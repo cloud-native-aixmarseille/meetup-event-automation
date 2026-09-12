@@ -44,10 +44,10 @@ describe("GitHub Action input and error boundary", () => {
 
 	it("passes through only allow-listed error classes", () => {
 		const known = new Error("configuration is invalid");
-		known.name = "ZodError";
+		known.name = "EventNotFoundError";
 
 		expect(publicErrorMessage(known)).toBe(
-			"ZodError: configuration is invalid",
+			"EventNotFoundError: configuration is invalid",
 		);
 		expect(publicErrorMessage({ message: "contact@example.test" })).toBe(
 			"Meetup automation failed; inspect debug logs using a trusted runner",

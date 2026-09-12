@@ -568,7 +568,7 @@ function runtimeInput(
 ): Parameters<typeof runCommunicationReconcile>[0] {
 	return {
 		issueNumber: 42,
-		configPath: ".github/meetup-automation.yml",
+
 		requestedMode: "check",
 		dispatchAuthorized: false,
 		githubToken: "github-token",

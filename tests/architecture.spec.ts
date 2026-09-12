@@ -1,9 +1,11 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join, relative } from "node:path";
+import { projectFiles } from "archunit";
 import { describe, expect, it } from "vitest";
 
 const repositoryRoot = process.cwd();
 const workspaceNamespace = "@meetup-automation/";
+const tsConfigPath = "tsconfig.json";
 
 type WorkspaceLayer = "domain" | "application" | "adapter" | "runtime";
 
@@ -26,6 +28,44 @@ async function filesBelow(directory: string): Promise<string[]> {
 }
 
 describe("clean architecture boundaries", () => {
+	it("confines dependency injection to runtime composition roots", async () => {
+		const violations: string[] = [];
+		for (const item of await workspacePackages()) {
+			for (const path of await filesBelow(join(item.directory, "src"))) {
+				if (!path.endsWith(".ts") || path.endsWith(".test.ts")) continue;
+				const source = await readFile(path, "utf8");
+				if (
+					/["'](?:inversify|@inversifyjs\/[^"']+|reflect-metadata)["']/.test(
+						source,
+					) &&
+					(item.layer !== "runtime" || !path.endsWith("composition.ts"))
+				) {
+					violations.push(relative(repositoryRoot, path));
+				}
+			}
+		}
+		expect(violations).toEqual([]);
+	});
+
+	it("keeps application orchestration independent of infrastructure APIs", async () => {
+		const violations: string[] = [];
+		const sourceFiles = await filesBelow(
+			join(repositoryRoot, "packages/application"),
+		);
+		for (const path of sourceFiles) {
+			if (!path.includes("/src/") || !path.endsWith(".ts")) continue;
+			const source = await readFile(path, "utf8");
+			if (
+				/["'](?:@actions\/|@octokit\/|node:|csv-parse["']|yaml["'])/.test(
+					source,
+				)
+			) {
+				violations.push(relative(repositoryRoot, path));
+			}
+		}
+		expect(violations).toEqual([]);
+	});
+
 	it("keeps technology and runtime imports outside domain packages", async () => {
 		const domainRoot = join(repositoryRoot, "packages/domain");
 		const sourceFiles = (await filesBelow(domainRoot)).filter((path) =>
@@ -51,6 +91,62 @@ describe("clean architecture boundaries", () => {
 		}
 
 		expect(violations).toEqual([]);
+	});
+
+	// The first ArchUnit assertion builds the TypeScript dependency graph. Under
+	// CI coverage this exceeds the default 5 seconds; later assertions reuse it.
+	describe("archunit clean architecture boundaries", {
+		timeout: 30_000,
+	}, () => {
+		it("keeps the domain layer free from outer-layer imports", async () => {
+			await expect(
+				projectFiles(tsConfigPath)
+					.inPath("packages/domain/**/src/**/*.ts")
+					.shouldNot()
+					.dependOnFiles()
+					.inPath("packages/application/**/src/**/*.ts"),
+			).toPassAsync();
+			await expect(
+				projectFiles(tsConfigPath)
+					.inPath("packages/domain/**/src/**/*.ts")
+					.shouldNot()
+					.dependOnFiles()
+					.inPath("packages/adapter/**/src/**/*.ts"),
+			).toPassAsync();
+			await expect(
+				projectFiles(tsConfigPath)
+					.inPath("packages/domain/**/src/**/*.ts")
+					.shouldNot()
+					.dependOnFiles()
+					.inPath("packages/runtime/**/src/**/*.ts"),
+			).toPassAsync();
+		});
+
+		it("keeps the application layer free from adapter and runtime imports", async () => {
+			await expect(
+				projectFiles(tsConfigPath)
+					.inPath("packages/application/**/src/**/*.ts")
+					.shouldNot()
+					.dependOnFiles()
+					.inPath("packages/adapter/**/src/**/*.ts"),
+			).toPassAsync();
+			await expect(
+				projectFiles(tsConfigPath)
+					.inPath("packages/application/**/src/**/*.ts")
+					.shouldNot()
+					.dependOnFiles()
+					.inPath("packages/runtime/**/src/**/*.ts"),
+			).toPassAsync();
+		});
+
+		it("keeps the package source graph cycle-free", async () => {
+			await expect(
+				projectFiles(tsConfigPath)
+					.inPath("packages/**/src/**/*.ts")
+					.should()
+					.haveNoCycles(),
+			).toPassAsync();
+		});
 	});
 
 	it("uses responsibility-bearing adapter package names", async () => {

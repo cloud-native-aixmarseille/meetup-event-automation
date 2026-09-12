@@ -5,17 +5,13 @@ import {
 	ListActiveEvents,
 } from "@meetup-automation/event";
 import {
-	AUTOMATION_CONFIG_PATH,
+	type AutomationConfig,
 	ManageMeetupEvent,
 	type PublicDiagnostic,
 	resultEnvelope,
 } from "@meetup-automation/journey";
 import { setDiagnosticsOutput, setJsonOutput } from "./action-output.js";
-import {
-	createEventComposition,
-	createReferentialRepository,
-	workspaceConfigRepository,
-} from "./composition.js";
+import { createEventContainer, SERVICES } from "./composition.js";
 import { enumInput, positiveIntegerInput } from "./runtime-input.js";
 
 export async function runEventReconcileAction(): Promise<void> {
@@ -33,24 +29,13 @@ export async function runEventReconcileAction(): Promise<void> {
 	});
 	const { owner, repo } = context.repo;
 	const repository = `${owner}/${repo}`;
-	const configRepository = workspaceConfigRepository();
-	const client = getOctokit(token);
-
-	const useCase = new ManageMeetupEvent({
-		configRepository,
-		createReferentialRepository: (config) =>
-			createReferentialRepository(config),
-		createEventDependencies: (config) =>
-			createEventComposition({
-				client,
-				owner,
-				repo,
-				config,
-				commentAuthorLogin,
-			}),
+	const container = createEventContainer({
+		client: getOctokit(token),
+		owner,
+		repo,
+		commentAuthorLogin,
 	});
-	const outcome = await useCase.execute({
-		configPath: AUTOMATION_CONFIG_PATH,
+	const outcome = await container.get(ManageMeetupEvent).execute({
 		identity: { repository, issueNumber },
 		mode,
 	});
@@ -77,15 +62,14 @@ export async function runEventListActiveAction(): Promise<void> {
 	const token = core.getInput("github-token", { required: true });
 	const { owner, repo } = context.repo;
 	const repository = `${owner}/${repo}`;
-	const config = await workspaceConfigRepository().load();
-	const composition = createEventComposition({
+	const container = createEventContainer({
 		client: getOctokit(token),
 		owner,
 		repo,
-		config,
 		commentAuthorLogin: "github-actions[bot]",
 	});
-	const outcome = await new ListActiveEvents(composition).execute({
+	const config = container.get<AutomationConfig>(SERVICES.config);
+	const outcome = await container.get(ListActiveEvents).execute({
 		repository,
 		label: config.event["issue-label"],
 		includeClosed: true,

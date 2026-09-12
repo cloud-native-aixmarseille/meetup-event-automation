@@ -11,8 +11,6 @@ const mocks = vi.hoisted(() => ({
 	dependencies: undefined as
 		| ConstructorParameters<typeof ManageMeetupAssets>[0]
 		| undefined,
-	createEventComposition: vi.fn(),
-	createReferentialRepository: vi.fn(),
 }));
 vi.mock("@actions/core", () => ({
 	getInput: (name: string) => mocks.inputs[name] ?? "",
@@ -23,7 +21,7 @@ vi.mock("@actions/core", () => ({
 }));
 vi.mock("@actions/github", () => ({
 	context: { repo: { owner: "community", repo: "meetups" } },
-	getOctokit: vi.fn(),
+	getOctokit: () => ({}),
 }));
 vi.mock("@meetup-automation/google-drive-asset-repository", () => ({
 	createGoogleDriveAssetRepository: mocks.createAssets,
@@ -39,11 +37,6 @@ vi.mock("@meetup-automation/journey", async (importOriginal) => ({
 		execute = mocks.execute;
 	},
 }));
-vi.mock("./composition.js", () => ({
-	createEventComposition: mocks.createEventComposition,
-	createReferentialRepository: mocks.createReferentialRepository,
-	workspaceConfigRepository: vi.fn(),
-}));
 
 beforeEach(() => {
 	vi.clearAllMocks();
@@ -55,6 +48,7 @@ beforeEach(() => {
 		"managed-comment-author": "test[bot]",
 	};
 	mocks.outputs = {};
+	mocks.createAssets.mockReturnValue({});
 	mocks.execute.mockResolvedValue({
 		skipped: false,
 		persisted: false,

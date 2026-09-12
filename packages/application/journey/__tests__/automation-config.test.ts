@@ -1,15 +1,10 @@
 import { describe, expect, it } from "vitest";
-import {
-	AUTOMATION_CONFIG_PATH,
-	parseAutomationConfig,
-	resultEnvelope,
-} from "../src/index.js";
+import { createAutomationConfig, resultEnvelope } from "../src/index.js";
 
 describe("opinionated automation configuration", () => {
-	it("owns the configuration path and meetup conventions", () => {
-		const result = parseAutomationConfig(undefined);
+	it("owns the meetup conventions", () => {
+		const result = createAutomationConfig();
 
-		expect(AUTOMATION_CONFIG_PATH).toBe(".github/meetup-automation.yml");
 		expect(result).toMatchObject({
 			timezone: "Europe/Paris",
 			event: {
@@ -40,20 +35,6 @@ describe("opinionated automation configuration", () => {
 					"https://ocgroups.dev/cncf/group/cloud-native-aix-marseille/event/",
 			},
 		});
-	});
-
-	it("ignores consumer-provided overrides and stays fully opinionated", () => {
-		const result = parseAutomationConfig({
-			timezone: "UTC",
-			communication: {
-				"dispatch-enabled": false,
-				"policy-version": 99,
-			},
-		});
-
-		expect(result.communication["dispatch-enabled"]).toBe(true);
-		expect(result.communication["policy-version"]).toBe(1);
-		expect(result.timezone).toBe("Europe/Paris");
 	});
 });
 

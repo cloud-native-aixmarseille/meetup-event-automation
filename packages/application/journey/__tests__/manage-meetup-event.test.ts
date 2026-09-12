@@ -3,7 +3,10 @@ import type {
 	MeetupEvent,
 	ReconcileEventDependencies,
 } from "@meetup-automation/event";
-import type { AssetRepository } from "@meetup-automation/publication";
+import {
+	type AssetRepository,
+	ReconcileEventAssets,
+} from "@meetup-automation/publication";
 import type { RawReferentialCatalog } from "@meetup-automation/referential";
 import { describe, expect, it, vi } from "vitest";
 import type { AutomationConfig } from "../src/index.js";
@@ -15,7 +18,6 @@ const identity = {
 } as const;
 
 const config: AutomationConfig = {
-	"schema-version": 1,
 	timezone: "Europe/Paris",
 	event: {
 		"issue-label": "meetup",
@@ -121,18 +123,48 @@ const catalog: RawReferentialCatalog = {
 };
 
 describe("ManageMeetupEvent manual publication tasks", () => {
+	it("honors injected rules instead of replacing them with defaults", async () => {
+		const evaluate = vi.fn().mockReturnValue({
+			patch: { operations: [] },
+			diagnostics: [
+				{
+					code: "event.custom-policy",
+					severity: "error",
+					category: "invalid",
+					message: "Custom event policy failed",
+				},
+			],
+		});
+		const useCase = new ManageMeetupEvent({
+			config,
+			referentialRepository: { load: async () => catalog },
+			eventDependencies: {
+				...createEventDependencies(),
+				rules: [{ id: "custom-policy", dependencies: [], evaluate }],
+			},
+		});
+		const result = await useCase.execute({ identity, mode: "check" });
+		expect(evaluate).toHaveBeenCalledOnce();
+		expect(result).toMatchObject({
+			skipped: false,
+			isReady: false,
+			diagnostics: expect.arrayContaining([
+				expect.objectContaining({ code: "event.custom-policy" }),
+			]),
+		});
+	});
+
 	it("returns composed task status and diagnoses only pending manual work", async () => {
 		const eventDependencies = createEventDependencies();
 		const useCase = new ManageMeetupEvent({
-			configRepository: { load: vi.fn().mockResolvedValue(config) },
-			createReferentialRepository: () => ({
+			config,
+			referentialRepository: {
 				load: vi.fn().mockResolvedValue(catalog),
-			}),
-			createEventDependencies: () => eventDependencies,
+			},
+			eventDependencies: eventDependencies,
 		});
 
 		const result = await useCase.execute({
-			configPath: ".github/meetup-automation.yml",
 			identity,
 			mode: "check",
 		});
@@ -224,10 +256,14 @@ function assetJourney() {
 		updateFile: vi.fn<AssetRepository["updateFile"]>(),
 	};
 	const useCase = new ManageMeetupAssets({
-		configRepository: { load: async () => config },
-		createReferentialRepository: () => ({ load: async () => catalog }),
-		createEventDependencies: () => eventDependencies,
-		assetRepository,
+		eventRepository: eventDependencies.repository,
+		documentCodec: eventDependencies.documentCodec,
+		manageEvent: new ManageMeetupEvent({
+			config,
+			eventDependencies,
+			referentialRepository: { load: async () => catalog },
+		}),
+		reconcileAssets: new ReconcileEventAssets(assetRepository),
 	});
 	return { eventDependencies, assetRepository, useCase };
 }
@@ -239,7 +275,6 @@ describe("ManageMeetupAssets", () => {
 			body: "projected asset link",
 		});
 		const result = await useCase.execute({
-			configPath: "",
 			identity,
 			mode: "fix",
 		});
@@ -270,7 +305,6 @@ describe("ManageMeetupAssets", () => {
 	it("checks existing assets without updating the issue or remote files", async () => {
 		const { eventDependencies, assetRepository, useCase } = assetJourney();
 		const result = await useCase.execute({
-			configPath: "",
 			identity,
 			mode: "check",
 		});
@@ -284,10 +318,9 @@ describe("ManageMeetupAssets", () => {
 
 	it("does not persist an empty codec patch", async () => {
 		const { eventDependencies, useCase } = assetJourney();
-		expect(
-			(await useCase.execute({ configPath: "", identity, mode: "fix" }))
-				.persisted,
-		).toBe(false);
+		expect((await useCase.execute({ identity, mode: "fix" })).persisted).toBe(
+			false,
+		);
 		expect(eventDependencies.repository.applyPatch).not.toHaveBeenCalled();
 	});
 
@@ -319,7 +352,6 @@ describe("ManageMeetupAssets", () => {
 				diagnostics: [],
 			});
 		const result = await useCase.execute({
-			configPath: "",
 			identity,
 			mode: "fix",
 		});
@@ -330,9 +362,9 @@ describe("ManageMeetupAssets", () => {
 	it("fails when the issue cannot be found", async () => {
 		const { eventDependencies, useCase } = assetJourney();
 		vi.mocked(eventDependencies.repository.find).mockResolvedValue(null);
-		await expect(
-			useCase.execute({ configPath: "", identity, mode: "fix" }),
-		).rejects.toThrow("not found");
+		await expect(useCase.execute({ identity, mode: "fix" })).rejects.toThrow(
+			"not found",
+		);
 	});
 
 	it("detects an issue edit before contacting Drive", async () => {
@@ -341,7 +373,7 @@ describe("ManageMeetupAssets", () => {
 			.mockResolvedValueOnce(sourceDocument)
 			.mockResolvedValue({ ...sourceDocument, body: "concurrent human edit" });
 		await expect(
-			useCase.execute({ configPath: "", identity, mode: "fix" }),
+			useCase.execute({ identity, mode: "fix" }),
 		).rejects.toMatchObject({ name: "EventConcurrentModificationError" });
 		expect(assetRepository.listTemplates).not.toHaveBeenCalled();
 	});
@@ -356,7 +388,7 @@ describe("ManageMeetupAssets", () => {
 			.mockResolvedValueOnce(sourceDocument)
 			.mockResolvedValue({ ...sourceDocument, body: "concurrent human edit" });
 		await expect(
-			useCase.execute({ configPath: "", identity, mode: "fix" }),
+			useCase.execute({ identity, mode: "fix" }),
 		).rejects.toMatchObject({ name: "EventConcurrentModificationError" });
 		expect(eventDependencies.repository.applyPatch).not.toHaveBeenCalled();
 	});

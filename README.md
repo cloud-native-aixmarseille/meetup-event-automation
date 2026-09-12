@@ -74,7 +74,6 @@ remain at these boundaries and do not leak into domain APIs.
 | [`github-repository-dispatch-mail-gateway`](packages/adapter/github-repository-dispatch-mail-gateway)   | Dispatch idempotent mail intents through a repository event                    |
 | [`csv-referential-repository`](packages/adapter/csv-referential-repository)                             | Load host and speaker referentials from checked-out CSV files                  |
 | [`yaml-issue-form-projection`](packages/adapter/yaml-issue-form-projection)                             | Project public referential choices into the issue form                         |
-| [`yaml-automation-config-repository`](packages/adapter/yaml-automation-config-repository)               | Load and validate the checked-out journey configuration                        |
 | [`slack-notification-gateway`](packages/adapter/slack-notification-gateway)                             | Deliver redacted Slack notifications                                           |
 | [`system-clock`](packages/adapter/system-clock)                                                         | Supply explicit instants to time-dependent use cases                           |
 | [`google-drive-asset-repository`](packages/adapter/google-drive-asset-repository)                       | Reconcile event folders and template copies through the publication asset port |
@@ -84,6 +83,11 @@ remain at these boundaries and do not leak into domain APIs.
 Each Action is a thin input/output boundary over the application use cases. Its
 directory contains the public contract, documentation, entrypoint, and
 committed bundle.
+
+Runtime composition roots use Inversify to inject ports and use cases within each
+invocation. Domain and application code remain independent of the container;
+cross-domain journey decisions live in `packages/application/journey`. See
+[the dependency injection decision](docs/adr/0002-runtime-dependency-injection.md).
 
 | Action                                                                                   | Responsibility                                                           |
 | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
@@ -126,12 +130,16 @@ to that SHA and can be rolled back by restoring the previous release SHA.
 
 ### Development
 
-The repository uses pnpm for the workspace and Nx for dependency-aware project
-tasks.
+Developer workflow, repository rules, and quality gates live in
+[docs/developer-guide.md](docs/developer-guide.md).
 
 ```shell
 make setup
-make ci
+make lint
+make check-knip
+make quality
+make check-architecture
+make check-contracts
 ```
 
 ## Contributing

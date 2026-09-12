@@ -3,16 +3,13 @@ import * as core from "@actions/core";
 import { context } from "@actions/github";
 import type { CommunicationDiagnostic } from "@meetup-automation/communication";
 import { mapGitHubIssueDocument } from "@meetup-automation/github-event-repository";
+import type { CommunicationJourneyDiagnostic } from "@meetup-automation/journey";
 import {
-	AUTOMATION_CONFIG_PATH,
 	type PublicDiagnostic,
 	resultEnvelope,
 } from "@meetup-automation/journey";
 import { setDiagnosticsOutput, setJsonOutput } from "./action-output.js";
-import {
-	type CommunicationRuntimeDiagnostic,
-	runCommunicationReconcile,
-} from "./communication.js";
+import { runCommunicationReconcile } from "./communication.js";
 import {
 	booleanInput,
 	enumInput,
@@ -40,7 +37,7 @@ export async function runCommunicationReconcileAction(): Promise<void> {
 		: undefined;
 	const outcome = await runCommunicationReconcile({
 		issueNumber,
-		configPath: AUTOMATION_CONFIG_PATH,
+
 		requestedMode,
 		dispatchAuthorized,
 		githubToken: core.getInput("github-token", { required: true }),
@@ -109,7 +106,7 @@ function domainDiagnostic(
 }
 
 function runtimeDiagnostic(
-	diagnostic: CommunicationRuntimeDiagnostic,
+	diagnostic: CommunicationJourneyDiagnostic,
 ): PublicDiagnostic {
 	return {
 		code: diagnostic.code,
@@ -147,7 +144,7 @@ const COMMUNICATION_MESSAGES: Readonly<
 };
 
 const RUNTIME_MESSAGES: Readonly<
-	Record<CommunicationRuntimeDiagnostic["code"], string>
+	Record<CommunicationJourneyDiagnostic["code"], string>
 > = {
 	"communication.dispatch-disabled-by-config":
 		"Communication dispatch is disabled by repository configuration.",

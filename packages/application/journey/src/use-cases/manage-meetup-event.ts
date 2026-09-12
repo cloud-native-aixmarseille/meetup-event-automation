@@ -1,9 +1,8 @@
 import {
-	createDefaultEventRules,
 	type EventDiagnostic,
 	type EventDocument,
 	type EventIdentity,
-	type EventRepositoryPatch,
+	EventNotFoundError,
 	ensureEventDocumentIsCurrent,
 	evaluateEventLifecycle,
 	evaluateEventReadiness,
@@ -14,10 +13,9 @@ import {
 	type ReconcileEventDependencies,
 } from "@meetup-automation/event";
 import {
-	AssetFolderUrlPolicy,
-	CommunityEventUrlPolicy,
+	createDefaultPublicationUrlPolicies,
+	DEFAULT_PUBLICATION_URL_CONFIGURATION,
 	type ManualPublicationTask,
-	MeetupEventUrlPolicy,
 	PublicationUrlPolicyEngine,
 	planManualPublicationTasks,
 } from "@meetup-automation/publication";
@@ -26,16 +24,13 @@ import {
 	ResolveEventReferences,
 	ValidateReferentialCatalog,
 } from "@meetup-automation/referential";
-import type {
-	AutomationConfig,
-	AutomationConfigRepository,
-} from "../config/automation-config.js";
+import type { AutomationConfig } from "../config/automation-config.js";
 import type { PublicDiagnostic } from "../result/result-envelope.js";
 
 export interface ManageMeetupEventDependencies {
-	configRepository: AutomationConfigRepository;
-	createReferentialRepository(config: AutomationConfig): ReferentialRepository;
-	createEventDependencies(config: AutomationConfig): ReconcileEventDependencies;
+	readonly config: AutomationConfig;
+	readonly referentialRepository: ReferentialRepository;
+	readonly eventDependencies: ReconcileEventDependencies;
 }
 
 export type ManageMeetupEventResult =
@@ -58,51 +53,31 @@ export class ManageMeetupEvent {
 	constructor(private readonly dependencies: ManageMeetupEventDependencies) {}
 
 	async execute(input: {
-		configPath: string;
 		identity: EventIdentity;
 		mode: "check" | "fix";
 		/** Optional immutable source captured by the composition boundary. */
 		sourceDocument?: EventDocument;
 	}): Promise<ManageMeetupEventResult> {
-		const config = await this.dependencies.configRepository.load(
-			input.configPath,
-		);
-		const eventDependencies = this.dependencies.createEventDependencies(config);
+		const config = this.dependencies.config;
+		const eventDependencies = this.dependencies.eventDependencies;
 		const sourceDocument =
 			input.sourceDocument ??
 			(await eventDependencies.repository.find(input.identity));
 		if (!sourceDocument) {
-			throw new Error(
-				`Meetup event ${input.identity.repository}#${input.identity.issueNumber} was not found`,
-			);
+			throw new EventNotFoundError(input.identity);
 		}
 		if (!sourceDocument.labels.includes(config.event["issue-label"])) {
 			return { skipped: true, diagnostics: [] };
 		}
 
-		const rules = createDefaultEventRules({
-			meetup: config.event["issue-label"],
-			hostNeeded: "hoster:needed",
-			hostConfirmed:
-				config.event["required-confirmation-labels"][0] ?? "hoster:confirmed",
-			speakersNeeded: "speakers:needed",
-			speakersConfirmed:
-				config.event["required-confirmation-labels"][1] ?? "speakers:confirmed",
-			occurrencePostponed: "event:postponed",
-			occurrenceHeld: "event:held",
-			occurrenceCancelled: "event:cancelled",
-		});
-		const eventResult = await new ReconcileEvent({
-			...eventDependencies,
-			rules,
-		}).execute({
+		const eventResult = await new ReconcileEvent(eventDependencies).execute({
 			identity: input.identity,
 			mode: "check",
 			sourceDocument,
 		});
 
 		const catalogValidation = await new ValidateReferentialCatalog(
-			this.dependencies.createReferentialRepository(config),
+			this.dependencies.referentialRepository,
 		).execute();
 		const eventDiagnostics: EventDiagnostic[] = [...eventResult.diagnostics];
 		let event = eventResult.event;
@@ -243,14 +218,18 @@ function evaluatePublication(
 			});
 		}
 	}
-	const engine = new PublicationUrlPolicyEngine([
-		new MeetupEventUrlPolicy(config.publication["meetup-event-url-prefix"]),
-		new CommunityEventUrlPolicy([
-			config.publication["cncf-event-url-prefix"],
-			"https://community.cncf.io/events/details/cncf-cloud-native-aix-marseille-presents-",
-		]),
-		new AssetFolderUrlPolicy("https://drive.google.com/drive/folders/"),
-	]);
+	const engine = new PublicationUrlPolicyEngine(
+		createDefaultPublicationUrlPolicies({
+			...DEFAULT_PUBLICATION_URL_CONFIGURATION,
+			meetupEventUrlPrefix: config.publication["meetup-event-url-prefix"],
+			communityEventUrlPrefixes: [
+				config.publication["cncf-event-url-prefix"],
+				...DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes.slice(
+					1,
+				),
+			],
+		}),
+	);
 	const evaluation = engine.evaluate(event.publicationLinks);
 	diagnostics.push(
 		...evaluation.diagnostics.map((item) => ({
@@ -341,11 +320,4 @@ function toPublicDiagnostic(item: EventDiagnostic): PublicDiagnostic {
 
 function canonical(value: string): string {
 	return value.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US");
-}
-
-export function combineRepositoryPatches(
-	left: EventRepositoryPatch,
-	right: EventRepositoryPatch,
-): EventRepositoryPatch {
-	return { ...left, ...right };
 }

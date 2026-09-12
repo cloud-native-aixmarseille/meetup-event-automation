@@ -1,27 +1,26 @@
 import {
+	type EventDocumentCodec,
 	type EventIdentity,
+	EventNotFoundError,
+	type EventRepository,
 	ensureEventDocumentIsCurrent,
 	eventRepositoryPatchIsEmpty,
 } from "@meetup-automation/event";
-import {
-	type AssetRepository,
-	ReconcileEventAssets,
-} from "@meetup-automation/publication";
+import type { ReconcileEventAssets } from "@meetup-automation/publication";
 import type { PublicDiagnostic } from "../result/result-envelope.js";
-import {
-	ManageMeetupEvent,
-	type ManageMeetupEventDependencies,
-} from "./manage-meetup-event.js";
+import type { ManageMeetupEvent } from "./manage-meetup-event.js";
+
+interface ManageMeetupAssetsDependencies {
+	readonly eventRepository: EventRepository;
+	readonly documentCodec: EventDocumentCodec;
+	readonly manageEvent: Pick<ManageMeetupEvent, "execute">;
+	readonly reconcileAssets: Pick<ReconcileEventAssets, "execute">;
+}
 
 export class ManageMeetupAssets {
-	constructor(
-		private readonly dependencies: ManageMeetupEventDependencies & {
-			assetRepository: AssetRepository;
-		},
-	) {}
+	constructor(private readonly dependencies: ManageMeetupAssetsDependencies) {}
 
 	async execute(input: {
-		configPath: string;
 		identity: EventIdentity;
 		mode: "check" | "fix";
 	}): Promise<{
@@ -31,17 +30,13 @@ export class ManageMeetupAssets {
 		files: Readonly<Record<string, string>>;
 		diagnostics: readonly PublicDiagnostic[];
 	}> {
-		const config = await this.dependencies.configRepository.load(
-			input.configPath,
-		);
-		const composition = this.dependencies.createEventDependencies(config);
-		const source = await composition.repository.find(input.identity);
-		if (!source) throw new Error("Meetup event was not found");
-		const evaluation = await new ManageMeetupEvent({
-			...this.dependencies,
-			configRepository: { load: async () => config },
-			createEventDependencies: () => composition,
-		}).execute({ ...input, mode: "check", sourceDocument: source });
+		const source = await this.dependencies.eventRepository.find(input.identity);
+		if (!source) throw new EventNotFoundError(input.identity);
+		const evaluation = await this.dependencies.manageEvent.execute({
+			...input,
+			mode: "check",
+			sourceDocument: source,
+		});
 		if (evaluation.skipped || evaluation.event.occurrenceStatus === "cancelled")
 			return { skipped: true, persisted: false, files: {}, diagnostics: [] };
 		if (
@@ -70,13 +65,11 @@ export class ManageMeetupAssets {
 		}
 		if (input.mode === "fix")
 			await ensureEventDocumentIsCurrent(
-				composition.repository,
+				this.dependencies.eventRepository,
 				input.identity,
 				source,
 			);
-		const assets = await new ReconcileEventAssets(
-			this.dependencies.assetRepository,
-		).execute({
+		const assets = await this.dependencies.reconcileAssets.execute({
 			eventId: `${input.identity.repository}#${input.identity.issueNumber}`,
 			date: evaluation.event.date,
 			hostName: evaluation.event.host.displayName,
@@ -87,8 +80,8 @@ export class ManageMeetupAssets {
 		if (input.mode === "fix" && assets.container) {
 			// Only project the asset reference. Event normalization remains owned by
 			// event reconciliation and the versioned codec owns all Markdown edits.
-			const original = composition.documentCodec.decode(source).event;
-			const patch = composition.documentCodec.createPatch(source, {
+			const original = this.dependencies.documentCodec.decode(source).event;
+			const patch = this.dependencies.documentCodec.createPatch(source, {
 				...original,
 				publicationLinks: {
 					...original.publicationLinks,
@@ -97,11 +90,14 @@ export class ManageMeetupAssets {
 			});
 			if (!eventRepositoryPatchIsEmpty(patch)) {
 				await ensureEventDocumentIsCurrent(
-					composition.repository,
+					this.dependencies.eventRepository,
 					input.identity,
 					source,
 				);
-				await composition.repository.applyPatch(input.identity, patch);
+				await this.dependencies.eventRepository.applyPatch(
+					input.identity,
+					patch,
+				);
 				persisted = true;
 			}
 		}

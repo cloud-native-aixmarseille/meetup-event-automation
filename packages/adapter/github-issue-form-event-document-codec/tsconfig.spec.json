@@ -1,7 +1,5 @@
 {
 	"extends": "../../../tsconfig.base.json",
-	"compilerOptions": {
-		"ignoreDeprecations": "6.0"
-	},
+	"compilerOptions": {},
 	"include": ["src/**/*.ts", "__tests__/**/*.ts"]
 }
