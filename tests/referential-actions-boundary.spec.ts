@@ -10,8 +10,6 @@ const boundary = vi.hoisted(() => ({
 	setOutput: vi.fn(),
 	validate: vi.fn(),
 	synchronize: vi.fn(),
-	workspaceConfigRepository: vi.fn(() => ({ load: vi.fn() })),
-	createReferentialRepository: vi.fn(),
 }));
 
 vi.mock("@actions/core", () => ({
@@ -19,35 +17,35 @@ vi.mock("@actions/core", () => ({
 	setOutput: boundary.setOutput,
 }));
 
-vi.mock("../packages/application/journey/src/index.js", () => ({
-	AUTOMATION_CONFIG_PATH: ".github/meetup-automation.yml",
-	resultEnvelope: (data: unknown, diagnostics: unknown) => ({
-		schemaVersion: 1,
-		data,
-		diagnostics,
+vi.mock(
+	"../packages/application/journey/src/index.js",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("../packages/application/journey/src/index.js")
+		>()),
+		resultEnvelope: (data: unknown, diagnostics: unknown) => ({
+			schemaVersion: 1,
+			data,
+			diagnostics,
+		}),
+		ValidateMeetupReferentials: class {
+			execute = boundary.validate;
+		},
+		SynchronizeMeetupIssueForm: class {
+			execute = boundary.synchronize;
+		},
 	}),
-	ValidateMeetupReferentials: class {
-		execute = boundary.validate;
-	},
-	SynchronizeMeetupIssueForm: class {
-		execute = boundary.synchronize;
-	},
-}));
+);
 
 vi.mock("../packages/adapter/yaml-issue-form-projection/src/index.js", () => ({
 	YamlIssueFormProjection: class {},
-}));
-
-vi.mock("../packages/runtime/github-actions/src/composition.js", () => ({
-	workspaceConfigRepository: boundary.workspaceConfigRepository,
-	createReferentialRepository: boundary.createReferentialRepository,
 }));
 
 describe("referential GitHub Action boundary", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		boundary.getInput.mockImplementation((name: string) =>
-			name === "mode" ? "fix" : ".github/meetup-automation.yml",
+			name === "mode" ? "fix" : "",
 		);
 	});
 
@@ -106,7 +104,6 @@ describe("referential GitHub Action boundary", () => {
 		await runReferentialSyncIssueFormAction();
 
 		expect(boundary.synchronize).toHaveBeenCalledWith({
-			configPath: ".github/meetup-automation.yml",
 			mode: "fix",
 		});
 		expect(core.setOutput).toHaveBeenCalledWith("changed", "true");

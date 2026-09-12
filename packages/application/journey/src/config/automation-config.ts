@@ -1,44 +1,35 @@
-import { z } from "zod";
+import { DEFAULT_PUBLICATION_URL_CONFIGURATION } from "@meetup-automation/publication";
 
-export const AUTOMATION_CONFIG_PATH = ".github/meetup-automation.yml";
-
-const resolvedAutomationConfigSchema = z.object({
-	"schema-version": z.literal(1),
-	timezone: z.string(),
-	event: z.object({
-		"issue-label": z.string(),
-		"issue-form": z.string(),
-		"occurrence-status-field": z.string(),
-		"required-confirmation-labels": z.array(z.string()),
-	}),
-	referentials: z.object({
-		hosts: z.string(),
-		speakers: z.string(),
-	}),
-	communication: z.object({
-		"readiness-window-days": z.number(),
-		"mailings-repository": z.string(),
-		"slack-enabled": z.boolean(),
-		"approval-label": z.string(),
-		"dispatch-enabled": z.boolean(),
-		"policy-version": z.number(),
-	}),
-	publication: z.object({
-		"meetup-event-url-prefix": z.string(),
-		"cncf-event-url-prefix": z.string(),
-	}),
-});
-
-export type AutomationConfig = z.infer<typeof resolvedAutomationConfigSchema>;
+export interface AutomationConfig {
+	readonly timezone: string;
+	readonly event: Readonly<{
+		"issue-label": string;
+		"issue-form": string;
+		"occurrence-status-field": string;
+		"required-confirmation-labels": readonly [host: string, speakers: string];
+	}>;
+	readonly referentials: Readonly<{ hosts: string; speakers: string }>;
+	readonly communication: Readonly<{
+		"readiness-window-days": number;
+		"mailings-repository": string;
+		"slack-enabled": boolean;
+		"approval-label": string;
+		"dispatch-enabled": boolean;
+		"policy-version": number;
+	}>;
+	readonly publication: Readonly<{
+		"meetup-event-url-prefix": string;
+		"cncf-event-url-prefix": string;
+	}>;
+}
 
 /**
  * Automation behavior is owned and versioned by this repository. Consumer
  * repositories do not provide a runtime configuration file anymore.
  */
 
-function createOpinionatedAutomationConfig(): AutomationConfig {
+export function createAutomationConfig(): AutomationConfig {
 	return {
-		"schema-version": 1,
 		timezone: "Europe/Paris",
 		event: {
 			"issue-label": "meetup",
@@ -63,21 +54,9 @@ function createOpinionatedAutomationConfig(): AutomationConfig {
 		},
 		publication: {
 			"meetup-event-url-prefix":
-				"https://www.meetup.com/cloud-native-aix-marseille/events/",
+				DEFAULT_PUBLICATION_URL_CONFIGURATION.meetupEventUrlPrefix,
 			"cncf-event-url-prefix":
-				"https://ocgroups.dev/cncf/group/cloud-native-aix-marseille/event/",
+				DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes[0],
 		},
 	};
-}
-
-export const automationConfigSchema = z
-	.unknown()
-	.transform(() => createOpinionatedAutomationConfig());
-
-export function parseAutomationConfig(value: unknown): AutomationConfig {
-	return automationConfigSchema.parse(value);
-}
-
-export interface AutomationConfigRepository {
-	load(configPath: string): Promise<AutomationConfig>;
 }

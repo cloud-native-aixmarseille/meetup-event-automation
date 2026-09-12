@@ -9,17 +9,13 @@ import type {
 export const DELIVERY_LEDGER_MARKER =
 	"<!-- meetup-automation-delivery-ledger:v1 -->";
 
-export interface GithubLedgerComment {
-	id: number;
-	body: string;
-	authorLogin?: string;
-}
+import type { GithubLedgerCommentClient } from "./comment-client.js";
 
-export interface GithubLedgerCommentClient {
-	listComments(): Promise<readonly GithubLedgerComment[]>;
-	createComment(body: string): Promise<void>;
-	updateComment(commentId: number, body: string): Promise<void>;
-}
+export type {
+	GithubLedgerComment,
+	GithubLedgerCommentClient,
+} from "./comment-client.js";
+export { ScopedGithubLedgerCommentClient } from "./scoped-github-ledger-comment-client.js";
 
 interface StoredEntry extends DeliveryLedgerEntry {
 	repositoryId: string;

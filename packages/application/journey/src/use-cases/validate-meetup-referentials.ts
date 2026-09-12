@@ -3,27 +3,24 @@ import {
 	type ReferentialRepository,
 	ValidateReferentialCatalog,
 } from "@meetup-automation/referential";
-import type {
-	AutomationConfig,
-	AutomationConfigRepository,
-} from "../config/automation-config.js";
+import type { AutomationConfig } from "../config/automation-config.js";
 import type { PublicDiagnostic } from "../result/result-envelope.js";
 
 export interface ValidateMeetupReferentialsDependencies {
-	configRepository: AutomationConfigRepository;
-	createReferentialRepository(config: AutomationConfig): ReferentialRepository;
+	readonly config: AutomationConfig;
+	readonly referentialRepository: ReferentialRepository;
 }
 
 export type ValidateMeetupReferentialsResult =
 	| {
 			isValid: true;
-			config: AutomationConfig;
+			readonly config: AutomationConfig;
 			catalog: ReferentialCatalog;
 			diagnostics: readonly PublicDiagnostic[];
 	  }
 	| {
 			isValid: false;
-			config: AutomationConfig;
+			readonly config: AutomationConfig;
 			diagnostics: readonly PublicDiagnostic[];
 	  };
 
@@ -32,9 +29,9 @@ export class ValidateMeetupReferentials {
 		private readonly dependencies: ValidateMeetupReferentialsDependencies,
 	) {}
 
-	async execute(configPath: string): Promise<ValidateMeetupReferentialsResult> {
-		const config = await this.dependencies.configRepository.load(configPath);
-		const repository = this.dependencies.createReferentialRepository(config);
+	async execute(): Promise<ValidateMeetupReferentialsResult> {
+		const config = this.dependencies.config;
+		const repository = this.dependencies.referentialRepository;
 		const validation = await new ValidateReferentialCatalog(
 			repository,
 		).execute();

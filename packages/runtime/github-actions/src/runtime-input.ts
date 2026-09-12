@@ -8,7 +8,6 @@ const SAFE_ERROR_NAMES = new Set([
 	"GitHubEventCommentRepositoryConfigurationError",
 	"GitHubEventCommentRepositoryScopeError",
 	"GitHubEventCommentRepositoryResponseError",
-	"ZodError",
 ]);
 
 export function positiveIntegerInput(name: string, value: string): number {

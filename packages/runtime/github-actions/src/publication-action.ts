@@ -1,17 +1,8 @@
 import * as core from "@actions/core";
 import { context, getOctokit } from "@actions/github";
-import { createGoogleDriveAssetRepository } from "@meetup-automation/google-drive-asset-repository";
-import {
-	AUTOMATION_CONFIG_PATH,
-	ManageMeetupAssets,
-	resultEnvelope,
-} from "@meetup-automation/journey";
+import { ManageMeetupAssets, resultEnvelope } from "@meetup-automation/journey";
 import { setDiagnosticsOutput, setJsonOutput } from "./action-output.js";
-import {
-	createEventComposition,
-	createReferentialRepository,
-	workspaceConfigRepository,
-} from "./composition.js";
+import { createPublicationContainer } from "./publication-composition.js";
 import { enumInput, positiveIntegerInput } from "./runtime-input.js";
 
 export async function runPublicationReconcileAssetsAction(): Promise<void> {
@@ -46,31 +37,22 @@ export async function runPublicationReconcileAssetsAction(): Promise<void> {
 		return;
 	}
 	core.setSecret(credentials);
-	const assetRepository = createGoogleDriveAssetRepository(credentials, {
-		parentFolderId: core.getInput("google-drive-meetup-folder-id"),
-		templateFolderId: core.getInput("google-drive-meetup-template-folder-id"),
-	});
 	const client = getOctokit(core.getInput("github-token", { required: true }));
 	const commentAuthorLogin = core.getInput("managed-comment-author", {
 		required: true,
 	});
 	const { owner, repo } = context.repo;
-	const outcome = await new ManageMeetupAssets({
-		assetRepository,
-		configRepository: workspaceConfigRepository(),
-		createReferentialRepository: (config) =>
-			createReferentialRepository(config),
-		createEventDependencies: (config) =>
-			createEventComposition({
-				client,
-				owner,
-				repo,
-				config,
-				commentAuthorLogin,
-			}),
-	}).execute({
+	const container = createPublicationContainer({
+		client,
+		owner,
+		repo,
+		commentAuthorLogin,
+		credentials,
+		parentFolderId: core.getInput("google-drive-meetup-folder-id"),
+		templateFolderId: core.getInput("google-drive-meetup-template-folder-id"),
+	});
+	const outcome = await container.get(ManageMeetupAssets).execute({
 		identity: { repository: `${owner}/${repo}`, issueNumber },
-		configPath: AUTOMATION_CONFIG_PATH,
 		mode,
 	});
 	setJsonOutput(

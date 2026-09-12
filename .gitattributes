@@ -1,3 +1,3 @@
 * text=auto eol=lf
 
-dist/** -diff linguist-generated=true
+actions/**/dist/** -diff linguist-generated=true

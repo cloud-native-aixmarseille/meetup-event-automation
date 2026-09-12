@@ -4,11 +4,6 @@ export {
 	runCommunicationReconcile,
 } from "./communication.js";
 export {
-	createEventComposition,
-	createReferentialRepository,
-	workspaceConfigRepository,
-} from "./composition.js";
-export {
 	booleanInput,
 	enumInput,
 	positiveIntegerInput,

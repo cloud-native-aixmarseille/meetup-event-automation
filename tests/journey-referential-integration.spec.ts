@@ -9,13 +9,9 @@ import type {
 	EventDocument,
 	ReconcileEventDependencies,
 } from "../packages/domain/event/src/index.js";
-import type {
-	RawReferentialCatalog,
-	ReferentialRepository,
-} from "../packages/domain/referential/src/index.js";
+import type { RawReferentialCatalog } from "../packages/domain/referential/src/index.js";
 
 const config: AutomationConfig = {
-	"schema-version": 1,
 	timezone: "Europe/Paris",
 	event: {
 		"issue-label": "meetup",
@@ -66,29 +62,24 @@ const catalog: RawReferentialCatalog = {
 };
 
 const dependenciesFor = (rawCatalog: RawReferentialCatalog) => {
-	const loadConfig = vi.fn().mockResolvedValue(config);
 	const loadCatalog = vi.fn().mockResolvedValue(rawCatalog);
-	const createReferentialRepository = vi
-		.fn<(value: AutomationConfig) => ReferentialRepository>()
-		.mockReturnValue({ load: loadCatalog });
+	const referentialRepository = { load: loadCatalog };
 
 	return {
 		dependencies: {
-			configRepository: { load: loadConfig },
-			createReferentialRepository,
+			config,
+			referentialRepository,
 		},
 		loadCatalog,
-		loadConfig,
-		createReferentialRepository,
 	};
 };
 
 describe("referential journey orchestration", () => {
-	it("loads configuration before validating and redacts catalog diagnostics", async () => {
+	it("validates the catalog using the injected configuration", async () => {
 		const fixture = dependenciesFor(catalog);
 		const result = await new ValidateMeetupReferentials(
 			fixture.dependencies,
-		).execute(".github/meetup-automation.yml");
+		).execute();
 
 		expect(result.isValid).toBe(true);
 		if (!result.isValid) throw new Error("Expected a valid synthetic catalog");
@@ -96,10 +87,6 @@ describe("referential journey orchestration", () => {
 		expect(result.catalog.hosts).toHaveLength(1);
 		expect(result.catalog.speakers).toHaveLength(1);
 		expect(result.diagnostics).toEqual([]);
-		expect(fixture.loadConfig).toHaveBeenCalledWith(
-			".github/meetup-automation.yml",
-		);
-		expect(fixture.createReferentialRepository).toHaveBeenCalledWith(config);
 		expect(fixture.loadCatalog).toHaveBeenCalledOnce();
 	});
 
@@ -110,9 +97,11 @@ describe("referential journey orchestration", () => {
 		});
 		const synchronize = vi.fn();
 		const result = await new SynchronizeMeetupIssueForm({
-			...fixture.dependencies,
+			validateReferentials: new ValidateMeetupReferentials(
+				fixture.dependencies,
+			),
 			issueFormProjection: { synchronize },
-		}).execute({ configPath: ".github/meetup-automation.yml", mode: "check" });
+		}).execute({ mode: "check" });
 
 		expect(result.changed).toBe(false);
 		expect(result.changedFiles).toEqual([]);
@@ -139,9 +128,11 @@ describe("referential journey orchestration", () => {
 			],
 		});
 		const result = await new SynchronizeMeetupIssueForm({
-			...fixture.dependencies,
+			validateReferentials: new ValidateMeetupReferentials(
+				fixture.dependencies,
+			),
 			issueFormProjection: { synchronize },
-		}).execute({ configPath: ".github/meetup-automation.yml", mode: "fix" });
+		}).execute({ mode: "fix" });
 
 		expect(result).toEqual({
 			changed: true,
@@ -190,16 +181,15 @@ describe("event journey selection", () => {
 
 	it("fails explicitly when the requested issue no longer exists", async () => {
 		const useCase = new ManageMeetupEvent({
-			configRepository: { load: vi.fn().mockResolvedValue(config) },
-			createReferentialRepository: () => ({
+			config,
+			referentialRepository: {
 				load: vi.fn().mockResolvedValue(catalog),
-			}),
-			createEventDependencies: () => eventDependencies(undefined),
+			},
+			eventDependencies: eventDependencies(undefined),
 		});
 
 		await expect(
 			useCase.execute({
-				configPath: ".github/meetup-automation.yml",
 				identity,
 				mode: "check",
 			}),
@@ -217,16 +207,15 @@ describe("event journey selection", () => {
 			body: "This is intentionally not a meetup.",
 		};
 		const useCase = new ManageMeetupEvent({
-			configRepository: { load: vi.fn().mockResolvedValue(config) },
-			createReferentialRepository: () => ({
+			config,
+			referentialRepository: {
 				load: vi.fn().mockResolvedValue(catalog),
-			}),
-			createEventDependencies: () => eventDependencies(document),
+			},
+			eventDependencies: eventDependencies(document),
 		});
 
 		await expect(
 			useCase.execute({
-				configPath: ".github/meetup-automation.yml",
 				identity,
 				mode: "fix",
 			}),

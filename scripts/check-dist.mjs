@@ -1,49 +1,28 @@
-import { spawnSync } from "node:child_process";
+import { readFile } from "node:fs/promises";
+import { actionBundles, buildActionBundles } from "./build-actions.mjs";
 
-const captureGeneratedDiff = () =>
-	spawnSync("git", ["diff", "--binary", "--", "actions"], {
-		encoding: "utf8",
-	});
-
-const exitWithCommandFailure = (label, result) => {
-	console.error(`check-dist: ${label} failed.`);
-	if (result.stderr) {
-		process.stderr.write(result.stderr);
+async function readBundle(path) {
+	try {
+		return await readFile(path);
+	} catch (error) {
+		if (error.code === "ENOENT") return undefined;
+		throw error;
 	}
-	process.exit(result.status ?? 1);
-};
-
-console.info("check-dist: capturing current generated diff for actions/.");
-
-const diffBeforeBuild = captureGeneratedDiff();
-if (diffBeforeBuild.status !== 0) {
-	exitWithCommandFailure("capturing pre-build diff", diffBeforeBuild);
 }
+
+console.info("check-dist: capturing current action bundles.");
+const paths = actionBundles.map(([, outfile]) => outfile);
+const before = await Promise.all(paths.map(readBundle));
 
 console.info("check-dist: rebuilding action bundles for comparison.");
-const build = spawnSync(process.execPath, ["scripts/build-actions.mjs"], {
-	stdio: "inherit",
-});
-if (build.status !== 0) {
-	console.error("check-dist: bundle rebuild failed.");
-	process.exit(build.status ?? 1);
-}
+await buildActionBundles();
+const after = await Promise.all(paths.map(readBundle));
+const stale = paths.filter((_, index) => !before[index]?.equals(after[index]));
 
-console.info("check-dist: capturing generated diff after rebuild.");
-const diffAfterBuild = captureGeneratedDiff();
-if (diffAfterBuild.status !== 0) {
-	exitWithCommandFailure("capturing post-build diff", diffAfterBuild);
-}
-
-if (diffBeforeBuild.stdout === diffAfterBuild.stdout) {
+if (stale.length > 0) {
+	console.error("check-dist: generated action bundles were stale or missing:");
+	for (const path of stale) console.error(`  ${path}`);
+	process.exitCode = 1;
+} else {
 	console.info("check-dist: action bundles are up to date.");
-	process.exit(0);
 }
-
-console.error(
-	"check-dist: generated action bundles are stale. Review the diff below.",
-);
-const diff = spawnSync("git", ["diff", "--exit-code", "--", "actions"], {
-	stdio: "inherit",
-});
-process.exit(diff.status ?? 1);

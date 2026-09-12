@@ -1,12 +1,10 @@
 export type {
-	AutomationConfig,
-	AutomationConfigRepository,
-} from "./config/automation-config.js";
-export {
-	AUTOMATION_CONFIG_PATH,
-	automationConfigSchema,
-	parseAutomationConfig,
-} from "./config/automation-config.js";
+	CommunicationJourneyDiagnostic,
+	ManageMeetupCommunicationsInput,
+	ManageMeetupCommunicationsResult,
+} from "./communication/contracts.js";
+export type { AutomationConfig } from "./config/automation-config.js";
+export { createAutomationConfig } from "./config/automation-config.js";
 export type {
 	IssueFormProjection,
 	IssueFormProjectionMode,
@@ -19,14 +17,16 @@ export type {
 } from "./result/result-envelope.js";
 export { resultEnvelope } from "./result/result-envelope.js";
 export { ManageMeetupAssets } from "./use-cases/manage-meetup-assets.js";
+export {
+	emptyCommunicationResult,
+	ManageMeetupCommunications,
+	resolveCommunicationDispatchMode,
+} from "./use-cases/manage-meetup-communications.js";
 export type {
 	ManageMeetupEventDependencies,
 	ManageMeetupEventResult,
 } from "./use-cases/manage-meetup-event.js";
-export {
-	combineRepositoryPatches,
-	ManageMeetupEvent,
-} from "./use-cases/manage-meetup-event.js";
+export { ManageMeetupEvent } from "./use-cases/manage-meetup-event.js";
 export type {
 	SynchronizeMeetupIssueFormDependencies,
 	SynchronizeMeetupIssueFormResult,

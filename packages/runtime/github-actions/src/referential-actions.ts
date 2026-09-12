@@ -1,28 +1,17 @@
 import * as core from "@actions/core";
 import {
-	AUTOMATION_CONFIG_PATH,
 	resultEnvelope,
 	SynchronizeMeetupIssueForm,
 	ValidateMeetupReferentials,
 } from "@meetup-automation/journey";
-import { YamlIssueFormProjection } from "@meetup-automation/yaml-issue-form-projection";
 import { setDiagnosticsOutput, setJsonOutput } from "./action-output.js";
-import {
-	createReferentialRepository,
-	workspaceConfigRepository,
-} from "./composition.js";
+import { createReferentialContainer } from "./composition.js";
 import { enumInput } from "./runtime-input.js";
 
 export async function runReferentialValidateAction(): Promise<void> {
-	const dependencies = {
-		configRepository: workspaceConfigRepository(),
-		createReferentialRepository: (
-			config: Parameters<typeof createReferentialRepository>[0],
-		) => createReferentialRepository(config),
-	};
-	const outcome = await new ValidateMeetupReferentials(dependencies).execute(
-		AUTOMATION_CONFIG_PATH,
-	);
+	const outcome = await createReferentialContainer()
+		.get(ValidateMeetupReferentials)
+		.execute();
 	const counts = outcome.isValid
 		? {
 				hostCount: outcome.catalog.hosts.length,
@@ -48,14 +37,9 @@ export async function runReferentialSyncIssueFormAction(): Promise<void> {
 		"check",
 		"fix",
 	] as const);
-	const outcome = await new SynchronizeMeetupIssueForm({
-		configRepository: workspaceConfigRepository(),
-		createReferentialRepository: (config) =>
-			createReferentialRepository(config),
-		issueFormProjection: new YamlIssueFormProjection({
-			workspaceRoot: process.cwd(),
-		}),
-	}).execute({ configPath: AUTOMATION_CONFIG_PATH, mode });
+	const outcome = await createReferentialContainer()
+		.get(SynchronizeMeetupIssueForm)
+		.execute({ mode });
 
 	setJsonOutput(
 		"result",

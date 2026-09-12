@@ -3,14 +3,11 @@ import type {
 	IssueFormProjectionMode,
 } from "../ports/issue-form-projection.js";
 import type { PublicDiagnostic } from "../result/result-envelope.js";
-import {
-	ValidateMeetupReferentials,
-	type ValidateMeetupReferentialsDependencies,
-} from "./validate-meetup-referentials.js";
+import type { ValidateMeetupReferentials } from "./validate-meetup-referentials.js";
 
-export interface SynchronizeMeetupIssueFormDependencies
-	extends ValidateMeetupReferentialsDependencies {
-	issueFormProjection: IssueFormProjection;
+export interface SynchronizeMeetupIssueFormDependencies {
+	readonly validateReferentials: Pick<ValidateMeetupReferentials, "execute">;
+	readonly issueFormProjection: IssueFormProjection;
 }
 
 export interface SynchronizeMeetupIssueFormResult {
@@ -25,12 +22,9 @@ export class SynchronizeMeetupIssueForm {
 	) {}
 
 	async execute(input: {
-		configPath: string;
 		mode: IssueFormProjectionMode;
 	}): Promise<SynchronizeMeetupIssueFormResult> {
-		const validation = await new ValidateMeetupReferentials(
-			this.dependencies,
-		).execute(input.configPath);
+		const validation = await this.dependencies.validateReferentials.execute();
 		if (!validation.isValid) {
 			return {
 				changed: false,

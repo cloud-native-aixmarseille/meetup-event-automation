@@ -1,8 +1,9 @@
 import { mkdir } from "node:fs/promises";
-import { dirname } from "node:path";
+import { dirname, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { build } from "esbuild";
 
-const entries = [
+export const actionBundles = [
 	[
 		"packages/runtime/github-actions/src/entrypoints/publication-reconcile-assets.ts",
 		"actions/publication/reconcile-assets/dist/index.js",
@@ -29,18 +30,27 @@ const entries = [
 	],
 ];
 
-for (const [entryPoint, outfile] of entries) {
-	await mkdir(dirname(outfile), { recursive: true });
-	await build({
-		entryPoints: [entryPoint],
-		outfile,
-		bundle: true,
-		format: "esm",
-		platform: "node",
-		target: "node24",
-		sourcemap: false,
-		banner: {
-			js: 'import { createRequire } from "node:module";const require = createRequire(import.meta.url);',
-		},
-	});
+export async function buildActionBundles() {
+	for (const [entryPoint, outfile] of actionBundles) {
+		await mkdir(dirname(outfile), { recursive: true });
+		await build({
+			entryPoints: [entryPoint],
+			outfile,
+			bundle: true,
+			format: "esm",
+			platform: "node",
+			target: "node24",
+			sourcemap: false,
+			banner: {
+				js: 'import { createRequire } from "node:module";const require = createRequire(import.meta.url);',
+			},
+		});
+	}
+}
+
+if (
+	process.argv[1] &&
+	import.meta.url === pathToFileURL(resolve(process.argv[1])).href
+) {
+	await buildActionBundles();
 }
