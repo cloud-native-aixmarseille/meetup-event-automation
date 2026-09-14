@@ -38661,9 +38661,9 @@ var require_side_channel_list = __commonJS({
   }
 });
 
-// node_modules/.pnpm/es-object-atoms@1.1.1/node_modules/es-object-atoms/index.js
+// node_modules/.pnpm/es-object-atoms@1.1.2/node_modules/es-object-atoms/index.js
 var require_es_object_atoms = __commonJS({
-  "node_modules/.pnpm/es-object-atoms@1.1.1/node_modules/es-object-atoms/index.js"(exports, module) {
+  "node_modules/.pnpm/es-object-atoms@1.1.2/node_modules/es-object-atoms/index.js"(exports, module) {
     "use strict";
     module.exports = Object;
   }

@@ -36,15 +36,3 @@ jobs:
     secrets:
       github-token: ${{ secrets.GITHUB_TOKEN }}
       github-app-key: ${{ secrets.CI_BOT_APP_PRIVATE_KEY }}
-
-  sync-docs:
-    needs: release
-    if: github.ref_name == github.event.repository.default_branch && vars.CI_BOT_APP_CLIENT_ID != '' && needs.release.outputs.artifact-id != ''
-    uses: hoverkraft-tech/public-docs/.github/workflows/sync-docs-dispatcher.yml@f3c9291760d927e6214e8d5f0a376af2d537c369 # 0.4.0
-    permissions:
-      contents: read
-    with:
-      artifact-id: ${{ needs.release.outputs.artifact-id }}
-      github-app-client-id: ${{ vars.CI_BOT_APP_CLIENT_ID }}
-    secrets:
-      github-app-key: ${{ secrets.CI_BOT_APP_PRIVATE_KEY }}
