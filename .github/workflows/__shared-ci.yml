@@ -16,6 +16,11 @@ jobs:
       pull-requests: write
       security-events: write
       statuses: write
+    with:
+      # The Node.js checks use Biome from the repository lockfile.
+      linter-env: |
+        VALIDATE_BIOME_FORMAT=false
+        VALIDATE_BIOME_LINT=false
 
   check-nodejs:
     name: Test nodejs

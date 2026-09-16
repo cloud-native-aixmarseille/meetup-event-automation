@@ -76,11 +76,15 @@ const dependenciesFor = (rawCatalog: RawReferentialCatalog) => {
 
 describe("referential journey orchestration", () => {
 	it("validates the catalog using the injected configuration", async () => {
+		// Arrange
 		const fixture = dependenciesFor(catalog);
+
+		// Act
 		const result = await new ValidateMeetupReferentials(
 			fixture.dependencies,
 		).execute();
 
+		// Assert
 		expect(result.isValid).toBe(true);
 		if (!result.isValid) throw new Error("Expected a valid synthetic catalog");
 		expect(result.config).toBe(config);
@@ -91,11 +95,14 @@ describe("referential journey orchestration", () => {
 	});
 
 	it("stops issue-form projection when a catalog is invalid", async () => {
+		// Arrange
 		const fixture = dependenciesFor({
 			...catalog,
 			speakers: [{ ...catalog.speakers[0], email: "not-an-email" }],
 		});
 		const synchronize = vi.fn();
+
+		// Act
 		const result = await new SynchronizeMeetupIssueForm({
 			validateReferentials: new ValidateMeetupReferentials(
 				fixture.dependencies,
@@ -103,6 +110,7 @@ describe("referential journey orchestration", () => {
 			issueFormProjection: { synchronize },
 		}).execute({ mode: "check" });
 
+		// Assert
 		expect(result.changed).toBe(false);
 		expect(result.changedFiles).toEqual([]);
 		expect(result.diagnostics).toContainEqual(
@@ -115,6 +123,7 @@ describe("referential journey orchestration", () => {
 	});
 
 	it("projects a validated catalog with the configured field contract", async () => {
+		// Arrange
 		const fixture = dependenciesFor(catalog);
 		const synchronize = vi.fn().mockResolvedValue({
 			changed: true,
@@ -127,6 +136,8 @@ describe("referential journey orchestration", () => {
 				},
 			],
 		});
+
+		// Act
 		const result = await new SynchronizeMeetupIssueForm({
 			validateReferentials: new ValidateMeetupReferentials(
 				fixture.dependencies,
@@ -134,6 +145,7 @@ describe("referential journey orchestration", () => {
 			issueFormProjection: { synchronize },
 		}).execute({ mode: "fix" });
 
+		// Assert
 		expect(result).toEqual({
 			changed: true,
 			changedFiles: [config.event["issue-form"]],
@@ -180,6 +192,7 @@ describe("event journey selection", () => {
 	});
 
 	it("fails explicitly when the requested issue no longer exists", async () => {
+		// Arrange
 		const useCase = new ManageMeetupEvent({
 			config,
 			referentialRepository: {
@@ -188,17 +201,20 @@ describe("event journey selection", () => {
 			eventDependencies: eventDependencies(undefined),
 		});
 
-		await expect(
-			useCase.execute({
-				identity,
-				mode: "check",
-			}),
-		).rejects.toThrow(
+		// Act
+		const operation = useCase.execute({
+			identity,
+			mode: "check",
+		});
+
+		// Assert
+		await expect(operation).rejects.toThrow(
 			"Meetup event cloud-native-aixmarseille/meetups#42 was not found",
 		);
 	});
 
 	it("skips issues outside the configured meetup label", async () => {
+		// Arrange
 		const document: EventDocument = {
 			identity,
 			issueState: "open",
@@ -214,11 +230,13 @@ describe("event journey selection", () => {
 			eventDependencies: eventDependencies(document),
 		});
 
-		await expect(
-			useCase.execute({
-				identity,
-				mode: "fix",
-			}),
-		).resolves.toEqual({ skipped: true, diagnostics: [] });
+		// Act
+		const actual = await useCase.execute({
+			identity,
+			mode: "fix",
+		});
+
+		// Assert
+		expect(actual).toEqual({ skipped: true, diagnostics: [] });
 	});
 });

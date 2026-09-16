@@ -1,10 +1,11 @@
 import {
+	type EventDocument,
 	type EventDocumentCodec,
 	type EventIdentity,
 	EventNotFoundError,
 	type EventRepository,
-	ensureEventDocumentIsCurrent,
-	eventRepositoryPatchIsEmpty,
+	EventRepositoryPatches,
+	ReconcileEvent,
 } from "@meetup-automation/event";
 import type { ReconcileEventAssets } from "@meetup-automation/publication";
 import type { PublicDiagnostic } from "../result/result-envelope.js";
@@ -64,7 +65,7 @@ export class ManageMeetupAssets {
 			};
 		}
 		if (input.mode === "fix")
-			await ensureEventDocumentIsCurrent(
+			await ReconcileEvent.ensureEventDocumentIsCurrent(
 				this.dependencies.eventRepository,
 				input.identity,
 				source,
@@ -76,31 +77,11 @@ export class ManageMeetupAssets {
 			existingUrl: evaluation.event.publicationLinks.assets,
 			mode: input.mode,
 		});
-		let persisted = false;
-		if (input.mode === "fix" && assets.container) {
-			// Only project the asset reference. Event normalization remains owned by
-			// event reconciliation and the versioned codec owns all Markdown edits.
-			const original = this.dependencies.documentCodec.decode(source).event;
-			const patch = this.dependencies.documentCodec.createPatch(source, {
-				...original,
-				publicationLinks: {
-					...original.publicationLinks,
-					assets: assets.container.url,
-				},
-			});
-			if (!eventRepositoryPatchIsEmpty(patch)) {
-				await ensureEventDocumentIsCurrent(
-					this.dependencies.eventRepository,
-					input.identity,
-					source,
-				);
-				await this.dependencies.eventRepository.applyPatch(
-					input.identity,
-					patch,
-				);
-				persisted = true;
-			}
-		}
+		const persisted = await this.persistAsset(
+			source,
+			assets.container?.url,
+			input.mode,
+		);
 		return {
 			skipped: false,
 			persisted,
@@ -111,5 +92,39 @@ export class ManageMeetupAssets {
 				field: "publicationLinks.assets",
 			})),
 		};
+	}
+
+	private async persistAsset(
+		source: EventDocument,
+		assetUrl: string | undefined,
+		mode: "check" | "fix",
+	) {
+		let persisted = false;
+		if (mode === "fix" && assetUrl) {
+			// Only project the asset reference. Event normalization remains owned by
+			// event reconciliation and the versioned codec owns all Markdown edits.
+			const original = this.dependencies.documentCodec.decode(source).event;
+			const patch = this.dependencies.documentCodec.createPatch(source, {
+				...original,
+				publicationLinks: {
+					...original.publicationLinks,
+					assets: assetUrl,
+				},
+			});
+			if (!EventRepositoryPatches.eventRepositoryPatchIsEmpty(patch)) {
+				await ReconcileEvent.ensureEventDocumentIsCurrent(
+					this.dependencies.eventRepository,
+					source.identity,
+					source,
+				);
+				await this.dependencies.eventRepository.applyPatch(
+					source.identity,
+					patch,
+				);
+				persisted = true;
+			}
+		}
+
+		return persisted;
 	}
 }

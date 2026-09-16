@@ -1,5 +1,11 @@
 import type { ContactId, HostId, SpeakerId } from "./identifiers.js";
 
+/** Location in the source catalog, for navigation only; IDs remain authoritative. */
+interface ReferentialSource {
+	readonly path: string;
+	readonly line: number;
+}
+
 export interface HostContact {
 	readonly id: ContactId;
 	readonly name: string;
@@ -9,12 +15,14 @@ export interface HostContact {
 }
 
 export interface Host {
+	readonly source?: ReferentialSource;
 	readonly id: HostId;
 	readonly displayName: string;
 	readonly contacts: readonly HostContact[];
 }
 
 export interface Speaker {
+	readonly source?: ReferentialSource;
 	readonly id: SpeakerId;
 	readonly displayName: string;
 	readonly firstName: string;
@@ -30,6 +38,7 @@ export interface ReferentialCatalog {
 }
 
 export interface RawHostRecord {
+	readonly source?: ReferentialSource;
 	readonly hostId: unknown;
 	readonly displayName: unknown;
 	readonly contactId: unknown;
@@ -40,6 +49,7 @@ export interface RawHostRecord {
 }
 
 export interface RawSpeakerRecord {
+	readonly source?: ReferentialSource;
 	readonly speakerId: unknown;
 	readonly firstName: unknown;
 	readonly lastName: unknown;
@@ -53,32 +63,36 @@ export interface RawReferentialCatalog {
 	readonly speakers: readonly RawSpeakerRecord[];
 }
 
-export function normalizeDisplayName(value: string): string {
-	return value.normalize("NFC").trim().replace(/\s+/g, " ");
-}
+export class ReferentialCatalogOperations {
+	static normalizeDisplayName(value: string): string {
+		return value.normalize("NFC").trim().replace(/\s+/g, " ");
+	}
 
-export function displayNameKey(value: string): string {
-	return normalizeDisplayName(value).toLowerCase();
-}
+	static displayNameKey(value: string): string {
+		return ReferentialCatalogOperations.normalizeDisplayName(
+			value,
+		).toLowerCase();
+	}
 
-export function freezeCatalog(
-	hosts: readonly Host[],
-	speakers: readonly Speaker[],
-): ReferentialCatalog {
-	for (const host of hosts) {
-		for (const contact of host.contacts) {
-			Object.freeze(contact);
+	static freezeCatalog(
+		hosts: readonly Host[],
+		speakers: readonly Speaker[],
+	): ReferentialCatalog {
+		for (const host of hosts) {
+			for (const contact of host.contacts) {
+				Object.freeze(contact);
+			}
+			Object.freeze(host.contacts);
+			Object.freeze(host);
 		}
-		Object.freeze(host.contacts);
-		Object.freeze(host);
-	}
 
-	for (const speaker of speakers) {
-		Object.freeze(speaker);
-	}
+		for (const speaker of speakers) {
+			Object.freeze(speaker);
+		}
 
-	return Object.freeze({
-		hosts: Object.freeze([...hosts]),
-		speakers: Object.freeze([...speakers]),
-	});
+		return Object.freeze({
+			hosts: Object.freeze([...hosts]),
+			speakers: Object.freeze([...speakers]),
+		});
+	}
 }

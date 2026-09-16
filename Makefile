@@ -1,6 +1,6 @@
 PNPM ?= pnpm
 
-.PHONY: help setup typecheck test package lint lint-fix quality check-knip check-architecture check-contracts ci
+.PHONY: help setup typecheck test package lint lint-fix quality check-knip check-structure check-architecture check-contracts ci
 
 help: ## Display help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -31,8 +31,6 @@ lint-fix: ## Execute linting and fix
 		-e FIX_MARKDOWN=true \
 		-e FIX_NATURAL_LANGUAGE=true \
 		-e FIX_SHELL_SHFMT=true \
-		-e FIX_BIOME_LINT=true \
-		-e FIX_BIOME_FORMAT=true \
 		-e FIX_YAML_PRETTIER=true \
 		-e FIX_MARKDOWN_PRETTIER=true \
 	)
@@ -42,6 +40,9 @@ quality: ## Execute deterministic quality checks
 
 check-knip: ## Validate unused files and dependencies
 	$(PNPM) check:knip
+
+check-structure: ## Validate class ownership and package entrypoints
+	$(PNPM) check:structure
 
 check-architecture: ## Validate architecture rules
 	$(PNPM) check:architecture
@@ -56,6 +57,7 @@ ci: setup ## Execute all CI quality gates
 	$(MAKE) lint-fix
 	$(MAKE) quality
 
+# Biome runs through pnpm with the version in the lockfile.
 define run_linter
 	DEFAULT_WORKSPACE="$(CURDIR)"; \
 	LINTER_IMAGE="linter:latest"; \
@@ -67,6 +69,8 @@ define run_linter
 		--rm \
 		-e DEFAULT_WORKSPACE="$$DEFAULT_WORKSPACE" \
 		-e FILTER_REGEX_INCLUDE="$(filter-out $@,$(MAKECMDGOALS))" \
+		-e VALIDATE_BIOME_FORMAT=false \
+		-e VALIDATE_BIOME_LINT=false \
 		$(1) \
 		$$LINTER_IMAGE
 endef

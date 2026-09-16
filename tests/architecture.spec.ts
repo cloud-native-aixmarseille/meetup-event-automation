@@ -29,7 +29,10 @@ async function filesBelow(directory: string): Promise<string[]> {
 
 describe("clean architecture boundaries", () => {
 	it("confines dependency injection to runtime composition roots", async () => {
+		// Arrange
 		const violations: string[] = [];
+
+		// Act
 		for (const item of await workspacePackages()) {
 			for (const path of await filesBelow(join(item.directory, "src"))) {
 				if (!path.endsWith(".ts") || path.endsWith(".test.ts")) continue;
@@ -44,14 +47,19 @@ describe("clean architecture boundaries", () => {
 				}
 			}
 		}
+
+		// Assert
 		expect(violations).toEqual([]);
 	});
 
 	it("keeps application orchestration independent of infrastructure APIs", async () => {
+		// Arrange
 		const violations: string[] = [];
 		const sourceFiles = await filesBelow(
 			join(repositoryRoot, "packages/application"),
 		);
+
+		// Act
 		for (const path of sourceFiles) {
 			if (!path.includes("/src/") || !path.endsWith(".ts")) continue;
 			const source = await readFile(path, "utf8");
@@ -63,10 +71,13 @@ describe("clean architecture boundaries", () => {
 				violations.push(relative(repositoryRoot, path));
 			}
 		}
+
+		// Assert
 		expect(violations).toEqual([]);
 	});
 
 	it("keeps technology and runtime imports outside domain packages", async () => {
+		// Arrange
 		const domainRoot = join(repositoryRoot, "packages/domain");
 		const sourceFiles = (await filesBelow(domainRoot)).filter((path) =>
 			path.endsWith(".ts"),
@@ -81,8 +92,9 @@ describe("clean architecture boundaries", () => {
 			/['"]@meetup-automation\/(?:github|csv|yaml|slack|system|.*-gateway)/,
 			/['"]@meetup-automation\/github-actions-runtime/,
 		];
-
 		const violations: string[] = [];
+
+		// Act
 		for (const path of sourceFiles) {
 			const source = await readFile(path, "utf8");
 			if (forbidden.some((pattern) => pattern.test(source))) {
@@ -90,6 +102,7 @@ describe("clean architecture boundaries", () => {
 			}
 		}
 
+		// Assert
 		expect(violations).toEqual([]);
 	});
 
@@ -99,77 +112,101 @@ describe("clean architecture boundaries", () => {
 		timeout: 30_000,
 	}, () => {
 		it("keeps the domain layer free from outer-layer imports", async () => {
-			await expect(
-				projectFiles(tsConfigPath)
-					.inPath("packages/domain/**/src/**/*.ts")
-					.shouldNot()
-					.dependOnFiles()
-					.inPath("packages/application/**/src/**/*.ts"),
-			).toPassAsync();
-			await expect(
-				projectFiles(tsConfigPath)
-					.inPath("packages/domain/**/src/**/*.ts")
-					.shouldNot()
-					.dependOnFiles()
-					.inPath("packages/adapter/**/src/**/*.ts"),
-			).toPassAsync();
-			await expect(
-				projectFiles(tsConfigPath)
-					.inPath("packages/domain/**/src/**/*.ts")
-					.shouldNot()
-					.dependOnFiles()
-					.inPath("packages/runtime/**/src/**/*.ts"),
-			).toPassAsync();
+			// Arrange
+			// No additional setup is needed.
+
+			// Act
+			const actual = projectFiles(tsConfigPath)
+				.inPath("packages/domain/**/src/**/*.ts")
+				.shouldNot()
+				.dependOnFiles()
+				.inPath("packages/application/**/src/**/*.ts");
+			const actual1 = projectFiles(tsConfigPath)
+				.inPath("packages/domain/**/src/**/*.ts")
+				.shouldNot()
+				.dependOnFiles()
+				.inPath("packages/adapter/**/src/**/*.ts");
+			const actual2 = projectFiles(tsConfigPath)
+				.inPath("packages/domain/**/src/**/*.ts")
+				.shouldNot()
+				.dependOnFiles()
+				.inPath("packages/runtime/**/src/**/*.ts");
+
+			// Assert
+			await expect(actual).toPassAsync();
+			await expect(actual1).toPassAsync();
+			await expect(actual2).toPassAsync();
 		});
 
 		it("keeps the application layer free from adapter and runtime imports", async () => {
-			await expect(
-				projectFiles(tsConfigPath)
-					.inPath("packages/application/**/src/**/*.ts")
-					.shouldNot()
-					.dependOnFiles()
-					.inPath("packages/adapter/**/src/**/*.ts"),
-			).toPassAsync();
-			await expect(
-				projectFiles(tsConfigPath)
-					.inPath("packages/application/**/src/**/*.ts")
-					.shouldNot()
-					.dependOnFiles()
-					.inPath("packages/runtime/**/src/**/*.ts"),
-			).toPassAsync();
+			// Arrange
+			// No additional setup is needed.
+
+			// Act
+			const actual = projectFiles(tsConfigPath)
+				.inPath("packages/application/**/src/**/*.ts")
+				.shouldNot()
+				.dependOnFiles()
+				.inPath("packages/adapter/**/src/**/*.ts");
+			const actual1 = projectFiles(tsConfigPath)
+				.inPath("packages/application/**/src/**/*.ts")
+				.shouldNot()
+				.dependOnFiles()
+				.inPath("packages/runtime/**/src/**/*.ts");
+
+			// Assert
+			await expect(actual).toPassAsync();
+			await expect(actual1).toPassAsync();
 		});
 
 		it("keeps the package source graph cycle-free", async () => {
-			await expect(
-				projectFiles(tsConfigPath)
-					.inPath("packages/**/src/**/*.ts")
-					.should()
-					.haveNoCycles(),
-			).toPassAsync();
+			// Arrange
+			// No additional setup is needed.
+
+			// Act
+			const actual = projectFiles(tsConfigPath)
+				.inPath("packages/**/src/**/*.ts")
+				.should()
+				.haveNoCycles();
+
+			// Assert
+			await expect(actual).toPassAsync();
 		});
 	});
 
 	it("uses responsibility-bearing adapter package names", async () => {
+		// Arrange
 		const adapterRoot = join(repositoryRoot, "packages/adapter");
+
+		// Act
 		const entries = await readdir(adapterRoot, { withFileTypes: true });
 		const packageNames = entries.filter((entry) => entry.isDirectory());
+		const projects = await Promise.all(
+			packageNames.map(async (entry) => {
+				const packageName = entry.name;
+				const project = JSON.parse(
+					await readFile(
+						join(adapterRoot, packageName, "project.json"),
+						"utf8",
+					),
+				) as { tags?: readonly string[] };
+				const technology = project.tags
+					?.find((tag) => tag.startsWith("technology:"))
+					?.slice("technology:".length);
+				const responsibility = project.tags
+					?.find((tag) => tag.startsWith("responsibility:"))
+					?.slice("responsibility:".length);
+				return { packageName, technology, responsibility };
+			}),
+		);
 
+		// Assert
 		expect(packageNames.length).toBeGreaterThan(0);
-		for (const entry of packageNames) {
-			const packageName = entry.name;
+		for (const { packageName, technology, responsibility } of projects) {
 			expect(packageName).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+){1,}$/);
 			expect(["github", "csv", "yaml", "slack", "system"]).not.toContain(
 				packageName,
 			);
-			const project = JSON.parse(
-				await readFile(join(adapterRoot, packageName, "project.json"), "utf8"),
-			) as { tags?: readonly string[] };
-			const technology = project.tags
-				?.find((tag) => tag.startsWith("technology:"))
-				?.slice("technology:".length);
-			const responsibility = project.tags
-				?.find((tag) => tag.startsWith("responsibility:"))
-				?.slice("responsibility:".length);
 			expect(technology, `${packageName} technology tag`).toBeTruthy();
 			expect(responsibility, `${packageName} responsibility tag`).toBeTruthy();
 			expect(packageName).toBe(`${technology}-${responsibility}`);
@@ -177,25 +214,10 @@ describe("clean architecture boundaries", () => {
 	});
 
 	it("enforces inward workspace dependencies and an acyclic package graph", async () => {
+		// Arrange
 		const packages = await workspacePackages();
 		const byName = new Map(packages.map((item) => [item.name, item]));
 		const violations: string[] = [];
-
-		for (const item of packages) {
-			for (const dependencyName of item.dependencies) {
-				const dependency = byName.get(dependencyName);
-				if (!dependency) {
-					violations.push(`${item.name} references unknown ${dependencyName}`);
-					continue;
-				}
-				if (!dependencyLayerAllowed(item.layer, dependency.layer)) {
-					violations.push(
-						`${item.name} (${item.layer}) depends on ${dependency.name} (${dependency.layer})`,
-					);
-				}
-			}
-		}
-
 		const visiting = new Set<string>();
 		const visited = new Set<string>();
 		const visit = (name: string, path: readonly string[]): void => {
@@ -213,16 +235,35 @@ describe("clean architecture boundaries", () => {
 			visiting.delete(name);
 			visited.add(name);
 		};
+
+		// Act
+		for (const item of packages) {
+			for (const dependencyName of item.dependencies) {
+				const dependency = byName.get(dependencyName);
+				if (!dependency) {
+					violations.push(`${item.name} references unknown ${dependencyName}`);
+					continue;
+				}
+				if (!dependencyLayerAllowed(item.layer, dependency.layer)) {
+					violations.push(
+						`${item.name} (${item.layer}) depends on ${dependency.name} (${dependency.layer})`,
+					);
+				}
+			}
+		}
 		for (const item of packages) visit(item.name, []);
 
+		// Assert
 		expect(violations).toEqual([]);
 	});
 
 	it("uses package entrypoints and makes adapter port conformance explicit", async () => {
+		// Arrange
 		const packages = await workspacePackages();
 		const packageNames = new Set(packages.map(({ name }) => name));
 		const violations: string[] = [];
 
+		// Act
 		for (const item of packages) {
 			const sourceFiles = (
 				await filesBelow(join(item.directory, "src"))
@@ -249,6 +290,7 @@ describe("clean architecture boundaries", () => {
 			}
 		}
 
+		// Assert
 		expect(violations).toEqual([]);
 	});
 });

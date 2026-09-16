@@ -60,15 +60,7 @@ export class ScopedGithubLedgerCommentClient
 			if (!Array.isArray(response.data)) {
 				throw new Error("GitHub delivery ledger comment response is invalid");
 			}
-			for (const value of response.data) {
-				if (Number.isSafeInteger(value.id) && typeof value.body === "string") {
-					comments.push({
-						id: value.id,
-						body: value.body,
-						...(value.user?.login ? { authorLogin: value.user.login } : {}),
-					});
-				}
-			}
+			ScopedGithubLedgerCommentClient.appendComments(response.data, comments);
 
 			const link = response.headers.link;
 			const hasNext =
@@ -98,5 +90,22 @@ export class ScopedGithubLedgerCommentClient
 			comment_id: commentId,
 			body,
 		});
+	}
+
+	private static appendComments(
+		values: Awaited<
+			ReturnType<ScopedGithubLedgerApi["rest"]["issues"]["listComments"]>
+		>["data"],
+		comments: GithubLedgerComment[],
+	) {
+		for (const value of values) {
+			if (Number.isSafeInteger(value.id) && typeof value.body === "string") {
+				comments.push({
+					id: value.id,
+					body: value.body,
+					...(value.user?.login ? { authorLogin: value.user.login } : {}),
+				});
+			}
+		}
 	}
 }

@@ -2,28 +2,36 @@
 	"$schema": "https://unpkg.com/knip@6/schema.json",
 	"workspaces": {
 		".": {
-			"entry": ["scripts/*.mjs", "tests/**/*.spec.ts"],
-			"project": ["scripts/*.mjs", "tests/**/*.ts"]
+			"entry": ["scripts/*.mjs", "tests/**/*.spec.ts", "scripts/**/*.test.ts"],
+			"project": ["scripts/*.mjs", "tests/**/*.ts", "scripts/**/*.test.ts"]
 		},
 		"packages/domain/communication": {
 			"entry": ["src/**/*.test.ts"],
 			"project": ["src/**/*.ts"]
 		},
 		"packages/domain/*": {
-			"entry": ["__tests__/**/*.ts"],
-			"project": ["src/**/*.ts", "__tests__/**/*.ts"]
+			"entry": ["src/**/*.test.ts"],
+			"project": ["src/**/*.ts"]
 		},
 		"packages/application/*": {
-			"entry": ["__tests__/**/*.ts"],
-			"project": ["src/**/*.ts", "__tests__/**/*.ts"]
+			"entry": ["src/**/*.test.ts"],
+			"project": ["src/**/*.ts", "testing/**/*.ts"]
 		},
 		"packages/adapter/*": {
-			"entry": ["__tests__/**/*.ts"],
-			"project": ["src/**/*.ts", "__tests__/**/*.ts"]
+			"entry": ["src/**/*.test.ts"],
+			"project": ["src/**/*.ts"]
 		},
 		"packages/runtime/github-actions": {
 			"entry": ["src/entrypoints/*.ts", "src/**/*.test.ts"],
 			"project": ["src/**/*.ts"]
+		},
+		"packages/domain/event": {
+			"entry": ["src/**/*.test.ts"],
+			"project": ["src/**/*.ts", "testing/**/*.ts"]
+		},
+		"packages/domain/referential": {
+			"entry": ["src/**/*.test.ts"],
+			"project": ["src/**/*.ts", "testing/**/*.ts"]
 		}
 	},
 	"ignoreDependencies": ["@commitlint/config-conventional"]

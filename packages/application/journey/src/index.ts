@@ -4,7 +4,7 @@ export type {
 	ManageMeetupCommunicationsResult,
 } from "./communication/contracts.js";
 export type { AutomationConfig } from "./config/automation-config.js";
-export { createAutomationConfig } from "./config/automation-config.js";
+export { AutomationConfigFactory } from "./config/automation-config.js";
 export type {
 	IssueFormProjection,
 	IssueFormProjectionMode,
@@ -15,18 +15,14 @@ export type {
 	ResultEnvelope,
 	ResultStatus,
 } from "./result/result-envelope.js";
-export { resultEnvelope } from "./result/result-envelope.js";
+export { ResultEnvelopeFactory } from "./result/result-envelope.js";
 export { ManageMeetupAssets } from "./use-cases/manage-meetup-assets.js";
-export {
-	emptyCommunicationResult,
-	ManageMeetupCommunications,
-	resolveCommunicationDispatchMode,
-} from "./use-cases/manage-meetup-communications.js";
+export { ManageMeetupCommunications } from "./use-cases/manage-meetup-communications.js";
+export { ManageMeetupEvent } from "./use-cases/manage-meetup-event.js";
 export type {
 	ManageMeetupEventDependencies,
 	ManageMeetupEventResult,
-} from "./use-cases/manage-meetup-event.js";
-export { ManageMeetupEvent } from "./use-cases/manage-meetup-event.js";
+} from "./use-cases/manage-meetup-event-contracts.js";
 export type {
 	SynchronizeMeetupIssueFormDependencies,
 	SynchronizeMeetupIssueFormResult,

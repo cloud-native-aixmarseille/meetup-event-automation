@@ -1,81 +1,28 @@
 import type { EventDiagnostic } from "../../domain/diagnostic.js";
-import {
-	type EventLifecycleEvaluation,
-	evaluateEventLifecycle,
-} from "../../domain/lifecycle.js";
-import type { EventIdentity, MeetupEvent } from "../../domain/model.js";
-import type { EventPatch } from "../../domain/patch.js";
-import {
-	type EventReadiness,
-	evaluateEventReadiness,
-} from "../../domain/readiness.js";
-import {
-	createDefaultEventRules,
-	type EventRule,
-	EventRuleEngine,
-} from "../../domain/rule.js";
-import type { EventClock } from "../ports/event-clock.js";
-import type { EventCommentRepository } from "../ports/event-comment-repository.js";
-import type { EventDocumentCodec } from "../ports/event-document-codec.js";
+import { EventRuleEngine } from "../../domain/event-rule-engine.js";
+import { EventRuleFactory } from "../../domain/event-rule-factory.js";
+import { EventLifecycle } from "../../domain/lifecycle.js";
+import type { EventIdentity } from "../../domain/model.js";
+import { EventReadinessPolicy } from "../../domain/readiness.js";
 import {
 	type EventDocument,
 	type EventRepository,
-	type EventRepositoryPatch,
-	eventRepositoryPatchIsEmpty,
+	EventRepositoryPatches,
 } from "../ports/event-repository.js";
-
-export type ReconcileEventMode = "check" | "fix";
-
-export type ReconcileEventInput = Readonly<{
-	identity: EventIdentity;
-	mode: ReconcileEventMode;
-	/** A caller may supply one already-loaded snapshot to avoid a stale double read. */
-	sourceDocument?: EventDocument;
-}>;
-
-export type ReconcileEventResult = Readonly<{
-	event: MeetupEvent;
-	diagnostics: readonly EventDiagnostic[];
-	normalizationPatch: EventPatch;
-	repositoryPatch: EventRepositoryPatch;
-	readiness: EventReadiness;
-	lifecycle: EventLifecycleEvaluation;
-	persisted: boolean;
-	commentUpdated: boolean;
-}>;
-
-export type ReconcileEventDependencies = Readonly<{
-	repository: EventRepository;
-	documentCodec: EventDocumentCodec;
-	commentRepository: EventCommentRepository;
-	clock: EventClock;
-	rules?: readonly EventRule[];
-}>;
-
-export class EventNotFoundError extends Error {
-	constructor(identity: EventIdentity) {
-		super(
-			`Meetup event ${identity.repository}#${identity.issueNumber} was not found`,
-		);
-		this.name = "EventNotFoundError";
-	}
-}
-
-export class EventConcurrentModificationError extends Error {
-	constructor(identity: EventIdentity) {
-		super(
-			`Meetup event ${identity.repository}#${identity.issueNumber} changed during reconciliation`,
-		);
-		this.name = "EventConcurrentModificationError";
-	}
-}
+import { EventConcurrentModificationError } from "./event-concurrent-modification-error.js";
+import { EventNotFoundError } from "./event-not-found-error.js";
+import type {
+	ReconcileEventDependencies,
+	ReconcileEventInput,
+	ReconcileEventResult,
+} from "./reconcile-event-contracts.js";
 
 export class ReconcileEvent {
 	private readonly ruleEngine: EventRuleEngine;
 
 	constructor(private readonly dependencies: ReconcileEventDependencies) {
 		this.ruleEngine = new EventRuleEngine(
-			dependencies.rules ?? createDefaultEventRules(),
+			dependencies.rules ?? EventRuleFactory.createDefaultEventRules(),
 		);
 	}
 
@@ -86,7 +33,7 @@ export class ReconcileEvent {
 		if (!document) {
 			throw new EventNotFoundError(input.identity);
 		}
-		if (!sameIdentity(document.identity, input.identity)) {
+		if (!ReconcileEvent.sameIdentity(document.identity, input.identity)) {
 			throw new EventNotFoundError(input.identity);
 		}
 
@@ -97,8 +44,11 @@ export class ReconcileEvent {
 			...evaluated.diagnostics,
 		];
 
-		const readiness = evaluateEventReadiness(evaluated.event, diagnostics);
-		const lifecycle = evaluateEventLifecycle({
+		const readiness = EventReadinessPolicy.evaluateEventReadiness(
+			evaluated.event,
+			diagnostics,
+		);
+		const lifecycle = EventLifecycle.evaluateEventLifecycle({
 			event: evaluated.event,
 			readiness,
 			now: this.dependencies.clock.now(),
@@ -108,10 +58,11 @@ export class ReconcileEvent {
 			evaluated.event,
 		);
 		const shouldPersist =
-			input.mode === "fix" && !eventRepositoryPatchIsEmpty(repositoryPatch);
+			input.mode === "fix" &&
+			!EventRepositoryPatches.eventRepositoryPatchIsEmpty(repositoryPatch);
 
 		if (shouldPersist) {
-			await ensureEventDocumentIsCurrent(
+			await ReconcileEvent.ensureEventDocumentIsCurrent(
 				this.dependencies.repository,
 				input.identity,
 				document,
@@ -143,45 +94,48 @@ export class ReconcileEvent {
 			commentUpdated,
 		};
 	}
-}
 
-export async function ensureEventDocumentIsCurrent(
-	repository: EventRepository,
-	identity: EventIdentity,
-	expected: EventDocument,
-): Promise<void> {
-	const current = await repository.find(identity);
-	if (!current) {
-		throw new EventNotFoundError(identity);
+	static async ensureEventDocumentIsCurrent(
+		repository: EventRepository,
+		identity: EventIdentity,
+		expected: EventDocument,
+	): Promise<void> {
+		const current = await repository.find(identity);
+		if (!current) {
+			throw new EventNotFoundError(identity);
+		}
+		if (!ReconcileEvent.eventDocumentsEqual(current, expected)) {
+			throw new EventConcurrentModificationError(identity);
+		}
 	}
-	if (!eventDocumentsEqual(current, expected)) {
-		throw new EventConcurrentModificationError(identity);
+
+	static eventDocumentsEqual(
+		left: EventDocument,
+		right: EventDocument,
+	): boolean {
+		const leftLabels = [...left.labels].sort(ReconcileEvent.compareText);
+		const rightLabels = [...right.labels].sort(ReconcileEvent.compareText);
+		return (
+			ReconcileEvent.sameIdentity(left.identity, right.identity) &&
+			left.issueState === right.issueState &&
+			left.issueTitle === right.issueTitle &&
+			left.body === right.body &&
+			leftLabels.length === rightLabels.length &&
+			leftLabels.every((label, index) => label === rightLabels[index])
+		);
 	}
-}
 
-export function eventDocumentsEqual(
-	left: EventDocument,
-	right: EventDocument,
-): boolean {
-	const leftLabels = [...left.labels].sort(compareText);
-	const rightLabels = [...right.labels].sort(compareText);
-	return (
-		sameIdentity(left.identity, right.identity) &&
-		left.issueState === right.issueState &&
-		left.issueTitle === right.issueTitle &&
-		left.body === right.body &&
-		leftLabels.length === rightLabels.length &&
-		leftLabels.every((label, index) => label === rightLabels[index])
-	);
-}
+	private static compareText(left: string, right: string): number {
+		return left < right ? -1 : left > right ? 1 : 0;
+	}
 
-function compareText(left: string, right: string): number {
-	return left < right ? -1 : left > right ? 1 : 0;
-}
-
-function sameIdentity(left: EventIdentity, right: EventIdentity): boolean {
-	return (
-		left.issueNumber === right.issueNumber &&
-		left.repository.toLowerCase() === right.repository.toLowerCase()
-	);
+	private static sameIdentity(
+		left: EventIdentity,
+		right: EventIdentity,
+	): boolean {
+		return (
+			left.issueNumber === right.issueNumber &&
+			left.repository.toLowerCase() === right.repository.toLowerCase()
+		);
+	}
 }

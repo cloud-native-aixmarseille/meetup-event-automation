@@ -21,7 +21,7 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": true
+			"preset": "recommended"
 		}
 	},
 	"javascript": {
@@ -36,5 +36,45 @@
 				"organizeImports": "on"
 			}
 		}
-	}
+	},
+	"overrides": [
+		{
+			"includes": ["packages/**/src/**/*.ts", "!**/*.test.ts", "!**/*.spec.ts"],
+			"linter": {
+				"rules": {
+					"complexity": {
+						"noStaticOnlyClass": "off",
+						"noExcessiveCognitiveComplexity": {
+							"level": "error",
+							"options": {
+								"maxAllowedComplexity": 15
+							}
+						},
+						"noExcessiveLinesPerFunction": {
+							"level": "error",
+							"options": {
+								"maxLines": 60,
+								"skipBlankLines": true
+							}
+						}
+					},
+					"style": {
+						"noExcessiveLinesPerFile": {
+							"level": "error",
+							"options": {
+								"maxLines": 300,
+								"skipBlankLines": true
+							}
+						},
+						"noExcessiveClassesPerFile": {
+							"level": "error",
+							"options": {
+								"maxClasses": 1
+							}
+						}
+					}
+				}
+			}
+		}
+	]
 }

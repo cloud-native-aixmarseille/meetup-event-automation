@@ -1,11 +1,6 @@
 export {
+	CommunicationRuntime,
 	type RunCommunicationReconcileInput,
 	type RunCommunicationReconcileResult,
-	runCommunicationReconcile,
 } from "./communication.js";
-export {
-	booleanInput,
-	enumInput,
-	positiveIntegerInput,
-	publicErrorMessage,
-} from "./runtime-input.js";
+export { RuntimeInput } from "./runtime-input.js";

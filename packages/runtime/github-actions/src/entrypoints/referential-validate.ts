@@ -1,7 +1,4 @@
-import * as core from "@actions/core";
-import { runReferentialValidateAction } from "../referential-actions.js";
-import { publicErrorMessage } from "../runtime-input.js";
+import { ActionRunner } from "../action-runner.js";
+import { ReferentialActions } from "../referential-actions.js";
 
-runReferentialValidateAction().catch((error: unknown) => {
-	core.setFailed(publicErrorMessage(error));
-});
+ActionRunner.run(ReferentialActions.runReferentialValidateAction);

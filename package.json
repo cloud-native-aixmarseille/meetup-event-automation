@@ -26,9 +26,9 @@
 	"scripts": {
 		"package": "node scripts/build-actions.mjs",
 		"lint:biome": "biome lint --error-on-warnings .",
-		"lint": "pnpm lint:biome && pnpm check:knip",
+		"lint": "pnpm format:check && pnpm lint:biome && pnpm check:structure && pnpm check:knip",
 		"lint:fix": "pnpm lint:biome --fix",
-		"lint:ci": "biome lint --error-on-warnings . --reporter=sarif | tee biome-report.sarif",
+		"lint:ci": "biome lint --error-on-warnings . --reporter=sarif > biome-report.sarif && pnpm format:check && pnpm check:structure",
 		"check:architecture": "vitest run tests/architecture.spec.ts",
 		"check:contracts": "vitest run tests/contracts",
 		"check:knip": "knip",
@@ -36,6 +36,7 @@
 		"all": "pnpm format && pnpm quality",
 		"build": "tsc --noEmit -p tsconfig.json",
 		"format": "biome format --write .",
+		"format:check": "biome format .",
 		"test": "vitest run",
 		"test:watch": "vitest",
 		"test:cov": "vitest run --coverage",
@@ -45,11 +46,12 @@
 		"workspace:test": "nx run-many -t test",
 		"check:dist": "node scripts/check-dist.mjs",
 		"check": "biome check --error-on-warnings --write .",
-		"vitest": "vitest"
+		"vitest": "vitest",
+		"check:structure": "node scripts/check-code-structure.mjs"
 	},
 	"license": "MIT",
 	"devDependencies": {
-		"@actions/core": "^3.0.1",
+		"@babel/parser": "^7.29.8",
 		"@biomejs/biome": "^2.5.13",
 		"@commitlint/config-conventional": "21.2.2",
 		"@types/node": "^26.5.1",

@@ -36,12 +36,12 @@ export interface EventRepository {
 	listPage(query: EventListPageQuery): Promise<EventDocumentPage>;
 }
 
-export function eventRepositoryPatchIsEmpty(
-	patch: EventRepositoryPatch,
-): boolean {
-	return (
-		patch.issueTitle === undefined &&
-		patch.labels === undefined &&
-		patch.body === undefined
-	);
+export class EventRepositoryPatches {
+	static eventRepositoryPatchIsEmpty(patch: EventRepositoryPatch): boolean {
+		return (
+			patch.issueTitle === undefined &&
+			patch.labels === undefined &&
+			patch.body === undefined
+		);
+	}
 }

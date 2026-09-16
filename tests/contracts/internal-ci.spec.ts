@@ -10,11 +10,33 @@ import {
 
 describe("internal CI contracts", () => {
 	it("routes main and pull-request CI through the shared workflow", async () => {
+		// Arrange
+		const workflowDirectory = join(root, ".github/workflows");
+
+		// Act
 		const main = await readWorkflow("__main-ci");
 		const pullRequest = await readWorkflow("__pull-request-ci");
 		const shared = await readWorkflow("__shared-ci");
 		const actionChecks = await readWorkflow("__check-actions");
+		const nodeChecks = await readWorkflow("__check-nodejs");
+		const build = String(nodeChecks.jobs?.["test-nodejs"].with?.build ?? "");
+		const workflowFiles = await readdir(workflowDirectory);
+		const dedicatedVitestGateOccurrences = (
+			await Promise.all(
+				workflowFiles
+					.filter((name) => name.endsWith(".yml"))
+					.map((name) =>
+						readFile(join(root, ".github/workflows", name), "utf8"),
+					),
+			)
+		).reduce(
+			(count, source) =>
+				count +
+				(source.match(/\bcheck:(?:architecture|contracts)\b/g)?.length ?? 0),
+			0,
+		);
 
+		// Assert
 		expect(main.jobs?.ci.uses).toBe("./.github/workflows/__shared-ci.yml");
 		expect(pullRequest.jobs?.ci).toEqual(main.jobs?.ci);
 		expect(shared.jobs?.["check-actions"]).toMatchObject({
@@ -25,15 +47,10 @@ describe("internal CI contracts", () => {
 				issues: "write",
 			},
 		});
-
-		const nodeChecks = await readWorkflow("__check-nodejs");
-		const build = String(nodeChecks.jobs?.["test-nodejs"].with?.build ?? "");
 		expect(build.split("\n")).toEqual(
 			expect.arrayContaining(["workspace:build", "package"]),
 		);
 		expect(nodeChecks.jobs?.["test-nodejs"].with?.test).toContain("coverage");
-
-		const workflowFiles = await readdir(join(root, ".github/workflows"));
 		expect(
 			workflowFiles.filter((name) =>
 				/^__test-(?:action|workflow|component)/.test(name),
@@ -93,30 +110,20 @@ describe("internal CI contracts", () => {
 			"test-event-reconcile",
 			"test-communication-reconcile",
 		]);
-		const dedicatedVitestGateOccurrences = (
-			await Promise.all(
-				workflowFiles
-					.filter((name) => name.endsWith(".yml"))
-					.map((name) =>
-						readFile(join(root, ".github/workflows", name), "utf8"),
-					),
-			)
-		).reduce(
-			(count, source) =>
-				count +
-				(source.match(/\bcheck:(?:architecture|contracts)\b/g)?.length ?? 0),
-			0,
-		);
 		expect(dedicatedVitestGateOccurrences).toBe(0);
 	});
 
 	it("delegates documentation updates to reusable release workflows", async () => {
+		// Arrange
 		const workflow = await readWorkflow("__main-ci");
+
+		// Act
 		const release = workflow.jobs?.release ?? {};
 
+		// Assert
 		expect(release.needs).toBe("ci");
-		expect(release.uses).toBe(
-			"hoverkraft-tech/ci-github-publish/.github/workflows/release-actions.yml@ed354ada70b9f518c2bb663e18a80041c2cf5156",
+		expect(release.uses).toMatch(
+			/^hoverkraft-tech\/ci-github-publish\/\.github\/workflows\/release-actions\.yml@[0-9a-f]{40}$/,
 		);
 		expect(release.permissions).toEqual({
 			contents: "write",

@@ -4,86 +4,21 @@ import type {
 	EventDiagnostic,
 	EventIdentity,
 } from "@meetup-automation/event";
-
-export const EVENT_DIAGNOSTIC_COMMENT_MARKER =
-	"<!-- meetup-automation:event-diagnostics:v1 -->";
-
-const DUPLICATE_COMMENT_MARKER =
-	"<!-- meetup-automation:event-diagnostics-duplicate:v1 -->";
-const RESOLVED_COMMENT_BODY = `${EVENT_DIAGNOSTIC_COMMENT_MARKER}\n\nMeetup automation found no active diagnostics.`;
-const DUPLICATE_COMMENT_BODY = `${DUPLICATE_COMMENT_MARKER}\n\nSuperseded duplicate automation comment.`;
-
-type GitHubRequestResult = Readonly<{
-	data: unknown;
-	headers?: Readonly<Record<string, unknown>>;
-}>;
-
-/** Minimal structural client contract; comment SDK DTOs stay inside the adapter. */
-export interface GitHubEventCommentRepositoryClient {
-	readonly rest: {
-		readonly issues: {
-			listComments(parameters: {
-				owner: string;
-				repo: string;
-				issue_number: number;
-				page: number;
-				per_page: number;
-			}): Promise<GitHubRequestResult>;
-			createComment(parameters: {
-				owner: string;
-				repo: string;
-				issue_number: number;
-				body: string;
-			}): Promise<unknown>;
-			updateComment(parameters: {
-				owner: string;
-				repo: string;
-				comment_id: number;
-				body: string;
-			}): Promise<unknown>;
-		};
-	};
-	readonly minimizeComment?: (parameters: {
-		commentId: number;
-		classifier: "OUTDATED";
-	}) => Promise<unknown>;
-}
-
-export type GitHubEventCommentRepositoryOptions = Readonly<{
-	owner: string;
-	repo: string;
-	/** Restrict managed comments to this bot login when it is known. */
-	authorLogin?: string;
-}>;
-
-export class GitHubEventCommentRepositoryConfigurationError extends Error {
-	constructor(message: string) {
-		super(message);
-		this.name = "GitHubEventCommentRepositoryConfigurationError";
-	}
-}
-
-export class GitHubEventCommentRepositoryResponseError extends Error {
-	constructor(message: string) {
-		super(message);
-		this.name = "GitHubEventCommentRepositoryResponseError";
-	}
-}
-
-export class GitHubEventCommentRepositoryScopeError extends Error {
-	constructor(expected: string, received: string) {
-		super(
-			`GitHub event comment repository is scoped to ${expected}, not ${received}`,
-		);
-		this.name = "GitHubEventCommentRepositoryScopeError";
-	}
-}
-
-type ManagedComment = Readonly<{
-	id: number;
-	body: string;
-	authorLogin?: string;
-}>;
+import {
+	type DiagnosticPresentation,
+	DiagnosticPresenter,
+} from "./diagnostic-presentation.js";
+import { GitHubEventCommentRepositoryConfigurationError } from "./github-event-comment-repository-configuration-error.js";
+import {
+	DUPLICATE_COMMENT_BODY,
+	EVENT_DIAGNOSTIC_COMMENT_MARKER,
+	type GitHubEventCommentRepositoryClient,
+	type GitHubEventCommentRepositoryOptions,
+	type ManagedComment,
+	RESOLVED_COMMENT_BODY,
+} from "./github-event-comment-repository-contracts.js";
+import { GitHubEventCommentRepositoryResponseError } from "./github-event-comment-repository-response-error.js";
+import { GitHubEventCommentRepositoryScopeError } from "./github-event-comment-repository-scope-error.js";
 
 export class GitHubEventCommentRepository implements EventCommentRepository {
 	private readonly owner: string;
@@ -95,8 +30,14 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 		private readonly client: GitHubEventCommentRepositoryClient,
 		options: GitHubEventCommentRepositoryOptions,
 	) {
-		this.owner = requireRepositoryPart(options.owner, "owner");
-		this.repo = requireRepositoryPart(options.repo, "repo");
+		this.owner = GitHubEventCommentRepository.requireRepositoryPart(
+			options.owner,
+			"owner",
+		);
+		this.repo = GitHubEventCommentRepository.requireRepositoryPart(
+			options.repo,
+			"repo",
+		);
 		this.repositoryName = `${this.owner}/${this.repo}`;
 		this.authorLogin = options.authorLogin?.trim() || undefined;
 	}
@@ -111,7 +52,8 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 		);
 		const [canonical, ...duplicates] = managedComments;
 		let changed = await this.minimizeDuplicates(duplicates);
-		const body = renderDiagnosticComment(diagnostics);
+		const body =
+			GitHubEventCommentRepository.renderDiagnosticComment(diagnostics);
 
 		if (!canonical) {
 			if (body === RESOLVED_COMMENT_BODY) {
@@ -156,13 +98,16 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 			}
 
 			for (const rawComment of response.data) {
-				const comment = mapComment(rawComment);
+				const comment = GitHubEventCommentRepository.mapComment(rawComment);
 				if (comment && this.isManagedComment(comment)) {
 					comments.push(comment);
 				}
 			}
 
-			const linkHeader = readHeader(response.headers, "link");
+			const linkHeader = GitHubEventCommentRepository.readHeader(
+				response.headers,
+				"link",
+			);
 			hasNextPage =
 				linkHeader === undefined
 					? response.data.length === 100
@@ -215,98 +160,98 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 			);
 		}
 	}
-}
 
-export function renderDiagnosticComment(
-	diagnostics: readonly EventDiagnostic[],
-): string {
-	const actionable = new Set<string>();
-	for (const item of diagnostics) {
-		if (item.severity === "info") {
-			continue;
+	static renderDiagnosticComment(
+		diagnostics: readonly EventDiagnostic[],
+	): string {
+		const actionable = new Map<string, DiagnosticPresentation>();
+		for (const item of diagnostics) {
+			if (item.severity === "info") {
+				continue;
+			}
+			const presentation = DiagnosticPresenter.presentDiagnostic(item);
+			actionable.set(
+				`${presentation.field}:${presentation.message}`,
+				presentation,
+			);
 		}
-		const code = /^[a-z0-9][a-z0-9._-]{0,99}$/i.test(item.code)
-			? item.code
-			: "diagnostic.redacted";
-		actionable.add(`${item.severity}:${code}`);
+
+		if (actionable.size === 0) {
+			return RESOLVED_COMMENT_BODY;
+		}
+
+		const lines = [...actionable.values()]
+			.sort(
+				(left, right) =>
+					left.order - right.order ||
+					left.field.localeCompare(right.field, "en", { numeric: true }) ||
+					left.message.localeCompare(right.message, "en"),
+			)
+			.map(({ field, message }) => `- [ ] **${field}**: ${message}`);
+
+		return [
+			EVENT_DIAGNOSTIC_COMMENT_MARKER,
+			"",
+			"Found the following items to complete in the meetup issue:",
+			"",
+			...lines,
+			"",
+			"Please update the issue description or labels to address these items. This checklist will refresh automatically.",
+		].join("\n");
 	}
 
-	if (actionable.size === 0) {
-		return RESOLVED_COMMENT_BODY;
+	private static mapComment(data: unknown): ManagedComment | null {
+		if (!GitHubEventCommentRepository.isRecord(data)) {
+			throw new GitHubEventCommentRepositoryResponseError(
+				"GitHub comment must be an object",
+			);
+		}
+		if (!Number.isInteger(data.id) || Number(data.id) <= 0) {
+			throw new GitHubEventCommentRepositoryResponseError(
+				"GitHub comment identifier must be a positive integer",
+			);
+		}
+		if (data.body === null) {
+			return null;
+		}
+		if (typeof data.body !== "string") {
+			throw new GitHubEventCommentRepositoryResponseError(
+				"GitHub comment body must be a string or null",
+			);
+		}
+
+		const user = GitHubEventCommentRepository.isRecord(data.user)
+			? data.user
+			: undefined;
+		return {
+			id: Number(data.id),
+			body: data.body,
+			authorLogin: typeof user?.login === "string" ? user.login : undefined,
+		};
 	}
 
-	const lines = [...actionable].sort(compareDiagnosticLines).map((entry) => {
-		const separator = entry.indexOf(":");
-		const severity = entry.slice(0, separator);
-		const code = entry.slice(separator + 1);
-		return `- **${severity}** \`${code}\``;
-	});
-
-	return [
-		EVENT_DIAGNOSTIC_COMMENT_MARKER,
-		"",
-		"### Meetup automation diagnostics",
-		"",
-		...lines,
-		"",
-		"Messages and event/contact values are intentionally omitted from this comment.",
-	].join("\n");
-}
-
-function compareDiagnosticLines(left: string, right: string): number {
-	const severityOrder = (value: string): number =>
-		value.startsWith("error:") ? 0 : 1;
-	return (
-		severityOrder(left) - severityOrder(right) || left.localeCompare(right)
-	);
-}
-
-function mapComment(data: unknown): ManagedComment | null {
-	if (!isRecord(data)) {
-		throw new GitHubEventCommentRepositoryResponseError(
-			"GitHub comment must be an object",
-		);
-	}
-	if (!Number.isInteger(data.id) || Number(data.id) <= 0) {
-		throw new GitHubEventCommentRepositoryResponseError(
-			"GitHub comment identifier must be a positive integer",
-		);
-	}
-	if (data.body === null) {
-		return null;
-	}
-	if (typeof data.body !== "string") {
-		throw new GitHubEventCommentRepositoryResponseError(
-			"GitHub comment body must be a string or null",
-		);
+	private static requireRepositoryPart(
+		value: string,
+		name: "owner" | "repo",
+	): string {
+		const normalized = value.trim();
+		if (normalized === "" || normalized.includes("/")) {
+			throw new GitHubEventCommentRepositoryConfigurationError(
+				`GitHub ${name} must be a non-empty repository name segment`,
+			);
+		}
+		return normalized;
 	}
 
-	const user = isRecord(data.user) ? data.user : undefined;
-	return {
-		id: Number(data.id),
-		body: data.body,
-		authorLogin: typeof user?.login === "string" ? user.login : undefined,
-	};
-}
-
-function requireRepositoryPart(value: string, name: "owner" | "repo"): string {
-	const normalized = value.trim();
-	if (normalized === "" || normalized.includes("/")) {
-		throw new GitHubEventCommentRepositoryConfigurationError(
-			`GitHub ${name} must be a non-empty repository name segment`,
-		);
+	private static readHeader(
+		headers: Readonly<Record<string, unknown>> | undefined,
+		name: string,
+	): string | undefined {
+		const value = headers?.[name];
+		return typeof value === "string" ? value : undefined;
 	}
-	return normalized;
-}
 
-function readHeader(
-	headers: Readonly<Record<string, unknown>> | undefined,
-	name: string,
-): string | undefined {
-	const value = headers?.[name];
-	return typeof value === "string" ? value : undefined;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === "object" && value !== null;
+	private static isRecord(value: unknown): value is Record<string, unknown> {
+		return typeof value === "object" && value !== null;
+	}
 }

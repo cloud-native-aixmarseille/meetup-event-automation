@@ -23,40 +23,41 @@ export interface AutomationConfig {
 	}>;
 }
 
-/**
- * Automation behavior is owned and versioned by this repository. Consumer
- * repositories do not provide a runtime configuration file anymore.
- */
-
-export function createAutomationConfig(): AutomationConfig {
-	return {
-		timezone: "Europe/Paris",
-		event: {
-			"issue-label": "meetup",
-			"issue-form": ".github/ISSUE_TEMPLATE/meetup.yml",
-			"occurrence-status-field": "event_status",
-			"required-confirmation-labels": [
-				"hoster:confirmed",
-				"speakers:confirmed",
-			],
-		},
-		referentials: {
-			hosts: "referentials/hosting.csv",
-			speakers: "referentials/speakers.csv",
-		},
-		communication: {
-			"readiness-window-days": 7,
-			"mailings-repository": "cloud-native-aixmarseille/mailings",
-			"slack-enabled": true,
-			"approval-label": "communication:approved",
-			"dispatch-enabled": true,
-			"policy-version": 1,
-		},
-		publication: {
-			"meetup-event-url-prefix":
-				DEFAULT_PUBLICATION_URL_CONFIGURATION.meetupEventUrlPrefix,
-			"cncf-event-url-prefix":
-				DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes[0],
-		},
-	};
+export class AutomationConfigFactory {
+	/**
+	 * Automation behavior is owned and versioned by this repository. Consumer
+	 * repositories do not provide a runtime configuration file anymore.
+	 */
+	static createAutomationConfig(): AutomationConfig {
+		return {
+			timezone: "Europe/Paris",
+			event: {
+				"issue-label": "meetup",
+				"issue-form": ".github/ISSUE_TEMPLATE/meetup.yml",
+				"occurrence-status-field": "event_status",
+				"required-confirmation-labels": [
+					"hoster:confirmed",
+					"speakers:confirmed",
+				],
+			},
+			referentials: {
+				hosts: "referentials/hosting.csv",
+				speakers: "referentials/speakers.csv",
+			},
+			communication: {
+				"readiness-window-days": 7,
+				"mailings-repository": "cloud-native-aixmarseille/mailings",
+				"slack-enabled": true,
+				"approval-label": "communication:approved",
+				"dispatch-enabled": true,
+				"policy-version": 1,
+			},
+			publication: {
+				"meetup-event-url-prefix":
+					DEFAULT_PUBLICATION_URL_CONFIGURATION.meetupEventUrlPrefix,
+				"cncf-event-url-prefix":
+					DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes[0],
+			},
+		};
+	}
 }

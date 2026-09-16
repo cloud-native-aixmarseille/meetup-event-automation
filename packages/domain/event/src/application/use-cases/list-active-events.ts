@@ -1,61 +1,22 @@
 import type { EventDiagnostic } from "../../domain/diagnostic.js";
-import {
-	type EventLifecycleEvaluation,
-	evaluateEventLifecycle,
-} from "../../domain/lifecycle.js";
-import type { EventIdentity, MeetupEvent } from "../../domain/model.js";
-import {
-	type EventReadiness,
-	evaluateEventReadiness,
-} from "../../domain/readiness.js";
-import {
-	createDefaultEventRules,
-	type EventRule,
-	EventRuleEngine,
-} from "../../domain/rule.js";
-import type { EventClock } from "../ports/event-clock.js";
-import type { EventDocumentCodec } from "../ports/event-document-codec.js";
-import type { EventRepository } from "../ports/event-repository.js";
-
-export type ListActiveEventsInput = Readonly<{
-	repository: string;
-	label?: string;
-	includeClosed?: boolean;
-	pageSize?: number;
-}>;
-
-export type ActiveEvent = Readonly<{
-	identity: EventIdentity;
-	event: MeetupEvent;
-	readiness: EventReadiness;
-	lifecycle: EventLifecycleEvaluation;
-}>;
-
-export type ListActiveEventsResult = Readonly<{
-	events: readonly ActiveEvent[];
-	diagnostics: readonly EventDiagnostic[];
-}>;
-
-export type ListActiveEventsDependencies = Readonly<{
-	repository: EventRepository;
-	documentCodec: EventDocumentCodec;
-	clock: EventClock;
-	rules?: readonly EventRule[];
-}>;
-
-export class EventPaginationError extends Error {
-	constructor(cursor: string) {
-		super(`Event repository repeated pagination cursor "${cursor}"`);
-		this.name = "EventPaginationError";
-	}
-}
+import { EventRuleEngine } from "../../domain/event-rule-engine.js";
+import { EventRuleFactory } from "../../domain/event-rule-factory.js";
+import { EventLifecycle } from "../../domain/lifecycle.js";
+import { EventReadinessPolicy } from "../../domain/readiness.js";
+import { EventPaginationError } from "./event-pagination-error.js";
+import type {
+	ActiveEvent,
+	ListActiveEventsDependencies,
+	ListActiveEventsInput,
+	ListActiveEventsResult,
+} from "./list-active-events-contracts.js";
 
 export class ListActiveEvents {
 	private readonly ruleEngine: EventRuleEngine;
 
 	constructor(private readonly dependencies: ListActiveEventsDependencies) {
 		this.ruleEngine = new EventRuleEngine(
-			dependencies.rules ?? createDefaultEventRules(),
+			dependencies.rules ?? EventRuleFactory.createDefaultEventRules(),
 		);
 	}
 
@@ -86,11 +47,11 @@ export class ListActiveEvents {
 					...decoded.diagnostics,
 					...evaluated.diagnostics,
 				];
-				const readiness = evaluateEventReadiness(
+				const readiness = EventReadinessPolicy.evaluateEventReadiness(
 					evaluated.event,
 					eventDiagnostics,
 				);
-				const lifecycle = evaluateEventLifecycle({
+				const lifecycle = EventLifecycle.evaluateEventLifecycle({
 					event: evaluated.event,
 					readiness,
 					now,

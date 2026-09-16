@@ -1,7 +1,4 @@
-import * as core from "@actions/core";
-import { runReferentialSyncIssueFormAction } from "../referential-actions.js";
-import { publicErrorMessage } from "../runtime-input.js";
+import { ActionRunner } from "../action-runner.js";
+import { ReferentialActions } from "../referential-actions.js";
 
-runReferentialSyncIssueFormAction().catch((error: unknown) => {
-	core.setFailed(publicErrorMessage(error));
-});
+ActionRunner.run(ReferentialActions.runReferentialSyncIssueFormAction);

@@ -10,38 +10,40 @@ const SAFE_ERROR_NAMES = new Set([
 	"GitHubEventCommentRepositoryResponseError",
 ]);
 
-export function positiveIntegerInput(name: string, value: string): number {
-	if (!/^\d+$/.test(value)) {
-		throw new Error(`${name} must be a positive integer`);
+export class RuntimeInput {
+	static positiveIntegerInput(name: string, value: string): number {
+		if (!/^\d+$/.test(value)) {
+			throw new Error(`${name} must be a positive integer`);
+		}
+		const parsed = Number(value);
+		if (!Number.isSafeInteger(parsed) || parsed <= 0) {
+			throw new Error(`${name} must be a positive integer`);
+		}
+		return parsed;
 	}
-	const parsed = Number(value);
-	if (!Number.isSafeInteger(parsed) || parsed <= 0) {
-		throw new Error(`${name} must be a positive integer`);
-	}
-	return parsed;
-}
 
-export function enumInput<const T extends string>(
-	name: string,
-	value: string,
-	allowed: readonly T[],
-): T {
-	if (!allowed.includes(value as T)) {
-		throw new Error(`${name} must be one of: ${allowed.join(", ")}`);
+	static enumInput<const T extends string>(
+		name: string,
+		value: string,
+		allowed: readonly T[],
+	): T {
+		if (!allowed.includes(value as T)) {
+			throw new Error(`${name} must be one of: ${allowed.join(", ")}`);
+		}
+		return value as T;
 	}
-	return value as T;
-}
 
-export function booleanInput(name: string, value: string): boolean {
-	if (value === "true") return true;
-	if (value === "false") return false;
-	throw new Error(`${name} must be true or false`);
-}
-
-/** Never expose provider responses, input values, or contact data in failures. */
-export function publicErrorMessage(error: unknown): string {
-	if (error instanceof Error && SAFE_ERROR_NAMES.has(error.name)) {
-		return `${error.name}: ${error.message}`;
+	static booleanInput(name: string, value: string): boolean {
+		if (value === "true") return true;
+		if (value === "false") return false;
+		throw new Error(`${name} must be true or false`);
 	}
-	return "Meetup automation failed; inspect debug logs using a trusted runner";
+
+	/** Never expose provider responses, input values, or contact data in failures. */
+	static publicErrorMessage(error: unknown): string {
+		if (error instanceof Error && SAFE_ERROR_NAMES.has(error.name)) {
+			return `${error.name}: ${error.message}`;
+		}
+		return "Meetup automation failed; inspect debug logs using a trusted runner";
+	}
 }

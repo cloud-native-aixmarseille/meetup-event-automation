@@ -15,6 +15,8 @@ export type EventDiagnostic = Readonly<{
 	fixAvailable?: boolean;
 }>;
 
-export function diagnostic(value: EventDiagnostic): Readonly<EventDiagnostic> {
-	return Object.freeze({ ...value });
+export class EventDiagnostics {
+	static diagnostic(value: EventDiagnostic): Readonly<EventDiagnostic> {
+		return Object.freeze({ ...value });
+	}
 }

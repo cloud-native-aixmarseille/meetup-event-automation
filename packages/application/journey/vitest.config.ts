@@ -1,8 +1,6 @@
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
-	test: {
-		environment: "node",
-		globals: true,
-	},
+	root: import.meta.dirname,
+	test: { include: ["src/**/*.test.ts"], environment: "node", globals: true },
 });
