@@ -1,12 +1,11 @@
 import {
+	CommunicationApproval,
 	type CommunicationApprovalRepository,
-	communicationApprovalMatches,
-	createCommunicationApprovalSnapshot,
 } from "@meetup-automation/communication";
 import {
 	type EventDocument,
-	eventDocumentsEqual,
 	type MeetupEvent,
+	ReconcileEvent,
 } from "@meetup-automation/event";
 import type { AutomationConfig } from "../config/automation-config.js";
 import type {
@@ -14,7 +13,7 @@ import type {
 	ManageMeetupCommunicationsInput,
 } from "./contracts.js";
 
-export async function resolveCommunicationApproval(input: {
+type ApprovalResolutionInput = {
 	readonly input: ManageMeetupCommunicationsInput;
 	readonly config: AutomationConfig;
 	readonly repository: CommunicationApprovalRepository;
@@ -25,43 +24,111 @@ export async function resolveCommunicationApproval(input: {
 	readonly readiness: "ready" | "not-ready";
 	readonly notificationDestinationFingerprint: string | null;
 	readonly diagnostics: CommunicationJourneyDiagnostic[];
-}): Promise<boolean> {
-	const eventId = `issue-${input.input.issueNumber}`;
-	const approvalLabel = input.config.communication["approval-label"];
-	const repository = input.repository;
-	const current = createCommunicationApprovalSnapshot({
-		automationRevision: input.input.automationRevision,
-		eventId,
-		eventDate: input.event.date,
-		occurrenceStatus: input.event.occurrenceStatus ?? "unknown",
-		readiness: input.readiness,
-		policyVersion: String(input.config.communication["policy-version"]),
-		mailingsRepository: input.config.communication["mailings-repository"],
-		notificationEnabled: input.config.communication["slack-enabled"],
-		notificationDestinationFingerprint:
-			input.notificationDestinationFingerprint,
-		confirmations: input.event.confirmations,
-		hostId: input.event.host?.id ?? null,
-		speakerIds: input.event.agenda.flatMap((entry) =>
-			entry.speakers.flatMap((speaker) => (speaker.id ? [speaker.id] : [])),
-		),
-		publicationUrls: {
-			meetup: input.event.publicationLinks.meetup ?? null,
-			community: input.event.publicationLinks.community ?? null,
-			assets: input.event.publicationLinks.assets ?? null,
-		},
-	});
+};
 
-	const trigger = input.input.approvalTrigger;
-	const hasApprovalLabel = input.event.labels.some((label) =>
-		labelsEqual(label, approvalLabel),
-	);
-	if (
-		input.captureApproval &&
-		hasApprovalLabel &&
-		trigger?.action === "labeled" &&
-		labelsEqual(trigger.label, approvalLabel)
-	) {
+export class CommunicationApprovalResolver {
+	static async resolveCommunicationApproval(
+		input: ApprovalResolutionInput,
+	): Promise<boolean> {
+		const eventId = `issue-${input.input.issueNumber}`;
+		const approvalLabel = input.config.communication["approval-label"];
+		const repository = input.repository;
+		const current = CommunicationApprovalResolver.snapshot(input);
+
+		const trigger = input.input.approvalTrigger;
+		const hasApprovalLabel = input.event.labels.some((label) =>
+			CommunicationApprovalResolver.labelsEqual(label, approvalLabel),
+		);
+		if (
+			input.captureApproval &&
+			hasApprovalLabel &&
+			trigger?.action === "labeled" &&
+			CommunicationApprovalResolver.labelsEqual(trigger.label, approvalLabel)
+		) {
+			if (
+				!(await CommunicationApprovalResolver.capture(input, trigger, current))
+			)
+				return false;
+		}
+
+		if (!hasApprovalLabel) {
+			input.diagnostics.push({
+				code: "communication.approval-label-missing",
+				severity: "warning",
+			});
+			return false;
+		}
+
+		try {
+			const approved = await repository.findApproved(eventId);
+			if (!approved) {
+				input.diagnostics.push({
+					code: "communication.approval-missing",
+					severity: "warning",
+				});
+				return false;
+			}
+			if (
+				!CommunicationApproval.communicationApprovalMatches(
+					approved,
+					current.facts,
+				)
+			) {
+				input.diagnostics.push({
+					code: "communication.approval-stale",
+					severity: "warning",
+				});
+				return false;
+			}
+			return true;
+		} catch {
+			input.diagnostics.push({
+				code: "communication.approval-repository-failed",
+				severity: "error",
+			});
+			return false;
+		}
+	}
+
+	static labelsEqual(left: string, right: string): boolean {
+		return (
+			left.trim().toLocaleLowerCase("en-US") ===
+			right.trim().toLocaleLowerCase("en-US")
+		);
+	}
+
+	private static snapshot(input: ApprovalResolutionInput) {
+		return CommunicationApproval.createCommunicationApprovalSnapshot({
+			automationRevision: input.input.automationRevision,
+			eventId: `issue-${input.input.issueNumber}`,
+			eventDate: input.event.date,
+			occurrenceStatus: input.event.occurrenceStatus ?? "unknown",
+			readiness: input.readiness,
+			policyVersion: String(input.config.communication["policy-version"]),
+			mailingsRepository: input.config.communication["mailings-repository"],
+			notificationEnabled: input.config.communication["slack-enabled"],
+			notificationDestinationFingerprint:
+				input.notificationDestinationFingerprint,
+			confirmations: input.event.confirmations,
+			hostId: input.event.host?.id ?? null,
+			speakerIds: input.event.agenda.flatMap((entry) =>
+				entry.speakers.flatMap((speaker) => (speaker.id ? [speaker.id] : [])),
+			),
+			publicationUrls: {
+				meetup: input.event.publicationLinks.meetup ?? null,
+				community: input.event.publicationLinks.community ?? null,
+				assets: input.event.publicationLinks.assets ?? null,
+			},
+		});
+	}
+
+	private static async capture(
+		input: ApprovalResolutionInput,
+		trigger: NonNullable<ManageMeetupCommunicationsInput["approvalTrigger"]>,
+		current: ReturnType<
+			typeof CommunicationApproval.createCommunicationApprovalSnapshot
+		>,
+	): Promise<boolean> {
 		if (!trigger.issueSnapshot) {
 			input.diagnostics.push({
 				code: "communication.approval-trigger-snapshot-missing",
@@ -69,7 +136,12 @@ export async function resolveCommunicationApproval(input: {
 			});
 			return false;
 		}
-		if (!eventDocumentsEqual(trigger.issueSnapshot, input.sourceDocument)) {
+		if (
+			!ReconcileEvent.eventDocumentsEqual(
+				trigger.issueSnapshot,
+				input.sourceDocument,
+			)
+		) {
 			input.diagnostics.push({
 				code: "communication.approval-trigger-stale",
 				severity: "error",
@@ -84,7 +156,7 @@ export async function resolveCommunicationApproval(input: {
 				});
 				return false;
 			} else {
-				await repository.saveApproved(current);
+				await input.repository.saveApproved(current);
 			}
 		} catch {
 			input.diagnostics.push({
@@ -93,45 +165,6 @@ export async function resolveCommunicationApproval(input: {
 			});
 			return false;
 		}
-	}
-
-	if (!hasApprovalLabel) {
-		input.diagnostics.push({
-			code: "communication.approval-label-missing",
-			severity: "warning",
-		});
-		return false;
-	}
-
-	try {
-		const approved = await repository.findApproved(eventId);
-		if (!approved) {
-			input.diagnostics.push({
-				code: "communication.approval-missing",
-				severity: "warning",
-			});
-			return false;
-		}
-		if (!communicationApprovalMatches(approved, current.facts)) {
-			input.diagnostics.push({
-				code: "communication.approval-stale",
-				severity: "warning",
-			});
-			return false;
-		}
 		return true;
-	} catch {
-		input.diagnostics.push({
-			code: "communication.approval-repository-failed",
-			severity: "error",
-		});
-		return false;
 	}
-}
-
-function labelsEqual(left: string, right: string): boolean {
-	return (
-		left.trim().toLocaleLowerCase("en-US") ===
-		right.trim().toLocaleLowerCase("en-US")
-	);
 }

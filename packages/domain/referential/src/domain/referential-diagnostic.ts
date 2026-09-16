@@ -35,17 +35,19 @@ export interface ReferentialDiagnostic {
 	readonly message: string;
 }
 
-export function diagnostic(
-	code: ReferentialDiagnosticCode,
-	severity: ReferentialDiagnosticSeverity,
-	path: string,
-	message: string,
-): ReferentialDiagnostic {
-	return Object.freeze({ code, severity, path, message });
-}
+export class ReferentialDiagnostics {
+	static diagnostic(
+		code: ReferentialDiagnosticCode,
+		severity: ReferentialDiagnosticSeverity,
+		path: string,
+		message: string,
+	): ReferentialDiagnostic {
+		return Object.freeze({ code, severity, path, message });
+	}
 
-export function freezeDiagnostics(
-	diagnostics: readonly ReferentialDiagnostic[],
-): readonly ReferentialDiagnostic[] {
-	return Object.freeze([...diagnostics]);
+	static freezeDiagnostics(
+		diagnostics: readonly ReferentialDiagnostic[],
+	): readonly ReferentialDiagnostic[] {
+		return Object.freeze([...diagnostics]);
+	}
 }

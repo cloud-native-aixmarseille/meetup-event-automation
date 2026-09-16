@@ -3,20 +3,12 @@ export type {
 	CommunicationApprovalFacts,
 	CommunicationApprovalPublicationUrls,
 	CommunicationApprovalSnapshot,
-} from "./approval.js";
-export {
-	COMMUNICATION_APPROVAL_SCHEMA_VERSION,
-	CommunicationApprovalSnapshotError,
-	communicationApprovalFactsEqual,
-	communicationApprovalMatches,
-	createCommunicationApprovalSnapshot,
-	parseCommunicationApprovalSnapshot,
-} from "./approval.js";
+} from "./approval-contracts.js";
+export { COMMUNICATION_APPROVAL_SCHEMA_VERSION } from "./approval-contracts.js";
+export { CommunicationApproval } from "./communication-approval.js";
+export { CommunicationApprovalSnapshotError } from "./communication-approval-snapshot-error.js";
 export type { CommunicationIdempotencyComponents } from "./idempotency.js";
-export {
-	createCommunicationIdempotencyKey,
-	isSafeCommunicationIdentifier,
-} from "./idempotency.js";
+export { CommunicationIdempotency } from "./idempotency.js";
 export type {
 	CommunicationDiagnostic,
 	CommunicationDiagnosticCode,

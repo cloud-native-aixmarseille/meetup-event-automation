@@ -10,32 +10,34 @@ export type CommunicationIdempotencyComponents = {
 	readonly policyVersion: string;
 };
 
-export function isSafeCommunicationIdentifier(value: string): boolean {
-	return SAFE_IDENTIFIER_PATTERN.test(value);
-}
-
-export function createCommunicationIdempotencyKey(
-	components: CommunicationIdempotencyComponents,
-): string {
-	const values = [
-		components.repositoryId,
-		components.eventId,
-		components.recipientId,
-		components.policyVersion,
-	];
-
-	if (!values.every(isSafeCommunicationIdentifier)) {
-		throw new Error(
-			"Communication identifiers must be stable, opaque, and PII-free",
-		);
+export class CommunicationIdempotency {
+	static isSafeCommunicationIdentifier(value: string): boolean {
+		return SAFE_IDENTIFIER_PATTERN.test(value);
 	}
 
-	return [
-		"meetup-communication:v1",
-		`repository=${encodeURIComponent(components.repositoryId)}`,
-		`event=${encodeURIComponent(components.eventId)}`,
-		`kind=${components.kind}`,
-		`recipient=${encodeURIComponent(components.recipientId)}`,
-		`policy=${encodeURIComponent(components.policyVersion)}`,
-	].join("|");
+	static createCommunicationIdempotencyKey(
+		components: CommunicationIdempotencyComponents,
+	): string {
+		const values = [
+			components.repositoryId,
+			components.eventId,
+			components.recipientId,
+			components.policyVersion,
+		];
+
+		if (!values.every(CommunicationIdempotency.isSafeCommunicationIdentifier)) {
+			throw new Error(
+				"Communication identifiers must be stable, opaque, and PII-free",
+			);
+		}
+
+		return [
+			"meetup-communication:v1",
+			`repository=${encodeURIComponent(components.repositoryId)}`,
+			`event=${encodeURIComponent(components.eventId)}`,
+			`kind=${components.kind}`,
+			`recipient=${encodeURIComponent(components.recipientId)}`,
+			`policy=${encodeURIComponent(components.policyVersion)}`,
+		].join("|");
+	}
 }

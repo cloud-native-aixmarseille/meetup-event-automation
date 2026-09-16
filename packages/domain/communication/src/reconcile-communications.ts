@@ -1,9 +1,12 @@
+import { CommunicationDispatcher } from "./communication-dispatcher.js";
+import {
+	CommunicationResults,
+	type MutableCounts,
+} from "./communication-results.js";
 import type {
 	CommunicationDiagnostic,
 	CommunicationIntent,
 	DeliveryLedgerEntry,
-	GatewayDispatchResult,
-	ReconcileCommunicationCounts,
 	ReconcileCommunicationsInput,
 	ReconcileCommunicationsResult,
 } from "./model.js";
@@ -23,23 +26,21 @@ export type ReconcileCommunicationsDependencies = {
 	readonly notificationGateway: NotificationGateway;
 };
 
-type MutableCounts = {
-	-readonly [Key in keyof ReconcileCommunicationCounts]: ReconcileCommunicationCounts[Key];
-};
-
 export class ReconcileCommunications {
 	readonly #planner: PlanCommunications;
 	readonly #clock: CommunicationClock;
 	readonly #ledger: DeliveryLedger;
-	readonly #mailGateway: MailGateway;
-	readonly #notificationGateway: NotificationGateway;
+	readonly #dispatcher: CommunicationDispatcher;
 
 	constructor(dependencies: ReconcileCommunicationsDependencies) {
 		this.#planner = dependencies.planner;
 		this.#clock = dependencies.clock;
 		this.#ledger = dependencies.ledger;
-		this.#mailGateway = dependencies.mailGateway;
-		this.#notificationGateway = dependencies.notificationGateway;
+		this.#dispatcher = new CommunicationDispatcher(
+			dependencies.ledger,
+			dependencies.mailGateway,
+			dependencies.notificationGateway,
+		);
 	}
 
 	async execute(
@@ -49,13 +50,13 @@ export class ReconcileCommunications {
 		try {
 			now = this.#clock.now();
 		} catch {
-			return emptyResult(input.mode, {
+			return CommunicationResults.emptyResult(input.mode, {
 				code: "invalid-clock",
 				severity: "error",
 			});
 		}
-		if (!isValidInstant(now)) {
-			return emptyResult(input.mode, {
+		if (!CommunicationResults.isValidInstant(now)) {
+			return CommunicationResults.emptyResult(input.mode, {
 				code: "invalid-clock",
 				severity: "error",
 			});
@@ -83,40 +84,17 @@ export class ReconcileCommunications {
 		const timestamp = now.toISOString();
 
 		for (const intent of plan.intents) {
-			const existing = await this.#findExisting(intent, diagnostics);
-			if (existing === "read-failed") {
-				continue;
-			}
-
-			if (existing) {
-				recordExisting(intent.intentId, existing, counts, diagnostics);
-				continue;
-			}
-
-			counts.due += 1;
-			if (mode === "check") {
-				continue;
-			}
-			if (!dispatchCapabilities[intent.channel]) {
-				continue;
-			}
-
-			const reservation = await this.#reserve(intent, timestamp, diagnostics);
-			if (reservation === "reservation-failed") {
-				continue;
-			}
-
-			if (!reservation.reserved) {
-				recordExisting(intent.intentId, reservation.entry, counts, diagnostics);
-				continue;
-			}
-
-			counts.reserved += 1;
-			counts.dispatched += 1;
-			await this.#dispatch(intent, timestamp, counts, diagnostics);
+			await this.processIntent(
+				intent,
+				timestamp,
+				mode,
+				dispatchCapabilities,
+				counts,
+				diagnostics,
+			);
 		}
 
-		return result(mode, plan.intents, counts, diagnostics);
+		return CommunicationResults.result(mode, plan.intents, counts, diagnostics);
 	}
 
 	async #findExisting(
@@ -161,127 +139,57 @@ export class ReconcileCommunications {
 		}
 	}
 
-	async #dispatch(
+	private async processIntent(
 		intent: CommunicationIntent,
 		timestamp: string,
+		mode: ReconcileCommunicationsInput["mode"],
+		dispatchCapabilities: NonNullable<
+			ReconcileCommunicationsInput["dispatchCapabilities"]
+		>,
 		counts: MutableCounts,
 		diagnostics: CommunicationDiagnostic[],
-	): Promise<void> {
-		let dispatchResult: GatewayDispatchResult;
-		try {
-			dispatchResult =
-				intent.channel === "mail"
-					? await this.#mailGateway.dispatch(intent)
-					: await this.#notificationGateway.dispatch(intent);
-		} catch {
-			counts.uncertain += 1;
-			diagnostics.push({
-				code: "gateway-threw-ambiguous-error",
-				severity: "error",
-				intentId: intent.intentId,
-			});
-			await this.#markUncertain(
-				intent,
-				timestamp,
-				"gateway-threw-ambiguous-error",
+	) {
+		const existing = await this.#findExisting(intent, diagnostics);
+		if (existing === "read-failed") {
+			return;
+		}
+
+		if (existing) {
+			CommunicationResults.recordExisting(
+				intent.intentId,
+				existing,
+				counts,
 				diagnostics,
 			);
 			return;
 		}
 
-		if (dispatchResult.outcome === "deferred") {
-			counts.deferred += 1;
-			diagnostics.push({
-				code: "gateway-delivery-deferred",
-				severity: "warning",
-				intentId: intent.intentId,
-				detailCode: dispatchResult.diagnosticCode,
-			});
-			try {
-				await this.#ledger.releasePending(intent.idempotencyKey);
-			} catch {
-				diagnostics.push({
-					code: "ledger-status-write-failed",
-					severity: "error",
-					intentId: intent.intentId,
-				});
-			}
+		counts.due += 1;
+		if (mode === "check") {
+			return;
+		}
+		if (!dispatchCapabilities[intent.channel]) {
 			return;
 		}
 
-		if (dispatchResult.outcome === "rejected") {
-			counts.rejected += 1;
-			diagnostics.push({
-				code: "gateway-delivery-rejected",
-				severity: "error",
-				intentId: intent.intentId,
-				detailCode: dispatchResult.diagnosticCode,
-			});
-			try {
-				await this.#ledger.markRejected(
-					intent.idempotencyKey,
-					timestamp,
-					dispatchResult.diagnosticCode,
-				);
-			} catch {
-				diagnostics.push({
-					code: "ledger-status-write-failed",
-					severity: "error",
-					intentId: intent.intentId,
-				});
-			}
+		const reservation = await this.#reserve(intent, timestamp, diagnostics);
+		if (reservation === "reservation-failed") {
 			return;
 		}
 
-		if (dispatchResult.outcome === "uncertain") {
-			const detailCode = safeDetailCode(dispatchResult.diagnosticCode);
-			counts.uncertain += 1;
-			diagnostics.push({
-				code: "gateway-delivery-uncertain",
-				severity: "error",
-				intentId: intent.intentId,
-				...(detailCode ? { detailCode } : {}),
-			});
-			await this.#markUncertain(
-				intent,
-				timestamp,
-				detailCode ?? "gateway-delivery-uncertain",
+		if (!reservation.reserved) {
+			CommunicationResults.recordExisting(
+				intent.intentId,
+				reservation.entry,
+				counts,
 				diagnostics,
 			);
 			return;
 		}
 
-		counts.accepted += 1;
-		try {
-			await this.#ledger.markAccepted(intent.idempotencyKey, timestamp);
-		} catch {
-			diagnostics.push({
-				code: "ledger-status-write-failed",
-				severity: "error",
-				intentId: intent.intentId,
-			});
-		}
-	}
-
-	async #markUncertain(
-		intent: CommunicationIntent,
-		timestamp: string,
-		diagnosticCode: string,
-		diagnostics: CommunicationDiagnostic[],
-	): Promise<void> {
-		try {
-			await this.#ledger.markUncertain(
-				intent.idempotencyKey,
-				timestamp,
-				diagnosticCode,
-			);
-		} catch {
-			diagnostics.push({
-				code: "ledger-status-write-failed",
-				severity: "error",
-				intentId: intent.intentId,
-			});
-		}
+		counts.reserved += 1;
+		counts.dispatched += 1;
+		await this.#dispatcher.execute(intent, timestamp, counts, diagnostics);
 	}
 }
 
@@ -289,69 +197,3 @@ const DEFAULT_DISPATCH_CAPABILITIES = Object.freeze({
 	mail: true,
 	notification: true,
 });
-
-function recordExisting(
-	intentId: string,
-	entry: DeliveryLedgerEntry,
-	counts: MutableCounts,
-	diagnostics: CommunicationDiagnostic[],
-): void {
-	counts.alreadyRecorded += 1;
-	diagnostics.push({
-		code: "delivery-already-recorded",
-		severity: "info",
-		intentId,
-		deliveryStatus: entry.status,
-	});
-}
-
-function result(
-	mode: ReconcileCommunicationsInput["mode"],
-	intents: readonly CommunicationIntent[],
-	counts: ReconcileCommunicationCounts,
-	diagnostics: readonly CommunicationDiagnostic[],
-): ReconcileCommunicationsResult {
-	return {
-		mode,
-		intentIds: intents.map((intent) => intent.intentId),
-		counts: { ...counts },
-		diagnostics: [...diagnostics],
-	};
-}
-
-function emptyResult(
-	mode: ReconcileCommunicationsInput["mode"],
-	diagnostic: CommunicationDiagnostic,
-): ReconcileCommunicationsResult {
-	return {
-		mode,
-		intentIds: [],
-		counts: {
-			planned: 0,
-			due: 0,
-			alreadyRecorded: 0,
-			reserved: 0,
-			dispatched: 0,
-			accepted: 0,
-			uncertain: 0,
-			rejected: 0,
-			deferred: 0,
-		},
-		diagnostics: [diagnostic],
-	};
-}
-
-function isValidInstant(value: Date): boolean {
-	return value instanceof Date && Number.isFinite(value.getTime());
-}
-
-function safeDetailCode(value: string | undefined): string | undefined {
-	return [
-		"ambiguous-response",
-		"connection-reset",
-		"provider-timeout",
-		"unknown-provider-state",
-	].includes(value ?? "")
-		? value
-		: undefined;
-}

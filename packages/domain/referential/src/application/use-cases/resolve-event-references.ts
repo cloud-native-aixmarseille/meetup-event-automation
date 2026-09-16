@@ -1,15 +1,13 @@
-import { asHostId, asSpeakerId } from "../../domain/identifiers.js";
+import { ReferentialIdentifiers } from "../../domain/identifiers.js";
 import {
-	displayNameKey,
 	type Host,
-	normalizeDisplayName,
 	type ReferentialCatalog,
+	ReferentialCatalogOperations,
 	type Speaker,
 } from "../../domain/referential-catalog.js";
 import {
-	diagnostic,
-	freezeDiagnostics,
 	type ReferentialDiagnostic,
+	ReferentialDiagnostics,
 } from "../../domain/referential-diagnostic.js";
 
 export interface ResolveEventReferencesCommand {
@@ -53,7 +51,8 @@ export class ResolveEventReferences {
 			)
 			.filter((speaker): speaker is Speaker => speaker !== undefined);
 
-		const frozenDiagnostics = freezeDiagnostics(diagnostics);
+		const frozenDiagnostics =
+			ReferentialDiagnostics.freezeDiagnostics(diagnostics);
 		if (!host || diagnostics.some(({ severity }) => severity === "error")) {
 			return Object.freeze({
 				resolved: false as const,
@@ -80,7 +79,7 @@ export class ResolveEventReferences {
 		const parsed = this.parseReference(reference);
 		if (!parsed) {
 			diagnostics.push(
-				diagnostic(
+				ReferentialDiagnostics.diagnostic(
 					"referential.reference.host.invalid",
 					"error",
 					"hostReference",
@@ -91,10 +90,10 @@ export class ResolveEventReferences {
 		}
 
 		if (parsed.stableId !== undefined) {
-			const id = asHostId(parsed.stableId);
+			const id = ReferentialIdentifiers.asHostId(parsed.stableId);
 			if (!id) {
 				diagnostics.push(
-					diagnostic(
+					ReferentialDiagnostics.diagnostic(
 						"referential.reference.host.invalid",
 						"error",
 						"hostReference",
@@ -107,7 +106,7 @@ export class ResolveEventReferences {
 			const host = hosts.find((candidate) => candidate.id === id);
 			if (!host) {
 				diagnostics.push(
-					diagnostic(
+					ReferentialDiagnostics.diagnostic(
 						"referential.reference.host.unknown",
 						"error",
 						"hostReference",
@@ -118,10 +117,11 @@ export class ResolveEventReferences {
 			}
 
 			if (
-				displayNameKey(host.displayName) !== displayNameKey(parsed.displayName)
+				ReferentialCatalogOperations.displayNameKey(host.displayName) !==
+				ReferentialCatalogOperations.displayNameKey(parsed.displayName)
 			) {
 				diagnostics.push(
-					diagnostic(
+					ReferentialDiagnostics.diagnostic(
 						"referential.reference.host.display-name-mismatch",
 						"warning",
 						"hostReference",
@@ -132,16 +132,118 @@ export class ResolveEventReferences {
 			return host;
 		}
 
+		return this.hostByName(hosts, parsed, diagnostics);
+	}
+
+	private resolveSpeaker(
+		speakers: readonly Speaker[],
+		reference: string,
+		index: number,
+		diagnostics: ReferentialDiagnostic[],
+	): Speaker | undefined {
+		const path = `speakerReferences[${index}]`;
+		const parsed = this.parseReference(reference);
+		if (!parsed) {
+			diagnostics.push(
+				ReferentialDiagnostics.diagnostic(
+					"referential.reference.speaker.invalid",
+					"error",
+					path,
+					"Speaker reference must be a display name or use Display name [speaker-0001] syntax.",
+				),
+			);
+			return undefined;
+		}
+
+		if (parsed.stableId !== undefined) {
+			const id = ReferentialIdentifiers.asSpeakerId(parsed.stableId);
+			if (!id) {
+				diagnostics.push(
+					ReferentialDiagnostics.diagnostic(
+						"referential.reference.speaker.invalid",
+						"error",
+						path,
+						"Explicit speaker reference contains an invalid stable identifier.",
+					),
+				);
+				return undefined;
+			}
+
+			const speaker = speakers.find((candidate) => candidate.id === id);
+			if (!speaker) {
+				diagnostics.push(
+					ReferentialDiagnostics.diagnostic(
+						"referential.reference.speaker.unknown",
+						"error",
+						path,
+						"Explicit speaker stable identifier is not present in the catalog.",
+					),
+				);
+				return undefined;
+			}
+
+			if (
+				ReferentialCatalogOperations.displayNameKey(speaker.displayName) !==
+				ReferentialCatalogOperations.displayNameKey(parsed.displayName)
+			) {
+				diagnostics.push(
+					ReferentialDiagnostics.diagnostic(
+						"referential.reference.speaker.display-name-mismatch",
+						"warning",
+						path,
+						"Speaker display name is stale; the stable identifier remains authoritative.",
+					),
+				);
+			}
+			return speaker;
+		}
+
+		return this.speakerByName(speakers, parsed, path, diagnostics);
+	}
+
+	private parseReference(reference: string): ParsedReference | undefined {
+		if (typeof reference !== "string") {
+			return undefined;
+		}
+
+		const normalized =
+			ReferentialCatalogOperations.normalizeDisplayName(reference);
+		if (!normalized) {
+			return undefined;
+		}
+
+		const explicit = normalized.match(EXPLICIT_REFERENCE_PATTERN);
+		if (!explicit) {
+			return { displayName: normalized };
+		}
+
+		const displayName = ReferentialCatalogOperations.normalizeDisplayName(
+			explicit[1],
+		);
+		const stableId = explicit[2].trim();
+		if (!displayName || !stableId) {
+			return undefined;
+		}
+
+		return { displayName, stableId };
+	}
+
+	private hostByName(
+		hosts: readonly Host[],
+		parsed: ParsedReference,
+		diagnostics: ReferentialDiagnostic[],
+	) {
 		const matches = hosts.filter(
 			(host) =>
-				displayNameKey(host.displayName) === displayNameKey(parsed.displayName),
+				ReferentialCatalogOperations.displayNameKey(host.displayName) ===
+				ReferentialCatalogOperations.displayNameKey(parsed.displayName),
 		);
 		if (matches.length === 1) {
 			return matches[0];
 		}
 
 		diagnostics.push(
-			diagnostic(
+			ReferentialDiagnostics.diagnostic(
 				matches.length === 0
 					? "referential.reference.host.unknown"
 					: "referential.reference.host.ambiguous",
@@ -155,80 +257,23 @@ export class ResolveEventReferences {
 		return undefined;
 	}
 
-	private resolveSpeaker(
+	private speakerByName(
 		speakers: readonly Speaker[],
-		reference: string,
-		index: number,
+		parsed: ParsedReference,
+		path: string,
 		diagnostics: ReferentialDiagnostic[],
-	): Speaker | undefined {
-		const path = `speakerReferences[${index}]`;
-		const parsed = this.parseReference(reference);
-		if (!parsed) {
-			diagnostics.push(
-				diagnostic(
-					"referential.reference.speaker.invalid",
-					"error",
-					path,
-					"Speaker reference must be a display name or use Display name [speaker-0001] syntax.",
-				),
-			);
-			return undefined;
-		}
-
-		if (parsed.stableId !== undefined) {
-			const id = asSpeakerId(parsed.stableId);
-			if (!id) {
-				diagnostics.push(
-					diagnostic(
-						"referential.reference.speaker.invalid",
-						"error",
-						path,
-						"Explicit speaker reference contains an invalid stable identifier.",
-					),
-				);
-				return undefined;
-			}
-
-			const speaker = speakers.find((candidate) => candidate.id === id);
-			if (!speaker) {
-				diagnostics.push(
-					diagnostic(
-						"referential.reference.speaker.unknown",
-						"error",
-						path,
-						"Explicit speaker stable identifier is not present in the catalog.",
-					),
-				);
-				return undefined;
-			}
-
-			if (
-				displayNameKey(speaker.displayName) !==
-				displayNameKey(parsed.displayName)
-			) {
-				diagnostics.push(
-					diagnostic(
-						"referential.reference.speaker.display-name-mismatch",
-						"warning",
-						path,
-						"Speaker display name is stale; the stable identifier remains authoritative.",
-					),
-				);
-			}
-			return speaker;
-		}
-
+	) {
 		const matches = speakers.filter(
 			(speaker) =>
-				displayNameKey(speaker.displayName) ===
-				displayNameKey(parsed.displayName),
+				ReferentialCatalogOperations.displayNameKey(speaker.displayName) ===
+				ReferentialCatalogOperations.displayNameKey(parsed.displayName),
 		);
 		if (matches.length === 1) {
 			return matches[0];
 		}
 
 		diagnostics.push(
-			diagnostic(
+			ReferentialDiagnostics.diagnostic(
 				matches.length === 0
 					? "referential.reference.speaker.unknown"
 					: "referential.reference.speaker.ambiguous",
@@ -240,29 +285,5 @@ export class ResolveEventReferences {
 			),
 		);
 		return undefined;
-	}
-
-	private parseReference(reference: string): ParsedReference | undefined {
-		if (typeof reference !== "string") {
-			return undefined;
-		}
-
-		const normalized = normalizeDisplayName(reference);
-		if (!normalized) {
-			return undefined;
-		}
-
-		const explicit = normalized.match(EXPLICIT_REFERENCE_PATTERN);
-		if (!explicit) {
-			return { displayName: normalized };
-		}
-
-		const displayName = normalizeDisplayName(explicit[1]);
-		const stableId = explicit[2].trim();
-		if (!displayName || !stableId) {
-			return undefined;
-		}
-
-		return { displayName, stableId };
 	}
 }

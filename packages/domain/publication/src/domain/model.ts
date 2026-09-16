@@ -44,27 +44,29 @@ export type PublicationEvaluation = Readonly<{
 	patch: PublicationPatch;
 }>;
 
-export function applyPublicationPatch(
-	references: PublicationReferences,
-	patch: PublicationPatch,
-): PublicationReferences {
-	const result: {
-		meetup?: string;
-		community?: string;
-		assets?: string;
-	} = { ...references };
-	for (const operation of patch.operations) {
-		switch (operation.path) {
-			case "meetup":
-				result.meetup = operation.value;
-				break;
-			case "community":
-				result.community = operation.value;
-				break;
-			case "assets":
-				result.assets = operation.value;
-				break;
+export class PublicationDiagnostics {
+	static applyPublicationPatch(
+		references: PublicationReferences,
+		patch: PublicationPatch,
+	): PublicationReferences {
+		const result: {
+			meetup?: string;
+			community?: string;
+			assets?: string;
+		} = { ...references };
+		for (const operation of patch.operations) {
+			switch (operation.path) {
+				case "meetup":
+					result.meetup = operation.value;
+					break;
+				case "community":
+					result.community = operation.value;
+					break;
+				case "assets":
+					result.assets = operation.value;
+					break;
+			}
 		}
+		return result;
 	}
-	return result;
 }

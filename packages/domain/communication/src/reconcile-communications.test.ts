@@ -1,19 +1,25 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	type CommunicationClock,
-	type DeliveryLedger,
-	type DeliveryLedgerEntry,
-	type MailGateway,
-	type NotificationGateway,
-	PlanCommunications,
-	ReconcileCommunications,
-	type ReconcileCommunicationsInput,
-} from "./index.js";
+import type {
+	DeliveryLedgerEntry,
+	ReconcileCommunicationsInput,
+} from "./model.js";
+import { PlanCommunications } from "./plan-communications.js";
+import type {
+	CommunicationClock,
+	DeliveryLedger,
+	MailGateway,
+	NotificationGateway,
+} from "./ports.js";
+import { ReconcileCommunications } from "./reconcile-communications.js";
 
 const fixedInstant = new Date("2026-06-01T10:00:00.000Z");
+
 let clock: CommunicationClock;
+
 let ledger: DeliveryLedger;
+
 let mailGateway: MailGateway;
+
 let notificationGateway: NotificationGateway;
 
 beforeEach(() => {
@@ -43,39 +49,70 @@ beforeEach(() => {
 });
 
 describe("ReconcileCommunications", () => {
-	it("fails closed when the clock throws or returns an invalid instant", async () => {
+	it("fails closed when the clock throws", async () => {
+		// Arrange
 		vi.mocked(clock.now).mockImplementationOnce(() => {
 			throw new Error("clock failed with private context");
 		});
-		const thrownClock = await reconciler().execute(input());
 
+		// Act
+		const result = await reconciler().execute(input());
+
+		// Assert
+		expect(result).toEqual({
+			mode: "dispatch",
+			intentIds: [],
+			counts: {
+				planned: 0,
+				due: 0,
+				alreadyRecorded: 0,
+				reserved: 0,
+				dispatched: 0,
+				accepted: 0,
+				uncertain: 0,
+				rejected: 0,
+				deferred: 0,
+			},
+			diagnostics: [{ code: "invalid-clock", severity: "error" }],
+		});
+		expect(ledger.find).not.toHaveBeenCalled();
+	});
+
+	it("fails closed when the clock returns an invalid instant", async () => {
+		// Arrange
 		vi.mocked(clock.now).mockReturnValueOnce(new Date("invalid"));
-		const invalidClock = await reconciler().execute(input());
 
-		for (const result of [thrownClock, invalidClock]) {
-			expect(result).toEqual({
-				mode: "dispatch",
-				intentIds: [],
-				counts: {
-					planned: 0,
-					due: 0,
-					alreadyRecorded: 0,
-					reserved: 0,
-					dispatched: 0,
-					accepted: 0,
-					uncertain: 0,
-					rejected: 0,
-					deferred: 0,
-				},
-				diagnostics: [{ code: "invalid-clock", severity: "error" }],
-			});
-		}
+		// Act
+		const result = await reconciler().execute(input());
+
+		// Assert
+		expect(result).toEqual({
+			mode: "dispatch",
+			intentIds: [],
+			counts: {
+				planned: 0,
+				due: 0,
+				alreadyRecorded: 0,
+				reserved: 0,
+				dispatched: 0,
+				accepted: 0,
+				uncertain: 0,
+				rejected: 0,
+				deferred: 0,
+			},
+			diagnostics: [{ code: "invalid-clock", severity: "error" }],
+		});
 		expect(ledger.find).not.toHaveBeenCalled();
 	});
 
 	it("checks the plan and ledger without reserving or dispatching", async () => {
+		// Arrange
+		// No additional setup is needed.
+
+		// Act
 		const result = await reconciler().execute(input({ mode: "check" }));
 
+		// Assert
 		expect(result.counts).toEqual({
 			planned: 1,
 			due: 1,
@@ -94,12 +131,17 @@ describe("ReconcileCommunications", () => {
 	});
 
 	it("keeps unavailable gateways in the business plan without reserving", async () => {
+		// Arrange
+		// No additional setup is needed.
+
+		// Act
 		const result = await reconciler().execute(
 			input({
 				dispatchCapabilities: { mail: false, notification: true },
 			}),
 		);
 
+		// Assert
 		expect(result.counts).toMatchObject({
 			planned: 1,
 			due: 1,
@@ -112,6 +154,7 @@ describe("ReconcileCommunications", () => {
 	});
 
 	it("reserves pending before dispatch and records an acknowledgement as accepted", async () => {
+		// Arrange
 		const calls: string[] = [];
 		vi.mocked(ledger.find).mockImplementation(async () => {
 			calls.push("find");
@@ -137,8 +180,10 @@ describe("ReconcileCommunications", () => {
 			calls.push("mark-accepted");
 		});
 
+		// Act
 		const result = await reconciler().execute(input());
 
+		// Assert
 		expect(calls).toEqual([
 			"find",
 			"reserve-pending",
@@ -172,37 +217,41 @@ describe("ReconcileCommunications", () => {
 		);
 	});
 
-	it.each([
-		"pending",
-		"uncertain",
-		"accepted",
-		"rejected",
-	] as const)("never automatically retries an existing %s delivery", async (status) => {
-		vi.mocked(ledger.find).mockResolvedValue(existingEntry(status));
+	it.each(["pending", "uncertain", "accepted", "rejected"] as const)(
+		"never automatically retries an existing %s delivery",
+		async (status) => {
+			// Arrange
+			vi.mocked(ledger.find).mockResolvedValue(existingEntry(status));
 
-		const result = await reconciler().execute(input());
+			// Act
+			const result = await reconciler().execute(input());
 
-		expect(result.counts.alreadyRecorded).toBe(1);
-		expect(result.counts.reserved).toBe(0);
-		expect(result.counts.dispatched).toBe(0);
-		expect(result.diagnostics).toContainEqual(
-			expect.objectContaining({
-				code: "delivery-already-recorded",
-				deliveryStatus: status,
-			}),
-		);
-		expect(ledger.reservePending).not.toHaveBeenCalled();
-		expect(mailGateway.dispatch).not.toHaveBeenCalled();
-	});
+			// Assert
+			expect(result.counts.alreadyRecorded).toBe(1);
+			expect(result.counts.reserved).toBe(0);
+			expect(result.counts.dispatched).toBe(0);
+			expect(result.diagnostics).toContainEqual(
+				expect.objectContaining({
+					code: "delivery-already-recorded",
+					deliveryStatus: status,
+				}),
+			);
+			expect(ledger.reservePending).not.toHaveBeenCalled();
+			expect(mailGateway.dispatch).not.toHaveBeenCalled();
+		},
+	);
 
 	it("honors an atomic reservation lost to a concurrent reconciler", async () => {
+		// Arrange
 		vi.mocked(ledger.reservePending).mockResolvedValue({
 			reserved: false,
 			entry: existingEntry("pending"),
 		});
 
+		// Act
 		const result = await reconciler().execute(input());
 
+		// Assert
 		expect(result.counts).toMatchObject({
 			due: 1,
 			alreadyRecorded: 1,
@@ -213,13 +262,16 @@ describe("ReconcileCommunications", () => {
 	});
 
 	it("records an explicitly ambiguous gateway result as uncertain", async () => {
+		// Arrange
 		vi.mocked(mailGateway.dispatch).mockResolvedValue({
 			outcome: "uncertain",
 			diagnosticCode: "provider-timeout",
 		});
 
+		// Act
 		const result = await reconciler().execute(input());
 
+		// Assert
 		expect(result.counts).toMatchObject({ dispatched: 1, uncertain: 1 });
 		expect(ledger.markUncertain).toHaveBeenCalledWith(
 			result.intentIds[0],
@@ -237,13 +289,16 @@ describe("ReconcileCommunications", () => {
 	});
 
 	it("records a definitive gateway rejection and surfaces an error", async () => {
+		// Arrange
 		vi.mocked(mailGateway.dispatch).mockResolvedValue({
 			outcome: "rejected",
 			diagnosticCode: "authentication-failed",
 		});
 
+		// Act
 		const result = await reconciler().execute(input());
 
+		// Assert
 		expect(result.counts).toMatchObject({
 			dispatched: 1,
 			rejected: 1,
@@ -264,13 +319,16 @@ describe("ReconcileCommunications", () => {
 	});
 
 	it("releases a definitively deferred reservation for a safe retry", async () => {
+		// Arrange
 		vi.mocked(mailGateway.dispatch).mockResolvedValue({
 			outcome: "deferred",
 			diagnosticCode: "rate-limited",
 		});
 
+		// Act
 		const result = await reconciler().execute(input());
 
+		// Assert
 		expect(result.counts).toMatchObject({
 			dispatched: 1,
 			deferred: 1,
@@ -287,13 +345,16 @@ describe("ReconcileCommunications", () => {
 	});
 
 	it("drops gateway detail codes outside the domain allowlist", async () => {
+		// Arrange
 		vi.mocked(mailGateway.dispatch).mockResolvedValue({
 			outcome: "uncertain",
 			diagnosticCode: "private-recipient-name" as never,
 		});
 
+		// Act
 		const result = await reconciler().execute(input());
 
+		// Assert
 		expect(result.diagnostics).toContainEqual(
 			expect.objectContaining({
 				code: "gateway-delivery-uncertain",
@@ -312,13 +373,16 @@ describe("ReconcileCommunications", () => {
 	});
 
 	it("treats a thrown gateway error as ambiguous without exposing it", async () => {
+		// Arrange
 		vi.mocked(mailGateway.dispatch).mockRejectedValue(
 			new Error("SMTP failed for private-person@example.test"),
 		);
 
+		// Act
 		const result = await reconciler().execute(input());
 		const serializedResult = JSON.stringify(result);
 
+		// Assert
 		expect(result.counts).toMatchObject({ dispatched: 1, uncertain: 1 });
 		expect(ledger.markUncertain).toHaveBeenCalledWith(
 			result.intentIds[0],
@@ -336,6 +400,10 @@ describe("ReconcileCommunications", () => {
 	});
 
 	it("dispatches reminders through the notification gateway", async () => {
+		// Arrange
+		// No additional setup is needed.
+
+		// Act
 		const result = await reconciler().execute(
 			input({
 				readiness: "not-ready",
@@ -351,7 +419,10 @@ describe("ReconcileCommunications", () => {
 				],
 			}),
 		);
+		const actual = JSON.stringify(result);
+		const actual1 = JSON.stringify(result);
 
+		// Assert
 		expect(result.counts.accepted).toBe(1);
 		expect(notificationGateway.dispatch).toHaveBeenCalledWith(
 			expect.objectContaining({
@@ -360,38 +431,53 @@ describe("ReconcileCommunications", () => {
 			}),
 		);
 		expect(mailGateway.dispatch).not.toHaveBeenCalled();
-		expect(JSON.stringify(result)).not.toContain("private-slack-channel");
-		expect(JSON.stringify(result)).not.toContain("Meetup private details");
+		expect(actual).not.toContain("private-slack-channel");
+		expect(actual1).not.toContain("Meetup private details");
 	});
 
-	it("does not dispatch when the ledger cannot be read or reserved", async () => {
+	it("does not dispatch when the ledger cannot be read", async () => {
+		// Arrange
 		vi.mocked(ledger.find).mockRejectedValueOnce(new Error("private data"));
+
+		// Act
 		const readFailure = await reconciler().execute(input());
+
+		// Assert
 		expect(readFailure.diagnostics).toContainEqual(
 			expect.objectContaining({ code: "ledger-read-failed" }),
 		);
+		expect(mailGateway.dispatch).not.toHaveBeenCalled();
+		expect(JSON.stringify(readFailure)).not.toContain("private data");
+	});
 
+	it("does not dispatch when the ledger cannot reserve delivery", async () => {
+		// Arrange
 		vi.mocked(ledger.find).mockResolvedValue(undefined);
 		vi.mocked(ledger.reservePending).mockRejectedValueOnce(
 			new Error("private data"),
 		);
+
+		// Act
 		const reservationFailure = await reconciler().execute(input());
+
+		// Assert
 		expect(reservationFailure.diagnostics).toContainEqual(
 			expect.objectContaining({ code: "ledger-reservation-failed" }),
 		);
 		expect(mailGateway.dispatch).not.toHaveBeenCalled();
-		expect(JSON.stringify([readFailure, reservationFailure])).not.toContain(
-			"private data",
-		);
+		expect(JSON.stringify(reservationFailure)).not.toContain("private data");
 	});
 
 	it("keeps an accepted delivery protected by pending when status persistence fails", async () => {
+		// Arrange
 		vi.mocked(ledger.markAccepted).mockRejectedValue(
 			new Error("storage unavailable"),
 		);
 
+		// Act
 		const result = await reconciler().execute(input());
 
+		// Assert
 		expect(result.counts.accepted).toBe(1);
 		expect(result.diagnostics).toContainEqual(
 			expect.objectContaining({ code: "ledger-status-write-failed" }),
@@ -399,6 +485,7 @@ describe("ReconcileCommunications", () => {
 	});
 
 	it("keeps an uncertain delivery protected by pending when status persistence fails", async () => {
+		// Arrange
 		vi.mocked(mailGateway.dispatch).mockResolvedValue({
 			outcome: "uncertain",
 			diagnosticCode: "connection-reset",
@@ -407,8 +494,10 @@ describe("ReconcileCommunications", () => {
 			new Error("storage unavailable"),
 		);
 
+		// Act
 		const result = await reconciler().execute(input());
 
+		// Assert
 		expect(result.counts.uncertain).toBe(1);
 		expect(result.diagnostics).toContainEqual(
 			expect.objectContaining({ code: "ledger-status-write-failed" }),
@@ -416,18 +505,26 @@ describe("ReconcileCommunications", () => {
 	});
 
 	it("does not trust a ledger-provided intent identifier in redacted output", async () => {
+		// Arrange
 		vi.mocked(ledger.find).mockResolvedValue({
 			...existingEntry("accepted"),
 			intentId: "private-person@example.test",
 		});
 
+		// Act
 		const result = await reconciler().execute(input());
+		const actual = JSON.stringify(result);
 
-		expect(JSON.stringify(result)).not.toContain("private-person@example.test");
+		// Assert
+		expect(actual).not.toContain("private-person@example.test");
 		expect(result.diagnostics[0]?.intentId).toBe(result.intentIds[0]);
 	});
 
 	it("returns only redacted identifiers, counts, and diagnostics", async () => {
+		// Arrange
+		// No additional setup is needed.
+
+		// Act
 		const result = await reconciler().execute(
 			input({
 				mailRecipients: [
@@ -444,13 +541,10 @@ describe("ReconcileCommunications", () => {
 			}),
 		);
 		const serialized = JSON.stringify(result);
+		const actual = Object.keys(result).sort();
 
-		expect(Object.keys(result).sort()).toEqual([
-			"counts",
-			"diagnostics",
-			"intentIds",
-			"mode",
-		]);
+		// Assert
+		expect(actual).toEqual(["counts", "diagnostics", "intentIds", "mode"]);
 		expect(serialized).not.toContain("private-host@example.test");
 		expect(serialized).not.toContain("Private Host");
 		expect(serialized).not.toContain("Private street");

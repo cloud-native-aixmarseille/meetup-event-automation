@@ -16,6 +16,7 @@ export default defineConfig({
 		coverage: {
 			exclude: [
 				"**/*.{spec,test}.ts",
+				"**/testing/**",
 				"packages/runtime/github-actions/src/entrypoints/**/*.ts",
 			],
 			include: ["src/**/*.ts", "packages/**/*.ts"],
@@ -31,7 +32,8 @@ export default defineConfig({
 		globals: true,
 		include: [
 			"src/**/*.{spec,test}.ts",
-			"packages/**/*.{spec,test}.ts",
+			"packages/**/src/**/*.test.ts",
+			"scripts/**/*.test.ts",
 			"tests/**/*.spec.ts",
 		],
 	},

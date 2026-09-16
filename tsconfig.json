@@ -13,5 +13,10 @@
 		"./src/**/*.test.ts",
 		"./coverage"
 	],
-	"include": ["./src/**/*", "./packages/**/*.ts", "./tests/**/*.ts"]
+	"include": [
+		"./src/**/*",
+		"./packages/**/*.ts",
+		"./tests/**/*.ts",
+		"./scripts/**/*.test.ts"
+	]
 }

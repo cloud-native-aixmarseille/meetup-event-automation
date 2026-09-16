@@ -32,9 +32,9 @@ var __export = (target, all) => {
 };
 var __copyProps = (to, from, except, desc) => {
   if (from && typeof from === "object" || typeof from === "function") {
-    for (let key2 of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key2) && key2 !== except)
-        __defProp(to, key2, { get: () => from[key2], enumerable: !(desc = __getOwnPropDesc(from, key2)) || desc.enumerable });
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
   }
   return to;
 };
@@ -818,9 +818,9 @@ var require_constants = __commonJS({
       "X-XSS-Protection"
     ];
     for (let i2 = 0; i2 < wellknownHeaderNames.length; ++i2) {
-      const key2 = wellknownHeaderNames[i2];
-      const lowerCasedKey = key2.toLowerCase();
-      headerNameLowerCasedRecord[key2] = headerNameLowerCasedRecord[lowerCasedKey] = lowerCasedKey;
+      const key = wellknownHeaderNames[i2];
+      const lowerCasedKey = key.toLowerCase();
+      headerNameLowerCasedRecord[key] = headerNameLowerCasedRecord[lowerCasedKey] = lowerCasedKey;
     }
     Object.setPrototypeOf(headerNameLowerCasedRecord, null);
     module.exports = {
@@ -854,16 +854,16 @@ var require_tree = __commonJS({
        * @param {any} value
        * @param {number} index
        */
-      constructor(key2, value, index) {
-        if (index === void 0 || index >= key2.length) {
+      constructor(key, value, index) {
+        if (index === void 0 || index >= key.length) {
           throw new TypeError("Unreachable");
         }
-        const code = this.code = key2.charCodeAt(index);
+        const code = this.code = key.charCodeAt(index);
         if (code > 127) {
           throw new TypeError("key must be ascii string");
         }
-        if (key2.length !== ++index) {
-          this.middle = new _TstNode(key2, value, index);
+        if (key.length !== ++index) {
+          this.middle = new _TstNode(key, value, index);
         } else {
           this.value = value;
         }
@@ -872,15 +872,15 @@ var require_tree = __commonJS({
        * @param {string} key
        * @param {any} value
        */
-      add(key2, value) {
-        const length = key2.length;
+      add(key, value) {
+        const length = key.length;
         if (length === 0) {
           throw new TypeError("Unreachable");
         }
         let index = 0;
         let node = this;
         while (true) {
-          const code = key2.charCodeAt(index);
+          const code = key.charCodeAt(index);
           if (code > 127) {
             throw new TypeError("key must be ascii string");
           }
@@ -891,20 +891,20 @@ var require_tree = __commonJS({
             } else if (node.middle !== null) {
               node = node.middle;
             } else {
-              node.middle = new _TstNode(key2, value, index);
+              node.middle = new _TstNode(key, value, index);
               break;
             }
           } else if (node.code < code) {
             if (node.left !== null) {
               node = node.left;
             } else {
-              node.left = new _TstNode(key2, value, index);
+              node.left = new _TstNode(key, value, index);
               break;
             }
           } else if (node.right !== null) {
             node = node.right;
           } else {
-            node.right = new _TstNode(key2, value, index);
+            node.right = new _TstNode(key, value, index);
             break;
           }
         }
@@ -913,12 +913,12 @@ var require_tree = __commonJS({
        * @param {Uint8Array} key
        * @return {TstNode | null}
        */
-      search(key2) {
-        const keylength = key2.length;
+      search(key) {
+        const keylength = key.length;
         let index = 0;
         let node = this;
         while (node !== null && index < keylength) {
-          let code = key2[index];
+          let code = key[index];
           if (code <= 90 && code >= 65) {
             code |= 32;
           }
@@ -943,25 +943,25 @@ var require_tree = __commonJS({
        * @param {string} key
        * @param {any} value
        * */
-      insert(key2, value) {
+      insert(key, value) {
         if (this.node === null) {
-          this.node = new TstNode(key2, value, 0);
+          this.node = new TstNode(key, value, 0);
         } else {
-          this.node.add(key2, value);
+          this.node.add(key, value);
         }
       }
       /**
        * @param {Uint8Array} key
        * @return {any}
        */
-      lookup(key2) {
-        return this.node?.search(key2)?.value ?? null;
+      lookup(key) {
+        return this.node?.search(key)?.value ?? null;
       }
     };
     var tree = new TernarySearchTree();
     for (let i2 = 0; i2 < wellknownHeaderNames.length; ++i2) {
-      const key2 = headerNameLowerCasedRecord[wellknownHeaderNames[i2]];
-      tree.insert(key2, key2);
+      const key = headerNameLowerCasedRecord[wellknownHeaderNames[i2]];
+      tree.insert(key, key);
     }
     module.exports = {
       TernarySearchTree,
@@ -1185,20 +1185,20 @@ var require_util = __commonJS({
     function parseHeaders(headers, obj) {
       if (obj === void 0) obj = {};
       for (let i2 = 0; i2 < headers.length; i2 += 2) {
-        const key2 = headerNameToString(headers[i2]);
-        let val = obj[key2];
+        const key = headerNameToString(headers[i2]);
+        let val = obj[key];
         if (val) {
           if (typeof val === "string") {
             val = [val];
-            obj[key2] = val;
+            obj[key] = val;
           }
           val.push(headers[i2 + 1].toString("utf8"));
         } else {
           const headersValue = headers[i2 + 1];
           if (typeof headersValue === "string") {
-            obj[key2] = headersValue;
+            obj[key] = headersValue;
           } else {
-            obj[key2] = Array.isArray(headersValue) ? headersValue.map((x2) => x2.toString("utf8")) : headersValue.toString("utf8");
+            obj[key] = Array.isArray(headersValue) ? headersValue.map((x2) => x2.toString("utf8")) : headersValue.toString("utf8");
           }
         }
       }
@@ -1212,21 +1212,21 @@ var require_util = __commonJS({
       const ret = new Array(len);
       let hasContentLength = false;
       let contentDispositionIdx = -1;
-      let key2;
+      let key;
       let val;
       let kLen = 0;
       for (let n = 0; n < headers.length; n += 2) {
-        key2 = headers[n];
+        key = headers[n];
         val = headers[n + 1];
-        typeof key2 !== "string" && (key2 = key2.toString());
+        typeof key !== "string" && (key = key.toString());
         typeof val !== "string" && (val = val.toString("utf8"));
-        kLen = key2.length;
-        if (kLen === 14 && key2[7] === "-" && (key2 === "content-length" || key2.toLowerCase() === "content-length")) {
+        kLen = key.length;
+        if (kLen === 14 && key[7] === "-" && (key === "content-length" || key.toLowerCase() === "content-length")) {
           hasContentLength = true;
-        } else if (kLen === 19 && key2[7] === "-" && (key2 === "content-disposition" || key2.toLowerCase() === "content-disposition")) {
+        } else if (kLen === 19 && key[7] === "-" && (key === "content-disposition" || key.toLowerCase() === "content-disposition")) {
           contentDispositionIdx = n + 1;
         }
-        ret[n] = key2;
+        ret[n] = key;
         ret[n + 1] = val;
       }
       if (hasContentLength && contentDispositionIdx !== -1) {
@@ -1911,20 +1911,20 @@ var require_request = __commonJS({
           this.endHandler = null;
         }
       }
-      addHeader(key2, value) {
-        processHeader(this, key2, value);
+      addHeader(key, value) {
+        processHeader(this, key, value);
         return this;
       }
     };
-    function processHeader(request2, key2, val) {
+    function processHeader(request2, key, val) {
       if (val && (typeof val === "object" && !Array.isArray(val))) {
-        throw new InvalidArgumentError(`invalid ${key2} header`);
+        throw new InvalidArgumentError(`invalid ${key} header`);
       } else if (val === void 0) {
         return;
       }
-      let headerName = headerNameLowerCasedRecord[key2];
+      let headerName = headerNameLowerCasedRecord[key];
       if (headerName === void 0) {
-        headerName = key2.toLowerCase();
+        headerName = key.toLowerCase();
         if (headerNameLowerCasedRecord[headerName] === void 0 && !isValidHTTPToken(headerName)) {
           throw new InvalidArgumentError("invalid header key");
         }
@@ -1934,17 +1934,17 @@ var require_request = __commonJS({
         for (let i2 = 0; i2 < val.length; i2++) {
           if (typeof val[i2] === "string") {
             if (!isValidHeaderValue(val[i2])) {
-              throw new InvalidArgumentError(`invalid ${key2} header`);
+              throw new InvalidArgumentError(`invalid ${key} header`);
             }
             arr.push(val[i2]);
           } else if (val[i2] === null) {
             arr.push("");
           } else if (typeof val[i2] === "object") {
-            throw new InvalidArgumentError(`invalid ${key2} header`);
+            throw new InvalidArgumentError(`invalid ${key} header`);
           } else {
             const str = `${val[i2]}`;
             if (!isValidHeaderValue(str)) {
-              throw new InvalidArgumentError(`invalid ${key2} header`);
+              throw new InvalidArgumentError(`invalid ${key} header`);
             }
             arr.push(str);
           }
@@ -1952,14 +1952,14 @@ var require_request = __commonJS({
         val = arr;
       } else if (typeof val === "string") {
         if (!isValidHeaderValue(val)) {
-          throw new InvalidArgumentError(`invalid ${key2} header`);
+          throw new InvalidArgumentError(`invalid ${key} header`);
         }
       } else if (val === null) {
         val = "";
       } else {
         val = `${val}`;
         if (!isValidHeaderValue(val)) {
-          throw new InvalidArgumentError(`invalid ${key2} header`);
+          throw new InvalidArgumentError(`invalid ${key} header`);
         }
       }
       if (headerName === "host") {
@@ -1980,7 +1980,7 @@ var require_request = __commonJS({
         }
       } else if (request2.contentType === null && headerName === "content-type") {
         request2.contentType = val;
-        request2.headers.push(key2, val);
+        request2.headers.push(key, val);
       } else if (headerName === "transfer-encoding" || headerName === "keep-alive" || headerName === "upgrade") {
         throw new InvalidArgumentError(`invalid ${headerName} header`);
       } else if (headerName === "connection") {
@@ -1994,7 +1994,7 @@ var require_request = __commonJS({
       } else if (headerName === "expect") {
         throw new NotSupportedError("expect header not supported");
       } else {
-        request2.headers.push(key2, val);
+        request2.headers.push(key, val);
       }
     }
     module.exports = Request2;
@@ -2474,13 +2474,13 @@ var require_connect = __commonJS({
         constructor(maxCachedSessions) {
           this._maxCachedSessions = maxCachedSessions;
           this._sessionCache = /* @__PURE__ */ new Map();
-          this._sessionRegistry = new global.FinalizationRegistry((key2) => {
+          this._sessionRegistry = new global.FinalizationRegistry((key) => {
             if (this._sessionCache.size < this._maxCachedSessions) {
               return;
             }
-            const ref = this._sessionCache.get(key2);
+            const ref = this._sessionCache.get(key);
             if (ref !== void 0 && ref.deref() === void 0) {
-              this._sessionCache.delete(key2);
+              this._sessionCache.delete(key);
             }
           });
         }
@@ -2644,10 +2644,10 @@ var require_utils = __commonJS({
     exports.enumToMap = void 0;
     function enumToMap(obj) {
       const res = {};
-      Object.keys(obj).forEach((key2) => {
-        const value = obj[key2];
+      Object.keys(obj).forEach((key) => {
+        const value = obj[key];
         if (typeof value === "number") {
-          res[key2] = value;
+          res[key] = value;
         }
       });
       return res;
@@ -2824,9 +2824,9 @@ var require_constants2 = __commonJS({
     ];
     exports.METHOD_MAP = utils_1.enumToMap(METHODS);
     exports.H_METHOD_MAP = {};
-    Object.keys(exports.METHOD_MAP).forEach((key2) => {
-      if (/^H/.test(key2)) {
-        exports.H_METHOD_MAP[key2] = exports.METHOD_MAP[key2];
+    Object.keys(exports.METHOD_MAP).forEach((key) => {
+      if (/^H/.test(key)) {
+        exports.H_METHOD_MAP[key] = exports.METHOD_MAP[key];
       }
     });
     var FINISH;
@@ -3797,19 +3797,19 @@ var require_webidl = __commonJS({
         const result = {};
         if (!types3.isProxy(O)) {
           const keys2 = [...Object.getOwnPropertyNames(O), ...Object.getOwnPropertySymbols(O)];
-          for (const key2 of keys2) {
-            const typedKey = keyConverter(key2, prefix, argument);
-            const typedValue = valueConverter(O[key2], prefix, argument);
+          for (const key of keys2) {
+            const typedKey = keyConverter(key, prefix, argument);
+            const typedValue = valueConverter(O[key], prefix, argument);
             result[typedKey] = typedValue;
           }
           return result;
         }
         const keys = Reflect.ownKeys(O);
-        for (const key2 of keys) {
-          const desc = Reflect.getOwnPropertyDescriptor(O, key2);
+        for (const key of keys) {
+          const desc = Reflect.getOwnPropertyDescriptor(O, key);
           if (desc?.enumerable) {
-            const typedKey = keyConverter(key2, prefix, argument);
-            const typedValue = valueConverter(O[key2], prefix, argument);
+            const typedKey = keyConverter(key, prefix, argument);
+            const typedValue = valueConverter(O[key], prefix, argument);
             result[typedKey] = typedValue;
           }
         }
@@ -3840,29 +3840,29 @@ var require_webidl = __commonJS({
           });
         }
         for (const options of converters) {
-          const { key: key2, defaultValue, required, converter } = options;
+          const { key, defaultValue, required, converter } = options;
           if (required === true) {
-            if (!Object.hasOwn(dictionary, key2)) {
+            if (!Object.hasOwn(dictionary, key)) {
               throw webidl.errors.exception({
                 header: prefix,
-                message: `Missing required key "${key2}".`
+                message: `Missing required key "${key}".`
               });
             }
           }
-          let value = dictionary[key2];
+          let value = dictionary[key];
           const hasDefault = Object.hasOwn(options, "defaultValue");
           if (hasDefault && value !== null) {
             value ??= defaultValue();
           }
           if (required || hasDefault || value !== void 0) {
-            value = converter(value, prefix, `${argument}.${key2}`);
+            value = converter(value, prefix, `${argument}.${key}`);
             if (options.allowedValues && !options.allowedValues.includes(value)) {
               throw webidl.errors.exception({
                 header: prefix,
                 message: `${value} is not an accepted type. Expected one of ${options.allowedValues.join(", ")}.`
               });
             }
-            dict[key2] = value;
+            dict[key] = value;
           }
         }
         return dict;
@@ -4477,18 +4477,18 @@ var require_util2 = __commonJS({
               done: true
             };
           }
-          const { [keyIndex]: key2, [valueIndex]: value } = values[index];
+          const { [keyIndex]: key, [valueIndex]: value } = values[index];
           this.#index = index + 1;
           let result;
           switch (this.#kind) {
             case "key":
-              result = key2;
+              result = key;
               break;
             case "value":
               result = value;
               break;
             case "key+value":
-              result = [key2, value];
+              result = [key, value];
               break;
           }
           return {
@@ -4554,8 +4554,8 @@ var require_util2 = __commonJS({
                 `Failed to execute 'forEach' on '${name}': parameter 1 is not of type 'Function'.`
               );
             }
-            for (const { 0: key2, 1: value } of makeIterator(this, "key+value")) {
-              callbackfn.call(thisArg, value, key2, this);
+            for (const { 0: key, 1: value } of makeIterator(this, "key+value")) {
+              callbackfn.call(thisArg, value, key, this);
             }
           }
         }
@@ -5998,15 +5998,15 @@ var require_client_h1 = __commonJS({
         } else {
           this.headers[len - 1] = Buffer.concat([this.headers[len - 1], buf]);
         }
-        const key2 = this.headers[len - 2];
-        if (key2.length === 10) {
-          const headerName = util.bufferToLowerCasedHeaderName(key2);
+        const key = this.headers[len - 2];
+        if (key.length === 10) {
+          const headerName = util.bufferToLowerCasedHeaderName(key);
           if (headerName === "keep-alive") {
             this.keepAlive += buf.toString();
           } else if (headerName === "connection") {
             this.connection += buf.toString();
           }
-        } else if (key2.length === 14 && util.bufferToLowerCasedHeaderName(key2) === "content-length") {
+        } else if (key.length === 14 && util.bufferToLowerCasedHeaderName(key) === "content-length") {
           this.contentLength += buf.toString();
         }
         this.trackHeader(buf.length);
@@ -6499,15 +6499,15 @@ upgrade: ${upgrade}\r
       }
       if (Array.isArray(headers)) {
         for (let n = 0; n < headers.length; n += 2) {
-          const key2 = headers[n + 0];
+          const key = headers[n + 0];
           const val = headers[n + 1];
           if (Array.isArray(val)) {
             for (let i2 = 0; i2 < val.length; i2++) {
-              header += `${key2}: ${val[i2]}\r
+              header += `${key}: ${val[i2]}\r
 `;
             }
           } else {
-            header += `${key2}: ${val}\r
+            header += `${key}: ${val}\r
 `;
           }
         }
@@ -7014,18 +7014,18 @@ var require_client_h2 = __commonJS({
       }
       const headers = {};
       for (let n = 0; n < reqHeaders.length; n += 2) {
-        const key2 = reqHeaders[n + 0];
+        const key = reqHeaders[n + 0];
         const val = reqHeaders[n + 1];
         if (Array.isArray(val)) {
           for (let i2 = 0; i2 < val.length; i2++) {
-            if (headers[key2]) {
-              headers[key2] += `,${val[i2]}`;
+            if (headers[key]) {
+              headers[key] += `,${val[i2]}`;
             } else {
-              headers[key2] = val[i2];
+              headers[key] = val[i2];
             }
           }
         } else {
-          headers[key2] = val;
+          headers[key] = val;
         }
       }
       let stream;
@@ -7490,9 +7490,9 @@ var require_redirect_handler = __commonJS({
           }
         }
       } else if (headers && typeof headers === "object") {
-        for (const key2 of Object.keys(headers)) {
-          if (!shouldRemoveHeader(key2, removeContent, unknownOrigin)) {
-            ret.push(key2, headers[key2]);
+        for (const key of Object.keys(headers)) {
+          if (!shouldRemoveHeader(key, removeContent, unknownOrigin)) {
+            ret.push(key, headers[key]);
           }
         }
       } else {
@@ -8569,16 +8569,16 @@ var require_agent = __commonJS({
         return ret;
       }
       [kDispatch](opts, handler2) {
-        let key2;
+        let key;
         if (opts.origin && (typeof opts.origin === "string" || opts.origin instanceof URL)) {
-          key2 = String(opts.origin);
+          key = String(opts.origin);
         } else {
           throw new InvalidArgumentError("opts.origin must be a non-empty string or URL.");
         }
-        let dispatcher = this[kClients].get(key2);
+        let dispatcher = this[kClients].get(key);
         if (!dispatcher) {
           dispatcher = this[kFactory](opts.origin, this[kOptions]).on("drain", this[kOnDrain]).on("connect", this[kOnConnect]).on("disconnect", this[kOnDisconnect]).on("connectionError", this[kOnConnectionError]);
-          this[kClients].set(key2, dispatcher);
+          this[kClients].set(key, dispatcher);
         }
         return dispatcher.dispatch(opts, handler2);
       }
@@ -8817,7 +8817,7 @@ var require_proxy_agent = __commonJS({
       return headers;
     }
     function throwIfProxyAuthIsSent(headers) {
-      const existProxyAuth = headers && Object.keys(headers).find((key2) => key2.toLowerCase() === "proxy-authorization");
+      const existProxyAuth = headers && Object.keys(headers).find((key) => key.toLowerCase() === "proxy-authorization");
       if (existProxyAuth) {
         throw new InvalidArgumentError("Proxy-Authorization should be sent in ProxyAgent constructor");
       }
@@ -10572,18 +10572,18 @@ var require_mock_utils = __commonJS({
         })
       );
     }
-    function getHeaderByName(headers, key2) {
+    function getHeaderByName(headers, key) {
       if (Array.isArray(headers)) {
         for (let i2 = 0; i2 < headers.length; i2 += 2) {
-          if (headers[i2].toLocaleLowerCase() === key2.toLocaleLowerCase()) {
+          if (headers[i2].toLocaleLowerCase() === key.toLocaleLowerCase()) {
             return headers[i2 + 1];
           }
         }
         return void 0;
       } else if (typeof headers.get === "function") {
-        return headers.get(key2);
+        return headers.get(key);
       } else {
-        return lowerCaseEntries(headers)[key2.toLocaleLowerCase()];
+        return lowerCaseEntries(headers)[key.toLocaleLowerCase()];
       }
     }
     function buildHeadersFromArray(headers) {
@@ -10647,41 +10647,41 @@ var require_mock_utils = __commonJS({
         return data.toString();
       }
     }
-    function getMockDispatch(mockDispatches, key2) {
-      const basePath = key2.query ? buildURL(key2.path, key2.query) : key2.path;
+    function getMockDispatch(mockDispatches, key) {
+      const basePath = key.query ? buildURL(key.path, key.query) : key.path;
       const resolvedPath = typeof basePath === "string" ? safeUrl(basePath) : basePath;
       let matchedMockDispatches = mockDispatches.filter(({ consumed }) => !consumed).filter(({ path }) => matchValue(safeUrl(path), resolvedPath));
       if (matchedMockDispatches.length === 0) {
         throw new MockNotMatchedError(`Mock dispatch not matched for path '${resolvedPath}'`);
       }
-      matchedMockDispatches = matchedMockDispatches.filter(({ method }) => matchValue(method, key2.method));
+      matchedMockDispatches = matchedMockDispatches.filter(({ method }) => matchValue(method, key.method));
       if (matchedMockDispatches.length === 0) {
-        throw new MockNotMatchedError(`Mock dispatch not matched for method '${key2.method}' on path '${resolvedPath}'`);
+        throw new MockNotMatchedError(`Mock dispatch not matched for method '${key.method}' on path '${resolvedPath}'`);
       }
-      matchedMockDispatches = matchedMockDispatches.filter(({ body }) => typeof body !== "undefined" ? matchValue(body, key2.body) : true);
+      matchedMockDispatches = matchedMockDispatches.filter(({ body }) => typeof body !== "undefined" ? matchValue(body, key.body) : true);
       if (matchedMockDispatches.length === 0) {
-        throw new MockNotMatchedError(`Mock dispatch not matched for body '${key2.body}' on path '${resolvedPath}'`);
+        throw new MockNotMatchedError(`Mock dispatch not matched for body '${key.body}' on path '${resolvedPath}'`);
       }
-      matchedMockDispatches = matchedMockDispatches.filter((mockDispatch2) => matchHeaders(mockDispatch2, key2.headers));
+      matchedMockDispatches = matchedMockDispatches.filter((mockDispatch2) => matchHeaders(mockDispatch2, key.headers));
       if (matchedMockDispatches.length === 0) {
-        const headers = typeof key2.headers === "object" ? JSON.stringify(key2.headers) : key2.headers;
+        const headers = typeof key.headers === "object" ? JSON.stringify(key.headers) : key.headers;
         throw new MockNotMatchedError(`Mock dispatch not matched for headers '${headers}' on path '${resolvedPath}'`);
       }
       return matchedMockDispatches[0];
     }
-    function addMockDispatch(mockDispatches, key2, data) {
+    function addMockDispatch(mockDispatches, key, data) {
       const baseData = { timesInvoked: 0, times: 1, persist: false, consumed: false };
       const replyData = typeof data === "function" ? { callback: data } : { ...data };
-      const newMockDispatch = { ...baseData, ...key2, pending: true, data: { error: null, ...replyData } };
+      const newMockDispatch = { ...baseData, ...key, pending: true, data: { error: null, ...replyData } };
       mockDispatches.push(newMockDispatch);
       return newMockDispatch;
     }
-    function deleteMockDispatch(mockDispatches, key2) {
+    function deleteMockDispatch(mockDispatches, key) {
       const index = mockDispatches.findIndex((dispatch) => {
         if (!dispatch.consumed) {
           return false;
         }
-        return matchKey(dispatch, key2);
+        return matchKey(dispatch, key);
       });
       if (index !== -1) {
         mockDispatches.splice(index, 1);
@@ -10701,9 +10701,9 @@ var require_mock_utils = __commonJS({
       const keys = Object.keys(data);
       const result = [];
       for (let i2 = 0; i2 < keys.length; ++i2) {
-        const key2 = keys[i2];
-        const value = data[key2];
-        const name = Buffer.from(`${key2}`);
+        const key = keys[i2];
+        const value = data[key];
+        const name = Buffer.from(`${key}`);
         if (Array.isArray(value)) {
           for (let j = 0; j < value.length; ++j) {
             result.push(name, Buffer.from(`${value[j]}`));
@@ -10725,8 +10725,8 @@ var require_mock_utils = __commonJS({
       return Buffer.concat(buffers).toString("utf8");
     }
     function mockDispatch(opts, handler2) {
-      const key2 = buildKey(opts);
-      const mockDispatch2 = getMockDispatch(this[kDispatches], key2);
+      const key = buildKey(opts);
+      const mockDispatch2 = getMockDispatch(this[kDispatches], key);
       mockDispatch2.timesInvoked++;
       if (mockDispatch2.data.callback) {
         mockDispatch2.data = { ...mockDispatch2.data, ...mockDispatch2.data.callback(opts) };
@@ -10736,7 +10736,7 @@ var require_mock_utils = __commonJS({
       mockDispatch2.consumed = !persist && timesInvoked >= times;
       mockDispatch2.pending = timesInvoked < times;
       if (error2 !== null) {
-        deleteMockDispatch(this[kDispatches], key2);
+        deleteMockDispatch(this[kDispatches], key);
         handler2.onError(error2);
         return true;
       }
@@ -10761,7 +10761,7 @@ var require_mock_utils = __commonJS({
         handler2.onHeaders?.(statusCode, responseHeaders, resume, getStatusText(statusCode));
         handler2.onData?.(Buffer.from(responseData));
         handler2.onComplete?.(responseTrailers);
-        deleteMockDispatch(mockDispatches, key2);
+        deleteMockDispatch(mockDispatches, key);
       }
       function resume() {
       }
@@ -12668,16 +12668,16 @@ var require_dispatcher_weakref = __commonJS({
       constructor(finalizer) {
         this.finalizer = finalizer;
       }
-      register(dispatcher, key2) {
+      register(dispatcher, key) {
         if (dispatcher.on) {
           dispatcher.on("disconnect", () => {
             if (dispatcher[kConnected] === 0 && dispatcher[kSize] === 0) {
-              this.finalizer(key2);
+              this.finalizer(key);
             }
           });
         }
       }
-      unregister(key2) {
+      unregister(key) {
       }
     };
     module.exports = function() {
@@ -15412,8 +15412,8 @@ var require_cache = __commonJS({
                 }));
               } else if (response.headersList.contains("vary")) {
                 const fieldValues = getFieldValues(response.headersList.get("vary"));
-                for (const fieldValue2 of fieldValues) {
-                  if (fieldValue2 === "*") {
+                for (const fieldValue of fieldValues) {
+                  if (fieldValue === "*") {
                     responsePromise.reject(webidl.errors.exception({
                       header: "Cache.addAll",
                       message: "invalid vary field value"
@@ -15495,8 +15495,8 @@ var require_cache = __commonJS({
         }
         if (innerResponse.headersList.contains("vary")) {
           const fieldValues = getFieldValues(innerResponse.headersList.get("vary"));
-          for (const fieldValue2 of fieldValues) {
-            if (fieldValue2 === "*") {
+          for (const fieldValue of fieldValues) {
+            if (fieldValue === "*") {
               throw webidl.errors.exception({
                 header: prefix,
                 message: "Got * vary field value"
@@ -15759,12 +15759,12 @@ var require_cache = __commonJS({
           return true;
         }
         const fieldValues = getFieldValues(response.headersList.get("vary"));
-        for (const fieldValue2 of fieldValues) {
-          if (fieldValue2 === "*") {
+        for (const fieldValue of fieldValues) {
+          if (fieldValue === "*") {
             return false;
           }
-          const requestValue = request2.headersList.get(fieldValue2);
-          const queryValue = requestQuery.headersList.get(fieldValue2);
+          const requestValue = request2.headersList.get(fieldValue);
+          const queryValue = requestQuery.headersList.get(fieldValue);
           if (requestValue !== queryValue) {
             return false;
           }
@@ -16164,8 +16164,8 @@ var require_util6 = __commonJS({
         if (!part.includes("=")) {
           throw new Error("Invalid unparsed");
         }
-        const [key2, ...value] = part.split("=");
-        const trimmedKey = key2.trim();
+        const [key, ...value] = part.split("=");
+        const trimmedKey = key.trim();
         const joinedValue = value.join("=");
         validateCookieName(trimmedKey);
         validateCookieValue(joinedValue);
@@ -19569,7 +19569,7 @@ var require_lib = __commonJS({
             if (statusCode === HttpCodes2.NotFound) {
               resolve4(response);
             }
-            function dateTimeDeserializer(key2, value) {
+            function dateTimeDeserializer(key, value) {
               if (typeof value === "string") {
                 const a = new Date(value);
                 if (!isNaN(a.valueOf())) {
@@ -19640,10 +19640,10 @@ var require_extend = __commonJS({
       if (obj.constructor && !hasOwnConstructor && !hasIsPrototypeOf) {
         return false;
       }
-      var key2;
-      for (key2 in obj) {
+      var key;
+      for (key in obj) {
       }
-      return typeof key2 === "undefined" || hasOwn.call(obj, key2);
+      return typeof key === "undefined" || hasOwn.call(obj, key);
     };
     var setProperty = function setProperty2(target, options) {
       if (defineProperty && options.name === "__proto__") {
@@ -20012,16 +20012,16 @@ var require_common = __commonJS({
       function redactHeaders(headers) {
         if (!headers)
           return;
-        headers.forEach((_, key2) => {
-          if (/^authentication$/i.test(key2) || /^authorization$/i.test(key2) || /secret/i.test(key2))
-            headers.set(key2, REDACT);
+        headers.forEach((_, key) => {
+          if (/^authentication$/i.test(key) || /^authorization$/i.test(key) || /secret/i.test(key))
+            headers.set(key, REDACT);
         });
       }
-      function redactString(obj, key2) {
-        if (typeof obj === "object" && obj !== null && typeof obj[key2] === "string") {
-          const text = obj[key2];
+      function redactString(obj, key) {
+        if (typeof obj === "object" && obj !== null && typeof obj[key] === "string") {
+          const text = obj[key];
           if (/grant_type=/i.test(text) || /assertion=/i.test(text) || /secret/i.test(text)) {
-            obj[key2] = REDACT;
+            obj[key] = REDACT;
           }
         }
       }
@@ -20030,9 +20030,9 @@ var require_common = __commonJS({
           return;
         } else if (obj instanceof FormData || obj instanceof URLSearchParams || // support `node-fetch` FormData/URLSearchParams
         "forEach" in obj && "set" in obj) {
-          obj.forEach((_, key2) => {
-            if (["grant_type", "assertion"].includes(key2) || /secret/.test(key2)) {
-              obj.set(key2, REDACT);
+          obj.forEach((_, key) => {
+            if (["grant_type", "assertion"].includes(key) || /secret/.test(key)) {
+              obj.set(key, REDACT);
             }
           });
         } else {
@@ -20318,8 +20318,8 @@ var require_common2 = __commonJS({
       createDebug.enabled = enabled;
       createDebug.humanize = require_ms();
       createDebug.destroy = destroy;
-      Object.keys(env).forEach((key2) => {
-        createDebug[key2] = env[key2];
+      Object.keys(env).forEach((key) => {
+        createDebug[key] = env[key];
       });
       createDebug.names = [];
       createDebug.skips = [];
@@ -20869,13 +20869,13 @@ var require_node = __commonJS({
       }
     } catch (error2) {
     }
-    exports.inspectOpts = Object.keys(process.env).filter((key2) => {
-      return /^debug_/i.test(key2);
-    }).reduce((obj, key2) => {
-      const prop = key2.substring(6).toLowerCase().replace(/_([a-z])/g, (_, k) => {
+    exports.inspectOpts = Object.keys(process.env).filter((key) => {
+      return /^debug_/i.test(key);
+    }).reduce((obj, key) => {
+      const prop = key.substring(6).toLowerCase().replace(/_([a-z])/g, (_, k) => {
         return k.toUpperCase();
       });
-      let val = process.env[key2];
+      let val = process.env[key];
       if (/^(yes|on|true|enabled)$/i.test(val)) {
         val = true;
       } else if (/^(no|off|false|disabled)$/i.test(val)) {
@@ -21244,15 +21244,15 @@ var require_parse_proxy_response = __commonJS({
               socket.destroy();
               return reject(new Error(`Invalid header from proxy CONNECT response: "${header}"`));
             }
-            const key2 = header.slice(0, firstColon).toLowerCase();
+            const key = header.slice(0, firstColon).toLowerCase();
             const value = header.slice(firstColon + 1).trimStart();
-            const current = headers[key2];
+            const current = headers[key];
             if (typeof current === "string") {
-              headers[key2] = [current, value];
+              headers[key] = [current, value];
             } else if (Array.isArray(current)) {
               current.push(value);
             } else {
-              headers[key2] = value;
+              headers[key] = value;
             }
           }
           debug2("got proxy server response: %o %o", firstLine, headers);
@@ -21414,10 +21414,10 @@ var require_dist2 = __commonJS({
     }
     function omit2(obj, ...keys) {
       const ret = {};
-      let key2;
-      for (key2 in obj) {
-        if (!keys.includes(key2)) {
-          ret[key2] = obj[key2];
+      let key;
+      for (key in obj) {
+        if (!keys.includes(key)) {
+          ret[key] = obj[key];
         }
       }
       return ret;
@@ -22138,28 +22138,28 @@ var require_ponyfill_es2018 = __commonJS({
         const buffer = ArrayBufferSlice(O.buffer, O.byteOffset, O.byteOffset + O.byteLength);
         return new Uint8Array(buffer);
       }
-      function DequeueValue(container2) {
-        const pair = container2._queue.shift();
-        container2._queueTotalSize -= pair.size;
-        if (container2._queueTotalSize < 0) {
-          container2._queueTotalSize = 0;
+      function DequeueValue(container) {
+        const pair = container._queue.shift();
+        container._queueTotalSize -= pair.size;
+        if (container._queueTotalSize < 0) {
+          container._queueTotalSize = 0;
         }
         return pair.value;
       }
-      function EnqueueValueWithSize(container2, value, size) {
+      function EnqueueValueWithSize(container, value, size) {
         if (!IsNonNegativeNumber(size) || size === Infinity) {
           throw new RangeError("Size must be a finite, non-NaN, non-negative number.");
         }
-        container2._queue.push({ value, size });
-        container2._queueTotalSize += size;
+        container._queue.push({ value, size });
+        container._queueTotalSize += size;
       }
-      function PeekQueueValue(container2) {
-        const pair = container2._queue.peek();
+      function PeekQueueValue(container) {
+        const pair = container._queue.peek();
         return pair.value;
       }
-      function ResetQueue(container2) {
-        container2._queue = new SimpleQueue();
-        container2._queueTotalSize = 0;
+      function ResetQueue(container) {
+        container._queue = new SimpleQueue();
+        container._queueTotalSize = 0;
       }
       function isDataViewConstructor(ctor) {
         return ctor === DataView;
@@ -27064,8 +27064,8 @@ var init_headers = __esm({
        * @returns {Record<string, string[]>}
        */
       raw() {
-        return [...this.keys()].reduce((result, key2) => {
-          result[key2] = this.getAll(key2);
+        return [...this.keys()].reduce((result, key) => {
+          result[key] = this.getAll(key);
           return result;
         }, {});
       }
@@ -27073,12 +27073,12 @@ var init_headers = __esm({
        * For better console.log(headers) and also to convert Headers into Node.js Request compatible format
        */
       [/* @__PURE__ */ Symbol.for("nodejs.util.inspect.custom")]() {
-        return [...this.keys()].reduce((result, key2) => {
-          const values = this.getAll(key2);
-          if (key2 === "host") {
-            result[key2] = values[0];
+        return [...this.keys()].reduce((result, key) => {
+          const values = this.getAll(key);
+          if (key === "host") {
+            result[key] = values[0];
           } else {
-            result[key2] = values.length > 1 ? values : values[0];
+            result[key] = values.length > 1 ? values : values[0];
           }
           return result;
         }, {});
@@ -28182,8 +28182,8 @@ var require_gaxios = __commonJS({
             opts.url = opts.url + prefix + additionalQueryParams;
           } else {
             const url = opts.url instanceof URL ? opts.url : new URL(opts.url);
-            for (const [key2, value] of new URLSearchParams(opts.params)) {
-              url.searchParams.append(key2, value);
+            for (const [key, value] of new URLSearchParams(opts.params)) {
+              url.searchParams.append(key, value);
             }
             opts.url = url;
           }
@@ -28374,8 +28374,8 @@ Content-Type: ${partContentType}\r
         base = base instanceof Headers ? base : new Headers(base);
         for (const headers of append) {
           const add = headers instanceof Headers ? headers : new Headers(headers);
-          add.forEach((value, key2) => {
-            key2 === "set-cookie" ? base.append(key2, value) : base.set(key2, value);
+          add.forEach((value, key) => {
+            key === "set-cookie" ? base.append(key, value) : base.set(key, value);
           });
         }
         return base;
@@ -29803,13 +29803,13 @@ var require_stringify = __commonJS({
           return typeof c === "string" ? c : "\\u" + ("0000" + a.charCodeAt(0).toString(16)).slice(-4);
         }) + '"' : '"' + string + '"';
       }
-      function str(key2, holder) {
-        var i2, k, v, length, mind = gap, partial, value = holder[key2], isBigNumber = value != null && (value instanceof BigNumber || BigNumber.isBigNumber(value));
+      function str(key, holder) {
+        var i2, k, v, length, mind = gap, partial, value = holder[key], isBigNumber = value != null && (value instanceof BigNumber || BigNumber.isBigNumber(value));
         if (value && typeof value === "object" && typeof value.toJSON === "function") {
-          value = value.toJSON(key2);
+          value = value.toJSON(key);
         }
         if (typeof rep === "function") {
-          value = rep.call(holder, key2, value);
+          value = rep.call(holder, key, value);
         }
         switch (typeof value) {
           case "string":
@@ -30079,7 +30079,7 @@ var require_parse2 = __commonJS({
         }
         error2("Bad array");
       }, object = function() {
-        var key2, object2 = /* @__PURE__ */ Object.create(null);
+        var key, object2 = /* @__PURE__ */ Object.create(null);
         if (ch === "{") {
           next("{");
           white();
@@ -30088,30 +30088,30 @@ var require_parse2 = __commonJS({
             return object2;
           }
           while (ch) {
-            key2 = string();
+            key = string();
             white();
             next(":");
-            if (_options.strict === true && Object.hasOwnProperty.call(object2, key2)) {
-              error2('Duplicate key "' + key2 + '"');
+            if (_options.strict === true && Object.hasOwnProperty.call(object2, key)) {
+              error2('Duplicate key "' + key + '"');
             }
-            if (suspectProtoRx.test(key2) === true) {
+            if (suspectProtoRx.test(key) === true) {
               if (_options.protoAction === "error") {
                 error2("Object contains forbidden prototype property");
               } else if (_options.protoAction === "ignore") {
                 value();
               } else {
-                object2[key2] = value();
+                object2[key] = value();
               }
-            } else if (suspectConstructorRx.test(key2) === true) {
+            } else if (suspectConstructorRx.test(key) === true) {
               if (_options.constructorAction === "error") {
                 error2("Object contains forbidden constructor property");
               } else if (_options.constructorAction === "ignore") {
                 value();
               } else {
-                object2[key2] = value();
+                object2[key] = value();
               }
             } else {
-              object2[key2] = value();
+              object2[key] = value();
             }
             white();
             if (ch === "}") {
@@ -30149,8 +30149,8 @@ var require_parse2 = __commonJS({
         if (ch) {
           error2("Syntax error");
         }
-        return typeof reviver === "function" ? (function walk(holder, key2) {
-          var k, v, value2 = holder[key2];
+        return typeof reviver === "function" ? (function walk(holder, key) {
+          var k, v, value2 = holder[key];
           if (value2 && typeof value2 === "object") {
             Object.keys(value2).forEach(function(k2) {
               v = walk(value2, k2);
@@ -30161,7 +30161,7 @@ var require_parse2 = __commonJS({
               }
             });
           }
-          return reviver.call(holder, key2, value2);
+          return reviver.call(holder, key, value2);
         })({ "": result }, "") : result;
       };
     };
@@ -30697,8 +30697,8 @@ var require_src4 = __commonJS({
       return new URL(exports.BASE_PATH, baseUrl2).href;
     }
     function validate(options) {
-      Object.keys(options).forEach((key2) => {
-        switch (key2) {
+      Object.keys(options).forEach((key) => {
+        switch (key) {
           case "params":
           case "property":
           case "headers":
@@ -30706,7 +30706,7 @@ var require_src4 = __commonJS({
           case "qs":
             throw new Error("'qs' is not a valid configuration option. Please use 'params' instead.");
           default:
-            throw new Error(`'${key2}' is not a valid configuration option.`);
+            throw new Error(`'${key}' is not a valid configuration option.`);
         }
       });
     }
@@ -30716,7 +30716,7 @@ var require_src4 = __commonJS({
       let params = {};
       if (typeof type === "object") {
         const metadataAccessor2 = type;
-        new Headers(metadataAccessor2.headers).forEach((value, key2) => headers.set(key2, value));
+        new Headers(metadataAccessor2.headers).forEach((value, key) => headers.set(key, value));
         metadataKey = metadataAccessor2.metadataKey;
         params = metadataAccessor2.params || params;
         noResponseRetries = metadataAccessor2.noResponseRetries || noResponseRetries;
@@ -30731,7 +30731,7 @@ var require_src4 = __commonJS({
         if (options.property) {
           metadataKey += `/${options.property}`;
         }
-        new Headers(options.headers).forEach((value, key2) => headers.set(key2, value));
+        new Headers(options.headers).forEach((value, key) => headers.set(key, value));
         params = options.params || params;
       }
       const requestMethod = fastFail ? fastFailMetadataRequest : gaxios_1.request;
@@ -30781,8 +30781,8 @@ var require_src4 = __commonJS({
       await Promise.all(properties.map((item) => {
         return (async () => {
           const res = await metadataAccessor(item);
-          const key2 = item.metadataKey;
-          r2[key2] = res;
+          const key = item.metadataKey;
+          r2[key] = res;
         })();
       }));
       return r2;
@@ -31071,8 +31071,8 @@ var require_crypto = __commonJS({
        * @return A promise that resolves with the HMAC-SHA256 hash in ArrayBuffer
        *   format.
        */
-      async signWithHmacSha256(key2, msg) {
-        const rawKey = typeof key2 === "string" ? key2 : String.fromCharCode(...new Uint16Array(key2));
+      async signWithHmacSha256(key, msg) {
+        const rawKey = typeof key === "string" ? key : String.fromCharCode(...new Uint16Array(key));
         const enc = new TextEncoder();
         const cryptoKey = await window.crypto.subtle.importKey("raw", enc.encode(rawKey), {
           name: "HMAC",
@@ -31136,8 +31136,8 @@ var require_crypto2 = __commonJS({
        * @return A promise that resolves with the HMAC-SHA256 hash in ArrayBuffer
        *   format.
        */
-      async signWithHmacSha256(key2, msg) {
-        const cryptoKey = typeof key2 === "string" ? key2 : toBuffer(key2);
+      async signWithHmacSha256(key, msg) {
+        const cryptoKey = typeof key === "string" ? key : toBuffer(key);
         return toArrayBuffer(crypto3.createHmac("sha256", cryptoKey).update(msg).digest());
       }
     };
@@ -31195,8 +31195,8 @@ var require_safe_buffer = __commonJS({
     var buffer = __require("buffer");
     var Buffer4 = buffer.Buffer;
     function copyProps(src, dst) {
-      for (var key2 in src) {
-        dst[key2] = src[key2];
+      for (var key in src) {
+        dst[key] = src[key];
       }
     }
     if (Buffer4.from && Buffer4.alloc && Buffer4.allocUnsafe && Buffer4.allocUnsafeSlow) {
@@ -31431,9 +31431,9 @@ var require_util10 = __commonJS({
       return str.replace(/([_][^_])/g, (match) => match.slice(1).toUpperCase());
     }
     function originalOrCamelOptions(obj) {
-      function get(key2) {
+      function get(key) {
         const o = obj || {};
-        return o[key2] ?? o[snakeToCamel(key2)];
+        return o[key] ?? o[snakeToCamel(key)];
       }
       return { get };
     }
@@ -31456,9 +31456,9 @@ var require_util10 = __commonJS({
        * @param key the key to move
        * @param value the value of the key
        */
-      #moveToEnd(key2, value) {
-        this.#cache.delete(key2);
-        this.#cache.set(key2, {
+      #moveToEnd(key, value) {
+        this.#cache.delete(key);
+        this.#cache.set(key, {
           value,
           lastAccessed: Date.now()
         });
@@ -31469,8 +31469,8 @@ var require_util10 = __commonJS({
        * @param key the key to upsert
        * @param value the value of the key
        */
-      set(key2, value) {
-        this.#moveToEnd(key2, value);
+      set(key, value) {
+        this.#moveToEnd(key, value);
         this.#evict();
       }
       /**
@@ -31478,11 +31478,11 @@ var require_util10 = __commonJS({
        *
        * @param key the key to retrieve
        */
-      get(key2) {
-        const item = this.#cache.get(key2);
+      get(key) {
+        const item = this.#cache.get(key);
         if (!item)
           return;
-        this.#moveToEnd(key2, item.value);
+        this.#moveToEnd(key, item.value);
         this.#evict();
         return item.value;
       }
@@ -31501,9 +31501,9 @@ var require_util10 = __commonJS({
     };
     exports.LRUCache = LRUCache;
     function removeUndefinedValuesInObject(object) {
-      Object.entries(object).forEach(([key2, value]) => {
+      Object.entries(object).forEach(([key, value]) => {
         if (value === void 0 || value === "undefined") {
-          delete object[key2];
+          delete object[key];
         }
       });
       return object;
@@ -32436,8 +32436,8 @@ var require_oauth2client = __commonJS({
             certificates = res.data;
             break;
           case CertificateFormat.JWK:
-            for (const key2 of res.data.keys) {
-              certificates[key2.kid] = key2;
+            for (const key of res.data.keys) {
+              certificates[key.kid] = key;
             }
             break;
           default:
@@ -32916,58 +32916,58 @@ var require_jwa = __commonJS({
       MSG_INVALID_VERIFIER_KEY += " or a KeyObject";
       MSG_INVALID_SECRET += "or a KeyObject";
     }
-    function checkIsPublicKey(key2) {
-      if (Buffer4.isBuffer(key2)) {
+    function checkIsPublicKey(key) {
+      if (Buffer4.isBuffer(key)) {
         return;
       }
-      if (typeof key2 === "string") {
+      if (typeof key === "string") {
         return;
       }
       if (!supportsKeyObjects) {
         throw typeError(MSG_INVALID_VERIFIER_KEY);
       }
-      if (typeof key2 !== "object") {
+      if (typeof key !== "object") {
         throw typeError(MSG_INVALID_VERIFIER_KEY);
       }
-      if (typeof key2.type !== "string") {
+      if (typeof key.type !== "string") {
         throw typeError(MSG_INVALID_VERIFIER_KEY);
       }
-      if (typeof key2.asymmetricKeyType !== "string") {
+      if (typeof key.asymmetricKeyType !== "string") {
         throw typeError(MSG_INVALID_VERIFIER_KEY);
       }
-      if (typeof key2.export !== "function") {
+      if (typeof key.export !== "function") {
         throw typeError(MSG_INVALID_VERIFIER_KEY);
       }
     }
-    function checkIsPrivateKey(key2) {
-      if (Buffer4.isBuffer(key2)) {
+    function checkIsPrivateKey(key) {
+      if (Buffer4.isBuffer(key)) {
         return;
       }
-      if (typeof key2 === "string") {
+      if (typeof key === "string") {
         return;
       }
-      if (typeof key2 === "object") {
+      if (typeof key === "object") {
         return;
       }
       throw typeError(MSG_INVALID_SIGNER_KEY);
     }
-    function checkIsSecretKey(key2) {
-      if (Buffer4.isBuffer(key2)) {
+    function checkIsSecretKey(key) {
+      if (Buffer4.isBuffer(key)) {
         return;
       }
-      if (typeof key2 === "string") {
-        return key2;
+      if (typeof key === "string") {
+        return key;
       }
       if (!supportsKeyObjects) {
         throw typeError(MSG_INVALID_SECRET);
       }
-      if (typeof key2 !== "object") {
+      if (typeof key !== "object") {
         throw typeError(MSG_INVALID_SECRET);
       }
-      if (key2.type !== "secret") {
+      if (key.type !== "secret") {
         throw typeError(MSG_INVALID_SECRET);
       }
-      if (typeof key2.export !== "function") {
+      if (typeof key.export !== "function") {
         throw typeError(MSG_INVALID_SECRET);
       }
     }
@@ -33742,7 +33742,7 @@ var require_src5 = __commonJS({
         key: "getCredentials",
         value: (function() {
           var _getCredentials = _asyncToGenerator(/* @__PURE__ */ _regenerator().m(function _callee2(keyFile) {
-            var ext, key2, body, privateKey, clientEmail, _privateKey, _t;
+            var ext, key, body, privateKey, clientEmail, _privateKey, _t;
             return _regenerator().w(function(_context2) {
               while (1) switch (_context2.n) {
                 case 0:
@@ -33754,8 +33754,8 @@ var require_src5 = __commonJS({
                   _context2.n = 2;
                   return readFile3(keyFile, "utf8");
                 case 2:
-                  key2 = _context2.v;
-                  body = JSON.parse(key2);
+                  key = _context2.v;
+                  body = JSON.parse(key);
                   privateKey = body.private_key;
                   clientEmail = body.client_email;
                   if (!(!privateKey || !clientEmail)) {
@@ -34032,9 +34032,9 @@ var require_jwtaccess = __commonJS({
        * @param key the private key that will be used to sign the token.
        * @param keyId the ID of the private key used to sign the token.
        */
-      constructor(email, key2, keyId, eagerRefreshThresholdMillis) {
+      constructor(email, key, keyId, eagerRefreshThresholdMillis) {
         this.email = email;
-        this.key = key2;
+        this.key = key;
         this.keyId = keyId;
         this.eagerRefreshThresholdMillis = eagerRefreshThresholdMillis ?? 5 * 60 * 1e3;
       }
@@ -34066,8 +34066,8 @@ var require_jwtaccess = __commonJS({
        * @returns An object that includes the authorization header.
        */
       getRequestHeaders(url, additionalClaims, scopes) {
-        const key2 = this.getCachedKey(url, scopes);
-        const cachedToken = this.cache.get(key2);
+        const key = this.getCachedKey(url, scopes);
+        const cachedToken = this.cache.get(key);
         const now = Date.now();
         if (cachedToken && cachedToken.expiration - now > this.eagerRefreshThresholdMillis) {
           return new Headers(cachedToken.headers);
@@ -34106,7 +34106,7 @@ var require_jwtaccess = __commonJS({
         const payload = Object.assign(defaultClaims, additionalClaims);
         const signedJWT = jws.sign({ header, payload, secret: this.key });
         const headers = new Headers({ authorization: `Bearer ${signedJWT}` });
-        this.cache.set(key2, {
+        this.cache.set(key, {
           expiration: exp * 1e3,
           headers
         });
@@ -34880,10 +34880,10 @@ var require_oauth2common = __commonJS({
         if (err.stack) {
           keys.push("stack");
         }
-        keys.forEach((key2) => {
-          if (key2 !== "message") {
-            Object.defineProperty(newError, key2, {
-              value: err[key2],
+        keys.forEach((key) => {
+          if (key !== "message") {
+            Object.defineProperty(newError, key, {
+              value: err[key],
               writable: false,
               enumerable: true
             });
@@ -35605,7 +35605,7 @@ var require_certificatesubjecttokensupplier = __commonJS({
        * @returns An object containing the cert content and key content in buffer format.
        */
       async #getKeyAndCert(certPath, keyPath) {
-        let cert, key2;
+        let cert, key;
         try {
           cert = await fs4.promises.readFile(certPath);
           new crypto_1.X509Certificate(cert);
@@ -35614,13 +35614,13 @@ var require_certificatesubjecttokensupplier = __commonJS({
           throw new CertificateSourceUnavailableError(`Failed to read certificate file at ${certPath}: ${message}`);
         }
         try {
-          key2 = await fs4.promises.readFile(keyPath);
-          (0, crypto_1.createPrivateKey)(key2);
+          key = await fs4.promises.readFile(keyPath);
+          (0, crypto_1.createPrivateKey)(key);
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
           throw new CertificateSourceUnavailableError(`Failed to read private key file at ${keyPath}: ${message}`);
         }
-        return { cert, key: key2 };
+        return { cert, key };
       }
       /**
        * Reads the leaf certificate and trust chain, combines them,
@@ -35864,11 +35864,11 @@ var require_awsrequestsigner = __commonJS({
       }
     };
     exports.AwsRequestSigner = AwsRequestSigner;
-    async function sign(crypto3, key2, msg) {
-      return await crypto3.signWithHmacSha256(key2, msg);
+    async function sign(crypto3, key, msg) {
+      return await crypto3.signWithHmacSha256(key, msg);
     }
-    async function getSigningKey(crypto3, key2, dateStamp, region, serviceName) {
-      const kDate = await sign(crypto3, `AWS4${key2}`, dateStamp);
+    async function getSigningKey(crypto3, key, dateStamp, region, serviceName) {
+      const kDate = await sign(crypto3, `AWS4${key}`, dateStamp);
       const kRegion = await sign(crypto3, kDate, region);
       const kService = await sign(crypto3, kRegion, serviceName);
       const kSigning = await sign(crypto3, kService, "aws4_request");
@@ -35897,8 +35897,8 @@ var require_awsrequestsigner = __commonJS({
       const signedHeadersList = [
         ...amzHeaders.keys()
       ].sort();
-      signedHeadersList.forEach((key2) => {
-        canonicalHeaders += `${key2}:${amzHeaders.get(key2)}
+      signedHeadersList.forEach((key) => {
+        canonicalHeaders += `${key}:${amzHeaders.get(key)}
 `;
       });
       const signedHeaders = signedHeadersList.join(";");
@@ -36180,7 +36180,7 @@ var require_awsclient = __commonJS({
           // ensure data integrity.
           "x-goog-cloud-target-resource": this.audience
         }, options.headers);
-        extendedHeaders.forEach((value, key2) => reformattedHeader.push({ key: key2, value }));
+        extendedHeaders.forEach((value, key) => reformattedHeader.push({ key, value }));
         return encodeURIComponent(JSON.stringify({
           url: options.url,
           method: options.method,
@@ -38227,8 +38227,8 @@ var require_object_inspect = __commonJS({
       if (isMap(obj)) {
         var mapParts = [];
         if (mapForEach) {
-          mapForEach.call(obj, function(value, key2) {
-            mapParts.push(inspect(key2, obj, true) + " => " + inspect(value, obj));
+          mapForEach.call(obj, function(value, key) {
+            mapParts.push(inspect(key, obj, true) + " => " + inspect(value, obj));
           });
         }
         return collectionOf("Map", mapSize.call(obj), mapParts, indent);
@@ -38346,11 +38346,11 @@ var require_object_inspect = __commonJS({
       }
       return false;
     }
-    var hasOwn = Object.prototype.hasOwnProperty || function(key2) {
-      return key2 in this;
+    var hasOwn = Object.prototype.hasOwnProperty || function(key) {
+      return key in this;
     };
-    function has(obj, key2) {
-      return hasOwn.call(obj, key2);
+    function has(obj, key) {
+      return hasOwn.call(obj, key);
     }
     function toStr(obj) {
       return objectToString.call(obj);
@@ -38541,19 +38541,19 @@ var require_object_inspect = __commonJS({
           symMap["$" + syms[k]] = syms[k];
         }
       }
-      for (var key2 in obj) {
-        if (!has(obj, key2)) {
+      for (var key in obj) {
+        if (!has(obj, key)) {
           continue;
         }
-        if (isArr && String(Number(key2)) === key2 && key2 < obj.length) {
+        if (isArr && String(Number(key)) === key && key < obj.length) {
           continue;
         }
-        if (hasShammedSymbols && symMap["$" + key2] instanceof Symbol) {
+        if (hasShammedSymbols && symMap["$" + key] instanceof Symbol) {
           continue;
-        } else if ($test.call(/[^\w$]/, key2)) {
-          xs.push(inspect(key2, obj) + ": " + inspect(obj[key2], obj));
+        } else if ($test.call(/[^\w$]/, key)) {
+          xs.push(inspect(key, obj) + ": " + inspect(obj[key], obj));
         } else {
-          xs.push(key2 + ": " + inspect(obj[key2], obj));
+          xs.push(key + ": " + inspect(obj[key], obj));
         }
       }
       if (typeof gOPS === "function") {
@@ -38574,11 +38574,11 @@ var require_side_channel_list = __commonJS({
     "use strict";
     var inspect = require_object_inspect();
     var $TypeError = require_type();
-    var listGetNode = function(list, key2, isDelete) {
+    var listGetNode = function(list, key, isDelete) {
       var prev = list;
       var curr;
       for (; (curr = prev.next) != null; prev = curr) {
-        if (curr.key === key2) {
+        if (curr.key === key) {
           prev.next = curr.next;
           if (!isDelete) {
             curr.next = /** @type {NonNullable<typeof list.next>} */
@@ -38589,60 +38589,60 @@ var require_side_channel_list = __commonJS({
         }
       }
     };
-    var listGet = function(objects, key2) {
+    var listGet = function(objects, key) {
       if (!objects) {
         return void 0;
       }
-      var node = listGetNode(objects, key2);
+      var node = listGetNode(objects, key);
       return node && node.value;
     };
-    var listSet = function(objects, key2, value) {
-      var node = listGetNode(objects, key2);
+    var listSet = function(objects, key, value) {
+      var node = listGetNode(objects, key);
       if (node) {
         node.value = value;
       } else {
         objects.next = /** @type {import('./list.d.ts').ListNode<typeof value, typeof key>} */
         {
           // eslint-disable-line no-param-reassign, no-extra-parens
-          key: key2,
+          key,
           next: objects.next,
           value
         };
       }
     };
-    var listHas = function(objects, key2) {
+    var listHas = function(objects, key) {
       if (!objects) {
         return false;
       }
-      return !!listGetNode(objects, key2);
+      return !!listGetNode(objects, key);
     };
-    var listDelete = function(objects, key2) {
+    var listDelete = function(objects, key) {
       if (objects) {
-        return listGetNode(objects, key2, true);
+        return listGetNode(objects, key, true);
       }
     };
     module.exports = function getSideChannelList() {
       var $o;
       var channel = {
-        assert: function(key2) {
-          if (!channel.has(key2)) {
-            throw new $TypeError("Side channel does not contain " + inspect(key2));
+        assert: function(key) {
+          if (!channel.has(key)) {
+            throw new $TypeError("Side channel does not contain " + inspect(key));
           }
         },
-        "delete": function(key2) {
-          var deletedNode = listDelete($o, key2);
+        "delete": function(key) {
+          var deletedNode = listDelete($o, key);
           if (deletedNode && $o && !$o.next) {
             $o = void 0;
           }
           return !!deletedNode;
         },
-        get: function(key2) {
-          return listGet($o, key2);
+        get: function(key) {
+          return listGet($o, key);
         },
-        has: function(key2) {
-          return listHas($o, key2);
+        has: function(key) {
+          return listHas($o, key);
         },
-        set: function(key2, value) {
+        set: function(key, value) {
           if (!$o) {
             $o = {
               next: void 0
@@ -38651,7 +38651,7 @@ var require_side_channel_list = __commonJS({
           listSet(
             /** @type {NonNullable<typeof $o>} */
             $o,
-            key2,
+            key,
             value
           );
         }
@@ -39497,14 +39497,14 @@ var require_side_channel_map = __commonJS({
     function getSideChannelMap() {
       var $m;
       var channel = {
-        assert: function(key2) {
-          if (!channel.has(key2)) {
-            throw new $TypeError("Side channel does not contain " + inspect(key2));
+        assert: function(key) {
+          if (!channel.has(key)) {
+            throw new $TypeError("Side channel does not contain " + inspect(key));
           }
         },
-        "delete": function(key2) {
+        "delete": function(key) {
           if ($m) {
-            var result = $mapDelete($m, key2);
+            var result = $mapDelete($m, key);
             if ($mapSize($m) === 0) {
               $m = void 0;
             }
@@ -39512,22 +39512,22 @@ var require_side_channel_map = __commonJS({
           }
           return false;
         },
-        get: function(key2) {
+        get: function(key) {
           if ($m) {
-            return $mapGet($m, key2);
+            return $mapGet($m, key);
           }
         },
-        has: function(key2) {
+        has: function(key) {
           if ($m) {
-            return $mapHas($m, key2);
+            return $mapHas($m, key);
           }
           return false;
         },
-        set: function(key2, value) {
+        set: function(key, value) {
           if (!$m) {
             $m = new $Map();
           }
-          $mapSet($m, key2, value);
+          $mapSet($m, key, value);
         }
       };
       return channel;
@@ -39555,50 +39555,50 @@ var require_side_channel_weakmap = __commonJS({
         var $wm;
         var $m;
         var channel = {
-          assert: function(key2) {
-            if (!channel.has(key2)) {
-              throw new $TypeError("Side channel does not contain " + inspect(key2));
+          assert: function(key) {
+            if (!channel.has(key)) {
+              throw new $TypeError("Side channel does not contain " + inspect(key));
             }
           },
-          "delete": function(key2) {
-            if ($WeakMap && key2 && (typeof key2 === "object" || typeof key2 === "function")) {
+          "delete": function(key) {
+            if ($WeakMap && key && (typeof key === "object" || typeof key === "function")) {
               if ($wm) {
-                return $weakMapDelete($wm, key2);
+                return $weakMapDelete($wm, key);
               }
             } else if (getSideChannelMap) {
               if ($m) {
-                return $m["delete"](key2);
+                return $m["delete"](key);
               }
             }
             return false;
           },
-          get: function(key2) {
-            if ($WeakMap && key2 && (typeof key2 === "object" || typeof key2 === "function")) {
+          get: function(key) {
+            if ($WeakMap && key && (typeof key === "object" || typeof key === "function")) {
               if ($wm) {
-                return $weakMapGet($wm, key2);
+                return $weakMapGet($wm, key);
               }
             }
-            return $m && $m.get(key2);
+            return $m && $m.get(key);
           },
-          has: function(key2) {
-            if ($WeakMap && key2 && (typeof key2 === "object" || typeof key2 === "function")) {
+          has: function(key) {
+            if ($WeakMap && key && (typeof key === "object" || typeof key === "function")) {
               if ($wm) {
-                return $weakMapHas($wm, key2);
+                return $weakMapHas($wm, key);
               }
             }
-            return !!$m && $m.has(key2);
+            return !!$m && $m.has(key);
           },
-          set: function(key2, value) {
-            if ($WeakMap && key2 && (typeof key2 === "object" || typeof key2 === "function")) {
+          set: function(key, value) {
+            if ($WeakMap && key && (typeof key === "object" || typeof key === "function")) {
               if (!$wm) {
                 $wm = new $WeakMap();
               }
-              $weakMapSet($wm, key2, value);
+              $weakMapSet($wm, key, value);
             } else if (getSideChannelMap) {
               if (!$m) {
                 $m = getSideChannelMap();
               }
-              $m.set(key2, value);
+              $m.set(key, value);
             }
           }
         };
@@ -39621,26 +39621,26 @@ var require_side_channel = __commonJS({
     module.exports = function getSideChannel() {
       var $channelData;
       var channel = {
-        assert: function(key2) {
-          if (!channel.has(key2)) {
-            var keyDesc = key2 && Object(key2) === key2 ? "the given object key" : inspect(key2);
+        assert: function(key) {
+          if (!channel.has(key)) {
+            var keyDesc = key && Object(key) === key ? "the given object key" : inspect(key);
             throw new $TypeError("Side channel does not contain " + keyDesc);
           }
         },
-        "delete": function(key2) {
-          return !!$channelData && $channelData["delete"](key2);
+        "delete": function(key) {
+          return !!$channelData && $channelData["delete"](key);
         },
-        get: function(key2) {
-          return $channelData && $channelData.get(key2);
+        get: function(key) {
+          return $channelData && $channelData.get(key);
         },
-        has: function(key2) {
-          return !!$channelData && $channelData.has(key2);
+        has: function(key) {
+          return !!$channelData && $channelData.has(key);
         },
-        set: function(key2, value) {
+        set: function(key, value) {
           if (!$channelData) {
             $channelData = makeChannel();
           }
-          $channelData.set(key2, value);
+          $channelData.set(key, value);
         }
       };
       return channel;
@@ -39728,16 +39728,16 @@ var require_utils2 = __commonJS({
       }
       return obj;
     };
-    var setProperty = function setProperty2(obj, key2, value) {
-      if (key2 === "__proto__" && defineProperty) {
-        defineProperty(obj, key2, {
+    var setProperty = function setProperty2(obj, key, value) {
+      if (key === "__proto__" && defineProperty) {
+        defineProperty(obj, key, {
           configurable: true,
           enumerable: true,
           value,
           writable: true
         });
       } else {
-        obj[key2] = value;
+        obj[key] = value;
       }
     };
     var merge2 = function merge3(target, source, options) {
@@ -39813,19 +39813,19 @@ var require_utils2 = __commonJS({
         }
         return target;
       }
-      return Object.keys(source).reduce(function(acc, key2) {
-        var value = source[key2];
-        if (has.call(acc, key2)) {
-          setProperty(acc, key2, merge3(acc[key2], value, options));
+      return Object.keys(source).reduce(function(acc, key) {
+        var value = source[key];
+        if (has.call(acc, key)) {
+          setProperty(acc, key, merge3(acc[key], value, options));
         } else {
-          setProperty(acc, key2, value);
+          setProperty(acc, key, value);
         }
         if (isOverflow(source) && !isOverflow(acc)) {
           markOverflow(acc, getMaxIndex(source));
         }
         if (isOverflow(acc)) {
-          var keyNum = parseInt(key2, 10);
-          if (String(keyNum) === key2 && keyNum >= 0 && keyNum > getMaxIndex(acc)) {
+          var keyNum = parseInt(key, 10);
+          if (String(keyNum) === key && keyNum >= 0 && keyNum > getMaxIndex(acc)) {
             setMaxIndex(acc, keyNum);
           }
         }
@@ -39833,8 +39833,8 @@ var require_utils2 = __commonJS({
       }, mergeTarget);
     };
     var assign = function assignSingleSource(target, source) {
-      return Object.keys(source).reduce(function(acc, key2) {
-        setProperty(acc, key2, source[key2]);
+      return Object.keys(source).reduce(function(acc, key) {
+        setProperty(acc, key, source[key]);
         return acc;
       }, target);
     };
@@ -39910,10 +39910,10 @@ var require_utils2 = __commonJS({
         var obj = item.obj[item.prop];
         var keys = Object.keys(obj);
         for (var j = 0; j < keys.length; ++j) {
-          var key2 = keys[j];
-          var val = obj[key2];
+          var key = keys[j];
+          var val = obj[key];
           if (typeof val === "object" && val !== null && !refs.has(val)) {
-            queue[queue.length] = { obj, prop: key2 };
+            queue[queue.length] = { obj, prop: key };
             refs.set(val, true);
           }
         }
@@ -39993,8 +39993,8 @@ var require_stringify2 = __commonJS({
         return prefix + "[]";
       },
       comma: "comma",
-      indices: function indices(prefix, key2) {
-        return prefix + "[" + key2 + "]";
+      indices: function indices(prefix, key) {
+        return prefix + "[" + key + "]";
       },
       repeat: function repeat(prefix) {
         return prefix;
@@ -40106,12 +40106,12 @@ var require_stringify2 = __commonJS({
         return adjustedPrefix + "[]";
       }
       for (var j = 0; j < objKeys.length; ++j) {
-        var key2 = objKeys[j];
-        var value = typeof key2 === "object" && key2 && typeof key2.value !== "undefined" ? key2.value : obj[key2];
+        var key = objKeys[j];
+        var value = typeof key === "object" && key && typeof key.value !== "undefined" ? key.value : obj[key];
         if (skipNulls && value === null) {
           continue;
         }
-        var encodedKey = allowDots && encodeDotInKeys ? String(key2).replace(/\./g, "%2E") : String(key2);
+        var encodedKey = allowDots && encodeDotInKeys ? String(key).replace(/\./g, "%2E") : String(key);
         var keyPrefix = isArray(obj) ? typeof generateArrayPrefix === "function" ? generateArrayPrefix(adjustedPrefix, encodedKey) : adjustedPrefix : adjustedPrefix + (allowDots ? "." + encodedKey : "[" + encodedKey + "]");
         sideChannel.set(object, step);
         var valueSideChannel = getSideChannel();
@@ -40231,15 +40231,15 @@ var require_stringify2 = __commonJS({
       }
       var sideChannel = getSideChannel();
       for (var i2 = 0; i2 < objKeys.length; ++i2) {
-        var key2 = objKeys[i2];
-        if (typeof key2 === "undefined" || key2 === null) {
+        var key = objKeys[i2];
+        if (typeof key === "undefined" || key === null) {
           continue;
         }
-        var value = obj[key2];
+        var value = obj[key];
         if (options.skipNulls && value === null) {
           continue;
         }
-        var encodedKey = options.encodeDotInKeys ? String(key2).replace(/\./g, "%2E") : String(key2);
+        var encodedKey = options.encodeDotInKeys ? String(key).replace(/\./g, "%2E") : String(key);
         pushToArray(keys, stringify(
           value,
           encodedKey,
@@ -40370,19 +40370,19 @@ var require_parse3 = __commonJS({
         var part = parts[i2];
         var bracketEqualsPos = part.indexOf("]=");
         var pos = bracketEqualsPos === -1 ? part.indexOf("=") : bracketEqualsPos + 1;
-        var key2;
+        var key;
         var val;
         if (pos === -1) {
-          key2 = options.decoder(part, defaults2.decoder, charset, "key");
+          key = options.decoder(part, defaults2.decoder, charset, "key");
           val = options.strictNullHandling ? null : "";
         } else {
-          key2 = options.decoder(part.slice(0, pos), defaults2.decoder, charset, "key");
-          if (key2 !== null) {
+          key = options.decoder(part.slice(0, pos), defaults2.decoder, charset, "key");
+          if (key !== null) {
             val = utils.maybeMap(
               parseArrayValue(
                 part.slice(pos + 1),
                 options,
-                isArray(obj[key2]) ? obj[key2].length : 0
+                isArray(obj[key]) ? obj[key].length : 0
               ),
               function(encodedVal) {
                 return options.decoder(encodedVal, defaults2.decoder, charset, "value");
@@ -40399,18 +40399,18 @@ var require_parse3 = __commonJS({
         if (options.comma && isArray(val) && val.length > options.arrayLimit) {
           val = utils.combine([], val, options.arrayLimit, options.plainObjects, options.throwOnLimitExceeded);
         }
-        if (key2 !== null) {
-          var existing = has.call(obj, key2);
+        if (key !== null) {
+          var existing = has.call(obj, key);
           if (existing && (options.duplicates === "combine" || part.indexOf("[]=") > -1)) {
-            obj[key2] = utils.combine(
-              obj[key2],
+            obj[key] = utils.combine(
+              obj[key],
               val,
               options.arrayLimit,
               options.plainObjects,
               options.throwOnLimitExceeded
             );
           } else if (!existing || options.duplicates === "last") {
-            obj[key2] = val;
+            obj[key] = val;
           }
         }
       }
@@ -40463,18 +40463,18 @@ var require_parse3 = __commonJS({
       return leaf;
     };
     var splitKeyIntoSegments = function splitKeyIntoSegments2(originalKey, options) {
-      var key2 = options.allowDots ? originalKey.replace(/\.([^.[]+)/g, "[$1]") : originalKey;
+      var key = options.allowDots ? originalKey.replace(/\.([^.[]+)/g, "[$1]") : originalKey;
       if (options.depth <= 0) {
-        if (!options.plainObjects && has.call(Object.prototype, key2)) {
+        if (!options.plainObjects && has.call(Object.prototype, key)) {
           if (!options.allowPrototypes) {
             return;
           }
         }
-        return [key2];
+        return [key];
       }
       var segments = [];
-      var first = key2.indexOf("[");
-      var parent = first >= 0 ? key2.slice(0, first) : key2;
+      var first = key.indexOf("[");
+      var parent = first >= 0 ? key.slice(0, first) : key;
       if (parent) {
         if (!options.plainObjects && has.call(Object.prototype, parent)) {
           if (!options.allowPrototypes) {
@@ -40483,7 +40483,7 @@ var require_parse3 = __commonJS({
         }
         segments[segments.length] = parent;
       }
-      var n = key2.length;
+      var n = key.length;
       var open2 = first;
       var collected = 0;
       while (open2 >= 0 && collected < options.depth) {
@@ -40491,7 +40491,7 @@ var require_parse3 = __commonJS({
         var i2 = open2 + 1;
         var close = -1;
         while (i2 < n && close < 0) {
-          var cu = key2.charCodeAt(i2);
+          var cu = key.charCodeAt(i2);
           if (cu === 91) {
             level += 1;
           } else if (cu === 93) {
@@ -40503,23 +40503,23 @@ var require_parse3 = __commonJS({
           i2 += 1;
         }
         if (close < 0) {
-          segments[segments.length] = "[" + key2.slice(open2) + "]";
+          segments[segments.length] = "[" + key.slice(open2) + "]";
           return segments;
         }
-        var seg = key2.slice(open2, close + 1);
+        var seg = key.slice(open2, close + 1);
         var content = seg.slice(1, -1);
         if (!options.plainObjects && has.call(Object.prototype, content) && !options.allowPrototypes) {
           return;
         }
         segments[segments.length] = seg;
         collected += 1;
-        open2 = key2.indexOf("[", close + 1);
+        open2 = key.indexOf("[", close + 1);
       }
       if (open2 >= 0) {
         if (options.strictDepth === true) {
           throw new RangeError("Input depth exceeded depth option of " + options.depth + " and strictDepth is true");
         }
-        segments[segments.length] = "[" + key2.slice(open2) + "]";
+        segments[segments.length] = "[" + key.slice(open2) + "]";
       }
       return segments;
     };
@@ -40593,8 +40593,8 @@ var require_parse3 = __commonJS({
       var obj = options.plainObjects ? { __proto__: null } : {};
       var keys = Object.keys(tempObj);
       for (var i2 = 0; i2 < keys.length; ++i2) {
-        var key2 = keys[i2];
-        var newObj = parseKeys(key2, tempObj[key2], options, typeof str === "string");
+        var key = keys[i2];
+        var newObj = parseKeys(key, tempObj[key], options, typeof str === "string");
         obj = utils.merge(obj, newObj, options);
       }
       if (options.allowSparse === true) {
@@ -40647,10 +40647,10 @@ var require_url_template = __commonJS({
           return "%" + c.charCodeAt(0).toString(16).toUpperCase();
         });
       };
-      UrlTemplate.prototype.encodeValue = function(operator, value, key2) {
+      UrlTemplate.prototype.encodeValue = function(operator, value, key) {
         value = operator === "+" || operator === "#" ? this.encodeReserved(value) : this.encodeUnreserved(value);
-        if (key2) {
-          return this.encodeUnreserved(key2) + "=" + value;
+        if (key) {
+          return this.encodeUnreserved(key) + "=" + value;
         } else {
           return value;
         }
@@ -40661,20 +40661,20 @@ var require_url_template = __commonJS({
       UrlTemplate.prototype.isKeyOperator = function(operator) {
         return operator === ";" || operator === "&" || operator === "?";
       };
-      UrlTemplate.prototype.getValues = function(context3, operator, key2, modifier) {
-        var value = context3[key2], result = [];
+      UrlTemplate.prototype.getValues = function(context3, operator, key, modifier) {
+        var value = context3[key], result = [];
         if (this.isDefined(value) && value !== "") {
           if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
             value = value.toString();
             if (modifier && modifier !== "*") {
               value = value.substring(0, parseInt(modifier, 10));
             }
-            result.push(this.encodeValue(operator, value, this.isKeyOperator(operator) ? key2 : null));
+            result.push(this.encodeValue(operator, value, this.isKeyOperator(operator) ? key : null));
           } else {
             if (modifier === "*") {
               if (Array.isArray(value)) {
                 value.filter(this.isDefined).forEach(function(value2) {
-                  result.push(this.encodeValue(operator, value2, this.isKeyOperator(operator) ? key2 : null));
+                  result.push(this.encodeValue(operator, value2, this.isKeyOperator(operator) ? key : null));
                 }, this);
               } else {
                 Object.keys(value).forEach(function(k) {
@@ -40698,7 +40698,7 @@ var require_url_template = __commonJS({
                 }, this);
               }
               if (this.isKeyOperator(operator)) {
-                result.push(this.encodeUnreserved(key2) + "=" + tmp.join(","));
+                result.push(this.encodeUnreserved(key) + "=" + tmp.join(","));
               } else if (tmp.length !== 0) {
                 result.push(tmp.join(","));
               }
@@ -40707,10 +40707,10 @@ var require_url_template = __commonJS({
         } else {
           if (operator === ";") {
             if (this.isDefined(value)) {
-              result.push(this.encodeUnreserved(key2));
+              result.push(this.encodeUnreserved(key));
             }
           } else if (value === "" && (operator === "&" || operator === "?")) {
-            result.push(this.encodeUnreserved(key2) + "=");
+            result.push(this.encodeUnreserved(key) + "=");
           } else if (value === "") {
             result.push("");
           }
@@ -40778,12 +40778,12 @@ var require_util11 = __commonJS({
     function headersToClassicHeaders(headers) {
       let classicHeaders = {};
       if (headers instanceof Headers) {
-        headers.forEach((value, key2) => {
-          classicHeaders[key2] = value;
+        headers.forEach((value, key) => {
+          classicHeaders[key] = value;
         });
       } else if (Array.isArray(headers)) {
-        for (const [key2, value] of headers) {
-          classicHeaders[key2] = value;
+        for (const [key, value] of headers) {
+          classicHeaders[key] = value;
         }
       } else {
         classicHeaders = headers || {};
@@ -41102,13 +41102,13 @@ var require_apirequest = __commonJS({
       return obj !== null && typeof obj === "object" && typeof obj.pipe === "function" && obj.readable !== false && typeof obj._read === "function" && typeof obj._readableState === "object";
     }
     function getMissingParams(params, required) {
-      const missing2 = new Array();
+      const missing = new Array();
       required.forEach((param) => {
         if (params[param] === void 0) {
-          missing2.push(param);
+          missing.push(param);
         }
       });
-      return missing2.length > 0 ? missing2 : null;
+      return missing.length > 0 ? missing : null;
     }
     function createAPIRequest(parameters, callback) {
       if (callback) {
@@ -41151,11 +41151,11 @@ var require_apirequest = __commonJS({
       const headers = (0, util_1.headersToClassicHeaders)(params.headers || {});
       populateAPIHeader(headers, options.apiVersion);
       delete params.headers;
-      Object.keys(params).forEach((key2) => {
-        if (key2.slice(-1) === "_") {
-          const newKey = key2.slice(0, -1);
-          params[newKey] = params[key2];
-          delete params[key2];
+      Object.keys(params).forEach((key) => {
+        if (key.slice(-1) === "_") {
+          const newKey = key.slice(0, -1);
+          params[newKey] = params[key];
+          delete params[key];
         }
       });
       const missingParams = getMissingParams(params, parameters.requiredParams);
@@ -41478,9 +41478,9 @@ var require_endpoint = __commonJS({
         if (typeof params !== "object") {
           params = {};
         }
-        Object.keys(params).forEach((key2) => {
-          if (params[key2].location === "path") {
-            pathParams.push(key2);
+        Object.keys(params).forEach((key) => {
+          if (params[key].location === "path") {
+            pathParams.push(key);
           }
         });
         return pathParams;
@@ -46287,11 +46287,11 @@ var require_visit = __commonJS({
     visit.BREAK = BREAK;
     visit.SKIP = SKIP;
     visit.REMOVE = REMOVE;
-    function visit_(key2, node, visitor, path) {
-      const ctrl = callVisitor(key2, node, visitor, path);
+    function visit_(key, node, visitor, path) {
+      const ctrl = callVisitor(key, node, visitor, path);
       if (identity.isNode(ctrl) || identity.isPair(ctrl)) {
-        replaceNode(key2, path, ctrl);
-        return visit_(key2, ctrl, visitor, path);
+        replaceNode(key, path, ctrl);
+        return visit_(key, ctrl, visitor, path);
       }
       if (typeof ctrl !== "symbol") {
         if (identity.isCollection(node)) {
@@ -46335,11 +46335,11 @@ var require_visit = __commonJS({
     visitAsync.BREAK = BREAK;
     visitAsync.SKIP = SKIP;
     visitAsync.REMOVE = REMOVE;
-    async function visitAsync_(key2, node, visitor, path) {
-      const ctrl = await callVisitor(key2, node, visitor, path);
+    async function visitAsync_(key, node, visitor, path) {
+      const ctrl = await callVisitor(key, node, visitor, path);
       if (identity.isNode(ctrl) || identity.isPair(ctrl)) {
-        replaceNode(key2, path, ctrl);
-        return visitAsync_(key2, ctrl, visitor, path);
+        replaceNode(key, path, ctrl);
+        return visitAsync_(key, ctrl, visitor, path);
       }
       if (typeof ctrl !== "symbol") {
         if (identity.isCollection(node)) {
@@ -46389,27 +46389,27 @@ var require_visit = __commonJS({
       }
       return visitor;
     }
-    function callVisitor(key2, node, visitor, path) {
+    function callVisitor(key, node, visitor, path) {
       if (typeof visitor === "function")
-        return visitor(key2, node, path);
+        return visitor(key, node, path);
       if (identity.isMap(node))
-        return visitor.Map?.(key2, node, path);
+        return visitor.Map?.(key, node, path);
       if (identity.isSeq(node))
-        return visitor.Seq?.(key2, node, path);
+        return visitor.Seq?.(key, node, path);
       if (identity.isPair(node))
-        return visitor.Pair?.(key2, node, path);
+        return visitor.Pair?.(key, node, path);
       if (identity.isScalar(node))
-        return visitor.Scalar?.(key2, node, path);
+        return visitor.Scalar?.(key, node, path);
       if (identity.isAlias(node))
-        return visitor.Alias?.(key2, node, path);
+        return visitor.Alias?.(key, node, path);
       return void 0;
     }
-    function replaceNode(key2, path, node) {
+    function replaceNode(key, path, node) {
       const parent = path[path.length - 1];
       if (identity.isCollection(parent)) {
-        parent.items[key2] = node;
+        parent.items[key] = node;
       } else if (identity.isPair(parent)) {
-        if (key2 === "key")
+        if (key === "key")
           parent.key = node;
         else
           parent.value = node;
@@ -46670,7 +46670,7 @@ var require_anchors = __commonJS({
 var require_applyReviver = __commonJS({
   "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/doc/applyReviver.js"(exports) {
     "use strict";
-    function applyReviver(reviver, obj, key2, val) {
+    function applyReviver(reviver, obj, key, val) {
       if (val && typeof val === "object") {
         if (Array.isArray(val)) {
           for (let i2 = 0, len = val.length; i2 < len; ++i2) {
@@ -46710,7 +46710,7 @@ var require_applyReviver = __commonJS({
           }
         }
       }
-      return reviver.call(obj, key2, val);
+      return reviver.call(obj, key, val);
     }
     exports.applyReviver = applyReviver;
   }
@@ -47071,14 +47071,14 @@ var require_Collection = __commonJS({
         if (isEmptyPath(path))
           this.add(value);
         else {
-          const [key2, ...rest] = path;
-          const node = this.get(key2, true);
+          const [key, ...rest] = path;
+          const node = this.get(key, true);
           if (identity.isCollection(node))
             node.addIn(rest, value);
           else if (node === void 0 && this.schema)
-            this.set(key2, collectionFromPath(this.schema, rest, value));
+            this.set(key, collectionFromPath(this.schema, rest, value));
           else
-            throw new Error(`Expected YAML collection at ${key2}. Remaining path: ${rest}`);
+            throw new Error(`Expected YAML collection at ${key}. Remaining path: ${rest}`);
         }
       }
       /**
@@ -47086,14 +47086,14 @@ var require_Collection = __commonJS({
        * @returns `true` if the item was found and removed.
        */
       deleteIn(path) {
-        const [key2, ...rest] = path;
+        const [key, ...rest] = path;
         if (rest.length === 0)
-          return this.delete(key2);
-        const node = this.get(key2, true);
+          return this.delete(key);
+        const node = this.get(key, true);
         if (identity.isCollection(node))
           return node.deleteIn(rest);
         else
-          throw new Error(`Expected YAML collection at ${key2}. Remaining path: ${rest}`);
+          throw new Error(`Expected YAML collection at ${key}. Remaining path: ${rest}`);
       }
       /**
        * Returns item at `key`, or `undefined` if not found. By default unwraps
@@ -47101,8 +47101,8 @@ var require_Collection = __commonJS({
        * `true` (collections are always returned intact).
        */
       getIn(path, keepScalar) {
-        const [key2, ...rest] = path;
-        const node = this.get(key2, true);
+        const [key, ...rest] = path;
+        const node = this.get(key, true);
         if (rest.length === 0)
           return !keepScalar && identity.isScalar(node) ? node.value : node;
         else
@@ -47120,10 +47120,10 @@ var require_Collection = __commonJS({
        * Checks if the collection includes a value with the key `key`.
        */
       hasIn(path) {
-        const [key2, ...rest] = path;
+        const [key, ...rest] = path;
         if (rest.length === 0)
-          return this.has(key2);
-        const node = this.get(key2, true);
+          return this.has(key);
+        const node = this.get(key, true);
         return identity.isCollection(node) ? node.hasIn(rest) : false;
       }
       /**
@@ -47131,17 +47131,17 @@ var require_Collection = __commonJS({
        * boolean to add/remove the item from the set.
        */
       setIn(path, value) {
-        const [key2, ...rest] = path;
+        const [key, ...rest] = path;
         if (rest.length === 0) {
-          this.set(key2, value);
+          this.set(key, value);
         } else {
-          const node = this.get(key2, true);
+          const node = this.get(key, true);
           if (identity.isCollection(node))
             node.setIn(rest, value);
           else if (node === void 0 && this.schema)
-            this.set(key2, collectionFromPath(this.schema, rest, value));
+            this.set(key, collectionFromPath(this.schema, rest, value));
           else
-            throw new Error(`Expected YAML collection at ${key2}. Remaining path: ${rest}`);
+            throw new Error(`Expected YAML collection at ${key}. Remaining path: ${rest}`);
         }
       }
     };
@@ -47719,19 +47719,19 @@ var require_stringifyPair = __commonJS({
     var Scalar = require_Scalar();
     var stringify = require_stringify3();
     var stringifyComment = require_stringifyComment();
-    function stringifyPair({ key: key2, value }, ctx, onComment, onChompKeep) {
+    function stringifyPair({ key, value }, ctx, onComment, onChompKeep) {
       const { allNullValues, doc, indent, indentStep, options: { commentString, indentSeq, simpleKeys } } = ctx;
-      let keyComment = identity.isNode(key2) && key2.comment || null;
+      let keyComment = identity.isNode(key) && key.comment || null;
       if (simpleKeys) {
         if (keyComment) {
           throw new Error("With simple keys, key nodes cannot have comments");
         }
-        if (identity.isCollection(key2) || !identity.isNode(key2) && typeof key2 === "object") {
+        if (identity.isCollection(key) || !identity.isNode(key) && typeof key === "object") {
           const msg = "With simple keys, collection cannot be used as a key value";
           throw new Error(msg);
         }
       }
-      let explicitKey = !simpleKeys && (!key2 || keyComment && value == null && !ctx.inFlow || identity.isCollection(key2) || (identity.isScalar(key2) ? key2.type === Scalar.Scalar.BLOCK_FOLDED || key2.type === Scalar.Scalar.BLOCK_LITERAL : typeof key2 === "object"));
+      let explicitKey = !simpleKeys && (!key || keyComment && value == null && !ctx.inFlow || identity.isCollection(key) || (identity.isScalar(key) ? key.type === Scalar.Scalar.BLOCK_FOLDED || key.type === Scalar.Scalar.BLOCK_LITERAL : typeof key === "object"));
       ctx = Object.assign({}, ctx, {
         allNullValues: false,
         implicitKey: !explicitKey && (simpleKeys || !allNullValues),
@@ -47739,7 +47739,7 @@ var require_stringifyPair = __commonJS({
       });
       let keyCommentDone = false;
       let chompKeep = false;
-      let str = stringify.stringify(key2, ctx, () => keyCommentDone = true, () => chompKeep = true);
+      let str = stringify.stringify(key, ctx, () => keyCommentDone = true, () => chompKeep = true);
       if (!explicitKey && !ctx.inFlow && str.length > 1024) {
         if (simpleKeys)
           throw new Error("With simple keys, single line scalar must not span more than 1024 characters");
@@ -47883,7 +47883,7 @@ var require_merge = __commonJS({
       }),
       stringify: () => MERGE_KEY
     };
-    var isMergeKey = (ctx, key2) => (merge2.identify(key2) || identity.isScalar(key2) && (!key2.type || key2.type === Scalar.Scalar.PLAIN) && merge2.identify(key2.value)) && ctx?.doc.schema.tags.some((tag) => tag.tag === merge2.tag && tag.default);
+    var isMergeKey = (ctx, key) => (merge2.identify(key) || identity.isScalar(key) && (!key.type || key.type === Scalar.Scalar.PLAIN) && merge2.identify(key.value)) && ctx?.doc.schema.tags.some((tag) => tag.tag === merge2.tag && tag.default);
     function addMergeToJSMap(ctx, map, value) {
       const source = resolveAliasValue(ctx, value);
       if (identity.isSeq(source))
@@ -47900,14 +47900,14 @@ var require_merge = __commonJS({
       if (!identity.isMap(source))
         throw new Error("Merge sources must be maps or map aliases");
       const srcMap = source.toJSON(null, ctx, Map);
-      for (const [key2, value2] of srcMap) {
+      for (const [key, value2] of srcMap) {
         if (map instanceof Map) {
-          if (!map.has(key2))
-            map.set(key2, value2);
+          if (!map.has(key))
+            map.set(key, value2);
         } else if (map instanceof Set) {
-          map.add(key2);
-        } else if (!Object.prototype.hasOwnProperty.call(map, key2)) {
-          Object.defineProperty(map, key2, {
+          map.add(key);
+        } else if (!Object.prototype.hasOwnProperty.call(map, key)) {
+          Object.defineProperty(map, key, {
             value: value2,
             writable: true,
             enumerable: true,
@@ -47935,19 +47935,19 @@ var require_addPairToJSMap = __commonJS({
     var stringify = require_stringify3();
     var identity = require_identity();
     var toJS = require_toJS();
-    function addPairToJSMap(ctx, map, { key: key2, value }) {
-      if (identity.isNode(key2) && key2.addToJSMap)
-        key2.addToJSMap(ctx, map, value);
-      else if (merge2.isMergeKey(ctx, key2))
+    function addPairToJSMap(ctx, map, { key, value }) {
+      if (identity.isNode(key) && key.addToJSMap)
+        key.addToJSMap(ctx, map, value);
+      else if (merge2.isMergeKey(ctx, key))
         merge2.addMergeToJSMap(ctx, map, value);
       else {
-        const jsKey = toJS.toJS(key2, "", ctx);
+        const jsKey = toJS.toJS(key, "", ctx);
         if (map instanceof Map) {
           map.set(jsKey, toJS.toJS(value, jsKey, ctx));
         } else if (map instanceof Set) {
           map.add(jsKey);
         } else {
-          const stringKey = stringifyKey(key2, jsKey, ctx);
+          const stringKey = stringifyKey(key, jsKey, ctx);
           const jsValue = toJS.toJS(value, stringKey, ctx);
           if (stringKey in map)
             Object.defineProperty(map, stringKey, {
@@ -47962,19 +47962,19 @@ var require_addPairToJSMap = __commonJS({
       }
       return map;
     }
-    function stringifyKey(key2, jsKey, ctx) {
+    function stringifyKey(key, jsKey, ctx) {
       if (jsKey === null)
         return "";
       if (typeof jsKey !== "object")
         return String(jsKey);
-      if (identity.isNode(key2) && ctx?.doc) {
+      if (identity.isNode(key) && ctx?.doc) {
         const strCtx = stringify.createStringifyContext(ctx.doc, {});
         strCtx.anchors = /* @__PURE__ */ new Set();
         for (const node of ctx.anchors.keys())
           strCtx.anchors.add(node.anchor);
         strCtx.inFlow = true;
         strCtx.inStringifyKey = true;
-        const strKey = key2.toString(strCtx);
+        const strKey = key.toString(strCtx);
         if (!ctx.mapKeyWarned) {
           let jsonStr = JSON.stringify(strKey);
           if (jsonStr.length > 40)
@@ -47998,24 +47998,24 @@ var require_Pair = __commonJS({
     var stringifyPair = require_stringifyPair();
     var addPairToJSMap = require_addPairToJSMap();
     var identity = require_identity();
-    function createPair(key2, value, ctx) {
-      const k = createNode.createNode(key2, void 0, ctx);
+    function createPair(key, value, ctx) {
+      const k = createNode.createNode(key, void 0, ctx);
       const v = createNode.createNode(value, void 0, ctx);
       return new Pair(k, v);
     }
     var Pair = class _Pair {
-      constructor(key2, value = null) {
+      constructor(key, value = null) {
         Object.defineProperty(this, identity.NODE_TYPE, { value: identity.PAIR });
-        this.key = key2;
+        this.key = key;
         this.value = value;
       }
       clone(schema) {
-        let { key: key2, value } = this;
-        if (identity.isNode(key2))
-          key2 = key2.clone(schema);
+        let { key, value } = this;
+        if (identity.isNode(key))
+          key = key.clone(schema);
         if (identity.isNode(value))
           value = value.clone(schema);
-        return new _Pair(key2, value);
+        return new _Pair(key, value);
       }
       toJSON(_, ctx) {
         const pair = ctx?.mapAsMap ? /* @__PURE__ */ new Map() : {};
@@ -48191,11 +48191,11 @@ var require_YAMLMap = __commonJS({
     var identity = require_identity();
     var Pair = require_Pair();
     var Scalar = require_Scalar();
-    function findPair(items, key2) {
-      const k = identity.isScalar(key2) ? key2.value : key2;
+    function findPair(items, key) {
+      const k = identity.isScalar(key) ? key.value : key;
       for (const it of items) {
         if (identity.isPair(it)) {
-          if (it.key === key2 || it.key === k)
+          if (it.key === key || it.key === k)
             return it;
           if (identity.isScalar(it.key) && it.key.value === k)
             return it;
@@ -48218,20 +48218,20 @@ var require_YAMLMap = __commonJS({
       static from(schema, obj, ctx) {
         const { keepUndefined, replacer } = ctx;
         const map = new this(schema);
-        const add = (key2, value) => {
+        const add = (key, value) => {
           if (typeof replacer === "function")
-            value = replacer.call(obj, key2, value);
-          else if (Array.isArray(replacer) && !replacer.includes(key2))
+            value = replacer.call(obj, key, value);
+          else if (Array.isArray(replacer) && !replacer.includes(key))
             return;
           if (value !== void 0 || keepUndefined)
-            map.items.push(Pair.createPair(key2, value, ctx));
+            map.items.push(Pair.createPair(key, value, ctx));
         };
         if (obj instanceof Map) {
-          for (const [key2, value] of obj)
-            add(key2, value);
+          for (const [key, value] of obj)
+            add(key, value);
         } else if (obj && typeof obj === "object") {
-          for (const key2 of Object.keys(obj))
-            add(key2, obj[key2]);
+          for (const key of Object.keys(obj))
+            add(key, obj[key]);
         }
         if (typeof schema.sortMapEntries === "function") {
           map.items.sort(schema.sortMapEntries);
@@ -48271,23 +48271,23 @@ var require_YAMLMap = __commonJS({
           this.items.push(_pair);
         }
       }
-      delete(key2) {
-        const it = findPair(this.items, key2);
+      delete(key) {
+        const it = findPair(this.items, key);
         if (!it)
           return false;
         const del = this.items.splice(this.items.indexOf(it), 1);
         return del.length > 0;
       }
-      get(key2, keepScalar) {
-        const it = findPair(this.items, key2);
+      get(key, keepScalar) {
+        const it = findPair(this.items, key);
         const node = it?.value;
         return (!keepScalar && identity.isScalar(node) ? node.value : node) ?? void 0;
       }
-      has(key2) {
-        return !!findPair(this.items, key2);
+      has(key) {
+        return !!findPair(this.items, key);
       }
-      set(key2, value) {
-        this.add(new Pair.Pair(key2, value), true);
+      set(key, value) {
+        this.add(new Pair.Pair(key, value), true);
       }
       /**
        * @param ctx - Conversion context, originally set in Document#toJS()
@@ -48376,15 +48376,15 @@ var require_YAMLSeq = __commonJS({
        *
        * @returns `true` if the item was found and removed.
        */
-      delete(key2) {
-        const idx = asItemIndex(key2);
+      delete(key) {
+        const idx = asItemIndex(key);
         if (typeof idx !== "number")
           return false;
         const del = this.items.splice(idx, 1);
         return del.length > 0;
       }
-      get(key2, keepScalar) {
-        const idx = asItemIndex(key2);
+      get(key, keepScalar) {
+        const idx = asItemIndex(key);
         if (typeof idx !== "number")
           return void 0;
         const it = this.items[idx];
@@ -48396,8 +48396,8 @@ var require_YAMLSeq = __commonJS({
        * `key` must contain a representation of an integer for this to succeed.
        * It may be wrapped in a `Scalar`.
        */
-      has(key2) {
-        const idx = asItemIndex(key2);
+      has(key) {
+        const idx = asItemIndex(key);
         return typeof idx === "number" && idx < this.items.length;
       }
       /**
@@ -48407,10 +48407,10 @@ var require_YAMLSeq = __commonJS({
        * If `key` does not contain a representation of an integer, this will throw.
        * It may be wrapped in a `Scalar`.
        */
-      set(key2, value) {
-        const idx = asItemIndex(key2);
+      set(key, value) {
+        const idx = asItemIndex(key);
         if (typeof idx !== "number")
-          throw new Error(`Expected a valid index, not ${key2}.`);
+          throw new Error(`Expected a valid index, not ${key}.`);
         const prev = this.items[idx];
         if (identity.isScalar(prev) && Scalar.isScalarValue(value))
           prev.value = value;
@@ -48444,8 +48444,8 @@ var require_YAMLSeq = __commonJS({
           let i2 = 0;
           for (let it of obj) {
             if (typeof replacer === "function") {
-              const key2 = obj instanceof Set ? it : String(i2++);
-              it = replacer.call(obj, key2, it);
+              const key = obj instanceof Set ? it : String(i2++);
+              it = replacer.call(obj, key, it);
             }
             seq.items.push(createNode.createNode(it, void 0, ctx));
           }
@@ -48453,8 +48453,8 @@ var require_YAMLSeq = __commonJS({
         return seq;
       }
     };
-    function asItemIndex(key2) {
-      let idx = identity.isScalar(key2) ? key2.value : key2;
+    function asItemIndex(key) {
+      let idx = identity.isScalar(key) ? key.value : key;
       if (idx && typeof idx === "string")
         idx = Number(idx);
       return typeof idx === "number" && Number.isInteger(idx) && idx >= 0 ? idx : null;
@@ -48868,25 +48868,25 @@ ${cn.comment}` : item.comment;
         for (let it of iterable) {
           if (typeof replacer === "function")
             it = replacer.call(iterable, String(i2++), it);
-          let key2, value;
+          let key, value;
           if (Array.isArray(it)) {
             if (it.length === 2) {
-              key2 = it[0];
+              key = it[0];
               value = it[1];
             } else
               throw new TypeError(`Expected [key, value] tuple: ${it}`);
           } else if (it && it instanceof Object) {
             const keys = Object.keys(it);
             if (keys.length === 1) {
-              key2 = keys[0];
-              value = it[key2];
+              key = keys[0];
+              value = it[key];
             } else {
               throw new TypeError(`Expected tuple with one key, not ${keys.length} keys`);
             }
           } else {
-            key2 = it;
+            key = it;
           }
-          pairs2.items.push(Pair.createPair(key2, value, ctx));
+          pairs2.items.push(Pair.createPair(key, value, ctx));
         }
       return pairs2;
     }
@@ -48933,16 +48933,16 @@ var require_omap = __commonJS({
         if (ctx?.onCreate)
           ctx.onCreate(map);
         for (const pair of this.items) {
-          let key2, value;
+          let key, value;
           if (identity.isPair(pair)) {
-            key2 = toJS.toJS(pair.key, "", ctx);
-            value = toJS.toJS(pair.value, key2, ctx);
+            key = toJS.toJS(pair.key, "", ctx);
+            value = toJS.toJS(pair.value, key, ctx);
           } else {
-            key2 = toJS.toJS(pair, "", ctx);
+            key = toJS.toJS(pair, "", ctx);
           }
-          if (map.has(key2))
+          if (map.has(key))
             throw new Error("Ordered maps must not include duplicate keys");
-          map.set(key2, value);
+          map.set(key, value);
         }
         return map;
       }
@@ -48963,12 +48963,12 @@ var require_omap = __commonJS({
       resolve(seq, onError) {
         const pairs$1 = pairs.resolvePairs(seq, onError);
         const seenKeys = [];
-        for (const { key: key2 } of pairs$1.items) {
-          if (identity.isScalar(key2)) {
-            if (seenKeys.includes(key2.value)) {
-              onError(`Ordered maps must not include duplicate keys: ${key2.value}`);
+        for (const { key } of pairs$1.items) {
+          if (identity.isScalar(key)) {
+            if (seenKeys.includes(key.value)) {
+              onError(`Ordered maps must not include duplicate keys: ${key.value}`);
             } else {
-              seenKeys.push(key2.value);
+              seenKeys.push(key.value);
             }
           }
         }
@@ -49153,14 +49153,14 @@ var require_set = __commonJS({
         super(schema);
         this.tag = _YAMLSet.tag;
       }
-      add(key2) {
+      add(key) {
         let pair;
-        if (identity.isPair(key2))
-          pair = key2;
-        else if (key2 && typeof key2 === "object" && "key" in key2 && "value" in key2 && key2.value === null)
-          pair = new Pair.Pair(key2.key, null);
+        if (identity.isPair(key))
+          pair = key;
+        else if (key && typeof key === "object" && "key" in key && "value" in key && key.value === null)
+          pair = new Pair.Pair(key.key, null);
         else
-          pair = new Pair.Pair(key2, null);
+          pair = new Pair.Pair(key, null);
         const prev = YAMLMap.findPair(this.items, pair.key);
         if (!prev)
           this.items.push(pair);
@@ -49169,18 +49169,18 @@ var require_set = __commonJS({
        * If `keepPair` is `true`, returns the Pair matching `key`.
        * Otherwise, returns the value of that Pair's key.
        */
-      get(key2, keepPair) {
-        const pair = YAMLMap.findPair(this.items, key2);
+      get(key, keepPair) {
+        const pair = YAMLMap.findPair(this.items, key);
         return !keepPair && identity.isPair(pair) ? identity.isScalar(pair.key) ? pair.key.value : pair.key : pair;
       }
-      set(key2, value) {
+      set(key, value) {
         if (typeof value !== "boolean")
           throw new Error(`Expected boolean value for set(key, value) in a YAML set, not ${typeof value}`);
-        const prev = YAMLMap.findPair(this.items, key2);
+        const prev = YAMLMap.findPair(this.items, key);
         if (prev && !value) {
           this.items.splice(this.items.indexOf(prev), 1);
         } else if (!prev && value) {
-          this.items.push(new Pair.Pair(key2));
+          this.items.push(new Pair.Pair(key));
         }
       }
       toJSON(_, ctx) {
@@ -49427,7 +49427,7 @@ var require_tags = __commonJS({
         if (Array.isArray(customTags))
           tags = [];
         else {
-          const keys = Array.from(schemas.keys()).filter((key2) => key2 !== "yaml11").map((key2) => JSON.stringify(key2)).join(", ");
+          const keys = Array.from(schemas.keys()).filter((key) => key !== "yaml11").map((key) => JSON.stringify(key)).join(", ");
           throw new Error(`Unknown schema "${schemaName}"; use one of ${keys} or define customTags array`);
         }
       }
@@ -49443,7 +49443,7 @@ var require_tags = __commonJS({
         const tagObj = typeof tag === "string" ? tagsByName[tag] : tag;
         if (!tagObj) {
           const tagName = JSON.stringify(tag);
-          const keys = Object.keys(tagsByName).map((key2) => JSON.stringify(key2)).join(", ");
+          const keys = Object.keys(tagsByName).map((key) => JSON.stringify(key)).join(", ");
           throw new Error(`Unknown custom tag ${tagName}; use one of ${keys}`);
         }
         if (!tags2.includes(tagObj))
@@ -49707,8 +49707,8 @@ var require_Document = __commonJS({
        * Convert a key and a value into a `Pair` using the current schema,
        * recursively wrapping all values as `Scalar` or `Collection` nodes.
        */
-      createPair(key2, value, options = {}) {
-        const k = this.createNode(key2, null, options);
+      createPair(key, value, options = {}) {
+        const k = this.createNode(key, null, options);
         const v = this.createNode(value, null, options);
         return new Pair.Pair(k, v);
       }
@@ -49716,8 +49716,8 @@ var require_Document = __commonJS({
        * Removes a value from the document.
        * @returns `true` if the item was found and removed.
        */
-      delete(key2) {
-        return assertCollection(this.contents) ? this.contents.delete(key2) : false;
+      delete(key) {
+        return assertCollection(this.contents) ? this.contents.delete(key) : false;
       }
       /**
        * Removes a value from the document.
@@ -49737,8 +49737,8 @@ var require_Document = __commonJS({
        * scalar values from their surrounding node; to disable set `keepScalar` to
        * `true` (collections are always returned intact).
        */
-      get(key2, keepScalar) {
-        return identity.isCollection(this.contents) ? this.contents.get(key2, keepScalar) : void 0;
+      get(key, keepScalar) {
+        return identity.isCollection(this.contents) ? this.contents.get(key, keepScalar) : void 0;
       }
       /**
        * Returns item at `path`, or `undefined` if not found. By default unwraps
@@ -49753,8 +49753,8 @@ var require_Document = __commonJS({
       /**
        * Checks if the document includes a value with the key `key`.
        */
-      has(key2) {
-        return identity.isCollection(this.contents) ? this.contents.has(key2) : false;
+      has(key) {
+        return identity.isCollection(this.contents) ? this.contents.has(key) : false;
       }
       /**
        * Checks if the document includes a value at `path`.
@@ -49768,11 +49768,11 @@ var require_Document = __commonJS({
        * Sets a value in this document. For `!!set`, `value` needs to be a
        * boolean to add/remove the item from the set.
        */
-      set(key2, value) {
+      set(key, value) {
         if (this.contents == null) {
-          this.contents = Collection2.collectionFromPath(this.schema, [key2], value);
+          this.contents = Collection2.collectionFromPath(this.schema, [key], value);
         } else if (assertCollection(this.contents)) {
-          this.contents.set(key2, value);
+          this.contents.set(key, value);
         }
       }
       /**
@@ -50080,24 +50080,24 @@ var require_resolve_props = __commonJS({
 var require_util_contains_newline = __commonJS({
   "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/util-contains-newline.js"(exports) {
     "use strict";
-    function containsNewline(key2) {
-      if (!key2)
+    function containsNewline(key) {
+      if (!key)
         return null;
-      switch (key2.type) {
+      switch (key.type) {
         case "alias":
         case "scalar":
         case "double-quoted-scalar":
         case "single-quoted-scalar":
-          if (key2.source.includes("\n"))
+          if (key.source.includes("\n"))
             return true;
-          if (key2.end) {
-            for (const st of key2.end)
+          if (key.end) {
+            for (const st of key.end)
               if (st.type === "newline")
                 return true;
           }
           return false;
         case "flow-collection":
-          for (const it of key2.items) {
+          for (const it of key.items) {
             for (const st of it.start)
               if (st.type === "newline")
                 return true;
@@ -50171,10 +50171,10 @@ var require_resolve_block_map = __commonJS({
       let offset = bm.offset;
       let commentEnd = null;
       for (const collItem of bm.items) {
-        const { start, key: key2, sep: sep3, value } = collItem;
+        const { start, key, sep: sep3, value } = collItem;
         const keyProps = resolveProps.resolveProps(start, {
           indicator: "explicit-key-ind",
-          next: key2 ?? sep3?.[0],
+          next: key ?? sep3?.[0],
           offset,
           onError,
           parentIndent: bm.indent,
@@ -50182,10 +50182,10 @@ var require_resolve_block_map = __commonJS({
         });
         const implicitKey = !keyProps.found;
         if (implicitKey) {
-          if (key2) {
-            if (key2.type === "block-seq")
+          if (key) {
+            if (key.type === "block-seq")
               onError(offset, "BLOCK_AS_IMPLICIT_KEY", "A block sequence may not be used as an implicit map key");
-            else if ("indent" in key2 && key2.indent !== bm.indent)
+            else if ("indent" in key && key.indent !== bm.indent)
               onError(offset, "BAD_INDENT", startColMsg);
           }
           if (!keyProps.anchor && !keyProps.tag && !sep3) {
@@ -50198,17 +50198,17 @@ var require_resolve_block_map = __commonJS({
             }
             continue;
           }
-          if (keyProps.newlineAfterProp || utilContainsNewline.containsNewline(key2)) {
-            onError(key2 ?? start[start.length - 1], "MULTILINE_IMPLICIT_KEY", "Implicit keys need to be on a single line");
+          if (keyProps.newlineAfterProp || utilContainsNewline.containsNewline(key)) {
+            onError(key ?? start[start.length - 1], "MULTILINE_IMPLICIT_KEY", "Implicit keys need to be on a single line");
           }
         } else if (keyProps.found?.indent !== bm.indent) {
           onError(offset, "BAD_INDENT", startColMsg);
         }
         ctx.atKey = true;
         const keyStart = keyProps.end;
-        const keyNode = key2 ? composeNode(ctx, key2, keyProps, onError) : composeEmptyNode(ctx, keyStart, start, null, keyProps, onError);
+        const keyNode = key ? composeNode(ctx, key, keyProps, onError) : composeEmptyNode(ctx, keyStart, start, null, keyProps, onError);
         if (ctx.schema.compat)
-          utilFlowIndentCheck.flowIndentCheck(bm.indent, key2, onError);
+          utilFlowIndentCheck.flowIndentCheck(bm.indent, key, onError);
         ctx.atKey = false;
         if (utilMapIncludes.mapIncludes(ctx, map.items, keyNode))
           onError(keyStart, "DUPLICATE_KEY", "Map keys must be unique");
@@ -50218,7 +50218,7 @@ var require_resolve_block_map = __commonJS({
           offset: keyNode.range[2],
           onError,
           parentIndent: bm.indent,
-          startOnNewline: !key2 || key2.type === "block-scalar"
+          startOnNewline: !key || key.type === "block-scalar"
         });
         offset = valueProps.end;
         if (valueProps.found) {
@@ -50382,11 +50382,11 @@ var require_resolve_flow_collection = __commonJS({
       let offset = fc.offset + fc.start.source.length;
       for (let i2 = 0; i2 < fc.items.length; ++i2) {
         const collItem = fc.items[i2];
-        const { start, key: key2, sep: sep3, value } = collItem;
+        const { start, key, sep: sep3, value } = collItem;
         const props = resolveProps.resolveProps(start, {
           flow: fcName,
           indicator: "explicit-key-ind",
-          next: key2 ?? sep3?.[0],
+          next: key ?? sep3?.[0],
           offset,
           onError,
           parentIndent: fc.indent,
@@ -50407,9 +50407,9 @@ var require_resolve_flow_collection = __commonJS({
             offset = props.end;
             continue;
           }
-          if (!isMap && ctx.options.strict && utilContainsNewline.containsNewline(key2))
+          if (!isMap && ctx.options.strict && utilContainsNewline.containsNewline(key))
             onError(
-              key2,
+              key,
               // checked by containsNewline()
               "MULTILINE_IMPLICIT_KEY",
               "Implicit keys of flow sequence pairs need to be on a single line"
@@ -50456,8 +50456,8 @@ var require_resolve_flow_collection = __commonJS({
         } else {
           ctx.atKey = true;
           const keyStart = props.end;
-          const keyNode = key2 ? composeNode(ctx, key2, props, onError) : composeEmptyNode(ctx, keyStart, start, null, props, onError);
-          if (isBlock(key2))
+          const keyNode = key ? composeNode(ctx, key, props, onError) : composeEmptyNode(ctx, keyStart, start, null, props, onError);
+          if (isBlock(key))
             onError(keyNode.range, "BLOCK_IN_FLOW", blockMsg);
           ctx.atKey = false;
           const valueProps = resolveProps.resolveProps(sep3 ?? [], {
@@ -51606,9 +51606,9 @@ var require_cst_scalar = __commonJS({
         ];
         if (!addEndtoBlockProps(props, "end" in token ? token.end : void 0))
           props.push({ type: "newline", offset: -1, indent, source: "\n" });
-        for (const key2 of Object.keys(token))
-          if (key2 !== "type" && key2 !== "offset")
-            delete token[key2];
+        for (const key of Object.keys(token))
+          if (key !== "type" && key !== "offset")
+            delete token[key];
         Object.assign(token, { type: "block-scalar", indent, props, source: body });
       }
     }
@@ -51656,9 +51656,9 @@ var require_cst_scalar = __commonJS({
         default: {
           const indent = "indent" in token ? token.indent : -1;
           const end = "end" in token && Array.isArray(token.end) ? token.end.filter((st) => st.type === "space" || st.type === "comment" || st.type === "newline") : [];
-          for (const key2 of Object.keys(token))
-            if (key2 !== "type" && key2 !== "offset")
-              delete token[key2];
+          for (const key of Object.keys(token))
+            if (key !== "type" && key !== "offset")
+              delete token[key];
           Object.assign(token, { type, indent, source, end });
         }
       }
@@ -51713,12 +51713,12 @@ var require_cst_stringify = __commonJS({
         }
       }
     }
-    function stringifyItem({ start, key: key2, sep: sep3, value }) {
+    function stringifyItem({ start, key, sep: sep3, value }) {
       let res = "";
       for (const st of start)
         res += st.source;
-      if (key2)
-        res += stringifyToken(key2);
+      if (key)
+        res += stringifyToken(key);
       if (sep3)
         for (const st of sep3)
           res += st.source;
@@ -53050,7 +53050,7 @@ var require_parser = __commonJS({
                   });
                 } else if (isFlowToken(it.key) && !includesToken(it.sep, "newline")) {
                   const start2 = getFirstKeyStartProps(it.start);
-                  const key2 = it.key;
+                  const key = it.key;
                   const sep3 = it.sep;
                   sep3.push(this.sourceToken);
                   delete it.key;
@@ -53059,7 +53059,7 @@ var require_parser = __commonJS({
                     type: "block-map",
                     offset: this.offset,
                     indent: this.indent,
-                    items: [{ start: start2, key: key2, sep: sep3 }]
+                    items: [{ start: start2, key, sep: sep3 }]
                   });
                 } else if (start.length > 0) {
                   it.sep = it.sep.concat(start, this.sourceToken);
@@ -53553,10 +53553,10 @@ var require_ReflectLite = __commonJS({
           root.Reflect = Reflect3;
         }
         function makeExporter(target, previous) {
-          return function(key2, value) {
-            Object.defineProperty(target, key2, { configurable: true, writable: true, value });
+          return function(key, value) {
+            Object.defineProperty(target, key, { configurable: true, writable: true, value });
             if (previous)
-              previous(key2, value);
+              previous(key, value);
           };
         }
         function sloppyModeThis() {
@@ -53763,19 +53763,19 @@ var require_ReflectLite = __commonJS({
           var set = new _Set();
           var keys = [];
           for (var _i = 0, ownKeys_1 = ownKeys; _i < ownKeys_1.length; _i++) {
-            var key2 = ownKeys_1[_i];
-            var hasKey = set.has(key2);
+            var key = ownKeys_1[_i];
+            var hasKey = set.has(key);
             if (!hasKey) {
-              set.add(key2);
-              keys.push(key2);
+              set.add(key);
+              keys.push(key);
             }
           }
           for (var _a = 0, parentKeys_1 = parentKeys; _a < parentKeys_1.length; _a++) {
-            var key2 = parentKeys_1[_a];
-            var hasKey = set.has(key2);
+            var key = parentKeys_1[_a];
+            var hasKey = set.has(key);
             if (!hasKey) {
-              set.add(key2);
-              keys.push(key2);
+              set.add(key);
+              keys.push(key);
             }
           }
           return keys;
@@ -53886,14 +53886,14 @@ var require_ReflectLite = __commonJS({
           return "" + argument;
         }
         function ToPropertyKey(argument) {
-          var key2 = ToPrimitive(
+          var key = ToPrimitive(
             argument,
             3
             /* String */
           );
-          if (IsSymbol(key2))
-            return key2;
-          return ToString(key2);
+          if (IsSymbol(key))
+            return key;
+          return ToString(key);
         }
         function IsArray(argument) {
           return Array.isArray ? Array.isArray(argument) : argument instanceof Object ? argument instanceof Array : Object.prototype.toString.call(argument) === "[object Array]";
@@ -54311,16 +54311,16 @@ var Command = class {
     if (this.properties && Object.keys(this.properties).length > 0) {
       cmdStr += " ";
       let first = true;
-      for (const key2 in this.properties) {
-        if (this.properties.hasOwnProperty(key2)) {
-          const val = this.properties[key2];
+      for (const key in this.properties) {
+        if (this.properties.hasOwnProperty(key)) {
+          const val = this.properties[key];
           if (val) {
             if (first) {
               first = false;
             } else {
               cmdStr += ",";
             }
-            cmdStr += `${key2}=${escapeProperty(val)}`;
+            cmdStr += `${key}=${escapeProperty(val)}`;
           }
         }
       }
@@ -54352,16 +54352,16 @@ function issueFileCommand(command, message) {
     encoding: "utf8"
   });
 }
-function prepareKeyValueMessage(key2, value) {
+function prepareKeyValueMessage(key, value) {
   const delimiter = `ghadelimiter_${crypto2.randomUUID()}`;
   const convertedValue = toCommandValue(value);
-  if (key2.includes(delimiter)) {
+  if (key.includes(delimiter)) {
     throw new Error(`Unexpected input: name should not contain the delimiter "${delimiter}"`);
   }
   if (convertedValue.includes(delimiter)) {
     throw new Error(`Unexpected input: value should not contain the delimiter "${delimiter}"`);
   }
-  return `${key2}<<${delimiter}${os2.EOL}${convertedValue}${os2.EOL}${delimiter}`;
+  return `${key}<<${delimiter}${os2.EOL}${convertedValue}${os2.EOL}${delimiter}`;
 }
 
 // node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/core.js
@@ -54492,7 +54492,7 @@ var Summary = class {
    * @returns {string} content wrapped in HTML element
    */
   wrap(tag, content, attrs = {}) {
-    const htmlAttrs = Object.entries(attrs).map(([key2, value]) => ` ${key2}="${value}"`).join("");
+    const htmlAttrs = Object.entries(attrs).map(([key, value]) => ` ${key}="${value}"`).join("");
     if (!content) {
       return `<${tag}${htmlAttrs}>`;
     }
@@ -54757,6 +54757,60 @@ function error(message, properties = {}) {
   issueCommand("error", toCommandProperties(properties), message instanceof Error ? message.toString() : message);
 }
 
+// packages/runtime/github-actions/src/runtime-input.ts
+var SAFE_ERROR_NAMES = /* @__PURE__ */ new Set([
+  "GoogleDriveAssetRepositoryError",
+  "EventNotFoundError",
+  "EventConcurrentModificationError",
+  "GitHubEventRepositoryConfigurationError",
+  "GitHubEventRepositoryScopeError",
+  "GitHubEventRepositoryResponseError",
+  "GitHubEventCommentRepositoryConfigurationError",
+  "GitHubEventCommentRepositoryScopeError",
+  "GitHubEventCommentRepositoryResponseError"
+]);
+var RuntimeInput = class {
+  static positiveIntegerInput(name, value) {
+    if (!/^\d+$/.test(value)) {
+      throw new Error(`${name} must be a positive integer`);
+    }
+    const parsed = Number(value);
+    if (!Number.isSafeInteger(parsed) || parsed <= 0) {
+      throw new Error(`${name} must be a positive integer`);
+    }
+    return parsed;
+  }
+  static enumInput(name, value, allowed) {
+    if (!allowed.includes(value)) {
+      throw new Error(`${name} must be one of: ${allowed.join(", ")}`);
+    }
+    return value;
+  }
+  static booleanInput(name, value) {
+    if (value === "true") return true;
+    if (value === "false") return false;
+    throw new Error(`${name} must be true or false`);
+  }
+  /** Never expose provider responses, input values, or contact data in failures. */
+  static publicErrorMessage(error2) {
+    if (error2 instanceof Error && SAFE_ERROR_NAMES.has(error2.name)) {
+      return `${error2.name}: ${error2.message}`;
+    }
+    return "Meetup automation failed; inspect debug logs using a trusted runner";
+  }
+};
+
+// packages/runtime/github-actions/src/action-runner.ts
+var ActionRunner = class {
+  static async run(operation) {
+    try {
+      await operation();
+    } catch (error2) {
+      setFailed(RuntimeInput.publicErrorMessage(error2));
+    }
+  }
+};
+
 // node_modules/.pnpm/@actions+github@9.1.1/node_modules/@actions/github/lib/context.js
 import { readFileSync, existsSync as existsSync2 } from "fs";
 import { EOL as EOL5 } from "os";
@@ -55013,8 +55067,8 @@ function lowercaseKeys(object) {
   if (!object) {
     return {};
   }
-  return Object.keys(object).reduce((newObj, key2) => {
-    newObj[key2.toLowerCase()] = object[key2];
+  return Object.keys(object).reduce((newObj, key) => {
+    newObj[key.toLowerCase()] = object[key];
     return newObj;
   }, {});
 }
@@ -55028,20 +55082,20 @@ function isPlainObject(value) {
 }
 function mergeDeep(defaults2, options) {
   const result = Object.assign({}, defaults2);
-  Object.keys(options).forEach((key2) => {
-    if (isPlainObject(options[key2])) {
-      if (!(key2 in defaults2)) Object.assign(result, { [key2]: options[key2] });
-      else result[key2] = mergeDeep(defaults2[key2], options[key2]);
+  Object.keys(options).forEach((key) => {
+    if (isPlainObject(options[key])) {
+      if (!(key in defaults2)) Object.assign(result, { [key]: options[key] });
+      else result[key] = mergeDeep(defaults2[key], options[key]);
     } else {
-      Object.assign(result, { [key2]: options[key2] });
+      Object.assign(result, { [key]: options[key] });
     }
   });
   return result;
 }
 function removeUndefinedProperties(obj) {
-  for (const key2 in obj) {
-    if (obj[key2] === void 0) {
-      delete obj[key2];
+  for (const key in obj) {
+    if (obj[key] === void 0) {
+      delete obj[key];
     }
   }
   return obj;
@@ -55093,9 +55147,9 @@ function extractUrlVariableNames(url) {
 }
 function omit(object, keysToOmit) {
   const result = { __proto__: null };
-  for (const key2 of Object.keys(object)) {
-    if (keysToOmit.indexOf(key2) === -1) {
-      result[key2] = object[key2];
+  for (const key of Object.keys(object)) {
+    if (keysToOmit.indexOf(key) === -1) {
+      result[key] = object[key];
     }
   }
   return result;
@@ -55113,10 +55167,10 @@ function encodeUnreserved(str) {
     return "%" + c.charCodeAt(0).toString(16).toUpperCase();
   });
 }
-function encodeValue(operator, value, key2) {
+function encodeValue(operator, value, key) {
   value = operator === "+" || operator === "#" ? encodeReserved(value) : encodeUnreserved(value);
-  if (key2) {
-    return encodeUnreserved(key2) + "=" + value;
+  if (key) {
+    return encodeUnreserved(key) + "=" + value;
   } else {
     return value;
   }
@@ -55127,8 +55181,8 @@ function isDefined(value) {
 function isKeyOperator(operator) {
   return operator === ";" || operator === "&" || operator === "?";
 }
-function getValues(context3, operator, key2, modifier) {
-  var value = context3[key2], result = [];
+function getValues(context3, operator, key, modifier) {
+  var value = context3[key], result = [];
   if (isDefined(value) && value !== "") {
     if (typeof value === "string" || typeof value === "number" || typeof value === "bigint" || typeof value === "boolean") {
       value = value.toString();
@@ -55136,14 +55190,14 @@ function getValues(context3, operator, key2, modifier) {
         value = value.substring(0, parseInt(modifier, 10));
       }
       result.push(
-        encodeValue(operator, value, isKeyOperator(operator) ? key2 : "")
+        encodeValue(operator, value, isKeyOperator(operator) ? key : "")
       );
     } else {
       if (modifier === "*") {
         if (Array.isArray(value)) {
           value.filter(isDefined).forEach(function(value2) {
             result.push(
-              encodeValue(operator, value2, isKeyOperator(operator) ? key2 : "")
+              encodeValue(operator, value2, isKeyOperator(operator) ? key : "")
             );
           });
         } else {
@@ -55168,7 +55222,7 @@ function getValues(context3, operator, key2, modifier) {
           });
         }
         if (isKeyOperator(operator)) {
-          result.push(encodeUnreserved(key2) + "=" + tmp.join(","));
+          result.push(encodeUnreserved(key) + "=" + tmp.join(","));
         } else if (tmp.length !== 0) {
           result.push(tmp.join(","));
         }
@@ -55177,10 +55231,10 @@ function getValues(context3, operator, key2, modifier) {
   } else {
     if (operator === ";") {
       if (isDefined(value)) {
-        result.push(encodeUnreserved(key2));
+        result.push(encodeUnreserved(key));
       }
     } else if (value === "" && (operator === "&" || operator === "?")) {
-      result.push(encodeUnreserved(key2) + "=");
+      result.push(encodeUnreserved(key) + "=");
     } else if (value === "") {
       result.push("");
     }
@@ -55350,7 +55404,7 @@ function parseParameters(header, type, index, len, stopChar) {
         continue parameter;
       if (code === EQ) {
         const keyEnd = trailingOWS(header, keyStart, index);
-        const key2 = header.slice(keyStart, keyEnd).toLowerCase();
+        const key = header.slice(keyStart, keyEnd).toLowerCase();
         index = skipOWS(header, index + 1, len);
         if (index < len && header.charCodeAt(index) === DQUOTE) {
           index++;
@@ -55359,8 +55413,8 @@ function parseParameters(header, type, index, len, stopChar) {
             const code2 = header.charCodeAt(index++);
             if (code2 === DQUOTE) {
               index = skipValue(header, index, len, stopChar);
-              if (parameters[key2] === void 0)
-                parameters[key2] = value;
+              if (parameters[key] === void 0)
+                parameters[key] = value;
               break;
             }
             if (code2 === BSLASH && index < len) {
@@ -55373,9 +55427,9 @@ function parseParameters(header, type, index, len, stopChar) {
         }
         const valueStart = index;
         index = skipValue(header, index, len, stopChar);
-        if (parameters[key2] === void 0) {
+        if (parameters[key] === void 0) {
           const valueEnd = trailingOWS(header, valueStart, index);
-          parameters[key2] = header.slice(valueStart, valueEnd);
+          parameters[key] = header.slice(valueStart, valueEnd);
         }
         continue parameter;
       }
@@ -55431,11 +55485,11 @@ var stringifyIteratively = (rootValue, replacer, spaceParam) => {
   }
   const isFunctionReplacer = typeof replacer === "function";
   const propertyList = Array.isArray(replacer) ? new Set(replacer.map(String)) : null;
-  const prepareVal = (parent, key2, val) => {
+  const prepareVal = (parent, key, val) => {
     const isObject = val !== null && typeof val === "object";
     const hasToJSON = isObject && typeof val.toJSON === "function";
     if (hasToJSON) {
-      val = val.toJSON(key2);
+      val = val.toJSON(key);
     }
     const isNoise = typeof val === "string" && noiseValue.test(val);
     if (isNoise) return val + "n";
@@ -55446,7 +55500,7 @@ var stringifyIteratively = (rootValue, replacer, spaceParam) => {
       return val.toString() + "n";
     }
     if (isFunctionReplacer) {
-      val = replacer.call(parent, key2, val);
+      val = replacer.call(parent, key, val);
     }
     const isPostReplacerObject = val !== null && typeof val === "object";
     if (isPostReplacerObject) {
@@ -55583,11 +55637,11 @@ var JSONStringify = (value, replacer, space) => {
     if (supportsRawJSON) {
       return originalStringify(
         value,
-        (key2, val) => {
+        (key, val) => {
           if (typeof val === "bigint") return JSON.rawJSON(val.toString());
           const hasFunctionReplacer = typeof replacer === "function";
-          if (hasFunctionReplacer) return replacer(key2, val);
-          const isKeyInArrayReplacer = Array.isArray(replacer) && replacer.includes(key2);
+          if (hasFunctionReplacer) return replacer(key, val);
+          const isKeyInArrayReplacer = Array.isArray(replacer) && replacer.includes(key);
           if (isKeyInArrayReplacer) return val;
           return val;
         },
@@ -55597,13 +55651,13 @@ var JSONStringify = (value, replacer, space) => {
     if (!value) return originalStringify(value, replacer, space);
     const convertedToCustomJSON = originalStringify(
       value,
-      (key2, val) => {
+      (key, val) => {
         const isNoise = typeof val === "string" && noiseValue.test(val);
         if (isNoise) return val.toString() + "n";
         if (typeof val === "bigint") return val.toString() + "n";
         const hasFunctionReplacer = typeof replacer === "function";
-        if (hasFunctionReplacer) return replacer(key2, val);
-        const isKeyInArrayReplacer = Array.isArray(replacer) && replacer.includes(key2);
+        if (hasFunctionReplacer) return replacer(key, val);
+        const isKeyInArrayReplacer = Array.isArray(replacer) && replacer.includes(key);
         if (isKeyInArrayReplacer) return val;
         return val;
       },
@@ -55645,17 +55699,17 @@ var isContextSourceSupported = () => {
     return false;
   }
 };
-var convertMarkedBigIntsReviver = (key2, value, context3, userReviver) => {
+var convertMarkedBigIntsReviver = (key, value, context3, userReviver) => {
   const isCustomFormatBigInt = typeof value === "string" && customFormat.test(value);
   if (isCustomFormatBigInt) return BigInt(value.slice(0, -1));
   const isNoiseValue = typeof value === "string" && noiseValue.test(value);
   if (isNoiseValue) return value.slice(0, -1);
   const hasUserReviver = typeof userReviver === "function";
   if (!hasUserReviver) return value;
-  return userReviver(key2, value, context3);
+  return userReviver(key, value, context3);
 };
 var JSONParseV2 = (text, reviver) => {
-  return JSON.parse(text, (key2, value, context3) => {
+  return JSON.parse(text, (key, value, context3) => {
     const isNumber = typeof value === "number";
     const isOutOfBounds = value > Number.MAX_SAFE_INTEGER || value < Number.MIN_SAFE_INTEGER;
     const isBigNumber = isNumber && isOutOfBounds;
@@ -55664,7 +55718,7 @@ var JSONParseV2 = (text, reviver) => {
     if (isBigInt) return BigInt(context3.source);
     const hasCustomReviver = typeof reviver === "function";
     if (!hasCustomReviver) return value;
-    return reviver(key2, value, context3);
+    return reviver(key, value, context3);
   });
 };
 var MAX_INT = Number.MAX_SAFE_INTEGER.toString();
@@ -55687,8 +55741,8 @@ var applyReviverIteratively = (parsed, userReviver) => {
         }
       }
     } else {
-      const { parent, key: key2 } = node;
-      let value = parent[key2];
+      const { parent, key } = node;
+      let value = parent[key];
       if (typeof value === "string") {
         const isCustomFormatBigInt = customFormat.test(value);
         if (isCustomFormatBigInt) {
@@ -55700,13 +55754,13 @@ var applyReviverIteratively = (parsed, userReviver) => {
       }
       const hasUserReviver = typeof userReviver === "function";
       if (hasUserReviver) {
-        value = userReviver.call(parent, key2, value);
+        value = userReviver.call(parent, key, value);
       }
       const isDeleted = value === void 0;
       if (isDeleted) {
-        delete parent[key2];
+        delete parent[key];
       } else {
-        parent[key2] = value;
+        parent[key] = value;
       }
       stack.pop();
     }
@@ -55735,7 +55789,7 @@ var JSONParse = (text, reviver) => {
     const serializedData = serializeBigInts(text);
     return originalParse(
       serializedData,
-      (key2, value, context3) => convertMarkedBigIntsReviver(key2, value, context3, reviver)
+      (key, value, context3) => convertMarkedBigIntsReviver(key, value, context3, reviver)
     );
   } catch (error2) {
     if (error2 instanceof RangeError) {
@@ -55855,8 +55909,8 @@ async function fetchWrapper(requestOptions2) {
   const status = fetchResponse.status;
   const url = fetchResponse.url;
   const responseHeaders = {};
-  for (const [key2, value] of fetchResponse.headers) {
-    responseHeaders[key2] = value;
+  for (const [key, value] of fetchResponse.headers) {
+    responseHeaders[key] = value;
   }
   const octokitResponse = {
     url,
@@ -56012,11 +56066,11 @@ function graphql(request2, query, options) {
         new Error(`[@octokit/graphql] "query" cannot be used as variable name`)
       );
     }
-    for (const key2 in options) {
-      if (!FORBIDDEN_VARIABLE_OPTIONS.includes(key2)) continue;
+    for (const key in options) {
+      if (!FORBIDDEN_VARIABLE_OPTIONS.includes(key)) continue;
       return Promise.reject(
         new Error(
-          `[@octokit/graphql] "${key2}" cannot be used as variable name`
+          `[@octokit/graphql] "${key}" cannot be used as variable name`
         )
       );
     }
@@ -56024,15 +56078,15 @@ function graphql(request2, query, options) {
   const parsedOptions = typeof query === "string" ? Object.assign({ query }, options) : query;
   const requestOptions2 = Object.keys(
     parsedOptions
-  ).reduce((result, key2) => {
-    if (NON_VARIABLE_OPTIONS.includes(key2)) {
-      result[key2] = parsedOptions[key2];
+  ).reduce((result, key) => {
+    if (NON_VARIABLE_OPTIONS.includes(key)) {
+      result[key] = parsedOptions[key];
       return result;
     }
     if (!result.variables) {
       result.variables = {};
     }
-    result.variables[key2] = parsedOptions[key2];
+    result.variables[key] = parsedOptions[key];
     return result;
   }, {});
   const baseUrl2 = parsedOptions.baseUrl || request2.endpoint.DEFAULTS.baseUrl;
@@ -56042,8 +56096,8 @@ function graphql(request2, query, options) {
   return request2(requestOptions2).then((response) => {
     if (response.data.errors) {
       const headers = {};
-      for (const key2 of Object.keys(response.headers)) {
-        headers[key2] = response.headers[key2];
+      for (const key of Object.keys(response.headers)) {
+        headers[key] = response.headers[key];
       }
       throw new GraphqlResponseError(
         requestOptions2,
@@ -58875,8 +58929,8 @@ var ReconcileEventAssets = class _ReconcileEventAssets {
       title: `${date} - ${month} - ${host}`
     };
     const diagnostics = [];
-    let container2 = await this.repository.findContainer(request2);
-    if (!container2 || container2.name !== request2.title) {
+    let container = await this.repository.findContainer(request2);
+    if (!container || container.name !== request2.title) {
       diagnostics.push(
         _ReconcileEventAssets.diagnostic(
           "container.drift",
@@ -58885,10 +58939,10 @@ var ReconcileEventAssets = class _ReconcileEventAssets {
         )
       );
       if (input.mode === "fix")
-        container2 = await this.repository.ensureContainer(request2);
+        container = await this.repository.ensureContainer(request2);
     }
-    if (!container2) return { files: {}, diagnostics };
-    if (container2.url !== input.existingUrl) {
+    if (!container) return { files: {}, diagnostics };
+    if (container.url !== input.existingUrl) {
       diagnostics.push(
         _ReconcileEventAssets.diagnostic(
           "link.drift",
@@ -58897,33 +58951,20 @@ var ReconcileEventAssets = class _ReconcileEventAssets {
         )
       );
     }
-    const currentFiles = await this.repository.listFiles(container2.id);
+    const currentFiles = await this.repository.listFiles(container.id);
     const files = {};
     for (const template of templates) {
-      const name = template.name.replaceAll("[EVENT_DATE:YYYY-MM-DD]", date);
-      const matches = currentFiles.filter(
-        (file2) => file2.templateId === template.id
+      const file = await this.reconcileFile(
+        container,
+        template,
+        currentFiles,
+        date,
+        input.mode,
+        diagnostics
       );
-      if (matches.length > 1)
-        throw new Error(
-          "Ambiguous event asset copies require manual reconciliation"
-        );
-      let file = matches[0];
-      if (!file || file.name !== name || file.kind !== template.kind) {
-        diagnostics.push(
-          _ReconcileEventAssets.diagnostic(
-            "file.drift",
-            "An event template copy is missing or its name or template metadata has changed",
-            input.mode === "fix"
-          )
-        );
-        if (input.mode === "fix") {
-          file = file ? await this.repository.updateFile(file, template, name) : await this.repository.copyTemplate(container2.id, template, name);
-        }
-      }
       if (file?.url) files[`${template.kind}-link`] = file.url;
     }
-    return { container: container2, files, diagnostics };
+    return { container, files, diagnostics };
   }
   static diagnostic(code, message, fixApplied) {
     return {
@@ -58949,136 +58990,105 @@ var ReconcileEventAssets = class _ReconcileEventAssets {
       );
     }
   }
+  async reconcileFile(container, template, currentFiles, date, mode, diagnostics) {
+    const name = template.name.replaceAll("[EVENT_DATE:YYYY-MM-DD]", date);
+    const matches = currentFiles.filter(
+      (file2) => file2.templateId === template.id
+    );
+    if (matches.length > 1)
+      throw new Error(
+        "Ambiguous event asset copies require manual reconciliation"
+      );
+    let file = matches[0];
+    if (!file || file.name !== name || file.kind !== template.kind) {
+      diagnostics.push(
+        _ReconcileEventAssets.diagnostic(
+          "file.drift",
+          "An event template copy is missing or its name or template metadata has changed",
+          mode === "fix"
+        )
+      );
+      if (mode === "fix") {
+        file = file ? await this.repository.updateFile(file, template, name) : await this.repository.copyTemplate(container.id, template, name);
+      }
+    }
+    return file;
+  }
 };
 
-// packages/domain/publication/src/domain/manual-task-policy.ts
-function planManualPublicationTasks(event) {
-  if (event.occurrenceStatus === "cancelled") {
-    return Object.freeze(
-      allTaskKinds().map((kind) => ({
-        kind,
-        status: "not-applicable",
-        reason: "The event is cancelled"
-      }))
+// packages/domain/publication/src/domain/publication-link-evaluation.ts
+var PublicationLinkEvaluation = class _PublicationLinkEvaluation {
+  static evaluateLink({
+    references,
+    path,
+    prefixes,
+    identifierPattern,
+    code,
+    message
+  }) {
+    const raw = references[path];
+    if (raw === void 0 || raw === "") {
+      return _PublicationLinkEvaluation.emptyEvaluation(references);
+    }
+    const normalized = raw.trim().replace(/\/$/, "");
+    const matchingPrefix = prefixes.find(
+      (prefix) => normalized.startsWith(prefix)
     );
+    const identifier = matchingPrefix ? normalized.slice(matchingPrefix.length) : void 0;
+    if (!_PublicationLinkEvaluation.isHttpsUrl(normalized) || !matchingPrefix || !identifier || !identifierPattern.test(identifier)) {
+      return {
+        references,
+        diagnostics: [
+          Object.freeze({
+            code,
+            severity: "error",
+            field: path,
+            message
+          })
+        ],
+        patch: Object.freeze({ operations: [] })
+      };
+    }
+    if (raw === normalized) {
+      return _PublicationLinkEvaluation.emptyEvaluation(references);
+    }
+    const operation = Object.freeze({
+      op: "replace",
+      path,
+      value: normalized,
+      reason: "Trim URL and remove its trailing slash"
+    });
+    return {
+      references: { ...references, [path]: normalized },
+      diagnostics: [
+        Object.freeze({
+          code: `publication.${path}.normalized`,
+          severity: "info",
+          field: path,
+          message: `${path} URL can be normalized safely`,
+          fixAvailable: true
+        })
+      ],
+      patch: Object.freeze({ operations: Object.freeze([operation]) })
+    };
   }
-  const occurrenceConfirmed = event.occurrenceStatus === "held";
-  return Object.freeze([
-    task(
-      "publish-meetup-event",
-      Boolean(event.references.meetup),
-      "Publish the event to Meetup"
-    ),
-    task(
-      "publish-community-event",
-      Boolean(event.references.community),
-      "Publish the event to the CNCF community platform"
-    ),
-    task(
-      "create-asset-folder",
-      Boolean(event.references.assets),
-      "Create the event asset folder"
-    ),
-    occurrenceConfirmed ? task(
-      "publish-slides",
-      event.slidesPublished,
-      "Publish post-event slides"
-    ) : notApplicable(
-      "publish-slides",
-      "Slides are published only after occurrence is explicitly confirmed"
-    ),
-    occurrenceConfirmed ? task(
-      "import-attendance",
-      event.attendanceImported,
-      "Import post-event attendance"
-    ) : notApplicable(
-      "import-attendance",
-      "Attendance is imported only after occurrence is explicitly confirmed"
-    )
-  ]);
-}
-function task(kind, completed, reason) {
-  return {
-    kind,
-    status: completed ? "completed" : "pending",
-    reason
-  };
-}
-function notApplicable(kind, reason) {
-  return { kind, status: "not-applicable", reason };
-}
-function allTaskKinds() {
-  return [
-    "publish-meetup-event",
-    "publish-community-event",
-    "create-asset-folder",
-    "publish-slides",
-    "import-attendance"
-  ];
-}
-
-// packages/domain/publication/src/domain/model.ts
-function applyPublicationPatch(references, patch) {
-  const result = { ...references };
-  for (const operation of patch.operations) {
-    switch (operation.path) {
-      case "meetup":
-        result.meetup = operation.value;
-        break;
-      case "community":
-        result.community = operation.value;
-        break;
-      case "assets":
-        result.assets = operation.value;
-        break;
+  static emptyEvaluation(references) {
+    return {
+      references,
+      diagnostics: [],
+      patch: Object.freeze({ operations: [] })
+    };
+  }
+  static isHttpsUrl(value) {
+    try {
+      return new URL(value).protocol === "https:";
+    } catch {
+      return false;
     }
   }
-  return result;
-}
+};
 
-// packages/domain/publication/src/domain/url-policy.ts
-var DEFAULT_PUBLICATION_URL_CONFIGURATION = Object.freeze({
-  meetupEventUrlPrefix: "https://www.meetup.com/cloud-native-aix-marseille/events/",
-  communityEventUrlPrefixes: Object.freeze([
-    "https://ocgroups.dev/cncf/group/cloud-native-aix-marseille/event/",
-    "https://community.cncf.io/events/details/cncf-cloud-native-aix-marseille-presents-"
-  ]),
-  assetFolderUrlPrefix: "https://drive.google.com/drive/folders/"
-});
-var MeetupEventUrlPolicy = class {
-  constructor(prefix) {
-    this.prefix = prefix;
-  }
-  prefix;
-  id = "meetup-event-url";
-  evaluate(references) {
-    return evaluateLink({
-      references,
-      path: "meetup",
-      prefixes: [this.prefix],
-      identifierPattern: /^\d+$/,
-      code: "publication.meetup-url.invalid",
-      message: `Meetup URL must start with ${this.prefix} and end with a numeric event identifier`
-    });
-  }
-};
-var CommunityEventUrlPolicy = class {
-  constructor(prefixes) {
-    this.prefixes = prefixes;
-  }
-  prefixes;
-  id = "community-event-url";
-  evaluate(references) {
-    return evaluateLink({
-      references,
-      path: "community",
-      prefixes: this.prefixes,
-      identifierPattern: /^[0-9a-z-]+$/,
-      code: "publication.community-url.invalid",
-      message: "Community event URL must use an approved CNCF/OCGroups prefix and identifier"
-    });
-  }
-};
+// packages/domain/publication/src/domain/asset-folder-url-policy.ts
 var AssetFolderUrlPolicy = class {
   constructor(prefix) {
     this.prefix = prefix;
@@ -59086,7 +59096,7 @@ var AssetFolderUrlPolicy = class {
   prefix;
   id = "asset-folder-url";
   evaluate(references) {
-    return evaluateLink({
+    return PublicationLinkEvaluation.evaluateLink({
       references,
       path: "assets",
       prefixes: [this.prefix],
@@ -59096,6 +59106,157 @@ var AssetFolderUrlPolicy = class {
     });
   }
 };
+
+// packages/domain/publication/src/domain/community-event-url-policy.ts
+var CommunityEventUrlPolicy = class {
+  constructor(prefixes) {
+    this.prefixes = prefixes;
+  }
+  prefixes;
+  id = "community-event-url";
+  evaluate(references) {
+    return PublicationLinkEvaluation.evaluateLink({
+      references,
+      path: "community",
+      prefixes: this.prefixes,
+      identifierPattern: /^[0-9a-z-]+$/,
+      code: "publication.community-url.invalid",
+      message: "Community event URL must use an approved CNCF/OCGroups prefix and identifier"
+    });
+  }
+};
+
+// packages/domain/publication/src/domain/manual-task-policy.ts
+var ManualPublicationPolicy = class _ManualPublicationPolicy {
+  /** Models human work explicitly until a corresponding outbound adapter exists. */
+  static planManualPublicationTasks(event) {
+    if (event.occurrenceStatus === "cancelled") {
+      return Object.freeze(
+        _ManualPublicationPolicy.allTaskKinds().map((kind) => ({
+          kind,
+          status: "not-applicable",
+          reason: "The event is cancelled"
+        }))
+      );
+    }
+    const occurrenceConfirmed = event.occurrenceStatus === "held";
+    return Object.freeze([
+      _ManualPublicationPolicy.task(
+        "publish-meetup-event",
+        Boolean(event.references.meetup),
+        "Publish the event to Meetup"
+      ),
+      _ManualPublicationPolicy.task(
+        "publish-community-event",
+        Boolean(event.references.community),
+        "Publish the event to the CNCF community platform"
+      ),
+      _ManualPublicationPolicy.task(
+        "create-asset-folder",
+        Boolean(event.references.assets),
+        "Create the event asset folder"
+      ),
+      occurrenceConfirmed ? _ManualPublicationPolicy.task(
+        "publish-slides",
+        event.slidesPublished,
+        "Publish post-event slides"
+      ) : _ManualPublicationPolicy.notApplicable(
+        "publish-slides",
+        "Slides are published only after occurrence is explicitly confirmed"
+      ),
+      occurrenceConfirmed ? _ManualPublicationPolicy.task(
+        "import-attendance",
+        event.attendanceImported,
+        "Import post-event attendance"
+      ) : _ManualPublicationPolicy.notApplicable(
+        "import-attendance",
+        "Attendance is imported only after occurrence is explicitly confirmed"
+      )
+    ]);
+  }
+  static task(kind, completed, reason) {
+    return {
+      kind,
+      status: completed ? "completed" : "pending",
+      reason
+    };
+  }
+  static notApplicable(kind, reason) {
+    return { kind, status: "not-applicable", reason };
+  }
+  static allTaskKinds() {
+    return [
+      "publish-meetup-event",
+      "publish-community-event",
+      "create-asset-folder",
+      "publish-slides",
+      "import-attendance"
+    ];
+  }
+};
+
+// packages/domain/publication/src/domain/meetup-event-url-policy.ts
+var MeetupEventUrlPolicy = class {
+  constructor(prefix) {
+    this.prefix = prefix;
+  }
+  prefix;
+  id = "meetup-event-url";
+  evaluate(references) {
+    return PublicationLinkEvaluation.evaluateLink({
+      references,
+      path: "meetup",
+      prefixes: [this.prefix],
+      identifierPattern: /^\d+$/,
+      code: "publication.meetup-url.invalid",
+      message: `Meetup URL must start with ${this.prefix} and end with a numeric event identifier`
+    });
+  }
+};
+
+// packages/domain/publication/src/domain/model.ts
+var PublicationDiagnostics = class {
+  static applyPublicationPatch(references, patch) {
+    const result = { ...references };
+    for (const operation of patch.operations) {
+      switch (operation.path) {
+        case "meetup":
+          result.meetup = operation.value;
+          break;
+        case "community":
+          result.community = operation.value;
+          break;
+        case "assets":
+          result.assets = operation.value;
+          break;
+      }
+    }
+    return result;
+  }
+};
+
+// packages/domain/publication/src/domain/url-policy-contracts.ts
+var DEFAULT_PUBLICATION_URL_CONFIGURATION = Object.freeze({
+  meetupEventUrlPrefix: "https://www.meetup.com/cloud-native-aix-marseille/events/",
+  communityEventUrlPrefixes: Object.freeze([
+    "https://ocgroups.dev/cncf/group/cloud-native-aix-marseille/event/",
+    "https://community.cncf.io/events/details/cncf-cloud-native-aix-marseille-presents-"
+  ]),
+  assetFolderUrlPrefix: "https://drive.google.com/drive/folders/"
+});
+
+// packages/domain/publication/src/domain/publication-url-policies.ts
+var PublicationUrlPolicies = class {
+  static createDefaultPublicationUrlPolicies(configuration = DEFAULT_PUBLICATION_URL_CONFIGURATION) {
+    return Object.freeze([
+      new MeetupEventUrlPolicy(configuration.meetupEventUrlPrefix),
+      new CommunityEventUrlPolicy(configuration.communityEventUrlPrefixes),
+      new AssetFolderUrlPolicy(configuration.assetFolderUrlPrefix)
+    ]);
+  }
+};
+
+// packages/domain/publication/src/domain/publication-url-policy-engine.ts
 var PublicationUrlPolicyEngine = class {
   constructor(policies) {
     this.policies = policies;
@@ -59109,7 +59270,10 @@ var PublicationUrlPolicyEngine = class {
       const result = policy.evaluate(normalized);
       diagnostics.push(...result.diagnostics);
       operations.push(...result.patch.operations);
-      normalized = applyPublicationPatch(normalized, result.patch);
+      normalized = PublicationDiagnostics.applyPublicationPatch(
+        normalized,
+        result.patch
+      );
     }
     return {
       references: normalized,
@@ -59118,128 +59282,153 @@ var PublicationUrlPolicyEngine = class {
     };
   }
 };
-function createDefaultPublicationUrlPolicies(configuration = DEFAULT_PUBLICATION_URL_CONFIGURATION) {
-  return Object.freeze([
-    new MeetupEventUrlPolicy(configuration.meetupEventUrlPrefix),
-    new CommunityEventUrlPolicy(configuration.communityEventUrlPrefixes),
-    new AssetFolderUrlPolicy(configuration.assetFolderUrlPrefix)
-  ]);
-}
-function evaluateLink({
-  references,
-  path,
-  prefixes,
-  identifierPattern,
-  code,
-  message
-}) {
-  const raw = references[path];
-  if (raw === void 0 || raw === "") {
-    return emptyEvaluation(references);
-  }
-  const normalized = raw.trim().replace(/\/$/, "");
-  const matchingPrefix = prefixes.find(
-    (prefix) => normalized.startsWith(prefix)
-  );
-  const identifier = matchingPrefix ? normalized.slice(matchingPrefix.length) : void 0;
-  if (!isHttpsUrl(normalized) || !matchingPrefix || !identifier || !identifierPattern.test(identifier)) {
-    return {
-      references,
-      diagnostics: [
-        Object.freeze({
-          code,
-          severity: "error",
-          field: path,
-          message
-        })
-      ],
-      patch: Object.freeze({ operations: [] })
-    };
-  }
-  if (raw === normalized) {
-    return emptyEvaluation(references);
-  }
-  const operation = Object.freeze({
-    op: "replace",
-    path,
-    value: normalized,
-    reason: "Trim URL and remove its trailing slash"
-  });
-  return {
-    references: { ...references, [path]: normalized },
-    diagnostics: [
-      Object.freeze({
-        code: `publication.${path}.normalized`,
-        severity: "info",
-        field: path,
-        message: `${path} URL can be normalized safely`,
-        fixAvailable: true
-      })
-    ],
-    patch: Object.freeze({ operations: Object.freeze([operation]) })
-  };
-}
-function emptyEvaluation(references) {
-  return {
-    references,
-    diagnostics: [],
-    patch: Object.freeze({ operations: [] })
-  };
-}
-function isHttpsUrl(value) {
-  try {
-    return new URL(value).protocol === "https:";
-  } catch {
-    return false;
-  }
-}
 
 // packages/application/journey/src/config/automation-config.ts
-function createAutomationConfig() {
-  return {
-    timezone: "Europe/Paris",
-    event: {
-      "issue-label": "meetup",
-      "issue-form": ".github/ISSUE_TEMPLATE/meetup.yml",
-      "occurrence-status-field": "event_status",
-      "required-confirmation-labels": [
-        "hoster:confirmed",
-        "speakers:confirmed"
-      ]
-    },
-    referentials: {
-      hosts: "referentials/hosting.csv",
-      speakers: "referentials/speakers.csv"
-    },
-    communication: {
-      "readiness-window-days": 7,
-      "mailings-repository": "cloud-native-aixmarseille/mailings",
-      "slack-enabled": true,
-      "approval-label": "communication:approved",
-      "dispatch-enabled": true,
-      "policy-version": 1
-    },
-    publication: {
-      "meetup-event-url-prefix": DEFAULT_PUBLICATION_URL_CONFIGURATION.meetupEventUrlPrefix,
-      "cncf-event-url-prefix": DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes[0]
-    }
-  };
-}
+var AutomationConfigFactory = class {
+  /**
+   * Automation behavior is owned and versioned by this repository. Consumer
+   * repositories do not provide a runtime configuration file anymore.
+   */
+  static createAutomationConfig() {
+    return {
+      timezone: "Europe/Paris",
+      event: {
+        "issue-label": "meetup",
+        "issue-form": ".github/ISSUE_TEMPLATE/meetup.yml",
+        "occurrence-status-field": "event_status",
+        "required-confirmation-labels": [
+          "hoster:confirmed",
+          "speakers:confirmed"
+        ]
+      },
+      referentials: {
+        hosts: "referentials/hosting.csv",
+        speakers: "referentials/speakers.csv"
+      },
+      communication: {
+        "readiness-window-days": 7,
+        "mailings-repository": "cloud-native-aixmarseille/mailings",
+        "slack-enabled": true,
+        "approval-label": "communication:approved",
+        "dispatch-enabled": true,
+        "policy-version": 1
+      },
+      publication: {
+        "meetup-event-url-prefix": DEFAULT_PUBLICATION_URL_CONFIGURATION.meetupEventUrlPrefix,
+        "cncf-event-url-prefix": DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes[0]
+      }
+    };
+  }
+};
 
 // packages/application/journey/src/result/result-envelope.ts
-function resultEnvelope(data, diagnostics) {
-  return {
-    schemaVersion: 1,
-    status: diagnostics.length === 0 ? "ok" : "diagnostics",
-    diagnostics,
-    data
-  };
-}
+var ResultEnvelopeFactory = class {
+  static resultEnvelope(data, diagnostics) {
+    return {
+      schemaVersion: 1,
+      status: diagnostics.length === 0 ? "ok" : "diagnostics",
+      diagnostics,
+      data
+    };
+  }
+};
 
 // packages/domain/event/src/application/ports/event-repository.ts
-function eventRepositoryPatchIsEmpty(patch) {
-  return patch.issueTitle === void 0 && patch.labels === void 0 && patch.body === void 0;
-}
+var EventRepositoryPatches = class {
+  static eventRepositoryPatchIsEmpty(patch) {
+    return patch.issueTitle === void 0 && patch.labels === void 0 && patch.body === void 0;
+  }
+};
+
+// packages/domain/event/src/application/use-cases/event-concurrent-modification-error.ts
+var EventConcurrentModificationError = class extends Error {
+  constructor(identity) {
+    super(
+      `Meetup event ${identity.repository}#${identity.issueNumber} changed during reconciliation`
+    );
+    this.name = "EventConcurrentModificationError";
+  }
+};
+
+// packages/domain/event/src/application/use-cases/event-not-found-error.ts
+var EventNotFoundError = class extends Error {
+  constructor(identity) {
+    super(
+      `Meetup event ${identity.repository}#${identity.issueNumber} was not found`
+    );
+    this.name = "EventNotFoundError";
+  }
+};
+
+// packages/domain/event/src/application/use-cases/event-pagination-error.ts
+var EventPaginationError = class extends Error {
+  constructor(cursor) {
+    super(`Event repository repeated pagination cursor "${cursor}"`);
+    this.name = "EventPaginationError";
+  }
+};
+
+// packages/domain/event/src/domain/event-rule-configuration-error.ts
+var EventRuleConfigurationError = class extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "EventRuleConfigurationError";
+  }
+};
+
+// packages/domain/event/src/domain/event-rule-ordering.ts
+var EventRuleOrdering = class {
+  static sortRules(rules) {
+    const byId = /* @__PURE__ */ new Map();
+    for (const rule of rules) {
+      if (byId.has(rule.id)) {
+        throw new EventRuleConfigurationError(
+          `Duplicate event rule "${rule.id}"`
+        );
+      }
+      byId.set(rule.id, rule);
+    }
+    for (const rule of rules) {
+      for (const dependency of rule.dependencies) {
+        if (!byId.has(dependency)) {
+          throw new EventRuleConfigurationError(
+            `Event rule "${rule.id}" has missing dependency "${dependency}"`
+          );
+        }
+      }
+    }
+    const permanent = /* @__PURE__ */ new Set();
+    const temporary = /* @__PURE__ */ new Set();
+    const ordered = [];
+    const visit = (rule, path) => {
+      if (temporary.has(rule.id)) {
+        throw new EventRuleConfigurationError(
+          `Cyclic event rule dependency: ${[...path, rule.id].join(" -> ")}`
+        );
+      }
+      if (permanent.has(rule.id)) {
+        return;
+      }
+      temporary.add(rule.id);
+      for (const dependencyId of rule.dependencies) {
+        const dependency = byId.get(dependencyId);
+        if (!dependency) {
+          throw new EventRuleConfigurationError(
+            `Event rule "${rule.id}" has missing dependency "${dependencyId}"`
+          );
+        }
+        visit(dependency, [...path, rule.id]);
+      }
+      temporary.delete(rule.id);
+      permanent.add(rule.id);
+      ordered.push(rule);
+    };
+    for (const rule of rules) {
+      visit(rule, []);
+    }
+    return Object.freeze(ordered);
+  }
+};
 
 // packages/domain/event/src/domain/model.ts
 var EVENT_SCHEMA_VERSION = 1;
@@ -59257,237 +59446,152 @@ var EXPECTED_POST_EVENT_TASK_NAMES = Object.freeze([
   POST_EVENT_TASK_NAMES.importAttendance,
   POST_EVENT_TASK_NAMES.shareOnSocialNetworks
 ]);
-function postEventChecklistIsComplete(items) {
-  if (items.length !== EXPECTED_POST_EVENT_TASK_NAMES.length) {
-    return false;
-  }
-  const itemByName = /* @__PURE__ */ new Map();
-  for (const item of items) {
-    if (itemByName.has(item.name)) {
+var MeetupEventOperations = class _MeetupEventOperations {
+  /**
+   * A post-event checklist is complete only when it contains each expected task
+   * exactly once, contains no additional task, and every task is completed.
+   */
+  static postEventChecklistIsComplete(items) {
+    if (items.length !== EXPECTED_POST_EVENT_TASK_NAMES.length) {
       return false;
     }
-    itemByName.set(item.name, item);
-  }
-  return EXPECTED_POST_EVENT_TASK_NAMES.every(
-    (name) => itemByName.get(name)?.completed === true
-  );
-}
-function cloneMeetupEvent(event) {
-  const operationalChecklists = {
-    slidesAndContent: event.operationalChecklists.slidesAndContent.map(
-      (item) => ({ ...item })
-    ),
-    communication: event.operationalChecklists.communication.map((item) => ({
-      ...item
-    })),
-    postEvent: event.operationalChecklists.postEvent.map((item) => ({
-      ...item
-    }))
-  };
-  return {
-    ...event,
-    identity: { ...event.identity },
-    labels: [...event.labels],
-    host: event.host ? { ...event.host } : void 0,
-    agenda: event.agenda.map((entry) => ({
-      ...entry,
-      speakers: entry.speakers.map((speaker) => ({ ...speaker }))
-    })),
-    publicationLinks: { ...event.publicationLinks },
-    confirmations: { ...event.confirmations },
-    logistics: { ...event.logistics },
-    operationalChecklists,
-    followUpComplete: event.followUpComplete && postEventChecklistIsComplete(operationalChecklists.postEvent)
-  };
-}
-
-// packages/domain/event/src/domain/lifecycle.ts
-function evaluateEventLifecycle({
-  event,
-  readiness,
-  now
-}) {
-  let state;
-  switch (event.occurrenceStatus) {
-    case "cancelled":
-      state = "cancelled";
-      break;
-    case "postponed":
-      state = "postponed";
-      break;
-    case "held":
-      state = event.followUpComplete && postEventChecklistIsComplete(event.operationalChecklists.postEvent) ? "follow-up-complete" : "held";
-      break;
-    case "scheduled":
-    case void 0:
-      if (!hasMinimumPlanningFacts(event)) {
-        state = "draft";
-      } else {
-        state = readiness.isReady ? "ready" : "planned";
+    const itemByName = /* @__PURE__ */ new Map();
+    for (const item of items) {
+      if (itemByName.has(item.name)) {
+        return false;
       }
-      break;
-  }
-  return {
-    state,
-    evaluatedAt: now,
-    timeZone: event.timeZone,
-    diagnostics: readiness.diagnostics
-  };
-}
-function hasMinimumPlanningFacts(event) {
-  return event.date.trim() !== "" && event.eventTitle.trim() !== "";
-}
-
-// packages/domain/event/src/domain/diagnostic.ts
-function diagnostic(value) {
-  return Object.freeze({ ...value });
-}
-
-// packages/domain/event/src/domain/readiness.ts
-function evaluateEventReadiness(event, diagnostics) {
-  const readinessDiagnostics = [...diagnostics];
-  if (event.occurrenceStatus === "cancelled") {
-    return {
-      status: "incomplete",
-      isReady: false,
-      diagnostics: readinessDiagnostics
-    };
-  }
-  if (event.occurrenceStatus === "postponed") {
-    return {
-      status: "incomplete",
-      isReady: false,
-      diagnostics: readinessDiagnostics
-    };
-  }
-  if (readinessDiagnostics.some((item) => item.severity === "error")) {
-    return {
-      status: "invalid",
-      isReady: false,
-      diagnostics: readinessDiagnostics
-    };
-  }
-  if (!event.confirmations.host) {
-    readinessDiagnostics.push(
-      diagnostic({
-        code: "event.confirmation.host.missing",
-        severity: "warning",
-        category: "incomplete",
-        field: "confirmations.host",
-        message: "Host confirmation is required before the event is ready"
-      })
+      itemByName.set(item.name, item);
+    }
+    return EXPECTED_POST_EVENT_TASK_NAMES.every(
+      (name) => itemByName.get(name)?.completed === true
     );
   }
-  if (!event.confirmations.speakers) {
-    readinessDiagnostics.push(
-      diagnostic({
-        code: "event.confirmation.speakers.missing",
-        severity: "warning",
-        category: "incomplete",
-        field: "confirmations.speakers",
-        message: "Speaker confirmation is required before the event is ready"
-      })
-    );
+  static cloneMeetupEvent(event) {
+    const operationalChecklists = {
+      slidesAndContent: event.operationalChecklists.slidesAndContent.map(
+        (item) => ({ ...item })
+      ),
+      communication: event.operationalChecklists.communication.map((item) => ({
+        ...item
+      })),
+      postEvent: event.operationalChecklists.postEvent.map((item) => ({
+        ...item
+      }))
+    };
+    return {
+      ...event,
+      identity: { ...event.identity },
+      labels: [...event.labels],
+      host: event.host ? { ...event.host } : void 0,
+      agenda: event.agenda.map((entry) => ({
+        ...entry,
+        speakers: entry.speakers.map((speaker) => ({ ...speaker }))
+      })),
+      publicationLinks: { ...event.publicationLinks },
+      confirmations: { ...event.confirmations },
+      logistics: { ...event.logistics },
+      operationalChecklists,
+      followUpComplete: event.followUpComplete && _MeetupEventOperations.postEventChecklistIsComplete(
+        operationalChecklists.postEvent
+      )
+    };
   }
-  const incomplete = readinessDiagnostics.some(
-    (item) => item.category === "incomplete"
-  );
-  return {
-    status: incomplete ? "incomplete" : "ready",
-    isReady: !incomplete,
-    diagnostics: Object.freeze(readinessDiagnostics)
-  };
-}
+};
 
 // packages/domain/event/src/domain/patch.ts
 var EMPTY_EVENT_PATCH = Object.freeze({ operations: [] });
-function replaceEventField(path, value, reason) {
-  return Object.freeze({
-    op: "replace",
-    path,
-    value,
-    reason
-  });
-}
-function createEventPatch(operations) {
-  return Object.freeze({ operations: Object.freeze([...operations]) });
-}
-function applyEventPatch(event, patch) {
-  return patch.operations.reduce(
-    (current, operation) => applyOperation(current, operation),
-    event
-  );
-}
-function applyOperation(event, operation) {
-  switch (operation.path) {
-    case "issueTitle":
-      return { ...event, issueTitle: operation.value };
-    case "labels":
-      return { ...event, labels: [...operation.value] };
-    case "eventTitle":
-      return { ...event, eventTitle: operation.value };
-    case "date":
-      return { ...event, date: operation.value };
-    case "description":
-      return { ...event, description: operation.value };
-    case "host":
-      return {
-        ...event,
-        host: operation.value ? { ...operation.value } : void 0
-      };
-    case "agenda":
-      return {
-        ...event,
-        agenda: operation.value.map((entry) => ({
-          ...entry,
-          speakers: entry.speakers.map((speaker) => ({ ...speaker }))
-        }))
-      };
-    case "publicationLinks":
-      return { ...event, publicationLinks: { ...operation.value } };
-    case "occurrenceStatus":
-      return { ...event, occurrenceStatus: operation.value };
-    case "timeZone":
-      return { ...event, timeZone: operation.value };
-    case "confirmations":
-      return { ...event, confirmations: { ...operation.value } };
-    case "logistics":
-      return { ...event, logistics: { ...operation.value } };
-    case "operationalChecklists": {
-      const operationalChecklists = {
-        slidesAndContent: operation.value.slidesAndContent.map((item) => ({
-          ...item
-        })),
-        communication: operation.value.communication.map((item) => ({
-          ...item
-        })),
-        postEvent: operation.value.postEvent.map((item) => ({ ...item }))
-      };
-      return {
-        ...event,
-        operationalChecklists,
-        followUpComplete: event.followUpComplete && postEventChecklistIsComplete(operationalChecklists.postEvent)
-      };
-    }
-    case "followUpComplete":
-      return {
-        ...event,
-        followUpComplete: operation.value && postEventChecklistIsComplete(event.operationalChecklists.postEvent)
-      };
+var EventPatches = class _EventPatches {
+  static replaceEventField(path, value, reason) {
+    return Object.freeze({
+      op: "replace",
+      path,
+      value,
+      reason
+    });
   }
-}
-
-// packages/domain/event/src/domain/rule.ts
-var EventRuleConfigurationError = class extends Error {
-  constructor(message) {
-    super(message);
-    this.name = "EventRuleConfigurationError";
+  static createEventPatch(operations) {
+    return Object.freeze({ operations: Object.freeze([...operations]) });
+  }
+  static mergeEventPatches(...patches) {
+    return _EventPatches.createEventPatch(
+      patches.flatMap((patch) => patch.operations)
+    );
+  }
+  static applyEventPatch(event, patch) {
+    return patch.operations.reduce(
+      (current, operation) => _EventPatches.applyOperation(current, operation),
+      event
+    );
+  }
+  static applyOperation(event, operation) {
+    switch (operation.path) {
+      case "issueTitle":
+        return { ...event, issueTitle: operation.value };
+      case "labels":
+        return { ...event, labels: [...operation.value] };
+      case "eventTitle":
+        return { ...event, eventTitle: operation.value };
+      case "date":
+        return { ...event, date: operation.value };
+      case "description":
+        return { ...event, description: operation.value };
+      case "host":
+        return {
+          ...event,
+          host: operation.value ? { ...operation.value } : void 0
+        };
+      case "agenda":
+        return {
+          ...event,
+          agenda: operation.value.map((entry) => ({
+            ...entry,
+            speakers: entry.speakers.map((speaker) => ({ ...speaker }))
+          }))
+        };
+      case "publicationLinks":
+        return { ...event, publicationLinks: { ...operation.value } };
+      case "occurrenceStatus":
+        return { ...event, occurrenceStatus: operation.value };
+      case "timeZone":
+        return { ...event, timeZone: operation.value };
+      case "confirmations":
+        return { ...event, confirmations: { ...operation.value } };
+      case "logistics":
+        return { ...event, logistics: { ...operation.value } };
+      case "operationalChecklists": {
+        const operationalChecklists = {
+          slidesAndContent: operation.value.slidesAndContent.map((item) => ({
+            ...item
+          })),
+          communication: operation.value.communication.map((item) => ({
+            ...item
+          })),
+          postEvent: operation.value.postEvent.map((item) => ({ ...item }))
+        };
+        return {
+          ...event,
+          operationalChecklists,
+          followUpComplete: event.followUpComplete && MeetupEventOperations.postEventChecklistIsComplete(
+            operationalChecklists.postEvent
+          )
+        };
+      }
+      case "followUpComplete":
+        return {
+          ...event,
+          followUpComplete: operation.value && MeetupEventOperations.postEventChecklistIsComplete(
+            event.operationalChecklists.postEvent
+          )
+        };
+    }
   }
 };
+
+// packages/domain/event/src/domain/event-rule-engine.ts
 var EventRuleEngine = class {
   orderedRules;
   constructor(rules) {
-    this.orderedRules = sortRules(rules);
+    this.orderedRules = EventRuleOrdering.sortRules(rules);
   }
   evaluate(event) {
     let normalizedEvent = event;
@@ -59497,120 +59601,109 @@ var EventRuleEngine = class {
       const result = rule.evaluate(normalizedEvent);
       diagnostics.push(...result.diagnostics);
       operations.push(...result.patch.operations);
-      normalizedEvent = applyEventPatch(normalizedEvent, result.patch);
+      normalizedEvent = EventPatches.applyEventPatch(
+        normalizedEvent,
+        result.patch
+      );
     }
     return {
       event: normalizedEvent,
       diagnostics: Object.freeze(diagnostics),
-      patch: createEventPatch(operations)
+      patch: EventPatches.createEventPatch(operations)
     };
   }
   get ruleIds() {
     return this.orderedRules.map((rule) => rule.id);
   }
 };
-function createDefaultEventRules(labelConfiguration = DEFAULT_MANAGED_LABEL_CONFIGURATION) {
-  return [
-    new EventDateRule(),
-    new EventTitleRule(),
-    new EventDescriptionRule(),
-    new EventHostRule(),
-    new EventAgendaRule(),
-    new EventLinksRule(),
-    new IssueTitleRule(),
-    new ManagedLabelsRule(labelConfiguration)
-  ];
-}
-var EventDateRule = class {
-  id = "event-date";
-  dependencies = [];
-  evaluate(event) {
-    const value = event.date.trim();
-    if (value === "") {
-      return missing("event.date.missing", "date", "An event date is required");
-    }
-    if (!isValidIsoDate(value)) {
-      return invalid(
-        "event.date.invalid",
-        "date",
-        "Event date must be a real calendar date formatted as YYYY-MM-DD"
-      );
-    }
-    return normalizeString(event.date, value, "date", "Normalize event date");
+
+// packages/domain/event/src/domain/diagnostic.ts
+var EventDiagnostics = class {
+  static diagnostic(value) {
+    return Object.freeze({ ...value });
   }
 };
-var EventTitleRule = class {
-  id = "event-title";
-  dependencies = [];
-  evaluate(event) {
-    const value = event.eventTitle.trim();
-    if (value === "") {
-      return missing(
-        "event.title.missing",
-        "eventTitle",
-        "An event title is required"
-      );
+
+// packages/domain/event/src/domain/event-participant-normalization.ts
+var EventParticipantNormalization = class _EventParticipantNormalization {
+  static normalizeParticipant(participant) {
+    const displayName = participant.displayName.trim();
+    const id = participant.id?.trim();
+    return id ? {
+      displayName,
+      id,
+      ...participant.source ? { source: participant.source } : {}
+    } : { displayName };
+  }
+  static participantsEqual(left, right) {
+    return left.displayName === right.displayName && left.id === right.id;
+  }
+  static normalizeAgendaEntry(entry) {
+    return {
+      speakers: entry.speakers.map(
+        _EventParticipantNormalization.normalizeParticipant
+      ),
+      description: entry.description.trim()
+    };
+  }
+  static agendaEqual(left, right) {
+    return JSON.stringify(left) === JSON.stringify(right);
+  }
+  static arraysEqual(left, right) {
+    return left.length === right.length && left.every((value, index) => value === right[index]);
+  }
+};
+
+// packages/domain/event/src/domain/event-rule-results.ts
+var EventRuleResults = class {
+  static missing(code, field, message) {
+    return {
+      diagnostics: [
+        EventDiagnostics.diagnostic({
+          code,
+          severity: "warning",
+          category: "incomplete",
+          field,
+          message
+        })
+      ],
+      patch: EMPTY_EVENT_PATCH
+    };
+  }
+  static invalid(code, field, message) {
+    return {
+      diagnostics: [
+        EventDiagnostics.diagnostic({
+          code,
+          severity: "error",
+          category: "invalid",
+          field,
+          message
+        })
+      ],
+      patch: EMPTY_EVENT_PATCH
+    };
+  }
+  static normalizeString(current, normalized, path, reason) {
+    if (current === normalized) {
+      return EventRuleFactory.emptyResult();
     }
-    return normalizeString(
-      event.eventTitle,
-      value,
-      "eventTitle",
-      "Trim event title"
+    return EventRuleFactory.normalizedResult(
+      EventPatches.replaceEventField(path, normalized, reason),
+      `event.${path}.normalized`,
+      path,
+      `${path} can be normalized safely`
     );
   }
 };
-var EventDescriptionRule = class {
-  id = "event-description";
-  dependencies = [];
-  evaluate(event) {
-    const value = event.description.trim();
-    if (value === "") {
-      return missing(
-        "event.description.missing",
-        "description",
-        "An event description is required"
-      );
-    }
-    return normalizeString(
-      event.description,
-      value,
-      "description",
-      "Trim event description"
-    );
-  }
-};
-var EventHostRule = class {
-  id = "event-host";
-  dependencies = [];
-  evaluate(event) {
-    if (!event.host) {
-      return missing("event.hoster.missing", "host", "A host must be selected");
-    }
-    const normalized = normalizeParticipant(event.host);
-    if (normalized.displayName === "") {
-      return invalid(
-        "event.hoster.invalid",
-        "host",
-        "Host display name must not be empty"
-      );
-    }
-    if (participantsEqual(event.host, normalized)) {
-      return emptyResult();
-    }
-    return normalizedResult(
-      replaceEventField("host", normalized, "Normalize host reference"),
-      "event.hoster.normalized",
-      "host",
-      "The host reference can be normalized safely"
-    );
-  }
-};
+
+// packages/domain/event/src/domain/event-agenda-rule.ts
 var EventAgendaRule = class {
   id = "event-agenda";
   dependencies = [];
   evaluate(event) {
     if (event.agenda.length === 0) {
-      return missing(
+      return EventRuleResults.missing(
         "event.agenda.missing",
         "agenda",
         "At least one agenda entry is required"
@@ -59618,51 +59711,22 @@ var EventAgendaRule = class {
     }
     const diagnostics = [];
     const normalizedEntries = event.agenda.map((entry, entryIndex) => {
-      const normalized = normalizeAgendaEntry(entry);
-      if (normalized.speakers.length === 0) {
-        diagnostics.push(
-          diagnostic({
-            code: "event.agenda.speaker.missing",
-            severity: "error",
-            category: "invalid",
-            field: `agenda.${entryIndex}.speakers`,
-            message: "Each agenda entry must have at least one speaker"
-          })
-        );
-      }
-      for (const [speakerIndex, speaker] of normalized.speakers.entries()) {
-        if (speaker.displayName === "") {
-          diagnostics.push(
-            diagnostic({
-              code: "event.agenda.speaker.invalid",
-              severity: "error",
-              category: "invalid",
-              field: `agenda.${entryIndex}.speakers.${speakerIndex}`,
-              message: "Speaker display name must not be empty"
-            })
-          );
-        }
-      }
-      if (normalized.description === "") {
-        diagnostics.push(
-          diagnostic({
-            code: "event.agenda.description.missing",
-            severity: "error",
-            category: "invalid",
-            field: `agenda.${entryIndex}.description`,
-            message: "Agenda entry description must not be empty"
-          })
-        );
-      }
-      return normalized;
+      return this.normalizeEntry(entry, entryIndex, diagnostics);
     });
     const operations = [];
-    if (!agendaEqual(event.agenda, normalizedEntries)) {
+    if (!EventParticipantNormalization.agendaEqual(
+      event.agenda,
+      normalizedEntries
+    )) {
       operations.push(
-        replaceEventField("agenda", normalizedEntries, "Normalize agenda")
+        EventPatches.replaceEventField(
+          "agenda",
+          normalizedEntries,
+          "Normalize agenda"
+        )
       );
       diagnostics.push(
-        diagnostic({
+        EventDiagnostics.diagnostic({
           code: "event.agenda.normalized",
           severity: "info",
           category: "normalization",
@@ -59674,10 +59738,174 @@ var EventAgendaRule = class {
     }
     return {
       diagnostics,
-      patch: createEventPatch(operations)
+      patch: EventPatches.createEventPatch(operations)
     };
   }
+  normalizeEntry(entry, entryIndex, diagnostics) {
+    const normalized = EventParticipantNormalization.normalizeAgendaEntry(entry);
+    if (normalized.speakers.length === 0) {
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.agenda.speaker.missing",
+          severity: "error",
+          category: "invalid",
+          field: `agenda.${entryIndex}.speakers`,
+          message: "Each agenda entry must have at least one speaker"
+        })
+      );
+    }
+    for (const [speakerIndex, speaker] of normalized.speakers.entries()) {
+      if (speaker.displayName === "") {
+        diagnostics.push(
+          EventDiagnostics.diagnostic({
+            code: "event.agenda.speaker.invalid",
+            severity: "error",
+            category: "invalid",
+            field: `agenda.${entryIndex}.speakers.${speakerIndex}`,
+            message: "Speaker display name must not be empty"
+          })
+        );
+      }
+    }
+    if (normalized.description === "") {
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.agenda.description.missing",
+          severity: "error",
+          category: "invalid",
+          field: `agenda.${entryIndex}.description`,
+          message: "Agenda entry description must not be empty"
+        })
+      );
+    }
+    return normalized;
+  }
 };
+
+// packages/domain/event/src/domain/event-date-validation.ts
+var EventDateValidation = class _EventDateValidation {
+  static isValidIsoDate(value) {
+    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) {
+      return false;
+    }
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    if (month < 1 || month > 12 || day < 1) {
+      return false;
+    }
+    const monthLengths = [
+      31,
+      _EventDateValidation.isLeapYear(year) ? 29 : 28,
+      31,
+      30,
+      31,
+      30,
+      31,
+      31,
+      30,
+      31,
+      30,
+      31
+    ];
+    return day <= monthLengths[month - 1];
+  }
+  static isLeapYear(year) {
+    return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  }
+};
+
+// packages/domain/event/src/domain/event-date-rule.ts
+var EventDateRule = class {
+  id = "event-date";
+  dependencies = [];
+  evaluate(event) {
+    const value = event.date.trim();
+    if (value === "") {
+      return EventRuleResults.missing(
+        "event.date.missing",
+        "date",
+        "An event date is required"
+      );
+    }
+    if (!EventDateValidation.isValidIsoDate(value)) {
+      return EventRuleResults.invalid(
+        "event.date.invalid",
+        "date",
+        "Event date must be a real calendar date formatted as YYYY-MM-DD"
+      );
+    }
+    return EventRuleResults.normalizeString(
+      event.date,
+      value,
+      "date",
+      "Normalize event date"
+    );
+  }
+};
+
+// packages/domain/event/src/domain/event-description-rule.ts
+var EventDescriptionRule = class {
+  id = "event-description";
+  dependencies = [];
+  evaluate(event) {
+    const value = event.description.trim();
+    if (value === "") {
+      return EventRuleResults.missing(
+        "event.description.missing",
+        "description",
+        "An event description is required"
+      );
+    }
+    return EventRuleResults.normalizeString(
+      event.description,
+      value,
+      "description",
+      "Trim event description"
+    );
+  }
+};
+
+// packages/domain/event/src/domain/event-host-rule.ts
+var EventHostRule = class {
+  id = "event-host";
+  dependencies = [];
+  evaluate(event) {
+    if (!event.host) {
+      return EventRuleResults.missing(
+        "event.hoster.missing",
+        "host",
+        "A host must be selected"
+      );
+    }
+    const normalized = EventParticipantNormalization.normalizeParticipant(
+      event.host
+    );
+    if (normalized.displayName === "") {
+      return EventRuleResults.invalid(
+        "event.hoster.invalid",
+        "host",
+        "Host display name must not be empty"
+      );
+    }
+    if (EventParticipantNormalization.participantsEqual(event.host, normalized)) {
+      return EventRuleFactory.emptyResult();
+    }
+    return EventRuleFactory.normalizedResult(
+      EventPatches.replaceEventField(
+        "host",
+        normalized,
+        "Normalize host reference"
+      ),
+      "event.hoster.normalized",
+      "host",
+      "The host reference can be normalized safely"
+    );
+  }
+};
+
+// packages/domain/event/src/domain/event-links-rule.ts
 var EventLinksRule = class {
   id = "event-links";
   dependencies = [];
@@ -59685,26 +59913,26 @@ var EventLinksRule = class {
     const diagnostics = [];
     const normalized = { ...event.publicationLinks };
     let changed = false;
-    for (const key2 of ["meetup", "community", "assets"]) {
-      const link = event.publicationLinks[key2];
+    for (const key of ["meetup", "community", "assets"]) {
+      const link = event.publicationLinks[key];
       if (link === void 0 || link.trim() === "") {
         continue;
       }
       const value = link.trim().replace(/\/$/, "");
-      if (!isHttpsUrl2(value)) {
+      if (!EventRuleFactory.isHttpsUrl(value)) {
         diagnostics.push(
-          diagnostic({
-            code: `event.link.${key2}.invalid`,
+          EventDiagnostics.diagnostic({
+            code: `event.link.${key}.invalid`,
             severity: "error",
             category: "invalid",
-            field: `publicationLinks.${key2}`,
-            message: `${key2} link must be a valid HTTPS URL`
+            field: `publicationLinks.${key}`,
+            message: `${key} link must be a valid HTTPS URL`
           })
         );
         continue;
       }
       if (value !== link) {
-        normalized[key2] = value;
+        normalized[key] = value;
         changed = true;
       }
     }
@@ -59712,7 +59940,7 @@ var EventLinksRule = class {
       return { diagnostics, patch: EMPTY_EVENT_PATCH };
     }
     diagnostics.push(
-      diagnostic({
+      EventDiagnostics.diagnostic({
         code: "event.links.normalized",
         severity: "info",
         category: "normalization",
@@ -59723,8 +59951,8 @@ var EventLinksRule = class {
     );
     return {
       diagnostics,
-      patch: createEventPatch([
-        replaceEventField(
+      patch: EventPatches.createEventPatch([
+        EventPatches.replaceEventField(
           "publicationLinks",
           normalized,
           "Trim publication links and remove trailing slashes"
@@ -59733,19 +59961,43 @@ var EventLinksRule = class {
     };
   }
 };
+
+// packages/domain/event/src/domain/event-title-rule.ts
+var EventTitleRule = class {
+  id = "event-title";
+  dependencies = [];
+  evaluate(event) {
+    const value = event.eventTitle.trim();
+    if (value === "") {
+      return EventRuleResults.missing(
+        "event.title.missing",
+        "eventTitle",
+        "An event title is required"
+      );
+    }
+    return EventRuleResults.normalizeString(
+      event.eventTitle,
+      value,
+      "eventTitle",
+      "Trim event title"
+    );
+  }
+};
+
+// packages/domain/event/src/domain/issue-title-rule.ts
 var IssueTitleRule = class {
   id = "issue-title";
   dependencies = ["event-date", "event-title"];
   evaluate(event) {
-    if (!isValidIsoDate(event.date) || event.eventTitle === "") {
-      return emptyResult();
+    if (!EventDateValidation.isValidIsoDate(event.date) || event.eventTitle === "") {
+      return EventRuleFactory.emptyResult();
     }
     const expected = `[Meetup] - ${event.date} - ${event.eventTitle}`;
     if (event.issueTitle === expected) {
-      return emptyResult();
+      return EventRuleFactory.emptyResult();
     }
-    return normalizedResult(
-      replaceEventField(
+    return EventRuleFactory.normalizedResult(
+      EventPatches.replaceEventField(
         "issueTitle",
         expected,
         "Project canonical issue title"
@@ -59756,16 +60008,8 @@ var IssueTitleRule = class {
     );
   }
 };
-var DEFAULT_MANAGED_LABEL_CONFIGURATION = Object.freeze({
-  meetup: "meetup",
-  hostNeeded: "hoster:needed",
-  hostConfirmed: "hoster:confirmed",
-  speakersNeeded: "speakers:needed",
-  speakersConfirmed: "speakers:confirmed",
-  occurrencePostponed: "event:postponed",
-  occurrenceHeld: "event:held",
-  occurrenceCancelled: "event:cancelled"
-});
+
+// packages/domain/event/src/domain/managed-labels-rule.ts
 var ManagedLabelsRule = class {
   constructor(configuration) {
     this.configuration = configuration;
@@ -59784,200 +60028,190 @@ var ManagedLabelsRule = class {
       event.confirmations.speakers ? this.configuration.speakersConfirmed : this.configuration.speakersNeeded,
       ...occurrenceLabels
     ];
-    if (labelsMatch(event.labels, expected)) {
-      return emptyResult();
+    if (EventRuleFactory.labelsMatch(event.labels, expected)) {
+      return EventRuleFactory.emptyResult();
     }
-    return normalizedResult(
-      replaceEventField("labels", expected, "Project managed lifecycle labels"),
+    return EventRuleFactory.normalizedResult(
+      EventPatches.replaceEventField(
+        "labels",
+        expected,
+        "Project managed lifecycle labels"
+      ),
       "event.labels.normalized",
       "labels",
       "Managed meetup labels can be reconciled safely"
     );
   }
 };
-function labelsMatch(actual, expected) {
-  return arraysEqual(actual, expected) || sameMembers(actual, expected);
-}
-function sameMembers(left, right) {
-  return left.length === right.length && left.every((label) => right.includes(label));
-}
-function sortRules(rules) {
-  const byId = /* @__PURE__ */ new Map();
-  for (const rule of rules) {
-    if (byId.has(rule.id)) {
-      throw new EventRuleConfigurationError(
-        `Duplicate event rule "${rule.id}"`
-      );
-    }
-    byId.set(rule.id, rule);
-  }
-  for (const rule of rules) {
-    for (const dependency of rule.dependencies) {
-      if (!byId.has(dependency)) {
-        throw new EventRuleConfigurationError(
-          `Event rule "${rule.id}" has missing dependency "${dependency}"`
-        );
-      }
-    }
-  }
-  const permanent = /* @__PURE__ */ new Set();
-  const temporary = /* @__PURE__ */ new Set();
-  const ordered = [];
-  const visit = (rule, path) => {
-    if (temporary.has(rule.id)) {
-      throw new EventRuleConfigurationError(
-        `Cyclic event rule dependency: ${[...path, rule.id].join(" -> ")}`
-      );
-    }
-    if (permanent.has(rule.id)) {
-      return;
-    }
-    temporary.add(rule.id);
-    for (const dependencyId of rule.dependencies) {
-      const dependency = byId.get(dependencyId);
-      if (!dependency) {
-        throw new EventRuleConfigurationError(
-          `Event rule "${rule.id}" has missing dependency "${dependencyId}"`
-        );
-      }
-      visit(dependency, [...path, rule.id]);
-    }
-    temporary.delete(rule.id);
-    permanent.add(rule.id);
-    ordered.push(rule);
-  };
-  for (const rule of rules) {
-    visit(rule, []);
-  }
-  return Object.freeze(ordered);
-}
-function emptyResult() {
-  return { diagnostics: [], patch: EMPTY_EVENT_PATCH };
-}
-function missing(code, field, message) {
-  return {
-    diagnostics: [
-      diagnostic({
-        code,
-        severity: "warning",
-        category: "incomplete",
-        field,
-        message
-      })
-    ],
-    patch: EMPTY_EVENT_PATCH
-  };
-}
-function invalid(code, field, message) {
-  return {
-    diagnostics: [
-      diagnostic({
-        code,
-        severity: "error",
-        category: "invalid",
-        field,
-        message
-      })
-    ],
-    patch: EMPTY_EVENT_PATCH
-  };
-}
-function normalizeString(current, normalized, path, reason) {
-  if (current === normalized) {
-    return emptyResult();
-  }
-  return normalizedResult(
-    replaceEventField(path, normalized, reason),
-    `event.${path}.normalized`,
-    path,
-    `${path} can be normalized safely`
-  );
-}
-function normalizedResult(operation, code, field, message) {
-  return {
-    diagnostics: [
-      diagnostic({
-        code,
-        severity: "info",
-        category: "normalization",
-        field,
-        message,
-        fixAvailable: true
-      })
-    ],
-    patch: createEventPatch([operation])
-  };
-}
-function isValidIsoDate(value) {
-  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!match) {
-    return false;
-  }
-  const year = Number(match[1]);
-  const month = Number(match[2]);
-  const day = Number(match[3]);
-  if (month < 1 || month > 12 || day < 1) {
-    return false;
-  }
-  const monthLengths = [
-    31,
-    isLeapYear(year) ? 29 : 28,
-    31,
-    30,
-    31,
-    30,
-    31,
-    31,
-    30,
-    31,
-    30,
-    31
-  ];
-  return day <= monthLengths[month - 1];
-}
-function isLeapYear(year) {
-  return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
-}
-function normalizeParticipant(participant) {
-  const displayName = participant.displayName.trim();
-  const id = participant.id?.trim();
-  return id ? { displayName, id } : { displayName };
-}
-function participantsEqual(left, right) {
-  return left.displayName === right.displayName && left.id === right.id;
-}
-function normalizeAgendaEntry(entry) {
-  return {
-    speakers: entry.speakers.map(normalizeParticipant),
-    description: entry.description.trim()
-  };
-}
-function agendaEqual(left, right) {
-  return JSON.stringify(left) === JSON.stringify(right);
-}
-function arraysEqual(left, right) {
-  return left.length === right.length && left.every((value, index) => value === right[index]);
-}
-function isHttpsUrl2(value) {
-  try {
-    return new URL(value).protocol === "https:";
-  } catch {
-    return false;
-  }
-}
 
-// packages/domain/event/src/application/use-cases/list-active-events.ts
-var EventPaginationError = class extends Error {
-  constructor(cursor) {
-    super(`Event repository repeated pagination cursor "${cursor}"`);
-    this.name = "EventPaginationError";
+// packages/domain/event/src/domain/rule-contracts.ts
+var DEFAULT_MANAGED_LABEL_CONFIGURATION = Object.freeze({
+  meetup: "meetup",
+  hostNeeded: "hoster:needed",
+  hostConfirmed: "hoster:confirmed",
+  speakersNeeded: "speakers:needed",
+  speakersConfirmed: "speakers:confirmed",
+  occurrencePostponed: "event:postponed",
+  occurrenceHeld: "event:held",
+  occurrenceCancelled: "event:cancelled"
+});
+
+// packages/domain/event/src/domain/event-rule-factory.ts
+var EventRuleFactory = class _EventRuleFactory {
+  static createDefaultEventRules(labelConfiguration = DEFAULT_MANAGED_LABEL_CONFIGURATION) {
+    return [
+      new EventDateRule(),
+      new EventTitleRule(),
+      new EventDescriptionRule(),
+      new EventHostRule(),
+      new EventAgendaRule(),
+      new EventLinksRule(),
+      new IssueTitleRule(),
+      new ManagedLabelsRule(labelConfiguration)
+    ];
+  }
+  static labelsMatch(actual, expected) {
+    return EventParticipantNormalization.arraysEqual(actual, expected) || _EventRuleFactory.sameMembers(actual, expected);
+  }
+  static sameMembers(left, right) {
+    return left.length === right.length && left.every((label) => right.includes(label));
+  }
+  static emptyResult() {
+    return { diagnostics: [], patch: EMPTY_EVENT_PATCH };
+  }
+  static normalizedResult(operation, code, field, message) {
+    return {
+      diagnostics: [
+        EventDiagnostics.diagnostic({
+          code,
+          severity: "info",
+          category: "normalization",
+          field,
+          message,
+          fixAvailable: true
+        })
+      ],
+      patch: EventPatches.createEventPatch([operation])
+    };
+  }
+  static isHttpsUrl(value) {
+    try {
+      return new URL(value).protocol === "https:";
+    } catch {
+      return false;
+    }
   }
 };
+
+// packages/domain/event/src/domain/lifecycle.ts
+var EventLifecycle = class _EventLifecycle {
+  /**
+   * Derives lifecycle exclusively from event facts and an explicitly supplied
+   * instant. In particular, a past date never implies that an event was held.
+   */
+  static evaluateEventLifecycle({
+    event,
+    readiness,
+    now
+  }) {
+    let state;
+    switch (event.occurrenceStatus) {
+      case "cancelled":
+        state = "cancelled";
+        break;
+      case "postponed":
+        state = "postponed";
+        break;
+      case "held":
+        state = event.followUpComplete && MeetupEventOperations.postEventChecklistIsComplete(
+          event.operationalChecklists.postEvent
+        ) ? "follow-up-complete" : "held";
+        break;
+      case "scheduled":
+      case void 0:
+        if (!_EventLifecycle.hasMinimumPlanningFacts(event)) {
+          state = "draft";
+        } else {
+          state = readiness.isReady ? "ready" : "planned";
+        }
+        break;
+    }
+    return {
+      state,
+      evaluatedAt: now,
+      timeZone: event.timeZone,
+      diagnostics: readiness.diagnostics
+    };
+  }
+  static hasMinimumPlanningFacts(event) {
+    return event.date.trim() !== "" && event.eventTitle.trim() !== "";
+  }
+};
+
+// packages/domain/event/src/domain/readiness.ts
+var EventReadinessPolicy = class {
+  static evaluateEventReadiness(event, diagnostics) {
+    const readinessDiagnostics = [...diagnostics];
+    if (event.occurrenceStatus === "cancelled") {
+      return {
+        status: "incomplete",
+        isReady: false,
+        diagnostics: readinessDiagnostics
+      };
+    }
+    if (event.occurrenceStatus === "postponed") {
+      return {
+        status: "incomplete",
+        isReady: false,
+        diagnostics: readinessDiagnostics
+      };
+    }
+    if (readinessDiagnostics.some((item) => item.severity === "error")) {
+      return {
+        status: "invalid",
+        isReady: false,
+        diagnostics: readinessDiagnostics
+      };
+    }
+    if (!event.confirmations.host) {
+      readinessDiagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.confirmation.host.missing",
+          severity: "warning",
+          category: "incomplete",
+          field: "confirmations.host",
+          message: "Host confirmation is required before the event is ready"
+        })
+      );
+    }
+    if (!event.confirmations.speakers) {
+      readinessDiagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.confirmation.speakers.missing",
+          severity: "warning",
+          category: "incomplete",
+          field: "confirmations.speakers",
+          message: "Speaker confirmation is required before the event is ready"
+        })
+      );
+    }
+    const incomplete = readinessDiagnostics.some(
+      (item) => item.category === "incomplete"
+    );
+    return {
+      status: incomplete ? "incomplete" : "ready",
+      isReady: !incomplete,
+      diagnostics: Object.freeze(readinessDiagnostics)
+    };
+  }
+};
+
+// packages/domain/event/src/application/use-cases/list-active-events.ts
 var ListActiveEvents = class {
   constructor(dependencies) {
     this.dependencies = dependencies;
     this.ruleEngine = new EventRuleEngine(
-      dependencies.rules ?? createDefaultEventRules()
+      dependencies.rules ?? EventRuleFactory.createDefaultEventRules()
     );
   }
   dependencies;
@@ -60006,11 +60240,11 @@ var ListActiveEvents = class {
           ...decoded.diagnostics,
           ...evaluated.diagnostics
         ];
-        const readiness = evaluateEventReadiness(
+        const readiness = EventReadinessPolicy.evaluateEventReadiness(
           evaluated.event,
           eventDiagnostics
         );
-        const lifecycle = evaluateEventLifecycle({
+        const lifecycle = EventLifecycle.evaluateEventLifecycle({
           event: evaluated.event,
           readiness,
           now
@@ -60041,27 +60275,11 @@ var ListActiveEvents = class {
 };
 
 // packages/domain/event/src/application/use-cases/reconcile-event.ts
-var EventNotFoundError = class extends Error {
-  constructor(identity) {
-    super(
-      `Meetup event ${identity.repository}#${identity.issueNumber} was not found`
-    );
-    this.name = "EventNotFoundError";
-  }
-};
-var EventConcurrentModificationError = class extends Error {
-  constructor(identity) {
-    super(
-      `Meetup event ${identity.repository}#${identity.issueNumber} changed during reconciliation`
-    );
-    this.name = "EventConcurrentModificationError";
-  }
-};
-var ReconcileEvent = class {
+var ReconcileEvent = class _ReconcileEvent {
   constructor(dependencies) {
     this.dependencies = dependencies;
     this.ruleEngine = new EventRuleEngine(
-      dependencies.rules ?? createDefaultEventRules()
+      dependencies.rules ?? EventRuleFactory.createDefaultEventRules()
     );
   }
   dependencies;
@@ -60071,7 +60289,7 @@ var ReconcileEvent = class {
     if (!document2) {
       throw new EventNotFoundError(input.identity);
     }
-    if (!sameIdentity(document2.identity, input.identity)) {
+    if (!_ReconcileEvent.sameIdentity(document2.identity, input.identity)) {
       throw new EventNotFoundError(input.identity);
     }
     const decoded = this.dependencies.documentCodec.decode(document2);
@@ -60080,8 +60298,11 @@ var ReconcileEvent = class {
       ...decoded.diagnostics,
       ...evaluated.diagnostics
     ];
-    const readiness = evaluateEventReadiness(evaluated.event, diagnostics);
-    const lifecycle = evaluateEventLifecycle({
+    const readiness = EventReadinessPolicy.evaluateEventReadiness(
+      evaluated.event,
+      diagnostics
+    );
+    const lifecycle = EventLifecycle.evaluateEventLifecycle({
       event: evaluated.event,
       readiness,
       now: this.dependencies.clock.now()
@@ -60090,9 +60311,9 @@ var ReconcileEvent = class {
       document2,
       evaluated.event
     );
-    const shouldPersist = input.mode === "fix" && !eventRepositoryPatchIsEmpty(repositoryPatch);
+    const shouldPersist = input.mode === "fix" && !EventRepositoryPatches.eventRepositoryPatchIsEmpty(repositoryPatch);
     if (shouldPersist) {
-      await ensureEventDocumentIsCurrent(
+      await _ReconcileEvent.ensureEventDocumentIsCurrent(
         this.dependencies.repository,
         input.identity,
         document2
@@ -60121,29 +60342,29 @@ var ReconcileEvent = class {
       commentUpdated
     };
   }
+  static async ensureEventDocumentIsCurrent(repository, identity, expected) {
+    const current = await repository.find(identity);
+    if (!current) {
+      throw new EventNotFoundError(identity);
+    }
+    if (!_ReconcileEvent.eventDocumentsEqual(current, expected)) {
+      throw new EventConcurrentModificationError(identity);
+    }
+  }
+  static eventDocumentsEqual(left, right) {
+    const leftLabels = [...left.labels].sort(_ReconcileEvent.compareText);
+    const rightLabels = [...right.labels].sort(_ReconcileEvent.compareText);
+    return _ReconcileEvent.sameIdentity(left.identity, right.identity) && left.issueState === right.issueState && left.issueTitle === right.issueTitle && left.body === right.body && leftLabels.length === rightLabels.length && leftLabels.every((label, index) => label === rightLabels[index]);
+  }
+  static compareText(left, right) {
+    return left < right ? -1 : left > right ? 1 : 0;
+  }
+  static sameIdentity(left, right) {
+    return left.issueNumber === right.issueNumber && left.repository.toLowerCase() === right.repository.toLowerCase();
+  }
 };
-async function ensureEventDocumentIsCurrent(repository, identity, expected) {
-  const current = await repository.find(identity);
-  if (!current) {
-    throw new EventNotFoundError(identity);
-  }
-  if (!eventDocumentsEqual(current, expected)) {
-    throw new EventConcurrentModificationError(identity);
-  }
-}
-function eventDocumentsEqual(left, right) {
-  const leftLabels = [...left.labels].sort(compareText);
-  const rightLabels = [...right.labels].sort(compareText);
-  return sameIdentity(left.identity, right.identity) && left.issueState === right.issueState && left.issueTitle === right.issueTitle && left.body === right.body && leftLabels.length === rightLabels.length && leftLabels.every((label, index) => label === rightLabels[index]);
-}
-function compareText(left, right) {
-  return left < right ? -1 : left > right ? 1 : 0;
-}
-function sameIdentity(left, right) {
-  return left.issueNumber === right.issueNumber && left.repository.toLowerCase() === right.repository.toLowerCase();
-}
 
-// packages/domain/event/src/domain/dto.ts
+// packages/domain/event/src/domain/dto-contracts.ts
 var STABLE_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._:-]*$/;
 var OCCURRENCE_STATUSES = [
   "scheduled",
@@ -60157,326 +60378,391 @@ var OCCURRENCE_STATUS_LABELS = Object.freeze({
   held: "event:held",
   cancelled: "event:cancelled"
 });
-function migrateMeetupEventDto(dto) {
-  if (dto.schemaVersion === EVENT_SCHEMA_VERSION) {
-    return {
-      event: cloneMeetupEvent(dto),
-      diagnostics: []
-    };
-  }
-  return migrateLegacyDto(dto);
-}
-function migrateLegacyDto(dto) {
-  const diagnostics = [];
-  const body = dto.parsedBody;
-  const eventTitle = readString(body.event_title, "event_title", diagnostics);
-  const date = readString(body.event_date, "event_date", diagnostics);
-  const description = readString(
-    body.event_description,
-    "event_description",
-    diagnostics
-  );
-  const host = readLegacyHost(body.hoster, diagnostics);
-  const agenda = readLegacyAgenda(body.agenda, diagnostics);
-  const occurrenceStatus = readOccurrenceStatus(
-    dto.labels ?? [],
-    dto.issueState ?? "open",
-    body.event_status,
-    diagnostics
-  );
-  const event = {
-    schemaVersion: EVENT_SCHEMA_VERSION,
-    identity: {
-      repository: dto.repository,
-      issueNumber: dto.issueNumber
-    },
-    issueState: dto.issueState ?? "open",
-    issueTitle: dto.issueTitle,
-    labels: [...dto.labels ?? []],
-    eventTitle,
-    date,
-    description,
-    host,
-    agenda,
-    publicationLinks: {
-      meetup: readOptionalString(body.meetup_link, "meetup_link", diagnostics),
-      community: readOptionalString(body.cncf_link, "cncf_link", diagnostics),
-      assets: readOptionalString(body.drive_link, "drive_link", diagnostics)
-    },
-    occurrenceStatus,
-    timeZone: dto.timeZone ?? "Europe/Paris",
-    confirmations: {
-      host: dto.labels?.includes("hoster:confirmed") ?? false,
-      speakers: dto.labels?.includes("speakers:confirmed") ?? false
-    },
-    logistics: {
-      aperitif: "unspecified",
-      postEventVenue: "unspecified"
-    },
-    operationalChecklists: {
-      slidesAndContent: [],
-      communication: [],
-      postEvent: []
-    },
-    // A legacy flag has no named task evidence and cannot prove completion.
-    followUpComplete: false
-  };
-  diagnostics.unshift(
-    diagnostic({
-      code: "event.document.legacy-schema",
-      severity: "info",
-      category: "migration",
-      message: "The legacy event document was migrated to schema version 1",
-      fixAvailable: true
-    })
-  );
-  return { event, diagnostics };
-}
-function readString(value, field, diagnostics) {
-  if (value === void 0 || value === null) {
-    return "";
-  }
-  if (typeof value === "string") {
-    return value;
-  }
-  diagnostics.push(
-    diagnostic({
-      code: "event.document.invalid-field-type",
-      severity: "error",
-      category: "invalid",
-      field,
-      message: `The ${field} field must be a string`
-    })
-  );
-  return "";
-}
-function readOptionalString(value, field, diagnostics) {
-  if (value === void 0 || value === null || value === "") {
-    return void 0;
-  }
-  return readString(value, field, diagnostics);
-}
-function readLegacyHost(value, diagnostics) {
-  if (value === void 0 || value === null) {
-    return void 0;
-  }
-  if (!Array.isArray(value)) {
-    diagnostics.push(
-      diagnostic({
-        code: "event.document.invalid-hoster-type",
-        severity: "error",
-        category: "invalid",
-        field: "hoster",
-        message: "The legacy hoster field must be an array"
-      })
-    );
-    return void 0;
-  }
-  if (value.length > 1) {
-    diagnostics.push(
-      diagnostic({
-        code: "event.hoster.multiple",
-        severity: "error",
-        category: "invalid",
-        field: "hoster",
-        message: "A meetup event must have exactly one host"
-      })
-    );
-  }
-  const first = value[0];
-  if (first === void 0) {
-    return void 0;
-  }
-  if (typeof first !== "string") {
-    diagnostics.push(
-      diagnostic({
-        code: "event.document.invalid-hoster-entry",
-        severity: "error",
-        category: "invalid",
-        field: "hoster",
-        message: "The legacy hoster entry must be a string"
-      })
-    );
-    return void 0;
-  }
-  return parseParticipantReference(first);
-}
-function readLegacyAgenda(value, diagnostics) {
-  if (value === void 0 || value === null || value === "") {
-    return [];
-  }
-  if (typeof value !== "string") {
-    diagnostics.push(
-      diagnostic({
-        code: "event.document.invalid-agenda-type",
-        severity: "error",
-        category: "invalid",
-        field: "agenda",
-        message: "The legacy agenda field must be a string"
-      })
-    );
-    return [];
-  }
-  const entries = [];
-  for (const [index, line] of value.split("\n").entries()) {
-    if (line.trim() === "") {
-      continue;
-    }
-    const agendaLine = parseLegacyAgendaLine(line);
-    if (!agendaLine) {
+
+// packages/domain/event/src/domain/event-occurrence-parser.ts
+var EventOccurrenceParser = class _EventOccurrenceParser {
+  static readOccurrenceStatus(labels, issueState, legacyValue, diagnostics) {
+    const explicitStatuses = OCCURRENCE_STATUSES.filter((status) => {
+      const label = OCCURRENCE_STATUS_LABELS[status];
+      return label !== null && labels.includes(label);
+    });
+    if (explicitStatuses.length > 1) {
       diagnostics.push(
-        diagnostic({
-          code: "event.agenda.legacy-line-invalid",
+        EventDiagnostics.diagnostic({
+          code: "event.occurrence-status.label-conflict",
           severity: "error",
           category: "invalid",
-          field: `agenda.${index}`,
-          message: `Agenda line ${index + 1} does not match "- <speaker(s)>: <description>"`
+          field: "labels",
+          message: "Occurrence status labels are mutually exclusive; keep only one of event:postponed, event:held, or event:cancelled"
         })
       );
-      continue;
+      return explicitStatuses[0] ?? (issueState === "closed" ? "held" : "scheduled");
     }
-    entries.push({
-      speakers: agendaLine.speakers.split(",").map((speaker) => parseParticipantReference(speaker)),
-      description: agendaLine.description
-    });
-  }
-  return entries;
-}
-function parseParticipantReference(value) {
-  const trimmed = value.trim();
-  const markdownLinkLabel = parseMarkdownLinkLabel(trimmed);
-  if (markdownLinkLabel !== void 0) {
-    return { displayName: markdownLinkLabel };
-  }
-  const stableReference = parseStableIdReference(trimmed);
-  if (stableReference) {
-    return stableReference;
-  }
-  return { displayName: trimmed };
-}
-function parseLegacyAgendaLine(line) {
-  let cursor = 0;
-  while (cursor < line.length && isHorizontalWhitespaceCharacter(line[cursor])) {
-    cursor += 1;
-  }
-  if (line[cursor] !== "-") {
-    return void 0;
-  }
-  cursor += 1;
-  if (!isHorizontalWhitespaceCharacter(line[cursor] ?? "")) {
-    return void 0;
-  }
-  while (cursor < line.length && isHorizontalWhitespaceCharacter(line[cursor])) {
-    cursor += 1;
-  }
-  const content = line.slice(cursor);
-  for (let index = 0; index < content.length; index += 1) {
-    if (content[index] !== ":") {
-      continue;
+    if (explicitStatuses.length === 1) {
+      return explicitStatuses[0];
     }
-    if (!isHorizontalWhitespaceCharacter(content[index + 1] ?? "")) {
-      continue;
+    const legacyStatus = _EventOccurrenceParser.readLegacyOccurrenceStatus(
+      legacyValue,
+      diagnostics
+    );
+    if (legacyStatus !== void 0) {
+      return legacyStatus;
     }
-    const speakers = content.slice(0, index).trimEnd();
-    if (speakers === "") {
+    return issueState === "closed" ? "held" : "scheduled";
+  }
+  static readLegacyOccurrenceStatus(value, diagnostics) {
+    if (value === void 0 || value === null || value === "") {
       return void 0;
     }
-    let descriptionStart = index + 1;
-    while (descriptionStart < content.length && isHorizontalWhitespaceCharacter(content[descriptionStart])) {
-      descriptionStart += 1;
+    if (typeof value === "string" && OCCURRENCE_STATUSES.includes(value)) {
+      return value;
     }
-    return {
-      speakers,
-      description: content.slice(descriptionStart)
-    };
-  }
-  return void 0;
-}
-function parseMarkdownLinkLabel(value) {
-  if (!value.startsWith("[") || !value.endsWith(")")) {
-    return void 0;
-  }
-  const closingBracket = value.indexOf("]");
-  if (closingBracket <= 1 || value[closingBracket + 1] !== "(") {
-    return void 0;
-  }
-  const target = value.slice(closingBracket + 2, -1);
-  if (target === "" || target.includes(")")) {
-    return void 0;
-  }
-  return value.slice(1, closingBracket).trim();
-}
-function parseStableIdReference(value) {
-  if (!value.endsWith("]")) {
-    return void 0;
-  }
-  const openingBracket = value.lastIndexOf("[");
-  if (openingBracket <= 0 || !isWhitespaceCharacter(value[openingBracket - 1] ?? "")) {
-    return void 0;
-  }
-  const id = value.slice(openingBracket + 1, -1);
-  if (!STABLE_ID_PATTERN.test(id)) {
-    return void 0;
-  }
-  const displayName = value.slice(0, openingBracket).trim();
-  if (displayName === "") {
-    return void 0;
-  }
-  return {
-    displayName,
-    id
-  };
-}
-function isHorizontalWhitespaceCharacter(value) {
-  return value === " " || value === "	";
-}
-function isWhitespaceCharacter(value) {
-  return isHorizontalWhitespaceCharacter(value) || value === "\n" || value === "\r";
-}
-function readOccurrenceStatus(labels, issueState, legacyValue, diagnostics) {
-  const explicitStatuses = OCCURRENCE_STATUSES.filter((status) => {
-    const label = OCCURRENCE_STATUS_LABELS[status];
-    return label !== null && labels.includes(label);
-  });
-  if (explicitStatuses.length > 1) {
     diagnostics.push(
-      diagnostic({
-        code: "event.occurrence-status.label-conflict",
+      EventDiagnostics.diagnostic({
+        code: "event.occurrence-status.invalid",
         severity: "error",
         category: "invalid",
-        field: "labels",
-        message: "Occurrence status labels are mutually exclusive; keep only one of event:postponed, event:held, or event:cancelled"
+        field: "event_status",
+        message: "Occurrence status must be scheduled, postponed, held, or cancelled"
       })
     );
-    return explicitStatuses[0] ?? (issueState === "closed" ? "held" : "scheduled");
-  }
-  if (explicitStatuses.length === 1) {
-    return explicitStatuses[0];
-  }
-  const legacyStatus = readLegacyOccurrenceStatus(legacyValue, diagnostics);
-  if (legacyStatus !== void 0) {
-    return legacyStatus;
-  }
-  return issueState === "closed" ? "held" : "scheduled";
-}
-function readLegacyOccurrenceStatus(value, diagnostics) {
-  if (value === void 0 || value === null || value === "") {
     return void 0;
   }
-  if (typeof value === "string" && OCCURRENCE_STATUSES.includes(value)) {
-    return value;
+};
+
+// packages/domain/event/src/domain/participant-reference-parser.ts
+var ParticipantReferenceParser = class _ParticipantReferenceParser {
+  static parseParticipantReference(value) {
+    const trimmed = value.trim();
+    const markdownLinkLabel = _ParticipantReferenceParser.parseMarkdownLinkLabel(trimmed);
+    if (markdownLinkLabel !== void 0) {
+      return { displayName: markdownLinkLabel };
+    }
+    const stableReference = _ParticipantReferenceParser.parseStableIdReference(trimmed);
+    if (stableReference) {
+      return stableReference;
+    }
+    return { displayName: trimmed };
   }
-  diagnostics.push(
-    diagnostic({
-      code: "event.occurrence-status.invalid",
-      severity: "error",
-      category: "invalid",
-      field: "event_status",
-      message: "Occurrence status must be scheduled, postponed, held, or cancelled"
-    })
-  );
-  return void 0;
-}
+  static parseLegacyAgendaLine(line) {
+    let cursor = 0;
+    cursor = _ParticipantReferenceParser.skipHorizontalWhitespace(line, cursor);
+    if (line[cursor] !== "-") {
+      return void 0;
+    }
+    cursor += 1;
+    if (!_ParticipantReferenceParser.isHorizontalWhitespaceCharacter(
+      line[cursor] ?? ""
+    )) {
+      return void 0;
+    }
+    cursor = _ParticipantReferenceParser.skipHorizontalWhitespace(line, cursor);
+    const content = line.slice(cursor);
+    for (let index = 0; index < content.length; index += 1) {
+      if (content[index] !== ":") {
+        continue;
+      }
+      if (!_ParticipantReferenceParser.isHorizontalWhitespaceCharacter(
+        content[index + 1] ?? ""
+      )) {
+        continue;
+      }
+      const speakers = content.slice(0, index).trimEnd();
+      if (speakers === "") {
+        return void 0;
+      }
+      let descriptionStart = index + 1;
+      while (descriptionStart < content.length && _ParticipantReferenceParser.isHorizontalWhitespaceCharacter(
+        content[descriptionStart]
+      )) {
+        descriptionStart += 1;
+      }
+      return {
+        speakers,
+        description: content.slice(descriptionStart)
+      };
+    }
+    return void 0;
+  }
+  static parseMarkdownLinkLabel(value) {
+    if (!value.startsWith("[") || !value.endsWith(")")) {
+      return void 0;
+    }
+    const closingBracket = value.indexOf("]");
+    if (closingBracket <= 1 || value[closingBracket + 1] !== "(") {
+      return void 0;
+    }
+    const target = value.slice(closingBracket + 2, -1);
+    if (target === "" || target.includes(")")) {
+      return void 0;
+    }
+    return value.slice(1, closingBracket).trim();
+  }
+  static parseStableIdReference(value) {
+    if (!value.endsWith("]")) {
+      return void 0;
+    }
+    const openingBracket = value.lastIndexOf("[");
+    if (openingBracket <= 0 || !_ParticipantReferenceParser.isWhitespaceCharacter(
+      value[openingBracket - 1] ?? ""
+    )) {
+      return void 0;
+    }
+    const id = value.slice(openingBracket + 1, -1);
+    if (!STABLE_ID_PATTERN.test(id)) {
+      return void 0;
+    }
+    const displayName = value.slice(0, openingBracket).trim();
+    if (displayName === "") {
+      return void 0;
+    }
+    return {
+      displayName,
+      id
+    };
+  }
+  static isHorizontalWhitespaceCharacter(value) {
+    return value === " " || value === "	";
+  }
+  static isWhitespaceCharacter(value) {
+    return _ParticipantReferenceParser.isHorizontalWhitespaceCharacter(value) || value === "\n" || value === "\r";
+  }
+  static skipHorizontalWhitespace(line, cursor) {
+    while (cursor < line.length && _ParticipantReferenceParser.isHorizontalWhitespaceCharacter(line[cursor])) {
+      cursor += 1;
+    }
+    return cursor;
+  }
+};
+
+// packages/domain/event/src/domain/legacy-event-fields.ts
+var LegacyEventFields = class _LegacyEventFields {
+  static readString(value, field, diagnostics) {
+    if (value === void 0 || value === null) {
+      return "";
+    }
+    if (typeof value === "string") {
+      return value;
+    }
+    diagnostics.push(
+      EventDiagnostics.diagnostic({
+        code: "event.document.invalid-field-type",
+        severity: "error",
+        category: "invalid",
+        field,
+        message: `The ${field} field must be a string`
+      })
+    );
+    return "";
+  }
+  static readOptionalString(value, field, diagnostics) {
+    if (value === void 0 || value === null || value === "") {
+      return void 0;
+    }
+    return _LegacyEventFields.readString(value, field, diagnostics);
+  }
+  static readLegacyHost(value, diagnostics) {
+    if (value === void 0 || value === null) {
+      return void 0;
+    }
+    if (!Array.isArray(value)) {
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.document.invalid-hoster-type",
+          severity: "error",
+          category: "invalid",
+          field: "hoster",
+          message: "The legacy hoster field must be an array"
+        })
+      );
+      return void 0;
+    }
+    if (value.length > 1) {
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.hoster.multiple",
+          severity: "error",
+          category: "invalid",
+          field: "hoster",
+          message: "A meetup event must have exactly one host"
+        })
+      );
+    }
+    const first = value[0];
+    if (first === void 0) {
+      return void 0;
+    }
+    if (typeof first !== "string") {
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.document.invalid-hoster-entry",
+          severity: "error",
+          category: "invalid",
+          field: "hoster",
+          message: "The legacy hoster entry must be a string"
+        })
+      );
+      return void 0;
+    }
+    return ParticipantReferenceParser.parseParticipantReference(first);
+  }
+  static readLegacyAgenda(value, diagnostics) {
+    if (value === void 0 || value === null || value === "") {
+      return [];
+    }
+    if (typeof value !== "string") {
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.document.invalid-agenda-type",
+          severity: "error",
+          category: "invalid",
+          field: "agenda",
+          message: "The legacy agenda field must be a string"
+        })
+      );
+      return [];
+    }
+    const entries = [];
+    for (const [index, line] of value.split("\n").entries()) {
+      if (line.trim() === "") {
+        continue;
+      }
+      const agendaLine = ParticipantReferenceParser.parseLegacyAgendaLine(line);
+      if (!agendaLine) {
+        diagnostics.push(
+          EventDiagnostics.diagnostic({
+            code: "event.agenda.legacy-line-invalid",
+            severity: "error",
+            category: "invalid",
+            field: `agenda.${index}`,
+            message: `Agenda line ${index + 1} does not match "- <speaker(s)>: <description>"`
+          })
+        );
+        continue;
+      }
+      entries.push({
+        speakers: agendaLine.speakers.split(",").map(
+          (speaker) => ParticipantReferenceParser.parseParticipantReference(speaker)
+        ),
+        description: agendaLine.description
+      });
+    }
+    return entries;
+  }
+};
+
+// packages/domain/event/src/domain/meetup-event-migration.ts
+var MeetupEventMigration = class _MeetupEventMigration {
+  static parseParticipantReference(value) {
+    return ParticipantReferenceParser.parseParticipantReference(value);
+  }
+  static migrateMeetupEventDto(dto) {
+    if (dto.schemaVersion === EVENT_SCHEMA_VERSION) {
+      return {
+        event: MeetupEventOperations.cloneMeetupEvent(dto),
+        diagnostics: []
+      };
+    }
+    return _MeetupEventMigration.migrateLegacyDto(dto);
+  }
+  static migrateLegacyDto(dto) {
+    const diagnostics = [];
+    const body = dto.parsedBody;
+    const { eventTitle, date, description, host, agenda, occurrenceStatus } = _MeetupEventMigration.legacyFields(dto, diagnostics);
+    const event = {
+      schemaVersion: EVENT_SCHEMA_VERSION,
+      identity: {
+        repository: dto.repository,
+        issueNumber: dto.issueNumber
+      },
+      issueState: dto.issueState ?? "open",
+      issueTitle: dto.issueTitle,
+      labels: [...dto.labels ?? []],
+      eventTitle,
+      date,
+      description,
+      host,
+      agenda,
+      publicationLinks: _MeetupEventMigration.publicationLinks(
+        body,
+        diagnostics
+      ),
+      occurrenceStatus,
+      timeZone: dto.timeZone ?? "Europe/Paris",
+      confirmations: {
+        host: dto.labels?.includes("hoster:confirmed") ?? false,
+        speakers: dto.labels?.includes("speakers:confirmed") ?? false
+      },
+      logistics: {
+        aperitif: "unspecified",
+        postEventVenue: "unspecified"
+      },
+      operationalChecklists: {
+        slidesAndContent: [],
+        communication: [],
+        postEvent: []
+      },
+      // A legacy flag has no named task evidence and cannot prove completion.
+      followUpComplete: false
+    };
+    diagnostics.unshift(
+      EventDiagnostics.diagnostic({
+        code: "event.document.legacy-schema",
+        severity: "info",
+        category: "migration",
+        message: "The legacy event document was migrated to schema version 1",
+        fixAvailable: true
+      })
+    );
+    return { event, diagnostics };
+  }
+  static publicationLinks(body, diagnostics) {
+    return {
+      meetup: LegacyEventFields.readOptionalString(
+        body.meetup_link,
+        "meetup_link",
+        diagnostics
+      ),
+      community: LegacyEventFields.readOptionalString(
+        body.cncf_link,
+        "cncf_link",
+        diagnostics
+      ),
+      assets: LegacyEventFields.readOptionalString(
+        body.drive_link,
+        "drive_link",
+        diagnostics
+      )
+    };
+  }
+  static legacyFields(dto, diagnostics) {
+    const body = dto.parsedBody;
+    const eventTitle = LegacyEventFields.readString(
+      body.event_title,
+      "event_title",
+      diagnostics
+    );
+    const date = LegacyEventFields.readString(
+      body.event_date,
+      "event_date",
+      diagnostics
+    );
+    const description = LegacyEventFields.readString(
+      body.event_description,
+      "event_description",
+      diagnostics
+    );
+    const host = LegacyEventFields.readLegacyHost(body.hoster, diagnostics);
+    const agenda = LegacyEventFields.readLegacyAgenda(body.agenda, diagnostics);
+    const occurrenceStatus = EventOccurrenceParser.readOccurrenceStatus(
+      dto.labels ?? [],
+      dto.issueState ?? "open",
+      body.event_status,
+      diagnostics
+    );
+    return { eventTitle, date, description, host, agenda, occurrenceStatus };
+  }
+};
 
 // packages/application/journey/src/use-cases/manage-meetup-assets.ts
 var ManageMeetupAssets = class {
@@ -60512,7 +60798,7 @@ var ManageMeetupAssets = class {
       };
     }
     if (input.mode === "fix")
-      await ensureEventDocumentIsCurrent(
+      await ReconcileEvent.ensureEventDocumentIsCurrent(
         this.dependencies.eventRepository,
         input.identity,
         source
@@ -60524,29 +60810,11 @@ var ManageMeetupAssets = class {
       existingUrl: evaluation.event.publicationLinks.assets,
       mode: input.mode
     });
-    let persisted = false;
-    if (input.mode === "fix" && assets.container) {
-      const original = this.dependencies.documentCodec.decode(source).event;
-      const patch = this.dependencies.documentCodec.createPatch(source, {
-        ...original,
-        publicationLinks: {
-          ...original.publicationLinks,
-          assets: assets.container.url
-        }
-      });
-      if (!eventRepositoryPatchIsEmpty(patch)) {
-        await ensureEventDocumentIsCurrent(
-          this.dependencies.eventRepository,
-          input.identity,
-          source
-        );
-        await this.dependencies.eventRepository.applyPatch(
-          input.identity,
-          patch
-        );
-        persisted = true;
-      }
-    }
+    const persisted = await this.persistAsset(
+      source,
+      assets.container?.url,
+      input.mode
+    );
     return {
       skipped: false,
       persisted,
@@ -60558,571 +60826,31 @@ var ManageMeetupAssets = class {
       }))
     };
   }
-};
-
-// packages/domain/referential/src/application/use-cases/project-referential-choices.ts
-var ProjectReferentialChoices = class {
-  execute(catalog) {
-    return Object.freeze({
-      hostOptions: Object.freeze(catalog.hosts.map((host) => host.displayName)),
-      speakerReferences: Object.freeze(
-        catalog.speakers.map((speaker) => speaker.displayName)
-      )
-    });
-  }
-};
-
-// packages/domain/referential/src/domain/identifiers.ts
-var HOST_ID_PATTERN = /^host-[0-9]{4}$/;
-var CONTACT_ID_PATTERN = /^contact-[0-9]{4}$/;
-var SPEAKER_ID_PATTERN = /^speaker-[0-9]{4}$/;
-function asHostId(value) {
-  return HOST_ID_PATTERN.test(value) ? value : void 0;
-}
-function asContactId(value) {
-  return CONTACT_ID_PATTERN.test(value) ? value : void 0;
-}
-function asSpeakerId(value) {
-  return SPEAKER_ID_PATTERN.test(value) ? value : void 0;
-}
-
-// packages/domain/referential/src/domain/referential-catalog.ts
-function normalizeDisplayName(value) {
-  return value.normalize("NFC").trim().replace(/\s+/g, " ");
-}
-function displayNameKey(value) {
-  return normalizeDisplayName(value).toLowerCase();
-}
-function freezeCatalog(hosts, speakers) {
-  for (const host of hosts) {
-    for (const contact of host.contacts) {
-      Object.freeze(contact);
-    }
-    Object.freeze(host.contacts);
-    Object.freeze(host);
-  }
-  for (const speaker of speakers) {
-    Object.freeze(speaker);
-  }
-  return Object.freeze({
-    hosts: Object.freeze([...hosts]),
-    speakers: Object.freeze([...speakers])
-  });
-}
-
-// packages/domain/referential/src/domain/referential-diagnostic.ts
-function diagnostic2(code, severity, path, message) {
-  return Object.freeze({ code, severity, path, message });
-}
-function freezeDiagnostics(diagnostics) {
-  return Object.freeze([...diagnostics]);
-}
-
-// packages/domain/referential/src/application/use-cases/resolve-event-references.ts
-var EXPLICIT_REFERENCE_PATTERN = /^(.*?)\s+\[([^\]]+)]\s*$/;
-var ResolveEventReferences = class {
-  execute(catalog, command) {
-    const diagnostics = [];
-    const host = this.resolveHost(
-      catalog.hosts,
-      command.hostReference,
-      diagnostics
-    );
-    const speakers = command.speakerReferences.map(
-      (reference, index) => this.resolveSpeaker(catalog.speakers, reference, index, diagnostics)
-    ).filter((speaker) => speaker !== void 0);
-    const frozenDiagnostics = freezeDiagnostics(diagnostics);
-    if (!host || diagnostics.some(({ severity }) => severity === "error")) {
-      return Object.freeze({
-        resolved: false,
-        diagnostics: frozenDiagnostics
+  async persistAsset(source, assetUrl, mode) {
+    let persisted = false;
+    if (mode === "fix" && assetUrl) {
+      const original = this.dependencies.documentCodec.decode(source).event;
+      const patch = this.dependencies.documentCodec.createPatch(source, {
+        ...original,
+        publicationLinks: {
+          ...original.publicationLinks,
+          assets: assetUrl
+        }
       });
-    }
-    const uniqueSpeakers = [
-      ...new Map(speakers.map((speaker) => [speaker.id, speaker])).values()
-    ];
-    return Object.freeze({
-      resolved: true,
-      host,
-      speakers: Object.freeze(uniqueSpeakers),
-      diagnostics: frozenDiagnostics
-    });
-  }
-  resolveHost(hosts, reference, diagnostics) {
-    const parsed = this.parseReference(reference);
-    if (!parsed) {
-      diagnostics.push(
-        diagnostic2(
-          "referential.reference.host.invalid",
-          "error",
-          "hostReference",
-          "Host reference must be a display name or use Display name [host-0001] syntax."
-        )
-      );
-      return void 0;
-    }
-    if (parsed.stableId !== void 0) {
-      const id = asHostId(parsed.stableId);
-      if (!id) {
-        diagnostics.push(
-          diagnostic2(
-            "referential.reference.host.invalid",
-            "error",
-            "hostReference",
-            "Explicit host reference contains an invalid stable identifier."
-          )
+      if (!EventRepositoryPatches.eventRepositoryPatchIsEmpty(patch)) {
+        await ReconcileEvent.ensureEventDocumentIsCurrent(
+          this.dependencies.eventRepository,
+          source.identity,
+          source
         );
-        return void 0;
-      }
-      const host = hosts.find((candidate) => candidate.id === id);
-      if (!host) {
-        diagnostics.push(
-          diagnostic2(
-            "referential.reference.host.unknown",
-            "error",
-            "hostReference",
-            "Explicit host stable identifier is not present in the catalog."
-          )
+        await this.dependencies.eventRepository.applyPatch(
+          source.identity,
+          patch
         );
-        return void 0;
+        persisted = true;
       }
-      if (displayNameKey(host.displayName) !== displayNameKey(parsed.displayName)) {
-        diagnostics.push(
-          diagnostic2(
-            "referential.reference.host.display-name-mismatch",
-            "warning",
-            "hostReference",
-            "Host display name is stale; the stable identifier remains authoritative."
-          )
-        );
-      }
-      return host;
     }
-    const matches = hosts.filter(
-      (host) => displayNameKey(host.displayName) === displayNameKey(parsed.displayName)
-    );
-    if (matches.length === 1) {
-      return matches[0];
-    }
-    diagnostics.push(
-      diagnostic2(
-        matches.length === 0 ? "referential.reference.host.unknown" : "referential.reference.host.ambiguous",
-        "error",
-        "hostReference",
-        matches.length === 0 ? "Legacy host display name is not present in the catalog." : "Legacy host display name is ambiguous; include the stable identifier."
-      )
-    );
-    return void 0;
-  }
-  resolveSpeaker(speakers, reference, index, diagnostics) {
-    const path = `speakerReferences[${index}]`;
-    const parsed = this.parseReference(reference);
-    if (!parsed) {
-      diagnostics.push(
-        diagnostic2(
-          "referential.reference.speaker.invalid",
-          "error",
-          path,
-          "Speaker reference must be a display name or use Display name [speaker-0001] syntax."
-        )
-      );
-      return void 0;
-    }
-    if (parsed.stableId !== void 0) {
-      const id = asSpeakerId(parsed.stableId);
-      if (!id) {
-        diagnostics.push(
-          diagnostic2(
-            "referential.reference.speaker.invalid",
-            "error",
-            path,
-            "Explicit speaker reference contains an invalid stable identifier."
-          )
-        );
-        return void 0;
-      }
-      const speaker = speakers.find((candidate) => candidate.id === id);
-      if (!speaker) {
-        diagnostics.push(
-          diagnostic2(
-            "referential.reference.speaker.unknown",
-            "error",
-            path,
-            "Explicit speaker stable identifier is not present in the catalog."
-          )
-        );
-        return void 0;
-      }
-      if (displayNameKey(speaker.displayName) !== displayNameKey(parsed.displayName)) {
-        diagnostics.push(
-          diagnostic2(
-            "referential.reference.speaker.display-name-mismatch",
-            "warning",
-            path,
-            "Speaker display name is stale; the stable identifier remains authoritative."
-          )
-        );
-      }
-      return speaker;
-    }
-    const matches = speakers.filter(
-      (speaker) => displayNameKey(speaker.displayName) === displayNameKey(parsed.displayName)
-    );
-    if (matches.length === 1) {
-      return matches[0];
-    }
-    diagnostics.push(
-      diagnostic2(
-        matches.length === 0 ? "referential.reference.speaker.unknown" : "referential.reference.speaker.ambiguous",
-        "error",
-        path,
-        matches.length === 0 ? "Legacy speaker display name is not present in the catalog." : "Legacy speaker display name is ambiguous; include the stable identifier."
-      )
-    );
-    return void 0;
-  }
-  parseReference(reference) {
-    if (typeof reference !== "string") {
-      return void 0;
-    }
-    const normalized = normalizeDisplayName(reference);
-    if (!normalized) {
-      return void 0;
-    }
-    const explicit = normalized.match(EXPLICIT_REFERENCE_PATTERN);
-    if (!explicit) {
-      return { displayName: normalized };
-    }
-    const displayName = normalizeDisplayName(explicit[1]);
-    const stableId = explicit[2].trim();
-    if (!displayName || !stableId) {
-      return void 0;
-    }
-    return { displayName, stableId };
-  }
-};
-
-// packages/domain/referential/src/application/use-cases/validate-referential-catalog.ts
-var EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-var ValidateReferentialCatalog = class {
-  constructor(repository) {
-    this.repository = repository;
-  }
-  repository;
-  async execute(rawCatalog) {
-    const input = rawCatalog ?? await this.loadCatalog();
-    const diagnostics = [];
-    const hosts = this.validateHosts(input.hosts, diagnostics);
-    const speakers = this.validateSpeakers(input.speakers, diagnostics);
-    this.reportDuplicateDisplayNames(
-      hosts,
-      "referential.host.display-name.duplicate",
-      "hosts",
-      "Duplicate normalized host display names are not allowed; keep one stable host per public name.",
-      diagnostics
-    );
-    this.reportDuplicateDisplayNames(
-      speakers,
-      "referential.speaker.display-name.duplicate",
-      "speakers",
-      "Duplicate normalized speaker display names are not allowed; keep one stable speaker per public name.",
-      diagnostics
-    );
-    const frozenDiagnostics = freezeDiagnostics(diagnostics);
-    if (diagnostics.some(({ severity }) => severity === "error")) {
-      return Object.freeze({
-        isValid: false,
-        diagnostics: frozenDiagnostics
-      });
-    }
-    return Object.freeze({
-      isValid: true,
-      catalog: freezeCatalog(hosts, speakers),
-      diagnostics: frozenDiagnostics
-    });
-  }
-  async loadCatalog() {
-    if (!this.repository) {
-      throw new Error(
-        "A referential repository or an explicit raw catalog is required."
-      );
-    }
-    return this.repository.load();
-  }
-  validateHosts(records, diagnostics) {
-    const hostsById = /* @__PURE__ */ new Map();
-    const contactIds = /* @__PURE__ */ new Set();
-    for (const [index, record] of records.entries()) {
-      const parsed = this.parseHostRecord(record, index, diagnostics);
-      if (!parsed) {
-        continue;
-      }
-      if (contactIds.has(parsed.contact.id)) {
-        diagnostics.push(
-          diagnostic2(
-            "referential.contact.id.duplicate",
-            "error",
-            `hosts[${index}].contactId`,
-            "Contact stable identifiers must be unique."
-          )
-        );
-        continue;
-      }
-      contactIds.add(parsed.contact.id);
-      const host = hostsById.get(parsed.hostId);
-      if (!host) {
-        hostsById.set(parsed.hostId, {
-          id: parsed.hostId,
-          displayName: parsed.displayName,
-          contacts: [parsed.contact]
-        });
-        continue;
-      }
-      if (host.displayName !== parsed.displayName) {
-        diagnostics.push(
-          diagnostic2(
-            "referential.host.id.conflict",
-            "error",
-            `hosts[${index}].hostId`,
-            "A host stable identifier cannot describe different host names."
-          )
-        );
-        continue;
-      }
-      host.contacts.push(parsed.contact);
-    }
-    return [...hostsById.values()].map((host) => ({
-      id: host.id,
-      displayName: host.displayName,
-      contacts: host.contacts
-    }));
-  }
-  parseHostRecord(record, index, diagnostics) {
-    const hostIdValue = this.requiredText(
-      record.hostId,
-      "referential.host.id.invalid",
-      `hosts[${index}].hostId`,
-      "Host stable identifier must be a non-empty string.",
-      diagnostics
-    );
-    const hostId = hostIdValue ? asHostId(hostIdValue) : void 0;
-    if (hostIdValue && !hostId) {
-      diagnostics.push(
-        diagnostic2(
-          "referential.host.id.invalid",
-          "error",
-          `hosts[${index}].hostId`,
-          "Host stable identifier must use the opaque host-0001 format."
-        )
-      );
-    }
-    const displayName = this.requiredText(
-      record.displayName,
-      "referential.host.display-name.invalid",
-      `hosts[${index}].displayName`,
-      "Host display name must be a non-empty string.",
-      diagnostics
-    );
-    const contactIdValue = this.requiredText(
-      record.contactId,
-      "referential.contact.id.invalid",
-      `hosts[${index}].contactId`,
-      "Contact stable identifier must be a non-empty string.",
-      diagnostics
-    );
-    const contactId = contactIdValue ? asContactId(contactIdValue) : void 0;
-    if (contactIdValue && !contactId) {
-      diagnostics.push(
-        diagnostic2(
-          "referential.contact.id.invalid",
-          "error",
-          `hosts[${index}].contactId`,
-          "Contact stable identifier must use the opaque contact-0001 format."
-        )
-      );
-    }
-    const contactName = this.requiredText(
-      record.contactName,
-      "referential.contact.name.invalid",
-      `hosts[${index}].contactName`,
-      "Contact name must be a non-empty string.",
-      diagnostics
-    );
-    const email = this.email(
-      record.email,
-      "referential.contact.email.invalid",
-      `hosts[${index}].email`,
-      "Host contact email address is invalid.",
-      diagnostics
-    );
-    const phone = this.optionalText(
-      record.phone,
-      "referential.contact.phone.invalid",
-      `hosts[${index}].phone`,
-      "Host contact phone must be a string when provided.",
-      diagnostics
-    );
-    const address = this.requiredText(
-      record.address,
-      "referential.contact.address.invalid",
-      `hosts[${index}].address`,
-      "Host contact address must be a non-empty string.",
-      diagnostics
-    );
-    if (!hostId || !displayName || !contactId || !contactName || !email || address === void 0 || phone === null) {
-      return void 0;
-    }
-    return {
-      hostId,
-      displayName,
-      contact: {
-        id: contactId,
-        name: contactName,
-        email,
-        ...phone ? { phone } : {},
-        address
-      }
-    };
-  }
-  validateSpeakers(records, diagnostics) {
-    const speakers = [];
-    const speakerIds = /* @__PURE__ */ new Set();
-    for (const [index, record] of records.entries()) {
-      const speakerIdValue = this.requiredText(
-        record.speakerId,
-        "referential.speaker.id.invalid",
-        `speakers[${index}].speakerId`,
-        "Speaker stable identifier must be a non-empty string.",
-        diagnostics
-      );
-      const speakerId = speakerIdValue ? asSpeakerId(speakerIdValue) : void 0;
-      if (speakerIdValue && !speakerId) {
-        diagnostics.push(
-          diagnostic2(
-            "referential.speaker.id.invalid",
-            "error",
-            `speakers[${index}].speakerId`,
-            "Speaker stable identifier must use the speaker-* slug format."
-          )
-        );
-      }
-      const firstName = this.requiredText(
-        record.firstName,
-        "referential.speaker.first-name.invalid",
-        `speakers[${index}].firstName`,
-        "Speaker first name must be a non-empty string.",
-        diagnostics
-      );
-      const lastName = this.requiredText(
-        record.lastName,
-        "referential.speaker.last-name.invalid",
-        `speakers[${index}].lastName`,
-        "Speaker last name must be a non-empty string.",
-        diagnostics
-      );
-      const company = this.requiredText(
-        record.company,
-        "referential.speaker.company.invalid",
-        `speakers[${index}].company`,
-        "Speaker company must be a non-empty string.",
-        diagnostics
-      );
-      const email = this.email(
-        record.email,
-        "referential.speaker.email.invalid",
-        `speakers[${index}].email`,
-        "Speaker email address is invalid.",
-        diagnostics
-      );
-      const phone = this.optionalText(
-        record.phone,
-        "referential.speaker.phone.invalid",
-        `speakers[${index}].phone`,
-        "Speaker phone must be a string when provided.",
-        diagnostics
-      );
-      if (!speakerId || !firstName || !lastName || !company || !email || phone === null) {
-        continue;
-      }
-      if (speakerIds.has(speakerId)) {
-        diagnostics.push(
-          diagnostic2(
-            "referential.speaker.id.duplicate",
-            "error",
-            `speakers[${index}].speakerId`,
-            "Speaker stable identifiers must be unique."
-          )
-        );
-        continue;
-      }
-      speakerIds.add(speakerId);
-      speakers.push({
-        id: speakerId,
-        firstName,
-        lastName,
-        displayName: `${firstName} ${lastName}`,
-        company,
-        email,
-        ...phone ? { phone } : {}
-      });
-    }
-    return speakers;
-  }
-  requiredText(value, code, path, message, diagnostics) {
-    if (typeof value !== "string") {
-      diagnostics.push(diagnostic2(code, "error", path, message));
-      return void 0;
-    }
-    const normalized = normalizeDisplayName(value);
-    if (!normalized) {
-      diagnostics.push(diagnostic2(code, "error", path, message));
-      return void 0;
-    }
-    return normalized;
-  }
-  optionalText(value, code, path, message, diagnostics) {
-    if (value === void 0 || value === null || value === "") {
-      return void 0;
-    }
-    if (typeof value !== "string") {
-      diagnostics.push(diagnostic2(code, "error", path, message));
-      return null;
-    }
-    return value.normalize("NFC").trim() || void 0;
-  }
-  email(value, code, path, message, diagnostics) {
-    if (typeof value !== "string") {
-      diagnostics.push(diagnostic2(code, "error", path, message));
-      return void 0;
-    }
-    const normalized = value.normalize("NFC").trim().toLowerCase();
-    if (!EMAIL_PATTERN.test(normalized)) {
-      diagnostics.push(diagnostic2(code, "error", path, message));
-      return void 0;
-    }
-    return normalized;
-  }
-  reportDuplicateDisplayNames(entities, code, path, message, diagnostics) {
-    const counts = /* @__PURE__ */ new Map();
-    for (const entity of entities) {
-      const key2 = displayNameKey(entity.displayName);
-      counts.set(key2, (counts.get(key2) ?? 0) + 1);
-    }
-    let ambiguityIndex = 0;
-    for (const count of counts.values()) {
-      if (count < 2) {
-        continue;
-      }
-      diagnostics.push(
-        diagnostic2(
-          code,
-          "error",
-          `${path}.ambiguities[${ambiguityIndex}]`,
-          message
-        )
-      );
-      ambiguityIndex += 1;
-    }
+    return persisted;
   }
 };
 
@@ -61134,7 +60862,7 @@ var MAIL_TEMPLATE_NAMES = {
   speakerThanks: "meetup-thanks-speakers"
 };
 
-// packages/domain/communication/src/plan-communications.ts
+// packages/domain/communication/src/plan-communications-contracts.ts
 var MAIL_POLICIES = {
   introduction: {
     hosting: {
@@ -61164,11 +60892,785 @@ var DEFAULT_DISPATCH_CAPABILITIES = Object.freeze({
   notification: true
 });
 
-// packages/application/journey/src/use-cases/manage-meetup-communications.ts
+// packages/domain/referential/src/application/use-cases/project-referential-choices.ts
+var ProjectReferentialChoices = class {
+  execute(catalog) {
+    return Object.freeze({
+      hostOptions: Object.freeze(catalog.hosts.map((host) => host.displayName)),
+      speakerReferences: Object.freeze(
+        catalog.speakers.map((speaker) => speaker.displayName)
+      )
+    });
+  }
+};
+
+// packages/domain/referential/src/domain/identifiers.ts
+var HOST_ID_PATTERN = /^host-[0-9]{4}$/;
+var CONTACT_ID_PATTERN = /^contact-[0-9]{4}$/;
+var SPEAKER_ID_PATTERN = /^speaker-[0-9]{4}$/;
+var ReferentialIdentifiers = class {
+  static asHostId(value) {
+    return HOST_ID_PATTERN.test(value) ? value : void 0;
+  }
+  static asContactId(value) {
+    return CONTACT_ID_PATTERN.test(value) ? value : void 0;
+  }
+  static asSpeakerId(value) {
+    return SPEAKER_ID_PATTERN.test(value) ? value : void 0;
+  }
+};
+
+// packages/domain/referential/src/domain/referential-catalog.ts
+var ReferentialCatalogOperations = class _ReferentialCatalogOperations {
+  static normalizeDisplayName(value) {
+    return value.normalize("NFC").trim().replace(/\s+/g, " ");
+  }
+  static displayNameKey(value) {
+    return _ReferentialCatalogOperations.normalizeDisplayName(
+      value
+    ).toLowerCase();
+  }
+  static freezeCatalog(hosts, speakers) {
+    for (const host of hosts) {
+      for (const contact of host.contacts) {
+        Object.freeze(contact);
+      }
+      Object.freeze(host.contacts);
+      Object.freeze(host);
+    }
+    for (const speaker of speakers) {
+      Object.freeze(speaker);
+    }
+    return Object.freeze({
+      hosts: Object.freeze([...hosts]),
+      speakers: Object.freeze([...speakers])
+    });
+  }
+};
+
+// packages/domain/referential/src/domain/referential-diagnostic.ts
+var ReferentialDiagnostics = class {
+  static diagnostic(code, severity, path, message) {
+    return Object.freeze({ code, severity, path, message });
+  }
+  static freezeDiagnostics(diagnostics) {
+    return Object.freeze([...diagnostics]);
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/resolve-event-references.ts
+var EXPLICIT_REFERENCE_PATTERN = /^(.*?)\s+\[([^\]]+)]\s*$/;
+var ResolveEventReferences = class {
+  execute(catalog, command) {
+    const diagnostics = [];
+    const host = this.resolveHost(
+      catalog.hosts,
+      command.hostReference,
+      diagnostics
+    );
+    const speakers = command.speakerReferences.map(
+      (reference, index) => this.resolveSpeaker(catalog.speakers, reference, index, diagnostics)
+    ).filter((speaker) => speaker !== void 0);
+    const frozenDiagnostics = ReferentialDiagnostics.freezeDiagnostics(diagnostics);
+    if (!host || diagnostics.some(({ severity }) => severity === "error")) {
+      return Object.freeze({
+        resolved: false,
+        diagnostics: frozenDiagnostics
+      });
+    }
+    const uniqueSpeakers = [
+      ...new Map(speakers.map((speaker) => [speaker.id, speaker])).values()
+    ];
+    return Object.freeze({
+      resolved: true,
+      host,
+      speakers: Object.freeze(uniqueSpeakers),
+      diagnostics: frozenDiagnostics
+    });
+  }
+  resolveHost(hosts, reference, diagnostics) {
+    const parsed = this.parseReference(reference);
+    if (!parsed) {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(
+          "referential.reference.host.invalid",
+          "error",
+          "hostReference",
+          "Host reference must be a display name or use Display name [host-0001] syntax."
+        )
+      );
+      return void 0;
+    }
+    if (parsed.stableId !== void 0) {
+      const id = ReferentialIdentifiers.asHostId(parsed.stableId);
+      if (!id) {
+        diagnostics.push(
+          ReferentialDiagnostics.diagnostic(
+            "referential.reference.host.invalid",
+            "error",
+            "hostReference",
+            "Explicit host reference contains an invalid stable identifier."
+          )
+        );
+        return void 0;
+      }
+      const host = hosts.find((candidate) => candidate.id === id);
+      if (!host) {
+        diagnostics.push(
+          ReferentialDiagnostics.diagnostic(
+            "referential.reference.host.unknown",
+            "error",
+            "hostReference",
+            "Explicit host stable identifier is not present in the catalog."
+          )
+        );
+        return void 0;
+      }
+      if (ReferentialCatalogOperations.displayNameKey(host.displayName) !== ReferentialCatalogOperations.displayNameKey(parsed.displayName)) {
+        diagnostics.push(
+          ReferentialDiagnostics.diagnostic(
+            "referential.reference.host.display-name-mismatch",
+            "warning",
+            "hostReference",
+            "Host display name is stale; the stable identifier remains authoritative."
+          )
+        );
+      }
+      return host;
+    }
+    return this.hostByName(hosts, parsed, diagnostics);
+  }
+  resolveSpeaker(speakers, reference, index, diagnostics) {
+    const path = `speakerReferences[${index}]`;
+    const parsed = this.parseReference(reference);
+    if (!parsed) {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(
+          "referential.reference.speaker.invalid",
+          "error",
+          path,
+          "Speaker reference must be a display name or use Display name [speaker-0001] syntax."
+        )
+      );
+      return void 0;
+    }
+    if (parsed.stableId !== void 0) {
+      const id = ReferentialIdentifiers.asSpeakerId(parsed.stableId);
+      if (!id) {
+        diagnostics.push(
+          ReferentialDiagnostics.diagnostic(
+            "referential.reference.speaker.invalid",
+            "error",
+            path,
+            "Explicit speaker reference contains an invalid stable identifier."
+          )
+        );
+        return void 0;
+      }
+      const speaker = speakers.find((candidate) => candidate.id === id);
+      if (!speaker) {
+        diagnostics.push(
+          ReferentialDiagnostics.diagnostic(
+            "referential.reference.speaker.unknown",
+            "error",
+            path,
+            "Explicit speaker stable identifier is not present in the catalog."
+          )
+        );
+        return void 0;
+      }
+      if (ReferentialCatalogOperations.displayNameKey(speaker.displayName) !== ReferentialCatalogOperations.displayNameKey(parsed.displayName)) {
+        diagnostics.push(
+          ReferentialDiagnostics.diagnostic(
+            "referential.reference.speaker.display-name-mismatch",
+            "warning",
+            path,
+            "Speaker display name is stale; the stable identifier remains authoritative."
+          )
+        );
+      }
+      return speaker;
+    }
+    return this.speakerByName(speakers, parsed, path, diagnostics);
+  }
+  parseReference(reference) {
+    if (typeof reference !== "string") {
+      return void 0;
+    }
+    const normalized = ReferentialCatalogOperations.normalizeDisplayName(reference);
+    if (!normalized) {
+      return void 0;
+    }
+    const explicit = normalized.match(EXPLICIT_REFERENCE_PATTERN);
+    if (!explicit) {
+      return { displayName: normalized };
+    }
+    const displayName = ReferentialCatalogOperations.normalizeDisplayName(
+      explicit[1]
+    );
+    const stableId = explicit[2].trim();
+    if (!displayName || !stableId) {
+      return void 0;
+    }
+    return { displayName, stableId };
+  }
+  hostByName(hosts, parsed, diagnostics) {
+    const matches = hosts.filter(
+      (host) => ReferentialCatalogOperations.displayNameKey(host.displayName) === ReferentialCatalogOperations.displayNameKey(parsed.displayName)
+    );
+    if (matches.length === 1) {
+      return matches[0];
+    }
+    diagnostics.push(
+      ReferentialDiagnostics.diagnostic(
+        matches.length === 0 ? "referential.reference.host.unknown" : "referential.reference.host.ambiguous",
+        "error",
+        "hostReference",
+        matches.length === 0 ? "Legacy host display name is not present in the catalog." : "Legacy host display name is ambiguous; include the stable identifier."
+      )
+    );
+    return void 0;
+  }
+  speakerByName(speakers, parsed, path, diagnostics) {
+    const matches = speakers.filter(
+      (speaker) => ReferentialCatalogOperations.displayNameKey(speaker.displayName) === ReferentialCatalogOperations.displayNameKey(parsed.displayName)
+    );
+    if (matches.length === 1) {
+      return matches[0];
+    }
+    diagnostics.push(
+      ReferentialDiagnostics.diagnostic(
+        matches.length === 0 ? "referential.reference.speaker.unknown" : "referential.reference.speaker.ambiguous",
+        "error",
+        path,
+        matches.length === 0 ? "Legacy speaker display name is not present in the catalog." : "Legacy speaker display name is ambiguous; include the stable identifier."
+      )
+    );
+    return void 0;
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/validate-referential-catalog-contracts.ts
+var EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// packages/domain/referential/src/application/use-cases/referential-record-fields.ts
+var ReferentialRecordFields = class {
+  static requiredText(value, code, path, message, diagnostics) {
+    if (typeof value !== "string") {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(code, "error", path, message)
+      );
+      return void 0;
+    }
+    const normalized = ReferentialCatalogOperations.normalizeDisplayName(value);
+    if (!normalized) {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(code, "error", path, message)
+      );
+      return void 0;
+    }
+    return normalized;
+  }
+  static optionalText(value, code, path, message, diagnostics) {
+    if (value === void 0 || value === null || value === "") {
+      return void 0;
+    }
+    if (typeof value !== "string") {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(code, "error", path, message)
+      );
+      return null;
+    }
+    return value.normalize("NFC").trim() || void 0;
+  }
+  static email(value, code, path, message, diagnostics) {
+    if (typeof value !== "string") {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(code, "error", path, message)
+      );
+      return void 0;
+    }
+    const normalized = value.normalize("NFC").trim().toLowerCase();
+    if (!EMAIL_PATTERN.test(normalized)) {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(code, "error", path, message)
+      );
+      return void 0;
+    }
+    return normalized;
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/host-catalog-validator.ts
+var HostCatalogValidator = class _HostCatalogValidator {
+  static validateHosts(records, diagnostics) {
+    const hostsById = /* @__PURE__ */ new Map();
+    const contactIds = /* @__PURE__ */ new Set();
+    for (const [index, record] of records.entries()) {
+      const parsed = _HostCatalogValidator.parseHostRecord(
+        record,
+        index,
+        diagnostics
+      );
+      if (!parsed) {
+        continue;
+      }
+      if (contactIds.has(parsed.contact.id)) {
+        diagnostics.push(
+          ReferentialDiagnostics.diagnostic(
+            "referential.contact.id.duplicate",
+            "error",
+            `hosts[${index}].contactId`,
+            "Contact stable identifiers must be unique."
+          )
+        );
+        continue;
+      }
+      contactIds.add(parsed.contact.id);
+      const host = hostsById.get(parsed.hostId);
+      if (!host) {
+        hostsById.set(parsed.hostId, {
+          ...record.source ? { source: Object.freeze({ ...record.source }) } : {},
+          id: parsed.hostId,
+          displayName: parsed.displayName,
+          contacts: [parsed.contact]
+        });
+        continue;
+      }
+      if (host.displayName !== parsed.displayName) {
+        diagnostics.push(
+          ReferentialDiagnostics.diagnostic(
+            "referential.host.id.conflict",
+            "error",
+            `hosts[${index}].hostId`,
+            "A host stable identifier cannot describe different host names."
+          )
+        );
+        continue;
+      }
+      host.contacts.push(parsed.contact);
+    }
+    return [...hostsById.values()].map((host) => ({
+      ...host.source ? { source: host.source } : {},
+      id: host.id,
+      displayName: host.displayName,
+      contacts: host.contacts
+    }));
+  }
+  static parseHostRecord(record, index, diagnostics) {
+    const hostId = _HostCatalogValidator.hostId(record, index, diagnostics);
+    const displayName = ReferentialRecordFields.requiredText(
+      record.displayName,
+      "referential.host.display-name.invalid",
+      `hosts[${index}].displayName`,
+      "Host display name must be a non-empty string.",
+      diagnostics
+    );
+    const contactId = _HostCatalogValidator.contactId(
+      record,
+      index,
+      diagnostics
+    );
+    const contactName = ReferentialRecordFields.requiredText(
+      record.contactName,
+      "referential.contact.name.invalid",
+      `hosts[${index}].contactName`,
+      "Contact name must be a non-empty string.",
+      diagnostics
+    );
+    const email = ReferentialRecordFields.email(
+      record.email,
+      "referential.contact.email.invalid",
+      `hosts[${index}].email`,
+      "Host contact email address is invalid.",
+      diagnostics
+    );
+    const phone = ReferentialRecordFields.optionalText(
+      record.phone,
+      "referential.contact.phone.invalid",
+      `hosts[${index}].phone`,
+      "Host contact phone must be a string when provided.",
+      diagnostics
+    );
+    const address = ReferentialRecordFields.requiredText(
+      record.address,
+      "referential.contact.address.invalid",
+      `hosts[${index}].address`,
+      "Host contact address must be a non-empty string.",
+      diagnostics
+    );
+    if (!hostId || !displayName || !contactId || !contactName || !email || address === void 0 || phone === null) {
+      return void 0;
+    }
+    return {
+      hostId,
+      displayName,
+      contact: {
+        id: contactId,
+        name: contactName,
+        email,
+        ...phone ? { phone } : {},
+        address
+      }
+    };
+  }
+  static hostId(record, index, diagnostics) {
+    const hostIdValue = ReferentialRecordFields.requiredText(
+      record.hostId,
+      "referential.host.id.invalid",
+      `hosts[${index}].hostId`,
+      "Host stable identifier must be a non-empty string.",
+      diagnostics
+    );
+    const hostId = hostIdValue ? ReferentialIdentifiers.asHostId(hostIdValue) : void 0;
+    if (hostIdValue && !hostId) {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(
+          "referential.host.id.invalid",
+          "error",
+          `hosts[${index}].hostId`,
+          "Host stable identifier must use the opaque host-0001 format."
+        )
+      );
+    }
+    return hostId;
+  }
+  static contactId(record, index, diagnostics) {
+    const contactIdValue = ReferentialRecordFields.requiredText(
+      record.contactId,
+      "referential.contact.id.invalid",
+      `hosts[${index}].contactId`,
+      "Contact stable identifier must be a non-empty string.",
+      diagnostics
+    );
+    const contactId = contactIdValue ? ReferentialIdentifiers.asContactId(contactIdValue) : void 0;
+    if (contactIdValue && !contactId) {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(
+          "referential.contact.id.invalid",
+          "error",
+          `hosts[${index}].contactId`,
+          "Contact stable identifier must use the opaque contact-0001 format."
+        )
+      );
+    }
+    return contactId;
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/speaker-catalog-validator.ts
+var SpeakerCatalogValidator = class _SpeakerCatalogValidator {
+  static validateSpeakers(records, diagnostics) {
+    const speakers = [];
+    const speakerIds = /* @__PURE__ */ new Set();
+    for (const [index, record] of records.entries()) {
+      const speakerId = _SpeakerCatalogValidator.speakerId(
+        record,
+        index,
+        diagnostics
+      );
+      const { firstName, lastName, company, email, phone } = _SpeakerCatalogValidator.contactFields(record, index, diagnostics);
+      if (!speakerId || !firstName || !lastName || !company || !email || phone === null) {
+        continue;
+      }
+      if (speakerIds.has(speakerId)) {
+        diagnostics.push(
+          ReferentialDiagnostics.diagnostic(
+            "referential.speaker.id.duplicate",
+            "error",
+            `speakers[${index}].speakerId`,
+            "Speaker stable identifiers must be unique."
+          )
+        );
+        continue;
+      }
+      speakerIds.add(speakerId);
+      speakers.push({
+        ...record.source ? { source: Object.freeze({ ...record.source }) } : {},
+        id: speakerId,
+        firstName,
+        lastName,
+        displayName: `${firstName} ${lastName}`,
+        company,
+        email,
+        ...phone ? { phone } : {}
+      });
+    }
+    return speakers;
+  }
+  static speakerId(record, index, diagnostics) {
+    const speakerIdValue = ReferentialRecordFields.requiredText(
+      record.speakerId,
+      "referential.speaker.id.invalid",
+      `speakers[${index}].speakerId`,
+      "Speaker stable identifier must be a non-empty string.",
+      diagnostics
+    );
+    const speakerId = speakerIdValue ? ReferentialIdentifiers.asSpeakerId(speakerIdValue) : void 0;
+    if (speakerIdValue && !speakerId) {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(
+          "referential.speaker.id.invalid",
+          "error",
+          `speakers[${index}].speakerId`,
+          "Speaker stable identifier must use the speaker-* slug format."
+        )
+      );
+    }
+    return speakerId;
+  }
+  static contactFields(record, index, diagnostics) {
+    const firstName = ReferentialRecordFields.requiredText(
+      record.firstName,
+      "referential.speaker.first-name.invalid",
+      `speakers[${index}].firstName`,
+      "Speaker first name must be a non-empty string.",
+      diagnostics
+    );
+    const lastName = ReferentialRecordFields.requiredText(
+      record.lastName,
+      "referential.speaker.last-name.invalid",
+      `speakers[${index}].lastName`,
+      "Speaker last name must be a non-empty string.",
+      diagnostics
+    );
+    const company = ReferentialRecordFields.requiredText(
+      record.company,
+      "referential.speaker.company.invalid",
+      `speakers[${index}].company`,
+      "Speaker company must be a non-empty string.",
+      diagnostics
+    );
+    const email = ReferentialRecordFields.email(
+      record.email,
+      "referential.speaker.email.invalid",
+      `speakers[${index}].email`,
+      "Speaker email address is invalid.",
+      diagnostics
+    );
+    const phone = ReferentialRecordFields.optionalText(
+      record.phone,
+      "referential.speaker.phone.invalid",
+      `speakers[${index}].phone`,
+      "Speaker phone must be a string when provided.",
+      diagnostics
+    );
+    return { firstName, lastName, company, email, phone };
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/validate-referential-catalog.ts
+var ValidateReferentialCatalog = class {
+  constructor(repository) {
+    this.repository = repository;
+  }
+  repository;
+  async execute(rawCatalog) {
+    const input = rawCatalog ?? await this.loadCatalog();
+    const diagnostics = [];
+    const hosts = HostCatalogValidator.validateHosts(input.hosts, diagnostics);
+    const speakers = SpeakerCatalogValidator.validateSpeakers(
+      input.speakers,
+      diagnostics
+    );
+    this.reportDuplicateDisplayNames(
+      hosts,
+      "referential.host.display-name.duplicate",
+      "hosts",
+      "Duplicate normalized host display names are not allowed; keep one stable host per public name.",
+      diagnostics
+    );
+    this.reportDuplicateDisplayNames(
+      speakers,
+      "referential.speaker.display-name.duplicate",
+      "speakers",
+      "Duplicate normalized speaker display names are not allowed; keep one stable speaker per public name.",
+      diagnostics
+    );
+    const frozenDiagnostics = ReferentialDiagnostics.freezeDiagnostics(diagnostics);
+    if (diagnostics.some(({ severity }) => severity === "error")) {
+      return Object.freeze({
+        isValid: false,
+        diagnostics: frozenDiagnostics
+      });
+    }
+    return Object.freeze({
+      isValid: true,
+      catalog: ReferentialCatalogOperations.freezeCatalog(hosts, speakers),
+      diagnostics: frozenDiagnostics
+    });
+  }
+  async loadCatalog() {
+    if (!this.repository) {
+      throw new Error(
+        "A referential repository or an explicit raw catalog is required."
+      );
+    }
+    return this.repository.load();
+  }
+  reportDuplicateDisplayNames(entities, code, path, message, diagnostics) {
+    const counts = /* @__PURE__ */ new Map();
+    for (const entity of entities) {
+      const key = ReferentialCatalogOperations.displayNameKey(
+        entity.displayName
+      );
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    let ambiguityIndex = 0;
+    for (const count of counts.values()) {
+      if (count < 2) {
+        continue;
+      }
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(
+          code,
+          "error",
+          `${path}.ambiguities[${ambiguityIndex}]`,
+          message
+        )
+      );
+      ambiguityIndex += 1;
+    }
+  }
+};
+
+// packages/application/journey/src/use-cases/manage-meetup-communications-contracts.ts
 var UNRESOLVED_MAIL_RECIPIENTS = Object.freeze({
   resolved: false,
   recipients: Object.freeze([])
 });
+
+// packages/application/journey/src/use-cases/event-diagnostic-projection.ts
+var EventDiagnosticProjection = class {
+  static toEventDiagnostic(code, severity, field, message) {
+    return {
+      code,
+      severity,
+      category: severity === "error" ? "invalid" : "migration",
+      field,
+      message
+    };
+  }
+  static toPublicDiagnostic(item) {
+    return {
+      code: item.code,
+      severity: item.severity,
+      field: item.field,
+      message: item.message,
+      fixApplied: false
+    };
+  }
+};
+
+// packages/application/journey/src/use-cases/event-participant-resolution.ts
+var EventParticipantResolution = class _EventParticipantResolution {
+  static renderReference(reference) {
+    return reference.id ? `${reference.displayName} [${reference.id}]` : reference.displayName;
+  }
+  static enrichStableReferences(event, host, speakers) {
+    return {
+      ...event,
+      host: _EventParticipantResolution.resolvedParticipant(host),
+      agenda: event.agenda.map((entry) => ({
+        ...entry,
+        speakers: entry.speakers.map((reference) => {
+          const matches = speakers.filter(
+            (speaker2) => speaker2.id === reference.id || _EventParticipantResolution.canonical(speaker2.displayName) === _EventParticipantResolution.canonical(reference.displayName)
+          );
+          const speaker = matches.length === 1 ? matches[0] : void 0;
+          return speaker ? _EventParticipantResolution.resolvedParticipant(speaker) : reference;
+        })
+      }))
+    };
+  }
+  static resolvedParticipant(reference) {
+    return {
+      id: reference.id,
+      displayName: reference.displayName,
+      ...reference.source ? { source: reference.source } : {}
+    };
+  }
+  static canonical(value) {
+    return value.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US");
+  }
+};
+
+// packages/application/journey/src/use-cases/event-publication-evaluation.ts
+var EventPublicationEvaluation = class _EventPublicationEvaluation {
+  static evaluatePublication(event, config) {
+    const diagnostics = [];
+    for (const field of ["meetup", "community", "assets"]) {
+      const value = event.publicationLinks[field];
+      if (!value) {
+        diagnostics.push({
+          code: `publication.${field}.missing`,
+          severity: "warning",
+          category: "incomplete",
+          field: `publicationLinks.${field}`,
+          message: `${field} publication link is required before the event is ready`
+        });
+      }
+    }
+    const engine = new PublicationUrlPolicyEngine(
+      PublicationUrlPolicies.createDefaultPublicationUrlPolicies({
+        ...DEFAULT_PUBLICATION_URL_CONFIGURATION,
+        meetupEventUrlPrefix: config.publication["meetup-event-url-prefix"],
+        communityEventUrlPrefixes: [
+          config.publication["cncf-event-url-prefix"],
+          ...DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes.slice(
+            1
+          )
+        ]
+      })
+    );
+    const evaluation = engine.evaluate(event.publicationLinks);
+    diagnostics.push(
+      ...evaluation.diagnostics.map((item) => ({
+        code: item.code,
+        severity: item.severity,
+        category: item.severity === "error" ? "invalid" : "normalization",
+        field: `publicationLinks.${item.field}`,
+        message: item.message,
+        fixAvailable: item.fixAvailable
+      }))
+    );
+    return {
+      event: { ...event, publicationLinks: evaluation.references },
+      diagnostics
+    };
+  }
+  static planEventManualPublicationTasks(event) {
+    return ManualPublicationPolicy.planManualPublicationTasks({
+      eventId: `${event.identity.repository}#${event.identity.issueNumber}`,
+      title: event.eventTitle,
+      description: event.description,
+      date: event.date,
+      timeZone: event.timeZone,
+      occurrenceStatus: event.occurrenceStatus,
+      references: event.publicationLinks,
+      slidesPublished: _EventPublicationEvaluation.checklistTaskIsCompleted(
+        event.operationalChecklists.postEvent,
+        POST_EVENT_TASK_NAMES.shareSlides
+      ),
+      attendanceImported: _EventPublicationEvaluation.checklistTaskIsCompleted(
+        event.operationalChecklists.postEvent,
+        POST_EVENT_TASK_NAMES.importAttendance
+      )
+    });
+  }
+  static checklistTaskIsCompleted(items, name) {
+    const matches = items.filter((item) => item.name === name);
+    return matches.length === 1 && matches[0]?.completed === true;
+  }
+  static pendingManualTaskDiagnostics(tasks) {
+    return tasks.filter((task) => task.status === "pending").map((task) => ({
+      code: `publication.manual-task.${task.kind}.pending`,
+      severity: "info",
+      field: `manualPublicationTasks.${task.kind}`,
+      message: `Manual task pending: ${task.reason}`
+    }));
+  }
+};
 
 // packages/application/journey/src/use-cases/manage-meetup-event.ts
 var ManageMeetupEvent = class {
@@ -61191,75 +61693,33 @@ var ManageMeetupEvent = class {
       mode: "check",
       sourceDocument
     });
-    const catalogValidation = await new ValidateReferentialCatalog(
-      this.dependencies.referentialRepository
-    ).execute();
     const eventDiagnostics = [...eventResult.diagnostics];
-    let event = eventResult.event;
-    if (catalogValidation.isValid) {
-      const speakerReferences = event.agenda.flatMap(
-        (entry) => entry.speakers.map(renderReference)
-      );
-      const resolution = new ResolveEventReferences().execute(
-        catalogValidation.catalog,
-        {
-          hostReference: event.host ? renderReference(event.host) : "",
-          speakerReferences
-        }
-      );
-      eventDiagnostics.push(
-        ...resolution.diagnostics.map(
-          (item) => toEventDiagnostic(item.code, item.severity, item.path, item.message)
-        )
-      );
-      if (resolution.resolved) {
-        event = enrichStableReferences(
-          event,
-          resolution.host,
-          resolution.speakers
-        );
-      }
-    } else {
-      eventDiagnostics.push(
-        ...catalogValidation.diagnostics.map(
-          (item) => toEventDiagnostic(item.code, item.severity, item.path, item.message)
-        )
-      );
-    }
-    const publication = evaluatePublication(event, config);
+    let event = await this.resolveParticipants(
+      eventResult.event,
+      eventDiagnostics
+    );
+    const publication = EventPublicationEvaluation.evaluatePublication(
+      event,
+      config
+    );
     event = publication.event;
     eventDiagnostics.push(...publication.diagnostics);
-    const manualPublicationTasks = planEventManualPublicationTasks(event);
-    const readiness = evaluateEventReadiness(event, eventDiagnostics);
-    const lifecycle = evaluateEventLifecycle({
+    const manualPublicationTasks = EventPublicationEvaluation.planEventManualPublicationTasks(event);
+    const readiness = EventReadinessPolicy.evaluateEventReadiness(
+      event,
+      eventDiagnostics
+    );
+    const lifecycle = EventLifecycle.evaluateEventLifecycle({
       event,
       readiness,
       now: eventDependencies.clock.now()
     });
-    const repositoryPatch = eventDependencies.documentCodec.createPatch(
+    const { persisted, commentUpdated } = await this.persist(
       sourceDocument,
-      event
+      event,
+      input.mode,
+      readiness.diagnostics
     );
-    let persisted = false;
-    let commentUpdated = false;
-    if (input.mode === "fix") {
-      if (!eventRepositoryPatchIsEmpty(repositoryPatch)) {
-        await ensureEventDocumentIsCurrent(
-          eventDependencies.repository,
-          input.identity,
-          sourceDocument
-        );
-        await eventDependencies.repository.applyPatch(
-          input.identity,
-          repositoryPatch
-        );
-        persisted = true;
-      }
-      commentUpdated = (await eventDependencies.commentRepository.reconcileDiagnostics(
-        input.identity,
-        readiness.diagnostics
-      )).changed;
-    }
     return {
       skipped: false,
       event,
@@ -61269,125 +61729,90 @@ var ManageMeetupEvent = class {
       persisted,
       commentUpdated,
       diagnostics: [
-        ...readiness.diagnostics.map(toPublicDiagnostic),
-        ...pendingManualTaskDiagnostics(manualPublicationTasks)
+        ...readiness.diagnostics.map(
+          EventDiagnosticProjection.toPublicDiagnostic
+        ),
+        ...EventPublicationEvaluation.pendingManualTaskDiagnostics(
+          manualPublicationTasks
+        )
       ]
     };
   }
-};
-function renderReference(reference) {
-  return reference.id ? `${reference.displayName} [${reference.id}]` : reference.displayName;
-}
-function enrichStableReferences(event, host, speakers) {
-  return {
-    ...event,
-    host: { id: host.id, displayName: host.displayName },
-    agenda: event.agenda.map((entry) => ({
-      ...entry,
-      speakers: entry.speakers.map((reference) => {
-        const matches = speakers.filter(
-          (speaker2) => speaker2.id === reference.id || canonical(speaker2.displayName) === canonical(reference.displayName)
-        );
-        const speaker = matches.length === 1 ? matches[0] : void 0;
-        return speaker ? { id: speaker.id, displayName: speaker.displayName } : reference;
-      })
-    }))
-  };
-}
-function evaluatePublication(event, config) {
-  const diagnostics = [];
-  for (const field of ["meetup", "community", "assets"]) {
-    const value = event.publicationLinks[field];
-    if (!value) {
-      diagnostics.push({
-        code: `publication.${field}.missing`,
-        severity: "warning",
-        category: "incomplete",
-        field: `publicationLinks.${field}`,
-        message: `${field} publication link is required before the event is ready`
-      });
-    }
-  }
-  const engine = new PublicationUrlPolicyEngine(
-    createDefaultPublicationUrlPolicies({
-      ...DEFAULT_PUBLICATION_URL_CONFIGURATION,
-      meetupEventUrlPrefix: config.publication["meetup-event-url-prefix"],
-      communityEventUrlPrefixes: [
-        config.publication["cncf-event-url-prefix"],
-        ...DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes.slice(
-          1
+  async resolveParticipants(event, eventDiagnostics) {
+    const catalogValidation = await new ValidateReferentialCatalog(
+      this.dependencies.referentialRepository
+    ).execute();
+    if (catalogValidation.isValid) {
+      const speakerReferences = event.agenda.flatMap(
+        (entry) => entry.speakers.map(EventParticipantResolution.renderReference)
+      );
+      const resolution = new ResolveEventReferences().execute(
+        catalogValidation.catalog,
+        {
+          hostReference: event.host ? EventParticipantResolution.renderReference(event.host) : "",
+          speakerReferences
+        }
+      );
+      eventDiagnostics.push(
+        ...resolution.diagnostics.map(
+          (item) => EventDiagnosticProjection.toEventDiagnostic(
+            item.code,
+            item.severity,
+            item.path,
+            item.message
+          )
         )
-      ]
-    })
-  );
-  const evaluation = engine.evaluate(event.publicationLinks);
-  diagnostics.push(
-    ...evaluation.diagnostics.map((item) => ({
-      code: item.code,
-      severity: item.severity,
-      category: item.severity === "error" ? "invalid" : "normalization",
-      field: `publicationLinks.${item.field}`,
-      message: item.message,
-      fixAvailable: item.fixAvailable
-    }))
-  );
-  return {
-    event: { ...event, publicationLinks: evaluation.references },
-    diagnostics
-  };
-}
-function planEventManualPublicationTasks(event) {
-  return planManualPublicationTasks({
-    eventId: `${event.identity.repository}#${event.identity.issueNumber}`,
-    title: event.eventTitle,
-    description: event.description,
-    date: event.date,
-    timeZone: event.timeZone,
-    occurrenceStatus: event.occurrenceStatus,
-    references: event.publicationLinks,
-    slidesPublished: checklistTaskIsCompleted(
-      event.operationalChecklists.postEvent,
-      POST_EVENT_TASK_NAMES.shareSlides
-    ),
-    attendanceImported: checklistTaskIsCompleted(
-      event.operationalChecklists.postEvent,
-      POST_EVENT_TASK_NAMES.importAttendance
-    )
-  });
-}
-function checklistTaskIsCompleted(items, name) {
-  const matches = items.filter((item) => item.name === name);
-  return matches.length === 1 && matches[0]?.completed === true;
-}
-function pendingManualTaskDiagnostics(tasks) {
-  return tasks.filter((task2) => task2.status === "pending").map((task2) => ({
-    code: `publication.manual-task.${task2.kind}.pending`,
-    severity: "info",
-    field: `manualPublicationTasks.${task2.kind}`,
-    message: `Manual task pending: ${task2.reason}`
-  }));
-}
-function toEventDiagnostic(code, severity, field, message) {
-  return {
-    code,
-    severity,
-    category: severity === "error" ? "invalid" : "migration",
-    field,
-    message
-  };
-}
-function toPublicDiagnostic(item) {
-  return {
-    code: item.code,
-    severity: item.severity,
-    field: item.field,
-    message: item.message,
-    fixApplied: false
-  };
-}
-function canonical(value) {
-  return value.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US");
-}
+      );
+      if (resolution.resolved) {
+        event = EventParticipantResolution.enrichStableReferences(
+          event,
+          resolution.host,
+          resolution.speakers
+        );
+      }
+    } else {
+      eventDiagnostics.push(
+        ...catalogValidation.diagnostics.map(
+          (item) => EventDiagnosticProjection.toEventDiagnostic(
+            item.code,
+            item.severity,
+            item.path,
+            item.message
+          )
+        )
+      );
+    }
+    return event;
+  }
+  async persist(sourceDocument, event, mode, diagnostics) {
+    const eventDependencies = this.dependencies.eventDependencies;
+    const repositoryPatch = eventDependencies.documentCodec.createPatch(
+      sourceDocument,
+      event
+    );
+    let persisted = false;
+    let commentUpdated = false;
+    if (mode === "fix") {
+      if (!EventRepositoryPatches.eventRepositoryPatchIsEmpty(repositoryPatch)) {
+        await ReconcileEvent.ensureEventDocumentIsCurrent(
+          eventDependencies.repository,
+          sourceDocument.identity,
+          sourceDocument
+        );
+        await eventDependencies.repository.applyPatch(
+          sourceDocument.identity,
+          repositoryPatch
+        );
+        persisted = true;
+      }
+      commentUpdated = (await eventDependencies.commentRepository.reconcileDiagnostics(
+        sourceDocument.identity,
+        diagnostics
+      )).changed;
+    }
+    return { persisted, commentUpdated };
+  }
+};
 
 // packages/application/journey/src/use-cases/synchronize-meetup-issue-form.ts
 var SynchronizeMeetupIssueForm = class {
@@ -61444,53 +61869,41 @@ var ValidateMeetupReferentials = class {
 };
 
 // packages/runtime/github-actions/src/action-output.ts
-function setJsonOutput(name, value) {
-  setOutput(name, JSON.stringify(value));
-}
-function setDiagnosticsOutput(diagnostics) {
-  setJsonOutput("diagnostics", diagnostics);
-}
+var ActionOutput = class _ActionOutput {
+  static setJsonOutput(name, value) {
+    setOutput(name, JSON.stringify(value));
+  }
+  static setDiagnosticsOutput(diagnostics) {
+    _ActionOutput.setJsonOutput("diagnostics", diagnostics);
+  }
+};
 
-// packages/adapter/google-drive-asset-repository/src/index.ts
+// packages/adapter/google-drive-asset-repository/src/google-drive-asset-repository.ts
 var import_drive = __toESM(require_build(), 1);
 import { createHash } from "node:crypto";
+
+// packages/adapter/google-drive-asset-repository/src/google-drive-asset-repository-contracts.ts
 var folderMimeType = "application/vnd.google-apps.folder";
 var fields = "id,name,webViewLink,mimeType,parents,trashed,appProperties";
 var requestOptions = { retry: false, timeout: 3e4 };
+
+// packages/adapter/google-drive-asset-repository/src/google-drive-asset-repository-error.ts
 var GoogleDriveAssetRepositoryError = class extends Error {
   constructor(message) {
     super(message);
     this.name = "GoogleDriveAssetRepositoryError";
   }
 };
-function createGoogleDriveAssetRepository(credentialsJson, options) {
-  let credentials;
-  try {
-    credentials = JSON.parse(credentialsJson);
-  } catch {
-    throw failure("Invalid Google service-account credentials");
-  }
-  if (credentials?.type !== "service_account" || typeof credentials.client_email !== "string" || !credentials.client_email || typeof credentials.private_key !== "string" || !credentials.private_key) {
-    throw failure("Invalid Google service-account credentials");
-  }
-  const authentication = new import_drive.auth.JWT({
-    email: credentials.client_email,
-    key: credentials.private_key,
-    scopes: ["https://www.googleapis.com/auth/drive"]
-  });
-  return new GoogleDriveAssetRepository(
-    (0, import_drive.drive)({ version: "v3", auth: authentication }),
-    options
-  );
-}
-var GoogleDriveAssetRepository = class {
+
+// packages/adapter/google-drive-asset-repository/src/google-drive-asset-repository.ts
+var GoogleDriveAssetRepository = class _GoogleDriveAssetRepository {
   constructor(client, options) {
     this.client = client;
     this.options = options;
     if (![options.parentFolderId, options.templateFolderId].every(
       (id) => /^[\w-]+$/.test(id)
     ) || options.parentFolderId === options.templateFolderId)
-      throw failure(
+      throw _GoogleDriveAssetRepository.failure(
         "Distinct Google Drive parent and template folder IDs are required"
       );
   }
@@ -61498,28 +61911,28 @@ var GoogleDriveAssetRepository = class {
   options;
   async findContainer(request2) {
     const matches = await this.list(
-      `'${escapeQuery(this.options.parentFolderId)}' in parents and mimeType='${folderMimeType}' and appProperties has { key='meetup_event_key' and value='${key(request2)}' }`
+      `'${_GoogleDriveAssetRepository.escapeQuery(this.options.parentFolderId)}' in parents and mimeType='${folderMimeType}' and appProperties has { key='meetup_event_key' and value='${_GoogleDriveAssetRepository.key(request2)}' }`
     );
     if (matches.length > 1)
-      throw failure(
+      throw _GoogleDriveAssetRepository.failure(
         "Multiple asset folders match this event; manual reconciliation is required"
       );
     const file = matches[0];
     if (!file) return void 0;
-    if (file.trashed || file.mimeType !== folderMimeType || !file.parents?.includes(this.options.parentFolderId) || file.appProperties?.meetup_event_key !== key(request2)) {
-      throw failure(
+    if (file.trashed || file.mimeType !== folderMimeType || !file.parents?.includes(this.options.parentFolderId) || file.appProperties?.meetup_event_key !== _GoogleDriveAssetRepository.key(request2)) {
+      throw _GoogleDriveAssetRepository.failure(
         "The asset folder does not match the requested event and configured parent"
       );
     }
-    return container(file, request2.eventId);
+    return _GoogleDriveAssetRepository.container(file, request2.eventId);
   }
   async ensureContainer(request2) {
     const current = await this.findContainer(request2);
     if (current?.name === request2.title) return current;
     const appProperties = {
-      meetup_event_key: key(request2)
+      meetup_event_key: _GoogleDriveAssetRepository.key(request2)
     };
-    const response = current ? await remote(
+    const response = current ? await _GoogleDriveAssetRepository.remote(
       () => this.client.files.update(
         {
           fileId: current.id,
@@ -61529,7 +61942,7 @@ var GoogleDriveAssetRepository = class {
         },
         requestOptions
       )
-    ) : await remote(
+    ) : await _GoogleDriveAssetRepository.remote(
       () => this.client.files.create(
         {
           requestBody: {
@@ -61544,14 +61957,14 @@ var GoogleDriveAssetRepository = class {
         requestOptions
       )
     );
-    return container(response.data, request2.eventId);
+    return _GoogleDriveAssetRepository.container(response.data, request2.eventId);
   }
   async listTemplates() {
     return (await this.list(
-      `'${escapeQuery(this.options.templateFolderId)}' in parents`
+      `'${_GoogleDriveAssetRepository.escapeQuery(this.options.templateFolderId)}' in parents`
     )).map((file) => {
       if (!file.id || !file.name || !file.appProperties?.template_kind || file.mimeType === folderMimeType)
-        throw failure(
+        throw _GoogleDriveAssetRepository.failure(
           "Every asset template must be a file with an ID, name, and template_kind"
         );
       return {
@@ -61563,18 +61976,18 @@ var GoogleDriveAssetRepository = class {
   }
   async listFiles(containerId) {
     return (await this.list(
-      `'${escapeQuery(containerId)}' in parents and mimeType!='${folderMimeType}'`
-    )).map(assetFile);
+      `'${_GoogleDriveAssetRepository.escapeQuery(containerId)}' in parents and mimeType!='${folderMimeType}'`
+    )).map(_GoogleDriveAssetRepository.assetFile);
   }
   async copyTemplate(containerId, template, name) {
-    const { data } = await remote(
+    const { data } = await _GoogleDriveAssetRepository.remote(
       () => this.client.files.copy(
         {
           fileId: template.id,
           requestBody: {
             name,
             parents: [containerId],
-            appProperties: templateProperties(template)
+            appProperties: _GoogleDriveAssetRepository.templateProperties(template)
           },
           fields,
           supportsAllDrives: true
@@ -61582,28 +61995,31 @@ var GoogleDriveAssetRepository = class {
         requestOptions
       )
     );
-    return assetFile(data);
+    return _GoogleDriveAssetRepository.assetFile(data);
   }
   async updateFile(file, template, name) {
-    const { data } = await remote(
+    const { data } = await _GoogleDriveAssetRepository.remote(
       () => this.client.files.update(
         {
           fileId: file.id,
-          requestBody: { name, appProperties: templateProperties(template) },
+          requestBody: {
+            name,
+            appProperties: _GoogleDriveAssetRepository.templateProperties(template)
+          },
           fields,
           supportsAllDrives: true
         },
         requestOptions
       )
     );
-    return assetFile(data);
+    return _GoogleDriveAssetRepository.assetFile(data);
   }
   async list(query) {
     const files = [];
     let pageToken;
     const tokens = /* @__PURE__ */ new Set();
     do {
-      const { data } = await remote(
+      const { data } = await _GoogleDriveAssetRepository.remote(
         () => this.client.files.list(
           {
             q: `${query} and trashed=false`,
@@ -61617,71 +62033,101 @@ var GoogleDriveAssetRepository = class {
         )
       );
       if (data.incompleteSearch)
-        throw failure(
+        throw _GoogleDriveAssetRepository.failure(
           "Google Drive returned an incomplete search; reconciliation was stopped"
         );
       files.push(...data.files ?? []);
       pageToken = data.nextPageToken || void 0;
       if (pageToken && tokens.has(pageToken))
-        throw failure("Google Drive returned a repeated pagination token");
+        throw _GoogleDriveAssetRepository.failure(
+          "Google Drive returned a repeated pagination token"
+        );
       if (pageToken) tokens.add(pageToken);
     } while (pageToken);
     return files;
   }
-};
-function key(request2) {
-  return createHash("sha256").update(request2.idempotencyKey).digest("hex");
-}
-function escapeQuery(value) {
-  return value.replaceAll("\\", "\\\\").replaceAll("'", "\\'");
-}
-function templateProperties(template) {
-  return { template_file_id: template.id, template_kind: template.kind };
-}
-function container(file, eventId) {
-  if (!file.id || !file.name)
-    throw failure("Google Drive returned an invalid asset folder");
-  return {
-    id: file.id,
-    name: file.name,
-    url: `https://drive.google.com/drive/folders/${file.id}`,
-    eventId
-  };
-}
-function assetFile(file) {
-  if (!file.id || !file.name)
-    throw failure("Google Drive returned an invalid asset file");
-  return {
-    id: file.id,
-    name: file.name,
-    ...file.webViewLink ? { url: file.webViewLink } : {},
-    templateId: file.appProperties?.template_file_id,
-    kind: file.appProperties?.template_kind
-  };
-}
-function failure(message) {
-  return new GoogleDriveAssetRepositoryError(message);
-}
-async function remote(operation) {
-  try {
-    return await operation();
-  } catch (error2) {
-    const status = error2?.response?.status;
-    if (status === 429)
-      throw failure(
-        "Google Drive rate limit reached; retry reconciliation later"
+  static createGoogleDriveAssetRepository(credentialsJson, options) {
+    let credentials;
+    try {
+      credentials = JSON.parse(credentialsJson);
+    } catch {
+      throw _GoogleDriveAssetRepository.failure(
+        "Invalid Google service-account credentials"
       );
-    if (status === 401 || status === 403)
-      throw failure(
-        "Google Drive denied access; check credentials, folder access, and quota"
+    }
+    if (credentials?.type !== "service_account" || typeof credentials.client_email !== "string" || !credentials.client_email || typeof credentials.private_key !== "string" || !credentials.private_key) {
+      throw _GoogleDriveAssetRepository.failure(
+        "Invalid Google service-account credentials"
       );
-    throw failure(
-      "Google Drive request failed; inspect provider state before retrying an uncertain write"
+    }
+    const authentication = new import_drive.auth.JWT({
+      email: credentials.client_email,
+      key: credentials.private_key,
+      scopes: ["https://www.googleapis.com/auth/drive"]
+    });
+    return new _GoogleDriveAssetRepository(
+      (0, import_drive.drive)({ version: "v3", auth: authentication }),
+      options
     );
   }
-}
+  static key(request2) {
+    return createHash("sha256").update(request2.idempotencyKey).digest("hex");
+  }
+  static escapeQuery(value) {
+    return value.replaceAll("\\", "\\\\").replaceAll("'", "\\'");
+  }
+  static templateProperties(template) {
+    return { template_file_id: template.id, template_kind: template.kind };
+  }
+  static container(file, eventId) {
+    if (!file.id || !file.name)
+      throw _GoogleDriveAssetRepository.failure(
+        "Google Drive returned an invalid asset folder"
+      );
+    return {
+      id: file.id,
+      name: file.name,
+      url: `https://drive.google.com/drive/folders/${file.id}`,
+      eventId
+    };
+  }
+  static assetFile(file) {
+    if (!file.id || !file.name)
+      throw _GoogleDriveAssetRepository.failure(
+        "Google Drive returned an invalid asset file"
+      );
+    return {
+      id: file.id,
+      name: file.name,
+      ...file.webViewLink ? { url: file.webViewLink } : {},
+      templateId: file.appProperties?.template_file_id,
+      kind: file.appProperties?.template_kind
+    };
+  }
+  static failure(message) {
+    return new GoogleDriveAssetRepositoryError(message);
+  }
+  static async remote(operation) {
+    try {
+      return await operation();
+    } catch (error2) {
+      const status = error2?.response?.status;
+      if (status === 429)
+        throw _GoogleDriveAssetRepository.failure(
+          "Google Drive rate limit reached; retry reconciliation later"
+        );
+      if (status === 401 || status === 403)
+        throw _GoogleDriveAssetRepository.failure(
+          "Google Drive denied access; check credentials, folder access, and quota"
+        );
+      throw _GoogleDriveAssetRepository.failure(
+        "Google Drive request failed; inspect provider state before retrying an uncertain write"
+      );
+    }
+  }
+};
 
-// packages/adapter/csv-referential-repository/src/index.ts
+// packages/adapter/csv-referential-repository/src/csv-referential-repository.ts
 import { readFile } from "node:fs/promises";
 import { isAbsolute, relative, resolve } from "node:path";
 
@@ -61695,9 +62141,9 @@ var CsvError = class _CsvError extends Error {
     }
     this.code = code;
     for (const context3 of contexts) {
-      for (const key2 in context3) {
-        const value = context3[key2];
-        this[key2] = Buffer.isBuffer(value) ? value.toString(options.encoding) : value == null ? value : JSON.parse(JSON.stringify(value));
+      for (const key in context3) {
+        const value = context3[key];
+        this[key] = Buffer.isBuffer(value) ? value.toString(options.encoding) : value == null ? value : JSON.parse(JSON.stringify(value));
       }
     }
   }
@@ -62696,8 +63142,8 @@ var transform = function(original_options = {}) {
                 ...this.original_options,
                 encoding: encoding2
               });
-              for (const key2 in options2) {
-                this.options[key2] = options2[key2];
+              for (const key in options2) {
+                this.options[key] = options2[key];
               }
               ({ comment, escape: escape2, quote } = this.options);
               break;
@@ -63389,27 +63835,8 @@ var parse3 = function(data, opts = {}) {
   return records;
 };
 
-// packages/adapter/csv-referential-repository/src/index.ts
-function localPath(rootInput, relativeInput) {
-  const root = resolve(rootInput);
-  const absolute = resolve(root, relativeInput);
-  const child = relative(root, absolute);
-  if (isAbsolute(child) || child === ".." || child.startsWith(`..${process.platform === "win32" ? "\\" : "/"}`)) {
-    throw new Error(
-      `Referential path must stay inside the checkout: ${relativeInput}`
-    );
-  }
-  return absolute;
-}
-function parseRows(source) {
-  return parse3(source, {
-    bom: true,
-    columns: true,
-    skip_empty_lines: true,
-    trim: true
-  });
-}
-var CsvReferentialRepository = class {
+// packages/adapter/csv-referential-repository/src/csv-referential-repository.ts
+var CsvReferentialRepository = class _CsvReferentialRepository {
   constructor(options) {
     this.options = options;
   }
@@ -63417,15 +63844,24 @@ var CsvReferentialRepository = class {
   async load() {
     const [hostsSource, speakersSource] = await Promise.all([
       readFile(
-        localPath(this.options.workspaceRoot, this.options.hostsPath),
+        _CsvReferentialRepository.localPath(
+          this.options.workspaceRoot,
+          this.options.hostsPath
+        ),
         "utf8"
       ),
       readFile(
-        localPath(this.options.workspaceRoot, this.options.speakersPath),
+        _CsvReferentialRepository.localPath(
+          this.options.workspaceRoot,
+          this.options.speakersPath
+        ),
         "utf8"
       )
     ]);
-    const hosts = parseRows(hostsSource).map((row) => ({
+    const hosts = _CsvReferentialRepository.parseRows(
+      hostsSource
+    ).map(({ row, line }) => ({
+      source: { path: this.options.hostsPath, line },
       hostId: row.host_id,
       displayName: row.name,
       contactId: row.contact_id,
@@ -63434,41 +63870,404 @@ var CsvReferentialRepository = class {
       phone: row.phone || void 0,
       address: row.address
     }));
-    const speakers = parseRows(speakersSource).map(
-      (row) => ({
-        speakerId: row.speaker_id,
-        firstName: row.firstname,
-        lastName: row.lastname,
-        company: row.company,
-        email: row.mail,
-        phone: row.phone || void 0
-      })
-    );
+    const speakers = _CsvReferentialRepository.parseRows(
+      speakersSource
+    ).map(({ row, line }) => ({
+      source: { path: this.options.speakersPath, line },
+      speakerId: row.speaker_id,
+      firstName: row.firstname,
+      lastName: row.lastname,
+      company: row.company,
+      email: row.mail,
+      phone: row.phone || void 0
+    }));
     return { hosts, speakers };
+  }
+  static localPath(rootInput, relativeInput) {
+    const root = resolve(rootInput);
+    const absolute = resolve(root, relativeInput);
+    const child = relative(root, absolute);
+    if (isAbsolute(child) || child === ".." || child.startsWith(`..${process.platform === "win32" ? "\\" : "/"}`)) {
+      throw new Error(
+        `Referential path must stay inside the checkout: ${relativeInput}`
+      );
+    }
+    return absolute;
+  }
+  static parseRows(source) {
+    const records = parse3(source.replace(/\r\n?/g, "\n"), {
+      bom: true,
+      columns: true,
+      skip_empty_lines: true,
+      trim: true,
+      info: true,
+      raw: true
+    });
+    return records.map(({ record, info, raw }) => ({
+      row: record,
+      line: info.lines - (raw.trimStart().replace(/\n$/, "").match(/\n/g)?.length ?? 0)
+    }));
   }
 };
 
-// packages/adapter/github-event-comment-repository/src/github-event-comment-repository.ts
-var EVENT_DIAGNOSTIC_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics:v1 -->";
-var DUPLICATE_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics-duplicate:v1 -->";
-var RESOLVED_COMMENT_BODY = `${EVENT_DIAGNOSTIC_COMMENT_MARKER}
+// packages/adapter/github-event-comment-repository/src/diagnostic-guidance.ts
+var FIELD_ORDER = [
+  "Event Title",
+  "Event Date",
+  "Hoster",
+  "Event Description",
+  "Agenda",
+  "Meetup Link",
+  "CNCF Link",
+  "Drive Link",
+  "Slides & Content",
+  "Communication",
+  "Aperitif",
+  "Restaurant / Bar",
+  "Post event",
+  "Host confirmation",
+  "Speaker confirmation",
+  "Event Status",
+  "Issue format",
+  "Referentials",
+  "Meetup issue"
+];
+var GUIDANCE = /* @__PURE__ */ new Map([
+  ["event.title.missing", ["Event Title", "Add a title for the event."]],
+  [
+    "event.date.missing",
+    ["Event Date", "Add the event date in YYYY-MM-DD format."]
+  ],
+  [
+    "event.date.invalid",
+    ["Event Date", "Enter a valid calendar date in YYYY-MM-DD format."]
+  ],
+  [
+    "event.description.missing",
+    ["Event Description", "Add a short description of the event."]
+  ],
+  ["event.hoster.missing", ["Hoster", "Select a host from the host list."]],
+  [
+    "event.hoster.invalid",
+    ["Hoster", "Use a host name or stable ID from the host list."]
+  ],
+  [
+    "event.hoster.multiple",
+    ["Hoster", "Select exactly one host for the event."]
+  ],
+  [
+    "event.agenda.missing",
+    ["Agenda", "Add at least one talk using `- Speaker: Talk description`."]
+  ],
+  [
+    "event.agenda.legacy-line-invalid",
+    ["Agenda", "Use `- Speaker: Talk description` for each agenda line."]
+  ],
+  [
+    "event.agenda.speaker.missing",
+    ["Agenda", "Add at least one speaker for this talk."]
+  ],
+  [
+    "event.agenda.speaker.invalid",
+    ["Agenda", "Enter a speaker name from the speaker list."]
+  ],
+  [
+    "event.agenda.description.missing",
+    ["Agenda", "Add a talk description after the speaker name and colon."]
+  ],
+  [
+    "publication.meetup.missing",
+    ["Meetup Link", "Add the link to the Meetup event page."]
+  ],
+  [
+    "publication.community.missing",
+    ["CNCF Link", "Add the link to the CNCF / OCGroups event page."]
+  ],
+  [
+    "publication.assets.missing",
+    ["Drive Link", "Add the link to the event's Google Drive folder."]
+  ],
+  [
+    "event.link.meetup.invalid",
+    ["Meetup Link", "Enter a valid HTTPS link to the Meetup event page."]
+  ],
+  [
+    "event.link.community.invalid",
+    [
+      "CNCF Link",
+      "Enter a valid HTTPS link to the CNCF / OCGroups event page."
+    ]
+  ],
+  [
+    "event.link.assets.invalid",
+    [
+      "Drive Link",
+      "Enter a valid HTTPS link to the event's Google Drive folder."
+    ]
+  ],
+  [
+    "publication.meetup-url.invalid",
+    [
+      "Meetup Link",
+      "Use this group's Meetup event URL, ending with the numeric event ID."
+    ]
+  ],
+  [
+    "publication.community-url.invalid",
+    ["CNCF Link", "Use this group's CNCF / OCGroups event URL."]
+  ],
+  [
+    "publication.asset-url.invalid",
+    [
+      "Drive Link",
+      "Use a Google Drive folder URL: `https://drive.google.com/drive/folders/FOLDER_ID`."
+    ]
+  ],
+  [
+    "event.confirmation.host.missing",
+    [
+      "Host confirmation",
+      "Confirm the host, then add the `hoster:confirmed` label."
+    ]
+  ],
+  [
+    "event.confirmation.speakers.missing",
+    [
+      "Speaker confirmation",
+      "Confirm the speakers, then add the `speakers:confirmed` label."
+    ]
+  ],
+  [
+    "event.logistics.intent.invalid",
+    [
+      "Logistics",
+      "Choose `Yes` or `No`, or leave the response empty if undecided."
+    ]
+  ],
+  [
+    "event.occurrence-status.invalid",
+    ["Event Status", "Use `scheduled`, `postponed`, `held`, or `cancelled`."]
+  ],
+  [
+    "event.occurrence-status.label-conflict",
+    [
+      "Event Status",
+      "Keep only one occurrence label: `event:postponed`, `event:held`, or `event:cancelled`."
+    ]
+  ],
+  [
+    "event.document.heading.missing",
+    [
+      "Issue format",
+      "Restore this section heading from the meetup issue template."
+    ]
+  ],
+  [
+    "event.document.heading.duplicate",
+    [
+      "Issue format",
+      "Keep a single section with this heading and merge its content."
+    ]
+  ],
+  [
+    "event.document.checkbox.invalid",
+    [
+      "Issue format",
+      "Use `- [ ] Task` for pending tasks and `- [x] Task` for completed tasks."
+    ]
+  ],
+  [
+    "event.document.invalid-field-type",
+    ["Issue format", "Enter a text response in this field."]
+  ],
+  [
+    "event.document.invalid-hoster-type",
+    ["Hoster", "Select one host from the host list."]
+  ],
+  [
+    "event.document.invalid-hoster-entry",
+    ["Hoster", "Use a host name or stable ID from the host list."]
+  ],
+  [
+    "event.document.invalid-agenda-type",
+    [
+      "Agenda",
+      "Write the agenda as a list of `- Speaker: Talk description` lines."
+    ]
+  ],
+  [
+    "event.document.schema-marker.duplicate",
+    [
+      "Issue format",
+      "Ask a maintainer to repair the duplicate automation metadata in the issue description."
+    ]
+  ],
+  [
+    "event.document.schema-version.unsupported",
+    [
+      "Issue format",
+      "Ask a maintainer to update the automation to support this issue format."
+    ]
+  ],
+  [
+    "event.document.reference-metadata.missing",
+    [
+      "Issue format",
+      "Ask a maintainer to regenerate the missing host and speaker reference metadata."
+    ]
+  ],
+  [
+    "event.document.reference-metadata.duplicate",
+    [
+      "Issue format",
+      "Ask a maintainer to repair the duplicate host and speaker reference metadata."
+    ]
+  ],
+  [
+    "event.document.reference-metadata.invalid",
+    [
+      "Issue format",
+      "Ask a maintainer to regenerate the invalid host and speaker reference metadata."
+    ]
+  ],
+  [
+    "event.document.reference-metadata.legacy",
+    [
+      "Issue format",
+      "Check the host and agenda references, then rerun the issue update workflow to refresh their old metadata."
+    ]
+  ],
+  [
+    "event.document.reference-metadata.stale",
+    [
+      "Issue format",
+      "Check the host and agenda references, then rerun the issue update workflow to refresh their metadata."
+    ]
+  ]
+]);
 
-Meetup automation found no active diagnostics.`;
-var DUPLICATE_COMMENT_BODY = `${DUPLICATE_COMMENT_MARKER}
+// packages/adapter/github-event-comment-repository/src/diagnostic-presentation.ts
+var DiagnosticPresenter = class _DiagnosticPresenter {
+  static FIELD_ALIASES = new Map([
+    ...FIELD_ORDER.map((field) => [field, field]),
+    ["eventTitle", "Event Title"],
+    ["event_title", "Event Title"],
+    ["date", "Event Date"],
+    ["event_date", "Event Date"],
+    ["host", "Hoster"],
+    ["hoster", "Hoster"],
+    ["hostReference", "Hoster"],
+    ["description", "Event Description"],
+    ["event_description", "Event Description"],
+    ["agenda", "Agenda"],
+    ["publicationLinks.meetup", "Meetup Link"],
+    ["meetup_link", "Meetup Link"],
+    ["publicationLinks.community", "CNCF Link"],
+    ["cncf_link", "CNCF Link"],
+    ["publicationLinks.assets", "Drive Link"],
+    ["drive_link", "Drive Link"],
+    ["confirmations.host", "Host confirmation"],
+    ["confirmations.speakers", "Speaker confirmation"],
+    ["occurrenceStatus", "Event Status"],
+    ["event_status", "Event Status"]
+  ]);
+  static presentDiagnostic(item) {
+    const guidance = GUIDANCE.get(item.code) ?? _DiagnosticPresenter.referenceGuidance(item.code);
+    const fallback = guidance?.[0] ?? "Meetup issue";
+    const [field, section] = _DiagnosticPresenter.publicField(
+      item.field,
+      fallback
+    );
+    const message = guidance?.[1] ?? "An additional validation check needs attention. Review the workflow diagnostics with a maintainer.";
+    const order = FIELD_ORDER.indexOf(section);
+    return { field, message, order: order < 0 ? FIELD_ORDER.length : order };
+  }
+  static referenceGuidance(code) {
+    const reference = code.match(
+      /^referential\.reference\.(host|speaker)\.(invalid|unknown|ambiguous|display-name-mismatch)$/
+    );
+    if (reference) {
+      const [, kind, problem] = reference;
+      const field = kind === "host" ? "Hoster" : "Agenda";
+      const catalog = kind === "host" ? "host list" : "speaker list";
+      const example = kind === "host" ? "Host name [host-0001]" : "Speaker name [speaker-0001]";
+      switch (problem) {
+        case "unknown":
+          return [
+            field,
+            `This ${kind} was not found in the ${catalog}. Copy its exact name, including accents, or use a name with its stable ID: \`${example}\`.`
+          ];
+        case "ambiguous":
+          return [
+            field,
+            `Several ${kind}s share this name. Include the correct stable ID: \`${example}\`.`
+          ];
+        case "display-name-mismatch":
+          return [
+            field,
+            `Use the ${kind} name associated with this stable ID in the ${catalog}.`
+          ];
+        default:
+          return [
+            field,
+            `Choose a ${kind} from the ${catalog} using its name or \`${example}\`.`
+          ];
+      }
+    }
+    if (/^referential\.(host|contact|speaker)\./.test(code)) {
+      return [
+        "Referentials",
+        "Ask a maintainer to correct the hosting or speaker catalog using the referential validation workflow diagnostics."
+      ];
+    }
+    return void 0;
+  }
+  /** Only known issue headings and numeric agenda positions can reach Markdown. */
+  static publicField(field, fallback) {
+    const known = _DiagnosticPresenter.FIELD_ALIASES.get(field ?? "");
+    if (known) return [known, known];
+    const agenda = field?.match(
+      /^agenda\.(\d{1,6})(?:\.(speakers|description)(?:\.(\d{1,6}))?)?$/
+    );
+    if (agenda) {
+      const entry = Number(agenda[1]) + 1;
+      const speaker2 = agenda[3] === void 0 ? "" : `, speaker ${Number(agenda[3]) + 1}`;
+      return [`Agenda (item ${entry}${speaker2})`, "Agenda"];
+    }
+    const speaker = field?.match(/^speakerReferences\[(\d{1,6})\]$/);
+    if (speaker)
+      return [`Agenda (speaker ${Number(speaker[1]) + 1})`, "Agenda"];
+    return [fallback, fallback];
+  }
+};
 
-Superseded duplicate automation comment.`;
+// packages/adapter/github-event-comment-repository/src/github-event-comment-repository-configuration-error.ts
 var GitHubEventCommentRepositoryConfigurationError = class extends Error {
   constructor(message) {
     super(message);
     this.name = "GitHubEventCommentRepositoryConfigurationError";
   }
 };
+
+// packages/adapter/github-event-comment-repository/src/github-event-comment-repository-contracts.ts
+var EVENT_DIAGNOSTIC_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics:v1 -->";
+var DUPLICATE_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics-duplicate:v1 -->";
+var RESOLVED_COMMENT_BODY = `${EVENT_DIAGNOSTIC_COMMENT_MARKER}
+
+All previously reported issues have been resolved. No changes are currently needed.`;
+var DUPLICATE_COMMENT_BODY = `${DUPLICATE_COMMENT_MARKER}
+
+Superseded duplicate automation comment.`;
+
+// packages/adapter/github-event-comment-repository/src/github-event-comment-repository-response-error.ts
 var GitHubEventCommentRepositoryResponseError = class extends Error {
   constructor(message) {
     super(message);
     this.name = "GitHubEventCommentRepositoryResponseError";
   }
 };
+
+// packages/adapter/github-event-comment-repository/src/github-event-comment-repository-scope-error.ts
 var GitHubEventCommentRepositoryScopeError = class extends Error {
   constructor(expected, received) {
     super(
@@ -63477,11 +64276,19 @@ var GitHubEventCommentRepositoryScopeError = class extends Error {
     this.name = "GitHubEventCommentRepositoryScopeError";
   }
 };
-var GitHubEventCommentRepository = class {
+
+// packages/adapter/github-event-comment-repository/src/github-event-comment-repository.ts
+var GitHubEventCommentRepository = class _GitHubEventCommentRepository {
   constructor(client, options) {
     this.client = client;
-    this.owner = requireRepositoryPart(options.owner, "owner");
-    this.repo = requireRepositoryPart(options.repo, "repo");
+    this.owner = _GitHubEventCommentRepository.requireRepositoryPart(
+      options.owner,
+      "owner"
+    );
+    this.repo = _GitHubEventCommentRepository.requireRepositoryPart(
+      options.repo,
+      "repo"
+    );
     this.repositoryName = `${this.owner}/${this.repo}`;
     this.authorLogin = options.authorLogin?.trim() || void 0;
   }
@@ -63495,10 +64302,10 @@ var GitHubEventCommentRepository = class {
     const managedComments = await this.listManagedComments(
       identity.issueNumber
     );
-    const [canonical2, ...duplicates] = managedComments;
+    const [canonical, ...duplicates] = managedComments;
     let changed = await this.minimizeDuplicates(duplicates);
-    const body = renderDiagnosticComment(diagnostics);
-    if (!canonical2) {
+    const body = _GitHubEventCommentRepository.renderDiagnosticComment(diagnostics);
+    if (!canonical) {
       if (body === RESOLVED_COMMENT_BODY) {
         return { changed };
       }
@@ -63510,8 +64317,8 @@ var GitHubEventCommentRepository = class {
       });
       return { changed: true };
     }
-    if (canonical2.body !== body) {
-      await this.updateComment(canonical2.id, body);
+    if (canonical.body !== body) {
+      await this.updateComment(canonical.id, body);
       changed = true;
     }
     return { changed };
@@ -63534,12 +64341,15 @@ var GitHubEventCommentRepository = class {
         );
       }
       for (const rawComment of response.data) {
-        const comment = mapComment(rawComment);
+        const comment = _GitHubEventCommentRepository.mapComment(rawComment);
         if (comment && this.isManagedComment(comment)) {
           comments.push(comment);
         }
       }
-      const linkHeader = readHeader(response.headers, "link");
+      const linkHeader = _GitHubEventCommentRepository.readHeader(
+        response.headers,
+        "link"
+      );
       hasNextPage = linkHeader === void 0 ? response.data.length === 100 : /<[^>]+>;\s*rel="next"/.test(linkHeader);
       page += 1;
     }
@@ -63579,106 +64389,114 @@ var GitHubEventCommentRepository = class {
       );
     }
   }
-};
-function renderDiagnosticComment(diagnostics) {
-  const actionable = /* @__PURE__ */ new Set();
-  for (const item of diagnostics) {
-    if (item.severity === "info") {
-      continue;
+  static renderDiagnosticComment(diagnostics) {
+    const actionable = /* @__PURE__ */ new Map();
+    for (const item of diagnostics) {
+      if (item.severity === "info") {
+        continue;
+      }
+      const presentation = DiagnosticPresenter.presentDiagnostic(item);
+      actionable.set(
+        `${presentation.field}:${presentation.message}`,
+        presentation
+      );
     }
-    const code = /^[a-z0-9][a-z0-9._-]{0,99}$/i.test(item.code) ? item.code : "diagnostic.redacted";
-    actionable.add(`${item.severity}:${code}`);
+    if (actionable.size === 0) {
+      return RESOLVED_COMMENT_BODY;
+    }
+    const lines = [...actionable.values()].sort(
+      (left, right) => left.order - right.order || left.field.localeCompare(right.field, "en", { numeric: true }) || left.message.localeCompare(right.message, "en")
+    ).map(({ field, message }) => `- [ ] **${field}**: ${message}`);
+    return [
+      EVENT_DIAGNOSTIC_COMMENT_MARKER,
+      "",
+      "Found the following items to complete in the meetup issue:",
+      "",
+      ...lines,
+      "",
+      "Please update the issue description or labels to address these items. This checklist will refresh automatically."
+    ].join("\n");
   }
-  if (actionable.size === 0) {
-    return RESOLVED_COMMENT_BODY;
+  static mapComment(data) {
+    if (!_GitHubEventCommentRepository.isRecord(data)) {
+      throw new GitHubEventCommentRepositoryResponseError(
+        "GitHub comment must be an object"
+      );
+    }
+    if (!Number.isInteger(data.id) || Number(data.id) <= 0) {
+      throw new GitHubEventCommentRepositoryResponseError(
+        "GitHub comment identifier must be a positive integer"
+      );
+    }
+    if (data.body === null) {
+      return null;
+    }
+    if (typeof data.body !== "string") {
+      throw new GitHubEventCommentRepositoryResponseError(
+        "GitHub comment body must be a string or null"
+      );
+    }
+    const user = _GitHubEventCommentRepository.isRecord(data.user) ? data.user : void 0;
+    return {
+      id: Number(data.id),
+      body: data.body,
+      authorLogin: typeof user?.login === "string" ? user.login : void 0
+    };
   }
-  const lines = [...actionable].sort(compareDiagnosticLines).map((entry) => {
-    const separator = entry.indexOf(":");
-    const severity = entry.slice(0, separator);
-    const code = entry.slice(separator + 1);
-    return `- **${severity}** \`${code}\``;
-  });
-  return [
-    EVENT_DIAGNOSTIC_COMMENT_MARKER,
-    "",
-    "### Meetup automation diagnostics",
-    "",
-    ...lines,
-    "",
-    "Messages and event/contact values are intentionally omitted from this comment."
-  ].join("\n");
-}
-function compareDiagnosticLines(left, right) {
-  const severityOrder = (value) => value.startsWith("error:") ? 0 : 1;
-  return severityOrder(left) - severityOrder(right) || left.localeCompare(right);
-}
-function mapComment(data) {
-  if (!isRecord(data)) {
-    throw new GitHubEventCommentRepositoryResponseError(
-      "GitHub comment must be an object"
-    );
+  static requireRepositoryPart(value, name) {
+    const normalized = value.trim();
+    if (normalized === "" || normalized.includes("/")) {
+      throw new GitHubEventCommentRepositoryConfigurationError(
+        `GitHub ${name} must be a non-empty repository name segment`
+      );
+    }
+    return normalized;
   }
-  if (!Number.isInteger(data.id) || Number(data.id) <= 0) {
-    throw new GitHubEventCommentRepositoryResponseError(
-      "GitHub comment identifier must be a positive integer"
-    );
+  static readHeader(headers, name) {
+    const value = headers?.[name];
+    return typeof value === "string" ? value : void 0;
   }
-  if (data.body === null) {
-    return null;
+  static isRecord(value) {
+    return typeof value === "object" && value !== null;
   }
-  if (typeof data.body !== "string") {
-    throw new GitHubEventCommentRepositoryResponseError(
-      "GitHub comment body must be a string or null"
-    );
-  }
-  const user = isRecord(data.user) ? data.user : void 0;
-  return {
-    id: Number(data.id),
-    body: data.body,
-    authorLogin: typeof user?.login === "string" ? user.login : void 0
-  };
-}
-function requireRepositoryPart(value, name) {
-  const normalized = value.trim();
-  if (normalized === "" || normalized.includes("/")) {
-    throw new GitHubEventCommentRepositoryConfigurationError(
-      `GitHub ${name} must be a non-empty repository name segment`
-    );
-  }
-  return normalized;
-}
-function readHeader(headers, name) {
-  const value = headers?.[name];
-  return typeof value === "string" ? value : void 0;
-}
-function isRecord(value) {
-  return typeof value === "object" && value !== null;
-}
+};
 
-// packages/adapter/github-event-repository/src/github-event-repository.ts
+// packages/adapter/github-event-repository/src/github-event-repository-configuration-error.ts
 var GitHubEventRepositoryConfigurationError = class extends Error {
   constructor(message) {
     super(message);
     this.name = "GitHubEventRepositoryConfigurationError";
   }
 };
-var GitHubEventRepositoryScopeError = class extends Error {
-  constructor(expected, received) {
-    super(`GitHub event repository is scoped to ${expected}, not ${received}`);
-    this.name = "GitHubEventRepositoryScopeError";
-  }
-};
+
+// packages/adapter/github-event-repository/src/github-event-repository-response-error.ts
 var GitHubEventRepositoryResponseError = class extends Error {
   constructor(message) {
     super(message);
     this.name = "GitHubEventRepositoryResponseError";
   }
 };
-var GitHubEventRepository = class {
+
+// packages/adapter/github-event-repository/src/github-event-repository-scope-error.ts
+var GitHubEventRepositoryScopeError = class extends Error {
+  constructor(expected, received) {
+    super(`GitHub event repository is scoped to ${expected}, not ${received}`);
+    this.name = "GitHubEventRepositoryScopeError";
+  }
+};
+
+// packages/adapter/github-event-repository/src/github-event-repository.ts
+var GitHubEventRepository = class _GitHubEventRepository {
   constructor(client, options) {
     this.client = client;
-    this.owner = requireRepositoryPart2(options.owner, "owner");
-    this.repo = requireRepositoryPart2(options.repo, "repo");
+    this.owner = _GitHubEventRepository.requireRepositoryPart(
+      options.owner,
+      "owner"
+    );
+    this.repo = _GitHubEventRepository.requireRepositoryPart(
+      options.repo,
+      "repo"
+    );
     this.repositoryName = `${this.owner}/${this.repo}`;
   }
   client;
@@ -63693,7 +64511,7 @@ var GitHubEventRepository = class {
         repo: this.repo,
         issue_number: identity.issueNumber
       });
-      const document2 = mapGitHubIssueDocument(
+      const document2 = _GitHubEventRepository.mapGitHubIssueDocument(
         response.data,
         this.repositoryName
       );
@@ -63704,7 +64522,7 @@ var GitHubEventRepository = class {
       }
       return document2;
     } catch (error2) {
-      if (isNotFoundError(error2)) {
+      if (_GitHubEventRepository.isNotFoundError(error2)) {
         return null;
       }
       throw error2;
@@ -63734,8 +64552,8 @@ var GitHubEventRepository = class {
   }
   async listPage(query) {
     this.assertScope(query.repository);
-    const page = parseCursor(query.cursor);
-    const pageSize = parsePageSize(query.pageSize);
+    const page = _GitHubEventRepository.parseCursor(query.cursor);
+    const pageSize = _GitHubEventRepository.parsePageSize(query.pageSize);
     const parameters = {
       owner: this.owner,
       repo: this.repo,
@@ -63752,8 +64570,16 @@ var GitHubEventRepository = class {
         "GitHub issue list response must contain an array"
       );
     }
-    const items = response.data.map((issue2) => mapGitHubIssueDocument(issue2, this.repositoryName)).filter((issue2) => issue2 !== null);
-    const linkHeader = readHeader2(response.headers, "link");
+    const items = response.data.map(
+      (issue2) => _GitHubEventRepository.mapGitHubIssueDocument(
+        issue2,
+        this.repositoryName
+      )
+    ).filter((issue2) => issue2 !== null);
+    const linkHeader = _GitHubEventRepository.readHeader(
+      response.headers,
+      "link"
+    );
     const hasNextPage = linkHeader === void 0 ? response.data.length === pageSize : /<[^>]+>;\s*rel="next"/.test(linkHeader);
     return {
       items: Object.freeze(items),
@@ -63768,115 +64594,118 @@ var GitHubEventRepository = class {
       );
     }
   }
+  static requireRepositoryPart(value, name) {
+    const normalized = value.trim();
+    if (normalized === "" || normalized.includes("/")) {
+      throw new GitHubEventRepositoryConfigurationError(
+        `GitHub ${name} must be a non-empty repository name segment`
+      );
+    }
+    return normalized;
+  }
+  /** Map one GitHub issue response or webhook snapshot into the domain document. */
+  static mapGitHubIssueDocument(data, repository) {
+    const issue2 = _GitHubEventRepository.asRecord(data, "GitHub issue");
+    if (issue2.pull_request !== void 0 && issue2.pull_request !== null) {
+      return null;
+    }
+    if (!Number.isInteger(issue2.number) || Number(issue2.number) <= 0) {
+      throw new GitHubEventRepositoryResponseError(
+        "GitHub issue number must be a positive integer"
+      );
+    }
+    if (typeof issue2.title !== "string") {
+      throw new GitHubEventRepositoryResponseError(
+        "GitHub issue title must be a string"
+      );
+    }
+    if (issue2.state !== "open" && issue2.state !== "closed") {
+      throw new GitHubEventRepositoryResponseError(
+        "GitHub issue state must be open or closed"
+      );
+    }
+    if (issue2.body !== null && typeof issue2.body !== "string") {
+      throw new GitHubEventRepositoryResponseError(
+        "GitHub issue body must be a string or null"
+      );
+    }
+    if (!Array.isArray(issue2.labels)) {
+      throw new GitHubEventRepositoryResponseError(
+        "GitHub issue labels must be an array"
+      );
+    }
+    return {
+      identity: { repository, issueNumber: Number(issue2.number) },
+      issueState: issue2.state,
+      issueTitle: issue2.title,
+      labels: _GitHubEventRepository.mapLabels(issue2.labels),
+      body: issue2.body ?? ""
+    };
+  }
+  static mapLabels(labels) {
+    const result = [];
+    for (const label of labels) {
+      let name;
+      if (typeof label === "string") {
+        name = label;
+      } else if (_GitHubEventRepository.isRecord(label) && typeof label.name === "string") {
+        name = label.name;
+      }
+      if (name && !result.includes(name)) {
+        result.push(name);
+      }
+    }
+    return Object.freeze(result);
+  }
+  static parseCursor(cursor) {
+    if (cursor === void 0) {
+      return 1;
+    }
+    if (!/^[1-9]\d*$/.test(cursor)) {
+      throw new GitHubEventRepositoryConfigurationError(
+        `Invalid GitHub pagination cursor "${cursor}"`
+      );
+    }
+    return Number(cursor);
+  }
+  static parsePageSize(pageSize) {
+    if (pageSize === void 0) {
+      return 100;
+    }
+    if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) {
+      throw new GitHubEventRepositoryConfigurationError(
+        "GitHub page size must be an integer between 1 and 100"
+      );
+    }
+    return pageSize;
+  }
+  static isNotFoundError(error2) {
+    if (!_GitHubEventRepository.isRecord(error2)) {
+      return false;
+    }
+    if (error2.status === 404) {
+      return true;
+    }
+    return _GitHubEventRepository.isRecord(error2.response) && error2.response.status === 404;
+  }
+  static readHeader(headers, name) {
+    const value = headers?.[name];
+    return typeof value === "string" ? value : void 0;
+  }
+  static asRecord(value, label) {
+    if (!_GitHubEventRepository.isRecord(value)) {
+      throw new GitHubEventRepositoryResponseError(
+        `${label} must be an object`
+      );
+    }
+    return value;
+  }
+  static isRecord(value) {
+    return typeof value === "object" && value !== null;
+  }
 };
-function requireRepositoryPart2(value, name) {
-  const normalized = value.trim();
-  if (normalized === "" || normalized.includes("/")) {
-    throw new GitHubEventRepositoryConfigurationError(
-      `GitHub ${name} must be a non-empty repository name segment`
-    );
-  }
-  return normalized;
-}
-function mapGitHubIssueDocument(data, repository) {
-  const issue2 = asRecord(data, "GitHub issue");
-  if (issue2.pull_request !== void 0 && issue2.pull_request !== null) {
-    return null;
-  }
-  if (!Number.isInteger(issue2.number) || Number(issue2.number) <= 0) {
-    throw new GitHubEventRepositoryResponseError(
-      "GitHub issue number must be a positive integer"
-    );
-  }
-  if (typeof issue2.title !== "string") {
-    throw new GitHubEventRepositoryResponseError(
-      "GitHub issue title must be a string"
-    );
-  }
-  if (issue2.state !== "open" && issue2.state !== "closed") {
-    throw new GitHubEventRepositoryResponseError(
-      "GitHub issue state must be open or closed"
-    );
-  }
-  if (issue2.body !== null && typeof issue2.body !== "string") {
-    throw new GitHubEventRepositoryResponseError(
-      "GitHub issue body must be a string or null"
-    );
-  }
-  if (!Array.isArray(issue2.labels)) {
-    throw new GitHubEventRepositoryResponseError(
-      "GitHub issue labels must be an array"
-    );
-  }
-  return {
-    identity: { repository, issueNumber: Number(issue2.number) },
-    issueState: issue2.state,
-    issueTitle: issue2.title,
-    labels: mapLabels(issue2.labels),
-    body: issue2.body ?? ""
-  };
-}
-function mapLabels(labels) {
-  const result = [];
-  for (const label of labels) {
-    let name;
-    if (typeof label === "string") {
-      name = label;
-    } else if (isRecord2(label) && typeof label.name === "string") {
-      name = label.name;
-    }
-    if (name && !result.includes(name)) {
-      result.push(name);
-    }
-  }
-  return Object.freeze(result);
-}
-function parseCursor(cursor) {
-  if (cursor === void 0) {
-    return 1;
-  }
-  if (!/^[1-9]\d*$/.test(cursor)) {
-    throw new GitHubEventRepositoryConfigurationError(
-      `Invalid GitHub pagination cursor "${cursor}"`
-    );
-  }
-  return Number(cursor);
-}
-function parsePageSize(pageSize) {
-  if (pageSize === void 0) {
-    return 100;
-  }
-  if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) {
-    throw new GitHubEventRepositoryConfigurationError(
-      "GitHub page size must be an integer between 1 and 100"
-    );
-  }
-  return pageSize;
-}
-function isNotFoundError(error2) {
-  if (!isRecord2(error2)) {
-    return false;
-  }
-  if (error2.status === 404) {
-    return true;
-  }
-  return isRecord2(error2.response) && error2.response.status === 404;
-}
-function readHeader2(headers, name) {
-  const value = headers?.[name];
-  return typeof value === "string" ? value : void 0;
-}
-function asRecord(value, label) {
-  if (!isRecord2(value)) {
-    throw new GitHubEventRepositoryResponseError(`${label} must be an object`);
-  }
-  return value;
-}
-function isRecord2(value) {
-  return typeof value === "object" && value !== null;
-}
 
-// packages/adapter/github-issue-form-event-document-codec/src/index.ts
+// packages/adapter/github-issue-form-event-document-codec/src/github-issue-form-event-document-codec-contracts.ts
 var CURRENT_SCHEMA_MARKER = "<!-- meetup-event-schema:1 -->";
 var SCHEMA_MARKER_NAME = "meetup-event-schema";
 var REFERENCE_MARKER_NAME = "meetup-event-references";
@@ -63897,210 +64726,203 @@ var HEADINGS = Object.freeze({
   postEvent: "Post event",
   occurrenceStatus: "Event Status"
 });
-var GitHubIssueFormEventDocumentCodec = class {
-  timeZone;
-  hostConfirmationLabel;
-  speakersConfirmationLabel;
-  constructor(options = {}) {
-    this.timeZone = options.timeZone ?? "Europe/Paris";
-    this.hostConfirmationLabel = options.hostConfirmationLabel ?? "hoster:confirmed";
-    this.speakersConfirmationLabel = options.speakersConfirmationLabel ?? "speakers:confirmed";
+
+// packages/adapter/github-issue-form-event-document-codec/src/markdown-lines.ts
+var MarkdownLines = class _MarkdownLines {
+  static findLineEnd(value, start) {
+    let cursor = start;
+    while (cursor < value.length && value[cursor] !== "\n" && value[cursor] !== "\r") {
+      cursor += 1;
+    }
+    return cursor;
   }
-  decode(document2) {
-    const diagnostics = [];
-    const sections = parseSections(document2.body);
-    const schema = this.readSchema(document2.body, diagnostics);
-    const parsedBody = {
-      event_title: this.readSection(
-        sections,
-        HEADINGS.eventTitle,
-        true,
-        diagnostics
-      ),
-      event_date: this.readSection(sections, HEADINGS.date, true, diagnostics),
-      hoster: [
-        this.readSection(sections, HEADINGS.host, true, diagnostics)
-      ].filter(Boolean),
-      event_description: this.readSection(
-        sections,
-        HEADINGS.description,
-        true,
-        diagnostics
-      ),
-      agenda: this.readSection(sections, HEADINGS.agenda, true, diagnostics),
-      meetup_link: this.readSection(
-        sections,
-        HEADINGS.meetupLink,
-        false,
-        diagnostics
-      ),
-      cncf_link: this.readSection(
-        sections,
-        HEADINGS.communityLink,
-        false,
-        diagnostics
-      ),
-      drive_link: this.readSection(
-        sections,
-        HEADINGS.assetsLink,
-        false,
-        diagnostics
-      ),
-      event_status: this.readSection(
-        sections,
-        HEADINGS.occurrenceStatus,
-        false,
-        diagnostics
-      )
-    };
-    const slidesAndContent = toOperationalChecklist(
-      this.readCheckboxes(sections, HEADINGS.slides, diagnostics)
-    );
-    const communication = toOperationalChecklist(
-      this.readCheckboxes(sections, HEADINGS.communication, diagnostics)
-    );
-    const postEventDiagnosticOffset = diagnostics.length;
-    const postEvent = toOperationalChecklist(
-      this.readCheckboxes(sections, HEADINGS.postEvent, diagnostics)
-    );
-    const postEventChecklistIsValid = diagnostics.length === postEventDiagnosticOffset;
-    const followUpComplete = postEventChecklistIsValid && postEventChecklistIsComplete(postEvent);
-    const logistics = {
-      aperitif: this.readLogisticsIntent(
-        sections,
-        HEADINGS.aperitif,
-        diagnostics
-      ),
-      postEventVenue: this.readLogisticsIntent(
-        sections,
-        HEADINGS.restaurant,
-        diagnostics
-      )
-    };
-    const migrated = migrateMeetupEventDto({
-      repository: document2.identity.repository,
-      issueNumber: document2.identity.issueNumber,
-      issueState: document2.issueState,
-      issueTitle: document2.issueTitle,
-      labels: document2.labels,
-      parsedBody,
-      timeZone: this.timeZone
-    });
-    diagnostics.push(
-      ...migrated.diagnostics.filter(
-        (item) => schema === 0 || item.code !== "event.document.legacy-schema"
-      )
-    );
-    let event = {
-      ...migrated.event,
-      confirmations: {
-        host: document2.labels.includes(this.hostConfirmationLabel),
-        speakers: document2.labels.includes(this.speakersConfirmationLabel)
-      },
-      logistics,
-      operationalChecklists: {
-        slidesAndContent,
-        communication,
-        postEvent
-      },
-      followUpComplete
-    };
-    const metadata = this.readReferenceMetadata(document2.body, diagnostics);
-    if (metadata) {
-      event = this.applyReferenceMetadata(event, metadata, diagnostics);
-    } else if (schema === 1) {
-      diagnostics.push(
-        diagnostic({
-          code: "event.document.reference-metadata.missing",
-          severity: "warning",
-          category: "migration",
-          message: "Stable reference metadata is missing",
-          fixAvailable: true
-        })
-      );
+  static findNextLineStart(value, lineEnd) {
+    if (lineEnd >= value.length) {
+      return value.length;
+    }
+    if (value[lineEnd] === "\r" && value[lineEnd + 1] === "\n") {
+      return lineEnd + 2;
+    }
+    return lineEnd + 1;
+  }
+  static trimLeadingWhitespace(value) {
+    let start = 0;
+    while (start < value.length && _MarkdownLines.isWhitespaceCharacter(value[start])) {
+      start += 1;
+    }
+    return value.slice(start);
+  }
+  static trimTrailingWhitespace(value) {
+    let end = value.length;
+    while (end > 0 && _MarkdownLines.isWhitespaceCharacter(value[end - 1])) {
+      end -= 1;
+    }
+    return value.slice(0, end);
+  }
+  static isHorizontalWhitespaceCharacter(value) {
+    return value === " " || value === "	";
+  }
+  static isWhitespaceCharacter(value) {
+    return value === " " || value === "	" || value === "\n" || value === "\r" || value === "\f" || value === "\v";
+  }
+  static parseHeadingLine(line) {
+    if (!line.startsWith("### ")) {
+      return void 0;
+    }
+    const rawHeading = line.slice(4);
+    if (rawHeading.length === 0) {
+      return void 0;
+    }
+    let end = rawHeading.length;
+    while (end > 1 && _MarkdownLines.isHorizontalWhitespaceCharacter(rawHeading[end - 1])) {
+      end -= 1;
+    }
+    return rawHeading.slice(0, end).trim();
+  }
+  static parseCheckboxLine(line) {
+    let cursor = 0;
+    cursor = _MarkdownLines.skipHorizontalWhitespace(line, cursor);
+    if (line[cursor] !== "-") {
+      return void 0;
+    }
+    cursor += 1;
+    if (!_MarkdownLines.isHorizontalWhitespaceCharacter(line[cursor] ?? "")) {
+      return void 0;
+    }
+    cursor = _MarkdownLines.skipHorizontalWhitespace(line, cursor);
+    if (line[cursor] !== "[") {
+      return void 0;
+    }
+    const checkedMarker = line[cursor + 1];
+    if (checkedMarker !== " " && checkedMarker !== "x" && checkedMarker !== "X" || line[cursor + 2] !== "]") {
+      return void 0;
+    }
+    cursor += 3;
+    if (!_MarkdownLines.isHorizontalWhitespaceCharacter(line[cursor] ?? "")) {
+      return void 0;
+    }
+    cursor = _MarkdownLines.skipHorizontalWhitespace(line, cursor);
+    const label = line.slice(cursor).trim();
+    if (label === "") {
+      return void 0;
     }
     return {
-      event,
-      diagnostics: Object.freeze(diagnostics)
+      checked: checkedMarker.toLowerCase() === "x",
+      label
     };
   }
-  createPatch(document2, event) {
-    const patch = {};
-    if (document2.issueTitle !== event.issueTitle) {
-      patch.issueTitle = event.issueTitle;
+  static skipHorizontalWhitespace(line, cursor) {
+    while (cursor < line.length && _MarkdownLines.isHorizontalWhitespaceCharacter(line[cursor])) {
+      cursor += 1;
     }
-    if (!arraysEqual2(document2.labels, event.labels)) {
-      patch.labels = Object.freeze([...event.labels]);
-    }
-    let body = document2.body;
-    body = replaceOrAppendSection(body, HEADINGS.eventTitle, event.eventTitle);
-    body = replaceOrAppendSection(body, HEADINGS.date, event.date);
-    body = replaceOrAppendSection(
-      body,
-      HEADINGS.host,
-      event.host ? event.host.displayName : ""
-    );
-    body = replaceOrAppendSection(
-      body,
-      HEADINGS.description,
-      event.description
-    );
-    body = replaceOrAppendSection(body, HEADINGS.agenda, renderAgenda(event));
-    body = replaceOrAppendSection(
-      body,
-      HEADINGS.meetupLink,
-      event.publicationLinks.meetup ?? ""
-    );
-    body = replaceOrAppendSection(
-      body,
-      HEADINGS.communityLink,
-      event.publicationLinks.community ?? ""
-    );
-    body = replaceOrAppendSection(
-      body,
-      HEADINGS.assetsLink,
-      event.publicationLinks.assets ?? ""
-    );
-    body = removeSection(body, HEADINGS.occurrenceStatus);
-    body = replaceOrAppendOperationalChecklist(
-      body,
-      HEADINGS.slides,
-      renderOperationalChecklist(event.operationalChecklists.slidesAndContent)
-    );
-    body = replaceOrAppendOperationalChecklist(
-      body,
-      HEADINGS.communication,
-      renderOperationalChecklist(event.operationalChecklists.communication)
-    );
-    body = replaceOrAppendLogisticsIntent(
-      body,
-      HEADINGS.aperitif,
-      event.logistics.aperitif
-    );
-    body = replaceOrAppendLogisticsIntent(
-      body,
-      HEADINGS.restaurant,
-      event.logistics.postEventVenue
-    );
-    body = replaceOrAppendOperationalChecklist(
-      body,
-      HEADINGS.postEvent,
-      renderOperationalChecklist(event.operationalChecklists.postEvent)
-    );
-    body = upsertManagedMarkers(body, referenceMetadata(event));
-    if (body !== document2.body) {
-      patch.body = body;
-    }
-    return Object.freeze(patch);
+    return cursor;
   }
-  readSchema(body, diagnostics) {
-    const markers = readManagedMarkerValues(body, SCHEMA_MARKER_NAME);
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/managed-issue-markers.ts
+var ManagedIssueMarkers = class _ManagedIssueMarkers {
+  static readManagedMarkerValues(body, markerName) {
+    return _ManagedIssueMarkers.findManagedMarkerMatches(body, markerName).map(
+      ({ value }) => value
+    );
+  }
+  static replaceManagedMarker(body, markerName, replacement) {
+    const matches = _ManagedIssueMarkers.findManagedMarkerMatches(
+      body,
+      markerName
+    );
+    if (matches.length === 0) {
+      return { body, found: false };
+    }
+    let result = "";
+    let lastIndex = 0;
+    for (const [index, match] of matches.entries()) {
+      result += body.slice(lastIndex, match.start);
+      if (index === 0) {
+        result += replacement;
+      }
+      lastIndex = match.end;
+    }
+    result += body.slice(lastIndex);
+    return { body: result, found: true };
+  }
+  static findManagedMarkerMatches(body, markerName) {
+    const matches = [];
+    for (let cursor = 0; cursor < body.length; ) {
+      const commentStart = body.indexOf("<!--", cursor);
+      if (commentStart === -1) {
+        break;
+      }
+      const commentEnd = body.indexOf("-->", commentStart + 4);
+      if (commentEnd === -1) {
+        break;
+      }
+      const value = _ManagedIssueMarkers.parseManagedMarkerComment(
+        body.slice(commentStart + 4, commentEnd),
+        markerName
+      );
+      if (value !== void 0) {
+        matches.push({
+          start: commentStart,
+          end: commentEnd + 3,
+          value
+        });
+      }
+      cursor = commentEnd + 3;
+    }
+    return matches;
+  }
+  static parseManagedMarkerComment(commentBody, markerName) {
+    const trimmed = commentBody.trim();
+    if (!trimmed.startsWith(markerName)) {
+      return void 0;
+    }
+    let cursor = markerName.length;
+    while (cursor < trimmed.length && MarkdownLines.isWhitespaceCharacter(trimmed[cursor])) {
+      cursor += 1;
+    }
+    if (trimmed[cursor] !== ":") {
+      return void 0;
+    }
+    return trimmed.slice(cursor + 1).trim();
+  }
+  static upsertManagedMarkers(body, metadata) {
+    const referenceMarker = `<!-- meetup-event-references:${JSON.stringify(metadata)} -->`;
+    const schemaReplacement = _ManagedIssueMarkers.replaceManagedMarker(
+      body,
+      SCHEMA_MARKER_NAME,
+      CURRENT_SCHEMA_MARKER
+    );
+    const referenceReplacement = _ManagedIssueMarkers.replaceManagedMarker(
+      schemaReplacement.body,
+      REFERENCE_MARKER_NAME,
+      referenceMarker
+    );
+    let result = referenceReplacement.body;
+    if (!schemaReplacement.found) {
+      result = `${CURRENT_SCHEMA_MARKER}
+${result}`;
+    }
+    if (!referenceReplacement.found) {
+      result = result.replace(
+        CURRENT_SCHEMA_MARKER,
+        `${CURRENT_SCHEMA_MARKER}
+${referenceMarker}`
+      );
+    }
+    return result;
+  }
+  static readSchema(body, diagnostics) {
+    const markers = _ManagedIssueMarkers.readManagedMarkerValues(
+      body,
+      SCHEMA_MARKER_NAME
+    );
     if (markers.length === 0) {
       return 0;
     }
     if (markers.length > 1) {
       diagnostics.push(
-        diagnostic({
+        EventDiagnostics.diagnostic({
           code: "event.document.schema-marker.duplicate",
           severity: "error",
           category: "invalid",
@@ -64111,7 +64933,7 @@ var GitHubIssueFormEventDocumentCodec = class {
     }
     if (markers[0] !== "1") {
       diagnostics.push(
-        diagnostic({
+        EventDiagnostics.diagnostic({
           code: "event.document.schema-version.unsupported",
           severity: "error",
           category: "migration",
@@ -64122,12 +64944,292 @@ var GitHubIssueFormEventDocumentCodec = class {
     }
     return 1;
   }
-  readSection(sections, heading, required, diagnostics) {
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/reference-bindings.ts
+var ReferenceBindings = class _ReferenceBindings {
+  static referenceBinding(participant, id) {
+    return {
+      id,
+      displayName: _ReferenceBindings.normalizeVisibleDisplayName(
+        participant.displayName
+      )
+    };
+  }
+  static normalizeVisibleDisplayName(displayName) {
+    return displayName.trim().replace(/\s+/g, " ");
+  }
+  static restoreBoundReference(participant, binding) {
+    if (!participant || participant.id || !binding) {
+      return participant;
+    }
+    return _ReferenceBindings.normalizeVisibleDisplayName(
+      participant.displayName
+    ) === binding.displayName ? { ...participant, id: binding.id } : participant;
+  }
+  static restoreBoundSpeaker(participant, bindings) {
+    if (participant.id) {
+      return participant;
+    }
+    const visibleName = _ReferenceBindings.normalizeVisibleDisplayName(
+      participant.displayName
+    );
+    const matchingIds = new Set(
+      bindings.filter(({ displayName }) => displayName === visibleName).map(({ id: id2 }) => id2)
+    );
+    if (matchingIds.size !== 1) {
+      return participant;
+    }
+    const id = matchingIds.values().next().value;
+    return id ? { ...participant, id } : participant;
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/reference-metadata-shape.ts
+var ReferenceMetadataShape = class _ReferenceMetadataShape {
+  static isReferenceMetadata(value) {
+    if (typeof value !== "object" || value === null || Array.isArray(value)) {
+      return false;
+    }
+    const candidate = value;
+    if (candidate.schemaVersion !== 2) {
+      return false;
+    }
+    if (candidate.host !== null && !_ReferenceMetadataShape.isReferenceBinding(candidate.host)) {
+      return false;
+    }
+    return Array.isArray(candidate.speakers) && candidate.speakers.every(_ReferenceMetadataShape.isReferenceBinding);
+  }
+  static isLegacyReferenceMetadata(value) {
+    if (typeof value !== "object" || value === null || Array.isArray(value)) {
+      return false;
+    }
+    const candidate = value;
+    if (candidate.hostId !== null && (typeof candidate.hostId !== "string" || !STABLE_ID_PATTERN2.test(candidate.hostId))) {
+      return false;
+    }
+    if (!Array.isArray(candidate.agendaSpeakerIds)) {
+      return false;
+    }
+    return candidate.agendaSpeakerIds.every(
+      (entry) => Array.isArray(entry) && entry.every(
+        (id) => id === null || typeof id === "string" && STABLE_ID_PATTERN2.test(id)
+      )
+    );
+  }
+  static isReferenceBinding(value) {
+    if (typeof value !== "object" || value === null || Array.isArray(value)) {
+      return false;
+    }
+    const candidate = value;
+    return typeof candidate.id === "string" && STABLE_ID_PATTERN2.test(candidate.id) && typeof candidate.displayName === "string" && candidate.displayName.length > 0 && candidate.displayName === ReferenceBindings.normalizeVisibleDisplayName(candidate.displayName);
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/event-reference-metadata.ts
+var EventReferenceMetadata = class _EventReferenceMetadata {
+  static readReferenceMetadata(body, diagnostics) {
+    const markers = ManagedIssueMarkers.readManagedMarkerValues(
+      body,
+      REFERENCE_MARKER_NAME
+    );
+    if (markers.length === 0) {
+      return void 0;
+    }
+    if (markers.length > 1) {
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.document.reference-metadata.duplicate",
+          severity: "error",
+          category: "invalid",
+          message: "The event document contains duplicate reference metadata",
+          fixAvailable: true
+        })
+      );
+    }
+    try {
+      const parsed = JSON.parse(markers[0]);
+      if (ReferenceMetadataShape.isReferenceMetadata(parsed)) {
+        return { kind: "bound", value: parsed };
+      }
+      if (ReferenceMetadataShape.isLegacyReferenceMetadata(parsed)) {
+        return { kind: "legacy", value: parsed };
+      }
+      throw new Error("invalid metadata shape");
+    } catch {
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.document.reference-metadata.invalid",
+          severity: "error",
+          category: "invalid",
+          message: "Stable reference metadata is malformed",
+          fixAvailable: true
+        })
+      );
+      return void 0;
+    }
+  }
+  static applyReferenceMetadata(event, metadata, diagnostics) {
+    if (metadata.kind === "legacy") {
+      diagnostics.push(_EventReferenceMetadata.legacyMetadataDiagnostic());
+      return event;
+    }
+    const boundMetadata = metadata.value;
+    const restored = {
+      ...event,
+      host: ReferenceBindings.restoreBoundReference(
+        event.host,
+        boundMetadata.host
+      ),
+      agenda: event.agenda.map((entry) => ({
+        ...entry,
+        speakers: entry.speakers.map(
+          (speaker) => ReferenceBindings.restoreBoundSpeaker(
+            speaker,
+            boundMetadata.speakers
+          )
+        )
+      }))
+    };
+    if (!_EventReferenceMetadata.referenceMetadataEqual(
+      boundMetadata,
+      _EventReferenceMetadata.referenceMetadata(restored)
+    )) {
+      diagnostics.push(_EventReferenceMetadata.staleMetadataDiagnostic());
+    }
+    return restored;
+  }
+  static referenceMetadata(event) {
+    return {
+      schemaVersion: 2,
+      host: event.host?.id ? ReferenceBindings.referenceBinding(event.host, event.host.id) : null,
+      speakers: event.agenda.flatMap(
+        (entry) => entry.speakers.flatMap(
+          (speaker) => speaker.id ? [ReferenceBindings.referenceBinding(speaker, speaker.id)] : []
+        )
+      )
+    };
+  }
+  static referenceMetadataEqual(left, right) {
+    return JSON.stringify(left) === JSON.stringify(right);
+  }
+  static legacyMetadataDiagnostic() {
+    return EventDiagnostics.diagnostic({
+      code: "event.document.reference-metadata.legacy",
+      severity: "warning",
+      category: "migration",
+      message: "Unbound stable reference metadata cannot safely restore participant IDs",
+      fixAvailable: true
+    });
+  }
+  static staleMetadataDiagnostic() {
+    return EventDiagnostics.diagnostic({
+      code: "event.document.reference-metadata.stale",
+      severity: "warning",
+      category: "migration",
+      message: "Stable reference metadata does not match visible participants",
+      fixAvailable: true
+    });
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/issue-form-sections.ts
+var IssueFormSections = class _IssueFormSections {
+  static parseSections(body) {
+    const sections = /* @__PURE__ */ new Map();
+    let pending;
+    for (let cursor = 0; cursor < body.length; ) {
+      const lineEnd = MarkdownLines.findLineEnd(body, cursor);
+      const nextLineStart = MarkdownLines.findNextLineStart(body, lineEnd);
+      const heading = MarkdownLines.parseHeadingLine(
+        body.slice(cursor, lineEnd)
+      );
+      if (heading !== void 0) {
+        if (pending) {
+          _IssueFormSections.appendSection(sections, {
+            heading: pending.heading,
+            headingStart: pending.headingStart,
+            contentStart: pending.contentStart,
+            contentEnd: cursor,
+            value: body.slice(pending.contentStart, cursor)
+          });
+        }
+        pending = {
+          heading,
+          headingStart: cursor,
+          contentStart: nextLineStart
+        };
+      }
+      cursor = nextLineStart;
+    }
+    if (pending) {
+      _IssueFormSections.appendSection(sections, {
+        heading: pending.heading,
+        headingStart: pending.headingStart,
+        contentStart: pending.contentStart,
+        contentEnd: body.length,
+        value: body.slice(pending.contentStart)
+      });
+    }
+    return sections;
+  }
+  static appendSection(sections, section) {
+    const existing = sections.get(section.heading) ?? [];
+    sections.set(section.heading, [...existing, section]);
+  }
+  static cleanResponse(value) {
+    const trimmed = value.trim();
+    return trimmed === "_No response_" ? "" : trimmed;
+  }
+  static replaceOrAppendSection(body, heading, value) {
+    const section = _IssueFormSections.parseSections(body).get(heading)?.[0];
+    const normalizedValue = value.trim();
+    if (!section) {
+      if (!normalizedValue) {
+        return body;
+      }
+      const separator = body.length === 0 || body.endsWith("\n\n") ? "" : "\n\n";
+      return `${body}${separator}### ${heading}
+
+${normalizedValue}
+`;
+    }
+    if (_IssueFormSections.cleanResponse(section.value) === normalizedValue) {
+      return body;
+    }
+    return `${body.slice(0, section.contentStart)}
+${normalizedValue}
+
+${body.slice(section.contentEnd)}`;
+  }
+  static removeSection(body, heading) {
+    const section = _IssueFormSections.parseSections(body).get(heading)?.[0];
+    if (!section) {
+      return body;
+    }
+    const before = MarkdownLines.trimTrailingWhitespace(
+      body.slice(0, section.headingStart)
+    );
+    const after = MarkdownLines.trimLeadingWhitespace(
+      body.slice(section.contentEnd)
+    );
+    if (before === "") {
+      return after;
+    }
+    if (after === "") {
+      return `${before}
+`;
+    }
+    return `${before}
+
+${after}`;
+  }
+  static readSection(sections, heading, required, diagnostics) {
     const matches = sections.get(heading) ?? [];
     if (matches.length === 0) {
       if (required) {
         diagnostics.push(
-          diagnostic({
+          EventDiagnostics.diagnostic({
             code: "event.document.heading.missing",
             severity: "error",
             category: "invalid",
@@ -64141,7 +65243,7 @@ var GitHubIssueFormEventDocumentCodec = class {
     }
     if (matches.length > 1) {
       diagnostics.push(
-        diagnostic({
+        EventDiagnostics.diagnostic({
           code: "event.document.heading.duplicate",
           severity: "error",
           category: "invalid",
@@ -64150,13 +65252,17 @@ var GitHubIssueFormEventDocumentCodec = class {
         })
       );
     }
-    return cleanResponse(matches[0].value);
+    return _IssueFormSections.cleanResponse(matches[0].value);
   }
-  readCheckboxes(sections, heading, diagnostics) {
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/issue-form-checklists.ts
+var IssueFormChecklists = class _IssueFormChecklists {
+  static readCheckboxes(sections, heading, diagnostics) {
     const matches = sections.get(heading) ?? [];
     if (matches.length > 1) {
       diagnostics.push(
-        diagnostic({
+        EventDiagnostics.diagnostic({
           code: "event.document.heading.duplicate",
           severity: "error",
           category: "invalid",
@@ -64165,7 +65271,7 @@ var GitHubIssueFormEventDocumentCodec = class {
         })
       );
     }
-    const value = cleanResponse(matches[0]?.value ?? "");
+    const value = IssueFormSections.cleanResponse(matches[0]?.value ?? "");
     if (!value) {
       return [];
     }
@@ -64174,10 +65280,10 @@ var GitHubIssueFormEventDocumentCodec = class {
       if (!line.trim()) {
         continue;
       }
-      const checkbox = parseCheckboxLine(line);
+      const checkbox = MarkdownLines.parseCheckboxLine(line);
       if (!checkbox) {
         diagnostics.push(
-          diagnostic({
+          EventDiagnostics.diagnostic({
             code: "event.document.checkbox.invalid",
             severity: "warning",
             category: "invalid",
@@ -64191,8 +65297,35 @@ var GitHubIssueFormEventDocumentCodec = class {
     }
     return checkboxes;
   }
-  readLogisticsIntent(sections, heading, diagnostics) {
-    const value = this.readSection(sections, heading, false, diagnostics);
+  static toOperationalChecklist(checkboxes) {
+    return checkboxes.map(({ checked, label }) => ({
+      name: label,
+      completed: checked
+    }));
+  }
+  static replaceOrAppendOperationalChecklist(body, heading, value) {
+    const sections = IssueFormSections.parseSections(body).get(heading) ?? [];
+    if (sections.length > 1 || sections[0] && !_IssueFormChecklists.operationalChecklistIsWellFormed(
+      sections[0].value
+    )) {
+      return body;
+    }
+    return IssueFormSections.replaceOrAppendSection(body, heading, value);
+  }
+  static operationalChecklistIsWellFormed(value) {
+    const cleaned = IssueFormSections.cleanResponse(value);
+    return cleaned === "" || cleaned.split(/\r?\n/).filter((line) => line.trim() !== "").every((line) => MarkdownLines.parseCheckboxLine(line) !== void 0);
+  }
+  static renderOperationalChecklist(items) {
+    return items.map(({ name, completed }) => `- [${completed ? "x" : " "}] ${name}`).join("\n");
+  }
+  static readLogisticsIntent(sections, heading, diagnostics) {
+    const value = IssueFormSections.readSection(
+      sections,
+      heading,
+      false,
+      diagnostics
+    );
     if (!value) {
       return "unspecified";
     }
@@ -64203,7 +65336,7 @@ var GitHubIssueFormEventDocumentCodec = class {
       return "not-planned";
     }
     diagnostics.push(
-      diagnostic({
+      EventDiagnostics.diagnostic({
         code: "event.logistics.intent.invalid",
         severity: "error",
         category: "invalid",
@@ -64213,464 +65346,308 @@ var GitHubIssueFormEventDocumentCodec = class {
     );
     return "unspecified";
   }
-  readReferenceMetadata(body, diagnostics) {
-    const markers = readManagedMarkerValues(body, REFERENCE_MARKER_NAME);
-    if (markers.length === 0) {
-      return void 0;
-    }
-    if (markers.length > 1) {
-      diagnostics.push(
-        diagnostic({
-          code: "event.document.reference-metadata.duplicate",
-          severity: "error",
-          category: "invalid",
-          message: "The event document contains duplicate reference metadata",
-          fixAvailable: true
-        })
-      );
-    }
-    try {
-      const parsed = JSON.parse(markers[0]);
-      if (isReferenceMetadata(parsed)) {
-        return { kind: "bound", value: parsed };
-      }
-      if (isLegacyReferenceMetadata(parsed)) {
-        return { kind: "legacy", value: parsed };
-      }
-      throw new Error("invalid metadata shape");
-    } catch {
-      diagnostics.push(
-        diagnostic({
-          code: "event.document.reference-metadata.invalid",
-          severity: "error",
-          category: "invalid",
-          message: "Stable reference metadata is malformed",
-          fixAvailable: true
-        })
-      );
-      return void 0;
+  static replaceOrAppendLogisticsIntent(body, heading, intent) {
+    return intent === "unspecified" || (IssueFormSections.parseSections(body).get(heading)?.length ?? 0) > 1 ? body : IssueFormSections.replaceOrAppendSection(
+      body,
+      heading,
+      _IssueFormChecklists.renderLogisticsIntent(intent)
+    );
+  }
+  static renderLogisticsIntent(intent) {
+    switch (intent) {
+      case "planned":
+        return "Yes";
+      case "not-planned":
+        return "No";
+      case "unspecified":
+        return "";
     }
   }
-  applyReferenceMetadata(event, metadata, diagnostics) {
-    if (metadata.kind === "legacy") {
-      diagnostics.push(legacyMetadataDiagnostic());
-      return event;
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/participant-links.ts
+var ParticipantLinks = class {
+  static readSourceLinks(value, repository) {
+    const sources = /* @__PURE__ */ new Map();
+    const prefix = `https://github.com/${repository}/blob/`;
+    for (const match of value.matchAll(
+      /\[([^\]]+)\]\((https:\/\/github\.com\/[^)\s]+)\)/g
+    )) {
+      const target = match[2];
+      if (!target.startsWith(prefix)) continue;
+      const location = target.slice(prefix.length).match(/^[^/]+\/(.+)#L([1-9]\d*)$/);
+      if (!location) continue;
+      try {
+        const source = {
+          path: decodeURIComponent(location[1]),
+          line: Number(location[2])
+        };
+        const name = ReferenceBindings.normalizeVisibleDisplayName(match[1]);
+        const previous = sources.get(name);
+        sources.set(
+          name,
+          sources.has(name) && (previous?.path !== source.path || previous?.line !== source.line) ? void 0 : source
+        );
+      } catch {
+      }
     }
-    const boundMetadata = metadata.value;
-    const restored = {
+    return sources;
+  }
+  static restoreSourceLocation(participant, sources) {
+    const source = participant.id ? sources.get(
+      ReferenceBindings.normalizeVisibleDisplayName(
+        participant.displayName
+      )
+    ) : void 0;
+    return source ? { ...participant, source } : participant;
+  }
+  static encodeUrlSegment(value) {
+    return encodeURIComponent(value).replace(
+      /[!'()*]/g,
+      (character) => `%${character.charCodeAt(0).toString(16).toUpperCase()}`
+    );
+  }
+  static renderAgenda(event, renderParticipant) {
+    return event.agenda.map(
+      (entry) => `- ${entry.speakers.map(renderParticipant).join(", ")}: ${entry.description}`
+    ).join("\n");
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/issue-form-reader.ts
+var IssueFormReader = class {
+  timeZone;
+  hostConfirmationLabel;
+  speakersConfirmationLabel;
+  constructor(options = {}) {
+    this.timeZone = options.timeZone ?? "Europe/Paris";
+    this.hostConfirmationLabel = options.hostConfirmationLabel ?? "hoster:confirmed";
+    this.speakersConfirmationLabel = options.speakersConfirmationLabel ?? "speakers:confirmed";
+  }
+  decode(document2) {
+    const diagnostics = [];
+    const sections = IssueFormSections.parseSections(document2.body);
+    const schema = ManagedIssueMarkers.readSchema(document2.body, diagnostics);
+    const parsedBody = this.readBody(sections, diagnostics);
+    const operations = this.readOperations(sections, diagnostics);
+    const migrated = MeetupEventMigration.migrateMeetupEventDto({
+      repository: document2.identity.repository,
+      issueNumber: document2.identity.issueNumber,
+      issueState: document2.issueState,
+      issueTitle: document2.issueTitle,
+      labels: document2.labels,
+      parsedBody,
+      timeZone: this.timeZone
+    });
+    diagnostics.push(
+      ...migrated.diagnostics.filter(
+        (item) => schema === 0 || item.code !== "event.document.legacy-schema"
+      )
+    );
+    const event = {
+      ...migrated.event,
+      ...operations,
+      confirmations: {
+        host: document2.labels.includes(this.hostConfirmationLabel),
+        speakers: document2.labels.includes(this.speakersConfirmationLabel)
+      }
+    };
+    const referenced = this.restoreReferences(
+      event,
+      document2.body,
+      schema,
+      diagnostics
+    );
+    return {
+      event: this.restoreLinks(
+        referenced,
+        sections,
+        document2.identity.repository
+      ),
+      diagnostics: Object.freeze(diagnostics)
+    };
+  }
+  readBody(sections, diagnostics) {
+    const read = (heading, required = false) => IssueFormSections.readSection(sections, heading, required, diagnostics);
+    return {
+      event_title: read(HEADINGS.eventTitle, true),
+      event_date: read(HEADINGS.date, true),
+      hoster: [read(HEADINGS.host, true)].filter(Boolean),
+      event_description: read(HEADINGS.description, true),
+      agenda: read(HEADINGS.agenda, true),
+      meetup_link: read(HEADINGS.meetupLink),
+      cncf_link: read(HEADINGS.communityLink),
+      drive_link: read(HEADINGS.assetsLink),
+      event_status: read(HEADINGS.occurrenceStatus)
+    };
+  }
+  readOperations(sections, diagnostics) {
+    const read = (heading) => IssueFormChecklists.toOperationalChecklist(
+      IssueFormChecklists.readCheckboxes(sections, heading, diagnostics)
+    );
+    const slidesAndContent = read(HEADINGS.slides);
+    const communication = read(HEADINGS.communication);
+    const diagnosticOffset = diagnostics.length;
+    const postEvent = read(HEADINGS.postEvent);
+    const followUpComplete = diagnostics.length === diagnosticOffset && MeetupEventOperations.postEventChecklistIsComplete(postEvent);
+    return {
+      operationalChecklists: { slidesAndContent, communication, postEvent },
+      followUpComplete,
+      logistics: {
+        aperitif: IssueFormChecklists.readLogisticsIntent(
+          sections,
+          HEADINGS.aperitif,
+          diagnostics
+        ),
+        postEventVenue: IssueFormChecklists.readLogisticsIntent(
+          sections,
+          HEADINGS.restaurant,
+          diagnostics
+        )
+      }
+    };
+  }
+  restoreReferences(event, body, schema, diagnostics) {
+    const metadata = EventReferenceMetadata.readReferenceMetadata(
+      body,
+      diagnostics
+    );
+    if (metadata)
+      return EventReferenceMetadata.applyReferenceMetadata(
+        event,
+        metadata,
+        diagnostics
+      );
+    if (schema === 1)
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.document.reference-metadata.missing",
+          severity: "warning",
+          category: "migration",
+          message: "Stable reference metadata is missing",
+          fixAvailable: true
+        })
+      );
+    return event;
+  }
+  restoreLinks(event, sections, repository) {
+    const hostSources = ParticipantLinks.readSourceLinks(
+      sections.get(HEADINGS.host)?.[0]?.value ?? "",
+      repository
+    );
+    const speakerSources = ParticipantLinks.readSourceLinks(
+      sections.get(HEADINGS.agenda)?.[0]?.value ?? "",
+      repository
+    );
+    return {
       ...event,
-      host: restoreBoundReference(event.host, boundMetadata.host),
+      host: event.host ? ParticipantLinks.restoreSourceLocation(event.host, hostSources) : void 0,
       agenda: event.agenda.map((entry) => ({
         ...entry,
         speakers: entry.speakers.map(
-          (speaker) => restoreBoundSpeaker(speaker, boundMetadata.speakers)
+          (speaker) => ParticipantLinks.restoreSourceLocation(speaker, speakerSources)
         )
       }))
     };
-    if (!referenceMetadataEqual(boundMetadata, referenceMetadata(restored))) {
-      diagnostics.push(staleMetadataDiagnostic());
-    }
-    return restored;
   }
 };
-function parseSections(body) {
-  const sections = /* @__PURE__ */ new Map();
-  let pending;
-  for (let cursor = 0; cursor < body.length; ) {
-    const lineEnd = findLineEnd(body, cursor);
-    const nextLineStart = findNextLineStart(body, lineEnd);
-    const heading = parseHeadingLine(body.slice(cursor, lineEnd));
-    if (heading !== void 0) {
-      if (pending) {
-        appendSection(sections, {
-          heading: pending.heading,
-          headingStart: pending.headingStart,
-          contentStart: pending.contentStart,
-          contentEnd: cursor,
-          value: body.slice(pending.contentStart, cursor)
-        });
-      }
-      pending = {
+
+// packages/adapter/github-issue-form-event-document-codec/src/issue-form-writer.ts
+var IssueFormWriter = class _IssueFormWriter {
+  repositoryRef;
+  constructor(options = {}) {
+    this.repositoryRef = options.repositoryRef ?? "main";
+  }
+  createPatch(document2, event) {
+    const patch = {};
+    if (document2.issueTitle !== event.issueTitle)
+      patch.issueTitle = event.issueTitle;
+    if (!_IssueFormWriter.arraysEqual(document2.labels, event.labels))
+      patch.labels = Object.freeze([...event.labels]);
+    const fields2 = this.renderFields(document2, event);
+    const checklists = this.renderOperations(fields2, event);
+    const body = ManagedIssueMarkers.upsertManagedMarkers(
+      checklists,
+      EventReferenceMetadata.referenceMetadata(event)
+    );
+    if (body !== document2.body) patch.body = body;
+    return Object.freeze(patch);
+  }
+  renderFields(document2, event) {
+    const render = (participant) => this.renderParticipant(participant, document2.identity.repository);
+    const fields2 = [
+      [HEADINGS.eventTitle, event.eventTitle],
+      [HEADINGS.date, event.date],
+      [HEADINGS.host, event.host ? render(event.host) : ""],
+      [HEADINGS.description, event.description],
+      [HEADINGS.agenda, ParticipantLinks.renderAgenda(event, render)],
+      [HEADINGS.meetupLink, event.publicationLinks.meetup ?? ""],
+      [HEADINGS.communityLink, event.publicationLinks.community ?? ""],
+      [HEADINGS.assetsLink, event.publicationLinks.assets ?? ""]
+    ];
+    let body = document2.body;
+    for (const [heading, value] of fields2)
+      body = IssueFormSections.replaceOrAppendSection(body, heading, value);
+    return IssueFormSections.removeSection(body, HEADINGS.occurrenceStatus);
+  }
+  renderOperations(source, event) {
+    let body = source;
+    for (const [heading, items] of [
+      [HEADINGS.slides, event.operationalChecklists.slidesAndContent],
+      [HEADINGS.communication, event.operationalChecklists.communication]
+    ])
+      body = IssueFormChecklists.replaceOrAppendOperationalChecklist(
+        body,
         heading,
-        headingStart: cursor,
-        contentStart: nextLineStart
-      };
-    }
-    cursor = nextLineStart;
-  }
-  if (pending) {
-    appendSection(sections, {
-      heading: pending.heading,
-      headingStart: pending.headingStart,
-      contentStart: pending.contentStart,
-      contentEnd: body.length,
-      value: body.slice(pending.contentStart)
-    });
-  }
-  return sections;
-}
-function cleanResponse(value) {
-  const trimmed = value.trim();
-  return trimmed === "_No response_" ? "" : trimmed;
-}
-function replaceOrAppendSection(body, heading, value) {
-  const section = parseSections(body).get(heading)?.[0];
-  const normalizedValue = value.trim();
-  if (!section) {
-    if (!normalizedValue) {
-      return body;
-    }
-    const separator = body.length === 0 || body.endsWith("\n\n") ? "" : "\n\n";
-    return `${body}${separator}### ${heading}
-
-${normalizedValue}
-`;
-  }
-  if (cleanResponse(section.value) === normalizedValue) {
-    return body;
-  }
-  return `${body.slice(0, section.contentStart)}
-${normalizedValue}
-
-${body.slice(section.contentEnd)}`;
-}
-function removeSection(body, heading) {
-  const section = parseSections(body).get(heading)?.[0];
-  if (!section) {
-    return body;
-  }
-  const before = trimTrailingWhitespace(body.slice(0, section.headingStart));
-  const after = trimLeadingWhitespace(body.slice(section.contentEnd));
-  if (before === "") {
-    return after;
-  }
-  if (after === "") {
-    return `${before}
-`;
-  }
-  return `${before}
-
-${after}`;
-}
-function replaceOrAppendOperationalChecklist(body, heading, value) {
-  const sections = parseSections(body).get(heading) ?? [];
-  if (sections.length > 1 || sections[0] && !operationalChecklistIsWellFormed(sections[0].value)) {
-    return body;
-  }
-  return replaceOrAppendSection(body, heading, value);
-}
-function operationalChecklistIsWellFormed(value) {
-  const cleaned = cleanResponse(value);
-  return cleaned === "" || cleaned.split(/\r?\n/).filter((line) => line.trim() !== "").every((line) => parseCheckboxLine(line) !== void 0);
-}
-function replaceOrAppendLogisticsIntent(body, heading, intent) {
-  return intent === "unspecified" || (parseSections(body).get(heading)?.length ?? 0) > 1 ? body : replaceOrAppendSection(body, heading, renderLogisticsIntent(intent));
-}
-function renderAgenda(event) {
-  return event.agenda.map(
-    (entry) => `- ${entry.speakers.map((speaker) => speaker.displayName).join(", ")}: ${entry.description}`
-  ).join("\n");
-}
-function toOperationalChecklist(checkboxes) {
-  return checkboxes.map(({ checked, label }) => ({
-    name: label,
-    completed: checked
-  }));
-}
-function renderOperationalChecklist(items) {
-  return items.map(({ name, completed }) => `- [${completed ? "x" : " "}] ${name}`).join("\n");
-}
-function renderLogisticsIntent(intent) {
-  switch (intent) {
-    case "planned":
-      return "Yes";
-    case "not-planned":
-      return "No";
-    case "unspecified":
-      return "";
-  }
-}
-function referenceMetadata(event) {
-  return {
-    schemaVersion: 2,
-    host: event.host?.id ? referenceBinding(event.host, event.host.id) : null,
-    speakers: event.agenda.flatMap(
-      (entry) => entry.speakers.flatMap(
-        (speaker) => speaker.id ? [referenceBinding(speaker, speaker.id)] : []
+        IssueFormChecklists.renderOperationalChecklist(items)
+      );
+    body = IssueFormChecklists.replaceOrAppendLogisticsIntent(
+      body,
+      HEADINGS.aperitif,
+      event.logistics.aperitif
+    );
+    body = IssueFormChecklists.replaceOrAppendLogisticsIntent(
+      body,
+      HEADINGS.restaurant,
+      event.logistics.postEventVenue
+    );
+    return IssueFormChecklists.replaceOrAppendOperationalChecklist(
+      body,
+      HEADINGS.postEvent,
+      IssueFormChecklists.renderOperationalChecklist(
+        event.operationalChecklists.postEvent
       )
-    )
-  };
-}
-function upsertManagedMarkers(body, metadata) {
-  const referenceMarker = `<!-- meetup-event-references:${JSON.stringify(metadata)} -->`;
-  const schemaReplacement = replaceManagedMarker(
-    body,
-    SCHEMA_MARKER_NAME,
-    CURRENT_SCHEMA_MARKER
-  );
-  const referenceReplacement = replaceManagedMarker(
-    schemaReplacement.body,
-    REFERENCE_MARKER_NAME,
-    referenceMarker
-  );
-  let result = referenceReplacement.body;
-  if (!schemaReplacement.found) {
-    result = `${CURRENT_SCHEMA_MARKER}
-${result}`;
-  }
-  if (!referenceReplacement.found) {
-    result = result.replace(
-      CURRENT_SCHEMA_MARKER,
-      `${CURRENT_SCHEMA_MARKER}
-${referenceMarker}`
     );
   }
-  return result;
-}
-function isReferenceMetadata(value) {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    return false;
+  renderParticipant(participant, repository) {
+    if (!participant.id || !participant.source) return participant.displayName;
+    const path = participant.source.path.split("/").map(ParticipantLinks.encodeUrlSegment).join("/");
+    const ref = ParticipantLinks.encodeUrlSegment(this.repositoryRef);
+    const url = `https://github.com/${repository}/blob/${ref}/${path}#L${participant.source.line}`;
+    return `[${participant.displayName}](${url})`;
   }
-  const candidate = value;
-  if (candidate.schemaVersion !== 2) {
-    return false;
+  static arraysEqual(left, right) {
+    return left.length === right.length && left.every((value, index) => value === right[index]);
   }
-  if (candidate.host !== null && !isReferenceBinding(candidate.host)) {
-    return false;
-  }
-  return Array.isArray(candidate.speakers) && candidate.speakers.every(isReferenceBinding);
-}
-function isLegacyReferenceMetadata(value) {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    return false;
-  }
-  const candidate = value;
-  if (candidate.hostId !== null && (typeof candidate.hostId !== "string" || !STABLE_ID_PATTERN2.test(candidate.hostId))) {
-    return false;
-  }
-  if (!Array.isArray(candidate.agendaSpeakerIds)) {
-    return false;
-  }
-  return candidate.agendaSpeakerIds.every(
-    (entry) => Array.isArray(entry) && entry.every(
-      (id) => id === null || typeof id === "string" && STABLE_ID_PATTERN2.test(id)
-    )
-  );
-}
-function isReferenceBinding(value) {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    return false;
-  }
-  const candidate = value;
-  return typeof candidate.id === "string" && STABLE_ID_PATTERN2.test(candidate.id) && typeof candidate.displayName === "string" && candidate.displayName.length > 0 && candidate.displayName === normalizeVisibleDisplayName(candidate.displayName);
-}
-function referenceBinding(participant, id) {
-  return {
-    id,
-    displayName: normalizeVisibleDisplayName(participant.displayName)
-  };
-}
-function readManagedMarkerValues(body, markerName) {
-  return findManagedMarkerMatches(body, markerName).map(({ value }) => value);
-}
-function replaceManagedMarker(body, markerName, replacement) {
-  const matches = findManagedMarkerMatches(body, markerName);
-  if (matches.length === 0) {
-    return { body, found: false };
-  }
-  let result = "";
-  let lastIndex = 0;
-  for (const [index, match] of matches.entries()) {
-    result += body.slice(lastIndex, match.start);
-    if (index === 0) {
-      result += replacement;
-    }
-    lastIndex = match.end;
-  }
-  result += body.slice(lastIndex);
-  return { body: result, found: true };
-}
-function findManagedMarkerMatches(body, markerName) {
-  const matches = [];
-  for (let cursor = 0; cursor < body.length; ) {
-    const commentStart = body.indexOf("<!--", cursor);
-    if (commentStart === -1) {
-      break;
-    }
-    const commentEnd = body.indexOf("-->", commentStart + 4);
-    if (commentEnd === -1) {
-      break;
-    }
-    const value = parseManagedMarkerComment(
-      body.slice(commentStart + 4, commentEnd),
-      markerName
-    );
-    if (value !== void 0) {
-      matches.push({
-        start: commentStart,
-        end: commentEnd + 3,
-        value
-      });
-    }
-    cursor = commentEnd + 3;
-  }
-  return matches;
-}
-function parseManagedMarkerComment(commentBody, markerName) {
-  const trimmed = commentBody.trim();
-  if (!trimmed.startsWith(markerName)) {
-    return void 0;
-  }
-  let cursor = markerName.length;
-  while (cursor < trimmed.length && isWhitespaceCharacter2(trimmed[cursor])) {
-    cursor += 1;
-  }
-  if (trimmed[cursor] !== ":") {
-    return void 0;
-  }
-  return trimmed.slice(cursor + 1).trim();
-}
-function appendSection(sections, section) {
-  const existing = sections.get(section.heading) ?? [];
-  sections.set(section.heading, [...existing, section]);
-}
-function parseHeadingLine(line) {
-  if (!line.startsWith("### ")) {
-    return void 0;
-  }
-  const rawHeading = line.slice(4);
-  if (rawHeading.length === 0) {
-    return void 0;
-  }
-  let end = rawHeading.length;
-  while (end > 1 && isHorizontalWhitespaceCharacter2(rawHeading[end - 1])) {
-    end -= 1;
-  }
-  return rawHeading.slice(0, end).trim();
-}
-function parseCheckboxLine(line) {
-  let cursor = 0;
-  while (cursor < line.length && isHorizontalWhitespaceCharacter2(line[cursor])) {
-    cursor += 1;
-  }
-  if (line[cursor] !== "-") {
-    return void 0;
-  }
-  cursor += 1;
-  if (!isHorizontalWhitespaceCharacter2(line[cursor] ?? "")) {
-    return void 0;
-  }
-  while (cursor < line.length && isHorizontalWhitespaceCharacter2(line[cursor])) {
-    cursor += 1;
-  }
-  if (line[cursor] !== "[") {
-    return void 0;
-  }
-  const checkedMarker = line[cursor + 1];
-  if (checkedMarker !== " " && checkedMarker !== "x" && checkedMarker !== "X" || line[cursor + 2] !== "]") {
-    return void 0;
-  }
-  cursor += 3;
-  if (!isHorizontalWhitespaceCharacter2(line[cursor] ?? "")) {
-    return void 0;
-  }
-  while (cursor < line.length && isHorizontalWhitespaceCharacter2(line[cursor])) {
-    cursor += 1;
-  }
-  const label = line.slice(cursor).trim();
-  if (label === "") {
-    return void 0;
-  }
-  return {
-    checked: checkedMarker.toLowerCase() === "x",
-    label
-  };
-}
-function findLineEnd(value, start) {
-  let cursor = start;
-  while (cursor < value.length && value[cursor] !== "\n" && value[cursor] !== "\r") {
-    cursor += 1;
-  }
-  return cursor;
-}
-function findNextLineStart(value, lineEnd) {
-  if (lineEnd >= value.length) {
-    return value.length;
-  }
-  if (value[lineEnd] === "\r" && value[lineEnd + 1] === "\n") {
-    return lineEnd + 2;
-  }
-  return lineEnd + 1;
-}
-function trimLeadingWhitespace(value) {
-  let start = 0;
-  while (start < value.length && isWhitespaceCharacter2(value[start])) {
-    start += 1;
-  }
-  return value.slice(start);
-}
-function trimTrailingWhitespace(value) {
-  let end = value.length;
-  while (end > 0 && isWhitespaceCharacter2(value[end - 1])) {
-    end -= 1;
-  }
-  return value.slice(0, end);
-}
-function isHorizontalWhitespaceCharacter2(value) {
-  return value === " " || value === "	";
-}
-function isWhitespaceCharacter2(value) {
-  return value === " " || value === "	" || value === "\n" || value === "\r" || value === "\f" || value === "\v";
-}
-function normalizeVisibleDisplayName(displayName) {
-  return displayName.trim().replace(/\s+/g, " ");
-}
-function restoreBoundReference(participant, binding) {
-  if (!participant || participant.id || !binding) {
-    return participant;
-  }
-  return normalizeVisibleDisplayName(participant.displayName) === binding.displayName ? { ...participant, id: binding.id } : participant;
-}
-function restoreBoundSpeaker(participant, bindings) {
-  if (participant.id) {
-    return participant;
-  }
-  const visibleName = normalizeVisibleDisplayName(participant.displayName);
-  const matchingIds = new Set(
-    bindings.filter(({ displayName }) => displayName === visibleName).map(({ id: id2 }) => id2)
-  );
-  if (matchingIds.size !== 1) {
-    return participant;
-  }
-  const id = matchingIds.values().next().value;
-  return id ? { ...participant, id } : participant;
-}
-function referenceMetadataEqual(left, right) {
-  return JSON.stringify(left) === JSON.stringify(right);
-}
-function legacyMetadataDiagnostic() {
-  return diagnostic({
-    code: "event.document.reference-metadata.legacy",
-    severity: "warning",
-    category: "migration",
-    message: "Unbound stable reference metadata cannot safely restore participant IDs",
-    fixAvailable: true
-  });
-}
-function staleMetadataDiagnostic() {
-  return diagnostic({
-    code: "event.document.reference-metadata.stale",
-    severity: "warning",
-    category: "migration",
-    message: "Stable reference metadata does not match visible participants",
-    fixAvailable: true
-  });
-}
-function arraysEqual2(left, right) {
-  return left.length === right.length && left.every((value, index) => value === right[index]);
-}
+};
 
-// packages/adapter/system-clock/src/index.ts
+// packages/adapter/github-issue-form-event-document-codec/src/github-issue-form-event-document-codec.ts
+var GitHubIssueFormEventDocumentCodec = class {
+  reader;
+  writer;
+  constructor(options = {}) {
+    this.reader = new IssueFormReader(options);
+    this.writer = new IssueFormWriter(options);
+  }
+  decode(document2) {
+    return this.reader.decode(document2);
+  }
+  createPatch(document2, event) {
+    return this.writer.createPatch(document2, event);
+  }
+};
+
+// packages/adapter/system-clock/src/system-event-clock.ts
 var SystemEventClock = class {
   constructor(dateFactory = () => /* @__PURE__ */ new Date()) {
     this.dateFactory = dateFactory;
@@ -64681,13 +65658,17 @@ var SystemEventClock = class {
   }
 };
 
-// packages/adapter/yaml-issue-form-projection/src/index.ts
+// packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-projection.ts
 import { readFile as readFile2, realpath, stat as stat3, writeFile as writeFile2 } from "node:fs/promises";
 import { isAbsolute as isAbsolute2, relative as relative2, resolve as resolve2, sep as sep2 } from "node:path";
 var import_yaml = __toESM(require_dist3(), 1);
+
+// packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-projection-contracts.ts
 var HOST_FIELD_ID = "hoster";
 var AVAILABLE_SPEAKERS_MARKER = "<!-- Available speakers -->";
-var YamlIssueFormProjection = class {
+
+// packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-projection.ts
+var YamlIssueFormProjection = class _YamlIssueFormProjection {
   constructor(options) {
     this.options = options;
   }
@@ -64705,7 +65686,7 @@ var YamlIssueFormProjection = class {
       throw new Error("Issue form is not valid YAML.");
     }
     const issueForm = document2.toJS({ maxAliasCount: 100 });
-    if (!isRecord3(issueForm) || !Array.isArray(issueForm.body)) {
+    if (!_YamlIssueFormProjection.isRecord(issueForm) || !Array.isArray(issueForm.body)) {
       throw new Error("Issue form must contain a body array.");
     }
     const body = issueForm.body;
@@ -64724,14 +65705,17 @@ var YamlIssueFormProjection = class {
       projection.speakerReferences
     );
     let changed = false;
-    if (!sameStringArray(fieldOptions(body[hostIndex]), projection.hostOptions)) {
+    if (!_YamlIssueFormProjection.sameStringArray(
+      _YamlIssueFormProjection.fieldOptions(body[hostIndex]),
+      projection.hostOptions
+    )) {
       document2.setIn(
         ["body", hostIndex, "attributes", "options"],
         projection.hostOptions
       );
       changed = true;
     }
-    if (fieldValue(body[speakersIndex]) !== speakersMarkdown) {
+    if (_YamlIssueFormProjection.fieldValue(body[speakersIndex]) !== speakersMarkdown) {
       document2.setIn(
         ["body", speakersIndex, "attributes", "value"],
         speakersMarkdown
@@ -64781,24 +65765,24 @@ var YamlIssueFormProjection = class {
   }
   findSingleFieldIndex(body, fieldId, expectedType) {
     const indexes = body.flatMap(
-      (item, index2) => isRecord3(item) && item.id === fieldId ? [index2] : []
+      (item, index2) => _YamlIssueFormProjection.isRecord(item) && item.id === fieldId ? [index2] : []
     );
     if (indexes.length !== 1) {
       throw new Error(`Issue form must contain exactly one ${fieldId} field.`);
     }
     const index = indexes[0];
     const field = body[index];
-    if (!isRecord3(field) || field.type !== expectedType) {
+    if (!_YamlIssueFormProjection.isRecord(field) || field.type !== expectedType) {
       throw new Error(`Issue-form field ${fieldId} must be a ${expectedType}.`);
     }
-    if (!isRecord3(field.attributes)) {
+    if (!_YamlIssueFormProjection.isRecord(field.attributes)) {
       throw new Error(`Issue-form field ${fieldId} must have attributes.`);
     }
     return index;
   }
   findOptionalFieldIndex(body, fieldId) {
     const indexes = body.flatMap(
-      (item, index) => isRecord3(item) && item.id === fieldId ? [index] : []
+      (item, index) => _YamlIssueFormProjection.isRecord(item) && item.id === fieldId ? [index] : []
     );
     if (indexes.length > 1) {
       throw new Error(`Issue form contains duplicate ${fieldId} fields.`);
@@ -64807,10 +65791,10 @@ var YamlIssueFormProjection = class {
   }
   findSpeakersMarkdownIndex(body) {
     const indexes = body.flatMap((item, index) => {
-      if (!isRecord3(item) || item.type !== "markdown") {
+      if (!_YamlIssueFormProjection.isRecord(item) || item.type !== "markdown") {
         return [];
       }
-      const value = fieldValue(item);
+      const value = _YamlIssueFormProjection.fieldValue(item);
       return value?.includes(AVAILABLE_SPEAKERS_MARKER) ? [index] : [];
     });
     if (indexes.length !== 1) {
@@ -64821,7 +65805,9 @@ var YamlIssueFormProjection = class {
     return indexes[0];
   }
   renderSpeakersMarkdown(speakers) {
-    const references = speakers.map((speaker) => `- <code>${escapeHtml(speaker)}</code>`).join("\n");
+    const references = speakers.map(
+      (speaker) => `- <code>${_YamlIssueFormProjection.escapeHtml(speaker)}</code>`
+    ).join("\n");
     return [
       AVAILABLE_SPEAKERS_MARKER,
       "",
@@ -64852,28 +65838,28 @@ var YamlIssueFormProjection = class {
     ]) : Object.freeze([]);
     return Object.freeze({ changed, changedFiles, diagnostics });
   }
+  static isRecord(value) {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+  }
+  static fieldOptions(field) {
+    if (!_YamlIssueFormProjection.isRecord(field) || !_YamlIssueFormProjection.isRecord(field.attributes)) {
+      return void 0;
+    }
+    return field.attributes.options;
+  }
+  static fieldValue(field) {
+    if (!_YamlIssueFormProjection.isRecord(field) || !_YamlIssueFormProjection.isRecord(field.attributes)) {
+      return void 0;
+    }
+    return typeof field.attributes.value === "string" ? field.attributes.value : void 0;
+  }
+  static escapeHtml(value) {
+    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+  }
+  static sameStringArray(actual, expected) {
+    return Array.isArray(actual) && actual.length === expected.length && actual.every((value, index) => value === expected[index]);
+  }
 };
-function isRecord3(value) {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-function fieldOptions(field) {
-  if (!isRecord3(field) || !isRecord3(field.attributes)) {
-    return void 0;
-  }
-  return field.attributes.options;
-}
-function fieldValue(field) {
-  if (!isRecord3(field) || !isRecord3(field.attributes)) {
-    return void 0;
-  }
-  return typeof field.attributes.value === "string" ? field.attributes.value : void 0;
-}
-function escapeHtml(value) {
-  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-}
-function sameStringArray(actual, expected) {
-  return Array.isArray(actual) && actual.length === expected.length && actual.every((value, index) => value === expected[index]);
-}
 
 // node_modules/.pnpm/@inversifyjs+common@2.0.1/node_modules/@inversifyjs/common/lib/common/calculations/isPromise.js
 function isPromise(object) {
@@ -64998,14 +65984,14 @@ var OneToManyMapStar = class _OneToManyMapStar {
     }
     return clone2;
   }
-  get(key2, value) {
-    return this.#relationToModelsMaps[key2].get(value);
+  get(key, value) {
+    return this.#relationToModelsMaps[key].get(value);
   }
-  getAllKeys(key2) {
-    return this.#relationToModelsMaps[key2].keys();
+  getAllKeys(key) {
+    return this.#relationToModelsMaps[key].keys();
   }
-  removeByRelation(key2, value) {
-    const models = this.get(key2, value);
+  removeByRelation(key, value) {
+    const models = this.get(key, value);
     if (models === void 0) {
       return;
     }
@@ -65016,7 +66002,7 @@ var OneToManyMapStar = class _OneToManyMapStar {
         throw new Error("Expecting model relation, none found");
       }
       for (const relation of relations) {
-        if (relation[key2] === value) {
+        if (relation[key] === value) {
           this.#removeModelFromRelationMaps(model, relation);
         }
       }
@@ -66007,7 +66993,7 @@ function stringifyParentServiceIdentifier(serviceIdentifier, parentServiceIdenti
 function stringifyBindingConstraints(bindingConstraints) {
   const stringifiedTags = bindingConstraints.tags.size === 0 ? "" : `
 - tags:
-  - ${[...bindingConstraints.tags.keys()].map((key2) => key2.toString()).join("\n  - ")}`;
+  - ${[...bindingConstraints.tags.keys()].map((key) => key.toString()).join("\n  - ")}`;
   return `
 
 Binding constraints:
@@ -68146,8 +69132,8 @@ function tryBuildGetPlanOptionsFromBuildServiceNodeOptions(options) {
   if (options.tags.size === 0) {
     tag = void 0;
   } else if (options.tags.size === 1) {
-    const [key2, value] = options.tags.entries().next().value;
-    tag = { key: key2, value };
+    const [key, value] = options.tags.entries().next().value;
+    tag = { key, value };
   } else {
     return void 0;
   }
@@ -68178,8 +69164,8 @@ function tryBuildGetPlanOptionsFromManagedClassElementMetadata(elementMetadata) 
   if (elementMetadata.tags.size === 0) {
     tag = void 0;
   } else if (elementMetadata.tags.size === 1) {
-    const [key2, value] = elementMetadata.tags.entries().next().value;
-    tag = { key: key2, value };
+    const [key, value] = elementMetadata.tags.entries().next().value;
+    tag = { key, value };
   } else {
     return void 0;
   }
@@ -68210,8 +69196,8 @@ function tryBuildGetPlanOptionsFromResolvedValueElementMetadata(resolvedValueEle
   if (resolvedValueElementMetadata.tags.size === 0) {
     tag = void 0;
   } else if (resolvedValueElementMetadata.tags.size === 1) {
-    const [key2, value] = resolvedValueElementMetadata.tags.entries().next().value;
-    tag = { key: key2, value };
+    const [key, value] = resolvedValueElementMetadata.tags.entries().next().value;
+    tag = { key, value };
   } else {
     return void 0;
   }
@@ -68710,11 +69696,11 @@ var PlanResultCacheService = class {
       servicesBranch: []
     };
   }
-  #getOrBuildMapValueFromMapMap(map, key2) {
-    let valueMap = map.get(key2);
+  #getOrBuildMapValueFromMapMap(map, key) {
+    let valueMap = map.get(key);
     if (valueMap === void 0) {
       valueMap = /* @__PURE__ */ new Map();
-      map.set(key2, valueMap);
+      map.set(key, valueMap);
     }
     return valueMap;
   }
@@ -69986,8 +70972,8 @@ var Plugin = class {
   [isPlugin] = true;
   _container;
   _context;
-  constructor(container2, context3) {
-    this._container = container2;
+  constructor(container, context3) {
+    this._container = container;
     this._context = context3;
   }
 };
@@ -69998,14 +70984,14 @@ var PluginManager = class {
   #pluginContext;
   #serviceResolutionManager;
   #serviceReferenceManager;
-  constructor(container2, serviceReferenceManager, serviceResolutionManager) {
+  constructor(container, serviceReferenceManager, serviceResolutionManager) {
     this.#serviceReferenceManager = serviceReferenceManager;
     this.#serviceResolutionManager = serviceResolutionManager;
-    this.#pluginApi = this.#buildPluginApi(container2);
+    this.#pluginApi = this.#buildPluginApi(container);
     this.#pluginContext = this.#buildPluginContext();
   }
-  register(container2, pluginConstructor) {
-    const pluginInstance = new pluginConstructor(container2, this.#pluginContext);
+  register(container, pluginConstructor) {
+    const pluginInstance = new pluginConstructor(container, this.#pluginContext);
     this.#assertIsPlugin(pluginInstance);
     pluginInstance.load(this.#pluginApi);
   }
@@ -70014,13 +71000,13 @@ var PluginManager = class {
       throw new InversifyContainerError(InversifyContainerErrorKind.invalidOperation, "Invalid plugin. The plugin must extend the Plugin class");
     }
   }
-  #buildPluginApi(container2) {
+  #buildPluginApi(container) {
     return {
       define: (name, method) => {
-        if (Object.prototype.hasOwnProperty.call(container2, name)) {
+        if (Object.prototype.hasOwnProperty.call(container, name)) {
           throw new InversifyContainerError(InversifyContainerErrorKind.invalidOperation, `Container already has a method named "${String(name)}"`);
         }
-        container2[name] = method;
+        container[name] = method;
       },
       onPlan: this.#serviceResolutionManager.onPlan.bind(this.#serviceResolutionManager)
     };
@@ -70379,239 +71365,223 @@ var SERVICES = {
   eventClock: /* @__PURE__ */ Symbol("EventClock"),
   eventDependencies: /* @__PURE__ */ Symbol("ReconcileEventDependencies")
 };
-function createReferentialContainer(input = {}) {
-  const container2 = new Container({ defaultScope: "Singleton" });
-  const workspaceRoot = input.workspaceRoot ?? process.cwd();
-  container2.bind(SERVICES.config).toConstantValue(input.config ?? createAutomationConfig());
-  container2.bind(SERVICES.referentialRepository).toDynamicValue((context3) => {
-    const config = context3.get(SERVICES.config);
-    return new CsvReferentialRepository({
-      workspaceRoot,
-      hostsPath: config.referentials.hosts,
-      speakersPath: config.referentials.speakers
+var EventComposition = class _EventComposition {
+  /** One container per invocation: no credentials or cached data survive a run. */
+  static createReferentialContainer(input = {}) {
+    const container = new Container({ defaultScope: "Singleton" });
+    const workspaceRoot = input.workspaceRoot ?? process.cwd();
+    container.bind(SERVICES.config).toConstantValue(
+      input.config ?? AutomationConfigFactory.createAutomationConfig()
+    );
+    container.bind(SERVICES.referentialRepository).toDynamicValue((context3) => {
+      const config = context3.get(SERVICES.config);
+      return new CsvReferentialRepository({
+        workspaceRoot,
+        hostsPath: config.referentials.hosts,
+        speakersPath: config.referentials.speakers
+      });
     });
-  });
-  container2.bind(SERVICES.issueFormProjection).toDynamicValue(() => new YamlIssueFormProjection({ workspaceRoot }));
-  container2.bind(ValidateMeetupReferentials).toDynamicValue(
-    (context3) => new ValidateMeetupReferentials({
-      config: context3.get(SERVICES.config),
-      referentialRepository: context3.get(
-        SERVICES.referentialRepository
-      )
-    })
-  );
-  container2.bind(SynchronizeMeetupIssueForm).toDynamicValue(
-    (context3) => new SynchronizeMeetupIssueForm({
-      validateReferentials: context3.get(ValidateMeetupReferentials),
-      issueFormProjection: context3.get(
-        SERVICES.issueFormProjection
-      )
-    })
-  );
-  return container2;
-}
-function createEventContainer(input) {
-  const container2 = createReferentialContainer(input);
-  container2.bind(SERVICES.eventRepository).toDynamicValue(() => new GitHubEventRepository(input.client, input));
-  container2.bind(SERVICES.eventDocumentCodec).toDynamicValue((context3) => {
-    const config = context3.get(SERVICES.config);
-    return new GitHubIssueFormEventDocumentCodec({
-      timeZone: config.timezone,
-      hostConfirmationLabel: config.event["required-confirmation-labels"][0],
-      speakersConfirmationLabel: config.event["required-confirmation-labels"][1]
-    });
-  });
-  container2.bind(SERVICES.eventCommentRepository).toDynamicValue(
-    () => new GitHubEventCommentRepository(input.client, {
-      owner: input.owner,
-      repo: input.repo,
-      authorLogin: input.commentAuthorLogin
-    })
-  );
-  container2.bind(SERVICES.eventClock).toDynamicValue(() => new SystemEventClock());
-  container2.bind(SERVICES.eventDependencies).toDynamicValue((context3) => {
-    const config = context3.get(SERVICES.config);
-    return {
-      repository: context3.get(SERVICES.eventRepository),
-      documentCodec: context3.get(
-        SERVICES.eventDocumentCodec
-      ),
-      commentRepository: context3.get(
-        SERVICES.eventCommentRepository
-      ),
-      clock: context3.get(SERVICES.eventClock),
-      rules: createDefaultEventRules({
-        meetup: config.event["issue-label"],
-        hostNeeded: "hoster:needed",
-        hostConfirmed: config.event["required-confirmation-labels"][0],
-        speakersNeeded: "speakers:needed",
-        speakersConfirmed: config.event["required-confirmation-labels"][1],
-        occurrencePostponed: "event:postponed",
-        occurrenceHeld: "event:held",
-        occurrenceCancelled: "event:cancelled"
+    container.bind(SERVICES.issueFormProjection).toDynamicValue(() => new YamlIssueFormProjection({ workspaceRoot }));
+    container.bind(ValidateMeetupReferentials).toDynamicValue(
+      (context3) => new ValidateMeetupReferentials({
+        config: context3.get(SERVICES.config),
+        referentialRepository: context3.get(
+          SERVICES.referentialRepository
+        )
       })
-    };
-  });
-  container2.bind(ManageMeetupEvent).toDynamicValue(
-    (context3) => new ManageMeetupEvent({
-      config: context3.get(SERVICES.config),
-      referentialRepository: context3.get(
-        SERVICES.referentialRepository
-      ),
-      eventDependencies: context3.get(
-        SERVICES.eventDependencies
-      )
-    })
-  );
-  container2.bind(ListActiveEvents).toDynamicValue(
-    (context3) => new ListActiveEvents({
-      repository: context3.get(SERVICES.eventRepository),
-      documentCodec: context3.get(
-        SERVICES.eventDocumentCodec
-      ),
-      clock: context3.get(SERVICES.eventClock),
-      rules: context3.get(
-        SERVICES.eventDependencies
-      ).rules
-    })
-  );
-  return container2;
-}
+    );
+    container.bind(SynchronizeMeetupIssueForm).toDynamicValue(
+      (context3) => new SynchronizeMeetupIssueForm({
+        validateReferentials: context3.get(ValidateMeetupReferentials),
+        issueFormProjection: context3.get(
+          SERVICES.issueFormProjection
+        )
+      })
+    );
+    return container;
+  }
+  static createEventContainer(input) {
+    const container = _EventComposition.createReferentialContainer(input);
+    _EventComposition.bindEventAdapters(container, input);
+    container.bind(SERVICES.eventDependencies).toDynamicValue((context3) => {
+      const config = context3.get(SERVICES.config);
+      return {
+        repository: context3.get(SERVICES.eventRepository),
+        documentCodec: context3.get(
+          SERVICES.eventDocumentCodec
+        ),
+        commentRepository: context3.get(
+          SERVICES.eventCommentRepository
+        ),
+        clock: context3.get(SERVICES.eventClock),
+        rules: EventRuleFactory.createDefaultEventRules({
+          meetup: config.event["issue-label"],
+          hostNeeded: "hoster:needed",
+          hostConfirmed: config.event["required-confirmation-labels"][0],
+          speakersNeeded: "speakers:needed",
+          speakersConfirmed: config.event["required-confirmation-labels"][1],
+          occurrencePostponed: "event:postponed",
+          occurrenceHeld: "event:held",
+          occurrenceCancelled: "event:cancelled"
+        })
+      };
+    });
+    container.bind(ManageMeetupEvent).toDynamicValue(
+      (context3) => new ManageMeetupEvent({
+        config: context3.get(SERVICES.config),
+        referentialRepository: context3.get(
+          SERVICES.referentialRepository
+        ),
+        eventDependencies: context3.get(
+          SERVICES.eventDependencies
+        )
+      })
+    );
+    container.bind(ListActiveEvents).toDynamicValue(
+      (context3) => new ListActiveEvents({
+        repository: context3.get(SERVICES.eventRepository),
+        documentCodec: context3.get(
+          SERVICES.eventDocumentCodec
+        ),
+        clock: context3.get(SERVICES.eventClock),
+        rules: context3.get(
+          SERVICES.eventDependencies
+        ).rules
+      })
+    );
+    return container;
+  }
+  static bindEventAdapters(container, input) {
+    container.bind(SERVICES.eventRepository).toDynamicValue(() => new GitHubEventRepository(input.client, input));
+    container.bind(SERVICES.eventDocumentCodec).toDynamicValue((context3) => {
+      const config = context3.get(SERVICES.config);
+      return new GitHubIssueFormEventDocumentCodec({
+        repositoryRef: input.repositoryRef ?? (process.env.GITHUB_SHA || "main"),
+        timeZone: config.timezone,
+        hostConfirmationLabel: config.event["required-confirmation-labels"][0],
+        speakersConfirmationLabel: config.event["required-confirmation-labels"][1]
+      });
+    });
+    container.bind(SERVICES.eventCommentRepository).toDynamicValue(
+      () => new GitHubEventCommentRepository(input.client, {
+        owner: input.owner,
+        repo: input.repo,
+        authorLogin: input.commentAuthorLogin
+      })
+    );
+    container.bind(SERVICES.eventClock).toDynamicValue(() => new SystemEventClock());
+  }
+};
 
 // packages/runtime/github-actions/src/publication-composition.ts
 var ASSET_REPOSITORY = /* @__PURE__ */ Symbol("AssetRepository");
-function createPublicationContainer(input) {
-  const container2 = createEventContainer(input);
-  container2.bind(ASSET_REPOSITORY).toDynamicValue(
-    () => createGoogleDriveAssetRepository(input.credentials, {
-      parentFolderId: input.parentFolderId,
-      templateFolderId: input.templateFolderId
-    })
-  );
-  container2.bind(ReconcileEventAssets).toDynamicValue(
-    (context3) => new ReconcileEventAssets(
-      context3.get(ASSET_REPOSITORY)
-    )
-  );
-  container2.bind(ManageMeetupAssets).toDynamicValue(
-    (context3) => new ManageMeetupAssets({
-      eventRepository: context3.get(SERVICES.eventRepository),
-      documentCodec: context3.get(
-        SERVICES.eventDocumentCodec
-      ),
-      manageEvent: context3.get(ManageMeetupEvent),
-      reconcileAssets: context3.get(ReconcileEventAssets)
-    })
-  );
-  return container2;
-}
-
-// packages/runtime/github-actions/src/runtime-input.ts
-var SAFE_ERROR_NAMES = /* @__PURE__ */ new Set([
-  "GoogleDriveAssetRepositoryError",
-  "EventNotFoundError",
-  "EventConcurrentModificationError",
-  "GitHubEventRepositoryConfigurationError",
-  "GitHubEventRepositoryScopeError",
-  "GitHubEventRepositoryResponseError",
-  "GitHubEventCommentRepositoryConfigurationError",
-  "GitHubEventCommentRepositoryScopeError",
-  "GitHubEventCommentRepositoryResponseError"
-]);
-function positiveIntegerInput(name, value) {
-  if (!/^\d+$/.test(value)) {
-    throw new Error(`${name} must be a positive integer`);
-  }
-  const parsed = Number(value);
-  if (!Number.isSafeInteger(parsed) || parsed <= 0) {
-    throw new Error(`${name} must be a positive integer`);
-  }
-  return parsed;
-}
-function enumInput(name, value, allowed) {
-  if (!allowed.includes(value)) {
-    throw new Error(`${name} must be one of: ${allowed.join(", ")}`);
-  }
-  return value;
-}
-function publicErrorMessage(error2) {
-  if (error2 instanceof Error && SAFE_ERROR_NAMES.has(error2.name)) {
-    return `${error2.name}: ${error2.message}`;
-  }
-  return "Meetup automation failed; inspect debug logs using a trusted runner";
-}
-
-// packages/runtime/github-actions/src/publication-action.ts
-async function runPublicationReconcileAssetsAction() {
-  const issueNumber = positiveIntegerInput(
-    "issue-number",
-    getInput("issue-number", { required: true })
-  );
-  const mode = enumInput("mode", getInput("mode", { required: true }), [
-    "check",
-    "fix"
-  ]);
-  const credentials = getInput("google-credentials");
-  if (!credentials) {
-    const diagnostics = [
-      {
-        code: "publication.assets.unavailable",
-        severity: "info",
-        message: "Google Drive credentials are unavailable; asset management remains manual"
-      }
-    ];
-    setJsonOutput(
-      "result",
-      resultEnvelope(
-        { skipped: true, persisted: false, files: {} },
-        diagnostics
+var PublicationComposition = class {
+  static createPublicationContainer(input) {
+    const container = EventComposition.createEventContainer(input);
+    container.bind(ASSET_REPOSITORY).toDynamicValue(
+      () => GoogleDriveAssetRepository.createGoogleDriveAssetRepository(
+        input.credentials,
+        {
+          parentFolderId: input.parentFolderId,
+          templateFolderId: input.templateFolderId
+        }
       )
     );
-    setJsonOutput("drive-files", {});
-    setOutput("asset-url", "");
-    setDiagnosticsOutput(diagnostics);
-    return;
+    container.bind(ReconcileEventAssets).toDynamicValue(
+      (context3) => new ReconcileEventAssets(
+        context3.get(ASSET_REPOSITORY)
+      )
+    );
+    container.bind(ManageMeetupAssets).toDynamicValue(
+      (context3) => new ManageMeetupAssets({
+        eventRepository: context3.get(
+          SERVICES.eventRepository
+        ),
+        documentCodec: context3.get(
+          SERVICES.eventDocumentCodec
+        ),
+        manageEvent: context3.get(ManageMeetupEvent),
+        reconcileAssets: context3.get(ReconcileEventAssets)
+      })
+    );
+    return container;
   }
-  setSecret(credentials);
-  const client = getOctokit(getInput("github-token", { required: true }));
-  const commentAuthorLogin = getInput("managed-comment-author", {
-    required: true
-  });
-  const { owner, repo } = context2.repo;
-  const container2 = createPublicationContainer({
-    client,
-    owner,
-    repo,
-    commentAuthorLogin,
-    credentials,
-    parentFolderId: getInput("google-drive-meetup-folder-id"),
-    templateFolderId: getInput("google-drive-meetup-template-folder-id")
-  });
-  const outcome = await container2.get(ManageMeetupAssets).execute({
-    identity: { repository: `${owner}/${repo}`, issueNumber },
-    mode
-  });
-  setJsonOutput(
-    "result",
-    resultEnvelope(
-      {
-        skipped: outcome.skipped,
-        persisted: outcome.persisted,
-        assetUrl: outcome.assetUrl,
-        files: outcome.files
-      },
-      outcome.diagnostics
-    )
-  );
-  setJsonOutput("drive-files", outcome.files);
-  setOutput("asset-url", outcome.assetUrl ?? "");
-  setDiagnosticsOutput(outcome.diagnostics);
-}
+};
+
+// packages/runtime/github-actions/src/publication-action.ts
+var PublicationAction = class {
+  static async runPublicationReconcileAssetsAction() {
+    const issueNumber = RuntimeInput.positiveIntegerInput(
+      "issue-number",
+      getInput("issue-number", { required: true })
+    );
+    const mode = RuntimeInput.enumInput(
+      "mode",
+      getInput("mode", { required: true }),
+      ["check", "fix"]
+    );
+    const credentials = getInput("google-credentials");
+    if (!credentials) {
+      const diagnostics = [
+        {
+          code: "publication.assets.unavailable",
+          severity: "info",
+          message: "Google Drive credentials are unavailable; asset management remains manual"
+        }
+      ];
+      ActionOutput.setJsonOutput(
+        "result",
+        ResultEnvelopeFactory.resultEnvelope(
+          { skipped: true, persisted: false, files: {} },
+          diagnostics
+        )
+      );
+      ActionOutput.setJsonOutput("drive-files", {});
+      setOutput("asset-url", "");
+      ActionOutput.setDiagnosticsOutput(diagnostics);
+      return;
+    }
+    setSecret(credentials);
+    const client = getOctokit(
+      getInput("github-token", { required: true })
+    );
+    const commentAuthorLogin = getInput("managed-comment-author", {
+      required: true
+    });
+    const { owner, repo } = context2.repo;
+    const container = PublicationComposition.createPublicationContainer({
+      client,
+      owner,
+      repo,
+      commentAuthorLogin,
+      credentials,
+      parentFolderId: getInput("google-drive-meetup-folder-id"),
+      templateFolderId: getInput("google-drive-meetup-template-folder-id")
+    });
+    const outcome = await container.get(ManageMeetupAssets).execute({
+      identity: { repository: `${owner}/${repo}`, issueNumber },
+      mode
+    });
+    ActionOutput.setJsonOutput(
+      "result",
+      ResultEnvelopeFactory.resultEnvelope(
+        {
+          skipped: outcome.skipped,
+          persisted: outcome.persisted,
+          assetUrl: outcome.assetUrl,
+          files: outcome.files
+        },
+        outcome.diagnostics
+      )
+    );
+    ActionOutput.setJsonOutput("drive-files", outcome.files);
+    setOutput("asset-url", outcome.assetUrl ?? "");
+    ActionOutput.setDiagnosticsOutput(outcome.diagnostics);
+  }
+};
 
 // packages/runtime/github-actions/src/entrypoints/publication-reconcile-assets.ts
-runPublicationReconcileAssetsAction().catch((error2) => {
-  setFailed(publicErrorMessage(error2));
-});
+ActionRunner.run(PublicationAction.runPublicationReconcileAssetsAction);
 /*! Bundled license information:
 
 undici/lib/web/fetch/body.js:

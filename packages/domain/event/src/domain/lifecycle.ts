@@ -2,7 +2,7 @@ import type { EventDiagnostic } from "./diagnostic.js";
 import {
 	type EventLifecycleState,
 	type MeetupEvent,
-	postEventChecklistIsComplete,
+	MeetupEventOperations,
 } from "./model.js";
 import type { EventReadiness } from "./readiness.js";
 
@@ -19,49 +19,53 @@ export type EvaluateEventLifecycleInput = Readonly<{
 	now: string;
 }>;
 
-/**
- * Derives lifecycle exclusively from event facts and an explicitly supplied
- * instant. In particular, a past date never implies that an event was held.
- */
-export function evaluateEventLifecycle({
-	event,
-	readiness,
-	now,
-}: EvaluateEventLifecycleInput): EventLifecycleEvaluation {
-	let state: EventLifecycleState;
+export class EventLifecycle {
+	/**
+	 * Derives lifecycle exclusively from event facts and an explicitly supplied
+	 * instant. In particular, a past date never implies that an event was held.
+	 */
+	static evaluateEventLifecycle({
+		event,
+		readiness,
+		now,
+	}: EvaluateEventLifecycleInput): EventLifecycleEvaluation {
+		let state: EventLifecycleState;
 
-	switch (event.occurrenceStatus) {
-		case "cancelled":
-			state = "cancelled";
-			break;
-		case "postponed":
-			state = "postponed";
-			break;
-		case "held":
-			state =
-				event.followUpComplete &&
-				postEventChecklistIsComplete(event.operationalChecklists.postEvent)
-					? "follow-up-complete"
-					: "held";
-			break;
-		case "scheduled":
-		case undefined:
-			if (!hasMinimumPlanningFacts(event)) {
-				state = "draft";
-			} else {
-				state = readiness.isReady ? "ready" : "planned";
-			}
-			break;
+		switch (event.occurrenceStatus) {
+			case "cancelled":
+				state = "cancelled";
+				break;
+			case "postponed":
+				state = "postponed";
+				break;
+			case "held":
+				state =
+					event.followUpComplete &&
+					MeetupEventOperations.postEventChecklistIsComplete(
+						event.operationalChecklists.postEvent,
+					)
+						? "follow-up-complete"
+						: "held";
+				break;
+			case "scheduled":
+			case undefined:
+				if (!EventLifecycle.hasMinimumPlanningFacts(event)) {
+					state = "draft";
+				} else {
+					state = readiness.isReady ? "ready" : "planned";
+				}
+				break;
+		}
+
+		return {
+			state,
+			evaluatedAt: now,
+			timeZone: event.timeZone,
+			diagnostics: readiness.diagnostics,
+		};
 	}
 
-	return {
-		state,
-		evaluatedAt: now,
-		timeZone: event.timeZone,
-		diagnostics: readiness.diagnostics,
-	};
-}
-
-function hasMinimumPlanningFacts(event: MeetupEvent): boolean {
-	return event.date.trim() !== "" && event.eventTitle.trim() !== "";
+	static hasMinimumPlanningFacts(event: MeetupEvent): boolean {
+		return event.date.trim() !== "" && event.eventTitle.trim() !== "";
+	}
 }

@@ -2,118 +2,15 @@ import { createHash } from "node:crypto";
 import * as core from "@actions/core";
 import { context } from "@actions/github";
 import type { CommunicationDiagnostic } from "@meetup-automation/communication";
-import { mapGitHubIssueDocument } from "@meetup-automation/github-event-repository";
+import { GitHubEventRepository } from "@meetup-automation/github-event-repository";
 import type { CommunicationJourneyDiagnostic } from "@meetup-automation/journey";
 import {
 	type PublicDiagnostic,
-	resultEnvelope,
+	ResultEnvelopeFactory,
 } from "@meetup-automation/journey";
-import { setDiagnosticsOutput, setJsonOutput } from "./action-output.js";
-import { runCommunicationReconcile } from "./communication.js";
-import {
-	booleanInput,
-	enumInput,
-	positiveIntegerInput,
-} from "./runtime-input.js";
-
-export async function runCommunicationReconcileAction(): Promise<void> {
-	const issueNumber = positiveIntegerInput(
-		"issue-number",
-		core.getInput("issue-number", { required: true }),
-	);
-	const requestedMode = enumInput(
-		"mode",
-		core.getInput("mode", { required: true }),
-		["check", "dispatch"] as const,
-	);
-	const dispatchAuthorized = booleanInput(
-		"dispatch-authorized",
-		core.getInput("dispatch-authorized", { required: true }),
-	);
-	const { owner, repo } = context.repo;
-	const issueSnapshot = context.payload.issue
-		? (mapGitHubIssueDocument(context.payload.issue, `${owner}/${repo}`) ??
-			undefined)
-		: undefined;
-	const outcome = await runCommunicationReconcile({
-		issueNumber,
-
-		requestedMode,
-		dispatchAuthorized,
-		githubToken: core.getInput("github-token", { required: true }),
-		mailingsToken: core.getInput("mailings-token"),
-		slackToken: core.getInput("slack-token"),
-		slackChannelId: process.env.SLACK_CHANNEL_ID ?? "",
-		owner,
-		repo,
-		repositoryId: process.env.GITHUB_REPOSITORY_ID,
-		automationRevision: process.env.GITHUB_SHA ?? "",
-		managedCommentAuthor: core.getInput("managed-comment-author", {
-			required: true,
-		}),
-		approvalTrigger: {
-			action:
-				typeof context.payload.action === "string"
-					? context.payload.action
-					: "",
-			label:
-				context.payload.label &&
-				typeof context.payload.label === "object" &&
-				"name" in context.payload.label &&
-				typeof context.payload.label.name === "string"
-					? context.payload.label.name
-					: "",
-			actor: context.actor,
-			...(issueSnapshot ? { issueSnapshot } : {}),
-		},
-	});
-	const diagnostics = [
-		...outcome.diagnostics.map(domainDiagnostic),
-		...outcome.runtimeDiagnostics.map(runtimeDiagnostic),
-	];
-
-	setJsonOutput(
-		"result",
-		resultEnvelope(
-			{
-				mode: outcome.mode,
-				counts: outcome.counts,
-				intentIds: outcome.intentIds.map(publicIntentIdentifier),
-			},
-			diagnostics,
-		),
-	);
-	core.setOutput("planned-count", String(outcome.counts.planned));
-	core.setOutput("dispatched-count", String(outcome.counts.dispatched));
-	setDiagnosticsOutput(diagnostics);
-	if (diagnostics.some(({ severity }) => severity === "error")) {
-		core.setFailed("Communication reconciliation failed; inspect diagnostics.");
-	}
-}
-
-function publicIntentIdentifier(value: string): string {
-	return `sha256:${createHash("sha256").update(value).digest("hex")}`;
-}
-
-function domainDiagnostic(
-	diagnostic: CommunicationDiagnostic,
-): PublicDiagnostic {
-	return {
-		code: `communication.${diagnostic.code}`,
-		severity: diagnostic.severity,
-		message: COMMUNICATION_MESSAGES[diagnostic.code],
-	};
-}
-
-function runtimeDiagnostic(
-	diagnostic: CommunicationJourneyDiagnostic,
-): PublicDiagnostic {
-	return {
-		code: diagnostic.code,
-		severity: diagnostic.severity,
-		message: RUNTIME_MESSAGES[diagnostic.code],
-	};
-}
+import { ActionOutput } from "./action-output.js";
+import { CommunicationRuntime } from "./communication.js";
+import { RuntimeInput } from "./runtime-input.js";
 
 const COMMUNICATION_MESSAGES: Readonly<
 	Record<CommunicationDiagnostic["code"], string>
@@ -180,3 +77,118 @@ const RUNTIME_MESSAGES: Readonly<
 	"communication.referential-catalog-invalid":
 		"Communications are disabled because the referential catalog is invalid.",
 };
+
+export class CommunicationAction {
+	static async runCommunicationReconcileAction(): Promise<void> {
+		const issueNumber = RuntimeInput.positiveIntegerInput(
+			"issue-number",
+			core.getInput("issue-number", { required: true }),
+		);
+		const requestedMode = RuntimeInput.enumInput(
+			"mode",
+			core.getInput("mode", { required: true }),
+			["check", "dispatch"] as const,
+		);
+		const dispatchAuthorized = RuntimeInput.booleanInput(
+			"dispatch-authorized",
+			core.getInput("dispatch-authorized", { required: true }),
+		);
+		const { owner, repo } = context.repo;
+		const issueSnapshot = context.payload.issue
+			? (GitHubEventRepository.mapGitHubIssueDocument(
+					context.payload.issue,
+					`${owner}/${repo}`,
+				) ?? undefined)
+			: undefined;
+		const outcome = await CommunicationRuntime.runCommunicationReconcile({
+			issueNumber,
+
+			requestedMode,
+			dispatchAuthorized,
+			githubToken: core.getInput("github-token", { required: true }),
+			mailingsToken: core.getInput("mailings-token"),
+			slackToken: core.getInput("slack-token"),
+			slackChannelId: process.env.SLACK_CHANNEL_ID ?? "",
+			owner,
+			repo,
+			repositoryId: process.env.GITHUB_REPOSITORY_ID,
+			automationRevision: process.env.GITHUB_SHA ?? "",
+			managedCommentAuthor: core.getInput("managed-comment-author", {
+				required: true,
+			}),
+			approvalTrigger: {
+				action:
+					typeof context.payload.action === "string"
+						? context.payload.action
+						: "",
+				label:
+					context.payload.label &&
+					typeof context.payload.label === "object" &&
+					"name" in context.payload.label &&
+					typeof context.payload.label.name === "string"
+						? context.payload.label.name
+						: "",
+				actor: context.actor,
+				...(issueSnapshot ? { issueSnapshot } : {}),
+			},
+		});
+		CommunicationAction.report(outcome);
+	}
+
+	static publicIntentIdentifier(value: string): string {
+		return `sha256:${createHash("sha256").update(value).digest("hex")}`;
+	}
+
+	static domainDiagnostic(
+		diagnostic: CommunicationDiagnostic,
+	): PublicDiagnostic {
+		return {
+			code: `communication.${diagnostic.code}`,
+			severity: diagnostic.severity,
+			message: COMMUNICATION_MESSAGES[diagnostic.code],
+		};
+	}
+
+	static runtimeDiagnostic(
+		diagnostic: CommunicationJourneyDiagnostic,
+	): PublicDiagnostic {
+		return {
+			code: diagnostic.code,
+			severity: diagnostic.severity,
+			message: RUNTIME_MESSAGES[diagnostic.code],
+		};
+	}
+
+	private static report(
+		outcome: Awaited<
+			ReturnType<typeof CommunicationRuntime.runCommunicationReconcile>
+		>,
+	) {
+		const diagnostics = [
+			...outcome.diagnostics.map(CommunicationAction.domainDiagnostic),
+			...outcome.runtimeDiagnostics.map(CommunicationAction.runtimeDiagnostic),
+		];
+
+		ActionOutput.setJsonOutput(
+			"result",
+			ResultEnvelopeFactory.resultEnvelope(
+				{
+					mode: outcome.mode,
+					counts: outcome.counts,
+					intentIds: outcome.intentIds.map(
+						CommunicationAction.publicIntentIdentifier,
+					),
+				},
+				diagnostics,
+			),
+		);
+		core.setOutput("planned-count", String(outcome.counts.planned));
+		core.setOutput("dispatched-count", String(outcome.counts.dispatched));
+		ActionOutput.setDiagnosticsOutput(diagnostics);
+		if (diagnostics.some(({ severity }) => severity === "error")) {
+			core.setFailed(
+				"Communication reconciliation failed; inspect diagnostics.",
+			);
+		}
+	}
+}

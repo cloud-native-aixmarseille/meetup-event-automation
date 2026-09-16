@@ -1,4 +1,4 @@
-import type { CommunicationApprovalSnapshot } from "./approval.js";
+import type { CommunicationApprovalSnapshot } from "./approval-contracts.js";
 import type {
 	DeliveryLedgerEntry,
 	DeliveryReservation,

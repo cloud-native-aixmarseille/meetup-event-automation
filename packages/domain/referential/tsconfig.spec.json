@@ -5,5 +5,5 @@
 		"rootDir": ".",
 		"tsBuildInfoFile": "../../../node_modules/.cache/referential.spec.tsbuildinfo"
 	},
-	"include": ["src/**/*.ts", "__tests__/**/*.ts"]
+	"include": ["src/**/*.ts", "testing/**/*.ts"]
 }

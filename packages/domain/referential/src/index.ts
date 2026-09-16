@@ -8,10 +8,8 @@ export {
 	type ResolveEventReferencesCommand,
 	type ResolveEventReferencesResult,
 } from "./application/use-cases/resolve-event-references.js";
-export {
-	type ReferentialCatalogValidation,
-	ValidateReferentialCatalog,
-} from "./application/use-cases/validate-referential-catalog.js";
+export { ValidateReferentialCatalog } from "./application/use-cases/validate-referential-catalog.js";
+export type { ReferentialCatalogValidation } from "./application/use-cases/validate-referential-catalog-contracts.js";
 export type { ContactId, HostId, SpeakerId } from "./domain/identifiers.js";
 export type {
 	Host,

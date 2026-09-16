@@ -1782,11 +1782,11 @@ var require_request = __commonJS({
           }
         } else if (headers && typeof headers === "object") {
           if (headers[Symbol.iterator]) {
-            for (const header2 of headers) {
-              if (!Array.isArray(header2) || header2.length !== 2) {
+            for (const header of headers) {
+              if (!Array.isArray(header) || header.length !== 2) {
                 throw new InvalidArgumentError("headers must be in key-value pair format");
               }
-              processHeader(this, header2[0], header2[1]);
+              processHeader(this, header[0], header[1]);
             }
           } else {
             const keys = Object.keys(headers);
@@ -3297,12 +3297,12 @@ var require_data_url = __commonJS({
       return serialized;
     }
     function collectASequenceOfCodePoints(condition, input, position) {
-      let result2 = "";
+      let result = "";
       while (position.position < input.length && condition(input[position.position])) {
-        result2 += input[position.position];
+        result += input[position.position];
         position.position++;
       }
-      return result2;
+      return result;
     }
     function collectASequenceOfCodePointsFast(char, input, position) {
       const idx = input.indexOf(char, position.position);
@@ -3524,16 +3524,16 @@ var require_data_url = __commonJS({
       if ((2 << 15) - 1 > length) {
         return String.fromCharCode.apply(null, input);
       }
-      let result2 = "";
+      let result = "";
       let i = 0;
       let addition = (2 << 15) - 1;
       while (i < length) {
         if (i + addition > length) {
           addition = length - i;
         }
-        result2 += String.fromCharCode.apply(null, input.subarray(i, i += addition));
+        result += String.fromCharCode.apply(null, input.subarray(i, i += addition));
       }
-      return result2;
+      return result;
     }
     function minimizeSupportedMimeType(mimeType) {
       switch (mimeType.essence) {
@@ -3782,15 +3782,15 @@ var require_webidl = __commonJS({
             message: `${argument} ("${webidl.util.Type(O)}") is not an Object.`
           });
         }
-        const result2 = {};
+        const result = {};
         if (!types.isProxy(O)) {
           const keys2 = [...Object.getOwnPropertyNames(O), ...Object.getOwnPropertySymbols(O)];
           for (const key of keys2) {
             const typedKey = keyConverter(key, prefix, argument);
             const typedValue = valueConverter(O[key], prefix, argument);
-            result2[typedKey] = typedValue;
+            result[typedKey] = typedValue;
           }
-          return result2;
+          return result;
         }
         const keys = Reflect.ownKeys(O);
         for (const key of keys) {
@@ -3798,10 +3798,10 @@ var require_webidl = __commonJS({
           if (desc?.enumerable) {
             const typedKey = keyConverter(key, prefix, argument);
             const typedValue = valueConverter(O[key], prefix, argument);
-            result2[typedKey] = typedValue;
+            result[typedKey] = typedValue;
           }
         }
-        return result2;
+        return result;
       };
     };
     webidl.interfaceConverter = function(i) {
@@ -4119,9 +4119,9 @@ var require_util2 = __commonJS({
       return "success";
     }
     function appendFetchMetadata(httpRequest) {
-      let header2 = null;
-      header2 = httpRequest.mode;
-      httpRequest.headersList.set("sec-fetch-mode", header2, true);
+      let header = null;
+      header = httpRequest.mode;
+      httpRequest.headersList.set("sec-fetch-mode", header, true);
     }
     function appendRequestOriginHeader(request2) {
       let serializedOrigin = request2.origin;
@@ -4331,7 +4331,7 @@ var require_util2 = __commonJS({
     }
     var parseHashWithOptions = /(?<algo>sha256|sha384|sha512)-((?<hash>[A-Za-z0-9+/]+|[A-Za-z0-9_-]+)={0,2}(?:\s|$)( +[!-~]*)?)?/i;
     function parseMetadata(metadata) {
-      const result2 = [];
+      const result = [];
       let empty = true;
       for (const token of metadata.split(" ")) {
         empty = false;
@@ -4341,13 +4341,13 @@ var require_util2 = __commonJS({
         }
         const algorithm = parsedToken.groups.algo.toLowerCase();
         if (supportedHashes.includes(algorithm)) {
-          result2.push(parsedToken.groups);
+          result.push(parsedToken.groups);
         }
       }
       if (empty === true) {
         return "no metadata";
       }
-      return result2;
+      return result;
     }
     function getStrongestMetadata(metadataList) {
       let algorithm = metadataList[0].algo;
@@ -4424,12 +4424,12 @@ var require_util2 = __commonJS({
       return normalizedMethodRecordsBase[method.toLowerCase()] ?? method;
     }
     function serializeJavascriptValueToJSONString(value) {
-      const result2 = JSON.stringify(value);
-      if (result2 === void 0) {
+      const result = JSON.stringify(value);
+      if (result === void 0) {
         throw new TypeError("Value is not JSON serializable");
       }
-      assert(typeof result2 === "string");
-      return result2;
+      assert(typeof result === "string");
+      return result;
     }
     var esIteratorPrototype = Object.getPrototypeOf(Object.getPrototypeOf([][Symbol.iterator]()));
     function createIterator(name, kInternalIterator, keyIndex = 0, valueIndex = 1) {
@@ -4467,20 +4467,20 @@ var require_util2 = __commonJS({
           }
           const { [keyIndex]: key, [valueIndex]: value } = values[index];
           this.#index = index + 1;
-          let result2;
+          let result;
           switch (this.#kind) {
             case "key":
-              result2 = key;
+              result = key;
               break;
             case "value":
-              result2 = value;
+              result = value;
               break;
             case "key+value":
-              result2 = [key, value];
+              result = [key, value];
               break;
           }
           return {
-            value: result2,
+            value: result,
             done: false
           };
         }
@@ -5171,11 +5171,11 @@ var require_formdata_parser = __commonJS({
           return "failure";
         }
         position.position += 2;
-        const result2 = parseMultipartFormDataHeaders(input, position);
-        if (result2 === "failure") {
+        const result = parseMultipartFormDataHeaders(input, position);
+        if (result === "failure") {
           return "failure";
         }
-        let { name, filename, contentType, encoding } = result2;
+        let { name, filename, contentType, encoding } = result;
         position.position += 2;
         let body;
         {
@@ -6468,22 +6468,22 @@ var require_client_h1 = __commonJS({
       if (blocking) {
         socket[kBlocking] = true;
       }
-      let header2 = `${method} ${path} HTTP/1.1\r
+      let header = `${method} ${path} HTTP/1.1\r
 `;
       if (typeof host === "string") {
-        header2 += `host: ${host}\r
+        header += `host: ${host}\r
 `;
       } else {
-        header2 += client[kHostHeader];
+        header += client[kHostHeader];
       }
       if (upgrade) {
-        header2 += `connection: upgrade\r
+        header += `connection: upgrade\r
 upgrade: ${upgrade}\r
 `;
       } else if (client[kPipelining] && !socket[kReset]) {
-        header2 += "connection: keep-alive\r\n";
+        header += "connection: keep-alive\r\n";
       } else {
-        header2 += "connection: close\r\n";
+        header += "connection: close\r\n";
       }
       if (Array.isArray(headers)) {
         for (let n = 0; n < headers.length; n += 2) {
@@ -6491,41 +6491,41 @@ upgrade: ${upgrade}\r
           const val = headers[n + 1];
           if (Array.isArray(val)) {
             for (let i = 0; i < val.length; i++) {
-              header2 += `${key}: ${val[i]}\r
+              header += `${key}: ${val[i]}\r
 `;
             }
           } else {
-            header2 += `${key}: ${val}\r
+            header += `${key}: ${val}\r
 `;
           }
         }
       }
       if (channels.sendHeaders.hasSubscribers) {
-        channels.sendHeaders.publish({ request: request2, headers: header2, socket });
+        channels.sendHeaders.publish({ request: request2, headers: header, socket });
       }
       if (!body || bodyLength === 0) {
-        writeBuffer(abort, null, client, request2, socket, contentLength, header2, expectsPayload);
+        writeBuffer(abort, null, client, request2, socket, contentLength, header, expectsPayload);
       } else if (util.isBuffer(body)) {
-        writeBuffer(abort, body, client, request2, socket, contentLength, header2, expectsPayload);
+        writeBuffer(abort, body, client, request2, socket, contentLength, header, expectsPayload);
       } else if (util.isBlobLike(body)) {
         if (typeof body.stream === "function") {
-          writeIterable(abort, body.stream(), client, request2, socket, contentLength, header2, expectsPayload);
+          writeIterable(abort, body.stream(), client, request2, socket, contentLength, header, expectsPayload);
         } else {
-          writeBlob(abort, body, client, request2, socket, contentLength, header2, expectsPayload);
+          writeBlob(abort, body, client, request2, socket, contentLength, header, expectsPayload);
         }
       } else if (util.isStream(body)) {
-        writeStream(abort, body, client, request2, socket, contentLength, header2, expectsPayload);
+        writeStream(abort, body, client, request2, socket, contentLength, header, expectsPayload);
       } else if (util.isIterable(body)) {
-        writeIterable(abort, body, client, request2, socket, contentLength, header2, expectsPayload);
+        writeIterable(abort, body, client, request2, socket, contentLength, header, expectsPayload);
       } else {
         assert(false);
       }
       return true;
     }
-    function writeStream(abort, body, client, request2, socket, contentLength, header2, expectsPayload) {
+    function writeStream(abort, body, client, request2, socket, contentLength, header, expectsPayload) {
       assert(contentLength !== 0 || client[kRunning] === 0, "stream body cannot be pipelined");
       let finished = false;
-      const writer = new AsyncWriter({ abort, socket, request: request2, contentLength, client, expectsPayload, header: header2 });
+      const writer = new AsyncWriter({ abort, socket, request: request2, contentLength, client, expectsPayload, header });
       const onData = function(chunk) {
         if (finished) {
           return;
@@ -6591,22 +6591,22 @@ upgrade: ${upgrade}\r
         setImmediate(onClose);
       }
     }
-    function writeBuffer(abort, body, client, request2, socket, contentLength, header2, expectsPayload) {
+    function writeBuffer(abort, body, client, request2, socket, contentLength, header, expectsPayload) {
       try {
         if (!body) {
           if (contentLength === 0) {
-            socket.write(`${header2}content-length: 0\r
+            socket.write(`${header}content-length: 0\r
 \r
 `, "latin1");
           } else {
             assert(contentLength === null, "no body must not have content length");
-            socket.write(`${header2}\r
+            socket.write(`${header}\r
 `, "latin1");
           }
         } else if (util.isBuffer(body)) {
           assert(contentLength === body.byteLength, "buffer body must have content length");
           socket.cork();
-          socket.write(`${header2}content-length: ${contentLength}\r
+          socket.write(`${header}content-length: ${contentLength}\r
 \r
 `, "latin1");
           socket.write(body);
@@ -6622,7 +6622,7 @@ upgrade: ${upgrade}\r
         abort(err);
       }
     }
-    async function writeBlob(abort, body, client, request2, socket, contentLength, header2, expectsPayload) {
+    async function writeBlob(abort, body, client, request2, socket, contentLength, header, expectsPayload) {
       assert(contentLength === body.size, "blob body must have content length");
       try {
         if (contentLength != null && contentLength !== body.size) {
@@ -6630,7 +6630,7 @@ upgrade: ${upgrade}\r
         }
         const buffer = Buffer.from(await body.arrayBuffer());
         socket.cork();
-        socket.write(`${header2}content-length: ${contentLength}\r
+        socket.write(`${header}content-length: ${contentLength}\r
 \r
 `, "latin1");
         socket.write(buffer);
@@ -6645,7 +6645,7 @@ upgrade: ${upgrade}\r
         abort(err);
       }
     }
-    async function writeIterable(abort, body, client, request2, socket, contentLength, header2, expectsPayload) {
+    async function writeIterable(abort, body, client, request2, socket, contentLength, header, expectsPayload) {
       assert(contentLength !== 0 || client[kRunning] === 0, "iterator body cannot be pipelined");
       let callback = null;
       function onDrain() {
@@ -6664,7 +6664,7 @@ upgrade: ${upgrade}\r
         }
       });
       socket.on("close", onDrain).on("drain", onDrain);
-      const writer = new AsyncWriter({ abort, socket, request: request2, contentLength, client, expectsPayload, header: header2 });
+      const writer = new AsyncWriter({ abort, socket, request: request2, contentLength, client, expectsPayload, header });
       try {
         for await (const chunk of body) {
           if (socket[kError]) {
@@ -6682,19 +6682,19 @@ upgrade: ${upgrade}\r
       }
     }
     var AsyncWriter = class {
-      constructor({ abort, socket, request: request2, contentLength, client, expectsPayload, header: header2 }) {
+      constructor({ abort, socket, request: request2, contentLength, client, expectsPayload, header }) {
         this.socket = socket;
         this.request = request2;
         this.contentLength = contentLength;
         this.client = client;
         this.bytesWritten = 0;
         this.expectsPayload = expectsPayload;
-        this.header = header2;
+        this.header = header;
         this.abort = abort;
         socket[kWriting] = true;
       }
       write(chunk) {
-        const { socket, request: request2, contentLength, client, bytesWritten, expectsPayload, header: header2 } = this;
+        const { socket, request: request2, contentLength, client, bytesWritten, expectsPayload, header } = this;
         if (socket[kError]) {
           throw socket[kError];
         }
@@ -6717,10 +6717,10 @@ upgrade: ${upgrade}\r
             socket[kReset] = true;
           }
           if (contentLength === null) {
-            socket.write(`${header2}transfer-encoding: chunked\r
+            socket.write(`${header}transfer-encoding: chunked\r
 `, "latin1");
           } else {
-            socket.write(`${header2}content-length: ${contentLength}\r
+            socket.write(`${header}content-length: ${contentLength}\r
 \r
 `, "latin1");
           }
@@ -6744,7 +6744,7 @@ ${len.toString(16)}\r
         return ret;
       }
       end() {
-        const { socket, contentLength, client, bytesWritten, expectsPayload, header: header2, request: request2 } = this;
+        const { socket, contentLength, client, bytesWritten, expectsPayload, header, request: request2 } = this;
         request2.onRequestSent();
         socket[kWriting] = false;
         if (socket[kError]) {
@@ -6755,11 +6755,11 @@ ${len.toString(16)}\r
         }
         if (bytesWritten === 0) {
           if (expectsPayload) {
-            socket.write(`${header2}content-length: 0\r
+            socket.write(`${header}content-length: 0\r
 \r
 `, "latin1");
           } else {
-            socket.write(`${header2}\r
+            socket.write(`${header}\r
 `, "latin1");
           }
         } else if (contentLength === null) {
@@ -6845,17 +6845,17 @@ var require_client_h2 = __commonJS({
       }
     } = http2;
     function parseH2Headers(headers) {
-      const result2 = [];
+      const result = [];
       for (const [name, value] of Object.entries(headers)) {
         if (Array.isArray(value)) {
           for (const subvalue of value) {
-            result2.push(Buffer.from(name), Buffer.from(subvalue));
+            result.push(Buffer.from(name), Buffer.from(subvalue));
           }
         } else {
-          result2.push(Buffer.from(name), Buffer.from(value));
+          result.push(Buffer.from(name), Buffer.from(value));
         }
       }
-      return result2;
+      return result;
     }
     async function connectH2(client, socket) {
       client[kSocket] = socket;
@@ -7456,15 +7456,15 @@ var require_redirect_handler = __commonJS({
         }
       }
     }
-    function shouldRemoveHeader(header2, removeContent, unknownOrigin) {
-      if (header2.length === 4) {
-        return util.headerNameToString(header2) === "host";
+    function shouldRemoveHeader(header, removeContent, unknownOrigin) {
+      if (header.length === 4) {
+        return util.headerNameToString(header) === "host";
       }
-      if (removeContent && util.headerNameToString(header2).startsWith("content-")) {
+      if (removeContent && util.headerNameToString(header).startsWith("content-")) {
         return true;
       }
-      if (unknownOrigin && (header2.length === 13 || header2.length === 6 || header2.length === 19)) {
-        const name = util.headerNameToString(header2);
+      if (unknownOrigin && (header.length === 13 || header.length === 6 || header.length === 19)) {
+        const name = util.headerNameToString(header);
         return name === "authorization" || name === "cookie" || name === "proxy-authorization";
       }
       return false;
@@ -8438,11 +8438,11 @@ var require_balanced_pool = __commonJS({
         return this;
       }
       _updateBalancedPoolStats() {
-        let result2 = 0;
+        let result = 0;
         for (let i = 0; i < this[kClients].length; i++) {
-          result2 = getGreatestCommonDivisor(this[kClients][i][kWeight], result2);
+          result = getGreatestCommonDivisor(this[kClients][i][kWeight], result);
         }
-        this[kGreatestCommonDivisor] = result2;
+        this[kGreatestCommonDivisor] = result;
       }
       removeUpstream(upstream) {
         const upstreamOrigin = parseOrigin(upstream).origin;
@@ -10687,20 +10687,20 @@ var require_mock_utils = __commonJS({
     }
     function generateKeyValues(data) {
       const keys = Object.keys(data);
-      const result2 = [];
+      const result = [];
       for (let i = 0; i < keys.length; ++i) {
         const key = keys[i];
         const value = data[key];
         const name = Buffer.from(`${key}`);
         if (Array.isArray(value)) {
           for (let j = 0; j < value.length; ++j) {
-            result2.push(name, Buffer.from(`${value[j]}`));
+            result.push(name, Buffer.from(`${value[j]}`));
           }
         } else {
-          result2.push(name, Buffer.from(`${value}`));
+          result.push(name, Buffer.from(`${value}`));
         }
       }
-      return result2;
+      return result;
     }
     function getStatusText(statusCode) {
       return STATUS_CODES[statusCode] || "unknown";
@@ -11825,14 +11825,14 @@ var require_headers = __commonJS({
     function fill(headers, object) {
       if (Array.isArray(object)) {
         for (let i = 0; i < object.length; ++i) {
-          const header2 = object[i];
-          if (header2.length !== 2) {
+          const header = object[i];
+          if (header.length !== 2) {
             throw webidl.errors.exception({
               header: "Headers constructor",
-              message: `expected name/value pair to be length 2, found ${header2.length}.`
+              message: `expected name/value pair to be length 2, found ${header.length}.`
             });
           }
-          appendHeader(headers, header2[0], header2[1]);
+          appendHeader(headers, header[0], header[1]);
         }
       } else if (typeof object === "object" && object !== null) {
         const keys = Object.keys(object);
@@ -13871,16 +13871,16 @@ var require_fetch = __commonJS({
             timingInfo = createOpaqueTimingInfo(timingInfo);
             cacheState = "";
           }
-          let responseStatus2 = 0;
+          let responseStatus = 0;
           if (fetchParams.request.mode !== "navigator" || !response.hasCrossOriginRedirects) {
-            responseStatus2 = response.status;
+            responseStatus = response.status;
             const mimeType = extractMimeType(response.headersList);
             if (mimeType !== "failure") {
               bodyInfo.contentType = minimizeSupportedMimeType(mimeType);
             }
           }
           if (fetchParams.request.initiatorType != null) {
-            markResourceTiming(timingInfo, fetchParams.request.url.href, fetchParams.request.initiatorType, globalThis, cacheState, bodyInfo, responseStatus2);
+            markResourceTiming(timingInfo, fetchParams.request.url.href, fetchParams.request.initiatorType, globalThis, cacheState, bodyInfo, responseStatus);
           }
         };
         const processResponseEndOfBodyTask = () => {
@@ -14869,11 +14869,11 @@ var require_util4 = __commonJS({
               queueMicrotask(() => {
                 fr[kState] = "done";
                 try {
-                  const result2 = packageData(bytes, type, blob.type, encodingName);
+                  const result = packageData(bytes, type, blob.type, encodingName);
                   if (fr[kAborted]) {
                     return;
                   }
-                  fr[kResult] = result2;
+                  fr[kResult] = result;
                   fireAProgressEvent("load", fr);
                 } catch (error2) {
                   fr[kError] = error2;
@@ -15278,10 +15278,10 @@ var require_util5 = __commonJS({
       const serializedB = URLSerializer(B, excludeFragment);
       return serializedA === serializedB;
     }
-    function getFieldValues(header2) {
-      assert(header2 !== null);
+    function getFieldValues(header) {
+      assert(header !== null);
       const values = [];
-      for (let value of header2.split(",")) {
+      for (let value of header.split(",")) {
         value = value.trim();
         if (isValidHeaderName(value)) {
           values.push(value);
@@ -15400,8 +15400,8 @@ var require_cache = __commonJS({
                 }));
               } else if (response.headersList.contains("vary")) {
                 const fieldValues = getFieldValues(response.headersList.get("vary"));
-                for (const fieldValue2 of fieldValues) {
-                  if (fieldValue2 === "*") {
+                for (const fieldValue of fieldValues) {
+                  if (fieldValue === "*") {
                     responsePromise.reject(webidl.errors.exception({
                       header: "Cache.addAll",
                       message: "invalid vary field value"
@@ -15483,8 +15483,8 @@ var require_cache = __commonJS({
         }
         if (innerResponse.headersList.contains("vary")) {
           const fieldValues = getFieldValues(innerResponse.headersList.get("vary"));
-          for (const fieldValue2 of fieldValues) {
-            if (fieldValue2 === "*") {
+          for (const fieldValue of fieldValues) {
+            if (fieldValue === "*") {
               throw webidl.errors.exception({
                 header: prefix,
                 message: "Got * vary field value"
@@ -15747,12 +15747,12 @@ var require_cache = __commonJS({
           return true;
         }
         const fieldValues = getFieldValues(response.headersList.get("vary"));
-        for (const fieldValue2 of fieldValues) {
-          if (fieldValue2 === "*") {
+        for (const fieldValue of fieldValues) {
+          if (fieldValue === "*") {
             return false;
           }
-          const requestValue = request2.headersList.get(fieldValue2);
-          const queryValue = requestQuery.headersList.get(fieldValue2);
+          const requestValue = request2.headersList.get(fieldValue);
+          const queryValue = requestQuery.headersList.get(fieldValue);
           if (requestValue !== queryValue) {
             return false;
           }
@@ -16180,20 +16180,20 @@ var require_parse = __commonJS({
     var { isCTLExcludingHtab } = require_util6();
     var { collectASequenceOfCodePointsFast } = require_data_url();
     var assert = __require("node:assert");
-    function parseSetCookie(header2) {
-      if (isCTLExcludingHtab(header2)) {
+    function parseSetCookie(header) {
+      if (isCTLExcludingHtab(header)) {
         return null;
       }
       let nameValuePair = "";
       let unparsedAttributes = "";
       let name = "";
       let value = "";
-      if (header2.includes(";")) {
+      if (header.includes(";")) {
         const position = { position: 0 };
-        nameValuePair = collectASequenceOfCodePointsFast(";", header2, position);
-        unparsedAttributes = header2.slice(position.position);
+        nameValuePair = collectASequenceOfCodePointsFast(";", header, position);
+        unparsedAttributes = header.slice(position.position);
       } else {
-        nameValuePair = header2;
+        nameValuePair = header;
       }
       if (!nameValuePair.includes("=")) {
         value = nameValuePair;
@@ -17176,10 +17176,10 @@ var require_connection = __commonJS({
       const wasClean = ws[kSentClose] === sentCloseFrameState.SENT && ws[kReceivedClose];
       let code = 1005;
       let reason = "";
-      const result2 = ws[kByteParser].closingInfo;
-      if (result2 && !result2.error) {
-        code = result2.code ?? 1005;
-        reason = result2.reason;
+      const result = ws[kByteParser].closingInfo;
+      if (result && !result.error) {
+        code = result.code ?? 1005;
+        reason = result.reason;
       } else if (!ws[kReceivedClose]) {
         code = 1006;
       }
@@ -18947,12 +18947,12 @@ var require_lib = __commonJS({
       };
       return function(mod) {
         if (mod && mod.__esModule) return mod;
-        var result2 = {};
+        var result = {};
         if (mod != null) {
-          for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result2, mod, k[i]);
+          for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
         }
-        __setModuleDefault(result2, mod);
-        return result2;
+        __setModuleDefault(result, mod);
+        return result;
       };
     })();
     var __awaiter3 = exports && exports.__awaiter || function(thisArg, _arguments, P, generator) {
@@ -18976,8 +18976,8 @@ var require_lib = __commonJS({
             reject(e);
           }
         }
-        function step(result2) {
-          result2.done ? resolve4(result2.value) : adopt(result2.value).then(fulfilled, rejected);
+        function step(result) {
+          result.done ? resolve4(result.value) : adopt(result.value).then(fulfilled, rejected);
         }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
       });
@@ -19253,9 +19253,9 @@ var require_lib = __commonJS({
               }
               yield response.readBody();
               if (parsedRedirectUrl.hostname !== parsedUrl.hostname) {
-                for (const header2 in headers) {
-                  if (header2.toLowerCase() === "authorization") {
-                    delete headers[header2];
+                for (const header in headers) {
+                  if (header.toLowerCase() === "authorization") {
+                    delete headers[header];
                   }
                 }
               }
@@ -19408,15 +19408,15 @@ var require_lib = __commonJS({
        * For headers that must always be a single string (like Content-Type), use the
        * specialized _getExistingOrDefaultContentTypeHeader method instead.
        */
-      _getExistingOrDefaultHeader(additionalHeaders, header2, _default) {
+      _getExistingOrDefaultHeader(additionalHeaders, header, _default) {
         let clientHeader;
         if (this.requestOptions && this.requestOptions.headers) {
-          const headerValue = lowercaseKeys2(this.requestOptions.headers)[header2];
+          const headerValue = lowercaseKeys2(this.requestOptions.headers)[header];
           if (headerValue) {
             clientHeader = typeof headerValue === "number" ? headerValue.toString() : headerValue;
           }
         }
-        const additionalValue = additionalHeaders[header2];
+        const additionalValue = additionalHeaders[header];
         if (additionalValue !== void 0) {
           return typeof additionalValue === "number" ? additionalValue.toString() : additionalValue;
         }
@@ -20891,9 +20891,9 @@ ${indent}`) + "'";
         start = start.replace(/\n+/g, `$&${indent}`);
       }
       const indentSize = indent ? "2" : "1";
-      let header2 = (startWithSpace ? indentSize : "") + chomp;
+      let header = (startWithSpace ? indentSize : "") + chomp;
       if (comment) {
-        header2 += " " + commentString(comment.replace(/ ?[\r\n]+/g, " "));
+        header += " " + commentString(comment.replace(/ ?[\r\n]+/g, " "));
         if (onComment)
           onComment();
       }
@@ -20908,11 +20908,11 @@ ${indent}`) + "'";
         }
         const body = foldFlowLines.foldFlowLines(`${start}${foldedValue}${end}`, indent, foldFlowLines.FOLD_BLOCK, foldOptions);
         if (!literalFallback)
-          return `>${header2}
+          return `>${header}
 ${indent}${body}`;
       }
       value = value.replace(/\n+/g, `$&${indent}`);
-      return `|${header2}
+      return `|${header}
 ${indent}${start}${value}${end}`;
     }
     function plainString(item, ctx, onComment, onChompKeep) {
@@ -24015,10 +24015,10 @@ var require_resolve_block_scalar = __commonJS({
     var Scalar = require_Scalar();
     function resolveBlockScalar(ctx, scalar, onError) {
       const start = scalar.offset;
-      const header2 = parseBlockScalarHeader(scalar, ctx.options.strict, onError);
-      if (!header2)
+      const header = parseBlockScalarHeader(scalar, ctx.options.strict, onError);
+      if (!header)
         return { value: "", type: null, comment: "", range: [start, start, start] };
-      const type = header2.mode === ">" ? Scalar.Scalar.BLOCK_FOLDED : Scalar.Scalar.BLOCK_LITERAL;
+      const type = header.mode === ">" ? Scalar.Scalar.BLOCK_FOLDED : Scalar.Scalar.BLOCK_LITERAL;
       const lines = scalar.source ? splitLines(scalar.source) : [];
       let chompStart = lines.length;
       for (let i = lines.length - 1; i >= 0; --i) {
@@ -24029,26 +24029,26 @@ var require_resolve_block_scalar = __commonJS({
           break;
       }
       if (chompStart === 0) {
-        const value2 = header2.chomp === "+" && lines.length > 0 ? "\n".repeat(Math.max(1, lines.length - 1)) : "";
-        let end2 = start + header2.length;
+        const value2 = header.chomp === "+" && lines.length > 0 ? "\n".repeat(Math.max(1, lines.length - 1)) : "";
+        let end2 = start + header.length;
         if (scalar.source)
           end2 += scalar.source.length;
-        return { value: value2, type, comment: header2.comment, range: [start, end2, end2] };
+        return { value: value2, type, comment: header.comment, range: [start, end2, end2] };
       }
-      let trimIndent = scalar.indent + header2.indent;
-      let offset = scalar.offset + header2.length;
+      let trimIndent = scalar.indent + header.indent;
+      let offset = scalar.offset + header.length;
       let contentStart = 0;
       for (let i = 0; i < chompStart; ++i) {
         const [indent, content] = lines[i];
         if (content === "" || content === "\r") {
-          if (header2.indent === 0 && indent.length > trimIndent)
+          if (header.indent === 0 && indent.length > trimIndent)
             trimIndent = indent.length;
         } else {
           if (indent.length < trimIndent) {
             const message = "Block scalars with more-indented leading empty lines must use an explicit indentation indicator";
             onError(offset + indent.length, "MISSING_CHAR", message);
           }
-          if (header2.indent === 0)
+          if (header.indent === 0)
             trimIndent = indent.length;
           contentStart = i;
           if (trimIndent === 0 && !ctx.atRoot) {
@@ -24075,7 +24075,7 @@ var require_resolve_block_scalar = __commonJS({
         if (crlf)
           content = content.slice(0, -1);
         if (content && indent.length < trimIndent) {
-          const src = header2.indent ? "explicit indentation indicator" : "first line";
+          const src = header.indent ? "explicit indentation indicator" : "first line";
           const message = `Block scalar lines must not be less indented than their ${src}`;
           onError(offset - content.length - (crlf ? 2 : 1), "BAD_INDENT", message);
           indent = "";
@@ -24102,7 +24102,7 @@ var require_resolve_block_scalar = __commonJS({
           prevMoreIndented = false;
         }
       }
-      switch (header2.chomp) {
+      switch (header.chomp) {
         case "-":
           break;
         case "+":
@@ -24114,8 +24114,8 @@ var require_resolve_block_scalar = __commonJS({
         default:
           value += "\n";
       }
-      const end = start + header2.length + scalar.source.length;
-      return { value, type, comment: header2.comment, range: [start, end, end] };
+      const end = start + header.length + scalar.source.length;
+      return { value, type, comment: header.comment, range: [start, end, end] };
     }
     function parseBlockScalarHeader({ offset, props }, strict, onError) {
       if (props[0].type !== "block-scalar-header") {
@@ -24953,10 +24953,10 @@ var require_cst_scalar = __commonJS({
             type = "QUOTE_DOUBLE";
             break;
           case "block-scalar": {
-            const header2 = token.props[0];
-            if (header2.type !== "block-scalar-header")
+            const header = token.props[0];
+            if (header.type !== "block-scalar-header")
               throw new Error("Invalid block scalar header");
-            type = header2.source[0] === ">" ? "BLOCK_FOLDED" : "BLOCK_LITERAL";
+            type = header.source[0] === ">" ? "BLOCK_FOLDED" : "BLOCK_LITERAL";
             break;
           }
           default:
@@ -24988,10 +24988,10 @@ var require_cst_scalar = __commonJS({
       const head = source.substring(0, he);
       const body = source.substring(he + 1) + "\n";
       if (token.type === "block-scalar") {
-        const header2 = token.props[0];
-        if (header2.type !== "block-scalar-header")
+        const header = token.props[0];
+        if (header.type !== "block-scalar-header")
           throw new Error("Invalid block scalar header");
-        header2.source = head;
+        header.source = head;
         token.source = body;
       } else {
         const { offset } = token;
@@ -27237,10 +27237,10 @@ var require_ReflectLite = __commonJS({
           var hint = PreferredType === 3 ? "string" : PreferredType === 5 ? "number" : "default";
           var exoticToPrim = GetMethod(input, toPrimitiveSymbol);
           if (exoticToPrim !== void 0) {
-            var result2 = exoticToPrim.call(input, hint);
-            if (IsObject(result2))
+            var result = exoticToPrim.call(input, hint);
+            if (IsObject(result))
               throw new TypeError();
-            return result2;
+            return result;
           }
           return OrdinaryToPrimitive(input, hint === "default" ? "number" : hint);
         }
@@ -27248,28 +27248,28 @@ var require_ReflectLite = __commonJS({
           if (hint === "string") {
             var toString_1 = O.toString;
             if (IsCallable(toString_1)) {
-              var result2 = toString_1.call(O);
-              if (!IsObject(result2))
-                return result2;
+              var result = toString_1.call(O);
+              if (!IsObject(result))
+                return result;
             }
             var valueOf = O.valueOf;
             if (IsCallable(valueOf)) {
-              var result2 = valueOf.call(O);
-              if (!IsObject(result2))
-                return result2;
+              var result = valueOf.call(O);
+              if (!IsObject(result))
+                return result;
             }
           } else {
             var valueOf = O.valueOf;
             if (IsCallable(valueOf)) {
-              var result2 = valueOf.call(O);
-              if (!IsObject(result2))
-                return result2;
+              var result = valueOf.call(O);
+              if (!IsObject(result))
+                return result;
             }
             var toString_2 = O.toString;
             if (IsCallable(toString_2)) {
-              var result2 = toString_2.call(O);
-              if (!IsObject(result2))
-                return result2;
+              var result = toString_2.call(O);
+              if (!IsObject(result))
+                return result;
             }
           }
           throw new TypeError();
@@ -27330,8 +27330,8 @@ var require_ReflectLite = __commonJS({
           return iterResult.value;
         }
         function IteratorStep(iterator2) {
-          var result2 = iterator2.next();
-          return result2.done ? false : result2;
+          var result = iterator2.next();
+          return result.done ? false : result;
         }
         function IteratorClose(iterator2) {
           var f = iterator2["return"];
@@ -27841,8 +27841,8 @@ var __awaiter = function(thisArg, _arguments, P, generator) {
         reject(e);
       }
     }
-    function step(result2) {
-      result2.done ? resolve4(result2.value) : adopt(result2.value).then(fulfilled, rejected);
+    function step(result) {
+      result.done ? resolve4(result.value) : adopt(result.value).then(fulfilled, rejected);
     }
     step((generator = generator.apply(thisArg, _arguments || [])).next());
   });
@@ -28004,8 +28004,8 @@ var Summary = class {
         if (typeof cell === "string") {
           return this.wrap("td", cell);
         }
-        const { header: header2, data, colspan, rowspan } = cell;
-        const tag = header2 ? "th" : "td";
+        const { header, data, colspan, rowspan } = cell;
+        const tag = header ? "th" : "td";
         const attrs = Object.assign(Object.assign({}, colspan && { colspan }), rowspan && { rowspan });
         return this.wrap(tag, data, attrs);
       }).join("");
@@ -28149,6 +28149,60 @@ function error(message, properties = {}) {
   issueCommand("error", toCommandProperties(properties), message instanceof Error ? message.toString() : message);
 }
 
+// packages/runtime/github-actions/src/runtime-input.ts
+var SAFE_ERROR_NAMES = /* @__PURE__ */ new Set([
+  "GoogleDriveAssetRepositoryError",
+  "EventNotFoundError",
+  "EventConcurrentModificationError",
+  "GitHubEventRepositoryConfigurationError",
+  "GitHubEventRepositoryScopeError",
+  "GitHubEventRepositoryResponseError",
+  "GitHubEventCommentRepositoryConfigurationError",
+  "GitHubEventCommentRepositoryScopeError",
+  "GitHubEventCommentRepositoryResponseError"
+]);
+var RuntimeInput = class {
+  static positiveIntegerInput(name, value) {
+    if (!/^\d+$/.test(value)) {
+      throw new Error(`${name} must be a positive integer`);
+    }
+    const parsed = Number(value);
+    if (!Number.isSafeInteger(parsed) || parsed <= 0) {
+      throw new Error(`${name} must be a positive integer`);
+    }
+    return parsed;
+  }
+  static enumInput(name, value, allowed) {
+    if (!allowed.includes(value)) {
+      throw new Error(`${name} must be one of: ${allowed.join(", ")}`);
+    }
+    return value;
+  }
+  static booleanInput(name, value) {
+    if (value === "true") return true;
+    if (value === "false") return false;
+    throw new Error(`${name} must be true or false`);
+  }
+  /** Never expose provider responses, input values, or contact data in failures. */
+  static publicErrorMessage(error2) {
+    if (error2 instanceof Error && SAFE_ERROR_NAMES.has(error2.name)) {
+      return `${error2.name}: ${error2.message}`;
+    }
+    return "Meetup automation failed; inspect debug logs using a trusted runner";
+  }
+};
+
+// packages/runtime/github-actions/src/action-runner.ts
+var ActionRunner = class {
+  static async run(operation) {
+    try {
+      await operation();
+    } catch (error2) {
+      setFailed(RuntimeInput.publicErrorMessage(error2));
+    }
+  }
+};
+
 // packages/runtime/github-actions/src/communication-action.ts
 import { createHash as createHash3 } from "node:crypto";
 
@@ -28227,8 +28281,8 @@ var __awaiter2 = function(thisArg, _arguments, P, generator) {
         reject(e);
       }
     }
-    function step(result2) {
-      result2.done ? resolve4(result2.value) : adopt(result2.value).then(fulfilled, rejected);
+    function step(result) {
+      result.done ? resolve4(result.value) : adopt(result.value).then(fulfilled, rejected);
     }
     step((generator = generator.apply(thisArg, _arguments || [])).next());
   });
@@ -28320,12 +28374,12 @@ function addHook(state, kind, name, hook2) {
   }
   if (kind === "after") {
     hook2 = (method, options) => {
-      let result2;
+      let result;
       return Promise.resolve().then(method.bind(null, options)).then((result_) => {
-        result2 = result_;
-        return orig(result2, options);
+        result = result_;
+        return orig(result, options);
       }).then(() => {
-        return result2;
+        return result;
       });
     };
   }
@@ -28422,16 +28476,16 @@ function isPlainObject(value) {
   return typeof Ctor === "function" && Ctor instanceof Ctor && Function.prototype.call(Ctor) === Function.prototype.call(value);
 }
 function mergeDeep(defaults2, options) {
-  const result2 = Object.assign({}, defaults2);
+  const result = Object.assign({}, defaults2);
   Object.keys(options).forEach((key) => {
     if (isPlainObject(options[key])) {
-      if (!(key in defaults2)) Object.assign(result2, { [key]: options[key] });
-      else result2[key] = mergeDeep(defaults2[key], options[key]);
+      if (!(key in defaults2)) Object.assign(result, { [key]: options[key] });
+      else result[key] = mergeDeep(defaults2[key], options[key]);
     } else {
-      Object.assign(result2, { [key]: options[key] });
+      Object.assign(result, { [key]: options[key] });
     }
   });
-  return result2;
+  return result;
 }
 function removeUndefinedProperties(obj) {
   for (const key in obj) {
@@ -28487,13 +28541,13 @@ function extractUrlVariableNames(url) {
   return matches.map(removeNonChars).reduce((a, b) => a.concat(b), []);
 }
 function omit(object, keysToOmit) {
-  const result2 = { __proto__: null };
+  const result = { __proto__: null };
   for (const key of Object.keys(object)) {
     if (keysToOmit.indexOf(key) === -1) {
-      result2[key] = object[key];
+      result[key] = object[key];
     }
   }
-  return result2;
+  return result;
 }
 function encodeReserved(str) {
   return str.split(/(%[0-9A-Fa-f]{2})/g).map(function(part) {
@@ -28523,28 +28577,28 @@ function isKeyOperator(operator) {
   return operator === ";" || operator === "&" || operator === "?";
 }
 function getValues(context3, operator, key, modifier) {
-  var value = context3[key], result2 = [];
+  var value = context3[key], result = [];
   if (isDefined(value) && value !== "") {
     if (typeof value === "string" || typeof value === "number" || typeof value === "bigint" || typeof value === "boolean") {
       value = value.toString();
       if (modifier && modifier !== "*") {
         value = value.substring(0, parseInt(modifier, 10));
       }
-      result2.push(
+      result.push(
         encodeValue(operator, value, isKeyOperator(operator) ? key : "")
       );
     } else {
       if (modifier === "*") {
         if (Array.isArray(value)) {
           value.filter(isDefined).forEach(function(value2) {
-            result2.push(
+            result.push(
               encodeValue(operator, value2, isKeyOperator(operator) ? key : "")
             );
           });
         } else {
           Object.keys(value).forEach(function(k) {
             if (isDefined(value[k])) {
-              result2.push(encodeValue(operator, value[k], k));
+              result.push(encodeValue(operator, value[k], k));
             }
           });
         }
@@ -28563,24 +28617,24 @@ function getValues(context3, operator, key, modifier) {
           });
         }
         if (isKeyOperator(operator)) {
-          result2.push(encodeUnreserved(key) + "=" + tmp.join(","));
+          result.push(encodeUnreserved(key) + "=" + tmp.join(","));
         } else if (tmp.length !== 0) {
-          result2.push(tmp.join(","));
+          result.push(tmp.join(","));
         }
       }
     }
   } else {
     if (operator === ";") {
       if (isDefined(value)) {
-        result2.push(encodeUnreserved(key));
+        result.push(encodeUnreserved(key));
       }
     } else if (value === "" && (operator === "&" || operator === "?")) {
-      result2.push(encodeUnreserved(key) + "=");
+      result.push(encodeUnreserved(key) + "=");
     } else if (value === "") {
-      result2.push("");
+      result.push("");
     }
   }
-  return result2;
+  return result;
 }
 function parseUrl(template) {
   return {
@@ -28710,18 +28764,18 @@ var NullObject = /* @__PURE__ */ (() => {
   C.prototype = /* @__PURE__ */ Object.create(null);
   return C;
 })();
-function parse2(header2, options) {
+function parse2(header, options) {
   const stopChar = options?.comma === true ? COMMA : 65536;
-  const len = header2.length;
-  let index = skipOWS(header2, options?.start ?? 0, len);
+  const len = header.length;
+  let index = skipOWS(header, options?.start ?? 0, len);
   const valueStart = index;
-  index = skipValue(header2, index, len, stopChar);
-  const valueEnd = trailingOWS(header2, valueStart, index);
-  const type = header2.slice(valueStart, valueEnd).toLowerCase();
+  index = skipValue(header, index, len, stopChar);
+  const valueEnd = trailingOWS(header, valueStart, index);
+  const type = header.slice(valueStart, valueEnd).toLowerCase();
   if (options?.parameters === false) {
     return { type, index, parameters: new NullObject() };
   }
-  return parseParameters(header2, type, index, len, stopChar);
+  return parseParameters(header, type, index, len, stopChar);
 }
 var SP = 32;
 var HTAB = 9;
@@ -28730,36 +28784,36 @@ var EQ = 61;
 var DQUOTE = 34;
 var BSLASH = 92;
 var COMMA = 44;
-function parseParameters(header2, type, index, len, stopChar) {
+function parseParameters(header, type, index, len, stopChar) {
   const parameters = new NullObject();
   parameter: while (index < len) {
-    if (header2.charCodeAt(index) === stopChar)
+    if (header.charCodeAt(index) === stopChar)
       break;
-    index = skipOWS(header2, index + 1, len);
+    index = skipOWS(header, index + 1, len);
     const keyStart = index;
     while (index < len) {
-      const code = header2.charCodeAt(index);
+      const code = header.charCodeAt(index);
       if (code === stopChar)
         break parameter;
       if (code === SEMI)
         continue parameter;
       if (code === EQ) {
-        const keyEnd = trailingOWS(header2, keyStart, index);
-        const key = header2.slice(keyStart, keyEnd).toLowerCase();
-        index = skipOWS(header2, index + 1, len);
-        if (index < len && header2.charCodeAt(index) === DQUOTE) {
+        const keyEnd = trailingOWS(header, keyStart, index);
+        const key = header.slice(keyStart, keyEnd).toLowerCase();
+        index = skipOWS(header, index + 1, len);
+        if (index < len && header.charCodeAt(index) === DQUOTE) {
           index++;
           let value = "";
           while (index < len) {
-            const code2 = header2.charCodeAt(index++);
+            const code2 = header.charCodeAt(index++);
             if (code2 === DQUOTE) {
-              index = skipValue(header2, index, len, stopChar);
+              index = skipValue(header, index, len, stopChar);
               if (parameters[key] === void 0)
                 parameters[key] = value;
               break;
             }
             if (code2 === BSLASH && index < len) {
-              value += header2[index++];
+              value += header[index++];
               continue;
             }
             value += String.fromCharCode(code2);
@@ -28767,10 +28821,10 @@ function parseParameters(header2, type, index, len, stopChar) {
           continue parameter;
         }
         const valueStart = index;
-        index = skipValue(header2, index, len, stopChar);
+        index = skipValue(header, index, len, stopChar);
         if (parameters[key] === void 0) {
-          const valueEnd = trailingOWS(header2, valueStart, index);
-          parameters[key] = header2.slice(valueStart, valueEnd);
+          const valueEnd = trailingOWS(header, valueStart, index);
+          parameters[key] = header.slice(valueStart, valueEnd);
         }
         continue parameter;
       }
@@ -28788,18 +28842,18 @@ function skipValue(str, index, len, stopChar) {
   }
   return index;
 }
-function skipOWS(header2, index, len) {
+function skipOWS(header, index, len) {
   while (index < len) {
-    const char = header2.charCodeAt(index);
+    const char = header.charCodeAt(index);
     if (char !== SP && char !== HTAB)
       break;
     index++;
   }
   return index;
 }
-function trailingOWS(header2, start, end) {
+function trailingOWS(header, start, end) {
   while (end > start) {
-    const char = header2.charCodeAt(end - 1);
+    const char = header.charCodeAt(end - 1);
     if (char !== SP && char !== HTAB)
       break;
     end--;
@@ -29029,12 +29083,12 @@ var isContextSourceSupported = () => {
     return featureCache.get(parseFingerprint);
   }
   try {
-    const result2 = JSON.parse(
+    const result = JSON.parse(
       "1",
       (_, __, context3) => !!context3?.source && context3.source === "1"
     );
-    featureCache.set(parseFingerprint, result2);
-    return result2;
+    featureCache.set(parseFingerprint, result);
+    return result;
   } catch {
     featureCache.set(parseFingerprint, false);
     return false;
@@ -29419,16 +29473,16 @@ function graphql(request2, query, options) {
   const parsedOptions = typeof query === "string" ? Object.assign({ query }, options) : query;
   const requestOptions = Object.keys(
     parsedOptions
-  ).reduce((result2, key) => {
+  ).reduce((result, key) => {
     if (NON_VARIABLE_OPTIONS.includes(key)) {
-      result2[key] = parsedOptions[key];
-      return result2;
+      result[key] = parsedOptions[key];
+      return result;
     }
-    if (!result2.variables) {
-      result2.variables = {};
+    if (!result.variables) {
+      result.variables = {};
     }
-    result2.variables[key] = parsedOptions[key];
-    return result2;
+    result.variables[key] = parsedOptions[key];
+    return result;
   }, {});
   const baseUrl2 = parsedOptions.baseUrl || request2.endpoint.DEFAULTS.baseUrl;
   if (GHES_V3_SUFFIX_REGEX.test(baseUrl2)) {
@@ -32177,8 +32231,8 @@ function paginate(octokit, route, parameters, mapFn) {
   );
 }
 function gather(octokit, results, iterator2, mapFn) {
-  return iterator2.next().then((result2) => {
-    if (result2.done) {
+  return iterator2.next().then((result) => {
+    if (result.done) {
       return results;
     }
     let earlyExit = false;
@@ -32186,7 +32240,7 @@ function gather(octokit, results, iterator2, mapFn) {
       earlyExit = true;
     }
     results = results.concat(
-      mapFn ? mapFn(result2.value, done) : result2.value.data
+      mapFn ? mapFn(result.value, done) : result.value.data
     );
     if (earlyExit) {
       return results;
@@ -32237,30 +32291,42 @@ function getOctokit(token, options, ...additionalPlugins) {
   return new GitHubWithPlugins(getOctokitOptions(token, options));
 }
 
-// packages/adapter/github-event-repository/src/github-event-repository.ts
+// packages/adapter/github-event-repository/src/github-event-repository-configuration-error.ts
 var GitHubEventRepositoryConfigurationError = class extends Error {
   constructor(message) {
     super(message);
     this.name = "GitHubEventRepositoryConfigurationError";
   }
 };
-var GitHubEventRepositoryScopeError = class extends Error {
-  constructor(expected, received) {
-    super(`GitHub event repository is scoped to ${expected}, not ${received}`);
-    this.name = "GitHubEventRepositoryScopeError";
-  }
-};
+
+// packages/adapter/github-event-repository/src/github-event-repository-response-error.ts
 var GitHubEventRepositoryResponseError = class extends Error {
   constructor(message) {
     super(message);
     this.name = "GitHubEventRepositoryResponseError";
   }
 };
-var GitHubEventRepository = class {
+
+// packages/adapter/github-event-repository/src/github-event-repository-scope-error.ts
+var GitHubEventRepositoryScopeError = class extends Error {
+  constructor(expected, received) {
+    super(`GitHub event repository is scoped to ${expected}, not ${received}`);
+    this.name = "GitHubEventRepositoryScopeError";
+  }
+};
+
+// packages/adapter/github-event-repository/src/github-event-repository.ts
+var GitHubEventRepository = class _GitHubEventRepository {
   constructor(client, options) {
     this.client = client;
-    this.owner = requireRepositoryPart(options.owner, "owner");
-    this.repo = requireRepositoryPart(options.repo, "repo");
+    this.owner = _GitHubEventRepository.requireRepositoryPart(
+      options.owner,
+      "owner"
+    );
+    this.repo = _GitHubEventRepository.requireRepositoryPart(
+      options.repo,
+      "repo"
+    );
     this.repositoryName = `${this.owner}/${this.repo}`;
   }
   client;
@@ -32275,7 +32341,7 @@ var GitHubEventRepository = class {
         repo: this.repo,
         issue_number: identity.issueNumber
       });
-      const document = mapGitHubIssueDocument(
+      const document = _GitHubEventRepository.mapGitHubIssueDocument(
         response.data,
         this.repositoryName
       );
@@ -32286,7 +32352,7 @@ var GitHubEventRepository = class {
       }
       return document;
     } catch (error2) {
-      if (isNotFoundError(error2)) {
+      if (_GitHubEventRepository.isNotFoundError(error2)) {
         return null;
       }
       throw error2;
@@ -32316,8 +32382,8 @@ var GitHubEventRepository = class {
   }
   async listPage(query) {
     this.assertScope(query.repository);
-    const page = parseCursor(query.cursor);
-    const pageSize = parsePageSize(query.pageSize);
+    const page = _GitHubEventRepository.parseCursor(query.cursor);
+    const pageSize = _GitHubEventRepository.parsePageSize(query.pageSize);
     const parameters = {
       owner: this.owner,
       repo: this.repo,
@@ -32334,8 +32400,16 @@ var GitHubEventRepository = class {
         "GitHub issue list response must contain an array"
       );
     }
-    const items = response.data.map((issue2) => mapGitHubIssueDocument(issue2, this.repositoryName)).filter((issue2) => issue2 !== null);
-    const linkHeader = readHeader(response.headers, "link");
+    const items = response.data.map(
+      (issue2) => _GitHubEventRepository.mapGitHubIssueDocument(
+        issue2,
+        this.repositoryName
+      )
+    ).filter((issue2) => issue2 !== null);
+    const linkHeader = _GitHubEventRepository.readHeader(
+      response.headers,
+      "link"
+    );
     const hasNextPage = linkHeader === void 0 ? response.data.length === pageSize : /<[^>]+>;\s*rel="next"/.test(linkHeader);
     return {
       items: Object.freeze(items),
@@ -32350,242 +32424,190 @@ var GitHubEventRepository = class {
       );
     }
   }
+  static requireRepositoryPart(value, name) {
+    const normalized = value.trim();
+    if (normalized === "" || normalized.includes("/")) {
+      throw new GitHubEventRepositoryConfigurationError(
+        `GitHub ${name} must be a non-empty repository name segment`
+      );
+    }
+    return normalized;
+  }
+  /** Map one GitHub issue response or webhook snapshot into the domain document. */
+  static mapGitHubIssueDocument(data, repository) {
+    const issue2 = _GitHubEventRepository.asRecord(data, "GitHub issue");
+    if (issue2.pull_request !== void 0 && issue2.pull_request !== null) {
+      return null;
+    }
+    if (!Number.isInteger(issue2.number) || Number(issue2.number) <= 0) {
+      throw new GitHubEventRepositoryResponseError(
+        "GitHub issue number must be a positive integer"
+      );
+    }
+    if (typeof issue2.title !== "string") {
+      throw new GitHubEventRepositoryResponseError(
+        "GitHub issue title must be a string"
+      );
+    }
+    if (issue2.state !== "open" && issue2.state !== "closed") {
+      throw new GitHubEventRepositoryResponseError(
+        "GitHub issue state must be open or closed"
+      );
+    }
+    if (issue2.body !== null && typeof issue2.body !== "string") {
+      throw new GitHubEventRepositoryResponseError(
+        "GitHub issue body must be a string or null"
+      );
+    }
+    if (!Array.isArray(issue2.labels)) {
+      throw new GitHubEventRepositoryResponseError(
+        "GitHub issue labels must be an array"
+      );
+    }
+    return {
+      identity: { repository, issueNumber: Number(issue2.number) },
+      issueState: issue2.state,
+      issueTitle: issue2.title,
+      labels: _GitHubEventRepository.mapLabels(issue2.labels),
+      body: issue2.body ?? ""
+    };
+  }
+  static mapLabels(labels) {
+    const result = [];
+    for (const label of labels) {
+      let name;
+      if (typeof label === "string") {
+        name = label;
+      } else if (_GitHubEventRepository.isRecord(label) && typeof label.name === "string") {
+        name = label.name;
+      }
+      if (name && !result.includes(name)) {
+        result.push(name);
+      }
+    }
+    return Object.freeze(result);
+  }
+  static parseCursor(cursor) {
+    if (cursor === void 0) {
+      return 1;
+    }
+    if (!/^[1-9]\d*$/.test(cursor)) {
+      throw new GitHubEventRepositoryConfigurationError(
+        `Invalid GitHub pagination cursor "${cursor}"`
+      );
+    }
+    return Number(cursor);
+  }
+  static parsePageSize(pageSize) {
+    if (pageSize === void 0) {
+      return 100;
+    }
+    if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) {
+      throw new GitHubEventRepositoryConfigurationError(
+        "GitHub page size must be an integer between 1 and 100"
+      );
+    }
+    return pageSize;
+  }
+  static isNotFoundError(error2) {
+    if (!_GitHubEventRepository.isRecord(error2)) {
+      return false;
+    }
+    if (error2.status === 404) {
+      return true;
+    }
+    return _GitHubEventRepository.isRecord(error2.response) && error2.response.status === 404;
+  }
+  static readHeader(headers, name) {
+    const value = headers?.[name];
+    return typeof value === "string" ? value : void 0;
+  }
+  static asRecord(value, label) {
+    if (!_GitHubEventRepository.isRecord(value)) {
+      throw new GitHubEventRepositoryResponseError(
+        `${label} must be an object`
+      );
+    }
+    return value;
+  }
+  static isRecord(value) {
+    return typeof value === "object" && value !== null;
+  }
 };
-function requireRepositoryPart(value, name) {
-  const normalized = value.trim();
-  if (normalized === "" || normalized.includes("/")) {
-    throw new GitHubEventRepositoryConfigurationError(
-      `GitHub ${name} must be a non-empty repository name segment`
-    );
-  }
-  return normalized;
-}
-function mapGitHubIssueDocument(data, repository) {
-  const issue2 = asRecord(data, "GitHub issue");
-  if (issue2.pull_request !== void 0 && issue2.pull_request !== null) {
-    return null;
-  }
-  if (!Number.isInteger(issue2.number) || Number(issue2.number) <= 0) {
-    throw new GitHubEventRepositoryResponseError(
-      "GitHub issue number must be a positive integer"
-    );
-  }
-  if (typeof issue2.title !== "string") {
-    throw new GitHubEventRepositoryResponseError(
-      "GitHub issue title must be a string"
-    );
-  }
-  if (issue2.state !== "open" && issue2.state !== "closed") {
-    throw new GitHubEventRepositoryResponseError(
-      "GitHub issue state must be open or closed"
-    );
-  }
-  if (issue2.body !== null && typeof issue2.body !== "string") {
-    throw new GitHubEventRepositoryResponseError(
-      "GitHub issue body must be a string or null"
-    );
-  }
-  if (!Array.isArray(issue2.labels)) {
-    throw new GitHubEventRepositoryResponseError(
-      "GitHub issue labels must be an array"
-    );
-  }
-  return {
-    identity: { repository, issueNumber: Number(issue2.number) },
-    issueState: issue2.state,
-    issueTitle: issue2.title,
-    labels: mapLabels(issue2.labels),
-    body: issue2.body ?? ""
-  };
-}
-function mapLabels(labels) {
-  const result2 = [];
-  for (const label of labels) {
-    let name;
-    if (typeof label === "string") {
-      name = label;
-    } else if (isRecord(label) && typeof label.name === "string") {
-      name = label.name;
-    }
-    if (name && !result2.includes(name)) {
-      result2.push(name);
-    }
-  }
-  return Object.freeze(result2);
-}
-function parseCursor(cursor) {
-  if (cursor === void 0) {
-    return 1;
-  }
-  if (!/^[1-9]\d*$/.test(cursor)) {
-    throw new GitHubEventRepositoryConfigurationError(
-      `Invalid GitHub pagination cursor "${cursor}"`
-    );
-  }
-  return Number(cursor);
-}
-function parsePageSize(pageSize) {
-  if (pageSize === void 0) {
-    return 100;
-  }
-  if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) {
-    throw new GitHubEventRepositoryConfigurationError(
-      "GitHub page size must be an integer between 1 and 100"
-    );
-  }
-  return pageSize;
-}
-function isNotFoundError(error2) {
-  if (!isRecord(error2)) {
-    return false;
-  }
-  if (error2.status === 404) {
-    return true;
-  }
-  return isRecord(error2.response) && error2.response.status === 404;
-}
-function readHeader(headers, name) {
-  const value = headers?.[name];
-  return typeof value === "string" ? value : void 0;
-}
-function asRecord(value, label) {
-  if (!isRecord(value)) {
-    throw new GitHubEventRepositoryResponseError(`${label} must be an object`);
-  }
-  return value;
-}
-function isRecord(value) {
-  return typeof value === "object" && value !== null;
-}
 
-// packages/domain/publication/src/domain/manual-task-policy.ts
-function planManualPublicationTasks(event) {
-  if (event.occurrenceStatus === "cancelled") {
-    return Object.freeze(
-      allTaskKinds().map((kind) => ({
-        kind,
-        status: "not-applicable",
-        reason: "The event is cancelled"
-      }))
-    );
-  }
-  const occurrenceConfirmed = event.occurrenceStatus === "held";
-  return Object.freeze([
-    task(
-      "publish-meetup-event",
-      Boolean(event.references.meetup),
-      "Publish the event to Meetup"
-    ),
-    task(
-      "publish-community-event",
-      Boolean(event.references.community),
-      "Publish the event to the CNCF community platform"
-    ),
-    task(
-      "create-asset-folder",
-      Boolean(event.references.assets),
-      "Create the event asset folder"
-    ),
-    occurrenceConfirmed ? task(
-      "publish-slides",
-      event.slidesPublished,
-      "Publish post-event slides"
-    ) : notApplicable(
-      "publish-slides",
-      "Slides are published only after occurrence is explicitly confirmed"
-    ),
-    occurrenceConfirmed ? task(
-      "import-attendance",
-      event.attendanceImported,
-      "Import post-event attendance"
-    ) : notApplicable(
-      "import-attendance",
-      "Attendance is imported only after occurrence is explicitly confirmed"
-    )
-  ]);
-}
-function task(kind, completed, reason) {
-  return {
-    kind,
-    status: completed ? "completed" : "pending",
-    reason
-  };
-}
-function notApplicable(kind, reason) {
-  return { kind, status: "not-applicable", reason };
-}
-function allTaskKinds() {
-  return [
-    "publish-meetup-event",
-    "publish-community-event",
-    "create-asset-folder",
-    "publish-slides",
-    "import-attendance"
-  ];
-}
-
-// packages/domain/publication/src/domain/model.ts
-function applyPublicationPatch(references, patch) {
-  const result2 = { ...references };
-  for (const operation of patch.operations) {
-    switch (operation.path) {
-      case "meetup":
-        result2.meetup = operation.value;
-        break;
-      case "community":
-        result2.community = operation.value;
-        break;
-      case "assets":
-        result2.assets = operation.value;
-        break;
+// packages/domain/publication/src/domain/publication-link-evaluation.ts
+var PublicationLinkEvaluation = class _PublicationLinkEvaluation {
+  static evaluateLink({
+    references,
+    path,
+    prefixes,
+    identifierPattern,
+    code,
+    message
+  }) {
+    const raw = references[path];
+    if (raw === void 0 || raw === "") {
+      return _PublicationLinkEvaluation.emptyEvaluation(references);
     }
-  }
-  return result2;
-}
-
-// packages/domain/publication/src/domain/url-policy.ts
-var DEFAULT_PUBLICATION_URL_CONFIGURATION = Object.freeze({
-  meetupEventUrlPrefix: "https://www.meetup.com/cloud-native-aix-marseille/events/",
-  communityEventUrlPrefixes: Object.freeze([
-    "https://ocgroups.dev/cncf/group/cloud-native-aix-marseille/event/",
-    "https://community.cncf.io/events/details/cncf-cloud-native-aix-marseille-presents-"
-  ]),
-  assetFolderUrlPrefix: "https://drive.google.com/drive/folders/"
-});
-var MeetupEventUrlPolicy = class {
-  constructor(prefix) {
-    this.prefix = prefix;
-  }
-  prefix;
-  id = "meetup-event-url";
-  evaluate(references) {
-    return evaluateLink({
-      references,
-      path: "meetup",
-      prefixes: [this.prefix],
-      identifierPattern: /^\d+$/,
-      code: "publication.meetup-url.invalid",
-      message: `Meetup URL must start with ${this.prefix} and end with a numeric event identifier`
+    const normalized = raw.trim().replace(/\/$/, "");
+    const matchingPrefix = prefixes.find(
+      (prefix) => normalized.startsWith(prefix)
+    );
+    const identifier = matchingPrefix ? normalized.slice(matchingPrefix.length) : void 0;
+    if (!_PublicationLinkEvaluation.isHttpsUrl(normalized) || !matchingPrefix || !identifier || !identifierPattern.test(identifier)) {
+      return {
+        references,
+        diagnostics: [
+          Object.freeze({
+            code,
+            severity: "error",
+            field: path,
+            message
+          })
+        ],
+        patch: Object.freeze({ operations: [] })
+      };
+    }
+    if (raw === normalized) {
+      return _PublicationLinkEvaluation.emptyEvaluation(references);
+    }
+    const operation = Object.freeze({
+      op: "replace",
+      path,
+      value: normalized,
+      reason: "Trim URL and remove its trailing slash"
     });
+    return {
+      references: { ...references, [path]: normalized },
+      diagnostics: [
+        Object.freeze({
+          code: `publication.${path}.normalized`,
+          severity: "info",
+          field: path,
+          message: `${path} URL can be normalized safely`,
+          fixAvailable: true
+        })
+      ],
+      patch: Object.freeze({ operations: Object.freeze([operation]) })
+    };
   }
-};
-var CommunityEventUrlPolicy = class {
-  constructor(prefixes) {
-    this.prefixes = prefixes;
-  }
-  prefixes;
-  id = "community-event-url";
-  evaluate(references) {
-    return evaluateLink({
+  static emptyEvaluation(references) {
+    return {
       references,
-      path: "community",
-      prefixes: this.prefixes,
-      identifierPattern: /^[0-9a-z-]+$/,
-      code: "publication.community-url.invalid",
-      message: "Community event URL must use an approved CNCF/OCGroups prefix and identifier"
-    });
+      diagnostics: [],
+      patch: Object.freeze({ operations: [] })
+    };
+  }
+  static isHttpsUrl(value) {
+    try {
+      return new URL(value).protocol === "https:";
+    } catch {
+      return false;
+    }
   }
 };
+
+// packages/domain/publication/src/domain/asset-folder-url-policy.ts
 var AssetFolderUrlPolicy = class {
   constructor(prefix) {
     this.prefix = prefix;
@@ -32593,7 +32615,7 @@ var AssetFolderUrlPolicy = class {
   prefix;
   id = "asset-folder-url";
   evaluate(references) {
-    return evaluateLink({
+    return PublicationLinkEvaluation.evaluateLink({
       references,
       path: "assets",
       prefixes: [this.prefix],
@@ -32603,6 +32625,157 @@ var AssetFolderUrlPolicy = class {
     });
   }
 };
+
+// packages/domain/publication/src/domain/community-event-url-policy.ts
+var CommunityEventUrlPolicy = class {
+  constructor(prefixes) {
+    this.prefixes = prefixes;
+  }
+  prefixes;
+  id = "community-event-url";
+  evaluate(references) {
+    return PublicationLinkEvaluation.evaluateLink({
+      references,
+      path: "community",
+      prefixes: this.prefixes,
+      identifierPattern: /^[0-9a-z-]+$/,
+      code: "publication.community-url.invalid",
+      message: "Community event URL must use an approved CNCF/OCGroups prefix and identifier"
+    });
+  }
+};
+
+// packages/domain/publication/src/domain/manual-task-policy.ts
+var ManualPublicationPolicy = class _ManualPublicationPolicy {
+  /** Models human work explicitly until a corresponding outbound adapter exists. */
+  static planManualPublicationTasks(event) {
+    if (event.occurrenceStatus === "cancelled") {
+      return Object.freeze(
+        _ManualPublicationPolicy.allTaskKinds().map((kind) => ({
+          kind,
+          status: "not-applicable",
+          reason: "The event is cancelled"
+        }))
+      );
+    }
+    const occurrenceConfirmed = event.occurrenceStatus === "held";
+    return Object.freeze([
+      _ManualPublicationPolicy.task(
+        "publish-meetup-event",
+        Boolean(event.references.meetup),
+        "Publish the event to Meetup"
+      ),
+      _ManualPublicationPolicy.task(
+        "publish-community-event",
+        Boolean(event.references.community),
+        "Publish the event to the CNCF community platform"
+      ),
+      _ManualPublicationPolicy.task(
+        "create-asset-folder",
+        Boolean(event.references.assets),
+        "Create the event asset folder"
+      ),
+      occurrenceConfirmed ? _ManualPublicationPolicy.task(
+        "publish-slides",
+        event.slidesPublished,
+        "Publish post-event slides"
+      ) : _ManualPublicationPolicy.notApplicable(
+        "publish-slides",
+        "Slides are published only after occurrence is explicitly confirmed"
+      ),
+      occurrenceConfirmed ? _ManualPublicationPolicy.task(
+        "import-attendance",
+        event.attendanceImported,
+        "Import post-event attendance"
+      ) : _ManualPublicationPolicy.notApplicable(
+        "import-attendance",
+        "Attendance is imported only after occurrence is explicitly confirmed"
+      )
+    ]);
+  }
+  static task(kind, completed, reason) {
+    return {
+      kind,
+      status: completed ? "completed" : "pending",
+      reason
+    };
+  }
+  static notApplicable(kind, reason) {
+    return { kind, status: "not-applicable", reason };
+  }
+  static allTaskKinds() {
+    return [
+      "publish-meetup-event",
+      "publish-community-event",
+      "create-asset-folder",
+      "publish-slides",
+      "import-attendance"
+    ];
+  }
+};
+
+// packages/domain/publication/src/domain/meetup-event-url-policy.ts
+var MeetupEventUrlPolicy = class {
+  constructor(prefix) {
+    this.prefix = prefix;
+  }
+  prefix;
+  id = "meetup-event-url";
+  evaluate(references) {
+    return PublicationLinkEvaluation.evaluateLink({
+      references,
+      path: "meetup",
+      prefixes: [this.prefix],
+      identifierPattern: /^\d+$/,
+      code: "publication.meetup-url.invalid",
+      message: `Meetup URL must start with ${this.prefix} and end with a numeric event identifier`
+    });
+  }
+};
+
+// packages/domain/publication/src/domain/model.ts
+var PublicationDiagnostics = class {
+  static applyPublicationPatch(references, patch) {
+    const result = { ...references };
+    for (const operation of patch.operations) {
+      switch (operation.path) {
+        case "meetup":
+          result.meetup = operation.value;
+          break;
+        case "community":
+          result.community = operation.value;
+          break;
+        case "assets":
+          result.assets = operation.value;
+          break;
+      }
+    }
+    return result;
+  }
+};
+
+// packages/domain/publication/src/domain/url-policy-contracts.ts
+var DEFAULT_PUBLICATION_URL_CONFIGURATION = Object.freeze({
+  meetupEventUrlPrefix: "https://www.meetup.com/cloud-native-aix-marseille/events/",
+  communityEventUrlPrefixes: Object.freeze([
+    "https://ocgroups.dev/cncf/group/cloud-native-aix-marseille/event/",
+    "https://community.cncf.io/events/details/cncf-cloud-native-aix-marseille-presents-"
+  ]),
+  assetFolderUrlPrefix: "https://drive.google.com/drive/folders/"
+});
+
+// packages/domain/publication/src/domain/publication-url-policies.ts
+var PublicationUrlPolicies = class {
+  static createDefaultPublicationUrlPolicies(configuration = DEFAULT_PUBLICATION_URL_CONFIGURATION) {
+    return Object.freeze([
+      new MeetupEventUrlPolicy(configuration.meetupEventUrlPrefix),
+      new CommunityEventUrlPolicy(configuration.communityEventUrlPrefixes),
+      new AssetFolderUrlPolicy(configuration.assetFolderUrlPrefix)
+    ]);
+  }
+};
+
+// packages/domain/publication/src/domain/publication-url-policy-engine.ts
 var PublicationUrlPolicyEngine = class {
   constructor(policies) {
     this.policies = policies;
@@ -32613,10 +32786,13 @@ var PublicationUrlPolicyEngine = class {
     const diagnostics = [];
     const operations = [];
     for (const policy of this.policies) {
-      const result2 = policy.evaluate(normalized);
-      diagnostics.push(...result2.diagnostics);
-      operations.push(...result2.patch.operations);
-      normalized = applyPublicationPatch(normalized, result2.patch);
+      const result = policy.evaluate(normalized);
+      diagnostics.push(...result.diagnostics);
+      operations.push(...result.patch.operations);
+      normalized = PublicationDiagnostics.applyPublicationPatch(
+        normalized,
+        result.patch
+      );
     }
     return {
       references: normalized,
@@ -32625,128 +32801,153 @@ var PublicationUrlPolicyEngine = class {
     };
   }
 };
-function createDefaultPublicationUrlPolicies(configuration = DEFAULT_PUBLICATION_URL_CONFIGURATION) {
-  return Object.freeze([
-    new MeetupEventUrlPolicy(configuration.meetupEventUrlPrefix),
-    new CommunityEventUrlPolicy(configuration.communityEventUrlPrefixes),
-    new AssetFolderUrlPolicy(configuration.assetFolderUrlPrefix)
-  ]);
-}
-function evaluateLink({
-  references,
-  path,
-  prefixes,
-  identifierPattern,
-  code,
-  message
-}) {
-  const raw = references[path];
-  if (raw === void 0 || raw === "") {
-    return emptyEvaluation(references);
-  }
-  const normalized = raw.trim().replace(/\/$/, "");
-  const matchingPrefix = prefixes.find(
-    (prefix) => normalized.startsWith(prefix)
-  );
-  const identifier = matchingPrefix ? normalized.slice(matchingPrefix.length) : void 0;
-  if (!isHttpsUrl(normalized) || !matchingPrefix || !identifier || !identifierPattern.test(identifier)) {
-    return {
-      references,
-      diagnostics: [
-        Object.freeze({
-          code,
-          severity: "error",
-          field: path,
-          message
-        })
-      ],
-      patch: Object.freeze({ operations: [] })
-    };
-  }
-  if (raw === normalized) {
-    return emptyEvaluation(references);
-  }
-  const operation = Object.freeze({
-    op: "replace",
-    path,
-    value: normalized,
-    reason: "Trim URL and remove its trailing slash"
-  });
-  return {
-    references: { ...references, [path]: normalized },
-    diagnostics: [
-      Object.freeze({
-        code: `publication.${path}.normalized`,
-        severity: "info",
-        field: path,
-        message: `${path} URL can be normalized safely`,
-        fixAvailable: true
-      })
-    ],
-    patch: Object.freeze({ operations: Object.freeze([operation]) })
-  };
-}
-function emptyEvaluation(references) {
-  return {
-    references,
-    diagnostics: [],
-    patch: Object.freeze({ operations: [] })
-  };
-}
-function isHttpsUrl(value) {
-  try {
-    return new URL(value).protocol === "https:";
-  } catch {
-    return false;
-  }
-}
 
 // packages/application/journey/src/config/automation-config.ts
-function createAutomationConfig() {
-  return {
-    timezone: "Europe/Paris",
-    event: {
-      "issue-label": "meetup",
-      "issue-form": ".github/ISSUE_TEMPLATE/meetup.yml",
-      "occurrence-status-field": "event_status",
-      "required-confirmation-labels": [
-        "hoster:confirmed",
-        "speakers:confirmed"
-      ]
-    },
-    referentials: {
-      hosts: "referentials/hosting.csv",
-      speakers: "referentials/speakers.csv"
-    },
-    communication: {
-      "readiness-window-days": 7,
-      "mailings-repository": "cloud-native-aixmarseille/mailings",
-      "slack-enabled": true,
-      "approval-label": "communication:approved",
-      "dispatch-enabled": true,
-      "policy-version": 1
-    },
-    publication: {
-      "meetup-event-url-prefix": DEFAULT_PUBLICATION_URL_CONFIGURATION.meetupEventUrlPrefix,
-      "cncf-event-url-prefix": DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes[0]
-    }
-  };
-}
+var AutomationConfigFactory = class {
+  /**
+   * Automation behavior is owned and versioned by this repository. Consumer
+   * repositories do not provide a runtime configuration file anymore.
+   */
+  static createAutomationConfig() {
+    return {
+      timezone: "Europe/Paris",
+      event: {
+        "issue-label": "meetup",
+        "issue-form": ".github/ISSUE_TEMPLATE/meetup.yml",
+        "occurrence-status-field": "event_status",
+        "required-confirmation-labels": [
+          "hoster:confirmed",
+          "speakers:confirmed"
+        ]
+      },
+      referentials: {
+        hosts: "referentials/hosting.csv",
+        speakers: "referentials/speakers.csv"
+      },
+      communication: {
+        "readiness-window-days": 7,
+        "mailings-repository": "cloud-native-aixmarseille/mailings",
+        "slack-enabled": true,
+        "approval-label": "communication:approved",
+        "dispatch-enabled": true,
+        "policy-version": 1
+      },
+      publication: {
+        "meetup-event-url-prefix": DEFAULT_PUBLICATION_URL_CONFIGURATION.meetupEventUrlPrefix,
+        "cncf-event-url-prefix": DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes[0]
+      }
+    };
+  }
+};
 
 // packages/application/journey/src/result/result-envelope.ts
-function resultEnvelope(data, diagnostics) {
-  return {
-    schemaVersion: 1,
-    status: diagnostics.length === 0 ? "ok" : "diagnostics",
-    diagnostics,
-    data
-  };
-}
+var ResultEnvelopeFactory = class {
+  static resultEnvelope(data, diagnostics) {
+    return {
+      schemaVersion: 1,
+      status: diagnostics.length === 0 ? "ok" : "diagnostics",
+      diagnostics,
+      data
+    };
+  }
+};
 
 // packages/domain/event/src/application/ports/event-repository.ts
-function eventRepositoryPatchIsEmpty(patch) {
-  return patch.issueTitle === void 0 && patch.labels === void 0 && patch.body === void 0;
-}
+var EventRepositoryPatches = class {
+  static eventRepositoryPatchIsEmpty(patch) {
+    return patch.issueTitle === void 0 && patch.labels === void 0 && patch.body === void 0;
+  }
+};
+
+// packages/domain/event/src/application/use-cases/event-concurrent-modification-error.ts
+var EventConcurrentModificationError = class extends Error {
+  constructor(identity) {
+    super(
+      `Meetup event ${identity.repository}#${identity.issueNumber} changed during reconciliation`
+    );
+    this.name = "EventConcurrentModificationError";
+  }
+};
+
+// packages/domain/event/src/application/use-cases/event-not-found-error.ts
+var EventNotFoundError = class extends Error {
+  constructor(identity) {
+    super(
+      `Meetup event ${identity.repository}#${identity.issueNumber} was not found`
+    );
+    this.name = "EventNotFoundError";
+  }
+};
+
+// packages/domain/event/src/application/use-cases/event-pagination-error.ts
+var EventPaginationError = class extends Error {
+  constructor(cursor) {
+    super(`Event repository repeated pagination cursor "${cursor}"`);
+    this.name = "EventPaginationError";
+  }
+};
+
+// packages/domain/event/src/domain/event-rule-configuration-error.ts
+var EventRuleConfigurationError = class extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "EventRuleConfigurationError";
+  }
+};
+
+// packages/domain/event/src/domain/event-rule-ordering.ts
+var EventRuleOrdering = class {
+  static sortRules(rules) {
+    const byId = /* @__PURE__ */ new Map();
+    for (const rule of rules) {
+      if (byId.has(rule.id)) {
+        throw new EventRuleConfigurationError(
+          `Duplicate event rule "${rule.id}"`
+        );
+      }
+      byId.set(rule.id, rule);
+    }
+    for (const rule of rules) {
+      for (const dependency of rule.dependencies) {
+        if (!byId.has(dependency)) {
+          throw new EventRuleConfigurationError(
+            `Event rule "${rule.id}" has missing dependency "${dependency}"`
+          );
+        }
+      }
+    }
+    const permanent = /* @__PURE__ */ new Set();
+    const temporary = /* @__PURE__ */ new Set();
+    const ordered = [];
+    const visit = (rule, path) => {
+      if (temporary.has(rule.id)) {
+        throw new EventRuleConfigurationError(
+          `Cyclic event rule dependency: ${[...path, rule.id].join(" -> ")}`
+        );
+      }
+      if (permanent.has(rule.id)) {
+        return;
+      }
+      temporary.add(rule.id);
+      for (const dependencyId of rule.dependencies) {
+        const dependency = byId.get(dependencyId);
+        if (!dependency) {
+          throw new EventRuleConfigurationError(
+            `Event rule "${rule.id}" has missing dependency "${dependencyId}"`
+          );
+        }
+        visit(dependency, [...path, rule.id]);
+      }
+      temporary.delete(rule.id);
+      permanent.add(rule.id);
+      ordered.push(rule);
+    };
+    for (const rule of rules) {
+      visit(rule, []);
+    }
+    return Object.freeze(ordered);
+  }
+};
 
 // packages/domain/event/src/domain/model.ts
 var EVENT_SCHEMA_VERSION = 1;
@@ -32764,360 +32965,264 @@ var EXPECTED_POST_EVENT_TASK_NAMES = Object.freeze([
   POST_EVENT_TASK_NAMES.importAttendance,
   POST_EVENT_TASK_NAMES.shareOnSocialNetworks
 ]);
-function postEventChecklistIsComplete(items) {
-  if (items.length !== EXPECTED_POST_EVENT_TASK_NAMES.length) {
-    return false;
-  }
-  const itemByName = /* @__PURE__ */ new Map();
-  for (const item of items) {
-    if (itemByName.has(item.name)) {
+var MeetupEventOperations = class _MeetupEventOperations {
+  /**
+   * A post-event checklist is complete only when it contains each expected task
+   * exactly once, contains no additional task, and every task is completed.
+   */
+  static postEventChecklistIsComplete(items) {
+    if (items.length !== EXPECTED_POST_EVENT_TASK_NAMES.length) {
       return false;
     }
-    itemByName.set(item.name, item);
-  }
-  return EXPECTED_POST_EVENT_TASK_NAMES.every(
-    (name) => itemByName.get(name)?.completed === true
-  );
-}
-function cloneMeetupEvent(event) {
-  const operationalChecklists = {
-    slidesAndContent: event.operationalChecklists.slidesAndContent.map(
-      (item) => ({ ...item })
-    ),
-    communication: event.operationalChecklists.communication.map((item) => ({
-      ...item
-    })),
-    postEvent: event.operationalChecklists.postEvent.map((item) => ({
-      ...item
-    }))
-  };
-  return {
-    ...event,
-    identity: { ...event.identity },
-    labels: [...event.labels],
-    host: event.host ? { ...event.host } : void 0,
-    agenda: event.agenda.map((entry) => ({
-      ...entry,
-      speakers: entry.speakers.map((speaker) => ({ ...speaker }))
-    })),
-    publicationLinks: { ...event.publicationLinks },
-    confirmations: { ...event.confirmations },
-    logistics: { ...event.logistics },
-    operationalChecklists,
-    followUpComplete: event.followUpComplete && postEventChecklistIsComplete(operationalChecklists.postEvent)
-  };
-}
-
-// packages/domain/event/src/domain/lifecycle.ts
-function evaluateEventLifecycle({
-  event,
-  readiness,
-  now
-}) {
-  let state;
-  switch (event.occurrenceStatus) {
-    case "cancelled":
-      state = "cancelled";
-      break;
-    case "postponed":
-      state = "postponed";
-      break;
-    case "held":
-      state = event.followUpComplete && postEventChecklistIsComplete(event.operationalChecklists.postEvent) ? "follow-up-complete" : "held";
-      break;
-    case "scheduled":
-    case void 0:
-      if (!hasMinimumPlanningFacts(event)) {
-        state = "draft";
-      } else {
-        state = readiness.isReady ? "ready" : "planned";
+    const itemByName = /* @__PURE__ */ new Map();
+    for (const item of items) {
+      if (itemByName.has(item.name)) {
+        return false;
       }
-      break;
-  }
-  return {
-    state,
-    evaluatedAt: now,
-    timeZone: event.timeZone,
-    diagnostics: readiness.diagnostics
-  };
-}
-function hasMinimumPlanningFacts(event) {
-  return event.date.trim() !== "" && event.eventTitle.trim() !== "";
-}
-
-// packages/domain/event/src/domain/diagnostic.ts
-function diagnostic(value) {
-  return Object.freeze({ ...value });
-}
-
-// packages/domain/event/src/domain/readiness.ts
-function evaluateEventReadiness(event, diagnostics) {
-  const readinessDiagnostics = [...diagnostics];
-  if (event.occurrenceStatus === "cancelled") {
-    return {
-      status: "incomplete",
-      isReady: false,
-      diagnostics: readinessDiagnostics
-    };
-  }
-  if (event.occurrenceStatus === "postponed") {
-    return {
-      status: "incomplete",
-      isReady: false,
-      diagnostics: readinessDiagnostics
-    };
-  }
-  if (readinessDiagnostics.some((item) => item.severity === "error")) {
-    return {
-      status: "invalid",
-      isReady: false,
-      diagnostics: readinessDiagnostics
-    };
-  }
-  if (!event.confirmations.host) {
-    readinessDiagnostics.push(
-      diagnostic({
-        code: "event.confirmation.host.missing",
-        severity: "warning",
-        category: "incomplete",
-        field: "confirmations.host",
-        message: "Host confirmation is required before the event is ready"
-      })
+      itemByName.set(item.name, item);
+    }
+    return EXPECTED_POST_EVENT_TASK_NAMES.every(
+      (name) => itemByName.get(name)?.completed === true
     );
   }
-  if (!event.confirmations.speakers) {
-    readinessDiagnostics.push(
-      diagnostic({
-        code: "event.confirmation.speakers.missing",
-        severity: "warning",
-        category: "incomplete",
-        field: "confirmations.speakers",
-        message: "Speaker confirmation is required before the event is ready"
-      })
-    );
+  static cloneMeetupEvent(event) {
+    const operationalChecklists = {
+      slidesAndContent: event.operationalChecklists.slidesAndContent.map(
+        (item) => ({ ...item })
+      ),
+      communication: event.operationalChecklists.communication.map((item) => ({
+        ...item
+      })),
+      postEvent: event.operationalChecklists.postEvent.map((item) => ({
+        ...item
+      }))
+    };
+    return {
+      ...event,
+      identity: { ...event.identity },
+      labels: [...event.labels],
+      host: event.host ? { ...event.host } : void 0,
+      agenda: event.agenda.map((entry) => ({
+        ...entry,
+        speakers: entry.speakers.map((speaker) => ({ ...speaker }))
+      })),
+      publicationLinks: { ...event.publicationLinks },
+      confirmations: { ...event.confirmations },
+      logistics: { ...event.logistics },
+      operationalChecklists,
+      followUpComplete: event.followUpComplete && _MeetupEventOperations.postEventChecklistIsComplete(
+        operationalChecklists.postEvent
+      )
+    };
   }
-  const incomplete = readinessDiagnostics.some(
-    (item) => item.category === "incomplete"
-  );
-  return {
-    status: incomplete ? "incomplete" : "ready",
-    isReady: !incomplete,
-    diagnostics: Object.freeze(readinessDiagnostics)
-  };
-}
+};
 
 // packages/domain/event/src/domain/patch.ts
 var EMPTY_EVENT_PATCH = Object.freeze({ operations: [] });
-function replaceEventField(path, value, reason) {
-  return Object.freeze({
-    op: "replace",
-    path,
-    value,
-    reason
-  });
-}
-function createEventPatch(operations) {
-  return Object.freeze({ operations: Object.freeze([...operations]) });
-}
-function applyEventPatch(event, patch) {
-  return patch.operations.reduce(
-    (current, operation) => applyOperation(current, operation),
-    event
-  );
-}
-function applyOperation(event, operation) {
-  switch (operation.path) {
-    case "issueTitle":
-      return { ...event, issueTitle: operation.value };
-    case "labels":
-      return { ...event, labels: [...operation.value] };
-    case "eventTitle":
-      return { ...event, eventTitle: operation.value };
-    case "date":
-      return { ...event, date: operation.value };
-    case "description":
-      return { ...event, description: operation.value };
-    case "host":
-      return {
-        ...event,
-        host: operation.value ? { ...operation.value } : void 0
-      };
-    case "agenda":
-      return {
-        ...event,
-        agenda: operation.value.map((entry) => ({
-          ...entry,
-          speakers: entry.speakers.map((speaker) => ({ ...speaker }))
-        }))
-      };
-    case "publicationLinks":
-      return { ...event, publicationLinks: { ...operation.value } };
-    case "occurrenceStatus":
-      return { ...event, occurrenceStatus: operation.value };
-    case "timeZone":
-      return { ...event, timeZone: operation.value };
-    case "confirmations":
-      return { ...event, confirmations: { ...operation.value } };
-    case "logistics":
-      return { ...event, logistics: { ...operation.value } };
-    case "operationalChecklists": {
-      const operationalChecklists = {
-        slidesAndContent: operation.value.slidesAndContent.map((item) => ({
-          ...item
-        })),
-        communication: operation.value.communication.map((item) => ({
-          ...item
-        })),
-        postEvent: operation.value.postEvent.map((item) => ({ ...item }))
-      };
-      return {
-        ...event,
-        operationalChecklists,
-        followUpComplete: event.followUpComplete && postEventChecklistIsComplete(operationalChecklists.postEvent)
-      };
-    }
-    case "followUpComplete":
-      return {
-        ...event,
-        followUpComplete: operation.value && postEventChecklistIsComplete(event.operationalChecklists.postEvent)
-      };
+var EventPatches = class _EventPatches {
+  static replaceEventField(path, value, reason) {
+    return Object.freeze({
+      op: "replace",
+      path,
+      value,
+      reason
+    });
   }
-}
-
-// packages/domain/event/src/domain/rule.ts
-var EventRuleConfigurationError = class extends Error {
-  constructor(message) {
-    super(message);
-    this.name = "EventRuleConfigurationError";
+  static createEventPatch(operations) {
+    return Object.freeze({ operations: Object.freeze([...operations]) });
+  }
+  static mergeEventPatches(...patches) {
+    return _EventPatches.createEventPatch(
+      patches.flatMap((patch) => patch.operations)
+    );
+  }
+  static applyEventPatch(event, patch) {
+    return patch.operations.reduce(
+      (current, operation) => _EventPatches.applyOperation(current, operation),
+      event
+    );
+  }
+  static applyOperation(event, operation) {
+    switch (operation.path) {
+      case "issueTitle":
+        return { ...event, issueTitle: operation.value };
+      case "labels":
+        return { ...event, labels: [...operation.value] };
+      case "eventTitle":
+        return { ...event, eventTitle: operation.value };
+      case "date":
+        return { ...event, date: operation.value };
+      case "description":
+        return { ...event, description: operation.value };
+      case "host":
+        return {
+          ...event,
+          host: operation.value ? { ...operation.value } : void 0
+        };
+      case "agenda":
+        return {
+          ...event,
+          agenda: operation.value.map((entry) => ({
+            ...entry,
+            speakers: entry.speakers.map((speaker) => ({ ...speaker }))
+          }))
+        };
+      case "publicationLinks":
+        return { ...event, publicationLinks: { ...operation.value } };
+      case "occurrenceStatus":
+        return { ...event, occurrenceStatus: operation.value };
+      case "timeZone":
+        return { ...event, timeZone: operation.value };
+      case "confirmations":
+        return { ...event, confirmations: { ...operation.value } };
+      case "logistics":
+        return { ...event, logistics: { ...operation.value } };
+      case "operationalChecklists": {
+        const operationalChecklists = {
+          slidesAndContent: operation.value.slidesAndContent.map((item) => ({
+            ...item
+          })),
+          communication: operation.value.communication.map((item) => ({
+            ...item
+          })),
+          postEvent: operation.value.postEvent.map((item) => ({ ...item }))
+        };
+        return {
+          ...event,
+          operationalChecklists,
+          followUpComplete: event.followUpComplete && MeetupEventOperations.postEventChecklistIsComplete(
+            operationalChecklists.postEvent
+          )
+        };
+      }
+      case "followUpComplete":
+        return {
+          ...event,
+          followUpComplete: operation.value && MeetupEventOperations.postEventChecklistIsComplete(
+            event.operationalChecklists.postEvent
+          )
+        };
+    }
   }
 };
+
+// packages/domain/event/src/domain/event-rule-engine.ts
 var EventRuleEngine = class {
   orderedRules;
   constructor(rules) {
-    this.orderedRules = sortRules(rules);
+    this.orderedRules = EventRuleOrdering.sortRules(rules);
   }
   evaluate(event) {
     let normalizedEvent = event;
     const diagnostics = [];
     const operations = [];
     for (const rule of this.orderedRules) {
-      const result2 = rule.evaluate(normalizedEvent);
-      diagnostics.push(...result2.diagnostics);
-      operations.push(...result2.patch.operations);
-      normalizedEvent = applyEventPatch(normalizedEvent, result2.patch);
+      const result = rule.evaluate(normalizedEvent);
+      diagnostics.push(...result.diagnostics);
+      operations.push(...result.patch.operations);
+      normalizedEvent = EventPatches.applyEventPatch(
+        normalizedEvent,
+        result.patch
+      );
     }
     return {
       event: normalizedEvent,
       diagnostics: Object.freeze(diagnostics),
-      patch: createEventPatch(operations)
+      patch: EventPatches.createEventPatch(operations)
     };
   }
   get ruleIds() {
     return this.orderedRules.map((rule) => rule.id);
   }
 };
-function createDefaultEventRules(labelConfiguration = DEFAULT_MANAGED_LABEL_CONFIGURATION) {
-  return [
-    new EventDateRule(),
-    new EventTitleRule(),
-    new EventDescriptionRule(),
-    new EventHostRule(),
-    new EventAgendaRule(),
-    new EventLinksRule(),
-    new IssueTitleRule(),
-    new ManagedLabelsRule(labelConfiguration)
-  ];
-}
-var EventDateRule = class {
-  id = "event-date";
-  dependencies = [];
-  evaluate(event) {
-    const value = event.date.trim();
-    if (value === "") {
-      return missing("event.date.missing", "date", "An event date is required");
-    }
-    if (!isValidIsoDate(value)) {
-      return invalid(
-        "event.date.invalid",
-        "date",
-        "Event date must be a real calendar date formatted as YYYY-MM-DD"
-      );
-    }
-    return normalizeString(event.date, value, "date", "Normalize event date");
+
+// packages/domain/event/src/domain/diagnostic.ts
+var EventDiagnostics = class {
+  static diagnostic(value) {
+    return Object.freeze({ ...value });
   }
 };
-var EventTitleRule = class {
-  id = "event-title";
-  dependencies = [];
-  evaluate(event) {
-    const value = event.eventTitle.trim();
-    if (value === "") {
-      return missing(
-        "event.title.missing",
-        "eventTitle",
-        "An event title is required"
-      );
+
+// packages/domain/event/src/domain/event-participant-normalization.ts
+var EventParticipantNormalization = class _EventParticipantNormalization {
+  static normalizeParticipant(participant) {
+    const displayName = participant.displayName.trim();
+    const id = participant.id?.trim();
+    return id ? {
+      displayName,
+      id,
+      ...participant.source ? { source: participant.source } : {}
+    } : { displayName };
+  }
+  static participantsEqual(left, right) {
+    return left.displayName === right.displayName && left.id === right.id;
+  }
+  static normalizeAgendaEntry(entry) {
+    return {
+      speakers: entry.speakers.map(
+        _EventParticipantNormalization.normalizeParticipant
+      ),
+      description: entry.description.trim()
+    };
+  }
+  static agendaEqual(left, right) {
+    return JSON.stringify(left) === JSON.stringify(right);
+  }
+  static arraysEqual(left, right) {
+    return left.length === right.length && left.every((value, index) => value === right[index]);
+  }
+};
+
+// packages/domain/event/src/domain/event-rule-results.ts
+var EventRuleResults = class {
+  static missing(code, field, message) {
+    return {
+      diagnostics: [
+        EventDiagnostics.diagnostic({
+          code,
+          severity: "warning",
+          category: "incomplete",
+          field,
+          message
+        })
+      ],
+      patch: EMPTY_EVENT_PATCH
+    };
+  }
+  static invalid(code, field, message) {
+    return {
+      diagnostics: [
+        EventDiagnostics.diagnostic({
+          code,
+          severity: "error",
+          category: "invalid",
+          field,
+          message
+        })
+      ],
+      patch: EMPTY_EVENT_PATCH
+    };
+  }
+  static normalizeString(current, normalized, path, reason) {
+    if (current === normalized) {
+      return EventRuleFactory.emptyResult();
     }
-    return normalizeString(
-      event.eventTitle,
-      value,
-      "eventTitle",
-      "Trim event title"
+    return EventRuleFactory.normalizedResult(
+      EventPatches.replaceEventField(path, normalized, reason),
+      `event.${path}.normalized`,
+      path,
+      `${path} can be normalized safely`
     );
   }
 };
-var EventDescriptionRule = class {
-  id = "event-description";
-  dependencies = [];
-  evaluate(event) {
-    const value = event.description.trim();
-    if (value === "") {
-      return missing(
-        "event.description.missing",
-        "description",
-        "An event description is required"
-      );
-    }
-    return normalizeString(
-      event.description,
-      value,
-      "description",
-      "Trim event description"
-    );
-  }
-};
-var EventHostRule = class {
-  id = "event-host";
-  dependencies = [];
-  evaluate(event) {
-    if (!event.host) {
-      return missing("event.hoster.missing", "host", "A host must be selected");
-    }
-    const normalized = normalizeParticipant(event.host);
-    if (normalized.displayName === "") {
-      return invalid(
-        "event.hoster.invalid",
-        "host",
-        "Host display name must not be empty"
-      );
-    }
-    if (participantsEqual(event.host, normalized)) {
-      return emptyResult();
-    }
-    return normalizedResult(
-      replaceEventField("host", normalized, "Normalize host reference"),
-      "event.hoster.normalized",
-      "host",
-      "The host reference can be normalized safely"
-    );
-  }
-};
+
+// packages/domain/event/src/domain/event-agenda-rule.ts
 var EventAgendaRule = class {
   id = "event-agenda";
   dependencies = [];
   evaluate(event) {
     if (event.agenda.length === 0) {
-      return missing(
+      return EventRuleResults.missing(
         "event.agenda.missing",
         "agenda",
         "At least one agenda entry is required"
@@ -33125,51 +33230,22 @@ var EventAgendaRule = class {
     }
     const diagnostics = [];
     const normalizedEntries = event.agenda.map((entry, entryIndex) => {
-      const normalized = normalizeAgendaEntry(entry);
-      if (normalized.speakers.length === 0) {
-        diagnostics.push(
-          diagnostic({
-            code: "event.agenda.speaker.missing",
-            severity: "error",
-            category: "invalid",
-            field: `agenda.${entryIndex}.speakers`,
-            message: "Each agenda entry must have at least one speaker"
-          })
-        );
-      }
-      for (const [speakerIndex, speaker] of normalized.speakers.entries()) {
-        if (speaker.displayName === "") {
-          diagnostics.push(
-            diagnostic({
-              code: "event.agenda.speaker.invalid",
-              severity: "error",
-              category: "invalid",
-              field: `agenda.${entryIndex}.speakers.${speakerIndex}`,
-              message: "Speaker display name must not be empty"
-            })
-          );
-        }
-      }
-      if (normalized.description === "") {
-        diagnostics.push(
-          diagnostic({
-            code: "event.agenda.description.missing",
-            severity: "error",
-            category: "invalid",
-            field: `agenda.${entryIndex}.description`,
-            message: "Agenda entry description must not be empty"
-          })
-        );
-      }
-      return normalized;
+      return this.normalizeEntry(entry, entryIndex, diagnostics);
     });
     const operations = [];
-    if (!agendaEqual(event.agenda, normalizedEntries)) {
+    if (!EventParticipantNormalization.agendaEqual(
+      event.agenda,
+      normalizedEntries
+    )) {
       operations.push(
-        replaceEventField("agenda", normalizedEntries, "Normalize agenda")
+        EventPatches.replaceEventField(
+          "agenda",
+          normalizedEntries,
+          "Normalize agenda"
+        )
       );
       diagnostics.push(
-        diagnostic({
+        EventDiagnostics.diagnostic({
           code: "event.agenda.normalized",
           severity: "info",
           category: "normalization",
@@ -33181,10 +33257,174 @@ var EventAgendaRule = class {
     }
     return {
       diagnostics,
-      patch: createEventPatch(operations)
+      patch: EventPatches.createEventPatch(operations)
     };
   }
+  normalizeEntry(entry, entryIndex, diagnostics) {
+    const normalized = EventParticipantNormalization.normalizeAgendaEntry(entry);
+    if (normalized.speakers.length === 0) {
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.agenda.speaker.missing",
+          severity: "error",
+          category: "invalid",
+          field: `agenda.${entryIndex}.speakers`,
+          message: "Each agenda entry must have at least one speaker"
+        })
+      );
+    }
+    for (const [speakerIndex, speaker] of normalized.speakers.entries()) {
+      if (speaker.displayName === "") {
+        diagnostics.push(
+          EventDiagnostics.diagnostic({
+            code: "event.agenda.speaker.invalid",
+            severity: "error",
+            category: "invalid",
+            field: `agenda.${entryIndex}.speakers.${speakerIndex}`,
+            message: "Speaker display name must not be empty"
+          })
+        );
+      }
+    }
+    if (normalized.description === "") {
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.agenda.description.missing",
+          severity: "error",
+          category: "invalid",
+          field: `agenda.${entryIndex}.description`,
+          message: "Agenda entry description must not be empty"
+        })
+      );
+    }
+    return normalized;
+  }
 };
+
+// packages/domain/event/src/domain/event-date-validation.ts
+var EventDateValidation = class _EventDateValidation {
+  static isValidIsoDate(value) {
+    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) {
+      return false;
+    }
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    if (month < 1 || month > 12 || day < 1) {
+      return false;
+    }
+    const monthLengths = [
+      31,
+      _EventDateValidation.isLeapYear(year) ? 29 : 28,
+      31,
+      30,
+      31,
+      30,
+      31,
+      31,
+      30,
+      31,
+      30,
+      31
+    ];
+    return day <= monthLengths[month - 1];
+  }
+  static isLeapYear(year) {
+    return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  }
+};
+
+// packages/domain/event/src/domain/event-date-rule.ts
+var EventDateRule = class {
+  id = "event-date";
+  dependencies = [];
+  evaluate(event) {
+    const value = event.date.trim();
+    if (value === "") {
+      return EventRuleResults.missing(
+        "event.date.missing",
+        "date",
+        "An event date is required"
+      );
+    }
+    if (!EventDateValidation.isValidIsoDate(value)) {
+      return EventRuleResults.invalid(
+        "event.date.invalid",
+        "date",
+        "Event date must be a real calendar date formatted as YYYY-MM-DD"
+      );
+    }
+    return EventRuleResults.normalizeString(
+      event.date,
+      value,
+      "date",
+      "Normalize event date"
+    );
+  }
+};
+
+// packages/domain/event/src/domain/event-description-rule.ts
+var EventDescriptionRule = class {
+  id = "event-description";
+  dependencies = [];
+  evaluate(event) {
+    const value = event.description.trim();
+    if (value === "") {
+      return EventRuleResults.missing(
+        "event.description.missing",
+        "description",
+        "An event description is required"
+      );
+    }
+    return EventRuleResults.normalizeString(
+      event.description,
+      value,
+      "description",
+      "Trim event description"
+    );
+  }
+};
+
+// packages/domain/event/src/domain/event-host-rule.ts
+var EventHostRule = class {
+  id = "event-host";
+  dependencies = [];
+  evaluate(event) {
+    if (!event.host) {
+      return EventRuleResults.missing(
+        "event.hoster.missing",
+        "host",
+        "A host must be selected"
+      );
+    }
+    const normalized = EventParticipantNormalization.normalizeParticipant(
+      event.host
+    );
+    if (normalized.displayName === "") {
+      return EventRuleResults.invalid(
+        "event.hoster.invalid",
+        "host",
+        "Host display name must not be empty"
+      );
+    }
+    if (EventParticipantNormalization.participantsEqual(event.host, normalized)) {
+      return EventRuleFactory.emptyResult();
+    }
+    return EventRuleFactory.normalizedResult(
+      EventPatches.replaceEventField(
+        "host",
+        normalized,
+        "Normalize host reference"
+      ),
+      "event.hoster.normalized",
+      "host",
+      "The host reference can be normalized safely"
+    );
+  }
+};
+
+// packages/domain/event/src/domain/event-links-rule.ts
 var EventLinksRule = class {
   id = "event-links";
   dependencies = [];
@@ -33198,9 +33438,9 @@ var EventLinksRule = class {
         continue;
       }
       const value = link.trim().replace(/\/$/, "");
-      if (!isHttpsUrl2(value)) {
+      if (!EventRuleFactory.isHttpsUrl(value)) {
         diagnostics.push(
-          diagnostic({
+          EventDiagnostics.diagnostic({
             code: `event.link.${key}.invalid`,
             severity: "error",
             category: "invalid",
@@ -33219,7 +33459,7 @@ var EventLinksRule = class {
       return { diagnostics, patch: EMPTY_EVENT_PATCH };
     }
     diagnostics.push(
-      diagnostic({
+      EventDiagnostics.diagnostic({
         code: "event.links.normalized",
         severity: "info",
         category: "normalization",
@@ -33230,8 +33470,8 @@ var EventLinksRule = class {
     );
     return {
       diagnostics,
-      patch: createEventPatch([
-        replaceEventField(
+      patch: EventPatches.createEventPatch([
+        EventPatches.replaceEventField(
           "publicationLinks",
           normalized,
           "Trim publication links and remove trailing slashes"
@@ -33240,19 +33480,43 @@ var EventLinksRule = class {
     };
   }
 };
+
+// packages/domain/event/src/domain/event-title-rule.ts
+var EventTitleRule = class {
+  id = "event-title";
+  dependencies = [];
+  evaluate(event) {
+    const value = event.eventTitle.trim();
+    if (value === "") {
+      return EventRuleResults.missing(
+        "event.title.missing",
+        "eventTitle",
+        "An event title is required"
+      );
+    }
+    return EventRuleResults.normalizeString(
+      event.eventTitle,
+      value,
+      "eventTitle",
+      "Trim event title"
+    );
+  }
+};
+
+// packages/domain/event/src/domain/issue-title-rule.ts
 var IssueTitleRule = class {
   id = "issue-title";
   dependencies = ["event-date", "event-title"];
   evaluate(event) {
-    if (!isValidIsoDate(event.date) || event.eventTitle === "") {
-      return emptyResult();
+    if (!EventDateValidation.isValidIsoDate(event.date) || event.eventTitle === "") {
+      return EventRuleFactory.emptyResult();
     }
     const expected = `[Meetup] - ${event.date} - ${event.eventTitle}`;
     if (event.issueTitle === expected) {
-      return emptyResult();
+      return EventRuleFactory.emptyResult();
     }
-    return normalizedResult(
-      replaceEventField(
+    return EventRuleFactory.normalizedResult(
+      EventPatches.replaceEventField(
         "issueTitle",
         expected,
         "Project canonical issue title"
@@ -33263,16 +33527,8 @@ var IssueTitleRule = class {
     );
   }
 };
-var DEFAULT_MANAGED_LABEL_CONFIGURATION = Object.freeze({
-  meetup: "meetup",
-  hostNeeded: "hoster:needed",
-  hostConfirmed: "hoster:confirmed",
-  speakersNeeded: "speakers:needed",
-  speakersConfirmed: "speakers:confirmed",
-  occurrencePostponed: "event:postponed",
-  occurrenceHeld: "event:held",
-  occurrenceCancelled: "event:cancelled"
-});
+
+// packages/domain/event/src/domain/managed-labels-rule.ts
 var ManagedLabelsRule = class {
   constructor(configuration) {
     this.configuration = configuration;
@@ -33291,200 +33547,190 @@ var ManagedLabelsRule = class {
       event.confirmations.speakers ? this.configuration.speakersConfirmed : this.configuration.speakersNeeded,
       ...occurrenceLabels
     ];
-    if (labelsMatch(event.labels, expected)) {
-      return emptyResult();
+    if (EventRuleFactory.labelsMatch(event.labels, expected)) {
+      return EventRuleFactory.emptyResult();
     }
-    return normalizedResult(
-      replaceEventField("labels", expected, "Project managed lifecycle labels"),
+    return EventRuleFactory.normalizedResult(
+      EventPatches.replaceEventField(
+        "labels",
+        expected,
+        "Project managed lifecycle labels"
+      ),
       "event.labels.normalized",
       "labels",
       "Managed meetup labels can be reconciled safely"
     );
   }
 };
-function labelsMatch(actual, expected) {
-  return arraysEqual(actual, expected) || sameMembers(actual, expected);
-}
-function sameMembers(left, right) {
-  return left.length === right.length && left.every((label) => right.includes(label));
-}
-function sortRules(rules) {
-  const byId = /* @__PURE__ */ new Map();
-  for (const rule of rules) {
-    if (byId.has(rule.id)) {
-      throw new EventRuleConfigurationError(
-        `Duplicate event rule "${rule.id}"`
-      );
-    }
-    byId.set(rule.id, rule);
-  }
-  for (const rule of rules) {
-    for (const dependency of rule.dependencies) {
-      if (!byId.has(dependency)) {
-        throw new EventRuleConfigurationError(
-          `Event rule "${rule.id}" has missing dependency "${dependency}"`
-        );
-      }
-    }
-  }
-  const permanent = /* @__PURE__ */ new Set();
-  const temporary = /* @__PURE__ */ new Set();
-  const ordered = [];
-  const visit = (rule, path) => {
-    if (temporary.has(rule.id)) {
-      throw new EventRuleConfigurationError(
-        `Cyclic event rule dependency: ${[...path, rule.id].join(" -> ")}`
-      );
-    }
-    if (permanent.has(rule.id)) {
-      return;
-    }
-    temporary.add(rule.id);
-    for (const dependencyId of rule.dependencies) {
-      const dependency = byId.get(dependencyId);
-      if (!dependency) {
-        throw new EventRuleConfigurationError(
-          `Event rule "${rule.id}" has missing dependency "${dependencyId}"`
-        );
-      }
-      visit(dependency, [...path, rule.id]);
-    }
-    temporary.delete(rule.id);
-    permanent.add(rule.id);
-    ordered.push(rule);
-  };
-  for (const rule of rules) {
-    visit(rule, []);
-  }
-  return Object.freeze(ordered);
-}
-function emptyResult() {
-  return { diagnostics: [], patch: EMPTY_EVENT_PATCH };
-}
-function missing(code, field, message) {
-  return {
-    diagnostics: [
-      diagnostic({
-        code,
-        severity: "warning",
-        category: "incomplete",
-        field,
-        message
-      })
-    ],
-    patch: EMPTY_EVENT_PATCH
-  };
-}
-function invalid(code, field, message) {
-  return {
-    diagnostics: [
-      diagnostic({
-        code,
-        severity: "error",
-        category: "invalid",
-        field,
-        message
-      })
-    ],
-    patch: EMPTY_EVENT_PATCH
-  };
-}
-function normalizeString(current, normalized, path, reason) {
-  if (current === normalized) {
-    return emptyResult();
-  }
-  return normalizedResult(
-    replaceEventField(path, normalized, reason),
-    `event.${path}.normalized`,
-    path,
-    `${path} can be normalized safely`
-  );
-}
-function normalizedResult(operation, code, field, message) {
-  return {
-    diagnostics: [
-      diagnostic({
-        code,
-        severity: "info",
-        category: "normalization",
-        field,
-        message,
-        fixAvailable: true
-      })
-    ],
-    patch: createEventPatch([operation])
-  };
-}
-function isValidIsoDate(value) {
-  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!match) {
-    return false;
-  }
-  const year = Number(match[1]);
-  const month = Number(match[2]);
-  const day = Number(match[3]);
-  if (month < 1 || month > 12 || day < 1) {
-    return false;
-  }
-  const monthLengths = [
-    31,
-    isLeapYear(year) ? 29 : 28,
-    31,
-    30,
-    31,
-    30,
-    31,
-    31,
-    30,
-    31,
-    30,
-    31
-  ];
-  return day <= monthLengths[month - 1];
-}
-function isLeapYear(year) {
-  return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
-}
-function normalizeParticipant(participant) {
-  const displayName = participant.displayName.trim();
-  const id = participant.id?.trim();
-  return id ? { displayName, id } : { displayName };
-}
-function participantsEqual(left, right) {
-  return left.displayName === right.displayName && left.id === right.id;
-}
-function normalizeAgendaEntry(entry) {
-  return {
-    speakers: entry.speakers.map(normalizeParticipant),
-    description: entry.description.trim()
-  };
-}
-function agendaEqual(left, right) {
-  return JSON.stringify(left) === JSON.stringify(right);
-}
-function arraysEqual(left, right) {
-  return left.length === right.length && left.every((value, index) => value === right[index]);
-}
-function isHttpsUrl2(value) {
-  try {
-    return new URL(value).protocol === "https:";
-  } catch {
-    return false;
-  }
-}
 
-// packages/domain/event/src/application/use-cases/list-active-events.ts
-var EventPaginationError = class extends Error {
-  constructor(cursor) {
-    super(`Event repository repeated pagination cursor "${cursor}"`);
-    this.name = "EventPaginationError";
+// packages/domain/event/src/domain/rule-contracts.ts
+var DEFAULT_MANAGED_LABEL_CONFIGURATION = Object.freeze({
+  meetup: "meetup",
+  hostNeeded: "hoster:needed",
+  hostConfirmed: "hoster:confirmed",
+  speakersNeeded: "speakers:needed",
+  speakersConfirmed: "speakers:confirmed",
+  occurrencePostponed: "event:postponed",
+  occurrenceHeld: "event:held",
+  occurrenceCancelled: "event:cancelled"
+});
+
+// packages/domain/event/src/domain/event-rule-factory.ts
+var EventRuleFactory = class _EventRuleFactory {
+  static createDefaultEventRules(labelConfiguration = DEFAULT_MANAGED_LABEL_CONFIGURATION) {
+    return [
+      new EventDateRule(),
+      new EventTitleRule(),
+      new EventDescriptionRule(),
+      new EventHostRule(),
+      new EventAgendaRule(),
+      new EventLinksRule(),
+      new IssueTitleRule(),
+      new ManagedLabelsRule(labelConfiguration)
+    ];
+  }
+  static labelsMatch(actual, expected) {
+    return EventParticipantNormalization.arraysEqual(actual, expected) || _EventRuleFactory.sameMembers(actual, expected);
+  }
+  static sameMembers(left, right) {
+    return left.length === right.length && left.every((label) => right.includes(label));
+  }
+  static emptyResult() {
+    return { diagnostics: [], patch: EMPTY_EVENT_PATCH };
+  }
+  static normalizedResult(operation, code, field, message) {
+    return {
+      diagnostics: [
+        EventDiagnostics.diagnostic({
+          code,
+          severity: "info",
+          category: "normalization",
+          field,
+          message,
+          fixAvailable: true
+        })
+      ],
+      patch: EventPatches.createEventPatch([operation])
+    };
+  }
+  static isHttpsUrl(value) {
+    try {
+      return new URL(value).protocol === "https:";
+    } catch {
+      return false;
+    }
   }
 };
+
+// packages/domain/event/src/domain/lifecycle.ts
+var EventLifecycle = class _EventLifecycle {
+  /**
+   * Derives lifecycle exclusively from event facts and an explicitly supplied
+   * instant. In particular, a past date never implies that an event was held.
+   */
+  static evaluateEventLifecycle({
+    event,
+    readiness,
+    now
+  }) {
+    let state;
+    switch (event.occurrenceStatus) {
+      case "cancelled":
+        state = "cancelled";
+        break;
+      case "postponed":
+        state = "postponed";
+        break;
+      case "held":
+        state = event.followUpComplete && MeetupEventOperations.postEventChecklistIsComplete(
+          event.operationalChecklists.postEvent
+        ) ? "follow-up-complete" : "held";
+        break;
+      case "scheduled":
+      case void 0:
+        if (!_EventLifecycle.hasMinimumPlanningFacts(event)) {
+          state = "draft";
+        } else {
+          state = readiness.isReady ? "ready" : "planned";
+        }
+        break;
+    }
+    return {
+      state,
+      evaluatedAt: now,
+      timeZone: event.timeZone,
+      diagnostics: readiness.diagnostics
+    };
+  }
+  static hasMinimumPlanningFacts(event) {
+    return event.date.trim() !== "" && event.eventTitle.trim() !== "";
+  }
+};
+
+// packages/domain/event/src/domain/readiness.ts
+var EventReadinessPolicy = class {
+  static evaluateEventReadiness(event, diagnostics) {
+    const readinessDiagnostics = [...diagnostics];
+    if (event.occurrenceStatus === "cancelled") {
+      return {
+        status: "incomplete",
+        isReady: false,
+        diagnostics: readinessDiagnostics
+      };
+    }
+    if (event.occurrenceStatus === "postponed") {
+      return {
+        status: "incomplete",
+        isReady: false,
+        diagnostics: readinessDiagnostics
+      };
+    }
+    if (readinessDiagnostics.some((item) => item.severity === "error")) {
+      return {
+        status: "invalid",
+        isReady: false,
+        diagnostics: readinessDiagnostics
+      };
+    }
+    if (!event.confirmations.host) {
+      readinessDiagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.confirmation.host.missing",
+          severity: "warning",
+          category: "incomplete",
+          field: "confirmations.host",
+          message: "Host confirmation is required before the event is ready"
+        })
+      );
+    }
+    if (!event.confirmations.speakers) {
+      readinessDiagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.confirmation.speakers.missing",
+          severity: "warning",
+          category: "incomplete",
+          field: "confirmations.speakers",
+          message: "Speaker confirmation is required before the event is ready"
+        })
+      );
+    }
+    const incomplete = readinessDiagnostics.some(
+      (item) => item.category === "incomplete"
+    );
+    return {
+      status: incomplete ? "incomplete" : "ready",
+      isReady: !incomplete,
+      diagnostics: Object.freeze(readinessDiagnostics)
+    };
+  }
+};
+
+// packages/domain/event/src/application/use-cases/list-active-events.ts
 var ListActiveEvents = class {
   constructor(dependencies) {
     this.dependencies = dependencies;
     this.ruleEngine = new EventRuleEngine(
-      dependencies.rules ?? createDefaultEventRules()
+      dependencies.rules ?? EventRuleFactory.createDefaultEventRules()
     );
   }
   dependencies;
@@ -33513,11 +33759,11 @@ var ListActiveEvents = class {
           ...decoded.diagnostics,
           ...evaluated.diagnostics
         ];
-        const readiness = evaluateEventReadiness(
+        const readiness = EventReadinessPolicy.evaluateEventReadiness(
           evaluated.event,
           eventDiagnostics
         );
-        const lifecycle = evaluateEventLifecycle({
+        const lifecycle = EventLifecycle.evaluateEventLifecycle({
           event: evaluated.event,
           readiness,
           now
@@ -33548,27 +33794,11 @@ var ListActiveEvents = class {
 };
 
 // packages/domain/event/src/application/use-cases/reconcile-event.ts
-var EventNotFoundError = class extends Error {
-  constructor(identity) {
-    super(
-      `Meetup event ${identity.repository}#${identity.issueNumber} was not found`
-    );
-    this.name = "EventNotFoundError";
-  }
-};
-var EventConcurrentModificationError = class extends Error {
-  constructor(identity) {
-    super(
-      `Meetup event ${identity.repository}#${identity.issueNumber} changed during reconciliation`
-    );
-    this.name = "EventConcurrentModificationError";
-  }
-};
-var ReconcileEvent = class {
+var ReconcileEvent = class _ReconcileEvent {
   constructor(dependencies) {
     this.dependencies = dependencies;
     this.ruleEngine = new EventRuleEngine(
-      dependencies.rules ?? createDefaultEventRules()
+      dependencies.rules ?? EventRuleFactory.createDefaultEventRules()
     );
   }
   dependencies;
@@ -33578,7 +33808,7 @@ var ReconcileEvent = class {
     if (!document) {
       throw new EventNotFoundError(input.identity);
     }
-    if (!sameIdentity(document.identity, input.identity)) {
+    if (!_ReconcileEvent.sameIdentity(document.identity, input.identity)) {
       throw new EventNotFoundError(input.identity);
     }
     const decoded = this.dependencies.documentCodec.decode(document);
@@ -33587,8 +33817,11 @@ var ReconcileEvent = class {
       ...decoded.diagnostics,
       ...evaluated.diagnostics
     ];
-    const readiness = evaluateEventReadiness(evaluated.event, diagnostics);
-    const lifecycle = evaluateEventLifecycle({
+    const readiness = EventReadinessPolicy.evaluateEventReadiness(
+      evaluated.event,
+      diagnostics
+    );
+    const lifecycle = EventLifecycle.evaluateEventLifecycle({
       event: evaluated.event,
       readiness,
       now: this.dependencies.clock.now()
@@ -33597,9 +33830,9 @@ var ReconcileEvent = class {
       document,
       evaluated.event
     );
-    const shouldPersist = input.mode === "fix" && !eventRepositoryPatchIsEmpty(repositoryPatch);
+    const shouldPersist = input.mode === "fix" && !EventRepositoryPatches.eventRepositoryPatchIsEmpty(repositoryPatch);
     if (shouldPersist) {
-      await ensureEventDocumentIsCurrent(
+      await _ReconcileEvent.ensureEventDocumentIsCurrent(
         this.dependencies.repository,
         input.identity,
         document
@@ -33628,29 +33861,29 @@ var ReconcileEvent = class {
       commentUpdated
     };
   }
+  static async ensureEventDocumentIsCurrent(repository, identity, expected) {
+    const current = await repository.find(identity);
+    if (!current) {
+      throw new EventNotFoundError(identity);
+    }
+    if (!_ReconcileEvent.eventDocumentsEqual(current, expected)) {
+      throw new EventConcurrentModificationError(identity);
+    }
+  }
+  static eventDocumentsEqual(left, right) {
+    const leftLabels = [...left.labels].sort(_ReconcileEvent.compareText);
+    const rightLabels = [...right.labels].sort(_ReconcileEvent.compareText);
+    return _ReconcileEvent.sameIdentity(left.identity, right.identity) && left.issueState === right.issueState && left.issueTitle === right.issueTitle && left.body === right.body && leftLabels.length === rightLabels.length && leftLabels.every((label, index) => label === rightLabels[index]);
+  }
+  static compareText(left, right) {
+    return left < right ? -1 : left > right ? 1 : 0;
+  }
+  static sameIdentity(left, right) {
+    return left.issueNumber === right.issueNumber && left.repository.toLowerCase() === right.repository.toLowerCase();
+  }
 };
-async function ensureEventDocumentIsCurrent(repository, identity, expected) {
-  const current = await repository.find(identity);
-  if (!current) {
-    throw new EventNotFoundError(identity);
-  }
-  if (!eventDocumentsEqual(current, expected)) {
-    throw new EventConcurrentModificationError(identity);
-  }
-}
-function eventDocumentsEqual(left, right) {
-  const leftLabels = [...left.labels].sort(compareText);
-  const rightLabels = [...right.labels].sort(compareText);
-  return sameIdentity(left.identity, right.identity) && left.issueState === right.issueState && left.issueTitle === right.issueTitle && left.body === right.body && leftLabels.length === rightLabels.length && leftLabels.every((label, index) => label === rightLabels[index]);
-}
-function compareText(left, right) {
-  return left < right ? -1 : left > right ? 1 : 0;
-}
-function sameIdentity(left, right) {
-  return left.issueNumber === right.issueNumber && left.repository.toLowerCase() === right.repository.toLowerCase();
-}
 
-// packages/domain/event/src/domain/dto.ts
+// packages/domain/event/src/domain/dto-contracts.ts
 var STABLE_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._:-]*$/;
 var OCCURRENCE_STATUSES = [
   "scheduled",
@@ -33664,1185 +33897,753 @@ var OCCURRENCE_STATUS_LABELS = Object.freeze({
   held: "event:held",
   cancelled: "event:cancelled"
 });
-function migrateMeetupEventDto(dto) {
-  if (dto.schemaVersion === EVENT_SCHEMA_VERSION) {
-    return {
-      event: cloneMeetupEvent(dto),
-      diagnostics: []
-    };
-  }
-  return migrateLegacyDto(dto);
-}
-function migrateLegacyDto(dto) {
-  const diagnostics = [];
-  const body = dto.parsedBody;
-  const eventTitle = readString(body.event_title, "event_title", diagnostics);
-  const date = readString(body.event_date, "event_date", diagnostics);
-  const description = readString(
-    body.event_description,
-    "event_description",
-    diagnostics
-  );
-  const host = readLegacyHost(body.hoster, diagnostics);
-  const agenda = readLegacyAgenda(body.agenda, diagnostics);
-  const occurrenceStatus = readOccurrenceStatus(
-    dto.labels ?? [],
-    dto.issueState ?? "open",
-    body.event_status,
-    diagnostics
-  );
-  const event = {
-    schemaVersion: EVENT_SCHEMA_VERSION,
-    identity: {
-      repository: dto.repository,
-      issueNumber: dto.issueNumber
-    },
-    issueState: dto.issueState ?? "open",
-    issueTitle: dto.issueTitle,
-    labels: [...dto.labels ?? []],
-    eventTitle,
-    date,
-    description,
-    host,
-    agenda,
-    publicationLinks: {
-      meetup: readOptionalString(body.meetup_link, "meetup_link", diagnostics),
-      community: readOptionalString(body.cncf_link, "cncf_link", diagnostics),
-      assets: readOptionalString(body.drive_link, "drive_link", diagnostics)
-    },
-    occurrenceStatus,
-    timeZone: dto.timeZone ?? "Europe/Paris",
-    confirmations: {
-      host: dto.labels?.includes("hoster:confirmed") ?? false,
-      speakers: dto.labels?.includes("speakers:confirmed") ?? false
-    },
-    logistics: {
-      aperitif: "unspecified",
-      postEventVenue: "unspecified"
-    },
-    operationalChecklists: {
-      slidesAndContent: [],
-      communication: [],
-      postEvent: []
-    },
-    // A legacy flag has no named task evidence and cannot prove completion.
-    followUpComplete: false
-  };
-  diagnostics.unshift(
-    diagnostic({
-      code: "event.document.legacy-schema",
-      severity: "info",
-      category: "migration",
-      message: "The legacy event document was migrated to schema version 1",
-      fixAvailable: true
-    })
-  );
-  return { event, diagnostics };
-}
-function readString(value, field, diagnostics) {
-  if (value === void 0 || value === null) {
-    return "";
-  }
-  if (typeof value === "string") {
-    return value;
-  }
-  diagnostics.push(
-    diagnostic({
-      code: "event.document.invalid-field-type",
-      severity: "error",
-      category: "invalid",
-      field,
-      message: `The ${field} field must be a string`
-    })
-  );
-  return "";
-}
-function readOptionalString(value, field, diagnostics) {
-  if (value === void 0 || value === null || value === "") {
-    return void 0;
-  }
-  return readString(value, field, diagnostics);
-}
-function readLegacyHost(value, diagnostics) {
-  if (value === void 0 || value === null) {
-    return void 0;
-  }
-  if (!Array.isArray(value)) {
-    diagnostics.push(
-      diagnostic({
-        code: "event.document.invalid-hoster-type",
-        severity: "error",
-        category: "invalid",
-        field: "hoster",
-        message: "The legacy hoster field must be an array"
-      })
-    );
-    return void 0;
-  }
-  if (value.length > 1) {
-    diagnostics.push(
-      diagnostic({
-        code: "event.hoster.multiple",
-        severity: "error",
-        category: "invalid",
-        field: "hoster",
-        message: "A meetup event must have exactly one host"
-      })
-    );
-  }
-  const first = value[0];
-  if (first === void 0) {
-    return void 0;
-  }
-  if (typeof first !== "string") {
-    diagnostics.push(
-      diagnostic({
-        code: "event.document.invalid-hoster-entry",
-        severity: "error",
-        category: "invalid",
-        field: "hoster",
-        message: "The legacy hoster entry must be a string"
-      })
-    );
-    return void 0;
-  }
-  return parseParticipantReference(first);
-}
-function readLegacyAgenda(value, diagnostics) {
-  if (value === void 0 || value === null || value === "") {
-    return [];
-  }
-  if (typeof value !== "string") {
-    diagnostics.push(
-      diagnostic({
-        code: "event.document.invalid-agenda-type",
-        severity: "error",
-        category: "invalid",
-        field: "agenda",
-        message: "The legacy agenda field must be a string"
-      })
-    );
-    return [];
-  }
-  const entries = [];
-  for (const [index, line] of value.split("\n").entries()) {
-    if (line.trim() === "") {
-      continue;
-    }
-    const agendaLine = parseLegacyAgendaLine(line);
-    if (!agendaLine) {
+
+// packages/domain/event/src/domain/event-occurrence-parser.ts
+var EventOccurrenceParser = class _EventOccurrenceParser {
+  static readOccurrenceStatus(labels, issueState, legacyValue, diagnostics) {
+    const explicitStatuses = OCCURRENCE_STATUSES.filter((status) => {
+      const label = OCCURRENCE_STATUS_LABELS[status];
+      return label !== null && labels.includes(label);
+    });
+    if (explicitStatuses.length > 1) {
       diagnostics.push(
-        diagnostic({
-          code: "event.agenda.legacy-line-invalid",
+        EventDiagnostics.diagnostic({
+          code: "event.occurrence-status.label-conflict",
           severity: "error",
           category: "invalid",
-          field: `agenda.${index}`,
-          message: `Agenda line ${index + 1} does not match "- <speaker(s)>: <description>"`
+          field: "labels",
+          message: "Occurrence status labels are mutually exclusive; keep only one of event:postponed, event:held, or event:cancelled"
         })
       );
-      continue;
+      return explicitStatuses[0] ?? (issueState === "closed" ? "held" : "scheduled");
     }
-    entries.push({
-      speakers: agendaLine.speakers.split(",").map((speaker) => parseParticipantReference(speaker)),
-      description: agendaLine.description
-    });
-  }
-  return entries;
-}
-function parseParticipantReference(value) {
-  const trimmed = value.trim();
-  const markdownLinkLabel = parseMarkdownLinkLabel(trimmed);
-  if (markdownLinkLabel !== void 0) {
-    return { displayName: markdownLinkLabel };
-  }
-  const stableReference = parseStableIdReference(trimmed);
-  if (stableReference) {
-    return stableReference;
-  }
-  return { displayName: trimmed };
-}
-function parseLegacyAgendaLine(line) {
-  let cursor = 0;
-  while (cursor < line.length && isHorizontalWhitespaceCharacter(line[cursor])) {
-    cursor += 1;
-  }
-  if (line[cursor] !== "-") {
-    return void 0;
-  }
-  cursor += 1;
-  if (!isHorizontalWhitespaceCharacter(line[cursor] ?? "")) {
-    return void 0;
-  }
-  while (cursor < line.length && isHorizontalWhitespaceCharacter(line[cursor])) {
-    cursor += 1;
-  }
-  const content = line.slice(cursor);
-  for (let index = 0; index < content.length; index += 1) {
-    if (content[index] !== ":") {
-      continue;
+    if (explicitStatuses.length === 1) {
+      return explicitStatuses[0];
     }
-    if (!isHorizontalWhitespaceCharacter(content[index + 1] ?? "")) {
-      continue;
-    }
-    const speakers = content.slice(0, index).trimEnd();
-    if (speakers === "") {
-      return void 0;
-    }
-    let descriptionStart = index + 1;
-    while (descriptionStart < content.length && isHorizontalWhitespaceCharacter(content[descriptionStart])) {
-      descriptionStart += 1;
-    }
-    return {
-      speakers,
-      description: content.slice(descriptionStart)
-    };
-  }
-  return void 0;
-}
-function parseMarkdownLinkLabel(value) {
-  if (!value.startsWith("[") || !value.endsWith(")")) {
-    return void 0;
-  }
-  const closingBracket = value.indexOf("]");
-  if (closingBracket <= 1 || value[closingBracket + 1] !== "(") {
-    return void 0;
-  }
-  const target = value.slice(closingBracket + 2, -1);
-  if (target === "" || target.includes(")")) {
-    return void 0;
-  }
-  return value.slice(1, closingBracket).trim();
-}
-function parseStableIdReference(value) {
-  if (!value.endsWith("]")) {
-    return void 0;
-  }
-  const openingBracket = value.lastIndexOf("[");
-  if (openingBracket <= 0 || !isWhitespaceCharacter(value[openingBracket - 1] ?? "")) {
-    return void 0;
-  }
-  const id = value.slice(openingBracket + 1, -1);
-  if (!STABLE_ID_PATTERN.test(id)) {
-    return void 0;
-  }
-  const displayName = value.slice(0, openingBracket).trim();
-  if (displayName === "") {
-    return void 0;
-  }
-  return {
-    displayName,
-    id
-  };
-}
-function isHorizontalWhitespaceCharacter(value) {
-  return value === " " || value === "	";
-}
-function isWhitespaceCharacter(value) {
-  return isHorizontalWhitespaceCharacter(value) || value === "\n" || value === "\r";
-}
-function readOccurrenceStatus(labels, issueState, legacyValue, diagnostics) {
-  const explicitStatuses = OCCURRENCE_STATUSES.filter((status) => {
-    const label = OCCURRENCE_STATUS_LABELS[status];
-    return label !== null && labels.includes(label);
-  });
-  if (explicitStatuses.length > 1) {
-    diagnostics.push(
-      diagnostic({
-        code: "event.occurrence-status.label-conflict",
-        severity: "error",
-        category: "invalid",
-        field: "labels",
-        message: "Occurrence status labels are mutually exclusive; keep only one of event:postponed, event:held, or event:cancelled"
-      })
-    );
-    return explicitStatuses[0] ?? (issueState === "closed" ? "held" : "scheduled");
-  }
-  if (explicitStatuses.length === 1) {
-    return explicitStatuses[0];
-  }
-  const legacyStatus = readLegacyOccurrenceStatus(legacyValue, diagnostics);
-  if (legacyStatus !== void 0) {
-    return legacyStatus;
-  }
-  return issueState === "closed" ? "held" : "scheduled";
-}
-function readLegacyOccurrenceStatus(value, diagnostics) {
-  if (value === void 0 || value === null || value === "") {
-    return void 0;
-  }
-  if (typeof value === "string" && OCCURRENCE_STATUSES.includes(value)) {
-    return value;
-  }
-  diagnostics.push(
-    diagnostic({
-      code: "event.occurrence-status.invalid",
-      severity: "error",
-      category: "invalid",
-      field: "event_status",
-      message: "Occurrence status must be scheduled, postponed, held, or cancelled"
-    })
-  );
-  return void 0;
-}
-
-// packages/domain/referential/src/application/use-cases/project-referential-choices.ts
-var ProjectReferentialChoices = class {
-  execute(catalog) {
-    return Object.freeze({
-      hostOptions: Object.freeze(catalog.hosts.map((host) => host.displayName)),
-      speakerReferences: Object.freeze(
-        catalog.speakers.map((speaker) => speaker.displayName)
-      )
-    });
-  }
-};
-
-// packages/domain/referential/src/domain/identifiers.ts
-var HOST_ID_PATTERN = /^host-[0-9]{4}$/;
-var CONTACT_ID_PATTERN = /^contact-[0-9]{4}$/;
-var SPEAKER_ID_PATTERN = /^speaker-[0-9]{4}$/;
-function asHostId(value) {
-  return HOST_ID_PATTERN.test(value) ? value : void 0;
-}
-function asContactId(value) {
-  return CONTACT_ID_PATTERN.test(value) ? value : void 0;
-}
-function asSpeakerId(value) {
-  return SPEAKER_ID_PATTERN.test(value) ? value : void 0;
-}
-
-// packages/domain/referential/src/domain/referential-catalog.ts
-function normalizeDisplayName(value) {
-  return value.normalize("NFC").trim().replace(/\s+/g, " ");
-}
-function displayNameKey(value) {
-  return normalizeDisplayName(value).toLowerCase();
-}
-function freezeCatalog(hosts, speakers) {
-  for (const host of hosts) {
-    for (const contact of host.contacts) {
-      Object.freeze(contact);
-    }
-    Object.freeze(host.contacts);
-    Object.freeze(host);
-  }
-  for (const speaker of speakers) {
-    Object.freeze(speaker);
-  }
-  return Object.freeze({
-    hosts: Object.freeze([...hosts]),
-    speakers: Object.freeze([...speakers])
-  });
-}
-
-// packages/domain/referential/src/domain/referential-diagnostic.ts
-function diagnostic2(code, severity, path, message) {
-  return Object.freeze({ code, severity, path, message });
-}
-function freezeDiagnostics(diagnostics) {
-  return Object.freeze([...diagnostics]);
-}
-
-// packages/domain/referential/src/application/use-cases/resolve-event-references.ts
-var EXPLICIT_REFERENCE_PATTERN = /^(.*?)\s+\[([^\]]+)]\s*$/;
-var ResolveEventReferences = class {
-  execute(catalog, command) {
-    const diagnostics = [];
-    const host = this.resolveHost(
-      catalog.hosts,
-      command.hostReference,
+    const legacyStatus = _EventOccurrenceParser.readLegacyOccurrenceStatus(
+      legacyValue,
       diagnostics
     );
-    const speakers = command.speakerReferences.map(
-      (reference, index) => this.resolveSpeaker(catalog.speakers, reference, index, diagnostics)
-    ).filter((speaker) => speaker !== void 0);
-    const frozenDiagnostics = freezeDiagnostics(diagnostics);
-    if (!host || diagnostics.some(({ severity }) => severity === "error")) {
-      return Object.freeze({
-        resolved: false,
-        diagnostics: frozenDiagnostics
-      });
+    if (legacyStatus !== void 0) {
+      return legacyStatus;
     }
-    const uniqueSpeakers = [
-      ...new Map(speakers.map((speaker) => [speaker.id, speaker])).values()
-    ];
-    return Object.freeze({
-      resolved: true,
-      host,
-      speakers: Object.freeze(uniqueSpeakers),
-      diagnostics: frozenDiagnostics
-    });
+    return issueState === "closed" ? "held" : "scheduled";
   }
-  resolveHost(hosts, reference, diagnostics) {
-    const parsed = this.parseReference(reference);
-    if (!parsed) {
-      diagnostics.push(
-        diagnostic2(
-          "referential.reference.host.invalid",
-          "error",
-          "hostReference",
-          "Host reference must be a display name or use Display name [host-0001] syntax."
-        )
-      );
-      return void 0;
-    }
-    if (parsed.stableId !== void 0) {
-      const id = asHostId(parsed.stableId);
-      if (!id) {
-        diagnostics.push(
-          diagnostic2(
-            "referential.reference.host.invalid",
-            "error",
-            "hostReference",
-            "Explicit host reference contains an invalid stable identifier."
-          )
-        );
-        return void 0;
-      }
-      const host = hosts.find((candidate) => candidate.id === id);
-      if (!host) {
-        diagnostics.push(
-          diagnostic2(
-            "referential.reference.host.unknown",
-            "error",
-            "hostReference",
-            "Explicit host stable identifier is not present in the catalog."
-          )
-        );
-        return void 0;
-      }
-      if (displayNameKey(host.displayName) !== displayNameKey(parsed.displayName)) {
-        diagnostics.push(
-          diagnostic2(
-            "referential.reference.host.display-name-mismatch",
-            "warning",
-            "hostReference",
-            "Host display name is stale; the stable identifier remains authoritative."
-          )
-        );
-      }
-      return host;
-    }
-    const matches = hosts.filter(
-      (host) => displayNameKey(host.displayName) === displayNameKey(parsed.displayName)
-    );
-    if (matches.length === 1) {
-      return matches[0];
-    }
-    diagnostics.push(
-      diagnostic2(
-        matches.length === 0 ? "referential.reference.host.unknown" : "referential.reference.host.ambiguous",
-        "error",
-        "hostReference",
-        matches.length === 0 ? "Legacy host display name is not present in the catalog." : "Legacy host display name is ambiguous; include the stable identifier."
-      )
-    );
-    return void 0;
-  }
-  resolveSpeaker(speakers, reference, index, diagnostics) {
-    const path = `speakerReferences[${index}]`;
-    const parsed = this.parseReference(reference);
-    if (!parsed) {
-      diagnostics.push(
-        diagnostic2(
-          "referential.reference.speaker.invalid",
-          "error",
-          path,
-          "Speaker reference must be a display name or use Display name [speaker-0001] syntax."
-        )
-      );
-      return void 0;
-    }
-    if (parsed.stableId !== void 0) {
-      const id = asSpeakerId(parsed.stableId);
-      if (!id) {
-        diagnostics.push(
-          diagnostic2(
-            "referential.reference.speaker.invalid",
-            "error",
-            path,
-            "Explicit speaker reference contains an invalid stable identifier."
-          )
-        );
-        return void 0;
-      }
-      const speaker = speakers.find((candidate) => candidate.id === id);
-      if (!speaker) {
-        diagnostics.push(
-          diagnostic2(
-            "referential.reference.speaker.unknown",
-            "error",
-            path,
-            "Explicit speaker stable identifier is not present in the catalog."
-          )
-        );
-        return void 0;
-      }
-      if (displayNameKey(speaker.displayName) !== displayNameKey(parsed.displayName)) {
-        diagnostics.push(
-          diagnostic2(
-            "referential.reference.speaker.display-name-mismatch",
-            "warning",
-            path,
-            "Speaker display name is stale; the stable identifier remains authoritative."
-          )
-        );
-      }
-      return speaker;
-    }
-    const matches = speakers.filter(
-      (speaker) => displayNameKey(speaker.displayName) === displayNameKey(parsed.displayName)
-    );
-    if (matches.length === 1) {
-      return matches[0];
-    }
-    diagnostics.push(
-      diagnostic2(
-        matches.length === 0 ? "referential.reference.speaker.unknown" : "referential.reference.speaker.ambiguous",
-        "error",
-        path,
-        matches.length === 0 ? "Legacy speaker display name is not present in the catalog." : "Legacy speaker display name is ambiguous; include the stable identifier."
-      )
-    );
-    return void 0;
-  }
-  parseReference(reference) {
-    if (typeof reference !== "string") {
-      return void 0;
-    }
-    const normalized = normalizeDisplayName(reference);
-    if (!normalized) {
-      return void 0;
-    }
-    const explicit = normalized.match(EXPLICIT_REFERENCE_PATTERN);
-    if (!explicit) {
-      return { displayName: normalized };
-    }
-    const displayName = normalizeDisplayName(explicit[1]);
-    const stableId = explicit[2].trim();
-    if (!displayName || !stableId) {
-      return void 0;
-    }
-    return { displayName, stableId };
-  }
-};
-
-// packages/domain/referential/src/application/use-cases/validate-referential-catalog.ts
-var EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-var ValidateReferentialCatalog = class {
-  constructor(repository) {
-    this.repository = repository;
-  }
-  repository;
-  async execute(rawCatalog) {
-    const input = rawCatalog ?? await this.loadCatalog();
-    const diagnostics = [];
-    const hosts = this.validateHosts(input.hosts, diagnostics);
-    const speakers = this.validateSpeakers(input.speakers, diagnostics);
-    this.reportDuplicateDisplayNames(
-      hosts,
-      "referential.host.display-name.duplicate",
-      "hosts",
-      "Duplicate normalized host display names are not allowed; keep one stable host per public name.",
-      diagnostics
-    );
-    this.reportDuplicateDisplayNames(
-      speakers,
-      "referential.speaker.display-name.duplicate",
-      "speakers",
-      "Duplicate normalized speaker display names are not allowed; keep one stable speaker per public name.",
-      diagnostics
-    );
-    const frozenDiagnostics = freezeDiagnostics(diagnostics);
-    if (diagnostics.some(({ severity }) => severity === "error")) {
-      return Object.freeze({
-        isValid: false,
-        diagnostics: frozenDiagnostics
-      });
-    }
-    return Object.freeze({
-      isValid: true,
-      catalog: freezeCatalog(hosts, speakers),
-      diagnostics: frozenDiagnostics
-    });
-  }
-  async loadCatalog() {
-    if (!this.repository) {
-      throw new Error(
-        "A referential repository or an explicit raw catalog is required."
-      );
-    }
-    return this.repository.load();
-  }
-  validateHosts(records, diagnostics) {
-    const hostsById = /* @__PURE__ */ new Map();
-    const contactIds = /* @__PURE__ */ new Set();
-    for (const [index, record] of records.entries()) {
-      const parsed = this.parseHostRecord(record, index, diagnostics);
-      if (!parsed) {
-        continue;
-      }
-      if (contactIds.has(parsed.contact.id)) {
-        diagnostics.push(
-          diagnostic2(
-            "referential.contact.id.duplicate",
-            "error",
-            `hosts[${index}].contactId`,
-            "Contact stable identifiers must be unique."
-          )
-        );
-        continue;
-      }
-      contactIds.add(parsed.contact.id);
-      const host = hostsById.get(parsed.hostId);
-      if (!host) {
-        hostsById.set(parsed.hostId, {
-          id: parsed.hostId,
-          displayName: parsed.displayName,
-          contacts: [parsed.contact]
-        });
-        continue;
-      }
-      if (host.displayName !== parsed.displayName) {
-        diagnostics.push(
-          diagnostic2(
-            "referential.host.id.conflict",
-            "error",
-            `hosts[${index}].hostId`,
-            "A host stable identifier cannot describe different host names."
-          )
-        );
-        continue;
-      }
-      host.contacts.push(parsed.contact);
-    }
-    return [...hostsById.values()].map((host) => ({
-      id: host.id,
-      displayName: host.displayName,
-      contacts: host.contacts
-    }));
-  }
-  parseHostRecord(record, index, diagnostics) {
-    const hostIdValue = this.requiredText(
-      record.hostId,
-      "referential.host.id.invalid",
-      `hosts[${index}].hostId`,
-      "Host stable identifier must be a non-empty string.",
-      diagnostics
-    );
-    const hostId = hostIdValue ? asHostId(hostIdValue) : void 0;
-    if (hostIdValue && !hostId) {
-      diagnostics.push(
-        diagnostic2(
-          "referential.host.id.invalid",
-          "error",
-          `hosts[${index}].hostId`,
-          "Host stable identifier must use the opaque host-0001 format."
-        )
-      );
-    }
-    const displayName = this.requiredText(
-      record.displayName,
-      "referential.host.display-name.invalid",
-      `hosts[${index}].displayName`,
-      "Host display name must be a non-empty string.",
-      diagnostics
-    );
-    const contactIdValue = this.requiredText(
-      record.contactId,
-      "referential.contact.id.invalid",
-      `hosts[${index}].contactId`,
-      "Contact stable identifier must be a non-empty string.",
-      diagnostics
-    );
-    const contactId = contactIdValue ? asContactId(contactIdValue) : void 0;
-    if (contactIdValue && !contactId) {
-      diagnostics.push(
-        diagnostic2(
-          "referential.contact.id.invalid",
-          "error",
-          `hosts[${index}].contactId`,
-          "Contact stable identifier must use the opaque contact-0001 format."
-        )
-      );
-    }
-    const contactName = this.requiredText(
-      record.contactName,
-      "referential.contact.name.invalid",
-      `hosts[${index}].contactName`,
-      "Contact name must be a non-empty string.",
-      diagnostics
-    );
-    const email = this.email(
-      record.email,
-      "referential.contact.email.invalid",
-      `hosts[${index}].email`,
-      "Host contact email address is invalid.",
-      diagnostics
-    );
-    const phone = this.optionalText(
-      record.phone,
-      "referential.contact.phone.invalid",
-      `hosts[${index}].phone`,
-      "Host contact phone must be a string when provided.",
-      diagnostics
-    );
-    const address = this.requiredText(
-      record.address,
-      "referential.contact.address.invalid",
-      `hosts[${index}].address`,
-      "Host contact address must be a non-empty string.",
-      diagnostics
-    );
-    if (!hostId || !displayName || !contactId || !contactName || !email || address === void 0 || phone === null) {
-      return void 0;
-    }
-    return {
-      hostId,
-      displayName,
-      contact: {
-        id: contactId,
-        name: contactName,
-        email,
-        ...phone ? { phone } : {},
-        address
-      }
-    };
-  }
-  validateSpeakers(records, diagnostics) {
-    const speakers = [];
-    const speakerIds = /* @__PURE__ */ new Set();
-    for (const [index, record] of records.entries()) {
-      const speakerIdValue = this.requiredText(
-        record.speakerId,
-        "referential.speaker.id.invalid",
-        `speakers[${index}].speakerId`,
-        "Speaker stable identifier must be a non-empty string.",
-        diagnostics
-      );
-      const speakerId = speakerIdValue ? asSpeakerId(speakerIdValue) : void 0;
-      if (speakerIdValue && !speakerId) {
-        diagnostics.push(
-          diagnostic2(
-            "referential.speaker.id.invalid",
-            "error",
-            `speakers[${index}].speakerId`,
-            "Speaker stable identifier must use the speaker-* slug format."
-          )
-        );
-      }
-      const firstName = this.requiredText(
-        record.firstName,
-        "referential.speaker.first-name.invalid",
-        `speakers[${index}].firstName`,
-        "Speaker first name must be a non-empty string.",
-        diagnostics
-      );
-      const lastName = this.requiredText(
-        record.lastName,
-        "referential.speaker.last-name.invalid",
-        `speakers[${index}].lastName`,
-        "Speaker last name must be a non-empty string.",
-        diagnostics
-      );
-      const company = this.requiredText(
-        record.company,
-        "referential.speaker.company.invalid",
-        `speakers[${index}].company`,
-        "Speaker company must be a non-empty string.",
-        diagnostics
-      );
-      const email = this.email(
-        record.email,
-        "referential.speaker.email.invalid",
-        `speakers[${index}].email`,
-        "Speaker email address is invalid.",
-        diagnostics
-      );
-      const phone = this.optionalText(
-        record.phone,
-        "referential.speaker.phone.invalid",
-        `speakers[${index}].phone`,
-        "Speaker phone must be a string when provided.",
-        diagnostics
-      );
-      if (!speakerId || !firstName || !lastName || !company || !email || phone === null) {
-        continue;
-      }
-      if (speakerIds.has(speakerId)) {
-        diagnostics.push(
-          diagnostic2(
-            "referential.speaker.id.duplicate",
-            "error",
-            `speakers[${index}].speakerId`,
-            "Speaker stable identifiers must be unique."
-          )
-        );
-        continue;
-      }
-      speakerIds.add(speakerId);
-      speakers.push({
-        id: speakerId,
-        firstName,
-        lastName,
-        displayName: `${firstName} ${lastName}`,
-        company,
-        email,
-        ...phone ? { phone } : {}
-      });
-    }
-    return speakers;
-  }
-  requiredText(value, code, path, message, diagnostics) {
-    if (typeof value !== "string") {
-      diagnostics.push(diagnostic2(code, "error", path, message));
-      return void 0;
-    }
-    const normalized = normalizeDisplayName(value);
-    if (!normalized) {
-      diagnostics.push(diagnostic2(code, "error", path, message));
-      return void 0;
-    }
-    return normalized;
-  }
-  optionalText(value, code, path, message, diagnostics) {
+  static readLegacyOccurrenceStatus(value, diagnostics) {
     if (value === void 0 || value === null || value === "") {
       return void 0;
     }
-    if (typeof value !== "string") {
-      diagnostics.push(diagnostic2(code, "error", path, message));
-      return null;
+    if (typeof value === "string" && OCCURRENCE_STATUSES.includes(value)) {
+      return value;
     }
-    return value.normalize("NFC").trim() || void 0;
-  }
-  email(value, code, path, message, diagnostics) {
-    if (typeof value !== "string") {
-      diagnostics.push(diagnostic2(code, "error", path, message));
-      return void 0;
-    }
-    const normalized = value.normalize("NFC").trim().toLowerCase();
-    if (!EMAIL_PATTERN.test(normalized)) {
-      diagnostics.push(diagnostic2(code, "error", path, message));
-      return void 0;
-    }
-    return normalized;
-  }
-  reportDuplicateDisplayNames(entities, code, path, message, diagnostics) {
-    const counts = /* @__PURE__ */ new Map();
-    for (const entity of entities) {
-      const key = displayNameKey(entity.displayName);
-      counts.set(key, (counts.get(key) ?? 0) + 1);
-    }
-    let ambiguityIndex = 0;
-    for (const count of counts.values()) {
-      if (count < 2) {
-        continue;
-      }
-      diagnostics.push(
-        diagnostic2(
-          code,
-          "error",
-          `${path}.ambiguities[${ambiguityIndex}]`,
-          message
-        )
-      );
-      ambiguityIndex += 1;
-    }
+    diagnostics.push(
+      EventDiagnostics.diagnostic({
+        code: "event.occurrence-status.invalid",
+        severity: "error",
+        category: "invalid",
+        field: "event_status",
+        message: "Occurrence status must be scheduled, postponed, held, or cancelled"
+      })
+    );
+    return void 0;
   }
 };
 
-// packages/domain/communication/src/idempotency.ts
-var SAFE_IDENTIFIER_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$/;
-function isSafeCommunicationIdentifier(value) {
-  return SAFE_IDENTIFIER_PATTERN.test(value);
-}
-function createCommunicationIdempotencyKey(components) {
-  const values = [
-    components.repositoryId,
-    components.eventId,
-    components.recipientId,
-    components.policyVersion
-  ];
-  if (!values.every(isSafeCommunicationIdentifier)) {
-    throw new Error(
-      "Communication identifiers must be stable, opaque, and PII-free"
-    );
+// packages/domain/event/src/domain/participant-reference-parser.ts
+var ParticipantReferenceParser = class _ParticipantReferenceParser {
+  static parseParticipantReference(value) {
+    const trimmed = value.trim();
+    const markdownLinkLabel = _ParticipantReferenceParser.parseMarkdownLinkLabel(trimmed);
+    if (markdownLinkLabel !== void 0) {
+      return { displayName: markdownLinkLabel };
+    }
+    const stableReference = _ParticipantReferenceParser.parseStableIdReference(trimmed);
+    if (stableReference) {
+      return stableReference;
+    }
+    return { displayName: trimmed };
   }
-  return [
-    "meetup-communication:v1",
-    `repository=${encodeURIComponent(components.repositoryId)}`,
-    `event=${encodeURIComponent(components.eventId)}`,
-    `kind=${components.kind}`,
-    `recipient=${encodeURIComponent(components.recipientId)}`,
-    `policy=${encodeURIComponent(components.policyVersion)}`
-  ].join("|");
-}
+  static parseLegacyAgendaLine(line) {
+    let cursor = 0;
+    cursor = _ParticipantReferenceParser.skipHorizontalWhitespace(line, cursor);
+    if (line[cursor] !== "-") {
+      return void 0;
+    }
+    cursor += 1;
+    if (!_ParticipantReferenceParser.isHorizontalWhitespaceCharacter(
+      line[cursor] ?? ""
+    )) {
+      return void 0;
+    }
+    cursor = _ParticipantReferenceParser.skipHorizontalWhitespace(line, cursor);
+    const content = line.slice(cursor);
+    for (let index = 0; index < content.length; index += 1) {
+      if (content[index] !== ":") {
+        continue;
+      }
+      if (!_ParticipantReferenceParser.isHorizontalWhitespaceCharacter(
+        content[index + 1] ?? ""
+      )) {
+        continue;
+      }
+      const speakers = content.slice(0, index).trimEnd();
+      if (speakers === "") {
+        return void 0;
+      }
+      let descriptionStart = index + 1;
+      while (descriptionStart < content.length && _ParticipantReferenceParser.isHorizontalWhitespaceCharacter(
+        content[descriptionStart]
+      )) {
+        descriptionStart += 1;
+      }
+      return {
+        speakers,
+        description: content.slice(descriptionStart)
+      };
+    }
+    return void 0;
+  }
+  static parseMarkdownLinkLabel(value) {
+    if (!value.startsWith("[") || !value.endsWith(")")) {
+      return void 0;
+    }
+    const closingBracket = value.indexOf("]");
+    if (closingBracket <= 1 || value[closingBracket + 1] !== "(") {
+      return void 0;
+    }
+    const target = value.slice(closingBracket + 2, -1);
+    if (target === "" || target.includes(")")) {
+      return void 0;
+    }
+    return value.slice(1, closingBracket).trim();
+  }
+  static parseStableIdReference(value) {
+    if (!value.endsWith("]")) {
+      return void 0;
+    }
+    const openingBracket = value.lastIndexOf("[");
+    if (openingBracket <= 0 || !_ParticipantReferenceParser.isWhitespaceCharacter(
+      value[openingBracket - 1] ?? ""
+    )) {
+      return void 0;
+    }
+    const id = value.slice(openingBracket + 1, -1);
+    if (!STABLE_ID_PATTERN.test(id)) {
+      return void 0;
+    }
+    const displayName = value.slice(0, openingBracket).trim();
+    if (displayName === "") {
+      return void 0;
+    }
+    return {
+      displayName,
+      id
+    };
+  }
+  static isHorizontalWhitespaceCharacter(value) {
+    return value === " " || value === "	";
+  }
+  static isWhitespaceCharacter(value) {
+    return _ParticipantReferenceParser.isHorizontalWhitespaceCharacter(value) || value === "\n" || value === "\r";
+  }
+  static skipHorizontalWhitespace(line, cursor) {
+    while (cursor < line.length && _ParticipantReferenceParser.isHorizontalWhitespaceCharacter(line[cursor])) {
+      cursor += 1;
+    }
+    return cursor;
+  }
+};
 
-// packages/domain/communication/src/approval.ts
+// packages/domain/event/src/domain/legacy-event-fields.ts
+var LegacyEventFields = class _LegacyEventFields {
+  static readString(value, field, diagnostics) {
+    if (value === void 0 || value === null) {
+      return "";
+    }
+    if (typeof value === "string") {
+      return value;
+    }
+    diagnostics.push(
+      EventDiagnostics.diagnostic({
+        code: "event.document.invalid-field-type",
+        severity: "error",
+        category: "invalid",
+        field,
+        message: `The ${field} field must be a string`
+      })
+    );
+    return "";
+  }
+  static readOptionalString(value, field, diagnostics) {
+    if (value === void 0 || value === null || value === "") {
+      return void 0;
+    }
+    return _LegacyEventFields.readString(value, field, diagnostics);
+  }
+  static readLegacyHost(value, diagnostics) {
+    if (value === void 0 || value === null) {
+      return void 0;
+    }
+    if (!Array.isArray(value)) {
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.document.invalid-hoster-type",
+          severity: "error",
+          category: "invalid",
+          field: "hoster",
+          message: "The legacy hoster field must be an array"
+        })
+      );
+      return void 0;
+    }
+    if (value.length > 1) {
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.hoster.multiple",
+          severity: "error",
+          category: "invalid",
+          field: "hoster",
+          message: "A meetup event must have exactly one host"
+        })
+      );
+    }
+    const first = value[0];
+    if (first === void 0) {
+      return void 0;
+    }
+    if (typeof first !== "string") {
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.document.invalid-hoster-entry",
+          severity: "error",
+          category: "invalid",
+          field: "hoster",
+          message: "The legacy hoster entry must be a string"
+        })
+      );
+      return void 0;
+    }
+    return ParticipantReferenceParser.parseParticipantReference(first);
+  }
+  static readLegacyAgenda(value, diagnostics) {
+    if (value === void 0 || value === null || value === "") {
+      return [];
+    }
+    if (typeof value !== "string") {
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.document.invalid-agenda-type",
+          severity: "error",
+          category: "invalid",
+          field: "agenda",
+          message: "The legacy agenda field must be a string"
+        })
+      );
+      return [];
+    }
+    const entries = [];
+    for (const [index, line] of value.split("\n").entries()) {
+      if (line.trim() === "") {
+        continue;
+      }
+      const agendaLine = ParticipantReferenceParser.parseLegacyAgendaLine(line);
+      if (!agendaLine) {
+        diagnostics.push(
+          EventDiagnostics.diagnostic({
+            code: "event.agenda.legacy-line-invalid",
+            severity: "error",
+            category: "invalid",
+            field: `agenda.${index}`,
+            message: `Agenda line ${index + 1} does not match "- <speaker(s)>: <description>"`
+          })
+        );
+        continue;
+      }
+      entries.push({
+        speakers: agendaLine.speakers.split(",").map(
+          (speaker) => ParticipantReferenceParser.parseParticipantReference(speaker)
+        ),
+        description: agendaLine.description
+      });
+    }
+    return entries;
+  }
+};
+
+// packages/domain/event/src/domain/meetup-event-migration.ts
+var MeetupEventMigration = class _MeetupEventMigration {
+  static parseParticipantReference(value) {
+    return ParticipantReferenceParser.parseParticipantReference(value);
+  }
+  static migrateMeetupEventDto(dto) {
+    if (dto.schemaVersion === EVENT_SCHEMA_VERSION) {
+      return {
+        event: MeetupEventOperations.cloneMeetupEvent(dto),
+        diagnostics: []
+      };
+    }
+    return _MeetupEventMigration.migrateLegacyDto(dto);
+  }
+  static migrateLegacyDto(dto) {
+    const diagnostics = [];
+    const body = dto.parsedBody;
+    const { eventTitle, date, description, host, agenda, occurrenceStatus } = _MeetupEventMigration.legacyFields(dto, diagnostics);
+    const event = {
+      schemaVersion: EVENT_SCHEMA_VERSION,
+      identity: {
+        repository: dto.repository,
+        issueNumber: dto.issueNumber
+      },
+      issueState: dto.issueState ?? "open",
+      issueTitle: dto.issueTitle,
+      labels: [...dto.labels ?? []],
+      eventTitle,
+      date,
+      description,
+      host,
+      agenda,
+      publicationLinks: _MeetupEventMigration.publicationLinks(
+        body,
+        diagnostics
+      ),
+      occurrenceStatus,
+      timeZone: dto.timeZone ?? "Europe/Paris",
+      confirmations: {
+        host: dto.labels?.includes("hoster:confirmed") ?? false,
+        speakers: dto.labels?.includes("speakers:confirmed") ?? false
+      },
+      logistics: {
+        aperitif: "unspecified",
+        postEventVenue: "unspecified"
+      },
+      operationalChecklists: {
+        slidesAndContent: [],
+        communication: [],
+        postEvent: []
+      },
+      // A legacy flag has no named task evidence and cannot prove completion.
+      followUpComplete: false
+    };
+    diagnostics.unshift(
+      EventDiagnostics.diagnostic({
+        code: "event.document.legacy-schema",
+        severity: "info",
+        category: "migration",
+        message: "The legacy event document was migrated to schema version 1",
+        fixAvailable: true
+      })
+    );
+    return { event, diagnostics };
+  }
+  static publicationLinks(body, diagnostics) {
+    return {
+      meetup: LegacyEventFields.readOptionalString(
+        body.meetup_link,
+        "meetup_link",
+        diagnostics
+      ),
+      community: LegacyEventFields.readOptionalString(
+        body.cncf_link,
+        "cncf_link",
+        diagnostics
+      ),
+      assets: LegacyEventFields.readOptionalString(
+        body.drive_link,
+        "drive_link",
+        diagnostics
+      )
+    };
+  }
+  static legacyFields(dto, diagnostics) {
+    const body = dto.parsedBody;
+    const eventTitle = LegacyEventFields.readString(
+      body.event_title,
+      "event_title",
+      diagnostics
+    );
+    const date = LegacyEventFields.readString(
+      body.event_date,
+      "event_date",
+      diagnostics
+    );
+    const description = LegacyEventFields.readString(
+      body.event_description,
+      "event_description",
+      diagnostics
+    );
+    const host = LegacyEventFields.readLegacyHost(body.hoster, diagnostics);
+    const agenda = LegacyEventFields.readLegacyAgenda(body.agenda, diagnostics);
+    const occurrenceStatus = EventOccurrenceParser.readOccurrenceStatus(
+      dto.labels ?? [],
+      dto.issueState ?? "open",
+      body.event_status,
+      diagnostics
+    );
+    return { eventTitle, date, description, host, agenda, occurrenceStatus };
+  }
+};
+
+// packages/domain/communication/src/approval-contracts.ts
 var COMMUNICATION_APPROVAL_SCHEMA_VERSION = 1;
+
+// packages/domain/communication/src/approval-shape.ts
+var ApprovalShape = class {
+  static isOccurrenceStatus(value) {
+    return typeof value === "string" && ["scheduled", "postponed", "held", "cancelled", "unknown"].includes(value);
+  }
+  static isReadiness(value) {
+    return value === "ready" || value === "not-ready";
+  }
+  static isNullableString(value) {
+    return value === null || typeof value === "string";
+  }
+  static isExactRecord(value, expectedKeys) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+      return false;
+    }
+    const keys = Object.keys(value).sort();
+    const expected = [...expectedKeys].sort();
+    return keys.length === expected.length && keys.every((key, index) => key === expected[index]);
+  }
+};
+
+// packages/domain/communication/src/communication-approval-snapshot-error.ts
 var CommunicationApprovalSnapshotError = class extends Error {
   constructor(message) {
     super(message);
     this.name = "CommunicationApprovalSnapshotError";
   }
 };
-function createCommunicationApprovalSnapshot(facts) {
-  return Object.freeze({
-    schemaVersion: COMMUNICATION_APPROVAL_SCHEMA_VERSION,
-    facts: normalizeFacts(facts)
-  });
-}
-function communicationApprovalFactsEqual(left, right) {
-  try {
-    return factsKey(normalizeFacts(left)) === factsKey(normalizeFacts(right));
-  } catch {
-    return false;
+
+// packages/domain/communication/src/idempotency.ts
+var SAFE_IDENTIFIER_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$/;
+var CommunicationIdempotency = class _CommunicationIdempotency {
+  static isSafeCommunicationIdentifier(value) {
+    return SAFE_IDENTIFIER_PATTERN.test(value);
   }
-}
-function communicationApprovalMatches(approved, currentFacts) {
-  return approved?.schemaVersion === COMMUNICATION_APPROVAL_SCHEMA_VERSION && communicationApprovalFactsEqual(approved.facts, currentFacts);
-}
-function parseCommunicationApprovalSnapshot(value) {
-  if (!isExactRecord(value, ["schemaVersion", "facts"])) {
-    throw invalidSnapshot();
+  static createCommunicationIdempotencyKey(components) {
+    const values = [
+      components.repositoryId,
+      components.eventId,
+      components.recipientId,
+      components.policyVersion
+    ];
+    if (!values.every(_CommunicationIdempotency.isSafeCommunicationIdentifier)) {
+      throw new Error(
+        "Communication identifiers must be stable, opaque, and PII-free"
+      );
+    }
+    return [
+      "meetup-communication:v1",
+      `repository=${encodeURIComponent(components.repositoryId)}`,
+      `event=${encodeURIComponent(components.eventId)}`,
+      `kind=${components.kind}`,
+      `recipient=${encodeURIComponent(components.recipientId)}`,
+      `policy=${encodeURIComponent(components.policyVersion)}`
+    ].join("|");
   }
-  if (value.schemaVersion !== COMMUNICATION_APPROVAL_SCHEMA_VERSION) {
-    throw invalidSnapshot();
+};
+
+// packages/domain/communication/src/approval-value-validation.ts
+var ApprovalValueValidation = class {
+  static requireSafeIdentifier(value, field) {
+    if (typeof value !== "string") {
+      throw new CommunicationApprovalSnapshotError(
+        `${field} must be a stable, PII-free identifier`
+      );
+    }
+    const normalized = value.trim();
+    if (!CommunicationIdempotency.isSafeCommunicationIdentifier(normalized)) {
+      throw new CommunicationApprovalSnapshotError(
+        `${field} must be a stable, PII-free identifier`
+      );
+    }
+    return normalized;
   }
-  if (!isExactRecord(value.facts, [
-    "automationRevision",
-    "eventId",
-    "eventDate",
-    "occurrenceStatus",
-    "readiness",
-    "policyVersion",
-    "mailingsRepository",
-    "notificationEnabled",
-    "notificationDestinationFingerprint",
-    "confirmations",
-    "hostId",
-    "speakerIds",
-    "publicationUrls"
-  ])) {
-    throw invalidSnapshot();
+  static requireSha256Fingerprint(value, field) {
+    if (typeof value !== "string" || !/^sha256:[0-9a-f]{64}$/.test(value)) {
+      throw new CommunicationApprovalSnapshotError(
+        `${field} must be a SHA-256 fingerprint`
+      );
+    }
+    return value;
   }
-  const facts = value.facts;
-  if (!isExactRecord(facts.confirmations, ["host", "speakers"])) {
-    throw invalidSnapshot();
+  static requireIsoDate(value) {
+    if (typeof value !== "string") {
+      throw new CommunicationApprovalSnapshotError(
+        "eventDate must be a real date formatted as YYYY-MM-DD"
+      );
+    }
+    const normalized = value.trim();
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(normalized);
+    if (!match) {
+      throw new CommunicationApprovalSnapshotError(
+        "eventDate must be a real date formatted as YYYY-MM-DD"
+      );
+    }
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    const parsed = new Date(Date.UTC(year, month - 1, day));
+    if (parsed.getUTCFullYear() !== year || parsed.getUTCMonth() !== month - 1 || parsed.getUTCDate() !== day) {
+      throw new CommunicationApprovalSnapshotError(
+        "eventDate must be a real date formatted as YYYY-MM-DD"
+      );
+    }
+    return normalized;
   }
-  if (!isExactRecord(facts.publicationUrls, ["meetup", "community", "assets"])) {
-    throw invalidSnapshot();
+  static normalizePublicUrl(value, field) {
+    if (value === null) {
+      return null;
+    }
+    if (typeof value !== "string") {
+      throw new CommunicationApprovalSnapshotError(
+        `${field} publication URL must be an HTTPS URL or null`
+      );
+    }
+    const normalized = value.trim().replace(/\/$/, "");
+    if (!normalized) {
+      return null;
+    }
+    try {
+      const url = new URL(normalized);
+      if (url.protocol !== "https:" || url.username || url.password) {
+        throw new Error("not a public HTTPS URL");
+      }
+    } catch {
+      throw new CommunicationApprovalSnapshotError(
+        `${field} publication URL must be an HTTPS URL or null`
+      );
+    }
+    return normalized;
   }
-  if (typeof facts.automationRevision !== "string" || typeof facts.eventId !== "string" || typeof facts.eventDate !== "string" || !isOccurrenceStatus(facts.occurrenceStatus) || !isReadiness(facts.readiness) || typeof facts.policyVersion !== "string" || typeof facts.mailingsRepository !== "string" || typeof facts.notificationEnabled !== "boolean" || !isNullableString(facts.notificationDestinationFingerprint) || typeof facts.confirmations.host !== "boolean" || typeof facts.confirmations.speakers !== "boolean" || facts.hostId !== null && typeof facts.hostId !== "string" || !Array.isArray(facts.speakerIds) || !facts.speakerIds.every((id) => typeof id === "string") || !isNullableString(facts.publicationUrls.meetup) || !isNullableString(facts.publicationUrls.community) || !isNullableString(facts.publicationUrls.assets)) {
-    throw invalidSnapshot();
+  static invalidSnapshot() {
+    return new CommunicationApprovalSnapshotError(
+      "Communication approval snapshot has an invalid schema"
+    );
   }
-  return createCommunicationApprovalSnapshot({
-    automationRevision: facts.automationRevision,
-    eventId: facts.eventId,
-    eventDate: facts.eventDate,
-    occurrenceStatus: facts.occurrenceStatus,
-    readiness: facts.readiness,
-    policyVersion: facts.policyVersion,
-    mailingsRepository: facts.mailingsRepository,
-    notificationEnabled: facts.notificationEnabled,
-    notificationDestinationFingerprint: facts.notificationDestinationFingerprint,
-    confirmations: {
+};
+
+// packages/domain/communication/src/approval-facts.ts
+var ApprovalFacts = class _ApprovalFacts {
+  static normalizeFacts(facts) {
+    const automationRevision = ApprovalValueValidation.requireSafeIdentifier(
+      facts.automationRevision,
+      "automationRevision"
+    );
+    const eventId = ApprovalValueValidation.requireSafeIdentifier(
+      facts.eventId,
+      "eventId"
+    );
+    const eventDate = ApprovalValueValidation.requireIsoDate(facts.eventDate);
+    if (!ApprovalShape.isOccurrenceStatus(facts.occurrenceStatus)) {
+      throw new CommunicationApprovalSnapshotError(
+        "occurrenceStatus must be a supported event status"
+      );
+    }
+    if (!ApprovalShape.isReadiness(facts.readiness)) {
+      throw new CommunicationApprovalSnapshotError(
+        "readiness must be ready or not-ready"
+      );
+    }
+    const policyVersion = ApprovalValueValidation.requireSafeIdentifier(
+      facts.policyVersion,
+      "policyVersion"
+    );
+    const mailingsRepository = ApprovalValueValidation.requireSafeIdentifier(
+      facts.mailingsRepository,
+      "mailingsRepository"
+    );
+    const notificationDestinationFingerprint = _ApprovalFacts.notificationFingerprint(facts);
+    if (typeof facts.confirmations?.host !== "boolean" || typeof facts.confirmations?.speakers !== "boolean") {
+      throw new CommunicationApprovalSnapshotError(
+        "confirmations must contain host and speakers booleans"
+      );
+    }
+    const hostId = facts.hostId === null ? null : ApprovalValueValidation.requireSafeIdentifier(facts.hostId, "hostId");
+    const speakerIds = _ApprovalFacts.speakerIds(facts);
+    const { confirmations, publicationUrls } = _ApprovalFacts.publication(facts);
+    return Object.freeze({
+      automationRevision,
+      eventId,
+      eventDate,
+      occurrenceStatus: facts.occurrenceStatus,
+      readiness: facts.readiness,
+      policyVersion,
+      mailingsRepository,
+      notificationEnabled: facts.notificationEnabled,
+      notificationDestinationFingerprint,
+      confirmations,
+      hostId,
+      speakerIds: Object.freeze(speakerIds),
+      publicationUrls
+    });
+  }
+  static factsKey(facts) {
+    return JSON.stringify(facts);
+  }
+  static compareText(left, right) {
+    return left < right ? -1 : left > right ? 1 : 0;
+  }
+  static notificationFingerprint(facts) {
+    if (typeof facts.notificationEnabled !== "boolean") {
+      throw new CommunicationApprovalSnapshotError(
+        "notificationEnabled must be a boolean"
+      );
+    }
+    const notificationDestinationFingerprint = facts.notificationDestinationFingerprint === null ? null : ApprovalValueValidation.requireSha256Fingerprint(
+      facts.notificationDestinationFingerprint,
+      "notificationDestinationFingerprint"
+    );
+    if (!facts.notificationEnabled && notificationDestinationFingerprint !== null) {
+      throw new CommunicationApprovalSnapshotError(
+        "notificationDestinationFingerprint must be null when notifications are disabled"
+      );
+    }
+    return notificationDestinationFingerprint;
+  }
+  static speakerIds(facts) {
+    if (!Array.isArray(facts.speakerIds)) {
+      throw new CommunicationApprovalSnapshotError(
+        "speakerIds must be an array of stable identifiers"
+      );
+    }
+    const speakerIds = [
+      ...new Set(
+        facts.speakerIds.map(
+          (id) => ApprovalValueValidation.requireSafeIdentifier(id, "speakerIds")
+        )
+      )
+    ].sort(_ApprovalFacts.compareText);
+    return speakerIds;
+  }
+  static publication(facts) {
+    if (!facts.publicationUrls || typeof facts.publicationUrls !== "object") {
+      throw new CommunicationApprovalSnapshotError(
+        "publicationUrls must contain public event URL fields"
+      );
+    }
+    const confirmations = Object.freeze({
       host: facts.confirmations.host,
       speakers: facts.confirmations.speakers
-    },
-    hostId: facts.hostId,
-    speakerIds: facts.speakerIds,
-    publicationUrls: {
-      meetup: facts.publicationUrls.meetup,
-      community: facts.publicationUrls.community,
-      assets: facts.publicationUrls.assets
+    });
+    const publicationUrls = Object.freeze({
+      meetup: ApprovalValueValidation.normalizePublicUrl(
+        facts.publicationUrls.meetup,
+        "meetup"
+      ),
+      community: ApprovalValueValidation.normalizePublicUrl(
+        facts.publicationUrls.community,
+        "community"
+      ),
+      assets: ApprovalValueValidation.normalizePublicUrl(
+        facts.publicationUrls.assets,
+        "assets"
+      )
+    });
+    return { confirmations, publicationUrls };
+  }
+};
+
+// packages/domain/communication/src/communication-approval.ts
+var CommunicationApproval = class _CommunicationApproval {
+  /**
+   * Create the canonical approval representation. Speaker identity is a set, so
+   * IDs are trimmed, deduplicated, and sorted. Public URLs are trimmed and have
+   * one trailing slash removed, matching event/publication normalization.
+   */
+  static createCommunicationApprovalSnapshot(facts) {
+    return Object.freeze({
+      schemaVersion: COMMUNICATION_APPROVAL_SCHEMA_VERSION,
+      facts: ApprovalFacts.normalizeFacts(facts)
+    });
+  }
+  /**
+   * Compare approval-bound facts. Speaker ordering and duplicate agenda
+   * appearances do not invalidate approval; every other normalized fact must be
+   * exactly equal.
+   */
+  static communicationApprovalFactsEqual(left, right) {
+    try {
+      return ApprovalFacts.factsKey(ApprovalFacts.normalizeFacts(left)) === ApprovalFacts.factsKey(ApprovalFacts.normalizeFacts(right));
+    } catch {
+      return false;
     }
-  });
-}
-function normalizeFacts(facts) {
-  const automationRevision = requireSafeIdentifier(
-    facts.automationRevision,
-    "automationRevision"
-  );
-  const eventId = requireSafeIdentifier(facts.eventId, "eventId");
-  const eventDate = requireIsoDate(facts.eventDate);
-  if (!isOccurrenceStatus(facts.occurrenceStatus)) {
-    throw new CommunicationApprovalSnapshotError(
-      "occurrenceStatus must be a supported event status"
+  }
+  static communicationApprovalMatches(approved, currentFacts) {
+    return approved?.schemaVersion === COMMUNICATION_APPROVAL_SCHEMA_VERSION && _CommunicationApproval.communicationApprovalFactsEqual(
+      approved.facts,
+      currentFacts
     );
   }
-  if (!isReadiness(facts.readiness)) {
-    throw new CommunicationApprovalSnapshotError(
-      "readiness must be ready or not-ready"
-    );
-  }
-  const policyVersion = requireSafeIdentifier(
-    facts.policyVersion,
-    "policyVersion"
-  );
-  const mailingsRepository = requireSafeIdentifier(
-    facts.mailingsRepository,
-    "mailingsRepository"
-  );
-  if (typeof facts.notificationEnabled !== "boolean") {
-    throw new CommunicationApprovalSnapshotError(
-      "notificationEnabled must be a boolean"
-    );
-  }
-  const notificationDestinationFingerprint = facts.notificationDestinationFingerprint === null ? null : requireSha256Fingerprint(
-    facts.notificationDestinationFingerprint,
-    "notificationDestinationFingerprint"
-  );
-  if (!facts.notificationEnabled && notificationDestinationFingerprint !== null) {
-    throw new CommunicationApprovalSnapshotError(
-      "notificationDestinationFingerprint must be null when notifications are disabled"
-    );
-  }
-  if (typeof facts.confirmations?.host !== "boolean" || typeof facts.confirmations?.speakers !== "boolean") {
-    throw new CommunicationApprovalSnapshotError(
-      "confirmations must contain host and speakers booleans"
-    );
-  }
-  const hostId = facts.hostId === null ? null : requireSafeIdentifier(facts.hostId, "hostId");
-  if (!Array.isArray(facts.speakerIds)) {
-    throw new CommunicationApprovalSnapshotError(
-      "speakerIds must be an array of stable identifiers"
-    );
-  }
-  const speakerIds = [
-    ...new Set(
-      facts.speakerIds.map((id) => requireSafeIdentifier(id, "speakerIds"))
-    )
-  ].sort(compareText2);
-  if (!facts.publicationUrls || typeof facts.publicationUrls !== "object") {
-    throw new CommunicationApprovalSnapshotError(
-      "publicationUrls must contain public event URL fields"
-    );
-  }
-  const confirmations = Object.freeze({
-    host: facts.confirmations.host,
-    speakers: facts.confirmations.speakers
-  });
-  const publicationUrls = Object.freeze({
-    meetup: normalizePublicUrl(facts.publicationUrls.meetup, "meetup"),
-    community: normalizePublicUrl(facts.publicationUrls.community, "community"),
-    assets: normalizePublicUrl(facts.publicationUrls.assets, "assets")
-  });
-  return Object.freeze({
-    automationRevision,
-    eventId,
-    eventDate,
-    occurrenceStatus: facts.occurrenceStatus,
-    readiness: facts.readiness,
-    policyVersion,
-    mailingsRepository,
-    notificationEnabled: facts.notificationEnabled,
-    notificationDestinationFingerprint,
-    confirmations,
-    hostId,
-    speakerIds: Object.freeze(speakerIds),
-    publicationUrls
-  });
-}
-function requireSafeIdentifier(value, field) {
-  if (typeof value !== "string") {
-    throw new CommunicationApprovalSnapshotError(
-      `${field} must be a stable, PII-free identifier`
-    );
-  }
-  const normalized = value.trim();
-  if (!isSafeCommunicationIdentifier(normalized)) {
-    throw new CommunicationApprovalSnapshotError(
-      `${field} must be a stable, PII-free identifier`
-    );
-  }
-  return normalized;
-}
-function requireSha256Fingerprint(value, field) {
-  if (typeof value !== "string" || !/^sha256:[0-9a-f]{64}$/.test(value)) {
-    throw new CommunicationApprovalSnapshotError(
-      `${field} must be a SHA-256 fingerprint`
-    );
-  }
-  return value;
-}
-function requireIsoDate(value) {
-  if (typeof value !== "string") {
-    throw new CommunicationApprovalSnapshotError(
-      "eventDate must be a real date formatted as YYYY-MM-DD"
-    );
-  }
-  const normalized = value.trim();
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(normalized);
-  if (!match) {
-    throw new CommunicationApprovalSnapshotError(
-      "eventDate must be a real date formatted as YYYY-MM-DD"
-    );
-  }
-  const year = Number(match[1]);
-  const month = Number(match[2]);
-  const day = Number(match[3]);
-  const parsed = new Date(Date.UTC(year, month - 1, day));
-  if (parsed.getUTCFullYear() !== year || parsed.getUTCMonth() !== month - 1 || parsed.getUTCDate() !== day) {
-    throw new CommunicationApprovalSnapshotError(
-      "eventDate must be a real date formatted as YYYY-MM-DD"
-    );
-  }
-  return normalized;
-}
-function normalizePublicUrl(value, field) {
-  if (value === null) {
-    return null;
-  }
-  if (typeof value !== "string") {
-    throw new CommunicationApprovalSnapshotError(
-      `${field} publication URL must be an HTTPS URL or null`
-    );
-  }
-  const normalized = value.trim().replace(/\/$/, "");
-  if (!normalized) {
-    return null;
-  }
-  try {
-    const url = new URL(normalized);
-    if (url.protocol !== "https:" || url.username || url.password) {
-      throw new Error("not a public HTTPS URL");
+  /** Parse a strict, technology-independent representation from an adapter. */
+  static parseCommunicationApprovalSnapshot(value) {
+    if (!ApprovalShape.isExactRecord(value, ["schemaVersion", "facts"])) {
+      throw ApprovalValueValidation.invalidSnapshot();
     }
-  } catch {
-    throw new CommunicationApprovalSnapshotError(
-      `${field} publication URL must be an HTTPS URL or null`
-    );
+    if (value.schemaVersion !== COMMUNICATION_APPROVAL_SCHEMA_VERSION) {
+      throw ApprovalValueValidation.invalidSnapshot();
+    }
+    const facts = value.facts;
+    _CommunicationApproval.assertFacts(facts);
+    return _CommunicationApproval.createCommunicationApprovalSnapshot({
+      automationRevision: facts.automationRevision,
+      eventId: facts.eventId,
+      eventDate: facts.eventDate,
+      occurrenceStatus: facts.occurrenceStatus,
+      readiness: facts.readiness,
+      policyVersion: facts.policyVersion,
+      mailingsRepository: facts.mailingsRepository,
+      notificationEnabled: facts.notificationEnabled,
+      notificationDestinationFingerprint: facts.notificationDestinationFingerprint,
+      confirmations: {
+        host: facts.confirmations.host,
+        speakers: facts.confirmations.speakers
+      },
+      hostId: facts.hostId,
+      speakerIds: facts.speakerIds,
+      publicationUrls: {
+        meetup: facts.publicationUrls.meetup,
+        community: facts.publicationUrls.community,
+        assets: facts.publicationUrls.assets
+      }
+    });
   }
-  return normalized;
-}
-function factsKey(facts) {
-  return JSON.stringify(facts);
-}
-function compareText2(left, right) {
-  return left < right ? -1 : left > right ? 1 : 0;
-}
-function isOccurrenceStatus(value) {
-  return typeof value === "string" && ["scheduled", "postponed", "held", "cancelled", "unknown"].includes(value);
-}
-function isReadiness(value) {
-  return value === "ready" || value === "not-ready";
-}
-function isNullableString(value) {
-  return value === null || typeof value === "string";
-}
-function isExactRecord(value, expectedKeys) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return false;
+  static assertFacts(facts) {
+    if (!ApprovalShape.isExactRecord(facts, [
+      "automationRevision",
+      "eventId",
+      "eventDate",
+      "occurrenceStatus",
+      "readiness",
+      "policyVersion",
+      "mailingsRepository",
+      "notificationEnabled",
+      "notificationDestinationFingerprint",
+      "confirmations",
+      "hostId",
+      "speakerIds",
+      "publicationUrls"
+    ])) {
+      throw ApprovalValueValidation.invalidSnapshot();
+    }
+    if (!ApprovalShape.isExactRecord(facts.confirmations, ["host", "speakers"])) {
+      throw ApprovalValueValidation.invalidSnapshot();
+    }
+    if (!ApprovalShape.isExactRecord(facts.publicationUrls, [
+      "meetup",
+      "community",
+      "assets"
+    ])) {
+      throw ApprovalValueValidation.invalidSnapshot();
+    }
+    if (typeof facts.automationRevision !== "string" || typeof facts.eventId !== "string" || typeof facts.eventDate !== "string" || !ApprovalShape.isOccurrenceStatus(facts.occurrenceStatus) || !ApprovalShape.isReadiness(facts.readiness) || typeof facts.policyVersion !== "string" || typeof facts.mailingsRepository !== "string" || typeof facts.notificationEnabled !== "boolean" || !ApprovalShape.isNullableString(
+      facts.notificationDestinationFingerprint
+    ) || typeof facts.confirmations.host !== "boolean" || typeof facts.confirmations.speakers !== "boolean" || facts.hostId !== null && typeof facts.hostId !== "string" || !Array.isArray(facts.speakerIds) || !facts.speakerIds.every((id) => typeof id === "string") || !ApprovalShape.isNullableString(facts.publicationUrls.meetup) || !ApprovalShape.isNullableString(facts.publicationUrls.community) || !ApprovalShape.isNullableString(facts.publicationUrls.assets)) {
+      throw ApprovalValueValidation.invalidSnapshot();
+    }
   }
-  const keys = Object.keys(value).sort(compareText2);
-  const expected = [...expectedKeys].sort(compareText2);
-  return keys.length === expected.length && keys.every((key, index) => key === expected[index]);
-}
-function invalidSnapshot() {
-  return new CommunicationApprovalSnapshotError(
-    "Communication approval snapshot has an invalid schema"
-  );
-}
+};
 
 // packages/domain/communication/src/model.ts
 var MAIL_TEMPLATE_NAMES = {
@@ -34852,7 +34653,53 @@ var MAIL_TEMPLATE_NAMES = {
   speakerThanks: "meetup-thanks-speakers"
 };
 
-// packages/domain/communication/src/plan-communications.ts
+// packages/domain/communication/src/communication-calendar.ts
+var CommunicationCalendar = class {
+  static parseIsoLocalDate(value) {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    if (!match) {
+      return void 0;
+    }
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    const candidate = new Date(Date.UTC(year, month - 1, day));
+    if (candidate.getUTCFullYear() !== year || candidate.getUTCMonth() !== month - 1 || candidate.getUTCDate() !== day) {
+      return void 0;
+    }
+    return { year, month, day };
+  }
+  static getLocalDate(instant, timeZone) {
+    try {
+      const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }).formatToParts(instant);
+      const values = new Map(parts.map((part) => [part.type, part.value]));
+      const year = Number(values.get("year"));
+      const month = Number(values.get("month"));
+      const day = Number(values.get("day"));
+      if (![year, month, day].every(Number.isInteger)) {
+        return void 0;
+      }
+      return { year, month, day };
+    } catch {
+      return void 0;
+    }
+  }
+  static toEpochDay(date) {
+    return Math.floor(
+      Date.UTC(date.year, date.month - 1, date.day) / 864e5
+    );
+  }
+  static isValidInstant(value) {
+    return value instanceof Date && Number.isFinite(value.getTime());
+  }
+};
+
+// packages/domain/communication/src/plan-communications-contracts.ts
 var MAIL_POLICIES = {
   introduction: {
     hosting: {
@@ -34875,19 +34722,158 @@ var MAIL_POLICIES = {
     }
   }
 };
+
+// packages/domain/communication/src/communication-planner.ts
+var CommunicationPlanner = class _CommunicationPlanner {
+  static planMailMessages(input, policyName, intents, diagnostics) {
+    for (const recipient of input.mailRecipients) {
+      if (!recipient.receivesCommunications) {
+        continue;
+      }
+      if (!CommunicationIdempotency.isSafeCommunicationIdentifier(
+        recipient.recipientId
+      )) {
+        diagnostics.push(
+          _CommunicationPlanner.errorDiagnostic("invalid-identifier")
+        );
+        continue;
+      }
+      if (recipient.email.trim().length === 0) {
+        diagnostics.push(
+          _CommunicationPlanner.errorDiagnostic("missing-mail-destination")
+        );
+        continue;
+      }
+      const policy = MAIL_POLICIES[policyName][recipient.role];
+      const base = _CommunicationPlanner.createIntentBase(
+        input,
+        policy.kind,
+        recipient.recipientId
+      );
+      const intent = {
+        ...base,
+        channel: "mail",
+        recipient: _CommunicationPlanner.cloneMailRecipient(recipient),
+        templateName: policy.templateName,
+        placeholders: {
+          ...input.mailPlaceholders ?? {},
+          ...recipient.placeholders ?? {}
+        }
+      };
+      intents.push(intent);
+    }
+  }
+  static planReadinessNotifications(input, intents, diagnostics) {
+    if (!input.notificationContent?.trim()) {
+      diagnostics.push(
+        _CommunicationPlanner.errorDiagnostic("missing-notification-content")
+      );
+      return;
+    }
+    for (const recipient of input.notificationRecipients) {
+      if (!recipient.receivesCommunications) {
+        continue;
+      }
+      if (!CommunicationIdempotency.isSafeCommunicationIdentifier(
+        recipient.recipientId
+      )) {
+        diagnostics.push(
+          _CommunicationPlanner.errorDiagnostic("invalid-identifier")
+        );
+        continue;
+      }
+      if (recipient.destination.trim().length === 0) {
+        diagnostics.push(
+          _CommunicationPlanner.errorDiagnostic(
+            "missing-notification-destination"
+          )
+        );
+        continue;
+      }
+      const base = _CommunicationPlanner.createIntentBase(
+        input,
+        "readiness-reminder",
+        recipient.recipientId
+      );
+      const intent = {
+        ...base,
+        channel: "notification",
+        recipient: { ...recipient },
+        content: input.notificationContent
+      };
+      intents.push(intent);
+    }
+  }
+  static createIntentBase(input, kind, recipientId) {
+    const idempotencyKey = CommunicationIdempotency.createCommunicationIdempotencyKey({
+      repositoryId: input.repositoryId,
+      eventId: input.eventId,
+      kind,
+      recipientId,
+      policyVersion: input.policyVersion
+    });
+    return {
+      intentId: idempotencyKey,
+      idempotencyKey,
+      repositoryId: input.repositoryId,
+      eventId: input.eventId,
+      policyVersion: input.policyVersion,
+      kind,
+      recipientId
+    };
+  }
+  static cloneMailRecipient(recipient) {
+    return {
+      ...recipient,
+      ...recipient.placeholders ? { placeholders: { ...recipient.placeholders } } : {}
+    };
+  }
+  static deduplicateIntents(intents, diagnostics) {
+    const uniqueIntents = /* @__PURE__ */ new Map();
+    for (const intent of intents) {
+      if (uniqueIntents.has(intent.idempotencyKey)) {
+        diagnostics.push({
+          ..._CommunicationPlanner.warningDiagnostic("duplicate-intent"),
+          intentId: intent.intentId
+        });
+        continue;
+      }
+      uniqueIntents.set(intent.idempotencyKey, intent);
+    }
+    return {
+      intents: [...uniqueIntents.values()],
+      diagnostics
+    };
+  }
+  static hasValidBaseIdentifiers(input) {
+    return [input.repositoryId, input.eventId, input.policyVersion].every(
+      CommunicationIdempotency.isSafeCommunicationIdentifier
+    );
+  }
+  static errorDiagnostic(code) {
+    return { code, severity: "error" };
+  }
+  static warningDiagnostic(code) {
+    return { code, severity: "warning" };
+  }
+};
+
+// packages/domain/communication/src/plan-communications.ts
 var PlanCommunications = class {
   execute(input) {
     const diagnostics = [];
-    if (!hasValidBaseIdentifiers(input)) {
+    if (!CommunicationPlanner.hasValidBaseIdentifiers(input)) {
       return {
         intents: [],
-        diagnostics: [errorDiagnostic("invalid-identifier")]
+        diagnostics: [
+          CommunicationPlanner.errorDiagnostic("invalid-identifier")
+        ]
       };
     }
-    if (!isValidInstant(input.now)) {
+    if (!CommunicationCalendar.isValidInstant(input.now)) {
       return {
         intents: [],
-        diagnostics: [errorDiagnostic("invalid-clock")]
+        diagnostics: [CommunicationPlanner.errorDiagnostic("invalid-clock")]
       };
     }
     if (input.occurrenceStatus === "cancelled" || input.occurrenceStatus === "postponed") {
@@ -34896,227 +34882,280 @@ var PlanCommunications = class {
     if (input.occurrenceStatus === "unknown") {
       return {
         intents: [],
-        diagnostics: [warningDiagnostic("occurrence-status-unknown")]
+        diagnostics: [
+          CommunicationPlanner.warningDiagnostic("occurrence-status-unknown")
+        ]
       };
     }
-    const eventDate = parseIsoLocalDate(input.eventDate);
+    const eventDate = CommunicationCalendar.parseIsoLocalDate(input.eventDate);
     if (!eventDate) {
       return {
         intents: [],
-        diagnostics: [errorDiagnostic("invalid-event-date")]
+        diagnostics: [
+          CommunicationPlanner.errorDiagnostic("invalid-event-date")
+        ]
       };
     }
-    const currentDate = getLocalDate(input.now, input.timeZone);
+    const currentDate = CommunicationCalendar.getLocalDate(
+      input.now,
+      input.timeZone
+    );
     if (!currentDate) {
       return {
         intents: [],
-        diagnostics: [errorDiagnostic("invalid-time-zone")]
+        diagnostics: [
+          CommunicationPlanner.errorDiagnostic("invalid-time-zone")
+        ]
       };
     }
-    const daysUntilEvent = toEpochDay(eventDate) - toEpochDay(currentDate);
+    const daysUntilEvent = CommunicationCalendar.toEpochDay(eventDate) - CommunicationCalendar.toEpochDay(currentDate);
+    return this.planDue(input, daysUntilEvent, diagnostics);
+  }
+  planDue(input, daysUntilEvent, diagnostics) {
     const intents = [];
     if (input.occurrenceStatus === "held") {
-      planMailMessages(input, "thanks", intents, diagnostics);
-      return deduplicateIntents(intents, diagnostics);
+      CommunicationPlanner.planMailMessages(
+        input,
+        "thanks",
+        intents,
+        diagnostics
+      );
+      return CommunicationPlanner.deduplicateIntents(intents, diagnostics);
     }
     if (daysUntilEvent < 0) {
       return { intents: [], diagnostics };
     }
     if (input.readiness === "ready") {
-      planMailMessages(input, "introduction", intents, diagnostics);
-      return deduplicateIntents(intents, diagnostics);
+      CommunicationPlanner.planMailMessages(
+        input,
+        "introduction",
+        intents,
+        diagnostics
+      );
+      return CommunicationPlanner.deduplicateIntents(intents, diagnostics);
     }
     if (!Number.isInteger(input.readinessWindowDays) || input.readinessWindowDays < 0) {
       return {
         intents: [],
-        diagnostics: [errorDiagnostic("invalid-readiness-window")]
+        diagnostics: [
+          CommunicationPlanner.errorDiagnostic("invalid-readiness-window")
+        ]
       };
     }
     if (daysUntilEvent > input.readinessWindowDays) {
       return { intents: [], diagnostics };
     }
-    planReadinessNotifications(input, intents, diagnostics);
-    return deduplicateIntents(intents, diagnostics);
+    CommunicationPlanner.planReadinessNotifications(
+      input,
+      intents,
+      diagnostics
+    );
+    return CommunicationPlanner.deduplicateIntents(intents, diagnostics);
   }
 };
-function planMailMessages(input, policyName, intents, diagnostics) {
-  for (const recipient of input.mailRecipients) {
-    if (!recipient.receivesCommunications) {
-      continue;
-    }
-    if (!isSafeCommunicationIdentifier(recipient.recipientId)) {
-      diagnostics.push(errorDiagnostic("invalid-identifier"));
-      continue;
-    }
-    if (recipient.email.trim().length === 0) {
-      diagnostics.push(errorDiagnostic("missing-mail-destination"));
-      continue;
-    }
-    const policy = MAIL_POLICIES[policyName][recipient.role];
-    const base = createIntentBase(input, policy.kind, recipient.recipientId);
-    const intent = {
-      ...base,
-      channel: "mail",
-      recipient: cloneMailRecipient(recipient),
-      templateName: policy.templateName,
-      placeholders: {
-        ...input.mailPlaceholders ?? {},
-        ...recipient.placeholders ?? {}
-      }
+
+// packages/domain/communication/src/communication-results.ts
+var CommunicationResults = class {
+  static recordExisting(intentId, entry, counts, diagnostics) {
+    counts.alreadyRecorded += 1;
+    diagnostics.push({
+      code: "delivery-already-recorded",
+      severity: "info",
+      intentId,
+      deliveryStatus: entry.status
+    });
+  }
+  static result(mode, intents, counts, diagnostics) {
+    return {
+      mode,
+      intentIds: intents.map((intent) => intent.intentId),
+      counts: { ...counts },
+      diagnostics: [...diagnostics]
     };
-    intents.push(intent);
   }
-}
-function planReadinessNotifications(input, intents, diagnostics) {
-  if (!input.notificationContent?.trim()) {
-    diagnostics.push(errorDiagnostic("missing-notification-content"));
-    return;
-  }
-  for (const recipient of input.notificationRecipients) {
-    if (!recipient.receivesCommunications) {
-      continue;
-    }
-    if (!isSafeCommunicationIdentifier(recipient.recipientId)) {
-      diagnostics.push(errorDiagnostic("invalid-identifier"));
-      continue;
-    }
-    if (recipient.destination.trim().length === 0) {
-      diagnostics.push(errorDiagnostic("missing-notification-destination"));
-      continue;
-    }
-    const base = createIntentBase(
-      input,
-      "readiness-reminder",
-      recipient.recipientId
-    );
-    const intent = {
-      ...base,
-      channel: "notification",
-      recipient: { ...recipient },
-      content: input.notificationContent
+  static emptyResult(mode, diagnostic) {
+    return {
+      mode,
+      intentIds: [],
+      counts: {
+        planned: 0,
+        due: 0,
+        alreadyRecorded: 0,
+        reserved: 0,
+        dispatched: 0,
+        accepted: 0,
+        uncertain: 0,
+        rejected: 0,
+        deferred: 0
+      },
+      diagnostics: [diagnostic]
     };
-    intents.push(intent);
   }
-}
-function createIntentBase(input, kind, recipientId) {
-  const idempotencyKey = createCommunicationIdempotencyKey({
-    repositoryId: input.repositoryId,
-    eventId: input.eventId,
-    kind,
-    recipientId,
-    policyVersion: input.policyVersion
-  });
-  return {
-    intentId: idempotencyKey,
-    idempotencyKey,
-    repositoryId: input.repositoryId,
-    eventId: input.eventId,
-    policyVersion: input.policyVersion,
-    kind,
-    recipientId
-  };
-}
-function cloneMailRecipient(recipient) {
-  return {
-    ...recipient,
-    ...recipient.placeholders ? { placeholders: { ...recipient.placeholders } } : {}
-  };
-}
-function deduplicateIntents(intents, diagnostics) {
-  const uniqueIntents = /* @__PURE__ */ new Map();
-  for (const intent of intents) {
-    if (uniqueIntents.has(intent.idempotencyKey)) {
+  static isValidInstant(value) {
+    return value instanceof Date && Number.isFinite(value.getTime());
+  }
+  static safeDetailCode(value) {
+    return [
+      "ambiguous-response",
+      "connection-reset",
+      "provider-timeout",
+      "unknown-provider-state"
+    ].includes(value ?? "") ? value : void 0;
+  }
+};
+
+// packages/domain/communication/src/communication-dispatcher.ts
+var CommunicationDispatcher = class {
+  #ledger;
+  #mailGateway;
+  #notificationGateway;
+  constructor(ledger, mailGateway, notificationGateway) {
+    this.#ledger = ledger;
+    this.#mailGateway = mailGateway;
+    this.#notificationGateway = notificationGateway;
+  }
+  async execute(intent, timestamp, counts, diagnostics) {
+    let dispatchResult;
+    try {
+      dispatchResult = intent.channel === "mail" ? await this.#mailGateway.dispatch(intent) : await this.#notificationGateway.dispatch(intent);
+    } catch {
+      counts.uncertain += 1;
       diagnostics.push({
-        ...warningDiagnostic("duplicate-intent"),
+        code: "gateway-threw-ambiguous-error",
+        severity: "error",
         intentId: intent.intentId
       });
-      continue;
+      await this.#markUncertain(
+        intent,
+        timestamp,
+        "gateway-threw-ambiguous-error",
+        diagnostics
+      );
+      return;
     }
-    uniqueIntents.set(intent.idempotencyKey, intent);
-  }
-  return {
-    intents: [...uniqueIntents.values()],
-    diagnostics
-  };
-}
-function hasValidBaseIdentifiers(input) {
-  return [input.repositoryId, input.eventId, input.policyVersion].every(
-    isSafeCommunicationIdentifier
-  );
-}
-function isValidInstant(value) {
-  return value instanceof Date && Number.isFinite(value.getTime());
-}
-function parseIsoLocalDate(value) {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  if (!match) {
-    return void 0;
-  }
-  const year = Number(match[1]);
-  const month = Number(match[2]);
-  const day = Number(match[3]);
-  const candidate = new Date(Date.UTC(year, month - 1, day));
-  if (candidate.getUTCFullYear() !== year || candidate.getUTCMonth() !== month - 1 || candidate.getUTCDate() !== day) {
-    return void 0;
-  }
-  return { year, month, day };
-}
-function getLocalDate(instant, timeZone) {
-  try {
-    const parts = new Intl.DateTimeFormat("en-US", {
-      timeZone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit"
-    }).formatToParts(instant);
-    const values = new Map(parts.map((part) => [part.type, part.value]));
-    const year = Number(values.get("year"));
-    const month = Number(values.get("month"));
-    const day = Number(values.get("day"));
-    if (![year, month, day].every(Number.isInteger)) {
-      return void 0;
+    if (dispatchResult.outcome === "deferred") {
+      return this.defer(intent, dispatchResult, counts, diagnostics);
     }
-    return { year, month, day };
-  } catch {
-    return void 0;
+    if (dispatchResult.outcome === "rejected") {
+      counts.rejected += 1;
+      diagnostics.push({
+        code: "gateway-delivery-rejected",
+        severity: "error",
+        intentId: intent.intentId,
+        detailCode: dispatchResult.diagnosticCode
+      });
+      try {
+        await this.#ledger.markRejected(
+          intent.idempotencyKey,
+          timestamp,
+          dispatchResult.diagnosticCode
+        );
+      } catch {
+        diagnostics.push({
+          code: "ledger-status-write-failed",
+          severity: "error",
+          intentId: intent.intentId
+        });
+      }
+      return;
+    }
+    if (dispatchResult.outcome === "uncertain") {
+      const detailCode = CommunicationResults.safeDetailCode(
+        dispatchResult.diagnosticCode
+      );
+      counts.uncertain += 1;
+      diagnostics.push({
+        code: "gateway-delivery-uncertain",
+        severity: "error",
+        intentId: intent.intentId,
+        ...detailCode ? { detailCode } : {}
+      });
+      await this.#markUncertain(
+        intent,
+        timestamp,
+        detailCode ?? "gateway-delivery-uncertain",
+        diagnostics
+      );
+      return;
+    }
+    await this.accept(intent, timestamp, counts, diagnostics);
   }
-}
-function toEpochDay(date) {
-  return Math.floor(Date.UTC(date.year, date.month - 1, date.day) / 864e5);
-}
-function errorDiagnostic(code) {
-  return { code, severity: "error" };
-}
-function warningDiagnostic(code) {
-  return { code, severity: "warning" };
-}
+  async #markUncertain(intent, timestamp, diagnosticCode, diagnostics) {
+    try {
+      await this.#ledger.markUncertain(
+        intent.idempotencyKey,
+        timestamp,
+        diagnosticCode
+      );
+    } catch {
+      diagnostics.push({
+        code: "ledger-status-write-failed",
+        severity: "error",
+        intentId: intent.intentId
+      });
+    }
+  }
+  async defer(intent, dispatchResult, counts, diagnostics) {
+    counts.deferred += 1;
+    diagnostics.push({
+      code: "gateway-delivery-deferred",
+      severity: "warning",
+      intentId: intent.intentId,
+      detailCode: dispatchResult.diagnosticCode
+    });
+    try {
+      await this.#ledger.releasePending(intent.idempotencyKey);
+    } catch {
+      diagnostics.push({
+        code: "ledger-status-write-failed",
+        severity: "error",
+        intentId: intent.intentId
+      });
+    }
+    return;
+  }
+  async accept(intent, timestamp, counts, diagnostics) {
+    counts.accepted += 1;
+    try {
+      await this.#ledger.markAccepted(intent.idempotencyKey, timestamp);
+    } catch {
+      diagnostics.push({
+        code: "ledger-status-write-failed",
+        severity: "error",
+        intentId: intent.intentId
+      });
+    }
+  }
+};
 
 // packages/domain/communication/src/reconcile-communications.ts
 var ReconcileCommunications = class {
   #planner;
   #clock;
   #ledger;
-  #mailGateway;
-  #notificationGateway;
+  #dispatcher;
   constructor(dependencies) {
     this.#planner = dependencies.planner;
     this.#clock = dependencies.clock;
     this.#ledger = dependencies.ledger;
-    this.#mailGateway = dependencies.mailGateway;
-    this.#notificationGateway = dependencies.notificationGateway;
+    this.#dispatcher = new CommunicationDispatcher(
+      dependencies.ledger,
+      dependencies.mailGateway,
+      dependencies.notificationGateway
+    );
   }
   async execute(input) {
     let now;
     try {
       now = this.#clock.now();
     } catch {
-      return emptyResult2(input.mode, {
+      return CommunicationResults.emptyResult(input.mode, {
         code: "invalid-clock",
         severity: "error"
       });
     }
-    if (!isValidInstant2(now)) {
-      return emptyResult2(input.mode, {
+    if (!CommunicationResults.isValidInstant(now)) {
+      return CommunicationResults.emptyResult(input.mode, {
         code: "invalid-clock",
         severity: "error"
       });
@@ -35141,34 +35180,16 @@ var ReconcileCommunications = class {
     };
     const timestamp = now.toISOString();
     for (const intent of plan2.intents) {
-      const existing = await this.#findExisting(intent, diagnostics);
-      if (existing === "read-failed") {
-        continue;
-      }
-      if (existing) {
-        recordExisting(intent.intentId, existing, counts, diagnostics);
-        continue;
-      }
-      counts.due += 1;
-      if (mode === "check") {
-        continue;
-      }
-      if (!dispatchCapabilities[intent.channel]) {
-        continue;
-      }
-      const reservation = await this.#reserve(intent, timestamp, diagnostics);
-      if (reservation === "reservation-failed") {
-        continue;
-      }
-      if (!reservation.reserved) {
-        recordExisting(intent.intentId, reservation.entry, counts, diagnostics);
-        continue;
-      }
-      counts.reserved += 1;
-      counts.dispatched += 1;
-      await this.#dispatch(intent, timestamp, counts, diagnostics);
+      await this.processIntent(
+        intent,
+        timestamp,
+        mode,
+        dispatchCapabilities,
+        counts,
+        diagnostics
+      );
     }
-    return result(mode, plan2.intents, counts, diagnostics);
+    return CommunicationResults.result(mode, plan2.intents, counts, diagnostics);
   }
   async #findExisting(intent, diagnostics) {
     try {
@@ -35203,193 +35224,127 @@ var ReconcileCommunications = class {
       return "reservation-failed";
     }
   }
-  async #dispatch(intent, timestamp, counts, diagnostics) {
-    let dispatchResult;
-    try {
-      dispatchResult = intent.channel === "mail" ? await this.#mailGateway.dispatch(intent) : await this.#notificationGateway.dispatch(intent);
-    } catch {
-      counts.uncertain += 1;
-      diagnostics.push({
-        code: "gateway-threw-ambiguous-error",
-        severity: "error",
-        intentId: intent.intentId
-      });
-      await this.#markUncertain(
-        intent,
-        timestamp,
-        "gateway-threw-ambiguous-error",
+  async processIntent(intent, timestamp, mode, dispatchCapabilities, counts, diagnostics) {
+    const existing = await this.#findExisting(intent, diagnostics);
+    if (existing === "read-failed") {
+      return;
+    }
+    if (existing) {
+      CommunicationResults.recordExisting(
+        intent.intentId,
+        existing,
+        counts,
         diagnostics
       );
       return;
     }
-    if (dispatchResult.outcome === "deferred") {
-      counts.deferred += 1;
-      diagnostics.push({
-        code: "gateway-delivery-deferred",
-        severity: "warning",
-        intentId: intent.intentId,
-        detailCode: dispatchResult.diagnosticCode
-      });
-      try {
-        await this.#ledger.releasePending(intent.idempotencyKey);
-      } catch {
-        diagnostics.push({
-          code: "ledger-status-write-failed",
-          severity: "error",
-          intentId: intent.intentId
-        });
-      }
+    counts.due += 1;
+    if (mode === "check") {
       return;
     }
-    if (dispatchResult.outcome === "rejected") {
-      counts.rejected += 1;
-      diagnostics.push({
-        code: "gateway-delivery-rejected",
-        severity: "error",
-        intentId: intent.intentId,
-        detailCode: dispatchResult.diagnosticCode
-      });
-      try {
-        await this.#ledger.markRejected(
-          intent.idempotencyKey,
-          timestamp,
-          dispatchResult.diagnosticCode
-        );
-      } catch {
-        diagnostics.push({
-          code: "ledger-status-write-failed",
-          severity: "error",
-          intentId: intent.intentId
-        });
-      }
+    if (!dispatchCapabilities[intent.channel]) {
       return;
     }
-    if (dispatchResult.outcome === "uncertain") {
-      const detailCode = safeDetailCode(dispatchResult.diagnosticCode);
-      counts.uncertain += 1;
-      diagnostics.push({
-        code: "gateway-delivery-uncertain",
-        severity: "error",
-        intentId: intent.intentId,
-        ...detailCode ? { detailCode } : {}
-      });
-      await this.#markUncertain(
-        intent,
-        timestamp,
-        detailCode ?? "gateway-delivery-uncertain",
+    const reservation = await this.#reserve(intent, timestamp, diagnostics);
+    if (reservation === "reservation-failed") {
+      return;
+    }
+    if (!reservation.reserved) {
+      CommunicationResults.recordExisting(
+        intent.intentId,
+        reservation.entry,
+        counts,
         diagnostics
       );
       return;
     }
-    counts.accepted += 1;
-    try {
-      await this.#ledger.markAccepted(intent.idempotencyKey, timestamp);
-    } catch {
-      diagnostics.push({
-        code: "ledger-status-write-failed",
-        severity: "error",
-        intentId: intent.intentId
-      });
-    }
-  }
-  async #markUncertain(intent, timestamp, diagnosticCode, diagnostics) {
-    try {
-      await this.#ledger.markUncertain(
-        intent.idempotencyKey,
-        timestamp,
-        diagnosticCode
-      );
-    } catch {
-      diagnostics.push({
-        code: "ledger-status-write-failed",
-        severity: "error",
-        intentId: intent.intentId
-      });
-    }
+    counts.reserved += 1;
+    counts.dispatched += 1;
+    await this.#dispatcher.execute(intent, timestamp, counts, diagnostics);
   }
 };
 var DEFAULT_DISPATCH_CAPABILITIES = Object.freeze({
   mail: true,
   notification: true
 });
-function recordExisting(intentId, entry, counts, diagnostics) {
-  counts.alreadyRecorded += 1;
-  diagnostics.push({
-    code: "delivery-already-recorded",
-    severity: "info",
-    intentId,
-    deliveryStatus: entry.status
-  });
-}
-function result(mode, intents, counts, diagnostics) {
-  return {
-    mode,
-    intentIds: intents.map((intent) => intent.intentId),
-    counts: { ...counts },
-    diagnostics: [...diagnostics]
-  };
-}
-function emptyResult2(mode, diagnostic3) {
-  return {
-    mode,
-    intentIds: [],
-    counts: {
-      planned: 0,
-      due: 0,
-      alreadyRecorded: 0,
-      reserved: 0,
-      dispatched: 0,
-      accepted: 0,
-      uncertain: 0,
-      rejected: 0,
-      deferred: 0
-    },
-    diagnostics: [diagnostic3]
-  };
-}
-function isValidInstant2(value) {
-  return value instanceof Date && Number.isFinite(value.getTime());
-}
-function safeDetailCode(value) {
-  return [
-    "ambiguous-response",
-    "connection-reset",
-    "provider-timeout",
-    "unknown-provider-state"
-  ].includes(value ?? "") ? value : void 0;
-}
 
 // packages/application/journey/src/communication/resolve-communication-approval.ts
-async function resolveCommunicationApproval(input) {
-  const eventId = `issue-${input.input.issueNumber}`;
-  const approvalLabel = input.config.communication["approval-label"];
-  const repository = input.repository;
-  const current = createCommunicationApprovalSnapshot({
-    automationRevision: input.input.automationRevision,
-    eventId,
-    eventDate: input.event.date,
-    occurrenceStatus: input.event.occurrenceStatus ?? "unknown",
-    readiness: input.readiness,
-    policyVersion: String(input.config.communication["policy-version"]),
-    mailingsRepository: input.config.communication["mailings-repository"],
-    notificationEnabled: input.config.communication["slack-enabled"],
-    notificationDestinationFingerprint: input.notificationDestinationFingerprint,
-    confirmations: input.event.confirmations,
-    hostId: input.event.host?.id ?? null,
-    speakerIds: input.event.agenda.flatMap(
-      (entry) => entry.speakers.flatMap((speaker) => speaker.id ? [speaker.id] : [])
-    ),
-    publicationUrls: {
-      meetup: input.event.publicationLinks.meetup ?? null,
-      community: input.event.publicationLinks.community ?? null,
-      assets: input.event.publicationLinks.assets ?? null
+var CommunicationApprovalResolver = class _CommunicationApprovalResolver {
+  static async resolveCommunicationApproval(input) {
+    const eventId = `issue-${input.input.issueNumber}`;
+    const approvalLabel = input.config.communication["approval-label"];
+    const repository = input.repository;
+    const current = _CommunicationApprovalResolver.snapshot(input);
+    const trigger = input.input.approvalTrigger;
+    const hasApprovalLabel = input.event.labels.some(
+      (label) => _CommunicationApprovalResolver.labelsEqual(label, approvalLabel)
+    );
+    if (input.captureApproval && hasApprovalLabel && trigger?.action === "labeled" && _CommunicationApprovalResolver.labelsEqual(trigger.label, approvalLabel)) {
+      if (!await _CommunicationApprovalResolver.capture(input, trigger, current))
+        return false;
     }
-  });
-  const trigger = input.input.approvalTrigger;
-  const hasApprovalLabel = input.event.labels.some(
-    (label) => labelsEqual(label, approvalLabel)
-  );
-  if (input.captureApproval && hasApprovalLabel && trigger?.action === "labeled" && labelsEqual(trigger.label, approvalLabel)) {
+    if (!hasApprovalLabel) {
+      input.diagnostics.push({
+        code: "communication.approval-label-missing",
+        severity: "warning"
+      });
+      return false;
+    }
+    try {
+      const approved = await repository.findApproved(eventId);
+      if (!approved) {
+        input.diagnostics.push({
+          code: "communication.approval-missing",
+          severity: "warning"
+        });
+        return false;
+      }
+      if (!CommunicationApproval.communicationApprovalMatches(
+        approved,
+        current.facts
+      )) {
+        input.diagnostics.push({
+          code: "communication.approval-stale",
+          severity: "warning"
+        });
+        return false;
+      }
+      return true;
+    } catch {
+      input.diagnostics.push({
+        code: "communication.approval-repository-failed",
+        severity: "error"
+      });
+      return false;
+    }
+  }
+  static labelsEqual(left, right) {
+    return left.trim().toLocaleLowerCase("en-US") === right.trim().toLocaleLowerCase("en-US");
+  }
+  static snapshot(input) {
+    return CommunicationApproval.createCommunicationApprovalSnapshot({
+      automationRevision: input.input.automationRevision,
+      eventId: `issue-${input.input.issueNumber}`,
+      eventDate: input.event.date,
+      occurrenceStatus: input.event.occurrenceStatus ?? "unknown",
+      readiness: input.readiness,
+      policyVersion: String(input.config.communication["policy-version"]),
+      mailingsRepository: input.config.communication["mailings-repository"],
+      notificationEnabled: input.config.communication["slack-enabled"],
+      notificationDestinationFingerprint: input.notificationDestinationFingerprint,
+      confirmations: input.event.confirmations,
+      hostId: input.event.host?.id ?? null,
+      speakerIds: input.event.agenda.flatMap(
+        (entry) => entry.speakers.flatMap((speaker) => speaker.id ? [speaker.id] : [])
+      ),
+      publicationUrls: {
+        meetup: input.event.publicationLinks.meetup ?? null,
+        community: input.event.publicationLinks.community ?? null,
+        assets: input.event.publicationLinks.assets ?? null
+      }
+    });
+  }
+  static async capture(input, trigger, current) {
     if (!trigger.issueSnapshot) {
       input.diagnostics.push({
         code: "communication.approval-trigger-snapshot-missing",
@@ -35397,7 +35352,10 @@ async function resolveCommunicationApproval(input) {
       });
       return false;
     }
-    if (!eventDocumentsEqual(trigger.issueSnapshot, input.sourceDocument)) {
+    if (!ReconcileEvent.eventDocumentsEqual(
+      trigger.issueSnapshot,
+      input.sourceDocument
+    )) {
       input.diagnostics.push({
         code: "communication.approval-trigger-stale",
         severity: "error"
@@ -35412,7 +35370,7 @@ async function resolveCommunicationApproval(input) {
         });
         return false;
       } else {
-        await repository.saveApproved(current);
+        await input.repository.saveApproved(current);
       }
     } catch {
       input.diagnostics.push({
@@ -35421,83 +35379,755 @@ async function resolveCommunicationApproval(input) {
       });
       return false;
     }
-  }
-  if (!hasApprovalLabel) {
-    input.diagnostics.push({
-      code: "communication.approval-label-missing",
-      severity: "warning"
-    });
-    return false;
-  }
-  try {
-    const approved = await repository.findApproved(eventId);
-    if (!approved) {
-      input.diagnostics.push({
-        code: "communication.approval-missing",
-        severity: "warning"
-      });
-      return false;
-    }
-    if (!communicationApprovalMatches(approved, current.facts)) {
-      input.diagnostics.push({
-        code: "communication.approval-stale",
-        severity: "warning"
-      });
-      return false;
-    }
     return true;
-  } catch {
-    input.diagnostics.push({
-      code: "communication.approval-repository-failed",
-      severity: "error"
-    });
-    return false;
   }
-}
-function labelsEqual(left, right) {
-  return left.trim().toLocaleLowerCase("en-US") === right.trim().toLocaleLowerCase("en-US");
-}
+};
 
-// packages/application/journey/src/use-cases/manage-meetup-communications.ts
-var ManageMeetupCommunications = class {
+// packages/domain/referential/src/application/use-cases/project-referential-choices.ts
+var ProjectReferentialChoices = class {
+  execute(catalog) {
+    return Object.freeze({
+      hostOptions: Object.freeze(catalog.hosts.map((host) => host.displayName)),
+      speakerReferences: Object.freeze(
+        catalog.speakers.map((speaker) => speaker.displayName)
+      )
+    });
+  }
+};
+
+// packages/domain/referential/src/domain/identifiers.ts
+var HOST_ID_PATTERN = /^host-[0-9]{4}$/;
+var CONTACT_ID_PATTERN = /^contact-[0-9]{4}$/;
+var SPEAKER_ID_PATTERN = /^speaker-[0-9]{4}$/;
+var ReferentialIdentifiers = class {
+  static asHostId(value) {
+    return HOST_ID_PATTERN.test(value) ? value : void 0;
+  }
+  static asContactId(value) {
+    return CONTACT_ID_PATTERN.test(value) ? value : void 0;
+  }
+  static asSpeakerId(value) {
+    return SPEAKER_ID_PATTERN.test(value) ? value : void 0;
+  }
+};
+
+// packages/domain/referential/src/domain/referential-catalog.ts
+var ReferentialCatalogOperations = class _ReferentialCatalogOperations {
+  static normalizeDisplayName(value) {
+    return value.normalize("NFC").trim().replace(/\s+/g, " ");
+  }
+  static displayNameKey(value) {
+    return _ReferentialCatalogOperations.normalizeDisplayName(
+      value
+    ).toLowerCase();
+  }
+  static freezeCatalog(hosts, speakers) {
+    for (const host of hosts) {
+      for (const contact of host.contacts) {
+        Object.freeze(contact);
+      }
+      Object.freeze(host.contacts);
+      Object.freeze(host);
+    }
+    for (const speaker of speakers) {
+      Object.freeze(speaker);
+    }
+    return Object.freeze({
+      hosts: Object.freeze([...hosts]),
+      speakers: Object.freeze([...speakers])
+    });
+  }
+};
+
+// packages/domain/referential/src/domain/referential-diagnostic.ts
+var ReferentialDiagnostics = class {
+  static diagnostic(code, severity, path, message) {
+    return Object.freeze({ code, severity, path, message });
+  }
+  static freezeDiagnostics(diagnostics) {
+    return Object.freeze([...diagnostics]);
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/resolve-event-references.ts
+var EXPLICIT_REFERENCE_PATTERN = /^(.*?)\s+\[([^\]]+)]\s*$/;
+var ResolveEventReferences = class {
+  execute(catalog, command) {
+    const diagnostics = [];
+    const host = this.resolveHost(
+      catalog.hosts,
+      command.hostReference,
+      diagnostics
+    );
+    const speakers = command.speakerReferences.map(
+      (reference, index) => this.resolveSpeaker(catalog.speakers, reference, index, diagnostics)
+    ).filter((speaker) => speaker !== void 0);
+    const frozenDiagnostics = ReferentialDiagnostics.freezeDiagnostics(diagnostics);
+    if (!host || diagnostics.some(({ severity }) => severity === "error")) {
+      return Object.freeze({
+        resolved: false,
+        diagnostics: frozenDiagnostics
+      });
+    }
+    const uniqueSpeakers = [
+      ...new Map(speakers.map((speaker) => [speaker.id, speaker])).values()
+    ];
+    return Object.freeze({
+      resolved: true,
+      host,
+      speakers: Object.freeze(uniqueSpeakers),
+      diagnostics: frozenDiagnostics
+    });
+  }
+  resolveHost(hosts, reference, diagnostics) {
+    const parsed = this.parseReference(reference);
+    if (!parsed) {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(
+          "referential.reference.host.invalid",
+          "error",
+          "hostReference",
+          "Host reference must be a display name or use Display name [host-0001] syntax."
+        )
+      );
+      return void 0;
+    }
+    if (parsed.stableId !== void 0) {
+      const id = ReferentialIdentifiers.asHostId(parsed.stableId);
+      if (!id) {
+        diagnostics.push(
+          ReferentialDiagnostics.diagnostic(
+            "referential.reference.host.invalid",
+            "error",
+            "hostReference",
+            "Explicit host reference contains an invalid stable identifier."
+          )
+        );
+        return void 0;
+      }
+      const host = hosts.find((candidate) => candidate.id === id);
+      if (!host) {
+        diagnostics.push(
+          ReferentialDiagnostics.diagnostic(
+            "referential.reference.host.unknown",
+            "error",
+            "hostReference",
+            "Explicit host stable identifier is not present in the catalog."
+          )
+        );
+        return void 0;
+      }
+      if (ReferentialCatalogOperations.displayNameKey(host.displayName) !== ReferentialCatalogOperations.displayNameKey(parsed.displayName)) {
+        diagnostics.push(
+          ReferentialDiagnostics.diagnostic(
+            "referential.reference.host.display-name-mismatch",
+            "warning",
+            "hostReference",
+            "Host display name is stale; the stable identifier remains authoritative."
+          )
+        );
+      }
+      return host;
+    }
+    return this.hostByName(hosts, parsed, diagnostics);
+  }
+  resolveSpeaker(speakers, reference, index, diagnostics) {
+    const path = `speakerReferences[${index}]`;
+    const parsed = this.parseReference(reference);
+    if (!parsed) {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(
+          "referential.reference.speaker.invalid",
+          "error",
+          path,
+          "Speaker reference must be a display name or use Display name [speaker-0001] syntax."
+        )
+      );
+      return void 0;
+    }
+    if (parsed.stableId !== void 0) {
+      const id = ReferentialIdentifiers.asSpeakerId(parsed.stableId);
+      if (!id) {
+        diagnostics.push(
+          ReferentialDiagnostics.diagnostic(
+            "referential.reference.speaker.invalid",
+            "error",
+            path,
+            "Explicit speaker reference contains an invalid stable identifier."
+          )
+        );
+        return void 0;
+      }
+      const speaker = speakers.find((candidate) => candidate.id === id);
+      if (!speaker) {
+        diagnostics.push(
+          ReferentialDiagnostics.diagnostic(
+            "referential.reference.speaker.unknown",
+            "error",
+            path,
+            "Explicit speaker stable identifier is not present in the catalog."
+          )
+        );
+        return void 0;
+      }
+      if (ReferentialCatalogOperations.displayNameKey(speaker.displayName) !== ReferentialCatalogOperations.displayNameKey(parsed.displayName)) {
+        diagnostics.push(
+          ReferentialDiagnostics.diagnostic(
+            "referential.reference.speaker.display-name-mismatch",
+            "warning",
+            path,
+            "Speaker display name is stale; the stable identifier remains authoritative."
+          )
+        );
+      }
+      return speaker;
+    }
+    return this.speakerByName(speakers, parsed, path, diagnostics);
+  }
+  parseReference(reference) {
+    if (typeof reference !== "string") {
+      return void 0;
+    }
+    const normalized = ReferentialCatalogOperations.normalizeDisplayName(reference);
+    if (!normalized) {
+      return void 0;
+    }
+    const explicit = normalized.match(EXPLICIT_REFERENCE_PATTERN);
+    if (!explicit) {
+      return { displayName: normalized };
+    }
+    const displayName = ReferentialCatalogOperations.normalizeDisplayName(
+      explicit[1]
+    );
+    const stableId = explicit[2].trim();
+    if (!displayName || !stableId) {
+      return void 0;
+    }
+    return { displayName, stableId };
+  }
+  hostByName(hosts, parsed, diagnostics) {
+    const matches = hosts.filter(
+      (host) => ReferentialCatalogOperations.displayNameKey(host.displayName) === ReferentialCatalogOperations.displayNameKey(parsed.displayName)
+    );
+    if (matches.length === 1) {
+      return matches[0];
+    }
+    diagnostics.push(
+      ReferentialDiagnostics.diagnostic(
+        matches.length === 0 ? "referential.reference.host.unknown" : "referential.reference.host.ambiguous",
+        "error",
+        "hostReference",
+        matches.length === 0 ? "Legacy host display name is not present in the catalog." : "Legacy host display name is ambiguous; include the stable identifier."
+      )
+    );
+    return void 0;
+  }
+  speakerByName(speakers, parsed, path, diagnostics) {
+    const matches = speakers.filter(
+      (speaker) => ReferentialCatalogOperations.displayNameKey(speaker.displayName) === ReferentialCatalogOperations.displayNameKey(parsed.displayName)
+    );
+    if (matches.length === 1) {
+      return matches[0];
+    }
+    diagnostics.push(
+      ReferentialDiagnostics.diagnostic(
+        matches.length === 0 ? "referential.reference.speaker.unknown" : "referential.reference.speaker.ambiguous",
+        "error",
+        path,
+        matches.length === 0 ? "Legacy speaker display name is not present in the catalog." : "Legacy speaker display name is ambiguous; include the stable identifier."
+      )
+    );
+    return void 0;
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/validate-referential-catalog-contracts.ts
+var EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// packages/domain/referential/src/application/use-cases/referential-record-fields.ts
+var ReferentialRecordFields = class {
+  static requiredText(value, code, path, message, diagnostics) {
+    if (typeof value !== "string") {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(code, "error", path, message)
+      );
+      return void 0;
+    }
+    const normalized = ReferentialCatalogOperations.normalizeDisplayName(value);
+    if (!normalized) {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(code, "error", path, message)
+      );
+      return void 0;
+    }
+    return normalized;
+  }
+  static optionalText(value, code, path, message, diagnostics) {
+    if (value === void 0 || value === null || value === "") {
+      return void 0;
+    }
+    if (typeof value !== "string") {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(code, "error", path, message)
+      );
+      return null;
+    }
+    return value.normalize("NFC").trim() || void 0;
+  }
+  static email(value, code, path, message, diagnostics) {
+    if (typeof value !== "string") {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(code, "error", path, message)
+      );
+      return void 0;
+    }
+    const normalized = value.normalize("NFC").trim().toLowerCase();
+    if (!EMAIL_PATTERN.test(normalized)) {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(code, "error", path, message)
+      );
+      return void 0;
+    }
+    return normalized;
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/host-catalog-validator.ts
+var HostCatalogValidator = class _HostCatalogValidator {
+  static validateHosts(records, diagnostics) {
+    const hostsById = /* @__PURE__ */ new Map();
+    const contactIds = /* @__PURE__ */ new Set();
+    for (const [index, record] of records.entries()) {
+      const parsed = _HostCatalogValidator.parseHostRecord(
+        record,
+        index,
+        diagnostics
+      );
+      if (!parsed) {
+        continue;
+      }
+      if (contactIds.has(parsed.contact.id)) {
+        diagnostics.push(
+          ReferentialDiagnostics.diagnostic(
+            "referential.contact.id.duplicate",
+            "error",
+            `hosts[${index}].contactId`,
+            "Contact stable identifiers must be unique."
+          )
+        );
+        continue;
+      }
+      contactIds.add(parsed.contact.id);
+      const host = hostsById.get(parsed.hostId);
+      if (!host) {
+        hostsById.set(parsed.hostId, {
+          ...record.source ? { source: Object.freeze({ ...record.source }) } : {},
+          id: parsed.hostId,
+          displayName: parsed.displayName,
+          contacts: [parsed.contact]
+        });
+        continue;
+      }
+      if (host.displayName !== parsed.displayName) {
+        diagnostics.push(
+          ReferentialDiagnostics.diagnostic(
+            "referential.host.id.conflict",
+            "error",
+            `hosts[${index}].hostId`,
+            "A host stable identifier cannot describe different host names."
+          )
+        );
+        continue;
+      }
+      host.contacts.push(parsed.contact);
+    }
+    return [...hostsById.values()].map((host) => ({
+      ...host.source ? { source: host.source } : {},
+      id: host.id,
+      displayName: host.displayName,
+      contacts: host.contacts
+    }));
+  }
+  static parseHostRecord(record, index, diagnostics) {
+    const hostId = _HostCatalogValidator.hostId(record, index, diagnostics);
+    const displayName = ReferentialRecordFields.requiredText(
+      record.displayName,
+      "referential.host.display-name.invalid",
+      `hosts[${index}].displayName`,
+      "Host display name must be a non-empty string.",
+      diagnostics
+    );
+    const contactId = _HostCatalogValidator.contactId(
+      record,
+      index,
+      diagnostics
+    );
+    const contactName = ReferentialRecordFields.requiredText(
+      record.contactName,
+      "referential.contact.name.invalid",
+      `hosts[${index}].contactName`,
+      "Contact name must be a non-empty string.",
+      diagnostics
+    );
+    const email = ReferentialRecordFields.email(
+      record.email,
+      "referential.contact.email.invalid",
+      `hosts[${index}].email`,
+      "Host contact email address is invalid.",
+      diagnostics
+    );
+    const phone = ReferentialRecordFields.optionalText(
+      record.phone,
+      "referential.contact.phone.invalid",
+      `hosts[${index}].phone`,
+      "Host contact phone must be a string when provided.",
+      diagnostics
+    );
+    const address = ReferentialRecordFields.requiredText(
+      record.address,
+      "referential.contact.address.invalid",
+      `hosts[${index}].address`,
+      "Host contact address must be a non-empty string.",
+      diagnostics
+    );
+    if (!hostId || !displayName || !contactId || !contactName || !email || address === void 0 || phone === null) {
+      return void 0;
+    }
+    return {
+      hostId,
+      displayName,
+      contact: {
+        id: contactId,
+        name: contactName,
+        email,
+        ...phone ? { phone } : {},
+        address
+      }
+    };
+  }
+  static hostId(record, index, diagnostics) {
+    const hostIdValue = ReferentialRecordFields.requiredText(
+      record.hostId,
+      "referential.host.id.invalid",
+      `hosts[${index}].hostId`,
+      "Host stable identifier must be a non-empty string.",
+      diagnostics
+    );
+    const hostId = hostIdValue ? ReferentialIdentifiers.asHostId(hostIdValue) : void 0;
+    if (hostIdValue && !hostId) {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(
+          "referential.host.id.invalid",
+          "error",
+          `hosts[${index}].hostId`,
+          "Host stable identifier must use the opaque host-0001 format."
+        )
+      );
+    }
+    return hostId;
+  }
+  static contactId(record, index, diagnostics) {
+    const contactIdValue = ReferentialRecordFields.requiredText(
+      record.contactId,
+      "referential.contact.id.invalid",
+      `hosts[${index}].contactId`,
+      "Contact stable identifier must be a non-empty string.",
+      diagnostics
+    );
+    const contactId = contactIdValue ? ReferentialIdentifiers.asContactId(contactIdValue) : void 0;
+    if (contactIdValue && !contactId) {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(
+          "referential.contact.id.invalid",
+          "error",
+          `hosts[${index}].contactId`,
+          "Contact stable identifier must use the opaque contact-0001 format."
+        )
+      );
+    }
+    return contactId;
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/speaker-catalog-validator.ts
+var SpeakerCatalogValidator = class _SpeakerCatalogValidator {
+  static validateSpeakers(records, diagnostics) {
+    const speakers = [];
+    const speakerIds = /* @__PURE__ */ new Set();
+    for (const [index, record] of records.entries()) {
+      const speakerId = _SpeakerCatalogValidator.speakerId(
+        record,
+        index,
+        diagnostics
+      );
+      const { firstName, lastName, company, email, phone } = _SpeakerCatalogValidator.contactFields(record, index, diagnostics);
+      if (!speakerId || !firstName || !lastName || !company || !email || phone === null) {
+        continue;
+      }
+      if (speakerIds.has(speakerId)) {
+        diagnostics.push(
+          ReferentialDiagnostics.diagnostic(
+            "referential.speaker.id.duplicate",
+            "error",
+            `speakers[${index}].speakerId`,
+            "Speaker stable identifiers must be unique."
+          )
+        );
+        continue;
+      }
+      speakerIds.add(speakerId);
+      speakers.push({
+        ...record.source ? { source: Object.freeze({ ...record.source }) } : {},
+        id: speakerId,
+        firstName,
+        lastName,
+        displayName: `${firstName} ${lastName}`,
+        company,
+        email,
+        ...phone ? { phone } : {}
+      });
+    }
+    return speakers;
+  }
+  static speakerId(record, index, diagnostics) {
+    const speakerIdValue = ReferentialRecordFields.requiredText(
+      record.speakerId,
+      "referential.speaker.id.invalid",
+      `speakers[${index}].speakerId`,
+      "Speaker stable identifier must be a non-empty string.",
+      diagnostics
+    );
+    const speakerId = speakerIdValue ? ReferentialIdentifiers.asSpeakerId(speakerIdValue) : void 0;
+    if (speakerIdValue && !speakerId) {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(
+          "referential.speaker.id.invalid",
+          "error",
+          `speakers[${index}].speakerId`,
+          "Speaker stable identifier must use the speaker-* slug format."
+        )
+      );
+    }
+    return speakerId;
+  }
+  static contactFields(record, index, diagnostics) {
+    const firstName = ReferentialRecordFields.requiredText(
+      record.firstName,
+      "referential.speaker.first-name.invalid",
+      `speakers[${index}].firstName`,
+      "Speaker first name must be a non-empty string.",
+      diagnostics
+    );
+    const lastName = ReferentialRecordFields.requiredText(
+      record.lastName,
+      "referential.speaker.last-name.invalid",
+      `speakers[${index}].lastName`,
+      "Speaker last name must be a non-empty string.",
+      diagnostics
+    );
+    const company = ReferentialRecordFields.requiredText(
+      record.company,
+      "referential.speaker.company.invalid",
+      `speakers[${index}].company`,
+      "Speaker company must be a non-empty string.",
+      diagnostics
+    );
+    const email = ReferentialRecordFields.email(
+      record.email,
+      "referential.speaker.email.invalid",
+      `speakers[${index}].email`,
+      "Speaker email address is invalid.",
+      diagnostics
+    );
+    const phone = ReferentialRecordFields.optionalText(
+      record.phone,
+      "referential.speaker.phone.invalid",
+      `speakers[${index}].phone`,
+      "Speaker phone must be a string when provided.",
+      diagnostics
+    );
+    return { firstName, lastName, company, email, phone };
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/validate-referential-catalog.ts
+var ValidateReferentialCatalog = class {
+  constructor(repository) {
+    this.repository = repository;
+  }
+  repository;
+  async execute(rawCatalog) {
+    const input = rawCatalog ?? await this.loadCatalog();
+    const diagnostics = [];
+    const hosts = HostCatalogValidator.validateHosts(input.hosts, diagnostics);
+    const speakers = SpeakerCatalogValidator.validateSpeakers(
+      input.speakers,
+      diagnostics
+    );
+    this.reportDuplicateDisplayNames(
+      hosts,
+      "referential.host.display-name.duplicate",
+      "hosts",
+      "Duplicate normalized host display names are not allowed; keep one stable host per public name.",
+      diagnostics
+    );
+    this.reportDuplicateDisplayNames(
+      speakers,
+      "referential.speaker.display-name.duplicate",
+      "speakers",
+      "Duplicate normalized speaker display names are not allowed; keep one stable speaker per public name.",
+      diagnostics
+    );
+    const frozenDiagnostics = ReferentialDiagnostics.freezeDiagnostics(diagnostics);
+    if (diagnostics.some(({ severity }) => severity === "error")) {
+      return Object.freeze({
+        isValid: false,
+        diagnostics: frozenDiagnostics
+      });
+    }
+    return Object.freeze({
+      isValid: true,
+      catalog: ReferentialCatalogOperations.freezeCatalog(hosts, speakers),
+      diagnostics: frozenDiagnostics
+    });
+  }
+  async loadCatalog() {
+    if (!this.repository) {
+      throw new Error(
+        "A referential repository or an explicit raw catalog is required."
+      );
+    }
+    return this.repository.load();
+  }
+  reportDuplicateDisplayNames(entities, code, path, message, diagnostics) {
+    const counts = /* @__PURE__ */ new Map();
+    for (const entity of entities) {
+      const key = ReferentialCatalogOperations.displayNameKey(
+        entity.displayName
+      );
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    let ambiguityIndex = 0;
+    for (const count of counts.values()) {
+      if (count < 2) {
+        continue;
+      }
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(
+          code,
+          "error",
+          `${path}.ambiguities[${ambiguityIndex}]`,
+          message
+        )
+      );
+      ambiguityIndex += 1;
+    }
+  }
+};
+
+// packages/application/journey/src/use-cases/manage-meetup-communications-contracts.ts
+var UNRESOLVED_MAIL_RECIPIENTS = Object.freeze({
+  resolved: false,
+  recipients: Object.freeze([])
+});
+
+// packages/application/journey/src/use-cases/communication-recipients.ts
+var CommunicationRecipients = class _CommunicationRecipients {
+  static resolveMailRecipients(event, catalog, diagnostics) {
+    const resolution = new ResolveEventReferences().execute(catalog, {
+      hostReference: event.host ? _CommunicationRecipients.renderReference(event.host) : "",
+      speakerReferences: event.agenda.flatMap(
+        (entry) => entry.speakers.map(_CommunicationRecipients.renderReference)
+      )
+    });
+    if (!resolution.resolved) {
+      diagnostics.push({
+        code: "communication.event-references-unresolved",
+        severity: "error"
+      });
+      return UNRESOLVED_MAIL_RECIPIENTS;
+    }
+    const eventHost = resolution.host;
+    const primaryContact = eventHost.contacts[0];
+    const hostingAddress = primaryContact?.address ?? "";
+    const recipients = primaryContact ? [
+      {
+        channel: "mail",
+        role: "hosting",
+        recipientId: primaryContact.id,
+        receivesCommunications: true,
+        email: primaryContact.email,
+        placeholders: { hostingName: eventHost.displayName }
+      }
+    ] : [];
+    for (const speaker of resolution.speakers) {
+      recipients.push(
+        _CommunicationRecipients.speakerRecipient(
+          speaker,
+          eventHost.displayName,
+          hostingAddress
+        )
+      );
+    }
+    return { resolved: true, recipients: Object.freeze(recipients) };
+  }
+  static speakerRecipient(speaker, hostingName, hostingAddress) {
+    return {
+      channel: "mail",
+      role: "speaker",
+      recipientId: speaker.id,
+      receivesCommunications: true,
+      email: speaker.email,
+      placeholders: {
+        speakerName: speaker.firstName,
+        hostingName,
+        hostingAddress
+      }
+    };
+  }
+  static renderReference(reference) {
+    return reference.id ? `${reference.displayName} [${reference.id}]` : reference.displayName;
+  }
+};
+
+// packages/application/journey/src/use-cases/communication-delivery-preparation.ts
+var CommunicationDeliveryPreparation = class {
   constructor(dependencies) {
     this.dependencies = dependencies;
   }
   dependencies;
-  async execute(input) {
-    const runtimeDiagnostics = [];
-    const config = this.dependencies.config;
-    const dispatchPermitted = resolveCommunicationDispatchMode(
-      input,
-      config,
+  async execute(input, dispatchPermitted, event, runtimeDiagnostics) {
+    const catalog = await this.catalog(runtimeDiagnostics);
+    const {
+      mailGatewayEnabled,
+      notificationDestination,
+      notificationConfigured
+    } = this.gateways(input, dispatchPermitted, runtimeDiagnostics);
+    const mailRecipientResolution = catalog ? CommunicationRecipients.resolveMailRecipients(
+      event,
+      catalog,
       runtimeDiagnostics
-    );
-    const repositoryName = `${input.owner}/${input.repo}`;
-    const identity = {
-      repository: repositoryName,
-      issueNumber: input.issueNumber
+    ) : UNRESOLVED_MAIL_RECIPIENTS;
+    const referencesResolved = catalog !== void 0 && mailRecipientResolution.resolved;
+    const notificationRecipients = [
+      {
+        channel: "notification",
+        role: "organizers",
+        recipientId: "organizers-slack",
+        receivesCommunications: notificationConfigured,
+        destination: notificationDestination
+      }
+    ];
+    return {
+      mailGatewayEnabled,
+      notificationDestination,
+      notificationConfigured,
+      mailRecipientResolution,
+      referencesResolved,
+      notificationRecipients
     };
-    const sourceDocument = await this.dependencies.eventRepository.find(identity);
-    if (!sourceDocument) {
-      throw new Error(
-        `Meetup event ${repositoryName}#${input.issueNumber} was not found`
-      );
-    }
-    const managed = await this.dependencies.manageEvent.execute({
-      identity,
-      mode: "check",
-      sourceDocument
-    });
-    if (managed.skipped) {
-      runtimeDiagnostics.push({
-        code: "communication.event-skipped",
-        severity: "info"
-      });
-      return emptyCommunicationResult(
-        dispatchPermitted ? "dispatch" : "check",
-        runtimeDiagnostics
-      );
-    }
+  }
+  async catalog(runtimeDiagnostics) {
     const validation = await new ValidateReferentialCatalog(
       this.dependencies.referentialRepository
     ).execute();
@@ -35510,6 +36140,10 @@ var ManageMeetupCommunications = class {
         severity: "error"
       });
     }
+    return catalog;
+  }
+  gateways(input, dispatchPermitted, runtimeDiagnostics) {
+    const config = this.dependencies.config;
     const mailGatewayEnabled = input.mailGatewayEnabled;
     if (dispatchPermitted && !mailGatewayEnabled) {
       runtimeDiagnostics.push({
@@ -35531,26 +36165,163 @@ var ManageMeetupCommunications = class {
         severity: "warning"
       });
     }
-    const mailRecipientResolution = catalog ? resolveMailRecipients(managed.event, catalog, runtimeDiagnostics) : UNRESOLVED_MAIL_RECIPIENTS;
-    const referencesResolved = catalog !== void 0 && mailRecipientResolution.resolved;
-    const notificationRecipients = [
-      {
-        channel: "notification",
-        role: "organizers",
-        recipientId: "organizers-slack",
-        receivesCommunications: notificationConfigured,
-        destination: notificationDestination
-      }
-    ];
-    if (dispatchPermitted && referencesResolved && !await eventSourceIsCurrent(
-      this.dependencies.eventRepository,
-      identity,
-      sourceDocument,
+    return {
+      mailGatewayEnabled,
+      notificationDestination,
+      notificationConfigured
+    };
+  }
+};
+
+// packages/application/journey/src/use-cases/communication-placeholders.ts
+var CommunicationPlaceholders = class {
+  static eventPlaceholders(event) {
+    return {
+      eventDate: event.date,
+      ...event.publicationLinks.meetup ? { eventMeetupUrl: event.publicationLinks.meetup } : {},
+      ...event.publicationLinks.community ? { eventCncfUrl: event.publicationLinks.community } : {},
+      ...event.publicationLinks.assets ? { eventSlidesUrl: event.publicationLinks.assets } : {}
+    };
+  }
+};
+
+// packages/application/journey/src/use-cases/manage-meetup-communications.ts
+var ManageMeetupCommunications = class _ManageMeetupCommunications {
+  constructor(dependencies) {
+    this.dependencies = dependencies;
+  }
+  dependencies;
+  async execute(input) {
+    const runtimeDiagnostics = [];
+    const config = this.dependencies.config;
+    const dispatchPermitted = _ManageMeetupCommunications.resolveCommunicationDispatchMode(
+      input,
+      config,
       runtimeDiagnostics
-    )) {
-      return emptyCommunicationResult("check", runtimeDiagnostics);
+    );
+    const { sourceDocument, managed } = await this.loadEvent(input);
+    if (managed.skipped) {
+      return _ManageMeetupCommunications.skippedResult(
+        dispatchPermitted,
+        runtimeDiagnostics
+      );
     }
-    const communicationApproved = referencesResolved ? await resolveCommunicationApproval({
+    const delivery = await new CommunicationDeliveryPreparation(
+      this.dependencies
+    ).execute(input, dispatchPermitted, managed.event, runtimeDiagnostics);
+    const { referencesResolved } = delivery;
+    if (dispatchPermitted && referencesResolved && !await this.sourceIsCurrent(sourceDocument, runtimeDiagnostics)) {
+      return _ManageMeetupCommunications.emptyCommunicationResult(
+        "check",
+        runtimeDiagnostics
+      );
+    }
+    const communicationApproved = await this.approve(
+      input,
+      sourceDocument,
+      managed,
+      dispatchPermitted,
+      referencesResolved,
+      runtimeDiagnostics
+    );
+    const dispatchEnabled = dispatchPermitted && referencesResolved && communicationApproved && !runtimeDiagnostics.some(({ severity }) => severity === "error");
+    if (dispatchEnabled && !await this.sourceIsCurrent(sourceDocument, runtimeDiagnostics)) {
+      return _ManageMeetupCommunications.emptyCommunicationResult(
+        "check",
+        runtimeDiagnostics
+      );
+    }
+    const reconciliation = await this.deliver(
+      input,
+      managed,
+      delivery,
+      dispatchEnabled
+    );
+    return _ManageMeetupCommunications.withRuntimeDiagnostics(
+      reconciliation,
+      runtimeDiagnostics
+    );
+  }
+  static resolveCommunicationDispatchMode(input, config, diagnostics) {
+    if (input.requestedMode !== "dispatch") {
+      return false;
+    }
+    const enabledByConfig = config.communication["dispatch-enabled"];
+    if (!enabledByConfig) {
+      diagnostics.push({
+        code: "communication.dispatch-disabled-by-config",
+        severity: "warning"
+      });
+    }
+    if (!input.dispatchAuthorized) {
+      diagnostics.push({
+        code: "communication.dispatch-not-authorized",
+        severity: "warning"
+      });
+    }
+    return enabledByConfig && input.dispatchAuthorized;
+  }
+  static async eventSourceIsCurrent(repository, expected, diagnostics) {
+    try {
+      const current = await repository.find(expected.identity);
+      if (current && ReconcileEvent.eventDocumentsEqual(current, expected)) {
+        return true;
+      }
+    } catch {
+    }
+    diagnostics.push({
+      code: "communication.event-concurrently-modified",
+      severity: "error"
+    });
+    return false;
+  }
+  static withRuntimeDiagnostics(result, runtimeDiagnostics) {
+    return {
+      ...result,
+      runtimeDiagnostics: Object.freeze([...runtimeDiagnostics])
+    };
+  }
+  static emptyCommunicationResult(mode, runtimeDiagnostics) {
+    return {
+      mode,
+      intentIds: [],
+      counts: {
+        planned: 0,
+        due: 0,
+        alreadyRecorded: 0,
+        reserved: 0,
+        dispatched: 0,
+        accepted: 0,
+        uncertain: 0,
+        rejected: 0,
+        deferred: 0
+      },
+      diagnostics: [],
+      runtimeDiagnostics: Object.freeze([...runtimeDiagnostics])
+    };
+  }
+  async loadEvent(input) {
+    const repositoryName = `${input.owner}/${input.repo}`;
+    const identity = {
+      repository: repositoryName,
+      issueNumber: input.issueNumber
+    };
+    const sourceDocument = await this.dependencies.eventRepository.find(identity);
+    if (!sourceDocument) {
+      throw new Error(
+        `Meetup event ${repositoryName}#${input.issueNumber} was not found`
+      );
+    }
+    const managed = await this.dependencies.manageEvent.execute({
+      identity,
+      mode: "check",
+      sourceDocument
+    });
+    return { identity, sourceDocument, managed };
+  }
+  async approve(input, sourceDocument, managed, dispatchPermitted, referencesResolved, runtimeDiagnostics) {
+    const config = this.dependencies.config;
+    const communicationApproved = referencesResolved ? await CommunicationApprovalResolver.resolveCommunicationApproval({
       input,
       config,
       repository: this.dependencies.approvalRepository,
@@ -35562,20 +36333,16 @@ var ManageMeetupCommunications = class {
       notificationDestinationFingerprint: input.notificationDestinationFingerprint,
       diagnostics: runtimeDiagnostics
     }) : false;
-    const dispatchEnabled = dispatchPermitted && referencesResolved && communicationApproved && !runtimeDiagnostics.some(({ severity }) => severity === "error");
-    if (dispatchEnabled && !await eventSourceIsCurrent(
-      this.dependencies.eventRepository,
-      identity,
-      sourceDocument,
-      runtimeDiagnostics
-    )) {
-      return emptyCommunicationResult("check", runtimeDiagnostics);
-    }
+    return communicationApproved;
+  }
+  async deliver(input, managed, delivery, dispatchEnabled) {
+    const config = this.dependencies.config;
+    const repositoryName = `${input.owner}/${input.repo}`;
     const reconciliation = await this.dependencies.reconcileCommunications(dispatchEnabled).execute({
       mode: dispatchEnabled ? "dispatch" : "check",
       dispatchCapabilities: {
-        mail: mailGatewayEnabled,
-        notification: notificationConfigured && input.notificationGatewayEnabled && notificationDestination.length > 0
+        mail: delivery.mailGatewayEnabled,
+        notification: delivery.notificationConfigured && input.notificationGatewayEnabled && delivery.notificationDestination.length > 0
       },
       repositoryId: input.repositoryId?.trim() || repositoryName,
       eventId: `issue-${input.issueNumber}`,
@@ -35585,135 +36352,165 @@ var ManageMeetupCommunications = class {
       occurrenceStatus: managed.event.occurrenceStatus ?? "unknown",
       policyVersion: String(config.communication["policy-version"]),
       readinessWindowDays: config.communication["readiness-window-days"],
-      mailRecipients: mailRecipientResolution.recipients,
-      notificationRecipients,
-      mailPlaceholders: eventPlaceholders(managed.event),
+      mailRecipients: delivery.mailRecipientResolution.recipients,
+      notificationRecipients: delivery.notificationRecipients,
+      mailPlaceholders: CommunicationPlaceholders.eventPlaceholders(
+        managed.event
+      ),
       notificationContent: `Meetup event issue #${input.issueNumber} requires organizer attention.`
     });
-    return withRuntimeDiagnostics(reconciliation, runtimeDiagnostics);
+    return reconciliation;
   }
-};
-function resolveCommunicationDispatchMode(input, config, diagnostics) {
-  if (input.requestedMode !== "dispatch") {
-    return false;
-  }
-  const enabledByConfig = config.communication["dispatch-enabled"];
-  if (!enabledByConfig) {
-    diagnostics.push({
-      code: "communication.dispatch-disabled-by-config",
-      severity: "warning"
-    });
-  }
-  if (!input.dispatchAuthorized) {
-    diagnostics.push({
-      code: "communication.dispatch-not-authorized",
-      severity: "warning"
-    });
-  }
-  return enabledByConfig && input.dispatchAuthorized;
-}
-var UNRESOLVED_MAIL_RECIPIENTS = Object.freeze({
-  resolved: false,
-  recipients: Object.freeze([])
-});
-async function eventSourceIsCurrent(repository, identity, expected, diagnostics) {
-  try {
-    const current = await repository.find(identity);
-    if (current && eventDocumentsEqual(current, expected)) {
-      return true;
-    }
-  } catch {
-  }
-  diagnostics.push({
-    code: "communication.event-concurrently-modified",
-    severity: "error"
-  });
-  return false;
-}
-function resolveMailRecipients(event, catalog, diagnostics) {
-  const resolution = new ResolveEventReferences().execute(catalog, {
-    hostReference: event.host ? renderReference(event.host) : "",
-    speakerReferences: event.agenda.flatMap(
-      (entry) => entry.speakers.map(renderReference)
-    )
-  });
-  if (!resolution.resolved) {
-    diagnostics.push({
-      code: "communication.event-references-unresolved",
-      severity: "error"
-    });
-    return UNRESOLVED_MAIL_RECIPIENTS;
-  }
-  const eventHost = resolution.host;
-  const primaryContact = eventHost.contacts[0];
-  const hostingAddress = primaryContact?.address ?? "";
-  const recipients = primaryContact ? [
-    {
-      channel: "mail",
-      role: "hosting",
-      recipientId: primaryContact.id,
-      receivesCommunications: true,
-      email: primaryContact.email,
-      placeholders: { hostingName: eventHost.displayName }
-    }
-  ] : [];
-  for (const speaker of resolution.speakers) {
-    recipients.push(
-      speakerRecipient(speaker, eventHost.displayName, hostingAddress)
+  sourceIsCurrent(source, diagnostics) {
+    return _ManageMeetupCommunications.eventSourceIsCurrent(
+      this.dependencies.eventRepository,
+      source,
+      diagnostics
     );
   }
-  return { resolved: true, recipients: Object.freeze(recipients) };
-}
-function speakerRecipient(speaker, hostingName, hostingAddress) {
-  return {
-    channel: "mail",
-    role: "speaker",
-    recipientId: speaker.id,
-    receivesCommunications: true,
-    email: speaker.email,
-    placeholders: {
-      speakerName: speaker.firstName,
-      hostingName,
-      hostingAddress
+  static skippedResult(dispatchPermitted, runtimeDiagnostics) {
+    runtimeDiagnostics.push({
+      code: "communication.event-skipped",
+      severity: "info"
+    });
+    return _ManageMeetupCommunications.emptyCommunicationResult(
+      dispatchPermitted ? "dispatch" : "check",
+      runtimeDiagnostics
+    );
+  }
+};
+
+// packages/application/journey/src/use-cases/event-diagnostic-projection.ts
+var EventDiagnosticProjection = class {
+  static toEventDiagnostic(code, severity, field, message) {
+    return {
+      code,
+      severity,
+      category: severity === "error" ? "invalid" : "migration",
+      field,
+      message
+    };
+  }
+  static toPublicDiagnostic(item) {
+    return {
+      code: item.code,
+      severity: item.severity,
+      field: item.field,
+      message: item.message,
+      fixApplied: false
+    };
+  }
+};
+
+// packages/application/journey/src/use-cases/event-participant-resolution.ts
+var EventParticipantResolution = class _EventParticipantResolution {
+  static renderReference(reference) {
+    return reference.id ? `${reference.displayName} [${reference.id}]` : reference.displayName;
+  }
+  static enrichStableReferences(event, host, speakers) {
+    return {
+      ...event,
+      host: _EventParticipantResolution.resolvedParticipant(host),
+      agenda: event.agenda.map((entry) => ({
+        ...entry,
+        speakers: entry.speakers.map((reference) => {
+          const matches = speakers.filter(
+            (speaker2) => speaker2.id === reference.id || _EventParticipantResolution.canonical(speaker2.displayName) === _EventParticipantResolution.canonical(reference.displayName)
+          );
+          const speaker = matches.length === 1 ? matches[0] : void 0;
+          return speaker ? _EventParticipantResolution.resolvedParticipant(speaker) : reference;
+        })
+      }))
+    };
+  }
+  static resolvedParticipant(reference) {
+    return {
+      id: reference.id,
+      displayName: reference.displayName,
+      ...reference.source ? { source: reference.source } : {}
+    };
+  }
+  static canonical(value) {
+    return value.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US");
+  }
+};
+
+// packages/application/journey/src/use-cases/event-publication-evaluation.ts
+var EventPublicationEvaluation = class _EventPublicationEvaluation {
+  static evaluatePublication(event, config) {
+    const diagnostics = [];
+    for (const field of ["meetup", "community", "assets"]) {
+      const value = event.publicationLinks[field];
+      if (!value) {
+        diagnostics.push({
+          code: `publication.${field}.missing`,
+          severity: "warning",
+          category: "incomplete",
+          field: `publicationLinks.${field}`,
+          message: `${field} publication link is required before the event is ready`
+        });
+      }
     }
-  };
-}
-function renderReference(reference) {
-  return reference.id ? `${reference.displayName} [${reference.id}]` : reference.displayName;
-}
-function eventPlaceholders(event) {
-  return {
-    eventDate: event.date,
-    ...event.publicationLinks.meetup ? { eventMeetupUrl: event.publicationLinks.meetup } : {},
-    ...event.publicationLinks.community ? { eventCncfUrl: event.publicationLinks.community } : {},
-    ...event.publicationLinks.assets ? { eventSlidesUrl: event.publicationLinks.assets } : {}
-  };
-}
-function withRuntimeDiagnostics(result2, runtimeDiagnostics) {
-  return {
-    ...result2,
-    runtimeDiagnostics: Object.freeze([...runtimeDiagnostics])
-  };
-}
-function emptyCommunicationResult(mode, runtimeDiagnostics) {
-  return {
-    mode,
-    intentIds: [],
-    counts: {
-      planned: 0,
-      due: 0,
-      alreadyRecorded: 0,
-      reserved: 0,
-      dispatched: 0,
-      accepted: 0,
-      uncertain: 0,
-      rejected: 0,
-      deferred: 0
-    },
-    diagnostics: [],
-    runtimeDiagnostics: Object.freeze([...runtimeDiagnostics])
-  };
-}
+    const engine = new PublicationUrlPolicyEngine(
+      PublicationUrlPolicies.createDefaultPublicationUrlPolicies({
+        ...DEFAULT_PUBLICATION_URL_CONFIGURATION,
+        meetupEventUrlPrefix: config.publication["meetup-event-url-prefix"],
+        communityEventUrlPrefixes: [
+          config.publication["cncf-event-url-prefix"],
+          ...DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes.slice(
+            1
+          )
+        ]
+      })
+    );
+    const evaluation = engine.evaluate(event.publicationLinks);
+    diagnostics.push(
+      ...evaluation.diagnostics.map((item) => ({
+        code: item.code,
+        severity: item.severity,
+        category: item.severity === "error" ? "invalid" : "normalization",
+        field: `publicationLinks.${item.field}`,
+        message: item.message,
+        fixAvailable: item.fixAvailable
+      }))
+    );
+    return {
+      event: { ...event, publicationLinks: evaluation.references },
+      diagnostics
+    };
+  }
+  static planEventManualPublicationTasks(event) {
+    return ManualPublicationPolicy.planManualPublicationTasks({
+      eventId: `${event.identity.repository}#${event.identity.issueNumber}`,
+      title: event.eventTitle,
+      description: event.description,
+      date: event.date,
+      timeZone: event.timeZone,
+      occurrenceStatus: event.occurrenceStatus,
+      references: event.publicationLinks,
+      slidesPublished: _EventPublicationEvaluation.checklistTaskIsCompleted(
+        event.operationalChecklists.postEvent,
+        POST_EVENT_TASK_NAMES.shareSlides
+      ),
+      attendanceImported: _EventPublicationEvaluation.checklistTaskIsCompleted(
+        event.operationalChecklists.postEvent,
+        POST_EVENT_TASK_NAMES.importAttendance
+      )
+    });
+  }
+  static checklistTaskIsCompleted(items, name) {
+    const matches = items.filter((item) => item.name === name);
+    return matches.length === 1 && matches[0]?.completed === true;
+  }
+  static pendingManualTaskDiagnostics(tasks) {
+    return tasks.filter((task) => task.status === "pending").map((task) => ({
+      code: `publication.manual-task.${task.kind}.pending`,
+      severity: "info",
+      field: `manualPublicationTasks.${task.kind}`,
+      message: `Manual task pending: ${task.reason}`
+    }));
+  }
+};
 
 // packages/application/journey/src/use-cases/manage-meetup-event.ts
 var ManageMeetupEvent = class {
@@ -35736,75 +36533,33 @@ var ManageMeetupEvent = class {
       mode: "check",
       sourceDocument
     });
-    const catalogValidation = await new ValidateReferentialCatalog(
-      this.dependencies.referentialRepository
-    ).execute();
     const eventDiagnostics = [...eventResult.diagnostics];
-    let event = eventResult.event;
-    if (catalogValidation.isValid) {
-      const speakerReferences = event.agenda.flatMap(
-        (entry) => entry.speakers.map(renderReference2)
-      );
-      const resolution = new ResolveEventReferences().execute(
-        catalogValidation.catalog,
-        {
-          hostReference: event.host ? renderReference2(event.host) : "",
-          speakerReferences
-        }
-      );
-      eventDiagnostics.push(
-        ...resolution.diagnostics.map(
-          (item) => toEventDiagnostic(item.code, item.severity, item.path, item.message)
-        )
-      );
-      if (resolution.resolved) {
-        event = enrichStableReferences(
-          event,
-          resolution.host,
-          resolution.speakers
-        );
-      }
-    } else {
-      eventDiagnostics.push(
-        ...catalogValidation.diagnostics.map(
-          (item) => toEventDiagnostic(item.code, item.severity, item.path, item.message)
-        )
-      );
-    }
-    const publication = evaluatePublication(event, config);
+    let event = await this.resolveParticipants(
+      eventResult.event,
+      eventDiagnostics
+    );
+    const publication = EventPublicationEvaluation.evaluatePublication(
+      event,
+      config
+    );
     event = publication.event;
     eventDiagnostics.push(...publication.diagnostics);
-    const manualPublicationTasks = planEventManualPublicationTasks(event);
-    const readiness = evaluateEventReadiness(event, eventDiagnostics);
-    const lifecycle = evaluateEventLifecycle({
+    const manualPublicationTasks = EventPublicationEvaluation.planEventManualPublicationTasks(event);
+    const readiness = EventReadinessPolicy.evaluateEventReadiness(
+      event,
+      eventDiagnostics
+    );
+    const lifecycle = EventLifecycle.evaluateEventLifecycle({
       event,
       readiness,
       now: eventDependencies.clock.now()
     });
-    const repositoryPatch = eventDependencies.documentCodec.createPatch(
+    const { persisted, commentUpdated } = await this.persist(
       sourceDocument,
-      event
+      event,
+      input.mode,
+      readiness.diagnostics
     );
-    let persisted = false;
-    let commentUpdated = false;
-    if (input.mode === "fix") {
-      if (!eventRepositoryPatchIsEmpty(repositoryPatch)) {
-        await ensureEventDocumentIsCurrent(
-          eventDependencies.repository,
-          input.identity,
-          sourceDocument
-        );
-        await eventDependencies.repository.applyPatch(
-          input.identity,
-          repositoryPatch
-        );
-        persisted = true;
-      }
-      commentUpdated = (await eventDependencies.commentRepository.reconcileDiagnostics(
-        input.identity,
-        readiness.diagnostics
-      )).changed;
-    }
     return {
       skipped: false,
       event,
@@ -35814,125 +36569,90 @@ var ManageMeetupEvent = class {
       persisted,
       commentUpdated,
       diagnostics: [
-        ...readiness.diagnostics.map(toPublicDiagnostic),
-        ...pendingManualTaskDiagnostics(manualPublicationTasks)
+        ...readiness.diagnostics.map(
+          EventDiagnosticProjection.toPublicDiagnostic
+        ),
+        ...EventPublicationEvaluation.pendingManualTaskDiagnostics(
+          manualPublicationTasks
+        )
       ]
     };
   }
-};
-function renderReference2(reference) {
-  return reference.id ? `${reference.displayName} [${reference.id}]` : reference.displayName;
-}
-function enrichStableReferences(event, host, speakers) {
-  return {
-    ...event,
-    host: { id: host.id, displayName: host.displayName },
-    agenda: event.agenda.map((entry) => ({
-      ...entry,
-      speakers: entry.speakers.map((reference) => {
-        const matches = speakers.filter(
-          (speaker2) => speaker2.id === reference.id || canonical(speaker2.displayName) === canonical(reference.displayName)
-        );
-        const speaker = matches.length === 1 ? matches[0] : void 0;
-        return speaker ? { id: speaker.id, displayName: speaker.displayName } : reference;
-      })
-    }))
-  };
-}
-function evaluatePublication(event, config) {
-  const diagnostics = [];
-  for (const field of ["meetup", "community", "assets"]) {
-    const value = event.publicationLinks[field];
-    if (!value) {
-      diagnostics.push({
-        code: `publication.${field}.missing`,
-        severity: "warning",
-        category: "incomplete",
-        field: `publicationLinks.${field}`,
-        message: `${field} publication link is required before the event is ready`
-      });
-    }
-  }
-  const engine = new PublicationUrlPolicyEngine(
-    createDefaultPublicationUrlPolicies({
-      ...DEFAULT_PUBLICATION_URL_CONFIGURATION,
-      meetupEventUrlPrefix: config.publication["meetup-event-url-prefix"],
-      communityEventUrlPrefixes: [
-        config.publication["cncf-event-url-prefix"],
-        ...DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes.slice(
-          1
+  async resolveParticipants(event, eventDiagnostics) {
+    const catalogValidation = await new ValidateReferentialCatalog(
+      this.dependencies.referentialRepository
+    ).execute();
+    if (catalogValidation.isValid) {
+      const speakerReferences = event.agenda.flatMap(
+        (entry) => entry.speakers.map(EventParticipantResolution.renderReference)
+      );
+      const resolution = new ResolveEventReferences().execute(
+        catalogValidation.catalog,
+        {
+          hostReference: event.host ? EventParticipantResolution.renderReference(event.host) : "",
+          speakerReferences
+        }
+      );
+      eventDiagnostics.push(
+        ...resolution.diagnostics.map(
+          (item) => EventDiagnosticProjection.toEventDiagnostic(
+            item.code,
+            item.severity,
+            item.path,
+            item.message
+          )
         )
-      ]
-    })
-  );
-  const evaluation = engine.evaluate(event.publicationLinks);
-  diagnostics.push(
-    ...evaluation.diagnostics.map((item) => ({
-      code: item.code,
-      severity: item.severity,
-      category: item.severity === "error" ? "invalid" : "normalization",
-      field: `publicationLinks.${item.field}`,
-      message: item.message,
-      fixAvailable: item.fixAvailable
-    }))
-  );
-  return {
-    event: { ...event, publicationLinks: evaluation.references },
-    diagnostics
-  };
-}
-function planEventManualPublicationTasks(event) {
-  return planManualPublicationTasks({
-    eventId: `${event.identity.repository}#${event.identity.issueNumber}`,
-    title: event.eventTitle,
-    description: event.description,
-    date: event.date,
-    timeZone: event.timeZone,
-    occurrenceStatus: event.occurrenceStatus,
-    references: event.publicationLinks,
-    slidesPublished: checklistTaskIsCompleted(
-      event.operationalChecklists.postEvent,
-      POST_EVENT_TASK_NAMES.shareSlides
-    ),
-    attendanceImported: checklistTaskIsCompleted(
-      event.operationalChecklists.postEvent,
-      POST_EVENT_TASK_NAMES.importAttendance
-    )
-  });
-}
-function checklistTaskIsCompleted(items, name) {
-  const matches = items.filter((item) => item.name === name);
-  return matches.length === 1 && matches[0]?.completed === true;
-}
-function pendingManualTaskDiagnostics(tasks) {
-  return tasks.filter((task2) => task2.status === "pending").map((task2) => ({
-    code: `publication.manual-task.${task2.kind}.pending`,
-    severity: "info",
-    field: `manualPublicationTasks.${task2.kind}`,
-    message: `Manual task pending: ${task2.reason}`
-  }));
-}
-function toEventDiagnostic(code, severity, field, message) {
-  return {
-    code,
-    severity,
-    category: severity === "error" ? "invalid" : "migration",
-    field,
-    message
-  };
-}
-function toPublicDiagnostic(item) {
-  return {
-    code: item.code,
-    severity: item.severity,
-    field: item.field,
-    message: item.message,
-    fixApplied: false
-  };
-}
-function canonical(value) {
-  return value.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US");
-}
+      );
+      if (resolution.resolved) {
+        event = EventParticipantResolution.enrichStableReferences(
+          event,
+          resolution.host,
+          resolution.speakers
+        );
+      }
+    } else {
+      eventDiagnostics.push(
+        ...catalogValidation.diagnostics.map(
+          (item) => EventDiagnosticProjection.toEventDiagnostic(
+            item.code,
+            item.severity,
+            item.path,
+            item.message
+          )
+        )
+      );
+    }
+    return event;
+  }
+  async persist(sourceDocument, event, mode, diagnostics) {
+    const eventDependencies = this.dependencies.eventDependencies;
+    const repositoryPatch = eventDependencies.documentCodec.createPatch(
+      sourceDocument,
+      event
+    );
+    let persisted = false;
+    let commentUpdated = false;
+    if (mode === "fix") {
+      if (!EventRepositoryPatches.eventRepositoryPatchIsEmpty(repositoryPatch)) {
+        await ReconcileEvent.ensureEventDocumentIsCurrent(
+          eventDependencies.repository,
+          sourceDocument.identity,
+          sourceDocument
+        );
+        await eventDependencies.repository.applyPatch(
+          sourceDocument.identity,
+          repositoryPatch
+        );
+        persisted = true;
+      }
+      commentUpdated = (await eventDependencies.commentRepository.reconcileDiagnostics(
+        sourceDocument.identity,
+        diagnostics
+      )).changed;
+    }
+    return { persisted, commentUpdated };
+  }
+};
 
 // packages/application/journey/src/use-cases/synchronize-meetup-issue-form.ts
 var SynchronizeMeetupIssueForm = class {
@@ -35989,43 +36709,63 @@ var ValidateMeetupReferentials = class {
 };
 
 // packages/runtime/github-actions/src/action-output.ts
-function setJsonOutput(name, value) {
-  setOutput(name, JSON.stringify(value));
-}
-function setDiagnosticsOutput(diagnostics) {
-  setJsonOutput("diagnostics", diagnostics);
-}
+var ActionOutput = class _ActionOutput {
+  static setJsonOutput(name, value) {
+    setOutput(name, JSON.stringify(value));
+  }
+  static setDiagnosticsOutput(diagnostics) {
+    _ActionOutput.setJsonOutput("diagnostics", diagnostics);
+  }
+};
 
 // packages/runtime/github-actions/src/communication.ts
 import { createHash as createHash2 } from "node:crypto";
 
-// packages/adapter/github-communication-approval-repository/src/index.ts
-var COMMUNICATION_APPROVAL_COMMENT_MARKER = "<!-- meetup-automation:communication-approval:v1 -->";
+// packages/adapter/github-communication-approval-repository/src/github-communication-approval-repository-configuration-error.ts
 var GithubCommunicationApprovalRepositoryConfigurationError = class extends Error {
   constructor(message) {
     super(message);
     this.name = "GithubCommunicationApprovalRepositoryConfigurationError";
   }
 };
+
+// packages/adapter/github-communication-approval-repository/src/github-communication-approval-repository-contracts.ts
+var COMMUNICATION_APPROVAL_COMMENT_MARKER = "<!-- meetup-automation:communication-approval:v1 -->";
+
+// packages/adapter/github-communication-approval-repository/src/github-communication-approval-repository-response-error.ts
 var GithubCommunicationApprovalRepositoryResponseError = class extends Error {
   constructor(message) {
     super(message);
     this.name = "GithubCommunicationApprovalRepositoryResponseError";
   }
 };
+
+// packages/adapter/github-communication-approval-repository/src/github-communication-approval-repository-state-error.ts
 var GithubCommunicationApprovalRepositoryStateError = class extends Error {
   constructor(message) {
     super(message);
     this.name = "GithubCommunicationApprovalRepositoryStateError";
   }
 };
-var GithubCommunicationApprovalRepository = class {
+
+// packages/adapter/github-communication-approval-repository/src/github-communication-approval-repository.ts
+var GithubCommunicationApprovalRepository = class _GithubCommunicationApprovalRepository {
   constructor(client, options) {
     this.client = client;
-    this.owner = repositoryPart(options.owner, "owner");
-    this.repo = repositoryPart(options.repo, "repo");
-    this.issueNumber = issueNumber(options.issueNumber);
-    this.trustedAuthorLogin = trustedAuthor(options.trustedAuthorLogin);
+    this.owner = _GithubCommunicationApprovalRepository.repositoryPart(
+      options.owner,
+      "owner"
+    );
+    this.repo = _GithubCommunicationApprovalRepository.repositoryPart(
+      options.repo,
+      "repo"
+    );
+    this.issueNumber = _GithubCommunicationApprovalRepository.issueNumber(
+      options.issueNumber
+    );
+    this.trustedAuthorLogin = _GithubCommunicationApprovalRepository.trustedAuthor(
+      options.trustedAuthorLogin
+    );
   }
   client;
   owner;
@@ -36033,12 +36773,14 @@ var GithubCommunicationApprovalRepository = class {
   issueNumber;
   trustedAuthorLogin;
   async findApproved(eventId) {
-    const normalizedEventId = safeEventId(eventId);
+    const normalizedEventId = _GithubCommunicationApprovalRepository.safeEventId(eventId);
     const comment = await this.findManagedComment();
     if (!comment) {
       return void 0;
     }
-    const snapshot = parseComment(comment.body);
+    const snapshot = _GithubCommunicationApprovalRepository.parseComment(
+      comment.body
+    );
     if (snapshot.facts.eventId !== normalizedEventId) {
       throw new GithubCommunicationApprovalRepositoryStateError(
         "Managed communication approval belongs to another event"
@@ -36047,8 +36789,8 @@ var GithubCommunicationApprovalRepository = class {
     return snapshot;
   }
   async saveApproved(snapshot) {
-    const canonical2 = strictSnapshot(snapshot);
-    const desiredBody = renderComment(canonical2);
+    const canonical = _GithubCommunicationApprovalRepository.strictSnapshot(snapshot);
+    const desiredBody = _GithubCommunicationApprovalRepository.renderComment(canonical);
     const comment = await this.findManagedComment();
     if (!comment) {
       await this.client.rest.issues.createComment({
@@ -36059,8 +36801,10 @@ var GithubCommunicationApprovalRepository = class {
       });
       return Object.freeze({ changed: true });
     }
-    const existing = parseComment(comment.body);
-    if (existing.facts.eventId !== canonical2.facts.eventId) {
+    const existing = _GithubCommunicationApprovalRepository.parseComment(
+      comment.body
+    );
+    if (existing.facts.eventId !== canonical.facts.eventId) {
       throw new GithubCommunicationApprovalRepositoryStateError(
         "Managed communication approval belongs to another event"
       );
@@ -36104,12 +36848,15 @@ var GithubCommunicationApprovalRepository = class {
         );
       }
       for (const value of response.data) {
-        const comment = mapComment(value);
+        const comment = _GithubCommunicationApprovalRepository.mapComment(value);
         if (comment) {
           comments.push(comment);
         }
       }
-      const link = header(response.headers, "link");
+      const link = _GithubCommunicationApprovalRepository.header(
+        response.headers,
+        "link"
+      );
       const hasNext = link === void 0 ? response.data.length === 100 : /<[^>]+>;\s*rel="next"/.test(link);
       if (!hasNext) {
         return comments;
@@ -36117,166 +36864,109 @@ var GithubCommunicationApprovalRepository = class {
       page += 1;
     }
   }
-};
-function parseComment(body) {
-  try {
-    const match = body.match(/```json\s*([\s\S]*?)\s*```/);
-    if (!match?.[1]) {
-      throw new Error("missing JSON block");
+  static parseComment(body) {
+    try {
+      const match = body.match(/```json\s*([\s\S]*?)\s*```/);
+      if (!match?.[1]) {
+        throw new Error("missing JSON block");
+      }
+      const snapshot = CommunicationApproval.parseCommunicationApprovalSnapshot(
+        JSON.parse(match[1])
+      );
+      if (body !== _GithubCommunicationApprovalRepository.renderComment(snapshot)) {
+        throw new Error("non-canonical managed comment");
+      }
+      return snapshot;
+    } catch {
+      throw new GithubCommunicationApprovalRepositoryStateError(
+        "Managed communication approval comment is corrupted"
+      );
     }
-    const snapshot = parseCommunicationApprovalSnapshot(JSON.parse(match[1]));
-    if (body !== renderComment(snapshot)) {
-      throw new Error("non-canonical managed comment");
+  }
+  static strictSnapshot(snapshot) {
+    try {
+      return CommunicationApproval.parseCommunicationApprovalSnapshot(snapshot);
+    } catch {
+      throw new GithubCommunicationApprovalRepositoryStateError(
+        "Communication approval snapshot is invalid"
+      );
     }
-    return snapshot;
-  } catch {
-    throw new GithubCommunicationApprovalRepositoryStateError(
-      "Managed communication approval comment is corrupted"
-    );
   }
-}
-function strictSnapshot(snapshot) {
-  try {
-    return parseCommunicationApprovalSnapshot(snapshot);
-  } catch {
-    throw new GithubCommunicationApprovalRepositoryStateError(
-      "Communication approval snapshot is invalid"
-    );
-  }
-}
-function renderComment(snapshot) {
-  return `${COMMUNICATION_APPROVAL_COMMENT_MARKER}
+  static renderComment(snapshot) {
+    return `${COMMUNICATION_APPROVAL_COMMENT_MARKER}
 
 Maintainer-approved communication facts. Any fact change requires a new approval.
 
 \`\`\`json
 ${JSON.stringify(snapshot, null, 2)}
 \`\`\``;
-}
-function mapComment(value) {
-  if (!isRecord2(value) || !Number.isSafeInteger(value.id)) {
-    return void 0;
   }
-  if (typeof value.body !== "string") {
-    return void 0;
-  }
-  const authorLogin = isRecord2(value.user) && typeof value.user.login === "string" ? value.user.login : void 0;
-  return {
-    id: Number(value.id),
-    body: value.body,
-    ...authorLogin ? { authorLogin } : {}
-  };
-}
-function repositoryPart(value, name) {
-  const normalized = value.trim();
-  if (!/^[A-Za-z0-9_.-]+$/.test(normalized)) {
-    throw new GithubCommunicationApprovalRepositoryConfigurationError(
-      `GitHub ${name} must be a valid repository segment`
-    );
-  }
-  return normalized;
-}
-function issueNumber(value) {
-  if (!Number.isSafeInteger(value) || value <= 0) {
-    throw new GithubCommunicationApprovalRepositoryConfigurationError(
-      "GitHub issue number must be a positive integer"
-    );
-  }
-  return value;
-}
-function trustedAuthor(value) {
-  const normalized = value.trim();
-  if (!normalized) {
-    throw new GithubCommunicationApprovalRepositoryConfigurationError(
-      "A trusted GitHub bot author login is required"
-    );
-  }
-  return normalized;
-}
-function safeEventId(value) {
-  const normalized = value.trim();
-  if (!isSafeCommunicationIdentifier(normalized)) {
-    throw new GithubCommunicationApprovalRepositoryConfigurationError(
-      "Communication event ID must be a stable, PII-free identifier"
-    );
-  }
-  return normalized;
-}
-function header(headers, name) {
-  const value = headers?.[name];
-  return typeof value === "string" ? value : void 0;
-}
-function isRecord2(value) {
-  return typeof value === "object" && value !== null;
-}
-
-// packages/adapter/github-delivery-ledger/src/index.ts
-import { createHash } from "node:crypto";
-
-// packages/adapter/github-delivery-ledger/src/scoped-github-ledger-comment-client.ts
-var ScopedGithubLedgerCommentClient = class {
-  constructor(client, owner, repo, issueNumber2) {
-    this.client = client;
-    this.owner = owner;
-    this.repo = repo;
-    this.issueNumber = issueNumber2;
-  }
-  client;
-  owner;
-  repo;
-  issueNumber;
-  async listComments() {
-    const comments = [];
-    let page = 1;
-    while (true) {
-      const response = await this.client.rest.issues.listComments({
-        owner: this.owner,
-        repo: this.repo,
-        issue_number: this.issueNumber,
-        page,
-        per_page: 100
-      });
-      if (!Array.isArray(response.data)) {
-        throw new Error("GitHub delivery ledger comment response is invalid");
-      }
-      for (const value of response.data) {
-        if (Number.isSafeInteger(value.id) && typeof value.body === "string") {
-          comments.push({
-            id: value.id,
-            body: value.body,
-            ...value.user?.login ? { authorLogin: value.user.login } : {}
-          });
-        }
-      }
-      const link = response.headers.link;
-      const hasNext = typeof link === "string" ? /<[^>]+>;\s*rel="next"/.test(link) : response.data.length === 100;
-      if (!hasNext) {
-        return comments;
-      }
-      page += 1;
+  static mapComment(value) {
+    if (!_GithubCommunicationApprovalRepository.isRecord(value) || !Number.isSafeInteger(value.id)) {
+      return void 0;
     }
+    if (typeof value.body !== "string") {
+      return void 0;
+    }
+    const authorLogin = _GithubCommunicationApprovalRepository.isRecord(value.user) && typeof value.user.login === "string" ? value.user.login : void 0;
+    return {
+      id: Number(value.id),
+      body: value.body,
+      ...authorLogin ? { authorLogin } : {}
+    };
   }
-  async createComment(body) {
-    await this.client.rest.issues.createComment({
-      owner: this.owner,
-      repo: this.repo,
-      issue_number: this.issueNumber,
-      body
-    });
+  static repositoryPart(value, name) {
+    const normalized = value.trim();
+    if (!/^[A-Za-z0-9_.-]+$/.test(normalized)) {
+      throw new GithubCommunicationApprovalRepositoryConfigurationError(
+        `GitHub ${name} must be a valid repository segment`
+      );
+    }
+    return normalized;
   }
-  async updateComment(commentId, body) {
-    await this.client.rest.issues.updateComment({
-      owner: this.owner,
-      repo: this.repo,
-      comment_id: commentId,
-      body
-    });
+  static issueNumber(value) {
+    if (!Number.isSafeInteger(value) || value <= 0) {
+      throw new GithubCommunicationApprovalRepositoryConfigurationError(
+        "GitHub issue number must be a positive integer"
+      );
+    }
+    return value;
+  }
+  static trustedAuthor(value) {
+    const normalized = value.trim();
+    if (!normalized) {
+      throw new GithubCommunicationApprovalRepositoryConfigurationError(
+        "A trusted GitHub bot author login is required"
+      );
+    }
+    return normalized;
+  }
+  static safeEventId(value) {
+    const normalized = value.trim();
+    if (!CommunicationIdempotency.isSafeCommunicationIdentifier(normalized)) {
+      throw new GithubCommunicationApprovalRepositoryConfigurationError(
+        "Communication event ID must be a stable, PII-free identifier"
+      );
+    }
+    return normalized;
+  }
+  static header(headers, name) {
+    const value = headers?.[name];
+    return typeof value === "string" ? value : void 0;
+  }
+  static isRecord(value) {
+    return typeof value === "object" && value !== null;
   }
 };
 
-// packages/adapter/github-delivery-ledger/src/index.ts
+// packages/adapter/github-delivery-ledger/src/github-delivery-ledger.ts
+import { createHash } from "node:crypto";
+
+// packages/adapter/github-delivery-ledger/src/github-delivery-ledger-contracts.ts
 var DELIVERY_LEDGER_MARKER = "<!-- meetup-automation-delivery-ledger:v1 -->";
-var GithubDeliveryLedger = class {
+
+// packages/adapter/github-delivery-ledger/src/github-delivery-ledger.ts
+var GithubDeliveryLedger = class _GithubDeliveryLedger {
   constructor(comments, options) {
     this.comments = comments;
     this.options = options;
@@ -36290,29 +36980,38 @@ var GithubDeliveryLedger = class {
   #authorLogin;
   async find(idempotencyKey) {
     const { ledger } = await this.#load();
-    const protectedKey = protectIdentifier(idempotencyKey);
+    const protectedKey = _GithubDeliveryLedger.protectIdentifier(idempotencyKey);
     const entry = ledger.entries.find(
       (candidate) => candidate.idempotencyKey === protectedKey
     );
-    return entry ? publicEntry(entry) : void 0;
+    return entry ? _GithubDeliveryLedger.publicEntry(entry) : void 0;
   }
   async reservePending(reservation) {
     this.#assertDispatchAuthorized();
     const state = await this.#load();
-    const protectedKey = protectIdentifier(reservation.idempotencyKey);
+    const protectedKey = _GithubDeliveryLedger.protectIdentifier(
+      reservation.idempotencyKey
+    );
     const existing = state.ledger.entries.find(
       (entry2) => entry2.idempotencyKey === protectedKey
     );
     if (existing) {
-      return { reserved: false, entry: publicEntry(existing) };
+      return {
+        reserved: false,
+        entry: _GithubDeliveryLedger.publicEntry(existing)
+      };
     }
     const entry = {
       idempotencyKey: protectedKey,
-      intentId: protectIdentifier(reservation.intentId),
-      repositoryId: protectIdentifier(reservation.repositoryId),
-      eventId: protectIdentifier(reservation.eventId),
+      intentId: _GithubDeliveryLedger.protectIdentifier(reservation.intentId),
+      repositoryId: _GithubDeliveryLedger.protectIdentifier(
+        reservation.repositoryId
+      ),
+      eventId: _GithubDeliveryLedger.protectIdentifier(reservation.eventId),
       kind: reservation.kind,
-      recipientId: protectIdentifier(reservation.recipientId),
+      recipientId: _GithubDeliveryLedger.protectIdentifier(
+        reservation.recipientId
+      ),
       policyVersion: reservation.policyVersion,
       status: "pending",
       updatedAt: reservation.reservedAt
@@ -36321,7 +37020,7 @@ var GithubDeliveryLedger = class {
     await this.#save(state.commentId, state.ledger);
     return {
       reserved: true,
-      entry: { ...publicEntry(entry), status: "pending" }
+      entry: { ..._GithubDeliveryLedger.publicEntry(entry), status: "pending" }
     };
   }
   async markAccepted(idempotencyKey, acceptedAt) {
@@ -36346,7 +37045,7 @@ var GithubDeliveryLedger = class {
   async releasePending(idempotencyKey) {
     this.#assertDispatchAuthorized();
     const state = await this.#load();
-    const protectedKey = protectIdentifier(idempotencyKey);
+    const protectedKey = _GithubDeliveryLedger.protectIdentifier(idempotencyKey);
     const index = state.ledger.entries.findIndex(
       (entry) => entry.idempotencyKey === protectedKey
     );
@@ -36359,7 +37058,7 @@ var GithubDeliveryLedger = class {
   async #transition(idempotencyKey, status, updatedAt, diagnosticCode) {
     this.#assertDispatchAuthorized();
     const state = await this.#load();
-    const protectedKey = protectIdentifier(idempotencyKey);
+    const protectedKey = _GithubDeliveryLedger.protectIdentifier(idempotencyKey);
     const index = state.ledger.entries.findIndex(
       (entry) => entry.idempotencyKey === protectedKey
     );
@@ -36374,7 +37073,7 @@ var GithubDeliveryLedger = class {
       ...current,
       status,
       updatedAt,
-      ...diagnosticCode ? { diagnosticCode: safeCode(diagnosticCode) } : {}
+      ...diagnosticCode ? { diagnosticCode: _GithubDeliveryLedger.safeCode(diagnosticCode) } : {}
     };
     await this.#save(state.commentId, state.ledger);
   }
@@ -36389,13 +37088,16 @@ var GithubDeliveryLedger = class {
     if (!comment) {
       return { ledger: { schemaVersion: 2, entries: [] } };
     }
-    return { commentId: comment.id, ledger: parseLedger(comment.body) };
+    return {
+      commentId: comment.id,
+      ledger: _GithubDeliveryLedger.parseLedger(comment.body)
+    };
   }
   async #save(commentId, ledger) {
     ledger.entries.sort(
       (left, right) => left.idempotencyKey.localeCompare(right.idempotencyKey)
     );
-    const body = renderLedger(ledger);
+    const body = _GithubDeliveryLedger.renderLedger(ledger);
     if (commentId === void 0) {
       await this.comments.createComment(body);
       return;
@@ -36409,28 +37111,27 @@ var GithubDeliveryLedger = class {
       );
     }
   }
-};
-function parseLedger(body) {
-  const match = body.match(/```json\s*([\s\S]*?)\s*```/);
-  if (!match?.[1]) {
-    throw new Error("Managed delivery ledger comment is corrupted");
-  }
-  const value = JSON.parse(match[1]);
-  if (value.schemaVersion !== 1 && value.schemaVersion !== 2 || !Array.isArray(value.entries)) {
-    throw new Error("Managed delivery ledger schema is unsupported");
-  }
-  for (const entry of value.entries) {
-    if (!isStoredEntry(entry)) {
-      throw new Error("Managed delivery ledger entry is corrupted");
+  static parseLedger(body) {
+    const match = body.match(/```json\s*([\s\S]*?)\s*```/);
+    if (!match?.[1]) {
+      throw new Error("Managed delivery ledger comment is corrupted");
     }
+    const value = JSON.parse(match[1]);
+    if (value.schemaVersion !== 1 && value.schemaVersion !== 2 || !Array.isArray(value.entries)) {
+      throw new Error("Managed delivery ledger schema is unsupported");
+    }
+    for (const entry of value.entries) {
+      if (!_GithubDeliveryLedger.isStoredEntry(entry)) {
+        throw new Error("Managed delivery ledger entry is corrupted");
+      }
+    }
+    return {
+      schemaVersion: 2,
+      entries: value.entries.map(_GithubDeliveryLedger.protectStoredEntry)
+    };
   }
-  return {
-    schemaVersion: 2,
-    entries: value.entries.map(protectStoredEntry)
-  };
-}
-function renderLedger(ledger) {
-  return `${DELIVERY_LEDGER_MARKER}
+  static renderLedger(ledger) {
+    return `${DELIVERY_LEDGER_MARKER}
 
 <details><summary>Meetup communication delivery ledger</summary>
 
@@ -36439,44 +37140,111 @@ ${JSON.stringify(ledger, null, 2)}
 \`\`\`
 
 </details>`;
-}
-function publicEntry(entry) {
-  return {
-    idempotencyKey: entry.idempotencyKey,
-    intentId: entry.intentId,
-    status: entry.status,
-    updatedAt: entry.updatedAt
-  };
-}
-function isStoredEntry(value) {
-  if (!value || typeof value !== "object") return false;
-  const entry = value;
-  return typeof entry.idempotencyKey === "string" && typeof entry.intentId === "string" && ["pending", "accepted", "uncertain", "rejected"].includes(
-    String(entry.status)
-  ) && typeof entry.updatedAt === "string" && typeof entry.repositoryId === "string" && typeof entry.eventId === "string" && typeof entry.kind === "string" && typeof entry.recipientId === "string" && typeof entry.policyVersion === "string";
-}
-function safeCode(code) {
-  return /^[a-z0-9][a-z0-9._-]{0,63}$/.test(code) ? code : "unsafe-diagnostic-code-redacted";
-}
-function protectStoredEntry(entry) {
-  return {
-    ...entry,
-    idempotencyKey: protectIdentifier(entry.idempotencyKey),
-    intentId: protectIdentifier(entry.intentId),
-    repositoryId: protectIdentifier(entry.repositoryId),
-    eventId: protectIdentifier(entry.eventId),
-    recipientId: protectIdentifier(entry.recipientId)
-  };
-}
-function protectIdentifier(value) {
-  if (/^sha256:[0-9a-f]{64}$/.test(value)) {
-    return value;
   }
-  return `sha256:${createHash("sha256").update(value).digest("hex")}`;
-}
+  static publicEntry(entry) {
+    return {
+      idempotencyKey: entry.idempotencyKey,
+      intentId: entry.intentId,
+      status: entry.status,
+      updatedAt: entry.updatedAt
+    };
+  }
+  static isStoredEntry(value) {
+    if (!value || typeof value !== "object") return false;
+    const entry = value;
+    return typeof entry.idempotencyKey === "string" && typeof entry.intentId === "string" && ["pending", "accepted", "uncertain", "rejected"].includes(
+      String(entry.status)
+    ) && typeof entry.updatedAt === "string" && typeof entry.repositoryId === "string" && typeof entry.eventId === "string" && typeof entry.kind === "string" && typeof entry.recipientId === "string" && typeof entry.policyVersion === "string";
+  }
+  static safeCode(code) {
+    return /^[a-z0-9][a-z0-9._-]{0,63}$/.test(code) ? code : "unsafe-diagnostic-code-redacted";
+  }
+  static protectStoredEntry(entry) {
+    return {
+      ...entry,
+      idempotencyKey: _GithubDeliveryLedger.protectIdentifier(
+        entry.idempotencyKey
+      ),
+      intentId: _GithubDeliveryLedger.protectIdentifier(entry.intentId),
+      repositoryId: _GithubDeliveryLedger.protectIdentifier(entry.repositoryId),
+      eventId: _GithubDeliveryLedger.protectIdentifier(entry.eventId),
+      recipientId: _GithubDeliveryLedger.protectIdentifier(entry.recipientId)
+    };
+  }
+  static protectIdentifier(value) {
+    if (/^sha256:[0-9a-f]{64}$/.test(value)) {
+      return value;
+    }
+    return `sha256:${createHash("sha256").update(value).digest("hex")}`;
+  }
+};
 
-// packages/adapter/github-repository-dispatch-mail-gateway/src/index.ts
-var GithubRepositoryDispatchMailGateway = class {
+// packages/adapter/github-delivery-ledger/src/scoped-github-ledger-comment-client.ts
+var ScopedGithubLedgerCommentClient = class _ScopedGithubLedgerCommentClient {
+  constructor(client, owner, repo, issueNumber) {
+    this.client = client;
+    this.owner = owner;
+    this.repo = repo;
+    this.issueNumber = issueNumber;
+  }
+  client;
+  owner;
+  repo;
+  issueNumber;
+  async listComments() {
+    const comments = [];
+    let page = 1;
+    while (true) {
+      const response = await this.client.rest.issues.listComments({
+        owner: this.owner,
+        repo: this.repo,
+        issue_number: this.issueNumber,
+        page,
+        per_page: 100
+      });
+      if (!Array.isArray(response.data)) {
+        throw new Error("GitHub delivery ledger comment response is invalid");
+      }
+      _ScopedGithubLedgerCommentClient.appendComments(response.data, comments);
+      const link = response.headers.link;
+      const hasNext = typeof link === "string" ? /<[^>]+>;\s*rel="next"/.test(link) : response.data.length === 100;
+      if (!hasNext) {
+        return comments;
+      }
+      page += 1;
+    }
+  }
+  async createComment(body) {
+    await this.client.rest.issues.createComment({
+      owner: this.owner,
+      repo: this.repo,
+      issue_number: this.issueNumber,
+      body
+    });
+  }
+  async updateComment(commentId, body) {
+    await this.client.rest.issues.updateComment({
+      owner: this.owner,
+      repo: this.repo,
+      comment_id: commentId,
+      body
+    });
+  }
+  static appendComments(values, comments) {
+    for (const value of values) {
+      if (Number.isSafeInteger(value.id) && typeof value.body === "string") {
+        comments.push({
+          id: value.id,
+          body: value.body,
+          ...value.user?.login ? { authorLogin: value.user.login } : {}
+        });
+      }
+    }
+  }
+};
+
+// packages/adapter/github-repository-dispatch-mail-gateway/src/github-repository-dispatch-mail-gateway.ts
+var GithubRepositoryDispatchMailGateway = class _GithubRepositoryDispatchMailGateway {
   constructor(client, repository) {
     this.client = client;
     const [owner, name, ...extra] = repository.split("/");
@@ -36503,64 +37271,86 @@ var GithubRepositoryDispatchMailGateway = class {
         }
       });
     } catch (error2) {
-      return classifyFailure(error2);
+      return _GithubRepositoryDispatchMailGateway.classifyFailure(error2);
     }
     return { outcome: "accepted" };
   }
+  static classifyFailure(error2) {
+    const status = _GithubRepositoryDispatchMailGateway.responseStatus(error2);
+    if (_GithubRepositoryDispatchMailGateway.isRateLimited(error2, status)) {
+      return { outcome: "deferred", diagnosticCode: "rate-limited" };
+    }
+    switch (status) {
+      case 400:
+      case 422:
+        return { outcome: "rejected", diagnosticCode: "invalid-request" };
+      case 401:
+        return { outcome: "rejected", diagnosticCode: "authentication-failed" };
+      case 403:
+        return { outcome: "rejected", diagnosticCode: "permission-denied" };
+      case 404:
+        return {
+          outcome: "rejected",
+          diagnosticCode: "destination-unavailable"
+        };
+      default:
+        return {
+          outcome: "uncertain",
+          diagnosticCode: "unknown-provider-state"
+        };
+    }
+  }
+  static responseStatus(error2) {
+    if (!_GithubRepositoryDispatchMailGateway.isRecord(error2)) return void 0;
+    const direct = Number(error2.status);
+    if (Number.isInteger(direct)) return direct;
+    if (!_GithubRepositoryDispatchMailGateway.isRecord(error2.response))
+      return void 0;
+    const nested = Number(error2.response.status);
+    return Number.isInteger(nested) ? nested : void 0;
+  }
+  /**
+   * GitHub can report both primary and secondary rate limits as HTTP 403. Only
+   * documented response headers are inspected: exception messages and response
+   * bodies may contain request or recipient data and must not cross this adapter.
+   */
+  static isRateLimited(error2, status) {
+    if (status === 429) return true;
+    if (status !== 403) return false;
+    const retryAfter = _GithubRepositoryDispatchMailGateway.responseHeader(
+      error2,
+      "retry-after"
+    );
+    if (retryAfter !== void 0 && /^\d+$/.test(retryAfter.trim())) {
+      return true;
+    }
+    return _GithubRepositoryDispatchMailGateway.responseHeader(
+      error2,
+      "x-ratelimit-remaining"
+    )?.trim() === "0";
+  }
+  static responseHeader(error2, name) {
+    if (!_GithubRepositoryDispatchMailGateway.isRecord(error2)) return void 0;
+    const response = _GithubRepositoryDispatchMailGateway.isRecord(
+      error2.response
+    ) ? error2.response : void 0;
+    const headers = _GithubRepositoryDispatchMailGateway.isRecord(
+      response?.headers
+    ) ? response.headers : _GithubRepositoryDispatchMailGateway.isRecord(error2.headers) ? error2.headers : void 0;
+    if (!headers) return void 0;
+    const matchingKey = Object.keys(headers).find(
+      (key) => key.toLowerCase() === name
+    );
+    const value = matchingKey ? headers[matchingKey] : void 0;
+    return typeof value === "string" || typeof value === "number" ? String(value) : void 0;
+  }
+  static isRecord(value) {
+    return typeof value === "object" && value !== null;
+  }
 };
-function classifyFailure(error2) {
-  const status = responseStatus(error2);
-  if (isRateLimited(error2, status)) {
-    return { outcome: "deferred", diagnosticCode: "rate-limited" };
-  }
-  switch (status) {
-    case 400:
-    case 422:
-      return { outcome: "rejected", diagnosticCode: "invalid-request" };
-    case 401:
-      return { outcome: "rejected", diagnosticCode: "authentication-failed" };
-    case 403:
-      return { outcome: "rejected", diagnosticCode: "permission-denied" };
-    case 404:
-      return { outcome: "rejected", diagnosticCode: "destination-unavailable" };
-    default:
-      return { outcome: "uncertain", diagnosticCode: "unknown-provider-state" };
-  }
-}
-function responseStatus(error2) {
-  if (!isRecord3(error2)) return void 0;
-  const direct = Number(error2.status);
-  if (Number.isInteger(direct)) return direct;
-  if (!isRecord3(error2.response)) return void 0;
-  const nested = Number(error2.response.status);
-  return Number.isInteger(nested) ? nested : void 0;
-}
-function isRateLimited(error2, status) {
-  if (status === 429) return true;
-  if (status !== 403) return false;
-  const retryAfter = responseHeader(error2, "retry-after");
-  if (retryAfter !== void 0 && /^\d+$/.test(retryAfter.trim())) {
-    return true;
-  }
-  return responseHeader(error2, "x-ratelimit-remaining")?.trim() === "0";
-}
-function responseHeader(error2, name) {
-  if (!isRecord3(error2)) return void 0;
-  const response = isRecord3(error2.response) ? error2.response : void 0;
-  const headers = isRecord3(response?.headers) ? response.headers : isRecord3(error2.headers) ? error2.headers : void 0;
-  if (!headers) return void 0;
-  const matchingKey = Object.keys(headers).find(
-    (key) => key.toLowerCase() === name
-  );
-  const value = matchingKey ? headers[matchingKey] : void 0;
-  return typeof value === "string" || typeof value === "number" ? String(value) : void 0;
-}
-function isRecord3(value) {
-  return typeof value === "object" && value !== null;
-}
 
-// packages/adapter/slack-notification-gateway/src/index.ts
-var SlackNotificationGateway = class {
+// packages/adapter/slack-notification-gateway/src/slack-notification-gateway.ts
+var SlackNotificationGateway = class _SlackNotificationGateway {
   constructor(token, fetcher = fetch) {
     this.token = token;
     this.fetcher = fetcher;
@@ -36588,7 +37378,7 @@ var SlackNotificationGateway = class {
       return { outcome: "uncertain", diagnosticCode: "unknown-provider-state" };
     }
     if (!response.ok) {
-      const rejection = httpRejection(response.status);
+      const rejection = _SlackNotificationGateway.httpRejection(response.status);
       if (rejection) return rejection;
       return { outcome: "uncertain", diagnosticCode: "ambiguous-response" };
     }
@@ -36599,59 +37389,62 @@ var SlackNotificationGateway = class {
       return { outcome: "uncertain", diagnosticCode: "ambiguous-response" };
     }
     if (payload.ok) return { outcome: "accepted" };
-    return slackApiRejection(payload.error);
+    return _SlackNotificationGateway.slackApiRejection(payload.error);
   }
-};
-function httpRejection(status) {
-  switch (status) {
-    case 400:
-    case 422:
-      return { outcome: "rejected", diagnosticCode: "invalid-request" };
-    case 401:
+  static httpRejection(status) {
+    switch (status) {
+      case 400:
+      case 422:
+        return { outcome: "rejected", diagnosticCode: "invalid-request" };
+      case 401:
+        return { outcome: "rejected", diagnosticCode: "authentication-failed" };
+      case 403:
+        return { outcome: "rejected", diagnosticCode: "permission-denied" };
+      case 404:
+        return {
+          outcome: "rejected",
+          diagnosticCode: "destination-unavailable"
+        };
+      case 429:
+        return { outcome: "deferred", diagnosticCode: "rate-limited" };
+      default:
+        return void 0;
+    }
+  }
+  static slackApiRejection(error2) {
+    if (typeof error2 !== "string") {
+      return { outcome: "uncertain", diagnosticCode: "ambiguous-response" };
+    }
+    if ([
+      "invalid_auth",
+      "not_authed",
+      "account_inactive",
+      "token_revoked"
+    ].includes(error2)) {
       return { outcome: "rejected", diagnosticCode: "authentication-failed" };
-    case 403:
-      return { outcome: "rejected", diagnosticCode: "permission-denied" };
-    case 404:
+    }
+    if (["channel_not_found", "not_in_channel", "is_archived"].includes(error2)) {
       return { outcome: "rejected", diagnosticCode: "destination-unavailable" };
-    case 429:
+    }
+    if (["missing_scope", "restricted_action"].includes(error2)) {
+      return { outcome: "rejected", diagnosticCode: "permission-denied" };
+    }
+    if ([
+      "invalid_arguments",
+      "invalid_arg_name",
+      "msg_too_long",
+      "no_text"
+    ].includes(error2)) {
+      return { outcome: "rejected", diagnosticCode: "invalid-request" };
+    }
+    if (error2 === "ratelimited") {
       return { outcome: "deferred", diagnosticCode: "rate-limited" };
-    default:
-      return void 0;
-  }
-}
-function slackApiRejection(error2) {
-  if (typeof error2 !== "string") {
+    }
     return { outcome: "uncertain", diagnosticCode: "ambiguous-response" };
   }
-  if ([
-    "invalid_auth",
-    "not_authed",
-    "account_inactive",
-    "token_revoked"
-  ].includes(error2)) {
-    return { outcome: "rejected", diagnosticCode: "authentication-failed" };
-  }
-  if (["channel_not_found", "not_in_channel", "is_archived"].includes(error2)) {
-    return { outcome: "rejected", diagnosticCode: "destination-unavailable" };
-  }
-  if (["missing_scope", "restricted_action"].includes(error2)) {
-    return { outcome: "rejected", diagnosticCode: "permission-denied" };
-  }
-  if ([
-    "invalid_arguments",
-    "invalid_arg_name",
-    "msg_too_long",
-    "no_text"
-  ].includes(error2)) {
-    return { outcome: "rejected", diagnosticCode: "invalid-request" };
-  }
-  if (error2 === "ratelimited") {
-    return { outcome: "deferred", diagnosticCode: "rate-limited" };
-  }
-  return { outcome: "uncertain", diagnosticCode: "ambiguous-response" };
-}
+};
 
-// packages/adapter/system-clock/src/index.ts
+// packages/adapter/system-clock/src/system-communication-clock.ts
 var SystemCommunicationClock = class {
   constructor(dateFactory = () => /* @__PURE__ */ new Date()) {
     this.dateFactory = dateFactory;
@@ -36661,6 +37454,8 @@ var SystemCommunicationClock = class {
     return this.dateFactory();
   }
 };
+
+// packages/adapter/system-clock/src/system-event-clock.ts
 var SystemEventClock = class {
   constructor(dateFactory = () => /* @__PURE__ */ new Date()) {
     this.dateFactory = dateFactory;
@@ -36671,7 +37466,7 @@ var SystemEventClock = class {
   }
 };
 
-// packages/adapter/csv-referential-repository/src/index.ts
+// packages/adapter/csv-referential-repository/src/csv-referential-repository.ts
 import { readFile } from "node:fs/promises";
 import { isAbsolute, relative, resolve } from "node:path";
 
@@ -37534,11 +38329,11 @@ var delimiter_discover = function(records, options) {
     info2.preferred = !!options.preferred[i];
     info2.score = options.score(info2, options);
   });
-  const result2 = info.reduce(
+  const result = info.reduce(
     (acc, info2) => acc.score > info2.score ? acc : info2,
     {}
   );
-  return String.fromCharCode(result2.char_code);
+  return String.fromCharCode(result.char_code);
 };
 var std = function(array) {
   const n = array.length;
@@ -38379,27 +39174,8 @@ var parse3 = function(data, opts = {}) {
   return records;
 };
 
-// packages/adapter/csv-referential-repository/src/index.ts
-function localPath(rootInput, relativeInput) {
-  const root = resolve(rootInput);
-  const absolute = resolve(root, relativeInput);
-  const child = relative(root, absolute);
-  if (isAbsolute(child) || child === ".." || child.startsWith(`..${process.platform === "win32" ? "\\" : "/"}`)) {
-    throw new Error(
-      `Referential path must stay inside the checkout: ${relativeInput}`
-    );
-  }
-  return absolute;
-}
-function parseRows(source) {
-  return parse3(source, {
-    bom: true,
-    columns: true,
-    skip_empty_lines: true,
-    trim: true
-  });
-}
-var CsvReferentialRepository = class {
+// packages/adapter/csv-referential-repository/src/csv-referential-repository.ts
+var CsvReferentialRepository = class _CsvReferentialRepository {
   constructor(options) {
     this.options = options;
   }
@@ -38407,15 +39183,24 @@ var CsvReferentialRepository = class {
   async load() {
     const [hostsSource, speakersSource] = await Promise.all([
       readFile(
-        localPath(this.options.workspaceRoot, this.options.hostsPath),
+        _CsvReferentialRepository.localPath(
+          this.options.workspaceRoot,
+          this.options.hostsPath
+        ),
         "utf8"
       ),
       readFile(
-        localPath(this.options.workspaceRoot, this.options.speakersPath),
+        _CsvReferentialRepository.localPath(
+          this.options.workspaceRoot,
+          this.options.speakersPath
+        ),
         "utf8"
       )
     ]);
-    const hosts = parseRows(hostsSource).map((row) => ({
+    const hosts = _CsvReferentialRepository.parseRows(
+      hostsSource
+    ).map(({ row, line }) => ({
+      source: { path: this.options.hostsPath, line },
       hostId: row.host_id,
       displayName: row.name,
       contactId: row.contact_id,
@@ -38424,41 +39209,404 @@ var CsvReferentialRepository = class {
       phone: row.phone || void 0,
       address: row.address
     }));
-    const speakers = parseRows(speakersSource).map(
-      (row) => ({
-        speakerId: row.speaker_id,
-        firstName: row.firstname,
-        lastName: row.lastname,
-        company: row.company,
-        email: row.mail,
-        phone: row.phone || void 0
-      })
-    );
+    const speakers = _CsvReferentialRepository.parseRows(
+      speakersSource
+    ).map(({ row, line }) => ({
+      source: { path: this.options.speakersPath, line },
+      speakerId: row.speaker_id,
+      firstName: row.firstname,
+      lastName: row.lastname,
+      company: row.company,
+      email: row.mail,
+      phone: row.phone || void 0
+    }));
     return { hosts, speakers };
+  }
+  static localPath(rootInput, relativeInput) {
+    const root = resolve(rootInput);
+    const absolute = resolve(root, relativeInput);
+    const child = relative(root, absolute);
+    if (isAbsolute(child) || child === ".." || child.startsWith(`..${process.platform === "win32" ? "\\" : "/"}`)) {
+      throw new Error(
+        `Referential path must stay inside the checkout: ${relativeInput}`
+      );
+    }
+    return absolute;
+  }
+  static parseRows(source) {
+    const records = parse3(source.replace(/\r\n?/g, "\n"), {
+      bom: true,
+      columns: true,
+      skip_empty_lines: true,
+      trim: true,
+      info: true,
+      raw: true
+    });
+    return records.map(({ record, info, raw }) => ({
+      row: record,
+      line: info.lines - (raw.trimStart().replace(/\n$/, "").match(/\n/g)?.length ?? 0)
+    }));
   }
 };
 
-// packages/adapter/github-event-comment-repository/src/github-event-comment-repository.ts
-var EVENT_DIAGNOSTIC_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics:v1 -->";
-var DUPLICATE_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics-duplicate:v1 -->";
-var RESOLVED_COMMENT_BODY = `${EVENT_DIAGNOSTIC_COMMENT_MARKER}
+// packages/adapter/github-event-comment-repository/src/diagnostic-guidance.ts
+var FIELD_ORDER = [
+  "Event Title",
+  "Event Date",
+  "Hoster",
+  "Event Description",
+  "Agenda",
+  "Meetup Link",
+  "CNCF Link",
+  "Drive Link",
+  "Slides & Content",
+  "Communication",
+  "Aperitif",
+  "Restaurant / Bar",
+  "Post event",
+  "Host confirmation",
+  "Speaker confirmation",
+  "Event Status",
+  "Issue format",
+  "Referentials",
+  "Meetup issue"
+];
+var GUIDANCE = /* @__PURE__ */ new Map([
+  ["event.title.missing", ["Event Title", "Add a title for the event."]],
+  [
+    "event.date.missing",
+    ["Event Date", "Add the event date in YYYY-MM-DD format."]
+  ],
+  [
+    "event.date.invalid",
+    ["Event Date", "Enter a valid calendar date in YYYY-MM-DD format."]
+  ],
+  [
+    "event.description.missing",
+    ["Event Description", "Add a short description of the event."]
+  ],
+  ["event.hoster.missing", ["Hoster", "Select a host from the host list."]],
+  [
+    "event.hoster.invalid",
+    ["Hoster", "Use a host name or stable ID from the host list."]
+  ],
+  [
+    "event.hoster.multiple",
+    ["Hoster", "Select exactly one host for the event."]
+  ],
+  [
+    "event.agenda.missing",
+    ["Agenda", "Add at least one talk using `- Speaker: Talk description`."]
+  ],
+  [
+    "event.agenda.legacy-line-invalid",
+    ["Agenda", "Use `- Speaker: Talk description` for each agenda line."]
+  ],
+  [
+    "event.agenda.speaker.missing",
+    ["Agenda", "Add at least one speaker for this talk."]
+  ],
+  [
+    "event.agenda.speaker.invalid",
+    ["Agenda", "Enter a speaker name from the speaker list."]
+  ],
+  [
+    "event.agenda.description.missing",
+    ["Agenda", "Add a talk description after the speaker name and colon."]
+  ],
+  [
+    "publication.meetup.missing",
+    ["Meetup Link", "Add the link to the Meetup event page."]
+  ],
+  [
+    "publication.community.missing",
+    ["CNCF Link", "Add the link to the CNCF / OCGroups event page."]
+  ],
+  [
+    "publication.assets.missing",
+    ["Drive Link", "Add the link to the event's Google Drive folder."]
+  ],
+  [
+    "event.link.meetup.invalid",
+    ["Meetup Link", "Enter a valid HTTPS link to the Meetup event page."]
+  ],
+  [
+    "event.link.community.invalid",
+    [
+      "CNCF Link",
+      "Enter a valid HTTPS link to the CNCF / OCGroups event page."
+    ]
+  ],
+  [
+    "event.link.assets.invalid",
+    [
+      "Drive Link",
+      "Enter a valid HTTPS link to the event's Google Drive folder."
+    ]
+  ],
+  [
+    "publication.meetup-url.invalid",
+    [
+      "Meetup Link",
+      "Use this group's Meetup event URL, ending with the numeric event ID."
+    ]
+  ],
+  [
+    "publication.community-url.invalid",
+    ["CNCF Link", "Use this group's CNCF / OCGroups event URL."]
+  ],
+  [
+    "publication.asset-url.invalid",
+    [
+      "Drive Link",
+      "Use a Google Drive folder URL: `https://drive.google.com/drive/folders/FOLDER_ID`."
+    ]
+  ],
+  [
+    "event.confirmation.host.missing",
+    [
+      "Host confirmation",
+      "Confirm the host, then add the `hoster:confirmed` label."
+    ]
+  ],
+  [
+    "event.confirmation.speakers.missing",
+    [
+      "Speaker confirmation",
+      "Confirm the speakers, then add the `speakers:confirmed` label."
+    ]
+  ],
+  [
+    "event.logistics.intent.invalid",
+    [
+      "Logistics",
+      "Choose `Yes` or `No`, or leave the response empty if undecided."
+    ]
+  ],
+  [
+    "event.occurrence-status.invalid",
+    ["Event Status", "Use `scheduled`, `postponed`, `held`, or `cancelled`."]
+  ],
+  [
+    "event.occurrence-status.label-conflict",
+    [
+      "Event Status",
+      "Keep only one occurrence label: `event:postponed`, `event:held`, or `event:cancelled`."
+    ]
+  ],
+  [
+    "event.document.heading.missing",
+    [
+      "Issue format",
+      "Restore this section heading from the meetup issue template."
+    ]
+  ],
+  [
+    "event.document.heading.duplicate",
+    [
+      "Issue format",
+      "Keep a single section with this heading and merge its content."
+    ]
+  ],
+  [
+    "event.document.checkbox.invalid",
+    [
+      "Issue format",
+      "Use `- [ ] Task` for pending tasks and `- [x] Task` for completed tasks."
+    ]
+  ],
+  [
+    "event.document.invalid-field-type",
+    ["Issue format", "Enter a text response in this field."]
+  ],
+  [
+    "event.document.invalid-hoster-type",
+    ["Hoster", "Select one host from the host list."]
+  ],
+  [
+    "event.document.invalid-hoster-entry",
+    ["Hoster", "Use a host name or stable ID from the host list."]
+  ],
+  [
+    "event.document.invalid-agenda-type",
+    [
+      "Agenda",
+      "Write the agenda as a list of `- Speaker: Talk description` lines."
+    ]
+  ],
+  [
+    "event.document.schema-marker.duplicate",
+    [
+      "Issue format",
+      "Ask a maintainer to repair the duplicate automation metadata in the issue description."
+    ]
+  ],
+  [
+    "event.document.schema-version.unsupported",
+    [
+      "Issue format",
+      "Ask a maintainer to update the automation to support this issue format."
+    ]
+  ],
+  [
+    "event.document.reference-metadata.missing",
+    [
+      "Issue format",
+      "Ask a maintainer to regenerate the missing host and speaker reference metadata."
+    ]
+  ],
+  [
+    "event.document.reference-metadata.duplicate",
+    [
+      "Issue format",
+      "Ask a maintainer to repair the duplicate host and speaker reference metadata."
+    ]
+  ],
+  [
+    "event.document.reference-metadata.invalid",
+    [
+      "Issue format",
+      "Ask a maintainer to regenerate the invalid host and speaker reference metadata."
+    ]
+  ],
+  [
+    "event.document.reference-metadata.legacy",
+    [
+      "Issue format",
+      "Check the host and agenda references, then rerun the issue update workflow to refresh their old metadata."
+    ]
+  ],
+  [
+    "event.document.reference-metadata.stale",
+    [
+      "Issue format",
+      "Check the host and agenda references, then rerun the issue update workflow to refresh their metadata."
+    ]
+  ]
+]);
 
-Meetup automation found no active diagnostics.`;
-var DUPLICATE_COMMENT_BODY = `${DUPLICATE_COMMENT_MARKER}
+// packages/adapter/github-event-comment-repository/src/diagnostic-presentation.ts
+var DiagnosticPresenter = class _DiagnosticPresenter {
+  static FIELD_ALIASES = new Map([
+    ...FIELD_ORDER.map((field) => [field, field]),
+    ["eventTitle", "Event Title"],
+    ["event_title", "Event Title"],
+    ["date", "Event Date"],
+    ["event_date", "Event Date"],
+    ["host", "Hoster"],
+    ["hoster", "Hoster"],
+    ["hostReference", "Hoster"],
+    ["description", "Event Description"],
+    ["event_description", "Event Description"],
+    ["agenda", "Agenda"],
+    ["publicationLinks.meetup", "Meetup Link"],
+    ["meetup_link", "Meetup Link"],
+    ["publicationLinks.community", "CNCF Link"],
+    ["cncf_link", "CNCF Link"],
+    ["publicationLinks.assets", "Drive Link"],
+    ["drive_link", "Drive Link"],
+    ["confirmations.host", "Host confirmation"],
+    ["confirmations.speakers", "Speaker confirmation"],
+    ["occurrenceStatus", "Event Status"],
+    ["event_status", "Event Status"]
+  ]);
+  static presentDiagnostic(item) {
+    const guidance = GUIDANCE.get(item.code) ?? _DiagnosticPresenter.referenceGuidance(item.code);
+    const fallback = guidance?.[0] ?? "Meetup issue";
+    const [field, section] = _DiagnosticPresenter.publicField(
+      item.field,
+      fallback
+    );
+    const message = guidance?.[1] ?? "An additional validation check needs attention. Review the workflow diagnostics with a maintainer.";
+    const order = FIELD_ORDER.indexOf(section);
+    return { field, message, order: order < 0 ? FIELD_ORDER.length : order };
+  }
+  static referenceGuidance(code) {
+    const reference = code.match(
+      /^referential\.reference\.(host|speaker)\.(invalid|unknown|ambiguous|display-name-mismatch)$/
+    );
+    if (reference) {
+      const [, kind, problem] = reference;
+      const field = kind === "host" ? "Hoster" : "Agenda";
+      const catalog = kind === "host" ? "host list" : "speaker list";
+      const example = kind === "host" ? "Host name [host-0001]" : "Speaker name [speaker-0001]";
+      switch (problem) {
+        case "unknown":
+          return [
+            field,
+            `This ${kind} was not found in the ${catalog}. Copy its exact name, including accents, or use a name with its stable ID: \`${example}\`.`
+          ];
+        case "ambiguous":
+          return [
+            field,
+            `Several ${kind}s share this name. Include the correct stable ID: \`${example}\`.`
+          ];
+        case "display-name-mismatch":
+          return [
+            field,
+            `Use the ${kind} name associated with this stable ID in the ${catalog}.`
+          ];
+        default:
+          return [
+            field,
+            `Choose a ${kind} from the ${catalog} using its name or \`${example}\`.`
+          ];
+      }
+    }
+    if (/^referential\.(host|contact|speaker)\./.test(code)) {
+      return [
+        "Referentials",
+        "Ask a maintainer to correct the hosting or speaker catalog using the referential validation workflow diagnostics."
+      ];
+    }
+    return void 0;
+  }
+  /** Only known issue headings and numeric agenda positions can reach Markdown. */
+  static publicField(field, fallback) {
+    const known = _DiagnosticPresenter.FIELD_ALIASES.get(field ?? "");
+    if (known) return [known, known];
+    const agenda = field?.match(
+      /^agenda\.(\d{1,6})(?:\.(speakers|description)(?:\.(\d{1,6}))?)?$/
+    );
+    if (agenda) {
+      const entry = Number(agenda[1]) + 1;
+      const speaker2 = agenda[3] === void 0 ? "" : `, speaker ${Number(agenda[3]) + 1}`;
+      return [`Agenda (item ${entry}${speaker2})`, "Agenda"];
+    }
+    const speaker = field?.match(/^speakerReferences\[(\d{1,6})\]$/);
+    if (speaker)
+      return [`Agenda (speaker ${Number(speaker[1]) + 1})`, "Agenda"];
+    return [fallback, fallback];
+  }
+};
 
-Superseded duplicate automation comment.`;
+// packages/adapter/github-event-comment-repository/src/github-event-comment-repository-configuration-error.ts
 var GitHubEventCommentRepositoryConfigurationError = class extends Error {
   constructor(message) {
     super(message);
     this.name = "GitHubEventCommentRepositoryConfigurationError";
   }
 };
+
+// packages/adapter/github-event-comment-repository/src/github-event-comment-repository-contracts.ts
+var EVENT_DIAGNOSTIC_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics:v1 -->";
+var DUPLICATE_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics-duplicate:v1 -->";
+var RESOLVED_COMMENT_BODY = `${EVENT_DIAGNOSTIC_COMMENT_MARKER}
+
+All previously reported issues have been resolved. No changes are currently needed.`;
+var DUPLICATE_COMMENT_BODY = `${DUPLICATE_COMMENT_MARKER}
+
+Superseded duplicate automation comment.`;
+
+// packages/adapter/github-event-comment-repository/src/github-event-comment-repository-response-error.ts
 var GitHubEventCommentRepositoryResponseError = class extends Error {
   constructor(message) {
     super(message);
     this.name = "GitHubEventCommentRepositoryResponseError";
   }
 };
+
+// packages/adapter/github-event-comment-repository/src/github-event-comment-repository-scope-error.ts
 var GitHubEventCommentRepositoryScopeError = class extends Error {
   constructor(expected, received) {
     super(
@@ -38467,11 +39615,19 @@ var GitHubEventCommentRepositoryScopeError = class extends Error {
     this.name = "GitHubEventCommentRepositoryScopeError";
   }
 };
-var GitHubEventCommentRepository = class {
+
+// packages/adapter/github-event-comment-repository/src/github-event-comment-repository.ts
+var GitHubEventCommentRepository = class _GitHubEventCommentRepository {
   constructor(client, options) {
     this.client = client;
-    this.owner = requireRepositoryPart2(options.owner, "owner");
-    this.repo = requireRepositoryPart2(options.repo, "repo");
+    this.owner = _GitHubEventCommentRepository.requireRepositoryPart(
+      options.owner,
+      "owner"
+    );
+    this.repo = _GitHubEventCommentRepository.requireRepositoryPart(
+      options.repo,
+      "repo"
+    );
     this.repositoryName = `${this.owner}/${this.repo}`;
     this.authorLogin = options.authorLogin?.trim() || void 0;
   }
@@ -38485,10 +39641,10 @@ var GitHubEventCommentRepository = class {
     const managedComments = await this.listManagedComments(
       identity.issueNumber
     );
-    const [canonical2, ...duplicates] = managedComments;
+    const [canonical, ...duplicates] = managedComments;
     let changed = await this.minimizeDuplicates(duplicates);
-    const body = renderDiagnosticComment(diagnostics);
-    if (!canonical2) {
+    const body = _GitHubEventCommentRepository.renderDiagnosticComment(diagnostics);
+    if (!canonical) {
       if (body === RESOLVED_COMMENT_BODY) {
         return { changed };
       }
@@ -38500,13 +39656,13 @@ var GitHubEventCommentRepository = class {
       });
       return { changed: true };
     }
-    if (canonical2.body !== body) {
-      await this.updateComment(canonical2.id, body);
+    if (canonical.body !== body) {
+      await this.updateComment(canonical.id, body);
       changed = true;
     }
     return { changed };
   }
-  async listManagedComments(issueNumber2) {
+  async listManagedComments(issueNumber) {
     const comments = [];
     let page = 1;
     let hasNextPage = true;
@@ -38514,7 +39670,7 @@ var GitHubEventCommentRepository = class {
       const response = await this.client.rest.issues.listComments({
         owner: this.owner,
         repo: this.repo,
-        issue_number: issueNumber2,
+        issue_number: issueNumber,
         page,
         per_page: 100
       });
@@ -38524,12 +39680,15 @@ var GitHubEventCommentRepository = class {
         );
       }
       for (const rawComment of response.data) {
-        const comment = mapComment2(rawComment);
+        const comment = _GitHubEventCommentRepository.mapComment(rawComment);
         if (comment && this.isManagedComment(comment)) {
           comments.push(comment);
         }
       }
-      const linkHeader = readHeader2(response.headers, "link");
+      const linkHeader = _GitHubEventCommentRepository.readHeader(
+        response.headers,
+        "link"
+      );
       hasNextPage = linkHeader === void 0 ? response.data.length === 100 : /<[^>]+>;\s*rel="next"/.test(linkHeader);
       page += 1;
     }
@@ -38569,83 +39728,79 @@ var GitHubEventCommentRepository = class {
       );
     }
   }
-};
-function renderDiagnosticComment(diagnostics) {
-  const actionable = /* @__PURE__ */ new Set();
-  for (const item of diagnostics) {
-    if (item.severity === "info") {
-      continue;
+  static renderDiagnosticComment(diagnostics) {
+    const actionable = /* @__PURE__ */ new Map();
+    for (const item of diagnostics) {
+      if (item.severity === "info") {
+        continue;
+      }
+      const presentation = DiagnosticPresenter.presentDiagnostic(item);
+      actionable.set(
+        `${presentation.field}:${presentation.message}`,
+        presentation
+      );
     }
-    const code = /^[a-z0-9][a-z0-9._-]{0,99}$/i.test(item.code) ? item.code : "diagnostic.redacted";
-    actionable.add(`${item.severity}:${code}`);
+    if (actionable.size === 0) {
+      return RESOLVED_COMMENT_BODY;
+    }
+    const lines = [...actionable.values()].sort(
+      (left, right) => left.order - right.order || left.field.localeCompare(right.field, "en", { numeric: true }) || left.message.localeCompare(right.message, "en")
+    ).map(({ field, message }) => `- [ ] **${field}**: ${message}`);
+    return [
+      EVENT_DIAGNOSTIC_COMMENT_MARKER,
+      "",
+      "Found the following items to complete in the meetup issue:",
+      "",
+      ...lines,
+      "",
+      "Please update the issue description or labels to address these items. This checklist will refresh automatically."
+    ].join("\n");
   }
-  if (actionable.size === 0) {
-    return RESOLVED_COMMENT_BODY;
+  static mapComment(data) {
+    if (!_GitHubEventCommentRepository.isRecord(data)) {
+      throw new GitHubEventCommentRepositoryResponseError(
+        "GitHub comment must be an object"
+      );
+    }
+    if (!Number.isInteger(data.id) || Number(data.id) <= 0) {
+      throw new GitHubEventCommentRepositoryResponseError(
+        "GitHub comment identifier must be a positive integer"
+      );
+    }
+    if (data.body === null) {
+      return null;
+    }
+    if (typeof data.body !== "string") {
+      throw new GitHubEventCommentRepositoryResponseError(
+        "GitHub comment body must be a string or null"
+      );
+    }
+    const user = _GitHubEventCommentRepository.isRecord(data.user) ? data.user : void 0;
+    return {
+      id: Number(data.id),
+      body: data.body,
+      authorLogin: typeof user?.login === "string" ? user.login : void 0
+    };
   }
-  const lines = [...actionable].sort(compareDiagnosticLines).map((entry) => {
-    const separator = entry.indexOf(":");
-    const severity = entry.slice(0, separator);
-    const code = entry.slice(separator + 1);
-    return `- **${severity}** \`${code}\``;
-  });
-  return [
-    EVENT_DIAGNOSTIC_COMMENT_MARKER,
-    "",
-    "### Meetup automation diagnostics",
-    "",
-    ...lines,
-    "",
-    "Messages and event/contact values are intentionally omitted from this comment."
-  ].join("\n");
-}
-function compareDiagnosticLines(left, right) {
-  const severityOrder = (value) => value.startsWith("error:") ? 0 : 1;
-  return severityOrder(left) - severityOrder(right) || left.localeCompare(right);
-}
-function mapComment2(data) {
-  if (!isRecord4(data)) {
-    throw new GitHubEventCommentRepositoryResponseError(
-      "GitHub comment must be an object"
-    );
+  static requireRepositoryPart(value, name) {
+    const normalized = value.trim();
+    if (normalized === "" || normalized.includes("/")) {
+      throw new GitHubEventCommentRepositoryConfigurationError(
+        `GitHub ${name} must be a non-empty repository name segment`
+      );
+    }
+    return normalized;
   }
-  if (!Number.isInteger(data.id) || Number(data.id) <= 0) {
-    throw new GitHubEventCommentRepositoryResponseError(
-      "GitHub comment identifier must be a positive integer"
-    );
+  static readHeader(headers, name) {
+    const value = headers?.[name];
+    return typeof value === "string" ? value : void 0;
   }
-  if (data.body === null) {
-    return null;
+  static isRecord(value) {
+    return typeof value === "object" && value !== null;
   }
-  if (typeof data.body !== "string") {
-    throw new GitHubEventCommentRepositoryResponseError(
-      "GitHub comment body must be a string or null"
-    );
-  }
-  const user = isRecord4(data.user) ? data.user : void 0;
-  return {
-    id: Number(data.id),
-    body: data.body,
-    authorLogin: typeof user?.login === "string" ? user.login : void 0
-  };
-}
-function requireRepositoryPart2(value, name) {
-  const normalized = value.trim();
-  if (normalized === "" || normalized.includes("/")) {
-    throw new GitHubEventCommentRepositoryConfigurationError(
-      `GitHub ${name} must be a non-empty repository name segment`
-    );
-  }
-  return normalized;
-}
-function readHeader2(headers, name) {
-  const value = headers?.[name];
-  return typeof value === "string" ? value : void 0;
-}
-function isRecord4(value) {
-  return typeof value === "object" && value !== null;
-}
+};
 
-// packages/adapter/github-issue-form-event-document-codec/src/index.ts
+// packages/adapter/github-issue-form-event-document-codec/src/github-issue-form-event-document-codec-contracts.ts
 var CURRENT_SCHEMA_MARKER = "<!-- meetup-event-schema:1 -->";
 var SCHEMA_MARKER_NAME = "meetup-event-schema";
 var REFERENCE_MARKER_NAME = "meetup-event-references";
@@ -38666,210 +39821,203 @@ var HEADINGS = Object.freeze({
   postEvent: "Post event",
   occurrenceStatus: "Event Status"
 });
-var GitHubIssueFormEventDocumentCodec = class {
-  timeZone;
-  hostConfirmationLabel;
-  speakersConfirmationLabel;
-  constructor(options = {}) {
-    this.timeZone = options.timeZone ?? "Europe/Paris";
-    this.hostConfirmationLabel = options.hostConfirmationLabel ?? "hoster:confirmed";
-    this.speakersConfirmationLabel = options.speakersConfirmationLabel ?? "speakers:confirmed";
+
+// packages/adapter/github-issue-form-event-document-codec/src/markdown-lines.ts
+var MarkdownLines = class _MarkdownLines {
+  static findLineEnd(value, start) {
+    let cursor = start;
+    while (cursor < value.length && value[cursor] !== "\n" && value[cursor] !== "\r") {
+      cursor += 1;
+    }
+    return cursor;
   }
-  decode(document) {
-    const diagnostics = [];
-    const sections = parseSections(document.body);
-    const schema = this.readSchema(document.body, diagnostics);
-    const parsedBody = {
-      event_title: this.readSection(
-        sections,
-        HEADINGS.eventTitle,
-        true,
-        diagnostics
-      ),
-      event_date: this.readSection(sections, HEADINGS.date, true, diagnostics),
-      hoster: [
-        this.readSection(sections, HEADINGS.host, true, diagnostics)
-      ].filter(Boolean),
-      event_description: this.readSection(
-        sections,
-        HEADINGS.description,
-        true,
-        diagnostics
-      ),
-      agenda: this.readSection(sections, HEADINGS.agenda, true, diagnostics),
-      meetup_link: this.readSection(
-        sections,
-        HEADINGS.meetupLink,
-        false,
-        diagnostics
-      ),
-      cncf_link: this.readSection(
-        sections,
-        HEADINGS.communityLink,
-        false,
-        diagnostics
-      ),
-      drive_link: this.readSection(
-        sections,
-        HEADINGS.assetsLink,
-        false,
-        diagnostics
-      ),
-      event_status: this.readSection(
-        sections,
-        HEADINGS.occurrenceStatus,
-        false,
-        diagnostics
-      )
-    };
-    const slidesAndContent = toOperationalChecklist(
-      this.readCheckboxes(sections, HEADINGS.slides, diagnostics)
-    );
-    const communication = toOperationalChecklist(
-      this.readCheckboxes(sections, HEADINGS.communication, diagnostics)
-    );
-    const postEventDiagnosticOffset = diagnostics.length;
-    const postEvent = toOperationalChecklist(
-      this.readCheckboxes(sections, HEADINGS.postEvent, diagnostics)
-    );
-    const postEventChecklistIsValid = diagnostics.length === postEventDiagnosticOffset;
-    const followUpComplete = postEventChecklistIsValid && postEventChecklistIsComplete(postEvent);
-    const logistics = {
-      aperitif: this.readLogisticsIntent(
-        sections,
-        HEADINGS.aperitif,
-        diagnostics
-      ),
-      postEventVenue: this.readLogisticsIntent(
-        sections,
-        HEADINGS.restaurant,
-        diagnostics
-      )
-    };
-    const migrated = migrateMeetupEventDto({
-      repository: document.identity.repository,
-      issueNumber: document.identity.issueNumber,
-      issueState: document.issueState,
-      issueTitle: document.issueTitle,
-      labels: document.labels,
-      parsedBody,
-      timeZone: this.timeZone
-    });
-    diagnostics.push(
-      ...migrated.diagnostics.filter(
-        (item) => schema === 0 || item.code !== "event.document.legacy-schema"
-      )
-    );
-    let event = {
-      ...migrated.event,
-      confirmations: {
-        host: document.labels.includes(this.hostConfirmationLabel),
-        speakers: document.labels.includes(this.speakersConfirmationLabel)
-      },
-      logistics,
-      operationalChecklists: {
-        slidesAndContent,
-        communication,
-        postEvent
-      },
-      followUpComplete
-    };
-    const metadata = this.readReferenceMetadata(document.body, diagnostics);
-    if (metadata) {
-      event = this.applyReferenceMetadata(event, metadata, diagnostics);
-    } else if (schema === 1) {
-      diagnostics.push(
-        diagnostic({
-          code: "event.document.reference-metadata.missing",
-          severity: "warning",
-          category: "migration",
-          message: "Stable reference metadata is missing",
-          fixAvailable: true
-        })
-      );
+  static findNextLineStart(value, lineEnd) {
+    if (lineEnd >= value.length) {
+      return value.length;
+    }
+    if (value[lineEnd] === "\r" && value[lineEnd + 1] === "\n") {
+      return lineEnd + 2;
+    }
+    return lineEnd + 1;
+  }
+  static trimLeadingWhitespace(value) {
+    let start = 0;
+    while (start < value.length && _MarkdownLines.isWhitespaceCharacter(value[start])) {
+      start += 1;
+    }
+    return value.slice(start);
+  }
+  static trimTrailingWhitespace(value) {
+    let end = value.length;
+    while (end > 0 && _MarkdownLines.isWhitespaceCharacter(value[end - 1])) {
+      end -= 1;
+    }
+    return value.slice(0, end);
+  }
+  static isHorizontalWhitespaceCharacter(value) {
+    return value === " " || value === "	";
+  }
+  static isWhitespaceCharacter(value) {
+    return value === " " || value === "	" || value === "\n" || value === "\r" || value === "\f" || value === "\v";
+  }
+  static parseHeadingLine(line) {
+    if (!line.startsWith("### ")) {
+      return void 0;
+    }
+    const rawHeading = line.slice(4);
+    if (rawHeading.length === 0) {
+      return void 0;
+    }
+    let end = rawHeading.length;
+    while (end > 1 && _MarkdownLines.isHorizontalWhitespaceCharacter(rawHeading[end - 1])) {
+      end -= 1;
+    }
+    return rawHeading.slice(0, end).trim();
+  }
+  static parseCheckboxLine(line) {
+    let cursor = 0;
+    cursor = _MarkdownLines.skipHorizontalWhitespace(line, cursor);
+    if (line[cursor] !== "-") {
+      return void 0;
+    }
+    cursor += 1;
+    if (!_MarkdownLines.isHorizontalWhitespaceCharacter(line[cursor] ?? "")) {
+      return void 0;
+    }
+    cursor = _MarkdownLines.skipHorizontalWhitespace(line, cursor);
+    if (line[cursor] !== "[") {
+      return void 0;
+    }
+    const checkedMarker = line[cursor + 1];
+    if (checkedMarker !== " " && checkedMarker !== "x" && checkedMarker !== "X" || line[cursor + 2] !== "]") {
+      return void 0;
+    }
+    cursor += 3;
+    if (!_MarkdownLines.isHorizontalWhitespaceCharacter(line[cursor] ?? "")) {
+      return void 0;
+    }
+    cursor = _MarkdownLines.skipHorizontalWhitespace(line, cursor);
+    const label = line.slice(cursor).trim();
+    if (label === "") {
+      return void 0;
     }
     return {
-      event,
-      diagnostics: Object.freeze(diagnostics)
+      checked: checkedMarker.toLowerCase() === "x",
+      label
     };
   }
-  createPatch(document, event) {
-    const patch = {};
-    if (document.issueTitle !== event.issueTitle) {
-      patch.issueTitle = event.issueTitle;
+  static skipHorizontalWhitespace(line, cursor) {
+    while (cursor < line.length && _MarkdownLines.isHorizontalWhitespaceCharacter(line[cursor])) {
+      cursor += 1;
     }
-    if (!arraysEqual2(document.labels, event.labels)) {
-      patch.labels = Object.freeze([...event.labels]);
-    }
-    let body = document.body;
-    body = replaceOrAppendSection(body, HEADINGS.eventTitle, event.eventTitle);
-    body = replaceOrAppendSection(body, HEADINGS.date, event.date);
-    body = replaceOrAppendSection(
-      body,
-      HEADINGS.host,
-      event.host ? event.host.displayName : ""
-    );
-    body = replaceOrAppendSection(
-      body,
-      HEADINGS.description,
-      event.description
-    );
-    body = replaceOrAppendSection(body, HEADINGS.agenda, renderAgenda(event));
-    body = replaceOrAppendSection(
-      body,
-      HEADINGS.meetupLink,
-      event.publicationLinks.meetup ?? ""
-    );
-    body = replaceOrAppendSection(
-      body,
-      HEADINGS.communityLink,
-      event.publicationLinks.community ?? ""
-    );
-    body = replaceOrAppendSection(
-      body,
-      HEADINGS.assetsLink,
-      event.publicationLinks.assets ?? ""
-    );
-    body = removeSection(body, HEADINGS.occurrenceStatus);
-    body = replaceOrAppendOperationalChecklist(
-      body,
-      HEADINGS.slides,
-      renderOperationalChecklist(event.operationalChecklists.slidesAndContent)
-    );
-    body = replaceOrAppendOperationalChecklist(
-      body,
-      HEADINGS.communication,
-      renderOperationalChecklist(event.operationalChecklists.communication)
-    );
-    body = replaceOrAppendLogisticsIntent(
-      body,
-      HEADINGS.aperitif,
-      event.logistics.aperitif
-    );
-    body = replaceOrAppendLogisticsIntent(
-      body,
-      HEADINGS.restaurant,
-      event.logistics.postEventVenue
-    );
-    body = replaceOrAppendOperationalChecklist(
-      body,
-      HEADINGS.postEvent,
-      renderOperationalChecklist(event.operationalChecklists.postEvent)
-    );
-    body = upsertManagedMarkers(body, referenceMetadata(event));
-    if (body !== document.body) {
-      patch.body = body;
-    }
-    return Object.freeze(patch);
+    return cursor;
   }
-  readSchema(body, diagnostics) {
-    const markers = readManagedMarkerValues(body, SCHEMA_MARKER_NAME);
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/managed-issue-markers.ts
+var ManagedIssueMarkers = class _ManagedIssueMarkers {
+  static readManagedMarkerValues(body, markerName) {
+    return _ManagedIssueMarkers.findManagedMarkerMatches(body, markerName).map(
+      ({ value }) => value
+    );
+  }
+  static replaceManagedMarker(body, markerName, replacement) {
+    const matches = _ManagedIssueMarkers.findManagedMarkerMatches(
+      body,
+      markerName
+    );
+    if (matches.length === 0) {
+      return { body, found: false };
+    }
+    let result = "";
+    let lastIndex = 0;
+    for (const [index, match] of matches.entries()) {
+      result += body.slice(lastIndex, match.start);
+      if (index === 0) {
+        result += replacement;
+      }
+      lastIndex = match.end;
+    }
+    result += body.slice(lastIndex);
+    return { body: result, found: true };
+  }
+  static findManagedMarkerMatches(body, markerName) {
+    const matches = [];
+    for (let cursor = 0; cursor < body.length; ) {
+      const commentStart = body.indexOf("<!--", cursor);
+      if (commentStart === -1) {
+        break;
+      }
+      const commentEnd = body.indexOf("-->", commentStart + 4);
+      if (commentEnd === -1) {
+        break;
+      }
+      const value = _ManagedIssueMarkers.parseManagedMarkerComment(
+        body.slice(commentStart + 4, commentEnd),
+        markerName
+      );
+      if (value !== void 0) {
+        matches.push({
+          start: commentStart,
+          end: commentEnd + 3,
+          value
+        });
+      }
+      cursor = commentEnd + 3;
+    }
+    return matches;
+  }
+  static parseManagedMarkerComment(commentBody, markerName) {
+    const trimmed = commentBody.trim();
+    if (!trimmed.startsWith(markerName)) {
+      return void 0;
+    }
+    let cursor = markerName.length;
+    while (cursor < trimmed.length && MarkdownLines.isWhitespaceCharacter(trimmed[cursor])) {
+      cursor += 1;
+    }
+    if (trimmed[cursor] !== ":") {
+      return void 0;
+    }
+    return trimmed.slice(cursor + 1).trim();
+  }
+  static upsertManagedMarkers(body, metadata) {
+    const referenceMarker = `<!-- meetup-event-references:${JSON.stringify(metadata)} -->`;
+    const schemaReplacement = _ManagedIssueMarkers.replaceManagedMarker(
+      body,
+      SCHEMA_MARKER_NAME,
+      CURRENT_SCHEMA_MARKER
+    );
+    const referenceReplacement = _ManagedIssueMarkers.replaceManagedMarker(
+      schemaReplacement.body,
+      REFERENCE_MARKER_NAME,
+      referenceMarker
+    );
+    let result = referenceReplacement.body;
+    if (!schemaReplacement.found) {
+      result = `${CURRENT_SCHEMA_MARKER}
+${result}`;
+    }
+    if (!referenceReplacement.found) {
+      result = result.replace(
+        CURRENT_SCHEMA_MARKER,
+        `${CURRENT_SCHEMA_MARKER}
+${referenceMarker}`
+      );
+    }
+    return result;
+  }
+  static readSchema(body, diagnostics) {
+    const markers = _ManagedIssueMarkers.readManagedMarkerValues(
+      body,
+      SCHEMA_MARKER_NAME
+    );
     if (markers.length === 0) {
       return 0;
     }
     if (markers.length > 1) {
       diagnostics.push(
-        diagnostic({
+        EventDiagnostics.diagnostic({
           code: "event.document.schema-marker.duplicate",
           severity: "error",
           category: "invalid",
@@ -38880,7 +40028,7 @@ var GitHubIssueFormEventDocumentCodec = class {
     }
     if (markers[0] !== "1") {
       diagnostics.push(
-        diagnostic({
+        EventDiagnostics.diagnostic({
           code: "event.document.schema-version.unsupported",
           severity: "error",
           category: "migration",
@@ -38891,12 +40039,292 @@ var GitHubIssueFormEventDocumentCodec = class {
     }
     return 1;
   }
-  readSection(sections, heading, required, diagnostics) {
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/reference-bindings.ts
+var ReferenceBindings = class _ReferenceBindings {
+  static referenceBinding(participant, id) {
+    return {
+      id,
+      displayName: _ReferenceBindings.normalizeVisibleDisplayName(
+        participant.displayName
+      )
+    };
+  }
+  static normalizeVisibleDisplayName(displayName) {
+    return displayName.trim().replace(/\s+/g, " ");
+  }
+  static restoreBoundReference(participant, binding) {
+    if (!participant || participant.id || !binding) {
+      return participant;
+    }
+    return _ReferenceBindings.normalizeVisibleDisplayName(
+      participant.displayName
+    ) === binding.displayName ? { ...participant, id: binding.id } : participant;
+  }
+  static restoreBoundSpeaker(participant, bindings) {
+    if (participant.id) {
+      return participant;
+    }
+    const visibleName = _ReferenceBindings.normalizeVisibleDisplayName(
+      participant.displayName
+    );
+    const matchingIds = new Set(
+      bindings.filter(({ displayName }) => displayName === visibleName).map(({ id: id2 }) => id2)
+    );
+    if (matchingIds.size !== 1) {
+      return participant;
+    }
+    const id = matchingIds.values().next().value;
+    return id ? { ...participant, id } : participant;
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/reference-metadata-shape.ts
+var ReferenceMetadataShape = class _ReferenceMetadataShape {
+  static isReferenceMetadata(value) {
+    if (typeof value !== "object" || value === null || Array.isArray(value)) {
+      return false;
+    }
+    const candidate = value;
+    if (candidate.schemaVersion !== 2) {
+      return false;
+    }
+    if (candidate.host !== null && !_ReferenceMetadataShape.isReferenceBinding(candidate.host)) {
+      return false;
+    }
+    return Array.isArray(candidate.speakers) && candidate.speakers.every(_ReferenceMetadataShape.isReferenceBinding);
+  }
+  static isLegacyReferenceMetadata(value) {
+    if (typeof value !== "object" || value === null || Array.isArray(value)) {
+      return false;
+    }
+    const candidate = value;
+    if (candidate.hostId !== null && (typeof candidate.hostId !== "string" || !STABLE_ID_PATTERN2.test(candidate.hostId))) {
+      return false;
+    }
+    if (!Array.isArray(candidate.agendaSpeakerIds)) {
+      return false;
+    }
+    return candidate.agendaSpeakerIds.every(
+      (entry) => Array.isArray(entry) && entry.every(
+        (id) => id === null || typeof id === "string" && STABLE_ID_PATTERN2.test(id)
+      )
+    );
+  }
+  static isReferenceBinding(value) {
+    if (typeof value !== "object" || value === null || Array.isArray(value)) {
+      return false;
+    }
+    const candidate = value;
+    return typeof candidate.id === "string" && STABLE_ID_PATTERN2.test(candidate.id) && typeof candidate.displayName === "string" && candidate.displayName.length > 0 && candidate.displayName === ReferenceBindings.normalizeVisibleDisplayName(candidate.displayName);
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/event-reference-metadata.ts
+var EventReferenceMetadata = class _EventReferenceMetadata {
+  static readReferenceMetadata(body, diagnostics) {
+    const markers = ManagedIssueMarkers.readManagedMarkerValues(
+      body,
+      REFERENCE_MARKER_NAME
+    );
+    if (markers.length === 0) {
+      return void 0;
+    }
+    if (markers.length > 1) {
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.document.reference-metadata.duplicate",
+          severity: "error",
+          category: "invalid",
+          message: "The event document contains duplicate reference metadata",
+          fixAvailable: true
+        })
+      );
+    }
+    try {
+      const parsed = JSON.parse(markers[0]);
+      if (ReferenceMetadataShape.isReferenceMetadata(parsed)) {
+        return { kind: "bound", value: parsed };
+      }
+      if (ReferenceMetadataShape.isLegacyReferenceMetadata(parsed)) {
+        return { kind: "legacy", value: parsed };
+      }
+      throw new Error("invalid metadata shape");
+    } catch {
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.document.reference-metadata.invalid",
+          severity: "error",
+          category: "invalid",
+          message: "Stable reference metadata is malformed",
+          fixAvailable: true
+        })
+      );
+      return void 0;
+    }
+  }
+  static applyReferenceMetadata(event, metadata, diagnostics) {
+    if (metadata.kind === "legacy") {
+      diagnostics.push(_EventReferenceMetadata.legacyMetadataDiagnostic());
+      return event;
+    }
+    const boundMetadata = metadata.value;
+    const restored = {
+      ...event,
+      host: ReferenceBindings.restoreBoundReference(
+        event.host,
+        boundMetadata.host
+      ),
+      agenda: event.agenda.map((entry) => ({
+        ...entry,
+        speakers: entry.speakers.map(
+          (speaker) => ReferenceBindings.restoreBoundSpeaker(
+            speaker,
+            boundMetadata.speakers
+          )
+        )
+      }))
+    };
+    if (!_EventReferenceMetadata.referenceMetadataEqual(
+      boundMetadata,
+      _EventReferenceMetadata.referenceMetadata(restored)
+    )) {
+      diagnostics.push(_EventReferenceMetadata.staleMetadataDiagnostic());
+    }
+    return restored;
+  }
+  static referenceMetadata(event) {
+    return {
+      schemaVersion: 2,
+      host: event.host?.id ? ReferenceBindings.referenceBinding(event.host, event.host.id) : null,
+      speakers: event.agenda.flatMap(
+        (entry) => entry.speakers.flatMap(
+          (speaker) => speaker.id ? [ReferenceBindings.referenceBinding(speaker, speaker.id)] : []
+        )
+      )
+    };
+  }
+  static referenceMetadataEqual(left, right) {
+    return JSON.stringify(left) === JSON.stringify(right);
+  }
+  static legacyMetadataDiagnostic() {
+    return EventDiagnostics.diagnostic({
+      code: "event.document.reference-metadata.legacy",
+      severity: "warning",
+      category: "migration",
+      message: "Unbound stable reference metadata cannot safely restore participant IDs",
+      fixAvailable: true
+    });
+  }
+  static staleMetadataDiagnostic() {
+    return EventDiagnostics.diagnostic({
+      code: "event.document.reference-metadata.stale",
+      severity: "warning",
+      category: "migration",
+      message: "Stable reference metadata does not match visible participants",
+      fixAvailable: true
+    });
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/issue-form-sections.ts
+var IssueFormSections = class _IssueFormSections {
+  static parseSections(body) {
+    const sections = /* @__PURE__ */ new Map();
+    let pending;
+    for (let cursor = 0; cursor < body.length; ) {
+      const lineEnd = MarkdownLines.findLineEnd(body, cursor);
+      const nextLineStart = MarkdownLines.findNextLineStart(body, lineEnd);
+      const heading = MarkdownLines.parseHeadingLine(
+        body.slice(cursor, lineEnd)
+      );
+      if (heading !== void 0) {
+        if (pending) {
+          _IssueFormSections.appendSection(sections, {
+            heading: pending.heading,
+            headingStart: pending.headingStart,
+            contentStart: pending.contentStart,
+            contentEnd: cursor,
+            value: body.slice(pending.contentStart, cursor)
+          });
+        }
+        pending = {
+          heading,
+          headingStart: cursor,
+          contentStart: nextLineStart
+        };
+      }
+      cursor = nextLineStart;
+    }
+    if (pending) {
+      _IssueFormSections.appendSection(sections, {
+        heading: pending.heading,
+        headingStart: pending.headingStart,
+        contentStart: pending.contentStart,
+        contentEnd: body.length,
+        value: body.slice(pending.contentStart)
+      });
+    }
+    return sections;
+  }
+  static appendSection(sections, section) {
+    const existing = sections.get(section.heading) ?? [];
+    sections.set(section.heading, [...existing, section]);
+  }
+  static cleanResponse(value) {
+    const trimmed = value.trim();
+    return trimmed === "_No response_" ? "" : trimmed;
+  }
+  static replaceOrAppendSection(body, heading, value) {
+    const section = _IssueFormSections.parseSections(body).get(heading)?.[0];
+    const normalizedValue = value.trim();
+    if (!section) {
+      if (!normalizedValue) {
+        return body;
+      }
+      const separator = body.length === 0 || body.endsWith("\n\n") ? "" : "\n\n";
+      return `${body}${separator}### ${heading}
+
+${normalizedValue}
+`;
+    }
+    if (_IssueFormSections.cleanResponse(section.value) === normalizedValue) {
+      return body;
+    }
+    return `${body.slice(0, section.contentStart)}
+${normalizedValue}
+
+${body.slice(section.contentEnd)}`;
+  }
+  static removeSection(body, heading) {
+    const section = _IssueFormSections.parseSections(body).get(heading)?.[0];
+    if (!section) {
+      return body;
+    }
+    const before = MarkdownLines.trimTrailingWhitespace(
+      body.slice(0, section.headingStart)
+    );
+    const after = MarkdownLines.trimLeadingWhitespace(
+      body.slice(section.contentEnd)
+    );
+    if (before === "") {
+      return after;
+    }
+    if (after === "") {
+      return `${before}
+`;
+    }
+    return `${before}
+
+${after}`;
+  }
+  static readSection(sections, heading, required, diagnostics) {
     const matches = sections.get(heading) ?? [];
     if (matches.length === 0) {
       if (required) {
         diagnostics.push(
-          diagnostic({
+          EventDiagnostics.diagnostic({
             code: "event.document.heading.missing",
             severity: "error",
             category: "invalid",
@@ -38910,7 +40338,7 @@ var GitHubIssueFormEventDocumentCodec = class {
     }
     if (matches.length > 1) {
       diagnostics.push(
-        diagnostic({
+        EventDiagnostics.diagnostic({
           code: "event.document.heading.duplicate",
           severity: "error",
           category: "invalid",
@@ -38919,13 +40347,17 @@ var GitHubIssueFormEventDocumentCodec = class {
         })
       );
     }
-    return cleanResponse(matches[0].value);
+    return _IssueFormSections.cleanResponse(matches[0].value);
   }
-  readCheckboxes(sections, heading, diagnostics) {
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/issue-form-checklists.ts
+var IssueFormChecklists = class _IssueFormChecklists {
+  static readCheckboxes(sections, heading, diagnostics) {
     const matches = sections.get(heading) ?? [];
     if (matches.length > 1) {
       diagnostics.push(
-        diagnostic({
+        EventDiagnostics.diagnostic({
           code: "event.document.heading.duplicate",
           severity: "error",
           category: "invalid",
@@ -38934,7 +40366,7 @@ var GitHubIssueFormEventDocumentCodec = class {
         })
       );
     }
-    const value = cleanResponse(matches[0]?.value ?? "");
+    const value = IssueFormSections.cleanResponse(matches[0]?.value ?? "");
     if (!value) {
       return [];
     }
@@ -38943,10 +40375,10 @@ var GitHubIssueFormEventDocumentCodec = class {
       if (!line.trim()) {
         continue;
       }
-      const checkbox = parseCheckboxLine(line);
+      const checkbox = MarkdownLines.parseCheckboxLine(line);
       if (!checkbox) {
         diagnostics.push(
-          diagnostic({
+          EventDiagnostics.diagnostic({
             code: "event.document.checkbox.invalid",
             severity: "warning",
             category: "invalid",
@@ -38960,8 +40392,35 @@ var GitHubIssueFormEventDocumentCodec = class {
     }
     return checkboxes;
   }
-  readLogisticsIntent(sections, heading, diagnostics) {
-    const value = this.readSection(sections, heading, false, diagnostics);
+  static toOperationalChecklist(checkboxes) {
+    return checkboxes.map(({ checked, label }) => ({
+      name: label,
+      completed: checked
+    }));
+  }
+  static replaceOrAppendOperationalChecklist(body, heading, value) {
+    const sections = IssueFormSections.parseSections(body).get(heading) ?? [];
+    if (sections.length > 1 || sections[0] && !_IssueFormChecklists.operationalChecklistIsWellFormed(
+      sections[0].value
+    )) {
+      return body;
+    }
+    return IssueFormSections.replaceOrAppendSection(body, heading, value);
+  }
+  static operationalChecklistIsWellFormed(value) {
+    const cleaned = IssueFormSections.cleanResponse(value);
+    return cleaned === "" || cleaned.split(/\r?\n/).filter((line) => line.trim() !== "").every((line) => MarkdownLines.parseCheckboxLine(line) !== void 0);
+  }
+  static renderOperationalChecklist(items) {
+    return items.map(({ name, completed }) => `- [${completed ? "x" : " "}] ${name}`).join("\n");
+  }
+  static readLogisticsIntent(sections, heading, diagnostics) {
+    const value = IssueFormSections.readSection(
+      sections,
+      heading,
+      false,
+      diagnostics
+    );
     if (!value) {
       return "unspecified";
     }
@@ -38972,7 +40431,7 @@ var GitHubIssueFormEventDocumentCodec = class {
       return "not-planned";
     }
     diagnostics.push(
-      diagnostic({
+      EventDiagnostics.diagnostic({
         code: "event.logistics.intent.invalid",
         severity: "error",
         category: "invalid",
@@ -38982,470 +40441,318 @@ var GitHubIssueFormEventDocumentCodec = class {
     );
     return "unspecified";
   }
-  readReferenceMetadata(body, diagnostics) {
-    const markers = readManagedMarkerValues(body, REFERENCE_MARKER_NAME);
-    if (markers.length === 0) {
-      return void 0;
-    }
-    if (markers.length > 1) {
-      diagnostics.push(
-        diagnostic({
-          code: "event.document.reference-metadata.duplicate",
-          severity: "error",
-          category: "invalid",
-          message: "The event document contains duplicate reference metadata",
-          fixAvailable: true
-        })
-      );
-    }
-    try {
-      const parsed = JSON.parse(markers[0]);
-      if (isReferenceMetadata(parsed)) {
-        return { kind: "bound", value: parsed };
-      }
-      if (isLegacyReferenceMetadata(parsed)) {
-        return { kind: "legacy", value: parsed };
-      }
-      throw new Error("invalid metadata shape");
-    } catch {
-      diagnostics.push(
-        diagnostic({
-          code: "event.document.reference-metadata.invalid",
-          severity: "error",
-          category: "invalid",
-          message: "Stable reference metadata is malformed",
-          fixAvailable: true
-        })
-      );
-      return void 0;
+  static replaceOrAppendLogisticsIntent(body, heading, intent) {
+    return intent === "unspecified" || (IssueFormSections.parseSections(body).get(heading)?.length ?? 0) > 1 ? body : IssueFormSections.replaceOrAppendSection(
+      body,
+      heading,
+      _IssueFormChecklists.renderLogisticsIntent(intent)
+    );
+  }
+  static renderLogisticsIntent(intent) {
+    switch (intent) {
+      case "planned":
+        return "Yes";
+      case "not-planned":
+        return "No";
+      case "unspecified":
+        return "";
     }
   }
-  applyReferenceMetadata(event, metadata, diagnostics) {
-    if (metadata.kind === "legacy") {
-      diagnostics.push(legacyMetadataDiagnostic());
-      return event;
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/participant-links.ts
+var ParticipantLinks = class {
+  static readSourceLinks(value, repository) {
+    const sources = /* @__PURE__ */ new Map();
+    const prefix = `https://github.com/${repository}/blob/`;
+    for (const match of value.matchAll(
+      /\[([^\]]+)\]\((https:\/\/github\.com\/[^)\s]+)\)/g
+    )) {
+      const target = match[2];
+      if (!target.startsWith(prefix)) continue;
+      const location = target.slice(prefix.length).match(/^[^/]+\/(.+)#L([1-9]\d*)$/);
+      if (!location) continue;
+      try {
+        const source = {
+          path: decodeURIComponent(location[1]),
+          line: Number(location[2])
+        };
+        const name = ReferenceBindings.normalizeVisibleDisplayName(match[1]);
+        const previous = sources.get(name);
+        sources.set(
+          name,
+          sources.has(name) && (previous?.path !== source.path || previous?.line !== source.line) ? void 0 : source
+        );
+      } catch {
+      }
     }
-    const boundMetadata = metadata.value;
-    const restored = {
+    return sources;
+  }
+  static restoreSourceLocation(participant, sources) {
+    const source = participant.id ? sources.get(
+      ReferenceBindings.normalizeVisibleDisplayName(
+        participant.displayName
+      )
+    ) : void 0;
+    return source ? { ...participant, source } : participant;
+  }
+  static encodeUrlSegment(value) {
+    return encodeURIComponent(value).replace(
+      /[!'()*]/g,
+      (character) => `%${character.charCodeAt(0).toString(16).toUpperCase()}`
+    );
+  }
+  static renderAgenda(event, renderParticipant) {
+    return event.agenda.map(
+      (entry) => `- ${entry.speakers.map(renderParticipant).join(", ")}: ${entry.description}`
+    ).join("\n");
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/issue-form-reader.ts
+var IssueFormReader = class {
+  timeZone;
+  hostConfirmationLabel;
+  speakersConfirmationLabel;
+  constructor(options = {}) {
+    this.timeZone = options.timeZone ?? "Europe/Paris";
+    this.hostConfirmationLabel = options.hostConfirmationLabel ?? "hoster:confirmed";
+    this.speakersConfirmationLabel = options.speakersConfirmationLabel ?? "speakers:confirmed";
+  }
+  decode(document) {
+    const diagnostics = [];
+    const sections = IssueFormSections.parseSections(document.body);
+    const schema = ManagedIssueMarkers.readSchema(document.body, diagnostics);
+    const parsedBody = this.readBody(sections, diagnostics);
+    const operations = this.readOperations(sections, diagnostics);
+    const migrated = MeetupEventMigration.migrateMeetupEventDto({
+      repository: document.identity.repository,
+      issueNumber: document.identity.issueNumber,
+      issueState: document.issueState,
+      issueTitle: document.issueTitle,
+      labels: document.labels,
+      parsedBody,
+      timeZone: this.timeZone
+    });
+    diagnostics.push(
+      ...migrated.diagnostics.filter(
+        (item) => schema === 0 || item.code !== "event.document.legacy-schema"
+      )
+    );
+    const event = {
+      ...migrated.event,
+      ...operations,
+      confirmations: {
+        host: document.labels.includes(this.hostConfirmationLabel),
+        speakers: document.labels.includes(this.speakersConfirmationLabel)
+      }
+    };
+    const referenced = this.restoreReferences(
+      event,
+      document.body,
+      schema,
+      diagnostics
+    );
+    return {
+      event: this.restoreLinks(
+        referenced,
+        sections,
+        document.identity.repository
+      ),
+      diagnostics: Object.freeze(diagnostics)
+    };
+  }
+  readBody(sections, diagnostics) {
+    const read = (heading, required = false) => IssueFormSections.readSection(sections, heading, required, diagnostics);
+    return {
+      event_title: read(HEADINGS.eventTitle, true),
+      event_date: read(HEADINGS.date, true),
+      hoster: [read(HEADINGS.host, true)].filter(Boolean),
+      event_description: read(HEADINGS.description, true),
+      agenda: read(HEADINGS.agenda, true),
+      meetup_link: read(HEADINGS.meetupLink),
+      cncf_link: read(HEADINGS.communityLink),
+      drive_link: read(HEADINGS.assetsLink),
+      event_status: read(HEADINGS.occurrenceStatus)
+    };
+  }
+  readOperations(sections, diagnostics) {
+    const read = (heading) => IssueFormChecklists.toOperationalChecklist(
+      IssueFormChecklists.readCheckboxes(sections, heading, diagnostics)
+    );
+    const slidesAndContent = read(HEADINGS.slides);
+    const communication = read(HEADINGS.communication);
+    const diagnosticOffset = diagnostics.length;
+    const postEvent = read(HEADINGS.postEvent);
+    const followUpComplete = diagnostics.length === diagnosticOffset && MeetupEventOperations.postEventChecklistIsComplete(postEvent);
+    return {
+      operationalChecklists: { slidesAndContent, communication, postEvent },
+      followUpComplete,
+      logistics: {
+        aperitif: IssueFormChecklists.readLogisticsIntent(
+          sections,
+          HEADINGS.aperitif,
+          diagnostics
+        ),
+        postEventVenue: IssueFormChecklists.readLogisticsIntent(
+          sections,
+          HEADINGS.restaurant,
+          diagnostics
+        )
+      }
+    };
+  }
+  restoreReferences(event, body, schema, diagnostics) {
+    const metadata = EventReferenceMetadata.readReferenceMetadata(
+      body,
+      diagnostics
+    );
+    if (metadata)
+      return EventReferenceMetadata.applyReferenceMetadata(
+        event,
+        metadata,
+        diagnostics
+      );
+    if (schema === 1)
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.document.reference-metadata.missing",
+          severity: "warning",
+          category: "migration",
+          message: "Stable reference metadata is missing",
+          fixAvailable: true
+        })
+      );
+    return event;
+  }
+  restoreLinks(event, sections, repository) {
+    const hostSources = ParticipantLinks.readSourceLinks(
+      sections.get(HEADINGS.host)?.[0]?.value ?? "",
+      repository
+    );
+    const speakerSources = ParticipantLinks.readSourceLinks(
+      sections.get(HEADINGS.agenda)?.[0]?.value ?? "",
+      repository
+    );
+    return {
       ...event,
-      host: restoreBoundReference(event.host, boundMetadata.host),
+      host: event.host ? ParticipantLinks.restoreSourceLocation(event.host, hostSources) : void 0,
       agenda: event.agenda.map((entry) => ({
         ...entry,
         speakers: entry.speakers.map(
-          (speaker) => restoreBoundSpeaker(speaker, boundMetadata.speakers)
+          (speaker) => ParticipantLinks.restoreSourceLocation(speaker, speakerSources)
         )
       }))
     };
-    if (!referenceMetadataEqual(boundMetadata, referenceMetadata(restored))) {
-      diagnostics.push(staleMetadataDiagnostic());
-    }
-    return restored;
   }
 };
-function parseSections(body) {
-  const sections = /* @__PURE__ */ new Map();
-  let pending;
-  for (let cursor = 0; cursor < body.length; ) {
-    const lineEnd = findLineEnd(body, cursor);
-    const nextLineStart = findNextLineStart(body, lineEnd);
-    const heading = parseHeadingLine(body.slice(cursor, lineEnd));
-    if (heading !== void 0) {
-      if (pending) {
-        appendSection(sections, {
-          heading: pending.heading,
-          headingStart: pending.headingStart,
-          contentStart: pending.contentStart,
-          contentEnd: cursor,
-          value: body.slice(pending.contentStart, cursor)
-        });
-      }
-      pending = {
+
+// packages/adapter/github-issue-form-event-document-codec/src/issue-form-writer.ts
+var IssueFormWriter = class _IssueFormWriter {
+  repositoryRef;
+  constructor(options = {}) {
+    this.repositoryRef = options.repositoryRef ?? "main";
+  }
+  createPatch(document, event) {
+    const patch = {};
+    if (document.issueTitle !== event.issueTitle)
+      patch.issueTitle = event.issueTitle;
+    if (!_IssueFormWriter.arraysEqual(document.labels, event.labels))
+      patch.labels = Object.freeze([...event.labels]);
+    const fields = this.renderFields(document, event);
+    const checklists = this.renderOperations(fields, event);
+    const body = ManagedIssueMarkers.upsertManagedMarkers(
+      checklists,
+      EventReferenceMetadata.referenceMetadata(event)
+    );
+    if (body !== document.body) patch.body = body;
+    return Object.freeze(patch);
+  }
+  renderFields(document, event) {
+    const render = (participant) => this.renderParticipant(participant, document.identity.repository);
+    const fields = [
+      [HEADINGS.eventTitle, event.eventTitle],
+      [HEADINGS.date, event.date],
+      [HEADINGS.host, event.host ? render(event.host) : ""],
+      [HEADINGS.description, event.description],
+      [HEADINGS.agenda, ParticipantLinks.renderAgenda(event, render)],
+      [HEADINGS.meetupLink, event.publicationLinks.meetup ?? ""],
+      [HEADINGS.communityLink, event.publicationLinks.community ?? ""],
+      [HEADINGS.assetsLink, event.publicationLinks.assets ?? ""]
+    ];
+    let body = document.body;
+    for (const [heading, value] of fields)
+      body = IssueFormSections.replaceOrAppendSection(body, heading, value);
+    return IssueFormSections.removeSection(body, HEADINGS.occurrenceStatus);
+  }
+  renderOperations(source, event) {
+    let body = source;
+    for (const [heading, items] of [
+      [HEADINGS.slides, event.operationalChecklists.slidesAndContent],
+      [HEADINGS.communication, event.operationalChecklists.communication]
+    ])
+      body = IssueFormChecklists.replaceOrAppendOperationalChecklist(
+        body,
         heading,
-        headingStart: cursor,
-        contentStart: nextLineStart
-      };
-    }
-    cursor = nextLineStart;
-  }
-  if (pending) {
-    appendSection(sections, {
-      heading: pending.heading,
-      headingStart: pending.headingStart,
-      contentStart: pending.contentStart,
-      contentEnd: body.length,
-      value: body.slice(pending.contentStart)
-    });
-  }
-  return sections;
-}
-function cleanResponse(value) {
-  const trimmed = value.trim();
-  return trimmed === "_No response_" ? "" : trimmed;
-}
-function replaceOrAppendSection(body, heading, value) {
-  const section = parseSections(body).get(heading)?.[0];
-  const normalizedValue = value.trim();
-  if (!section) {
-    if (!normalizedValue) {
-      return body;
-    }
-    const separator = body.length === 0 || body.endsWith("\n\n") ? "" : "\n\n";
-    return `${body}${separator}### ${heading}
-
-${normalizedValue}
-`;
-  }
-  if (cleanResponse(section.value) === normalizedValue) {
-    return body;
-  }
-  return `${body.slice(0, section.contentStart)}
-${normalizedValue}
-
-${body.slice(section.contentEnd)}`;
-}
-function removeSection(body, heading) {
-  const section = parseSections(body).get(heading)?.[0];
-  if (!section) {
-    return body;
-  }
-  const before = trimTrailingWhitespace(body.slice(0, section.headingStart));
-  const after = trimLeadingWhitespace(body.slice(section.contentEnd));
-  if (before === "") {
-    return after;
-  }
-  if (after === "") {
-    return `${before}
-`;
-  }
-  return `${before}
-
-${after}`;
-}
-function replaceOrAppendOperationalChecklist(body, heading, value) {
-  const sections = parseSections(body).get(heading) ?? [];
-  if (sections.length > 1 || sections[0] && !operationalChecklistIsWellFormed(sections[0].value)) {
-    return body;
-  }
-  return replaceOrAppendSection(body, heading, value);
-}
-function operationalChecklistIsWellFormed(value) {
-  const cleaned = cleanResponse(value);
-  return cleaned === "" || cleaned.split(/\r?\n/).filter((line) => line.trim() !== "").every((line) => parseCheckboxLine(line) !== void 0);
-}
-function replaceOrAppendLogisticsIntent(body, heading, intent) {
-  return intent === "unspecified" || (parseSections(body).get(heading)?.length ?? 0) > 1 ? body : replaceOrAppendSection(body, heading, renderLogisticsIntent(intent));
-}
-function renderAgenda(event) {
-  return event.agenda.map(
-    (entry) => `- ${entry.speakers.map((speaker) => speaker.displayName).join(", ")}: ${entry.description}`
-  ).join("\n");
-}
-function toOperationalChecklist(checkboxes) {
-  return checkboxes.map(({ checked, label }) => ({
-    name: label,
-    completed: checked
-  }));
-}
-function renderOperationalChecklist(items) {
-  return items.map(({ name, completed }) => `- [${completed ? "x" : " "}] ${name}`).join("\n");
-}
-function renderLogisticsIntent(intent) {
-  switch (intent) {
-    case "planned":
-      return "Yes";
-    case "not-planned":
-      return "No";
-    case "unspecified":
-      return "";
-  }
-}
-function referenceMetadata(event) {
-  return {
-    schemaVersion: 2,
-    host: event.host?.id ? referenceBinding(event.host, event.host.id) : null,
-    speakers: event.agenda.flatMap(
-      (entry) => entry.speakers.flatMap(
-        (speaker) => speaker.id ? [referenceBinding(speaker, speaker.id)] : []
+        IssueFormChecklists.renderOperationalChecklist(items)
+      );
+    body = IssueFormChecklists.replaceOrAppendLogisticsIntent(
+      body,
+      HEADINGS.aperitif,
+      event.logistics.aperitif
+    );
+    body = IssueFormChecklists.replaceOrAppendLogisticsIntent(
+      body,
+      HEADINGS.restaurant,
+      event.logistics.postEventVenue
+    );
+    return IssueFormChecklists.replaceOrAppendOperationalChecklist(
+      body,
+      HEADINGS.postEvent,
+      IssueFormChecklists.renderOperationalChecklist(
+        event.operationalChecklists.postEvent
       )
-    )
-  };
-}
-function upsertManagedMarkers(body, metadata) {
-  const referenceMarker = `<!-- meetup-event-references:${JSON.stringify(metadata)} -->`;
-  const schemaReplacement = replaceManagedMarker(
-    body,
-    SCHEMA_MARKER_NAME,
-    CURRENT_SCHEMA_MARKER
-  );
-  const referenceReplacement = replaceManagedMarker(
-    schemaReplacement.body,
-    REFERENCE_MARKER_NAME,
-    referenceMarker
-  );
-  let result2 = referenceReplacement.body;
-  if (!schemaReplacement.found) {
-    result2 = `${CURRENT_SCHEMA_MARKER}
-${result2}`;
-  }
-  if (!referenceReplacement.found) {
-    result2 = result2.replace(
-      CURRENT_SCHEMA_MARKER,
-      `${CURRENT_SCHEMA_MARKER}
-${referenceMarker}`
     );
   }
-  return result2;
-}
-function isReferenceMetadata(value) {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    return false;
+  renderParticipant(participant, repository) {
+    if (!participant.id || !participant.source) return participant.displayName;
+    const path = participant.source.path.split("/").map(ParticipantLinks.encodeUrlSegment).join("/");
+    const ref = ParticipantLinks.encodeUrlSegment(this.repositoryRef);
+    const url = `https://github.com/${repository}/blob/${ref}/${path}#L${participant.source.line}`;
+    return `[${participant.displayName}](${url})`;
   }
-  const candidate = value;
-  if (candidate.schemaVersion !== 2) {
-    return false;
+  static arraysEqual(left, right) {
+    return left.length === right.length && left.every((value, index) => value === right[index]);
   }
-  if (candidate.host !== null && !isReferenceBinding(candidate.host)) {
-    return false;
-  }
-  return Array.isArray(candidate.speakers) && candidate.speakers.every(isReferenceBinding);
-}
-function isLegacyReferenceMetadata(value) {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    return false;
-  }
-  const candidate = value;
-  if (candidate.hostId !== null && (typeof candidate.hostId !== "string" || !STABLE_ID_PATTERN2.test(candidate.hostId))) {
-    return false;
-  }
-  if (!Array.isArray(candidate.agendaSpeakerIds)) {
-    return false;
-  }
-  return candidate.agendaSpeakerIds.every(
-    (entry) => Array.isArray(entry) && entry.every(
-      (id) => id === null || typeof id === "string" && STABLE_ID_PATTERN2.test(id)
-    )
-  );
-}
-function isReferenceBinding(value) {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    return false;
-  }
-  const candidate = value;
-  return typeof candidate.id === "string" && STABLE_ID_PATTERN2.test(candidate.id) && typeof candidate.displayName === "string" && candidate.displayName.length > 0 && candidate.displayName === normalizeVisibleDisplayName(candidate.displayName);
-}
-function referenceBinding(participant, id) {
-  return {
-    id,
-    displayName: normalizeVisibleDisplayName(participant.displayName)
-  };
-}
-function readManagedMarkerValues(body, markerName) {
-  return findManagedMarkerMatches(body, markerName).map(({ value }) => value);
-}
-function replaceManagedMarker(body, markerName, replacement) {
-  const matches = findManagedMarkerMatches(body, markerName);
-  if (matches.length === 0) {
-    return { body, found: false };
-  }
-  let result2 = "";
-  let lastIndex = 0;
-  for (const [index, match] of matches.entries()) {
-    result2 += body.slice(lastIndex, match.start);
-    if (index === 0) {
-      result2 += replacement;
-    }
-    lastIndex = match.end;
-  }
-  result2 += body.slice(lastIndex);
-  return { body: result2, found: true };
-}
-function findManagedMarkerMatches(body, markerName) {
-  const matches = [];
-  for (let cursor = 0; cursor < body.length; ) {
-    const commentStart = body.indexOf("<!--", cursor);
-    if (commentStart === -1) {
-      break;
-    }
-    const commentEnd = body.indexOf("-->", commentStart + 4);
-    if (commentEnd === -1) {
-      break;
-    }
-    const value = parseManagedMarkerComment(
-      body.slice(commentStart + 4, commentEnd),
-      markerName
-    );
-    if (value !== void 0) {
-      matches.push({
-        start: commentStart,
-        end: commentEnd + 3,
-        value
-      });
-    }
-    cursor = commentEnd + 3;
-  }
-  return matches;
-}
-function parseManagedMarkerComment(commentBody, markerName) {
-  const trimmed = commentBody.trim();
-  if (!trimmed.startsWith(markerName)) {
-    return void 0;
-  }
-  let cursor = markerName.length;
-  while (cursor < trimmed.length && isWhitespaceCharacter2(trimmed[cursor])) {
-    cursor += 1;
-  }
-  if (trimmed[cursor] !== ":") {
-    return void 0;
-  }
-  return trimmed.slice(cursor + 1).trim();
-}
-function appendSection(sections, section) {
-  const existing = sections.get(section.heading) ?? [];
-  sections.set(section.heading, [...existing, section]);
-}
-function parseHeadingLine(line) {
-  if (!line.startsWith("### ")) {
-    return void 0;
-  }
-  const rawHeading = line.slice(4);
-  if (rawHeading.length === 0) {
-    return void 0;
-  }
-  let end = rawHeading.length;
-  while (end > 1 && isHorizontalWhitespaceCharacter2(rawHeading[end - 1])) {
-    end -= 1;
-  }
-  return rawHeading.slice(0, end).trim();
-}
-function parseCheckboxLine(line) {
-  let cursor = 0;
-  while (cursor < line.length && isHorizontalWhitespaceCharacter2(line[cursor])) {
-    cursor += 1;
-  }
-  if (line[cursor] !== "-") {
-    return void 0;
-  }
-  cursor += 1;
-  if (!isHorizontalWhitespaceCharacter2(line[cursor] ?? "")) {
-    return void 0;
-  }
-  while (cursor < line.length && isHorizontalWhitespaceCharacter2(line[cursor])) {
-    cursor += 1;
-  }
-  if (line[cursor] !== "[") {
-    return void 0;
-  }
-  const checkedMarker = line[cursor + 1];
-  if (checkedMarker !== " " && checkedMarker !== "x" && checkedMarker !== "X" || line[cursor + 2] !== "]") {
-    return void 0;
-  }
-  cursor += 3;
-  if (!isHorizontalWhitespaceCharacter2(line[cursor] ?? "")) {
-    return void 0;
-  }
-  while (cursor < line.length && isHorizontalWhitespaceCharacter2(line[cursor])) {
-    cursor += 1;
-  }
-  const label = line.slice(cursor).trim();
-  if (label === "") {
-    return void 0;
-  }
-  return {
-    checked: checkedMarker.toLowerCase() === "x",
-    label
-  };
-}
-function findLineEnd(value, start) {
-  let cursor = start;
-  while (cursor < value.length && value[cursor] !== "\n" && value[cursor] !== "\r") {
-    cursor += 1;
-  }
-  return cursor;
-}
-function findNextLineStart(value, lineEnd) {
-  if (lineEnd >= value.length) {
-    return value.length;
-  }
-  if (value[lineEnd] === "\r" && value[lineEnd + 1] === "\n") {
-    return lineEnd + 2;
-  }
-  return lineEnd + 1;
-}
-function trimLeadingWhitespace(value) {
-  let start = 0;
-  while (start < value.length && isWhitespaceCharacter2(value[start])) {
-    start += 1;
-  }
-  return value.slice(start);
-}
-function trimTrailingWhitespace(value) {
-  let end = value.length;
-  while (end > 0 && isWhitespaceCharacter2(value[end - 1])) {
-    end -= 1;
-  }
-  return value.slice(0, end);
-}
-function isHorizontalWhitespaceCharacter2(value) {
-  return value === " " || value === "	";
-}
-function isWhitespaceCharacter2(value) {
-  return value === " " || value === "	" || value === "\n" || value === "\r" || value === "\f" || value === "\v";
-}
-function normalizeVisibleDisplayName(displayName) {
-  return displayName.trim().replace(/\s+/g, " ");
-}
-function restoreBoundReference(participant, binding) {
-  if (!participant || participant.id || !binding) {
-    return participant;
-  }
-  return normalizeVisibleDisplayName(participant.displayName) === binding.displayName ? { ...participant, id: binding.id } : participant;
-}
-function restoreBoundSpeaker(participant, bindings) {
-  if (participant.id) {
-    return participant;
-  }
-  const visibleName = normalizeVisibleDisplayName(participant.displayName);
-  const matchingIds = new Set(
-    bindings.filter(({ displayName }) => displayName === visibleName).map(({ id: id2 }) => id2)
-  );
-  if (matchingIds.size !== 1) {
-    return participant;
-  }
-  const id = matchingIds.values().next().value;
-  return id ? { ...participant, id } : participant;
-}
-function referenceMetadataEqual(left, right) {
-  return JSON.stringify(left) === JSON.stringify(right);
-}
-function legacyMetadataDiagnostic() {
-  return diagnostic({
-    code: "event.document.reference-metadata.legacy",
-    severity: "warning",
-    category: "migration",
-    message: "Unbound stable reference metadata cannot safely restore participant IDs",
-    fixAvailable: true
-  });
-}
-function staleMetadataDiagnostic() {
-  return diagnostic({
-    code: "event.document.reference-metadata.stale",
-    severity: "warning",
-    category: "migration",
-    message: "Stable reference metadata does not match visible participants",
-    fixAvailable: true
-  });
-}
-function arraysEqual2(left, right) {
-  return left.length === right.length && left.every((value, index) => value === right[index]);
-}
+};
 
-// packages/adapter/yaml-issue-form-projection/src/index.ts
+// packages/adapter/github-issue-form-event-document-codec/src/github-issue-form-event-document-codec.ts
+var GitHubIssueFormEventDocumentCodec = class {
+  reader;
+  writer;
+  constructor(options = {}) {
+    this.reader = new IssueFormReader(options);
+    this.writer = new IssueFormWriter(options);
+  }
+  decode(document) {
+    return this.reader.decode(document);
+  }
+  createPatch(document, event) {
+    return this.writer.createPatch(document, event);
+  }
+};
+
+// packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-projection.ts
 import { readFile as readFile2, realpath, stat as stat2, writeFile as writeFile2 } from "node:fs/promises";
 import { isAbsolute as isAbsolute2, relative as relative2, resolve as resolve2, sep as sep2 } from "node:path";
 var import_yaml = __toESM(require_dist(), 1);
+
+// packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-projection-contracts.ts
 var HOST_FIELD_ID = "hoster";
 var AVAILABLE_SPEAKERS_MARKER = "<!-- Available speakers -->";
-var YamlIssueFormProjection = class {
+
+// packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-projection.ts
+var YamlIssueFormProjection = class _YamlIssueFormProjection {
   constructor(options) {
     this.options = options;
   }
@@ -39463,7 +40770,7 @@ var YamlIssueFormProjection = class {
       throw new Error("Issue form is not valid YAML.");
     }
     const issueForm = document.toJS({ maxAliasCount: 100 });
-    if (!isRecord5(issueForm) || !Array.isArray(issueForm.body)) {
+    if (!_YamlIssueFormProjection.isRecord(issueForm) || !Array.isArray(issueForm.body)) {
       throw new Error("Issue form must contain a body array.");
     }
     const body = issueForm.body;
@@ -39482,14 +40789,17 @@ var YamlIssueFormProjection = class {
       projection.speakerReferences
     );
     let changed = false;
-    if (!sameStringArray(fieldOptions(body[hostIndex]), projection.hostOptions)) {
+    if (!_YamlIssueFormProjection.sameStringArray(
+      _YamlIssueFormProjection.fieldOptions(body[hostIndex]),
+      projection.hostOptions
+    )) {
       document.setIn(
         ["body", hostIndex, "attributes", "options"],
         projection.hostOptions
       );
       changed = true;
     }
-    if (fieldValue(body[speakersIndex]) !== speakersMarkdown) {
+    if (_YamlIssueFormProjection.fieldValue(body[speakersIndex]) !== speakersMarkdown) {
       document.setIn(
         ["body", speakersIndex, "attributes", "value"],
         speakersMarkdown
@@ -39539,24 +40849,24 @@ var YamlIssueFormProjection = class {
   }
   findSingleFieldIndex(body, fieldId, expectedType) {
     const indexes = body.flatMap(
-      (item, index2) => isRecord5(item) && item.id === fieldId ? [index2] : []
+      (item, index2) => _YamlIssueFormProjection.isRecord(item) && item.id === fieldId ? [index2] : []
     );
     if (indexes.length !== 1) {
       throw new Error(`Issue form must contain exactly one ${fieldId} field.`);
     }
     const index = indexes[0];
     const field = body[index];
-    if (!isRecord5(field) || field.type !== expectedType) {
+    if (!_YamlIssueFormProjection.isRecord(field) || field.type !== expectedType) {
       throw new Error(`Issue-form field ${fieldId} must be a ${expectedType}.`);
     }
-    if (!isRecord5(field.attributes)) {
+    if (!_YamlIssueFormProjection.isRecord(field.attributes)) {
       throw new Error(`Issue-form field ${fieldId} must have attributes.`);
     }
     return index;
   }
   findOptionalFieldIndex(body, fieldId) {
     const indexes = body.flatMap(
-      (item, index) => isRecord5(item) && item.id === fieldId ? [index] : []
+      (item, index) => _YamlIssueFormProjection.isRecord(item) && item.id === fieldId ? [index] : []
     );
     if (indexes.length > 1) {
       throw new Error(`Issue form contains duplicate ${fieldId} fields.`);
@@ -39565,10 +40875,10 @@ var YamlIssueFormProjection = class {
   }
   findSpeakersMarkdownIndex(body) {
     const indexes = body.flatMap((item, index) => {
-      if (!isRecord5(item) || item.type !== "markdown") {
+      if (!_YamlIssueFormProjection.isRecord(item) || item.type !== "markdown") {
         return [];
       }
-      const value = fieldValue(item);
+      const value = _YamlIssueFormProjection.fieldValue(item);
       return value?.includes(AVAILABLE_SPEAKERS_MARKER) ? [index] : [];
     });
     if (indexes.length !== 1) {
@@ -39579,7 +40889,9 @@ var YamlIssueFormProjection = class {
     return indexes[0];
   }
   renderSpeakersMarkdown(speakers) {
-    const references = speakers.map((speaker) => `- <code>${escapeHtml(speaker)}</code>`).join("\n");
+    const references = speakers.map(
+      (speaker) => `- <code>${_YamlIssueFormProjection.escapeHtml(speaker)}</code>`
+    ).join("\n");
     return [
       AVAILABLE_SPEAKERS_MARKER,
       "",
@@ -39610,28 +40922,28 @@ var YamlIssueFormProjection = class {
     ]) : Object.freeze([]);
     return Object.freeze({ changed, changedFiles, diagnostics });
   }
+  static isRecord(value) {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+  }
+  static fieldOptions(field) {
+    if (!_YamlIssueFormProjection.isRecord(field) || !_YamlIssueFormProjection.isRecord(field.attributes)) {
+      return void 0;
+    }
+    return field.attributes.options;
+  }
+  static fieldValue(field) {
+    if (!_YamlIssueFormProjection.isRecord(field) || !_YamlIssueFormProjection.isRecord(field.attributes)) {
+      return void 0;
+    }
+    return typeof field.attributes.value === "string" ? field.attributes.value : void 0;
+  }
+  static escapeHtml(value) {
+    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+  }
+  static sameStringArray(actual, expected) {
+    return Array.isArray(actual) && actual.length === expected.length && actual.every((value, index) => value === expected[index]);
+  }
 };
-function isRecord5(value) {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-function fieldOptions(field) {
-  if (!isRecord5(field) || !isRecord5(field.attributes)) {
-    return void 0;
-  }
-  return field.attributes.options;
-}
-function fieldValue(field) {
-  if (!isRecord5(field) || !isRecord5(field.attributes)) {
-    return void 0;
-  }
-  return typeof field.attributes.value === "string" ? field.attributes.value : void 0;
-}
-function escapeHtml(value) {
-  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-}
-function sameStringArray(actual, expected) {
-  return Array.isArray(actual) && actual.length === expected.length && actual.every((value, index) => value === expected[index]);
-}
 
 // node_modules/.pnpm/@inversifyjs+common@2.0.1/node_modules/@inversifyjs/common/lib/common/calculations/isPromise.js
 function isPromise(object) {
@@ -41299,15 +42611,15 @@ function resolveAllPostConstructMethods(instance, binding, postConstructMethodNa
   if (postConstructMethodNames.size === 0) {
     return instance;
   }
-  let result2 = instance;
+  let result = instance;
   for (const methodName of postConstructMethodNames) {
-    if (isPromise(result2)) {
-      result2 = result2.then((resolvedInstance) => resolvePostConstruct(resolvedInstance, binding, methodName));
+    if (isPromise(result)) {
+      result = result.then((resolvedInstance) => resolvePostConstruct(resolvedInstance, binding, methodName));
     } else {
-      result2 = resolvePostConstruct(result2, binding, methodName);
+      result = resolvePostConstruct(result, binding, methodName);
     }
   }
-  return result2;
+  return result;
 }
 function resolveInstanceBindingNodeFromConstructorParams(constructorValues, params, node) {
   const instance = new node.binding.implementationType(...constructorValues);
@@ -43574,14 +44886,14 @@ var PlanResultCacheService = class {
       switch (invalidation.kind) {
         case CacheBindingInvalidationKind.bindingAdded:
           for (const [serviceNode, context3] of serviceNonCachedServiceNodeMap) {
-            const result2 = addServiceNodeBindingIfContextFree({
+            const result = addServiceNodeBindingIfContextFree({
               autobindOptions: void 0,
               jitEnabled: this.#jitEnabled,
               operations: invalidation.operations,
               servicesBranch: []
             }, serviceNode, invalidation.binding, context3.bindingConstraintsList, context3.buildServiceNodeOptions);
-            if (result2.isContextFreeBinding) {
-              if (result2.shouldInvalidateServiceNode && LazyPlanServiceNode.is(serviceNode)) {
+            if (result.isContextFreeBinding) {
+              if (result.shouldInvalidateServiceNode && LazyPlanServiceNode.is(serviceNode)) {
                 this.#invalidateNonCachePlanServiceNodeDescendents(serviceNode);
                 serviceNode.invalidate();
               }
@@ -43592,10 +44904,10 @@ var PlanResultCacheService = class {
           break;
         case CacheBindingInvalidationKind.bindingRemoved:
           for (const [serviceNode, context3] of serviceNonCachedServiceNodeMap) {
-            const result2 = removeServiceNodeBindingIfContextFree(serviceNode, invalidation.binding, context3.bindingConstraintsList, context3.buildServiceNodeOptions.optional);
-            if (result2.isContextFreeBinding) {
-              if (result2.bindingNodeRemoved !== void 0) {
-                this.#invalidateNonCachePlanBindingNodeDescendents(result2.bindingNodeRemoved);
+            const result = removeServiceNodeBindingIfContextFree(serviceNode, invalidation.binding, context3.bindingConstraintsList, context3.buildServiceNodeOptions.optional);
+            if (result.isContextFreeBinding) {
+              if (result.bindingNodeRemoved !== void 0) {
+                this.#invalidateNonCachePlanBindingNodeDescendents(result.bindingNodeRemoved);
               }
             } else {
               this.clearCache();
@@ -43632,9 +44944,9 @@ var PlanResultCacheService = class {
       switch (invalidation.kind) {
         case CacheBindingInvalidationKind.bindingAdded:
           {
-            const result2 = addRootServiceNodeBindingIfContextFree(planParams, servicePlan.tree.root, invalidation.binding);
-            if (result2.isContextFreeBinding) {
-              if (result2.shouldInvalidateServiceNode) {
+            const result = addRootServiceNodeBindingIfContextFree(planParams, servicePlan.tree.root, invalidation.binding);
+            if (result.isContextFreeBinding) {
+              if (result.shouldInvalidateServiceNode) {
                 this.#invalidateNonCachePlanServiceNodeDescendents(servicePlan.tree.root);
                 servicePlan.tree.root.invalidate();
               }
@@ -43645,10 +44957,10 @@ var PlanResultCacheService = class {
           break;
         case CacheBindingInvalidationKind.bindingRemoved:
           {
-            const result2 = removeRootServiceNodeBindingIfContextFree(planParams, servicePlan.tree.root, invalidation.binding);
-            if (result2.isContextFreeBinding) {
-              if (result2.bindingNodeRemoved !== void 0) {
-                this.#invalidateNonCachePlanBindingNodeDescendents(result2.bindingNodeRemoved);
+            const result = removeRootServiceNodeBindingIfContextFree(planParams, servicePlan.tree.root, invalidation.binding);
+            if (result.isContextFreeBinding) {
+              if (result.bindingNodeRemoved !== void 0) {
+                this.#invalidateNonCachePlanBindingNodeDescendents(result.bindingNodeRemoved);
               }
             } else {
               this.clearCache();
@@ -43684,9 +44996,9 @@ function extractLikelyCircularDependency2(params) {
     stack.push(node);
     try {
       for (const child of getChildServiceNodes(node)) {
-        const result3 = depthFirstSearch(child);
-        if (result3 !== void 0) {
-          return result3;
+        const result2 = depthFirstSearch(child);
+        if (result2 !== void 0) {
+          return result2;
         }
       }
     } finally {
@@ -43694,8 +45006,8 @@ function extractLikelyCircularDependency2(params) {
     }
     return void 0;
   }
-  const result2 = depthFirstSearch(root);
-  return result2 ?? [];
+  const result = depthFirstSearch(root);
+  return result ?? [];
 }
 function getChildServiceNodes(serviceNode) {
   const children = [];
@@ -43778,8 +45090,8 @@ function resolveBindingPreDestroy(params, binding) {
 }
 function resolveInstancePreDestroyMethod(instance, methodName) {
   if (typeof instance[methodName] === "function") {
-    const result2 = instance[methodName]();
-    return result2;
+    const result = instance[methodName]();
+    return result;
   }
 }
 function resolveInstancePreDestroyMethods(classMetadata, instance) {
@@ -43787,15 +45099,15 @@ function resolveInstancePreDestroyMethods(classMetadata, instance) {
   if (preDestroyMethodNames.size === 0) {
     return;
   }
-  let result2 = void 0;
+  let result = void 0;
   for (const methodName of preDestroyMethodNames) {
-    if (result2 === void 0) {
-      result2 = resolveInstancePreDestroyMethod(instance, methodName);
+    if (result === void 0) {
+      result = resolveInstancePreDestroyMethod(instance, methodName);
     } else {
-      result2 = result2.then(() => resolveInstancePreDestroyMethod(instance, methodName));
+      result = result.then(() => resolveInstancePreDestroyMethod(instance, methodName));
     }
   }
-  return result2;
+  return result;
 }
 
 // node_modules/.pnpm/@inversifyjs+core@15.0.1_reflect-metadata@0.2.2/node_modules/@inversifyjs/core/lib/resolution/actions/resolveBindingServiceDeactivations.js
@@ -44435,14 +45747,14 @@ var BindingManager = class {
     await this.#unbindAll();
   }
   unbindAll() {
-    const result2 = this.#unbindAll();
-    if (result2 !== void 0) {
+    const result = this.#unbindAll();
+    if (result !== void 0) {
       throw new InversifyContainerError(InversifyContainerErrorKind.invalidOperation, "Unexpected asynchronous deactivation when unbinding all services. Consider using Container.unbindAllAsync() instead.");
     }
   }
   unbind(identifier) {
-    const result2 = this.#unbindAsync(identifier);
-    if (result2 !== void 0) {
+    const result = this.#unbindAsync(identifier);
+    if (result !== void 0) {
       this.#throwUnexpectedAsyncUnbindOperation(identifier);
     }
   }
@@ -44477,11 +45789,11 @@ var BindingManager = class {
   #unbindBindingIdentifier(identifier) {
     const bindingsIterable = this.#serviceReferenceManager.bindingService.getById(identifier.id);
     const bindings = bindingsIterable === void 0 ? void 0 : [...bindingsIterable];
-    const result2 = resolveBindingsDeactivations(this.#deactivationParams, bindingsIterable);
-    if (result2 === void 0) {
+    const result = resolveBindingsDeactivations(this.#deactivationParams, bindingsIterable);
+    if (result === void 0) {
       this.#clearAfterUnbindBindingIdentifier(bindings, identifier);
     } else {
-      return result2.then(() => {
+      return result.then(() => {
         this.#clearAfterUnbindBindingIdentifier(bindings, identifier);
       });
     }
@@ -44502,7 +45814,7 @@ var BindingManager = class {
       ...this.#serviceReferenceManager.bindingService.getNonParentBoundServices()
     ];
     const deactivationResults = nonParentBoundServiceIds.map((serviceId) => resolveServiceDeactivations(this.#deactivationParams, serviceId));
-    const hasAsyncDeactivations = deactivationResults.some((result2) => isPromise(result2));
+    const hasAsyncDeactivations = deactivationResults.some((result) => isPromise(result));
     if (hasAsyncDeactivations) {
       return Promise.all(deactivationResults).then(() => {
         this.#clearAfterUnbindAll(nonParentBoundServiceIds);
@@ -44521,11 +45833,11 @@ var BindingManager = class {
   #unbindServiceIdentifier(identifier) {
     const bindingsIterable = this.#serviceReferenceManager.bindingService.get(identifier);
     const bindings = bindingsIterable === void 0 ? void 0 : [...bindingsIterable];
-    const result2 = resolveBindingsDeactivations(this.#deactivationParams, bindingsIterable);
-    if (result2 === void 0) {
+    const result = resolveBindingsDeactivations(this.#deactivationParams, bindingsIterable);
+    if (result === void 0) {
       this.#clearAfterUnbindServiceIdentifier(identifier, bindings);
     } else {
-      return result2.then(() => {
+      return result.then(() => {
         this.#clearAfterUnbindServiceIdentifier(identifier, bindings);
       });
     }
@@ -44584,8 +45896,8 @@ var ContainerModuleManager = class {
   }
   load(...modules) {
     const results = this.#load(...modules);
-    for (const result2 of results) {
-      if (result2 !== void 0) {
+    for (const result of results) {
+      if (result !== void 0) {
         throw new InversifyContainerError(InversifyContainerErrorKind.invalidOperation, "Unexpected asynchronous module load. Consider using container.loadAsync() instead.");
       }
     }
@@ -44596,8 +45908,8 @@ var ContainerModuleManager = class {
   }
   unload(...modules) {
     const results = this.#unload(...modules);
-    for (const result2 of results) {
-      if (result2 !== void 0) {
+    for (const result of results) {
+      if (result !== void 0) {
         throw new InversifyContainerError(InversifyContainerErrorKind.invalidOperation, "Unexpected asynchronous module unload. Consider using container.unloadAsync() instead.");
       }
     }
@@ -45137,104 +46449,113 @@ var SERVICES = {
   eventClock: /* @__PURE__ */ Symbol("EventClock"),
   eventDependencies: /* @__PURE__ */ Symbol("ReconcileEventDependencies")
 };
-function createReferentialContainer(input = {}) {
-  const container = new Container({ defaultScope: "Singleton" });
-  const workspaceRoot = input.workspaceRoot ?? process.cwd();
-  container.bind(SERVICES.config).toConstantValue(input.config ?? createAutomationConfig());
-  container.bind(SERVICES.referentialRepository).toDynamicValue((context3) => {
-    const config = context3.get(SERVICES.config);
-    return new CsvReferentialRepository({
-      workspaceRoot,
-      hostsPath: config.referentials.hosts,
-      speakersPath: config.referentials.speakers
+var EventComposition = class _EventComposition {
+  /** One container per invocation: no credentials or cached data survive a run. */
+  static createReferentialContainer(input = {}) {
+    const container = new Container({ defaultScope: "Singleton" });
+    const workspaceRoot = input.workspaceRoot ?? process.cwd();
+    container.bind(SERVICES.config).toConstantValue(
+      input.config ?? AutomationConfigFactory.createAutomationConfig()
+    );
+    container.bind(SERVICES.referentialRepository).toDynamicValue((context3) => {
+      const config = context3.get(SERVICES.config);
+      return new CsvReferentialRepository({
+        workspaceRoot,
+        hostsPath: config.referentials.hosts,
+        speakersPath: config.referentials.speakers
+      });
     });
-  });
-  container.bind(SERVICES.issueFormProjection).toDynamicValue(() => new YamlIssueFormProjection({ workspaceRoot }));
-  container.bind(ValidateMeetupReferentials).toDynamicValue(
-    (context3) => new ValidateMeetupReferentials({
-      config: context3.get(SERVICES.config),
-      referentialRepository: context3.get(
-        SERVICES.referentialRepository
-      )
-    })
-  );
-  container.bind(SynchronizeMeetupIssueForm).toDynamicValue(
-    (context3) => new SynchronizeMeetupIssueForm({
-      validateReferentials: context3.get(ValidateMeetupReferentials),
-      issueFormProjection: context3.get(
-        SERVICES.issueFormProjection
-      )
-    })
-  );
-  return container;
-}
-function createEventContainer(input) {
-  const container = createReferentialContainer(input);
-  container.bind(SERVICES.eventRepository).toDynamicValue(() => new GitHubEventRepository(input.client, input));
-  container.bind(SERVICES.eventDocumentCodec).toDynamicValue((context3) => {
-    const config = context3.get(SERVICES.config);
-    return new GitHubIssueFormEventDocumentCodec({
-      timeZone: config.timezone,
-      hostConfirmationLabel: config.event["required-confirmation-labels"][0],
-      speakersConfirmationLabel: config.event["required-confirmation-labels"][1]
-    });
-  });
-  container.bind(SERVICES.eventCommentRepository).toDynamicValue(
-    () => new GitHubEventCommentRepository(input.client, {
-      owner: input.owner,
-      repo: input.repo,
-      authorLogin: input.commentAuthorLogin
-    })
-  );
-  container.bind(SERVICES.eventClock).toDynamicValue(() => new SystemEventClock());
-  container.bind(SERVICES.eventDependencies).toDynamicValue((context3) => {
-    const config = context3.get(SERVICES.config);
-    return {
-      repository: context3.get(SERVICES.eventRepository),
-      documentCodec: context3.get(
-        SERVICES.eventDocumentCodec
-      ),
-      commentRepository: context3.get(
-        SERVICES.eventCommentRepository
-      ),
-      clock: context3.get(SERVICES.eventClock),
-      rules: createDefaultEventRules({
-        meetup: config.event["issue-label"],
-        hostNeeded: "hoster:needed",
-        hostConfirmed: config.event["required-confirmation-labels"][0],
-        speakersNeeded: "speakers:needed",
-        speakersConfirmed: config.event["required-confirmation-labels"][1],
-        occurrencePostponed: "event:postponed",
-        occurrenceHeld: "event:held",
-        occurrenceCancelled: "event:cancelled"
+    container.bind(SERVICES.issueFormProjection).toDynamicValue(() => new YamlIssueFormProjection({ workspaceRoot }));
+    container.bind(ValidateMeetupReferentials).toDynamicValue(
+      (context3) => new ValidateMeetupReferentials({
+        config: context3.get(SERVICES.config),
+        referentialRepository: context3.get(
+          SERVICES.referentialRepository
+        )
       })
-    };
-  });
-  container.bind(ManageMeetupEvent).toDynamicValue(
-    (context3) => new ManageMeetupEvent({
-      config: context3.get(SERVICES.config),
-      referentialRepository: context3.get(
-        SERVICES.referentialRepository
-      ),
-      eventDependencies: context3.get(
-        SERVICES.eventDependencies
-      )
-    })
-  );
-  container.bind(ListActiveEvents).toDynamicValue(
-    (context3) => new ListActiveEvents({
-      repository: context3.get(SERVICES.eventRepository),
-      documentCodec: context3.get(
-        SERVICES.eventDocumentCodec
-      ),
-      clock: context3.get(SERVICES.eventClock),
-      rules: context3.get(
-        SERVICES.eventDependencies
-      ).rules
-    })
-  );
-  return container;
-}
+    );
+    container.bind(SynchronizeMeetupIssueForm).toDynamicValue(
+      (context3) => new SynchronizeMeetupIssueForm({
+        validateReferentials: context3.get(ValidateMeetupReferentials),
+        issueFormProjection: context3.get(
+          SERVICES.issueFormProjection
+        )
+      })
+    );
+    return container;
+  }
+  static createEventContainer(input) {
+    const container = _EventComposition.createReferentialContainer(input);
+    _EventComposition.bindEventAdapters(container, input);
+    container.bind(SERVICES.eventDependencies).toDynamicValue((context3) => {
+      const config = context3.get(SERVICES.config);
+      return {
+        repository: context3.get(SERVICES.eventRepository),
+        documentCodec: context3.get(
+          SERVICES.eventDocumentCodec
+        ),
+        commentRepository: context3.get(
+          SERVICES.eventCommentRepository
+        ),
+        clock: context3.get(SERVICES.eventClock),
+        rules: EventRuleFactory.createDefaultEventRules({
+          meetup: config.event["issue-label"],
+          hostNeeded: "hoster:needed",
+          hostConfirmed: config.event["required-confirmation-labels"][0],
+          speakersNeeded: "speakers:needed",
+          speakersConfirmed: config.event["required-confirmation-labels"][1],
+          occurrencePostponed: "event:postponed",
+          occurrenceHeld: "event:held",
+          occurrenceCancelled: "event:cancelled"
+        })
+      };
+    });
+    container.bind(ManageMeetupEvent).toDynamicValue(
+      (context3) => new ManageMeetupEvent({
+        config: context3.get(SERVICES.config),
+        referentialRepository: context3.get(
+          SERVICES.referentialRepository
+        ),
+        eventDependencies: context3.get(
+          SERVICES.eventDependencies
+        )
+      })
+    );
+    container.bind(ListActiveEvents).toDynamicValue(
+      (context3) => new ListActiveEvents({
+        repository: context3.get(SERVICES.eventRepository),
+        documentCodec: context3.get(
+          SERVICES.eventDocumentCodec
+        ),
+        clock: context3.get(SERVICES.eventClock),
+        rules: context3.get(
+          SERVICES.eventDependencies
+        ).rules
+      })
+    );
+    return container;
+  }
+  static bindEventAdapters(container, input) {
+    container.bind(SERVICES.eventRepository).toDynamicValue(() => new GitHubEventRepository(input.client, input));
+    container.bind(SERVICES.eventDocumentCodec).toDynamicValue((context3) => {
+      const config = context3.get(SERVICES.config);
+      return new GitHubIssueFormEventDocumentCodec({
+        repositoryRef: input.repositoryRef ?? (process.env.GITHUB_SHA || "main"),
+        timeZone: config.timezone,
+        hostConfirmationLabel: config.event["required-confirmation-labels"][0],
+        speakersConfirmationLabel: config.event["required-confirmation-labels"][1]
+      });
+    });
+    container.bind(SERVICES.eventCommentRepository).toDynamicValue(
+      () => new GitHubEventCommentRepository(input.client, {
+        owner: input.owner,
+        repo: input.repo,
+        authorLogin: input.commentAuthorLogin
+      })
+    );
+    container.bind(SERVICES.eventClock).toDynamicValue(() => new SystemEventClock());
+  }
+};
 
 // packages/runtime/github-actions/src/communication-composition.ts
 var COMMUNICATION_SERVICES = {
@@ -45243,285 +46564,193 @@ var COMMUNICATION_SERVICES = {
   notificationGateway: /* @__PURE__ */ Symbol("NotificationGateway"),
   ledgerFactory: /* @__PURE__ */ Symbol("DeliveryLedgerFactory")
 };
-function createCommunicationContainer(input) {
-  const container = createEventContainer(input);
-  const repository = container.get(
-    SERVICES.referentialRepository
-  );
-  let loaded;
-  container.rebind(SERVICES.referentialRepository).toConstantValue({
-    load: () => {
-      loaded ??= repository.load();
-      return loaded;
+var CommunicationComposition = class _CommunicationComposition {
+  static createCommunicationContainer(input) {
+    const container = EventComposition.createEventContainer(input);
+    _CommunicationComposition.bindRepositories(container, input);
+    _CommunicationComposition.bindGateways(container, input);
+    container.bind(COMMUNICATION_SERVICES.ledgerFactory).toDynamicValue(
+      () => (dispatchAuthorized) => new GithubDeliveryLedger(
+        new ScopedGithubLedgerCommentClient(
+          input.client,
+          input.owner,
+          input.repo,
+          input.issueNumber
+        ),
+        { dispatchAuthorized, authorLogin: input.commentAuthorLogin }
+      )
+    );
+    container.bind(PlanCommunications).toDynamicValue(() => new PlanCommunications());
+    container.bind(SystemCommunicationClock).toDynamicValue(() => new SystemCommunicationClock());
+    _CommunicationComposition.bindJourney(container, input);
+    return container;
+  }
+  static bindRepositories(container, input) {
+    const repository = container.get(
+      SERVICES.referentialRepository
+    );
+    let loaded;
+    container.rebind(SERVICES.referentialRepository).toConstantValue({
+      load: () => {
+        loaded ??= repository.load();
+        return loaded;
+      }
+    });
+    container.bind(
+      COMMUNICATION_SERVICES.approvalRepository
+    ).toDynamicValue(
+      () => new GithubCommunicationApprovalRepository(input.client, {
+        owner: input.owner,
+        repo: input.repo,
+        issueNumber: input.issueNumber,
+        trustedAuthorLogin: input.commentAuthorLogin
+      })
+    );
+  }
+  static bindGateways(container, input) {
+    container.bind(COMMUNICATION_SERVICES.mailGateway).toDynamicValue((context3) => {
+      if (!input.mailingsToken)
+        return {
+          dispatch: async () => ({
+            outcome: "uncertain",
+            diagnosticCode: "unknown-provider-state"
+          })
+        };
+      const client = getOctokit(input.mailingsToken);
+      return new GithubRepositoryDispatchMailGateway(
+        {
+          createDispatchEvent: (parameters) => client.rest.repos.createDispatchEvent(parameters)
+        },
+        context3.get(SERVICES.config).communication["mailings-repository"]
+      );
+    });
+    container.bind(COMMUNICATION_SERVICES.notificationGateway).toDynamicValue(() => new SlackNotificationGateway(input.slackToken));
+  }
+  static bindJourney(container, input) {
+    container.bind(ManageMeetupCommunications).toDynamicValue((context3) => {
+      const ledger = context3.get(
+        COMMUNICATION_SERVICES.ledgerFactory
+      );
+      const planner = context3.get(PlanCommunications);
+      const clock = context3.get(SystemCommunicationClock);
+      const mailGateway = context3.get(
+        COMMUNICATION_SERVICES.mailGateway
+      );
+      const notificationGateway = context3.get(
+        COMMUNICATION_SERVICES.notificationGateway
+      );
+      return new ManageMeetupCommunications({
+        config: context3.get(SERVICES.config),
+        eventRepository: context3.get(SERVICES.eventRepository),
+        referentialRepository: context3.get(
+          SERVICES.referentialRepository
+        ),
+        manageEvent: context3.get(ManageMeetupEvent),
+        approvalRepository: context3.get(
+          COMMUNICATION_SERVICES.approvalRepository
+        ),
+        actorCanApprove: async (actor) => {
+          if (!/^[A-Za-z0-9_.-]+$/.test(actor)) return false;
+          const { data } = await input.client.rest.repos.getCollaboratorPermissionLevel({
+            owner: input.owner,
+            repo: input.repo,
+            username: actor
+          });
+          return [data.permission, data.role_name].some(
+            (value) => ["admin", "maintain", "write", "triage"].includes(value)
+          );
+        },
+        reconcileCommunications: (dispatchAuthorized) => new ReconcileCommunications({
+          planner,
+          clock,
+          mailGateway,
+          notificationGateway,
+          ledger: ledger(dispatchAuthorized)
+        })
+      });
+    });
+  }
+};
+
+// packages/runtime/github-actions/src/communication.ts
+var CommunicationRuntime = class _CommunicationRuntime {
+  /** Translate runtime credentials into capabilities before entering the application. */
+  static async runCommunicationReconcile(input) {
+    _CommunicationRuntime.assertInput(input);
+    const config = AutomationConfigFactory.createAutomationConfig();
+    const runtimeDiagnostics = [];
+    const githubToken = input.githubToken.trim();
+    if (!githubToken) {
+      ManageMeetupCommunications.resolveCommunicationDispatchMode(
+        input,
+        config,
+        runtimeDiagnostics
+      );
+      runtimeDiagnostics.push({
+        code: "communication.github-credential-missing",
+        severity: "error"
+      });
+      return ManageMeetupCommunications.emptyCommunicationResult(
+        "check",
+        runtimeDiagnostics
+      );
     }
-  });
-  container.bind(
-    COMMUNICATION_SERVICES.approvalRepository
-  ).toDynamicValue(
-    () => new GithubCommunicationApprovalRepository(input.client, {
+    const mailingsToken = input.mailingsToken.trim();
+    const slackToken = input.slackToken.trim();
+    const slackChannelId = input.slackChannelId.trim();
+    const container = CommunicationComposition.createCommunicationContainer({
+      client: getOctokit(githubToken),
       owner: input.owner,
       repo: input.repo,
       issueNumber: input.issueNumber,
-      trustedAuthorLogin: input.commentAuthorLogin
-    })
-  );
-  container.bind(COMMUNICATION_SERVICES.mailGateway).toDynamicValue((context3) => {
-    if (!input.mailingsToken)
-      return {
-        dispatch: async () => ({
-          outcome: "uncertain",
-          diagnosticCode: "unknown-provider-state"
-        })
-      };
-    const client = getOctokit(input.mailingsToken);
-    return new GithubRepositoryDispatchMailGateway(
-      {
-        createDispatchEvent: (parameters) => client.rest.repos.createDispatchEvent(parameters)
-      },
-      context3.get(SERVICES.config).communication["mailings-repository"]
-    );
-  });
-  container.bind(COMMUNICATION_SERVICES.notificationGateway).toDynamicValue(() => new SlackNotificationGateway(input.slackToken));
-  container.bind(COMMUNICATION_SERVICES.ledgerFactory).toDynamicValue(
-    () => (dispatchAuthorized) => new GithubDeliveryLedger(
-      new ScopedGithubLedgerCommentClient(
-        input.client,
-        input.owner,
-        input.repo,
-        input.issueNumber
-      ),
-      { dispatchAuthorized, authorLogin: input.commentAuthorLogin }
-    )
-  );
-  container.bind(PlanCommunications).toDynamicValue(() => new PlanCommunications());
-  container.bind(SystemCommunicationClock).toDynamicValue(() => new SystemCommunicationClock());
-  container.bind(ManageMeetupCommunications).toDynamicValue((context3) => {
-    const ledger = context3.get(
-      COMMUNICATION_SERVICES.ledgerFactory
-    );
-    const planner = context3.get(PlanCommunications);
-    const clock = context3.get(SystemCommunicationClock);
-    const mailGateway = context3.get(
-      COMMUNICATION_SERVICES.mailGateway
-    );
-    const notificationGateway = context3.get(
-      COMMUNICATION_SERVICES.notificationGateway
-    );
-    return new ManageMeetupCommunications({
-      config: context3.get(SERVICES.config),
-      eventRepository: context3.get(SERVICES.eventRepository),
-      referentialRepository: context3.get(
-        SERVICES.referentialRepository
-      ),
-      manageEvent: context3.get(ManageMeetupEvent),
-      approvalRepository: context3.get(
-        COMMUNICATION_SERVICES.approvalRepository
-      ),
-      actorCanApprove: async (actor) => {
-        if (!/^[A-Za-z0-9_.-]+$/.test(actor)) return false;
-        const { data } = await input.client.rest.repos.getCollaboratorPermissionLevel({
-          owner: input.owner,
-          repo: input.repo,
-          username: actor
-        });
-        return [data.permission, data.role_name].some(
-          (value) => ["admin", "maintain", "write", "triage"].includes(value)
-        );
-      },
-      reconcileCommunications: (dispatchAuthorized) => new ReconcileCommunications({
-        planner,
-        clock,
-        mailGateway,
-        notificationGateway,
-        ledger: ledger(dispatchAuthorized)
-      })
+      commentAuthorLogin: input.managedCommentAuthor,
+      config,
+      workspaceRoot: input.workspaceRoot,
+      mailingsToken,
+      slackToken
     });
-  });
-  return container;
-}
-
-// packages/runtime/github-actions/src/communication.ts
-async function runCommunicationReconcile(input) {
-  assertInput(input);
-  const config = createAutomationConfig();
-  const runtimeDiagnostics = [];
-  const githubToken = input.githubToken.trim();
-  if (!githubToken) {
-    resolveCommunicationDispatchMode(input, config, runtimeDiagnostics);
-    runtimeDiagnostics.push({
-      code: "communication.github-credential-missing",
-      severity: "error"
+    const result = await container.get(ManageMeetupCommunications).execute({
+      issueNumber: input.issueNumber,
+      owner: input.owner,
+      repo: input.repo,
+      repositoryId: input.repositoryId,
+      automationRevision: input.automationRevision,
+      requestedMode: input.requestedMode,
+      dispatchAuthorized: input.dispatchAuthorized,
+      mailGatewayEnabled: mailingsToken.length > 0,
+      notificationGatewayEnabled: slackToken.length > 0,
+      notificationDestination: slackChannelId,
+      approvalTrigger: input.approvalTrigger,
+      notificationDestinationFingerprint: config.communication["slack-enabled"] && slackChannelId ? `sha256:${createHash2("sha256").update(slackChannelId).digest("hex")}` : null
     });
-    return emptyCommunicationResult("check", runtimeDiagnostics);
+    return result;
   }
-  const mailingsToken = input.mailingsToken.trim();
-  const slackToken = input.slackToken.trim();
-  const slackChannelId = input.slackChannelId.trim();
-  const container = createCommunicationContainer({
-    client: getOctokit(githubToken),
-    owner: input.owner,
-    repo: input.repo,
-    issueNumber: input.issueNumber,
-    commentAuthorLogin: input.managedCommentAuthor,
-    config,
-    workspaceRoot: input.workspaceRoot,
-    mailingsToken,
-    slackToken
-  });
-  const result2 = await container.get(ManageMeetupCommunications).execute({
-    issueNumber: input.issueNumber,
-    owner: input.owner,
-    repo: input.repo,
-    repositoryId: input.repositoryId,
-    automationRevision: input.automationRevision,
-    requestedMode: input.requestedMode,
-    dispatchAuthorized: input.dispatchAuthorized,
-    mailGatewayEnabled: mailingsToken.length > 0,
-    notificationGatewayEnabled: slackToken.length > 0,
-    notificationDestination: slackChannelId,
-    approvalTrigger: input.approvalTrigger,
-    notificationDestinationFingerprint: config.communication["slack-enabled"] && slackChannelId ? `sha256:${createHash2("sha256").update(slackChannelId).digest("hex")}` : null
-  });
-  return result2;
-}
-function assertInput(input) {
-  if (!Number.isSafeInteger(input.issueNumber) || input.issueNumber <= 0) {
-    throw new Error("issueNumber must be a positive integer");
+  static assertInput(input) {
+    if (!Number.isSafeInteger(input.issueNumber) || input.issueNumber <= 0) {
+      throw new Error("issueNumber must be a positive integer");
+    }
+    if (!_CommunicationRuntime.isRepositoryPart(input.owner) || !_CommunicationRuntime.isRepositoryPart(input.repo)) {
+      throw new Error(
+        "owner and repo must be valid GitHub repository segments"
+      );
+    }
+    if (!input.managedCommentAuthor.trim()) {
+      throw new Error("managedCommentAuthor must not be empty");
+    }
+    if (!CommunicationIdempotency.isSafeCommunicationIdentifier(
+      input.automationRevision.trim()
+    )) {
+      throw new Error(
+        "automationRevision must be a stable, PII-free revision identifier"
+      );
+    }
   }
-  if (!isRepositoryPart(input.owner) || !isRepositoryPart(input.repo)) {
-    throw new Error("owner and repo must be valid GitHub repository segments");
+  static isRepositoryPart(value) {
+    return /^[A-Za-z0-9_.-]+$/.test(value);
   }
-  if (!input.managedCommentAuthor.trim()) {
-    throw new Error("managedCommentAuthor must not be empty");
-  }
-  if (!isSafeCommunicationIdentifier(input.automationRevision.trim())) {
-    throw new Error(
-      "automationRevision must be a stable, PII-free revision identifier"
-    );
-  }
-}
-function isRepositoryPart(value) {
-  return /^[A-Za-z0-9_.-]+$/.test(value);
-}
-
-// packages/runtime/github-actions/src/runtime-input.ts
-var SAFE_ERROR_NAMES = /* @__PURE__ */ new Set([
-  "GoogleDriveAssetRepositoryError",
-  "EventNotFoundError",
-  "EventConcurrentModificationError",
-  "GitHubEventRepositoryConfigurationError",
-  "GitHubEventRepositoryScopeError",
-  "GitHubEventRepositoryResponseError",
-  "GitHubEventCommentRepositoryConfigurationError",
-  "GitHubEventCommentRepositoryScopeError",
-  "GitHubEventCommentRepositoryResponseError"
-]);
-function positiveIntegerInput(name, value) {
-  if (!/^\d+$/.test(value)) {
-    throw new Error(`${name} must be a positive integer`);
-  }
-  const parsed = Number(value);
-  if (!Number.isSafeInteger(parsed) || parsed <= 0) {
-    throw new Error(`${name} must be a positive integer`);
-  }
-  return parsed;
-}
-function enumInput(name, value, allowed) {
-  if (!allowed.includes(value)) {
-    throw new Error(`${name} must be one of: ${allowed.join(", ")}`);
-  }
-  return value;
-}
-function booleanInput(name, value) {
-  if (value === "true") return true;
-  if (value === "false") return false;
-  throw new Error(`${name} must be true or false`);
-}
-function publicErrorMessage(error2) {
-  if (error2 instanceof Error && SAFE_ERROR_NAMES.has(error2.name)) {
-    return `${error2.name}: ${error2.message}`;
-  }
-  return "Meetup automation failed; inspect debug logs using a trusted runner";
-}
+};
 
 // packages/runtime/github-actions/src/communication-action.ts
-async function runCommunicationReconcileAction() {
-  const issueNumber2 = positiveIntegerInput(
-    "issue-number",
-    getInput("issue-number", { required: true })
-  );
-  const requestedMode = enumInput(
-    "mode",
-    getInput("mode", { required: true }),
-    ["check", "dispatch"]
-  );
-  const dispatchAuthorized = booleanInput(
-    "dispatch-authorized",
-    getInput("dispatch-authorized", { required: true })
-  );
-  const { owner, repo } = context2.repo;
-  const issueSnapshot = context2.payload.issue ? mapGitHubIssueDocument(context2.payload.issue, `${owner}/${repo}`) ?? void 0 : void 0;
-  const outcome = await runCommunicationReconcile({
-    issueNumber: issueNumber2,
-    requestedMode,
-    dispatchAuthorized,
-    githubToken: getInput("github-token", { required: true }),
-    mailingsToken: getInput("mailings-token"),
-    slackToken: getInput("slack-token"),
-    slackChannelId: process.env.SLACK_CHANNEL_ID ?? "",
-    owner,
-    repo,
-    repositoryId: process.env.GITHUB_REPOSITORY_ID,
-    automationRevision: process.env.GITHUB_SHA ?? "",
-    managedCommentAuthor: getInput("managed-comment-author", {
-      required: true
-    }),
-    approvalTrigger: {
-      action: typeof context2.payload.action === "string" ? context2.payload.action : "",
-      label: context2.payload.label && typeof context2.payload.label === "object" && "name" in context2.payload.label && typeof context2.payload.label.name === "string" ? context2.payload.label.name : "",
-      actor: context2.actor,
-      ...issueSnapshot ? { issueSnapshot } : {}
-    }
-  });
-  const diagnostics = [
-    ...outcome.diagnostics.map(domainDiagnostic),
-    ...outcome.runtimeDiagnostics.map(runtimeDiagnostic)
-  ];
-  setJsonOutput(
-    "result",
-    resultEnvelope(
-      {
-        mode: outcome.mode,
-        counts: outcome.counts,
-        intentIds: outcome.intentIds.map(publicIntentIdentifier)
-      },
-      diagnostics
-    )
-  );
-  setOutput("planned-count", String(outcome.counts.planned));
-  setOutput("dispatched-count", String(outcome.counts.dispatched));
-  setDiagnosticsOutput(diagnostics);
-  if (diagnostics.some(({ severity }) => severity === "error")) {
-    setFailed("Communication reconciliation failed; inspect diagnostics.");
-  }
-}
-function publicIntentIdentifier(value) {
-  return `sha256:${createHash3("sha256").update(value).digest("hex")}`;
-}
-function domainDiagnostic(diagnostic3) {
-  return {
-    code: `communication.${diagnostic3.code}`,
-    severity: diagnostic3.severity,
-    message: COMMUNICATION_MESSAGES[diagnostic3.code]
-  };
-}
-function runtimeDiagnostic(diagnostic3) {
-  return {
-    code: diagnostic3.code,
-    severity: diagnostic3.severity,
-    message: RUNTIME_MESSAGES[diagnostic3.code]
-  };
-}
 var COMMUNICATION_MESSAGES = {
   "duplicate-intent": "A duplicate communication intent was ignored.",
   "gateway-delivery-uncertain": "A gateway could not confirm delivery.",
@@ -45561,11 +46790,98 @@ var RUNTIME_MESSAGES = {
   "communication.notification-gateway-disabled-missing-destination": "Notifications are disabled because their destination is unavailable.",
   "communication.referential-catalog-invalid": "Communications are disabled because the referential catalog is invalid."
 };
+var CommunicationAction = class _CommunicationAction {
+  static async runCommunicationReconcileAction() {
+    const issueNumber = RuntimeInput.positiveIntegerInput(
+      "issue-number",
+      getInput("issue-number", { required: true })
+    );
+    const requestedMode = RuntimeInput.enumInput(
+      "mode",
+      getInput("mode", { required: true }),
+      ["check", "dispatch"]
+    );
+    const dispatchAuthorized = RuntimeInput.booleanInput(
+      "dispatch-authorized",
+      getInput("dispatch-authorized", { required: true })
+    );
+    const { owner, repo } = context2.repo;
+    const issueSnapshot = context2.payload.issue ? GitHubEventRepository.mapGitHubIssueDocument(
+      context2.payload.issue,
+      `${owner}/${repo}`
+    ) ?? void 0 : void 0;
+    const outcome = await CommunicationRuntime.runCommunicationReconcile({
+      issueNumber,
+      requestedMode,
+      dispatchAuthorized,
+      githubToken: getInput("github-token", { required: true }),
+      mailingsToken: getInput("mailings-token"),
+      slackToken: getInput("slack-token"),
+      slackChannelId: process.env.SLACK_CHANNEL_ID ?? "",
+      owner,
+      repo,
+      repositoryId: process.env.GITHUB_REPOSITORY_ID,
+      automationRevision: process.env.GITHUB_SHA ?? "",
+      managedCommentAuthor: getInput("managed-comment-author", {
+        required: true
+      }),
+      approvalTrigger: {
+        action: typeof context2.payload.action === "string" ? context2.payload.action : "",
+        label: context2.payload.label && typeof context2.payload.label === "object" && "name" in context2.payload.label && typeof context2.payload.label.name === "string" ? context2.payload.label.name : "",
+        actor: context2.actor,
+        ...issueSnapshot ? { issueSnapshot } : {}
+      }
+    });
+    _CommunicationAction.report(outcome);
+  }
+  static publicIntentIdentifier(value) {
+    return `sha256:${createHash3("sha256").update(value).digest("hex")}`;
+  }
+  static domainDiagnostic(diagnostic) {
+    return {
+      code: `communication.${diagnostic.code}`,
+      severity: diagnostic.severity,
+      message: COMMUNICATION_MESSAGES[diagnostic.code]
+    };
+  }
+  static runtimeDiagnostic(diagnostic) {
+    return {
+      code: diagnostic.code,
+      severity: diagnostic.severity,
+      message: RUNTIME_MESSAGES[diagnostic.code]
+    };
+  }
+  static report(outcome) {
+    const diagnostics = [
+      ...outcome.diagnostics.map(_CommunicationAction.domainDiagnostic),
+      ...outcome.runtimeDiagnostics.map(_CommunicationAction.runtimeDiagnostic)
+    ];
+    ActionOutput.setJsonOutput(
+      "result",
+      ResultEnvelopeFactory.resultEnvelope(
+        {
+          mode: outcome.mode,
+          counts: outcome.counts,
+          intentIds: outcome.intentIds.map(
+            _CommunicationAction.publicIntentIdentifier
+          )
+        },
+        diagnostics
+      )
+    );
+    setOutput("planned-count", String(outcome.counts.planned));
+    setOutput("dispatched-count", String(outcome.counts.dispatched));
+    ActionOutput.setDiagnosticsOutput(diagnostics);
+    if (diagnostics.some(({ severity }) => severity === "error")) {
+      setFailed(
+        "Communication reconciliation failed; inspect diagnostics."
+      );
+    }
+  }
+};
 
 // packages/runtime/github-actions/src/entrypoints/communication-reconcile.ts
-runCommunicationReconcileAction().catch((error2) => {
-  setFailed(publicErrorMessage(error2));
-});
+ActionRunner.run(CommunicationAction.runCommunicationReconcileAction);
 /*! Bundled license information:
 
 undici/lib/web/fetch/body.js:

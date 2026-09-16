@@ -15,14 +15,16 @@ export interface ResultEnvelope<T extends object = Record<string, never>> {
 	data: T;
 }
 
-export function resultEnvelope<T extends object>(
-	data: T,
-	diagnostics: readonly PublicDiagnostic[],
-): ResultEnvelope<T> {
-	return {
-		schemaVersion: 1,
-		status: diagnostics.length === 0 ? "ok" : "diagnostics",
-		diagnostics,
-		data,
-	};
+export class ResultEnvelopeFactory {
+	static resultEnvelope<T extends object>(
+		data: T,
+		diagnostics: readonly PublicDiagnostic[],
+	): ResultEnvelope<T> {
+		return {
+			schemaVersion: 1,
+			status: diagnostics.length === 0 ? "ok" : "diagnostics",
+			diagnostics,
+			data,
+		};
+	}
 }

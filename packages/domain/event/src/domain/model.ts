@@ -19,6 +19,8 @@ export type EventLifecycleState =
 	| "follow-up-complete";
 
 export type ParticipantReference = Readonly<{
+	/** Resolved catalog location for presentation, never a participant identity. */
+	source?: Readonly<{ path: string; line: number }>;
 	id?: string;
 	displayName: string;
 }>;
@@ -74,30 +76,6 @@ export const EXPECTED_POST_EVENT_TASK_NAMES = Object.freeze([
 ] as const);
 
 /**
- * A post-event checklist is complete only when it contains each expected task
- * exactly once, contains no additional task, and every task is completed.
- */
-export function postEventChecklistIsComplete(
-	items: readonly OperationalChecklistItem[],
-): boolean {
-	if (items.length !== EXPECTED_POST_EVENT_TASK_NAMES.length) {
-		return false;
-	}
-
-	const itemByName = new Map<string, OperationalChecklistItem>();
-	for (const item of items) {
-		if (itemByName.has(item.name)) {
-			return false;
-		}
-		itemByName.set(item.name, item);
-	}
-
-	return EXPECTED_POST_EVENT_TASK_NAMES.every(
-		(name) => itemByName.get(name)?.completed === true,
-	);
-}
-
-/**
  * Technology-independent representation of a meetup event.
  *
  * Fields may be empty while an event is being drafted. Invalid transport
@@ -124,33 +102,61 @@ export type MeetupEvent = Readonly<{
 	followUpComplete: boolean;
 }>;
 
-export function cloneMeetupEvent(event: MeetupEvent): MeetupEvent {
-	const operationalChecklists = {
-		slidesAndContent: event.operationalChecklists.slidesAndContent.map(
-			(item) => ({ ...item }),
-		),
-		communication: event.operationalChecklists.communication.map((item) => ({
-			...item,
-		})),
-		postEvent: event.operationalChecklists.postEvent.map((item) => ({
-			...item,
-		})),
-	};
-	return {
-		...event,
-		identity: { ...event.identity },
-		labels: [...event.labels],
-		host: event.host ? { ...event.host } : undefined,
-		agenda: event.agenda.map((entry) => ({
-			...entry,
-			speakers: entry.speakers.map((speaker) => ({ ...speaker })),
-		})),
-		publicationLinks: { ...event.publicationLinks },
-		confirmations: { ...event.confirmations },
-		logistics: { ...event.logistics },
-		operationalChecklists,
-		followUpComplete:
-			event.followUpComplete &&
-			postEventChecklistIsComplete(operationalChecklists.postEvent),
-	};
+export class MeetupEventOperations {
+	/**
+	 * A post-event checklist is complete only when it contains each expected task
+	 * exactly once, contains no additional task, and every task is completed.
+	 */
+	static postEventChecklistIsComplete(
+		items: readonly OperationalChecklistItem[],
+	): boolean {
+		if (items.length !== EXPECTED_POST_EVENT_TASK_NAMES.length) {
+			return false;
+		}
+
+		const itemByName = new Map<string, OperationalChecklistItem>();
+		for (const item of items) {
+			if (itemByName.has(item.name)) {
+				return false;
+			}
+			itemByName.set(item.name, item);
+		}
+
+		return EXPECTED_POST_EVENT_TASK_NAMES.every(
+			(name) => itemByName.get(name)?.completed === true,
+		);
+	}
+
+	static cloneMeetupEvent(event: MeetupEvent): MeetupEvent {
+		const operationalChecklists = {
+			slidesAndContent: event.operationalChecklists.slidesAndContent.map(
+				(item) => ({ ...item }),
+			),
+			communication: event.operationalChecklists.communication.map((item) => ({
+				...item,
+			})),
+			postEvent: event.operationalChecklists.postEvent.map((item) => ({
+				...item,
+			})),
+		};
+		return {
+			...event,
+			identity: { ...event.identity },
+			labels: [...event.labels],
+			host: event.host ? { ...event.host } : undefined,
+			agenda: event.agenda.map((entry) => ({
+				...entry,
+				speakers: entry.speakers.map((speaker) => ({ ...speaker })),
+			})),
+			publicationLinks: { ...event.publicationLinks },
+			confirmations: { ...event.confirmations },
+			logistics: { ...event.logistics },
+			operationalChecklists,
+			followUpComplete:
+				event.followUpComplete &&
+				MeetupEventOperations.postEventChecklistIsComplete(
+					operationalChecklists.postEvent,
+				),
+		};
+	}
 }

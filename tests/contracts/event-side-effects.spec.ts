@@ -1,32 +1,37 @@
 import { describe, expect, it } from "vitest";
 import {
 	type ActionManifest,
-	type Step,
 	automationActionPrefix,
 	findStep,
 	managedAuthor,
 	readWorkflow,
 	readYaml,
+	type Step,
 	sortedKeys,
 	workflowExpression,
 } from "./support.js";
 
 describe("event side-effect safeguards", () => {
-	it("keeps asset mutations optional and protected by the shared event lock", async () => {
-		const action = await readYaml<ActionManifest>(
-			"actions/publication/reconcile-assets/action.yml",
-		);
-		expect(action.inputs?.["google-credentials"]?.required).toBe(false);
-		for (const [name, jobName] of [
-			["update-meetup-issue", "manage"],
-			["check-active-meetup-issues", "audit"],
-		] as const) {
+	it.each([
+		["update-meetup-issue", "manage"],
+		["check-active-meetup-issues", "audit"],
+	] as const)(
+		"keeps asset mutations optional and locked in %s",
+		async (name, jobName) => {
+			// Arrange
+			const actionPath = "actions/publication/reconcile-assets/action.yml";
+
+			// Act
+			const action = await readYaml<ActionManifest>(actionPath);
 			const workflow = await readWorkflow(name);
 			const job = workflow.jobs?.[jobName] ?? {};
 			const step = findStep(
 				job,
 				`${automationActionPrefix}publication/reconcile-assets`,
 			);
+
+			// Assert
+			expect(action.inputs?.["google-credentials"]?.required).toBe(false);
 			expect(job.concurrency?.["cancel-in-progress"]).toBe(false);
 			expect(step?.with).toMatchObject({
 				mode: "fix",
@@ -52,15 +57,19 @@ describe("event side-effect safeguards", () => {
 					"google-drive-meetup-template-folder-id"
 				],
 			).toBeDefined();
-		}
-	});
+		},
+	);
 
 	it("shares one non-cancelling event lock between issue and audit paths", async () => {
+		// Arrange
 		const manage = await readWorkflow("update-meetup-issue");
 		const audit = await readWorkflow("check-active-meetup-issues");
 		const manageLock = manage.jobs?.manage.concurrency;
+
+		// Act
 		const auditLock = audit.jobs?.audit.concurrency;
 
+		// Assert
 		expect(manageLock).toEqual({
 			"cancel-in-progress": false,
 			group: `meetup-event-${workflowExpression("github.repository_id")}-${workflowExpression("github.event.issue.number")}`,
@@ -71,11 +80,16 @@ describe("event side-effect safeguards", () => {
 		});
 	});
 
-	it("derives managed authors from the scoped application token", async () => {
-		for (const [workflowName, jobName] of [
-			["update-meetup-issue", "manage"],
-			["check-active-meetup-issues", "audit"],
-		] as const) {
+	it.each([
+		["update-meetup-issue", "manage"],
+		["check-active-meetup-issues", "audit"],
+	] as const)(
+		"derives managed authors from the scoped token in %s",
+		async (workflowName, jobName) => {
+			// Arrange
+			const actions = ["event/reconcile", "communication/reconcile"];
+
+			// Act
 			const workflow = await readWorkflow(workflowName);
 			const job = workflow.jobs?.[jobName] ?? {};
 			const appTokenIndex = (job.steps ?? []).findIndex(
@@ -83,50 +97,62 @@ describe("event side-effect safeguards", () => {
 					step.id === "app-token" &&
 					step.uses?.startsWith("actions/create-github-app-token@"),
 			);
-			for (const action of ["event/reconcile", "communication/reconcile"]) {
+			const actionSteps = actions.map((action) => {
 				const stepIndex = (job.steps ?? []).findIndex(
 					(step: Step) => step.uses === `${automationActionPrefix}${action}`,
 				);
+				return { stepIndex, step: job.steps?.[stepIndex] };
+			});
+
+			// Assert
+			for (const { stepIndex, step } of actionSteps) {
 				expect(stepIndex).toBeGreaterThan(appTokenIndex);
-				expect(job.steps?.[stepIndex].with?.["managed-comment-author"]).toBe(
-					managedAuthor,
-				);
+				expect(step?.with?.["managed-comment-author"]).toBe(managedAuthor);
 			}
 			expect(workflow.on?.workflow_call?.inputs ?? {}).not.toHaveProperty(
 				"managed-comment-author",
 			);
-		}
-	});
+		},
+	);
 
-	it("authorizes dispatch only in the two officially locked jobs", async () => {
-		const expected = [
-			{
-				job: "manage",
-				mode: "dispatch",
-				workflow: "update-meetup-issue",
-			},
-			{
-				job: "audit",
-				mode: "dispatch",
-				workflow: "check-active-meetup-issues",
-			},
-		] as const;
+	it.each([
+		{
+			job: "manage",
+			mode: "dispatch",
+			workflow: "update-meetup-issue",
+		},
+		{
+			job: "audit",
+			mode: "dispatch",
+			workflow: "check-active-meetup-issues",
+		},
+	] as const)(
+		"authorizes dispatch under the event lock in $workflow",
+		async (item) => {
+			// Arrange
+			// Use the shared fixtures.
 
-		for (const item of expected) {
+			// Act
 			const workflow = await readWorkflow(item.workflow);
 			const job = workflow.jobs?.[item.job] ?? {};
 			const step = findStep(
 				job,
 				`${automationActionPrefix}communication/reconcile`,
 			);
+
+			// Assert
 			expect(job.concurrency?.["cancel-in-progress"]).toBe(false);
 			expect(step?.with?.mode).toBe(item.mode);
 			expect(step?.with?.["dispatch-authorized"]).toBe("true");
-		}
-	});
+		},
+	);
 
 	it("keeps scheduled audits code-owned and config-gated", async () => {
-		const workflow = await readWorkflow("check-active-meetup-issues");
+		// Arrange
+		const workflowName = "check-active-meetup-issues";
+
+		// Act
+		const workflow = await readWorkflow(workflowName);
 		const job = workflow.jobs?.audit ?? {};
 		const token = (job.steps ?? []).find(
 			(step: Step) => step.id === "app-token",
@@ -136,7 +162,11 @@ describe("event side-effect safeguards", () => {
 			job,
 			`${automationActionPrefix}communication/reconcile`,
 		);
+		const summary = (job.steps ?? []).find(
+			(step: Step) => step.name === "Add redacted audit summary",
+		);
 
+		// Assert
 		expect(sortedKeys(workflow.on?.workflow_call?.inputs)).toEqual([
 			"github-app-id",
 			"google-drive-meetup-folder-id",
@@ -152,9 +182,6 @@ describe("event side-effect safeguards", () => {
 		expect(communication?.with?.mode).toBe("dispatch");
 		expect(communication?.env?.SLACK_CHANNEL_ID).toBe(
 			workflowExpression("inputs.slack-channel-id"),
-		);
-		const summary = (job.steps ?? []).find(
-			(step: Step) => step.name === "Add redacted audit summary",
 		);
 		expect(summary?.if).toBe("always()");
 		expect(sortedKeys(summary?.env)).toEqual([
@@ -195,12 +222,15 @@ describe("event side-effect safeguards", () => {
 	});
 
 	it("blocks issue-form synchronization when referentials are invalid", async () => {
+		// Arrange
 		const workflow = await readWorkflow("update-meetup-issue-form");
 		const steps = workflow.jobs?.synchronize?.steps ?? [];
 		const validation = findStep(
 			workflow.jobs?.synchronize ?? {},
 			`${automationActionPrefix}referential/validate`,
 		);
+
+		// Act
 		const enforcement = steps.find(
 			(step: Step) => step.name === "Enforce valid referentials",
 		);
@@ -208,14 +238,14 @@ describe("event side-effect safeguards", () => {
 			workflow.jobs?.synchronize ?? {},
 			`${automationActionPrefix}referential/sync-issue-form`,
 		);
+		const actual = steps.indexOf(enforcement as Step);
 
+		// Assert
 		expect(validation?.id).toBe("referentials");
 		expect(enforcement?.if).toBe(
 			"steps.referentials.outputs.is-valid != 'true'",
 		);
 		expect(enforcement?.run).toContain("exit 1");
-		expect(steps.indexOf(enforcement as Step)).toBeLessThan(
-			steps.indexOf(projection as Step),
-		);
+		expect(actual).toBeLessThan(steps.indexOf(projection as Step));
 	});
 });

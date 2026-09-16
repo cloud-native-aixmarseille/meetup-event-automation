@@ -1,7 +1,4 @@
-import * as core from "@actions/core";
-import { runPublicationReconcileAssetsAction } from "../publication-action.js";
-import { publicErrorMessage } from "../runtime-input.js";
+import { ActionRunner } from "../action-runner.js";
+import { PublicationAction } from "../publication-action.js";
 
-runPublicationReconcileAssetsAction().catch((error: unknown) => {
-	core.setFailed(publicErrorMessage(error));
-});
+ActionRunner.run(PublicationAction.runPublicationReconcileAssetsAction);

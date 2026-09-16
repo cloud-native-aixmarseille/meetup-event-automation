@@ -15400,8 +15400,8 @@ var require_cache = __commonJS({
                 }));
               } else if (response.headersList.contains("vary")) {
                 const fieldValues = getFieldValues(response.headersList.get("vary"));
-                for (const fieldValue2 of fieldValues) {
-                  if (fieldValue2 === "*") {
+                for (const fieldValue of fieldValues) {
+                  if (fieldValue === "*") {
                     responsePromise.reject(webidl.errors.exception({
                       header: "Cache.addAll",
                       message: "invalid vary field value"
@@ -15483,8 +15483,8 @@ var require_cache = __commonJS({
         }
         if (innerResponse.headersList.contains("vary")) {
           const fieldValues = getFieldValues(innerResponse.headersList.get("vary"));
-          for (const fieldValue2 of fieldValues) {
-            if (fieldValue2 === "*") {
+          for (const fieldValue of fieldValues) {
+            if (fieldValue === "*") {
               throw webidl.errors.exception({
                 header: prefix,
                 message: "Got * vary field value"
@@ -15747,12 +15747,12 @@ var require_cache = __commonJS({
           return true;
         }
         const fieldValues = getFieldValues(response.headersList.get("vary"));
-        for (const fieldValue2 of fieldValues) {
-          if (fieldValue2 === "*") {
+        for (const fieldValue of fieldValues) {
+          if (fieldValue === "*") {
             return false;
           }
-          const requestValue = request.headersList.get(fieldValue2);
-          const queryValue = requestQuery.headersList.get(fieldValue2);
+          const requestValue = request.headersList.get(fieldValue);
+          const queryValue = requestQuery.headersList.get(fieldValue);
           if (requestValue !== queryValue) {
             return false;
           }
@@ -27351,6 +27351,16 @@ var ExitCode;
   ExitCode2[ExitCode2["Success"] = 0] = "Success";
   ExitCode2[ExitCode2["Failure"] = 1] = "Failure";
 })(ExitCode || (ExitCode = {}));
+function getInput(name, options) {
+  const val = process.env[`INPUT_${name.replace(/ /g, "_").toUpperCase()}`] || "";
+  if (options && options.required && !val) {
+    throw new Error(`Input required and not supplied: ${name}`);
+  }
+  if (options && options.trimWhitespace === false) {
+    return val;
+  }
+  return val.trim();
+}
 function setOutput(name, value) {
   const filePath = process.env["GITHUB_OUTPUT"] || "";
   if (filePath) {
@@ -27367,7 +27377,280 @@ function error(message, properties = {}) {
   issueCommand("error", toCommandProperties(properties), message instanceof Error ? message.toString() : message);
 }
 
-// packages/domain/publication/src/domain/url-policy.ts
+// packages/runtime/github-actions/src/runtime-input.ts
+var SAFE_ERROR_NAMES = /* @__PURE__ */ new Set([
+  "GoogleDriveAssetRepositoryError",
+  "EventNotFoundError",
+  "EventConcurrentModificationError",
+  "GitHubEventRepositoryConfigurationError",
+  "GitHubEventRepositoryScopeError",
+  "GitHubEventRepositoryResponseError",
+  "GitHubEventCommentRepositoryConfigurationError",
+  "GitHubEventCommentRepositoryScopeError",
+  "GitHubEventCommentRepositoryResponseError"
+]);
+var RuntimeInput = class {
+  static positiveIntegerInput(name, value) {
+    if (!/^\d+$/.test(value)) {
+      throw new Error(`${name} must be a positive integer`);
+    }
+    const parsed = Number(value);
+    if (!Number.isSafeInteger(parsed) || parsed <= 0) {
+      throw new Error(`${name} must be a positive integer`);
+    }
+    return parsed;
+  }
+  static enumInput(name, value, allowed) {
+    if (!allowed.includes(value)) {
+      throw new Error(`${name} must be one of: ${allowed.join(", ")}`);
+    }
+    return value;
+  }
+  static booleanInput(name, value) {
+    if (value === "true") return true;
+    if (value === "false") return false;
+    throw new Error(`${name} must be true or false`);
+  }
+  /** Never expose provider responses, input values, or contact data in failures. */
+  static publicErrorMessage(error2) {
+    if (error2 instanceof Error && SAFE_ERROR_NAMES.has(error2.name)) {
+      return `${error2.name}: ${error2.message}`;
+    }
+    return "Meetup automation failed; inspect debug logs using a trusted runner";
+  }
+};
+
+// packages/runtime/github-actions/src/action-runner.ts
+var ActionRunner = class {
+  static async run(operation) {
+    try {
+      await operation();
+    } catch (error2) {
+      setFailed(RuntimeInput.publicErrorMessage(error2));
+    }
+  }
+};
+
+// packages/domain/publication/src/domain/publication-link-evaluation.ts
+var PublicationLinkEvaluation = class _PublicationLinkEvaluation {
+  static evaluateLink({
+    references,
+    path,
+    prefixes,
+    identifierPattern,
+    code,
+    message
+  }) {
+    const raw = references[path];
+    if (raw === void 0 || raw === "") {
+      return _PublicationLinkEvaluation.emptyEvaluation(references);
+    }
+    const normalized = raw.trim().replace(/\/$/, "");
+    const matchingPrefix = prefixes.find(
+      (prefix) => normalized.startsWith(prefix)
+    );
+    const identifier = matchingPrefix ? normalized.slice(matchingPrefix.length) : void 0;
+    if (!_PublicationLinkEvaluation.isHttpsUrl(normalized) || !matchingPrefix || !identifier || !identifierPattern.test(identifier)) {
+      return {
+        references,
+        diagnostics: [
+          Object.freeze({
+            code,
+            severity: "error",
+            field: path,
+            message
+          })
+        ],
+        patch: Object.freeze({ operations: [] })
+      };
+    }
+    if (raw === normalized) {
+      return _PublicationLinkEvaluation.emptyEvaluation(references);
+    }
+    const operation = Object.freeze({
+      op: "replace",
+      path,
+      value: normalized,
+      reason: "Trim URL and remove its trailing slash"
+    });
+    return {
+      references: { ...references, [path]: normalized },
+      diagnostics: [
+        Object.freeze({
+          code: `publication.${path}.normalized`,
+          severity: "info",
+          field: path,
+          message: `${path} URL can be normalized safely`,
+          fixAvailable: true
+        })
+      ],
+      patch: Object.freeze({ operations: Object.freeze([operation]) })
+    };
+  }
+  static emptyEvaluation(references) {
+    return {
+      references,
+      diagnostics: [],
+      patch: Object.freeze({ operations: [] })
+    };
+  }
+  static isHttpsUrl(value) {
+    try {
+      return new URL(value).protocol === "https:";
+    } catch {
+      return false;
+    }
+  }
+};
+
+// packages/domain/publication/src/domain/asset-folder-url-policy.ts
+var AssetFolderUrlPolicy = class {
+  constructor(prefix) {
+    this.prefix = prefix;
+  }
+  prefix;
+  id = "asset-folder-url";
+  evaluate(references) {
+    return PublicationLinkEvaluation.evaluateLink({
+      references,
+      path: "assets",
+      prefixes: [this.prefix],
+      identifierPattern: /^[a-zA-Z0-9_-]+$/,
+      code: "publication.asset-url.invalid",
+      message: `Asset folder URL must start with ${this.prefix} and end with a folder identifier`
+    });
+  }
+};
+
+// packages/domain/publication/src/domain/community-event-url-policy.ts
+var CommunityEventUrlPolicy = class {
+  constructor(prefixes) {
+    this.prefixes = prefixes;
+  }
+  prefixes;
+  id = "community-event-url";
+  evaluate(references) {
+    return PublicationLinkEvaluation.evaluateLink({
+      references,
+      path: "community",
+      prefixes: this.prefixes,
+      identifierPattern: /^[0-9a-z-]+$/,
+      code: "publication.community-url.invalid",
+      message: "Community event URL must use an approved CNCF/OCGroups prefix and identifier"
+    });
+  }
+};
+
+// packages/domain/publication/src/domain/manual-task-policy.ts
+var ManualPublicationPolicy = class _ManualPublicationPolicy {
+  /** Models human work explicitly until a corresponding outbound adapter exists. */
+  static planManualPublicationTasks(event) {
+    if (event.occurrenceStatus === "cancelled") {
+      return Object.freeze(
+        _ManualPublicationPolicy.allTaskKinds().map((kind) => ({
+          kind,
+          status: "not-applicable",
+          reason: "The event is cancelled"
+        }))
+      );
+    }
+    const occurrenceConfirmed = event.occurrenceStatus === "held";
+    return Object.freeze([
+      _ManualPublicationPolicy.task(
+        "publish-meetup-event",
+        Boolean(event.references.meetup),
+        "Publish the event to Meetup"
+      ),
+      _ManualPublicationPolicy.task(
+        "publish-community-event",
+        Boolean(event.references.community),
+        "Publish the event to the CNCF community platform"
+      ),
+      _ManualPublicationPolicy.task(
+        "create-asset-folder",
+        Boolean(event.references.assets),
+        "Create the event asset folder"
+      ),
+      occurrenceConfirmed ? _ManualPublicationPolicy.task(
+        "publish-slides",
+        event.slidesPublished,
+        "Publish post-event slides"
+      ) : _ManualPublicationPolicy.notApplicable(
+        "publish-slides",
+        "Slides are published only after occurrence is explicitly confirmed"
+      ),
+      occurrenceConfirmed ? _ManualPublicationPolicy.task(
+        "import-attendance",
+        event.attendanceImported,
+        "Import post-event attendance"
+      ) : _ManualPublicationPolicy.notApplicable(
+        "import-attendance",
+        "Attendance is imported only after occurrence is explicitly confirmed"
+      )
+    ]);
+  }
+  static task(kind, completed, reason) {
+    return {
+      kind,
+      status: completed ? "completed" : "pending",
+      reason
+    };
+  }
+  static notApplicable(kind, reason) {
+    return { kind, status: "not-applicable", reason };
+  }
+  static allTaskKinds() {
+    return [
+      "publish-meetup-event",
+      "publish-community-event",
+      "create-asset-folder",
+      "publish-slides",
+      "import-attendance"
+    ];
+  }
+};
+
+// packages/domain/publication/src/domain/meetup-event-url-policy.ts
+var MeetupEventUrlPolicy = class {
+  constructor(prefix) {
+    this.prefix = prefix;
+  }
+  prefix;
+  id = "meetup-event-url";
+  evaluate(references) {
+    return PublicationLinkEvaluation.evaluateLink({
+      references,
+      path: "meetup",
+      prefixes: [this.prefix],
+      identifierPattern: /^\d+$/,
+      code: "publication.meetup-url.invalid",
+      message: `Meetup URL must start with ${this.prefix} and end with a numeric event identifier`
+    });
+  }
+};
+
+// packages/domain/publication/src/domain/model.ts
+var PublicationDiagnostics = class {
+  static applyPublicationPatch(references, patch) {
+    const result = { ...references };
+    for (const operation of patch.operations) {
+      switch (operation.path) {
+        case "meetup":
+          result.meetup = operation.value;
+          break;
+        case "community":
+          result.community = operation.value;
+          break;
+        case "assets":
+          result.assets = operation.value;
+          break;
+      }
+    }
+    return result;
+  }
+};
+
+// packages/domain/publication/src/domain/url-policy-contracts.ts
 var DEFAULT_PUBLICATION_URL_CONFIGURATION = Object.freeze({
   meetupEventUrlPrefix: "https://www.meetup.com/cloud-native-aix-marseille/events/",
   communityEventUrlPrefixes: Object.freeze([
@@ -27377,49 +27660,193 @@ var DEFAULT_PUBLICATION_URL_CONFIGURATION = Object.freeze({
   assetFolderUrlPrefix: "https://drive.google.com/drive/folders/"
 });
 
-// packages/application/journey/src/config/automation-config.ts
-function createAutomationConfig() {
-  return {
-    timezone: "Europe/Paris",
-    event: {
-      "issue-label": "meetup",
-      "issue-form": ".github/ISSUE_TEMPLATE/meetup.yml",
-      "occurrence-status-field": "event_status",
-      "required-confirmation-labels": [
-        "hoster:confirmed",
-        "speakers:confirmed"
-      ]
-    },
-    referentials: {
-      hosts: "referentials/hosting.csv",
-      speakers: "referentials/speakers.csv"
-    },
-    communication: {
-      "readiness-window-days": 7,
-      "mailings-repository": "cloud-native-aixmarseille/mailings",
-      "slack-enabled": true,
-      "approval-label": "communication:approved",
-      "dispatch-enabled": true,
-      "policy-version": 1
-    },
-    publication: {
-      "meetup-event-url-prefix": DEFAULT_PUBLICATION_URL_CONFIGURATION.meetupEventUrlPrefix,
-      "cncf-event-url-prefix": DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes[0]
+// packages/domain/publication/src/domain/publication-url-policies.ts
+var PublicationUrlPolicies = class {
+  static createDefaultPublicationUrlPolicies(configuration = DEFAULT_PUBLICATION_URL_CONFIGURATION) {
+    return Object.freeze([
+      new MeetupEventUrlPolicy(configuration.meetupEventUrlPrefix),
+      new CommunityEventUrlPolicy(configuration.communityEventUrlPrefixes),
+      new AssetFolderUrlPolicy(configuration.assetFolderUrlPrefix)
+    ]);
+  }
+};
+
+// packages/domain/publication/src/domain/publication-url-policy-engine.ts
+var PublicationUrlPolicyEngine = class {
+  constructor(policies) {
+    this.policies = policies;
+  }
+  policies;
+  evaluate(references) {
+    let normalized = references;
+    const diagnostics = [];
+    const operations = [];
+    for (const policy of this.policies) {
+      const result = policy.evaluate(normalized);
+      diagnostics.push(...result.diagnostics);
+      operations.push(...result.patch.operations);
+      normalized = PublicationDiagnostics.applyPublicationPatch(
+        normalized,
+        result.patch
+      );
     }
-  };
-}
+    return {
+      references: normalized,
+      diagnostics: Object.freeze(diagnostics),
+      patch: Object.freeze({ operations: Object.freeze(operations) })
+    };
+  }
+};
+
+// packages/application/journey/src/config/automation-config.ts
+var AutomationConfigFactory = class {
+  /**
+   * Automation behavior is owned and versioned by this repository. Consumer
+   * repositories do not provide a runtime configuration file anymore.
+   */
+  static createAutomationConfig() {
+    return {
+      timezone: "Europe/Paris",
+      event: {
+        "issue-label": "meetup",
+        "issue-form": ".github/ISSUE_TEMPLATE/meetup.yml",
+        "occurrence-status-field": "event_status",
+        "required-confirmation-labels": [
+          "hoster:confirmed",
+          "speakers:confirmed"
+        ]
+      },
+      referentials: {
+        hosts: "referentials/hosting.csv",
+        speakers: "referentials/speakers.csv"
+      },
+      communication: {
+        "readiness-window-days": 7,
+        "mailings-repository": "cloud-native-aixmarseille/mailings",
+        "slack-enabled": true,
+        "approval-label": "communication:approved",
+        "dispatch-enabled": true,
+        "policy-version": 1
+      },
+      publication: {
+        "meetup-event-url-prefix": DEFAULT_PUBLICATION_URL_CONFIGURATION.meetupEventUrlPrefix,
+        "cncf-event-url-prefix": DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes[0]
+      }
+    };
+  }
+};
 
 // packages/application/journey/src/result/result-envelope.ts
-function resultEnvelope(data, diagnostics) {
-  return {
-    schemaVersion: 1,
-    status: diagnostics.length === 0 ? "ok" : "diagnostics",
-    diagnostics,
-    data
-  };
-}
+var ResultEnvelopeFactory = class {
+  static resultEnvelope(data, diagnostics) {
+    return {
+      schemaVersion: 1,
+      status: diagnostics.length === 0 ? "ok" : "diagnostics",
+      diagnostics,
+      data
+    };
+  }
+};
+
+// packages/domain/event/src/application/ports/event-repository.ts
+var EventRepositoryPatches = class {
+  static eventRepositoryPatchIsEmpty(patch) {
+    return patch.issueTitle === void 0 && patch.labels === void 0 && patch.body === void 0;
+  }
+};
+
+// packages/domain/event/src/application/use-cases/event-concurrent-modification-error.ts
+var EventConcurrentModificationError = class extends Error {
+  constructor(identity) {
+    super(
+      `Meetup event ${identity.repository}#${identity.issueNumber} changed during reconciliation`
+    );
+    this.name = "EventConcurrentModificationError";
+  }
+};
+
+// packages/domain/event/src/application/use-cases/event-not-found-error.ts
+var EventNotFoundError = class extends Error {
+  constructor(identity) {
+    super(
+      `Meetup event ${identity.repository}#${identity.issueNumber} was not found`
+    );
+    this.name = "EventNotFoundError";
+  }
+};
+
+// packages/domain/event/src/application/use-cases/event-pagination-error.ts
+var EventPaginationError = class extends Error {
+  constructor(cursor) {
+    super(`Event repository repeated pagination cursor "${cursor}"`);
+    this.name = "EventPaginationError";
+  }
+};
+
+// packages/domain/event/src/domain/event-rule-configuration-error.ts
+var EventRuleConfigurationError = class extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "EventRuleConfigurationError";
+  }
+};
+
+// packages/domain/event/src/domain/event-rule-ordering.ts
+var EventRuleOrdering = class {
+  static sortRules(rules) {
+    const byId = /* @__PURE__ */ new Map();
+    for (const rule of rules) {
+      if (byId.has(rule.id)) {
+        throw new EventRuleConfigurationError(
+          `Duplicate event rule "${rule.id}"`
+        );
+      }
+      byId.set(rule.id, rule);
+    }
+    for (const rule of rules) {
+      for (const dependency of rule.dependencies) {
+        if (!byId.has(dependency)) {
+          throw new EventRuleConfigurationError(
+            `Event rule "${rule.id}" has missing dependency "${dependency}"`
+          );
+        }
+      }
+    }
+    const permanent = /* @__PURE__ */ new Set();
+    const temporary = /* @__PURE__ */ new Set();
+    const ordered = [];
+    const visit = (rule, path) => {
+      if (temporary.has(rule.id)) {
+        throw new EventRuleConfigurationError(
+          `Cyclic event rule dependency: ${[...path, rule.id].join(" -> ")}`
+        );
+      }
+      if (permanent.has(rule.id)) {
+        return;
+      }
+      temporary.add(rule.id);
+      for (const dependencyId of rule.dependencies) {
+        const dependency = byId.get(dependencyId);
+        if (!dependency) {
+          throw new EventRuleConfigurationError(
+            `Event rule "${rule.id}" has missing dependency "${dependencyId}"`
+          );
+        }
+        visit(dependency, [...path, rule.id]);
+      }
+      temporary.delete(rule.id);
+      permanent.add(rule.id);
+      ordered.push(rule);
+    };
+    for (const rule of rules) {
+      visit(rule, []);
+    }
+    return Object.freeze(ordered);
+  }
+};
 
 // packages/domain/event/src/domain/model.ts
+var EVENT_SCHEMA_VERSION = 1;
 var POST_EVENT_TASK_NAMES = Object.freeze({
   thankHost: "Mail thanks hoster",
   thankSpeakers: "Mail thanks speakers",
@@ -27434,11 +27861,605 @@ var EXPECTED_POST_EVENT_TASK_NAMES = Object.freeze([
   POST_EVENT_TASK_NAMES.importAttendance,
   POST_EVENT_TASK_NAMES.shareOnSocialNetworks
 ]);
+var MeetupEventOperations = class _MeetupEventOperations {
+  /**
+   * A post-event checklist is complete only when it contains each expected task
+   * exactly once, contains no additional task, and every task is completed.
+   */
+  static postEventChecklistIsComplete(items) {
+    if (items.length !== EXPECTED_POST_EVENT_TASK_NAMES.length) {
+      return false;
+    }
+    const itemByName = /* @__PURE__ */ new Map();
+    for (const item of items) {
+      if (itemByName.has(item.name)) {
+        return false;
+      }
+      itemByName.set(item.name, item);
+    }
+    return EXPECTED_POST_EVENT_TASK_NAMES.every(
+      (name) => itemByName.get(name)?.completed === true
+    );
+  }
+  static cloneMeetupEvent(event) {
+    const operationalChecklists = {
+      slidesAndContent: event.operationalChecklists.slidesAndContent.map(
+        (item) => ({ ...item })
+      ),
+      communication: event.operationalChecklists.communication.map((item) => ({
+        ...item
+      })),
+      postEvent: event.operationalChecklists.postEvent.map((item) => ({
+        ...item
+      }))
+    };
+    return {
+      ...event,
+      identity: { ...event.identity },
+      labels: [...event.labels],
+      host: event.host ? { ...event.host } : void 0,
+      agenda: event.agenda.map((entry) => ({
+        ...entry,
+        speakers: entry.speakers.map((speaker) => ({ ...speaker }))
+      })),
+      publicationLinks: { ...event.publicationLinks },
+      confirmations: { ...event.confirmations },
+      logistics: { ...event.logistics },
+      operationalChecklists,
+      followUpComplete: event.followUpComplete && _MeetupEventOperations.postEventChecklistIsComplete(
+        operationalChecklists.postEvent
+      )
+    };
+  }
+};
 
 // packages/domain/event/src/domain/patch.ts
 var EMPTY_EVENT_PATCH = Object.freeze({ operations: [] });
+var EventPatches = class _EventPatches {
+  static replaceEventField(path, value, reason) {
+    return Object.freeze({
+      op: "replace",
+      path,
+      value,
+      reason
+    });
+  }
+  static createEventPatch(operations) {
+    return Object.freeze({ operations: Object.freeze([...operations]) });
+  }
+  static mergeEventPatches(...patches) {
+    return _EventPatches.createEventPatch(
+      patches.flatMap((patch) => patch.operations)
+    );
+  }
+  static applyEventPatch(event, patch) {
+    return patch.operations.reduce(
+      (current, operation) => _EventPatches.applyOperation(current, operation),
+      event
+    );
+  }
+  static applyOperation(event, operation) {
+    switch (operation.path) {
+      case "issueTitle":
+        return { ...event, issueTitle: operation.value };
+      case "labels":
+        return { ...event, labels: [...operation.value] };
+      case "eventTitle":
+        return { ...event, eventTitle: operation.value };
+      case "date":
+        return { ...event, date: operation.value };
+      case "description":
+        return { ...event, description: operation.value };
+      case "host":
+        return {
+          ...event,
+          host: operation.value ? { ...operation.value } : void 0
+        };
+      case "agenda":
+        return {
+          ...event,
+          agenda: operation.value.map((entry) => ({
+            ...entry,
+            speakers: entry.speakers.map((speaker) => ({ ...speaker }))
+          }))
+        };
+      case "publicationLinks":
+        return { ...event, publicationLinks: { ...operation.value } };
+      case "occurrenceStatus":
+        return { ...event, occurrenceStatus: operation.value };
+      case "timeZone":
+        return { ...event, timeZone: operation.value };
+      case "confirmations":
+        return { ...event, confirmations: { ...operation.value } };
+      case "logistics":
+        return { ...event, logistics: { ...operation.value } };
+      case "operationalChecklists": {
+        const operationalChecklists = {
+          slidesAndContent: operation.value.slidesAndContent.map((item) => ({
+            ...item
+          })),
+          communication: operation.value.communication.map((item) => ({
+            ...item
+          })),
+          postEvent: operation.value.postEvent.map((item) => ({ ...item }))
+        };
+        return {
+          ...event,
+          operationalChecklists,
+          followUpComplete: event.followUpComplete && MeetupEventOperations.postEventChecklistIsComplete(
+            operationalChecklists.postEvent
+          )
+        };
+      }
+      case "followUpComplete":
+        return {
+          ...event,
+          followUpComplete: operation.value && MeetupEventOperations.postEventChecklistIsComplete(
+            event.operationalChecklists.postEvent
+          )
+        };
+    }
+  }
+};
 
-// packages/domain/event/src/domain/rule.ts
+// packages/domain/event/src/domain/event-rule-engine.ts
+var EventRuleEngine = class {
+  orderedRules;
+  constructor(rules) {
+    this.orderedRules = EventRuleOrdering.sortRules(rules);
+  }
+  evaluate(event) {
+    let normalizedEvent = event;
+    const diagnostics = [];
+    const operations = [];
+    for (const rule of this.orderedRules) {
+      const result = rule.evaluate(normalizedEvent);
+      diagnostics.push(...result.diagnostics);
+      operations.push(...result.patch.operations);
+      normalizedEvent = EventPatches.applyEventPatch(
+        normalizedEvent,
+        result.patch
+      );
+    }
+    return {
+      event: normalizedEvent,
+      diagnostics: Object.freeze(diagnostics),
+      patch: EventPatches.createEventPatch(operations)
+    };
+  }
+  get ruleIds() {
+    return this.orderedRules.map((rule) => rule.id);
+  }
+};
+
+// packages/domain/event/src/domain/diagnostic.ts
+var EventDiagnostics = class {
+  static diagnostic(value) {
+    return Object.freeze({ ...value });
+  }
+};
+
+// packages/domain/event/src/domain/event-participant-normalization.ts
+var EventParticipantNormalization = class _EventParticipantNormalization {
+  static normalizeParticipant(participant) {
+    const displayName = participant.displayName.trim();
+    const id = participant.id?.trim();
+    return id ? {
+      displayName,
+      id,
+      ...participant.source ? { source: participant.source } : {}
+    } : { displayName };
+  }
+  static participantsEqual(left, right) {
+    return left.displayName === right.displayName && left.id === right.id;
+  }
+  static normalizeAgendaEntry(entry) {
+    return {
+      speakers: entry.speakers.map(
+        _EventParticipantNormalization.normalizeParticipant
+      ),
+      description: entry.description.trim()
+    };
+  }
+  static agendaEqual(left, right) {
+    return JSON.stringify(left) === JSON.stringify(right);
+  }
+  static arraysEqual(left, right) {
+    return left.length === right.length && left.every((value, index) => value === right[index]);
+  }
+};
+
+// packages/domain/event/src/domain/event-rule-results.ts
+var EventRuleResults = class {
+  static missing(code, field, message) {
+    return {
+      diagnostics: [
+        EventDiagnostics.diagnostic({
+          code,
+          severity: "warning",
+          category: "incomplete",
+          field,
+          message
+        })
+      ],
+      patch: EMPTY_EVENT_PATCH
+    };
+  }
+  static invalid(code, field, message) {
+    return {
+      diagnostics: [
+        EventDiagnostics.diagnostic({
+          code,
+          severity: "error",
+          category: "invalid",
+          field,
+          message
+        })
+      ],
+      patch: EMPTY_EVENT_PATCH
+    };
+  }
+  static normalizeString(current, normalized, path, reason) {
+    if (current === normalized) {
+      return EventRuleFactory.emptyResult();
+    }
+    return EventRuleFactory.normalizedResult(
+      EventPatches.replaceEventField(path, normalized, reason),
+      `event.${path}.normalized`,
+      path,
+      `${path} can be normalized safely`
+    );
+  }
+};
+
+// packages/domain/event/src/domain/event-agenda-rule.ts
+var EventAgendaRule = class {
+  id = "event-agenda";
+  dependencies = [];
+  evaluate(event) {
+    if (event.agenda.length === 0) {
+      return EventRuleResults.missing(
+        "event.agenda.missing",
+        "agenda",
+        "At least one agenda entry is required"
+      );
+    }
+    const diagnostics = [];
+    const normalizedEntries = event.agenda.map((entry, entryIndex) => {
+      return this.normalizeEntry(entry, entryIndex, diagnostics);
+    });
+    const operations = [];
+    if (!EventParticipantNormalization.agendaEqual(
+      event.agenda,
+      normalizedEntries
+    )) {
+      operations.push(
+        EventPatches.replaceEventField(
+          "agenda",
+          normalizedEntries,
+          "Normalize agenda"
+        )
+      );
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.agenda.normalized",
+          severity: "info",
+          category: "normalization",
+          field: "agenda",
+          message: "The agenda can be normalized safely",
+          fixAvailable: true
+        })
+      );
+    }
+    return {
+      diagnostics,
+      patch: EventPatches.createEventPatch(operations)
+    };
+  }
+  normalizeEntry(entry, entryIndex, diagnostics) {
+    const normalized = EventParticipantNormalization.normalizeAgendaEntry(entry);
+    if (normalized.speakers.length === 0) {
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.agenda.speaker.missing",
+          severity: "error",
+          category: "invalid",
+          field: `agenda.${entryIndex}.speakers`,
+          message: "Each agenda entry must have at least one speaker"
+        })
+      );
+    }
+    for (const [speakerIndex, speaker] of normalized.speakers.entries()) {
+      if (speaker.displayName === "") {
+        diagnostics.push(
+          EventDiagnostics.diagnostic({
+            code: "event.agenda.speaker.invalid",
+            severity: "error",
+            category: "invalid",
+            field: `agenda.${entryIndex}.speakers.${speakerIndex}`,
+            message: "Speaker display name must not be empty"
+          })
+        );
+      }
+    }
+    if (normalized.description === "") {
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.agenda.description.missing",
+          severity: "error",
+          category: "invalid",
+          field: `agenda.${entryIndex}.description`,
+          message: "Agenda entry description must not be empty"
+        })
+      );
+    }
+    return normalized;
+  }
+};
+
+// packages/domain/event/src/domain/event-date-validation.ts
+var EventDateValidation = class _EventDateValidation {
+  static isValidIsoDate(value) {
+    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) {
+      return false;
+    }
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    if (month < 1 || month > 12 || day < 1) {
+      return false;
+    }
+    const monthLengths = [
+      31,
+      _EventDateValidation.isLeapYear(year) ? 29 : 28,
+      31,
+      30,
+      31,
+      30,
+      31,
+      31,
+      30,
+      31,
+      30,
+      31
+    ];
+    return day <= monthLengths[month - 1];
+  }
+  static isLeapYear(year) {
+    return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  }
+};
+
+// packages/domain/event/src/domain/event-date-rule.ts
+var EventDateRule = class {
+  id = "event-date";
+  dependencies = [];
+  evaluate(event) {
+    const value = event.date.trim();
+    if (value === "") {
+      return EventRuleResults.missing(
+        "event.date.missing",
+        "date",
+        "An event date is required"
+      );
+    }
+    if (!EventDateValidation.isValidIsoDate(value)) {
+      return EventRuleResults.invalid(
+        "event.date.invalid",
+        "date",
+        "Event date must be a real calendar date formatted as YYYY-MM-DD"
+      );
+    }
+    return EventRuleResults.normalizeString(
+      event.date,
+      value,
+      "date",
+      "Normalize event date"
+    );
+  }
+};
+
+// packages/domain/event/src/domain/event-description-rule.ts
+var EventDescriptionRule = class {
+  id = "event-description";
+  dependencies = [];
+  evaluate(event) {
+    const value = event.description.trim();
+    if (value === "") {
+      return EventRuleResults.missing(
+        "event.description.missing",
+        "description",
+        "An event description is required"
+      );
+    }
+    return EventRuleResults.normalizeString(
+      event.description,
+      value,
+      "description",
+      "Trim event description"
+    );
+  }
+};
+
+// packages/domain/event/src/domain/event-host-rule.ts
+var EventHostRule = class {
+  id = "event-host";
+  dependencies = [];
+  evaluate(event) {
+    if (!event.host) {
+      return EventRuleResults.missing(
+        "event.hoster.missing",
+        "host",
+        "A host must be selected"
+      );
+    }
+    const normalized = EventParticipantNormalization.normalizeParticipant(
+      event.host
+    );
+    if (normalized.displayName === "") {
+      return EventRuleResults.invalid(
+        "event.hoster.invalid",
+        "host",
+        "Host display name must not be empty"
+      );
+    }
+    if (EventParticipantNormalization.participantsEqual(event.host, normalized)) {
+      return EventRuleFactory.emptyResult();
+    }
+    return EventRuleFactory.normalizedResult(
+      EventPatches.replaceEventField(
+        "host",
+        normalized,
+        "Normalize host reference"
+      ),
+      "event.hoster.normalized",
+      "host",
+      "The host reference can be normalized safely"
+    );
+  }
+};
+
+// packages/domain/event/src/domain/event-links-rule.ts
+var EventLinksRule = class {
+  id = "event-links";
+  dependencies = [];
+  evaluate(event) {
+    const diagnostics = [];
+    const normalized = { ...event.publicationLinks };
+    let changed = false;
+    for (const key of ["meetup", "community", "assets"]) {
+      const link = event.publicationLinks[key];
+      if (link === void 0 || link.trim() === "") {
+        continue;
+      }
+      const value = link.trim().replace(/\/$/, "");
+      if (!EventRuleFactory.isHttpsUrl(value)) {
+        diagnostics.push(
+          EventDiagnostics.diagnostic({
+            code: `event.link.${key}.invalid`,
+            severity: "error",
+            category: "invalid",
+            field: `publicationLinks.${key}`,
+            message: `${key} link must be a valid HTTPS URL`
+          })
+        );
+        continue;
+      }
+      if (value !== link) {
+        normalized[key] = value;
+        changed = true;
+      }
+    }
+    if (!changed) {
+      return { diagnostics, patch: EMPTY_EVENT_PATCH };
+    }
+    diagnostics.push(
+      EventDiagnostics.diagnostic({
+        code: "event.links.normalized",
+        severity: "info",
+        category: "normalization",
+        field: "publicationLinks",
+        message: "Publication links can be normalized safely",
+        fixAvailable: true
+      })
+    );
+    return {
+      diagnostics,
+      patch: EventPatches.createEventPatch([
+        EventPatches.replaceEventField(
+          "publicationLinks",
+          normalized,
+          "Trim publication links and remove trailing slashes"
+        )
+      ])
+    };
+  }
+};
+
+// packages/domain/event/src/domain/event-title-rule.ts
+var EventTitleRule = class {
+  id = "event-title";
+  dependencies = [];
+  evaluate(event) {
+    const value = event.eventTitle.trim();
+    if (value === "") {
+      return EventRuleResults.missing(
+        "event.title.missing",
+        "eventTitle",
+        "An event title is required"
+      );
+    }
+    return EventRuleResults.normalizeString(
+      event.eventTitle,
+      value,
+      "eventTitle",
+      "Trim event title"
+    );
+  }
+};
+
+// packages/domain/event/src/domain/issue-title-rule.ts
+var IssueTitleRule = class {
+  id = "issue-title";
+  dependencies = ["event-date", "event-title"];
+  evaluate(event) {
+    if (!EventDateValidation.isValidIsoDate(event.date) || event.eventTitle === "") {
+      return EventRuleFactory.emptyResult();
+    }
+    const expected = `[Meetup] - ${event.date} - ${event.eventTitle}`;
+    if (event.issueTitle === expected) {
+      return EventRuleFactory.emptyResult();
+    }
+    return EventRuleFactory.normalizedResult(
+      EventPatches.replaceEventField(
+        "issueTitle",
+        expected,
+        "Project canonical issue title"
+      ),
+      "event.issue-title.normalized",
+      "issueTitle",
+      `Issue title should be "${expected}"`
+    );
+  }
+};
+
+// packages/domain/event/src/domain/managed-labels-rule.ts
+var ManagedLabelsRule = class {
+  constructor(configuration) {
+    this.configuration = configuration;
+  }
+  configuration;
+  id = "managed-labels";
+  dependencies = ["event-host", "event-agenda"];
+  evaluate(event) {
+    const managed = Object.values(this.configuration);
+    const unmanaged2 = event.labels.filter((label) => !managed.includes(label));
+    const occurrenceLabels = event.occurrenceStatus === "postponed" ? [this.configuration.occurrencePostponed] : event.occurrenceStatus === "held" ? [this.configuration.occurrenceHeld] : event.occurrenceStatus === "cancelled" ? [this.configuration.occurrenceCancelled] : [];
+    const expected = [
+      ...unmanaged2,
+      this.configuration.meetup,
+      event.confirmations.host ? this.configuration.hostConfirmed : this.configuration.hostNeeded,
+      event.confirmations.speakers ? this.configuration.speakersConfirmed : this.configuration.speakersNeeded,
+      ...occurrenceLabels
+    ];
+    if (EventRuleFactory.labelsMatch(event.labels, expected)) {
+      return EventRuleFactory.emptyResult();
+    }
+    return EventRuleFactory.normalizedResult(
+      EventPatches.replaceEventField(
+        "labels",
+        expected,
+        "Project managed lifecycle labels"
+      ),
+      "event.labels.normalized",
+      "labels",
+      "Managed meetup labels can be reconciled safely"
+    );
+  }
+};
+
+// packages/domain/event/src/domain/rule-contracts.ts
 var DEFAULT_MANAGED_LABEL_CONFIGURATION = Object.freeze({
   meetup: "meetup",
   hostNeeded: "hoster:needed",
@@ -27450,7 +28471,322 @@ var DEFAULT_MANAGED_LABEL_CONFIGURATION = Object.freeze({
   occurrenceCancelled: "event:cancelled"
 });
 
-// packages/domain/event/src/domain/dto.ts
+// packages/domain/event/src/domain/event-rule-factory.ts
+var EventRuleFactory = class _EventRuleFactory {
+  static createDefaultEventRules(labelConfiguration = DEFAULT_MANAGED_LABEL_CONFIGURATION) {
+    return [
+      new EventDateRule(),
+      new EventTitleRule(),
+      new EventDescriptionRule(),
+      new EventHostRule(),
+      new EventAgendaRule(),
+      new EventLinksRule(),
+      new IssueTitleRule(),
+      new ManagedLabelsRule(labelConfiguration)
+    ];
+  }
+  static labelsMatch(actual, expected) {
+    return EventParticipantNormalization.arraysEqual(actual, expected) || _EventRuleFactory.sameMembers(actual, expected);
+  }
+  static sameMembers(left, right) {
+    return left.length === right.length && left.every((label) => right.includes(label));
+  }
+  static emptyResult() {
+    return { diagnostics: [], patch: EMPTY_EVENT_PATCH };
+  }
+  static normalizedResult(operation, code, field, message) {
+    return {
+      diagnostics: [
+        EventDiagnostics.diagnostic({
+          code,
+          severity: "info",
+          category: "normalization",
+          field,
+          message,
+          fixAvailable: true
+        })
+      ],
+      patch: EventPatches.createEventPatch([operation])
+    };
+  }
+  static isHttpsUrl(value) {
+    try {
+      return new URL(value).protocol === "https:";
+    } catch {
+      return false;
+    }
+  }
+};
+
+// packages/domain/event/src/domain/lifecycle.ts
+var EventLifecycle = class _EventLifecycle {
+  /**
+   * Derives lifecycle exclusively from event facts and an explicitly supplied
+   * instant. In particular, a past date never implies that an event was held.
+   */
+  static evaluateEventLifecycle({
+    event,
+    readiness,
+    now
+  }) {
+    let state;
+    switch (event.occurrenceStatus) {
+      case "cancelled":
+        state = "cancelled";
+        break;
+      case "postponed":
+        state = "postponed";
+        break;
+      case "held":
+        state = event.followUpComplete && MeetupEventOperations.postEventChecklistIsComplete(
+          event.operationalChecklists.postEvent
+        ) ? "follow-up-complete" : "held";
+        break;
+      case "scheduled":
+      case void 0:
+        if (!_EventLifecycle.hasMinimumPlanningFacts(event)) {
+          state = "draft";
+        } else {
+          state = readiness.isReady ? "ready" : "planned";
+        }
+        break;
+    }
+    return {
+      state,
+      evaluatedAt: now,
+      timeZone: event.timeZone,
+      diagnostics: readiness.diagnostics
+    };
+  }
+  static hasMinimumPlanningFacts(event) {
+    return event.date.trim() !== "" && event.eventTitle.trim() !== "";
+  }
+};
+
+// packages/domain/event/src/domain/readiness.ts
+var EventReadinessPolicy = class {
+  static evaluateEventReadiness(event, diagnostics) {
+    const readinessDiagnostics = [...diagnostics];
+    if (event.occurrenceStatus === "cancelled") {
+      return {
+        status: "incomplete",
+        isReady: false,
+        diagnostics: readinessDiagnostics
+      };
+    }
+    if (event.occurrenceStatus === "postponed") {
+      return {
+        status: "incomplete",
+        isReady: false,
+        diagnostics: readinessDiagnostics
+      };
+    }
+    if (readinessDiagnostics.some((item) => item.severity === "error")) {
+      return {
+        status: "invalid",
+        isReady: false,
+        diagnostics: readinessDiagnostics
+      };
+    }
+    if (!event.confirmations.host) {
+      readinessDiagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.confirmation.host.missing",
+          severity: "warning",
+          category: "incomplete",
+          field: "confirmations.host",
+          message: "Host confirmation is required before the event is ready"
+        })
+      );
+    }
+    if (!event.confirmations.speakers) {
+      readinessDiagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.confirmation.speakers.missing",
+          severity: "warning",
+          category: "incomplete",
+          field: "confirmations.speakers",
+          message: "Speaker confirmation is required before the event is ready"
+        })
+      );
+    }
+    const incomplete = readinessDiagnostics.some(
+      (item) => item.category === "incomplete"
+    );
+    return {
+      status: incomplete ? "incomplete" : "ready",
+      isReady: !incomplete,
+      diagnostics: Object.freeze(readinessDiagnostics)
+    };
+  }
+};
+
+// packages/domain/event/src/application/use-cases/list-active-events.ts
+var ListActiveEvents = class {
+  constructor(dependencies) {
+    this.dependencies = dependencies;
+    this.ruleEngine = new EventRuleEngine(
+      dependencies.rules ?? EventRuleFactory.createDefaultEventRules()
+    );
+  }
+  dependencies;
+  ruleEngine;
+  async execute(input) {
+    const activeEvents = [];
+    const allDiagnostics = [];
+    const seenCursors = /* @__PURE__ */ new Set();
+    const seenEvents = /* @__PURE__ */ new Set();
+    const now = this.dependencies.clock.now();
+    let cursor;
+    do {
+      const page = await this.dependencies.repository.listPage({
+        ...input,
+        cursor
+      });
+      for (const document of page.items) {
+        const identityKey = `${document.identity.repository}#${document.identity.issueNumber}`;
+        if (seenEvents.has(identityKey)) {
+          continue;
+        }
+        seenEvents.add(identityKey);
+        const decoded = this.dependencies.documentCodec.decode(document);
+        const evaluated = this.ruleEngine.evaluate(decoded.event);
+        const eventDiagnostics = [
+          ...decoded.diagnostics,
+          ...evaluated.diagnostics
+        ];
+        const readiness = EventReadinessPolicy.evaluateEventReadiness(
+          evaluated.event,
+          eventDiagnostics
+        );
+        const lifecycle = EventLifecycle.evaluateEventLifecycle({
+          event: evaluated.event,
+          readiness,
+          now
+        });
+        allDiagnostics.push(...readiness.diagnostics);
+        if (lifecycle.state !== "cancelled" && lifecycle.state !== "follow-up-complete") {
+          activeEvents.push({
+            identity: { ...document.identity },
+            event: evaluated.event,
+            readiness,
+            lifecycle
+          });
+        }
+      }
+      cursor = page.nextCursor;
+      if (cursor) {
+        if (seenCursors.has(cursor)) {
+          throw new EventPaginationError(cursor);
+        }
+        seenCursors.add(cursor);
+      }
+    } while (cursor);
+    return {
+      events: Object.freeze(activeEvents),
+      diagnostics: Object.freeze(allDiagnostics)
+    };
+  }
+};
+
+// packages/domain/event/src/application/use-cases/reconcile-event.ts
+var ReconcileEvent = class _ReconcileEvent {
+  constructor(dependencies) {
+    this.dependencies = dependencies;
+    this.ruleEngine = new EventRuleEngine(
+      dependencies.rules ?? EventRuleFactory.createDefaultEventRules()
+    );
+  }
+  dependencies;
+  ruleEngine;
+  async execute(input) {
+    const document = input.sourceDocument ?? await this.dependencies.repository.find(input.identity);
+    if (!document) {
+      throw new EventNotFoundError(input.identity);
+    }
+    if (!_ReconcileEvent.sameIdentity(document.identity, input.identity)) {
+      throw new EventNotFoundError(input.identity);
+    }
+    const decoded = this.dependencies.documentCodec.decode(document);
+    const evaluated = this.ruleEngine.evaluate(decoded.event);
+    const diagnostics = [
+      ...decoded.diagnostics,
+      ...evaluated.diagnostics
+    ];
+    const readiness = EventReadinessPolicy.evaluateEventReadiness(
+      evaluated.event,
+      diagnostics
+    );
+    const lifecycle = EventLifecycle.evaluateEventLifecycle({
+      event: evaluated.event,
+      readiness,
+      now: this.dependencies.clock.now()
+    });
+    const repositoryPatch = this.dependencies.documentCodec.createPatch(
+      document,
+      evaluated.event
+    );
+    const shouldPersist = input.mode === "fix" && !EventRepositoryPatches.eventRepositoryPatchIsEmpty(repositoryPatch);
+    if (shouldPersist) {
+      await _ReconcileEvent.ensureEventDocumentIsCurrent(
+        this.dependencies.repository,
+        input.identity,
+        document
+      );
+      await this.dependencies.repository.applyPatch(
+        input.identity,
+        repositoryPatch
+      );
+    }
+    let commentUpdated = false;
+    if (input.mode === "fix") {
+      const commentResult = await this.dependencies.commentRepository.reconcileDiagnostics(
+        input.identity,
+        readiness.diagnostics
+      );
+      commentUpdated = commentResult.changed;
+    }
+    return {
+      event: evaluated.event,
+      diagnostics: readiness.diagnostics,
+      normalizationPatch: evaluated.patch,
+      repositoryPatch,
+      readiness,
+      lifecycle,
+      persisted: shouldPersist,
+      commentUpdated
+    };
+  }
+  static async ensureEventDocumentIsCurrent(repository, identity, expected) {
+    const current = await repository.find(identity);
+    if (!current) {
+      throw new EventNotFoundError(identity);
+    }
+    if (!_ReconcileEvent.eventDocumentsEqual(current, expected)) {
+      throw new EventConcurrentModificationError(identity);
+    }
+  }
+  static eventDocumentsEqual(left, right) {
+    const leftLabels = [...left.labels].sort(_ReconcileEvent.compareText);
+    const rightLabels = [...right.labels].sort(_ReconcileEvent.compareText);
+    return _ReconcileEvent.sameIdentity(left.identity, right.identity) && left.issueState === right.issueState && left.issueTitle === right.issueTitle && left.body === right.body && leftLabels.length === rightLabels.length && leftLabels.every((label, index) => label === rightLabels[index]);
+  }
+  static compareText(left, right) {
+    return left < right ? -1 : left > right ? 1 : 0;
+  }
+  static sameIdentity(left, right) {
+    return left.issueNumber === right.issueNumber && left.repository.toLowerCase() === right.repository.toLowerCase();
+  }
+};
+
+// packages/domain/event/src/domain/dto-contracts.ts
+var STABLE_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._:-]*$/;
+var OCCURRENCE_STATUSES = [
+  "scheduled",
+  "postponed",
+  "held",
+  "cancelled"
+];
 var OCCURRENCE_STATUS_LABELS = Object.freeze({
   scheduled: null,
   postponed: "event:postponed",
@@ -27458,385 +28794,388 @@ var OCCURRENCE_STATUS_LABELS = Object.freeze({
   cancelled: "event:cancelled"
 });
 
-// packages/domain/referential/src/application/use-cases/project-referential-choices.ts
-var ProjectReferentialChoices = class {
-  execute(catalog) {
-    return Object.freeze({
-      hostOptions: Object.freeze(catalog.hosts.map((host) => host.displayName)),
-      speakerReferences: Object.freeze(
-        catalog.speakers.map((speaker) => speaker.displayName)
-      )
+// packages/domain/event/src/domain/event-occurrence-parser.ts
+var EventOccurrenceParser = class _EventOccurrenceParser {
+  static readOccurrenceStatus(labels, issueState, legacyValue, diagnostics) {
+    const explicitStatuses = OCCURRENCE_STATUSES.filter((status) => {
+      const label = OCCURRENCE_STATUS_LABELS[status];
+      return label !== null && labels.includes(label);
     });
-  }
-};
-
-// packages/domain/referential/src/domain/identifiers.ts
-var HOST_ID_PATTERN = /^host-[0-9]{4}$/;
-var CONTACT_ID_PATTERN = /^contact-[0-9]{4}$/;
-var SPEAKER_ID_PATTERN = /^speaker-[0-9]{4}$/;
-function asHostId(value) {
-  return HOST_ID_PATTERN.test(value) ? value : void 0;
-}
-function asContactId(value) {
-  return CONTACT_ID_PATTERN.test(value) ? value : void 0;
-}
-function asSpeakerId(value) {
-  return SPEAKER_ID_PATTERN.test(value) ? value : void 0;
-}
-
-// packages/domain/referential/src/domain/referential-catalog.ts
-function normalizeDisplayName(value) {
-  return value.normalize("NFC").trim().replace(/\s+/g, " ");
-}
-function displayNameKey(value) {
-  return normalizeDisplayName(value).toLowerCase();
-}
-function freezeCatalog(hosts, speakers) {
-  for (const host of hosts) {
-    for (const contact of host.contacts) {
-      Object.freeze(contact);
-    }
-    Object.freeze(host.contacts);
-    Object.freeze(host);
-  }
-  for (const speaker of speakers) {
-    Object.freeze(speaker);
-  }
-  return Object.freeze({
-    hosts: Object.freeze([...hosts]),
-    speakers: Object.freeze([...speakers])
-  });
-}
-
-// packages/domain/referential/src/domain/referential-diagnostic.ts
-function diagnostic2(code, severity, path, message) {
-  return Object.freeze({ code, severity, path, message });
-}
-function freezeDiagnostics(diagnostics) {
-  return Object.freeze([...diagnostics]);
-}
-
-// packages/domain/referential/src/application/use-cases/validate-referential-catalog.ts
-var EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-var ValidateReferentialCatalog = class {
-  constructor(repository) {
-    this.repository = repository;
-  }
-  repository;
-  async execute(rawCatalog) {
-    const input = rawCatalog ?? await this.loadCatalog();
-    const diagnostics = [];
-    const hosts = this.validateHosts(input.hosts, diagnostics);
-    const speakers = this.validateSpeakers(input.speakers, diagnostics);
-    this.reportDuplicateDisplayNames(
-      hosts,
-      "referential.host.display-name.duplicate",
-      "hosts",
-      "Duplicate normalized host display names are not allowed; keep one stable host per public name.",
-      diagnostics
-    );
-    this.reportDuplicateDisplayNames(
-      speakers,
-      "referential.speaker.display-name.duplicate",
-      "speakers",
-      "Duplicate normalized speaker display names are not allowed; keep one stable speaker per public name.",
-      diagnostics
-    );
-    const frozenDiagnostics = freezeDiagnostics(diagnostics);
-    if (diagnostics.some(({ severity }) => severity === "error")) {
-      return Object.freeze({
-        isValid: false,
-        diagnostics: frozenDiagnostics
-      });
-    }
-    return Object.freeze({
-      isValid: true,
-      catalog: freezeCatalog(hosts, speakers),
-      diagnostics: frozenDiagnostics
-    });
-  }
-  async loadCatalog() {
-    if (!this.repository) {
-      throw new Error(
-        "A referential repository or an explicit raw catalog is required."
-      );
-    }
-    return this.repository.load();
-  }
-  validateHosts(records, diagnostics) {
-    const hostsById = /* @__PURE__ */ new Map();
-    const contactIds = /* @__PURE__ */ new Set();
-    for (const [index, record] of records.entries()) {
-      const parsed = this.parseHostRecord(record, index, diagnostics);
-      if (!parsed) {
-        continue;
-      }
-      if (contactIds.has(parsed.contact.id)) {
-        diagnostics.push(
-          diagnostic2(
-            "referential.contact.id.duplicate",
-            "error",
-            `hosts[${index}].contactId`,
-            "Contact stable identifiers must be unique."
-          )
-        );
-        continue;
-      }
-      contactIds.add(parsed.contact.id);
-      const host = hostsById.get(parsed.hostId);
-      if (!host) {
-        hostsById.set(parsed.hostId, {
-          id: parsed.hostId,
-          displayName: parsed.displayName,
-          contacts: [parsed.contact]
-        });
-        continue;
-      }
-      if (host.displayName !== parsed.displayName) {
-        diagnostics.push(
-          diagnostic2(
-            "referential.host.id.conflict",
-            "error",
-            `hosts[${index}].hostId`,
-            "A host stable identifier cannot describe different host names."
-          )
-        );
-        continue;
-      }
-      host.contacts.push(parsed.contact);
-    }
-    return [...hostsById.values()].map((host) => ({
-      id: host.id,
-      displayName: host.displayName,
-      contacts: host.contacts
-    }));
-  }
-  parseHostRecord(record, index, diagnostics) {
-    const hostIdValue = this.requiredText(
-      record.hostId,
-      "referential.host.id.invalid",
-      `hosts[${index}].hostId`,
-      "Host stable identifier must be a non-empty string.",
-      diagnostics
-    );
-    const hostId = hostIdValue ? asHostId(hostIdValue) : void 0;
-    if (hostIdValue && !hostId) {
+    if (explicitStatuses.length > 1) {
       diagnostics.push(
-        diagnostic2(
-          "referential.host.id.invalid",
-          "error",
-          `hosts[${index}].hostId`,
-          "Host stable identifier must use the opaque host-0001 format."
-        )
+        EventDiagnostics.diagnostic({
+          code: "event.occurrence-status.label-conflict",
+          severity: "error",
+          category: "invalid",
+          field: "labels",
+          message: "Occurrence status labels are mutually exclusive; keep only one of event:postponed, event:held, or event:cancelled"
+        })
       );
+      return explicitStatuses[0] ?? (issueState === "closed" ? "held" : "scheduled");
     }
-    const displayName = this.requiredText(
-      record.displayName,
-      "referential.host.display-name.invalid",
-      `hosts[${index}].displayName`,
-      "Host display name must be a non-empty string.",
-      diagnostics
-    );
-    const contactIdValue = this.requiredText(
-      record.contactId,
-      "referential.contact.id.invalid",
-      `hosts[${index}].contactId`,
-      "Contact stable identifier must be a non-empty string.",
-      diagnostics
-    );
-    const contactId = contactIdValue ? asContactId(contactIdValue) : void 0;
-    if (contactIdValue && !contactId) {
-      diagnostics.push(
-        diagnostic2(
-          "referential.contact.id.invalid",
-          "error",
-          `hosts[${index}].contactId`,
-          "Contact stable identifier must use the opaque contact-0001 format."
-        )
-      );
+    if (explicitStatuses.length === 1) {
+      return explicitStatuses[0];
     }
-    const contactName = this.requiredText(
-      record.contactName,
-      "referential.contact.name.invalid",
-      `hosts[${index}].contactName`,
-      "Contact name must be a non-empty string.",
+    const legacyStatus = _EventOccurrenceParser.readLegacyOccurrenceStatus(
+      legacyValue,
       diagnostics
     );
-    const email = this.email(
-      record.email,
-      "referential.contact.email.invalid",
-      `hosts[${index}].email`,
-      "Host contact email address is invalid.",
-      diagnostics
-    );
-    const phone = this.optionalText(
-      record.phone,
-      "referential.contact.phone.invalid",
-      `hosts[${index}].phone`,
-      "Host contact phone must be a string when provided.",
-      diagnostics
-    );
-    const address = this.requiredText(
-      record.address,
-      "referential.contact.address.invalid",
-      `hosts[${index}].address`,
-      "Host contact address must be a non-empty string.",
-      diagnostics
-    );
-    if (!hostId || !displayName || !contactId || !contactName || !email || address === void 0 || phone === null) {
-      return void 0;
+    if (legacyStatus !== void 0) {
+      return legacyStatus;
     }
-    return {
-      hostId,
-      displayName,
-      contact: {
-        id: contactId,
-        name: contactName,
-        email,
-        ...phone ? { phone } : {},
-        address
-      }
-    };
+    return issueState === "closed" ? "held" : "scheduled";
   }
-  validateSpeakers(records, diagnostics) {
-    const speakers = [];
-    const speakerIds = /* @__PURE__ */ new Set();
-    for (const [index, record] of records.entries()) {
-      const speakerIdValue = this.requiredText(
-        record.speakerId,
-        "referential.speaker.id.invalid",
-        `speakers[${index}].speakerId`,
-        "Speaker stable identifier must be a non-empty string.",
-        diagnostics
-      );
-      const speakerId = speakerIdValue ? asSpeakerId(speakerIdValue) : void 0;
-      if (speakerIdValue && !speakerId) {
-        diagnostics.push(
-          diagnostic2(
-            "referential.speaker.id.invalid",
-            "error",
-            `speakers[${index}].speakerId`,
-            "Speaker stable identifier must use the speaker-* slug format."
-          )
-        );
-      }
-      const firstName = this.requiredText(
-        record.firstName,
-        "referential.speaker.first-name.invalid",
-        `speakers[${index}].firstName`,
-        "Speaker first name must be a non-empty string.",
-        diagnostics
-      );
-      const lastName = this.requiredText(
-        record.lastName,
-        "referential.speaker.last-name.invalid",
-        `speakers[${index}].lastName`,
-        "Speaker last name must be a non-empty string.",
-        diagnostics
-      );
-      const company = this.requiredText(
-        record.company,
-        "referential.speaker.company.invalid",
-        `speakers[${index}].company`,
-        "Speaker company must be a non-empty string.",
-        diagnostics
-      );
-      const email = this.email(
-        record.email,
-        "referential.speaker.email.invalid",
-        `speakers[${index}].email`,
-        "Speaker email address is invalid.",
-        diagnostics
-      );
-      const phone = this.optionalText(
-        record.phone,
-        "referential.speaker.phone.invalid",
-        `speakers[${index}].phone`,
-        "Speaker phone must be a string when provided.",
-        diagnostics
-      );
-      if (!speakerId || !firstName || !lastName || !company || !email || phone === null) {
-        continue;
-      }
-      if (speakerIds.has(speakerId)) {
-        diagnostics.push(
-          diagnostic2(
-            "referential.speaker.id.duplicate",
-            "error",
-            `speakers[${index}].speakerId`,
-            "Speaker stable identifiers must be unique."
-          )
-        );
-        continue;
-      }
-      speakerIds.add(speakerId);
-      speakers.push({
-        id: speakerId,
-        firstName,
-        lastName,
-        displayName: `${firstName} ${lastName}`,
-        company,
-        email,
-        ...phone ? { phone } : {}
-      });
-    }
-    return speakers;
-  }
-  requiredText(value, code, path, message, diagnostics) {
-    if (typeof value !== "string") {
-      diagnostics.push(diagnostic2(code, "error", path, message));
-      return void 0;
-    }
-    const normalized = normalizeDisplayName(value);
-    if (!normalized) {
-      diagnostics.push(diagnostic2(code, "error", path, message));
-      return void 0;
-    }
-    return normalized;
-  }
-  optionalText(value, code, path, message, diagnostics) {
+  static readLegacyOccurrenceStatus(value, diagnostics) {
     if (value === void 0 || value === null || value === "") {
       return void 0;
     }
-    if (typeof value !== "string") {
-      diagnostics.push(diagnostic2(code, "error", path, message));
-      return null;
+    if (typeof value === "string" && OCCURRENCE_STATUSES.includes(value)) {
+      return value;
     }
-    return value.normalize("NFC").trim() || void 0;
+    diagnostics.push(
+      EventDiagnostics.diagnostic({
+        code: "event.occurrence-status.invalid",
+        severity: "error",
+        category: "invalid",
+        field: "event_status",
+        message: "Occurrence status must be scheduled, postponed, held, or cancelled"
+      })
+    );
+    return void 0;
   }
-  email(value, code, path, message, diagnostics) {
-    if (typeof value !== "string") {
-      diagnostics.push(diagnostic2(code, "error", path, message));
+};
+
+// packages/domain/event/src/domain/participant-reference-parser.ts
+var ParticipantReferenceParser = class _ParticipantReferenceParser {
+  static parseParticipantReference(value) {
+    const trimmed = value.trim();
+    const markdownLinkLabel = _ParticipantReferenceParser.parseMarkdownLinkLabel(trimmed);
+    if (markdownLinkLabel !== void 0) {
+      return { displayName: markdownLinkLabel };
+    }
+    const stableReference = _ParticipantReferenceParser.parseStableIdReference(trimmed);
+    if (stableReference) {
+      return stableReference;
+    }
+    return { displayName: trimmed };
+  }
+  static parseLegacyAgendaLine(line) {
+    let cursor = 0;
+    cursor = _ParticipantReferenceParser.skipHorizontalWhitespace(line, cursor);
+    if (line[cursor] !== "-") {
       return void 0;
     }
-    const normalized = value.normalize("NFC").trim().toLowerCase();
-    if (!EMAIL_PATTERN.test(normalized)) {
-      diagnostics.push(diagnostic2(code, "error", path, message));
+    cursor += 1;
+    if (!_ParticipantReferenceParser.isHorizontalWhitespaceCharacter(
+      line[cursor] ?? ""
+    )) {
       return void 0;
     }
-    return normalized;
-  }
-  reportDuplicateDisplayNames(entities, code, path, message, diagnostics) {
-    const counts = /* @__PURE__ */ new Map();
-    for (const entity of entities) {
-      const key = displayNameKey(entity.displayName);
-      counts.set(key, (counts.get(key) ?? 0) + 1);
-    }
-    let ambiguityIndex = 0;
-    for (const count of counts.values()) {
-      if (count < 2) {
+    cursor = _ParticipantReferenceParser.skipHorizontalWhitespace(line, cursor);
+    const content = line.slice(cursor);
+    for (let index = 0; index < content.length; index += 1) {
+      if (content[index] !== ":") {
         continue;
       }
-      diagnostics.push(
-        diagnostic2(
-          code,
-          "error",
-          `${path}.ambiguities[${ambiguityIndex}]`,
-          message
-        )
-      );
-      ambiguityIndex += 1;
+      if (!_ParticipantReferenceParser.isHorizontalWhitespaceCharacter(
+        content[index + 1] ?? ""
+      )) {
+        continue;
+      }
+      const speakers = content.slice(0, index).trimEnd();
+      if (speakers === "") {
+        return void 0;
+      }
+      let descriptionStart = index + 1;
+      while (descriptionStart < content.length && _ParticipantReferenceParser.isHorizontalWhitespaceCharacter(
+        content[descriptionStart]
+      )) {
+        descriptionStart += 1;
+      }
+      return {
+        speakers,
+        description: content.slice(descriptionStart)
+      };
     }
+    return void 0;
+  }
+  static parseMarkdownLinkLabel(value) {
+    if (!value.startsWith("[") || !value.endsWith(")")) {
+      return void 0;
+    }
+    const closingBracket = value.indexOf("]");
+    if (closingBracket <= 1 || value[closingBracket + 1] !== "(") {
+      return void 0;
+    }
+    const target = value.slice(closingBracket + 2, -1);
+    if (target === "" || target.includes(")")) {
+      return void 0;
+    }
+    return value.slice(1, closingBracket).trim();
+  }
+  static parseStableIdReference(value) {
+    if (!value.endsWith("]")) {
+      return void 0;
+    }
+    const openingBracket = value.lastIndexOf("[");
+    if (openingBracket <= 0 || !_ParticipantReferenceParser.isWhitespaceCharacter(
+      value[openingBracket - 1] ?? ""
+    )) {
+      return void 0;
+    }
+    const id = value.slice(openingBracket + 1, -1);
+    if (!STABLE_ID_PATTERN.test(id)) {
+      return void 0;
+    }
+    const displayName = value.slice(0, openingBracket).trim();
+    if (displayName === "") {
+      return void 0;
+    }
+    return {
+      displayName,
+      id
+    };
+  }
+  static isHorizontalWhitespaceCharacter(value) {
+    return value === " " || value === "	";
+  }
+  static isWhitespaceCharacter(value) {
+    return _ParticipantReferenceParser.isHorizontalWhitespaceCharacter(value) || value === "\n" || value === "\r";
+  }
+  static skipHorizontalWhitespace(line, cursor) {
+    while (cursor < line.length && _ParticipantReferenceParser.isHorizontalWhitespaceCharacter(line[cursor])) {
+      cursor += 1;
+    }
+    return cursor;
+  }
+};
+
+// packages/domain/event/src/domain/legacy-event-fields.ts
+var LegacyEventFields = class _LegacyEventFields {
+  static readString(value, field, diagnostics) {
+    if (value === void 0 || value === null) {
+      return "";
+    }
+    if (typeof value === "string") {
+      return value;
+    }
+    diagnostics.push(
+      EventDiagnostics.diagnostic({
+        code: "event.document.invalid-field-type",
+        severity: "error",
+        category: "invalid",
+        field,
+        message: `The ${field} field must be a string`
+      })
+    );
+    return "";
+  }
+  static readOptionalString(value, field, diagnostics) {
+    if (value === void 0 || value === null || value === "") {
+      return void 0;
+    }
+    return _LegacyEventFields.readString(value, field, diagnostics);
+  }
+  static readLegacyHost(value, diagnostics) {
+    if (value === void 0 || value === null) {
+      return void 0;
+    }
+    if (!Array.isArray(value)) {
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.document.invalid-hoster-type",
+          severity: "error",
+          category: "invalid",
+          field: "hoster",
+          message: "The legacy hoster field must be an array"
+        })
+      );
+      return void 0;
+    }
+    if (value.length > 1) {
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.hoster.multiple",
+          severity: "error",
+          category: "invalid",
+          field: "hoster",
+          message: "A meetup event must have exactly one host"
+        })
+      );
+    }
+    const first = value[0];
+    if (first === void 0) {
+      return void 0;
+    }
+    if (typeof first !== "string") {
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.document.invalid-hoster-entry",
+          severity: "error",
+          category: "invalid",
+          field: "hoster",
+          message: "The legacy hoster entry must be a string"
+        })
+      );
+      return void 0;
+    }
+    return ParticipantReferenceParser.parseParticipantReference(first);
+  }
+  static readLegacyAgenda(value, diagnostics) {
+    if (value === void 0 || value === null || value === "") {
+      return [];
+    }
+    if (typeof value !== "string") {
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.document.invalid-agenda-type",
+          severity: "error",
+          category: "invalid",
+          field: "agenda",
+          message: "The legacy agenda field must be a string"
+        })
+      );
+      return [];
+    }
+    const entries = [];
+    for (const [index, line] of value.split("\n").entries()) {
+      if (line.trim() === "") {
+        continue;
+      }
+      const agendaLine = ParticipantReferenceParser.parseLegacyAgendaLine(line);
+      if (!agendaLine) {
+        diagnostics.push(
+          EventDiagnostics.diagnostic({
+            code: "event.agenda.legacy-line-invalid",
+            severity: "error",
+            category: "invalid",
+            field: `agenda.${index}`,
+            message: `Agenda line ${index + 1} does not match "- <speaker(s)>: <description>"`
+          })
+        );
+        continue;
+      }
+      entries.push({
+        speakers: agendaLine.speakers.split(",").map(
+          (speaker) => ParticipantReferenceParser.parseParticipantReference(speaker)
+        ),
+        description: agendaLine.description
+      });
+    }
+    return entries;
+  }
+};
+
+// packages/domain/event/src/domain/meetup-event-migration.ts
+var MeetupEventMigration = class _MeetupEventMigration {
+  static parseParticipantReference(value) {
+    return ParticipantReferenceParser.parseParticipantReference(value);
+  }
+  static migrateMeetupEventDto(dto) {
+    if (dto.schemaVersion === EVENT_SCHEMA_VERSION) {
+      return {
+        event: MeetupEventOperations.cloneMeetupEvent(dto),
+        diagnostics: []
+      };
+    }
+    return _MeetupEventMigration.migrateLegacyDto(dto);
+  }
+  static migrateLegacyDto(dto) {
+    const diagnostics = [];
+    const body = dto.parsedBody;
+    const { eventTitle, date, description, host, agenda, occurrenceStatus } = _MeetupEventMigration.legacyFields(dto, diagnostics);
+    const event = {
+      schemaVersion: EVENT_SCHEMA_VERSION,
+      identity: {
+        repository: dto.repository,
+        issueNumber: dto.issueNumber
+      },
+      issueState: dto.issueState ?? "open",
+      issueTitle: dto.issueTitle,
+      labels: [...dto.labels ?? []],
+      eventTitle,
+      date,
+      description,
+      host,
+      agenda,
+      publicationLinks: _MeetupEventMigration.publicationLinks(
+        body,
+        diagnostics
+      ),
+      occurrenceStatus,
+      timeZone: dto.timeZone ?? "Europe/Paris",
+      confirmations: {
+        host: dto.labels?.includes("hoster:confirmed") ?? false,
+        speakers: dto.labels?.includes("speakers:confirmed") ?? false
+      },
+      logistics: {
+        aperitif: "unspecified",
+        postEventVenue: "unspecified"
+      },
+      operationalChecklists: {
+        slidesAndContent: [],
+        communication: [],
+        postEvent: []
+      },
+      // A legacy flag has no named task evidence and cannot prove completion.
+      followUpComplete: false
+    };
+    diagnostics.unshift(
+      EventDiagnostics.diagnostic({
+        code: "event.document.legacy-schema",
+        severity: "info",
+        category: "migration",
+        message: "The legacy event document was migrated to schema version 1",
+        fixAvailable: true
+      })
+    );
+    return { event, diagnostics };
+  }
+  static publicationLinks(body, diagnostics) {
+    return {
+      meetup: LegacyEventFields.readOptionalString(
+        body.meetup_link,
+        "meetup_link",
+        diagnostics
+      ),
+      community: LegacyEventFields.readOptionalString(
+        body.cncf_link,
+        "cncf_link",
+        diagnostics
+      ),
+      assets: LegacyEventFields.readOptionalString(
+        body.drive_link,
+        "drive_link",
+        diagnostics
+      )
+    };
+  }
+  static legacyFields(dto, diagnostics) {
+    const body = dto.parsedBody;
+    const eventTitle = LegacyEventFields.readString(
+      body.event_title,
+      "event_title",
+      diagnostics
+    );
+    const date = LegacyEventFields.readString(
+      body.event_date,
+      "event_date",
+      diagnostics
+    );
+    const description = LegacyEventFields.readString(
+      body.event_description,
+      "event_description",
+      diagnostics
+    );
+    const host = LegacyEventFields.readLegacyHost(body.hoster, diagnostics);
+    const agenda = LegacyEventFields.readLegacyAgenda(body.agenda, diagnostics);
+    const occurrenceStatus = EventOccurrenceParser.readOccurrenceStatus(
+      dto.labels ?? [],
+      dto.issueState ?? "open",
+      body.event_status,
+      diagnostics
+    );
+    return { eventTitle, date, description, host, agenda, occurrenceStatus };
   }
 };
 
@@ -27848,7 +29187,7 @@ var MAIL_TEMPLATE_NAMES = {
   speakerThanks: "meetup-thanks-speakers"
 };
 
-// packages/domain/communication/src/plan-communications.ts
+// packages/domain/communication/src/plan-communications-contracts.ts
 var MAIL_POLICIES = {
   introduction: {
     hosting: {
@@ -27878,11 +29217,927 @@ var DEFAULT_DISPATCH_CAPABILITIES = Object.freeze({
   notification: true
 });
 
-// packages/application/journey/src/use-cases/manage-meetup-communications.ts
+// packages/domain/referential/src/application/use-cases/project-referential-choices.ts
+var ProjectReferentialChoices = class {
+  execute(catalog) {
+    return Object.freeze({
+      hostOptions: Object.freeze(catalog.hosts.map((host) => host.displayName)),
+      speakerReferences: Object.freeze(
+        catalog.speakers.map((speaker) => speaker.displayName)
+      )
+    });
+  }
+};
+
+// packages/domain/referential/src/domain/identifiers.ts
+var HOST_ID_PATTERN = /^host-[0-9]{4}$/;
+var CONTACT_ID_PATTERN = /^contact-[0-9]{4}$/;
+var SPEAKER_ID_PATTERN = /^speaker-[0-9]{4}$/;
+var ReferentialIdentifiers = class {
+  static asHostId(value) {
+    return HOST_ID_PATTERN.test(value) ? value : void 0;
+  }
+  static asContactId(value) {
+    return CONTACT_ID_PATTERN.test(value) ? value : void 0;
+  }
+  static asSpeakerId(value) {
+    return SPEAKER_ID_PATTERN.test(value) ? value : void 0;
+  }
+};
+
+// packages/domain/referential/src/domain/referential-catalog.ts
+var ReferentialCatalogOperations = class _ReferentialCatalogOperations {
+  static normalizeDisplayName(value) {
+    return value.normalize("NFC").trim().replace(/\s+/g, " ");
+  }
+  static displayNameKey(value) {
+    return _ReferentialCatalogOperations.normalizeDisplayName(
+      value
+    ).toLowerCase();
+  }
+  static freezeCatalog(hosts, speakers) {
+    for (const host of hosts) {
+      for (const contact of host.contacts) {
+        Object.freeze(contact);
+      }
+      Object.freeze(host.contacts);
+      Object.freeze(host);
+    }
+    for (const speaker of speakers) {
+      Object.freeze(speaker);
+    }
+    return Object.freeze({
+      hosts: Object.freeze([...hosts]),
+      speakers: Object.freeze([...speakers])
+    });
+  }
+};
+
+// packages/domain/referential/src/domain/referential-diagnostic.ts
+var ReferentialDiagnostics = class {
+  static diagnostic(code, severity, path, message) {
+    return Object.freeze({ code, severity, path, message });
+  }
+  static freezeDiagnostics(diagnostics) {
+    return Object.freeze([...diagnostics]);
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/resolve-event-references.ts
+var EXPLICIT_REFERENCE_PATTERN = /^(.*?)\s+\[([^\]]+)]\s*$/;
+var ResolveEventReferences = class {
+  execute(catalog, command) {
+    const diagnostics = [];
+    const host = this.resolveHost(
+      catalog.hosts,
+      command.hostReference,
+      diagnostics
+    );
+    const speakers = command.speakerReferences.map(
+      (reference, index) => this.resolveSpeaker(catalog.speakers, reference, index, diagnostics)
+    ).filter((speaker) => speaker !== void 0);
+    const frozenDiagnostics = ReferentialDiagnostics.freezeDiagnostics(diagnostics);
+    if (!host || diagnostics.some(({ severity }) => severity === "error")) {
+      return Object.freeze({
+        resolved: false,
+        diagnostics: frozenDiagnostics
+      });
+    }
+    const uniqueSpeakers = [
+      ...new Map(speakers.map((speaker) => [speaker.id, speaker])).values()
+    ];
+    return Object.freeze({
+      resolved: true,
+      host,
+      speakers: Object.freeze(uniqueSpeakers),
+      diagnostics: frozenDiagnostics
+    });
+  }
+  resolveHost(hosts, reference, diagnostics) {
+    const parsed = this.parseReference(reference);
+    if (!parsed) {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(
+          "referential.reference.host.invalid",
+          "error",
+          "hostReference",
+          "Host reference must be a display name or use Display name [host-0001] syntax."
+        )
+      );
+      return void 0;
+    }
+    if (parsed.stableId !== void 0) {
+      const id = ReferentialIdentifiers.asHostId(parsed.stableId);
+      if (!id) {
+        diagnostics.push(
+          ReferentialDiagnostics.diagnostic(
+            "referential.reference.host.invalid",
+            "error",
+            "hostReference",
+            "Explicit host reference contains an invalid stable identifier."
+          )
+        );
+        return void 0;
+      }
+      const host = hosts.find((candidate) => candidate.id === id);
+      if (!host) {
+        diagnostics.push(
+          ReferentialDiagnostics.diagnostic(
+            "referential.reference.host.unknown",
+            "error",
+            "hostReference",
+            "Explicit host stable identifier is not present in the catalog."
+          )
+        );
+        return void 0;
+      }
+      if (ReferentialCatalogOperations.displayNameKey(host.displayName) !== ReferentialCatalogOperations.displayNameKey(parsed.displayName)) {
+        diagnostics.push(
+          ReferentialDiagnostics.diagnostic(
+            "referential.reference.host.display-name-mismatch",
+            "warning",
+            "hostReference",
+            "Host display name is stale; the stable identifier remains authoritative."
+          )
+        );
+      }
+      return host;
+    }
+    return this.hostByName(hosts, parsed, diagnostics);
+  }
+  resolveSpeaker(speakers, reference, index, diagnostics) {
+    const path = `speakerReferences[${index}]`;
+    const parsed = this.parseReference(reference);
+    if (!parsed) {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(
+          "referential.reference.speaker.invalid",
+          "error",
+          path,
+          "Speaker reference must be a display name or use Display name [speaker-0001] syntax."
+        )
+      );
+      return void 0;
+    }
+    if (parsed.stableId !== void 0) {
+      const id = ReferentialIdentifiers.asSpeakerId(parsed.stableId);
+      if (!id) {
+        diagnostics.push(
+          ReferentialDiagnostics.diagnostic(
+            "referential.reference.speaker.invalid",
+            "error",
+            path,
+            "Explicit speaker reference contains an invalid stable identifier."
+          )
+        );
+        return void 0;
+      }
+      const speaker = speakers.find((candidate) => candidate.id === id);
+      if (!speaker) {
+        diagnostics.push(
+          ReferentialDiagnostics.diagnostic(
+            "referential.reference.speaker.unknown",
+            "error",
+            path,
+            "Explicit speaker stable identifier is not present in the catalog."
+          )
+        );
+        return void 0;
+      }
+      if (ReferentialCatalogOperations.displayNameKey(speaker.displayName) !== ReferentialCatalogOperations.displayNameKey(parsed.displayName)) {
+        diagnostics.push(
+          ReferentialDiagnostics.diagnostic(
+            "referential.reference.speaker.display-name-mismatch",
+            "warning",
+            path,
+            "Speaker display name is stale; the stable identifier remains authoritative."
+          )
+        );
+      }
+      return speaker;
+    }
+    return this.speakerByName(speakers, parsed, path, diagnostics);
+  }
+  parseReference(reference) {
+    if (typeof reference !== "string") {
+      return void 0;
+    }
+    const normalized = ReferentialCatalogOperations.normalizeDisplayName(reference);
+    if (!normalized) {
+      return void 0;
+    }
+    const explicit = normalized.match(EXPLICIT_REFERENCE_PATTERN);
+    if (!explicit) {
+      return { displayName: normalized };
+    }
+    const displayName = ReferentialCatalogOperations.normalizeDisplayName(
+      explicit[1]
+    );
+    const stableId = explicit[2].trim();
+    if (!displayName || !stableId) {
+      return void 0;
+    }
+    return { displayName, stableId };
+  }
+  hostByName(hosts, parsed, diagnostics) {
+    const matches = hosts.filter(
+      (host) => ReferentialCatalogOperations.displayNameKey(host.displayName) === ReferentialCatalogOperations.displayNameKey(parsed.displayName)
+    );
+    if (matches.length === 1) {
+      return matches[0];
+    }
+    diagnostics.push(
+      ReferentialDiagnostics.diagnostic(
+        matches.length === 0 ? "referential.reference.host.unknown" : "referential.reference.host.ambiguous",
+        "error",
+        "hostReference",
+        matches.length === 0 ? "Legacy host display name is not present in the catalog." : "Legacy host display name is ambiguous; include the stable identifier."
+      )
+    );
+    return void 0;
+  }
+  speakerByName(speakers, parsed, path, diagnostics) {
+    const matches = speakers.filter(
+      (speaker) => ReferentialCatalogOperations.displayNameKey(speaker.displayName) === ReferentialCatalogOperations.displayNameKey(parsed.displayName)
+    );
+    if (matches.length === 1) {
+      return matches[0];
+    }
+    diagnostics.push(
+      ReferentialDiagnostics.diagnostic(
+        matches.length === 0 ? "referential.reference.speaker.unknown" : "referential.reference.speaker.ambiguous",
+        "error",
+        path,
+        matches.length === 0 ? "Legacy speaker display name is not present in the catalog." : "Legacy speaker display name is ambiguous; include the stable identifier."
+      )
+    );
+    return void 0;
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/validate-referential-catalog-contracts.ts
+var EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// packages/domain/referential/src/application/use-cases/referential-record-fields.ts
+var ReferentialRecordFields = class {
+  static requiredText(value, code, path, message, diagnostics) {
+    if (typeof value !== "string") {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(code, "error", path, message)
+      );
+      return void 0;
+    }
+    const normalized = ReferentialCatalogOperations.normalizeDisplayName(value);
+    if (!normalized) {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(code, "error", path, message)
+      );
+      return void 0;
+    }
+    return normalized;
+  }
+  static optionalText(value, code, path, message, diagnostics) {
+    if (value === void 0 || value === null || value === "") {
+      return void 0;
+    }
+    if (typeof value !== "string") {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(code, "error", path, message)
+      );
+      return null;
+    }
+    return value.normalize("NFC").trim() || void 0;
+  }
+  static email(value, code, path, message, diagnostics) {
+    if (typeof value !== "string") {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(code, "error", path, message)
+      );
+      return void 0;
+    }
+    const normalized = value.normalize("NFC").trim().toLowerCase();
+    if (!EMAIL_PATTERN.test(normalized)) {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(code, "error", path, message)
+      );
+      return void 0;
+    }
+    return normalized;
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/host-catalog-validator.ts
+var HostCatalogValidator = class _HostCatalogValidator {
+  static validateHosts(records, diagnostics) {
+    const hostsById = /* @__PURE__ */ new Map();
+    const contactIds = /* @__PURE__ */ new Set();
+    for (const [index, record] of records.entries()) {
+      const parsed = _HostCatalogValidator.parseHostRecord(
+        record,
+        index,
+        diagnostics
+      );
+      if (!parsed) {
+        continue;
+      }
+      if (contactIds.has(parsed.contact.id)) {
+        diagnostics.push(
+          ReferentialDiagnostics.diagnostic(
+            "referential.contact.id.duplicate",
+            "error",
+            `hosts[${index}].contactId`,
+            "Contact stable identifiers must be unique."
+          )
+        );
+        continue;
+      }
+      contactIds.add(parsed.contact.id);
+      const host = hostsById.get(parsed.hostId);
+      if (!host) {
+        hostsById.set(parsed.hostId, {
+          ...record.source ? { source: Object.freeze({ ...record.source }) } : {},
+          id: parsed.hostId,
+          displayName: parsed.displayName,
+          contacts: [parsed.contact]
+        });
+        continue;
+      }
+      if (host.displayName !== parsed.displayName) {
+        diagnostics.push(
+          ReferentialDiagnostics.diagnostic(
+            "referential.host.id.conflict",
+            "error",
+            `hosts[${index}].hostId`,
+            "A host stable identifier cannot describe different host names."
+          )
+        );
+        continue;
+      }
+      host.contacts.push(parsed.contact);
+    }
+    return [...hostsById.values()].map((host) => ({
+      ...host.source ? { source: host.source } : {},
+      id: host.id,
+      displayName: host.displayName,
+      contacts: host.contacts
+    }));
+  }
+  static parseHostRecord(record, index, diagnostics) {
+    const hostId = _HostCatalogValidator.hostId(record, index, diagnostics);
+    const displayName = ReferentialRecordFields.requiredText(
+      record.displayName,
+      "referential.host.display-name.invalid",
+      `hosts[${index}].displayName`,
+      "Host display name must be a non-empty string.",
+      diagnostics
+    );
+    const contactId = _HostCatalogValidator.contactId(
+      record,
+      index,
+      diagnostics
+    );
+    const contactName = ReferentialRecordFields.requiredText(
+      record.contactName,
+      "referential.contact.name.invalid",
+      `hosts[${index}].contactName`,
+      "Contact name must be a non-empty string.",
+      diagnostics
+    );
+    const email = ReferentialRecordFields.email(
+      record.email,
+      "referential.contact.email.invalid",
+      `hosts[${index}].email`,
+      "Host contact email address is invalid.",
+      diagnostics
+    );
+    const phone = ReferentialRecordFields.optionalText(
+      record.phone,
+      "referential.contact.phone.invalid",
+      `hosts[${index}].phone`,
+      "Host contact phone must be a string when provided.",
+      diagnostics
+    );
+    const address = ReferentialRecordFields.requiredText(
+      record.address,
+      "referential.contact.address.invalid",
+      `hosts[${index}].address`,
+      "Host contact address must be a non-empty string.",
+      diagnostics
+    );
+    if (!hostId || !displayName || !contactId || !contactName || !email || address === void 0 || phone === null) {
+      return void 0;
+    }
+    return {
+      hostId,
+      displayName,
+      contact: {
+        id: contactId,
+        name: contactName,
+        email,
+        ...phone ? { phone } : {},
+        address
+      }
+    };
+  }
+  static hostId(record, index, diagnostics) {
+    const hostIdValue = ReferentialRecordFields.requiredText(
+      record.hostId,
+      "referential.host.id.invalid",
+      `hosts[${index}].hostId`,
+      "Host stable identifier must be a non-empty string.",
+      diagnostics
+    );
+    const hostId = hostIdValue ? ReferentialIdentifiers.asHostId(hostIdValue) : void 0;
+    if (hostIdValue && !hostId) {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(
+          "referential.host.id.invalid",
+          "error",
+          `hosts[${index}].hostId`,
+          "Host stable identifier must use the opaque host-0001 format."
+        )
+      );
+    }
+    return hostId;
+  }
+  static contactId(record, index, diagnostics) {
+    const contactIdValue = ReferentialRecordFields.requiredText(
+      record.contactId,
+      "referential.contact.id.invalid",
+      `hosts[${index}].contactId`,
+      "Contact stable identifier must be a non-empty string.",
+      diagnostics
+    );
+    const contactId = contactIdValue ? ReferentialIdentifiers.asContactId(contactIdValue) : void 0;
+    if (contactIdValue && !contactId) {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(
+          "referential.contact.id.invalid",
+          "error",
+          `hosts[${index}].contactId`,
+          "Contact stable identifier must use the opaque contact-0001 format."
+        )
+      );
+    }
+    return contactId;
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/speaker-catalog-validator.ts
+var SpeakerCatalogValidator = class _SpeakerCatalogValidator {
+  static validateSpeakers(records, diagnostics) {
+    const speakers = [];
+    const speakerIds = /* @__PURE__ */ new Set();
+    for (const [index, record] of records.entries()) {
+      const speakerId = _SpeakerCatalogValidator.speakerId(
+        record,
+        index,
+        diagnostics
+      );
+      const { firstName, lastName, company, email, phone } = _SpeakerCatalogValidator.contactFields(record, index, diagnostics);
+      if (!speakerId || !firstName || !lastName || !company || !email || phone === null) {
+        continue;
+      }
+      if (speakerIds.has(speakerId)) {
+        diagnostics.push(
+          ReferentialDiagnostics.diagnostic(
+            "referential.speaker.id.duplicate",
+            "error",
+            `speakers[${index}].speakerId`,
+            "Speaker stable identifiers must be unique."
+          )
+        );
+        continue;
+      }
+      speakerIds.add(speakerId);
+      speakers.push({
+        ...record.source ? { source: Object.freeze({ ...record.source }) } : {},
+        id: speakerId,
+        firstName,
+        lastName,
+        displayName: `${firstName} ${lastName}`,
+        company,
+        email,
+        ...phone ? { phone } : {}
+      });
+    }
+    return speakers;
+  }
+  static speakerId(record, index, diagnostics) {
+    const speakerIdValue = ReferentialRecordFields.requiredText(
+      record.speakerId,
+      "referential.speaker.id.invalid",
+      `speakers[${index}].speakerId`,
+      "Speaker stable identifier must be a non-empty string.",
+      diagnostics
+    );
+    const speakerId = speakerIdValue ? ReferentialIdentifiers.asSpeakerId(speakerIdValue) : void 0;
+    if (speakerIdValue && !speakerId) {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(
+          "referential.speaker.id.invalid",
+          "error",
+          `speakers[${index}].speakerId`,
+          "Speaker stable identifier must use the speaker-* slug format."
+        )
+      );
+    }
+    return speakerId;
+  }
+  static contactFields(record, index, diagnostics) {
+    const firstName = ReferentialRecordFields.requiredText(
+      record.firstName,
+      "referential.speaker.first-name.invalid",
+      `speakers[${index}].firstName`,
+      "Speaker first name must be a non-empty string.",
+      diagnostics
+    );
+    const lastName = ReferentialRecordFields.requiredText(
+      record.lastName,
+      "referential.speaker.last-name.invalid",
+      `speakers[${index}].lastName`,
+      "Speaker last name must be a non-empty string.",
+      diagnostics
+    );
+    const company = ReferentialRecordFields.requiredText(
+      record.company,
+      "referential.speaker.company.invalid",
+      `speakers[${index}].company`,
+      "Speaker company must be a non-empty string.",
+      diagnostics
+    );
+    const email = ReferentialRecordFields.email(
+      record.email,
+      "referential.speaker.email.invalid",
+      `speakers[${index}].email`,
+      "Speaker email address is invalid.",
+      diagnostics
+    );
+    const phone = ReferentialRecordFields.optionalText(
+      record.phone,
+      "referential.speaker.phone.invalid",
+      `speakers[${index}].phone`,
+      "Speaker phone must be a string when provided.",
+      diagnostics
+    );
+    return { firstName, lastName, company, email, phone };
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/validate-referential-catalog.ts
+var ValidateReferentialCatalog = class {
+  constructor(repository) {
+    this.repository = repository;
+  }
+  repository;
+  async execute(rawCatalog) {
+    const input = rawCatalog ?? await this.loadCatalog();
+    const diagnostics = [];
+    const hosts = HostCatalogValidator.validateHosts(input.hosts, diagnostics);
+    const speakers = SpeakerCatalogValidator.validateSpeakers(
+      input.speakers,
+      diagnostics
+    );
+    this.reportDuplicateDisplayNames(
+      hosts,
+      "referential.host.display-name.duplicate",
+      "hosts",
+      "Duplicate normalized host display names are not allowed; keep one stable host per public name.",
+      diagnostics
+    );
+    this.reportDuplicateDisplayNames(
+      speakers,
+      "referential.speaker.display-name.duplicate",
+      "speakers",
+      "Duplicate normalized speaker display names are not allowed; keep one stable speaker per public name.",
+      diagnostics
+    );
+    const frozenDiagnostics = ReferentialDiagnostics.freezeDiagnostics(diagnostics);
+    if (diagnostics.some(({ severity }) => severity === "error")) {
+      return Object.freeze({
+        isValid: false,
+        diagnostics: frozenDiagnostics
+      });
+    }
+    return Object.freeze({
+      isValid: true,
+      catalog: ReferentialCatalogOperations.freezeCatalog(hosts, speakers),
+      diagnostics: frozenDiagnostics
+    });
+  }
+  async loadCatalog() {
+    if (!this.repository) {
+      throw new Error(
+        "A referential repository or an explicit raw catalog is required."
+      );
+    }
+    return this.repository.load();
+  }
+  reportDuplicateDisplayNames(entities, code, path, message, diagnostics) {
+    const counts = /* @__PURE__ */ new Map();
+    for (const entity of entities) {
+      const key = ReferentialCatalogOperations.displayNameKey(
+        entity.displayName
+      );
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    let ambiguityIndex = 0;
+    for (const count of counts.values()) {
+      if (count < 2) {
+        continue;
+      }
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(
+          code,
+          "error",
+          `${path}.ambiguities[${ambiguityIndex}]`,
+          message
+        )
+      );
+      ambiguityIndex += 1;
+    }
+  }
+};
+
+// packages/application/journey/src/use-cases/manage-meetup-communications-contracts.ts
 var UNRESOLVED_MAIL_RECIPIENTS = Object.freeze({
   resolved: false,
   recipients: Object.freeze([])
 });
+
+// packages/application/journey/src/use-cases/event-diagnostic-projection.ts
+var EventDiagnosticProjection = class {
+  static toEventDiagnostic(code, severity, field, message) {
+    return {
+      code,
+      severity,
+      category: severity === "error" ? "invalid" : "migration",
+      field,
+      message
+    };
+  }
+  static toPublicDiagnostic(item) {
+    return {
+      code: item.code,
+      severity: item.severity,
+      field: item.field,
+      message: item.message,
+      fixApplied: false
+    };
+  }
+};
+
+// packages/application/journey/src/use-cases/event-participant-resolution.ts
+var EventParticipantResolution = class _EventParticipantResolution {
+  static renderReference(reference) {
+    return reference.id ? `${reference.displayName} [${reference.id}]` : reference.displayName;
+  }
+  static enrichStableReferences(event, host, speakers) {
+    return {
+      ...event,
+      host: _EventParticipantResolution.resolvedParticipant(host),
+      agenda: event.agenda.map((entry) => ({
+        ...entry,
+        speakers: entry.speakers.map((reference) => {
+          const matches = speakers.filter(
+            (speaker2) => speaker2.id === reference.id || _EventParticipantResolution.canonical(speaker2.displayName) === _EventParticipantResolution.canonical(reference.displayName)
+          );
+          const speaker = matches.length === 1 ? matches[0] : void 0;
+          return speaker ? _EventParticipantResolution.resolvedParticipant(speaker) : reference;
+        })
+      }))
+    };
+  }
+  static resolvedParticipant(reference) {
+    return {
+      id: reference.id,
+      displayName: reference.displayName,
+      ...reference.source ? { source: reference.source } : {}
+    };
+  }
+  static canonical(value) {
+    return value.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US");
+  }
+};
+
+// packages/application/journey/src/use-cases/event-publication-evaluation.ts
+var EventPublicationEvaluation = class _EventPublicationEvaluation {
+  static evaluatePublication(event, config) {
+    const diagnostics = [];
+    for (const field of ["meetup", "community", "assets"]) {
+      const value = event.publicationLinks[field];
+      if (!value) {
+        diagnostics.push({
+          code: `publication.${field}.missing`,
+          severity: "warning",
+          category: "incomplete",
+          field: `publicationLinks.${field}`,
+          message: `${field} publication link is required before the event is ready`
+        });
+      }
+    }
+    const engine = new PublicationUrlPolicyEngine(
+      PublicationUrlPolicies.createDefaultPublicationUrlPolicies({
+        ...DEFAULT_PUBLICATION_URL_CONFIGURATION,
+        meetupEventUrlPrefix: config.publication["meetup-event-url-prefix"],
+        communityEventUrlPrefixes: [
+          config.publication["cncf-event-url-prefix"],
+          ...DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes.slice(
+            1
+          )
+        ]
+      })
+    );
+    const evaluation = engine.evaluate(event.publicationLinks);
+    diagnostics.push(
+      ...evaluation.diagnostics.map((item) => ({
+        code: item.code,
+        severity: item.severity,
+        category: item.severity === "error" ? "invalid" : "normalization",
+        field: `publicationLinks.${item.field}`,
+        message: item.message,
+        fixAvailable: item.fixAvailable
+      }))
+    );
+    return {
+      event: { ...event, publicationLinks: evaluation.references },
+      diagnostics
+    };
+  }
+  static planEventManualPublicationTasks(event) {
+    return ManualPublicationPolicy.planManualPublicationTasks({
+      eventId: `${event.identity.repository}#${event.identity.issueNumber}`,
+      title: event.eventTitle,
+      description: event.description,
+      date: event.date,
+      timeZone: event.timeZone,
+      occurrenceStatus: event.occurrenceStatus,
+      references: event.publicationLinks,
+      slidesPublished: _EventPublicationEvaluation.checklistTaskIsCompleted(
+        event.operationalChecklists.postEvent,
+        POST_EVENT_TASK_NAMES.shareSlides
+      ),
+      attendanceImported: _EventPublicationEvaluation.checklistTaskIsCompleted(
+        event.operationalChecklists.postEvent,
+        POST_EVENT_TASK_NAMES.importAttendance
+      )
+    });
+  }
+  static checklistTaskIsCompleted(items, name) {
+    const matches = items.filter((item) => item.name === name);
+    return matches.length === 1 && matches[0]?.completed === true;
+  }
+  static pendingManualTaskDiagnostics(tasks) {
+    return tasks.filter((task) => task.status === "pending").map((task) => ({
+      code: `publication.manual-task.${task.kind}.pending`,
+      severity: "info",
+      field: `manualPublicationTasks.${task.kind}`,
+      message: `Manual task pending: ${task.reason}`
+    }));
+  }
+};
+
+// packages/application/journey/src/use-cases/manage-meetup-event.ts
+var ManageMeetupEvent = class {
+  constructor(dependencies) {
+    this.dependencies = dependencies;
+  }
+  dependencies;
+  async execute(input) {
+    const config = this.dependencies.config;
+    const eventDependencies = this.dependencies.eventDependencies;
+    const sourceDocument = input.sourceDocument ?? await eventDependencies.repository.find(input.identity);
+    if (!sourceDocument) {
+      throw new EventNotFoundError(input.identity);
+    }
+    if (!sourceDocument.labels.includes(config.event["issue-label"])) {
+      return { skipped: true, diagnostics: [] };
+    }
+    const eventResult = await new ReconcileEvent(eventDependencies).execute({
+      identity: input.identity,
+      mode: "check",
+      sourceDocument
+    });
+    const eventDiagnostics = [...eventResult.diagnostics];
+    let event = await this.resolveParticipants(
+      eventResult.event,
+      eventDiagnostics
+    );
+    const publication = EventPublicationEvaluation.evaluatePublication(
+      event,
+      config
+    );
+    event = publication.event;
+    eventDiagnostics.push(...publication.diagnostics);
+    const manualPublicationTasks = EventPublicationEvaluation.planEventManualPublicationTasks(event);
+    const readiness = EventReadinessPolicy.evaluateEventReadiness(
+      event,
+      eventDiagnostics
+    );
+    const lifecycle = EventLifecycle.evaluateEventLifecycle({
+      event,
+      readiness,
+      now: eventDependencies.clock.now()
+    });
+    const { persisted, commentUpdated } = await this.persist(
+      sourceDocument,
+      event,
+      input.mode,
+      readiness.diagnostics
+    );
+    return {
+      skipped: false,
+      event,
+      state: lifecycle.state,
+      isReady: readiness.isReady,
+      manualPublicationTasks,
+      persisted,
+      commentUpdated,
+      diagnostics: [
+        ...readiness.diagnostics.map(
+          EventDiagnosticProjection.toPublicDiagnostic
+        ),
+        ...EventPublicationEvaluation.pendingManualTaskDiagnostics(
+          manualPublicationTasks
+        )
+      ]
+    };
+  }
+  async resolveParticipants(event, eventDiagnostics) {
+    const catalogValidation = await new ValidateReferentialCatalog(
+      this.dependencies.referentialRepository
+    ).execute();
+    if (catalogValidation.isValid) {
+      const speakerReferences = event.agenda.flatMap(
+        (entry) => entry.speakers.map(EventParticipantResolution.renderReference)
+      );
+      const resolution = new ResolveEventReferences().execute(
+        catalogValidation.catalog,
+        {
+          hostReference: event.host ? EventParticipantResolution.renderReference(event.host) : "",
+          speakerReferences
+        }
+      );
+      eventDiagnostics.push(
+        ...resolution.diagnostics.map(
+          (item) => EventDiagnosticProjection.toEventDiagnostic(
+            item.code,
+            item.severity,
+            item.path,
+            item.message
+          )
+        )
+      );
+      if (resolution.resolved) {
+        event = EventParticipantResolution.enrichStableReferences(
+          event,
+          resolution.host,
+          resolution.speakers
+        );
+      }
+    } else {
+      eventDiagnostics.push(
+        ...catalogValidation.diagnostics.map(
+          (item) => EventDiagnosticProjection.toEventDiagnostic(
+            item.code,
+            item.severity,
+            item.path,
+            item.message
+          )
+        )
+      );
+    }
+    return event;
+  }
+  async persist(sourceDocument, event, mode, diagnostics) {
+    const eventDependencies = this.dependencies.eventDependencies;
+    const repositoryPatch = eventDependencies.documentCodec.createPatch(
+      sourceDocument,
+      event
+    );
+    let persisted = false;
+    let commentUpdated = false;
+    if (mode === "fix") {
+      if (!EventRepositoryPatches.eventRepositoryPatchIsEmpty(repositoryPatch)) {
+        await ReconcileEvent.ensureEventDocumentIsCurrent(
+          eventDependencies.repository,
+          sourceDocument.identity,
+          sourceDocument
+        );
+        await eventDependencies.repository.applyPatch(
+          sourceDocument.identity,
+          repositoryPatch
+        );
+        persisted = true;
+      }
+      commentUpdated = (await eventDependencies.commentRepository.reconcileDiagnostics(
+        sourceDocument.identity,
+        diagnostics
+      )).changed;
+    }
+    return { persisted, commentUpdated };
+  }
+};
 
 // packages/application/journey/src/use-cases/synchronize-meetup-issue-form.ts
 var SynchronizeMeetupIssueForm = class {
@@ -27939,14 +30194,16 @@ var ValidateMeetupReferentials = class {
 };
 
 // packages/runtime/github-actions/src/action-output.ts
-function setJsonOutput(name, value) {
-  setOutput(name, JSON.stringify(value));
-}
-function setDiagnosticsOutput(diagnostics) {
-  setJsonOutput("diagnostics", diagnostics);
-}
+var ActionOutput = class _ActionOutput {
+  static setJsonOutput(name, value) {
+    setOutput(name, JSON.stringify(value));
+  }
+  static setDiagnosticsOutput(diagnostics) {
+    _ActionOutput.setJsonOutput("diagnostics", diagnostics);
+  }
+};
 
-// packages/adapter/csv-referential-repository/src/index.ts
+// packages/adapter/csv-referential-repository/src/csv-referential-repository.ts
 import { readFile } from "node:fs/promises";
 import { isAbsolute, relative, resolve } from "node:path";
 
@@ -29654,27 +31911,8 @@ var parse = function(data, opts = {}) {
   return records;
 };
 
-// packages/adapter/csv-referential-repository/src/index.ts
-function localPath(rootInput, relativeInput) {
-  const root = resolve(rootInput);
-  const absolute = resolve(root, relativeInput);
-  const child = relative(root, absolute);
-  if (isAbsolute(child) || child === ".." || child.startsWith(`..${process.platform === "win32" ? "\\" : "/"}`)) {
-    throw new Error(
-      `Referential path must stay inside the checkout: ${relativeInput}`
-    );
-  }
-  return absolute;
-}
-function parseRows(source) {
-  return parse(source, {
-    bom: true,
-    columns: true,
-    skip_empty_lines: true,
-    trim: true
-  });
-}
-var CsvReferentialRepository = class {
+// packages/adapter/csv-referential-repository/src/csv-referential-repository.ts
+var CsvReferentialRepository = class _CsvReferentialRepository {
   constructor(options) {
     this.options = options;
   }
@@ -29682,15 +31920,24 @@ var CsvReferentialRepository = class {
   async load() {
     const [hostsSource, speakersSource] = await Promise.all([
       readFile(
-        localPath(this.options.workspaceRoot, this.options.hostsPath),
+        _CsvReferentialRepository.localPath(
+          this.options.workspaceRoot,
+          this.options.hostsPath
+        ),
         "utf8"
       ),
       readFile(
-        localPath(this.options.workspaceRoot, this.options.speakersPath),
+        _CsvReferentialRepository.localPath(
+          this.options.workspaceRoot,
+          this.options.speakersPath
+        ),
         "utf8"
       )
     ]);
-    const hosts = parseRows(hostsSource).map((row) => ({
+    const hosts = _CsvReferentialRepository.parseRows(
+      hostsSource
+    ).map(({ row, line }) => ({
+      source: { path: this.options.hostsPath, line },
       hostId: row.host_id,
       displayName: row.name,
       contactId: row.contact_id,
@@ -29699,31 +31946,846 @@ var CsvReferentialRepository = class {
       phone: row.phone || void 0,
       address: row.address
     }));
-    const speakers = parseRows(speakersSource).map(
-      (row) => ({
-        speakerId: row.speaker_id,
-        firstName: row.firstname,
-        lastName: row.lastname,
-        company: row.company,
-        email: row.mail,
-        phone: row.phone || void 0
-      })
-    );
+    const speakers = _CsvReferentialRepository.parseRows(
+      speakersSource
+    ).map(({ row, line }) => ({
+      source: { path: this.options.speakersPath, line },
+      speakerId: row.speaker_id,
+      firstName: row.firstname,
+      lastName: row.lastname,
+      company: row.company,
+      email: row.mail,
+      phone: row.phone || void 0
+    }));
     return { hosts, speakers };
+  }
+  static localPath(rootInput, relativeInput) {
+    const root = resolve(rootInput);
+    const absolute = resolve(root, relativeInput);
+    const child = relative(root, absolute);
+    if (isAbsolute(child) || child === ".." || child.startsWith(`..${process.platform === "win32" ? "\\" : "/"}`)) {
+      throw new Error(
+        `Referential path must stay inside the checkout: ${relativeInput}`
+      );
+    }
+    return absolute;
+  }
+  static parseRows(source) {
+    const records = parse(source.replace(/\r\n?/g, "\n"), {
+      bom: true,
+      columns: true,
+      skip_empty_lines: true,
+      trim: true,
+      info: true,
+      raw: true
+    });
+    return records.map(({ record, info, raw }) => ({
+      row: record,
+      line: info.lines - (raw.trimStart().replace(/\n$/, "").match(/\n/g)?.length ?? 0)
+    }));
   }
 };
 
-// packages/adapter/github-event-comment-repository/src/github-event-comment-repository.ts
+// packages/adapter/github-event-comment-repository/src/diagnostic-guidance.ts
+var FIELD_ORDER = [
+  "Event Title",
+  "Event Date",
+  "Hoster",
+  "Event Description",
+  "Agenda",
+  "Meetup Link",
+  "CNCF Link",
+  "Drive Link",
+  "Slides & Content",
+  "Communication",
+  "Aperitif",
+  "Restaurant / Bar",
+  "Post event",
+  "Host confirmation",
+  "Speaker confirmation",
+  "Event Status",
+  "Issue format",
+  "Referentials",
+  "Meetup issue"
+];
+var GUIDANCE = /* @__PURE__ */ new Map([
+  ["event.title.missing", ["Event Title", "Add a title for the event."]],
+  [
+    "event.date.missing",
+    ["Event Date", "Add the event date in YYYY-MM-DD format."]
+  ],
+  [
+    "event.date.invalid",
+    ["Event Date", "Enter a valid calendar date in YYYY-MM-DD format."]
+  ],
+  [
+    "event.description.missing",
+    ["Event Description", "Add a short description of the event."]
+  ],
+  ["event.hoster.missing", ["Hoster", "Select a host from the host list."]],
+  [
+    "event.hoster.invalid",
+    ["Hoster", "Use a host name or stable ID from the host list."]
+  ],
+  [
+    "event.hoster.multiple",
+    ["Hoster", "Select exactly one host for the event."]
+  ],
+  [
+    "event.agenda.missing",
+    ["Agenda", "Add at least one talk using `- Speaker: Talk description`."]
+  ],
+  [
+    "event.agenda.legacy-line-invalid",
+    ["Agenda", "Use `- Speaker: Talk description` for each agenda line."]
+  ],
+  [
+    "event.agenda.speaker.missing",
+    ["Agenda", "Add at least one speaker for this talk."]
+  ],
+  [
+    "event.agenda.speaker.invalid",
+    ["Agenda", "Enter a speaker name from the speaker list."]
+  ],
+  [
+    "event.agenda.description.missing",
+    ["Agenda", "Add a talk description after the speaker name and colon."]
+  ],
+  [
+    "publication.meetup.missing",
+    ["Meetup Link", "Add the link to the Meetup event page."]
+  ],
+  [
+    "publication.community.missing",
+    ["CNCF Link", "Add the link to the CNCF / OCGroups event page."]
+  ],
+  [
+    "publication.assets.missing",
+    ["Drive Link", "Add the link to the event's Google Drive folder."]
+  ],
+  [
+    "event.link.meetup.invalid",
+    ["Meetup Link", "Enter a valid HTTPS link to the Meetup event page."]
+  ],
+  [
+    "event.link.community.invalid",
+    [
+      "CNCF Link",
+      "Enter a valid HTTPS link to the CNCF / OCGroups event page."
+    ]
+  ],
+  [
+    "event.link.assets.invalid",
+    [
+      "Drive Link",
+      "Enter a valid HTTPS link to the event's Google Drive folder."
+    ]
+  ],
+  [
+    "publication.meetup-url.invalid",
+    [
+      "Meetup Link",
+      "Use this group's Meetup event URL, ending with the numeric event ID."
+    ]
+  ],
+  [
+    "publication.community-url.invalid",
+    ["CNCF Link", "Use this group's CNCF / OCGroups event URL."]
+  ],
+  [
+    "publication.asset-url.invalid",
+    [
+      "Drive Link",
+      "Use a Google Drive folder URL: `https://drive.google.com/drive/folders/FOLDER_ID`."
+    ]
+  ],
+  [
+    "event.confirmation.host.missing",
+    [
+      "Host confirmation",
+      "Confirm the host, then add the `hoster:confirmed` label."
+    ]
+  ],
+  [
+    "event.confirmation.speakers.missing",
+    [
+      "Speaker confirmation",
+      "Confirm the speakers, then add the `speakers:confirmed` label."
+    ]
+  ],
+  [
+    "event.logistics.intent.invalid",
+    [
+      "Logistics",
+      "Choose `Yes` or `No`, or leave the response empty if undecided."
+    ]
+  ],
+  [
+    "event.occurrence-status.invalid",
+    ["Event Status", "Use `scheduled`, `postponed`, `held`, or `cancelled`."]
+  ],
+  [
+    "event.occurrence-status.label-conflict",
+    [
+      "Event Status",
+      "Keep only one occurrence label: `event:postponed`, `event:held`, or `event:cancelled`."
+    ]
+  ],
+  [
+    "event.document.heading.missing",
+    [
+      "Issue format",
+      "Restore this section heading from the meetup issue template."
+    ]
+  ],
+  [
+    "event.document.heading.duplicate",
+    [
+      "Issue format",
+      "Keep a single section with this heading and merge its content."
+    ]
+  ],
+  [
+    "event.document.checkbox.invalid",
+    [
+      "Issue format",
+      "Use `- [ ] Task` for pending tasks and `- [x] Task` for completed tasks."
+    ]
+  ],
+  [
+    "event.document.invalid-field-type",
+    ["Issue format", "Enter a text response in this field."]
+  ],
+  [
+    "event.document.invalid-hoster-type",
+    ["Hoster", "Select one host from the host list."]
+  ],
+  [
+    "event.document.invalid-hoster-entry",
+    ["Hoster", "Use a host name or stable ID from the host list."]
+  ],
+  [
+    "event.document.invalid-agenda-type",
+    [
+      "Agenda",
+      "Write the agenda as a list of `- Speaker: Talk description` lines."
+    ]
+  ],
+  [
+    "event.document.schema-marker.duplicate",
+    [
+      "Issue format",
+      "Ask a maintainer to repair the duplicate automation metadata in the issue description."
+    ]
+  ],
+  [
+    "event.document.schema-version.unsupported",
+    [
+      "Issue format",
+      "Ask a maintainer to update the automation to support this issue format."
+    ]
+  ],
+  [
+    "event.document.reference-metadata.missing",
+    [
+      "Issue format",
+      "Ask a maintainer to regenerate the missing host and speaker reference metadata."
+    ]
+  ],
+  [
+    "event.document.reference-metadata.duplicate",
+    [
+      "Issue format",
+      "Ask a maintainer to repair the duplicate host and speaker reference metadata."
+    ]
+  ],
+  [
+    "event.document.reference-metadata.invalid",
+    [
+      "Issue format",
+      "Ask a maintainer to regenerate the invalid host and speaker reference metadata."
+    ]
+  ],
+  [
+    "event.document.reference-metadata.legacy",
+    [
+      "Issue format",
+      "Check the host and agenda references, then rerun the issue update workflow to refresh their old metadata."
+    ]
+  ],
+  [
+    "event.document.reference-metadata.stale",
+    [
+      "Issue format",
+      "Check the host and agenda references, then rerun the issue update workflow to refresh their metadata."
+    ]
+  ]
+]);
+
+// packages/adapter/github-event-comment-repository/src/diagnostic-presentation.ts
+var DiagnosticPresenter = class _DiagnosticPresenter {
+  static FIELD_ALIASES = new Map([
+    ...FIELD_ORDER.map((field) => [field, field]),
+    ["eventTitle", "Event Title"],
+    ["event_title", "Event Title"],
+    ["date", "Event Date"],
+    ["event_date", "Event Date"],
+    ["host", "Hoster"],
+    ["hoster", "Hoster"],
+    ["hostReference", "Hoster"],
+    ["description", "Event Description"],
+    ["event_description", "Event Description"],
+    ["agenda", "Agenda"],
+    ["publicationLinks.meetup", "Meetup Link"],
+    ["meetup_link", "Meetup Link"],
+    ["publicationLinks.community", "CNCF Link"],
+    ["cncf_link", "CNCF Link"],
+    ["publicationLinks.assets", "Drive Link"],
+    ["drive_link", "Drive Link"],
+    ["confirmations.host", "Host confirmation"],
+    ["confirmations.speakers", "Speaker confirmation"],
+    ["occurrenceStatus", "Event Status"],
+    ["event_status", "Event Status"]
+  ]);
+  static presentDiagnostic(item) {
+    const guidance = GUIDANCE.get(item.code) ?? _DiagnosticPresenter.referenceGuidance(item.code);
+    const fallback = guidance?.[0] ?? "Meetup issue";
+    const [field, section] = _DiagnosticPresenter.publicField(
+      item.field,
+      fallback
+    );
+    const message = guidance?.[1] ?? "An additional validation check needs attention. Review the workflow diagnostics with a maintainer.";
+    const order = FIELD_ORDER.indexOf(section);
+    return { field, message, order: order < 0 ? FIELD_ORDER.length : order };
+  }
+  static referenceGuidance(code) {
+    const reference = code.match(
+      /^referential\.reference\.(host|speaker)\.(invalid|unknown|ambiguous|display-name-mismatch)$/
+    );
+    if (reference) {
+      const [, kind, problem] = reference;
+      const field = kind === "host" ? "Hoster" : "Agenda";
+      const catalog = kind === "host" ? "host list" : "speaker list";
+      const example = kind === "host" ? "Host name [host-0001]" : "Speaker name [speaker-0001]";
+      switch (problem) {
+        case "unknown":
+          return [
+            field,
+            `This ${kind} was not found in the ${catalog}. Copy its exact name, including accents, or use a name with its stable ID: \`${example}\`.`
+          ];
+        case "ambiguous":
+          return [
+            field,
+            `Several ${kind}s share this name. Include the correct stable ID: \`${example}\`.`
+          ];
+        case "display-name-mismatch":
+          return [
+            field,
+            `Use the ${kind} name associated with this stable ID in the ${catalog}.`
+          ];
+        default:
+          return [
+            field,
+            `Choose a ${kind} from the ${catalog} using its name or \`${example}\`.`
+          ];
+      }
+    }
+    if (/^referential\.(host|contact|speaker)\./.test(code)) {
+      return [
+        "Referentials",
+        "Ask a maintainer to correct the hosting or speaker catalog using the referential validation workflow diagnostics."
+      ];
+    }
+    return void 0;
+  }
+  /** Only known issue headings and numeric agenda positions can reach Markdown. */
+  static publicField(field, fallback) {
+    const known = _DiagnosticPresenter.FIELD_ALIASES.get(field ?? "");
+    if (known) return [known, known];
+    const agenda = field?.match(
+      /^agenda\.(\d{1,6})(?:\.(speakers|description)(?:\.(\d{1,6}))?)?$/
+    );
+    if (agenda) {
+      const entry = Number(agenda[1]) + 1;
+      const speaker2 = agenda[3] === void 0 ? "" : `, speaker ${Number(agenda[3]) + 1}`;
+      return [`Agenda (item ${entry}${speaker2})`, "Agenda"];
+    }
+    const speaker = field?.match(/^speakerReferences\[(\d{1,6})\]$/);
+    if (speaker)
+      return [`Agenda (speaker ${Number(speaker[1]) + 1})`, "Agenda"];
+    return [fallback, fallback];
+  }
+};
+
+// packages/adapter/github-event-comment-repository/src/github-event-comment-repository-configuration-error.ts
+var GitHubEventCommentRepositoryConfigurationError = class extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "GitHubEventCommentRepositoryConfigurationError";
+  }
+};
+
+// packages/adapter/github-event-comment-repository/src/github-event-comment-repository-contracts.ts
 var EVENT_DIAGNOSTIC_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics:v1 -->";
 var DUPLICATE_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics-duplicate:v1 -->";
 var RESOLVED_COMMENT_BODY = `${EVENT_DIAGNOSTIC_COMMENT_MARKER}
 
-Meetup automation found no active diagnostics.`;
+All previously reported issues have been resolved. No changes are currently needed.`;
 var DUPLICATE_COMMENT_BODY = `${DUPLICATE_COMMENT_MARKER}
 
 Superseded duplicate automation comment.`;
 
-// packages/adapter/github-issue-form-event-document-codec/src/index.ts
+// packages/adapter/github-event-comment-repository/src/github-event-comment-repository-response-error.ts
+var GitHubEventCommentRepositoryResponseError = class extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "GitHubEventCommentRepositoryResponseError";
+  }
+};
+
+// packages/adapter/github-event-comment-repository/src/github-event-comment-repository-scope-error.ts
+var GitHubEventCommentRepositoryScopeError = class extends Error {
+  constructor(expected, received) {
+    super(
+      `GitHub event comment repository is scoped to ${expected}, not ${received}`
+    );
+    this.name = "GitHubEventCommentRepositoryScopeError";
+  }
+};
+
+// packages/adapter/github-event-comment-repository/src/github-event-comment-repository.ts
+var GitHubEventCommentRepository = class _GitHubEventCommentRepository {
+  constructor(client, options) {
+    this.client = client;
+    this.owner = _GitHubEventCommentRepository.requireRepositoryPart(
+      options.owner,
+      "owner"
+    );
+    this.repo = _GitHubEventCommentRepository.requireRepositoryPart(
+      options.repo,
+      "repo"
+    );
+    this.repositoryName = `${this.owner}/${this.repo}`;
+    this.authorLogin = options.authorLogin?.trim() || void 0;
+  }
+  client;
+  owner;
+  repo;
+  repositoryName;
+  authorLogin;
+  async reconcileDiagnostics(identity, diagnostics) {
+    this.assertScope(identity.repository);
+    const managedComments = await this.listManagedComments(
+      identity.issueNumber
+    );
+    const [canonical, ...duplicates] = managedComments;
+    let changed = await this.minimizeDuplicates(duplicates);
+    const body = _GitHubEventCommentRepository.renderDiagnosticComment(diagnostics);
+    if (!canonical) {
+      if (body === RESOLVED_COMMENT_BODY) {
+        return { changed };
+      }
+      await this.client.rest.issues.createComment({
+        owner: this.owner,
+        repo: this.repo,
+        issue_number: identity.issueNumber,
+        body
+      });
+      return { changed: true };
+    }
+    if (canonical.body !== body) {
+      await this.updateComment(canonical.id, body);
+      changed = true;
+    }
+    return { changed };
+  }
+  async listManagedComments(issueNumber) {
+    const comments = [];
+    let page = 1;
+    let hasNextPage = true;
+    while (hasNextPage) {
+      const response = await this.client.rest.issues.listComments({
+        owner: this.owner,
+        repo: this.repo,
+        issue_number: issueNumber,
+        page,
+        per_page: 100
+      });
+      if (!Array.isArray(response.data)) {
+        throw new GitHubEventCommentRepositoryResponseError(
+          "GitHub comment list response must contain an array"
+        );
+      }
+      for (const rawComment of response.data) {
+        const comment = _GitHubEventCommentRepository.mapComment(rawComment);
+        if (comment && this.isManagedComment(comment)) {
+          comments.push(comment);
+        }
+      }
+      const linkHeader = _GitHubEventCommentRepository.readHeader(
+        response.headers,
+        "link"
+      );
+      hasNextPage = linkHeader === void 0 ? response.data.length === 100 : /<[^>]+>;\s*rel="next"/.test(linkHeader);
+      page += 1;
+    }
+    return comments.sort((left, right) => left.id - right.id);
+  }
+  isManagedComment(comment) {
+    if (!comment.body.startsWith(EVENT_DIAGNOSTIC_COMMENT_MARKER)) {
+      return false;
+    }
+    return this.authorLogin === void 0 || comment.authorLogin?.toLowerCase() === this.authorLogin.toLowerCase();
+  }
+  async minimizeDuplicates(duplicates) {
+    for (const duplicate of duplicates) {
+      await this.updateComment(duplicate.id, DUPLICATE_COMMENT_BODY);
+      if (this.client.minimizeComment) {
+        await this.client.minimizeComment({
+          commentId: duplicate.id,
+          classifier: "OUTDATED"
+        });
+      }
+    }
+    return duplicates.length > 0;
+  }
+  async updateComment(commentId, body) {
+    await this.client.rest.issues.updateComment({
+      owner: this.owner,
+      repo: this.repo,
+      comment_id: commentId,
+      body
+    });
+  }
+  assertScope(repository) {
+    if (repository.toLowerCase() !== this.repositoryName.toLowerCase()) {
+      throw new GitHubEventCommentRepositoryScopeError(
+        this.repositoryName,
+        repository
+      );
+    }
+  }
+  static renderDiagnosticComment(diagnostics) {
+    const actionable = /* @__PURE__ */ new Map();
+    for (const item of diagnostics) {
+      if (item.severity === "info") {
+        continue;
+      }
+      const presentation = DiagnosticPresenter.presentDiagnostic(item);
+      actionable.set(
+        `${presentation.field}:${presentation.message}`,
+        presentation
+      );
+    }
+    if (actionable.size === 0) {
+      return RESOLVED_COMMENT_BODY;
+    }
+    const lines = [...actionable.values()].sort(
+      (left, right) => left.order - right.order || left.field.localeCompare(right.field, "en", { numeric: true }) || left.message.localeCompare(right.message, "en")
+    ).map(({ field, message }) => `- [ ] **${field}**: ${message}`);
+    return [
+      EVENT_DIAGNOSTIC_COMMENT_MARKER,
+      "",
+      "Found the following items to complete in the meetup issue:",
+      "",
+      ...lines,
+      "",
+      "Please update the issue description or labels to address these items. This checklist will refresh automatically."
+    ].join("\n");
+  }
+  static mapComment(data) {
+    if (!_GitHubEventCommentRepository.isRecord(data)) {
+      throw new GitHubEventCommentRepositoryResponseError(
+        "GitHub comment must be an object"
+      );
+    }
+    if (!Number.isInteger(data.id) || Number(data.id) <= 0) {
+      throw new GitHubEventCommentRepositoryResponseError(
+        "GitHub comment identifier must be a positive integer"
+      );
+    }
+    if (data.body === null) {
+      return null;
+    }
+    if (typeof data.body !== "string") {
+      throw new GitHubEventCommentRepositoryResponseError(
+        "GitHub comment body must be a string or null"
+      );
+    }
+    const user = _GitHubEventCommentRepository.isRecord(data.user) ? data.user : void 0;
+    return {
+      id: Number(data.id),
+      body: data.body,
+      authorLogin: typeof user?.login === "string" ? user.login : void 0
+    };
+  }
+  static requireRepositoryPart(value, name) {
+    const normalized = value.trim();
+    if (normalized === "" || normalized.includes("/")) {
+      throw new GitHubEventCommentRepositoryConfigurationError(
+        `GitHub ${name} must be a non-empty repository name segment`
+      );
+    }
+    return normalized;
+  }
+  static readHeader(headers, name) {
+    const value = headers?.[name];
+    return typeof value === "string" ? value : void 0;
+  }
+  static isRecord(value) {
+    return typeof value === "object" && value !== null;
+  }
+};
+
+// packages/adapter/github-event-repository/src/github-event-repository-configuration-error.ts
+var GitHubEventRepositoryConfigurationError = class extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "GitHubEventRepositoryConfigurationError";
+  }
+};
+
+// packages/adapter/github-event-repository/src/github-event-repository-response-error.ts
+var GitHubEventRepositoryResponseError = class extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "GitHubEventRepositoryResponseError";
+  }
+};
+
+// packages/adapter/github-event-repository/src/github-event-repository-scope-error.ts
+var GitHubEventRepositoryScopeError = class extends Error {
+  constructor(expected, received) {
+    super(`GitHub event repository is scoped to ${expected}, not ${received}`);
+    this.name = "GitHubEventRepositoryScopeError";
+  }
+};
+
+// packages/adapter/github-event-repository/src/github-event-repository.ts
+var GitHubEventRepository = class _GitHubEventRepository {
+  constructor(client, options) {
+    this.client = client;
+    this.owner = _GitHubEventRepository.requireRepositoryPart(
+      options.owner,
+      "owner"
+    );
+    this.repo = _GitHubEventRepository.requireRepositoryPart(
+      options.repo,
+      "repo"
+    );
+    this.repositoryName = `${this.owner}/${this.repo}`;
+  }
+  client;
+  owner;
+  repo;
+  repositoryName;
+  async find(identity) {
+    this.assertScope(identity.repository);
+    try {
+      const response = await this.client.rest.issues.get({
+        owner: this.owner,
+        repo: this.repo,
+        issue_number: identity.issueNumber
+      });
+      const document = _GitHubEventRepository.mapGitHubIssueDocument(
+        response.data,
+        this.repositoryName
+      );
+      if (document && document.identity.issueNumber !== identity.issueNumber) {
+        throw new GitHubEventRepositoryResponseError(
+          `GitHub returned issue ${document.identity.issueNumber} while ${identity.issueNumber} was requested`
+        );
+      }
+      return document;
+    } catch (error2) {
+      if (_GitHubEventRepository.isNotFoundError(error2)) {
+        return null;
+      }
+      throw error2;
+    }
+  }
+  async applyPatch(identity, patch) {
+    this.assertScope(identity.repository);
+    const changes = {};
+    if (patch.issueTitle !== void 0) {
+      changes.title = patch.issueTitle;
+    }
+    if (patch.body !== void 0) {
+      changes.body = patch.body;
+    }
+    if (patch.labels !== void 0) {
+      changes.labels = [...patch.labels];
+    }
+    if (Object.keys(changes).length === 0) {
+      return;
+    }
+    await this.client.rest.issues.update({
+      owner: this.owner,
+      repo: this.repo,
+      issue_number: identity.issueNumber,
+      ...changes
+    });
+  }
+  async listPage(query) {
+    this.assertScope(query.repository);
+    const page = _GitHubEventRepository.parseCursor(query.cursor);
+    const pageSize = _GitHubEventRepository.parsePageSize(query.pageSize);
+    const parameters = {
+      owner: this.owner,
+      repo: this.repo,
+      state: query.includeClosed ? "all" : "open",
+      page,
+      per_page: pageSize
+    };
+    if (query.label !== void 0 && query.label.trim() !== "") {
+      parameters.labels = query.label.trim();
+    }
+    const response = await this.client.rest.issues.listForRepo(parameters);
+    if (!Array.isArray(response.data)) {
+      throw new GitHubEventRepositoryResponseError(
+        "GitHub issue list response must contain an array"
+      );
+    }
+    const items = response.data.map(
+      (issue2) => _GitHubEventRepository.mapGitHubIssueDocument(
+        issue2,
+        this.repositoryName
+      )
+    ).filter((issue2) => issue2 !== null);
+    const linkHeader = _GitHubEventRepository.readHeader(
+      response.headers,
+      "link"
+    );
+    const hasNextPage = linkHeader === void 0 ? response.data.length === pageSize : /<[^>]+>;\s*rel="next"/.test(linkHeader);
+    return {
+      items: Object.freeze(items),
+      ...hasNextPage ? { nextCursor: String(page + 1) } : {}
+    };
+  }
+  assertScope(repository) {
+    if (repository.toLowerCase() !== this.repositoryName.toLowerCase()) {
+      throw new GitHubEventRepositoryScopeError(
+        this.repositoryName,
+        repository
+      );
+    }
+  }
+  static requireRepositoryPart(value, name) {
+    const normalized = value.trim();
+    if (normalized === "" || normalized.includes("/")) {
+      throw new GitHubEventRepositoryConfigurationError(
+        `GitHub ${name} must be a non-empty repository name segment`
+      );
+    }
+    return normalized;
+  }
+  /** Map one GitHub issue response or webhook snapshot into the domain document. */
+  static mapGitHubIssueDocument(data, repository) {
+    const issue2 = _GitHubEventRepository.asRecord(data, "GitHub issue");
+    if (issue2.pull_request !== void 0 && issue2.pull_request !== null) {
+      return null;
+    }
+    if (!Number.isInteger(issue2.number) || Number(issue2.number) <= 0) {
+      throw new GitHubEventRepositoryResponseError(
+        "GitHub issue number must be a positive integer"
+      );
+    }
+    if (typeof issue2.title !== "string") {
+      throw new GitHubEventRepositoryResponseError(
+        "GitHub issue title must be a string"
+      );
+    }
+    if (issue2.state !== "open" && issue2.state !== "closed") {
+      throw new GitHubEventRepositoryResponseError(
+        "GitHub issue state must be open or closed"
+      );
+    }
+    if (issue2.body !== null && typeof issue2.body !== "string") {
+      throw new GitHubEventRepositoryResponseError(
+        "GitHub issue body must be a string or null"
+      );
+    }
+    if (!Array.isArray(issue2.labels)) {
+      throw new GitHubEventRepositoryResponseError(
+        "GitHub issue labels must be an array"
+      );
+    }
+    return {
+      identity: { repository, issueNumber: Number(issue2.number) },
+      issueState: issue2.state,
+      issueTitle: issue2.title,
+      labels: _GitHubEventRepository.mapLabels(issue2.labels),
+      body: issue2.body ?? ""
+    };
+  }
+  static mapLabels(labels) {
+    const result = [];
+    for (const label of labels) {
+      let name;
+      if (typeof label === "string") {
+        name = label;
+      } else if (_GitHubEventRepository.isRecord(label) && typeof label.name === "string") {
+        name = label.name;
+      }
+      if (name && !result.includes(name)) {
+        result.push(name);
+      }
+    }
+    return Object.freeze(result);
+  }
+  static parseCursor(cursor) {
+    if (cursor === void 0) {
+      return 1;
+    }
+    if (!/^[1-9]\d*$/.test(cursor)) {
+      throw new GitHubEventRepositoryConfigurationError(
+        `Invalid GitHub pagination cursor "${cursor}"`
+      );
+    }
+    return Number(cursor);
+  }
+  static parsePageSize(pageSize) {
+    if (pageSize === void 0) {
+      return 100;
+    }
+    if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) {
+      throw new GitHubEventRepositoryConfigurationError(
+        "GitHub page size must be an integer between 1 and 100"
+      );
+    }
+    return pageSize;
+  }
+  static isNotFoundError(error2) {
+    if (!_GitHubEventRepository.isRecord(error2)) {
+      return false;
+    }
+    if (error2.status === 404) {
+      return true;
+    }
+    return _GitHubEventRepository.isRecord(error2.response) && error2.response.status === 404;
+  }
+  static readHeader(headers, name) {
+    const value = headers?.[name];
+    return typeof value === "string" ? value : void 0;
+  }
+  static asRecord(value, label) {
+    if (!_GitHubEventRepository.isRecord(value)) {
+      throw new GitHubEventRepositoryResponseError(
+        `${label} must be an object`
+      );
+    }
+    return value;
+  }
+  static isRecord(value) {
+    return typeof value === "object" && value !== null;
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/github-issue-form-event-document-codec-contracts.ts
+var CURRENT_SCHEMA_MARKER = "<!-- meetup-event-schema:1 -->";
+var SCHEMA_MARKER_NAME = "meetup-event-schema";
+var REFERENCE_MARKER_NAME = "meetup-event-references";
+var STABLE_ID_PATTERN2 = /^[a-zA-Z0-9][a-zA-Z0-9._:-]*$/;
 var HEADINGS = Object.freeze({
   eventTitle: "Event Title",
   date: "Event Date",
@@ -29741,13 +32803,948 @@ var HEADINGS = Object.freeze({
   occurrenceStatus: "Event Status"
 });
 
-// packages/adapter/yaml-issue-form-projection/src/index.ts
+// packages/adapter/github-issue-form-event-document-codec/src/markdown-lines.ts
+var MarkdownLines = class _MarkdownLines {
+  static findLineEnd(value, start) {
+    let cursor = start;
+    while (cursor < value.length && value[cursor] !== "\n" && value[cursor] !== "\r") {
+      cursor += 1;
+    }
+    return cursor;
+  }
+  static findNextLineStart(value, lineEnd) {
+    if (lineEnd >= value.length) {
+      return value.length;
+    }
+    if (value[lineEnd] === "\r" && value[lineEnd + 1] === "\n") {
+      return lineEnd + 2;
+    }
+    return lineEnd + 1;
+  }
+  static trimLeadingWhitespace(value) {
+    let start = 0;
+    while (start < value.length && _MarkdownLines.isWhitespaceCharacter(value[start])) {
+      start += 1;
+    }
+    return value.slice(start);
+  }
+  static trimTrailingWhitespace(value) {
+    let end = value.length;
+    while (end > 0 && _MarkdownLines.isWhitespaceCharacter(value[end - 1])) {
+      end -= 1;
+    }
+    return value.slice(0, end);
+  }
+  static isHorizontalWhitespaceCharacter(value) {
+    return value === " " || value === "	";
+  }
+  static isWhitespaceCharacter(value) {
+    return value === " " || value === "	" || value === "\n" || value === "\r" || value === "\f" || value === "\v";
+  }
+  static parseHeadingLine(line) {
+    if (!line.startsWith("### ")) {
+      return void 0;
+    }
+    const rawHeading = line.slice(4);
+    if (rawHeading.length === 0) {
+      return void 0;
+    }
+    let end = rawHeading.length;
+    while (end > 1 && _MarkdownLines.isHorizontalWhitespaceCharacter(rawHeading[end - 1])) {
+      end -= 1;
+    }
+    return rawHeading.slice(0, end).trim();
+  }
+  static parseCheckboxLine(line) {
+    let cursor = 0;
+    cursor = _MarkdownLines.skipHorizontalWhitespace(line, cursor);
+    if (line[cursor] !== "-") {
+      return void 0;
+    }
+    cursor += 1;
+    if (!_MarkdownLines.isHorizontalWhitespaceCharacter(line[cursor] ?? "")) {
+      return void 0;
+    }
+    cursor = _MarkdownLines.skipHorizontalWhitespace(line, cursor);
+    if (line[cursor] !== "[") {
+      return void 0;
+    }
+    const checkedMarker = line[cursor + 1];
+    if (checkedMarker !== " " && checkedMarker !== "x" && checkedMarker !== "X" || line[cursor + 2] !== "]") {
+      return void 0;
+    }
+    cursor += 3;
+    if (!_MarkdownLines.isHorizontalWhitespaceCharacter(line[cursor] ?? "")) {
+      return void 0;
+    }
+    cursor = _MarkdownLines.skipHorizontalWhitespace(line, cursor);
+    const label = line.slice(cursor).trim();
+    if (label === "") {
+      return void 0;
+    }
+    return {
+      checked: checkedMarker.toLowerCase() === "x",
+      label
+    };
+  }
+  static skipHorizontalWhitespace(line, cursor) {
+    while (cursor < line.length && _MarkdownLines.isHorizontalWhitespaceCharacter(line[cursor])) {
+      cursor += 1;
+    }
+    return cursor;
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/managed-issue-markers.ts
+var ManagedIssueMarkers = class _ManagedIssueMarkers {
+  static readManagedMarkerValues(body, markerName) {
+    return _ManagedIssueMarkers.findManagedMarkerMatches(body, markerName).map(
+      ({ value }) => value
+    );
+  }
+  static replaceManagedMarker(body, markerName, replacement) {
+    const matches = _ManagedIssueMarkers.findManagedMarkerMatches(
+      body,
+      markerName
+    );
+    if (matches.length === 0) {
+      return { body, found: false };
+    }
+    let result = "";
+    let lastIndex = 0;
+    for (const [index, match] of matches.entries()) {
+      result += body.slice(lastIndex, match.start);
+      if (index === 0) {
+        result += replacement;
+      }
+      lastIndex = match.end;
+    }
+    result += body.slice(lastIndex);
+    return { body: result, found: true };
+  }
+  static findManagedMarkerMatches(body, markerName) {
+    const matches = [];
+    for (let cursor = 0; cursor < body.length; ) {
+      const commentStart = body.indexOf("<!--", cursor);
+      if (commentStart === -1) {
+        break;
+      }
+      const commentEnd = body.indexOf("-->", commentStart + 4);
+      if (commentEnd === -1) {
+        break;
+      }
+      const value = _ManagedIssueMarkers.parseManagedMarkerComment(
+        body.slice(commentStart + 4, commentEnd),
+        markerName
+      );
+      if (value !== void 0) {
+        matches.push({
+          start: commentStart,
+          end: commentEnd + 3,
+          value
+        });
+      }
+      cursor = commentEnd + 3;
+    }
+    return matches;
+  }
+  static parseManagedMarkerComment(commentBody, markerName) {
+    const trimmed = commentBody.trim();
+    if (!trimmed.startsWith(markerName)) {
+      return void 0;
+    }
+    let cursor = markerName.length;
+    while (cursor < trimmed.length && MarkdownLines.isWhitespaceCharacter(trimmed[cursor])) {
+      cursor += 1;
+    }
+    if (trimmed[cursor] !== ":") {
+      return void 0;
+    }
+    return trimmed.slice(cursor + 1).trim();
+  }
+  static upsertManagedMarkers(body, metadata) {
+    const referenceMarker = `<!-- meetup-event-references:${JSON.stringify(metadata)} -->`;
+    const schemaReplacement = _ManagedIssueMarkers.replaceManagedMarker(
+      body,
+      SCHEMA_MARKER_NAME,
+      CURRENT_SCHEMA_MARKER
+    );
+    const referenceReplacement = _ManagedIssueMarkers.replaceManagedMarker(
+      schemaReplacement.body,
+      REFERENCE_MARKER_NAME,
+      referenceMarker
+    );
+    let result = referenceReplacement.body;
+    if (!schemaReplacement.found) {
+      result = `${CURRENT_SCHEMA_MARKER}
+${result}`;
+    }
+    if (!referenceReplacement.found) {
+      result = result.replace(
+        CURRENT_SCHEMA_MARKER,
+        `${CURRENT_SCHEMA_MARKER}
+${referenceMarker}`
+      );
+    }
+    return result;
+  }
+  static readSchema(body, diagnostics) {
+    const markers = _ManagedIssueMarkers.readManagedMarkerValues(
+      body,
+      SCHEMA_MARKER_NAME
+    );
+    if (markers.length === 0) {
+      return 0;
+    }
+    if (markers.length > 1) {
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.document.schema-marker.duplicate",
+          severity: "error",
+          category: "invalid",
+          message: "The event document contains duplicate schema markers",
+          fixAvailable: true
+        })
+      );
+    }
+    if (markers[0] !== "1") {
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.document.schema-version.unsupported",
+          severity: "error",
+          category: "migration",
+          message: "The event document schema version is unsupported"
+        })
+      );
+      return 0;
+    }
+    return 1;
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/reference-bindings.ts
+var ReferenceBindings = class _ReferenceBindings {
+  static referenceBinding(participant, id) {
+    return {
+      id,
+      displayName: _ReferenceBindings.normalizeVisibleDisplayName(
+        participant.displayName
+      )
+    };
+  }
+  static normalizeVisibleDisplayName(displayName) {
+    return displayName.trim().replace(/\s+/g, " ");
+  }
+  static restoreBoundReference(participant, binding) {
+    if (!participant || participant.id || !binding) {
+      return participant;
+    }
+    return _ReferenceBindings.normalizeVisibleDisplayName(
+      participant.displayName
+    ) === binding.displayName ? { ...participant, id: binding.id } : participant;
+  }
+  static restoreBoundSpeaker(participant, bindings) {
+    if (participant.id) {
+      return participant;
+    }
+    const visibleName = _ReferenceBindings.normalizeVisibleDisplayName(
+      participant.displayName
+    );
+    const matchingIds = new Set(
+      bindings.filter(({ displayName }) => displayName === visibleName).map(({ id: id2 }) => id2)
+    );
+    if (matchingIds.size !== 1) {
+      return participant;
+    }
+    const id = matchingIds.values().next().value;
+    return id ? { ...participant, id } : participant;
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/reference-metadata-shape.ts
+var ReferenceMetadataShape = class _ReferenceMetadataShape {
+  static isReferenceMetadata(value) {
+    if (typeof value !== "object" || value === null || Array.isArray(value)) {
+      return false;
+    }
+    const candidate = value;
+    if (candidate.schemaVersion !== 2) {
+      return false;
+    }
+    if (candidate.host !== null && !_ReferenceMetadataShape.isReferenceBinding(candidate.host)) {
+      return false;
+    }
+    return Array.isArray(candidate.speakers) && candidate.speakers.every(_ReferenceMetadataShape.isReferenceBinding);
+  }
+  static isLegacyReferenceMetadata(value) {
+    if (typeof value !== "object" || value === null || Array.isArray(value)) {
+      return false;
+    }
+    const candidate = value;
+    if (candidate.hostId !== null && (typeof candidate.hostId !== "string" || !STABLE_ID_PATTERN2.test(candidate.hostId))) {
+      return false;
+    }
+    if (!Array.isArray(candidate.agendaSpeakerIds)) {
+      return false;
+    }
+    return candidate.agendaSpeakerIds.every(
+      (entry) => Array.isArray(entry) && entry.every(
+        (id) => id === null || typeof id === "string" && STABLE_ID_PATTERN2.test(id)
+      )
+    );
+  }
+  static isReferenceBinding(value) {
+    if (typeof value !== "object" || value === null || Array.isArray(value)) {
+      return false;
+    }
+    const candidate = value;
+    return typeof candidate.id === "string" && STABLE_ID_PATTERN2.test(candidate.id) && typeof candidate.displayName === "string" && candidate.displayName.length > 0 && candidate.displayName === ReferenceBindings.normalizeVisibleDisplayName(candidate.displayName);
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/event-reference-metadata.ts
+var EventReferenceMetadata = class _EventReferenceMetadata {
+  static readReferenceMetadata(body, diagnostics) {
+    const markers = ManagedIssueMarkers.readManagedMarkerValues(
+      body,
+      REFERENCE_MARKER_NAME
+    );
+    if (markers.length === 0) {
+      return void 0;
+    }
+    if (markers.length > 1) {
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.document.reference-metadata.duplicate",
+          severity: "error",
+          category: "invalid",
+          message: "The event document contains duplicate reference metadata",
+          fixAvailable: true
+        })
+      );
+    }
+    try {
+      const parsed = JSON.parse(markers[0]);
+      if (ReferenceMetadataShape.isReferenceMetadata(parsed)) {
+        return { kind: "bound", value: parsed };
+      }
+      if (ReferenceMetadataShape.isLegacyReferenceMetadata(parsed)) {
+        return { kind: "legacy", value: parsed };
+      }
+      throw new Error("invalid metadata shape");
+    } catch {
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.document.reference-metadata.invalid",
+          severity: "error",
+          category: "invalid",
+          message: "Stable reference metadata is malformed",
+          fixAvailable: true
+        })
+      );
+      return void 0;
+    }
+  }
+  static applyReferenceMetadata(event, metadata, diagnostics) {
+    if (metadata.kind === "legacy") {
+      diagnostics.push(_EventReferenceMetadata.legacyMetadataDiagnostic());
+      return event;
+    }
+    const boundMetadata = metadata.value;
+    const restored = {
+      ...event,
+      host: ReferenceBindings.restoreBoundReference(
+        event.host,
+        boundMetadata.host
+      ),
+      agenda: event.agenda.map((entry) => ({
+        ...entry,
+        speakers: entry.speakers.map(
+          (speaker) => ReferenceBindings.restoreBoundSpeaker(
+            speaker,
+            boundMetadata.speakers
+          )
+        )
+      }))
+    };
+    if (!_EventReferenceMetadata.referenceMetadataEqual(
+      boundMetadata,
+      _EventReferenceMetadata.referenceMetadata(restored)
+    )) {
+      diagnostics.push(_EventReferenceMetadata.staleMetadataDiagnostic());
+    }
+    return restored;
+  }
+  static referenceMetadata(event) {
+    return {
+      schemaVersion: 2,
+      host: event.host?.id ? ReferenceBindings.referenceBinding(event.host, event.host.id) : null,
+      speakers: event.agenda.flatMap(
+        (entry) => entry.speakers.flatMap(
+          (speaker) => speaker.id ? [ReferenceBindings.referenceBinding(speaker, speaker.id)] : []
+        )
+      )
+    };
+  }
+  static referenceMetadataEqual(left, right) {
+    return JSON.stringify(left) === JSON.stringify(right);
+  }
+  static legacyMetadataDiagnostic() {
+    return EventDiagnostics.diagnostic({
+      code: "event.document.reference-metadata.legacy",
+      severity: "warning",
+      category: "migration",
+      message: "Unbound stable reference metadata cannot safely restore participant IDs",
+      fixAvailable: true
+    });
+  }
+  static staleMetadataDiagnostic() {
+    return EventDiagnostics.diagnostic({
+      code: "event.document.reference-metadata.stale",
+      severity: "warning",
+      category: "migration",
+      message: "Stable reference metadata does not match visible participants",
+      fixAvailable: true
+    });
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/issue-form-sections.ts
+var IssueFormSections = class _IssueFormSections {
+  static parseSections(body) {
+    const sections = /* @__PURE__ */ new Map();
+    let pending;
+    for (let cursor = 0; cursor < body.length; ) {
+      const lineEnd = MarkdownLines.findLineEnd(body, cursor);
+      const nextLineStart = MarkdownLines.findNextLineStart(body, lineEnd);
+      const heading = MarkdownLines.parseHeadingLine(
+        body.slice(cursor, lineEnd)
+      );
+      if (heading !== void 0) {
+        if (pending) {
+          _IssueFormSections.appendSection(sections, {
+            heading: pending.heading,
+            headingStart: pending.headingStart,
+            contentStart: pending.contentStart,
+            contentEnd: cursor,
+            value: body.slice(pending.contentStart, cursor)
+          });
+        }
+        pending = {
+          heading,
+          headingStart: cursor,
+          contentStart: nextLineStart
+        };
+      }
+      cursor = nextLineStart;
+    }
+    if (pending) {
+      _IssueFormSections.appendSection(sections, {
+        heading: pending.heading,
+        headingStart: pending.headingStart,
+        contentStart: pending.contentStart,
+        contentEnd: body.length,
+        value: body.slice(pending.contentStart)
+      });
+    }
+    return sections;
+  }
+  static appendSection(sections, section) {
+    const existing = sections.get(section.heading) ?? [];
+    sections.set(section.heading, [...existing, section]);
+  }
+  static cleanResponse(value) {
+    const trimmed = value.trim();
+    return trimmed === "_No response_" ? "" : trimmed;
+  }
+  static replaceOrAppendSection(body, heading, value) {
+    const section = _IssueFormSections.parseSections(body).get(heading)?.[0];
+    const normalizedValue = value.trim();
+    if (!section) {
+      if (!normalizedValue) {
+        return body;
+      }
+      const separator = body.length === 0 || body.endsWith("\n\n") ? "" : "\n\n";
+      return `${body}${separator}### ${heading}
+
+${normalizedValue}
+`;
+    }
+    if (_IssueFormSections.cleanResponse(section.value) === normalizedValue) {
+      return body;
+    }
+    return `${body.slice(0, section.contentStart)}
+${normalizedValue}
+
+${body.slice(section.contentEnd)}`;
+  }
+  static removeSection(body, heading) {
+    const section = _IssueFormSections.parseSections(body).get(heading)?.[0];
+    if (!section) {
+      return body;
+    }
+    const before = MarkdownLines.trimTrailingWhitespace(
+      body.slice(0, section.headingStart)
+    );
+    const after = MarkdownLines.trimLeadingWhitespace(
+      body.slice(section.contentEnd)
+    );
+    if (before === "") {
+      return after;
+    }
+    if (after === "") {
+      return `${before}
+`;
+    }
+    return `${before}
+
+${after}`;
+  }
+  static readSection(sections, heading, required, diagnostics) {
+    const matches = sections.get(heading) ?? [];
+    if (matches.length === 0) {
+      if (required) {
+        diagnostics.push(
+          EventDiagnostics.diagnostic({
+            code: "event.document.heading.missing",
+            severity: "error",
+            category: "invalid",
+            field: heading,
+            message: `The ${heading} heading is missing`,
+            fixAvailable: true
+          })
+        );
+      }
+      return "";
+    }
+    if (matches.length > 1) {
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.document.heading.duplicate",
+          severity: "error",
+          category: "invalid",
+          field: heading,
+          message: `The ${heading} heading occurs more than once`
+        })
+      );
+    }
+    return _IssueFormSections.cleanResponse(matches[0].value);
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/issue-form-checklists.ts
+var IssueFormChecklists = class _IssueFormChecklists {
+  static readCheckboxes(sections, heading, diagnostics) {
+    const matches = sections.get(heading) ?? [];
+    if (matches.length > 1) {
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.document.heading.duplicate",
+          severity: "error",
+          category: "invalid",
+          field: heading,
+          message: `The ${heading} heading occurs more than once`
+        })
+      );
+    }
+    const value = IssueFormSections.cleanResponse(matches[0]?.value ?? "");
+    if (!value) {
+      return [];
+    }
+    const checkboxes = [];
+    for (const [index, line] of value.split(/\r?\n/).entries()) {
+      if (!line.trim()) {
+        continue;
+      }
+      const checkbox = MarkdownLines.parseCheckboxLine(line);
+      if (!checkbox) {
+        diagnostics.push(
+          EventDiagnostics.diagnostic({
+            code: "event.document.checkbox.invalid",
+            severity: "warning",
+            category: "invalid",
+            field: heading,
+            message: `${heading} checklist line ${index + 1} is malformed`
+          })
+        );
+        continue;
+      }
+      checkboxes.push(checkbox);
+    }
+    return checkboxes;
+  }
+  static toOperationalChecklist(checkboxes) {
+    return checkboxes.map(({ checked, label }) => ({
+      name: label,
+      completed: checked
+    }));
+  }
+  static replaceOrAppendOperationalChecklist(body, heading, value) {
+    const sections = IssueFormSections.parseSections(body).get(heading) ?? [];
+    if (sections.length > 1 || sections[0] && !_IssueFormChecklists.operationalChecklistIsWellFormed(
+      sections[0].value
+    )) {
+      return body;
+    }
+    return IssueFormSections.replaceOrAppendSection(body, heading, value);
+  }
+  static operationalChecklistIsWellFormed(value) {
+    const cleaned = IssueFormSections.cleanResponse(value);
+    return cleaned === "" || cleaned.split(/\r?\n/).filter((line) => line.trim() !== "").every((line) => MarkdownLines.parseCheckboxLine(line) !== void 0);
+  }
+  static renderOperationalChecklist(items) {
+    return items.map(({ name, completed }) => `- [${completed ? "x" : " "}] ${name}`).join("\n");
+  }
+  static readLogisticsIntent(sections, heading, diagnostics) {
+    const value = IssueFormSections.readSection(
+      sections,
+      heading,
+      false,
+      diagnostics
+    );
+    if (!value) {
+      return "unspecified";
+    }
+    if (value.toLocaleLowerCase("en-US") === "yes") {
+      return "planned";
+    }
+    if (value.toLocaleLowerCase("en-US") === "no") {
+      return "not-planned";
+    }
+    diagnostics.push(
+      EventDiagnostics.diagnostic({
+        code: "event.logistics.intent.invalid",
+        severity: "error",
+        category: "invalid",
+        field: heading,
+        message: `${heading} must be Yes or No when specified`
+      })
+    );
+    return "unspecified";
+  }
+  static replaceOrAppendLogisticsIntent(body, heading, intent) {
+    return intent === "unspecified" || (IssueFormSections.parseSections(body).get(heading)?.length ?? 0) > 1 ? body : IssueFormSections.replaceOrAppendSection(
+      body,
+      heading,
+      _IssueFormChecklists.renderLogisticsIntent(intent)
+    );
+  }
+  static renderLogisticsIntent(intent) {
+    switch (intent) {
+      case "planned":
+        return "Yes";
+      case "not-planned":
+        return "No";
+      case "unspecified":
+        return "";
+    }
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/participant-links.ts
+var ParticipantLinks = class {
+  static readSourceLinks(value, repository) {
+    const sources = /* @__PURE__ */ new Map();
+    const prefix = `https://github.com/${repository}/blob/`;
+    for (const match of value.matchAll(
+      /\[([^\]]+)\]\((https:\/\/github\.com\/[^)\s]+)\)/g
+    )) {
+      const target = match[2];
+      if (!target.startsWith(prefix)) continue;
+      const location = target.slice(prefix.length).match(/^[^/]+\/(.+)#L([1-9]\d*)$/);
+      if (!location) continue;
+      try {
+        const source = {
+          path: decodeURIComponent(location[1]),
+          line: Number(location[2])
+        };
+        const name = ReferenceBindings.normalizeVisibleDisplayName(match[1]);
+        const previous = sources.get(name);
+        sources.set(
+          name,
+          sources.has(name) && (previous?.path !== source.path || previous?.line !== source.line) ? void 0 : source
+        );
+      } catch {
+      }
+    }
+    return sources;
+  }
+  static restoreSourceLocation(participant, sources) {
+    const source = participant.id ? sources.get(
+      ReferenceBindings.normalizeVisibleDisplayName(
+        participant.displayName
+      )
+    ) : void 0;
+    return source ? { ...participant, source } : participant;
+  }
+  static encodeUrlSegment(value) {
+    return encodeURIComponent(value).replace(
+      /[!'()*]/g,
+      (character) => `%${character.charCodeAt(0).toString(16).toUpperCase()}`
+    );
+  }
+  static renderAgenda(event, renderParticipant) {
+    return event.agenda.map(
+      (entry) => `- ${entry.speakers.map(renderParticipant).join(", ")}: ${entry.description}`
+    ).join("\n");
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/issue-form-reader.ts
+var IssueFormReader = class {
+  timeZone;
+  hostConfirmationLabel;
+  speakersConfirmationLabel;
+  constructor(options = {}) {
+    this.timeZone = options.timeZone ?? "Europe/Paris";
+    this.hostConfirmationLabel = options.hostConfirmationLabel ?? "hoster:confirmed";
+    this.speakersConfirmationLabel = options.speakersConfirmationLabel ?? "speakers:confirmed";
+  }
+  decode(document) {
+    const diagnostics = [];
+    const sections = IssueFormSections.parseSections(document.body);
+    const schema = ManagedIssueMarkers.readSchema(document.body, diagnostics);
+    const parsedBody = this.readBody(sections, diagnostics);
+    const operations = this.readOperations(sections, diagnostics);
+    const migrated = MeetupEventMigration.migrateMeetupEventDto({
+      repository: document.identity.repository,
+      issueNumber: document.identity.issueNumber,
+      issueState: document.issueState,
+      issueTitle: document.issueTitle,
+      labels: document.labels,
+      parsedBody,
+      timeZone: this.timeZone
+    });
+    diagnostics.push(
+      ...migrated.diagnostics.filter(
+        (item) => schema === 0 || item.code !== "event.document.legacy-schema"
+      )
+    );
+    const event = {
+      ...migrated.event,
+      ...operations,
+      confirmations: {
+        host: document.labels.includes(this.hostConfirmationLabel),
+        speakers: document.labels.includes(this.speakersConfirmationLabel)
+      }
+    };
+    const referenced = this.restoreReferences(
+      event,
+      document.body,
+      schema,
+      diagnostics
+    );
+    return {
+      event: this.restoreLinks(
+        referenced,
+        sections,
+        document.identity.repository
+      ),
+      diagnostics: Object.freeze(diagnostics)
+    };
+  }
+  readBody(sections, diagnostics) {
+    const read = (heading, required = false) => IssueFormSections.readSection(sections, heading, required, diagnostics);
+    return {
+      event_title: read(HEADINGS.eventTitle, true),
+      event_date: read(HEADINGS.date, true),
+      hoster: [read(HEADINGS.host, true)].filter(Boolean),
+      event_description: read(HEADINGS.description, true),
+      agenda: read(HEADINGS.agenda, true),
+      meetup_link: read(HEADINGS.meetupLink),
+      cncf_link: read(HEADINGS.communityLink),
+      drive_link: read(HEADINGS.assetsLink),
+      event_status: read(HEADINGS.occurrenceStatus)
+    };
+  }
+  readOperations(sections, diagnostics) {
+    const read = (heading) => IssueFormChecklists.toOperationalChecklist(
+      IssueFormChecklists.readCheckboxes(sections, heading, diagnostics)
+    );
+    const slidesAndContent = read(HEADINGS.slides);
+    const communication = read(HEADINGS.communication);
+    const diagnosticOffset = diagnostics.length;
+    const postEvent = read(HEADINGS.postEvent);
+    const followUpComplete = diagnostics.length === diagnosticOffset && MeetupEventOperations.postEventChecklistIsComplete(postEvent);
+    return {
+      operationalChecklists: { slidesAndContent, communication, postEvent },
+      followUpComplete,
+      logistics: {
+        aperitif: IssueFormChecklists.readLogisticsIntent(
+          sections,
+          HEADINGS.aperitif,
+          diagnostics
+        ),
+        postEventVenue: IssueFormChecklists.readLogisticsIntent(
+          sections,
+          HEADINGS.restaurant,
+          diagnostics
+        )
+      }
+    };
+  }
+  restoreReferences(event, body, schema, diagnostics) {
+    const metadata = EventReferenceMetadata.readReferenceMetadata(
+      body,
+      diagnostics
+    );
+    if (metadata)
+      return EventReferenceMetadata.applyReferenceMetadata(
+        event,
+        metadata,
+        diagnostics
+      );
+    if (schema === 1)
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.document.reference-metadata.missing",
+          severity: "warning",
+          category: "migration",
+          message: "Stable reference metadata is missing",
+          fixAvailable: true
+        })
+      );
+    return event;
+  }
+  restoreLinks(event, sections, repository) {
+    const hostSources = ParticipantLinks.readSourceLinks(
+      sections.get(HEADINGS.host)?.[0]?.value ?? "",
+      repository
+    );
+    const speakerSources = ParticipantLinks.readSourceLinks(
+      sections.get(HEADINGS.agenda)?.[0]?.value ?? "",
+      repository
+    );
+    return {
+      ...event,
+      host: event.host ? ParticipantLinks.restoreSourceLocation(event.host, hostSources) : void 0,
+      agenda: event.agenda.map((entry) => ({
+        ...entry,
+        speakers: entry.speakers.map(
+          (speaker) => ParticipantLinks.restoreSourceLocation(speaker, speakerSources)
+        )
+      }))
+    };
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/issue-form-writer.ts
+var IssueFormWriter = class _IssueFormWriter {
+  repositoryRef;
+  constructor(options = {}) {
+    this.repositoryRef = options.repositoryRef ?? "main";
+  }
+  createPatch(document, event) {
+    const patch = {};
+    if (document.issueTitle !== event.issueTitle)
+      patch.issueTitle = event.issueTitle;
+    if (!_IssueFormWriter.arraysEqual(document.labels, event.labels))
+      patch.labels = Object.freeze([...event.labels]);
+    const fields = this.renderFields(document, event);
+    const checklists = this.renderOperations(fields, event);
+    const body = ManagedIssueMarkers.upsertManagedMarkers(
+      checklists,
+      EventReferenceMetadata.referenceMetadata(event)
+    );
+    if (body !== document.body) patch.body = body;
+    return Object.freeze(patch);
+  }
+  renderFields(document, event) {
+    const render = (participant) => this.renderParticipant(participant, document.identity.repository);
+    const fields = [
+      [HEADINGS.eventTitle, event.eventTitle],
+      [HEADINGS.date, event.date],
+      [HEADINGS.host, event.host ? render(event.host) : ""],
+      [HEADINGS.description, event.description],
+      [HEADINGS.agenda, ParticipantLinks.renderAgenda(event, render)],
+      [HEADINGS.meetupLink, event.publicationLinks.meetup ?? ""],
+      [HEADINGS.communityLink, event.publicationLinks.community ?? ""],
+      [HEADINGS.assetsLink, event.publicationLinks.assets ?? ""]
+    ];
+    let body = document.body;
+    for (const [heading, value] of fields)
+      body = IssueFormSections.replaceOrAppendSection(body, heading, value);
+    return IssueFormSections.removeSection(body, HEADINGS.occurrenceStatus);
+  }
+  renderOperations(source, event) {
+    let body = source;
+    for (const [heading, items] of [
+      [HEADINGS.slides, event.operationalChecklists.slidesAndContent],
+      [HEADINGS.communication, event.operationalChecklists.communication]
+    ])
+      body = IssueFormChecklists.replaceOrAppendOperationalChecklist(
+        body,
+        heading,
+        IssueFormChecklists.renderOperationalChecklist(items)
+      );
+    body = IssueFormChecklists.replaceOrAppendLogisticsIntent(
+      body,
+      HEADINGS.aperitif,
+      event.logistics.aperitif
+    );
+    body = IssueFormChecklists.replaceOrAppendLogisticsIntent(
+      body,
+      HEADINGS.restaurant,
+      event.logistics.postEventVenue
+    );
+    return IssueFormChecklists.replaceOrAppendOperationalChecklist(
+      body,
+      HEADINGS.postEvent,
+      IssueFormChecklists.renderOperationalChecklist(
+        event.operationalChecklists.postEvent
+      )
+    );
+  }
+  renderParticipant(participant, repository) {
+    if (!participant.id || !participant.source) return participant.displayName;
+    const path = participant.source.path.split("/").map(ParticipantLinks.encodeUrlSegment).join("/");
+    const ref = ParticipantLinks.encodeUrlSegment(this.repositoryRef);
+    const url = `https://github.com/${repository}/blob/${ref}/${path}#L${participant.source.line}`;
+    return `[${participant.displayName}](${url})`;
+  }
+  static arraysEqual(left, right) {
+    return left.length === right.length && left.every((value, index) => value === right[index]);
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/github-issue-form-event-document-codec.ts
+var GitHubIssueFormEventDocumentCodec = class {
+  reader;
+  writer;
+  constructor(options = {}) {
+    this.reader = new IssueFormReader(options);
+    this.writer = new IssueFormWriter(options);
+  }
+  decode(document) {
+    return this.reader.decode(document);
+  }
+  createPatch(document, event) {
+    return this.writer.createPatch(document, event);
+  }
+};
+
+// packages/adapter/system-clock/src/system-event-clock.ts
+var SystemEventClock = class {
+  constructor(dateFactory = () => /* @__PURE__ */ new Date()) {
+    this.dateFactory = dateFactory;
+  }
+  dateFactory;
+  now() {
+    return this.dateFactory().toISOString();
+  }
+};
+
+// packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-projection.ts
 import { readFile as readFile2, realpath, stat as stat2, writeFile as writeFile2 } from "node:fs/promises";
 import { isAbsolute as isAbsolute2, relative as relative2, resolve as resolve2, sep } from "node:path";
 var import_yaml = __toESM(require_dist(), 1);
+
+// packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-projection-contracts.ts
 var HOST_FIELD_ID = "hoster";
 var AVAILABLE_SPEAKERS_MARKER = "<!-- Available speakers -->";
-var YamlIssueFormProjection = class {
+
+// packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-projection.ts
+var YamlIssueFormProjection = class _YamlIssueFormProjection {
   constructor(options) {
     this.options = options;
   }
@@ -29765,7 +33762,7 @@ var YamlIssueFormProjection = class {
       throw new Error("Issue form is not valid YAML.");
     }
     const issueForm = document.toJS({ maxAliasCount: 100 });
-    if (!isRecord(issueForm) || !Array.isArray(issueForm.body)) {
+    if (!_YamlIssueFormProjection.isRecord(issueForm) || !Array.isArray(issueForm.body)) {
       throw new Error("Issue form must contain a body array.");
     }
     const body = issueForm.body;
@@ -29784,14 +33781,17 @@ var YamlIssueFormProjection = class {
       projection.speakerReferences
     );
     let changed = false;
-    if (!sameStringArray(fieldOptions(body[hostIndex]), projection.hostOptions)) {
+    if (!_YamlIssueFormProjection.sameStringArray(
+      _YamlIssueFormProjection.fieldOptions(body[hostIndex]),
+      projection.hostOptions
+    )) {
       document.setIn(
         ["body", hostIndex, "attributes", "options"],
         projection.hostOptions
       );
       changed = true;
     }
-    if (fieldValue(body[speakersIndex]) !== speakersMarkdown) {
+    if (_YamlIssueFormProjection.fieldValue(body[speakersIndex]) !== speakersMarkdown) {
       document.setIn(
         ["body", speakersIndex, "attributes", "value"],
         speakersMarkdown
@@ -29841,24 +33841,24 @@ var YamlIssueFormProjection = class {
   }
   findSingleFieldIndex(body, fieldId, expectedType) {
     const indexes = body.flatMap(
-      (item, index2) => isRecord(item) && item.id === fieldId ? [index2] : []
+      (item, index2) => _YamlIssueFormProjection.isRecord(item) && item.id === fieldId ? [index2] : []
     );
     if (indexes.length !== 1) {
       throw new Error(`Issue form must contain exactly one ${fieldId} field.`);
     }
     const index = indexes[0];
     const field = body[index];
-    if (!isRecord(field) || field.type !== expectedType) {
+    if (!_YamlIssueFormProjection.isRecord(field) || field.type !== expectedType) {
       throw new Error(`Issue-form field ${fieldId} must be a ${expectedType}.`);
     }
-    if (!isRecord(field.attributes)) {
+    if (!_YamlIssueFormProjection.isRecord(field.attributes)) {
       throw new Error(`Issue-form field ${fieldId} must have attributes.`);
     }
     return index;
   }
   findOptionalFieldIndex(body, fieldId) {
     const indexes = body.flatMap(
-      (item, index) => isRecord(item) && item.id === fieldId ? [index] : []
+      (item, index) => _YamlIssueFormProjection.isRecord(item) && item.id === fieldId ? [index] : []
     );
     if (indexes.length > 1) {
       throw new Error(`Issue form contains duplicate ${fieldId} fields.`);
@@ -29867,10 +33867,10 @@ var YamlIssueFormProjection = class {
   }
   findSpeakersMarkdownIndex(body) {
     const indexes = body.flatMap((item, index) => {
-      if (!isRecord(item) || item.type !== "markdown") {
+      if (!_YamlIssueFormProjection.isRecord(item) || item.type !== "markdown") {
         return [];
       }
-      const value = fieldValue(item);
+      const value = _YamlIssueFormProjection.fieldValue(item);
       return value?.includes(AVAILABLE_SPEAKERS_MARKER) ? [index] : [];
     });
     if (indexes.length !== 1) {
@@ -29881,7 +33881,9 @@ var YamlIssueFormProjection = class {
     return indexes[0];
   }
   renderSpeakersMarkdown(speakers) {
-    const references = speakers.map((speaker) => `- <code>${escapeHtml(speaker)}</code>`).join("\n");
+    const references = speakers.map(
+      (speaker) => `- <code>${_YamlIssueFormProjection.escapeHtml(speaker)}</code>`
+    ).join("\n");
     return [
       AVAILABLE_SPEAKERS_MARKER,
       "",
@@ -29912,28 +33914,28 @@ var YamlIssueFormProjection = class {
     ]) : Object.freeze([]);
     return Object.freeze({ changed, changedFiles, diagnostics });
   }
+  static isRecord(value) {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+  }
+  static fieldOptions(field) {
+    if (!_YamlIssueFormProjection.isRecord(field) || !_YamlIssueFormProjection.isRecord(field.attributes)) {
+      return void 0;
+    }
+    return field.attributes.options;
+  }
+  static fieldValue(field) {
+    if (!_YamlIssueFormProjection.isRecord(field) || !_YamlIssueFormProjection.isRecord(field.attributes)) {
+      return void 0;
+    }
+    return typeof field.attributes.value === "string" ? field.attributes.value : void 0;
+  }
+  static escapeHtml(value) {
+    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+  }
+  static sameStringArray(actual, expected) {
+    return Array.isArray(actual) && actual.length === expected.length && actual.every((value, index) => value === expected[index]);
+  }
 };
-function isRecord(value) {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-function fieldOptions(field) {
-  if (!isRecord(field) || !isRecord(field.attributes)) {
-    return void 0;
-  }
-  return field.attributes.options;
-}
-function fieldValue(field) {
-  if (!isRecord(field) || !isRecord(field.attributes)) {
-    return void 0;
-  }
-  return typeof field.attributes.value === "string" ? field.attributes.value : void 0;
-}
-function escapeHtml(value) {
-  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-}
-function sameStringArray(actual, expected) {
-  return Array.isArray(actual) && actual.length === expected.length && actual.every((value, index) => value === expected[index]);
-}
 
 // node_modules/.pnpm/@inversifyjs+common@2.0.1/node_modules/@inversifyjs/common/lib/common/calculations/isPromise.js
 function isPromise(object) {
@@ -35439,81 +39441,156 @@ var SERVICES = {
   eventClock: /* @__PURE__ */ Symbol("EventClock"),
   eventDependencies: /* @__PURE__ */ Symbol("ReconcileEventDependencies")
 };
-function createReferentialContainer(input = {}) {
-  const container = new Container({ defaultScope: "Singleton" });
-  const workspaceRoot = input.workspaceRoot ?? process.cwd();
-  container.bind(SERVICES.config).toConstantValue(input.config ?? createAutomationConfig());
-  container.bind(SERVICES.referentialRepository).toDynamicValue((context) => {
-    const config = context.get(SERVICES.config);
-    return new CsvReferentialRepository({
-      workspaceRoot,
-      hostsPath: config.referentials.hosts,
-      speakersPath: config.referentials.speakers
+var EventComposition = class _EventComposition {
+  /** One container per invocation: no credentials or cached data survive a run. */
+  static createReferentialContainer(input = {}) {
+    const container = new Container({ defaultScope: "Singleton" });
+    const workspaceRoot = input.workspaceRoot ?? process.cwd();
+    container.bind(SERVICES.config).toConstantValue(
+      input.config ?? AutomationConfigFactory.createAutomationConfig()
+    );
+    container.bind(SERVICES.referentialRepository).toDynamicValue((context) => {
+      const config = context.get(SERVICES.config);
+      return new CsvReferentialRepository({
+        workspaceRoot,
+        hostsPath: config.referentials.hosts,
+        speakersPath: config.referentials.speakers
+      });
     });
-  });
-  container.bind(SERVICES.issueFormProjection).toDynamicValue(() => new YamlIssueFormProjection({ workspaceRoot }));
-  container.bind(ValidateMeetupReferentials).toDynamicValue(
-    (context) => new ValidateMeetupReferentials({
-      config: context.get(SERVICES.config),
-      referentialRepository: context.get(
-        SERVICES.referentialRepository
-      )
-    })
-  );
-  container.bind(SynchronizeMeetupIssueForm).toDynamicValue(
-    (context) => new SynchronizeMeetupIssueForm({
-      validateReferentials: context.get(ValidateMeetupReferentials),
-      issueFormProjection: context.get(
-        SERVICES.issueFormProjection
-      )
-    })
-  );
-  return container;
-}
-
-// packages/runtime/github-actions/src/runtime-input.ts
-var SAFE_ERROR_NAMES = /* @__PURE__ */ new Set([
-  "GoogleDriveAssetRepositoryError",
-  "EventNotFoundError",
-  "EventConcurrentModificationError",
-  "GitHubEventRepositoryConfigurationError",
-  "GitHubEventRepositoryScopeError",
-  "GitHubEventRepositoryResponseError",
-  "GitHubEventCommentRepositoryConfigurationError",
-  "GitHubEventCommentRepositoryScopeError",
-  "GitHubEventCommentRepositoryResponseError"
-]);
-function publicErrorMessage(error2) {
-  if (error2 instanceof Error && SAFE_ERROR_NAMES.has(error2.name)) {
-    return `${error2.name}: ${error2.message}`;
+    container.bind(SERVICES.issueFormProjection).toDynamicValue(() => new YamlIssueFormProjection({ workspaceRoot }));
+    container.bind(ValidateMeetupReferentials).toDynamicValue(
+      (context) => new ValidateMeetupReferentials({
+        config: context.get(SERVICES.config),
+        referentialRepository: context.get(
+          SERVICES.referentialRepository
+        )
+      })
+    );
+    container.bind(SynchronizeMeetupIssueForm).toDynamicValue(
+      (context) => new SynchronizeMeetupIssueForm({
+        validateReferentials: context.get(ValidateMeetupReferentials),
+        issueFormProjection: context.get(
+          SERVICES.issueFormProjection
+        )
+      })
+    );
+    return container;
   }
-  return "Meetup automation failed; inspect debug logs using a trusted runner";
-}
+  static createEventContainer(input) {
+    const container = _EventComposition.createReferentialContainer(input);
+    _EventComposition.bindEventAdapters(container, input);
+    container.bind(SERVICES.eventDependencies).toDynamicValue((context) => {
+      const config = context.get(SERVICES.config);
+      return {
+        repository: context.get(SERVICES.eventRepository),
+        documentCodec: context.get(
+          SERVICES.eventDocumentCodec
+        ),
+        commentRepository: context.get(
+          SERVICES.eventCommentRepository
+        ),
+        clock: context.get(SERVICES.eventClock),
+        rules: EventRuleFactory.createDefaultEventRules({
+          meetup: config.event["issue-label"],
+          hostNeeded: "hoster:needed",
+          hostConfirmed: config.event["required-confirmation-labels"][0],
+          speakersNeeded: "speakers:needed",
+          speakersConfirmed: config.event["required-confirmation-labels"][1],
+          occurrencePostponed: "event:postponed",
+          occurrenceHeld: "event:held",
+          occurrenceCancelled: "event:cancelled"
+        })
+      };
+    });
+    container.bind(ManageMeetupEvent).toDynamicValue(
+      (context) => new ManageMeetupEvent({
+        config: context.get(SERVICES.config),
+        referentialRepository: context.get(
+          SERVICES.referentialRepository
+        ),
+        eventDependencies: context.get(
+          SERVICES.eventDependencies
+        )
+      })
+    );
+    container.bind(ListActiveEvents).toDynamicValue(
+      (context) => new ListActiveEvents({
+        repository: context.get(SERVICES.eventRepository),
+        documentCodec: context.get(
+          SERVICES.eventDocumentCodec
+        ),
+        clock: context.get(SERVICES.eventClock),
+        rules: context.get(
+          SERVICES.eventDependencies
+        ).rules
+      })
+    );
+    return container;
+  }
+  static bindEventAdapters(container, input) {
+    container.bind(SERVICES.eventRepository).toDynamicValue(() => new GitHubEventRepository(input.client, input));
+    container.bind(SERVICES.eventDocumentCodec).toDynamicValue((context) => {
+      const config = context.get(SERVICES.config);
+      return new GitHubIssueFormEventDocumentCodec({
+        repositoryRef: input.repositoryRef ?? (process.env.GITHUB_SHA || "main"),
+        timeZone: config.timezone,
+        hostConfirmationLabel: config.event["required-confirmation-labels"][0],
+        speakersConfirmationLabel: config.event["required-confirmation-labels"][1]
+      });
+    });
+    container.bind(SERVICES.eventCommentRepository).toDynamicValue(
+      () => new GitHubEventCommentRepository(input.client, {
+        owner: input.owner,
+        repo: input.repo,
+        authorLogin: input.commentAuthorLogin
+      })
+    );
+    container.bind(SERVICES.eventClock).toDynamicValue(() => new SystemEventClock());
+  }
+};
 
 // packages/runtime/github-actions/src/referential-actions.ts
-async function runReferentialValidateAction() {
-  const outcome = await createReferentialContainer().get(ValidateMeetupReferentials).execute();
-  const counts = outcome.isValid ? {
-    hostCount: outcome.catalog.hosts.length,
-    speakerCount: outcome.catalog.speakers.length
-  } : { hostCount: 0, speakerCount: 0 };
-  setJsonOutput(
-    "result",
-    resultEnvelope(
-      { isValid: outcome.isValid, ...counts },
-      outcome.diagnostics
-    )
-  );
-  setOutput("is-valid", String(outcome.isValid));
-  setOutput("host-count", String(counts.hostCount));
-  setOutput("speaker-count", String(counts.speakerCount));
-  setDiagnosticsOutput(outcome.diagnostics);
-}
+var ReferentialActions = class {
+  static async runReferentialValidateAction() {
+    const outcome = await EventComposition.createReferentialContainer().get(ValidateMeetupReferentials).execute();
+    const counts = outcome.isValid ? {
+      hostCount: outcome.catalog.hosts.length,
+      speakerCount: outcome.catalog.speakers.length
+    } : { hostCount: 0, speakerCount: 0 };
+    ActionOutput.setJsonOutput(
+      "result",
+      ResultEnvelopeFactory.resultEnvelope(
+        { isValid: outcome.isValid, ...counts },
+        outcome.diagnostics
+      )
+    );
+    setOutput("is-valid", String(outcome.isValid));
+    setOutput("host-count", String(counts.hostCount));
+    setOutput("speaker-count", String(counts.speakerCount));
+    ActionOutput.setDiagnosticsOutput(outcome.diagnostics);
+  }
+  static async runReferentialSyncIssueFormAction() {
+    const mode = RuntimeInput.enumInput(
+      "mode",
+      getInput("mode", { required: true }),
+      ["check", "fix"]
+    );
+    const outcome = await EventComposition.createReferentialContainer().get(SynchronizeMeetupIssueForm).execute({ mode });
+    ActionOutput.setJsonOutput(
+      "result",
+      ResultEnvelopeFactory.resultEnvelope(
+        { changed: outcome.changed, changedFiles: outcome.changedFiles },
+        outcome.diagnostics
+      )
+    );
+    setOutput("changed", String(outcome.changed));
+    ActionOutput.setJsonOutput("changed-files", outcome.changedFiles);
+    ActionOutput.setDiagnosticsOutput(outcome.diagnostics);
+  }
+};
 
 // packages/runtime/github-actions/src/entrypoints/referential-validate.ts
-runReferentialValidateAction().catch((error2) => {
-  setFailed(publicErrorMessage(error2));
-});
+ActionRunner.run(ReferentialActions.runReferentialValidateAction);
 /*! Bundled license information:
 
 undici/lib/web/fetch/body.js:

@@ -76,29 +76,14 @@ export class ReconcileEventAssets {
 		const currentFiles = await this.repository.listFiles(container.id);
 		const files: Record<string, string> = {};
 		for (const template of templates) {
-			const name = template.name.replaceAll("[EVENT_DATE:YYYY-MM-DD]", date);
-			const matches = currentFiles.filter(
-				(file) => file.templateId === template.id,
+			const file = await this.reconcileFile(
+				container,
+				template,
+				currentFiles,
+				date,
+				input.mode,
+				diagnostics,
 			);
-			if (matches.length > 1)
-				throw new Error(
-					"Ambiguous event asset copies require manual reconciliation",
-				);
-			let file: AssetFile | undefined = matches[0];
-			if (!file || file.name !== name || file.kind !== template.kind) {
-				diagnostics.push(
-					ReconcileEventAssets.diagnostic(
-						"file.drift",
-						"An event template copy is missing or its name or template metadata has changed",
-						input.mode === "fix",
-					),
-				);
-				if (input.mode === "fix") {
-					file = file
-						? await this.repository.updateFile(file, template, name)
-						: await this.repository.copyTemplate(container.id, template, name);
-				}
-			}
 			if (file?.url) files[`${template.kind}-link`] = file.url;
 		}
 		return { container, files, diagnostics };
@@ -142,5 +127,39 @@ export class ReconcileEventAssets {
 				"Asset templates must have unique IDs, unique kinds, and non-empty names",
 			);
 		}
+	}
+
+	private async reconcileFile(
+		container: AssetContainer,
+		template: AssetTemplate,
+		currentFiles: readonly AssetFile[],
+		date: string,
+		mode: ReconcileEventAssetsMode,
+		diagnostics: PublicationDiagnostic[],
+	) {
+		const name = template.name.replaceAll("[EVENT_DATE:YYYY-MM-DD]", date);
+		const matches = currentFiles.filter(
+			(file) => file.templateId === template.id,
+		);
+		if (matches.length > 1)
+			throw new Error(
+				"Ambiguous event asset copies require manual reconciliation",
+			);
+		let file: AssetFile | undefined = matches[0];
+		if (!file || file.name !== name || file.kind !== template.kind) {
+			diagnostics.push(
+				ReconcileEventAssets.diagnostic(
+					"file.drift",
+					"An event template copy is missing or its name or template metadata has changed",
+					mode === "fix",
+				),
+			);
+			if (mode === "fix") {
+				file = file
+					? await this.repository.updateFile(file, template, name)
+					: await this.repository.copyTemplate(container.id, template, name);
+			}
+		}
+		return file;
 	}
 }

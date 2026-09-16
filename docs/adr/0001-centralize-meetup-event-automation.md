@@ -219,7 +219,7 @@ packages/domain/<domain>/
 │   │   ├── ports/             # Interfaces required by use cases
 │   │   └── use-cases/
 │   └── index.ts               # The only supported package API
-├── __tests__/                 # Builders, fakes, and contract fixtures
+├── testing/                   # Shared test builders, fakes, and fixtures
 ├── tsconfig.lib.json
 ├── tsconfig.spec.json
 └── vitest.config.ts
@@ -346,8 +346,19 @@ metadata. If a free-form legacy name resolves to more than one record, the
 action reports an ambiguity and requires an explicit ID; it does not guess.
 The generated issue form exposes the accepted `Display name [stable_id]`
 syntax wherever ambiguity is possible.
-Existing CSV line links are treated only as legacy presentation data because a
-line number is not a stable identity.
+Host and speaker names link to the matching rows in the consumer's CSV
+referentials. The CSV adapter records physical source lines (including blank
+lines and multiline fields); a host with multiple contacts links to its first
+row. Validated source locations accompany resolved IDs through event
+reconciliation, and the issue codec renders links using the caller repository
+and checkout revision. Runtime composition defaults that revision to the caller's
+`GITHUB_SHA`, keeping the row target tied to the catalog used by the run.
+
+CSV line links remain presentation data, never stable identities. The codec
+preserves generated navigation links across decoding and projection, while
+reconciliation refreshes their locations from the current catalog. Hidden
+metadata contains only the existing name-bound IDs, and no contact fields are
+copied into the event or issue body.
 
 The brain owns these schemas in TypeScript and their synthetic fixtures. Once
 the replacement validation action is active, the consumer's
@@ -739,6 +750,15 @@ business expression under `meetups/.github/actions` or its caller workflows.
   conditional write if the provider exposes one.
 - Exactly one managed diagnostic comment exists per event. It is updated or
   minimized deterministically; identical diagnostics cause no write.
+  Comments present a checklist in issue-form order, with public field names and
+  concrete correction instructions instead of internal diagnostic codes. Known
+  diagnostics use code-owned presentation templates; raw messages and arbitrary
+  field paths are never copied into comments because they may contain private
+  referential data. Numeric agenda positions distinguish separate affected
+  entries or speakers. Unknown diagnostics direct maintainers to the workflow
+  diagnostics. Fixes belong in the issue description or labels; the next issue
+  update refreshes the checklist. An existing comment is marked resolved when
+  no actionable diagnostics remain.
 - While the shared workflow lock is held, communication dispatch persists
   `pending` in the ledger before calling a gateway and records `accepted` on
   acknowledgement. A `pending` or `uncertain` intent is never automatically
