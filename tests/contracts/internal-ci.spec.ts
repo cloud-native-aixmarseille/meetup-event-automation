@@ -121,6 +121,7 @@ describe("internal CI contracts", () => {
 		expect(release.permissions).toEqual({
 			contents: "write",
 			"pull-requests": "write",
+			workflows: "write",
 		});
 		expect(release.with).toMatchObject({
 			"github-app-client-id": workflowExpression("vars.CI_BOT_APP_CLIENT_ID"),
