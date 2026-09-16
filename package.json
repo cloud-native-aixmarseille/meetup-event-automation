@@ -6,13 +6,13 @@
 	"type": "module",
 	"private": true,
 	"packageManager": "pnpm@11.25.0",
-	"homepage": "https://github.com/cloud-native-aixmarseille/meetup-issue-linter-action",
+	"homepage": "https://github.com/cloud-native-aixmarseille/meetup-event-automation",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/cloud-native-aixmarseille/meetup-issue-linter-action.git"
+		"url": "git+https://github.com/cloud-native-aixmarseille/meetup-event-automation.git"
 	},
 	"bugs": {
-		"url": "https://github.com/cloud-native-aixmarseille/meetup-issue-linter-action/issues"
+		"url": "https://github.com/cloud-native-aixmarseille/meetup-event-automation/issues"
 	},
 	"keywords": [
 		"actions",

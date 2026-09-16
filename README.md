@@ -10,10 +10,10 @@
 
 <!-- badges:start -->
 
-[![Release](https://img.shields.io/github/v/release/cloud-native-aixmarseille/meetup-issue-linter-action)](https://github.com/cloud-native-aixmarseille/meetup-issue-linter-action/releases)
-[![License](https://img.shields.io/github/license/cloud-native-aixmarseille/meetup-issue-linter-action)](http://choosealicense.com/licenses/mit/)
-[![Stars](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-issue-linter-action?style=social)](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-issue-linter-action?style=social)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/cloud-native-aixmarseille/meetup-issue-linter-action/blob/main/CONTRIBUTING.md)
+[![Release](https://img.shields.io/github/v/release/cloud-native-aixmarseille/meetup-event-automation)](https://github.com/cloud-native-aixmarseille/meetup-event-automation/releases)
+[![License](https://img.shields.io/github/license/cloud-native-aixmarseille/meetup-event-automation)](http://choosealicense.com/licenses/mit/)
+[![Stars](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/main/CONTRIBUTING.md)
 
 <!-- badges:end -->
 
@@ -122,7 +122,7 @@ full 40-character release commit SHA, retaining the version as a review aid:
 ```yaml
 jobs:
   manage:
-    uses: cloud-native-aixmarseille/meetup-issue-linter-action/.github/workflows/update-meetup-issue.yml@0123456789abcdef0123456789abcdef01234567 # 1.x.y; replace with the published release SHA
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/update-meetup-issue.yml@0123456789abcdef0123456789abcdef01234567 # 1.x.y; replace with the published release SHA
 ```
 
 Do not pin a mutable branch or major-version tag. Upgrades are explicit changes
@@ -144,7 +144,7 @@ make check-contracts
 
 ## Contributing
 
-Contributions are welcome! Please see the [contributing guidelines](https://github.com/cloud-native-aixmarseille/meetup-issue-linter-action/blob/main/CONTRIBUTING.md) for more details.
+Contributions are welcome! Please see the [contributing guidelines](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/main/CONTRIBUTING.md) for more details.
 
 ## License
 

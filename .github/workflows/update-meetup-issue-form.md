@@ -5,8 +5,8 @@
 <!-- header:end -->
 <!-- badges:start -->
 
-[![Release](https://img.shields.io/github/v/release/cloud-native-aixmarseille/meetup-issue-linter-action)](https://github.com/cloud-native-aixmarseille/meetup-issue-linter-action/releases)
-[![Stars](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-issue-linter-action?style=social)](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-issue-linter-action?style=social)
+[![Release](https://img.shields.io/github/v/release/cloud-native-aixmarseille/meetup-event-automation)](https://github.com/cloud-native-aixmarseille/meetup-event-automation/releases)
+[![Stars](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)
 
 <!-- badges:end -->
 <!-- overview:start -->
@@ -34,7 +34,7 @@ on:
 permissions: {}
 jobs:
   update-meetup-issue-form:
-    uses: cloud-native-aixmarseille/meetup-issue-linter-action/.github/workflows/update-meetup-issue-form.yml@88fd8c3495bfbf7061bbd67d1324b0b4e4bc14d3 # main
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/update-meetup-issue-form.yml@88fd8c3495bfbf7061bbd67d1324b0b4e4bc14d3 # main
     permissions:
       contents: read
     with:

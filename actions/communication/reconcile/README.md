@@ -6,8 +6,8 @@
 <!-- badges:start -->
 
 [![Marketplace](https://img.shields.io/badge/Marketplace-reconcile--meetup--communications-blue?logo=github-actions)](https://github.com/marketplace/actions/reconcile-meetup-communications)
-[![Release](https://img.shields.io/github/v/release/cloud-native-aixmarseille/meetup-issue-linter-action)](https://github.com/cloud-native-aixmarseille/meetup-issue-linter-action/releases)
-[![Stars](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-issue-linter-action?style=social)](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-issue-linter-action?style=social)
+[![Release](https://img.shields.io/github/v/release/cloud-native-aixmarseille/meetup-event-automation)](https://github.com/cloud-native-aixmarseille/meetup-event-automation/releases)
+[![Stars](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)
 
 <!-- badges:end -->
 <!-- overview:start -->
@@ -22,7 +22,7 @@ Plan due meetup communications and, when authorized, dispatch them through the c
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-issue-linter-action/actions/communication/reconcile@88fd8c3495bfbf7061bbd67d1324b0b4e4bc14d3 # main
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/communication/reconcile@88fd8c3495bfbf7061bbd67d1324b0b4e4bc14d3 # main
   with:
     # GitHub issue number in the caller repository containing the meetup event document to inspect.
     # This input is required.

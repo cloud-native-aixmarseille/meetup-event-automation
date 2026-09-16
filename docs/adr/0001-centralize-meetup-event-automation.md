@@ -73,7 +73,7 @@ repository is organized by meetup business domain first.
 
 ## Decision drivers
 
-1. `meetup-issue-linter-action` must be the only implementation of meetup
+1. `meetup-event-automation` must be the only implementation of meetup
    journey behavior.
 2. `meetups` must remain the owner of community data, event instances,
    credentials, permissions, and GitHub triggers.
@@ -92,7 +92,7 @@ repository is organized by meetup business domain first.
 
 ## Decision
 
-`meetup-issue-linter-action` becomes the meetup automation product (the
+`meetup-event-automation` becomes the meetup automation product (the
 "brain"). It will contain:
 
 - a pnpm/Nx TypeScript workspace;
@@ -113,14 +113,15 @@ repository is organized by meetup business domain first.
 - repository variables and secrets;
 - small trigger-only workflows that call the brain at an immutable revision.
 
-The historical repository name remains during the migration to avoid breaking
-existing references. Renaming the repository is outside this decision. The
-published surface is limited to dedicated Actions under `actions/` and public
+The repository and published surface assume the target name
+`meetup-event-automation`. Consumers that pin this repository by owner and name
+must update their references when the rename is applied. The published surface
+is limited to dedicated Actions under `actions/` and public
 reusable workflows under `.github/workflows/`.
 
 ## Responsibility boundary
 
-| Concern                            | Brain: `meetup-issue-linter-action`              | Consumer: `meetups`                           |
+| Concern                            | Brain: `meetup-event-automation`                 | Consumer: `meetups`                           |
 | ---------------------------------- | ------------------------------------------------ | --------------------------------------------- |
 | Meetup aggregate and lifecycle     | Owns model, rules, use cases                     | Stores event instances as issues              |
 | Validation and normalization       | Owns                                             | No executable rules                           |
@@ -147,7 +148,7 @@ is strict. Vitest is the test runner, Biome formats/lints, and esbuild produces
 the committed Node.js action bundles.
 
 ```text
-meetup-issue-linter-action/
+meetup-event-automation/
 ├── package.json
 ├── pnpm-lock.yaml
 ├── pnpm-workspace.yaml
@@ -704,7 +705,7 @@ permissions: {}
 
 jobs:
   manage:
-    uses: cloud-native-aixmarseille/meetup-issue-linter-action/.github/workflows/manage-meetup-event.yml@0123456789abcdef0123456789abcdef01234567 # 1.x.y
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/manage-meetup-event.yml@0123456789abcdef0123456789abcdef01234567 # 1.x.y
     permissions:
       contents: read
     secrets:
@@ -717,11 +718,11 @@ The scheduled and referential workflows follow the same shape:
 ```yaml
 jobs:
   audit:
-    uses: cloud-native-aixmarseille/meetup-issue-linter-action/.github/workflows/audit-meetup-events.yml@0123456789abcdef0123456789abcdef01234567 # 1.x.y
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/audit-meetup-events.yml@0123456789abcdef0123456789abcdef01234567 # 1.x.y
     # Explicit permissions and secrets only; no workflow inputs.
 
   synchronize:
-    uses: cloud-native-aixmarseille/meetup-issue-linter-action/.github/workflows/synchronize-meetup-issue-form.yml@0123456789abcdef0123456789abcdef01234567 # 1.x.y
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/synchronize-meetup-issue-form.yml@0123456789abcdef0123456789abcdef01234567 # 1.x.y
     # Explicit permissions and secrets only; no workflow inputs.
 ```
 

@@ -6,8 +6,8 @@
 <!-- badges:start -->
 
 [![Marketplace](https://img.shields.io/badge/Marketplace-list--active--meetup--events-blue?logo=github-actions)](https://github.com/marketplace/actions/list-active-meetup-events)
-[![Release](https://img.shields.io/github/v/release/cloud-native-aixmarseille/meetup-issue-linter-action)](https://github.com/cloud-native-aixmarseille/meetup-issue-linter-action/releases)
-[![Stars](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-issue-linter-action?style=social)](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-issue-linter-action?style=social)
+[![Release](https://img.shields.io/github/v/release/cloud-native-aixmarseille/meetup-event-automation)](https://github.com/cloud-native-aixmarseille/meetup-event-automation/releases)
+[![Stars](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)
 
 <!-- badges:end -->
 <!-- overview:start -->
@@ -22,7 +22,7 @@ List active meetup issue numbers from the caller repository using the configured
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-issue-linter-action/actions/event/list-active@88fd8c3495bfbf7061bbd67d1324b0b4e4bc14d3 # main
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/event/list-active@88fd8c3495bfbf7061bbd67d1324b0b4e4bc14d3 # main
   with:
     # Token for the caller repository with issues:read permission.
     # This input is required.

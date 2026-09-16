@@ -6,8 +6,8 @@
 <!-- badges:start -->
 
 [![Marketplace](https://img.shields.io/badge/Marketplace-validate--meetup--referentials-blue?logo=github-actions)](https://github.com/marketplace/actions/validate-meetup-referentials)
-[![Release](https://img.shields.io/github/v/release/cloud-native-aixmarseille/meetup-issue-linter-action)](https://github.com/cloud-native-aixmarseille/meetup-issue-linter-action/releases)
-[![Stars](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-issue-linter-action?style=social)](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-issue-linter-action?style=social)
+[![Release](https://img.shields.io/github/v/release/cloud-native-aixmarseille/meetup-event-automation)](https://github.com/cloud-native-aixmarseille/meetup-event-automation/releases)
+[![Stars](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)
 
 <!-- badges:end -->
 <!-- overview:start -->
@@ -22,7 +22,7 @@ Validate the configured host and speaker catalogs and return only redacted count
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-issue-linter-action/actions/referential/validate@88fd8c3495bfbf7061bbd67d1324b0b4e4bc14d3 # main
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/referential/validate@88fd8c3495bfbf7061bbd67d1324b0b4e4bc14d3 # main
 ```
 
 <!-- usage:end -->
