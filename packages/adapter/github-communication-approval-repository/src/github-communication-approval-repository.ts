@@ -158,12 +158,18 @@ export class GithubCommunicationApprovalRepository
 
 	private static parseComment(body: string): CommunicationApprovalSnapshot {
 		try {
-			const match = body.match(/```json\s*([\s\S]*?)\s*```/);
-			if (!match?.[1]) {
+			const openingFence = "```json";
+			const start = body.indexOf(openingFence);
+			const end = body.indexOf("```", start + openingFence.length);
+			const json =
+				start < 0 || end < 0
+					? ""
+					: body.slice(start + openingFence.length, end).trim();
+			if (!json) {
 				throw new Error("missing JSON block");
 			}
 			const snapshot = CommunicationApproval.parseCommunicationApprovalSnapshot(
-				JSON.parse(match[1]),
+				JSON.parse(json),
 			);
 			if (
 				body !== GithubCommunicationApprovalRepository.renderComment(snapshot)

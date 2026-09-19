@@ -189,6 +189,43 @@ describe("GithubCommunicationApprovalRepository", () => {
 	});
 
 	it.each([
+		["missing opening fence", '{"schemaVersion":1}\n```'],
+		["missing closing fence", '```json\n{"schemaVersion":1}'],
+		["unclosed whitespace block", `\`\`\`json${" ".repeat(65_536)}`],
+		["empty block", "```json\n```"],
+		["whitespace block", `\`\`\`json${" ".repeat(65_536)}\`\`\``],
+		["invalid JSON", "```json\n{invalid}\n```"],
+	])("rejects a trusted approval with a %s", async (_name, block) => {
+		// Arrange
+		const body = `${COMMUNICATION_APPROVAL_COMMENT_MARKER}\n\n${block}`;
+		const memory = commentClient([trustedComment(1, body)]);
+		const repository = createRepository(memory.client);
+
+		// Act
+		const operation = repository.findApproved("issue-42");
+
+		// Assert
+		await expect(operation).rejects.toThrow(/corrupted/);
+		expect(memory.createComment).not.toHaveBeenCalled();
+		expect(memory.updateComment).not.toHaveBeenCalled();
+	});
+
+	it("rejects non-canonical whitespace around a valid approval snapshot", async () => {
+		// Arrange
+		const snapshot =
+			CommunicationApproval.createCommunicationApprovalSnapshot(FACTS);
+		const body = approvalBody(snapshot).replace("```json\n", "```json \n");
+		const memory = commentClient([trustedComment(1, body)]);
+		const repository = createRepository(memory.client);
+
+		// Act
+		const operation = repository.findApproved("issue-42");
+
+		// Assert
+		await expect(operation).rejects.toThrow(/corrupted/);
+	});
+
+	it.each([
 		{
 			owner: "bad/owner",
 			repo: "meetups",
