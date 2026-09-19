@@ -2,6 +2,7 @@ import type { DeliveryReservation } from "@meetup-automation/communication";
 import { describe, expect, it } from "vitest";
 import type { GithubLedgerComment } from "./comment-client.js";
 import { GithubDeliveryLedger } from "./github-delivery-ledger.js";
+import { DELIVERY_LEDGER_MARKER } from "./github-delivery-ledger-contracts.js";
 
 class MemoryComments {
 	comments: GithubLedgerComment[] = [];
@@ -186,4 +187,66 @@ describe("GithubDeliveryLedger", () => {
 		expect(comments.comments[0]?.body).not.toContain(reservation.recipientId);
 		expect(comments.comments[0]?.body).toContain('"schemaVersion": 2');
 	});
+
+	it.each([
+		["missing opening fence", '{"schemaVersion":2,"entries":[]}\n```'],
+		["missing closing fence", '```json\n{"schemaVersion":2,"entries":[]}'],
+		["unclosed whitespace block", `\`\`\`json${" ".repeat(65_536)}`],
+		["empty block", "```json\n```"],
+		["whitespace block", `\`\`\`json${" ".repeat(65_536)}\`\`\``],
+	])("rejects a trusted ledger with a %s", async (_name, block) => {
+		// Arrange
+		const comments = new MemoryComments();
+		const body = `${DELIVERY_LEDGER_MARKER}\n\n${block}`;
+		comments.comments.push({ id: 1, body, authorLogin: "automation[bot]" });
+		const ledger = new GithubDeliveryLedger(comments, {
+			dispatchAuthorized: true,
+			authorLogin: "automation[bot]",
+		});
+
+		// Act
+		const operation = ledger.reservePending(reservation);
+
+		// Assert
+		await expect(operation).rejects.toThrow(/corrupted/);
+		expect(comments.comments).toEqual([
+			{ id: 1, body, authorLogin: "automation[bot]" },
+		]);
+	});
+
+	it.each(["", "\r\n\t", " ".repeat(65_536)])(
+		"reads a ledger with surrounding JSON whitespace variant %#",
+		async (whitespace) => {
+			// Arrange
+			const value = {
+				schemaVersion: 1,
+				entries: [
+					{
+						...reservation,
+						status: "accepted",
+						updatedAt: reservation.reservedAt,
+					},
+				],
+			};
+			const comments = new MemoryComments();
+			comments.comments.push({
+				id: 1,
+				authorLogin: "automation[bot]",
+				body: `${DELIVERY_LEDGER_MARKER}\n\n\`\`\`json${whitespace}${JSON.stringify(value)}${whitespace}\`\`\`\n\n</details>`,
+			});
+			const ledger = new GithubDeliveryLedger(comments, {
+				dispatchAuthorized: false,
+				authorLogin: "automation[bot]",
+			});
+
+			// Act
+			const entry = await ledger.find(reservation.idempotencyKey);
+
+			// Assert
+			expect(entry).toMatchObject({
+				status: "accepted",
+				updatedAt: reservation.reservedAt,
+			});
+		},
+	);
 });

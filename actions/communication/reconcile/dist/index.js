@@ -36866,12 +36866,15 @@ var GithubCommunicationApprovalRepository = class _GithubCommunicationApprovalRe
   }
   static parseComment(body) {
     try {
-      const match = body.match(/```json\s*([\s\S]*?)\s*```/);
-      if (!match?.[1]) {
+      const openingFence = "```json";
+      const start = body.indexOf(openingFence);
+      const end = body.indexOf("```", start + openingFence.length);
+      const json = start < 0 || end < 0 ? "" : body.slice(start + openingFence.length, end).trim();
+      if (!json) {
         throw new Error("missing JSON block");
       }
       const snapshot = CommunicationApproval.parseCommunicationApprovalSnapshot(
-        JSON.parse(match[1])
+        JSON.parse(json)
       );
       if (body !== _GithubCommunicationApprovalRepository.renderComment(snapshot)) {
         throw new Error("non-canonical managed comment");
@@ -37112,11 +37115,14 @@ var GithubDeliveryLedger = class _GithubDeliveryLedger {
     }
   }
   static parseLedger(body) {
-    const match = body.match(/```json\s*([\s\S]*?)\s*```/);
-    if (!match?.[1]) {
+    const openingFence = "```json";
+    const start = body.indexOf(openingFence);
+    const end = body.indexOf("```", start + openingFence.length);
+    const json = start < 0 || end < 0 ? "" : body.slice(start + openingFence.length, end).trim();
+    if (!json) {
       throw new Error("Managed delivery ledger comment is corrupted");
     }
-    const value = JSON.parse(match[1]);
+    const value = JSON.parse(json);
     if (value.schemaVersion !== 1 && value.schemaVersion !== 2 || !Array.isArray(value.entries)) {
       throw new Error("Managed delivery ledger schema is unsupported");
     }

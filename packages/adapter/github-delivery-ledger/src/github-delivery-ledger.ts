@@ -196,11 +196,17 @@ export class GithubDeliveryLedger implements DeliveryLedger {
 	}
 
 	private static parseLedger(body: string): StoredLedger {
-		const match = body.match(/```json\s*([\s\S]*?)\s*```/);
-		if (!match?.[1]) {
+		const openingFence = "```json";
+		const start = body.indexOf(openingFence);
+		const end = body.indexOf("```", start + openingFence.length);
+		const json =
+			start < 0 || end < 0
+				? ""
+				: body.slice(start + openingFence.length, end).trim();
+		if (!json) {
 			throw new Error("Managed delivery ledger comment is corrupted");
 		}
-		const value = JSON.parse(match[1]) as {
+		const value = JSON.parse(json) as {
 			schemaVersion?: unknown;
 			entries?: unknown;
 		};
