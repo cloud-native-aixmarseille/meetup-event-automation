@@ -14,7 +14,7 @@
 
 ## Overview
 
-Plan due meetup communications and, when authorized, dispatch them through the configured mail and Slack gateways.
+Plan due meetup communications and, when authorized, dispatch them through the configured mail and Slack gateways. Publish redacted diagnostics in annotations, logs, and the job summary.
 
 <!-- overview:end -->
 <!-- usage:start -->
@@ -24,6 +24,8 @@ Plan due meetup communications and, when authorized, dispatch them through the c
 ```yaml
 - uses: cloud-native-aixmarseille/meetup-event-automation/actions/communication/reconcile@88fd8c3495bfbf7061bbd67d1324b0b4e4bc14d3 # main
   with:
+    # Optional language for generated text.
+    locale: en
     # GitHub issue number in the caller repository containing the meetup event document to inspect.
     # This input is required.
     issue-number: ""
@@ -58,6 +60,7 @@ Plan due meetup communications and, when authorized, dispatch them through the c
 
 | **Input**                    | **Description**                                                                                                                                                  | **Required** | **Default** |
 | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
+| **`locale`**                 | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.                               | **false**    | `en`        |
 | **`issue-number`**           | GitHub issue number in the caller repository containing the meetup event document to inspect.                                                                    | **true**     | -           |
 | **`mode`**                   | Use check to plan and validate only, or dispatch to send due communications when every safety gate passes.                                                       | **false**    | `check`     |
 | **`github-token`**           | Token for the caller repository. Requires issues:read; dispatch mode also requires issues:write.                                                                 | **true**     | -           |

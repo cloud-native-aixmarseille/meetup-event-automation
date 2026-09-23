@@ -1,3 +1,4 @@
 [codespell]
-skip = *.svg,**/package-lock.json,**/pnpm-lock.yaml,**/node_modules/**,**/dist/**,**/coverage/**
+# Codespell uses English dictionaries; French catalogs are reviewed separately.
+skip = *.svg,**/*.fr.ts,**/package-lock.json,**/pnpm-lock.yaml,**/node_modules/**,**/dist/**,**/coverage/**
 ignore-words-list = addIn

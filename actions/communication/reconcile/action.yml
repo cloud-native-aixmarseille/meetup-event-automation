@@ -1,7 +1,11 @@
 name: Reconcile meetup communications
-description: Plan due meetup communications and, when authorized, dispatch them through the configured mail and Slack gateways.
+description: Plan due meetup communications and, when authorized, dispatch them through the configured mail and Slack gateways. Publish redacted diagnostics in annotations, logs, and the job summary.
 author: Cloud Native Aix-Marseille
 inputs:
+  locale:
+    description: Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
+    required: false
+    default: en
   issue-number:
     description: GitHub issue number in the caller repository containing the meetup event document to inspect.
     required: true

@@ -5,6 +5,11 @@ name: Update meetup issue form
 on:
   workflow_call:
     inputs:
+      locale:
+        description: Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
+        required: false
+        type: string
+        default: en
       github-app-id:
         description: GitHub App ID used to mint the narrowly scoped installation token for meetup automation.
         required: true
@@ -76,6 +81,8 @@ jobs:
       - name: Validate referentials
         id: referentials
         uses: ./../self-workflow/actions/referential/validate
+        with:
+          locale: ${{ inputs.locale }}
 
       - name: Enforce valid referentials
         if: steps.referentials.outputs.is-valid != 'true'
@@ -88,6 +95,7 @@ jobs:
         id: synchronize
         uses: ./../self-workflow/actions/referential/sync-issue-form
         with:
+          locale: ${{ inputs.locale }}
           mode: fix
 
       - name: Open or update synchronization pull request

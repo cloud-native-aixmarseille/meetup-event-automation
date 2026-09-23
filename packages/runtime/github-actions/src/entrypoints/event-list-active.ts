@@ -1,4 +1,7 @@
 import { ActionRunner } from "../action-runner.js";
 import { EventActions } from "../event-actions.js";
 
-ActionRunner.run(EventActions.runEventListActiveAction);
+await ActionRunner.run(
+	"action.event.list-active",
+	EventActions.runEventListActiveAction,
+);

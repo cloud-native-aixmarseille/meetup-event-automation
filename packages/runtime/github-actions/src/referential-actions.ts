@@ -5,12 +5,19 @@ import {
 	ValidateMeetupReferentials,
 } from "@meetup-automation/journey";
 import { ActionOutput } from "./action-output.js";
+import type { ActionReportData } from "./action-report.js";
 import { EventComposition } from "./composition.js";
+import { ActionMessages } from "./i18n/action-messages.js";
+import { ReferentialActionReport } from "./referential-action-report.js";
 import { RuntimeInput } from "./runtime-input.js";
 
 export class ReferentialActions {
-	static async runReferentialValidateAction(): Promise<void> {
-		const outcome = await EventComposition.createReferentialContainer()
+	static async runReferentialValidateAction(
+		messages = new ActionMessages(),
+	): Promise<ActionReportData> {
+		const outcome = await EventComposition.createReferentialContainer({
+			locale: messages.locale,
+		})
 			.get(ValidateMeetupReferentials)
 			.execute();
 		const counts = outcome.isValid
@@ -28,18 +35,30 @@ export class ReferentialActions {
 			),
 		);
 		core.setOutput("is-valid", String(outcome.isValid));
+		core.setOutput(
+			"failure-message",
+			outcome.isValid ? "" : messages.t("workflow.referential.failed"),
+		);
 		core.setOutput("host-count", String(counts.hostCount));
 		core.setOutput("speaker-count", String(counts.speakerCount));
-		ActionOutput.setDiagnosticsOutput(outcome.diagnostics);
+		return ReferentialActionReport.validation(
+			{ isValid: outcome.isValid, ...counts },
+			outcome.diagnostics,
+			messages,
+		);
 	}
 
-	static async runReferentialSyncIssueFormAction(): Promise<void> {
+	static async runReferentialSyncIssueFormAction(
+		messages = new ActionMessages(),
+	): Promise<ActionReportData> {
 		const mode = RuntimeInput.enumInput(
 			"mode",
 			core.getInput("mode", { required: true }),
 			["check", "fix"] as const,
 		);
-		const outcome = await EventComposition.createReferentialContainer()
+		const outcome = await EventComposition.createReferentialContainer({
+			locale: messages.locale,
+		})
 			.get(SynchronizeMeetupIssueForm)
 			.execute({ mode });
 
@@ -51,7 +70,15 @@ export class ReferentialActions {
 			),
 		);
 		core.setOutput("changed", String(outcome.changed));
+		core.setOutput(
+			"failure-message",
+			outcome.diagnostics.some((item) => item.severity === "error")
+				? messages.t("workflow.referential.failed")
+				: outcome.changed && mode === "check"
+					? messages.t("workflow.issue-form.failed")
+					: "",
+		);
 		ActionOutput.setJsonOutput("changed-files", outcome.changedFiles);
-		ActionOutput.setDiagnosticsOutput(outcome.diagnostics);
+		return ReferentialActionReport.issueForm(mode, outcome, messages);
 	}
 }

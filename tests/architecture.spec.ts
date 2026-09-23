@@ -1,13 +1,19 @@
 import { readdir, readFile } from "node:fs/promises";
-import { join, relative } from "node:path";
+import { basename, join, relative } from "node:path";
 import { projectFiles } from "archunit";
 import { describe, expect, it } from "vitest";
+import { workspacePackageDirectories } from "../scripts/workspace-packages.mjs";
 
 const repositoryRoot = process.cwd();
 const workspaceNamespace = "@meetup-automation/";
 const tsConfigPath = "tsconfig.json";
 
-type WorkspaceLayer = "domain" | "application" | "adapter" | "runtime";
+type WorkspaceLayer =
+	| "domain"
+	| "application"
+	| "adapter"
+	| "runtime"
+	| "presentation";
 
 type WorkspacePackage = Readonly<{
 	name: string;
@@ -19,10 +25,12 @@ type WorkspacePackage = Readonly<{
 async function filesBelow(directory: string): Promise<string[]> {
 	const entries = await readdir(directory, { withFileTypes: true });
 	const nested = await Promise.all(
-		entries.map(async (entry) => {
-			const path = join(directory, entry.name);
-			return entry.isDirectory() ? filesBelow(path) : [path];
-		}),
+		entries
+			.filter((entry) => entry.name !== "node_modules")
+			.map(async (entry) => {
+				const path = join(directory, entry.name);
+				return entry.isDirectory() ? filesBelow(path) : [path];
+			}),
 	);
 	return nested.flat();
 }
@@ -106,6 +114,33 @@ describe("clean architecture boundaries", () => {
 		expect(violations).toEqual([]);
 	});
 
+	it("keeps localization and formatting libraries outside business rules", async () => {
+		// Arrange
+		const paths = [
+			...(await filesBelow(join(repositoryRoot, "packages/domain"))),
+			...(await filesBelow(join(repositoryRoot, "packages/application"))),
+		];
+		const violations: string[] = [];
+		// Act
+		for (const path of paths) {
+			if (
+				!path.includes("/src/") ||
+				!path.endsWith(".ts") ||
+				path.endsWith(".test.ts")
+			)
+				continue;
+			const source = await readFile(path, "utf8");
+			if (
+				/["'](?:@meetup-automation\/localization|intl-messageformat|@formatjs\/)/.test(
+					source,
+				)
+			)
+				violations.push(relative(repositoryRoot, path));
+		}
+		// Assert
+		expect(violations).toEqual([]);
+	});
+
 	// The first ArchUnit assertion builds the TypeScript dependency graph. Under
 	// CI coverage this exceeds the default 5 seconds; later assertions reuse it.
 	describe("archunit clean architecture boundaries", {
@@ -179,16 +214,12 @@ describe("clean architecture boundaries", () => {
 		const adapterRoot = join(repositoryRoot, "packages/adapter");
 
 		// Act
-		const entries = await readdir(adapterRoot, { withFileTypes: true });
-		const packageNames = entries.filter((entry) => entry.isDirectory());
+		const directories = await workspacePackageDirectories(adapterRoot);
 		const projects = await Promise.all(
-			packageNames.map(async (entry) => {
-				const packageName = entry.name;
+			directories.map(async (directory) => {
+				const packageName = basename(directory);
 				const project = JSON.parse(
-					await readFile(
-						join(adapterRoot, packageName, "project.json"),
-						"utf8",
-					),
+					await readFile(join(directory, "project.json"), "utf8"),
 				) as { tags?: readonly string[] };
 				const technology = project.tags
 					?.find((tag) => tag.startsWith("technology:"))
@@ -201,7 +232,7 @@ describe("clean architecture boundaries", () => {
 		);
 
 		// Assert
-		expect(packageNames.length).toBeGreaterThan(0);
+		expect(directories.length).toBeGreaterThan(0);
 		for (const { packageName, technology, responsibility } of projects) {
 			expect(packageName).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+){1,}$/);
 			expect(["github", "csv", "yaml", "slack", "system"]).not.toContain(
@@ -302,14 +333,12 @@ async function workspacePackages(): Promise<readonly WorkspacePackage[]> {
 		"application",
 		"adapter",
 		"runtime",
+		"presentation",
 	];
 	const packages: WorkspacePackage[] = [];
 	for (const layer of layers) {
 		const layerRoot = join(packageRoot, layer);
-		const entries = await readdir(layerRoot, { withFileTypes: true });
-		for (const entry of entries) {
-			if (!entry.isDirectory()) continue;
-			const directory = join(layerRoot, entry.name);
+		for (const directory of await workspacePackageDirectories(layerRoot)) {
 			const manifest = JSON.parse(
 				await readFile(join(directory, "package.json"), "utf8"),
 			) as {
@@ -336,8 +365,9 @@ function dependencyLayerAllowed(
 	const allowed: Readonly<Record<WorkspaceLayer, readonly WorkspaceLayer[]>> = {
 		domain: [],
 		application: ["domain"],
-		adapter: ["domain", "application"],
-		runtime: ["domain", "application", "adapter"],
+		adapter: ["domain", "application", "presentation"],
+		runtime: ["domain", "application", "adapter", "presentation"],
+		presentation: [],
 	};
 	return allowed[consumer].includes(dependency);
 }

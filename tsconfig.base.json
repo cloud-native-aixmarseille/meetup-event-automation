@@ -64,6 +64,9 @@
 			],
 			"@meetup-automation/google-drive-asset-repository": [
 				"./packages/adapter/google-drive-asset-repository/src/index.ts"
+			],
+			"@meetup-automation/localization": [
+				"./packages/presentation/localization/src/index.ts"
 			]
 		}
 	}

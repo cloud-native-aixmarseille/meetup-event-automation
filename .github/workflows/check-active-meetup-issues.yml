@@ -5,6 +5,11 @@ name: Check active meetup issues
 on:
   workflow_call:
     inputs:
+      locale:
+        description: Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
+        required: false
+        type: string
+        default: en
       github-app-id:
         description: GitHub App ID used to mint the narrowly scoped installation token for meetup automation.
         required: true
@@ -64,6 +69,7 @@ jobs:
         id: list
         uses: ./../self-workflow/actions/event/list-active
         with:
+          locale: ${{ inputs.locale }}
           github-token: ${{ github.token }}
 
   audit:
@@ -105,6 +111,7 @@ jobs:
         id: assets
         uses: ./../self-workflow/actions/publication/reconcile-assets
         with:
+          locale: ${{ inputs.locale }}
           issue-number: ${{ matrix.issue-number }}
           mode: fix
           github-token: ${{ steps.app-token.outputs.token }}
@@ -117,6 +124,7 @@ jobs:
         id: event
         uses: ./../self-workflow/actions/event/reconcile
         with:
+          locale: ${{ inputs.locale }}
           issue-number: ${{ matrix.issue-number }}
           mode: check
           github-token: ${{ steps.app-token.outputs.token }}
@@ -128,6 +136,7 @@ jobs:
         env:
           SLACK_CHANNEL_ID: ${{ inputs.slack-channel-id }}
         with:
+          locale: ${{ inputs.locale }}
           issue-number: ${{ matrix.issue-number }}
           mode: dispatch
           github-token: ${{ steps.app-token.outputs.token }}
@@ -135,60 +144,3 @@ jobs:
           mailings-token: ${{ secrets.mailings-token }} # zizmor: ignore[secrets-outside-env] optional reusable-workflow secret is forwarded explicitly to avoid secrets: inherit
           slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] optional reusable-workflow secret is forwarded explicitly to avoid secrets: inherit
           dispatch-authorized: "true"
-
-      - name: Add redacted audit summary
-        if: always()
-        shell: bash
-        env:
-          ISSUE_NUMBER: ${{ matrix.issue-number }}
-          EVENT_STATE: ${{ steps.event.outputs.state || 'unavailable' }}
-          EVENT_READY: ${{ steps.event.outputs.is-ready || 'false' }}
-          EVENT_RESULT: ${{ steps.event.outputs.result || '{}' }}
-          EVENT_DIAGNOSTICS: ${{ steps.event.outputs.diagnostics || '[]' }}
-          PLANNED_COUNT: ${{ steps.communications.outputs.planned-count || '0' }}
-          DISPATCHED_COUNT: ${{ steps.communications.outputs.dispatched-count || '0' }}
-          COMMUNICATION_RESULT: ${{ steps.communications.outputs.result || '{}' }}
-          COMMUNICATION_DIAGNOSTICS: ${{ steps.communications.outputs.diagnostics || '[]' }}
-        run: |
-          sanitize_json() {
-            local value
-            if ! value="$(jq -c . <<< "$1" 2>/dev/null)"; then
-              value='{}'
-            fi
-            printf '%s' "${value}" | sed \
-              -e 's/&/\&amp;/g' \
-              -e 's/</\&lt;/g' \
-              -e 's/>/\&gt;/g'
-          }
-
-          {
-            echo "### Meetup issue #${ISSUE_NUMBER}"
-            echo
-            echo "Event state: \`${EVENT_STATE}\`"
-            echo
-            echo "Event ready: \`${EVENT_READY}\`"
-            echo
-            echo "Planned communications: ${PLANNED_COUNT}"
-            echo
-            echo "Dispatched communications: ${DISPATCHED_COUNT}"
-            echo
-            echo '<details><summary>Redacted event result</summary>'
-            echo
-            printf '<pre>%s</pre>\n' "$(sanitize_json "${EVENT_RESULT}")"
-            echo '</details>'
-            echo
-            echo '<details><summary>Redacted event diagnostics</summary>'
-            echo
-            printf '<pre>%s</pre>\n' "$(sanitize_json "${EVENT_DIAGNOSTICS}")"
-            echo '</details>'
-            echo
-            echo '<details><summary>Redacted communication result</summary>'
-            echo
-            printf '<pre>%s</pre>\n' "$(sanitize_json "${COMMUNICATION_RESULT}")"
-            echo '</details>'
-            echo
-            echo '<details><summary>Redacted communication diagnostics</summary>'
-            echo
-            printf '<pre>%s</pre>\n' "$(sanitize_json "${COMMUNICATION_DIAGNOSTICS}")"
-            echo '</details>'
-          } >> "${GITHUB_STEP_SUMMARY}"

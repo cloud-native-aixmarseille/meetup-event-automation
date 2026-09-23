@@ -35,6 +35,12 @@ lint-fix: ## Execute linting and fix
 		-e FIX_MARKDOWN_PRETTIER=true \
 	)
 
+audit: ## Execute security audit
+	$(PNPM) audit
+
+audit-fix: ## Execute security audit and fix
+	$(PNPM) audit --fix=update
+
 quality: ## Execute deterministic quality checks
 	$(PNPM) quality
 
@@ -54,6 +60,7 @@ check-dist: ## Check that the dist folder is up to date
 	$(PNPM) check:dist
 
 ci: setup ## Execute all CI quality gates
+	$(MAKE) audit-fix || true
 	$(MAKE) lint-fix
 	$(MAKE) quality
 

@@ -9,6 +9,7 @@ export const AVAILABLE_SPEAKERS_MARKER = "<!-- Available speakers -->";
 
 export interface YamlIssueFormProjectionOptions {
 	readonly workspaceRoot: string;
+	locale?: string;
 }
 
 export type SynchronizeIssueFormInput = Parameters<

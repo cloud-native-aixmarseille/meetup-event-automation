@@ -53,6 +53,8 @@ jobs:
       # Optional Slack bot token used for approved notifications. When omitted, Slack delivery is skipped safely.
       slack-token: ""
     with:
+      # Optional language for generated text.
+      locale: en
       # GitHub App ID used to mint the narrowly scoped installation token for meetup automation.
       # This input is required.
       github-app-id: ""
@@ -68,10 +70,11 @@ jobs:
 
 ### Workflow Call Inputs
 
-| **Input**              | **Description**                                                                                            | **Required** | **Type**   | **Default** |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------- | ------------ | ---------- | ----------- |
-| **`github-app-id`**    | GitHub App ID used to mint the narrowly scoped installation token for meetup automation.                   | **true**     | **string** | -           |
-| **`slack-channel-id`** | Optional Slack channel ID used for approved notifications. When omitted, Slack delivery is skipped safely. | **false**    | **string** | -           |
+| **Input**              | **Description**                                                                                                                    | **Required** | **Type**   | **Default** |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- | ----------- |
+| **`locale`**           | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **false**    | **string** | `en`        |
+| **`github-app-id`**    | GitHub App ID used to mint the narrowly scoped installation token for meetup automation.                                           | **true**     | **string** | -           |
+| **`slack-channel-id`** | Optional Slack channel ID used for approved notifications. When omitted, Slack delivery is skipped safely.                         | **false**    | **string** | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->

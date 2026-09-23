@@ -14,7 +14,7 @@
 
 ## Overview
 
-List active meetup issue numbers from the caller repository using the configured event label and lifecycle rules.
+List active meetup issue numbers from the caller repository using the configured event label and lifecycle rules. Publish redacted diagnostics in annotations, logs, and the job summary.
 
 <!-- overview:end -->
 <!-- usage:start -->
@@ -24,6 +24,8 @@ List active meetup issue numbers from the caller repository using the configured
 ```yaml
 - uses: cloud-native-aixmarseille/meetup-event-automation/actions/event/list-active@88fd8c3495bfbf7061bbd67d1324b0b4e4bc14d3 # main
   with:
+    # Optional language for generated text.
+    locale: en
     # Token for the caller repository with issues:read permission.
     # This input is required.
     github-token: ""
@@ -34,9 +36,10 @@ List active meetup issue numbers from the caller repository using the configured
 
 ## Inputs
 
-| **Input**          | **Description**                                              | **Required** | **Default** |
-| ------------------ | ------------------------------------------------------------ | ------------ | ----------- |
-| **`github-token`** | Token for the caller repository with issues:read permission. | **true**     | -           |
+| **Input**          | **Description**                                                                                                                    | **Required** | **Default** |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
+| **`locale`**       | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **false**    | `en`        |
+| **`github-token`** | Token for the caller repository with issues:read permission.                                                                       | **true**     | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->

@@ -70,7 +70,8 @@ describe("publication action boundary", () => {
 		// No additional setup is needed.
 
 		// Act
-		await PublicationAction.runPublicationReconcileAssetsAction();
+		const report =
+			await PublicationAction.runPublicationReconcileAssetsAction();
 		const actual = JSON.parse(mocks.outputs.result);
 
 		// Assert
@@ -82,6 +83,9 @@ describe("publication action boundary", () => {
 		expect(mocks.outputs["drive-files"]).toBe("{}");
 		expect(mocks.outputs["asset-url"]).toBe("");
 		expect(mocks.createAssets).not.toHaveBeenCalled();
+		expect(report.details.join("\n")).toContain(
+			"Skipped: Google Drive credentials are unavailable",
+		);
 	});
 
 	it.each(["check", "fix"])(
@@ -98,7 +102,8 @@ describe("publication action boundary", () => {
 			});
 
 			// Act
-			await PublicationAction.runPublicationReconcileAssetsAction();
+			const report =
+				await PublicationAction.runPublicationReconcileAssetsAction();
 			const actual = JSON.parse(mocks.outputs["drive-files"]);
 			const actual1 = JSON.stringify(mocks.outputs);
 
@@ -115,7 +120,8 @@ describe("publication action boundary", () => {
 				}),
 			);
 			expect(actual).toHaveProperty("slides-link");
-			expect(mocks.outputs.diagnostics).toBe("[]");
+			expect(report.diagnostics).toEqual([]);
+			expect(report.details).toContain("Asset reconciliation completed.");
 			expect(actual1).not.toContain("secret-json");
 		},
 	);
@@ -131,7 +137,8 @@ describe("publication action boundary", () => {
 		});
 
 		// Act
-		await PublicationAction.runPublicationReconcileAssetsAction();
+		const report =
+			await PublicationAction.runPublicationReconcileAssetsAction();
 
 		// Assert
 		expect(mocks.createAssets).toHaveBeenCalledWith("secret-json", {
@@ -139,5 +146,8 @@ describe("publication action boundary", () => {
 			templateFolderId: "",
 		});
 		expect(mocks.outputs["asset-url"]).toBe("");
+		expect(report.details.join("\n")).toContain(
+			"Asset reconciliation was skipped",
+		);
 	});
 });

@@ -1,4 +1,7 @@
 import { ActionRunner } from "../action-runner.js";
 import { EventActions } from "../event-actions.js";
 
-ActionRunner.run(EventActions.runEventReconcileAction);
+await ActionRunner.run(
+	"action.event.reconcile",
+	EventActions.runEventReconcileAction,
+);

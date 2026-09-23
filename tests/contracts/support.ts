@@ -50,6 +50,7 @@ export interface Workflow {
 }
 
 export interface ActionManifest {
+	name?: string;
 	inputs?: Inputs;
 	outputs?: Record<string, unknown>;
 	runs?: {

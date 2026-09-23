@@ -1,7 +1,11 @@
 name: Reconcile meetup assets
-description: Check or reconcile the event Drive folder, template copies, and issue asset link.
+description: Check or reconcile the event Drive folder, template copies, and issue asset link. Publish redacted diagnostics in annotations, logs, and the job summary.
 author: Cloud Native Aix-Marseille
 inputs:
+  locale:
+    description: Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
+    required: false
+    default: en
   issue-number:
     description: GitHub issue number containing the meetup event document.
     required: true

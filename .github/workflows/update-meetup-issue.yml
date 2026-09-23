@@ -5,6 +5,11 @@ name: Update meetup issue
 on:
   workflow_call:
     inputs:
+      locale:
+        description: Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
+        required: false
+        type: string
+        default: en
       github-app-id:
         description: GitHub App ID used to mint the narrowly scoped installation token for meetup automation.
         required: true
@@ -91,6 +96,7 @@ jobs:
         env:
           SLACK_CHANNEL_ID: ${{ inputs.slack-channel-id }}
         with:
+          locale: ${{ inputs.locale }}
           issue-number: ${{ github.event.issue.number }}
           mode: dispatch
           github-token: ${{ steps.app-token.outputs.token }}
@@ -103,6 +109,7 @@ jobs:
         id: assets
         uses: ./../self-workflow/actions/publication/reconcile-assets
         with:
+          locale: ${{ inputs.locale }}
           issue-number: ${{ github.event.issue.number }}
           mode: fix
           github-token: ${{ steps.app-token.outputs.token }}
@@ -116,6 +123,7 @@ jobs:
         if: always()
         uses: ./../self-workflow/actions/event/reconcile
         with:
+          locale: ${{ inputs.locale }}
           issue-number: ${{ github.event.issue.number }}
           mode: fix
           github-token: ${{ steps.app-token.outputs.token }}

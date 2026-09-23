@@ -1,0 +1,13 @@
+{
+	"name": "@meetup-automation/localization",
+	"version": "1.0.0",
+	"private": true,
+	"type": "module",
+	"exports": "./src/index.ts",
+	"dependencies": {
+		"@formatjs/intl": "^6.1.2"
+	},
+	"devDependencies": {
+		"@formatjs/icu-messageformat-parser": "^3.5.20"
+	}
+}

@@ -116,7 +116,7 @@ describe("public reusable workflow contracts", () => {
 
 			// Assert
 			expect(workflow.permissions).toEqual({});
-			expect(actual).toEqual([...expected.inputs].sort());
+			expect(actual).toEqual([...expected.inputs, "locale"].sort());
 			expect(actual1).toEqual([...expected.secrets].sort());
 			expect(actual2).toEqual([...expected.outputs].sort());
 			expect(documentation).toContain(
@@ -178,6 +178,41 @@ describe("public reusable workflow contracts", () => {
 				).toBeGreaterThanOrEqual(0);
 				expect(workflowSourceIndex).toBeLessThan(firstActionIndex);
 			}
+		},
+	);
+
+	it.each([
+		[
+			"Enforce valid referentials",
+			"steps.referentials.outputs.is-valid != 'true'",
+			"referentials",
+		],
+		[
+			"Enforce current issue form",
+			"steps.issue-form.outputs.changed == 'true'",
+			"issue-form",
+		],
+	])(
+		"explains the failure and remediation in %s",
+		async (name, condition, step) => {
+			// Arrange
+			const workflow = await readWorkflow(
+				"check-meetup-referentials-and-issue-form",
+			);
+
+			// Act
+			const enforcement = workflow.jobs?.validate.steps?.find(
+				(step) => step.name === name,
+			);
+
+			// Assert
+			expect(enforcement?.if).toBe(condition);
+			expect(enforcement?.run).toContain("::error::");
+			expect(enforcement?.env?.FAILURE_MESSAGE).toBe(
+				`\${{ steps.${step}.outputs.failure-message }}`,
+			);
+			expect(enforcement?.run).toContain("$FAILURE_MESSAGE");
+			expect(enforcement?.run).toContain("exit 1");
 		},
 	);
 

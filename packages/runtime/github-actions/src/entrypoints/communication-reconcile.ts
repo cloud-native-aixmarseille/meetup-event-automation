@@ -1,4 +1,7 @@
 import { ActionRunner } from "../action-runner.js";
 import { CommunicationAction } from "../communication-action.js";
 
-ActionRunner.run(CommunicationAction.runCommunicationReconcileAction);
+await ActionRunner.run(
+	"action.communication.reconcile",
+	CommunicationAction.runCommunicationReconcileAction,
+);

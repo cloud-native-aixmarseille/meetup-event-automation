@@ -31,6 +31,7 @@ const actionContracts = [
 		directory: "actions/referential/validate",
 		inputs: [],
 		outputs: [
+			"failure-message",
 			"diagnostics",
 			"host-count",
 			"is-valid",
@@ -41,7 +42,13 @@ const actionContracts = [
 	{
 		directory: "actions/referential/sync-issue-form",
 		inputs: ["mode"],
-		outputs: ["changed", "changed-files", "diagnostics", "result"],
+		outputs: [
+			"changed",
+			"changed-files",
+			"diagnostics",
+			"failure-message",
+			"result",
+		],
 	},
 	{
 		directory: "actions/communication/reconcile",
@@ -78,7 +85,7 @@ describe("public action contracts", () => {
 				main: "dist/index.js",
 				using: "node24",
 			});
-			expect(sortedKeys(manifest.inputs)).toEqual([...inputs].sort());
+			expect(sortedKeys(manifest.inputs)).toEqual([...inputs, "locale"].sort());
 			expect(sortedKeys(manifest.outputs)).toEqual([...outputs].sort());
 			expect(readmeAccess).toBeUndefined();
 			expect(documentation).toContain(

@@ -1,3 +1,4 @@
+import type { MessageId } from "./i18n/catalog.js";
 export const FIELD_ORDER = [
 	"Event Title",
 	"Event Date",
@@ -20,221 +21,216 @@ export const FIELD_ORDER = [
 	"Meetup issue",
 ];
 
-// These are presentation templates, not raw diagnostic messages: messages and
-// arbitrary field paths can contain issue text or private referential values.
+// Only known, public guidance reaches issue comments; never raw diagnostic values.
 export const GUIDANCE = new Map<
 	string,
-	readonly [field: string, message: string]
+	readonly [
+		field: string,
+		message: Extract<MessageId, `comment.guidance.${string}`>,
+	]
 >([
-	["event.title.missing", ["Event Title", "Add a title for the event."]],
 	[
-		"event.date.missing",
-		["Event Date", "Add the event date in YYYY-MM-DD format."],
+		"event.title.missing",
+		["Event Title", "comment.guidance.event.title.missing"],
 	],
-	[
-		"event.date.invalid",
-		["Event Date", "Enter a valid calendar date in YYYY-MM-DD format."],
-	],
+	["event.date.missing", ["Event Date", "comment.guidance.event.date.missing"]],
+	["event.date.invalid", ["Event Date", "comment.guidance.event.date.invalid"]],
 	[
 		"event.description.missing",
-		["Event Description", "Add a short description of the event."],
+		["Event Description", "comment.guidance.event.description.missing"],
 	],
-	["event.hoster.missing", ["Hoster", "Select a host from the host list."]],
-	[
-		"event.hoster.invalid",
-		["Hoster", "Use a host name or stable ID from the host list."],
-	],
+	["event.hoster.missing", ["Hoster", "comment.guidance.event.hoster.missing"]],
+	["event.hoster.invalid", ["Hoster", "comment.guidance.event.hoster.invalid"]],
 	[
 		"event.hoster.multiple",
-		["Hoster", "Select exactly one host for the event."],
+		["Hoster", "comment.guidance.event.hoster.multiple"],
 	],
-	[
-		"event.agenda.missing",
-		["Agenda", "Add at least one talk using `- Speaker: Talk description`."],
-	],
+	["event.agenda.missing", ["Agenda", "comment.guidance.event.agenda.missing"]],
 	[
 		"event.agenda.legacy-line-invalid",
-		["Agenda", "Use `- Speaker: Talk description` for each agenda line."],
+		["Agenda", "comment.guidance.event.agenda.legacy-line-invalid"],
 	],
 	[
 		"event.agenda.speaker.missing",
-		["Agenda", "Add at least one speaker for this talk."],
+		["Agenda", "comment.guidance.event.agenda.speaker.missing"],
 	],
 	[
 		"event.agenda.speaker.invalid",
-		["Agenda", "Enter a speaker name from the speaker list."],
+		["Agenda", "comment.guidance.event.agenda.speaker.invalid"],
 	],
 	[
 		"event.agenda.description.missing",
-		["Agenda", "Add a talk description after the speaker name and colon."],
+		["Agenda", "comment.guidance.event.agenda.description.missing"],
 	],
 	[
 		"publication.meetup.missing",
-		["Meetup Link", "Add the link to the Meetup event page."],
+		["Meetup Link", "comment.guidance.publication.meetup.missing"],
 	],
 	[
 		"publication.community.missing",
-		["CNCF Link", "Add the link to the CNCF / OCGroups event page."],
+		["CNCF Link", "comment.guidance.publication.community.missing"],
 	],
 	[
 		"publication.assets.missing",
-		["Drive Link", "Add the link to the event's Google Drive folder."],
+		["Drive Link", "comment.guidance.publication.assets.missing"],
 	],
 	[
 		"event.link.meetup.invalid",
-		["Meetup Link", "Enter a valid HTTPS link to the Meetup event page."],
+		["Meetup Link", "comment.guidance.event.link.meetup.invalid"],
 	],
 	[
 		"event.link.community.invalid",
-		[
-			"CNCF Link",
-			"Enter a valid HTTPS link to the CNCF / OCGroups event page.",
-		],
+		["CNCF Link", "comment.guidance.event.link.community.invalid"],
 	],
 	[
 		"event.link.assets.invalid",
-		[
-			"Drive Link",
-			"Enter a valid HTTPS link to the event's Google Drive folder.",
-		],
+		["Drive Link", "comment.guidance.event.link.assets.invalid"],
 	],
 	[
 		"publication.meetup-url.invalid",
-		[
-			"Meetup Link",
-			"Use this group's Meetup event URL, ending with the numeric event ID.",
-		],
+		["Meetup Link", "comment.guidance.publication.meetup-url.invalid"],
 	],
 	[
 		"publication.community-url.invalid",
-		["CNCF Link", "Use this group's CNCF / OCGroups event URL."],
+		["CNCF Link", "comment.guidance.publication.community-url.invalid"],
 	],
 	[
 		"publication.asset-url.invalid",
-		[
-			"Drive Link",
-			"Use a Google Drive folder URL: `https://drive.google.com/drive/folders/FOLDER_ID`.",
-		],
+		["Drive Link", "comment.guidance.publication.asset-url.invalid"],
 	],
 	[
 		"event.confirmation.host.missing",
-		[
-			"Host confirmation",
-			"Confirm the host, then add the `hoster:confirmed` label.",
-		],
+		["Host confirmation", "comment.guidance.event.confirmation.host.missing"],
 	],
 	[
 		"event.confirmation.speakers.missing",
 		[
 			"Speaker confirmation",
-			"Confirm the speakers, then add the `speakers:confirmed` label.",
+			"comment.guidance.event.confirmation.speakers.missing",
 		],
 	],
 	[
 		"event.logistics.intent.invalid",
-		[
-			"Logistics",
-			"Choose `Yes` or `No`, or leave the response empty if undecided.",
-		],
+		["Logistics", "comment.guidance.event.logistics.intent.invalid"],
 	],
 	[
 		"event.occurrence-status.invalid",
-		["Event Status", "Use `scheduled`, `postponed`, `held`, or `cancelled`."],
+		["Event Status", "comment.guidance.event.occurrence-status.invalid"],
 	],
 	[
 		"event.occurrence-status.label-conflict",
-		[
-			"Event Status",
-			"Keep only one occurrence label: `event:postponed`, `event:held`, or `event:cancelled`.",
-		],
+		["Event Status", "comment.guidance.event.occurrence-status.label-conflict"],
 	],
 	[
 		"event.document.heading.missing",
-		[
-			"Issue format",
-			"Restore this section heading from the meetup issue template.",
-		],
+		["Issue format", "comment.guidance.event.document.heading.missing"],
 	],
 	[
 		"event.document.heading.duplicate",
-		[
-			"Issue format",
-			"Keep a single section with this heading and merge its content.",
-		],
+		["Issue format", "comment.guidance.event.document.heading.duplicate"],
 	],
 	[
 		"event.document.checkbox.invalid",
-		[
-			"Issue format",
-			"Use `- [ ] Task` for pending tasks and `- [x] Task` for completed tasks.",
-		],
+		["Issue format", "comment.guidance.event.document.checkbox.invalid"],
 	],
 	[
 		"event.document.invalid-field-type",
-		["Issue format", "Enter a text response in this field."],
+		["Issue format", "comment.guidance.event.document.invalid-field-type"],
 	],
 	[
 		"event.document.invalid-hoster-type",
-		["Hoster", "Select one host from the host list."],
+		["Hoster", "comment.guidance.event.document.invalid-hoster-type"],
 	],
 	[
 		"event.document.invalid-hoster-entry",
-		["Hoster", "Use a host name or stable ID from the host list."],
+		["Hoster", "comment.guidance.event.document.invalid-hoster-entry"],
 	],
 	[
 		"event.document.invalid-agenda-type",
-		[
-			"Agenda",
-			"Write the agenda as a list of `- Speaker: Talk description` lines.",
-		],
+		["Agenda", "comment.guidance.event.document.invalid-agenda-type"],
 	],
 	[
 		"event.document.schema-marker.duplicate",
-		[
-			"Issue format",
-			"Ask a maintainer to repair the duplicate automation metadata in the issue description.",
-		],
+		["Issue format", "comment.guidance.event.document.schema-marker.duplicate"],
 	],
 	[
 		"event.document.schema-version.unsupported",
 		[
 			"Issue format",
-			"Ask a maintainer to update the automation to support this issue format.",
+			"comment.guidance.event.document.schema-version.unsupported",
 		],
 	],
 	[
 		"event.document.reference-metadata.missing",
 		[
 			"Issue format",
-			"Ask a maintainer to regenerate the missing host and speaker reference metadata.",
+			"comment.guidance.event.document.reference-metadata.missing",
 		],
 	],
 	[
 		"event.document.reference-metadata.duplicate",
 		[
 			"Issue format",
-			"Ask a maintainer to repair the duplicate host and speaker reference metadata.",
+			"comment.guidance.event.document.reference-metadata.duplicate",
 		],
 	],
 	[
 		"event.document.reference-metadata.invalid",
 		[
 			"Issue format",
-			"Ask a maintainer to regenerate the invalid host and speaker reference metadata.",
+			"comment.guidance.event.document.reference-metadata.invalid",
 		],
 	],
 	[
 		"event.document.reference-metadata.legacy",
 		[
 			"Issue format",
-			"Check the host and agenda references, then rerun the issue update workflow to refresh their old metadata.",
+			"comment.guidance.event.document.reference-metadata.legacy",
 		],
 	],
 	[
 		"event.document.reference-metadata.stale",
 		[
 			"Issue format",
-			"Check the host and agenda references, then rerun the issue update workflow to refresh their metadata.",
+			"comment.guidance.event.document.reference-metadata.stale",
 		],
+	],
+	[
+		"referential.reference.host.unknown",
+		["Hoster", "comment.guidance.referential.reference.host.unknown"],
+	],
+	[
+		"referential.reference.host.ambiguous",
+		["Hoster", "comment.guidance.referential.reference.host.ambiguous"],
+	],
+	[
+		"referential.reference.host.display-name-mismatch",
+		[
+			"Hoster",
+			"comment.guidance.referential.reference.host.display-name-mismatch",
+		],
+	],
+	[
+		"referential.reference.host.invalid",
+		["Hoster", "comment.guidance.referential.reference.host.invalid"],
+	],
+	[
+		"referential.reference.speaker.unknown",
+		["Agenda", "comment.guidance.referential.reference.speaker.unknown"],
+	],
+	[
+		"referential.reference.speaker.ambiguous",
+		["Agenda", "comment.guidance.referential.reference.speaker.ambiguous"],
+	],
+	[
+		"referential.reference.speaker.display-name-mismatch",
+		[
+			"Agenda",
+			"comment.guidance.referential.reference.speaker.display-name-mismatch",
+		],
+	],
+	[
+		"referential.reference.speaker.invalid",
+		["Agenda", "comment.guidance.referential.reference.speaker.invalid"],
 	],
 ]);

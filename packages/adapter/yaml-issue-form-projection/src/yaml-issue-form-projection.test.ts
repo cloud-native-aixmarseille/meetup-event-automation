@@ -117,6 +117,39 @@ async function fixture(source = INITIAL_FORM) {
 }
 
 describe("YamlIssueFormProjection", () => {
+	it("produces a stable French projection and detects drift when the requested locale changes", async () => {
+		// Arrange
+		const target = await fixture();
+		const french = new YamlIssueFormProjection({
+			workspaceRoot: target.workspaceRoot,
+			locale: "fr",
+		});
+		const input = {
+			issueFormPath: target.issueFormPath,
+			occurrenceStatusFieldId: "event_status",
+			catalog: await catalog(),
+			mode: "fix" as const,
+		};
+		await french.synchronize(input);
+		const content = await readFile(target.absolutePath, "utf8");
+		// Act
+		const current = await french.synchronize({ ...input, mode: "check" });
+		const english = await new YamlIssueFormProjection({
+			workspaceRoot: target.workspaceRoot,
+		}).synchronize({ ...input, mode: "check" });
+		const after = await readFile(target.absolutePath, "utf8");
+		// Assert
+		expect(content).toContain(
+			"Afficher les références des intervenants disponibles",
+		);
+		expect(content).toContain("<!-- Available speakers -->");
+		expect(content).toContain("Unique &lt;Public&gt; Speaker &amp; Team");
+		expect(content).not.toContain("speaker-one@example.test");
+		expect(current.changed).toBe(false);
+		expect(english.changed).toBe(true);
+		expect(after).toBe(content);
+	});
+
 	it("updates referential projections, removes the occurrence dropdown, and preserves unrelated fields", async () => {
 		// Arrange
 		const target = await fixture();

@@ -3,6 +3,7 @@ packages:
   - packages/application/*
   - packages/adapter/*
   - packages/runtime/*
+  - packages/presentation/*
 
 allowBuilds:
   esbuild: true

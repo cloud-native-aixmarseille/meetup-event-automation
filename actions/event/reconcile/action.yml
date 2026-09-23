@@ -1,10 +1,14 @@
 name: Reconcile meetup event
-description: Read one meetup issue, derive lifecycle and readiness, and optionally persist safe issue and managed-comment updates.
+description: Read one meetup issue, derive lifecycle and readiness, and optionally persist safe issue and managed-comment updates. Publish redacted diagnostics in annotations, logs, and the job summary.
 author: Cloud Native Aix-Marseille
 branding:
   icon: check-circle
   color: blue
 inputs:
+  locale:
+    description: Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
+    required: false
+    default: en
   issue-number:
     description: GitHub issue number in the caller repository containing the meetup event document to inspect.
     required: true

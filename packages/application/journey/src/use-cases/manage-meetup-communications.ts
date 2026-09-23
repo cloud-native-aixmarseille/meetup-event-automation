@@ -256,7 +256,7 @@ export class ManageMeetupCommunications {
 				mailPlaceholders: CommunicationPlaceholders.eventPlaceholders(
 					managed.event,
 				),
-				notificationContent: `Meetup event issue #${input.issueNumber} requires organizer attention.`,
+				notificationContent: input.notificationContent,
 			});
 
 		return reconciliation;

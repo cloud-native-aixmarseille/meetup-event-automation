@@ -15,6 +15,8 @@
 
 Reusable workflow that checks referential catalogs and the generated meetup
 issue-form projection for consumer pull requests.
+Reports redacted diagnostic codes, fields, and messages in annotations and the
+job summary, with affected issue-form files and instructions to resolve failures.
 
 ### Permissions
 
@@ -37,10 +39,19 @@ jobs:
     uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/check-meetup-referentials-and-issue-form.yml@88fd8c3495bfbf7061bbd67d1324b0b4e4bc14d3 # main
     permissions:
       contents: read
+    with:
+      locale: en
 ```
 
 <!-- usage:end -->
 <!-- inputs:start -->
+
+## Inputs
+
+| **Input**    | **Description**                                                                                                                    | **Required** | **Default** |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
+| **`locale`** | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **false**    | `en`        |
+
 <!-- inputs:end -->
 <!-- secrets:start -->
 <!-- secrets:end -->

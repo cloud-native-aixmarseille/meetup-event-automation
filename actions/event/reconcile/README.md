@@ -14,7 +14,7 @@
 
 ## Overview
 
-Read one meetup issue, derive lifecycle and readiness, and optionally persist safe issue and managed-comment updates.
+Read one meetup issue, derive lifecycle and readiness, and optionally persist safe issue and managed-comment updates. Publish redacted diagnostics in annotations, logs, and the job summary.
 
 <!-- overview:end -->
 <!-- usage:start -->
@@ -24,6 +24,8 @@ Read one meetup issue, derive lifecycle and readiness, and optionally persist sa
 ```yaml
 - uses: cloud-native-aixmarseille/meetup-event-automation/actions/event/reconcile@88fd8c3495bfbf7061bbd67d1324b0b4e4bc14d3 # main
   with:
+    # Optional language for generated text.
+    locale: en
     # GitHub issue number in the caller repository containing the meetup event document to inspect.
     # This input is required.
     issue-number: ""
@@ -46,12 +48,13 @@ Read one meetup issue, derive lifecycle and readiness, and optionally persist sa
 
 ## Inputs
 
-| **Input**                    | **Description**                                                                                                       | **Required** | **Default** |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
-| **`issue-number`**           | GitHub issue number in the caller repository containing the meetup event document to inspect.                         | **true**     | -           |
-| **`mode`**                   | Use check for read-only validation or fix to persist safe normalizations to the issue and managed diagnostic comment. | **false**    | `check`     |
-| **`github-token`**           | Token for the caller repository. Requires issues:read; fix mode also requires issues:write.                           | **true**     | -           |
-| **`managed-comment-author`** | Trusted bot login allowed to create or update the managed diagnostic comment, for example my-app[bot].                | **true**     | -           |
+| **Input**                    | **Description**                                                                                                                    | **Required** | **Default** |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
+| **`locale`**                 | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **false**    | `en`        |
+| **`issue-number`**           | GitHub issue number in the caller repository containing the meetup event document to inspect.                                      | **true**     | -           |
+| **`mode`**                   | Use check for read-only validation or fix to persist safe normalizations to the issue and managed diagnostic comment.              | **false**    | `check`     |
+| **`github-token`**           | Token for the caller repository. Requires issues:read; fix mode also requires issues:write.                                        | **true**     | -           |
+| **`managed-comment-author`** | Trusted bot login allowed to create or update the managed diagnostic comment, for example my-app[bot].                             | **true**     | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->

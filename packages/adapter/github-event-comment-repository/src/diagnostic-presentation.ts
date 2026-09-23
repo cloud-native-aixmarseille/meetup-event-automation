@@ -1,6 +1,6 @@
 import type { EventDiagnostic } from "@meetup-automation/event";
-
 import { FIELD_ORDER, GUIDANCE } from "./diagnostic-guidance.js";
+import { EventCommentMessages } from "./i18n/event-comment-messages.js";
 
 export type DiagnosticPresentation = Readonly<{
 	field: string;
@@ -33,72 +33,33 @@ export class DiagnosticPresenter {
 		["event_status", "Event Status"],
 	]);
 
-	static presentDiagnostic(item: EventDiagnostic): DiagnosticPresentation {
-		const guidance =
-			GUIDANCE.get(item.code) ??
-			DiagnosticPresenter.referenceGuidance(item.code);
-		const fallback = guidance?.[0] ?? "Meetup issue";
+	static presentDiagnostic(
+		item: EventDiagnostic,
+		messages = new EventCommentMessages(),
+	): DiagnosticPresentation {
+		const guidance = GUIDANCE.get(item.code);
+		const referential = /^referential\.(host|contact|speaker)\./.test(
+			item.code,
+		);
+		const fallback =
+			guidance?.[0] ?? (referential ? "Referentials" : "Meetup issue");
 		const [field, section] = DiagnosticPresenter.publicField(
 			item.field,
 			fallback,
+			messages,
 		);
-		const message =
-			guidance?.[1] ??
-			"An additional validation check needs attention. Review the workflow diagnostics with a maintainer.";
+		const message = guidance
+			? messages.t(guidance[1])
+			: messages.t(referential ? "comment.referential" : "comment.unknown");
 		const order = FIELD_ORDER.indexOf(section);
 		return { field, message, order: order < 0 ? FIELD_ORDER.length : order };
-	}
-
-	static referenceGuidance(
-		code: string,
-	): readonly [string, string] | undefined {
-		const reference = code.match(
-			/^referential\.reference\.(host|speaker)\.(invalid|unknown|ambiguous|display-name-mismatch)$/,
-		);
-		if (reference) {
-			const [, kind, problem] = reference;
-			const field = kind === "host" ? "Hoster" : "Agenda";
-			const catalog = kind === "host" ? "host list" : "speaker list";
-			const example =
-				kind === "host"
-					? "Host name [host-0001]"
-					: "Speaker name [speaker-0001]";
-			switch (problem) {
-				case "unknown":
-					return [
-						field,
-						`This ${kind} was not found in the ${catalog}. Copy its exact name, including accents, or use a name with its stable ID: \`${example}\`.`,
-					];
-				case "ambiguous":
-					return [
-						field,
-						`Several ${kind}s share this name. Include the correct stable ID: \`${example}\`.`,
-					];
-				case "display-name-mismatch":
-					return [
-						field,
-						`Use the ${kind} name associated with this stable ID in the ${catalog}.`,
-					];
-				default:
-					return [
-						field,
-						`Choose a ${kind} from the ${catalog} using its name or \`${example}\`.`,
-					];
-			}
-		}
-		if (/^referential\.(host|contact|speaker)\./.test(code)) {
-			return [
-				"Referentials",
-				"Ask a maintainer to correct the hosting or speaker catalog using the referential validation workflow diagnostics.",
-			];
-		}
-		return undefined;
 	}
 
 	/** Only known issue headings and numeric agenda positions can reach Markdown. */
 	static publicField(
 		field: string | undefined,
 		fallback: string,
+		messages = new EventCommentMessages(),
 	): readonly [string, string] {
 		const known = DiagnosticPresenter.FIELD_ALIASES.get(field ?? "");
 		if (known) return [known, known];
@@ -108,12 +69,24 @@ export class DiagnosticPresenter {
 		if (agenda) {
 			const entry = Number(agenda[1]) + 1;
 			const speaker =
-				agenda[3] === undefined ? "" : `, speaker ${Number(agenda[3]) + 1}`;
-			return [`Agenda (item ${entry}${speaker})`, "Agenda"];
+				agenda[3] === undefined
+					? ""
+					: messages.t("comment.agenda.speaker-suffix", {
+							speaker: Number(agenda[3]) + 1,
+						});
+			return [
+				messages.t("comment.agenda.item", { item: entry, speaker }),
+				"Agenda",
+			];
 		}
 		const speaker = field?.match(/^speakerReferences\[(\d{1,6})\]$/);
 		if (speaker)
-			return [`Agenda (speaker ${Number(speaker[1]) + 1})`, "Agenda"];
+			return [
+				messages.t("comment.agenda.speaker", {
+					speaker: Number(speaker[1]) + 1,
+				}),
+				"Agenda",
+			];
 		return [fallback, fallback];
 	}
 }

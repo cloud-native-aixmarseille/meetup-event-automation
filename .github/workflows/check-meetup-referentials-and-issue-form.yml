@@ -1,9 +1,17 @@
 # Reusable workflow that checks referential catalogs and the generated meetup
 # issue-form projection for consumer pull requests.
+# Reports redacted diagnostic codes, fields, and messages in annotations and the
+# job summary, with affected issue-form files and instructions to resolve failures.
 name: Check meetup referentials and issue form
 
 on:
   workflow_call:
+    inputs:
+      locale:
+        description: Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
+        required: false
+        type: string
+        default: en
     outputs:
       is-valid:
         description: Whether the private referential catalogs passed validation.
@@ -56,16 +64,30 @@ jobs:
       - name: Validate referentials
         id: referentials
         uses: ./../self-workflow/actions/referential/validate
+        with:
+          locale: ${{ inputs.locale }}
 
       - name: Check issue form projection
         id: issue-form
         uses: ./../self-workflow/actions/referential/sync-issue-form
         with:
+          locale: ${{ inputs.locale }}
           mode: check
 
-      - name: Enforce validation result
-        if: steps.referentials.outputs.is-valid != 'true' || steps.issue-form.outputs.changed == 'true'
+      - name: Enforce valid referentials
+        if: steps.referentials.outputs.is-valid != 'true'
         shell: bash
+        env:
+          FAILURE_MESSAGE: ${{ steps.referentials.outputs.failure-message }}
         run: |
-          echo "Meetup referentials are invalid or the issue form projection is stale." >&2
+          printf '::error::%s\n' "$FAILURE_MESSAGE"
+          exit 1
+
+      - name: Enforce current issue form
+        if: steps.issue-form.outputs.changed == 'true'
+        shell: bash
+        env:
+          FAILURE_MESSAGE: ${{ steps.issue-form.outputs.failure-message }}
+        run: |
+          printf '::error::%s\n' "$FAILURE_MESSAGE"
           exit 1

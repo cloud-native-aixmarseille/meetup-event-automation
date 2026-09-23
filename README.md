@@ -155,3 +155,10 @@ SPDX-License-Identifier: MIT
 Copyright © 2026 Cloud Native Aix-Marseille
 
 For more details, see the [license](http://choosealicense.com/licenses/mit/).
+
+## Language
+
+Set the optional `locale` input to `fr` for French reports, comments, and generated
+guidance; English is the default. Use the same locale in all consumer workflows.
+See [Localization](docs/localization.md) for supported surfaces, fallback rules,
+and translation development.

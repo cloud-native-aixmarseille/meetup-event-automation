@@ -10,6 +10,10 @@ export interface ManageMeetupCommunicationsInput {
 	readonly notificationGatewayEnabled: boolean;
 	readonly notificationDestinationFingerprint: string | null;
 	readonly notificationDestination: string;
+	/** Rendered at the presentation boundary; never use this as an idempotency key. */
+	readonly notificationContent: string;
+	/** Empty preserves the original English approval policy. */
+	readonly notificationContentRevision: string;
 	readonly owner: string;
 	readonly repo: string;
 	readonly repositoryId?: string;
