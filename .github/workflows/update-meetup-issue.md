@@ -38,6 +38,9 @@ jobs:
     permissions:
       contents: read
     secrets:
+      # Required API key for the owner of the existing Kutt feedback link.
+      kutt-api-key: ""
+
       # Optional Google service-account JSON for Drive asset reconciliation. Omission keeps asset management manual.
       google-credentials: ""
 
@@ -51,6 +54,9 @@ jobs:
       # Optional Slack bot token used for approved notifications. When omitted, Slack delivery is skipped safely.
       slack-token: ""
     with:
+      # Required API ID of the existing Kutt feedback link.
+      kutt-link-id: ""
+
       # GitHub App ID used to mint the narrowly scoped installation token for meetup automation.
       # This input is required.
       github-app-id: ""
@@ -64,39 +70,44 @@ jobs:
 
 ## Inputs
 
-### Workflow Call Inputs
-
-| **Input**              | **Description**                                                                                            | **Required** | **Type**   | **Default** |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------- | ------------ | ---------- | ----------- |
-| **`github-app-id`**    | GitHub App ID used to mint the narrowly scoped installation token for meetup automation.                   | **true**     | **string** | -           |
-| **`slack-channel-id`** | Optional Slack channel ID used for approved notifications. When omitted, Slack delivery is skipped safely. | **false**    | **string** | -           |
+| Name                                     | Description                                                                                                | Required | Default |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------- | -------- | ------- |
+| `github-app-id`                          | GitHub App ID used to mint the narrowly scoped installation token for meetup automation.                   | true     | —       |
+| `slack-channel-id`                       | Optional Slack channel ID used for approved notifications. When omitted, Slack delivery is skipped safely. | false    | —       |
+| `google-drive-meetup-folder-id`          | Optional Google Drive folder ID of the parent meetup folder used for asset reconciliation.                 | false    | —       |
+| `google-drive-meetup-template-folder-id` | Optional Google Drive folder ID of the template folder used for asset reconciliation.                      | false    | —       |
+| `kutt-link-id`                           | Existing Kutt feedback link API ID.                                                                        | true     | —       |
 
 <!-- inputs:end -->
 <!-- secrets:start -->
 
 ## Secrets
 
-| **Secret**                   | **Description**                                                                                                                                                  | **Required** |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
-| **`google-credentials`**     | Optional Google service-account JSON for Drive asset reconciliation. Omission keeps asset management manual.                                                     | **false**    |
-| **`github-app-private-key`** | PEM-encoded private key for the GitHub App identified by the github-app-id input. Used to mint a narrowly scoped installation token.                             | **true**     |
-| **`mailings-token`**         | Optional token used to dispatch approved email communications to the configured mailings repository. When omitted, mail intents remain planned but are not sent. | **false**    |
-| **`slack-token`**            | Optional Slack bot token used for approved notifications. When omitted, Slack delivery is skipped safely.                                                        | **false**    |
+| Name                     | Description                                                                                                                                                      | Required | Default |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------- |
+| `kutt-api-key`           | API key for the owner of the existing Kutt feedback link.                                                                                                        | true     | —       |
+| `google-credentials`     | Optional Google service-account JSON for Drive asset reconciliation. Omission keeps asset management manual.                                                     | false    | —       |
+| `github-app-private-key` | PEM-encoded private key for the GitHub App identified by the github-app-id input. Used to mint a narrowly scoped installation token.                             | true     | —       |
+| `mailings-token`         | Optional token used to dispatch approved email communications to the configured mailings repository. When omitted, mail intents remain planned but are not sent. | false    | —       |
+| `slack-token`            | Optional Slack bot token used for approved notifications. When omitted, Slack delivery is skipped safely.                                                        | false    | —       |
 
 <!-- secrets:end -->
 <!-- outputs:start -->
 
 ## Outputs
 
-| **Output**                      | **Description**                                                                                                  |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| **`state`**                     | Derived lifecycle state for the target meetup issue, such as draft, planned, ready, held, or follow-up-complete. |
-| **`is-ready`**                  | Whether the current meetup issue revision satisfies readiness checks.                                            |
-| **`diagnostics`**               | Redacted JSON diagnostics produced by event reconciliation.                                                      |
-| **`communication-diagnostics`** | Redacted JSON diagnostics produced by approval capture and communication reconciliation.                         |
+| Output                      | Description                                                                                                      |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `state`                     | Derived lifecycle state for the target meetup issue, such as draft, planned, ready, held, or follow-up-complete. |
+| `is-ready`                  | Whether the current meetup issue revision satisfies readiness checks.                                            |
+| `diagnostics`               | Redacted JSON diagnostics produced by event reconciliation.                                                      |
+| `communication-diagnostics` | Redacted JSON diagnostics produced by approval capture and communication reconciliation.                         |
 
 <!-- outputs:end -->
 <!-- examples:start -->
+
+See [feedback setup and retry behavior](../../docs/publication-feedback.md) for the required Kutt configuration.
+
 <!-- examples:end -->
 <!-- contributing:start -->
 <!-- contributing:end -->

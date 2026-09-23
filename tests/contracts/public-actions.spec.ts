@@ -5,6 +5,18 @@ import { type ActionManifest, readYaml, root, sortedKeys } from "./support.js";
 
 const actionContracts = [
 	{
+		directory: "actions/publication/reconcile-feedback",
+		inputs: [
+			"github-token",
+			"issue-number",
+			"managed-comment-author",
+			"mode",
+			"kutt-api-key",
+			"kutt-link-id",
+		],
+		outputs: ["result", "diagnostics", "feedback-url", "link-updated"],
+	},
+	{
 		directory: "actions/publication/reconcile-assets",
 		inputs: [
 			"github-token",

@@ -32871,7 +32871,7 @@ var EventLinksRule = class {
     const diagnostics = [];
     const normalized = { ...event.publicationLinks };
     let changed = false;
-    for (const key of ["meetup", "community", "assets"]) {
+    for (const key of ["meetup", "community", "assets", "feedback"]) {
       const link = event.publicationLinks[key];
       if (link === void 0 || link.trim() === "") {
         continue;
@@ -33686,6 +33686,11 @@ var MeetupEventMigration = class _MeetupEventMigration {
         "cncf_link",
         diagnostics
       ),
+      feedback: LegacyEventFields.readOptionalString(
+        body.openfeedback_link,
+        "openfeedback_link",
+        diagnostics
+      ),
       assets: LegacyEventFields.readOptionalString(
         body.drive_link,
         "drive_link",
@@ -33931,6 +33936,9 @@ var PublicationDiagnostics = class {
           break;
         case "community":
           result.community = operation.value;
+          break;
+        case "feedback":
+          result.feedback = operation.value;
           break;
         case "assets":
           result.assets = operation.value;
@@ -37655,6 +37663,7 @@ var HEADINGS = Object.freeze({
   meetupLink: "Meetup Link",
   communityLink: "CNCF Link",
   assetsLink: "Drive Link",
+  feedbackLink: "OpenFeedback Link",
   slides: "Slides & Content",
   communication: "Communication",
   aperitif: "Aperitif",
@@ -38414,6 +38423,7 @@ var IssueFormReader = class {
       meetup_link: read(HEADINGS.meetupLink),
       cncf_link: read(HEADINGS.communityLink),
       drive_link: read(HEADINGS.assetsLink),
+      openfeedback_link: read(HEADINGS.feedbackLink),
       event_status: read(HEADINGS.occurrenceStatus)
     };
   }
@@ -38524,6 +38534,12 @@ var IssueFormWriter = class _IssueFormWriter {
     let body = document.body;
     for (const [heading, value] of fields)
       body = IssueFormSections.replaceOrAppendSection(body, heading, value);
+    if (event.publicationLinks.feedback)
+      body = IssueFormSections.replaceOrAppendSection(
+        body,
+        HEADINGS.feedbackLink,
+        event.publicationLinks.feedback
+      );
     return IssueFormSections.removeSection(body, HEADINGS.occurrenceStatus);
   }
   renderOperations(source, event) {

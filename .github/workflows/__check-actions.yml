@@ -413,6 +413,50 @@ jobs:
           [[ -z "$ASSET_URL" ]]
           jq -e '.schemaVersion == 1 and .data.skipped == true and .data.persisted == false and (.diagnostics | map(.code) | index("publication.assets.unavailable") != null)' <<< "$RESULT" >/dev/null
 
+  test-publication-reconcile-feedback:
+    name: Test required feedback configuration
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Reject a missing Kutt API key
+        id: missing-key
+        continue-on-error: true
+        uses: ./actions/publication/reconcile-feedback
+        with:
+          issue-number: "1"
+          mode: check
+          github-token: ${{ github.token }}
+          managed-comment-author: integration-tests[bot]
+          kutt-api-key: ""
+          kutt-link-id: synthetic-link
+
+      - name: Reject a missing Kutt link ID
+        id: missing-id
+        continue-on-error: true
+        uses: ./actions/publication/reconcile-feedback
+        with:
+          issue-number: "1"
+          mode: check
+          github-token: ${{ github.token }}
+          managed-comment-author: integration-tests[bot]
+          kutt-api-key: synthetic-key
+          kutt-link-id: ""
+
+      - name: Assert both missing settings fail
+        shell: bash
+        env:
+          KEY_OUTCOME: ${{ steps.missing-key.outcome }}
+          ID_OUTCOME: ${{ steps.missing-id.outcome }}
+        run: |
+          [[ "$KEY_OUTCOME" == "failure" ]]
+          [[ "$ID_OUTCOME" == "failure" ]]
+
   cleanup-synthetic-issue:
     name: Cleanup synthetic meetup issue
     if: always()

@@ -1,0 +1,34 @@
+name: Reconcile meetup feedback
+description: Update the existing Kutt link to the meetup’s OpenFeedback URL on the event day.
+inputs:
+  github-token:
+    description: GitHub token with issue read and write permissions.
+    required: true
+  issue-number:
+    description: Meetup issue number.
+    required: true
+  managed-comment-author:
+    description: GitHub App bot login used by event evaluation.
+    required: true
+  mode:
+    description: Check validates the poll URL without writes; fix also updates due links.
+    required: false
+    default: check
+  kutt-api-key:
+    description: API key for the owner of the existing Kutt link.
+    required: true
+  kutt-link-id:
+    description: Existing Kutt link API ID, not the short address.
+    required: true
+outputs:
+  result:
+    description: Versioned JSON feedback reconciliation result.
+  diagnostics:
+    description: Redacted JSON diagnostics.
+  feedback-url:
+    description: OpenFeedback event URL.
+  link-updated:
+    description: Whether the existing Kutt link target changed.
+runs:
+  using: node24
+  main: dist/index.js
