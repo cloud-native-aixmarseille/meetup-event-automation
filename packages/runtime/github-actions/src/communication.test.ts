@@ -27,6 +27,44 @@ afterEach(async () => {
 });
 
 describe("runCommunicationReconcile", () => {
+	it("requires new approval after a locale change without resending recorded deliveries", async () => {
+		// Arrange
+		const workspaceRoot = await createWorkspace();
+		const clients = githubClients();
+		getOctokitMock.mockImplementation((token: string) =>
+			token === "github-token" ? clients.github : clients.mailings,
+		);
+		const input = runtimeInput(workspaceRoot, {
+			requestedMode: "dispatch",
+			dispatchAuthorized: true,
+			mailingsToken: "mailings-token",
+		});
+		await CommunicationRuntime.runCommunicationReconcile({
+			...input,
+			approvalTrigger: approvalTrigger(),
+		});
+		clients.createDispatchEvent.mockClear();
+		// Act
+		const stale = await CommunicationRuntime.runCommunicationReconcile({
+			...input,
+			locale: "fr",
+		});
+		const approved = await CommunicationRuntime.runCommunicationReconcile({
+			...input,
+			locale: "fr",
+			approvalTrigger: approvalTrigger(),
+		});
+		// Assert
+		expect(stale.mode).toBe("check");
+		expect(stale.runtimeDiagnostics).toContainEqual({
+			code: "communication.approval-stale",
+			severity: "warning",
+		});
+		expect(approved.mode).toBe("dispatch");
+		expect(approved.counts.alreadyRecorded).toBe(2);
+		expect(clients.createDispatchEvent).not.toHaveBeenCalled();
+	});
+
 	it("requires a stable caller revision before reading repository state", async () => {
 		// Arrange
 		// No additional setup is needed.
@@ -177,57 +215,62 @@ describe("runCommunicationReconcile", () => {
 		expect(clients.createDispatchEvent).not.toHaveBeenCalled();
 	});
 
-	it("uses fixed PII-free content for an enabled Slack reminder", async () => {
-		// Arrange
-		vi.useFakeTimers();
-		vi.setSystemTime(new Date("2026-09-04T10:00:00.000Z"));
-		const eventDate = localDate(new Date(), "Europe/Paris");
-		const workspaceRoot = await createWorkspace();
-		const labels = ["meetup", "communication:approved"];
-		const clients = githubClients({
-			labels,
-			eventDate,
-		});
-		getOctokitMock.mockImplementation((token: string) =>
-			token === "github-token" ? clients.github : clients.mailings,
-		);
-		const fetcher = vi.fn().mockResolvedValue({
-			ok: true,
-			json: async () => ({ ok: true }),
-		});
-		vi.stubGlobal("fetch", fetcher);
+	it.each([
+		["en", "Meetup event issue #42 requires organizer attention."],
+		["fr", "Le ticket du meetup #42 nécessite l’attention des organisateurs."],
+	])(
+		"uses fixed PII-free %s content for an enabled Slack reminder",
+		async (locale, expected) => {
+			// Arrange
+			vi.useFakeTimers();
+			vi.setSystemTime(new Date("2026-09-04T10:00:00.000Z"));
+			const eventDate = localDate(new Date(), "Europe/Paris");
+			const workspaceRoot = await createWorkspace();
+			const labels = ["meetup", "communication:approved"];
+			const clients = githubClients({
+				labels,
+				eventDate,
+			});
+			getOctokitMock.mockImplementation((token: string) =>
+				token === "github-token" ? clients.github : clients.mailings,
+			);
+			const fetcher = vi.fn().mockResolvedValue({
+				ok: true,
+				json: async () => ({ ok: true }),
+			});
+			vi.stubGlobal("fetch", fetcher);
 
-		// Act
-		const result = await CommunicationRuntime.runCommunicationReconcile(
-			runtimeInput(workspaceRoot, {
-				requestedMode: "dispatch",
-				dispatchAuthorized: true,
-				mailingsToken: "mailings-token",
-				slackToken: "slack-token",
-				slackChannelId: "channel-safe-id",
-				approvalTrigger: approvalTrigger(eventDate, labels),
-			}),
-		);
-		const request = fetcher.mock.calls[0]?.[1] as { body: string };
-		const payload = JSON.parse(request.body) as Record<string, unknown>;
+			// Act
+			const result = await CommunicationRuntime.runCommunicationReconcile(
+				runtimeInput(workspaceRoot, {
+					locale,
+					requestedMode: "dispatch",
+					dispatchAuthorized: true,
+					mailingsToken: "mailings-token",
+					slackToken: "slack-token",
+					slackChannelId: "channel-safe-id",
+					approvalTrigger: approvalTrigger(eventDate, labels),
+				}),
+			);
+			const request = fetcher.mock.calls[0]?.[1] as { body: string };
+			const payload = JSON.parse(request.body) as Record<string, unknown>;
 
-		// Assert
-		expect(result.counts).toMatchObject({
-			planned: 1,
-			reserved: 1,
-			dispatched: 1,
-			accepted: 1,
-		});
-		expect(fetcher).toHaveBeenCalledOnce();
-		expect(payload.text).toBe(
-			"Meetup event issue #42 requires organizer attention.",
-		);
-		expect(request.body).not.toContain("Private Host Contact");
-		expect(request.body).not.toContain("speaker@example.invalid");
-		expect(
-			clients.comments.every(({ body }) => !body.includes("channel-safe-id")),
-		).toBe(true);
-	});
+			// Assert
+			expect(result.counts).toMatchObject({
+				planned: 1,
+				reserved: 1,
+				dispatched: 1,
+				accepted: 1,
+			});
+			expect(fetcher).toHaveBeenCalledOnce();
+			expect(payload.text).toBe(expected);
+			expect(request.body).not.toContain("Private Host Contact");
+			expect(request.body).not.toContain("speaker@example.invalid");
+			expect(
+				clients.comments.every(({ body }) => !body.includes("channel-safe-id")),
+			).toBe(true);
+		},
+	);
 
 	it("keeps Slack intents in the plan without reserving when its token is missing", async () => {
 		// Arrange

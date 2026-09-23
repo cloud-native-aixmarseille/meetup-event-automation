@@ -1,4 +1,7 @@
 import { ActionRunner } from "../action-runner.js";
 import { ReferentialActions } from "../referential-actions.js";
 
-ActionRunner.run(ReferentialActions.runReferentialValidateAction);
+await ActionRunner.run(
+	"action.referential.validate",
+	ReferentialActions.runReferentialValidateAction,
+);

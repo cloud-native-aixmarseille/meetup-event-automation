@@ -47,6 +47,66 @@ newer Biome rules. Super-linter still runs the other repository checks.
 - Treat generated action and workflow documentation as source-controlled output
   that must stay in sync.
 
+## Action reporting contract
+
+Every public action must use the shared GitHub Actions reporting boundary:
+
+- Register its bootstrap as `await ActionRunner.run("action.<group>.<action>", operation)`.
+  The English title must match the action manifest name. The runner passes one
+  resolved ActionMessages into the operation. Entrypoints follow `src/entrypoints/<group>-<action>.ts` and are included in
+  `scripts/build-actions.mjs`.
+- Return `ActionReportData` on every normal path, including skipped actions.
+  Select public facts explicitly: outcome, mode, counts, persistence status,
+  affected files, and useful next steps. Explain skipped or blocked work.
+- Return redacted `PublicDiagnostic` values with the original severity, code,
+  message, optional field, and optional `fixApplied` flag. The runner owns the
+  `diagnostics` output; the action still owns its other documented outputs.
+- `ActionReport` renders the same facts and diagnostics in logs, severity-matched
+  annotations, and an HTML-escaped job summary. Successful runs with no
+  diagnostics still receive a report. Do not duplicate this rendering in actions
+  or hide essential explanations exclusively in machine-readable outputs.
+- Exceptions pass through `RuntimeInput.publicErrorMessage` and receive a failure
+  annotation, redacted diagnostic output, and summary. Never log raw exceptions,
+  provider responses, contact records, credentials, or whole use-case results.
+  A summary-write error must preserve the action outcome and existing log
+  diagnostics; emit a safe warning without exposing the write error.
+- Keep exit status separate from diagnostic severity. Set `report.failure` only
+  when the action's documented policy requires failure. For example, referential
+  validation returns errors for the calling workflow to enforce, while
+  communication reconciliation fails on error diagnostics. Reporting changes
+  must not silently change these policies.
+
+`tests/contracts/action-reporting.spec.ts` discovers every action manifest and
+enforces the shared runner and reporting ownership. The runner's typed operation
+requires report data on every returned path. Add behavioral tests beside the
+changed action for public facts, diagnostics, redaction, and relevant skip/failure
+paths; shared renderer and runner tests cover transport and exception behavior.
+Update action descriptions and generated readmes, then rebuild all affected
+bundles and run the quality checks above.
+
+## Localization contract
+
+Follow [the localization guide](localization.md) and
+[ADR 0004](adr/0004-localize-generated-messages.md). Keep generated wording,
+message IDs, parameter types, and catalog tests with the presenter that owns
+them: action reporting, managed comments, issue-form guidance, or organizer
+notifications. The shared localization package wraps FormatJS and contains no
+feature catalogs or global message-key registry.
+
+ActionRunner injects ActionMessages into actions; composition passes the resolved
+locale to adapters, which construct their own scoped translators. Every public
+action and reusable workflow exposes and forwards the same English-default
+locale input. Do not introduce global locale state or translation dependencies
+in domain/application rules. Preserve canonical diagnostic JSON and identifiers.
+
+New messages require complete English/French translations, typed parameters,
+owner-local catalog samples, and relevant behavior tests. Unknown diagnostic
+fallbacks must already be redacted. Translations never bypass escaping, and
+formatter error handlers must not expose interpolation values.
+Localization contracts enforce catalog ownership, public locale wiring, and
+diagnostic coverage. Catalog tests enforce key, ICU syntax, and argument parity.
+Update public reference docs and rebuild bundles when catalogs change.
+
 ## Production code structure
 
 All production behavior in `packages/**/src/**/*.ts` belongs to a focused class.

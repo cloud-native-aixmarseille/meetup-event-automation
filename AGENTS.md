@@ -38,3 +38,31 @@ Do not suppress these rules or pack statements to evade them. Run `pnpm lint`,
 `pnpm build`, the behavioral/architecture/contract tests, and rebuild/check action
 bundles after production changes. Responsibility and dependency review remains
 necessary even when numeric checks pass.
+
+Every public GitHub Action must follow the Action reporting contract in
+`docs/developer-guide.md`: use `await ActionRunner.run` with its action title
+message ID and return `ActionReportData` on every normal path, including skips.
+The shared runner/reporter owns diagnostic outputs, logs, severity-matched
+annotations, escaped job summaries, and redacted exception reporting. Include
+public outcome facts and actionable guidance; never expose private records or
+raw exceptions. Preserve each action's failure policy explicitly through
+`report.failure`. Add or update behavior tests and keep
+`tests/contracts/action-reporting.spec.ts` enforcing this for every published
+action. Do not add action-specific logging or summary implementations.
+
+Generated user-facing text must use its presenter's scoped translator and
+owner-local English/French ICU catalogs. The shared
+packages/presentation/localization package provides only generic FormatJS
+infrastructure and catalog types; never put feature wording or a global
+message-key registry there. Keep catalogs, argument types, and catalog tests
+beside the presenter. Pass locale across package boundaries; do not import
+another presenter's catalogs. Follow [the localization guide](docs/localization.md)
+and [ADR 0004](docs/adr/0004-localize-generated-messages.md).
+
+Do not hardcode new report, guidance, comment, or notification prose outside
+owner catalogs. Domain/application diagnostics retain canonical English machine
+messages; translate at the presentation boundary. Preserve identifiers,
+redaction, and escaping. Do not enable formatter logging that could reveal
+interpolation values. Every action/workflow must expose the same English-default
+locale input and forward it to all owned actions. Keep catalog, behavior,
+architecture, and localization contract tests passing.

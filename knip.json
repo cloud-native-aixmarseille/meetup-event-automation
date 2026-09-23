@@ -32,6 +32,10 @@
 		"packages/domain/referential": {
 			"entry": ["src/**/*.test.ts"],
 			"project": ["src/**/*.ts", "testing/**/*.ts"]
+		},
+		"packages/presentation/*": {
+			"entry": ["src/**/*.test.ts"],
+			"project": ["src/**/*.ts", "testing/**/*.ts"]
 		}
 	},
 	"ignoreDependencies": ["@commitlint/config-conventional"]

@@ -1,12 +1,8 @@
 export const EVENT_DIAGNOSTIC_COMMENT_MARKER =
 	"<!-- meetup-automation:event-diagnostics:v1 -->";
 
-const DUPLICATE_COMMENT_MARKER =
+export const DUPLICATE_COMMENT_MARKER =
 	"<!-- meetup-automation:event-diagnostics-duplicate:v1 -->";
-
-export const RESOLVED_COMMENT_BODY = `${EVENT_DIAGNOSTIC_COMMENT_MARKER}\n\nAll previously reported issues have been resolved. No changes are currently needed.`;
-
-export const DUPLICATE_COMMENT_BODY = `${DUPLICATE_COMMENT_MARKER}\n\nSuperseded duplicate automation comment.`;
 
 type GitHubRequestResult = Readonly<{
 	data: unknown;
@@ -49,6 +45,7 @@ export type GitHubEventCommentRepositoryOptions = Readonly<{
 	repo: string;
 	/** Restrict managed comments to this bot login when it is known. */
 	authorLogin?: string;
+	locale?: string;
 }>;
 
 export type ManagedComment = Readonly<{

@@ -5,11 +5,15 @@ import {
 	ResultEnvelopeFactory,
 } from "@meetup-automation/journey";
 import { ActionOutput } from "./action-output.js";
+import type { ActionReportData } from "./action-report.js";
+import { ActionMessages } from "./i18n/action-messages.js";
 import { PublicationComposition } from "./publication-composition.js";
 import { RuntimeInput } from "./runtime-input.js";
 
 export class PublicationAction {
-	static async runPublicationReconcileAssetsAction(): Promise<void> {
+	static async runPublicationReconcileAssetsAction(
+		messages = new ActionMessages(),
+	): Promise<ActionReportData> {
 		const issueNumber = RuntimeInput.positiveIntegerInput(
 			"issue-number",
 			core.getInput("issue-number", { required: true }),
@@ -20,27 +24,7 @@ export class PublicationAction {
 			["check", "fix"] as const,
 		);
 		const credentials = core.getInput("google-credentials");
-		if (!credentials) {
-			const diagnostics = [
-				{
-					code: "publication.assets.unavailable",
-					severity: "info" as const,
-					message:
-						"Google Drive credentials are unavailable; asset management remains manual",
-				},
-			];
-			ActionOutput.setJsonOutput(
-				"result",
-				ResultEnvelopeFactory.resultEnvelope(
-					{ skipped: true, persisted: false, files: {} },
-					diagnostics,
-				),
-			);
-			ActionOutput.setJsonOutput("drive-files", {});
-			core.setOutput("asset-url", "");
-			ActionOutput.setDiagnosticsOutput(diagnostics);
-			return;
-		}
+		if (!credentials) return PublicationAction.unavailableReport(messages);
 		core.setSecret(credentials);
 		const client = getOctokit(
 			core.getInput("github-token", { required: true }),
@@ -50,6 +34,7 @@ export class PublicationAction {
 		});
 		const { owner, repo } = context.repo;
 		const container = PublicationComposition.createPublicationContainer({
+			locale: messages.locale,
 			client,
 			owner,
 			repo,
@@ -62,6 +47,15 @@ export class PublicationAction {
 			identity: { repository: `${owner}/${repo}`, issueNumber },
 			mode,
 		});
+		return PublicationAction.report(issueNumber, mode, outcome, messages);
+	}
+
+	private static report(
+		issueNumber: number,
+		mode: string,
+		outcome: Awaited<ReturnType<ManageMeetupAssets["execute"]>>,
+		messages: ActionMessages,
+	): ActionReportData {
 		ActionOutput.setJsonOutput(
 			"result",
 			ResultEnvelopeFactory.resultEnvelope(
@@ -76,6 +70,42 @@ export class PublicationAction {
 		);
 		ActionOutput.setJsonOutput("drive-files", outcome.files);
 		core.setOutput("asset-url", outcome.assetUrl ?? "");
-		ActionOutput.setDiagnosticsOutput(outcome.diagnostics);
+		return {
+			details: [
+				messages.t("report.event.context", { issue: issueNumber, mode }),
+				outcome.skipped
+					? messages.t("report.assets.skipped")
+					: messages.t("report.assets.completed"),
+				messages.t("report.assets.counts", {
+					persisted: String(outcome.persisted),
+					count: Object.keys(outcome.files).length,
+				}),
+			],
+			diagnostics: outcome.diagnostics,
+		};
+	}
+
+	private static unavailableReport(messages: ActionMessages): ActionReportData {
+		const diagnostics = [
+			{
+				code: "publication.assets.unavailable",
+				severity: "info" as const,
+				message:
+					"Google Drive credentials are unavailable; asset management remains manual",
+			},
+		];
+		ActionOutput.setJsonOutput(
+			"result",
+			ResultEnvelopeFactory.resultEnvelope(
+				{ skipped: true, persisted: false, files: {} },
+				diagnostics,
+			),
+		);
+		ActionOutput.setJsonOutput("drive-files", {});
+		core.setOutput("asset-url", "");
+		return {
+			details: [messages.t("report.assets.unavailable")],
+			diagnostics,
+		};
 	}
 }

@@ -1,12 +1,18 @@
 name: Synchronize meetup issue form
-description: Validate configured referentials and synchronize the public meetup issue form projection.
+description: Validate configured referentials and synchronize the public meetup issue form projection. Publish redacted diagnostics in annotations, logs, and the job summary.
 author: Cloud Native Aix-Marseille
 inputs:
+  locale:
+    description: Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
+    required: false
+    default: en
   mode:
     description: Use check to report projection drift or fix to rewrite the checked-out issue form with the validated public projection.
     required: false
     default: check
 outputs:
+  failure-message:
+    description: Localized remediation for a failed workflow check; empty when the check succeeds.
   result:
     description: Versioned redacted JSON envelope containing drift status, changed files, and redacted diagnostics.
   changed:

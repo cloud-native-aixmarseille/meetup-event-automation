@@ -9,8 +9,10 @@ import {
 	type ManageMeetupCommunicationsResult,
 } from "@meetup-automation/journey";
 import { CommunicationComposition } from "./communication-composition.js";
+import { OrganizerNotificationMessages } from "./notifications/organizer-notification-messages.js";
 
 export interface RunCommunicationReconcileInput {
+	readonly locale?: string;
 	readonly issueNumber: number;
 
 	readonly requestedMode: "check" | "dispatch";
@@ -64,7 +66,9 @@ export class CommunicationRuntime {
 		const mailingsToken = input.mailingsToken.trim();
 		const slackToken = input.slackToken.trim();
 		const slackChannelId = input.slackChannelId.trim();
+		const messages = new OrganizerNotificationMessages(input.locale);
 		const container = CommunicationComposition.createCommunicationContainer({
+			locale: messages.locale,
 			client: getOctokit(githubToken),
 			owner: input.owner,
 			repo: input.repo,
@@ -86,6 +90,10 @@ export class CommunicationRuntime {
 			mailGatewayEnabled: mailingsToken.length > 0,
 			notificationGatewayEnabled: slackToken.length > 0,
 			notificationDestination: slackChannelId,
+			notificationContent: messages.t("communication.organizer-attention", {
+				issue: input.issueNumber,
+			}),
+			notificationContentRevision: messages.policyRevision,
 			approvalTrigger: input.approvalTrigger,
 			notificationDestinationFingerprint:
 				config.communication["slack-enabled"] && slackChannelId

@@ -14,7 +14,7 @@
 
 ## Overview
 
-Check or reconcile the event Drive folder, template copies, and issue asset link.
+Check or reconcile the event Drive folder, template copies, and issue asset link. Publish redacted diagnostics in annotations, logs, and the job summary.
 
 <!-- overview:end -->
 <!-- usage:start -->
@@ -24,6 +24,8 @@ Check or reconcile the event Drive folder, template copies, and issue asset link
 ```yaml
 - uses: cloud-native-aixmarseille/meetup-event-automation/actions/publication/reconcile-assets@0123456789abcdef0123456789abcdef01234567 # replace with a release SHA containing asset reconciliation
   with:
+    # Optional language for generated text.
+    locale: en
     # GitHub issue number containing the meetup event document.
     # This input is required.
     issue-number: ""
@@ -55,6 +57,7 @@ Check or reconcile the event Drive folder, template copies, and issue asset link
 
 | **Input**                    | **Description**                                                                                                                         | **Required** | **Default** |
 | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
+| **`locale`**                 | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.      | **false**    | `en`        |
 | **`issue-number`**           | GitHub issue number containing the meetup event document.                                                                               | **true**     | -           |
 | **`mode`**                   | Use check to report drift without writes, or fix under the shared event workflow lock.                                                  | **false**    | `check`     |
 | **`github-token`**           | Token for the caller repository. Requires issues:read; fix also requires issues:write.                                                  | **true**     | -           |

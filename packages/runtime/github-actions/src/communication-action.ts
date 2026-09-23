@@ -9,7 +9,9 @@ import {
 	ResultEnvelopeFactory,
 } from "@meetup-automation/journey";
 import { ActionOutput } from "./action-output.js";
+import type { ActionReportData } from "./action-report.js";
 import { CommunicationRuntime } from "./communication.js";
+import { ActionMessages } from "./i18n/action-messages.js";
 import { RuntimeInput } from "./runtime-input.js";
 
 const COMMUNICATION_MESSAGES: Readonly<
@@ -79,7 +81,9 @@ const RUNTIME_MESSAGES: Readonly<
 };
 
 export class CommunicationAction {
-	static async runCommunicationReconcileAction(): Promise<void> {
+	static async runCommunicationReconcileAction(
+		messages = new ActionMessages(),
+	): Promise<ActionReportData> {
 		const issueNumber = RuntimeInput.positiveIntegerInput(
 			"issue-number",
 			core.getInput("issue-number", { required: true }),
@@ -101,6 +105,7 @@ export class CommunicationAction {
 				) ?? undefined)
 			: undefined;
 		const outcome = await CommunicationRuntime.runCommunicationReconcile({
+			locale: messages.locale,
 			issueNumber,
 
 			requestedMode,
@@ -132,7 +137,7 @@ export class CommunicationAction {
 				...(issueSnapshot ? { issueSnapshot } : {}),
 			},
 		});
-		CommunicationAction.report(outcome);
+		return CommunicationAction.report(outcome, messages);
 	}
 
 	static publicIntentIdentifier(value: string): string {
@@ -163,7 +168,8 @@ export class CommunicationAction {
 		outcome: Awaited<
 			ReturnType<typeof CommunicationRuntime.runCommunicationReconcile>
 		>,
-	) {
+		messages: ActionMessages,
+	): ActionReportData {
 		const diagnostics = [
 			...outcome.diagnostics.map(CommunicationAction.domainDiagnostic),
 			...outcome.runtimeDiagnostics.map(CommunicationAction.runtimeDiagnostic),
@@ -184,11 +190,28 @@ export class CommunicationAction {
 		);
 		core.setOutput("planned-count", String(outcome.counts.planned));
 		core.setOutput("dispatched-count", String(outcome.counts.dispatched));
-		ActionOutput.setDiagnosticsOutput(diagnostics);
-		if (diagnostics.some(({ severity }) => severity === "error")) {
-			core.setFailed(
-				"Communication reconciliation failed; inspect diagnostics.",
-			);
-		}
+		return {
+			details: [
+				messages.t("report.communication.mode", { mode: outcome.mode }),
+				messages.t("report.communication.planned", outcome.counts),
+				messages.t("report.communication.accepted", {
+					...outcome.counts,
+					recorded: outcome.counts.alreadyRecorded,
+				}),
+				messages.t("report.communication.uncertain", outcome.counts),
+				...(diagnostics.length > 0
+					? [messages.t("report.communication.guidance")]
+					: []),
+				...(outcome.counts.uncertain > 0
+					? [messages.t("report.communication.uncertain-guidance")]
+					: []),
+			],
+			diagnostics,
+			...(diagnostics.some(({ severity }) => severity === "error")
+				? {
+						failure: messages.t("report.communication.failed"),
+					}
+				: {}),
+		};
 	}
 }

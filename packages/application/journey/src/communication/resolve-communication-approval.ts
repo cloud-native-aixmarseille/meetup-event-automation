@@ -104,7 +104,12 @@ export class CommunicationApprovalResolver {
 			eventDate: input.event.date,
 			occurrenceStatus: input.event.occurrenceStatus ?? "unknown",
 			readiness: input.readiness,
-			policyVersion: String(input.config.communication["policy-version"]),
+			policyVersion: [
+				String(input.config.communication["policy-version"]),
+				input.input.notificationContentRevision,
+			]
+				.filter(Boolean)
+				.join(":"),
 			mailingsRepository: input.config.communication["mailings-repository"],
 			notificationEnabled: input.config.communication["slack-enabled"],
 			notificationDestinationFingerprint:

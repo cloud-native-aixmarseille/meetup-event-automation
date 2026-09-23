@@ -4,6 +4,12 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
 	resolve: {
 		alias: {
+			"@meetup-automation/localization": fileURLToPath(
+				new URL(
+					"./packages/presentation/localization/src/index.ts",
+					import.meta.url,
+				),
+			),
 			"@meetup-automation/event": fileURLToPath(
 				new URL("./packages/domain/event/src/index.ts", import.meta.url),
 			),

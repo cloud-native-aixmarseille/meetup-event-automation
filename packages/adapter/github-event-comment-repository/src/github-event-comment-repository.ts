@@ -10,17 +10,18 @@ import {
 } from "./diagnostic-presentation.js";
 import { GitHubEventCommentRepositoryConfigurationError } from "./github-event-comment-repository-configuration-error.js";
 import {
-	DUPLICATE_COMMENT_BODY,
+	DUPLICATE_COMMENT_MARKER,
 	EVENT_DIAGNOSTIC_COMMENT_MARKER,
 	type GitHubEventCommentRepositoryClient,
 	type GitHubEventCommentRepositoryOptions,
 	type ManagedComment,
-	RESOLVED_COMMENT_BODY,
 } from "./github-event-comment-repository-contracts.js";
 import { GitHubEventCommentRepositoryResponseError } from "./github-event-comment-repository-response-error.js";
 import { GitHubEventCommentRepositoryScopeError } from "./github-event-comment-repository-scope-error.js";
+import { EventCommentMessages } from "./i18n/event-comment-messages.js";
 
 export class GitHubEventCommentRepository implements EventCommentRepository {
+	private readonly messages: EventCommentMessages;
 	private readonly owner: string;
 	private readonly repo: string;
 	private readonly repositoryName: string;
@@ -30,6 +31,7 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 		private readonly client: GitHubEventCommentRepositoryClient,
 		options: GitHubEventCommentRepositoryOptions,
 	) {
+		this.messages = new EventCommentMessages(options.locale);
 		this.owner = GitHubEventCommentRepository.requireRepositoryPart(
 			options.owner,
 			"owner",
@@ -52,11 +54,13 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 		);
 		const [canonical, ...duplicates] = managedComments;
 		let changed = await this.minimizeDuplicates(duplicates);
-		const body =
-			GitHubEventCommentRepository.renderDiagnosticComment(diagnostics);
+		const body = GitHubEventCommentRepository.renderDiagnosticComment(
+			diagnostics,
+			this.messages,
+		);
 
 		if (!canonical) {
-			if (body === RESOLVED_COMMENT_BODY) {
+			if (!diagnostics.some((item) => item.severity !== "info")) {
 				return { changed };
 			}
 			await this.client.rest.issues.createComment({
@@ -132,7 +136,10 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 		duplicates: readonly ManagedComment[],
 	): Promise<boolean> {
 		for (const duplicate of duplicates) {
-			await this.updateComment(duplicate.id, DUPLICATE_COMMENT_BODY);
+			await this.updateComment(
+				duplicate.id,
+				`${DUPLICATE_COMMENT_MARKER}\n\n${this.messages.t("comment.duplicate")}`,
+			);
 			if (this.client.minimizeComment) {
 				await this.client.minimizeComment({
 					commentId: duplicate.id,
@@ -163,13 +170,17 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 
 	static renderDiagnosticComment(
 		diagnostics: readonly EventDiagnostic[],
+		messages = new EventCommentMessages(),
 	): string {
 		const actionable = new Map<string, DiagnosticPresentation>();
 		for (const item of diagnostics) {
 			if (item.severity === "info") {
 				continue;
 			}
-			const presentation = DiagnosticPresenter.presentDiagnostic(item);
+			const presentation = DiagnosticPresenter.presentDiagnostic(
+				item,
+				messages,
+			);
 			actionable.set(
 				`${presentation.field}:${presentation.message}`,
 				presentation,
@@ -177,26 +188,28 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 		}
 
 		if (actionable.size === 0) {
-			return RESOLVED_COMMENT_BODY;
+			return `${EVENT_DIAGNOSTIC_COMMENT_MARKER}\n\n${messages.t("comment.resolved")}`;
 		}
 
 		const lines = [...actionable.values()]
 			.sort(
 				(left, right) =>
 					left.order - right.order ||
-					left.field.localeCompare(right.field, "en", { numeric: true }) ||
-					left.message.localeCompare(right.message, "en"),
+					left.field.localeCompare(right.field, messages.locale, {
+						numeric: true,
+					}) ||
+					left.message.localeCompare(right.message, messages.locale),
 			)
 			.map(({ field, message }) => `- [ ] **${field}**: ${message}`);
 
 		return [
 			EVENT_DIAGNOSTIC_COMMENT_MARKER,
 			"",
-			"Found the following items to complete in the meetup issue:",
+			messages.t("comment.introduction"),
 			"",
 			...lines,
 			"",
-			"Please update the issue description or labels to address these items. This checklist will refresh automatically.",
+			messages.t("comment.guidance"),
 		].join("\n");
 	}
 

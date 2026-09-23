@@ -1,7 +1,11 @@
 name: List active meetup events
-description: List active meetup issue numbers from the caller repository using the configured event label and lifecycle rules.
+description: List active meetup issue numbers from the caller repository using the configured event label and lifecycle rules. Publish redacted diagnostics in annotations, logs, and the job summary.
 author: Cloud Native Aix-Marseille
 inputs:
+  locale:
+    description: Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
+    required: false
+    default: en
   github-token:
     description: Token for the caller repository with issues:read permission.
     required: true

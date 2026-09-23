@@ -60,13 +60,13 @@ describe("referential GitHub Action boundary", () => {
 		});
 
 		// Act
-		await ReferentialActions.runReferentialValidateAction();
+		const report = await ReferentialActions.runReferentialValidateAction();
 
 		// Assert
 		expect(core.setOutput).toHaveBeenCalledWith("is-valid", "true");
 		expect(core.setOutput).toHaveBeenCalledWith("host-count", "1");
 		expect(core.setOutput).toHaveBeenCalledWith("speaker-count", "1");
-		expect(core.setOutput).toHaveBeenCalledWith("diagnostics", "[]");
+		expect(report.diagnostics).toEqual([]);
 		expect(core.setOutput).toHaveBeenCalledWith(
 			"result",
 			JSON.stringify({
@@ -91,9 +91,17 @@ describe("referential GitHub Action boundary", () => {
 		});
 
 		// Act
-		await ReferentialActions.runReferentialValidateAction();
+		const report = await ReferentialActions.runReferentialValidateAction();
 
 		// Assert
+		expect(report.diagnostics).toEqual([
+			{
+				code: "referential.invalid",
+				severity: "error",
+				message: "Invalid row",
+			},
+		]);
+		expect(report.details).toContain("Referentials: invalid.");
 		expect(core.setOutput).toHaveBeenCalledWith("is-valid", "false");
 		expect(core.setOutput).toHaveBeenCalledWith("host-count", "0");
 		expect(core.setOutput).toHaveBeenCalledWith("speaker-count", "0");
@@ -108,9 +116,10 @@ describe("referential GitHub Action boundary", () => {
 		});
 
 		// Act
-		await ReferentialActions.runReferentialSyncIssueFormAction();
+		const report = await ReferentialActions.runReferentialSyncIssueFormAction();
 
 		// Assert
+		expect(report.details).toContain("Issue form was updated.");
 		expect(boundary.synchronize).toHaveBeenCalledWith({
 			mode: "fix",
 		});
@@ -119,6 +128,6 @@ describe("referential GitHub Action boundary", () => {
 			"changed-files",
 			'[".github/ISSUE_TEMPLATE/meetup.yml"]',
 		);
-		expect(core.setOutput).toHaveBeenCalledWith("diagnostics", "[]");
+		expect(report.diagnostics).toEqual([]);
 	});
 });

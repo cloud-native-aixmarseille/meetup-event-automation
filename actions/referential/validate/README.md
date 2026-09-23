@@ -14,7 +14,7 @@
 
 ## Overview
 
-Validate the configured host and speaker catalogs and return only redacted counts and diagnostics.
+Validate the configured host and speaker catalogs and return only redacted counts and diagnostics. Publish redacted diagnostics in annotations, logs, and the job summary.
 
 <!-- overview:end -->
 <!-- usage:start -->
@@ -23,6 +23,8 @@ Validate the configured host and speaker catalogs and return only redacted count
 
 ```yaml
 - uses: cloud-native-aixmarseille/meetup-event-automation/actions/referential/validate@88fd8c3495bfbf7061bbd67d1324b0b4e4bc14d3 # main
+  with:
+    locale: en
 ```
 
 <!-- usage:end -->
@@ -30,8 +32,9 @@ Validate the configured host and speaker catalogs and return only redacted count
 
 ## Inputs
 
-| **Input** | **Description** | **Required** | **Default** |
-| --------- | --------------- | ------------ | ----------- |
+| **Input**    | **Description**                                                                                                                    | **Required** | **Default** |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
+| **`locale`** | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **false**    | `en`        |
 
 <!-- inputs:end -->
 <!-- secrets:start -->
@@ -40,13 +43,14 @@ Validate the configured host and speaker catalogs and return only redacted count
 
 ## Outputs
 
-| **Output**          | **Description**                                                                                         |
-| ------------------- | ------------------------------------------------------------------------------------------------------- |
-| **`result`**        | Versioned redacted JSON envelope containing validation status, public counts, and redacted diagnostics. |
-| **`is-valid`**      | Whether both configured referential catalogs passed validation.                                         |
-| **`host-count`**    | Number of valid host entries exposed to downstream automation; 0 when validation fails.                 |
-| **`speaker-count`** | Number of valid speaker entries exposed to downstream automation; 0 when validation fails.              |
-| **`diagnostics`**   | Redacted JSON diagnostics safe to expose outside the private catalogs.                                  |
+| **Output**            | **Description**                                                                                         |
+| --------------------- | ------------------------------------------------------------------------------------------------------- |
+| **`failure-message`** | Localized remediation for a failed workflow check; empty when the check succeeds.                       |
+| **`result`**          | Versioned redacted JSON envelope containing validation status, public counts, and redacted diagnostics. |
+| **`is-valid`**        | Whether both configured referential catalogs passed validation.                                         |
+| **`host-count`**      | Number of valid host entries exposed to downstream automation; 0 when validation fails.                 |
+| **`speaker-count`**   | Number of valid speaker entries exposed to downstream automation; 0 when validation fails.              |
+| **`diagnostics`**     | Redacted JSON diagnostics safe to expose outside the private catalogs.                                  |
 
 <!-- outputs:end -->
 <!-- examples:start -->

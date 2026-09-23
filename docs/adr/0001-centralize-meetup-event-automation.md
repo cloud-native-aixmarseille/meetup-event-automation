@@ -1078,3 +1078,12 @@ This decision is implemented when:
 - [GitHub reusable workflow documentation](https://docs.github.com/en/actions/sharing-automations/reusing-workflows)
 - [GitHub workflow concurrency documentation](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency)
 - [GitHub Actions secrets documentation](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets)
+
+## Localization extension
+
+[ADR 0004](0004-localize-generated-messages.md) adds the focused
+packages/presentation/localization package. Runtime and adapter packages may
+depend on this presentation package; domain and application packages may not.
+It provides generic FormatJS formatting and locale policy without importing
+business rules or infrastructure. Feature catalogs, keys, and argument types
+stay with their owning runtime or adapter presenter.

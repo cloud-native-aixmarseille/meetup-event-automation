@@ -162,8 +162,8 @@ describe("event side-effect safeguards", () => {
 			job,
 			`${automationActionPrefix}communication/reconcile`,
 		);
-		const summary = (job.steps ?? []).find(
-			(step: Step) => step.name === "Add redacted audit summary",
+		const summary = (job.steps ?? []).find((step: Step) =>
+			step.run?.includes("GITHUB_STEP_SUMMARY"),
 		);
 
 		// Assert
@@ -171,6 +171,7 @@ describe("event side-effect safeguards", () => {
 			"github-app-id",
 			"google-drive-meetup-folder-id",
 			"google-drive-meetup-template-folder-id",
+			"locale",
 			"slack-channel-id",
 		]);
 		expect(token?.with?.["app-id"]).toBe(
@@ -183,35 +184,7 @@ describe("event side-effect safeguards", () => {
 		expect(communication?.env?.SLACK_CHANNEL_ID).toBe(
 			workflowExpression("inputs.slack-channel-id"),
 		);
-		expect(summary?.if).toBe("always()");
-		expect(sortedKeys(summary?.env)).toEqual([
-			"COMMUNICATION_DIAGNOSTICS",
-			"COMMUNICATION_RESULT",
-			"DISPATCHED_COUNT",
-			"EVENT_DIAGNOSTICS",
-			"EVENT_READY",
-			"EVENT_RESULT",
-			"EVENT_STATE",
-			"ISSUE_NUMBER",
-			"PLANNED_COUNT",
-		]);
-		expect(summary?.env?.EVENT_RESULT).toBe(
-			workflowExpression("steps.event.outputs.result || '{}'"),
-		);
-		expect(summary?.env?.EVENT_DIAGNOSTICS).toBe(
-			workflowExpression("steps.event.outputs.diagnostics || '[]'"),
-		);
-		expect(summary?.env?.COMMUNICATION_RESULT).toBe(
-			workflowExpression("steps.communications.outputs.result || '{}'"),
-		);
-		expect(summary?.env?.COMMUNICATION_DIAGNOSTICS).toBe(
-			workflowExpression("steps.communications.outputs.diagnostics || '[]'"),
-		);
-		expect(summary?.run).toContain("sanitize_json");
-		expect(summary?.run).toContain("Redacted event result");
-		expect(summary?.run).toContain("Redacted event diagnostics");
-		expect(summary?.run).toContain("Redacted communication result");
-		expect(summary?.run).toContain("Redacted communication diagnostics");
+		expect(summary).toBeUndefined();
 		expect(
 			(job.steps ?? []).filter(
 				(step: Step) =>

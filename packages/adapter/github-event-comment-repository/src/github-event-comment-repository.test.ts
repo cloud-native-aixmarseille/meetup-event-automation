@@ -8,6 +8,7 @@ import {
 } from "./github-event-comment-repository-contracts.js";
 import { GitHubEventCommentRepositoryResponseError } from "./github-event-comment-repository-response-error.js";
 import { GitHubEventCommentRepositoryScopeError } from "./github-event-comment-repository-scope-error.js";
+import { EventCommentMessages } from "./i18n/event-comment-messages.js";
 
 const repositoryName = "example/meetups";
 
@@ -51,6 +52,44 @@ function comment(id: number, body: string, login = "meetup-bot") {
 }
 
 describe("renderDiagnosticComment", () => {
+	it("localizes guidance while retaining markers, issue headings and privacy boundaries", () => {
+		// Arrange
+		const messages = new EventCommentMessages("fr");
+		const diagnostics = [
+			errorDiagnostic,
+			{
+				...errorDiagnostic,
+				code: "unrecognized.code",
+				field: "private@example.test",
+			},
+			{
+				...errorDiagnostic,
+				code: "event.agenda.speaker.missing",
+				field: "agenda.0.speakers.1",
+			},
+		];
+		// Act
+		const body = GitHubEventCommentRepository.renderDiagnosticComment(
+			diagnostics,
+			messages,
+		);
+		const resolved = GitHubEventCommentRepository.renderDiagnosticComment(
+			[],
+			messages,
+		);
+		// Assert
+		expect(body).toContain(EVENT_DIAGNOSTIC_COMMENT_MARKER);
+		expect(body).toContain("**Event Date**: Saisissez une date valide"); // codespell:ignore valide
+		expect(body).toContain("**Programme (élément 1, intervenant 2)**");
+		expect(body).toContain("Une vérification supplémentaire");
+		expect(body).not.toContain("private@example.test");
+		expect(body).not.toContain(errorDiagnostic.message);
+		expect(resolved).toContain(EVENT_DIAGNOSTIC_COMMENT_MARKER);
+		expect(resolved).toContain(
+			"Tous les problèmes signalés précédemment ont été résolus.",
+		);
+	});
+
 	it("renders incomplete event fields as an actionable checklist in form order", () => {
 		// Arrange
 		const diagnostics = [

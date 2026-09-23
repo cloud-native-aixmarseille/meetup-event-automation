@@ -7,6 +7,7 @@
 	"dependencies": {
 		"@meetup-automation/journey": "workspace:*",
 		"@meetup-automation/referential": "workspace:*",
-		"yaml": "^2.9.1"
+		"yaml": "^2.9.1",
+		"@meetup-automation/localization": "workspace:*"
 	}
 }

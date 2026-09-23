@@ -20,6 +20,7 @@ import {
 	SynchronizeMeetupIssueForm,
 	ValidateMeetupReferentials,
 } from "@meetup-automation/journey";
+import type { Locale } from "@meetup-automation/localization";
 import type { ReferentialRepository } from "@meetup-automation/referential";
 import { SystemEventClock } from "@meetup-automation/system-clock";
 import { YamlIssueFormProjection } from "@meetup-automation/yaml-issue-form-projection";
@@ -39,6 +40,7 @@ export const SERVICES = {
 };
 
 export interface WorkspaceCompositionInput {
+	readonly locale?: Locale;
 	readonly config?: AutomationConfig;
 	readonly workspaceRoot?: string;
 }
@@ -75,7 +77,13 @@ export class EventComposition {
 			});
 		container
 			.bind<IssueFormProjection>(SERVICES.issueFormProjection)
-			.toDynamicValue(() => new YamlIssueFormProjection({ workspaceRoot }));
+			.toDynamicValue(
+				() =>
+					new YamlIssueFormProjection({
+						workspaceRoot,
+						locale: input.locale,
+					}),
+			);
 		container.bind(ValidateMeetupReferentials).toDynamicValue(
 			(context) =>
 				new ValidateMeetupReferentials({
@@ -182,6 +190,7 @@ export class EventComposition {
 						owner: input.owner,
 						repo: input.repo,
 						authorLogin: input.commentAuthorLogin,
+						locale: input.locale,
 					}),
 			);
 		container

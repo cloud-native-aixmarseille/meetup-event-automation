@@ -38,6 +38,8 @@ jobs:
     permissions:
       contents: read
     with:
+      # Optional language for generated text.
+      locale: en
       # GitHub App ID used to mint the narrowly scoped installation token for meetup automation.
       # This input is required.
       github-app-id: ""
@@ -52,9 +54,10 @@ jobs:
 
 ## Inputs
 
-| **Input**           | **Description**                                     | **Required** | **Type** |
-| ------------------- | --------------------------------------------------- | ------------ | -------- |
-| **`github-app-id`** | GitHub App ID for meetup automation token creation. | **true**     | `string` |
+| **Input**           | **Description**                                                                                                                    | **Required** | **Type** |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | -------- |
+| **`locale`**        | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **false**    | `en`     |
+| **`github-app-id`** | GitHub App ID for meetup automation token creation.                                                                                | **true**     | `string` |
 
 <!-- inputs:end -->
 <!-- secrets:start -->

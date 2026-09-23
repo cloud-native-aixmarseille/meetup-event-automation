@@ -6,6 +6,7 @@ import type {
 } from "@meetup-automation/journey";
 import { ProjectReferentialChoices } from "@meetup-automation/referential";
 import { parseDocument } from "yaml";
+import { IssueFormMessages } from "./i18n/issue-form-messages.js";
 import {
 	AVAILABLE_SPEAKERS_MARKER,
 	HOST_FIELD_ID,
@@ -18,9 +19,12 @@ import {
 } from "./yaml-issue-form-projection-contracts.js";
 
 export class YamlIssueFormProjection implements IssueFormProjection {
+	private readonly messages: IssueFormMessages;
 	private readonly choices = new ProjectReferentialChoices();
 
-	constructor(private readonly options: YamlIssueFormProjectionOptions) {}
+	constructor(private readonly options: YamlIssueFormProjectionOptions) {
+		this.messages = new IssueFormMessages(options.locale);
+	}
 
 	async synchronize(
 		input: SynchronizeIssueFormInput,
@@ -213,10 +217,10 @@ export class YamlIssueFormProjection implements IssueFormProjection {
 		return [
 			AVAILABLE_SPEAKERS_MARKER,
 			"",
-			"Select speakers by copying one or more references into the agenda.",
+			this.messages.t("form.speakers.guidance"),
 			"",
 			"<details>",
-			"<summary>Show available speaker references</summary>",
+			`<summary>${this.messages.t("form.speakers.show")}</summary>`,
 			"",
 			references,
 			"",

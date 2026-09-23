@@ -2679,12 +2679,12 @@ var require_constants2 = __commonJS({
       ERROR2[ERROR2["PAUSED_H2_UPGRADE"] = 23] = "PAUSED_H2_UPGRADE";
       ERROR2[ERROR2["USER"] = 24] = "USER";
     })(ERROR = exports.ERROR || (exports.ERROR = {}));
-    var TYPE;
-    (function(TYPE2) {
-      TYPE2[TYPE2["BOTH"] = 0] = "BOTH";
-      TYPE2[TYPE2["REQUEST"] = 1] = "REQUEST";
-      TYPE2[TYPE2["RESPONSE"] = 2] = "RESPONSE";
-    })(TYPE = exports.TYPE || (exports.TYPE = {}));
+    var TYPE2;
+    (function(TYPE3) {
+      TYPE3[TYPE3["BOTH"] = 0] = "BOTH";
+      TYPE3[TYPE3["REQUEST"] = 1] = "REQUEST";
+      TYPE3[TYPE3["RESPONSE"] = 2] = "RESPONSE";
+    })(TYPE2 = exports.TYPE || (exports.TYPE = {}));
     var FLAGS;
     (function(FLAGS2) {
       FLAGS2[FLAGS2["CONNECTION_KEEP_ALIVE"] = 1] = "CONNECTION_KEEP_ALIVE";
@@ -5792,7 +5792,7 @@ var require_client_h1 = __commonJS({
     var TIMEOUT_HEADERS = 2 | USE_FAST_TIMER;
     var TIMEOUT_BODY = 4 | USE_FAST_TIMER;
     var TIMEOUT_KEEP_ALIVE = 8 | USE_NATIVE_TIMER;
-    var Parser = class {
+    var Parser2 = class {
       constructor(client, socket, { exports: exports2 }) {
         assert(Number.isFinite(client[kMaxHeadersSize]) && client[kMaxHeadersSize] > 0);
         this.llhttp = exports2;
@@ -6218,7 +6218,7 @@ var require_client_h1 = __commonJS({
       socket[kIdleSocketValidation] = 0;
       socket[kIdleSocketValidationTimeout] = null;
       socket[kSocketUsed] = false;
-      socket[kParser] = new Parser(client, socket, llhttpInstance);
+      socket[kParser] = new Parser2(client, socket, llhttpInstance);
       addListener(socket, "error", function(err) {
         assert(err.code !== "ERR_TLS_CERT_ALTNAME_INVALID");
         const parser = this[kParser];
@@ -19221,12 +19221,12 @@ var require_lib = __commonJS({
             throw new Error("Client has already been disposed.");
           }
           const parsedUrl = new URL(requestUrl);
-          let info = this._prepareRequest(verb, parsedUrl, headers);
+          let info2 = this._prepareRequest(verb, parsedUrl, headers);
           const maxTries = this._allowRetries && RetryableHttpVerbs.includes(verb) ? this._maxRetries + 1 : 1;
           let numTries = 0;
           let response;
           do {
-            response = yield this.requestRaw(info, data);
+            response = yield this.requestRaw(info2, data);
             if (response && response.message && response.message.statusCode === HttpCodes2.Unauthorized) {
               let authenticationHandler;
               for (const handler2 of this.handlers) {
@@ -19236,7 +19236,7 @@ var require_lib = __commonJS({
                 }
               }
               if (authenticationHandler) {
-                return authenticationHandler.handleAuthentication(this, info, data);
+                return authenticationHandler.handleAuthentication(this, info2, data);
               } else {
                 return response;
               }
@@ -19259,8 +19259,8 @@ var require_lib = __commonJS({
                   }
                 }
               }
-              info = this._prepareRequest(verb, parsedRedirectUrl, headers);
-              response = yield this.requestRaw(info, data);
+              info2 = this._prepareRequest(verb, parsedRedirectUrl, headers);
+              response = yield this.requestRaw(info2, data);
               redirectsRemaining--;
             }
             if (!response.message.statusCode || !HttpResponseRetryCodes2.includes(response.message.statusCode)) {
@@ -19289,7 +19289,7 @@ var require_lib = __commonJS({
        * @param info
        * @param data
        */
-      requestRaw(info, data) {
+      requestRaw(info2, data) {
         return __awaiter3(this, void 0, void 0, function* () {
           return new Promise((resolve4, reject) => {
             function callbackForResult(err, res) {
@@ -19301,7 +19301,7 @@ var require_lib = __commonJS({
                 resolve4(res);
               }
             }
-            this.requestRawWithCallback(info, data, callbackForResult);
+            this.requestRawWithCallback(info2, data, callbackForResult);
           });
         });
       }
@@ -19311,12 +19311,12 @@ var require_lib = __commonJS({
        * @param data
        * @param onResult
        */
-      requestRawWithCallback(info, data, onResult) {
+      requestRawWithCallback(info2, data, onResult) {
         if (typeof data === "string") {
-          if (!info.options.headers) {
-            info.options.headers = {};
+          if (!info2.options.headers) {
+            info2.options.headers = {};
           }
-          info.options.headers["Content-Length"] = Buffer.byteLength(data, "utf8");
+          info2.options.headers["Content-Length"] = Buffer.byteLength(data, "utf8");
         }
         let callbackCalled = false;
         function handleResult(err, res) {
@@ -19325,7 +19325,7 @@ var require_lib = __commonJS({
             onResult(err, res);
           }
         }
-        const req = info.httpModule.request(info.options, (msg) => {
+        const req = info2.httpModule.request(info2.options, (msg) => {
           const res = new HttpClientResponse(msg);
           handleResult(void 0, res);
         });
@@ -19337,7 +19337,7 @@ var require_lib = __commonJS({
           if (socket) {
             socket.end();
           }
-          handleResult(new Error(`Request timeout: ${info.options.path}`));
+          handleResult(new Error(`Request timeout: ${info2.options.path}`));
         });
         req.on("error", function(err) {
           handleResult(err);
@@ -19373,27 +19373,27 @@ var require_lib = __commonJS({
         return this._getProxyAgentDispatcher(parsedUrl, proxyUrl);
       }
       _prepareRequest(method, requestUrl, headers) {
-        const info = {};
-        info.parsedUrl = requestUrl;
-        const usingSsl = info.parsedUrl.protocol === "https:";
-        info.httpModule = usingSsl ? https : http;
+        const info2 = {};
+        info2.parsedUrl = requestUrl;
+        const usingSsl = info2.parsedUrl.protocol === "https:";
+        info2.httpModule = usingSsl ? https : http;
         const defaultPort = usingSsl ? 443 : 80;
-        info.options = {};
-        info.options.host = info.parsedUrl.hostname;
-        info.options.port = info.parsedUrl.port ? parseInt(info.parsedUrl.port) : defaultPort;
-        info.options.path = (info.parsedUrl.pathname || "") + (info.parsedUrl.search || "");
-        info.options.method = method;
-        info.options.headers = this._mergeHeaders(headers);
+        info2.options = {};
+        info2.options.host = info2.parsedUrl.hostname;
+        info2.options.port = info2.parsedUrl.port ? parseInt(info2.parsedUrl.port) : defaultPort;
+        info2.options.path = (info2.parsedUrl.pathname || "") + (info2.parsedUrl.search || "");
+        info2.options.method = method;
+        info2.options.headers = this._mergeHeaders(headers);
         if (this.userAgent != null) {
-          info.options.headers["user-agent"] = this.userAgent;
+          info2.options.headers["user-agent"] = this.userAgent;
         }
-        info.options.agent = this._getAgent(info.parsedUrl);
+        info2.options.agent = this._getAgent(info2.parsedUrl);
         if (this.handlers) {
           for (const handler2 of this.handlers) {
-            handler2.prepareRequest(info.options);
+            handler2.prepareRequest(info2.options);
           }
         }
-        return info;
+        return info2;
       }
       _mergeHeaders(headers) {
         if (this.requestOptions && this.requestOptions.headers) {
@@ -21250,12 +21250,12 @@ var require_log = __commonJS({
       if (logLevel === "debug")
         console.log(...messages);
     }
-    function warn(logLevel, warning) {
+    function warn(logLevel, warning2) {
       if (logLevel === "debug" || logLevel === "warn") {
         if (typeof node_process.emitWarning === "function")
-          node_process.emitWarning(warning);
+          node_process.emitWarning(warning2);
         else
-          console.warn(warning);
+          console.warn(warning2);
       }
     }
     exports.debug = debug2;
@@ -23306,9 +23306,9 @@ var require_errors2 = __commonJS({
       let ci = col - 1;
       let lineStr = src.substring(lc.lineStarts[line - 1], lc.lineStarts[line]).replace(/[\n\r]+$/, "");
       if (ci >= 60 && lineStr.length > 80) {
-        const trimStart = Math.min(ci - 39, lineStr.length - 79);
-        lineStr = "\u2026" + lineStr.substring(trimStart);
-        ci -= trimStart - 1;
+        const trimStart4 = Math.min(ci - 39, lineStr.length - 79);
+        lineStr = "\u2026" + lineStr.substring(trimStart4);
+        ci -= trimStart4 - 1;
       }
       if (lineStr.length > 80)
         lineStr = lineStr.substring(0, 79) + "\u2026";
@@ -24274,15 +24274,15 @@ var require_resolve_flow_scalar = __commonJS({
       let match = line.exec(source);
       if (!match)
         return source;
-      let trimEnd, trimBoth;
+      let trimEnd4, trimBoth;
       try {
-        trimEnd = new RegExp("(?<![ 	])[ 	]+$");
+        trimEnd4 = new RegExp("(?<![ 	])[ 	]+$");
         trimBoth = new RegExp("^[ 	]+|(?<![ 	])[ 	]+$", "g");
       } catch {
-        trimEnd = /[ \t]+$/;
+        trimEnd4 = /[ \t]+$/;
         trimBoth = /^[ \t]+|[ \t]+$/g;
       }
-      let res = match[1].replace(trimEnd, "");
+      let res = match[1].replace(trimEnd4, "");
       let sep3 = " ";
       let pos = line.lastIndex;
       while (match = line.exec(source)) {
@@ -24725,9 +24725,9 @@ var require_composer = __commonJS({
         this.prelude = [];
         this.errors = [];
         this.warnings = [];
-        this.onError = (source, code, message, warning) => {
+        this.onError = (source, code, message, warning2) => {
           const pos = getErrorPos(source);
-          if (warning)
+          if (warning2)
             this.warnings.push(new errors.YAMLWarning(pos, code, message));
           else
             this.errors.push(new errors.YAMLParseError(pos, code, message));
@@ -24800,10 +24800,10 @@ ${cb}` : comment;
           console.dir(token, { depth: null });
         switch (token.type) {
           case "directive":
-            this.directives.add(token.source, (offset, message, warning) => {
+            this.directives.add(token.source, (offset, message, warning2) => {
               const pos = getErrorPos(token);
               pos[0] += offset;
-              this.onError(pos, "BAD_DIRECTIVE", message, warning);
+              this.onError(pos, "BAD_DIRECTIVE", message, warning2);
             });
             this.prelude.push(token.source);
             this.atDirectives = true;
@@ -26009,7 +26009,7 @@ var require_parser = __commonJS({
         }
       }
     }
-    var Parser = class {
+    var Parser2 = class {
       /**
        * @param onNewLine - If defined, called separately with the start position of
        *   each new line (in `parse()`, including the start of input).
@@ -26782,7 +26782,7 @@ var require_parser = __commonJS({
         }
       }
     };
-    exports.Parser = Parser;
+    exports.Parser = Parser2;
   }
 });
 
@@ -26835,7 +26835,7 @@ var require_public_api = __commonJS({
       }
       return doc;
     }
-    function parse4(src, reviver, options) {
+    function parse5(src, reviver, options) {
       let _reviver = void 0;
       if (typeof reviver === "function") {
         _reviver = reviver;
@@ -26845,7 +26845,7 @@ var require_public_api = __commonJS({
       const doc = parseDocument2(src, options);
       if (!doc)
         return null;
-      doc.warnings.forEach((warning) => log.warn(doc.options.logLevel, warning));
+      doc.warnings.forEach((warning2) => log.warn(doc.options.logLevel, warning2));
       if (doc.errors.length > 0) {
         if (doc.options.logLevel !== "silent")
           throw doc.errors[0];
@@ -26876,7 +26876,7 @@ var require_public_api = __commonJS({
         return value.toString(options);
       return new Document.Document(value, _replacer, options).toString(options);
     }
-    exports.parse = parse4;
+    exports.parse = parse5;
     exports.parseAllDocuments = parseAllDocuments;
     exports.parseDocument = parseDocument2;
     exports.stringify = stringify;
@@ -28103,6 +28103,7 @@ var Summary = class {
   }
 };
 var _summary = new Summary();
+var summary = _summary;
 
 // node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/platform.js
 import os3 from "os";
@@ -28151,6 +28152,3839 @@ function setFailed(message) {
 function error(message, properties = {}) {
   issueCommand("error", toCommandProperties(properties), message instanceof Error ? message.toString() : message);
 }
+function warning(message, properties = {}) {
+  issueCommand("warning", toCommandProperties(properties), message instanceof Error ? message.toString() : message);
+}
+function notice(message, properties = {}) {
+  issueCommand("notice", toCommandProperties(properties), message instanceof Error ? message.toString() : message);
+}
+function info(message) {
+  process.stdout.write(message + os4.EOL);
+}
+
+// packages/runtime/github-actions/src/action-output.ts
+var ActionOutput = class _ActionOutput {
+  static setJsonOutput(name, value) {
+    setOutput(name, JSON.stringify(value));
+  }
+  static setDiagnosticsOutput(diagnostics) {
+    _ActionOutput.setJsonOutput("diagnostics", diagnostics);
+  }
+};
+
+// node_modules/.pnpm/@formatjs+fast-memoize@3.1.7/node_modules/@formatjs/fast-memoize/index.js
+function memoize(fn, options) {
+  const cache = options && options.cache ? options.cache : cacheDefault;
+  const serializer = options && options.serializer ? options.serializer : serializerDefault;
+  return (options && options.strategy ? options.strategy : strategyDefault)(fn, {
+    cache,
+    serializer
+  });
+}
+function isPrimitive(value) {
+  return value == null || typeof value === "number" || typeof value === "boolean";
+}
+function monadic(fn, cache, serializer, arg) {
+  const cacheKey = isPrimitive(arg) ? arg : serializer(arg);
+  let computedValue = cache.get(cacheKey);
+  if (typeof computedValue === "undefined") {
+    computedValue = fn.call(this, arg);
+    cache.set(cacheKey, computedValue);
+  }
+  return computedValue;
+}
+function variadic(fn, cache, serializer) {
+  const args = Array.prototype.slice.call(arguments, 3);
+  const cacheKey = serializer(args);
+  let computedValue = cache.get(cacheKey);
+  if (typeof computedValue === "undefined") {
+    computedValue = fn.apply(this, args);
+    cache.set(cacheKey, computedValue);
+  }
+  return computedValue;
+}
+function assemble(fn, context3, strategy, cache, serialize) {
+  return strategy.bind(context3, fn, cache, serialize);
+}
+function strategyDefault(fn, options) {
+  const strategy = fn.length === 1 ? monadic : variadic;
+  return assemble(fn, this, strategy, options.cache.create(), options.serializer);
+}
+function strategyVariadic(fn, options) {
+  return assemble(fn, this, variadic, options.cache.create(), options.serializer);
+}
+function strategyMonadic(fn, options) {
+  return assemble(fn, this, monadic, options.cache.create(), options.serializer);
+}
+var serializerDefault = function() {
+  return JSON.stringify(arguments);
+};
+var ObjectWithoutPrototypeCache = class {
+  constructor() {
+    this.cache = /* @__PURE__ */ Object.create(null);
+  }
+  get(key) {
+    return this.cache[key];
+  }
+  set(key, value) {
+    this.cache[key] = value;
+  }
+};
+var cacheDefault = { create: function create() {
+  return new ObjectWithoutPrototypeCache();
+} };
+var strategies = {
+  variadic: strategyVariadic,
+  monadic: strategyMonadic
+};
+
+// node_modules/.pnpm/@formatjs+icu-skeleton-parser@2.1.12/node_modules/@formatjs/icu-skeleton-parser/index.js
+var DATE_TIME_REGEX = /(?:[Eec]{1,6}|G{1,5}|[Qq]{1,5}|(?:[yYur]+|U{1,5})|[ML]{1,5}|d{1,2}|D{1,3}|F{1}|[abB]{1,5}|[hkHK]{1,2}|w{1,2}|W{1}|m{1,2}|s{1,2}|[zZOvVxX]{1,4})(?=([^']*'[^']*')*[^']*$)/g;
+function parseDateTimeSkeleton(skeleton) {
+  const result = {};
+  skeleton.replace(DATE_TIME_REGEX, (match) => {
+    const len = match.length;
+    switch (match[0]) {
+      case "G":
+        result.era = len === 4 ? "long" : len === 5 ? "narrow" : "short";
+        break;
+      case "y":
+        result.year = len === 2 ? "2-digit" : "numeric";
+        break;
+      case "Y":
+      case "u":
+      case "U":
+      case "r":
+        throw new RangeError("`Y/u/U/r` (year) patterns are not supported, use `y` instead");
+      case "q":
+      case "Q":
+        throw new RangeError("`q/Q` (quarter) patterns are not supported");
+      case "M":
+      case "L":
+        result.month = [
+          "numeric",
+          "2-digit",
+          "short",
+          "long",
+          "narrow"
+        ][len - 1];
+        break;
+      case "w":
+      case "W":
+        throw new RangeError("`w/W` (week) patterns are not supported");
+      case "d":
+        result.day = ["numeric", "2-digit"][len - 1];
+        break;
+      case "D":
+      case "F":
+      case "g":
+        throw new RangeError("`D/F/g` (day) patterns are not supported, use `d` instead");
+      case "E":
+        result.weekday = len === 4 ? "long" : len === 5 ? "narrow" : "short";
+        break;
+      case "e":
+        if (len < 4) throw new RangeError("`e..eee` (weekday) patterns are not supported");
+        result.weekday = [
+          "short",
+          "long",
+          "narrow",
+          "short"
+        ][len - 3];
+        break;
+      case "c":
+        if (len < 4) throw new RangeError("`c..ccc` (weekday) patterns are not supported");
+        result.weekday = [
+          "short",
+          "long",
+          "narrow",
+          "short"
+        ][len - 3];
+        break;
+      case "a":
+        result.hour12 = true;
+        break;
+      case "b":
+      case "B":
+        throw new RangeError("`b/B` (period) patterns are not supported, use `a` instead");
+      case "h":
+        result.hourCycle = "h12";
+        result.hour = ["numeric", "2-digit"][len - 1];
+        break;
+      case "H":
+        result.hourCycle = "h23";
+        result.hour = ["numeric", "2-digit"][len - 1];
+        break;
+      case "K":
+        result.hourCycle = "h11";
+        result.hour = ["numeric", "2-digit"][len - 1];
+        break;
+      case "k":
+        result.hourCycle = "h24";
+        result.hour = ["numeric", "2-digit"][len - 1];
+        break;
+      case "j":
+      case "J":
+      case "C":
+        throw new RangeError("`j/J/C` (hour) patterns are not supported, use `h/H/K/k` instead");
+      case "m":
+        result.minute = ["numeric", "2-digit"][len - 1];
+        break;
+      case "s":
+        result.second = ["numeric", "2-digit"][len - 1];
+        break;
+      case "S":
+      case "A":
+        throw new RangeError("`S/A` (second) patterns are not supported, use `s` instead");
+      case "z":
+        result.timeZoneName = len < 4 ? "short" : "long";
+        break;
+      case "Z":
+      case "O":
+      case "v":
+      case "V":
+      case "X":
+      case "x":
+        throw new RangeError("`Z/O/v/V/X/x` (timeZone) patterns are not supported, use `z` instead");
+    }
+    return "";
+  });
+  return result;
+}
+var WHITE_SPACE_REGEX = /[\t-\r \x85\u200E\u200F\u2028\u2029]/i;
+function parseNumberSkeletonFromString(skeleton) {
+  if (skeleton.length === 0) throw new Error("Number skeleton cannot be empty");
+  const stringTokens = skeleton.split(WHITE_SPACE_REGEX).filter((x) => x.length > 0);
+  const tokens = [];
+  for (const stringToken of stringTokens) {
+    let stemAndOptions = stringToken.split("/");
+    if (stemAndOptions.length === 0) throw new Error("Invalid number skeleton");
+    const [stem, ...options] = stemAndOptions;
+    for (const option of options) if (option.length === 0) throw new Error("Invalid number skeleton");
+    tokens.push({
+      stem,
+      options
+    });
+  }
+  return tokens;
+}
+function icuUnitToEcma(unit) {
+  return unit.replace(/^(.*?)-/, "");
+}
+var FRACTION_PRECISION_REGEX = /^\.(?:(0+)(\*)?|(#+)|(0+)(#+))$/g;
+var SIGNIFICANT_PRECISION_REGEX = /^(@+)?(\+|#+)?[rs]?$/g;
+var INTEGER_WIDTH_REGEX = /(\*)(0+)|(#+)(0+)|(0+)/g;
+var CONCISE_INTEGER_WIDTH_REGEX = /^(0+)$/;
+function parseSignificantPrecision(str) {
+  const result = {};
+  if (str[str.length - 1] === "r") result.roundingPriority = "morePrecision";
+  else if (str[str.length - 1] === "s") result.roundingPriority = "lessPrecision";
+  str.replace(SIGNIFICANT_PRECISION_REGEX, function(_, g1, g2) {
+    if (typeof g2 !== "string") {
+      result.minimumSignificantDigits = g1.length;
+      result.maximumSignificantDigits = g1.length;
+    } else if (g2 === "+") result.minimumSignificantDigits = g1.length;
+    else if (g1[0] === "#") result.maximumSignificantDigits = g1.length;
+    else {
+      result.minimumSignificantDigits = g1.length;
+      result.maximumSignificantDigits = g1.length + (typeof g2 === "string" ? g2.length : 0);
+    }
+    return "";
+  });
+  return result;
+}
+function parseSign(str) {
+  switch (str) {
+    case "sign-auto":
+      return { signDisplay: "auto" };
+    case "sign-accounting":
+    case "()":
+      return { currencySign: "accounting" };
+    case "sign-always":
+    case "+!":
+      return { signDisplay: "always" };
+    case "sign-accounting-always":
+    case "()!":
+      return {
+        signDisplay: "always",
+        currencySign: "accounting"
+      };
+    case "sign-except-zero":
+    case "+?":
+      return { signDisplay: "exceptZero" };
+    case "sign-accounting-except-zero":
+    case "()?":
+      return {
+        signDisplay: "exceptZero",
+        currencySign: "accounting"
+      };
+    case "sign-never":
+    case "+_":
+      return { signDisplay: "never" };
+  }
+}
+function parseConciseScientificAndEngineeringStem(stem) {
+  let result;
+  if (stem[0] === "E" && stem[1] === "E") {
+    result = { notation: "engineering" };
+    stem = stem.slice(2);
+  } else if (stem[0] === "E") {
+    result = { notation: "scientific" };
+    stem = stem.slice(1);
+  }
+  if (result) {
+    const signDisplay = stem.slice(0, 2);
+    if (signDisplay === "+!") {
+      result.signDisplay = "always";
+      stem = stem.slice(2);
+    } else if (signDisplay === "+?") {
+      result.signDisplay = "exceptZero";
+      stem = stem.slice(2);
+    }
+    if (!CONCISE_INTEGER_WIDTH_REGEX.test(stem)) throw new Error("Malformed concise eng/scientific notation");
+    result.minimumIntegerDigits = stem.length;
+  }
+  return result;
+}
+function parseNotationOptions(opt) {
+  const result = {};
+  const signOpts = parseSign(opt);
+  if (signOpts) return signOpts;
+  return result;
+}
+function parseNumberSkeleton(tokens) {
+  let result = {};
+  for (const token of tokens) {
+    switch (token.stem) {
+      case "percent":
+      case "%":
+        result.style = "percent";
+        continue;
+      case "%x100":
+        result.style = "percent";
+        result.scale = 100;
+        continue;
+      case "currency":
+        result.style = "currency";
+        result.currency = token.options[0];
+        continue;
+      case "group-off":
+      case ",_":
+        result.useGrouping = false;
+        continue;
+      case "precision-integer":
+      case ".":
+        result.maximumFractionDigits = 0;
+        continue;
+      case "measure-unit":
+      case "unit":
+        result.style = "unit";
+        result.unit = icuUnitToEcma(token.options[0]);
+        continue;
+      case "compact-short":
+      case "K":
+        result.notation = "compact";
+        result.compactDisplay = "short";
+        continue;
+      case "compact-long":
+      case "KK":
+        result.notation = "compact";
+        result.compactDisplay = "long";
+        continue;
+      case "scientific":
+        result = {
+          ...result,
+          notation: "scientific",
+          ...token.options.reduce((all, opt) => ({
+            ...all,
+            ...parseNotationOptions(opt)
+          }), {})
+        };
+        continue;
+      case "engineering":
+        result = {
+          ...result,
+          notation: "engineering",
+          ...token.options.reduce((all, opt) => ({
+            ...all,
+            ...parseNotationOptions(opt)
+          }), {})
+        };
+        continue;
+      case "notation-simple":
+        result.notation = "standard";
+        continue;
+      case "unit-width-narrow":
+        result.currencyDisplay = "narrowSymbol";
+        result.unitDisplay = "narrow";
+        continue;
+      case "unit-width-short":
+        result.currencyDisplay = "code";
+        result.unitDisplay = "short";
+        continue;
+      case "unit-width-full-name":
+        result.currencyDisplay = "name";
+        result.unitDisplay = "long";
+        continue;
+      case "unit-width-iso-code":
+        result.currencyDisplay = "symbol";
+        continue;
+      case "scale":
+        result.scale = parseFloat(token.options[0]);
+        continue;
+      case "rounding-mode-floor":
+        result.roundingMode = "floor";
+        continue;
+      case "rounding-mode-ceiling":
+        result.roundingMode = "ceil";
+        continue;
+      case "rounding-mode-down":
+        result.roundingMode = "trunc";
+        continue;
+      case "rounding-mode-up":
+        result.roundingMode = "expand";
+        continue;
+      case "rounding-mode-half-even":
+        result.roundingMode = "halfEven";
+        continue;
+      case "rounding-mode-half-down":
+        result.roundingMode = "halfTrunc";
+        continue;
+      case "rounding-mode-half-up":
+        result.roundingMode = "halfExpand";
+        continue;
+      case "integer-width":
+        if (token.options.length > 1) throw new RangeError("integer-width stems only accept a single optional option");
+        token.options[0].replace(INTEGER_WIDTH_REGEX, function(_, g1, g2, g3, g4, g5) {
+          if (g1) result.minimumIntegerDigits = g2.length;
+          else if (g3 && g4) throw new Error("We currently do not support maximum integer digits");
+          else if (g5) throw new Error("We currently do not support exact integer digits");
+          return "";
+        });
+        continue;
+    }
+    if (CONCISE_INTEGER_WIDTH_REGEX.test(token.stem)) {
+      result.minimumIntegerDigits = token.stem.length;
+      continue;
+    }
+    if (FRACTION_PRECISION_REGEX.test(token.stem)) {
+      if (token.options.length > 1) throw new RangeError("Fraction-precision stems only accept a single optional option");
+      token.stem.replace(FRACTION_PRECISION_REGEX, function(_, g1, g2, g3, g4, g5) {
+        if (g2 === "*") result.minimumFractionDigits = g1.length;
+        else if (g3 && g3[0] === "#") result.maximumFractionDigits = g3.length;
+        else if (g4 && g5) {
+          result.minimumFractionDigits = g4.length;
+          result.maximumFractionDigits = g4.length + g5.length;
+        } else {
+          result.minimumFractionDigits = g1.length;
+          result.maximumFractionDigits = g1.length;
+        }
+        return "";
+      });
+      const opt = token.options[0];
+      if (opt === "w") result = {
+        ...result,
+        trailingZeroDisplay: "stripIfInteger"
+      };
+      else if (opt) result = {
+        ...result,
+        ...parseSignificantPrecision(opt)
+      };
+      continue;
+    }
+    if (SIGNIFICANT_PRECISION_REGEX.test(token.stem)) {
+      result = {
+        ...result,
+        ...parseSignificantPrecision(token.stem)
+      };
+      continue;
+    }
+    const signOpts = parseSign(token.stem);
+    if (signOpts) result = {
+      ...result,
+      ...signOpts
+    };
+    const conciseScientificAndEngineeringOpts = parseConciseScientificAndEngineeringStem(token.stem);
+    if (conciseScientificAndEngineeringOpts) result = {
+      ...result,
+      ...conciseScientificAndEngineeringOpts
+    };
+  }
+  return result;
+}
+
+// node_modules/.pnpm/@formatjs+icu-messageformat-parser@3.5.20/node_modules/@formatjs/icu-messageformat-parser/index.js
+var ErrorKind = /* @__PURE__ */ (function(ErrorKind2) {
+  ErrorKind2[ErrorKind2["EXPECT_ARGUMENT_CLOSING_BRACE"] = 1] = "EXPECT_ARGUMENT_CLOSING_BRACE";
+  ErrorKind2[ErrorKind2["EMPTY_ARGUMENT"] = 2] = "EMPTY_ARGUMENT";
+  ErrorKind2[ErrorKind2["MALFORMED_ARGUMENT"] = 3] = "MALFORMED_ARGUMENT";
+  ErrorKind2[ErrorKind2["EXPECT_ARGUMENT_TYPE"] = 4] = "EXPECT_ARGUMENT_TYPE";
+  ErrorKind2[ErrorKind2["INVALID_ARGUMENT_TYPE"] = 5] = "INVALID_ARGUMENT_TYPE";
+  ErrorKind2[ErrorKind2["EXPECT_ARGUMENT_STYLE"] = 6] = "EXPECT_ARGUMENT_STYLE";
+  ErrorKind2[ErrorKind2["INVALID_NUMBER_SKELETON"] = 7] = "INVALID_NUMBER_SKELETON";
+  ErrorKind2[ErrorKind2["INVALID_DATE_TIME_SKELETON"] = 8] = "INVALID_DATE_TIME_SKELETON";
+  ErrorKind2[ErrorKind2["EXPECT_NUMBER_SKELETON"] = 9] = "EXPECT_NUMBER_SKELETON";
+  ErrorKind2[ErrorKind2["EXPECT_DATE_TIME_SKELETON"] = 10] = "EXPECT_DATE_TIME_SKELETON";
+  ErrorKind2[ErrorKind2["UNCLOSED_QUOTE_IN_ARGUMENT_STYLE"] = 11] = "UNCLOSED_QUOTE_IN_ARGUMENT_STYLE";
+  ErrorKind2[ErrorKind2["EXPECT_SELECT_ARGUMENT_OPTIONS"] = 12] = "EXPECT_SELECT_ARGUMENT_OPTIONS";
+  ErrorKind2[ErrorKind2["EXPECT_PLURAL_ARGUMENT_OFFSET_VALUE"] = 13] = "EXPECT_PLURAL_ARGUMENT_OFFSET_VALUE";
+  ErrorKind2[ErrorKind2["INVALID_PLURAL_ARGUMENT_OFFSET_VALUE"] = 14] = "INVALID_PLURAL_ARGUMENT_OFFSET_VALUE";
+  ErrorKind2[ErrorKind2["EXPECT_SELECT_ARGUMENT_SELECTOR"] = 15] = "EXPECT_SELECT_ARGUMENT_SELECTOR";
+  ErrorKind2[ErrorKind2["EXPECT_PLURAL_ARGUMENT_SELECTOR"] = 16] = "EXPECT_PLURAL_ARGUMENT_SELECTOR";
+  ErrorKind2[ErrorKind2["EXPECT_SELECT_ARGUMENT_SELECTOR_FRAGMENT"] = 17] = "EXPECT_SELECT_ARGUMENT_SELECTOR_FRAGMENT";
+  ErrorKind2[ErrorKind2["EXPECT_PLURAL_ARGUMENT_SELECTOR_FRAGMENT"] = 18] = "EXPECT_PLURAL_ARGUMENT_SELECTOR_FRAGMENT";
+  ErrorKind2[ErrorKind2["INVALID_PLURAL_ARGUMENT_SELECTOR"] = 19] = "INVALID_PLURAL_ARGUMENT_SELECTOR";
+  ErrorKind2[ErrorKind2["DUPLICATE_PLURAL_ARGUMENT_SELECTOR"] = 20] = "DUPLICATE_PLURAL_ARGUMENT_SELECTOR";
+  ErrorKind2[ErrorKind2["DUPLICATE_SELECT_ARGUMENT_SELECTOR"] = 21] = "DUPLICATE_SELECT_ARGUMENT_SELECTOR";
+  ErrorKind2[ErrorKind2["MISSING_OTHER_CLAUSE"] = 22] = "MISSING_OTHER_CLAUSE";
+  ErrorKind2[ErrorKind2["INVALID_TAG"] = 23] = "INVALID_TAG";
+  ErrorKind2[ErrorKind2["INVALID_TAG_NAME"] = 25] = "INVALID_TAG_NAME";
+  ErrorKind2[ErrorKind2["UNMATCHED_CLOSING_TAG"] = 26] = "UNMATCHED_CLOSING_TAG";
+  ErrorKind2[ErrorKind2["UNCLOSED_TAG"] = 27] = "UNCLOSED_TAG";
+  return ErrorKind2;
+})({});
+var TYPE = /* @__PURE__ */ (function(TYPE2) {
+  TYPE2[TYPE2["literal"] = 0] = "literal";
+  TYPE2[TYPE2["argument"] = 1] = "argument";
+  TYPE2[TYPE2["number"] = 2] = "number";
+  TYPE2[TYPE2["date"] = 3] = "date";
+  TYPE2[TYPE2["time"] = 4] = "time";
+  TYPE2[TYPE2["select"] = 5] = "select";
+  TYPE2[TYPE2["plural"] = 6] = "plural";
+  TYPE2[TYPE2["pound"] = 7] = "pound";
+  TYPE2[TYPE2["tag"] = 8] = "tag";
+  return TYPE2;
+})({});
+function isLiteralElement(el) {
+  return el.type === 0;
+}
+function isArgumentElement(el) {
+  return el.type === 1;
+}
+function isNumberElement(el) {
+  return el.type === 2;
+}
+function isDateElement(el) {
+  return el.type === 3;
+}
+function isTimeElement(el) {
+  return el.type === 4;
+}
+function isSelectElement(el) {
+  return el.type === 5;
+}
+function isPluralElement(el) {
+  return el.type === 6;
+}
+function isPoundElement(el) {
+  return el.type === 7;
+}
+function isTagElement(el) {
+  return el.type === 8;
+}
+function isNumberSkeleton(el) {
+  return !!(el && typeof el === "object" && el.type === 0);
+}
+function isDateTimeSkeleton(el) {
+  return !!(el && typeof el === "object" && el.type === 1);
+}
+var SPACE_SEPARATOR_REGEX = /[ \xA0\u1680\u2000-\u200A\u202F\u205F\u3000]/;
+var IDENTIFIER_PREFIX_REGEX = /([^\t-\r -\/:-@\[-\^`\{-~\x85\xA0-\xA7\xA9\xAB\xAC\xAE\xB0\xB1\xB6\xBB\xBF\xD7\xF7\u1680\u2000-\u200A\u2010-\u2029\u202F-\u203E\u2041-\u2053\u2055-\u205F\u2190-\u245F\u2500-\u2775\u2794-\u2BFF\u2E00-\u2E7F\u3000-\u3003\u3008-\u3020\u3030\uFD3E\uFD3F\uFE45\uFE46]*)/g;
+var timeData = {
+  "001": ["H", "h"],
+  "419": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "AC": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "AD": ["H", "hB"],
+  "AE": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "AF": [
+    "H",
+    "hb",
+    "hB",
+    "h"
+  ],
+  "AG": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "AI": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "AL": [
+    "h",
+    "H",
+    "hB"
+  ],
+  "AM": ["H", "hB"],
+  "AO": ["H", "hB"],
+  "AR": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "AS": ["h", "H"],
+  "AT": ["H", "hB"],
+  "AU": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "AW": ["H", "hB"],
+  "AX": ["H"],
+  "AZ": [
+    "H",
+    "hB",
+    "h"
+  ],
+  "BA": [
+    "H",
+    "hB",
+    "h"
+  ],
+  "BB": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "BD": [
+    "h",
+    "hB",
+    "H"
+  ],
+  "BE": ["H", "hB"],
+  "BF": ["H", "hB"],
+  "BG": [
+    "H",
+    "hB",
+    "h"
+  ],
+  "BH": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "BI": ["H", "h"],
+  "BJ": ["H", "hB"],
+  "BL": ["H", "hB"],
+  "BM": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "BN": [
+    "hb",
+    "hB",
+    "h",
+    "H"
+  ],
+  "BO": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "BQ": ["H"],
+  "BR": ["H", "hB"],
+  "BS": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "BT": ["h", "H"],
+  "BW": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "BY": ["H", "h"],
+  "BZ": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "CA": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "CC": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "CD": ["hB", "H"],
+  "CF": [
+    "H",
+    "h",
+    "hB"
+  ],
+  "CG": ["H", "hB"],
+  "CH": [
+    "H",
+    "hB",
+    "h"
+  ],
+  "CI": ["H", "hB"],
+  "CK": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "CL": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "CM": [
+    "H",
+    "h",
+    "hB"
+  ],
+  "CN": [
+    "H",
+    "hB",
+    "hb",
+    "h"
+  ],
+  "CO": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "CP": ["H"],
+  "CR": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "CU": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "CV": ["H", "hB"],
+  "CW": ["H", "hB"],
+  "CX": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "CY": [
+    "h",
+    "H",
+    "hb",
+    "hB"
+  ],
+  "CZ": ["H"],
+  "DE": ["H", "hB"],
+  "DG": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "DJ": ["h", "H"],
+  "DK": ["H"],
+  "DM": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "DO": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "DZ": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "EA": [
+    "H",
+    "h",
+    "hB",
+    "hb"
+  ],
+  "EC": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "EE": ["H", "hB"],
+  "EG": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "EH": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "ER": ["h", "H"],
+  "ES": [
+    "H",
+    "hB",
+    "h",
+    "hb"
+  ],
+  "ET": [
+    "hB",
+    "hb",
+    "h",
+    "H"
+  ],
+  "FI": ["H"],
+  "FJ": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "FK": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "FM": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "FO": ["H", "h"],
+  "FR": ["H", "hB"],
+  "GA": ["H", "hB"],
+  "GB": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "GD": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "GE": [
+    "H",
+    "hB",
+    "h"
+  ],
+  "GF": ["H", "hB"],
+  "GG": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "GH": ["h", "H"],
+  "GI": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "GL": ["H", "h"],
+  "GM": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "GN": ["H", "hB"],
+  "GP": ["H", "hB"],
+  "GQ": [
+    "H",
+    "hB",
+    "h",
+    "hb"
+  ],
+  "GR": [
+    "h",
+    "H",
+    "hb",
+    "hB"
+  ],
+  "GS": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "GT": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "GU": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "GW": ["H", "hB"],
+  "GY": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "HK": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "HN": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "HR": ["H", "hB"],
+  "HU": ["H", "h"],
+  "IC": [
+    "H",
+    "h",
+    "hB",
+    "hb"
+  ],
+  "ID": ["H"],
+  "IE": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "IL": ["H", "hB"],
+  "IM": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "IN": ["h", "H"],
+  "IO": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "IQ": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "IR": ["hB", "H"],
+  "IS": ["H"],
+  "IT": ["H", "hB"],
+  "JE": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "JM": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "JO": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "JP": [
+    "H",
+    "K",
+    "h"
+  ],
+  "KE": [
+    "hB",
+    "hb",
+    "H",
+    "h"
+  ],
+  "KG": [
+    "H",
+    "h",
+    "hB",
+    "hb"
+  ],
+  "KH": [
+    "hB",
+    "h",
+    "H",
+    "hb"
+  ],
+  "KI": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "KM": [
+    "H",
+    "h",
+    "hB",
+    "hb"
+  ],
+  "KN": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "KP": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "KR": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "KW": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "KY": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "KZ": ["H", "hB"],
+  "LA": [
+    "H",
+    "hb",
+    "hB",
+    "h"
+  ],
+  "LB": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "LC": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "LI": [
+    "H",
+    "hB",
+    "h"
+  ],
+  "LK": [
+    "H",
+    "h",
+    "hB",
+    "hb"
+  ],
+  "LR": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "LS": ["h", "H"],
+  "LT": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "LU": [
+    "H",
+    "h",
+    "hB"
+  ],
+  "LV": [
+    "H",
+    "hB",
+    "hb",
+    "h"
+  ],
+  "LY": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "MA": [
+    "H",
+    "h",
+    "hB",
+    "hb"
+  ],
+  "MC": ["H", "hB"],
+  "MD": ["H", "hB"],
+  "ME": [
+    "H",
+    "hB",
+    "h"
+  ],
+  "MF": ["H", "hB"],
+  "MG": ["H", "h"],
+  "MH": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "MK": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "ML": ["H"],
+  "MM": [
+    "hB",
+    "hb",
+    "H",
+    "h"
+  ],
+  "MN": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "MO": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "MP": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "MQ": ["H", "hB"],
+  "MR": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "MS": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "MT": ["H", "h"],
+  "MU": ["H", "h"],
+  "MV": ["H", "h"],
+  "MW": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "MX": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "MY": [
+    "hb",
+    "hB",
+    "h",
+    "H"
+  ],
+  "MZ": ["H", "hB"],
+  "NA": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "NC": ["H", "hB"],
+  "NE": ["H"],
+  "NF": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "NG": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "NI": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "NL": ["H", "hB"],
+  "NO": ["H", "h"],
+  "NP": [
+    "H",
+    "h",
+    "hB"
+  ],
+  "NR": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "NU": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "NZ": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "OM": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "PA": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "PE": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "PF": [
+    "H",
+    "h",
+    "hB"
+  ],
+  "PG": ["h", "H"],
+  "PH": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "PK": [
+    "h",
+    "hB",
+    "H"
+  ],
+  "PL": ["H", "h"],
+  "PM": ["H", "hB"],
+  "PN": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "PR": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "PS": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "PT": ["H", "hB"],
+  "PW": ["h", "H"],
+  "PY": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "QA": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "RE": ["H", "hB"],
+  "RO": ["H", "hB"],
+  "RS": [
+    "H",
+    "hB",
+    "h"
+  ],
+  "RU": ["H"],
+  "RW": ["H", "h"],
+  "SA": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "SB": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "SC": [
+    "H",
+    "h",
+    "hB"
+  ],
+  "SD": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "SE": ["H"],
+  "SG": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "SH": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "SI": ["H", "hB"],
+  "SJ": ["H"],
+  "SK": ["H"],
+  "SL": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "SM": [
+    "H",
+    "h",
+    "hB"
+  ],
+  "SN": [
+    "H",
+    "h",
+    "hB"
+  ],
+  "SO": ["h", "H"],
+  "SR": ["H", "hB"],
+  "SS": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "ST": ["H", "hB"],
+  "SV": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "SX": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "SY": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "SZ": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "TA": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "TC": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "TD": [
+    "h",
+    "H",
+    "hB"
+  ],
+  "TF": [
+    "H",
+    "h",
+    "hB"
+  ],
+  "TG": ["H", "hB"],
+  "TH": ["H", "h"],
+  "TJ": ["H", "h"],
+  "TL": [
+    "H",
+    "hB",
+    "hb",
+    "h"
+  ],
+  "TM": ["H", "h"],
+  "TN": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "TO": ["h", "H"],
+  "TR": ["H", "hB"],
+  "TT": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "TW": [
+    "hB",
+    "hb",
+    "h",
+    "H"
+  ],
+  "TZ": [
+    "hB",
+    "hb",
+    "H",
+    "h"
+  ],
+  "UA": [
+    "H",
+    "hB",
+    "h"
+  ],
+  "UG": [
+    "hB",
+    "hb",
+    "H",
+    "h"
+  ],
+  "UM": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "US": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "UY": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "UZ": [
+    "H",
+    "hB",
+    "h"
+  ],
+  "VA": [
+    "H",
+    "h",
+    "hB"
+  ],
+  "VC": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "VE": [
+    "h",
+    "H",
+    "hB",
+    "hb"
+  ],
+  "VG": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "VI": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "VN": ["H", "h"],
+  "VU": ["h", "H"],
+  "WF": ["H", "hB"],
+  "WS": ["h", "H"],
+  "XK": [
+    "H",
+    "hB",
+    "h"
+  ],
+  "YE": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "YT": ["H", "hB"],
+  "ZA": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "ZM": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "ZW": ["H", "h"],
+  "af-ZA": [
+    "H",
+    "h",
+    "hB",
+    "hb"
+  ],
+  "ar-001": [
+    "h",
+    "hB",
+    "hb",
+    "H"
+  ],
+  "ca-ES": [
+    "H",
+    "h",
+    "hB"
+  ],
+  "en-001": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "en-HK": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "en-IL": [
+    "H",
+    "h",
+    "hb",
+    "hB"
+  ],
+  "en-MY": [
+    "h",
+    "hb",
+    "H",
+    "hB"
+  ],
+  "es-BR": [
+    "H",
+    "h",
+    "hB",
+    "hb"
+  ],
+  "es-ES": [
+    "H",
+    "h",
+    "hB",
+    "hb"
+  ],
+  "es-GQ": [
+    "H",
+    "h",
+    "hB",
+    "hb"
+  ],
+  "fr-CA": [
+    "H",
+    "h",
+    "hB"
+  ],
+  "gl-ES": [
+    "H",
+    "h",
+    "hB"
+  ],
+  "gu-IN": [
+    "hB",
+    "hb",
+    "h",
+    "H"
+  ],
+  "hi-IN": [
+    "hB",
+    "h",
+    "H"
+  ],
+  "it-CH": [
+    "H",
+    "h",
+    "hB"
+  ],
+  "it-IT": [
+    "H",
+    "h",
+    "hB"
+  ],
+  "kn-IN": [
+    "hB",
+    "h",
+    "H"
+  ],
+  "ku-SY": ["H", "hB"],
+  "ml-IN": [
+    "hB",
+    "h",
+    "H"
+  ],
+  "mr-IN": [
+    "hB",
+    "hb",
+    "h",
+    "H"
+  ],
+  "pa-IN": [
+    "hB",
+    "hb",
+    "h",
+    "H"
+  ],
+  "ta-IN": [
+    "hB",
+    "h",
+    "hb",
+    "H"
+  ],
+  "te-IN": [
+    "hB",
+    "h",
+    "H"
+  ],
+  "zu-ZA": [
+    "H",
+    "hB",
+    "hb",
+    "h"
+  ]
+};
+function getBestPattern(skeleton, locale) {
+  let skeletonCopy = "";
+  for (let patternPos = 0; patternPos < skeleton.length; patternPos++) {
+    const patternChar = skeleton.charAt(patternPos);
+    if (patternChar === "j") {
+      let extraLength = 0;
+      while (patternPos + 1 < skeleton.length && skeleton.charAt(patternPos + 1) === patternChar) {
+        extraLength++;
+        patternPos++;
+      }
+      let hourLen = 1 + (extraLength & 1);
+      let dayPeriodLen = extraLength < 2 ? 1 : 3 + (extraLength >> 1);
+      let dayPeriodChar = "a";
+      let hourChar = getDefaultHourSymbolFromLocale(locale);
+      if (hourChar == "H" || hourChar == "k") dayPeriodLen = 0;
+      while (dayPeriodLen-- > 0) skeletonCopy += dayPeriodChar;
+      while (hourLen-- > 0) skeletonCopy = hourChar + skeletonCopy;
+    } else if (patternChar === "J") skeletonCopy += "H";
+    else skeletonCopy += patternChar;
+  }
+  return skeletonCopy;
+}
+function getDefaultHourSymbolFromLocale(locale) {
+  let hourCycle = locale.hourCycle;
+  if (hourCycle === void 0) {
+    const localeWithHourCycles = locale;
+    hourCycle = localeWithHourCycles.getHourCycles?.()[0] ?? localeWithHourCycles.hourCycles?.[0];
+  }
+  if (hourCycle) switch (hourCycle) {
+    case "h24":
+      return "k";
+    case "h23":
+      return "H";
+    case "h12":
+      return "h";
+    case "h11":
+      return "K";
+    default:
+      throw new Error("Invalid hourCycle");
+  }
+  const languageTag = locale.language;
+  let regionTag;
+  if (languageTag !== "root") regionTag = locale.maximize().region;
+  return (timeData[`${languageTag}-${regionTag}`] || timeData[regionTag || ""] || timeData[languageTag || ""] || timeData[`${languageTag}-001`] || timeData["001"])[0].charAt(0);
+}
+var SPACE_SEPARATOR_START_REGEX = new RegExp(`^${SPACE_SEPARATOR_REGEX.source}*`);
+var SPACE_SEPARATOR_END_REGEX = new RegExp(`${SPACE_SEPARATOR_REGEX.source}*$`);
+function createLocation(start, end) {
+  return {
+    start,
+    end
+  };
+}
+var hasNativeFromEntries = !!Object.fromEntries;
+var hasTrimStart = !!String.prototype.trimStart;
+var hasTrimEnd = !!String.prototype.trimEnd;
+var fromEntries = hasNativeFromEntries ? Object.fromEntries : function fromEntries2(entries) {
+  const obj = {};
+  for (const [k, v] of entries) obj[k] = v;
+  return obj;
+};
+var trimStart = hasTrimStart ? function trimStart2(s) {
+  return s.trimStart();
+} : function trimStart3(s) {
+  return s.replace(SPACE_SEPARATOR_START_REGEX, "");
+};
+var trimEnd = hasTrimEnd ? function trimEnd2(s) {
+  return s.trimEnd();
+} : function trimEnd3(s) {
+  return s.replace(SPACE_SEPARATOR_END_REGEX, "");
+};
+var IDENTIFIER_PREFIX_RE = createIdentifierPrefixRegex();
+function createIdentifierPrefixRegex() {
+  try {
+    const regex = new RegExp("([^\\p{White_Space}\\p{Pattern_Syntax}]*)", "yu");
+    if (regex.exec("a ")?.[1] === "a") return regex;
+  } catch {
+  }
+  return IDENTIFIER_PREFIX_REGEX;
+}
+function matchIdentifierAtIndex(s, index) {
+  IDENTIFIER_PREFIX_RE.lastIndex = index;
+  return IDENTIFIER_PREFIX_RE.exec(s)[1] ?? "";
+}
+function plainTopLevelEndPosition(message) {
+  if (message.length === 0) return null;
+  let line = 1;
+  let column = 1;
+  for (let offset = 0; offset < message.length; ) {
+    const code = message.charCodeAt(offset);
+    switch (code) {
+      case 35:
+      case 39:
+      case 60:
+      case 123:
+      case 125:
+        return null;
+    }
+    if (code === 10) {
+      line++;
+      column = 1;
+      offset++;
+    } else {
+      column++;
+      if (code >= 55296 && code <= 56319 && offset + 1 < message.length) {
+        const next = message.charCodeAt(offset + 1);
+        offset += next >= 56320 && next <= 57343 ? 2 : 1;
+      } else offset++;
+    }
+  }
+  return {
+    offset: message.length,
+    line,
+    column
+  };
+}
+var Parser = class {
+  constructor(message, options = {}) {
+    this.message = message;
+    this.position = {
+      offset: 0,
+      line: 1,
+      column: 1
+    };
+    this.ignoreTag = !!options.ignoreTag;
+    this.locale = options.locale;
+    this.requiresOtherClause = !!options.requiresOtherClause;
+    this.shouldParseSkeletons = !!options.shouldParseSkeletons;
+  }
+  parse() {
+    if (this.offset() !== 0) throw Error("parser can only be used once");
+    if (this.message.length > 0) {
+      const firstCode = this.message.charCodeAt(0);
+      if (firstCode !== 35 && firstCode !== 39 && firstCode !== 60 && firstCode !== 123 && firstCode !== 125) {
+        const plainEndPosition = plainTopLevelEndPosition(this.message);
+        if (plainEndPosition) {
+          const start = this.clonePosition();
+          this.position = plainEndPosition;
+          return {
+            val: [{
+              type: 0,
+              value: this.message,
+              location: createLocation(start, this.clonePosition())
+            }],
+            err: null
+          };
+        }
+      }
+    }
+    return this.parseMessage(0, "", false);
+  }
+  parseMessage(nestingLevel, parentArgType, expectingCloseTag) {
+    let elements = [];
+    while (!this.isEOF()) {
+      const char = this.char();
+      if (char === 123) {
+        const result = this.parseArgument(nestingLevel, expectingCloseTag);
+        if (result.err) return result;
+        elements.push(result.val);
+      } else if (char === 125 && nestingLevel > 0) break;
+      else if (char === 35 && (parentArgType === "plural" || parentArgType === "selectordinal")) {
+        const position = this.clonePosition();
+        this.bump();
+        elements.push({
+          type: 7,
+          location: createLocation(position, this.clonePosition())
+        });
+      } else if (char === 60 && !this.ignoreTag && this.peek() === 47) {
+        if (expectingCloseTag) break;
+        else return this.error(26, createLocation(this.clonePosition(), this.clonePosition()));
+      } else if (char === 60 && !this.ignoreTag && _isAlpha(this.peek() || 0)) {
+        const result = this.parseTag(nestingLevel, parentArgType);
+        if (result.err) return result;
+        elements.push(result.val);
+      } else {
+        const result = this.parseLiteral(nestingLevel, parentArgType);
+        if (result.err) return result;
+        elements.push(result.val);
+      }
+    }
+    return {
+      val: elements,
+      err: null
+    };
+  }
+  /**
+  * A tag name must start with an ASCII lower/upper case letter. The grammar is based on the
+  * [custom element name][] except that a dash is NOT always mandatory and uppercase letters
+  * are accepted:
+  *
+  * ```
+  * tag ::= "<" tagName (whitespace)* "/>" | "<" tagName (whitespace)* ">" message "</" tagName (whitespace)* ">"
+  * tagName ::= [a-z] (PENChar)*
+  * PENChar ::=
+  *     "-" | "." | [0-9] | "_" | [a-z] | [A-Z] | #xB7 | [#xC0-#xD6] | [#xD8-#xF6] | [#xF8-#x37D] |
+  *     [#x37F-#x1FFF] | [#x200C-#x200D] | [#x203F-#x2040] | [#x2070-#x218F] | [#x2C00-#x2FEF] |
+  *     [#x3001-#xD7FF] | [#xF900-#xFDCF] | [#xFDF0-#xFFFD] | [#x10000-#xEFFFF]
+  * ```
+  *
+  * [custom element name]: https://html.spec.whatwg.org/multipage/custom-elements.html#valid-custom-element-name
+  * NOTE: We're a bit more lax here since HTML technically does not allow uppercase HTML element but we do
+  * since other tag-based engines like React allow it
+  */
+  parseTag(nestingLevel, parentArgType) {
+    const startPosition = this.clonePosition();
+    this.bump();
+    const tagName = this.parseTagName();
+    this.bumpSpace();
+    if (this.bumpIf("/>")) return {
+      val: {
+        type: 0,
+        value: `<${tagName}/>`,
+        location: createLocation(startPosition, this.clonePosition())
+      },
+      err: null
+    };
+    else if (this.bumpIf(">")) {
+      const childrenResult = this.parseMessage(nestingLevel + 1, parentArgType, true);
+      if (childrenResult.err) return childrenResult;
+      const children = childrenResult.val;
+      const endTagStartPosition = this.clonePosition();
+      if (this.bumpIf("</")) {
+        if (this.isEOF() || !_isAlpha(this.char())) return this.error(23, createLocation(endTagStartPosition, this.clonePosition()));
+        const closingTagNameStartPosition = this.clonePosition();
+        if (tagName !== this.parseTagName()) return this.error(26, createLocation(closingTagNameStartPosition, this.clonePosition()));
+        this.bumpSpace();
+        if (!this.bumpIf(">")) return this.error(23, createLocation(endTagStartPosition, this.clonePosition()));
+        return {
+          val: {
+            type: 8,
+            value: tagName,
+            children,
+            location: createLocation(startPosition, this.clonePosition())
+          },
+          err: null
+        };
+      } else return this.error(27, createLocation(startPosition, this.clonePosition()));
+    } else return this.error(23, createLocation(startPosition, this.clonePosition()));
+  }
+  /**
+  * This method assumes that the caller has peeked ahead for the first tag character.
+  */
+  parseTagName() {
+    const startOffset = this.offset();
+    this.bump();
+    while (!this.isEOF() && _isPotentialElementNameChar(this.char())) this.bump();
+    return this.message.slice(startOffset, this.offset());
+  }
+  parseLiteral(nestingLevel, parentArgType) {
+    const start = this.clonePosition();
+    let value = "";
+    while (true) {
+      const parseQuoteResult = this.tryParseQuote(parentArgType);
+      if (parseQuoteResult) {
+        value += parseQuoteResult;
+        continue;
+      }
+      const parseUnquotedResult = this.tryParseUnquoted(nestingLevel, parentArgType);
+      if (parseUnquotedResult) {
+        value += parseUnquotedResult;
+        continue;
+      }
+      const parseLeftAngleResult = this.tryParseLeftAngleBracket();
+      if (parseLeftAngleResult) {
+        value += parseLeftAngleResult;
+        continue;
+      }
+      break;
+    }
+    const location = createLocation(start, this.clonePosition());
+    return {
+      val: {
+        type: 0,
+        value,
+        location
+      },
+      err: null
+    };
+  }
+  tryParseLeftAngleBracket() {
+    if (!this.isEOF() && this.char() === 60 && (this.ignoreTag || !_isAlphaOrSlash(this.peek() || 0))) {
+      this.bump();
+      return "<";
+    }
+    return null;
+  }
+  /**
+  * Starting with ICU 4.8, an ASCII apostrophe only starts quoted text if it immediately precedes
+  * a character that requires quoting (that is, "only where needed"), and works the same in
+  * nested messages as on the top level of the pattern. The new behavior is otherwise compatible.
+  */
+  tryParseQuote(parentArgType) {
+    if (this.isEOF() || this.char() !== 39) return null;
+    switch (this.peek()) {
+      case 39:
+        this.bump();
+        this.bump();
+        return "'";
+      case 123:
+      case 60:
+      case 62:
+      case 125:
+        break;
+      case 35:
+        if (parentArgType === "plural" || parentArgType === "selectordinal") break;
+        return null;
+      default:
+        return null;
+    }
+    this.bump();
+    const codePoints = [this.char()];
+    this.bump();
+    while (!this.isEOF()) {
+      const ch = this.char();
+      if (ch === 39) {
+        if (this.peek() === 39) {
+          codePoints.push(39);
+          this.bump();
+        } else {
+          this.bump();
+          break;
+        }
+      } else codePoints.push(ch);
+      this.bump();
+    }
+    return String.fromCodePoint(...codePoints);
+  }
+  tryParseUnquoted(nestingLevel, parentArgType) {
+    if (this.isEOF()) return null;
+    const ch = this.char();
+    if (ch === 60 || ch === 123 || ch === 35 && (parentArgType === "plural" || parentArgType === "selectordinal") || ch === 125 && nestingLevel > 0) return null;
+    else {
+      this.bump();
+      return String.fromCodePoint(ch);
+    }
+  }
+  parseArgument(nestingLevel, expectingCloseTag) {
+    const openingBracePosition = this.clonePosition();
+    this.bump();
+    this.bumpSpace();
+    if (this.isEOF()) return this.error(1, createLocation(openingBracePosition, this.clonePosition()));
+    if (this.char() === 125) {
+      this.bump();
+      return this.error(2, createLocation(openingBracePosition, this.clonePosition()));
+    }
+    let value = this.parseIdentifierIfPossible().value;
+    if (!value) return this.error(3, createLocation(openingBracePosition, this.clonePosition()));
+    this.bumpSpace();
+    if (this.isEOF()) return this.error(1, createLocation(openingBracePosition, this.clonePosition()));
+    switch (this.char()) {
+      case 125:
+        this.bump();
+        return {
+          val: {
+            type: 1,
+            value,
+            location: createLocation(openingBracePosition, this.clonePosition())
+          },
+          err: null
+        };
+      case 44:
+        this.bump();
+        this.bumpSpace();
+        if (this.isEOF()) return this.error(1, createLocation(openingBracePosition, this.clonePosition()));
+        return this.parseArgumentOptions(nestingLevel, expectingCloseTag, value, openingBracePosition);
+      default:
+        return this.error(3, createLocation(openingBracePosition, this.clonePosition()));
+    }
+  }
+  /**
+  * Advance the parser until the end of the identifier, if it is currently on
+  * an identifier character. Return an empty string otherwise.
+  */
+  parseIdentifierIfPossible() {
+    const startingPosition = this.clonePosition();
+    const startOffset = this.offset();
+    const value = matchIdentifierAtIndex(this.message, startOffset);
+    const endOffset = startOffset + value.length;
+    this.bumpTo(endOffset);
+    return {
+      value,
+      location: createLocation(startingPosition, this.clonePosition())
+    };
+  }
+  parseArgumentOptions(nestingLevel, expectingCloseTag, value, openingBracePosition) {
+    let typeStartPosition = this.clonePosition();
+    let argType = this.parseIdentifierIfPossible().value;
+    let typeEndPosition = this.clonePosition();
+    switch (argType) {
+      case "":
+        return this.error(4, createLocation(typeStartPosition, typeEndPosition));
+      case "number":
+      case "date":
+      case "time": {
+        this.bumpSpace();
+        let styleAndLocation = null;
+        if (this.bumpIf(",")) {
+          this.bumpSpace();
+          const styleStartPosition = this.clonePosition();
+          const result = this.parseSimpleArgStyleIfPossible();
+          if (result.err) return result;
+          const style = trimEnd(result.val);
+          if (style.length === 0) return this.error(6, createLocation(this.clonePosition(), this.clonePosition()));
+          styleAndLocation = {
+            style,
+            styleLocation: createLocation(styleStartPosition, this.clonePosition())
+          };
+        }
+        const argCloseResult = this.tryParseArgumentClose(openingBracePosition);
+        if (argCloseResult.err) return argCloseResult;
+        const location = createLocation(openingBracePosition, this.clonePosition());
+        if (styleAndLocation && styleAndLocation.style.startsWith("::")) {
+          let skeleton = trimStart(styleAndLocation.style.slice(2));
+          if (argType === "number") {
+            const result = this.parseNumberSkeletonFromString(skeleton, styleAndLocation.styleLocation);
+            if (result.err) return result;
+            return {
+              val: {
+                type: 2,
+                value,
+                location,
+                style: result.val
+              },
+              err: null
+            };
+          } else {
+            if (skeleton.length === 0) return this.error(10, location);
+            let dateTimePattern = skeleton;
+            if (this.locale) dateTimePattern = getBestPattern(skeleton, this.locale);
+            const style = {
+              type: 1,
+              pattern: dateTimePattern,
+              location: styleAndLocation.styleLocation,
+              parsedOptions: this.shouldParseSkeletons ? parseDateTimeSkeleton(dateTimePattern) : {}
+            };
+            return {
+              val: {
+                type: argType === "date" ? 3 : 4,
+                value,
+                location,
+                style
+              },
+              err: null
+            };
+          }
+        }
+        return {
+          val: {
+            type: argType === "number" ? 2 : argType === "date" ? 3 : 4,
+            value,
+            location,
+            style: styleAndLocation?.style ?? null
+          },
+          err: null
+        };
+      }
+      case "plural":
+      case "selectordinal":
+      case "select": {
+        const typeEndPosition2 = this.clonePosition();
+        this.bumpSpace();
+        if (!this.bumpIf(",")) return this.error(12, createLocation(typeEndPosition2, { ...typeEndPosition2 }));
+        this.bumpSpace();
+        let identifierAndLocation = this.parseIdentifierIfPossible();
+        let pluralOffset = 0;
+        if (argType !== "select" && identifierAndLocation.value === "offset") {
+          if (!this.bumpIf(":")) return this.error(13, createLocation(this.clonePosition(), this.clonePosition()));
+          this.bumpSpace();
+          const result = this.tryParseDecimalInteger(13, 14);
+          if (result.err) return result;
+          this.bumpSpace();
+          identifierAndLocation = this.parseIdentifierIfPossible();
+          pluralOffset = result.val;
+        }
+        const optionsResult = this.tryParsePluralOrSelectOptions(nestingLevel, argType, expectingCloseTag, identifierAndLocation);
+        if (optionsResult.err) return optionsResult;
+        const argCloseResult = this.tryParseArgumentClose(openingBracePosition);
+        if (argCloseResult.err) return argCloseResult;
+        const location = createLocation(openingBracePosition, this.clonePosition());
+        if (argType === "select") return {
+          val: {
+            type: 5,
+            value,
+            options: fromEntries(optionsResult.val),
+            location
+          },
+          err: null
+        };
+        else return {
+          val: {
+            type: 6,
+            value,
+            options: fromEntries(optionsResult.val),
+            offset: pluralOffset,
+            pluralType: argType === "plural" ? "cardinal" : "ordinal",
+            location
+          },
+          err: null
+        };
+      }
+      default:
+        return this.error(5, createLocation(typeStartPosition, typeEndPosition));
+    }
+  }
+  tryParseArgumentClose(openingBracePosition) {
+    if (this.isEOF() || this.char() !== 125) return this.error(1, createLocation(openingBracePosition, this.clonePosition()));
+    this.bump();
+    return {
+      val: true,
+      err: null
+    };
+  }
+  /**
+  * See: https://github.com/unicode-org/icu/blob/af7ed1f6d2298013dc303628438ec4abe1f16479/icu4c/source/common/messagepattern.cpp#L659
+  */
+  parseSimpleArgStyleIfPossible() {
+    let nestedBraces = 0;
+    const startPosition = this.clonePosition();
+    while (!this.isEOF()) switch (this.char()) {
+      case 39: {
+        this.bump();
+        let apostrophePosition = this.clonePosition();
+        if (!this.bumpUntil("'")) return this.error(11, createLocation(apostrophePosition, this.clonePosition()));
+        this.bump();
+        break;
+      }
+      case 123:
+        nestedBraces += 1;
+        this.bump();
+        break;
+      case 125:
+        if (nestedBraces > 0) nestedBraces -= 1;
+        else return {
+          val: this.message.slice(startPosition.offset, this.offset()),
+          err: null
+        };
+        break;
+      default:
+        this.bump();
+    }
+    return {
+      val: this.message.slice(startPosition.offset, this.offset()),
+      err: null
+    };
+  }
+  parseNumberSkeletonFromString(skeleton, location) {
+    let tokens = [];
+    try {
+      tokens = parseNumberSkeletonFromString(skeleton);
+    } catch {
+      return this.error(7, location);
+    }
+    return {
+      val: {
+        type: 0,
+        tokens,
+        location,
+        parsedOptions: this.shouldParseSkeletons ? parseNumberSkeleton(tokens) : {}
+      },
+      err: null
+    };
+  }
+  /**
+  * @param nesting_level The current nesting level of messages.
+  *     This can be positive when parsing message fragment in select or plural argument options.
+  * @param parent_arg_type The parent argument's type.
+  * @param parsed_first_identifier If provided, this is the first identifier-like selector of
+  *     the argument. It is a by-product of a previous parsing attempt.
+  * @param expecting_close_tag If true, this message is directly or indirectly nested inside
+  *     between a pair of opening and closing tags. The nested message will not parse beyond
+  *     the closing tag boundary.
+  */
+  tryParsePluralOrSelectOptions(nestingLevel, parentArgType, expectCloseTag, parsedFirstIdentifier) {
+    let hasOtherClause = false;
+    const options = [];
+    const parsedSelectors = /* @__PURE__ */ new Set();
+    let { value: selector, location: selectorLocation } = parsedFirstIdentifier;
+    while (true) {
+      if (selector.length === 0) {
+        const startPosition = this.clonePosition();
+        if (parentArgType !== "select" && this.bumpIf("=")) {
+          const result = this.tryParseDecimalInteger(16, 19);
+          if (result.err) return result;
+          selectorLocation = createLocation(startPosition, this.clonePosition());
+          selector = this.message.slice(startPosition.offset, this.offset());
+        } else break;
+      }
+      if (parsedSelectors.has(selector)) return this.error(parentArgType === "select" ? 21 : 20, selectorLocation);
+      if (selector === "other") hasOtherClause = true;
+      this.bumpSpace();
+      const openingBracePosition = this.clonePosition();
+      if (!this.bumpIf("{")) return this.error(parentArgType === "select" ? 17 : 18, createLocation(this.clonePosition(), this.clonePosition()));
+      const fragmentResult = this.parseMessage(nestingLevel + 1, parentArgType, expectCloseTag);
+      if (fragmentResult.err) return fragmentResult;
+      const argCloseResult = this.tryParseArgumentClose(openingBracePosition);
+      if (argCloseResult.err) return argCloseResult;
+      options.push([selector, {
+        value: fragmentResult.val,
+        location: createLocation(openingBracePosition, this.clonePosition())
+      }]);
+      parsedSelectors.add(selector);
+      this.bumpSpace();
+      ({ value: selector, location: selectorLocation } = this.parseIdentifierIfPossible());
+    }
+    if (options.length === 0) return this.error(parentArgType === "select" ? 15 : 16, createLocation(this.clonePosition(), this.clonePosition()));
+    if (this.requiresOtherClause && !hasOtherClause) return this.error(22, createLocation(this.clonePosition(), this.clonePosition()));
+    return {
+      val: options,
+      err: null
+    };
+  }
+  tryParseDecimalInteger(expectNumberError, invalidNumberError) {
+    let sign = 1;
+    const startingPosition = this.clonePosition();
+    if (this.bumpIf("+")) {
+    } else if (this.bumpIf("-")) sign = -1;
+    let hasDigits = false;
+    let decimal = 0;
+    while (!this.isEOF()) {
+      const ch = this.char();
+      if (ch >= 48 && ch <= 57) {
+        hasDigits = true;
+        decimal = decimal * 10 + (ch - 48);
+        this.bump();
+      } else break;
+    }
+    const location = createLocation(startingPosition, this.clonePosition());
+    if (!hasDigits) return this.error(expectNumberError, location);
+    decimal *= sign;
+    if (!Number.isSafeInteger(decimal)) return this.error(invalidNumberError, location);
+    return {
+      val: decimal,
+      err: null
+    };
+  }
+  offset() {
+    return this.position.offset;
+  }
+  isEOF() {
+    return this.offset() === this.message.length;
+  }
+  clonePosition() {
+    return {
+      offset: this.position.offset,
+      line: this.position.line,
+      column: this.position.column
+    };
+  }
+  /**
+  * Return the code point at the current position of the parser.
+  * Throws if the index is out of bound.
+  */
+  char() {
+    const offset = this.position.offset;
+    if (offset >= this.message.length) throw Error("out of bound");
+    const code = this.message.codePointAt(offset);
+    if (code === void 0) throw Error(`Offset ${offset} is at invalid UTF-16 code unit boundary`);
+    return code;
+  }
+  error(kind, location) {
+    return {
+      val: null,
+      err: {
+        kind,
+        message: this.message,
+        location
+      }
+    };
+  }
+  /** Bump the parser to the next UTF-16 code unit. */
+  bump() {
+    if (this.isEOF()) return;
+    const code = this.char();
+    if (code === 10) {
+      this.position.line += 1;
+      this.position.column = 1;
+      this.position.offset += 1;
+    } else {
+      this.position.column += 1;
+      this.position.offset += code < 65536 ? 1 : 2;
+    }
+  }
+  /**
+  * If the substring starting at the current position of the parser has
+  * the given prefix, then bump the parser to the character immediately
+  * following the prefix and return true. Otherwise, don't bump the parser
+  * and return false.
+  */
+  bumpIf(prefix) {
+    if (this.message.startsWith(prefix, this.offset())) {
+      for (let i = 0; i < prefix.length; i++) this.bump();
+      return true;
+    }
+    return false;
+  }
+  /**
+  * Bump the parser until the pattern character is found and return `true`.
+  * Otherwise bump to the end of the file and return `false`.
+  */
+  bumpUntil(pattern) {
+    const currentOffset = this.offset();
+    const index = this.message.indexOf(pattern, currentOffset);
+    if (index >= 0) {
+      this.bumpTo(index);
+      return true;
+    } else {
+      this.bumpTo(this.message.length);
+      return false;
+    }
+  }
+  /**
+  * Bump the parser to the target offset.
+  * If target offset is beyond the end of the input, bump the parser to the end of the input.
+  */
+  bumpTo(targetOffset) {
+    if (this.offset() > targetOffset) throw Error(`targetOffset ${targetOffset} must be greater than or equal to the current offset ${this.offset()}`);
+    targetOffset = Math.min(targetOffset, this.message.length);
+    while (true) {
+      const offset = this.offset();
+      if (offset === targetOffset) break;
+      if (offset > targetOffset) throw Error(`targetOffset ${targetOffset} is at invalid UTF-16 code unit boundary`);
+      this.bump();
+      if (this.isEOF()) break;
+    }
+  }
+  /** advance the parser through all whitespace to the next non-whitespace code unit. */
+  bumpSpace() {
+    while (!this.isEOF() && _isWhiteSpace(this.char())) this.bump();
+  }
+  /**
+  * Peek at the *next* Unicode codepoint in the input without advancing the parser.
+  * If the input has been exhausted, then this returns null.
+  */
+  peek() {
+    if (this.isEOF()) return null;
+    const code = this.char();
+    const offset = this.offset();
+    return this.message.charCodeAt(offset + (code >= 65536 ? 2 : 1)) ?? null;
+  }
+};
+function _isAlpha(codepoint) {
+  return codepoint >= 97 && codepoint <= 122 || codepoint >= 65 && codepoint <= 90;
+}
+function _isAlphaOrSlash(codepoint) {
+  return _isAlpha(codepoint) || codepoint === 47;
+}
+function _isPotentialElementNameChar(c) {
+  return c === 45 || c === 46 || c >= 48 && c <= 57 || c === 95 || c >= 97 && c <= 122 || c >= 65 && c <= 90 || c == 183 || c >= 192 && c <= 214 || c >= 216 && c <= 246 || c >= 248 && c <= 893 || c >= 895 && c <= 8191 || c >= 8204 && c <= 8205 || c >= 8255 && c <= 8256 || c >= 8304 && c <= 8591 || c >= 11264 && c <= 12271 || c >= 12289 && c <= 55295 || c >= 63744 && c <= 64975 || c >= 65008 && c <= 65533 || c >= 65536 && c <= 983039;
+}
+function _isWhiteSpace(c) {
+  return c >= 9 && c <= 13 || c === 32 || c === 133 || c >= 8206 && c <= 8207 || c === 8232 || c === 8233;
+}
+function pruneLocation(els) {
+  els.forEach((el) => {
+    delete el.location;
+    if (isSelectElement(el) || isPluralElement(el)) for (const k in el.options) {
+      delete el.options[k].location;
+      pruneLocation(el.options[k].value);
+    }
+    else if (isNumberElement(el) && isNumberSkeleton(el.style)) delete el.style.location;
+    else if ((isDateElement(el) || isTimeElement(el)) && isDateTimeSkeleton(el.style)) delete el.style.location;
+    else if (isTagElement(el)) pruneLocation(el.children);
+  });
+}
+function parse(message, opts = {}) {
+  opts = {
+    shouldParseSkeletons: true,
+    requiresOtherClause: true,
+    ...opts
+  };
+  const result = new Parser(message, opts).parse();
+  if (result.err) {
+    const error2 = SyntaxError(ErrorKind[result.err.kind]);
+    error2.location = result.err.location;
+    error2.originalMessage = result.err.message;
+    throw error2;
+  }
+  if (!opts?.captureLocation) pruneLocation(result.val);
+  return result.val;
+}
+
+// node_modules/.pnpm/intl-messageformat@12.1.2/node_modules/intl-messageformat/index.js
+var ErrorCode = /* @__PURE__ */ (function(ErrorCode2) {
+  ErrorCode2["MISSING_VALUE"] = "MISSING_VALUE";
+  ErrorCode2["INVALID_VALUE"] = "INVALID_VALUE";
+  ErrorCode2["MISSING_INTL_API"] = "MISSING_INTL_API";
+  return ErrorCode2;
+})({});
+var FormatError = class extends Error {
+  constructor(msg, code, originalMessage) {
+    super(msg);
+    this.code = code;
+    this.originalMessage = originalMessage;
+  }
+  toString() {
+    return `[formatjs Error: ${this.code}] ${this.message}`;
+  }
+};
+var InvalidValueError = class extends FormatError {
+  constructor(variableId, value, options, originalMessage) {
+    super(`Invalid values for "${variableId}": "${value}". Options are "${Object.keys(options).join('", "')}"`, "INVALID_VALUE", originalMessage);
+  }
+};
+var InvalidValueTypeError = class extends FormatError {
+  constructor(value, type, originalMessage) {
+    super(`Value for "${value}" must be of type ${type}`, "INVALID_VALUE", originalMessage);
+  }
+};
+var MissingValueError = class extends FormatError {
+  constructor(variableId, originalMessage) {
+    super(`The intl string context variable "${variableId}" was not provided to the string "${originalMessage}"`, "MISSING_VALUE", originalMessage);
+  }
+};
+function mergeLiteral(parts) {
+  if (parts.length < 2) return parts;
+  return parts.reduce((all, part) => {
+    const lastPart = all[all.length - 1];
+    if (!lastPart || lastPart.type !== 0 || part.type !== 0) all.push(part);
+    else lastPart.value += part.value;
+    return all;
+  }, []);
+}
+function isFormatXMLElementFn(el) {
+  return typeof el === "function";
+}
+function formatToParts(els, locales, formatters, formats, values, currentPluralValue, originalMessage) {
+  if (els.length === 1 && isLiteralElement(els[0])) return [{
+    type: 0,
+    value: els[0].value
+  }];
+  const result = [];
+  for (const el of els) {
+    if (isLiteralElement(el)) {
+      result.push({
+        type: 0,
+        value: el.value
+      });
+      continue;
+    }
+    if (isPoundElement(el)) {
+      if (typeof currentPluralValue === "number") result.push({
+        type: 0,
+        value: formatters.getNumberFormat(locales).format(currentPluralValue)
+      });
+      continue;
+    }
+    const { value: varName } = el;
+    if (!(values && varName in values)) throw new MissingValueError(varName, originalMessage);
+    let value = values[varName];
+    if (isArgumentElement(el)) {
+      if (!value || typeof value === "string" || typeof value === "number" || typeof value === "bigint") value = typeof value === "string" || typeof value === "number" || typeof value === "bigint" ? String(value) : "";
+      result.push({
+        type: typeof value === "string" ? 0 : 1,
+        value
+      });
+      continue;
+    }
+    if (isDateElement(el)) {
+      const style = typeof el.style === "string" ? formats.date[el.style] : isDateTimeSkeleton(el.style) ? el.style.parsedOptions : void 0;
+      result.push({
+        type: 0,
+        value: formatters.getDateTimeFormat(locales, style).format(value)
+      });
+      continue;
+    }
+    if (isTimeElement(el)) {
+      const style = typeof el.style === "string" ? formats.time[el.style] : isDateTimeSkeleton(el.style) ? el.style.parsedOptions : formats.time.medium;
+      result.push({
+        type: 0,
+        value: formatters.getDateTimeFormat(locales, style).format(value)
+      });
+      continue;
+    }
+    if (isNumberElement(el)) {
+      const style = typeof el.style === "string" ? formats.number[el.style] : isNumberSkeleton(el.style) ? el.style.parsedOptions : void 0;
+      if (style && style.scale) {
+        const scale = style.scale || 1;
+        if (typeof value === "bigint") {
+          if (!Number.isInteger(scale)) throw new TypeError(`Cannot apply fractional scale ${scale} to bigint value. Scale must be an integer when formatting bigint.`);
+          value = value * BigInt(scale);
+        } else value = value * scale;
+      }
+      result.push({
+        type: 0,
+        value: formatters.getNumberFormat(locales, style).format(value)
+      });
+      continue;
+    }
+    if (isTagElement(el)) {
+      const { children, value: value2 } = el;
+      const formatFn = values[value2];
+      if (!isFormatXMLElementFn(formatFn)) throw new InvalidValueTypeError(value2, "function", originalMessage);
+      let chunks = formatFn(formatToParts(children, locales, formatters, formats, values, currentPluralValue).map((p) => p.value));
+      if (!Array.isArray(chunks)) chunks = [chunks];
+      result.push(...chunks.map((c) => {
+        return {
+          type: typeof c === "string" ? 0 : 1,
+          value: c
+        };
+      }));
+    }
+    if (isSelectElement(el)) {
+      const key = value;
+      const opt = (Object.prototype.hasOwnProperty.call(el.options, key) ? el.options[key] : void 0) || el.options.other;
+      if (!opt) throw new InvalidValueError(el.value, value, Object.keys(el.options), originalMessage);
+      result.push(...formatToParts(opt.value, locales, formatters, formats, values));
+      continue;
+    }
+    if (isPluralElement(el)) {
+      const exactKey = `=${value}`;
+      let opt = Object.prototype.hasOwnProperty.call(el.options, exactKey) ? el.options[exactKey] : void 0;
+      if (!opt) {
+        if (!Intl.PluralRules) throw new FormatError(`Intl.PluralRules is not available in this environment.
+Try polyfilling it using "@formatjs/intl-pluralrules"
+`, "MISSING_INTL_API", originalMessage);
+        const numericValue2 = typeof value === "bigint" ? Number(value) : value;
+        const rule = formatters.getPluralRules(locales, { type: el.pluralType }).select(numericValue2 - (el.offset || 0));
+        opt = (Object.prototype.hasOwnProperty.call(el.options, rule) ? el.options[rule] : void 0) || el.options.other;
+      }
+      if (!opt) throw new InvalidValueError(el.value, value, Object.keys(el.options), originalMessage);
+      const numericValue = typeof value === "bigint" ? Number(value) : value;
+      result.push(...formatToParts(opt.value, locales, formatters, formats, values, numericValue - (el.offset || 0)));
+      continue;
+    }
+  }
+  return mergeLiteral(result);
+}
+function mergeConfig(c1, c2) {
+  if (!c2) return c1;
+  return {
+    ...c1,
+    ...c2,
+    ...Object.keys(c1).reduce((all, k) => {
+      all[k] = {
+        ...c1[k],
+        ...c2[k]
+      };
+      return all;
+    }, {})
+  };
+}
+function mergeConfigs(defaultConfig, configs) {
+  if (!configs) return defaultConfig;
+  return Object.keys(defaultConfig).reduce((all, k) => {
+    all[k] = mergeConfig(defaultConfig[k], configs[k]);
+    return all;
+  }, { ...defaultConfig });
+}
+function createFastMemoizeCache(store) {
+  return { create() {
+    return {
+      get(key) {
+        return store[key];
+      },
+      set(key, value) {
+        store[key] = value;
+      }
+    };
+  } };
+}
+function createDefaultFormatters(cache = {
+  number: {},
+  dateTime: {},
+  pluralRules: {}
+}) {
+  return {
+    getNumberFormat: memoize((...args) => new Intl.NumberFormat(...args), {
+      cache: createFastMemoizeCache(cache.number),
+      strategy: strategies.variadic
+    }),
+    getDateTimeFormat: memoize((...args) => new Intl.DateTimeFormat(...args), {
+      cache: createFastMemoizeCache(cache.dateTime),
+      strategy: strategies.variadic
+    }),
+    getPluralRules: memoize((...args) => new Intl.PluralRules(...args), {
+      cache: createFastMemoizeCache(cache.pluralRules),
+      strategy: strategies.variadic
+    })
+  };
+}
+var IntlMessageFormat = class IntlMessageFormat2 {
+  constructor(message, locales = IntlMessageFormat2.defaultLocale, overrideFormats, opts) {
+    this.formatterCache = {
+      number: {},
+      dateTime: {},
+      pluralRules: {}
+    };
+    this.format = ((values) => {
+      const parts = this.formatToParts(values);
+      if (parts.length === 1) return parts[0].value;
+      const result = parts.reduce((all, part) => {
+        if (!all.length || part.type !== 0 || typeof all[all.length - 1] !== "string") all.push(part.value);
+        else all[all.length - 1] += part.value;
+        return all;
+      }, []);
+      if (result.length <= 1) return result[0] || "";
+      return result;
+    });
+    this.formatToParts = ((values) => formatToParts(this.ast, this.locales, this.formatters, this.formats, values, void 0, this.message));
+    this.resolvedOptions = () => ({ locale: this.resolvedLocale?.toString() || Intl.NumberFormat.supportedLocalesOf(this.locales)[0] });
+    this.getAst = () => this.ast;
+    this.locales = locales;
+    this.resolvedLocale = IntlMessageFormat2.resolveLocale(locales);
+    if (typeof message === "string") {
+      this.message = message;
+      if (!IntlMessageFormat2.__parse) throw new TypeError("IntlMessageFormat.__parse must be set to process `message` of type `string`");
+      const { ...parseOpts } = opts || {};
+      this.ast = IntlMessageFormat2.__parse(message, {
+        ...parseOpts,
+        locale: this.resolvedLocale
+      });
+    } else this.ast = message;
+    if (!Array.isArray(this.ast)) throw new TypeError("A message must be provided as a String or AST.");
+    this.formats = mergeConfigs(IntlMessageFormat2.formats, overrideFormats);
+    this.formatters = opts && opts.formatters || createDefaultFormatters(this.formatterCache);
+  }
+  static {
+    this.memoizedDefaultLocale = null;
+  }
+  static get defaultLocale() {
+    if (!IntlMessageFormat2.memoizedDefaultLocale) IntlMessageFormat2.memoizedDefaultLocale = new Intl.NumberFormat().resolvedOptions().locale;
+    return IntlMessageFormat2.memoizedDefaultLocale;
+  }
+  static {
+    this.resolveLocale = (locales) => {
+      if (typeof Intl.Locale === "undefined") return;
+      const supportedLocales = Intl.NumberFormat.supportedLocalesOf(locales);
+      if (supportedLocales.length > 0) return new Intl.Locale(supportedLocales[0]);
+      return new Intl.Locale(typeof locales === "string" ? locales : locales[0]);
+    };
+  }
+  static {
+    this.__parse = parse;
+  }
+  static {
+    this.formats = {
+      number: {
+        integer: { maximumFractionDigits: 0 },
+        currency: { style: "currency" },
+        percent: { style: "percent" }
+      },
+      date: {
+        short: {
+          month: "numeric",
+          day: "numeric",
+          year: "2-digit"
+        },
+        medium: {
+          month: "short",
+          day: "numeric",
+          year: "numeric"
+        },
+        long: {
+          month: "long",
+          day: "numeric",
+          year: "numeric"
+        },
+        full: {
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+          year: "numeric"
+        }
+      },
+      time: {
+        short: {
+          hour: "numeric",
+          minute: "numeric"
+        },
+        medium: {
+          hour: "numeric",
+          minute: "numeric",
+          second: "numeric"
+        },
+        long: {
+          hour: "numeric",
+          minute: "numeric",
+          second: "numeric",
+          timeZoneName: "short"
+        },
+        full: {
+          hour: "numeric",
+          minute: "numeric",
+          second: "numeric",
+          timeZoneName: "short"
+        }
+      }
+    };
+  }
+};
+
+// node_modules/.pnpm/@formatjs+intl@6.1.2/node_modules/@formatjs/intl/index.js
+var IntlError = class IntlError2 extends Error {
+  constructor(code, message, exception) {
+    const err = exception ? exception instanceof Error ? exception : new Error(String(exception)) : void 0;
+    super(`[@formatjs/intl Error ${code}] ${message}
+${err ? `
+${err.message}
+${err.stack}` : ""}`);
+    this.code = code;
+    if (typeof Error.captureStackTrace === "function") Error.captureStackTrace(this, IntlError2);
+  }
+};
+var UnsupportedFormatterError = class extends IntlError {
+  constructor(message, exception) {
+    super("UNSUPPORTED_FORMATTER", message, exception);
+  }
+};
+var InvalidConfigError = class extends IntlError {
+  constructor(message, exception) {
+    super("INVALID_CONFIG", message, exception);
+  }
+};
+var MissingDataError = class extends IntlError {
+  constructor(message, exception) {
+    super("MISSING_DATA", message, exception);
+  }
+};
+var IntlFormatError = class extends IntlError {
+  constructor(message, locale, exception) {
+    super("FORMAT_ERROR", `${message}
+Locale: ${locale}
+`, exception);
+    this.locale = locale;
+  }
+};
+var MessageFormatError = class extends IntlFormatError {
+  constructor(message, locale, descriptor, exception) {
+    super(`${message}
+MessageID: ${descriptor?.id}
+Default Message: ${descriptor?.defaultMessage}
+Description: ${descriptor?.description}
+`, locale, exception);
+    this.descriptor = descriptor;
+    this.locale = locale;
+  }
+};
+var MissingTranslationError = class extends IntlError {
+  constructor(descriptor, locale) {
+    super("MISSING_TRANSLATION", `Missing message: "${descriptor.id}" for locale "${locale}", using ${descriptor.defaultMessage ? `default message (${typeof descriptor.defaultMessage === "string" ? descriptor.defaultMessage : descriptor.defaultMessage.map((e) => e.value ?? JSON.stringify(e)).join()})` : "id"} as fallback.`);
+    this.descriptor = descriptor;
+  }
+};
+function invariant(condition, message, Err = Error) {
+  if (!condition) throw new Err(message);
+}
+function filterProps(props, allowlist, defaults2 = {}) {
+  return allowlist.reduce((filtered, name) => {
+    if (name in props) filtered[name] = props[name];
+    else if (name in defaults2) filtered[name] = defaults2[name];
+    return filtered;
+  }, {});
+}
+var defaultErrorHandler = (error2) => {
+  if (process.env.NODE_ENV !== "production") console.error(error2);
+};
+var defaultWarnHandler = (warning2) => {
+  if (process.env.NODE_ENV !== "production") console.warn(warning2);
+};
+var DEFAULT_INTL_CONFIG = {
+  formats: {},
+  messages: {},
+  timeZone: void 0,
+  defaultLocale: "en",
+  defaultFormats: {},
+  fallbackOnEmptyString: true,
+  onError: defaultErrorHandler,
+  onWarn: defaultWarnHandler
+};
+function createIntlCache() {
+  return {
+    dateTime: {},
+    number: {},
+    message: {},
+    duration: {},
+    relativeTime: {},
+    pluralRules: {},
+    list: {},
+    displayNames: {}
+  };
+}
+function createFastMemoizeCache2(store) {
+  return { create() {
+    return {
+      get(key) {
+        return store[key];
+      },
+      set(key, value) {
+        store[key] = value;
+      }
+    };
+  } };
+}
+function createFormatters(cache = createIntlCache()) {
+  const RelativeTimeFormat = Intl.RelativeTimeFormat;
+  const ListFormat = Intl.ListFormat;
+  const DisplayNames = Intl.DisplayNames;
+  const getDateTimeFormat = memoize((...args) => new Intl.DateTimeFormat(...args), {
+    cache: createFastMemoizeCache2(cache.dateTime),
+    strategy: strategies.variadic
+  });
+  const getNumberFormat = memoize((...args) => new Intl.NumberFormat(...args), {
+    cache: createFastMemoizeCache2(cache.number),
+    strategy: strategies.variadic
+  });
+  const getPluralRules = memoize((...args) => new Intl.PluralRules(...args), {
+    cache: createFastMemoizeCache2(cache.pluralRules),
+    strategy: strategies.variadic
+  });
+  return {
+    getDateTimeFormat,
+    getNumberFormat,
+    getMessageFormat: memoize((message, locales, overrideFormats, opts) => new IntlMessageFormat(message, locales, overrideFormats, {
+      formatters: {
+        getNumberFormat,
+        getDateTimeFormat,
+        getPluralRules
+      },
+      ...opts
+    }), {
+      cache: createFastMemoizeCache2(cache.message),
+      strategy: strategies.variadic
+    }),
+    getDurationFormat: memoize((...args) => new Intl.DurationFormat(...args), {
+      cache: createFastMemoizeCache2(cache.duration),
+      strategy: strategies.variadic
+    }),
+    getRelativeTimeFormat: memoize((...args) => new RelativeTimeFormat(...args), {
+      cache: createFastMemoizeCache2(cache.relativeTime),
+      strategy: strategies.variadic
+    }),
+    getPluralRules,
+    getListFormat: memoize((...args) => new ListFormat(...args), {
+      cache: createFastMemoizeCache2(cache.list),
+      strategy: strategies.variadic
+    }),
+    getDisplayNames: memoize((...args) => new DisplayNames(...args), {
+      cache: createFastMemoizeCache2(cache.displayNames),
+      strategy: strategies.variadic
+    })
+  };
+}
+function getNamedFormat(formats, type, name, onError) {
+  const formatType = formats && formats[type];
+  let format;
+  if (formatType) format = formatType[name];
+  if (format) return format;
+  onError(new UnsupportedFormatterError(`No ${type} format named: ${name}`));
+}
+function setTimeZoneInOptions(opts, timeZone) {
+  return Object.keys(opts).reduce((all, k) => {
+    all[k] = {
+      timeZone,
+      ...opts[k]
+    };
+    return all;
+  }, {});
+}
+function deepMergeOptions(opts1, opts2) {
+  return Object.keys({
+    ...opts1,
+    ...opts2
+  }).reduce((all, k) => {
+    all[k] = {
+      ...opts1[k],
+      ...opts2[k]
+    };
+    return all;
+  }, {});
+}
+function deepMergeFormatsAndSetTimeZone(f1, timeZone) {
+  if (!timeZone) return f1;
+  const mfFormats = IntlMessageFormat.formats;
+  return {
+    ...mfFormats,
+    ...f1,
+    date: deepMergeOptions(setTimeZoneInOptions(mfFormats.date, timeZone), setTimeZoneInOptions(f1.date || {}, timeZone)),
+    time: deepMergeOptions(setTimeZoneInOptions(mfFormats.time, timeZone), setTimeZoneInOptions(f1.time || {}, timeZone))
+  };
+}
+function getMessageDescriptorContext(messageDescriptor) {
+  const { defaultMessage } = messageDescriptor;
+  try {
+    return defaultMessage !== void 0 ? `
+Default Message: ${typeof defaultMessage === "string" ? defaultMessage : JSON.stringify(defaultMessage)}` : `
+Message Descriptor: ${JSON.stringify(messageDescriptor)}`;
+  } catch {
+    return "";
+  }
+}
+var formatMessage = ({ locale, formats, messages, defaultLocale, defaultFormats, fallbackOnEmptyString, onError, timeZone, defaultRichTextElements }, state, messageDescriptor = { id: "" }, values, opts) => {
+  const { id: msgId, defaultMessage } = messageDescriptor;
+  if (!msgId) invariant(false, `[@formatjs/intl] An \`id\` must be provided to format a message. You can either:
+1. Configure your build toolchain with [babel-plugin-formatjs](https://formatjs.github.io/docs/tooling/babel-plugin)
+or [@formatjs/ts-transformer](https://formatjs.github.io/docs/tooling/ts-transformer) OR
+2. Configure your \`eslint\` config to include [eslint-plugin-formatjs](https://formatjs.github.io/docs/tooling/linter#enforce-id)
+to autofix this issue${getMessageDescriptorContext(messageDescriptor)}`);
+  const id = String(msgId);
+  const message = messages && Object.prototype.hasOwnProperty.call(messages, id) && messages[id];
+  if (Array.isArray(message) && message.length === 1 && message[0].type === TYPE.literal) return message[0].value;
+  values = {
+    ...defaultRichTextElements,
+    ...values
+  };
+  formats = deepMergeFormatsAndSetTimeZone(formats, timeZone);
+  defaultFormats = deepMergeFormatsAndSetTimeZone(defaultFormats, timeZone);
+  if (!message) {
+    if (fallbackOnEmptyString === false && message === "") return message;
+    if (!defaultMessage || locale && locale.toLowerCase() !== defaultLocale.toLowerCase()) onError(new MissingTranslationError(messageDescriptor, locale));
+    if (defaultMessage) try {
+      return state.getMessageFormat(defaultMessage, defaultLocale, defaultFormats, opts).format(values);
+    } catch (e) {
+      onError(new MessageFormatError(`Error formatting default message for: "${id}", rendering default message verbatim`, locale, messageDescriptor, e));
+      return typeof defaultMessage === "string" ? defaultMessage : id;
+    }
+    return id;
+  }
+  try {
+    return state.getMessageFormat(message, locale, formats, {
+      formatters: state,
+      ...opts
+    }).format(values);
+  } catch (e) {
+    onError(new MessageFormatError(`Error formatting message: "${id}", using ${defaultMessage ? "default message" : "id"} as fallback.`, locale, messageDescriptor, e));
+  }
+  if (defaultMessage) try {
+    return state.getMessageFormat(defaultMessage, defaultLocale, defaultFormats, opts).format(values);
+  } catch (e) {
+    onError(new MessageFormatError(`Error formatting the default message for: "${id}", rendering message verbatim`, locale, messageDescriptor, e));
+  }
+  if (typeof message === "string") return message;
+  if (typeof defaultMessage === "string") return defaultMessage;
+  return id;
+};
+var DATE_TIME_FORMAT_OPTIONS = [
+  "formatMatcher",
+  "timeZone",
+  "hour12",
+  "weekday",
+  "era",
+  "year",
+  "month",
+  "day",
+  "hour",
+  "minute",
+  "second",
+  "timeZoneName",
+  "hourCycle",
+  "dateStyle",
+  "timeStyle",
+  "calendar",
+  "numberingSystem",
+  "fractionalSecondDigits"
+];
+function getFormatter$3({ locale, formats, onError, timeZone }, type, getDateTimeFormat, options = {}) {
+  const { format } = options;
+  const defaults2 = {
+    ...timeZone && { timeZone },
+    ...format && getNamedFormat(formats, type, format, onError)
+  };
+  let filteredOptions = filterProps(options, DATE_TIME_FORMAT_OPTIONS, defaults2);
+  if (type === "time" && !filteredOptions.hour && !filteredOptions.minute && !filteredOptions.second && !filteredOptions.timeStyle && !filteredOptions.dateStyle) filteredOptions = {
+    ...filteredOptions,
+    hour: "numeric",
+    minute: "numeric"
+  };
+  return getDateTimeFormat(locale, filteredOptions);
+}
+function formatDate(config, getDateTimeFormat, value, options = {}) {
+  const date = typeof value === "string" ? new Date(value || 0) : value;
+  try {
+    return getFormatter$3(config, "date", getDateTimeFormat, options).format(date);
+  } catch (e) {
+    config.onError(new IntlFormatError("Error formatting date.", config.locale, e));
+  }
+  return String(date);
+}
+function formatTime(config, getDateTimeFormat, value, options = {}) {
+  const date = typeof value === "string" ? new Date(value || 0) : value;
+  try {
+    return getFormatter$3(config, "time", getDateTimeFormat, options).format(date);
+  } catch (e) {
+    config.onError(new IntlFormatError("Error formatting time.", config.locale, e));
+  }
+  return String(date);
+}
+function formatDateTimeRange(config, getDateTimeFormat, from, to, options = {}) {
+  const fromDate = typeof from === "string" ? new Date(from || 0) : from;
+  const toDate = typeof to === "string" ? new Date(to || 0) : to;
+  try {
+    return getFormatter$3(config, "dateTimeRange", getDateTimeFormat, options).formatRange(fromDate, toDate);
+  } catch (e) {
+    config.onError(new IntlFormatError("Error formatting date time range.", config.locale, e));
+  }
+  return String(fromDate);
+}
+function formatDateToParts(config, getDateTimeFormat, value, options = {}) {
+  const date = typeof value === "string" ? new Date(value || 0) : value;
+  try {
+    return getFormatter$3(config, "date", getDateTimeFormat, options).formatToParts(date);
+  } catch (e) {
+    config.onError(new IntlFormatError("Error formatting date.", config.locale, e));
+  }
+  return [];
+}
+function formatTimeToParts(config, getDateTimeFormat, value, options = {}) {
+  const date = typeof value === "string" ? new Date(value || 0) : value;
+  try {
+    return getFormatter$3(config, "time", getDateTimeFormat, options).formatToParts(date);
+  } catch (e) {
+    config.onError(new IntlFormatError("Error formatting time.", config.locale, e));
+  }
+  return [];
+}
+var DURATION_FORMAT_OPTIONS = [
+  "style",
+  "numberingSystem",
+  "years",
+  "yearsDisplay",
+  "months",
+  "monthsDisplay",
+  "weeks",
+  "weeksDisplay",
+  "days",
+  "daysDisplay",
+  "hours",
+  "hoursDisplay",
+  "minutes",
+  "minutesDisplay",
+  "seconds",
+  "secondsDisplay",
+  "milliseconds",
+  "millisecondsDisplay",
+  "microseconds",
+  "microsecondsDisplay",
+  "nanoseconds",
+  "nanosecondsDisplay",
+  "fractionalDigits"
+];
+function getFormatter$2({ locale, formats, onError }, getDurationFormat, options) {
+  if (!Intl.DurationFormat) {
+    onError(new FormatError('Intl.DurationFormat is not available in this environment.\nTry polyfilling it using "@formatjs/intl-durationformat"', ErrorCode.MISSING_INTL_API));
+    return;
+  }
+  const { format } = options;
+  const defaults2 = format && getNamedFormat(formats, "duration", format, onError) || {};
+  return getDurationFormat(locale, filterProps(options, DURATION_FORMAT_OPTIONS, defaults2));
+}
+function formatDuration(config, getDurationFormat, value, options = {}) {
+  try {
+    return getFormatter$2(config, getDurationFormat, options)?.format(value) ?? "";
+  } catch (e) {
+    config.onError(new IntlFormatError("Error formatting duration.", config.locale, e));
+  }
+  return "";
+}
+function formatDurationToParts(config, getDurationFormat, value, options = {}) {
+  try {
+    return getFormatter$2(config, getDurationFormat, options)?.formatToParts(value) ?? [];
+  } catch (e) {
+    config.onError(new IntlFormatError("Error formatting duration.", config.locale, e));
+  }
+  return [];
+}
+var DISPLAY_NAMES_OPTONS = [
+  "style",
+  "type",
+  "fallback",
+  "languageDisplay"
+];
+function formatDisplayName({ locale, onError }, getDisplayNames, value, options) {
+  if (!Intl.DisplayNames) onError(new FormatError(`Intl.DisplayNames is not available in this environment.
+Try polyfilling it using "@formatjs/intl-displaynames"
+`, ErrorCode.MISSING_INTL_API));
+  const filteredOptions = filterProps(options, DISPLAY_NAMES_OPTONS);
+  try {
+    return getDisplayNames(locale, filteredOptions).of(value);
+  } catch (e) {
+    onError(new IntlFormatError("Error formatting display name.", locale, e));
+  }
+}
+var LIST_FORMAT_OPTIONS = ["type", "style"];
+var now = Date.now();
+function generateToken(i) {
+  return `${now}_${i}_${now}`;
+}
+function formatList(opts, getListFormat, values, options = {}) {
+  const results = formatListToParts(opts, getListFormat, values, options).reduce((all, el) => {
+    const val = el.value;
+    if (typeof val !== "string") all.push(val);
+    else if (typeof all[all.length - 1] === "string") all[all.length - 1] += val;
+    else all.push(val);
+    return all;
+  }, []);
+  return results.length === 1 ? results[0] : results.length === 0 ? "" : results;
+}
+function formatListToParts({ locale, onError }, getListFormat, values, options = {}) {
+  if (!Intl.ListFormat) onError(new FormatError(`Intl.ListFormat is not available in this environment.
+Try polyfilling it using "@formatjs/intl-listformat"
+`, ErrorCode.MISSING_INTL_API));
+  const filteredOptions = filterProps(options, LIST_FORMAT_OPTIONS);
+  try {
+    const richValues = {};
+    const serializedValues = Array.from(values).map((v, i) => {
+      if (typeof v === "object" && v !== null) {
+        const id = generateToken(i);
+        richValues[id] = v;
+        return id;
+      }
+      return String(v);
+    });
+    return getListFormat(locale, filteredOptions).formatToParts(serializedValues).map((part) => part.type === "literal" ? part : {
+      ...part,
+      value: richValues[part.value] || part.value
+    });
+  } catch (e) {
+    onError(new IntlFormatError("Error formatting list.", locale, e));
+  }
+  return values;
+}
+var PLURAL_FORMAT_OPTIONS = ["type"];
+function formatPlural({ locale, onError }, getPluralRules, value, options = {}) {
+  if (!Intl.PluralRules) onError(new FormatError(`Intl.PluralRules is not available in this environment.
+Try polyfilling it using "@formatjs/intl-pluralrules"
+`, ErrorCode.MISSING_INTL_API));
+  const filteredOptions = filterProps(options, PLURAL_FORMAT_OPTIONS);
+  try {
+    return getPluralRules(locale, filteredOptions).select(value);
+  } catch (e) {
+    onError(new IntlFormatError("Error formatting plural.", locale, e));
+  }
+  return "other";
+}
+var RELATIVE_TIME_FORMAT_OPTIONS = ["numeric", "style"];
+function getFormatter$1({ locale, formats, onError }, getRelativeTimeFormat, options = {}) {
+  const { format } = options;
+  const defaults2 = !!format && getNamedFormat(formats, "relative", format, onError) || {};
+  return getRelativeTimeFormat(locale, filterProps(options, RELATIVE_TIME_FORMAT_OPTIONS, defaults2));
+}
+function formatRelativeTime(config, getRelativeTimeFormat, value, unit, options = {}) {
+  if (!unit) unit = "second";
+  if (!Intl.RelativeTimeFormat) config.onError(new FormatError(`Intl.RelativeTimeFormat is not available in this environment.
+Try polyfilling it using "@formatjs/intl-relativetimeformat"
+`, ErrorCode.MISSING_INTL_API));
+  try {
+    return getFormatter$1(config, getRelativeTimeFormat, options).format(value, unit);
+  } catch (e) {
+    config.onError(new IntlFormatError("Error formatting relative time.", config.locale, e));
+  }
+  return String(value);
+}
+var NUMBER_FORMAT_OPTIONS = [
+  "style",
+  "currency",
+  "unit",
+  "unitDisplay",
+  "useGrouping",
+  "minimumIntegerDigits",
+  "minimumFractionDigits",
+  "maximumFractionDigits",
+  "minimumSignificantDigits",
+  "maximumSignificantDigits",
+  "compactDisplay",
+  "currencyDisplay",
+  "currencySign",
+  "notation",
+  "signDisplay",
+  "unit",
+  "unitDisplay",
+  "numberingSystem",
+  "trailingZeroDisplay",
+  "roundingPriority",
+  "roundingIncrement",
+  "roundingMode"
+];
+function getFormatter({ locale, formats, onError }, getNumberFormat, options = {}) {
+  const { format } = options;
+  const defaults2 = format && getNamedFormat(formats, "number", format, onError) || {};
+  return getNumberFormat(locale, filterProps(options, NUMBER_FORMAT_OPTIONS, defaults2));
+}
+function formatNumber(config, getNumberFormat, value, options = {}) {
+  try {
+    return getFormatter(config, getNumberFormat, options).format(value);
+  } catch (e) {
+    config.onError(new IntlFormatError("Error formatting number.", config.locale, e));
+  }
+  return String(value);
+}
+function formatNumberToParts(config, getNumberFormat, value, options = {}) {
+  try {
+    return getFormatter(config, getNumberFormat, options).formatToParts(value);
+  } catch (e) {
+    config.onError(new IntlFormatError("Error formatting number.", config.locale, e));
+  }
+  return [];
+}
+function messagesContainString(messages) {
+  return typeof (messages ? messages[Object.keys(messages)[0]] : void 0) === "string";
+}
+function verifyConfigMessages(config) {
+  if (config.onWarn && config.defaultRichTextElements && messagesContainString(config.messages || {})) config.onWarn(`[@formatjs/intl] "defaultRichTextElements" was specified but "message" was not pre-compiled. 
+Please consider using "@formatjs/cli" to pre-compile your messages for performance.
+For more details see https://formatjs.github.io/docs/getting-started/message-distribution`);
+}
+function createIntl(config, cache) {
+  const formatters = createFormatters(cache);
+  const resolvedConfig = {
+    ...DEFAULT_INTL_CONFIG,
+    ...config
+  };
+  const { locale, defaultLocale, onError } = resolvedConfig;
+  if (!locale) {
+    if (onError) onError(new InvalidConfigError(`"locale" was not configured, using "${defaultLocale}" as fallback. See https://formatjs.github.io/docs/react-intl/api#intlshape for more details`));
+    resolvedConfig.locale = resolvedConfig.defaultLocale || "en";
+  } else if (!Intl.NumberFormat.supportedLocalesOf(locale).length && onError) onError(new MissingDataError(`Missing locale data for locale: "${locale}" in Intl.NumberFormat. Using default locale: "${defaultLocale}" as fallback. See https://formatjs.github.io/docs/react-intl#runtime-requirements for more details`));
+  else if (!Intl.DateTimeFormat.supportedLocalesOf(locale).length && onError) onError(new MissingDataError(`Missing locale data for locale: "${locale}" in Intl.DateTimeFormat. Using default locale: "${defaultLocale}" as fallback. See https://formatjs.github.io/docs/react-intl#runtime-requirements for more details`));
+  verifyConfigMessages(resolvedConfig);
+  return {
+    ...resolvedConfig,
+    formatters,
+    formatNumber: formatNumber.bind(null, resolvedConfig, formatters.getNumberFormat),
+    formatNumberToParts: formatNumberToParts.bind(null, resolvedConfig, formatters.getNumberFormat),
+    formatDuration: formatDuration.bind(null, resolvedConfig, formatters.getDurationFormat),
+    formatDurationToParts: formatDurationToParts.bind(null, resolvedConfig, formatters.getDurationFormat),
+    formatRelativeTime: formatRelativeTime.bind(null, resolvedConfig, formatters.getRelativeTimeFormat),
+    formatDate: formatDate.bind(null, resolvedConfig, formatters.getDateTimeFormat),
+    formatDateToParts: formatDateToParts.bind(null, resolvedConfig, formatters.getDateTimeFormat),
+    formatTime: formatTime.bind(null, resolvedConfig, formatters.getDateTimeFormat),
+    formatDateTimeRange: formatDateTimeRange.bind(null, resolvedConfig, formatters.getDateTimeFormat),
+    formatTimeToParts: formatTimeToParts.bind(null, resolvedConfig, formatters.getDateTimeFormat),
+    formatPlural: formatPlural.bind(null, resolvedConfig, formatters.getPluralRules),
+    formatMessage: formatMessage.bind(null, resolvedConfig, formatters),
+    $t: formatMessage.bind(null, resolvedConfig, formatters),
+    formatList: formatList.bind(null, resolvedConfig, formatters.getListFormat),
+    formatListToParts: formatListToParts.bind(null, resolvedConfig, formatters.getListFormat),
+    formatDisplayName: formatDisplayName.bind(null, resolvedConfig, formatters.getDisplayNames)
+  };
+}
+
+// packages/presentation/localization/src/message-localizer.ts
+var MessageLocalizer = class _MessageLocalizer {
+  constructor(catalogs, locale = "en") {
+    this.catalogs = catalogs;
+    this.locale = _MessageLocalizer.resolveLocale(locale);
+    this.intl = createIntl(
+      {
+        locale: this.locale,
+        defaultLocale: "en",
+        messages: catalogs[this.locale],
+        onError: _MessageLocalizer.keepFormattingErrorsPrivate,
+        onWarn: _MessageLocalizer.keepFormattingErrorsPrivate
+      },
+      createIntlCache()
+    );
+  }
+  catalogs;
+  locale;
+  intl;
+  static resolveLocale(requested) {
+    try {
+      const language = new Intl.Locale(
+        requested.trim().replaceAll("_", "-") || "en"
+      ).language;
+      return language === "fr" ? "fr" : "en";
+    } catch {
+      return "en";
+    }
+  }
+  t(key, ...args) {
+    return this.intl.formatMessage(
+      { id: key, defaultMessage: this.catalogs.en[key] },
+      args[0],
+      { ignoreTag: true }
+    );
+  }
+  static keepFormattingErrorsPrivate() {
+  }
+};
+
+// packages/runtime/github-actions/src/i18n/diagnostics-communication.en.ts
+var DIAGNOSTICS_COMMUNICATION_EN = {
+  "diagnostic.communication.duplicate-intent": "A duplicate communication intent was ignored.",
+  "diagnostic.communication.gateway-delivery-uncertain": "A gateway could not confirm delivery.",
+  "diagnostic.communication.gateway-delivery-rejected": "A gateway definitively rejected the delivery request.",
+  "diagnostic.communication.gateway-delivery-deferred": "A gateway deferred the request; a later retry remains safe.",
+  "diagnostic.communication.gateway-threw-ambiguous-error": "A gateway failed without a definitive delivery outcome.",
+  "diagnostic.communication.invalid-clock": "The communication clock is invalid.",
+  "diagnostic.communication.invalid-event-date": "The event date is invalid.",
+  "diagnostic.communication.invalid-identifier": "A stable communication identifier is invalid.",
+  "diagnostic.communication.invalid-readiness-window": "The readiness reminder window is invalid.",
+  "diagnostic.communication.invalid-time-zone": "The configured time zone is invalid.",
+  "diagnostic.communication.ledger-read-failed": "The delivery ledger could not be read.",
+  "diagnostic.communication.ledger-reservation-failed": "The delivery could not be reserved safely.",
+  "diagnostic.communication.ledger-status-write-failed": "The delivery status could not be recorded.",
+  "diagnostic.communication.missing-mail-destination": "An opted-in mail recipient has no destination.",
+  "diagnostic.communication.missing-notification-content": "Notification content is unavailable.",
+  "diagnostic.communication.missing-notification-destination": "The notification destination is unavailable.",
+  "diagnostic.communication.occurrence-status-unknown": "The event occurrence status must be explicit.",
+  "diagnostic.communication.delivery-already-recorded": "The delivery ledger already contains this intent.",
+  "diagnostic.communication.dispatch-disabled-by-config": "Communication dispatch is disabled by repository configuration.",
+  "diagnostic.communication.dispatch-not-authorized": "Communication dispatch is not authorized by the workflow lock.",
+  "diagnostic.communication.approval-label-missing": "Communications require the configured maintainer approval label.",
+  "diagnostic.communication.approval-missing": "Communications require a maintainer-owned approval snapshot.",
+  "diagnostic.communication.approval-stale": "Message-affecting event facts changed after approval; remove and re-add the approval label.",
+  "diagnostic.communication.approval-capture-unauthorized": "The approval label actor does not have sufficient repository permission.",
+  "diagnostic.communication.approval-trigger-snapshot-missing": "The approval label event did not contain an immutable issue snapshot.",
+  "diagnostic.communication.approval-trigger-stale": "The issue changed after the approval label event; remove and re-add the approval label.",
+  "diagnostic.communication.approval-repository-failed": "The maintainer approval record could not be verified safely.",
+  "diagnostic.communication.event-skipped": "The issue is not a configured meetup event.",
+  "diagnostic.communication.event-concurrently-modified": "The meetup issue changed while communications were being reconciled; no delivery was attempted.",
+  "diagnostic.communication.event-references-unresolved": "Event participants could not be resolved to stable identifiers.",
+  "diagnostic.communication.github-credential-missing": "The GitHub credential is unavailable.",
+  "diagnostic.communication.mail-gateway-disabled-missing-credential": "Mail delivery is disabled because its credential is unavailable.",
+  "diagnostic.communication.notification-gateway-disabled-missing-credential": "Notifications are disabled because their credential is unavailable.",
+  "diagnostic.communication.notification-gateway-disabled-missing-destination": "Notifications are disabled because their destination is unavailable.",
+  "diagnostic.communication.referential-catalog-invalid": "Communications are disabled because the referential catalog is invalid."
+};
+
+// packages/runtime/github-actions/src/i18n/diagnostics-communication.fr.ts
+var DIAGNOSTICS_COMMUNICATION_FR = {
+  "diagnostic.communication.duplicate-intent": "Une intention de communication en double a \xE9t\xE9 ignor\xE9e.",
+  "diagnostic.communication.gateway-delivery-uncertain": "Un service n\u2019a pas pu confirmer la livraison.",
+  "diagnostic.communication.gateway-delivery-rejected": "Un service a refus\xE9 d\xE9finitivement la demande de livraison.",
+  "diagnostic.communication.gateway-delivery-deferred": "Un service a diff\xE9r\xE9 la demande ; une nouvelle tentative reste s\xFBre.",
+  "diagnostic.communication.gateway-threw-ambiguous-error": "Un service a \xE9chou\xE9 sans r\xE9sultat de livraison d\xE9finitif.",
+  "diagnostic.communication.invalid-clock": "L\u2019horloge des communications est invalide.",
+  "diagnostic.communication.invalid-event-date": "La date de l\u2019\xE9v\xE9nement est invalide.",
+  "diagnostic.communication.invalid-identifier": "Un identifiant stable de communication est invalide.",
+  "diagnostic.communication.invalid-readiness-window": "La p\xE9riode de rappel de pr\xE9paration est invalide.",
+  "diagnostic.communication.invalid-time-zone": "Le fuseau horaire configur\xE9 est invalide.",
+  "diagnostic.communication.ledger-read-failed": "Le registre des livraisons n\u2019a pas pu \xEAtre lu.",
+  "diagnostic.communication.ledger-reservation-failed": "La livraison n\u2019a pas pu \xEAtre r\xE9serv\xE9e de mani\xE8re s\xFBre.",
+  "diagnostic.communication.ledger-status-write-failed": "L\u2019\xE9tat de la livraison n\u2019a pas pu \xEAtre enregistr\xE9.",
+  "diagnostic.communication.missing-mail-destination": "Un destinataire ayant accept\xE9 les e-mails n\u2019a pas d\u2019adresse.",
+  "diagnostic.communication.missing-notification-content": "Le contenu de la notification est indisponible.",
+  "diagnostic.communication.missing-notification-destination": "La destination de la notification est indisponible.",
+  "diagnostic.communication.occurrence-status-unknown": "Le statut de l\u2019\xE9v\xE9nement doit \xEAtre explicite.",
+  "diagnostic.communication.delivery-already-recorded": "Le registre des livraisons contient d\xE9j\xE0 cette intention.",
+  "diagnostic.communication.dispatch-disabled-by-config": "L\u2019envoi des communications est d\xE9sactiv\xE9 par la configuration du d\xE9p\xF4t.",
+  "diagnostic.communication.dispatch-not-authorized": "L\u2019envoi des communications n\u2019est pas autoris\xE9 par le verrou du workflow.",
+  "diagnostic.communication.approval-label-missing": "Les communications n\xE9cessitent le label d\u2019approbation configur\xE9.",
+  "diagnostic.communication.approval-missing": "Les communications n\xE9cessitent un instantan\xE9 approuv\xE9 par un responsable.",
+  "diagnostic.communication.approval-stale": "Des informations affectant les messages ont chang\xE9 depuis l\u2019approbation ; retirez puis ajoutez \xE0 nouveau le label d\u2019approbation.",
+  "diagnostic.communication.approval-capture-unauthorized": "L\u2019auteur du label d\u2019approbation n\u2019a pas les droits suffisants sur le d\xE9p\xF4t.",
+  "diagnostic.communication.approval-trigger-snapshot-missing": "L\u2019\xE9v\xE9nement d\u2019ajout du label ne contient pas d\u2019instantan\xE9 immuable de l\u2019issue.",
+  "diagnostic.communication.approval-trigger-stale": "L\u2019issue a chang\xE9 depuis l\u2019ajout du label ; retirez puis ajoutez \xE0 nouveau le label d\u2019approbation.",
+  "diagnostic.communication.approval-repository-failed": "L\u2019approbation du responsable n\u2019a pas pu \xEAtre v\xE9rifi\xE9e de mani\xE8re s\xFBre.",
+  "diagnostic.communication.event-skipped": "L\u2019issue n\u2019est pas un \xE9v\xE9nement meetup configur\xE9.",
+  "diagnostic.communication.event-concurrently-modified": "L\u2019issue a chang\xE9 pendant la pr\xE9paration des communications ; aucun envoi n\u2019a \xE9t\xE9 tent\xE9.",
+  "diagnostic.communication.event-references-unresolved": "Les participants n\u2019ont pas pu \xEAtre associ\xE9s \xE0 des identifiants stables.",
+  "diagnostic.communication.github-credential-missing": "Les identifiants GitHub sont indisponibles.",
+  "diagnostic.communication.mail-gateway-disabled-missing-credential": "L\u2019envoi d\u2019e-mails est d\xE9sactiv\xE9 car ses identifiants sont indisponibles.",
+  "diagnostic.communication.notification-gateway-disabled-missing-credential": "Les notifications sont d\xE9sactiv\xE9es car leurs identifiants sont indisponibles.",
+  "diagnostic.communication.notification-gateway-disabled-missing-destination": "Les notifications sont d\xE9sactiv\xE9es car leur destination est indisponible.",
+  "diagnostic.communication.referential-catalog-invalid": "Les communications sont d\xE9sactiv\xE9es car le catalogue de r\xE9f\xE9rences est invalide."
+};
+
+// packages/runtime/github-actions/src/i18n/diagnostics-event.en.ts
+var DIAGNOSTICS_EVENT_EN = {
+  "diagnostic.event.document.reference-metadata.duplicate": "The event document contains duplicate reference metadata",
+  "diagnostic.event.document.reference-metadata.invalid": "Stable reference metadata is malformed",
+  "diagnostic.event.document.reference-metadata.legacy": "Unbound stable reference metadata cannot safely restore participant IDs",
+  "diagnostic.event.document.reference-metadata.stale": "Stable reference metadata does not match visible participants",
+  "diagnostic.event.document.reference-metadata.missing": "Stable reference metadata is missing",
+  "diagnostic.event.document.schema-marker.duplicate": "The event document contains duplicate schema markers",
+  "diagnostic.event.document.schema-version.unsupported": "The event document schema version is unsupported",
+  "diagnostic.event.agenda.missing": "At least one agenda entry is required",
+  "diagnostic.event.agenda.normalized": "The agenda can be normalized safely",
+  "diagnostic.event.agenda.speaker.missing": "Each agenda entry must have at least one speaker",
+  "diagnostic.event.agenda.speaker.invalid": "Speaker display name must not be empty",
+  "diagnostic.event.agenda.description.missing": "Agenda entry description must not be empty",
+  "diagnostic.event.date.missing": "An event date is required",
+  "diagnostic.event.date.invalid": "Event date must be a real calendar date formatted as YYYY-MM-DD",
+  "diagnostic.event.description.missing": "An event description is required",
+  "diagnostic.event.hoster.missing": "A host must be selected",
+  "diagnostic.event.hoster.invalid": "Host display name must not be empty",
+  "diagnostic.event.hoster.normalized": "The host reference can be normalized safely",
+  "diagnostic.event.links.normalized": "Publication links can be normalized safely",
+  "diagnostic.event.occurrence-status.label-conflict": "Occurrence status labels are mutually exclusive; keep only one of event:postponed, event:held, or event:cancelled",
+  "diagnostic.event.occurrence-status.invalid": "Occurrence status must be scheduled, postponed, held, or cancelled",
+  "diagnostic.event.title.missing": "An event title is required",
+  "diagnostic.event.document.invalid-hoster-type": "The legacy hoster field must be an array",
+  "diagnostic.event.hoster.multiple": "A meetup event must have exactly one host",
+  "diagnostic.event.document.invalid-hoster-entry": "The legacy hoster entry must be a string",
+  "diagnostic.event.document.invalid-agenda-type": "The legacy agenda field must be a string",
+  "diagnostic.event.labels.normalized": "Managed meetup labels can be reconciled safely",
+  "diagnostic.event.document.legacy-schema": "The legacy event document was migrated to schema version 1",
+  "diagnostic.event.confirmation.host.missing": "Host confirmation is required before the event is ready",
+  "diagnostic.event.confirmation.speakers.missing": "Speaker confirmation is required before the event is ready",
+  "diagnostic.event.agenda.legacy-line-invalid": "Use - Speaker: Talk description for each agenda line.",
+  "diagnostic.event.link.meetup.invalid": "The Meetup publication link must be a valid HTTPS URL.",
+  "diagnostic.event.link.community.invalid": "The CNCF / OCGroups publication link must be a valid HTTPS URL.",
+  "diagnostic.event.link.assets.invalid": "The asset folder link must be a valid HTTPS URL.",
+  "diagnostic.event.logistics.intent.invalid": "Choose Yes or No, or leave the response empty if undecided.",
+  "diagnostic.event.document.heading.missing": "A required issue section heading is missing.",
+  "diagnostic.event.document.heading.duplicate": "An issue section heading is duplicated.",
+  "diagnostic.event.document.checkbox.invalid": "Use - [ ] Task or - [x] Task for checkboxes.",
+  "diagnostic.event.document.invalid-field-type": "The issue field must contain text.",
+  "diagnostic.event.issue-title.normalized": "The issue title can be normalized safely."
+};
+
+// packages/runtime/github-actions/src/i18n/diagnostics-event.fr.ts
+var DIAGNOSTICS_EVENT_FR = {
+  "diagnostic.event.document.reference-metadata.duplicate": "Le document contient des m\xE9tadonn\xE9es de r\xE9f\xE9rences en double.",
+  "diagnostic.event.document.reference-metadata.invalid": "Les m\xE9tadonn\xE9es des r\xE9f\xE9rences stables sont mal form\xE9es.",
+  "diagnostic.event.document.reference-metadata.legacy": "Les anciennes m\xE9tadonn\xE9es ne permettent pas de r\xE9tablir les identifiants des participants de mani\xE8re s\xFBre.",
+  "diagnostic.event.document.reference-metadata.stale": "Les m\xE9tadonn\xE9es des r\xE9f\xE9rences stables ne correspondent pas aux participants visibles.",
+  "diagnostic.event.document.reference-metadata.missing": "Les m\xE9tadonn\xE9es des r\xE9f\xE9rences stables sont manquantes.",
+  "diagnostic.event.document.schema-marker.duplicate": "Le document contient des marqueurs de sch\xE9ma en double.",
+  "diagnostic.event.document.schema-version.unsupported": "La version du sch\xE9ma du document n\u2019est pas prise en charge.",
+  "diagnostic.event.agenda.missing": "Le programme doit contenir au moins une conf\xE9rence.",
+  "diagnostic.event.agenda.normalized": "Le programme peut \xEAtre normalis\xE9 sans risque.",
+  "diagnostic.event.agenda.speaker.missing": "Chaque conf\xE9rence doit avoir au moins un intervenant.",
+  "diagnostic.event.agenda.speaker.invalid": "Le nom de l\u2019intervenant ne doit pas \xEAtre vide.",
+  "diagnostic.event.agenda.description.missing": "La description de la conf\xE9rence ne doit pas \xEAtre vide.",
+  "diagnostic.event.date.missing": "La date de l\u2019\xE9v\xE9nement est obligatoire.",
+  "diagnostic.event.date.invalid": "La date doit \xEAtre une date r\xE9elle au format AAAA-MM-JJ.",
+  "diagnostic.event.description.missing": "La description de l\u2019\xE9v\xE9nement est obligatoire.",
+  "diagnostic.event.hoster.missing": "Un h\xF4te doit \xEAtre s\xE9lectionn\xE9.",
+  "diagnostic.event.hoster.invalid": "Le nom de l\u2019h\xF4te ne doit pas \xEAtre vide.",
+  "diagnostic.event.hoster.normalized": "La r\xE9f\xE9rence de l\u2019h\xF4te peut \xEAtre normalis\xE9e sans risque.",
+  "diagnostic.event.links.normalized": "Les liens de publication peuvent \xEAtre normalis\xE9s sans risque.",
+  "diagnostic.event.occurrence-status.label-conflict": "Les labels de statut s\u2019excluent mutuellement ; conservez uniquement event:postponed, event:held ou event:cancelled.",
+  "diagnostic.event.occurrence-status.invalid": "Le statut doit \xEAtre scheduled, postponed, held ou cancelled.",
+  "diagnostic.event.title.missing": "Le titre de l\u2019\xE9v\xE9nement est obligatoire.",
+  "diagnostic.event.document.invalid-hoster-type": "L\u2019ancien champ hoster doit \xEAtre un tableau.",
+  "diagnostic.event.hoster.multiple": "L\u2019\xE9v\xE9nement doit avoir exactement un h\xF4te.",
+  "diagnostic.event.document.invalid-hoster-entry": "L\u2019ancienne r\xE9f\xE9rence d\u2019h\xF4te doit \xEAtre une cha\xEEne de caract\xE8res.",
+  "diagnostic.event.document.invalid-agenda-type": "L\u2019ancien champ agenda doit \xEAtre une cha\xEEne de caract\xE8res.",
+  "diagnostic.event.labels.normalized": "Les labels g\xE9r\xE9s par l\u2019automatisation peuvent \xEAtre synchronis\xE9s sans risque.",
+  "diagnostic.event.document.legacy-schema": "L\u2019ancien document a \xE9t\xE9 migr\xE9 vers la version 1 du sch\xE9ma.",
+  "diagnostic.event.confirmation.host.missing": "La confirmation de l\u2019h\xF4te est n\xE9cessaire pour que l\u2019\xE9v\xE9nement soit pr\xEAt.",
+  "diagnostic.event.confirmation.speakers.missing": "La confirmation des intervenants est n\xE9cessaire pour que l\u2019\xE9v\xE9nement soit pr\xEAt.",
+  "diagnostic.event.agenda.legacy-line-invalid": "Utilisez - Intervenant: Description pour chaque ligne du programme.",
+  "diagnostic.event.link.meetup.invalid": "Le lien Meetup doit \xEAtre une URL HTTPS valide.",
+  "diagnostic.event.link.community.invalid": "Le lien CNCF / OCGroups doit \xEAtre une URL HTTPS valide.",
+  "diagnostic.event.link.assets.invalid": "Le lien vers le dossier des fichiers doit \xEAtre une URL HTTPS valide.",
+  "diagnostic.event.logistics.intent.invalid": "Choisissez Yes ou No, ou laissez la r\xE9ponse vide si elle reste ind\xE9cise.",
+  "diagnostic.event.document.heading.missing": "Un en-t\xEAte de section obligatoire est manquant.",
+  "diagnostic.event.document.heading.duplicate": "Un en-t\xEAte de section est pr\xE9sent en double.",
+  "diagnostic.event.document.checkbox.invalid": "Utilisez - [ ] T\xE2che ou - [x] T\xE2che pour les cases \xE0 cocher.",
+  "diagnostic.event.document.invalid-field-type": "Le champ de l\u2019issue doit contenir du texte.",
+  "diagnostic.event.issue-title.normalized": "Le titre de l\u2019issue peut \xEAtre normalis\xE9 sans risque."
+};
+
+// packages/runtime/github-actions/src/i18n/diagnostics-other.en.ts
+var DIAGNOSTICS_OTHER_EN = {
+  "diagnostic.publication.assets.unavailable": "Google Drive credentials are unavailable; asset management remains manual",
+  "diagnostic.publication.assets.prerequisites": "Resolve the event host and date before reconciling assets",
+  "diagnostic.publication.community-url.invalid": "Community event URL must use an approved CNCF/OCGroups prefix and identifier",
+  "diagnostic.publication.meetup.missing": "The Meetup publication link is required.",
+  "diagnostic.publication.community.missing": "The CNCF / OCGroups publication link is required.",
+  "diagnostic.publication.assets.missing": "The event asset folder link is required.",
+  "diagnostic.publication.meetup-url.invalid": "Use this group's Meetup event URL, ending with the numeric event ID.",
+  "diagnostic.publication.asset-url.invalid": "Use a Google Drive folder URL.",
+  "diagnostic.issue-form.out-of-date": "Issue form requires synchronization.",
+  "diagnostic.issue-form.updated": "Issue form was synchronized.",
+  "diagnostic.action.execution.failed": "Meetup automation failed; inspect debug logs using a trusted runner"
+};
+
+// packages/runtime/github-actions/src/i18n/diagnostics-other.fr.ts
+var DIAGNOSTICS_OTHER_FR = {
+  "diagnostic.publication.assets.unavailable": "Les identifiants Google Drive sont indisponibles ; la gestion des fichiers reste manuelle.",
+  "diagnostic.publication.assets.prerequisites": "R\xE9solvez les r\xE9f\xE9rences de l\u2019h\xF4te et de la date avant de synchroniser les fichiers.",
+  "diagnostic.publication.community-url.invalid": "L\u2019URL doit utiliser un pr\xE9fixe CNCF/OCGroups autoris\xE9 et un identifiant.",
+  "diagnostic.publication.meetup.missing": "Le lien de publication Meetup est obligatoire.",
+  "diagnostic.publication.community.missing": "Le lien de publication CNCF / OCGroups est obligatoire.",
+  "diagnostic.publication.assets.missing": "Le lien vers le dossier des fichiers est obligatoire.",
+  "diagnostic.publication.meetup-url.invalid": "Utilisez l\u2019URL Meetup de ce groupe, termin\xE9e par l\u2019identifiant num\xE9rique de l\u2019\xE9v\xE9nement.",
+  "diagnostic.publication.asset-url.invalid": "Utilisez une URL de dossier Google Drive.",
+  "diagnostic.issue-form.out-of-date": "Le formulaire d\u2019issue doit \xEAtre synchronis\xE9.",
+  "diagnostic.issue-form.updated": "Le formulaire d\u2019issue a \xE9t\xE9 synchronis\xE9.",
+  "diagnostic.action.execution.failed": "L\u2019automatisation a \xE9chou\xE9 ; consultez les journaux de d\xE9bogage sur un ex\xE9cuteur de confiance."
+};
+
+// packages/runtime/github-actions/src/i18n/diagnostics-referential.en.ts
+var DIAGNOSTICS_REFERENTIAL_EN = {
+  "diagnostic.referential.contact.id.duplicate": "Contact stable identifiers must be unique.",
+  "diagnostic.referential.host.id.conflict": "A host stable identifier cannot describe different host names.",
+  "diagnostic.referential.host.display-name.invalid": "Host display name must be a non-empty string.",
+  "diagnostic.referential.contact.name.invalid": "Contact name must be a non-empty string.",
+  "diagnostic.referential.contact.email.invalid": "Host contact email address is invalid.",
+  "diagnostic.referential.contact.phone.invalid": "Host contact phone must be a string when provided.",
+  "diagnostic.referential.contact.address.invalid": "Host contact address must be a non-empty string.",
+  "diagnostic.referential.host.id.invalid": "Host stable identifier must use the opaque host-0001 format.",
+  "diagnostic.referential.contact.id.invalid": "Contact stable identifier must use the opaque contact-0001 format.",
+  "diagnostic.referential.reference.host.invalid": "Explicit host reference contains an invalid stable identifier.",
+  "diagnostic.referential.reference.host.unknown": "Explicit host stable identifier is not present in the catalog.",
+  "diagnostic.referential.reference.host.display-name-mismatch": "Host display name is stale; the stable identifier remains authoritative.",
+  "diagnostic.referential.reference.speaker.invalid": "Explicit speaker reference contains an invalid stable identifier.",
+  "diagnostic.referential.reference.speaker.unknown": "Explicit speaker stable identifier is not present in the catalog.",
+  "diagnostic.referential.reference.speaker.display-name-mismatch": "Speaker display name is stale; the stable identifier remains authoritative.",
+  "diagnostic.referential.speaker.id.duplicate": "Speaker stable identifiers must be unique.",
+  "diagnostic.referential.speaker.id.invalid": "Speaker stable identifier must use the speaker-* slug format.",
+  "diagnostic.referential.speaker.first-name.invalid": "Speaker first name must be a non-empty string.",
+  "diagnostic.referential.speaker.last-name.invalid": "Speaker last name must be a non-empty string.",
+  "diagnostic.referential.speaker.company.invalid": "Speaker company must be a non-empty string.",
+  "diagnostic.referential.speaker.email.invalid": "Speaker email address is invalid.",
+  "diagnostic.referential.speaker.phone.invalid": "Speaker phone must be a string when provided.",
+  "diagnostic.referential.host.display-name.duplicate": "Duplicate normalized host display names are not allowed; keep one stable host per public name.",
+  "diagnostic.referential.speaker.display-name.duplicate": "Duplicate normalized speaker display names are not allowed; keep one stable speaker per public name.",
+  "diagnostic.referential.reference.host.ambiguous": "Several hosts share this name; include the correct stable host ID.",
+  "diagnostic.referential.reference.speaker.ambiguous": "Several speakers share this name; include the correct stable speaker ID."
+};
+
+// packages/runtime/github-actions/src/i18n/diagnostics-referential.fr.ts
+var DIAGNOSTICS_REFERENTIAL_FR = {
+  "diagnostic.referential.contact.id.duplicate": "Les identifiants stables des contacts doivent \xEAtre uniques.",
+  "diagnostic.referential.host.id.conflict": "Un identifiant stable d\u2019h\xF4te ne peut pas d\xE9signer plusieurs noms d\u2019h\xF4te.",
+  "diagnostic.referential.host.display-name.invalid": "Le nom de l\u2019h\xF4te doit \xEAtre une cha\xEEne de caract\xE8res non vide.",
+  "diagnostic.referential.contact.name.invalid": "Le nom du contact doit \xEAtre une cha\xEEne de caract\xE8res non vide.",
+  "diagnostic.referential.contact.email.invalid": "L\u2019adresse e-mail du contact de l\u2019h\xF4te est invalide.",
+  "diagnostic.referential.contact.phone.invalid": "Le t\xE9l\xE9phone du contact doit \xEAtre une cha\xEEne de caract\xE8res lorsqu\u2019il est renseign\xE9.",
+  "diagnostic.referential.contact.address.invalid": "L\u2019adresse du contact doit \xEAtre une cha\xEEne de caract\xE8res non vide.",
+  "diagnostic.referential.host.id.invalid": "L\u2019identifiant stable de l\u2019h\xF4te doit respecter le format opaque host-0001.",
+  "diagnostic.referential.contact.id.invalid": "L\u2019identifiant stable du contact doit respecter le format opaque contact-0001.",
+  "diagnostic.referential.reference.host.invalid": "La r\xE9f\xE9rence de l\u2019h\xF4te ou son identifiant stable est invalide.",
+  "diagnostic.referential.reference.host.unknown": "L\u2019h\xF4te r\xE9f\xE9renc\xE9 est absent du catalogue.",
+  "diagnostic.referential.reference.host.display-name-mismatch": "Le nom de l\u2019h\xF4te est obsol\xE8te ; son identifiant stable reste la r\xE9f\xE9rence.",
+  "diagnostic.referential.reference.speaker.invalid": "La r\xE9f\xE9rence de l\u2019intervenant ou son identifiant stable est invalide.",
+  "diagnostic.referential.reference.speaker.unknown": "L\u2019intervenant r\xE9f\xE9renc\xE9 est absent du catalogue.",
+  "diagnostic.referential.reference.speaker.display-name-mismatch": "Le nom de l\u2019intervenant est obsol\xE8te ; son identifiant stable reste la r\xE9f\xE9rence.",
+  "diagnostic.referential.speaker.id.duplicate": "Les identifiants stables des intervenants doivent \xEAtre uniques.",
+  "diagnostic.referential.speaker.id.invalid": "L\u2019identifiant stable de l\u2019intervenant doit respecter le format speaker-*.",
+  "diagnostic.referential.speaker.first-name.invalid": "Le pr\xE9nom de l\u2019intervenant doit \xEAtre une cha\xEEne de caract\xE8res non vide.",
+  "diagnostic.referential.speaker.last-name.invalid": "Le nom de l\u2019intervenant doit \xEAtre une cha\xEEne de caract\xE8res non vide.",
+  "diagnostic.referential.speaker.company.invalid": "L\u2019entreprise de l\u2019intervenant doit \xEAtre une cha\xEEne de caract\xE8res non vide.",
+  "diagnostic.referential.speaker.email.invalid": "L\u2019adresse e-mail de l\u2019intervenant est invalide.",
+  "diagnostic.referential.speaker.phone.invalid": "Le t\xE9l\xE9phone de l\u2019intervenant doit \xEAtre une cha\xEEne de caract\xE8res lorsqu\u2019il est renseign\xE9.",
+  "diagnostic.referential.host.display-name.duplicate": "Les noms d\u2019h\xF4te normalis\xE9s doivent \xEAtre uniques ; conservez un seul identifiant stable par nom public.",
+  "diagnostic.referential.speaker.display-name.duplicate": "Les noms d\u2019intervenant normalis\xE9s doivent \xEAtre uniques ; conservez un seul identifiant stable par nom public.",
+  "diagnostic.referential.reference.host.ambiguous": "Plusieurs h\xF4tes portent ce nom ; ajoutez le bon identifiant stable.",
+  "diagnostic.referential.reference.speaker.ambiguous": "Plusieurs intervenants portent ce nom ; ajoutez le bon identifiant stable."
+};
+
+// packages/runtime/github-actions/src/i18n/messages.en.ts
+var EN_MESSAGES = {
+  "error.EventNotFoundError": "The event could not be found. Check the issue number and repository.",
+  "error.EventConcurrentModificationError": "The event changed during reconciliation. Rerun against its latest version.",
+  "error.GoogleDriveAssetRepositoryError": "Google Drive asset reconciliation failed. Check credentials, folders and permissions.",
+  "error.GitHubEventRepositoryConfigurationError": "The event repository configuration is invalid. Check the repository settings.",
+  "error.GitHubEventRepositoryScopeError": "The event is outside the configured repository scope.",
+  "error.GitHubEventRepositoryResponseError": "GitHub returned an invalid event response. Check service availability and repository access.",
+  "error.GitHubEventCommentRepositoryConfigurationError": "The comment repository configuration is invalid. Check the repository and bot settings.",
+  "error.GitHubEventCommentRepositoryScopeError": "The comment is outside the configured repository scope.",
+  "error.GitHubEventCommentRepositoryResponseError": "GitHub returned an invalid comment response. Check service availability and repository access.",
+  "action.referential.validate": "Validate meetup referentials",
+  "action.referential.sync-issue-form": "Synchronize meetup issue form",
+  "action.event.reconcile": "Reconcile meetup event",
+  "action.event.list-active": "List active meetup events",
+  "action.communication.reconcile": "Reconcile meetup communications",
+  "action.publication.reconcile-assets": "Reconcile meetup assets",
+  "report.no-diagnostics": "No diagnostics.",
+  "report.fix-applied": "fix applied: {applied, select, true {true} other {false}}",
+  "report.failed": "Action failed: {reason}",
+  "report.summary-unavailable": "The job summary could not be written; the action report is available in the logs and annotations.",
+  "report.severity.error": "error",
+  "report.severity.warning": "warning",
+  "report.severity.info": "info",
+  "report.execution.failed": "Action execution failed before a result was available.",
+  "report.execution.guidance": "Review the action inputs and service configuration. Reproduce on a trusted runner if private debugging is required.",
+  "report.error.unexpected": "Meetup automation failed; inspect debug logs using a trusted runner",
+  "report.referential.valid": "Referentials: valid.",
+  "report.referential.invalid": "Referentials: invalid.",
+  "report.referential.counts": "Valid hosts: {hosts, number}; valid speakers: {speakers, number}.",
+  "report.referential.guidance": "Correct the catalog fields listed below, then rerun validation. Field indexes are zero-based record positions.",
+  "report.issue-form.blocked": "Issue form synchronization is blocked by invalid referentials.",
+  "report.issue-form.stale": "Issue form is out of date.",
+  "report.issue-form.updated": "Issue form was updated.",
+  "report.issue-form.current": "Issue form is up to date.",
+  "report.issue-form.files": "Affected files: {files}.",
+  "report.issue-form.guidance": "Run actions/referential/sync-issue-form with mode: fix on this branch, then commit the affected files.",
+  "report.event.context": "Issue: #{issue}; mode: {mode}.",
+  "report.event.skipped": "Skipped: the issue is not a configured meetup event.",
+  "report.event.state": "Event state: {state}; ready: {ready, select, true {true} other {false}}.",
+  "report.event.persisted": "Issue changes persisted: {persisted, select, true {true} other {false}}; diagnostic comment updated: {comment, select, true {true} other {false}}.",
+  "report.event.guidance": "Resolve the event fields and pending tasks listed in the diagnostics.",
+  "report.events.count": "Active events: {count, number}.",
+  "report.events.issues": "Issue numbers: {issues}.",
+  "report.events.empty": "No active meetup events were found.",
+  "report.assets.skipped": "Asset reconciliation was skipped: the event is ineligible or prerequisites are incomplete.",
+  "report.assets.completed": "Asset reconciliation completed.",
+  "report.assets.counts": "Issue changes persisted: {persisted, select, true {true} other {false}}; asset files: {count, number}.",
+  "report.assets.unavailable": "Skipped: Google Drive credentials are unavailable; asset management remains manual.",
+  "report.communication.mode": "Communication mode: {mode}.",
+  "report.communication.planned": "Planned: {planned, number}; due: {due, number}; dispatched: {dispatched, number}.",
+  "report.communication.accepted": "Accepted: {accepted, number}; already recorded: {recorded, number}; deferred: {deferred, number}.",
+  "report.communication.uncertain": "Uncertain: {uncertain, number}; rejected: {rejected, number}.",
+  "report.communication.guidance": "Review approval and delivery diagnostics before retrying.",
+  "report.communication.uncertain-guidance": "Reconcile uncertain deliveries with the provider and ledger before any resend.",
+  "report.communication.failed": "Communication reconciliation failed; inspect the diagnostic annotations and job summary.",
+  "workflow.referential.failed": "Meetup referentials are invalid. Correct the catalog fields listed in the validation annotations and job summary.",
+  "workflow.issue-form.failed": "The meetup issue form is out of date. Run actions/referential/sync-issue-form with mode: fix on this branch and commit the affected files listed in the job summary."
+};
+
+// packages/runtime/github-actions/src/i18n/messages.fr.ts
+var FR_MESSAGES = {
+  "error.EventNotFoundError": "L\u2019\xE9v\xE9nement est introuvable. V\xE9rifiez le num\xE9ro d\u2019issue et le d\xE9p\xF4t.",
+  "error.EventConcurrentModificationError": "L\u2019\xE9v\xE9nement a chang\xE9 pendant la synchronisation. Relancez-la sur sa derni\xE8re version.",
+  "error.GoogleDriveAssetRepositoryError": "La synchronisation des fichiers Google Drive a \xE9chou\xE9. V\xE9rifiez les identifiants, les dossiers configur\xE9s et les autorisations.",
+  "error.GitHubEventRepositoryConfigurationError": "La configuration du d\xE9p\xF4t d\u2019\xE9v\xE9nements est invalide. V\xE9rifiez les param\xE8tres du d\xE9p\xF4t.",
+  "error.GitHubEventRepositoryScopeError": "L\u2019\xE9v\xE9nement est hors du p\xE9rim\xE8tre du d\xE9p\xF4t configur\xE9.",
+  "error.GitHubEventRepositoryResponseError": "La r\xE9ponse GitHub pour l\u2019\xE9v\xE9nement est invalide. V\xE9rifiez la disponibilit\xE9 du service et l\u2019acc\xE8s au d\xE9p\xF4t.",
+  "error.GitHubEventCommentRepositoryConfigurationError": "La configuration du d\xE9p\xF4t de commentaires est invalide. V\xE9rifiez les param\xE8tres du d\xE9p\xF4t et du bot.",
+  "error.GitHubEventCommentRepositoryScopeError": "Le commentaire est hors du p\xE9rim\xE8tre du d\xE9p\xF4t configur\xE9.",
+  "error.GitHubEventCommentRepositoryResponseError": "La r\xE9ponse GitHub pour les commentaires est invalide. V\xE9rifiez la disponibilit\xE9 du service et l\u2019acc\xE8s au d\xE9p\xF4t.",
+  "action.referential.validate": "Valider les r\xE9f\xE9rentiels du meetup",
+  "action.referential.sync-issue-form": "Synchroniser le formulaire du meetup",
+  "action.event.reconcile": "V\xE9rifier et mettre \xE0 jour le meetup",
+  "action.event.list-active": "Lister les meetups actifs",
+  "action.communication.reconcile": "V\xE9rifier et envoyer les communications du meetup",
+  "action.publication.reconcile-assets": "V\xE9rifier et mettre \xE0 jour les ressources du meetup",
+  "report.no-diagnostics": "Aucun diagnostic.",
+  "report.fix-applied": "correction appliqu\xE9e : {applied, select, true {oui} other {non}}",
+  "report.failed": "\xC9chec de l\u2019action : {reason}",
+  "report.summary-unavailable": "Le r\xE9sum\xE9 de la t\xE2che n\u2019a pas pu \xEAtre \xE9crit ; le rapport est disponible dans les journaux et les annotations.",
+  "report.severity.error": "erreur",
+  "report.severity.warning": "avertissement",
+  "report.severity.info": "information",
+  "report.execution.failed": "L\u2019action a \xE9chou\xE9 avant de produire un r\xE9sultat.",
+  "report.execution.guidance": "V\xE9rifiez les param\xE8tres de l\u2019action et la configuration des services. Reproduisez le probl\xE8me sur un ex\xE9cuteur de confiance si un d\xE9bogage priv\xE9 est n\xE9cessaire.",
+  "report.error.unexpected": "L\u2019automatisation du meetup a \xE9chou\xE9 ; effectuez le diagnostic sur un ex\xE9cuteur de confiance.",
+  "report.referential.valid": "R\xE9f\xE9rentiels : valides.",
+  "report.referential.invalid": "R\xE9f\xE9rentiels : invalides.",
+  "report.referential.counts": "Structures d\u2019accueil valides : {hosts, number} ; intervenants valides : {speakers, number}.",
+  "report.referential.guidance": "Corrigez les champs du r\xE9f\xE9rentiel indiqu\xE9s ci-dessous, puis relancez la validation. Les indices d\xE9signent la position des enregistrements, \xE0 partir de z\xE9ro.",
+  "report.issue-form.blocked": "La synchronisation du formulaire est bloqu\xE9e par des r\xE9f\xE9rentiels invalides.",
+  "report.issue-form.stale": "Le formulaire n\u2019est pas \xE0 jour.",
+  "report.issue-form.updated": "Le formulaire a \xE9t\xE9 mis \xE0 jour.",
+  "report.issue-form.current": "Le formulaire est \xE0 jour.",
+  "report.issue-form.files": "Fichiers concern\xE9s : {files}.",
+  "report.issue-form.guidance": "Ex\xE9cutez actions/referential/sync-issue-form avec mode: fix sur cette branche, puis cr\xE9ez un commit avec les fichiers concern\xE9s.",
+  "report.event.context": "Ticket : #{issue} ; mode : {mode}.",
+  "report.event.skipped": "Ignor\xE9 : ce ticket ne correspond pas \xE0 un meetup configur\xE9.",
+  "report.event.state": "\xC9tat du meetup : {state} ; pr\xEAt : {ready, select, true {oui} other {non}}.",
+  "report.event.persisted": "Modifications du ticket enregistr\xE9es : {persisted, select, true {oui} other {non}} ; commentaire de diagnostic mis \xE0 jour : {comment, select, true {oui} other {non}}.",
+  "report.event.guidance": "Corrigez les champs du meetup et terminez les t\xE2ches indiqu\xE9es dans les diagnostics.",
+  "report.events.count": "{count, plural, =0 {Aucun meetup actif.} one {# meetup actif.} other {# meetups actifs.}}",
+  "report.events.issues": "Num\xE9ros des tickets : {issues}.",
+  "report.events.empty": "Aucun meetup actif n\u2019a \xE9t\xE9 trouv\xE9.",
+  "report.assets.skipped": "La mise \xE0 jour des ressources a \xE9t\xE9 ignor\xE9e : le meetup n\u2019est pas \xE9ligible ou des pr\xE9requis manquent.",
+  "report.assets.completed": "La v\xE9rification et la mise \xE0 jour des ressources sont termin\xE9es.",
+  "report.assets.counts": "Modifications du ticket enregistr\xE9es : {persisted, select, true {oui} other {non}} ; fichiers de ressources : {count, number}.",
+  "report.assets.unavailable": "Ignor\xE9 : les identifiants Google Drive sont absents ; la gestion des ressources reste manuelle.",
+  "report.communication.mode": "Mode de communication : {mode}.",
+  "report.communication.planned": "Planifi\xE9es : {planned, number} ; \xE0 envoyer : {due, number} ; tentatives d\u2019envoi : {dispatched, number}.",
+  "report.communication.accepted": "Accept\xE9es : {accepted, number} ; d\xE9j\xE0 enregistr\xE9es : {recorded, number} ; diff\xE9r\xE9es : {deferred, number}.",
+  "report.communication.uncertain": "R\xE9sultats incertains : {uncertain, number} ; rejets : {rejected, number}.",
+  "report.communication.guidance": "Consultez les diagnostics d\u2019approbation et d\u2019envoi avant de r\xE9essayer.",
+  "report.communication.uncertain-guidance": "V\xE9rifiez les envois incertains aupr\xE8s du fournisseur et dans le registre avant tout nouvel envoi.",
+  "report.communication.failed": "La v\xE9rification des communications a \xE9chou\xE9 ; consultez les annotations de diagnostic et le r\xE9sum\xE9 de la t\xE2che.",
+  "workflow.referential.failed": "Les r\xE9f\xE9rentiels du meetup sont invalides. Corrigez les champs indiqu\xE9s dans les annotations de validation et le r\xE9sum\xE9 de la t\xE2che.",
+  "workflow.issue-form.failed": "Le formulaire du meetup n\u2019est pas \xE0 jour. Ex\xE9cutez actions/referential/sync-issue-form avec mode: fix sur cette branche, puis cr\xE9ez un commit avec les fichiers indiqu\xE9s dans le r\xE9sum\xE9."
+};
+
+// packages/runtime/github-actions/src/i18n/catalog.ts
+var CATALOGS = {
+  en: {
+    ...EN_MESSAGES,
+    ...DIAGNOSTICS_REFERENTIAL_EN,
+    ...DIAGNOSTICS_EVENT_EN,
+    ...DIAGNOSTICS_COMMUNICATION_EN,
+    ...DIAGNOSTICS_OTHER_EN
+  },
+  fr: {
+    ...FR_MESSAGES,
+    ...DIAGNOSTICS_REFERENTIAL_FR,
+    ...DIAGNOSTICS_EVENT_FR,
+    ...DIAGNOSTICS_COMMUNICATION_FR,
+    ...DIAGNOSTICS_OTHER_FR
+  }
+};
+
+// packages/runtime/github-actions/src/i18n/action-messages.ts
+var ActionMessages = class extends MessageLocalizer {
+  constructor(locale = "en") {
+    super(CATALOGS, locale);
+  }
+  /** The fallback must already be redacted by the public diagnostic boundary. */
+  diagnostic(code, fallback) {
+    const key = `diagnostic.${code}`;
+    return this.locale === "en" || !Object.hasOwn(CATALOGS.en, key) ? fallback : this.t(key);
+  }
+  error(name, publicFallback) {
+    const key = `error.${name}`;
+    if (this.locale === "en") return publicFallback;
+    return Object.hasOwn(CATALOGS.en, key) ? this.t(key) : this.t("report.error.unexpected");
+  }
+};
+
+// packages/runtime/github-actions/src/action-report.ts
+var ActionReport = class _ActionReport {
+  static async write(title, report, messages = new ActionMessages()) {
+    const lines = [...report.details];
+    info(title);
+    for (const detail of report.details) {
+      info(detail.replaceAll("\r", "\\r").replaceAll("\n", "\\n"));
+    }
+    for (const item of report.diagnostics) {
+      const message = _ActionReport.diagnosticMessage(
+        item,
+        report.failure,
+        messages
+      );
+      if (item.severity === "error") error(message);
+      else if (item.severity === "warning") warning(message);
+      else notice(message);
+      lines.push(
+        `${messages.t(`report.severity.${item.severity}`)}: ${message}`
+      );
+    }
+    if (report.diagnostics.length === 0) {
+      info(messages.t("report.no-diagnostics"));
+      lines.push(messages.t("report.no-diagnostics"));
+    }
+    if (report.failure)
+      lines.push(messages.t("report.failed", { reason: report.failure }));
+    const content = lines.join("\n").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+    try {
+      await summary.addHeading(title, 2).addRaw(`<pre>${content}</pre>
+`).write();
+    } catch {
+      summary.clear();
+      warning(messages.t("report.summary-unavailable"));
+    }
+  }
+  static diagnosticMessage(item, failure, messages) {
+    const field = item.field ? ` (${item.field})` : "";
+    const fixed = item.fixApplied === void 0 ? "" : ` [${messages.t("report.fix-applied", { applied: String(item.fixApplied) })}]`;
+    const translated = item.code === "action.execution.failed" && failure ? failure : messages.diagnostic(item.code, item.message);
+    return `[${item.code}]${field}: ${translated}${fixed}`;
+  }
+};
 
 // packages/runtime/github-actions/src/runtime-input.ts
 var SAFE_ERROR_NAMES = /* @__PURE__ */ new Set([
@@ -28197,12 +32031,30 @@ var RuntimeInput = class {
 
 // packages/runtime/github-actions/src/action-runner.ts
 var ActionRunner = class {
-  static async run(operation) {
+  static async run(title, operation) {
+    const messages = new ActionMessages(getInput("locale"));
+    let report;
     try {
-      await operation();
+      report = await operation(messages);
     } catch (error2) {
-      setFailed(RuntimeInput.publicErrorMessage(error2));
+      const message = RuntimeInput.publicErrorMessage(error2);
+      report = {
+        details: [
+          messages.t("report.execution.failed"),
+          messages.t("report.execution.guidance")
+        ],
+        diagnostics: [
+          { code: "action.execution.failed", severity: "error", message }
+        ],
+        failure: messages.error(
+          error2 instanceof Error ? error2.name : "",
+          message
+        )
+      };
     }
+    await ActionReport.write(messages.t(title), report, messages);
+    if (report.failure) setFailed(report.failure);
+    ActionOutput.setDiagnosticsOutput(report.diagnostics);
   }
 };
 
@@ -28682,7 +32534,7 @@ function expand(template, context3) {
     return template.replace(/\/$/, "");
   }
 }
-function parse(options) {
+function parse2(options) {
   let method = options.method.toUpperCase();
   let url = (options.url || "/").replace(/:([a-z]\w+)/g, "{$1}");
   let headers = Object.assign({}, options.headers);
@@ -28746,7 +32598,7 @@ function parse(options) {
   );
 }
 function endpointWithDefaults(defaults2, route, options) {
-  return parse(merge(defaults2, route, options));
+  return parse2(merge(defaults2, route, options));
 }
 function withDefaults(oldDefaults, newDefaults) {
   const DEFAULTS2 = merge(oldDefaults, newDefaults);
@@ -28755,7 +32607,7 @@ function withDefaults(oldDefaults, newDefaults) {
     DEFAULTS: DEFAULTS2,
     defaults: withDefaults.bind(null, DEFAULTS2),
     merge: merge.bind(null, DEFAULTS2),
-    parse
+    parse: parse2
   });
 }
 var endpoint = withDefaults(null, DEFAULTS);
@@ -28767,7 +32619,7 @@ var NullObject = /* @__PURE__ */ (() => {
   C.prototype = /* @__PURE__ */ Object.create(null);
   return C;
 })();
-function parse2(header, options) {
+function parse3(header, options) {
   const stopChar = options?.comma === true ? COMMA : 65536;
   const len = header.length;
   let index = skipOWS(header, options?.start ?? 0, len);
@@ -29357,7 +33209,7 @@ async function getResponseData(response) {
   if (!contentType) {
     return response.text().catch(noop);
   }
-  const mimetype = parse2(contentType);
+  const mimetype = parse3(contentType);
   if (isJSONResponse(mimetype)) {
     let text = "";
     try {
@@ -33634,7 +37486,7 @@ var EventLifecycle = class _EventLifecycle {
   static evaluateEventLifecycle({
     event,
     readiness,
-    now
+    now: now2
   }) {
     let state;
     switch (event.occurrenceStatus) {
@@ -33660,7 +37512,7 @@ var EventLifecycle = class _EventLifecycle {
     }
     return {
       state,
-      evaluatedAt: now,
+      evaluatedAt: now2,
       timeZone: event.timeZone,
       diagnostics: readiness.diagnostics
     };
@@ -33743,7 +37595,7 @@ var ListActiveEvents = class {
     const allDiagnostics = [];
     const seenCursors = /* @__PURE__ */ new Set();
     const seenEvents = /* @__PURE__ */ new Set();
-    const now = this.dependencies.clock.now();
+    const now2 = this.dependencies.clock.now();
     let cursor;
     do {
       const page = await this.dependencies.repository.listPage({
@@ -33769,7 +37621,7 @@ var ListActiveEvents = class {
         const lifecycle = EventLifecycle.evaluateEventLifecycle({
           event: evaluated.event,
           readiness,
-          now
+          now: now2
         });
         allDiagnostics.push(...readiness.diagnostics);
         if (lifecycle.state !== "cancelled" && lifecycle.state !== "follow-up-complete") {
@@ -35148,16 +39000,16 @@ var ReconcileCommunications = class {
     );
   }
   async execute(input) {
-    let now;
+    let now2;
     try {
-      now = this.#clock.now();
+      now2 = this.#clock.now();
     } catch {
       return CommunicationResults.emptyResult(input.mode, {
         code: "invalid-clock",
         severity: "error"
       });
     }
-    if (!CommunicationResults.isValidInstant(now)) {
+    if (!CommunicationResults.isValidInstant(now2)) {
       return CommunicationResults.emptyResult(input.mode, {
         code: "invalid-clock",
         severity: "error"
@@ -35168,7 +39020,7 @@ var ReconcileCommunications = class {
       dispatchCapabilities = DEFAULT_DISPATCH_CAPABILITIES,
       ...planningInput
     } = input;
-    const plan2 = this.#planner.execute({ ...planningInput, now });
+    const plan2 = this.#planner.execute({ ...planningInput, now: now2 });
     const diagnostics = [...plan2.diagnostics];
     const counts = {
       planned: plan2.intents.length,
@@ -35181,7 +39033,7 @@ var ReconcileCommunications = class {
       rejected: 0,
       deferred: 0
     };
-    const timestamp = now.toISOString();
+    const timestamp = now2.toISOString();
     for (const intent of plan2.intents) {
       await this.processIntent(
         intent,
@@ -35331,7 +39183,10 @@ var CommunicationApprovalResolver = class _CommunicationApprovalResolver {
       eventDate: input.event.date,
       occurrenceStatus: input.event.occurrenceStatus ?? "unknown",
       readiness: input.readiness,
-      policyVersion: String(input.config.communication["policy-version"]),
+      policyVersion: [
+        String(input.config.communication["policy-version"]),
+        input.input.notificationContentRevision
+      ].filter(Boolean).join(":"),
       mailingsRepository: input.config.communication["mailings-repository"],
       notificationEnabled: input.config.communication["slack-enabled"],
       notificationDestinationFingerprint: input.notificationDestinationFingerprint,
@@ -36360,7 +40215,7 @@ var ManageMeetupCommunications = class _ManageMeetupCommunications {
       mailPlaceholders: CommunicationPlaceholders.eventPlaceholders(
         managed.event
       ),
-      notificationContent: `Meetup event issue #${input.issueNumber} requires organizer attention.`
+      notificationContent: input.notificationContent
     });
     return reconciliation;
   }
@@ -36708,16 +40563,6 @@ var ValidateMeetupReferentials = class {
       message: item.message
     }));
     return validation.isValid ? { isValid: true, config, catalog: validation.catalog, diagnostics } : { isValid: false, config, diagnostics };
-  }
-};
-
-// packages/runtime/github-actions/src/action-output.ts
-var ActionOutput = class _ActionOutput {
-  static setJsonOutput(name, value) {
-    setOutput(name, JSON.stringify(value));
-  }
-  static setDiagnosticsOutput(diagnostics) {
-    _ActionOutput.setJsonOutput("diagnostics", diagnostics);
   }
 };
 
@@ -37898,8 +41743,8 @@ var normalize_options = function(opts) {
       );
     }
     if (options.delimiter_auto.score === void 0)
-      options.delimiter_auto.score = (info, options2) => {
-        return (info.total - info.std) * (options2.preferred[info.char_code] || 1);
+      options.delimiter_auto.score = (info2, options2) => {
+        return (info2.total - info2.std) * (options2.preferred[info2.char_code] || 1);
       };
     else if (typeof options.delimiter_auto.score !== "function") {
       throw new CsvError(
@@ -38323,23 +42168,23 @@ var delimiter_discover = function(records, options) {
       return records2;
     })(records);
   }
-  const info = Array(127).fill().map(() => ({ lines: [] }));
+  const info2 = Array(127).fill().map(() => ({ lines: [] }));
   records.map(([record], line) => {
     for (let i = 0, l = record.length; i < l; i++) {
       const code = record.charCodeAt(i);
-      if (info[code].lines[line] === void 0) info[code].lines[line] = 0;
-      info[code].lines[line]++;
+      if (info2[code].lines[line] === void 0) info2[code].lines[line] = 0;
+      info2[code].lines[line]++;
     }
   });
-  info.map((info2, i) => {
-    info2.char_code = i;
-    info2.std = std(info2.lines);
-    info2.total = info2.lines.reduce((acc, val) => acc + val, 0);
-    info2.preferred = !!options.preferred[i];
-    info2.score = options.score(info2, options);
+  info2.map((info3, i) => {
+    info3.char_code = i;
+    info3.std = std(info3.lines);
+    info3.total = info3.lines.reduce((acc, val) => acc + val, 0);
+    info3.preferred = !!options.preferred[i];
+    info3.score = options.score(info3, options);
   });
-  const result = info.reduce(
-    (acc, info2) => acc.score > info2.score ? acc : info2,
+  const result = info2.reduce(
+    (acc, info3) => acc.score > info3.score ? acc : info3,
     {}
   );
   return String.fromCharCode(result.char_code);
@@ -38373,7 +42218,7 @@ var boms = {
   utf16le: Buffer.from([255, 254])
 };
 var transform = function(original_options = {}) {
-  const info = {
+  const info2 = {
     bytes: 0,
     bytes_records: 0,
     comment_lines: 0,
@@ -38384,7 +42229,7 @@ var transform = function(original_options = {}) {
   };
   const options = normalize_options(original_options);
   return {
-    info,
+    info: info2,
     original_options,
     options,
     state: init_state(options),
@@ -38590,7 +42435,7 @@ var transform = function(original_options = {}) {
             } else {
               if (this.state.field.length !== 0) {
                 if (relax_quotes === false) {
-                  const info2 = this.__infoField();
+                  const info3 = this.__infoField();
                   const bom2 = Object.keys(boms).map(
                     (b) => boms[b].equals(this.state.field.toString()) ? b : false
                   ).filter(Boolean)[0];
@@ -38599,11 +42444,11 @@ var transform = function(original_options = {}) {
                       "INVALID_OPENING_QUOTE",
                       [
                         "Invalid Opening Quote:",
-                        `a quote is found on field ${JSON.stringify(info2.column)} at line ${info2.lines}, value is ${JSON.stringify(this.state.field.toString(encoding))}`,
+                        `a quote is found on field ${JSON.stringify(info3.column)} at line ${info3.lines}, value is ${JSON.stringify(this.state.field.toString(encoding))}`,
                         bom2 ? `(${bom2} bom)` : void 0
                       ],
                       this.options,
-                      info2,
+                      info3,
                       {
                         field: this.state.field
                       }
@@ -38759,7 +42604,7 @@ var transform = function(original_options = {}) {
         columns,
         group_columns_by_name,
         encoding,
-        info: info2,
+        info: info3,
         from,
         relax_column_count,
         relax_column_count_less,
@@ -38848,11 +42693,11 @@ var transform = function(original_options = {}) {
               });
             }
           }
-          if (raw === true || info2 === true) {
+          if (raw === true || info3 === true) {
             const extRecord = Object.assign(
               { record: obj },
               raw === true ? { raw: this.state.rawBuffer.toString(encoding) } : {},
-              info2 === true ? { info: this.__infoRecord() } : {}
+              info3 === true ? { info: this.__infoRecord() } : {}
             );
             const err = this.__push(
               objname === void 0 ? extRecord : [obj[objname], extRecord],
@@ -38871,11 +42716,11 @@ var transform = function(original_options = {}) {
             }
           }
         } else {
-          if (raw === true || info2 === true) {
+          if (raw === true || info3 === true) {
             const extRecord = Object.assign(
               { record },
               raw === true ? { raw: this.state.rawBuffer.toString(encoding) } : {},
-              info2 === true ? { info: this.__infoRecord() } : {}
+              info3 === true ? { info: this.__infoRecord() } : {}
             );
             const err = this.__push(
               objname === void 0 ? extRecord : [record[objname], extRecord],
@@ -38963,9 +42808,9 @@ var transform = function(original_options = {}) {
     __push: function(record, push) {
       const { on_record } = this.options;
       if (on_record !== void 0) {
-        const info2 = this.__infoRecord();
+        const info3 = this.__infoRecord();
         try {
-          record = on_record.call(null, record, info2);
+          record = on_record.call(null, record, info3);
         } catch (err) {
           return err;
         }
@@ -38985,8 +42830,8 @@ var transform = function(original_options = {}) {
       }
       if (this.state.castField !== null) {
         try {
-          const info2 = this.__infoField();
-          return [void 0, this.state.castField.call(null, field, info2)];
+          const info3 = this.__infoField();
+          return [void 0, this.state.castField.call(null, field, info3)];
         } catch (err) {
           return [err];
         }
@@ -38994,8 +42839,8 @@ var transform = function(original_options = {}) {
       if (this.__isFloat(field)) {
         return [void 0, parseFloat(field)];
       } else if (this.options.cast_date !== false) {
-        const info2 = this.__infoField();
-        return [void 0, this.options.cast_date.call(null, field, info2)];
+        const info3 = this.__infoField();
+        return [void 0, this.options.cast_date.call(null, field, info3)];
       }
       return [void 0, field];
     },
@@ -39164,7 +43009,7 @@ var transform = function(original_options = {}) {
 };
 
 // node_modules/.pnpm/csv-parse@7.0.2/node_modules/csv-parse/lib/sync.js
-var parse3 = function(data, opts = {}) {
+var parse4 = function(data, opts = {}) {
   if (typeof data === "string") {
     data = Buffer.from(data);
   }
@@ -39243,7 +43088,7 @@ var CsvReferentialRepository = class _CsvReferentialRepository {
     return absolute;
   }
   static parseRows(source) {
-    const records = parse3(source.replace(/\r\n?/g, "\n"), {
+    const records = parse4(source.replace(/\r\n?/g, "\n"), {
       bom: true,
       columns: true,
       skip_empty_lines: true,
@@ -39251,9 +43096,9 @@ var CsvReferentialRepository = class _CsvReferentialRepository {
       info: true,
       raw: true
     });
-    return records.map(({ record, info, raw }) => ({
+    return records.map(({ record, info: info2, raw }) => ({
       row: record,
-      line: info.lines - (raw.trimStart().replace(/\n$/, "").match(/\n/g)?.length ?? 0)
+      line: info2.lines - (raw.trimStart().replace(/\n$/, "").match(/\n/g)?.length ?? 0)
     }));
   }
 };
@@ -39281,218 +43126,346 @@ var FIELD_ORDER = [
   "Meetup issue"
 ];
 var GUIDANCE = /* @__PURE__ */ new Map([
-  ["event.title.missing", ["Event Title", "Add a title for the event."]],
   [
-    "event.date.missing",
-    ["Event Date", "Add the event date in YYYY-MM-DD format."]
+    "event.title.missing",
+    ["Event Title", "comment.guidance.event.title.missing"]
   ],
-  [
-    "event.date.invalid",
-    ["Event Date", "Enter a valid calendar date in YYYY-MM-DD format."]
-  ],
+  ["event.date.missing", ["Event Date", "comment.guidance.event.date.missing"]],
+  ["event.date.invalid", ["Event Date", "comment.guidance.event.date.invalid"]],
   [
     "event.description.missing",
-    ["Event Description", "Add a short description of the event."]
+    ["Event Description", "comment.guidance.event.description.missing"]
   ],
-  ["event.hoster.missing", ["Hoster", "Select a host from the host list."]],
-  [
-    "event.hoster.invalid",
-    ["Hoster", "Use a host name or stable ID from the host list."]
-  ],
+  ["event.hoster.missing", ["Hoster", "comment.guidance.event.hoster.missing"]],
+  ["event.hoster.invalid", ["Hoster", "comment.guidance.event.hoster.invalid"]],
   [
     "event.hoster.multiple",
-    ["Hoster", "Select exactly one host for the event."]
+    ["Hoster", "comment.guidance.event.hoster.multiple"]
   ],
-  [
-    "event.agenda.missing",
-    ["Agenda", "Add at least one talk using `- Speaker: Talk description`."]
-  ],
+  ["event.agenda.missing", ["Agenda", "comment.guidance.event.agenda.missing"]],
   [
     "event.agenda.legacy-line-invalid",
-    ["Agenda", "Use `- Speaker: Talk description` for each agenda line."]
+    ["Agenda", "comment.guidance.event.agenda.legacy-line-invalid"]
   ],
   [
     "event.agenda.speaker.missing",
-    ["Agenda", "Add at least one speaker for this talk."]
+    ["Agenda", "comment.guidance.event.agenda.speaker.missing"]
   ],
   [
     "event.agenda.speaker.invalid",
-    ["Agenda", "Enter a speaker name from the speaker list."]
+    ["Agenda", "comment.guidance.event.agenda.speaker.invalid"]
   ],
   [
     "event.agenda.description.missing",
-    ["Agenda", "Add a talk description after the speaker name and colon."]
+    ["Agenda", "comment.guidance.event.agenda.description.missing"]
   ],
   [
     "publication.meetup.missing",
-    ["Meetup Link", "Add the link to the Meetup event page."]
+    ["Meetup Link", "comment.guidance.publication.meetup.missing"]
   ],
   [
     "publication.community.missing",
-    ["CNCF Link", "Add the link to the CNCF / OCGroups event page."]
+    ["CNCF Link", "comment.guidance.publication.community.missing"]
   ],
   [
     "publication.assets.missing",
-    ["Drive Link", "Add the link to the event's Google Drive folder."]
+    ["Drive Link", "comment.guidance.publication.assets.missing"]
   ],
   [
     "event.link.meetup.invalid",
-    ["Meetup Link", "Enter a valid HTTPS link to the Meetup event page."]
+    ["Meetup Link", "comment.guidance.event.link.meetup.invalid"]
   ],
   [
     "event.link.community.invalid",
-    [
-      "CNCF Link",
-      "Enter a valid HTTPS link to the CNCF / OCGroups event page."
-    ]
+    ["CNCF Link", "comment.guidance.event.link.community.invalid"]
   ],
   [
     "event.link.assets.invalid",
-    [
-      "Drive Link",
-      "Enter a valid HTTPS link to the event's Google Drive folder."
-    ]
+    ["Drive Link", "comment.guidance.event.link.assets.invalid"]
   ],
   [
     "publication.meetup-url.invalid",
-    [
-      "Meetup Link",
-      "Use this group's Meetup event URL, ending with the numeric event ID."
-    ]
+    ["Meetup Link", "comment.guidance.publication.meetup-url.invalid"]
   ],
   [
     "publication.community-url.invalid",
-    ["CNCF Link", "Use this group's CNCF / OCGroups event URL."]
+    ["CNCF Link", "comment.guidance.publication.community-url.invalid"]
   ],
   [
     "publication.asset-url.invalid",
-    [
-      "Drive Link",
-      "Use a Google Drive folder URL: `https://drive.google.com/drive/folders/FOLDER_ID`."
-    ]
+    ["Drive Link", "comment.guidance.publication.asset-url.invalid"]
   ],
   [
     "event.confirmation.host.missing",
-    [
-      "Host confirmation",
-      "Confirm the host, then add the `hoster:confirmed` label."
-    ]
+    ["Host confirmation", "comment.guidance.event.confirmation.host.missing"]
   ],
   [
     "event.confirmation.speakers.missing",
     [
       "Speaker confirmation",
-      "Confirm the speakers, then add the `speakers:confirmed` label."
+      "comment.guidance.event.confirmation.speakers.missing"
     ]
   ],
   [
     "event.logistics.intent.invalid",
-    [
-      "Logistics",
-      "Choose `Yes` or `No`, or leave the response empty if undecided."
-    ]
+    ["Logistics", "comment.guidance.event.logistics.intent.invalid"]
   ],
   [
     "event.occurrence-status.invalid",
-    ["Event Status", "Use `scheduled`, `postponed`, `held`, or `cancelled`."]
+    ["Event Status", "comment.guidance.event.occurrence-status.invalid"]
   ],
   [
     "event.occurrence-status.label-conflict",
-    [
-      "Event Status",
-      "Keep only one occurrence label: `event:postponed`, `event:held`, or `event:cancelled`."
-    ]
+    ["Event Status", "comment.guidance.event.occurrence-status.label-conflict"]
   ],
   [
     "event.document.heading.missing",
-    [
-      "Issue format",
-      "Restore this section heading from the meetup issue template."
-    ]
+    ["Issue format", "comment.guidance.event.document.heading.missing"]
   ],
   [
     "event.document.heading.duplicate",
-    [
-      "Issue format",
-      "Keep a single section with this heading and merge its content."
-    ]
+    ["Issue format", "comment.guidance.event.document.heading.duplicate"]
   ],
   [
     "event.document.checkbox.invalid",
-    [
-      "Issue format",
-      "Use `- [ ] Task` for pending tasks and `- [x] Task` for completed tasks."
-    ]
+    ["Issue format", "comment.guidance.event.document.checkbox.invalid"]
   ],
   [
     "event.document.invalid-field-type",
-    ["Issue format", "Enter a text response in this field."]
+    ["Issue format", "comment.guidance.event.document.invalid-field-type"]
   ],
   [
     "event.document.invalid-hoster-type",
-    ["Hoster", "Select one host from the host list."]
+    ["Hoster", "comment.guidance.event.document.invalid-hoster-type"]
   ],
   [
     "event.document.invalid-hoster-entry",
-    ["Hoster", "Use a host name or stable ID from the host list."]
+    ["Hoster", "comment.guidance.event.document.invalid-hoster-entry"]
   ],
   [
     "event.document.invalid-agenda-type",
-    [
-      "Agenda",
-      "Write the agenda as a list of `- Speaker: Talk description` lines."
-    ]
+    ["Agenda", "comment.guidance.event.document.invalid-agenda-type"]
   ],
   [
     "event.document.schema-marker.duplicate",
-    [
-      "Issue format",
-      "Ask a maintainer to repair the duplicate automation metadata in the issue description."
-    ]
+    ["Issue format", "comment.guidance.event.document.schema-marker.duplicate"]
   ],
   [
     "event.document.schema-version.unsupported",
     [
       "Issue format",
-      "Ask a maintainer to update the automation to support this issue format."
+      "comment.guidance.event.document.schema-version.unsupported"
     ]
   ],
   [
     "event.document.reference-metadata.missing",
     [
       "Issue format",
-      "Ask a maintainer to regenerate the missing host and speaker reference metadata."
+      "comment.guidance.event.document.reference-metadata.missing"
     ]
   ],
   [
     "event.document.reference-metadata.duplicate",
     [
       "Issue format",
-      "Ask a maintainer to repair the duplicate host and speaker reference metadata."
+      "comment.guidance.event.document.reference-metadata.duplicate"
     ]
   ],
   [
     "event.document.reference-metadata.invalid",
     [
       "Issue format",
-      "Ask a maintainer to regenerate the invalid host and speaker reference metadata."
+      "comment.guidance.event.document.reference-metadata.invalid"
     ]
   ],
   [
     "event.document.reference-metadata.legacy",
     [
       "Issue format",
-      "Check the host and agenda references, then rerun the issue update workflow to refresh their old metadata."
+      "comment.guidance.event.document.reference-metadata.legacy"
     ]
   ],
   [
     "event.document.reference-metadata.stale",
     [
       "Issue format",
-      "Check the host and agenda references, then rerun the issue update workflow to refresh their metadata."
+      "comment.guidance.event.document.reference-metadata.stale"
     ]
+  ],
+  [
+    "referential.reference.host.unknown",
+    ["Hoster", "comment.guidance.referential.reference.host.unknown"]
+  ],
+  [
+    "referential.reference.host.ambiguous",
+    ["Hoster", "comment.guidance.referential.reference.host.ambiguous"]
+  ],
+  [
+    "referential.reference.host.display-name-mismatch",
+    [
+      "Hoster",
+      "comment.guidance.referential.reference.host.display-name-mismatch"
+    ]
+  ],
+  [
+    "referential.reference.host.invalid",
+    ["Hoster", "comment.guidance.referential.reference.host.invalid"]
+  ],
+  [
+    "referential.reference.speaker.unknown",
+    ["Agenda", "comment.guidance.referential.reference.speaker.unknown"]
+  ],
+  [
+    "referential.reference.speaker.ambiguous",
+    ["Agenda", "comment.guidance.referential.reference.speaker.ambiguous"]
+  ],
+  [
+    "referential.reference.speaker.display-name-mismatch",
+    [
+      "Agenda",
+      "comment.guidance.referential.reference.speaker.display-name-mismatch"
+    ]
+  ],
+  [
+    "referential.reference.speaker.invalid",
+    ["Agenda", "comment.guidance.referential.reference.speaker.invalid"]
   ]
 ]);
+
+// packages/adapter/github-event-comment-repository/src/i18n/messages.en.ts
+var EN_MESSAGES2 = {
+  "comment.resolved": "All previously reported issues have been resolved. No changes are currently needed.",
+  "comment.duplicate": "Superseded duplicate automation comment.",
+  "comment.introduction": "Found the following items to complete in the meetup issue:",
+  "comment.guidance": "Please update the issue description or labels to address these items. This checklist will refresh automatically.",
+  "comment.unknown": "An additional validation check needs attention. Review the workflow diagnostics with a maintainer.",
+  "comment.referential": "Ask a maintainer to correct the hosting or speaker catalog using the referential validation workflow diagnostics.",
+  "comment.agenda.item": "Agenda (item {item}{speaker})",
+  "comment.agenda.speaker-suffix": ", speaker {speaker}",
+  "comment.agenda.speaker": "Agenda (speaker {speaker})",
+  "comment.guidance.event.title.missing": "Add a title for the event.",
+  "comment.guidance.event.date.missing": "Add the event date in YYYY-MM-DD format.",
+  "comment.guidance.event.date.invalid": "Enter a valid calendar date in YYYY-MM-DD format.",
+  "comment.guidance.event.description.missing": "Add a short description of the event.",
+  "comment.guidance.event.hoster.missing": "Select a host from the host list.",
+  "comment.guidance.event.hoster.invalid": "Use a host name or stable ID from the host list.",
+  "comment.guidance.event.hoster.multiple": "Select exactly one host for the event.",
+  "comment.guidance.event.agenda.missing": "Add at least one talk using `- Speaker: Talk description`.",
+  "comment.guidance.event.agenda.legacy-line-invalid": "Use `- Speaker: Talk description` for each agenda line.",
+  "comment.guidance.event.agenda.speaker.missing": "Add at least one speaker for this talk.",
+  "comment.guidance.event.agenda.speaker.invalid": "Enter a speaker name from the speaker list.",
+  "comment.guidance.event.agenda.description.missing": "Add a talk description after the speaker name and colon.",
+  "comment.guidance.publication.meetup.missing": "Add the link to the Meetup event page.",
+  "comment.guidance.publication.community.missing": "Add the link to the CNCF / OCGroups event page.",
+  "comment.guidance.publication.assets.missing": "Add the link to the event's Google Drive folder.",
+  "comment.guidance.event.link.meetup.invalid": "Enter a valid HTTPS link to the Meetup event page.",
+  "comment.guidance.event.link.community.invalid": "Enter a valid HTTPS link to the CNCF / OCGroups event page.",
+  "comment.guidance.event.link.assets.invalid": "Enter a valid HTTPS link to the event's Google Drive folder.",
+  "comment.guidance.publication.meetup-url.invalid": "Use this group's Meetup event URL, ending with the numeric event ID.",
+  "comment.guidance.publication.community-url.invalid": "Use this group's CNCF / OCGroups event URL.",
+  "comment.guidance.publication.asset-url.invalid": "Use a Google Drive folder URL: `https://drive.google.com/drive/folders/FOLDER_ID`.",
+  "comment.guidance.event.confirmation.host.missing": "Confirm the host, then add the `hoster:confirmed` label.",
+  "comment.guidance.event.confirmation.speakers.missing": "Confirm the speakers, then add the `speakers:confirmed` label.",
+  "comment.guidance.event.logistics.intent.invalid": "Choose `Yes` or `No`, or leave the response empty if undecided.",
+  "comment.guidance.event.occurrence-status.invalid": "Use `scheduled`, `postponed`, `held`, or `cancelled`.",
+  "comment.guidance.event.occurrence-status.label-conflict": "Keep only one occurrence label: `event:postponed`, `event:held`, or `event:cancelled`.",
+  "comment.guidance.event.document.heading.missing": "Restore this section heading from the meetup issue template.",
+  "comment.guidance.event.document.heading.duplicate": "Keep a single section with this heading and merge its content.",
+  "comment.guidance.event.document.checkbox.invalid": "Use `- [ ] Task` for pending tasks and `- [x] Task` for completed tasks.",
+  "comment.guidance.event.document.invalid-field-type": "Enter a text response in this field.",
+  "comment.guidance.event.document.invalid-hoster-type": "Select one host from the host list.",
+  "comment.guidance.event.document.invalid-hoster-entry": "Use a host name or stable ID from the host list.",
+  "comment.guidance.event.document.invalid-agenda-type": "Write the agenda as a list of `- Speaker: Talk description` lines.",
+  "comment.guidance.event.document.schema-marker.duplicate": "Ask a maintainer to repair the duplicate automation metadata in the issue description.",
+  "comment.guidance.event.document.schema-version.unsupported": "Ask a maintainer to update the automation to support this issue format.",
+  "comment.guidance.event.document.reference-metadata.missing": "Ask a maintainer to regenerate the missing host and speaker reference metadata.",
+  "comment.guidance.event.document.reference-metadata.duplicate": "Ask a maintainer to repair the duplicate host and speaker reference metadata.",
+  "comment.guidance.event.document.reference-metadata.invalid": "Ask a maintainer to regenerate the invalid host and speaker reference metadata.",
+  "comment.guidance.event.document.reference-metadata.legacy": "Check the host and agenda references, then rerun the issue update workflow to refresh their old metadata.",
+  "comment.guidance.event.document.reference-metadata.stale": "Check the host and agenda references, then rerun the issue update workflow to refresh their metadata.",
+  "comment.guidance.referential.reference.host.unknown": "This host was not found in the host list. Copy its exact name, including accents, or use a name with its stable ID: `Host name [host-0001]`.",
+  "comment.guidance.referential.reference.host.ambiguous": "Several hosts share this name. Include the correct stable ID: `Host name [host-0001]`.",
+  "comment.guidance.referential.reference.host.display-name-mismatch": "Use the host name associated with this stable ID in the host list.",
+  "comment.guidance.referential.reference.host.invalid": "Choose a host from the host list using its name or `Host name [host-0001]`.",
+  "comment.guidance.referential.reference.speaker.unknown": "This speaker was not found in the speaker list. Copy its exact name, including accents, or use a name with its stable ID: `Speaker name [speaker-0001]`.",
+  "comment.guidance.referential.reference.speaker.ambiguous": "Several speakers share this name. Include the correct stable ID: `Speaker name [speaker-0001]`.",
+  "comment.guidance.referential.reference.speaker.display-name-mismatch": "Use the speaker name associated with this stable ID in the speaker list.",
+  "comment.guidance.referential.reference.speaker.invalid": "Choose a speaker from the speaker list using its name or `Speaker name [speaker-0001]`."
+};
+
+// packages/adapter/github-event-comment-repository/src/i18n/messages.fr.ts
+var FR_MESSAGES2 = {
+  "comment.resolved": "Tous les probl\xE8mes signal\xE9s pr\xE9c\xE9demment ont \xE9t\xE9 r\xE9solus. Aucune modification n\u2019est n\xE9cessaire.",
+  "comment.duplicate": "Ce commentaire automatique en double a \xE9t\xE9 remplac\xE9.",
+  "comment.introduction": "Voici les \xE9l\xE9ments \xE0 compl\xE9ter dans le ticket du meetup :",
+  "comment.guidance": "Mettez \xE0 jour la description du ticket ou ses \xE9tiquettes pour traiter ces \xE9l\xE9ments. Cette liste sera actualis\xE9e automatiquement.",
+  "comment.unknown": "Une v\xE9rification suppl\xE9mentaire n\xE9cessite votre attention. Consultez les diagnostics du workflow avec un responsable.",
+  "comment.referential": "Demandez \xE0 un responsable de corriger les r\xE9f\xE9rentiels des structures d\u2019accueil ou des intervenants \xE0 l\u2019aide des diagnostics du workflow de validation.",
+  "comment.agenda.item": "Programme (\xE9l\xE9ment {item}{speaker})",
+  "comment.agenda.speaker-suffix": ", intervenant {speaker}",
+  "comment.agenda.speaker": "Programme (intervenant {speaker})",
+  "comment.guidance.event.title.missing": "Ajoutez un titre \xE0 l\u2019\xE9v\xE9nement.",
+  "comment.guidance.event.date.missing": "Ajoutez la date de l\u2019\xE9v\xE9nement au format AAAA-MM-JJ.",
+  "comment.guidance.event.date.invalid": "Saisissez une date valide au format AAAA-MM-JJ.",
+  "comment.guidance.event.description.missing": "Ajoutez une courte description de l\u2019\xE9v\xE9nement.",
+  "comment.guidance.event.hoster.missing": "S\xE9lectionnez un h\xF4te dans la liste.",
+  "comment.guidance.event.hoster.invalid": "Utilisez un nom ou un identifiant stable de la liste des h\xF4tes.",
+  "comment.guidance.event.hoster.multiple": "S\xE9lectionnez un seul h\xF4te pour l\u2019\xE9v\xE9nement.",
+  "comment.guidance.event.agenda.missing": "Ajoutez au moins une conf\xE9rence au format `- Intervenant: Description`.",
+  "comment.guidance.event.agenda.legacy-line-invalid": "Utilisez `- Intervenant: Description` pour chaque ligne du programme.",
+  "comment.guidance.event.agenda.speaker.missing": "Ajoutez au moins un intervenant pour cette conf\xE9rence.",
+  "comment.guidance.event.agenda.speaker.invalid": "Saisissez un nom de la liste des intervenants.",
+  "comment.guidance.event.agenda.description.missing": "Ajoutez une description apr\xE8s le nom de l\u2019intervenant et les deux-points.",
+  "comment.guidance.publication.meetup.missing": "Ajoutez le lien vers la page Meetup de l\u2019\xE9v\xE9nement.",
+  "comment.guidance.publication.community.missing": "Ajoutez le lien vers la page CNCF / OCGroups de l\u2019\xE9v\xE9nement.",
+  "comment.guidance.publication.assets.missing": "Ajoutez le lien vers le dossier Google Drive de l\u2019\xE9v\xE9nement.",
+  "comment.guidance.event.link.meetup.invalid": "Saisissez un lien HTTPS valide vers la page Meetup de l\u2019\xE9v\xE9nement.",
+  "comment.guidance.event.link.community.invalid": "Saisissez un lien HTTPS valide vers la page CNCF / OCGroups de l\u2019\xE9v\xE9nement.",
+  "comment.guidance.event.link.assets.invalid": "Saisissez un lien HTTPS valide vers le dossier Google Drive de l\u2019\xE9v\xE9nement.",
+  "comment.guidance.publication.meetup-url.invalid": "Utilisez l\u2019URL Meetup de ce groupe, termin\xE9e par l\u2019identifiant num\xE9rique de l\u2019\xE9v\xE9nement.",
+  "comment.guidance.publication.community-url.invalid": "Utilisez l\u2019URL CNCF / OCGroups de ce groupe.",
+  "comment.guidance.publication.asset-url.invalid": "Utilisez une URL de dossier Google Drive : `https://drive.google.com/drive/folders/FOLDER_ID`.",
+  "comment.guidance.event.confirmation.host.missing": "Confirmez l\u2019h\xF4te, puis ajoutez le label `hoster:confirmed`.",
+  "comment.guidance.event.confirmation.speakers.missing": "Confirmez les intervenants, puis ajoutez le label `speakers:confirmed`.",
+  "comment.guidance.event.logistics.intent.invalid": "Choisissez `Yes` ou `No`, ou laissez la r\xE9ponse vide si elle reste ind\xE9cise.",
+  "comment.guidance.event.occurrence-status.invalid": "Utilisez `scheduled`, `postponed`, `held` ou `cancelled`.",
+  "comment.guidance.event.occurrence-status.label-conflict": "Conservez un seul label de statut : `event:postponed`, `event:held` ou `event:cancelled`.",
+  "comment.guidance.event.document.heading.missing": "R\xE9tablissez cet en-t\xEAte de section \xE0 partir du mod\xE8le d\u2019issue.",
+  "comment.guidance.event.document.heading.duplicate": "Conservez une seule section avec cet en-t\xEAte et fusionnez son contenu.",
+  "comment.guidance.event.document.checkbox.invalid": "Utilisez `- [ ] T\xE2che` pour les t\xE2ches \xE0 faire et `- [x] T\xE2che` pour les t\xE2ches termin\xE9es.",
+  "comment.guidance.event.document.invalid-field-type": "Saisissez une r\xE9ponse textuelle dans ce champ.",
+  "comment.guidance.event.document.invalid-hoster-type": "S\xE9lectionnez un h\xF4te dans la liste.",
+  "comment.guidance.event.document.invalid-hoster-entry": "Utilisez un nom ou un identifiant stable de la liste des h\xF4tes.",
+  "comment.guidance.event.document.invalid-agenda-type": "R\xE9digez le programme sous forme de lignes `- Intervenant: Description`.",
+  "comment.guidance.event.document.schema-marker.duplicate": "Demandez \xE0 un responsable de corriger les m\xE9tadonn\xE9es d\u2019automatisation en double dans la description.",
+  "comment.guidance.event.document.schema-version.unsupported": "Demandez \xE0 un responsable de mettre \xE0 jour l\u2019automatisation pour prendre en charge ce format d\u2019issue.",
+  "comment.guidance.event.document.reference-metadata.missing": "Demandez \xE0 un responsable de r\xE9g\xE9n\xE9rer les m\xE9tadonn\xE9es manquantes des r\xE9f\xE9rences d\u2019h\xF4te et d\u2019intervenants.",
+  "comment.guidance.event.document.reference-metadata.duplicate": "Demandez \xE0 un responsable de corriger les m\xE9tadonn\xE9es en double des r\xE9f\xE9rences d\u2019h\xF4te et d\u2019intervenants.",
+  "comment.guidance.event.document.reference-metadata.invalid": "Demandez \xE0 un responsable de r\xE9g\xE9n\xE9rer les m\xE9tadonn\xE9es invalides des r\xE9f\xE9rences d\u2019h\xF4te et d\u2019intervenants.",
+  "comment.guidance.event.document.reference-metadata.legacy": "V\xE9rifiez les r\xE9f\xE9rences de l\u2019h\xF4te et du programme, puis relancez la mise \xE0 jour de l\u2019issue pour actualiser leurs anciennes m\xE9tadonn\xE9es.",
+  "comment.guidance.event.document.reference-metadata.stale": "V\xE9rifiez les r\xE9f\xE9rences de l\u2019h\xF4te et du programme, puis relancez la mise \xE0 jour de l\u2019issue pour actualiser leurs m\xE9tadonn\xE9es.",
+  "comment.guidance.referential.reference.host.unknown": "Cet h\xF4te est absent de la liste des h\xF4tes. Copiez son nom exact, accents compris, ou utilisez son identifiant stable : `Nom de l\u2019h\xF4te [host-0001]`.",
+  "comment.guidance.referential.reference.host.ambiguous": "Plusieurs h\xF4tes portent ce nom. Ajoutez le bon identifiant stable : `Nom de l\u2019h\xF4te [host-0001]`.",
+  "comment.guidance.referential.reference.host.display-name-mismatch": "Utilisez le nom associ\xE9 \xE0 cet identifiant stable dans la liste des h\xF4tes.",
+  "comment.guidance.referential.reference.host.invalid": "Choisissez un h\xF4te de la liste des h\xF4tes par son nom ou `Nom de l\u2019h\xF4te [host-0001]`.",
+  "comment.guidance.referential.reference.speaker.unknown": "Cet intervenant est absent de la liste des intervenants. Copiez son nom exact, accents compris, ou utilisez son identifiant stable : `Nom de l\u2019intervenant [speaker-0001]`.",
+  "comment.guidance.referential.reference.speaker.ambiguous": "Plusieurs intervenants portent ce nom. Ajoutez le bon identifiant stable : `Nom de l\u2019intervenant [speaker-0001]`.",
+  "comment.guidance.referential.reference.speaker.display-name-mismatch": "Utilisez le nom associ\xE9 \xE0 cet identifiant stable dans la liste des intervenants.",
+  "comment.guidance.referential.reference.speaker.invalid": "Choisissez un intervenant de la liste des intervenants par son nom ou `Nom de l\u2019intervenant [speaker-0001]`."
+};
+
+// packages/adapter/github-event-comment-repository/src/i18n/catalog.ts
+var CATALOGS2 = {
+  en: { ...EN_MESSAGES2 },
+  fr: { ...FR_MESSAGES2 }
+};
+
+// packages/adapter/github-event-comment-repository/src/i18n/event-comment-messages.ts
+var EventCommentMessages = class extends MessageLocalizer {
+  constructor(locale = "en") {
+    super(CATALOGS2, locale);
+  }
+};
 
 // packages/adapter/github-event-comment-repository/src/diagnostic-presentation.ts
 var DiagnosticPresenter = class _DiagnosticPresenter {
@@ -39519,59 +43492,23 @@ var DiagnosticPresenter = class _DiagnosticPresenter {
     ["occurrenceStatus", "Event Status"],
     ["event_status", "Event Status"]
   ]);
-  static presentDiagnostic(item) {
-    const guidance = GUIDANCE.get(item.code) ?? _DiagnosticPresenter.referenceGuidance(item.code);
-    const fallback = guidance?.[0] ?? "Meetup issue";
+  static presentDiagnostic(item, messages = new EventCommentMessages()) {
+    const guidance = GUIDANCE.get(item.code);
+    const referential = /^referential\.(host|contact|speaker)\./.test(
+      item.code
+    );
+    const fallback = guidance?.[0] ?? (referential ? "Referentials" : "Meetup issue");
     const [field, section] = _DiagnosticPresenter.publicField(
       item.field,
-      fallback
+      fallback,
+      messages
     );
-    const message = guidance?.[1] ?? "An additional validation check needs attention. Review the workflow diagnostics with a maintainer.";
+    const message = guidance ? messages.t(guidance[1]) : messages.t(referential ? "comment.referential" : "comment.unknown");
     const order = FIELD_ORDER.indexOf(section);
     return { field, message, order: order < 0 ? FIELD_ORDER.length : order };
   }
-  static referenceGuidance(code) {
-    const reference = code.match(
-      /^referential\.reference\.(host|speaker)\.(invalid|unknown|ambiguous|display-name-mismatch)$/
-    );
-    if (reference) {
-      const [, kind, problem] = reference;
-      const field = kind === "host" ? "Hoster" : "Agenda";
-      const catalog = kind === "host" ? "host list" : "speaker list";
-      const example = kind === "host" ? "Host name [host-0001]" : "Speaker name [speaker-0001]";
-      switch (problem) {
-        case "unknown":
-          return [
-            field,
-            `This ${kind} was not found in the ${catalog}. Copy its exact name, including accents, or use a name with its stable ID: \`${example}\`.`
-          ];
-        case "ambiguous":
-          return [
-            field,
-            `Several ${kind}s share this name. Include the correct stable ID: \`${example}\`.`
-          ];
-        case "display-name-mismatch":
-          return [
-            field,
-            `Use the ${kind} name associated with this stable ID in the ${catalog}.`
-          ];
-        default:
-          return [
-            field,
-            `Choose a ${kind} from the ${catalog} using its name or \`${example}\`.`
-          ];
-      }
-    }
-    if (/^referential\.(host|contact|speaker)\./.test(code)) {
-      return [
-        "Referentials",
-        "Ask a maintainer to correct the hosting or speaker catalog using the referential validation workflow diagnostics."
-      ];
-    }
-    return void 0;
-  }
   /** Only known issue headings and numeric agenda positions can reach Markdown. */
-  static publicField(field, fallback) {
+  static publicField(field, fallback, messages = new EventCommentMessages()) {
     const known = _DiagnosticPresenter.FIELD_ALIASES.get(field ?? "");
     if (known) return [known, known];
     const agenda = field?.match(
@@ -39579,12 +43516,22 @@ var DiagnosticPresenter = class _DiagnosticPresenter {
     );
     if (agenda) {
       const entry = Number(agenda[1]) + 1;
-      const speaker2 = agenda[3] === void 0 ? "" : `, speaker ${Number(agenda[3]) + 1}`;
-      return [`Agenda (item ${entry}${speaker2})`, "Agenda"];
+      const speaker2 = agenda[3] === void 0 ? "" : messages.t("comment.agenda.speaker-suffix", {
+        speaker: Number(agenda[3]) + 1
+      });
+      return [
+        messages.t("comment.agenda.item", { item: entry, speaker: speaker2 }),
+        "Agenda"
+      ];
     }
     const speaker = field?.match(/^speakerReferences\[(\d{1,6})\]$/);
     if (speaker)
-      return [`Agenda (speaker ${Number(speaker[1]) + 1})`, "Agenda"];
+      return [
+        messages.t("comment.agenda.speaker", {
+          speaker: Number(speaker[1]) + 1
+        }),
+        "Agenda"
+      ];
     return [fallback, fallback];
   }
 };
@@ -39600,12 +43547,6 @@ var GitHubEventCommentRepositoryConfigurationError = class extends Error {
 // packages/adapter/github-event-comment-repository/src/github-event-comment-repository-contracts.ts
 var EVENT_DIAGNOSTIC_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics:v1 -->";
 var DUPLICATE_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics-duplicate:v1 -->";
-var RESOLVED_COMMENT_BODY = `${EVENT_DIAGNOSTIC_COMMENT_MARKER}
-
-All previously reported issues have been resolved. No changes are currently needed.`;
-var DUPLICATE_COMMENT_BODY = `${DUPLICATE_COMMENT_MARKER}
-
-Superseded duplicate automation comment.`;
 
 // packages/adapter/github-event-comment-repository/src/github-event-comment-repository-response-error.ts
 var GitHubEventCommentRepositoryResponseError = class extends Error {
@@ -39629,6 +43570,7 @@ var GitHubEventCommentRepositoryScopeError = class extends Error {
 var GitHubEventCommentRepository = class _GitHubEventCommentRepository {
   constructor(client, options) {
     this.client = client;
+    this.messages = new EventCommentMessages(options.locale);
     this.owner = _GitHubEventCommentRepository.requireRepositoryPart(
       options.owner,
       "owner"
@@ -39641,6 +43583,7 @@ var GitHubEventCommentRepository = class _GitHubEventCommentRepository {
     this.authorLogin = options.authorLogin?.trim() || void 0;
   }
   client;
+  messages;
   owner;
   repo;
   repositoryName;
@@ -39652,9 +43595,12 @@ var GitHubEventCommentRepository = class _GitHubEventCommentRepository {
     );
     const [canonical, ...duplicates] = managedComments;
     let changed = await this.minimizeDuplicates(duplicates);
-    const body = _GitHubEventCommentRepository.renderDiagnosticComment(diagnostics);
+    const body = _GitHubEventCommentRepository.renderDiagnosticComment(
+      diagnostics,
+      this.messages
+    );
     if (!canonical) {
-      if (body === RESOLVED_COMMENT_BODY) {
+      if (!diagnostics.some((item) => item.severity !== "info")) {
         return { changed };
       }
       await this.client.rest.issues.createComment({
@@ -39711,7 +43657,12 @@ var GitHubEventCommentRepository = class _GitHubEventCommentRepository {
   }
   async minimizeDuplicates(duplicates) {
     for (const duplicate of duplicates) {
-      await this.updateComment(duplicate.id, DUPLICATE_COMMENT_BODY);
+      await this.updateComment(
+        duplicate.id,
+        `${DUPLICATE_COMMENT_MARKER}
+
+${this.messages.t("comment.duplicate")}`
+      );
       if (this.client.minimizeComment) {
         await this.client.minimizeComment({
           commentId: duplicate.id,
@@ -39737,32 +43688,39 @@ var GitHubEventCommentRepository = class _GitHubEventCommentRepository {
       );
     }
   }
-  static renderDiagnosticComment(diagnostics) {
+  static renderDiagnosticComment(diagnostics, messages = new EventCommentMessages()) {
     const actionable = /* @__PURE__ */ new Map();
     for (const item of diagnostics) {
       if (item.severity === "info") {
         continue;
       }
-      const presentation = DiagnosticPresenter.presentDiagnostic(item);
+      const presentation = DiagnosticPresenter.presentDiagnostic(
+        item,
+        messages
+      );
       actionable.set(
         `${presentation.field}:${presentation.message}`,
         presentation
       );
     }
     if (actionable.size === 0) {
-      return RESOLVED_COMMENT_BODY;
+      return `${EVENT_DIAGNOSTIC_COMMENT_MARKER}
+
+${messages.t("comment.resolved")}`;
     }
     const lines = [...actionable.values()].sort(
-      (left, right) => left.order - right.order || left.field.localeCompare(right.field, "en", { numeric: true }) || left.message.localeCompare(right.message, "en")
+      (left, right) => left.order - right.order || left.field.localeCompare(right.field, messages.locale, {
+        numeric: true
+      }) || left.message.localeCompare(right.message, messages.locale)
     ).map(({ field, message }) => `- [ ] **${field}**: ${message}`);
     return [
       EVENT_DIAGNOSTIC_COMMENT_MARKER,
       "",
-      "Found the following items to complete in the meetup issue:",
+      messages.t("comment.introduction"),
       "",
       ...lines,
       "",
-      "Please update the issue description or labels to address these items. This checklist will refresh automatically."
+      messages.t("comment.guidance")
     ].join("\n");
   }
   static mapComment(data) {
@@ -40756,6 +44714,31 @@ import { readFile as readFile2, realpath, stat as stat2, writeFile as writeFile2
 import { isAbsolute as isAbsolute2, relative as relative2, resolve as resolve2, sep as sep2 } from "node:path";
 var import_yaml = __toESM(require_dist(), 1);
 
+// packages/adapter/yaml-issue-form-projection/src/i18n/messages.en.ts
+var EN_MESSAGES3 = {
+  "form.speakers.guidance": "Select speakers by copying one or more references into the agenda.",
+  "form.speakers.show": "Show available speaker references"
+};
+
+// packages/adapter/yaml-issue-form-projection/src/i18n/messages.fr.ts
+var FR_MESSAGES3 = {
+  "form.speakers.guidance": "S\xE9lectionnez les intervenants en copiant une ou plusieurs r\xE9f\xE9rences dans le programme.",
+  "form.speakers.show": "Afficher les r\xE9f\xE9rences des intervenants disponibles"
+};
+
+// packages/adapter/yaml-issue-form-projection/src/i18n/catalog.ts
+var CATALOGS3 = {
+  en: { ...EN_MESSAGES3 },
+  fr: { ...FR_MESSAGES3 }
+};
+
+// packages/adapter/yaml-issue-form-projection/src/i18n/issue-form-messages.ts
+var IssueFormMessages = class extends MessageLocalizer {
+  constructor(locale = "en") {
+    super(CATALOGS3, locale);
+  }
+};
+
 // packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-projection-contracts.ts
 var HOST_FIELD_ID = "hoster";
 var AVAILABLE_SPEAKERS_MARKER = "<!-- Available speakers -->";
@@ -40764,8 +44747,10 @@ var AVAILABLE_SPEAKERS_MARKER = "<!-- Available speakers -->";
 var YamlIssueFormProjection = class _YamlIssueFormProjection {
   constructor(options) {
     this.options = options;
+    this.messages = new IssueFormMessages(options.locale);
   }
   options;
+  messages;
   choices = new ProjectReferentialChoices();
   async synchronize(input) {
     this.assertInput(input);
@@ -40904,10 +44889,10 @@ var YamlIssueFormProjection = class _YamlIssueFormProjection {
     return [
       AVAILABLE_SPEAKERS_MARKER,
       "",
-      "Select speakers by copying one or more references into the agenda.",
+      this.messages.t("form.speakers.guidance"),
       "",
       "<details>",
-      "<summary>Show available speaker references</summary>",
+      `<summary>${this.messages.t("form.speakers.show")}</summary>`,
       "",
       references,
       "",
@@ -46474,7 +50459,12 @@ var EventComposition = class _EventComposition {
         speakersPath: config.referentials.speakers
       });
     });
-    container.bind(SERVICES.issueFormProjection).toDynamicValue(() => new YamlIssueFormProjection({ workspaceRoot }));
+    container.bind(SERVICES.issueFormProjection).toDynamicValue(
+      () => new YamlIssueFormProjection({
+        workspaceRoot,
+        locale: input.locale
+      })
+    );
     container.bind(ValidateMeetupReferentials).toDynamicValue(
       (context3) => new ValidateMeetupReferentials({
         config: context3.get(SERVICES.config),
@@ -46559,7 +50549,8 @@ var EventComposition = class _EventComposition {
       () => new GitHubEventCommentRepository(input.client, {
         owner: input.owner,
         repo: input.repo,
-        authorLogin: input.commentAuthorLogin
+        authorLogin: input.commentAuthorLogin,
+        locale: input.locale
       })
     );
     container.bind(SERVICES.eventClock).toDynamicValue(() => new SystemEventClock());
@@ -46681,6 +50672,32 @@ var CommunicationComposition = class _CommunicationComposition {
   }
 };
 
+// packages/runtime/github-actions/src/notifications/messages.en.ts
+var EN_MESSAGES4 = {
+  "communication.organizer-attention": "Meetup event issue #{issue} requires organizer attention."
+};
+
+// packages/runtime/github-actions/src/notifications/messages.fr.ts
+var FR_MESSAGES4 = {
+  "communication.organizer-attention": "Le ticket du meetup #{issue} n\xE9cessite l\u2019attention des organisateurs."
+};
+
+// packages/runtime/github-actions/src/notifications/catalog.ts
+var CATALOGS4 = {
+  en: { ...EN_MESSAGES4 },
+  fr: { ...FR_MESSAGES4 }
+};
+
+// packages/runtime/github-actions/src/notifications/organizer-notification-messages.ts
+var OrganizerNotificationMessages = class extends MessageLocalizer {
+  constructor(locale = "en") {
+    super(CATALOGS4, locale);
+  }
+  get policyRevision() {
+    return this.locale === "en" ? "" : "organizer-attention.fr.v1";
+  }
+};
+
 // packages/runtime/github-actions/src/communication.ts
 var CommunicationRuntime = class _CommunicationRuntime {
   /** Translate runtime credentials into capabilities before entering the application. */
@@ -46707,7 +50724,9 @@ var CommunicationRuntime = class _CommunicationRuntime {
     const mailingsToken = input.mailingsToken.trim();
     const slackToken = input.slackToken.trim();
     const slackChannelId = input.slackChannelId.trim();
+    const messages = new OrganizerNotificationMessages(input.locale);
     const container = CommunicationComposition.createCommunicationContainer({
+      locale: messages.locale,
       client: getOctokit(githubToken),
       owner: input.owner,
       repo: input.repo,
@@ -46729,6 +50748,10 @@ var CommunicationRuntime = class _CommunicationRuntime {
       mailGatewayEnabled: mailingsToken.length > 0,
       notificationGatewayEnabled: slackToken.length > 0,
       notificationDestination: slackChannelId,
+      notificationContent: messages.t("communication.organizer-attention", {
+        issue: input.issueNumber
+      }),
+      notificationContentRevision: messages.policyRevision,
       approvalTrigger: input.approvalTrigger,
       notificationDestinationFingerprint: config.communication["slack-enabled"] && slackChannelId ? `sha256:${createHash2("sha256").update(slackChannelId).digest("hex")}` : null
     });
@@ -46800,7 +50823,7 @@ var RUNTIME_MESSAGES = {
   "communication.referential-catalog-invalid": "Communications are disabled because the referential catalog is invalid."
 };
 var CommunicationAction = class _CommunicationAction {
-  static async runCommunicationReconcileAction() {
+  static async runCommunicationReconcileAction(messages = new ActionMessages()) {
     const issueNumber = RuntimeInput.positiveIntegerInput(
       "issue-number",
       getInput("issue-number", { required: true })
@@ -46820,6 +50843,7 @@ var CommunicationAction = class _CommunicationAction {
       `${owner}/${repo}`
     ) ?? void 0 : void 0;
     const outcome = await CommunicationRuntime.runCommunicationReconcile({
+      locale: messages.locale,
       issueNumber,
       requestedMode,
       dispatchAuthorized,
@@ -46841,7 +50865,7 @@ var CommunicationAction = class _CommunicationAction {
         ...issueSnapshot ? { issueSnapshot } : {}
       }
     });
-    _CommunicationAction.report(outcome);
+    return _CommunicationAction.report(outcome, messages);
   }
   static publicIntentIdentifier(value) {
     return `sha256:${createHash3("sha256").update(value).digest("hex")}`;
@@ -46860,7 +50884,7 @@ var CommunicationAction = class _CommunicationAction {
       message: RUNTIME_MESSAGES[diagnostic.code]
     };
   }
-  static report(outcome) {
+  static report(outcome, messages) {
     const diagnostics = [
       ...outcome.diagnostics.map(_CommunicationAction.domainDiagnostic),
       ...outcome.runtimeDiagnostics.map(_CommunicationAction.runtimeDiagnostic)
@@ -46880,17 +50904,31 @@ var CommunicationAction = class _CommunicationAction {
     );
     setOutput("planned-count", String(outcome.counts.planned));
     setOutput("dispatched-count", String(outcome.counts.dispatched));
-    ActionOutput.setDiagnosticsOutput(diagnostics);
-    if (diagnostics.some(({ severity }) => severity === "error")) {
-      setFailed(
-        "Communication reconciliation failed; inspect diagnostics."
-      );
-    }
+    return {
+      details: [
+        messages.t("report.communication.mode", { mode: outcome.mode }),
+        messages.t("report.communication.planned", outcome.counts),
+        messages.t("report.communication.accepted", {
+          ...outcome.counts,
+          recorded: outcome.counts.alreadyRecorded
+        }),
+        messages.t("report.communication.uncertain", outcome.counts),
+        ...diagnostics.length > 0 ? [messages.t("report.communication.guidance")] : [],
+        ...outcome.counts.uncertain > 0 ? [messages.t("report.communication.uncertain-guidance")] : []
+      ],
+      diagnostics,
+      ...diagnostics.some(({ severity }) => severity === "error") ? {
+        failure: messages.t("report.communication.failed")
+      } : {}
+    };
   }
 };
 
 // packages/runtime/github-actions/src/entrypoints/communication-reconcile.ts
-ActionRunner.run(CommunicationAction.runCommunicationReconcileAction);
+await ActionRunner.run(
+  "action.communication.reconcile",
+  CommunicationAction.runCommunicationReconcileAction
+);
 /*! Bundled license information:
 
 undici/lib/web/fetch/body.js:
