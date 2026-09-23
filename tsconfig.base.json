@@ -64,6 +64,9 @@
 			],
 			"@meetup-automation/google-drive-asset-repository": [
 				"./packages/adapter/google-drive-asset-repository/src/index.ts"
+			],
+			"@meetup-automation/kutt-feedback-link-gateway": [
+				"./packages/adapter/kutt-feedback-link-gateway/src/index.ts"
 			]
 		}
 	}

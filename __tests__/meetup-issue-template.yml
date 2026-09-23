@@ -68,6 +68,12 @@
       "label": "Drive Link"
       "description": "Provide the link to the Google Drive folder"
       "placeholder": "https://drive.google.com/drive/folders/xxxxxxxxxxxxxxxxxxxx"
+  - type: input
+    id: openfeedback_link
+    attributes:
+      label: OpenFeedback Link
+      description: Provide the existing OpenFeedback poll URL for this event.
+      placeholder: https://openfeedback.io/event-id
   - "type": "checkboxes"
     "id": "slides"
     "attributes":
@@ -79,8 +85,7 @@
         - "label": "Announcements / surveys / news etc..."
         - "label": "Slides hoster"
         - "label": "Slides speaker(s)"
-        - "label": "Kahoot / Game"
-        - "label": "Openfeedback"
+        - "label": "Game"
         - "label": "Goodies"
   - "type": "checkboxes"
     "id": "communication"

@@ -20,12 +20,14 @@ const publicWorkflowContracts = {
 			"github-app-id",
 			"google-drive-meetup-folder-id",
 			"google-drive-meetup-template-folder-id",
+			"kutt-link-id",
 			"slack-channel-id",
 		],
 		outputs: ["issue-numbers"],
 		secrets: [
 			"github-app-private-key",
 			"google-credentials",
+			"kutt-api-key",
 			"mailings-token",
 			"slack-token",
 		],
@@ -35,12 +37,14 @@ const publicWorkflowContracts = {
 			"github-app-id",
 			"google-drive-meetup-folder-id",
 			"google-drive-meetup-template-folder-id",
+			"kutt-link-id",
 			"slack-channel-id",
 		],
 		outputs: ["communication-diagnostics", "diagnostics", "is-ready", "state"],
 		secrets: [
 			"github-app-private-key",
 			"google-credentials",
+			"kutt-api-key",
 			"mailings-token",
 			"slack-token",
 		],
@@ -76,6 +80,7 @@ const publicWorkflowContracts = {
 const expectedActionWiring = {
 	"check-active-meetup-issues": {
 		audit: [
+			"publication/reconcile-feedback",
 			"publication/reconcile-assets",
 			"event/reconcile",
 			"communication/reconcile",
@@ -85,6 +90,7 @@ const expectedActionWiring = {
 	"update-meetup-issue": {
 		manage: [
 			"communication/reconcile",
+			"publication/reconcile-feedback",
 			"publication/reconcile-assets",
 			"event/reconcile",
 		],

@@ -155,3 +155,11 @@ SPDX-License-Identifier: MIT
 Copyright © 2026 Cloud Native Aix-Marseille
 
 For more details, see the [license](http://choosealicense.com/licenses/mit/).
+
+### Feedback publication
+
+[Feedback setup](docs/publication-feedback.md) describes manually created
+OpenFeedback polls and automatic updates of the shared Kutt link on the event
+day. The publication action uses `kutt-feedback-link-gateway` and requires both
+the Kutt API key and existing link ID. Missing configuration fails the action.
+Automatic poll creation remains blocked by OpenFeedback's public API.

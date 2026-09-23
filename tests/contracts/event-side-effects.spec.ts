@@ -171,6 +171,7 @@ describe("event side-effect safeguards", () => {
 			"github-app-id",
 			"google-drive-meetup-folder-id",
 			"google-drive-meetup-template-folder-id",
+			"kutt-link-id",
 			"slack-channel-id",
 		]);
 		expect(token?.with?.["app-id"]).toBe(

@@ -99,6 +99,12 @@ importers:
         specifier: workspace:*
         version: link:../../domain/publication
 
+  packages/adapter/kutt-feedback-link-gateway:
+    dependencies:
+      '@meetup-automation/publication':
+        specifier: workspace:*
+        version: link:../../domain/publication
+
   packages/adapter/slack-notification-gateway:
     dependencies:
       '@meetup-automation/communication':
@@ -190,6 +196,9 @@ importers:
       '@meetup-automation/journey':
         specifier: workspace:*
         version: link:../../application/journey
+      '@meetup-automation/kutt-feedback-link-gateway':
+        specifier: workspace:*
+        version: link:../../adapter/kutt-feedback-link-gateway
       '@meetup-automation/publication':
         specifier: workspace:*
         version: link:../../domain/publication
