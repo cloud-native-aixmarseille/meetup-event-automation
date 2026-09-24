@@ -6,8 +6,6 @@ export interface ManageMeetupCommunicationsInput {
 
 	readonly requestedMode: "check" | "dispatch";
 	readonly dispatchAuthorized: boolean;
-	readonly mailGatewayEnabled: boolean;
-	readonly notificationGatewayEnabled: boolean;
 	readonly notificationDestinationFingerprint: string | null;
 	readonly notificationDestination: string;
 	/** Rendered at the presentation boundary; never use this as an idempotency key. */
@@ -42,9 +40,6 @@ type CommunicationJourneyDiagnosticCode =
 	| "communication.event-concurrently-modified"
 	| "communication.event-references-unresolved"
 	| "communication.github-credential-missing"
-	| "communication.mail-gateway-disabled-missing-credential"
-	| "communication.notification-gateway-disabled-missing-credential"
-	| "communication.notification-gateway-disabled-missing-destination"
 	| "communication.referential-catalog-invalid";
 
 export interface CommunicationJourneyDiagnostic {

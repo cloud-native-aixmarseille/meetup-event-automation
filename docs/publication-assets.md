@@ -14,27 +14,32 @@ In the consumer repository, set these variables:
 - `CI_GOOGLE_DRIVE_MEETUP_FOLDER_ID`: parent of the event folders.
 - `CI_GOOGLE_DRIVE_MEETUP_TEMPLATE_FOLDER_ID`: folder containing file templates.
 
-Pass the service-account JSON explicitly as the optional `google-credentials`
-secret to `update-meetup-issue.yml` and `check-active-meetup-issues.yml`:
+Both `update-meetup-issue.yml` and `check-active-meetup-issues.yml` require the
+service-account JSON and both folder IDs. Their callers pass them explicitly:
 
 ```yaml
+with:
+  github-app-id: ${{ vars.CI_BOT_APP_ID }}
+  slack-channel-id: ${{ vars.SLACK_CHANNEL_ID }}
+  google-drive-meetup-folder-id: ${{ vars.CI_GOOGLE_DRIVE_MEETUP_FOLDER_ID }}
+  google-drive-meetup-template-folder-id: ${{ vars.CI_GOOGLE_DRIVE_MEETUP_TEMPLATE_FOLDER_ID }}
 secrets:
   github-app-private-key: ${{ secrets.CI_BOT_APP_PRIVATE_KEY }}
   google-credentials: ${{ secrets.CI_GOOGLE_SERVICE_ACCOUNT_CREDENTIALS }}
+  mailings-token: ${{ secrets.MAILINGS_TOKEN }}
+  slack-token: ${{ secrets.SLACK_BOT_TOKEN }}
 ```
 
 The service account needs read access to templates and permission to create,
 copy, and update files in the parent folder. Shared drives are supported; this
-action does not change sharing permissions. Missing credentials leave assets
-as manual work and produce `publication.assets.unavailable`. Supplied but
-invalid credentials or folder IDs fail the action without printing secret
-values or provider response bodies.
+action does not change sharing permissions. Credentials and folder IDs are
+required in every mode. Invalid credentials or folder IDs fail the action
+without printing secret values or provider response bodies.
 
-For direct action use, set `GOOGLE_DRIVE_MEETUP_FOLDER_ID` and
-`GOOGLE_DRIVE_MEETUP_TEMPLATE_FOLDER_ID` in its environment. Direct use supports
-`check`; `fix` is an internal workflow operation requiring
-`mutation-authorized: "true"` while holding the shared non-cancelling per-event
-lock. The two public event workflows provide that lock and assertion.
+For direct action use, provide `google-credentials`,
+`google-drive-meetup-folder-id`, and `google-drive-meetup-template-folder-id`
+as action inputs. Use `check` to report drift without writes; `fix` runs under
+the shared non-cancelling per-event lock supplied by both public event workflows.
 
 ## Reconciliation behavior
 

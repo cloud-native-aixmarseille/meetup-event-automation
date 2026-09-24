@@ -49,6 +49,8 @@ export const FR_MESSAGES = {
 	"report.issue-form.blocked":
 		"La synchronisation du formulaire est bloquée par des référentiels invalides.",
 	"report.issue-form.stale": "Le formulaire n’est pas à jour.",
+	"report.issue-form.drift-allowed":
+		"Le décalage du formulaire ne bloque pas cette vérification. La synchronisation peut être exécutée après la fusion.",
 	"report.issue-form.updated": "Le formulaire a été mis à jour.",
 	"report.issue-form.current": "Le formulaire est à jour.",
 	"report.issue-form.files": "Fichiers concernés : {files}.",
@@ -73,8 +75,6 @@ export const FR_MESSAGES = {
 		"La vérification et la mise à jour des ressources sont terminées.",
 	"report.assets.counts":
 		"Modifications du ticket enregistrées : {persisted, select, true {oui} other {non}} ; fichiers de ressources : {count, number}.",
-	"report.assets.unavailable":
-		"Ignoré : les identifiants Google Drive sont absents ; la gestion des ressources reste manuelle.",
 	"report.communication.mode": "Mode de communication : {mode}.",
 	"report.communication.planned":
 		"Planifiées : {planned, number} ; à envoyer : {due, number} ; tentatives d’envoi : {dispatched, number}.",

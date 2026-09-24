@@ -20,14 +20,14 @@ inputs:
     description: Trusted GitHub App bot login used by the event composition.
     required: true
   google-credentials:
-    description: Optional service-account JSON with access to the configured Drive parent and template folders. Omission leaves asset management manual.
-    required: false
+    description: Service-account JSON with access to the configured Drive parent and template folders.
+    required: true
   google-drive-meetup-folder-id:
-    description: Optional Google Drive folder ID of the parent meetup folder. Required when google-credentials is provided.
-    required: false
+    description: Google Drive folder ID of the parent meetup folder.
+    required: true
   google-drive-meetup-template-folder-id:
-    description: Optional Google Drive folder ID of the template folder. Required when google-credentials is provided.
-    required: false
+    description: Google Drive folder ID of the template folder.
+    required: true
 outputs:
   result:
     description: Versioned JSON envelope containing folder and template links, persistence status, and diagnostics.

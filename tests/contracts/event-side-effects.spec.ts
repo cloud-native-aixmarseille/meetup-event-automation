@@ -16,7 +16,7 @@ describe("event side-effect safeguards", () => {
 		["update-meetup-issue", "manage"],
 		["check-active-meetup-issues", "audit"],
 	] as const)(
-		"keeps asset mutations optional and locked in %s",
+		"requires asset configuration and locks mutations in %s",
 		async (name, jobName) => {
 			// Arrange
 			const actionPath = "actions/publication/reconcile-assets/action.yml";
@@ -31,7 +31,14 @@ describe("event side-effect safeguards", () => {
 			);
 
 			// Assert
-			expect(action.inputs?.["google-credentials"]?.required).toBe(false);
+			for (const inputName of [
+				"google-credentials",
+				"google-drive-meetup-folder-id",
+				"google-drive-meetup-template-folder-id",
+			]) {
+				expect(action.inputs?.[inputName]?.required).toBe(true);
+				expect(action.inputs?.[inputName]?.default).toBeUndefined();
+			}
 			expect(job.concurrency?.["cancel-in-progress"]).toBe(false);
 			expect(step?.with).toMatchObject({
 				mode: "fix",
@@ -48,15 +55,18 @@ describe("event side-effect safeguards", () => {
 			expect(step?.env).toBeUndefined();
 			expect(
 				workflow.on?.workflow_call?.secrets?.["google-credentials"]?.required,
-			).toBe(false);
-			expect(
-				workflow.on?.workflow_call?.inputs?.["google-drive-meetup-folder-id"],
-			).toBeDefined();
-			expect(
-				workflow.on?.workflow_call?.inputs?.[
-					"google-drive-meetup-template-folder-id"
-				],
-			).toBeDefined();
+			).toBe(true);
+			for (const inputName of [
+				"google-drive-meetup-folder-id",
+				"google-drive-meetup-template-folder-id",
+			]) {
+				expect(workflow.on?.workflow_call?.inputs?.[inputName]?.required).toBe(
+					true,
+				);
+				expect(
+					workflow.on?.workflow_call?.inputs?.[inputName]?.default,
+				).toBeUndefined();
+			}
 		},
 	);
 
@@ -181,7 +191,7 @@ describe("event side-effect safeguards", () => {
 		expect(event?.with?.mode).toBe("check");
 		expect(event?.id).toBe("event");
 		expect(communication?.with?.mode).toBe("dispatch");
-		expect(communication?.env?.SLACK_CHANNEL_ID).toBe(
+		expect(communication?.with?.["slack-channel-id"]).toBe(
 			workflowExpression("inputs.slack-channel-id"),
 		);
 		expect(summary).toBeUndefined();
@@ -194,31 +204,38 @@ describe("event side-effect safeguards", () => {
 		).toEqual([]);
 	});
 
-	it("blocks issue-form synchronization when referentials are invalid", async () => {
+	it("requires successful actions before updating the issue form and opening a pull request", async () => {
 		// Arrange
 		const workflow = await readWorkflow("update-meetup-issue-form");
-		const steps = workflow.jobs?.synchronize?.steps ?? [];
-		const validation = findStep(
-			workflow.jobs?.synchronize ?? {},
-			`${automationActionPrefix}referential/validate`,
-		);
+		const job = workflow.jobs?.synchronize ?? {};
+		const steps = job.steps ?? [];
 
 		// Act
-		const enforcement = steps.find(
-			(step: Step) => step.name === "Enforce valid referentials",
+		const validation = findStep(
+			job,
+			`${automationActionPrefix}referential/validate`,
 		);
 		const projection = findStep(
-			workflow.jobs?.synchronize ?? {},
+			job,
 			`${automationActionPrefix}referential/sync-issue-form`,
 		);
-		const actual = steps.indexOf(enforcement as Step);
+		const pullRequest = steps.find((step) =>
+			step.uses?.startsWith("peter-evans/create-pull-request@"),
+		);
 
 		// Assert
 		expect(validation?.id).toBe("referentials");
-		expect(enforcement?.if).toBe(
-			"steps.referentials.outputs.is-valid != 'true'",
+		expect(validation).not.toHaveProperty("continue-on-error");
+		expect(projection?.id).toBe("synchronize");
+		expect(projection?.with?.mode).toBe("fix");
+		expect(projection?.if).toBeUndefined();
+		expect(projection).not.toHaveProperty("continue-on-error");
+		expect(steps.indexOf(validation as Step)).toBeLessThan(
+			steps.indexOf(projection as Step),
 		);
-		expect(enforcement?.run).toContain("exit 1");
-		expect(actual).toBeLessThan(steps.indexOf(projection as Step));
+		expect(pullRequest?.if).toBe("steps.synchronize.outputs.changed == 'true'");
+		expect(steps.indexOf(projection as Step)).toBeLessThan(
+			steps.indexOf(pullRequest as Step),
+		);
 	});
 });

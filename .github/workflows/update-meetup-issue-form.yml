@@ -84,13 +84,6 @@ jobs:
         with:
           locale: ${{ inputs.locale }}
 
-      - name: Enforce valid referentials
-        if: steps.referentials.outputs.is-valid != 'true'
-        shell: bash
-        run: |
-          echo "Meetup referentials are invalid; issue-form synchronization is blocked." >&2
-          exit 1
-
       - name: Render issue form
         id: synchronize
         uses: ./../self-workflow/actions/referential/sync-issue-form

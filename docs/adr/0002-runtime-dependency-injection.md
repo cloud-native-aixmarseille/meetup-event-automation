@@ -29,15 +29,19 @@ replacement ports and verify behavior and isolation.
 
 The communication journey belongs to the application package. It receives an
 approval repository, an approval authorization capability, event and referential
-ports, and a delivery use-case factory. Runtime credentials become availability
-flags before crossing that boundary. The delivery factory captures the final
-dispatch authorization after readiness, approval, and concurrency checks, so the
-ledger retains its independent write guard.
+ports, and a delivery use-case factory. The runtime requires both mail and Slack
+tokens and a Slack channel ID and constructs their gateways; credentials remain
+at that boundary. The delivery factory captures the final dispatch authorization
+after readiness,
+approval, and concurrency checks, so the ledger retains its independent write
+guard.
 
 Event rules are constructed once by the composition root and honored by the
 journey. Asset reconciliation and issue-form synchronization receive their
-collaborating use cases explicitly. The GitHub ledger comment client belongs to
-the ledger adapter, alongside its transport interface.
+collaborating use cases explicitly. The publication runtime requires Google
+credentials and both Drive folder IDs before constructing its asset repository.
+The GitHub ledger comment client belongs to the ledger adapter, alongside its
+transport interface.
 
 ## Consequences
 

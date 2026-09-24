@@ -8,8 +8,8 @@
 
 Implementation follow-up: [Google Drive event assets](../publication-assets.md)
 adds the publication-owned asset use case, `google-drive-asset-repository`, and
-`actions/publication/reconcile-assets` anticipated by this decision. The initial
-manual asset task remains the fallback when the optional credentials are absent.
+`actions/publication/reconcile-assets` anticipated by this decision. The asset
+action and both event workflows require Google credentials and Drive folder IDs.
 
 ## Context
 
@@ -390,11 +390,10 @@ it with the same idempotency key, and transitions it to `accepted` only after
 gateway acknowledgement. An ambiguous response becomes `uncertain` and is
 never automatically resent; an operator must reconcile it.
 
-Planning is independent of gateway credentials. Check mode therefore reports
-the complete business plan even when optional mail or Slack secrets are not
-available. In dispatch mode, runtime capabilities suppress reservation and
-gateway invocation for an unavailable channel without removing its due intents
-from the plan.
+Planning is independent of gateway credentials. The public communication action
+requires mail and Slack tokens and a Slack channel ID in every mode. Check mode
+reports the complete business plan without dispatching it; dispatch mode uses
+the configured gateways once the approval and delivery gates pass.
 
 The mailings repository/provider must accept and deduplicate the idempotency key
 before email dispatch is enabled. Slack does not provide an exactly-once
@@ -624,20 +623,23 @@ convention. The prefix is not an access-control mechanism.
 | `synchronize-meetup-issue-form.yml` | Referential/config change or manual | Checkout caller; validate referentials; render and test issue form; open/update a bot pull request only when changed |
 | `validate-meetup-automation.yml`    | Consumer pull request               | Read-only referential validation and issue-form projection drift check                                               |
 
-All four workflows expose zero ordinary caller inputs. The manage workflow
-derives the issue number from the issue event. App identity and Slack routing
-use the fixed repository variable names `CI_BOT_APP_ID` and
-`SLACK_CHANNEL_ID`. Synchronization opens a pull request only when drift is
-detected. Communication reconciliation always evaluates dispatch, while the
+The issue workflow derives the issue number from the issue event. Both event
+workflows require explicit inputs for the GitHub App ID, Slack channel ID, and
+Drive parent and template folder IDs. Consumer callers supply
+`CI_BOT_APP_ID`, `SLACK_CHANNEL_ID`, `CI_GOOGLE_DRIVE_MEETUP_FOLDER_ID`, and
+`CI_GOOGLE_DRIVE_MEETUP_TEMPLATE_FOLDER_ID` repository variables.
+Synchronization opens a pull request only when drift is detected. Communication
+reconciliation always evaluates dispatch, while the
 configuration switch, maintainer approval, credentials, and delivery ledger
 remain fail-closed gates. The three mutating/operational workflows declare
-their required GitHub App private key and optional delivery secrets explicitly.
+their required GitHub App private key explicitly. Both workflows that reconcile
+communications and assets also require mail, Slack, and Google service-account
+secrets.
 
 Each workflow starts with `permissions: {}` and declares permissions per job.
 It declares every `workflow_call` secret and output. `secrets: inherit`
-is forbidden for consumer calls. Optional secrets are detected inside a step or
-action through an environment value; they are never referenced directly in an
-`if:` expression.
+is forbidden for consumer calls. Required secrets are passed explicitly to their
+owned actions; they are never referenced directly in an `if:` expression.
 
 ### Same-revision action loading
 
@@ -719,8 +721,15 @@ jobs:
     uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/manage-meetup-event.yml@0123456789abcdef0123456789abcdef01234567 # 1.x.y
     permissions:
       contents: read
+    with:
+      github-app-id: ${{ vars.CI_BOT_APP_ID }}
+      slack-channel-id: ${{ vars.SLACK_CHANNEL_ID }}
+      google-drive-meetup-folder-id: ${{ vars.CI_GOOGLE_DRIVE_MEETUP_FOLDER_ID }}
+      google-drive-meetup-template-folder-id: ${{ vars.CI_GOOGLE_DRIVE_MEETUP_TEMPLATE_FOLDER_ID }}
     secrets:
       github-app-private-key: ${{ secrets.CI_BOT_APP_PRIVATE_KEY }}
+      google-credentials: ${{ secrets.CI_GOOGLE_SERVICE_ACCOUNT_CREDENTIALS }}
+      mailings-token: ${{ secrets.MAILINGS_TOKEN }}
       slack-token: ${{ secrets.SLACK_BOT_TOKEN }}
 ```
 
@@ -730,11 +739,11 @@ The scheduled and referential workflows follow the same shape:
 jobs:
   audit:
     uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/audit-meetup-events.yml@0123456789abcdef0123456789abcdef01234567 # 1.x.y
-    # Explicit permissions and secrets only; no workflow inputs.
+    # Explicit permissions, required inputs, and secrets as above.
 
   synchronize:
     uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/synchronize-meetup-issue-form.yml@0123456789abcdef0123456789abcdef01234567 # 1.x.y
-    # Explicit permissions and secrets only; no workflow inputs.
+    # Explicit App ID, private key, and permissions.
 ```
 
 After migration there is no meetup-specific JavaScript, composite action, or
@@ -821,9 +830,10 @@ business expression under `meetups/.github/actions` or its caller workflows.
   `permission-*` scopes per job.
 - GitHub App tokens use the numeric App ID contract, are created per job, and
   are not forwarded to unrelated actions.
-- Slack and cross-repository mail dispatch credentials are explicit reusable
-  workflow secrets. A missing optional gateway secret disables that gateway
-  with a clear diagnostic; it never falls back to another token.
+- Slack, cross-repository mail dispatch, and Google service-account credentials
+  are required reusable workflow secrets and action inputs. Slack channel and
+  Drive folder IDs are also required inputs. There is no missing-configuration
+  delivery or asset-management fallback.
 
 ## Testing and quality gates
 

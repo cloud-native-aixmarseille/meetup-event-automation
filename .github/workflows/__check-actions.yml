@@ -368,6 +368,9 @@ jobs:
           mode: check
           github-token: ${{ secrets.GITHUB_TOKEN }}
           managed-comment-author: integration-tests[bot]
+          mailings-token: synthetic-mailings-token
+          slack-token: synthetic-slack-token
+          slack-channel-id: synthetic-slack-channel
 
       - name: Assert communication reconciliation
         shell: bash
@@ -383,7 +386,7 @@ jobs:
           jq -e '.data.mode == "check" and .data.counts.planned == 2 and .data.counts.dispatched == 0 and (.data.intentIds | length == 2) and (.diagnostics | map(.code) | index("communication.approval-missing") != null)' <<< "$RESULT" >/dev/null
 
   test-publication-reconcile-assets:
-    name: Test publication asset action without optional credentials
+    name: Test publication asset action requires credentials
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -393,25 +396,27 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Check optional asset integration
+      - name: Check required asset credentials
         id: assets
+        continue-on-error: true
         uses: ./actions/publication/reconcile-assets
         with:
           issue-number: "1"
           mode: check
           github-token: ${{ github.token }}
           managed-comment-author: integration-tests[bot]
+          google-credentials: ""
+          google-drive-meetup-folder-id: synthetic-parent-folder
+          google-drive-meetup-template-folder-id: synthetic-template-folder
 
-      - name: Assert asset integration is skipped without credentials
+      - name: Assert asset action rejects missing credentials
         shell: bash
         env:
-          RESULT: ${{ steps.assets.outputs.result }}
-          DRIVE_FILES: ${{ steps.assets.outputs.drive-files }}
-          ASSET_URL: ${{ steps.assets.outputs.asset-url }}
+          OUTCOME: ${{ steps.assets.outcome }}
+          DIAGNOSTICS: ${{ steps.assets.outputs.diagnostics }}
         run: |
-          [[ "$DRIVE_FILES" == "{}" ]]
-          [[ -z "$ASSET_URL" ]]
-          jq -e '.schemaVersion == 1 and .data.skipped == true and .data.persisted == false and (.diagnostics | map(.code) | index("publication.assets.unavailable") != null)' <<< "$RESULT" >/dev/null
+          [[ "$OUTCOME" == "failure" ]]
+          jq -e 'map(.code) | index("action.execution.failed") != null' <<< "$DIAGNOSTICS" >/dev/null
 
   cleanup-synthetic-issue:
     name: Cleanup synthetic meetup issue

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { ActionMessages } from "./i18n/action-messages.js";
 import { ReferentialActionReport } from "./referential-action-report.js";
 
 describe("referential action report facts", () => {
@@ -35,7 +36,11 @@ describe("referential action report facts", () => {
 				report.details.join("\n").includes("zero-based record positions"),
 			).toBe(!isValid);
 			expect(report.diagnostics).toEqual(diagnostics);
-			expect(report.failure).toBeUndefined();
+			expect(report.failure).toBe(
+				isValid
+					? undefined
+					: "Meetup referentials are invalid. Correct the catalog fields listed in the validation annotations and job summary.",
+			);
 		},
 	);
 
@@ -61,42 +66,97 @@ describe("referential action report facts", () => {
 				"Affected files: .github/ISSUE_TEMPLATE/example.yml.",
 			);
 			expect(report.details.join("\n").includes("mode: fix")).toBe(guidance);
+			expect(report.failure).toBe(
+				mode === "check"
+					? "The meetup issue form is out of date. Run actions/referential/sync-issue-form with mode: fix on this branch and commit the affected files listed in the job summary."
+					: undefined,
+			);
 		},
 	);
 
-	it("reports an unchanged issue form as current", () => {
-		// Arrange
-		const result = { changed: false, changedFiles: [], diagnostics: [] };
+	it.each([
+		{
+			locale: "en",
+			guidance:
+				"Issue-form drift does not block this check. Synchronization can run after merge.",
+		},
+		{
+			locale: "fr",
+			guidance:
+				"Le décalage du formulaire ne bloque pas cette vérification. La synchronisation peut être exécutée après la fusion.",
+		},
+	])(
+		"reports allowed drift with advisory guidance in $locale",
+		({ locale, guidance }) => {
+			// Arrange
+			const result = {
+				changed: true,
+				changedFiles: [".github/ISSUE_TEMPLATE/example.yml"],
+				diagnostics: [],
+			};
+			const messages = new ActionMessages(locale);
 
-		// Act
-		const report = ReferentialActionReport.issueForm("check", result);
+			// Act
+			const report = ReferentialActionReport.issueForm(
+				"check",
+				result,
+				messages,
+				false,
+			);
 
-		// Assert
-		expect(report.details).toEqual(["Issue form is up to date."]);
-	});
+			// Assert
+			expect(report.failure).toBeUndefined();
+			expect(report.details).toContain(guidance);
+			expect(report.details.join("\n")).toContain(
+				".github/ISSUE_TEMPLATE/example.yml",
+			);
+			expect(report.details.join("\n")).not.toContain("mode: fix");
+		},
+	);
 
-	it("reports blocked synchronization without claiming the issue form is current", () => {
-		// Arrange
-		const result = {
-			changed: false,
-			changedFiles: [],
-			diagnostics: [
-				{
-					code: "referential.speaker.id.invalid",
-					severity: "error" as const,
-					field: "speakers[0].speakerId",
-					message: "Speaker stable identifiers must be valid.",
-				},
-			],
-		};
+	it.each(["check", "fix"] as const)(
+		"reports an unchanged issue form as current in %s mode",
+		(mode) => {
+			// Arrange
+			const result = { changed: false, changedFiles: [], diagnostics: [] };
 
-		// Act
-		const report = ReferentialActionReport.issueForm("check", result);
+			// Act
+			const report = ReferentialActionReport.issueForm(mode, result);
 
-		// Assert
-		expect(report.details).toEqual([
-			"Issue form synchronization is blocked by invalid referentials.",
-		]);
-		expect(report.diagnostics).toEqual(result.diagnostics);
-	});
+			// Assert
+			expect(report.details).toEqual(["Issue form is up to date."]);
+			expect(report.failure).toBeUndefined();
+		},
+	);
+
+	it.each(["check", "fix"] as const)(
+		"fails blocked synchronization in %s mode without claiming the issue form is current",
+		(mode) => {
+			// Arrange
+			const result = {
+				changed: false,
+				changedFiles: [],
+				diagnostics: [
+					{
+						code: "referential.speaker.id.invalid",
+						severity: "error" as const,
+						field: "speakers[0].speakerId",
+						message: "Speaker stable identifiers must be valid.",
+					},
+				],
+			};
+
+			// Act
+			const report = ReferentialActionReport.issueForm(mode, result);
+
+			// Assert
+			expect(report.details).toEqual([
+				"Issue form synchronization is blocked by invalid referentials.",
+			]);
+			expect(report.diagnostics).toEqual(result.diagnostics);
+			expect(report.failure).toBe(
+				"Meetup referentials are invalid. Correct the catalog fields listed in the validation annotations and job summary.",
+			);
+		},
+	);
 });

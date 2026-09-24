@@ -42,12 +42,17 @@ Check or reconcile the event Drive folder, template copies, and issue asset link
     # This input is required.
     managed-comment-author: ""
 
-    # Optional service-account JSON with access to the configured Drive parent and template folders. Omission leaves asset management manual.
+    # Service-account JSON with access to the configured Drive parent and template folders.
+    # This input is required.
     google-credentials: ""
 
-    # Internal workflow assertion that the shared non-cancelling event concurrency lock is held.
-    # Default: `false`
-    mutation-authorized: "false"
+    # Google Drive folder ID of the parent meetup folder.
+    # This input is required.
+    google-drive-meetup-folder-id: ""
+
+    # Google Drive folder ID of the template folder.
+    # This input is required.
+    google-drive-meetup-template-folder-id: ""
 ```
 
 <!-- usage:end -->
@@ -55,15 +60,16 @@ Check or reconcile the event Drive folder, template copies, and issue asset link
 
 ## Inputs
 
-| **Input**                    | **Description**                                                                                                                         | **Required** | **Default** |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
-| **`locale`**                 | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.      | **false**    | `en`        |
-| **`issue-number`**           | GitHub issue number containing the meetup event document.                                                                               | **true**     | -           |
-| **`mode`**                   | Use check to report drift without writes, or fix under the shared event workflow lock.                                                  | **false**    | `check`     |
-| **`github-token`**           | Token for the caller repository. Requires issues:read; fix also requires issues:write.                                                  | **true**     | -           |
-| **`managed-comment-author`** | Trusted GitHub App bot login used by the event composition.                                                                             | **true**     | -           |
-| **`google-credentials`**     | Optional service-account JSON with access to the configured Drive parent and template folders. Omission leaves asset management manual. | **false**    | -           |
-| **`mutation-authorized`**    | Internal workflow assertion that the shared non-cancelling event concurrency lock is held.                                              | **false**    | `false`     |
+| **Input**                                    | **Description**                                                                                                                    | **Required** | **Default** |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
+| **`locale`**                                 | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **false**    | `en`        |
+| **`issue-number`**                           | GitHub issue number containing the meetup event document.                                                                          | **true**     | -           |
+| **`mode`**                                   | Use check to report drift without writes, or fix under the shared event workflow lock.                                             | **false**    | `check`     |
+| **`github-token`**                           | Token for the caller repository. Requires issues:read; fix also requires issues:write.                                             | **true**     | -           |
+| **`managed-comment-author`**                 | Trusted GitHub App bot login used by the event composition.                                                                        | **true**     | -           |
+| **`google-credentials`**                     | Service-account JSON with access to the configured Drive parent and template folders.                                              | **true**     | -           |
+| **`google-drive-meetup-folder-id`**          | Google Drive folder ID of the parent meetup folder.                                                                                | **true**     | -           |
+| **`google-drive-meetup-template-folder-id`** | Google Drive folder ID of the template folder.                                                                                     | **true**     | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->
@@ -82,7 +88,7 @@ Check or reconcile the event Drive folder, template copies, and issue asset link
 <!-- outputs:end -->
 <!-- examples:start -->
 
-See [Google Drive event assets](../../../docs/publication-assets.md) for the required folder environment variables, service-account access, asset identity, and retry behavior.
+See [Google Drive event assets](../../../docs/publication-assets.md) for the required folder inputs, service-account access, asset identity, and retry behavior.
 
 <!-- examples:end -->
 <!-- contributing:start -->

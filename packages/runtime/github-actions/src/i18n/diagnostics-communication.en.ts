@@ -28,8 +28,6 @@ export const DIAGNOSTICS_COMMUNICATION_EN = {
 		"An opted-in mail recipient has no destination.",
 	"diagnostic.communication.missing-notification-content":
 		"Notification content is unavailable.",
-	"diagnostic.communication.missing-notification-destination":
-		"The notification destination is unavailable.",
 	"diagnostic.communication.occurrence-status-unknown":
 		"The event occurrence status must be explicit.",
 	"diagnostic.communication.delivery-already-recorded":
@@ -60,12 +58,6 @@ export const DIAGNOSTICS_COMMUNICATION_EN = {
 		"Event participants could not be resolved to stable identifiers.",
 	"diagnostic.communication.github-credential-missing":
 		"The GitHub credential is unavailable.",
-	"diagnostic.communication.mail-gateway-disabled-missing-credential":
-		"Mail delivery is disabled because its credential is unavailable.",
-	"diagnostic.communication.notification-gateway-disabled-missing-credential":
-		"Notifications are disabled because their credential is unavailable.",
-	"diagnostic.communication.notification-gateway-disabled-missing-destination":
-		"Notifications are disabled because their destination is unavailable.",
 	"diagnostic.communication.referential-catalog-invalid":
 		"Communications are disabled because the referential catalog is invalid.",
 } as const;

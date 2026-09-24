@@ -47,6 +47,8 @@ export const EN_MESSAGES = {
 	"report.issue-form.blocked":
 		"Issue form synchronization is blocked by invalid referentials.",
 	"report.issue-form.stale": "Issue form is out of date.",
+	"report.issue-form.drift-allowed":
+		"Issue-form drift does not block this check. Synchronization can run after merge.",
 	"report.issue-form.updated": "Issue form was updated.",
 	"report.issue-form.current": "Issue form is up to date.",
 	"report.issue-form.files": "Affected files: {files}.",
@@ -69,8 +71,6 @@ export const EN_MESSAGES = {
 	"report.assets.completed": "Asset reconciliation completed.",
 	"report.assets.counts":
 		"Issue changes persisted: {persisted, select, true {true} other {false}}; asset files: {count, number}.",
-	"report.assets.unavailable":
-		"Skipped: Google Drive credentials are unavailable; asset management remains manual.",
 	"report.communication.mode": "Communication mode: {mode}.",
 	"report.communication.planned":
 		"Planned: {planned, number}; due: {due, number}; dispatched: {dispatched, number}.",

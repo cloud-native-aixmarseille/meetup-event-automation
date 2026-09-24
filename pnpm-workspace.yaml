@@ -8,3 +8,8 @@ packages:
 allowBuilds:
   esbuild: true
   nx: true
+
+# Nx 23.2.1 pins the vulnerable parser; remove when Nx ships a patched version.
+# https://github.com/advisories/GHSA-7w5x-hrqm-74c2
+overrides:
+  nx@23.2.1>smol-toml: 1.7.1

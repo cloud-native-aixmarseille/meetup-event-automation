@@ -39,8 +39,8 @@ describe("publication-composition", () => {
 		const container = PublicationComposition.createPublicationContainer({
 			...input,
 			credentials: "not-json",
-			parentFolderId: "",
-			templateFolderId: "",
+			parentFolderId: "parent",
+			templateFolderId: "templates",
 		});
 		const assets: AssetRepository = {
 			findContainer: vi.fn(),

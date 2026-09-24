@@ -1,5 +1,7 @@
 # Reusable workflow that checks referential catalogs and the generated meetup
 # issue-form projection for consumer pull requests.
+# Projection drift is advisory because synchronization runs after merge to main.
+# Invalid referentials and projection errors still fail the check.
 # Reports redacted diagnostic codes, fields, and messages in annotations and the
 # job summary, with affected issue-form files and instructions to resolve failures.
 name: Check meetup referentials and issue form
@@ -73,21 +75,4 @@ jobs:
         with:
           locale: ${{ inputs.locale }}
           mode: check
-
-      - name: Enforce valid referentials
-        if: steps.referentials.outputs.is-valid != 'true'
-        shell: bash
-        env:
-          FAILURE_MESSAGE: ${{ steps.referentials.outputs.failure-message }}
-        run: |
-          printf '::error::%s\n' "$FAILURE_MESSAGE"
-          exit 1
-
-      - name: Enforce current issue form
-        if: steps.issue-form.outputs.changed == 'true'
-        shell: bash
-        env:
-          FAILURE_MESSAGE: ${{ steps.issue-form.outputs.failure-message }}
-        run: |
-          printf '::error::%s\n' "$FAILURE_MESSAGE"
-          exit 1
+          fail-on-drift: "false"

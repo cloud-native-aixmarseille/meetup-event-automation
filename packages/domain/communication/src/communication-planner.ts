@@ -89,15 +89,6 @@ export class CommunicationPlanner {
 				continue;
 			}
 
-			if (recipient.destination.trim().length === 0) {
-				diagnostics.push(
-					CommunicationPlanner.errorDiagnostic(
-						"missing-notification-destination",
-					),
-				);
-				continue;
-			}
-
 			const base = CommunicationPlanner.createIntentBase(
 				input,
 				"readiness-reminder",

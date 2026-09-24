@@ -23,8 +23,7 @@ export class PublicationAction {
 			core.getInput("mode", { required: true }),
 			["check", "fix"] as const,
 		);
-		const credentials = core.getInput("google-credentials");
-		if (!credentials) return PublicationAction.unavailableReport(messages);
+		const credentials = core.getInput("google-credentials", { required: true });
 		core.setSecret(credentials);
 		const client = getOctokit(
 			core.getInput("github-token", { required: true }),
@@ -40,8 +39,15 @@ export class PublicationAction {
 			repo,
 			commentAuthorLogin,
 			credentials,
-			parentFolderId: core.getInput("google-drive-meetup-folder-id"),
-			templateFolderId: core.getInput("google-drive-meetup-template-folder-id"),
+			parentFolderId: core.getInput("google-drive-meetup-folder-id", {
+				required: true,
+			}),
+			templateFolderId: core.getInput(
+				"google-drive-meetup-template-folder-id",
+				{
+					required: true,
+				},
+			),
 		});
 		const outcome = await container.get(ManageMeetupAssets).execute({
 			identity: { repository: `${owner}/${repo}`, issueNumber },
@@ -82,30 +88,6 @@ export class PublicationAction {
 				}),
 			],
 			diagnostics: outcome.diagnostics,
-		};
-	}
-
-	private static unavailableReport(messages: ActionMessages): ActionReportData {
-		const diagnostics = [
-			{
-				code: "publication.assets.unavailable",
-				severity: "info" as const,
-				message:
-					"Google Drive credentials are unavailable; asset management remains manual",
-			},
-		];
-		ActionOutput.setJsonOutput(
-			"result",
-			ResultEnvelopeFactory.resultEnvelope(
-				{ skipped: true, persisted: false, files: {} },
-				diagnostics,
-			),
-		);
-		ActionOutput.setJsonOutput("drive-files", {});
-		core.setOutput("asset-url", "");
-		return {
-			details: [messages.t("report.assets.unavailable")],
-			diagnostics,
 		};
 	}
 }

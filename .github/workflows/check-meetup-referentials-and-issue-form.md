@@ -15,6 +15,8 @@
 
 Reusable workflow that checks referential catalogs and the generated meetup
 issue-form projection for consumer pull requests.
+Projection drift is advisory because synchronization runs after merge to main.
+Invalid referentials and projection errors still fail the check.
 Reports redacted diagnostic codes, fields, and messages in annotations and the
 job summary, with affected issue-form files and instructions to resolve failures.
 
@@ -30,7 +32,7 @@ job summary, with affected issue-form files and instructions to resolve failures
 ```yaml
 name: Check meetup referentials and issue form
 on:
-  push:
+  pull_request:
     branches:
       - main
 permissions: {}

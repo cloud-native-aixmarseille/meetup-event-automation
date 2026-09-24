@@ -23,16 +23,13 @@ export class CommunicationDeliveryPreparation {
 	) {}
 	async execute(
 		input: ManageMeetupCommunicationsInput,
-		dispatchPermitted: boolean,
 		event: MeetupEvent,
 		runtimeDiagnostics: CommunicationJourneyDiagnostic[],
 	) {
 		const catalog = await this.catalog(runtimeDiagnostics);
-		const {
-			mailGatewayEnabled,
-			notificationDestination,
-			notificationConfigured,
-		} = this.gateways(input, dispatchPermitted, runtimeDiagnostics);
+		const notificationDestination = input.notificationDestination.trim();
+		const notificationConfigured =
+			this.dependencies.config.communication["slack-enabled"];
 
 		const mailRecipientResolution = catalog
 			? CommunicationRecipients.resolveMailRecipients(
@@ -54,8 +51,6 @@ export class CommunicationDeliveryPreparation {
 		];
 
 		return {
-			mailGatewayEnabled,
-			notificationDestination,
 			notificationConfigured,
 			mailRecipientResolution,
 			referencesResolved,
@@ -77,49 +72,5 @@ export class CommunicationDeliveryPreparation {
 		}
 
 		return catalog;
-	}
-	private gateways(
-		input: ManageMeetupCommunicationsInput,
-		dispatchPermitted: boolean,
-		runtimeDiagnostics: CommunicationJourneyDiagnostic[],
-	) {
-		const config = this.dependencies.config;
-
-		const mailGatewayEnabled = input.mailGatewayEnabled;
-		if (dispatchPermitted && !mailGatewayEnabled) {
-			runtimeDiagnostics.push({
-				code: "communication.mail-gateway-disabled-missing-credential",
-				severity: "warning",
-			});
-		}
-
-		const notificationDestination = input.notificationDestination.trim();
-		const notificationConfigured = config.communication["slack-enabled"];
-		if (
-			dispatchPermitted &&
-			notificationConfigured &&
-			!input.notificationGatewayEnabled
-		) {
-			runtimeDiagnostics.push({
-				code: "communication.notification-gateway-disabled-missing-credential",
-				severity: "warning",
-			});
-		}
-		if (
-			dispatchPermitted &&
-			notificationConfigured &&
-			!notificationDestination
-		) {
-			runtimeDiagnostics.push({
-				code: "communication.notification-gateway-disabled-missing-destination",
-				severity: "warning",
-			});
-		}
-
-		return {
-			mailGatewayEnabled,
-			notificationDestination,
-			notificationConfigured,
-		};
 	}
 }

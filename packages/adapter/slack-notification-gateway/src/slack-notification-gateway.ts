@@ -14,10 +14,6 @@ export class SlackNotificationGateway implements NotificationGateway {
 	async dispatch(
 		message: NotificationMessageIntent,
 	): Promise<GatewayDispatchResult> {
-		if (!this.token) {
-			return { outcome: "rejected", diagnosticCode: "authentication-failed" };
-		}
-
 		let response: Response;
 		try {
 			response = await this.fetcher("https://slack.com/api/chat.postMessage", {
