@@ -178,7 +178,7 @@ An evening about reliable platforms.
 			workspaceRoot,
 			repositoryRef: options.repositoryRef,
 			config: {
-				...AutomationConfigFactory.createAutomationConfig(),
+				...AutomationConfigFactory.createAutomationConfig("example"),
 				referentials: { hosts: "venues.csv", speakers: "presenters.csv" },
 			},
 		});

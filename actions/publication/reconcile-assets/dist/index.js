@@ -64345,9 +64345,10 @@ var PublicationUrlPolicyEngine = class {
 var AutomationConfigFactory = class {
   /**
    * Automation behavior is owned and versioned by this repository. Consumer
-   * repositories do not provide a runtime configuration file anymore.
+   * repositories do not provide a runtime configuration file anymore. Without
+   * a repository owner, workspace-only operations leave communication disabled.
    */
-  static createAutomationConfig() {
+  static createAutomationConfig(repositoryOwner) {
     return {
       timezone: "Europe/Paris",
       event: {
@@ -64365,10 +64366,10 @@ var AutomationConfigFactory = class {
       },
       communication: {
         "readiness-window-days": 7,
-        "mailings-repository": "cloud-native-aixmarseille/mailings",
+        "mailings-repository": repositoryOwner ? `${repositoryOwner}/mailings` : "",
         "slack-enabled": true,
         "approval-label": "communication:approved",
-        "dispatch-enabled": true,
+        "dispatch-enabled": Boolean(repositoryOwner),
         "policy-version": 1
       },
       publication: {
@@ -76559,7 +76560,7 @@ var EventComposition = class _EventComposition {
     const container = new Container({ defaultScope: "Singleton" });
     const workspaceRoot = input.workspaceRoot ?? process.cwd();
     container.bind(SERVICES.config).toConstantValue(
-      input.config ?? AutomationConfigFactory.createAutomationConfig()
+      input.config ?? AutomationConfigFactory.createAutomationConfig(input.owner)
     );
     container.bind(SERVICES.referentialRepository).toDynamicValue((context3) => {
       const config = context3.get(SERVICES.config);

@@ -2,7 +2,7 @@
 # communication and issue updates needed to keep it current.
 #
 # The workflow creates a separate GitHub App installation token for
-# `cloud-native-aixmarseille/mailings` using the supplied App client ID and private key.
+# `<repository-owner>/mailings` using the supplied App client ID and private key.
 # The App must be installed there with Contents: write permission. The token is
 # used in the dispatch job and revoked when the job finishes; callers do not
 # provide a mailing token secret.
@@ -99,7 +99,7 @@ jobs:
         with:
           client-id: ${{ inputs.github-app-client-id }}
           private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] reusable workflow receives the App key explicitly to mint a repository-scoped token
-          owner: cloud-native-aixmarseille
+          owner: ${{ github.repository_owner }}
           repositories: mailings
           permission-contents: write
 

@@ -17,7 +17,7 @@ Reusable workflow that checks active meetup issues, evaluates their current
 state, and processes due communications under the shared per-event lock.
 
 The workflow creates a separate GitHub App installation token for
-`cloud-native-aixmarseille/mailings` using the supplied App client ID and private key.
+`<repository-owner>/mailings` using the supplied App client ID and private key.
 The App must be installed there with Contents: write permission. The token is
 used in the dispatch job and revoked when the job finishes; callers do not
 provide a mailing token secret.
