@@ -99,7 +99,7 @@ cross-domain journey decisions live in `packages/application/journey`. See
 | [`actions/publication/reconcile-assets`](actions/publication/reconcile-assets/README.md) | Check or reconcile Drive folders, template copies, and issue asset links |
 
 Both event workflows create a short-lived mailings installation token using
-the supplied GitHub App ID and private key. Install the App on
+the supplied GitHub App client ID and private key. Install the App on
 `cloud-native-aixmarseille/mailings` with Contents: write permission. Each token
 is scoped to that repository and revoked at job completion. Callers do not
 provide a `mailings-token` workflow secret; direct action callers still supply

@@ -178,14 +178,14 @@ describe("event side-effect safeguards", () => {
 
 		// Assert
 		expect(sortedKeys(workflow.on?.workflow_call?.inputs)).toEqual([
-			"github-app-id",
+			"github-app-client-id",
 			"google-drive-meetup-folder-id",
 			"google-drive-meetup-template-folder-id",
 			"locale",
 			"slack-channel-id",
 		]);
-		expect(token?.with?.["app-id"]).toBe(
-			workflowExpression("inputs.github-app-id"),
+		expect(token?.with?.["client-id"]).toBe(
+			workflowExpression("inputs.github-app-client-id"),
 		);
 		expect(token?.with?.["permission-issues"]).toBe("write");
 		expect(event?.with?.mode).toBe("check");

@@ -624,17 +624,17 @@ convention. The prefix is not an access-control mechanism.
 | `validate-meetup-automation.yml`    | Consumer pull request               | Read-only referential validation and issue-form projection drift check                                               |
 
 The issue workflow derives the issue number from the issue event. Both event
-workflows require explicit inputs for the GitHub App ID, Slack channel ID, and
+workflows require explicit inputs for the GitHub App client ID, Slack channel ID, and
 Drive parent and template folder IDs. Consumer callers supply
-`CI_BOT_APP_ID`, `SLACK_CHANNEL_ID`, `CI_GOOGLE_DRIVE_MEETUP_FOLDER_ID`, and
+`CI_BOT_APP_CLIENT_ID`, `SLACK_CHANNEL_ID`, `CI_GOOGLE_DRIVE_MEETUP_FOLDER_ID`, and
 `CI_GOOGLE_DRIVE_MEETUP_TEMPLATE_FOLDER_ID` repository variables.
 Synchronization opens a pull request only when drift is detected. Communication
 reconciliation always evaluates dispatch, while the
 configuration switch, maintainer approval, credentials, and delivery ledger
 remain fail-closed gates. The three mutating/operational workflows declare
 their required GitHub App private key explicitly. Both workflows that reconcile
-communications and assets also require mail, Slack, and Google service-account
-secrets.
+communications and assets also require Slack and Google service-account
+secrets. They create the mailing dispatch token from the supplied App credentials.
 
 Each workflow starts with `permissions: {}` and declares permissions per job.
 It declares every `workflow_call` secret and output. `secrets: inherit`
@@ -722,7 +722,7 @@ jobs:
     permissions:
       contents: read
     with:
-      github-app-id: ${{ vars.CI_BOT_APP_ID }}
+      github-app-client-id: ${{ vars.CI_BOT_APP_CLIENT_ID }}
       slack-channel-id: ${{ vars.SLACK_CHANNEL_ID }}
       google-drive-meetup-folder-id: ${{ vars.CI_GOOGLE_DRIVE_MEETUP_FOLDER_ID }}
       google-drive-meetup-template-folder-id: ${{ vars.CI_GOOGLE_DRIVE_MEETUP_TEMPLATE_FOLDER_ID }}
@@ -742,7 +742,7 @@ jobs:
 
   synchronize:
     uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/synchronize-meetup-issue-form.yml@0123456789abcdef0123456789abcdef01234567 # 1.x.y
-    # Explicit App ID, private key, and permissions.
+    # Explicit App client ID, private key, and permissions.
 ```
 
 After migration there is no meetup-specific JavaScript, composite action, or
@@ -827,10 +827,11 @@ business expression under `meetups/.github/actions` or its caller workflows.
   are applied: the caller grants the minimum `GITHUB_TOKEN` access, and token
   creation explicitly restricts owner, repositories, and requested
   `permission-*` scopes per job.
-- GitHub App tokens use the numeric App ID contract, are created per job, and
+- GitHub App tokens use the App client ID contract, are created per job, and
   are not forwarded to unrelated actions.
-- Slack, cross-repository mail dispatch, and Google service-account credentials
-  are required reusable workflow secrets and action inputs. Slack channel and
+- Slack and Google service-account credentials are required reusable workflow
+  secrets and action inputs. The mail dispatch action receives a token generated
+  from the App client ID and private key in the same job. Slack channel and
   Drive folder IDs are also required inputs. There is no missing-configuration
   delivery or asset-management fallback.
 
@@ -950,8 +951,8 @@ business expression under `meetups/.github/actions` or its caller workflows.
    before enabling delivery.
 2. Add brain-managed issue-body schema markers and adopt operational labels for
    postponed or cancelled transitions.
-3. Store the GitHub App's numeric ID in the conventionally named
-   `CI_BOT_APP_ID` repository variable; workflows read it directly.
+3. Store the GitHub App's client ID in the conventionally named
+   `CI_BOT_APP_CLIENT_ID` repository variable; workflows read it directly.
 4. Run new workflows in `check` mode beside the current paths and compare
    redacted results.
 5. Enable event reconciliation, then referential synchronization, then
@@ -1083,7 +1084,7 @@ This decision is implemented when:
 - [`ci-github-nodejs` public continuous-integration workflow](https://github.com/hoverkraft-tech/ci-github-nodejs/blob/b4c875c272ffe07240418d0f2a87301ca5b7ca8e/.github/workflows/continuous-integration.yml)
 - [`ci-github-nodejs` shared action/workflow contract tests](https://github.com/hoverkraft-tech/ci-github-nodejs/blob/b4c875c272ffe07240418d0f2a87301ca5b7ca8e/.github/workflows/__shared-ci.yml)
 - [`ci-github-common` same-revision workflow action loader](https://github.com/hoverkraft-tech/ci-github-common/blob/3a27d31e9ccefbe9609cc9165017ed100ff34a22/actions/local-workflow-actions/action.yml)
-- [`actions/create-github-app-token` App ID contract](https://github.com/actions/create-github-app-token/blob/f8d387b68d61c58ab83c6c016672934102569859/action.yml)
+- [`actions/create-github-app-token` App client ID contract](https://github.com/actions/create-github-app-token/blob/bcd2ba49218906704ab6c1aa796996da409d3eb1/action.yml)
 - [GitHub reusable workflow documentation](https://docs.github.com/en/actions/sharing-automations/reusing-workflows)
 - [GitHub workflow concurrency documentation](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency)
 - [GitHub Actions secrets documentation](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets)
