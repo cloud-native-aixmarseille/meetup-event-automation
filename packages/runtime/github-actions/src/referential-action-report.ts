@@ -26,17 +26,26 @@ export class ReferentialActionReport {
 		if (!result.isValid) {
 			details.push(messages.t("report.referential.guidance"));
 		}
-		return { details, diagnostics };
+		return {
+			details,
+			diagnostics,
+			failure: result.isValid
+				? undefined
+				: messages.t("workflow.referential.failed"),
+		};
 	}
 
 	static issueForm(
 		mode: IssueFormProjectionMode,
 		result: SynchronizeMeetupIssueFormResult,
 		messages = new ActionMessages(),
+		failOnDrift = true,
 	): ActionReportData {
 		const details: string[] = [];
+		let failure: string | undefined;
 		if (result.diagnostics.some((item) => item.severity === "error")) {
 			details.push(messages.t("report.issue-form.blocked"));
+			failure = messages.t("workflow.referential.failed");
 		} else if (result.changed) {
 			details.push(
 				mode === "check"
@@ -47,11 +56,18 @@ export class ReferentialActionReport {
 				}),
 			);
 			if (mode === "check") {
-				details.push(messages.t("report.issue-form.guidance"));
+				details.push(
+					messages.t(
+						failOnDrift
+							? "report.issue-form.guidance"
+							: "report.issue-form.drift-allowed",
+					),
+				);
+				if (failOnDrift) failure = messages.t("workflow.issue-form.failed");
 			}
 		} else {
 			details.push(messages.t("report.issue-form.current"));
 		}
-		return { details, diagnostics: result.diagnostics };
+		return { details, diagnostics: result.diagnostics, failure };
 	}
 }

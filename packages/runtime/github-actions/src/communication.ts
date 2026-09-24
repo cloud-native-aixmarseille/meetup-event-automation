@@ -40,7 +40,7 @@ export interface RunCommunicationReconcileInput {
 export type RunCommunicationReconcileResult = ManageMeetupCommunicationsResult;
 
 export class CommunicationRuntime {
-	/** Translate runtime credentials into capabilities before entering the application. */
+	/** Compose authenticated gateways before entering the application. */
 	static async runCommunicationReconcile(
 		input: RunCommunicationReconcileInput,
 	): Promise<RunCommunicationReconcileResult> {
@@ -87,18 +87,15 @@ export class CommunicationRuntime {
 			automationRevision: input.automationRevision,
 			requestedMode: input.requestedMode,
 			dispatchAuthorized: input.dispatchAuthorized,
-			mailGatewayEnabled: mailingsToken.length > 0,
-			notificationGatewayEnabled: slackToken.length > 0,
 			notificationDestination: slackChannelId,
 			notificationContent: messages.t("communication.organizer-attention", {
 				issue: input.issueNumber,
 			}),
 			notificationContentRevision: messages.policyRevision,
 			approvalTrigger: input.approvalTrigger,
-			notificationDestinationFingerprint:
-				config.communication["slack-enabled"] && slackChannelId
-					? `sha256:${createHash("sha256").update(slackChannelId).digest("hex")}`
-					: null,
+			notificationDestinationFingerprint: config.communication["slack-enabled"]
+				? `sha256:${createHash("sha256").update(slackChannelId).digest("hex")}`
+				: null,
 		});
 		return result;
 	}

@@ -42,10 +42,16 @@ Plan due meetup communications and, when authorized, dispatch them through the c
     # This input is required.
     managed-comment-author: ""
 
-    # Optional token used to dispatch approved email communications to the configured mailings repository. When omitted, mail intents remain planned but are not sent.
+    # Token used to dispatch approved email communications to the configured mailings repository.
+    # This input is required.
     mailings-token: ""
 
-    # Optional Slack bot token used for approved notifications. When omitted, Slack delivery is skipped safely.
+    # Slack channel ID used for approved notifications.
+    # This input is required.
+    slack-channel-id: ""
+
+    # Slack bot token used for approved notifications.
+    # This input is required.
     slack-token: ""
 
     # Internal workflow assertion that the shared event concurrency lock is held and dispatch is authorized by the caller workflow.
@@ -58,16 +64,17 @@ Plan due meetup communications and, when authorized, dispatch them through the c
 
 ## Inputs
 
-| **Input**                    | **Description**                                                                                                                                                  | **Required** | **Default** |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
-| **`locale`**                 | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.                               | **false**    | `en`        |
-| **`issue-number`**           | GitHub issue number in the caller repository containing the meetup event document to inspect.                                                                    | **true**     | -           |
-| **`mode`**                   | Use check to plan and validate only, or dispatch to send due communications when every safety gate passes.                                                       | **false**    | `check`     |
-| **`github-token`**           | Token for the caller repository. Requires issues:read; dispatch mode also requires issues:write.                                                                 | **true**     | -           |
-| **`managed-comment-author`** | Trusted bot login allowed to create or update the managed delivery ledger comment, for example my-app[bot].                                                      | **true**     | -           |
-| **`mailings-token`**         | Optional token used to dispatch approved email communications to the configured mailings repository. When omitted, mail intents remain planned but are not sent. | **false**    | -           |
-| **`slack-token`**            | Optional Slack bot token used for approved notifications. When omitted, Slack delivery is skipped safely.                                                        | **false**    | -           |
-| **`dispatch-authorized`**    | Internal workflow assertion that the shared event concurrency lock is held and dispatch is authorized by the caller workflow.                                    | **false**    | `false`     |
+| **Input**                    | **Description**                                                                                                                    | **Required** | **Default** |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
+| **`locale`**                 | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **false**    | `en`        |
+| **`issue-number`**           | GitHub issue number in the caller repository containing the meetup event document to inspect.                                      | **true**     | -           |
+| **`mode`**                   | Use check to plan and validate only, or dispatch to send due communications when every safety gate passes.                         | **false**    | `check`     |
+| **`github-token`**           | Token for the caller repository. Requires issues:read; dispatch mode also requires issues:write.                                   | **true**     | -           |
+| **`managed-comment-author`** | Trusted bot login allowed to create or update the managed delivery ledger comment, for example my-app[bot].                        | **true**     | -           |
+| **`mailings-token`**         | Token used to dispatch approved email communications to the configured mailings repository.                                        | **true**     | -           |
+| **`slack-channel-id`**       | Slack channel ID used for approved notifications.                                                                                  | **true**     | -           |
+| **`slack-token`**            | Slack bot token used for approved notifications.                                                                                   | **true**     | -           |
+| **`dispatch-authorized`**    | Internal workflow assertion that the shared event concurrency lock is held and dispatch is authorized by the caller workflow.      | **false**    | `false`     |
 
 <!-- inputs:end -->
 <!-- secrets:start -->

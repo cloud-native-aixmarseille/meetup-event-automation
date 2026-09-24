@@ -12,6 +12,7 @@ import {
 	type Step,
 	sortedKeys,
 	type Workflow,
+	workflowExpression,
 } from "./support.js";
 
 const publicWorkflowContracts = {
@@ -128,6 +129,36 @@ describe("public reusable workflow contracts", () => {
 		},
 	);
 
+	it.each(["check-active-meetup-issues", "update-meetup-issue"])(
+		"requires and forwards communication tokens and routing in %s",
+		async (workflowName) => {
+			// Arrange
+			const communicationAction = `${automationActionPrefix}communication/reconcile`;
+
+			// Act
+			const workflow = await readWorkflow(workflowName);
+			const secrets = workflow.on?.workflow_call?.secrets;
+			const slackChannel =
+				workflow.on?.workflow_call?.inputs?.["slack-channel-id"];
+			const communicationSteps = Object.values(workflow.jobs ?? {})
+				.flatMap((job) => job.steps ?? [])
+				.filter((step) => step.uses === communicationAction);
+
+			// Assert
+			expect(secrets?.["mailings-token"]?.required).toBe(true);
+			expect(secrets?.["slack-token"]?.required).toBe(true);
+			expect(slackChannel?.required).toBe(true);
+			expect(slackChannel?.default).toBeUndefined();
+			expect(communicationSteps).toHaveLength(1);
+			expect(communicationSteps[0].with).toMatchObject({
+				"mailings-token": workflowExpression("secrets.mailings-token"),
+				"slack-token": workflowExpression("secrets.slack-token"),
+				"slack-channel-id": workflowExpression("inputs.slack-channel-id"),
+			});
+			expect(communicationSteps[0].env).toBeUndefined();
+		},
+	);
+
 	it.each(Object.entries(expectedActionWiring))(
 		"loads actions from the reusable workflow revision in %s",
 		async (workflowName, jobs) => {
@@ -182,37 +213,29 @@ describe("public reusable workflow contracts", () => {
 	);
 
 	it.each([
-		[
-			"Enforce valid referentials",
-			"steps.referentials.outputs.is-valid != 'true'",
-			"referentials",
-		],
-		[
-			"Enforce current issue form",
-			"steps.issue-form.outputs.changed == 'true'",
-			"issue-form",
-		],
-	])(
-		"explains the failure and remediation in %s",
-		async (name, condition, step) => {
+		["check-meetup-referentials-and-issue-form", "validate", "check", "false"],
+		["update-meetup-issue-form", "synchronize", "fix", undefined],
+	] as const)(
+		"lets referential actions enforce the configured drift policy in %s",
+		async (workflowName, jobName, mode, failOnDrift) => {
 			// Arrange
-			const workflow = await readWorkflow(
-				"check-meetup-referentials-and-issue-form",
-			);
+			const workflow = await readWorkflow(workflowName);
 
 			// Act
-			const enforcement = workflow.jobs?.validate.steps?.find(
-				(step) => step.name === name,
+			const job = workflow.jobs?.[jobName];
+			const actions = (job?.steps ?? []).filter((step) =>
+				step.uses?.startsWith(`${automationActionPrefix}referential/`),
 			);
 
 			// Assert
-			expect(enforcement?.if).toBe(condition);
-			expect(enforcement?.run).toContain("::error::");
-			expect(enforcement?.env?.FAILURE_MESSAGE).toBe(
-				`\${{ steps.${step}.outputs.failure-message }}`,
-			);
-			expect(enforcement?.run).toContain("$FAILURE_MESSAGE");
-			expect(enforcement?.run).toContain("exit 1");
+			expect(job).not.toHaveProperty("continue-on-error");
+			expect(actions).toHaveLength(2);
+			for (const action of actions) {
+				expect(action).not.toHaveProperty("continue-on-error");
+				expect(action.if).toBeUndefined();
+			}
+			expect(actions[1].with?.mode).toBe(mode);
+			expect(actions[1].with?.["fail-on-drift"]).toBe(failOnDrift);
 		},
 	);
 

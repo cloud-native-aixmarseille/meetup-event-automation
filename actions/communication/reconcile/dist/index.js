@@ -31548,7 +31548,6 @@ var DIAGNOSTICS_COMMUNICATION_EN = {
   "diagnostic.communication.ledger-status-write-failed": "The delivery status could not be recorded.",
   "diagnostic.communication.missing-mail-destination": "An opted-in mail recipient has no destination.",
   "diagnostic.communication.missing-notification-content": "Notification content is unavailable.",
-  "diagnostic.communication.missing-notification-destination": "The notification destination is unavailable.",
   "diagnostic.communication.occurrence-status-unknown": "The event occurrence status must be explicit.",
   "diagnostic.communication.delivery-already-recorded": "The delivery ledger already contains this intent.",
   "diagnostic.communication.dispatch-disabled-by-config": "Communication dispatch is disabled by repository configuration.",
@@ -31564,9 +31563,6 @@ var DIAGNOSTICS_COMMUNICATION_EN = {
   "diagnostic.communication.event-concurrently-modified": "The meetup issue changed while communications were being reconciled; no delivery was attempted.",
   "diagnostic.communication.event-references-unresolved": "Event participants could not be resolved to stable identifiers.",
   "diagnostic.communication.github-credential-missing": "The GitHub credential is unavailable.",
-  "diagnostic.communication.mail-gateway-disabled-missing-credential": "Mail delivery is disabled because its credential is unavailable.",
-  "diagnostic.communication.notification-gateway-disabled-missing-credential": "Notifications are disabled because their credential is unavailable.",
-  "diagnostic.communication.notification-gateway-disabled-missing-destination": "Notifications are disabled because their destination is unavailable.",
   "diagnostic.communication.referential-catalog-invalid": "Communications are disabled because the referential catalog is invalid."
 };
 
@@ -31587,7 +31583,6 @@ var DIAGNOSTICS_COMMUNICATION_FR = {
   "diagnostic.communication.ledger-status-write-failed": "L\u2019\xE9tat de la livraison n\u2019a pas pu \xEAtre enregistr\xE9.",
   "diagnostic.communication.missing-mail-destination": "Un destinataire ayant accept\xE9 les e-mails n\u2019a pas d\u2019adresse.",
   "diagnostic.communication.missing-notification-content": "Le contenu de la notification est indisponible.",
-  "diagnostic.communication.missing-notification-destination": "La destination de la notification est indisponible.",
   "diagnostic.communication.occurrence-status-unknown": "Le statut de l\u2019\xE9v\xE9nement doit \xEAtre explicite.",
   "diagnostic.communication.delivery-already-recorded": "Le registre des livraisons contient d\xE9j\xE0 cette intention.",
   "diagnostic.communication.dispatch-disabled-by-config": "L\u2019envoi des communications est d\xE9sactiv\xE9 par la configuration du d\xE9p\xF4t.",
@@ -31603,9 +31598,6 @@ var DIAGNOSTICS_COMMUNICATION_FR = {
   "diagnostic.communication.event-concurrently-modified": "L\u2019issue a chang\xE9 pendant la pr\xE9paration des communications ; aucun envoi n\u2019a \xE9t\xE9 tent\xE9.",
   "diagnostic.communication.event-references-unresolved": "Les participants n\u2019ont pas pu \xEAtre associ\xE9s \xE0 des identifiants stables.",
   "diagnostic.communication.github-credential-missing": "Les identifiants GitHub sont indisponibles.",
-  "diagnostic.communication.mail-gateway-disabled-missing-credential": "L\u2019envoi d\u2019e-mails est d\xE9sactiv\xE9 car ses identifiants sont indisponibles.",
-  "diagnostic.communication.notification-gateway-disabled-missing-credential": "Les notifications sont d\xE9sactiv\xE9es car leurs identifiants sont indisponibles.",
-  "diagnostic.communication.notification-gateway-disabled-missing-destination": "Les notifications sont d\xE9sactiv\xE9es car leur destination est indisponible.",
   "diagnostic.communication.referential-catalog-invalid": "Les communications sont d\xE9sactiv\xE9es car le catalogue de r\xE9f\xE9rences est invalide."
 };
 
@@ -31699,7 +31691,6 @@ var DIAGNOSTICS_EVENT_FR = {
 
 // packages/runtime/github-actions/src/i18n/diagnostics-other.en.ts
 var DIAGNOSTICS_OTHER_EN = {
-  "diagnostic.publication.assets.unavailable": "Google Drive credentials are unavailable; asset management remains manual",
   "diagnostic.publication.assets.prerequisites": "Resolve the event host and date before reconciling assets",
   "diagnostic.publication.community-url.invalid": "Community event URL must use an approved CNCF/OCGroups prefix and identifier",
   "diagnostic.publication.meetup.missing": "The Meetup publication link is required.",
@@ -31714,7 +31705,6 @@ var DIAGNOSTICS_OTHER_EN = {
 
 // packages/runtime/github-actions/src/i18n/diagnostics-other.fr.ts
 var DIAGNOSTICS_OTHER_FR = {
-  "diagnostic.publication.assets.unavailable": "Les identifiants Google Drive sont indisponibles ; la gestion des fichiers reste manuelle.",
   "diagnostic.publication.assets.prerequisites": "R\xE9solvez les r\xE9f\xE9rences de l\u2019h\xF4te et de la date avant de synchroniser les fichiers.",
   "diagnostic.publication.community-url.invalid": "L\u2019URL doit utiliser un pr\xE9fixe CNCF/OCGroups autoris\xE9 et un identifiant.",
   "diagnostic.publication.meetup.missing": "Le lien de publication Meetup est obligatoire.",
@@ -31820,6 +31810,7 @@ var EN_MESSAGES = {
   "report.referential.guidance": "Correct the catalog fields listed below, then rerun validation. Field indexes are zero-based record positions.",
   "report.issue-form.blocked": "Issue form synchronization is blocked by invalid referentials.",
   "report.issue-form.stale": "Issue form is out of date.",
+  "report.issue-form.drift-allowed": "Issue-form drift does not block this check. Synchronization can run after merge.",
   "report.issue-form.updated": "Issue form was updated.",
   "report.issue-form.current": "Issue form is up to date.",
   "report.issue-form.files": "Affected files: {files}.",
@@ -31835,7 +31826,6 @@ var EN_MESSAGES = {
   "report.assets.skipped": "Asset reconciliation was skipped: the event is ineligible or prerequisites are incomplete.",
   "report.assets.completed": "Asset reconciliation completed.",
   "report.assets.counts": "Issue changes persisted: {persisted, select, true {true} other {false}}; asset files: {count, number}.",
-  "report.assets.unavailable": "Skipped: Google Drive credentials are unavailable; asset management remains manual.",
   "report.communication.mode": "Communication mode: {mode}.",
   "report.communication.planned": "Planned: {planned, number}; due: {due, number}; dispatched: {dispatched, number}.",
   "report.communication.accepted": "Accepted: {accepted, number}; already recorded: {recorded, number}; deferred: {deferred, number}.",
@@ -31880,6 +31870,7 @@ var FR_MESSAGES = {
   "report.referential.guidance": "Corrigez les champs du r\xE9f\xE9rentiel indiqu\xE9s ci-dessous, puis relancez la validation. Les indices d\xE9signent la position des enregistrements, \xE0 partir de z\xE9ro.",
   "report.issue-form.blocked": "La synchronisation du formulaire est bloqu\xE9e par des r\xE9f\xE9rentiels invalides.",
   "report.issue-form.stale": "Le formulaire n\u2019est pas \xE0 jour.",
+  "report.issue-form.drift-allowed": "Le d\xE9calage du formulaire ne bloque pas cette v\xE9rification. La synchronisation peut \xEAtre ex\xE9cut\xE9e apr\xE8s la fusion.",
   "report.issue-form.updated": "Le formulaire a \xE9t\xE9 mis \xE0 jour.",
   "report.issue-form.current": "Le formulaire est \xE0 jour.",
   "report.issue-form.files": "Fichiers concern\xE9s : {files}.",
@@ -31895,7 +31886,6 @@ var FR_MESSAGES = {
   "report.assets.skipped": "La mise \xE0 jour des ressources a \xE9t\xE9 ignor\xE9e : le meetup n\u2019est pas \xE9ligible ou des pr\xE9requis manquent.",
   "report.assets.completed": "La v\xE9rification et la mise \xE0 jour des ressources sont termin\xE9es.",
   "report.assets.counts": "Modifications du ticket enregistr\xE9es : {persisted, select, true {oui} other {non}} ; fichiers de ressources : {count, number}.",
-  "report.assets.unavailable": "Ignor\xE9 : les identifiants Google Drive sont absents ; la gestion des ressources reste manuelle.",
   "report.communication.mode": "Mode de communication : {mode}.",
   "report.communication.planned": "Planifi\xE9es : {planned, number} ; \xE0 envoyer : {due, number} ; tentatives d\u2019envoi : {dispatched, number}.",
   "report.communication.accepted": "Accept\xE9es : {accepted, number} ; d\xE9j\xE0 enregistr\xE9es : {recorded, number} ; diff\xE9r\xE9es : {deferred, number}.",
@@ -38637,14 +38627,6 @@ var CommunicationPlanner = class _CommunicationPlanner {
         );
         continue;
       }
-      if (recipient.destination.trim().length === 0) {
-        diagnostics.push(
-          _CommunicationPlanner.errorDiagnostic(
-            "missing-notification-destination"
-          )
-        );
-        continue;
-      }
       const base = _CommunicationPlanner.createIntentBase(
         input,
         "readiness-reminder",
@@ -39954,13 +39936,10 @@ var CommunicationDeliveryPreparation = class {
     this.dependencies = dependencies;
   }
   dependencies;
-  async execute(input, dispatchPermitted, event, runtimeDiagnostics) {
+  async execute(input, event, runtimeDiagnostics) {
     const catalog = await this.catalog(runtimeDiagnostics);
-    const {
-      mailGatewayEnabled,
-      notificationDestination,
-      notificationConfigured
-    } = this.gateways(input, dispatchPermitted, runtimeDiagnostics);
+    const notificationDestination = input.notificationDestination.trim();
+    const notificationConfigured = this.dependencies.config.communication["slack-enabled"];
     const mailRecipientResolution = catalog ? CommunicationRecipients.resolveMailRecipients(
       event,
       catalog,
@@ -39977,8 +39956,6 @@ var CommunicationDeliveryPreparation = class {
       }
     ];
     return {
-      mailGatewayEnabled,
-      notificationDestination,
       notificationConfigured,
       mailRecipientResolution,
       referencesResolved,
@@ -39999,35 +39976,6 @@ var CommunicationDeliveryPreparation = class {
       });
     }
     return catalog;
-  }
-  gateways(input, dispatchPermitted, runtimeDiagnostics) {
-    const config = this.dependencies.config;
-    const mailGatewayEnabled = input.mailGatewayEnabled;
-    if (dispatchPermitted && !mailGatewayEnabled) {
-      runtimeDiagnostics.push({
-        code: "communication.mail-gateway-disabled-missing-credential",
-        severity: "warning"
-      });
-    }
-    const notificationDestination = input.notificationDestination.trim();
-    const notificationConfigured = config.communication["slack-enabled"];
-    if (dispatchPermitted && notificationConfigured && !input.notificationGatewayEnabled) {
-      runtimeDiagnostics.push({
-        code: "communication.notification-gateway-disabled-missing-credential",
-        severity: "warning"
-      });
-    }
-    if (dispatchPermitted && notificationConfigured && !notificationDestination) {
-      runtimeDiagnostics.push({
-        code: "communication.notification-gateway-disabled-missing-destination",
-        severity: "warning"
-      });
-    }
-    return {
-      mailGatewayEnabled,
-      notificationDestination,
-      notificationConfigured
-    };
   }
 };
 
@@ -40066,7 +40014,7 @@ var ManageMeetupCommunications = class _ManageMeetupCommunications {
     }
     const delivery = await new CommunicationDeliveryPreparation(
       this.dependencies
-    ).execute(input, dispatchPermitted, managed.event, runtimeDiagnostics);
+    ).execute(input, managed.event, runtimeDiagnostics);
     const { referencesResolved } = delivery;
     if (dispatchPermitted && referencesResolved && !await this.sourceIsCurrent(sourceDocument, runtimeDiagnostics)) {
       return _ManageMeetupCommunications.emptyCommunicationResult(
@@ -40199,8 +40147,8 @@ var ManageMeetupCommunications = class _ManageMeetupCommunications {
     const reconciliation = await this.dependencies.reconcileCommunications(dispatchEnabled).execute({
       mode: dispatchEnabled ? "dispatch" : "check",
       dispatchCapabilities: {
-        mail: delivery.mailGatewayEnabled,
-        notification: delivery.notificationConfigured && input.notificationGatewayEnabled && delivery.notificationDestination.length > 0
+        mail: true,
+        notification: delivery.notificationConfigured
       },
       repositoryId: input.repositoryId?.trim() || repositoryName,
       eventId: `issue-${input.issueNumber}`,
@@ -41212,9 +41160,6 @@ var SlackNotificationGateway = class _SlackNotificationGateway {
   token;
   fetcher;
   async dispatch(message) {
-    if (!this.token) {
-      return { outcome: "rejected", diagnosticCode: "authentication-failed" };
-    }
     let response;
     try {
       response = await this.fetcher("https://slack.com/api/chat.postMessage", {
@@ -50609,13 +50554,6 @@ var CommunicationComposition = class _CommunicationComposition {
   }
   static bindGateways(container, input) {
     container.bind(COMMUNICATION_SERVICES.mailGateway).toDynamicValue((context3) => {
-      if (!input.mailingsToken)
-        return {
-          dispatch: async () => ({
-            outcome: "uncertain",
-            diagnosticCode: "unknown-provider-state"
-          })
-        };
       const client = getOctokit(input.mailingsToken);
       return new GithubRepositoryDispatchMailGateway(
         {
@@ -50700,7 +50638,7 @@ var OrganizerNotificationMessages = class extends MessageLocalizer {
 
 // packages/runtime/github-actions/src/communication.ts
 var CommunicationRuntime = class _CommunicationRuntime {
-  /** Translate runtime credentials into capabilities before entering the application. */
+  /** Compose authenticated gateways before entering the application. */
   static async runCommunicationReconcile(input) {
     _CommunicationRuntime.assertInput(input);
     const config = AutomationConfigFactory.createAutomationConfig();
@@ -50745,15 +50683,13 @@ var CommunicationRuntime = class _CommunicationRuntime {
       automationRevision: input.automationRevision,
       requestedMode: input.requestedMode,
       dispatchAuthorized: input.dispatchAuthorized,
-      mailGatewayEnabled: mailingsToken.length > 0,
-      notificationGatewayEnabled: slackToken.length > 0,
       notificationDestination: slackChannelId,
       notificationContent: messages.t("communication.organizer-attention", {
         issue: input.issueNumber
       }),
       notificationContentRevision: messages.policyRevision,
       approvalTrigger: input.approvalTrigger,
-      notificationDestinationFingerprint: config.communication["slack-enabled"] && slackChannelId ? `sha256:${createHash2("sha256").update(slackChannelId).digest("hex")}` : null
+      notificationDestinationFingerprint: config.communication["slack-enabled"] ? `sha256:${createHash2("sha256").update(slackChannelId).digest("hex")}` : null
     });
     return result;
   }
@@ -50799,7 +50735,6 @@ var COMMUNICATION_MESSAGES = {
   "ledger-status-write-failed": "The delivery status could not be recorded.",
   "missing-mail-destination": "An opted-in mail recipient has no destination.",
   "missing-notification-content": "Notification content is unavailable.",
-  "missing-notification-destination": "The notification destination is unavailable.",
   "occurrence-status-unknown": "The event occurrence status must be explicit.",
   "delivery-already-recorded": "The delivery ledger already contains this intent."
 };
@@ -50817,9 +50752,6 @@ var RUNTIME_MESSAGES = {
   "communication.event-concurrently-modified": "The meetup issue changed while communications were being reconciled; no delivery was attempted.",
   "communication.event-references-unresolved": "Event participants could not be resolved to stable identifiers.",
   "communication.github-credential-missing": "The GitHub credential is unavailable.",
-  "communication.mail-gateway-disabled-missing-credential": "Mail delivery is disabled because its credential is unavailable.",
-  "communication.notification-gateway-disabled-missing-credential": "Notifications are disabled because their credential is unavailable.",
-  "communication.notification-gateway-disabled-missing-destination": "Notifications are disabled because their destination is unavailable.",
   "communication.referential-catalog-invalid": "Communications are disabled because the referential catalog is invalid."
 };
 var CommunicationAction = class _CommunicationAction {
@@ -50848,9 +50780,9 @@ var CommunicationAction = class _CommunicationAction {
       requestedMode,
       dispatchAuthorized,
       githubToken: getInput("github-token", { required: true }),
-      mailingsToken: getInput("mailings-token"),
-      slackToken: getInput("slack-token"),
-      slackChannelId: process.env.SLACK_CHANNEL_ID ?? "",
+      mailingsToken: getInput("mailings-token", { required: true }),
+      slackToken: getInput("slack-token", { required: true }),
+      slackChannelId: getInput("slack-channel-id", { required: true }),
       owner,
       repo,
       repositoryId: process.env.GITHUB_REPOSITORY_ID,

@@ -35,8 +35,6 @@ const COMMUNICATION_MESSAGES: Readonly<
 	"ledger-status-write-failed": "The delivery status could not be recorded.",
 	"missing-mail-destination": "An opted-in mail recipient has no destination.",
 	"missing-notification-content": "Notification content is unavailable.",
-	"missing-notification-destination":
-		"The notification destination is unavailable.",
 	"occurrence-status-unknown": "The event occurrence status must be explicit.",
 	"delivery-already-recorded":
 		"The delivery ledger already contains this intent.",
@@ -70,12 +68,6 @@ const RUNTIME_MESSAGES: Readonly<
 		"Event participants could not be resolved to stable identifiers.",
 	"communication.github-credential-missing":
 		"The GitHub credential is unavailable.",
-	"communication.mail-gateway-disabled-missing-credential":
-		"Mail delivery is disabled because its credential is unavailable.",
-	"communication.notification-gateway-disabled-missing-credential":
-		"Notifications are disabled because their credential is unavailable.",
-	"communication.notification-gateway-disabled-missing-destination":
-		"Notifications are disabled because their destination is unavailable.",
 	"communication.referential-catalog-invalid":
 		"Communications are disabled because the referential catalog is invalid.",
 };
@@ -111,9 +103,9 @@ export class CommunicationAction {
 			requestedMode,
 			dispatchAuthorized,
 			githubToken: core.getInput("github-token", { required: true }),
-			mailingsToken: core.getInput("mailings-token"),
-			slackToken: core.getInput("slack-token"),
-			slackChannelId: process.env.SLACK_CHANNEL_ID ?? "",
+			mailingsToken: core.getInput("mailings-token", { required: true }),
+			slackToken: core.getInput("slack-token", { required: true }),
+			slackChannelId: core.getInput("slack-channel-id", { required: true }),
 			owner,
 			repo,
 			repositoryId: process.env.GITHUB_REPOSITORY_ID,

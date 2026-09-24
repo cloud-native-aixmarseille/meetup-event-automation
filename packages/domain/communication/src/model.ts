@@ -98,7 +98,6 @@ export type CommunicationDiagnosticCode =
 	| "ledger-status-write-failed"
 	| "missing-mail-destination"
 	| "missing-notification-content"
-	| "missing-notification-destination"
 	| "occurrence-status-unknown"
 	| "delivery-already-recorded";
 

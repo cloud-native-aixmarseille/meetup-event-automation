@@ -1,9 +1,8 @@
 import type { ManageMeetupAssets } from "@meetup-automation/journey";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PublicationAction } from "./publication-action.js";
 
 const mocks = vi.hoisted(() => ({
-	inputs: {} as Record<string, string>,
 	outputs: {} as Record<string, string>,
 	setSecret: vi.fn(),
 	createAssets: vi.fn(),
@@ -13,8 +12,8 @@ const mocks = vi.hoisted(() => ({
 		| undefined,
 }));
 
-vi.mock("@actions/core", () => ({
-	getInput: (name: string) => mocks.inputs[name] ?? "",
+vi.mock("@actions/core", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@actions/core")>()),
 	setOutput: (name: string, value: string) => {
 		mocks.outputs[name] = value;
 	},
@@ -46,13 +45,17 @@ vi.mock("@meetup-automation/journey", async (importOriginal) => ({
 
 beforeEach(() => {
 	vi.clearAllMocks();
-	vi.unstubAllEnvs();
-	mocks.inputs = {
+	for (const [name, value] of Object.entries({
 		"issue-number": "42",
 		mode: "check",
 		"github-token": "github-test-token",
 		"managed-comment-author": "test[bot]",
-	};
+		"google-credentials": "secret-json",
+		"google-drive-meetup-folder-id": "parent",
+		"google-drive-meetup-template-folder-id": "templates",
+	})) {
+		vi.stubEnv(`INPUT_${name.toUpperCase()}`, value);
+	}
 	mocks.outputs = {};
 	mocks.createAssets.mockReturnValue({});
 	mocks.execute.mockResolvedValue({
@@ -64,42 +67,38 @@ beforeEach(() => {
 	});
 });
 
+afterEach(() => vi.unstubAllEnvs());
+
 describe("publication action boundary", () => {
-	it("leaves assets manual when the optional credential is absent", async () => {
+	it.each([
+		["google-credentials", "check"],
+		["google-drive-meetup-folder-id", "check"],
+		["google-drive-meetup-template-folder-id", "check"],
+		["google-credentials", "fix"],
+		["google-drive-meetup-folder-id", "fix"],
+		["google-drive-meetup-template-folder-id", "fix"],
+	])("requires %s before reconciling in %s mode", async (input, mode) => {
 		// Arrange
-		// No additional setup is needed.
+		vi.stubEnv(`INPUT_${input.toUpperCase()}`, "");
+		vi.stubEnv("INPUT_MODE", mode);
 
 		// Act
-		const report =
-			await PublicationAction.runPublicationReconcileAssetsAction();
-		const actual = JSON.parse(mocks.outputs.result);
+		const operation = PublicationAction.runPublicationReconcileAssetsAction();
 
 		// Assert
-		expect(actual).toMatchObject({
-			schemaVersion: 1,
-			data: { skipped: true, files: {} },
-			diagnostics: [{ code: "publication.assets.unavailable" }],
-		});
-		expect(mocks.outputs["drive-files"]).toBe("{}");
-		expect(mocks.outputs["asset-url"]).toBe("");
-		expect(mocks.createAssets).not.toHaveBeenCalled();
-		expect(report.details.join("\n")).toContain(
-			"Skipped: Google Drive credentials are unavailable",
+		await expect(operation).rejects.toThrow(
+			`Input required and not supplied: ${input}`,
 		);
+		expect(mocks.createAssets).not.toHaveBeenCalled();
+		expect(mocks.execute).not.toHaveBeenCalled();
+		expect(mocks.outputs).toEqual({});
 	});
 
 	it.each(["check", "fix"])(
 		"masks credentials and serializes the %s result",
 		async (mode) => {
 			// Arrange
-			Object.assign(mocks.inputs, {
-				mode,
-				"google-credentials": "secret-json",
-			});
-			Object.assign(mocks.inputs, {
-				"google-drive-meetup-folder-id": "parent",
-				"google-drive-meetup-template-folder-id": "templates",
-			});
+			vi.stubEnv("INPUT_MODE", mode);
 
 			// Act
 			const report =
@@ -126,9 +125,8 @@ describe("publication action boundary", () => {
 		},
 	);
 
-	it("passes missing folder configuration to the validating adapter and handles skipped events", async () => {
+	it("reports skipped events with supplied Google Drive configuration", async () => {
 		// Arrange
-		mocks.inputs["google-credentials"] = "secret-json";
 		mocks.execute.mockResolvedValue({
 			skipped: true,
 			persisted: false,
@@ -142,8 +140,8 @@ describe("publication action boundary", () => {
 
 		// Assert
 		expect(mocks.createAssets).toHaveBeenCalledWith("secret-json", {
-			parentFolderId: "",
-			templateFolderId: "",
+			parentFolderId: "parent",
+			templateFolderId: "templates",
 		});
 		expect(mocks.outputs["asset-url"]).toBe("");
 		expect(report.details.join("\n")).toContain(

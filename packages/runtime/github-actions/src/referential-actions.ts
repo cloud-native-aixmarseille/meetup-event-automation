@@ -26,6 +26,11 @@ export class ReferentialActions {
 					speakerCount: outcome.catalog.speakers.length,
 				}
 			: { hostCount: 0, speakerCount: 0 };
+		const report = ReferentialActionReport.validation(
+			{ isValid: outcome.isValid, ...counts },
+			outcome.diagnostics,
+			messages,
+		);
 
 		ActionOutput.setJsonOutput(
 			"result",
@@ -35,17 +40,10 @@ export class ReferentialActions {
 			),
 		);
 		core.setOutput("is-valid", String(outcome.isValid));
-		core.setOutput(
-			"failure-message",
-			outcome.isValid ? "" : messages.t("workflow.referential.failed"),
-		);
+		core.setOutput("failure-message", report.failure ?? "");
 		core.setOutput("host-count", String(counts.hostCount));
 		core.setOutput("speaker-count", String(counts.speakerCount));
-		return ReferentialActionReport.validation(
-			{ isValid: outcome.isValid, ...counts },
-			outcome.diagnostics,
-			messages,
-		);
+		return report;
 	}
 
 	static async runReferentialSyncIssueFormAction(
@@ -56,11 +54,21 @@ export class ReferentialActions {
 			core.getInput("mode", { required: true }),
 			["check", "fix"] as const,
 		);
+		const failOnDrift = RuntimeInput.booleanInput(
+			"fail-on-drift",
+			core.getInput("fail-on-drift") || "true",
+		);
 		const outcome = await EventComposition.createReferentialContainer({
 			locale: messages.locale,
 		})
 			.get(SynchronizeMeetupIssueForm)
 			.execute({ mode });
+		const report = ReferentialActionReport.issueForm(
+			mode,
+			outcome,
+			messages,
+			failOnDrift,
+		);
 
 		ActionOutput.setJsonOutput(
 			"result",
@@ -70,15 +78,8 @@ export class ReferentialActions {
 			),
 		);
 		core.setOutput("changed", String(outcome.changed));
-		core.setOutput(
-			"failure-message",
-			outcome.diagnostics.some((item) => item.severity === "error")
-				? messages.t("workflow.referential.failed")
-				: outcome.changed && mode === "check"
-					? messages.t("workflow.issue-form.failed")
-					: "",
-		);
+		core.setOutput("failure-message", report.failure ?? "");
 		ActionOutput.setJsonOutput("changed-files", outcome.changedFiles);
-		return ReferentialActionReport.issueForm(mode, outcome, messages);
+		return report;
 	}
 }

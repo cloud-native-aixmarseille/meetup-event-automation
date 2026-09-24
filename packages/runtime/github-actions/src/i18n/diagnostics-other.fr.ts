@@ -1,7 +1,5 @@
 import type { DIAGNOSTICS_OTHER_EN } from "./diagnostics-other.en.js";
 export const DIAGNOSTICS_OTHER_FR = {
-	"diagnostic.publication.assets.unavailable":
-		"Les identifiants Google Drive sont indisponibles ; la gestion des fichiers reste manuelle.",
 	"diagnostic.publication.assets.prerequisites":
 		"Résolvez les références de l’hôte et de la date avant de synchroniser les fichiers.",
 	"diagnostic.publication.community-url.invalid":

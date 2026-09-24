@@ -48,23 +48,6 @@ describe("SlackNotificationGateway", () => {
 		);
 	});
 
-	it("does not attempt delivery without a configured token", async () => {
-		// Arrange
-		const fetcher = vi.fn();
-
-		// Act
-		const actual = await new SlackNotificationGateway("", fetcher).dispatch(
-			intent,
-		);
-
-		// Assert
-		expect(actual).toEqual({
-			outcome: "rejected",
-			diagnosticCode: "authentication-failed",
-		});
-		expect(fetcher).not.toHaveBeenCalled();
-	});
-
 	it.each([
 		["invalid_auth", "authentication-failed"],
 		["channel_not_found", "destination-unavailable"],

@@ -1,6 +1,4 @@
 export const DIAGNOSTICS_OTHER_EN = {
-	"diagnostic.publication.assets.unavailable":
-		"Google Drive credentials are unavailable; asset management remains manual",
 	"diagnostic.publication.assets.prerequisites":
 		"Resolve the event host and date before reconciling assets",
 	"diagnostic.publication.community-url.invalid":

@@ -112,13 +112,6 @@ export class CommunicationComposition {
 		container
 			.bind<MailGateway>(COMMUNICATION_SERVICES.mailGateway)
 			.toDynamicValue((context) => {
-				if (!input.mailingsToken)
-					return {
-						dispatch: async () => ({
-							outcome: "uncertain" as const,
-							diagnosticCode: "unknown-provider-state" as const,
-						}),
-					};
 				const client = getOctokit(input.mailingsToken);
 				return new GithubRepositoryDispatchMailGateway(
 					{

@@ -20,11 +20,14 @@ inputs:
     description: Trusted bot login allowed to create or update the managed delivery ledger comment, for example my-app[bot].
     required: true
   mailings-token:
-    description: Optional token used to dispatch approved email communications to the configured mailings repository. When omitted, mail intents remain planned but are not sent.
-    required: false
+    description: Token used to dispatch approved email communications to the configured mailings repository.
+    required: true
+  slack-channel-id:
+    description: Slack channel ID used for approved notifications.
+    required: true
   slack-token:
-    description: Optional Slack bot token used for approved notifications. When omitted, Slack delivery is skipped safely.
-    required: false
+    description: Slack bot token used for approved notifications.
+    required: true
   dispatch-authorized:
     description: Internal workflow assertion that the shared event concurrency lock is held and dispatch is authorized by the caller workflow.
     required: false

@@ -30,8 +30,6 @@ export const DIAGNOSTICS_COMMUNICATION_FR = {
 		"Un destinataire ayant accepté les e-mails n’a pas d’adresse.",
 	"diagnostic.communication.missing-notification-content":
 		"Le contenu de la notification est indisponible.",
-	"diagnostic.communication.missing-notification-destination":
-		"La destination de la notification est indisponible.",
 	"diagnostic.communication.occurrence-status-unknown":
 		"Le statut de l’événement doit être explicite.",
 	"diagnostic.communication.delivery-already-recorded":
@@ -62,12 +60,6 @@ export const DIAGNOSTICS_COMMUNICATION_FR = {
 		"Les participants n’ont pas pu être associés à des identifiants stables.",
 	"diagnostic.communication.github-credential-missing":
 		"Les identifiants GitHub sont indisponibles.",
-	"diagnostic.communication.mail-gateway-disabled-missing-credential":
-		"L’envoi d’e-mails est désactivé car ses identifiants sont indisponibles.",
-	"diagnostic.communication.notification-gateway-disabled-missing-credential":
-		"Les notifications sont désactivées car leurs identifiants sont indisponibles.",
-	"diagnostic.communication.notification-gateway-disabled-missing-destination":
-		"Les notifications sont désactivées car leur destination est indisponible.",
 	"diagnostic.communication.referential-catalog-invalid":
 		"Les communications sont désactivées car le catalogue de références est invalide.",
 } satisfies Record<keyof typeof DIAGNOSTICS_COMMUNICATION_EN, string>;

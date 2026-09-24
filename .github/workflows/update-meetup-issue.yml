@@ -15,30 +15,30 @@ on:
         required: true
         type: string
       slack-channel-id:
-        description: Optional Slack channel ID used for approved notifications. When omitted, Slack delivery is skipped safely.
-        required: false
+        description: Slack channel ID used for approved notifications.
+        required: true
         type: string
       google-drive-meetup-folder-id:
-        description: Optional Google Drive folder ID of the parent meetup folder used for asset reconciliation.
-        required: false
+        description: Google Drive folder ID of the parent meetup folder used for asset reconciliation.
+        required: true
         type: string
       google-drive-meetup-template-folder-id:
-        description: Optional Google Drive folder ID of the template folder used for asset reconciliation.
-        required: false
+        description: Google Drive folder ID of the template folder used for asset reconciliation.
+        required: true
         type: string
     secrets:
       google-credentials:
-        description: Optional Google service-account JSON for Drive asset reconciliation. Omission keeps asset management manual.
-        required: false
+        description: Google service-account JSON for Drive asset reconciliation.
+        required: true
       github-app-private-key:
         description: PEM-encoded private key for the GitHub App identified by the github-app-id input. Used to mint a narrowly scoped installation token.
         required: true
       mailings-token:
-        description: Optional token used to dispatch approved email communications to the configured mailings repository. When omitted, mail intents remain planned but are not sent.
-        required: false
+        description: Token used to dispatch approved email communications to the configured mailings repository.
+        required: true
       slack-token:
-        description: Optional Slack bot token used for approved notifications. When omitted, Slack delivery is skipped safely.
-        required: false
+        description: Slack bot token used for approved notifications.
+        required: true
     outputs:
       state:
         description: Derived lifecycle state for the target meetup issue, such as draft, planned, ready, held, or follow-up-complete.
@@ -93,16 +93,15 @@ jobs:
       - name: Reconcile communications
         id: communications
         uses: ./../self-workflow/actions/communication/reconcile
-        env:
-          SLACK_CHANNEL_ID: ${{ inputs.slack-channel-id }}
         with:
           locale: ${{ inputs.locale }}
           issue-number: ${{ github.event.issue.number }}
           mode: dispatch
           github-token: ${{ steps.app-token.outputs.token }}
           managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
-          mailings-token: ${{ secrets.mailings-token }} # zizmor: ignore[secrets-outside-env] optional reusable-workflow secret is forwarded explicitly to avoid secrets: inherit
-          slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] optional reusable-workflow secret is forwarded explicitly to avoid secrets: inherit
+          mailings-token: ${{ secrets.mailings-token }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly to avoid secrets: inherit
+          slack-channel-id: ${{ inputs.slack-channel-id }}
+          slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly to avoid secrets: inherit
           dispatch-authorized: "true"
 
       - name: Reconcile event assets
@@ -114,7 +113,7 @@ jobs:
           mode: fix
           github-token: ${{ steps.app-token.outputs.token }}
           managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
-          google-credentials: ${{ secrets.google-credentials }} # zizmor: ignore[secrets-outside-env] optional reusable-workflow secret is forwarded explicitly
+          google-credentials: ${{ secrets.google-credentials }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly
           google-drive-meetup-folder-id: ${{ inputs.google-drive-meetup-folder-id }}
           google-drive-meetup-template-folder-id: ${{ inputs.google-drive-meetup-template-folder-id }}
 

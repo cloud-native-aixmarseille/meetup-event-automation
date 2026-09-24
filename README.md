@@ -98,7 +98,7 @@ cross-domain journey decisions live in `packages/application/journey`. See
 | [`actions/communication/reconcile`](actions/communication/reconcile/README.md)           | Plan or dispatch due communications under workflow authorization         |
 | [`actions/publication/reconcile-assets`](actions/publication/reconcile-assets/README.md) | Check or reconcile Drive folders, template copies, and issue asset links |
 
-Drive integration is optional in both event workflows. See
+Both event workflows require Google credentials and Drive folder IDs. See
 [Google Drive event assets](docs/publication-assets.md) for setup instructions,
 asset identity, and retry behavior.
 

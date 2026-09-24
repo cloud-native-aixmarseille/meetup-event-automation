@@ -152,37 +152,6 @@ describe("runCommunicationReconcile", () => {
 		}
 	});
 
-	it("keeps mail intents in the plan without reserving when its token is missing", async () => {
-		// Arrange
-		const workspaceRoot = await createWorkspace();
-		const clients = githubClients();
-		getOctokitMock.mockReturnValue(clients.github);
-
-		// Act
-		const result = await CommunicationRuntime.runCommunicationReconcile(
-			runtimeInput(workspaceRoot, {
-				requestedMode: "dispatch",
-				dispatchAuthorized: true,
-				mailingsToken: "",
-			}),
-		);
-
-		// Assert
-		expect(result.counts).toMatchObject({
-			planned: 2,
-			due: 2,
-			reserved: 0,
-			dispatched: 0,
-		});
-		expect(result.runtimeDiagnostics).toContainEqual({
-			code: "communication.mail-gateway-disabled-missing-credential",
-			severity: "warning",
-		});
-		expect(clients.createComment).not.toHaveBeenCalled();
-		expect(clients.updateComment).not.toHaveBeenCalled();
-		expect(clients.createDispatchEvent).not.toHaveBeenCalled();
-	});
-
 	it("stays read-only unless dispatch is authorized by the caller workflow", async () => {
 		// Arrange
 		const workspaceRoot = await createWorkspace();
@@ -272,44 +241,6 @@ describe("runCommunicationReconcile", () => {
 		},
 	);
 
-	it("keeps Slack intents in the plan without reserving when its token is missing", async () => {
-		// Arrange
-		const eventDate = localDate(new Date(), "Europe/Paris");
-		const workspaceRoot = await createWorkspace();
-		const clients = githubClients({ labels: ["meetup"], eventDate });
-		getOctokitMock.mockImplementation((token: string) =>
-			token === "github-token" ? clients.github : clients.mailings,
-		);
-		const fetcher = vi.fn();
-		vi.stubGlobal("fetch", fetcher);
-
-		// Act
-		const result = await CommunicationRuntime.runCommunicationReconcile(
-			runtimeInput(workspaceRoot, {
-				requestedMode: "dispatch",
-				dispatchAuthorized: true,
-				mailingsToken: "mailings-token",
-				slackToken: "",
-				slackChannelId: "channel-safe-id",
-			}),
-		);
-
-		// Assert
-		expect(result.counts).toMatchObject({
-			planned: 1,
-			due: 1,
-			reserved: 0,
-			dispatched: 0,
-		});
-		expect(result.runtimeDiagnostics).toContainEqual({
-			code: "communication.notification-gateway-disabled-missing-credential",
-			severity: "warning",
-		});
-		expect(fetcher).not.toHaveBeenCalled();
-		expect(clients.createComment).not.toHaveBeenCalled();
-		expect(clients.updateComment).not.toHaveBeenCalled();
-	});
-
 	it("never blesses an edited event merely because its approval label remains", async () => {
 		// Arrange
 		const workspaceRoot = await createWorkspace();
@@ -324,6 +255,7 @@ describe("runCommunicationReconcile", () => {
 				approvalTrigger: approvalTrigger(),
 			}),
 		);
+		clients.createDispatchEvent.mockClear();
 		const changedDate = "2099-06-09";
 		clients.getIssue.mockResolvedValue({
 			data: {
@@ -356,7 +288,7 @@ describe("runCommunicationReconcile", () => {
 			severity: "warning",
 		});
 		expect(clients.createDispatchEvent).not.toHaveBeenCalled();
-		expect(clients.comments).toHaveLength(1);
+		expect(clients.comments).toHaveLength(2);
 	});
 
 	it("does not capture approval in check mode", async () => {
@@ -426,6 +358,7 @@ describe("runCommunicationReconcile", () => {
 				approvalTrigger: approvalTrigger(),
 			}),
 		);
+		clients.createDispatchEvent.mockClear();
 		clients.github.rest.repos.getCollaboratorPermissionLevel.mockResolvedValue({
 			data: { permission: "read" },
 		});
@@ -469,6 +402,7 @@ describe("runCommunicationReconcile", () => {
 				approvalTrigger: approvalTrigger(),
 			}),
 		);
+		clients.createDispatchEvent.mockClear();
 		const result = await CommunicationRuntime.runCommunicationReconcile(
 			runtimeInput(workspaceRoot, {
 				requestedMode: "dispatch",
@@ -658,9 +592,9 @@ function runtimeInput(
 		requestedMode: "check",
 		dispatchAuthorized: false,
 		githubToken: "github-token",
-		mailingsToken: "",
-		slackToken: "",
-		slackChannelId: "",
+		mailingsToken: "mailings-token",
+		slackToken: "slack-token",
+		slackChannelId: "channel-safe-id",
 		owner: "organization",
 		repo: "meetups",
 		automationRevision: "revision-test",

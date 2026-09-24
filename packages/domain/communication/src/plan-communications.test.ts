@@ -419,11 +419,6 @@ describe("PlanCommunications", () => {
 						...notificationRecipient(),
 						recipientId: "private@example.test",
 					},
-					{
-						...notificationRecipient(),
-						recipientId: "channel-2",
-						destination: "",
-					},
 				],
 			}),
 		);
@@ -432,7 +427,6 @@ describe("PlanCommunications", () => {
 		expect(result.intents).toEqual([]);
 		expect(result.diagnostics).toEqual([
 			{ code: "invalid-identifier", severity: "error" },
-			{ code: "missing-notification-destination", severity: "error" },
 		]);
 	});
 

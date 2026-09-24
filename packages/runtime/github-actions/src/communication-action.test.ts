@@ -1,17 +1,10 @@
 import * as core from "@actions/core";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CommunicationAction } from "./communication-action.js";
 
 const boundary = vi.hoisted(() => ({ execute: vi.fn() }));
-vi.mock("@actions/core", () => ({
-	getInput: (name: string) =>
-		({
-			"issue-number": "42",
-			mode: "check",
-			"dispatch-authorized": "false",
-			"github-token": "private-token",
-			"managed-comment-author": "automation[bot]",
-		})[name] ?? "",
+vi.mock("@actions/core", async (importOriginal) => ({
+	...(await importOriginal<typeof core>()),
 	setOutput: vi.fn(),
 }));
 vi.mock("@actions/github", () => ({
@@ -26,7 +19,46 @@ vi.mock("./communication.js", () => ({
 }));
 
 describe("communication action report facts", () => {
-	beforeEach(() => vi.clearAllMocks());
+	beforeEach(() => {
+		vi.clearAllMocks();
+		for (const [name, value] of Object.entries({
+			"issue-number": "42",
+			mode: "check",
+			"dispatch-authorized": "false",
+			"github-token": "private-token",
+			"mailings-token": "private-mailings-token",
+			"slack-token": "private-slack-token",
+			"slack-channel-id": "channel-safe-id",
+			"managed-comment-author": "automation[bot]",
+		})) {
+			vi.stubEnv(`INPUT_${name.toUpperCase()}`, value);
+		}
+	});
+
+	afterEach(() => vi.unstubAllEnvs());
+
+	it.each([
+		["mailings-token", "check"],
+		["slack-token", "check"],
+		["slack-channel-id", "check"],
+		["mailings-token", "dispatch"],
+		["slack-token", "dispatch"],
+		["slack-channel-id", "dispatch"],
+	])("requires %s before reconciling in %s mode", async (input, mode) => {
+		// Arrange
+		vi.stubEnv(`INPUT_${input.toUpperCase()}`, "");
+		vi.stubEnv("INPUT_MODE", mode);
+
+		// Act
+		const operation = CommunicationAction.runCommunicationReconcileAction();
+
+		// Assert
+		await expect(operation).rejects.toThrow(
+			`Input required and not supplied: ${input}`,
+		);
+		expect(boundary.execute).not.toHaveBeenCalled();
+		expect(core.setOutput).not.toHaveBeenCalled();
+	});
 
 	it.each(["warning", "error"] as const)(
 		"redacts provider data and preserves failure policy for %s diagnostics",
@@ -121,6 +153,13 @@ describe("communication action report facts", () => {
 		const report = await CommunicationAction.runCommunicationReconcileAction();
 
 		// Assert
+		expect(boundary.execute).toHaveBeenCalledWith(
+			expect.objectContaining({
+				mailingsToken: "private-mailings-token",
+				slackToken: "private-slack-token",
+				slackChannelId: "channel-safe-id",
+			}),
+		);
 		expect(report.details).toContain("Communication mode: dispatch.");
 		expect(report.details.join("\n")).toContain("Accepted: 1;");
 		expect(report.details.join("\n")).not.toContain("before retrying");

@@ -14,7 +14,7 @@
 
 ## Overview
 
-Validate the configured host and speaker catalogs and return only redacted counts and diagnostics. Publish redacted diagnostics in annotations, logs, and the job summary.
+Validate the configured host and speaker catalogs and fail when invalid, returning only redacted counts and diagnostics. Publish redacted diagnostics in annotations, logs, and the job summary.
 
 <!-- overview:end -->
 <!-- usage:start -->
@@ -45,7 +45,7 @@ Validate the configured host and speaker catalogs and return only redacted count
 
 | **Output**            | **Description**                                                                                         |
 | --------------------- | ------------------------------------------------------------------------------------------------------- |
-| **`failure-message`** | Localized remediation for a failed workflow check; empty when the check succeeds.                       |
+| **`failure-message`** | Localized remediation for a failed action check; empty when the check succeeds.                         |
 | **`result`**          | Versioned redacted JSON envelope containing validation status, public counts, and redacted diagnostics. |
 | **`is-valid`**        | Whether both configured referential catalogs passed validation.                                         |
 | **`host-count`**      | Number of valid host entries exposed to downstream automation; 0 when validation fails.                 |

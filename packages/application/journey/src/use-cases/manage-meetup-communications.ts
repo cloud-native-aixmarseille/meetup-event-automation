@@ -44,7 +44,7 @@ export class ManageMeetupCommunications {
 
 		const delivery = await new CommunicationDeliveryPreparation(
 			this.dependencies,
-		).execute(input, dispatchPermitted, managed.event, runtimeDiagnostics);
+		).execute(input, managed.event, runtimeDiagnostics);
 		const { referencesResolved } = delivery;
 
 		if (
@@ -237,11 +237,8 @@ export class ManageMeetupCommunications {
 			.execute({
 				mode: dispatchEnabled ? "dispatch" : "check",
 				dispatchCapabilities: {
-					mail: delivery.mailGatewayEnabled,
-					notification:
-						delivery.notificationConfigured &&
-						input.notificationGatewayEnabled &&
-						delivery.notificationDestination.length > 0,
+					mail: true,
+					notification: delivery.notificationConfigured,
 				},
 				repositoryId: input.repositoryId?.trim() || repositoryName,
 				eventId: `issue-${input.issueNumber}`,

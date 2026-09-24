@@ -72,9 +72,14 @@ Every public action must use the shared GitHub Actions reporting boundary:
   diagnostics; emit a safe warning without exposing the write error.
 - Keep exit status separate from diagnostic severity. Set `report.failure` only
   when the action's documented policy requires failure. For example, referential
-  validation returns errors for the calling workflow to enforce, while
-  communication reconciliation fails on error diagnostics. Reporting changes
-  must not silently change these policies.
+  validation fails on invalid catalogs. Issue-form synchronization fails on error
+  diagnostics in either mode. Projection drift fails check mode by default;
+  `fail-on-drift: false` reports drift without failing, as used by the pull-request
+  check workflow because synchronization runs after merge. Successful updates in
+  fix mode do not fail. Communication reconciliation fails on error
+  diagnostics. Actions own these policies through the shared runner; calling
+  workflows do not need separate enforcement steps. Reporting changes must not
+  silently change these policies.
 
 `tests/contracts/action-reporting.spec.ts` discovers every action manifest and
 enforces the shared runner and reporting ownership. The runner's typed operation
