@@ -19,7 +19,7 @@ import {
 const publicWorkflowContracts = {
 	"check-active-meetup-issues": {
 		inputs: [
-			"github-app-id",
+			"github-app-client-id",
 			"google-drive-meetup-folder-id",
 			"google-drive-meetup-template-folder-id",
 			"slack-channel-id",
@@ -29,7 +29,7 @@ const publicWorkflowContracts = {
 	},
 	"update-meetup-issue": {
 		inputs: [
-			"github-app-id",
+			"github-app-client-id",
 			"google-drive-meetup-folder-id",
 			"google-drive-meetup-template-folder-id",
 			"slack-channel-id",
@@ -38,7 +38,7 @@ const publicWorkflowContracts = {
 		secrets: ["github-app-private-key", "google-credentials", "slack-token"],
 	},
 	"update-meetup-issue-form": {
-		inputs: ["github-app-id"],
+		inputs: ["github-app-client-id"],
 		outputs: [
 			"changed",
 			"changed-files",
@@ -120,6 +120,47 @@ describe("public reusable workflow contracts", () => {
 		},
 	);
 
+	it("creates every public workflow installation token from a required client ID", async () => {
+		// Arrange
+		const workflowFiles = (
+			await readdir(join(root, ".github/workflows"))
+		).filter((name) => name.endsWith(".yml") && !name.startsWith("__"));
+
+		// Act
+		const workflows = await Promise.all(
+			workflowFiles.map(async (file) => {
+				const workflow = await readYaml<Workflow>(`.github/workflows/${file}`);
+				const tokens = Object.values(workflow.jobs ?? {})
+					.flatMap((job) => job.steps ?? [])
+					.filter((step) =>
+						step.uses?.startsWith("actions/create-github-app-token@"),
+					);
+				return { file, contract: workflow.on?.workflow_call, tokens };
+			}),
+		);
+		const tokenWorkflows = workflows.filter(({ tokens }) => tokens.length > 0);
+
+		// Assert
+		expect(tokenWorkflows.map(({ file }) => file).sort()).toEqual([
+			"check-active-meetup-issues.yml",
+			"update-meetup-issue-form.yml",
+			"update-meetup-issue.yml",
+		]);
+		for (const { file, contract, tokens } of tokenWorkflows) {
+			expect(contract?.inputs?.["github-app-client-id"], file).toMatchObject({
+				required: true,
+				type: "string",
+			});
+			expect(contract?.inputs, file).not.toHaveProperty("github-app-id");
+			for (const token of tokens) {
+				expect(token.with?.["client-id"], `${file}/${token.id}`).toBe(
+					workflowExpression("inputs.github-app-client-id"),
+				);
+				expect(token.with, `${file}/${token.id}`).not.toHaveProperty("app-id");
+			}
+		}
+	});
+
 	it.each(["check-active-meetup-issues", "update-meetup-issue"])(
 		"requires Slack credentials and forwards communication tokens and routing in %s",
 		async (workflowName) => {
@@ -189,7 +230,7 @@ describe("public reusable workflow contracts", () => {
 			);
 			expect(token.if).toBeUndefined();
 			expect(token.with).toEqual({
-				"app-id": workflowExpression("inputs.github-app-id"),
+				"client-id": workflowExpression("inputs.github-app-client-id"),
 				"private-key": workflowExpression("secrets.github-app-private-key"),
 				owner: "cloud-native-aixmarseille",
 				repositories: "mailings",

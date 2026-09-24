@@ -40,11 +40,11 @@ jobs:
     with:
       # Optional language for generated text.
       locale: en
-      # GitHub App ID used to mint the narrowly scoped installation token for meetup automation.
+      # GitHub App client ID used to mint the narrowly scoped installation token for meetup automation.
       # This input is required.
-      github-app-id: ""
+      github-app-client-id: ""
     secrets:
-      # PEM-encoded private key for the GitHub App identified by the github-app-id input. Used to mint a narrowly scoped installation token.
+      # PEM-encoded private key for the GitHub App identified by the github-app-client-id input. Used to mint a narrowly scoped installation token.
       # This input is required.
       github-app-private-key: ""
 ```
@@ -54,17 +54,17 @@ jobs:
 
 ## Inputs
 
-| **Input**           | **Description**                                                                                                                    | **Required** | **Type** |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | -------- |
-| **`locale`**        | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **false**    | `en`     |
-| **`github-app-id`** | GitHub App ID for meetup automation token creation.                                                                                | **true**     | `string` |
+| **Input**                  | **Description**                                                                                                                    | **Required** | **Type** |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | -------- |
+| **`locale`**               | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **false**    | `en`     |
+| **`github-app-client-id`** | GitHub App client ID for meetup automation token creation.                                                                         | **true**     | `string` |
 
 <!-- inputs:end -->
 <!-- secrets:start -->
 
 ## Secrets
 
-- **`github-app-private-key`**: PEM-encoded private key for the GitHub App identified by `github-app-id`. Required: **true**.
+- **`github-app-private-key`**: PEM-encoded private key for the GitHub App identified by `github-app-client-id`. Required: **true**.
 
 <!-- secrets:end -->
 <!-- outputs:start -->

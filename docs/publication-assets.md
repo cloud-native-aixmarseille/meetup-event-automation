@@ -19,7 +19,7 @@ service-account JSON and both folder IDs. Their callers pass them explicitly:
 
 ```yaml
 with:
-  github-app-id: ${{ vars.CI_BOT_APP_ID }}
+  github-app-client-id: ${{ vars.CI_BOT_APP_CLIENT_ID }}
   slack-channel-id: ${{ vars.SLACK_CHANNEL_ID }}
   google-drive-meetup-folder-id: ${{ vars.CI_GOOGLE_DRIVE_MEETUP_FOLDER_ID }}
   google-drive-meetup-template-folder-id: ${{ vars.CI_GOOGLE_DRIVE_MEETUP_TEMPLATE_FOLDER_ID }}

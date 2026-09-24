@@ -2,7 +2,7 @@
 # state, and processes due communications under the shared per-event lock.
 #
 # The workflow creates a separate GitHub App installation token for
-# `cloud-native-aixmarseille/mailings` using the supplied App ID and private key.
+# `cloud-native-aixmarseille/mailings` using the supplied App client ID and private key.
 # The App must be installed there with Contents: write permission. The token is
 # used in the dispatch job and revoked when the job finishes; callers do not
 # provide a mailing token secret.
@@ -16,8 +16,8 @@ on:
         required: false
         type: string
         default: en
-      github-app-id:
-        description: GitHub App ID used to mint the narrowly scoped installation token for meetup automation.
+      github-app-client-id:
+        description: GitHub App client ID used to mint the narrowly scoped installation token for meetup automation.
         required: true
         type: string
       slack-channel-id:
@@ -41,7 +41,7 @@ on:
         description: Google service-account JSON for Drive asset reconciliation.
         required: true
       github-app-private-key:
-        description: PEM-encoded private key for the GitHub App identified by the github-app-id input. Used to mint a narrowly scoped installation token.
+        description: PEM-encoded private key for the GitHub App identified by the github-app-client-id input. Used to mint a narrowly scoped installation token.
         required: true
       slack-token:
         description: Slack bot token used for approved notifications.
@@ -93,7 +93,7 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
-          app-id: ${{ inputs.github-app-id }}
+          client-id: ${{ inputs.github-app-client-id }}
           private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] reusable workflows cannot safely consume environment secrets without broad inherit; this workflow forwards only the required secret
           owner: ${{ github.repository_owner }}
           repositories: ${{ github.event.repository.name }}
@@ -137,7 +137,7 @@ jobs:
         id: mailings-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
-          app-id: ${{ inputs.github-app-id }}
+          client-id: ${{ inputs.github-app-client-id }}
           private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] reusable workflow receives the App key explicitly to mint a repository-scoped token
           owner: cloud-native-aixmarseille
           repositories: mailings
