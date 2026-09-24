@@ -16,6 +16,12 @@
 Reusable workflow that checks active meetup issues, evaluates their current
 state, and processes due communications under the shared per-event lock.
 
+The workflow creates a separate GitHub App installation token for
+`cloud-native-aixmarseille/mailings` using the supplied App ID and private key.
+The App must be installed there with Contents: write permission. The token is
+used in the dispatch job and revoked when the job finishes; callers do not
+provide a mailing token secret.
+
 ### Permissions
 
 - **`contents`**: `read`
@@ -47,10 +53,6 @@ jobs:
       # PEM-encoded private key for the GitHub App identified by the github-app-id input. Used to mint a narrowly scoped installation token.
       # This input is required.
       github-app-private-key: ""
-
-      # Token used to dispatch approved email communications to the configured mailings repository.
-      # This input is required.
-      mailings-token: ""
 
       # Slack bot token used for approved notifications.
       # This input is required.
@@ -99,7 +101,6 @@ jobs:
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ------------ |
 | **`google-credentials`**     | Google service-account JSON for Drive asset reconciliation.                                                                          | **true**     |
 | **`github-app-private-key`** | PEM-encoded private key for the GitHub App identified by the github-app-id input. Used to mint a narrowly scoped installation token. | **true**     |
-| **`mailings-token`**         | Token used to dispatch approved email communications to the configured mailings repository.                                          | **true**     |
 | **`slack-token`**            | Slack bot token used for approved notifications.                                                                                     | **true**     |
 
 <!-- secrets:end -->

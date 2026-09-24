@@ -98,6 +98,13 @@ cross-domain journey decisions live in `packages/application/journey`. See
 | [`actions/communication/reconcile`](actions/communication/reconcile/README.md)           | Plan or dispatch due communications under workflow authorization         |
 | [`actions/publication/reconcile-assets`](actions/publication/reconcile-assets/README.md) | Check or reconcile Drive folders, template copies, and issue asset links |
 
+Both event workflows create a short-lived mailings installation token using
+the supplied GitHub App ID and private key. Install the App on
+`cloud-native-aixmarseille/mailings` with Contents: write permission. Each token
+is scoped to that repository and revoked at job completion. Callers do not
+provide a `mailings-token` workflow secret; direct action callers still supply
+the generated token through the action input.
+
 Both event workflows require Google credentials and Drive folder IDs. See
 [Google Drive event assets](docs/publication-assets.md) for setup instructions,
 asset identity, and retry behavior.
