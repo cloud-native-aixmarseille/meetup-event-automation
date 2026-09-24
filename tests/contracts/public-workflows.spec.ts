@@ -1,6 +1,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { AutomationConfigFactory } from "../../packages/application/journey/src/config/automation-config.js";
 import {
 	type ActionManifest,
 	automationActionPrefix,
@@ -24,12 +25,7 @@ const publicWorkflowContracts = {
 			"slack-channel-id",
 		],
 		outputs: ["issue-numbers"],
-		secrets: [
-			"github-app-private-key",
-			"google-credentials",
-			"mailings-token",
-			"slack-token",
-		],
+		secrets: ["github-app-private-key", "google-credentials", "slack-token"],
 	},
 	"update-meetup-issue": {
 		inputs: [
@@ -39,12 +35,7 @@ const publicWorkflowContracts = {
 			"slack-channel-id",
 		],
 		outputs: ["communication-diagnostics", "diagnostics", "is-ready", "state"],
-		secrets: [
-			"github-app-private-key",
-			"google-credentials",
-			"mailings-token",
-			"slack-token",
-		],
+		secrets: ["github-app-private-key", "google-credentials", "slack-token"],
 	},
 	"update-meetup-issue-form": {
 		inputs: ["github-app-id"],
@@ -130,7 +121,7 @@ describe("public reusable workflow contracts", () => {
 	);
 
 	it.each(["check-active-meetup-issues", "update-meetup-issue"])(
-		"requires and forwards communication tokens and routing in %s",
+		"requires Slack credentials and forwards communication tokens and routing in %s",
 		async (workflowName) => {
 			// Arrange
 			const communicationAction = `${automationActionPrefix}communication/reconcile`;
@@ -145,17 +136,74 @@ describe("public reusable workflow contracts", () => {
 				.filter((step) => step.uses === communicationAction);
 
 			// Assert
-			expect(secrets?.["mailings-token"]?.required).toBe(true);
+			expect(secrets).not.toHaveProperty("mailings-token");
 			expect(secrets?.["slack-token"]?.required).toBe(true);
 			expect(slackChannel?.required).toBe(true);
 			expect(slackChannel?.default).toBeUndefined();
 			expect(communicationSteps).toHaveLength(1);
 			expect(communicationSteps[0].with).toMatchObject({
-				"mailings-token": workflowExpression("secrets.mailings-token"),
+				"mailings-token": workflowExpression(
+					"steps.mailings-token.outputs.token",
+				),
 				"slack-token": workflowExpression("secrets.slack-token"),
 				"slack-channel-id": workflowExpression("inputs.slack-channel-id"),
 			});
 			expect(communicationSteps[0].env).toBeUndefined();
+		},
+	);
+
+	it.each([
+		["check-active-meetup-issues", "audit"],
+		["update-meetup-issue", "manage"],
+	] as const)(
+		"creates a revocable mailings-only token in the dispatch job in %s",
+		async (workflowName, jobName) => {
+			// Arrange
+			const config = AutomationConfigFactory.createAutomationConfig();
+			const communicationAction = `${automationActionPrefix}communication/reconcile`;
+
+			// Act
+			const workflow = await readWorkflow(workflowName);
+			const jobs = Object.values(workflow.jobs ?? {});
+			const steps = workflow.jobs?.[jobName]?.steps ?? [];
+			const tokens = jobs
+				.flatMap((job) => job.steps ?? [])
+				.filter((step) => step.id === "mailings-token");
+			const token = tokens[0];
+			const tokenIndex = steps.indexOf(token);
+			const communicationIndex = steps.findIndex(
+				(step) => step.uses === communicationAction,
+			);
+			const jobOutputs = jobs.map((job) =>
+				"outputs" in job ? job.outputs : {},
+			);
+			const publicOutputs = JSON.stringify([
+				workflow.on?.workflow_call?.outputs,
+				...jobOutputs,
+			]);
+
+			// Assert
+			expect(tokens).toHaveLength(1);
+			expect(token.uses).toMatch(
+				/^actions\/create-github-app-token@[0-9a-f]{40}$/,
+			);
+			expect(token.if).toBeUndefined();
+			expect(token.with).toEqual({
+				"app-id": workflowExpression("inputs.github-app-id"),
+				"private-key": workflowExpression("secrets.github-app-private-key"),
+				owner: "cloud-native-aixmarseille",
+				repositories: "mailings",
+				"permission-contents": "write",
+			});
+			expect(`${token.with?.owner}/${token.with?.repositories}`).toBe(
+				config.communication["mailings-repository"],
+			);
+			expect(tokenIndex).toBeGreaterThanOrEqual(0);
+			expect(communicationIndex).toBeGreaterThan(tokenIndex);
+			expect(steps[communicationIndex].with?.["mailings-token"]).toBe(
+				workflowExpression("steps.mailings-token.outputs.token"),
+			);
+			expect(publicOutputs).not.toContain("steps.mailings-token.outputs.token");
 		},
 	);
 

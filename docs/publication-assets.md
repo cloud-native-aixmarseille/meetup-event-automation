@@ -26,7 +26,6 @@ with:
 secrets:
   github-app-private-key: ${{ secrets.CI_BOT_APP_PRIVATE_KEY }}
   google-credentials: ${{ secrets.CI_GOOGLE_SERVICE_ACCOUNT_CREDENTIALS }}
-  mailings-token: ${{ secrets.MAILINGS_TOKEN }}
   slack-token: ${{ secrets.SLACK_BOT_TOKEN }}
 ```
 
