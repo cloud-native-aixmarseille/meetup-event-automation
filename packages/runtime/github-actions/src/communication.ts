@@ -45,7 +45,7 @@ export class CommunicationRuntime {
 		input: RunCommunicationReconcileInput,
 	): Promise<RunCommunicationReconcileResult> {
 		CommunicationRuntime.assertInput(input);
-		const config = AutomationConfigFactory.createAutomationConfig();
+		const config = AutomationConfigFactory.createAutomationConfig(input.owner);
 		const runtimeDiagnostics: CommunicationJourneyDiagnostic[] = [];
 		const githubToken = input.githubToken.trim();
 		if (!githubToken) {

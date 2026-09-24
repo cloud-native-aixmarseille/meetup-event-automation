@@ -26,9 +26,10 @@ export interface AutomationConfig {
 export class AutomationConfigFactory {
 	/**
 	 * Automation behavior is owned and versioned by this repository. Consumer
-	 * repositories do not provide a runtime configuration file anymore.
+	 * repositories do not provide a runtime configuration file anymore. Without
+	 * a repository owner, workspace-only operations leave communication disabled.
 	 */
-	static createAutomationConfig(): AutomationConfig {
+	static createAutomationConfig(repositoryOwner?: string): AutomationConfig {
 		return {
 			timezone: "Europe/Paris",
 			event: {
@@ -46,10 +47,12 @@ export class AutomationConfigFactory {
 			},
 			communication: {
 				"readiness-window-days": 7,
-				"mailings-repository": "cloud-native-aixmarseille/mailings",
+				"mailings-repository": repositoryOwner
+					? `${repositoryOwner}/mailings`
+					: "",
 				"slack-enabled": true,
 				"approval-label": "communication:approved",
-				"dispatch-enabled": true,
+				"dispatch-enabled": Boolean(repositoryOwner),
 				"policy-version": 1,
 			},
 			publication: {

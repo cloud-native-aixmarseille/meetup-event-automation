@@ -40,6 +40,7 @@ export const SERVICES = {
 };
 
 export interface WorkspaceCompositionInput {
+	readonly owner?: string;
 	readonly locale?: Locale;
 	readonly config?: AutomationConfig;
 	readonly workspaceRoot?: string;
@@ -63,7 +64,8 @@ export class EventComposition {
 		container
 			.bind<AutomationConfig>(SERVICES.config)
 			.toConstantValue(
-				input.config ?? AutomationConfigFactory.createAutomationConfig(),
+				input.config ??
+					AutomationConfigFactory.createAutomationConfig(input.owner),
 			);
 		container
 			.bind<ReferentialRepository>(SERVICES.referentialRepository)

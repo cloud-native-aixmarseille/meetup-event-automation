@@ -100,7 +100,8 @@ cross-domain journey decisions live in `packages/application/journey`. See
 
 Both event workflows create a short-lived mailings installation token using
 the supplied GitHub App client ID and private key. Install the App on
-`cloud-native-aixmarseille/mailings` with Contents: write permission. Each token
+`mailings` in the caller repository owner's organization with Contents: write
+permission. The token scope and dispatch target both use that owner. Each token
 is scoped to that repository and revoked at job completion. Callers do not
 provide a `mailings-token` workflow secret; direct action callers still supply
 the generated token through the action input.

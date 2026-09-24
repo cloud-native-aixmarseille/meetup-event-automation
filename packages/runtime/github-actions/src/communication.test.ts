@@ -27,6 +27,49 @@ afterEach(async () => {
 });
 
 describe("runCommunicationReconcile", () => {
+	it.each(["example-community", "another-community"])(
+		"dispatches to %s/mailings and records the same approval destination",
+		async (owner) => {
+			// Arrange
+			const workspaceRoot = await createWorkspace();
+			const clients = githubClients();
+			getOctokitMock.mockImplementation((token: string) =>
+				token === "github-token" ? clients.github : clients.mailings,
+			);
+			const trigger = approvalTrigger();
+
+			// Act
+			const result = await CommunicationRuntime.runCommunicationReconcile(
+				runtimeInput(workspaceRoot, {
+					owner,
+					requestedMode: "dispatch",
+					dispatchAuthorized: true,
+					approvalTrigger: {
+						...trigger,
+						issueSnapshot: {
+							...trigger.issueSnapshot,
+							identity: { repository: `${owner}/meetups`, issueNumber: 42 },
+						},
+					},
+				}),
+			);
+			const approvalComment = clients.comments.find(({ body }) =>
+				body.startsWith("<!-- meetup-automation:communication-approval:v1 -->"),
+			);
+
+			// Assert
+			expect(result.mode).toBe("dispatch");
+			expect(result.counts.accepted).toBe(2);
+			expect(clients.createDispatchEvent).toHaveBeenCalledTimes(2);
+			for (const [dispatch] of clients.createDispatchEvent.mock.calls) {
+				expect(dispatch).toMatchObject({ owner, repo: "mailings" });
+			}
+			expect(approvalComment?.body).toContain(
+				`"mailingsRepository": "${owner}/mailings"`,
+			);
+		},
+	);
+
 	it("requires new approval after a locale change without resending recorded deliveries", async () => {
 		// Arrange
 		const workspaceRoot = await createWorkspace();

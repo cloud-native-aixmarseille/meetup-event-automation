@@ -200,7 +200,9 @@ describe("public reusable workflow contracts", () => {
 		"creates a revocable mailings-only token in the dispatch job in %s",
 		async (workflowName, jobName) => {
 			// Arrange
-			const config = AutomationConfigFactory.createAutomationConfig();
+			const repositoryOwner = "example-community";
+			const config =
+				AutomationConfigFactory.createAutomationConfig(repositoryOwner);
 			const communicationAction = `${automationActionPrefix}communication/reconcile`;
 
 			// Act
@@ -232,11 +234,11 @@ describe("public reusable workflow contracts", () => {
 			expect(token.with).toEqual({
 				"client-id": workflowExpression("inputs.github-app-client-id"),
 				"private-key": workflowExpression("secrets.github-app-private-key"),
-				owner: "cloud-native-aixmarseille",
+				owner: workflowExpression("github.repository_owner"),
 				repositories: "mailings",
 				"permission-contents": "write",
 			});
-			expect(`${token.with?.owner}/${token.with?.repositories}`).toBe(
+			expect(`${repositoryOwner}/${token.with?.repositories}`).toBe(
 				config.communication["mailings-repository"],
 			);
 			expect(tokenIndex).toBeGreaterThanOrEqual(0);
