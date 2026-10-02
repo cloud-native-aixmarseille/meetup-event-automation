@@ -99,8 +99,8 @@ importers:
   packages/adapter/google-drive-asset-repository:
     dependencies:
       '@googleapis/drive':
-        specifier: ^26.0.0
-        version: 26.0.0(supports-color@7.2.0)
+        specifier: ^26.0.1
+        version: 26.0.1(supports-color@7.2.0)
       '@meetup-automation/publication':
         specifier: workspace:*
         version: link:../../domain/publication
@@ -582,8 +582,8 @@ packages:
   '@formatjs/intl@6.1.2':
     resolution: {integrity: sha512-YH3Ldfa2vmavWgBlCyrT9WiobphTXlNHnHxhhB6nLSUOxmitJ6Bzqzg61uBcnc6yhKTU+YRo8hLhEatOZrVJUg==}
 
-  '@googleapis/drive@26.0.0':
-    resolution: {integrity: sha512-CsLfCWJEXUSa56KGnkW5DvT+I40f8i9ndDA+29s0SRjphS42/2NPCzEq2hg9C55y9m22xubrYliijuo3aHog/w==}
+  '@googleapis/drive@26.0.1':
+    resolution: {integrity: sha512-q1U+WNS2OPAS3Prn3FD0otYNudnv+feXX9DP8qrDqGGwIVU90OBnP6NV66aTc0qJrqeJvnrCYcnjddjm4h23iQ==}
     engines: {node: '>=22.0.0'}
 
   '@inversifyjs/common@2.0.1':
@@ -2691,7 +2691,7 @@ snapshots:
       '@formatjs/icu-messageformat-parser': 3.5.20
       intl-messageformat: 12.1.2
 
-  '@googleapis/drive@26.0.0(supports-color@7.2.0)':
+  '@googleapis/drive@26.0.1(supports-color@7.2.0)':
     dependencies:
       googleapis-common: 9.0.4(supports-color@7.2.0)
     transitivePeerDependencies:
