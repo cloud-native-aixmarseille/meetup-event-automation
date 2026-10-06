@@ -75,8 +75,8 @@ workflow generates adjacent readme references.
 
 ## Architecture decisions
 
-Eight records group accepted decisions by feature or architectural scope. Each
-includes its context, decisions, trade-offs, and links to the original history.
+Records group decisions and proposals by feature or architectural scope. Each
+includes its status, context, decisions, and trade-offs.
 Use the current guides above for setup and supported operational behavior.
 
 | Scope                                                                     | Decisions                                                                         |
@@ -89,9 +89,7 @@ Use the current guides above for setup and supported operational behavior.
 | [Feedback and shared links](adr/0006-feedback.md)                         | OpenFeedback agendas, resource identity, and Kutt target selection.               |
 | [Managed assets](adr/0007-assets.md)                                      | Template bindings, public fields, images, and presentation PDFs.                  |
 | [Draft generation and review](adr/0008-draft-generation.md)               | Event copy, cover artwork, social formats, reminders, and provider boundaries.    |
-
-The [historical index](adr/archive/README.md) preserves all 29 original numbered
-records, including superseded choices, dated evidence, and implementation notes.
+| [Community event publication](adr/0009-community-event-publication.md)    | Proposed OCGroups browser reconciliation, approval, verification, and recovery.   |
 
 ## Directory layout
 
@@ -129,9 +127,7 @@ docs/
     ├── 0006-feedback.md
     ├── 0007-assets.md
     ├── 0008-draft-generation.md
-    └── archive/
-        ├── README.md
-        └── <original numbered records listed in the historical index>
+    └── 0009-community-event-publication.md
 ```
 
 Action references stay beside `action.yml`; workflow references stay beside
