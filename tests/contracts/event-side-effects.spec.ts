@@ -186,7 +186,7 @@ describe("event side-effect safeguards", () => {
 			"google-drive-meetup-template-folder-id",
 			"kutt-link-id",
 			"locale",
-			"slack-channel-id",
+			"slack-organizer-channel-id",
 		]);
 		expect(token?.with?.["client-id"]).toBe(
 			workflowExpression("inputs.github-app-client-id"),
@@ -197,8 +197,8 @@ describe("event side-effect safeguards", () => {
 		expect(communication?.with).not.toHaveProperty("mode");
 		expect(communication?.with?.["report-errors-to-issue"]).toBe("true");
 		expect(communication).not.toHaveProperty("continue-on-error");
-		expect(communication?.with?.["slack-channel-id"]).toBe(
-			workflowExpression("inputs.slack-channel-id"),
+		expect(communication?.with?.["slack-organizer-channel-id"]).toBe(
+			workflowExpression("inputs.slack-organizer-channel-id"),
 		);
 		expect(summary).toBeUndefined();
 		expect(

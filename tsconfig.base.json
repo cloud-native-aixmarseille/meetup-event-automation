@@ -32,9 +32,6 @@
 			"@meetup-automation/github-event-repository": [
 				"./packages/adapter/github-event-repository/src/index.ts"
 			],
-			"@meetup-automation/github-communication-approval-repository": [
-				"./packages/adapter/github-communication-approval-repository/src/index.ts"
-			],
 			"@meetup-automation/github-event-comment-repository": [
 				"./packages/adapter/github-event-comment-repository/src/index.ts"
 			],
@@ -73,6 +70,9 @@
 			],
 			"@meetup-automation/openfeedback-event-gateway": [
 				"./packages/adapter/openfeedback-event-gateway/src/index.ts"
+			],
+			"@meetup-automation/github-organizer-approval": [
+				"./packages/adapter/github-organizer-approval/src/index.ts"
 			]
 		}
 	}

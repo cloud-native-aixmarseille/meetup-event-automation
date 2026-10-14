@@ -69,7 +69,7 @@ const actionContracts = [
 			"issue-number",
 			"mailings-token",
 			"managed-comment-author",
-			"slack-channel-id",
+			"slack-organizer-channel-id",
 			"slack-token",
 		],
 		outputs: ["diagnostics", "dispatched-count", "planned-count", "result"],
@@ -137,7 +137,7 @@ describe("public action contracts", () => {
 		},
 	);
 
-	it.each(["mailings-token", "slack-channel-id", "slack-token"])(
+	it.each(["mailings-token", "slack-organizer-channel-id", "slack-token"])(
 		"requires an explicit %s for communication reconciliation",
 		async (inputName) => {
 			// Arrange
@@ -177,5 +177,6 @@ describe("public action contracts", () => {
 		).toBeUndefined();
 		expect(communication.inputs).not.toHaveProperty("mode");
 		expect(communication.inputs).not.toHaveProperty("dispatch-authorized");
+		expect(communication.inputs).not.toHaveProperty("slack-channel-id");
 	});
 });

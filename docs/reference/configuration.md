@@ -18,7 +18,7 @@ parameter names are the public contract.
 | Variable `GOOGLE_DRIVE_MEETUP_FOLDER_ID`          | Input `google-drive-meetup-folder-id`          | Both event workflows.                     |
 | Variable `GOOGLE_DRIVE_MEETUP_TEMPLATE_FOLDER_ID` | Input `google-drive-meetup-template-folder-id` | Both event workflows.                     |
 | Secret `SLACK_BOT_TOKEN`                          | Secret `slack-token`                           | Both event workflows.                     |
-| Variable `SLACK_CHANNEL_ID`                       | Input `slack-channel-id`                       | Both event workflows.                     |
+| Variable `SLACK_ORGANIZER_CHANNEL_ID`             | Input `slack-organizer-channel-id`             | Both event workflows.                     |
 
 Use the GitHub App's client ID. Install the App on the consumer repository and
 `mailings` under the same owner. Both event workflows generate a separate,
@@ -40,7 +40,7 @@ does not forward it to a reusable workflow.
 The optional `locale` workflow input defaults to English (`en`) and also supports
 French (`fr`). Use the same `locale` in all callers. Regional French variants such as `fr-FR`
 resolve to French; unsupported values fall back to English. Changing locale
-requires issue-form synchronization and renewed communication approval. See
+requires issue-form synchronization. See
 [localization](../development/localization.md) for covered messages and stable
 identifiers.
 
@@ -67,24 +67,27 @@ Use Drive folder URLs for assets and OpenFeedback event URLs for feedback.
 
 Create these labels in the consumer repository:
 
-| Label                    | Meaning                                                      |
-| ------------------------ | ------------------------------------------------------------ |
-| `meetup`                 | Marks an issue as a meetup.                                  |
-| `hoster:needed`          | Host participation is not confirmed.                         |
-| `hoster:confirmed`       | Organizer confirms the host.                                 |
-| `speakers:needed`        | Speaker participation is not confirmed.                      |
-| `speakers:confirmed`     | Organizer confirms the speakers.                             |
-| `event:postponed`        | Meetup is postponed.                                         |
-| `event:held`             | Meetup took place.                                           |
-| `event:cancelled`        | Meetup is cancelled.                                         |
-| `communication:approved` | Requests communication approval for the current event facts. |
+| Label                | Meaning                                 |
+| -------------------- | --------------------------------------- |
+| `meetup`             | Marks an issue as a meetup.             |
+| `hoster:needed`      | Host participation is not confirmed.    |
+| `hoster:confirmed`   | Organizer confirms the host.            |
+| `speakers:needed`    | Speaker participation is not confirmed. |
+| `speakers:confirmed` | Organizer confirms the speakers.        |
+| `event:postponed`    | Meetup is postponed.                    |
+| `event:held`         | Meetup took place.                      |
+| `event:cancelled`    | Meetup is cancelled.                    |
 
 The automation maintains the `needed` labels from the confirmation state. Use at
 most one `event:*` status label. An open issue without a status label is
 scheduled; closing it marks it held unless an explicit status says otherwise.
 The date passing alone does not mark an event held.
 
-Communication approval requires a label event from a user with triage, write,
-maintain, or admin access. See
-[approval and delivery](../integrations/communications.md) before enabling
-messages.
+Email tasks use completion checkboxes. See
+[approval and automatic completion](../integrations/communications.md) for task names, timing,
+and duplicate protection.
+
+`SLACK_ORGANIZER_CHANNEL_ID` selects the dedicated meetup organizer channel for
+approval requests and readiness reminders. Public Slack announcements remain
+manual checklist tasks and have no automation channel input. See
+[channel selection](../integrations/communications.md#organizer-and-public-channels).

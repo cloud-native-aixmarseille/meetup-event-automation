@@ -57,7 +57,7 @@ jobs:
       locale: en
       github-app-client-id: ${{ vars.CI_BOT_APP_CLIENT_ID }}
       kutt-link-id: ${{ vars.KUTT_FEEDBACK_LINK_ID }}
-      slack-channel-id: ${{ vars.SLACK_CHANNEL_ID }}
+      slack-organizer-channel-id: ${{ vars.SLACK_ORGANIZER_CHANNEL_ID }}
       google-drive-meetup-folder-id: ${{ vars.GOOGLE_DRIVE_MEETUP_FOLDER_ID }}
       google-drive-meetup-template-folder-id: ${{ vars.GOOGLE_DRIVE_MEETUP_TEMPLATE_FOLDER_ID }}
     secrets:
@@ -79,7 +79,7 @@ jobs:
 | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- | ----------- |
 | **`locale`**                                 | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **false**    | **string** | `en`        |
 | **`github-app-client-id`**                   | GitHub App client ID used to mint the narrowly scoped installation token for meetup automation.                                    | **true**     | **string** | -           |
-| **`slack-channel-id`**                       | Slack channel ID used for approved notifications.                                                                                  | **true**     | **string** | -           |
+| **`slack-organizer-channel-id`**             | Internal meetup organizer Slack channel for approval requests and readiness reminders. Public announcement channels are separate.  | **true**     | **string** | -           |
 | **`google-drive-meetup-folder-id`**          | Google Drive folder ID of the parent meetup folder used for asset reconciliation.                                                  | **true**     | **string** | -           |
 | **`google-drive-meetup-template-folder-id`** | Google Drive folder ID of the template folder used for asset reconciliation.                                                       | **true**     | **string** | -           |
 | **`kutt-link-id`**                           | Existing Kutt feedback link API ID.                                                                                                | **true**     | **string** | -           |
@@ -93,7 +93,7 @@ jobs:
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
 | **`google-credentials`**     | Google service-account JSON for Drive asset reconciliation.                                                                                 | **true**     |
 | **`github-app-private-key`** | PEM-encoded private key for the GitHub App identified by the github-app-client-id input. Used to mint a narrowly scoped installation token. | **true**     |
-| **`slack-token`**            | Slack bot token used for approved notifications.                                                                                            | **true**     |
+| **`slack-token`**            | Slack bot token used for approval requests and organizer reminders.                                                                         | **true**     |
 | **`kutt-api-key`**           | API key for the owner of the existing Kutt feedback link.                                                                                   | **true**     |
 | **`openfeedback-api-key`**   | OpenFeedback organization API key (oforg\_) used to create missing events.                                                                  | **true**     |
 

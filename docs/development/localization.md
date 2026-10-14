@@ -19,12 +19,11 @@ Changing locale makes the generated form stale until it is synchronized again.
 
 Diagnostic JSON retains canonical English messages and stable codes, fields, and
 severities. Existing labels, issue headings, IDs, comment markers, and
-approval/ledger formats also stay stable. Unknown diagnostic codes retain their
+ledger formats also stay stable. Unknown diagnostic codes retain their
 redacted English explanation. Static workflow metadata and externally rendered
 email bodies are outside these catalogs.
 
-Changing notification language requires renewed communication approval (remove
-and re-add the approval label). It does not resend deliveries already recorded
+Changing notification language does not resend deliveries already recorded
 in the ledger.
 
 ## Ownership
@@ -34,12 +33,13 @@ The shared `packages/presentation/localization` package wraps
 formatting, locale normalization, and typed catalog contracts. It contains no
 feature wording.
 
-| Responsibility                                           | Catalogs and scoped translator                                                        |
-| -------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| Action reports, errors, and diagnostic annotations       | `packages/runtime/github-actions/src/i18n` — `ActionMessages`                         |
-| Managed issue comments                                   | `packages/adapter/github-event-comment-repository/src/i18n` — `EventCommentMessages`  |
-| Issue-form speaker guidance                              | `packages/adapter/yaml-issue-form-projection/src/i18n` — `IssueFormMessages`          |
-| Organizer notification content and its approval revision | `packages/runtime/github-actions/src/notifications` — `OrganizerNotificationMessages` |
+| Responsibility                                     | Catalogs and scoped translator                                                        |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Action reports, errors, and diagnostic annotations | `packages/runtime/github-actions/src/i18n` — `ActionMessages`                         |
+| Organizer approval requests and Slack alerts       | `packages/adapter/github-organizer-approval/src/i18n` - `ApprovalMessages`            |
+| Managed issue comments                             | `packages/adapter/github-event-comment-repository/src/i18n` — `EventCommentMessages`  |
+| Issue-form speaker guidance                        | `packages/adapter/yaml-issue-form-projection/src/i18n` — `IssueFormMessages`          |
+| Organizer notification content                     | `packages/runtime/github-actions/src/notifications` — `OrganizerNotificationMessages` |
 
 Keep wording, keys, parameter types, and catalog tests with the presenter that
 owns them. Pass the resolved locale across package boundaries; each owner
@@ -61,14 +61,13 @@ emit stable diagnostic codes without translation dependencies.
 4. Preserve redaction and destination escaping. Never pass raw exceptions,
    provider responses, or private catalog data into a template. FormatJS's
    default logging stays disabled to protect interpolation values.
-5. Add relevant behavior tests. Update
-   `OrganizerNotificationMessages.policyRevision` when changing outbound
-   notification wording, without changing delivery idempotency keys.
+5. Add relevant behavior tests when changing outbound notification wording.
+   Preserve delivery idempotency keys.
 6. Run `pnpm lint`, `pnpm build`, `pnpm test`, `pnpm package`, and
    `pnpm check:dist`. Commit regenerated bundles and public reference docs.
 
 To add a language, extend the shared locale contract and normalization, add the
-matching catalog in every owner, and extend catalog and notification revision
+matching catalog in every owner, and extend catalog and notification
 tests. Update public input descriptions and this guide. Missing or invalid
 translations fall back to English using English formatting rules at runtime, but
 incomplete catalogs still fail the development checks.

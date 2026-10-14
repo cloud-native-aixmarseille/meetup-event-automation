@@ -85,7 +85,7 @@ export const EN_MESSAGES = {
 	"report.communication.uncertain":
 		"Uncertain: {uncertain, number}; rejected: {rejected, number}.",
 	"report.communication.guidance":
-		"Review approval and delivery diagnostics before retrying.",
+		"Review checklist and delivery diagnostics before retrying.",
 	"report.communication.uncertain-guidance":
 		"Reconcile uncertain deliveries with the provider and ledger before any resend.",
 	"report.communication.issue-reported":

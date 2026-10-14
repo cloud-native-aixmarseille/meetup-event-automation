@@ -30,7 +30,7 @@ export class CommunicationDispatcher {
 		timestamp: string,
 		counts: MutableCounts,
 		diagnostics: CommunicationDiagnostic[],
-	): Promise<void> {
+	): Promise<boolean> {
 		let dispatchResult: GatewayDispatchResult;
 		try {
 			dispatchResult =
@@ -50,11 +50,12 @@ export class CommunicationDispatcher {
 				"gateway-threw-ambiguous-error",
 				diagnostics,
 			);
-			return;
+			return false;
 		}
 
 		if (dispatchResult.outcome === "deferred") {
-			return this.defer(intent, dispatchResult, counts, diagnostics);
+			await this.defer(intent, dispatchResult, counts, diagnostics);
+			return false;
 		}
 
 		if (dispatchResult.outcome === "rejected") {
@@ -78,7 +79,7 @@ export class CommunicationDispatcher {
 					intentId: intent.intentId,
 				});
 			}
-			return;
+			return false;
 		}
 
 		if (dispatchResult.outcome === "uncertain") {
@@ -98,10 +99,10 @@ export class CommunicationDispatcher {
 				detailCode ?? "gateway-delivery-uncertain",
 				diagnostics,
 			);
-			return;
+			return false;
 		}
 
-		await this.accept(intent, timestamp, counts, diagnostics);
+		return this.accept(intent, timestamp, counts, diagnostics);
 	}
 
 	async #markUncertain(
@@ -159,6 +160,7 @@ export class CommunicationDispatcher {
 		counts.accepted += 1;
 		try {
 			await this.#ledger.markAccepted(intent.idempotencyKey, timestamp);
+			return true;
 		} catch {
 			diagnostics.push({
 				code: "ledger-status-write-failed",
@@ -166,5 +168,6 @@ export class CommunicationDispatcher {
 				intentId: intent.intentId,
 			});
 		}
+		return false;
 	}
 }

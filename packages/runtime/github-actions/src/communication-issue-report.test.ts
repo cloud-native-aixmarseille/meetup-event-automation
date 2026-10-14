@@ -10,7 +10,7 @@ const comments = {
 	updateComment: vi.fn(),
 };
 const report: ActionReportData = {
-	details: ["Review approval and delivery diagnostics before retrying."],
+	details: ["Review checklist and delivery diagnostics before retrying."],
 	diagnostics: [
 		{
 			code: "communication.invalid-event-date",

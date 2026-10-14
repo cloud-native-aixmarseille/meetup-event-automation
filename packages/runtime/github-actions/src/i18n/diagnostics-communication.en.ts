@@ -1,4 +1,13 @@
 export const DIAGNOSTICS_COMMUNICATION_EN = {
+	"diagnostic.communication.approval-pending":
+		"Email dispatch is waiting for approval on the meetup issue.",
+	"diagnostic.communication.approval-rejected":
+		"The email batch was rejected. Clear Reject and check Approve in the request comment before sending.",
+	"diagnostic.communication.approval-unavailable":
+		"The organizer approval could not be verified or persisted; email dispatch is blocked.",
+	"diagnostic.communication.approval-notification-failed":
+		"The Slack approval notification was not confirmed. Review the request on the meetup issue.",
+
 	"diagnostic.communication.duplicate-intent":
 		"A duplicate communication intent was ignored.",
 	"diagnostic.communication.gateway-delivery-uncertain":
@@ -34,20 +43,8 @@ export const DIAGNOSTICS_COMMUNICATION_EN = {
 		"The delivery ledger already contains this intent.",
 	"diagnostic.communication.dispatch-disabled-by-config":
 		"Communication dispatch is disabled by repository configuration.",
-	"diagnostic.communication.approval-label-missing":
-		"Communications require the configured maintainer approval label.",
-	"diagnostic.communication.approval-missing":
-		"Communications require a maintainer-owned approval snapshot.",
-	"diagnostic.communication.approval-stale":
-		"Message-affecting event facts changed after approval; remove and re-add the approval label.",
-	"diagnostic.communication.approval-capture-unauthorized":
-		"The approval label actor does not have sufficient repository permission.",
-	"diagnostic.communication.approval-trigger-snapshot-missing":
-		"The approval label event did not contain an immutable issue snapshot.",
-	"diagnostic.communication.approval-trigger-stale":
-		"The issue changed after the approval label event; remove and re-add the approval label.",
-	"diagnostic.communication.approval-repository-failed":
-		"The maintainer approval record could not be verified safely.",
+	"diagnostic.communication.checklist-update-failed":
+		"Email dispatch results are recorded, but the checklist could not be updated. Run reconciliation again to recover without resending accepted messages.",
 	"diagnostic.communication.event-skipped":
 		"The issue is not a configured meetup event.",
 	"diagnostic.communication.event-concurrently-modified":

@@ -23,7 +23,7 @@ const publicWorkflowContracts = {
 			"google-drive-meetup-folder-id",
 			"google-drive-meetup-template-folder-id",
 			"kutt-link-id",
-			"slack-channel-id",
+			"slack-organizer-channel-id",
 		],
 		outputs: ["issue-numbers"],
 		secrets: [
@@ -40,7 +40,7 @@ const publicWorkflowContracts = {
 			"google-drive-meetup-folder-id",
 			"google-drive-meetup-template-folder-id",
 			"kutt-link-id",
-			"slack-channel-id",
+			"slack-organizer-channel-id",
 		],
 		outputs: ["communication-diagnostics", "diagnostics", "is-ready", "state"],
 		secrets: [
@@ -190,7 +190,7 @@ describe("public reusable workflow contracts", () => {
 			const workflow = await readWorkflow(workflowName);
 			const secrets = workflow.on?.workflow_call?.secrets;
 			const slackChannel =
-				workflow.on?.workflow_call?.inputs?.["slack-channel-id"];
+				workflow.on?.workflow_call?.inputs?.["slack-organizer-channel-id"];
 			const communicationSteps = Object.values(workflow.jobs ?? {})
 				.flatMap((job) => job.steps ?? [])
 				.filter((step) => step.uses === communicationAction);
@@ -199,6 +199,9 @@ describe("public reusable workflow contracts", () => {
 			expect(secrets).not.toHaveProperty("mailings-token");
 			expect(secrets?.["slack-token"]?.required).toBe(true);
 			expect(slackChannel?.required).toBe(true);
+			expect(workflow.on?.workflow_call?.inputs).not.toHaveProperty(
+				"slack-channel-id",
+			);
 			expect(slackChannel?.default).toBeUndefined();
 			expect(communicationSteps).toHaveLength(1);
 			expect(communicationSteps[0].with).toMatchObject({
@@ -206,7 +209,9 @@ describe("public reusable workflow contracts", () => {
 					"steps.mailings-token.outputs.token",
 				),
 				"slack-token": workflowExpression("secrets.slack-token"),
-				"slack-channel-id": workflowExpression("inputs.slack-channel-id"),
+				"slack-organizer-channel-id": workflowExpression(
+					"inputs.slack-organizer-channel-id",
+				),
 			});
 			expect(communicationSteps[0].env).toBeUndefined();
 		},
@@ -391,5 +396,23 @@ describe("public reusable workflow contracts", () => {
 		for (const uses of externalUses) {
 			expect(uses).toMatch(/^[^@\s]+@[0-9a-f]{40}$/);
 		}
+	});
+});
+
+describe("organizer decision workflow triggers", () => {
+	it("accepts human edits to bot requests while excluding pull requests and bot edits", async () => {
+		// Arrange
+		const workflow = await readWorkflow("update-meetup-issue");
+		// Act
+		const guard = workflow.jobs?.manage?.if ?? "";
+		// Assert
+		expect(guard).toContain("!github.event.issue.pull_request");
+		expect(guard).toContain("github.event_name != 'issue_comment'");
+		expect(guard).toContain("github.event.action == 'edited'");
+		expect(guard).toContain("github.event.sender.type == 'User'");
+		expect(guard).toContain("github.event.comment.user.type == 'Bot'");
+		expect(guard).toContain(
+			"startsWith(github.event.comment.body, '<!-- meetup-organizer-approval:v1 ')",
+		);
 	});
 });

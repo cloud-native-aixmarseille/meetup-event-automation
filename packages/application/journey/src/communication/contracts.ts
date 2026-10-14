@@ -1,38 +1,23 @@
 import type { ReconcileCommunicationsResult } from "@meetup-automation/communication";
-import type { EventDocument } from "@meetup-automation/event";
 
 export interface ManageMeetupCommunicationsInput {
 	readonly issueNumber: number;
 
-	readonly notificationDestinationFingerprint: string | null;
-	readonly notificationDestination: string;
+	readonly organizerNotificationDestination: string;
 	/** Rendered at the presentation boundary; never use this as an idempotency key. */
-	readonly notificationContent: string;
-	/** Empty preserves the original English approval policy. */
-	readonly notificationContentRevision: string;
+	readonly organizerNotificationContent: string;
 	readonly owner: string;
 	readonly repo: string;
 	readonly repositoryId?: string;
-	/** Caller revision which owns the private referentials. */
-	readonly automationRevision: string;
-	readonly approvalTrigger?: Readonly<{
-		action: string;
-		label: string;
-		actor: string;
-		/** Immutable issue snapshot delivered with the GitHub label event. */
-		issueSnapshot?: EventDocument;
-	}>;
 }
 
 type CommunicationJourneyDiagnosticCode =
 	| "communication.dispatch-disabled-by-config"
-	| "communication.approval-label-missing"
-	| "communication.approval-missing"
-	| "communication.approval-stale"
-	| "communication.approval-capture-unauthorized"
-	| "communication.approval-trigger-snapshot-missing"
-	| "communication.approval-trigger-stale"
-	| "communication.approval-repository-failed"
+	| "communication.approval-pending"
+	| "communication.approval-rejected"
+	| "communication.approval-unavailable"
+	| "communication.approval-notification-failed"
+	| "communication.checklist-update-failed"
 	| "communication.event-skipped"
 	| "communication.event-concurrently-modified"
 	| "communication.event-references-unresolved"

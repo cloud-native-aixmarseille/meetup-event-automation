@@ -1,6 +1,6 @@
 # ADR 0004: Localize generated messages at presentation boundaries
 
-Status: Accepted
+Status: Accepted; communication approval superseded by [ADR 0007](0007-automatic-communication-checklists.md)
 
 ## Context
 

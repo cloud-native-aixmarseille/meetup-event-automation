@@ -2,7 +2,6 @@ import { createHash } from "node:crypto";
 import * as core from "@actions/core";
 import { context, getOctokit } from "@actions/github";
 import type { CommunicationDiagnostic } from "@meetup-automation/communication";
-import { GitHubEventRepository } from "@meetup-automation/github-event-repository";
 import type { CommunicationJourneyDiagnostic } from "@meetup-automation/journey";
 import {
 	type PublicDiagnostic,
@@ -44,22 +43,18 @@ const COMMUNICATION_MESSAGES: Readonly<
 const RUNTIME_MESSAGES: Readonly<
 	Record<CommunicationJourneyDiagnostic["code"], string>
 > = {
+	"communication.approval-pending":
+		"Email dispatch is waiting for approval on the meetup issue.",
+	"communication.approval-rejected":
+		"The email batch was rejected. A new approval comment is required before sending.",
+	"communication.approval-unavailable":
+		"The organizer approval could not be verified or persisted; email dispatch is blocked.",
+	"communication.approval-notification-failed":
+		"The Slack approval notification was not confirmed. Review the request on the meetup issue.",
 	"communication.dispatch-disabled-by-config":
 		"Communication dispatch is disabled by repository configuration.",
-	"communication.approval-label-missing":
-		"Communications require the configured maintainer approval label.",
-	"communication.approval-missing":
-		"Communications require a maintainer-owned approval snapshot.",
-	"communication.approval-stale":
-		"Message-affecting event facts changed after approval; remove and re-add the approval label.",
-	"communication.approval-capture-unauthorized":
-		"The approval label actor does not have sufficient repository permission.",
-	"communication.approval-trigger-snapshot-missing":
-		"The approval label event did not contain an immutable issue snapshot.",
-	"communication.approval-trigger-stale":
-		"The issue changed after the approval label event; remove and re-add the approval label.",
-	"communication.approval-repository-failed":
-		"The maintainer approval record could not be verified safely.",
+	"communication.checklist-update-failed":
+		"Delivery results are recorded but checklist completion could not be persisted.",
 	"communication.event-skipped": "The issue is not a configured meetup event.",
 	"communication.event-concurrently-modified":
 		"The meetup issue changed while communications were being reconciled; no delivery was attempted.",
@@ -84,12 +79,6 @@ export class CommunicationAction {
 			core.getInput("issue-number", { required: true }),
 		);
 		const { owner, repo } = context.repo;
-		const issueSnapshot = context.payload.issue
-			? (GitHubEventRepository.mapGitHubIssueDocument(
-					context.payload.issue,
-					`${owner}/${repo}`,
-				) ?? undefined)
-			: undefined;
 		const outcome = await CommunicationRuntime.runCommunicationReconcile({
 			locale: messages.locale,
 			issueNumber,
@@ -97,29 +86,15 @@ export class CommunicationAction {
 			githubToken: core.getInput("github-token", { required: true }),
 			mailingsToken: core.getInput("mailings-token", { required: true }),
 			slackToken: core.getInput("slack-token", { required: true }),
-			slackChannelId: core.getInput("slack-channel-id", { required: true }),
+			slackOrganizerChannelId: core.getInput("slack-organizer-channel-id", {
+				required: true,
+			}),
 			owner,
 			repo,
 			repositoryId: process.env.GITHUB_REPOSITORY_ID,
-			automationRevision: process.env.GITHUB_SHA ?? "",
 			managedCommentAuthor: core.getInput("managed-comment-author", {
 				required: true,
 			}),
-			approvalTrigger: {
-				action:
-					typeof context.payload.action === "string"
-						? context.payload.action
-						: "",
-				label:
-					context.payload.label &&
-					typeof context.payload.label === "object" &&
-					"name" in context.payload.label &&
-					typeof context.payload.label.name === "string"
-						? context.payload.label.name
-						: "",
-				actor: context.actor,
-				...(issueSnapshot ? { issueSnapshot } : {}),
-			},
 		});
 		const report = CommunicationAction.report(outcome, messages);
 		return reportErrorsToIssue

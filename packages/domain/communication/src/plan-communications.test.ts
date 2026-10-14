@@ -61,7 +61,7 @@ function notificationRecipient(receivesCommunications = true) {
 		channel: "notification" as const,
 		recipientId: "organizers-slack",
 		role: "organizers" as const,
-		destination: "slack-channel-id",
+		destination: "slack-organizer-channel-id",
 		receivesCommunications,
 	};
 }

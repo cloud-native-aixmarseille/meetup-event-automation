@@ -10,7 +10,6 @@
 		"@meetup-automation/communication": "workspace:*",
 		"@meetup-automation/csv-referential-repository": "workspace:*",
 		"@meetup-automation/event": "workspace:*",
-		"@meetup-automation/github-communication-approval-repository": "workspace:*",
 		"@meetup-automation/github-delivery-ledger": "workspace:*",
 		"@meetup-automation/github-event-comment-repository": "workspace:*",
 		"@meetup-automation/github-event-repository": "workspace:*",
@@ -26,6 +25,7 @@
 		"inversify": "^8.2.3",
 		"@meetup-automation/publication": "workspace:*",
 		"@meetup-automation/localization": "workspace:*",
-		"@meetup-automation/kutt-feedback-link-gateway": "workspace:*"
+		"@meetup-automation/kutt-feedback-link-gateway": "workspace:*",
+		"@meetup-automation/github-organizer-approval": "workspace:*"
 	}
 }

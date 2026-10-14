@@ -14,11 +14,20 @@
 
 ## Overview
 
-Reconcile due meetup communications and dispatch them through the configured mail and Slack gateways when approval and delivery checks pass. Publish redacted diagnostics in annotations, logs, and the job summary.
+Reconcile due meetup communications and dispatch them through the configured mail and Slack gateways when event, checklist, approval and delivery checks pass. Publish redacted diagnostics in annotations, logs, and the job summary.
 
-The action uses one reconciliation path. Its result still reports the effective
-`check` or `dispatch` mode according to approval and delivery checks. Run the
+The action uses one reconciliation path. Its result reports the effective
+`check` or `dispatch` mode according to event, checklist, approval and delivery checks. Run the
 action under the shared per-event lock; the reusable workflows provide it.
+
+The required `slack-organizer-channel-id` selects the internal organizer channel.
+Public event announcements remain manual checklist tasks and are never sent by
+this action. See [channel selection](../../../docs/integrations/communications.md#organizer-and-public-channels).
+
+Pending or rejected approval blocks mail while preserving `dispatch` mode and
+independent readiness notifications. Approval comments and their Slack alerts
+are excluded from delivery counts. See the
+[approval flow](../../../docs/integrations/communications.md#confirm-an-email-batch).
 
 The required `report-errors-to-issue` input selects the error policy. Issue
 updates use `false` to fail on error diagnostics. Audits use `true` to record the
@@ -44,23 +53,23 @@ resolved. Execution and comment persistence failures still fail the action.
     # Use the shared event lock.
     report-errors-to-issue: "false"
 
-    # Token for the caller repository. Requires issues:write for approval, delivery ledger, and diagnostic comments.
+    # Token for the caller repository. Requires issues:write for approval requests, checklist completion, delivery ledger, and diagnostic comments, and metadata:read to verify approvers.
     # This input is required.
     github-token: ""
 
-    # Trusted bot login allowed to create or update managed delivery ledger and communication diagnostic comments, for example my-app[bot].
+    # Trusted bot login allowed to create or update managed approval, delivery ledger and communication diagnostic comments, for example my-app[bot].
     # This input is required.
     managed-comment-author: ""
 
-    # Token used to dispatch approved email communications to the configured mailings repository.
+    # Token used to dispatch due email communications to the configured mailings repository.
     # This input is required.
     mailings-token: ""
 
-    # Slack channel ID used for approved notifications.
+    # Internal meetup organizer Slack channel for approval requests and readiness reminders. Public announcement channels are separate.
     # This input is required.
-    slack-channel-id: ""
+    slack-organizer-channel-id: ""
 
-    # Slack bot token used for approved notifications.
+    # Slack bot token used for approval requests and organizer reminders.
     # This input is required.
     slack-token: ""
 ```
@@ -70,16 +79,16 @@ resolved. Execution and comment persistence failures still fail the action.
 
 ## Inputs
 
-| **Input**                    | **Description**                                                                                                                                                                                                        | **Required** | **Default** |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
-| **`locale`**                 | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.                                                                                     | **false**    | `en`        |
-| **`issue-number`**           | GitHub issue number in the caller repository containing the meetup event document to inspect.                                                                                                                          | **true**     | -           |
-| **`report-errors-to-issue`** | Use true to record diagnostics in a managed issue comment and succeed after persistence, or false to fail on error diagnostics. Execution and comment persistence failures still fail. Requires the shared event lock. | **true**     | -           |
-| **`github-token`**           | Token for the caller repository. Requires issues:write for approval, delivery ledger, and diagnostic comments.                                                                                                         | **true**     | -           |
-| **`managed-comment-author`** | Trusted bot login allowed to create or update managed delivery ledger and communication diagnostic comments, for example my-app[bot].                                                                                  | **true**     | -           |
-| **`mailings-token`**         | Token used to dispatch approved email communications to the configured mailings repository.                                                                                                                            | **true**     | -           |
-| **`slack-channel-id`**       | Slack channel ID used for approved notifications.                                                                                                                                                                      | **true**     | -           |
-| **`slack-token`**            | Slack bot token used for approved notifications.                                                                                                                                                                       | **true**     | -           |
+| **Input**                        | **Description**                                                                                                                                                                                                        | **Required** | **Default** |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
+| **`locale`**                     | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.                                                                                     | **false**    | `en`        |
+| **`issue-number`**               | GitHub issue number in the caller repository containing the meetup event document to inspect.                                                                                                                          | **true**     | -           |
+| **`report-errors-to-issue`**     | Use true to record diagnostics in a managed issue comment and succeed after persistence, or false to fail on error diagnostics. Execution and comment persistence failures still fail. Requires the shared event lock. | **true**     | -           |
+| **`github-token`**               | Token for the caller repository. Requires issues:write for approval requests, checklist completion, delivery ledger, and diagnostic comments, and metadata:read to verify approvers.                                   | **true**     | -           |
+| **`managed-comment-author`**     | Trusted bot login allowed to create or update managed approval, delivery ledger and communication diagnostic comments, for example my-app[bot].                                                                        | **true**     | -           |
+| **`mailings-token`**             | Token used to dispatch due email communications to the configured mailings repository.                                                                                                                                 | **true**     | -           |
+| **`slack-organizer-channel-id`** | Internal meetup organizer Slack channel for approval requests and readiness reminders. Public announcement channels are separate.                                                                                      | **true**     | -           |
+| **`slack-token`**                | Slack bot token used for approval requests and organizer reminders.                                                                                                                                                    | **true**     | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->

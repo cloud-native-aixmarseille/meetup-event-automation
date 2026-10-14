@@ -1,4 +1,3 @@
-import type { CommunicationApprovalSnapshot } from "./approval-contracts.js";
 import type {
 	DeliveryLedgerEntry,
 	DeliveryReservation,
@@ -7,19 +6,6 @@ import type {
 	MailMessageIntent,
 	NotificationMessageIntent,
 } from "./model.js";
-
-export type CommunicationApprovalSaveResult = Readonly<{
-	changed: boolean;
-}>;
-
-export interface CommunicationApprovalRepository {
-	findApproved(
-		eventId: string,
-	): Promise<CommunicationApprovalSnapshot | undefined>;
-	saveApproved(
-		snapshot: CommunicationApprovalSnapshot,
-	): Promise<CommunicationApprovalSaveResult>;
-}
 
 export interface CommunicationClock {
 	now(): Date;

@@ -1,14 +1,21 @@
+import {
+	GithubOrganizerApproval,
+	GithubApprovalClient,
+	ApprovalPresenter,
+	ApprovalMessages,
+} from "@meetup-automation/github-organizer-approval";
 import { getOctokit } from "@actions/github";
 import {
-	type CommunicationApprovalRepository,
 	type DeliveryLedger,
 	type MailGateway,
 	type NotificationGateway,
 	PlanCommunications,
 	ReconcileCommunications,
 } from "@meetup-automation/communication";
-import type { EventRepository } from "@meetup-automation/event";
-import { GithubCommunicationApprovalRepository } from "@meetup-automation/github-communication-approval-repository";
+import type {
+	EventDocumentCodec,
+	EventRepository,
+} from "@meetup-automation/event";
 import {
 	GithubDeliveryLedger,
 	ScopedGithubLedgerCommentClient,
@@ -32,7 +39,6 @@ import {
 import { ActionMessages } from "./i18n/action-messages.js";
 
 const COMMUNICATION_SERVICES = {
-	approvalRepository: Symbol("CommunicationApprovalRepository"),
 	mailGateway: Symbol("MailGateway"),
 	notificationGateway: Symbol("NotificationGateway"),
 	ledgerFactory: Symbol("DeliveryLedgerFactory"),
@@ -42,6 +48,7 @@ type CommunicationCompositionInput = EventCompositionInput & {
 	readonly issueNumber: number;
 	readonly mailingsToken: string;
 	readonly slackToken: string;
+	readonly slackOrganizerChannelId: string;
 };
 
 type DeliveryLedgerFactory = (dispatchAuthorized: boolean) => DeliveryLedger;
@@ -64,7 +71,7 @@ export class CommunicationComposition {
 
 	static createCommunicationContainer(input: CommunicationCompositionInput) {
 		const container = EventComposition.createEventContainer(input);
-		CommunicationComposition.bindRepositories(container, input);
+		CommunicationComposition.bindRepositories(container);
 		CommunicationComposition.bindGateways(container, input);
 		container
 			.bind<DeliveryLedgerFactory>(COMMUNICATION_SERVICES.ledgerFactory)
@@ -90,10 +97,7 @@ export class CommunicationComposition {
 		return container;
 	}
 
-	private static bindRepositories(
-		container: Container,
-		input: CommunicationCompositionInput,
-	) {
+	private static bindRepositories(container: Container) {
 		// Both event evaluation and recipient resolution must see the same CSV snapshot.
 		const repository = container.get<ReferentialRepository>(
 			SERVICES.referentialRepository,
@@ -107,19 +111,6 @@ export class CommunicationComposition {
 					return loaded;
 				},
 			});
-		container
-			.bind<CommunicationApprovalRepository>(
-				COMMUNICATION_SERVICES.approvalRepository,
-			)
-			.toDynamicValue(
-				() =>
-					new GithubCommunicationApprovalRepository(input.client, {
-						owner: input.owner,
-						repo: input.repo,
-						issueNumber: input.issueNumber,
-						trustedAuthorLogin: input.commentAuthorLogin,
-					}),
-			);
 	}
 
 	private static bindGateways(
@@ -162,27 +153,28 @@ export class CommunicationComposition {
 				COMMUNICATION_SERVICES.notificationGateway,
 			);
 			return new ManageMeetupCommunications({
+				clock,
+				organizerApproval: new GithubOrganizerApproval(
+					new GithubApprovalClient(
+						input.client,
+						input.owner,
+						input.repo,
+						input.issueNumber,
+					),
+					input.commentAuthorLogin,
+					new ApprovalPresenter(new ApprovalMessages(input.locale)),
+					notificationGateway,
+					input.slackOrganizerChannelId,
+				),
 				config: context.get<AutomationConfig>(SERVICES.config),
 				eventRepository: context.get<EventRepository>(SERVICES.eventRepository),
 				referentialRepository: context.get<ReferentialRepository>(
 					SERVICES.referentialRepository,
 				),
 				manageEvent: context.get(ManageMeetupEvent),
-				approvalRepository: context.get<CommunicationApprovalRepository>(
-					COMMUNICATION_SERVICES.approvalRepository,
+				eventDocumentCodec: context.get<EventDocumentCodec>(
+					SERVICES.eventDocumentCodec,
 				),
-				actorCanApprove: async (actor) => {
-					if (!/^[A-Za-z0-9_.-]+$/.test(actor)) return false;
-					const { data } =
-						await input.client.rest.repos.getCollaboratorPermissionLevel({
-							owner: input.owner,
-							repo: input.repo,
-							username: actor,
-						});
-					return [data.permission, data.role_name].some((value) =>
-						["admin", "maintain", "write", "triage"].includes(value),
-					);
-				},
 				reconcileCommunications: (dispatchAuthorized) =>
 					new ReconcileCommunications({
 						planner,

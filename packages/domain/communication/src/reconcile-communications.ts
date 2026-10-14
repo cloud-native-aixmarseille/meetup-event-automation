@@ -82,9 +82,10 @@ export class ReconcileCommunications {
 		};
 
 		const timestamp = now.toISOString();
+		const acceptedIds = new Set<string>();
 
 		for (const intent of plan.intents) {
-			await this.processIntent(
+			const accepted = await this.processIntent(
 				intent,
 				timestamp,
 				mode,
@@ -92,9 +93,16 @@ export class ReconcileCommunications {
 				counts,
 				diagnostics,
 			);
+			if (accepted) acceptedIds.add(intent.intentId);
 		}
 
-		return CommunicationResults.result(mode, plan.intents, counts, diagnostics);
+		return CommunicationResults.result(
+			mode,
+			plan.intents,
+			counts,
+			diagnostics,
+			acceptedIds,
+		);
 	}
 
 	async #findExisting(
@@ -161,7 +169,7 @@ export class ReconcileCommunications {
 				counts,
 				diagnostics,
 			);
-			return;
+			return existing.status === "accepted";
 		}
 
 		counts.due += 1;
@@ -184,12 +192,12 @@ export class ReconcileCommunications {
 				counts,
 				diagnostics,
 			);
-			return;
+			return reservation.entry.status === "accepted";
 		}
 
 		counts.reserved += 1;
 		counts.dispatched += 1;
-		await this.#dispatcher.execute(intent, timestamp, counts, diagnostics);
+		return this.#dispatcher.execute(intent, timestamp, counts, diagnostics);
 	}
 }
 

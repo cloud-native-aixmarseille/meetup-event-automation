@@ -13,7 +13,6 @@ export interface AutomationConfig {
 		"readiness-window-days": number;
 		"mailings-repository": string;
 		"slack-enabled": boolean;
-		"approval-label": string;
 		"dispatch-enabled": boolean;
 		"policy-version": number;
 	}>;
@@ -51,7 +50,6 @@ export class AutomationConfigFactory {
 					? `${repositoryOwner}/mailings`
 					: "",
 				"slack-enabled": true,
-				"approval-label": "communication:approved",
 				"dispatch-enabled": Boolean(repositoryOwner),
 				"policy-version": 1,
 			},

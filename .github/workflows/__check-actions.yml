@@ -91,6 +91,10 @@ jobs:
             ### Drive Link
 
             https://drive.google.com/drive/folders/public-event-assets
+
+            ### Communication
+
+            - [x] Mail introduction
             `;
             const labels = [...new Set([
               process.env.ISSUE_LABEL,
@@ -358,7 +362,7 @@ jobs:
           speaker-0001,Ada,Speaker,Public Company,speaker@example.invalid,
           EOF
 
-      # The synthetic issue has no approval label, so delivery remains blocked.
+      # The synthetic issue has completed email tasks, so no delivery is due.
       - name: Reconcile synthetic meetup communications
         id: reconcile-communications
         uses: ./actions/communication/reconcile
@@ -369,7 +373,7 @@ jobs:
           managed-comment-author: integration-tests[bot]
           mailings-token: synthetic-mailings-token
           slack-token: synthetic-slack-token
-          slack-channel-id: synthetic-slack-channel
+          slack-organizer-channel-id: synthetic-slack-channel
 
       - name: Assert communication reconciliation
         shell: bash
@@ -379,10 +383,9 @@ jobs:
           DISPATCHED_COUNT: ${{ steps.reconcile-communications.outputs.dispatched-count }}
           DIAGNOSTICS: ${{ steps.reconcile-communications.outputs.diagnostics }}
         run: |
-          [[ "$PLANNED_COUNT" == "2" ]]
+          [[ "$PLANNED_COUNT" == "0" ]]
           [[ "$DISPATCHED_COUNT" == "0" ]]
-          [[ "$DIAGNOSTICS" == *'communication.approval-label-missing'* ]]
-          jq -e '.data.mode == "check" and .data.counts.planned == 2 and .data.counts.dispatched == 0 and (.data.intentIds | length == 2) and (.diagnostics | map(.code) | index("communication.approval-label-missing") != null)' <<< "$RESULT" >/dev/null
+          jq -e '.data.mode == "dispatch" and .data.counts.planned == 0 and .data.counts.dispatched == 0 and (.data.intentIds | length == 0)' <<< "$RESULT" >/dev/null
 
   test-publication-reconcile-assets:
     name: Test publication asset action requires credentials
