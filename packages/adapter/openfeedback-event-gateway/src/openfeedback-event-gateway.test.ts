@@ -13,6 +13,80 @@ const eventId =
 afterEach(() => vi.restoreAllMocks());
 
 describe("OpenFeedback event creation", () => {
+	it.each([
+		"https://openfeedback.io/existing-event",
+		"https://openfeedback.io/existing-event/2030-09-30",
+		"https://openfeedback.io/existing-event/0",
+	])("updates the existing event in place from %s", async (url) => {
+		// Arrange
+		const fetcher = vi
+			.fn<typeof fetch>()
+			.mockResolvedValue(Response.json({ id: "existing-event" }));
+		const gateway = new OpenFeedbackEventGateway(apiKey, fetcher);
+		const revised = { ...input, name: "Revised meetup title", url };
+
+		// Act
+		const result = await gateway.ensureEvent(revised);
+		const body = JSON.parse(fetcher.mock.calls[0][1]?.body as string);
+
+		// Assert
+		expect(result).toBe(url);
+		expect(fetcher).toHaveBeenCalledExactlyOnceWith(
+			"https://api.openfeedback.io/events/existing-event",
+			expect.objectContaining({ method: "PATCH", redirect: "error" }),
+		);
+		expect(body).toEqual({
+			name: revised.name,
+			scheduleLink: revised.scheduleUrl,
+		});
+	});
+
+	it.each([401, 403, 404, 409])(
+		"never replaces an existing event when its update fails (HTTP %s)",
+		async (status) => {
+			// Arrange
+			const fetcher = vi
+				.fn<typeof fetch>()
+				.mockResolvedValue(
+					new Response(`private-response ${apiKey}`, { status }),
+				);
+			const gateway = new OpenFeedbackEventGateway(apiKey, fetcher);
+
+			// Act
+			const operation = gateway.ensureEvent({
+				...input,
+				url: "https://openfeedback.io/existing-event",
+			});
+
+			// Assert
+			await expect(operation).rejects.toThrow(
+				`OpenFeedback request failed (HTTP ${status})`,
+			);
+			expect(fetcher).toHaveBeenCalledOnce();
+		},
+	);
+
+	it.each([
+		"https://example.test/poll",
+		"https://openfeedback.io/poll?private=secret",
+	])(
+		"rejects an invalid existing event URL before requests: %s",
+		async (url) => {
+			// Arrange
+			const fetcher = vi.fn<typeof fetch>();
+			const gateway = new OpenFeedbackEventGateway(apiKey, fetcher);
+
+			// Act
+			const operation = gateway.ensureEvent({ ...input, url });
+
+			// Assert
+			await expect(operation).rejects.toThrow(
+				"Feedback link must be an OpenFeedback event URL",
+			);
+			expect(fetcher).not.toHaveBeenCalled();
+		},
+	);
+
 	it.each(["", "   ", "ofproj_synthetic-key", "oforg_", "oforg_ "])(
 		"rejects a missing or non-organization API key (%j)",
 		(key) => {

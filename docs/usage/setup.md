@@ -165,9 +165,9 @@ jobs:
       slack-token: ${{ secrets.SLACK_BOT_TOKEN }}
 ```
 
-This example runs at 09:00 UTC. Event-day decisions use `Europe/Paris`. The
-audit is needed for timed communications and the event-day feedback link update,
-even when nobody edits an issue.
+This example runs at 09:00 UTC. Calendar-day decisions use `Europe/Paris`. The
+audit is needed for timed communications and the feedback link update on the day
+before the event, even when nobody edits an issue.
 
 ### Synchronize the issue form
 

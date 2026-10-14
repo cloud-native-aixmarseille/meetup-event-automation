@@ -1,8 +1,8 @@
 # OpenFeedback and the shared feedback link
 
 The issue-update and daily-audit workflows create missing OpenFeedback events,
-save their public URLs in the issue, and point the shared Kutt link to the event
-on its date.
+synchronize their titles, save their public URLs in the issue, and point the
+shared Kutt link to the event the day before its date.
 
 ## Configure
 
@@ -37,22 +37,27 @@ It uses the meetup title, limited to 100 characters, and the GitHub issue URL as
 the schedule link.
 
 Open the saved URL and add talks and speakers in OpenFeedback before the meetup.
-The automation creates the event only; it does not populate the agenda or check
-that talks are ready. Once the URL is saved, subsequent runs leave the
-OpenFeedback event unchanged.
+The automation does not populate the agenda or check that talks are ready.
+Subsequent runs synchronize the event name from the meetup title and keep the
+GitHub issue URL as the schedule link. The existing event ID, feedback URL,
+talks, settings and votes are preserved. Title synchronization runs independently
+of the date restriction on the Kutt update.
 
-Creation requires a valid event date and a title. A complete agenda is not
-required. Closed, cancelled, postponed and unrelated issues are skipped.
+Creation and title synchronization require a valid event date and a title. A
+complete agenda is not required. Closed, cancelled, postponed and unrelated
+issues are skipped.
 
-## Event-day update
+## Update the day before the event
 
-The shared Kutt link changes only on the event's calendar day in `Europe/Paris`.
-Future and past events cannot take it over. The link keeps its short address;
-only its target changes. If the target already matches, no update is made.
+The shared Kutt link changes only on the calendar day before the event in
+`Europe/Paris`. For example, a meetup on September 30 gets its redirect updated
+on September 29. Runs earlier, on the event day, or afterward leave the target
+unchanged. The link keeps its short address; only its target changes. If the
+target already matches, no update is made.
 
-Keep the daily audit enabled. If no run occurs on the event day, update Kutt
-manually. If several active meetups share the date, the workflow reports
-`publication.feedback.ambiguous-date`; choose the target manually.
+Keep the daily audit enabled. If no run occurs on the day before the event,
+update Kutt manually. If several active meetups share the event date, the workflow
+reports `publication.feedback.ambiguous-date`; choose the target manually.
 
 ## Resolve failures
 
@@ -62,7 +67,9 @@ updates its name and schedule link, preserving its talks, settings and votes.
 
 For a missing Kutt link, verify its API ID and the key's owner. For an
 OpenFeedback authorization error, verify that the organization key has access to
-the event. If the issue changed during a run, rerun after editing is complete.
+the event, including when its URL was entered manually. Failed updates never
+replace an existing event. If the issue changed during a run, rerun after editing
+is complete.
 
 The direct
 [feedback action](../../actions/publication/reconcile-feedback/README.md)

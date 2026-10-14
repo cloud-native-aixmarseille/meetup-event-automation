@@ -38,7 +38,7 @@
 | [Validate referentials](../actions/referential/validate/README.md)         | Check host and speaker catalogs.                             |
 | [Synchronize issue form](../actions/referential/sync-issue-form/README.md) | Update the checked-out form choices.                         |
 | [Reconcile assets](../actions/publication/reconcile-assets/README.md)      | Prepare Google Drive folders and template copies.            |
-| [Reconcile feedback](../actions/publication/reconcile-feedback/README.md)  | Create OpenFeedback events and update the shared short link. |
+| [Reconcile feedback](../actions/publication/reconcile-feedback/README.md)  | Synchronize OpenFeedback event titles and update the shared short link. |
 | [Reconcile communications](../actions/communication/reconcile/README.md)   | Plan or dispatch due email and Slack messages.               |
 
 ## Development

@@ -1,5 +1,5 @@
 name: Reconcile meetup feedback
-description: Create missing OpenFeedback events and update the existing Kutt link on the event day.
+description: Create OpenFeedback events, synchronize their titles, and update the existing Kutt link the day before the event.
 inputs:
   locale:
     description: Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
@@ -15,7 +15,7 @@ inputs:
     description: GitHub App bot login used by event evaluation.
     required: true
   openfeedback-api-key:
-    description: OpenFeedback organization API key (oforg_) used to create missing events.
+    description: OpenFeedback organization API key (oforg_) used to create and update events.
     required: true
   kutt-api-key:
     description: API key for the owner of the existing Kutt link.

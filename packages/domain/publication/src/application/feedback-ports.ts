@@ -4,10 +4,11 @@ export interface FeedbackLinkGateway {
 }
 
 export interface FeedbackEventGateway {
-	/** Create or recover the event identified by a stable source key. */
+	/** Synchronize an existing event, or create/recover one by its stable source key. */
 	ensureEvent(input: {
 		readonly key: string;
 		readonly name: string;
 		readonly scheduleUrl: string;
+		readonly url?: string;
 	}): Promise<string>;
 }
