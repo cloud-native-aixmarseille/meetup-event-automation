@@ -91,9 +91,9 @@ const expectedActionWiring = {
 	},
 	"update-meetup-issue": {
 		manage: [
-			"publication/reconcile-feedback",
 			"publication/reconcile-assets",
 			"communication/reconcile",
+			"publication/reconcile-feedback",
 			"event/reconcile",
 		],
 	},

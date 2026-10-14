@@ -110,18 +110,6 @@ jobs:
         with:
           actions-path: actions
 
-      - name: Reconcile event feedback
-        id: feedback
-        uses: ./../self-workflow/actions/publication/reconcile-feedback
-        with:
-          locale: ${{ inputs.locale }}
-          issue-number: ${{ github.event.issue.number }}
-          github-token: ${{ steps.app-token.outputs.token }}
-          managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
-          kutt-link-id: ${{ inputs.kutt-link-id }}
-          openfeedback-api-key: ${{ secrets.openfeedback-api-key }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly
-          kutt-api-key: ${{ secrets.kutt-api-key }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly
-
       - name: Reconcile event assets
         id: assets
         uses: ./../self-workflow/actions/publication/reconcile-assets
@@ -157,6 +145,18 @@ jobs:
           mailings-token: ${{ steps.mailings-token.outputs.token }}
           slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
           slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly to avoid secrets: inherit
+
+      - name: Reconcile event feedback
+        id: feedback
+        uses: ./../self-workflow/actions/publication/reconcile-feedback
+        with:
+          locale: ${{ inputs.locale }}
+          issue-number: ${{ github.event.issue.number }}
+          github-token: ${{ steps.app-token.outputs.token }}
+          managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
+          kutt-link-id: ${{ inputs.kutt-link-id }}
+          openfeedback-api-key: ${{ secrets.openfeedback-api-key }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly
+          kutt-api-key: ${{ secrets.kutt-api-key }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly
 
       - name: Reconcile event
         id: reconcile
