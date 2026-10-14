@@ -72,6 +72,7 @@ for implemented behavior and contributor conventions.
 - [ADR-0010: Approve email batches with request checkboxes](adr/0010-checkbox-organizer-approval.md)
 - [ADR-0011: Finalize organizer decisions in place and acknowledge them on Slack](adr/0011-final-organizer-decisions.md)
 - [ADR-0012: Synchronize OpenFeedback talks and speakers](adr/0012-synchronize-openfeedback-talks-and-speakers.md)
+- [ADR-0013: Reconcile actionable organizer alerts throughout the meetup lifecycle](adr/0013-actionable-organizer-alerts.md) (proposed)
 
 ## Directory layout
 
@@ -107,7 +108,8 @@ docs/
     ├── 0009-organizer-role-and-slack-channel.md
     ├── 0010-checkbox-organizer-approval.md
     ├── 0011-final-organizer-decisions.md
-    └── 0012-synchronize-openfeedback-talks-and-speakers.md
+    ├── 0012-synchronize-openfeedback-talks-and-speakers.md
+    └── 0013-actionable-organizer-alerts.md
 ```
 
 Action references stay beside `action.yml`; workflow references stay beside
