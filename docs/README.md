@@ -79,6 +79,7 @@ for implemented behavior and contributor conventions.
 - [ADR-0012: Use Conference Hall as the source of truth for talks and speakers](adr/0012-conference-hall-talks-and-speakers.md)
 - [ADR-0013: Reconcile actionable organizer alerts throughout the meetup lifecycle](adr/0013-actionable-organizer-alerts.md)
 - [ADR-0014: Consolidate post-event follow-up](adr/0014-consolidated-post-event-follow-up.md)
+- [ADR-0014: Populate and update managed placeholders in Drive template copies](adr/0014-reconcile-drive-template-placeholders.md) (proposed)
 
 ## Directory layout
 
@@ -118,7 +119,8 @@ docs/
     ├── 0012-synchronize-openfeedback-talks-and-speakers.md
     ├── 0012-conference-hall-talks-and-speakers.md
     ├── 0013-actionable-organizer-alerts.md
-    └── 0014-consolidated-post-event-follow-up.md
+    ├── 0014-consolidated-post-event-follow-up.md
+    └── 0014-reconcile-drive-template-placeholders.md
 ```
 
 Action references stay beside `action.yml`; workflow references stay beside
