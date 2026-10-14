@@ -45,8 +45,11 @@ resolved. Execution and comment persistence failures still fail the action.
 
 ## Usage
 
+Replace `<automation-commit-sha>` with the full commit SHA of the automation
+release you use. The asset step must have the ID `assets` for this example.
+
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/communication/reconcile@88fd8c3495bfbf7061bbd67d1324b0b4e4bc14d3 # main
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/communication/reconcile@<automation-commit-sha>
   with:
     # Optional language for generated text.
     locale: en
