@@ -23,8 +23,9 @@ Conference Hall's [Web API contract][conference-hall-api] exposes event proposal
 through `GET /api/v1/event/:event`, authenticated with an event key in the
 `X-API-Key` header. Its schedule endpoint is restricted to conference events.
 The [proposal serializer][conference-hall-export] includes proposal and speaker
-IDs, profiles, email addresses, review data, and survey answers. Only a selected
-set of fields belongs in the private referential or public agenda.
+IDs, profiles, a speaker `picture` URL, email addresses, review data, and survey
+answers. Only a selected set of fields belongs in the private referential or
+public agenda.
 
 ## Decision
 
@@ -52,11 +53,13 @@ a talk, publish a proposal, confirm attendance, or authorize an email.
 | `speaker_id`                             | Local stable identity. Preserve existing values; never replace them with provider IDs.                  |
 | Conference Hall identity mapping         | Associate provider, CFP, and speaker ID with the local ID; validate uniqueness and scope.               |
 | Public display name, company, and email  | Conference Hall owns these fields for linked rows; sync proposes updates in the CSV.                    |
+| `picture_url`                            | Conference Hall owns this optional profile image URL for linked rows; sync proposes updates in the CSV. |
 | `firstname` and `lastname`               | Preserve existing values as local structured-name data; do not invent them by splitting a display name. |
 | `phone` and other supported local fields | Organizers own these fields; synchronization preserves them exactly.                                    |
 | Unlinked existing rows                   | Remain locally maintained and are not overwritten or removed.                                           |
 
-Extend the CSV schema with explicit source mapping and a display-name field.
+Extend the CSV schema with explicit source mapping, a display-name field, and
+an optional `picture_url` populated from Conference Hall's speaker `picture`.
 The current reader requires first name, last name, and company, while the export
 provides a single name and may omit affiliation. Support imported display names
 without fabricated structured names; retain legacy name parsing for existing
@@ -64,6 +67,22 @@ rows, allow absent affiliation, and use the display name for email greetings
 when no organizer-maintained first name exists. Update validation, resolution,
 form projection, and communication placeholders together. Equal display names
 must remain distinguishable by stable ID; name-only ambiguous references fail.
+
+Synchronize profile picture URLs along with the other provider-owned fields.
+Store a validated HTTPS image reference in `picture_url`, without downloading
+image binaries into Git or forwarding API credentials to an image host. Expose
+this optional field in the resolved public speaker profile so presenters can
+use it without reading private contact fields. Storing a URL does not embed an
+image automatically; each consuming presenter owns image display and fallback.
+
+An omitted source field preserves the existing URL; an explicit empty or null
+picture proposes clearing it through the private synchronization PR. A changed
+valid URL proposes an update, and unchanged values produce no diff. Invalid or
+authentication-dependent image references produce a diagnostic and preserve the
+last valid value, or leave a new speaker's picture empty. Missing or unavailable
+pictures never block agenda resolution or email delivery. Image consumers must
+handle unavailable images because the externally hosted content can change
+independently of the committed CSV.
 
 Link existing rows through an organizer-reviewed mapping. Name or email matches
 may identify a candidate for review but never authorize merging people or copying
@@ -131,11 +150,12 @@ If a selected speaker has no committed mapping, report that synchronization and
 review are required; do not create a second live contact lookup or guess by name.
 Deduplicate recipients across talks by local speaker identity.
 
-The proposal owns talk content; the committed CSV supplies speaker display names
-and contact data to existing consumers. Keep talk-specific biographies out of the
-contact schema unless a supported feature requires them. Render managed agenda
-content through the issue codec, preserving unrelated sections and explicit
-meetup order. Edits to managed talk text are corrected in Conference Hall.
+The proposal owns talk content; the committed CSV supplies speaker display names,
+optional profile picture URLs, and contact data to their respective consumers.
+Keep talk-specific biographies out of the contact schema unless a supported
+feature requires them. Render managed agenda content through the issue codec,
+preserving unrelated sections and explicit meetup order. Edits to managed talk
+text are corrected in Conference Hall.
 
 A selected proposal must be accepted before its content is eligible for
 publication. Pending, declined, withdrawn, or unrecognized states produce a
@@ -211,9 +231,11 @@ Validate field ownership, preserved phone numbers and extra columns, unmapped
 rows, source disappearance, name ambiguity, missing data, co-speaker identity,
 ID allocation across retries, unchanged syncs, concurrent organizer edits, sync
 failures and freshness, private-destination enforcement, escaped text, locale
-changes, selected proposals, and unchanged email duplicate protection. Run the
-behavior, architecture, public contract, reporting, localization, and bundle
-checks for eventual production changes.
+changes, selected proposals, and unchanged email duplicate protection. Cover
+picture URL import, updates, explicit removal, omitted fields, invalid references,
+and unavailable-image fallbacks without blocking unrelated work. Run the behavior,
+architecture, public contract, reporting, localization, and bundle checks for
+eventual production changes.
 
 [conference-hall-api]: https://github.com/conference-hall/conference-hall/blob/335d349b51194e3f5abbd809016b779dbdbcc0d5/docs/api.md
 [conference-hall-export]: https://github.com/conference-hall/conference-hall/blob/335d349b51194e3f5abbd809016b779dbdbcc0d5/app/features/event-management/proposals-export/services/proposals-export.server.ts
