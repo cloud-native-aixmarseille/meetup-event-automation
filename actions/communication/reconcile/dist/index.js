@@ -31770,9 +31770,9 @@ var MessageLocalizer = class _MessageLocalizer {
 // packages/runtime/github-actions/src/i18n/diagnostics-communication.en.ts
 var DIAGNOSTICS_COMMUNICATION_EN = {
   "diagnostic.communication.approval-pending": "Email dispatch is waiting for approval on the meetup issue.",
-  "diagnostic.communication.approval-rejected": "The email batch was rejected. Clear Reject and check Approve in the request comment before sending.",
+  "diagnostic.communication.approval-rejected": "The email batch was rejected. The recorded decision is final for this batch revision.",
   "diagnostic.communication.approval-unavailable": "The organizer approval could not be verified or persisted; email dispatch is blocked.",
-  "diagnostic.communication.approval-notification-failed": "The Slack approval notification was not confirmed. Review the request on the meetup issue.",
+  "diagnostic.communication.approval-notification-failed": "The Slack approval notification or decision reaction was not confirmed. Review the request on the meetup issue. Check the bot's channel membership and chat:write and reactions:write scopes; legacy alerts without a saved message reference cannot receive automatic reactions.",
   "diagnostic.communication.duplicate-intent": "A duplicate communication intent was ignored.",
   "diagnostic.communication.gateway-delivery-uncertain": "A gateway could not confirm delivery.",
   "diagnostic.communication.gateway-delivery-rejected": "A gateway definitively rejected the delivery request.",
@@ -31802,9 +31802,9 @@ var DIAGNOSTICS_COMMUNICATION_EN = {
 // packages/runtime/github-actions/src/i18n/diagnostics-communication.fr.ts
 var DIAGNOSTICS_COMMUNICATION_FR = {
   "diagnostic.communication.approval-pending": "Les e-mails attendent une confirmation dans le ticket du meetup.",
-  "diagnostic.communication.approval-rejected": "Le lot d'e-mails a \xE9t\xE9 refus\xE9. D\xE9cochez Refuser et cochez Approuver dans la demande avant l'envoi.",
+  "diagnostic.communication.approval-rejected": "Le lot d'e-mails a \xE9t\xE9 refus\xE9. La d\xE9cision enregistr\xE9e est d\xE9finitive pour cette version du lot.",
   "diagnostic.communication.approval-unavailable": "La confirmation des organisateurs n'a pas pu \xEAtre v\xE9rifi\xE9e ou enregistr\xE9e ; l'envoi des e-mails est bloqu\xE9.",
-  "diagnostic.communication.approval-notification-failed": "La notification Slack de confirmation n'a pas \xE9t\xE9 confirm\xE9e. Consultez la demande dans le ticket du meetup.",
+  "diagnostic.communication.approval-notification-failed": "La notification Slack ou la r\xE9action \xE0 la d\xE9cision n'a pas \xE9t\xE9 confirm\xE9e. Consultez la demande dans le ticket du meetup. V\xE9rifiez que le bot est membre du canal et poss\xE8de les autorisations chat:write et reactions:write ; les anciennes alertes sans r\xE9f\xE9rence de message enregistr\xE9e ne peuvent pas recevoir de r\xE9action automatique.",
   "diagnostic.communication.duplicate-intent": "Une intention de communication en double a \xE9t\xE9 ignor\xE9e.",
   "diagnostic.communication.gateway-delivery-uncertain": "Un service n'a pas pu confirmer la livraison.",
   "diagnostic.communication.gateway-delivery-rejected": "Un service a refus\xE9 d\xE9finitivement la demande de livraison.",
@@ -39901,7 +39901,7 @@ var ManageMeetupCommunications = class _ManageMeetupCommunications {
       delivery,
       dispatchEnabled
     );
-    const mailApproved = dispatchEnabled && await new ApproveCommunicationBatch(
+    const mailApproved = dispatchEnabled && await this.synchronizeApprovals(runtimeDiagnostics) && await new ApproveCommunicationBatch(
       this.dependencies.organizerApproval,
       this.dependencies.clock,
       this.dependencies.reconcileCommunications(false)
@@ -39947,6 +39947,23 @@ var ManageMeetupCommunications = class _ManageMeetupCommunications {
       });
     }
     return enabledByConfig;
+  }
+  async synchronizeApprovals(diagnostics) {
+    try {
+      const result = await this.dependencies.organizerApproval.synchronize();
+      if (result.notificationFailed)
+        diagnostics.push({
+          code: "communication.approval-notification-failed",
+          severity: "warning"
+        });
+      return true;
+    } catch {
+      diagnostics.push({
+        code: "communication.approval-unavailable",
+        severity: "error"
+      });
+      return false;
+    }
   }
   static async eventSourceIsCurrent(repository, expected, diagnostics) {
     try {
@@ -40416,6 +40433,12 @@ var ApprovalRecord = class _ApprovalRecord {
     _ApprovalRecord.validate(record);
     if (!/^approval-[a-f0-9-]{36}$/.test(record.requestId) || !["new", "reserved", "sent", "retry"].includes(record.notification))
       throw new Error("Invalid approval state");
+    if (record.decision && (!["approved", "rejected"].includes(record.decision.status) || !/^[A-Za-z0-9-]{1,39}$/.test(record.decision.actor) || !Number.isFinite(Date.parse(record.decision.decidedAt))))
+      throw new Error("Invalid final approval decision");
+    if (record.notificationMessage && (typeof record.notificationMessage.destination !== "string" || !record.notificationMessage.destination.trim() || typeof record.notificationMessage.messageId !== "string" || !record.notificationMessage.messageId.trim()))
+      throw new Error("Invalid approval notification reference");
+    if (record.reactionSent !== void 0 && (typeof record.reactionSent !== "boolean" || !record.decision || !record.notificationMessage))
+      throw new Error("Invalid approval reaction state");
     return record;
   }
   static marker(record) {
@@ -40425,12 +40448,14 @@ var ApprovalRecord = class _ApprovalRecord {
 
 // packages/adapter/github-organizer-approval/src/i18n/messages.en.ts
 var EN_MESSAGES2 = {
+  "approval.final": "### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\nEvent date: {date}. This batch covers up to {count, number} recipients; completed deliveries are skipped.\n\n{status, select, approved {\u2705 **Approved**} rejected {\u274C **Rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nThis decision is final for this batch revision. {status, select, approved {Approved emails can be sent when delivery checks pass. Email completion is tracked in the issue checklist.} rejected {This batch will not be sent.} other {}} Changed event details or recipients require a new confirmation.",
   "approval.request": "### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\nEvent date: {date}. This batch covers up to {count, number} recipients; completed deliveries are skipped.\n\nOrganizers with repository write access: check one choice below. Leave both unchecked to wait.\n\n- [{approveMark}] Approve sending this batch\n- [{rejectMark}] Reject sending this batch\n\nApproval applies to this batch revision. Changed event details or recipients require a new confirmation. The email checkboxes in the issue are checked after accepted dispatch.",
   "approval.slack": "Organizer confirmation needed: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}} for {date}, up to {count, number} recipients. Open the request and check Approve or Reject: {url}"
 };
 
 // packages/adapter/github-organizer-approval/src/i18n/messages.fr.ts
 var FR_MESSAGES2 = {
+  "approval.final": "### Confirmation des organisateurs : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}}\n\nDate du meetup : {date}. Ce lot concerne au maximum {count, number} destinataires ; les envois d\xE9j\xE0 termin\xE9s sont ignor\xE9s.\n\n{status, select, approved {\u2705 **Approuv\xE9**} rejected {\u274C **Refus\xE9**} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\nCette d\xE9cision est d\xE9finitive pour cette version du lot. {status, select, approved {Les e-mails approuv\xE9s peuvent \xEAtre envoy\xE9s lorsque les contr\xF4les de livraison r\xE9ussissent. Leur envoi est suivi dans la liste de t\xE2ches du ticket.} rejected {Ce lot ne sera pas envoy\xE9.} other {}} Toute modification des d\xE9tails du meetup ou des destinataires n\xE9cessite une nouvelle confirmation.",
   "approval.request": "### Confirmation des organisateurs : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}}\n\nDate du meetup : {date}. Ce lot concerne au maximum {count, number} destinataires ; les envois d\xE9j\xE0 termin\xE9s sont ignor\xE9s.\n\nOrganisateurs disposant d'un acc\xE8s en \xE9criture au d\xE9p\xF4t : cochez un choix ci-dessous. Laissez les deux cases d\xE9coch\xE9es pour attendre.\n\n- [{approveMark}] Approuver l'envoi de ce lot\n- [{rejectMark}] Refuser l'envoi de ce lot\n\nLa confirmation concerne cette version du lot. Toute modification des d\xE9tails du meetup ou des destinataires n\xE9cessite une nouvelle confirmation. Les cases des e-mails dans le ticket sont coch\xE9es apr\xE8s acceptation de l'envoi.",
   "approval.slack": "Confirmation des organisateurs n\xE9cessaire : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}} pour le {date}, au maximum {count, number} destinataires. Ouvrez la demande et cochez Approuver ou Refuser : {url}"
 };
@@ -40452,6 +40477,18 @@ var ApprovalPresenter = class _ApprovalPresenter {
   }
   messages;
   issue(record, decision) {
+    if (record.decision)
+      return [
+        ApprovalRecord.marker(record),
+        this.messages.t("approval.final", {
+          kind: record.kind.replace("email-", ""),
+          date: record.eventDate,
+          count: record.recipientCount,
+          status: record.decision.status,
+          actor: record.decision.actor,
+          decidedAt: record.decision.decidedAt
+        })
+      ].join("\n\n");
     return [
       ApprovalRecord.marker(record),
       this.messages.t("approval.request", {
@@ -40464,6 +40501,7 @@ var ApprovalPresenter = class _ApprovalPresenter {
     ].join("\n\n");
   }
   decision(record, body) {
+    if (record.decision) return { status: "pending" };
     const normalized = body.replace(/\r\n/g, "\n").replace(/- \[X\]/g, "- [x]");
     for (const locale of ["en", "fr"]) {
       const presenter = new _ApprovalPresenter(new ApprovalMessages(locale));
@@ -40540,7 +40578,7 @@ var GithubApprovalClient = class {
       repo: this.repo,
       username
     });
-    return response.data.permission === "write" || response.data.permission === "admin";
+    return response.data.permission === "write" || response.data.permission === "maintain" || response.data.permission === "admin";
   }
   async replace(commentId, before, after) {
     const current = (await this.list()).find(
@@ -40570,6 +40608,96 @@ var GithubApprovalClient = class {
   url(commentId) {
     return `https://github.com/${this.owner}/${this.repo}/issues/${this.issue}#issuecomment-${commentId}`;
   }
+  async history(comment) {
+    if (!comment.node_id)
+      throw new Error("Missing approval comment node identity");
+    const edits = [];
+    let after;
+    do {
+      const response = await this.api.graphql(
+        `query ApprovalCommentHistory($id: ID!, $after: String) {
+				node(id: $id) { ... on IssueComment {
+					id body userContentEdits(first: 100, after: $after) {
+						nodes { diff deletedAt editor { login __typename } }
+						pageInfo { hasNextPage endCursor }
+					}
+				} }
+			}`,
+        { id: comment.node_id, ...after ? { after } : {} }
+      );
+      if (response.node?.id !== comment.node_id || response.node.body !== comment.body)
+        throw new Error("Approval comment changed during history verification");
+      const history = response.node.userContentEdits;
+      if (!Array.isArray(history?.nodes) || !history.pageInfo)
+        throw new Error("Approval history is unavailable");
+      edits.push(...history.nodes);
+      if (!history.pageInfo.hasNextPage) return edits;
+      const next = history.pageInfo.endCursor;
+      if (!next || next === after)
+        throw new Error("Invalid approval history cursor");
+      after = next;
+    } while (after);
+    return edits;
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/approval-notifications.ts
+var ApprovalNotifications = class {
+  constructor(client, presenter, notifications, channelId) {
+    this.client = client;
+    this.presenter = presenter;
+    this.notifications = notifications;
+    this.channelId = channelId;
+  }
+  client;
+  presenter;
+  notifications;
+  channelId;
+  async send(record, commentId) {
+    if (record.notification !== "new" && record.notification !== "retry")
+      return record.notification === "reserved";
+    const before = this.presenter.issue(record, { status: "pending" });
+    record.notification = "reserved";
+    const reserved = this.presenter.issue(record, { status: "pending" });
+    await this.client.replace(commentId, before, reserved);
+    try {
+      const result = await this.notifications.send({
+        destination: this.channelId,
+        content: this.presenter.slack(record, this.client.url(commentId))
+      });
+      record.notification = result.outcome === "accepted" ? "sent" : result.outcome === "uncertain" ? "reserved" : "retry";
+      if (result.outcome === "accepted" && result.message)
+        record.notificationMessage = result.message;
+    } catch {
+    }
+    await this.client.replace(
+      commentId,
+      reserved,
+      this.presenter.issue(record, { status: "pending" })
+    );
+    return record.notification !== "sent";
+  }
+  async react(record, commentId) {
+    if (!record.decision || record.reactionSent) return false;
+    if (!record.notificationMessage) return true;
+    const before = this.presenter.issue(record, record.decision);
+    try {
+      const accepted = await this.notifications.react(
+        record.notificationMessage,
+        record.decision.status
+      );
+      if (!accepted) return true;
+      record.reactionSent = true;
+      await this.client.replace(
+        commentId,
+        before,
+        this.presenter.issue(record, record.decision)
+      );
+      return false;
+    } catch {
+      return true;
+    }
+  }
 };
 
 // packages/adapter/github-organizer-approval/src/resolve-approval-decision.ts
@@ -40581,13 +40709,49 @@ var ResolveApprovalDecision = class {
   client;
   presenter;
   async execute(record, comment) {
+    if (record.decision) return record.decision;
     const decision = this.presenter.decision(record, comment.body ?? "");
     if (decision.status === "pending") return decision;
     const edit = await this.client.edit(comment);
     const editedAt = Date.parse(edit.lastEditedAt ?? "");
     if (edit.editor?.__typename !== "User" || !edit.editor.login || edit.editor.login === "ghost" || !Number.isFinite(editedAt) || editedAt < Math.floor(Date.parse(record.requestedAt) / 1e3) * 1e3)
       return { status: "pending" };
-    return await this.client.canApprove(edit.editor.login) ? decision : { status: "pending" };
+    return await this.client.canApprove(edit.editor.login) ? {
+      ...decision,
+      actor: edit.editor.login,
+      decidedAt: edit.lastEditedAt ?? void 0
+    } : { status: "pending" };
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/trusted-approval-state.ts
+var TrustedApprovalState = class {
+  constructor(client, authorLogin) {
+    this.client = client;
+    this.authorLogin = authorLogin;
+  }
+  client;
+  authorLogin;
+  async read(comment) {
+    const current = await this.client.edit(comment);
+    if (this.isAuthor(current.editor) || !current.editor && current.lastEditedAt === null)
+      return this.record(current.body);
+    for (const edit of await this.client.history(comment)) {
+      if (edit.deletedAt) throw new Error("Approval history was deleted");
+      if (this.isAuthor(edit.editor)) {
+        if (edit.diff === null)
+          throw new Error("Approval history is unavailable");
+        return this.record(edit.diff);
+      }
+    }
+    throw new Error("A trusted approval revision could not be verified");
+  }
+  record(body) {
+    if (!body?.startsWith(APPROVAL_MARKER)) return void 0;
+    return ApprovalRecord.read(body);
+  }
+  isAuthor(editor) {
+    return editor?.__typename === "Bot" && editor.login.toLowerCase().replace(/\[bot\]$/, "") === this.authorLogin.toLowerCase().replace(/\[bot\]$/, "");
   }
 };
 
@@ -40597,79 +40761,93 @@ var GithubOrganizerApproval = class {
     this.client = client;
     this.authorLogin = authorLogin;
     this.presenter = presenter;
-    this.notifications = notifications;
-    this.organizerChannelId = organizerChannelId;
+    this.notifications = new ApprovalNotifications(
+      client,
+      presenter,
+      notifications,
+      organizerChannelId
+    );
   }
   client;
   authorLogin;
   presenter;
   notifications;
-  organizerChannelId;
   async request(input) {
     ApprovalRecord.validate(input);
-    const comments = await this.client.list();
-    const records = comments.filter(
-      (comment) => comment.user?.login.toLowerCase() === this.authorLogin.toLowerCase() && comment.body?.startsWith(APPROVAL_MARKER)
-    ).map((comment) => ({
-      comment,
-      record: ApprovalRecord.read(comment.body ?? "")
-    })).filter(({ record: record2 }) => record2.kind === input.kind);
-    if (records.length > 1) throw new Error("Ambiguous approval state");
-    const existing = records[0];
-    const current = existing && ApprovalRecord.matches(existing.record, input) ? existing : void 0;
-    const record = current?.record ?? ApprovalRecord.create(input);
-    const decision = current ? await new ResolveApprovalDecision(this.client, this.presenter).execute(
-      record,
-      current.comment
-    ) : { status: "pending" };
-    if (decision.status !== "pending")
-      return { status: decision.status, notificationFailed: false };
-    const body = this.presenter.issue(record, decision);
+    const existing = (await this.states()).find(
+      ({ record: record2 }) => record2.kind === input.kind
+    );
+    if (existing && ApprovalRecord.matches(existing.record, input)) {
+      const result = await this.finalize(existing);
+      if (result.status === "approved" && !await this.client.canApprove(existing.record.decision?.actor ?? ""))
+        throw new Error(
+          "The recorded organizer no longer has approval permission"
+        );
+      if (result.status !== "pending") return result;
+      return {
+        status: "pending",
+        notificationFailed: await this.notifications.send(
+          existing.record,
+          existing.comment.id
+        )
+      };
+    }
+    const record = ApprovalRecord.create(input);
+    const body = this.presenter.issue(record, { status: "pending" });
     const commentId = existing ? existing.comment.id : await this.client.create(body);
-    if (existing && body !== existing.comment.body)
+    if (existing)
       await this.client.replace(commentId, existing.comment.body ?? "", body);
-    await this.notify(record, commentId);
     return {
-      status: decision.status,
-      notificationFailed: record.notification === "reserved" || record.notification === "retry"
+      status: "pending",
+      notificationFailed: await this.notifications.send(record, commentId)
     };
   }
-  async notify(record, commentId) {
-    if (record.notification !== "new" && record.notification !== "retry")
-      return;
-    const before = this.presenter.issue(record, { status: "pending" });
-    record.notification = "reserved";
-    const reserved = this.presenter.issue(record, { status: "pending" });
-    await this.client.replace(commentId, before, reserved);
-    let outcome = "uncertain";
-    try {
-      const result = await this.notifications.dispatch({
-        channel: "notification",
-        kind: "readiness-reminder",
-        intentId: record.requestId,
-        idempotencyKey: record.requestId,
-        repositoryId: "organizer-approval",
-        eventId: record.requestId,
-        policyVersion: "1",
-        recipientId: "organizers",
-        recipient: {
-          channel: "notification",
-          role: "organizers",
-          recipientId: "organizers",
-          receivesCommunications: true,
-          destination: this.organizerChannelId
-        },
-        content: this.presenter.slack(record, this.client.url(commentId))
-      });
-      outcome = result.outcome;
-    } catch {
+  async synchronize() {
+    let notificationFailed = false;
+    for (const state of await this.states()) {
+      const result = await this.finalize(state);
+      notificationFailed = result.notificationFailed || notificationFailed;
     }
-    record.notification = outcome === "accepted" ? "sent" : outcome === "uncertain" ? "reserved" : "retry";
-    await this.client.replace(
-      commentId,
-      reserved,
-      this.presenter.issue(record, { status: "pending" })
-    );
+    return { notificationFailed };
+  }
+  async states() {
+    const states = [];
+    const trusted = new TrustedApprovalState(this.client, this.authorLogin);
+    for (const comment of await this.client.list()) {
+      if (comment.user?.login.toLowerCase() !== this.authorLogin.toLowerCase())
+        continue;
+      const record = await trusted.read(comment);
+      if (!record) continue;
+      if (states.some((state) => state.record.kind === record.kind))
+        throw new Error("Ambiguous approval state");
+      states.push({ record, comment });
+    }
+    return states;
+  }
+  async finalize({
+    record,
+    comment
+  }) {
+    const decision = await new ResolveApprovalDecision(
+      this.client,
+      this.presenter
+    ).execute(record, comment);
+    if (decision.status !== "pending" && !record.decision) {
+      if (!decision.actor || !decision.decidedAt)
+        throw new Error("Missing verified approval identity");
+      record.decision = {
+        status: decision.status,
+        actor: decision.actor,
+        decidedAt: decision.decidedAt
+      };
+    }
+    const body = this.presenter.issue(record, decision);
+    if (body !== comment.body)
+      await this.client.replace(comment.id, comment.body ?? "", body);
+    return {
+      status: decision.status,
+      notificationFailed: await this.notifications.react(record, comment.id)
+    };
   }
 };
 
@@ -41132,44 +41310,57 @@ var GithubRepositoryDispatchMailGateway = class _GithubRepositoryDispatchMailGat
   }
 };
 
-// packages/adapter/slack-notification-gateway/src/slack-notification-gateway.ts
-var SlackNotificationGateway = class _SlackNotificationGateway {
+// packages/adapter/slack-notification-gateway/src/slack-api-client.ts
+var SlackApiClient = class _SlackApiClient {
   constructor(token, fetcher = fetch) {
     this.token = token;
     this.fetcher = fetcher;
   }
   token;
   fetcher;
-  async dispatch(message) {
+  async post(method, body) {
     let response;
     try {
-      response = await this.fetcher("https://slack.com/api/chat.postMessage", {
+      response = await this.fetcher(`https://slack.com/api/${method}`, {
         method: "POST",
         headers: {
           authorization: `Bearer ${this.token}`,
           "content-type": "application/json; charset=utf-8"
         },
-        body: JSON.stringify({
-          channel: message.recipient.destination,
-          text: message.content
-        })
+        body: JSON.stringify(body)
       });
     } catch {
-      return { outcome: "uncertain", diagnosticCode: "unknown-provider-state" };
+      return {
+        result: {
+          outcome: "uncertain",
+          diagnosticCode: "unknown-provider-state"
+        }
+      };
     }
-    if (!response.ok) {
-      const rejection = _SlackNotificationGateway.httpRejection(response.status);
-      if (rejection) return rejection;
-      return { outcome: "uncertain", diagnosticCode: "ambiguous-response" };
-    }
+    if (!response.ok)
+      return {
+        result: _SlackApiClient.httpRejection(response.status) ?? {
+          outcome: "uncertain",
+          diagnosticCode: "ambiguous-response"
+        }
+      };
     let payload;
     try {
       payload = await response.json();
     } catch {
-      return { outcome: "uncertain", diagnosticCode: "ambiguous-response" };
+      return {
+        result: { outcome: "uncertain", diagnosticCode: "ambiguous-response" }
+      };
     }
-    if (payload.ok) return { outcome: "accepted" };
-    return _SlackNotificationGateway.slackApiRejection(payload.error);
+    if (typeof payload !== "object" || payload === null || Array.isArray(payload))
+      return {
+        result: { outcome: "uncertain", diagnosticCode: "ambiguous-response" }
+      };
+    const data = payload;
+    return {
+      result: data.ok === true ? { outcome: "accepted" } : _SlackApiClient.slackApiRejection(data.error),
+      payload: data
+    };
   }
   static httpRejection(status) {
     switch (status) {
@@ -41221,6 +41412,50 @@ var SlackNotificationGateway = class _SlackNotificationGateway {
       return { outcome: "deferred", diagnosticCode: "rate-limited" };
     }
     return { outcome: "uncertain", diagnosticCode: "ambiguous-response" };
+  }
+};
+
+// packages/adapter/slack-notification-gateway/src/slack-notification-gateway.ts
+var SlackNotificationGateway = class {
+  client;
+  constructor(token, fetcher = fetch) {
+    this.client = new SlackApiClient(token, fetcher);
+  }
+  async dispatch(message) {
+    const response = await this.client.post("chat.postMessage", {
+      channel: message.recipient.destination,
+      text: message.content
+    });
+    return response.result;
+  }
+};
+
+// packages/adapter/slack-notification-gateway/src/slack-approval-notification.ts
+var SlackApprovalNotification = class {
+  client;
+  constructor(token, fetcher = fetch) {
+    this.client = new SlackApiClient(token, fetcher);
+  }
+  async send(input) {
+    const { result, payload } = await this.client.post("chat.postMessage", {
+      channel: input.destination,
+      text: input.content
+    });
+    if (result.outcome !== "accepted") return result;
+    if (typeof payload?.channel !== "string" || !/^[CGD][A-Z0-9]+$/.test(payload.channel) || typeof payload.ts !== "string" || !/^\d+\.\d+$/.test(payload.ts))
+      return { outcome: "uncertain", diagnosticCode: "ambiguous-response" };
+    return {
+      outcome: "accepted",
+      message: { destination: payload.channel, messageId: payload.ts }
+    };
+  }
+  async react(message, decision) {
+    const { result, payload } = await this.client.post("reactions.add", {
+      channel: message.destination,
+      timestamp: message.messageId,
+      name: decision === "approved" ? "white_check_mark" : "x"
+    });
+    return result.outcome === "accepted" || payload?.error === "already_reacted";
   }
 };
 
@@ -58273,7 +58508,7 @@ var CommunicationComposition = class _CommunicationComposition {
           ),
           input.commentAuthorLogin,
           new ApprovalPresenter(new ApprovalMessages(input.locale)),
-          notificationGateway,
+          new SlackApprovalNotification(input.slackToken),
           input.slackOrganizerChannelId
         ),
         config: context3.get(SERVICES.config),
@@ -58385,9 +58620,9 @@ var COMMUNICATION_MESSAGES = {
 };
 var RUNTIME_MESSAGES = {
   "communication.approval-pending": "Email dispatch is waiting for approval on the meetup issue.",
-  "communication.approval-rejected": "The email batch was rejected. A new approval comment is required before sending.",
+  "communication.approval-rejected": "The email batch was rejected. The recorded decision is final for this batch revision.",
   "communication.approval-unavailable": "The organizer approval could not be verified or persisted; email dispatch is blocked.",
-  "communication.approval-notification-failed": "The Slack approval notification was not confirmed. Review the request on the meetup issue.",
+  "communication.approval-notification-failed": "The Slack approval notification or decision reaction was not confirmed. Review the request on the meetup issue.",
   "communication.dispatch-disabled-by-config": "Communication dispatch is disabled by repository configuration.",
   "communication.checklist-update-failed": "Delivery results are recorded but checklist completion could not be persisted.",
   "communication.event-skipped": "The issue is not a configured meetup event.",

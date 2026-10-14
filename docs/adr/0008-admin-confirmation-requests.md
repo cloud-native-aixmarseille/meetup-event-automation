@@ -1,6 +1,6 @@
 # ADR 0008: Request organizer confirmation for email batches
 
-Status: Accepted
+Status: Accepted; decision persistence and Slack acknowledgement extended by [ADR 0011](0011-final-organizer-decisions.md).
 
 Date: 2026-10-14
 

@@ -334,9 +334,10 @@ describe("automatic communication completion after approval", () => {
 			vi.useFakeTimers();
 			vi.setSystemTime(new Date("2026-09-04T10:00:00Z"));
 			const f = await setup({ eventDate: "2026-09-04", labels: ["meetup"] });
-			const fetcher = vi
-				.fn()
-				.mockResolvedValue({ ok: true, json: async () => ({ ok: true }) });
+			const fetcher = vi.fn().mockResolvedValue({
+				ok: true,
+				json: async () => ({ ok: true, channel: "C12345", ts: "100.001" }),
+			});
 			vi.stubGlobal("fetch", fetcher);
 			// Act
 			const result = await CommunicationRuntime.runCommunicationReconcile({
@@ -374,9 +375,10 @@ describe("automatic communication completion after approval", () => {
 				"https://www.meetup.com/fr-fr/cloud-native-aix-marseille/events/123",
 			)}\n### Aperitif\n\nMaybe\n\n### Restaurant / Bar\n\nMaybe\n`,
 		});
-		const fetcher = vi
-			.fn()
-			.mockResolvedValue({ ok: true, json: async () => ({ ok: true }) });
+		const fetcher = vi.fn().mockResolvedValue({
+			ok: true,
+			json: async () => ({ ok: true, channel: "C12345", ts: "100.001" }),
+		});
 		vi.stubGlobal("fetch", fetcher);
 
 		// Act
@@ -422,10 +424,80 @@ describe("automatic communication completion after approval", () => {
 });
 
 describe("organizer approval for email batches", () => {
+	it("retries a failed Slack reaction after email completion without resending emails", async () => {
+		// Arrange
+		const f = await setup();
+		await CommunicationRuntime.runCommunicationReconcile(f.input);
+		approveBatch(f);
+		vi.mocked(fetch).mockResolvedValue({
+			ok: true,
+			json: async () => ({ ok: false, error: "missing_scope" }),
+		} as Response);
+		// Act
+		const sent = await CommunicationRuntime.runCommunicationReconcile(f.input);
+		const completedBody = f.issue.body;
+		const callsBeforeRetry = vi.mocked(fetch).mock.calls.length;
+		vi.mocked(fetch).mockResolvedValue({
+			ok: true,
+			json: async () => ({ ok: false, error: "already_reacted" }),
+		} as Response);
+		const retried = await CommunicationRuntime.runCommunicationReconcile(
+			f.input,
+		);
+		await CommunicationRuntime.runCommunicationReconcile(f.input);
+		// Assert
+		expect(sent.counts.accepted).toBe(2);
+		expect(sent.runtimeDiagnostics).toContainEqual({
+			code: "communication.approval-notification-failed",
+			severity: "warning",
+		});
+		expect(completedBody).toContain("- [x] Mail introduction");
+		expect(retried.counts.dispatched).toBe(0);
+		expect(retried.runtimeDiagnostics).not.toContainEqual({
+			code: "communication.approval-notification-failed",
+			severity: "warning",
+		});
+		expect(fetch).toHaveBeenCalledTimes(callsBeforeRetry + 1);
+		expect(f.createDispatchEvent).toHaveBeenCalledTimes(2);
+		expect(f.comments[0]?.body).toContain("✅ **Approved**");
+	});
+	it("finalizes rejection and reacts on Slack without sending email", async () => {
+		// Arrange
+		const f = await setup();
+		await CommunicationRuntime.runCommunicationReconcile(f.input);
+		approveBatch(f, "Reject");
+		// Act
+		const result = await CommunicationRuntime.runCommunicationReconcile(
+			f.input,
+		);
+		await CommunicationRuntime.runCommunicationReconcile(f.input);
+		// Assert
+		expect(result.runtimeDiagnostics).toContainEqual({
+			code: "communication.approval-rejected",
+			severity: "warning",
+		});
+		expect(f.createDispatchEvent).not.toHaveBeenCalled();
+		expect(f.comments[0]?.body).toContain("❌ **Rejected** by @organizer");
+		expect(f.comments[0]?.body).not.toContain("- [");
+		expect(fetch).toHaveBeenCalledTimes(2);
+		expect(fetch).toHaveBeenLastCalledWith(
+			"https://slack.com/api/reactions.add",
+			expect.objectContaining({
+				body: JSON.stringify({
+					channel: "C12345",
+					timestamp: "100.001",
+					name: "x",
+				}),
+			}),
+		);
+	});
 	beforeEach(() => {
 		vi.stubGlobal(
 			"fetch",
-			vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true }) }),
+			vi.fn().mockResolvedValue({
+				ok: true,
+				json: async () => ({ ok: true, channel: "C12345", ts: "100.001" }),
+			}),
 		);
 	});
 	it("requests approval in the issue and Slack, then sends and completes only after approval", async () => {
@@ -453,7 +525,7 @@ describe("organizer approval for email batches", () => {
 		expect(approved.counts.accepted).toBe(2);
 		expect(f.createDispatchEvent).toHaveBeenCalledTimes(2);
 		expect(f.issue.body).toContain("- [x] Mail introduction");
-		expect(fetch).toHaveBeenCalledTimes(1);
+		expect(fetch).toHaveBeenCalledTimes(2);
 		const notification = JSON.parse(
 			vi.mocked(fetch).mock.calls[0]?.[1]?.body as string,
 		);
@@ -462,7 +534,18 @@ describe("organizer approval for email batches", () => {
 		expect(notification.text).toContain(
 			"https://github.com/organization/meetups/issues/42#issuecomment-",
 		);
-		expect(f.comments[0]?.body).toContain("- [x] Approve sending this batch");
+		expect(f.comments[0]?.body).toContain("✅ **Approved** by @organizer");
+		expect(f.comments[0]?.body).not.toContain("- [");
+		expect(fetch).toHaveBeenCalledWith(
+			"https://slack.com/api/reactions.add",
+			expect.objectContaining({
+				body: JSON.stringify({
+					channel: "C12345",
+					timestamp: "100.001",
+					name: "white_check_mark",
+				}),
+			}),
+		);
 		expect(f.permission).toHaveBeenCalledWith({
 			owner: "organization",
 			repo: "meetups",
@@ -518,7 +601,7 @@ describe("organizer approval for email batches", () => {
 		expect(partial).toContain("- [ ] Mail introduction speakers");
 		expect(second.counts.accepted).toBe(1);
 		expect(f.createDispatchEvent).toHaveBeenCalledTimes(3);
-		expect(fetch).toHaveBeenCalledTimes(1);
+		expect(fetch).toHaveBeenCalledTimes(2);
 		expect(f.issue.body).toContain("- [x] Mail introduction speakers");
 	});
 	it("requires a separate approval for thank-you emails", async () => {

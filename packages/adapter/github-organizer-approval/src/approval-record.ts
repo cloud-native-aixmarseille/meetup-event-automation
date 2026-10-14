@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type {
+	ApprovalNotificationMessage,
 	OrganizerApprovalRequest,
 	OrganizerApprovalResult,
 } from "@meetup-automation/journey";
@@ -8,9 +9,19 @@ export const APPROVAL_MARKER = "<!-- meetup-organizer-approval:v1 ";
 export interface StoredApproval extends OrganizerApprovalRequest {
 	readonly requestId: string;
 	notification: "new" | "reserved" | "sent" | "retry";
+	notificationMessage?: ApprovalNotificationMessage;
+	decision?: FinalApprovalDecision;
+	reactionSent?: boolean;
+}
+interface FinalApprovalDecision {
+	readonly status: "approved" | "rejected";
+	readonly actor: string;
+	readonly decidedAt: string;
 }
 export interface ApprovalDecision {
 	readonly status: OrganizerApprovalResult["status"];
+	readonly actor?: string;
+	readonly decidedAt?: string;
 }
 export class ApprovalRecord {
 	static matches(
@@ -56,6 +67,28 @@ export class ApprovalRecord {
 			!["new", "reserved", "sent", "retry"].includes(record.notification)
 		)
 			throw new Error("Invalid approval state");
+		if (
+			record.decision &&
+			(!["approved", "rejected"].includes(record.decision.status) ||
+				!/^[A-Za-z0-9-]{1,39}$/.test(record.decision.actor) ||
+				!Number.isFinite(Date.parse(record.decision.decidedAt)))
+		)
+			throw new Error("Invalid final approval decision");
+		if (
+			record.notificationMessage &&
+			(typeof record.notificationMessage.destination !== "string" ||
+				!record.notificationMessage.destination.trim() ||
+				typeof record.notificationMessage.messageId !== "string" ||
+				!record.notificationMessage.messageId.trim())
+		)
+			throw new Error("Invalid approval notification reference");
+		if (
+			record.reactionSent !== undefined &&
+			(typeof record.reactionSent !== "boolean" ||
+				!record.decision ||
+				!record.notificationMessage)
+		)
+			throw new Error("Invalid approval reaction state");
 		return record;
 	}
 	static marker(record: StoredApproval): string {

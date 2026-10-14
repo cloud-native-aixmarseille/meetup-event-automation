@@ -152,17 +152,24 @@ explicit destination through `slack-organizer-channel-id`. Public Slack
 announcement tasks are manual and do not share this routing.
 
 The journey's `OrganizerApproval` port gates each due email batch. The GitHub
-adapter owns trusted request comments, localized approval checkboxes, GitHub GraphQL
-editor verification, current write-permission checks, and issue/Slack
-presentation. Accepted choices remain human edits; bot rewrites would replace
-the editor identity used on later runs. Both supported catalogs are recognized
-when checking request integrity, so locale changes preserve a valid approval.
+adapter owns trusted request comments, localized approval choices and final
+results, GitHub GraphQL editor/history verification, current write-permission
+checks, and issue/Slack presentation. It durably records the verified human
+identity and final decision in the original bot comment before authorizing mail.
+Later human edits recover state from the most recent bot-authored revision;
+missing or deleted history fails closed. Both supported catalogs are recognized
+when checking pending request integrity, so locale changes preserve approval.
 Only the communication domain's batch fingerprint and public facts cross this
 boundary. Requests are independent
 of delivery records: approval never clears a delivery reservation. Partial
 completion does not invalidate the full batch fingerprint. Slack notification
 reservations prevent automatic retries after ambiguous acknowledgements. The
-journey maps task names to recipient groups, and records completion through the
+journey's `OrganizerApprovalNotification` port returns an opaque message
+reference for accepted requests. The Slack adapter uses it for idempotent
+decision reactions on the original message. Synchronization finalizes choices
+and retries reactions even when no email task remains. Slack failures do not
+undo durable decisions. See [ADR 0011](../adr/0011-final-organizer-decisions.md).
+The journey maps task names to recipient groups, and records completion through the
 event codec only after all recipients in a group have durable accepted records.
 It rechecks the source before dispatch and before updating completion. Delivery
 reserves an intent as `pending` before calling a gateway and marks it `accepted` after acknowledgement. Pending

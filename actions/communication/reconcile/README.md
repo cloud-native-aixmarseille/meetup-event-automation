@@ -69,7 +69,7 @@ resolved. Execution and comment persistence failures still fail the action.
     # This input is required.
     slack-organizer-channel-id: ""
 
-    # Slack bot token used for approval requests and organizer reminders.
+    # Slack bot token with chat:write and reactions:write for organizer notifications and decision reactions.
     # This input is required.
     slack-token: ""
 ```
@@ -88,7 +88,7 @@ resolved. Execution and comment persistence failures still fail the action.
 | **`managed-comment-author`**     | Trusted bot login allowed to create or update managed approval, delivery ledger and communication diagnostic comments, for example my-app[bot].                                                                        | **true**     | -           |
 | **`mailings-token`**             | Token used to dispatch due email communications to the configured mailings repository.                                                                                                                                 | **true**     | -           |
 | **`slack-organizer-channel-id`** | Internal meetup organizer Slack channel for approval requests and readiness reminders. Public announcement channels are separate.                                                                                      | **true**     | -           |
-| **`slack-token`**                | Slack bot token used for approval requests and organizer reminders.                                                                                                                                                    | **true**     | -           |
+| **`slack-token`**                | Slack bot token with chat:write and reactions:write for organizer notifications and decision reactions.                                                                                                                | **true**     | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->

@@ -5,6 +5,7 @@ import { ApprovalRecord } from "../src/approval-record.js";
 import {
 	type ApprovalComment,
 	type ApprovalCommentEdit,
+	type ApprovalContentEdit,
 	GithubApprovalClient,
 } from "../src/github-approval-client.js";
 import { GithubOrganizerApproval } from "../src/github-organizer-approval.js";
@@ -19,9 +20,18 @@ export const request: OrganizerApprovalRequest = {
 export function fixture(locale = "en") {
 	const comments: ApprovalComment[] = [];
 	const edits = new Map<string, ApprovalCommentEdit>();
+	const history = new Map<string, ApprovalContentEdit[]>();
 	const presenter = new ApprovalPresenter(new ApprovalMessages(locale));
 	const graphql = vi.fn().mockImplementation(async (_query, variables) => ({
-		node: edits.get(variables.id) ?? null,
+		node: edits.has(variables.id)
+			? {
+					...edits.get(variables.id),
+					userContentEdits: {
+						nodes: history.get(variables.id) ?? [],
+						pageInfo: { hasNextPage: false, endCursor: null },
+					},
+				}
+			: null,
 	}));
 	const permission = vi
 		.fn()
@@ -37,6 +47,14 @@ export function fixture(locale = "en") {
 			node_id: `comment-${input.comment_id}`,
 			body: input.body,
 		};
+		history.set(`comment-${input.comment_id}`, [
+			{
+				diff: input.body,
+				deletedAt: null,
+				editor: { login: "automation", __typename: "Bot" },
+			},
+			...(history.get(`comment-${input.comment_id}`) ?? []),
+		]);
 		edits.set(`comment-${input.comment_id}`, {
 			id: `comment-${input.comment_id}`,
 			body: input.body,
@@ -52,6 +70,19 @@ export function fixture(locale = "en") {
 			body: input.body,
 			user: { login: "automation[bot]", type: "Bot" },
 		});
+		edits.set(`comment-${id}`, {
+			id: `comment-${id}`,
+			body: input.body,
+			editor: null,
+			lastEditedAt: null,
+		});
+		history.set(`comment-${id}`, [
+			{
+				diff: input.body,
+				deletedAt: null,
+				editor: { login: "automation", __typename: "Bot" },
+			},
+		]);
 		return { data: { id } };
 	});
 	const list = vi.fn(async () => ({ data: [...comments], headers: {} }));
@@ -67,18 +98,25 @@ export function fixture(locale = "en") {
 		},
 	};
 	const client = new GithubApprovalClient(api, "example", "meetups", 42);
-	const dispatch = vi.fn().mockResolvedValue({ outcome: "accepted" });
+	const dispatch = vi.fn().mockResolvedValue({
+		outcome: "accepted",
+		message: { destination: "C12345", messageId: "100.001" },
+	});
+	const react = vi.fn().mockResolvedValue(true);
 	const approvals = new GithubOrganizerApproval(
 		client,
 		"automation[bot]",
 		presenter,
-		{ dispatch },
+		{ send: dispatch, react },
 		"organizer-channel",
 	);
 	return {
+		api,
 		presenter,
 		graphql,
 		edits,
+		history,
+		react,
 		comments,
 		permission,
 		update,
@@ -106,4 +144,8 @@ export function decision(
 	};
 	f.comments[0] = { ...comment, body: edit.body };
 	f.edits.set(comment.node_id, edit);
+	f.history.set(comment.node_id, [
+		{ diff: edit.body, deletedAt: null, editor: edit.editor },
+		...(f.history.get(comment.node_id) ?? []),
+	]);
 }

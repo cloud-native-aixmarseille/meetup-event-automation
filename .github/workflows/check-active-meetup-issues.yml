@@ -56,7 +56,7 @@ on:
         description: PEM-encoded private key for the GitHub App identified by the github-app-client-id input. Used to mint a narrowly scoped installation token.
         required: true
       slack-token:
-        description: Slack bot token used for approval requests and organizer reminders.
+        description: Slack bot token with chat:write and reactions:write for organizer notifications and decision reactions.
         required: true
 
 permissions: {}

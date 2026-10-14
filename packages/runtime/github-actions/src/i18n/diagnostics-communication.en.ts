@@ -2,11 +2,11 @@ export const DIAGNOSTICS_COMMUNICATION_EN = {
 	"diagnostic.communication.approval-pending":
 		"Email dispatch is waiting for approval on the meetup issue.",
 	"diagnostic.communication.approval-rejected":
-		"The email batch was rejected. Clear Reject and check Approve in the request comment before sending.",
+		"The email batch was rejected. The recorded decision is final for this batch revision.",
 	"diagnostic.communication.approval-unavailable":
 		"The organizer approval could not be verified or persisted; email dispatch is blocked.",
 	"diagnostic.communication.approval-notification-failed":
-		"The Slack approval notification was not confirmed. Review the request on the meetup issue.",
+		"The Slack approval notification or decision reaction was not confirmed. Review the request on the meetup issue. Check the bot's channel membership and chat:write and reactions:write scopes; legacy alerts without a saved message reference cannot receive automatic reactions.",
 
 	"diagnostic.communication.duplicate-intent":
 		"A duplicate communication intent was ignored.",

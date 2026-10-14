@@ -92,6 +92,7 @@ export class ManageMeetupCommunications {
 		);
 		const mailApproved =
 			dispatchEnabled &&
+			(await this.synchronizeApprovals(runtimeDiagnostics)) &&
 			(await new ApproveCommunicationBatch(
 				this.dependencies.organizerApproval,
 				this.dependencies.clock,
@@ -151,6 +152,25 @@ export class ManageMeetupCommunications {
 			});
 		}
 		return enabledByConfig;
+	}
+	private async synchronizeApprovals(
+		diagnostics: CommunicationJourneyDiagnostic[],
+	): Promise<boolean> {
+		try {
+			const result = await this.dependencies.organizerApproval.synchronize();
+			if (result.notificationFailed)
+				diagnostics.push({
+					code: "communication.approval-notification-failed",
+					severity: "warning",
+				});
+			return true;
+		} catch {
+			diagnostics.push({
+				code: "communication.approval-unavailable",
+				severity: "error",
+			});
+			return false;
+		}
 	}
 
 	private static async eventSourceIsCurrent(

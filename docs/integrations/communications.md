@@ -39,8 +39,10 @@ installation token scoped to that repository, uses it for email dispatch, and
 revokes it at job completion. Configure the mailings repository to handle the
 templates listed below.
 
-The Slack bot must be able to post to the organizer channel. Missing App or Slack
-settings fail the workflow; complete setup before using automatic communications.
+The Slack bot must be a member of the organizer channel and have `chat:write`
+and `reactions:write` bot scopes. These allow request messages and decision
+reactions on those messages. Missing App or Slack settings fail the workflow;
+complete setup before using automatic communications.
 
 Email recipients come from the [referentials](../reference/referentials.md): the
 host's first contact and each resolved speaker. Fix invalid records or
@@ -58,17 +60,25 @@ followed by two choices:
 ```
 
 Click **Approve sending this batch** in that bot comment to authorize sending.
-Click **Reject sending this batch** to hold it. Leave both unchecked to wait;
+Click **Reject sending this batch** to refuse it. Leave both unchecked to wait;
 selecting both does not approve anything.
-To change a decision before dispatch, clear the previous choice and select the
-other. A decision cannot undo emails already sent.
+
+When the automation processes a valid choice, it updates that same comment to
+show **Approved** or **Rejected**, the organizer, and the decision time. The
+checkboxes disappear. This decision is final for that batch revision: restoring
+the old checkboxes or editing the final comment cannot change it. The automation
+restores its recorded result on the next reconciliation. No separate decision
+comment is posted.
 
 Anyone with repository **write** access or higher can decide. The automation
 reads the current comment and its last editor from GitHub, checks that editor's
 current repository permission, and accepts only an unchanged request with one
-selected choice. It preserves the human edit for subsequent runs; GitHub's
-comment edit history identifies the editor. Edited request descriptions,
-ineligible editors and approvals for a different batch cannot authorize sending.
+selected choice. It saves the verified identity before authorizing dispatch and
+rechecks the recorded organizer's write access before dispatch on later runs.
+GitHub's bot-authored edit history protects the recorded decision against later
+human edits. Missing or unverifiable history blocks sending. Edited request
+descriptions, ineligible editors and approvals for a different batch cannot
+authorize sending.
 
 Slack links to the request; decisions are made on GitHub. Set `SLACK_ORGANIZER_CHANNEL_ID`
 to the meetup organizer channel and invite the bot there. Each request sends one
@@ -76,11 +86,18 @@ alert. Definitively rejected or rate-limited alerts can retry; an uncertain
 acknowledgement is reported without automatically posting a duplicate. The
 issue request remains usable if Slack fails.
 
+The automation adds a reaction to the original Slack request: ✅ for approval
+or ❌ for rejection. These reactions show the organizer's decision, not email
+delivery. Failed reactions are retried on later reconciliations, including
+after email tasks are complete. They do not reopen the decision or resend mail.
+
 Introductions and thank-you emails require separate approvals. Approval covers
 the host and speaker batch for the current email inputs, including recipient
 addresses, templates, placeholders, date and policy. Only a fingerprint and
 public facts are persisted; contact details never appear in the request.
-Changes to those inputs reset both approval choices and require a fresh decision.
+Changes to those inputs create a new request in the same GitHub comment, with
+unchecked choices and a new Slack alert. The previous decision only applies to
+the previous revision; it is not reversed.
 Completed tasks are skipped, and approval survives partial completion and safe
 retries. Locale changes and unrelated checklist edits do not invalidate it.
 
@@ -91,7 +108,10 @@ same issue concurrency lock. See
 [setup](../usage/setup.md#3-add-workflow-callers) for the caller configuration.
 GitHub comment updates have no atomic compare-and-set guarantee. The automation
 rechecks comments before persistence, but a final concurrent human edit can still
-race a write or dispatch. Clearing approval does not cancel an in-flight send.
+race a write. The choice is final once the automation records it. GitHub still
+allows writers to edit comment text; such edits do not revoke the recorded
+decision or cancel an in-flight send. Removing the metadata marker may prevent
+the edit trigger from matching; the daily audit still verifies the comment.
 
 Approval applies to email batches. Resolve missing participation confirmations
 and integration errors before sending.
@@ -179,8 +199,15 @@ persistence failures still fail the job. See the
 
 `planned-count` counts planned messages; `dispatched-count` counts
 planned-message provider calls, including rejected or uncertain attempts.
-Organizer approval comments and their Slack alerts are excluded from these
-delivery counts.
+Organizer approval comments, Slack alerts and decision reactions are excluded
+from these delivery counts.
+
+A `communication.approval-notification-failed` diagnostic can mean a request
+alert or decision reaction was not confirmed. Check the bot's channel membership
+and its `chat:write` and `reactions:write` scopes. A request without a stored
+Slack message reference cannot receive an automatic reaction; its GitHub
+decision remains authoritative and the automation does not post a duplicate
+alert. Do not delete approval comments or their edit history to retry a decision.
 
 A `communication.checklist-update-failed` diagnostic means dispatch results were
 recorded but issue completion could not be saved, for example after a concurrent

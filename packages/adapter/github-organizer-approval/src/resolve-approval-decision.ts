@@ -15,6 +15,7 @@ export class ResolveApprovalDecision {
 		record: StoredApproval,
 		comment: ApprovalComment,
 	): Promise<ApprovalDecision> {
+		if (record.decision) return record.decision;
 		const decision = this.presenter.decision(record, comment.body ?? "");
 		if (decision.status === "pending") return decision;
 		const edit = await this.client.edit(comment);
@@ -28,7 +29,11 @@ export class ResolveApprovalDecision {
 		)
 			return { status: "pending" };
 		return (await this.client.canApprove(edit.editor.login))
-			? decision
+			? {
+					...decision,
+					actor: edit.editor.login,
+					decidedAt: edit.lastEditedAt ?? undefined,
+				}
 			: { status: "pending" };
 	}
 }

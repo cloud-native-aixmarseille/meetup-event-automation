@@ -73,6 +73,12 @@ the bot comment. The automation sends the emails and checks each item
 independently after all requests for that group are accepted. Check an item
 yourself only when that group's work was completed manually.
 
+Check **Reject sending this batch** to refuse sending. Once processed, either
+choice is final: the same comment shows the decision and organizer, with no
+checkboxes. The original Slack message receives ✅ for approval or ❌ for
+rejection. See [batch confirmation](../integrations/communications.md#confirm-an-email-batch)
+for permissions, changed batches and notification recovery.
+
 Keep `Mail thanks hoster` and `Mail thanks speakers` in **Post event** for the
 corresponding follow-up emails. Missing tasks are not sent automatically. See
 [communications](../integrations/communications.md) for supported task names,

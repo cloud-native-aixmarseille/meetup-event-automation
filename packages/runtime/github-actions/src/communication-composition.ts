@@ -29,7 +29,10 @@ import {
 	ManageMeetupEvent,
 } from "@meetup-automation/journey";
 import type { ReferentialRepository } from "@meetup-automation/referential";
-import { SlackNotificationGateway } from "@meetup-automation/slack-notification-gateway";
+import {
+	SlackNotificationGateway,
+	SlackApprovalNotification,
+} from "@meetup-automation/slack-notification-gateway";
 import { SystemCommunicationClock } from "@meetup-automation/system-clock";
 import type { Container } from "inversify";
 import { CommunicationIssueReport } from "./communication-issue-report.js";
@@ -171,7 +174,7 @@ export class CommunicationComposition {
 					),
 					input.commentAuthorLogin,
 					new ApprovalPresenter(new ApprovalMessages(input.locale)),
-					notificationGateway,
+					new SlackApprovalNotification(input.slackToken),
 					input.slackOrganizerChannelId,
 				),
 				config: context.get<AutomationConfig>(SERVICES.config),
