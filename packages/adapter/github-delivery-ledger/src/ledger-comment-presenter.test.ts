@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { inspectLedgerComment } from "../testing/ledger-comment.js";
 import {
 	type StoredEntry,
 	type StoredLedger,
@@ -40,10 +41,7 @@ describe("LedgerCommentPresenter", () => {
 
 			// Act
 			const body = presenter.render(ledger);
-			const visible = body.replace(/<!--[\s\S]*?-->/g, "");
-			const persisted = JSON.parse(
-				body.split("```json\n")[1]?.split("```")[0] ?? "",
-			);
+			const { visible, persisted } = inspectLedgerComment(body);
 
 			// Assert
 			expect(body.startsWith(DELIVERY_LEDGER_MARKER)).toBe(true);
@@ -90,10 +88,14 @@ describe("LedgerCommentPresenter", () => {
 		expect(body).toContain("check its result for actual delivery");
 	});
 
-	it("keeps comment delimiters and Markdown fences in stored values from exposing metadata", () => {
+	it.each([
+		["comment terminators and fences", "-->\n```json\n<!channel>\n<!--"],
+		["nested comment delimiters", "<<!--nested-->!-->"],
+		["alternate comment terminators", "--!>\n<!channel>\n<!--"],
+		["adjacent comment boundaries", "<!--first--><!--second-->"],
+	])("keeps %s in stored values from exposing metadata", (_name, malicious) => {
 		// Arrange
 		const presenter = new LedgerCommentPresenter();
-		const malicious = "-->\n```json\n<!channel>\n<!--";
 		const ledger: StoredLedger = {
 			schemaVersion: 2,
 			entries: [{ ...entry, diagnosticCode: malicious }],
@@ -101,10 +103,7 @@ describe("LedgerCommentPresenter", () => {
 
 		// Act
 		const body = presenter.render(ledger);
-		const visible = body.replace(/<!--[\s\S]*?-->/g, "");
-		const persisted = JSON.parse(
-			body.split("```json\n")[1]?.split("```")[0] ?? "",
-		);
+		const { visible, persisted } = inspectLedgerComment(body);
 
 		// Assert
 		expect(visible).not.toContain("<!channel>");
