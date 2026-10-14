@@ -1,5 +1,6 @@
 import type { DeliveryReservation } from "@meetup-automation/communication";
 import { describe, expect, it } from "vitest";
+import { inspectLedgerComment } from "../testing/ledger-comment.js";
 import type { GithubLedgerComment } from "./comment-client.js";
 import { GithubDeliveryLedger } from "./github-delivery-ledger.js";
 import { DELIVERY_LEDGER_MARKER } from "./github-delivery-ledger-contracts.js";
@@ -182,9 +183,8 @@ describe("GithubDeliveryLedger", () => {
 				"2026-09-04T10:00:02.000Z",
 			);
 			const repeated = await ledger.reservePending(reservation);
-			const visible = comments.comments[0]?.body.replace(
-				/<!--[\s\S]*?-->/g,
-				"",
+			const { visible } = inspectLedgerComment(
+				comments.comments[0]?.body ?? "",
 			);
 
 			// Assert
