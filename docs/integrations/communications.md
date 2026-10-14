@@ -151,6 +151,11 @@ Each message kind is sent at most once per issue and recipient under the current
 policy. The Slack reminder is not a daily repeat. Changing the locale or
 repository revision does not resend previously recorded messages.
 
+Readiness reminders include the event date, a direct link to the meetup issue,
+and the outstanding validation items with actions to resolve them. They use the
+workflow's language and omit private contact data. Update the issue fields or
+confirmation labels named in the reminder.
+
 The `<consumer-repository-owner>/mailings` repository receives a
 `send-transactional-email` dispatch with a template, recipient, placeholders and
 an idempotency key. It must support:
@@ -181,8 +186,13 @@ A `communication.checklist-update-failed` diagnostic means dispatch results were
 recorded but issue completion could not be saved, for example after a concurrent
 edit. Run reconciliation again; accepted messages will not be sent twice.
 
-The bot keeps a delivery ledger in an issue comment. Existing records prevent
-repeated delivery:
+The bot maintains one **Communication status** comment on the meetup issue. It
+groups message requests by type and status, without listing recipients. The
+duplicate-prevention records are stored in an HTML comment in its Markdown source;
+organizers see the status summary, not JSON. Accepted email requests still require
+checking the mail service for actual delivery.
+
+Existing records prevent repeated delivery:
 
 | Delivery result           | Next action                                                                                          |
 | ------------------------- | ---------------------------------------------------------------------------------------------------- |

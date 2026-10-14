@@ -6,6 +6,7 @@ import type {
 	DeliveryReservationResult,
 } from "@meetup-automation/communication";
 import type { GithubLedgerCommentClient } from "./comment-client.js";
+import { LedgerCommentPresenter } from "./ledger-comment-presenter.js";
 import {
 	DELIVERY_LEDGER_MARKER,
 	type GithubDeliveryLedgerOptions,
@@ -19,6 +20,7 @@ export class GithubDeliveryLedger implements DeliveryLedger {
 	constructor(
 		private readonly comments: GithubLedgerCommentClient,
 		private readonly options: GithubDeliveryLedgerOptions,
+		private readonly presenter = new LedgerCommentPresenter(),
 	) {
 		this.#authorLogin = options.authorLogin.trim().toLowerCase();
 		if (!this.#authorLogin) {
@@ -179,7 +181,7 @@ export class GithubDeliveryLedger implements DeliveryLedger {
 		ledger.entries.sort((left, right) =>
 			left.idempotencyKey.localeCompare(right.idempotencyKey),
 		);
-		const body = GithubDeliveryLedger.renderLedger(ledger);
+		const body = this.presenter.render(ledger);
 		if (commentId === undefined) {
 			await this.comments.createComment(body);
 			return;
@@ -225,10 +227,6 @@ export class GithubDeliveryLedger implements DeliveryLedger {
 			schemaVersion: 2,
 			entries: value.entries.map(GithubDeliveryLedger.protectStoredEntry),
 		};
-	}
-
-	private static renderLedger(ledger: StoredLedger): string {
-		return `${DELIVERY_LEDGER_MARKER}\n\n<details><summary>Meetup communication delivery ledger</summary>\n\n\`\`\`json\n${JSON.stringify(ledger, null, 2)}\n\`\`\`\n\n</details>`;
 	}
 
 	private static publicEntry(entry: StoredEntry): DeliveryLedgerEntry {

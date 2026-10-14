@@ -9,6 +9,7 @@ import type { IssueFormMessages } from "../../packages/adapter/yaml-issue-form-p
 import { ActionMessages } from "../../packages/runtime/github-actions/src/i18n/action-messages.js";
 import type { MessageId } from "../../packages/runtime/github-actions/src/i18n/catalog.js";
 import type { OrganizerNotificationMessages } from "../../packages/runtime/github-actions/src/notifications/organizer-notification-messages.js";
+import { CATALOGS as NOTIFICATION_CATALOGS } from "../../packages/runtime/github-actions/src/notifications/catalog.js";
 import {
 	type ActionManifest,
 	automationActionPrefix,
@@ -88,7 +89,7 @@ describe("localization contract", () => {
 			for (const match of source.matchAll(
 				/"(?:((?:event|referential|publication|issue-form|communication)\.[a-z-]+(?:\.[a-z-]+)*))"/g,
 			))
-				if (match[1] !== "communication.organizer-attention")
+				if (!Object.hasOwn(NOTIFICATION_CATALOGS.en, match[1] ?? ""))
 					codes.add(match[1]);
 		}
 		const missing = [...codes].filter(

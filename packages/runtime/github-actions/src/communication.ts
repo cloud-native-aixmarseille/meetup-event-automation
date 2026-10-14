@@ -68,12 +68,6 @@ export class CommunicationRuntime {
 			repo: input.repo,
 			repositoryId: input.repositoryId,
 			organizerNotificationDestination: slackOrganizerChannelId,
-			organizerNotificationContent: messages.t(
-				"communication.organizer-attention",
-				{
-					issue: input.issueNumber,
-				},
-			),
 		});
 		return result;
 	}

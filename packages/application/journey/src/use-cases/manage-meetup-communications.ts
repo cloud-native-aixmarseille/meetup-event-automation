@@ -258,7 +258,15 @@ export class ManageMeetupCommunications {
 			mailPlaceholders: CommunicationPlaceholders.eventPlaceholders(
 				managed.event,
 			),
-			notificationContent: input.organizerNotificationContent,
+			notificationContent:
+				this.dependencies.organizerReadinessNotification.render({
+					repository: repositoryName,
+					issueNumber: input.issueNumber,
+					eventDate: managed.event.date,
+					reasons: managed.diagnostics
+						.filter((item) => item.severity !== "info" && !item.fixApplied)
+						.map(({ code, field }) => ({ code, field })),
+				}),
 		};
 	}
 

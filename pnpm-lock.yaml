@@ -66,23 +66,14 @@ importers:
         specifier: ^7.0.3
         version: 7.0.3
 
-  packages/adapter/github-organizer-approval:
-    dependencies:
-      '@meetup-automation/communication':
-        specifier: workspace:*
-        version: link:../../domain/communication
-      '@meetup-automation/journey':
-        specifier: workspace:*
-        version: link:../../application/journey
-      '@meetup-automation/localization':
-        specifier: workspace:*
-        version: link:../../presentation/localization
-
   packages/adapter/github-delivery-ledger:
     dependencies:
       '@meetup-automation/communication':
         specifier: workspace:*
         version: link:../../domain/communication
+      '@meetup-automation/localization':
+        specifier: workspace:*
+        version: link:../../presentation/localization
 
   packages/adapter/github-event-comment-repository:
     dependencies:
@@ -104,6 +95,18 @@ importers:
       '@meetup-automation/event':
         specifier: workspace:*
         version: link:../../domain/event
+
+  packages/adapter/github-organizer-approval:
+    dependencies:
+      '@meetup-automation/communication':
+        specifier: workspace:*
+        version: link:../../domain/communication
+      '@meetup-automation/journey':
+        specifier: workspace:*
+        version: link:../../application/journey
+      '@meetup-automation/localization':
+        specifier: workspace:*
+        version: link:../../presentation/localization
 
   packages/adapter/github-repository-dispatch-mail-gateway:
     dependencies:
@@ -200,9 +203,6 @@ importers:
 
   packages/runtime/github-actions:
     dependencies:
-      '@meetup-automation/github-organizer-approval':
-        specifier: workspace:*
-        version: link:../../adapter/github-organizer-approval
       '@actions/core':
         specifier: ^3.0.1
         version: 3.0.1
@@ -230,6 +230,9 @@ importers:
       '@meetup-automation/github-issue-form-event-document-codec':
         specifier: workspace:*
         version: link:../../adapter/github-issue-form-event-document-codec
+      '@meetup-automation/github-organizer-approval':
+        specifier: workspace:*
+        version: link:../../adapter/github-organizer-approval
       '@meetup-automation/github-repository-dispatch-mail-gateway':
         specifier: workspace:*
         version: link:../../adapter/github-repository-dispatch-mail-gateway

@@ -317,11 +317,19 @@ describe("automatic communication completion after approval", () => {
 	);
 
 	it.each([
-		["en", "Meetup event issue #42 requires organizer attention."],
-		["fr", "Le ticket du meetup #42 nécessite l'attention des organisateurs."],
+		[
+			"en",
+			"Confirm the host and add the hoster:confirmed label.",
+			"Communication status",
+		],
+		[
+			"fr",
+			"Confirmez le lieu d'accueil et ajoutez le label hoster:confirmed.",
+			"État des communications",
+		],
 	])(
 		"sends the %s organizer reminder without email approval",
-		async (locale, expected) => {
+		async (locale, expected, ledgerTitle) => {
 			// Arrange
 			vi.useFakeTimers();
 			vi.setSystemTime(new Date("2026-09-04T10:00:00Z"));
@@ -338,15 +346,58 @@ describe("automatic communication completion after approval", () => {
 			// Assert
 			expect(result.counts.accepted).toBe(1);
 			expect(JSON.parse(fetcher.mock.calls[0][1].body)).toMatchObject({
-				text: expected,
+				text: expect.stringContaining(expected),
 				channel: "organizer-channel-id",
 			});
 			expect(fetcher).toHaveBeenCalledTimes(1);
+			const notification = JSON.parse(fetcher.mock.calls[0][1].body).text;
+			expect(notification).toContain(
+				"https://github.com/organization/meetups/issues/42",
+			);
+			expect(notification).toContain("2026-09-04");
+			expect(notification).toContain("speakers:confirmed");
+			expect(notification).not.toContain("@example.invalid");
+			expect(f.comments[0]?.body).toContain(ledgerTitle);
 			expect(f.issue.body).toContain("- [ ] Slack - Public Community");
 			expect(f.createDispatchEvent).not.toHaveBeenCalled();
 			expect(f.updateIssue).not.toHaveBeenCalled();
 		},
 	);
+
+	it("includes outstanding validation fixes in the reminder and does not resend after a locale change", async () => {
+		// Arrange
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-09-04T10:00:00Z"));
+		const f = await setup({
+			body: `${eventBody("2026-09-04").replace(
+				"https://www.meetup.com/cloud-native-aix-marseille/events/123",
+				"https://www.meetup.com/fr-fr/cloud-native-aix-marseille/events/123",
+			)}\n### Aperitif\n\nMaybe\n\n### Restaurant / Bar\n\nMaybe\n`,
+		});
+		const fetcher = vi
+			.fn()
+			.mockResolvedValue({ ok: true, json: async () => ({ ok: true }) });
+		vi.stubGlobal("fetch", fetcher);
+
+		// Act
+		const first = await CommunicationRuntime.runCommunicationReconcile(f.input);
+		const second = await CommunicationRuntime.runCommunicationReconcile({
+			...f.input,
+			locale: "fr",
+		});
+		const text = JSON.parse(fetcher.mock.calls[0][1].body).text;
+
+		// Assert
+		expect(first.counts.accepted).toBe(1);
+		expect(second.counts.alreadyRecorded).toBe(1);
+		expect(fetcher).toHaveBeenCalledTimes(1);
+		expect(text).toContain("Set Aperitif to Yes or No.");
+		expect(text).toContain("Set Restaurant / Bar to Yes or No.");
+		expect(text).toContain("Meetup Link");
+		expect(text).toContain("https://github.com/organization/meetups/issues/42");
+		expect(text).not.toContain("Review the remaining validation items");
+		expect(f.createDispatchEvent).not.toHaveBeenCalled();
+	});
 
 	it("blocks communications for an invalid private catalog", async () => {
 		// Arrange
