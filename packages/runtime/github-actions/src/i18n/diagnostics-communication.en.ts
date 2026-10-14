@@ -1,4 +1,6 @@
 export const DIAGNOSTICS_COMMUNICATION_EN = {
+	"diagnostic.communication.slides-unavailable":
+		"Email dispatch is blocked because the presentation file link is missing or invalid. Configure a Drive template with template_kind=slides, reconcile assets, and pass the slides-link entry from drive-files as slides-url.",
 	"diagnostic.communication.approval-pending":
 		"Email dispatch is waiting for approval on the meetup issue.",
 	"diagnostic.communication.approval-rejected":

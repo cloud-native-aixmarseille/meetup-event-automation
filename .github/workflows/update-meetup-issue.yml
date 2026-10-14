@@ -110,29 +110,6 @@ jobs:
         with:
           actions-path: actions
 
-      - name: Create mailings GitHub App token
-        id: mailings-token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          client-id: ${{ inputs.github-app-client-id }}
-          private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] reusable workflow receives the App key explicitly to mint a repository-scoped token
-          owner: ${{ github.repository_owner }}
-          repositories: mailings
-          permission-contents: write
-
-      - name: Reconcile communications
-        id: communications
-        uses: ./../self-workflow/actions/communication/reconcile
-        with:
-          report-errors-to-issue: "false"
-          locale: ${{ inputs.locale }}
-          issue-number: ${{ github.event.issue.number }}
-          github-token: ${{ steps.app-token.outputs.token }}
-          managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
-          mailings-token: ${{ steps.mailings-token.outputs.token }}
-          slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
-          slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly to avoid secrets: inherit
-
       - name: Reconcile event feedback
         id: feedback
         uses: ./../self-workflow/actions/publication/reconcile-feedback
@@ -156,6 +133,30 @@ jobs:
           google-credentials: ${{ secrets.google-credentials }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly
           google-drive-meetup-folder-id: ${{ inputs.google-drive-meetup-folder-id }}
           google-drive-meetup-template-folder-id: ${{ inputs.google-drive-meetup-template-folder-id }}
+
+      - name: Create mailings GitHub App token
+        id: mailings-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ inputs.github-app-client-id }}
+          private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] reusable workflow receives the App key explicitly to mint a repository-scoped token
+          owner: ${{ github.repository_owner }}
+          repositories: mailings
+          permission-contents: write
+
+      - name: Reconcile communications
+        id: communications
+        uses: ./../self-workflow/actions/communication/reconcile
+        with:
+          slides-url: ${{ fromJSON(steps.assets.outputs.drive-files)['slides-link'] }}
+          report-errors-to-issue: "false"
+          locale: ${{ inputs.locale }}
+          issue-number: ${{ github.event.issue.number }}
+          github-token: ${{ steps.app-token.outputs.token }}
+          managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
+          mailings-token: ${{ steps.mailings-token.outputs.token }}
+          slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
+          slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly to avoid secrets: inherit
 
       - name: Reconcile event
         id: reconcile

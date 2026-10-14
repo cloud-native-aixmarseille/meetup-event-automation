@@ -16,6 +16,10 @@
 Reusable workflow that checks one meetup issue and applies the due
 communication and issue updates needed to keep it current.
 
+Asset reconciliation runs before communications and passes the managed
+presentation URL into email approval and delivery. See
+[presentation link requirements](../../docs/integrations/communications.md#presentation-link).
+
 Checking an approval choice in the bot's request comment triggers reconciliation.
 The job accepts human edits to bot approval requests and ignores pull requests
 and bot edits. The action verifies the current comment editor and repository

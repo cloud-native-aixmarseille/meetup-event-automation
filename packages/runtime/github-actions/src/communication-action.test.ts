@@ -44,6 +44,7 @@ describe("communication action report facts", () => {
 		for (const [name, value] of Object.entries({
 			"report-errors-to-issue": "false",
 			"issue-number": "42",
+			"slides-url": "https://docs.google.com/presentation/d/event-slides/edit",
 			"github-token": "private-token",
 			"mailings-token": "private-mailings-token",
 			"slack-token": "private-slack-token",
@@ -202,6 +203,7 @@ describe("communication action report facts", () => {
 		// Assert
 		expect(boundary.execute).toHaveBeenCalledWith(
 			expect.objectContaining({
+				slidesUrl: "https://docs.google.com/presentation/d/event-slides/edit",
 				mailingsToken: "private-mailings-token",
 				slackToken: "private-slack-token",
 				slackOrganizerChannelId: "organizer-channel-id",

@@ -9,6 +9,9 @@ inputs:
   issue-number:
     description: GitHub issue number in the caller repository containing the meetup event document to inspect.
     required: true
+  slides-url:
+    description: Direct presentation file URL from the asset action's drive-files slides-link entry. Required for due email batches; missing or invalid links block email dispatch.
+    required: false
   github-token:
     description: Token for the caller repository. Requires issues:write for approval requests, checklist completion, delivery ledger, and diagnostic comments, and metadata:read to verify approvers.
     required: true

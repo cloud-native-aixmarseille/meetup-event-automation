@@ -29,7 +29,8 @@ reconciliation.
 
 The template folder must contain at least one file and no subfolders. Each file
 needs a non-empty, unique `template_kind` in its Drive `appProperties` metadata,
-such as `slides` or `attendance`. Set this metadata through the Drive API using
+such as `slides` or `attendance`. Use `slides` for the event presentation: email
+batches require the direct URL of that managed copy. Set this metadata through the Drive API using
 the same application credentials used by the automation.
 
 Use `[EVENT_DATE:YYYY-MM-DD]` in filenames where the event date belongs. For
@@ -66,4 +67,7 @@ The direct
 [assets action](../../actions/publication/reconcile-assets/README.md) reconciles
 assets on every invocation. Call it under the shared event workflow lock. Its
 `asset-url` output is the folder URL; `drive-files` maps each
-`<template_kind>-link` to a copied file URL.
+`<template_kind>-link` to a copied file URL. Both event workflows pass the
+`slides-link` entry to communications. **Drive Link** continues to identify the
+folder; email slides links identify the presentation file. See
+[email link requirements](communications.md#presentation-link).

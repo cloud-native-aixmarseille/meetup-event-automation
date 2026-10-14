@@ -91,9 +91,9 @@ const expectedActionWiring = {
 	},
 	"update-meetup-issue": {
 		manage: [
-			"communication/reconcile",
 			"publication/reconcile-feedback",
 			"publication/reconcile-assets",
+			"communication/reconcile",
 			"event/reconcile",
 		],
 	},
@@ -106,6 +106,36 @@ const expectedActionWiring = {
 } as const;
 
 describe("public reusable workflow contracts", () => {
+	it.each([
+		["update-meetup-issue", "manage"],
+		["check-active-meetup-issues", "audit"],
+	] as const)(
+		"provides the reconciled presentation before email approval in %s",
+		async (name, job) => {
+			// Arrange
+			const assetsAction = `${automationActionPrefix}publication/reconcile-assets`;
+			const communicationAction = `${automationActionPrefix}communication/reconcile`;
+
+			// Act
+			const workflow = await readWorkflow(name);
+			const steps = workflow.jobs?.[job]?.steps ?? [];
+			const assetsIndex = steps.findIndex((step) => step.uses === assetsAction);
+			const communicationIndex = steps.findIndex(
+				(step) => step.uses === communicationAction,
+			);
+
+			// Assert
+			expect(assetsIndex).toBeGreaterThanOrEqual(0);
+			expect(steps[assetsIndex]?.id).toBe("assets");
+			expect(communicationIndex).toBeGreaterThan(assetsIndex);
+			expect(steps[communicationIndex]?.with?.["slides-url"]).toBe(
+				workflowExpression(
+					"fromJSON(steps.assets.outputs.drive-files)['slides-link']",
+				),
+			);
+		},
+	);
+
 	it.each(Object.entries(publicWorkflowContracts))(
 		"publishes the exact caller contract and generated documentation for %s",
 		async (name, expected) => {

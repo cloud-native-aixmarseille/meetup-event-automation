@@ -31,6 +31,13 @@ export class ApproveCommunicationBatch {
 			if (preview.diagnostics.some(({ severity }) => severity === "error"))
 				throw new Error("Communication approval preflight failed");
 			if (preview.counts.due === 0) return false;
+			if (!input.mailPlaceholders?.eventSlidesUrl) {
+				diagnostics.push({
+					code: "communication.slides-unavailable",
+					severity: "error",
+				});
+				return false;
+			}
 			const batch = planner.execute({
 				...input,
 				now,

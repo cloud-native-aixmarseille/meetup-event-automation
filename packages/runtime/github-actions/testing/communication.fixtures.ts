@@ -49,6 +49,7 @@ export function runtimeInput(
 		owner: "organization",
 		repo: "meetups",
 		managedCommentAuthor: "automation[bot]",
+		slidesUrl: "https://docs.google.com/presentation/d/event-deck/edit",
 		workspaceRoot,
 		...override,
 	};

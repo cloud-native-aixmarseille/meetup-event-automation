@@ -43,6 +43,8 @@ const COMMUNICATION_MESSAGES: Readonly<
 const RUNTIME_MESSAGES: Readonly<
 	Record<CommunicationJourneyDiagnostic["code"], string>
 > = {
+	"communication.slides-unavailable":
+		"Email dispatch requires a valid presentation file URL.",
 	"communication.approval-pending":
 		"Email dispatch is waiting for approval on the meetup issue.",
 	"communication.approval-rejected":
@@ -82,6 +84,7 @@ export class CommunicationAction {
 		const outcome = await CommunicationRuntime.runCommunicationReconcile({
 			locale: messages.locale,
 			issueNumber,
+			slidesUrl: core.getInput("slides-url"),
 
 			githubToken: core.getInput("github-token", { required: true }),
 			mailingsToken: core.getInput("mailings-token", { required: true }),
