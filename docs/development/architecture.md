@@ -23,7 +23,7 @@ consumer settings.
 | ------------------------------------ | --------------------------------------------------------------------------------------------------------- |
 | `packages/domain/event`              | Event model, field rules, readiness, lifecycle, reconciliation, event/document/comment ports, clock       |
 | `packages/domain/referential`        | Catalog validation, stable participant IDs, reference resolution, issue-form choices, catalog port        |
-| `packages/domain/communication`      | Due-message planning, approval facts, idempotency, delivery state, approval/ledger/gateway/clock ports    |
+| `packages/domain/communication`      | Due-message planning, idempotency, delivery state, ledger/gateway/clock ports                             |
 | `packages/domain/publication`        | Publication URL rules, manual checklist evaluation, asset reconciliation, asset and feedback ports        |
 | `packages/application/journey`       | Cross-domain orchestration, configuration defaults, public result envelope, issue-form projection port    |
 | `packages/adapter/*`                 | Concrete implementations of owned ports: GitHub, CSV, YAML, Drive, OpenFeedback, Kutt, Slack, system time |
@@ -144,9 +144,28 @@ snapshots before writing or dispatching. GitHub issue writes have no
 transactional compare-and-set guarantee, so a final race with a human edit
 remains possible.
 
-Communication approval binds a trusted maintainer action to an immutable issue
-snapshot and message-affecting facts. Delivery reserves an intent as `pending`
-before calling a gateway and marks it `accepted` after acknowledgement. Pending
+Communication delivery uses the current event and unfinished email tasks.
+Use `organizer` for the meetup management role in domain models, ports, and
+presentation. GitHub's `admin` value remains a repository permission returned by
+the API; it is not a second meetup role. Organizer notifications receive their
+explicit destination through `slack-organizer-channel-id`. Public Slack
+announcement tasks are manual and do not share this routing.
+
+The journey's `OrganizerApproval` port gates each due email batch. The GitHub
+adapter owns trusted request comments, localized approval checkboxes, GitHub GraphQL
+editor verification, current write-permission checks, and issue/Slack
+presentation. Accepted choices remain human edits; bot rewrites would replace
+the editor identity used on later runs. Both supported catalogs are recognized
+when checking request integrity, so locale changes preserve a valid approval.
+Only the communication domain's batch fingerprint and public facts cross this
+boundary. Requests are independent
+of delivery records: approval never clears a delivery reservation. Partial
+completion does not invalidate the full batch fingerprint. Slack notification
+reservations prevent automatic retries after ambiguous acknowledgements. The
+journey maps task names to recipient groups, and records completion through the
+event codec only after all recipients in a group have durable accepted records.
+It rechecks the source before dispatch and before updating completion. Delivery
+reserves an intent as `pending` before calling a gateway and marks it `accepted` after acknowledgement. Pending
 and uncertain intents are not automatically resent. A definitively deferred
 attempt releases its reservation for a safe retry. The GitHub ledger depends on
 the shared workflow lock; do not dispatch outside the official workflows or
@@ -171,7 +190,7 @@ recovery is documented under [integrations](../README.md#integrations).
 - Use safe diagnostic templates and codes at output boundaries. Do not publish
   raw exception messages or arbitrary diagnostic field paths. Public
   communication identifiers and ledger keys use SHA-256 digests.
-- Trust managed diagnostic, approval, and ledger comments only when authored by
+- Trust managed diagnostic and ledger comments only when authored by
   the configured GitHub App bot. A marker alone does not establish trust.
 - Read catalogs from the checked-out revision. Parse action inputs at the
   boundary and pass issue text through typed APIs or data files/environment

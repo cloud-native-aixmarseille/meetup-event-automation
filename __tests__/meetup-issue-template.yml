@@ -93,6 +93,8 @@
       "label": "Communication"
       "description": "Select communication items to be prepared"
       "options":
+        - "label": "Mail introduction speakers"
+        - "label": "Mail introduction hoster"
         - "label": "Cover image"
         - "label": "Announcement"
         - "label": "Slack - AixMarseille.Tech"

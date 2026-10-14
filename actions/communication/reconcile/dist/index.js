@@ -31769,6 +31769,10 @@ var MessageLocalizer = class _MessageLocalizer {
 
 // packages/runtime/github-actions/src/i18n/diagnostics-communication.en.ts
 var DIAGNOSTICS_COMMUNICATION_EN = {
+  "diagnostic.communication.approval-pending": "Email dispatch is waiting for approval on the meetup issue.",
+  "diagnostic.communication.approval-rejected": "The email batch was rejected. Clear Reject and check Approve in the request comment before sending.",
+  "diagnostic.communication.approval-unavailable": "The organizer approval could not be verified or persisted; email dispatch is blocked.",
+  "diagnostic.communication.approval-notification-failed": "The Slack approval notification was not confirmed. Review the request on the meetup issue.",
   "diagnostic.communication.duplicate-intent": "A duplicate communication intent was ignored.",
   "diagnostic.communication.gateway-delivery-uncertain": "A gateway could not confirm delivery.",
   "diagnostic.communication.gateway-delivery-rejected": "A gateway definitively rejected the delivery request.",
@@ -31787,13 +31791,7 @@ var DIAGNOSTICS_COMMUNICATION_EN = {
   "diagnostic.communication.occurrence-status-unknown": "The event occurrence status must be explicit.",
   "diagnostic.communication.delivery-already-recorded": "The delivery ledger already contains this intent.",
   "diagnostic.communication.dispatch-disabled-by-config": "Communication dispatch is disabled by repository configuration.",
-  "diagnostic.communication.approval-label-missing": "Communications require the configured maintainer approval label.",
-  "diagnostic.communication.approval-missing": "Communications require a maintainer-owned approval snapshot.",
-  "diagnostic.communication.approval-stale": "Message-affecting event facts changed after approval; remove and re-add the approval label.",
-  "diagnostic.communication.approval-capture-unauthorized": "The approval label actor does not have sufficient repository permission.",
-  "diagnostic.communication.approval-trigger-snapshot-missing": "The approval label event did not contain an immutable issue snapshot.",
-  "diagnostic.communication.approval-trigger-stale": "The issue changed after the approval label event; remove and re-add the approval label.",
-  "diagnostic.communication.approval-repository-failed": "The maintainer approval record could not be verified safely.",
+  "diagnostic.communication.checklist-update-failed": "Email dispatch results are recorded, but the checklist could not be updated. Run reconciliation again to recover without resending accepted messages.",
   "diagnostic.communication.event-skipped": "The issue is not a configured meetup event.",
   "diagnostic.communication.event-concurrently-modified": "The meetup issue changed while communications were being reconciled; no delivery was attempted.",
   "diagnostic.communication.event-references-unresolved": "Event participants could not be resolved to stable identifiers.",
@@ -31803,6 +31801,10 @@ var DIAGNOSTICS_COMMUNICATION_EN = {
 
 // packages/runtime/github-actions/src/i18n/diagnostics-communication.fr.ts
 var DIAGNOSTICS_COMMUNICATION_FR = {
+  "diagnostic.communication.approval-pending": "Les e-mails attendent une confirmation dans le ticket du meetup.",
+  "diagnostic.communication.approval-rejected": "Le lot d'e-mails a \xE9t\xE9 refus\xE9. D\xE9cochez Refuser et cochez Approuver dans la demande avant l'envoi.",
+  "diagnostic.communication.approval-unavailable": "La confirmation des organisateurs n'a pas pu \xEAtre v\xE9rifi\xE9e ou enregistr\xE9e ; l'envoi des e-mails est bloqu\xE9.",
+  "diagnostic.communication.approval-notification-failed": "La notification Slack de confirmation n'a pas \xE9t\xE9 confirm\xE9e. Consultez la demande dans le ticket du meetup.",
   "diagnostic.communication.duplicate-intent": "Une intention de communication en double a \xE9t\xE9 ignor\xE9e.",
   "diagnostic.communication.gateway-delivery-uncertain": "Un service n'a pas pu confirmer la livraison.",
   "diagnostic.communication.gateway-delivery-rejected": "Un service a refus\xE9 d\xE9finitivement la demande de livraison.",
@@ -31821,13 +31823,7 @@ var DIAGNOSTICS_COMMUNICATION_FR = {
   "diagnostic.communication.occurrence-status-unknown": "Le statut de l'\xE9v\xE9nement doit \xEAtre explicite.",
   "diagnostic.communication.delivery-already-recorded": "Le registre des livraisons contient d\xE9j\xE0 cette intention.",
   "diagnostic.communication.dispatch-disabled-by-config": "L'envoi des communications est d\xE9sactiv\xE9 par la configuration du d\xE9p\xF4t.",
-  "diagnostic.communication.approval-label-missing": "Les communications n\xE9cessitent le label d'approbation configur\xE9.",
-  "diagnostic.communication.approval-missing": "Les communications n\xE9cessitent un instantan\xE9 approuv\xE9 par un responsable.",
-  "diagnostic.communication.approval-stale": "Des informations affectant les messages ont chang\xE9 depuis l'approbation ; retirez puis ajoutez \xE0 nouveau le label d'approbation.",
-  "diagnostic.communication.approval-capture-unauthorized": "L'auteur du label d'approbation n'a pas les droits suffisants sur le d\xE9p\xF4t.",
-  "diagnostic.communication.approval-trigger-snapshot-missing": "L'\xE9v\xE9nement d'ajout du label ne contient pas d'instantan\xE9 immuable de l'issue.",
-  "diagnostic.communication.approval-trigger-stale": "L'issue a chang\xE9 depuis l'ajout du label ; retirez puis ajoutez \xE0 nouveau le label d'approbation.",
-  "diagnostic.communication.approval-repository-failed": "L'approbation du responsable n'a pas pu \xEAtre v\xE9rifi\xE9e de mani\xE8re s\xFBre.",
+  "diagnostic.communication.checklist-update-failed": "Les r\xE9sultats des envois sont enregistr\xE9s, mais la liste de t\xE2ches n'a pas pu \xEAtre mise \xE0 jour. Relancez la r\xE9conciliation pour la restaurer sans renvoyer les messages accept\xE9s.",
   "diagnostic.communication.event-skipped": "L'issue n'est pas un \xE9v\xE9nement meetup configur\xE9.",
   "diagnostic.communication.event-concurrently-modified": "L'issue a chang\xE9 pendant la pr\xE9paration des communications ; aucun envoi n'a \xE9t\xE9 tent\xE9.",
   "diagnostic.communication.event-references-unresolved": "Les participants n'ont pas pu \xEAtre associ\xE9s \xE0 des identifiants stables.",
@@ -32078,7 +32074,7 @@ var EN_MESSAGES = {
   "report.communication.planned": "Planned: {planned, number}; due: {due, number}; dispatched: {dispatched, number}.",
   "report.communication.accepted": "Accepted: {accepted, number}; already recorded: {recorded, number}; deferred: {deferred, number}.",
   "report.communication.uncertain": "Uncertain: {uncertain, number}; rejected: {rejected, number}.",
-  "report.communication.guidance": "Review approval and delivery diagnostics before retrying.",
+  "report.communication.guidance": "Review checklist and delivery diagnostics before retrying.",
   "report.communication.uncertain-guidance": "Reconcile uncertain deliveries with the provider and ledger before any resend.",
   "report.communication.issue-reported": "Communication diagnostics are recorded in the meetup issue; reported errors do not fail this audit.",
   "report.communication.failed": "Communication reconciliation failed; inspect the diagnostic annotations and job summary.",
@@ -32142,7 +32138,7 @@ var FR_MESSAGES = {
   "report.communication.planned": "Planifi\xE9es : {planned, number} ; \xE0 envoyer : {due, number} ; tentatives d'envoi : {dispatched, number}.",
   "report.communication.accepted": "Accept\xE9es : {accepted, number} ; d\xE9j\xE0 enregistr\xE9es : {recorded, number} ; diff\xE9r\xE9es : {deferred, number}.",
   "report.communication.uncertain": "R\xE9sultats incertains : {uncertain, number} ; rejets : {rejected, number}.",
-  "report.communication.guidance": "Consultez les diagnostics d'approbation et d'envoi avant de r\xE9essayer.",
+  "report.communication.guidance": "Consultez les diagnostics de liste de t\xE2ches et d'envoi avant de r\xE9essayer.",
   "report.communication.uncertain-guidance": "V\xE9rifiez les envois incertains aupr\xE8s du fournisseur et dans le registre avant tout nouvel envoi.",
   "report.communication.issue-reported": "Les diagnostics de communication sont enregistr\xE9s dans le ticket du meetup ; les erreurs signal\xE9es ne font pas \xE9chouer cette v\xE9rification.",
   "report.communication.failed": "La v\xE9rification des communications a \xE9chou\xE9 ; consultez les annotations de diagnostic et le r\xE9sum\xE9 de la t\xE2che.",
@@ -36468,250 +36464,6 @@ function getOctokit(token, options, ...additionalPlugins) {
   return new GitHubWithPlugins(getOctokitOptions(token, options));
 }
 
-// packages/adapter/github-event-repository/src/github-event-repository-configuration-error.ts
-var GitHubEventRepositoryConfigurationError = class extends Error {
-  constructor(message) {
-    super(message);
-    this.name = "GitHubEventRepositoryConfigurationError";
-  }
-};
-
-// packages/adapter/github-event-repository/src/github-event-repository-response-error.ts
-var GitHubEventRepositoryResponseError = class extends Error {
-  constructor(message) {
-    super(message);
-    this.name = "GitHubEventRepositoryResponseError";
-  }
-};
-
-// packages/adapter/github-event-repository/src/github-event-repository-scope-error.ts
-var GitHubEventRepositoryScopeError = class extends Error {
-  constructor(expected, received) {
-    super(`GitHub event repository is scoped to ${expected}, not ${received}`);
-    this.name = "GitHubEventRepositoryScopeError";
-  }
-};
-
-// packages/adapter/github-event-repository/src/github-event-repository.ts
-var GitHubEventRepository = class _GitHubEventRepository {
-  constructor(client, options) {
-    this.client = client;
-    this.owner = _GitHubEventRepository.requireRepositoryPart(
-      options.owner,
-      "owner"
-    );
-    this.repo = _GitHubEventRepository.requireRepositoryPart(
-      options.repo,
-      "repo"
-    );
-    this.repositoryName = `${this.owner}/${this.repo}`;
-  }
-  client;
-  owner;
-  repo;
-  repositoryName;
-  async find(identity) {
-    this.assertScope(identity.repository);
-    try {
-      const response = await this.client.rest.issues.get({
-        owner: this.owner,
-        repo: this.repo,
-        issue_number: identity.issueNumber
-      });
-      const document = _GitHubEventRepository.mapGitHubIssueDocument(
-        response.data,
-        this.repositoryName
-      );
-      if (document && document.identity.issueNumber !== identity.issueNumber) {
-        throw new GitHubEventRepositoryResponseError(
-          `GitHub returned issue ${document.identity.issueNumber} while ${identity.issueNumber} was requested`
-        );
-      }
-      return document;
-    } catch (error2) {
-      if (_GitHubEventRepository.isNotFoundError(error2)) {
-        return null;
-      }
-      throw error2;
-    }
-  }
-  async applyPatch(identity, patch) {
-    this.assertScope(identity.repository);
-    const changes = {};
-    if (patch.issueTitle !== void 0) {
-      changes.title = patch.issueTitle;
-    }
-    if (patch.body !== void 0) {
-      changes.body = patch.body;
-    }
-    if (patch.labels !== void 0) {
-      changes.labels = [...patch.labels];
-    }
-    if (Object.keys(changes).length === 0) {
-      return;
-    }
-    await this.client.rest.issues.update({
-      owner: this.owner,
-      repo: this.repo,
-      issue_number: identity.issueNumber,
-      ...changes
-    });
-  }
-  async listPage(query) {
-    this.assertScope(query.repository);
-    const page = _GitHubEventRepository.parseCursor(query.cursor);
-    const pageSize = _GitHubEventRepository.parsePageSize(query.pageSize);
-    const parameters = {
-      owner: this.owner,
-      repo: this.repo,
-      state: query.includeClosed ? "all" : "open",
-      page,
-      per_page: pageSize
-    };
-    if (query.label !== void 0 && query.label.trim() !== "") {
-      parameters.labels = query.label.trim();
-    }
-    const response = await this.client.rest.issues.listForRepo(parameters);
-    if (!Array.isArray(response.data)) {
-      throw new GitHubEventRepositoryResponseError(
-        "GitHub issue list response must contain an array"
-      );
-    }
-    const items = response.data.map(
-      (issue2) => _GitHubEventRepository.mapGitHubIssueDocument(
-        issue2,
-        this.repositoryName
-      )
-    ).filter((issue2) => issue2 !== null);
-    const linkHeader = _GitHubEventRepository.readHeader(
-      response.headers,
-      "link"
-    );
-    const hasNextPage = linkHeader === void 0 ? response.data.length === pageSize : /<[^>]+>;\s*rel="next"/.test(linkHeader);
-    return {
-      items: Object.freeze(items),
-      ...hasNextPage ? { nextCursor: String(page + 1) } : {}
-    };
-  }
-  assertScope(repository) {
-    if (repository.toLowerCase() !== this.repositoryName.toLowerCase()) {
-      throw new GitHubEventRepositoryScopeError(
-        this.repositoryName,
-        repository
-      );
-    }
-  }
-  static requireRepositoryPart(value, name) {
-    const normalized = value.trim();
-    if (normalized === "" || normalized.includes("/")) {
-      throw new GitHubEventRepositoryConfigurationError(
-        `GitHub ${name} must be a non-empty repository name segment`
-      );
-    }
-    return normalized;
-  }
-  /** Map one GitHub issue response or webhook snapshot into the domain document. */
-  static mapGitHubIssueDocument(data, repository) {
-    const issue2 = _GitHubEventRepository.asRecord(data, "GitHub issue");
-    if (issue2.pull_request !== void 0 && issue2.pull_request !== null) {
-      return null;
-    }
-    if (!Number.isInteger(issue2.number) || Number(issue2.number) <= 0) {
-      throw new GitHubEventRepositoryResponseError(
-        "GitHub issue number must be a positive integer"
-      );
-    }
-    if (typeof issue2.title !== "string") {
-      throw new GitHubEventRepositoryResponseError(
-        "GitHub issue title must be a string"
-      );
-    }
-    if (issue2.state !== "open" && issue2.state !== "closed") {
-      throw new GitHubEventRepositoryResponseError(
-        "GitHub issue state must be open or closed"
-      );
-    }
-    if (issue2.body !== null && typeof issue2.body !== "string") {
-      throw new GitHubEventRepositoryResponseError(
-        "GitHub issue body must be a string or null"
-      );
-    }
-    if (!Array.isArray(issue2.labels)) {
-      throw new GitHubEventRepositoryResponseError(
-        "GitHub issue labels must be an array"
-      );
-    }
-    return {
-      identity: { repository, issueNumber: Number(issue2.number) },
-      issueState: issue2.state,
-      issueTitle: issue2.title,
-      labels: _GitHubEventRepository.mapLabels(issue2.labels),
-      body: issue2.body ?? ""
-    };
-  }
-  static mapLabels(labels) {
-    const result = [];
-    for (const label of labels) {
-      let name;
-      if (typeof label === "string") {
-        name = label;
-      } else if (_GitHubEventRepository.isRecord(label) && typeof label.name === "string") {
-        name = label.name;
-      }
-      if (name && !result.includes(name)) {
-        result.push(name);
-      }
-    }
-    return Object.freeze(result);
-  }
-  static parseCursor(cursor) {
-    if (cursor === void 0) {
-      return 1;
-    }
-    if (!/^[1-9]\d*$/.test(cursor)) {
-      throw new GitHubEventRepositoryConfigurationError(
-        `Invalid GitHub pagination cursor "${cursor}"`
-      );
-    }
-    return Number(cursor);
-  }
-  static parsePageSize(pageSize) {
-    if (pageSize === void 0) {
-      return 100;
-    }
-    if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) {
-      throw new GitHubEventRepositoryConfigurationError(
-        "GitHub page size must be an integer between 1 and 100"
-      );
-    }
-    return pageSize;
-  }
-  static isNotFoundError(error2) {
-    if (!_GitHubEventRepository.isRecord(error2)) {
-      return false;
-    }
-    if (error2.status === 404) {
-      return true;
-    }
-    return _GitHubEventRepository.isRecord(error2.response) && error2.response.status === 404;
-  }
-  static readHeader(headers, name) {
-    const value = headers?.[name];
-    return typeof value === "string" ? value : void 0;
-  }
-  static asRecord(value, label) {
-    if (!_GitHubEventRepository.isRecord(value)) {
-      throw new GitHubEventRepositoryResponseError(
-        `${label} must be an object`
-      );
-    }
-    return value;
-  }
-  static isRecord(value) {
-    return typeof value === "object" && value !== null;
-  }
-};
-
 // packages/domain/publication/src/domain/publication-link-evaluation.ts
 var PublicationLinkEvaluation = class _PublicationLinkEvaluation {
   static evaluateLink({
@@ -37009,7 +36761,6 @@ var AutomationConfigFactory = class {
         "readiness-window-days": 7,
         "mailings-repository": repositoryOwner ? `${repositoryOwner}/mailings` : "",
         "slack-enabled": true,
-        "approval-label": "communication:approved",
         "dispatch-enabled": Boolean(repositoryOwner),
         "policy-version": 1
       },
@@ -38469,38 +38220,6 @@ var MeetupEventMigration = class _MeetupEventMigration {
   }
 };
 
-// packages/domain/communication/src/approval-contracts.ts
-var COMMUNICATION_APPROVAL_SCHEMA_VERSION = 1;
-
-// packages/domain/communication/src/approval-shape.ts
-var ApprovalShape = class {
-  static isOccurrenceStatus(value) {
-    return typeof value === "string" && ["scheduled", "postponed", "held", "cancelled", "unknown"].includes(value);
-  }
-  static isReadiness(value) {
-    return value === "ready" || value === "not-ready";
-  }
-  static isNullableString(value) {
-    return value === null || typeof value === "string";
-  }
-  static isExactRecord(value, expectedKeys) {
-    if (!value || typeof value !== "object" || Array.isArray(value)) {
-      return false;
-    }
-    const keys = Object.keys(value).sort();
-    const expected = [...expectedKeys].sort();
-    return keys.length === expected.length && keys.every((key, index) => key === expected[index]);
-  }
-};
-
-// packages/domain/communication/src/communication-approval-snapshot-error.ts
-var CommunicationApprovalSnapshotError = class extends Error {
-  constructor(message) {
-    super(message);
-    this.name = "CommunicationApprovalSnapshotError";
-  }
-};
-
 // packages/domain/communication/src/idempotency.ts
 var SAFE_IDENTIFIER_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$/;
 var CommunicationIdempotency = class _CommunicationIdempotency {
@@ -38527,307 +38246,6 @@ var CommunicationIdempotency = class _CommunicationIdempotency {
       `recipient=${encodeURIComponent(components.recipientId)}`,
       `policy=${encodeURIComponent(components.policyVersion)}`
     ].join("|");
-  }
-};
-
-// packages/domain/communication/src/approval-value-validation.ts
-var ApprovalValueValidation = class {
-  static requireSafeIdentifier(value, field) {
-    if (typeof value !== "string") {
-      throw new CommunicationApprovalSnapshotError(
-        `${field} must be a stable, PII-free identifier`
-      );
-    }
-    const normalized = value.trim();
-    if (!CommunicationIdempotency.isSafeCommunicationIdentifier(normalized)) {
-      throw new CommunicationApprovalSnapshotError(
-        `${field} must be a stable, PII-free identifier`
-      );
-    }
-    return normalized;
-  }
-  static requireSha256Fingerprint(value, field) {
-    if (typeof value !== "string" || !/^sha256:[0-9a-f]{64}$/.test(value)) {
-      throw new CommunicationApprovalSnapshotError(
-        `${field} must be a SHA-256 fingerprint`
-      );
-    }
-    return value;
-  }
-  static requireIsoDate(value) {
-    if (typeof value !== "string") {
-      throw new CommunicationApprovalSnapshotError(
-        "eventDate must be a real date formatted as YYYY-MM-DD"
-      );
-    }
-    const normalized = value.trim();
-    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(normalized);
-    if (!match) {
-      throw new CommunicationApprovalSnapshotError(
-        "eventDate must be a real date formatted as YYYY-MM-DD"
-      );
-    }
-    const year = Number(match[1]);
-    const month = Number(match[2]);
-    const day = Number(match[3]);
-    const parsed = new Date(Date.UTC(year, month - 1, day));
-    if (parsed.getUTCFullYear() !== year || parsed.getUTCMonth() !== month - 1 || parsed.getUTCDate() !== day) {
-      throw new CommunicationApprovalSnapshotError(
-        "eventDate must be a real date formatted as YYYY-MM-DD"
-      );
-    }
-    return normalized;
-  }
-  static normalizePublicUrl(value, field) {
-    if (value === null) {
-      return null;
-    }
-    if (typeof value !== "string") {
-      throw new CommunicationApprovalSnapshotError(
-        `${field} publication URL must be an HTTPS URL or null`
-      );
-    }
-    const normalized = value.trim().replace(/\/$/, "");
-    if (!normalized) {
-      return null;
-    }
-    try {
-      const url = new URL(normalized);
-      if (url.protocol !== "https:" || url.username || url.password) {
-        throw new Error("not a public HTTPS URL");
-      }
-    } catch {
-      throw new CommunicationApprovalSnapshotError(
-        `${field} publication URL must be an HTTPS URL or null`
-      );
-    }
-    return normalized;
-  }
-  static invalidSnapshot() {
-    return new CommunicationApprovalSnapshotError(
-      "Communication approval snapshot has an invalid schema"
-    );
-  }
-};
-
-// packages/domain/communication/src/approval-facts.ts
-var ApprovalFacts = class _ApprovalFacts {
-  static normalizeFacts(facts) {
-    const automationRevision = ApprovalValueValidation.requireSafeIdentifier(
-      facts.automationRevision,
-      "automationRevision"
-    );
-    const eventId = ApprovalValueValidation.requireSafeIdentifier(
-      facts.eventId,
-      "eventId"
-    );
-    const eventDate = ApprovalValueValidation.requireIsoDate(facts.eventDate);
-    if (!ApprovalShape.isOccurrenceStatus(facts.occurrenceStatus)) {
-      throw new CommunicationApprovalSnapshotError(
-        "occurrenceStatus must be a supported event status"
-      );
-    }
-    if (!ApprovalShape.isReadiness(facts.readiness)) {
-      throw new CommunicationApprovalSnapshotError(
-        "readiness must be ready or not-ready"
-      );
-    }
-    const policyVersion = ApprovalValueValidation.requireSafeIdentifier(
-      facts.policyVersion,
-      "policyVersion"
-    );
-    const mailingsRepository = ApprovalValueValidation.requireSafeIdentifier(
-      facts.mailingsRepository,
-      "mailingsRepository"
-    );
-    const notificationDestinationFingerprint = _ApprovalFacts.notificationFingerprint(facts);
-    if (typeof facts.confirmations?.host !== "boolean" || typeof facts.confirmations?.speakers !== "boolean") {
-      throw new CommunicationApprovalSnapshotError(
-        "confirmations must contain host and speakers booleans"
-      );
-    }
-    const hostId = facts.hostId === null ? null : ApprovalValueValidation.requireSafeIdentifier(facts.hostId, "hostId");
-    const speakerIds = _ApprovalFacts.speakerIds(facts);
-    const { confirmations, publicationUrls } = _ApprovalFacts.publication(facts);
-    return Object.freeze({
-      automationRevision,
-      eventId,
-      eventDate,
-      occurrenceStatus: facts.occurrenceStatus,
-      readiness: facts.readiness,
-      policyVersion,
-      mailingsRepository,
-      notificationEnabled: facts.notificationEnabled,
-      notificationDestinationFingerprint,
-      confirmations,
-      hostId,
-      speakerIds: Object.freeze(speakerIds),
-      publicationUrls
-    });
-  }
-  static factsKey(facts) {
-    return JSON.stringify(facts);
-  }
-  static compareText(left, right) {
-    return left < right ? -1 : left > right ? 1 : 0;
-  }
-  static notificationFingerprint(facts) {
-    if (typeof facts.notificationEnabled !== "boolean") {
-      throw new CommunicationApprovalSnapshotError(
-        "notificationEnabled must be a boolean"
-      );
-    }
-    const notificationDestinationFingerprint = facts.notificationDestinationFingerprint === null ? null : ApprovalValueValidation.requireSha256Fingerprint(
-      facts.notificationDestinationFingerprint,
-      "notificationDestinationFingerprint"
-    );
-    if (!facts.notificationEnabled && notificationDestinationFingerprint !== null) {
-      throw new CommunicationApprovalSnapshotError(
-        "notificationDestinationFingerprint must be null when notifications are disabled"
-      );
-    }
-    return notificationDestinationFingerprint;
-  }
-  static speakerIds(facts) {
-    if (!Array.isArray(facts.speakerIds)) {
-      throw new CommunicationApprovalSnapshotError(
-        "speakerIds must be an array of stable identifiers"
-      );
-    }
-    const speakerIds = [
-      ...new Set(
-        facts.speakerIds.map(
-          (id) => ApprovalValueValidation.requireSafeIdentifier(id, "speakerIds")
-        )
-      )
-    ].sort(_ApprovalFacts.compareText);
-    return speakerIds;
-  }
-  static publication(facts) {
-    if (!facts.publicationUrls || typeof facts.publicationUrls !== "object") {
-      throw new CommunicationApprovalSnapshotError(
-        "publicationUrls must contain public event URL fields"
-      );
-    }
-    const confirmations = Object.freeze({
-      host: facts.confirmations.host,
-      speakers: facts.confirmations.speakers
-    });
-    const publicationUrls = Object.freeze({
-      meetup: ApprovalValueValidation.normalizePublicUrl(
-        facts.publicationUrls.meetup,
-        "meetup"
-      ),
-      community: ApprovalValueValidation.normalizePublicUrl(
-        facts.publicationUrls.community,
-        "community"
-      ),
-      assets: ApprovalValueValidation.normalizePublicUrl(
-        facts.publicationUrls.assets,
-        "assets"
-      )
-    });
-    return { confirmations, publicationUrls };
-  }
-};
-
-// packages/domain/communication/src/communication-approval.ts
-var CommunicationApproval = class _CommunicationApproval {
-  /**
-   * Create the canonical approval representation. Speaker identity is a set, so
-   * IDs are trimmed, deduplicated, and sorted. Public URLs are trimmed and have
-   * one trailing slash removed, matching event/publication normalization.
-   */
-  static createCommunicationApprovalSnapshot(facts) {
-    return Object.freeze({
-      schemaVersion: COMMUNICATION_APPROVAL_SCHEMA_VERSION,
-      facts: ApprovalFacts.normalizeFacts(facts)
-    });
-  }
-  /**
-   * Compare approval-bound facts. Speaker ordering and duplicate agenda
-   * appearances do not invalidate approval; every other normalized fact must be
-   * exactly equal.
-   */
-  static communicationApprovalFactsEqual(left, right) {
-    try {
-      return ApprovalFacts.factsKey(ApprovalFacts.normalizeFacts(left)) === ApprovalFacts.factsKey(ApprovalFacts.normalizeFacts(right));
-    } catch {
-      return false;
-    }
-  }
-  static communicationApprovalMatches(approved, currentFacts) {
-    return approved?.schemaVersion === COMMUNICATION_APPROVAL_SCHEMA_VERSION && _CommunicationApproval.communicationApprovalFactsEqual(
-      approved.facts,
-      currentFacts
-    );
-  }
-  /** Parse a strict, technology-independent representation from an adapter. */
-  static parseCommunicationApprovalSnapshot(value) {
-    if (!ApprovalShape.isExactRecord(value, ["schemaVersion", "facts"])) {
-      throw ApprovalValueValidation.invalidSnapshot();
-    }
-    if (value.schemaVersion !== COMMUNICATION_APPROVAL_SCHEMA_VERSION) {
-      throw ApprovalValueValidation.invalidSnapshot();
-    }
-    const facts = value.facts;
-    _CommunicationApproval.assertFacts(facts);
-    return _CommunicationApproval.createCommunicationApprovalSnapshot({
-      automationRevision: facts.automationRevision,
-      eventId: facts.eventId,
-      eventDate: facts.eventDate,
-      occurrenceStatus: facts.occurrenceStatus,
-      readiness: facts.readiness,
-      policyVersion: facts.policyVersion,
-      mailingsRepository: facts.mailingsRepository,
-      notificationEnabled: facts.notificationEnabled,
-      notificationDestinationFingerprint: facts.notificationDestinationFingerprint,
-      confirmations: {
-        host: facts.confirmations.host,
-        speakers: facts.confirmations.speakers
-      },
-      hostId: facts.hostId,
-      speakerIds: facts.speakerIds,
-      publicationUrls: {
-        meetup: facts.publicationUrls.meetup,
-        community: facts.publicationUrls.community,
-        assets: facts.publicationUrls.assets
-      }
-    });
-  }
-  static assertFacts(facts) {
-    if (!ApprovalShape.isExactRecord(facts, [
-      "automationRevision",
-      "eventId",
-      "eventDate",
-      "occurrenceStatus",
-      "readiness",
-      "policyVersion",
-      "mailingsRepository",
-      "notificationEnabled",
-      "notificationDestinationFingerprint",
-      "confirmations",
-      "hostId",
-      "speakerIds",
-      "publicationUrls"
-    ])) {
-      throw ApprovalValueValidation.invalidSnapshot();
-    }
-    if (!ApprovalShape.isExactRecord(facts.confirmations, ["host", "speakers"])) {
-      throw ApprovalValueValidation.invalidSnapshot();
-    }
-    if (!ApprovalShape.isExactRecord(facts.publicationUrls, [
-      "meetup",
-      "community",
-      "assets"
-    ])) {
-      throw ApprovalValueValidation.invalidSnapshot();
-    }
-    if (typeof facts.automationRevision !== "string" || typeof facts.eventId !== "string" || typeof facts.eventDate !== "string" || !ApprovalShape.isOccurrenceStatus(facts.occurrenceStatus) || !ApprovalShape.isReadiness(facts.readiness) || typeof facts.policyVersion !== "string" || typeof facts.mailingsRepository !== "string" || typeof facts.notificationEnabled !== "boolean" || !ApprovalShape.isNullableString(
-      facts.notificationDestinationFingerprint
-    ) || typeof facts.confirmations.host !== "boolean" || typeof facts.confirmations.speakers !== "boolean" || facts.hostId !== null && typeof facts.hostId !== "string" || !Array.isArray(facts.speakerIds) || !facts.speakerIds.every((id) => typeof id === "string") || !ApprovalShape.isNullableString(facts.publicationUrls.meetup) || !ApprovalShape.isNullableString(facts.publicationUrls.community) || !ApprovalShape.isNullableString(facts.publicationUrls.assets)) {
-      throw ApprovalValueValidation.invalidSnapshot();
-    }
   }
 };
 
@@ -39133,7 +38551,7 @@ var PlanCommunications = class {
 };
 
 // packages/domain/communication/src/communication-results.ts
-var CommunicationResults = class {
+var CommunicationResults = class _CommunicationResults {
   static recordExisting(intentId, entry, counts, diagnostics) {
     counts.alreadyRecorded += 1;
     diagnostics.push({
@@ -39143,18 +38561,35 @@ var CommunicationResults = class {
       deliveryStatus: entry.status
     });
   }
-  static result(mode, intents, counts, diagnostics) {
+  static result(mode, intents, counts, diagnostics, acceptedIds) {
     return {
       mode,
       intentIds: intents.map((intent) => intent.intentId),
+      completedMailKinds: _CommunicationResults.completedMailKinds(
+        intents,
+        acceptedIds
+      ),
       counts: { ...counts },
       diagnostics: [...diagnostics]
     };
+  }
+  static completedMailKinds(intents, acceptedIds) {
+    const groups = /* @__PURE__ */ new Map();
+    for (const intent of intents) {
+      if (intent.channel !== "mail" || intent.kind === "readiness-reminder")
+        continue;
+      groups.set(
+        intent.kind,
+        (groups.get(intent.kind) ?? true) && acceptedIds.has(intent.intentId)
+      );
+    }
+    return [...groups].filter(([, accepted]) => accepted).map(([kind]) => kind);
   }
   static emptyResult(mode, diagnostic) {
     return {
       mode,
       intentIds: [],
+      completedMailKinds: [],
       counts: {
         planned: 0,
         due: 0,
@@ -39209,10 +38644,11 @@ var CommunicationDispatcher = class {
         "gateway-threw-ambiguous-error",
         diagnostics
       );
-      return;
+      return false;
     }
     if (dispatchResult.outcome === "deferred") {
-      return this.defer(intent, dispatchResult, counts, diagnostics);
+      await this.defer(intent, dispatchResult, counts, diagnostics);
+      return false;
     }
     if (dispatchResult.outcome === "rejected") {
       counts.rejected += 1;
@@ -39235,7 +38671,7 @@ var CommunicationDispatcher = class {
           intentId: intent.intentId
         });
       }
-      return;
+      return false;
     }
     if (dispatchResult.outcome === "uncertain") {
       const detailCode = CommunicationResults.safeDetailCode(
@@ -39254,9 +38690,9 @@ var CommunicationDispatcher = class {
         detailCode ?? "gateway-delivery-uncertain",
         diagnostics
       );
-      return;
+      return false;
     }
-    await this.accept(intent, timestamp, counts, diagnostics);
+    return this.accept(intent, timestamp, counts, diagnostics);
   }
   async #markUncertain(intent, timestamp, diagnosticCode, diagnostics) {
     try {
@@ -39296,6 +38732,7 @@ var CommunicationDispatcher = class {
     counts.accepted += 1;
     try {
       await this.#ledger.markAccepted(intent.idempotencyKey, timestamp);
+      return true;
     } catch {
       diagnostics.push({
         code: "ledger-status-write-failed",
@@ -39303,6 +38740,7 @@ var CommunicationDispatcher = class {
         intentId: intent.intentId
       });
     }
+    return false;
   }
 };
 
@@ -39357,8 +38795,9 @@ var ReconcileCommunications = class {
       deferred: 0
     };
     const timestamp = now2.toISOString();
+    const acceptedIds = /* @__PURE__ */ new Set();
     for (const intent of plan2.intents) {
-      await this.processIntent(
+      const accepted = await this.processIntent(
         intent,
         timestamp,
         mode,
@@ -39366,8 +38805,15 @@ var ReconcileCommunications = class {
         counts,
         diagnostics
       );
+      if (accepted) acceptedIds.add(intent.intentId);
     }
-    return CommunicationResults.result(mode, plan2.intents, counts, diagnostics);
+    return CommunicationResults.result(
+      mode,
+      plan2.intents,
+      counts,
+      diagnostics,
+      acceptedIds
+    );
   }
   async #findExisting(intent, diagnostics) {
     try {
@@ -39414,7 +38860,7 @@ var ReconcileCommunications = class {
         counts,
         diagnostics
       );
-      return;
+      return existing.status === "accepted";
     }
     counts.due += 1;
     if (mode === "check") {
@@ -39434,11 +38880,11 @@ var ReconcileCommunications = class {
         counts,
         diagnostics
       );
-      return;
+      return reservation.entry.status === "accepted";
     }
     counts.reserved += 1;
     counts.dispatched += 1;
-    await this.#dispatcher.execute(intent, timestamp, counts, diagnostics);
+    return this.#dispatcher.execute(intent, timestamp, counts, diagnostics);
   }
 };
 var DEFAULT_DISPATCH_CAPABILITIES = Object.freeze({
@@ -39446,121 +38892,197 @@ var DEFAULT_DISPATCH_CAPABILITIES = Object.freeze({
   notification: true
 });
 
-// packages/application/journey/src/communication/resolve-communication-approval.ts
-var CommunicationApprovalResolver = class _CommunicationApprovalResolver {
-  static async resolveCommunicationApproval(input) {
-    const eventId = `issue-${input.input.issueNumber}`;
-    const approvalLabel = input.config.communication["approval-label"];
-    const repository = input.repository;
-    const current = _CommunicationApprovalResolver.snapshot(input);
-    const trigger = input.input.approvalTrigger;
-    const hasApprovalLabel = input.event.labels.some(
-      (label) => _CommunicationApprovalResolver.labelsEqual(label, approvalLabel)
-    );
-    if (input.captureApproval && hasApprovalLabel && trigger?.action === "labeled" && _CommunicationApprovalResolver.labelsEqual(trigger.label, approvalLabel)) {
-      if (!await _CommunicationApprovalResolver.capture(input, trigger, current))
-        return false;
-    }
-    if (!hasApprovalLabel) {
-      input.diagnostics.push({
-        code: "communication.approval-label-missing",
-        severity: "warning"
-      });
-      return false;
-    }
+// packages/domain/communication/src/mail-batch-fingerprint.ts
+import { createHash } from "node:crypto";
+var MailBatchFingerprint = class {
+  static create(eventDate, timeZone, intents) {
+    const messages = intents.map((intent) => ({
+      id: intent.idempotencyKey,
+      destination: intent.recipient.email,
+      template: intent.templateName,
+      placeholders: Object.entries(intent.placeholders).sort(
+        ([a], [b2]) => a.localeCompare(b2)
+      )
+    })).sort((a, b2) => a.id.localeCompare(b2.id));
+    return createHash("sha256").update(JSON.stringify({ eventDate, timeZone, messages })).digest("hex");
+  }
+};
+
+// packages/application/journey/src/use-cases/approve-communication-batch.ts
+var ApproveCommunicationBatch = class {
+  constructor(approvals, clock, preview) {
+    this.approvals = approvals;
+    this.clock = clock;
+    this.preview = preview;
+  }
+  approvals;
+  clock;
+  preview;
+  async execute(input, recipients, diagnostics) {
     try {
-      const approved = await repository.findApproved(eventId);
-      if (!approved) {
-        input.diagnostics.push({
-          code: "communication.approval-missing",
+      const now2 = this.clock.now();
+      const planner = new PlanCommunications();
+      const pending = planner.execute({ ...input, now: now2 });
+      if (!pending.intents.some(({ channel }) => channel === "mail"))
+        return false;
+      const preview = await this.preview.execute({ ...input, mode: "check" });
+      if (preview.diagnostics.some(({ severity }) => severity === "error"))
+        throw new Error("Communication approval preflight failed");
+      if (preview.counts.due === 0) return false;
+      const batch = planner.execute({
+        ...input,
+        now: now2,
+        mailRecipients: recipients
+      });
+      if (batch.diagnostics.some(({ severity }) => severity === "error"))
+        throw new Error("Communication approval batch is invalid");
+      const mails = batch.intents.filter((intent) => intent.channel === "mail");
+      const result = await this.approvals.request({
+        kind: input.occurrenceStatus === "held" ? "email-thanks" : "email-introduction",
+        revision: MailBatchFingerprint.create(
+          input.eventDate,
+          input.timeZone,
+          mails
+        ),
+        eventDate: input.eventDate,
+        recipientCount: mails.length,
+        requestedAt: now2.toISOString()
+      });
+      if (result.notificationFailed)
+        diagnostics.push({
+          code: "communication.approval-notification-failed",
           severity: "warning"
         });
-        return false;
-      }
-      if (!CommunicationApproval.communicationApprovalMatches(
-        approved,
-        current.facts
-      )) {
-        input.diagnostics.push({
-          code: "communication.approval-stale",
+      if (result.status !== "approved")
+        diagnostics.push({
+          code: result.status === "rejected" ? "communication.approval-rejected" : "communication.approval-pending",
           severity: "warning"
         });
-        return false;
-      }
-      return true;
+      return result.status === "approved";
     } catch {
-      input.diagnostics.push({
-        code: "communication.approval-repository-failed",
+      diagnostics.push({
+        code: "communication.approval-unavailable",
         severity: "error"
       });
       return false;
     }
   }
-  static labelsEqual(left, right) {
-    return left.trim().toLocaleLowerCase("en-US") === right.trim().toLocaleLowerCase("en-US");
+};
+
+// packages/application/journey/src/use-cases/communication-checklist.ts
+var INTRODUCTION = "Mail introduction";
+var LEGACY_SPEAKER_THANKS = "Thanks speakers and share openfeedback reports";
+var TASKS = {
+  "host-introduction": {
+    section: "communication",
+    names: ["Mail introduction hoster", INTRODUCTION]
+  },
+  "speaker-introduction": {
+    section: "communication",
+    names: ["Mail introduction speakers", INTRODUCTION]
+  },
+  "host-thanks": {
+    section: "postEvent",
+    names: ["Mail thanks hoster", "Thanks hoster"]
+  },
+  "speaker-thanks": {
+    section: "postEvent",
+    names: ["Mail thanks speakers", "Thanks speakers", LEGACY_SPEAKER_THANKS]
   }
-  static snapshot(input) {
-    return CommunicationApproval.createCommunicationApprovalSnapshot({
-      automationRevision: input.input.automationRevision,
-      eventId: `issue-${input.input.issueNumber}`,
-      eventDate: input.event.date,
-      occurrenceStatus: input.event.occurrenceStatus ?? "unknown",
-      readiness: input.readiness,
-      policyVersion: [
-        String(input.config.communication["policy-version"]),
-        input.input.notificationContentRevision
-      ].filter(Boolean).join(":"),
-      mailingsRepository: input.config.communication["mailings-repository"],
-      notificationEnabled: input.config.communication["slack-enabled"],
-      notificationDestinationFingerprint: input.notificationDestinationFingerprint,
-      confirmations: input.event.confirmations,
-      hostId: input.event.host?.id ?? null,
-      speakerIds: input.event.agenda.flatMap(
-        (entry) => entry.speakers.flatMap((speaker) => speaker.id ? [speaker.id] : [])
-      ),
-      publicationUrls: {
-        meetup: input.event.publicationLinks.meetup ?? null,
-        community: input.event.publicationLinks.community ?? null,
-        assets: input.event.publicationLinks.assets ?? null
-      }
+};
+var CommunicationChecklist = class _CommunicationChecklist {
+  static pendingRecipients(event, recipients) {
+    const thanks = event.occurrenceStatus === "held";
+    return recipients.filter((recipient) => {
+      const kind = recipient.role === "hosting" ? thanks ? "host-thanks" : "host-introduction" : thanks ? "speaker-thanks" : "speaker-introduction";
+      const task = TASKS[kind];
+      const matches = event.operationalChecklists[task.section].filter(
+        (item) => _CommunicationChecklist.matches(item, task.names)
+      );
+      return matches.length > 0 && !matches.some((item) => item.completed);
     });
   }
-  static async capture(input, trigger, current) {
-    if (!trigger.issueSnapshot) {
-      input.diagnostics.push({
-        code: "communication.approval-trigger-snapshot-missing",
-        severity: "error"
-      });
-      return false;
+  static complete(event, accepted) {
+    const completed = new Set(accepted);
+    const checklists = event.operationalChecklists;
+    const communication = checklists.communication.map((item) => ({
+      ...item,
+      completed: item.completed || _CommunicationChecklist.accepted(
+        item,
+        "communication",
+        completed,
+        checklists
+      )
+    }));
+    const postEvent = checklists.postEvent.map((item) => ({
+      ...item,
+      completed: item.completed || _CommunicationChecklist.accepted(
+        item,
+        "postEvent",
+        completed,
+        checklists
+      )
+    }));
+    if (completed.has("speaker-thanks") && postEvent.some((item) => item.name === LEGACY_SPEAKER_THANKS) && !postEvent.some((item) => item.name === "Mail thanks speakers")) {
+      postEvent.push({ name: "Mail thanks speakers", completed: true });
     }
-    if (!ReconcileEvent.eventDocumentsEqual(
-      trigger.issueSnapshot,
-      input.sourceDocument
-    )) {
-      input.diagnostics.push({
-        code: "communication.approval-trigger-stale",
-        severity: "error"
-      });
-      return false;
-    }
+    return { ...checklists, communication, postEvent };
+  }
+  static accepted(item, section, accepted, checklists) {
+    if (item.name === LEGACY_SPEAKER_THANKS) return false;
+    const kinds = Object.keys(TASKS).filter(
+      (kind) => TASKS[kind].section === section && _CommunicationChecklist.matches(item, TASKS[kind].names)
+    );
+    return kinds.length > 0 && kinds.every(
+      (kind) => accepted.has(kind) || checklists[section].some(
+        (other) => other.completed && _CommunicationChecklist.matches(other, TASKS[kind].names)
+      )
+    );
+  }
+  static matches(item, names) {
+    return names.includes(item.name);
+  }
+};
+
+// packages/application/journey/src/use-cases/complete-communication-checklist.ts
+var CompleteCommunicationChecklist = class {
+  constructor(repository, codec) {
+    this.repository = repository;
+    this.codec = codec;
+  }
+  repository;
+  codec;
+  async execute(source, accepted, diagnostics) {
+    if (accepted.length === 0) return;
     try {
-      if (!await input.actorCanApprove(trigger.actor)) {
-        input.diagnostics.push({
-          code: "communication.approval-capture-unauthorized",
-          severity: "error"
-        });
-        return false;
-      } else {
-        await input.repository.saveApproved(current);
-      }
+      const { event } = this.codec.decode(source);
+      const operationalChecklists = CommunicationChecklist.complete(
+        event,
+        accepted
+      );
+      if (JSON.stringify(operationalChecklists) === JSON.stringify(event.operationalChecklists))
+        return;
+      const patch = this.codec.createPatch(source, {
+        ...event,
+        operationalChecklists
+      });
+      if (!patch.body)
+        throw new Error("Checklist completion could not be rendered");
+      const rendered = this.codec.decode({ ...source, body: patch.body }).event.operationalChecklists;
+      if (JSON.stringify(rendered) !== JSON.stringify(operationalChecklists))
+        throw new Error(
+          "Checklist completion was not preserved by the document codec"
+        );
+      const current = await this.repository.find(source.identity);
+      if (!current || !ReconcileEvent.eventDocumentsEqual(current, source))
+        throw new Error("Checklist source changed");
+      await this.repository.applyPatch(source.identity, { body: patch.body });
     } catch {
-      input.diagnostics.push({
-        code: "communication.approval-repository-failed",
+      diagnostics.push({
+        code: "communication.checklist-update-failed",
         severity: "error"
       });
-      return false;
     }
-    return true;
   }
 };
 
@@ -40279,7 +39801,7 @@ var CommunicationDeliveryPreparation = class {
   dependencies;
   async execute(input, event, runtimeDiagnostics) {
     const catalog = await this.catalog(runtimeDiagnostics);
-    const notificationDestination = input.notificationDestination.trim();
+    const organizerNotificationDestination = input.organizerNotificationDestination.trim();
     const notificationConfigured = this.dependencies.config.communication["slack-enabled"];
     const mailRecipientResolution = catalog ? CommunicationRecipients.resolveMailRecipients(
       event,
@@ -40293,7 +39815,7 @@ var CommunicationDeliveryPreparation = class {
         role: "organizers",
         recipientId: "organizers-slack",
         receivesCommunications: notificationConfigured,
-        destination: notificationDestination
+        destination: organizerNotificationDestination
       }
     ];
     return {
@@ -40362,27 +39884,55 @@ var ManageMeetupCommunications = class _ManageMeetupCommunications {
         runtimeDiagnostics
       );
     }
-    const communicationApproved = await this.approve(
+    const dispatchEnabled = dispatchPermitted && referencesResolved && !runtimeDiagnostics.some(({ severity }) => severity === "error");
+    return this.deliver(
       input,
       sourceDocument,
       managed,
-      dispatchPermitted,
-      referencesResolved,
+      delivery,
+      dispatchEnabled,
       runtimeDiagnostics
     );
-    const dispatchEnabled = dispatchPermitted && referencesResolved && communicationApproved && !runtimeDiagnostics.some(({ severity }) => severity === "error");
+  }
+  async deliver(input, sourceDocument, managed, delivery, dispatchEnabled, runtimeDiagnostics) {
+    const deliveryInput = this.deliveryInput(
+      input,
+      managed,
+      delivery,
+      dispatchEnabled
+    );
+    const mailApproved = dispatchEnabled && await new ApproveCommunicationBatch(
+      this.dependencies.organizerApproval,
+      this.dependencies.clock,
+      this.dependencies.reconcileCommunications(false)
+    ).execute(
+      deliveryInput,
+      delivery.mailRecipientResolution.recipients,
+      runtimeDiagnostics
+    );
     if (dispatchEnabled && !await this.sourceIsCurrent(sourceDocument, runtimeDiagnostics)) {
       return _ManageMeetupCommunications.emptyCommunicationResult(
         "check",
         runtimeDiagnostics
       );
     }
-    const reconciliation = await this.deliver(
-      input,
-      managed,
-      delivery,
-      dispatchEnabled
-    );
+    const reconciliation = await this.dependencies.reconcileCommunications(dispatchEnabled).execute({
+      ...deliveryInput,
+      dispatchCapabilities: {
+        mail: mailApproved,
+        notification: delivery.notificationConfigured
+      }
+    });
+    if (dispatchEnabled) {
+      await new CompleteCommunicationChecklist(
+        this.dependencies.eventRepository,
+        this.dependencies.eventDocumentCodec
+      ).execute(
+        sourceDocument,
+        reconciliation.completedMailKinds,
+        runtimeDiagnostics
+      );
+    }
     return _ManageMeetupCommunications.withRuntimeDiagnostics(
       reconciliation,
       runtimeDiagnostics
@@ -40422,6 +39972,7 @@ var ManageMeetupCommunications = class _ManageMeetupCommunications {
     return {
       mode,
       intentIds: [],
+      completedMailKinds: [],
       counts: {
         planned: 0,
         due: 0,
@@ -40456,26 +40007,10 @@ var ManageMeetupCommunications = class _ManageMeetupCommunications {
     });
     return { identity, sourceDocument, managed };
   }
-  async approve(input, sourceDocument, managed, dispatchPermitted, referencesResolved, runtimeDiagnostics) {
-    const config = this.dependencies.config;
-    const communicationApproved = referencesResolved ? await CommunicationApprovalResolver.resolveCommunicationApproval({
-      input,
-      config,
-      repository: this.dependencies.approvalRepository,
-      actorCanApprove: this.dependencies.actorCanApprove,
-      captureApproval: dispatchPermitted,
-      sourceDocument,
-      event: managed.event,
-      readiness: managed.isReady ? "ready" : "not-ready",
-      notificationDestinationFingerprint: input.notificationDestinationFingerprint,
-      diagnostics: runtimeDiagnostics
-    }) : false;
-    return communicationApproved;
-  }
-  async deliver(input, managed, delivery, dispatchEnabled) {
+  deliveryInput(input, managed, delivery, dispatchEnabled) {
     const config = this.dependencies.config;
     const repositoryName = `${input.owner}/${input.repo}`;
-    const reconciliation = await this.dependencies.reconcileCommunications(dispatchEnabled).execute({
+    return {
       mode: dispatchEnabled ? "dispatch" : "check",
       dispatchCapabilities: {
         mail: true,
@@ -40489,14 +40024,16 @@ var ManageMeetupCommunications = class _ManageMeetupCommunications {
       occurrenceStatus: managed.event.occurrenceStatus ?? "unknown",
       policyVersion: String(config.communication["policy-version"]),
       readinessWindowDays: config.communication["readiness-window-days"],
-      mailRecipients: delivery.mailRecipientResolution.recipients,
+      mailRecipients: CommunicationChecklist.pendingRecipients(
+        managed.event,
+        delivery.mailRecipientResolution.recipients
+      ),
       notificationRecipients: delivery.notificationRecipients,
       mailPlaceholders: CommunicationPlaceholders.eventPlaceholders(
         managed.event
       ),
-      notificationContent: input.notificationContent
-    });
-    return reconciliation;
+      notificationContent: input.organizerNotificationContent
+    };
   }
   sourceIsCurrent(source, diagnostics) {
     return _ManageMeetupCommunications.eventSourceIsCurrent(
@@ -40845,252 +40382,294 @@ var ValidateMeetupReferentials = class {
   }
 };
 
-// packages/runtime/github-actions/src/communication.ts
-import { createHash as createHash2 } from "node:crypto";
-
-// packages/adapter/github-communication-approval-repository/src/github-communication-approval-repository-configuration-error.ts
-var GithubCommunicationApprovalRepositoryConfigurationError = class extends Error {
-  constructor(message) {
-    super(message);
-    this.name = "GithubCommunicationApprovalRepositoryConfigurationError";
+// packages/adapter/github-organizer-approval/src/approval-record.ts
+import { randomUUID as randomUUID2 } from "node:crypto";
+var APPROVAL_MARKER = "<!-- meetup-organizer-approval:v1 ";
+var ApprovalRecord = class _ApprovalRecord {
+  static matches(record, input) {
+    return record.kind === input.kind && record.revision === input.revision && record.eventDate === input.eventDate && record.recipientCount === input.recipientCount;
+  }
+  static validate(input) {
+    if (!/^[a-f0-9]{64}$/.test(input.revision) || !["email-introduction", "email-thanks"].includes(input.kind) || !/^\d{4}-\d{2}-\d{2}$/.test(input.eventDate) || !Number.isSafeInteger(input.recipientCount) || input.recipientCount <= 0 || !Number.isFinite(Date.parse(input.requestedAt)))
+      throw new Error("Invalid approval request");
+  }
+  static create(input) {
+    _ApprovalRecord.validate(input);
+    return {
+      ...input,
+      requestId: `approval-${randomUUID2()}`,
+      notification: "new"
+    };
+  }
+  static read(body) {
+    const line = body.split("\n", 1)[0];
+    if (!line?.startsWith(APPROVAL_MARKER) || !line.endsWith(" -->"))
+      throw new Error("Invalid approval record");
+    const record = JSON.parse(
+      line.slice(APPROVAL_MARKER.length, -4)
+    );
+    _ApprovalRecord.validate(record);
+    if (!/^approval-[a-f0-9-]{36}$/.test(record.requestId) || !["new", "reserved", "sent", "retry"].includes(record.notification))
+      throw new Error("Invalid approval state");
+    return record;
+  }
+  static marker(record) {
+    return `${APPROVAL_MARKER}${JSON.stringify(record)} -->`;
   }
 };
 
-// packages/adapter/github-communication-approval-repository/src/github-communication-approval-repository-contracts.ts
-var COMMUNICATION_APPROVAL_COMMENT_MARKER = "<!-- meetup-automation:communication-approval:v1 -->";
+// packages/adapter/github-organizer-approval/src/i18n/messages.en.ts
+var EN_MESSAGES2 = {
+  "approval.request": "### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\nEvent date: {date}. This batch covers up to {count, number} recipients; completed deliveries are skipped.\n\nOrganizers with repository write access: check one choice below. Leave both unchecked to wait.\n\n- [{approveMark}] Approve sending this batch\n- [{rejectMark}] Reject sending this batch\n\nApproval applies to this batch revision. Changed event details or recipients require a new confirmation. The email checkboxes in the issue are checked after accepted dispatch.",
+  "approval.slack": "Organizer confirmation needed: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}} for {date}, up to {count, number} recipients. Open the request and check Approve or Reject: {url}"
+};
 
-// packages/adapter/github-communication-approval-repository/src/github-communication-approval-repository-response-error.ts
-var GithubCommunicationApprovalRepositoryResponseError = class extends Error {
-  constructor(message) {
-    super(message);
-    this.name = "GithubCommunicationApprovalRepositoryResponseError";
+// packages/adapter/github-organizer-approval/src/i18n/messages.fr.ts
+var FR_MESSAGES2 = {
+  "approval.request": "### Confirmation des organisateurs : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}}\n\nDate du meetup : {date}. Ce lot concerne au maximum {count, number} destinataires ; les envois d\xE9j\xE0 termin\xE9s sont ignor\xE9s.\n\nOrganisateurs disposant d'un acc\xE8s en \xE9criture au d\xE9p\xF4t : cochez un choix ci-dessous. Laissez les deux cases d\xE9coch\xE9es pour attendre.\n\n- [{approveMark}] Approuver l'envoi de ce lot\n- [{rejectMark}] Refuser l'envoi de ce lot\n\nLa confirmation concerne cette version du lot. Toute modification des d\xE9tails du meetup ou des destinataires n\xE9cessite une nouvelle confirmation. Les cases des e-mails dans le ticket sont coch\xE9es apr\xE8s acceptation de l'envoi.",
+  "approval.slack": "Confirmation des organisateurs n\xE9cessaire : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}} pour le {date}, au maximum {count, number} destinataires. Ouvrez la demande et cochez Approuver ou Refuser : {url}"
+};
+
+// packages/adapter/github-organizer-approval/src/i18n/catalog.ts
+var CATALOGS2 = { en: EN_MESSAGES2, fr: FR_MESSAGES2 };
+
+// packages/adapter/github-organizer-approval/src/i18n/approval-messages.ts
+var ApprovalMessages = class extends MessageLocalizer {
+  constructor(locale = "en") {
+    super(CATALOGS2, locale);
   }
 };
 
-// packages/adapter/github-communication-approval-repository/src/github-communication-approval-repository-state-error.ts
-var GithubCommunicationApprovalRepositoryStateError = class extends Error {
-  constructor(message) {
-    super(message);
-    this.name = "GithubCommunicationApprovalRepositoryStateError";
+// packages/adapter/github-organizer-approval/src/approval-presenter.ts
+var ApprovalPresenter = class _ApprovalPresenter {
+  constructor(messages) {
+    this.messages = messages;
+  }
+  messages;
+  issue(record, decision) {
+    return [
+      ApprovalRecord.marker(record),
+      this.messages.t("approval.request", {
+        kind: record.kind.replace("email-", ""),
+        date: record.eventDate,
+        count: record.recipientCount,
+        approveMark: decision.status === "approved" ? "x" : " ",
+        rejectMark: decision.status === "rejected" ? "x" : " "
+      })
+    ].join("\n\n");
+  }
+  decision(record, body) {
+    const normalized = body.replace(/\r\n/g, "\n").replace(/- \[X\]/g, "- [x]");
+    for (const locale of ["en", "fr"]) {
+      const presenter = new _ApprovalPresenter(new ApprovalMessages(locale));
+      for (const status of ["approved", "rejected"]) {
+        if (normalized === presenter.issue(record, { status }))
+          return { status };
+      }
+    }
+    return { status: "pending" };
+  }
+  slack(record, url) {
+    return this.messages.t("approval.slack", {
+      kind: record.kind.replace("email-", ""),
+      date: record.eventDate,
+      count: record.recipientCount,
+      url
+    });
   }
 };
 
-// packages/adapter/github-communication-approval-repository/src/github-communication-approval-repository.ts
-var GithubCommunicationApprovalRepository = class _GithubCommunicationApprovalRepository {
-  constructor(client, options) {
-    this.client = client;
-    this.owner = _GithubCommunicationApprovalRepository.repositoryPart(
-      options.owner,
-      "owner"
-    );
-    this.repo = _GithubCommunicationApprovalRepository.repositoryPart(
-      options.repo,
-      "repo"
-    );
-    this.issueNumber = _GithubCommunicationApprovalRepository.issueNumber(
-      options.issueNumber
-    );
-    this.trustedAuthorLogin = _GithubCommunicationApprovalRepository.trustedAuthor(
-      options.trustedAuthorLogin
-    );
+// packages/adapter/github-organizer-approval/src/github-approval-client.ts
+var GithubApprovalClient = class {
+  constructor(api, owner, repo, issue2) {
+    this.api = api;
+    this.owner = owner;
+    this.repo = repo;
+    this.issue = issue2;
   }
-  client;
+  api;
   owner;
   repo;
-  issueNumber;
-  trustedAuthorLogin;
-  async findApproved(eventId) {
-    const normalizedEventId = _GithubCommunicationApprovalRepository.safeEventId(eventId);
-    const comment = await this.findManagedComment();
-    if (!comment) {
-      return void 0;
-    }
-    const snapshot = _GithubCommunicationApprovalRepository.parseComment(
-      comment.body
-    );
-    if (snapshot.facts.eventId !== normalizedEventId) {
-      throw new GithubCommunicationApprovalRepositoryStateError(
-        "Managed communication approval belongs to another event"
-      );
-    }
-    return snapshot;
-  }
-  async saveApproved(snapshot) {
-    const canonical = _GithubCommunicationApprovalRepository.strictSnapshot(snapshot);
-    const desiredBody = _GithubCommunicationApprovalRepository.renderComment(canonical);
-    const comment = await this.findManagedComment();
-    if (!comment) {
-      await this.client.rest.issues.createComment({
-        owner: this.owner,
-        repo: this.repo,
-        issue_number: this.issueNumber,
-        body: desiredBody
-      });
-      return Object.freeze({ changed: true });
-    }
-    const existing = _GithubCommunicationApprovalRepository.parseComment(
-      comment.body
-    );
-    if (existing.facts.eventId !== canonical.facts.eventId) {
-      throw new GithubCommunicationApprovalRepositoryStateError(
-        "Managed communication approval belongs to another event"
-      );
-    }
-    if (comment.body === desiredBody) {
-      return Object.freeze({ changed: false });
-    }
-    await this.client.rest.issues.updateComment({
-      owner: this.owner,
-      repo: this.repo,
-      comment_id: comment.id,
-      body: desiredBody
-    });
-    return Object.freeze({ changed: true });
-  }
-  async findManagedComment() {
-    const matching = (await this.listComments()).filter(
-      (comment) => comment.body.startsWith(COMMUNICATION_APPROVAL_COMMENT_MARKER) && comment.authorLogin?.toLowerCase() === this.trustedAuthorLogin.toLowerCase()
-    );
-    if (matching.length > 1) {
-      throw new GithubCommunicationApprovalRepositoryStateError(
-        "Multiple trusted communication approval comments found"
-      );
-    }
-    return matching[0];
-  }
-  async listComments() {
+  issue;
+  async list() {
     const comments = [];
     let page = 1;
     while (true) {
-      const response = await this.client.rest.issues.listComments({
+      const response = await this.api.rest.issues.listComments({
         owner: this.owner,
         repo: this.repo,
-        issue_number: this.issueNumber,
+        issue_number: this.issue,
         page,
         per_page: 100
       });
-      if (!Array.isArray(response.data)) {
-        throw new GithubCommunicationApprovalRepositoryResponseError(
-          "GitHub comment list response must contain an array"
-        );
-      }
-      for (const value of response.data) {
-        const comment = _GithubCommunicationApprovalRepository.mapComment(value);
-        if (comment) {
-          comments.push(comment);
-        }
-      }
-      const link = _GithubCommunicationApprovalRepository.header(
-        response.headers,
-        "link"
-      );
-      const hasNext = link === void 0 ? response.data.length === 100 : /<[^>]+>;\s*rel="next"/.test(link);
-      if (!hasNext) {
-        return comments;
-      }
+      if (!Array.isArray(response.data))
+        throw new Error("Invalid approval comment response");
+      comments.push(...response.data);
+      const next = response.headers.link ? /<[^>]+>;\s*rel="next"/.test(response.headers.link) : response.data.length === 100;
+      if (!next) return comments;
       page += 1;
     }
   }
-  static parseComment(body) {
-    try {
-      const openingFence = "```json";
-      const start = body.indexOf(openingFence);
-      const end = body.indexOf("```", start + openingFence.length);
-      const json = start < 0 || end < 0 ? "" : body.slice(start + openingFence.length, end).trim();
-      if (!json) {
-        throw new Error("missing JSON block");
-      }
-      const snapshot = CommunicationApproval.parseCommunicationApprovalSnapshot(
-        JSON.parse(json)
-      );
-      if (body !== _GithubCommunicationApprovalRepository.renderComment(snapshot)) {
-        throw new Error("non-canonical managed comment");
-      }
-      return snapshot;
-    } catch {
-      throw new GithubCommunicationApprovalRepositoryStateError(
-        "Managed communication approval comment is corrupted"
-      );
-    }
+  async create(body) {
+    const response = await this.api.rest.issues.createComment({
+      owner: this.owner,
+      repo: this.repo,
+      issue_number: this.issue,
+      body
+    });
+    if (!Number.isSafeInteger(response.data.id) || response.data.id <= 0)
+      throw new Error("Invalid approval comment identity");
+    return response.data.id;
   }
-  static strictSnapshot(snapshot) {
-    try {
-      return CommunicationApproval.parseCommunicationApprovalSnapshot(snapshot);
-    } catch {
-      throw new GithubCommunicationApprovalRepositoryStateError(
-        "Communication approval snapshot is invalid"
-      );
-    }
+  async update(commentId, body) {
+    await this.api.rest.issues.updateComment({
+      owner: this.owner,
+      repo: this.repo,
+      comment_id: commentId,
+      body
+    });
   }
-  static renderComment(snapshot) {
-    return `${COMMUNICATION_APPROVAL_COMMENT_MARKER}
+  async canApprove(username) {
+    const response = await this.api.rest.repos.getCollaboratorPermissionLevel({
+      owner: this.owner,
+      repo: this.repo,
+      username
+    });
+    return response.data.permission === "write" || response.data.permission === "admin";
+  }
+  async replace(commentId, before, after) {
+    const current = (await this.list()).find(
+      (comment) => comment.id === commentId
+    );
+    if (current?.body !== before)
+      throw new Error("Approval comment changed before persistence");
+    await this.update(commentId, after);
+  }
+  async edit(comment) {
+    if (!comment.node_id)
+      throw new Error("Missing approval comment node identity");
+    const result = await this.api.graphql(
+      `query ApprovalCommentEditor($id: ID!) {
+				node(id: $id) {
+					... on IssueComment {
+						id body lastEditedAt editor { login __typename }
+					}
+				}
+			}`,
+      { id: comment.node_id }
+    );
+    if (result.node?.id !== comment.node_id || result.node.body !== comment.body)
+      throw new Error("Approval comment changed during verification");
+    return result.node;
+  }
+  url(commentId) {
+    return `https://github.com/${this.owner}/${this.repo}/issues/${this.issue}#issuecomment-${commentId}`;
+  }
+};
 
-Maintainer-approved communication facts. Any fact change requires a new approval.
-
-\`\`\`json
-${JSON.stringify(snapshot, null, 2)}
-\`\`\``;
+// packages/adapter/github-organizer-approval/src/resolve-approval-decision.ts
+var ResolveApprovalDecision = class {
+  constructor(client, presenter) {
+    this.client = client;
+    this.presenter = presenter;
   }
-  static mapComment(value) {
-    if (!_GithubCommunicationApprovalRepository.isRecord(value) || !Number.isSafeInteger(value.id)) {
-      return void 0;
-    }
-    if (typeof value.body !== "string") {
-      return void 0;
-    }
-    const authorLogin = _GithubCommunicationApprovalRepository.isRecord(value.user) && typeof value.user.login === "string" ? value.user.login : void 0;
+  client;
+  presenter;
+  async execute(record, comment) {
+    const decision = this.presenter.decision(record, comment.body ?? "");
+    if (decision.status === "pending") return decision;
+    const edit = await this.client.edit(comment);
+    const editedAt = Date.parse(edit.lastEditedAt ?? "");
+    if (edit.editor?.__typename !== "User" || !edit.editor.login || edit.editor.login === "ghost" || !Number.isFinite(editedAt) || editedAt < Math.floor(Date.parse(record.requestedAt) / 1e3) * 1e3)
+      return { status: "pending" };
+    return await this.client.canApprove(edit.editor.login) ? decision : { status: "pending" };
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/github-organizer-approval.ts
+var GithubOrganizerApproval = class {
+  constructor(client, authorLogin, presenter, notifications, organizerChannelId) {
+    this.client = client;
+    this.authorLogin = authorLogin;
+    this.presenter = presenter;
+    this.notifications = notifications;
+    this.organizerChannelId = organizerChannelId;
+  }
+  client;
+  authorLogin;
+  presenter;
+  notifications;
+  organizerChannelId;
+  async request(input) {
+    ApprovalRecord.validate(input);
+    const comments = await this.client.list();
+    const records = comments.filter(
+      (comment) => comment.user?.login.toLowerCase() === this.authorLogin.toLowerCase() && comment.body?.startsWith(APPROVAL_MARKER)
+    ).map((comment) => ({
+      comment,
+      record: ApprovalRecord.read(comment.body ?? "")
+    })).filter(({ record: record2 }) => record2.kind === input.kind);
+    if (records.length > 1) throw new Error("Ambiguous approval state");
+    const existing = records[0];
+    const current = existing && ApprovalRecord.matches(existing.record, input) ? existing : void 0;
+    const record = current?.record ?? ApprovalRecord.create(input);
+    const decision = current ? await new ResolveApprovalDecision(this.client, this.presenter).execute(
+      record,
+      current.comment
+    ) : { status: "pending" };
+    if (decision.status !== "pending")
+      return { status: decision.status, notificationFailed: false };
+    const body = this.presenter.issue(record, decision);
+    const commentId = existing ? existing.comment.id : await this.client.create(body);
+    if (existing && body !== existing.comment.body)
+      await this.client.replace(commentId, existing.comment.body ?? "", body);
+    await this.notify(record, commentId);
     return {
-      id: Number(value.id),
-      body: value.body,
-      ...authorLogin ? { authorLogin } : {}
+      status: decision.status,
+      notificationFailed: record.notification === "reserved" || record.notification === "retry"
     };
   }
-  static repositoryPart(value, name) {
-    const normalized = value.trim();
-    if (!/^[A-Za-z0-9_.-]+$/.test(normalized)) {
-      throw new GithubCommunicationApprovalRepositoryConfigurationError(
-        `GitHub ${name} must be a valid repository segment`
-      );
+  async notify(record, commentId) {
+    if (record.notification !== "new" && record.notification !== "retry")
+      return;
+    const before = this.presenter.issue(record, { status: "pending" });
+    record.notification = "reserved";
+    const reserved = this.presenter.issue(record, { status: "pending" });
+    await this.client.replace(commentId, before, reserved);
+    let outcome = "uncertain";
+    try {
+      const result = await this.notifications.dispatch({
+        channel: "notification",
+        kind: "readiness-reminder",
+        intentId: record.requestId,
+        idempotencyKey: record.requestId,
+        repositoryId: "organizer-approval",
+        eventId: record.requestId,
+        policyVersion: "1",
+        recipientId: "organizers",
+        recipient: {
+          channel: "notification",
+          role: "organizers",
+          recipientId: "organizers",
+          receivesCommunications: true,
+          destination: this.organizerChannelId
+        },
+        content: this.presenter.slack(record, this.client.url(commentId))
+      });
+      outcome = result.outcome;
+    } catch {
     }
-    return normalized;
-  }
-  static issueNumber(value) {
-    if (!Number.isSafeInteger(value) || value <= 0) {
-      throw new GithubCommunicationApprovalRepositoryConfigurationError(
-        "GitHub issue number must be a positive integer"
-      );
-    }
-    return value;
-  }
-  static trustedAuthor(value) {
-    const normalized = value.trim();
-    if (!normalized) {
-      throw new GithubCommunicationApprovalRepositoryConfigurationError(
-        "A trusted GitHub bot author login is required"
-      );
-    }
-    return normalized;
-  }
-  static safeEventId(value) {
-    const normalized = value.trim();
-    if (!CommunicationIdempotency.isSafeCommunicationIdentifier(normalized)) {
-      throw new GithubCommunicationApprovalRepositoryConfigurationError(
-        "Communication event ID must be a stable, PII-free identifier"
-      );
-    }
-    return normalized;
-  }
-  static header(headers, name) {
-    const value = headers?.[name];
-    return typeof value === "string" ? value : void 0;
-  }
-  static isRecord(value) {
-    return typeof value === "object" && value !== null;
+    record.notification = outcome === "accepted" ? "sent" : outcome === "uncertain" ? "reserved" : "retry";
+    await this.client.replace(
+      commentId,
+      reserved,
+      this.presenter.issue(record, { status: "pending" })
+    );
   }
 };
 
 // packages/adapter/github-delivery-ledger/src/github-delivery-ledger.ts
-import { createHash } from "node:crypto";
+import { createHash as createHash2 } from "node:crypto";
 
 // packages/adapter/github-delivery-ledger/src/github-delivery-ledger-contracts.ts
 var DELIVERY_LEDGER_MARKER = "<!-- meetup-automation-delivery-ledger:v1 -->";
@@ -41308,7 +40887,7 @@ ${JSON.stringify(ledger, null, 2)}
     if (/^sha256:[0-9a-f]{64}$/.test(value)) {
       return value;
     }
-    return `sha256:${createHash("sha256").update(value).digest("hex")}`;
+    return `sha256:${createHash2("sha256").update(value).digest("hex")}`;
   }
 };
 
@@ -43663,7 +43242,7 @@ var GUIDANCE = /* @__PURE__ */ new Map([
 ]);
 
 // packages/adapter/github-event-comment-repository/src/i18n/messages.en.ts
-var EN_MESSAGES2 = {
+var EN_MESSAGES3 = {
   "comment.guidance.event.link.feedback.invalid": "Enter a valid HTTPS link to the OpenFeedback event page.",
   "comment.resolved": "All previously reported issues have been resolved. No changes are currently needed.",
   "comment.duplicate": "Superseded duplicate automation comment.",
@@ -43725,7 +43304,7 @@ var EN_MESSAGES2 = {
 };
 
 // packages/adapter/github-event-comment-repository/src/i18n/messages.fr.ts
-var FR_MESSAGES2 = {
+var FR_MESSAGES3 = {
   "comment.guidance.event.link.feedback.invalid": "Saisissez un lien HTTPS valide vers la page de l'\xE9v\xE9nement OpenFeedback.",
   "comment.resolved": "Tous les probl\xE8mes signal\xE9s pr\xE9c\xE9demment ont \xE9t\xE9 r\xE9solus. Aucune modification n'est n\xE9cessaire.",
   "comment.duplicate": "Ce commentaire automatique en double a \xE9t\xE9 remplac\xE9.",
@@ -43787,15 +43366,15 @@ var FR_MESSAGES2 = {
 };
 
 // packages/adapter/github-event-comment-repository/src/i18n/catalog.ts
-var CATALOGS2 = {
-  en: { ...EN_MESSAGES2 },
-  fr: { ...FR_MESSAGES2 }
+var CATALOGS3 = {
+  en: { ...EN_MESSAGES3 },
+  fr: { ...FR_MESSAGES3 }
 };
 
 // packages/adapter/github-event-comment-repository/src/i18n/event-comment-messages.ts
 var EventCommentMessages = class extends MessageLocalizer {
   constructor(locale = "en") {
-    super(CATALOGS2, locale);
+    super(CATALOGS3, locale);
   }
 };
 
@@ -44095,6 +43674,250 @@ ${messages.t("comment.resolved")}`;
   static readHeader(headers, name) {
     const value = headers?.[name];
     return typeof value === "string" ? value : void 0;
+  }
+  static isRecord(value) {
+    return typeof value === "object" && value !== null;
+  }
+};
+
+// packages/adapter/github-event-repository/src/github-event-repository-configuration-error.ts
+var GitHubEventRepositoryConfigurationError = class extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "GitHubEventRepositoryConfigurationError";
+  }
+};
+
+// packages/adapter/github-event-repository/src/github-event-repository-response-error.ts
+var GitHubEventRepositoryResponseError = class extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "GitHubEventRepositoryResponseError";
+  }
+};
+
+// packages/adapter/github-event-repository/src/github-event-repository-scope-error.ts
+var GitHubEventRepositoryScopeError = class extends Error {
+  constructor(expected, received) {
+    super(`GitHub event repository is scoped to ${expected}, not ${received}`);
+    this.name = "GitHubEventRepositoryScopeError";
+  }
+};
+
+// packages/adapter/github-event-repository/src/github-event-repository.ts
+var GitHubEventRepository = class _GitHubEventRepository {
+  constructor(client, options) {
+    this.client = client;
+    this.owner = _GitHubEventRepository.requireRepositoryPart(
+      options.owner,
+      "owner"
+    );
+    this.repo = _GitHubEventRepository.requireRepositoryPart(
+      options.repo,
+      "repo"
+    );
+    this.repositoryName = `${this.owner}/${this.repo}`;
+  }
+  client;
+  owner;
+  repo;
+  repositoryName;
+  async find(identity) {
+    this.assertScope(identity.repository);
+    try {
+      const response = await this.client.rest.issues.get({
+        owner: this.owner,
+        repo: this.repo,
+        issue_number: identity.issueNumber
+      });
+      const document = _GitHubEventRepository.mapGitHubIssueDocument(
+        response.data,
+        this.repositoryName
+      );
+      if (document && document.identity.issueNumber !== identity.issueNumber) {
+        throw new GitHubEventRepositoryResponseError(
+          `GitHub returned issue ${document.identity.issueNumber} while ${identity.issueNumber} was requested`
+        );
+      }
+      return document;
+    } catch (error2) {
+      if (_GitHubEventRepository.isNotFoundError(error2)) {
+        return null;
+      }
+      throw error2;
+    }
+  }
+  async applyPatch(identity, patch) {
+    this.assertScope(identity.repository);
+    const changes = {};
+    if (patch.issueTitle !== void 0) {
+      changes.title = patch.issueTitle;
+    }
+    if (patch.body !== void 0) {
+      changes.body = patch.body;
+    }
+    if (patch.labels !== void 0) {
+      changes.labels = [...patch.labels];
+    }
+    if (Object.keys(changes).length === 0) {
+      return;
+    }
+    await this.client.rest.issues.update({
+      owner: this.owner,
+      repo: this.repo,
+      issue_number: identity.issueNumber,
+      ...changes
+    });
+  }
+  async listPage(query) {
+    this.assertScope(query.repository);
+    const page = _GitHubEventRepository.parseCursor(query.cursor);
+    const pageSize = _GitHubEventRepository.parsePageSize(query.pageSize);
+    const parameters = {
+      owner: this.owner,
+      repo: this.repo,
+      state: query.includeClosed ? "all" : "open",
+      page,
+      per_page: pageSize
+    };
+    if (query.label !== void 0 && query.label.trim() !== "") {
+      parameters.labels = query.label.trim();
+    }
+    const response = await this.client.rest.issues.listForRepo(parameters);
+    if (!Array.isArray(response.data)) {
+      throw new GitHubEventRepositoryResponseError(
+        "GitHub issue list response must contain an array"
+      );
+    }
+    const items = response.data.map(
+      (issue2) => _GitHubEventRepository.mapGitHubIssueDocument(
+        issue2,
+        this.repositoryName
+      )
+    ).filter((issue2) => issue2 !== null);
+    const linkHeader = _GitHubEventRepository.readHeader(
+      response.headers,
+      "link"
+    );
+    const hasNextPage = linkHeader === void 0 ? response.data.length === pageSize : /<[^>]+>;\s*rel="next"/.test(linkHeader);
+    return {
+      items: Object.freeze(items),
+      ...hasNextPage ? { nextCursor: String(page + 1) } : {}
+    };
+  }
+  assertScope(repository) {
+    if (repository.toLowerCase() !== this.repositoryName.toLowerCase()) {
+      throw new GitHubEventRepositoryScopeError(
+        this.repositoryName,
+        repository
+      );
+    }
+  }
+  static requireRepositoryPart(value, name) {
+    const normalized = value.trim();
+    if (normalized === "" || normalized.includes("/")) {
+      throw new GitHubEventRepositoryConfigurationError(
+        `GitHub ${name} must be a non-empty repository name segment`
+      );
+    }
+    return normalized;
+  }
+  /** Map one GitHub issue response or webhook snapshot into the domain document. */
+  static mapGitHubIssueDocument(data, repository) {
+    const issue2 = _GitHubEventRepository.asRecord(data, "GitHub issue");
+    if (issue2.pull_request !== void 0 && issue2.pull_request !== null) {
+      return null;
+    }
+    if (!Number.isInteger(issue2.number) || Number(issue2.number) <= 0) {
+      throw new GitHubEventRepositoryResponseError(
+        "GitHub issue number must be a positive integer"
+      );
+    }
+    if (typeof issue2.title !== "string") {
+      throw new GitHubEventRepositoryResponseError(
+        "GitHub issue title must be a string"
+      );
+    }
+    if (issue2.state !== "open" && issue2.state !== "closed") {
+      throw new GitHubEventRepositoryResponseError(
+        "GitHub issue state must be open or closed"
+      );
+    }
+    if (issue2.body !== null && typeof issue2.body !== "string") {
+      throw new GitHubEventRepositoryResponseError(
+        "GitHub issue body must be a string or null"
+      );
+    }
+    if (!Array.isArray(issue2.labels)) {
+      throw new GitHubEventRepositoryResponseError(
+        "GitHub issue labels must be an array"
+      );
+    }
+    return {
+      identity: { repository, issueNumber: Number(issue2.number) },
+      issueState: issue2.state,
+      issueTitle: issue2.title,
+      labels: _GitHubEventRepository.mapLabels(issue2.labels),
+      body: issue2.body ?? ""
+    };
+  }
+  static mapLabels(labels) {
+    const result = [];
+    for (const label of labels) {
+      let name;
+      if (typeof label === "string") {
+        name = label;
+      } else if (_GitHubEventRepository.isRecord(label) && typeof label.name === "string") {
+        name = label.name;
+      }
+      if (name && !result.includes(name)) {
+        result.push(name);
+      }
+    }
+    return Object.freeze(result);
+  }
+  static parseCursor(cursor) {
+    if (cursor === void 0) {
+      return 1;
+    }
+    if (!/^[1-9]\d*$/.test(cursor)) {
+      throw new GitHubEventRepositoryConfigurationError(
+        `Invalid GitHub pagination cursor "${cursor}"`
+      );
+    }
+    return Number(cursor);
+  }
+  static parsePageSize(pageSize) {
+    if (pageSize === void 0) {
+      return 100;
+    }
+    if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) {
+      throw new GitHubEventRepositoryConfigurationError(
+        "GitHub page size must be an integer between 1 and 100"
+      );
+    }
+    return pageSize;
+  }
+  static isNotFoundError(error2) {
+    if (!_GitHubEventRepository.isRecord(error2)) {
+      return false;
+    }
+    if (error2.status === 404) {
+      return true;
+    }
+    return _GitHubEventRepository.isRecord(error2.response) && error2.response.status === 404;
+  }
+  static readHeader(headers, name) {
+    const value = headers?.[name];
+    return typeof value === "string" ? value : void 0;
+  }
+  static asRecord(value, label) {
+    if (!_GitHubEventRepository.isRecord(value)) {
+      throw new GitHubEventRepositoryResponseError(
+        `${label} must be an object`
+      );
+    }
+    return value;
   }
   static isRecord(value) {
     return typeof value === "object" && value !== null;
@@ -52313,27 +52136,27 @@ var $i2 = { parse: de2(du), formatAST: de2(Fu), formatDoc: de2(Eu), printToDoc: 
 var import_yaml = __toESM(require_dist(), 1);
 
 // packages/adapter/yaml-issue-form-projection/src/i18n/messages.en.ts
-var EN_MESSAGES3 = {
+var EN_MESSAGES4 = {
   "form.speakers.guidance": "Select speakers by copying one or more references into the agenda.",
   "form.speakers.show": "Show available speaker references"
 };
 
 // packages/adapter/yaml-issue-form-projection/src/i18n/messages.fr.ts
-var FR_MESSAGES3 = {
+var FR_MESSAGES4 = {
   "form.speakers.guidance": "S\xE9lectionnez les intervenants en copiant une ou plusieurs r\xE9f\xE9rences dans le programme.",
   "form.speakers.show": "Afficher les r\xE9f\xE9rences des intervenants disponibles"
 };
 
 // packages/adapter/yaml-issue-form-projection/src/i18n/catalog.ts
-var CATALOGS3 = {
-  en: { ...EN_MESSAGES3 },
-  fr: { ...FR_MESSAGES3 }
+var CATALOGS4 = {
+  en: { ...EN_MESSAGES4 },
+  fr: { ...FR_MESSAGES4 }
 };
 
 // packages/adapter/yaml-issue-form-projection/src/i18n/issue-form-messages.ts
 var IssueFormMessages = class extends MessageLocalizer {
   constructor(locale = "en") {
-    super(CATALOGS3, locale);
+    super(CATALOGS4, locale);
   }
 };
 
@@ -58158,7 +57981,6 @@ var EventComposition = class _EventComposition {
 
 // packages/runtime/github-actions/src/communication-composition.ts
 var COMMUNICATION_SERVICES = {
-  approvalRepository: /* @__PURE__ */ Symbol("CommunicationApprovalRepository"),
   mailGateway: /* @__PURE__ */ Symbol("MailGateway"),
   notificationGateway: /* @__PURE__ */ Symbol("NotificationGateway"),
   ledgerFactory: /* @__PURE__ */ Symbol("DeliveryLedgerFactory")
@@ -58178,7 +58000,7 @@ var CommunicationComposition = class _CommunicationComposition {
   }
   static createCommunicationContainer(input) {
     const container = EventComposition.createEventContainer(input);
-    _CommunicationComposition.bindRepositories(container, input);
+    _CommunicationComposition.bindRepositories(container);
     _CommunicationComposition.bindGateways(container, input);
     container.bind(COMMUNICATION_SERVICES.ledgerFactory).toDynamicValue(
       () => (dispatchAuthorized) => new GithubDeliveryLedger(
@@ -58196,7 +58018,7 @@ var CommunicationComposition = class _CommunicationComposition {
     _CommunicationComposition.bindJourney(container, input);
     return container;
   }
-  static bindRepositories(container, input) {
+  static bindRepositories(container) {
     const repository = container.get(
       SERVICES.referentialRepository
     );
@@ -58207,16 +58029,6 @@ var CommunicationComposition = class _CommunicationComposition {
         return loaded;
       }
     });
-    container.bind(
-      COMMUNICATION_SERVICES.approvalRepository
-    ).toDynamicValue(
-      () => new GithubCommunicationApprovalRepository(input.client, {
-        owner: input.owner,
-        repo: input.repo,
-        issueNumber: input.issueNumber,
-        trustedAuthorLogin: input.commentAuthorLogin
-      })
-    );
   }
   static bindGateways(container, input) {
     container.bind(COMMUNICATION_SERVICES.mailGateway).toDynamicValue((context3) => {
@@ -58244,26 +58056,28 @@ var CommunicationComposition = class _CommunicationComposition {
         COMMUNICATION_SERVICES.notificationGateway
       );
       return new ManageMeetupCommunications({
+        clock,
+        organizerApproval: new GithubOrganizerApproval(
+          new GithubApprovalClient(
+            input.client,
+            input.owner,
+            input.repo,
+            input.issueNumber
+          ),
+          input.commentAuthorLogin,
+          new ApprovalPresenter(new ApprovalMessages(input.locale)),
+          notificationGateway,
+          input.slackOrganizerChannelId
+        ),
         config: context3.get(SERVICES.config),
         eventRepository: context3.get(SERVICES.eventRepository),
         referentialRepository: context3.get(
           SERVICES.referentialRepository
         ),
         manageEvent: context3.get(ManageMeetupEvent),
-        approvalRepository: context3.get(
-          COMMUNICATION_SERVICES.approvalRepository
+        eventDocumentCodec: context3.get(
+          SERVICES.eventDocumentCodec
         ),
-        actorCanApprove: async (actor) => {
-          if (!/^[A-Za-z0-9_.-]+$/.test(actor)) return false;
-          const { data } = await input.client.rest.repos.getCollaboratorPermissionLevel({
-            owner: input.owner,
-            repo: input.repo,
-            username: actor
-          });
-          return [data.permission, data.role_name].some(
-            (value) => ["admin", "maintain", "write", "triage"].includes(value)
-          );
-        },
         reconcileCommunications: (dispatchAuthorized) => new ReconcileCommunications({
           planner,
           clock,
@@ -58277,28 +58091,25 @@ var CommunicationComposition = class _CommunicationComposition {
 };
 
 // packages/runtime/github-actions/src/notifications/messages.en.ts
-var EN_MESSAGES4 = {
+var EN_MESSAGES5 = {
   "communication.organizer-attention": "Meetup event issue #{issue} requires organizer attention."
 };
 
 // packages/runtime/github-actions/src/notifications/messages.fr.ts
-var FR_MESSAGES4 = {
+var FR_MESSAGES5 = {
   "communication.organizer-attention": "Le ticket du meetup #{issue} n\xE9cessite l'attention des organisateurs."
 };
 
 // packages/runtime/github-actions/src/notifications/catalog.ts
-var CATALOGS4 = {
-  en: { ...EN_MESSAGES4 },
-  fr: { ...FR_MESSAGES4 }
+var CATALOGS5 = {
+  en: { ...EN_MESSAGES5 },
+  fr: { ...FR_MESSAGES5 }
 };
 
 // packages/runtime/github-actions/src/notifications/organizer-notification-messages.ts
 var OrganizerNotificationMessages = class extends MessageLocalizer {
   constructor(locale = "en") {
-    super(CATALOGS4, locale);
-  }
-  get policyRevision() {
-    return this.locale === "en" ? "" : "organizer-attention.fr.v2";
+    super(CATALOGS5, locale);
   }
 };
 
@@ -58323,7 +58134,7 @@ var CommunicationRuntime = class _CommunicationRuntime {
     }
     const mailingsToken = input.mailingsToken.trim();
     const slackToken = input.slackToken.trim();
-    const slackChannelId = input.slackChannelId.trim();
+    const slackOrganizerChannelId = input.slackOrganizerChannelId.trim();
     const messages = new OrganizerNotificationMessages(input.locale);
     const container = CommunicationComposition.createCommunicationContainer({
       locale: messages.locale,
@@ -58335,21 +58146,21 @@ var CommunicationRuntime = class _CommunicationRuntime {
       config,
       workspaceRoot: input.workspaceRoot,
       mailingsToken,
-      slackToken
+      slackToken,
+      slackOrganizerChannelId
     });
     const result = await container.get(ManageMeetupCommunications).execute({
       issueNumber: input.issueNumber,
       owner: input.owner,
       repo: input.repo,
       repositoryId: input.repositoryId,
-      automationRevision: input.automationRevision,
-      notificationDestination: slackChannelId,
-      notificationContent: messages.t("communication.organizer-attention", {
-        issue: input.issueNumber
-      }),
-      notificationContentRevision: messages.policyRevision,
-      approvalTrigger: input.approvalTrigger,
-      notificationDestinationFingerprint: config.communication["slack-enabled"] ? `sha256:${createHash2("sha256").update(slackChannelId).digest("hex")}` : null
+      organizerNotificationDestination: slackOrganizerChannelId,
+      organizerNotificationContent: messages.t(
+        "communication.organizer-attention",
+        {
+          issue: input.issueNumber
+        }
+      )
     });
     return result;
   }
@@ -58362,15 +58173,11 @@ var CommunicationRuntime = class _CommunicationRuntime {
         "owner and repo must be valid GitHub repository segments"
       );
     }
+    if (!input.slackOrganizerChannelId.trim()) {
+      throw new Error("slackOrganizerChannelId must not be empty");
+    }
     if (!input.managedCommentAuthor.trim()) {
       throw new Error("managedCommentAuthor must not be empty");
-    }
-    if (!CommunicationIdempotency.isSafeCommunicationIdentifier(
-      input.automationRevision.trim()
-    )) {
-      throw new Error(
-        "automationRevision must be a stable, PII-free revision identifier"
-      );
     }
   }
   static isRepositoryPart(value) {
@@ -58399,14 +58206,12 @@ var COMMUNICATION_MESSAGES = {
   "delivery-already-recorded": "The delivery ledger already contains this intent."
 };
 var RUNTIME_MESSAGES = {
+  "communication.approval-pending": "Email dispatch is waiting for approval on the meetup issue.",
+  "communication.approval-rejected": "The email batch was rejected. A new approval comment is required before sending.",
+  "communication.approval-unavailable": "The organizer approval could not be verified or persisted; email dispatch is blocked.",
+  "communication.approval-notification-failed": "The Slack approval notification was not confirmed. Review the request on the meetup issue.",
   "communication.dispatch-disabled-by-config": "Communication dispatch is disabled by repository configuration.",
-  "communication.approval-label-missing": "Communications require the configured maintainer approval label.",
-  "communication.approval-missing": "Communications require a maintainer-owned approval snapshot.",
-  "communication.approval-stale": "Message-affecting event facts changed after approval; remove and re-add the approval label.",
-  "communication.approval-capture-unauthorized": "The approval label actor does not have sufficient repository permission.",
-  "communication.approval-trigger-snapshot-missing": "The approval label event did not contain an immutable issue snapshot.",
-  "communication.approval-trigger-stale": "The issue changed after the approval label event; remove and re-add the approval label.",
-  "communication.approval-repository-failed": "The maintainer approval record could not be verified safely.",
+  "communication.checklist-update-failed": "Delivery results are recorded but checklist completion could not be persisted.",
   "communication.event-skipped": "The issue is not a configured meetup event.",
   "communication.event-concurrently-modified": "The meetup issue changed while communications were being reconciled; no delivery was attempted.",
   "communication.event-references-unresolved": "Event participants could not be resolved to stable identifiers.",
@@ -58424,30 +58229,21 @@ var CommunicationAction = class _CommunicationAction {
       getInput("issue-number", { required: true })
     );
     const { owner, repo } = context2.repo;
-    const issueSnapshot = context2.payload.issue ? GitHubEventRepository.mapGitHubIssueDocument(
-      context2.payload.issue,
-      `${owner}/${repo}`
-    ) ?? void 0 : void 0;
     const outcome = await CommunicationRuntime.runCommunicationReconcile({
       locale: messages.locale,
       issueNumber,
       githubToken: getInput("github-token", { required: true }),
       mailingsToken: getInput("mailings-token", { required: true }),
       slackToken: getInput("slack-token", { required: true }),
-      slackChannelId: getInput("slack-channel-id", { required: true }),
+      slackOrganizerChannelId: getInput("slack-organizer-channel-id", {
+        required: true
+      }),
       owner,
       repo,
       repositoryId: process.env.GITHUB_REPOSITORY_ID,
-      automationRevision: process.env.GITHUB_SHA ?? "",
       managedCommentAuthor: getInput("managed-comment-author", {
         required: true
-      }),
-      approvalTrigger: {
-        action: typeof context2.payload.action === "string" ? context2.payload.action : "",
-        label: context2.payload.label && typeof context2.payload.label === "object" && "name" in context2.payload.label && typeof context2.payload.label.name === "string" ? context2.payload.label.name : "",
-        actor: context2.actor,
-        ...issueSnapshot ? { issueSnapshot } : {}
-      }
+      })
     });
     const report = _CommunicationAction.report(outcome, messages);
     return reportErrorsToIssue ? _CommunicationAction.reportToIssue(issueNumber, report, messages) : report;

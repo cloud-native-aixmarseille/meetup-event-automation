@@ -114,7 +114,7 @@ describe("internal CI contracts", () => {
 		expect(dedicatedVitestGateOccurrences).toBe(0);
 	});
 
-	it("runs communication integration checks against an unapproved fixture under the event lock", async () => {
+	it("runs communication integration checks against a completed-mail fixture under the event lock", async () => {
 		// Arrange
 		const workflow = await readWorkflow("__check-actions");
 
@@ -138,8 +138,8 @@ describe("internal CI contracts", () => {
 		expect(communication?.with).not.toHaveProperty("mode");
 		expect(communication?.with).not.toHaveProperty("dispatch-authorized");
 		expect(communication?.with?.["report-errors-to-issue"]).toBe("false");
-		expect(fixture?.with?.script).not.toContain("communication:approved");
-		expect(assertions?.run).toContain("communication.approval-label-missing");
+		expect(fixture?.with?.script).toContain("- [x] Mail introduction");
+		expect(assertions?.run).toContain(".data.counts.planned == 0");
 		expect(assertions?.run).toContain(".data.counts.dispatched == 0");
 	});
 

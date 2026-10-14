@@ -13,8 +13,13 @@
 
 ## Overview
 
-Reusable workflow that checks one meetup issue and applies the approved
+Reusable workflow that checks one meetup issue and applies the due
 communication and issue updates needed to keep it current.
+
+Checking an approval choice in the bot's request comment triggers reconciliation.
+The job accepts human edits to bot approval requests and ignores pull requests
+and bot edits. The action verifies the current comment editor and repository
+write permission. Put the caller on the default branch.
 
 The workflow creates a separate GitHub App installation token for
 `<repository-owner>/mailings` using the supplied App client ID and private key.
@@ -37,6 +42,8 @@ Set the variables and secrets described in [repository setup](../../docs/usage/s
 ```yaml
 name: Update meetup issue
 on:
+  issue_comment:
+    types: [edited]
   issues:
     types:
       [
@@ -52,6 +59,13 @@ on:
 permissions: {}
 jobs:
   manage:
+    if: >-
+      ${{ !github.event.issue.pull_request &&
+          (github.event_name != 'issue_comment' ||
+           (github.event.action == 'edited' &&
+            github.event.sender.type == 'User' &&
+            github.event.comment.user.type == 'Bot' &&
+            startsWith(github.event.comment.body, '<!-- meetup-organizer-approval:v1 '))) }}
     uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/update-meetup-issue.yml@0123456789abcdef0123456789abcdef01234567
     permissions:
       contents: read
@@ -59,7 +73,7 @@ jobs:
       locale: en
       github-app-client-id: ${{ vars.CI_BOT_APP_CLIENT_ID }}
       kutt-link-id: ${{ vars.KUTT_FEEDBACK_LINK_ID }}
-      slack-channel-id: ${{ vars.SLACK_CHANNEL_ID }}
+      slack-organizer-channel-id: ${{ vars.SLACK_ORGANIZER_CHANNEL_ID }}
       google-drive-meetup-folder-id: ${{ vars.GOOGLE_DRIVE_MEETUP_FOLDER_ID }}
       google-drive-meetup-template-folder-id: ${{ vars.GOOGLE_DRIVE_MEETUP_TEMPLATE_FOLDER_ID }}
     secrets:
@@ -81,7 +95,7 @@ jobs:
 | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- | ----------- |
 | **`locale`**                                 | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **false**    | **string** | `en`        |
 | **`github-app-client-id`**                   | GitHub App client ID used to mint the narrowly scoped installation token for meetup automation.                                    | **true**     | **string** | -           |
-| **`slack-channel-id`**                       | Slack channel ID used for approved notifications.                                                                                  | **true**     | **string** | -           |
+| **`slack-organizer-channel-id`**             | Internal meetup organizer Slack channel for approval requests and readiness reminders. Public announcement channels are separate.  | **true**     | **string** | -           |
 | **`google-drive-meetup-folder-id`**          | Google Drive folder ID of the parent meetup folder used for asset reconciliation.                                                  | **true**     | **string** | -           |
 | **`google-drive-meetup-template-folder-id`** | Google Drive folder ID of the template folder used for asset reconciliation.                                                       | **true**     | **string** | -           |
 | **`kutt-link-id`**                           | Existing Kutt feedback link API ID.                                                                                                | **true**     | **string** | -           |
@@ -95,7 +109,7 @@ jobs:
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
 | **`google-credentials`**     | Google service-account JSON for Drive asset reconciliation.                                                                                 | **true**     |
 | **`github-app-private-key`** | PEM-encoded private key for the GitHub App identified by the github-app-client-id input. Used to mint a narrowly scoped installation token. | **true**     |
-| **`slack-token`**            | Slack bot token used for approved notifications.                                                                                            | **true**     |
+| **`slack-token`**            | Slack bot token used for approval requests and organizer reminders.                                                                         | **true**     |
 | **`kutt-api-key`**           | API key for the owner of the existing Kutt feedback link.                                                                                   | **true**     |
 | **`openfeedback-api-key`**   | OpenFeedback organization API key (oforg\_) used to create missing events.                                                                  | **true**     |
 
@@ -109,7 +123,7 @@ jobs:
 | **`state`**                     | Derived lifecycle state for the target meetup issue, such as draft, planned, ready, held, or follow-up-complete. |
 | **`is-ready`**                  | Whether the current meetup issue revision satisfies readiness checks.                                            |
 | **`diagnostics`**               | Redacted JSON diagnostics produced by event reconciliation.                                                      |
-| **`communication-diagnostics`** | Redacted JSON diagnostics produced by approval capture and communication reconciliation.                         |
+| **`communication-diagnostics`** | Redacted JSON diagnostics produced by checklist completion and communication reconciliation.                     |
 
 <!-- outputs:end -->
 <!-- examples:start -->

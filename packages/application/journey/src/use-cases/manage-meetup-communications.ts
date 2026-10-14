@@ -1,4 +1,8 @@
-import type { ReconcileCommunicationsResult } from "@meetup-automation/communication";
+import { ApproveCommunicationBatch } from "./approve-communication-batch.js";
+import type {
+	ReconcileCommunicationsInput,
+	ReconcileCommunicationsResult,
+} from "@meetup-automation/communication";
 import {
 	type EventDocument,
 	type EventRepository,
@@ -9,14 +13,15 @@ import type {
 	ManageMeetupCommunicationsInput,
 	ManageMeetupCommunicationsResult,
 } from "../communication/contracts.js";
-import { CommunicationApprovalResolver } from "../communication/resolve-communication-approval.js";
+import { CommunicationChecklist } from "./communication-checklist.js";
+import { CompleteCommunicationChecklist } from "./complete-communication-checklist.js";
 import type { AutomationConfig } from "../config/automation-config.js";
 import { CommunicationDeliveryPreparation } from "./communication-delivery-preparation.js";
 import { CommunicationPlaceholders } from "./communication-placeholders.js";
 import type { ManageMeetupCommunicationsDependencies } from "./manage-meetup-communications-contracts.js";
 import type { ManageMeetupEventResult } from "./manage-meetup-event-contracts.js";
 
-/** Coordinate event readiness, approval and delivery through owned ports. */
+/** Coordinate event readiness, checklist completion and delivery through owned ports. */
 export class ManageMeetupCommunications {
 	constructor(
 		private readonly dependencies: ManageMeetupCommunicationsDependencies,
@@ -56,20 +61,46 @@ export class ManageMeetupCommunications {
 			);
 		}
 
-		const communicationApproved = await this.approve(
-			input,
-			sourceDocument,
-			managed,
-			dispatchPermitted,
-			referencesResolved,
-			runtimeDiagnostics,
-		);
-
 		const dispatchEnabled =
 			dispatchPermitted &&
 			referencesResolved &&
-			communicationApproved &&
 			!runtimeDiagnostics.some(({ severity }) => severity === "error");
+
+		return this.deliver(
+			input,
+			sourceDocument,
+			managed,
+			delivery,
+			dispatchEnabled,
+			runtimeDiagnostics,
+		);
+	}
+
+	private async deliver(
+		input: ManageMeetupCommunicationsInput,
+		sourceDocument: EventDocument,
+		managed: Exclude<ManageMeetupEventResult, { skipped: true }>,
+		delivery: Awaited<ReturnType<CommunicationDeliveryPreparation["execute"]>>,
+		dispatchEnabled: boolean,
+		runtimeDiagnostics: CommunicationJourneyDiagnostic[],
+	): Promise<ManageMeetupCommunicationsResult> {
+		const deliveryInput = this.deliveryInput(
+			input,
+			managed,
+			delivery,
+			dispatchEnabled,
+		);
+		const mailApproved =
+			dispatchEnabled &&
+			(await new ApproveCommunicationBatch(
+				this.dependencies.organizerApproval,
+				this.dependencies.clock,
+				this.dependencies.reconcileCommunications(false),
+			).execute(
+				deliveryInput,
+				delivery.mailRecipientResolution.recipients,
+				runtimeDiagnostics,
+			));
 
 		if (
 			dispatchEnabled &&
@@ -81,12 +112,26 @@ export class ManageMeetupCommunications {
 			);
 		}
 
-		const reconciliation = await this.deliver(
-			input,
-			managed,
-			delivery,
-			dispatchEnabled,
-		);
+		const reconciliation = await this.dependencies
+			.reconcileCommunications(dispatchEnabled)
+			.execute({
+				...deliveryInput,
+				dispatchCapabilities: {
+					mail: mailApproved,
+					notification: delivery.notificationConfigured,
+				},
+			});
+
+		if (dispatchEnabled) {
+			await new CompleteCommunicationChecklist(
+				this.dependencies.eventRepository,
+				this.dependencies.eventDocumentCodec,
+			).execute(
+				sourceDocument,
+				reconciliation.completedMailKinds,
+				runtimeDiagnostics,
+			);
+		}
 
 		return ManageMeetupCommunications.withRuntimeDiagnostics(
 			reconciliation,
@@ -145,6 +190,7 @@ export class ManageMeetupCommunications {
 		return {
 			mode,
 			intentIds: [],
+			completedMailKinds: [],
 			counts: {
 				planned: 0,
 				due: 0,
@@ -182,65 +228,38 @@ export class ManageMeetupCommunications {
 
 		return { identity, sourceDocument, managed };
 	}
-	private async approve(
-		input: ManageMeetupCommunicationsInput,
-		sourceDocument: EventDocument,
-		managed: Exclude<ManageMeetupEventResult, { skipped: true }>,
-		dispatchPermitted: boolean,
-		referencesResolved: boolean,
-		runtimeDiagnostics: CommunicationJourneyDiagnostic[],
-	) {
-		const config = this.dependencies.config;
-		const communicationApproved = referencesResolved
-			? await CommunicationApprovalResolver.resolveCommunicationApproval({
-					input,
-					config,
-					repository: this.dependencies.approvalRepository,
-					actorCanApprove: this.dependencies.actorCanApprove,
-					captureApproval: dispatchPermitted,
-					sourceDocument,
-					event: managed.event,
-					readiness: managed.isReady ? "ready" : "not-ready",
-					notificationDestinationFingerprint:
-						input.notificationDestinationFingerprint,
-					diagnostics: runtimeDiagnostics,
-				})
-			: false;
-		return communicationApproved;
-	}
-	private async deliver(
+	private deliveryInput(
 		input: ManageMeetupCommunicationsInput,
 		managed: Exclude<ManageMeetupEventResult, { skipped: true }>,
 		delivery: Awaited<ReturnType<CommunicationDeliveryPreparation["execute"]>>,
 		dispatchEnabled: boolean,
-	) {
+	): ReconcileCommunicationsInput {
 		const config = this.dependencies.config;
 		const repositoryName = `${input.owner}/${input.repo}`;
-		const reconciliation = await this.dependencies
-			.reconcileCommunications(dispatchEnabled)
-			.execute({
-				mode: dispatchEnabled ? "dispatch" : "check",
-				dispatchCapabilities: {
-					mail: true,
-					notification: delivery.notificationConfigured,
-				},
-				repositoryId: input.repositoryId?.trim() || repositoryName,
-				eventId: `issue-${input.issueNumber}`,
-				eventDate: managed.event.date,
-				timeZone: config.timezone,
-				readiness: managed.isReady ? "ready" : "not-ready",
-				occurrenceStatus: managed.event.occurrenceStatus ?? "unknown",
-				policyVersion: String(config.communication["policy-version"]),
-				readinessWindowDays: config.communication["readiness-window-days"],
-				mailRecipients: delivery.mailRecipientResolution.recipients,
-				notificationRecipients: delivery.notificationRecipients,
-				mailPlaceholders: CommunicationPlaceholders.eventPlaceholders(
-					managed.event,
-				),
-				notificationContent: input.notificationContent,
-			});
-
-		return reconciliation;
+		return {
+			mode: dispatchEnabled ? "dispatch" : "check",
+			dispatchCapabilities: {
+				mail: true,
+				notification: delivery.notificationConfigured,
+			},
+			repositoryId: input.repositoryId?.trim() || repositoryName,
+			eventId: `issue-${input.issueNumber}`,
+			eventDate: managed.event.date,
+			timeZone: config.timezone,
+			readiness: managed.isReady ? "ready" : "not-ready",
+			occurrenceStatus: managed.event.occurrenceStatus ?? "unknown",
+			policyVersion: String(config.communication["policy-version"]),
+			readinessWindowDays: config.communication["readiness-window-days"],
+			mailRecipients: CommunicationChecklist.pendingRecipients(
+				managed.event,
+				delivery.mailRecipientResolution.recipients,
+			),
+			notificationRecipients: delivery.notificationRecipients,
+			mailPlaceholders: CommunicationPlaceholders.eventPlaceholders(
+				managed.event,
+			),
+			notificationContent: input.organizerNotificationContent,
+		};
 	}
 
 	private sourceIsCurrent(

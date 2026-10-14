@@ -91,7 +91,7 @@ export const FR_MESSAGES = {
 	"report.communication.uncertain":
 		"Résultats incertains : {uncertain, number} ; rejets : {rejected, number}.",
 	"report.communication.guidance":
-		"Consultez les diagnostics d'approbation et d'envoi avant de réessayer.",
+		"Consultez les diagnostics de liste de tâches et d'envoi avant de réessayer.",
 	"report.communication.uncertain-guidance":
 		"Vérifiez les envois incertains auprès du fournisseur et dans le registre avant tout nouvel envoi.",
 	"report.communication.issue-reported":

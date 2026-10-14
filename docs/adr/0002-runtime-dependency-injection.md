@@ -1,6 +1,6 @@
 # ADR-0002: Compose dependencies at the runtime boundary
 
-- Status: Accepted
+- Status: Accepted; communication approval superseded by [ADR 0007](0007-automatic-communication-checklists.md)
 - Date: 2026-09-13
 - Builds on: [ADR-0001](0001-centralize-meetup-event-automation.md)
 

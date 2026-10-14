@@ -49,6 +49,21 @@ beforeEach(() => {
 });
 
 describe("ReconcileCommunications", () => {
+	it.each(["pending", "uncertain", "rejected", "accepted"] as const)(
+		"only treats durable accepted records as completed (%s)",
+		async (status) => {
+			// Arrange
+			vi.mocked(ledger.find).mockResolvedValue(existingEntry(status));
+			// Act
+			const result = await reconciler().execute(input());
+			// Assert
+			expect(result.completedMailKinds).toEqual(
+				status === "accepted" ? ["host-introduction"] : [],
+			);
+			expect(mailGateway.dispatch).not.toHaveBeenCalled();
+		},
+	);
+
 	it("fails closed when the clock throws", async () => {
 		// Arrange
 		vi.mocked(clock.now).mockImplementationOnce(() => {
@@ -62,6 +77,7 @@ describe("ReconcileCommunications", () => {
 		expect(result).toEqual({
 			mode: "dispatch",
 			intentIds: [],
+			completedMailKinds: [],
 			counts: {
 				planned: 0,
 				due: 0,
@@ -89,6 +105,7 @@ describe("ReconcileCommunications", () => {
 		expect(result).toEqual({
 			mode: "dispatch",
 			intentIds: [],
+			completedMailKinds: [],
 			counts: {
 				planned: 0,
 				due: 0,
@@ -479,6 +496,7 @@ describe("ReconcileCommunications", () => {
 
 		// Assert
 		expect(result.counts.accepted).toBe(1);
+		expect(result.completedMailKinds).toEqual([]);
 		expect(result.diagnostics).toContainEqual(
 			expect.objectContaining({ code: "ledger-status-write-failed" }),
 		);
@@ -544,7 +562,13 @@ describe("ReconcileCommunications", () => {
 		const actual = Object.keys(result).sort();
 
 		// Assert
-		expect(actual).toEqual(["counts", "diagnostics", "intentIds", "mode"]);
+		expect(actual).toEqual([
+			"completedMailKinds",
+			"counts",
+			"diagnostics",
+			"intentIds",
+			"mode",
+		]);
 		expect(serialized).not.toContain("private-host@example.test");
 		expect(serialized).not.toContain("Private Host");
 		expect(serialized).not.toContain("Private street");

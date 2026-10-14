@@ -1,20 +1,25 @@
+import type { OrganizerApproval } from "../ports/organizer-approval.js";
 import type {
-	CommunicationApprovalRepository,
 	MailRecipient,
+	CommunicationClock,
 	ReconcileCommunications,
 } from "@meetup-automation/communication";
-import type { EventRepository } from "@meetup-automation/event";
+import type {
+	EventDocumentCodec,
+	EventRepository,
+} from "@meetup-automation/event";
 import type { ReferentialRepository } from "@meetup-automation/referential";
 import type { AutomationConfig } from "../config/automation-config.js";
 import type { ManageMeetupEvent } from "./manage-meetup-event.js";
 
 export interface ManageMeetupCommunicationsDependencies {
 	readonly config: AutomationConfig;
+	readonly organizerApproval: OrganizerApproval;
+	readonly clock: CommunicationClock;
 	readonly eventRepository: EventRepository;
 	readonly referentialRepository: ReferentialRepository;
 	readonly manageEvent: Pick<ManageMeetupEvent, "execute">;
-	readonly approvalRepository: CommunicationApprovalRepository;
-	readonly actorCanApprove: (actor: string) => Promise<boolean>;
+	readonly eventDocumentCodec: EventDocumentCodec;
 	readonly reconcileCommunications: (
 		dispatchAuthorized: boolean,
 	) => Pick<ReconcileCommunications, "execute">;

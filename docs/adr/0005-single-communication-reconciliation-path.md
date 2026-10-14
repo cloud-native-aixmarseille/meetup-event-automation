@@ -1,6 +1,6 @@
 # ADR 0005: Use one communication reconciliation path
 
-Status: Accepted; other action modes partially superseded by [ADR 0006](0006-explicit-reconciliation-behavior.md)
+Status: Accepted; other action modes partially superseded by [ADR 0006](0006-explicit-reconciliation-behavior.md); communication approval superseded by [ADR 0007](0007-automatic-communication-checklists.md)
 
 Date: 2026-09-30
 

@@ -15,6 +15,11 @@ export type CommunicationKind =
 	| "host-thanks"
 	| "speaker-thanks";
 
+export type MailCommunicationKind = Exclude<
+	CommunicationKind,
+	"readiness-reminder"
+>;
+
 export type EventReadiness = "ready" | "not-ready";
 
 export type EventOccurrenceStatus =
@@ -219,6 +224,8 @@ export type ReconcileCommunicationsResult = {
 	readonly mode: ReconcileMode;
 	/** Safe identifiers only; message payloads and destinations are never returned. */
 	readonly intentIds: readonly string[];
+	/** Mail groups with every planned recipient durably accepted. */
+	readonly completedMailKinds: readonly MailCommunicationKind[];
 	readonly counts: ReconcileCommunicationCounts;
 	readonly diagnostics: readonly CommunicationDiagnostic[];
 };

@@ -27,7 +27,6 @@ const config: AutomationConfig = {
 		"readiness-window-days": 7,
 		"mailings-repository": "cloud-native-aixmarseille/mailings",
 		"slack-enabled": true,
-		"approval-label": "communication:approved",
 		"dispatch-enabled": false,
 		"policy-version": 1,
 	},

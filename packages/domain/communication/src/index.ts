@@ -1,12 +1,3 @@
-export type {
-	CommunicationApprovalConfirmations,
-	CommunicationApprovalFacts,
-	CommunicationApprovalPublicationUrls,
-	CommunicationApprovalSnapshot,
-} from "./approval-contracts.js";
-export { COMMUNICATION_APPROVAL_SCHEMA_VERSION } from "./approval-contracts.js";
-export { CommunicationApproval } from "./communication-approval.js";
-export { CommunicationApprovalSnapshotError } from "./communication-approval-snapshot-error.js";
 export type { CommunicationIdempotencyComponents } from "./idempotency.js";
 export { CommunicationIdempotency } from "./idempotency.js";
 export type {
@@ -25,6 +16,7 @@ export type {
 	GatewayDispatchResult,
 	GatewayRejectionCode,
 	GatewayRetryCode,
+	MailCommunicationKind,
 	MailMessageIntent,
 	MailRecipient,
 	MailRecipientRole,
@@ -41,8 +33,6 @@ export type {
 export { MAIL_TEMPLATE_NAMES } from "./model.js";
 export { PlanCommunications } from "./plan-communications.js";
 export type {
-	CommunicationApprovalRepository,
-	CommunicationApprovalSaveResult,
 	CommunicationClock,
 	DeliveryLedger,
 	MailGateway,
@@ -50,3 +40,4 @@ export type {
 } from "./ports.js";
 export type { ReconcileCommunicationsDependencies } from "./reconcile-communications.js";
 export { ReconcileCommunications } from "./reconcile-communications.js";
+export { MailBatchFingerprint } from "./mail-batch-fingerprint.js";

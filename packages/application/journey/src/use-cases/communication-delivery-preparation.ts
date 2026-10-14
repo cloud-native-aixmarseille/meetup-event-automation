@@ -27,7 +27,8 @@ export class CommunicationDeliveryPreparation {
 		runtimeDiagnostics: CommunicationJourneyDiagnostic[],
 	) {
 		const catalog = await this.catalog(runtimeDiagnostics);
-		const notificationDestination = input.notificationDestination.trim();
+		const organizerNotificationDestination =
+			input.organizerNotificationDestination.trim();
 		const notificationConfigured =
 			this.dependencies.config.communication["slack-enabled"];
 
@@ -46,7 +47,7 @@ export class CommunicationDeliveryPreparation {
 				role: "organizers",
 				recipientId: "organizers-slack",
 				receivesCommunications: notificationConfigured,
-				destination: notificationDestination,
+				destination: organizerNotificationDestination,
 			},
 		];
 

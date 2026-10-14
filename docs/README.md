@@ -5,7 +5,7 @@
 - [Set up a repository](usage/setup.md): prerequisites, files, credentials, and
   workflow callers.
 - [Organize a meetup](usage/organize-meetup.md): create an event, resolve
-  diagnostics, approve messages, and complete follow-up.
+  diagnostics, track email completion, and complete follow-up.
 
 ## Reference
 
@@ -39,7 +39,7 @@
 | [Synchronize issue form](../actions/referential/sync-issue-form/README.md) | Update the checked-out form choices.                         |
 | [Reconcile assets](../actions/publication/reconcile-assets/README.md)      | Prepare Google Drive folders and template copies.            |
 | [Reconcile feedback](../actions/publication/reconcile-feedback/README.md)  | Create OpenFeedback events and update the shared short link. |
-| [Reconcile communications](../actions/communication/reconcile/README.md)   | Plan or dispatch authorized email and Slack messages.        |
+| [Reconcile communications](../actions/communication/reconcile/README.md)   | Plan or dispatch due email and Slack messages.               |
 
 ## Development
 
@@ -62,6 +62,10 @@ implementation.
 - [ADR-0004: Localize generated messages](adr/0004-localize-generated-messages.md)
 - [ADR-0005: Use one communication reconciliation path](adr/0005-single-communication-reconciliation-path.md)
 - [ADR-0006: Match action inputs to operational behavior](adr/0006-explicit-reconciliation-behavior.md)
+- [ADR-0007: Track automatic emails with completion checkboxes](adr/0007-automatic-communication-checklists.md)
+- [ADR-0008: Request organizer confirmation for email batches](adr/0008-admin-confirmation-requests.md)
+- [ADR-0009: Use one organizer role and an explicit organizer Slack channel](adr/0009-organizer-role-and-slack-channel.md)
+- [ADR-0010: Approve email batches with request checkboxes](adr/0010-checkbox-organizer-approval.md)
 
 ## Directory layout
 
@@ -90,7 +94,11 @@ docs/
     ├── 0003-production-code-structure.md
     ├── 0004-localize-generated-messages.md
     ├── 0005-single-communication-reconciliation-path.md
-    └── 0006-explicit-reconciliation-behavior.md
+    ├── 0006-explicit-reconciliation-behavior.md
+    ├── 0007-automatic-communication-checklists.md
+    ├── 0008-admin-confirmation-requests.md
+    ├── 0009-organizer-role-and-slack-channel.md
+    └── 0010-checkbox-organizer-approval.md
 ```
 
 Action references stay beside `action.yml`; workflow references stay beside

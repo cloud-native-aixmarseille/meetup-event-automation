@@ -1,20 +1,37 @@
 # Email and Slack communications
 
-Communications require an explicit approval on the meetup issue. The
-issue-update and daily-audit workflows send due messages using the current
-event, its resolved contacts and the stored approval.
+The issue-update and daily-audit workflows request organizer confirmation before
+sending each introduction or thank-you email batch. They post the request on
+the meetup issue and alert the meetup organizer Slack channel. Checked email tasks
+mean completed; after approval, the automation sends and checks them.
+
+## Organizer and public channels
+
+An **organizer** manages the meetup, approves email batches, and resolves
+preparation issues. Approval requires repository write access or higher.
+
+| Audience           | Channel selection                                                        | Behavior                                                                       |
+| ------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| Meetup organizers  | `SLACK_ORGANIZER_CHANNEL_ID`, passed as `slack-organizer-channel-id`     | The automation posts approval requests and readiness reminders.                |
+| Public communities | The destination channels for the issue's public Slack announcement tasks | Organizers post event announcements manually and check those tasks themselves. |
+
+Use a dedicated organizer channel, separate from public event announcement
+channels. The `Slack - AixMarseille.Tech` and `Slack - OpenBaR` tasks
+are manual. They neither route organizer messages nor enable automatic
+public posting. The automation accepts no public announcement channel input.
 
 ## Configure delivery
 
-Complete [repository setup](../usage/setup.md), including the issue workflow's
-`labeled` trigger. Both event workflows require these settings:
+Complete [repository setup](../usage/setup.md), including the issue workflow triggers
+for issue edits, labels, closing, and approval checkbox edits. Both event workflows
+require these settings:
 
-| Consumer setting                | Reusable workflow parameter     | Purpose                       |
-| ------------------------------- | ------------------------------- | ----------------------------- |
-| Variable `CI_BOT_APP_CLIENT_ID` | Input `github-app-client-id`    | Identify the GitHub App.      |
-| Secret `CI_BOT_APP_PRIVATE_KEY` | Secret `github-app-private-key` | Create installation tokens.   |
-| Secret `SLACK_BOT_TOKEN`        | Secret `slack-token`            | Send organizer notifications. |
-| Variable `SLACK_CHANNEL_ID`     | Input `slack-channel-id`        | Select the organizer channel. |
+| Consumer setting                      | Reusable workflow parameter        | Purpose                                |
+| ------------------------------------- | ---------------------------------- | -------------------------------------- |
+| Variable `CI_BOT_APP_CLIENT_ID`       | Input `github-app-client-id`       | Identify the GitHub App.               |
+| Secret `CI_BOT_APP_PRIVATE_KEY`       | Secret `github-app-private-key`    | Create installation tokens.            |
+| Secret `SLACK_BOT_TOKEN`              | Secret `slack-token`               | Send organizer requests and reminders. |
+| Variable `SLACK_ORGANIZER_CHANNEL_ID` | Input `slack-organizer-channel-id` | Select the meetup organizer channel.   |
 
 Install the GitHub App on `mailings` under the consumer repository's owner with
 **Contents: write** permission. Each event workflow generates a separate
@@ -22,40 +39,105 @@ installation token scoped to that repository, uses it for email dispatch, and
 revokes it at job completion. Configure the mailings repository to handle the
 templates listed below.
 
-The Slack bot must be able to post to the selected channel. Missing App or Slack
-settings fail the workflow; complete setup before approving communications.
+The Slack bot must be able to post to the organizer channel. Missing App or Slack
+settings fail the workflow; complete setup before using automatic communications.
 
 Email recipients come from the [referentials](../reference/referentials.md): the
 host's first contact and each resolved speaker. Fix invalid records or
-unresolved participants before approving communications.
+unresolved participants before using automatic communications.
 
-## Approve an issue
+## Confirm an email batch
 
-1. Review the issue's date, status, host, speakers, confirmations and links. Let
-   pending issue updates finish.
-2. Add `communication:approved` with a GitHub account that has `triage`,
-   `write`, `maintain` or `admin` permission on the meetup repository.
-3. Check the issue-update run. It captures the approval and dispatches any due
-   messages.
+When a batch is due, the bot creates or updates a confirmation comment on the
+meetup issue. It shows the batch type, event date and maximum recipient count,
+followed by two choices:
 
-Approval is captured from the label-add event. A scheduled run cannot create a
-missing approval. If the label was already present before setup, remove and
-re-add it. Keep the label on the issue for later deliveries.
+```markdown
+- [ ] Approve sending this batch
+- [ ] Reject sending this batch
+```
 
-The approval covers the event date and status, readiness, confirmation labels,
-host and speaker IDs, Meetup/CNCF/Drive URLs, delivery routing and consumer
-repository revision and notification language. Changes to these values make it
-stale. Review the changes, then remove and re-add `communication:approved`. Do
-the same if the issue changed between adding the label and capturing the
-approval.
+Click **Approve sending this batch** in that bot comment to authorize sending.
+Click **Reject sending this batch** to hold it. Leave both unchecked to wait;
+selecting both does not approve anything.
+To change a decision before dispatch, clear the previous choice and select the
+other. A decision cannot undo emails already sent.
 
-Changing the event to `held` requires a new approval before thank-you messages
-can be sent. Removing the label stops future dispatches; it does not undo
-messages already accepted by a provider.
+Anyone with repository **write** access or higher can decide. The automation
+reads the current comment and its last editor from GitHub, checks that editor's
+current repository permission, and accepts only an unchanged request with one
+selected choice. It preserves the human edit for subsequent runs; GitHub's
+comment edit history identifies the editor. Edited request descriptions,
+ineligible editors and approvals for a different batch cannot authorize sending.
+
+Slack links to the request; decisions are made on GitHub. Set `SLACK_ORGANIZER_CHANNEL_ID`
+to the meetup organizer channel and invite the bot there. Each request sends one
+alert. Definitively rejected or rate-limited alerts can retry; an uncertain
+acknowledgement is reported without automatically posting a duplicate. The
+issue request remains usable if Slack fails.
+
+Introductions and thank-you emails require separate approvals. Approval covers
+the host and speaker batch for the current email inputs, including recipient
+addresses, templates, placeholders, date and policy. Only a fingerprint and
+public facts are persisted; contact details never appear in the request.
+Changes to those inputs reset both approval choices and require a fresh decision.
+Completed tasks are skipped, and approval survives partial completion and safe
+retries. Locale changes and unrelated checklist edits do not invalidate it.
+
+The `issue_comment: edited` caller must be on the repository's default branch.
+It runs for human edits to bot approval requests and ignores pull requests and
+bot edits. The daily audit can also pick up a new decision. Both paths use the
+same issue concurrency lock. See
+[setup](../usage/setup.md#3-add-workflow-callers) for the caller configuration.
+GitHub comment updates have no atomic compare-and-set guarantee. The automation
+rechecks comments before persistence, but a final concurrent human edit can still
+race a write or dispatch. Clearing approval does not cancel an in-flight send.
+
+Approval applies to email batches. Resolve missing participation confirmations
+and integration errors before sending.
+
+## Track email completion
+
+Keep these items in the meetup issue:
+
+```markdown
+### Communication
+
+- [ ] Mail introduction speakers
+- [ ] Mail introduction hoster
+
+### Post event
+
+- [ ] Mail thanks hoster
+- [ ] Mail thanks speakers
+```
+
+Leave a task unchecked for the automation to perform it when due and approved.
+A checked item records completed work, including emails sent manually. Missing email
+items are not scheduled; add them unchecked to enable their automation.
+Other checklist items remain manual.
+
+`Mail introduction speakers` tracks all speaker introduction emails, and
+`Mail introduction hoster` tracks the host contact's introduction email. Each
+item is completed independently after its recipients' dispatches are accepted.
+The automation also supports these task names:
+
+| Task                                             | Behavior                                                                                                      |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| `Mail introduction`                              | Tracks host and speaker introductions together; completes after both groups.                                  |
+| `Thanks hoster`                                  | Tracks the host contact's thank-you email.                                                                    |
+| `Thanks speakers`                                | Tracks speaker thank-you emails.                                                                              |
+| `Thanks speakers and share openfeedback reports` | Sends speaker thank-you emails and adds a completed `Mail thanks speakers` item; report sharing stays manual. |
+
+The automation checks a task only after all its recipient requests have been
+accepted and recorded in the delivery ledger. Partial failures leave that task
+unchecked. A later run retries definitively deferred requests and restores
+missing completion checkmarks from accepted records without sending again.
+Unchecking an already dispatched task does not resend its recorded messages.
 
 ## When messages are due
 
-Dates use `Europe/Paris`. Every row below also requires a current approval.
+Dates use `Europe/Paris`. Email rows require a present, unchecked task and batch approval.
 
 | Event condition                                                          | Message                                                       |
 | ------------------------------------------------------------------------ | ------------------------------------------------------------- |
@@ -66,8 +148,8 @@ Dates use `Europe/Paris`. Every row below also requires a current approval.
 | Scheduled with a past date                                               | No messages; a past date does not confirm the meetup happened |
 
 Each message kind is sent at most once per issue and recipient under the current
-policy. The Slack reminder is not a daily repeat. Reapproval does not resend
-previously recorded messages.
+policy. The Slack reminder is not a daily repeat. Changing the locale or
+repository revision does not resend previously recorded messages.
 
 The `<consumer-repository-owner>/mailings` repository receives a
 `send-transactional-email` dispatch with a template, recipient, placeholders and
@@ -78,8 +160,9 @@ an idempotency key. It must support:
 | Host contact | `meetup-intro-hosting`  | `meetup-thanks-hosting`  |
 | Speaker      | `meetup-intro-speakers` | `meetup-thanks-speakers` |
 
-A successful dispatch means GitHub accepted the request. Check the mailings
-repository's run for the actual email result.
+A successful dispatch and a checked email task mean GitHub accepted the request,
+not that the recipient received the email. Check the mailings repository's run
+for the actual email result.
 
 ## Diagnose and recover
 
@@ -90,7 +173,13 @@ persistence failures still fail the job. See the
 [audit workflow contract](../../.github/workflows/check-active-meetup-issues.md).
 
 `planned-count` counts planned messages; `dispatched-count` counts
-provider calls, including rejected or uncertain attempts.
+planned-message provider calls, including rejected or uncertain attempts.
+Organizer approval comments and their Slack alerts are excluded from these
+delivery counts.
+
+A `communication.checklist-update-failed` diagnostic means dispatch results were
+recorded but issue completion could not be saved, for example after a concurrent
+edit. Run reconciliation again; accepted messages will not be sent twice.
 
 The bot keeps a delivery ledger in an issue comment. Existing records prevent
 repeated delivery:
@@ -108,7 +197,8 @@ failed ledger read or reservation prevents dispatch. Use the reusable workflows
 so issue updates and audits share the same per-issue concurrency lock.
 
 The [communication action](../../actions/communication/reconcile/README.md)
-uses one reconciliation path. It dispatches when maintainer approval and
-delivery checks permit sending. The reported `check` mode means that a gate
-blocked dispatch. The reusable workflows supply the mailings token and hold the
-shared event lock.
+dispatches when event, checklist, approval, and delivery checks permit sending.
+The reported `check` mode means global dispatch is blocked. A pending or rejected
+approval disables mail within `dispatch` mode and reports a warning. Readiness
+reminders are independent of email approval. The reusable workflows supply the
+mailings token and hold the shared event lock.

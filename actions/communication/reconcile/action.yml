@@ -1,5 +1,5 @@
 name: Reconcile meetup communications
-description: Reconcile due meetup communications and dispatch them through the configured mail and Slack gateways when approval and delivery checks pass. Publish redacted diagnostics in annotations, logs, and the job summary.
+description: Reconcile due meetup communications and dispatch them through the configured mail and Slack gateways when event, checklist, approval and delivery checks pass. Publish redacted diagnostics in annotations, logs, and the job summary.
 author: Cloud Native Aix-Marseille
 inputs:
   locale:
@@ -10,19 +10,19 @@ inputs:
     description: GitHub issue number in the caller repository containing the meetup event document to inspect.
     required: true
   github-token:
-    description: Token for the caller repository. Requires issues:write for approval, delivery ledger, and diagnostic comments.
+    description: Token for the caller repository. Requires issues:write for approval requests, checklist completion, delivery ledger, and diagnostic comments, and metadata:read to verify approvers.
     required: true
   managed-comment-author:
-    description: Trusted bot login allowed to create or update managed delivery ledger and communication diagnostic comments, for example my-app[bot].
+    description: Trusted bot login allowed to create or update managed approval, delivery ledger and communication diagnostic comments, for example my-app[bot].
     required: true
   mailings-token:
-    description: Token used to dispatch approved email communications to the configured mailings repository.
+    description: Token used to dispatch due email communications to the configured mailings repository.
     required: true
-  slack-channel-id:
-    description: Slack channel ID used for approved notifications.
+  slack-organizer-channel-id:
+    description: Internal meetup organizer Slack channel for approval requests and readiness reminders. Public announcement channels are separate.
     required: true
   slack-token:
-    description: Slack bot token used for approved notifications.
+    description: Slack bot token used for approval requests and organizer reminders.
     required: true
   report-errors-to-issue:
     description: Use true to record communication diagnostics in a managed meetup issue comment and succeed after persistence, or false to fail on error diagnostics. Execution and comment persistence failures still fail the action. Requires the shared event lock.

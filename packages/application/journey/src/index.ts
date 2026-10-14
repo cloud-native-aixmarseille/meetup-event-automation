@@ -34,3 +34,9 @@ export type {
 } from "./use-cases/validate-meetup-referentials.js";
 export { ValidateMeetupReferentials } from "./use-cases/validate-meetup-referentials.js";
 export { ManageMeetupFeedback } from "./use-cases/manage-meetup-feedback.js";
+export type {
+	OrganizerApproval,
+	OrganizerApprovalKind,
+	OrganizerApprovalRequest,
+	OrganizerApprovalResult,
+} from "./ports/organizer-approval.js";

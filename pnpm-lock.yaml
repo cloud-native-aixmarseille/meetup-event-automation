@@ -66,11 +66,17 @@ importers:
         specifier: ^7.0.3
         version: 7.0.3
 
-  packages/adapter/github-communication-approval-repository:
+  packages/adapter/github-organizer-approval:
     dependencies:
       '@meetup-automation/communication':
         specifier: workspace:*
         version: link:../../domain/communication
+      '@meetup-automation/journey':
+        specifier: workspace:*
+        version: link:../../application/journey
+      '@meetup-automation/localization':
+        specifier: workspace:*
+        version: link:../../presentation/localization
 
   packages/adapter/github-delivery-ledger:
     dependencies:
@@ -194,6 +200,9 @@ importers:
 
   packages/runtime/github-actions:
     dependencies:
+      '@meetup-automation/github-organizer-approval':
+        specifier: workspace:*
+        version: link:../../adapter/github-organizer-approval
       '@actions/core':
         specifier: ^3.0.1
         version: 3.0.1
@@ -209,9 +218,6 @@ importers:
       '@meetup-automation/event':
         specifier: workspace:*
         version: link:../../domain/event
-      '@meetup-automation/github-communication-approval-repository':
-        specifier: workspace:*
-        version: link:../../adapter/github-communication-approval-repository
       '@meetup-automation/github-delivery-ledger':
         specifier: workspace:*
         version: link:../../adapter/github-delivery-ledger

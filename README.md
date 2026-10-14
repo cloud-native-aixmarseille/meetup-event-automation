@@ -10,7 +10,7 @@ publication links, and follow-up tasks.
 
 The automation validates and updates those issues, keeps host and speaker
 choices in sync, prepares Google Drive assets and OpenFeedback events, updates
-the shared feedback link, and sends approved email and Slack messages.
+the shared feedback link, and sends approved email batches and Slack notifications.
 
 This repository contains the automation. The consuming meetup repository stores
 the issues, private host and speaker CSV files, credentials, and workflow
@@ -26,7 +26,7 @@ reusable workflow callers. Pin every caller to the same published release commit
 - [Google Drive](docs/integrations/assets.md): create event folders and copy
   templates.
 - [OpenFeedback](docs/integrations/feedback.md): create feedback events automatically.
-- [Email and Slack](docs/integrations/communications.md): send approved
+- [Email and Slack](docs/integrations/communications.md): approve email batches and track automatic
   communications.
 
 Set the optional `locale` workflow input to `fr` for French generated messages;
@@ -41,12 +41,13 @@ English is the default. Use the same locale in all four callers.
 3. Add `hoster:confirmed` and `speakers:confirmed` after confirming
    participation.
 4. Publish the Meetup and CNCF event pages, then add their links to the issue.
-5. Review the event and apply `communication:approved` to authorize
-   communications.
+5. Check **Approve sending this batch** in each bot request comment. Leave the
+   issue's email tasks unchecked for automatic sending; checked tasks are already
+   complete.
 6. Complete the event and its follow-up checklist.
 
 The [organizer guide](docs/usage/organize-meetup.md) covers agenda syntax,
-postponements, feedback preparation, approvals, and follow-up.
+postponements, feedback preparation, email completion, and follow-up.
 
 ## Documentation
 

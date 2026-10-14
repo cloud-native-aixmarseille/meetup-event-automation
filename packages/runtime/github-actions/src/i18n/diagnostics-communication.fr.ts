@@ -1,5 +1,14 @@
 import type { DIAGNOSTICS_COMMUNICATION_EN } from "./diagnostics-communication.en.js";
 export const DIAGNOSTICS_COMMUNICATION_FR = {
+	"diagnostic.communication.approval-pending":
+		"Les e-mails attendent une confirmation dans le ticket du meetup.",
+	"diagnostic.communication.approval-rejected":
+		"Le lot d'e-mails a été refusé. Décochez Refuser et cochez Approuver dans la demande avant l'envoi.",
+	"diagnostic.communication.approval-unavailable":
+		"La confirmation des organisateurs n'a pas pu être vérifiée ou enregistrée ; l'envoi des e-mails est bloqué.",
+	"diagnostic.communication.approval-notification-failed":
+		"La notification Slack de confirmation n'a pas été confirmée. Consultez la demande dans le ticket du meetup.",
+
 	"diagnostic.communication.duplicate-intent":
 		"Une intention de communication en double a été ignorée.",
 	"diagnostic.communication.gateway-delivery-uncertain":
@@ -36,20 +45,8 @@ export const DIAGNOSTICS_COMMUNICATION_FR = {
 		"Le registre des livraisons contient déjà cette intention.",
 	"diagnostic.communication.dispatch-disabled-by-config":
 		"L'envoi des communications est désactivé par la configuration du dépôt.",
-	"diagnostic.communication.approval-label-missing":
-		"Les communications nécessitent le label d'approbation configuré.",
-	"diagnostic.communication.approval-missing":
-		"Les communications nécessitent un instantané approuvé par un responsable.",
-	"diagnostic.communication.approval-stale":
-		"Des informations affectant les messages ont changé depuis l'approbation ; retirez puis ajoutez à nouveau le label d'approbation.",
-	"diagnostic.communication.approval-capture-unauthorized":
-		"L'auteur du label d'approbation n'a pas les droits suffisants sur le dépôt.",
-	"diagnostic.communication.approval-trigger-snapshot-missing":
-		"L'événement d'ajout du label ne contient pas d'instantané immuable de l'issue.",
-	"diagnostic.communication.approval-trigger-stale":
-		"L'issue a changé depuis l'ajout du label ; retirez puis ajoutez à nouveau le label d'approbation.",
-	"diagnostic.communication.approval-repository-failed":
-		"L'approbation du responsable n'a pas pu être vérifiée de manière sûre.",
+	"diagnostic.communication.checklist-update-failed":
+		"Les résultats des envois sont enregistrés, mais la liste de tâches n'a pas pu être mise à jour. Relancez la réconciliation pour la restaurer sans renvoyer les messages acceptés.",
 	"diagnostic.communication.event-skipped":
 		"L'issue n'est pas un événement meetup configuré.",
 	"diagnostic.communication.event-concurrently-modified":

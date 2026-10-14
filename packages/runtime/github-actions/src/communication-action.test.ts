@@ -47,7 +47,7 @@ describe("communication action report facts", () => {
 			"github-token": "private-token",
 			"mailings-token": "private-mailings-token",
 			"slack-token": "private-slack-token",
-			"slack-channel-id": "channel-safe-id",
+			"slack-organizer-channel-id": "organizer-channel-id",
 			"managed-comment-author": "automation[bot]",
 		})) {
 			vi.stubEnv(`INPUT_${name.toUpperCase()}`, value);
@@ -60,7 +60,7 @@ describe("communication action report facts", () => {
 		"report-errors-to-issue",
 		"mailings-token",
 		"slack-token",
-		"slack-channel-id",
+		"slack-organizer-channel-id",
 	])("requires %s before reconciling communications", async (input) => {
 		// Arrange
 		vi.stubEnv(`INPUT_${input.toUpperCase()}`, "");
@@ -74,6 +74,19 @@ describe("communication action report facts", () => {
 		);
 		expect(boundary.execute).not.toHaveBeenCalled();
 		expect(core.setOutput).not.toHaveBeenCalled();
+	});
+
+	it("requires the organizer channel even when a generic Slack channel is configured", async () => {
+		// Arrange
+		vi.stubEnv("INPUT_SLACK-ORGANIZER-CHANNEL-ID", "");
+		vi.stubEnv("INPUT_SLACK-CHANNEL-ID", "public-channel-id");
+		// Act
+		const operation = CommunicationAction.runCommunicationReconcileAction();
+		// Assert
+		await expect(operation).rejects.toThrow(
+			"Input required and not supplied: slack-organizer-channel-id",
+		);
+		expect(boundary.execute).not.toHaveBeenCalled();
 	});
 
 	it.each([
@@ -110,9 +123,9 @@ describe("communication action report facts", () => {
 				],
 				runtimeDiagnostics: [
 					{
-						code: "communication.approval-missing",
+						code: "communication.checklist-update-failed",
 						severity: "warning",
-						message: "private approval data",
+						message: "private checklist data",
 					},
 				],
 			});
@@ -135,9 +148,10 @@ describe("communication action report facts", () => {
 				message: "A gateway could not confirm delivery.",
 			});
 			expect(report.diagnostics).toContainEqual({
-				code: "communication.approval-missing",
+				code: "communication.checklist-update-failed",
 				severity: "warning",
-				message: "Communications require a maintainer-owned approval snapshot.",
+				message:
+					"Delivery results are recorded but checklist completion could not be persisted.",
 			});
 			expect(Boolean(report.failure)).toBe(
 				severity === "error" && !issueReporting,
@@ -190,7 +204,7 @@ describe("communication action report facts", () => {
 			expect.objectContaining({
 				mailingsToken: "private-mailings-token",
 				slackToken: "private-slack-token",
-				slackChannelId: "channel-safe-id",
+				slackOrganizerChannelId: "organizer-channel-id",
 			}),
 		);
 		expect(report.details).toContain("Communication mode: dispatch.");

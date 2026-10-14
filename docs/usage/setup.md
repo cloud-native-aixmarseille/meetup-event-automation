@@ -33,11 +33,12 @@ create the form.
 Install a GitHub App on the consumer repository with these repository
 permissions:
 
-| Permission           | Used for                                          |
-| -------------------- | ------------------------------------------------- |
-| Issues: write        | Update event issues and managed comments.         |
-| Contents: write      | Create the issue-form update branch.              |
-| Pull requests: write | Open the issue-form synchronization pull request. |
+| Permission           | Used for                                               |
+| -------------------- | ------------------------------------------------------ |
+| Metadata: read       | Verify repository write access for approval decisions. |
+| Issues: write        | Update event issues and managed comments.              |
+| Contents: write      | Create the issue-form update branch.                   |
+| Pull requests: write | Open the issue-form synchronization pull request.      |
 
 Install the same App on `mailings` under the consumer repository's owner with
 **Contents: write** permission for email dispatch. Each workflow creates the
@@ -57,13 +58,18 @@ Both event workflows require the OpenFeedback key and both Kutt settings,
 including when events already have feedback URLs. Also configure the required
 Drive and Slack settings:
 
-| Type     | Name                                     | Value                                                  |
-| -------- | ---------------------------------------- | ------------------------------------------------------ |
-| Secret   | `GOOGLE_SERVICE_ACCOUNT_CREDENTIALS`     | Service-account JSON with access to the Drive folders. |
-| Variable | `GOOGLE_DRIVE_MEETUP_FOLDER_ID`          | Parent folder ID for event assets.                     |
-| Variable | `GOOGLE_DRIVE_MEETUP_TEMPLATE_FOLDER_ID` | Distinct folder ID containing templates.               |
-| Secret   | `SLACK_BOT_TOKEN`                        | Bot token allowed to post to the organizer channel.    |
-| Variable | `SLACK_CHANNEL_ID`                       | Organizer channel ID.                                  |
+| Type     | Name                                     | Value                                                            |
+| -------- | ---------------------------------------- | ---------------------------------------------------------------- |
+| Secret   | `GOOGLE_SERVICE_ACCOUNT_CREDENTIALS`     | Service-account JSON with access to the Drive folders.           |
+| Variable | `GOOGLE_DRIVE_MEETUP_FOLDER_ID`          | Parent folder ID for event assets.                               |
+| Variable | `GOOGLE_DRIVE_MEETUP_TEMPLATE_FOLDER_ID` | Distinct folder ID containing templates.                         |
+| Secret   | `SLACK_BOT_TOKEN`                        | Bot token allowed to post to the meetup organizer channel.       |
+| Variable | `SLACK_ORGANIZER_CHANNEL_ID`             | Meetup organizer channel ID for approval requests and reminders. |
+
+Set `SLACK_ORGANIZER_CHANNEL_ID` to the channel used by meetup organizers for
+approvals and preparation reminders. Keep public event announcement destinations
+separate; their issue checklist tasks remain manual. See
+[Slack audiences](../integrations/communications.md#organizer-and-public-channels).
 
 Prepare [Drive templates](../integrations/assets.md),
 [OpenFeedback and Kutt](../integrations/feedback.md), and
@@ -85,6 +91,8 @@ that includes the features you configure. GitHub requires a literal revision in
 ```yaml
 name: Update meetup issue
 on:
+  issue_comment:
+    types: [edited]
   issues:
     types:
       [
@@ -100,6 +108,13 @@ on:
 permissions: {}
 jobs:
   manage:
+    if: >-
+      ${{ !github.event.issue.pull_request &&
+          (github.event_name != 'issue_comment' ||
+           (github.event.action == 'edited' &&
+            github.event.sender.type == 'User' &&
+            github.event.comment.user.type == 'Bot' &&
+            startsWith(github.event.comment.body, '<!-- meetup-organizer-approval:v1 '))) }}
     uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/update-meetup-issue.yml@RELEASE_SHA
     permissions:
       contents: read
@@ -107,7 +122,7 @@ jobs:
       locale: en
       github-app-client-id: ${{ vars.CI_BOT_APP_CLIENT_ID }}
       kutt-link-id: ${{ vars.KUTT_FEEDBACK_LINK_ID }}
-      slack-channel-id: ${{ vars.SLACK_CHANNEL_ID }}
+      slack-organizer-channel-id: ${{ vars.SLACK_ORGANIZER_CHANNEL_ID }}
       google-drive-meetup-folder-id: ${{ vars.GOOGLE_DRIVE_MEETUP_FOLDER_ID }}
       google-drive-meetup-template-folder-id: ${{ vars.GOOGLE_DRIVE_MEETUP_TEMPLATE_FOLDER_ID }}
     secrets:
@@ -139,7 +154,7 @@ jobs:
       locale: en
       github-app-client-id: ${{ vars.CI_BOT_APP_CLIENT_ID }}
       kutt-link-id: ${{ vars.KUTT_FEEDBACK_LINK_ID }}
-      slack-channel-id: ${{ vars.SLACK_CHANNEL_ID }}
+      slack-organizer-channel-id: ${{ vars.SLACK_ORGANIZER_CHANNEL_ID }}
       google-drive-meetup-folder-id: ${{ vars.GOOGLE_DRIVE_MEETUP_FOLDER_ID }}
       google-drive-meetup-template-folder-id: ${{ vars.GOOGLE_DRIVE_MEETUP_TEMPLATE_FOLDER_ID }}
     secrets:
@@ -220,7 +235,3 @@ workflows provide the per-event concurrency lock.
 Open a Meetup issue. Check the Actions run and the diagnostic comment on the
 issue. Correct any missing fields or credential errors, then follow the
 [organizer guide](organize-meetup.md).
-
-To upgrade, change all four pins to the selected release commit and review its
-input and secret contracts. Run the data check and an event audit after the
-upgrade. Restore the prior pins to roll back the workflow version.

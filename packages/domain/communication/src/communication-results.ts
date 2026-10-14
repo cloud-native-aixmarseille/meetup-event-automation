@@ -2,6 +2,7 @@ import type {
 	CommunicationDiagnostic,
 	CommunicationIntent,
 	DeliveryLedgerEntry,
+	MailCommunicationKind,
 	ReconcileCommunicationCounts,
 	ReconcileCommunicationsInput,
 	ReconcileCommunicationsResult,
@@ -30,13 +31,34 @@ export class CommunicationResults {
 		intents: readonly CommunicationIntent[],
 		counts: ReconcileCommunicationCounts,
 		diagnostics: readonly CommunicationDiagnostic[],
+		acceptedIds: ReadonlySet<string>,
 	): ReconcileCommunicationsResult {
 		return {
 			mode,
 			intentIds: intents.map((intent) => intent.intentId),
+			completedMailKinds: CommunicationResults.completedMailKinds(
+				intents,
+				acceptedIds,
+			),
 			counts: { ...counts },
 			diagnostics: [...diagnostics],
 		};
+	}
+
+	static completedMailKinds(
+		intents: readonly CommunicationIntent[],
+		acceptedIds: ReadonlySet<string>,
+	): readonly MailCommunicationKind[] {
+		const groups = new Map<MailCommunicationKind, boolean>();
+		for (const intent of intents) {
+			if (intent.channel !== "mail" || intent.kind === "readiness-reminder")
+				continue;
+			groups.set(
+				intent.kind,
+				(groups.get(intent.kind) ?? true) && acceptedIds.has(intent.intentId),
+			);
+		}
+		return [...groups].filter(([, accepted]) => accepted).map(([kind]) => kind);
 	}
 
 	static emptyResult(
@@ -46,6 +68,7 @@ export class CommunicationResults {
 		return {
 			mode,
 			intentIds: [],
+			completedMailKinds: [],
 			counts: {
 				planned: 0,
 				due: 0,

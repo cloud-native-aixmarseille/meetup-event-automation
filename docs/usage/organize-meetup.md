@@ -55,22 +55,34 @@ event creation does not populate them.
 The shared Kutt link switches on the event's calendar day in `Europe/Paris`.
 Check the daily audit ran and the target contains the expected talks.
 
-## Approve communications
+## Track communications
 
-After reviewing the event, a repository user with triage, write, maintain, or
-admin access applies `communication:approved`.
+Meetup **organizers** manage preparation and approvals. The organizer Slack
+channel receives approval requests and readiness reminders. Post public Slack
+event announcements manually and check their separate Communication tasks.
+See [channel separation](../integrations/communications.md#organizer-and-public-channels).
 
-If the workflow reports stale approval, review the changed facts, remove the
-label, and apply it again. Changes to the event date, participants, readiness,
-publication links, routing, language, or the checked-out repository revision can
-require new approval. See [communications](../integrations/communications.md)
-for message timing and retry behavior. A checkbox does not authorize a message.
+Leave these two items unchecked in **Communication**:
+
+- [ ] Mail introduction speakers
+- [ ] Mail introduction hoster
+
+Once the event is ready, review the approval request in the issue or follow its
+Slack link. A repository writer can check **Approve sending this batch** in
+the bot comment. The automation sends the emails and checks each item
+independently after all requests for that group are accepted. Check an item
+yourself only when that group's work was completed manually.
+
+Keep `Mail thanks hoster` and `Mail thanks speakers` in **Post event** for the
+corresponding follow-up emails. Missing tasks are not sent automatically. See
+[communications](../integrations/communications.md) for supported task names,
+message timing and recovery after partial failures.
 
 ## Postpone or cancel
 
 Add `event:postponed` or `event:cancelled` and remove any other `event:*` status
 label. If a postponed event is scheduled again, set the new date, remove
-`event:postponed`, and review its links and approval.
+`event:postponed`, and review its links and unfinished tasks.
 
 For a cancelled event, apply `event:cancelled` before closing the issue. Closing
 an issue without an explicit status marks it held.
@@ -80,11 +92,11 @@ an issue without an explicit status marks it held.
 After the meetup, apply `event:held` or close the issue. Passage of time alone
 does not confirm that the meetup happened.
 
-Review communication approval for the held event so due thank-you messages can
-be sent. Publish slides, import attendance to the CNCF platform, and complete
-the remaining post-event tasks. Check the communication result before marking
-thank-you tasks complete. Update the follow-up checkboxes yourself after work is
-done.
+Review and approve the separate thank-you batch for the held event. Unchecked
+thank-you tasks are then sent automatically and checked after accepted dispatch.
+Publish slides, share OpenFeedback reports, import attendance to the CNCF
+platform, and complete the remaining manual
+post-event tasks yourself. The mailings workflow reports the actual email result.
 
 The audit continues to include held events with unfinished follow-up, including
 closed issues. Cancelled events and events with complete follow-up are excluded.

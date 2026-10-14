@@ -1,0 +1,41 @@
+import {
+	type ApprovalDecision,
+	ApprovalRecord,
+	type StoredApproval,
+} from "./approval-record.js";
+import { ApprovalMessages } from "./i18n/approval-messages.js";
+
+export class ApprovalPresenter {
+	constructor(private readonly messages: ApprovalMessages) {}
+	issue(record: StoredApproval, decision: ApprovalDecision): string {
+		return [
+			ApprovalRecord.marker(record),
+			this.messages.t("approval.request", {
+				kind: record.kind.replace("email-", ""),
+				date: record.eventDate,
+				count: record.recipientCount,
+				approveMark: decision.status === "approved" ? "x" : " ",
+				rejectMark: decision.status === "rejected" ? "x" : " ",
+			}),
+		].join("\n\n");
+	}
+	decision(record: StoredApproval, body: string): ApprovalDecision {
+		const normalized = body.replace(/\r\n/g, "\n").replace(/- \[X\]/g, "- [x]");
+		for (const locale of ["en", "fr"]) {
+			const presenter = new ApprovalPresenter(new ApprovalMessages(locale));
+			for (const status of ["approved", "rejected"] as const) {
+				if (normalized === presenter.issue(record, { status }))
+					return { status };
+			}
+		}
+		return { status: "pending" };
+	}
+	slack(record: StoredApproval, url: string): string {
+		return this.messages.t("approval.slack", {
+			kind: record.kind.replace("email-", ""),
+			date: record.eventDate,
+			count: record.recipientCount,
+			url,
+		});
+	}
+}

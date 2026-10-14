@@ -1,7 +1,4 @@
-import { createHash } from "node:crypto";
 import { getOctokit } from "@actions/github";
-import { CommunicationIdempotency } from "@meetup-automation/communication";
-import type { EventDocument } from "@meetup-automation/event";
 import {
 	AutomationConfigFactory,
 	type CommunicationJourneyDiagnostic,
@@ -18,21 +15,12 @@ export interface RunCommunicationReconcileInput {
 	readonly githubToken: string;
 	readonly mailingsToken: string;
 	readonly slackToken: string;
-	readonly slackChannelId: string;
+	readonly slackOrganizerChannelId: string;
 	readonly owner: string;
 	readonly repo: string;
 	readonly repositoryId?: string;
-	/** Caller revision which owns the private referentials. */
-	readonly automationRevision: string;
 	readonly workspaceRoot?: string;
 	readonly managedCommentAuthor: string;
-	readonly approvalTrigger?: Readonly<{
-		action: string;
-		label: string;
-		actor: string;
-		/** Immutable issue snapshot delivered with the GitHub label event. */
-		issueSnapshot?: EventDocument;
-	}>;
 }
 
 export type RunCommunicationReconcileResult = ManageMeetupCommunicationsResult;
@@ -59,7 +47,7 @@ export class CommunicationRuntime {
 		}
 		const mailingsToken = input.mailingsToken.trim();
 		const slackToken = input.slackToken.trim();
-		const slackChannelId = input.slackChannelId.trim();
+		const slackOrganizerChannelId = input.slackOrganizerChannelId.trim();
 		const messages = new OrganizerNotificationMessages(input.locale);
 		const container = CommunicationComposition.createCommunicationContainer({
 			locale: messages.locale,
@@ -72,22 +60,20 @@ export class CommunicationRuntime {
 			workspaceRoot: input.workspaceRoot,
 			mailingsToken,
 			slackToken,
+			slackOrganizerChannelId,
 		});
 		const result = await container.get(ManageMeetupCommunications).execute({
 			issueNumber: input.issueNumber,
 			owner: input.owner,
 			repo: input.repo,
 			repositoryId: input.repositoryId,
-			automationRevision: input.automationRevision,
-			notificationDestination: slackChannelId,
-			notificationContent: messages.t("communication.organizer-attention", {
-				issue: input.issueNumber,
-			}),
-			notificationContentRevision: messages.policyRevision,
-			approvalTrigger: input.approvalTrigger,
-			notificationDestinationFingerprint: config.communication["slack-enabled"]
-				? `sha256:${createHash("sha256").update(slackChannelId).digest("hex")}`
-				: null,
+			organizerNotificationDestination: slackOrganizerChannelId,
+			organizerNotificationContent: messages.t(
+				"communication.organizer-attention",
+				{
+					issue: input.issueNumber,
+				},
+			),
 		});
 		return result;
 	}
@@ -104,17 +90,11 @@ export class CommunicationRuntime {
 				"owner and repo must be valid GitHub repository segments",
 			);
 		}
+		if (!input.slackOrganizerChannelId.trim()) {
+			throw new Error("slackOrganizerChannelId must not be empty");
+		}
 		if (!input.managedCommentAuthor.trim()) {
 			throw new Error("managedCommentAuthor must not be empty");
-		}
-		if (
-			!CommunicationIdempotency.isSafeCommunicationIdentifier(
-				input.automationRevision.trim(),
-			)
-		) {
-			throw new Error(
-				"automationRevision must be a stable, PII-free revision identifier",
-			);
 		}
 	}
 
