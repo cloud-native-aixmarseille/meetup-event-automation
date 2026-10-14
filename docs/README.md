@@ -73,8 +73,8 @@ for implemented behavior and contributor conventions.
 - [ADR-0010: Approve email batches with request checkboxes](adr/0010-checkbox-organizer-approval.md)
 - [ADR-0011: Finalize organizer decisions in place and acknowledge them on Slack](adr/0011-final-organizer-decisions.md)
 - [ADR-0012: Synchronize OpenFeedback talks and speakers](adr/0012-synchronize-openfeedback-talks-and-speakers.md)
+- [ADR-0012: Synchronize speaker referentials and selected talks from Conference Hall](adr/0012-conference-hall-talks-and-speakers.md) (proposed)
 - [ADR-0013: Reconcile actionable organizer alerts throughout the meetup lifecycle](adr/0013-actionable-organizer-alerts.md)
-- [ADR-0012: Resolve selected talks and speakers from Conference Hall](adr/0012-conference-hall-talks-and-speakers.md) (proposed)
 
 ## Directory layout
 
