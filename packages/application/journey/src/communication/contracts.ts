@@ -4,8 +4,6 @@ export interface ManageMeetupCommunicationsInput {
 	readonly issueNumber: number;
 
 	readonly organizerNotificationDestination: string;
-	/** Rendered at the presentation boundary; never use this as an idempotency key. */
-	readonly organizerNotificationContent: string;
 	readonly owner: string;
 	readonly repo: string;
 	readonly repositoryId?: string;

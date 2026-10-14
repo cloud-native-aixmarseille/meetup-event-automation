@@ -1,4 +1,5 @@
 import type { OrganizerApproval } from "../ports/organizer-approval.js";
+import type { OrganizerReadinessNotification } from "../ports/organizer-readiness-notification.js";
 import type {
 	MailRecipient,
 	CommunicationClock,
@@ -15,6 +16,7 @@ import type { ManageMeetupEvent } from "./manage-meetup-event.js";
 export interface ManageMeetupCommunicationsDependencies {
 	readonly config: AutomationConfig;
 	readonly organizerApproval: OrganizerApproval;
+	readonly organizerReadinessNotification: OrganizerReadinessNotification;
 	readonly clock: CommunicationClock;
 	readonly eventRepository: EventRepository;
 	readonly referentialRepository: ReferentialRepository;

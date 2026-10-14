@@ -18,6 +18,8 @@ import type {
 } from "@meetup-automation/event";
 import {
 	GithubDeliveryLedger,
+	LedgerCommentPresenter,
+	LedgerMessages,
 	ScopedGithubLedgerCommentClient,
 } from "@meetup-automation/github-delivery-ledger";
 import { GithubRepositoryDispatchMailGateway } from "@meetup-automation/github-repository-dispatch-mail-gateway";
@@ -37,6 +39,8 @@ import {
 	SERVICES,
 } from "./composition.js";
 import { ActionMessages } from "./i18n/action-messages.js";
+import { OrganizerReadinessPresenter } from "./notifications/organizer-readiness-presenter.js";
+import { OrganizerNotificationMessages } from "./notifications/organizer-notification-messages.js";
 
 const COMMUNICATION_SERVICES = {
 	mailGateway: Symbol("MailGateway"),
@@ -85,6 +89,7 @@ export class CommunicationComposition {
 							input.issueNumber,
 						),
 						{ dispatchAuthorized, authorLogin: input.commentAuthorLogin },
+						new LedgerCommentPresenter(new LedgerMessages(input.locale)),
 					),
 			);
 		container
@@ -154,6 +159,9 @@ export class CommunicationComposition {
 			);
 			return new ManageMeetupCommunications({
 				clock,
+				organizerReadinessNotification: new OrganizerReadinessPresenter(
+					new OrganizerNotificationMessages(input.locale),
+				),
 				organizerApproval: new GithubOrganizerApproval(
 					new GithubApprovalClient(
 						input.client,

@@ -6,6 +6,9 @@ import type { MessageParameters } from "./message-parameters.js";
 const parameters = {
 	"communication.organizer-attention": {
 		issue: 42,
+		date: "2026-09-04",
+		url: "https://github.com/example/meetups/issues/42",
+		reasons: "Confirm the host.",
 	},
 } satisfies { [Key in keyof MessageParameters]: MessageParameters[Key] };
 describe("owned message catalogs", () => {

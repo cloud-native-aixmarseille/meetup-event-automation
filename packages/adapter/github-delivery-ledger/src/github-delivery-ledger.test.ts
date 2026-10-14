@@ -149,44 +149,60 @@ describe("GithubDeliveryLedger", () => {
 		expect(comments.comments).toHaveLength(2);
 	});
 
-	it("migrates a trusted version 1 ledger before matching and writing", async () => {
-		// Arrange
-		const comments = new MemoryComments();
-		comments.comments.push({
-			id: 1,
-			authorLogin: "automation[bot]",
-			body: `${"<!-- meetup-automation-delivery-ledger:v1 -->"}\n\n\`\`\`json\n${JSON.stringify(
-				{
-					schemaVersion: 1,
-					entries: [
-						{
-							...reservation,
-							status: "accepted",
-							updatedAt: reservation.reservedAt,
-						},
-					],
-				},
-			)}\n\`\`\``,
-		});
-		const ledger = new GithubDeliveryLedger(comments, {
-			dispatchAuthorized: true,
-			authorLogin: "automation[bot]",
-		});
+	it.each([1, 2])(
+		"preserves a trusted visible version %s ledger when rewriting its presentation",
+		async (schemaVersion) => {
+			// Arrange
+			const comments = new MemoryComments();
+			comments.comments.push({
+				id: 1,
+				authorLogin: "automation[bot]",
+				body: `${"<!-- meetup-automation-delivery-ledger:v1 -->"}\n\n\`\`\`json\n${JSON.stringify(
+					{
+						schemaVersion,
+						entries: [
+							{
+								...reservation,
+								status: "accepted",
+								updatedAt: reservation.reservedAt,
+							},
+						],
+					},
+				)}\n\`\`\``,
+			});
+			const ledger = new GithubDeliveryLedger(comments, {
+				dispatchAuthorized: true,
+				authorLogin: "automation[bot]",
+			});
 
-		// Act
-		const entry = await ledger.find(reservation.idempotencyKey);
-		await ledger.markAccepted(
-			reservation.idempotencyKey,
-			"2026-09-04T10:00:02.000Z",
-		);
+			// Act
+			const entry = await ledger.find(reservation.idempotencyKey);
+			await ledger.markAccepted(
+				reservation.idempotencyKey,
+				"2026-09-04T10:00:02.000Z",
+			);
+			const repeated = await ledger.reservePending(reservation);
+			const visible = comments.comments[0]?.body.replace(
+				/<!--[\s\S]*?-->/g,
+				"",
+			);
 
-		// Assert
-		expect(entry).toMatchObject({
-			status: "accepted",
-		});
-		expect(comments.comments[0]?.body).not.toContain(reservation.recipientId);
-		expect(comments.comments[0]?.body).toContain('"schemaVersion": 2');
-	});
+			// Assert
+			expect(entry).toMatchObject({
+				status: "accepted",
+			});
+			expect(comments.comments[0]?.body).not.toContain(reservation.recipientId);
+			expect(comments.comments[0]?.body).toContain('"schemaVersion": 2');
+			expect(visible).toContain(
+				"Host introduction email: Request accepted (1)",
+			);
+			expect(visible).not.toContain("schemaVersion");
+			expect(repeated).toMatchObject({
+				reserved: false,
+				entry: { status: "accepted" },
+			});
+		},
+	);
 
 	it.each([
 		["missing opening fence", '{"schemaVersion":2,"entries":[]}\n```'],

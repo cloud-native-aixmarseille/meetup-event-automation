@@ -40,6 +40,7 @@ feature wording.
 | Managed issue comments                             | `packages/adapter/github-event-comment-repository/src/i18n` — `EventCommentMessages`  |
 | Issue-form speaker guidance                        | `packages/adapter/yaml-issue-form-projection/src/i18n` — `IssueFormMessages`          |
 | Organizer notification content                     | `packages/runtime/github-actions/src/notifications` — `OrganizerNotificationMessages` |
+| Communication status comments                      | `packages/adapter/github-delivery-ledger/src/i18n` — `LedgerMessages`                 |
 
 Keep wording, keys, parameter types, and catalog tests with the presenter that
 owns them. Pass the resolved locale across package boundaries; each owner

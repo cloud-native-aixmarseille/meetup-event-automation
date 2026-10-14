@@ -40032,7 +40032,12 @@ var ManageMeetupCommunications = class _ManageMeetupCommunications {
       mailPlaceholders: CommunicationPlaceholders.eventPlaceholders(
         managed.event
       ),
-      notificationContent: input.organizerNotificationContent
+      notificationContent: this.dependencies.organizerReadinessNotification.render({
+        repository: repositoryName,
+        issueNumber: input.issueNumber,
+        eventDate: managed.event.date,
+        reasons: managed.diagnostics.filter((item) => item.severity !== "info" && !item.fixApplied).map(({ code, field }) => ({ code, field }))
+      })
     };
   }
   sourceIsCurrent(source, diagnostics) {
@@ -40674,11 +40679,87 @@ import { createHash as createHash2 } from "node:crypto";
 // packages/adapter/github-delivery-ledger/src/github-delivery-ledger-contracts.ts
 var DELIVERY_LEDGER_MARKER = "<!-- meetup-automation-delivery-ledger:v1 -->";
 
+// packages/adapter/github-delivery-ledger/src/i18n/messages.en.ts
+var EN_MESSAGES3 = {
+  "ledger.title": "### Communication status",
+  "ledger.empty": "No message requests are currently recorded.",
+  "ledger.row": "- {kind}: {status} ({count, number})",
+  "ledger.kind": "{kind, select, host_introduction {Host introduction email} speaker_introduction {Speaker introduction email} host_thanks {Host thank-you email} speaker_thanks {Speaker thank-you email} readiness_reminder {Organizer Slack reminder} other {Message}}",
+  "ledger.status": "{status, select, accepted {Request accepted} pending {Delivery in progress or awaiting verification} rejected {Request rejected} uncertain {Delivery needs verification} other {Unknown status}}",
+  "ledger.explanation": "Accepted email requests are handed to the mail service; check its result for actual delivery.",
+  "ledger.attention": "For rejected requests, fix the configuration before requesting a retry. For deliveries awaiting verification, check the provider before retrying to avoid duplicates."
+};
+
+// packages/adapter/github-delivery-ledger/src/i18n/messages.fr.ts
+var FR_MESSAGES3 = {
+  "ledger.title": "### \xC9tat des communications",
+  "ledger.empty": "Aucune demande d'envoi n'est enregistr\xE9e actuellement.",
+  "ledger.row": "- {kind} : {status} ({count, number})",
+  "ledger.kind": "{kind, select, host_introduction {Courriel de pr\xE9sentation au lieu d'accueil} speaker_introduction {Courriel de pr\xE9sentation aux intervenants} host_thanks {Courriel de remerciement au lieu d'accueil} speaker_thanks {Courriel de remerciement aux intervenants} readiness_reminder {Rappel Slack aux organisateurs} other {Message}}",
+  "ledger.status": "{status, select, accepted {Demande accept\xE9e} pending {Envoi en cours ou \xE0 v\xE9rifier} rejected {Demande refus\xE9e} uncertain {Envoi \xE0 v\xE9rifier} other {\xC9tat inconnu}}",
+  "ledger.explanation": "Les demandes de courriel accept\xE9es sont transmises au service d'envoi ; consultez son r\xE9sultat pour v\xE9rifier la livraison.",
+  "ledger.attention": "Pour les demandes refus\xE9es, corrigez la configuration avant de demander une nouvelle tentative. Pour les envois \xE0 v\xE9rifier, consultez le fournisseur avant de r\xE9essayer afin d'\xE9viter les doublons."
+};
+
+// packages/adapter/github-delivery-ledger/src/i18n/catalog.ts
+var CATALOGS3 = { en: EN_MESSAGES3, fr: FR_MESSAGES3 };
+
+// packages/adapter/github-delivery-ledger/src/i18n/ledger-messages.ts
+var LedgerMessages = class extends MessageLocalizer {
+  constructor(locale = "en") {
+    super(CATALOGS3, locale);
+  }
+};
+
+// packages/adapter/github-delivery-ledger/src/ledger-comment-presenter.ts
+var LedgerCommentPresenter = class {
+  constructor(messages = new LedgerMessages()) {
+    this.messages = messages;
+  }
+  messages;
+  render(ledger) {
+    const groups = /* @__PURE__ */ new Map();
+    for (const entry of ledger.entries) {
+      const kind = this.messages.t("ledger.kind", {
+        kind: entry.kind.replaceAll("-", "_")
+      });
+      const status = this.messages.t("ledger.status", { status: entry.status });
+      const key = JSON.stringify([kind, status]);
+      const group = groups.get(key) ?? { kind, status, count: 0 };
+      group.count += 1;
+      groups.set(key, group);
+    }
+    const lines = [DELIVERY_LEDGER_MARKER, this.messages.t("ledger.title")];
+    lines.push(
+      groups.size === 0 ? this.messages.t("ledger.empty") : [...groups.values()].map((group) => this.messages.t("ledger.row", group)).join("\n")
+    );
+    if (ledger.entries.some(
+      (entry) => entry.kind !== "readiness-reminder" && entry.status === "accepted"
+    )) {
+      lines.push(this.messages.t("ledger.explanation"));
+    }
+    if (ledger.entries.some((entry) => entry.status !== "accepted")) {
+      lines.push(this.messages.t("ledger.attention"));
+    }
+    const json = JSON.stringify(ledger, null, 2).replace(
+      /[<>&`-]/g,
+      (character) => `\\u${character.charCodeAt(0).toString(16).padStart(4, "0")}`
+    );
+    lines.push(`<!--
+\`\`\`json
+${json}
+\`\`\`
+-->`);
+    return lines.join("\n\n");
+  }
+};
+
 // packages/adapter/github-delivery-ledger/src/github-delivery-ledger.ts
 var GithubDeliveryLedger = class _GithubDeliveryLedger {
-  constructor(comments, options) {
+  constructor(comments, options, presenter = new LedgerCommentPresenter()) {
     this.comments = comments;
     this.options = options;
+    this.presenter = presenter;
     this.#authorLogin = options.authorLogin.trim().toLowerCase();
     if (!this.#authorLogin) {
       throw new Error("Delivery ledger author login is required");
@@ -40686,6 +40767,7 @@ var GithubDeliveryLedger = class _GithubDeliveryLedger {
   }
   comments;
   options;
+  presenter;
   #authorLogin;
   async find(idempotencyKey) {
     const { ledger } = await this.#load();
@@ -40806,7 +40888,7 @@ var GithubDeliveryLedger = class _GithubDeliveryLedger {
     ledger.entries.sort(
       (left, right) => left.idempotencyKey.localeCompare(right.idempotencyKey)
     );
-    const body = _GithubDeliveryLedger.renderLedger(ledger);
+    const body = this.presenter.render(ledger);
     if (commentId === void 0) {
       await this.comments.createComment(body);
       return;
@@ -40841,17 +40923,6 @@ var GithubDeliveryLedger = class _GithubDeliveryLedger {
       schemaVersion: 2,
       entries: value.entries.map(_GithubDeliveryLedger.protectStoredEntry)
     };
-  }
-  static renderLedger(ledger) {
-    return `${DELIVERY_LEDGER_MARKER}
-
-<details><summary>Meetup communication delivery ledger</summary>
-
-\`\`\`json
-${JSON.stringify(ledger, null, 2)}
-\`\`\`
-
-</details>`;
   }
   static publicEntry(entry) {
     return {
@@ -43242,7 +43313,7 @@ var GUIDANCE = /* @__PURE__ */ new Map([
 ]);
 
 // packages/adapter/github-event-comment-repository/src/i18n/messages.en.ts
-var EN_MESSAGES3 = {
+var EN_MESSAGES4 = {
   "comment.guidance.event.link.feedback.invalid": "Enter a valid HTTPS link to the OpenFeedback event page.",
   "comment.resolved": "All previously reported issues have been resolved. No changes are currently needed.",
   "comment.duplicate": "Superseded duplicate automation comment.",
@@ -43304,7 +43375,7 @@ var EN_MESSAGES3 = {
 };
 
 // packages/adapter/github-event-comment-repository/src/i18n/messages.fr.ts
-var FR_MESSAGES3 = {
+var FR_MESSAGES4 = {
   "comment.guidance.event.link.feedback.invalid": "Saisissez un lien HTTPS valide vers la page de l'\xE9v\xE9nement OpenFeedback.",
   "comment.resolved": "Tous les probl\xE8mes signal\xE9s pr\xE9c\xE9demment ont \xE9t\xE9 r\xE9solus. Aucune modification n'est n\xE9cessaire.",
   "comment.duplicate": "Ce commentaire automatique en double a \xE9t\xE9 remplac\xE9.",
@@ -43366,15 +43437,15 @@ var FR_MESSAGES3 = {
 };
 
 // packages/adapter/github-event-comment-repository/src/i18n/catalog.ts
-var CATALOGS3 = {
-  en: { ...EN_MESSAGES3 },
-  fr: { ...FR_MESSAGES3 }
+var CATALOGS4 = {
+  en: { ...EN_MESSAGES4 },
+  fr: { ...FR_MESSAGES4 }
 };
 
 // packages/adapter/github-event-comment-repository/src/i18n/event-comment-messages.ts
 var EventCommentMessages = class extends MessageLocalizer {
   constructor(locale = "en") {
-    super(CATALOGS3, locale);
+    super(CATALOGS4, locale);
   }
 };
 
@@ -52136,27 +52207,27 @@ var $i2 = { parse: de2(du), formatAST: de2(Fu), formatDoc: de2(Eu), printToDoc: 
 var import_yaml = __toESM(require_dist(), 1);
 
 // packages/adapter/yaml-issue-form-projection/src/i18n/messages.en.ts
-var EN_MESSAGES4 = {
+var EN_MESSAGES5 = {
   "form.speakers.guidance": "Select speakers by copying one or more references into the agenda.",
   "form.speakers.show": "Show available speaker references"
 };
 
 // packages/adapter/yaml-issue-form-projection/src/i18n/messages.fr.ts
-var FR_MESSAGES4 = {
+var FR_MESSAGES5 = {
   "form.speakers.guidance": "S\xE9lectionnez les intervenants en copiant une ou plusieurs r\xE9f\xE9rences dans le programme.",
   "form.speakers.show": "Afficher les r\xE9f\xE9rences des intervenants disponibles"
 };
 
 // packages/adapter/yaml-issue-form-projection/src/i18n/catalog.ts
-var CATALOGS4 = {
-  en: { ...EN_MESSAGES4 },
-  fr: { ...FR_MESSAGES4 }
+var CATALOGS5 = {
+  en: { ...EN_MESSAGES5 },
+  fr: { ...FR_MESSAGES5 }
 };
 
 // packages/adapter/yaml-issue-form-projection/src/i18n/issue-form-messages.ts
 var IssueFormMessages = class extends MessageLocalizer {
   constructor(locale = "en") {
-    super(CATALOGS4, locale);
+    super(CATALOGS5, locale);
   }
 };
 
@@ -57979,6 +58050,138 @@ var EventComposition = class _EventComposition {
   }
 };
 
+// packages/runtime/github-actions/src/notifications/readiness-guidance.ts
+var READINESS_GUIDANCE = /* @__PURE__ */ new Map([
+  ["event.confirmation.host.missing", "communication.reason.host-confirmation"],
+  [
+    "event.confirmation.speakers.missing",
+    "communication.reason.speaker-confirmation"
+  ],
+  ["event.title.missing", "communication.reason.title"],
+  ["event.date.missing", "communication.reason.date"],
+  ["event.date.invalid", "communication.reason.date"],
+  ["event.description.missing", "communication.reason.description"],
+  ["event.hoster.missing", "communication.reason.host"],
+  ["event.hoster.invalid", "communication.reason.host"],
+  ["event.hoster.multiple", "communication.reason.host"],
+  ["event.agenda.missing", "communication.reason.agenda"],
+  ["event.agenda.legacy-line-invalid", "communication.reason.agenda"],
+  ["event.agenda.speaker.missing", "communication.reason.agenda-speaker"],
+  ["event.agenda.speaker.invalid", "communication.reason.agenda-speaker"],
+  [
+    "event.agenda.description.missing",
+    "communication.reason.agenda-description"
+  ],
+  ["publication.meetup.missing", "communication.reason.meetup-link"],
+  ["event.link.meetup.invalid", "communication.reason.meetup-link"],
+  ["publication.meetup-url.invalid", "communication.reason.meetup-link"],
+  ["publication.community.missing", "communication.reason.community-link"],
+  ["event.link.community.invalid", "communication.reason.community-link"],
+  ["publication.community-url.invalid", "communication.reason.community-link"],
+  ["publication.assets.missing", "communication.reason.assets-link"],
+  ["event.link.assets.invalid", "communication.reason.assets-link"],
+  ["publication.asset-url.invalid", "communication.reason.assets-link"],
+  ["event.link.feedback.invalid", "communication.reason.feedback-link"]
+]);
+
+// packages/runtime/github-actions/src/notifications/organizer-readiness-presenter.ts
+var OrganizerReadinessPresenter = class {
+  constructor(messages) {
+    this.messages = messages;
+  }
+  messages;
+  render(context3) {
+    const reasons = new Set(
+      context3.reasons.map((reason) => this.reason(reason))
+    );
+    if (reasons.size === 0)
+      reasons.add(this.messages.t("communication.reason.unknown"));
+    const repository = context3.repository.split("/").map(encodeURIComponent).join("/");
+    return this.messages.t("communication.organizer-attention", {
+      issue: context3.issueNumber,
+      date: /^\d{4}-\d{2}-\d{2}$/.test(context3.eventDate) ? context3.eventDate : this.messages.t("communication.date-unknown"),
+      url: `https://github.com/${repository}/issues/${context3.issueNumber}`,
+      reasons: [...reasons].map((reason) => `\u2022 ${reason}`).join("\n")
+    });
+  }
+  reason(reason) {
+    let key = READINESS_GUIDANCE.get(
+      reason.code
+    );
+    if (reason.code === "event.logistics.intent.invalid") {
+      key = reason.field === "Aperitif" ? "communication.reason.aperitif" : reason.field === "Restaurant / Bar" ? "communication.reason.restaurant" : "communication.reason.logistics";
+    }
+    if (!key && reason.code.startsWith("event.document."))
+      key = "communication.reason.issue-format";
+    if (!key && reason.code.startsWith("referential."))
+      key = "communication.reason.referentials";
+    return this.messages.t(key ?? "communication.reason.unknown");
+  }
+};
+
+// packages/runtime/github-actions/src/notifications/messages.en.ts
+var EN_MESSAGES6 = {
+  "communication.organizer-attention": "Meetup #{issue} \xB7 {date} is approaching and is not ready.\n\nPlease resolve:\n{reasons}\n\nReview and update the meetup issue: {url}",
+  "communication.date-unknown": "date to confirm",
+  "communication.reason.host-confirmation": "Confirm the host and add the hoster:confirmed label.",
+  "communication.reason.speaker-confirmation": "Confirm the speakers and add the speakers:confirmed label.",
+  "communication.reason.title": "Add the event title.",
+  "communication.reason.date": "Set Event Date to a valid date in YYYY-MM-DD format.",
+  "communication.reason.description": "Add the event description.",
+  "communication.reason.host": "Choose one valid host in Hoster.",
+  "communication.reason.agenda": "Complete Agenda with one line per talk: - Speaker: Talk description.",
+  "communication.reason.agenda-speaker": "Choose a valid speaker for each talk in Agenda.",
+  "communication.reason.agenda-description": "Add a description for each talk in Agenda.",
+  "communication.reason.meetup-link": "Add or correct Meetup Link using the event URL without a language prefix (such as /fr-fr/).",
+  "communication.reason.community-link": "Add or correct CNCF Link using the community event URL.",
+  "communication.reason.assets-link": "Add or correct Drive Link using the event folder URL.",
+  "communication.reason.feedback-link": "Correct OpenFeedback Link using an HTTPS event URL.",
+  "communication.reason.aperitif": "Set Aperitif to Yes or No.",
+  "communication.reason.restaurant": "Set Restaurant / Bar to Yes or No.",
+  "communication.reason.logistics": "Set the logistics choices to Yes or No.",
+  "communication.reason.issue-format": "Repair the issue format using the automation's validation comment.",
+  "communication.reason.referentials": "Check the host and speaker references against the catalogs.",
+  "communication.reason.unknown": "Review the remaining validation items on the meetup issue."
+};
+
+// packages/runtime/github-actions/src/notifications/messages.fr.ts
+var FR_MESSAGES6 = {
+  "communication.organizer-attention": "Le meetup #{issue} \xB7 {date} approche et n'est pas pr\xEAt.\n\nPoints \xE0 r\xE9soudre :\n{reasons}\n\nConsultez et mettez \xE0 jour le ticket du meetup : {url}",
+  "communication.date-unknown": "date \xE0 confirmer",
+  "communication.reason.host-confirmation": "Confirmez le lieu d'accueil et ajoutez le label hoster:confirmed.",
+  "communication.reason.speaker-confirmation": "Confirmez les intervenants et ajoutez le label speakers:confirmed.",
+  "communication.reason.title": "Ajoutez le titre du meetup.",
+  "communication.reason.date": "Renseignez Event Date avec une date valide au format YYYY-MM-DD.",
+  "communication.reason.description": "Ajoutez la description du meetup.",
+  "communication.reason.host": "S\xE9lectionnez un seul lieu d'accueil valide dans Hoster.",
+  "communication.reason.agenda": "Compl\xE9tez Agenda avec une ligne par pr\xE9sentation : - Intervenant: Description.",
+  "communication.reason.agenda-speaker": "S\xE9lectionnez un intervenant valide pour chaque pr\xE9sentation dans Agenda.",
+  "communication.reason.agenda-description": "Ajoutez une description pour chaque pr\xE9sentation dans Agenda.",
+  "communication.reason.meetup-link": "Ajoutez ou corrigez Meetup Link avec l'URL de l'\xE9v\xE9nement sans pr\xE9fixe de langue (comme /fr-fr/).",
+  "communication.reason.community-link": "Ajoutez ou corrigez CNCF Link avec l'URL de l'\xE9v\xE9nement communautaire.",
+  "communication.reason.assets-link": "Ajoutez ou corrigez Drive Link avec l'URL du dossier du meetup.",
+  "communication.reason.feedback-link": "Corrigez OpenFeedback Link avec une URL HTTPS de l'\xE9v\xE9nement.",
+  "communication.reason.aperitif": "Renseignez Aperitif avec Yes ou No.",
+  "communication.reason.restaurant": "Renseignez Restaurant / Bar avec Yes ou No.",
+  "communication.reason.logistics": "Renseignez les choix logistiques avec Yes ou No.",
+  "communication.reason.issue-format": "Corrigez le format du ticket en suivant le commentaire de validation de l'automatisation.",
+  "communication.reason.referentials": "V\xE9rifiez les r\xE9f\xE9rences du lieu et des intervenants dans les catalogues.",
+  "communication.reason.unknown": "Consultez les autres points de validation dans le ticket du meetup."
+};
+
+// packages/runtime/github-actions/src/notifications/catalog.ts
+var CATALOGS6 = {
+  en: { ...EN_MESSAGES6 },
+  fr: { ...FR_MESSAGES6 }
+};
+
+// packages/runtime/github-actions/src/notifications/organizer-notification-messages.ts
+var OrganizerNotificationMessages = class extends MessageLocalizer {
+  constructor(locale = "en") {
+    super(CATALOGS6, locale);
+  }
+};
+
 // packages/runtime/github-actions/src/communication-composition.ts
 var COMMUNICATION_SERVICES = {
   mailGateway: /* @__PURE__ */ Symbol("MailGateway"),
@@ -58010,7 +58213,8 @@ var CommunicationComposition = class _CommunicationComposition {
           input.repo,
           input.issueNumber
         ),
-        { dispatchAuthorized, authorLogin: input.commentAuthorLogin }
+        { dispatchAuthorized, authorLogin: input.commentAuthorLogin },
+        new LedgerCommentPresenter(new LedgerMessages(input.locale))
       )
     );
     container.bind(PlanCommunications).toDynamicValue(() => new PlanCommunications());
@@ -58057,6 +58261,9 @@ var CommunicationComposition = class _CommunicationComposition {
       );
       return new ManageMeetupCommunications({
         clock,
+        organizerReadinessNotification: new OrganizerReadinessPresenter(
+          new OrganizerNotificationMessages(input.locale)
+        ),
         organizerApproval: new GithubOrganizerApproval(
           new GithubApprovalClient(
             input.client,
@@ -58087,29 +58294,6 @@ var CommunicationComposition = class _CommunicationComposition {
         })
       });
     });
-  }
-};
-
-// packages/runtime/github-actions/src/notifications/messages.en.ts
-var EN_MESSAGES5 = {
-  "communication.organizer-attention": "Meetup event issue #{issue} requires organizer attention."
-};
-
-// packages/runtime/github-actions/src/notifications/messages.fr.ts
-var FR_MESSAGES5 = {
-  "communication.organizer-attention": "Le ticket du meetup #{issue} n\xE9cessite l'attention des organisateurs."
-};
-
-// packages/runtime/github-actions/src/notifications/catalog.ts
-var CATALOGS5 = {
-  en: { ...EN_MESSAGES5 },
-  fr: { ...FR_MESSAGES5 }
-};
-
-// packages/runtime/github-actions/src/notifications/organizer-notification-messages.ts
-var OrganizerNotificationMessages = class extends MessageLocalizer {
-  constructor(locale = "en") {
-    super(CATALOGS5, locale);
   }
 };
 
@@ -58154,13 +58338,7 @@ var CommunicationRuntime = class _CommunicationRuntime {
       owner: input.owner,
       repo: input.repo,
       repositoryId: input.repositoryId,
-      organizerNotificationDestination: slackOrganizerChannelId,
-      organizerNotificationContent: messages.t(
-        "communication.organizer-attention",
-        {
-          issue: input.issueNumber
-        }
-      )
+      organizerNotificationDestination: slackOrganizerChannelId
     });
     return result;
   }
