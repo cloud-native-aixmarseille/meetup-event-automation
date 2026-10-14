@@ -31,15 +31,15 @@
 
 ## Action contracts
 
-| Action                                                                     | Purpose                                                      |
-| -------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| [Reconcile event](../actions/event/reconcile/README.md)                    | Validate and normalize one meetup issue.                     |
-| [List active events](../actions/event/list-active/README.md)               | Select issues for an audit.                                  |
-| [Validate referentials](../actions/referential/validate/README.md)         | Check host and speaker catalogs.                             |
-| [Synchronize issue form](../actions/referential/sync-issue-form/README.md) | Update the checked-out form choices.                         |
-| [Reconcile assets](../actions/publication/reconcile-assets/README.md)      | Prepare Google Drive folders and template copies.            |
+| Action                                                                     | Purpose                                                                 |
+| -------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| [Reconcile event](../actions/event/reconcile/README.md)                    | Validate and normalize one meetup issue.                                |
+| [List active events](../actions/event/list-active/README.md)               | Select issues for an audit.                                             |
+| [Validate referentials](../actions/referential/validate/README.md)         | Check host and speaker catalogs.                                        |
+| [Synchronize issue form](../actions/referential/sync-issue-form/README.md) | Update the checked-out form choices.                                    |
+| [Reconcile assets](../actions/publication/reconcile-assets/README.md)      | Prepare Google Drive folders and template copies.                       |
 | [Reconcile feedback](../actions/publication/reconcile-feedback/README.md)  | Synchronize OpenFeedback event titles and update the shared short link. |
-| [Reconcile communications](../actions/communication/reconcile/README.md)   | Plan or dispatch due email and Slack messages.               |
+| [Reconcile communications](../actions/communication/reconcile/README.md)   | Plan or dispatch due email and Slack messages.                          |
 
 ## Development
 

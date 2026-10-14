@@ -49,7 +49,10 @@ Both can edit files; review the resulting diff.
 The [Makefile](../../Makefile) provides wrappers for these checks. `make lint`
 and `make lint-fix` additionally build and run the repository's Super-linter
 Docker image. They require Docker. Super-linter's Biome checks are disabled;
-`pnpm` runs the lockfile version.
+`pnpm` runs the lockfile version. The linter container masks the workspace's
+`node_modules` directory so its bundled tools and presets do not load
+host-installed dependencies. This matches hosted linting before dependency
+installation.
 
 ## Choose checks for the change
 

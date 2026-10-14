@@ -65,6 +65,7 @@ ci: setup ## Execute all CI quality gates
 	$(MAKE) quality
 
 # Biome runs through pnpm with the version in the lockfile.
+# Keep container linters isolated from host-installed dependencies, as in CI.
 define run_linter
 	DEFAULT_WORKSPACE="$(CURDIR)"; \
 	LINTER_IMAGE="linter:latest"; \
@@ -73,6 +74,7 @@ define run_linter
 	docker run \
 		--platform=linux/amd64 \
 		-v $$VOLUME \
+		--mount "type=tmpfs,destination=$$DEFAULT_WORKSPACE/node_modules" \
 		--rm \
 		-e DEFAULT_WORKSPACE="$$DEFAULT_WORKSPACE" \
 		-e FILTER_REGEX_INCLUDE="$(filter-out $@,$(MAKECMDGOALS))" \

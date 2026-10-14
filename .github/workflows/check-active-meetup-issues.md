@@ -98,7 +98,7 @@ jobs:
 | **`github-app-private-key`** | PEM-encoded private key for the GitHub App identified by the github-app-client-id input. Used to mint a narrowly scoped installation token. | **true**     |
 | **`slack-token`**            | Slack bot token with chat:write and reactions:write for organizer notifications and decision reactions.                                     | **true**     |
 | **`kutt-api-key`**           | API key for the owner of the existing Kutt feedback link.                                                                                   | **true**     |
-| **`openfeedback-api-key`**   | OpenFeedback organization API key (oforg\_) used to create and update events.                                                                | **true**     |
+| **`openfeedback-api-key`**   | OpenFeedback organization API key (oforg\_) used to create and update events.                                                               | **true**     |
 
 <!-- secrets:end -->
 <!-- outputs:start -->
