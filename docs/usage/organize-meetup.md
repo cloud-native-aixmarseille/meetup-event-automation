@@ -49,11 +49,13 @@ asset preparation fails.
 
 Leave **OpenFeedback Link** empty to have the event created automatically using
 the required [organization API key](../integrations/feedback.md). A valid existing
-feedback URL is reused. Add talks and speakers in OpenFeedback before the meetup;
-event creation does not populate them.
+feedback URL is reused, and subsequent runs synchronize the OpenFeedback event
+name when the meetup title changes. Add talks and speakers in OpenFeedback before
+the meetup; event creation does not populate them.
 
-The shared Kutt link switches on the event's calendar day in `Europe/Paris`.
-Check the daily audit ran and the target contains the expected talks.
+The shared Kutt link switches on the calendar day before the event in
+`Europe/Paris`. Check the daily audit ran and the target contains the expected
+talks.
 
 ## Track communications
 

@@ -36737,7 +36737,7 @@ var PublicationUrlPolicyEngine = class {
 };
 
 // packages/domain/publication/src/domain/feedback-policy.ts
-var FeedbackPolicy = class {
+var FeedbackPolicy = class _FeedbackPolicy {
   static validDate(value) {
     const date = /* @__PURE__ */ new Date(`${value}T00:00:00Z`);
     return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(date.valueOf()) && date.toISOString().slice(0, 10) === value;
@@ -36750,14 +36750,17 @@ var FeedbackPolicy = class {
       throw new Error("Feedback link must be an OpenFeedback event URL");
     return url.href.replace(/\/$/, "");
   }
-  static isEventDay(date, now2, timeZone) {
+  static isDayBeforeEvent(date, now2, timeZone) {
+    if (!_FeedbackPolicy.validDate(date)) return false;
+    const updateDate = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
+    updateDate.setUTCDate(updateDate.getUTCDate() - 1);
     const today = new Intl.DateTimeFormat("en-CA", {
       timeZone,
       year: "numeric",
       month: "2-digit",
       day: "2-digit"
     }).format(new Date(now2));
-    return date === today;
+    return updateDate.toISOString().slice(0, 10) === today;
   }
 };
 
@@ -39288,23 +39291,22 @@ var ManageMeetupFeedback = class _ManageMeetupFeedback {
         "prerequisites",
         "Resolve the event date and feedback link before updating feedback"
       );
-    const feedbackUrl = event.publicationLinks.feedback;
-    if (!feedbackUrl) return this.createFeedback(source, event);
-    return this.reconcile(source, event, FeedbackPolicy.pollUrl(feedbackUrl));
+    return this.synchronizeFeedback(source, event);
   }
-  async createFeedback(source, event) {
+  async synchronizeFeedback(source, event) {
     const name = event.eventTitle.trim().slice(0, 100);
     if (!name)
       return this.skipped(
         "prerequisites",
-        "Set an event title before creating feedback"
+        "Set an event title before updating feedback"
       );
     await this.ensureCurrent(source);
     const { repository, issueNumber } = source.identity;
     const url = await this.dependencies.events.ensureEvent({
       key: `${repository.toLowerCase()}#${issueNumber}`,
       name,
-      scheduleUrl: `https://github.com/${repository}/issues/${issueNumber}`
+      scheduleUrl: `https://github.com/${repository}/issues/${issueNumber}`,
+      ...event.publicationLinks.feedback ? { url: FeedbackPolicy.pollUrl(event.publicationLinks.feedback) } : {}
     });
     return this.reconcile(source, event, FeedbackPolicy.pollUrl(url));
   }
@@ -39313,7 +39315,7 @@ var ManageMeetupFeedback = class _ManageMeetupFeedback {
     const { persisted, current } = await this.persist(source, url);
     const diagnostics = [];
     let linkUpdated = false;
-    if (FeedbackPolicy.isEventDay(
+    if (FeedbackPolicy.isDayBeforeEvent(
       event.date,
       this.dependencies.clock.now(),
       event.timeZone
@@ -39488,18 +39490,19 @@ var OpenFeedbackEventGateway = class _OpenFeedbackEventGateway {
   fetcher;
   async ensureEvent(input) {
     _OpenFeedbackEventGateway.validateInput(input);
-    const id = `meetup-${createHash("sha256").update(input.key).digest("hex")}`;
+    const url = input.url === void 0 ? void 0 : FeedbackPolicy.pollUrl(input.url);
+    const id = url ? new URL(url).pathname.split("/")[1] : `meetup-${createHash("sha256").update(input.key).digest("hex")}`;
     const details = { name: input.name, scheduleLink: input.scheduleUrl };
-    let response = await this.request("/events/", "POST", {
+    let response = url ? await this.request(`/events/${id}`, "PATCH", details) : await this.request("/events/", "POST", {
       id,
       ...details,
       setupType: "openfeedbackv1"
     });
-    if (response.status === 409) {
+    if (!url && response.status === 409) {
       response = await this.request(`/events/${id}`, "PATCH", details);
     }
     await _OpenFeedbackEventGateway.validateResponse(response, id);
-    return `https://openfeedback.io/${id}`;
+    return url ?? `https://openfeedback.io/${id}`;
   }
   static validateInput(input) {
     if (!input.key.trim() || !input.name.trim() || input.name.length > 100)

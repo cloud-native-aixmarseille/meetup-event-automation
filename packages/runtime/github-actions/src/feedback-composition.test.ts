@@ -108,7 +108,7 @@ describe("feedback composition", () => {
 			createPatch: vi.fn().mockReturnValue({ body: "event with feedback URL" }),
 		});
 		container.rebind(SERVICES.eventClock).toConstantValue({
-			now: () => "2030-09-29T10:00:00Z",
+			now: () => "2030-09-28T10:00:00Z",
 		});
 		container
 			.rebind<Pick<ManageMeetupEvent, "execute">>(ManageMeetupEvent)

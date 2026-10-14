@@ -18,7 +18,7 @@ import { ManageMeetupFeedback } from "./manage-meetup-feedback.js";
 const feedbackUrl = "https://openfeedback.io/example-poll";
 function journey(
 	overrides: Partial<MeetupEvent> = {},
-	now = "2026-09-30T10:00:00Z",
+	now = "2026-09-29T10:00:00Z",
 ) {
 	const deps = createEventDependencies();
 	let current: EventDocument = sourceDocument;
@@ -68,7 +68,7 @@ function journey(
 }
 
 describe("meetup feedback journey", () => {
-	it("updates the shared link to the existing poll on the event day", async () => {
+	it("updates the shared link to the existing poll the day before the event", async () => {
 		// Arrange
 		const { deps, events, links, useCase } = journey();
 
@@ -83,12 +83,44 @@ describe("meetup feedback journey", () => {
 		});
 		expect(links.updateTarget).toHaveBeenCalledWith(feedbackUrl);
 		expect(deps.repository.applyPatch).not.toHaveBeenCalled();
-		expect(events.ensureEvent).not.toHaveBeenCalled();
+		expect(events.ensureEvent).toHaveBeenCalledExactlyOnceWith({
+			key: `${identity.repository}#${identity.issueNumber}`,
+			name: event.eventTitle,
+			scheduleUrl: `https://github.com/${identity.repository}/issues/${identity.issueNumber}`,
+			url: feedbackUrl,
+		});
 		expect(deps.commentRepository.reconcileDiagnostics).not.toHaveBeenCalled();
 	});
 
-	it.each(["2026-09-29T10:00:00Z", "2026-10-01T10:00:00Z"])(
-		"leaves the shared link unchanged outside the event day: %s",
+	it("synchronizes a changed title before the short link update day", async () => {
+		// Arrange
+		const revisedTitle = "Updated platform evening";
+		const { deps, events, links, useCase } = journey(
+			{ eventTitle: revisedTitle },
+			"2026-09-28T10:00:00Z",
+		);
+
+		// Act
+		const result = await useCase.execute({ identity });
+
+		// Assert
+		expect(events.ensureEvent).toHaveBeenCalledWith({
+			key: `${identity.repository}#${identity.issueNumber}`,
+			name: revisedTitle,
+			scheduleUrl: `https://github.com/${identity.repository}/issues/${identity.issueNumber}`,
+			url: feedbackUrl,
+		});
+		expect(result).toMatchObject({ feedbackUrl, persisted: false });
+		expect(deps.repository.applyPatch).not.toHaveBeenCalled();
+		expect(links.updateTarget).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		"2026-09-28T10:00:00Z",
+		"2026-09-30T10:00:00Z",
+		"2026-10-01T10:00:00Z",
+	])(
+		"leaves the shared link unchanged outside the day before the event: %s",
 		async (now) => {
 			// Arrange
 			const { links, useCase } = journey({}, now);
@@ -98,6 +130,7 @@ describe("meetup feedback journey", () => {
 
 			// Assert
 			expect(result.feedbackUrl).toBe(feedbackUrl);
+			expect(result.linkUpdated).toBe(false);
 			expect(links.updateTarget).not.toHaveBeenCalled();
 		},
 	);
@@ -163,7 +196,7 @@ describe("meetup feedback journey", () => {
 			expect.objectContaining({ code: "publication.feedback.ambiguous-date" }),
 		);
 		expect(links.updateTarget).not.toHaveBeenCalled();
-		expect(events.ensureEvent).not.toHaveBeenCalled();
+		expect(events.ensureEvent).toHaveBeenCalledOnce();
 	});
 
 	it("preserves an issue edit made while checking for concurrent meetups", async () => {
@@ -185,7 +218,7 @@ describe("meetup feedback journey", () => {
 			name: "EventConcurrentModificationError",
 		});
 		expect(deps.repository.applyPatch).not.toHaveBeenCalled();
-		expect(events.ensureEvent).not.toHaveBeenCalled();
+		expect(events.ensureEvent).toHaveBeenCalledOnce();
 		expect(links.updateTarget).not.toHaveBeenCalled();
 	});
 
@@ -202,7 +235,7 @@ describe("meetup feedback journey", () => {
 		// Assert
 		await expect(operation).rejects.toThrow("HTTP 401");
 		expect(deps.repository.applyPatch).not.toHaveBeenCalled();
-		expect(events.ensureEvent).not.toHaveBeenCalled();
+		expect(events.ensureEvent).toHaveBeenCalledOnce();
 		expect(links.updateTarget).toHaveBeenCalledWith(feedbackUrl);
 	});
 
@@ -228,7 +261,7 @@ describe("meetup feedback journey", () => {
 		expect(links.updateTarget).toHaveBeenCalledWith(feedbackUrl);
 	});
 
-	it("creates and persists missing feedback before switching the event-day short link", async () => {
+	it("creates and persists missing feedback before switching the short link the day before the event", async () => {
 		// Arrange
 		const { deps, events, links, useCase } = journey({
 			publicationLinks: event.publicationLinks,
@@ -245,10 +278,16 @@ describe("meetup feedback journey", () => {
 			feedbackUrl,
 			linkUpdated: true,
 		});
-		expect(events.ensureEvent).toHaveBeenCalledExactlyOnceWith({
+		expect(events.ensureEvent).toHaveBeenNthCalledWith(1, {
 			key: `${identity.repository}#${identity.issueNumber}`,
 			name: event.eventTitle,
 			scheduleUrl: `https://github.com/${identity.repository}/issues/${identity.issueNumber}`,
+		});
+		expect(events.ensureEvent).toHaveBeenNthCalledWith(2, {
+			key: `${identity.repository}#${identity.issueNumber}`,
+			name: event.eventTitle,
+			scheduleUrl: `https://github.com/${identity.repository}/issues/${identity.issueNumber}`,
+			url: feedbackUrl,
 		});
 		expect(deps.repository.applyPatch).toHaveBeenCalledOnce();
 		expect(links.updateTarget).toHaveBeenCalledWith(feedbackUrl);
@@ -265,7 +304,7 @@ describe("meetup feedback journey", () => {
 		// Arrange
 		const { events, links, useCase } = journey(
 			{ publicationLinks: event.publicationLinks },
-			"2026-09-29T10:00:00Z",
+			"2026-09-28T10:00:00Z",
 		);
 
 		// Act
@@ -297,22 +336,25 @@ describe("meetup feedback journey", () => {
 		);
 	});
 
-	it("requires a title before creating an event", async () => {
-		// Arrange
-		const { events, useCase } = journey({
-			publicationLinks: event.publicationLinks,
-			eventTitle: "",
-		});
+	it.each([undefined, feedbackUrl])(
+		"requires a title before synchronizing feedback (%s)",
+		async (feedback) => {
+			// Arrange
+			const { events, useCase } = journey({
+				publicationLinks: { ...event.publicationLinks, feedback },
+				eventTitle: "",
+			});
 
-		// Act
-		const result = await useCase.execute({ identity });
+			// Act
+			const result = await useCase.execute({ identity });
 
-		// Assert
-		expect(result.diagnostics).toContainEqual(
-			expect.objectContaining({ code: "publication.feedback.prerequisites" }),
-		);
-		expect(events.ensureEvent).not.toHaveBeenCalled();
-	});
+			// Assert
+			expect(result.diagnostics).toContainEqual(
+				expect.objectContaining({ code: "publication.feedback.prerequisites" }),
+			);
+			expect(events.ensureEvent).not.toHaveBeenCalled();
+		},
+	);
 
 	it("does not create feedback after the source issue changes", async () => {
 		// Arrange
@@ -335,29 +377,32 @@ describe("meetup feedback journey", () => {
 		expect(links.updateTarget).not.toHaveBeenCalled();
 	});
 
-	it("preserves issue edits made during event creation", async () => {
-		// Arrange
-		const { deps, events, links, useCase } = journey({
-			publicationLinks: event.publicationLinks,
-		});
-		events.ensureEvent.mockImplementation(async () => {
-			vi.mocked(deps.repository.find).mockResolvedValue({
-				...sourceDocument,
-				body: "human edit",
+	it.each([undefined, feedbackUrl])(
+		"preserves issue edits made during event synchronization (%s)",
+		async (feedback) => {
+			// Arrange
+			const { deps, events, links, useCase } = journey({
+				publicationLinks: { ...event.publicationLinks, feedback },
 			});
-			return feedbackUrl;
-		});
+			events.ensureEvent.mockImplementation(async () => {
+				vi.mocked(deps.repository.find).mockResolvedValue({
+					...sourceDocument,
+					body: "human edit",
+				});
+				return feedbackUrl;
+			});
 
-		// Act
-		const operation = useCase.execute({ identity });
+			// Act
+			const operation = useCase.execute({ identity });
 
-		// Assert
-		await expect(operation).rejects.toMatchObject({
-			name: "EventConcurrentModificationError",
-		});
-		expect(deps.repository.applyPatch).not.toHaveBeenCalled();
-		expect(links.updateTarget).not.toHaveBeenCalled();
-	});
+			// Assert
+			await expect(operation).rejects.toMatchObject({
+				name: "EventConcurrentModificationError",
+			});
+			expect(deps.repository.applyPatch).not.toHaveBeenCalled();
+			expect(links.updateTarget).not.toHaveBeenCalled();
+		},
+	);
 
 	it("reuses the same source key after a failed issue save", async () => {
 		// Arrange

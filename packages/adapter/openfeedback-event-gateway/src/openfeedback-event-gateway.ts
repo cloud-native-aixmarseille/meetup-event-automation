@@ -1,5 +1,8 @@
 import { createHash } from "node:crypto";
-import type { FeedbackEventGateway } from "@meetup-automation/publication";
+import {
+	type FeedbackEventGateway,
+	FeedbackPolicy,
+} from "@meetup-automation/publication";
 
 export class OpenFeedbackEventGateway implements FeedbackEventGateway {
 	constructor(
@@ -14,21 +17,28 @@ export class OpenFeedbackEventGateway implements FeedbackEventGateway {
 		readonly key: string;
 		readonly name: string;
 		readonly scheduleUrl: string;
+		readonly url?: string;
 	}): Promise<string> {
 		OpenFeedbackEventGateway.validateInput(input);
-		const id = `meetup-${createHash("sha256").update(input.key).digest("hex")}`;
+		const url =
+			input.url === undefined ? undefined : FeedbackPolicy.pollUrl(input.url);
+		const id = url
+			? new URL(url).pathname.split("/")[1]
+			: `meetup-${createHash("sha256").update(input.key).digest("hex")}`;
 		const details = { name: input.name, scheduleLink: input.scheduleUrl };
-		let response = await this.request("/events/", "POST", {
-			id,
-			...details,
-			setupType: "openfeedbackv1",
-		});
-		if (response.status === 409) {
+		let response = url
+			? await this.request(`/events/${id}`, "PATCH", details)
+			: await this.request("/events/", "POST", {
+					id,
+					...details,
+					setupType: "openfeedbackv1",
+				});
+		if (!url && response.status === 409) {
 			// PATCH verifies organization access and preserves all omitted settings.
 			response = await this.request(`/events/${id}`, "PATCH", details);
 		}
 		await OpenFeedbackEventGateway.validateResponse(response, id);
-		return `https://openfeedback.io/${id}`;
+		return url ?? `https://openfeedback.io/${id}`;
 	}
 
 	private static validateInput(input: {

@@ -4,7 +4,7 @@
 
 <!-- header:end -->
 
-Create missing OpenFeedback events and update the existing Kutt link on the event day.
+Create OpenFeedback events, synchronize their titles, and update the existing Kutt link the day before the event.
 
 ## Usage
 
@@ -23,7 +23,7 @@ issue already has a feedback URL. Use a key beginning with `oforg_`.
 | `github-token`           | GitHub token with issue read and write permissions.                                                                                | true     | —       |
 | `issue-number`           | Meetup issue number.                                                                                                               | true     | —       |
 | `managed-comment-author` | GitHub App bot login used by event evaluation.                                                                                     | true     | —       |
-| `openfeedback-api-key`   | OpenFeedback organization API key (oforg\_) used to create missing events.                                                         | true     | —       |
+| `openfeedback-api-key`   | OpenFeedback organization API key (oforg\_) used to create and update events.                                                       | true     | —       |
 | `kutt-api-key`           | API key for the owner of the existing Kutt link.                                                                                   | true     | —       |
 | `kutt-link-id`           | Existing Kutt link API ID, not the short address.                                                                                  | true     | —       |
 

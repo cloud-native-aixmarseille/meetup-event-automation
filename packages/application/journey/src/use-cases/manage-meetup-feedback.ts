@@ -3,10 +3,10 @@ import {
 	type EventDocument,
 	type EventDocumentCodec,
 	type EventIdentity,
-	type MeetupEvent,
 	EventNotFoundError,
 	type EventRepository,
 	EventRepositoryPatches,
+	type MeetupEvent,
 	ReconcileEvent,
 } from "@meetup-automation/event";
 import {
@@ -67,12 +67,10 @@ export class ManageMeetupFeedback {
 				"prerequisites",
 				"Resolve the event date and feedback link before updating feedback",
 			);
-		const feedbackUrl = event.publicationLinks.feedback;
-		if (!feedbackUrl) return this.createFeedback(source, event);
-		return this.reconcile(source, event, FeedbackPolicy.pollUrl(feedbackUrl));
+		return this.synchronizeFeedback(source, event);
 	}
 
-	private async createFeedback(
+	private async synchronizeFeedback(
 		source: EventDocument,
 		event: MeetupEvent,
 	): Promise<ManageMeetupFeedbackResult> {
@@ -80,7 +78,7 @@ export class ManageMeetupFeedback {
 		if (!name)
 			return this.skipped(
 				"prerequisites",
-				"Set an event title before creating feedback",
+				"Set an event title before updating feedback",
 			);
 		await this.ensureCurrent(source);
 		const { repository, issueNumber } = source.identity;
@@ -88,6 +86,9 @@ export class ManageMeetupFeedback {
 			key: `${repository.toLowerCase()}#${issueNumber}`,
 			name,
 			scheduleUrl: `https://github.com/${repository}/issues/${issueNumber}`,
+			...(event.publicationLinks.feedback
+				? { url: FeedbackPolicy.pollUrl(event.publicationLinks.feedback) }
+				: {}),
 		});
 		return this.reconcile(source, event, FeedbackPolicy.pollUrl(url));
 	}
@@ -102,7 +103,7 @@ export class ManageMeetupFeedback {
 		const diagnostics: PublicDiagnostic[] = [];
 		let linkUpdated = false;
 		if (
-			FeedbackPolicy.isEventDay(
+			FeedbackPolicy.isDayBeforeEvent(
 				event.date,
 				this.dependencies.clock.now(),
 				event.timeZone,

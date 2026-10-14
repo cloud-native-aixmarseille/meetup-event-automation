@@ -24,13 +24,20 @@ export class FeedbackPolicy {
 		return url.href.replace(/\/$/, "");
 	}
 
-	static isEventDay(date: string, now: string, timeZone: string): boolean {
+	static isDayBeforeEvent(
+		date: string,
+		now: string,
+		timeZone: string,
+	): boolean {
+		if (!FeedbackPolicy.validDate(date)) return false;
+		const updateDate = new Date(`${date}T00:00:00Z`);
+		updateDate.setUTCDate(updateDate.getUTCDate() - 1);
 		const today = new Intl.DateTimeFormat("en-CA", {
 			timeZone,
 			year: "numeric",
 			month: "2-digit",
 			day: "2-digit",
 		}).format(new Date(now));
-		return date === today;
+		return updateDate.toISOString().slice(0, 10) === today;
 	}
 }

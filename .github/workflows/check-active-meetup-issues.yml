@@ -44,7 +44,7 @@ on:
         value: ${{ jobs.list.outputs.issue-numbers }}
     secrets:
       openfeedback-api-key:
-        description: OpenFeedback organization API key (oforg_) used to create missing events.
+        description: OpenFeedback organization API key (oforg_) used to create and update events.
         required: true
       kutt-api-key:
         description: API key for the owner of the existing Kutt feedback link.
