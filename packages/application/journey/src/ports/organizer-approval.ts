@@ -13,4 +13,5 @@ export interface OrganizerApprovalResult {
 }
 export interface OrganizerApproval {
 	request(input: OrganizerApprovalRequest): Promise<OrganizerApprovalResult>;
+	synchronize(): Promise<{ readonly notificationFailed: boolean }>;
 }

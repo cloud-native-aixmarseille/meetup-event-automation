@@ -8,6 +8,18 @@ import { ApprovalMessages } from "./i18n/approval-messages.js";
 export class ApprovalPresenter {
 	constructor(private readonly messages: ApprovalMessages) {}
 	issue(record: StoredApproval, decision: ApprovalDecision): string {
+		if (record.decision)
+			return [
+				ApprovalRecord.marker(record),
+				this.messages.t("approval.final", {
+					kind: record.kind.replace("email-", ""),
+					date: record.eventDate,
+					count: record.recipientCount,
+					status: record.decision.status,
+					actor: record.decision.actor,
+					decidedAt: record.decision.decidedAt,
+				}),
+			].join("\n\n");
 		return [
 			ApprovalRecord.marker(record),
 			this.messages.t("approval.request", {
@@ -20,6 +32,7 @@ export class ApprovalPresenter {
 		].join("\n\n");
 	}
 	decision(record: StoredApproval, body: string): ApprovalDecision {
+		if (record.decision) return { status: "pending" };
 		const normalized = body.replace(/\r\n/g, "\n").replace(/- \[X\]/g, "- [x]");
 		for (const locale of ["en", "fr"]) {
 			const presenter = new ApprovalPresenter(new ApprovalMessages(locale));

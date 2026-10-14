@@ -66,6 +66,7 @@ implementation.
 - [ADR-0008: Request organizer confirmation for email batches](adr/0008-admin-confirmation-requests.md)
 - [ADR-0009: Use one organizer role and an explicit organizer Slack channel](adr/0009-organizer-role-and-slack-channel.md)
 - [ADR-0010: Approve email batches with request checkboxes](adr/0010-checkbox-organizer-approval.md)
+- [ADR-0011: Finalize organizer decisions in place and acknowledge them on Slack](adr/0011-final-organizer-decisions.md)
 
 ## Directory layout
 
@@ -98,7 +99,8 @@ docs/
     ├── 0007-automatic-communication-checklists.md
     ├── 0008-admin-confirmation-requests.md
     ├── 0009-organizer-role-and-slack-channel.md
-    └── 0010-checkbox-organizer-approval.md
+    ├── 0010-checkbox-organizer-approval.md
+    └── 0011-final-organizer-decisions.md
 ```
 
 Action references stay beside `action.yml`; workflow references stay beside

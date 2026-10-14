@@ -46,11 +46,11 @@ const RUNTIME_MESSAGES: Readonly<
 	"communication.approval-pending":
 		"Email dispatch is waiting for approval on the meetup issue.",
 	"communication.approval-rejected":
-		"The email batch was rejected. A new approval comment is required before sending.",
+		"The email batch was rejected. The recorded decision is final for this batch revision.",
 	"communication.approval-unavailable":
 		"The organizer approval could not be verified or persisted; email dispatch is blocked.",
 	"communication.approval-notification-failed":
-		"The Slack approval notification was not confirmed. Review the request on the meetup issue.",
+		"The Slack approval notification or decision reaction was not confirmed. Review the request on the meetup issue.",
 	"communication.dispatch-disabled-by-config":
 		"Communication dispatch is disabled by repository configuration.",
 	"communication.checklist-update-failed":

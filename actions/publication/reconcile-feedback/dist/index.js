@@ -31773,9 +31773,9 @@ var MessageLocalizer = class _MessageLocalizer {
 // packages/runtime/github-actions/src/i18n/diagnostics-communication.en.ts
 var DIAGNOSTICS_COMMUNICATION_EN = {
   "diagnostic.communication.approval-pending": "Email dispatch is waiting for approval on the meetup issue.",
-  "diagnostic.communication.approval-rejected": "The email batch was rejected. Clear Reject and check Approve in the request comment before sending.",
+  "diagnostic.communication.approval-rejected": "The email batch was rejected. The recorded decision is final for this batch revision.",
   "diagnostic.communication.approval-unavailable": "The organizer approval could not be verified or persisted; email dispatch is blocked.",
-  "diagnostic.communication.approval-notification-failed": "The Slack approval notification was not confirmed. Review the request on the meetup issue.",
+  "diagnostic.communication.approval-notification-failed": "The Slack approval notification or decision reaction was not confirmed. Review the request on the meetup issue. Check the bot's channel membership and chat:write and reactions:write scopes; legacy alerts without a saved message reference cannot receive automatic reactions.",
   "diagnostic.communication.duplicate-intent": "A duplicate communication intent was ignored.",
   "diagnostic.communication.gateway-delivery-uncertain": "A gateway could not confirm delivery.",
   "diagnostic.communication.gateway-delivery-rejected": "A gateway definitively rejected the delivery request.",
@@ -31805,9 +31805,9 @@ var DIAGNOSTICS_COMMUNICATION_EN = {
 // packages/runtime/github-actions/src/i18n/diagnostics-communication.fr.ts
 var DIAGNOSTICS_COMMUNICATION_FR = {
   "diagnostic.communication.approval-pending": "Les e-mails attendent une confirmation dans le ticket du meetup.",
-  "diagnostic.communication.approval-rejected": "Le lot d'e-mails a \xE9t\xE9 refus\xE9. D\xE9cochez Refuser et cochez Approuver dans la demande avant l'envoi.",
+  "diagnostic.communication.approval-rejected": "Le lot d'e-mails a \xE9t\xE9 refus\xE9. La d\xE9cision enregistr\xE9e est d\xE9finitive pour cette version du lot.",
   "diagnostic.communication.approval-unavailable": "La confirmation des organisateurs n'a pas pu \xEAtre v\xE9rifi\xE9e ou enregistr\xE9e ; l'envoi des e-mails est bloqu\xE9.",
-  "diagnostic.communication.approval-notification-failed": "La notification Slack de confirmation n'a pas \xE9t\xE9 confirm\xE9e. Consultez la demande dans le ticket du meetup.",
+  "diagnostic.communication.approval-notification-failed": "La notification Slack ou la r\xE9action \xE0 la d\xE9cision n'a pas \xE9t\xE9 confirm\xE9e. Consultez la demande dans le ticket du meetup. V\xE9rifiez que le bot est membre du canal et poss\xE8de les autorisations chat:write et reactions:write ; les anciennes alertes sans r\xE9f\xE9rence de message enregistr\xE9e ne peuvent pas recevoir de r\xE9action automatique.",
   "diagnostic.communication.duplicate-intent": "Une intention de communication en double a \xE9t\xE9 ignor\xE9e.",
   "diagnostic.communication.gateway-delivery-uncertain": "Un service n'a pas pu confirmer la livraison.",
   "diagnostic.communication.gateway-delivery-rejected": "Un service a refus\xE9 d\xE9finitivement la demande de livraison.",

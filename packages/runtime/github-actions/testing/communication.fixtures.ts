@@ -76,6 +76,14 @@ export function githubClients(
 		created_at?: string;
 		updated_at?: string;
 	}> = [];
+	const history = new Map<
+		string,
+		Array<{
+			diff: string;
+			deletedAt: null;
+			editor: { login: string; __typename: string };
+		}>
+	>();
 	const issue = {
 		number: 42,
 		state: "open",
@@ -96,6 +104,15 @@ export function githubClients(
 			body: parameters.body,
 			user: { login: "automation[bot]", type: "Bot" },
 		});
+		const created = comments.at(-1);
+		if (created?.node_id)
+			history.set(created.node_id, [
+				{
+					diff: parameters.body,
+					deletedAt: null,
+					editor: { login: "automation", __typename: "Bot" },
+				},
+			]);
 		return { data: { id: 100 + comments.length - 1 } };
 	});
 	const updateComment = vi.fn(
@@ -104,6 +121,11 @@ export function githubClients(
 			if (!comment) throw new Error("missing synthetic comment");
 			comment.body = parameters.body;
 			comment.editor = { login: "automation[bot]", __typename: "Bot" };
+			if (comment.node_id)
+				history.set(comment.node_id, [
+					{ diff: parameters.body, deletedAt: null, editor: comment.editor },
+					...(history.get(comment.node_id) ?? []),
+				]);
 		},
 	);
 	const permission = vi
@@ -117,7 +139,11 @@ export function githubClients(
 						id: comment.node_id,
 						body: comment.body,
 						editor: comment.editor,
-						lastEditedAt: comment.updated_at,
+						lastEditedAt: comment.updated_at ?? null,
+						userContentEdits: {
+							nodes: history.get(variables.id) ?? [],
+							pageInfo: { hasNextPage: false, endCursor: null },
+						},
 					}
 				: null,
 		};
@@ -145,6 +171,7 @@ export function githubClients(
 	};
 	return {
 		graphql,
+		history,
 		permission,
 		comments,
 		github,

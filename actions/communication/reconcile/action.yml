@@ -22,7 +22,7 @@ inputs:
     description: Internal meetup organizer Slack channel for approval requests and readiness reminders. Public announcement channels are separate.
     required: true
   slack-token:
-    description: Slack bot token used for approval requests and organizer reminders.
+    description: Slack bot token with chat:write and reactions:write for organizer notifications and decision reactions.
     required: true
   report-errors-to-issue:
     description: Use true to record communication diagnostics in a managed meetup issue comment and succeed after persistence, or false to fail on error diagnostics. Execution and comment persistence failures still fail the action. Requires the shared event lock.

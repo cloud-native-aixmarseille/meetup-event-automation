@@ -44,3 +44,8 @@ export type {
 	OrganizerReadinessContext,
 	OrganizerReadinessNotification,
 } from "./ports/organizer-readiness-notification.js";
+export type {
+	ApprovalNotificationMessage,
+	ApprovalNotificationResult,
+	OrganizerApprovalNotification,
+} from "./ports/organizer-approval-notification.js";

@@ -6,6 +6,203 @@ import { GithubOrganizerApproval } from "./github-organizer-approval.js";
 import { ApprovalMessages } from "./i18n/approval-messages.js";
 
 describe("organizer approval requests", () => {
+	it("cannot finalize a decision until the GitHub write succeeds", async () => {
+		// Arrange
+		const f = fixture();
+		await f.approvals.request(request);
+		decision(f);
+		f.update.mockRejectedValueOnce(new Error("write failed"));
+		// Act
+		const result = f.approvals.request(request);
+		// Assert
+		await expect(result).rejects.toThrow("write failed");
+		expect(f.react).not.toHaveBeenCalled();
+		expect(
+			ApprovalRecord.read(f.comments[0]?.body ?? "").decision,
+		).toBeUndefined();
+	});
+	it("retries the same reaction when its successful acknowledgement cannot be saved", async () => {
+		// Arrange
+		const f = fixture();
+		await f.approvals.request(request);
+		decision(f);
+		f.react.mockImplementationOnce(async () => {
+			f.update.mockRejectedValueOnce(new Error("write failed"));
+			return true;
+		});
+		// Act
+		const first = await f.approvals.synchronize();
+		const recorded = ApprovalRecord.read(f.comments[0]?.body ?? "");
+		const second = await f.approvals.synchronize();
+		// Assert
+		expect(first.notificationFailed).toBe(true);
+		expect(recorded.decision?.status).toBe("approved");
+		expect(recorded.reactionSent).toBeUndefined();
+		expect(second.notificationFailed).toBe(false);
+		expect(f.react).toHaveBeenCalledTimes(2);
+		expect(f.react.mock.calls[1]).toEqual(f.react.mock.calls[0]);
+		expect(f.dispatch).toHaveBeenCalledTimes(1);
+	});
+	it("does not accept a forged final decision in a pending request", async () => {
+		// Arrange
+		const f = fixture();
+		await f.approvals.request(request);
+		const record = ApprovalRecord.read(f.comments[0]?.body ?? "");
+		record.decision = {
+			status: "approved",
+			actor: "organizer",
+			decidedAt: request.requestedAt,
+		};
+		decision(f, { body: f.presenter.issue(record, record.decision) });
+		// Act
+		const result = await f.approvals.request(request);
+		// Assert
+		expect(result.status).toBe("pending");
+		expect(f.comments[0]?.body).toContain("- [ ] Approve sending this batch");
+		expect(f.react).not.toHaveBeenCalled();
+		expect(f.permission).not.toHaveBeenCalled();
+	});
+	it("requests a new decision in the same comment when a rejected batch changes", async () => {
+		// Arrange
+		const f = fixture();
+		await f.approvals.request(request);
+		decision(f, {}, "rejected");
+		await f.approvals.synchronize();
+		const original = ApprovalRecord.read(f.comments[0]?.body ?? "");
+		f.dispatch.mockResolvedValueOnce({
+			outcome: "accepted",
+			message: { destination: "C67890", messageId: "200.001" },
+		});
+		// Act
+		const result = await f.approvals.request({
+			...request,
+			revision: "b".repeat(64),
+		});
+		const replacement = ApprovalRecord.read(f.comments[0]?.body ?? "");
+		decision(f);
+		await f.approvals.synchronize();
+		// Assert
+		expect(result.status).toBe("pending");
+		expect(replacement.requestId).not.toBe(original.requestId);
+		expect(replacement.decision).toBeUndefined();
+		expect(f.comments).toHaveLength(1);
+		expect(f.dispatch).toHaveBeenCalledTimes(2);
+		expect(f.react.mock.calls).toEqual([
+			[{ destination: "C12345", messageId: "100.001" }, "rejected"],
+			[{ destination: "C67890", messageId: "200.001" }, "approved"],
+		]);
+	});
+	it.each(["approved", "rejected"] as const)(
+		"finalizes %s in place and reacts once on the recorded Slack destination",
+		async (status) => {
+			// Arrange
+			const f = fixture();
+			await f.approvals.request(request);
+			const commentId = f.comments[0]?.id;
+			decision(f, {}, status);
+			// Act
+			const first = await f.approvals.synchronize();
+			const second = await f.approvals.synchronize();
+			const result = await f.approvals.request(request);
+			// Assert
+			expect(result.status).toBe(status);
+			expect(first.notificationFailed).toBe(false);
+			expect(second.notificationFailed).toBe(false);
+			expect(f.comments).toHaveLength(1);
+			expect(f.comments[0]?.id).toBe(commentId);
+			expect(f.comments[0]?.body).not.toContain("- [");
+			expect(f.comments[0]?.body).toContain("@organizer");
+			expect(f.comments[0]?.body).toContain(request.requestedAt);
+			expect(f.dispatch).toHaveBeenCalledTimes(1);
+			expect(f.react).toHaveBeenCalledExactlyOnceWith(
+				{ destination: "C12345", messageId: "100.001" },
+				status,
+			);
+		},
+	);
+	it.each(["approved", "rejected"] as const)(
+		"restores a final %s decision after tampering with its metadata",
+		async (status) => {
+			// Arrange
+			const f = fixture();
+			await f.approvals.request(request);
+			decision(f, {}, status);
+			await f.approvals.synchronize();
+			const original = f.comments[0]?.body ?? "";
+			const replacement = original.replaceAll(
+				status,
+				status === "approved" ? "rejected" : "approved",
+			);
+			// Act
+			decision(f, { body: replacement });
+			const result = await f.approvals.request(request);
+			// Assert
+			expect(result.status).toBe(status);
+			expect(f.comments[0]?.body).toBe(original);
+			expect(f.create).toHaveBeenCalledTimes(1);
+			expect(f.react).toHaveBeenCalledTimes(1);
+		},
+	);
+	it("preserves a finalized decision when a human removes all comment metadata", async () => {
+		// Arrange
+		const f = fixture();
+		await f.approvals.request(request);
+		decision(f, {}, "rejected");
+		await f.approvals.synchronize();
+		const original = f.comments[0]?.body;
+		// Act
+		decision(f, { body: "- [x] Approve sending this batch" });
+		const result = await f.approvals.request(request);
+		// Assert
+		expect(result.status).toBe("rejected");
+		expect(f.comments[0]?.body).toBe(original);
+		expect(f.comments).toHaveLength(1);
+	});
+	it("retries a failed reaction while retaining the final decision", async () => {
+		// Arrange
+		const f = fixture();
+		await f.approvals.request(request);
+		decision(f);
+		f.react.mockResolvedValueOnce(false);
+		// Act
+		const first = await f.approvals.synchronize();
+		const firstBody = f.comments[0]?.body;
+		const second = await f.approvals.synchronize();
+		// Assert
+		expect(first.notificationFailed).toBe(true);
+		expect(firstBody).toContain("✅ **Approved**");
+		expect(firstBody).not.toContain("- [");
+		expect(second.notificationFailed).toBe(false);
+		expect(f.react).toHaveBeenCalledTimes(2);
+		expect(f.dispatch).toHaveBeenCalledTimes(1);
+	});
+	it("finalizes legacy requests without inventing a reference or reposting Slack", async () => {
+		// Arrange
+		const f = fixture();
+		f.dispatch.mockResolvedValue({ outcome: "accepted" });
+		await f.approvals.request(request);
+		decision(f);
+		// Act
+		const result = await f.approvals.request(request);
+		// Assert
+		expect(result).toEqual({ status: "approved", notificationFailed: true });
+		expect(f.comments[0]?.body).toContain("✅ **Approved**");
+		expect(f.react).not.toHaveBeenCalled();
+		expect(f.dispatch).toHaveBeenCalledTimes(1);
+	});
+	it("does not authorize dispatch after the recorded organizer loses write access", async () => {
+		// Arrange
+		const f = fixture();
+		await f.approvals.request(request);
+		decision(f);
+		await f.approvals.synchronize();
+		f.permission.mockResolvedValue({ data: { permission: "read" } });
+		// Act
+		const result = f.approvals.request(request);
+		// Assert
+		await expect(result).rejects.toThrow("no longer has approval permission");
+		expect(f.comments[0]?.body).toContain("✅ **Approved**");
+	});
 	it.each([{ eventDate: "2099-06-09" }, { recipientCount: 1 }])(
 		"resets a request whose displayed facts were changed: %j",
 		async (changed) => {
@@ -28,20 +225,19 @@ describe("organizer approval requests", () => {
 		},
 	);
 	it.each(["en", "fr"])(
-		"preserves approval and its human editor across retries and locale changes from %s",
+		"preserves the recorded decision across retries and locale changes from %s",
 		async (locale) => {
 			// Arrange
 			const f = fixture(locale);
 			await f.approvals.request(request);
 			decision(f);
-			const writes = f.update.mock.calls.length;
 			const translated = new GithubOrganizerApproval(
 				f.client,
 				"automation[bot]",
 				new ApprovalPresenter(
 					new ApprovalMessages(locale === "en" ? "fr" : "en"),
 				),
-				{ dispatch: f.dispatch },
+				{ send: f.dispatch, react: f.react },
 				"organizer-channel",
 			);
 			// Act
@@ -50,8 +246,11 @@ describe("organizer approval requests", () => {
 			// Assert
 			expect(first.status).toBe("approved");
 			expect(second.status).toBe("approved");
-			expect(f.update).toHaveBeenCalledTimes(writes);
-			expect(f.permission).toHaveBeenCalledTimes(2);
+			expect(f.comments).toHaveLength(1);
+			expect(f.comments[0]?.body).not.toContain("- [");
+			expect(f.comments[0]?.body).toContain("@organizer");
+			expect(f.dispatch).toHaveBeenCalledTimes(1);
+			expect(f.react).toHaveBeenCalledTimes(1);
 		},
 	);
 	it.each(["both", "changed description", "command"])(
@@ -76,18 +275,25 @@ describe("organizer approval requests", () => {
 			expect(f.permission).not.toHaveBeenCalled();
 		},
 	);
-	it("withdraws approval when its checkbox is cleared", async () => {
-		// Arrange
-		const f = fixture();
-		await f.approvals.request(request);
-		decision(f);
-		await f.approvals.request(request);
-		// Act
-		decision(f, {}, "pending");
-		const result = await f.approvals.request(request);
-		// Assert
-		expect(result.status).toBe("pending");
-	});
+	it.each(["approved", "rejected"] as const)(
+		"preserves a finalized %s decision when old checkboxes are restored",
+		async (status) => {
+			// Arrange
+			const f = fixture();
+			await f.approvals.request(request);
+			const pending = f.comments[0]?.body ?? "";
+			decision(f, {}, status);
+			await f.approvals.request(request);
+			// Act
+			decision(f, { body: pending }, "pending");
+			const result = await f.approvals.request(request);
+			// Assert
+			expect(result.status).toBe(status);
+			expect(f.comments[0]?.body).not.toContain("- [");
+			expect(f.comments).toHaveLength(1);
+			expect(f.react).toHaveBeenCalledTimes(1);
+		},
+	);
 	it("blocks approval if the request changes while its editor is being read", async () => {
 		// Arrange
 		const f = fixture();
@@ -140,7 +346,7 @@ describe("organizer approval requests", () => {
 			);
 		},
 	);
-	it.each(["write", "admin"])(
+	it.each(["write", "maintain", "admin"])(
 		"accepts approval with %s permission",
 		async (permission) => {
 			// Arrange
@@ -152,7 +358,8 @@ describe("organizer approval requests", () => {
 			const result = await f.approvals.request(request);
 			// Assert
 			expect(result.status).toBe("approved");
-			expect(f.comments[0]?.body).toContain("- [x] Approve sending this batch");
+			expect(f.comments[0]?.body).toContain("✅ **Approved** by @organizer");
+			expect(f.comments[0]?.body).not.toContain("- [");
 		},
 	);
 	it.each(["read", "triage", "none"])(
@@ -198,7 +405,8 @@ describe("organizer approval requests", () => {
 		const result = await f.approvals.request(request);
 		// Assert
 		expect(result.status).toBe("rejected");
-		expect(f.comments[0]?.body).toContain("- [x] Reject sending this batch");
+		expect(f.comments[0]?.body).toContain("❌ **Rejected** by @organizer");
+		expect(f.comments[0]?.body).not.toContain("- [");
 		expect(f.dispatch).toHaveBeenCalledTimes(1);
 	});
 	it("invalidates a prior approval when the revision changes, even if old facts return", async () => {

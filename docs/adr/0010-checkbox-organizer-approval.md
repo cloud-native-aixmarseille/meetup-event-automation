@@ -1,6 +1,6 @@
 # ADR 0010: Approve email batches with request checkboxes
 
-Status: Accepted
+Status: Partially superseded by [ADR 0011](0011-final-organizer-decisions.md) for decision persistence, finality and Slack acknowledgement.
 
 Date: 2026-10-14
 

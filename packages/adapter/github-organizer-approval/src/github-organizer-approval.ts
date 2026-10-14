@@ -1,118 +1,123 @@
-import type { NotificationGateway } from "@meetup-automation/communication";
 import type {
 	OrganizerApproval,
+	OrganizerApprovalNotification,
 	OrganizerApprovalRequest,
 	OrganizerApprovalResult,
 } from "@meetup-automation/journey";
+import { ApprovalNotifications } from "./approval-notifications.js";
 import type { ApprovalPresenter } from "./approval-presenter.js";
-import {
-	APPROVAL_MARKER,
-	ApprovalRecord,
-	type StoredApproval,
-} from "./approval-record.js";
-import type { GithubApprovalClient } from "./github-approval-client.js";
+import { ApprovalRecord, type StoredApproval } from "./approval-record.js";
+import type {
+	ApprovalComment,
+	GithubApprovalClient,
+} from "./github-approval-client.js";
 import { ResolveApprovalDecision } from "./resolve-approval-decision.js";
+import { TrustedApprovalState } from "./trusted-approval-state.js";
 
-/** GitHub is authoritative; Slack points organizers to the durable issue request. */
+interface ApprovalState {
+	readonly comment: ApprovalComment;
+	readonly record: StoredApproval;
+}
+
+/** Final decisions are bot-persisted revisions of the original request comment. */
 export class GithubOrganizerApproval implements OrganizerApproval {
+	private readonly notifications: ApprovalNotifications;
 	constructor(
 		private readonly client: GithubApprovalClient,
 		private readonly authorLogin: string,
 		private readonly presenter: ApprovalPresenter,
-		private readonly notifications: NotificationGateway,
-		private readonly organizerChannelId: string,
-	) {}
+		notifications: OrganizerApprovalNotification,
+		organizerChannelId: string,
+	) {
+		this.notifications = new ApprovalNotifications(
+			client,
+			presenter,
+			notifications,
+			organizerChannelId,
+		);
+	}
 	async request(
 		input: OrganizerApprovalRequest,
 	): Promise<OrganizerApprovalResult> {
 		ApprovalRecord.validate(input);
-		const comments = await this.client.list();
-		const records = comments
-			.filter(
-				(comment) =>
-					comment.user?.login.toLowerCase() ===
-						this.authorLogin.toLowerCase() &&
-					comment.body?.startsWith(APPROVAL_MARKER),
+		const existing = (await this.states()).find(
+			({ record }) => record.kind === input.kind,
+		);
+		if (existing && ApprovalRecord.matches(existing.record, input)) {
+			const result = await this.finalize(existing);
+			if (
+				result.status === "approved" &&
+				!(await this.client.canApprove(existing.record.decision?.actor ?? ""))
 			)
-			.map((comment) => ({
-				comment,
-				record: ApprovalRecord.read(comment.body ?? ""),
-			}))
-			.filter(({ record }) => record.kind === input.kind);
-		if (records.length > 1) throw new Error("Ambiguous approval state");
-		const existing = records[0];
-		const current =
-			existing && ApprovalRecord.matches(existing.record, input)
-				? existing
-				: undefined;
-		const record = current?.record ?? ApprovalRecord.create(input);
-		const decision = current
-			? await new ResolveApprovalDecision(this.client, this.presenter).execute(
-					record,
-					current.comment,
-				)
-			: { status: "pending" as const };
-		// Preserve the human edit: bot rewrites would replace GitHub's editor identity.
-		if (decision.status !== "pending")
-			return { status: decision.status, notificationFailed: false };
-		const body = this.presenter.issue(record, decision);
+				throw new Error(
+					"The recorded organizer no longer has approval permission",
+				);
+			if (result.status !== "pending") return result;
+			return {
+				status: "pending",
+				notificationFailed: await this.notifications.send(
+					existing.record,
+					existing.comment.id,
+				),
+			};
+		}
+		const record = ApprovalRecord.create(input);
+		const body = this.presenter.issue(record, { status: "pending" });
 		const commentId = existing
 			? existing.comment.id
 			: await this.client.create(body);
-		if (existing && body !== existing.comment.body)
+		if (existing)
 			await this.client.replace(commentId, existing.comment.body ?? "", body);
-		await this.notify(record, commentId);
 		return {
-			status: decision.status,
-			notificationFailed:
-				record.notification === "reserved" || record.notification === "retry",
+			status: "pending",
+			notificationFailed: await this.notifications.send(record, commentId),
 		};
 	}
-	private async notify(
-		record: StoredApproval,
-		commentId: number,
-	): Promise<void> {
-		if (record.notification !== "new" && record.notification !== "retry")
-			return;
-		const before = this.presenter.issue(record, { status: "pending" });
-		record.notification = "reserved";
-		const reserved = this.presenter.issue(record, { status: "pending" });
-		await this.client.replace(commentId, before, reserved);
-		let outcome: "accepted" | "uncertain" | "rejected" | "deferred" =
-			"uncertain";
-		try {
-			const result = await this.notifications.dispatch({
-				channel: "notification",
-				kind: "readiness-reminder",
-				intentId: record.requestId,
-				idempotencyKey: record.requestId,
-				repositoryId: "organizer-approval",
-				eventId: record.requestId,
-				policyVersion: "1",
-				recipientId: "organizers",
-				recipient: {
-					channel: "notification",
-					role: "organizers",
-					recipientId: "organizers",
-					receivesCommunications: true,
-					destination: this.organizerChannelId,
-				},
-				content: this.presenter.slack(record, this.client.url(commentId)),
-			});
-			outcome = result.outcome;
-		} catch {
-			/* Ambiguous acknowledgement must not produce duplicate notifications. */
+	async synchronize(): Promise<{ notificationFailed: boolean }> {
+		let notificationFailed = false;
+		for (const state of await this.states()) {
+			const result = await this.finalize(state);
+			notificationFailed = result.notificationFailed || notificationFailed;
 		}
-		record.notification =
-			outcome === "accepted"
-				? "sent"
-				: outcome === "uncertain"
-					? "reserved"
-					: "retry";
-		await this.client.replace(
-			commentId,
-			reserved,
-			this.presenter.issue(record, { status: "pending" }),
-		);
+		return { notificationFailed };
+	}
+	private async states(): Promise<readonly ApprovalState[]> {
+		const states: ApprovalState[] = [];
+		const trusted = new TrustedApprovalState(this.client, this.authorLogin);
+		for (const comment of await this.client.list()) {
+			if (comment.user?.login.toLowerCase() !== this.authorLogin.toLowerCase())
+				continue;
+			const record = await trusted.read(comment);
+			if (!record) continue;
+			if (states.some((state) => state.record.kind === record.kind))
+				throw new Error("Ambiguous approval state");
+			states.push({ record, comment });
+		}
+		return states;
+	}
+	private async finalize({
+		record,
+		comment,
+	}: ApprovalState): Promise<OrganizerApprovalResult> {
+		const decision = await new ResolveApprovalDecision(
+			this.client,
+			this.presenter,
+		).execute(record, comment);
+		if (decision.status !== "pending" && !record.decision) {
+			if (!decision.actor || !decision.decidedAt)
+				throw new Error("Missing verified approval identity");
+			record.decision = {
+				status: decision.status,
+				actor: decision.actor,
+				decidedAt: decision.decidedAt,
+			};
+		}
+		const body = this.presenter.issue(record, decision);
+		if (body !== comment.body)
+			await this.client.replace(comment.id, comment.body ?? "", body);
+		return {
+			status: decision.status,
+			notificationFailed: await this.notifications.react(record, comment.id),
+		};
 	}
 }

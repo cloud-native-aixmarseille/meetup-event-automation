@@ -1,3 +1,14 @@
+type ApprovalHistoryResponse = {
+	node: {
+		id: string;
+		body: string;
+		userContentEdits: {
+			nodes: readonly ApprovalContentEdit[];
+			pageInfo: { hasNextPage: boolean; endCursor: string | null };
+		};
+	} | null;
+};
+
 export interface ApprovalComment {
 	readonly id: number;
 	readonly node_id?: string;
@@ -15,10 +26,15 @@ export interface ApprovalCommentEdit {
 		readonly __typename: string;
 	} | null;
 }
+export interface ApprovalContentEdit {
+	readonly diff: string | null;
+	readonly deletedAt: string | null;
+	readonly editor: ApprovalCommentEdit["editor"];
+}
 export interface GithubApprovalApi {
 	graphql<Response>(
 		query: string,
-		variables: { id: string },
+		variables: { id: string; after?: string },
 	): Promise<Response>;
 	readonly rest: {
 		readonly issues: {
@@ -111,6 +127,7 @@ export class GithubApprovalClient {
 		});
 		return (
 			response.data.permission === "write" ||
+			response.data.permission === "maintain" ||
 			response.data.permission === "admin"
 		);
 	}
@@ -148,5 +165,42 @@ export class GithubApprovalClient {
 	}
 	url(commentId: number): string {
 		return `https://github.com/${this.owner}/${this.repo}/issues/${this.issue}#issuecomment-${commentId}`;
+	}
+	async history(
+		comment: ApprovalComment,
+	): Promise<readonly ApprovalContentEdit[]> {
+		if (!comment.node_id)
+			throw new Error("Missing approval comment node identity");
+		const edits: ApprovalContentEdit[] = [];
+		let after: string | undefined;
+		do {
+			const response: ApprovalHistoryResponse =
+				await this.api.graphql<ApprovalHistoryResponse>(
+					`query ApprovalCommentHistory($id: ID!, $after: String) {
+				node(id: $id) { ... on IssueComment {
+					id body userContentEdits(first: 100, after: $after) {
+						nodes { diff deletedAt editor { login __typename } }
+						pageInfo { hasNextPage endCursor }
+					}
+				} }
+			}`,
+					{ id: comment.node_id, ...(after ? { after } : {}) },
+				);
+			if (
+				response.node?.id !== comment.node_id ||
+				response.node.body !== comment.body
+			)
+				throw new Error("Approval comment changed during history verification");
+			const history = response.node.userContentEdits;
+			if (!Array.isArray(history?.nodes) || !history.pageInfo)
+				throw new Error("Approval history is unavailable");
+			edits.push(...history.nodes);
+			if (!history.pageInfo.hasNextPage) return edits;
+			const next = history.pageInfo.endCursor;
+			if (!next || next === after)
+				throw new Error("Invalid approval history cursor");
+			after = next;
+		} while (after);
+		return edits;
 	}
 }

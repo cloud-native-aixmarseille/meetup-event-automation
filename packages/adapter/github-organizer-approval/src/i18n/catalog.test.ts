@@ -4,6 +4,14 @@ import { CATALOGS } from "./catalog.js";
 import type { MessageParameters } from "./message-parameters.js";
 
 const parameters = {
+	"approval.final": {
+		kind: "introduction",
+		date: "2099-06-08",
+		count: 2,
+		status: "approved",
+		actor: "organizer",
+		decidedAt: "2099-06-01T10:00:00Z",
+	},
 	"approval.request": {
 		kind: "introduction",
 		date: "2099-06-08",

@@ -3,11 +3,11 @@ export const DIAGNOSTICS_COMMUNICATION_FR = {
 	"diagnostic.communication.approval-pending":
 		"Les e-mails attendent une confirmation dans le ticket du meetup.",
 	"diagnostic.communication.approval-rejected":
-		"Le lot d'e-mails a été refusé. Décochez Refuser et cochez Approuver dans la demande avant l'envoi.",
+		"Le lot d'e-mails a été refusé. La décision enregistrée est définitive pour cette version du lot.",
 	"diagnostic.communication.approval-unavailable":
 		"La confirmation des organisateurs n'a pas pu être vérifiée ou enregistrée ; l'envoi des e-mails est bloqué.",
 	"diagnostic.communication.approval-notification-failed":
-		"La notification Slack de confirmation n'a pas été confirmée. Consultez la demande dans le ticket du meetup.",
+		"La notification Slack ou la réaction à la décision n'a pas été confirmée. Consultez la demande dans le ticket du meetup. Vérifiez que le bot est membre du canal et possède les autorisations chat:write et reactions:write ; les anciennes alertes sans référence de message enregistrée ne peuvent pas recevoir de réaction automatique.",
 
 	"diagnostic.communication.duplicate-intent":
 		"Une intention de communication en double a été ignorée.",

@@ -98,9 +98,6 @@ importers:
 
   packages/adapter/github-organizer-approval:
     dependencies:
-      '@meetup-automation/communication':
-        specifier: workspace:*
-        version: link:../../domain/communication
       '@meetup-automation/journey':
         specifier: workspace:*
         version: link:../../application/journey
@@ -140,6 +137,9 @@ importers:
       '@meetup-automation/communication':
         specifier: workspace:*
         version: link:../../domain/communication
+      '@meetup-automation/journey':
+        specifier: workspace:*
+        version: link:../../application/journey
 
   packages/adapter/system-clock:
     dependencies:
