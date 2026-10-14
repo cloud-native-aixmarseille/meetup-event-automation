@@ -48,6 +48,20 @@ Email recipients come from the [referentials](../reference/referentials.md): the
 host's first contact and each resolved speaker. Fix invalid records or
 unresolved participants before using automatic communications.
 
+## Presentation link
+
+Emails use the managed presentation file URL for `eventSlidesUrl`. Both event
+workflows reconcile assets before communications and pass the `slides-link`
+entry from the asset action's `drive-files` output. Configure the presentation
+template with `template_kind=slides`; see [Drive templates](assets.md#prepare-templates).
+
+When calling the communication action directly, supply that URL as `slides-url`.
+It accepts HTTPS Google Slides presentation links and Google Drive file links.
+A due email batch with a missing or invalid link is held with the
+`communication.slides-unavailable` diagnostic, before requesting approval.
+The issue's **Drive Link** remains the event folder and is never used as a
+fallback for the presentation. Readiness reminders do not require a presentation.
+
 ## Confirm an email batch
 
 When a batch is due, the bot creates or updates a confirmation comment on the

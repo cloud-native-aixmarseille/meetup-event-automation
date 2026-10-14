@@ -21,6 +21,9 @@ still fail the job. Subsequent audits update the same comment, including when
 the errors are resolved. Diagnostics remain visible in annotations, outputs,
 and the job summary.
 
+Asset reconciliation passes the managed presentation URL into email approval
+and delivery. See [presentation link requirements](../../docs/integrations/communications.md#presentation-link).
+
 The workflow creates a separate GitHub App installation token for
 `<repository-owner>/mailings` using the supplied App client ID and private key.
 The App must be installed there with Contents: write permission. The token is

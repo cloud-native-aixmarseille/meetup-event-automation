@@ -64,6 +64,7 @@ const actionContracts = [
 	{
 		directory: "actions/communication/reconcile",
 		inputs: [
+			"slides-url",
 			"report-errors-to-issue",
 			"github-token",
 			"issue-number",

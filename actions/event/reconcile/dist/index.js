@@ -31769,6 +31769,7 @@ var MessageLocalizer = class _MessageLocalizer {
 
 // packages/runtime/github-actions/src/i18n/diagnostics-communication.en.ts
 var DIAGNOSTICS_COMMUNICATION_EN = {
+  "diagnostic.communication.slides-unavailable": "Email dispatch is blocked because the presentation file link is missing or invalid. Configure a Drive template with template_kind=slides, reconcile assets, and pass the slides-link entry from drive-files as slides-url.",
   "diagnostic.communication.approval-pending": "Email dispatch is waiting for approval on the meetup issue.",
   "diagnostic.communication.approval-rejected": "The email batch was rejected. The recorded decision is final for this batch revision.",
   "diagnostic.communication.approval-unavailable": "The organizer approval could not be verified or persisted; email dispatch is blocked.",
@@ -31801,6 +31802,7 @@ var DIAGNOSTICS_COMMUNICATION_EN = {
 
 // packages/runtime/github-actions/src/i18n/diagnostics-communication.fr.ts
 var DIAGNOSTICS_COMMUNICATION_FR = {
+  "diagnostic.communication.slides-unavailable": "L'envoi des e-mails est bloqu\xE9 car le lien du fichier de pr\xE9sentation est absent ou invalide. Configurez un mod\xE8le Drive avec template_kind=slides, r\xE9conciliez les fichiers et transmettez l'entr\xE9e slides-link de drive-files dans slides-url.",
   "diagnostic.communication.approval-pending": "Les e-mails attendent une confirmation dans le ticket du meetup.",
   "diagnostic.communication.approval-rejected": "Le lot d'e-mails a \xE9t\xE9 refus\xE9. La d\xE9cision enregistr\xE9e est d\xE9finitive pour cette version du lot.",
   "diagnostic.communication.approval-unavailable": "La confirmation des organisateurs n'a pas pu \xEAtre v\xE9rifi\xE9e ou enregistr\xE9e ; l'envoi des e-mails est bloqu\xE9.",

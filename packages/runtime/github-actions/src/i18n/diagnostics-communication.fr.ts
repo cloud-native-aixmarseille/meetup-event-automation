@@ -1,5 +1,7 @@
 import type { DIAGNOSTICS_COMMUNICATION_EN } from "./diagnostics-communication.en.js";
 export const DIAGNOSTICS_COMMUNICATION_FR = {
+	"diagnostic.communication.slides-unavailable":
+		"L'envoi des e-mails est bloqué car le lien du fichier de présentation est absent ou invalide. Configurez un modèle Drive avec template_kind=slides, réconciliez les fichiers et transmettez l'entrée slides-link de drive-files dans slides-url.",
 	"diagnostic.communication.approval-pending":
 		"Les e-mails attendent une confirmation dans le ticket du meetup.",
 	"diagnostic.communication.approval-rejected":

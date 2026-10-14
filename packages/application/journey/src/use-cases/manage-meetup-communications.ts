@@ -277,6 +277,7 @@ export class ManageMeetupCommunications {
 			notificationRecipients: delivery.notificationRecipients,
 			mailPlaceholders: CommunicationPlaceholders.eventPlaceholders(
 				managed.event,
+				input.slidesUrl,
 			),
 			notificationContent:
 				this.dependencies.organizerReadinessNotification.render({

@@ -41,6 +41,110 @@ describe("automatic communication completion after approval", () => {
 			notificationFailed: false,
 		});
 	});
+	it.each(["scheduled", "held"])(
+		"dispatches %s emails with the presentation file URL",
+		async (status) => {
+			// Arrange
+			const f = await setup({
+				labels: [
+					"meetup",
+					"hoster:confirmed",
+					"speakers:confirmed",
+					`event:${status}`,
+				],
+			});
+			const originalBody = f.issue.body;
+
+			// Act
+			const result = await CommunicationRuntime.runCommunicationReconcile(
+				f.input,
+			);
+			const placeholders = f.createDispatchEvent.mock.calls.map(
+				([request]) => request.client_payload.placeholders,
+			);
+
+			// Assert
+			expect(result.counts.accepted).toBe(2);
+			expect(placeholders).toHaveLength(2);
+			for (const values of placeholders) {
+				expect(values.eventSlidesUrl).toBe(f.input.slidesUrl);
+				expect(values.eventSlidesUrl).not.toContain("/folders/");
+			}
+			expect(originalBody).toContain(
+				"https://drive.google.com/drive/folders/public-event-assets",
+			);
+			expect(f.issue.body).toContain(
+				"https://drive.google.com/drive/folders/public-event-assets",
+			);
+		},
+	);
+
+	it.each([undefined, "https://drive.google.com/drive/folders/event-assets"])(
+		"holds due mail without requesting approval when the presentation is unavailable: %s",
+		async (slidesUrl) => {
+			// Arrange
+			const f = await setup();
+
+			// Act
+			const result = await CommunicationRuntime.runCommunicationReconcile({
+				...f.input,
+				slidesUrl,
+			});
+
+			// Assert
+			expect(result.runtimeDiagnostics).toContainEqual({
+				code: "communication.slides-unavailable",
+				severity: "error",
+			});
+			expect(f.createDispatchEvent).not.toHaveBeenCalled();
+			expect(GithubOrganizerApproval.prototype.request).not.toHaveBeenCalled();
+			expect(f.issue.body).toContain("- [ ] Mail introduction");
+		},
+	);
+
+	it("does not require a presentation when no email task is pending", async () => {
+		// Arrange
+		const f = await setup({
+			body: eventBody("2099-06-08").replace(
+				"- [ ] Mail introduction",
+				"- [x] Mail introduction",
+			),
+		});
+
+		// Act
+		const result = await CommunicationRuntime.runCommunicationReconcile({
+			...f.input,
+			slidesUrl: undefined,
+		});
+
+		// Assert
+		expect(result.runtimeDiagnostics).toEqual([]);
+		expect(f.createDispatchEvent).not.toHaveBeenCalled();
+		expect(GithubOrganizerApproval.prototype.request).not.toHaveBeenCalled();
+	});
+
+	it("restores recorded completion without resending when the presentation changes", async () => {
+		// Arrange
+		const f = await setup();
+
+		// Act
+		await CommunicationRuntime.runCommunicationReconcile(f.input);
+		f.issue.body = f.issue.body.replace(
+			"- [x] Mail introduction",
+			"- [ ] Mail introduction",
+		);
+		const result = await CommunicationRuntime.runCommunicationReconcile({
+			...f.input,
+			slidesUrl:
+				"https://docs.google.com/presentation/d/replacement-slides/edit",
+		});
+
+		// Assert
+		expect(result.counts.alreadyRecorded).toBe(2);
+		expect(result.counts.dispatched).toBe(0);
+		expect(f.createDispatchEvent).toHaveBeenCalledTimes(2);
+		expect(f.issue.body).toContain("- [x] Mail introduction");
+	});
 	it.each(["example-community", "another-community"])(
 		"dispatches due introductions through %s/mailings after approval",
 		async (owner) => {
@@ -343,6 +447,7 @@ describe("automatic communication completion after approval", () => {
 			const result = await CommunicationRuntime.runCommunicationReconcile({
 				...f.input,
 				locale,
+				slidesUrl: undefined,
 			});
 			// Assert
 			expect(result.counts.accepted).toBe(1);
@@ -499,6 +604,29 @@ describe("organizer approval for email batches", () => {
 				json: async () => ({ ok: true, channel: "C12345", ts: "100.001" }),
 			}),
 		);
+	});
+	it("requires a new approval when the presentation file changes before dispatch", async () => {
+		// Arrange
+		const f = await setup();
+		await CommunicationRuntime.runCommunicationReconcile(f.input);
+		approveBatch(f);
+		const originalRequest = f.comments[0]?.body;
+
+		// Act
+		const result = await CommunicationRuntime.runCommunicationReconcile({
+			...f.input,
+			slidesUrl:
+				"https://docs.google.com/presentation/d/replacement-slides/edit",
+		});
+
+		// Assert
+		expect(result.runtimeDiagnostics).toContainEqual({
+			code: "communication.approval-pending",
+			severity: "warning",
+		});
+		expect(f.createDispatchEvent).not.toHaveBeenCalled();
+		expect(f.comments[0]?.body).not.toBe(originalRequest);
+		expect(f.comments[0]?.body).toContain("- [ ] Approve sending this batch");
 	});
 	it("requests approval in the issue and Slack, then sends and completes only after approval", async () => {
 		// Arrange

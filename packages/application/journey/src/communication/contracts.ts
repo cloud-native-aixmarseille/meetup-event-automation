@@ -7,6 +7,7 @@ export interface ManageMeetupCommunicationsInput {
 	readonly owner: string;
 	readonly repo: string;
 	readonly repositoryId?: string;
+	readonly slidesUrl?: string;
 }
 
 type CommunicationJourneyDiagnosticCode =
@@ -15,6 +16,7 @@ type CommunicationJourneyDiagnosticCode =
 	| "communication.approval-rejected"
 	| "communication.approval-unavailable"
 	| "communication.approval-notification-failed"
+	| "communication.slides-unavailable"
 	| "communication.checklist-update-failed"
 	| "communication.event-skipped"
 	| "communication.event-concurrently-modified"

@@ -31769,6 +31769,7 @@ var MessageLocalizer = class _MessageLocalizer {
 
 // packages/runtime/github-actions/src/i18n/diagnostics-communication.en.ts
 var DIAGNOSTICS_COMMUNICATION_EN = {
+  "diagnostic.communication.slides-unavailable": "Email dispatch is blocked because the presentation file link is missing or invalid. Configure a Drive template with template_kind=slides, reconcile assets, and pass the slides-link entry from drive-files as slides-url.",
   "diagnostic.communication.approval-pending": "Email dispatch is waiting for approval on the meetup issue.",
   "diagnostic.communication.approval-rejected": "The email batch was rejected. The recorded decision is final for this batch revision.",
   "diagnostic.communication.approval-unavailable": "The organizer approval could not be verified or persisted; email dispatch is blocked.",
@@ -31801,6 +31802,7 @@ var DIAGNOSTICS_COMMUNICATION_EN = {
 
 // packages/runtime/github-actions/src/i18n/diagnostics-communication.fr.ts
 var DIAGNOSTICS_COMMUNICATION_FR = {
+  "diagnostic.communication.slides-unavailable": "L'envoi des e-mails est bloqu\xE9 car le lien du fichier de pr\xE9sentation est absent ou invalide. Configurez un mod\xE8le Drive avec template_kind=slides, r\xE9conciliez les fichiers et transmettez l'entr\xE9e slides-link de drive-files dans slides-url.",
   "diagnostic.communication.approval-pending": "Les e-mails attendent une confirmation dans le ticket du meetup.",
   "diagnostic.communication.approval-rejected": "Le lot d'e-mails a \xE9t\xE9 refus\xE9. La d\xE9cision enregistr\xE9e est d\xE9finitive pour cette version du lot.",
   "diagnostic.communication.approval-unavailable": "La confirmation des organisateurs n'a pas pu \xEAtre v\xE9rifi\xE9e ou enregistr\xE9e ; l'envoi des e-mails est bloqu\xE9.",
@@ -36555,6 +36557,27 @@ var AssetFolderUrlPolicy = class {
   }
 };
 
+// packages/domain/publication/src/domain/presentation-file-url.ts
+var PresentationFileUrl = class {
+  static normalize(value) {
+    if (!value?.trim()) return void 0;
+    try {
+      const url = new URL(value.trim());
+      if (url.protocol !== "https:" || url.username || url.password || url.port)
+        return void 0;
+      const presentation = url.hostname === "docs.google.com" && /^\/presentation\/d\/[a-zA-Z0-9_-]+(?:\/(?:edit|view|preview|present))?\/?$/.test(
+        url.pathname
+      );
+      const file = url.hostname === "drive.google.com" && /^\/file\/d\/[a-zA-Z0-9_-]+(?:\/(?:view|preview|edit))?\/?$/.test(
+        url.pathname
+      );
+      return presentation || file ? url.href : void 0;
+    } catch {
+      return void 0;
+    }
+  }
+};
+
 // packages/domain/publication/src/domain/community-event-url-policy.ts
 var CommunityEventUrlPolicy = class {
   constructor(prefixes) {
@@ -38929,6 +38952,13 @@ var ApproveCommunicationBatch = class {
       if (preview.diagnostics.some(({ severity }) => severity === "error"))
         throw new Error("Communication approval preflight failed");
       if (preview.counts.due === 0) return false;
+      if (!input.mailPlaceholders?.eventSlidesUrl) {
+        diagnostics.push({
+          code: "communication.slides-unavailable",
+          severity: "error"
+        });
+        return false;
+      }
       const batch = planner.execute({
         ...input,
         now: now2,
@@ -39844,12 +39874,13 @@ var CommunicationDeliveryPreparation = class {
 
 // packages/application/journey/src/use-cases/communication-placeholders.ts
 var CommunicationPlaceholders = class {
-  static eventPlaceholders(event) {
+  static eventPlaceholders(event, slidesUrl) {
+    const presentationUrl = PresentationFileUrl.normalize(slidesUrl);
     return {
       eventDate: event.date,
       ...event.publicationLinks.meetup ? { eventMeetupUrl: event.publicationLinks.meetup } : {},
       ...event.publicationLinks.community ? { eventCncfUrl: event.publicationLinks.community } : {},
-      ...event.publicationLinks.assets ? { eventSlidesUrl: event.publicationLinks.assets } : {}
+      ...presentationUrl ? { eventSlidesUrl: presentationUrl } : {}
     };
   }
 };
@@ -40047,7 +40078,8 @@ var ManageMeetupCommunications = class _ManageMeetupCommunications {
       ),
       notificationRecipients: delivery.notificationRecipients,
       mailPlaceholders: CommunicationPlaceholders.eventPlaceholders(
-        managed.event
+        managed.event,
+        input.slidesUrl
       ),
       notificationContent: this.dependencies.organizerReadinessNotification.render({
         repository: repositoryName,
@@ -58573,7 +58605,8 @@ var CommunicationRuntime = class _CommunicationRuntime {
       owner: input.owner,
       repo: input.repo,
       repositoryId: input.repositoryId,
-      organizerNotificationDestination: slackOrganizerChannelId
+      organizerNotificationDestination: slackOrganizerChannelId,
+      slidesUrl: input.slidesUrl
     });
     return result;
   }
@@ -58619,6 +58652,7 @@ var COMMUNICATION_MESSAGES = {
   "delivery-already-recorded": "The delivery ledger already contains this intent."
 };
 var RUNTIME_MESSAGES = {
+  "communication.slides-unavailable": "Email dispatch requires a valid presentation file URL.",
   "communication.approval-pending": "Email dispatch is waiting for approval on the meetup issue.",
   "communication.approval-rejected": "The email batch was rejected. The recorded decision is final for this batch revision.",
   "communication.approval-unavailable": "The organizer approval could not be verified or persisted; email dispatch is blocked.",
@@ -58645,6 +58679,7 @@ var CommunicationAction = class _CommunicationAction {
     const outcome = await CommunicationRuntime.runCommunicationReconcile({
       locale: messages.locale,
       issueNumber,
+      slidesUrl: getInput("slides-url"),
       githubToken: getInput("github-token", { required: true }),
       mailingsToken: getInput("mailings-token", { required: true }),
       slackToken: getInput("slack-token", { required: true }),

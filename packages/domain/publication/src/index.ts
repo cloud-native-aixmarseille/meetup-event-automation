@@ -17,6 +17,7 @@ export {
 	type ReconcileEventAssetsResult,
 } from "./application/reconcile-event-assets.js";
 export { AssetFolderUrlPolicy } from "./domain/asset-folder-url-policy.js";
+export { PresentationFileUrl } from "./domain/presentation-file-url.js";
 export { CommunityEventUrlPolicy } from "./domain/community-event-url-policy.js";
 export {
 	ManualPublicationPolicy,

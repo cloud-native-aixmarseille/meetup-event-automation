@@ -20,6 +20,11 @@ The action uses one reconciliation path. Its result reports the effective
 `check` or `dispatch` mode according to event, checklist, approval and delivery checks. Run the
 action under the shared per-event lock; the reusable workflows provide it.
 
+Pass the presentation file URL as `slides-url`, using the `slides-link` entry
+from the asset action's `drive-files` output. Due email batches require a valid
+file link; missing links and folder URLs block email dispatch before approval.
+See [presentation links](../../../docs/integrations/communications.md#presentation-link).
+
 The required `slack-organizer-channel-id` selects the internal organizer channel.
 Public event announcements remain manual checklist tasks and are never sent by
 this action. See [channel selection](../../../docs/integrations/communications.md#organizer-and-public-channels).
@@ -48,6 +53,9 @@ resolved. Execution and comment persistence failures still fail the action.
     # GitHub issue number in the caller repository containing the meetup event document to inspect.
     # This input is required.
     issue-number: ""
+
+    # Required when an email batch is due. Reconcile assets first.
+    slides-url: ${{ fromJSON(steps.assets.outputs.drive-files)['slides-link'] }}
 
     # Required: true reports errors in the issue; false fails on error diagnostics.
     # Use the shared event lock.
@@ -83,6 +91,7 @@ resolved. Execution and comment persistence failures still fail the action.
 | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
 | **`locale`**                     | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.                                                                                     | **false**    | `en`        |
 | **`issue-number`**               | GitHub issue number in the caller repository containing the meetup event document to inspect.                                                                                                                          | **true**     | -           |
+| **`slides-url`**                 | Direct presentation file URL from the asset action's drive-files slides-link entry. Required for due email batches; missing or invalid links block email dispatch. | **false** | - |
 | **`report-errors-to-issue`**     | Use true to record diagnostics in a managed issue comment and succeed after persistence, or false to fail on error diagnostics. Execution and comment persistence failures still fail. Requires the shared event lock. | **true**     | -           |
 | **`github-token`**               | Token for the caller repository. Requires issues:write for approval requests, checklist completion, delivery ledger, and diagnostic comments, and metadata:read to verify approvers.                                   | **true**     | -           |
 | **`managed-comment-author`**     | Trusted bot login allowed to create or update managed approval, delivery ledger and communication diagnostic comments, for example my-app[bot].                                                                        | **true**     | -           |
