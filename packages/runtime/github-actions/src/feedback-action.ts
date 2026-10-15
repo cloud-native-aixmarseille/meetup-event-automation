@@ -19,6 +19,7 @@ export class FeedbackAction {
 		const kuttApiKey = FeedbackAction.requiredInput("kutt-api-key");
 		core.setSecret(kuttApiKey);
 		const kuttLinkId = FeedbackAction.requiredInput("kutt-link-id");
+		const kuttBaseUrl = FeedbackAction.requiredInput("kutt-base-url");
 		const openFeedbackApiKey = FeedbackAction.requiredInput(
 			"openfeedback-api-key",
 		);
@@ -33,6 +34,7 @@ export class FeedbackAction {
 				required: true,
 			}),
 			kuttApiKey,
+			kuttBaseUrl,
 			kuttLinkId,
 			openFeedbackApiKey,
 		});
@@ -43,7 +45,11 @@ export class FeedbackAction {
 	}
 
 	private static requiredInput(
-		name: "kutt-api-key" | "kutt-link-id" | "openfeedback-api-key",
+		name:
+			| "kutt-api-key"
+			| "kutt-base-url"
+			| "kutt-link-id"
+			| "openfeedback-api-key",
 	): string {
 		const value = core.getInput(name, { required: true });
 		if (!value) throw new Error(`Input required and not supplied: ${name}`);

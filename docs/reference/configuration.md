@@ -11,6 +11,7 @@ parameter names are the public contract.
 | ------------------------------------------------- | ---------------------------------------------- | ----------------------------------------- |
 | Variable `CI_BOT_APP_CLIENT_ID`                   | Input `github-app-client-id`                   | Event workflows and form synchronization. |
 | Secret `CI_BOT_APP_PRIVATE_KEY`                   | Secret `github-app-private-key`                | Event workflows and form synchronization. |
+| Variable `KUTT_BASE_URL`                          | Input `kutt-base-url`                          | Both event workflows.                     |
 | Variable `KUTT_FEEDBACK_LINK_ID`                  | Input `kutt-link-id`                           | Both event workflows.                     |
 | Secret `OPENFEEDBACK_API_KEY`                     | Secret `openfeedback-api-key`                  | Both event workflows.                     |
 | Secret `KUTT_API_KEY`                             | Secret `kutt-api-key`                          | Both event workflows.                     |

@@ -82,6 +82,7 @@ jobs:
     with:
       locale: en
       github-app-client-id: ${{ vars.CI_BOT_APP_CLIENT_ID }}
+      kutt-base-url: ${{ vars.KUTT_BASE_URL }}
       kutt-link-id: ${{ vars.KUTT_FEEDBACK_LINK_ID }}
       slack-organizer-channel-id: ${{ vars.SLACK_ORGANIZER_CHANNEL_ID }}
       google-drive-meetup-folder-id: ${{ vars.GOOGLE_DRIVE_MEETUP_FOLDER_ID }}
@@ -108,6 +109,7 @@ jobs:
 | **`slack-organizer-channel-id`**             | Internal meetup organizer Slack channel for approval requests and actionable organizer reminders. Public announcement channels are separate. | **true**     | **string** | -           |
 | **`google-drive-meetup-folder-id`**          | Google Drive folder ID of the parent meetup folder used for asset reconciliation.                                                            | **true**     | **string** | -           |
 | **`google-drive-meetup-template-folder-id`** | Google Drive folder ID of the template folder used for asset reconciliation.                                                                 | **true**     | **string** | -           |
+| **`kutt-base-url`**                          | HTTPS base URL of the Kutt instance, without /api/v2. No default.                                                                            | **true**     | **string** | -           |
 | **`kutt-link-id`**                           | Existing Kutt feedback link API ID.                                                                                                          | **true**     | **string** | -           |
 
 <!-- inputs:end -->

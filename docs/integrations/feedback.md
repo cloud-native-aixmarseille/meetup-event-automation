@@ -14,16 +14,24 @@ paginated reads, creation with stable IDs and updates with per-record revisions.
 Follow [repository setup](../usage/setup.md), then pass these settings to both
 `update-meetup-issue.yml` and `check-active-meetup-issues.yml`:
 
-| Consumer setting                 | Reusable workflow parameter   | Requirement                                                            |
-| -------------------------------- | ----------------------------- | ---------------------------------------------------------------------- |
-| Secret `KUTT_API_KEY`            | Secret `kutt-api-key`         | Required; key belonging to the owner of the existing link on `kutt.it` |
-| Variable `KUTT_FEEDBACK_LINK_ID` | Input `kutt-link-id`          | Required; the link's API `id`, not its short address                   |
-| Secret `OPENFEEDBACK_API_KEY`    | Secret `openfeedback-api-key` | Required organization key beginning with `oforg_`                      |
+| Consumer setting                 | Reusable workflow parameter   | Requirement                                                                          |
+| -------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------ |
+| Secret `KUTT_API_KEY`            | Secret `kutt-api-key`         | Required; key belonging to the owner of the existing link on the configured instance |
+| Variable `KUTT_BASE_URL`         | Input `kutt-base-url`         | Required; HTTPS base URL of the Kutt instance, without `/api/v2`                     |
+| Variable `KUTT_FEEDBACK_LINK_ID` | Input `kutt-link-id`          | Required; the link's API `id`, not its short address                                 |
+| Secret `OPENFEEDBACK_API_KEY`    | Secret `openfeedback-api-key` | Required organization key beginning with `oforg_`                                    |
 
-All three settings are required, including for issues with an
+All four settings are required, including for issues with an
 existing feedback URL. A missing or malformed OpenFeedback key fails feedback
 reconciliation. Use an organization key beginning with `oforg_`; an event-specific
 `ofproj_` key is not accepted.
+
+Set `KUTT_BASE_URL` to the instance hosting the existing short link, for example
+`https://short.example.test`. There is no default endpoint. The URL must use
+HTTPS and have no embedded credentials, query string, or fragment. An optional
+path prefix is supported, such as `https://short.example.test/shortener`;
+trailing slashes are normalized. The adapter appends `/api/v2` and rejects
+redirects. The API key must belong to that instance.
 
 Create the Kutt short link before enabling the workflows. Missing Kutt settings
 fail feedback reconciliation. The automation does not create or replace a

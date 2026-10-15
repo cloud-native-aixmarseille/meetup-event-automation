@@ -440,6 +440,7 @@ jobs:
           managed-comment-author: integration-tests[bot]
           openfeedback-api-key: ""
           kutt-api-key: synthetic-key
+          kutt-base-url: https://short.example.test
           kutt-link-id: synthetic-link
 
       - name: Reject a missing Kutt API key
@@ -452,6 +453,7 @@ jobs:
           managed-comment-author: integration-tests[bot]
           openfeedback-api-key: oforg_synthetic-key
           kutt-api-key: ""
+          kutt-base-url: https://short.example.test
           kutt-link-id: synthetic-link
 
       - name: Reject a missing Kutt link ID
@@ -464,7 +466,21 @@ jobs:
           managed-comment-author: integration-tests[bot]
           openfeedback-api-key: oforg_synthetic-key
           kutt-api-key: synthetic-key
+          kutt-base-url: https://short.example.test
           kutt-link-id: ""
+
+      - name: Reject a missing Kutt base URL
+        id: missing-base-url
+        continue-on-error: true
+        uses: ./actions/publication/reconcile-feedback
+        with:
+          issue-number: "1"
+          github-token: ${{ github.token }}
+          managed-comment-author: integration-tests[bot]
+          openfeedback-api-key: oforg_synthetic-key
+          kutt-api-key: synthetic-key
+          kutt-link-id: synthetic-link
+          kutt-base-url: ""
 
       - name: Assert missing settings fail
         shell: bash
@@ -473,11 +489,13 @@ jobs:
           OPENFEEDBACK_DIAGNOSTICS: ${{ steps.missing-openfeedback-key.outputs.diagnostics }}
           KEY_OUTCOME: ${{ steps.missing-key.outcome }}
           ID_OUTCOME: ${{ steps.missing-id.outcome }}
+          BASE_URL_OUTCOME: ${{ steps.missing-base-url.outcome }}
         run: |
           [[ "$OPENFEEDBACK_OUTCOME" == "failure" ]]
           jq -e 'map(.code) | index("action.execution.failed") != null' <<< "$OPENFEEDBACK_DIAGNOSTICS" >/dev/null
           [[ "$KEY_OUTCOME" == "failure" ]]
           [[ "$ID_OUTCOME" == "failure" ]]
+          [[ "$BASE_URL_OUTCOME" == "failure" ]]
 
   cleanup-synthetic-issue:
     name: Cleanup synthetic meetup issue

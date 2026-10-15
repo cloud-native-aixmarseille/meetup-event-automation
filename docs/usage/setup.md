@@ -46,15 +46,16 @@ repository-scoped tokens it needs and revokes them when the job ends.
 
 Add the following repository settings:
 
-| Type     | Name                     | Value                                                      |
-| -------- | ------------------------ | ---------------------------------------------------------- |
-| Variable | `CI_BOT_APP_CLIENT_ID`   | GitHub App client ID.                                      |
-| Secret   | `CI_BOT_APP_PRIVATE_KEY` | App private key in PEM format.                             |
-| Variable | `KUTT_FEEDBACK_LINK_ID`  | API ID of the existing Kutt short link.                    |
-| Secret   | `OPENFEEDBACK_API_KEY`   | OpenFeedback organization API key beginning with `oforg_`. |
-| Secret   | `KUTT_API_KEY`           | API key of that link's owner.                              |
+| Type     | Name                     | Value                                                               |
+| -------- | ------------------------ | ------------------------------------------------------------------- |
+| Variable | `CI_BOT_APP_CLIENT_ID`   | GitHub App client ID.                                               |
+| Secret   | `CI_BOT_APP_PRIVATE_KEY` | App private key in PEM format.                                      |
+| Variable | `KUTT_BASE_URL`          | HTTPS base URL of the Kutt instance, without `/api/v2`; no default. |
+| Variable | `KUTT_FEEDBACK_LINK_ID`  | API ID of the existing Kutt short link.                             |
+| Secret   | `OPENFEEDBACK_API_KEY`   | OpenFeedback organization API key beginning with `oforg_`.          |
+| Secret   | `KUTT_API_KEY`           | API key of that link's owner.                                       |
 
-Both event workflows require the OpenFeedback key and both Kutt settings,
+Both event workflows require the OpenFeedback key and all three Kutt settings,
 including when events already have feedback URLs. Also configure the required
 Drive and Slack settings:
 
@@ -121,6 +122,7 @@ jobs:
     with:
       locale: en
       github-app-client-id: ${{ vars.CI_BOT_APP_CLIENT_ID }}
+      kutt-base-url: ${{ vars.KUTT_BASE_URL }}
       kutt-link-id: ${{ vars.KUTT_FEEDBACK_LINK_ID }}
       slack-organizer-channel-id: ${{ vars.SLACK_ORGANIZER_CHANNEL_ID }}
       google-drive-meetup-folder-id: ${{ vars.GOOGLE_DRIVE_MEETUP_FOLDER_ID }}
@@ -153,6 +155,7 @@ jobs:
     with:
       locale: en
       github-app-client-id: ${{ vars.CI_BOT_APP_CLIENT_ID }}
+      kutt-base-url: ${{ vars.KUTT_BASE_URL }}
       kutt-link-id: ${{ vars.KUTT_FEEDBACK_LINK_ID }}
       slack-organizer-channel-id: ${{ vars.SLACK_ORGANIZER_CHANNEL_ID }}
       google-drive-meetup-folder-id: ${{ vars.GOOGLE_DRIVE_MEETUP_FOLDER_ID }}

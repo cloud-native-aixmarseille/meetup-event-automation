@@ -6,13 +6,37 @@ import {
 type KuttLink = { id: string; address: string; target: string; link: string };
 
 export class KuttFeedbackLinkGateway implements FeedbackLinkGateway {
+	private readonly baseUrl: string;
+
 	constructor(
 		private readonly apiKey: string,
 		private readonly linkId: string,
+		baseUrl: string,
 		private readonly fetcher: typeof fetch = fetch,
 	) {
 		if (!apiKey.trim() || !/^[a-zA-Z0-9_-]+$/.test(linkId))
 			throw new Error("Kutt API key and existing link ID are required");
+		this.baseUrl = KuttFeedbackLinkGateway.normalizeBaseUrl(baseUrl);
+	}
+
+	private static normalizeBaseUrl(value: string): string {
+		let url: URL;
+		const message =
+			"Kutt base URL must be an absolute HTTPS URL without credentials, query, or fragment";
+		try {
+			url = new URL(value);
+		} catch {
+			throw new Error(message);
+		}
+		if (
+			url.protocol !== "https:" ||
+			url.username ||
+			url.password ||
+			url.search ||
+			url.hash
+		)
+			throw new Error(message);
+		return `${url.origin}${url.pathname.replace(/\/+$/, "")}`;
 	}
 
 	async updateTarget(value: string): Promise<boolean> {
@@ -65,7 +89,7 @@ export class KuttFeedbackLinkGateway implements FeedbackLinkGateway {
 	private async request(path: string, init: RequestInit): Promise<unknown> {
 		let response: Response;
 		try {
-			response = await this.fetcher(`https://kutt.it/api/v2${path}`, {
+			response = await this.fetcher(`${this.baseUrl}/api/v2${path}`, {
 				...init,
 				redirect: "error",
 				signal: AbortSignal.timeout(30_000),

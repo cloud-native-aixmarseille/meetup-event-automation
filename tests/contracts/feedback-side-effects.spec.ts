@@ -32,6 +32,12 @@ describe("feedback workflow safeguards", () => {
 			expect(
 				workflow.on?.workflow_call?.inputs?.["kutt-link-id"]?.required,
 			).toBe(true);
+			expect(
+				workflow.on?.workflow_call?.inputs?.["kutt-base-url"],
+			).toMatchObject({ required: true, type: "string" });
+			expect(
+				workflow.on?.workflow_call?.inputs?.["kutt-base-url"]?.default,
+			).toBeUndefined();
 			expect(step?.with).not.toHaveProperty("mode");
 			expect(step?.with).toMatchObject({
 				locale: workflowExpression("inputs.locale"),
@@ -40,6 +46,7 @@ describe("feedback workflow safeguards", () => {
 					"secrets.openfeedback-api-key",
 				),
 				"kutt-api-key": workflowExpression("secrets.kutt-api-key"),
+				"kutt-base-url": workflowExpression("inputs.kutt-base-url"),
 				"kutt-link-id": workflowExpression("inputs.kutt-link-id"),
 			});
 		},

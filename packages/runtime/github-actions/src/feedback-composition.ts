@@ -26,6 +26,7 @@ export class FeedbackComposition {
 	static createFeedbackContainer(
 		input: EventCompositionInput & {
 			kuttApiKey: string;
+			kuttBaseUrl: string;
 			kuttLinkId: string;
 			openFeedbackApiKey: string;
 		},
@@ -39,7 +40,12 @@ export class FeedbackComposition {
 		container
 			.bind<FeedbackLinkGateway>(FEEDBACK_LINKS)
 			.toDynamicValue(
-				() => new KuttFeedbackLinkGateway(input.kuttApiKey, input.kuttLinkId),
+				() =>
+					new KuttFeedbackLinkGateway(
+						input.kuttApiKey,
+						input.kuttLinkId,
+						input.kuttBaseUrl,
+					),
 			);
 		container.bind(ManageMeetupFeedback).toDynamicValue(
 			(context) =>

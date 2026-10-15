@@ -12,8 +12,6 @@
 
 Create OpenFeedback events, synchronize their titles, talks and speakers, and update the existing Kutt link the day before the event.
 
-## Usage
-
 Use the reusable issue-update and daily-audit workflows, which hold the required shared event lock. See [setup, timing and retry behavior](../../../docs/integrations/feedback.md).
 
 The OpenFeedback organization key is required, including when the
@@ -29,8 +27,9 @@ issue already has a feedback URL. Use a key beginning with `oforg_`.
 | **`github-token`**           | GitHub token with issue read and write permissions.                                                                                | **true**     | -           |
 | **`issue-number`**           | Meetup issue number.                                                                                                               | **true**     | -           |
 | **`managed-comment-author`** | GitHub App bot login used by event evaluation.                                                                                     | **true**     | -           |
-| **`openfeedback-api-key`**   | OpenFeedback organization API key (oforg_) used to create and update events.                                                       | **true**     | -           |
+| **`openfeedback-api-key`**   | OpenFeedback organization API key (oforg\_) used to create and update events.                                                      | **true**     | -           |
 | **`kutt-api-key`**           | API key for the owner of the existing Kutt link.                                                                                   | **true**     | -           |
+| **`kutt-base-url`**          | HTTPS base URL of the Kutt instance, without /api/v2. No default.                                                                  | **true**     | -           |
 | **`kutt-link-id`**           | Existing Kutt link API ID, not the short address.                                                                                  | **true**     | -           |
 
 <!-- inputs:end -->
@@ -75,8 +74,11 @@ Create OpenFeedback events, synchronize their titles, talks and speakers, and up
 
 ## Usage
 
+Replace the placeholder revision with the full commit SHA of a published release.
+See [feedback configuration](../../../docs/integrations/feedback.md) for the required instance URL and credentials.
+
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/publication/reconcile-feedback@b399e626f07da6f5a5c1110cc743f7252cb7568a # 2.0.2
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/publication/reconcile-feedback@0123456789abcdef0123456789abcdef01234567
   with:
     # Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
     # Default: `en`
@@ -101,6 +103,10 @@ Create OpenFeedback events, synchronize their titles, talks and speakers, and up
     # API key for the owner of the existing Kutt link.
     # This input is required.
     kutt-api-key: ""
+
+    # HTTPS base URL of the Kutt instance, without /api/v2. No default.
+    # This input is required.
+    kutt-base-url: ${{ vars.KUTT_BASE_URL }}
 
     # Existing Kutt link API ID, not the short address.
     # This input is required.
