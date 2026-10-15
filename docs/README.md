@@ -34,16 +34,16 @@ page for each topic below.
 
 ## Action contracts
 
-| Action                                                                     | Purpose                                                                                |
-| -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| [Reconcile event](../actions/event/reconcile/README.md)                    | Validate and normalize one meetup issue.                                               |
-| [List active events](../actions/event/list-active/README.md)               | Select issues for an audit.                                                            |
-| [Validate referentials](../actions/referential/validate/README.md)         | Check host and speaker catalogs.                                                       |
-| [Synchronize issue form](../actions/referential/sync-issue-form/README.md) | Update the checked-out form choices.                                                   |
-| [Reconcile assets](../actions/publication/reconcile-assets/README.md)      | Prepare Google Drive folders and template copies.                                      |
-| [Reconcile feedback](../actions/publication/reconcile-feedback/README.md)  | Synchronize OpenFeedback events, talks and speakers, and update the shared short link. |
-| [Reconcile organizer attention](../actions/communication/reconcile-attention/README.md) | Update durable status and bounded organizer reminders. |
-| [Reconcile communications](../actions/communication/reconcile/README.md)   | Plan or dispatch due email and Slack messages.                                         |
+| Action                                                                                  | Purpose                                                                                |
+| --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| [Reconcile event](../actions/event/reconcile/README.md)                                 | Validate and normalize one meetup issue.                                               |
+| [List active events](../actions/event/list-active/README.md)                            | Select issues for an audit.                                                            |
+| [Validate referentials](../actions/referential/validate/README.md)                      | Check host and speaker catalogs.                                                       |
+| [Synchronize issue form](../actions/referential/sync-issue-form/README.md)              | Update the checked-out form choices.                                                   |
+| [Reconcile assets](../actions/publication/reconcile-assets/README.md)                   | Prepare Google Drive folders and template copies.                                      |
+| [Reconcile feedback](../actions/publication/reconcile-feedback/README.md)               | Synchronize OpenFeedback events, talks and speakers, and update the shared short link. |
+| [Reconcile organizer attention](../actions/communication/reconcile-attention/README.md) | Update durable status and bounded organizer reminders.                                 |
+| [Reconcile communications](../actions/communication/reconcile/README.md)                | Plan or dispatch due email and Slack messages.                                         |
 
 ## Development
 

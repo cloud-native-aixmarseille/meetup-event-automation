@@ -53,11 +53,11 @@ issues and 20 pages; exceeding a bound fails explicitly. See
 
 ## Outputs
 
-| **Output**          | **Description**                                                                                       |
-| ------------------- | ----------------------------------------------------------------------------------------------------- |
-| **`result`**        | Versioned JSON envelope containing the selected issue numbers, their count, and redacted diagnostics. |
-| **`issue-numbers`** | JSON array of meetup issue numbers, including closed issues requiring recovery checks selected for downstream workflows.                     |
-| **`diagnostics`**   | Redacted JSON diagnostics safe to expose in workflow logs and summaries.                              |
+| **Output**          | **Description**                                                                                                          |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **`result`**        | Versioned JSON envelope containing the selected issue numbers, their count, and redacted diagnostics.                    |
+| **`issue-numbers`** | JSON array of meetup issue numbers, including closed issues requiring recovery checks selected for downstream workflows. |
+| **`diagnostics`**   | Redacted JSON diagnostics safe to expose in workflow logs and summaries.                                                 |
 
 <!-- outputs:end -->
 <!-- examples:start -->
