@@ -1,0 +1,38 @@
+name: Reconcile organizer attention
+description: Reconcile durable organizer conditions and bounded Slack reminders after all integration stages.
+inputs:
+  locale:
+    description: Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
+    required: false
+    default: en
+  issue-number:
+    description: Meetup issue number.
+    required: true
+  github-token:
+    description: GitHub App token with issue write access.
+    required: true
+  managed-comment-author:
+    description: Trusted GitHub App bot login.
+    required: true
+  slack-token:
+    description: Slack bot token for organizer attention.
+    required: true
+  slack-organizer-channel-id:
+    description: Explicit internal organizer channel ID.
+    required: true
+  stage-results:
+    description: JSON object of event, assets, feedback and communications outcomes and diagnostic outputs. Unexecuted stages remain unknown.
+    required: true
+  recover-post:
+    description: Optional explicit recovery JSON for a verified pending reservation. Supply its reservationId and outcome (accepted with message reference, or not-accepted).
+    required: false
+outputs:
+  active-count:
+    description: Number of unresolved organizer conditions.
+  posted:
+    description: Whether a new daily Slack message was accepted.
+  diagnostics:
+    description: Redacted JSON diagnostics from the shared action runner.
+runs:
+  using: node24
+  main: dist/index.js

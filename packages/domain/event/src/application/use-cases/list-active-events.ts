@@ -26,9 +26,11 @@ export class ListActiveEvents {
 		const seenCursors = new Set<string>();
 		const seenEvents = new Set<string>();
 		const now = this.dependencies.clock.now();
+		let pages = 0;
 		let cursor: string | undefined;
 
 		do {
+			if (++pages > 20) throw new EventPaginationError("audit-page-limit");
 			const page = await this.dependencies.repository.listPage({
 				...input,
 				cursor,
@@ -40,6 +42,7 @@ export class ListActiveEvents {
 					continue;
 				}
 				seenEvents.add(identityKey);
+				ListActiveEvents.checkLimit(seenEvents.size);
 
 				const decoded = this.dependencies.documentCodec.decode(document);
 				const evaluated = this.ruleEngine.evaluate(decoded.event);
@@ -58,17 +61,13 @@ export class ListActiveEvents {
 				});
 				allDiagnostics.push(...readiness.diagnostics);
 
-				if (
-					lifecycle.state !== "cancelled" &&
-					lifecycle.state !== "follow-up-complete"
-				) {
-					activeEvents.push({
-						identity: { ...document.identity },
-						event: evaluated.event,
-						readiness,
-						lifecycle,
-					});
-				}
+				// Terminal issues may still hold uncertain external deliveries.
+				activeEvents.push({
+					identity: { ...document.identity },
+					event: evaluated.event,
+					readiness,
+					lifecycle,
+				});
 			}
 
 			cursor = page.nextCursor;
@@ -84,5 +83,8 @@ export class ListActiveEvents {
 			events: Object.freeze(activeEvents),
 			diagnostics: Object.freeze(allDiagnostics),
 		};
+	}
+	private static checkLimit(count: number): void {
+		if (count > 200) throw new EventPaginationError("audit-issue-limit");
 	}
 }

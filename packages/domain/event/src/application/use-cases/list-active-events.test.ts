@@ -15,7 +15,7 @@ import { EventPaginationError } from "./event-pagination-error.js";
 import { ListActiveEvents } from "./list-active-events.js";
 
 describe("ListActiveEvents", () => {
-	it("paginates, deduplicates, and excludes terminal lifecycle states", async () => {
+	it("paginates and deduplicates while retaining terminal issues for recovery", async () => {
 		// Arrange
 		const activeDocument = {
 			...document,
@@ -87,7 +87,7 @@ describe("ListActiveEvents", () => {
 			2,
 			expect.objectContaining({ cursor: "page-2" }),
 		);
-		expect(actual).toEqual([1]);
+		expect(actual).toEqual([1, 2, 3]);
 	});
 
 	it("rejects a repeated pagination cursor", async () => {
@@ -112,5 +112,32 @@ describe("ListActiveEvents", () => {
 		await expect(operation).rejects.toEqual(
 			new EventPaginationError("same-page"),
 		);
+	});
+	it("fails explicitly when the bounded audit selection is exceeded", async () => {
+		// Arrange
+		const items = Array.from({ length: 201 }, (_, index) => ({
+			...document,
+			identity: { ...identity, issueNumber: index + 1 },
+		}));
+		const events = new Map(
+			items.map((item) => [
+				item.identity.issueNumber,
+				createTestEvent({ identity: item.identity }),
+			]),
+		);
+		const repository: EventRepository = {
+			find: vi.fn(),
+			applyPatch: vi.fn(),
+			listPage: vi.fn().mockResolvedValue({ items }),
+		};
+		const useCase = new ListActiveEvents({
+			repository,
+			documentCodec: createCodec(events),
+			clock: createClock(),
+		});
+		// Act
+		const operation = useCase.execute({ repository: identity.repository });
+		// Assert
+		await expect(operation).rejects.toThrow("audit-issue-limit");
 	});
 });

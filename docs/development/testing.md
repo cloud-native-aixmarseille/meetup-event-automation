@@ -75,6 +75,7 @@ it("rejects a non-positive issue identifier", () => {
 | [Localization](../../tests/contracts/localization.spec.ts)                 | Catalog ownership, locale wiring, and diagnostic coverage                    |
 | [Public workflows](../../tests/contracts/public-workflows.spec.ts)         | Reusable workflow interfaces, permissions, secrets, pinned dependencies      |
 | [Event safeguards](../../tests/contracts/event-side-effects.spec.ts)       | Shared concurrency lock, audit gating, issue-form validation                 |
+| [Attention safeguards](../../tests/contracts/attention-side-effects.spec.ts) | Final execution after failure, typed outcomes, and shared concurrency |
 | [Feedback safeguards](../../tests/contracts/feedback-side-effects.spec.ts) | Feedback action credentials and workflow gating                              |
 | [Internal CI](../../tests/contracts/internal-ci.spec.ts)                   | Shared CI, action checks, release documentation wiring                       |
 | [Journey integration](../../tests/journey-referential-integration.spec.ts) | Event, catalog, codec, and issue-form behavior together                      |

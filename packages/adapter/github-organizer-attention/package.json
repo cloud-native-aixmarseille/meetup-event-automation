@@ -1,0 +1,11 @@
+{
+	"name": "@meetup-automation/github-organizer-attention",
+	"version": "1.0.0",
+	"private": true,
+	"type": "module",
+	"exports": "./src/index.ts",
+	"dependencies": {
+		"@meetup-automation/communication": "workspace:*",
+		"@meetup-automation/localization": "workspace:*"
+	}
+}

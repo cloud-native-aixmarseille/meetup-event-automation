@@ -5,6 +5,10 @@ import { build } from "esbuild";
 
 export const actionBundles = [
 	[
+		"packages/runtime/github-actions/src/entrypoints/communication-reconcile-attention.ts",
+		"actions/communication/reconcile-attention/dist/index.js",
+	],
+	[
 		"packages/runtime/github-actions/src/entrypoints/publication-reconcile-feedback.ts",
 		"actions/publication/reconcile-feedback/dist/index.js",
 	],

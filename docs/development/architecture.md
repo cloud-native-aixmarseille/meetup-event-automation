@@ -27,7 +27,7 @@ consumer settings.
 | ------------------------------------ | --------------------------------------------------------------------------------------------------------- |
 | `packages/domain/event`              | Event model, field rules, readiness, lifecycle, reconciliation, event/document/comment ports, clock       |
 | `packages/domain/referential`        | Catalog validation, stable participant IDs, reference resolution, issue-form choices, catalog port        |
-| `packages/domain/communication`      | Due-message planning, idempotency, delivery state, ledger/gateway/clock ports                             |
+| `packages/domain/communication`      | Due-message planning, attention conditions/episodes/reminders, delivery state and ports                             |
 | `packages/domain/publication`        | Publication URL rules, manual checklist evaluation, asset reconciliation, asset and feedback ports        |
 | `packages/application/journey`       | Cross-domain orchestration, configuration defaults, public result envelope, issue-form projection port    |
 | `packages/adapter/*`                 | Concrete implementations of owned ports: GitHub, CSV, YAML, Drive, OpenFeedback, Kutt, Slack, system time |
@@ -181,6 +181,16 @@ and uncertain intents are not automatically resent. A definitively deferred
 attempt releases its reservation for a safe retry. The GitHub ledger depends on
 the shared workflow lock; do not dispatch outside the official workflows or
 claim exactly-once delivery.
+
+Organizer attention has separate domain-owned conditions, episodes, reminder windows,
+and notification reservations. The journey gathers typed stage outcomes and
+reloads the event; failed evidence stays unknown. The GitHub attention adapter
+verifies bot authorship and revision history, validates and persists state, and
+projects localized status before the Slack adapter posts or updates a message.
+Runtime composition injects the clock and ports. A pending post blocks further
+posts across days until explicit verified recovery. Existing mail records and
+approval decisions remain independent. See
+[organizer attention](../integrations/communications.md#organizer-attention).
 
 OpenFeedback creation uses a stable source key to recover events on retries.
 Agenda synchronization reuses matching talk and speaker IDs, preserves votes and

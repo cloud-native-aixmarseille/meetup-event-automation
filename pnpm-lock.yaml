@@ -98,9 +98,21 @@ importers:
 
   packages/adapter/github-organizer-approval:
     dependencies:
+      '@meetup-automation/communication':
+        specifier: workspace:*
+        version: link:../../domain/communication
       '@meetup-automation/journey':
         specifier: workspace:*
         version: link:../../application/journey
+      '@meetup-automation/localization':
+        specifier: workspace:*
+        version: link:../../presentation/localization
+
+  packages/adapter/github-organizer-attention:
+    dependencies:
+      '@meetup-automation/communication':
+        specifier: workspace:*
+        version: link:../../domain/communication
       '@meetup-automation/localization':
         specifier: workspace:*
         version: link:../../presentation/localization
@@ -233,6 +245,9 @@ importers:
       '@meetup-automation/github-organizer-approval':
         specifier: workspace:*
         version: link:../../adapter/github-organizer-approval
+      '@meetup-automation/github-organizer-attention':
+        specifier: workspace:*
+        version: link:../../adapter/github-organizer-attention
       '@meetup-automation/github-repository-dispatch-mail-gateway':
         specifier: workspace:*
         version: link:../../adapter/github-repository-dispatch-mail-gateway

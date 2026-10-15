@@ -1,4 +1,12 @@
 export const EN_MESSAGES = {
+	"action.communication.reconcile-attention": "Reconcile organizer attention",
+	"report.attention.updated":
+		"Organizer attention status is persisted on the issue. Review its current conditions and recovery guidance.",
+	"report.attention.skipped":
+		"The issue is not a configured meetup event; attention reconciliation was skipped.",
+	"report.attention.failed":
+		"Organizer attention could not be fully synchronized. Review the GitHub status and verify uncertain deliveries before recovery.",
+
 	"action.publication.reconcile-feedback": "Reconcile meetup feedback",
 	"report.feedback.skipped":
 		"Feedback reconciliation was skipped; review the diagnostics for the reason.",

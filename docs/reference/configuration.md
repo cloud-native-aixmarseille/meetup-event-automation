@@ -88,6 +88,6 @@ Email tasks use completion checkboxes. See
 and duplicate protection.
 
 `SLACK_ORGANIZER_CHANNEL_ID` selects the dedicated meetup organizer channel for
-approval requests and readiness reminders. Public Slack announcements remain
+approval requests and actionable organizer reminders. Public Slack announcements remain
 manual checklist tasks and have no automation channel input. See
 [channel selection](../integrations/communications.md#organizer-and-public-channels).

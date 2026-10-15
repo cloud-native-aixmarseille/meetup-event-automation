@@ -42,6 +42,7 @@ page for each topic below.
 | [Synchronize issue form](../actions/referential/sync-issue-form/README.md) | Update the checked-out form choices.                                                   |
 | [Reconcile assets](../actions/publication/reconcile-assets/README.md)      | Prepare Google Drive folders and template copies.                                      |
 | [Reconcile feedback](../actions/publication/reconcile-feedback/README.md)  | Synchronize OpenFeedback events, talks and speakers, and update the shared short link. |
+| [Reconcile organizer attention](../actions/communication/reconcile-attention/README.md) | Update durable status and bounded organizer reminders. |
 | [Reconcile communications](../actions/communication/reconcile/README.md)   | Plan or dispatch due email and Slack messages.                                         |
 
 ## Development
@@ -72,7 +73,7 @@ for implemented behavior and contributor conventions.
 - [ADR-0010: Approve email batches with request checkboxes](adr/0010-checkbox-organizer-approval.md)
 - [ADR-0011: Finalize organizer decisions in place and acknowledge them on Slack](adr/0011-final-organizer-decisions.md)
 - [ADR-0012: Synchronize OpenFeedback talks and speakers](adr/0012-synchronize-openfeedback-talks-and-speakers.md)
-- [ADR-0013: Reconcile actionable organizer alerts throughout the meetup lifecycle](adr/0013-actionable-organizer-alerts.md) (proposed)
+- [ADR-0013: Reconcile actionable organizer alerts throughout the meetup lifecycle](adr/0013-actionable-organizer-alerts.md)
 
 ## Directory layout
 

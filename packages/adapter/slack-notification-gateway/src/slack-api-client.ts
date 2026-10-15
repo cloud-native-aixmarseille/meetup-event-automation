@@ -3,6 +3,7 @@ import type { SlackFetch } from "./slack-notification-gateway-contracts.js";
 
 export interface SlackApiResponse {
 	readonly result: GatewayDispatchResult;
+	readonly retryAfterSeconds?: number;
 	readonly payload?: Readonly<Record<string, unknown>>;
 }
 
@@ -13,8 +14,8 @@ export class SlackApiClient {
 		private readonly fetcher: SlackFetch = fetch,
 	) {}
 	async post(
-		method: "chat.postMessage" | "reactions.add",
-		body: Readonly<Record<string, string>>,
+		method: "chat.postMessage" | "chat.update" | "reactions.add",
+		body: Readonly<Record<string, string | boolean>>,
 	): Promise<SlackApiResponse> {
 		let response: Response;
 		try {
@@ -36,6 +37,7 @@ export class SlackApiClient {
 		}
 		if (!response.ok)
 			return {
+				retryAfterSeconds: SlackApiClient.retryAfter(response),
 				result: SlackApiClient.httpRejection(response.status) ?? {
 					outcome: "uncertain",
 					diagnosticCode: "ambiguous-response",
@@ -65,6 +67,10 @@ export class SlackApiClient {
 					: SlackApiClient.slackApiRejection(data.error),
 			payload: data,
 		};
+	}
+	private static retryAfter(response: Response): number | undefined {
+		const value = Number(response.headers.get("retry-after"));
+		return Number.isFinite(value) && value > 0 ? value : undefined;
 	}
 	private static httpRejection(
 		status: number,

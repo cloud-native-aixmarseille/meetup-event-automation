@@ -1,5 +1,7 @@
 import { createHash } from "node:crypto";
 import type {
+	AttentionRecoverySource,
+	AttentionRecoveryItem,
 	DeliveryLedger,
 	DeliveryLedgerEntry,
 	DeliveryReservation,
@@ -14,7 +16,9 @@ import {
 	type StoredLedger,
 } from "./github-delivery-ledger-contracts.js";
 
-export class GithubDeliveryLedger implements DeliveryLedger {
+export class GithubDeliveryLedger
+	implements DeliveryLedger, AttentionRecoverySource
+{
 	readonly #authorLogin: string;
 
 	constructor(
@@ -28,6 +32,15 @@ export class GithubDeliveryLedger implements DeliveryLedger {
 		}
 	}
 
+	async readAttention(): Promise<readonly AttentionRecoveryItem[]> {
+		const { ledger, commentId } = await this.#load();
+		return ledger.entries.map((entry) => ({
+			key: entry.idempotencyKey,
+			uncertain: entry.status === "pending" || entry.status === "uncertain",
+			resolved: entry.status === "accepted",
+			commentId,
+		}));
+	}
 	async find(idempotencyKey: string): Promise<DeliveryLedgerEntry | undefined> {
 		const { ledger } = await this.#load();
 		const protectedKey = GithubDeliveryLedger.protectIdentifier(idempotencyKey);

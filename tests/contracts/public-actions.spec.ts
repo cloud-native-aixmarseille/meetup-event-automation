@@ -5,6 +5,19 @@ import { type ActionManifest, readYaml, root, sortedKeys } from "./support.js";
 
 const actionContracts = [
 	{
+		directory: "actions/communication/reconcile-attention",
+		inputs: [
+			"github-token",
+			"issue-number",
+			"managed-comment-author",
+			"slack-organizer-channel-id",
+			"slack-token",
+			"stage-results",
+			"recover-post",
+		],
+		outputs: ["active-count", "posted", "diagnostics"],
+	},
+	{
 		directory: "actions/publication/reconcile-feedback",
 		inputs: [
 			"github-token",

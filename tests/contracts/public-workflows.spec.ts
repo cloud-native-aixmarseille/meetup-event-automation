@@ -86,6 +86,7 @@ const expectedActionWiring = {
 			"publication/reconcile-assets",
 			"event/reconcile",
 			"communication/reconcile",
+			"communication/reconcile-attention",
 		],
 		list: ["event/list-active"],
 	},
@@ -95,6 +96,7 @@ const expectedActionWiring = {
 			"communication/reconcile",
 			"publication/reconcile-feedback",
 			"event/reconcile",
+			"communication/reconcile-attention",
 		],
 	},
 	"update-meetup-issue-form": {

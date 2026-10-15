@@ -63,7 +63,7 @@ talks.
 ## Track communications
 
 Meetup **organizers** manage preparation and approvals. The organizer Slack
-channel receives approval requests and readiness reminders. Post public Slack
+channel receives approval requests and actionable organizer reminders. Post public Slack
 event announcements manually and check their separate Communication tasks.
 See [channel separation](../integrations/communications.md#organizer-and-public-channels).
 
@@ -110,4 +110,18 @@ platform, and complete the remaining manual
 post-event tasks yourself. The mailings workflow reports the actual email result.
 
 The audit continues to include held events with unfinished follow-up, including
-closed issues. Cancelled events and events with complete follow-up are excluded.
+closed issues. Cancelled and completed events remain eligible for delivery recovery;
+task reminders stop on closure, cancellation, or postponement.
+
+## Resolve organizer attention
+
+Use the bot's **Organizer attention** comment as the current task list. Follow
+its links to the original approval request, diagnostic comment, delivery record,
+or failed run. Slack groups reminders into one message per issue and local day
+and edits that message as conditions change. A later failure may appear as an
+edit without a fresh notification.
+
+See [organizer attention](../integrations/communications.md#organizer-attention)
+for reminder timing and recovery. Mark held, postponed, or cancelled explicitly
+after the scheduled date; do not infer occurrence from the calendar. Verify any
+uncertain external delivery even when the issue is closed.

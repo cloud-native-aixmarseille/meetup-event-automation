@@ -1,4 +1,8 @@
 import type {
+	AttentionApproval,
+	AttentionApprovalSource,
+} from "@meetup-automation/communication";
+import type {
 	OrganizerApproval,
 	OrganizerApprovalNotification,
 	OrganizerApprovalRequest,
@@ -20,7 +24,9 @@ interface ApprovalState {
 }
 
 /** Final decisions are bot-persisted revisions of the original request comment. */
-export class GithubOrganizerApproval implements OrganizerApproval {
+export class GithubOrganizerApproval
+	implements OrganizerApproval, AttentionApprovalSource
+{
 	private readonly notifications: ApprovalNotifications;
 	constructor(
 		private readonly client: GithubApprovalClient,
@@ -72,6 +78,21 @@ export class GithubOrganizerApproval implements OrganizerApproval {
 			status: "pending",
 			notificationFailed: await this.notifications.send(record, commentId),
 		};
+	}
+	async readAttention(): Promise<readonly AttentionApproval[]> {
+		const result: AttentionApproval[] = [];
+		for (const state of await this.states()) {
+			const decision = await this.finalize(state);
+			result.push({
+				revision: state.record.revision,
+				requestedAt: state.record.requestedAt,
+				commentId: state.comment.id,
+				eventDate: state.record.eventDate,
+				kind: state.record.kind,
+				status: decision.status,
+			});
+		}
+		return result;
 	}
 	async synchronize(): Promise<{ notificationFailed: boolean }> {
 		let notificationFailed = false;
