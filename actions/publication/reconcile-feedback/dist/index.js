@@ -39702,25 +39702,41 @@ var OpenFeedbackAgendaPlan = class _OpenFeedbackAgendaPlan {
   }
 };
 
+// packages/adapter/openfeedback-event-gateway/src/openfeedback-resource-id.ts
+var OpenFeedbackResourceId = class {
+  static isValid(value) {
+    return typeof value === "string" && Array.from(value).length <= 1500 && /^(?!\.\.?$)(?!__.*__$)[^/]+$/u.test(value);
+  }
+};
+
 // packages/adapter/openfeedback-event-gateway/src/openfeedback-agenda-snapshot.ts
 var OpenFeedbackAgendaSnapshot = class _OpenFeedbackAgendaSnapshot {
   static parse(body) {
     if (!_OpenFeedbackAgendaSnapshot.records(body.speakers, "name") || !_OpenFeedbackAgendaSnapshot.records(body.talks, "title"))
       throw new Error("Invalid OpenFeedback agenda response");
-    const speakers = body.speakers;
-    const talks = body.talks;
-    const ids = new Set(speakers.map((speaker) => speaker.id));
-    if (talks.some(
-      (talk) => !Array.isArray(talk.speakers) || new Set(talk.speakers).size !== talk.speakers.length || talk.speakers.some((id) => !ids.has(id))
+    if (body.talks.some(
+      (talk) => !Array.isArray(talk.speakers) || talk.speakers.some((id) => typeof id !== "string")
     ))
       throw new Error("Invalid OpenFeedback agenda response");
-    return { speakers, talks };
+    return {
+      speakers: body.speakers.map((speaker) => ({
+        id: speaker.id,
+        revision: speaker.revision,
+        name: speaker.name ?? ""
+      })),
+      talks: body.talks.map((talk) => ({
+        id: talk.id,
+        revision: talk.revision,
+        title: talk.title ?? "",
+        speakers: talk.speakers
+      }))
+    };
   }
   static records(value, field) {
     if (!Array.isArray(value) || value.length > 200) return false;
     const ids = /* @__PURE__ */ new Set();
     for (const record of value) {
-      if (!record || typeof record !== "object" || typeof record.id !== "string" || !/^(?!__.*__$)[a-zA-Z0-9_-]{1,100}$/.test(record.id) || typeof record.revision !== "string" || !/^[a-f0-9]{64}$/.test(record.revision) || typeof record[field] !== "string" || !record[field].trim() || ids.has(record.id))
+      if (!record || typeof record !== "object" || !OpenFeedbackResourceId.isValid(record.id) || typeof record.revision !== "string" || !/^[a-f0-9]{64}$/.test(record.revision) || record[field] !== void 0 && typeof record[field] !== "string" || ids.has(record.id))
         return false;
       ids.add(record.id);
     }
@@ -39792,10 +39808,14 @@ var OpenFeedbackRecordsGateway = class _OpenFeedbackRecordsGateway {
     if (previous && _OpenFeedbackRecordsGateway.unchanged(fields, previous))
       return;
     const base = `/events/${eventId}/${kind}`;
-    const response = previous ? await this.client.request(`${base}/${id}`, "PATCH", {
-      ...fields,
-      revision: previous.revision
-    }) : await this.client.request(base, "POST", record);
+    const response = previous ? await this.client.request(
+      `${base}/${encodeURIComponent(id)}`,
+      "PATCH",
+      {
+        ...fields,
+        revision: previous.revision
+      }
+    ) : await this.client.request(base, "POST", record);
     await OpenFeedbackClient.read(response, id);
   }
   static unchanged(fields, previous) {
@@ -39807,7 +39827,7 @@ var OpenFeedbackRecordsGateway = class _OpenFeedbackRecordsGateway {
     });
   }
   static validCursor(value) {
-    return value === null || typeof value === "string" && /^(?!__.*__$)[a-zA-Z0-9_-]{1,100}$/.test(value);
+    return value === null || OpenFeedbackResourceId.isValid(value);
   }
 };
 
