@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import { KuttFeedbackLinkGateway } from "./kutt-feedback-link-gateway.js";
 
+const baseUrl = "https://short.example.test";
 const link = {
 	id: "link-123",
 	address: "community-feedback",
-	link: "https://kutt.it/community-feedback",
+	link: `${baseUrl}/community-feedback`,
 	target: "https://openfeedback.io/old",
 };
 const target = "https://openfeedback.io/new";
@@ -15,13 +16,14 @@ describe("Kutt feedback link updates", () => {
 		["   ", "link-123"],
 		["synthetic-key", ""],
 		["synthetic-key", "   "],
-		["synthetic-key", "https://kutt.it/community-feedback"],
+		["synthetic-key", `${baseUrl}/community-feedback`],
 	])("rejects missing or invalid configuration (%j, %j)", (key, id) => {
 		// Arrange
 		const fetcher = vi.fn<typeof fetch>();
 
 		// Act
-		const createGateway = () => new KuttFeedbackLinkGateway(key, id, fetcher);
+		const createGateway = () =>
+			new KuttFeedbackLinkGateway(key, id, baseUrl, fetcher);
 
 		// Assert
 		expect(createGateway).toThrow(
@@ -29,6 +31,70 @@ describe("Kutt feedback link updates", () => {
 		);
 		expect(fetcher).not.toHaveBeenCalled();
 	});
+
+	it.each([
+		"",
+		"   ",
+		"not-a-url",
+		"/relative",
+		"http://short.example.test",
+		"ftp://short.example.test",
+		"https://user:secret@short.example.test",
+		"https://user@short.example.test",
+		"https://short.example.test?key=secret",
+		"https://short.example.test#fragment",
+	])("rejects an invalid base URL (%j) before requests", (value) => {
+		// Arrange
+		const fetcher = vi.fn<typeof fetch>();
+
+		// Act
+		const createGateway = () =>
+			new KuttFeedbackLinkGateway("synthetic-key", link.id, value, fetcher);
+
+		// Assert
+		expect(createGateway).toThrow(
+			"Kutt base URL must be an absolute HTTPS URL without credentials, query, or fragment",
+		);
+		expect(fetcher).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		[baseUrl, `${baseUrl}/api/v2`],
+		[`${baseUrl}/`, `${baseUrl}/api/v2`],
+		[`${baseUrl}///`, `${baseUrl}/api/v2`],
+		[`${baseUrl}:8443/shortener/`, `${baseUrl}:8443/shortener/api/v2`],
+	])(
+		"uses the configured base URL (%s) for reads and updates",
+		async (value, apiUrl) => {
+			// Arrange
+			const fetcher = vi
+				.fn<typeof fetch>()
+				.mockResolvedValueOnce(Response.json({ total: 1, data: [link] }))
+				.mockResolvedValueOnce(Response.json({ ...link, target }));
+			const gateway = new KuttFeedbackLinkGateway(
+				"synthetic-key",
+				link.id,
+				value,
+				fetcher,
+			);
+
+			// Act
+			const updated = await gateway.updateTarget(target);
+
+			// Assert
+			expect(updated).toBe(true);
+			expect(fetcher.mock.calls.map(([url]) => url)).toEqual([
+				`${apiUrl}/links?limit=100&skip=0`,
+				`${apiUrl}/links/${link.id}`,
+			]);
+			for (const [, options] of fetcher.mock.calls) {
+				expect(options).toMatchObject({
+					redirect: "error",
+					headers: { "X-API-KEY": "synthetic-key" },
+				});
+			}
+		},
+	);
 
 	it("finds the existing ID beyond the first page and preserves its short address", async () => {
 		// Arrange
@@ -44,6 +110,7 @@ describe("Kutt feedback link updates", () => {
 		const gateway = new KuttFeedbackLinkGateway(
 			"synthetic-key",
 			link.id,
+			baseUrl,
 			fetcher,
 		);
 
@@ -54,10 +121,10 @@ describe("Kutt feedback link updates", () => {
 		// Assert
 		expect(result).toBe(true);
 		expect(fetcher.mock.calls[1][0]).toBe(
-			"https://kutt.it/api/v2/links?limit=100&skip=100",
+			`${baseUrl}/api/v2/links?limit=100&skip=100`,
 		);
 		expect(fetcher.mock.calls[2]).toEqual([
-			"https://kutt.it/api/v2/links/link-123",
+			`${baseUrl}/api/v2/links/link-123`,
 			expect.objectContaining({
 				method: "PATCH",
 				redirect: "error",
@@ -80,6 +147,7 @@ describe("Kutt feedback link updates", () => {
 		const gateway = new KuttFeedbackLinkGateway(
 			"synthetic-key",
 			link.id,
+			baseUrl,
 			fetcher,
 		);
 
@@ -99,6 +167,7 @@ describe("Kutt feedback link updates", () => {
 		const gateway = new KuttFeedbackLinkGateway(
 			"synthetic-key",
 			link.id,
+			baseUrl,
 			fetcher,
 		);
 
@@ -120,6 +189,7 @@ describe("Kutt feedback link updates", () => {
 		const gateway = new KuttFeedbackLinkGateway(
 			"synthetic-key",
 			link.id,
+			baseUrl,
 			fetcher,
 		);
 
@@ -140,6 +210,7 @@ describe("Kutt feedback link updates", () => {
 		const gateway = new KuttFeedbackLinkGateway(
 			"synthetic-key",
 			link.id,
+			baseUrl,
 			fetcher,
 		);
 

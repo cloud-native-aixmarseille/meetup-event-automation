@@ -5,7 +5,8 @@ import {
 	ManageMeetupFeedback,
 } from "@meetup-automation/journey";
 import { OpenFeedbackEventGateway } from "@meetup-automation/openfeedback-event-gateway";
-import { describe, expect, it, vi } from "vitest";
+import type { FeedbackLinkGateway } from "@meetup-automation/publication";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { SERVICES } from "./composition.js";
 import {
 	FEEDBACK_EVENTS,
@@ -20,11 +21,45 @@ const input = {
 	commentAuthorLogin: "example[bot]",
 	workspaceRoot: "/must-not-read",
 	kuttApiKey: "synthetic-key",
+	kuttBaseUrl: "https://short.example.test",
 	kuttLinkId: "link-1",
 	openFeedbackApiKey: "oforg_synthetic-key",
 };
 
+afterEach(() => vi.unstubAllGlobals());
+
 describe("feedback composition", () => {
+	it("passes the configured base URL to the Kutt gateway", async () => {
+		// Arrange
+		const target = "https://openfeedback.io/synthetic-event";
+		const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+			Response.json({
+				total: 1,
+				data: [
+					{
+						id: input.kuttLinkId,
+						address: "feedback",
+						link: `${input.kuttBaseUrl}/feedback`,
+						target,
+					},
+				],
+			}),
+		);
+		vi.stubGlobal("fetch", fetcher);
+		const container = FeedbackComposition.createFeedbackContainer(input);
+		const gateway = container.get<FeedbackLinkGateway>(FEEDBACK_LINKS);
+
+		// Act
+		const updated = await gateway.updateTarget(target);
+
+		// Assert
+		expect(updated).toBe(false);
+		expect(fetcher).toHaveBeenCalledExactlyOnceWith(
+			`${input.kuttBaseUrl}/api/v2/links?limit=100&skip=0`,
+			expect.objectContaining({ redirect: "error" }),
+		);
+	});
+
 	it("allows replacing feedback providers before resolving the journey", async () => {
 		// Arrange
 		const identity = { repository: "example/meetups", issueNumber: 12 };

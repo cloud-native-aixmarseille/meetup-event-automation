@@ -37,6 +37,7 @@ beforeEach(() => {
 		"github-token": "synthetic-token",
 		"managed-comment-author": "example[bot]",
 		"kutt-api-key": "synthetic-key",
+		"kutt-base-url": "https://short.example.test",
 		"kutt-link-id": "link-1",
 		"openfeedback-api-key": "oforg_synthetic-secret",
 	};
@@ -53,6 +54,8 @@ beforeEach(() => {
 
 describe("feedback action boundary", () => {
 	it.each([
+		["kutt-base-url", ""],
+		["kutt-base-url", "   "],
 		["kutt-api-key", ""],
 		["kutt-api-key", "   "],
 		["kutt-link-id", ""],
@@ -102,9 +105,9 @@ describe("feedback action boundary", () => {
 		expect(JSON.stringify(mocks.outputs)).not.toContain("synthetic-");
 	});
 
-	it("forwards both required Kutt settings", async () => {
+	it("forwards all required Kutt settings", async () => {
 		// Arrange
-		// Default inputs provide both required Kutt settings.
+		// Default inputs provide all required Kutt settings.
 
 		// Act
 		await FeedbackAction.run();
@@ -113,6 +116,7 @@ describe("feedback action boundary", () => {
 		expect(mocks.compose).toHaveBeenCalledWith(
 			expect.objectContaining({
 				kuttApiKey: "synthetic-key",
+				kuttBaseUrl: "https://short.example.test",
 				kuttLinkId: "link-1",
 			}),
 		);

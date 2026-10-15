@@ -20,6 +20,9 @@ inputs:
   kutt-api-key:
     description: API key for the owner of the existing Kutt link.
     required: true
+  kutt-base-url:
+    description: HTTPS base URL of the Kutt instance, without /api/v2. No default.
+    required: true
   kutt-link-id:
     description: Existing Kutt link API ID, not the short address.
     required: true

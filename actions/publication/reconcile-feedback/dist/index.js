@@ -39472,17 +39472,31 @@ var ManageMeetupFeedback = class _ManageMeetupFeedback {
 };
 
 // packages/adapter/kutt-feedback-link-gateway/src/kutt-feedback-link-gateway.ts
-var KuttFeedbackLinkGateway = class {
-  constructor(apiKey, linkId, fetcher = fetch) {
+var KuttFeedbackLinkGateway = class _KuttFeedbackLinkGateway {
+  constructor(apiKey, linkId, baseUrl2, fetcher = fetch) {
     this.apiKey = apiKey;
     this.linkId = linkId;
     this.fetcher = fetcher;
     if (!apiKey.trim() || !/^[a-zA-Z0-9_-]+$/.test(linkId))
       throw new Error("Kutt API key and existing link ID are required");
+    this.baseUrl = _KuttFeedbackLinkGateway.normalizeBaseUrl(baseUrl2);
   }
   apiKey;
   linkId;
   fetcher;
+  baseUrl;
+  static normalizeBaseUrl(value) {
+    let url;
+    const message = "Kutt base URL must be an absolute HTTPS URL without credentials, query, or fragment";
+    try {
+      url = new URL(value);
+    } catch {
+      throw new Error(message);
+    }
+    if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash)
+      throw new Error(message);
+    return `${url.origin}${url.pathname.replace(/\/+$/, "")}`;
+  }
   async updateTarget(value) {
     const target = FeedbackPolicy.pollUrl(value);
     const link = await this.findLink();
@@ -39521,7 +39535,7 @@ var KuttFeedbackLinkGateway = class {
   async request(path, init) {
     let response;
     try {
-      response = await this.fetcher(`https://kutt.it/api/v2${path}`, {
+      response = await this.fetcher(`${this.baseUrl}/api/v2${path}`, {
         ...init,
         redirect: "error",
         signal: AbortSignal.timeout(3e4),
@@ -56667,7 +56681,11 @@ var FeedbackComposition = class {
       () => OpenFeedbackEventGateway.create(input.openFeedbackApiKey)
     );
     container.bind(FEEDBACK_LINKS).toDynamicValue(
-      () => new KuttFeedbackLinkGateway(input.kuttApiKey, input.kuttLinkId)
+      () => new KuttFeedbackLinkGateway(
+        input.kuttApiKey,
+        input.kuttLinkId,
+        input.kuttBaseUrl
+      )
     );
     container.bind(ManageMeetupFeedback).toDynamicValue(
       (context3) => new ManageMeetupFeedback({
@@ -56697,6 +56715,7 @@ var FeedbackAction = class _FeedbackAction {
     const kuttApiKey = _FeedbackAction.requiredInput("kutt-api-key");
     setSecret(kuttApiKey);
     const kuttLinkId = _FeedbackAction.requiredInput("kutt-link-id");
+    const kuttBaseUrl = _FeedbackAction.requiredInput("kutt-base-url");
     const openFeedbackApiKey = _FeedbackAction.requiredInput(
       "openfeedback-api-key"
     );
@@ -56711,6 +56730,7 @@ var FeedbackAction = class _FeedbackAction {
         required: true
       }),
       kuttApiKey,
+      kuttBaseUrl,
       kuttLinkId,
       openFeedbackApiKey
     });

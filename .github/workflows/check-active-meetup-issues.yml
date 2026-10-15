@@ -34,6 +34,10 @@ on:
         description: Google Drive folder ID of the template folder used for asset reconciliation.
         required: true
         type: string
+      kutt-base-url:
+        description: HTTPS base URL of the Kutt instance, without /api/v2. No default.
+        required: true
+        type: string
       kutt-link-id:
         description: Existing Kutt feedback link API ID.
         required: true
@@ -130,6 +134,7 @@ jobs:
           issue-number: ${{ matrix.issue-number }}
           github-token: ${{ steps.app-token.outputs.token }}
           managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
+          kutt-base-url: ${{ inputs.kutt-base-url }}
           kutt-link-id: ${{ inputs.kutt-link-id }}
           openfeedback-api-key: ${{ secrets.openfeedback-api-key }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly
           kutt-api-key: ${{ secrets.kutt-api-key }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly

@@ -24,6 +24,7 @@ const actionContracts = [
 			"issue-number",
 			"managed-comment-author",
 			"kutt-api-key",
+			"kutt-base-url",
 			"kutt-link-id",
 			"openfeedback-api-key",
 		],
@@ -135,7 +136,12 @@ describe("public action contracts", () => {
 		},
 	);
 
-	it.each(["openfeedback-api-key", "kutt-api-key", "kutt-link-id"])(
+	it.each([
+		"openfeedback-api-key",
+		"kutt-api-key",
+		"kutt-base-url",
+		"kutt-link-id",
+	])(
 		"requires an explicit %s for feedback reconciliation",
 		async (inputName) => {
 			// Arrange
