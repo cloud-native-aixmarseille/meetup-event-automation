@@ -31929,6 +31929,7 @@ var DIAGNOSTICS_OTHER_EN = {
   "diagnostic.publication.feedback.unrelated": "This issue is not a meetup",
   "diagnostic.publication.feedback.inactive": "Feedback automation is inactive for this event",
   "diagnostic.publication.feedback.prerequisites": "Resolve the event title, date and feedback link before updating feedback",
+  "diagnostic.publication.feedback.current-event": "An active meetup takes place today; keep its shared feedback link until the event day ends",
   "diagnostic.publication.feedback.ambiguous-date": "Several active meetups share this date; update the shared feedback link manually",
   "diagnostic.publication.assets.prerequisites": "Resolve the event host and date before reconciling assets",
   "diagnostic.publication.community-url.invalid": "Community event URL must use an approved CNCF/OCGroups prefix and identifier",
@@ -31948,6 +31949,7 @@ var DIAGNOSTICS_OTHER_FR = {
   "diagnostic.publication.feedback.unrelated": "Ce ticket ne correspond pas \xE0 un meetup.",
   "diagnostic.publication.feedback.inactive": "L'automatisation des retours est inactive pour cet \xE9v\xE9nement.",
   "diagnostic.publication.feedback.prerequisites": "Corrigez le titre, la date et le lien des retours avant de mettre \xE0 jour les retours.",
+  "diagnostic.publication.feedback.current-event": "Un meetup actif a lieu aujourd'hui ; conservez son lien partag\xE9 de retours jusqu'\xE0 la fin de la journ\xE9e.",
   "diagnostic.publication.feedback.ambiguous-date": "Plusieurs meetups actifs ont lieu \xE0 cette date ; mettez \xE0 jour le lien partag\xE9 des retours manuellement.",
   "diagnostic.publication.assets.prerequisites": "R\xE9solvez les r\xE9f\xE9rences de l'h\xF4te et de la date avant de synchroniser les fichiers.",
   "diagnostic.publication.community-url.invalid": "L'URL doit utiliser un pr\xE9fixe CNCF/OCGroups autoris\xE9 et un identifiant.",
@@ -38550,7 +38552,7 @@ var EvaluateAttention = class _EvaluateAttention {
     const conditions = [];
     if (!stopped) _EvaluateAttention.tasks(facts, now2, conditions);
     const evaluated = [];
-    _EvaluateAttention.stages(facts, evaluated, conditions);
+    if (!stopped) _EvaluateAttention.stages(facts, evaluated, conditions);
     if (facts.approvals) evaluated.push("approvals");
     if (facts.recovery) evaluated.push("delivery");
     for (const item of (facts.recovery ?? []).filter(
@@ -40936,6 +40938,22 @@ var GithubAttentionRepository = class {
 
 // packages/adapter/github-organizer-attention/src/i18n/messages.en.ts
 var messages = {
+  "slack.title": "Meetup #{issue}",
+  "slack.more": "+{count, plural, one {# more task} other {# more tasks}} \u2192 View all",
+  "slack.run": "Review run",
+  "slack.review": "Review details",
+  "slack.unknown": "status unverified",
+  "slack.missing-date": "Set the event date.",
+  "slack.required-data": "Complete the event details.",
+  "slack.host-confirmation": "Confirm the host.",
+  "slack.speaker-confirmation": "Confirm the speakers.",
+  "slack.manual-publication": "Publication: {task}.",
+  "slack.approval-pending": "Approve or reject the email batch.",
+  "slack.integration-failure": "Failed or blocked: {task}.",
+  "slack.delivery-recovery": "Verify delivery before retrying.",
+  "slack.occurrence-decision": "Date passed: mark held, postponed, or cancelled.",
+  "slack.follow-up": "Follow-up: {task}.",
+  "slack.stage-unknown": "Check the incomplete stage: {task}.",
   "attention.diagnostics": "Detailed diagnostics",
   "task.approvals": "email approvals",
   "task.delivery": "delivery recovery",
@@ -40945,7 +40963,6 @@ var messages = {
   "attention.title": "Organizer attention",
   "attention.date": "Event date: {date}",
   "attention.full": "Review the full issue status",
-  "attention.more": "Additional items are listed on the issue.",
   "attention.clear": "No outstanding organizer tasks.",
   "attention.stopped": "Task reminders stopped: this event is closed, cancelled, or postponed. Unverified deliveries still require recovery.",
   "attention.pending": "Slack acknowledgement is uncertain. Verify the reserved post before explicitly recovering it; automatic reposting is blocked.",
@@ -40980,6 +40997,22 @@ var messages = {
 
 // packages/adapter/github-organizer-attention/src/i18n/messages.fr.ts
 var messages2 = {
+  "slack.title": "Meetup #{issue}",
+  "slack.more": "+{count, plural, one {# autre t\xE2che} other {# autres t\xE2ches}} \u2192 Tout voir",
+  "slack.run": "Voir l'ex\xE9cution",
+  "slack.review": "Voir les d\xE9tails",
+  "slack.unknown": "statut non v\xE9rifi\xE9",
+  "slack.missing-date": "Renseignez la date du meetup.",
+  "slack.required-data": "Compl\xE9tez les informations du meetup.",
+  "slack.host-confirmation": "Confirmez le lieu h\xF4te.",
+  "slack.speaker-confirmation": "Confirmez les intervenants.",
+  "slack.manual-publication": "Publication : {task}.",
+  "slack.approval-pending": "Approuvez ou refusez le lot de courriels.",
+  "slack.integration-failure": "\xC9chec ou blocage : {task}.",
+  "slack.delivery-recovery": "V\xE9rifiez l'envoi avant toute reprise.",
+  "slack.occurrence-decision": "Date pass\xE9e : indiquez tenu, report\xE9 ou annul\xE9.",
+  "slack.follow-up": "Suivi : {task}.",
+  "slack.stage-unknown": "V\xE9rifiez l'\xE9tape inachev\xE9e : {task}.",
   "attention.diagnostics": "Diagnostics d\xE9taill\xE9s",
   "task.approvals": "approbation des courriels",
   "task.delivery": "reprise des envois",
@@ -40989,7 +41022,6 @@ var messages2 = {
   "attention.title": "Points \xE0 traiter par les organisateurs",
   "attention.date": "Date du meetup : {date}",
   "attention.full": "Consulter le statut complet sur le ticket",
-  "attention.more": "Les autres points sont indiqu\xE9s sur le ticket.",
   "attention.clear": "Aucune t\xE2che organisateur en attente.",
   "attention.stopped": "Rappels des t\xE2ches arr\xEAt\xE9s : le meetup est ferm\xE9, annul\xE9 ou report\xE9. Les envois non v\xE9rifi\xE9s n\xE9cessitent toujours une intervention.",
   "attention.pending": "La confirmation Slack est incertaine. V\xE9rifiez le message r\xE9serv\xE9 avant une reprise explicite ; tout nouvel envoi automatique est bloqu\xE9.",
@@ -41037,7 +41069,7 @@ var AttentionMessages = class extends MessageLocalizer {
 };
 
 // packages/adapter/github-organizer-attention/src/attention-presenter.ts
-var AttentionPresenter = class {
+var AttentionPresenter = class _AttentionPresenter {
   constructor(repository, issueNumber, messages3 = new AttentionMessages()) {
     this.repository = repository;
     this.issueNumber = issueNumber;
@@ -41081,18 +41113,54 @@ var AttentionPresenter = class {
     return lines.join("\n\n");
   }
   render(view) {
+    const title = this.messages.t("slack.title", {
+      issue: String(this.issueNumber)
+    });
+    const icon = view.conditions.length ? "\u26A0\uFE0F" : "\u2705";
+    const date = this.slackDate(view.state.eventDate);
     const lines = [
-      `${this.messages.t("attention.title")} #${this.issueNumber}`,
-      this.date(view.state),
-      ...view.state.stopped ? [this.messages.t("attention.stopped")] : []
+      `${icon} *${this.link(this.issueUrl, title)}*${date ? ` \xB7 ${date}` : ""}`,
+      ""
     ];
-    for (const episode of view.conditions.slice(0, 5))
-      lines.push(`\u2022 ${this.text(episode)} ${this.url(episode, view.state)}`);
-    if (!view.conditions.length) lines.push(this.messages.t("attention.clear"));
-    if (view.conditions.length > 5)
-      lines.push(this.messages.t("attention.more"));
-    lines.push(`${this.messages.t("attention.full")}: ${this.issueUrl}`);
-    return lines.join("\n").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+    for (const episode of view.conditions.slice(0, 3))
+      lines.push(this.slackCondition(episode, view.state));
+    if (!view.conditions.length)
+      lines.push(_AttentionPresenter.escape(this.messages.t("attention.clear")));
+    if (view.conditions.length > 3)
+      lines.push(
+        this.link(
+          this.issueUrl,
+          this.messages.t("slack.more", { count: view.conditions.length - 3 })
+        )
+      );
+    return lines.join("\n");
+  }
+  slackDate(date) {
+    if (AttentionPolicy.eventDay(date) === void 0) return "";
+    return new Intl.DateTimeFormat(this.messages.locale, {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      timeZone: "UTC"
+    }).format(/* @__PURE__ */ new Date(`${date}T00:00:00Z`));
+  }
+  slackCondition(episode, state) {
+    const text = this.messages.t(`slack.${episode.condition.code}`, {
+      task: this.messages.task(episode.condition.resource)
+    });
+    const url = this.url(episode, state);
+    const label = this.messages.t(
+      episode.condition.commentId ? "slack.review" : "slack.run"
+    );
+    const link = url === this.issueUrl ? "" : ` \xB7 ${this.link(url, label)}`;
+    const unknown = episode.status === "unknown" ? ` _(${_AttentionPresenter.escape(this.messages.t("slack.unknown"))})_` : "";
+    return `\u2022 ${_AttentionPresenter.escape(text)}${unknown}${link}`;
+  }
+  link(url, label) {
+    return `<${_AttentionPresenter.escape(url)}|${_AttentionPresenter.escape(label)}>`;
+  }
+  static escape(value) {
+    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
   }
   date(state) {
     return this.messages.t("attention.date", {
@@ -41116,11 +41184,11 @@ var AttentionPresenter = class {
     return episode.status === "unknown" ? `${text} ${this.messages.t("attention.unknown")}` : text;
   }
   url(episode, state) {
-    if (episode.condition.commentId)
+    if (Number.isSafeInteger(episode.condition.commentId) && (episode.condition.commentId ?? 0) > 0)
       return `${this.issueUrl}#issuecomment-${episode.condition.commentId}`;
     if (["integration-failure", "stage-unknown"].includes(
       episode.condition.code
-    ) && state.runId)
+    ) && state.runId && /^\d+$/.test(state.runId))
       return `https://github.com/${this.repository}/actions/runs/${state.runId}`;
     return this.issueUrl;
   }
@@ -41313,7 +41381,7 @@ var SlackAttentionNotification = class {
       text: this.presenter.render(view),
       parse: "none",
       link_names: false,
-      mrkdwn: false,
+      mrkdwn: true,
       unfurl_links: false,
       unfurl_media: false
     };

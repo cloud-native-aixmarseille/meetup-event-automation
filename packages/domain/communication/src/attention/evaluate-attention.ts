@@ -34,7 +34,7 @@ export class EvaluateAttention {
 		const conditions: AttentionCondition[] = [];
 		if (!stopped) EvaluateAttention.tasks(facts, now, conditions);
 		const evaluated: AttentionOwner[] = [];
-		EvaluateAttention.stages(facts, evaluated, conditions);
+		if (!stopped) EvaluateAttention.stages(facts, evaluated, conditions);
 		if (facts.approvals) evaluated.push("approvals");
 		if (facts.recovery) evaluated.push("delivery");
 		for (const item of (facts.recovery ?? []).filter(

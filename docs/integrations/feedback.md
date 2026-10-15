@@ -2,7 +2,7 @@
 
 The issue-update and daily-audit workflows create missing OpenFeedback events,
 synchronize their titles, talks and speakers, save their public URLs in the issue, and point the
-shared Kutt link to the event the day before its date.
+shared Kutt link to the event from the day before its date through the event day.
 
 ## Configure
 
@@ -80,17 +80,26 @@ talk or speaker update checks that record's last-read revision. A conflict stops
 the run and requires a fresh read on retry. Closed, cancelled, postponed and
 unrelated issues are skipped.
 
-## Update the day before the event
+## Update the shared link
 
-The shared Kutt link changes only on the calendar day before the event in
-`Europe/Paris`. For example, a meetup on September 30 gets its redirect updated
-on September 29. Runs earlier, on the event day, or afterward leave the target
-unchanged. The link keeps its short address; only its target changes. If the
-target already matches, no update is made.
+The shared Kutt link can change from the start of the calendar day before the
+event through the end of the event day in `Europe/Paris`. For example, a meetup
+on September 30 gets its redirect updated on September 29; a run on September 30
+can catch up if the earlier run was missed or failed. Runs before September 29
+or after September 30 leave the target unchanged. The link keeps its short
+address; only its target changes. If the target already matches, no update is
+made.
 
-Keep the daily audit enabled. If no run occurs on the day before the event,
-update Kutt manually. If several active meetups share the event date, the workflow
-reports `publication.feedback.ambiguous-date`; choose the target manually.
+Keep the daily audit enabled. A manual audit on the event day can repair a missed
+update. If both eligible days pass without a successful update, update Kutt
+manually.
+
+An active meetup happening today takes priority over one scheduled for tomorrow,
+so tomorrow's audit does not replace today's feedback link. The
+future event reports `publication.feedback.current-event` and can switch on its
+own event day. Closed, cancelled, and postponed meetups do not block the switch.
+If several active meetups share the event date, the workflow reports
+`publication.feedback.ambiguous-date`; choose the target manually.
 
 ## Resolve failures
 

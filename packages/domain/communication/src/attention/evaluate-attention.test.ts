@@ -1,7 +1,48 @@
 import { describe, expect, it } from "vitest";
 import { facts } from "../../testing/attention.fixtures.js";
-import { EvaluateAttention } from "./evaluate-attention.js";
+import {
+	EvaluateAttention,
+	type AttentionFacts,
+} from "./evaluate-attention.js";
 describe("actionable attention conditions", () => {
+	it.each([
+		{ closed: true },
+		{ occurrence: "cancelled" },
+		{ occurrence: "postponed" },
+	] satisfies Partial<AttentionFacts>[])(
+		"suppresses stage alerts for a stopped event (%j) while retaining delivery recovery",
+		(lifecycle) => {
+			// Arrange
+			const input = facts({
+				...lifecycle,
+				eventDate: "",
+				approvals: undefined,
+				stages: [
+					{ owner: "communications", outcome: "failure", blocked: false },
+					{ owner: "assets", outcome: "success", blocked: true },
+					{ owner: "feedback", outcome: "unknown", blocked: false },
+				],
+				recovery: [
+					{ key: "uncertain", uncertain: true },
+					{ key: "rejected", uncertain: false },
+				],
+			});
+
+			// Act
+			const result = EvaluateAttention.execute(
+				input,
+				new Date("2099-06-01T10:00:00Z"),
+			);
+
+			// Assert
+			expect(result.stopped).toBe(true);
+			expect(result.conditions).toMatchObject([
+				{ code: "delivery-recovery", resource: "uncertain", recovery: true },
+			]);
+			expect(result.conditions).toHaveLength(1);
+		},
+	);
+
 	it.each(["scheduled", "held"] as const)(
 		"requires an explicit occurrence decision before follow-up (%s)",
 		(occurrence) => {

@@ -1,5 +1,8 @@
 import { vi } from "vitest";
-import type { AttentionState } from "@meetup-automation/communication";
+import type {
+	AttentionEpisode,
+	AttentionState,
+} from "@meetup-automation/communication";
 import { AttentionPresenter } from "../src/attention-presenter.js";
 import {
 	GithubAttentionClient,
@@ -94,5 +97,24 @@ export function fixture() {
 			"automation[bot]",
 			presenter,
 		),
+	};
+}
+
+export function episode(
+	code: AttentionEpisode["condition"]["code"] = "integration-failure",
+	resource = "communications",
+): AttentionEpisode {
+	return {
+		condition: {
+			key: `${code}:${resource}`,
+			code,
+			resource,
+			owner: "communications",
+			severity: "error",
+			policy: "daily",
+		},
+		episode: 1,
+		openedAt: "2099-06-01T10:00:00Z",
+		status: "active",
 	};
 }

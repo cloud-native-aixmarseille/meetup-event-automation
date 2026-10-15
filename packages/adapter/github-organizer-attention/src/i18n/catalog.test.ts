@@ -3,6 +3,12 @@ import { inspectCatalog } from "../../../../presentation/localization/testing/ca
 import { CATALOGS } from "./catalog.js";
 import type { MessageParameters } from "./attention-messages.js";
 const parameters = {
+	"slack.title": { issue: "42" },
+	"slack.more": { count: 2 },
+	"slack.manual-publication": { task: "publication" },
+	"slack.integration-failure": { task: "assets" },
+	"slack.follow-up": { task: "thanks" },
+	"slack.stage-unknown": { task: "feedback" },
 	"attention.date": { date: "2099-06-08" },
 	"attention.resolved": { count: 2 },
 	"attention.manual-publication": { task: "publication" },

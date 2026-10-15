@@ -115,6 +115,7 @@ describe("ActionMessages", () => {
 		"publication.feedback.inactive",
 		"publication.feedback.prerequisites",
 		"publication.feedback.ambiguous-date",
+		"publication.feedback.current-event",
 	])("translates the dynamically emitted feedback diagnostic %s", (code) => {
 		// Arrange
 		const french = new ActionMessages("fr");

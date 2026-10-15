@@ -56,9 +56,11 @@ talks there; automation preserves existing votes and does not delete records.
 See [agenda synchronization](../integrations/feedback.md#prepare-the-event) for
 identity matching and concurrent-edit handling.
 
-The shared Kutt link switches on the calendar day before the event in
-`Europe/Paris`. Check the daily audit ran and the target contains the expected
-talks.
+The shared Kutt link switches from the calendar day before the event through the
+event day in `Europe/Paris`. If the earlier update was missed, run the daily audit
+again on the event day. Check that the target contains the expected talks. See
+[shared link timing](../integrations/feedback.md#update-the-shared-link) for
+consecutive events and conflicting dates.
 
 ## Track communications
 
