@@ -1,4 +1,23 @@
 export const messages = {
+	"slack.title": "Meetup #{issue}",
+	"slack.more":
+		"+{count, plural, one {# more task} other {# more tasks}} → View all",
+	"slack.run": "Review run",
+	"slack.review": "Review details",
+	"slack.unknown": "status unverified",
+	"slack.missing-date": "Set the event date.",
+	"slack.required-data": "Complete the event details.",
+	"slack.host-confirmation": "Confirm the host.",
+	"slack.speaker-confirmation": "Confirm the speakers.",
+	"slack.manual-publication": "Publication: {task}.",
+	"slack.approval-pending": "Approve or reject the email batch.",
+	"slack.integration-failure": "Failed or blocked: {task}.",
+	"slack.delivery-recovery": "Verify delivery before retrying.",
+	"slack.occurrence-decision":
+		"Date passed: mark held, postponed, or cancelled.",
+	"slack.follow-up": "Follow-up: {task}.",
+	"slack.stage-unknown": "Check the incomplete stage: {task}.",
+
 	"attention.diagnostics": "Detailed diagnostics",
 	"task.approvals": "email approvals",
 	"task.delivery": "delivery recovery",
@@ -9,7 +28,6 @@ export const messages = {
 	"attention.title": "Organizer attention",
 	"attention.date": "Event date: {date}",
 	"attention.full": "Review the full issue status",
-	"attention.more": "Additional items are listed on the issue.",
 	"attention.clear": "No outstanding organizer tasks.",
 	"attention.stopped":
 		"Task reminders stopped: this event is closed, cancelled, or postponed. Unverified deliveries still require recovery.",

@@ -64,7 +64,7 @@ export class SlackAttentionNotification implements AttentionNotification {
 			text: this.presenter.render(view),
 			parse: "none",
 			link_names: false,
-			mrkdwn: false,
+			mrkdwn: true,
 			unfurl_links: false,
 			unfurl_media: false,
 		};

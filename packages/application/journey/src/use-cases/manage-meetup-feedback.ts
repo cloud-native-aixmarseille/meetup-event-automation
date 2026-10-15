@@ -133,23 +133,14 @@ export class ManageMeetupFeedback {
 		const { persisted, current } = await this.persist(source, url);
 		const diagnostics: PublicDiagnostic[] = [];
 		let linkUpdated = false;
-		if (
-			FeedbackPolicy.isDayBeforeEvent(
-				event.date,
-				this.dependencies.clock.now(),
-				event.timeZone,
-			)
-		) {
-			if (await this.isOnlyEventOnDate(source, event.date)) {
+		const now = this.dependencies.clock.now();
+		if (FeedbackPolicy.isLinkUpdateDue(event.date, now, event.timeZone)) {
+			const conflict = await this.linkConflict(source, event, now);
+			if (conflict) diagnostics.push(conflict);
+			else {
 				await this.ensureCurrent(current);
 				linkUpdated = await this.dependencies.links.updateTarget(url);
-			} else
-				diagnostics.push({
-					code: "publication.feedback.ambiguous-date",
-					severity: "warning",
-					message:
-						"Several active meetups share this date; update the shared feedback link manually",
-				});
+			}
 		}
 		return {
 			skipped: false,
@@ -188,10 +179,11 @@ export class ManageMeetupFeedback {
 		return { persisted: true, current: { ...source, ...patch } };
 	}
 
-	private async isOnlyEventOnDate(
+	private async linkConflict(
 		source: EventDocument,
-		date: string,
-	): Promise<boolean> {
+		target: MeetupEvent,
+		now: string,
+	): Promise<PublicDiagnostic | undefined> {
 		let cursor: string | undefined;
 		const visited = new Set<string>();
 		do {
@@ -204,20 +196,50 @@ export class ManageMeetupFeedback {
 				if (document.identity.issueNumber === source.identity.issueNumber)
 					continue;
 				const { event } = this.dependencies.documentCodec.decode(document);
-				if (
-					event.date === date &&
-					event.issueState === "open" &&
-					event.occurrenceStatus !== "cancelled" &&
-					event.occurrenceStatus !== "postponed"
-				)
-					return false;
+				const conflict = ManageMeetupFeedback.conflictingEvent(
+					event,
+					target,
+					now,
+				);
+				if (conflict) return conflict;
 			}
 			cursor = page.nextCursor;
 			if (cursor && visited.has(cursor))
 				throw new Error("Feedback event pagination did not advance");
 			if (cursor) visited.add(cursor);
 		} while (cursor);
-		return true;
+		return undefined;
+	}
+
+	private static conflictingEvent(
+		event: MeetupEvent,
+		target: MeetupEvent,
+		now: string,
+	): PublicDiagnostic | undefined {
+		if (
+			event.issueState !== "open" ||
+			event.occurrenceStatus === "cancelled" ||
+			event.occurrenceStatus === "postponed"
+		)
+			return undefined;
+		if (event.date === target.date)
+			return {
+				code: "publication.feedback.ambiguous-date",
+				severity: "warning",
+				message:
+					"Several active meetups share this date; update the shared feedback link manually",
+			};
+		if (
+			event.date < target.date &&
+			FeedbackPolicy.isLinkUpdateDue(event.date, now, target.timeZone)
+		)
+			return {
+				code: "publication.feedback.current-event",
+				severity: "info",
+				message:
+					"An active meetup takes place today; keep its shared feedback link until the event day ends",
+			};
+		return undefined;
 	}
 
 	private ensureCurrent(source: EventDocument) {

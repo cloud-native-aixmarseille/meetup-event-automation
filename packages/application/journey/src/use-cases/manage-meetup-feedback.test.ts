@@ -109,30 +109,35 @@ describe("meetup feedback journey", () => {
 			}),
 		);
 	});
-	it("updates the shared link to the existing poll the day before the event", async () => {
-		// Arrange
-		const { deps, events, links, useCase } = journey();
+	it.each(["2026-09-29T10:00:00Z", "2026-09-30T10:00:00Z"])(
+		"updates the shared link to the existing poll during the update window: %s",
+		async (now) => {
+			// Arrange
+			const { deps, events, links, useCase } = journey({}, now);
 
-		// Act
-		const result = await useCase.execute({ identity });
+			// Act
+			const result = await useCase.execute({ identity });
 
-		// Assert
-		expect(result).toMatchObject({
-			persisted: false,
-			linkUpdated: true,
-			feedbackUrl,
-		});
-		expect(links.updateTarget).toHaveBeenCalledWith(feedbackUrl);
-		expect(deps.repository.applyPatch).not.toHaveBeenCalled();
-		expect(events.ensureEvent).toHaveBeenCalledExactlyOnceWith({
-			key: `${identity.repository}#${identity.issueNumber}`,
-			name: event.eventTitle,
-			scheduleUrl: `https://github.com/${identity.repository}/issues/${identity.issueNumber}`,
-			agenda: feedbackAgenda,
-			url: feedbackUrl,
-		});
-		expect(deps.commentRepository.reconcileDiagnostics).not.toHaveBeenCalled();
-	});
+			// Assert
+			expect(result).toMatchObject({
+				persisted: false,
+				linkUpdated: true,
+				feedbackUrl,
+			});
+			expect(links.updateTarget).toHaveBeenCalledWith(feedbackUrl);
+			expect(deps.repository.applyPatch).not.toHaveBeenCalled();
+			expect(events.ensureEvent).toHaveBeenCalledExactlyOnceWith({
+				key: `${identity.repository}#${identity.issueNumber}`,
+				name: event.eventTitle,
+				scheduleUrl: `https://github.com/${identity.repository}/issues/${identity.issueNumber}`,
+				agenda: feedbackAgenda,
+				url: feedbackUrl,
+			});
+			expect(
+				deps.commentRepository.reconcileDiagnostics,
+			).not.toHaveBeenCalled();
+		},
+	);
 
 	it("synchronizes a changed title before the short link update day", async () => {
 		// Arrange
@@ -158,12 +163,8 @@ describe("meetup feedback journey", () => {
 		expect(links.updateTarget).not.toHaveBeenCalled();
 	});
 
-	it.each([
-		"2026-09-28T10:00:00Z",
-		"2026-09-30T10:00:00Z",
-		"2026-10-01T10:00:00Z",
-	])(
-		"leaves the shared link unchanged outside the day before the event: %s",
+	it.each(["2026-09-28T10:00:00Z", "2026-10-01T10:00:00Z"])(
+		"leaves the shared link unchanged outside the update window: %s",
 		async (now) => {
 			// Arrange
 			const { links, useCase } = journey({}, now);
@@ -242,6 +243,98 @@ describe("meetup feedback journey", () => {
 		expect(events.ensureEvent).toHaveBeenCalledOnce();
 	});
 
+	it.each([
+		{
+			date: "2026-09-30",
+			otherDate: "2026-09-29",
+			now: "2026-09-29T10:00:00Z",
+			update: false,
+		},
+		{
+			date: "2026-09-29",
+			otherDate: "2026-09-30",
+			now: "2026-09-29T10:00:00Z",
+			update: true,
+		},
+		{
+			date: "2026-09-30",
+			otherDate: "2026-09-29",
+			now: "2026-09-30T10:00:00Z",
+			update: true,
+		},
+	])(
+		"keeps today's meetup ahead of tomorrow's: $date vs $otherDate at $now",
+		async ({ date, otherDate, now, update }) => {
+			// Arrange
+			const { deps, links, useCase } = journey({ date }, now);
+			const other = {
+				...sourceDocument,
+				identity: { ...identity, issueNumber: 99 },
+			};
+			vi.mocked(deps.repository.listPage)
+				.mockResolvedValueOnce({ items: [], nextCursor: "2" })
+				.mockResolvedValueOnce({ items: [other] });
+			vi.mocked(deps.documentCodec.decode).mockImplementation((document) => ({
+				event: {
+					...event,
+					date: document.identity.issueNumber === 99 ? otherDate : date,
+					publicationLinks: {
+						...event.publicationLinks,
+						feedback: feedbackUrl,
+					},
+				},
+				diagnostics: [],
+			}));
+
+			// Act
+			const result = await useCase.execute({ identity });
+
+			// Assert
+			expect(result.linkUpdated).toBe(update);
+			expect(links.updateTarget).toHaveBeenCalledTimes(update ? 1 : 0);
+			expect(result.diagnostics.map((item) => item.code)).toEqual(
+				update ? [] : ["publication.feedback.current-event"],
+			);
+		},
+	);
+
+	it.each([
+		{ issueState: "closed" },
+		{ occurrenceStatus: "cancelled" },
+		{ occurrenceStatus: "postponed" },
+	] satisfies Partial<MeetupEvent>[])(
+		"does not let an inactive meetup block tomorrow's link (%j)",
+		async (inactive) => {
+			// Arrange
+			const { deps, links, useCase } = journey();
+			const other = {
+				...sourceDocument,
+				identity: { ...identity, issueNumber: 99 },
+			};
+			vi.mocked(deps.repository.listPage).mockResolvedValue({ items: [other] });
+			vi.mocked(deps.documentCodec.decode).mockImplementation((document) => ({
+				event:
+					document.identity.issueNumber === 99
+						? { ...event, date: "2026-09-29", ...inactive }
+						: {
+								...event,
+								publicationLinks: {
+									...event.publicationLinks,
+									feedback: feedbackUrl,
+								},
+							},
+				diagnostics: [],
+			}));
+
+			// Act
+			const result = await useCase.execute({ identity });
+
+			// Assert
+			expect(result.linkUpdated).toBe(true);
+			expect(links.updateTarget).toHaveBeenCalledExactlyOnceWith(feedbackUrl);
+		},
+	);
+
 	it("preserves an issue edit made while checking for concurrent meetups", async () => {
 		// Arrange
 		const { deps, events, links, useCase } = journey();
@@ -304,46 +397,52 @@ describe("meetup feedback journey", () => {
 		expect(links.updateTarget).toHaveBeenCalledWith(feedbackUrl);
 	});
 
-	it("creates and persists missing feedback before switching the short link the day before the event", async () => {
-		// Arrange
-		const { deps, events, links, useCase } = journey({
-			publicationLinks: event.publicationLinks,
-		});
+	it.each(["2026-09-29T10:00:00Z", "2026-09-30T10:00:00Z"])(
+		"creates and persists missing feedback before switching the short link: %s",
+		async (now) => {
+			// Arrange
+			const { deps, events, links, useCase } = journey(
+				{
+					publicationLinks: event.publicationLinks,
+				},
+				now,
+			);
 
-		// Act
-		const result = await useCase.execute({ identity });
-		const repeated = await useCase.execute({ identity });
+			// Act
+			const result = await useCase.execute({ identity });
+			const repeated = await useCase.execute({ identity });
 
-		// Assert
-		expect(result).toMatchObject({
-			skipped: false,
-			persisted: true,
-			feedbackUrl,
-			linkUpdated: true,
-		});
-		expect(events.ensureEvent).toHaveBeenNthCalledWith(1, {
-			key: `${identity.repository}#${identity.issueNumber}`,
-			name: event.eventTitle,
-			scheduleUrl: `https://github.com/${identity.repository}/issues/${identity.issueNumber}`,
-			agenda: feedbackAgenda,
-		});
-		expect(events.ensureEvent).toHaveBeenNthCalledWith(2, {
-			key: `${identity.repository}#${identity.issueNumber}`,
-			name: event.eventTitle,
-			scheduleUrl: `https://github.com/${identity.repository}/issues/${identity.issueNumber}`,
-			agenda: feedbackAgenda,
-			url: feedbackUrl,
-		});
-		expect(deps.repository.applyPatch).toHaveBeenCalledOnce();
-		expect(links.updateTarget).toHaveBeenCalledWith(feedbackUrl);
-		expect(events.ensureEvent.mock.invocationCallOrder[0]).toBeLessThan(
-			vi.mocked(deps.repository.applyPatch).mock.invocationCallOrder[0],
-		);
-		expect(
-			vi.mocked(deps.repository.applyPatch).mock.invocationCallOrder[0],
-		).toBeLessThan(links.updateTarget.mock.invocationCallOrder[0]);
-		expect(repeated.persisted).toBe(false);
-	});
+			// Assert
+			expect(result).toMatchObject({
+				skipped: false,
+				persisted: true,
+				feedbackUrl,
+				linkUpdated: true,
+			});
+			expect(events.ensureEvent).toHaveBeenNthCalledWith(1, {
+				key: `${identity.repository}#${identity.issueNumber}`,
+				name: event.eventTitle,
+				scheduleUrl: `https://github.com/${identity.repository}/issues/${identity.issueNumber}`,
+				agenda: feedbackAgenda,
+			});
+			expect(events.ensureEvent).toHaveBeenNthCalledWith(2, {
+				key: `${identity.repository}#${identity.issueNumber}`,
+				name: event.eventTitle,
+				scheduleUrl: `https://github.com/${identity.repository}/issues/${identity.issueNumber}`,
+				agenda: feedbackAgenda,
+				url: feedbackUrl,
+			});
+			expect(deps.repository.applyPatch).toHaveBeenCalledOnce();
+			expect(links.updateTarget).toHaveBeenCalledWith(feedbackUrl);
+			expect(events.ensureEvent.mock.invocationCallOrder[0]).toBeLessThan(
+				vi.mocked(deps.repository.applyPatch).mock.invocationCallOrder[0],
+			);
+			expect(
+				vi.mocked(deps.repository.applyPatch).mock.invocationCallOrder[0],
+			).toBeLessThan(links.updateTarget.mock.invocationCallOrder[0]);
+			expect(repeated.persisted).toBe(false);
+		},
+	);
 
 	it("prepares future feedback without changing the shared short link", async () => {
 		// Arrange

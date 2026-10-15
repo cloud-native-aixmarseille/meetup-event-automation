@@ -31932,6 +31932,7 @@ var DIAGNOSTICS_OTHER_EN = {
   "diagnostic.publication.feedback.unrelated": "This issue is not a meetup",
   "diagnostic.publication.feedback.inactive": "Feedback automation is inactive for this event",
   "diagnostic.publication.feedback.prerequisites": "Resolve the event title, date and feedback link before updating feedback",
+  "diagnostic.publication.feedback.current-event": "An active meetup takes place today; keep its shared feedback link until the event day ends",
   "diagnostic.publication.feedback.ambiguous-date": "Several active meetups share this date; update the shared feedback link manually",
   "diagnostic.publication.assets.prerequisites": "Resolve the event host and date before reconciling assets",
   "diagnostic.publication.community-url.invalid": "Community event URL must use an approved CNCF/OCGroups prefix and identifier",
@@ -31951,6 +31952,7 @@ var DIAGNOSTICS_OTHER_FR = {
   "diagnostic.publication.feedback.unrelated": "Ce ticket ne correspond pas \xE0 un meetup.",
   "diagnostic.publication.feedback.inactive": "L'automatisation des retours est inactive pour cet \xE9v\xE9nement.",
   "diagnostic.publication.feedback.prerequisites": "Corrigez le titre, la date et le lien des retours avant de mettre \xE0 jour les retours.",
+  "diagnostic.publication.feedback.current-event": "Un meetup actif a lieu aujourd'hui ; conservez son lien partag\xE9 de retours jusqu'\xE0 la fin de la journ\xE9e.",
   "diagnostic.publication.feedback.ambiguous-date": "Plusieurs meetups actifs ont lieu \xE0 cette date ; mettez \xE0 jour le lien partag\xE9 des retours manuellement.",
   "diagnostic.publication.assets.prerequisites": "R\xE9solvez les r\xE9f\xE9rences de l'h\xF4te et de la date avant de synchroniser les fichiers.",
   "diagnostic.publication.community-url.invalid": "L'URL doit utiliser un pr\xE9fixe CNCF/OCGroups autoris\xE9 et un identifiant.",
@@ -36762,7 +36764,7 @@ var FeedbackPolicy = class _FeedbackPolicy {
       throw new Error("Feedback link must be an OpenFeedback event URL");
     return url.href.replace(/\/$/, "");
   }
-  static isDayBeforeEvent(date, now2, timeZone) {
+  static isLinkUpdateDue(date, now2, timeZone) {
     if (!_FeedbackPolicy.validDate(date)) return false;
     const updateDate = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
     updateDate.setUTCDate(updateDate.getUTCDate() - 1);
@@ -36772,7 +36774,7 @@ var FeedbackPolicy = class _FeedbackPolicy {
       month: "2-digit",
       day: "2-digit"
     }).format(new Date(now2));
-    return updateDate.toISOString().slice(0, 10) === today;
+    return today >= updateDate.toISOString().slice(0, 10) && today <= date;
   }
 };
 
@@ -39381,20 +39383,14 @@ var ManageMeetupFeedback = class _ManageMeetupFeedback {
     const { persisted, current } = await this.persist(source, url);
     const diagnostics = [];
     let linkUpdated = false;
-    if (FeedbackPolicy.isDayBeforeEvent(
-      event.date,
-      this.dependencies.clock.now(),
-      event.timeZone
-    )) {
-      if (await this.isOnlyEventOnDate(source, event.date)) {
+    const now2 = this.dependencies.clock.now();
+    if (FeedbackPolicy.isLinkUpdateDue(event.date, now2, event.timeZone)) {
+      const conflict = await this.linkConflict(source, event, now2);
+      if (conflict) diagnostics.push(conflict);
+      else {
         await this.ensureCurrent(current);
         linkUpdated = await this.dependencies.links.updateTarget(url);
-      } else
-        diagnostics.push({
-          code: "publication.feedback.ambiguous-date",
-          severity: "warning",
-          message: "Several active meetups share this date; update the shared feedback link manually"
-        });
+      }
     }
     return {
       skipped: false,
@@ -39424,7 +39420,7 @@ var ManageMeetupFeedback = class _ManageMeetupFeedback {
     await this.dependencies.eventRepository.applyPatch(source.identity, patch);
     return { persisted: true, current: { ...source, ...patch } };
   }
-  async isOnlyEventOnDate(source, date) {
+  async linkConflict(source, target, now2) {
     let cursor;
     const visited = /* @__PURE__ */ new Set();
     do {
@@ -39437,15 +39433,36 @@ var ManageMeetupFeedback = class _ManageMeetupFeedback {
         if (document.identity.issueNumber === source.identity.issueNumber)
           continue;
         const { event } = this.dependencies.documentCodec.decode(document);
-        if (event.date === date && event.issueState === "open" && event.occurrenceStatus !== "cancelled" && event.occurrenceStatus !== "postponed")
-          return false;
+        const conflict = _ManageMeetupFeedback.conflictingEvent(
+          event,
+          target,
+          now2
+        );
+        if (conflict) return conflict;
       }
       cursor = page.nextCursor;
       if (cursor && visited.has(cursor))
         throw new Error("Feedback event pagination did not advance");
       if (cursor) visited.add(cursor);
     } while (cursor);
-    return true;
+    return void 0;
+  }
+  static conflictingEvent(event, target, now2) {
+    if (event.issueState !== "open" || event.occurrenceStatus === "cancelled" || event.occurrenceStatus === "postponed")
+      return void 0;
+    if (event.date === target.date)
+      return {
+        code: "publication.feedback.ambiguous-date",
+        severity: "warning",
+        message: "Several active meetups share this date; update the shared feedback link manually"
+      };
+    if (event.date < target.date && FeedbackPolicy.isLinkUpdateDue(event.date, now2, target.timeZone))
+      return {
+        code: "publication.feedback.current-event",
+        severity: "info",
+        message: "An active meetup takes place today; keep its shared feedback link until the event day ends"
+      };
+    return void 0;
   }
   ensureCurrent(source) {
     return ReconcileEvent.ensureEventDocumentIsCurrent(

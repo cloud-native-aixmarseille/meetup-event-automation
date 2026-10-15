@@ -19,7 +19,10 @@ describe("Slack attention transport", () => {
 		const notification = new SlackAttentionNotification(
 			"private-token",
 			"C123",
-			{ render: () => "Review the issue." },
+			{
+				render: () =>
+					"*Meetup*\n• <https://github.com/example/meetups/issues/42|Review issue>",
+			},
 			fetcher,
 		);
 		// Act
@@ -38,6 +41,15 @@ describe("Slack attention transport", () => {
 			message: { destination: "C123", messageId: "123.456" },
 		});
 		expect(updated).toBe(true);
+		for (const call of calls)
+			expect(call.body).toMatchObject({
+				text: "*Meetup*\n• <https://github.com/example/meetups/issues/42|Review issue>",
+				mrkdwn: true,
+				parse: "none",
+				link_names: false,
+				unfurl_links: false,
+				unfurl_media: false,
+			});
 		expect(calls[1]).toMatchObject({
 			url: "https://slack.com/api/chat.update",
 			body: {
@@ -45,7 +57,9 @@ describe("Slack attention transport", () => {
 				ts: "123.456",
 				parse: "none",
 				link_names: false,
-				mrkdwn: false,
+				mrkdwn: true,
+				unfurl_links: false,
+				unfurl_media: false,
 			},
 		});
 	});

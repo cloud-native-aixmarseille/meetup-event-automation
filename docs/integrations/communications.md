@@ -204,7 +204,9 @@ bot-owned **Organizer attention** comment, including public event facts, current
 conditions, next actions, and links to approval requests, delivery records,
 detailed diagnostic comments, or the workflow run. Resolved conditions disappear
 from the current list and the comment records their resolution. Closed,
-cancelled, and postponed issues show why task reminders have stopped.
+cancelled, and postponed issues show why task reminders have stopped. Their
+integration failures and skipped stages do not trigger Slack alerts; only
+unverified external deliveries continue to require recovery.
 
 | Condition                                                   | Reminder policy                                                                                                                      |
 | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
@@ -224,10 +226,15 @@ final for its batch revision. A returning condition starts a new episode. Locale
 wording, and unrelated issue edits do not restart episodes.
 
 Due conditions share one Slack attention message per issue and local day. Later
-changes edit that message using its stored channel and timestamp, with errors
-first and at most five conditions plus a link to the full issue. Only the first
-post requests fresh attention; messages use no channel-wide mentions. Later
-failures that day therefore require organizers to read the updated message.
+changes edit that message using its stored channel and timestamp. Slack uses
+[formatted text](https://docs.slack.dev/messaging/formatting-message-text/) with a
+linked meetup heading, a localized date when known, and at most three concise
+actions, errors first. An overflow link gives the number of additional tasks.
+Run and comment links have short labels; detailed guidance remains on GitHub.
+Missing dates and lifecycle boilerplate are omitted from Slack. Automatic link
+previews and channel-wide mentions are disabled. Only the first post requests
+fresh attention. Later failures that day therefore require organizers to read
+the updated message.
 Resolution updates the current message without posting an all-clear. Dedicated
 email approval messages and decision reactions remain separate. Public Slack
 announcement checkboxes remain manual and use separate destinations.

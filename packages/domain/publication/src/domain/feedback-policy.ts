@@ -24,11 +24,7 @@ export class FeedbackPolicy {
 		return url.href.replace(/\/$/, "");
 	}
 
-	static isDayBeforeEvent(
-		date: string,
-		now: string,
-		timeZone: string,
-	): boolean {
+	static isLinkUpdateDue(date: string, now: string, timeZone: string): boolean {
 		if (!FeedbackPolicy.validDate(date)) return false;
 		const updateDate = new Date(`${date}T00:00:00Z`);
 		updateDate.setUTCDate(updateDate.getUTCDate() - 1);
@@ -38,6 +34,6 @@ export class FeedbackPolicy {
 			month: "2-digit",
 			day: "2-digit",
 		}).format(new Date(now));
-		return updateDate.toISOString().slice(0, 10) === today;
+		return today >= updateDate.toISOString().slice(0, 10) && today <= date;
 	}
 }

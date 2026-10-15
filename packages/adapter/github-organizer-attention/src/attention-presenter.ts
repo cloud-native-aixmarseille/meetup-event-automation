@@ -54,20 +54,60 @@ export class AttentionPresenter implements AttentionContent {
 		return lines.join("\n\n");
 	}
 	render(view: AttentionView): string {
-		// All interpolated values are validated identifiers or owner-local catalog text.
+		const title = this.messages.t("slack.title", {
+			issue: String(this.issueNumber),
+		});
+		const icon = view.conditions.length ? "⚠️" : "✅";
+		const date = this.slackDate(view.state.eventDate);
 		const lines = [
-			`${this.messages.t("attention.title")} #${this.issueNumber}`,
-			this.date(view.state),
-			...(view.state.stopped ? [this.messages.t("attention.stopped")] : []),
+			`${icon} *${this.link(this.issueUrl, title)}*${date ? ` · ${date}` : ""}`,
+			"",
 		];
-		for (const episode of view.conditions.slice(0, 5))
-			lines.push(`• ${this.text(episode)} ${this.url(episode, view.state)}`);
-		if (!view.conditions.length) lines.push(this.messages.t("attention.clear"));
-		if (view.conditions.length > 5)
-			lines.push(this.messages.t("attention.more"));
-		lines.push(`${this.messages.t("attention.full")}: ${this.issueUrl}`);
-		return lines
-			.join("\n")
+		for (const episode of view.conditions.slice(0, 3))
+			lines.push(this.slackCondition(episode, view.state));
+		if (!view.conditions.length)
+			lines.push(AttentionPresenter.escape(this.messages.t("attention.clear")));
+		if (view.conditions.length > 3)
+			lines.push(
+				this.link(
+					this.issueUrl,
+					this.messages.t("slack.more", { count: view.conditions.length - 3 }),
+				),
+			);
+		return lines.join("\n");
+	}
+	private slackDate(date: string): string {
+		if (AttentionPolicy.eventDay(date) === undefined) return "";
+		return new Intl.DateTimeFormat(this.messages.locale, {
+			day: "numeric",
+			month: "short",
+			year: "numeric",
+			timeZone: "UTC",
+		}).format(new Date(`${date}T00:00:00Z`));
+	}
+	private slackCondition(
+		episode: AttentionEpisode,
+		state: AttentionState,
+	): string {
+		const text = this.messages.t(`slack.${episode.condition.code}`, {
+			task: this.messages.task(episode.condition.resource),
+		});
+		const url = this.url(episode, state);
+		const label = this.messages.t(
+			episode.condition.commentId ? "slack.review" : "slack.run",
+		);
+		const link = url === this.issueUrl ? "" : ` · ${this.link(url, label)}`;
+		const unknown =
+			episode.status === "unknown"
+				? ` _(${AttentionPresenter.escape(this.messages.t("slack.unknown"))})_`
+				: "";
+		return `• ${AttentionPresenter.escape(text)}${unknown}${link}`;
+	}
+	private link(url: string, label: string): string {
+		return `<${AttentionPresenter.escape(url)}|${AttentionPresenter.escape(label)}>`;
+	}
+	private static escape(value: string): string {
+		return value
 			.replaceAll("&", "&amp;")
 			.replaceAll("<", "&lt;")
 			.replaceAll(">", "&gt;");
@@ -96,13 +136,17 @@ export class AttentionPresenter implements AttentionContent {
 			: text;
 	}
 	private url(episode: AttentionEpisode, state: AttentionState): string {
-		if (episode.condition.commentId)
+		if (
+			Number.isSafeInteger(episode.condition.commentId) &&
+			(episode.condition.commentId ?? 0) > 0
+		)
 			return `${this.issueUrl}#issuecomment-${episode.condition.commentId}`;
 		if (
 			["integration-failure", "stage-unknown"].includes(
 				episode.condition.code,
 			) &&
-			state.runId
+			state.runId &&
+			/^\d+$/.test(state.runId)
 		)
 			return `https://github.com/${this.repository}/actions/runs/${state.runId}`;
 		return this.issueUrl;

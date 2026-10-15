@@ -2,14 +2,20 @@ import { describe, expect, it } from "vitest";
 import { FeedbackPolicy } from "./feedback-policy.js";
 
 describe("feedback eligibility", () => {
-	it.each(["2026-09-28T22:00:00Z", "2026-09-29T21:59:59Z"])(
-		"updates throughout the Paris calendar day before the event at %s",
+	it.each([
+		"2026-09-28T22:00:00Z",
+		"2026-09-29T21:59:59Z",
+		"2026-09-29T22:00:00Z",
+		"2026-09-30T10:00:00Z",
+		"2026-09-30T21:59:59Z",
+	])(
+		"updates from the previous Paris day through the event day at %s",
 		(now) => {
 			// Arrange
 			const date = "2026-09-30";
 
 			// Act
-			const result = FeedbackPolicy.isDayBeforeEvent(date, now, "Europe/Paris");
+			const result = FeedbackPolicy.isLinkUpdateDue(date, now, "Europe/Paris");
 
 			// Assert
 			expect(result).toBe(true);
@@ -18,17 +24,16 @@ describe("feedback eligibility", () => {
 
 	it.each([
 		"2026-09-28T21:59:59Z",
-		"2026-09-29T22:00:00Z",
-		"2026-09-30T10:00:00Z",
+		"2026-09-30T22:00:00Z",
 		"2026-10-01T10:00:00Z",
 	])(
-		"does not update outside the calendar day before the event at %s",
+		"does not update before the window or after the event day at %s",
 		(now) => {
 			// Arrange
 			const date = "2026-09-30";
 
 			// Act
-			const result = FeedbackPolicy.isDayBeforeEvent(date, now, "Europe/Paris");
+			const result = FeedbackPolicy.isLinkUpdateDue(date, now, "Europe/Paris");
 
 			// Assert
 			expect(result).toBe(false);
@@ -45,7 +50,7 @@ describe("feedback eligibility", () => {
 		const timeZone = "Europe/Paris";
 
 		// Act
-		const result = FeedbackPolicy.isDayBeforeEvent(date, now, timeZone);
+		const result = FeedbackPolicy.isLinkUpdateDue(date, now, timeZone);
 
 		// Assert
 		expect(result).toBe(true);
@@ -55,11 +60,15 @@ describe("feedback eligibility", () => {
 		{ date: "2026-03-30", now: "2026-03-28T22:59:59Z", expected: false },
 		{ date: "2026-03-30", now: "2026-03-28T23:00:00Z", expected: true },
 		{ date: "2026-03-30", now: "2026-03-29T21:59:59Z", expected: true },
-		{ date: "2026-03-30", now: "2026-03-29T22:00:00Z", expected: false },
+		{ date: "2026-03-30", now: "2026-03-29T22:00:00Z", expected: true },
+		{ date: "2026-03-30", now: "2026-03-30T21:59:59Z", expected: true },
+		{ date: "2026-03-30", now: "2026-03-30T22:00:00Z", expected: false },
 		{ date: "2026-10-26", now: "2026-10-24T21:59:59Z", expected: false },
 		{ date: "2026-10-26", now: "2026-10-24T22:00:00Z", expected: true },
 		{ date: "2026-10-26", now: "2026-10-25T22:59:59Z", expected: true },
-		{ date: "2026-10-26", now: "2026-10-25T23:00:00Z", expected: false },
+		{ date: "2026-10-26", now: "2026-10-25T23:00:00Z", expected: true },
+		{ date: "2026-10-26", now: "2026-10-26T22:59:59Z", expected: true },
+		{ date: "2026-10-26", now: "2026-10-26T23:00:00Z", expected: false },
 	])(
 		"uses calendar days across daylight saving changes at $now",
 		({ date, now, expected }) => {
@@ -67,7 +76,7 @@ describe("feedback eligibility", () => {
 			const timeZone = "Europe/Paris";
 
 			// Act
-			const result = FeedbackPolicy.isDayBeforeEvent(date, now, timeZone);
+			const result = FeedbackPolicy.isLinkUpdateDue(date, now, timeZone);
 
 			// Assert
 			expect(result).toBe(expected);
@@ -81,7 +90,7 @@ describe("feedback eligibility", () => {
 			const now = "2027-02-28T10:00:00Z";
 
 			// Act
-			const result = FeedbackPolicy.isDayBeforeEvent(date, now, "Europe/Paris");
+			const result = FeedbackPolicy.isLinkUpdateDue(date, now, "Europe/Paris");
 
 			// Assert
 			expect(result).toBe(false);
