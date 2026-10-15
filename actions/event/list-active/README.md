@@ -16,6 +16,11 @@
 
 List active meetup issue numbers from the caller repository using the configured event label and lifecycle rules. Publish redacted diagnostics in annotations, logs, and the job summary.
 
+Audit selection includes terminal and closed labelled issues so pending external
+delivery remains recoverable. It paginates and deduplicates with a maximum of 200
+issues and 20 pages; exceeding a bound fails explicitly. See
+[organizer attention](../../../docs/integrations/communications.md#organizer-attention).
+
 <!-- overview:end -->
 <!-- usage:start -->
 
@@ -51,7 +56,7 @@ List active meetup issue numbers from the caller repository using the configured
 | **Output**          | **Description**                                                                                       |
 | ------------------- | ----------------------------------------------------------------------------------------------------- |
 | **`result`**        | Versioned JSON envelope containing the selected issue numbers, their count, and redacted diagnostics. |
-| **`issue-numbers`** | JSON array of nonterminal meetup issue numbers selected for downstream workflows.                     |
+| **`issue-numbers`** | JSON array of meetup issue numbers, including closed issues requiring recovery checks selected for downstream workflows.                     |
 | **`diagnostics`**   | Redacted JSON diagnostics safe to expose in workflow logs and summaries.                              |
 
 <!-- outputs:end -->

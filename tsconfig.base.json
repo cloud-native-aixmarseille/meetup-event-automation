@@ -73,6 +73,9 @@
 			],
 			"@meetup-automation/github-organizer-approval": [
 				"./packages/adapter/github-organizer-approval/src/index.ts"
+			],
+			"@meetup-automation/github-organizer-attention": [
+				"./packages/adapter/github-organizer-attention/src/index.ts"
 			]
 		}
 	}

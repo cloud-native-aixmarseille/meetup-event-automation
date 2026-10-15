@@ -34,6 +34,36 @@ const reservation: DeliveryReservation = {
 };
 
 describe("GithubDeliveryLedger", () => {
+	it("keeps blocked and uncertain requests visible until acceptance is verified", async () => {
+		// Arrange
+		const comments = new MemoryComments();
+		const ledger = new GithubDeliveryLedger(comments, {
+			dispatchAuthorized: true,
+			authorLogin: "automation[bot]",
+		});
+		// Act
+		await ledger.reservePending(reservation);
+		const pending = await ledger.readAttention();
+		await ledger.markRejected(
+			reservation.idempotencyKey,
+			"2099-06-01T10:00:00Z",
+			"permission-denied",
+		);
+		const rejected = await ledger.readAttention();
+		await ledger.markAccepted(
+			reservation.idempotencyKey,
+			"2099-06-01T11:00:00Z",
+		);
+		const accepted = await ledger.readAttention();
+		// Assert
+		expect(pending).toMatchObject([{ uncertain: true, commentId: 1 }]);
+		expect(rejected).toMatchObject([{ uncertain: false, commentId: 1 }]);
+		expect(accepted).toMatchObject([
+			{ uncertain: false, resolved: true, commentId: 1 },
+		]);
+		expect(JSON.stringify(pending)).not.toContain(reservation.idempotencyKey);
+	});
+
 	it("persists pending before accepting and refuses another reservation", async () => {
 		// Arrange
 		const comments = new MemoryComments();

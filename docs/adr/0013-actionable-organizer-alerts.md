@@ -1,6 +1,6 @@
 # ADR 0013: Reconcile actionable organizer alerts throughout the meetup lifecycle
 
-Status: Proposed
+Status: Accepted
 
 Date: 2026-10-14
 

@@ -1,5 +1,13 @@
 import type { EN_MESSAGES } from "./messages.en.js";
 export const FR_MESSAGES = {
+	"action.communication.reconcile-attention":
+		"Synchroniser les points à traiter par les organisateurs",
+	"report.attention.updated":
+		"Le statut des points à traiter est enregistré sur le ticket. Consultez les conditions actuelles et les consignes de reprise.",
+	"report.attention.skipped":
+		"Le ticket ne correspond pas à un meetup configuré ; la synchronisation a été ignorée.",
+	"report.attention.failed":
+		"La synchronisation des points à traiter est incomplète. Consultez le statut GitHub et vérifiez les envois incertains avant toute reprise.",
 	"action.publication.reconcile-feedback":
 		"Vérifier et mettre à jour les retours du meetup",
 	"report.feedback.skipped":

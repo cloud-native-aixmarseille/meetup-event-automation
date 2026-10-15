@@ -41,3 +41,36 @@ export type {
 export type { ReconcileCommunicationsDependencies } from "./reconcile-communications.js";
 export { ReconcileCommunications } from "./reconcile-communications.js";
 export { MailBatchFingerprint } from "./mail-batch-fingerprint.js";
+
+export type {
+	AttentionApproval,
+	AttentionCode,
+	AttentionCondition,
+	AttentionEpisode,
+	AttentionMessageReference,
+	AttentionObservation,
+	AttentionOwner,
+	AttentionPostResult,
+	AttentionRecoveryItem,
+	AttentionState,
+	AttentionView,
+} from "./attention/model.js";
+export { ATTENTION_CODES } from "./attention/model.js";
+export type {
+	AttentionApprovalSource,
+	AttentionNotification,
+	AttentionRecoverySource,
+	AttentionRepository,
+} from "./attention/ports.js";
+export { AttentionPolicy } from "./attention/attention-policy.js";
+export {
+	ReconcileAttention,
+	type AttentionResult,
+} from "./attention/reconcile-attention.js";
+export {
+	EvaluateAttention,
+	type AttentionFacts,
+	type AttentionStage,
+} from "./attention/evaluate-attention.js";
+export type { AttentionContent } from "./attention/ports.js";
+export type { AttentionPostRecovery } from "./attention/recover-attention-post.js";

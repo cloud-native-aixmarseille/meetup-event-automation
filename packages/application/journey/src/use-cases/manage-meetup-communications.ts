@@ -274,7 +274,7 @@ export class ManageMeetupCommunications {
 				managed.event,
 				delivery.mailRecipientResolution.recipients,
 			),
-			notificationRecipients: delivery.notificationRecipients,
+			notificationRecipients: [],
 			mailPlaceholders: CommunicationPlaceholders.eventPlaceholders(
 				managed.event,
 				input.slidesUrl,

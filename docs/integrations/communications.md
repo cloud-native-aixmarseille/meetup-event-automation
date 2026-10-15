@@ -12,7 +12,7 @@ preparation issues. Approval requires repository write access or higher.
 
 | Audience           | Channel selection                                                        | Behavior                                                                       |
 | ------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
-| Meetup organizers  | `SLACK_ORGANIZER_CHANNEL_ID`, passed as `slack-organizer-channel-id`     | The automation posts approval requests and readiness reminders.                |
+| Meetup organizers  | `SLACK_ORGANIZER_CHANNEL_ID`, passed as `slack-organizer-channel-id`     | The automation posts approval requests and grouped organizer attention.                |
 | Public communities | The destination channels for the issue's public Slack announcement tasks | Organizers post event announcements manually and check those tasks themselves. |
 
 Use a dedicated organizer channel, separate from public event announcement
@@ -60,7 +60,7 @@ It accepts HTTPS Google Slides presentation links and Google Drive file links.
 A due email batch with a missing or invalid link is held with the
 `communication.slides-unavailable` diagnostic, before requesting approval.
 The issue's **Drive Link** remains the event folder and is never used as a
-fallback for the presentation. Readiness reminders do not require a presentation.
+fallback for the presentation. Organizer attention does not require a presentation.
 
 ## Confirm an email batch
 
@@ -176,19 +176,12 @@ Dates use `Europe/Paris`. Email rows require a present, unchecked task and batch
 | Event condition                                                          | Message                                                       |
 | ------------------------------------------------------------------------ | ------------------------------------------------------------- |
 | Scheduled, ready, and today or in the future                             | Introduction email to the host contact and speakers           |
-| Scheduled, not ready, and within seven days of its date, including today | Organizer Slack reminder                                      |
 | Explicitly marked `held`                                                 | Thank-you email to the host contact and speakers              |
-| Cancelled, postponed, or status unknown                                  | No messages                                                   |
-| Scheduled with a past date                                               | No messages; a past date does not confirm the meetup happened |
+| Cancelled, postponed, or status unknown                                  | No email messages                                             |
+| Scheduled with a past date                                               | No email messages; a past date does not confirm occurrence     |
 
-Each message kind is sent at most once per issue and recipient under the current
-policy. The Slack reminder is not a daily repeat. Changing the locale or
-repository revision does not resend previously recorded messages.
-
-Readiness reminders include the event date, a direct link to the meetup issue,
-and the outstanding validation items with actions to resolve them. They use the
-workflow's language and omit private contact data. Update the issue fields or
-confirmation labels named in the reminder.
+Each email kind is sent at most once per issue and recipient under the current
+policy. Changing the locale or repository revision does not resend recorded email.
 
 The `<consumer-repository-owner>/mailings` repository receives a
 `send-transactional-email` dispatch with a template, recipient, placeholders and
@@ -202,6 +195,88 @@ an idempotency key. It must support:
 A successful dispatch and a checked email task mean GitHub accepted the request,
 not that the recipient received the email. Check the mailings repository's run
 for the actual email result.
+
+## Organizer attention
+
+Both workflows finish with the [attention action](../../actions/communication/reconcile-attention/README.md),
+under the shared repository/issue lock. It reloads the issue and reconciles one
+bot-owned **Organizer attention** comment, including public event facts, current
+conditions, next actions, and links to approval requests, delivery records,
+detailed diagnostic comments, or the workflow run. Resolved conditions disappear
+from the current list and the comment records their resolution. Closed,
+cancelled, and postponed issues show why task reminders have stopped.
+
+| Condition | Reminder policy |
+| --- | --- |
+| Missing confirmations, required data, or manual publication | First detection within seven days before the event; reminders at three days, one day, and event day. |
+| Missing or invalid date | First detection, then weekly until scheduled or closed. |
+| Pending email approval | The dedicated approval request is the first alert; attention reminders start after 24 hours, at most once per Paris-local day. |
+| Integration failure or blocked delivery | Immediately, then at most once per Paris-local day. |
+| Pending or uncertain external delivery | Retained until verified, including after cancellation or closure. |
+| Scheduled date passed without an occurrence decision | First subsequent audit, then at seven days after the date; asks for held, postponed, or cancelled. |
+| Held event with unfinished follow-up | First audit at least one day after the event, then at seven days; identifies email and manual tasks without claiming inbox delivery. |
+
+Milestones use `Europe/Paris` and the current clock. A missed audit sends only the
+most urgent current reminder. Repeated runs do not repeat the same milestone.
+Changing the date recomputes future milestones without replaying elapsed ones.
+Approval or rejection resolves that request's pending condition; rejection stays
+final for its batch revision. A returning condition starts a new episode. Locale,
+wording, and unrelated issue edits do not restart episodes.
+
+Due conditions share one Slack attention message per issue and local day. Later
+changes edit that message using its stored channel and timestamp, with errors
+first and at most five conditions plus a link to the full issue. Only the first
+post requests fresh attention; messages use no channel-wide mentions. Later
+failures that day therefore require organizers to read the updated message.
+Resolution updates the current message without posting an all-clear. Dedicated
+email approval messages and decision reactions remain separate. Public Slack
+announcement checkboxes remain manual and use separate destinations.
+
+The final action runs even after failed dependencies. Skipped or cancelled stages
+are unknown and cannot resolve previous conditions. The original actions retain
+their failure policies. Notification failures fail the attention action without
+creating recursive notification conditions. GitHub status is persisted before
+Slack is contacted, so it remains useful during a Slack outage. Failed GitHub
+persistence prevents new Slack posts; workflow failures and GitHub's normal
+notifications are the fallback. A schedule that never runs needs external
+workflow monitoring.
+
+Audits paginate all labelled meetup issues, including terminal and closed issues,
+because unresolved external delivery cannot be inferred from lifecycle alone.
+Selection is bounded to 200 distinct issues and 20 pages; exceeding either limit
+fails listing explicitly instead of silently dropping recovery work. Remove the
+meetup label from archived issues only after verifying their delivery records and
+attention status. A past date alone never confirms occurrence.
+
+### Recover an uncertain attention post
+
+Attention uses a versioned bot-owned record separate from email delivery and
+approval state. The bot verifies authorship and the latest trusted bot revision
+before using it. Missing or deleted revision history fails closed. Do not edit or
+delete metadata to force a retry.
+
+A new Slack post is reserved in GitHub before dispatch. Definitive nonacceptance
+can retry after at least five minutes or Slack's longer `Retry-After` interval.
+An ambiguous acknowledgement retains its pending reservation across days and
+locale changes. It never automatically posts again until the outcome is verified.
+Known-message updates can safely retry. This is duplicate protection, not an
+exactly-once delivery guarantee; GitHub writes still have a final race with human
+edits despite pre-write snapshot checks.
+
+To recover, verify the message in the configured organizer channel. In a manually
+run workflow holding the same repository/issue concurrency lock, call the attention
+action with its normal inputs and the optional `recover-post` JSON. Copy the exact
+`reservationId` from the managed attention comment's source. For a verified
+accepted post, supply its stored-channel-compatible Slack reference:
+
+```json
+{"reservationId":"attention:47268:4083991200000","outcome":"accepted","message":{"destination":"C12345","messageId":"123.456"}}
+```
+
+For verified nonacceptance, use the same reservation ID with
+`"outcome":"not-accepted"` and omit `message`. Stale reservation IDs are rejected.
+A human edit to the comment cannot authorize recovery. Recovering attention does
+not alter email reservations or final approval decisions.
 
 ## Diagnose and recover
 
@@ -250,6 +325,6 @@ so issue updates and audits share the same per-issue concurrency lock.
 The [communication action](../../actions/communication/reconcile/README.md)
 dispatches when event, checklist, approval, and delivery checks permit sending.
 The reported `check` mode means global dispatch is blocked. A pending or rejected
-approval disables mail within `dispatch` mode and reports a warning. Readiness
-reminders are independent of email approval. The reusable workflows supply the
+approval disables mail within `dispatch` mode and reports a warning. Organizer
+attention is reconciled independently by the final workflow action. The reusable workflows supply the
 mailings token and hold the shared event lock.

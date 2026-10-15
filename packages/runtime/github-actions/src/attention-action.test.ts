@@ -1,0 +1,63 @@
+import * as core from "@actions/core";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { AttentionAction } from "./attention-action.js";
+import { ActionMessages } from "./i18n/action-messages.js";
+const boundary = vi.hoisted(() => ({ execute: vi.fn() }));
+vi.mock("@actions/core", () => ({
+	getInput: (name: string) =>
+		({
+			"issue-number": "42",
+			"github-token": "private-token",
+			"managed-comment-author": "automation[bot]",
+			"slack-token": "private-slack",
+			"slack-organizer-channel-id": "C123",
+			"stage-results": "{}",
+			"recover-post": "",
+		})[name],
+	setOutput: vi.fn(),
+}));
+vi.mock("@actions/github", () => ({
+	context: { repo: { owner: "example", repo: "meetups" }, runId: 123 },
+	getOctokit: () => ({}),
+}));
+vi.mock("./attention-composition.js", () => ({
+	AttentionComposition: {
+		create: () => ({ get: () => ({ execute: boundary.execute }) }),
+	},
+}));
+describe("attention action reporting", () => {
+	beforeEach(() => vi.clearAllMocks());
+	it.each([true, false])(
+		"reports notification failure %s through the shared runner contract",
+		async (notificationFailed) => {
+			// Arrange
+			boundary.execute.mockResolvedValue({
+				active: 2,
+				posted: false,
+				skipped: false,
+				notificationFailed,
+			});
+			// Act
+			const report = await AttentionAction.run(new ActionMessages("fr"));
+			// Assert
+			expect(Boolean(report.failure)).toBe(notificationFailed);
+			expect(report.details.join(" ")).toContain("ticket");
+			expect(core.setOutput).toHaveBeenCalledWith("active-count", "2");
+			expect(JSON.stringify(report)).not.toContain("private");
+		},
+	);
+	it("explains skipped issues", async () => {
+		// Arrange
+		boundary.execute.mockResolvedValue({
+			active: 0,
+			posted: false,
+			skipped: true,
+			notificationFailed: false,
+		});
+		// Act
+		const report = await AttentionAction.run();
+		// Assert
+		expect(report.details.join(" ")).toContain("skipped");
+		expect(report.failure).toBeUndefined();
+	});
+});

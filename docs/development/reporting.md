@@ -37,7 +37,9 @@ Every public action must use the shared GitHub Actions reporting boundary:
   comment. An unchanged trusted comment also counts as persisted. Execution
   failures and failed comment reads or writes still fail the action. Actions own
   these policies through the shared runner;
-  calling workflows do not need separate enforcement steps. Reporting changes
+  calling workflows do not need separate enforcement steps. Organizer attention
+  fails when evidence or notification synchronization is incomplete; GitHub
+  persistence failures also fail through the shared exception boundary. Reporting changes
   must not silently change these policies.
 
 `tests/contracts/action-reporting.spec.ts` discovers every action manifest and

@@ -13,7 +13,7 @@ outputs:
   result:
     description: Versioned JSON envelope containing the selected issue numbers, their count, and redacted diagnostics.
   issue-numbers:
-    description: JSON array of nonterminal meetup issue numbers selected for downstream workflows.
+    description: JSON array of meetup issue numbers, including closed issues requiring recovery checks selected for downstream workflows.
   diagnostics:
     description: Redacted JSON diagnostics safe to expose in workflow logs and summaries.
 runs:

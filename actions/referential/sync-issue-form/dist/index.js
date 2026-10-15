@@ -31251,6 +31251,10 @@ var DIAGNOSTICS_REFERENTIAL_FR = {
 
 // packages/runtime/github-actions/src/i18n/messages.en.ts
 var EN_MESSAGES = {
+  "action.communication.reconcile-attention": "Reconcile organizer attention",
+  "report.attention.updated": "Organizer attention status is persisted on the issue. Review its current conditions and recovery guidance.",
+  "report.attention.skipped": "The issue is not a configured meetup event; attention reconciliation was skipped.",
+  "report.attention.failed": "Organizer attention could not be fully synchronized. Review the GitHub status and verify uncertain deliveries before recovery.",
   "action.publication.reconcile-feedback": "Reconcile meetup feedback",
   "report.feedback.skipped": "Feedback reconciliation was skipped; review the diagnostics for the reason.",
   "report.feedback.completed": "Feedback reconciliation completed.",
@@ -31316,6 +31320,10 @@ var EN_MESSAGES = {
 
 // packages/runtime/github-actions/src/i18n/messages.fr.ts
 var FR_MESSAGES = {
+  "action.communication.reconcile-attention": "Synchroniser les points \xE0 traiter par les organisateurs",
+  "report.attention.updated": "Le statut des points \xE0 traiter est enregistr\xE9 sur le ticket. Consultez les conditions actuelles et les consignes de reprise.",
+  "report.attention.skipped": "Le ticket ne correspond pas \xE0 un meetup configur\xE9 ; la synchronisation a \xE9t\xE9 ignor\xE9e.",
+  "report.attention.failed": "La synchronisation des points \xE0 traiter est incompl\xE8te. Consultez le statut GitHub et v\xE9rifiez les envois incertains avant toute reprise.",
   "action.publication.reconcile-feedback": "V\xE9rifier et mettre \xE0 jour les retours du meetup",
   "report.feedback.skipped": "La mise \xE0 jour des retours a \xE9t\xE9 ignor\xE9e ; consultez les diagnostics pour conna\xEEtre la raison.",
   "report.feedback.completed": "La v\xE9rification et la mise \xE0 jour des retours sont termin\xE9es.",
@@ -32724,7 +32732,7 @@ var EventReadinessPolicy = class {
 };
 
 // packages/domain/event/src/application/use-cases/list-active-events.ts
-var ListActiveEvents = class {
+var ListActiveEvents = class _ListActiveEvents {
   constructor(dependencies) {
     this.dependencies = dependencies;
     this.ruleEngine = new EventRuleEngine(
@@ -32739,8 +32747,10 @@ var ListActiveEvents = class {
     const seenCursors = /* @__PURE__ */ new Set();
     const seenEvents = /* @__PURE__ */ new Set();
     const now2 = this.dependencies.clock.now();
+    let pages = 0;
     let cursor;
     do {
+      if (++pages > 20) throw new EventPaginationError("audit-page-limit");
       const page = await this.dependencies.repository.listPage({
         ...input,
         cursor
@@ -32751,6 +32761,7 @@ var ListActiveEvents = class {
           continue;
         }
         seenEvents.add(identityKey);
+        _ListActiveEvents.checkLimit(seenEvents.size);
         const decoded = this.dependencies.documentCodec.decode(document);
         const evaluated = this.ruleEngine.evaluate(decoded.event);
         const eventDiagnostics = [
@@ -32767,14 +32778,12 @@ var ListActiveEvents = class {
           now: now2
         });
         allDiagnostics.push(...readiness.diagnostics);
-        if (lifecycle.state !== "cancelled" && lifecycle.state !== "follow-up-complete") {
-          activeEvents.push({
-            identity: { ...document.identity },
-            event: evaluated.event,
-            readiness,
-            lifecycle
-          });
-        }
+        activeEvents.push({
+          identity: { ...document.identity },
+          event: evaluated.event,
+          readiness,
+          lifecycle
+        });
       }
       cursor = page.nextCursor;
       if (cursor) {
@@ -32788,6 +32797,9 @@ var ListActiveEvents = class {
       events: Object.freeze(activeEvents),
       diagnostics: Object.freeze(allDiagnostics)
     };
+  }
+  static checkLimit(count) {
+    if (count > 200) throw new EventPaginationError("audit-issue-limit");
   }
 };
 

@@ -29,8 +29,8 @@ The required `slack-organizer-channel-id` selects the internal organizer channel
 Public event announcements remain manual checklist tasks and are never sent by
 this action. See [channel selection](../../../docs/integrations/communications.md#organizer-and-public-channels).
 
-Pending or rejected approval blocks mail while preserving `dispatch` mode and
-independent readiness notifications. Approval comments and their Slack alerts
+Pending or rejected approval blocks mail while preserving `dispatch` mode.
+The final attention action owns organizer reminders. Approval comments and their Slack alerts
 are excluded from delivery counts. See the
 [approval flow](../../../docs/integrations/communications.md#confirm-an-email-batch).
 
@@ -76,7 +76,7 @@ release you use. The asset step must have the ID `assets` for this example.
     # This input is required.
     mailings-token: ""
 
-    # Internal meetup organizer Slack channel for approval requests and readiness reminders. Public announcement channels are separate.
+    # Internal meetup organizer Slack channel for approval requests and actionable organizer reminders. Public announcement channels are separate.
     # This input is required.
     slack-organizer-channel-id: ""
 
@@ -99,7 +99,7 @@ release you use. The asset step must have the ID `assets` for this example.
 | **`github-token`**               | Token for the caller repository. Requires issues:write for approval requests, checklist completion, delivery ledger, and diagnostic comments, and metadata:read to verify approvers.                                   | **true**     | -           |
 | **`managed-comment-author`**     | Trusted bot login allowed to create or update managed approval, delivery ledger and communication diagnostic comments, for example my-app[bot].                                                                        | **true**     | -           |
 | **`mailings-token`**             | Token used to dispatch due email communications to the configured mailings repository.                                                                                                                                 | **true**     | -           |
-| **`slack-organizer-channel-id`** | Internal meetup organizer Slack channel for approval requests and readiness reminders. Public announcement channels are separate.                                                                                      | **true**     | -           |
+| **`slack-organizer-channel-id`** | Internal meetup organizer Slack channel for approval requests and actionable organizer reminders. Public announcement channels are separate.                                                                                      | **true**     | -           |
 | **`slack-token`**                | Slack bot token with chat:write and reactions:write for organizer notifications and decision reactions.                                                                                                                | **true**     | -           |
 
 <!-- inputs:end -->

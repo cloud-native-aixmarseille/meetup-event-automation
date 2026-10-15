@@ -165,7 +165,9 @@ describe("Slack notification failure contract", () => {
 		"maps HTTP %s without exposing the provider body",
 		async (status, outcome, diagnosticCode) => {
 			// Arrange
-			const fetcher = vi.fn().mockResolvedValue({ ok: false, status });
+			const fetcher = vi
+				.fn()
+				.mockResolvedValue(new Response("provider response", { status }));
 
 			// Act
 			const result = await new SlackNotificationGateway(
