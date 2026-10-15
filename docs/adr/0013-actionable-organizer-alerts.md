@@ -74,7 +74,7 @@ with the most urgent first. Edit that message as the day's conditions change;
 newly discovered failures appear immediately in the GitHub comment and existing
 Slack message. Only the first post requests fresh channel attention that day.
 Use no automatic channel-wide mentions. Show a bounded list with a link to the
-full issue status. Record this daily cap as a deliberate tradeoff: later failures
+full issue status. Record this daily cap as a deliberate trade-off: later failures
 on the same day may require organizers to read the updated status.
 
 Email approval requests keep their existing dedicated messages, fingerprint

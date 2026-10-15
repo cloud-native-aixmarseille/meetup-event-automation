@@ -12,7 +12,7 @@ preparation issues. Approval requires repository write access or higher.
 
 | Audience           | Channel selection                                                        | Behavior                                                                       |
 | ------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
-| Meetup organizers  | `SLACK_ORGANIZER_CHANNEL_ID`, passed as `slack-organizer-channel-id`     | The automation posts approval requests and grouped organizer attention.                |
+| Meetup organizers  | `SLACK_ORGANIZER_CHANNEL_ID`, passed as `slack-organizer-channel-id`     | The automation posts approval requests and grouped organizer attention.        |
 | Public communities | The destination channels for the issue's public Slack announcement tasks | Organizers post event announcements manually and check those tasks themselves. |
 
 Use a dedicated organizer channel, separate from public event announcement
@@ -173,12 +173,12 @@ Unchecking an already dispatched task does not resend its recorded messages.
 
 Dates use `Europe/Paris`. Email rows require a present, unchecked task and batch approval.
 
-| Event condition                                                          | Message                                                       |
-| ------------------------------------------------------------------------ | ------------------------------------------------------------- |
-| Scheduled, ready, and today or in the future                             | Introduction email to the host contact and speakers           |
-| Explicitly marked `held`                                                 | Thank-you email to the host contact and speakers              |
-| Cancelled, postponed, or status unknown                                  | No email messages                                             |
-| Scheduled with a past date                                               | No email messages; a past date does not confirm occurrence     |
+| Event condition                              | Message                                                    |
+| -------------------------------------------- | ---------------------------------------------------------- |
+| Scheduled, ready, and today or in the future | Introduction email to the host contact and speakers        |
+| Explicitly marked `held`                     | Thank-you email to the host contact and speakers           |
+| Cancelled, postponed, or status unknown      | No email messages                                          |
+| Scheduled with a past date                   | No email messages; a past date does not confirm occurrence |
 
 Each email kind is sent at most once per issue and recipient under the current
 policy. Changing the locale or repository revision does not resend recorded email.
@@ -206,15 +206,15 @@ detailed diagnostic comments, or the workflow run. Resolved conditions disappear
 from the current list and the comment records their resolution. Closed,
 cancelled, and postponed issues show why task reminders have stopped.
 
-| Condition | Reminder policy |
-| --- | --- |
-| Missing confirmations, required data, or manual publication | First detection within seven days before the event; reminders at three days, one day, and event day. |
-| Missing or invalid date | First detection, then weekly until scheduled or closed. |
-| Pending email approval | The dedicated approval request is the first alert; attention reminders start after 24 hours, at most once per Paris-local day. |
-| Integration failure or blocked delivery | Immediately, then at most once per Paris-local day. |
-| Pending or uncertain external delivery | Retained until verified, including after cancellation or closure. |
-| Scheduled date passed without an occurrence decision | First subsequent audit, then at seven days after the date; asks for held, postponed, or cancelled. |
-| Held event with unfinished follow-up | First audit at least one day after the event, then at seven days; identifies email and manual tasks without claiming inbox delivery. |
+| Condition                                                   | Reminder policy                                                                                                                      |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Missing confirmations, required data, or manual publication | First detection within seven days before the event; reminders at three days, one day, and event day.                                 |
+| Missing or invalid date                                     | First detection, then weekly until scheduled or closed.                                                                              |
+| Pending email approval                                      | The dedicated approval request is the first alert; attention reminders start after 24 hours, at most once per Paris-local day.       |
+| Integration failure or blocked delivery                     | Immediately, then at most once per Paris-local day.                                                                                  |
+| Pending or uncertain external delivery                      | Retained until verified, including after cancellation or closure.                                                                    |
+| Scheduled date passed without an occurrence decision        | First subsequent audit, then at seven days after the date; asks for held, postponed, or cancelled.                                   |
+| Held event with unfinished follow-up                        | First audit at least one day after the event, then at seven days; identifies email and manual tasks without claiming inbox delivery. |
 
 Milestones use `Europe/Paris` and the current clock. A missed audit sends only the
 most urgent current reminder. Repeated runs do not repeat the same milestone.
@@ -270,7 +270,11 @@ action with its normal inputs and the optional `recover-post` JSON. Copy the exa
 accepted post, supply its stored-channel-compatible Slack reference:
 
 ```json
-{"reservationId":"attention:47268:4083991200000","outcome":"accepted","message":{"destination":"C12345","messageId":"123.456"}}
+{
+  "reservationId": "attention:47268:4083991200000",
+  "outcome": "accepted",
+  "message": { "destination": "C12345", "messageId": "123.456" }
+}
 ```
 
 For verified nonacceptance, use the same reservation ID with
