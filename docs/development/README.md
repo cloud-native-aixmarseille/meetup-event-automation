@@ -57,6 +57,9 @@ Docker image. They require Docker. Super-linter's Biome checks are disabled;
 host-installed dependencies. This matches hosted linting before dependency
 installation.
 
+The linter mounts the shared Git directory read-only so these commands also work
+from a linked Git worktree.
+
 ## Choose checks for the change
 
 - **Production code:** run `pnpm quality` and include changed action bundles.
