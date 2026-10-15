@@ -11,6 +11,56 @@ import { OpenFeedbackClient } from "./openfeedback-client.js";
 import { OpenFeedbackRecordsGateway } from "./openfeedback-records-gateway.js";
 
 describe("feedback agenda synchronization", () => {
+	it("reuses imported identities while preserving unrelated incomplete records", async () => {
+		// Arrange
+		const speakerId = "speaker:Aléx #1";
+		const talkId = "session:Platforms #1";
+		const fetcher = vi
+			.fn<typeof fetch>()
+			.mockResolvedValueOnce(
+				Response.json({
+					...speakerPage,
+					speakers: [
+						{ ...speakerPage.speakers[0], id: speakerId },
+						{ id: "unnamed", revision },
+					],
+				}),
+			)
+			.mockResolvedValueOnce(
+				Response.json({
+					...talkPage,
+					talks: [
+						{ ...talkPage.talks[0], id: talkId, speakers: [speakerId] },
+						{ id: "untitled", revision, speakers: ["deleted-speaker"] },
+					],
+				}),
+			)
+			.mockResolvedValueOnce(Response.json({ id: talkId }));
+		const gateway = new OpenFeedbackAgendaGateway(
+			new OpenFeedbackRecordsGateway(
+				new OpenFeedbackClient("oforg_synthetic", fetcher),
+			),
+		);
+		const changed = { talks: [{ ...agenda.talks[0], title: "Updated topic" }] };
+
+		// Act
+		await gateway.synchronize("event-1", "example/meetups#12", changed);
+
+		// Assert
+		expect(fetcher).toHaveBeenCalledTimes(3);
+		expect(fetcher).toHaveBeenLastCalledWith(
+			"https://api.openfeedback.io/events/event-1/talks/session%3APlatforms%20%231",
+			expect.objectContaining({
+				method: "PATCH",
+				body: JSON.stringify({
+					title: "Updated topic",
+					speakers: [speakerId],
+					revision,
+				}),
+			}),
+		);
+	});
+
 	it("leaves unchanged talks and speakers untouched", async () => {
 		// Arrange
 		const fetcher = vi

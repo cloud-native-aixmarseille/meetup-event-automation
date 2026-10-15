@@ -6,6 +6,11 @@ shared Kutt link to the event the day before its date.
 
 ## Configure
 
+The integration requires the talk and speaker resource API available in
+[OpenFeedback v0.36.0](https://github.com/HugoGresse/open-feedback/releases/tag/v0.36.0)
+and documented in the [API reference](https://api.openfeedback.io/). It uses
+paginated reads, creation with stable IDs and updates with per-record revisions.
+
 Follow [repository setup](../usage/setup.md), then pass these settings to both
 `update-meetup-issue.yml` and `check-active-meetup-issues.yml`:
 
@@ -47,6 +52,9 @@ Subsequent runs synchronize the event name and agenda from the issue. Existing
 matching speakers and talks keep their OpenFeedback IDs, including records
 created manually. A title edit keeps its talk ID when the speaker group matches
 unambiguously; a speaker change keeps the talk ID when the title matches uniquely.
+Imported record IDs are preserved. Incomplete records and references to deleted
+speakers do not block synchronization of other talks; unrelated records remain
+untouched.
 Edit one talk at a time when several talks share the same speakers;
 ambiguous matches fail without writing the agenda. Changes to both the title and
 speaker group can create a new talk. Review such changes in OpenFeedback.

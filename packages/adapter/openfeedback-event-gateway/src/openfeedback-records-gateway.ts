@@ -1,4 +1,5 @@
 import { OpenFeedbackClient } from "./openfeedback-client.js";
+import { OpenFeedbackResourceId } from "./openfeedback-resource-id.js";
 import type {
 	OpenFeedbackSpeaker,
 	OpenFeedbackTalk,
@@ -51,10 +52,14 @@ export class OpenFeedbackRecordsGateway {
 			return;
 		const base = `/events/${eventId}/${kind}`;
 		const response = previous
-			? await this.client.request(`${base}/${id}`, "PATCH", {
-					...fields,
-					revision: previous.revision,
-				})
+			? await this.client.request(
+					`${base}/${encodeURIComponent(id)}`,
+					"PATCH",
+					{
+						...fields,
+						revision: previous.revision,
+					},
+				)
 			: await this.client.request(base, "POST", record);
 		await OpenFeedbackClient.read(response, id);
 	}
@@ -75,10 +80,6 @@ export class OpenFeedbackRecordsGateway {
 	}
 
 	private static validCursor(value: unknown): value is string | null {
-		return (
-			value === null ||
-			(typeof value === "string" &&
-				/^(?!__.*__$)[a-zA-Z0-9_-]{1,100}$/.test(value))
-		);
+		return value === null || OpenFeedbackResourceId.isValid(value);
 	}
 }

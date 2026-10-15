@@ -9,9 +9,12 @@ import { OpenFeedbackClient } from "./openfeedback-client.js";
 import { OpenFeedbackRecordsGateway } from "./openfeedback-records-gateway.js";
 
 describe("OpenFeedback resource operations", () => {
-	it("follows list cursors and retains record revisions", async () => {
+	it.each([
+		["speaker-a", "speaker-a"],
+		["speaker:Aléx #1?x=y&z=%", "speaker%3AAl%C3%A9x%20%231%3Fx%3Dy%26z%3D%25"],
+	])("follows and encodes list cursor %s", async (id, encoded) => {
 		// Arrange
-		const first = { id: "speaker-a", name: "Alex Example", revision };
+		const first = { id, name: "Alex Example", revision };
 		const second = { id: "speaker-b", name: "Sam Example", revision };
 		const fetcher = vi
 			.fn<typeof fetch>()
@@ -35,7 +38,7 @@ describe("OpenFeedback resource operations", () => {
 		// Assert
 		expect(records).toEqual([first, second]);
 		expect(fetcher.mock.calls[1][0]).toBe(
-			"https://api.openfeedback.io/events/event-1/speakers?limit=100&after=speaker-a",
+			`https://api.openfeedback.io/events/event-1/speakers?limit=100&after=${encoded}`,
 		);
 	});
 
@@ -143,9 +146,12 @@ describe("OpenFeedback resource operations", () => {
 		);
 	});
 
-	it("patches an existing speaker with its read revision", async () => {
+	it.each([
+		["manual-speaker", "manual-speaker"],
+		["speaker:Aléx #1?x=y&z=%", "speaker%3AAl%C3%A9x%20%231%3Fx%3Dy%26z%3D%25"],
+	])("patches speaker %s with its read revision", async (id, encoded) => {
 		// Arrange
-		const record = { ...snapshot.speakers[0], name: "Alex Renamed" };
+		const record = { id, name: "Alex Renamed" };
 		const fetcher = vi
 			.fn<typeof fetch>()
 			.mockResolvedValue(Response.json({ id: record.id }));
@@ -154,16 +160,14 @@ describe("OpenFeedback resource operations", () => {
 		);
 
 		// Act
-		await gateway.synchronize(
-			"event-1",
-			"speakers",
-			record,
-			storedSnapshot.speakers[0],
-		);
+		await gateway.synchronize("event-1", "speakers", record, {
+			...storedSnapshot.speakers[0],
+			id,
+		});
 
 		// Assert
 		expect(fetcher).toHaveBeenCalledExactlyOnceWith(
-			`https://api.openfeedback.io/events/event-1/speakers/${record.id}`,
+			`https://api.openfeedback.io/events/event-1/speakers/${encoded}`,
 			expect.objectContaining({
 				method: "PATCH",
 				body: JSON.stringify({ name: "Alex Renamed", revision }),
@@ -190,7 +194,7 @@ describe("OpenFeedback resource operations", () => {
 		expect(fetcher).not.toHaveBeenCalled();
 	});
 
-	it.each([401, 404, 409, 500])(
+	it.each([401, 403, 404, 409, 500, 503])(
 		"does not automatically retry rejected changes: HTTP %s",
 		async (status) => {
 			// Arrange

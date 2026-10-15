@@ -1,3 +1,7 @@
+import { OpenFeedbackResourceId } from "./openfeedback-resource-id.js";
+
+type StoredRecord = Record<string, unknown> & { id: string; revision: string };
+
 export interface OpenFeedbackSpeaker {
 	readonly id: string;
 	readonly name: string;
@@ -28,38 +32,43 @@ export class OpenFeedbackAgendaSnapshot {
 			!OpenFeedbackAgendaSnapshot.records(body.talks, "title")
 		)
 			throw new Error("Invalid OpenFeedback agenda response");
-		const speakers =
-			body.speakers as unknown as OpenFeedbackStoredAgenda["speakers"];
-		const talks = body.talks as unknown as OpenFeedbackStoredAgenda["talks"];
-		const ids = new Set(speakers.map((speaker) => speaker.id));
 		if (
-			talks.some(
+			body.talks.some(
 				(talk) =>
 					!Array.isArray(talk.speakers) ||
-					new Set(talk.speakers).size !== talk.speakers.length ||
-					talk.speakers.some((id) => !ids.has(id)),
+					talk.speakers.some((id) => typeof id !== "string"),
 			)
 		)
 			throw new Error("Invalid OpenFeedback agenda response");
-		return { speakers, talks };
+		return {
+			speakers: body.speakers.map((speaker) => ({
+				id: speaker.id,
+				revision: speaker.revision,
+				name: (speaker.name as string | undefined) ?? "",
+			})),
+			talks: body.talks.map((talk) => ({
+				id: talk.id,
+				revision: talk.revision,
+				title: (talk.title as string | undefined) ?? "",
+				speakers: talk.speakers as string[],
+			})),
+		};
 	}
 
 	private static records(
 		value: unknown,
 		field: "name" | "title",
-	): value is Record<string, unknown>[] {
+	): value is StoredRecord[] {
 		if (!Array.isArray(value) || value.length > 200) return false;
 		const ids = new Set<string>();
 		for (const record of value) {
 			if (
 				!record ||
 				typeof record !== "object" ||
-				typeof record.id !== "string" ||
-				!/^(?!__.*__$)[a-zA-Z0-9_-]{1,100}$/.test(record.id) ||
+				!OpenFeedbackResourceId.isValid(record.id) ||
 				typeof record.revision !== "string" ||
 				!/^[a-f0-9]{64}$/.test(record.revision) ||
-				typeof record[field] !== "string" ||
-				!record[field].trim() ||
+				(record[field] !== undefined && typeof record[field] !== "string") ||
 				ids.has(record.id)
 			)
 				return false;
