@@ -1,5 +1,8 @@
 # Documentation
 
+These guides describe the current supported behavior. Use the authoritative
+page for each topic below.
+
 ## Usage
 
 - [Set up a repository](usage/setup.md): prerequisites, files, credentials, and
@@ -31,19 +34,20 @@
 
 ## Action contracts
 
-| Action                                                                     | Purpose                                                                 |
-| -------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| [Reconcile event](../actions/event/reconcile/README.md)                    | Validate and normalize one meetup issue.                                |
-| [List active events](../actions/event/list-active/README.md)               | Select issues for an audit.                                             |
-| [Validate referentials](../actions/referential/validate/README.md)         | Check host and speaker catalogs.                                        |
-| [Synchronize issue form](../actions/referential/sync-issue-form/README.md) | Update the checked-out form choices.                                    |
-| [Reconcile assets](../actions/publication/reconcile-assets/README.md)      | Prepare Google Drive folders and template copies.                       |
-| [Reconcile feedback](../actions/publication/reconcile-feedback/README.md)  | Synchronize OpenFeedback event titles and update the shared short link. |
-| [Reconcile communications](../actions/communication/reconcile/README.md)   | Plan or dispatch due email and Slack messages.                          |
+| Action                                                                     | Purpose                                                                                |
+| -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| [Reconcile event](../actions/event/reconcile/README.md)                    | Validate and normalize one meetup issue.                                               |
+| [List active events](../actions/event/list-active/README.md)               | Select issues for an audit.                                                            |
+| [Validate referentials](../actions/referential/validate/README.md)         | Check host and speaker catalogs.                                                       |
+| [Synchronize issue form](../actions/referential/sync-issue-form/README.md) | Update the checked-out form choices.                                                   |
+| [Reconcile assets](../actions/publication/reconcile-assets/README.md)      | Prepare Google Drive folders and template copies.                                      |
+| [Reconcile feedback](../actions/publication/reconcile-feedback/README.md)  | Synchronize OpenFeedback events, talks and speakers, and update the shared short link. |
+| [Reconcile communications](../actions/communication/reconcile/README.md)   | Plan or dispatch due email and Slack messages.                                         |
 
 ## Development
 
 - [Development workflow](development/README.md)
+- [Documentation rules](development/documentation.md)
 - [Architecture](development/architecture.md)
 - [Testing](development/testing.md)
 - [Action reporting](development/reporting.md)
@@ -52,9 +56,9 @@
 
 ## Architecture decisions
 
-ADRs preserve the context and reasoning behind architectural decisions. Use the
-[architecture guide](development/architecture.md) for the current
-implementation.
+ADRs preserve decision history, including superseded decisions. Their status and
+supersession links identify how decisions relate. Use the current guides above
+for implemented behavior and contributor conventions.
 
 - [ADR-0001: Centralize meetup event automation](adr/0001-centralize-meetup-event-automation.md)
 - [ADR-0002: Runtime dependency injection](adr/0002-runtime-dependency-injection.md)
@@ -67,6 +71,7 @@ implementation.
 - [ADR-0009: Use one organizer role and an explicit organizer Slack channel](adr/0009-organizer-role-and-slack-channel.md)
 - [ADR-0010: Approve email batches with request checkboxes](adr/0010-checkbox-organizer-approval.md)
 - [ADR-0011: Finalize organizer decisions in place and acknowledge them on Slack](adr/0011-final-organizer-decisions.md)
+- [ADR-0012: Synchronize OpenFeedback talks and speakers](adr/0012-synchronize-openfeedback-talks-and-speakers.md)
 
 ## Directory layout
 
@@ -85,6 +90,7 @@ docs/
 │   └── communications.md
 ├── development/
 │   ├── README.md
+│   ├── documentation.md
 │   ├── architecture.md
 │   ├── testing.md
 │   ├── reporting.md
@@ -100,7 +106,8 @@ docs/
     ├── 0008-admin-confirmation-requests.md
     ├── 0009-organizer-role-and-slack-channel.md
     ├── 0010-checkbox-organizer-approval.md
-    └── 0011-final-organizer-decisions.md
+    ├── 0011-final-organizer-decisions.md
+    └── 0012-synchronize-openfeedback-talks-and-speakers.md
 ```
 
 Action references stay beside `action.yml`; workflow references stay beside

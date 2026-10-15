@@ -1,14 +1,18 @@
 # Architecture
 
-This guide describes the current implementation. The
-[architecture decision records](../README.md#architecture-decisions) preserve
-the context and reasoning behind its decisions.
+This guide defines the current package boundaries, implementation rules, and
+constraints for contributors. [ADRs](../README.md#architecture-decisions)
+preserve the decision history.
 
 `meetup-event-automation` owns meetup rules, orchestration, adapters, actions,
 and reusable workflows. The consuming repository owns event issues, private
 host/speaker CSV data, the issue form, workflow triggers, variables, secrets,
 and permission grants. Consumer workflows delegate behavior to a pinned
 automation revision.
+
+Reusable workflows load their owned actions from that same automation revision
+so action implementations match the calling workflow's contract. Catalogs and
+the issue form come from the consumer checkout.
 
 Defaults are defined by
 [`AutomationConfigFactory`](../../packages/application/journey/src/config/automation-config.ts).
@@ -122,8 +126,7 @@ failure policy; they do not implement their own logging or summaries. Follow
 Each presenter owns its English/French ICU catalogs, argument types, and tests.
 The runtime resolves locale once and passes it through composition. Domain
 diagnostics and protocol identifiers remain stable. See
-[localization](localization.md) and
-[ADR 0004](../adr/0004-localize-generated-messages.md).
+[localization](localization.md).
 
 ## State, retries, and concurrent writes
 
@@ -168,7 +171,8 @@ journey's `OrganizerApprovalNotification` port returns an opaque message
 reference for accepted requests. The Slack adapter uses it for idempotent
 decision reactions on the original message. Synchronization finalizes choices
 and retries reactions even when no email task remains. Slack failures do not
-undo durable decisions. See [ADR 0011](../adr/0011-final-organizer-decisions.md).
+undo durable decisions. See the
+[communication integration guide](../integrations/communications.md#confirm-an-email-batch).
 The journey maps task names to recipient groups, and records completion through the
 event codec only after all recipients in a group have durable accepted records.
 It rechecks the source before dispatch and before updating completion. Delivery
@@ -179,6 +183,15 @@ the shared workflow lock; do not dispatch outside the official workflows or
 claim exactly-once delivery.
 
 OpenFeedback creation uses a stable source key to recover events on retries.
+Agenda synchronization reuses matching talk and speaker IDs, preserves votes and
+manual metadata, and checks the last-read revision of each record before updating.
+The adapter maps the issue's agenda to OpenFeedback's talk and speaker resources.
+It resolves all identities before writing speakers, then talks. Each write is
+atomic for one record; conflicts stop the run and retries read current state to
+resume after partial completion. Unchanged records are skipped, and records are
+never deleted automatically. See the
+[feedback integration guide](../integrations/feedback.md) for required API
+capabilities, identity matching, and recovery.
 Preserve idempotency and failure behavior for all external effects. Operational
 recovery is documented under [integrations](../README.md#integrations).
 

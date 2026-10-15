@@ -92,6 +92,12 @@ describe("feedback composition", () => {
 			date: "2030-09-30",
 			timeZone: "Europe/Paris",
 			publicationLinks: {},
+			agenda: [
+				{
+					description: "Reliable platforms",
+					speakers: [{ id: "speaker-0001", displayName: "Alex Example" }],
+				},
+			],
 		};
 		const feedbackUrl = "https://openfeedback.io/synthetic-event";
 		const events = { ensureEvent: vi.fn().mockResolvedValue(feedbackUrl) };
@@ -128,6 +134,14 @@ describe("feedback composition", () => {
 			key: "example/meetups#12",
 			name: "Platform evening",
 			scheduleUrl: "https://github.com/example/meetups/issues/12",
+			agenda: {
+				talks: [
+					{
+						title: "Reliable platforms",
+						speakers: [{ id: "speaker-0001", name: "Alex Example" }],
+					},
+				],
+			},
 		});
 		expect(result).toMatchObject({ feedbackUrl, persisted: true });
 		expect(applyPatch).toHaveBeenCalledOnce();

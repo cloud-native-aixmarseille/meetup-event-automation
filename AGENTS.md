@@ -5,12 +5,12 @@ architecture, quality, and test conventions.
 
 Use the [documentation index](docs/README.md) to find guides relevant to the
 change. Current development guides and executable architecture and contract
-checks under `tests/` define the supported conventions. Consult relevant
-[ADRs](docs/adr/) for decision context, status, and superseding decisions.
+checks under `tests/` define the supported conventions. Follow the
+[documentation rules](docs/development/documentation.md) for every documentation
+change.
 
 Keep this overview focused on documentation entry points. Maintain the document
-inventory in the documentation index instead of listing individual guides or
-ADRs here.
+inventory in the documentation index instead of listing individual guides here.
 
 Prefer minimal, deterministic changes and keep documentation in sync with code.
 
@@ -62,8 +62,7 @@ infrastructure and catalog types; never put feature wording or a global
 message-key registry there. Keep catalogs, argument types, and catalog tests
 beside the presenter. Pass locale across package boundaries; do not import
 another presenter's catalogs. Follow
-[the localization guide](docs/development/localization.md) and
-[ADR 0004](docs/adr/0004-localize-generated-messages.md).
+[the localization guide](docs/development/localization.md).
 
 Do not hardcode new report, guidance, comment, or notification prose outside
 owner catalogs. Domain/application diagnostics retain canonical English machine
@@ -75,38 +74,22 @@ architecture, and localization contract tests passing.
 
 ## Documentation rules
 
-These rules apply whenever documentation is added or changed:
+Developer guides, agent instructions, user guides, and action and workflow
+references must describe only the current implemented and supported system.
+ADRs under `docs/adr/` are the explicit exception: preserve their decision
+history.
 
-- Keep `README.md` focused on the global project description and end user usage:
-  what the project does, who uses it, how to start, and where to find details.
-  Put architecture, source inventories, and contributor tooling in dedicated
-  docs.
-- Put detailed guides under `docs/`, grouped by purpose: `usage/`, `reference/`,
-  `integrations/`, and `development/`. Keep architectural decision records
-  (ADRs) under `docs/adr/`. Keep `docs/README.md` as the linked index and keep
-  its directory tree accurate. Keep action and workflow contract references
-  beside their YAML manifests.
-- Give each page one purpose and one audience. State the task or behavior first,
-  then the prerequisites, steps, expected result, and relevant limitations. Use
-  plain, direct language. Remove filler, promotional claims, generic
-  boilerplate, repeated explanations, and implementation details that do not
-  help the intended reader.
-- Usage, reference, integration, and development guides describe current
-  implemented and supported behavior. Remove dead-code descriptions, removed
-  settings or commands, obsolete APIs, and speculative future features from
-  those guides.
-- Preserve ADRs as the history of architectural decisions, including their
-  context, alternatives, and consequences. Do not delete ADRs or rewrite past
-  decisions during documentation cleanup. Record a changed decision in a new ADR
-  and link it from the superseded record with an updated status. Keep ADR
-  numbering stable and repair links when documentation moves.
-- Verify commands, paths, inputs, secrets, permissions, examples, and defaults
-  against the code and public YAML contracts. Distinguish automatic work from
-  manual tasks. Use synthetic examples and clearly identify required
-  placeholders.
-- Maintain one authoritative explanation per topic and link to it from other
-  pages. Update all incoming links when moving or deleting a page. Keep
-  generated reference sections consistent with their manifests.
-- After documentation changes, check local links and the documented tree, parse
-  YAML examples, and run the relevant public contract checks. Do not change
-  production behavior merely to make an inaccurate document true.
+- Maintain one authoritative explanation per topic. Update it in place with the
+  code change, and link to it from other pages.
+- Remove obsolete, deprecated, superseded, historical, and speculative content
+  from current guides. Update explanations in place instead of appending
+  migration narratives or corrections.
+- Preserve ADRs, their numbering, context, alternatives, and consequences. Do
+  not delete or rewrite past decisions during cleanup. Record changed decisions
+  in new ADRs and update the affected records' status and supersession links.
+- Keep current architectural rationale and constraints in the relevant guide.
+  Verify documented behavior against source, tests, and public manifests; do not
+  change production behavior to make an inaccurate document true.
+- Follow the [documentation guide](docs/development/documentation.md) for page
+  placement, writing, and validation. Update the index, directory tree, and all
+  incoming links when adding, moving, or deleting pages.

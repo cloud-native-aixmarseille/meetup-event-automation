@@ -4,7 +4,7 @@
 
 <!-- header:end -->
 
-Create OpenFeedback events, synchronize their titles, and update the existing Kutt link the day before the event.
+Create OpenFeedback events, synchronize their titles, talks and speakers, and update the existing Kutt link the day before the event.
 
 ## Usage
 

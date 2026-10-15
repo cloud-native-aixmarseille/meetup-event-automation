@@ -33,8 +33,8 @@ export class FeedbackComposition {
 		const container = EventComposition.createEventContainer(input);
 		container
 			.bind<FeedbackEventGateway>(FEEDBACK_EVENTS)
-			.toDynamicValue(
-				() => new OpenFeedbackEventGateway(input.openFeedbackApiKey),
+			.toDynamicValue(() =>
+				OpenFeedbackEventGateway.create(input.openFeedbackApiKey),
 			);
 		container
 			.bind<FeedbackLinkGateway>(FEEDBACK_LINKS)

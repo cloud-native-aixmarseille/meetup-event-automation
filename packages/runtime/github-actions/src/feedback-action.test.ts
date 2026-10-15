@@ -163,7 +163,7 @@ describe("feedback action boundary", () => {
 			"Modifications du ticket enregistrées : oui ; lien partagé des retours mis à jour : oui.", // codespell:ignore mis
 		);
 		expect(report.details).toContain(
-			"Consultez les diagnostics des retours et configurez les présentations et les intervenants dans OpenFeedback.",
+			"Consultez les diagnostics des retours. Les titres et les noms des intervenants suivent le programme de l'issue ; gérez les horaires, les photos et les présentations retirées dans OpenFeedback.",
 		);
 		expect(report.diagnostics).toEqual([]);
 	});

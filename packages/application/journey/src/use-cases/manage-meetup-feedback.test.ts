@@ -15,6 +15,15 @@ import {
 import { ManageMeetupEvent } from "./manage-meetup-event.js";
 import { ManageMeetupFeedback } from "./manage-meetup-feedback.js";
 
+const feedbackAgenda = {
+	talks: [
+		{
+			title: "Reliable platforms",
+			speakers: [{ id: "speaker-0001", name: "Example Speaker" }],
+		},
+	],
+};
+
 const feedbackUrl = "https://openfeedback.io/example-poll";
 function journey(
 	overrides: Partial<MeetupEvent> = {},
@@ -68,6 +77,38 @@ function journey(
 }
 
 describe("meetup feedback journey", () => {
+	it("waits for talk subjects before creating a new poll", async () => {
+		// Arrange
+		const { events, links, useCase } = journey({
+			agenda: [],
+			publicationLinks: event.publicationLinks,
+		});
+		// Act
+		const result = await useCase.execute({ identity });
+		// Assert
+		expect(result.skipped).toBe(true);
+		expect(result.diagnostics).toContainEqual(
+			expect.objectContaining({ code: "publication.feedback.agenda" }),
+		);
+		expect(events.ensureEvent).not.toHaveBeenCalled();
+		expect(links.updateTarget).not.toHaveBeenCalled();
+	});
+
+	it("preserves the existing poll when the issue agenda is incomplete", async () => {
+		// Arrange
+		const { events, useCase } = journey({ agenda: [] });
+		// Act
+		const result = await useCase.execute({ identity });
+		// Assert
+		expect(events.ensureEvent.mock.calls[0][0]).not.toHaveProperty("agenda");
+		expect(result.feedbackUrl).toBe(feedbackUrl);
+		expect(result.diagnostics).toContainEqual(
+			expect.objectContaining({
+				code: "publication.feedback.agenda",
+				severity: "warning",
+			}),
+		);
+	});
 	it("updates the shared link to the existing poll the day before the event", async () => {
 		// Arrange
 		const { deps, events, links, useCase } = journey();
@@ -87,6 +128,7 @@ describe("meetup feedback journey", () => {
 			key: `${identity.repository}#${identity.issueNumber}`,
 			name: event.eventTitle,
 			scheduleUrl: `https://github.com/${identity.repository}/issues/${identity.issueNumber}`,
+			agenda: feedbackAgenda,
 			url: feedbackUrl,
 		});
 		expect(deps.commentRepository.reconcileDiagnostics).not.toHaveBeenCalled();
@@ -108,6 +150,7 @@ describe("meetup feedback journey", () => {
 			key: `${identity.repository}#${identity.issueNumber}`,
 			name: revisedTitle,
 			scheduleUrl: `https://github.com/${identity.repository}/issues/${identity.issueNumber}`,
+			agenda: feedbackAgenda,
 			url: feedbackUrl,
 		});
 		expect(result).toMatchObject({ feedbackUrl, persisted: false });
@@ -282,11 +325,13 @@ describe("meetup feedback journey", () => {
 			key: `${identity.repository}#${identity.issueNumber}`,
 			name: event.eventTitle,
 			scheduleUrl: `https://github.com/${identity.repository}/issues/${identity.issueNumber}`,
+			agenda: feedbackAgenda,
 		});
 		expect(events.ensureEvent).toHaveBeenNthCalledWith(2, {
 			key: `${identity.repository}#${identity.issueNumber}`,
 			name: event.eventTitle,
 			scheduleUrl: `https://github.com/${identity.repository}/issues/${identity.issueNumber}`,
+			agenda: feedbackAgenda,
 			url: feedbackUrl,
 		});
 		expect(deps.repository.applyPatch).toHaveBeenCalledOnce();

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { OpenFeedbackEventGateway } from "./openfeedback-event-gateway.js";
+import { agenda } from "../testing/feedback-agenda.fixtures.js";
 
 const apiKey = "oforg_synthetic-key";
 const input = {
@@ -13,6 +14,65 @@ const eventId =
 afterEach(() => vi.restoreAllMocks());
 
 describe("OpenFeedback event creation", () => {
+	it("populates a newly created event before returning its public URL", async () => {
+		// Arrange
+		const fetcher = vi
+			.fn<typeof fetch>()
+			.mockResolvedValueOnce(Response.json({ id: eventId }, { status: 201 }))
+			.mockResolvedValueOnce(
+				Response.json({ id: eventId, speakers: [], nextCursor: null }),
+			)
+			.mockResolvedValueOnce(
+				Response.json({ id: eventId, talks: [], nextCursor: null }),
+			)
+			.mockImplementation(async (_, options) =>
+				Response.json(
+					{ id: JSON.parse(options?.body as string).id },
+					{ status: 201 },
+				),
+			);
+		const gateway = OpenFeedbackEventGateway.create(apiKey, fetcher);
+
+		// Act
+		const result = await gateway.ensureEvent({ ...input, agenda });
+		const speaker = JSON.parse(fetcher.mock.calls[3][1]?.body as string);
+		const talk = JSON.parse(fetcher.mock.calls[4][1]?.body as string);
+
+		// Assert
+		expect(result).toBe(`https://openfeedback.io/${eventId}`);
+		expect(
+			fetcher.mock.calls.map(([url, options]) => [url, options?.method]),
+		).toEqual([
+			["https://api.openfeedback.io/events/", "POST"],
+			[
+				`https://api.openfeedback.io/events/${eventId}/speakers?limit=100`,
+				"GET",
+			],
+			[`https://api.openfeedback.io/events/${eventId}/talks?limit=100`, "GET"],
+			[`https://api.openfeedback.io/events/${eventId}/speakers`, "POST"],
+			[`https://api.openfeedback.io/events/${eventId}/talks`, "POST"],
+		]);
+		expect(talk.title).toBe("Reliable platforms");
+		expect(talk.speakers).toEqual([speaker.id]);
+	});
+
+	it("does not return a new feedback URL when agenda publication fails", async () => {
+		// Arrange
+		const fetcher = vi
+			.fn<typeof fetch>()
+			.mockResolvedValueOnce(Response.json({ id: eventId }, { status: 201 }))
+			.mockResolvedValueOnce(new Response("private response", { status: 404 }));
+		const gateway = OpenFeedbackEventGateway.create(apiKey, fetcher);
+
+		// Act
+		const operation = gateway.ensureEvent({ ...input, agenda });
+
+		// Assert
+		await expect(operation).rejects.toThrow(
+			"OpenFeedback request failed (HTTP 404)",
+		);
+		expect(fetcher).toHaveBeenCalledTimes(2);
+	});
 	it.each([
 		"https://openfeedback.io/existing-event",
 		"https://openfeedback.io/existing-event/2030-09-30",
@@ -22,7 +82,7 @@ describe("OpenFeedback event creation", () => {
 		const fetcher = vi
 			.fn<typeof fetch>()
 			.mockResolvedValue(Response.json({ id: "existing-event" }));
-		const gateway = new OpenFeedbackEventGateway(apiKey, fetcher);
+		const gateway = OpenFeedbackEventGateway.create(apiKey, fetcher);
 		const revised = { ...input, name: "Revised meetup title", url };
 
 		// Act
@@ -50,7 +110,7 @@ describe("OpenFeedback event creation", () => {
 				.mockResolvedValue(
 					new Response(`private-response ${apiKey}`, { status }),
 				);
-			const gateway = new OpenFeedbackEventGateway(apiKey, fetcher);
+			const gateway = OpenFeedbackEventGateway.create(apiKey, fetcher);
 
 			// Act
 			const operation = gateway.ensureEvent({
@@ -74,7 +134,7 @@ describe("OpenFeedback event creation", () => {
 		async (url) => {
 			// Arrange
 			const fetcher = vi.fn<typeof fetch>();
-			const gateway = new OpenFeedbackEventGateway(apiKey, fetcher);
+			const gateway = OpenFeedbackEventGateway.create(apiKey, fetcher);
 
 			// Act
 			const operation = gateway.ensureEvent({ ...input, url });
@@ -94,7 +154,7 @@ describe("OpenFeedback event creation", () => {
 			const fetcher = vi.fn<typeof fetch>();
 
 			// Act
-			const createGateway = () => new OpenFeedbackEventGateway(key, fetcher);
+			const createGateway = () => OpenFeedbackEventGateway.create(key, fetcher);
 
 			// Assert
 			expect(createGateway).toThrow(
@@ -113,7 +173,7 @@ describe("OpenFeedback event creation", () => {
 	])("rejects invalid event identity or name (%j)", async (changes) => {
 		// Arrange
 		const fetcher = vi.fn<typeof fetch>();
-		const gateway = new OpenFeedbackEventGateway(apiKey, fetcher);
+		const gateway = OpenFeedbackEventGateway.create(apiKey, fetcher);
 
 		// Act
 		const operation = gateway.ensureEvent({ ...input, ...changes });
@@ -133,7 +193,7 @@ describe("OpenFeedback event creation", () => {
 	])("rejects an invalid schedule URL (%j)", async (scheduleUrl) => {
 		// Arrange
 		const fetcher = vi.fn<typeof fetch>();
-		const gateway = new OpenFeedbackEventGateway(apiKey, fetcher);
+		const gateway = OpenFeedbackEventGateway.create(apiKey, fetcher);
 
 		// Act
 		const operation = gateway.ensureEvent({ ...input, scheduleUrl });
@@ -150,7 +210,7 @@ describe("OpenFeedback event creation", () => {
 		const fetcher = vi
 			.fn<typeof fetch>()
 			.mockResolvedValue(Response.json({ id: eventId }, { status: 201 }));
-		const gateway = new OpenFeedbackEventGateway(apiKey, fetcher);
+		const gateway = OpenFeedbackEventGateway.create(apiKey, fetcher);
 
 		// Act
 		const result = await gateway.ensureEvent(input);
@@ -185,7 +245,7 @@ describe("OpenFeedback event creation", () => {
 			.mockResolvedValueOnce(Response.json({ id: eventId }, { status: 201 }))
 			.mockResolvedValueOnce(new Response("already exists", { status: 409 }))
 			.mockResolvedValueOnce(Response.json({ id: eventId }));
-		const gateway = new OpenFeedbackEventGateway(apiKey, fetcher);
+		const gateway = OpenFeedbackEventGateway.create(apiKey, fetcher);
 		const revised = { ...input, name: "Revised meetup title" };
 
 		// Act
@@ -222,7 +282,7 @@ describe("OpenFeedback event creation", () => {
 			.mockRejectedValueOnce(new Error("Connection lost after creation"))
 			.mockResolvedValueOnce(new Response("exists", { status: 409 }))
 			.mockResolvedValueOnce(Response.json({ id: eventId }));
-		const gateway = new OpenFeedbackEventGateway(apiKey, fetcher);
+		const gateway = OpenFeedbackEventGateway.create(apiKey, fetcher);
 
 		// Act
 		const firstError = await gateway
@@ -252,7 +312,7 @@ describe("OpenFeedback event creation", () => {
 			.fn<typeof fetch>()
 			.mockResolvedValueOnce(Response.json({ id: eventId }, { status: 201 }))
 			.mockResolvedValueOnce(Response.json({ id: otherId }, { status: 201 }));
-		const gateway = new OpenFeedbackEventGateway(apiKey, fetcher);
+		const gateway = OpenFeedbackEventGateway.create(apiKey, fetcher);
 
 		// Act
 		const first = await gateway.ensureEvent(input);
@@ -276,7 +336,7 @@ describe("OpenFeedback event creation", () => {
 				.mockResolvedValueOnce(
 					new Response(`private-response ${apiKey}`, { status }),
 				);
-			const gateway = new OpenFeedbackEventGateway(apiKey, fetcher);
+			const gateway = OpenFeedbackEventGateway.create(apiKey, fetcher);
 
 			// Act
 			const operation = gateway.ensureEvent(input);
@@ -298,7 +358,7 @@ describe("OpenFeedback event creation", () => {
 				.mockResolvedValue(
 					new Response(`private-response ${apiKey}`, { status }),
 				);
-			const gateway = new OpenFeedbackEventGateway(apiKey, fetcher);
+			const gateway = OpenFeedbackEventGateway.create(apiKey, fetcher);
 
 			// Act
 			const operation = gateway.ensureEvent(input);
@@ -318,14 +378,14 @@ describe("OpenFeedback event creation", () => {
 			const fetcher = vi
 				.fn<typeof fetch>()
 				.mockResolvedValue(Response.json(body));
-			const gateway = new OpenFeedbackEventGateway(apiKey, fetcher);
+			const gateway = OpenFeedbackEventGateway.create(apiKey, fetcher);
 
 			// Act
 			const operation = gateway.ensureEvent(input);
 
 			// Assert
 			await expect(operation).rejects.toThrow(
-				"OpenFeedback returned an unexpected event",
+				"OpenFeedback returned an unexpected resource",
 			);
 		},
 	);
@@ -336,14 +396,14 @@ describe("OpenFeedback event creation", () => {
 			.fn<typeof fetch>()
 			.mockResolvedValueOnce(new Response("exists", { status: 409 }))
 			.mockResolvedValueOnce(Response.json({ id: "other-event" }));
-		const gateway = new OpenFeedbackEventGateway(apiKey, fetcher);
+		const gateway = OpenFeedbackEventGateway.create(apiKey, fetcher);
 
 		// Act
 		const operation = gateway.ensureEvent(input);
 
 		// Assert
 		await expect(operation).rejects.toThrow(
-			"OpenFeedback returned an unexpected event",
+			"OpenFeedback returned an unexpected resource",
 		);
 	});
 
@@ -352,7 +412,7 @@ describe("OpenFeedback event creation", () => {
 		const fetcher = vi
 			.fn<typeof fetch>()
 			.mockResolvedValue(new Response(`private-response ${apiKey}`));
-		const gateway = new OpenFeedbackEventGateway(apiKey, fetcher);
+		const gateway = OpenFeedbackEventGateway.create(apiKey, fetcher);
 
 		// Act
 		const operation = gateway.ensureEvent(input);
@@ -368,7 +428,7 @@ describe("OpenFeedback event creation", () => {
 		const fetcher = vi
 			.fn<typeof fetch>()
 			.mockRejectedValue(new Error(`private-response ${apiKey}`));
-		const gateway = new OpenFeedbackEventGateway(apiKey, fetcher);
+		const gateway = OpenFeedbackEventGateway.create(apiKey, fetcher);
 
 		// Act
 		const operation = gateway.ensureEvent(input);
@@ -387,7 +447,7 @@ describe("OpenFeedback event creation", () => {
 				init?.signal?.throwIfAborted();
 				return Response.json({ id: eventId });
 			});
-		const gateway = new OpenFeedbackEventGateway(apiKey, fetcher);
+		const gateway = OpenFeedbackEventGateway.create(apiKey, fetcher);
 
 		// Act
 		const operation = gateway.ensureEvent(input);

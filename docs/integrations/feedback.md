@@ -1,7 +1,7 @@
 # OpenFeedback and the shared feedback link
 
 The issue-update and daily-audit workflows create missing OpenFeedback events,
-synchronize their titles, save their public URLs in the issue, and point the
+synchronize their titles, talks and speakers, save their public URLs in the issue, and point the
 shared Kutt link to the event the day before its date.
 
 ## Configure
@@ -36,16 +36,33 @@ through the [OpenFeedback events API](https://api.openfeedback.io/#tag/events).
 It uses the meetup title, limited to 100 characters, and the GitHub issue URL as
 the schedule link.
 
-Open the saved URL and add talks and speakers in OpenFeedback before the meetup.
-The automation does not populate the agenda or check that talks are ready.
-Subsequent runs synchronize the event name from the meetup title and keep the
-GitHub issue URL as the schedule link. The existing event ID, feedback URL,
-talks, settings and votes are preserved. Title synchronization runs independently
-of the date restriction on the Kutt update.
+Creation requires a valid event date, a title, at least one talk subject and
+resolved speaker references. Talk subjects become OpenFeedback talk titles;
+only public speaker names and stable identities are sent. Private catalog
+contacts and source locations are excluded. The automation supports up to 100
+issue talks and 100 speakers, with titles up to 2,000 characters and names up to 200. It follows API pagination and limits reads to 200 existing records of each
+type. Larger events require manual synchronization.
 
-Creation and title synchronization require a valid event date and a title. A
-complete agenda is not required. Closed, cancelled, postponed and unrelated
-issues are skipped.
+Subsequent runs synchronize the event name and agenda from the issue. Existing
+matching speakers and talks keep their OpenFeedback IDs, including records
+created manually. A title edit keeps its talk ID when the speaker group matches
+unambiguously; a speaker change keeps the talk ID when the title matches uniquely.
+Edit one talk at a time when several talks share the same speakers;
+ambiguous matches fail without writing the agenda. Changes to both the title and
+speaker group can create a new talk. Review such changes in OpenFeedback.
+
+Talks and speakers remain editable in OpenFeedback. The issue owns synchronized
+titles and names; changes to these fields in OpenFeedback can be overwritten on
+the next run. Manage photos, schedules, tags and other settings there. The
+automation never deletes talks, speakers or votes. Remove obsolete talks manually
+after reviewing their feedback. It does not convert events backed by JSON or
+Hoverboard to OpenFeedback storage.
+
+An incomplete agenda preserves an existing poll, reports a diagnostic, and still
+allows title and due Kutt updates. New polls wait for a complete agenda. Each
+talk or speaker update checks that record's last-read revision. A conflict stops
+the run and requires a fresh read on retry. Closed, cancelled, postponed and
+unrelated issues are skipped.
 
 ## Update the day before the event
 
@@ -63,7 +80,12 @@ reports `publication.feedback.ambiguous-date`; choose the target manually.
 
 A failed issue update after successful event creation can be retried. The event
 ID is stable for the repository and issue. A retry finds the same event and
-updates its name and schedule link, preserving its talks, settings and votes.
+updates its name, schedule link and agenda, preserving existing identities,
+settings and votes. Speakers are synchronized before talks. Each write is atomic
+for one record; a later failure leaves earlier successful writes in place. A retry
+reads those records, skips unchanged ones and resumes using the same IDs.
+Creation conflicts stop the current run instead of overwriting an existing
+record; rerun after reviewing the conflict.
 
 For a missing Kutt link, verify its API ID and the key's owner. For an
 OpenFeedback authorization error, verify that the organization key has access to
