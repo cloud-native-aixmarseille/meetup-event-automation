@@ -27,7 +27,7 @@ issue already has a feedback URL. Use a key beginning with `oforg_`.
 | **`github-token`**           | GitHub token with issue read and write permissions.                                                                                | **true**     | -           |
 | **`issue-number`**           | Meetup issue number.                                                                                                               | **true**     | -           |
 | **`managed-comment-author`** | GitHub App bot login used by event evaluation.                                                                                     | **true**     | -           |
-| **`openfeedback-api-key`**   | OpenFeedback organization API key (oforg\_) used to create and update events.                                                      | **true**     | -           |
+| **`openfeedback-api-key`**   | OpenFeedback organization API key (oforg_) used to create and update events.                                                       | **true**     | -           |
 | **`kutt-api-key`**           | API key for the owner of the existing Kutt link.                                                                                   | **true**     | -           |
 | **`kutt-base-url`**          | HTTPS base URL of the Kutt instance, without /api/v2. No default.                                                                  | **true**     | -           |
 | **`kutt-link-id`**           | Existing Kutt link API ID, not the short address.                                                                                  | **true**     | -           |
@@ -74,11 +74,8 @@ Create OpenFeedback events, synchronize their titles, talks and speakers, and up
 
 ## Usage
 
-Replace the placeholder revision with the full commit SHA of a published release.
-See [feedback configuration](../../../docs/integrations/feedback.md) for the required instance URL and credentials.
-
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/publication/reconcile-feedback@0123456789abcdef0123456789abcdef01234567
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/publication/reconcile-feedback@8dfb3e8516e00121d0ba1eafbfb252cebda2f8ed # 2.1.0
   with:
     # Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
     # Default: `en`
@@ -106,7 +103,7 @@ See [feedback configuration](../../../docs/integrations/feedback.md) for the req
 
     # HTTPS base URL of the Kutt instance, without /api/v2. No default.
     # This input is required.
-    kutt-base-url: ${{ vars.KUTT_BASE_URL }}
+    kutt-base-url: ""
 
     # Existing Kutt link API ID, not the short address.
     # This input is required.
