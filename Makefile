@@ -69,11 +69,13 @@ ci: setup ## Execute all CI quality gates
 define run_linter
 	DEFAULT_WORKSPACE="$(CURDIR)"; \
 	LINTER_IMAGE="linter:latest"; \
+	LINTER_GIT_DIR="$$(git rev-parse --path-format=absolute --git-common-dir)"; \
 	VOLUME="$$DEFAULT_WORKSPACE:$$DEFAULT_WORKSPACE"; \
 	docker build --platform=linux/amd64 --build-arg UID=$(shell id -u) --build-arg GID=$(shell id -g) --tag $$LINTER_IMAGE .; \
 	docker run \
 		--platform=linux/amd64 \
 		-v $$VOLUME \
+		--mount "type=bind,source=$$LINTER_GIT_DIR,target=$$LINTER_GIT_DIR,readonly" \
 		--mount "type=tmpfs,destination=$$DEFAULT_WORKSPACE/node_modules" \
 		--rm \
 		-e DEFAULT_WORKSPACE="$$DEFAULT_WORKSPACE" \
