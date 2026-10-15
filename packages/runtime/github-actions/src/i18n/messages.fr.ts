@@ -9,7 +9,9 @@ export const FR_MESSAGES = {
 	"report.feedback.changes":
 		"Modifications du ticket enregistrées : {persisted, select, true {oui} other {non}} ; lien partagé des retours mis à jour : {linkUpdated, select, true {oui} other {non}}.",
 	"report.feedback.guidance":
-		"Consultez les diagnostics des retours et configurez les présentations et les intervenants dans OpenFeedback.",
+		"Consultez les diagnostics des retours. Les titres et les noms des intervenants suivent le programme de l'issue ; gérez les horaires, les photos et les présentations retirées dans OpenFeedback.",
+	"error.OpenFeedbackAgendaConflictError":
+		"Plusieurs présentations ou intervenants correspondent au programme de l'issue. Corrigez les noms en double ou modifiez une présentation à la fois avant de réessayer ; les retours existants sont conservés.",
 	"error.EventNotFoundError":
 		"L'événement est introuvable. Vérifiez le numéro d'issue et le dépôt.",
 	"error.EventConcurrentModificationError":

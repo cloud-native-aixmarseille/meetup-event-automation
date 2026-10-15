@@ -31925,6 +31925,7 @@ var DIAGNOSTICS_EVENT_FR = {
 
 // packages/runtime/github-actions/src/i18n/diagnostics-other.en.ts
 var DIAGNOSTICS_OTHER_EN = {
+  "diagnostic.publication.feedback.agenda": "Complete talk subjects and resolve speaker references in the issue before synchronizing the feedback agenda. Existing feedback is preserved.",
   "diagnostic.publication.feedback.unrelated": "This issue is not a meetup",
   "diagnostic.publication.feedback.inactive": "Feedback automation is inactive for this event",
   "diagnostic.publication.feedback.prerequisites": "Resolve the event title, date and feedback link before updating feedback",
@@ -31943,6 +31944,7 @@ var DIAGNOSTICS_OTHER_EN = {
 
 // packages/runtime/github-actions/src/i18n/diagnostics-other.fr.ts
 var DIAGNOSTICS_OTHER_FR = {
+  "diagnostic.publication.feedback.agenda": "Compl\xE9tez les sujets des pr\xE9sentations et r\xE9solvez les r\xE9f\xE9rences des intervenants dans l'issue avant de synchroniser le programme des retours. Les retours existants sont conserv\xE9s.",
   "diagnostic.publication.feedback.unrelated": "Ce ticket ne correspond pas \xE0 un meetup.",
   "diagnostic.publication.feedback.inactive": "L'automatisation des retours est inactive pour cet \xE9v\xE9nement.",
   "diagnostic.publication.feedback.prerequisites": "Corrigez le titre, la date et le lien des retours avant de mettre \xE0 jour les retours.",
@@ -32025,7 +32027,8 @@ var EN_MESSAGES = {
   "report.feedback.skipped": "Feedback reconciliation was skipped; review the diagnostics for the reason.",
   "report.feedback.completed": "Feedback reconciliation completed.",
   "report.feedback.changes": "Issue changes persisted: {persisted, select, true {true} other {false}}; shared feedback link updated: {linkUpdated, select, true {true} other {false}}.",
-  "report.feedback.guidance": "Review feedback diagnostics and configure talks and speakers in OpenFeedback.",
+  "report.feedback.guidance": "Review feedback diagnostics. Talk titles and speaker names follow the issue agenda; manage schedules, photos and removed talks in OpenFeedback.",
+  "error.OpenFeedbackAgendaConflictError": "Several feedback talks or speakers match the issue agenda. Resolve duplicate names or edit one talk at a time before retrying; existing feedback was preserved.",
   "error.EventNotFoundError": "The event could not be found. Check the issue number and repository.",
   "error.EventConcurrentModificationError": "The event changed during reconciliation. Rerun against its latest version.",
   "error.GoogleDriveAssetRepositoryError": "Google Drive asset reconciliation failed. Check credentials, folders and permissions.",
@@ -32089,7 +32092,8 @@ var FR_MESSAGES = {
   "report.feedback.skipped": "La mise \xE0 jour des retours a \xE9t\xE9 ignor\xE9e ; consultez les diagnostics pour conna\xEEtre la raison.",
   "report.feedback.completed": "La v\xE9rification et la mise \xE0 jour des retours sont termin\xE9es.",
   "report.feedback.changes": "Modifications du ticket enregistr\xE9es : {persisted, select, true {oui} other {non}} ; lien partag\xE9 des retours mis \xE0 jour : {linkUpdated, select, true {oui} other {non}}.",
-  "report.feedback.guidance": "Consultez les diagnostics des retours et configurez les pr\xE9sentations et les intervenants dans OpenFeedback.",
+  "report.feedback.guidance": "Consultez les diagnostics des retours. Les titres et les noms des intervenants suivent le programme de l'issue ; g\xE9rez les horaires, les photos et les pr\xE9sentations retir\xE9es dans OpenFeedback.",
+  "error.OpenFeedbackAgendaConflictError": "Plusieurs pr\xE9sentations ou intervenants correspondent au programme de l'issue. Corrigez les noms en double ou modifiez une pr\xE9sentation \xE0 la fois avant de r\xE9essayer ; les retours existants sont conserv\xE9s.",
   "error.EventNotFoundError": "L'\xE9v\xE9nement est introuvable. V\xE9rifiez le num\xE9ro d'issue et le d\xE9p\xF4t.",
   "error.EventConcurrentModificationError": "L'\xE9v\xE9nement a chang\xE9 pendant la synchronisation. Relancez-la sur sa derni\xE8re version.",
   "error.GoogleDriveAssetRepositoryError": "La synchronisation des fichiers Google Drive a \xE9chou\xE9. V\xE9rifiez les identifiants, les dossiers configur\xE9s et les autorisations.",

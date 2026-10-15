@@ -1,4 +1,6 @@
 export const DIAGNOSTICS_OTHER_EN = {
+	"diagnostic.publication.feedback.agenda":
+		"Complete talk subjects and resolve speaker references in the issue before synchronizing the feedback agenda. Existing feedback is preserved.",
 	"diagnostic.publication.feedback.unrelated": "This issue is not a meetup",
 	"diagnostic.publication.feedback.inactive":
 		"Feedback automation is inactive for this event",

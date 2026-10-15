@@ -73,9 +73,6 @@ tests. Update public input descriptions and this guide. Missing or invalid
 translations fall back to English using English formatting rules at runtime, but
 incomplete catalogs still fail the development checks.
 
-See [ADR 0004](../adr/0004-localize-generated-messages.md) for the architecture
-and compatibility decisions.
-
 French catalogs (`*.fr.ts`) are excluded from the English-only Codespell check.
 Keep English catalogs checked, and use a line-scoped `codespell:ignore`
 directive only for valid French words in mixed-language tests. Review French

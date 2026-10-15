@@ -1,5 +1,7 @@
 import type { DIAGNOSTICS_OTHER_EN } from "./diagnostics-other.en.js";
 export const DIAGNOSTICS_OTHER_FR = {
+	"diagnostic.publication.feedback.agenda":
+		"Complétez les sujets des présentations et résolvez les références des intervenants dans l'issue avant de synchroniser le programme des retours. Les retours existants sont conservés.",
 	"diagnostic.publication.feedback.unrelated":
 		"Ce ticket ne correspond pas à un meetup.",
 	"diagnostic.publication.feedback.inactive":

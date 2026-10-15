@@ -10,10 +10,12 @@ import {
 	ReconcileEvent,
 } from "@meetup-automation/event";
 import {
+	type FeedbackAgenda,
 	type FeedbackEventGateway,
 	type FeedbackLinkGateway,
 	FeedbackPolicy,
 } from "@meetup-automation/publication";
+import { FeedbackAgendaProjection } from "./feedback-agenda-projection.js";
 import type { PublicDiagnostic } from "../result/result-envelope.js";
 import type { ManageMeetupEvent } from "./manage-meetup-event.js";
 
@@ -67,12 +69,22 @@ export class ManageMeetupFeedback {
 				"prerequisites",
 				"Resolve the event date and feedback link before updating feedback",
 			);
-		return this.synchronizeFeedback(source, event);
+		const agenda = FeedbackAgendaProjection.create(
+			event,
+			evaluation.diagnostics,
+		);
+		if (!agenda && !event.publicationLinks.feedback)
+			return this.skipped(
+				"agenda",
+				"Complete talk subjects and resolve speaker references before creating feedback",
+			);
+		return this.synchronizeFeedback(source, event, agenda);
 	}
 
 	private async synchronizeFeedback(
 		source: EventDocument,
 		event: MeetupEvent,
+		agenda: FeedbackAgenda | undefined,
 	): Promise<ManageMeetupFeedbackResult> {
 		const name = event.eventTitle.trim().slice(0, 100);
 		if (!name)
@@ -86,11 +98,30 @@ export class ManageMeetupFeedback {
 			key: `${repository.toLowerCase()}#${issueNumber}`,
 			name,
 			scheduleUrl: `https://github.com/${repository}/issues/${issueNumber}`,
+			...(agenda ? { agenda } : {}),
 			...(event.publicationLinks.feedback
 				? { url: FeedbackPolicy.pollUrl(event.publicationLinks.feedback) }
 				: {}),
 		});
-		return this.reconcile(source, event, FeedbackPolicy.pollUrl(url));
+		const result = await this.reconcile(
+			source,
+			event,
+			FeedbackPolicy.pollUrl(url),
+		);
+		if (agenda) return result;
+		return {
+			...result,
+			diagnostics: [
+				...result.diagnostics,
+				{
+					code: "publication.feedback.agenda",
+					severity: "warning" as const,
+					field: "publicationLinks.feedback",
+					message:
+						"Complete talk subjects and resolve speaker references before synchronizing the feedback agenda",
+				},
+			],
+		};
 	}
 
 	private async reconcile(

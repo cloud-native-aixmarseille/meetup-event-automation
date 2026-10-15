@@ -6,7 +6,9 @@ export const EN_MESSAGES = {
 	"report.feedback.changes":
 		"Issue changes persisted: {persisted, select, true {true} other {false}}; shared feedback link updated: {linkUpdated, select, true {true} other {false}}.",
 	"report.feedback.guidance":
-		"Review feedback diagnostics and configure talks and speakers in OpenFeedback.",
+		"Review feedback diagnostics. Talk titles and speaker names follow the issue agenda; manage schedules, photos and removed talks in OpenFeedback.",
+	"error.OpenFeedbackAgendaConflictError":
+		"Several feedback talks or speakers match the issue agenda. Resolve duplicate names or edit one talk at a time before retrying; existing feedback was preserved.",
 	"error.EventNotFoundError":
 		"The event could not be found. Check the issue number and repository.",
 	"error.EventConcurrentModificationError":

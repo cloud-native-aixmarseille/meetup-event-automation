@@ -31928,6 +31928,7 @@ var DIAGNOSTICS_EVENT_FR = {
 
 // packages/runtime/github-actions/src/i18n/diagnostics-other.en.ts
 var DIAGNOSTICS_OTHER_EN = {
+  "diagnostic.publication.feedback.agenda": "Complete talk subjects and resolve speaker references in the issue before synchronizing the feedback agenda. Existing feedback is preserved.",
   "diagnostic.publication.feedback.unrelated": "This issue is not a meetup",
   "diagnostic.publication.feedback.inactive": "Feedback automation is inactive for this event",
   "diagnostic.publication.feedback.prerequisites": "Resolve the event title, date and feedback link before updating feedback",
@@ -31946,6 +31947,7 @@ var DIAGNOSTICS_OTHER_EN = {
 
 // packages/runtime/github-actions/src/i18n/diagnostics-other.fr.ts
 var DIAGNOSTICS_OTHER_FR = {
+  "diagnostic.publication.feedback.agenda": "Compl\xE9tez les sujets des pr\xE9sentations et r\xE9solvez les r\xE9f\xE9rences des intervenants dans l'issue avant de synchroniser le programme des retours. Les retours existants sont conserv\xE9s.",
   "diagnostic.publication.feedback.unrelated": "Ce ticket ne correspond pas \xE0 un meetup.",
   "diagnostic.publication.feedback.inactive": "L'automatisation des retours est inactive pour cet \xE9v\xE9nement.",
   "diagnostic.publication.feedback.prerequisites": "Corrigez le titre, la date et le lien des retours avant de mettre \xE0 jour les retours.",
@@ -32028,7 +32030,8 @@ var EN_MESSAGES = {
   "report.feedback.skipped": "Feedback reconciliation was skipped; review the diagnostics for the reason.",
   "report.feedback.completed": "Feedback reconciliation completed.",
   "report.feedback.changes": "Issue changes persisted: {persisted, select, true {true} other {false}}; shared feedback link updated: {linkUpdated, select, true {true} other {false}}.",
-  "report.feedback.guidance": "Review feedback diagnostics and configure talks and speakers in OpenFeedback.",
+  "report.feedback.guidance": "Review feedback diagnostics. Talk titles and speaker names follow the issue agenda; manage schedules, photos and removed talks in OpenFeedback.",
+  "error.OpenFeedbackAgendaConflictError": "Several feedback talks or speakers match the issue agenda. Resolve duplicate names or edit one talk at a time before retrying; existing feedback was preserved.",
   "error.EventNotFoundError": "The event could not be found. Check the issue number and repository.",
   "error.EventConcurrentModificationError": "The event changed during reconciliation. Rerun against its latest version.",
   "error.GoogleDriveAssetRepositoryError": "Google Drive asset reconciliation failed. Check credentials, folders and permissions.",
@@ -32092,7 +32095,8 @@ var FR_MESSAGES = {
   "report.feedback.skipped": "La mise \xE0 jour des retours a \xE9t\xE9 ignor\xE9e ; consultez les diagnostics pour conna\xEEtre la raison.",
   "report.feedback.completed": "La v\xE9rification et la mise \xE0 jour des retours sont termin\xE9es.",
   "report.feedback.changes": "Modifications du ticket enregistr\xE9es : {persisted, select, true {oui} other {non}} ; lien partag\xE9 des retours mis \xE0 jour : {linkUpdated, select, true {oui} other {non}}.",
-  "report.feedback.guidance": "Consultez les diagnostics des retours et configurez les pr\xE9sentations et les intervenants dans OpenFeedback.",
+  "report.feedback.guidance": "Consultez les diagnostics des retours. Les titres et les noms des intervenants suivent le programme de l'issue ; g\xE9rez les horaires, les photos et les pr\xE9sentations retir\xE9es dans OpenFeedback.",
+  "error.OpenFeedbackAgendaConflictError": "Plusieurs pr\xE9sentations ou intervenants correspondent au programme de l'issue. Corrigez les noms en double ou modifiez une pr\xE9sentation \xE0 la fois avant de r\xE9essayer ; les retours existants sont conserv\xE9s.",
   "error.EventNotFoundError": "L'\xE9v\xE9nement est introuvable. V\xE9rifiez le num\xE9ro d'issue et le d\xE9p\xF4t.",
   "error.EventConcurrentModificationError": "L'\xE9v\xE9nement a chang\xE9 pendant la synchronisation. Relancez-la sur sa derni\xE8re version.",
   "error.GoogleDriveAssetRepositoryError": "La synchronisation des fichiers Google Drive a \xE9chou\xE9. V\xE9rifiez les identifiants, les dossiers configur\xE9s et les autorisations.",
@@ -39264,6 +39268,29 @@ var ValidateMeetupReferentials = class {
   }
 };
 
+// packages/application/journey/src/use-cases/feedback-agenda-projection.ts
+var FeedbackAgendaProjection = class {
+  static create(event, diagnostics) {
+    if (event.agenda.length === 0 || diagnostics.some(
+      (item) => item.severity === "error" && (item.code.startsWith("referential.") && !item.code.startsWith("referential.reference.host.") || item.code.startsWith("event.agenda."))
+    ) || event.agenda.some(
+      (entry) => !entry.description.trim() || entry.speakers.length === 0 || entry.speakers.some(
+        (speaker) => !speaker.id || !speaker.displayName.trim()
+      )
+    ))
+      return void 0;
+    return {
+      talks: event.agenda.map((entry) => ({
+        title: entry.description.trim(),
+        speakers: entry.speakers.map((speaker) => ({
+          id: speaker.id,
+          name: speaker.displayName.trim()
+        }))
+      }))
+    };
+  }
+};
+
 // packages/application/journey/src/use-cases/manage-meetup-feedback.ts
 var ManageMeetupFeedback = class _ManageMeetupFeedback {
   constructor(dependencies) {
@@ -39291,9 +39318,18 @@ var ManageMeetupFeedback = class _ManageMeetupFeedback {
         "prerequisites",
         "Resolve the event date and feedback link before updating feedback"
       );
-    return this.synchronizeFeedback(source, event);
+    const agenda = FeedbackAgendaProjection.create(
+      event,
+      evaluation.diagnostics
+    );
+    if (!agenda && !event.publicationLinks.feedback)
+      return this.skipped(
+        "agenda",
+        "Complete talk subjects and resolve speaker references before creating feedback"
+      );
+    return this.synchronizeFeedback(source, event, agenda);
   }
-  async synchronizeFeedback(source, event) {
+  async synchronizeFeedback(source, event, agenda) {
     const name = event.eventTitle.trim().slice(0, 100);
     if (!name)
       return this.skipped(
@@ -39306,9 +39342,27 @@ var ManageMeetupFeedback = class _ManageMeetupFeedback {
       key: `${repository.toLowerCase()}#${issueNumber}`,
       name,
       scheduleUrl: `https://github.com/${repository}/issues/${issueNumber}`,
+      ...agenda ? { agenda } : {},
       ...event.publicationLinks.feedback ? { url: FeedbackPolicy.pollUrl(event.publicationLinks.feedback) } : {}
     });
-    return this.reconcile(source, event, FeedbackPolicy.pollUrl(url));
+    const result = await this.reconcile(
+      source,
+      event,
+      FeedbackPolicy.pollUrl(url)
+    );
+    if (agenda) return result;
+    return {
+      ...result,
+      diagnostics: [
+        ...result.diagnostics,
+        {
+          code: "publication.feedback.agenda",
+          severity: "warning",
+          field: "publicationLinks.feedback",
+          message: "Complete talk subjects and resolve speaker references before synchronizing the feedback agenda"
+        }
+      ]
+    };
   }
   async reconcile(source, event, url) {
     await this.ensureCurrent(source);
@@ -39478,9 +39532,11 @@ var KuttFeedbackLinkGateway = class {
 };
 
 // packages/adapter/openfeedback-event-gateway/src/openfeedback-event-gateway.ts
-import { createHash } from "node:crypto";
-var OpenFeedbackEventGateway = class _OpenFeedbackEventGateway {
-  constructor(apiKey, fetcher = fetch) {
+import { createHash as createHash2 } from "node:crypto";
+
+// packages/adapter/openfeedback-event-gateway/src/openfeedback-client.ts
+var OpenFeedbackClient = class {
+  constructor(apiKey, fetcher) {
     this.apiKey = apiKey;
     this.fetcher = fetcher;
     if (!/^oforg_\S+$/.test(apiKey))
@@ -39488,20 +39544,305 @@ var OpenFeedbackEventGateway = class _OpenFeedbackEventGateway {
   }
   apiKey;
   fetcher;
+  async request(path, method, body) {
+    try {
+      return await this.fetcher(`https://api.openfeedback.io${path}`, {
+        method,
+        ...body === void 0 ? {} : { body: JSON.stringify(body) },
+        redirect: "error",
+        signal: AbortSignal.timeout(3e4),
+        headers: {
+          "x-api-key": this.apiKey,
+          "Content-Type": "application/json"
+        }
+      });
+    } catch {
+      throw new Error("OpenFeedback request failed");
+    }
+  }
+  static async read(response, id) {
+    if (!response.ok)
+      throw new Error(`OpenFeedback request failed (HTTP ${response.status})`);
+    let body;
+    try {
+      body = await response.json();
+    } catch {
+      throw new Error("Invalid OpenFeedback JSON response");
+    }
+    if (!body || typeof body !== "object" || Array.isArray(body) || !("id" in body) || body.id !== id)
+      throw new Error("OpenFeedback returned an unexpected resource");
+    return body;
+  }
+};
+
+// packages/adapter/openfeedback-event-gateway/src/openfeedback-agenda-plan.ts
+import { createHash } from "node:crypto";
+
+// packages/adapter/openfeedback-event-gateway/src/openfeedback-agenda-conflict-error.ts
+var OpenFeedbackAgendaConflictError = class extends Error {
+  constructor() {
+    super("The feedback agenda contains ambiguous talk or speaker identities");
+    this.name = "OpenFeedbackAgendaConflictError";
+  }
+};
+
+// packages/adapter/openfeedback-event-gateway/src/openfeedback-agenda-plan.ts
+var OpenFeedbackAgendaPlan = class _OpenFeedbackAgendaPlan {
+  static create(key, agenda, current) {
+    const speakers = _OpenFeedbackAgendaPlan.matchSpeakers(key, agenda, current);
+    const candidates = agenda.talks.map((talk) => {
+      const ids = [
+        ...new Set(
+          talk.speakers.map(
+            (speaker) => speakers.get(speaker.id).id
+          )
+        )
+      ].sort();
+      return {
+        id: _OpenFeedbackAgendaPlan.id(
+          "talk",
+          JSON.stringify([key, talk.title, ids])
+        ),
+        title: talk.title,
+        speakers: ids
+      };
+    });
+    const talks = _OpenFeedbackAgendaPlan.matchTalks(candidates, current.talks);
+    if (talks.length > 100 || speakers.size > 100 || talks.some((talk) => talk.title.length > 2e3) || [...speakers.values()].some((speaker) => speaker.name.length > 200))
+      throw new Error("Feedback agenda exceeds the synchronization limits");
+    return {
+      speakers: [...speakers.values()],
+      talks
+    };
+  }
+  static matchSpeakers(key, agenda, current) {
+    const speakers = /* @__PURE__ */ new Map();
+    for (const talk of agenda.talks) {
+      for (const speaker of talk.speakers) {
+        if (speakers.has(speaker.id)) continue;
+        const stableId = _OpenFeedbackAgendaPlan.id(
+          "speaker",
+          `${key}:${speaker.id}`
+        );
+        const found = current.speakers.find((item) => item.id === stableId);
+        const matches = found ? [found] : current.speakers.filter(
+          (item) => _OpenFeedbackAgendaPlan.normalize(item.name) === _OpenFeedbackAgendaPlan.normalize(speaker.name)
+        );
+        if (matches.length > 1) throw new OpenFeedbackAgendaConflictError();
+        speakers.set(speaker.id, {
+          id: matches[0]?.id ?? stableId,
+          name: speaker.name
+        });
+      }
+    }
+    if (new Set([...speakers.values()].map((speaker) => speaker.id)).size !== speakers.size)
+      throw new OpenFeedbackAgendaConflictError();
+    return speakers;
+  }
+  static matchTalks(incoming, current) {
+    if (new Set(incoming.map((talk) => talk.id)).size !== incoming.length)
+      throw new OpenFeedbackAgendaConflictError();
+    const used = /* @__PURE__ */ new Set();
+    const resolved = /* @__PURE__ */ new Map();
+    _OpenFeedbackAgendaPlan.matchExactTalks(incoming, current, resolved, used);
+    _OpenFeedbackAgendaPlan.matchTitles(incoming, current, resolved, used);
+    for (const talk of incoming.filter((item) => !resolved.has(item))) {
+      const matches = current.filter(
+        (item) => !used.has(item.id) && _OpenFeedbackAgendaPlan.sameSpeakers(item, talk)
+      );
+      const pending = incoming.filter(
+        (item) => !resolved.has(item) && _OpenFeedbackAgendaPlan.sameSpeakers(item, talk)
+      );
+      if (matches.length > 1 || matches.length === 1 && pending.length > 1)
+        throw new OpenFeedbackAgendaConflictError();
+      const id = matches[0]?.id ?? talk.id;
+      if (used.has(id) || !matches[0] && current.some((item) => item.id === id))
+        throw new OpenFeedbackAgendaConflictError();
+      resolved.set(talk, { ...talk, id });
+      used.add(id);
+    }
+    return incoming.map((talk) => resolved.get(talk));
+  }
+  static matchExactTalks(incoming, current, resolved, used) {
+    for (const talk of incoming) {
+      const matches = current.filter(
+        (item) => !used.has(item.id) && _OpenFeedbackAgendaPlan.normalize(item.title) === _OpenFeedbackAgendaPlan.normalize(talk.title) && _OpenFeedbackAgendaPlan.sameSpeakers(item, talk)
+      );
+      if (matches.length > 1) throw new OpenFeedbackAgendaConflictError();
+      if (matches[0]) {
+        resolved.set(talk, { ...talk, id: matches[0].id });
+        used.add(matches[0].id);
+      }
+    }
+  }
+  static matchTitles(incoming, current, resolved, used) {
+    for (const talk of incoming.filter((item) => !resolved.has(item))) {
+      const title = _OpenFeedbackAgendaPlan.normalize(talk.title);
+      const matches = current.filter(
+        (item) => !used.has(item.id) && _OpenFeedbackAgendaPlan.normalize(item.title) === title
+      );
+      if (matches.length === 0) continue;
+      const pending = incoming.filter(
+        (item) => !resolved.has(item) && _OpenFeedbackAgendaPlan.normalize(item.title) === title
+      );
+      if (matches.length > 1 || pending.length > 1)
+        throw new OpenFeedbackAgendaConflictError();
+      resolved.set(talk, { ...talk, id: matches[0].id });
+      used.add(matches[0].id);
+    }
+  }
+  static sameSpeakers(left, right) {
+    return JSON.stringify([...left.speakers].sort()) === JSON.stringify([...right.speakers].sort());
+  }
+  static id(kind, key) {
+    return `meetup-${kind}-${createHash("sha256").update(key).digest("hex")}`;
+  }
+  static normalize(value) {
+    return value.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US");
+  }
+};
+
+// packages/adapter/openfeedback-event-gateway/src/openfeedback-agenda-snapshot.ts
+var OpenFeedbackAgendaSnapshot = class _OpenFeedbackAgendaSnapshot {
+  static parse(body) {
+    if (!_OpenFeedbackAgendaSnapshot.records(body.speakers, "name") || !_OpenFeedbackAgendaSnapshot.records(body.talks, "title"))
+      throw new Error("Invalid OpenFeedback agenda response");
+    const speakers = body.speakers;
+    const talks = body.talks;
+    const ids = new Set(speakers.map((speaker) => speaker.id));
+    if (talks.some(
+      (talk) => !Array.isArray(talk.speakers) || new Set(talk.speakers).size !== talk.speakers.length || talk.speakers.some((id) => !ids.has(id))
+    ))
+      throw new Error("Invalid OpenFeedback agenda response");
+    return { speakers, talks };
+  }
+  static records(value, field) {
+    if (!Array.isArray(value) || value.length > 200) return false;
+    const ids = /* @__PURE__ */ new Set();
+    for (const record of value) {
+      if (!record || typeof record !== "object" || typeof record.id !== "string" || !/^(?!__.*__$)[a-zA-Z0-9_-]{1,100}$/.test(record.id) || typeof record.revision !== "string" || !/^[a-f0-9]{64}$/.test(record.revision) || typeof record[field] !== "string" || !record[field].trim() || ids.has(record.id))
+        return false;
+      ids.add(record.id);
+    }
+    return true;
+  }
+};
+
+// packages/adapter/openfeedback-event-gateway/src/openfeedback-agenda-gateway.ts
+var OpenFeedbackAgendaGateway = class {
+  constructor(records) {
+    this.records = records;
+  }
+  records;
+  async synchronize(id, key, agenda) {
+    const speakers = await this.records.list(id, "speakers");
+    const talks = await this.records.list(id, "talks");
+    const current = OpenFeedbackAgendaSnapshot.parse({ speakers, talks });
+    const changes = OpenFeedbackAgendaPlan.create(key, agenda, current);
+    for (const speaker of changes.speakers)
+      await this.records.synchronize(
+        id,
+        "speakers",
+        speaker,
+        current.speakers.find((item) => item.id === speaker.id)
+      );
+    for (const talk of changes.talks)
+      await this.records.synchronize(
+        id,
+        "talks",
+        talk,
+        current.talks.find((item) => item.id === talk.id)
+      );
+  }
+};
+
+// packages/adapter/openfeedback-event-gateway/src/openfeedback-records-gateway.ts
+var OpenFeedbackRecordsGateway = class _OpenFeedbackRecordsGateway {
+  constructor(client) {
+    this.client = client;
+  }
+  client;
+  async list(eventId, kind) {
+    const records = [];
+    const cursors = /* @__PURE__ */ new Set();
+    let cursor = null;
+    for (; ; ) {
+      const query = cursor ? `&after=${encodeURIComponent(cursor)}` : "";
+      const path = `/events/${eventId}/${kind}?limit=100${query}`;
+      const body = await OpenFeedbackClient.read(
+        await this.client.request(path, "GET"),
+        eventId
+      );
+      const page = body[kind];
+      const next = body.nextCursor;
+      if (!Array.isArray(page) || page.length > 100 || !_OpenFeedbackRecordsGateway.validCursor(next))
+        throw new Error("Invalid OpenFeedback list response");
+      records.push(...page);
+      if (records.length > 200 || records.length === 200 && next !== null)
+        throw new Error("Feedback records exceed the synchronization limits");
+      if (next === null) return records;
+      if (cursors.has(next) || page.at(-1)?.id !== next)
+        throw new Error("Invalid OpenFeedback pagination cursor");
+      cursors.add(next);
+      cursor = next;
+    }
+  }
+  async synchronize(eventId, kind, record, previous) {
+    const { id, ...fields } = record;
+    if (previous && _OpenFeedbackRecordsGateway.unchanged(fields, previous))
+      return;
+    const base = `/events/${eventId}/${kind}`;
+    const response = previous ? await this.client.request(`${base}/${id}`, "PATCH", {
+      ...fields,
+      revision: previous.revision
+    }) : await this.client.request(base, "POST", record);
+    await OpenFeedbackClient.read(response, id);
+  }
+  static unchanged(fields, previous) {
+    return Object.entries(fields).every(([key, value]) => {
+      const stored = previous[key];
+      if (key === "speakers" && Array.isArray(stored) && Array.isArray(value))
+        return JSON.stringify([...stored].sort()) === JSON.stringify([...value].sort());
+      return JSON.stringify(stored) === JSON.stringify(value);
+    });
+  }
+  static validCursor(value) {
+    return value === null || typeof value === "string" && /^(?!__.*__$)[a-zA-Z0-9_-]{1,100}$/.test(value);
+  }
+};
+
+// packages/adapter/openfeedback-event-gateway/src/openfeedback-event-gateway.ts
+var OpenFeedbackEventGateway = class _OpenFeedbackEventGateway {
+  constructor(client, agendas) {
+    this.client = client;
+    this.agendas = agendas;
+  }
+  client;
+  agendas;
+  static create(apiKey, fetcher = fetch) {
+    const client = new OpenFeedbackClient(apiKey, fetcher);
+    return new _OpenFeedbackEventGateway(
+      client,
+      new OpenFeedbackAgendaGateway(new OpenFeedbackRecordsGateway(client))
+    );
+  }
   async ensureEvent(input) {
     _OpenFeedbackEventGateway.validateInput(input);
     const url = input.url === void 0 ? void 0 : FeedbackPolicy.pollUrl(input.url);
-    const id = url ? new URL(url).pathname.split("/")[1] : `meetup-${createHash("sha256").update(input.key).digest("hex")}`;
+    const id = url ? new URL(url).pathname.split("/")[1] : `meetup-${createHash2("sha256").update(input.key).digest("hex")}`;
     const details = { name: input.name, scheduleLink: input.scheduleUrl };
-    let response = url ? await this.request(`/events/${id}`, "PATCH", details) : await this.request("/events/", "POST", {
+    let response = url ? await this.client.request(`/events/${id}`, "PATCH", details) : await this.client.request("/events/", "POST", {
       id,
       ...details,
       setupType: "openfeedbackv1"
     });
     if (!url && response.status === 409) {
-      response = await this.request(`/events/${id}`, "PATCH", details);
+      response = await this.client.request(`/events/${id}`, "PATCH", details);
     }
-    await _OpenFeedbackEventGateway.validateResponse(response, id);
+    await OpenFeedbackClient.read(response, id);
+    if (input.agenda) {
+      await this.agendas.synchronize(id, input.key, input.agenda);
+    }
     return url ?? `https://openfeedback.io/${id}`;
   }
   static validateInput(input) {
@@ -39515,34 +39856,6 @@ var OpenFeedbackEventGateway = class _OpenFeedbackEventGateway {
     }
     if (scheduleUrl.protocol !== "https:" || scheduleUrl.username || scheduleUrl.password)
       throw new Error("Invalid OpenFeedback event schedule URL");
-  }
-  async request(path, method, body) {
-    try {
-      return await this.fetcher(`https://api.openfeedback.io${path}`, {
-        method,
-        body: JSON.stringify(body),
-        redirect: "error",
-        signal: AbortSignal.timeout(3e4),
-        headers: {
-          "x-api-key": this.apiKey,
-          "Content-Type": "application/json"
-        }
-      });
-    } catch {
-      throw new Error("OpenFeedback request failed");
-    }
-  }
-  static async validateResponse(response, id) {
-    if (!response.ok)
-      throw new Error(`OpenFeedback request failed (HTTP ${response.status})`);
-    let body;
-    try {
-      body = await response.json();
-    } catch {
-      throw new Error("Invalid OpenFeedback JSON response");
-    }
-    if (!body || typeof body !== "object" || Array.isArray(body) || !("id" in body) || body.id !== id)
-      throw new Error("OpenFeedback returned an unexpected event");
   }
 };
 
@@ -56319,7 +56632,7 @@ var FeedbackComposition = class {
   static createFeedbackContainer(input) {
     const container = EventComposition.createEventContainer(input);
     container.bind(FEEDBACK_EVENTS).toDynamicValue(
-      () => new OpenFeedbackEventGateway(input.openFeedbackApiKey)
+      () => OpenFeedbackEventGateway.create(input.openFeedbackApiKey)
     );
     container.bind(FEEDBACK_LINKS).toDynamicValue(
       () => new KuttFeedbackLinkGateway(input.kuttApiKey, input.kuttLinkId)

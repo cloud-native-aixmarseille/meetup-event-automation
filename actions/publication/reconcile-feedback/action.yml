@@ -1,5 +1,5 @@
 name: Reconcile meetup feedback
-description: Create OpenFeedback events, synchronize their titles, and update the existing Kutt link the day before the event.
+description: Create OpenFeedback events, synchronize their titles, talks and speakers, and update the existing Kutt link the day before the event.
 inputs:
   locale:
     description: Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.

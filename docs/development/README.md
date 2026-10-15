@@ -6,8 +6,11 @@ Actions in `actions/` and reusable workflows in `.github/workflows/`.
 Read the [architecture rules](architecture.md) before changing package
 responsibilities and the [test conventions](testing.md) before adding tests. Use
 [action reporting](reporting.md) and [localization](localization.md) for
-generated messages. [AGENTS.md](../../AGENTS.md) also applies to agent-assisted
-work.
+generated messages. Follow the [documentation rules](documentation.md): guides
+describe only the current implemented and supported system, while ADRs preserve
+decision history. Update authoritative guides in place and remove historical,
+deprecated, or superseded content from them. [AGENTS.md](../../AGENTS.md) also
+applies to agent-assisted work.
 
 ## Setup
 
@@ -62,10 +65,10 @@ installation.
 - **Action metadata or workflow YAML:** run `pnpm check:contracts` and
   `make lint`. Update the adjacent action or workflow reference and the relevant
   usage page.
-- **Documentation only:** verify commands and behavior against current source,
-  check relative links, and run the applicable Markdown checks through
-  `make lint`. Do not add implementation-mirroring tests or rebuild bundles for
-  prose changes.
+- **Documentation only:** follow the [documentation review checklist](documentation.md#review-and-validation),
+  including source verification, links and anchors, the index and tree, YAML
+  examples, `pnpm check:contracts`, and `make lint`. Do not add
+  implementation-mirroring tests or rebuild bundles for prose changes.
 
 [`scripts/build-actions.mjs`](../../scripts/build-actions.mjs) owns the bundle
 entrypoints and build settings. Edit source, then run `pnpm package`; never edit
@@ -88,9 +91,7 @@ sync. The release job in
 updates to the pinned reusable release workflow. There is no local documentation
 generation script in this repository.
 
-Usage and reference documentation must describe current, working behavior.
-Preserve architectural decision history in
-[ADRs](../README.md#architecture-decisions). Put user tasks under `docs/usage/`,
-supported settings under `docs/reference/`, integration setup and operations
-under `docs/integrations/`, and contributor rules here. Follow the
-[documentation rules in AGENTS.md](../../AGENTS.md) when adding or moving pages.
+Keep current architectural rationale in the relevant development guide.
+Preserve [ADRs](../README.md#architecture-decisions) as decision history, with
+clear status and supersession links. Follow the
+[documentation guide](documentation.md) for page ownership and validation.
