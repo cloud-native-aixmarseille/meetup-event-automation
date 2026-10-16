@@ -491,3 +491,125 @@ describe("organizer approval requests", () => {
 		expect(f.dispatch).not.toHaveBeenCalled();
 	});
 });
+
+describe("shared post-event follow-up", () => {
+	const followUp = {
+		eventDate: request.eventDate,
+		requestedAt: request.requestedAt,
+		active: true,
+		pendingTasks: [
+			"thank-host",
+			"thank-speakers",
+			"share-slides",
+			"import-attendance",
+			"share-social",
+		] as const,
+	};
+	it("creates an overview before emails are ready and upgrades the same comment", async () => {
+		// Arrange
+		const f = fixture();
+		// Act
+		const commentId = await f.approvals.synchronizeFollowUp(followUp);
+		const waiting = f.comments[0]?.body;
+		const result = await f.approvals.request({
+			...request,
+			kind: "email-thanks",
+		});
+		// Assert
+		expect(commentId).toBe(100);
+		expect(waiting).toContain("Email approval will appear here");
+		expect(waiting).not.toContain("- [ ]");
+		expect(result.status).toBe("pending");
+		expect(f.comments).toHaveLength(1);
+		expect(f.comments[0]?.body).toContain("- [ ] Approve");
+		expect(f.comments[0]?.body).toContain("Import attendance into CNCF");
+		expect(f.dispatch).not.toHaveBeenCalled();
+	});
+	it("records a human decision before updating task progress and retains it on retry", async () => {
+		// Arrange
+		const f = fixture();
+		await f.approvals.request({ ...request, kind: "email-thanks" });
+		decision(f);
+		// Act
+		await f.approvals.synchronizeFollowUp({
+			...followUp,
+			pendingTasks: ["thank-host", "share-slides"],
+		});
+		const result = await f.approvals.request({
+			...request,
+			kind: "email-thanks",
+		});
+		const record = ApprovalRecord.read(f.comments[0]?.body ?? "");
+		// Assert
+		expect(result.status).toBe("approved");
+		expect(record.decision?.actor).toBe("organizer");
+		expect(record.followUp?.pendingTasks).toEqual([
+			"thank-host",
+			"share-slides",
+		]);
+		expect(f.comments[0]?.body).toContain("✅ Thank the speakers");
+		expect(f.comments).toHaveLength(1);
+		expect(f.dispatch).not.toHaveBeenCalled();
+		expect(f.react).not.toHaveBeenCalled();
+	});
+	it("retains notification reservations but requires approval for changed email batches", async () => {
+		// Arrange
+		const f = fixture();
+		await f.approvals.request({ ...request, kind: "email-thanks" });
+		decision(f);
+		await f.approvals.saveFollowUpAttention("serialized-reservation");
+		// Act
+		const changed = await f.approvals.request({
+			...request,
+			kind: "email-thanks",
+			revision: "c".repeat(64),
+		});
+		const restored = await f.approvals.followUpAttention();
+		// Assert
+		expect(changed.status).toBe("pending");
+		expect(restored).toEqual({
+			commentId: 100,
+			body: "serialized-reservation",
+		});
+		expect(f.comments).toHaveLength(1);
+		expect(f.comments[0]?.body).toContain("- [ ] Approve");
+	});
+	it("removes approval controls when follow-up is no longer eligible", async () => {
+		// Arrange
+		const f = fixture();
+		await f.approvals.request({ ...request, kind: "email-thanks" });
+		// Act
+		await f.approvals.synchronizeFollowUp({
+			...followUp,
+			active: false,
+			eventDate: "",
+		});
+		const body = f.comments[0]?.body ?? "";
+		// Assert
+		expect(body).toContain("Follow-up is paused");
+		expect(body).not.toContain("- [ ]");
+		expect(f.comments).toHaveLength(1);
+	});
+	it("does not create an overview before follow-up is due", async () => {
+		// Arrange
+		const f = fixture();
+		// Act
+		const id = await f.approvals.synchronizeFollowUp({
+			...followUp,
+			active: false,
+			eventDate: "",
+		});
+		// Assert
+		expect(id).toBeUndefined();
+		expect(f.comments).toHaveLength(0);
+	});
+	it("does not interpret an overview without emails as a pending approval", async () => {
+		// Arrange
+		const f = fixture();
+		await f.approvals.synchronizeFollowUp(followUp);
+		// Act
+		const approvals = await f.approvals.readAttention();
+		// Assert
+		expect(approvals).toEqual([]);
+	});
+});

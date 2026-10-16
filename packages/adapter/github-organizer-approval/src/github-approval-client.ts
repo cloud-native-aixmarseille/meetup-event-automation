@@ -101,6 +101,7 @@ export class GithubApprovalClient {
 		}
 	}
 	async create(body: string): Promise<number> {
+		if (body.length > 60000) throw new Error("Approval comment limit exceeded");
 		const response = await this.api.rest.issues.createComment({
 			owner: this.owner,
 			repo: this.repo,
@@ -112,6 +113,7 @@ export class GithubApprovalClient {
 		return response.data.id;
 	}
 	async update(commentId: number, body: string): Promise<void> {
+		if (body.length > 60000) throw new Error("Approval comment limit exceeded");
 		await this.api.rest.issues.updateComment({
 			owner: this.owner,
 			repo: this.repo,
@@ -136,6 +138,7 @@ export class GithubApprovalClient {
 		before: string,
 		after: string,
 	): Promise<void> {
+		if (before === after) return;
 		const current = (await this.list()).find(
 			(comment) => comment.id === commentId,
 		);

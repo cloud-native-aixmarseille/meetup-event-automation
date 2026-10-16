@@ -58,3 +58,11 @@ export type {
 } from "./ports/organizer-approval-details.js";
 
 export { SynchronizeSourceSpeakers } from "./use-cases/synchronize-source-speakers.js";
+export { FOLLOW_UP_TASKS } from "./ports/organizer-follow-up.js";
+export type {
+	FollowUpTask,
+	OrganizerFollowUp,
+	OrganizerFollowUpInput,
+	FollowUpAttentionCodec,
+	FollowUpAttentionPresentation,
+} from "./ports/organizer-follow-up.js";

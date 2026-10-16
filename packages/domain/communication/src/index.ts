@@ -32,6 +32,7 @@ export type {
 } from "./model.js";
 export { MAIL_TEMPLATE_NAMES } from "./model.js";
 export { PlanCommunications } from "./plan-communications.js";
+export { PostEventPolicy } from "./post-event-policy.js";
 export type {
 	CommunicationClock,
 	DeliveryLedger,

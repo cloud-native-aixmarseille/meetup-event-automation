@@ -30,6 +30,11 @@ export class AttentionRecord {
 			throw new Error("Duplicate attention condition");
 		if (state.runId !== undefined && !/^\d+$/.test(state.runId))
 			throw new Error("Invalid attention run");
+		if (
+			state.commentId !== undefined &&
+			(!Number.isSafeInteger(state.commentId) || state.commentId <= 0)
+		)
+			throw new Error("Invalid attention comment");
 		return {
 			version: 1,
 			eventDate: state.eventDate,
@@ -37,6 +42,7 @@ export class AttentionRecord {
 			episodes,
 			post: AttentionRecord.post(state.post),
 			runId: state.runId,
+			commentId: state.commentId,
 		};
 	}
 	static marker(state: AttentionState): string {

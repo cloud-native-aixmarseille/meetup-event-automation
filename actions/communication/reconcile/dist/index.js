@@ -38593,6 +38593,18 @@ var CommunicationPlanner = class _CommunicationPlanner {
   }
 };
 
+// packages/domain/communication/src/post-event-policy.ts
+var PostEventPolicy = class {
+  static isDue(input) {
+    if (!["scheduled", "held"].includes(input.occurrenceStatus)) return false;
+    if (!CommunicationCalendar.isValidInstant(input.now)) return false;
+    const event = CommunicationCalendar.parseIsoLocalDate(input.eventDate);
+    const today = CommunicationCalendar.getLocalDate(input.now, input.timeZone);
+    if (!event || !today) return false;
+    return input.occurrenceStatus === "held" || CommunicationCalendar.toEpochDay(today) > CommunicationCalendar.toEpochDay(event);
+  }
+};
+
 // packages/domain/communication/src/plan-communications.ts
 var PlanCommunications = class {
   execute(input) {
@@ -38648,7 +38660,7 @@ var PlanCommunications = class {
   }
   planDue(input, daysUntilEvent, diagnostics) {
     const intents = [];
-    if (input.occurrenceStatus === "held") {
+    if (PostEventPolicy.isDue(input)) {
       CommunicationPlanner.planMailMessages(
         input,
         "thanks",
@@ -38656,9 +38668,6 @@ var PlanCommunications = class {
         diagnostics
       );
       return CommunicationPlanner.deduplicateIntents(intents, diagnostics);
-    }
-    if (daysUntilEvent < 0) {
-      return { intents: [], diagnostics };
     }
     if (input.readiness === "ready") {
       CommunicationPlanner.planMailMessages(
@@ -39140,7 +39149,7 @@ var ApproveCommunicationBatch = class {
         throw new Error("Communication approval batch is invalid");
       const mails = batch.intents.filter((intent) => intent.channel === "mail");
       const result = await this.approvals.request({
-        kind: input.occurrenceStatus === "held" ? "email-thanks" : "email-introduction",
+        kind: mails.some((mail) => mail.kind.endsWith("-thanks")) ? "email-thanks" : "email-introduction",
         revision: MailBatchFingerprint.create(
           input.eventDate,
           input.timeZone,
@@ -39194,16 +39203,18 @@ var TASKS = {
   }
 };
 var CommunicationChecklist = class _CommunicationChecklist {
-  static pendingRecipients(event, recipients) {
-    const thanks = event.occurrenceStatus === "held";
+  static pendingRecipients(event, recipients, thanks = event.occurrenceStatus === "held") {
     return recipients.filter((recipient) => {
       const kind = recipient.role === "hosting" ? thanks ? "host-thanks" : "host-introduction" : thanks ? "speaker-thanks" : "speaker-introduction";
-      const task = TASKS[kind];
-      const matches = event.operationalChecklists[task.section].filter(
-        (item) => _CommunicationChecklist.matches(item, task.names)
-      );
-      return matches.length > 0 && !matches.some((item) => item.completed);
+      return _CommunicationChecklist.status(event, kind) === "pending";
     });
+  }
+  static status(event, kind) {
+    const task = TASKS[kind];
+    const matches = event.operationalChecklists[task.section].filter(
+      (item) => _CommunicationChecklist.matches(item, task.names)
+    );
+    return matches.some((item) => item.completed) ? "completed" : matches.length ? "pending" : "missing";
   }
   static complete(event, accepted) {
     const completed = new Set(accepted);
@@ -40176,8 +40187,8 @@ var SpeakerFeedbackPreparation = class {
     this.feedback = feedback;
   }
   feedback;
-  async execute(event, recipients, diagnostics) {
-    if (event.occurrenceStatus !== "held" || CommunicationChecklist.pendingRecipients(event, recipients).length === 0 || !recipients.some((recipient) => recipient.role === "speaker"))
+  async execute(event, recipients, diagnostics, postEvent = event.occurrenceStatus === "held") {
+    if (!postEvent || CommunicationChecklist.pendingRecipients(event, recipients, postEvent).length === 0 || !recipients.some((recipient) => recipient.role === "speaker"))
       return recipients;
     try {
       const agenda = FeedbackAgendaProjection.create(event, []);
@@ -40218,6 +40229,12 @@ var CommunicationDeliveryPreparation = class {
   }
   dependencies;
   async execute(input, event, runtimeDiagnostics) {
+    const postEvent = PostEventPolicy.isDue({
+      eventDate: event.date,
+      timeZone: event.timeZone,
+      occurrenceStatus: event.occurrenceStatus ?? "unknown",
+      now: this.dependencies.clock.now()
+    });
     const catalog = await this.catalog(runtimeDiagnostics);
     const organizerNotificationDestination = input.organizerNotificationDestination.trim();
     const notificationConfigured = this.dependencies.config.communication["slack-enabled"];
@@ -40234,7 +40251,12 @@ var CommunicationDeliveryPreparation = class {
     const referencesResolved = catalog !== void 0 && mailRecipientResolution.resolved;
     const recipients = referencesResolved ? await new SpeakerFeedbackPreparation(
       this.dependencies.feedbackResults
-    ).execute(event, mailRecipientResolution.recipients, runtimeDiagnostics) : mailRecipientResolution.recipients;
+    ).execute(
+      event,
+      mailRecipientResolution.recipients,
+      runtimeDiagnostics,
+      postEvent
+    ) : mailRecipientResolution.recipients;
     const notificationRecipients = [
       {
         channel: "notification",
@@ -40245,6 +40267,7 @@ var CommunicationDeliveryPreparation = class {
       }
     ];
     return {
+      postEvent,
       notificationConfigured,
       mailRecipientResolution: { ...mailRecipientResolution, recipients },
       referencesResolved,
@@ -40471,7 +40494,8 @@ var ManageMeetupCommunications = class _ManageMeetupCommunications {
       readinessWindowDays: config.communication["readiness-window-days"],
       mailRecipients: CommunicationChecklist.pendingRecipients(
         managed.event,
-        delivery.mailRecipientResolution.recipients
+        delivery.mailRecipientResolution.recipients,
+        delivery.postEvent
       ),
       notificationRecipients: [],
       mailPlaceholders: CommunicationPlaceholders.eventPlaceholders(
@@ -40909,6 +40933,15 @@ var ValidateMeetupReferentials = class {
   }
 };
 
+// packages/application/journey/src/ports/organizer-follow-up.ts
+var FOLLOW_UP_TASKS = [
+  "thank-host",
+  "thank-speakers",
+  "share-slides",
+  "import-attendance",
+  "share-social"
+];
+
 // packages/adapter/github-organizer-approval/src/approval-record.ts
 import { randomUUID as randomUUID2 } from "node:crypto";
 
@@ -40949,6 +40982,15 @@ var ApprovalDetails = class _ApprovalDetails {
   }
 };
 
+// packages/adapter/github-organizer-approval/src/follow-up-record.ts
+var FollowUpRecord = class {
+  static validate(value) {
+    if (value === void 0) return;
+    if (!value || typeof value.active !== "boolean" || !Array.isArray(value.pendingTasks) || value.pendingTasks.length > FOLLOW_UP_TASKS.length || new Set(value.pendingTasks).size !== value.pendingTasks.length || value.pendingTasks.some((task) => !FOLLOW_UP_TASKS.includes(task)) || value.attention !== void 0 && (typeof value.attention !== "string" || value.attention.length > 5e4) || value.attentionDetails !== void 0 && (typeof value.attentionDetails !== "string" || value.attentionDetails.length > 2e4))
+      throw new Error("Invalid post-event follow-up state");
+  }
+};
+
 // packages/adapter/github-organizer-approval/src/approval-record.ts
 var APPROVAL_MARKER = "<!-- meetup-organizer-approval:v1 ";
 var ApprovalRecord = class _ApprovalRecord {
@@ -40956,7 +40998,10 @@ var ApprovalRecord = class _ApprovalRecord {
     return record.kind === input.kind && record.revision === input.revision && record.eventDate === input.eventDate && record.recipientCount === input.recipientCount && (Boolean(record.decision) || JSON.stringify(record.details) === JSON.stringify(input.details));
   }
   static validate(input) {
-    if (!/^[a-f0-9]{64}$/.test(input.revision) || !["email-introduction", "email-thanks"].includes(input.kind) || !/^\d{4}-\d{2}-\d{2}$/.test(input.eventDate) || !Number.isSafeInteger(input.recipientCount) || input.recipientCount <= 0 || !Number.isFinite(Date.parse(input.requestedAt)))
+    FollowUpRecord.validate(input.followUp);
+    if (input.followUp && input.kind !== "email-thanks")
+      throw new Error("Invalid post-event approval kind");
+    if (!/^[a-f0-9]{64}$/.test(input.revision) || !["email-introduction", "email-thanks"].includes(input.kind) || !/^\d{4}-\d{2}-\d{2}$/.test(input.eventDate) || !Number.isSafeInteger(input.recipientCount) || input.recipientCount <= 0 && !(input.recipientCount === 0 && input.kind === "email-thanks" && input.followUp) || !Number.isFinite(Date.parse(input.requestedAt)))
       throw new Error("Invalid approval request");
     ApprovalDetails.validate(input.details, input.recipientCount);
   }
@@ -40978,7 +41023,7 @@ var ApprovalRecord = class _ApprovalRecord {
     _ApprovalRecord.validate(record);
     if (!/^approval-[a-f0-9-]{36}$/.test(record.requestId) || !["new", "reserved", "sent", "retry"].includes(record.notification))
       throw new Error("Invalid approval state");
-    if (record.decision && (!["approved", "rejected"].includes(record.decision.status) || !/^[A-Za-z0-9-]{1,39}$/.test(record.decision.actor) || !Number.isFinite(Date.parse(record.decision.decidedAt))))
+    if (record.decision && (record.recipientCount === 0 || !["approved", "rejected"].includes(record.decision.status) || !/^[A-Za-z0-9-]{1,39}$/.test(record.decision.actor) || !Number.isFinite(Date.parse(record.decision.decidedAt))))
       throw new Error("Invalid final approval decision");
     if (record.notificationMessage && (typeof record.notificationMessage.destination !== "string" || !record.notificationMessage.destination.trim() || typeof record.notificationMessage.messageId !== "string" || !record.notificationMessage.messageId.trim()))
       throw new Error("Invalid approval notification reference");
@@ -40994,6 +41039,12 @@ var ApprovalRecord = class _ApprovalRecord {
 
 // packages/adapter/github-organizer-approval/src/i18n/messages.en.ts
 var EN_MESSAGES2 = {
+  "follow-up.title": "## Post-event follow-up \xB7 {date}",
+  "follow-up.instructions": "This overview follows the issue's Post event checklist. Complete manual tasks there. Email approval below authorizes the thank-you batch; it does not complete the other tasks. Email tasks are checked after accepted dispatch.",
+  "follow-up.task": "{task, select, thank_host {Thank the host} thank_speakers {Thank the speakers} share_slides {Share slides on Meetup} import_attendance {Import attendance into CNCF} share_social {Share on social networks} other {Post-event task}}",
+  "follow-up.stopped": "Follow-up is paused: the event is not currently eligible. No email approval is requested.",
+  "follow-up.waiting": "Email approval will appear here when the thank-you batch is ready. Check the workflow diagnostics if preparation is blocked.",
+  "follow-up.emails-complete": "The issue checklist has no pending thank-you emails.",
   "approval.details.summary": "Review email details",
   "approval.details.email": "{kind, select, host_introduction {Introduction for the host contact} speaker_introduction {Introduction for the speaker} host_thanks {Thank-you email for the host contact} speaker_thanks {Thank-you email for the speaker} other {Email}}",
   "approval.details.purpose": "{kind, select, host_introduction {Thanks the host for welcoming the meetup and shares event links, slides and logistical requirements.} speaker_introduction {Shares event links, arrival and venue information, and presentation guidance.} host_thanks {Thanks the host for organizing the meetup and invites future collaboration.} speaker_thanks {Thanks the speaker, shares feedback results for their talks and invites suggestions about the meetup.} other {Sends the planned email.}}",
@@ -41002,12 +41053,18 @@ var EN_MESSAGES2 = {
   "approval.details.omitted-emails": "{count, plural, one {# additional email is included in this batch but omitted from this summary.} other {# additional emails are included in this batch but omitted from this summary.}}",
   "approval.details.omitted-links": "{count, plural, one {# additional link is included in this email but omitted from this summary.} other {# additional links are included in this email but omitted from this summary.}}",
   "approval.final": "### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\nEvent date: {date}. This batch covers up to {count, number} recipients; completed deliveries are skipped.\n\n{status, select, approved {\u2705 **Approved**} rejected {\u274C **Rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nThis decision is final for this batch revision. {status, select, approved {Approved emails can be sent when delivery checks pass. Email completion is tracked in the issue checklist.} rejected {This batch will not be sent.} other {}} Changed event details or recipients require a new confirmation.",
-  "approval.request": "### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\nEvent date: {date}. This batch covers up to {count, number} recipients; completed deliveries are skipped.\n\nOrganizers with repository write access: check one choice below. Leave both unchecked to wait.\n\n- [{approveMark}] Approve sending this batch\n- [{rejectMark}] Reject sending this batch\n\nApproval applies to this batch revision. Changed event details or recipients require a new confirmation. The email checkboxes in the issue are checked after accepted dispatch.",
+  "approval.request": "### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\nEvent date: {date}. This batch covers up to {count, number} recipients; completed deliveries are skipped.\n\nOrganizers with repository write access: check one choice below. Leave both unchecked to wait. Selecting both is invalid and keeps the request pending.\n\n- [{approveMark}] Approve sending this batch\n- [{rejectMark}] Reject sending this batch\n\nApproval applies to this batch revision. Changed event details or recipients require a new confirmation. The email checkboxes in the issue are checked after accepted dispatch.",
   "approval.slack": "Organizer confirmation needed: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}} for {date}, up to {count, number} recipients. Open the request and check Approve or Reject: {url}"
 };
 
 // packages/adapter/github-organizer-approval/src/i18n/messages.fr.ts
 var FR_MESSAGES2 = {
+  "follow-up.title": "## Suivi apr\xE8s le meetup \xB7 {date}",
+  "follow-up.instructions": "Ce r\xE9capitulatif suit la liste Post event du ticket. Cochez les t\xE2ches manuelles dans le ticket. La confirmation ci-dessous autorise le lot de remerciements sans terminer les autres t\xE2ches. Les t\xE2ches d'e-mail sont coch\xE9es apr\xE8s acceptation de l'envoi.",
+  "follow-up.task": "{task, select, thank_host {Remercier l'h\xF4te} thank_speakers {Remercier les intervenants} share_slides {Partager la pr\xE9sentation sur Meetup} import_attendance {Importer la participation dans CNCF} share_social {Partager sur les r\xE9seaux sociaux} other {T\xE2che apr\xE8s le meetup}}",
+  "follow-up.stopped": "Le suivi est suspendu : le meetup ne remplit pas actuellement les conditions. Aucune confirmation d'envoi n'est demand\xE9e.",
+  "follow-up.waiting": "La confirmation appara\xEEtra ici lorsque le lot de remerciements sera pr\xEAt. Consultez les diagnostics du workflow si la pr\xE9paration est bloqu\xE9e.",
+  "follow-up.emails-complete": "La liste du ticket ne contient aucun e-mail de remerciement en attente.",
   "approval.details.summary": "Voir le d\xE9tail des e-mails",
   "approval.details.email": "{kind, select, host_introduction {Introduction pour le contact de l'h\xF4te} speaker_introduction {Introduction pour l'intervenant} host_thanks {Remerciement pour le contact de l'h\xF4te} speaker_thanks {Remerciement pour l'intervenant} other {E-mail}}",
   "approval.details.purpose": "{kind, select, host_introduction {Remercie l'h\xF4te pour son accueil et partage les liens du meetup, la pr\xE9sentation et les besoins logistiques.} speaker_introduction {Partage les liens du meetup, les informations d'arriv\xE9e et de lieu, ainsi que les consignes de pr\xE9sentation.} host_thanks {Remercie l'h\xF4te pour l'organisation du meetup et propose de renouveler la collaboration.} speaker_thanks {Remercie l'intervenant, partage les r\xE9sultats des retours sur ses pr\xE9sentations et sollicite ses suggestions pour le meetup.} other {Envoie l'e-mail pr\xE9vu.}}",
@@ -41016,7 +41073,7 @@ var FR_MESSAGES2 = {
   "approval.details.omitted-emails": "{count, plural, one {# e-mail suppl\xE9mentaire fait partie de ce lot mais ne figure pas dans ce r\xE9sum\xE9.} other {# e-mails suppl\xE9mentaires font partie de ce lot mais ne figurent pas dans ce r\xE9sum\xE9.}}",
   "approval.details.omitted-links": "{count, plural, one {# lien suppl\xE9mentaire figure dans cet e-mail mais pas dans ce r\xE9sum\xE9.} other {# liens suppl\xE9mentaires figurent dans cet e-mail mais pas dans ce r\xE9sum\xE9.}}",
   "approval.final": "### Confirmation des organisateurs : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}}\n\nDate du meetup : {date}. Ce lot concerne au maximum {count, number} destinataires ; les envois d\xE9j\xE0 termin\xE9s sont ignor\xE9s.\n\n{status, select, approved {\u2705 **Approuv\xE9**} rejected {\u274C **Refus\xE9**} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\nCette d\xE9cision est d\xE9finitive pour cette version du lot. {status, select, approved {Les e-mails approuv\xE9s peuvent \xEAtre envoy\xE9s lorsque les contr\xF4les de livraison r\xE9ussissent. Leur envoi est suivi dans la liste de t\xE2ches du ticket.} rejected {Ce lot ne sera pas envoy\xE9.} other {}} Toute modification des d\xE9tails du meetup ou des destinataires n\xE9cessite une nouvelle confirmation.",
-  "approval.request": "### Confirmation des organisateurs : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}}\n\nDate du meetup : {date}. Ce lot concerne au maximum {count, number} destinataires ; les envois d\xE9j\xE0 termin\xE9s sont ignor\xE9s.\n\nOrganisateurs disposant d'un acc\xE8s en \xE9criture au d\xE9p\xF4t : cochez un choix ci-dessous. Laissez les deux cases d\xE9coch\xE9es pour attendre.\n\n- [{approveMark}] Approuver l'envoi de ce lot\n- [{rejectMark}] Refuser l'envoi de ce lot\n\nLa confirmation concerne cette version du lot. Toute modification des d\xE9tails du meetup ou des destinataires n\xE9cessite une nouvelle confirmation. Les cases des e-mails dans le ticket sont coch\xE9es apr\xE8s acceptation de l'envoi.",
+  "approval.request": "### Confirmation des organisateurs : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}}\n\nDate du meetup : {date}. Ce lot concerne au maximum {count, number} destinataires ; les envois d\xE9j\xE0 termin\xE9s sont ignor\xE9s.\n\nOrganisateurs disposant d'un acc\xE8s en \xE9criture au d\xE9p\xF4t : cochez un choix ci-dessous. Laissez les deux cases d\xE9coch\xE9es pour attendre. Cocher les deux est invalide et laisse la demande en attente.\n\n- [{approveMark}] Approuver l'envoi de ce lot\n- [{rejectMark}] Refuser l'envoi de ce lot\n\nLa confirmation concerne cette version du lot. Toute modification des d\xE9tails du meetup ou des destinataires n\xE9cessite une nouvelle confirmation. Les cases des e-mails dans le ticket sont coch\xE9es apr\xE8s acceptation de l'envoi.",
   "approval.slack": "Confirmation des organisateurs n\xE9cessaire : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}} pour le {date}, au maximum {count, number} destinataires. Ouvrez la demande et cochez Approuver ou Refuser : {url}"
 };
 
@@ -41081,6 +41138,37 @@ var ApprovalDetailsPresenter = class _ApprovalDetailsPresenter {
   }
 };
 
+// packages/adapter/github-organizer-approval/src/follow-up-presenter.ts
+var FollowUpPresenter = class {
+  constructor(messages) {
+    this.messages = messages;
+  }
+  messages;
+  render(record) {
+    if (!record.followUp) return [];
+    const lines = [
+      this.messages.t("follow-up.title", { date: record.eventDate }),
+      this.messages.t("follow-up.instructions", {})
+    ];
+    for (const task of FOLLOW_UP_TASKS) {
+      const pending = record.followUp.pendingTasks.includes(task);
+      lines.push(
+        `${pending ? "\u23F3" : "\u2705"} ${this.messages.t("follow-up.task", { task: task.replaceAll("-", "_") })}`
+      );
+    }
+    if (!record.followUp.active)
+      lines.push(this.messages.t("follow-up.stopped", {}));
+    else if (!record.recipientCount)
+      lines.push(
+        this.messages.t(
+          record.followUp.pendingTasks.some((task) => task.startsWith("thank-")) ? "follow-up.waiting" : "follow-up.emails-complete",
+          {}
+        )
+      );
+    return lines;
+  }
+};
+
 // packages/adapter/github-organizer-approval/src/approval-presenter.ts
 var ApprovalPresenter = class _ApprovalPresenter {
   constructor(messages) {
@@ -41088,10 +41176,18 @@ var ApprovalPresenter = class _ApprovalPresenter {
   }
   messages;
   issue(record, decision) {
+    const heading = [
+      ApprovalRecord.marker(record),
+      ...new FollowUpPresenter(this.messages).render(record)
+    ];
+    if (record.recipientCount === 0 || record.followUp?.active === false)
+      return [...heading, record.followUp?.attentionDetails ?? ""].join("\n\n").trimEnd();
     const details = record.details ? [new ApprovalDetailsPresenter(this.messages).render(record.details)] : [];
+    if (record.followUp?.attentionDetails)
+      details.push(record.followUp.attentionDetails);
     if (record.decision)
       return [
-        ApprovalRecord.marker(record),
+        ...heading,
         this.messages.t("approval.final", {
           kind: record.kind.replace("email-", ""),
           date: record.eventDate,
@@ -41103,7 +41199,7 @@ var ApprovalPresenter = class _ApprovalPresenter {
         ...details
       ].join("\n\n");
     return [
-      ApprovalRecord.marker(record),
+      ...heading,
       this.messages.t("approval.request", {
         kind: record.kind.replace("email-", ""),
         date: record.eventDate,
@@ -41115,7 +41211,8 @@ var ApprovalPresenter = class _ApprovalPresenter {
     ].join("\n\n");
   }
   decision(record, body) {
-    if (record.decision) return { status: "pending" };
+    if (record.decision || record.recipientCount === 0 || record.followUp?.active === false)
+      return { status: "pending" };
     const normalized = body.replace(/\r\n/g, "\n").replace(/- \[X\]/g, "- [x]");
     for (const locale of ["en", "fr"]) {
       const presenter = new _ApprovalPresenter(new ApprovalMessages(locale));
@@ -41168,6 +41265,7 @@ var GithubApprovalClient = class {
     }
   }
   async create(body) {
+    if (body.length > 6e4) throw new Error("Approval comment limit exceeded");
     const response = await this.api.rest.issues.createComment({
       owner: this.owner,
       repo: this.repo,
@@ -41179,6 +41277,7 @@ var GithubApprovalClient = class {
     return response.data.id;
   }
   async update(commentId, body) {
+    if (body.length > 6e4) throw new Error("Approval comment limit exceeded");
     await this.api.rest.issues.updateComment({
       owner: this.owner,
       repo: this.repo,
@@ -41195,6 +41294,7 @@ var GithubApprovalClient = class {
     return response.data.permission === "write" || response.data.permission === "maintain" || response.data.permission === "admin";
   }
   async replace(commentId, before, after) {
+    if (before === after) return;
     const current = (await this.list()).find(
       (comment) => comment.id === commentId
     );
@@ -41268,6 +41368,7 @@ var ApprovalNotifications = class {
   notifications;
   channelId;
   async send(record, commentId) {
+    if (record.kind === "email-thanks") return false;
     if (record.notification !== "new" && record.notification !== "retry")
       return record.notification === "reserved";
     const before = this.presenter.issue(record, { status: "pending" });
@@ -41292,6 +41393,7 @@ var ApprovalNotifications = class {
     return record.notification !== "sent";
   }
   async react(record, commentId) {
+    if (record.kind === "email-thanks") return false;
     if (!record.decision || record.reactionSent) return false;
     if (!record.notificationMessage) return true;
     const before = this.presenter.issue(record, record.decision);
@@ -41407,6 +41509,11 @@ var GithubOrganizerApproval = class {
       };
     }
     const record = ApprovalRecord.create(input);
+    if (input.kind === "email-thanks")
+      record.followUp = existing?.record.followUp ?? {
+        active: true,
+        pendingTasks: FOLLOW_UP_TASKS
+      };
     const body = this.presenter.issue(record, { status: "pending" });
     const commentId = existing ? existing.comment.id : await this.client.create(body);
     if (existing)
@@ -41419,6 +41526,7 @@ var GithubOrganizerApproval = class {
   async readAttention() {
     const result = [];
     for (const state of await this.states()) {
+      if (state.record.recipientCount === 0) continue;
       const decision = await this.finalize(state);
       result.push({
         revision: state.record.revision,
@@ -41439,6 +41547,69 @@ var GithubOrganizerApproval = class {
     }
     return { notificationFailed };
   }
+  async synchronizeFollowUp(input) {
+    const existing = (await this.states()).find(
+      ({ record: record2 }) => record2.kind === "email-thanks"
+    );
+    if (!existing && !input.active) return void 0;
+    if (existing) await this.finalize(existing);
+    const attention = existing?.record.followUp?.attention;
+    const attentionDetails = existing?.record.followUp?.attentionDetails;
+    const record = existing && (!input.active || existing.record.eventDate === input.eventDate) ? existing.record : ApprovalRecord.create({
+      kind: "email-thanks",
+      revision: "0".repeat(64),
+      eventDate: input.eventDate,
+      recipientCount: 0,
+      requestedAt: input.requestedAt,
+      followUp: {
+        active: input.active,
+        pendingTasks: input.pendingTasks
+      }
+    });
+    record.followUp = {
+      active: input.active,
+      pendingTasks: input.pendingTasks,
+      attention,
+      attentionDetails
+    };
+    ApprovalRecord.validate(record);
+    const body = this.presenter.issue(
+      record,
+      record.decision ?? { status: "pending" }
+    );
+    if (!existing) return this.client.create(body);
+    await this.client.replace(
+      existing.comment.id,
+      existing.comment.body ?? "",
+      body
+    );
+    return existing.comment.id;
+  }
+  async followUpAttention() {
+    const state = (await this.states()).find(({ record }) => record.followUp);
+    return state ? { commentId: state.comment.id, body: state.record.followUp?.attention } : void 0;
+  }
+  async saveFollowUpAttention(body, details) {
+    const state = (await this.states()).find(({ record }) => record.followUp);
+    if (!state?.record.followUp)
+      throw new Error("Missing post-event follow-up comment");
+    await this.finalize(state);
+    state.record.followUp = {
+      ...state.record.followUp,
+      attention: body,
+      attentionDetails: details
+    };
+    ApprovalRecord.validate(state.record);
+    const updated = this.presenter.issue(
+      state.record,
+      state.record.decision ?? { status: "pending" }
+    );
+    await this.client.replace(
+      state.comment.id,
+      state.comment.body ?? "",
+      updated
+    );
+  }
   async states() {
     const states = [];
     const trusted = new TrustedApprovalState(this.client, this.authorLogin);
@@ -41453,10 +41624,8 @@ var GithubOrganizerApproval = class {
     }
     return states;
   }
-  async finalize({
-    record,
-    comment
-  }) {
+  async finalize(state) {
+    const { record, comment } = state;
     const decision = await new ResolveApprovalDecision(
       this.client,
       this.presenter
@@ -41473,6 +41642,7 @@ var GithubOrganizerApproval = class {
     const body = this.presenter.issue(record, decision);
     if (body !== comment.body)
       await this.client.replace(comment.id, comment.body ?? "", body);
+    state.comment = { ...comment, body };
     return {
       status: decision.status,
       notificationFailed: await this.notifications.react(record, comment.id)

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { ApprovalDetails } from "./approval-details.js";
+import { FollowUpRecord, type StoredFollowUp } from "./follow-up-record.js";
 import type {
 	ApprovalNotificationMessage,
 	OrganizerApprovalRequest,
@@ -13,6 +14,7 @@ export interface StoredApproval extends OrganizerApprovalRequest {
 	notificationMessage?: ApprovalNotificationMessage;
 	decision?: FinalApprovalDecision;
 	reactionSent?: boolean;
+	followUp?: StoredFollowUp;
 }
 interface FinalApprovalDecision {
 	readonly status: "approved" | "rejected";
@@ -38,19 +40,31 @@ export class ApprovalRecord {
 				JSON.stringify(record.details) === JSON.stringify(input.details))
 		);
 	}
-	static validate(input: OrganizerApprovalRequest): void {
+	static validate(
+		input: OrganizerApprovalRequest & { followUp?: StoredFollowUp },
+	): void {
+		FollowUpRecord.validate(input.followUp);
+		if (input.followUp && input.kind !== "email-thanks")
+			throw new Error("Invalid post-event approval kind");
 		if (
 			!/^[a-f0-9]{64}$/.test(input.revision) ||
 			!["email-introduction", "email-thanks"].includes(input.kind) ||
 			!/^\d{4}-\d{2}-\d{2}$/.test(input.eventDate) ||
 			!Number.isSafeInteger(input.recipientCount) ||
-			input.recipientCount <= 0 ||
+			(input.recipientCount <= 0 &&
+				!(
+					input.recipientCount === 0 &&
+					input.kind === "email-thanks" &&
+					input.followUp
+				)) ||
 			!Number.isFinite(Date.parse(input.requestedAt))
 		)
 			throw new Error("Invalid approval request");
 		ApprovalDetails.validate(input.details, input.recipientCount);
 	}
-	static create(input: OrganizerApprovalRequest): StoredApproval {
+	static create(
+		input: OrganizerApprovalRequest & { followUp?: StoredFollowUp },
+	): StoredApproval {
 		ApprovalRecord.validate(input);
 		return {
 			...input,
@@ -73,7 +87,8 @@ export class ApprovalRecord {
 			throw new Error("Invalid approval state");
 		if (
 			record.decision &&
-			(!["approved", "rejected"].includes(record.decision.status) ||
+			(record.recipientCount === 0 ||
+				!["approved", "rejected"].includes(record.decision.status) ||
 				!/^[A-Za-z0-9-]{1,39}$/.test(record.decision.actor) ||
 				!Number.isFinite(Date.parse(record.decision.decidedAt)))
 		)

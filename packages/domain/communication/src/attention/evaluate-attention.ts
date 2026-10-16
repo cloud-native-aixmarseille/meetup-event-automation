@@ -6,6 +6,7 @@ import type {
 	AttentionRecoveryItem,
 } from "./model.js";
 import { AttentionPolicy } from "./attention-policy.js";
+import { PostEventPolicy } from "../post-event-policy.js";
 export interface AttentionStage {
 	readonly owner: "event" | "assets" | "feedback" | "communications";
 	readonly outcome: "success" | "failure" | "unknown";
@@ -95,26 +96,32 @@ export class EvaluateAttention {
 	): void {
 		const eventDay = AttentionPolicy.eventDay(facts.eventDate);
 		const day = AttentionPolicy.day(now);
+		const postEvent = PostEventPolicy.isDue({
+			eventDate: facts.eventDate,
+			timeZone: "Europe/Paris",
+			occurrenceStatus: facts.occurrence,
+			now,
+		});
 		if (eventDay === undefined)
 			conditions.push(
 				EvaluateAttention.condition("missing-date", "event", "date", "weekly"),
 			);
 		EvaluateAttention.preparation(facts, eventDay, day, conditions);
-		if (facts.occurrence === "held")
+		if (postEvent)
 			for (const task of facts.followUpPending)
 				conditions.push(
 					EvaluateAttention.condition("follow-up", "event", task, "follow-up"),
 				);
-		EvaluateAttention.approvals(facts, conditions);
+		EvaluateAttention.approvals(facts, conditions, postEvent);
 	}
 	private static approvals(
 		facts: AttentionFacts,
 		conditions: AttentionCondition[],
+		postEvent: boolean,
 	): void {
 		for (const approval of facts.approvals ?? []) {
 			const relevant =
-				approval.kind ===
-				(facts.occurrence === "held" ? "email-thanks" : "email-introduction");
+				approval.kind === (postEvent ? "email-thanks" : "email-introduction");
 			if (
 				approval.status === "pending" &&
 				approval.eventDate === facts.eventDate &&
@@ -138,7 +145,10 @@ export class EvaluateAttention {
 		day: number,
 		conditions: AttentionCondition[],
 	): void {
-		if (facts.occurrence === "scheduled") {
+		if (
+			facts.occurrence === "scheduled" &&
+			(eventDay === undefined || day <= eventDay)
+		) {
 			if (!facts.hostConfirmed)
 				conditions.push(
 					EvaluateAttention.condition(
@@ -173,15 +183,6 @@ export class EvaluateAttention {
 						"event",
 						task,
 						"preparation",
-					),
-				);
-			if (eventDay !== undefined && day > eventDay)
-				conditions.push(
-					EvaluateAttention.condition(
-						"occurrence-decision",
-						"event",
-						"occurrence",
-						"occurrence",
 					),
 				);
 		}

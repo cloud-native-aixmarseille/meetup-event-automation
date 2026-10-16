@@ -1,6 +1,7 @@
 # ADR 0011: Finalize organizer decisions in place and acknowledge them on Slack
 
-Status: Accepted
+Status: Accepted; partially superseded by
+[ADR 0014](0014-consolidated-post-event-follow-up.md) for dedicated thank-you Slack alerts and reactions.
 
 Date: 2026-10-14
 

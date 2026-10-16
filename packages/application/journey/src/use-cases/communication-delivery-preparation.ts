@@ -1,4 +1,7 @@
-import type { NotificationRecipient } from "@meetup-automation/communication";
+import {
+	PostEventPolicy,
+	type NotificationRecipient,
+} from "@meetup-automation/communication";
 import type { MeetupEvent } from "@meetup-automation/event";
 import {
 	type ReferentialCatalog,
@@ -19,7 +22,7 @@ export class CommunicationDeliveryPreparation {
 	constructor(
 		private readonly dependencies: Pick<
 			ManageMeetupCommunicationsDependencies,
-			"config" | "referentialRepository" | "feedbackResults"
+			"config" | "referentialRepository" | "feedbackResults" | "clock"
 		>,
 	) {}
 	async execute(
@@ -27,6 +30,12 @@ export class CommunicationDeliveryPreparation {
 		event: MeetupEvent,
 		runtimeDiagnostics: CommunicationJourneyDiagnostic[],
 	) {
+		const postEvent = PostEventPolicy.isDue({
+			eventDate: event.date,
+			timeZone: event.timeZone,
+			occurrenceStatus: event.occurrenceStatus ?? "unknown",
+			now: this.dependencies.clock.now(),
+		});
 		const catalog = await this.catalog(runtimeDiagnostics);
 		const organizerNotificationDestination =
 			input.organizerNotificationDestination.trim();
@@ -51,7 +60,12 @@ export class CommunicationDeliveryPreparation {
 		const recipients = referencesResolved
 			? await new SpeakerFeedbackPreparation(
 					this.dependencies.feedbackResults,
-				).execute(event, mailRecipientResolution.recipients, runtimeDiagnostics)
+				).execute(
+					event,
+					mailRecipientResolution.recipients,
+					runtimeDiagnostics,
+					postEvent,
+				)
 			: mailRecipientResolution.recipients;
 		const notificationRecipients: readonly NotificationRecipient[] = [
 			{
@@ -64,6 +78,7 @@ export class CommunicationDeliveryPreparation {
 		];
 
 		return {
+			postEvent,
 			notificationConfigured,
 			mailRecipientResolution: { ...mailRecipientResolution, recipients },
 			referencesResolved,

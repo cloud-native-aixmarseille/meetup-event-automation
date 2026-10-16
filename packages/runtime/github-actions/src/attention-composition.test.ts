@@ -1,3 +1,9 @@
+import { followUpFixture } from "../testing/follow-up-attention.fixtures.js";
+import {
+	decision,
+	request,
+} from "../../../adapter/github-organizer-approval/testing/approval.fixtures.js";
+import { AttentionRecord } from "@meetup-automation/github-organizer-attention";
 import { getOctokit } from "@actions/github";
 import type {
 	EventDocumentCodec,
@@ -101,5 +107,118 @@ describe("attention runtime composition", () => {
 		expect(f.comments[0]?.body).toContain('"status":"accepted"');
 		expect(f.comments[0]?.body).toContain("organisateurs");
 		expect(f.comments[0]?.body).not.toContain("private-token");
+	});
+});
+
+describe("post-event attention composition", () => {
+	afterEach(() => vi.unstubAllGlobals());
+	it("keeps blocked preparation and recovery guidance visible alongside task progress", async () => {
+		// Arrange
+		const f = followUpFixture();
+		// Act
+		const result = await f.run("en", [
+			{ owner: "communications", outcome: "failure", blocked: true },
+		]);
+		const body = f.comments[0]?.body ?? "";
+		// Assert
+		expect(result.posted).toBe(true);
+		expect(f.comments).toHaveLength(1);
+		expect(body).toContain("Email approval will appear here");
+		expect(body).toContain("Review the failed or blocked stage");
+		expect(body).toContain("/actions/runs/123");
+		expect(body).not.toContain("- [ ] Approve");
+	});
+
+	it("uses one approval and task comment, with one notification for all follow-up tasks", async () => {
+		// Arrange
+		const f = followUpFixture();
+		// Act
+		const first = await f.run();
+		await f.approvals.request({ ...request, kind: "email-thanks" });
+		const second = await f.run();
+		const body = f.comments[0]?.body ?? "";
+		const shared = await f.approvals.followUpAttention();
+		const state = AttentionRecord.read(shared?.body ?? "");
+		// Assert
+		expect(first.posted).toBe(true);
+		expect(second.posted).toBe(false);
+		expect(second.notificationFailed).toBe(false);
+		expect(f.comments).toHaveLength(1);
+		expect(body).toContain("- [ ] Approve sending this batch");
+		expect(
+			state.episodes.filter(
+				(episode) => episode.condition.code === "follow-up",
+			),
+		).toHaveLength(5);
+		expect(state.commentId).toBe(100);
+		expect(f.dispatch).not.toHaveBeenCalled();
+		expect(
+			f.fetcher.mock.calls.filter(([url]) =>
+				String(url).endsWith("chat.postMessage"),
+			),
+		).toHaveLength(1);
+		expect(String(f.fetcher.mock.calls[0]?.[1]?.body)).toContain(
+			"#issuecomment-100",
+		);
+	});
+	it("preserves approval while task progress and locale change without another post", async () => {
+		// Arrange
+		const f = followUpFixture();
+		await f.run();
+		await f.approvals.request({ ...request, kind: "email-thanks" });
+		decision(f);
+		f.current.event = {
+			...f.current.event,
+			operationalChecklists: {
+				...f.current.event.operationalChecklists,
+				postEvent: [
+					{ name: "Mail thanks hoster", completed: true },
+					{ name: "Mail thanks speakers", completed: true },
+					{ name: "Share slides to meetup", completed: true },
+					{ name: "Sync attendees from tally sheet to CNCF", completed: true },
+					{ name: "Social networks", completed: true },
+				],
+			},
+		};
+		// Act
+		const result = await f.run("fr");
+		const approved = await f.approvals.request({
+			...request,
+			kind: "email-thanks",
+		});
+		// Assert
+		expect(result.active).toBe(0);
+		expect(result.notificationFailed).toBe(false);
+		expect(approved.status).toBe("approved");
+		expect(f.comments).toHaveLength(1);
+		expect(
+			f.fetcher.mock.calls.filter(([url]) =>
+				String(url).endsWith("chat.postMessage"),
+			),
+		).toHaveLength(1);
+		expect(
+			f.fetcher.mock.calls.some(([url]) => String(url).endsWith("chat.update")),
+		).toBe(true);
+	});
+	it("moves an uncertain existing notification reservation before retiring the previous overview", async () => {
+		// Arrange
+		const f = followUpFixture();
+		f.current.now = new Date("2099-06-01T10:00:00Z");
+		f.fetcher.mockRejectedValueOnce(new Error("lost acknowledgement"));
+		await f.run();
+		f.current.now = new Date("2099-06-09T10:00:00Z");
+		// Act
+		const migrated = await f.run();
+		const retry = await f.run();
+		const shared = await f.approvals.followUpAttention();
+		const state = AttentionRecord.read(shared?.body ?? "");
+		// Assert
+		expect(migrated.notificationFailed).toBe(true);
+		expect(retry.notificationFailed).toBe(true);
+		expect(state.post?.status).toBe("pending");
+		expect(f.fetcher).toHaveBeenCalledTimes(1);
+		expect(f.comments).toHaveLength(2);
+		expect(f.comments[0]?.body).toContain("shared follow-up comment");
+		expect(f.comments[0]?.body).not.toContain("meetup-organizer-attention:v1");
 	});
 });

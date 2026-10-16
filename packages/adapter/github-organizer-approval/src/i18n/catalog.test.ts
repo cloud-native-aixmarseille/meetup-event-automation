@@ -4,6 +4,12 @@ import { CATALOGS } from "./catalog.js";
 import type { MessageParameters } from "./message-parameters.js";
 
 const parameters = {
+	"follow-up.title": { date: "2099-06-08" },
+	"follow-up.instructions": {},
+	"follow-up.task": { task: "thank_host" },
+	"follow-up.stopped": {},
+	"follow-up.waiting": {},
+	"follow-up.emails-complete": {},
 	"approval.details.summary": {},
 	"approval.details.email": { kind: "speaker_thanks" },
 	"approval.details.purpose": { kind: "speaker_thanks" },

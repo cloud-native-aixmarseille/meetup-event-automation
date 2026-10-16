@@ -153,7 +153,9 @@ compatibility code.
 
 Time-dependent rules receive an explicit clock and time zone. A past date does
 not prove an event happened. Occurrence comes from issue state and explicit
-status labels; lifecycle is derived from those facts.
+status labels; lifecycle is derived from those facts. `PostEventPolicy` separately
+enables follow-up after the event date without projecting a held label. Planning,
+recipient selection, feedback preparation, approval and attention use that phase.
 
 Official side-effecting event jobs share a repository/issue concurrency group
 and use `cancel-in-progress: false`. Reconciliation reloads and compares issue
@@ -183,7 +185,7 @@ completion does not invalidate the full batch fingerprint. Slack notification
 reservations prevent automatic retries after ambiguous acknowledgements. The
 journey's `OrganizerApprovalNotification` port returns an opaque message
 reference for accepted requests. The Slack adapter uses it for idempotent
-decision reactions on the original message. Synchronization finalizes choices
+introduction decision reactions on the original message. Synchronization finalizes choices
 and retries reactions even when no email task remains. Slack failures do not
 undo durable decisions. See the
 [communication integration guide](../integrations/communications.md#confirm-an-email-batch).
@@ -203,7 +205,15 @@ verifies bot authorship and revision history, validates and persists state, and
 projects localized status before the Slack adapter posts or updates a message.
 Runtime composition injects the clock and ports. A pending post blocks further
 posts across days until explicit verified recovery. Existing mail records and
-approval decisions remain independent. See
+approval decisions remain independent. Once follow-up begins, the approval adapter
+stores the attention record inside the single thank-you approval and task comment.
+The attention adapter still owns validation and presentation; runtime composition
+supplies these capabilities without adapter-to-adapter dependencies. A placeholder
+with zero recipients shows task progress while a safe email batch is unavailable;
+it cannot authorize mail. Progress writes first verify and finalize any human
+choice. Migration persists notification reservations before retiring the earlier
+attention view. Thank-you requests use grouped attention notifications, without
+separate Slack approval posts or reactions. See
 [organizer attention](../integrations/communications.md#organizer-attention).
 
 OpenFeedback creation uses a stable source key to recover events on retries.

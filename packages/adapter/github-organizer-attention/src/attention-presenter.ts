@@ -28,18 +28,29 @@ export class AttentionPresenter implements AttentionContent {
 			(id) => Number.isSafeInteger(id) && id > 0,
 		);
 	}
+	redirect(commentId: number): string {
+		return this.messages.t("attention.redirect", {
+			url: `${this.issueUrl}#issuecomment-${commentId}`,
+		});
+	}
 	issue(state: AttentionState): string {
+		return [AttentionRecord.marker(state), this.details(state)].join("\n\n");
+	}
+	details(state: AttentionState): string {
 		const view = AttentionPolicy.view(state);
 		const lines = [
-			AttentionRecord.marker(state),
 			`## ${this.messages.t("attention.title")}`,
 			this.date(state),
 			...this.status(state),
 		];
 		for (const episode of view.conditions)
-			lines.push(
-				`- ${this.text(episode)} ([${this.messages.t("attention.full")}](${this.url(episode, state)}))`,
-			);
+			if (
+				!state.commentId ||
+				!["follow-up", "approval-pending"].includes(episode.condition.code)
+			)
+				lines.push(
+					`- ${this.text(episode)} ([${this.messages.t("attention.full")}](${this.url(episode, state)}))`,
+				);
 		if (!view.conditions.length) lines.push(this.messages.t("attention.clear"));
 		lines.push(
 			this.messages.t("attention.resolved", {
@@ -60,7 +71,7 @@ export class AttentionPresenter implements AttentionContent {
 		const icon = view.conditions.length ? "⚠️" : "✅";
 		const date = this.slackDate(view.state.eventDate);
 		const lines = [
-			`${icon} *${this.link(this.issueUrl, title)}*${date ? ` · ${date}` : ""}`,
+			`${icon} *${this.link(this.overviewUrl(view.state), title)}*${date ? ` · ${date}` : ""}`,
 			"",
 		];
 		for (const episode of view.conditions.slice(0, 3))
@@ -70,7 +81,7 @@ export class AttentionPresenter implements AttentionContent {
 		if (view.conditions.length > 3)
 			lines.push(
 				this.link(
-					this.issueUrl,
+					this.overviewUrl(view.state),
 					this.messages.t("slack.more", { count: view.conditions.length - 3 }),
 				),
 			);
@@ -94,7 +105,10 @@ export class AttentionPresenter implements AttentionContent {
 		});
 		const url = this.url(episode, state);
 		const label = this.messages.t(
-			episode.condition.commentId ? "slack.review" : "slack.run",
+			episode.condition.commentId ||
+				(state.commentId && episode.condition.code === "follow-up")
+				? "slack.review"
+				: "slack.run",
 		);
 		const link = url === this.issueUrl ? "" : ` · ${this.link(url, label)}`;
 		const unknown =
@@ -149,6 +163,11 @@ export class AttentionPresenter implements AttentionContent {
 			/^\d+$/.test(state.runId)
 		)
 			return `https://github.com/${this.repository}/actions/runs/${state.runId}`;
-		return this.issueUrl;
+		return this.overviewUrl(state);
+	}
+	private overviewUrl(state: AttentionState): string {
+		return state.commentId
+			? `${this.issueUrl}#issuecomment-${state.commentId}`
+			: this.issueUrl;
 	}
 }
