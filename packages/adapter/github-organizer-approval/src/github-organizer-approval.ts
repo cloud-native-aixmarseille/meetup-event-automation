@@ -7,7 +7,10 @@ import type {
 	OrganizerApprovalNotification,
 	OrganizerApprovalRequest,
 	OrganizerApprovalResult,
+	OrganizerFollowUp,
+	OrganizerFollowUpInput,
 } from "@meetup-automation/journey";
+import { FOLLOW_UP_TASKS } from "@meetup-automation/journey";
 import { ApprovalNotifications } from "./approval-notifications.js";
 import type { ApprovalPresenter } from "./approval-presenter.js";
 import { ApprovalRecord, type StoredApproval } from "./approval-record.js";
@@ -19,13 +22,13 @@ import { ResolveApprovalDecision } from "./resolve-approval-decision.js";
 import { TrustedApprovalState } from "./trusted-approval-state.js";
 
 interface ApprovalState {
-	readonly comment: ApprovalComment;
+	comment: ApprovalComment;
 	readonly record: StoredApproval;
 }
 
 /** Final decisions are bot-persisted revisions of the original request comment. */
 export class GithubOrganizerApproval
-	implements OrganizerApproval, AttentionApprovalSource
+	implements OrganizerApproval, AttentionApprovalSource, OrganizerFollowUp
 {
 	private readonly notifications: ApprovalNotifications;
 	constructor(
@@ -68,6 +71,11 @@ export class GithubOrganizerApproval
 			};
 		}
 		const record = ApprovalRecord.create(input);
+		if (input.kind === "email-thanks")
+			record.followUp = existing?.record.followUp ?? {
+				active: true,
+				pendingTasks: FOLLOW_UP_TASKS,
+			};
 		const body = this.presenter.issue(record, { status: "pending" });
 		const commentId = existing
 			? existing.comment.id
@@ -82,6 +90,7 @@ export class GithubOrganizerApproval
 	async readAttention(): Promise<readonly AttentionApproval[]> {
 		const result: AttentionApproval[] = [];
 		for (const state of await this.states()) {
+			if (state.record.recipientCount === 0) continue;
 			const decision = await this.finalize(state);
 			result.push({
 				revision: state.record.revision,
@@ -102,6 +111,79 @@ export class GithubOrganizerApproval
 		}
 		return { notificationFailed };
 	}
+	async synchronizeFollowUp(
+		input: OrganizerFollowUpInput,
+	): Promise<number | undefined> {
+		const existing = (await this.states()).find(
+			({ record }) => record.kind === "email-thanks",
+		);
+		if (!existing && !input.active) return undefined;
+		if (existing) await this.finalize(existing);
+		const attention = existing?.record.followUp?.attention;
+		const attentionDetails = existing?.record.followUp?.attentionDetails;
+		const record =
+			existing &&
+			(!input.active || existing.record.eventDate === input.eventDate)
+				? existing.record
+				: ApprovalRecord.create({
+						kind: "email-thanks",
+						revision: "0".repeat(64),
+						eventDate: input.eventDate,
+						recipientCount: 0,
+						requestedAt: input.requestedAt,
+						followUp: {
+							active: input.active,
+							pendingTasks: input.pendingTasks,
+						},
+					});
+		record.followUp = {
+			active: input.active,
+			pendingTasks: input.pendingTasks,
+			attention,
+			attentionDetails,
+		};
+		ApprovalRecord.validate(record);
+		const body = this.presenter.issue(
+			record,
+			record.decision ?? { status: "pending" },
+		);
+		if (!existing) return this.client.create(body);
+		await this.client.replace(
+			existing.comment.id,
+			existing.comment.body ?? "",
+			body,
+		);
+		return existing.comment.id;
+	}
+	async followUpAttention(): Promise<
+		{ commentId: number; body?: string } | undefined
+	> {
+		const state = (await this.states()).find(({ record }) => record.followUp);
+		return state
+			? { commentId: state.comment.id, body: state.record.followUp?.attention }
+			: undefined;
+	}
+	async saveFollowUpAttention(body: string, details?: string): Promise<void> {
+		const state = (await this.states()).find(({ record }) => record.followUp);
+		if (!state?.record.followUp)
+			throw new Error("Missing post-event follow-up comment");
+		await this.finalize(state);
+		state.record.followUp = {
+			...state.record.followUp,
+			attention: body,
+			attentionDetails: details,
+		};
+		ApprovalRecord.validate(state.record);
+		const updated = this.presenter.issue(
+			state.record,
+			state.record.decision ?? { status: "pending" },
+		);
+		await this.client.replace(
+			state.comment.id,
+			state.comment.body ?? "",
+			updated,
+		);
+	}
 	private async states(): Promise<readonly ApprovalState[]> {
 		const states: ApprovalState[] = [];
 		const trusted = new TrustedApprovalState(this.client, this.authorLogin);
@@ -116,10 +198,10 @@ export class GithubOrganizerApproval
 		}
 		return states;
 	}
-	private async finalize({
-		record,
-		comment,
-	}: ApprovalState): Promise<OrganizerApprovalResult> {
+	private async finalize(
+		state: ApprovalState,
+	): Promise<OrganizerApprovalResult> {
+		const { record, comment } = state;
 		const decision = await new ResolveApprovalDecision(
 			this.client,
 			this.presenter,
@@ -136,6 +218,7 @@ export class GithubOrganizerApproval
 		const body = this.presenter.issue(record, decision);
 		if (body !== comment.body)
 			await this.client.replace(comment.id, comment.body ?? "", body);
+		state.comment = { ...comment, body };
 		return {
 			status: decision.status,
 			notificationFailed: await this.notifications.react(record, comment.id),

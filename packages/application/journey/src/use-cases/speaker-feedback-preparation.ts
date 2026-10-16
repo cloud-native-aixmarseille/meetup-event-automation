@@ -12,11 +12,12 @@ export class SpeakerFeedbackPreparation {
 		event: MeetupEvent,
 		recipients: readonly MailRecipient[],
 		diagnostics: CommunicationJourneyDiagnostic[],
+		postEvent = event.occurrenceStatus === "held",
 	): Promise<readonly MailRecipient[]> {
 		if (
-			event.occurrenceStatus !== "held" ||
-			CommunicationChecklist.pendingRecipients(event, recipients).length ===
-				0 ||
+			!postEvent ||
+			CommunicationChecklist.pendingRecipients(event, recipients, postEvent)
+				.length === 0 ||
 			!recipients.some((recipient) => recipient.role === "speaker")
 		)
 			return recipients;

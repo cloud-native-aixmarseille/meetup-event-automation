@@ -4,19 +4,15 @@ import {
 } from "@meetup-automation/communication";
 import {
 	type EventDocumentDecodeResult,
+	type MeetupEvent,
 	EventRuleEngine,
 	EventRuleFactory,
 	EXPECTED_POST_EVENT_TASK_NAMES,
 } from "@meetup-automation/event";
 import type { AutomationConfig } from "../config/automation-config.js";
 import { EventPublicationEvaluation } from "./event-publication-evaluation.js";
-const FOLLOW_UP_RESOURCES = [
-	"thank-host",
-	"thank-speakers",
-	"share-slides",
-	"import-attendance",
-	"share-social",
-] as const;
+import { CommunicationChecklist } from "./communication-checklist.js";
+import { FOLLOW_UP_TASKS } from "../ports/organizer-follow-up.js";
 export class AttentionEventFacts {
 	static create(
 		decoded: EventDocumentDecodeResult,
@@ -59,14 +55,23 @@ export class AttentionEventFacts {
 					event.operationalChecklists.communication,
 				),
 			],
-			followUpPending: EXPECTED_POST_EVENT_TASK_NAMES.flatMap((name, index) => {
-				const completed = EventPublicationEvaluation.checklistTaskIsCompleted(
-					event.operationalChecklists.postEvent,
-					name,
-				);
-				return completed ? [] : [FOLLOW_UP_RESOURCES[index]];
-			}),
+			followUpPending: AttentionEventFacts.followUp(event),
 		};
+	}
+	private static followUp(event: MeetupEvent): string[] {
+		return EXPECTED_POST_EVENT_TASK_NAMES.flatMap((name, index) => {
+			const completed =
+				index < 2
+					? CommunicationChecklist.status(
+							event,
+							index === 0 ? "host-thanks" : "speaker-thanks",
+						) === "completed"
+					: EventPublicationEvaluation.checklistTaskIsCompleted(
+							event.operationalChecklists.postEvent,
+							name,
+						);
+			return completed ? [] : [FOLLOW_UP_TASKS[index]];
+		});
 	}
 	private static announcements(
 		items: readonly { name: string; completed: boolean }[],

@@ -50,10 +50,9 @@ export class ApproveCommunicationBatch {
 				throw new Error("Communication approval batch is invalid");
 			const mails = batch.intents.filter((intent) => intent.channel === "mail");
 			const result = await this.approvals.request({
-				kind:
-					input.occurrenceStatus === "held"
-						? "email-thanks"
-						: "email-introduction",
+				kind: mails.some((mail) => mail.kind.endsWith("-thanks"))
+					? "email-thanks"
+					: "email-introduction",
 				revision: MailBatchFingerprint.create(
 					input.eventDate,
 					input.timeZone,

@@ -78,6 +78,7 @@ for implemented behavior and contributor conventions.
 - [ADR-0012: Synchronize OpenFeedback talks and speakers](adr/0012-synchronize-openfeedback-talks-and-speakers.md)
 - [ADR-0012: Use Conference Hall as the source of truth for talks and speakers](adr/0012-conference-hall-talks-and-speakers.md)
 - [ADR-0013: Reconcile actionable organizer alerts throughout the meetup lifecycle](adr/0013-actionable-organizer-alerts.md)
+- [ADR-0014: Consolidate post-event follow-up](adr/0014-consolidated-post-event-follow-up.md)
 
 ## Directory layout
 
@@ -116,7 +117,8 @@ docs/
     ├── 0011-final-organizer-decisions.md
     ├── 0012-synchronize-openfeedback-talks-and-speakers.md
     ├── 0012-conference-hall-talks-and-speakers.md
-    └── 0013-actionable-organizer-alerts.md
+    ├── 0013-actionable-organizer-alerts.md
+    └── 0014-consolidated-post-event-follow-up.md
 ```
 
 Action references stay beside `action.yml`; workflow references stay beside

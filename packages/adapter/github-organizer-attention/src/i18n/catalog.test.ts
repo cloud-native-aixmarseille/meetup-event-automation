@@ -3,6 +3,9 @@ import { inspectCatalog } from "../../../../presentation/localization/testing/ca
 import { CATALOGS } from "./catalog.js";
 import type { MessageParameters } from "./attention-messages.js";
 const parameters = {
+	"attention.redirect": {
+		url: "https://github.com/example/meetups/issues/42#issuecomment-100",
+	},
 	"slack.title": { issue: "42" },
 	"slack.more": { count: 2 },
 	"slack.manual-publication": { task: "publication" },

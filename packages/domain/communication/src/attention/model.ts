@@ -40,6 +40,7 @@ export interface AttentionCondition {
 	readonly recovery?: boolean;
 }
 export interface AttentionObservation {
+	readonly commentId?: number;
 	readonly conditions: readonly AttentionCondition[];
 	readonly evaluated: readonly AttentionOwner[];
 	/** Explicitly verified outcomes; missing evidence never clears uncertainty. */
@@ -69,6 +70,7 @@ interface AttentionPost {
 	fingerprint?: string;
 }
 export interface AttentionState {
+	commentId?: number;
 	readonly version: 1;
 	eventDate: string;
 	stopped: boolean;

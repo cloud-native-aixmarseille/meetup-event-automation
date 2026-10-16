@@ -249,7 +249,7 @@ describe("PlanCommunications", () => {
 		);
 	});
 
-	it("plans thanks only from an explicit held state", () => {
+	it("plans thanks for held events and elapsed scheduled dates", () => {
 		// Arrange
 		// No additional setup is needed.
 
@@ -289,12 +289,11 @@ describe("PlanCommunications", () => {
 				expect.objectContaining({ kind: "readiness-reminder" }),
 			]),
 		);
-		expect(merelyPast.intents).not.toEqual(
+		expect(merelyPast.intents).toEqual(
 			expect.arrayContaining([
 				expect.objectContaining({ kind: "host-thanks" }),
 			]),
 		);
-		expect(merelyPast.intents).toEqual([]);
 	});
 
 	it("does not introduce a ready event whose scheduled date has elapsed", () => {
@@ -310,7 +309,10 @@ describe("PlanCommunications", () => {
 		);
 
 		// Assert
-		expect(result).toEqual({ intents: [], diagnostics: [] });
+		expect(result.diagnostics).toEqual([]);
+		expect(result.intents.map((intent) => intent.kind)).toEqual([
+			"host-thanks",
+		]);
 	});
 
 	it.each(["cancelled", "postponed", "unknown"] as const)(

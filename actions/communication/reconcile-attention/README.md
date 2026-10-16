@@ -8,7 +8,8 @@
 ## Overview
 
 Reconcile durable organizer conditions after integration stages, reload the issue,
-and maintain one GitHub attention comment and bounded Slack messages. Run under
+and maintain one GitHub status comment and bounded Slack messages. Post-event
+status shares the thank-you approval comment and notification flow. Run under
 `meetup-event-${{ github.repository_id }}-<issue-number>` concurrency with
 `cancel-in-progress: false`. Both public event workflows provide this lock and
 run the action after failed dependencies.

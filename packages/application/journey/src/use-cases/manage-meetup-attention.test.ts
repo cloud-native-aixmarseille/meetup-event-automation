@@ -22,6 +22,7 @@ function fixture() {
 		config: AutomationConfigFactory.createAutomationConfig(),
 		repository: { find, applyPatch: vi.fn(), listPage: vi.fn() },
 		codec: { decode: () => ({ event, diagnostics: [] }), createPatch: vi.fn() },
+		followUp: { synchronizeFollowUp: vi.fn().mockResolvedValue(undefined) },
 		approvals: { readAttention: vi.fn().mockResolvedValue([]) },
 		recovery: { readAttention: vi.fn().mockResolvedValue([]) },
 		reconciliation: { execute },

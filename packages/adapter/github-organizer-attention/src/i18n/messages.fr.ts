@@ -1,4 +1,6 @@
 export const messages = {
+	"attention.redirect":
+		"La confirmation et le suivi des tâches après le meetup sont dans le [commentaire de suivi commun]({url}).",
 	"slack.title": "Meetup #{issue}",
 	"slack.more":
 		"+{count, plural, one {# autre tâche} other {# autres tâches}} → Tout voir",
