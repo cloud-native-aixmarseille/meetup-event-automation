@@ -82,7 +82,9 @@ Create these labels in the consumer repository:
 The automation maintains the `needed` labels from the confirmation state. Use at
 most one `event:*` status label. An open issue without a status label is
 scheduled; closing it marks it held unless an explicit status says otherwise.
-The date passing alone does not mark an event held.
+The date passing alone does not mark an event held. It enables
+[post-event follow-up](../integrations/communications.md#when-messages-are-due)
+from the next Paris calendar day, with organizer approval still required for mail.
 
 Email tasks use completion checkboxes. See
 [approval and automatic completion](../integrations/communications.md) for task names, timing,

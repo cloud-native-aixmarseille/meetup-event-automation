@@ -18,9 +18,11 @@ import {
 	ApprovalPresenter,
 	GithubApprovalClient,
 	GithubOrganizerApproval,
+	GithubFollowUpAttentionRepository,
 } from "@meetup-automation/github-organizer-approval";
 import {
 	AttentionMessages,
+	AttentionRecord,
 	AttentionPresenter,
 	GithubAttentionClient,
 	GithubAttentionRepository,
@@ -53,6 +55,10 @@ export class AttentionComposition {
 		container
 			.bind(SystemCommunicationClock)
 			.toDynamicValue(() => new SystemCommunicationClock());
+		container
+			.bind(GithubOrganizerApproval)
+			.toDynamicValue(() => AttentionComposition.approvals(input))
+			.inSingletonScope();
 		const presenter = new AttentionPresenter(
 			`${input.owner}/${input.repo}`,
 			input.issueNumber,
@@ -61,15 +67,20 @@ export class AttentionComposition {
 		container
 			.bind<AttentionRepository>(ATTENTION_SERVICES.repository)
 			.toDynamicValue(
-				() =>
-					new GithubAttentionRepository(
-						new GithubAttentionClient(
-							input.client,
-							input.owner,
-							input.repo,
-							input.issueNumber,
+				(context) =>
+					new GithubFollowUpAttentionRepository(
+						context.get(GithubOrganizerApproval),
+						new GithubAttentionRepository(
+							new GithubAttentionClient(
+								input.client,
+								input.owner,
+								input.repo,
+								input.issueNumber,
+							),
+							input.commentAuthorLogin,
+							presenter,
 						),
-						input.commentAuthorLogin,
+						AttentionRecord,
 						presenter,
 					),
 			);
@@ -86,6 +97,22 @@ export class AttentionComposition {
 		AttentionComposition.bindJourney(container, input);
 		return container;
 	}
+	private static approvals(
+		input: AttentionCompositionInput,
+	): GithubOrganizerApproval {
+		return new GithubOrganizerApproval(
+			new GithubApprovalClient(
+				input.client,
+				input.owner,
+				input.repo,
+				input.issueNumber,
+			),
+			input.commentAuthorLogin,
+			new ApprovalPresenter(new ApprovalMessages(input.locale)),
+			new SlackApprovalNotification(input.slackToken),
+			input.slackOrganizerChannelId,
+		);
+	}
 	private static bindJourney(
 		container: Container,
 		input: AttentionCompositionInput,
@@ -97,18 +124,8 @@ export class AttentionComposition {
 				repository: context.get<EventRepository>(SERVICES.eventRepository),
 				codec: context.get<EventDocumentCodec>(SERVICES.eventDocumentCodec),
 				clock,
-				approvals: new GithubOrganizerApproval(
-					new GithubApprovalClient(
-						input.client,
-						input.owner,
-						input.repo,
-						input.issueNumber,
-					),
-					input.commentAuthorLogin,
-					new ApprovalPresenter(new ApprovalMessages(input.locale)),
-					new SlackApprovalNotification(input.slackToken),
-					input.slackOrganizerChannelId,
-				),
+				approvals: context.get(GithubOrganizerApproval),
+				followUp: context.get(GithubOrganizerApproval),
 				recovery: new GithubDeliveryLedger(
 					new ScopedGithubLedgerCommentClient(
 						input.client,

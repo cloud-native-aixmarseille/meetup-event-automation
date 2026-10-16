@@ -12,6 +12,7 @@ export class ApprovalNotifications {
 		private readonly channelId: string,
 	) {}
 	async send(record: StoredApproval, commentId: number): Promise<boolean> {
+		if (record.kind === "email-thanks") return false;
 		if (record.notification !== "new" && record.notification !== "retry")
 			return record.notification === "reserved";
 		const before = this.presenter.issue(record, { status: "pending" });
@@ -42,6 +43,7 @@ export class ApprovalNotifications {
 		return record.notification !== "sent";
 	}
 	async react(record: StoredApproval, commentId: number): Promise<boolean> {
+		if (record.kind === "email-thanks") return false;
 		if (!record.decision || record.reactionSent) return false;
 		if (!record.notificationMessage) return true;
 		const before = this.presenter.issue(record, record.decision);

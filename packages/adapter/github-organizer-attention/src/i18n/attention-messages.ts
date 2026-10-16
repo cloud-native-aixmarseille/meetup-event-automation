@@ -1,6 +1,7 @@
 import { MessageLocalizer } from "@meetup-automation/localization";
 import { CATALOGS, type MessageId } from "./catalog.js";
 export interface MessageParameters {
+	"attention.redirect": { url: string };
 	"slack.title": { issue: string };
 	"slack.more": { count: number };
 	"slack.manual-publication": { task: string };

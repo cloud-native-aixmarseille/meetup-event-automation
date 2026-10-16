@@ -1,6 +1,7 @@
 # ADR 0013: Reconcile actionable organizer alerts throughout the meetup lifecycle
 
-Status: Accepted
+Status: Accepted; partially superseded by
+[ADR 0014](0014-consolidated-post-event-follow-up.md) for post-event eligibility, comments and notifications.
 
 Date: 2026-10-14
 

@@ -1,5 +1,6 @@
 import { CommunicationCalendar } from "./communication-calendar.js";
 import { CommunicationPlanner } from "./communication-planner.js";
+import { PostEventPolicy } from "./post-event-policy.js";
 import type {
 	CommunicationDiagnostic,
 	CommunicationIntent,
@@ -78,7 +79,7 @@ export class PlanCommunications {
 		diagnostics: CommunicationDiagnostic[],
 	) {
 		const intents: CommunicationIntent[] = [];
-		if (input.occurrenceStatus === "held") {
+		if (PostEventPolicy.isDue(input)) {
 			CommunicationPlanner.planMailMessages(
 				input,
 				"thanks",
@@ -86,12 +87,6 @@ export class PlanCommunications {
 				diagnostics,
 			);
 			return CommunicationPlanner.deduplicateIntents(intents, diagnostics);
-		}
-
-		// A scheduled event in the past is not evidence that it was held. It must
-		// be explicitly transitioned before any occurrence-dependent mail is due.
-		if (daysUntilEvent < 0) {
-			return { intents: [], diagnostics };
 		}
 
 		if (input.readiness === "ready") {

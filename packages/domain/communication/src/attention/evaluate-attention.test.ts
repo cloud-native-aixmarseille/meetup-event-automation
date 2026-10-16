@@ -44,7 +44,7 @@ describe("actionable attention conditions", () => {
 	);
 
 	it.each(["scheduled", "held"] as const)(
-		"requires an explicit occurrence decision before follow-up (%s)",
+		"starts follow-up after the event date for %s events",
 		(occurrence) => {
 			// Arrange
 			const input = facts({ occurrence, followUpPending: ["thank-host"] });
@@ -54,9 +54,7 @@ describe("actionable attention conditions", () => {
 				new Date("2099-06-10T10:00:00Z"),
 			);
 			// Assert
-			expect(result.conditions.map((item) => item.code)).toEqual([
-				occurrence === "held" ? "follow-up" : "occurrence-decision",
-			]);
+			expect(result.conditions.map((item) => item.code)).toEqual(["follow-up"]);
 		},
 	);
 	it.each(["cancelled", "postponed"] as const)(

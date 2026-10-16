@@ -2,8 +2,9 @@
 
 The issue-update and daily-audit workflows request organizer confirmation before
 sending each introduction or thank-you email batch. They post the request on
-the meetup issue and alert the meetup organizer Slack channel. Checked email tasks
-mean completed; after approval, the automation sends and checks them.
+the meetup issue and alert the meetup organizer Slack channel. Post-event approval,
+task status, and reminders share one follow-up comment and grouped notifications.
+Checked email tasks mean completed; after approval, the automation sends and checks them.
 
 ## Organizer and public channels
 
@@ -137,13 +138,14 @@ descriptions, ineligible editors and approvals for a different batch cannot
 authorize sending.
 
 Slack links to the request; decisions are made on GitHub. Set `SLACK_ORGANIZER_CHANNEL_ID`
-to the meetup organizer channel and invite the bot there. Each request sends one
-alert. Definitively rejected or rate-limited alerts can retry; an uncertain
+to the meetup organizer channel and invite the bot there. Each introduction
+request sends one alert. Thank-you requests use the shared post-event notification
+described below. Definitively rejected or rate-limited alerts can retry; an uncertain
 acknowledgement is reported without automatically posting a duplicate. The
 issue request remains usable if Slack fails.
 
-The automation adds a reaction to the original Slack request: ✅ for approval
-or ❌ for rejection. These reactions show the organizer's decision, not email
+For introductions, the automation adds a reaction to the original Slack request:
+✅ for approval or ❌ for rejection. These reactions show the organizer's decision, not email
 delivery. Failed reactions are retried on later reconciliations, including
 after email tasks are complete. They do not reopen the decision or resend mail.
 
@@ -152,8 +154,9 @@ the host and speaker batch for the current email inputs, including recipient
 addresses, templates, placeholders, date and policy. Only a fingerprint and
 public facts are persisted; contact details never appear in the request.
 Changes to those inputs create a new request in the same GitHub comment, with
-unchecked choices and a new Slack alert. The previous decision only applies to
-the previous revision; it is not reversed.
+unchecked choices. Introduction requests send a new Slack alert; thank-you requests
+update the shared post-event status and follow its reminder policy. The previous
+decision only applies to the previous revision; it is not reversed.
 Completed tasks are skipped, and approval survives partial completion and safe
 retries. Locale changes and unrelated checklist edits do not invalidate it.
 
@@ -215,12 +218,17 @@ Unchecking an already dispatched task does not resend its recorded messages.
 
 Dates use `Europe/Paris`. Email rows require a present, unchecked task and batch approval.
 
-| Event condition                              | Message                                                    |
-| -------------------------------------------- | ---------------------------------------------------------- |
-| Scheduled, ready, and today or in the future | Introduction email to the host contact and speakers        |
-| Explicitly marked `held`                     | Thank-you email to the host contact and speakers           |
-| Cancelled, postponed, or status unknown      | No email messages                                          |
-| Scheduled with a past date                   | No email messages; a past date does not confirm occurrence |
+| Event condition                                  | Message                                             |
+| ------------------------------------------------ | --------------------------------------------------- |
+| Scheduled, ready, and today or in the future     | Introduction email to the host contact and speakers |
+| Scheduled with a past date, or explicitly `held` | Thank-you email to the host contact and speakers    |
+| Cancelled, postponed, or status unknown          | No email messages                                   |
+
+Scheduled events become eligible on the next calendar day in `Europe/Paris`.
+The next issue update or audit prepares the request. No `event:held` label is
+required, and eligibility does not change the recorded occurrence. Cancellation
+or postponement suppresses email planning. An explicit held status remains a
+supported override.
 
 Each email kind is sent at most once per issue and recipient under the current
 policy. Changing the locale or repository revision does not resend recorded email.
@@ -241,24 +249,37 @@ for the actual email result.
 ## Organizer attention
 
 Both workflows finish with the [attention action](../../actions/communication/reconcile-attention/README.md),
-under the shared repository/issue lock. It reloads the issue and reconciles one
-bot-owned **Organizer attention** comment, including public event facts, current
-conditions, next actions, and links to approval requests, delivery records,
-detailed diagnostic comments, or the workflow run. Resolved conditions disappear
-from the current list and the comment records their resolution. Closed,
-cancelled, and postponed issues show why task reminders have stopped. Their
-integration failures and skipped stages do not trigger Slack alerts; only
-unverified external deliveries continue to require recovery.
+under the shared repository/issue lock. Before the event, the bot maintains an
+**Organizer attention** comment. From the day after the event, one **Post-event
+follow-up** comment holds the thank-you approval, all five task statuses, and
+current integration or delivery diagnostics:
 
-| Condition                                                   | Reminder policy                                                                                                                      |
-| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Missing confirmations, required data, or manual publication | First detection within seven days before the event; reminders at three days, one day, and event day.                                 |
-| Missing or invalid date                                     | First detection, then weekly until scheduled or closed.                                                                              |
-| Pending email approval                                      | The dedicated approval request is the first alert; attention reminders start after 24 hours, at most once per Paris-local day.       |
-| Integration failure or blocked delivery                     | Immediately, then at most once per Paris-local day.                                                                                  |
-| Pending or uncertain external delivery                      | Retained until verified, including after cancellation or closure.                                                                    |
-| Scheduled date passed without an occurrence decision        | First subsequent audit, then at seven days after the date; asks for held, postponed, or cancelled.                                   |
-| Held event with unfinished follow-up                        | First audit at least one day after the event, then at seven days; identifies email and manual tasks without claiming inbox delivery. |
+- Thank the host and speakers, with one approval for the complete email batch.
+- Share slides on Meetup.
+- Import attendance into CNCF.
+- Share on social networks.
+
+The task overview exists even if email preparation is blocked or emails are
+already complete. Complete manual tasks in the issue's **Post event** checklist;
+approval authorizes only the emails. Progress updates the shared comment without
+invalidating a reviewed email batch. Email details, final decisions and delivery
+reservations retain their existing verification rules. Earlier attention comments
+link to this shared view, and their notification reservations are preserved.
+
+Closed, cancelled, and postponed issues stop task reminders. Their integration
+failures and skipped stages do not trigger Slack alerts; unverified external
+deliveries continue to require recovery. Cancellation or postponement also hides
+pending approval controls. Diagnostic and delivery-record comments remain the
+detailed evidence sources.
+
+| Condition                                                   | Reminder policy                                                                                                                                                                                            |
+| ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Missing confirmations, required data, or manual publication | First detection within seven days before the event; reminders at three days, one day, and event day.                                                                                                       |
+| Missing or invalid date                                     | First detection, then weekly until scheduled or closed.                                                                                                                                                    |
+| Pending email approval                                      | Introduction requests have a dedicated initial alert. Thank-you approval appears in the grouped follow-up notification. Pending approval reminders start after 24 hours, at most once per Paris-local day. |
+| Integration failure or blocked delivery                     | Immediately, then at most once per Paris-local day.                                                                                                                                                        |
+| Pending or uncertain external delivery                      | Retained until verified, including after cancellation or closure.                                                                                                                                          |
+| Past scheduled or held event with unfinished follow-up      | First audit at least one day after the event, then at seven days; identifies email and manual tasks without claiming inbox delivery.                                                                       |
 
 Milestones use `Europe/Paris` and the current clock. A missed audit sends only the
 most urgent current reminder. Repeated runs do not repeat the same milestone.
@@ -277,8 +298,10 @@ Missing dates and lifecycle boilerplate are omitted from Slack. Automatic link
 previews and channel-wide mentions are disabled. Only the first post requests
 fresh attention. Later failures that day therefore require organizers to read
 the updated message.
-Resolution updates the current message without posting an all-clear. Dedicated
-email approval messages and decision reactions remain separate. Public Slack
+Resolution updates the current message without posting an all-clear. Post-event
+notifications link to the shared follow-up comment and include thank-you approval;
+they do not send a separate thank-you approval alert or decision reaction.
+Introduction approval messages and their decision reactions remain separate. Public Slack
 announcement checkboxes remain manual and use separate destinations.
 
 The final action runs even after failed dependencies. Skipped or cancelled stages
@@ -299,9 +322,9 @@ attention status. A past date alone never confirms occurrence.
 
 ### Recover an uncertain attention post
 
-Attention uses a versioned bot-owned record separate from email delivery and
-approval state. The bot verifies authorship and the latest trusted bot revision
-before using it. Missing or deleted revision history fails closed. Do not edit or
+Attention uses a versioned bot-owned record independent of email delivery and
+approval decisions. During follow-up it is stored inside the shared comment.
+The bot verifies authorship and the latest trusted bot revision before using it. Missing or deleted revision history fails closed. Do not edit or
 delete metadata to force a retry.
 
 A new Slack post is reserved in GitHub before dispatch. Definitive nonacceptance
@@ -315,7 +338,8 @@ edits despite pre-write snapshot checks.
 To recover, verify the message in the configured organizer channel. In a manually
 run workflow holding the same repository/issue concurrency lock, call the attention
 action with its normal inputs and the optional `recover-post` JSON. Copy the exact
-`reservationId` from the managed attention comment's source. For a verified
+`reservationId` from the attention record in the managed status comment's source
+(the shared follow-up comment after the event). For a verified
 accepted post, supply its stored-channel-compatible Slack reference:
 
 ```json

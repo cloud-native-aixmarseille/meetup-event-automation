@@ -1,4 +1,10 @@
 export interface MessageParameters {
+	"follow-up.title": { date: string };
+	"follow-up.instructions": Record<string, never>;
+	"follow-up.task": { task: string };
+	"follow-up.stopped": Record<string, never>;
+	"follow-up.waiting": Record<string, never>;
+	"follow-up.emails-complete": Record<string, never>;
 	"approval.details.summary": Record<string, never>;
 	"approval.details.email": { kind: string };
 	"approval.details.purpose": { kind: string };

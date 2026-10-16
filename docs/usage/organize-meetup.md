@@ -102,31 +102,32 @@ an issue without an explicit status marks it held.
 
 ## Complete follow-up
 
-After the meetup, apply `event:held` or close the issue. Passage of time alone
-does not confirm that the meetup happened.
+From the day after the meetup in `Europe/Paris`, the next audit or issue update
+starts follow-up automatically. Keep the issue open while completing tasks.
+Mark cancelled or postponed events accordingly; no `event:held` label is needed
+for follow-up, and the calendar alone does not change the recorded occurrence.
 
-Review and approve the separate thank-you batch for the held event. Unchecked
-thank-you tasks are then sent automatically and checked after accepted dispatch.
-Publish slides, share OpenFeedback reports, import attendance to the CNCF
-platform, and complete the remaining manual
-post-event tasks yourself. The mailings workflow reports the actual email result.
+Use the single **Post-event follow-up** comment to review all five task statuses
+and approve or reject the thank-you email batch. Leave both choices unchecked to
+wait; checking both keeps the request pending. Approval sends only the unfinished
+emails, with completion recorded after accepted dispatch. Publish slides, share
+OpenFeedback reports, import attendance into CNCF, and complete social posts
+manually in the issue checklist. The mailings workflow reports the email result.
 
-The audit continues to include held events with unfinished follow-up, including
-closed issues. Cancelled and completed events remain eligible for delivery recovery;
-task reminders stop on closure, cancellation, or postponement.
+The audit includes events with unfinished follow-up and delivery recovery.
+Task reminders stop on closure, cancellation, or postponement; verify uncertain
+external deliveries even after closing the issue.
 
 ## Resolve organizer attention
 
-Use the bot's **Organizer attention** comment as the current task list. Follow
-its links to the original approval request, diagnostic comment, delivery record,
-or failed run. Slack groups reminders into one message per issue and local day
-and edits that message as conditions change. A later failure may appear as an
-edit without a fresh notification.
+Before the event, use **Organizer attention** for the current task list. After the
+event, use the shared **Post-event follow-up** comment for approval, task progress,
+and diagnostics. Slack groups post-event reminders and approval into one message
+per issue and local day and updates that message as conditions change. A later
+failure may appear as an edit without a fresh notification.
 
 See [organizer attention](../integrations/communications.md#organizer-attention)
-for reminder timing and recovery. Mark held, postponed, or cancelled explicitly
-after the scheduled date; do not infer occurrence from the calendar. Verify any
-uncertain external delivery even when the issue is closed.
+for reminder timing and recovery.
 
 ## Conference Hall
 

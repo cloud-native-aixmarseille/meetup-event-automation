@@ -34,8 +34,8 @@ export class CommunicationChecklist {
 	static pendingRecipients(
 		event: MeetupEvent,
 		recipients: readonly MailRecipient[],
+		thanks = event.occurrenceStatus === "held",
 	): readonly MailRecipient[] {
-		const thanks = event.occurrenceStatus === "held";
 		return recipients.filter((recipient) => {
 			const kind =
 				recipient.role === "hosting"
@@ -45,12 +45,22 @@ export class CommunicationChecklist {
 					: thanks
 						? "speaker-thanks"
 						: "speaker-introduction";
-			const task = TASKS[kind];
-			const matches = event.operationalChecklists[task.section].filter((item) =>
-				CommunicationChecklist.matches(item, task.names),
-			);
-			return matches.length > 0 && !matches.some((item) => item.completed);
+			return CommunicationChecklist.status(event, kind) === "pending";
 		});
+	}
+	static status(
+		event: MeetupEvent,
+		kind: MailCommunicationKind,
+	): "missing" | "pending" | "completed" {
+		const task = TASKS[kind];
+		const matches = event.operationalChecklists[task.section].filter((item) =>
+			CommunicationChecklist.matches(item, task.names),
+		);
+		return matches.some((item) => item.completed)
+			? "completed"
+			: matches.length
+				? "pending"
+				: "missing";
 	}
 
 	static complete(

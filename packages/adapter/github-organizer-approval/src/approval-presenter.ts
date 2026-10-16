@@ -5,16 +5,27 @@ import {
 } from "./approval-record.js";
 import { ApprovalMessages } from "./i18n/approval-messages.js";
 import { ApprovalDetailsPresenter } from "./approval-details-presenter.js";
+import { FollowUpPresenter } from "./follow-up-presenter.js";
 
 export class ApprovalPresenter {
 	constructor(private readonly messages: ApprovalMessages) {}
 	issue(record: StoredApproval, decision: ApprovalDecision): string {
+		const heading = [
+			ApprovalRecord.marker(record),
+			...new FollowUpPresenter(this.messages).render(record),
+		];
+		if (record.recipientCount === 0 || record.followUp?.active === false)
+			return [...heading, record.followUp?.attentionDetails ?? ""]
+				.join("\n\n")
+				.trimEnd();
 		const details = record.details
 			? [new ApprovalDetailsPresenter(this.messages).render(record.details)]
 			: [];
+		if (record.followUp?.attentionDetails)
+			details.push(record.followUp.attentionDetails);
 		if (record.decision)
 			return [
-				ApprovalRecord.marker(record),
+				...heading,
 				this.messages.t("approval.final", {
 					kind: record.kind.replace("email-", ""),
 					date: record.eventDate,
@@ -26,7 +37,7 @@ export class ApprovalPresenter {
 				...details,
 			].join("\n\n");
 		return [
-			ApprovalRecord.marker(record),
+			...heading,
 			this.messages.t("approval.request", {
 				kind: record.kind.replace("email-", ""),
 				date: record.eventDate,
@@ -38,7 +49,12 @@ export class ApprovalPresenter {
 		].join("\n\n");
 	}
 	decision(record: StoredApproval, body: string): ApprovalDecision {
-		if (record.decision) return { status: "pending" };
+		if (
+			record.decision ||
+			record.recipientCount === 0 ||
+			record.followUp?.active === false
+		)
+			return { status: "pending" };
 		const normalized = body.replace(/\r\n/g, "\n").replace(/- \[X\]/g, "- [x]");
 		for (const locale of ["en", "fr"]) {
 			const presenter = new ApprovalPresenter(new ApprovalMessages(locale));

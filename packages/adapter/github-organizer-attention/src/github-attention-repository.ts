@@ -68,4 +68,15 @@ export class GithubAttentionRepository implements AttentionRepository {
 		}
 		this.snapshot.body = body;
 	}
+	async retire(commentId: number): Promise<void> {
+		if (!this.loaded)
+			throw new Error("Attention state must be loaded before retiring");
+		if (!this.snapshot) return;
+		await this.client.replace(
+			this.snapshot.id,
+			this.snapshot.body,
+			this.presenter.redirect(commentId),
+		);
+		this.snapshot = undefined;
+	}
 }

@@ -29,6 +29,11 @@ The required `slack-organizer-channel-id` selects the internal organizer channel
 Public event announcements remain manual checklist tasks and are never sent by
 this action. See [channel selection](../../../docs/integrations/communications.md#organizer-and-public-channels).
 
+Scheduled events become eligible for thank-you emails on the next Paris calendar
+day. The [attention action](../reconcile-attention/README.md) maintains their
+shared approval/task overview and grouped Slack notifications; run it after this
+action, as both public event workflows do.
+
 Pending or rejected approval blocks mail while preserving `dispatch` mode.
 The final attention action owns organizer reminders. Approval comments and their Slack alerts
 are excluded from delivery counts. See the

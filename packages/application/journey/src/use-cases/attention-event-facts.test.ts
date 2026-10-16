@@ -3,6 +3,33 @@ import { createTestEvent } from "../../../../domain/event/testing/event.fixtures
 import { AutomationConfigFactory } from "../config/automation-config.js";
 import { AttentionEventFacts } from "./attention-event-facts.js";
 describe("public attention event facts", () => {
+	it.each([
+		"Thanks speakers",
+		"Thanks speakers and share openfeedback reports",
+	])("recognizes completed legacy email tasks: %s", (speakerTask) => {
+		// Arrange
+		const event = createTestEvent({
+			operationalChecklists: {
+				communication: [],
+				slidesAndContent: [],
+				postEvent: [
+					{ name: "Thanks hoster", completed: true },
+					{ name: speakerTask, completed: true },
+				],
+			},
+		});
+		// Act
+		const result = AttentionEventFacts.create(
+			{ event, diagnostics: [] },
+			AutomationConfigFactory.createAutomationConfig(),
+		);
+		// Assert
+		expect(result.followUpPending).toEqual([
+			"share-slides",
+			"import-attendance",
+			"share-social",
+		]);
+	});
 	it("maps unfinished manual tasks to safe identifiers without arbitrary checklist text", () => {
 		// Arrange
 		const event = createTestEvent({

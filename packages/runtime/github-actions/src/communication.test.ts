@@ -1006,3 +1006,40 @@ describe("organizer notification routing", () => {
 		expect(getOctokitMock).not.toHaveBeenCalled();
 	});
 });
+
+describe("scheduled post-event thanks", () => {
+	it("requests approval the day after the event without adding a held label, then sends both thanks", async () => {
+		// Arrange
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2099-06-09T10:00:00Z"));
+		const f = await setup();
+		// Act: prepare the shared request; no delivery before approval.
+		const pending = await CommunicationRuntime.runCommunicationReconcile(
+			f.input,
+		);
+		// Assert
+		expect(pending.counts.accepted).toBe(0);
+		expect(f.createDispatchEvent).not.toHaveBeenCalled();
+		expect(
+			f.comments.filter((comment) =>
+				comment.body.includes("Post-event follow-up"),
+			),
+		).toHaveLength(1);
+		// Arrange: approve the prepared batch.
+		approveBatch(f);
+		// Act
+		const approved = await CommunicationRuntime.runCommunicationReconcile(
+			f.input,
+		);
+		// Assert
+		expect(approved.counts.accepted).toBe(2);
+		expect(
+			f.createDispatchEvent.mock.calls
+				.map(([input]) => input.client_payload["template-name"])
+				.sort(),
+		).toEqual(["meetup-thanks-hosting", "meetup-thanks-speakers"]);
+		expect(f.issue.body).toContain("- [x] Mail thanks hoster");
+		expect(f.issue.body).toContain("- [x] Mail thanks speakers");
+		expect(f.issue.labels).not.toContain("event:held");
+	});
+});

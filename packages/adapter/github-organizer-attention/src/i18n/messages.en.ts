@@ -1,4 +1,6 @@
 export const messages = {
+	"attention.redirect":
+		"Post-event approval and task status are now in the [shared follow-up comment]({url}).",
 	"slack.title": "Meetup #{issue}",
 	"slack.more":
 		"+{count, plural, one {# more task} other {# more tasks}} → View all",

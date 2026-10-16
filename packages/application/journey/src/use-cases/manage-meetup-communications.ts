@@ -274,6 +274,7 @@ export class ManageMeetupCommunications {
 			mailRecipients: CommunicationChecklist.pendingRecipients(
 				managed.event,
 				delivery.mailRecipientResolution.recipients,
+				delivery.postEvent,
 			),
 			notificationRecipients: [],
 			mailPlaceholders: CommunicationPlaceholders.eventPlaceholders(

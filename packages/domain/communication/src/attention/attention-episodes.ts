@@ -57,6 +57,7 @@ export class AttentionEpisodes {
 		state.eventDate = observation.eventDate;
 		state.stopped = observation.stopped;
 		state.runId = observation.runId;
+		state.commentId = observation.commentId;
 		return state;
 	}
 	private static absentStatus(
