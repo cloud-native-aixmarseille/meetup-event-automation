@@ -112,11 +112,15 @@ keep their own source snapshot and checked-out local supplements.
 
 ## Select talks
 
-Add the optional `conference_hall_proposals` textarea from the
+Use the `conference_hall_proposals` textarea from the
 [issue form template](../../__tests__/meetup-issue-template.yml), with the heading
-`Conference Hall proposals`. Enter one proposal ID per line in presentation
-order. Only selected, accepted proposals are projected. Declined speaker
-confirmation, unknown states, missing IDs, duplicate selections and missing
+`Conference Hall proposals`, as the form's only talk input. Omit the manual
+`agenda` textarea and the `<!-- Available speakers -->` Markdown block.
+Enter one proposal ID per line in presentation order. The first successful
+reconciliation adds **Agenda** to the issue; subsequent runs refresh it from the
+selected proposals. Leaving the selection blank keeps the draft incomplete until
+talks are selected. Only selected, accepted proposals are projected. Declined
+speaker confirmation, unknown states, missing IDs, duplicate selections and missing
 committed speaker mappings stop the refresh. Acceptance does not confirm meetup
 availability; keep the existing host and speaker confirmation labels.
 

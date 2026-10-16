@@ -1,4 +1,5 @@
 import type { EventDiagnostic, MeetupEvent } from "@meetup-automation/event";
+import { HEADINGS } from "./github-issue-form-event-document-codec-contracts.js";
 import { IssueFormSections } from "./issue-form-sections.js";
 import { ManagedIssueMarkers } from "./managed-issue-markers.js";
 
@@ -10,7 +11,7 @@ export class ProposalSelectionCodec {
 		const sections = IssueFormSections.parseSections(body);
 		const value = IssueFormSections.readSection(
 			sections,
-			"Conference Hall proposals",
+			HEADINGS.proposals,
 			false,
 			diagnostics,
 		);

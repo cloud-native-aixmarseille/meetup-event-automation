@@ -6,7 +6,7 @@ import {
 	ValidateReferentialCatalog,
 } from "@meetup-automation/referential";
 import { check, format } from "prettier";
-import { parse } from "yaml";
+import { parse, stringify } from "yaml";
 import { YamlIssueFormProjection } from "./yaml-issue-form-projection.js";
 
 const PRIVATE_CONTACT_VALUES = {
@@ -118,6 +118,77 @@ async function fixture(source = INITIAL_FORM) {
 }
 
 describe("YamlIssueFormProjection", () => {
+	it("synchronizes a proposal-only form without adding manual speaker or agenda fields", async () => {
+		// Arrange
+		const form = parse(INITIAL_FORM);
+		form.body = form.body.filter(
+			(field: { type: string }) => field.type !== "markdown",
+		);
+		const proposals = {
+			type: "textarea",
+			id: "conference_hall_proposals",
+			attributes: { label: "Conference Hall proposals" },
+		};
+		form.body.push(proposals);
+		const target = await fixture(stringify(form));
+		const adapter = new YamlIssueFormProjection({
+			workspaceRoot: target.workspaceRoot,
+		});
+		const input = {
+			issueFormPath: target.issueFormPath,
+			occurrenceStatusFieldId: "event_status",
+			catalog: await catalog(),
+			mode: "fix" as const,
+		};
+
+		// Act
+		const result = await adapter.synchronize(input);
+		const updated = parse(await readFile(target.absolutePath, "utf8"));
+		const current = await adapter.synchronize({ ...input, mode: "check" });
+
+		// Assert
+		expect(result.changed).toBe(true);
+		expect(
+			updated.body.find((field: { id?: string }) => field.id === "hoster")
+				.attributes.options,
+		).toEqual(["Example Host", "Other Host", "Unique Host"]);
+		expect(updated.body).toHaveLength(form.body.length);
+		expect(updated.body.at(-1)).toEqual(proposals);
+		expect(
+			updated.body.some(
+				(field: { id?: string; type: string }) =>
+					field.id === "agenda" || field.type === "markdown",
+			),
+		).toBe(false);
+		expect(current.changed).toBe(false);
+	});
+
+	it("requires the speaker reference block for a form without proposal selection", async () => {
+		// Arrange
+		const form = parse(INITIAL_FORM);
+		form.body = form.body.filter(
+			(field: { type: string }) => field.type !== "markdown",
+		);
+		const target = await fixture(stringify(form));
+		const adapter = new YamlIssueFormProjection({
+			workspaceRoot: target.workspaceRoot,
+		});
+		const input = {
+			issueFormPath: target.issueFormPath,
+			occurrenceStatusFieldId: "event_status",
+			catalog: await catalog(),
+			mode: "check" as const,
+		};
+
+		// Act
+		const operation = adapter.synchronize(input);
+
+		// Assert
+		await expect(operation).rejects.toThrow(
+			"Issue form must contain exactly one Available speakers markdown block.",
+		);
+	});
+
 	it("keeps generated YAML formatted and preserves unrelated field values", async () => {
 		// Arrange
 		const unrelatedFields = String.raw`  - "type": "input"

@@ -88,7 +88,7 @@ export class IssueFormReader {
 			event_date: read(HEADINGS.date, true),
 			hoster: [read(HEADINGS.host, true)].filter(Boolean),
 			event_description: read(HEADINGS.description, true),
-			agenda: read(HEADINGS.agenda, true),
+			agenda: read(HEADINGS.agenda, !sections.has(HEADINGS.proposals)),
 			meetup_link: read(HEADINGS.meetupLink),
 			cncf_link: read(HEADINGS.communityLink),
 			drive_link: read(HEADINGS.assetsLink),

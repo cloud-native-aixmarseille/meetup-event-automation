@@ -7,6 +7,28 @@ import {
 } from "./support.js";
 
 describe("Conference Hall contracts", () => {
+	it("collects proposals without duplicate manual talk or speaker inputs", async () => {
+		// Arrange
+		const path = "__tests__/meetup-issue-template.yml";
+
+		// Act
+		const form = await readYaml<{
+			body: { id?: string; attributes?: { value?: string } }[];
+		}>(path);
+
+		// Assert
+		expect(
+			form.body.filter((field) => field.id === "conference_hall_proposals"),
+		).toHaveLength(1);
+		expect(
+			form.body.some(
+				(field) =>
+					field.id === "agenda" ||
+					field.attributes?.value?.includes("<!-- Available speakers -->"),
+			),
+		).toBe(false);
+	});
+
 	it("supplies source settings to bundled-action integration checks", async () => {
 		// Arrange
 		const workflow = await readWorkflow("__check-actions");

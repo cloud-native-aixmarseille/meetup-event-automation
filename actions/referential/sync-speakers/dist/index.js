@@ -45959,7 +45959,7 @@ var YamlIssueFormProjection = class _YamlIssueFormProjection {
       );
       changed = true;
     }
-    if (_YamlIssueFormProjection.fieldValue(body[speakersIndex]) !== speakersMarkdown) {
+    if (speakersIndex !== void 0 && _YamlIssueFormProjection.fieldValue(body[speakersIndex]) !== speakersMarkdown) {
       document.setIn(
         ["body", speakersIndex, "attributes", "value"],
         speakersMarkdown
@@ -46042,6 +46042,10 @@ var YamlIssueFormProjection = class _YamlIssueFormProjection {
       const value = _YamlIssueFormProjection.fieldValue(item);
       return value?.includes(AVAILABLE_SPEAKERS_MARKER) ? [index] : [];
     });
+    if (indexes.length === 0 && this.findOptionalFieldIndex(body, "conference_hall_proposals") !== void 0) {
+      this.findSingleFieldIndex(body, "conference_hall_proposals", "textarea");
+      return void 0;
+    }
     if (indexes.length !== 1) {
       throw new Error(
         "Issue form must contain exactly one Available speakers markdown block."
