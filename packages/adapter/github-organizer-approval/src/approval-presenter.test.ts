@@ -75,32 +75,35 @@ describe("approval request details", () => {
 		expect(rejected.status).toBe("pending");
 	});
 
-	it("escapes public text and keeps it inside the metadata comment and collapsed section", () => {
-		// Arrange
-		const record = ApprovalRecord.create({
-			...detailed,
-			details: {
-				...detailed.details,
-				emails: [
-					{
-						...detailed.details.emails[0],
-						recipientName: "--><img src=x> @person **name**",
-					},
-				],
-			},
-		});
-		const presenter = new ApprovalPresenter(new ApprovalMessages());
+	it.each(["-->", "--!>"])(
+		"escapes the %s comment terminator in public text",
+		(terminator) => {
+			// Arrange
+			const record = ApprovalRecord.create({
+				...detailed,
+				details: {
+					...detailed.details,
+					emails: [
+						{
+							...detailed.details.emails[0],
+							recipientName: `${terminator}<img src=x> @person **name**`,
+						},
+					],
+				},
+			});
+			const presenter = new ApprovalPresenter(new ApprovalMessages());
 
-		// Act
-		const body = presenter.issue(record, { status: "pending" });
-		const restored = ApprovalRecord.read(body);
+			// Act
+			const body = presenter.issue(record, { status: "pending" });
+			const restored = ApprovalRecord.read(body);
 
-		// Assert
-		expect(body).not.toContain("<img");
-		expect(body.match(/-->/g)).toHaveLength(1);
-		expect(body).toContain("&lt;img src=x&gt; &#64;person");
-		expect(restored.details).toEqual(record.details);
-	});
+			// Assert
+			expect(body).not.toContain("<img");
+			expect(body.match(/--!?>/g)).toHaveLength(1);
+			expect(body).toContain("&lt;img src=x&gt; &#64;person");
+			expect(restored.details).toEqual(record.details);
+		},
+	);
 
 	it("retains the reviewed details after the decision is recorded", () => {
 		// Arrange
