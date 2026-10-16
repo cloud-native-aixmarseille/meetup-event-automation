@@ -1,4 +1,15 @@
 export const DIAGNOSTICS_EVENT_EN = {
+	"diagnostic.event.proposals.invalid":
+		"Selected proposals could not be refreshed; the last agenda is stale. Check source access, acceptance and reviewed speaker mappings.",
+	"diagnostic.event.proposals.unavailable":
+		"Selected proposals could not be refreshed; the last agenda is stale. Check source access, acceptance and reviewed speaker mappings.",
+	"diagnostic.event.proposals.rate-limited":
+		"Selected proposals could not be refreshed; the last agenda is stale. Check source access, acceptance and reviewed speaker mappings.",
+	"diagnostic.event.proposals.mapping-required":
+		"Selected proposals could not be refreshed; the last agenda is stale. Check source access, acceptance and reviewed speaker mappings.",
+	"diagnostic.event.proposals.conflict":
+		"Selected proposals could not be refreshed; the last agenda is stale. Check source access, acceptance and reviewed speaker mappings.",
+
 	"diagnostic.event.link.feedback.invalid":
 		"The feedback link must be a valid HTTPS URL.",
 	"diagnostic.event.document.reference-metadata.duplicate":

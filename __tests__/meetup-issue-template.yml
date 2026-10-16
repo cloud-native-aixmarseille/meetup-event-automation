@@ -41,6 +41,13 @@
 
         -->"
   - "type": "textarea"
+    "id": "conference_hall_proposals"
+    "attributes":
+      "label": "Conference Hall proposals"
+      "description": "Enter one selected CFP proposal ID per line, in presentation order. Talk content and linked speaker profiles refresh automatically from Conference Hall."
+    "validations":
+      "required": false
+  - "type": "textarea"
     "id": "agenda"
     "attributes":
       "label": "Agenda"

@@ -31,6 +31,34 @@ export const GUIDANCE = new Map<
 	]
 >([
 	[
+		"referential.source.unavailable",
+		["Agenda", "comment.guidance.source-profiles"],
+	],
+	[
+		"referential.source.invalid",
+		["Agenda", "comment.guidance.source-profiles"],
+	],
+	[
+		"referential.source.rate-limited",
+		["Agenda", "comment.guidance.source-profiles"],
+	],
+	[
+		"referential.source.mapping-required",
+		["Agenda", "comment.guidance.source-profiles"],
+	],
+	[
+		"referential.source.conflict",
+		["Agenda", "comment.guidance.source-profiles"],
+	],
+	["event.proposals.unavailable", ["Agenda", "comment.guidance.proposals"]],
+	["event.proposals.invalid", ["Agenda", "comment.guidance.proposals"]],
+	["event.proposals.rate-limited", ["Agenda", "comment.guidance.proposals"]],
+	[
+		"event.proposals.mapping-required",
+		["Agenda", "comment.guidance.proposals"],
+	],
+	["event.proposals.conflict", ["Agenda", "comment.guidance.proposals"]],
+	[
 		"event.title.missing",
 		["Event Title", "comment.guidance.event.title.missing"],
 	],

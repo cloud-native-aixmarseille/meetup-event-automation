@@ -21,16 +21,18 @@ issue already has a feedback URL. Use a key beginning with `oforg_`.
 
 ## Inputs
 
-| **Input**                    | **Description**                                                                                                                    | **Required** | **Default** |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
-| **`locale`**                 | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **false**    | `en`        |
-| **`github-token`**           | GitHub token with issue read and write permissions.                                                                                | **true**     | -           |
-| **`issue-number`**           | Meetup issue number.                                                                                                               | **true**     | -           |
-| **`managed-comment-author`** | GitHub App bot login used by event evaluation.                                                                                     | **true**     | -           |
-| **`openfeedback-api-key`**   | OpenFeedback organization API key (oforg\_) used to create and update events.                                                      | **true**     | -           |
-| **`kutt-api-key`**           | API key for the owner of the existing Kutt link.                                                                                   | **true**     | -           |
-| **`kutt-base-url`**          | HTTPS base URL of the Kutt instance, without /api/v2. No default.                                                                  | **true**     | -           |
-| **`kutt-link-id`**           | Existing Kutt link API ID, not the short address.                                                                                  | **true**     | -           |
+| **Input**                     | **Description**                                                                                                                    | **Required** | **Default** |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
+| **`conference-hall-event`**   | Conference Hall CFP slug for live linked profiles and selected proposals.                                                          | **true**     | -           |
+| **`conference-hall-api-key`** | Read-only Conference Hall event API key.                                                                                           | **true**     | -           |
+| **`locale`**                  | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **false**    | `en`        |
+| **`github-token`**            | GitHub token with issue read and write permissions.                                                                                | **true**     | -           |
+| **`issue-number`**            | Meetup issue number.                                                                                                               | **true**     | -           |
+| **`managed-comment-author`**  | GitHub App bot login used by event evaluation.                                                                                     | **true**     | -           |
+| **`openfeedback-api-key`**    | OpenFeedback organization API key (oforg\_) used to create and update events.                                                      | **true**     | -           |
+| **`kutt-api-key`**            | API key for the owner of the existing Kutt link.                                                                                   | **true**     | -           |
+| **`kutt-base-url`**           | HTTPS base URL of the Kutt instance, without /api/v2. No default.                                                                  | **true**     | -           |
+| **`kutt-link-id`**            | Existing Kutt link API ID, not the short address.                                                                                  | **true**     | -           |
 
 <!-- inputs:end -->
 
@@ -77,6 +79,8 @@ Create OpenFeedback events, synchronize their titles, talks and speakers, and up
 ```yaml
 - uses: cloud-native-aixmarseille/meetup-event-automation/actions/publication/reconcile-feedback@8dfb3e8516e00121d0ba1eafbfb252cebda2f8ed # 2.1.0
   with:
+    conference-hall-event: ${{ vars.CONFERENCE_HALL_EVENT }}
+    conference-hall-api-key: ${{ secrets.CONFERENCE_HALL_API_KEY }}
     # Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
     # Default: `en`
     locale: en
@@ -137,3 +141,12 @@ Copyright © 2026 cloud-native-aixmarseille
 For more details, see the [license](http://choosealicense.com/licenses/mit/).
 
 <!-- license:end -->
+
+## Conference Hall inputs
+
+Required `conference-hall-event` and `conference-hall-api-key` inputs provide
+live speaker-profile and selected-proposal refresh. Each invocation combines
+one Conference Hall snapshot with committed CSV identity mappings and local
+contact supplements. Linked profile changes take effect without a CSV merge.
+Missing or blank source settings fail before reconciliation. See
+[setup and failure behavior](../../../docs/integrations/conference-hall.md).

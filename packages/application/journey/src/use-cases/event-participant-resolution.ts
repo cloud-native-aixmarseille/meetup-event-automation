@@ -24,10 +24,10 @@ export class EventParticipantResolution {
 			agenda: event.agenda.map((entry) => ({
 				...entry,
 				speakers: entry.speakers.map((reference) => {
-					const matches = speakers.filter(
-						(speaker) =>
-							speaker.id === reference.id ||
-							EventParticipantResolution.canonical(speaker.displayName) ===
+					const matches = speakers.filter((speaker) =>
+						reference.id
+							? speaker.id === reference.id
+							: EventParticipantResolution.canonical(speaker.displayName) ===
 								EventParticipantResolution.canonical(reference.displayName),
 					);
 					const speaker = matches.length === 1 ? matches[0] : undefined;
@@ -45,6 +45,7 @@ export class EventParticipantResolution {
 		return {
 			id: reference.id,
 			displayName: reference.displayName,
+			...(reference.pictureUrl ? { pictureUrl: reference.pictureUrl } : {}),
 			...(reference.source ? { source: reference.source } : {}),
 		};
 	}

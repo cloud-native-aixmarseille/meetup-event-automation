@@ -19,6 +19,7 @@ import {
 const publicWorkflowContracts = {
 	"check-active-meetup-issues": {
 		inputs: [
+			"conference-hall-event",
 			"github-app-client-id",
 			"google-drive-meetup-folder-id",
 			"google-drive-meetup-template-folder-id",
@@ -28,6 +29,7 @@ const publicWorkflowContracts = {
 		],
 		outputs: ["issue-numbers"],
 		secrets: [
+			"conference-hall-api-key",
 			"github-app-private-key",
 			"google-credentials",
 			"kutt-api-key",
@@ -37,6 +39,7 @@ const publicWorkflowContracts = {
 	},
 	"update-meetup-issue": {
 		inputs: [
+			"conference-hall-event",
 			"github-app-client-id",
 			"google-drive-meetup-folder-id",
 			"google-drive-meetup-template-folder-id",
@@ -46,6 +49,7 @@ const publicWorkflowContracts = {
 		],
 		outputs: ["communication-diagnostics", "diagnostics", "is-ready", "state"],
 		secrets: [
+			"conference-hall-api-key",
 			"github-app-private-key",
 			"google-credentials",
 			"kutt-api-key",
@@ -202,6 +206,7 @@ describe("public reusable workflow contracts", () => {
 		// Assert
 		expect(tokenWorkflows.map(({ file }) => file).sort()).toEqual([
 			"check-active-meetup-issues.yml",
+			"synchronize-conference-hall-speakers.yml",
 			"update-meetup-issue-form.yml",
 			"update-meetup-issue.yml",
 		]);

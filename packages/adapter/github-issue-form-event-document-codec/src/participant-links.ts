@@ -2,6 +2,7 @@ import type {
 	MeetupEvent,
 	ParticipantReference,
 } from "@meetup-automation/event";
+import { ProposalSelectionCodec } from "./proposal-selection-codec.js";
 import { ReferenceBindings } from "./reference-bindings.js";
 
 export class ParticipantLinks {
@@ -25,7 +26,9 @@ export class ParticipantLinks {
 					path: decodeURIComponent(location[1]),
 					line: Number(location[2]),
 				};
-				const name = ReferenceBindings.normalizeVisibleDisplayName(match[1]);
+				const name = ReferenceBindings.normalizeVisibleDisplayName(
+					ProposalSelectionCodec.unescape(match[1]),
+				);
 				const previous = sources.get(name);
 				// Conflicting links for a repeated speaker must be resolved from the catalog.
 				sources.set(
@@ -70,7 +73,7 @@ export class ParticipantLinks {
 		return event.agenda
 			.map(
 				(entry) =>
-					`- ${entry.speakers.map(renderParticipant).join(", ")}: ${entry.description}`,
+					`- ${entry.speakers.map(renderParticipant).join(", ")}: ${event.proposalStatus === "current" ? ProposalSelectionCodec.escape(entry.description) : entry.description}`,
 			)
 			.join("\n");
 	}

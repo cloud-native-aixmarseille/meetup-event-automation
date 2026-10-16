@@ -30,6 +30,12 @@ export interface Speaker {
 	readonly company: string;
 	readonly email: string;
 	readonly phone?: string;
+	readonly pictureUrl?: string;
+	readonly sourceIdentity?: Readonly<{
+		provider: string;
+		event: string;
+		speakerId: string;
+	}>;
 }
 
 export interface ReferentialCatalog {
@@ -51,6 +57,11 @@ export interface RawHostRecord {
 export interface RawSpeakerRecord {
 	readonly source?: ReferentialSource;
 	readonly speakerId: unknown;
+	readonly displayName?: unknown;
+	readonly pictureUrl?: unknown;
+	readonly sourceProvider?: unknown;
+	readonly sourceEvent?: unknown;
+	readonly sourceSpeakerId?: unknown;
 	readonly firstName: unknown;
 	readonly lastName: unknown;
 	readonly company: unknown;

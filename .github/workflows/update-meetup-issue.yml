@@ -40,6 +40,10 @@ on:
         description: Existing Kutt feedback link API ID.
         required: true
         type: string
+      conference-hall-event:
+        description: Conference Hall CFP slug for live linked profiles and selected proposals.
+        required: true
+        type: string
     secrets:
       openfeedback-api-key:
         description: OpenFeedback organization API key (oforg_) used to create and update events.
@@ -55,6 +59,9 @@ on:
         required: true
       slack-token:
         description: Slack bot token with chat:write and reactions:write for organizer notifications and decision reactions.
+        required: true
+      conference-hall-api-key:
+        description: Read-only Conference Hall event API key.
         required: true
     outputs:
       state:
@@ -118,6 +125,8 @@ jobs:
         id: assets
         uses: ./../self-workflow/actions/publication/reconcile-assets
         with:
+          conference-hall-event: ${{ inputs.conference-hall-event }}
+          conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicit reusable workflow secret
           locale: ${{ inputs.locale }}
           issue-number: ${{ github.event.issue.number }}
           github-token: ${{ steps.app-token.outputs.token }}
@@ -130,6 +139,8 @@ jobs:
         id: feedback
         uses: ./../self-workflow/actions/publication/reconcile-feedback
         with:
+          conference-hall-event: ${{ inputs.conference-hall-event }}
+          conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicit reusable workflow secret
           locale: ${{ inputs.locale }}
           issue-number: ${{ github.event.issue.number }}
           github-token: ${{ steps.app-token.outputs.token }}
@@ -153,6 +164,8 @@ jobs:
         id: communications
         uses: ./../self-workflow/actions/communication/reconcile
         with:
+          conference-hall-event: ${{ inputs.conference-hall-event }}
+          conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicit reusable workflow secret
           slides-url: ${{ fromJSON(steps.assets.outputs.drive-files)['slides-link'] }}
           openfeedback-api-key: ${{ secrets.openfeedback-api-key }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly
           report-errors-to-issue: "false"
@@ -169,6 +182,8 @@ jobs:
         if: always()
         uses: ./../self-workflow/actions/event/reconcile
         with:
+          conference-hall-event: ${{ inputs.conference-hall-event }}
+          conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicit reusable workflow secret
           locale: ${{ inputs.locale }}
           issue-number: ${{ github.event.issue.number }}
           mode: fix

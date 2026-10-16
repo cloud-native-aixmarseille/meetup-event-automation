@@ -193,6 +193,7 @@ describe("event journey selection", () => {
 	it("fails explicitly when the requested issue no longer exists", async () => {
 		// Arrange
 		const useCase = new ManageMeetupEvent({
+			proposalSource: { load: vi.fn() },
 			config,
 			referentialRepository: {
 				load: vi.fn().mockResolvedValue(catalog),
@@ -222,6 +223,7 @@ describe("event journey selection", () => {
 			body: "This is intentionally not a meetup.",
 		};
 		const useCase = new ManageMeetupEvent({
+			proposalSource: { load: vi.fn() },
 			config,
 			referentialRepository: {
 				load: vi.fn().mockResolvedValue(catalog),

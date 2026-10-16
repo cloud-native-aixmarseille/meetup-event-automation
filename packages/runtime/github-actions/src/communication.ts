@@ -1,3 +1,7 @@
+import {
+	ConferenceHallInput,
+	type ConferenceHallSettings,
+} from "./conference-hall-input.js";
 import { getOctokit } from "@actions/github";
 import {
 	AutomationConfigFactory,
@@ -8,7 +12,7 @@ import {
 import { CommunicationComposition } from "./communication-composition.js";
 import { OrganizerNotificationMessages } from "./notifications/organizer-notification-messages.js";
 
-export interface RunCommunicationReconcileInput {
+export interface RunCommunicationReconcileInput extends ConferenceHallSettings {
 	readonly locale?: string;
 	readonly issueNumber: number;
 
@@ -53,6 +57,8 @@ export class CommunicationRuntime {
 		const messages = new OrganizerNotificationMessages(input.locale);
 		const container = CommunicationComposition.createCommunicationContainer({
 			locale: messages.locale,
+			conferenceHallEvent: input.conferenceHallEvent,
+			conferenceHallApiKey: input.conferenceHallApiKey,
 			client: getOctokit(githubToken),
 			owner: input.owner,
 			repo: input.repo,
@@ -77,6 +83,7 @@ export class CommunicationRuntime {
 	}
 
 	static assertInput(input: RunCommunicationReconcileInput): void {
+		ConferenceHallInput.validate(input);
 		if (!Number.isSafeInteger(input.issueNumber) || input.issueNumber <= 0) {
 			throw new Error("issueNumber must be a positive integer");
 		}

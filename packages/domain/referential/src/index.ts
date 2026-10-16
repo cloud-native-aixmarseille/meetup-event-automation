@@ -25,3 +25,20 @@ export type {
 	ReferentialDiagnosticCode,
 	ReferentialDiagnosticSeverity,
 } from "./domain/referential-diagnostic.js";
+
+export type {
+	ProposalSource,
+	ProposalSnapshot,
+	SourceProposal,
+	SourceSpeaker,
+	SpeakerCsvRow,
+	SpeakerSyncState,
+} from "./application/ports/proposal-source.js";
+export { ProposalSourceError } from "./domain/proposal-source-error.js";
+export { MergeSourceSpeakers } from "./application/use-cases/merge-source-speakers.js";
+export { SourceSpeakerReferentialRepository } from "./application/use-cases/source-speaker-referential-repository.js";
+
+export type {
+	SpeakerCatalogDocument,
+	SpeakerCatalogStore,
+} from "./application/ports/speaker-catalog-store.js";

@@ -10,7 +10,15 @@ export class ProjectReferentialChoices {
 		return Object.freeze({
 			hostOptions: Object.freeze(catalog.hosts.map((host) => host.displayName)),
 			speakerReferences: Object.freeze(
-				catalog.speakers.map((speaker) => speaker.displayName),
+				catalog.speakers.map((speaker) =>
+					catalog.speakers.filter(
+						(other) =>
+							other.displayName.toLowerCase() ===
+							speaker.displayName.toLowerCase(),
+					).length > 1
+						? `${speaker.displayName} [${speaker.id}]`
+						: speaker.displayName,
+				),
 			),
 		});
 	}

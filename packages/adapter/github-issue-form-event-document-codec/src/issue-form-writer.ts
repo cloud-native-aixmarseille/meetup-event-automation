@@ -12,6 +12,7 @@ import {
 import { IssueFormChecklists } from "./issue-form-checklists.js";
 import { IssueFormSections } from "./issue-form-sections.js";
 import { ManagedIssueMarkers } from "./managed-issue-markers.js";
+import { ProposalSelectionCodec } from "./proposal-selection-codec.js";
 import { ParticipantLinks } from "./participant-links.js";
 
 export class IssueFormWriter {
@@ -34,9 +35,12 @@ export class IssueFormWriter {
 			patch.labels = Object.freeze([...event.labels]);
 		const fields = this.renderFields(document, event);
 		const checklists = this.renderOperations(fields, event);
-		const body = ManagedIssueMarkers.upsertManagedMarkers(
-			checklists,
-			EventReferenceMetadata.referenceMetadata(event),
+		const body = ProposalSelectionCodec.write(
+			ManagedIssueMarkers.upsertManagedMarkers(
+				checklists,
+				EventReferenceMetadata.referenceMetadata(event),
+			),
+			event,
 		);
 		if (body !== document.body) patch.body = body;
 		return Object.freeze(patch);
@@ -44,19 +48,30 @@ export class IssueFormWriter {
 	private renderFields(document: EventDocument, event: MeetupEvent): string {
 		const render = (participant: ParticipantReference) =>
 			this.renderParticipant(participant, document.identity.repository);
+		const renderSpeaker = (participant: ParticipantReference) =>
+			event.proposalReferences?.length && participant.id
+				? `${ProposalSelectionCodec.escape(participant.displayName)} [${participant.id}]`
+				: render({
+						...participant,
+						displayName: ProposalSelectionCodec.escape(participant.displayName),
+					});
+
 		const fields = [
 			[HEADINGS.eventTitle, event.eventTitle],
 			[HEADINGS.date, event.date],
 			[HEADINGS.host, event.host ? render(event.host) : ""],
 			[HEADINGS.description, event.description],
-			[HEADINGS.agenda, ParticipantLinks.renderAgenda(event, render)],
+			[HEADINGS.agenda, ParticipantLinks.renderAgenda(event, renderSpeaker)],
 			[HEADINGS.meetupLink, event.publicationLinks.meetup ?? ""],
 			[HEADINGS.communityLink, event.publicationLinks.community ?? ""],
 			[HEADINGS.assetsLink, event.publicationLinks.assets ?? ""],
 		] as const;
 		let body = document.body;
-		for (const [heading, value] of fields)
+		for (const [heading, value] of fields) {
+			if (heading === HEADINGS.agenda && event.proposalStatus === "stale")
+				continue;
 			body = IssueFormSections.replaceOrAppendSection(body, heading, value);
+		}
 		if (event.publicationLinks.feedback)
 			body = IssueFormSections.replaceOrAppendSection(
 				body,

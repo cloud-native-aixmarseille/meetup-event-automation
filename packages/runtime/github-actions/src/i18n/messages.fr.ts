@@ -1,5 +1,18 @@
 import type { EN_MESSAGES } from "./messages.en.js";
 export const FR_MESSAGES = {
+	"report.speaker-sync.pr-title":
+		"feat(referential): synchroniser les intervenants Conference Hall",
+	"report.speaker-sync.pr-body":
+		"Vérifiez les identités, la copie CSV et les champs locaux préservés. Les nouvelles identités seront disponibles après fusion. Les profils déjà liés sont actualisés directement depuis Conference Hall à chaque exécution. Le workflow lié identifie cette copie ; la fusion automatique est désactivée.",
+	"action.referential.sync-speakers":
+		"Synchroniser les intervenants Conference Hall",
+	"report.speaker-sync.completed":
+		"Catalogue et formulaire préparés : {count} intervenants. Vérifiez la pull request privée avant fusion.",
+	"report.speaker-sync.failed":
+		"La synchronisation de la copie CSV a échoué. Les identités et champs locaux restent inchangés. Les profils doivent toujours être actualisés en direct ; vérifiez les accès, les identités et les modifications concurrentes avant de réessayer.",
+	"report.speaker-sync.private":
+		"La synchronisation des intervenants nécessite un dépôt privé.",
+
 	"action.communication.reconcile-attention":
 		"Synchroniser les points à traiter par les organisateurs",
 	"report.attention.updated":

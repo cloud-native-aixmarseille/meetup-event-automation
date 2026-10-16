@@ -27,6 +27,7 @@
 		"@meetup-automation/localization": "workspace:*",
 		"@meetup-automation/kutt-feedback-link-gateway": "workspace:*",
 		"@meetup-automation/github-organizer-approval": "workspace:*",
-		"@meetup-automation/github-organizer-attention": "workspace:*"
+		"@meetup-automation/github-organizer-attention": "workspace:*",
+		"@meetup-automation/conference-hall-proposal-source": "workspace:*"
 	}
 }

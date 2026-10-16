@@ -51,6 +51,11 @@ export class CsvReferentialRepository implements ReferentialRepository {
 		).map(({ row, line }) => ({
 			source: { path: this.options.speakersPath, line },
 			speakerId: row.speaker_id,
+			displayName: row.display_name,
+			pictureUrl: row.picture_url,
+			sourceProvider: row.source_provider,
+			sourceEvent: row.source_event,
+			sourceSpeakerId: row.source_speaker_id,
 			firstName: row.firstname,
 			lastName: row.lastname,
 			company: row.company,

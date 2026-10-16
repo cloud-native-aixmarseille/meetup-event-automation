@@ -181,6 +181,7 @@ describe("event side-effect safeguards", () => {
 
 		// Assert
 		expect(sortedKeys(workflow.on?.workflow_call?.inputs)).toEqual([
+			"conference-hall-event",
 			"github-app-client-id",
 			"google-drive-meetup-folder-id",
 			"google-drive-meetup-template-folder-id",
@@ -193,7 +194,7 @@ describe("event side-effect safeguards", () => {
 			workflowExpression("inputs.github-app-client-id"),
 		);
 		expect(token?.with?.["permission-issues"]).toBe("write");
-		expect(event?.with?.mode).toBe("check");
+		expect(event?.with?.mode).toBe("fix");
 		expect(event?.id).toBe("event");
 		expect(communication?.with).not.toHaveProperty("mode");
 		expect(communication?.with?.["report-errors-to-issue"]).toBe("true");
@@ -208,7 +209,7 @@ describe("event side-effect safeguards", () => {
 					step.uses === `${automationActionPrefix}event/reconcile` &&
 					step.with?.mode === "fix",
 			),
-		).toEqual([]);
+		).toHaveLength(1);
 	});
 
 	it("requires successful actions before updating the issue form and opening a pull request", async () => {

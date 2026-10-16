@@ -313,6 +313,8 @@ jobs:
         id: reconcile-event
         uses: ./actions/event/reconcile
         with:
+          conference-hall-event: synthetic-cfp
+          conference-hall-api-key: synthetic-key
           issue-number: ${{ needs.prepare-synthetic-issue.outputs.issue-number }}
           mode: check
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -367,6 +369,8 @@ jobs:
         id: reconcile-communications
         uses: ./actions/communication/reconcile
         with:
+          conference-hall-event: synthetic-cfp
+          conference-hall-api-key: synthetic-key
           report-errors-to-issue: "false"
           issue-number: ${{ needs.prepare-synthetic-issue.outputs.issue-number }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -403,6 +407,8 @@ jobs:
         continue-on-error: true
         uses: ./actions/publication/reconcile-assets
         with:
+          conference-hall-event: synthetic-cfp
+          conference-hall-api-key: synthetic-key
           issue-number: "1"
           github-token: ${{ github.token }}
           managed-comment-author: integration-tests[bot]
@@ -435,6 +441,8 @@ jobs:
         continue-on-error: true
         uses: ./actions/publication/reconcile-feedback
         with:
+          conference-hall-event: synthetic-cfp
+          conference-hall-api-key: synthetic-key
           issue-number: "1"
           github-token: ${{ github.token }}
           managed-comment-author: integration-tests[bot]
@@ -448,6 +456,8 @@ jobs:
         continue-on-error: true
         uses: ./actions/publication/reconcile-feedback
         with:
+          conference-hall-event: synthetic-cfp
+          conference-hall-api-key: synthetic-key
           issue-number: "1"
           github-token: ${{ github.token }}
           managed-comment-author: integration-tests[bot]
@@ -461,6 +471,8 @@ jobs:
         continue-on-error: true
         uses: ./actions/publication/reconcile-feedback
         with:
+          conference-hall-event: synthetic-cfp
+          conference-hall-api-key: synthetic-key
           issue-number: "1"
           github-token: ${{ github.token }}
           managed-comment-author: integration-tests[bot]
@@ -474,6 +486,8 @@ jobs:
         continue-on-error: true
         uses: ./actions/publication/reconcile-feedback
         with:
+          conference-hall-event: synthetic-cfp
+          conference-hall-api-key: synthetic-key
           issue-number: "1"
           github-token: ${{ github.token }}
           managed-comment-author: integration-tests[bot]

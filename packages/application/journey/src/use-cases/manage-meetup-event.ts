@@ -13,6 +13,7 @@ import {
 	ResolveEventReferences,
 	ValidateReferentialCatalog,
 } from "@meetup-automation/referential";
+import { RefreshSelectedProposals } from "./refresh-selected-proposals.js";
 import { EventDiagnosticProjection } from "./event-diagnostic-projection.js";
 import { EventParticipantResolution } from "./event-participant-resolution.js";
 import { EventPublicationEvaluation } from "./event-publication-evaluation.js";
@@ -107,6 +108,9 @@ export class ManageMeetupEvent {
 		).execute();
 
 		if (catalogValidation.isValid) {
+			event = await new RefreshSelectedProposals(
+				this.dependencies.proposalSource,
+			).execute(event, catalogValidation.catalog, eventDiagnostics);
 			const speakerReferences = event.agenda.flatMap((entry) =>
 				entry.speakers.map(EventParticipantResolution.renderReference),
 			);
@@ -137,6 +141,8 @@ export class ManageMeetupEvent {
 				);
 			}
 		} else {
+			if (event.proposalReferences?.length)
+				event = { ...event, proposalStatus: "stale" };
 			eventDiagnostics.push(
 				...catalogValidation.diagnostics.map((item) =>
 					EventDiagnosticProjection.toEventDiagnostic(

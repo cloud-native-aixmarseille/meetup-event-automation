@@ -56,3 +56,5 @@ export type {
 	ApprovalEmailLink,
 	OrganizerApprovalDetails,
 } from "./ports/organizer-approval-details.js";
+
+export { SynchronizeSourceSpeakers } from "./use-cases/synchronize-source-speakers.js";

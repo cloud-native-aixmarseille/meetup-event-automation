@@ -1,3 +1,4 @@
+import { ConferenceHallInput } from "./conference-hall-input.js";
 import * as core from "@actions/core";
 import { context, getOctokit } from "@actions/github";
 import {
@@ -37,6 +38,7 @@ export class EventActions {
 		const repository = `${owner}/${repo}`;
 		const container = EventComposition.createEventContainer({
 			locale: messages.locale,
+			...ConferenceHallInput.read(),
 			client: getOctokit(token),
 			owner,
 			repo,
@@ -74,7 +76,7 @@ export class EventActions {
 		const token = core.getInput("github-token", { required: true });
 		const { owner, repo } = context.repo;
 		const repository = `${owner}/${repo}`;
-		const container = EventComposition.createEventContainer({
+		const container = EventComposition.createDocumentContainer({
 			locale: messages.locale,
 			client: getOctokit(token),
 			owner,

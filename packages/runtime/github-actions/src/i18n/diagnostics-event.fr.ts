@@ -1,5 +1,16 @@
 import type { DIAGNOSTICS_EVENT_EN } from "./diagnostics-event.en.js";
 export const DIAGNOSTICS_EVENT_FR = {
+	"diagnostic.event.proposals.invalid":
+		"Les propositions ne peuvent pas être actualisées. Le dernier programme est périmé ; vérifiez les accès, les acceptations et les identités validées.",
+	"diagnostic.event.proposals.unavailable":
+		"Les propositions ne peuvent pas être actualisées. Le dernier programme est périmé ; vérifiez les accès, les acceptations et les identités validées.",
+	"diagnostic.event.proposals.rate-limited":
+		"Les propositions ne peuvent pas être actualisées. Le dernier programme est périmé ; vérifiez les accès, les acceptations et les identités validées.",
+	"diagnostic.event.proposals.mapping-required":
+		"Les propositions ne peuvent pas être actualisées. Le dernier programme est périmé ; vérifiez les accès, les acceptations et les identités validées.",
+	"diagnostic.event.proposals.conflict":
+		"Les propositions ne peuvent pas être actualisées. Le dernier programme est périmé ; vérifiez les accès, les acceptations et les identités validées.",
+
 	"diagnostic.event.link.feedback.invalid":
 		"Le lien des retours doit être une URL HTTPS valide.",
 	"diagnostic.event.document.reference-metadata.duplicate":

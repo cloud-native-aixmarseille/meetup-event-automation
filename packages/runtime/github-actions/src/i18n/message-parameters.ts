@@ -1,4 +1,5 @@
 export interface MessageParameters {
+	"report.speaker-sync.completed": { count: number };
 	"report.feedback.changes": { persisted: string; linkUpdated: string };
 	"report.fix-applied": { applied: string };
 	"report.failed": { reason: string };

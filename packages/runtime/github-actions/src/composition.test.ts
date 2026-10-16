@@ -18,6 +18,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { EventComposition, SERVICES } from "./composition.js";
 
 const input = {
+	conferenceHallEvent: "example-cfp",
+	conferenceHallApiKey: "synthetic-source-key",
 	client: getOctokit("synthetic-test-token"),
 	owner: "community",
 	repo: "meetups",
@@ -42,6 +44,21 @@ function unrelatedEventRepository(): EventRepository {
 }
 
 describe("composition", () => {
+	it.each(["conferenceHallEvent", "conferenceHallApiKey"])(
+		"rejects blank %s before constructing reconciliation dependencies",
+		(field) => {
+			// Arrange
+			const incomplete = { ...input, [field]: "  " };
+
+			// Act
+			const create = () => EventComposition.createEventContainer(incomplete);
+
+			// Assert
+			expect(create).toThrow(
+				"Input required and not supplied: conference-hall-",
+			);
+		},
+	);
 	it("shares instances within an invocation and isolates separate invocations", () => {
 		// Arrange
 		const first = EventComposition.createEventContainer(input);
@@ -171,6 +188,8 @@ An evening about reliable platforms.
 			}),
 		};
 		const container = EventComposition.createEventContainer({
+			conferenceHallEvent: "example-cfp",
+			conferenceHallApiKey: "synthetic-source-key",
 			client: getOctokit("synthetic-test-token"),
 			owner: "example",
 			repo: "events",

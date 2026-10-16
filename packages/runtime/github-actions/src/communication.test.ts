@@ -971,6 +971,25 @@ describe("organizer approval for email batches", () => {
 	});
 });
 
+describe("required runtime configuration", () => {
+	it.each(["conferenceHallEvent", "conferenceHallApiKey"])(
+		"rejects blank %s before accessing integrations",
+		async (field) => {
+			// Arrange
+			const input = { ...runtimeInput("/synthetic/workspace"), [field]: "  " };
+
+			// Act
+			const result = CommunicationRuntime.runCommunicationReconcile(input);
+
+			// Assert
+			await expect(result).rejects.toThrow(
+				"Input required and not supplied: conference-hall-",
+			);
+			expect(getOctokitMock).not.toHaveBeenCalled();
+		},
+	);
+});
+
 describe("organizer notification routing", () => {
 	it("rejects an empty organizer destination before accessing integrations", async () => {
 		// Arrange

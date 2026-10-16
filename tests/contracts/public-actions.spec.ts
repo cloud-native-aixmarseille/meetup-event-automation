@@ -20,6 +20,8 @@ const actionContracts = [
 	{
 		directory: "actions/publication/reconcile-feedback",
 		inputs: [
+			"conference-hall-api-key",
+			"conference-hall-event",
 			"github-token",
 			"issue-number",
 			"managed-comment-author",
@@ -33,6 +35,8 @@ const actionContracts = [
 	{
 		directory: "actions/publication/reconcile-assets",
 		inputs: [
+			"conference-hall-api-key",
+			"conference-hall-event",
 			"github-token",
 			"google-credentials",
 			"google-drive-meetup-folder-id",
@@ -44,7 +48,14 @@ const actionContracts = [
 	},
 	{
 		directory: "actions/event/reconcile",
-		inputs: ["github-token", "issue-number", "managed-comment-author", "mode"],
+		inputs: [
+			"conference-hall-api-key",
+			"conference-hall-event",
+			"github-token",
+			"issue-number",
+			"managed-comment-author",
+			"mode",
+		],
 		outputs: ["diagnostics", "is-ready", "result", "state"],
 	},
 	{
@@ -78,6 +89,8 @@ const actionContracts = [
 	{
 		directory: "actions/communication/reconcile",
 		inputs: [
+			"conference-hall-api-key",
+			"conference-hall-event",
 			"openfeedback-api-key",
 			"slides-url",
 			"report-errors-to-issue",

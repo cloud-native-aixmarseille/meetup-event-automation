@@ -1,3 +1,4 @@
+import { ConferenceHallProposalSource } from "@meetup-automation/conference-hall-proposal-source";
 import type { getOctokit } from "@actions/github";
 import { CsvReferentialRepository } from "@meetup-automation/csv-referential-repository";
 import {
@@ -21,16 +22,25 @@ import {
 	ValidateMeetupReferentials,
 } from "@meetup-automation/journey";
 import type { Locale } from "@meetup-automation/localization";
-import type { ReferentialRepository } from "@meetup-automation/referential";
+import {
+	type ProposalSource,
+	type ReferentialRepository,
+	SourceSpeakerReferentialRepository,
+} from "@meetup-automation/referential";
 import { SystemEventClock } from "@meetup-automation/system-clock";
 import { YamlIssueFormProjection } from "@meetup-automation/yaml-issue-form-projection";
 import { Container } from "inversify";
+import {
+	ConferenceHallInput,
+	type ConferenceHallSettings,
+} from "./conference-hall-input.js";
 
 type GitHubClient = ReturnType<typeof getOctokit>;
 
 export const SERVICES = {
 	config: Symbol("AutomationConfig"),
 	referentialRepository: Symbol("ReferentialRepository"),
+	proposalSource: Symbol("ProposalSource"),
 	issueFormProjection: Symbol("IssueFormProjection"),
 	eventRepository: Symbol("EventRepository"),
 	eventDocumentCodec: Symbol("EventDocumentCodec"),
@@ -46,13 +56,18 @@ export interface WorkspaceCompositionInput {
 	readonly workspaceRoot?: string;
 }
 
-export interface EventCompositionInput extends WorkspaceCompositionInput {
+export interface EventDocumentCompositionInput
+	extends WorkspaceCompositionInput {
 	readonly repositoryRef?: string;
 	readonly client: GitHubClient;
 	readonly owner: string;
 	readonly repo: string;
 	readonly commentAuthorLogin: string;
 }
+
+export interface EventCompositionInput
+	extends EventDocumentCompositionInput,
+		ConferenceHallSettings {}
 
 export class EventComposition {
 	/** One container per invocation: no credentials or cached data survive a run. */
@@ -107,7 +122,9 @@ export class EventComposition {
 		return container;
 	}
 
-	static createEventContainer(input: EventCompositionInput): Container {
+	static createDocumentContainer(
+		input: EventDocumentCompositionInput,
+	): Container {
 		const container = EventComposition.createReferentialContainer(input);
 		EventComposition.bindEventAdapters(container, input);
 		container
@@ -135,18 +152,6 @@ export class EventComposition {
 					}),
 				};
 			});
-		container.bind(ManageMeetupEvent).toDynamicValue(
-			(context) =>
-				new ManageMeetupEvent({
-					config: context.get<AutomationConfig>(SERVICES.config),
-					referentialRepository: context.get<ReferentialRepository>(
-						SERVICES.referentialRepository,
-					),
-					eventDependencies: context.get<ReconcileEventDependencies>(
-						SERVICES.eventDependencies,
-					),
-				}),
-		);
 		container.bind(ListActiveEvents).toDynamicValue(
 			(context) =>
 				new ListActiveEvents({
@@ -163,9 +168,53 @@ export class EventComposition {
 		return container;
 	}
 
+	static createEventContainer(input: EventCompositionInput): Container {
+		const sourceSettings = ConferenceHallInput.validate(input);
+		const container = EventComposition.createDocumentContainer(input);
+		EventComposition.bindProposalSource(container, sourceSettings);
+		container.bind(ManageMeetupEvent).toDynamicValue(
+			(context) =>
+				new ManageMeetupEvent({
+					proposalSource: context.get<ProposalSource>(SERVICES.proposalSource),
+					config: context.get<AutomationConfig>(SERVICES.config),
+					referentialRepository: context.get<ReferentialRepository>(
+						SERVICES.referentialRepository,
+					),
+					eventDependencies: context.get<ReconcileEventDependencies>(
+						SERVICES.eventDependencies,
+					),
+				}),
+		);
+		return container;
+	}
+
+	private static bindProposalSource(
+		container: Container,
+		input: ConferenceHallSettings,
+	) {
+		const source = new ConferenceHallProposalSource(
+			input.conferenceHallEvent,
+			input.conferenceHallApiKey,
+		);
+		container
+			.bind<ProposalSource>(SERVICES.proposalSource)
+			.toConstantValue(source);
+		const local = container.get<ReferentialRepository>(
+			SERVICES.referentialRepository,
+		);
+		container
+			.rebind<ReferentialRepository>(SERVICES.referentialRepository)
+			.toConstantValue(
+				new SourceSpeakerReferentialRepository(local, source, {
+					provider: "conference-hall",
+					event: input.conferenceHallEvent,
+				}),
+			);
+	}
+
 	private static bindEventAdapters(
 		container: Container,
-		input: EventCompositionInput,
+		input: EventDocumentCompositionInput,
 	) {
 		container
 			.bind<EventRepository>(SERVICES.eventRepository)

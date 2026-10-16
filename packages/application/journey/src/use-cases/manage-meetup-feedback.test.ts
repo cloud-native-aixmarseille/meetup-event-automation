@@ -1,3 +1,7 @@
+import {
+	ProposalSourceError,
+	type ReferentialRepository,
+} from "@meetup-automation/referential";
 import type { EventDocument, MeetupEvent } from "@meetup-automation/event";
 import type {
 	FeedbackEventGateway,
@@ -28,6 +32,7 @@ const feedbackUrl = "https://openfeedback.io/example-poll";
 function journey(
 	overrides: Partial<MeetupEvent> = {},
 	now = "2026-09-29T10:00:00Z",
+	referentialRepository: ReferentialRepository = { load: async () => catalog },
 ) {
 	const deps = createEventDependencies();
 	let current: EventDocument = sourceDocument;
@@ -68,15 +73,39 @@ function journey(
 		links,
 		events,
 		manageEvent: new ManageMeetupEvent({
+			proposalSource: { load: vi.fn() },
 			config,
 			eventDependencies: deps,
-			referentialRepository: { load: async () => catalog },
+			referentialRepository,
 		}),
 	});
 	return { deps, events, links, useCase };
 }
 
 describe("meetup feedback journey", () => {
+	it("keeps feedback unchanged when live profiles cannot be refreshed, including a manual agenda", async () => {
+		// Arrange
+		const { useCase, events, links } = journey({}, undefined, {
+			load: async () => {
+				throw new ProposalSourceError("unavailable");
+			},
+		});
+
+		// Act
+		const result = await useCase.execute({ identity });
+
+		// Assert
+		expect(result).toMatchObject({
+			skipped: true,
+			persisted: false,
+			linkUpdated: false,
+		});
+		expect(result.diagnostics).toContainEqual(
+			expect.objectContaining({ code: "referential.source.unavailable" }),
+		);
+		expect(events.ensureEvent).not.toHaveBeenCalled();
+		expect(links.updateTarget).not.toHaveBeenCalled();
+	});
 	it("waits for talk subjects before creating a new poll", async () => {
 		// Arrange
 		const { events, links, useCase } = journey({

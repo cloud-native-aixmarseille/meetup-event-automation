@@ -30,6 +30,12 @@ inputs:
   slack-token:
     description: Slack bot token with chat:write and reactions:write for organizer notifications and decision reactions.
     required: true
+  conference-hall-event:
+    description: Conference Hall CFP slug for live linked profiles and selected proposals.
+    required: true
+  conference-hall-api-key:
+    description: Read-only Conference Hall event API key.
+    required: true
   report-errors-to-issue:
     description: Use true to record communication diagnostics in a managed meetup issue comment and succeed after persistence, or false to fail on error diagnostics. Execution and comment persistence failures still fail the action. Requires the shared event lock.
     required: true

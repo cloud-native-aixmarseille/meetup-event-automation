@@ -36,20 +36,20 @@ import {
 import {
 	EventComposition,
 	SERVICES,
-	type EventCompositionInput,
+	type EventDocumentCompositionInput,
 } from "./composition.js";
 const ATTENTION_SERVICES = {
 	repository: Symbol("AttentionRepository"),
 	notification: Symbol("AttentionNotification"),
 };
-type AttentionCompositionInput = EventCompositionInput & {
+type AttentionCompositionInput = EventDocumentCompositionInput & {
 	issueNumber: number;
 	slackToken: string;
 	slackOrganizerChannelId: string;
 };
 export class AttentionComposition {
 	static create(input: AttentionCompositionInput) {
-		const container = EventComposition.createEventContainer(input);
+		const container = EventComposition.createDocumentContainer(input);
 		container
 			.bind(SystemCommunicationClock)
 			.toDynamicValue(() => new SystemCommunicationClock());

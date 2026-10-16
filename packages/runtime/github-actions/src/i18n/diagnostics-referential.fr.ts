@@ -1,5 +1,19 @@
 import type { DIAGNOSTICS_REFERENTIAL_EN } from "./diagnostics-referential.en.js";
 export const DIAGNOSTICS_REFERENTIAL_FR = {
+	"diagnostic.referential.source.unavailable":
+		"Les profils Conference Hall sont indisponibles. Vérifiez les accès au CFP puis réessayez ; les anciens contacts ne sont pas utilisés.",
+	"diagnostic.referential.source.invalid":
+		"Les profils Conference Hall sont invalides ou proviennent d'un autre CFP. Vérifiez la configuration avant de réessayer.",
+	"diagnostic.referential.source.rate-limited":
+		"Conference Hall limite les requêtes de profils. Attendez le délai de reprise ; les anciens contacts ne sont pas utilisés.",
+	"diagnostic.referential.source.mapping-required":
+		"Un intervenant lié est absent de l'export du CFP configuré. Vérifiez son identité source avant de réessayer.",
+	"diagnostic.referential.source.conflict":
+		"Les identités des intervenants Conference Hall sont en conflit. Vérifiez les correspondances dans le CFP avant de réessayer.",
+	"diagnostic.referential.speaker.display-name.invalid":
+		"Un nom public ou un prénom et un nom sont nécessaires.",
+	"diagnostic.referential.speaker.mapping.invalid":
+		"Les identités source doivent être complètes, uniques et liées au CFP.",
 	"diagnostic.referential.contact.id.duplicate":
 		"Les identifiants stables des contacts doivent être uniques.",
 	"diagnostic.referential.host.id.conflict":

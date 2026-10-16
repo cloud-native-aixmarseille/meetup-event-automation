@@ -127,3 +127,9 @@ See [organizer attention](../integrations/communications.md#organizer-attention)
 for reminder timing and recovery. Mark held, postponed, or cancelled explicitly
 after the scheduled date; do not infer occurrence from the calendar. Verify any
 uncertain external delivery even when the issue is closed.
+
+## Conference Hall
+
+Use the [Conference Hall guide](../integrations/conference-hall.md) for the required
+`conference-hall-event` input, `conference-hall-api-key` secret, live profile refresh, reviewed identity
+synchronization, selected proposals and consumer workflow triggers.

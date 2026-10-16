@@ -1,241 +1,241 @@
-# ADR 0012: Synchronize speaker referentials and selected talks from Conference Hall
+# ADR 0012: Use Conference Hall as the source of truth for talks and speakers
 
-Status: Proposed
+Status: Accepted (implemented)
 
 Date: 2026-10-14
+
+Updated: 2026-10-16
 
 ## Context
 
 All meetup talks originate in the recurring
 [Cloud Native Aix-Marseille CFP](https://conference-hall.io/team/cloud-native-aix-marseille/meetup-cloud-native-aix-marseille/proposals).
-Organizers explicitly select proposals for each meetup. Today they copy talk
-text into the issue agenda and maintain speaker profiles and contacts in the
-[private speaker CSV](../reference/referentials.md). Changes in Conference Hall
-do not reach either source automatically.
+Organizers explicitly select proposals for each meetup. Speaker profile and
+submitted-talk corrections must reach event content and recipients automatically,
+without copying text or waiting for a CSV synchronization PR to merge.
 
-The CSV is already the speaker referential used by validation, issue-form
-projection, and communications. Its stable `speaker_id` also identifies email
-recipients for duplicate protection. It contains organizer-maintained fields,
-such as phone numbers, that the proposal export does not supply. Keeping this
-referential avoids replacing its consumers or discarding useful local data.
+The [private speaker CSV](../reference/referentials.md) already supports catalog
+validation, issue-form projection and communications. Its stable `speaker_id`
+identifies recipients for duplicate protection. It also contains local fields,
+such as phone numbers, that the proposal export does not supply. These identities
+and organizer-maintained fields must survive source updates.
 
 Conference Hall's [Web API contract][conference-hall-api] exposes event proposals
 through `GET /api/v1/event/:event`, authenticated with an event key in the
 `X-API-Key` header. Its schedule endpoint is restricted to conference events.
 The [proposal serializer][conference-hall-export] includes proposal and speaker
-IDs, profiles, a speaker `picture` URL, email addresses, review data, and survey
-answers. Only a selected set of fields belongs in the private referential or
-public agenda.
+IDs, profiles, picture URLs, email addresses, review data and survey answers.
+Only an allowlisted subset belongs in the private catalog or public agenda.
 
 ## Decision
 
-Synchronize Conference Hall speaker data one way into
-`referentials/speakers.csv` in the private consumer repository. Keep that CSV as
-the application's speaker referential, including locally maintained phone
-numbers. Separately resolve explicitly selected proposals into meetup agendas.
-The issue retains selection, order, event date, host, lifecycle, and confirmation
-for that particular meetup. This ADR proposes future behavior; it does not change
-the current CSV, issue, or workflow contracts by itself.
+Use Conference Hall as the runtime authority for linked speaker profiles and
+explicitly selected talks. Compose its current export with committed local
+speaker IDs, reviewed identity mappings and organizer-owned fields through the
+existing referential port. Event evaluation and recipient preparation share one
+composed catalog and one source snapshot per invocation.
 
-### Speaker synchronization and field ownership
+Retain private reviewed CSV synchronization for identity registration, stable-ID
+allocation, snapshots and issue-form choices. Routine source edits take effect
+on the next successful reconciliation without a snapshot PR merge. The meetup
+issue owns proposal selection and order, date, host, lifecycle and participation
+confirmation.
 
-Configure the CFP slug `meetup-cloud-native-aix-marseille` at the consumer workflow
-boundary and provide its API key as an explicit secret. The organizer dashboard
-URL is not an API endpoint. Keep requests on the supported service origin;
-issue text cannot choose credential targets.
+### Required source configuration
 
-Read speakers from the configured CFP's proposal export, including co-speakers,
-and reconcile an allowlisted set of fields. Importing a speaker does not select
-a talk, publish a proposal, confirm attendance, or authorize an email.
+Require both `conference-hall-event` and `conference-hall-api-key` in the event,
+feedback, asset and communication actions and their reusable workflows. Speaker
+synchronization requires the same settings. Supply the CFP slug at the workflow
+boundary and the key as an explicitly forwarded secret, with no defaults.
 
-| Field                                    | Owner and synchronization behavior                                                                      |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `speaker_id`                             | Local stable identity. Preserve existing values; never replace them with provider IDs.                  |
-| Conference Hall identity mapping         | Associate provider, CFP, and speaker ID with the local ID; validate uniqueness and scope.               |
-| Public display name, company, and email  | Conference Hall owns these fields for linked rows; sync proposes updates in the CSV.                    |
-| `picture_url`                            | Conference Hall owns this optional profile image URL for linked rows; sync proposes updates in the CSV. |
-| `firstname` and `lastname`               | Preserve existing values as local structured-name data; do not invent them by splitting a display name. |
-| `phone` and other supported local fields | Organizers own these fields; synchronization preserves them exactly.                                    |
-| Unlinked existing rows                   | Remain locally maintained and are not overwritten or removed.                                           |
+Runtime validation rejects missing or blank values before reconciliation,
+including direct programmatic calls and issues without selected proposals.
+Required TypeScript dependencies express the same contract. Always compose the
+source-aware catalog and proposal source; there is no unconfigured CSV fallback.
 
-Extend the CSV schema with explicit source mapping, a display-name field, and
-an optional `picture_url` populated from Conference Hall's speaker `picture`.
-The current reader requires first name, last name, and company, while the export
-provides a single name and may omit affiliation. Support imported display names
-without fabricated structured names; retain legacy name parsing for existing
-rows, allow absent affiliation, and use the display name for email greetings
-when no organizer-maintained first name exists. Update validation, resolution,
-form projection, and communication placeholders together. Equal display names
-must remain distinguishable by stable ID; name-only ambiguous references fail.
+Use the configured CFP's event export on the supported service origin. The
+organizer dashboard URL is not an API endpoint, and issue text cannot choose a
+credential target. Document-only issue listing and organizer attention do not
+resolve profiles or talks; their composition does not expose the event
+reconciliation journey. Standalone CSV validation and form projection remain
+local maintenance tools.
 
-Synchronize profile picture URLs along with the other provider-owned fields.
-Store a validated HTTPS image reference in `picture_url`, without downloading
-image binaries into Git or forwarding API credentials to an image host. Expose
-this optional field in the resolved public speaker profile so presenters can
-use it without reading private contact fields. Storing a URL does not embed an
-image automatically; each consuming presenter owns image display and fallback.
+### Speaker identity and field ownership
 
-An omitted source field preserves the existing URL; an explicit empty or null
-picture proposes clearing it through the private synchronization PR. A changed
-valid URL proposes an update, and unchanged values produce no diff. Invalid or
-authentication-dependent image references produce a diagnostic and preserve the
-last valid value, or leave a new speaker's picture empty. Missing or unavailable
-pictures never block agenda resolution or email delivery. Image consumers must
-handle unavailable images because the externally hosted content can change
-independently of the committed CSV.
+Read speakers from the configured CFP's proposals, including co-speakers.
+Importing a speaker does not select or publish a talk, confirm attendance, or
+authorize an email.
 
-Link existing rows through an organizer-reviewed mapping. Name or email matches
-may identify a candidate for review but never authorize merging people or copying
-local contact fields. Reject conflicting mappings and inconsistent profiles for
-the same source identity. Verify the provider's speaker-ID scope across proposals
-before relying on it for deduplication.
+| Field                                    | Owner and behavior                                                                                                        |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `speaker_id`                             | Local stable identity; never replace it with a provider ID or reuse a removed ID.                                         |
+| Source identity mapping                  | Reviewed association of provider, CFP and event-scoped speaker ID with a local ID; complete and unique within that scope. |
+| Public display name, company and email   | Conference Hall owns these fields for linked rows; current values override the CSV snapshot during reconciliation.        |
+| `picture_url`                            | Conference Hall owns the optional profile image URL; expose a validated HTTPS reference in the resolved public profile.   |
+| `firstname` and `lastname`               | Preserve local structured-name data; never invent it by splitting a display name.                                         |
+| `phone` and other supported local fields | Organizers own these fields; synchronization preserves them.                                                              |
+| Unlinked rows and rows for another CFP   | Retain local values and identities.                                                                                       |
 
-Allocate a local ID once for a new speaker, preserving it across reruns and
-updates to an open synchronization PR. Never reuse a removed speaker's ID.
-Preserve unmapped records, phone numbers, and supported extra columns. Unknown
-columns must survive serialization or block the write with a diagnostic; they
-must not be silently dropped. Missing fields in a response never clear local
-fields. Missing or invalid required source data blocks the candidate sync and
-leaves the committed catalog unchanged. Clearing an optional source-owned value
-is an explicit reviewed diff. Disappearance from an export never deletes a row.
+Support imported display names without requiring structured names or affiliation.
+Use the current source display name in email greetings for linked speakers,
+including when local structured names are older. Local speakers use their first
+name when available, otherwise their display name. Equal public names remain
+distinguishable by stable ID; ambiguous name-only references fail.
 
-For linked rows, correct imported fields in Conference Hall; a local edit to one
-of those fields will be proposed for replacement on the next sync. Local fields
-remain editable in CSV. Do not upload local contacts or edits to Conference Hall.
+Absent, empty or null source-owned affiliation and picture fields become empty.
+Invalid picture references fall back to text. Do not download images into Git,
+forward API credentials to image hosts, or expose private contact fields through
+public profile consumers. Each presenter owns image display and fallback;
+unavailable pictures do not block agenda resolution or email delivery.
 
-### Persist through the existing private repository workflow
+Link existing rows through organizer-reviewed mappings. Name or email matches
+may identify candidates for review but never authorize merging people or copying
+local contacts. Reject conflicting mappings and inconsistent profiles for the
+same source identity. Conference Hall speaker IDs are event-scoped and shared
+across that event's proposals; retain the CFP scope when resolving co-speakers.
 
-Run a dedicated speaker synchronization workflow on a schedule and manual
-request. Fetch one source snapshot, compute a deterministic merge, validate the
-complete candidate catalog, and open or update one private synchronization PR.
-Reuse the repository's existing bot-PR pattern. Regenerate the issue-form choices
-from the same candidate catalog and include them in that PR when changed.
-Unchanged input produces no new diff or PR.
+Allocate a local ID once for each new speaker and preserve it across retries and
+updates to an open synchronization PR. Reserve historical and removed IDs.
+Preserve unmapped rows, local fields and extra columns during serialization;
+unknown columns must survive or block the write. Source disappearance never
+deletes a local row. Correct source-owned fields in Conference Hall and local
+supplements in the CSV; do not upload local contacts or edits to Conference Hall.
 
-Keep the CSV and identity mappings in the consumer repository. Restrict the
-workflow to a private destination before writing contact data. Use a dedicated
-repository-wide concurrency group for synchronization; per-issue locks cannot
-protect shared catalog writes or ID allocation. Rebase the merge on the current
-default-branch catalog and verify the source revision before updating the branch.
-Preserve organizer edits on both the default branch and an existing sync PR;
-conflicts require reconciliation rather than overwriting those edits.
+### Private identity registration and snapshots
 
-Organizers review and merge the proposed changes using existing repository rules.
-Do not enable automatic merge as part of this decision. Event runs consume the
-catalog at their checked-out revision, exactly as today. Merging a sync triggers
-validation/form checks and reconciliation of affected active events so pending
-email approvals are evaluated against the updated inputs.
+Run speaker synchronization on scheduled and manual requests. Fetch one source
+snapshot, compute a deterministic merge, validate the complete candidate catalog,
+and open or update one private PR containing the CSV, allocation state and
+regenerated issue-form choices. Unchanged input produces no new diff or PR.
 
-Recipient resolution uses the committed CSV and does not fetch Conference Hall
-contacts at dispatch time. An unmerged import is not live application data.
-Record and report sync freshness through the workflow and private PR, including
-failures. A failed sync leaves the last merged catalog usable; it must not be
-reported as current. This deliberately accepts lag until the next successful,
-reviewed sync. Urgent contact changes require a new sync and merge before use;
-they do not bypass approval or reset accepted deliveries.
+Verify the destination is private before persisting contacts. Use a dedicated
+repository-wide concurrency group to protect shared writes and ID allocation.
+Merge the current default branch before importing and verify its revision before
+publication. Use an exact branch-head lease when updating the synchronization
+branch. Preserve organizer edits; conflicts or a human-authored branch head
+require reconciliation.
 
-### Selected talk integration
+Organizers review and merge new mappings and snapshot updates using existing
+repository rules. Automatic merge is disabled. New identities become available
+after their mappings are committed; existing linked profiles refresh directly
+from Conference Hall independently of later snapshot PRs. Catalog merges trigger
+validation/form checks and active-event audits through the consumer workflows.
 
-Add ordered proposal references to the issue form and versioned codec.
-Organizers explicitly select stable proposal IDs within the configured CFP.
-Document how to obtain them from Conference Hall's Web API settings/export.
-Do not infer selection from CSV membership, names, titles, acceptance alone, or
-a conference schedule. Reject duplicate, missing, or foreign proposal IDs.
+The private PR and workflow record snapshot freshness and failures. Missing or
+invalid required source data blocks the candidate sync and leaves committed
+files unchanged. A failed snapshot sync does not establish runtime freshness or
+permit use of cached source-owned contacts.
 
-Resolve selected proposal titles, abstracts, languages, formats, and speaker
-identities through the API on issue changes and scheduled/manual audits.
-Translate their speaker identities to local `speaker_id` values through the
-committed mapping and use the same catalog revision for participant resolution.
-If a selected speaker has no committed mapping, report that synchronization and
-review are required; do not create a second live contact lookup or guess by name.
-Deduplicate recipients across talks by local speaker identity.
+### Selected talks and automatic propagation
 
-The proposal owns talk content; the committed CSV supplies speaker display names,
-optional profile picture URLs, and contact data to their respective consumers.
-Keep talk-specific biographies out of the contact schema unless a supported
-feature requires them. Render managed agenda content through the issue codec,
-preserving unrelated sections and explicit meetup order. Edits to managed talk
-text are corrected in Conference Hall.
+Add ordered proposal references to the issue form and versioned codec. Organizers
+select stable proposal IDs within the configured CFP; document how to obtain
+them from its Web API export. Do not infer selection from names, titles, CSV
+membership, acceptance alone or a conference schedule. Reject duplicate, missing
+or foreign proposal IDs.
 
-A selected proposal must be accepted before its content is eligible for
-publication. Pending, declined, withdrawn, or unrecognized states produce a
-diagnostic. Preserve and mark the last valid agenda projection stale if refresh
-fails, and block effects requiring a verified refreshed proposal. Existing
-recipient lookup remains available from the committed CSV. CFP acceptance or
-confirmation does not imply availability on this meetup's date; retain its
-participation-confirmation checks. Never change Conference Hall proposal status
-or send its result emails.
+Resolve selected titles, abstracts, languages, formats and speaker identities
+from the same source snapshot used for profiles. Translate source identities
+through committed mappings to local `speaker_id` values. Missing mappings
+require synchronization and review; never guess by name. Deduplicate recipients
+across talks by local identity.
 
-### Ownership, failures, and privacy
+A selected proposal must have accepted deliberation and a supported,
+non-declined confirmation state. Preserve the meetup's separate participation
+confirmation checks: CFP acceptance does not establish availability on its date.
+Never change Conference Hall proposal status or send its result emails.
 
-The referential domain owns source mappings, field merge rules, stable-ID
-allocation, and catalog validation through provider-neutral ports. A
-`conference-hall-proposal-source` adapter validates vendor responses; a CSV
-adapter persists the validated candidate without losing local fields. The event
-domain owns proposal references and public agenda data. The journey coordinates
-synchronization, form projection, and event reconciliation. Runtime composition
-injects credentials and adapters; provider payloads stay outside domains.
+Render managed agenda content through the issue codec, escaping imported public
+text and preserving explicit order and unrelated sections. Issues without
+proposal references retain manually maintained talk text while linked speaker
+profiles still refresh. Keep talk-specific biographies outside the contact schema
+unless a supported consumer requires them.
 
-Bound requests and response sizes, honor rate-limit responses and `Retry-After`,
-and avoid a request per speaker or proposal. Fetch once per sync invocation;
-validate the deployed API contract and budget audit requests before enabling
-selected-talk refresh. Authentication errors, invalid responses, and incomplete
-reads leave committed files and existing issue content intact with diagnostics.
-No raw export cache, artifact, or action output is needed.
+Reconcile on issue changes and scheduled/manual audits. Scheduled audits always
+persist refreshed event content and diagnostics in fix mode under the shared
+event lock. Source edits alone do not trigger GitHub Actions; the next successful
+audit determines propagation latency.
 
-Store allowlisted speaker contacts only in the private consumer referential.
-Discard reviews, surveys, contact locations, and arbitrary reference fields at
-the import boundary. Private PR diffs contain the intended catalog updates;
-public reports show safe counts and diagnostic codes, never rows, addresses,
-phone numbers, credentials, or provider exceptions. Do not project local contact
-fields into issues, Slack, or Drive assets. Escape imported public text and use
-owner-local English/French catalogs and the shared action reporting contract.
+Conference Hall updates event speaker records when users save profiles. Its
+personal talk library and submitted proposals are separate: this integration
+inherits the selected CFP proposal exposed by the event API. Editing only a
+library talk does not update existing submissions. Source capabilities, setup
+and recovery are documented in the [integration guide](../integrations/conference-hall.md).
 
-Existing issues and speaker IDs remain readable without conversion to a second
-recipient model. Preserve all delivery reservations and completion records when
-linking a speaker or updating profile data. Changed outgoing inputs require
-fresh approval for affected unfinished batches through the existing fingerprint
-rules, but do not resend accepted deliveries. In-flight event runs retain their
-checked-out catalog snapshot; a merge cannot recall an already dispatched
-message. Keep the host referential unchanged.
+### Failures, privacy and delivery safeguards
+
+If the configured source cannot be refreshed, its export is invalid, identities
+conflict or a linked profile is missing, reject catalog use with safe localized
+diagnostics. Do not fall back to old profile or contact values. Retain local rows
+and the last valid selected agenda, mark selected proposals stale, and block
+dependent mail and feedback work. Independent event work can continue. Recovery
+requires a successful refresh or an explicit correction to the mapping.
+
+Bound requests and response sizes, handle rate-limit responses and `Retry-After`
+without immediate retries, and fetch once per action invocation rather than per
+speaker or proposal. Separate actions consume the provider's shared rate budget;
+audit frequency must account for that. Do not persist raw export caches or expose
+provider payloads through artifacts or action outputs.
+
+The referential domain owns source mappings, field ownership, stable-ID
+allocation and validation through provider-neutral ports. A source-aware
+repository combines live profiles and local supplements. The Conference Hall
+adapter validates and allowlists vendor responses; the CSV adapter persists
+validated candidates without losing local fields. The event domain owns proposal
+references and public agenda data. The journey coordinates use cases, and runtime
+composition injects credentials and adapters.
+
+Store allowlisted contact snapshots only in the private consumer referential.
+Discard reviews, surveys, contact locations and arbitrary reference fields at
+the source boundary. Keep private addresses, phone numbers, credentials and raw
+exceptions out of public issues, Slack, Drive assets, logs, summaries and outputs.
+Use owner-local English/French catalogs and the shared action reporting contract.
+
+Current source profiles and selected proposals feed existing email batch
+fingerprints. Changed unfinished batches require fresh approval. Preserve stable
+recipient IDs, accepted deliveries and reservations when linking or updating a
+speaker; never reset or resend accepted deliveries. Source refresh does not
+authorize mail. In-flight runs retain their source snapshot and checked-out local
+supplements and cannot recall an already dispatched message. Hosts remain locally
+managed.
 
 ## Alternatives
 
-- Resolving speaker contacts live from Conference Hall and retaining only local
-  supplements requires two runtime sources and a new contact-resolution path.
-  CSV synchronization reuses the existing consumers and their stable IDs.
-- Copying the raw export or replacing entire CSV rows would import unnecessary
-  private data and erase organizer-maintained fields. Field-owned merging avoids
-  both problems.
-- Bidirectional synchronization adds conflict policy and write APIs beyond the
-  read-only integration needed here.
-- Importing every accepted proposal into an agenda removes the organizer's
-  explicit meetup selection. Speaker synchronization does not replace it.
+- Using the committed CSV as runtime authority delays speaker corrections until
+  a reviewed sync is merged. Live composition preserves the existing consumers
+  and stable IDs while removing that delay.
+- Optional source configuration permits callers to silently use a different
+  authority policy. Required settings make that policy consistent.
+- Copying raw exports or replacing whole CSV rows imports unnecessary private
+  data and erases organizer-owned fields.
+- Bidirectional synchronization adds conflict policies and write APIs beyond
+  the read-only integration needed here.
+- Importing every accepted proposal into an agenda removes explicit meetup
+  selection; profile synchronization does not replace it.
 
-## Consequences and delivery
+## Consequences and validation
 
-Organizers maintain phone numbers and other local fields in the existing CSV;
-Conference Hall supplies updates to linked profiles through reviewable diffs.
-Speaker lookup remains deterministic and available without a live contact API
-call. The tradeoffs are synchronization lag, private contact history in Git, and
-ongoing maintenance of explicit identity mappings and a compatible CSV schema.
+Speaker and submitted-proposal corrections reach event content and recipients
+on the next successful reconciliation. Local identities, supplemental contacts,
+explicit meetup selection and delivery protection remain stable. No webhook or
+bidirectional source write is required.
 
-First deliver the schema/name compatibility changes and mapping review, then the
-source adapter, field merge, and private synchronization workflow. Add selected
-proposal references and agenda refresh after committed speaker mappings are
-available. Update usage, referential, configuration, action, and workflow
-contracts when each behavior ships. No live data migration is performed by this
-ADR.
+Every reconciliation caller must supply both source settings. Event runs depend
+on source availability when their catalog contains linked profiles, including
+manual agendas. Missing linked profiles invalidate that CFP catalog until
+repaired. Tradeoffs include API request budgets, snapshot consistency within
+individual invocations, reviewed registration of new identities, and private
+contact history in Git. Standalone CSV validation and form choices reflect the
+committed snapshot rather than live source values.
 
-Validate field ownership, preserved phone numbers and extra columns, unmapped
-rows, source disappearance, name ambiguity, missing data, co-speaker identity,
-ID allocation across retries, unchanged syncs, concurrent organizer edits, sync
-failures and freshness, private-destination enforcement, escaped text, locale
-changes, selected proposals, and unchanged email duplicate protection. Cover
-picture URL import, updates, explicit removal, omitted fields, invalid references,
-and unavailable-image fallbacks without blocking unrelated work. Run the behavior,
-architecture, public contract, reporting, localization, and bundle checks for
-eventual production changes.
+Validate required manifests and forwarding, missing and blank settings, direct
+runtime calls, scheduled persistence, and profile/talk edits across invocations
+without a CSV change. Cover field ownership, optional field clearing, picture
+fallbacks, local field preservation, scoped mappings, co-speakers, name ambiguity,
+ID allocation across retries, missing profiles, unchanged syncs, concurrent edits,
+private-destination checks, redaction, escaped text and locale changes. Preserve
+approval and duplicate-delivery tests, and run architecture, public contract,
+reporting, localization and bundle checks for implementation changes.
 
 [conference-hall-api]: https://github.com/conference-hall/conference-hall/blob/335d349b51194e3f5abbd809016b779dbdbcc0d5/docs/api.md
 [conference-hall-export]: https://github.com/conference-hall/conference-hall/blob/335d349b51194e3f5abbd809016b779dbdbcc0d5/app/features/event-management/proposals-export/services/proposals-export.server.ts

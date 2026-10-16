@@ -8,6 +8,7 @@ export class EventParticipantNormalization {
 		const id = participant.id?.trim();
 		return id
 			? {
+					...participant,
 					displayName,
 					id,
 					...(participant.source ? { source: participant.source } : {}),
@@ -24,6 +25,7 @@ export class EventParticipantNormalization {
 
 	static normalizeAgendaEntry(entry: AgendaEntry): AgendaEntry {
 		return {
+			...entry,
 			speakers: entry.speakers.map(
 				EventParticipantNormalization.normalizeParticipant,
 			),

@@ -6,12 +6,15 @@ const boundary = vi.hoisted(() => ({ execute: vi.fn() }));
 vi.mock("@actions/core", () => ({
 	getInput: (name: string) =>
 		({
+			"conference-hall-event": "example-cfp",
+			"conference-hall-api-key": "synthetic-source-key",
 			"issue-number": "42",
 			mode: "check",
 			"github-token": "private-token",
 			"managed-comment-author": "automation[bot]",
 		})[name],
 	setOutput: vi.fn(),
+	setSecret: vi.fn(),
 }));
 vi.mock("@actions/github", () => ({
 	context: { repo: { owner: "community", repo: "meetups" } },
@@ -20,6 +23,12 @@ vi.mock("@actions/github", () => ({
 vi.mock("./composition.js", () => ({
 	SERVICES: { config: "config" },
 	EventComposition: {
+		createDocumentContainer: () => ({
+			get: (key: unknown) =>
+				key === "config"
+					? { event: { "issue-label": "meetup" } }
+					: { execute: boundary.execute },
+		}),
 		createEventContainer: () => ({
 			get: (key: unknown) =>
 				key === "config"

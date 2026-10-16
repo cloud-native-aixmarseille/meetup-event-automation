@@ -47,6 +47,11 @@ complete setup before using automatic communications.
 Email recipients come from the [referentials](../reference/referentials.md): the
 host's first contact and each resolved speaker. Fix invalid records or
 unresolved participants before using automatic communications.
+[Conference Hall configuration](conference-hall.md) is required. Linked speaker addresses
+and greeting names come from the live CFP snapshot shared with event evaluation.
+Source edits affect unfinished batches on the next run and require fresh approval
+when their fingerprint changes. Local IDs and accepted delivery records remain
+stable; source failure blocks delivery instead of using cached addresses.
 
 ## Presentation link
 

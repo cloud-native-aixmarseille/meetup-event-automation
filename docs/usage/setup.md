@@ -46,16 +46,19 @@ repository-scoped tokens it needs and revokes them when the job ends.
 
 Add the following repository settings:
 
-| Type     | Name                     | Value                                                               |
-| -------- | ------------------------ | ------------------------------------------------------------------- |
-| Variable | `CI_BOT_APP_CLIENT_ID`   | GitHub App client ID.                                               |
-| Secret   | `CI_BOT_APP_PRIVATE_KEY` | App private key in PEM format.                                      |
-| Variable | `KUTT_BASE_URL`          | HTTPS base URL of the Kutt instance, without `/api/v2`; no default. |
-| Variable | `KUTT_FEEDBACK_LINK_ID`  | API ID of the existing Kutt short link.                             |
-| Secret   | `OPENFEEDBACK_API_KEY`   | OpenFeedback organization API key beginning with `oforg_`.          |
-| Secret   | `KUTT_API_KEY`           | API key of that link's owner.                                       |
+| Type     | Name                      | Value                                                               |
+| -------- | ------------------------- | ------------------------------------------------------------------- |
+| Variable | `CONFERENCE_HALL_EVENT`   | CFP slug, such as `meetup-cloud-native-aix-marseille`.              |
+| Secret   | `CONFERENCE_HALL_API_KEY` | Read-only event key from Conference Hall's Web API settings.        |
+| Variable | `CI_BOT_APP_CLIENT_ID`    | GitHub App client ID.                                               |
+| Secret   | `CI_BOT_APP_PRIVATE_KEY`  | App private key in PEM format.                                      |
+| Variable | `KUTT_BASE_URL`           | HTTPS base URL of the Kutt instance, without `/api/v2`; no default. |
+| Variable | `KUTT_FEEDBACK_LINK_ID`   | API ID of the existing Kutt short link.                             |
+| Secret   | `OPENFEEDBACK_API_KEY`    | OpenFeedback organization API key beginning with `oforg_`.          |
+| Secret   | `KUTT_API_KEY`            | API key of that link's owner.                                       |
 
-Both event workflows require the OpenFeedback key and all three Kutt settings,
+Both event workflows require the Conference Hall slug and API key, the
+OpenFeedback key and all three Kutt settings,
 including when events already have feedback URLs. Also configure the required
 Drive and Slack settings:
 
@@ -72,7 +75,8 @@ approvals and preparation reminders. Keep public event announcement destinations
 separate; their issue checklist tasks remain manual. See
 [Slack audiences](../integrations/communications.md#organizer-and-public-channels).
 
-Prepare [Drive templates](../integrations/assets.md),
+Prepare [Conference Hall](../integrations/conference-hall.md),
+[Drive templates](../integrations/assets.md),
 [OpenFeedback and Kutt](../integrations/feedback.md), and
 [email and Slack delivery](../integrations/communications.md) before running
 event workflows.
@@ -120,6 +124,7 @@ jobs:
     permissions:
       contents: read
     with:
+      conference-hall-event: ${{ vars.CONFERENCE_HALL_EVENT }}
       locale: en
       github-app-client-id: ${{ vars.CI_BOT_APP_CLIENT_ID }}
       kutt-base-url: ${{ vars.KUTT_BASE_URL }}
@@ -128,6 +133,7 @@ jobs:
       google-drive-meetup-folder-id: ${{ vars.GOOGLE_DRIVE_MEETUP_FOLDER_ID }}
       google-drive-meetup-template-folder-id: ${{ vars.GOOGLE_DRIVE_MEETUP_TEMPLATE_FOLDER_ID }}
     secrets:
+      conference-hall-api-key: ${{ secrets.CONFERENCE_HALL_API_KEY }}
       github-app-private-key: ${{ secrets.CI_BOT_APP_PRIVATE_KEY }}
       openfeedback-api-key: ${{ secrets.OPENFEEDBACK_API_KEY }}
       kutt-api-key: ${{ secrets.KUTT_API_KEY }}
@@ -153,6 +159,7 @@ jobs:
       contents: read
       issues: read
     with:
+      conference-hall-event: ${{ vars.CONFERENCE_HALL_EVENT }}
       locale: en
       github-app-client-id: ${{ vars.CI_BOT_APP_CLIENT_ID }}
       kutt-base-url: ${{ vars.KUTT_BASE_URL }}
@@ -161,6 +168,7 @@ jobs:
       google-drive-meetup-folder-id: ${{ vars.GOOGLE_DRIVE_MEETUP_FOLDER_ID }}
       google-drive-meetup-template-folder-id: ${{ vars.GOOGLE_DRIVE_MEETUP_TEMPLATE_FOLDER_ID }}
     secrets:
+      conference-hall-api-key: ${{ secrets.CONFERENCE_HALL_API_KEY }}
       github-app-private-key: ${{ secrets.CI_BOT_APP_PRIVATE_KEY }}
       openfeedback-api-key: ${{ secrets.OPENFEEDBACK_API_KEY }}
       kutt-api-key: ${{ secrets.KUTT_API_KEY }}
@@ -238,3 +246,9 @@ workflows provide the per-event concurrency lock.
 Open a Meetup issue. Check the Actions run and the diagnostic comment on the
 issue. Correct any missing fields or credential errors, then follow the
 [organizer guide](organize-meetup.md).
+
+## Conference Hall
+
+Use the [Conference Hall guide](../integrations/conference-hall.md) for the required
+`conference-hall-event` input, `conference-hall-api-key` secret, live profile refresh, reviewed identity
+synchronization, selected proposals and consumer workflow triggers.

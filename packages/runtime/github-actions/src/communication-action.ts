@@ -1,3 +1,4 @@
+import { ConferenceHallInput } from "./conference-hall-input.js";
 import { createHash } from "node:crypto";
 import * as core from "@actions/core";
 import { context, getOctokit } from "@actions/github";
@@ -85,6 +86,7 @@ export class CommunicationAction {
 		const { owner, repo } = context.repo;
 		const outcome = await CommunicationRuntime.runCommunicationReconcile({
 			locale: messages.locale,
+			...ConferenceHallInput.read(),
 			issueNumber,
 			slidesUrl: core.getInput("slides-url"),
 			openFeedbackApiKey: core.getInput("openfeedback-api-key"),

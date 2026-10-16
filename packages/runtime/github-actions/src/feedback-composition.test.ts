@@ -15,6 +15,8 @@ import {
 } from "./feedback-composition.js";
 
 const input = {
+	conferenceHallEvent: "example-cfp",
+	conferenceHallApiKey: "synthetic-source-key",
 	client: getOctokit("synthetic-token"),
 	owner: "example",
 	repo: "meetups",

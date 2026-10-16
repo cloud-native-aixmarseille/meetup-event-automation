@@ -33,13 +33,19 @@ export class CommunicationDeliveryPreparation {
 		const notificationConfigured =
 			this.dependencies.config.communication["slack-enabled"];
 
-		const mailRecipientResolution = catalog
-			? CommunicationRecipients.resolveMailRecipients(
-					event,
-					catalog,
-					runtimeDiagnostics,
-				)
-			: UNRESOLVED_MAIL_RECIPIENTS;
+		if (event.proposalStatus === "stale")
+			runtimeDiagnostics.push({
+				code: "communication.event-references-unresolved",
+				severity: "error",
+			});
+		const mailRecipientResolution =
+			catalog && event.proposalStatus !== "stale"
+				? CommunicationRecipients.resolveMailRecipients(
+						event,
+						catalog,
+						runtimeDiagnostics,
+					)
+				: UNRESOLVED_MAIL_RECIPIENTS;
 		const referencesResolved =
 			catalog !== undefined && mailRecipientResolution.resolved;
 		const recipients = referencesResolved
