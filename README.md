@@ -35,7 +35,7 @@ English is the default. Use the same locale in all four callers.
 ## Organize a meetup
 
 1. Open a **Meetup** issue and fill in the date, title, host, description, and
-   agenda.
+   Conference Hall proposal IDs. The automation generates the agenda.
 2. Read the automation's diagnostic comment and complete the missing
    information.
 3. Add `hoster:confirmed` and `speakers:confirmed` after confirming
@@ -46,7 +46,7 @@ English is the default. Use the same locale in all four callers.
    complete.
 6. Complete the event and its follow-up checklist.
 
-The [organizer guide](docs/usage/organize-meetup.md) covers agenda syntax,
+The [organizer guide](docs/usage/organize-meetup.md) covers talk selection,
 postponements, feedback preparation, email completion, and follow-up.
 
 ## Documentation
