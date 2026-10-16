@@ -31769,6 +31769,7 @@ var MessageLocalizer = class _MessageLocalizer {
 
 // packages/runtime/github-actions/src/i18n/diagnostics-communication.en.ts
 var DIAGNOSTICS_COMMUNICATION_EN = {
+  "diagnostic.communication.feedback-unavailable": "Thank-you emails are blocked because speaker feedback results could not be resolved. Check the OpenFeedback event link, organization API key and synchronized talks, then retry.",
   "diagnostic.communication.slides-unavailable": "Email dispatch is blocked because the presentation file link is missing or invalid. Configure a Drive template with template_kind=slides, reconcile assets, and pass the slides-link entry from drive-files as slides-url.",
   "diagnostic.communication.approval-pending": "Email dispatch is waiting for approval on the meetup issue.",
   "diagnostic.communication.approval-rejected": "The email batch was rejected. The recorded decision is final for this batch revision.",
@@ -31802,6 +31803,7 @@ var DIAGNOSTICS_COMMUNICATION_EN = {
 
 // packages/runtime/github-actions/src/i18n/diagnostics-communication.fr.ts
 var DIAGNOSTICS_COMMUNICATION_FR = {
+  "diagnostic.communication.feedback-unavailable": "Les e-mails de remerciement sont bloqu\xE9s car les r\xE9sultats des retours des intervenants sont indisponibles. V\xE9rifiez le lien de l'\xE9v\xE9nement OpenFeedback, la cl\xE9 API de l'organisation et les pr\xE9sentations synchronis\xE9es, puis r\xE9essayez.",
   "diagnostic.communication.slides-unavailable": "L'envoi des e-mails est bloqu\xE9 car le lien du fichier de pr\xE9sentation est absent ou invalide. Configurez un mod\xE8le Drive avec template_kind=slides, r\xE9conciliez les fichiers et transmettez l'entr\xE9e slides-link de drive-files dans slides-url.",
   "diagnostic.communication.approval-pending": "Les e-mails attendent une confirmation dans le ticket du meetup.",
   "diagnostic.communication.approval-rejected": "Le lot d'e-mails a \xE9t\xE9 refus\xE9. La d\xE9cision enregistr\xE9e est d\xE9finitive pour cette version du lot.",
@@ -32313,7 +32315,7 @@ var ActionRunner = class {
 };
 
 // packages/runtime/github-actions/src/communication-action.ts
-import { createHash as createHash3 } from "node:crypto";
+import { createHash as createHash4 } from "node:crypto";
 
 // node_modules/.pnpm/@actions+github@9.1.1/node_modules/@actions/github/lib/context.js
 import { readFileSync, existsSync as existsSync2 } from "fs";
@@ -36771,6 +36773,34 @@ var PublicationUrlPolicyEngine = class {
   }
 };
 
+// packages/domain/publication/src/domain/feedback-policy.ts
+var FeedbackPolicy = class _FeedbackPolicy {
+  static validDate(value) {
+    const date = /* @__PURE__ */ new Date(`${value}T00:00:00Z`);
+    return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(date.valueOf()) && date.toISOString().slice(0, 10) === value;
+  }
+  static pollUrl(value) {
+    const url = new URL(value);
+    if (url.origin !== "https://openfeedback.io" || url.username || url.password || !/^\/[a-zA-Z0-9_-]+(?:\/(?:\d{4}-\d{2}-\d{2}|0))?\/?$/.test(
+      url.pathname
+    ) || url.search || url.hash)
+      throw new Error("Feedback link must be an OpenFeedback event URL");
+    return url.href.replace(/\/$/, "");
+  }
+  static isLinkUpdateDue(date, now2, timeZone) {
+    if (!_FeedbackPolicy.validDate(date)) return false;
+    const updateDate = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
+    updateDate.setUTCDate(updateDate.getUTCDate() - 1);
+    const today = new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).format(new Date(now2));
+    return today >= updateDate.toISOString().slice(0, 10) && today <= date;
+  }
+};
+
 // packages/application/journey/src/config/automation-config.ts
 var AutomationConfigFactory = class {
   /**
@@ -38617,8 +38647,7 @@ var CommunicationResults = class _CommunicationResults {
   static completedMailKinds(intents, acceptedIds) {
     const groups = /* @__PURE__ */ new Map();
     for (const intent of intents) {
-      if (intent.channel !== "mail" || intent.kind === "readiness-reminder")
-        continue;
+      if (intent.channel !== "mail") continue;
       groups.set(
         intent.kind,
         (groups.get(intent.kind) ?? true) && acceptedIds.has(intent.intentId)
@@ -38949,6 +38978,63 @@ var MailBatchFingerprint = class {
   }
 };
 
+// packages/application/journey/src/use-cases/communication-approval-details.ts
+var CommunicationApprovalDetails = class _CommunicationApprovalDetails {
+  static create(event, mails) {
+    const ordered = [...mails].sort(
+      (left, right) => left.idempotencyKey.localeCompare(right.idempotencyKey)
+    );
+    const emails = ordered.slice(0, 20).map((mail) => {
+      const links = _CommunicationApprovalDetails.links(mail);
+      const name = mail.recipient.role === "hosting" ? event.host?.displayName : event.agenda.flatMap((talk) => talk.speakers).find((speaker) => speaker.id === mail.recipientId)?.displayName;
+      return {
+        kind: mail.kind,
+        recipientName: _CommunicationApprovalDetails.text(name ?? ""),
+        links: links.slice(0, 8),
+        omittedLinks: links.length - Math.min(links.length, 8)
+      };
+    });
+    while (JSON.stringify(emails).length > 4e3) {
+      const largest = [...emails].sort(
+        (a, b2) => JSON.stringify(b2).length - JSON.stringify(a).length
+      )[0];
+      if (largest?.links.length) {
+        largest.links.pop();
+        largest.omittedLinks++;
+      } else {
+        emails.pop();
+      }
+    }
+    return { emails, omittedEmails: mails.length - emails.length };
+  }
+  static links(mail) {
+    if (mail.kind === "speaker-thanks") {
+      const talks = mail.placeholders.speakerFeedbackTalks;
+      if (!talks || typeof talks === "string") return [];
+      return talks.map(({ title, url }) => ({
+        kind: "feedback",
+        title: _CommunicationApprovalDetails.text(title),
+        url
+      }));
+    }
+    if (mail.kind === "host-thanks") return [];
+    const links = [];
+    for (const [kind, placeholder] of [
+      ["meetup", "eventMeetupUrl"],
+      ["community", "eventCncfUrl"],
+      ["slides", "eventSlidesUrl"]
+    ]) {
+      const url = mail.placeholders[placeholder];
+      if (typeof url === "string" && url) links.push({ kind, url });
+    }
+    return links;
+  }
+  static text(value) {
+    const normalized = value.trim().replace(/\s+/g, " ");
+    return normalized.length <= 200 ? normalized : `${normalized.slice(0, 197)}...`;
+  }
+};
+
 // packages/application/journey/src/use-cases/approve-communication-batch.ts
 var ApproveCommunicationBatch = class {
   constructor(approvals, clock, preview) {
@@ -38959,7 +39045,7 @@ var ApproveCommunicationBatch = class {
   approvals;
   clock;
   preview;
-  async execute(input, recipients, diagnostics) {
+  async execute(input, recipients, event, diagnostics) {
     try {
       const now2 = this.clock.now();
       const planner = new PlanCommunications();
@@ -38994,6 +39080,7 @@ var ApproveCommunicationBatch = class {
         ),
         eventDate: input.eventDate,
         recipientCount: mails.length,
+        details: CommunicationApprovalDetails.create(event, mails),
         requestedAt: now2.toISOString()
       });
       if (result.notificationFailed)
@@ -39841,6 +39928,70 @@ var CommunicationRecipients = class _CommunicationRecipients {
   }
 };
 
+// packages/application/journey/src/use-cases/feedback-agenda-projection.ts
+var FeedbackAgendaProjection = class {
+  static create(event, diagnostics) {
+    if (event.agenda.length === 0 || diagnostics.some(
+      (item) => item.severity === "error" && (item.code.startsWith("referential.") && !item.code.startsWith("referential.reference.host.") || item.code.startsWith("event.agenda."))
+    ) || event.agenda.some(
+      (entry) => !entry.description.trim() || entry.speakers.length === 0 || entry.speakers.some(
+        (speaker) => !speaker.id || !speaker.displayName.trim()
+      )
+    ))
+      return void 0;
+    return {
+      talks: event.agenda.map((entry) => ({
+        title: entry.description.trim(),
+        speakers: entry.speakers.map((speaker) => ({
+          id: speaker.id,
+          name: speaker.displayName.trim()
+        }))
+      }))
+    };
+  }
+};
+
+// packages/application/journey/src/use-cases/speaker-feedback-preparation.ts
+var SpeakerFeedbackPreparation = class {
+  constructor(feedback) {
+    this.feedback = feedback;
+  }
+  feedback;
+  async execute(event, recipients, diagnostics) {
+    if (event.occurrenceStatus !== "held" || CommunicationChecklist.pendingRecipients(event, recipients).length === 0 || !recipients.some((recipient) => recipient.role === "speaker"))
+      return recipients;
+    try {
+      const agenda = FeedbackAgendaProjection.create(event, []);
+      if (!agenda || !event.publicationLinks.feedback)
+        throw new Error("Feedback agenda or event link is unavailable");
+      const talks = await this.feedback.resolve({
+        key: `${event.identity.repository.toLowerCase()}#${event.identity.issueNumber}`,
+        url: event.publicationLinks.feedback,
+        agenda
+      });
+      return recipients.map((recipient) => {
+        if (recipient.role !== "speaker") return recipient;
+        const results = talks.filter((talk) => talk.speakerIds.includes(recipient.recipientId)).map(({ title, url }) => ({ title, url }));
+        if (results.length === 0)
+          throw new Error("Speaker feedback results are unavailable");
+        return {
+          ...recipient,
+          placeholders: {
+            ...recipient.placeholders,
+            speakerFeedbackTalks: results
+          }
+        };
+      });
+    } catch {
+      diagnostics.push({
+        code: "communication.feedback-unavailable",
+        severity: "error"
+      });
+      return recipients;
+    }
+  }
+};
+
 // packages/application/journey/src/use-cases/communication-delivery-preparation.ts
 var CommunicationDeliveryPreparation = class {
   constructor(dependencies) {
@@ -39857,6 +40008,9 @@ var CommunicationDeliveryPreparation = class {
       runtimeDiagnostics
     ) : UNRESOLVED_MAIL_RECIPIENTS;
     const referencesResolved = catalog !== void 0 && mailRecipientResolution.resolved;
+    const recipients = referencesResolved ? await new SpeakerFeedbackPreparation(
+      this.dependencies.feedbackResults
+    ).execute(event, mailRecipientResolution.recipients, runtimeDiagnostics) : mailRecipientResolution.recipients;
     const notificationRecipients = [
       {
         channel: "notification",
@@ -39868,7 +40022,7 @@ var CommunicationDeliveryPreparation = class {
     ];
     return {
       notificationConfigured,
-      mailRecipientResolution,
+      mailRecipientResolution: { ...mailRecipientResolution, recipients },
       referencesResolved,
       notificationRecipients
     };
@@ -39957,6 +40111,7 @@ var ManageMeetupCommunications = class _ManageMeetupCommunications {
     ).execute(
       deliveryInput,
       delivery.mailRecipientResolution.recipients,
+      managed.event,
       runtimeDiagnostics
     );
     if (dispatchEnabled && !await this.sourceIsCurrent(sourceDocument, runtimeDiagnostics)) {
@@ -40456,14 +40611,54 @@ var ValidateMeetupReferentials = class {
 
 // packages/adapter/github-organizer-approval/src/approval-record.ts
 import { randomUUID as randomUUID2 } from "node:crypto";
+
+// packages/adapter/github-organizer-approval/src/approval-details.ts
+var ApprovalDetails = class _ApprovalDetails {
+  static validate(details, recipientCount) {
+    if (details === void 0) return;
+    if (!details || !Array.isArray(details.emails) || details.emails.length > 20 || !_ApprovalDetails.count(details.omittedEmails) || details.emails.length + details.omittedEmails !== recipientCount || JSON.stringify(details).length > 12e3 || !details.emails.every(_ApprovalDetails.email))
+      throw new Error("Invalid approval details");
+  }
+  static email(email) {
+    return Boolean(
+      email && [
+        "host-introduction",
+        "speaker-introduction",
+        "host-thanks",
+        "speaker-thanks"
+      ].includes(email.kind) && _ApprovalDetails.text(email.recipientName) && _ApprovalDetails.count(email.omittedLinks) && Array.isArray(email.links) && email.links.length <= 8 && email.links.every(
+        (link) => link && ["meetup", "community", "slides", "feedback"].includes(link.kind) && (link.title === void 0 || _ApprovalDetails.text(link.title)) && _ApprovalDetails.url(link.url)
+      )
+    );
+  }
+  static text(value) {
+    return typeof value === "string" && value.length <= 200 && !/[\r\n]/.test(value) && !value.includes("\0");
+  }
+  static count(value) {
+    return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+  }
+  static url(value) {
+    if (typeof value !== "string" || value.length > 2048 || /\s/.test(value) || value.includes("\0"))
+      return false;
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" && !url.username && !url.password;
+    } catch {
+      return false;
+    }
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/approval-record.ts
 var APPROVAL_MARKER = "<!-- meetup-organizer-approval:v1 ";
 var ApprovalRecord = class _ApprovalRecord {
   static matches(record, input) {
-    return record.kind === input.kind && record.revision === input.revision && record.eventDate === input.eventDate && record.recipientCount === input.recipientCount;
+    return record.kind === input.kind && record.revision === input.revision && record.eventDate === input.eventDate && record.recipientCount === input.recipientCount && (Boolean(record.decision) || JSON.stringify(record.details) === JSON.stringify(input.details));
   }
   static validate(input) {
     if (!/^[a-f0-9]{64}$/.test(input.revision) || !["email-introduction", "email-thanks"].includes(input.kind) || !/^\d{4}-\d{2}-\d{2}$/.test(input.eventDate) || !Number.isSafeInteger(input.recipientCount) || input.recipientCount <= 0 || !Number.isFinite(Date.parse(input.requestedAt)))
       throw new Error("Invalid approval request");
+    ApprovalDetails.validate(input.details, input.recipientCount);
   }
   static create(input) {
     _ApprovalRecord.validate(input);
@@ -40492,12 +40687,20 @@ var ApprovalRecord = class _ApprovalRecord {
     return record;
   }
   static marker(record) {
-    return `${APPROVAL_MARKER}${JSON.stringify(record)} -->`;
+    const json = JSON.stringify(record).replaceAll("<", "\\u003c").replaceAll(">", "\\u003e").replaceAll("&", "\\u0026");
+    return `${APPROVAL_MARKER}${json} -->`;
   }
 };
 
 // packages/adapter/github-organizer-approval/src/i18n/messages.en.ts
 var EN_MESSAGES2 = {
+  "approval.details.summary": "Review email details",
+  "approval.details.email": "{kind, select, host_introduction {Introduction for the host contact} speaker_introduction {Introduction for the speaker} host_thanks {Thank-you email for the host contact} speaker_thanks {Thank-you email for the speaker} other {Email}}",
+  "approval.details.purpose": "{kind, select, host_introduction {Thanks the host for welcoming the meetup and shares event links, slides and logistical requirements.} speaker_introduction {Shares event links, arrival and venue information, and presentation guidance.} host_thanks {Thanks the host for organizing the meetup and invites future collaboration.} speaker_thanks {Thanks the speaker, shares feedback results for their talks and invites suggestions about the meetup.} other {Sends the planned email.}}",
+  "approval.details.link": "{kind, select, meetup {Meetup event} community {CNCF community event} slides {Meetup presentation} other {Event link}}",
+  "approval.details.feedback": "Feedback results: {title}",
+  "approval.details.omitted-emails": "{count, plural, one {# additional email is included in this batch but omitted from this summary.} other {# additional emails are included in this batch but omitted from this summary.}}",
+  "approval.details.omitted-links": "{count, plural, one {# additional link is included in this email but omitted from this summary.} other {# additional links are included in this email but omitted from this summary.}}",
   "approval.final": "### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\nEvent date: {date}. This batch covers up to {count, number} recipients; completed deliveries are skipped.\n\n{status, select, approved {\u2705 **Approved**} rejected {\u274C **Rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nThis decision is final for this batch revision. {status, select, approved {Approved emails can be sent when delivery checks pass. Email completion is tracked in the issue checklist.} rejected {This batch will not be sent.} other {}} Changed event details or recipients require a new confirmation.",
   "approval.request": "### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\nEvent date: {date}. This batch covers up to {count, number} recipients; completed deliveries are skipped.\n\nOrganizers with repository write access: check one choice below. Leave both unchecked to wait.\n\n- [{approveMark}] Approve sending this batch\n- [{rejectMark}] Reject sending this batch\n\nApproval applies to this batch revision. Changed event details or recipients require a new confirmation. The email checkboxes in the issue are checked after accepted dispatch.",
   "approval.slack": "Organizer confirmation needed: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}} for {date}, up to {count, number} recipients. Open the request and check Approve or Reject: {url}"
@@ -40505,6 +40708,13 @@ var EN_MESSAGES2 = {
 
 // packages/adapter/github-organizer-approval/src/i18n/messages.fr.ts
 var FR_MESSAGES2 = {
+  "approval.details.summary": "Voir le d\xE9tail des e-mails",
+  "approval.details.email": "{kind, select, host_introduction {Introduction pour le contact de l'h\xF4te} speaker_introduction {Introduction pour l'intervenant} host_thanks {Remerciement pour le contact de l'h\xF4te} speaker_thanks {Remerciement pour l'intervenant} other {E-mail}}",
+  "approval.details.purpose": "{kind, select, host_introduction {Remercie l'h\xF4te pour son accueil et partage les liens du meetup, la pr\xE9sentation et les besoins logistiques.} speaker_introduction {Partage les liens du meetup, les informations d'arriv\xE9e et de lieu, ainsi que les consignes de pr\xE9sentation.} host_thanks {Remercie l'h\xF4te pour l'organisation du meetup et propose de renouveler la collaboration.} speaker_thanks {Remercie l'intervenant, partage les r\xE9sultats des retours sur ses pr\xE9sentations et sollicite ses suggestions pour le meetup.} other {Envoie l'e-mail pr\xE9vu.}}",
+  "approval.details.link": "{kind, select, meetup {\xC9v\xE9nement Meetup} community {\xC9v\xE9nement de la communaut\xE9 CNCF} slides {Pr\xE9sentation du meetup} other {Lien du meetup}}",
+  "approval.details.feedback": "R\xE9sultats des retours : {title}",
+  "approval.details.omitted-emails": "{count, plural, one {# e-mail suppl\xE9mentaire fait partie de ce lot mais ne figure pas dans ce r\xE9sum\xE9.} other {# e-mails suppl\xE9mentaires font partie de ce lot mais ne figurent pas dans ce r\xE9sum\xE9.}}",
+  "approval.details.omitted-links": "{count, plural, one {# lien suppl\xE9mentaire figure dans cet e-mail mais pas dans ce r\xE9sum\xE9.} other {# liens suppl\xE9mentaires figurent dans cet e-mail mais pas dans ce r\xE9sum\xE9.}}",
   "approval.final": "### Confirmation des organisateurs : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}}\n\nDate du meetup : {date}. Ce lot concerne au maximum {count, number} destinataires ; les envois d\xE9j\xE0 termin\xE9s sont ignor\xE9s.\n\n{status, select, approved {\u2705 **Approuv\xE9**} rejected {\u274C **Refus\xE9**} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\nCette d\xE9cision est d\xE9finitive pour cette version du lot. {status, select, approved {Les e-mails approuv\xE9s peuvent \xEAtre envoy\xE9s lorsque les contr\xF4les de livraison r\xE9ussissent. Leur envoi est suivi dans la liste de t\xE2ches du ticket.} rejected {Ce lot ne sera pas envoy\xE9.} other {}} Toute modification des d\xE9tails du meetup ou des destinataires n\xE9cessite une nouvelle confirmation.",
   "approval.request": "### Confirmation des organisateurs : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}}\n\nDate du meetup : {date}. Ce lot concerne au maximum {count, number} destinataires ; les envois d\xE9j\xE0 termin\xE9s sont ignor\xE9s.\n\nOrganisateurs disposant d'un acc\xE8s en \xE9criture au d\xE9p\xF4t : cochez un choix ci-dessous. Laissez les deux cases d\xE9coch\xE9es pour attendre.\n\n- [{approveMark}] Approuver l'envoi de ce lot\n- [{rejectMark}] Refuser l'envoi de ce lot\n\nLa confirmation concerne cette version du lot. Toute modification des d\xE9tails du meetup ou des destinataires n\xE9cessite une nouvelle confirmation. Les cases des e-mails dans le ticket sont coch\xE9es apr\xE8s acceptation de l'envoi.",
   "approval.slack": "Confirmation des organisateurs n\xE9cessaire : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}} pour le {date}, au maximum {count, number} destinataires. Ouvrez la demande et cochez Approuver ou Refuser : {url}"
@@ -40520,6 +40730,57 @@ var ApprovalMessages = class extends MessageLocalizer {
   }
 };
 
+// packages/adapter/github-organizer-approval/src/approval-details-presenter.ts
+var ApprovalDetailsPresenter = class _ApprovalDetailsPresenter {
+  constructor(messages) {
+    this.messages = messages;
+  }
+  messages;
+  render(details) {
+    const lines = [
+      "<details>",
+      `<summary>${_ApprovalDetailsPresenter.escape(this.messages.t("approval.details.summary", {}))}</summary>`,
+      "",
+      ...details.emails.map((email) => this.email(email))
+    ];
+    if (details.omittedEmails > 0)
+      lines.push(
+        `<p>${_ApprovalDetailsPresenter.escape(this.messages.t("approval.details.omitted-emails", { count: details.omittedEmails }))}</p>`
+      );
+    return [...lines, "", "</details>"].join("\n");
+  }
+  email(email) {
+    const heading = this.messages.t("approval.details.email", {
+      kind: email.kind.replaceAll("-", "_")
+    });
+    const name = email.recipientName ? `: ${_ApprovalDetailsPresenter.escape(email.recipientName)}` : "";
+    const lines = [
+      `<p><strong>${_ApprovalDetailsPresenter.escape(heading)}${name}</strong></p>`,
+      `<p>${_ApprovalDetailsPresenter.escape(this.messages.t("approval.details.purpose", { kind: email.kind.replaceAll("-", "_") }))}</p>`
+    ];
+    if (email.links.length)
+      lines.push(
+        "<ul>",
+        ...email.links.map((link) => `<li>${this.link(link)}</li>`),
+        "</ul>"
+      );
+    if (email.omittedLinks > 0)
+      lines.push(
+        `<p>${_ApprovalDetailsPresenter.escape(this.messages.t("approval.details.omitted-links", { count: email.omittedLinks }))}</p>`
+      );
+    return lines.join("\n");
+  }
+  link(link) {
+    const label = link.kind === "feedback" ? this.messages.t("approval.details.feedback", {
+      title: link.title ?? ""
+    }) : this.messages.t("approval.details.link", { kind: link.kind });
+    return `<a href="${_ApprovalDetailsPresenter.escape(link.url)}">${_ApprovalDetailsPresenter.escape(label)}</a>`;
+  }
+  static escape(value) {
+    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;").replaceAll("@", "&#64;");
+  }
+};
+
 // packages/adapter/github-organizer-approval/src/approval-presenter.ts
 var ApprovalPresenter = class _ApprovalPresenter {
   constructor(messages) {
@@ -40527,6 +40788,7 @@ var ApprovalPresenter = class _ApprovalPresenter {
   }
   messages;
   issue(record, decision) {
+    const details = record.details ? [new ApprovalDetailsPresenter(this.messages).render(record.details)] : [];
     if (record.decision)
       return [
         ApprovalRecord.marker(record),
@@ -40537,7 +40799,8 @@ var ApprovalPresenter = class _ApprovalPresenter {
           status: record.decision.status,
           actor: record.decision.actor,
           decidedAt: record.decision.decidedAt
-        })
+        }),
+        ...details
       ].join("\n\n");
     return [
       ApprovalRecord.marker(record),
@@ -40547,7 +40810,8 @@ var ApprovalPresenter = class _ApprovalPresenter {
         count: record.recipientCount,
         approveMark: decision.status === "approved" ? "x" : " ",
         rejectMark: decision.status === "rejected" ? "x" : " "
-      })
+      }),
+      ...details
     ].join("\n\n");
   }
   decision(record, body) {
@@ -41381,6 +41645,313 @@ var GithubRepositoryDispatchMailGateway = class _GithubRepositoryDispatchMailGat
   }
   static isRecord(value) {
     return typeof value === "object" && value !== null;
+  }
+};
+
+// packages/adapter/openfeedback-event-gateway/src/openfeedback-client.ts
+var OpenFeedbackClient = class {
+  constructor(apiKey, fetcher) {
+    this.apiKey = apiKey;
+    this.fetcher = fetcher;
+    if (!/^oforg_\S+$/.test(apiKey))
+      throw new Error("An OpenFeedback organization API key is required");
+  }
+  apiKey;
+  fetcher;
+  async request(path, method, body) {
+    try {
+      return await this.fetcher(`https://api.openfeedback.io${path}`, {
+        method,
+        ...body === void 0 ? {} : { body: JSON.stringify(body) },
+        redirect: "error",
+        signal: AbortSignal.timeout(3e4),
+        headers: {
+          "x-api-key": this.apiKey,
+          "Content-Type": "application/json"
+        }
+      });
+    } catch {
+      throw new Error("OpenFeedback request failed");
+    }
+  }
+  static async read(response, id) {
+    if (!response.ok)
+      throw new Error(`OpenFeedback request failed (HTTP ${response.status})`);
+    let body;
+    try {
+      body = await response.json();
+    } catch {
+      throw new Error("Invalid OpenFeedback JSON response");
+    }
+    if (!body || typeof body !== "object" || Array.isArray(body) || !("id" in body) || body.id !== id)
+      throw new Error("OpenFeedback returned an unexpected resource");
+    return body;
+  }
+};
+
+// packages/adapter/openfeedback-event-gateway/src/openfeedback-agenda-plan.ts
+import { createHash as createHash3 } from "node:crypto";
+
+// packages/adapter/openfeedback-event-gateway/src/openfeedback-agenda-conflict-error.ts
+var OpenFeedbackAgendaConflictError = class extends Error {
+  constructor() {
+    super("The feedback agenda contains ambiguous talk or speaker identities");
+    this.name = "OpenFeedbackAgendaConflictError";
+  }
+};
+
+// packages/adapter/openfeedback-event-gateway/src/openfeedback-agenda-plan.ts
+var OpenFeedbackAgendaPlan = class _OpenFeedbackAgendaPlan {
+  static create(key, agenda, current) {
+    const speakers = _OpenFeedbackAgendaPlan.matchSpeakers(key, agenda, current);
+    const candidates = agenda.talks.map((talk) => {
+      const ids = [
+        ...new Set(
+          talk.speakers.map(
+            (speaker) => speakers.get(speaker.id).id
+          )
+        )
+      ].sort();
+      return {
+        id: _OpenFeedbackAgendaPlan.id(
+          "talk",
+          JSON.stringify([key, talk.title, ids])
+        ),
+        title: talk.title,
+        speakers: ids
+      };
+    });
+    const talks = _OpenFeedbackAgendaPlan.matchTalks(candidates, current.talks);
+    if (talks.length > 100 || speakers.size > 100 || talks.some((talk) => talk.title.length > 2e3) || [...speakers.values()].some((speaker) => speaker.name.length > 200))
+      throw new Error("Feedback agenda exceeds the synchronization limits");
+    return {
+      speakers: [...speakers.values()],
+      talks
+    };
+  }
+  static matchSpeakers(key, agenda, current) {
+    const speakers = /* @__PURE__ */ new Map();
+    for (const talk of agenda.talks) {
+      for (const speaker of talk.speakers) {
+        if (speakers.has(speaker.id)) continue;
+        const stableId = _OpenFeedbackAgendaPlan.id(
+          "speaker",
+          `${key}:${speaker.id}`
+        );
+        const found = current.speakers.find((item) => item.id === stableId);
+        const matches = found ? [found] : current.speakers.filter(
+          (item) => _OpenFeedbackAgendaPlan.normalize(item.name) === _OpenFeedbackAgendaPlan.normalize(speaker.name)
+        );
+        if (matches.length > 1) throw new OpenFeedbackAgendaConflictError();
+        speakers.set(speaker.id, {
+          id: matches[0]?.id ?? stableId,
+          name: speaker.name
+        });
+      }
+    }
+    if (new Set([...speakers.values()].map((speaker) => speaker.id)).size !== speakers.size)
+      throw new OpenFeedbackAgendaConflictError();
+    return speakers;
+  }
+  static matchTalks(incoming, current) {
+    if (new Set(incoming.map((talk) => talk.id)).size !== incoming.length)
+      throw new OpenFeedbackAgendaConflictError();
+    const used = /* @__PURE__ */ new Set();
+    const resolved = /* @__PURE__ */ new Map();
+    _OpenFeedbackAgendaPlan.matchExactTalks(incoming, current, resolved, used);
+    _OpenFeedbackAgendaPlan.matchTitles(incoming, current, resolved, used);
+    for (const talk of incoming.filter((item) => !resolved.has(item))) {
+      const matches = current.filter(
+        (item) => !used.has(item.id) && _OpenFeedbackAgendaPlan.sameSpeakers(item, talk)
+      );
+      const pending = incoming.filter(
+        (item) => !resolved.has(item) && _OpenFeedbackAgendaPlan.sameSpeakers(item, talk)
+      );
+      if (matches.length > 1 || matches.length === 1 && pending.length > 1)
+        throw new OpenFeedbackAgendaConflictError();
+      const id = matches[0]?.id ?? talk.id;
+      if (used.has(id) || !matches[0] && current.some((item) => item.id === id))
+        throw new OpenFeedbackAgendaConflictError();
+      resolved.set(talk, { ...talk, id });
+      used.add(id);
+    }
+    return incoming.map((talk) => resolved.get(talk));
+  }
+  static matchExactTalks(incoming, current, resolved, used) {
+    for (const talk of incoming) {
+      const matches = current.filter(
+        (item) => !used.has(item.id) && _OpenFeedbackAgendaPlan.normalize(item.title) === _OpenFeedbackAgendaPlan.normalize(talk.title) && _OpenFeedbackAgendaPlan.sameSpeakers(item, talk)
+      );
+      if (matches.length > 1) throw new OpenFeedbackAgendaConflictError();
+      if (matches[0]) {
+        resolved.set(talk, { ...talk, id: matches[0].id });
+        used.add(matches[0].id);
+      }
+    }
+  }
+  static matchTitles(incoming, current, resolved, used) {
+    for (const talk of incoming.filter((item) => !resolved.has(item))) {
+      const title = _OpenFeedbackAgendaPlan.normalize(talk.title);
+      const matches = current.filter(
+        (item) => !used.has(item.id) && _OpenFeedbackAgendaPlan.normalize(item.title) === title
+      );
+      if (matches.length === 0) continue;
+      const pending = incoming.filter(
+        (item) => !resolved.has(item) && _OpenFeedbackAgendaPlan.normalize(item.title) === title
+      );
+      if (matches.length > 1 || pending.length > 1)
+        throw new OpenFeedbackAgendaConflictError();
+      resolved.set(talk, { ...talk, id: matches[0].id });
+      used.add(matches[0].id);
+    }
+  }
+  static sameSpeakers(left, right) {
+    return JSON.stringify([...left.speakers].sort()) === JSON.stringify([...right.speakers].sort());
+  }
+  static id(kind, key) {
+    return `meetup-${kind}-${createHash3("sha256").update(key).digest("hex")}`;
+  }
+  static normalize(value) {
+    return value.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US");
+  }
+};
+
+// packages/adapter/openfeedback-event-gateway/src/openfeedback-resource-id.ts
+var OpenFeedbackResourceId = class {
+  static isValid(value) {
+    return typeof value === "string" && Array.from(value).length <= 1500 && /^(?!\.\.?$)(?!__.*__$)[^/]+$/u.test(value);
+  }
+};
+
+// packages/adapter/openfeedback-event-gateway/src/openfeedback-agenda-snapshot.ts
+var OpenFeedbackAgendaSnapshot = class _OpenFeedbackAgendaSnapshot {
+  static parse(body) {
+    if (!_OpenFeedbackAgendaSnapshot.records(body.speakers, "name") || !_OpenFeedbackAgendaSnapshot.records(body.talks, "title"))
+      throw new Error("Invalid OpenFeedback agenda response");
+    if (body.talks.some(
+      (talk) => !Array.isArray(talk.speakers) || talk.speakers.some((id) => typeof id !== "string")
+    ))
+      throw new Error("Invalid OpenFeedback agenda response");
+    return {
+      speakers: body.speakers.map((speaker) => ({
+        id: speaker.id,
+        revision: speaker.revision,
+        name: speaker.name ?? ""
+      })),
+      talks: body.talks.map((talk) => ({
+        id: talk.id,
+        revision: talk.revision,
+        title: talk.title ?? "",
+        speakers: talk.speakers
+      }))
+    };
+  }
+  static records(value, field) {
+    if (!Array.isArray(value) || value.length > 200) return false;
+    const ids = /* @__PURE__ */ new Set();
+    for (const record of value) {
+      if (!record || typeof record !== "object" || !OpenFeedbackResourceId.isValid(record.id) || typeof record.revision !== "string" || !/^[a-f0-9]{64}$/.test(record.revision) || record[field] !== void 0 && typeof record[field] !== "string" || ids.has(record.id))
+        return false;
+      ids.add(record.id);
+    }
+    return true;
+  }
+};
+
+// packages/adapter/openfeedback-event-gateway/src/openfeedback-records-gateway.ts
+var OpenFeedbackRecordsGateway = class _OpenFeedbackRecordsGateway {
+  constructor(client) {
+    this.client = client;
+  }
+  client;
+  async list(eventId, kind) {
+    const records = [];
+    const cursors = /* @__PURE__ */ new Set();
+    let cursor = null;
+    for (; ; ) {
+      const query = cursor ? `&after=${encodeURIComponent(cursor)}` : "";
+      const path = `/events/${eventId}/${kind}?limit=100${query}`;
+      const body = await OpenFeedbackClient.read(
+        await this.client.request(path, "GET"),
+        eventId
+      );
+      const page = body[kind];
+      const next = body.nextCursor;
+      if (!Array.isArray(page) || page.length > 100 || !_OpenFeedbackRecordsGateway.validCursor(next))
+        throw new Error("Invalid OpenFeedback list response");
+      records.push(...page);
+      if (records.length > 200 || records.length === 200 && next !== null)
+        throw new Error("Feedback records exceed the synchronization limits");
+      if (next === null) return records;
+      if (cursors.has(next) || page.at(-1)?.id !== next)
+        throw new Error("Invalid OpenFeedback pagination cursor");
+      cursors.add(next);
+      cursor = next;
+    }
+  }
+  async synchronize(eventId, kind, record, previous) {
+    const { id, ...fields } = record;
+    if (previous && _OpenFeedbackRecordsGateway.unchanged(fields, previous))
+      return;
+    const base = `/events/${eventId}/${kind}`;
+    const response = previous ? await this.client.request(
+      `${base}/${encodeURIComponent(id)}`,
+      "PATCH",
+      {
+        ...fields,
+        revision: previous.revision
+      }
+    ) : await this.client.request(base, "POST", record);
+    await OpenFeedbackClient.read(response, id);
+  }
+  static unchanged(fields, previous) {
+    return Object.entries(fields).every(([key, value]) => {
+      const stored = previous[key];
+      if (key === "speakers" && Array.isArray(stored) && Array.isArray(value))
+        return JSON.stringify([...stored].sort()) === JSON.stringify([...value].sort());
+      return JSON.stringify(stored) === JSON.stringify(value);
+    });
+  }
+  static validCursor(value) {
+    return value === null || OpenFeedbackResourceId.isValid(value);
+  }
+};
+
+// packages/adapter/openfeedback-event-gateway/src/openfeedback-talk-results-gateway.ts
+var OpenFeedbackTalkResultsGateway = class {
+  constructor(apiKey, fetcher = fetch) {
+    this.apiKey = apiKey;
+    this.fetcher = fetcher;
+  }
+  apiKey;
+  fetcher;
+  async resolve(input) {
+    const eventId = new URL(FeedbackPolicy.pollUrl(input.url)).pathname.split(
+      "/"
+    )[1];
+    if (!eventId) throw new Error("Feedback event identity is missing");
+    const records = new OpenFeedbackRecordsGateway(
+      new OpenFeedbackClient(this.apiKey, this.fetcher)
+    );
+    const speakers = await records.list(eventId, "speakers");
+    const talks = await records.list(eventId, "talks");
+    const current = OpenFeedbackAgendaSnapshot.parse({ speakers, talks });
+    const matched = OpenFeedbackAgendaPlan.create(
+      input.key,
+      input.agenda,
+      current
+    );
+    return input.agenda.talks.map((source, index) => {
+      const talk = matched.talks[index];
+      const stored = current.talks.find((item) => item.id === talk?.id);
+      if (!talk || !stored || JSON.stringify([...stored.speakers].sort()) !== JSON.stringify([...talk.speakers].sort()))
+        throw new Error("Feedback talk results are unavailable");
+      return {
+        title: talk.title,
+        url: `https://openfeedback.io/${eventId}/0/${encodeURIComponent(talk.id)}?displayVotes=true`,
+        speakerIds: source.speakers.map((speaker) => speaker.id)
+      };
+    });
   }
 };
 
@@ -58574,6 +59145,9 @@ var CommunicationComposition = class _CommunicationComposition {
         COMMUNICATION_SERVICES.notificationGateway
       );
       return new ManageMeetupCommunications({
+        feedbackResults: new OpenFeedbackTalkResultsGateway(
+          input.openFeedbackApiKey ?? ""
+        ),
         clock,
         organizerReadinessNotification: new OrganizerReadinessPresenter(
           new OrganizerNotificationMessages(input.locale)
@@ -58644,6 +59218,7 @@ var CommunicationRuntime = class _CommunicationRuntime {
       config,
       workspaceRoot: input.workspaceRoot,
       mailingsToken,
+      openFeedbackApiKey: input.openFeedbackApiKey,
       slackToken,
       slackOrganizerChannelId
     });
@@ -58699,6 +59274,7 @@ var COMMUNICATION_MESSAGES = {
   "delivery-already-recorded": "The delivery ledger already contains this intent."
 };
 var RUNTIME_MESSAGES = {
+  "communication.feedback-unavailable": "Speaker thank-you emails require resolved feedback results for every talk.",
   "communication.slides-unavailable": "Email dispatch requires a valid presentation file URL.",
   "communication.approval-pending": "Email dispatch is waiting for approval on the meetup issue.",
   "communication.approval-rejected": "The email batch was rejected. The recorded decision is final for this batch revision.",
@@ -58727,6 +59303,7 @@ var CommunicationAction = class _CommunicationAction {
       locale: messages.locale,
       issueNumber,
       slidesUrl: getInput("slides-url"),
+      openFeedbackApiKey: getInput("openfeedback-api-key"),
       githubToken: getInput("github-token", { required: true }),
       mailingsToken: getInput("mailings-token", { required: true }),
       slackToken: getInput("slack-token", { required: true }),
@@ -58755,7 +59332,7 @@ var CommunicationAction = class _CommunicationAction {
     }).reconcile(report);
   }
   static publicIntentIdentifier(value) {
-    return `sha256:${createHash3("sha256").update(value).digest("hex")}`;
+    return `sha256:${createHash4("sha256").update(value).digest("hex")}`;
   }
   static domainDiagnostic(diagnostic) {
     return {

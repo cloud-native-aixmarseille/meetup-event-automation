@@ -40,6 +40,10 @@ export type CommunicationDispatchCapabilities = Readonly<{
 
 export type MailRecipientRole = "hosting" | "speaker";
 
+type MailPlaceholders = Readonly<
+	Record<string, string | readonly Readonly<{ title: string; url: string }>[]>
+>;
+
 type Recipient = {
 	/**
 	 * Stable, opaque identifier. It must not be a name, email address, or other
@@ -53,7 +57,7 @@ export type MailRecipient = Recipient & {
 	readonly channel: "mail";
 	readonly role: MailRecipientRole;
 	readonly email: string;
-	readonly placeholders?: Readonly<Record<string, string>>;
+	readonly placeholders?: MailPlaceholders;
 };
 
 export type NotificationRecipient = Recipient & {
@@ -74,9 +78,10 @@ type CommunicationIntentBase = {
 
 export type MailMessageIntent = CommunicationIntentBase & {
 	readonly channel: "mail";
+	readonly kind: MailCommunicationKind;
 	readonly recipient: MailRecipient;
 	readonly templateName: MailTemplateName;
-	readonly placeholders: Readonly<Record<string, string>>;
+	readonly placeholders: MailPlaceholders;
 };
 
 export type NotificationMessageIntent = CommunicationIntentBase & {
@@ -187,7 +192,7 @@ export type PlanCommunicationsInput = {
 	readonly readinessWindowDays: number;
 	readonly mailRecipients: readonly MailRecipient[];
 	readonly notificationRecipients: readonly NotificationRecipient[];
-	readonly mailPlaceholders?: Readonly<Record<string, string>>;
+	readonly mailPlaceholders?: MailPlaceholders;
 	readonly notificationContent?: string;
 	/** Explicit instant. The planner never reads system time. */
 	readonly now: Date;

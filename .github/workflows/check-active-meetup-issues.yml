@@ -176,6 +176,7 @@ jobs:
         uses: ./../self-workflow/actions/communication/reconcile
         with:
           slides-url: ${{ fromJSON(steps.assets.outputs.drive-files)['slides-link'] }}
+          openfeedback-api-key: ${{ secrets.openfeedback-api-key }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly
           locale: ${{ inputs.locale }}
           issue-number: ${{ matrix.issue-number }}
           github-token: ${{ steps.app-token.outputs.token }}

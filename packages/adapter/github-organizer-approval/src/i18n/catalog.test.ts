@@ -4,6 +4,13 @@ import { CATALOGS } from "./catalog.js";
 import type { MessageParameters } from "./message-parameters.js";
 
 const parameters = {
+	"approval.details.summary": {},
+	"approval.details.email": { kind: "speaker_thanks" },
+	"approval.details.purpose": { kind: "speaker_thanks" },
+	"approval.details.link": { kind: "slides" },
+	"approval.details.feedback": { title: "Reliable platforms" },
+	"approval.details.omitted-emails": { count: 2 },
+	"approval.details.omitted-links": { count: 2 },
 	"approval.final": {
 		kind: "introduction",
 		date: "2099-06-08",

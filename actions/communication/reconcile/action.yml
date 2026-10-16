@@ -12,6 +12,9 @@ inputs:
   slides-url:
     description: Direct presentation file URL from the asset action's drive-files slides-link entry. Required for due email batches; missing or invalid links block email dispatch.
     required: false
+  openfeedback-api-key:
+    description: OpenFeedback organization API key used to read existing talk results for speaker thank-you emails. Missing or unresolved results block the thank-you batch.
+    required: false
   github-token:
     description: Token for the caller repository. Requires issues:write for approval requests, checklist completion, delivery ledger, and diagnostic comments, and metadata:read to verify approvers.
     required: true

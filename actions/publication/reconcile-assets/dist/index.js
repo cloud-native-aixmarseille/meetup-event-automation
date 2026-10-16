@@ -58616,6 +58616,7 @@ var MessageLocalizer = class _MessageLocalizer {
 
 // packages/runtime/github-actions/src/i18n/diagnostics-communication.en.ts
 var DIAGNOSTICS_COMMUNICATION_EN = {
+  "diagnostic.communication.feedback-unavailable": "Thank-you emails are blocked because speaker feedback results could not be resolved. Check the OpenFeedback event link, organization API key and synchronized talks, then retry.",
   "diagnostic.communication.slides-unavailable": "Email dispatch is blocked because the presentation file link is missing or invalid. Configure a Drive template with template_kind=slides, reconcile assets, and pass the slides-link entry from drive-files as slides-url.",
   "diagnostic.communication.approval-pending": "Email dispatch is waiting for approval on the meetup issue.",
   "diagnostic.communication.approval-rejected": "The email batch was rejected. The recorded decision is final for this batch revision.",
@@ -58649,6 +58650,7 @@ var DIAGNOSTICS_COMMUNICATION_EN = {
 
 // packages/runtime/github-actions/src/i18n/diagnostics-communication.fr.ts
 var DIAGNOSTICS_COMMUNICATION_FR = {
+  "diagnostic.communication.feedback-unavailable": "Les e-mails de remerciement sont bloqu\xE9s car les r\xE9sultats des retours des intervenants sont indisponibles. V\xE9rifiez le lien de l'\xE9v\xE9nement OpenFeedback, la cl\xE9 API de l'organisation et les pr\xE9sentations synchronis\xE9es, puis r\xE9essayez.",
   "diagnostic.communication.slides-unavailable": "L'envoi des e-mails est bloqu\xE9 car le lien du fichier de pr\xE9sentation est absent ou invalide. Configurez un mod\xE8le Drive avec template_kind=slides, r\xE9conciliez les fichiers et transmettez l'entr\xE9e slides-link de drive-files dans slides-url.",
   "diagnostic.communication.approval-pending": "Les e-mails attendent une confirmation dans le ticket du meetup.",
   "diagnostic.communication.approval-rejected": "Le lot d'e-mails a \xE9t\xE9 refus\xE9. La d\xE9cision enregistr\xE9e est d\xE9finitive pour cette version du lot.",

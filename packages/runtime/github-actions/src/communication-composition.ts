@@ -23,6 +23,7 @@ import {
 	ScopedGithubLedgerCommentClient,
 } from "@meetup-automation/github-delivery-ledger";
 import { GithubRepositoryDispatchMailGateway } from "@meetup-automation/github-repository-dispatch-mail-gateway";
+import { OpenFeedbackTalkResultsGateway } from "@meetup-automation/openfeedback-event-gateway";
 import {
 	type AutomationConfig,
 	ManageMeetupCommunications,
@@ -54,6 +55,7 @@ const COMMUNICATION_SERVICES = {
 type CommunicationCompositionInput = EventCompositionInput & {
 	readonly issueNumber: number;
 	readonly mailingsToken: string;
+	readonly openFeedbackApiKey?: string;
 	readonly slackToken: string;
 	readonly slackOrganizerChannelId: string;
 };
@@ -161,6 +163,9 @@ export class CommunicationComposition {
 				COMMUNICATION_SERVICES.notificationGateway,
 			);
 			return new ManageMeetupCommunications({
+				feedbackResults: new OpenFeedbackTalkResultsGateway(
+					input.openFeedbackApiKey ?? "",
+				),
 				clock,
 				organizerReadinessNotification: new OrganizerReadinessPresenter(
 					new OrganizerNotificationMessages(input.locale),

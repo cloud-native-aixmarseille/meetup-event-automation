@@ -10,10 +10,12 @@ import type {
 	EventRepository,
 } from "@meetup-automation/event";
 import type { ReferentialRepository } from "@meetup-automation/referential";
+import type { FeedbackTalkResultsGateway } from "@meetup-automation/publication";
 import type { AutomationConfig } from "../config/automation-config.js";
 import type { ManageMeetupEvent } from "./manage-meetup-event.js";
 
 export interface ManageMeetupCommunicationsDependencies {
+	readonly feedbackResults: FeedbackTalkResultsGateway;
 	readonly config: AutomationConfig;
 	readonly organizerApproval: OrganizerApproval;
 	readonly organizerReadinessNotification: OrganizerReadinessNotification;

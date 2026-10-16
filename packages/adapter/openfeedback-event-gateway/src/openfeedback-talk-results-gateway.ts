@@ -1,0 +1,54 @@
+import {
+	FeedbackPolicy,
+	type FeedbackTalkResult,
+	type FeedbackTalkResultsGateway,
+} from "@meetup-automation/publication";
+import { OpenFeedbackAgendaPlan } from "./openfeedback-agenda-plan.js";
+import { OpenFeedbackAgendaSnapshot } from "./openfeedback-agenda-snapshot.js";
+import { OpenFeedbackClient } from "./openfeedback-client.js";
+import { OpenFeedbackRecordsGateway } from "./openfeedback-records-gateway.js";
+
+export class OpenFeedbackTalkResultsGateway
+	implements FeedbackTalkResultsGateway
+{
+	constructor(
+		private readonly apiKey: string,
+		private readonly fetcher: typeof fetch = fetch,
+	) {}
+
+	async resolve(
+		input: Parameters<FeedbackTalkResultsGateway["resolve"]>[0],
+	): Promise<readonly FeedbackTalkResult[]> {
+		const eventId = new URL(FeedbackPolicy.pollUrl(input.url)).pathname.split(
+			"/",
+		)[1];
+		if (!eventId) throw new Error("Feedback event identity is missing");
+		const records = new OpenFeedbackRecordsGateway(
+			new OpenFeedbackClient(this.apiKey, this.fetcher),
+		);
+		const speakers = await records.list(eventId, "speakers");
+		const talks = await records.list(eventId, "talks");
+		const current = OpenFeedbackAgendaSnapshot.parse({ speakers, talks });
+		const matched = OpenFeedbackAgendaPlan.create(
+			input.key,
+			input.agenda,
+			current,
+		);
+		return input.agenda.talks.map((source, index) => {
+			const talk = matched.talks[index];
+			const stored = current.talks.find((item) => item.id === talk?.id);
+			if (
+				!talk ||
+				!stored ||
+				JSON.stringify([...stored.speakers].sort()) !==
+					JSON.stringify([...talk.speakers].sort())
+			)
+				throw new Error("Feedback talk results are unavailable");
+			return {
+				title: talk.title,
+				url: `https://openfeedback.io/${eventId}/0/${encodeURIComponent(talk.id)}?displayVotes=true`,
+				speakerIds: source.speakers.map((speaker) => speaker.id),
+			};
+		});
+	}
+}

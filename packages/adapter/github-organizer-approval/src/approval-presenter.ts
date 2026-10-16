@@ -4,10 +4,14 @@ import {
 	type StoredApproval,
 } from "./approval-record.js";
 import { ApprovalMessages } from "./i18n/approval-messages.js";
+import { ApprovalDetailsPresenter } from "./approval-details-presenter.js";
 
 export class ApprovalPresenter {
 	constructor(private readonly messages: ApprovalMessages) {}
 	issue(record: StoredApproval, decision: ApprovalDecision): string {
+		const details = record.details
+			? [new ApprovalDetailsPresenter(this.messages).render(record.details)]
+			: [];
 		if (record.decision)
 			return [
 				ApprovalRecord.marker(record),
@@ -19,6 +23,7 @@ export class ApprovalPresenter {
 					actor: record.decision.actor,
 					decidedAt: record.decision.decidedAt,
 				}),
+				...details,
 			].join("\n\n");
 		return [
 			ApprovalRecord.marker(record),
@@ -29,6 +34,7 @@ export class ApprovalPresenter {
 				approveMark: decision.status === "approved" ? "x" : " ",
 				rejectMark: decision.status === "rejected" ? "x" : " ",
 			}),
+			...details,
 		].join("\n\n");
 	}
 	decision(record: StoredApproval, body: string): ApprovalDecision {

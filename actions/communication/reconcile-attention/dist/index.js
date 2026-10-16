@@ -31769,6 +31769,7 @@ var MessageLocalizer = class _MessageLocalizer {
 
 // packages/runtime/github-actions/src/i18n/diagnostics-communication.en.ts
 var DIAGNOSTICS_COMMUNICATION_EN = {
+  "diagnostic.communication.feedback-unavailable": "Thank-you emails are blocked because speaker feedback results could not be resolved. Check the OpenFeedback event link, organization API key and synchronized talks, then retry.",
   "diagnostic.communication.slides-unavailable": "Email dispatch is blocked because the presentation file link is missing or invalid. Configure a Drive template with template_kind=slides, reconcile assets, and pass the slides-link entry from drive-files as slides-url.",
   "diagnostic.communication.approval-pending": "Email dispatch is waiting for approval on the meetup issue.",
   "diagnostic.communication.approval-rejected": "The email batch was rejected. The recorded decision is final for this batch revision.",
@@ -31802,6 +31803,7 @@ var DIAGNOSTICS_COMMUNICATION_EN = {
 
 // packages/runtime/github-actions/src/i18n/diagnostics-communication.fr.ts
 var DIAGNOSTICS_COMMUNICATION_FR = {
+  "diagnostic.communication.feedback-unavailable": "Les e-mails de remerciement sont bloqu\xE9s car les r\xE9sultats des retours des intervenants sont indisponibles. V\xE9rifiez le lien de l'\xE9v\xE9nement OpenFeedback, la cl\xE9 API de l'organisation et les pr\xE9sentations synchronis\xE9es, puis r\xE9essayez.",
   "diagnostic.communication.slides-unavailable": "L'envoi des e-mails est bloqu\xE9 car le lien du fichier de pr\xE9sentation est absent ou invalide. Configurez un mod\xE8le Drive avec template_kind=slides, r\xE9conciliez les fichiers et transmettez l'entr\xE9e slides-link de drive-files dans slides-url.",
   "diagnostic.communication.approval-pending": "Les e-mails attendent une confirmation dans le ticket du meetup.",
   "diagnostic.communication.approval-rejected": "Le lot d'e-mails a \xE9t\xE9 refus\xE9. La d\xE9cision enregistr\xE9e est d\xE9finitive pour cette version du lot.",
@@ -40163,14 +40165,54 @@ var ScopedGithubLedgerCommentClient = class _ScopedGithubLedgerCommentClient {
 
 // packages/adapter/github-organizer-approval/src/approval-record.ts
 import { randomUUID as randomUUID2 } from "node:crypto";
+
+// packages/adapter/github-organizer-approval/src/approval-details.ts
+var ApprovalDetails = class _ApprovalDetails {
+  static validate(details, recipientCount) {
+    if (details === void 0) return;
+    if (!details || !Array.isArray(details.emails) || details.emails.length > 20 || !_ApprovalDetails.count(details.omittedEmails) || details.emails.length + details.omittedEmails !== recipientCount || JSON.stringify(details).length > 12e3 || !details.emails.every(_ApprovalDetails.email))
+      throw new Error("Invalid approval details");
+  }
+  static email(email) {
+    return Boolean(
+      email && [
+        "host-introduction",
+        "speaker-introduction",
+        "host-thanks",
+        "speaker-thanks"
+      ].includes(email.kind) && _ApprovalDetails.text(email.recipientName) && _ApprovalDetails.count(email.omittedLinks) && Array.isArray(email.links) && email.links.length <= 8 && email.links.every(
+        (link) => link && ["meetup", "community", "slides", "feedback"].includes(link.kind) && (link.title === void 0 || _ApprovalDetails.text(link.title)) && _ApprovalDetails.url(link.url)
+      )
+    );
+  }
+  static text(value) {
+    return typeof value === "string" && value.length <= 200 && !/[\r\n]/.test(value) && !value.includes("\0");
+  }
+  static count(value) {
+    return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+  }
+  static url(value) {
+    if (typeof value !== "string" || value.length > 2048 || /\s/.test(value) || value.includes("\0"))
+      return false;
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" && !url.username && !url.password;
+    } catch {
+      return false;
+    }
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/approval-record.ts
 var APPROVAL_MARKER = "<!-- meetup-organizer-approval:v1 ";
 var ApprovalRecord = class _ApprovalRecord {
   static matches(record, input) {
-    return record.kind === input.kind && record.revision === input.revision && record.eventDate === input.eventDate && record.recipientCount === input.recipientCount;
+    return record.kind === input.kind && record.revision === input.revision && record.eventDate === input.eventDate && record.recipientCount === input.recipientCount && (Boolean(record.decision) || JSON.stringify(record.details) === JSON.stringify(input.details));
   }
   static validate(input) {
     if (!/^[a-f0-9]{64}$/.test(input.revision) || !["email-introduction", "email-thanks"].includes(input.kind) || !/^\d{4}-\d{2}-\d{2}$/.test(input.eventDate) || !Number.isSafeInteger(input.recipientCount) || input.recipientCount <= 0 || !Number.isFinite(Date.parse(input.requestedAt)))
       throw new Error("Invalid approval request");
+    ApprovalDetails.validate(input.details, input.recipientCount);
   }
   static create(input) {
     _ApprovalRecord.validate(input);
@@ -40199,12 +40241,20 @@ var ApprovalRecord = class _ApprovalRecord {
     return record;
   }
   static marker(record) {
-    return `${APPROVAL_MARKER}${JSON.stringify(record)} -->`;
+    const json = JSON.stringify(record).replaceAll("<", "\\u003c").replaceAll(">", "\\u003e").replaceAll("&", "\\u0026");
+    return `${APPROVAL_MARKER}${json} -->`;
   }
 };
 
 // packages/adapter/github-organizer-approval/src/i18n/messages.en.ts
 var EN_MESSAGES3 = {
+  "approval.details.summary": "Review email details",
+  "approval.details.email": "{kind, select, host_introduction {Introduction for the host contact} speaker_introduction {Introduction for the speaker} host_thanks {Thank-you email for the host contact} speaker_thanks {Thank-you email for the speaker} other {Email}}",
+  "approval.details.purpose": "{kind, select, host_introduction {Thanks the host for welcoming the meetup and shares event links, slides and logistical requirements.} speaker_introduction {Shares event links, arrival and venue information, and presentation guidance.} host_thanks {Thanks the host for organizing the meetup and invites future collaboration.} speaker_thanks {Thanks the speaker, shares feedback results for their talks and invites suggestions about the meetup.} other {Sends the planned email.}}",
+  "approval.details.link": "{kind, select, meetup {Meetup event} community {CNCF community event} slides {Meetup presentation} other {Event link}}",
+  "approval.details.feedback": "Feedback results: {title}",
+  "approval.details.omitted-emails": "{count, plural, one {# additional email is included in this batch but omitted from this summary.} other {# additional emails are included in this batch but omitted from this summary.}}",
+  "approval.details.omitted-links": "{count, plural, one {# additional link is included in this email but omitted from this summary.} other {# additional links are included in this email but omitted from this summary.}}",
   "approval.final": "### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\nEvent date: {date}. This batch covers up to {count, number} recipients; completed deliveries are skipped.\n\n{status, select, approved {\u2705 **Approved**} rejected {\u274C **Rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nThis decision is final for this batch revision. {status, select, approved {Approved emails can be sent when delivery checks pass. Email completion is tracked in the issue checklist.} rejected {This batch will not be sent.} other {}} Changed event details or recipients require a new confirmation.",
   "approval.request": "### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\nEvent date: {date}. This batch covers up to {count, number} recipients; completed deliveries are skipped.\n\nOrganizers with repository write access: check one choice below. Leave both unchecked to wait.\n\n- [{approveMark}] Approve sending this batch\n- [{rejectMark}] Reject sending this batch\n\nApproval applies to this batch revision. Changed event details or recipients require a new confirmation. The email checkboxes in the issue are checked after accepted dispatch.",
   "approval.slack": "Organizer confirmation needed: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}} for {date}, up to {count, number} recipients. Open the request and check Approve or Reject: {url}"
@@ -40212,6 +40262,13 @@ var EN_MESSAGES3 = {
 
 // packages/adapter/github-organizer-approval/src/i18n/messages.fr.ts
 var FR_MESSAGES3 = {
+  "approval.details.summary": "Voir le d\xE9tail des e-mails",
+  "approval.details.email": "{kind, select, host_introduction {Introduction pour le contact de l'h\xF4te} speaker_introduction {Introduction pour l'intervenant} host_thanks {Remerciement pour le contact de l'h\xF4te} speaker_thanks {Remerciement pour l'intervenant} other {E-mail}}",
+  "approval.details.purpose": "{kind, select, host_introduction {Remercie l'h\xF4te pour son accueil et partage les liens du meetup, la pr\xE9sentation et les besoins logistiques.} speaker_introduction {Partage les liens du meetup, les informations d'arriv\xE9e et de lieu, ainsi que les consignes de pr\xE9sentation.} host_thanks {Remercie l'h\xF4te pour l'organisation du meetup et propose de renouveler la collaboration.} speaker_thanks {Remercie l'intervenant, partage les r\xE9sultats des retours sur ses pr\xE9sentations et sollicite ses suggestions pour le meetup.} other {Envoie l'e-mail pr\xE9vu.}}",
+  "approval.details.link": "{kind, select, meetup {\xC9v\xE9nement Meetup} community {\xC9v\xE9nement de la communaut\xE9 CNCF} slides {Pr\xE9sentation du meetup} other {Lien du meetup}}",
+  "approval.details.feedback": "R\xE9sultats des retours : {title}",
+  "approval.details.omitted-emails": "{count, plural, one {# e-mail suppl\xE9mentaire fait partie de ce lot mais ne figure pas dans ce r\xE9sum\xE9.} other {# e-mails suppl\xE9mentaires font partie de ce lot mais ne figurent pas dans ce r\xE9sum\xE9.}}",
+  "approval.details.omitted-links": "{count, plural, one {# lien suppl\xE9mentaire figure dans cet e-mail mais pas dans ce r\xE9sum\xE9.} other {# liens suppl\xE9mentaires figurent dans cet e-mail mais pas dans ce r\xE9sum\xE9.}}",
   "approval.final": "### Confirmation des organisateurs : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}}\n\nDate du meetup : {date}. Ce lot concerne au maximum {count, number} destinataires ; les envois d\xE9j\xE0 termin\xE9s sont ignor\xE9s.\n\n{status, select, approved {\u2705 **Approuv\xE9**} rejected {\u274C **Refus\xE9**} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\nCette d\xE9cision est d\xE9finitive pour cette version du lot. {status, select, approved {Les e-mails approuv\xE9s peuvent \xEAtre envoy\xE9s lorsque les contr\xF4les de livraison r\xE9ussissent. Leur envoi est suivi dans la liste de t\xE2ches du ticket.} rejected {Ce lot ne sera pas envoy\xE9.} other {}} Toute modification des d\xE9tails du meetup ou des destinataires n\xE9cessite une nouvelle confirmation.",
   "approval.request": "### Confirmation des organisateurs : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}}\n\nDate du meetup : {date}. Ce lot concerne au maximum {count, number} destinataires ; les envois d\xE9j\xE0 termin\xE9s sont ignor\xE9s.\n\nOrganisateurs disposant d'un acc\xE8s en \xE9criture au d\xE9p\xF4t : cochez un choix ci-dessous. Laissez les deux cases d\xE9coch\xE9es pour attendre.\n\n- [{approveMark}] Approuver l'envoi de ce lot\n- [{rejectMark}] Refuser l'envoi de ce lot\n\nLa confirmation concerne cette version du lot. Toute modification des d\xE9tails du meetup ou des destinataires n\xE9cessite une nouvelle confirmation. Les cases des e-mails dans le ticket sont coch\xE9es apr\xE8s acceptation de l'envoi.",
   "approval.slack": "Confirmation des organisateurs n\xE9cessaire : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}} pour le {date}, au maximum {count, number} destinataires. Ouvrez la demande et cochez Approuver ou Refuser : {url}"
@@ -40227,6 +40284,57 @@ var ApprovalMessages = class extends MessageLocalizer {
   }
 };
 
+// packages/adapter/github-organizer-approval/src/approval-details-presenter.ts
+var ApprovalDetailsPresenter = class _ApprovalDetailsPresenter {
+  constructor(messages3) {
+    this.messages = messages3;
+  }
+  messages;
+  render(details) {
+    const lines = [
+      "<details>",
+      `<summary>${_ApprovalDetailsPresenter.escape(this.messages.t("approval.details.summary", {}))}</summary>`,
+      "",
+      ...details.emails.map((email) => this.email(email))
+    ];
+    if (details.omittedEmails > 0)
+      lines.push(
+        `<p>${_ApprovalDetailsPresenter.escape(this.messages.t("approval.details.omitted-emails", { count: details.omittedEmails }))}</p>`
+      );
+    return [...lines, "", "</details>"].join("\n");
+  }
+  email(email) {
+    const heading = this.messages.t("approval.details.email", {
+      kind: email.kind.replaceAll("-", "_")
+    });
+    const name = email.recipientName ? `: ${_ApprovalDetailsPresenter.escape(email.recipientName)}` : "";
+    const lines = [
+      `<p><strong>${_ApprovalDetailsPresenter.escape(heading)}${name}</strong></p>`,
+      `<p>${_ApprovalDetailsPresenter.escape(this.messages.t("approval.details.purpose", { kind: email.kind.replaceAll("-", "_") }))}</p>`
+    ];
+    if (email.links.length)
+      lines.push(
+        "<ul>",
+        ...email.links.map((link) => `<li>${this.link(link)}</li>`),
+        "</ul>"
+      );
+    if (email.omittedLinks > 0)
+      lines.push(
+        `<p>${_ApprovalDetailsPresenter.escape(this.messages.t("approval.details.omitted-links", { count: email.omittedLinks }))}</p>`
+      );
+    return lines.join("\n");
+  }
+  link(link) {
+    const label = link.kind === "feedback" ? this.messages.t("approval.details.feedback", {
+      title: link.title ?? ""
+    }) : this.messages.t("approval.details.link", { kind: link.kind });
+    return `<a href="${_ApprovalDetailsPresenter.escape(link.url)}">${_ApprovalDetailsPresenter.escape(label)}</a>`;
+  }
+  static escape(value) {
+    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;").replaceAll("@", "&#64;");
+  }
+};
+
 // packages/adapter/github-organizer-approval/src/approval-presenter.ts
 var ApprovalPresenter = class _ApprovalPresenter {
   constructor(messages3) {
@@ -40234,6 +40342,7 @@ var ApprovalPresenter = class _ApprovalPresenter {
   }
   messages;
   issue(record, decision) {
+    const details = record.details ? [new ApprovalDetailsPresenter(this.messages).render(record.details)] : [];
     if (record.decision)
       return [
         ApprovalRecord.marker(record),
@@ -40244,7 +40353,8 @@ var ApprovalPresenter = class _ApprovalPresenter {
           status: record.decision.status,
           actor: record.decision.actor,
           decidedAt: record.decision.decidedAt
-        })
+        }),
+        ...details
       ].join("\n\n");
     return [
       ApprovalRecord.marker(record),
@@ -40254,7 +40364,8 @@ var ApprovalPresenter = class _ApprovalPresenter {
         count: record.recipientCount,
         approveMark: decision.status === "approved" ? "x" : " ",
         rejectMark: decision.status === "rejected" ? "x" : " "
-      })
+      }),
+      ...details
     ].join("\n\n");
   }
   decision(record, body) {

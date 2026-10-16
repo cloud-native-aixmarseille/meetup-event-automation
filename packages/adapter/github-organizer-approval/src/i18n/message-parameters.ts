@@ -1,4 +1,11 @@
 export interface MessageParameters {
+	"approval.details.summary": Record<string, never>;
+	"approval.details.email": { kind: string };
+	"approval.details.purpose": { kind: string };
+	"approval.details.link": { kind: string };
+	"approval.details.feedback": { title: string };
+	"approval.details.omitted-emails": { count: number };
+	"approval.details.omitted-links": { count: number };
 	"approval.final": {
 		kind: string;
 		date: string;

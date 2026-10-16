@@ -6,6 +6,7 @@ export interface OrganizerApprovalRequest {
 	readonly eventDate: string;
 	readonly recipientCount: number;
 	readonly requestedAt: string;
+	readonly details?: OrganizerApprovalDetails;
 }
 export interface OrganizerApprovalResult {
 	readonly status: "pending" | "approved" | "rejected";
@@ -15,3 +16,4 @@ export interface OrganizerApproval {
 	request(input: OrganizerApprovalRequest): Promise<OrganizerApprovalResult>;
 	synchronize(): Promise<{ readonly notificationFailed: boolean }>;
 }
+import type { OrganizerApprovalDetails } from "./organizer-approval-details.js";

@@ -1,6 +1,7 @@
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { GithubOrganizerApproval } from "@meetup-automation/github-organizer-approval";
+import { OpenFeedbackTalkResultsGateway } from "@meetup-automation/openfeedback-event-gateway";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CommunicationRuntime } from "./communication.js";
 
@@ -26,6 +27,16 @@ afterEach(async () => {
 });
 
 async function setup(options: Parameters<typeof githubClients>[0] = {}) {
+	vi.spyOn(
+		OpenFeedbackTalkResultsGateway.prototype,
+		"resolve",
+	).mockResolvedValue([
+		{
+			title: "A public talk",
+			url: "https://openfeedback.io/event-1/0/talk-1?displayVotes=true",
+			speakerIds: ["speaker-0001"],
+		},
+	]);
 	const workspaceRoot = await createWorkspace();
 	const clients = githubClients(options);
 	getOctokitMock.mockImplementation((token: string) =>
@@ -216,11 +227,112 @@ describe("automatic communication completion after approval", () => {
 			expect.objectContaining({
 				client_payload: expect.objectContaining({
 					"template-name": "meetup-thanks-speakers",
+					placeholders: expect.objectContaining({
+						speakerFeedbackTalks: [
+							{
+								title: "A public talk",
+								url: "https://openfeedback.io/event-1/0/talk-1?displayVotes=true",
+							},
+						],
+					}),
 				}),
 			}),
 		);
 		expect(f.issue.body).toContain("- [x] Mail thanks speakers");
 		expect(f.issue.body).toContain("- [ ] Mail introduction");
+	});
+
+	it("holds thank-you emails without requesting approval when feedback lookup fails", async () => {
+		// Arrange
+		const f = await setup({
+			labels: [
+				"meetup",
+				"event:held",
+				"hoster:confirmed",
+				"speakers:confirmed",
+			],
+		});
+		vi.mocked(
+			OpenFeedbackTalkResultsGateway.prototype.resolve,
+		).mockRejectedValue(new Error("private provider response"));
+
+		// Act
+		const result = await CommunicationRuntime.runCommunicationReconcile(
+			f.input,
+		);
+
+		// Assert
+		expect(result.runtimeDiagnostics).toContainEqual({
+			code: "communication.feedback-unavailable",
+			severity: "error",
+		});
+		expect(f.createDispatchEvent).not.toHaveBeenCalled();
+		expect(GithubOrganizerApproval.prototype.request).not.toHaveBeenCalled();
+		expect(f.issue.body).toContain("- [ ] Mail thanks speakers");
+		expect(JSON.stringify(result)).not.toContain("private provider response");
+	});
+
+	it("reads existing OpenFeedback records and dispatches the stored talk results link", async () => {
+		// Arrange
+		const f = await setup({
+			labels: [
+				"meetup",
+				"event:held",
+				"hoster:confirmed",
+				"speakers:confirmed",
+			],
+		});
+		vi.mocked(OpenFeedbackTalkResultsGateway.prototype.resolve).mockRestore();
+		const revision = "a".repeat(64);
+		const fetcher = vi
+			.fn<typeof fetch>()
+			.mockResolvedValueOnce(
+				Response.json({
+					id: "event-1",
+					speakers: [{ id: "imported-speaker", name: "Ada Speaker", revision }],
+					nextCursor: null,
+				}),
+			)
+			.mockResolvedValueOnce(
+				Response.json({
+					id: "event-1",
+					talks: [
+						{
+							id: "imported-talk",
+							title: "A public talk",
+							speakers: ["imported-speaker"],
+							revision,
+						},
+					],
+					nextCursor: null,
+				}),
+			);
+		vi.stubGlobal("fetch", fetcher);
+
+		// Act
+		const result = await CommunicationRuntime.runCommunicationReconcile(
+			f.input,
+		);
+		const speakerMail = f.createDispatchEvent.mock.calls.find(
+			([request]) =>
+				request.client_payload["template-name"] === "meetup-thanks-speakers",
+		);
+
+		// Assert
+		expect(result.counts.accepted).toBe(2);
+		expect(
+			speakerMail?.[0].client_payload.placeholders.speakerFeedbackTalks,
+		).toEqual([
+			{
+				title: "A public talk",
+				url: "https://openfeedback.io/event-1/0/imported-talk?displayVotes=true",
+			},
+		]);
+		expect(fetcher.mock.calls.map(([, options]) => options?.method)).toEqual([
+			"GET",
+			"GET",
+		]);
+		expect(JSON.stringify(result)).not.toContain("oforg_synthetic");
 	});
 
 	it.each([400, 429, 500])(
@@ -570,6 +682,112 @@ describe("organizer approval for email batches", () => {
 		expect(f.createDispatchEvent).not.toHaveBeenCalled();
 		expect(f.comments[0]?.body).not.toBe(originalRequest);
 		expect(f.comments[0]?.body).toContain("- [ ] Approve sending this batch");
+	});
+	it.each(["scheduled", "held"])(
+		"shows human-readable collapsed details before approving %s emails",
+		async (status) => {
+			// Arrange
+			const f = await setup({
+				labels: [
+					"meetup",
+					`event:${status}`,
+					"hoster:confirmed",
+					"speakers:confirmed",
+				],
+			});
+
+			// Act
+			const result = await CommunicationRuntime.runCommunicationReconcile(
+				f.input,
+			);
+			const body = f.comments[0]?.body ?? "";
+
+			// Assert
+			expect(result.counts.dispatched).toBe(0);
+			expect(body).toContain(
+				"<details>\n<summary>Review email details</summary>",
+			);
+			expect(body).toContain("Public Venue");
+			expect(body).toContain("Ada Speaker");
+			expect(body).toContain(
+				status === "held"
+					? "Feedback results: A public talk"
+					: "Meetup presentation",
+			);
+			expect(body).not.toContain("Private Host Contact");
+			expect(body).not.toContain("1 Private Street");
+			expect(body).not.toContain("@example.invalid");
+			expect(body).not.toContain("<details open");
+		},
+	);
+	it("requires a new approval when a speaker feedback destination changes", async () => {
+		// Arrange
+		const f = await setup({
+			labels: [
+				"meetup",
+				"event:held",
+				"hoster:confirmed",
+				"speakers:confirmed",
+			],
+		});
+		await CommunicationRuntime.runCommunicationReconcile(f.input);
+		approveBatch(f);
+		vi.mocked(
+			OpenFeedbackTalkResultsGateway.prototype.resolve,
+		).mockResolvedValue([
+			{
+				title: "A public talk",
+				url: "https://openfeedback.io/event-1/0/replacement-talk?displayVotes=true",
+				speakerIds: ["speaker-0001"],
+			},
+		]);
+
+		// Act
+		const result = await CommunicationRuntime.runCommunicationReconcile(
+			f.input,
+		);
+
+		// Assert
+		expect(result.runtimeDiagnostics).toContainEqual({
+			code: "communication.approval-pending",
+			severity: "warning",
+		});
+		expect(f.createDispatchEvent).not.toHaveBeenCalled();
+		expect(f.comments[0]?.body).toContain("- [ ] Approve sending this batch");
+	});
+
+	it("keeps the thank-you approval after the speaker email succeeds and the host email is deferred", async () => {
+		// Arrange
+		const f = await setup({
+			labels: [
+				"meetup",
+				"event:held",
+				"hoster:confirmed",
+				"speakers:confirmed",
+			],
+		});
+		await CommunicationRuntime.runCommunicationReconcile(f.input);
+		approveBatch(f);
+		f.createDispatchEvent.mockRejectedValueOnce({ status: 429 });
+
+		// Act
+		const first = await CommunicationRuntime.runCommunicationReconcile(f.input);
+		const second = await CommunicationRuntime.runCommunicationReconcile(
+			f.input,
+		);
+		const third = await CommunicationRuntime.runCommunicationReconcile(f.input);
+
+		// Assert
+		expect(first.counts.accepted).toBe(1);
+		expect(first.counts.deferred).toBe(1);
+		expect(second.counts.accepted).toBe(1);
+		expect(second.runtimeDiagnostics).not.toContainEqual(
+			expect.objectContaining({ code: "communication.approval-pending" }),
+		);
+		expect(third.counts.dispatched).toBe(0);
+		expect(f.createDispatchEvent).toHaveBeenCalledTimes(3);
+		expect(f.issue.body).toContain("- [x] Mail thanks hoster");
+		expect(f.issue.body).toContain("- [x] Mail thanks speakers");
 	});
 	it("requests approval in the issue and Slack, then sends and completes only after approval", async () => {
 		// Arrange

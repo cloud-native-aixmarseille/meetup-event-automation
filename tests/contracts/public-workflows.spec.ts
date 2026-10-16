@@ -95,8 +95,8 @@ const expectedActionWiring = {
 	"update-meetup-issue": {
 		manage: [
 			"publication/reconcile-assets",
-			"communication/reconcile",
 			"publication/reconcile-feedback",
+			"communication/reconcile",
 			"event/reconcile",
 			"communication/reconcile-attention",
 		],
@@ -132,6 +132,12 @@ describe("public reusable workflow contracts", () => {
 			expect(assetsIndex).toBeGreaterThanOrEqual(0);
 			expect(steps[assetsIndex]?.id).toBe("assets");
 			expect(communicationIndex).toBeGreaterThan(assetsIndex);
+			expect(steps.findIndex((step) => step.id === "feedback")).toBeLessThan(
+				communicationIndex,
+			);
+			expect(steps[communicationIndex]?.with?.["openfeedback-api-key"]).toBe(
+				workflowExpression("secrets.openfeedback-api-key"),
+			);
 			expect(steps[communicationIndex]?.with?.["slides-url"]).toBe(
 				workflowExpression(
 					"fromJSON(steps.assets.outputs.drive-files)['slides-link']",

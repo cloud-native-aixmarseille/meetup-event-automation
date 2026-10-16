@@ -51,3 +51,7 @@ export type {
 	FeedbackAgenda,
 	FeedbackTalk,
 } from "./application/feedback-agenda.js";
+export type {
+	FeedbackTalkResult,
+	FeedbackTalkResultsGateway,
+} from "./application/feedback-talk-results.js";

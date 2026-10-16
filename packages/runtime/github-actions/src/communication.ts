@@ -14,6 +14,7 @@ export interface RunCommunicationReconcileInput {
 
 	readonly githubToken: string;
 	readonly mailingsToken: string;
+	readonly openFeedbackApiKey?: string;
 	readonly slackToken: string;
 	readonly slackOrganizerChannelId: string;
 	readonly owner: string;
@@ -60,6 +61,7 @@ export class CommunicationRuntime {
 			config,
 			workspaceRoot: input.workspaceRoot,
 			mailingsToken,
+			openFeedbackApiKey: input.openFeedbackApiKey,
 			slackToken,
 			slackOrganizerChannelId,
 		});
