@@ -104,9 +104,9 @@ export class CommunicationPlanner {
 		}
 	}
 
-	static createIntentBase(
+	static createIntentBase<Kind extends CommunicationKind>(
 		input: PlanCommunicationsInput,
-		kind: CommunicationKind,
+		kind: Kind,
 		recipientId: string,
 	) {
 		const idempotencyKey =

@@ -8,6 +8,8 @@ import {
 } from "@meetup-automation/communication";
 import type { OrganizerApproval } from "../ports/organizer-approval.js";
 import type { CommunicationJourneyDiagnostic } from "../communication/contracts.js";
+import type { MeetupEvent } from "@meetup-automation/event";
+import { CommunicationApprovalDetails } from "./communication-approval-details.js";
 
 /** Approve the whole event batch so partial delivery resumes under the same decision. */
 export class ApproveCommunicationBatch {
@@ -19,6 +21,7 @@ export class ApproveCommunicationBatch {
 	async execute(
 		input: ReconcileCommunicationsInput,
 		recipients: readonly MailRecipient[],
+		event: MeetupEvent,
 		diagnostics: CommunicationJourneyDiagnostic[],
 	): Promise<boolean> {
 		try {
@@ -58,6 +61,7 @@ export class ApproveCommunicationBatch {
 				),
 				eventDate: input.eventDate,
 				recipientCount: mails.length,
+				details: CommunicationApprovalDetails.create(event, mails),
 				requestedAt: now.toISOString(),
 			});
 			if (result.notificationFailed)

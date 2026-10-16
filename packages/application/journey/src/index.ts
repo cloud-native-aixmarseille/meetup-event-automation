@@ -51,3 +51,8 @@ export type {
 } from "./ports/organizer-approval-notification.js";
 
 export { ManageMeetupAttention } from "./use-cases/manage-meetup-attention.js";
+export type {
+	ApprovalEmailDetail,
+	ApprovalEmailLink,
+	OrganizerApprovalDetails,
+} from "./ports/organizer-approval-details.js";

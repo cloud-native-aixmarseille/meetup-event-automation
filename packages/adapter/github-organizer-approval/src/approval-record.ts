@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { ApprovalDetails } from "./approval-details.js";
 import type {
 	ApprovalNotificationMessage,
 	OrganizerApprovalRequest,
@@ -32,7 +33,9 @@ export class ApprovalRecord {
 			record.kind === input.kind &&
 			record.revision === input.revision &&
 			record.eventDate === input.eventDate &&
-			record.recipientCount === input.recipientCount
+			record.recipientCount === input.recipientCount &&
+			(Boolean(record.decision) ||
+				JSON.stringify(record.details) === JSON.stringify(input.details))
 		);
 	}
 	static validate(input: OrganizerApprovalRequest): void {
@@ -45,6 +48,7 @@ export class ApprovalRecord {
 			!Number.isFinite(Date.parse(input.requestedAt))
 		)
 			throw new Error("Invalid approval request");
+		ApprovalDetails.validate(input.details, input.recipientCount);
 	}
 	static create(input: OrganizerApprovalRequest): StoredApproval {
 		ApprovalRecord.validate(input);
@@ -92,6 +96,10 @@ export class ApprovalRecord {
 		return record;
 	}
 	static marker(record: StoredApproval): string {
-		return `${APPROVAL_MARKER}${JSON.stringify(record)} -->`;
+		const json = JSON.stringify(record)
+			.replaceAll("<", "\\u003c")
+			.replaceAll(">", "\\u003e")
+			.replaceAll("&", "\\u0026");
+		return `${APPROVAL_MARKER}${json} -->`;
 	}
 }

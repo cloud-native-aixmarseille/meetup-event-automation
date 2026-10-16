@@ -9,6 +9,7 @@ import type {
 	ManageMeetupCommunicationsInput,
 } from "../communication/contracts.js";
 import { CommunicationRecipients } from "./communication-recipients.js";
+import { SpeakerFeedbackPreparation } from "./speaker-feedback-preparation.js";
 import {
 	type ManageMeetupCommunicationsDependencies,
 	UNRESOLVED_MAIL_RECIPIENTS,
@@ -18,7 +19,7 @@ export class CommunicationDeliveryPreparation {
 	constructor(
 		private readonly dependencies: Pick<
 			ManageMeetupCommunicationsDependencies,
-			"config" | "referentialRepository"
+			"config" | "referentialRepository" | "feedbackResults"
 		>,
 	) {}
 	async execute(
@@ -41,6 +42,11 @@ export class CommunicationDeliveryPreparation {
 			: UNRESOLVED_MAIL_RECIPIENTS;
 		const referencesResolved =
 			catalog !== undefined && mailRecipientResolution.resolved;
+		const recipients = referencesResolved
+			? await new SpeakerFeedbackPreparation(
+					this.dependencies.feedbackResults,
+				).execute(event, mailRecipientResolution.recipients, runtimeDiagnostics)
+			: mailRecipientResolution.recipients;
 		const notificationRecipients: readonly NotificationRecipient[] = [
 			{
 				channel: "notification",
@@ -53,7 +59,7 @@ export class CommunicationDeliveryPreparation {
 
 		return {
 			notificationConfigured,
-			mailRecipientResolution,
+			mailRecipientResolution: { ...mailRecipientResolution, recipients },
 			referencesResolved,
 			notificationRecipients,
 		};

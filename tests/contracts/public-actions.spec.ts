@@ -78,6 +78,7 @@ const actionContracts = [
 	{
 		directory: "actions/communication/reconcile",
 		inputs: [
+			"openfeedback-api-key",
 			"slides-url",
 			"report-errors-to-issue",
 			"github-token",

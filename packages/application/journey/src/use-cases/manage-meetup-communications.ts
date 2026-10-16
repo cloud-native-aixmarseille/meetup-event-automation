@@ -100,6 +100,7 @@ export class ManageMeetupCommunications {
 			).execute(
 				deliveryInput,
 				delivery.mailRecipientResolution.recipients,
+				managed.event,
 				runtimeDiagnostics,
 			));
 

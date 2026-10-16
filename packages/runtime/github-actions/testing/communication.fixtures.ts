@@ -44,6 +44,7 @@ export function runtimeInput(
 		issueNumber: 42,
 		githubToken: "github-token",
 		mailingsToken: "mailings-token",
+		openFeedbackApiKey: "oforg_synthetic",
 		slackToken: "slack-token",
 		slackOrganizerChannelId: "organizer-channel-id",
 		owner: "organization",
@@ -239,6 +240,10 @@ https://ocgroups.dev/cncf/group/cloud-native-aix-marseille/event/platform-night
 ### Drive Link
 
 https://drive.google.com/drive/folders/public-event-assets
+
+### OpenFeedback Link
+
+https://openfeedback.io/event-1
 
 ### Communication
 

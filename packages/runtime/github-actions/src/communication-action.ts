@@ -43,6 +43,8 @@ const COMMUNICATION_MESSAGES: Readonly<
 const RUNTIME_MESSAGES: Readonly<
 	Record<CommunicationJourneyDiagnostic["code"], string>
 > = {
+	"communication.feedback-unavailable":
+		"Speaker thank-you emails require resolved feedback results for every talk.",
 	"communication.slides-unavailable":
 		"Email dispatch requires a valid presentation file URL.",
 	"communication.approval-pending":
@@ -85,6 +87,7 @@ export class CommunicationAction {
 			locale: messages.locale,
 			issueNumber,
 			slidesUrl: core.getInput("slides-url"),
+			openFeedbackApiKey: core.getInput("openfeedback-api-key"),
 
 			githubToken: core.getInput("github-token", { required: true }),
 			mailingsToken: core.getInput("mailings-token", { required: true }),

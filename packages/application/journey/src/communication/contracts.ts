@@ -17,6 +17,7 @@ type CommunicationJourneyDiagnosticCode =
 	| "communication.approval-unavailable"
 	| "communication.approval-notification-failed"
 	| "communication.slides-unavailable"
+	| "communication.feedback-unavailable"
 	| "communication.checklist-update-failed"
 	| "communication.event-skipped"
 	| "communication.event-concurrently-modified"

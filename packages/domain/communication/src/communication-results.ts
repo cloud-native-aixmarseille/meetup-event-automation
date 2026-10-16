@@ -51,8 +51,7 @@ export class CommunicationResults {
 	): readonly MailCommunicationKind[] {
 		const groups = new Map<MailCommunicationKind, boolean>();
 		for (const intent of intents) {
-			if (intent.channel !== "mail" || intent.kind === "readiness-reminder")
-				continue;
+			if (intent.channel !== "mail") continue;
 			groups.set(
 				intent.kind,
 				(groups.get(intent.kind) ?? true) && acceptedIds.has(intent.intentId),

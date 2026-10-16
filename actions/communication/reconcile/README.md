@@ -40,6 +40,9 @@ report in a managed meetup issue comment and succeed after it is saved or
 confirmed current. Later runs update that comment, including when errors are
 resolved. Execution and comment persistence failures still fail the action.
 
+Speaker thank-you emails include direct results links for their talks. Supply
+`openfeedback-api-key`; see [speaker feedback results](../../../docs/integrations/communications.md#speaker-feedback-results) for prerequisites and recovery.
+
 <!-- overview:end -->
 <!-- usage:start -->
 
@@ -59,6 +62,9 @@ release you use. The asset step must have the ID `assets` for this example.
 
     # Required when an email batch is due. Reconcile assets first.
     slides-url: ${{ fromJSON(steps.assets.outputs.drive-files)['slides-link'] }}
+
+    # Required for speaker thank-you emails. Reads existing OpenFeedback talks.
+    openfeedback-api-key: ${{ secrets.OPENFEEDBACK_API_KEY }}
 
     # Required: true reports errors in the issue; false fails on error diagnostics.
     # Use the shared event lock.
@@ -95,6 +101,7 @@ release you use. The asset step must have the ID `assets` for this example.
 | **`locale`**                     | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.                                                                                     | **false**    | `en`        |
 | **`issue-number`**               | GitHub issue number in the caller repository containing the meetup event document to inspect.                                                                                                                          | **true**     | -           |
 | **`slides-url`**                 | Direct presentation file URL from the asset action's drive-files slides-link entry. Required for due email batches; missing or invalid links block email dispatch.                                                     | **false**    | -           |
+| **`openfeedback-api-key`**       | OpenFeedback organization API key used to read existing talk results for speaker thank-you emails. Missing or unresolved results block the thank-you batch.                                                            | **false**    | -           |
 | **`report-errors-to-issue`**     | Use true to record diagnostics in a managed issue comment and succeed after persistence, or false to fail on error diagnostics. Execution and comment persistence failures still fail. Requires the shared event lock. | **true**     | -           |
 | **`github-token`**               | Token for the caller repository. Requires issues:write for approval requests, checklist completion, delivery ledger, and diagnostic comments, and metadata:read to verify approvers.                                   | **true**     | -           |
 | **`managed-comment-author`**     | Trusted bot login allowed to create or update managed approval, delivery ledger and communication diagnostic comments, for example my-app[bot].                                                                        | **true**     | -           |

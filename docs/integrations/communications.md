@@ -62,16 +62,53 @@ A due email batch with a missing or invalid link is held with the
 The issue's **Drive Link** remains the event folder and is never used as a
 fallback for the presentation. Organizer attention does not require a presentation.
 
+## Speaker feedback results
+
+Speaker thank-you emails include `speakerFeedbackTalks`, an array of talk titles
+and direct OpenFeedback results URLs. Each recipient receives all of their talks;
+co-speakers receive the same link for a shared talk. The links use existing
+OpenFeedback talk IDs and `?displayVotes=true` so results are visible without
+submitting a vote. The email does not use the shared Kutt link, whose target can
+change for later meetups.
+
+Both event workflows reconcile feedback before communications and forward the
+OpenFeedback organization key. When calling the communication action directly,
+pass `openfeedback-api-key`. The lookup reads the event's speakers and talks and
+uses the same identity matching as [feedback synchronization](feedback.md).
+It never creates or updates feedback records while preparing email.
+
+A pending thank-you batch with speaker recipients is held before approval if the
+OpenFeedback event link, credentials, agenda, or matching talks are unavailable.
+The diagnostic is `communication.feedback-unavailable`. Check the event link and
+key, synchronize the agenda, resolve ambiguous matches in OpenFeedback, and retry.
+Introductions and completed batches do not require feedback lookup. Link changes
+are included in the approval fingerprint; accepted deliveries keep their existing
+idempotency keys and are not resent.
+
+Deploy the `mailings` speaker thank-you template that renders the
+`speakerFeedbackTalks` array before enabling this automation revision. Its HTML
+and plain-text versions include one results link per talk.
+
 ## Confirm an email batch
 
 When a batch is due, the bot creates or updates a confirmation comment on the
 meetup issue. It shows the batch type, event date and maximum recipient count,
-followed by two choices:
+with two choices:
 
 ```markdown
 - [ ] Approve sending this batch
 - [ ] Reject sending this batch
 ```
+
+Expand **Review email details** to see each email's purpose, public host or
+speaker name, and included event, presentation, or talk feedback links. Private
+contact names, email addresses and venue addresses are excluded. The summary
+stays collapsed by default and remains in the comment after a decision.
+Large batches show a bounded summary with explicit counts of omitted emails or
+links. The approval still covers the whole batch.
+
+The details belong to the reviewed request. Editing them while selecting an
+approval choice does not authorize sending; the bot restores the trusted request.
 
 Click **Approve sending this batch** in that bot comment to authorize sending.
 Click **Reject sending this batch** to refuse it. Leave both unchecked to wait;
