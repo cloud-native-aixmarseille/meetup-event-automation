@@ -1,4 +1,16 @@
 export const EN_MESSAGES = {
+	"report.speaker-sync.pr-title":
+		"feat(referential): synchronize Conference Hall speakers",
+	"report.speaker-sync.pr-body":
+		"Review identity mappings, the CSV snapshot and preserved local fields. New mappings become available after merge. Existing linked profiles refresh directly from Conference Hall during event runs. The linked workflow run identifies this snapshot; automatic merge is disabled.",
+	"action.referential.sync-speakers": "Synchronize Conference Hall speakers",
+	"report.speaker-sync.completed":
+		"Speaker catalog and form prepared: {count} speakers. Review the private pull request before merging.",
+	"report.speaker-sync.failed":
+		"Speaker snapshot synchronization failed. Existing mappings and local fields are unchanged. Live profile refresh remains required; check source access, mappings and concurrent edits before retrying.",
+	"report.speaker-sync.private":
+		"Speaker synchronization requires a private repository.",
+
 	"action.communication.reconcile-attention": "Reconcile organizer attention",
 	"report.attention.updated":
 		"Organizer attention status is persisted on the issue. Review its current conditions and recovery guidance.",

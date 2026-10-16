@@ -1,4 +1,19 @@
 export const DIAGNOSTICS_REFERENTIAL_EN = {
+	"diagnostic.referential.source.unavailable":
+		"Conference Hall speaker profiles are unavailable. Check CFP access and retry; cached contacts are not used.",
+	"diagnostic.referential.source.invalid":
+		"Conference Hall speaker profiles are invalid or belong to another CFP. Check source configuration before retrying.",
+	"diagnostic.referential.source.rate-limited":
+		"Conference Hall has rate-limited profile refresh. Wait for the source retry window; cached contacts are not used.",
+	"diagnostic.referential.source.mapping-required":
+		"A linked speaker is missing from the configured CFP export. Review the source identity mapping before retrying.",
+	"diagnostic.referential.source.conflict":
+		"Conference Hall speaker identities conflict. Review scoped mappings before retrying.",
+	"diagnostic.referential.speaker.display-name.invalid":
+		"A display name or both structured names are required.",
+	"diagnostic.referential.speaker.mapping.invalid":
+		"Source mappings must be complete, scoped and unique.",
+
 	"diagnostic.referential.contact.id.duplicate":
 		"Contact stable identifiers must be unique.",
 	"diagnostic.referential.host.id.conflict":

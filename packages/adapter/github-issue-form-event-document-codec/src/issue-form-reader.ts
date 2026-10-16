@@ -17,6 +17,7 @@ import {
 import { IssueFormChecklists } from "./issue-form-checklists.js";
 import { IssueFormSections } from "./issue-form-sections.js";
 import { ManagedIssueMarkers } from "./managed-issue-markers.js";
+import { ProposalSelectionCodec } from "./proposal-selection-codec.js";
 import { ParticipantLinks } from "./participant-links.js";
 
 type Sections = ReadonlyMap<string, readonly Section[]>;
@@ -55,13 +56,14 @@ export class IssueFormReader {
 		const event: MeetupEvent = {
 			...migrated.event,
 			...operations,
+			...ProposalSelectionCodec.read(document.body, diagnostics),
 			confirmations: {
 				host: document.labels.includes(this.hostConfirmationLabel),
 				speakers: document.labels.includes(this.speakersConfirmationLabel),
 			},
 		};
 		const referenced = this.restoreReferences(
-			event,
+			ProposalSelectionCodec.restore(event),
 			document.body,
 			schema,
 			diagnostics,

@@ -26,6 +26,12 @@ inputs:
   kutt-link-id:
     description: Existing Kutt link API ID, not the short address.
     required: true
+  conference-hall-event:
+    description: Conference Hall CFP slug for live linked profiles and selected proposals.
+    required: true
+  conference-hall-api-key:
+    description: Read-only Conference Hall event API key.
+    required: true
 outputs:
   result:
     description: Versioned JSON feedback reconciliation result.

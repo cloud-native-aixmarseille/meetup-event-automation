@@ -1,6 +1,11 @@
 export type ReferentialDiagnosticSeverity = "error" | "warning";
 
 export type ReferentialDiagnosticCode =
+	| "referential.source.unavailable"
+	| "referential.source.invalid"
+	| "referential.source.rate-limited"
+	| "referential.source.mapping-required"
+	| "referential.source.conflict"
 	| "referential.host.id.invalid"
 	| "referential.host.id.conflict"
 	| "referential.host.display-name.invalid"
@@ -11,6 +16,8 @@ export type ReferentialDiagnosticCode =
 	| "referential.contact.email.invalid"
 	| "referential.contact.phone.invalid"
 	| "referential.contact.address.invalid"
+	| "referential.speaker.display-name.invalid"
+	| "referential.speaker.mapping.invalid"
 	| "referential.speaker.id.invalid"
 	| "referential.speaker.id.duplicate"
 	| "referential.speaker.first-name.invalid"

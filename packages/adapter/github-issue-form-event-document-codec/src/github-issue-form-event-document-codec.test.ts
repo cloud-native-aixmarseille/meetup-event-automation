@@ -672,3 +672,64 @@ it("round-trips feedback links while preserving unmanaged issue content", () => 
 	expect(patch.body).toContain("This exact content must survive.");
 	expect(repeated).toEqual({});
 });
+
+it("preserves the last managed agenda verbatim when proposal refresh fails", () => {
+	// Arrange
+	const source = document({
+		body: `${LEGACY_BODY}\n### Conference Hall proposals\n\nproposal-one\n`,
+	});
+	const codec = new GitHubIssueFormEventDocumentCodec();
+	const decoded = codec.decode(source).event;
+	const stale = {
+		...decoded,
+		proposalStatus: "stale" as const,
+		agenda: [
+			{ speakers: [], description: "Must not replace the existing agenda" },
+		],
+	};
+
+	// Act
+	const patch = codec.createPatch(source, stale);
+
+	// Assert
+	expect(patch.body).toContain(
+		"- [Ada Lovelace](https://example.test/legacy-speaker-line), Grace Hopper [speaker-0002]: Platform history",
+	);
+	expect(patch.body).toContain("This exact content must survive.");
+	expect(patch.body).toContain("<!-- meetup-proposals:1:stale -->");
+	expect(patch.body).not.toContain("Must not replace");
+});
+
+it("round-trips imported punctuation and prevents names from breaking managed comments", () => {
+	// Arrange
+	const source = document({
+		body: `${LEGACY_BODY}\n### Conference Hall proposals\n\nproposal-one\n`,
+	});
+	const codec = new GitHubIssueFormEventDocumentCodec();
+	const decoded = codec.decode(source).event;
+	const name = "Example, Person: --><script>alert(1)</script>";
+	const selected = {
+		...decoded,
+		proposalStatus: "current" as const,
+		agenda: [
+			{
+				speakers: [{ id: "speaker-0001", displayName: name }],
+				description: "Public: Abstract [text]",
+			},
+		],
+	};
+
+	// Act
+	const patch = codec.createPatch(source, selected);
+	const roundTrip = codec.decode({ ...source, ...patch });
+
+	// Assert
+	expect(patch.body).not.toContain("--><script>");
+	expect(roundTrip.event.agenda[0].speakers).toEqual([
+		{ id: "speaker-0001", displayName: name },
+	]);
+	expect(roundTrip.event.agenda[0].description).toBe("Public: Abstract [text]");
+	expect(roundTrip.diagnostics.map((item) => item.code)).not.toContain(
+		"event.document.reference-metadata.stale",
+	);
+});

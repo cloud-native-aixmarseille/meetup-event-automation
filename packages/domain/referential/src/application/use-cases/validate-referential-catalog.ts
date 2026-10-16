@@ -8,8 +8,10 @@ import {
 } from "../../domain/referential-diagnostic.js";
 import type { ReferentialRepository } from "../ports/referential-repository.js";
 import { HostCatalogValidator } from "./host-catalog-validator.js";
+import { SpeakerSourceFields } from "./speaker-source-fields.js";
 import { SpeakerCatalogValidator } from "./speaker-catalog-validator.js";
 import type { ReferentialCatalogValidation } from "./validate-referential-catalog-contracts.js";
+import { ProposalSourceError } from "../../domain/proposal-source-error.js";
 
 export class ValidateReferentialCatalog {
 	constructor(private readonly repository?: ReferentialRepository) {}
@@ -17,7 +19,25 @@ export class ValidateReferentialCatalog {
 	async execute(
 		rawCatalog?: RawReferentialCatalog,
 	): Promise<ReferentialCatalogValidation> {
-		const input = rawCatalog ?? (await this.loadCatalog());
+		try {
+			return this.validate(rawCatalog ?? (await this.loadCatalog()));
+		} catch (error) {
+			if (!(error instanceof ProposalSourceError)) throw error;
+			return Object.freeze({
+				isValid: false as const,
+				diagnostics: ReferentialDiagnostics.freezeDiagnostics([
+					ReferentialDiagnostics.diagnostic(
+						`referential.source.${error.code}`,
+						"error",
+						"speakers",
+						"Source-owned speaker profiles could not be refreshed. Check source access and identity mappings before retrying.",
+					),
+				]),
+			});
+		}
+	}
+
+	private validate(input: RawReferentialCatalog): ReferentialCatalogValidation {
 		const diagnostics: ReferentialDiagnostic[] = [];
 		const hosts = HostCatalogValidator.validateHosts(input.hosts, diagnostics);
 		const speakers = SpeakerCatalogValidator.validateSpeakers(
@@ -32,14 +52,8 @@ export class ValidateReferentialCatalog {
 			"Duplicate normalized host display names are not allowed; keep one stable host per public name.",
 			diagnostics,
 		);
-		this.reportDuplicateDisplayNames(
-			speakers,
-			"referential.speaker.display-name.duplicate",
-			"speakers",
-			"Duplicate normalized speaker display names are not allowed; keep one stable speaker per public name.",
-			diagnostics,
-		);
 
+		SpeakerSourceFields.validateMappings(speakers, diagnostics);
 		const frozenDiagnostics =
 			ReferentialDiagnostics.freezeDiagnostics(diagnostics);
 		if (diagnostics.some(({ severity }) => severity === "error")) {

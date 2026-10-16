@@ -1,3 +1,4 @@
+import { ConferenceHallInput } from "./conference-hall-input.js";
 import * as core from "@actions/core";
 import { context, getOctokit } from "@actions/github";
 import {
@@ -29,6 +30,7 @@ export class PublicationAction {
 		const { owner, repo } = context.repo;
 		const container = PublicationComposition.createPublicationContainer({
 			locale: messages.locale,
+			...ConferenceHallInput.read(),
 			client,
 			owner,
 			repo,

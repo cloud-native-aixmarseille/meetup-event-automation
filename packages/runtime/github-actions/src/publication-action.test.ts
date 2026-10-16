@@ -46,6 +46,8 @@ vi.mock("@meetup-automation/journey", async (importOriginal) => ({
 beforeEach(() => {
 	vi.clearAllMocks();
 	for (const [name, value] of Object.entries({
+		"conference-hall-event": "example-cfp",
+		"conference-hall-api-key": "synthetic-source-key",
 		"issue-number": "42",
 		"github-token": "github-test-token",
 		"managed-comment-author": "test[bot]",
@@ -70,6 +72,8 @@ afterEach(() => vi.unstubAllEnvs());
 
 describe("publication action boundary", () => {
 	it.each([
+		"conference-hall-event",
+		"conference-hall-api-key",
 		"google-credentials",
 		"google-drive-meetup-folder-id",
 		"google-drive-meetup-template-folder-id",

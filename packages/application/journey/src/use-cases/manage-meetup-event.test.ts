@@ -22,6 +22,7 @@ describe("ManageMeetupEvent manual publication tasks", () => {
 			],
 		});
 		const useCase = new ManageMeetupEvent({
+			proposalSource: { load: vi.fn() },
 			config,
 			referentialRepository: { load: async () => catalog },
 			eventDependencies: {
@@ -48,6 +49,7 @@ describe("ManageMeetupEvent manual publication tasks", () => {
 		// Arrange
 		const eventDependencies = createEventDependencies();
 		const useCase = new ManageMeetupEvent({
+			proposalSource: { load: vi.fn() },
 			config,
 			referentialRepository: {
 				load: vi.fn().mockResolvedValue(catalog),

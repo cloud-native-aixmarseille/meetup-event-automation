@@ -110,7 +110,7 @@ export class ManagedIssueMarkers {
 		body: string,
 		metadata: StableReferenceMetadata,
 	): string {
-		const referenceMarker = `<!-- meetup-event-references:${JSON.stringify(metadata)} -->`;
+		const referenceMarker = `<!-- meetup-event-references:${JSON.stringify(metadata).replaceAll("<", "\\u003c").replaceAll(">", "\\u003e")} -->`;
 		const schemaReplacement = ManagedIssueMarkers.replaceManagedMarker(
 			body,
 			SCHEMA_MARKER_NAME,

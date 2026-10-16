@@ -35,9 +35,9 @@ Path: `referentials/speakers.csv`.
 | Column       | Required | Meaning                                               |
 | ------------ | -------- | ----------------------------------------------------- |
 | `speaker_id` | Yes      | Unique stable ID: `speaker-` followed by four digits. |
-| `firstname`  | Yes      | Public first name.                                    |
-| `lastname`   | Yes      | Public last name.                                     |
-| `company`    | Yes      | Company or affiliation.                               |
+| `firstname`  | No       | Organizer-maintained first name.                      |
+| `lastname`   | No       | Organizer-maintained last name.                       |
+| `company`    | No       | Company or affiliation.                               |
 | `mail`       | Yes      | Valid email address.                                  |
 | `phone`      | No       | Phone number.                                         |
 
@@ -48,8 +48,30 @@ speaker_id,firstname,lastname,company,mail,phone
 speaker-0001,Alex,Example,Example Company,alex@example.test,
 ```
 
-Host display names and speaker full names must be unique after normalization.
-Duplicate names invalidate the catalog even when the stable IDs differ.
+Host display names must be unique after normalization. Speakers may share a
+name; ambiguous name-only references fail and generated choices include stable
+IDs for those names. Each speaker needs either `display_name` or both
+`firstname` and `lastname`. Email greetings use the current source display name for linked speakers. Local
+speakers use the first name when available, otherwise the display name.
+
+Optional speaker columns:
+
+| Column              | Meaning                                                                          |
+| ------------------- | -------------------------------------------------------------------------------- |
+| `display_name`      | Public name; takes precedence over structured names.                             |
+| `picture_url`       | Optional HTTPS portrait URL without credentials. Invalid URLs fall back to text. |
+| `source_provider`   | Source namespace, `conference-hall` for imported profiles.                       |
+| `source_event`      | CFP slug.                                                                        |
+| `source_speaker_id` | Event-scoped speaker ID from the proposal export.                                |
+
+Source mapping columns must be complete and unique together. For linked rows,
+Conference Hall owns display name, company, email and picture URL. Structured
+names, phone numbers and extra columns stay local. Unknown columns survive
+synchronization. Event runs replace source-owned fields from the live
+CFP export; the committed values are a snapshot for local validation and form
+choices. Profile URLs are not fetched or embedded automatically.
+See [Conference Hall](../integrations/conference-hall.md) for reviewed mapping,
+field ownership, stable-ID allocation, synchronization and recovery.
 
 Keep IDs unchanged when names or contact details change. Do not reuse an ID for
 a different host, contact, or speaker. Quote CSV values containing commas,

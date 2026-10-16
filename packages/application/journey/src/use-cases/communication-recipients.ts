@@ -81,7 +81,9 @@ export class CommunicationRecipients {
 			receivesCommunications: true,
 			email: speaker.email,
 			placeholders: {
-				speakerName: speaker.firstName,
+				speakerName: speaker.sourceIdentity
+					? speaker.displayName
+					: speaker.firstName || speaker.displayName,
 				hostingName,
 				hostingAddress,
 			},

@@ -40,6 +40,7 @@ import { CommunicationIssueReport } from "./communication-issue-report.js";
 import {
 	EventComposition,
 	type EventCompositionInput,
+	type EventDocumentCompositionInput,
 	SERVICES,
 } from "./composition.js";
 import { ActionMessages } from "./i18n/action-messages.js";
@@ -64,7 +65,7 @@ type DeliveryLedgerFactory = (dispatchAuthorized: boolean) => DeliveryLedger;
 
 export class CommunicationComposition {
 	static createIssueReport(
-		input: EventCompositionInput & { readonly issueNumber: number },
+		input: EventDocumentCompositionInput & { readonly issueNumber: number },
 	): CommunicationIssueReport {
 		return new CommunicationIssueReport(
 			new ScopedGithubLedgerCommentClient(
@@ -108,7 +109,7 @@ export class CommunicationComposition {
 	}
 
 	private static bindRepositories(container: Container) {
-		// Both event evaluation and recipient resolution must see the same CSV snapshot.
+		// Event evaluation and recipients share the same source profiles and local supplements.
 		const repository = container.get<ReferentialRepository>(
 			SERVICES.referentialRepository,
 		);

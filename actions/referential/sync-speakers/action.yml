@@ -1,0 +1,32 @@
+name: Synchronize Conference Hall speakers
+description: Prepare a validated private speaker catalog and issue form from one Conference Hall snapshot.
+inputs:
+  locale:
+    description: Language for generated reports (en or fr).
+    required: false
+    default: en
+  github-token:
+    description: Token used to verify the destination repository is private.
+    required: true
+  conference-hall-event:
+    description: Conference Hall CFP slug.
+    required: true
+  conference-hall-api-key:
+    description: Read-only Conference Hall event API key.
+    required: true
+outputs:
+  pr-title:
+    description: Localized private synchronization PR title.
+  pr-body:
+    description: Localized private synchronization PR guidance.
+  changed:
+    description: Whether the candidate catalog, allocation state or form changed.
+  speaker-count:
+    description: Number of speakers in the validated candidate.
+  retry-after-seconds:
+    description: Minimum delay before a rate-limited request may be retried.
+  diagnostics:
+    description: Redacted JSON diagnostics.
+runs:
+  using: node24
+  main: dist/index.js

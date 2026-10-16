@@ -92,3 +92,9 @@ and duplicate protection.
 approval requests and actionable organizer reminders. Public Slack announcements remain
 manual checklist tasks and have no automation channel input. See
 [channel selection](../integrations/communications.md#organizer-and-public-channels).
+
+## Conference Hall
+
+Use the [Conference Hall guide](../integrations/conference-hall.md) for the required
+`conference-hall-event` input, `conference-hall-api-key` secret, live profile refresh, reviewed identity
+synchronization, selected proposals and consumer workflow triggers.

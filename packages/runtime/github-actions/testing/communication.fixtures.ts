@@ -41,6 +41,8 @@ export function runtimeInput(
 	> = {},
 ): Parameters<typeof CommunicationRuntime.runCommunicationReconcile>[0] {
 	return {
+		conferenceHallEvent: "example-cfp",
+		conferenceHallApiKey: "synthetic-source-key",
 		issueNumber: 42,
 		githubToken: "github-token",
 		mailingsToken: "mailings-token",

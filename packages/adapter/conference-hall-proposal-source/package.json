@@ -1,0 +1,10 @@
+{
+	"name": "@meetup-automation/conference-hall-proposal-source",
+	"version": "1.0.0",
+	"private": true,
+	"type": "module",
+	"exports": "./src/index.ts",
+	"dependencies": {
+		"@meetup-automation/referential": "workspace:*"
+	}
+}

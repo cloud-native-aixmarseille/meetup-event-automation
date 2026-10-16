@@ -1,5 +1,10 @@
 import type { EN_MESSAGES } from "./messages.en.js";
 export const FR_MESSAGES = {
+	"comment.guidance.source-profiles":
+		"Les profils Conference Hall n'ont pas pu être actualisés. Vérifiez les accès au CFP et les identités liées, puis réessayez après tout délai imposé. Les profils et contacts en cache ne font pas autorité.",
+	"comment.guidance.proposals":
+		"Les propositions Conference Hall ne peuvent pas être actualisées. Le dernier programme est périmé. Vérifiez les accès au CFP, les acceptations et les identités fusionnées ; réessayez après la limite API si nécessaire.",
+
 	"comment.guidance.event.link.feedback.invalid":
 		"Saisissez un lien HTTPS valide vers la page de l'événement OpenFeedback.",
 	"comment.resolved":

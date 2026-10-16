@@ -93,7 +93,7 @@ describe("ValidateReferentialCatalog", () => {
 		expect(result.isValid).toBe(true);
 	});
 
-	it("rejects duplicate display names", async () => {
+	it("rejects duplicate host display names", async () => {
 		// Arrange
 		// No additional setup is needed.
 
@@ -122,10 +122,7 @@ describe("ValidateReferentialCatalog", () => {
 
 		// Assert
 		expect(result.isValid).toBe(false);
-		expect(actual).toEqual([
-			"referential.host.display-name.duplicate",
-			"referential.speaker.display-name.duplicate",
-		]);
+		expect(actual).toEqual(["referential.host.display-name.duplicate"]);
 		expect(actual1).toBe(true);
 		expect(actual2).toBe(true);
 		expect(actual3).toBe(true);

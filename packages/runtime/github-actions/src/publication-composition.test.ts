@@ -10,6 +10,8 @@ import {
 } from "./publication-composition.js";
 
 const input = {
+	conferenceHallEvent: "example-cfp",
+	conferenceHallApiKey: "synthetic-source-key",
 	client: getOctokit("synthetic-test-token"),
 	owner: "community",
 	repo: "meetups",

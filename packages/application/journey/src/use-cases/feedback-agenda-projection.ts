@@ -28,7 +28,16 @@ export class FeedbackAgendaProjection {
 			return undefined;
 		return {
 			talks: event.agenda.map((entry) => ({
-				title: entry.description.trim(),
+				title: entry.proposal?.title ?? entry.description.trim(),
+				...(entry.proposal
+					? {
+							sourceIdentity: JSON.stringify([
+								entry.proposal.provider,
+								entry.proposal.event,
+								entry.proposal.id,
+							]),
+						}
+					: {}),
 				speakers: entry.speakers.map((speaker) => ({
 					id: speaker.id as string,
 					name: speaker.displayName.trim(),

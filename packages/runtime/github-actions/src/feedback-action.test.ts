@@ -33,6 +33,8 @@ vi.mock("./feedback-composition.js", () => ({
 beforeEach(() => {
 	vi.clearAllMocks();
 	mocks.inputs = {
+		"conference-hall-event": "example-cfp",
+		"conference-hall-api-key": "synthetic-source-key",
 		"issue-number": "12",
 		"github-token": "synthetic-token",
 		"managed-comment-author": "example[bot]",
@@ -54,6 +56,10 @@ beforeEach(() => {
 
 describe("feedback action boundary", () => {
 	it.each([
+		["conference-hall-event", ""],
+		["conference-hall-event", "   "],
+		["conference-hall-api-key", ""],
+		["conference-hall-api-key", "   "],
 		["kutt-base-url", ""],
 		["kutt-base-url", "   "],
 		["kutt-api-key", ""],

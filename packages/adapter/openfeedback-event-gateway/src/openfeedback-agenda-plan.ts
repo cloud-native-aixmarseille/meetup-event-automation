@@ -25,13 +25,24 @@ export class OpenFeedbackAgendaPlan {
 			return {
 				id: OpenFeedbackAgendaPlan.id(
 					"talk",
-					JSON.stringify([key, talk.title, ids]),
+					talk.sourceIdentity
+						? JSON.stringify([key, talk.sourceIdentity])
+						: JSON.stringify([key, talk.title, ids]),
 				),
 				title: talk.title,
 				speakers: ids,
 			};
 		});
-		const talks = OpenFeedbackAgendaPlan.matchTalks(candidates, current.talks);
+		const stableIds = new Set(
+			candidates
+				.filter((_, index) => agenda.talks[index].sourceIdentity)
+				.map((talk) => talk.id),
+		);
+		const talks = OpenFeedbackAgendaPlan.matchTalks(
+			candidates,
+			current.talks,
+			stableIds,
+		);
 		if (
 			talks.length > 100 ||
 			speakers.size > 100 ||
@@ -84,12 +95,27 @@ export class OpenFeedbackAgendaPlan {
 	private static matchTalks(
 		incoming: readonly OpenFeedbackTalk[],
 		current: readonly OpenFeedbackTalk[],
+		stableIds: ReadonlySet<string>,
 	): OpenFeedbackTalk[] {
 		if (new Set(incoming.map((talk) => talk.id)).size !== incoming.length)
 			throw new OpenFeedbackAgendaConflictError();
 		const used = new Set<string>();
 		const resolved = new Map<OpenFeedbackTalk, OpenFeedbackTalk>();
-		OpenFeedbackAgendaPlan.matchExactTalks(incoming, current, resolved, used);
+		for (const talk of incoming) {
+			if (
+				stableIds.has(talk.id) &&
+				current.some((item) => item.id === talk.id)
+			) {
+				resolved.set(talk, talk);
+				used.add(talk.id);
+			}
+		}
+		OpenFeedbackAgendaPlan.matchExactTalks(
+			incoming.filter((talk) => !resolved.has(talk)),
+			current,
+			resolved,
+			used,
+		);
 		OpenFeedbackAgendaPlan.matchTitles(incoming, current, resolved, used);
 		for (const talk of incoming.filter((item) => !resolved.has(item))) {
 			const matches = current.filter(

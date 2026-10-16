@@ -83,6 +83,20 @@ stateless operations and composition.
 
 The common composition root supplies event and referential dependencies.
 Communication, publication, and feedback roots add their required capabilities.
+Event reconciliation requires the Conference Hall CFP slug and API key.
+Document-only listing and attention composition do not bind the reconciliation
+journey or consume source credentials. Conference Hall resolution uses a
+provider-neutral referential port and
+a bounded, allowlisting adapter. Each invocation holds one source snapshot;
+linked speaker profiles and delivery addresses come from Conference Hall. A
+provider-neutral repository composes those profiles with checked-out local IDs,
+identity mappings and organizer-maintained fields. The same source instance
+supplies selected talks and speaker profiles. Source failures invalidate catalog
+use instead of falling back to cached contacts. Reviewed snapshot synchronization
+registers identities and preserves local fields and allocation history. The event codec
+owns proposal selection and managed agenda projection. Stale proposals block
+talk-dependent mail and feedback effects. See [Conference Hall](../integrations/conference-hall.md).
+
 Communication planning and participant resolution share the same catalog
 snapshot. The runtime converts available credentials into capabilities before
 calling the journey. Its delivery factory receives the final dispatch
@@ -222,7 +236,8 @@ recovery is documented under [integrations](../README.md#integrations).
   communication identifiers and ledger keys use SHA-256 digests.
 - Trust managed diagnostic and ledger comments only when authored by
   the configured GitHub App bot. A marker alone does not establish trust.
-- Read catalogs from the checked-out revision. Parse action inputs at the
+- Read local catalog supplements from the checked-out revision; resolve linked
+  profiles through the configured source. Parse action inputs at the
   boundary and pass issue text through typed APIs or data files/environment
   values, never executable shell interpolation.
 - Pin external actions and consumer workflow references to full commit SHAs. Use

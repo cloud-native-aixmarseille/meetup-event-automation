@@ -22,12 +22,22 @@ export type ParticipantReference = Readonly<{
 	/** Resolved catalog location for presentation, never a participant identity. */
 	source?: Readonly<{ path: string; line: number }>;
 	id?: string;
+	pictureUrl?: string;
 	displayName: string;
 }>;
 
 export type AgendaEntry = Readonly<{
 	speakers: readonly ParticipantReference[];
 	description: string;
+	proposal?: Readonly<{
+		provider: string;
+		event: string;
+		id: string;
+		title: string;
+		abstract: string;
+		languages: readonly string[];
+		formats: readonly string[];
+	}>;
 }>;
 
 export type EventPublicationLinks = Readonly<{
@@ -93,6 +103,8 @@ export type MeetupEvent = Readonly<{
 	description: string;
 	host?: ParticipantReference;
 	agenda: readonly AgendaEntry[];
+	proposalReferences?: readonly string[];
+	proposalStatus?: "current" | "stale";
 	publicationLinks: EventPublicationLinks;
 	occurrenceStatus?: OccurrenceStatus;
 	timeZone: string;

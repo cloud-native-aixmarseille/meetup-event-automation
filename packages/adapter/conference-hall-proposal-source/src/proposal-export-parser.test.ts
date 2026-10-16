@@ -1,0 +1,105 @@
+import { describe, expect, it } from "vitest";
+import { proposal, sourceExport, speaker } from "../testing/export.fixtures.js";
+import { ProposalExportParser } from "./proposal-export-parser.js";
+
+describe("ProposalExportParser", () => {
+	it.each(["DECLINED", "WITHDRAWN", "unexpected"])(
+		"does not publish an accepted proposal with %s confirmation",
+		(confirmationStatus) => {
+			// Arrange
+			const input = { proposals: [{ ...proposal, confirmationStatus }] };
+
+			// Act
+			const result = ProposalExportParser.parse(input, "example-cfp");
+
+			// Assert
+			expect(result.proposals[0].accepted).toBe(false);
+		},
+	);
+	it("rejects missing required source contact data without exposing values", () => {
+		// Arrange
+		const input = {
+			proposals: [{ ...proposal, speakers: [{ ...speaker, email: null }] }],
+		};
+
+		// Act
+		const parse = () => ProposalExportParser.parse(input, "example-cfp");
+
+		// Assert
+		expect(parse).toThrow("Proposal source invalid.");
+	});
+
+	it("deduplicates event-scoped co-speakers and drops private export fields", () => {
+		// Arrange
+		const input = {
+			...sourceExport,
+			proposals: [proposal, { ...proposal, id: "proposal-two" }],
+		};
+		// Act
+		const result = ProposalExportParser.parse(input, "example-cfp");
+		// Assert
+		expect(result.speakers).toHaveLength(1);
+		expect(result.proposals).toHaveLength(2);
+		expect(JSON.stringify(result)).not.toMatch(
+			/PRIVATE|survey|location|review|bio/,
+		);
+		expect(result.speakers[0].pictureUrl).toBe(speaker.picture);
+	});
+	it.each(["PENDING", "REJECTED", "WITHDRAWN", "unexpected"])(
+		"does not publish %s proposals",
+		(deliberationStatus) => {
+			// Arrange
+			const input = { proposals: [{ ...proposal, deliberationStatus }] };
+			// Act
+			const result = ProposalExportParser.parse(input, "example-cfp");
+			// Assert
+			expect(result.proposals[0].accepted).toBe(false);
+		},
+	);
+	it.each([
+		{},
+		{ picture: "javascript:alert(1)" },
+		{ picture: "http://example.test/a" },
+		{ picture: "https://user:pass@example.test/a" },
+	])(
+		"preserves omitted or invalid picture references without downloading them: %j",
+		(picture) => {
+			// Arrange
+			const { picture: _unused, ...profile } = speaker;
+			const input = {
+				proposals: [{ ...proposal, speakers: [{ ...profile, ...picture }] }],
+			};
+			// Act
+			const result = ProposalExportParser.parse(input, "example-cfp");
+			// Assert
+			expect(result.speakers[0]).not.toHaveProperty("pictureUrl");
+		},
+	);
+	it("keeps explicit picture removal distinct from an omitted field", () => {
+		// Arrange
+		const input = {
+			proposals: [{ ...proposal, speakers: [{ ...speaker, picture: null }] }],
+		};
+		// Act
+		const result = ProposalExportParser.parse(input, "example-cfp");
+		// Assert
+		expect(result.speakers[0].pictureUrl).toBeNull();
+	});
+	it("rejects inconsistent profiles for one source identity", () => {
+		// Arrange
+		const input = {
+			proposals: [
+				proposal,
+				{
+					...proposal,
+					id: "another",
+					speakers: [{ ...speaker, email: "other@example.test" }],
+				},
+			],
+		};
+		// Act
+		const parse = () => ProposalExportParser.parse(input, "example-cfp");
+		// Assert
+		expect(parse).toThrow("Proposal source invalid.");
+	});
+});

@@ -7,6 +7,7 @@ import {
 	type ReferentialDiagnostic,
 	ReferentialDiagnostics,
 } from "../../domain/referential-diagnostic.js";
+import { SpeakerSourceFields } from "./speaker-source-fields.js";
 import { ReferentialRecordFields } from "./referential-record-fields.js";
 
 export class SpeakerCatalogValidator {
@@ -23,14 +24,15 @@ export class SpeakerCatalogValidator {
 				index,
 				diagnostics,
 			);
-			const { firstName, lastName, company, email, phone } =
+			const { firstName, lastName, company, email, phone, displayName } =
 				SpeakerCatalogValidator.contactFields(record, index, diagnostics);
 
 			if (
 				!speakerId ||
-				!firstName ||
-				!lastName ||
-				!company ||
+				!displayName ||
+				firstName === null ||
+				lastName === null ||
+				company === null ||
 				!email ||
 				phone === null
 			) {
@@ -55,10 +57,11 @@ export class SpeakerCatalogValidator {
 					? { source: Object.freeze({ ...record.source }) }
 					: {}),
 				id: speakerId,
-				firstName,
-				lastName,
-				displayName: `${firstName} ${lastName}`,
-				company,
+				firstName: firstName ?? "",
+				lastName: lastName ?? "",
+				displayName,
+				company: company ?? "",
+				...SpeakerSourceFields.read(record, index, diagnostics),
 				email,
 				...(phone ? { phone } : {}),
 			});
@@ -101,21 +104,21 @@ export class SpeakerCatalogValidator {
 		index: number,
 		diagnostics: ReferentialDiagnostic[],
 	) {
-		const firstName = ReferentialRecordFields.requiredText(
+		const firstName = ReferentialRecordFields.optionalText(
 			record.firstName,
 			"referential.speaker.first-name.invalid",
 			`speakers[${index}].firstName`,
 			"Speaker first name must be a non-empty string.",
 			diagnostics,
 		);
-		const lastName = ReferentialRecordFields.requiredText(
+		const lastName = ReferentialRecordFields.optionalText(
 			record.lastName,
 			"referential.speaker.last-name.invalid",
 			`speakers[${index}].lastName`,
 			"Speaker last name must be a non-empty string.",
 			diagnostics,
 		);
-		const company = ReferentialRecordFields.requiredText(
+		const company = ReferentialRecordFields.optionalText(
 			record.company,
 			"referential.speaker.company.invalid",
 			`speakers[${index}].company`,
@@ -137,6 +140,14 @@ export class SpeakerCatalogValidator {
 			diagnostics,
 		);
 
-		return { firstName, lastName, company, email, phone };
+		const displayName = ReferentialRecordFields.requiredText(
+			record.displayName ||
+				(firstName && lastName ? `${firstName} ${lastName}` : ""),
+			"referential.speaker.display-name.invalid",
+			`speakers[${index}].displayName`,
+			"A display name or both structured names are required.",
+			diagnostics,
+		);
+		return { firstName, lastName, company, email, phone, displayName };
 	}
 }

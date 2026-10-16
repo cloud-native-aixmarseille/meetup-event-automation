@@ -19,6 +19,7 @@ page for each topic below.
 
 ## Integrations
 
+- [Conference Hall](integrations/conference-hall.md)
 - [Google Drive assets](integrations/assets.md)
 - [OpenFeedback and Kutt](integrations/feedback.md)
 - [Email and Slack](integrations/communications.md)
@@ -27,6 +28,7 @@ page for each topic below.
 
 | Workflow                                                                                              | Purpose                                                    |
 | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| [Synchronize Conference Hall speakers](../.github/workflows/synchronize-conference-hall-speakers.md)  | Prepare a private catalog and form review PR.              |
 | [Update meetup issue](../.github/workflows/update-meetup-issue.md)                                    | Process issue changes.                                     |
 | [Check active meetup issues](../.github/workflows/check-active-meetup-issues.md)                      | Run the scheduled or manual audit.                         |
 | [Update meetup issue form](../.github/workflows/update-meetup-issue-form.md)                          | Open a pull request with updated host and speaker choices. |
@@ -38,6 +40,7 @@ page for each topic below.
 | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
 | [Reconcile event](../actions/event/reconcile/README.md)                                 | Validate and normalize one meetup issue.                                               |
 | [List active events](../actions/event/list-active/README.md)                            | Select issues for an audit.                                                            |
+| [Synchronize speakers](../actions/referential/sync-speakers/README.md)                  | Prepare a validated private speaker catalog from Conference Hall.                      |
 | [Validate referentials](../actions/referential/validate/README.md)                      | Check host and speaker catalogs.                                                       |
 | [Synchronize issue form](../actions/referential/sync-issue-form/README.md)              | Update the checked-out form choices.                                                   |
 | [Reconcile assets](../actions/publication/reconcile-assets/README.md)                   | Prepare Google Drive folders and template copies.                                      |
@@ -73,7 +76,7 @@ for implemented behavior and contributor conventions.
 - [ADR-0010: Approve email batches with request checkboxes](adr/0010-checkbox-organizer-approval.md)
 - [ADR-0011: Finalize organizer decisions in place and acknowledge them on Slack](adr/0011-final-organizer-decisions.md)
 - [ADR-0012: Synchronize OpenFeedback talks and speakers](adr/0012-synchronize-openfeedback-talks-and-speakers.md)
-- [ADR-0012: Synchronize speaker referentials and selected talks from Conference Hall](adr/0012-conference-hall-talks-and-speakers.md) (proposed)
+- [ADR-0012: Use Conference Hall as the source of truth for talks and speakers](adr/0012-conference-hall-talks-and-speakers.md)
 - [ADR-0013: Reconcile actionable organizer alerts throughout the meetup lifecycle](adr/0013-actionable-organizer-alerts.md)
 
 ## Directory layout
@@ -88,6 +91,7 @@ docs/
 │   ├── configuration.md
 │   └── referentials.md
 ├── integrations/
+│   ├── conference-hall.md
 │   ├── assets.md
 │   ├── feedback.md
 │   └── communications.md

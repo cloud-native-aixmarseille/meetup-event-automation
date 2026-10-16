@@ -31840,6 +31840,11 @@ var DIAGNOSTICS_COMMUNICATION_FR = {
 
 // packages/runtime/github-actions/src/i18n/diagnostics-event.en.ts
 var DIAGNOSTICS_EVENT_EN = {
+  "diagnostic.event.proposals.invalid": "Selected proposals could not be refreshed; the last agenda is stale. Check source access, acceptance and reviewed speaker mappings.",
+  "diagnostic.event.proposals.unavailable": "Selected proposals could not be refreshed; the last agenda is stale. Check source access, acceptance and reviewed speaker mappings.",
+  "diagnostic.event.proposals.rate-limited": "Selected proposals could not be refreshed; the last agenda is stale. Check source access, acceptance and reviewed speaker mappings.",
+  "diagnostic.event.proposals.mapping-required": "Selected proposals could not be refreshed; the last agenda is stale. Check source access, acceptance and reviewed speaker mappings.",
+  "diagnostic.event.proposals.conflict": "Selected proposals could not be refreshed; the last agenda is stale. Check source access, acceptance and reviewed speaker mappings.",
   "diagnostic.event.link.feedback.invalid": "The feedback link must be a valid HTTPS URL.",
   "diagnostic.event.document.reference-metadata.duplicate": "The event document contains duplicate reference metadata",
   "diagnostic.event.document.reference-metadata.invalid": "Stable reference metadata is malformed",
@@ -31885,6 +31890,11 @@ var DIAGNOSTICS_EVENT_EN = {
 
 // packages/runtime/github-actions/src/i18n/diagnostics-event.fr.ts
 var DIAGNOSTICS_EVENT_FR = {
+  "diagnostic.event.proposals.invalid": "Les propositions ne peuvent pas \xEAtre actualis\xE9es. Le dernier programme est p\xE9rim\xE9 ; v\xE9rifiez les acc\xE8s, les acceptations et les identit\xE9s valid\xE9es.",
+  "diagnostic.event.proposals.unavailable": "Les propositions ne peuvent pas \xEAtre actualis\xE9es. Le dernier programme est p\xE9rim\xE9 ; v\xE9rifiez les acc\xE8s, les acceptations et les identit\xE9s valid\xE9es.",
+  "diagnostic.event.proposals.rate-limited": "Les propositions ne peuvent pas \xEAtre actualis\xE9es. Le dernier programme est p\xE9rim\xE9 ; v\xE9rifiez les acc\xE8s, les acceptations et les identit\xE9s valid\xE9es.",
+  "diagnostic.event.proposals.mapping-required": "Les propositions ne peuvent pas \xEAtre actualis\xE9es. Le dernier programme est p\xE9rim\xE9 ; v\xE9rifiez les acc\xE8s, les acceptations et les identit\xE9s valid\xE9es.",
+  "diagnostic.event.proposals.conflict": "Les propositions ne peuvent pas \xEAtre actualis\xE9es. Le dernier programme est p\xE9rim\xE9 ; v\xE9rifiez les acc\xE8s, les acceptations et les identit\xE9s valid\xE9es.",
   "diagnostic.event.link.feedback.invalid": "Le lien des retours doit \xEAtre une URL HTTPS valide.",
   "diagnostic.event.document.reference-metadata.duplicate": "Le document contient des m\xE9tadonn\xE9es de r\xE9f\xE9rences en double.",
   "diagnostic.event.document.reference-metadata.invalid": "Les m\xE9tadonn\xE9es des r\xE9f\xE9rences stables sont mal form\xE9es.",
@@ -31970,6 +31980,13 @@ var DIAGNOSTICS_OTHER_FR = {
 
 // packages/runtime/github-actions/src/i18n/diagnostics-referential.en.ts
 var DIAGNOSTICS_REFERENTIAL_EN = {
+  "diagnostic.referential.source.unavailable": "Conference Hall speaker profiles are unavailable. Check CFP access and retry; cached contacts are not used.",
+  "diagnostic.referential.source.invalid": "Conference Hall speaker profiles are invalid or belong to another CFP. Check source configuration before retrying.",
+  "diagnostic.referential.source.rate-limited": "Conference Hall has rate-limited profile refresh. Wait for the source retry window; cached contacts are not used.",
+  "diagnostic.referential.source.mapping-required": "A linked speaker is missing from the configured CFP export. Review the source identity mapping before retrying.",
+  "diagnostic.referential.source.conflict": "Conference Hall speaker identities conflict. Review scoped mappings before retrying.",
+  "diagnostic.referential.speaker.display-name.invalid": "A display name or both structured names are required.",
+  "diagnostic.referential.speaker.mapping.invalid": "Source mappings must be complete, scoped and unique.",
   "diagnostic.referential.contact.id.duplicate": "Contact stable identifiers must be unique.",
   "diagnostic.referential.host.id.conflict": "A host stable identifier cannot describe different host names.",
   "diagnostic.referential.host.display-name.invalid": "Host display name must be a non-empty string.",
@@ -32000,6 +32017,13 @@ var DIAGNOSTICS_REFERENTIAL_EN = {
 
 // packages/runtime/github-actions/src/i18n/diagnostics-referential.fr.ts
 var DIAGNOSTICS_REFERENTIAL_FR = {
+  "diagnostic.referential.source.unavailable": "Les profils Conference Hall sont indisponibles. V\xE9rifiez les acc\xE8s au CFP puis r\xE9essayez ; les anciens contacts ne sont pas utilis\xE9s.",
+  "diagnostic.referential.source.invalid": "Les profils Conference Hall sont invalides ou proviennent d'un autre CFP. V\xE9rifiez la configuration avant de r\xE9essayer.",
+  "diagnostic.referential.source.rate-limited": "Conference Hall limite les requ\xEAtes de profils. Attendez le d\xE9lai de reprise ; les anciens contacts ne sont pas utilis\xE9s.",
+  "diagnostic.referential.source.mapping-required": "Un intervenant li\xE9 est absent de l'export du CFP configur\xE9. V\xE9rifiez son identit\xE9 source avant de r\xE9essayer.",
+  "diagnostic.referential.source.conflict": "Les identit\xE9s des intervenants Conference Hall sont en conflit. V\xE9rifiez les correspondances dans le CFP avant de r\xE9essayer.",
+  "diagnostic.referential.speaker.display-name.invalid": "Un nom public ou un pr\xE9nom et un nom sont n\xE9cessaires.",
+  "diagnostic.referential.speaker.mapping.invalid": "Les identit\xE9s source doivent \xEAtre compl\xE8tes, uniques et li\xE9es au CFP.",
   "diagnostic.referential.contact.id.duplicate": "Les identifiants stables des contacts doivent \xEAtre uniques.",
   "diagnostic.referential.host.id.conflict": "Un identifiant stable d'h\xF4te ne peut pas d\xE9signer plusieurs noms d'h\xF4te.",
   "diagnostic.referential.host.display-name.invalid": "Le nom de l'h\xF4te doit \xEAtre une cha\xEEne de caract\xE8res non vide.",
@@ -32030,6 +32054,12 @@ var DIAGNOSTICS_REFERENTIAL_FR = {
 
 // packages/runtime/github-actions/src/i18n/messages.en.ts
 var EN_MESSAGES = {
+  "report.speaker-sync.pr-title": "feat(referential): synchronize Conference Hall speakers",
+  "report.speaker-sync.pr-body": "Review identity mappings, the CSV snapshot and preserved local fields. New mappings become available after merge. Existing linked profiles refresh directly from Conference Hall during event runs. The linked workflow run identifies this snapshot; automatic merge is disabled.",
+  "action.referential.sync-speakers": "Synchronize Conference Hall speakers",
+  "report.speaker-sync.completed": "Speaker catalog and form prepared: {count} speakers. Review the private pull request before merging.",
+  "report.speaker-sync.failed": "Speaker snapshot synchronization failed. Existing mappings and local fields are unchanged. Live profile refresh remains required; check source access, mappings and concurrent edits before retrying.",
+  "report.speaker-sync.private": "Speaker synchronization requires a private repository.",
   "action.communication.reconcile-attention": "Reconcile organizer attention",
   "report.attention.updated": "Organizer attention status is persisted on the issue. Review its current conditions and recovery guidance.",
   "report.attention.skipped": "The issue is not a configured meetup event; attention reconciliation was skipped.",
@@ -32099,6 +32129,12 @@ var EN_MESSAGES = {
 
 // packages/runtime/github-actions/src/i18n/messages.fr.ts
 var FR_MESSAGES = {
+  "report.speaker-sync.pr-title": "feat(referential): synchroniser les intervenants Conference Hall",
+  "report.speaker-sync.pr-body": "V\xE9rifiez les identit\xE9s, la copie CSV et les champs locaux pr\xE9serv\xE9s. Les nouvelles identit\xE9s seront disponibles apr\xE8s fusion. Les profils d\xE9j\xE0 li\xE9s sont actualis\xE9s directement depuis Conference Hall \xE0 chaque ex\xE9cution. Le workflow li\xE9 identifie cette copie ; la fusion automatique est d\xE9sactiv\xE9e.",
+  "action.referential.sync-speakers": "Synchroniser les intervenants Conference Hall",
+  "report.speaker-sync.completed": "Catalogue et formulaire pr\xE9par\xE9s : {count} intervenants. V\xE9rifiez la pull request priv\xE9e avant fusion.",
+  "report.speaker-sync.failed": "La synchronisation de la copie CSV a \xE9chou\xE9. Les identit\xE9s et champs locaux restent inchang\xE9s. Les profils doivent toujours \xEAtre actualis\xE9s en direct ; v\xE9rifiez les acc\xE8s, les identit\xE9s et les modifications concurrentes avant de r\xE9essayer.",
+  "report.speaker-sync.private": "La synchronisation des intervenants n\xE9cessite un d\xE9p\xF4t priv\xE9.",
   "action.communication.reconcile-attention": "Synchroniser les points \xE0 traiter par les organisateurs",
   "report.attention.updated": "Le statut des points \xE0 traiter est enregistr\xE9 sur le ticket. Consultez les conditions actuelles et les consignes de reprise.",
   "report.attention.skipped": "Le ticket ne correspond pas \xE0 un meetup configur\xE9 ; la synchronisation a \xE9t\xE9 ignor\xE9e.",
@@ -32314,6 +32350,33 @@ var ActionRunner = class {
     await ActionReport.write(messages.t(title), report, messages);
     if (report.failure) setFailed(report.failure);
     ActionOutput.setDiagnosticsOutput(report.diagnostics);
+  }
+};
+
+// packages/runtime/github-actions/src/conference-hall-input.ts
+var ConferenceHallInput = class _ConferenceHallInput {
+  static read() {
+    const conferenceHallApiKey = getInput("conference-hall-api-key", {
+      required: true
+    });
+    setSecret(conferenceHallApiKey);
+    return _ConferenceHallInput.validate({
+      conferenceHallEvent: getInput("conference-hall-event", {
+        required: true
+      }),
+      conferenceHallApiKey
+    });
+  }
+  static validate(input) {
+    const conferenceHallEvent = input.conferenceHallEvent?.trim();
+    const conferenceHallApiKey = input.conferenceHallApiKey?.trim();
+    if (!conferenceHallEvent)
+      throw new Error("Input required and not supplied: conference-hall-event");
+    if (!conferenceHallApiKey)
+      throw new Error(
+        "Input required and not supplied: conference-hall-api-key"
+      );
+    return { conferenceHallEvent, conferenceHallApiKey };
   }
 };
 
@@ -37127,6 +37190,7 @@ var EventParticipantNormalization = class _EventParticipantNormalization {
     const displayName = participant.displayName.trim();
     const id = participant.id?.trim();
     return id ? {
+      ...participant,
       displayName,
       id,
       ...participant.source ? { source: participant.source } : {}
@@ -37137,6 +37201,7 @@ var EventParticipantNormalization = class _EventParticipantNormalization {
   }
   static normalizeAgendaEntry(entry) {
     return {
+      ...entry,
       speakers: entry.speakers.map(
         _EventParticipantNormalization.normalizeParticipant
       ),
@@ -38314,7 +38379,11 @@ var ProjectReferentialChoices = class {
     return Object.freeze({
       hostOptions: Object.freeze(catalog.hosts.map((host) => host.displayName)),
       speakerReferences: Object.freeze(
-        catalog.speakers.map((speaker) => speaker.displayName)
+        catalog.speakers.map(
+          (speaker) => catalog.speakers.filter(
+            (other) => other.displayName.toLowerCase() === speaker.displayName.toLowerCase()
+          ).length > 1 ? `${speaker.displayName} [${speaker.id}]` : speaker.displayName
+        )
       )
     });
   }
@@ -38774,6 +38843,62 @@ var HostCatalogValidator = class _HostCatalogValidator {
   }
 };
 
+// packages/domain/referential/src/application/use-cases/speaker-source-fields.ts
+var SpeakerSourceFields = class _SpeakerSourceFields {
+  static read(record, index, diagnostics) {
+    const values = [
+      record.sourceProvider,
+      record.sourceEvent,
+      record.sourceSpeakerId
+    ];
+    const hasMapping = values.some(
+      (value) => value !== void 0 && value !== ""
+    );
+    if (hasMapping && !values.every(
+      (value) => typeof value === "string" && /^[a-zA-Z0-9_-]{1,200}$/.test(value)
+    )) {
+      _SpeakerSourceFields.invalid(index, diagnostics);
+      return {};
+    }
+    return {
+      ...hasMapping ? {
+        sourceIdentity: {
+          provider: String(record.sourceProvider),
+          event: String(record.sourceEvent),
+          speakerId: String(record.sourceSpeakerId)
+        }
+      } : {},
+      ..._SpeakerSourceFields.pictureUrl(record.pictureUrl) ? { pictureUrl: String(record.pictureUrl) } : {}
+    };
+  }
+  static pictureUrl(value) {
+    if (typeof value !== "string" || value.length > 2048) return void 0;
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" && !url.username && !url.password ? url.href : void 0;
+    } catch {
+      return void 0;
+    }
+  }
+  static validateMappings(speakers, diagnostics) {
+    const identities = /* @__PURE__ */ new Set();
+    for (const [index, speaker] of speakers.entries()) {
+      if (!speaker.sourceIdentity) continue;
+      const key = JSON.stringify(speaker.sourceIdentity);
+      if (identities.has(key)) _SpeakerSourceFields.invalid(index, diagnostics);
+      identities.add(key);
+    }
+  }
+  static invalid(index, diagnostics) {
+    diagnostics.push({
+      code: "referential.speaker.mapping.invalid",
+      severity: "error",
+      path: `speakers[${index}].sourceIdentity`,
+      message: "Source mappings must be complete, scoped and unique."
+    });
+  }
+};
+
 // packages/domain/referential/src/application/use-cases/speaker-catalog-validator.ts
 var SpeakerCatalogValidator = class _SpeakerCatalogValidator {
   static validateSpeakers(records, diagnostics) {
@@ -38785,8 +38910,8 @@ var SpeakerCatalogValidator = class _SpeakerCatalogValidator {
         index,
         diagnostics
       );
-      const { firstName, lastName, company, email, phone } = _SpeakerCatalogValidator.contactFields(record, index, diagnostics);
-      if (!speakerId || !firstName || !lastName || !company || !email || phone === null) {
+      const { firstName, lastName, company, email, phone, displayName } = _SpeakerCatalogValidator.contactFields(record, index, diagnostics);
+      if (!speakerId || !displayName || firstName === null || lastName === null || company === null || !email || phone === null) {
         continue;
       }
       if (speakerIds.has(speakerId)) {
@@ -38804,10 +38929,11 @@ var SpeakerCatalogValidator = class _SpeakerCatalogValidator {
       speakers.push({
         ...record.source ? { source: Object.freeze({ ...record.source }) } : {},
         id: speakerId,
-        firstName,
-        lastName,
-        displayName: `${firstName} ${lastName}`,
-        company,
+        firstName: firstName ?? "",
+        lastName: lastName ?? "",
+        displayName,
+        company: company ?? "",
+        ...SpeakerSourceFields.read(record, index, diagnostics),
         email,
         ...phone ? { phone } : {}
       });
@@ -38836,21 +38962,21 @@ var SpeakerCatalogValidator = class _SpeakerCatalogValidator {
     return speakerId;
   }
   static contactFields(record, index, diagnostics) {
-    const firstName = ReferentialRecordFields.requiredText(
+    const firstName = ReferentialRecordFields.optionalText(
       record.firstName,
       "referential.speaker.first-name.invalid",
       `speakers[${index}].firstName`,
       "Speaker first name must be a non-empty string.",
       diagnostics
     );
-    const lastName = ReferentialRecordFields.requiredText(
+    const lastName = ReferentialRecordFields.optionalText(
       record.lastName,
       "referential.speaker.last-name.invalid",
       `speakers[${index}].lastName`,
       "Speaker last name must be a non-empty string.",
       diagnostics
     );
-    const company = ReferentialRecordFields.requiredText(
+    const company = ReferentialRecordFields.optionalText(
       record.company,
       "referential.speaker.company.invalid",
       `speakers[${index}].company`,
@@ -38871,8 +38997,27 @@ var SpeakerCatalogValidator = class _SpeakerCatalogValidator {
       "Speaker phone must be a string when provided.",
       diagnostics
     );
-    return { firstName, lastName, company, email, phone };
+    const displayName = ReferentialRecordFields.requiredText(
+      record.displayName || (firstName && lastName ? `${firstName} ${lastName}` : ""),
+      "referential.speaker.display-name.invalid",
+      `speakers[${index}].displayName`,
+      "A display name or both structured names are required.",
+      diagnostics
+    );
+    return { firstName, lastName, company, email, phone, displayName };
   }
+};
+
+// packages/domain/referential/src/domain/proposal-source-error.ts
+var ProposalSourceError = class extends Error {
+  constructor(code, retryAfterSeconds) {
+    super(`Proposal source ${code}.`);
+    this.code = code;
+    this.retryAfterSeconds = retryAfterSeconds;
+    this.name = "ProposalSourceError";
+  }
+  code;
+  retryAfterSeconds;
 };
 
 // packages/domain/referential/src/application/use-cases/validate-referential-catalog.ts
@@ -38882,7 +39027,24 @@ var ValidateReferentialCatalog = class {
   }
   repository;
   async execute(rawCatalog) {
-    const input = rawCatalog ?? await this.loadCatalog();
+    try {
+      return this.validate(rawCatalog ?? await this.loadCatalog());
+    } catch (error2) {
+      if (!(error2 instanceof ProposalSourceError)) throw error2;
+      return Object.freeze({
+        isValid: false,
+        diagnostics: ReferentialDiagnostics.freezeDiagnostics([
+          ReferentialDiagnostics.diagnostic(
+            `referential.source.${error2.code}`,
+            "error",
+            "speakers",
+            "Source-owned speaker profiles could not be refreshed. Check source access and identity mappings before retrying."
+          )
+        ])
+      });
+    }
+  }
+  validate(input) {
     const diagnostics = [];
     const hosts = HostCatalogValidator.validateHosts(input.hosts, diagnostics);
     const speakers = SpeakerCatalogValidator.validateSpeakers(
@@ -38896,13 +39058,7 @@ var ValidateReferentialCatalog = class {
       "Duplicate normalized host display names are not allowed; keep one stable host per public name.",
       diagnostics
     );
-    this.reportDuplicateDisplayNames(
-      speakers,
-      "referential.speaker.display-name.duplicate",
-      "speakers",
-      "Duplicate normalized speaker display names are not allowed; keep one stable speaker per public name.",
-      diagnostics
-    );
+    SpeakerSourceFields.validateMappings(speakers, diagnostics);
     const frozenDiagnostics = ReferentialDiagnostics.freezeDiagnostics(diagnostics);
     if (diagnostics.some(({ severity }) => severity === "error")) {
       return Object.freeze({
@@ -38950,6 +39106,59 @@ var ValidateReferentialCatalog = class {
   }
 };
 
+// packages/domain/referential/src/application/use-cases/source-speaker-referential-repository.ts
+var SourceSpeakerReferentialRepository = class {
+  constructor(local, source, scope) {
+    this.local = local;
+    this.source = source;
+    this.scope = scope;
+  }
+  local;
+  source;
+  scope;
+  snapshot;
+  load() {
+    this.snapshot ??= this.refresh();
+    return this.snapshot;
+  }
+  async refresh() {
+    const catalog = await this.local.load();
+    if (!catalog.speakers.some((row) => this.isLinked(row))) return catalog;
+    const snapshot = await this.loadSource();
+    const profiles = new Map(
+      snapshot.speakers.map((speaker) => [speaker.id, speaker])
+    );
+    if (profiles.size !== snapshot.speakers.length)
+      throw new ProposalSourceError("conflict");
+    const speakers = catalog.speakers.map((row) => {
+      if (!this.isLinked(row)) return row;
+      const speaker = typeof row.sourceSpeakerId === "string" ? profiles.get(row.sourceSpeakerId.trim()) : void 0;
+      if (!speaker) throw new ProposalSourceError("mapping-required");
+      return {
+        ...row,
+        displayName: speaker.displayName,
+        email: speaker.email,
+        company: speaker.company ?? "",
+        pictureUrl: speaker.pictureUrl ?? ""
+      };
+    });
+    return { ...catalog, speakers };
+  }
+  isLinked(row) {
+    return typeof row.sourceProvider === "string" && row.sourceProvider.trim() === this.scope.provider && typeof row.sourceEvent === "string" && row.sourceEvent.trim() === this.scope.event;
+  }
+  async loadSource() {
+    try {
+      const snapshot = await this.source.load();
+      if (snapshot.provider !== this.scope.provider || snapshot.event !== this.scope.event)
+        throw new ProposalSourceError("invalid");
+      return snapshot;
+    } catch (error2) {
+      throw error2 instanceof ProposalSourceError ? error2 : new ProposalSourceError("unavailable");
+    }
+  }
+};
+
 // packages/application/journey/src/use-cases/manage-meetup-communications-contracts.ts
 var UNRESOLVED_MAIL_RECIPIENTS = Object.freeze({
   resolved: false,
@@ -38969,13 +39178,90 @@ var FeedbackAgendaProjection = class {
       return void 0;
     return {
       talks: event.agenda.map((entry) => ({
-        title: entry.description.trim(),
+        title: entry.proposal?.title ?? entry.description.trim(),
+        ...entry.proposal ? {
+          sourceIdentity: JSON.stringify([
+            entry.proposal.provider,
+            entry.proposal.event,
+            entry.proposal.id
+          ])
+        } : {},
         speakers: entry.speakers.map((speaker) => ({
           id: speaker.id,
           name: speaker.displayName.trim()
         }))
       }))
     };
+  }
+};
+
+// packages/application/journey/src/use-cases/refresh-selected-proposals.ts
+var RefreshSelectedProposals = class {
+  constructor(source) {
+    this.source = source;
+  }
+  source;
+  async execute(event, catalog, diagnostics) {
+    const ids = event.proposalReferences;
+    if (!ids?.length) return event;
+    try {
+      if (diagnostics.some(
+        (item) => (item.code.startsWith("event.proposals.") || item.code.startsWith("event.document.")) && item.severity === "error"
+      ))
+        throw new ProposalSourceError("invalid");
+      if (new Set(ids).size !== ids.length || !ids.every((id) => /^[a-zA-Z0-9_-]{1,200}$/.test(id)))
+        throw new ProposalSourceError("invalid");
+      const snapshot = await this.source.load();
+      const agenda = this.project(ids, snapshot, catalog);
+      for (let index = diagnostics.length - 1; index >= 0; index--) {
+        if (diagnostics[index].code.startsWith("event.agenda."))
+          diagnostics.splice(index, 1);
+      }
+      return { ...event, agenda, proposalStatus: "current" };
+    } catch (error2) {
+      const code = error2 instanceof ProposalSourceError ? error2.code : "unavailable";
+      diagnostics.push({
+        code: `event.proposals.${code}`,
+        severity: "error",
+        category: "invalid",
+        field: "agenda",
+        message: "Selected proposals could not be refreshed; the last agenda is stale. Check source access, acceptance and reviewed speaker mappings."
+      });
+      return { ...event, proposalStatus: "stale" };
+    }
+  }
+  project(ids, snapshot, catalog) {
+    return ids.map((id) => {
+      const proposal = snapshot.proposals.find((item) => item.id === id);
+      if (!proposal?.accepted) throw new ProposalSourceError("invalid");
+      const speakers = proposal.speakerIds.map((speakerId) => {
+        const matches = catalog.speakers.filter(
+          (speaker2) => speaker2.sourceIdentity?.provider === snapshot.provider && speaker2.sourceIdentity.event === snapshot.event && speaker2.sourceIdentity.speakerId === speakerId
+        );
+        if (matches.length !== 1)
+          throw new ProposalSourceError("mapping-required");
+        const speaker = matches[0];
+        return {
+          id: speaker.id,
+          displayName: speaker.displayName,
+          source: speaker.source,
+          pictureUrl: speaker.pictureUrl
+        };
+      });
+      return {
+        speakers,
+        description: `${proposal.title}: ${proposal.abstract}`,
+        proposal: {
+          provider: snapshot.provider,
+          event: snapshot.event,
+          id: proposal.id,
+          title: proposal.title,
+          abstract: proposal.abstract,
+          languages: proposal.languages,
+          formats: proposal.formats
+        }
+      };
+    });
   }
 };
 
@@ -39014,7 +39300,7 @@ var EventParticipantResolution = class _EventParticipantResolution {
         ...entry,
         speakers: entry.speakers.map((reference) => {
           const matches = speakers.filter(
-            (speaker2) => speaker2.id === reference.id || _EventParticipantResolution.canonical(speaker2.displayName) === _EventParticipantResolution.canonical(reference.displayName)
+            (speaker2) => reference.id ? speaker2.id === reference.id : _EventParticipantResolution.canonical(speaker2.displayName) === _EventParticipantResolution.canonical(reference.displayName)
           );
           const speaker = matches.length === 1 ? matches[0] : void 0;
           return speaker ? _EventParticipantResolution.resolvedParticipant(speaker) : reference;
@@ -39026,6 +39312,7 @@ var EventParticipantResolution = class _EventParticipantResolution {
     return {
       id: reference.id,
       displayName: reference.displayName,
+      ...reference.pictureUrl ? { pictureUrl: reference.pictureUrl } : {},
       ...reference.source ? { source: reference.source } : {}
     };
   }
@@ -39182,6 +39469,9 @@ var ManageMeetupEvent = class {
       this.dependencies.referentialRepository
     ).execute();
     if (catalogValidation.isValid) {
+      event = await new RefreshSelectedProposals(
+        this.dependencies.proposalSource
+      ).execute(event, catalogValidation.catalog, eventDiagnostics);
       const speakerReferences = event.agenda.flatMap(
         (entry) => entry.speakers.map(EventParticipantResolution.renderReference)
       );
@@ -39210,6 +39500,8 @@ var ManageMeetupEvent = class {
         );
       }
     } else {
+      if (event.proposalReferences?.length)
+        event = { ...event, proposalStatus: "stale" };
       eventDiagnostics.push(
         ...catalogValidation.diagnostics.map(
           (item) => EventDiagnosticProjection.toEventDiagnostic(
@@ -39324,6 +39616,15 @@ var ManageMeetupFeedback = class _ManageMeetupFeedback {
     if (evaluation.skipped)
       return this.skipped("unrelated", "This issue is not a meetup");
     const event = evaluation.event;
+    if (event.proposalStatus === "stale" || evaluation.diagnostics.some(
+      (item) => item.code.startsWith("referential.source.")
+    ))
+      return {
+        skipped: true,
+        persisted: false,
+        linkUpdated: false,
+        diagnostics: evaluation.diagnostics
+      };
     if (event.issueState === "closed" || event.occurrenceStatus === "cancelled" || event.occurrenceStatus === "postponed")
       return this.skipped(
         "inactive",
@@ -39646,13 +39947,20 @@ var OpenFeedbackAgendaPlan = class _OpenFeedbackAgendaPlan {
       return {
         id: _OpenFeedbackAgendaPlan.id(
           "talk",
-          JSON.stringify([key, talk.title, ids])
+          talk.sourceIdentity ? JSON.stringify([key, talk.sourceIdentity]) : JSON.stringify([key, talk.title, ids])
         ),
         title: talk.title,
         speakers: ids
       };
     });
-    const talks = _OpenFeedbackAgendaPlan.matchTalks(candidates, current.talks);
+    const stableIds = new Set(
+      candidates.filter((_2, index) => agenda.talks[index].sourceIdentity).map((talk) => talk.id)
+    );
+    const talks = _OpenFeedbackAgendaPlan.matchTalks(
+      candidates,
+      current.talks,
+      stableIds
+    );
     if (talks.length > 100 || speakers.size > 100 || talks.some((talk) => talk.title.length > 2e3) || [...speakers.values()].some((speaker) => speaker.name.length > 200))
       throw new Error("Feedback agenda exceeds the synchronization limits");
     return {
@@ -39684,12 +39992,23 @@ var OpenFeedbackAgendaPlan = class _OpenFeedbackAgendaPlan {
       throw new OpenFeedbackAgendaConflictError();
     return speakers;
   }
-  static matchTalks(incoming, current) {
+  static matchTalks(incoming, current, stableIds) {
     if (new Set(incoming.map((talk) => talk.id)).size !== incoming.length)
       throw new OpenFeedbackAgendaConflictError();
     const used = /* @__PURE__ */ new Set();
     const resolved = /* @__PURE__ */ new Map();
-    _OpenFeedbackAgendaPlan.matchExactTalks(incoming, current, resolved, used);
+    for (const talk of incoming) {
+      if (stableIds.has(talk.id) && current.some((item) => item.id === talk.id)) {
+        resolved.set(talk, talk);
+        used.add(talk.id);
+      }
+    }
+    _OpenFeedbackAgendaPlan.matchExactTalks(
+      incoming.filter((talk) => !resolved.has(talk)),
+      current,
+      resolved,
+      used
+    );
     _OpenFeedbackAgendaPlan.matchTitles(incoming, current, resolved, used);
     for (const talk of incoming.filter((item) => !resolved.has(item))) {
       const matches = current.filter(
@@ -39921,6 +40240,178 @@ var OpenFeedbackEventGateway = class _OpenFeedbackEventGateway {
     }
     if (scheduleUrl.protocol !== "https:" || scheduleUrl.username || scheduleUrl.password)
       throw new Error("Invalid OpenFeedback event schedule URL");
+  }
+};
+
+// packages/adapter/conference-hall-proposal-source/src/proposal-export-parser.ts
+var ProposalExportParser = class _ProposalExportParser {
+  static parse(value, event) {
+    const root = _ProposalExportParser.object(value);
+    if (!Array.isArray(root.proposals) || root.proposals.length > 1e4)
+      throw new ProposalSourceError("invalid");
+    const speakers = /* @__PURE__ */ new Map();
+    const ids = /* @__PURE__ */ new Set();
+    const proposals = root.proposals.map((raw) => {
+      const proposal = _ProposalExportParser.object(raw);
+      const id = _ProposalExportParser.id(proposal.id);
+      if (ids.has(id) || !Array.isArray(proposal.speakers) || proposal.speakers.length === 0)
+        throw new ProposalSourceError("invalid");
+      ids.add(id);
+      const speakerIds = proposal.speakers.map((item) => {
+        const speaker = _ProposalExportParser.speaker(item);
+        const existing = speakers.get(speaker.id);
+        if (existing && JSON.stringify(existing) !== JSON.stringify(speaker))
+          throw new ProposalSourceError("invalid");
+        speakers.set(speaker.id, speaker);
+        return speaker.id;
+      });
+      return {
+        id,
+        title: _ProposalExportParser.text(proposal.title),
+        abstract: _ProposalExportParser.text(proposal.abstract),
+        accepted: proposal.deliberationStatus === "ACCEPTED" && [null, void 0, "PENDING", "CONFIRMED"].includes(
+          proposal.confirmationStatus
+        ),
+        languages: _ProposalExportParser.strings(proposal.languages),
+        formats: _ProposalExportParser.strings(proposal.formats),
+        speakerIds: [...new Set(speakerIds)]
+      };
+    });
+    return {
+      provider: "conference-hall",
+      event,
+      speakers: [...speakers.values()],
+      proposals
+    };
+  }
+  static speaker(value) {
+    const speaker = _ProposalExportParser.object(value);
+    const email = _ProposalExportParser.text(speaker.email);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      throw new ProposalSourceError("invalid");
+    return {
+      id: _ProposalExportParser.id(speaker.id),
+      displayName: _ProposalExportParser.text(speaker.name),
+      email,
+      ..."company" in speaker ? { company: _ProposalExportParser.optionalText(speaker.company) } : {},
+      ..._ProposalExportParser.picture(speaker)
+    };
+  }
+  static picture(speaker) {
+    if (!("picture" in speaker)) return {};
+    if (speaker.picture === null || speaker.picture === "")
+      return { pictureUrl: null };
+    if (typeof speaker.picture !== "string" || speaker.picture.length > 2048)
+      return {};
+    try {
+      const url = new URL(speaker.picture);
+      return url.protocol === "https:" && !url.username && !url.password ? { pictureUrl: url.href } : {};
+    } catch {
+      return {};
+    }
+  }
+  static optionalText(value) {
+    if (value === null || value === "") return null;
+    return _ProposalExportParser.text(value);
+  }
+  static strings(value) {
+    if (!Array.isArray(value) || value.length > 100)
+      throw new ProposalSourceError("invalid");
+    return value.map((item) => _ProposalExportParser.text(item));
+  }
+  static text(value) {
+    if (typeof value !== "string" || !value.trim() || value.length > 3e4)
+      throw new ProposalSourceError("invalid");
+    return value.trim();
+  }
+  static id(value) {
+    const id = _ProposalExportParser.text(value);
+    if (!/^[a-zA-Z0-9_-]{1,200}$/.test(id))
+      throw new ProposalSourceError("invalid");
+    return id;
+  }
+  static object(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value))
+      throw new ProposalSourceError("invalid");
+    return value;
+  }
+};
+
+// packages/adapter/conference-hall-proposal-source/src/conference-hall-proposal-source.ts
+var ConferenceHallProposalSource = class {
+  constructor(event, apiKey, request2 = fetch) {
+    this.event = event;
+    this.apiKey = apiKey;
+    this.request = request2;
+  }
+  event;
+  apiKey;
+  request;
+  snapshot;
+  load() {
+    this.snapshot ??= this.fetchSnapshot();
+    return this.snapshot;
+  }
+  async fetchSnapshot() {
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(this.event) || !this.apiKey.trim())
+      throw new ProposalSourceError("unavailable");
+    try {
+      const response = await this.request(
+        `https://conference-hall.io/api/v1/event/${this.event}`,
+        {
+          headers: { "X-API-Key": this.apiKey, Accept: "application/json" },
+          redirect: "error",
+          signal: AbortSignal.timeout(15e3)
+        }
+      );
+      if (response.status === 429) {
+        await response.body?.cancel();
+        throw new ProposalSourceError(
+          "rate-limited",
+          this.retryAfter(response.headers.get("retry-after"))
+        );
+      }
+      if (!response.ok) {
+        await response.body?.cancel();
+        throw new ProposalSourceError("unavailable");
+      }
+      return ProposalExportParser.parse(
+        JSON.parse(await this.readBounded(response)),
+        this.event
+      );
+    } catch (error2) {
+      if (error2 instanceof ProposalSourceError) throw error2;
+      throw new ProposalSourceError("unavailable");
+    }
+  }
+  async readBounded(response) {
+    const limit = 5 * 1024 * 1024;
+    if (Number(response.headers.get("content-length")) > limit || !response.body) {
+      await response.body?.cancel();
+      throw new ProposalSourceError("invalid");
+    }
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder("utf-8", { fatal: true });
+    let size = 0;
+    let result = "";
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        size += value.byteLength;
+        if (size > limit) throw new ProposalSourceError("invalid");
+        result += decoder.decode(value, { stream: true });
+      }
+      return result + decoder.decode();
+    } finally {
+      await reader.cancel();
+      reader.releaseLock();
+    }
+  }
+  retryAfter(value) {
+    if (value && /^\d+$/.test(value)) return Math.max(1, Number(value));
+    const date = value ? Date.parse(value) : Number.NaN;
+    return Number.isFinite(date) ? Math.max(1, Math.ceil((date - Date.now()) / 1e3)) : 3600;
   }
 };
 
@@ -41672,6 +42163,11 @@ var CsvReferentialRepository = class _CsvReferentialRepository {
     ).map(({ row, line }) => ({
       source: { path: this.options.speakersPath, line },
       speakerId: row.speaker_id,
+      displayName: row.display_name,
+      pictureUrl: row.picture_url,
+      sourceProvider: row.source_provider,
+      sourceEvent: row.source_event,
+      sourceSpeakerId: row.source_speaker_id,
       firstName: row.firstname,
       lastName: row.lastname,
       company: row.company,
@@ -41731,6 +42227,34 @@ var FIELD_ORDER = [
   "Meetup issue"
 ];
 var GUIDANCE = /* @__PURE__ */ new Map([
+  [
+    "referential.source.unavailable",
+    ["Agenda", "comment.guidance.source-profiles"]
+  ],
+  [
+    "referential.source.invalid",
+    ["Agenda", "comment.guidance.source-profiles"]
+  ],
+  [
+    "referential.source.rate-limited",
+    ["Agenda", "comment.guidance.source-profiles"]
+  ],
+  [
+    "referential.source.mapping-required",
+    ["Agenda", "comment.guidance.source-profiles"]
+  ],
+  [
+    "referential.source.conflict",
+    ["Agenda", "comment.guidance.source-profiles"]
+  ],
+  ["event.proposals.unavailable", ["Agenda", "comment.guidance.proposals"]],
+  ["event.proposals.invalid", ["Agenda", "comment.guidance.proposals"]],
+  ["event.proposals.rate-limited", ["Agenda", "comment.guidance.proposals"]],
+  [
+    "event.proposals.mapping-required",
+    ["Agenda", "comment.guidance.proposals"]
+  ],
+  ["event.proposals.conflict", ["Agenda", "comment.guidance.proposals"]],
   [
     "event.title.missing",
     ["Event Title", "comment.guidance.event.title.missing"]
@@ -41943,6 +42467,8 @@ var GUIDANCE = /* @__PURE__ */ new Map([
 
 // packages/adapter/github-event-comment-repository/src/i18n/messages.en.ts
 var EN_MESSAGES2 = {
+  "comment.guidance.source-profiles": "Conference Hall speaker profiles could not be refreshed. Check CFP access and linked speaker identities, then retry after any rate-limit window. Cached profiles and contacts are not authoritative.",
+  "comment.guidance.proposals": "The selected Conference Hall proposals could not be refreshed. The last agenda is stale. Check CFP access, accepted status and merged speaker mappings; retry after the source rate-limit window if needed.",
   "comment.guidance.event.link.feedback.invalid": "Enter a valid HTTPS link to the OpenFeedback event page.",
   "comment.resolved": "All previously reported issues have been resolved. No changes are currently needed.",
   "comment.duplicate": "Superseded duplicate automation comment.",
@@ -42005,6 +42531,8 @@ var EN_MESSAGES2 = {
 
 // packages/adapter/github-event-comment-repository/src/i18n/messages.fr.ts
 var FR_MESSAGES2 = {
+  "comment.guidance.source-profiles": "Les profils Conference Hall n'ont pas pu \xEAtre actualis\xE9s. V\xE9rifiez les acc\xE8s au CFP et les identit\xE9s li\xE9es, puis r\xE9essayez apr\xE8s tout d\xE9lai impos\xE9. Les profils et contacts en cache ne font pas autorit\xE9.",
+  "comment.guidance.proposals": "Les propositions Conference Hall ne peuvent pas \xEAtre actualis\xE9es. Le dernier programme est p\xE9rim\xE9. V\xE9rifiez les acc\xE8s au CFP, les acceptations et les identit\xE9s fusionn\xE9es ; r\xE9essayez apr\xE8s la limite API si n\xE9cessaire.",
   "comment.guidance.event.link.feedback.invalid": "Saisissez un lien HTTPS valide vers la page de l'\xE9v\xE9nement OpenFeedback.",
   "comment.resolved": "Tous les probl\xE8mes signal\xE9s pr\xE9c\xE9demment ont \xE9t\xE9 r\xE9solus. Aucune modification n'est n\xE9cessaire.",
   "comment.duplicate": "Ce commentaire automatique en double a \xE9t\xE9 remplac\xE9.",
@@ -42807,7 +43335,7 @@ var ManagedIssueMarkers = class _ManagedIssueMarkers {
     return trimmed.slice(cursor + 1).trim();
   }
   static upsertManagedMarkers(body, metadata) {
-    const referenceMarker = `<!-- meetup-event-references:${JSON.stringify(metadata)} -->`;
+    const referenceMarker = `<!-- meetup-event-references:${JSON.stringify(metadata).replaceAll("<", "\\u003c").replaceAll(">", "\\u003e")} -->`;
     const schemaReplacement = _ManagedIssueMarkers.replaceManagedMarker(
       body,
       SCHEMA_MARKER_NAME,
@@ -43285,6 +43813,74 @@ var IssueFormChecklists = class _IssueFormChecklists {
   }
 };
 
+// packages/adapter/github-issue-form-event-document-codec/src/proposal-selection-codec.ts
+var ProposalSelectionCodec = class _ProposalSelectionCodec {
+  static read(body, diagnostics) {
+    const sections = IssueFormSections.parseSections(body);
+    const value = IssueFormSections.readSection(
+      sections,
+      "Conference Hall proposals",
+      false,
+      diagnostics
+    );
+    const hasMarker = body.includes("<!-- meetup-proposals:");
+    if ((!value || value === "_No response_") && !hasMarker) return {};
+    const proposalReferences = (value || "!missing-selection").split(/\r?\n/).map((id) => id.trim().replace(/^[-*]\s+/, "")).filter(Boolean);
+    const markers = ManagedIssueMarkers.readManagedMarkerValues(
+      body,
+      "meetup-proposals"
+    );
+    if (markers.length > 1 || markers[0] && !/^1:(current|stale)$/.test(markers[0]))
+      diagnostics.push({
+        code: "event.proposals.invalid",
+        severity: "error",
+        category: "invalid",
+        field: "agenda",
+        message: "Proposal selection metadata is invalid."
+      });
+    return { proposalReferences, proposalStatus: "stale" };
+  }
+  static write(body, event) {
+    if (!event.proposalReferences?.length) return body;
+    const marker = `<!-- meetup-proposals:1:${event.proposalStatus ?? "stale"} -->`;
+    const replaced = ManagedIssueMarkers.replaceManagedMarker(
+      body,
+      "meetup-proposals",
+      marker
+    );
+    return replaced.found ? replaced.body : `${marker}
+${body}`;
+  }
+  static restore(event) {
+    return {
+      ...event,
+      agenda: event.agenda.map((entry) => ({
+        ...entry,
+        description: event.proposalReferences?.length ? _ProposalSelectionCodec.unescape(entry.description) : entry.description,
+        speakers: entry.speakers.map((speaker) => ({
+          ...speaker,
+          displayName: _ProposalSelectionCodec.unescape(speaker.displayName)
+        }))
+      }))
+    };
+  }
+  static unescape(value) {
+    return value.replace(/&(amp|lt|gt|#\d+);/g, (match, code) => {
+      if (code === "amp") return "&";
+      if (code === "lt") return "<";
+      if (code === "gt") return ">";
+      const number = Number(code.slice(1));
+      return number >= 32 && number <= 126 ? String.fromCharCode(number) : match;
+    });
+  }
+  static escape(value) {
+    return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(
+      /[\\`*_[\]{}()#!|~,:]/g,
+      (character) => `&#${character.charCodeAt(0)};`
+    ).replace(/[\r\n]+/g, " ");
+  }
+};
+
 // packages/adapter/github-issue-form-event-document-codec/src/participant-links.ts
 var ParticipantLinks = class {
   static readSourceLinks(value, repository) {
@@ -43302,7 +43898,9 @@ var ParticipantLinks = class {
           path: decodeURIComponent(location[1]),
           line: Number(location[2])
         };
-        const name = ReferenceBindings.normalizeVisibleDisplayName(match[1]);
+        const name = ReferenceBindings.normalizeVisibleDisplayName(
+          ProposalSelectionCodec.unescape(match[1])
+        );
         const previous = sources.get(name);
         sources.set(
           name,
@@ -43329,7 +43927,7 @@ var ParticipantLinks = class {
   }
   static renderAgenda(event, renderParticipant) {
     return event.agenda.map(
-      (entry) => `- ${entry.speakers.map(renderParticipant).join(", ")}: ${entry.description}`
+      (entry) => `- ${entry.speakers.map(renderParticipant).join(", ")}: ${event.proposalStatus === "current" ? ProposalSelectionCodec.escape(entry.description) : entry.description}`
     ).join("\n");
   }
 };
@@ -43367,13 +43965,14 @@ var IssueFormReader = class {
     const event = {
       ...migrated.event,
       ...operations,
+      ...ProposalSelectionCodec.read(document.body, diagnostics),
       confirmations: {
         host: document.labels.includes(this.hostConfirmationLabel),
         speakers: document.labels.includes(this.speakersConfirmationLabel)
       }
     };
     const referenced = this.restoreReferences(
-      event,
+      ProposalSelectionCodec.restore(event),
       document.body,
       schema,
       diagnostics
@@ -43487,28 +44086,38 @@ var IssueFormWriter = class _IssueFormWriter {
       patch.labels = Object.freeze([...event.labels]);
     const fields = this.renderFields(document, event);
     const checklists = this.renderOperations(fields, event);
-    const body = ManagedIssueMarkers.upsertManagedMarkers(
-      checklists,
-      EventReferenceMetadata.referenceMetadata(event)
+    const body = ProposalSelectionCodec.write(
+      ManagedIssueMarkers.upsertManagedMarkers(
+        checklists,
+        EventReferenceMetadata.referenceMetadata(event)
+      ),
+      event
     );
     if (body !== document.body) patch.body = body;
     return Object.freeze(patch);
   }
   renderFields(document, event) {
     const render = (participant) => this.renderParticipant(participant, document.identity.repository);
+    const renderSpeaker = (participant) => event.proposalReferences?.length && participant.id ? `${ProposalSelectionCodec.escape(participant.displayName)} [${participant.id}]` : render({
+      ...participant,
+      displayName: ProposalSelectionCodec.escape(participant.displayName)
+    });
     const fields = [
       [HEADINGS.eventTitle, event.eventTitle],
       [HEADINGS.date, event.date],
       [HEADINGS.host, event.host ? render(event.host) : ""],
       [HEADINGS.description, event.description],
-      [HEADINGS.agenda, ParticipantLinks.renderAgenda(event, render)],
+      [HEADINGS.agenda, ParticipantLinks.renderAgenda(event, renderSpeaker)],
       [HEADINGS.meetupLink, event.publicationLinks.meetup ?? ""],
       [HEADINGS.communityLink, event.publicationLinks.community ?? ""],
       [HEADINGS.assetsLink, event.publicationLinks.assets ?? ""]
     ];
     let body = document.body;
-    for (const [heading, value] of fields)
+    for (const [heading, value] of fields) {
+      if (heading === HEADINGS.agenda && event.proposalStatus === "stale")
+        continue;
       body = IssueFormSections.replaceOrAppendSection(body, heading, value);
+    }
     if (event.publicationLinks.feedback)
       body = IssueFormSections.replaceOrAppendSection(
         body,
@@ -56569,6 +57178,7 @@ var Container = class {
 var SERVICES = {
   config: /* @__PURE__ */ Symbol("AutomationConfig"),
   referentialRepository: /* @__PURE__ */ Symbol("ReferentialRepository"),
+  proposalSource: /* @__PURE__ */ Symbol("ProposalSource"),
   issueFormProjection: /* @__PURE__ */ Symbol("IssueFormProjection"),
   eventRepository: /* @__PURE__ */ Symbol("EventRepository"),
   eventDocumentCodec: /* @__PURE__ */ Symbol("EventDocumentCodec"),
@@ -56616,7 +57226,7 @@ var EventComposition = class _EventComposition {
     );
     return container;
   }
-  static createEventContainer(input) {
+  static createDocumentContainer(input) {
     const container = _EventComposition.createReferentialContainer(input);
     _EventComposition.bindEventAdapters(container, input);
     container.bind(SERVICES.eventDependencies).toDynamicValue((context3) => {
@@ -56642,17 +57252,6 @@ var EventComposition = class _EventComposition {
         })
       };
     });
-    container.bind(ManageMeetupEvent).toDynamicValue(
-      (context3) => new ManageMeetupEvent({
-        config: context3.get(SERVICES.config),
-        referentialRepository: context3.get(
-          SERVICES.referentialRepository
-        ),
-        eventDependencies: context3.get(
-          SERVICES.eventDependencies
-        )
-      })
-    );
     container.bind(ListActiveEvents).toDynamicValue(
       (context3) => new ListActiveEvents({
         repository: context3.get(SERVICES.eventRepository),
@@ -56666,6 +57265,40 @@ var EventComposition = class _EventComposition {
       })
     );
     return container;
+  }
+  static createEventContainer(input) {
+    const sourceSettings = ConferenceHallInput.validate(input);
+    const container = _EventComposition.createDocumentContainer(input);
+    _EventComposition.bindProposalSource(container, sourceSettings);
+    container.bind(ManageMeetupEvent).toDynamicValue(
+      (context3) => new ManageMeetupEvent({
+        proposalSource: context3.get(SERVICES.proposalSource),
+        config: context3.get(SERVICES.config),
+        referentialRepository: context3.get(
+          SERVICES.referentialRepository
+        ),
+        eventDependencies: context3.get(
+          SERVICES.eventDependencies
+        )
+      })
+    );
+    return container;
+  }
+  static bindProposalSource(container, input) {
+    const source = new ConferenceHallProposalSource(
+      input.conferenceHallEvent,
+      input.conferenceHallApiKey
+    );
+    container.bind(SERVICES.proposalSource).toConstantValue(source);
+    const local = container.get(
+      SERVICES.referentialRepository
+    );
+    container.rebind(SERVICES.referentialRepository).toConstantValue(
+      new SourceSpeakerReferentialRepository(local, source, {
+        provider: "conference-hall",
+        event: input.conferenceHallEvent
+      })
+    );
   }
   static bindEventAdapters(container, input) {
     container.bind(SERVICES.eventRepository).toDynamicValue(() => new GitHubEventRepository(input.client, input));
@@ -56742,6 +57375,7 @@ var FeedbackAction = class _FeedbackAction {
     const { owner, repo } = context2.repo;
     const container = FeedbackComposition.createFeedbackContainer({
       locale: messages.locale,
+      ...ConferenceHallInput.read(),
       client: getOctokit(getInput("github-token", { required: true })),
       owner,
       repo,

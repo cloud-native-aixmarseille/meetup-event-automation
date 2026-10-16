@@ -1,3 +1,4 @@
+import { ConferenceHallInput } from "./conference-hall-input.js";
 import * as core from "@actions/core";
 import { context, getOctokit } from "@actions/github";
 import {
@@ -27,6 +28,7 @@ export class FeedbackAction {
 		const { owner, repo } = context.repo;
 		const container = FeedbackComposition.createFeedbackContainer({
 			locale: messages.locale,
+			...ConferenceHallInput.read(),
 			client: getOctokit(core.getInput("github-token", { required: true })),
 			owner,
 			repo,

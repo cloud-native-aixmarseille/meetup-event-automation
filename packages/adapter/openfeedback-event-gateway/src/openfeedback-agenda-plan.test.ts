@@ -3,6 +3,43 @@ import { agenda, snapshot } from "../testing/feedback-agenda.fixtures.js";
 import { OpenFeedbackAgendaPlan } from "./openfeedback-agenda-plan.js";
 
 describe("feedback agenda identities", () => {
+	it("preserves proposal identities when multiple talks by the same speaker are renamed", () => {
+		// Arrange
+		const key = "example/meetups#12";
+		const selected = {
+			talks: [
+				{ ...agenda.talks[0], sourceIdentity: "conference-hall:cfp:first" },
+				{
+					...agenda.talks[0],
+					title: "Another talk",
+					sourceIdentity: "conference-hall:cfp:second",
+				},
+			],
+		};
+		const created = OpenFeedbackAgendaPlan.create(key, selected, {
+			speakers: [],
+			talks: [],
+		});
+		const changed = {
+			talks: selected.talks.map((talk, index) => ({
+				...talk,
+				title: `Renamed ${index}`,
+			})),
+		};
+
+		// Act
+		const result = OpenFeedbackAgendaPlan.create(key, changed, created);
+
+		// Assert
+		expect(result.talks.map((talk) => talk.id)).toEqual(
+			created.talks.map((talk) => talk.id),
+		);
+		expect(result.talks.map((talk) => talk.title)).toEqual([
+			"Renamed 0",
+			"Renamed 1",
+		]);
+	});
+
 	it("adopts existing matching talks and speakers without changing their IDs", () => {
 		// Arrange
 		const key = "example/meetups#12";

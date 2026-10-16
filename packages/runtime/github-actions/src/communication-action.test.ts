@@ -13,6 +13,7 @@ const boundary = vi.hoisted(() => ({
 vi.mock("@actions/core", async (importOriginal) => ({
 	...(await importOriginal<typeof core>()),
 	setOutput: vi.fn(),
+	setSecret: vi.fn(),
 	setFailed: vi.fn(),
 	info: vi.fn(),
 	error: vi.fn(),
@@ -43,6 +44,8 @@ describe("communication action report facts", () => {
 		boundary.listComments.mockResolvedValue({ data: [], headers: {} });
 		for (const [name, value] of Object.entries({
 			"report-errors-to-issue": "false",
+			"conference-hall-event": "example-cfp",
+			"conference-hall-api-key": "synthetic-source-key",
 			"issue-number": "42",
 			"slides-url": "https://docs.google.com/presentation/d/event-slides/edit",
 			"github-token": "private-token",
@@ -58,6 +61,8 @@ describe("communication action report facts", () => {
 	afterEach(() => vi.unstubAllEnvs());
 
 	it.each([
+		"conference-hall-event",
+		"conference-hall-api-key",
 		"report-errors-to-issue",
 		"mailings-token",
 		"slack-token",

@@ -76,6 +76,9 @@
 			],
 			"@meetup-automation/github-organizer-attention": [
 				"./packages/adapter/github-organizer-attention/src/index.ts"
+			],
+			"@meetup-automation/conference-hall-proposal-source": [
+				"./packages/adapter/conference-hall-proposal-source/src/index.ts"
 			]
 		}
 	}

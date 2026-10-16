@@ -185,6 +185,7 @@ function assetJourney() {
 		eventRepository: eventDependencies.repository,
 		documentCodec: eventDependencies.documentCodec,
 		manageEvent: new ManageMeetupEvent({
+			proposalSource: { load: vi.fn() },
 			config,
 			eventDependencies,
 			referentialRepository: { load: async () => catalog },

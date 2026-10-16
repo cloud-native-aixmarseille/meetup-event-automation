@@ -1,4 +1,9 @@
 export const EN_MESSAGES = {
+	"comment.guidance.source-profiles":
+		"Conference Hall speaker profiles could not be refreshed. Check CFP access and linked speaker identities, then retry after any rate-limit window. Cached profiles and contacts are not authoritative.",
+	"comment.guidance.proposals":
+		"The selected Conference Hall proposals could not be refreshed. The last agenda is stale. Check CFP access, accepted status and merged speaker mappings; retry after the source rate-limit window if needed.",
+
 	"comment.guidance.event.link.feedback.invalid":
 		"Enter a valid HTTPS link to the OpenFeedback event page.",
 	"comment.resolved":

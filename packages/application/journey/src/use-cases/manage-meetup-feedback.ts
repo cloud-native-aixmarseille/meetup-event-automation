@@ -53,6 +53,18 @@ export class ManageMeetupFeedback {
 			return this.skipped("unrelated", "This issue is not a meetup");
 		const event = evaluation.event;
 		if (
+			event.proposalStatus === "stale" ||
+			evaluation.diagnostics.some((item) =>
+				item.code.startsWith("referential.source."),
+			)
+		)
+			return {
+				skipped: true,
+				persisted: false,
+				linkUpdated: false,
+				diagnostics: evaluation.diagnostics,
+			};
+		if (
 			event.issueState === "closed" ||
 			event.occurrenceStatus === "cancelled" ||
 			event.occurrenceStatus === "postponed"
