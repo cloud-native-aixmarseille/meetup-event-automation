@@ -223,7 +223,7 @@ bidirectional source write is required.
 Every reconciliation caller must supply both source settings. Event runs depend
 on source availability when their catalog contains linked profiles, including
 manual agendas. Missing linked profiles invalidate that CFP catalog until
-repaired. Tradeoffs include API request budgets, snapshot consistency within
+repaired. Trade-offs include API request budgets, snapshot consistency within
 individual invocations, reviewed registration of new identities, and private
 contact history in Git. Standalone CSV validation and form choices reflect the
 committed snapshot rather than live source values.
