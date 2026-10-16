@@ -12,6 +12,7 @@ export const HEADINGS = Object.freeze({
 	host: "Hoster",
 	description: "Event Description",
 	agenda: "Agenda",
+	proposals: "Conference Hall proposals",
 	meetupLink: "Meetup Link",
 	communityLink: "CNCF Link",
 	assetsLink: "Drive Link",

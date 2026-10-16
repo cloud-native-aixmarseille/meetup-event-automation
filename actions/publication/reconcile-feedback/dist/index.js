@@ -43163,6 +43163,7 @@ var HEADINGS = Object.freeze({
   host: "Hoster",
   description: "Event Description",
   agenda: "Agenda",
+  proposals: "Conference Hall proposals",
   meetupLink: "Meetup Link",
   communityLink: "CNCF Link",
   assetsLink: "Drive Link",
@@ -43819,7 +43820,7 @@ var ProposalSelectionCodec = class _ProposalSelectionCodec {
     const sections = IssueFormSections.parseSections(body);
     const value = IssueFormSections.readSection(
       sections,
-      "Conference Hall proposals",
+      HEADINGS.proposals,
       false,
       diagnostics
     );
@@ -43993,7 +43994,7 @@ var IssueFormReader = class {
       event_date: read(HEADINGS.date, true),
       hoster: [read(HEADINGS.host, true)].filter(Boolean),
       event_description: read(HEADINGS.description, true),
-      agenda: read(HEADINGS.agenda, true),
+      agenda: read(HEADINGS.agenda, !sections.has(HEADINGS.proposals)),
       meetup_link: read(HEADINGS.meetupLink),
       cncf_link: read(HEADINGS.communityLink),
       drive_link: read(HEADINGS.assetsLink),
@@ -51534,7 +51535,7 @@ var YamlIssueFormProjection = class _YamlIssueFormProjection {
       );
       changed = true;
     }
-    if (_YamlIssueFormProjection.fieldValue(body[speakersIndex]) !== speakersMarkdown) {
+    if (speakersIndex !== void 0 && _YamlIssueFormProjection.fieldValue(body[speakersIndex]) !== speakersMarkdown) {
       document.setIn(
         ["body", speakersIndex, "attributes", "value"],
         speakersMarkdown
@@ -51617,6 +51618,10 @@ var YamlIssueFormProjection = class _YamlIssueFormProjection {
       const value = _YamlIssueFormProjection.fieldValue(item);
       return value?.includes(AVAILABLE_SPEAKERS_MARKER) ? [index] : [];
     });
+    if (indexes.length === 0 && this.findOptionalFieldIndex(body, "conference_hall_proposals") !== void 0) {
+      this.findSingleFieldIndex(body, "conference_hall_proposals", "textarea");
+      return void 0;
+    }
     if (indexes.length !== 1) {
       throw new Error(
         "Issue form must contain exactly one Available speakers markdown block."

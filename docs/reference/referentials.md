@@ -79,8 +79,12 @@ quotes, or newlines.
 
 ## Use references in issues
 
-Choose a host from the generated dropdown. Copy speaker names from the form into
-the agenda. You can also include the catalog ID explicitly:
+Choose a host from the generated dropdown. For Conference Hall talks, select
+proposal IDs and let the automation generate the agenda and speaker references;
+see [select talks](../integrations/conference-hall.md#select-talks).
+
+In manually managed issues without proposal selections, copy speaker names from
+the form into the agenda. You can also include the catalog ID explicitly:
 
 ```text
 - Alex Example [speaker-0001]: Reliable platforms
@@ -119,13 +123,17 @@ network requests. Review the diff before committing.
 The
 [synchronization workflow](../../.github/workflows/update-meetup-issue-form.md)
 also opens a pull request when choices on the default branch need updating. It
-changes the host dropdown and speaker reference block in the existing form.
-Maintain other form fields yourself and keep their IDs and labels intact.
+changes the host dropdown and, when present, the speaker reference block in the
+existing form. Maintain other form fields yourself and keep their IDs and labels
+intact.
 When choices change, the generator formats the YAML with bundled Prettier
 defaults so the update passes the standard YAML formatting check. Check mode
 does not write files, and a current projection is left untouched.
 
-The initial form must include the `hoster` dropdown and a Markdown block with
-`<!-- Available speakers -->`. Use the
+The initial form must include the `hoster` dropdown. A Conference Hall form uses
+`conference_hall_proposals` as its only talk field and can omit the manual
+`agenda` textarea and speaker reference block. The generator does not add those
+fields. Manual-agenda forms without proposal selection must include a Markdown
+block with `<!-- Available speakers -->`. Use the
 [form template](../../__tests__/meetup-issue-template.yml) when setting up a new
 repository.

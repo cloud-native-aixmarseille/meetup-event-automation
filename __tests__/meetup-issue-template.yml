@@ -31,30 +31,13 @@
     "attributes":
       "label": "Event Description"
       "description": "Short describe the event"
-  - "type": "markdown"
-    "attributes":
-      "value": "<!-- Available speakers -->
-
-        <!--
-
-        Speaker One; Speaker Two
-
-        -->"
   - "type": "textarea"
     "id": "conference_hall_proposals"
     "attributes":
       "label": "Conference Hall proposals"
-      "description": "Enter one selected CFP proposal ID per line, in presentation order. Talk content and linked speaker profiles refresh automatically from Conference Hall."
+      "description": "Enter one accepted CFP proposal ID per line, in presentation order. The agenda is generated automatically from Conference Hall; edit talks and speaker profiles there."
     "validations":
       "required": false
-  - "type": "textarea"
-    "id": "agenda"
-    "attributes":
-      "label": "Agenda"
-      "description": "Outline the schedule and topics to be discussed"
-      "placeholder": "- <speaker_1>: <talk_description_1>
-
-        - <speaker_2>: <talk_description_2>\n"
   - "type": "input"
     "id": "meetup_link"
     "attributes":

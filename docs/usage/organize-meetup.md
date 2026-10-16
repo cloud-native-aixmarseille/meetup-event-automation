@@ -9,14 +9,17 @@ Open a new issue with the **Meetup** form. Fill in:
 - **Event Title** and **Event Date** (`YYYY-MM-DD`).
 - **Hoster**, using the generated choices.
 - **Event Description**, with the public event summary.
-- **Agenda**, with a speaker reference and description for every talk.
+- **Conference Hall proposals**, with one accepted proposal ID per line, in
+  presentation order. You can leave this blank while planning the event.
 
-Copy speaker names from the form. For example:
+The automation generates **Agenda** from the selected proposals after submission.
+Edit talk content and speaker profiles in Conference Hall; source changes appear
+on the next successful issue update or scheduled audit. See
+[select talks](../integrations/conference-hall.md#select-talks).
 
-```text
-- Alex Example: Reliable platforms
-- Sam Example, Jo Example: Operating Kubernetes
-```
+For manually managed issues without proposal selections, maintain **Agenda** with
+speaker references and descriptions using the
+[referential guide](../reference/referentials.md#use-references-in-issues).
 
 Select the aperitif and restaurant/bar options and use the checklists to track
 preparation. Keep email addresses, phone numbers, and other contact details in
