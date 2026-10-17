@@ -129,6 +129,15 @@ importers:
         specifier: workspace:*
         version: link:../../domain/communication
 
+  packages/adapter/google-docs-content-repository:
+    dependencies:
+      '@googleapis/docs':
+        specifier: ^14.1.1
+        version: 14.1.1(supports-color@7.2.0)
+      '@meetup-automation/publication':
+        specifier: workspace:*
+        version: link:../../domain/publication
+
   packages/adapter/google-drive-asset-repository:
     dependencies:
       '@googleapis/drive':
@@ -137,6 +146,27 @@ importers:
       '@meetup-automation/publication':
         specifier: workspace:*
         version: link:../../domain/publication
+
+  packages/adapter/google-slides-content-repository:
+    dependencies:
+      '@googleapis/slides':
+        specifier: ^10.1.1
+        version: 10.1.1(supports-color@7.2.0)
+      '@meetup-automation/publication':
+        specifier: workspace:*
+        version: link:../../domain/publication
+
+  packages/adapter/https-asset-image-repository:
+    dependencies:
+      '@meetup-automation/publication':
+        specifier: workspace:*
+        version: link:../../domain/publication
+      image-size:
+        specifier: ^2.0.4
+        version: 2.0.4
+      ipaddr.js:
+        specifier: ^2.5.0
+        version: 2.5.0
 
   packages/adapter/kutt-feedback-link-gateway:
     dependencies:
@@ -260,9 +290,18 @@ importers:
       '@meetup-automation/github-repository-dispatch-mail-gateway':
         specifier: workspace:*
         version: link:../../adapter/github-repository-dispatch-mail-gateway
+      '@meetup-automation/google-docs-content-repository':
+        specifier: workspace:*
+        version: link:../../adapter/google-docs-content-repository
       '@meetup-automation/google-drive-asset-repository':
         specifier: workspace:*
         version: link:../../adapter/google-drive-asset-repository
+      '@meetup-automation/google-slides-content-repository':
+        specifier: workspace:*
+        version: link:../../adapter/google-slides-content-repository
+      '@meetup-automation/https-asset-image-repository':
+        specifier: workspace:*
+        version: link:../../adapter/https-asset-image-repository
       '@meetup-automation/journey':
         specifier: workspace:*
         version: link:../../application/journey
@@ -615,8 +654,16 @@ packages:
   '@formatjs/intl@6.1.3':
     resolution: {integrity: sha512-fBxQVx6wi0f3iibauVFKr/uY+BJR0Z64Zuu6SB+p8hmxjqZoX2u4/RPYaKnFMut2+kNPIeGOaaKDHQ5odnXsZQ==}
 
+  '@googleapis/docs@14.1.1':
+    resolution: {integrity: sha512-trSnsaDWDIt+nZDUMn0sSuSwBzLvic2QOplmWogJgMX3pcDLadyw8G72UZKfmYQFZzt6ObUy5lcd95lJJUgajQ==}
+    engines: {node: '>=22.0.0'}
+
   '@googleapis/drive@26.0.2':
     resolution: {integrity: sha512-VeKVZvzgH4ioczJZrZ5sy73RJbHrYLI1XZIZ3ZqGKQhC4U03XsOOOiBHKqvH4F9vbXrxR2LawmktoIJuTJhzYg==}
+    engines: {node: '>=22.0.0'}
+
+  '@googleapis/slides@10.1.1':
+    resolution: {integrity: sha512-tcONZLDyKXE82NKEQjkeDeiVwrT0NElsooj4A4hy4oepJrgYR5OCe+eSRJG+c5MgbsR+lfAmijiomPXUUnBb9Q==}
     engines: {node: '>=22.0.0'}
 
   '@inversifyjs/common@2.0.1':
@@ -1669,6 +1716,11 @@ packages:
     resolution: {integrity: sha512-BAg6QkE8W+TuQLrrw0Ugr7HegXduRuuj8/ti2kSOc+jz1dmx8/WNcjr6XGnq5YpDWxFwwaavqD0+jIUOKelTsw==}
     engines: {node: '>= 4'}
 
+  image-size@2.0.4:
+    resolution: {integrity: sha512-QRUkFFsRV/6fuESxb9Vkq+a0LkSrgKXuc2NEqfikiXxxN/G3tjWt5EVUlMaImRBZRZK/jRBEbYvpPYZL8t08Zw==}
+    engines: {node: '>=18'}
+    hasBin: true
+
   inherits@2.0.4:
     resolution: {integrity: sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==}
 
@@ -1677,6 +1729,10 @@ packages:
 
   inversify@8.2.3:
     resolution: {integrity: sha512-OmTj/HB/lEV6WFaeHXBDXdUYWwtadF8QTbyEKT7LUZMzOkw5xF+Nrm1GTjIhBOrAUN4K65vtqKgxRWlSHzQH7w==}
+
+  ipaddr.js@2.5.0:
+    resolution: {integrity: sha512-aq+t5NAc+cS6rZQQVWC2x98CPqGtKKTMDd4Gaodv0wShnItdKg/51djkGJ1hqH+Oy0ivDftCbSLCQob8zso01w==}
+    engines: {node: '>= 10'}
 
   is-core-module@2.17.0:
     resolution: {integrity: sha512-J/vG0zBCbIKOQFfufSwyXdMrsohyJIUNkrnmo6WZGzoM7tr/lsbfW5b2BvisL6zsyMzK9UxV9L6c7AoFbyXHOA==}
@@ -2607,7 +2663,19 @@ snapshots:
       '@formatjs/icu-messageformat-parser': 3.5.21
       intl-messageformat: 12.1.3
 
+  '@googleapis/docs@14.1.1(supports-color@7.2.0)':
+    dependencies:
+      googleapis-common: 9.1.0(supports-color@7.2.0)
+    transitivePeerDependencies:
+      - supports-color
+
   '@googleapis/drive@26.0.2(supports-color@7.2.0)':
+    dependencies:
+      googleapis-common: 9.1.0(supports-color@7.2.0)
+    transitivePeerDependencies:
+      - supports-color
+
+  '@googleapis/slides@10.1.1(supports-color@7.2.0)':
     dependencies:
       googleapis-common: 9.1.0(supports-color@7.2.0)
     transitivePeerDependencies:
@@ -3448,6 +3516,8 @@ snapshots:
 
   ignore@7.0.6: {}
 
+  image-size@2.0.4: {}
+
   inherits@2.0.4: {}
 
   intl-messageformat@12.1.3:
@@ -3462,6 +3532,8 @@ snapshots:
       '@inversifyjs/core': 15.0.1(reflect-metadata@0.2.2)
     transitivePeerDependencies:
       - reflect-metadata
+
+  ipaddr.js@2.5.0: {}
 
   is-core-module@2.17.0:
     dependencies:

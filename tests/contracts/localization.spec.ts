@@ -4,6 +4,7 @@ import type { CommunicationDiagnostic } from "@meetup-automation/communication";
 import type { CommunicationJourneyDiagnostic } from "@meetup-automation/journey";
 import type { ReferentialDiagnostic } from "@meetup-automation/referential";
 import { describe, expect, expectTypeOf, it } from "vitest";
+import { TEXT_TOKENS } from "../../packages/domain/publication/src/domain/asset-content.js";
 import type { EventCommentMessages } from "../../packages/adapter/github-event-comment-repository/src/i18n/event-comment-messages.js";
 import type { IssueFormMessages } from "../../packages/adapter/yaml-issue-form-projection/src/i18n/issue-form-messages.js";
 import { ActionMessages } from "../../packages/runtime/github-actions/src/i18n/action-messages.js";
@@ -20,7 +21,7 @@ import {
 } from "./support.js";
 
 describe("localization contract", () => {
-	it("gives every published action the same English-default locale input", async () => {
+	it("requires an explicit locale in every published action", async () => {
 		// Arrange
 		const paths = (
 			await readdir(join(root, "actions"), { recursive: true })
@@ -31,11 +32,12 @@ describe("localization contract", () => {
 		);
 		// Assert
 		expect(actions.length).toBeGreaterThan(0);
-		for (const action of actions)
+		for (const action of actions) {
 			expect(action.inputs?.locale).toMatchObject({
-				required: false,
-				default: "en",
+				required: true,
 			});
+			expect(action.inputs?.locale).not.toHaveProperty("default");
+		}
 	});
 	it("forwards locale through every reusable workflow action and keeps reporting in actions", async () => {
 		// Arrange
@@ -86,10 +88,14 @@ describe("localization contract", () => {
 		const codes = new Set<string>();
 		for (const path of paths) {
 			const source = await readFile(join(root, "packages", path), "utf8");
+			// Template token IDs are protocol fields, not diagnostic message codes.
 			for (const match of source.matchAll(
 				/"(?:((?:event|referential|publication|issue-form|communication)\.[a-z-]+(?:\.[a-z-]+)*))"/g,
 			))
-				if (!Object.hasOwn(NOTIFICATION_CATALOGS.en, match[1] ?? ""))
+				if (
+					!Object.hasOwn(NOTIFICATION_CATALOGS.en, match[1] ?? "") &&
+					!TEXT_TOKENS.some((token) => token === match[1])
+				)
 					codes.add(match[1]);
 		}
 		const missing = [...codes].filter(

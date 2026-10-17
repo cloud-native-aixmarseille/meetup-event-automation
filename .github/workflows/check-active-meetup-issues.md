@@ -43,6 +43,11 @@ and posts or edits bounded Slack reminders. Earlier action failure policies are
 preserved. See [organizer attention](../../docs/integrations/communications.md#organizer-attention)
 for the timing, audit bounds, and recovery contract.
 
+Feedback runs before asset content rendering. The workflow forwards the copied
+presentation URL and content readiness to communications under the event lock.
+Configure opt-in contracts and revision-bound recovery in the consumer's
+`.github/meetup-asset-content.json`; see [managed Drive content](../../docs/integrations/assets.md#author-managed-content).
+
 <!-- overview:end -->
 <!-- usage:start -->
 
@@ -119,9 +124,7 @@ jobs:
 
 ## Outputs
 
-| **Output**          | **Description**                                                                 |
-| ------------------- | ------------------------------------------------------------------------------- |
-| **`issue-numbers`** | JSON array of meetup issue numbers selected for audit during the listing phase. |
+No public workflow outputs. Reports appear in action logs, annotations, and job summaries.
 
 <!-- outputs:end -->
 <!-- examples:start -->

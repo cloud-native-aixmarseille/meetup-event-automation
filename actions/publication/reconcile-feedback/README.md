@@ -25,13 +25,13 @@ issue already has a feedback URL. Use a key beginning with `oforg_`.
 | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
 | **`conference-hall-event`**   | Conference Hall CFP slug for live linked profiles and selected proposals.                                                          | **true**     | -           |
 | **`conference-hall-api-key`** | Read-only Conference Hall event API key.                                                                                           | **true**     | -           |
-| **`locale`**                  | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **false**    | `en`        |
+| **`locale`**                  | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **true**    | - |
 | **`github-token`**            | GitHub token with issue read and write permissions.                                                                                | **true**     | -           |
 | **`issue-number`**            | Meetup issue number.                                                                                                               | **true**     | -           |
 | **`managed-comment-author`**  | GitHub App bot login used by event evaluation.                                                                                     | **true**     | -           |
 | **`openfeedback-api-key`**    | OpenFeedback organization API key (oforg\_) used to create and update events.                                                      | **true**     | -           |
 | **`kutt-api-key`**            | API key for the owner of the existing Kutt link.                                                                                   | **true**     | -           |
-| **`kutt-base-url`**           | HTTPS base URL of the Kutt instance, without /api/v2. No default.                                                                  | **true**     | -           |
+| **`kutt-base-url`**           | HTTPS base URL of the Kutt instance, without /api/v2. No default.                                                                   | **true**     | -           |
 | **`kutt-link-id`**            | Existing Kutt link API ID, not the short address.                                                                                  | **true**     | -           |
 
 <!-- inputs:end -->
@@ -42,10 +42,7 @@ issue already has a feedback URL. Use a key beginning with `oforg_`.
 
 | **Output**         | **Description**                                |
 | ------------------ | ---------------------------------------------- |
-| **`result`**       | Versioned JSON feedback reconciliation result. |
 | **`diagnostics`**  | Redacted JSON diagnostics.                     |
-| **`feedback-url`** | OpenFeedback event URL.                        |
-| **`link-updated`** | Whether the existing Kutt link target changed. |
 
 <!-- outputs:end -->
 

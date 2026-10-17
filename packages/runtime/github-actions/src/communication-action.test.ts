@@ -44,6 +44,9 @@ describe("communication action report facts", () => {
 		boundary.listComments.mockResolvedValue({ data: [], headers: {} });
 		for (const [name, value] of Object.entries({
 			"report-errors-to-issue": "false",
+			locale: "en",
+			"slides-ready": "true",
+			"openfeedback-api-key": "oforg_synthetic-key",
 			"conference-hall-event": "example-cfp",
 			"conference-hall-api-key": "synthetic-source-key",
 			"issue-number": "42",
@@ -61,6 +64,9 @@ describe("communication action report facts", () => {
 	afterEach(() => vi.unstubAllEnvs());
 
 	it.each([
+		"slides-url",
+		"slides-ready",
+		"openfeedback-api-key",
 		"conference-hall-event",
 		"conference-hall-api-key",
 		"report-errors-to-issue",
@@ -171,11 +177,7 @@ describe("communication action report facts", () => {
 			expect(JSON.stringify(boundary.createComment.mock.calls)).not.toContain(
 				"private",
 			);
-			expect(core.setOutput).toHaveBeenCalledWith("planned-count", "2");
-			expect(core.setOutput).toHaveBeenCalledWith(
-				"result",
-				expect.stringContaining("sha256:"),
-			);
+
 			expect(
 				JSON.stringify([report, vi.mocked(core.setOutput).mock.calls]),
 			).not.toContain("private");
@@ -238,6 +240,7 @@ describe("communication action report facts", () => {
 		await ActionRunner.run(
 			"action.communication.reconcile",
 			CommunicationAction.runCommunicationReconcileAction,
+			true,
 		);
 
 		// Assert
@@ -296,6 +299,7 @@ describe("communication action report facts", () => {
 			await ActionRunner.run(
 				"action.communication.reconcile",
 				CommunicationAction.runCommunicationReconcileAction,
+				true,
 			);
 
 			// Assert
@@ -313,17 +317,34 @@ describe("communication action report facts", () => {
 		},
 	);
 
-	it("rejects an invalid issue reporting option before executing communications", async () => {
+	it("preserves explicit false slides readiness", async () => {
 		// Arrange
-		vi.stubEnv("INPUT_REPORT-ERRORS-TO-ISSUE", "invalid");
+		vi.stubEnv("INPUT_SLIDES-READY", "false");
+		boundary.execute.mockResolvedValue(
+			ManageMeetupCommunications.emptyCommunicationResult("check", []),
+		);
 
 		// Act
-		const result = CommunicationAction.runCommunicationReconcileAction();
+		await CommunicationAction.runCommunicationReconcileAction();
 
 		// Assert
-		await expect(result).rejects.toThrow(
-			"report-errors-to-issue must be true or false",
+		expect(boundary.execute).toHaveBeenCalledWith(
+			expect.objectContaining({ slidesReady: false }),
 		);
-		expect(boundary.execute).not.toHaveBeenCalled();
 	});
+
+	it.each(["report-errors-to-issue", "slides-ready"])(
+		"rejects an invalid %s before executing communications",
+		async (input) => {
+			// Arrange
+			vi.stubEnv(`INPUT_${input.toUpperCase()}`, "invalid");
+
+			// Act
+			const result = CommunicationAction.runCommunicationReconcileAction();
+
+			// Assert
+			await expect(result).rejects.toThrow(`${input} must be true or false`);
+			expect(boundary.execute).not.toHaveBeenCalled();
+		},
+	);
 });

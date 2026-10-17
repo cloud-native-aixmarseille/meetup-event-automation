@@ -3,8 +3,7 @@ description: Reconcile durable organizer conditions and bounded Slack reminders 
 inputs:
   locale:
     description: Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
-    required: false
-    default: en
+    required: true
   issue-number:
     description: Meetup issue number.
     required: true
@@ -24,15 +23,11 @@ inputs:
     description: JSON object of event, assets, feedback and communications outcomes and diagnostic outputs. Unexecuted stages remain unknown.
     required: true
   recover-post:
-    description: Optional explicit recovery JSON for a verified pending reservation. Supply its reservationId and outcome (accepted with message reference, or not-accepted).
-    required: false
-outputs:
-  active-count:
-    description: Number of unresolved organizer conditions.
-  posted:
-    description: Whether a new daily Slack message was accepted.
-  diagnostics:
-    description: Redacted JSON diagnostics from the shared action runner.
+    description: >-
+      Explicit recovery JSON: null for no recovery, or an object for a verified
+      pending reservation with reservationId and outcome (accepted with message
+      reference, or not-accepted).
+    required: true
 runs:
   using: node24
   main: dist/index.js

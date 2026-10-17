@@ -24,14 +24,14 @@ for reminder policy, trust checks, daily caps, audit bounds, and explicit recove
 
 | Input                        | Required | Default | Purpose                                                                                             |
 | ---------------------------- | -------- | ------- | --------------------------------------------------------------------------------------------------- |
-| `locale`                     | No       | `en`    | English or French generated messages.                                                               |
+| `locale`                     | Yes       | - | English or French generated messages.                                                               |
 | `issue-number`               | Yes      |         | Meetup issue number.                                                                                |
 | `github-token`               | Yes      |         | GitHub App token with issue write access and comment-history read access.                           |
 | `managed-comment-author`     | Yes      |         | Trusted GitHub App bot login.                                                                       |
 | `slack-token`                | Yes      |         | Slack bot token with `chat:write` and `reactions:write`.                                            |
 | `slack-organizer-channel-id` | Yes      |         | Explicit internal organizer channel ID.                                                             |
 | `stage-results`              | Yes      |         | JSON object containing event, assets, feedback, and communications outcomes and diagnostic outputs. |
-| `recover-post`               | No       |         | Verified recovery JSON for the current pending reservation.                                         |
+| `recover-post`               | Yes       |         | Explicit `null` for no recovery, or verified recovery JSON for the current pending reservation.                                         |
 
 `stage-results` uses each step's `outcome` and `diagnostics` output. Success and
 failure are explicit; skipped, cancelled, or absent stages are unknown. No rendered
@@ -51,11 +51,7 @@ logs or raw provider errors are used as condition evidence. Example:
 
 ## Outputs
 
-| Output         | Description                                              |
-| -------------- | -------------------------------------------------------- |
-| `active-count` | Number of unresolved organizer conditions.               |
-| `posted`       | Whether a new daily Slack message was accepted.          |
-| `diagnostics`  | Redacted JSON diagnostics from the shared action runner. |
+No public outputs. Results are reported through logs, annotations, and the job summary.
 
 The action returns public report facts on successful and skipped paths. Incomplete
 evidence or notification synchronization fails the action; persistence and execution

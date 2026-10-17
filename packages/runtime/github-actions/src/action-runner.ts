@@ -9,10 +9,14 @@ export class ActionRunner {
 	static async run(
 		title: Extract<MessageId, `action.${string}`>,
 		operation: (messages: ActionMessages) => Promise<ActionReportData>,
+		diagnosticsOutput: boolean,
 	): Promise<void> {
-		const messages = new ActionMessages(core.getInput("locale"));
+		let messages = new ActionMessages("en");
 		let report: ActionReportData;
 		try {
+			messages = new ActionMessages(
+				core.getInput("locale", { required: true }),
+			);
 			report = await operation(messages);
 		} catch (error) {
 			const message = RuntimeInput.publicErrorMessage(error);
@@ -32,6 +36,7 @@ export class ActionRunner {
 		}
 		await ActionReport.write(messages.t(title), report, messages);
 		if (report.failure) core.setFailed(report.failure);
-		ActionOutput.setDiagnosticsOutput(report.diagnostics);
+		if (diagnosticsOutput)
+			ActionOutput.setDiagnosticsOutput(report.diagnostics);
 	}
 }

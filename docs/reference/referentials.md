@@ -137,3 +137,12 @@ fields. Manual-agenda forms without proposal selection must include a Markdown
 block with `<!-- Available speakers -->`. Use the
 [form template](../../__tests__/meetup-issue-template.yml) when setting up a new
 repository.
+
+## Public speaker pictures
+
+The optional `picture_url` speaker CSV column supplies public portraits for
+[managed Drive content](../integrations/assets.md#author-managed-content).
+It is independent of email and phone fields. Use an HTTPS PNG, JPEG or GIF URL
+that Google can retrieve without credentials. Image validation and explicit
+fallbacks are owned by asset rendering; an invalid optional portrait does not
+invalidate otherwise usable contact records.

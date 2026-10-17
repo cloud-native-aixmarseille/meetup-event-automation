@@ -4,4 +4,5 @@ import { CommunicationAction } from "../communication-action.js";
 await ActionRunner.run(
 	"action.communication.reconcile",
 	CommunicationAction.runCommunicationReconcileAction,
+	true,
 );

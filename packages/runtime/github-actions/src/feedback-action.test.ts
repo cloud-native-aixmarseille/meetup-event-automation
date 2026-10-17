@@ -106,8 +106,7 @@ describe("feedback action boundary", () => {
 		expect(mocks.execute).toHaveBeenCalledWith({
 			identity: { repository: "example/meetups", issueNumber: 12 },
 		});
-		expect(mocks.outputs["feedback-url"]).toBe("https://openfeedback.io/poll");
-		expect(mocks.outputs["link-updated"]).toBe("true");
+		expect(mocks.outputs).toEqual({});
 		expect(JSON.stringify(mocks.outputs)).not.toContain("synthetic-");
 	});
 
@@ -152,8 +151,7 @@ describe("feedback action boundary", () => {
 		);
 		expect(report.diagnostics).toEqual(diagnostics);
 		expect(report.failure).toBeUndefined();
-		expect(mocks.outputs["feedback-url"]).toBe("");
-		expect(mocks.outputs["link-updated"]).toBe("false");
+		expect(mocks.outputs).toEqual({});
 		expect(mocks.outputs.diagnostics).toBeUndefined();
 	});
 

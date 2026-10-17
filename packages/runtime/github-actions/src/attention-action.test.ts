@@ -12,7 +12,7 @@ vi.mock("@actions/core", () => ({
 			"slack-token": "private-slack",
 			"slack-organizer-channel-id": "C123",
 			"stage-results": "{}",
-			"recover-post": "",
+			"recover-post": "null",
 		})[name],
 	setOutput: vi.fn(),
 }));
@@ -42,7 +42,8 @@ describe("attention action reporting", () => {
 			// Assert
 			expect(Boolean(report.failure)).toBe(notificationFailed);
 			expect(report.details.join(" ")).toContain("ticket");
-			expect(core.setOutput).toHaveBeenCalledWith("active-count", "2");
+			expect(core.setOutput).not.toHaveBeenCalled();
+
 			expect(JSON.stringify(report)).not.toContain("private");
 		},
 	);

@@ -16,13 +16,13 @@
 
 Reconcile due meetup communications and dispatch them through the configured mail and Slack gateways when event, checklist, approval and delivery checks pass. Publish redacted diagnostics in annotations, logs, and the job summary.
 
-The action uses one reconciliation path. Its result reports the effective
+The action uses one reconciliation path. Its shared report describes the effective
 `check` or `dispatch` mode according to event, checklist, approval and delivery checks. Run the
 action under the shared per-event lock; the reusable workflows provide it.
 
 Pass the presentation file URL as `slides-url`, using the `slides-link` entry
 from the asset action's `drive-files` output. Due email batches require a valid
-file link; missing links and folder URLs block email dispatch before approval.
+file link and ready managed content. Forward `slides-ready` from the asset action; false holds due email before approval. Copy-only slides use true. Missing links and folder URLs also block email dispatch.
 See [presentation links](../../../docs/integrations/communications.md#presentation-link).
 
 The required `slack-organizer-channel-id` selects the internal organizer channel.
@@ -61,7 +61,7 @@ release you use. The asset step must have the ID `assets` for this example.
   with:
     conference-hall-event: ${{ vars.CONFERENCE_HALL_EVENT }}
     conference-hall-api-key: ${{ secrets.CONFERENCE_HALL_API_KEY }}
-    # Optional language for generated text.
+    # Required language for generated text; no default.
     locale: en
     # GitHub issue number in the caller repository containing the meetup event document to inspect.
     # This input is required.
@@ -69,6 +69,7 @@ release you use. The asset step must have the ID `assets` for this example.
 
     # Required when an email batch is due. Reconcile assets first.
     slides-url: ${{ fromJSON(steps.assets.outputs.drive-files)['slides-link'] }}
+    slides-ready: ${{ steps.assets.outputs.slides-ready }}
 
     # Required for speaker thank-you emails. Reads existing OpenFeedback talks.
     openfeedback-api-key: ${{ secrets.OPENFEEDBACK_API_KEY }}
@@ -107,10 +108,11 @@ release you use. The asset step must have the ID `assets` for this example.
 | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
 | **`conference-hall-event`**      | Conference Hall CFP slug for live linked profiles and selected proposals.                                                                                                                                              | **true**     | -           |
 | **`conference-hall-api-key`**    | Read-only Conference Hall event API key.                                                                                                                                                                               | **true**     | -           |
-| **`locale`**                     | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.                                                                                     | **false**    | `en`        |
+| **`locale`**                     | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.                                                                                     | **true**    | - |
 | **`issue-number`**               | GitHub issue number in the caller repository containing the meetup event document to inspect.                                                                                                                          | **true**     | -           |
-| **`slides-url`**                 | Direct presentation file URL from the asset action's drive-files slides-link entry. Required for due email batches; missing or invalid links block email dispatch.                                                     | **false**    | -           |
-| **`openfeedback-api-key`**       | OpenFeedback organization API key used to read existing talk results for speaker thank-you emails. Missing or unresolved results block the thank-you batch.                                                            | **false**    | -           |
+| **`slides-ready`** | Whether managed slides content is ready. False holds due email batches. Copy-only slides use true. | **true** | - |
+| **`slides-url`**                 | Direct presentation file URL from the asset action's drive-files slides-link entry. Supply on every invocation; invalid links block due email batches.                                                               | **true**    | -           |
+| **`openfeedback-api-key`**       | OpenFeedback organization API key used to read existing talk results for speaker thank-you emails. Missing or unresolved results block the thank-you batch.                                                            | **true**    | -           |
 | **`report-errors-to-issue`**     | Use true to record diagnostics in a managed issue comment and succeed after persistence, or false to fail on error diagnostics. Execution and comment persistence failures still fail. Requires the shared event lock. | **true**     | -           |
 | **`github-token`**               | Token for the caller repository. Requires issues:write for approval requests, checklist completion, delivery ledger, and diagnostic comments, and metadata:read to verify approvers.                                   | **true**     | -           |
 | **`managed-comment-author`**     | Trusted bot login allowed to create or update managed approval, delivery ledger and communication diagnostic comments, for example my-app[bot].                                                                        | **true**     | -           |
@@ -127,9 +129,6 @@ release you use. The asset step must have the ID `assets` for this example.
 
 | **Output**             | **Description**                                                                                                                    |
 | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| **`result`**           | Versioned redacted JSON envelope containing the effective mode, reconciliation counts, hashed intent identifiers, and diagnostics. |
-| **`planned-count`**    | Number of due communication intents identified for the current event revision.                                                     |
-| **`dispatched-count`** | Number of gateway calls attempted during this run.                                                                                 |
 | **`diagnostics`**      | Redacted JSON diagnostics safe to expose in workflow logs and summaries.                                                           |
 
 <!-- outputs:end -->

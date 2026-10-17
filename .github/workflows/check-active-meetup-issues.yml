@@ -46,10 +46,6 @@ on:
         description: Conference Hall CFP slug for live linked profiles and selected proposals.
         required: true
         type: string
-    outputs:
-      issue-numbers:
-        description: JSON array of meetup issue numbers selected for audit during the listing phase.
-        value: ${{ jobs.list.outputs.issue-numbers }}
     secrets:
       openfeedback-api-key:
         description: OpenFeedback organization API key (oforg_) used to create and update events.
@@ -190,6 +186,7 @@ jobs:
         with:
           conference-hall-event: ${{ inputs.conference-hall-event }}
           conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicit reusable workflow secret
+          slides-ready: ${{ steps.assets.outputs.slides-ready }}
           slides-url: ${{ fromJSON(steps.assets.outputs.drive-files)['slides-link'] }}
           openfeedback-api-key: ${{ secrets.openfeedback-api-key }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly
           locale: ${{ inputs.locale }}
@@ -212,6 +209,7 @@ jobs:
           managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
           slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
           slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly
+          recover-post: "null"
           stage-results: >-
             {"event":{"outcome":${{ toJSON(steps.event.outcome) }},"diagnostics":${{ toJSON(steps.event.outputs.diagnostics) }}},
             "assets":{"outcome":${{ toJSON(steps.assets.outcome) }},"diagnostics":${{ toJSON(steps.assets.outputs.diagnostics) }}},

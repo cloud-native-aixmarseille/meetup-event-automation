@@ -28,6 +28,9 @@
 		"@meetup-automation/kutt-feedback-link-gateway": "workspace:*",
 		"@meetup-automation/github-organizer-approval": "workspace:*",
 		"@meetup-automation/github-organizer-attention": "workspace:*",
-		"@meetup-automation/conference-hall-proposal-source": "workspace:*"
+		"@meetup-automation/conference-hall-proposal-source": "workspace:*",
+		"@meetup-automation/google-slides-content-repository": "workspace:*",
+		"@meetup-automation/google-docs-content-repository": "workspace:*",
+		"@meetup-automation/https-asset-image-repository": "workspace:*"
 	}
 }

@@ -14,28 +14,6 @@ on:
         description: GitHub App client ID used to mint the narrowly scoped installation token for meetup automation.
         required: true
         type: string
-    outputs:
-      is-valid:
-        description: Whether the private referential catalogs passed validation before issue-form projection.
-        value: ${{ jobs.synchronize.outputs.is-valid }}
-      host-count:
-        description: Number of valid host entries detected during referential validation.
-        value: ${{ jobs.synchronize.outputs.host-count }}
-      speaker-count:
-        description: Number of valid speaker entries detected during referential validation.
-        value: ${{ jobs.synchronize.outputs.speaker-count }}
-      referential-diagnostics:
-        description: Redacted JSON diagnostics produced during referential validation.
-        value: ${{ jobs.synchronize.outputs.referential-diagnostics }}
-      changed:
-        description: Whether the checked-out issue form differed from the desired public projection.
-        value: ${{ jobs.synchronize.outputs.changed }}
-      changed-files:
-        description: JSON array of repository-relative files changed or that would change during synchronization.
-        value: ${{ jobs.synchronize.outputs.changed-files }}
-      diagnostics:
-        description: Redacted JSON diagnostics produced by the issue-form projection step.
-        value: ${{ jobs.synchronize.outputs.diagnostics }}
     secrets:
       github-app-private-key:
         description: PEM-encoded private key for the GitHub App identified by the github-app-client-id input. Used to mint a narrowly scoped installation token.
@@ -48,14 +26,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    outputs:
-      is-valid: ${{ steps.referentials.outputs.is-valid }}
-      host-count: ${{ steps.referentials.outputs.host-count }}
-      speaker-count: ${{ steps.referentials.outputs.speaker-count }}
-      referential-diagnostics: ${{ steps.referentials.outputs.diagnostics }}
-      changed: ${{ steps.synchronize.outputs.changed }}
-      changed-files: ${{ steps.synchronize.outputs.changed-files }}
-      diagnostics: ${{ steps.synchronize.outputs.diagnostics }}
     steps:
       - name: Create narrowly scoped GitHub App token
         id: app-token

@@ -1,6 +1,44 @@
 import { describe, expect, it } from "vitest";
 import { AttentionStages } from "./attention-stages.js";
 describe("typed attention stage boundary", () => {
+	it("accepts an explicit choice not to recover", () => {
+		// Arrange
+		const input = "null";
+
+		// Act
+		const recovery = AttentionStages.recovery(input);
+
+		// Assert
+		expect(recovery).toBeUndefined();
+	});
+
+	it.each(["", " ", "{}", '{"outcome":"accepted"}'])(
+		"rejects an unspecified or incomplete recovery choice %s",
+		(input) => {
+			// Arrange
+			const value = input;
+
+			// Act
+			const recover = () => AttentionStages.recovery(value);
+
+			// Assert
+			expect(recover).toThrow();
+		},
+	);
+
+	it("retains a verified recovery decision", () => {
+		// Arrange
+		const decision = {
+			reservationId: "reservation-one",
+			outcome: "not-accepted",
+		};
+
+		// Act
+		const recovery = AttentionStages.recovery(JSON.stringify(decision));
+
+		// Assert
+		expect(recovery).toMatchObject(decision);
+	});
 	it.each(["skipped", "cancelled", "", undefined])(
 		"marks %s stages unknown",
 		(outcome) => {

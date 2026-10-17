@@ -58,10 +58,13 @@ stable; source failure blocks delivery instead of using cached addresses.
 
 Emails use the managed presentation file URL for `eventSlidesUrl`. Both event
 workflows reconcile assets before communications and pass the `slides-link`
-entry from the asset action's `drive-files` output. Configure the presentation
+entry from the asset action's `drive-files` output together with `slides-ready`. Configure the presentation
 template with `template_kind=slides`; see [Drive templates](assets.md#prepare-templates).
 
-When calling the communication action directly, supply that URL as `slides-url`.
+When calling the communication action directly, supply that URL as `slides-url`
+and forward `slides-ready`. False holds due emails even when the URL exists.
+Managed content changes do not resend completed emails; approved batch inputs
+include the stable URL, not a frozen document snapshot.
 It accepts HTTPS Google Slides presentation links and Google Drive file links.
 A due email batch with a missing or invalid link is held with the
 `communication.slides-unavailable` diagnostic, before requesting approval.
@@ -337,7 +340,8 @@ edits despite pre-write snapshot checks.
 
 To recover, verify the message in the configured organizer channel. In a manually
 run workflow holding the same repository/issue concurrency lock, call the attention
-action with its normal inputs and the optional `recover-post` JSON. Copy the exact
+action with its normal inputs and an explicit `recover-post` JSON object.
+Normal reconciliation passes the string `"null"` to select no recovery. Copy the exact
 `reservationId` from the attention record in the managed status comment's source
 (the shared follow-up comment after the event). For a verified
 accepted post, supply its stored-channel-compatible Slack reference:
