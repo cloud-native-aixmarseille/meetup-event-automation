@@ -7,6 +7,11 @@ import type {
 	ImageSource,
 	PublicAssetModel,
 } from "../domain/asset-content.js";
+import type {
+	PublicAssetVenue,
+	PublicAssetTalk,
+	PublicNextAssetEvent,
+} from "../domain/asset-render-data.js";
 
 export interface AssetContentRepository {
 	read(
@@ -37,6 +42,10 @@ export interface AssetRenderPresenter {
 		date?: string;
 		timeZone: string;
 		hostName?: string;
+		venue?: PublicAssetVenue;
+		talks?: Readonly<Record<string, PublicAssetTalk>>;
+		speakers?: Readonly<Record<string, string>>;
+		nextEvent?: PublicNextAssetEvent;
 		feedbackUrl?: string;
 		agenda: readonly { title: string; speakers: readonly string[] }[];
 		pictures: PublicAssetModel["pictures"];

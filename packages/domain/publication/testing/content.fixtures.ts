@@ -11,8 +11,10 @@ import type {
 	ContentManifest,
 	ContentValue,
 	PublicAssetModel,
+	TextField,
 } from "../src/domain/asset-content.js";
 import { ContentFingerprint } from "../src/domain/content-fingerprint.js";
+import { ContentTextKey } from "../src/domain/content-text-key.js";
 
 export const mimeType = "application/vnd.google-apps.presentation";
 export const contract: ContentContract = {
@@ -26,7 +28,11 @@ export const model: PublicAssetModel = {
 	pictures: {},
 };
 
-export function contentFixture(image = false) {
+export function contentFixture(
+	image = false,
+	textField: TextField = { type: "text", token: "event.title", required: true },
+) {
+	const textKey = ContentTextKey.of(textField);
 	const imageField = {
 		type: "image",
 		token: "speaker.picture",
@@ -40,14 +46,15 @@ export function contentFixture(image = false) {
 		},
 		fit: "CENTER_CROP",
 	} as const;
-	const fields: ContentContract = image
-		? { ...contract, fields: [...contract.fields, imageField] }
-		: contract;
+	const fields: ContentContract = {
+		...contract,
+		fields: image ? [textField, imageField] : [textField],
+	};
 	const bindings: ContentBinding[] = [
 		{
 			id: "title",
 			type: "text",
-			key: "event.title",
+			key: textKey,
 			anchor: { objectId: "title", pageId: "page" },
 			applied: "",
 		},
@@ -68,7 +75,7 @@ export function contentFixture(image = false) {
 			bindings.map((binding) => [
 				binding.id,
 				ContentFingerprint.of(
-					binding.type === "text" ? "{{event.title}}" : "original image",
+					binding.type === "text" ? `{{${textKey}}}` : "original image",
 				),
 			]),
 		),
@@ -127,7 +134,7 @@ export function contentFixture(image = false) {
 		contract: fields,
 		fresh: true,
 		managed: true,
-		model,
+		model: { text: { [textKey]: "Public meetup" }, pictures: {} },
 	};
 	return { service, input, state, renderer, manifests, images, writes };
 }

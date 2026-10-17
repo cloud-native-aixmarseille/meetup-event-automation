@@ -1,3 +1,4 @@
+import { ContentTextKey } from "@meetup-automation/publication";
 import type { slides_v1 } from "@googleapis/slides";
 import {
 	ContentError,
@@ -25,7 +26,7 @@ export class SlideTemplateBindings {
 		SlideTemplateBindings.rejectTokens(presentation.masters);
 		SlideTemplateBindings.rejectTokens(presentation.layouts);
 		for (const field of contract.fields) {
-			const key = field.type === "text" ? field.token : field.slot;
+			const key = field.type === "text" ? ContentTextKey.of(field) : field.slot;
 			if (!bindings.some((binding) => binding.key === key))
 				throw new ContentError("location");
 		}
@@ -43,14 +44,15 @@ export class SlideTemplateBindings {
 		const text = SlideTemplateBindings.text(element);
 		if (element.shape && text.includes("{{")) {
 			const field = contract.fields.find(
-				(field) => field.type === "text" && text === `{{${field.token}}}`,
+				(field) =>
+					field.type === "text" && text === `{{${ContentTextKey.of(field)}}}`,
 			);
-			if (!field) throw new ContentError("location");
+			if (field?.type !== "text") throw new ContentError("location");
 			SlideTemplateBindings.style(element);
 			bindings.push({
 				id: objectId,
 				type: "text",
-				key: field.token,
+				key: ContentTextKey.of(field),
 				anchor: { objectId, pageId },
 				applied: "",
 			});

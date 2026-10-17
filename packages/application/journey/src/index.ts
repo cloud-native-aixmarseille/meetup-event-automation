@@ -67,3 +67,4 @@ export type {
 	FollowUpAttentionPresentation,
 } from "./ports/organizer-follow-up.js";
 export { AssetRenderProjection } from "./use-cases/asset-render-projection.js";
+export { FindNextAssetEvent } from "./use-cases/find-next-asset-event.js";

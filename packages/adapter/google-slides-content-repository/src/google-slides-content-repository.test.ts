@@ -3,6 +3,72 @@ import { ContentFingerprint } from "@meetup-automation/publication";
 import { slidesFixture } from "../testing/slides.fixtures.js";
 
 describe("Slides content repository", () => {
+	it("renders a slotted talk title and follows its shape after the placeholder disappears", async () => {
+		// Arrange
+		const f = slidesFixture();
+		const contract = {
+			...f.contract,
+			fields: [
+				...f.contract.fields,
+				{
+					type: "text",
+					token: "talk.title",
+					slot: "opening",
+					required: true,
+				} as const,
+			],
+		};
+		f.firstRun.content = "{{talk.title:opening}}\n";
+
+		// Act
+		const initial = await f.repository.read("file", contract);
+		const location = initial.locations.find(
+			(item) => item.key === "talk.title:opening",
+		);
+		if (!location) throw new Error("Missing talk fixture binding");
+		await f.repository.apply("file", initial, [
+			{
+				location,
+				value: {
+					type: "text",
+					key: location.key,
+					text: "Public talk",
+					fingerprint: ContentFingerprint.of("Public talk"),
+				},
+			},
+		]);
+		f.firstRun.content = "Public talk\n";
+		const updated = await f.repository.read(
+			"file",
+			contract,
+			initial.locations.map((item) => ({ ...item, applied: item.fingerprint })),
+		);
+
+		// Assert
+		expect(updated.locations.find((item) => item.id === "title")).toMatchObject(
+			{
+				key: "talk.title:opening",
+				fingerprint: ContentFingerprint.of("Public talk"),
+			},
+		);
+		expect(f.client.presentations.batchUpdate).toHaveBeenCalledWith(
+			expect.objectContaining({
+				requestBody: expect.objectContaining({
+					requests: expect.arrayContaining([
+						{
+							insertText: {
+								objectId: "title",
+								insertionIndex: 0,
+								text: "Public talk",
+							},
+						},
+					]),
+				}),
+			}),
+			{ retry: false, timeout: 30_000 },
+		);
+	});
+
 	it("binds repeated whole-shape tokens and preserves manual shapes and text style", async () => {
 		// Arrange
 		const f = slidesFixture();

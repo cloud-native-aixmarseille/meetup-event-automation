@@ -7,6 +7,7 @@ import type {
 import { ContentContractPolicy } from "../domain/content-contract-policy.js";
 import { ContentError } from "../domain/content-error.js";
 import { ContentFingerprint } from "../domain/content-fingerprint.js";
+import { ContentTextKey } from "../domain/content-text-key.js";
 import type { AssetImageRepository } from "./content-ports.js";
 
 export class ResolveContentValues {
@@ -22,13 +23,13 @@ export class ResolveContentValues {
 				values.push(await this.image(field, model));
 				continue;
 			}
+			const key = ContentTextKey.of(field);
 			const text =
-				model.text[field.token] ||
-				(!field.required ? field.fallback : undefined);
+				model.text[key] || (!field.required ? field.fallback : undefined);
 			if (!ContentContractPolicy.text(text)) throw new ContentError("missing");
 			values.push({
 				type: "text",
-				key: field.token,
+				key,
 				text,
 				fingerprint: ContentFingerprint.of(text),
 			});

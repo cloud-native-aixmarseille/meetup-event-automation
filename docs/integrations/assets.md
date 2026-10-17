@@ -47,7 +47,8 @@ on the service account's file permissions. Sharing is never changed automaticall
 ## Author managed content
 
 The configuration has `version: 1`, a `contracts` map keyed by `template_kind`,
-and an optional `events` map keyed by `owner/repository#issue-number`. This
+an optional `venues` map keyed by stable host ID, and an optional `events` map
+keyed by `owner/repository#issue-number`. This
 synthetic example opts in the `slides` template:
 
 ```json
@@ -62,7 +63,12 @@ synthetic example opts in the `slides` template:
         { "type": "text", "token": "event.title", "required": true },
         { "type": "text", "token": "event.date", "required": true },
         { "type": "text", "token": "host.name", "required": true },
+        { "type": "text", "token": "host.city", "required": true },
         { "type": "text", "token": "agenda", "required": true },
+        { "type": "text", "token": "talk.title", "slot": "opening", "required": true },
+        { "type": "text", "token": "talk.abstract", "slot": "opening", "required": false, "fallback": "Details coming soon" },
+        { "type": "text", "token": "speaker.name", "slot": "portrait-a", "required": true },
+        { "type": "text", "token": "next_event.date.numeric", "required": false, "fallback": "To be announced" },
         {
           "type": "text",
           "token": "event.feedback_url",
@@ -85,9 +91,19 @@ synthetic example opts in the `slides` template:
       ]
     }
   },
+  "venues": {
+    "host-example": {
+      "address": "1 Public Square",
+      "postalCode": "13001",
+      "city": "Marseille"
+    }
+  },
   "events": {
     "example/meetups#42": {
-      "speakers": { "portrait-a": "speaker-example" }
+      "speakers": { "portrait-a": "speaker-example" },
+      "talks": {
+        "opening": { "provider": "conference-hall", "event": "example-cfp", "id": "proposal-one" }
+      }
     }
   }
 }
@@ -98,16 +114,67 @@ generic portrait. Obtain object, page and tab IDs using the corresponding
 Google API's `get` operation. The configuration supports at most 100 fields per
 contract and 500 registered locations per file. Configuration and sidecars are
 limited to 1 MB. Revisions and slot names use letters, digits, underscores,
-dots, colons or hyphens, with at most 100 characters.
+dots, colons or hyphens, with at most 100 characters. A slotted text field's
+complete `token:slot` key must also fit within 100 characters. Assignment maps
+and the public venue map each accept at most 200 entries; reserved object keys
+are not valid assignment slot names.
 
-Text fields use the literal `{{token}}` spelling in the document. The allowlist
-is `event.title`, `event.date`, `host.name`, `agenda` and
-`event.feedback_url`. Dates preserve the event timezone's calendar day and use
-the workflow locale. Agenda lines contain ordered talk titles and all public
-co-speaker names, with English or French list formatting. Required missing
-values block the file; optional text needs an explicit non-empty fallback.
-Values are inserted literally, including token-looking text or HTML. No
-expressions, property traversal or executable template language are supported.
+Text fields use the literal `{{token}}` spelling, or `{{token:slot}}` for a
+slotted field. The complete allowlist is:
+
+| Token | Public value |
+| --- | --- |
+| `event.title` | Validated event title. |
+| `event.date` | Localized long event date. |
+| `event.date.month` | Localized month name. |
+| `event.date.numeric` | Event date as `DD/MM/YYYY`. |
+| `event.date.weekday` | Localized weekday and full event date. |
+| `host.name` | Resolved host display name. |
+| `host.address`, `host.postal_code`, `host.city` | Explicit public venue fields. |
+| `agenda` | Ordered talk titles and all public co-speaker names. |
+| `event.feedback_url` | Public feedback URL. |
+| `talk.title`, `talk.abstract`, `talk.speakers` | Slotted selected proposal title, abstract, and public co-speaker names. |
+| `speaker.name` | Slotted public speaker name using the same assignment as portraits. |
+| `next_event.date`, `next_event.date.numeric` | Next published meetup date, localized long form or `DD/MM/YYYY`. |
+| `next_event.host.name`, `next_event.host.city` | Next published meetup's host display name and explicit public city. |
+
+Dates preserve the event timezone's calendar day; month and weekday names use
+the workflow locale. Numeric dates always use `DD/MM/YYYY`. Speaker lists use
+English or French list formatting. Required missing values block the file;
+optional text needs an explicit non-empty fallback in the template's language.
+Values are inserted literally, including token-looking text or HTML. There are
+no expressions, arbitrary date formats, or executable template instructions.
+
+For `{{talk.title:opening}}`, declare `token: "talk.title"` and `slot: "opening"`.
+Assign that slot to the proposal's exact `provider`, `event`, and `id` in the
+current event's `talks` map. Values come from the refreshed, selected Conference
+Hall proposal snapshot; `talk.abstract` uses its public abstract. Reordering the
+agenda retains the assignment. Removing the proposal, a duplicate identity, an
+unresolved selection, or stale source data leaves the slot missing. A manual
+agenda entry without a proposal identity can appear in `agenda` but cannot fill
+a talk slot. Extra talks require additional authored slots; extra co-speakers
+can use `talk.speakers` or explicit separate speaker/portrait slots.
+
+For `{{speaker.name:portrait-a}}`, use the event's `speakers` mapping. The speaker
+must still appear in the current validated agenda. Name and image slots share
+the stable ID; a missing portrait does not prevent a valid public name. Missing
+participants follow each field's required/fallback policy instead of silently
+moving the next participant into the slot.
+
+Public venue values are committed explicitly under `venues[host-id]` with
+`address`, `postalCode`, and `city`. All three must be non-empty. Private host
+contact addresses are never used as a fallback. Supply only venue information
+intended for public documents.
+
+Next-meetup lookup runs only when a configured contract declares a `next_event.*`
+field. It selects the earliest strictly later date among open `meetup` issues
+in the same repository with scheduled status, a confirmed resolved host, a valid
+date, and a valid Meetup or CNCF publication URL. Same-date ties use the lowest
+issue number. Cancelled, postponed, held, unpublished, and same-day events are
+excluded. The host name comes from the validated referential; its city comes
+from the same public venue map. Missing data or an incomplete/failed listing
+produces missing fields. Lookup is limited to 200 distinct issues and 20 pages;
+it never selects from a partial result or edits candidate issues.
 
 In Slides, put each text token in an entire, ungrouped text shape with uniform
 text styling. Repeated tokens use separate shapes. Tables, grouped shapes,

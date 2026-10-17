@@ -1,15 +1,36 @@
 export const TEXT_TOKENS = [
 	"event.title",
 	"event.date",
+	"event.date.month",
+	"event.date.numeric",
+	"event.date.weekday",
 	"host.name",
+	"host.address",
+	"host.postal_code",
+	"host.city",
 	"agenda",
 	"event.feedback_url",
+	"next_event.date",
+	"next_event.date.numeric",
+	"next_event.host.name",
+	"next_event.host.city",
 ] as const;
-export type TextToken = (typeof TEXT_TOKENS)[number];
+export const SLOTTED_TEXT_TOKENS = [
+	"talk.title",
+	"talk.abstract",
+	"talk.speakers",
+	"speaker.name",
+] as const;
+export type SlottedTextToken = (typeof SLOTTED_TEXT_TOKENS)[number];
+export type TextToken = (typeof TEXT_TOKENS)[number] | SlottedTextToken;
+export type TextKey =
+	| (typeof TEXT_TOKENS)[number]
+	| `${SlottedTextToken}:${string}`;
 export type ImageSource = Readonly<{ url: string; description: string }>;
 export type TextField = Readonly<{
 	type: "text";
 	token: TextToken;
+	slot?: string;
 	required: boolean;
 	fallback?: string;
 }>;
@@ -31,7 +52,7 @@ export type ContentContract = Readonly<{
 	fields: readonly (TextField | ImageField)[];
 }>;
 export type PublicAssetModel = Readonly<{
-	text: Readonly<Partial<Record<TextToken, string>>>;
+	text: Readonly<Partial<Record<TextKey, string>>>;
 	pictures: Readonly<Record<string, ImageSource & { speakerId: string }>>;
 }>;
 export type ContentAnchor = Readonly<{

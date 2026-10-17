@@ -3,15 +3,32 @@ import { join } from "node:path";
 import {
 	ContentContractPolicy,
 	type ContentRecovery,
+	type AssetRenderAssignments,
 } from "@meetup-automation/publication";
+import { AssetRenderConfiguration } from "./asset-render-configuration.js";
 
-export type AssetContentConfigurationData = Readonly<{
-	contracts: Readonly<Record<string, unknown>>;
-	speakers: Readonly<Record<string, string>>;
-	recovery: Readonly<Record<string, ContentRecovery>>;
-}>;
+export type AssetContentConfigurationData = AssetRenderAssignments &
+	Readonly<{
+		contracts: Readonly<Record<string, unknown>>;
+		speakers: Readonly<Record<string, string>>;
+		recovery: Readonly<Record<string, ContentRecovery>>;
+	}>;
 
 export class AssetContentConfiguration {
+	static usesNextEvent(contracts: Readonly<Record<string, unknown>>): boolean {
+		return Object.values(contracts).some((contract) => {
+			const fields = (contract as { fields?: unknown } | null)?.fields;
+			return (
+				Array.isArray(fields) &&
+				fields.some(
+					(field) =>
+						typeof field?.token === "string" &&
+						field.token.startsWith("next_event."),
+				)
+			);
+		});
+	}
+
 	static async load(
 		root: string,
 		eventId: string,
@@ -24,7 +41,13 @@ export class AssetContentConfiguration {
 			);
 		} catch (error) {
 			if ((error as NodeJS.ErrnoException).code === "ENOENT")
-				return { contracts: {}, speakers: {}, recovery: {} };
+				return {
+					contracts: {},
+					speakers: {},
+					talks: {},
+					venues: {},
+					recovery: {},
+				};
 			throw error;
 		}
 		if (Buffer.byteLength(text) > 1_000_000)
@@ -36,10 +59,12 @@ export class AssetContentConfiguration {
 		const root = input as {
 			version: number;
 			contracts: Record<string, unknown>;
+			venues?: unknown;
 			events?: Record<
 				string,
 				{
 					speakers?: Record<string, string>;
+					talks?: unknown;
 					recovery?: Record<string, ContentRecovery>;
 				}
 			>;
@@ -47,24 +72,25 @@ export class AssetContentConfiguration {
 		if (
 			root?.version !== 1 ||
 			!AssetContentConfiguration.record(root.contracts) ||
-			!ContentContractPolicy.keys(root, ["version", "contracts", "events"]) ||
+			!ContentContractPolicy.keys(root, [
+				"version",
+				"contracts",
+				"events",
+				"venues",
+			]) ||
 			(root.events !== undefined &&
 				!AssetContentConfiguration.record(root.events))
 		)
 			throw new Error("Invalid asset content configuration");
 		const event = root.events?.[eventId] ?? {};
-		if (!ContentContractPolicy.keys(event, ["speakers", "recovery"]))
-			throw new Error("Invalid asset event configuration");
-		const speakers = event.speakers ?? {};
-		const recovery = event.recovery ?? {};
 		if (
-			!AssetContentConfiguration.record(speakers) ||
-			!AssetContentConfiguration.record(recovery) ||
-			Object.entries(speakers).some(
-				([key, id]) =>
-					!ContentContractPolicy.name(key) || !/^speaker-[a-z0-9-]+$/.test(id),
-			)
+			!AssetContentConfiguration.record(event) ||
+			!ContentContractPolicy.keys(event, ["speakers", "talks", "recovery"])
 		)
+			throw new Error("Invalid asset event configuration");
+		const assignments = AssetRenderConfiguration.parse(event, root.venues);
+		const recovery = event.recovery ?? {};
+		if (!AssetContentConfiguration.record(recovery))
 			throw new Error("Invalid asset speaker assignments");
 		for (const [id, operation] of Object.entries(recovery)) {
 			if (
@@ -82,7 +108,7 @@ export class AssetContentConfiguration {
 			)
 				throw new Error("Invalid asset recovery operation");
 		}
-		return { contracts: root.contracts, speakers, recovery };
+		return { contracts: root.contracts, ...assignments, recovery };
 	}
 
 	private static record(value: unknown): value is Record<string, unknown> {

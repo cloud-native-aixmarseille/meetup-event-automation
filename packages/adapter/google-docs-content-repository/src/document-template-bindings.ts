@@ -1,3 +1,4 @@
+import { ContentTextKey } from "@meetup-automation/publication";
 import type {
 	ContentBinding,
 	ContentContract,
@@ -34,7 +35,7 @@ export class DocumentTemplateBindings {
 			}
 		}
 		for (const field of contract.fields) {
-			const key = field.type === "text" ? field.token : field.slot;
+			const key = field.type === "text" ? ContentTextKey.of(field) : field.slot;
 			if (!bindings.some((binding) => binding.key === key))
 				throw new ContentError("location");
 		}
@@ -78,15 +79,17 @@ export class DocumentTemplateBindings {
 	): void {
 		for (const match of matches) {
 			const field = contract.fields.find(
-				(field) => field.type === "text" && field.token === match[1],
+				(field) =>
+					field.type === "text" && ContentTextKey.of(field) === match[1],
 			);
-			if (!field || startIndex == null) throw new ContentError("location");
+			if (field?.type !== "text" || startIndex == null)
+				throw new ContentError("location");
 			const start = startIndex + (match.index ?? 0);
 			const id = `meetup_${tabId}_${start}`;
 			bindings.push({
 				id,
 				type: "text",
-				key: field.token,
+				key: ContentTextKey.of(field),
 				applied: "",
 				anchor: {
 					tabId: tabId,

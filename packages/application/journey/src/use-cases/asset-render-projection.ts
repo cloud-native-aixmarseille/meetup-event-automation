@@ -1,5 +1,6 @@
 import type { MeetupEvent } from "@meetup-automation/event";
 import type {
+	AssetRenderAssignments,
 	AssetRenderPresenter,
 	PublicAssetModel,
 } from "@meetup-automation/publication";
@@ -8,12 +9,19 @@ import {
 	ValidateReferentialCatalog,
 } from "@meetup-automation/referential";
 import type { PublicDiagnostic } from "../result/result-envelope.js";
+import { AssetParticipantProjection } from "./asset-participant-projection.js";
+import type { FindNextAssetEvent } from "./find-next-asset-event.js";
 
 export class AssetRenderProjection {
 	constructor(
 		private readonly presenter: AssetRenderPresenter,
 		private readonly repository: ReferentialRepository,
-		private readonly speakers: Readonly<Record<string, string>> = {},
+		private readonly assignments: AssetRenderAssignments = {
+			speakers: {},
+			talks: {},
+			venues: {},
+		},
+		private readonly nextEvent?: Pick<FindNextAssetEvent, "find">,
 	) {}
 
 	async create(
@@ -23,36 +31,21 @@ export class AssetRenderProjection {
 		const catalog = await new ValidateReferentialCatalog(
 			this.repository,
 		).execute();
-		const agendaValid = !diagnostics.some(
-			(item) =>
-				item.severity === "error" && /agenda|referential/.test(item.code),
-		);
-		const agendaIds = agendaValid
-			? new Set(
-					event.agenda.flatMap((talk) =>
-						talk.speakers.map((speaker) => speaker.id),
-					),
+		const agendaValid =
+			catalog.isValid &&
+			event.proposalStatus !== "stale" &&
+			!diagnostics.some(
+				(item) =>
+					item.severity === "error" &&
+					/agenda|referential|proposals/.test(`${item.code} ${item.field}`),
+			);
+		const participants = agendaValid
+			? AssetParticipantProjection.create(
+					event,
+					catalog.catalog,
+					this.assignments,
 				)
-			: new Set<string>();
-		const pictures: Record<
-			string,
-			{ speakerId: string; url: string; description: string }
-		> = {};
-		if (catalog.isValid) {
-			for (const [slot, id] of Object.entries(this.speakers)) {
-				const speaker = catalog.catalog.speakers.find((item) => item.id === id);
-				if (
-					agendaIds.has(id) &&
-					speaker?.pictureUrl &&
-					AssetRenderProjection.publicUrl(speaker.pictureUrl)
-				)
-					pictures[slot] = {
-						speakerId: id,
-						url: speaker.pictureUrl,
-						description: speaker.displayName,
-					};
-			}
-		}
+			: { speakers: {}, talks: {}, pictures: {} };
 		return this.presenter.format({
 			title: diagnostics.some(
 				(item) => item.severity === "error" && /title/.test(item.code),
@@ -62,36 +55,26 @@ export class AssetRenderProjection {
 			date: event.date,
 			timeZone: event.timeZone,
 			hostName: event.host?.displayName,
+			venue: event.host?.id
+				? this.assignments.venues[event.host.id]
+				: undefined,
 			feedbackUrl:
 				!diagnostics.some(
 					(item) => item.severity === "error" && /feedback/.test(item.code),
-				) && AssetRenderProjection.publicUrl(event.publicationLinks.feedback)
+				) &&
+				AssetParticipantProjection.publicUrl(event.publicationLinks.feedback)
 					? event.publicationLinks.feedback
 					: undefined,
 			agenda: agendaValid
 				? event.agenda.map((talk) => ({
-						title: talk.description,
+						title: talk.proposal?.title ?? talk.description,
 						speakers: talk.speakers.map((speaker) => speaker.displayName),
 					}))
 				: [],
-			pictures,
+			...participants,
+			nextEvent: catalog.isValid
+				? await this.nextEvent?.find(event, catalog.catalog)
+				: undefined,
 		});
-	}
-
-	private static publicUrl(value?: string): boolean {
-		if (!value) return false;
-		try {
-			const url = new URL(value);
-			return (
-				url.protocol === "https:" &&
-				!url.username &&
-				!url.password &&
-				![...url.searchParams.keys()].some((key) =>
-					/token|signature|credential|secret|key|auth/i.test(key),
-				)
-			);
-		} catch {
-			return false;
-		}
 	}
 }

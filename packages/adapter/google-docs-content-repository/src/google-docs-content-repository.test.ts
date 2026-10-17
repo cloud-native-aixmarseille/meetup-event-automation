@@ -3,6 +3,77 @@ import { ContentFingerprint } from "@meetup-automation/publication";
 import { docsFixture, paragraph } from "../testing/docs.fixtures.js";
 
 describe("Docs content repository", () => {
+	it("binds and renders slotted speaker names in body prose", async () => {
+		// Arrange
+		const f = docsFixture();
+		const contract = {
+			...f.contract,
+			fields: [
+				...f.contract.fields,
+				{
+					type: "text",
+					token: "speaker.name",
+					slot: "portrait",
+					required: true,
+				} as const,
+			],
+		};
+		f.rootContent.body = {
+			content: [paragraph("Welcome {{speaker.name:portrait}}\n")],
+		};
+
+		// Act
+		const snapshot = await f.repository.read("file", contract);
+		const location = snapshot.locations.find(
+			(item) => item.key === "speaker.name:portrait",
+		);
+		if (!location) throw new Error("Missing speaker fixture binding");
+		await f.repository.apply("file", snapshot, [
+			{
+				location,
+				value: {
+					type: "text",
+					key: location.key,
+					text: "Public Speaker",
+					fingerprint: ContentFingerprint.of("Public Speaker"),
+				},
+			},
+		]);
+
+		// Assert
+		expect(location.anchor).toMatchObject({
+			tabId: "tab-one",
+			start: 9,
+			end: 34,
+		});
+		expect(f.client.documents.batchUpdate).toHaveBeenCalledWith(
+			expect.objectContaining({
+				requestBody: expect.objectContaining({
+					requests: expect.arrayContaining([
+						{
+							insertText: {
+								location: { index: 9, tabId: "tab-one", segmentId: "" },
+								text: "Public Speaker",
+							},
+						},
+						{
+							createNamedRange: {
+								name: location.id,
+								range: {
+									startIndex: 9,
+									endIndex: 23,
+									tabId: "tab-one",
+									segmentId: "",
+								},
+							},
+						},
+					]),
+				}),
+			}),
+			{ retry: false, timeout: 30_000 },
+		);
+	});
+
 	it("registers repeated body tokens across nested tabs with UTF-16 indices and one revision-controlled batch", async () => {
 		// Arrange
 		const f = docsFixture();
