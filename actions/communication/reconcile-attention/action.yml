@@ -22,12 +22,6 @@ inputs:
   stage-results:
     description: JSON object of event, assets, feedback and communications outcomes and diagnostic outputs. Unexecuted stages remain unknown.
     required: true
-  recover-post:
-    description: >-
-      Explicit recovery JSON: null for no recovery, or an object for a verified
-      pending reservation with reservationId and outcome (accepted with message
-      reference, or not-accepted).
-    required: true
 runs:
   using: node24
   main: dist/index.js

@@ -13,9 +13,8 @@ on:
     inputs:
       locale:
         description: Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
-        required: false
+        required: true
         type: string
-        default: en
       github-app-client-id:
         description: GitHub App client ID used to mint the narrowly scoped installation token for meetup automation.
         required: true
@@ -169,7 +168,6 @@ jobs:
           conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicit reusable workflow secret
           locale: ${{ inputs.locale }}
           issue-number: ${{ github.event.issue.number }}
-          mode: fix
           github-token: ${{ steps.app-token.outputs.token }}
           managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
 
@@ -184,7 +182,6 @@ jobs:
           managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
           slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
           slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly
-          recover-post: "null"
           stage-results: >-
             {"event":{"outcome":${{ toJSON(steps.reconcile.outcome) }},"diagnostics":${{ toJSON(steps.reconcile.outputs.diagnostics) }}},
             "assets":{"outcome":${{ toJSON(steps.assets.outcome) }},"diagnostics":${{ toJSON(steps.assets.outputs.diagnostics) }}},

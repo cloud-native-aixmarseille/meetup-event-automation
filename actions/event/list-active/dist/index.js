@@ -56748,11 +56748,6 @@ var EventActions = class _EventActions {
       "issue-number",
       getInput("issue-number", { required: true })
     );
-    const mode = RuntimeInput.enumInput(
-      "mode",
-      getInput("mode", { required: true }),
-      ["check", "fix"]
-    );
     const token = getInput("github-token", { required: true });
     const commentAuthorLogin = getInput("managed-comment-author", {
       required: true
@@ -56769,9 +56764,9 @@ var EventActions = class _EventActions {
     });
     const outcome = await container.get(ManageMeetupEvent).execute({
       identity: { repository, issueNumber },
-      mode
+      mode: "fix"
     });
-    return _EventActions.reconcileReport(issueNumber, mode, outcome, messages);
+    return _EventActions.reconcileReport(issueNumber, outcome, messages);
   }
   static async runEventListActiveAction(messages = new ActionMessages()) {
     const token = getInput("github-token", { required: true });
@@ -56808,9 +56803,9 @@ var EventActions = class _EventActions {
       diagnostics
     };
   }
-  static reconcileReport(issueNumber, mode, outcome, messages) {
+  static reconcileReport(issueNumber, outcome, messages) {
     const details = [
-      messages.t("report.event.context", { issue: issueNumber, mode })
+      messages.t("report.event.context", { issue: issueNumber, mode: "fix" })
     ];
     if (outcome.skipped) {
       details.push(messages.t("report.event.skipped"));

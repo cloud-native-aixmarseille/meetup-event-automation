@@ -7,9 +7,8 @@ on:
     inputs:
       locale:
         description: Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
-        required: false
+        required: true
         type: string
-        default: en
       github-app-client-id:
         description: GitHub App client ID used to mint the narrowly scoped installation token for meetup automation.
         required: true

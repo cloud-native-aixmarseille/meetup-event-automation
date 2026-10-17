@@ -269,6 +269,11 @@ jobs:
     name: Test event reconcile action
     needs: prepare-synthetic-issue
     runs-on: ubuntu-latest
+    # Removing the constant mode input makes this test write the same synthetic
+    # issue as the communication test, so both must use its existing event lock.
+    concurrency:
+      group: meetup-event-${{ github.repository_id }}-${{ needs.prepare-synthetic-issue.outputs.issue-number }}
+      cancel-in-progress: false
     permissions:
       contents: read
       issues: write
@@ -301,7 +306,6 @@ jobs:
           conference-hall-event: synthetic-cfp
           conference-hall-api-key: synthetic-key
           issue-number: ${{ needs.prepare-synthetic-issue.outputs.issue-number }}
-          mode: check
           github-token: ${{ secrets.GITHUB_TOKEN }}
           managed-comment-author: integration-tests[bot]
 

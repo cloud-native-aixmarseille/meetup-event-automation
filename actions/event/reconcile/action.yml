@@ -1,5 +1,5 @@
 name: Reconcile meetup event
-description: Read one meetup issue, derive lifecycle and readiness, and optionally persist safe issue and managed-comment updates. Publish redacted diagnostics in annotations, logs, and the job summary.
+description: Read one meetup issue, derive lifecycle and readiness, and persist safe issue and managed-comment updates. Publish redacted diagnostics in annotations, logs, and the job summary.
 author: Cloud Native Aix-Marseille
 branding:
   icon: check-circle
@@ -17,11 +17,8 @@ inputs:
   conference-hall-api-key:
     description: Read-only Conference Hall event API key.
     required: true
-  mode:
-    description: Use check for read-only validation or fix to persist safe normalizations to the issue and managed diagnostic comment.
-    required: true
   github-token:
-    description: Token for the caller repository. Requires issues:read; fix mode also requires issues:write.
+    description: Token for the caller repository. Requires issues:write for issue normalization and managed diagnostic comments.
     required: true
   managed-comment-author:
     description: Trusted bot login allowed to create or update the managed diagnostic comment, for example my-app[bot].

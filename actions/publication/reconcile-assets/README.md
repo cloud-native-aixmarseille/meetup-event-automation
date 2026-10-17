@@ -62,7 +62,7 @@ Reconcile the event Drive folder, template copies, and issue asset link. Populat
 | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
 | **`conference-hall-event`**                  | Conference Hall CFP slug for live linked profiles and selected proposals.                                                          | **true**     | -           |
 | **`conference-hall-api-key`**                | Read-only Conference Hall event API key.                                                                                           | **true**     | -           |
-| **`locale`**                                 | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **true**    | - |
+| **`locale`**                                 | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **true**     | -           |
 | **`issue-number`**                           | GitHub issue number containing the meetup event document.                                                                          | **true**     | -           |
 | **`github-token`**                           | Token for the caller repository. Requires issues:read and issues:write.                                                            | **true**     | -           |
 | **`managed-comment-author`**                 | Trusted GitHub App bot login used by the event composition.                                                                        | **true**     | -           |
@@ -77,11 +77,11 @@ Reconcile the event Drive folder, template copies, and issue asset link. Populat
 
 ## Outputs
 
-| **Output**        | **Description**                                                                                    |
-| ----------------- | -------------------------------------------------------------------------------------------------- |
-| **`drive-files`** | JSON map from template kind followed by -link to the corresponding copied file URL.                |
-| **`slides-ready`** | Whether a slides URL exists and its content is copy-only or ready. |
-| **`diagnostics`** | Redacted JSON diagnostics for asset reconciliation.                                                |
+| **Output**         | **Description**                                                                     |
+| ------------------ | ----------------------------------------------------------------------------------- |
+| **`drive-files`**  | JSON map from template kind followed by -link to the corresponding copied file URL. |
+| **`slides-ready`** | Whether a slides URL exists and its content is copy-only or ready.                  |
+| **`diagnostics`**  | Redacted JSON diagnostics for asset reconciliation.                                 |
 
 <!-- outputs:end -->
 <!-- examples:start -->

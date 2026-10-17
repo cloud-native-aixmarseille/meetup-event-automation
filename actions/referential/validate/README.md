@@ -34,7 +34,7 @@ Validate the configured host and speaker catalogs and fail when invalid, returni
 
 | **Input**    | **Description**                                                                                                                    | **Required** | **Default** |
 | ------------ | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
-| **`locale`** | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **true**    | - |
+| **`locale`** | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **true**     | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->

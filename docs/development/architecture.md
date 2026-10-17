@@ -23,16 +23,16 @@ consumer settings.
 
 ## Package ownership
 
-| Package area                         | Responsibility                                                                                            |
-| ------------------------------------ | --------------------------------------------------------------------------------------------------------- |
-| `packages/domain/event`              | Event model, field rules, readiness, lifecycle, reconciliation, event/document/comment ports, clock       |
-| `packages/domain/referential`        | Catalog validation, stable participant IDs, reference resolution, issue-form choices, catalog port        |
-| `packages/domain/communication`      | Due-message planning, attention conditions/episodes/reminders, delivery state and ports                   |
-| `packages/domain/publication`        | Publication URL rules, manual checklist evaluation, asset reconciliation, text/image contracts and ownership, content/asset/feedback ports        |
-| `packages/application/journey`       | Cross-domain orchestration, configuration defaults, public diagnostics, issue-form projection port       |
-| `packages/adapter/*`                 | Concrete implementations of owned ports: GitHub, CSV, YAML, Drive, OpenFeedback, Kutt, Slack, system time |
-| `packages/presentation/localization` | Generic locale normalization, ICU formatting, and catalog contracts                                       |
-| `packages/runtime/github-actions`    | Input parsing, credentials, dependency composition, action execution, output serialization                |
+| Package area                         | Responsibility                                                                                                                             |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `packages/domain/event`              | Event model, field rules, readiness, lifecycle, reconciliation, event/document/comment ports, clock                                        |
+| `packages/domain/referential`        | Catalog validation, stable participant IDs, reference resolution, issue-form choices, catalog port                                         |
+| `packages/domain/communication`      | Due-message planning, attention conditions/episodes/reminders, delivery state and ports                                                    |
+| `packages/domain/publication`        | Publication URL rules, manual checklist evaluation, asset reconciliation, text/image contracts and ownership, content/asset/feedback ports |
+| `packages/application/journey`       | Cross-domain orchestration, configuration defaults, public diagnostics, issue-form projection port                                         |
+| `packages/adapter/*`                 | Concrete implementations of owned ports: GitHub, CSV, YAML, Drive, OpenFeedback, Kutt, Slack, system time                                  |
+| `packages/presentation/localization` | Generic locale normalization, ICU formatting, and catalog contracts                                                                        |
+| `packages/runtime/github-actions`    | Input parsing, credentials, dependency composition, action execution, output serialization                                                 |
 
 A domain package owns its model, use cases, and ports. Journey code coordinates
 those APIs without redefining their rules. Each port has one owner. Adapters
@@ -204,7 +204,7 @@ reloads the event; failed evidence stays unknown. The GitHub attention adapter
 verifies bot authorship and revision history, validates and persists state, and
 projects localized status before the Slack adapter posts or updates a message.
 Runtime composition injects the clock and ports. A pending post blocks further
-posts across days until explicit verified recovery. Existing mail records and
+posts across days and requires operator investigation. Existing mail records and
 approval decisions remain independent. Once follow-up begins, the approval adapter
 stores the attention record inside the single thank-you approval and task comment.
 The attention adapter still owns validation and presentation; runtime composition

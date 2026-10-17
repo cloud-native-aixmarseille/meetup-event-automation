@@ -65,10 +65,31 @@ synthetic example opts in the `slides` template:
         { "type": "text", "token": "host.name", "required": true },
         { "type": "text", "token": "host.city", "required": true },
         { "type": "text", "token": "agenda", "required": true },
-        { "type": "text", "token": "talk.title", "slot": "opening", "required": true },
-        { "type": "text", "token": "talk.abstract", "slot": "opening", "required": false, "fallback": "Details coming soon" },
-        { "type": "text", "token": "speaker.name", "slot": "portrait-a", "required": true },
-        { "type": "text", "token": "next_event.date.numeric", "required": false, "fallback": "To be announced" },
+        {
+          "type": "text",
+          "token": "talk.title",
+          "slot": "opening",
+          "required": true
+        },
+        {
+          "type": "text",
+          "token": "talk.abstract",
+          "slot": "opening",
+          "required": false,
+          "fallback": "Details coming soon"
+        },
+        {
+          "type": "text",
+          "token": "speaker.name",
+          "slot": "portrait-a",
+          "required": true
+        },
+        {
+          "type": "text",
+          "token": "next_event.date.numeric",
+          "required": false,
+          "fallback": "To be announced"
+        },
         {
           "type": "text",
           "token": "event.feedback_url",
@@ -121,7 +142,11 @@ synthetic example opts in the `slides` template:
     "example/meetups#42": {
       "speakers": { "portrait-a": "speaker-example" },
       "talks": {
-        "opening": { "provider": "conference-hall", "event": "example-cfp", "id": "proposal-one" }
+        "opening": {
+          "provider": "conference-hall",
+          "event": "example-cfp",
+          "id": "proposal-one"
+        }
       }
     }
   }
@@ -130,7 +155,7 @@ synthetic example opts in the `slides` template:
 
 Replace the example IDs and image URLs with real template IDs and public images,
 including separate generic portrait and logo fallbacks. Obtain object, page and
-tab IDs using the corresponding Google API's `get` operation. The configuration supports at most 100 fields per
+tab IDs using the corresponding Google API `get` operation. The configuration supports at most 100 fields per
 contract and 500 registered locations per file. Configuration and sidecars are
 limited to 1 MB. Revisions and slot names use letters, digits, underscores,
 dots, colons or hyphens, with at most 100 characters. A slotted text field's
@@ -141,21 +166,21 @@ object keys are not valid assignment slot names.
 Text fields use the literal `{{token}}` spelling, or `{{token:slot}}` for a
 slotted field. The complete allowlist is:
 
-| Token | Public value |
-| --- | --- |
-| `event.title` | Validated event title. |
-| `event.date` | Localized long event date. |
-| `event.date.month` | Localized month name. |
-| `event.date.numeric` | Event date as `DD/MM/YYYY`. |
-| `event.date.weekday` | Localized weekday and full event date. |
-| `host.name` | Resolved host display name. |
-| `host.address`, `host.postal_code`, `host.city` | Explicit public venue fields. |
-| `agenda` | Ordered talk titles and all public co-speaker names. |
-| `event.feedback_url` | Public feedback URL. |
-| `talk.title`, `talk.abstract`, `talk.speakers` | Slotted selected proposal title, abstract, and public co-speaker names. |
-| `speaker.name` | Slotted public speaker name using the same assignment as portraits. |
-| `next_event.date`, `next_event.date.numeric` | Next published meetup date, localized long form or `DD/MM/YYYY`. |
-| `next_event.host.name`, `next_event.host.city` | Next published meetup's host display name and explicit public city. |
+| Token                                           | Public value                                                            |
+| ----------------------------------------------- | ----------------------------------------------------------------------- |
+| `event.title`                                   | Validated event title.                                                  |
+| `event.date`                                    | Localized long event date.                                              |
+| `event.date.month`                              | Localized month name.                                                   |
+| `event.date.numeric`                            | Event date as `DD/MM/YYYY`.                                             |
+| `event.date.weekday`                            | Localized weekday and full event date.                                  |
+| `host.name`                                     | Resolved host display name.                                             |
+| `host.address`, `host.postal_code`, `host.city` | Explicit public venue fields.                                           |
+| `agenda`                                        | Ordered talk titles and all public co-speaker names.                    |
+| `event.feedback_url`                            | Public feedback URL.                                                    |
+| `talk.title`, `talk.abstract`, `talk.speakers`  | Slotted selected proposal title, abstract, and public co-speaker names. |
+| `speaker.name`                                  | Slotted public speaker name using the same assignment as portraits.     |
+| `next_event.date`, `next_event.date.numeric`    | Next published meetup date, localized long form or `DD/MM/YYYY`.        |
+| `next_event.host.name`, `next_event.host.city`  | Next published meetup's host display name and explicit public city.     |
 
 Dates preserve the event timezone's calendar day; month and weekday names use
 the workflow locale. Numeric dates always use `DD/MM/YYYY`. Speaker lists use
@@ -190,7 +215,7 @@ field. It selects the earliest strictly later date among open `meetup` issues
 in the same repository with scheduled status, a confirmed resolved host, a valid
 date, and a valid Meetup or CNCF publication URL. Same-date ties use the lowest
 issue number. Cancelled, postponed, held, unpublished, and same-day events are
-excluded. The host name comes from the validated referential; its city comes
+excluded. The name of the host comes from the validated referential; its city comes
 from the same public venue map. Missing data or an incomplete/failed listing
 produces missing fields. Lookup is limited to 200 distinct issues and 20 pages;
 it never selects from a partial result or edits candidate issues.

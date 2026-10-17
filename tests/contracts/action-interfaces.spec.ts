@@ -2,6 +2,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parse } from "@babel/parser";
 import { describe, expect, it } from "vitest";
+import * as ActionInterfaceUsage from "../../scripts/action-interface-usage.js";
 import {
 	type ActionManifest,
 	type Workflow,
@@ -10,6 +11,22 @@ import {
 } from "./support.js";
 
 describe("minimal explicit action interfaces", () => {
+	it("enforces interface checks in local and CI lint", async () => {
+		// Arrange
+		const path = join(root, "package.json");
+		// Act
+		const { scripts } = JSON.parse(await readFile(path, "utf8"));
+		// Assert
+		for (const name of ["lint", "lint:ci"])
+			expect(scripts[name].split(" && ")).toContain("pnpm check:interfaces");
+		expect(scripts["check:interfaces"]).toContain(
+			"tests/contracts/action-interfaces.spec.ts",
+		);
+		expect(scripts["check:interfaces"]).toContain(
+			"scripts/action-interface-usage.test.ts",
+		);
+	});
+
 	it("requires every published input without a default", async () => {
 		// Arrange
 		const paths = (
@@ -34,6 +51,68 @@ describe("minimal explicit action interfaces", () => {
 		}
 	});
 
+	it("requires every reusable and manual workflow input without a default", async () => {
+		// Arrange
+		const paths = (await readdir(join(root, ".github/workflows"))).filter(
+			(path) => path.endsWith(".yml"),
+		);
+		// Act
+		const workflows = await Promise.all(
+			paths.map((path) => readYaml<Workflow>(`.github/workflows/${path}`)),
+		);
+		// Assert
+		for (const workflow of workflows)
+			for (const trigger of ["workflow_call", "workflow_dispatch"] as const)
+				for (const [name, input] of Object.entries(
+					workflow.on?.[trigger]?.inputs ?? {},
+				)) {
+					expect(input.required, `${workflow.name}: ${name}`).toBe(true);
+					expect(input, `${workflow.name}: ${name}`).not.toHaveProperty(
+						"default",
+					);
+				}
+	});
+
+	it("requires operational consumers for reusable workflow outputs", async () => {
+		// Arrange
+		const paths = (await readdir(join(root, ".github/workflows"))).filter(
+			(path) => path.endsWith(".yml"),
+		);
+		const workflows = await Promise.all(
+			paths.map(async (path) => ({
+				path,
+				workflow: await readYaml<Workflow>(`.github/workflows/${path}`),
+			})),
+		);
+		const violations: string[] = [];
+		// Act
+		for (const { path, workflow } of workflows)
+			for (const output of Object.keys(
+				workflow.on?.workflow_call?.outputs ?? {},
+			)) {
+				const consumed = workflows.some(
+					(caller) =>
+						!caller.path.startsWith("__") &&
+						Object.entries(caller.workflow.jobs ?? {}).some(
+							([id, job]) =>
+								job.uses === `./.github/workflows/${path}` &&
+								Object.entries(caller.workflow.jobs ?? {}).some(
+									([otherId, other]) =>
+										otherId !== id &&
+										ActionInterfaceUsage.operationalValues(other).some(
+											(value) =>
+												value.includes(`needs.${id}.outputs.${output}`),
+										),
+								),
+						),
+				);
+				if (!consumed)
+					violations.push(`${path}: unused workflow output ${output}`);
+			}
+		// Assert
+		expect(violations).toEqual([]);
+	});
+
 	it("wires every caller explicitly and retains only operationally consumed outputs", async () => {
 		// Arrange
 		const paths = (
@@ -55,6 +134,32 @@ describe("minimal explicit action interfaces", () => {
 		).filter((path) => path.endsWith(".yml"));
 		const consumed = new Map(
 			[...manifests.keys()].map((name) => [name, new Set<string>()]),
+		);
+		const inputValues = new Map(
+			[...manifests].map(([name, manifest]) => [
+				name,
+				new Map(
+					Object.keys(manifest.inputs ?? {}).map((input) => [
+						input,
+						[] as unknown[],
+					]),
+				),
+			]),
+		);
+		const runtime = join(root, "packages/runtime/github-actions/src");
+		const sources = await Promise.all(
+			(await readdir(runtime, { recursive: true }))
+				.filter((path) => path.endsWith(".ts") && !path.endsWith(".test.ts"))
+				.map((path) => readFile(join(runtime, path), "utf8")),
+		);
+		const flags = new Set(
+			sources.flatMap((source) =>
+				[
+					...source.matchAll(
+						/(?:RuntimeInput\.(?:booleanInput|enumInput)|core\.getBooleanInput)\(\s*"([^"]+)"/g,
+					),
+				].map((match) => match[1]),
+			),
 		);
 		const violations: string[] = [];
 		const references = (text: string) =>
@@ -94,7 +199,9 @@ describe("minimal explicit action interfaces", () => {
 					for (const input of Object.keys(step.with ?? {}))
 						if (!Object.hasOwn(manifest.inputs ?? {}, input))
 							violations.push(`${path}: ${action} receives unknown ${input}`);
-					for (const ref of references(JSON.stringify(job))) {
+					for (const ref of references(
+						ActionInterfaceUsage.strings(job).join("\n"),
+					)) {
 						if (
 							ref.step === step.id &&
 							!Object.hasOwn(manifest.outputs ?? {}, ref.output)
@@ -102,17 +209,22 @@ describe("minimal explicit action interfaces", () => {
 							violations.push(`${path}: ${action} has no ${ref.output} output`);
 					}
 					if (path.startsWith("__")) continue;
-					let operational = JSON.stringify(steps);
+					for (const [input, value] of Object.entries(step.with ?? {}))
+						inputValues.get(action)?.get(input)?.push(value);
+					let operational =
+						ActionInterfaceUsage.operationalValues(job).join("\n");
 					for (const [output, expression] of Object.entries(
 						job.outputs ?? {},
 					)) {
-						const downstream = JSON.stringify(
-							Object.entries(workflow.jobs ?? {}).filter(
-								([id]) => id !== jobId,
-							),
-						);
+						const downstream = Object.entries(workflow.jobs ?? {})
+							.filter(([id]) => id !== jobId)
+							.flatMap(([, other]) =>
+								ActionInterfaceUsage.operationalValues(other),
+							)
+							.join("\n");
 						if (downstream.includes(`needs.${jobId}.outputs.${output}`))
-							operational += JSON.stringify(expression);
+							operational +=
+								ActionInterfaceUsage.strings(expression).join("\n");
 					}
 					for (const ref of references(operational))
 						if (ref.step === step.id) consumed.get(action)?.add(ref.output);
@@ -123,6 +235,15 @@ describe("minimal explicit action interfaces", () => {
 			for (const output of Object.keys(manifest.outputs ?? {}))
 				if (!consumed.get(action)?.has(output))
 					violations.push(`${action}: unused output ${output}`);
+
+		for (const [action, inputs] of inputValues)
+			for (const [input, values] of inputs) {
+				const problem = ActionInterfaceUsage.inputProblem(
+					values,
+					flags.has(input),
+				);
+				if (problem) violations.push(`${action}: ${input} ${problem}`);
+			}
 
 		// Assert
 		expect(violations).toEqual([]);
@@ -159,7 +280,7 @@ describe("minimal explicit action interfaces", () => {
 						call.callee.object.type === "Identifier" &&
 						call.callee.object.name === "core" &&
 						call.callee.property.type === "Identifier" &&
-						call.callee.property.name === "getInput"
+						["getInput", "getBooleanInput"].includes(call.callee.property.name)
 					) {
 						reads++;
 						const options = call.arguments[1];

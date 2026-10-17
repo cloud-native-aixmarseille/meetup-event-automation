@@ -14,7 +14,7 @@
 
 ## Overview
 
-Read one meetup issue, derive lifecycle and readiness, and optionally persist safe issue and managed-comment updates. Publish redacted diagnostics in annotations, logs, and the job summary.
+Read one meetup issue, derive lifecycle and readiness, and persist safe issue and managed-comment updates. Publish redacted diagnostics in annotations, logs, and the job summary.
 
 <!-- overview:end -->
 <!-- usage:start -->
@@ -32,11 +32,7 @@ Read one meetup issue, derive lifecycle and readiness, and optionally persist sa
     # This input is required.
     issue-number: ""
 
-    # Use check for read-only validation or fix to persist safe normalizations to the issue and managed diagnostic comment.
-    # This input is required.
-    mode: check
-
-    # Token for the caller repository. Requires issues:read; fix mode also requires issues:write.
+    # Token for the caller repository. Requires issues:write for issue normalization and managed diagnostic comments.
     # This input is required.
     github-token: ""
 
@@ -54,10 +50,9 @@ Read one meetup issue, derive lifecycle and readiness, and optionally persist sa
 | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
 | **`conference-hall-event`**   | Conference Hall CFP slug for live linked profiles and selected proposals.                                                          | **true**     | -           |
 | **`conference-hall-api-key`** | Read-only Conference Hall event API key.                                                                                           | **true**     | -           |
-| **`locale`**                  | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **true**    | - |
+| **`locale`**                  | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **true**     | -           |
 | **`issue-number`**            | GitHub issue number in the caller repository containing the meetup event document to inspect.                                      | **true**     | -           |
-| **`mode`**                    | Use check for read-only validation or fix to persist safe normalizations to the issue and managed diagnostic comment.              | **true**     | -           |
-| **`github-token`**            | Token for the caller repository. Requires issues:read; fix mode also requires issues:write.                                        | **true**     | -           |
+| **`github-token`**            | Token for the caller repository. Requires issues:write for issue normalization and managed diagnostic comments.                    | **true**     | -           |
 | **`managed-comment-author`**  | Trusted bot login allowed to create or update the managed diagnostic comment, for example my-app[bot].                             | **true**     | -           |
 
 <!-- inputs:end -->
@@ -67,9 +62,9 @@ Read one meetup issue, derive lifecycle and readiness, and optionally persist sa
 
 ## Outputs
 
-| **Output**        | **Description**                                                                                                                              |
-| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`diagnostics`** | Redacted JSON diagnostics safe to expose in workflow logs and summaries.                                                                     |
+| **Output**        | **Description**                                                          |
+| ----------------- | ------------------------------------------------------------------------ |
+| **`diagnostics`** | Redacted JSON diagnostics safe to expose in workflow logs and summaries. |
 
 <!-- outputs:end -->
 <!-- examples:start -->

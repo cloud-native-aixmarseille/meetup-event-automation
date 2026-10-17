@@ -74,4 +74,3 @@ export {
 	type AttentionStage,
 } from "./attention/evaluate-attention.js";
 export type { AttentionContent } from "./attention/ports.js";
-export type { AttentionPostRecovery } from "./attention/recover-attention-post.js";

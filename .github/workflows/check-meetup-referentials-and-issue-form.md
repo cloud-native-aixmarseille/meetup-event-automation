@@ -52,7 +52,7 @@ jobs:
 
 | **Input**    | **Description**                                                                                                                    | **Required** | **Default** |
 | ------------ | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
-| **`locale`** | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **false**    | `en`        |
+| **`locale`** | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **true**     | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->

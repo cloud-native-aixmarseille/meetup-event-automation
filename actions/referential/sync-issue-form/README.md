@@ -38,7 +38,7 @@ Validate configured referentials and synchronize the public meetup issue form pr
 
 | **Input**    | **Description**                                                                                                                    | **Required** | **Default** |
 | ------------ | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
-| **`locale`** | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **true**    | - |
+| **`locale`** | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **true**     | -           |
 | **`mode`**   | Use check to detect projection drift or fix to rewrite the checked-out issue form with the validated public projection.            | **true**     | -           |
 
 <!-- inputs:end -->
@@ -48,9 +48,9 @@ Validate configured referentials and synchronize the public meetup issue form pr
 
 ## Outputs
 
-| **Output**            | **Description**                                                                                    |
-| --------------------- | -------------------------------------------------------------------------------------------------- |
-| **`changed`**         | Whether the checked-out issue form differs from the desired public projection.                     |
+| **Output**    | **Description**                                                                |
+| ------------- | ------------------------------------------------------------------------------ |
+| **`changed`** | Whether the checked-out issue form differs from the desired public projection. |
 
 <!-- outputs:end -->
 <!-- examples:start -->

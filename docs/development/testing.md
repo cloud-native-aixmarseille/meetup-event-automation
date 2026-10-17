@@ -72,13 +72,16 @@ every declared input has `required: true` and no `default` key, and every output
 has an identified real consumer. Check caller wiring and runtime input validation
 alongside the manifest. Tests and dummy workflow reads do not count as consumers;
 remove unused outputs from runtime emission and metadata together.
+Reject flags with one operational value and inputs that are always null, false,
+or empty. Logging and optional verbose reads cannot establish output use.
+The focused `pnpm check:interfaces` command also runs in local and CI lint.
 
 | Check                                                                        | What it verifies                                                             |
 | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
 | [Architecture](../../tests/architecture.spec.ts)                             | Dependency layers, package entrypoints, cycles, adapter names, DI boundaries |
 | [Code structure](../../tests/contracts/code-structure.spec.ts)               | Actual Biome limits, class ownership, unit-test layout                       |
 | [Public actions](../../tests/contracts/public-actions.spec.ts)               | Action inputs, outputs, runtime, dispatch authorization                      |
-| [Action interfaces](../../tests/contracts/action-interfaces.spec.ts)         | Required inputs without defaults, explicit caller wiring, consumed outputs  |
+| [Action interfaces](../../tests/contracts/action-interfaces.spec.ts)         | Required inputs without defaults, explicit caller wiring, consumed outputs   |
 | [Action reporting](../../tests/contracts/action-reporting.spec.ts)           | Shared runner, public reports, failure policy, and safe rendering            |
 | [Localization](../../tests/contracts/localization.spec.ts)                   | Catalog ownership, locale wiring, and diagnostic coverage                    |
 | [Public workflows](../../tests/contracts/public-workflows.spec.ts)           | Reusable workflow interfaces, permissions, secrets, pinned dependencies      |

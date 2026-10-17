@@ -1,6 +1,7 @@
 # ADR 0006: Match action inputs to operational behavior
 
 Status: Accepted; the explicit input rule is generalized by [ADR 0017](0017-explicit-action-interfaces.md).
+The event action mode is removed by [ADR 0018](0018-remove-invariant-action-options.md).
 
 Date: 2026-09-30
 

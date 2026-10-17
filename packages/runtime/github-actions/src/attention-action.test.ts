@@ -12,7 +12,6 @@ vi.mock("@actions/core", () => ({
 			"slack-token": "private-slack",
 			"slack-organizer-channel-id": "C123",
 			"stage-results": "{}",
-			"recover-post": "null",
 		})[name],
 	setOutput: vi.fn(),
 }));

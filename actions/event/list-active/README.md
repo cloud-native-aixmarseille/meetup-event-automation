@@ -43,7 +43,7 @@ issues and 20 pages; exceeding a bound fails explicitly. See
 
 | **Input**          | **Description**                                                                                                                    | **Required** | **Default** |
 | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
-| **`locale`**       | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **true**    | - |
+| **`locale`**       | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **true**     | -           |
 | **`github-token`** | Token for the caller repository with issues:read permission.                                                                       | **true**     | -           |
 
 <!-- inputs:end -->

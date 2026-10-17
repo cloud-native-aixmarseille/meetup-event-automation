@@ -15,7 +15,7 @@ status shares the thank-you approval comment and notification flow. Run under
 run the action after failed dependencies.
 
 See [organizer attention](../../../docs/integrations/communications.md#organizer-attention)
-for reminder policy, trust checks, daily caps, audit bounds, and explicit recovery.
+for reminder policy, trust checks, daily caps, audit bounds, and uncertain delivery holds.
 
 <!-- overview:end -->
 <!-- inputs:start -->
@@ -24,14 +24,13 @@ for reminder policy, trust checks, daily caps, audit bounds, and explicit recove
 
 | Input                        | Required | Default | Purpose                                                                                             |
 | ---------------------------- | -------- | ------- | --------------------------------------------------------------------------------------------------- |
-| `locale`                     | Yes       | - | English or French generated messages.                                                               |
+| `locale`                     | Yes      | -       | English or French generated messages.                                                               |
 | `issue-number`               | Yes      |         | Meetup issue number.                                                                                |
 | `github-token`               | Yes      |         | GitHub App token with issue write access and comment-history read access.                           |
 | `managed-comment-author`     | Yes      |         | Trusted GitHub App bot login.                                                                       |
 | `slack-token`                | Yes      |         | Slack bot token with `chat:write` and `reactions:write`.                                            |
 | `slack-organizer-channel-id` | Yes      |         | Explicit internal organizer channel ID.                                                             |
 | `stage-results`              | Yes      |         | JSON object containing event, assets, feedback, and communications outcomes and diagnostic outputs. |
-| `recover-post`               | Yes       |         | Explicit `null` for no recovery, or verified recovery JSON for the current pending reservation.                                         |
 
 `stage-results` uses each step's `outcome` and `diagnostics` output. Success and
 failure are explicit; skipped, cancelled, or absent stages are unknown. No rendered

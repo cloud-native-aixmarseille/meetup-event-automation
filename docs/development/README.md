@@ -40,6 +40,7 @@ Run commands from the repository root.
 | `pnpm test:cov`           | Run tests with coverage thresholds                                                       |
 | `pnpm check:architecture` | Check package boundaries, imports, and cycles                                            |
 | `pnpm check:contracts`    | Check action, workflow, CI, and code-structure contracts                                 |
+| `pnpm check:interfaces`   | Reject optional/defaulted inputs, constant flags, empty-only inputs, and unused outputs  |
 | `pnpm check:structure`    | Check class ownership, entrypoints, and unit-test placement                              |
 | `pnpm check:knip`         | Find unused code and dependencies                                                        |
 | `pnpm package`            | Rebuild committed action bundles                                                         |
@@ -96,7 +97,8 @@ generation script in this repository.
 
 ### Action interface rules
 
-Apply these requirements to every input and output in `actions/**/action.yml`:
+Apply these requirements to every owned action and workflow input and output,
+including manual workflow inputs:
 
 - Every input must declare `required: true` and omit the `default` key entirely.
   Optional inputs, omitted `required`, and defaults are prohibited, including
@@ -105,11 +107,21 @@ Apply these requirements to every input and output in `actions/**/action.yml`:
   runtime boundary; do not hide a missing input behind a runtime default, an
   empty string, or an implicit environment value. Keep fixed internal values
   out of the public input contract.
+- Trace values through operational callers, excluding tests and examples. If a
+  flag or mode always selects the same behavior, remove it and make that behavior
+  unconditional. If an input is always null, false, or empty, remove it and its
+  unused behavior. Delete the associated parsers, types, branches, tests, and
+  documentation. Requiring an explicit dummy value does not make an input useful.
+  Required data such as locale and identifiers can legitimately have one current
+  value; this does not justify constant behavioral switches.
 - Declare and emit an output only when an identified caller actually consumes
   it. Trace the value to a workflow expression, downstream action, or supported
-  external caller. A declaration, README entry, test assertion, or hypothetical
+  external caller. A declaration, readme entry, test assertion, or hypothetical
   future use is not a consumer. This applies to result envelopes, diagnostics,
   counts, flags, and URLs as well as feature-specific outputs.
+- Debugging, logging, summaries, and optional verbose output are not operational
+  consumers. Follow exported values through wrappers to the final decision,
+  downstream input, or published artifact. A reference alone is insufficient.
 - Remove unused outputs from the manifest and runtime together, and update
   callers, adjacent documentation, and contract tests in the same change.
   Keep information intended for people in the shared logs, annotations, and
@@ -119,10 +131,17 @@ Apply these requirements to every input and output in `actions/**/action.yml`:
   output. Do not add dummy reads or tests solely to make an unused output appear
   consumed.
 
-These rules apply to action manifests. Reusable workflow inputs have their own
-explicit contract; a workflow must pass its resolved values to actions rather
-than relying on action defaults. See [localization](localization.md) and
-[action reporting](reporting.md) for the corresponding runtime responsibilities.
+`pnpm check:interfaces` runs in both `pnpm lint` and `pnpm lint:ci`. It verifies
+required inputs without defaults, explicit action callers, operational flag
+values, and consumed outputs. Internal integration tests do not establish
+production use. It recognizes owned action inputs, operational conditions and
+matrices, and checked shell data flows into published pull requests. Unknown
+script or third-party consumers need a reviewed rule and regression coverage;
+do not accept arbitrary environment bindings or logging as evidence.
+
+Reusable workflows require inputs explicitly too and forward them to actions.
+See [localization](localization.md) and [action reporting](reporting.md) for the
+corresponding runtime responsibilities.
 
 Keep current architectural rationale in the relevant development guide.
 Preserve [ADRs](../README.md#architecture-decisions) as decision history, with

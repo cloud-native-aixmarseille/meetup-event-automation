@@ -1,6 +1,7 @@
 # ADR 0017: Require explicit action inputs and consumed outputs
 
-Status: Accepted
+Status: Accepted; explicit null recovery and optional workflow locale are
+superseded by [ADR 0018](0018-remove-invariant-action-options.md).
 
 Date: 2026-10-17
 

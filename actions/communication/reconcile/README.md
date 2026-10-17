@@ -108,11 +108,11 @@ release you use. The asset step must have the ID `assets` for this example.
 | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
 | **`conference-hall-event`**      | Conference Hall CFP slug for live linked profiles and selected proposals.                                                                                                                                              | **true**     | -           |
 | **`conference-hall-api-key`**    | Read-only Conference Hall event API key.                                                                                                                                                                               | **true**     | -           |
-| **`locale`**                     | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.                                                                                     | **true**    | - |
+| **`locale`**                     | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.                                                                                     | **true**     | -           |
 | **`issue-number`**               | GitHub issue number in the caller repository containing the meetup event document to inspect.                                                                                                                          | **true**     | -           |
-| **`slides-ready`** | Whether managed slides content is ready. False holds due email batches. Copy-only slides use true. | **true** | - |
-| **`slides-url`**                 | Direct presentation file URL from the asset action's drive-files slides-link entry. Supply on every invocation; invalid links block due email batches.                                                               | **true**    | -           |
-| **`openfeedback-api-key`**       | OpenFeedback organization API key used to read existing talk results for speaker thank-you emails. Missing or unresolved results block the thank-you batch.                                                            | **true**    | -           |
+| **`slides-ready`**               | Whether managed slides content is ready. False holds due email batches. Copy-only slides use true.                                                                                                                     | **true**     | -           |
+| **`slides-url`**                 | Direct presentation file URL from the asset action's drive-files slides-link entry. Supply on every invocation; invalid links block due email batches.                                                                 | **true**     | -           |
+| **`openfeedback-api-key`**       | OpenFeedback organization API key used to read existing talk results for speaker thank-you emails. Missing or unresolved results block the thank-you batch.                                                            | **true**     | -           |
 | **`report-errors-to-issue`**     | Use true to record diagnostics in a managed issue comment and succeed after persistence, or false to fail on error diagnostics. Execution and comment persistence failures still fail. Requires the shared event lock. | **true**     | -           |
 | **`github-token`**               | Token for the caller repository. Requires issues:write for approval requests, checklist completion, delivery ledger, and diagnostic comments, and metadata:read to verify approvers.                                   | **true**     | -           |
 | **`managed-comment-author`**     | Trusted bot login allowed to create or update managed approval, delivery ledger and communication diagnostic comments, for example my-app[bot].                                                                        | **true**     | -           |
@@ -127,9 +127,9 @@ release you use. The asset step must have the ID `assets` for this example.
 
 ## Outputs
 
-| **Output**             | **Description**                                                                                                                    |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| **`diagnostics`**      | Redacted JSON diagnostics safe to expose in workflow logs and summaries.                                                           |
+| **Output**        | **Description**                                                          |
+| ----------------- | ------------------------------------------------------------------------ |
+| **`diagnostics`** | Redacted JSON diagnostics safe to expose in workflow logs and summaries. |
 
 <!-- outputs:end -->
 <!-- examples:start -->

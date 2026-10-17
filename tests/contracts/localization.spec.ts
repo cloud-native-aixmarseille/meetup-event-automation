@@ -59,10 +59,12 @@ describe("localization contract", () => {
 		expect(publicWorkflows.length).toBeGreaterThan(0);
 		for (const workflow of publicWorkflows) {
 			expect(workflow.on?.workflow_call?.inputs?.locale).toMatchObject({
-				default: "en",
-				required: false,
+				required: true,
 				type: "string",
 			});
+			expect(workflow.on?.workflow_call?.inputs?.locale).not.toHaveProperty(
+				"default",
+			);
 			for (const job of Object.values(workflow.jobs ?? {}))
 				for (const step of job.steps ?? []) {
 					if (step.uses?.startsWith(automationActionPrefix))

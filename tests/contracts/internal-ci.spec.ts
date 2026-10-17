@@ -114,12 +114,13 @@ describe("internal CI contracts", () => {
 		expect(dedicatedVitestGateOccurrences).toBe(0);
 	});
 
-	it("runs communication integration checks against a completed-mail fixture under the event lock", async () => {
+	it("runs event and communication integration checks under the same synthetic event lock", async () => {
 		// Arrange
 		const workflow = await readWorkflow("__check-actions");
 
 		// Act
 		const job = workflow.jobs?.["test-communication-reconcile"];
+		const eventJob = workflow.jobs?.["test-event-reconcile"];
 		const communication = job?.steps?.find(
 			(step) => step.uses === "./actions/communication/reconcile",
 		);
@@ -135,6 +136,8 @@ describe("internal CI contracts", () => {
 			group: `meetup-event-${workflowExpression("github.repository_id")}-${workflowExpression("needs.prepare-synthetic-issue.outputs.issue-number")}`,
 			"cancel-in-progress": false,
 		});
+		expect(eventJob?.concurrency).toEqual(job?.concurrency);
+		expect(eventJob?.permissions?.issues).toBe("write");
 		expect(communication?.with).not.toHaveProperty("mode");
 		expect(communication?.with).not.toHaveProperty("dispatch-authorized");
 		expect(communication?.with?.["report-errors-to-issue"]).toBe("false");

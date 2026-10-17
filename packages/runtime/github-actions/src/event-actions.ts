@@ -24,11 +24,6 @@ export class EventActions {
 			"issue-number",
 			core.getInput("issue-number", { required: true }),
 		);
-		const mode = RuntimeInput.enumInput(
-			"mode",
-			core.getInput("mode", { required: true }),
-			["check", "fix"] as const,
-		);
 		const token = core.getInput("github-token", { required: true });
 		const commentAuthorLogin = core.getInput("managed-comment-author", {
 			required: true,
@@ -45,9 +40,9 @@ export class EventActions {
 		});
 		const outcome = await container.get(ManageMeetupEvent).execute({
 			identity: { repository, issueNumber },
-			mode,
+			mode: "fix",
 		});
-		return EventActions.reconcileReport(issueNumber, mode, outcome, messages);
+		return EventActions.reconcileReport(issueNumber, outcome, messages);
 	}
 
 	static async runEventListActiveAction(
@@ -93,12 +88,11 @@ export class EventActions {
 
 	private static reconcileReport(
 		issueNumber: number,
-		mode: string,
 		outcome: Awaited<ReturnType<ManageMeetupEvent["execute"]>>,
 		messages: ActionMessages,
 	): ActionReportData {
 		const details = [
-			messages.t("report.event.context", { issue: issueNumber, mode }),
+			messages.t("report.event.context", { issue: issueNumber, mode: "fix" }),
 		];
 		if (outcome.skipped) {
 			details.push(messages.t("report.event.skipped"));

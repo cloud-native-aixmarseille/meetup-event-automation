@@ -6,7 +6,7 @@ workflows; see [Conference Hall setup](../../docs/integrations/conference-hall.m
 
 | Input                   | Required | Meaning                                          |
 | ----------------------- | -------- | ------------------------------------------------ |
-| `locale`                | No       | English by default; `fr` is supported.           |
+| `locale`                | Yes      | Explicit `en` or `fr`; no default.               |
 | `github-app-client-id`  | Yes      | GitHub App installed on the consumer repository. |
 | `conference-hall-event` | Yes      | CFP slug.                                        |
 

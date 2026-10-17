@@ -13,7 +13,6 @@ const actionContracts = [
 			"slack-organizer-channel-id",
 			"slack-token",
 			"stage-results",
-			"recover-post",
 		],
 		outputs: [],
 	},
@@ -54,7 +53,6 @@ const actionContracts = [
 			"github-token",
 			"issue-number",
 			"managed-comment-author",
-			"mode",
 		],
 		outputs: ["diagnostics"],
 	},
@@ -123,7 +121,7 @@ describe("public action contracts", () => {
 		},
 	);
 
-	it.each(["event/reconcile", "referential/sync-issue-form"])(
+	it.each(["referential/sync-issue-form"])(
 		"requires an explicit mode for %s",
 		async (action) => {
 			// Arrange

@@ -44,13 +44,22 @@ rebuild/check action bundles after production changes. Responsibility and
 dependency review remains necessary even when numeric checks pass.
 
 Enforce the [action interface rules](docs/development/README.md#action-interface-rules)
-for every action: all inputs must declare `required: true`, with no `default`
+for every owned action and workflow, including manual inputs: all inputs must
+declare `required: true`, with no `default`
 key, and callers must supply them explicitly. Do not add optional inputs or
 runtime defaults that conceal missing required values, including for `locale`
-and booleans. Declare and emit only outputs with an identified, actual consumer;
-documentation, tests, logging, and hypothetical future use do not establish one.
+and booleans. Audit operational callers, excluding tests: remove flags that always
+select the same behavior and make that behavior unconditional. Remove inputs
+that are always null, false, or empty, and delete their unused behavior, parsers,
+types, and tests. Do not retain a required dummy value to preserve an unused path.
+Declare and emit only outputs with an identified, actual operational consumer;
+documentation, tests, debugging, logging, optional verbosity, and hypothetical
+future use do not establish one. Trace forwarding chains to their final effect.
 Remove unused outputs and update runtime code, callers, documentation, and
 contract checks together. Do not create dummy consumers to preserve an output.
+Keep `pnpm check:interfaces` in both local and CI lint commands. Its checks must
+reject constant flags, empty-only inputs, and logging-only output references;
+new script consumers need reviewed data-flow checks rather than a blanket bypass.
 
 Every public GitHub Action must follow the Action reporting contract in
 [the action reporting guide](docs/development/reporting.md): use

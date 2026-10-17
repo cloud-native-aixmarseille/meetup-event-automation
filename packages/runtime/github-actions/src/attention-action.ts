@@ -32,9 +32,6 @@ export class AttentionAction {
 			},
 			AttentionStages.parse(core.getInput("stage-results", { required: true })),
 			String(context.runId),
-			AttentionStages.recovery(
-				core.getInput("recover-post", { required: true }),
-			),
 		);
 
 		return {

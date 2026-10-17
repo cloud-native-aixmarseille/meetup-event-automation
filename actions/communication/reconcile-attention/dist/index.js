@@ -38494,26 +38494,6 @@ var AttentionPolicy = class _AttentionPolicy {
   }
 };
 
-// packages/domain/communication/src/attention/recover-attention-post.ts
-var RecoverAttentionPost = class {
-  static apply(state, recovery, now2) {
-    if (!state?.post || state.post.reservationId !== recovery.reservationId || state.post.status !== "pending")
-      throw new Error(
-        "Recovery requires the current pending attention reservation"
-      );
-    if (recovery.outcome === "accepted") {
-      if (!recovery.message || !/^[CG][A-Z0-9]+$/.test(recovery.message.destination) || !/^\d+\.\d+$/.test(recovery.message.messageId))
-        throw new Error("Recovery requires a verified Slack message reference");
-      state.post.status = "accepted";
-      state.post.message = { ...recovery.message };
-      state.post.fingerprint = void 0;
-    } else if (recovery.outcome === "not-accepted") {
-      state.post.status = "retry";
-      state.post.retryAt = now2.toISOString();
-    } else throw new Error("Invalid attention recovery outcome");
-  }
-};
-
 // packages/domain/communication/src/attention/attention-episodes.ts
 var AttentionEpisodes = class _AttentionEpisodes {
   static reconcile(previous, observation, now2) {
@@ -38593,11 +38573,10 @@ var ReconcileAttention = class {
   repository;
   notification;
   clock;
-  async execute(observation, recovery) {
+  async execute(observation) {
     const now2 = this.clock.now();
     const day = AttentionPolicy.day(now2);
     const previous = await this.repository.load();
-    if (recovery) RecoverAttentionPost.apply(previous, recovery, now2);
     const state = AttentionEpisodes.reconcile(previous, observation, now2);
     await this.repository.save(state);
     const view = AttentionPolicy.view(state);
@@ -40163,7 +40142,7 @@ var ManageMeetupAttention = class {
     this.dependencies = dependencies;
   }
   dependencies;
-  async execute(identity, stages, runId, recovery) {
+  async execute(identity, stages, runId) {
     const { repository, codec, config, clock } = this.dependencies;
     const source = await repository.find(identity);
     if (!source) throw new Error("Attention issue is unavailable");
@@ -40196,10 +40175,10 @@ var ManageMeetupAttention = class {
         (task) => facts.followUpPending.includes(task)
       )
     });
-    const result = await this.dependencies.reconciliation.execute(
-      { ...observation, commentId },
-      recovery
-    );
+    const result = await this.dependencies.reconciliation.execute({
+      ...observation,
+      commentId
+    });
     return {
       ...result,
       skipped: false,
@@ -59389,17 +59368,6 @@ var AttentionStages = class _AttentionStages {
       };
     });
   }
-  static recovery(value) {
-    const input = JSON.parse(value);
-    if (input === null) return void 0;
-    if (!input || typeof input.reservationId !== "string" || !["accepted", "not-accepted"].includes(input.outcome))
-      throw new Error("Invalid attention recovery input");
-    return {
-      reservationId: input.reservationId,
-      outcome: input.outcome,
-      message: input.message
-    };
-  }
   static blocked(input) {
     let diagnostics = input;
     if (typeof diagnostics === "string") {
@@ -59453,10 +59421,7 @@ var AttentionAction = class {
         issueNumber
       },
       AttentionStages.parse(getInput("stage-results", { required: true })),
-      String(context2.runId),
-      AttentionStages.recovery(
-        getInput("recover-post", { required: true })
-      )
+      String(context2.runId)
     );
     return {
       details: [

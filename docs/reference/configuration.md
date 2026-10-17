@@ -39,8 +39,8 @@ does not forward it to a reusable workflow.
 
 ## Language
 
-The optional `locale` workflow input defaults to English (`en`) and also supports
-French (`fr`). Use the same `locale` in all callers. Regional French variants such as `fr-FR`
+The required `locale` workflow input accepts English (`en`) or French (`fr`)
+without a default. Use the same `locale` in all callers. Regional French variants such as `fr-FR`
 resolve to French; unsupported values fall back to English. Changing locale
 requires issue-form synchronization. See
 [localization](../development/localization.md) for covered messages and stable
