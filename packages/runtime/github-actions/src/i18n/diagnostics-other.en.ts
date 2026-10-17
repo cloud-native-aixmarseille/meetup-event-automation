@@ -14,9 +14,9 @@ export const DIAGNOSTICS_OTHER_EN = {
 	"diagnostic.publication.assets.content.revision":
 		"The document changed during rendering. Reconcile again after the current edit is complete.",
 	"diagnostic.publication.assets.content.image":
-		"Check the public HTTPS portrait and fallback: PNG, JPEG or GIF, under 50 MB and at most 25 megapixels. Signed or private URLs are unsupported.",
+		"Check the public HTTPS image and fallback: PNG, JPEG or GIF, under 50 MB and at most 25 megapixels. Signed or private URLs are unsupported.",
 	"diagnostic.publication.assets.content.fallback":
-		"An optional portrait uses its validated generic fallback. The file remains ready; check the speaker assignment and public picture URL.",
+		"An optional image uses its validated generic fallback. The file remains ready; check the speaker assignment or host-logo configuration and public image URL.",
 
 	"diagnostic.publication.feedback.agenda":
 		"Complete talk subjects and resolve speaker references in the issue before synchronizing the feedback agenda. Existing feedback is preserved.",

@@ -55,6 +55,11 @@ export class AssetRenderProjection {
 			date: event.date,
 			timeZone: event.timeZone,
 			hostName: event.host?.displayName,
+			hostLogo:
+				catalog.isValid &&
+				catalog.catalog.hosts.some((host) => host.id === event.host?.id)
+					? this.hostLogo(event.host?.id)
+					: undefined,
 			venue: event.host?.id
 				? this.assignments.venues[event.host.id]
 				: undefined,
@@ -76,5 +81,13 @@ export class AssetRenderProjection {
 				? await this.nextEvent?.find(event, catalog.catalog)
 				: undefined,
 		});
+	}
+
+	private hostLogo(hostId?: string): PublicAssetModel["hostLogo"] {
+		if (!hostId) return undefined;
+		const logo = this.assignments.hostLogos?.[hostId];
+		return logo && AssetParticipantProjection.publicUrl(logo.url)
+			? { ...logo, hostId }
+			: undefined;
 	}
 }

@@ -15,9 +15,9 @@ export const DIAGNOSTICS_OTHER_FR = {
 	"diagnostic.publication.assets.content.revision":
 		"Le document a changé pendant le rendu. Relancez la réconciliation après la modification en cours.",
 	"diagnostic.publication.assets.content.image":
-		"Vérifiez le portrait HTTPS public et son image de remplacement : PNG, JPEG ou GIF, moins de 50 Mo et au plus 25 mégapixels. Les URL privées ou signées ne sont pas prises en charge.",
+		"Vérifiez l'image HTTPS publique et son image de remplacement : PNG, JPEG ou GIF, moins de 50 Mo et au plus 25 mégapixels. Les URL privées ou signées ne sont pas prises en charge.",
 	"diagnostic.publication.assets.content.fallback":
-		"Un portrait facultatif utilise son image générique validée. Le fichier reste prêt ; vérifiez le choix de l'intervenant et son URL publique.",
+		"Une image facultative utilise son image générique validée. Le fichier reste prêt ; vérifiez le choix de l'intervenant ou la configuration du logo de l'hôte et l'URL publique de l'image.",
 
 	"diagnostic.publication.feedback.agenda":
 		"Complétez les sujets des présentations et résolvez les références des intervenants dans l'issue avant de synchroniser le programme des retours. Les retours existants sont conservés.",

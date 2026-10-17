@@ -81,6 +81,7 @@ for implemented behavior and contributor conventions.
 - [ADR-0014: Consolidate post-event follow-up](adr/0014-consolidated-post-event-follow-up.md)
 - [ADR-0014: Populate and update managed placeholders in Drive template copies](adr/0014-reconcile-drive-template-placeholders.md)
 - [ADR-0015: Render explicit participant, venue, and next-meetup fields](adr/0015-extend-asset-render-fields.md)
+- [ADR-0016: Render the current host's public logo](adr/0016-render-host-logos.md)
 
 ## Directory layout
 
@@ -122,7 +123,8 @@ docs/
     ├── 0013-actionable-organizer-alerts.md
     ├── 0014-consolidated-post-event-follow-up.md
     ├── 0014-reconcile-drive-template-placeholders.md
-    └── 0015-extend-asset-render-fields.md
+    ├── 0015-extend-asset-render-fields.md
+    └── 0016-render-host-logos.md
 ```
 
 Action references stay beside `action.yml`; workflow references stay beside

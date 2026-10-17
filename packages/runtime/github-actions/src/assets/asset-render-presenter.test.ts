@@ -6,6 +6,11 @@ describe("asset public presentation", () => {
 	it("formats venue, participant, and next-event fields from their public projections", () => {
 		// Arrange
 		const presenter = new AssetRenderPresenterImpl(new AssetMessages("fr"));
+		const hostLogo = {
+			hostId: "host-0001",
+			url: "https://images.example.org/logo.png",
+			description: "Logo de l'hôte",
+		};
 
 		// Act
 		const result = presenter.format({
@@ -13,6 +18,7 @@ describe("asset public presentation", () => {
 			timeZone: "Europe/Paris",
 			agenda: [],
 			pictures: {},
+			hostLogo,
 			venue: {
 				address: "1 Public Square",
 				postalCode: "13001",
@@ -30,6 +36,7 @@ describe("asset public presentation", () => {
 		});
 
 		// Assert
+		expect(result.hostLogo).toEqual(hostLogo);
 		expect(result.text).toMatchObject({
 			"event.date.month": "octobre",
 			"event.date.numeric": "15/10/2026",

@@ -105,7 +105,7 @@ export class ContentContractPolicy {
 	private static image(field: ImageField, mimeType: string): void {
 		if (
 			field.type !== "image" ||
-			field.token !== "speaker.picture" ||
+			!["speaker.picture", "host.logo"].includes(field.token) ||
 			!ContentContractPolicy.name(field.slot) ||
 			!ContentContractPolicy.name(field.objectId) ||
 			!ContentContractPolicy.keys(field, [

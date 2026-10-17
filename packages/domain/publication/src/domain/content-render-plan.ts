@@ -55,6 +55,7 @@ export class ContentRenderPlan {
 								applied:
 									value.type === "text" ? value.fingerprint : binding.applied,
 								speakerId: value.speakerId,
+								hostId: value.hostId,
 								fallback: value.fallback,
 							}
 						: binding;

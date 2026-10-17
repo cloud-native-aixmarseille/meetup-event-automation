@@ -12,6 +12,7 @@ import type {
 	ContentValue,
 	PublicAssetModel,
 	TextField,
+	ImageField,
 } from "../src/domain/asset-content.js";
 import { ContentFingerprint } from "../src/domain/content-fingerprint.js";
 import { ContentTextKey } from "../src/domain/content-text-key.js";
@@ -31,12 +32,14 @@ export const model: PublicAssetModel = {
 export function contentFixture(
 	image = false,
 	textField: TextField = { type: "text", token: "event.title", required: true },
+	imageToken: ImageField["token"] = "speaker.picture",
 ) {
 	const textKey = ContentTextKey.of(textField);
+	const imageSlot = imageToken === "host.logo" ? "host-logo" : "portrait";
 	const imageField = {
 		type: "image",
-		token: "speaker.picture",
-		slot: "portrait",
+		token: imageToken,
+		slot: imageSlot,
 		objectId: "image",
 		pageId: "page",
 		required: false,
@@ -63,7 +66,7 @@ export function contentFixture(
 		bindings.push({
 			id: "image",
 			type: "image",
-			key: "portrait",
+			key: imageSlot,
 			anchor: { objectId: "image", pageId: "page" },
 			applied: "",
 		});

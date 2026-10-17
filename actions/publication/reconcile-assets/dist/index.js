@@ -59969,8 +59969,8 @@ var DIAGNOSTICS_OTHER_EN = {
   "diagnostic.publication.assets.content.conflict": "A managed location changed or its anchor is missing. Preserve the edit; use revision-bound restore or remove recovery in the asset content configuration.",
   "diagnostic.publication.assets.content.recovery": "Inspect the file and binding sidecar. Restore valid state or use explicit enrollment or binding recovery; do not delete the file or reset email records.",
   "diagnostic.publication.assets.content.revision": "The document changed during rendering. Reconcile again after the current edit is complete.",
-  "diagnostic.publication.assets.content.image": "Check the public HTTPS portrait and fallback: PNG, JPEG or GIF, under 50 MB and at most 25 megapixels. Signed or private URLs are unsupported.",
-  "diagnostic.publication.assets.content.fallback": "An optional portrait uses its validated generic fallback. The file remains ready; check the speaker assignment and public picture URL.",
+  "diagnostic.publication.assets.content.image": "Check the public HTTPS image and fallback: PNG, JPEG or GIF, under 50 MB and at most 25 megapixels. Signed or private URLs are unsupported.",
+  "diagnostic.publication.assets.content.fallback": "An optional image uses its validated generic fallback. The file remains ready; check the speaker assignment or host-logo configuration and public image URL.",
   "diagnostic.publication.feedback.agenda": "Complete talk subjects and resolve speaker references in the issue before synchronizing the feedback agenda. Existing feedback is preserved.",
   "diagnostic.publication.feedback.unrelated": "This issue is not a meetup",
   "diagnostic.publication.feedback.inactive": "Feedback automation is inactive for this event",
@@ -59998,8 +59998,8 @@ var DIAGNOSTICS_OTHER_FR = {
   "diagnostic.publication.assets.content.conflict": "Un emplacement g\xE9r\xE9 a chang\xE9 ou son ancre manque. Pr\xE9servez la modification et utilisez une restauration ou un retrait li\xE9 \xE0 la r\xE9vision dans la configuration des contenus.",
   "diagnostic.publication.assets.content.recovery": "Inspectez le fichier et son manifeste. Restaurez un \xE9tat valide ou utilisez une inscription ou une r\xE9cup\xE9ration explicite ; ne supprimez pas le fichier et ne r\xE9initialisez pas les envois.",
   "diagnostic.publication.assets.content.revision": "Le document a chang\xE9 pendant le rendu. Relancez la r\xE9conciliation apr\xE8s la modification en cours.",
-  "diagnostic.publication.assets.content.image": "V\xE9rifiez le portrait HTTPS public et son image de remplacement : PNG, JPEG ou GIF, moins de 50 Mo et au plus 25 m\xE9gapixels. Les URL priv\xE9es ou sign\xE9es ne sont pas prises en charge.",
-  "diagnostic.publication.assets.content.fallback": "Un portrait facultatif utilise son image g\xE9n\xE9rique valid\xE9e. Le fichier reste pr\xEAt ; v\xE9rifiez le choix de l'intervenant et son URL publique.",
+  "diagnostic.publication.assets.content.image": "V\xE9rifiez l'image HTTPS publique et son image de remplacement : PNG, JPEG ou GIF, moins de 50 Mo et au plus 25 m\xE9gapixels. Les URL priv\xE9es ou sign\xE9es ne sont pas prises en charge.",
+  "diagnostic.publication.assets.content.fallback": "Une image facultative utilise son image g\xE9n\xE9rique valid\xE9e. Le fichier reste pr\xEAt ; v\xE9rifiez le choix de l'intervenant ou la configuration du logo de l'h\xF4te et l'URL publique de l'image.",
   "diagnostic.publication.feedback.agenda": "Compl\xE9tez les sujets des pr\xE9sentations et r\xE9solvez les r\xE9f\xE9rences des intervenants dans l'issue avant de synchroniser le programme des retours. Les retours existants sont conserv\xE9s.",
   "diagnostic.publication.feedback.unrelated": "Ce ticket ne correspond pas \xE0 un meetup.",
   "diagnostic.publication.feedback.inactive": "L'automatisation des retours est inactive pour cet \xE9v\xE9nement.",
@@ -65235,7 +65235,7 @@ var ContentContractPolicy = class _ContentContractPolicy {
     return Object.keys(value).every((key) => keys.includes(key));
   }
   static image(field, mimeType) {
-    if (field.type !== "image" || field.token !== "speaker.picture" || !_ContentContractPolicy.name(field.slot) || !_ContentContractPolicy.name(field.objectId) || !_ContentContractPolicy.keys(field, [
+    if (field.type !== "image" || !["speaker.picture", "host.logo"].includes(field.token) || !_ContentContractPolicy.name(field.slot) || !_ContentContractPolicy.name(field.objectId) || !_ContentContractPolicy.keys(field, [
       "type",
       "token",
       "slot",
@@ -65294,6 +65294,10 @@ var ContentManifestPolicy = class _ContentManifestPolicy {
       if (!ContentContractPolicy.text(manifest.pending.revision) || !ContentContractPolicy.keys(manifest.pending, ["revision", "bindings"]))
         throw new ContentError("recovery");
       _ContentManifestPolicy.bindings(manifest.pending.bindings);
+      _ContentManifestPolicy.associations({
+        ...manifest,
+        bindings: manifest.pending.bindings
+      });
       if (manifest.pending.bindings.length !== manifest.bindings.length || manifest.pending.bindings.some((binding, i2) => {
         const prior = manifest.bindings[i2];
         return prior.id !== binding.id || prior.key !== binding.key || prior.type !== binding.type || JSON.stringify(prior.anchor) !== JSON.stringify(binding.anchor);
@@ -65314,6 +65318,7 @@ var ContentManifestPolicy = class _ContentManifestPolicy {
         "applied",
         "desired",
         "speakerId",
+        "hostId",
         "fallback"
       ]))
         throw new ContentError("recovery");
@@ -65361,11 +65366,18 @@ var ContentManifestPolicy = class _ContentManifestPolicy {
         anchor.objectId,
         anchor.rangeName
       ]);
-      if (!field || anchors.has(key) || binding.fallback !== void 0 && typeof binding.fallback !== "boolean" || binding.speakerId !== void 0 && !/^speaker-[a-z0-9-]+$/.test(binding.speakerId))
+      if (!field || anchors.has(key) || binding.fallback !== void 0 && typeof binding.fallback !== "boolean")
         throw new ContentError("recovery");
       anchors.add(key);
+      _ContentManifestPolicy.identity(binding, field);
       _ContentManifestPolicy.rendererAnchor(manifest.mimeType, binding);
     }
+  }
+  static identity(binding, field) {
+    if (binding.speakerId !== void 0 && (!/^speaker-[a-z0-9-]+$/.test(binding.speakerId) || field.type !== "image" || field.token !== "speaker.picture"))
+      throw new ContentError("recovery");
+    if (binding.hostId !== void 0 && (!/^host-[a-z0-9-]+$/.test(binding.hostId) || field.type !== "image" || field.token !== "host.logo"))
+      throw new ContentError("recovery");
   }
   static rendererAnchor(mimeType, binding) {
     const anchor = binding.anchor;
@@ -65411,6 +65423,7 @@ var ContentRenderPlan = class {
             desired: value.fingerprint,
             applied: value.type === "text" ? value.fingerprint : binding.applied,
             speakerId: value.speakerId,
+            hostId: value.hostId,
             fallback: value.fallback
           } : binding;
         })
@@ -65493,19 +65506,27 @@ var ResolveContentValues = class {
     return values;
   }
   async image(field, model) {
-    const picture = model.pictures[field.slot];
+    const host = field.token === "host.logo";
+    const picture = host ? model.hostLogo : model.pictures[field.slot];
+    const hostId = host ? model.hostLogo?.hostId : void 0;
+    const speakerId = host ? void 0 : model.pictures[field.slot]?.speakerId;
+    const identity = hostId ?? speakerId;
     const fallback = field.fallback ? await this.images.validate(field.fallback) : void 0;
     try {
-      if (!picture) throw new ContentError("image");
+      if (!picture || !(host ? /^host-[a-z0-9-]+$/ : /^speaker-[a-z0-9-]+$/).test(
+        identity ?? ""
+      ))
+        throw new ContentError("image");
       const validated = await this.images.validate(picture);
       return {
         type: "image",
         key: field.slot,
         image: validated.source,
         fingerprint: ContentFingerprint.of(
-          `${validated.fingerprint}:${picture.speakerId}:${picture.description}:${field.fit}`
+          `${validated.fingerprint}:${identity}:${picture.description}:${field.fit}`
         ),
-        speakerId: picture.speakerId,
+        speakerId,
+        hostId,
         fallback: false,
         fit: field.fit
       };
@@ -68597,6 +68618,7 @@ var AssetRenderProjection = class {
       date: event.date,
       timeZone: event.timeZone,
       hostName: event.host?.displayName,
+      hostLogo: catalog.isValid && catalog.catalog.hosts.some((host) => host.id === event.host?.id) ? this.hostLogo(event.host?.id) : void 0,
       venue: event.host?.id ? this.assignments.venues[event.host.id] : void 0,
       feedbackUrl: !diagnostics.some(
         (item) => item.severity === "error" && /feedback/.test(item.code)
@@ -68608,6 +68630,11 @@ var AssetRenderProjection = class {
       ...participants,
       nextEvent: catalog.isValid ? await this.nextEvent?.find(event, catalog.catalog) : void 0
     });
+  }
+  hostLogo(hostId) {
+    if (!hostId) return void 0;
+    const logo = this.assignments.hostLogos?.[hostId];
+    return logo && AssetParticipantProjection.publicUrl(logo.url) ? { ...logo, hostId } : void 0;
   }
 };
 
@@ -70840,7 +70867,8 @@ var AssetRenderPresenterImpl = class {
         ).join("\n"),
         ...this.slots(input)
       },
-      pictures: input.pictures
+      pictures: input.pictures,
+      hostLogo: input.hostLogo
     };
   }
   slots(input) {
@@ -70868,7 +70896,7 @@ import { join } from "node:path";
 
 // packages/runtime/github-actions/src/assets/asset-render-configuration.ts
 var AssetRenderConfiguration = class _AssetRenderConfiguration {
-  static parse(event, venues) {
+  static parse(event, venues, hostLogos) {
     const speakers = _AssetRenderConfiguration.record(event.speakers ?? {});
     const talks = _AssetRenderConfiguration.record(event.talks ?? {});
     const publicVenues = _AssetRenderConfiguration.record(venues ?? {});
@@ -70893,8 +70921,18 @@ var AssetRenderConfiguration = class _AssetRenderConfiguration {
     return {
       speakers,
       talks,
-      venues: publicVenues
+      venues: publicVenues,
+      hostLogos: _AssetRenderConfiguration.logos(hostLogos)
     };
+  }
+  static logos(input) {
+    const logos = _AssetRenderConfiguration.record(input ?? {});
+    for (const [hostId, value] of Object.entries(logos)) {
+      const logo = _AssetRenderConfiguration.record(value);
+      if (!/^host-[a-z0-9-]+$/.test(hostId) || !ContentContractPolicy.keys(logo, ["url", "description"]) || ![logo.url, logo.description].every(ContentContractPolicy.text))
+        throw new Error("Invalid public host logo");
+    }
+    return logos;
   }
   static slot(value) {
     return ContentContractPolicy.name(value) && !["__proto__", "prototype", "constructor"].includes(value);
@@ -70930,6 +70968,7 @@ var AssetContentConfiguration = class _AssetContentConfiguration {
           speakers: {},
           talks: {},
           venues: {},
+          hostLogos: {},
           recovery: {}
         };
       throw error2;
@@ -70944,13 +70983,18 @@ var AssetContentConfiguration = class _AssetContentConfiguration {
       "version",
       "contracts",
       "events",
-      "venues"
+      "venues",
+      "hostLogos"
     ]) || root.events !== void 0 && !_AssetContentConfiguration.record(root.events))
       throw new Error("Invalid asset content configuration");
     const event = root.events?.[eventId] ?? {};
     if (!_AssetContentConfiguration.record(event) || !ContentContractPolicy.keys(event, ["speakers", "talks", "recovery"]))
       throw new Error("Invalid asset event configuration");
-    const assignments = AssetRenderConfiguration.parse(event, root.venues);
+    const assignments = AssetRenderConfiguration.parse(
+      event,
+      root.venues,
+      root.hostLogos
+    );
     const recovery = event.recovery ?? {};
     if (!_AssetContentConfiguration.record(recovery))
       throw new Error("Invalid asset speaker assignments");

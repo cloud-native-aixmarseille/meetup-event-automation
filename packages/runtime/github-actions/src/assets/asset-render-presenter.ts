@@ -52,6 +52,7 @@ export class AssetRenderPresenterImpl implements AssetRenderPresenter {
 				...this.slots(input),
 			},
 			pictures: input.pictures,
+			hostLogo: input.hostLogo,
 		};
 	}
 

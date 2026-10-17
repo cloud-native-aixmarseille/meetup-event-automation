@@ -36,7 +36,7 @@ export type TextField = Readonly<{
 }>;
 export type ImageField = Readonly<{
 	type: "image";
-	token: "speaker.picture";
+	token: "speaker.picture" | "host.logo";
 	slot: string;
 	objectId: string;
 	pageId?: string;
@@ -54,6 +54,7 @@ export type ContentContract = Readonly<{
 export type PublicAssetModel = Readonly<{
 	text: Readonly<Partial<Record<TextKey, string>>>;
 	pictures: Readonly<Record<string, ImageSource & { speakerId: string }>>;
+	hostLogo?: ImageSource & { hostId: string };
 }>;
 export type ContentAnchor = Readonly<{
 	objectId?: string;
@@ -72,6 +73,7 @@ export type ContentBinding = Readonly<{
 	applied: string;
 	desired?: string;
 	speakerId?: string;
+	hostId?: string;
 	fallback?: boolean;
 }>;
 export type ObservedLocation = Readonly<{
@@ -92,6 +94,7 @@ export type ContentValue = Readonly<{
 	text?: string;
 	image?: ImageSource;
 	speakerId?: string;
+	hostId?: string;
 	fallback?: boolean;
 	fit?: "CENTER_CROP" | "CENTER_INSIDE";
 }>;

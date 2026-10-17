@@ -17,6 +17,12 @@ describe("committed content configuration", () => {
 		const input = {
 			version: 1,
 			contracts: {},
+			hostLogos: {
+				"host-0001": {
+					url: "https://images.example.org/logo.png",
+					description: "Host logo",
+				},
+			},
 			venues: { "host-0001": venue },
 			events: {
 				"example/meetups#42": { talks: { opening } },
@@ -33,6 +39,8 @@ describe("committed content configuration", () => {
 		// Assert
 		expect(actual.talks).toEqual({ opening });
 		expect(actual.venues).toEqual({ "host-0001": venue });
+		expect(actual.hostLogos).toEqual(input.hostLogos);
+		expect(absent.hostLogos).toEqual(input.hostLogos);
 		expect(absent.talks).toEqual({});
 	});
 

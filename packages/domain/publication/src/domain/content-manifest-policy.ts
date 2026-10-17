@@ -1,4 +1,8 @@
-import type { ContentBinding, ContentManifest } from "./asset-content.js";
+import type {
+	ContentBinding,
+	ContentContract,
+	ContentManifest,
+} from "./asset-content.js";
 import { ContentContractPolicy } from "./content-contract-policy.js";
 import { ContentError } from "./content-error.js";
 import { ContentTextKey } from "./content-text-key.js";
@@ -50,6 +54,10 @@ export class ContentManifestPolicy {
 			)
 				throw new ContentError("recovery");
 			ContentManifestPolicy.bindings(manifest.pending.bindings);
+			ContentManifestPolicy.associations({
+				...manifest,
+				bindings: manifest.pending.bindings,
+			});
 			if (
 				manifest.pending.bindings.length !== manifest.bindings.length ||
 				manifest.pending.bindings.some((binding, i) => {
@@ -91,6 +99,7 @@ export class ContentManifestPolicy {
 					"applied",
 					"desired",
 					"speakerId",
+					"hostId",
 					"fallback",
 				])
 			)
@@ -152,14 +161,33 @@ export class ContentManifestPolicy {
 				!field ||
 				anchors.has(key) ||
 				(binding.fallback !== undefined &&
-					typeof binding.fallback !== "boolean") ||
-				(binding.speakerId !== undefined &&
-					!/^speaker-[a-z0-9-]+$/.test(binding.speakerId))
+					typeof binding.fallback !== "boolean")
 			)
 				throw new ContentError("recovery");
 			anchors.add(key);
+			ContentManifestPolicy.identity(binding, field);
 			ContentManifestPolicy.rendererAnchor(manifest.mimeType, binding);
 		}
+	}
+
+	private static identity(
+		binding: ContentBinding,
+		field: ContentContract["fields"][number],
+	): void {
+		if (
+			binding.speakerId !== undefined &&
+			(!/^speaker-[a-z0-9-]+$/.test(binding.speakerId) ||
+				field.type !== "image" ||
+				field.token !== "speaker.picture")
+		)
+			throw new ContentError("recovery");
+		if (
+			binding.hostId !== undefined &&
+			(!/^host-[a-z0-9-]+$/.test(binding.hostId) ||
+				field.type !== "image" ||
+				field.token !== "host.logo")
+		)
+			throw new ContentError("recovery");
 	}
 
 	private static rendererAnchor(

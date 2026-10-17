@@ -207,95 +207,98 @@ describe("Docs content repository", () => {
 		expect(f.client.documents.batchUpdate).not.toHaveBeenCalled();
 	});
 
-	it("replaces the bound inline image in its tab with explicit center crop", async () => {
-		// Arrange
-		const f = docsFixture();
-		const tab = f.childContent;
-		tab.body = {
-			content: [
+	it.each(["speaker.picture", "host.logo"] as const)(
+		"replaces the bound %s image in its tab with explicit center crop",
+		async (token) => {
+			// Arrange
+			const f = docsFixture();
+			const tab = f.childContent;
+			tab.body = {
+				content: [
+					{
+						startIndex: 1,
+						paragraph: {
+							elements: [
+								{
+									startIndex: 1,
+									endIndex: 2,
+									inlineObjectElement: { inlineObjectId: "portrait" },
+								},
+							],
+						},
+					},
+				],
+			};
+			tab.inlineObjects = {
+				portrait: {
+					inlineObjectProperties: {
+						embeddedObject: {
+							description: "Speaker portrait",
+							imageProperties: {
+								contentUri: "https://images.googleusercontent.com/temporary",
+							},
+						},
+					},
+				},
+			};
+			const contract = {
+				...f.contract,
+				fields: [
+					{
+						type: "image",
+						token,
+						slot: "p".repeat(100),
+						objectId: "portrait",
+						tabId: "tab-two",
+						required: true,
+						fit: "CENTER_CROP",
+					},
+				],
+			} as const;
+			f.rootContent.body = {
+				content: [paragraph("Manual prose\n")],
+			};
+			const snapshot = await f.repository.read("file", contract);
+			// Act
+			await f.repository.apply("file", snapshot, [
 				{
-					startIndex: 1,
-					paragraph: {
-						elements: [
+					location: snapshot.locations[0],
+					value: {
+						type: "image",
+						key: "p".repeat(100),
+						fingerprint: "new",
+						image: {
+							url: "https://images.example.org/new.png",
+							description: "Public speaker",
+						},
+						fit: "CENTER_CROP",
+					},
+				},
+			]);
+			// Assert
+			expect(snapshot.locations[0].id.length).toBeLessThanOrEqual(100);
+			expect(f.client.documents.batchUpdate).toHaveBeenCalledWith(
+				{
+					documentId: "file",
+					requestBody: {
+						writeControl: { requiredRevisionId: "rev1" },
+						requests: [
 							{
-								startIndex: 1,
-								endIndex: 2,
-								inlineObjectElement: { inlineObjectId: "portrait" },
+								replaceImage: {
+									imageObjectId: "portrait",
+									uri: "https://images.example.org/new.png",
+									tabId: "tab-two",
+									imageReplaceMethod: "CENTER_CROP",
+								},
 							},
 						],
 					},
 				},
-			],
-		};
-		tab.inlineObjects = {
-			portrait: {
-				inlineObjectProperties: {
-					embeddedObject: {
-						description: "Speaker portrait",
-						imageProperties: {
-							contentUri: "https://images.googleusercontent.com/temporary",
-						},
-					},
-				},
-			},
-		};
-		const contract = {
-			...f.contract,
-			fields: [
-				{
-					type: "image",
-					token: "speaker.picture",
-					slot: "p".repeat(100),
-					objectId: "portrait",
-					tabId: "tab-two",
-					required: true,
-					fit: "CENTER_CROP",
-				},
-			],
-		} as const;
-		f.rootContent.body = {
-			content: [paragraph("Manual prose\n")],
-		};
-		const snapshot = await f.repository.read("file", contract);
-		// Act
-		await f.repository.apply("file", snapshot, [
-			{
-				location: snapshot.locations[0],
-				value: {
-					type: "image",
-					key: "p".repeat(100),
-					fingerprint: "new",
-					image: {
-						url: "https://images.example.org/new.png",
-						description: "Public speaker",
-					},
-					fit: "CENTER_CROP",
-				},
-			},
-		]);
-		// Assert
-		expect(snapshot.locations[0].id.length).toBeLessThanOrEqual(100);
-		expect(f.client.documents.batchUpdate).toHaveBeenCalledWith(
-			{
-				documentId: "file",
-				requestBody: {
-					writeControl: { requiredRevisionId: "rev1" },
-					requests: [
-						{
-							replaceImage: {
-								imageObjectId: "portrait",
-								uri: "https://images.example.org/new.png",
-								tabId: "tab-two",
-								imageReplaceMethod: "CENTER_CROP",
-							},
-						},
-					],
-				},
-			},
-			{ retry: false, timeout: 30_000 },
-		);
-		expect(f.images.observe).toHaveBeenCalledWith(
-			"https://images.googleusercontent.com/temporary",
-		);
-	});
+				{ retry: false, timeout: 30_000 },
+			);
+			expect(f.images.observe).toHaveBeenCalledWith(
+				"https://images.googleusercontent.com/temporary",
+			);
+		},
+	);
 });
