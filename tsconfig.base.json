@@ -79,6 +79,15 @@
 			],
 			"@meetup-automation/conference-hall-proposal-source": [
 				"./packages/adapter/conference-hall-proposal-source/src/index.ts"
+			],
+			"@meetup-automation/google-slides-content-repository": [
+				"./packages/adapter/google-slides-content-repository/src/index.ts"
+			],
+			"@meetup-automation/google-docs-content-repository": [
+				"./packages/adapter/google-docs-content-repository/src/index.ts"
+			],
+			"@meetup-automation/https-asset-image-repository": [
+				"./packages/adapter/https-asset-image-repository/src/index.ts"
 			]
 		}
 	}

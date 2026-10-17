@@ -1,7 +1,13 @@
+import type {
+	ContentRecovery,
+	ContentStatus,
+	PublicAssetModel,
+} from "../domain/asset-content.js";
+import type { ReconcileAssetContent } from "./reconcile-asset-content.js";
+import { ReconcileAssetFile } from "./reconcile-asset-file.js";
 import type { PublicationDiagnostic } from "../domain/model.js";
 import type {
 	AssetContainer,
-	AssetFile,
 	AssetRepository,
 	AssetTemplate,
 } from "./ports.js";
@@ -9,13 +15,17 @@ import type {
 export type ReconcileEventAssetsResult = Readonly<{
 	container?: AssetContainer;
 	files: Readonly<Record<string, string>>;
+	content?: Readonly<Record<string, ContentStatus>>;
 	diagnostics: readonly PublicationDiagnostic[];
 }>;
 
 export type ReconcileEventAssetsMode = "check" | "fix";
 
 export class ReconcileEventAssets {
-	constructor(private readonly repository: AssetRepository) {}
+	constructor(
+		private readonly repository: AssetRepository,
+		private readonly content?: ReconcileAssetContent,
+	) {}
 
 	async execute(input: {
 		eventId: string;
@@ -23,6 +33,8 @@ export class ReconcileEventAssets {
 		hostName: string;
 		existingUrl?: string;
 		mode: ReconcileEventAssetsMode;
+		model?: PublicAssetModel;
+		recovery?: Readonly<Record<string, ContentRecovery>>;
 	}): Promise<ReconcileEventAssetsResult> {
 		const date = input.date.trim();
 		const host = input.hostName.trim();
@@ -73,20 +85,36 @@ export class ReconcileEventAssets {
 				),
 			);
 		}
+		return this.reconcileFiles(container, templates, input, diagnostics);
+	}
+
+	private async reconcileFiles(
+		container: AssetContainer,
+		templates: readonly AssetTemplate[],
+		input: {
+			date: string;
+			mode: ReconcileEventAssetsMode;
+			model?: PublicAssetModel;
+			recovery?: Readonly<Record<string, ContentRecovery>>;
+		},
+		diagnostics: PublicationDiagnostic[],
+	): Promise<ReconcileEventAssetsResult> {
 		const currentFiles = await this.repository.listFiles(container.id);
 		const files: Record<string, string> = {};
+		const content: Record<string, ContentStatus> = {};
+		const reconcile = new ReconcileAssetFile(this.repository, this.content);
 		for (const template of templates) {
-			const file = await this.reconcileFile(
-				container,
+			const result = await reconcile.execute({
+				...input,
 				template,
+				container,
 				currentFiles,
-				date,
-				input.mode,
 				diagnostics,
-			);
-			if (file?.url) files[`${template.kind}-link`] = file.url;
+			});
+			if (result.file?.url) files[`${template.kind}-link`] = result.file.url;
+			content[template.kind] = result.status;
 		}
-		return { container, files, diagnostics };
+		return { container, files, content, diagnostics };
 	}
 
 	private static diagnostic(
@@ -127,39 +155,5 @@ export class ReconcileEventAssets {
 				"Asset templates must have unique IDs, unique kinds, and non-empty names",
 			);
 		}
-	}
-
-	private async reconcileFile(
-		container: AssetContainer,
-		template: AssetTemplate,
-		currentFiles: readonly AssetFile[],
-		date: string,
-		mode: ReconcileEventAssetsMode,
-		diagnostics: PublicationDiagnostic[],
-	) {
-		const name = template.name.replaceAll("[EVENT_DATE:YYYY-MM-DD]", date);
-		const matches = currentFiles.filter(
-			(file) => file.templateId === template.id,
-		);
-		if (matches.length > 1)
-			throw new Error(
-				"Ambiguous event asset copies require manual reconciliation",
-			);
-		let file: AssetFile | undefined = matches[0];
-		if (!file || file.name !== name || file.kind !== template.kind) {
-			diagnostics.push(
-				ReconcileEventAssets.diagnostic(
-					"file.drift",
-					"An event template copy is missing or its name or template metadata has changed",
-					mode === "fix",
-				),
-			);
-			if (mode === "fix") {
-				file = file
-					? await this.repository.updateFile(file, template, name)
-					: await this.repository.copyTemplate(container.id, template, name);
-			}
-		}
-		return file;
 	}
 }

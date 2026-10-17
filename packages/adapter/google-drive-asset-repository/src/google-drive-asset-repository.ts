@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { auth, drive } from "@googleapis/drive";
+import { drive } from "@googleapis/drive";
 import type {
 	AssetContainer,
 	AssetFile,
@@ -15,6 +15,7 @@ import {
 	type GoogleDriveClient,
 	requestOptions,
 } from "./google-drive-asset-repository-contracts.js";
+import { GoogleDriveAuthentication } from "./google-drive-authentication.js";
 import { GoogleDriveAssetRepositoryError } from "./google-drive-asset-repository-error.js";
 
 export class GoogleDriveAssetRepository implements AssetRepository {
@@ -116,6 +117,9 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 				id: file.id,
 				name: file.name,
 				kind: file.appProperties.template_kind,
+				mimeType: file.mimeType ?? undefined,
+				contentContract:
+					this.options.contentContracts?.[file.appProperties.template_kind],
 			};
 		});
 	}
@@ -125,7 +129,9 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 			await this.list(
 				`'${GoogleDriveAssetRepository.escapeQuery(containerId)}' in parents and mimeType!='${folderMimeType}'`,
 			)
-		).map(GoogleDriveAssetRepository.assetFile);
+		)
+			.filter((file) => !file.appProperties?.meetup_binding_file)
+			.map(GoogleDriveAssetRepository.assetFile);
 	}
 
 	async copyTemplate(
@@ -140,8 +146,10 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 					requestBody: {
 						name,
 						parents: [containerId],
-						appProperties:
-							GoogleDriveAssetRepository.templateProperties(template),
+						appProperties: {
+							...GoogleDriveAssetRepository.templateProperties(template),
+							...(template.contentContract ? { meetup_content: "v1" } : {}),
+						},
 					},
 					fields,
 					supportsAllDrives: true,
@@ -163,8 +171,10 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 					fileId: file.id,
 					requestBody: {
 						name,
-						appProperties:
-							GoogleDriveAssetRepository.templateProperties(template),
+						appProperties: {
+							...GoogleDriveAssetRepository.templateProperties(template),
+							...(file.contentManaged ? { meetup_content: "v1" } : {}),
+						},
 					},
 					fields,
 					supportsAllDrives: true,
@@ -212,40 +222,17 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 		credentialsJson: string,
 		options: GoogleDriveAssetOptions,
 	): GoogleDriveAssetRepository {
-		let credentials: {
-			type?: unknown;
-			client_email?: unknown;
-			private_key?: unknown;
-		};
-		try {
-			credentials = JSON.parse(credentialsJson);
-		} catch {
-			throw GoogleDriveAssetRepository.failure(
-				"Invalid Google service-account credentials",
-			);
-		}
-		if (
-			credentials?.type !== "service_account" ||
-			typeof credentials.client_email !== "string" ||
-			!credentials.client_email ||
-			typeof credentials.private_key !== "string" ||
-			!credentials.private_key
-		) {
-			throw GoogleDriveAssetRepository.failure(
-				"Invalid Google service-account credentials",
-			);
-		}
-		// Only the expected service-account fields cross the boundary. Arbitrary
-		// credential configurations cannot select an external token endpoint.
-		const authentication = new auth.JWT({
-			email: credentials.client_email,
-			key: credentials.private_key,
-			scopes: ["https://www.googleapis.com/auth/drive"],
-		});
 		return new GoogleDriveAssetRepository(
-			drive({ version: "v3", auth: authentication }),
+			GoogleDriveAssetRepository.client(credentialsJson),
 			options,
 		);
+	}
+
+	static client(credentialsJson: string): GoogleDriveClient {
+		return drive({
+			version: "v3",
+			auth: GoogleDriveAuthentication.create(credentialsJson),
+		});
 	}
 
 	private static key(request: EnsureAssetContainerRequest): string {
@@ -286,6 +273,8 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 			...(file.webViewLink ? { url: file.webViewLink } : {}),
 			templateId: file.appProperties?.template_file_id,
 			kind: file.appProperties?.template_kind,
+			mimeType: file.mimeType ?? undefined,
+			contentManaged: file.appProperties?.meetup_content === "v1",
 		};
 	}
 

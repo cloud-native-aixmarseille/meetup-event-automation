@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { AssetRepository, AssetTemplate } from "./ports.js";
 import { ReconcileEventAssets } from "./reconcile-event-assets.js";
+import { contentFixture } from "../../testing/content.fixtures.js";
 
 const input = {
 	eventId: "community/meetups#42",
@@ -51,6 +52,45 @@ function setup() {
 }
 
 describe("event asset reconciliation", () => {
+	it("keeps successful files reusable when another contract fails preflight", async () => {
+		// Arrange
+		const { repository } = setup();
+		const content = contentFixture();
+		repository.listFiles.mockResolvedValue([]);
+		repository.listTemplates.mockResolvedValue([
+			{
+				...template,
+				mimeType: content.input.mimeType,
+				contentContract: { ...content.input.contract, version: 99 },
+			},
+			{ id: "attendance-template", name: "Attendance", kind: "attendance" },
+		]);
+		repository.copyTemplate.mockImplementation(
+			async (_folder, template, name) => ({
+				id: "attendance-copy",
+				name,
+				kind: template.kind,
+				templateId: template.id,
+				url: "https://drive.google.com/file/d/attendance-copy/view",
+			}),
+		);
+		const reconcile = new ReconcileEventAssets(repository, content.service);
+		// Act
+		const result = await reconcile.execute({
+			...input,
+			model: content.input.model,
+		});
+		// Assert
+		expect(result.content).toEqual({
+			slides: "pending",
+			attendance: "copy-only",
+		});
+		expect(result.files).toEqual({
+			"attendance-link": "https://drive.google.com/file/d/attendance-copy/view",
+		});
+		expect(repository.copyTemplate).toHaveBeenCalledTimes(1);
+		expect(content.renderer.apply).not.toHaveBeenCalled();
+	});
 	it("creates the missing folder and template copies and returns typed links", async () => {
 		// Arrange
 		const { repository, reconcile } = setup();

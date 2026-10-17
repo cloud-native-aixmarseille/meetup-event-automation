@@ -9,6 +9,10 @@ inputs:
   issue-number:
     description: GitHub issue number in the caller repository containing the meetup event document to inspect.
     required: true
+  slides-ready:
+    description: Whether managed slides content is ready. False holds email batches that require slides. Copy-only slides use true.
+    required: false
+    default: "true"
   slides-url:
     description: Direct presentation file URL from the asset action's drive-files slides-link entry. Required for due email batches; missing or invalid links block email dispatch.
     required: false

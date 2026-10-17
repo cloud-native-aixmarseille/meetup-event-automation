@@ -2,7 +2,7 @@ export const DIAGNOSTICS_COMMUNICATION_EN = {
 	"diagnostic.communication.feedback-unavailable":
 		"Thank-you emails are blocked because speaker feedback results could not be resolved. Check the OpenFeedback event link, organization API key and synchronized talks, then retry.",
 	"diagnostic.communication.slides-unavailable":
-		"Email dispatch is blocked because the presentation file link is missing or invalid. Configure a Drive template with template_kind=slides, reconcile assets, and pass the slides-link entry from drive-files as slides-url.",
+		"Email dispatch requires a valid presentation file URL and ready managed content. Resolve asset diagnostics and reconcile again.",
 	"diagnostic.communication.approval-pending":
 		"Email dispatch is waiting for approval on the meetup issue.",
 	"diagnostic.communication.approval-rejected":

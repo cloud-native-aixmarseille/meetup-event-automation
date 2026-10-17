@@ -22,7 +22,7 @@ action under the shared per-event lock; the reusable workflows provide it.
 
 Pass the presentation file URL as `slides-url`, using the `slides-link` entry
 from the asset action's `drive-files` output. Due email batches require a valid
-file link; missing links and folder URLs block email dispatch before approval.
+file link and ready managed content. Forward `slides-ready` from the asset action; false holds due email before approval. Copy-only slides use true. Missing links and folder URLs also block email dispatch.
 See [presentation links](../../../docs/integrations/communications.md#presentation-link).
 
 The required `slack-organizer-channel-id` selects the internal organizer channel.
@@ -69,6 +69,7 @@ release you use. The asset step must have the ID `assets` for this example.
 
     # Required when an email batch is due. Reconcile assets first.
     slides-url: ${{ fromJSON(steps.assets.outputs.drive-files)['slides-link'] }}
+    slides-ready: ${{ steps.assets.outputs.slides-ready }}
 
     # Required for speaker thank-you emails. Reads existing OpenFeedback talks.
     openfeedback-api-key: ${{ secrets.OPENFEEDBACK_API_KEY }}
@@ -109,6 +110,7 @@ release you use. The asset step must have the ID `assets` for this example.
 | **`conference-hall-api-key`**    | Read-only Conference Hall event API key.                                                                                                                                                                               | **true**     | -           |
 | **`locale`**                     | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.                                                                                     | **false**    | `en`        |
 | **`issue-number`**               | GitHub issue number in the caller repository containing the meetup event document to inspect.                                                                                                                          | **true**     | -           |
+| **`slides-ready`** | Whether managed slides content is ready. False holds due email batches. Copy-only slides use true. | **false** | `true` |
 | **`slides-url`**                 | Direct presentation file URL from the asset action's drive-files slides-link entry. Required for due email batches; missing or invalid links block email dispatch.                                                     | **false**    | -           |
 | **`openfeedback-api-key`**       | OpenFeedback organization API key used to read existing talk results for speaker thank-you emails. Missing or unresolved results block the thank-you batch.                                                            | **false**    | -           |
 | **`report-errors-to-issue`**     | Use true to record diagnostics in a managed issue comment and succeed after persistence, or false to fail on error diagnostics. Execution and comment persistence failures still fail. Requires the shared event lock. | **true**     | -           |

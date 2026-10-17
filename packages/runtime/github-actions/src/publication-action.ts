@@ -10,6 +10,7 @@ import type { ActionReportData } from "./action-report.js";
 import { ActionMessages } from "./i18n/action-messages.js";
 import { PublicationComposition } from "./publication-composition.js";
 import { RuntimeInput } from "./runtime-input.js";
+import { AssetContentConfiguration } from "./assets/asset-content-configuration.js";
 
 export class PublicationAction {
 	static async runPublicationReconcileAssetsAction(
@@ -29,6 +30,10 @@ export class PublicationAction {
 		});
 		const { owner, repo } = context.repo;
 		const container = PublicationComposition.createPublicationContainer({
+			contentConfiguration: await AssetContentConfiguration.load(
+				process.cwd(),
+				`${owner}/${repo}#${issueNumber}`,
+			),
 			locale: messages.locale,
 			...ConferenceHallInput.read(),
 			client,
@@ -65,11 +70,17 @@ export class PublicationAction {
 					persisted: outcome.persisted,
 					assetUrl: outcome.assetUrl,
 					files: outcome.files,
+					content: outcome.content ?? {},
 				},
 				outcome.diagnostics,
 			),
 		);
 		ActionOutput.setJsonOutput("drive-files", outcome.files);
+		core.setOutput(
+			"slides-ready",
+			["copy-only", "ready"].includes(outcome.content?.slides ?? "copy-only") &&
+				Boolean(outcome.files["slides-link"]),
+		);
 		core.setOutput("asset-url", outcome.assetUrl ?? "");
 		return {
 			details: [

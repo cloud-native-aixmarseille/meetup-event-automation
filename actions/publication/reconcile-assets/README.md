@@ -14,7 +14,7 @@
 
 ## Overview
 
-Reconcile the event Drive folder, template copies, and issue asset link. Publish redacted diagnostics in annotations, logs, and the job summary.
+Reconcile the event Drive folder, template copies, and issue asset link. Populate opted-in text and image bindings in Google Slides and Docs. Publish redacted diagnostics in annotations, logs, and the job summary.
 
 <!-- overview:end -->
 <!-- usage:start -->
@@ -79,15 +79,16 @@ Reconcile the event Drive folder, template copies, and issue asset link. Publish
 
 | **Output**        | **Description**                                                                                    |
 | ----------------- | -------------------------------------------------------------------------------------------------- |
-| **`result`**      | Versioned JSON envelope containing folder and template links, persistence status, and diagnostics. |
+| **`result`**      | Versioned JSON envelope containing folder and template links, per-template content status, persistence status, and diagnostics. |
 | **`asset-url`**   | URL of the managed event folder, or an empty string when unavailable.                              |
 | **`drive-files`** | JSON map from template kind followed by -link to the corresponding copied file URL.                |
+| **`slides-ready`** | Whether a slides URL exists and its content is copy-only or ready. |
 | **`diagnostics`** | Redacted JSON diagnostics for asset reconciliation.                                                |
 
 <!-- outputs:end -->
 <!-- examples:start -->
 
-See [Google Drive event assets](../../../docs/integrations/assets.md) for the required folder inputs, service-account access, asset identity, and retry behavior.
+See [Google Drive event assets](../../../docs/integrations/assets.md) for service-account access, the committed content configuration, template authoring, stable asset identity and recovery. Forward `slides-ready` with the file URL to communications.
 
 <!-- examples:end -->
 <!-- contributing:start -->

@@ -31773,7 +31773,7 @@ var MessageLocalizer = class _MessageLocalizer {
 // packages/runtime/github-actions/src/i18n/diagnostics-communication.en.ts
 var DIAGNOSTICS_COMMUNICATION_EN = {
   "diagnostic.communication.feedback-unavailable": "Thank-you emails are blocked because speaker feedback results could not be resolved. Check the OpenFeedback event link, organization API key and synchronized talks, then retry.",
-  "diagnostic.communication.slides-unavailable": "Email dispatch is blocked because the presentation file link is missing or invalid. Configure a Drive template with template_kind=slides, reconcile assets, and pass the slides-link entry from drive-files as slides-url.",
+  "diagnostic.communication.slides-unavailable": "Email dispatch requires a valid presentation file URL and ready managed content. Resolve asset diagnostics and reconcile again.",
   "diagnostic.communication.approval-pending": "Email dispatch is waiting for approval on the meetup issue.",
   "diagnostic.communication.approval-rejected": "The email batch was rejected. The recorded decision is final for this batch revision.",
   "diagnostic.communication.approval-unavailable": "The organizer approval could not be verified or persisted; email dispatch is blocked.",
@@ -31807,7 +31807,7 @@ var DIAGNOSTICS_COMMUNICATION_EN = {
 // packages/runtime/github-actions/src/i18n/diagnostics-communication.fr.ts
 var DIAGNOSTICS_COMMUNICATION_FR = {
   "diagnostic.communication.feedback-unavailable": "Les e-mails de remerciement sont bloqu\xE9s car les r\xE9sultats des retours des intervenants sont indisponibles. V\xE9rifiez le lien de l'\xE9v\xE9nement OpenFeedback, la cl\xE9 API de l'organisation et les pr\xE9sentations synchronis\xE9es, puis r\xE9essayez.",
-  "diagnostic.communication.slides-unavailable": "L'envoi des e-mails est bloqu\xE9 car le lien du fichier de pr\xE9sentation est absent ou invalide. Configurez un mod\xE8le Drive avec template_kind=slides, r\xE9conciliez les fichiers et transmettez l'entr\xE9e slides-link de drive-files dans slides-url.",
+  "diagnostic.communication.slides-unavailable": "Les envois n\xE9cessitent un lien de pr\xE9sentation valide et un contenu g\xE9r\xE9 pr\xEAt. Corrigez les diagnostics des documents puis relancez la r\xE9conciliation.",
   "diagnostic.communication.approval-pending": "Les e-mails attendent une confirmation dans le ticket du meetup.",
   "diagnostic.communication.approval-rejected": "Le lot d'e-mails a \xE9t\xE9 refus\xE9. La d\xE9cision enregistr\xE9e est d\xE9finitive pour cette version du lot.",
   "diagnostic.communication.approval-unavailable": "La confirmation des organisateurs n'a pas pu \xEAtre v\xE9rifi\xE9e ou enregistr\xE9e ; l'envoi des e-mails est bloqu\xE9.",
@@ -31940,6 +31940,15 @@ var DIAGNOSTICS_EVENT_FR = {
 
 // packages/runtime/github-actions/src/i18n/diagnostics-other.en.ts
 var DIAGNOSTICS_OTHER_EN = {
+  "diagnostic.publication.assets.file.drift": "An event template copy is missing or its name or template metadata has changed",
+  "diagnostic.publication.assets.content.contract": "Check the versioned content contract, supported MIME type, tokens, image slots and fit policy.",
+  "diagnostic.publication.assets.content.missing": "Complete the required public text or link, then reconcile again. The existing copy is reused.",
+  "diagnostic.publication.assets.content.location": "Place Slides tokens in whole text shapes and Docs tokens in body paragraphs. Check tab and object IDs, alt text and supported structures.",
+  "diagnostic.publication.assets.content.conflict": "A managed location changed or its anchor is missing. Preserve the edit; use revision-bound restore or remove recovery in the asset content configuration.",
+  "diagnostic.publication.assets.content.recovery": "Inspect the file and binding sidecar. Restore valid state or use explicit enrollment or binding recovery; do not delete the file or reset email records.",
+  "diagnostic.publication.assets.content.revision": "The document changed during rendering. Reconcile again after the current edit is complete.",
+  "diagnostic.publication.assets.content.image": "Check the public HTTPS portrait and fallback: PNG, JPEG or GIF, under 50 MB and at most 25 megapixels. Signed or private URLs are unsupported.",
+  "diagnostic.publication.assets.content.fallback": "An optional portrait uses its validated generic fallback. The file remains ready; check the speaker assignment and public picture URL.",
   "diagnostic.publication.feedback.agenda": "Complete talk subjects and resolve speaker references in the issue before synchronizing the feedback agenda. Existing feedback is preserved.",
   "diagnostic.publication.feedback.unrelated": "This issue is not a meetup",
   "diagnostic.publication.feedback.inactive": "Feedback automation is inactive for this event",
@@ -31960,6 +31969,15 @@ var DIAGNOSTICS_OTHER_EN = {
 
 // packages/runtime/github-actions/src/i18n/diagnostics-other.fr.ts
 var DIAGNOSTICS_OTHER_FR = {
+  "diagnostic.publication.assets.file.drift": "Une copie du mod\xE8le manque ou son nom ou ses m\xE9tadonn\xE9es ont chang\xE9.",
+  "diagnostic.publication.assets.content.contract": "V\xE9rifiez le contrat de contenu versionn\xE9, le type MIME, les jetons, les images et le mode de cadrage.",
+  "diagnostic.publication.assets.content.missing": "Compl\xE9tez le texte ou le lien public requis, puis relancez la r\xE9conciliation. La copie existante est r\xE9utilis\xE9e.",
+  "diagnostic.publication.assets.content.location": "Placez les jetons Slides dans des formes de texte enti\xE8res et les jetons Docs dans les paragraphes du corps. V\xE9rifiez les identifiants, le texte alternatif et les structures prises en charge.",
+  "diagnostic.publication.assets.content.conflict": "Un emplacement g\xE9r\xE9 a chang\xE9 ou son ancre manque. Pr\xE9servez la modification et utilisez une restauration ou un retrait li\xE9 \xE0 la r\xE9vision dans la configuration des contenus.",
+  "diagnostic.publication.assets.content.recovery": "Inspectez le fichier et son manifeste. Restaurez un \xE9tat valide ou utilisez une inscription ou une r\xE9cup\xE9ration explicite ; ne supprimez pas le fichier et ne r\xE9initialisez pas les envois.",
+  "diagnostic.publication.assets.content.revision": "Le document a chang\xE9 pendant le rendu. Relancez la r\xE9conciliation apr\xE8s la modification en cours.",
+  "diagnostic.publication.assets.content.image": "V\xE9rifiez le portrait HTTPS public et son image de remplacement : PNG, JPEG ou GIF, moins de 50 Mo et au plus 25 m\xE9gapixels. Les URL priv\xE9es ou sign\xE9es ne sont pas prises en charge.",
+  "diagnostic.publication.assets.content.fallback": "Un portrait facultatif utilise son image g\xE9n\xE9rique valid\xE9e. Le fichier reste pr\xEAt ; v\xE9rifiez le choix de l'intervenant et son URL publique.",
   "diagnostic.publication.feedback.agenda": "Compl\xE9tez les sujets des pr\xE9sentations et r\xE9solvez les r\xE9f\xE9rences des intervenants dans l'issue avant de synchroniser le programme des retours. Les retours existants sont conserv\xE9s.",
   "diagnostic.publication.feedback.unrelated": "Ce ticket ne correspond pas \xE0 un meetup.",
   "diagnostic.publication.feedback.inactive": "L'automatisation des retours est inactive pour cet \xE9v\xE9nement.",
@@ -40500,7 +40518,7 @@ var ManageMeetupCommunications = class _ManageMeetupCommunications {
       notificationRecipients: [],
       mailPlaceholders: CommunicationPlaceholders.eventPlaceholders(
         managed.event,
-        input.slidesUrl
+        input.slidesReady === false ? void 0 : input.slidesUrl
       ),
       notificationContent: this.dependencies.organizerReadinessNotification.render({
         repository: repositoryName,
@@ -60037,7 +60055,8 @@ var CommunicationRuntime = class _CommunicationRuntime {
       repo: input.repo,
       repositoryId: input.repositoryId,
       organizerNotificationDestination: slackOrganizerChannelId,
-      slidesUrl: input.slidesUrl
+      slidesUrl: input.slidesUrl,
+      slidesReady: input.slidesReady
     });
     return result;
   }
@@ -60085,7 +60104,7 @@ var COMMUNICATION_MESSAGES = {
 };
 var RUNTIME_MESSAGES = {
   "communication.feedback-unavailable": "Speaker thank-you emails require resolved feedback results for every talk.",
-  "communication.slides-unavailable": "Email dispatch requires a valid presentation file URL.",
+  "communication.slides-unavailable": "Email dispatch requires a valid presentation file URL and ready managed content. Resolve asset diagnostics and run reconciliation again.",
   "communication.approval-pending": "Email dispatch is waiting for approval on the meetup issue.",
   "communication.approval-rejected": "The email batch was rejected. The recorded decision is final for this batch revision.",
   "communication.approval-unavailable": "The organizer approval could not be verified or persisted; email dispatch is blocked.",
@@ -60114,6 +60133,10 @@ var CommunicationAction = class _CommunicationAction {
       ...ConferenceHallInput.read(),
       issueNumber,
       slidesUrl: getInput("slides-url"),
+      slidesReady: RuntimeInput.booleanInput(
+        "slides-ready",
+        getInput("slides-ready") || "true"
+      ),
       openFeedbackApiKey: getInput("openfeedback-api-key"),
       githubToken: getInput("github-token", { required: true }),
       mailingsToken: getInput("mailings-token", { required: true }),

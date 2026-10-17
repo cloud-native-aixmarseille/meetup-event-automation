@@ -190,6 +190,7 @@ jobs:
         with:
           conference-hall-event: ${{ inputs.conference-hall-event }}
           conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicit reusable workflow secret
+          slides-ready: ${{ steps.assets.outputs.slides-ready }}
           slides-url: ${{ fromJSON(steps.assets.outputs.drive-files)['slides-link'] }}
           openfeedback-api-key: ${{ secrets.openfeedback-api-key }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly
           locale: ${{ inputs.locale }}

@@ -32,11 +32,13 @@ inputs:
     required: true
 outputs:
   result:
-    description: Versioned JSON envelope containing folder and template links, persistence status, and diagnostics.
+    description: Versioned JSON envelope containing folder and template links, per-template content status, persistence status, and diagnostics.
   asset-url:
     description: URL of the managed event folder, or an empty string when unavailable.
   drive-files:
     description: JSON map from template kind followed by -link to the corresponding copied file URL.
+  slides-ready:
+    description: Whether a slides URL exists and its content is copy-only or ready.
   diagnostics:
     description: Redacted JSON diagnostics for asset reconciliation.
 runs:

@@ -47,7 +47,7 @@ const RUNTIME_MESSAGES: Readonly<
 	"communication.feedback-unavailable":
 		"Speaker thank-you emails require resolved feedback results for every talk.",
 	"communication.slides-unavailable":
-		"Email dispatch requires a valid presentation file URL.",
+		"Email dispatch requires a valid presentation file URL and ready managed content. Resolve asset diagnostics and run reconciliation again.",
 	"communication.approval-pending":
 		"Email dispatch is waiting for approval on the meetup issue.",
 	"communication.approval-rejected":
@@ -89,6 +89,10 @@ export class CommunicationAction {
 			...ConferenceHallInput.read(),
 			issueNumber,
 			slidesUrl: core.getInput("slides-url"),
+			slidesReady: RuntimeInput.booleanInput(
+				"slides-ready",
+				core.getInput("slides-ready") || "true",
+			),
 			openFeedbackApiKey: core.getInput("openfeedback-api-key"),
 
 			githubToken: core.getInput("github-token", { required: true }),
