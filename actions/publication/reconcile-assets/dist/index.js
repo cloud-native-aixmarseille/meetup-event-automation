@@ -65143,13 +65143,36 @@ var PublicationUrlPolicyEngine = class {
   }
 };
 
+// packages/domain/publication/src/domain/content-text-key.ts
+var ContentTextKey = class {
+  static of(field) {
+    return field.slot ? `${field.token}:${field.slot}` : field.token;
+  }
+};
+
 // packages/domain/publication/src/domain/asset-content.ts
 var TEXT_TOKENS = [
   "event.title",
   "event.date",
+  "event.date.month",
+  "event.date.numeric",
+  "event.date.weekday",
   "host.name",
+  "host.address",
+  "host.postal_code",
+  "host.city",
   "agenda",
-  "event.feedback_url"
+  "event.feedback_url",
+  "next_event.date",
+  "next_event.date.numeric",
+  "next_event.host.name",
+  "next_event.host.city"
+];
+var SLOTTED_TEXT_TOKENS = [
+  "talk.title",
+  "talk.abstract",
+  "talk.speakers",
+  "speaker.name"
 ];
 
 // packages/domain/publication/src/domain/content-contract-policy.ts
@@ -65170,7 +65193,7 @@ var ContentContractPolicy = class _ContentContractPolicy {
       let key;
       if (field.type === "text") {
         _ContentContractPolicy.textField(field);
-        key = field.token;
+        key = ContentTextKey.of(field);
       } else {
         _ContentContractPolicy.image(field, mimeType);
         key = field.slot;
@@ -65181,9 +65204,13 @@ var ContentContractPolicy = class _ContentContractPolicy {
     return contract;
   }
   static textField(field) {
-    if (!TEXT_TOKENS.includes(field.token) || !_ContentContractPolicy.keys(field, [
+    const slotted = SLOTTED_TEXT_TOKENS.includes(
+      field.token
+    );
+    if (!(slotted || TEXT_TOKENS.includes(field.token)) || (slotted ? !_ContentContractPolicy.name(field.slot) : field.slot !== void 0) || !_ContentContractPolicy.name(ContentTextKey.of(field)) || !_ContentContractPolicy.keys(field, [
       "type",
       "token",
+      "slot",
       "required",
       "fallback"
     ]) || (!field.required || field.fallback !== void 0) && !_ContentContractPolicy.text(field.fallback))
@@ -65324,7 +65351,7 @@ var ContentManifestPolicy = class _ContentManifestPolicy {
     const anchors = /* @__PURE__ */ new Set();
     for (const binding of manifest.bindings) {
       const field = manifest.contract.fields.find(
-        (field2) => field2.type === binding.type && (field2.type === "text" ? field2.token : field2.slot) === binding.key
+        (field2) => field2.type === binding.type && (field2.type === "text" ? ContentTextKey.of(field2) : field2.slot) === binding.key
       );
       const anchor = binding.anchor;
       const key = JSON.stringify([
@@ -65453,11 +65480,12 @@ var ResolveContentValues = class {
         values.push(await this.image(field, model));
         continue;
       }
-      const text = model.text[field.token] || (!field.required ? field.fallback : void 0);
+      const key = ContentTextKey.of(field);
+      const text = model.text[key] || (!field.required ? field.fallback : void 0);
       if (!ContentContractPolicy.text(text)) throw new ContentError("missing");
       values.push({
         type: "text",
-        key: field.token,
+        key,
         text,
         fingerprint: ContentFingerprint.of(text)
       });
@@ -65529,7 +65557,7 @@ var ReconcileAssetContent = class {
           ...manifest.contract,
           fields: manifest.contract.fields.filter(
             (field) => recovered.manifest.bindings.some(
-              (binding) => binding.key === (field.type === "text" ? field.token : field.slot)
+              (binding) => binding.key === (field.type === "text" ? ContentTextKey.of(field) : field.slot)
             )
           )
         },
@@ -68484,56 +68512,42 @@ var ValidateMeetupReferentials = class {
   }
 };
 
-// packages/application/journey/src/use-cases/asset-render-projection.ts
-var AssetRenderProjection = class _AssetRenderProjection {
-  constructor(presenter, repository, speakers = {}) {
-    this.presenter = presenter;
-    this.repository = repository;
-    this.speakers = speakers;
-  }
-  presenter;
-  repository;
-  speakers;
-  async create(event, diagnostics) {
-    const catalog = await new ValidateReferentialCatalog(
-      this.repository
-    ).execute();
-    const agendaValid = !diagnostics.some(
-      (item) => item.severity === "error" && /agenda|referential/.test(item.code)
-    );
-    const agendaIds = agendaValid ? new Set(
+// packages/application/journey/src/use-cases/asset-participant-projection.ts
+var AssetParticipantProjection = class _AssetParticipantProjection {
+  static create(event, catalog, assignments) {
+    const agendaIds = new Set(
       event.agenda.flatMap(
         (talk) => talk.speakers.map((speaker) => speaker.id)
       )
-    ) : /* @__PURE__ */ new Set();
+    );
+    const speakers = {};
     const pictures = {};
-    if (catalog.isValid) {
-      for (const [slot, id] of Object.entries(this.speakers)) {
-        const speaker = catalog.catalog.speakers.find((item) => item.id === id);
-        if (agendaIds.has(id) && speaker?.pictureUrl && _AssetRenderProjection.publicUrl(speaker.pictureUrl))
-          pictures[slot] = {
-            speakerId: id,
-            url: speaker.pictureUrl,
-            description: speaker.displayName
-          };
+    for (const [slot, id] of Object.entries(assignments.speakers)) {
+      const speaker = catalog.speakers.find((item) => item.id === id);
+      if (!speaker || !agendaIds.has(id)) continue;
+      speakers[slot] = speaker.displayName;
+      if (_AssetParticipantProjection.publicUrl(speaker.pictureUrl)) {
+        pictures[slot] = {
+          speakerId: id,
+          url: speaker.pictureUrl,
+          description: speaker.displayName
+        };
       }
     }
-    return this.presenter.format({
-      title: diagnostics.some(
-        (item) => item.severity === "error" && /title/.test(item.code)
-      ) ? void 0 : event.eventTitle,
-      date: event.date,
-      timeZone: event.timeZone,
-      hostName: event.host?.displayName,
-      feedbackUrl: !diagnostics.some(
-        (item) => item.severity === "error" && /feedback/.test(item.code)
-      ) && _AssetRenderProjection.publicUrl(event.publicationLinks.feedback) ? event.publicationLinks.feedback : void 0,
-      agenda: agendaValid ? event.agenda.map((talk) => ({
-        title: talk.description,
+    const talks = {};
+    for (const [slot, identity] of Object.entries(assignments.talks)) {
+      const matches = event.agenda.filter(
+        (talk2) => talk2.proposal?.id === identity.id && talk2.proposal.provider === identity.provider && talk2.proposal.event === identity.event
+      );
+      if (matches.length !== 1) continue;
+      const talk = matches[0];
+      talks[slot] = {
+        title: talk.proposal?.title,
+        abstract: talk.proposal?.abstract,
         speakers: talk.speakers.map((speaker) => speaker.displayName)
-      })) : [],
-      pictures
-    });
+      };
+    }
+    return { speakers, pictures, talks };
   }
   static publicUrl(value) {
     if (!value) return false;
@@ -68545,6 +68559,143 @@ var AssetRenderProjection = class _AssetRenderProjection {
     } catch {
       return false;
     }
+  }
+};
+
+// packages/application/journey/src/use-cases/asset-render-projection.ts
+var AssetRenderProjection = class {
+  constructor(presenter, repository, assignments = {
+    speakers: {},
+    talks: {},
+    venues: {}
+  }, nextEvent) {
+    this.presenter = presenter;
+    this.repository = repository;
+    this.assignments = assignments;
+    this.nextEvent = nextEvent;
+  }
+  presenter;
+  repository;
+  assignments;
+  nextEvent;
+  async create(event, diagnostics) {
+    const catalog = await new ValidateReferentialCatalog(
+      this.repository
+    ).execute();
+    const agendaValid = catalog.isValid && event.proposalStatus !== "stale" && !diagnostics.some(
+      (item) => item.severity === "error" && /agenda|referential|proposals/.test(`${item.code} ${item.field}`)
+    );
+    const participants = agendaValid ? AssetParticipantProjection.create(
+      event,
+      catalog.catalog,
+      this.assignments
+    ) : { speakers: {}, talks: {}, pictures: {} };
+    return this.presenter.format({
+      title: diagnostics.some(
+        (item) => item.severity === "error" && /title/.test(item.code)
+      ) ? void 0 : event.eventTitle,
+      date: event.date,
+      timeZone: event.timeZone,
+      hostName: event.host?.displayName,
+      venue: event.host?.id ? this.assignments.venues[event.host.id] : void 0,
+      feedbackUrl: !diagnostics.some(
+        (item) => item.severity === "error" && /feedback/.test(item.code)
+      ) && AssetParticipantProjection.publicUrl(event.publicationLinks.feedback) ? event.publicationLinks.feedback : void 0,
+      agenda: agendaValid ? event.agenda.map((talk) => ({
+        title: talk.proposal?.title ?? talk.description,
+        speakers: talk.speakers.map((speaker) => speaker.displayName)
+      })) : [],
+      ...participants,
+      nextEvent: catalog.isValid ? await this.nextEvent?.find(event, catalog.catalog) : void 0
+    });
+  }
+};
+
+// packages/application/journey/src/use-cases/find-next-asset-event.ts
+var FindNextAssetEvent = class {
+  constructor(repository, codec, venues = {}) {
+    this.repository = repository;
+    this.codec = codec;
+    this.venues = venues;
+  }
+  repository;
+  codec;
+  venues;
+  async find(current, catalog) {
+    try {
+      const candidates = await this.candidates(current);
+      candidates.sort(
+        (a, b2) => a.date.localeCompare(b2.date) || a.identity.issueNumber - b2.identity.issueNumber
+      );
+      for (const candidate of candidates) {
+        const host = catalog.hosts.find(
+          (item) => item.id === candidate.host?.id
+        );
+        if (host)
+          return {
+            date: candidate.date,
+            hostName: host.displayName,
+            city: this.venues[host.id]?.city
+          };
+      }
+      return void 0;
+    } catch {
+      return void 0;
+    }
+  }
+  async candidates(current) {
+    const events = [];
+    const seen = /* @__PURE__ */ new Set();
+    const cursors = /* @__PURE__ */ new Set();
+    let cursor;
+    for (let pages = 0; pages < 20; pages++) {
+      const page = await this.repository.listPage({
+        repository: current.identity.repository,
+        label: "meetup",
+        includeClosed: false,
+        pageSize: 100,
+        cursor
+      });
+      events.push(...this.pageCandidates(page.items, current, seen));
+      cursor = page.nextCursor;
+      if (!cursor) return events;
+      if (cursors.has(cursor))
+        throw new Error("Asset event listing repeated a cursor");
+      cursors.add(cursor);
+    }
+    throw new Error("Asset event page limit exceeded");
+  }
+  pageCandidates(documents, current, seen) {
+    const events = [];
+    for (const document2 of documents) {
+      if (document2.identity.repository !== current.identity.repository || seen.has(document2.identity.issueNumber))
+        continue;
+      seen.add(document2.identity.issueNumber);
+      if (seen.size > 200)
+        throw new Error("Asset event selection limit exceeded");
+      const event = this.candidate(document2, current);
+      if (event) events.push(event);
+    }
+    return events;
+  }
+  candidate(document2, current) {
+    if (document2.issueState !== "open" || !document2.labels.includes("meetup"))
+      return void 0;
+    const decoded = this.codec.decode(document2);
+    const evaluated = new EventRuleEngine(
+      EventRuleFactory.createDefaultEventRules()
+    ).evaluate(decoded.event);
+    const event = evaluated.event;
+    const invalid = [...decoded.diagnostics, ...evaluated.diagnostics].some(
+      (item) => item.severity === "error" && (/date|host/.test(item.field ?? "") || item.code.startsWith("event.document."))
+    );
+    if (invalid || event.date <= current.date || event.occurrenceStatus !== "scheduled" || !event.confirmations.host)
+      return void 0;
+    const published = PublicationUrlPolicies.createDefaultPublicationUrlPolicies().filter((policy) => policy.id !== "asset-folder-url").some((policy) => {
+      const field = policy.id === "meetup-event-url" ? "meetup" : "community";
+      return Boolean(event.publicationLinks[field]) && !policy.evaluate({ [field]: event.publicationLinks[field] }).diagnostics.some((item) => item.severity === "error");
+    });
+    return published ? event : void 0;
   }
 };
 
@@ -68982,7 +69133,7 @@ var DocumentTemplateBindings = class _DocumentTemplateBindings {
       }
     }
     for (const field of contract.fields) {
-      const key = field.type === "text" ? field.token : field.slot;
+      const key = field.type === "text" ? ContentTextKey.of(field) : field.slot;
       if (!bindings.some((binding) => binding.key === key))
         throw new ContentError("location");
     }
@@ -69012,15 +69163,16 @@ var DocumentTemplateBindings = class _DocumentTemplateBindings {
   static matches(matches, startIndex, tabId, contract, bindings) {
     for (const match of matches) {
       const field = contract.fields.find(
-        (field2) => field2.type === "text" && field2.token === match[1]
+        (field2) => field2.type === "text" && ContentTextKey.of(field2) === match[1]
       );
-      if (!field || startIndex == null) throw new ContentError("location");
+      if (field?.type !== "text" || startIndex == null)
+        throw new ContentError("location");
       const start = startIndex + (match.index ?? 0);
       const id = `meetup_${tabId}_${start}`;
       bindings.push({
         id,
         type: "text",
-        key: field.token,
+        key: ContentTextKey.of(field),
         applied: "",
         anchor: {
           tabId,
@@ -69256,7 +69408,7 @@ var SlideTemplateBindings = class _SlideTemplateBindings {
     _SlideTemplateBindings.rejectTokens(presentation.masters);
     _SlideTemplateBindings.rejectTokens(presentation.layouts);
     for (const field of contract.fields) {
-      const key = field.type === "text" ? field.token : field.slot;
+      const key = field.type === "text" ? ContentTextKey.of(field) : field.slot;
       if (!bindings.some((binding) => binding.key === key))
         throw new ContentError("location");
     }
@@ -69268,14 +69420,14 @@ var SlideTemplateBindings = class _SlideTemplateBindings {
     const text = _SlideTemplateBindings.text(element);
     if (element.shape && text.includes("{{")) {
       const field = contract.fields.find(
-        (field2) => field2.type === "text" && text === `{{${field2.token}}}`
+        (field2) => field2.type === "text" && text === `{{${ContentTextKey.of(field2)}}}`
       );
-      if (!field) throw new ContentError("location");
+      if (field?.type !== "text") throw new ContentError("location");
       _SlideTemplateBindings.style(element);
       bindings.push({
         id: objectId,
         type: "text",
-        key: field.token,
+        key: ContentTextKey.of(field),
         anchor: { objectId, pageId },
         applied: ""
       });
@@ -70619,6 +70771,31 @@ var AssetMessages = class extends MessageLocalizer {
   }
 };
 
+// packages/runtime/github-actions/src/assets/asset-date-formatter.ts
+var AssetDateFormatter = class {
+  constructor(locale) {
+    this.locale = locale;
+  }
+  locale;
+  format(date, timeZone, format = "long") {
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return void 0;
+    try {
+      new Intl.DateTimeFormat(this.locale, { timeZone });
+      const instant = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
+      if (instant.toISOString().slice(0, 10) !== date) return void 0;
+      if (format === "numeric")
+        return `${date.slice(8, 10)}/${date.slice(5, 7)}/${date.slice(0, 4)}`;
+      const options = format === "month" ? { month: "long" } : { dateStyle: format === "weekday" ? "full" : "long" };
+      return new Intl.DateTimeFormat(this.locale, {
+        ...options,
+        timeZone: "UTC"
+      }).format(instant);
+    } catch {
+      return void 0;
+    }
+  }
+};
+
 // packages/runtime/github-actions/src/assets/asset-render-presenter.ts
 var AssetRenderPresenterImpl = class {
   constructor(messages = new AssetMessages()) {
@@ -70626,38 +70803,169 @@ var AssetRenderPresenterImpl = class {
   }
   messages;
   format(input) {
+    const date = new AssetDateFormatter(this.messages.locale);
     return {
       text: {
         "event.title": input.title,
-        "event.date": this.date(input.date, input.timeZone),
+        "event.date": date.format(input.date, input.timeZone),
+        "event.date.month": date.format(input.date, input.timeZone, "month"),
+        "event.date.numeric": date.format(
+          input.date,
+          input.timeZone,
+          "numeric"
+        ),
+        "event.date.weekday": date.format(
+          input.date,
+          input.timeZone,
+          "weekday"
+        ),
         "host.name": input.hostName,
+        "host.address": input.venue?.address,
+        "host.postal_code": input.venue?.postalCode,
+        "host.city": input.venue?.city,
         "event.feedback_url": input.feedbackUrl,
+        "next_event.date": date.format(input.nextEvent?.date, input.timeZone),
+        "next_event.date.numeric": date.format(
+          input.nextEvent?.date,
+          input.timeZone,
+          "numeric"
+        ),
+        "next_event.host.name": input.nextEvent?.hostName,
+        "next_event.host.city": input.nextEvent?.city,
         agenda: input.agenda.map(
           (talk) => this.messages.t("asset.agenda.talk", {
             title: talk.title,
-            speakers: new Intl.ListFormat(this.messages.locale, {
-              style: "long",
-              type: "conjunction"
-            }).format(talk.speakers)
+            speakers: this.names(talk.speakers)
           })
-        ).join("\n")
+        ).join("\n"),
+        ...this.slots(input)
       },
       pictures: input.pictures
     };
   }
-  date(date, timeZone) {
-    if (!date) return void 0;
-    try {
-      new Intl.DateTimeFormat(this.messages.locale, { timeZone });
-      const instant = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
-      if (instant.toISOString().slice(0, 10) !== date) return void 0;
-      return new Intl.DateTimeFormat(this.messages.locale, {
-        dateStyle: "long",
-        timeZone: "UTC"
-      }).format(instant);
-    } catch {
-      return void 0;
+  slots(input) {
+    const text = {};
+    for (const [slot, talk] of Object.entries(input.talks ?? {})) {
+      text[`talk.title:${slot}`] = talk.title;
+      text[`talk.abstract:${slot}`] = talk.abstract;
+      text[`talk.speakers:${slot}`] = this.names(talk.speakers);
     }
+    for (const [slot, name] of Object.entries(input.speakers ?? {}))
+      text[`speaker.name:${slot}`] = name;
+    return text;
+  }
+  names(speakers) {
+    return new Intl.ListFormat(this.messages.locale, {
+      style: "long",
+      type: "conjunction"
+    }).format(speakers);
+  }
+};
+
+// packages/runtime/github-actions/src/assets/asset-content-configuration.ts
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+
+// packages/runtime/github-actions/src/assets/asset-render-configuration.ts
+var AssetRenderConfiguration = class _AssetRenderConfiguration {
+  static parse(event, venues) {
+    const speakers = _AssetRenderConfiguration.record(event.speakers ?? {});
+    const talks = _AssetRenderConfiguration.record(event.talks ?? {});
+    const publicVenues = _AssetRenderConfiguration.record(venues ?? {});
+    for (const [slot, id] of Object.entries(speakers)) {
+      if (!_AssetRenderConfiguration.slot(slot) || typeof id !== "string" || !/^speaker-[a-z0-9-]+$/.test(id))
+        throw new Error("Invalid asset speaker assignment");
+    }
+    for (const [slot, value] of Object.entries(talks)) {
+      const identity = _AssetRenderConfiguration.record(value);
+      if (!_AssetRenderConfiguration.slot(slot) || !ContentContractPolicy.keys(identity, ["provider", "event", "id"]) || ![identity.provider, identity.event, identity.id].every(
+        (item) => typeof item === "string" && /^[a-zA-Z0-9_-]{1,200}$/.test(item)
+      ))
+        throw new Error("Invalid asset talk assignment");
+    }
+    for (const [id, value] of Object.entries(publicVenues)) {
+      const venue = _AssetRenderConfiguration.record(value);
+      if (!/^host-[a-z0-9-]+$/.test(id) || !ContentContractPolicy.keys(venue, ["address", "postalCode", "city"]) || ![venue.address, venue.postalCode, venue.city].every(
+        ContentContractPolicy.text
+      ))
+        throw new Error("Invalid public asset venue");
+    }
+    return {
+      speakers,
+      talks,
+      venues: publicVenues
+    };
+  }
+  static slot(value) {
+    return ContentContractPolicy.name(value) && !["__proto__", "prototype", "constructor"].includes(value);
+  }
+  static record(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).length > 200)
+      throw new Error("Invalid asset render configuration");
+    return value;
+  }
+};
+
+// packages/runtime/github-actions/src/assets/asset-content-configuration.ts
+var AssetContentConfiguration = class _AssetContentConfiguration {
+  static usesNextEvent(contracts) {
+    return Object.values(contracts).some((contract) => {
+      const fields2 = contract?.fields;
+      return Array.isArray(fields2) && fields2.some(
+        (field) => typeof field?.token === "string" && field.token.startsWith("next_event.")
+      );
+    });
+  }
+  static async load(root, eventId) {
+    let text;
+    try {
+      text = await readFile(
+        join(root, ".github/meetup-asset-content.json"),
+        "utf8"
+      );
+    } catch (error2) {
+      if (error2.code === "ENOENT")
+        return {
+          contracts: {},
+          speakers: {},
+          talks: {},
+          venues: {},
+          recovery: {}
+        };
+      throw error2;
+    }
+    if (Buffer.byteLength(text) > 1e6)
+      throw new Error("Asset content configuration is too large");
+    return _AssetContentConfiguration.parse(JSON.parse(text), eventId);
+  }
+  static parse(input, eventId) {
+    const root = input;
+    if (root?.version !== 1 || !_AssetContentConfiguration.record(root.contracts) || !ContentContractPolicy.keys(root, [
+      "version",
+      "contracts",
+      "events",
+      "venues"
+    ]) || root.events !== void 0 && !_AssetContentConfiguration.record(root.events))
+      throw new Error("Invalid asset content configuration");
+    const event = root.events?.[eventId] ?? {};
+    if (!_AssetContentConfiguration.record(event) || !ContentContractPolicy.keys(event, ["speakers", "talks", "recovery"]))
+      throw new Error("Invalid asset event configuration");
+    const assignments = AssetRenderConfiguration.parse(event, root.venues);
+    const recovery = event.recovery ?? {};
+    if (!_AssetContentConfiguration.record(recovery))
+      throw new Error("Invalid asset speaker assignments");
+    for (const [id, operation] of Object.entries(recovery)) {
+      if (!ContentContractPolicy.name(id) || !operation || !["enroll", "restore", "remove"].includes(operation.operation) || !ContentContractPolicy.text(operation.revision) || operation.operation !== "enroll" && !ContentContractPolicy.name(operation.bindingId) || !ContentContractPolicy.keys(operation, [
+        "operation",
+        "revision",
+        "bindingId"
+      ]))
+        throw new Error("Invalid asset recovery operation");
+    }
+    return { contracts: root.contracts, ...assignments, recovery };
+  }
+  static record(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
   }
 };
 
@@ -70891,7 +71199,7 @@ var ConferenceHallProposalSource = class {
 };
 
 // packages/adapter/csv-referential-repository/src/csv-referential-repository.ts
-import { readFile } from "node:fs/promises";
+import { readFile as readFile2 } from "node:fs/promises";
 import { isAbsolute, relative, resolve } from "node:path";
 
 // node_modules/.pnpm/csv-parse@7.0.3/node_modules/csv-parse/lib/api/CsvError.js
@@ -72606,14 +72914,14 @@ var CsvReferentialRepository = class _CsvReferentialRepository {
   options;
   async load() {
     const [hostsSource, speakersSource] = await Promise.all([
-      readFile(
+      readFile2(
         _CsvReferentialRepository.localPath(
           this.options.workspaceRoot,
           this.options.hostsPath
         ),
         "utf8"
       ),
-      readFile(
+      readFile2(
         _CsvReferentialRepository.localPath(
           this.options.workspaceRoot,
           this.options.speakersPath
@@ -74671,7 +74979,7 @@ var SystemEventClock = class {
 };
 
 // packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-projection.ts
-import { readFile as readFile2, realpath, stat as stat3, writeFile as writeFile2 } from "node:fs/promises";
+import { readFile as readFile3, realpath, stat as stat3, writeFile as writeFile2 } from "node:fs/promises";
 import { isAbsolute as isAbsolute2, relative as relative2, resolve as resolve2, sep as sep2 } from "node:path";
 
 // node_modules/.pnpm/prettier@3.9.9/node_modules/prettier/plugins/yaml.mjs
@@ -81972,7 +82280,7 @@ var YamlIssueFormProjection = class _YamlIssueFormProjection {
   async synchronize(input) {
     this.assertInput(input);
     const issueFormPath = await this.resolveIssueFormPath(input.issueFormPath);
-    const source = await readFile2(issueFormPath.absolutePath, "utf8");
+    const source = await readFile3(issueFormPath.absolutePath, "utf8");
     const document2 = (0, import_yaml.parseDocument)(source, {
       strict: true,
       uniqueKeys: true
@@ -87835,12 +88143,27 @@ var PublicationComposition = class _PublicationComposition {
         context3.get(ReconcileAssetContent)
       )
     );
+    _PublicationComposition.bindManageAssets(container, input);
+    return container;
+  }
+  static bindManageAssets(container, input) {
     container.bind(ManageMeetupAssets).toDynamicValue(
       (context3) => new ManageMeetupAssets({
         renderProjection: new AssetRenderProjection(
           new AssetRenderPresenterImpl(new AssetMessages(input.locale)),
           context3.get(SERVICES.referentialRepository),
-          input.contentConfiguration?.speakers
+          input.contentConfiguration ?? {
+            speakers: {},
+            talks: {},
+            venues: {}
+          },
+          AssetContentConfiguration.usesNextEvent(
+            input.contentConfiguration?.contracts ?? {}
+          ) ? new FindNextAssetEvent(
+            context3.get(SERVICES.eventRepository),
+            context3.get(SERVICES.eventDocumentCodec),
+            input.contentConfiguration?.venues
+          ) : void 0
         ),
         recovery: input.contentConfiguration?.recovery,
         eventRepository: context3.get(
@@ -87853,7 +88176,6 @@ var PublicationComposition = class _PublicationComposition {
         reconcileAssets: context3.get(ReconcileEventAssets)
       })
     );
-    return container;
   }
   static bindContent(container, credentials) {
     container.bind(ReconcileAssetContent).toDynamicValue(() => {
@@ -87870,54 +88192,6 @@ var PublicationComposition = class _PublicationComposition {
         images
       );
     });
-  }
-};
-
-// packages/runtime/github-actions/src/assets/asset-content-configuration.ts
-import { readFile as readFile3 } from "node:fs/promises";
-import { join } from "node:path";
-var AssetContentConfiguration = class _AssetContentConfiguration {
-  static async load(root, eventId) {
-    let text;
-    try {
-      text = await readFile3(
-        join(root, ".github/meetup-asset-content.json"),
-        "utf8"
-      );
-    } catch (error2) {
-      if (error2.code === "ENOENT")
-        return { contracts: {}, speakers: {}, recovery: {} };
-      throw error2;
-    }
-    if (Buffer.byteLength(text) > 1e6)
-      throw new Error("Asset content configuration is too large");
-    return _AssetContentConfiguration.parse(JSON.parse(text), eventId);
-  }
-  static parse(input, eventId) {
-    const root = input;
-    if (root?.version !== 1 || !_AssetContentConfiguration.record(root.contracts) || !ContentContractPolicy.keys(root, ["version", "contracts", "events"]) || root.events !== void 0 && !_AssetContentConfiguration.record(root.events))
-      throw new Error("Invalid asset content configuration");
-    const event = root.events?.[eventId] ?? {};
-    if (!ContentContractPolicy.keys(event, ["speakers", "recovery"]))
-      throw new Error("Invalid asset event configuration");
-    const speakers = event.speakers ?? {};
-    const recovery = event.recovery ?? {};
-    if (!_AssetContentConfiguration.record(speakers) || !_AssetContentConfiguration.record(recovery) || Object.entries(speakers).some(
-      ([key, id]) => !ContentContractPolicy.name(key) || !/^speaker-[a-z0-9-]+$/.test(id)
-    ))
-      throw new Error("Invalid asset speaker assignments");
-    for (const [id, operation] of Object.entries(recovery)) {
-      if (!ContentContractPolicy.name(id) || !operation || !["enroll", "restore", "remove"].includes(operation.operation) || !ContentContractPolicy.text(operation.revision) || operation.operation !== "enroll" && !ContentContractPolicy.name(operation.bindingId) || !ContentContractPolicy.keys(operation, [
-        "operation",
-        "revision",
-        "bindingId"
-      ]))
-        throw new Error("Invalid asset recovery operation");
-    }
-    return { contracts: root.contracts, speakers, recovery };
-  }
-  static record(value) {
-    return value !== null && typeof value === "object" && !Array.isArray(value);
   }
 };
 

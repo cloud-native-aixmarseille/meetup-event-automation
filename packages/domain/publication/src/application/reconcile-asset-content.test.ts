@@ -4,6 +4,38 @@ import { ContentFingerprint } from "../domain/content-fingerprint.js";
 import { ContentError } from "../domain/content-error.js";
 
 describe("managed content reconciliation", () => {
+	it("persists a slotted text binding through updates, no-ops, and manual-edit conflicts", async () => {
+		// Arrange
+		const f = contentFixture(false, {
+			type: "text",
+			token: "talk.title",
+			slot: "opening",
+			required: true,
+		});
+
+		// Act
+		await f.service.execute(f.input);
+		const changed = {
+			...f.input,
+			fresh: false,
+			model: { text: { "talk.title:opening": "Updated title" }, pictures: {} },
+		};
+		await f.service.execute(changed);
+		const unchanged = await f.service.execute(changed);
+		f.state.content.set("title", ContentFingerprint.of("Manual title"));
+		const conflict = f.service.execute(changed);
+
+		// Assert
+		expect(unchanged.status).toBe("ready");
+		expect(f.state.manifest?.bindings[0].key).toBe("talk.title:opening");
+		expect(f.renderer.apply).toHaveBeenCalledTimes(2);
+		expect(f.writes.map((value) => value.text)).toEqual([
+			"Public meetup",
+			"Updated title",
+		]);
+		await expect(conflict).rejects.toMatchObject({ code: "conflict" });
+	});
+
 	it("safely retries a text batch that left the original content intact", async () => {
 		// Arrange
 		const f = contentFixture();

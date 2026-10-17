@@ -80,6 +80,7 @@ for implemented behavior and contributor conventions.
 - [ADR-0013: Reconcile actionable organizer alerts throughout the meetup lifecycle](adr/0013-actionable-organizer-alerts.md)
 - [ADR-0014: Consolidate post-event follow-up](adr/0014-consolidated-post-event-follow-up.md)
 - [ADR-0014: Populate and update managed placeholders in Drive template copies](adr/0014-reconcile-drive-template-placeholders.md)
+- [ADR-0015: Render explicit participant, venue, and next-meetup fields](adr/0015-extend-asset-render-fields.md)
 
 ## Directory layout
 
@@ -120,7 +121,8 @@ docs/
     ├── 0012-conference-hall-talks-and-speakers.md
     ├── 0013-actionable-organizer-alerts.md
     ├── 0014-consolidated-post-event-follow-up.md
-    └── 0014-reconcile-drive-template-placeholders.md
+    ├── 0014-reconcile-drive-template-placeholders.md
+    └── 0015-extend-asset-render-fields.md
 ```
 
 Action references stay beside `action.yml`; workflow references stay beside

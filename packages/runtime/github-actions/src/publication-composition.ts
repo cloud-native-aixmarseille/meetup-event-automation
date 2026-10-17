@@ -13,11 +13,15 @@ import { HttpsAssetImageRepository } from "@meetup-automation/https-asset-image-
 import type { ReferentialRepository } from "@meetup-automation/referential";
 import { AssetRenderPresenterImpl } from "./assets/asset-render-presenter.js";
 import { AssetMessages } from "./assets/asset-messages.js";
-import type { AssetContentConfigurationData } from "./assets/asset-content-configuration.js";
+import {
+	AssetContentConfiguration,
+	type AssetContentConfigurationData,
+} from "./assets/asset-content-configuration.js";
 import {
 	ManageMeetupAssets,
 	ManageMeetupEvent,
 	AssetRenderProjection,
+	FindNextAssetEvent,
 } from "@meetup-automation/journey";
 import {
 	type AssetRepository,
@@ -32,15 +36,15 @@ import {
 
 export const ASSET_REPOSITORY = Symbol("AssetRepository");
 
+type PublicationInput = EventCompositionInput & {
+	readonly credentials: string;
+	readonly parentFolderId: string;
+	readonly templateFolderId: string;
+	readonly contentConfiguration?: AssetContentConfigurationData;
+};
+
 export class PublicationComposition {
-	static createPublicationContainer(
-		input: EventCompositionInput & {
-			readonly credentials: string;
-			readonly parentFolderId: string;
-			readonly templateFolderId: string;
-			readonly contentConfiguration?: AssetContentConfigurationData;
-		},
-	) {
+	static createPublicationContainer(input: PublicationInput) {
 		const container = EventComposition.createEventContainer(input);
 		const repository = container.get<ReferentialRepository>(
 			SERVICES.referentialRepository,
@@ -74,13 +78,34 @@ export class PublicationComposition {
 						context.get(ReconcileAssetContent),
 					),
 			);
+		PublicationComposition.bindManageAssets(container, input);
+		return container;
+	}
+
+	private static bindManageAssets(
+		container: ReturnType<typeof EventComposition.createEventContainer>,
+		input: PublicationInput,
+	): void {
 		container.bind(ManageMeetupAssets).toDynamicValue(
 			(context) =>
 				new ManageMeetupAssets({
 					renderProjection: new AssetRenderProjection(
 						new AssetRenderPresenterImpl(new AssetMessages(input.locale)),
 						context.get<ReferentialRepository>(SERVICES.referentialRepository),
-						input.contentConfiguration?.speakers,
+						input.contentConfiguration ?? {
+							speakers: {},
+							talks: {},
+							venues: {},
+						},
+						AssetContentConfiguration.usesNextEvent(
+							input.contentConfiguration?.contracts ?? {},
+						)
+							? new FindNextAssetEvent(
+									context.get<EventRepository>(SERVICES.eventRepository),
+									context.get<EventDocumentCodec>(SERVICES.eventDocumentCodec),
+									input.contentConfiguration?.venues,
+								)
+							: undefined,
 					),
 					recovery: input.contentConfiguration?.recovery,
 					eventRepository: context.get<EventRepository>(
@@ -93,7 +118,6 @@ export class PublicationComposition {
 					reconcileAssets: context.get(ReconcileEventAssets),
 				}),
 		);
-		return container;
 	}
 	private static bindContent(
 		container: ReturnType<typeof EventComposition.createEventContainer>,

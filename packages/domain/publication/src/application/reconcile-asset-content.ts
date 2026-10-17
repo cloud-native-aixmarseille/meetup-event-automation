@@ -11,6 +11,7 @@ import { ContentManifestPolicy } from "../domain/content-manifest-policy.js";
 import { ContentRenderPlan } from "../domain/content-render-plan.js";
 import { ContentFingerprint } from "../domain/content-fingerprint.js";
 import { ContentError } from "../domain/content-error.js";
+import { ContentTextKey } from "../domain/content-text-key.js";
 import type {
 	AssetContentRepository,
 	AssetImageRepository,
@@ -71,7 +72,7 @@ export class ReconcileAssetContent {
 						recovered.manifest.bindings.some(
 							(binding) =>
 								binding.key ===
-								(field.type === "text" ? field.token : field.slot),
+								(field.type === "text" ? ContentTextKey.of(field) : field.slot),
 						),
 					),
 				},

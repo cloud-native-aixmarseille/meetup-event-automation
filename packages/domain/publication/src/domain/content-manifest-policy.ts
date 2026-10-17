@@ -1,6 +1,7 @@
 import type { ContentBinding, ContentManifest } from "./asset-content.js";
 import { ContentContractPolicy } from "./content-contract-policy.js";
 import { ContentError } from "./content-error.js";
+import { ContentTextKey } from "./content-text-key.js";
 
 export class ContentManifestPolicy {
 	static parse(
@@ -136,7 +137,8 @@ export class ContentManifestPolicy {
 			const field = manifest.contract.fields.find(
 				(field) =>
 					field.type === binding.type &&
-					(field.type === "text" ? field.token : field.slot) === binding.key,
+					(field.type === "text" ? ContentTextKey.of(field) : field.slot) ===
+						binding.key,
 			);
 			const anchor = binding.anchor;
 			const key = JSON.stringify([

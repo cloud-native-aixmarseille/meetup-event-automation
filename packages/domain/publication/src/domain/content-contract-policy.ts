@@ -3,7 +3,9 @@ import {
 	type ImageField,
 	type TextField,
 	TEXT_TOKENS,
+	SLOTTED_TEXT_TOKENS,
 } from "./asset-content.js";
+import { ContentTextKey } from "./content-text-key.js";
 import { ContentError } from "./content-error.js";
 
 export class ContentContractPolicy {
@@ -36,7 +38,7 @@ export class ContentContractPolicy {
 			let key: string;
 			if (field.type === "text") {
 				ContentContractPolicy.textField(field);
-				key = field.token;
+				key = ContentTextKey.of(field);
 			} else {
 				ContentContractPolicy.image(field, mimeType);
 				key = field.slot;
@@ -48,11 +50,19 @@ export class ContentContractPolicy {
 	}
 
 	private static textField(field: TextField): void {
+		const slotted = (SLOTTED_TEXT_TOKENS as readonly string[]).includes(
+			field.token,
+		);
 		if (
-			!TEXT_TOKENS.includes(field.token) ||
+			!(slotted || (TEXT_TOKENS as readonly string[]).includes(field.token)) ||
+			(slotted
+				? !ContentContractPolicy.name(field.slot)
+				: field.slot !== undefined) ||
+			!ContentContractPolicy.name(ContentTextKey.of(field)) ||
 			!ContentContractPolicy.keys(field, [
 				"type",
 				"token",
+				"slot",
 				"required",
 				"fallback",
 			]) ||
