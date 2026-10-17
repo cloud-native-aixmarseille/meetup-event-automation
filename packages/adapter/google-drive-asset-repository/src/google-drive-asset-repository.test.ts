@@ -213,6 +213,8 @@ describe("Google Drive asset repository", () => {
 
 		// Assert
 		expect(copy).toEqual({
+			contentManaged: false,
+			mimeType: undefined,
 			id: file.id,
 			name: file.name,
 			url: file.webViewLink,
@@ -249,7 +251,14 @@ describe("Google Drive asset repository", () => {
 
 		// Assert
 		expect(actual).toEqual([
-			{ id: "file", name: "Name", kind: undefined, templateId: undefined },
+			{
+				id: "file",
+				name: "Name",
+				kind: undefined,
+				templateId: undefined,
+				mimeType: undefined,
+				contentManaged: false,
+			},
 		]);
 		expect(files.list.mock.calls[0][0].q).toContain(
 			"'folder\\'\\\\id' in parents",

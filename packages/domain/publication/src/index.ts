@@ -55,3 +55,10 @@ export type {
 	FeedbackTalkResult,
 	FeedbackTalkResultsGateway,
 } from "./application/feedback-talk-results.js";
+
+export type * from "./domain/asset-content.js";
+export type * from "./application/content-ports.js";
+export { ContentContractPolicy } from "./domain/content-contract-policy.js";
+export { ContentFingerprint } from "./domain/content-fingerprint.js";
+export { ContentError } from "./domain/content-error.js";
+export { ReconcileAssetContent } from "./application/reconcile-asset-content.js";

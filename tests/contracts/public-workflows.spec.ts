@@ -98,8 +98,8 @@ const expectedActionWiring = {
 	},
 	"update-meetup-issue": {
 		manage: [
-			"publication/reconcile-assets",
 			"publication/reconcile-feedback",
+			"publication/reconcile-assets",
 			"communication/reconcile",
 			"event/reconcile",
 			"communication/reconcile-attention",
@@ -141,6 +141,9 @@ describe("public reusable workflow contracts", () => {
 			);
 			expect(steps[communicationIndex]?.with?.["openfeedback-api-key"]).toBe(
 				workflowExpression("secrets.openfeedback-api-key"),
+			);
+			expect(steps[communicationIndex]?.with?.["slides-ready"]).toBe(
+				workflowExpression("steps.assets.outputs.slides-ready"),
 			);
 			expect(steps[communicationIndex]?.with?.["slides-url"]).toBe(
 				workflowExpression(

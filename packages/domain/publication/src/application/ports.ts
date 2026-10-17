@@ -35,6 +35,8 @@ export type AssetTemplate = Readonly<{
 	id: string;
 	name: string;
 	kind: string;
+	mimeType?: string;
+	contentContract?: unknown;
 }>;
 
 export type AssetFile = Readonly<{
@@ -43,6 +45,8 @@ export type AssetFile = Readonly<{
 	url?: string;
 	templateId?: string;
 	kind?: string;
+	mimeType?: string;
+	contentManaged?: boolean;
 }>;
 
 export interface AssetRepository {

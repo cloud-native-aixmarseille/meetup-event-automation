@@ -100,3 +100,11 @@ manual checklist tasks and have no automation channel input. See
 Use the [Conference Hall guide](../integrations/conference-hall.md) for the required
 `conference-hall-event` input, `conference-hall-api-key` secret, live profile refresh, reviewed identity
 synchronization, selected proposals and consumer workflow triggers.
+
+## Managed asset content
+
+Commit `.github/meetup-asset-content.json` to opt template kinds into managed
+Slides or Docs rendering and to assign portrait slots by stable speaker ID.
+The [asset guide](../integrations/assets.md#author-managed-content) owns the
+versioned contract, event-specific configuration and recovery operations.
+Without this file, templates retain copy-only behavior.

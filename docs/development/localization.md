@@ -35,6 +35,7 @@ feature wording.
 
 | Responsibility                                     | Catalogs and scoped translator                                                        |
 | -------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Asset dates and agenda text | `packages/runtime/github-actions/src/assets` - `AssetMessages` |
 | Action reports, errors, and diagnostic annotations | `packages/runtime/github-actions/src/i18n` — `ActionMessages`                         |
 | Organizer approval requests and Slack alerts       | `packages/adapter/github-organizer-approval/src/i18n` - `ApprovalMessages`            |
 | Managed issue comments                             | `packages/adapter/github-event-comment-repository/src/i18n` — `EventCommentMessages`  |

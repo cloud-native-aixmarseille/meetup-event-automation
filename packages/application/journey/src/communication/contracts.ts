@@ -8,6 +8,7 @@ export interface ManageMeetupCommunicationsInput {
 	readonly repo: string;
 	readonly repositoryId?: string;
 	readonly slidesUrl?: string;
+	readonly slidesReady?: boolean;
 }
 
 type CommunicationJourneyDiagnosticCode =

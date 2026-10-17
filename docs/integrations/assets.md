@@ -36,8 +36,116 @@ the same application credentials used by the automation.
 Use `[EVENT_DATE:YYYY-MM-DD]` in filenames where the event date belongs. For
 example, `Slides [EVENT_DATE:YYYY-MM-DD]` becomes `Slides 2026-10-15`.
 
-The automation copies files and substitutes filenames. Edit presentation
-content, attendee sheets and other document content yourself.
+Templates remain copy-only unless their kind has a content contract in the
+consumer's committed `.github/meetup-asset-content.json`. Google Slides and
+Google Docs support managed text and embedded portrait images. Sheets, uploaded
+Office files, PDFs and standalone images remain copy-only. Enable the Drive,
+Slides and Docs APIs in the service-account project for the formats used. The
+existing Drive OAuth scope authorizes these file operations; access still depends
+on the service account's file permissions. Sharing is never changed automatically.
+
+## Author managed content
+
+The configuration has `version: 1`, a `contracts` map keyed by `template_kind`,
+and an optional `events` map keyed by `owner/repository#issue-number`. This
+synthetic example opts in the `slides` template:
+
+```json
+{
+  "version": 1,
+  "contracts": {
+    "slides": {
+      "version": 1,
+      "revision": "slides-v1",
+      "kind": "slides",
+      "fields": [
+        { "type": "text", "token": "event.title", "required": true },
+        { "type": "text", "token": "event.date", "required": true },
+        { "type": "text", "token": "host.name", "required": true },
+        { "type": "text", "token": "agenda", "required": true },
+        {
+          "type": "text",
+          "token": "event.feedback_url",
+          "required": false,
+          "fallback": "Feedback opens soon"
+        },
+        {
+          "type": "image",
+          "token": "speaker.picture",
+          "slot": "portrait-a",
+          "objectId": "REPLACE_IMAGE_OBJECT_ID",
+          "pageId": "REPLACE_PAGE_OBJECT_ID",
+          "required": false,
+          "fit": "CENTER_CROP",
+          "fallback": {
+            "url": "https://images.example.org/generic-speaker.png",
+            "description": "Speaker portrait"
+          }
+        }
+      ]
+    }
+  },
+  "events": {
+    "example/meetups#42": {
+      "speakers": { "portrait-a": "speaker-example" }
+    }
+  }
+}
+```
+
+Replace the example IDs and fallback URL with real template IDs and a public
+generic portrait. Obtain object, page and tab IDs using the corresponding
+Google API's `get` operation. The configuration supports at most 100 fields per
+contract and 500 registered locations per file. Configuration and sidecars are
+limited to 1 MB. Revisions and slot names use letters, digits, underscores,
+dots, colons or hyphens, with at most 100 characters.
+
+Text fields use the literal `{{token}}` spelling in the document. The allowlist
+is `event.title`, `event.date`, `host.name`, `agenda` and
+`event.feedback_url`. Dates preserve the event timezone's calendar day and use
+the workflow locale. Agenda lines contain ordered talk titles and all public
+co-speaker names, with English or French list formatting. Required missing
+values block the file; optional text needs an explicit non-empty fallback.
+Values are inserted literally, including token-looking text or HTML. No
+expressions, property traversal or executable template language are supported.
+
+In Slides, put each text token in an entire, ungrouped text shape with uniform
+text styling. Repeated tokens use separate shapes. Tables, grouped shapes,
+speaker notes, masters, layouts and mixed prose/token shapes are unsupported.
+The renderer preserves shape geometry and uniform text style. Manual slides
+and unregistered elements remain untouched.
+
+In Docs, place tokens in body paragraphs, including child tabs. Repeated
+occurrences receive independent named ranges. Header/footer, footnote and table
+tokens are unsupported; suggestions inside managed content must be resolved
+first. The renderer renews named ranges when replacing text, and follows them
+when surrounding content moves. It does not search for previously rendered text.
+
+Image fields refer to actual placeholder images, not printed URLs. Slides uses
+`pageId` and `objectId`; Docs uses `tabId` and the inline image's `objectId` in a
+body paragraph. Assign each slot to an explicit stable speaker ID in that
+event's `speakers` map. Reordering the agenda does not reassign portraits, and
+co-speakers need separate slots. A removed or unbound speaker uses the optional
+fallback instead of retaining the old portrait. Public URLs come from the
+committed speaker referential's optional `picture_url` column; renderers never
+contact Conference Hall or receive contact records.
+
+Images and fallbacks must be publicly retrievable HTTPS PNG, JPEG or GIF files,
+smaller than 50 MB, at most 25 megapixels, with source URLs no longer than
+2 KB. Retrieval permits at most three redirects, validates each destination,
+rejects non-public network addresses and credential-bearing URLs, and forwards
+no integration credentials. Media type and dimensions are checked before
+mutation. Keep source images available to Google after preflight. Prefer stable
+public URLs; changing bytes at the same URL is detected on reconciliation.
+
+Both renderers use explicit center crop. Slides also accepts `CENTER_INSIDE`;
+Docs rejects it. Image replacement can remove provider effects; no preservation
+of shadows, recoloring or other image effects is promised. Supply meaningful
+generic alt text on placeholder images. Slides updates the description from
+the public image value; Docs retains the authored description because its image
+replacement API does not update alt text. A validated optional fallback reports
+a warning and counts as ready. Failure of a required image or its fallback
+leaves the file pending.
 
 ## Run and retry
 
@@ -50,6 +158,23 @@ Each issue owns one managed folder. Changing its date or host renames that
 folder. Each template file owns one managed copy: changes to template names or
 kinds update the copy's name and metadata; changes to template contents do not
 replace existing copy contents. New templates produce new copies.
+
+New opted-in copies validate their whole contract, locations and values before
+copying. A binding sidecar freezes the contract revision for that copy. Later
+template or contract edits affect new copies; they do not overwrite existing
+layouts or manual work. Existing copy-only files remain copy-only until an
+explicit enrollment. Upgrading an enrolled copy's contract needs a separately
+reviewed migration plan that preserves manual content and file identity.
+
+Managed copies store a compact identity marker in Drive `appProperties` and a
+`.FILE_ID.bindings.json` sidecar in the event folder. The sidecar contains
+identities, the bound contract, locations, fingerprints and pending write state;
+it contains no event export, contacts or temporary Google image delivery URLs.
+Keep it under the folder's existing access policy. Do not publish it in issues.
+Rendering stores intent before a revision-controlled document batch, validates
+the resulting locations, then saves success. An unchanged file receives no
+content write. Manual edits inside registered locations are conflicts; changes
+outside them survive reconciliation.
 
 Files are identified by stored metadata, not their names. Manually created files
 with matching names are left alone. Repeated successful runs reuse managed
@@ -67,7 +192,55 @@ The direct
 [assets action](../../actions/publication/reconcile-assets/README.md) reconciles
 assets on every invocation. Call it under the shared event workflow lock. Its
 `asset-url` output is the folder URL; `drive-files` maps each
-`<template_kind>-link` to a copied file URL. Both event workflows pass the
-`slides-link` entry to communications. **Drive Link** continues to identify the
+`<template_kind>-link` to a copied file URL. The `result` output's `data.content`
+maps template kinds to `copy-only`, `ready`, `pending`, `conflict` or
+`recovery-required`.
+Both event workflows produce feedback before rendering and pass the
+`slides-link` entry and `slides-ready` to communications. An existing URL alone
+does not make opted-in content ready. Pending or conflicted slides hold due
+email batches; other successfully rendered files remain reusable. Completed
+emails are not resent when document content changes. Approval covers the email
+batch inputs and stable links, not an immutable snapshot of linked content.
+**Drive Link** continues to identify the
 folder; email slides links identify the presentation file. See
 [email link requirements](communications.md#presentation-link).
+
+## Recover a content conflict
+
+Inspect the file and its sidecar before recovery. Do not delete the managed copy,
+recreate its URL or clear delivery records. An uncertain copy operation still
+requires manual inspection for duplicate files. Missing, duplicate or malformed
+sidecars require restoring verified state; they are never guessed from rendered
+text. After a lost text response, matching pending fingerprints confirm success;
+matching previous content allows a safe retry. An uncertain image write requires
+explicit recovery when the stored observations cannot prove the result.
+
+For an intact binding with a manual edit, either restore the last managed value
+yourself or commit a one-time recovery entry under the event's `recovery` map:
+
+```json
+{
+  "COPY_FILE_ID": {
+    "operation": "restore",
+    "revision": "CURRENT_DOCS_OR_SLIDES_REVISION_ID",
+    "bindingId": "BINDING_ID_FROM_SIDECAR"
+  }
+}
+```
+
+Read the current revision through Docs or Slides immediately before approving
+the operation. `restore` authorizes replacing that location with the currently
+resolved value. `remove` stops managing that one binding and leaves its content
+alone; it can also remove a deleted anchor. Recovery rejects a changed document
+revision and records consumption so the same request cannot repeatedly overwrite
+future edits. Remove the committed request after success. Missing or duplicated
+anchors must be repaired explicitly or removed; automation never rebinds by
+matching text or image similarity.
+
+To enroll a copy-only file, use `operation: "enroll"` with its current revision
+and omit `bindingId`. The copy must contain the authored tokens and image IDs
+from the selected contract. Review and preserve organizer edits before adding
+those locations. Enrollment validates them before marking the file as managed.
+For a missing initial sidecar, enrollment is possible only after explicitly
+restoring the authored placeholders; an already rendered file is not scanned
+for old values. Recovery runs through the normal workflow under the event lock.

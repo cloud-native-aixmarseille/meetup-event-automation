@@ -44,7 +44,13 @@ const actionContracts = [
 			"issue-number",
 			"managed-comment-author",
 		],
-		outputs: ["asset-url", "diagnostics", "drive-files", "result"],
+		outputs: [
+			"asset-url",
+			"diagnostics",
+			"drive-files",
+			"result",
+			"slides-ready",
+		],
 	},
 	{
 		directory: "actions/event/reconcile",
@@ -93,6 +99,7 @@ const actionContracts = [
 			"conference-hall-event",
 			"openfeedback-api-key",
 			"slides-url",
+			"slides-ready",
 			"report-errors-to-issue",
 			"github-token",
 			"issue-number",

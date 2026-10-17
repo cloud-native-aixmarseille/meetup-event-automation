@@ -1,7 +1,10 @@
 import { getOctokit } from "@actions/github";
 import type { EventRepository } from "@meetup-automation/event";
 import { ManageMeetupAssets } from "@meetup-automation/journey";
-import type { AssetRepository } from "@meetup-automation/publication";
+import {
+	ReconcileAssetContent,
+	type AssetRepository,
+} from "@meetup-automation/publication";
 import { describe, expect, it, vi } from "vitest";
 import { SERVICES } from "./composition.js";
 import {
@@ -44,6 +47,15 @@ describe("publication-composition", () => {
 			parentFolderId: "parent",
 			templateFolderId: "templates",
 		});
+		container
+			.rebind(ReconcileAssetContent)
+			.toConstantValue(
+				new ReconcileAssetContent(
+					{ load: vi.fn(), save: vi.fn() },
+					{},
+					{ validate: vi.fn(), observe: vi.fn() },
+				),
+			);
 		const assets: AssetRepository = {
 			findContainer: vi.fn(),
 			ensureContainer: vi.fn(),

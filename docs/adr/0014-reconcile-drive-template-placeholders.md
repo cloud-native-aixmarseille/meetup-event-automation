@@ -1,6 +1,6 @@
 # ADR 0014: Populate and update managed placeholders in Drive template copies
 
-Status: Proposed
+Status: Accepted
 
 Date: 2026-10-14
 
