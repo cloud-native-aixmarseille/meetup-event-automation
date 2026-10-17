@@ -33,7 +33,7 @@
 		"check:interfaces": "vitest run scripts/action-interface-usage.test.ts tests/contracts/action-interfaces.spec.ts",
 		"check:contracts": "vitest run tests/contracts",
 		"check:knip": "knip",
-		"quality": "pnpm lint && pnpm build && pnpm check:architecture && pnpm check:contracts && pnpm package && pnpm test && pnpm check:dist",
+		"quality": "pnpm lint && pnpm build && pnpm workspace:build && pnpm check:architecture && pnpm check:contracts && pnpm package && pnpm test && pnpm check:dist",
 		"all": "pnpm format && pnpm quality",
 		"build": "tsc --noEmit -p tsconfig.json",
 		"format": "biome format --write .",

@@ -30,22 +30,22 @@ incompatible transitive versions to silence dependency warnings.
 
 Run commands from the repository root.
 
-| Command                   | Purpose                                                                                  |
-| ------------------------- | ---------------------------------------------------------------------------------------- |
-| `pnpm lint`               | Check formatting, Biome rules, class/test structure, and unused code/dependencies        |
-| `pnpm build`              | Type-check the root TypeScript project without emitting files                            |
-| `pnpm workspace:build`    | Type-check workspace projects through Nx                                                 |
-| `pnpm test`               | Run all unit, integration, architecture, and contract tests                              |
-| `pnpm test:watch`         | Run Vitest in watch mode                                                                 |
-| `pnpm test:cov`           | Run tests with coverage thresholds                                                       |
-| `pnpm check:architecture` | Check package boundaries, imports, and cycles                                            |
-| `pnpm check:contracts`    | Check action, workflow, CI, and code-structure contracts                                 |
-| `pnpm check:interfaces`   | Reject optional/defaulted inputs, constant flags, empty-only inputs, and unused outputs  |
-| `pnpm check:structure`    | Check class ownership, entrypoints, and unit-test placement                              |
-| `pnpm check:knip`         | Find unused code and dependencies                                                        |
-| `pnpm package`            | Rebuild committed action bundles                                                         |
-| `pnpm check:dist`         | Rebuild bundles and fail if their bytes were stale or missing                            |
-| `pnpm quality`            | Run lint, type-checking, architecture/contracts, packaging, all tests, and bundle checks |
+| Command                   | Purpose                                                                                           |
+| ------------------------- | ------------------------------------------------------------------------------------------------- |
+| `pnpm lint`               | Check formatting, Biome rules, class/test structure, and unused code/dependencies                 |
+| `pnpm build`              | Type-check the root TypeScript project without emitting files                                     |
+| `pnpm workspace:build`    | Type-check workspace projects through Nx                                                          |
+| `pnpm test`               | Run all unit, integration, architecture, and contract tests                                       |
+| `pnpm test:watch`         | Run Vitest in watch mode                                                                          |
+| `pnpm test:cov`           | Run tests with coverage thresholds                                                                |
+| `pnpm check:architecture` | Check package boundaries, imports, and cycles                                                     |
+| `pnpm check:contracts`    | Check action, workflow, CI, and code-structure contracts                                          |
+| `pnpm check:interfaces`   | Reject optional/defaulted inputs, constant flags, empty-only inputs, and unused outputs           |
+| `pnpm check:structure`    | Check class ownership, entrypoints, and unit-test placement                                       |
+| `pnpm check:knip`         | Find unused code and dependencies                                                                 |
+| `pnpm package`            | Rebuild committed action bundles                                                                  |
+| `pnpm check:dist`         | Rebuild bundles and fail if their bytes were stale or missing                                     |
+| `pnpm quality`            | Run lint, root/workspace type checks, architecture/contracts, packaging, tests, and bundle checks |
 
 Use `pnpm format` to apply formatting and `pnpm lint:fix` for Biome lint fixes.
 Both can edit files; review the resulting diff.
