@@ -4,6 +4,64 @@ import { ContentFingerprint } from "../domain/content-fingerprint.js";
 import { ContentError } from "../domain/content-error.js";
 
 describe("managed content reconciliation", () => {
+	it("updates a host logo on host reassignment, byte changes, and removal", async () => {
+		// Arrange
+		const f = contentFixture(true, undefined, "host.logo");
+		const logo = {
+			url: "https://images.example.org/logo.png",
+			description: "Public host logo",
+		};
+		const first = {
+			...f.input,
+			model: { ...f.input.model, hostLogo: { ...logo, hostId: "host-one" } },
+		};
+		const second = {
+			...first,
+			fresh: false,
+			model: { ...f.input.model, hostLogo: { ...logo, hostId: "host-two" } },
+		};
+
+		// Act
+		await f.service.execute(first);
+		await f.service.execute({ ...first, fresh: false });
+		const unchangedWrites = vi.mocked(f.renderer.apply).mock.calls.length;
+		await f.service.execute(second);
+		const assignedHost = f.state.manifest?.bindings.find(
+			(binding) => binding.type === "image",
+		)?.hostId;
+		f.state.sourceVersion = "updated-logo-bytes";
+		await f.service.execute(second);
+		const removed = await f.service.execute({ ...f.input, fresh: false });
+
+		// Assert
+		expect(unchangedWrites).toBe(1);
+		expect(assignedHost).toBe("host-two");
+		expect(
+			f.writes
+				.filter((value) => value.type === "image")
+				.map((value) => value.hostId),
+		).toEqual(["host-one", "host-two", "host-two", undefined]);
+		expect(removed).toEqual({ status: "ready", fallback: true });
+		expect(
+			f.state.manifest?.bindings.find((binding) => binding.type === "image")
+				?.hostId,
+		).toBeUndefined();
+	});
+
+	it("preserves manually replaced host logos", async () => {
+		// Arrange
+		const f = contentFixture(true, undefined, "host.logo");
+		await f.service.execute(f.input);
+		f.state.content.set("image", ContentFingerprint.of("manual host logo"));
+
+		// Act
+		const result = f.service.execute({ ...f.input, fresh: false });
+
+		// Assert
+		await expect(result).rejects.toMatchObject({ code: "conflict" });
+		expect(f.renderer.apply).toHaveBeenCalledTimes(1);
+	});
+
 	it("persists a slotted text binding through updates, no-ops, and manual-edit conflicts", async () => {
 		// Arrange
 		const f = contentFixture(false, {

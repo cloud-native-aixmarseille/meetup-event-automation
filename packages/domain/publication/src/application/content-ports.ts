@@ -42,6 +42,7 @@ export interface AssetRenderPresenter {
 		date?: string;
 		timeZone: string;
 		hostName?: string;
+		hostLogo?: PublicAssetModel["hostLogo"];
 		venue?: PublicAssetVenue;
 		talks?: Readonly<Record<string, PublicAssetTalk>>;
 		speakers?: Readonly<Record<string, string>>;

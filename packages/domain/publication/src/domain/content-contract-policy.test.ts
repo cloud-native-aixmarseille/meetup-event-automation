@@ -3,6 +3,37 @@ import { contract, mimeType } from "../../testing/content.fixtures.js";
 import { ContentContractPolicy } from "./content-contract-policy.js";
 
 describe("template contracts", () => {
+	it.each([
+		[
+			"application/vnd.google-apps.presentation",
+			"CENTER_INSIDE",
+			{ pageId: "page" },
+		],
+		["application/vnd.google-apps.document", "CENTER_CROP", { tabId: "tab" }],
+	])("accepts a host logo in %s", (mime, fit, anchor) => {
+		// Arrange
+		const input = {
+			...contract,
+			fields: [
+				{
+					type: "image",
+					token: "host.logo",
+					slot: "host-logo",
+					objectId: "logo",
+					...anchor,
+					required: true,
+					fit,
+				},
+			],
+		};
+
+		// Act
+		const actual = ContentContractPolicy.parse(input, "slides", mime);
+
+		// Assert
+		expect(actual).toEqual(input);
+	});
+
 	it("accepts distinct stable slots and the extended public fields", () => {
 		// Arrange
 		const input = {
@@ -111,34 +142,37 @@ describe("template contracts", () => {
 		expect(error).toMatchObject({ code: "contract" });
 	});
 
-	it("rejects unsupported Docs image fitting", () => {
-		// Arrange
-		const input = {
-			...contract,
-			fields: [
-				{
-					type: "image",
-					token: "speaker.picture",
-					slot: "portrait",
-					objectId: "image",
-					tabId: "tab",
-					required: true,
-					fit: "CENTER_INSIDE",
-				},
-			],
-		};
-		let error: unknown;
-		// Act
-		try {
-			ContentContractPolicy.parse(
-				input,
-				"slides",
-				"application/vnd.google-apps.document",
-			);
-		} catch (caught) {
-			error = caught;
-		}
-		// Assert
-		expect(error).toMatchObject({ code: "contract" });
-	});
+	it.each(["speaker.picture", "host.logo"])(
+		"rejects unsupported Docs image fitting for %s",
+		(token) => {
+			// Arrange
+			const input = {
+				...contract,
+				fields: [
+					{
+						type: "image",
+						token,
+						slot: "portrait",
+						objectId: "image",
+						tabId: "tab",
+						required: true,
+						fit: "CENTER_INSIDE",
+					},
+				],
+			};
+			let error: unknown;
+			// Act
+			try {
+				ContentContractPolicy.parse(
+					input,
+					"slides",
+					"application/vnd.google-apps.document",
+				);
+			} catch (caught) {
+				error = caught;
+			}
+			// Assert
+			expect(error).toMatchObject({ code: "contract" });
+		},
+	);
 });

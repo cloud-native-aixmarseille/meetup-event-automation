@@ -2,6 +2,52 @@ import { describe, expect, it } from "vitest";
 import { AssetRenderConfiguration } from "./asset-render-configuration.js";
 
 describe("public render configuration", () => {
+	it("accepts public host logos independently of venue addresses", () => {
+		// Arrange
+		const logos = {
+			"host-example": {
+				url: "https://images.example.org/logo.png",
+				description: "Public host logo",
+			},
+		};
+
+		// Act
+		const actual = AssetRenderConfiguration.parse({}, {}, logos);
+
+		// Assert
+		expect(actual.hostLogos).toEqual(logos);
+	});
+
+	it.each([
+		{
+			"display name": {
+				url: "https://images.example.org/logo.png",
+				description: "Logo",
+			},
+		},
+		{ "host-example": { url: "https://images.example.org/logo.png" } },
+		{ "host-example": { url: "", description: "Logo" } },
+		{
+			"host-example": {
+				url: "https://images.example.org/logo.png",
+				description: "Logo",
+				email: "private@example.test",
+			},
+		},
+	])(
+		"rejects invalid host-logo identities or extra contact fields",
+		(logos) => {
+			// Arrange
+			const input = logos;
+
+			// Act
+			const parse = () => AssetRenderConfiguration.parse({}, {}, input);
+
+			// Assert
+			expect(parse).toThrow();
+		},
+	);
+
 	it("accepts explicit public venues and stable talk/speaker identities", () => {
 		// Arrange
 		const event = {
@@ -26,7 +72,7 @@ describe("public render configuration", () => {
 		const actual = AssetRenderConfiguration.parse(event, venues);
 
 		// Assert
-		expect(actual).toEqual({ ...event, venues });
+		expect(actual).toEqual({ ...event, venues, hostLogos: {} });
 	});
 
 	it.each([

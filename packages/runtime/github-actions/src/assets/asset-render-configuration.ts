@@ -3,12 +3,14 @@ import {
 	type AssetRenderAssignments,
 	type AssetTalkIdentity,
 	type PublicAssetVenue,
+	type ImageSource,
 } from "@meetup-automation/publication";
 
 export class AssetRenderConfiguration {
 	static parse(
 		event: { speakers?: unknown; talks?: unknown },
 		venues: unknown,
+		hostLogos?: unknown,
 	): AssetRenderAssignments {
 		const speakers = AssetRenderConfiguration.record(event.speakers ?? {});
 		const talks = AssetRenderConfiguration.record(event.talks ?? {});
@@ -48,7 +50,22 @@ export class AssetRenderConfiguration {
 			speakers: speakers as Record<string, string>,
 			talks: talks as Record<string, AssetTalkIdentity>,
 			venues: publicVenues as Record<string, PublicAssetVenue>,
+			hostLogos: AssetRenderConfiguration.logos(hostLogos),
 		};
+	}
+
+	private static logos(input: unknown): Readonly<Record<string, ImageSource>> {
+		const logos = AssetRenderConfiguration.record(input ?? {});
+		for (const [hostId, value] of Object.entries(logos)) {
+			const logo = AssetRenderConfiguration.record(value);
+			if (
+				!/^host-[a-z0-9-]+$/.test(hostId) ||
+				!ContentContractPolicy.keys(logo, ["url", "description"]) ||
+				![logo.url, logo.description].every(ContentContractPolicy.text)
+			)
+				throw new Error("Invalid public host logo");
+		}
+		return logos as Record<string, ImageSource>;
 	}
 
 	private static slot(value: string): boolean {

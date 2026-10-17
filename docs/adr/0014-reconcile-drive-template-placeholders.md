@@ -2,6 +2,7 @@
 
 Status: Accepted; the initial text allowlist and aggregate-only agenda decision
 are extended by [ADR 0015](0015-extend-asset-render-fields.md).
+The image allowlist is extended by [ADR 0016](0016-render-host-logos.md).
 
 Date: 2026-10-14
 

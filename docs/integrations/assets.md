@@ -38,8 +38,8 @@ example, `Slides [EVENT_DATE:YYYY-MM-DD]` becomes `Slides 2026-10-15`.
 
 Templates remain copy-only unless their kind has a content contract in the
 consumer's committed `.github/meetup-asset-content.json`. Google Slides and
-Google Docs support managed text and embedded portrait images. Sheets, uploaded
-Office files, PDFs and standalone images remain copy-only. Enable the Drive,
+Google Docs support managed text, speaker portraits, and host logos. Sheets,
+uploaded Office files, PDFs and standalone images remain copy-only. Enable the Drive,
 Slides and Docs APIs in the service-account project for the formats used. The
 existing Drive OAuth scope authorizes these file operations; access still depends
 on the service account's file permissions. Sharing is never changed automatically.
@@ -47,8 +47,8 @@ on the service account's file permissions. Sharing is never changed automaticall
 ## Author managed content
 
 The configuration has `version: 1`, a `contracts` map keyed by `template_kind`,
-an optional `venues` map keyed by stable host ID, and an optional `events` map
-keyed by `owner/repository#issue-number`. This
+optional `venues` and `hostLogos` maps keyed by stable host ID, and an optional
+`events` map keyed by `owner/repository#issue-number`. This
 synthetic example opts in the `slides` template:
 
 ```json
@@ -87,6 +87,19 @@ synthetic example opts in the `slides` template:
             "url": "https://images.example.org/generic-speaker.png",
             "description": "Speaker portrait"
           }
+        },
+        {
+          "type": "image",
+          "token": "host.logo",
+          "slot": "host-logo",
+          "objectId": "REPLACE_LOGO_OBJECT_ID",
+          "pageId": "REPLACE_PAGE_OBJECT_ID",
+          "required": false,
+          "fit": "CENTER_INSIDE",
+          "fallback": {
+            "url": "https://images.example.org/generic-host.png",
+            "description": "Host logo"
+          }
         }
       ]
     }
@@ -96,6 +109,12 @@ synthetic example opts in the `slides` template:
       "address": "1 Public Square",
       "postalCode": "13001",
       "city": "Marseille"
+    }
+  },
+  "hostLogos": {
+    "host-example": {
+      "url": "https://images.example.org/host-example.png",
+      "description": "Example host logo"
     }
   },
   "events": {
@@ -109,15 +128,15 @@ synthetic example opts in the `slides` template:
 }
 ```
 
-Replace the example IDs and fallback URL with real template IDs and a public
-generic portrait. Obtain object, page and tab IDs using the corresponding
-Google API's `get` operation. The configuration supports at most 100 fields per
+Replace the example IDs and image URLs with real template IDs and public images,
+including separate generic portrait and logo fallbacks. Obtain object, page and
+tab IDs using the corresponding Google API's `get` operation. The configuration supports at most 100 fields per
 contract and 500 registered locations per file. Configuration and sidecars are
 limited to 1 MB. Revisions and slot names use letters, digits, underscores,
 dots, colons or hyphens, with at most 100 characters. A slotted text field's
 complete `token:slot` key must also fit within 100 characters. Assignment maps
-and the public venue map each accept at most 200 entries; reserved object keys
-are not valid assignment slot names.
+and the public venue and host-logo maps each accept at most 200 entries; reserved
+object keys are not valid assignment slot names.
 
 Text fields use the literal `{{token}}` spelling, or `{{token:slot}}` for a
 slotted field. The complete allowlist is:
@@ -190,12 +209,23 @@ when surrounding content moves. It does not search for previously rendered text.
 
 Image fields refer to actual placeholder images, not printed URLs. Slides uses
 `pageId` and `objectId`; Docs uses `tabId` and the inline image's `objectId` in a
-body paragraph. Assign each slot to an explicit stable speaker ID in that
-event's `speakers` map. Reordering the agenda does not reassign portraits, and
+body paragraph. For `speaker.picture`, assign each slot to an explicit stable
+speaker ID in that event's `speakers` map. Reordering the agenda does not reassign portraits, and
 co-speakers need separate slots. A removed or unbound speaker uses the optional
 fallback instead of retaining the old portrait. Public URLs come from the
 committed speaker referential's optional `picture_url` column; renderers never
 contact Conference Hall or receive contact records.
+
+For `host.logo`, configure the public image's `url` and non-empty `description`
+under `hostLogos[host-id]`. The renderer selects the current event's resolved
+host by stable ID; it does not match display names or read contact data.
+The contract's `slot` names the image binding and needs no per-event assignment.
+Multiple logo locations can use separate slots for the same current host.
+Changing the host or the image bytes updates the bound logo. A missing,
+unresolved, unconfigured, or invalid source uses the optional generic fallback
+instead of retaining the previous logo; a required logo leaves the file pending.
+Manual replacements remain conflicts. Logos are independent of agenda and venue
+assignments. Community branding and unregistered sponsor images remain manual.
 
 Images and fallbacks must be publicly retrievable HTTPS PNG, JPEG or GIF files,
 smaller than 50 MB, at most 25 megapixels, with source URLs no longer than
@@ -206,7 +236,9 @@ mutation. Keep source images available to Google after preflight. Prefer stable
 public URLs; changing bytes at the same URL is detected on reconciliation.
 
 Both renderers use explicit center crop. Slides also accepts `CENTER_INSIDE`;
-Docs rejects it. Image replacement can remove provider effects; no preservation
+use it for logos that should fit entirely inside their frame. Docs rejects it;
+prepare a padded logo image for `CENTER_CROP` when cropping would cut off branding.
+Image replacement can remove provider effects; no preservation
 of shadows, recoloring or other image effects is promised. Supply meaningful
 generic alt text on placeholder images. Slides updates the description from
 the public image value; Docs retains the authored description because its image

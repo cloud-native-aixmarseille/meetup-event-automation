@@ -41,21 +41,32 @@ export class ResolveContentValues {
 		field: ImageField,
 		model: PublicAssetModel,
 	): Promise<ContentValue> {
-		const picture = model.pictures[field.slot];
+		const host = field.token === "host.logo";
+		const picture = host ? model.hostLogo : model.pictures[field.slot];
+		const hostId = host ? model.hostLogo?.hostId : undefined;
+		const speakerId = host ? undefined : model.pictures[field.slot]?.speakerId;
+		const identity = hostId ?? speakerId;
 		const fallback = field.fallback
 			? await this.images.validate(field.fallback)
 			: undefined;
 		try {
-			if (!picture) throw new ContentError("image");
+			if (
+				!picture ||
+				!(host ? /^host-[a-z0-9-]+$/ : /^speaker-[a-z0-9-]+$/).test(
+					identity ?? "",
+				)
+			)
+				throw new ContentError("image");
 			const validated = await this.images.validate(picture);
 			return {
 				type: "image",
 				key: field.slot,
 				image: validated.source,
 				fingerprint: ContentFingerprint.of(
-					`${validated.fingerprint}:${picture.speakerId}:${picture.description}:${field.fit}`,
+					`${validated.fingerprint}:${identity}:${picture.description}:${field.fit}`,
 				),
-				speakerId: picture.speakerId,
+				speakerId,
+				hostId,
 				fallback: false,
 				fit: field.fit,
 			};

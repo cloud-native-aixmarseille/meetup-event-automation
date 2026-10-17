@@ -46,6 +46,7 @@ export class AssetContentConfiguration {
 					speakers: {},
 					talks: {},
 					venues: {},
+					hostLogos: {},
 					recovery: {},
 				};
 			throw error;
@@ -60,6 +61,7 @@ export class AssetContentConfiguration {
 			version: number;
 			contracts: Record<string, unknown>;
 			venues?: unknown;
+			hostLogos?: unknown;
 			events?: Record<
 				string,
 				{
@@ -77,6 +79,7 @@ export class AssetContentConfiguration {
 				"contracts",
 				"events",
 				"venues",
+				"hostLogos",
 			]) ||
 			(root.events !== undefined &&
 				!AssetContentConfiguration.record(root.events))
@@ -88,7 +91,11 @@ export class AssetContentConfiguration {
 			!ContentContractPolicy.keys(event, ["speakers", "talks", "recovery"])
 		)
 			throw new Error("Invalid asset event configuration");
-		const assignments = AssetRenderConfiguration.parse(event, root.venues);
+		const assignments = AssetRenderConfiguration.parse(
+			event,
+			root.venues,
+			root.hostLogos,
+		);
 		const recovery = event.recovery ?? {};
 		if (!AssetContentConfiguration.record(recovery))
 			throw new Error("Invalid asset speaker assignments");

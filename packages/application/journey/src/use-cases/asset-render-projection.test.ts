@@ -5,6 +5,73 @@ import { AssetRenderProjection } from "./asset-render-projection.js";
 import { talk } from "../../testing/asset-render.fixtures.js";
 
 describe("asset public projection", () => {
+	it.each([
+		"resolved",
+		"stale-agenda",
+		"unresolved",
+		"removed",
+		"unconfigured",
+		"unsafe-url",
+		"invalid-catalog",
+	])("projects the current host's public logo only when %s", async (reason) => {
+		// Arrange
+		const logo = {
+			url:
+				reason === "unsafe-url"
+					? "https://images.example.org/logo.png?token=private"
+					: "https://images.example.org/logo.png",
+			description: "Example host logo",
+		};
+		const presenter: AssetRenderPresenter = {
+			format: vi.fn(() => ({ text: {}, pictures: {} })),
+		};
+		const projection = new AssetRenderProjection(
+			presenter,
+			{
+				load: vi.fn(async () =>
+					reason === "invalid-catalog"
+						? { ...catalog, hosts: [...catalog.hosts, ...catalog.hosts] }
+						: catalog,
+				),
+			},
+			{
+				speakers: {},
+				talks: {},
+				venues: {},
+				hostLogos:
+					reason === "unconfigured"
+						? {}
+						: { "host-0001": logo, "host-unknown": logo },
+			},
+		);
+		const host =
+			reason === "removed"
+				? undefined
+				: reason === "unresolved"
+					? { id: "host-unknown", displayName: "Unknown" }
+					: event.host;
+
+		// Act
+		await projection.create(
+			{
+				...event,
+				host,
+				proposalStatus: reason === "stale-agenda" ? "stale" : "current",
+			},
+			[],
+		);
+		const payload = vi.mocked(presenter.format).mock.calls[0][0];
+
+		// Assert
+		expect(payload.hostLogo).toEqual(
+			["resolved", "stale-agenda"].includes(reason)
+				? { ...logo, hostId: "host-0001" }
+				: undefined,
+		);
+		expect(JSON.stringify(payload)).not.toContain(catalog.hosts[0].email);
+		expect(JSON.stringify(payload)).not.toContain(catalog.hosts[0].address);
+	});
+
 	it.each(["stale", "invalid-agenda", "invalid-catalog"])(
 		"withholds participant fields from %s data",
 		async (reason) => {
@@ -150,6 +217,7 @@ describe("asset public projection", () => {
 			"agenda",
 			"date",
 			"feedbackUrl",
+			"hostLogo",
 			"hostName",
 			"nextEvent",
 			"pictures",
