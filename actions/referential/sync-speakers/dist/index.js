@@ -31662,10 +31662,13 @@ var RuntimeInput = class {
 
 // packages/runtime/github-actions/src/action-runner.ts
 var ActionRunner = class {
-  static async run(title, operation) {
-    const messages = new ActionMessages(getInput("locale"));
+  static async run(title, operation, diagnosticsOutput) {
+    let messages = new ActionMessages("en");
     let report;
     try {
+      messages = new ActionMessages(
+        getInput("locale", { required: true })
+      );
       report = await operation(messages);
     } catch (error2) {
       const message = RuntimeInput.publicErrorMessage(error2);
@@ -31685,7 +31688,8 @@ var ActionRunner = class {
     }
     await ActionReport.write(messages.t(title), report, messages);
     if (report.failure) setFailed(report.failure);
-    ActionOutput.setDiagnosticsOutput(report.diagnostics);
+    if (diagnosticsOutput)
+      ActionOutput.setDiagnosticsOutput(report.diagnostics);
   }
 };
 
@@ -46395,8 +46399,6 @@ var SpeakerSyncAction = class {
       ).execute();
       setOutput("pr-title", messages.t("report.speaker-sync.pr-title"));
       setOutput("pr-body", messages.t("report.speaker-sync.pr-body"));
-      setOutput("changed", String(result.changed));
-      setOutput("speaker-count", String(result.speakerCount));
       return {
         details: [
           messages.t("report.speaker-sync.completed", {
@@ -46408,9 +46410,6 @@ var SpeakerSyncAction = class {
     } catch (error2) {
       const report = SpeakerSyncFailureReport.create(error2, messages);
       setOutput("pr-body", report.failure);
-      const source = error2 instanceof SpeakerSynchronizationError ? error2.cause : error2;
-      if (source instanceof ProposalSourceError && source.retryAfterSeconds)
-        setOutput("retry-after-seconds", String(source.retryAfterSeconds));
       return report;
     }
   }
@@ -46419,7 +46418,8 @@ var SpeakerSyncAction = class {
 // packages/runtime/github-actions/src/entrypoints/referential-sync-speakers.ts
 await ActionRunner.run(
   "action.referential.sync-speakers",
-  SpeakerSyncAction.run
+  SpeakerSyncAction.run,
+  false
 );
 /*! Bundled license information:
 

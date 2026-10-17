@@ -10,12 +10,7 @@ export type {
 	IssueFormProjectionMode,
 	IssueFormProjectionResult,
 } from "./ports/issue-form-projection.js";
-export type {
-	PublicDiagnostic,
-	ResultEnvelope,
-	ResultStatus,
-} from "./result/result-envelope.js";
-export { ResultEnvelopeFactory } from "./result/result-envelope.js";
+export type { PublicDiagnostic } from "./result/result-envelope.js";
 export { ManageMeetupAssets } from "./use-cases/manage-meetup-assets.js";
 export { ManageMeetupCommunications } from "./use-cases/manage-meetup-communications.js";
 export { ManageMeetupEvent } from "./use-cases/manage-meetup-event.js";

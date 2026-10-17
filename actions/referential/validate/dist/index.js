@@ -31618,10 +31618,13 @@ var RuntimeInput = class {
 
 // packages/runtime/github-actions/src/action-runner.ts
 var ActionRunner = class {
-  static async run(title, operation) {
-    const messages = new ActionMessages(getInput("locale"));
+  static async run(title, operation, diagnosticsOutput) {
+    let messages = new ActionMessages("en");
     let report;
     try {
+      messages = new ActionMessages(
+        getInput("locale", { required: true })
+      );
       report = await operation(messages);
     } catch (error2) {
       const message = RuntimeInput.publicErrorMessage(error2);
@@ -31641,7 +31644,8 @@ var ActionRunner = class {
     }
     await ActionReport.write(messages.t(title), report, messages);
     if (report.failure) setFailed(report.failure);
-    ActionOutput.setDiagnosticsOutput(report.diagnostics);
+    if (diagnosticsOutput)
+      ActionOutput.setDiagnosticsOutput(report.diagnostics);
   }
 };
 
@@ -31949,18 +31953,6 @@ var AutomationConfigFactory = class {
         "meetup-event-url-prefix": DEFAULT_PUBLICATION_URL_CONFIGURATION.meetupEventUrlPrefix,
         "cncf-event-url-prefix": DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes[0]
       }
-    };
-  }
-};
-
-// packages/application/journey/src/result/result-envelope.ts
-var ResultEnvelopeFactory = class {
-  static resultEnvelope(data, diagnostics) {
-    return {
-      schemaVersion: 1,
-      status: diagnostics.length === 0 ? "ok" : "diagnostics",
-      diagnostics,
-      data
     };
   }
 };
@@ -51870,17 +51862,6 @@ var ReferentialActions = class {
       outcome.diagnostics,
       messages
     );
-    ActionOutput.setJsonOutput(
-      "result",
-      ResultEnvelopeFactory.resultEnvelope(
-        { isValid: outcome.isValid, ...counts },
-        outcome.diagnostics
-      )
-    );
-    setOutput("is-valid", String(outcome.isValid));
-    setOutput("failure-message", report.failure ?? "");
-    setOutput("host-count", String(counts.hostCount));
-    setOutput("speaker-count", String(counts.speakerCount));
     return report;
   }
   static async runReferentialSyncIssueFormAction(messages = new ActionMessages()) {
@@ -51893,16 +51874,7 @@ var ReferentialActions = class {
       locale: messages.locale
     }).get(SynchronizeMeetupIssueForm).execute({ mode });
     const report = ReferentialActionReport.issueForm(mode, outcome, messages);
-    ActionOutput.setJsonOutput(
-      "result",
-      ResultEnvelopeFactory.resultEnvelope(
-        { changed: outcome.changed, changedFiles: outcome.changedFiles },
-        outcome.diagnostics
-      )
-    );
     setOutput("changed", String(outcome.changed));
-    setOutput("failure-message", report.failure ?? "");
-    ActionOutput.setJsonOutput("changed-files", outcome.changedFiles);
     return report;
   }
 };
@@ -51910,7 +51882,8 @@ var ReferentialActions = class {
 // packages/runtime/github-actions/src/entrypoints/referential-validate.ts
 await ActionRunner.run(
   "action.referential.validate",
-  ReferentialActions.runReferentialValidateAction
+  ReferentialActions.runReferentialValidateAction,
+  false
 );
 /*! Bundled license information:
 

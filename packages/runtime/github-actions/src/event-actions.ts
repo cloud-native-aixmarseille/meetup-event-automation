@@ -9,7 +9,6 @@ import {
 	type AutomationConfig,
 	ManageMeetupEvent,
 	type PublicDiagnostic,
-	ResultEnvelopeFactory,
 } from "@meetup-automation/journey";
 import { ActionOutput } from "./action-output.js";
 import type { ActionReportData } from "./action-report.js";
@@ -48,25 +47,6 @@ export class EventActions {
 			identity: { repository, issueNumber },
 			mode,
 		});
-		const data = outcome.skipped
-			? { skipped: true }
-			: {
-					skipped: false,
-					state: outcome.state,
-					isReady: outcome.isReady,
-					persisted: outcome.persisted,
-					commentUpdated: outcome.commentUpdated,
-				};
-
-		ActionOutput.setJsonOutput(
-			"result",
-			ResultEnvelopeFactory.resultEnvelope(data, outcome.diagnostics),
-		);
-		core.setOutput("state", outcome.skipped ? "skipped" : outcome.state);
-		core.setOutput(
-			"is-ready",
-			outcome.skipped ? "false" : String(outcome.isReady),
-		);
 		return EventActions.reconcileReport(issueNumber, mode, outcome, messages);
 	}
 
@@ -97,13 +77,6 @@ export class EventActions {
 			EventActions.toPublicDiagnostic,
 		);
 
-		ActionOutput.setJsonOutput(
-			"result",
-			ResultEnvelopeFactory.resultEnvelope(
-				{ issueNumbers, count: issueNumbers.length },
-				diagnostics,
-			),
-		);
 		ActionOutput.setJsonOutput("issue-numbers", issueNumbers);
 		return {
 			details: [

@@ -290,10 +290,10 @@ later.
 The direct
 [assets action](../../actions/publication/reconcile-assets/README.md) reconciles
 assets on every invocation. Call it under the shared event workflow lock. Its
-`asset-url` output is the folder URL; `drive-files` maps each
-`<template_kind>-link` to a copied file URL. The `result` output's `data.content`
-maps template kinds to `copy-only`, `ready`, `pending`, `conflict` or
-`recovery-required`.
+`drive-files` output maps each `<template_kind>-link` to a copied file URL.
+`slides-ready` is true only when a slides URL exists and its content is copy-only
+or ready. Rendering problems and recovery guidance appear in the shared report
+and `diagnostics` output. The managed folder URL is saved on the issue.
 Both event workflows produce feedback before rendering and pass the
 `slides-link` entry and `slides-ready` to communications. An existing URL alone
 does not make opted-in content ready. Pending or conflicted slides hold due

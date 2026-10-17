@@ -124,9 +124,7 @@ jobs:
 
 ## Outputs
 
-| **Output**          | **Description**                                                                 |
-| ------------------- | ------------------------------------------------------------------------------- |
-| **`issue-numbers`** | JSON array of meetup issue numbers selected for audit during the listing phase. |
+No public workflow outputs. Reports appear in action logs, annotations, and job summaries.
 
 <!-- outputs:end -->
 <!-- examples:start -->

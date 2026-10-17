@@ -1,11 +1,7 @@
 import { ConferenceHallInput } from "./conference-hall-input.js";
 import * as core from "@actions/core";
 import { context, getOctokit } from "@actions/github";
-import {
-	ManageMeetupFeedback,
-	ResultEnvelopeFactory,
-} from "@meetup-automation/journey";
-import { ActionOutput } from "./action-output.js";
+import { ManageMeetupFeedback } from "@meetup-automation/journey";
 import type { ActionReportData } from "./action-report.js";
 import { FeedbackComposition } from "./feedback-composition.js";
 import { ActionMessages } from "./i18n/action-messages.js";
@@ -64,12 +60,7 @@ export class FeedbackAction {
 		messages: ActionMessages,
 	): ActionReportData {
 		const { diagnostics, ...result } = outcome;
-		ActionOutput.setJsonOutput(
-			"result",
-			ResultEnvelopeFactory.resultEnvelope(result, diagnostics),
-		);
-		core.setOutput("feedback-url", result.feedbackUrl ?? "");
-		core.setOutput("link-updated", String(result.linkUpdated));
+
 		return {
 			details: [
 				messages.t("report.event.context", { issue: issueNumber, mode: "fix" }),

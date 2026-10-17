@@ -27,7 +27,7 @@ const publicWorkflowContracts = {
 			"kutt-link-id",
 			"slack-organizer-channel-id",
 		],
-		outputs: ["issue-numbers"],
+		outputs: [],
 		secrets: [
 			"conference-hall-api-key",
 			"github-app-private-key",
@@ -47,7 +47,7 @@ const publicWorkflowContracts = {
 			"kutt-link-id",
 			"slack-organizer-channel-id",
 		],
-		outputs: ["communication-diagnostics", "diagnostics", "is-ready", "state"],
+		outputs: [],
 		secrets: [
 			"conference-hall-api-key",
 			"github-app-private-key",
@@ -59,28 +59,12 @@ const publicWorkflowContracts = {
 	},
 	"update-meetup-issue-form": {
 		inputs: ["github-app-client-id"],
-		outputs: [
-			"changed",
-			"changed-files",
-			"diagnostics",
-			"host-count",
-			"is-valid",
-			"referential-diagnostics",
-			"speaker-count",
-		],
+		outputs: [],
 		secrets: ["github-app-private-key"],
 	},
 	"check-meetup-referentials-and-issue-form": {
 		inputs: [],
-		outputs: [
-			"host-count",
-			"is-valid",
-			"issue-form-changed",
-			"issue-form-changed-files",
-			"issue-form-diagnostics",
-			"referential-diagnostics",
-			"speaker-count",
-		],
+		outputs: [],
 		secrets: [],
 	},
 } as const;

@@ -340,7 +340,8 @@ edits despite pre-write snapshot checks.
 
 To recover, verify the message in the configured organizer channel. In a manually
 run workflow holding the same repository/issue concurrency lock, call the attention
-action with its normal inputs and the optional `recover-post` JSON. Copy the exact
+action with its normal inputs and an explicit `recover-post` JSON object.
+Normal reconciliation passes the string `"null"` to select no recovery. Copy the exact
 `reservationId` from the attention record in the managed status comment's source
 (the shared follow-up comment after the event). For a verified
 accepted post, supply its stored-channel-compatible Slack reference:

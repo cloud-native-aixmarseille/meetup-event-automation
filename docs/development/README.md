@@ -94,6 +94,36 @@ sync. The release job in
 updates to the pinned reusable release workflow. There is no local documentation
 generation script in this repository.
 
+### Action interface rules
+
+Apply these requirements to every input and output in `actions/**/action.yml`:
+
+- Every input must declare `required: true` and omit the `default` key entirely.
+  Optional inputs, omitted `required`, and defaults are prohibited, including
+  for `locale`, booleans, credentials, and execution settings.
+- Callers must pass each input explicitly. Validate required values at the
+  runtime boundary; do not hide a missing input behind a runtime default, an
+  empty string, or an implicit environment value. Keep fixed internal values
+  out of the public input contract.
+- Declare and emit an output only when an identified caller actually consumes
+  it. Trace the value to a workflow expression, downstream action, or supported
+  external caller. A declaration, README entry, test assertion, or hypothetical
+  future use is not a consumer. This applies to result envelopes, diagnostics,
+  counts, flags, and URLs as well as feature-specific outputs.
+- Remove unused outputs from the manifest and runtime together, and update
+  callers, adjacent documentation, and contract tests in the same change.
+  Keep information intended for people in the shared logs, annotations, and
+  job summary; reporting alone does not justify a public output.
+- Review the contract tests when changing an interface. Assert that every input
+  is required and has no default, and verify the real consumer of every retained
+  output. Do not add dummy reads or tests solely to make an unused output appear
+  consumed.
+
+These rules apply to action manifests. Reusable workflow inputs have their own
+explicit contract; a workflow must pass its resolved values to actions rather
+than relying on action defaults. See [localization](localization.md) and
+[action reporting](reporting.md) for the corresponding runtime responsibilities.
+
 Keep current architectural rationale in the relevant development guide.
 Preserve [ADRs](../README.md#architecture-decisions) as decision history, with
 clear status and supersession links. Follow the

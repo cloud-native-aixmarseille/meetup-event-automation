@@ -97,9 +97,10 @@ describe("publication action boundary", () => {
 		expect(JSON.parse(mocks.outputs["drive-files"])).toEqual({
 			"slides-link": url,
 		});
-		expect(JSON.parse(mocks.outputs.result).data.content).toEqual({
-			slides: "conflict",
-		});
+		expect(Object.keys(mocks.outputs).sort()).toEqual([
+			"drive-files",
+			"slides-ready",
+		]);
 		expect(mocks.outputs["slides-ready"]).toBe(false);
 	});
 	it.each([
@@ -171,7 +172,7 @@ describe("publication action boundary", () => {
 			contentContracts: {},
 			templateFolderId: "templates",
 		});
-		expect(mocks.outputs["asset-url"]).toBe("");
+		expect(mocks.outputs["slides-ready"]).toBe(false);
 		expect(report.details.join("\n")).toContain(
 			"Asset reconciliation was skipped",
 		);

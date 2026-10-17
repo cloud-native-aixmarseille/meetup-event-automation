@@ -2,11 +2,7 @@ import * as core from "@actions/core";
 import { context, getOctokit } from "@actions/github";
 import { ConferenceHallProposalSource } from "@meetup-automation/conference-hall-proposal-source";
 import { CsvSpeakerCatalogStore } from "@meetup-automation/csv-referential-repository";
-import {
-	SpeakerSynchronizationError,
-	SynchronizeSourceSpeakers,
-} from "@meetup-automation/journey";
-import { ProposalSourceError } from "@meetup-automation/referential";
+import { SynchronizeSourceSpeakers } from "@meetup-automation/journey";
 import { YamlIssueFormProjection } from "@meetup-automation/yaml-issue-form-projection";
 import type { ActionReportData } from "./action-report.js";
 import { ConferenceHallInput } from "./conference-hall-input.js";
@@ -40,8 +36,7 @@ export class SpeakerSyncAction {
 			).execute();
 			core.setOutput("pr-title", messages.t("report.speaker-sync.pr-title"));
 			core.setOutput("pr-body", messages.t("report.speaker-sync.pr-body"));
-			core.setOutput("changed", String(result.changed));
-			core.setOutput("speaker-count", String(result.speakerCount));
+
 			return {
 				details: [
 					messages.t("report.speaker-sync.completed", {
@@ -53,10 +48,6 @@ export class SpeakerSyncAction {
 		} catch (error) {
 			const report = SpeakerSyncFailureReport.create(error, messages);
 			core.setOutput("pr-body", report.failure);
-			const source =
-				error instanceof SpeakerSynchronizationError ? error.cause : error;
-			if (source instanceof ProposalSourceError && source.retryAfterSeconds)
-				core.setOutput("retry-after-seconds", String(source.retryAfterSeconds));
 			return report;
 		}
 	}

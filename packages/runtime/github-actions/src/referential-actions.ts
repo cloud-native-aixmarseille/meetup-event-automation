@@ -1,10 +1,8 @@
 import * as core from "@actions/core";
 import {
-	ResultEnvelopeFactory,
 	SynchronizeMeetupIssueForm,
 	ValidateMeetupReferentials,
 } from "@meetup-automation/journey";
-import { ActionOutput } from "./action-output.js";
 import type { ActionReportData } from "./action-report.js";
 import { EventComposition } from "./composition.js";
 import { ActionMessages } from "./i18n/action-messages.js";
@@ -32,17 +30,6 @@ export class ReferentialActions {
 			messages,
 		);
 
-		ActionOutput.setJsonOutput(
-			"result",
-			ResultEnvelopeFactory.resultEnvelope(
-				{ isValid: outcome.isValid, ...counts },
-				outcome.diagnostics,
-			),
-		);
-		core.setOutput("is-valid", String(outcome.isValid));
-		core.setOutput("failure-message", report.failure ?? "");
-		core.setOutput("host-count", String(counts.hostCount));
-		core.setOutput("speaker-count", String(counts.speakerCount));
 		return report;
 	}
 
@@ -61,16 +48,8 @@ export class ReferentialActions {
 			.execute({ mode });
 		const report = ReferentialActionReport.issueForm(mode, outcome, messages);
 
-		ActionOutput.setJsonOutput(
-			"result",
-			ResultEnvelopeFactory.resultEnvelope(
-				{ changed: outcome.changed, changedFiles: outcome.changedFiles },
-				outcome.diagnostics,
-			),
-		);
 		core.setOutput("changed", String(outcome.changed));
-		core.setOutput("failure-message", report.failure ?? "");
-		ActionOutput.setJsonOutput("changed-files", outcome.changedFiles);
+
 		return report;
 	}
 }

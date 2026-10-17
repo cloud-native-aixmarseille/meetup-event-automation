@@ -139,8 +139,8 @@ describe("internal CI contracts", () => {
 		expect(communication?.with).not.toHaveProperty("dispatch-authorized");
 		expect(communication?.with?.["report-errors-to-issue"]).toBe("false");
 		expect(fixture?.with?.script).toContain("- [x] Mail introduction");
-		expect(assertions?.run).toContain(".data.counts.planned == 0");
-		expect(assertions?.run).toContain(".data.counts.dispatched == 0");
+		expect(assertions?.run).toContain('all(.[]; .severity != "error")');
+		expect(communication?.with?.["slides-ready"]).toBe("true");
 	});
 
 	it("delegates documentation updates to reusable release workflows", async () => {

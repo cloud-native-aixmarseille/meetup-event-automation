@@ -139,12 +139,7 @@ jobs:
 
 ## Outputs
 
-| **Output**                      | **Description**                                                                                                  |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| **`state`**                     | Derived lifecycle state for the target meetup issue, such as draft, planned, ready, held, or follow-up-complete. |
-| **`is-ready`**                  | Whether the current meetup issue revision satisfies readiness checks.                                            |
-| **`diagnostics`**               | Redacted JSON diagnostics produced by event reconciliation.                                                      |
-| **`communication-diagnostics`** | Redacted JSON diagnostics produced by checklist completion and communication reconciliation.                     |
+No public workflow outputs. Reports appear in action logs, annotations, and job summaries.
 
 <!-- outputs:end -->
 <!-- examples:start -->
