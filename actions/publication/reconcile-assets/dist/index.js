@@ -60366,10 +60366,13 @@ var RuntimeInput = class {
 
 // packages/runtime/github-actions/src/action-runner.ts
 var ActionRunner = class {
-  static async run(title, operation) {
-    const messages = new ActionMessages(getInput("locale"));
+  static async run(title, operation, diagnosticsOutput) {
+    let messages = new ActionMessages("en");
     let report;
     try {
+      messages = new ActionMessages(
+        getInput("locale", { required: true })
+      );
       report = await operation(messages);
     } catch (error2) {
       const message = RuntimeInput.publicErrorMessage(error2);
@@ -60389,7 +60392,8 @@ var ActionRunner = class {
     }
     await ActionReport.write(messages.t(title), report, messages);
     if (report.failure) setFailed(report.failure);
-    ActionOutput.setDiagnosticsOutput(report.diagnostics);
+    if (diagnosticsOutput)
+      ActionOutput.setDiagnosticsOutput(report.diagnostics);
   }
 };
 
@@ -65702,18 +65706,6 @@ var AutomationConfigFactory = class {
         "meetup-event-url-prefix": DEFAULT_PUBLICATION_URL_CONFIGURATION.meetupEventUrlPrefix,
         "cncf-event-url-prefix": DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes[0]
       }
-    };
-  }
-};
-
-// packages/application/journey/src/result/result-envelope.ts
-var ResultEnvelopeFactory = class {
-  static resultEnvelope(data, diagnostics) {
-    return {
-      schemaVersion: 1,
-      status: diagnostics.length === 0 ? "ok" : "diagnostics",
-      diagnostics,
-      data
     };
   }
 };
@@ -88178,25 +88170,11 @@ var PublicationAction = class _PublicationAction {
     return _PublicationAction.report(issueNumber, outcome, messages);
   }
   static report(issueNumber, outcome, messages) {
-    ActionOutput.setJsonOutput(
-      "result",
-      ResultEnvelopeFactory.resultEnvelope(
-        {
-          skipped: outcome.skipped,
-          persisted: outcome.persisted,
-          assetUrl: outcome.assetUrl,
-          files: outcome.files,
-          content: outcome.content ?? {}
-        },
-        outcome.diagnostics
-      )
-    );
     ActionOutput.setJsonOutput("drive-files", outcome.files);
     setOutput(
       "slides-ready",
       ["copy-only", "ready"].includes(outcome.content?.slides ?? "copy-only") && Boolean(outcome.files["slides-link"])
     );
-    setOutput("asset-url", outcome.assetUrl ?? "");
     return {
       details: [
         messages.t("report.event.context", { issue: issueNumber, mode: "fix" }),
@@ -88214,7 +88192,8 @@ var PublicationAction = class _PublicationAction {
 // packages/runtime/github-actions/src/entrypoints/publication-reconcile-assets.ts
 await ActionRunner.run(
   "action.publication.reconcile-assets",
-  PublicationAction.runPublicationReconcileAssetsAction
+  PublicationAction.runPublicationReconcileAssetsAction,
+  true
 );
 /*! Bundled license information:
 

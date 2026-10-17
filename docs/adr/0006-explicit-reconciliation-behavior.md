@@ -1,6 +1,6 @@
 # ADR 0006: Match action inputs to operational behavior
 
-Status: Accepted
+Status: Accepted; the explicit input rule is generalized by [ADR 0017](0017-explicit-action-interfaces.md).
 
 Date: 2026-09-30
 

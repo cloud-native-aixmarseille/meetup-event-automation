@@ -21,7 +21,7 @@ import {
 } from "./support.js";
 
 describe("localization contract", () => {
-	it("gives every published action the same English-default locale input", async () => {
+	it("requires an explicit locale in every published action", async () => {
 		// Arrange
 		const paths = (
 			await readdir(join(root, "actions"), { recursive: true })
@@ -32,11 +32,12 @@ describe("localization contract", () => {
 		);
 		// Assert
 		expect(actions.length).toBeGreaterThan(0);
-		for (const action of actions)
+		for (const action of actions) {
 			expect(action.inputs?.locale).toMatchObject({
-				required: false,
-				default: "en",
+				required: true,
 			});
+			expect(action.inputs?.locale).not.toHaveProperty("default");
+		}
 	});
 	it("forwards locale through every reusable workflow action and keeps reporting in actions", async () => {
 		// Arrange

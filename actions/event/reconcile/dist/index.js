@@ -32344,10 +32344,13 @@ var RuntimeInput = class {
 
 // packages/runtime/github-actions/src/action-runner.ts
 var ActionRunner = class {
-  static async run(title, operation) {
-    const messages = new ActionMessages(getInput("locale"));
+  static async run(title, operation, diagnosticsOutput) {
+    let messages = new ActionMessages("en");
     let report;
     try {
+      messages = new ActionMessages(
+        getInput("locale", { required: true })
+      );
       report = await operation(messages);
     } catch (error2) {
       const message = RuntimeInput.publicErrorMessage(error2);
@@ -32367,7 +32370,8 @@ var ActionRunner = class {
     }
     await ActionReport.write(messages.t(title), report, messages);
     if (report.failure) setFailed(report.failure);
-    ActionOutput.setDiagnosticsOutput(report.diagnostics);
+    if (diagnosticsOutput)
+      ActionOutput.setDiagnosticsOutput(report.diagnostics);
   }
 };
 
@@ -38309,18 +38313,6 @@ var AutomationConfigFactory = class {
         "meetup-event-url-prefix": DEFAULT_PUBLICATION_URL_CONFIGURATION.meetupEventUrlPrefix,
         "cncf-event-url-prefix": DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes[0]
       }
-    };
-  }
-};
-
-// packages/application/journey/src/result/result-envelope.ts
-var ResultEnvelopeFactory = class {
-  static resultEnvelope(data, diagnostics) {
-    return {
-      schemaVersion: 1,
-      status: diagnostics.length === 0 ? "ok" : "diagnostics",
-      diagnostics,
-      data
     };
   }
 };
@@ -56674,22 +56666,6 @@ var EventActions = class _EventActions {
       identity: { repository, issueNumber },
       mode
     });
-    const data = outcome.skipped ? { skipped: true } : {
-      skipped: false,
-      state: outcome.state,
-      isReady: outcome.isReady,
-      persisted: outcome.persisted,
-      commentUpdated: outcome.commentUpdated
-    };
-    ActionOutput.setJsonOutput(
-      "result",
-      ResultEnvelopeFactory.resultEnvelope(data, outcome.diagnostics)
-    );
-    setOutput("state", outcome.skipped ? "skipped" : outcome.state);
-    setOutput(
-      "is-ready",
-      outcome.skipped ? "false" : String(outcome.isReady)
-    );
     return _EventActions.reconcileReport(issueNumber, mode, outcome, messages);
   }
   static async runEventListActiveAction(messages = new ActionMessages()) {
@@ -56715,13 +56691,6 @@ var EventActions = class _EventActions {
     );
     const diagnostics = outcome.diagnostics.map(
       _EventActions.toPublicDiagnostic
-    );
-    ActionOutput.setJsonOutput(
-      "result",
-      ResultEnvelopeFactory.resultEnvelope(
-        { issueNumbers, count: issueNumbers.length },
-        diagnostics
-      )
     );
     ActionOutput.setJsonOutput("issue-numbers", issueNumbers);
     return {
@@ -56768,7 +56737,8 @@ var EventActions = class _EventActions {
 // packages/runtime/github-actions/src/entrypoints/event-reconcile.ts
 await ActionRunner.run(
   "action.event.reconcile",
-  EventActions.runEventReconcileAction
+  EventActions.runEventReconcileAction,
+  true
 );
 /*! Bundled license information:
 

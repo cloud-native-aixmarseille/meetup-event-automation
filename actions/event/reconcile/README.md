@@ -26,7 +26,7 @@ Read one meetup issue, derive lifecycle and readiness, and optionally persist sa
   with:
     conference-hall-event: ${{ vars.CONFERENCE_HALL_EVENT }}
     conference-hall-api-key: ${{ secrets.CONFERENCE_HALL_API_KEY }}
-    # Optional language for generated text.
+    # Required language for generated text; no default.
     locale: en
     # GitHub issue number in the caller repository containing the meetup event document to inspect.
     # This input is required.
@@ -54,7 +54,7 @@ Read one meetup issue, derive lifecycle and readiness, and optionally persist sa
 | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
 | **`conference-hall-event`**   | Conference Hall CFP slug for live linked profiles and selected proposals.                                                          | **true**     | -           |
 | **`conference-hall-api-key`** | Read-only Conference Hall event API key.                                                                                           | **true**     | -           |
-| **`locale`**                  | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **false**    | `en`        |
+| **`locale`**                  | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **true**    | - |
 | **`issue-number`**            | GitHub issue number in the caller repository containing the meetup event document to inspect.                                      | **true**     | -           |
 | **`mode`**                    | Use check for read-only validation or fix to persist safe normalizations to the issue and managed diagnostic comment.              | **true**     | -           |
 | **`github-token`**            | Token for the caller repository. Requires issues:read; fix mode also requires issues:write.                                        | **true**     | -           |
@@ -69,9 +69,6 @@ Read one meetup issue, derive lifecycle and readiness, and optionally persist sa
 
 | **Output**        | **Description**                                                                                                                              |
 | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`result`**      | Versioned JSON envelope containing whether the event was skipped, the derived state, readiness, persistence flags, and redacted diagnostics. |
-| **`state`**       | Derived lifecycle state for the meetup issue, such as draft, planned, ready, held, or follow-up-complete.                                    |
-| **`is-ready`**    | Whether the current meetup issue revision satisfies readiness checks.                                                                        |
 | **`diagnostics`** | Redacted JSON diagnostics safe to expose in workflow logs and summaries.                                                                     |
 
 <!-- outputs:end -->

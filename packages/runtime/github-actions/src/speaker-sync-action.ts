@@ -3,7 +3,6 @@ import { context, getOctokit } from "@actions/github";
 import { ConferenceHallProposalSource } from "@meetup-automation/conference-hall-proposal-source";
 import { CsvSpeakerCatalogStore } from "@meetup-automation/csv-referential-repository";
 import { SynchronizeSourceSpeakers } from "@meetup-automation/journey";
-import { ProposalSourceError } from "@meetup-automation/referential";
 import { YamlIssueFormProjection } from "@meetup-automation/yaml-issue-form-projection";
 import type { ActionReportData } from "./action-report.js";
 import { ConferenceHallInput } from "./conference-hall-input.js";
@@ -36,8 +35,7 @@ export class SpeakerSyncAction {
 			).execute();
 			core.setOutput("pr-title", messages.t("report.speaker-sync.pr-title"));
 			core.setOutput("pr-body", messages.t("report.speaker-sync.pr-body"));
-			core.setOutput("changed", String(result.changed));
-			core.setOutput("speaker-count", String(result.speakerCount));
+
 			return {
 				details: [
 					messages.t("report.speaker-sync.completed", {
@@ -46,10 +44,8 @@ export class SpeakerSyncAction {
 				],
 				diagnostics: [],
 			};
-		} catch (error) {
+		} catch {
 			core.setOutput("pr-body", messages.t("report.speaker-sync.failed"));
-			if (error instanceof ProposalSourceError && error.retryAfterSeconds)
-				core.setOutput("retry-after-seconds", String(error.retryAfterSeconds));
 			return {
 				details: [],
 				diagnostics: [],

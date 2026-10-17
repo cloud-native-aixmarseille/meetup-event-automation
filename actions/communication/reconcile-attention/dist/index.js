@@ -32344,10 +32344,13 @@ var RuntimeInput = class {
 
 // packages/runtime/github-actions/src/action-runner.ts
 var ActionRunner = class {
-  static async run(title, operation) {
-    const messages3 = new ActionMessages(getInput("locale"));
+  static async run(title, operation, diagnosticsOutput) {
+    let messages3 = new ActionMessages("en");
     let report;
     try {
+      messages3 = new ActionMessages(
+        getInput("locale", { required: true })
+      );
       report = await operation(messages3);
     } catch (error2) {
       const message = RuntimeInput.publicErrorMessage(error2);
@@ -32367,7 +32370,8 @@ var ActionRunner = class {
     }
     await ActionReport.write(messages3.t(title), report, messages3);
     if (report.failure) setFailed(report.failure);
-    ActionOutput.setDiagnosticsOutput(report.diagnostics);
+    if (diagnosticsOutput)
+      ActionOutput.setDiagnosticsOutput(report.diagnostics);
   }
 };
 
@@ -59281,8 +59285,8 @@ var AttentionStages = class _AttentionStages {
     });
   }
   static recovery(value) {
-    if (!value.trim()) return void 0;
     const input = JSON.parse(value);
+    if (input === null) return void 0;
     if (!input || typeof input.reservationId !== "string" || !["accepted", "not-accepted"].includes(input.outcome))
       throw new Error("Invalid attention recovery input");
     return {
@@ -59345,10 +59349,10 @@ var AttentionAction = class {
       },
       AttentionStages.parse(getInput("stage-results", { required: true })),
       String(context2.runId),
-      AttentionStages.recovery(getInput("recover-post"))
+      AttentionStages.recovery(
+        getInput("recover-post", { required: true })
+      )
     );
-    setOutput("active-count", String(result.active));
-    setOutput("posted", String(result.posted));
     return {
       details: [
         messages3.t(
@@ -59364,7 +59368,8 @@ var AttentionAction = class {
 // packages/runtime/github-actions/src/entrypoints/communication-reconcile-attention.ts
 await ActionRunner.run(
   "action.communication.reconcile-attention",
-  AttentionAction.run
+  AttentionAction.run,
+  false
 );
 /*! Bundled license information:
 

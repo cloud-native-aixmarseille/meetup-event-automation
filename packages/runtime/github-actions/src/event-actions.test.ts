@@ -79,7 +79,7 @@ describe("event action report facts", () => {
 			expect(report.diagnostics).toEqual(diagnostics);
 			expect(report.failure).toBeUndefined();
 			expect(JSON.stringify(report)).not.toContain("contact@example.test");
-			expect(core.setOutput).toHaveBeenCalledWith("is-ready", String(isReady));
+			expect(core.setOutput).not.toHaveBeenCalled();
 		},
 	);
 
@@ -94,7 +94,6 @@ describe("event action report facts", () => {
 		expect(report.details).toContain(
 			"Skipped: the issue is not a configured meetup event.",
 		);
-		expect(core.setOutput).toHaveBeenCalledWith("state", "skipped");
 	});
 
 	it.each([{ issueNumbers: [] }, { issueNumbers: [12, 34] }])(

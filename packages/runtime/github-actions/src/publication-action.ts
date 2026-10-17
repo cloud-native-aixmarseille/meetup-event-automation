@@ -1,10 +1,7 @@
 import { ConferenceHallInput } from "./conference-hall-input.js";
 import * as core from "@actions/core";
 import { context, getOctokit } from "@actions/github";
-import {
-	ManageMeetupAssets,
-	ResultEnvelopeFactory,
-} from "@meetup-automation/journey";
+import { ManageMeetupAssets } from "@meetup-automation/journey";
 import { ActionOutput } from "./action-output.js";
 import type { ActionReportData } from "./action-report.js";
 import { ActionMessages } from "./i18n/action-messages.js";
@@ -62,26 +59,13 @@ export class PublicationAction {
 		outcome: Awaited<ReturnType<ManageMeetupAssets["execute"]>>,
 		messages: ActionMessages,
 	): ActionReportData {
-		ActionOutput.setJsonOutput(
-			"result",
-			ResultEnvelopeFactory.resultEnvelope(
-				{
-					skipped: outcome.skipped,
-					persisted: outcome.persisted,
-					assetUrl: outcome.assetUrl,
-					files: outcome.files,
-					content: outcome.content ?? {},
-				},
-				outcome.diagnostics,
-			),
-		);
 		ActionOutput.setJsonOutput("drive-files", outcome.files);
 		core.setOutput(
 			"slides-ready",
 			["copy-only", "ready"].includes(outcome.content?.slides ?? "copy-only") &&
 				Boolean(outcome.files["slides-link"]),
 		);
-		core.setOutput("asset-url", outcome.assetUrl ?? "");
+
 		return {
 			details: [
 				messages.t("report.event.context", { issue: issueNumber, mode: "fix" }),

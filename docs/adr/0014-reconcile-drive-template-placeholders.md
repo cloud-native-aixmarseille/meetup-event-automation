@@ -3,6 +3,7 @@
 Status: Accepted; the initial text allowlist and aggregate-only agenda decision
 are extended by [ADR 0015](0015-extend-asset-render-fields.md).
 The image allowlist is extended by [ADR 0016](0016-render-host-logos.md).
+The action output contract is narrowed by [ADR 0017](0017-explicit-action-interfaces.md).
 
 Date: 2026-10-14
 

@@ -91,6 +91,10 @@ describe("public action reporting contract", () => {
 									value: `action.${directory.replaceAll("/", ".")}`,
 								}),
 								expect.objectContaining({ type: "MemberExpression" }),
+								expect.objectContaining({
+									type: "BooleanLiteral",
+									value: Boolean(manifest.outputs?.diagnostics),
+								}),
 							],
 						}),
 					}),

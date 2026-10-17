@@ -29,7 +29,7 @@ consumer settings.
 | `packages/domain/referential`        | Catalog validation, stable participant IDs, reference resolution, issue-form choices, catalog port        |
 | `packages/domain/communication`      | Due-message planning, attention conditions/episodes/reminders, delivery state and ports                   |
 | `packages/domain/publication`        | Publication URL rules, manual checklist evaluation, asset reconciliation, text/image contracts and ownership, content/asset/feedback ports        |
-| `packages/application/journey`       | Cross-domain orchestration, configuration defaults, public result envelope, issue-form projection port    |
+| `packages/application/journey`       | Cross-domain orchestration, configuration defaults, public diagnostics, issue-form projection port       |
 | `packages/adapter/*`                 | Concrete implementations of owned ports: GitHub, CSV, YAML, Drive, OpenFeedback, Kutt, Slack, system time |
 | `packages/presentation/localization` | Generic locale normalization, ICU formatting, and catalog contracts                                       |
 | `packages/runtime/github-actions`    | Input parsing, credentials, dependency composition, action execution, output serialization                |

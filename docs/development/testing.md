@@ -66,11 +66,19 @@ it("rejects a non-positive issue identifier", () => {
 
 ## Repository checks
 
+When changing action interfaces, enforce the
+[action interface rules](README.md#action-interface-rules) in contract coverage:
+every declared input has `required: true` and no `default` key, and every output
+has an identified real consumer. Check caller wiring and runtime input validation
+alongside the manifest. Tests and dummy workflow reads do not count as consumers;
+remove unused outputs from runtime emission and metadata together.
+
 | Check                                                                        | What it verifies                                                             |
 | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
 | [Architecture](../../tests/architecture.spec.ts)                             | Dependency layers, package entrypoints, cycles, adapter names, DI boundaries |
 | [Code structure](../../tests/contracts/code-structure.spec.ts)               | Actual Biome limits, class ownership, unit-test layout                       |
 | [Public actions](../../tests/contracts/public-actions.spec.ts)               | Action inputs, outputs, runtime, dispatch authorization                      |
+| [Action interfaces](../../tests/contracts/action-interfaces.spec.ts)         | Required inputs without defaults, explicit caller wiring, consumed outputs  |
 | [Action reporting](../../tests/contracts/action-reporting.spec.ts)           | Shared runner, public reports, failure policy, and safe rendering            |
 | [Localization](../../tests/contracts/localization.spec.ts)                   | Catalog ownership, locale wiring, and diagnostic coverage                    |
 | [Public workflows](../../tests/contracts/public-workflows.spec.ts)           | Reusable workflow interfaces, permissions, secrets, pinned dependencies      |
@@ -84,7 +92,8 @@ it("rejects a non-positive issue identifier", () => {
 bundled actions in CI using a synthetic issue and catalog fixtures. Its cleanup
 job closes the test issue. Do not replace these fixtures with live meetup
 issues. Communication integration checks use a synthetic issue with its introduction
-task already completed and assert that no messages are planned or dispatched.
+task already completed and assert that diagnostics contain no errors. Runtime and
+journey tests verify planning and dispatch counts with controlled collaborators.
 
 `pnpm test:cov` enforces the aggregate thresholds in
 [`vitest.config.ts`](../../vitest.config.ts): 90% lines/statements and 85%

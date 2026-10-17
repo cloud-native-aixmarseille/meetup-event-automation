@@ -25,8 +25,8 @@ export class AttentionStages {
 		});
 	}
 	static recovery(value: string): AttentionPostRecovery | undefined {
-		if (!value.trim()) return undefined;
-		const input = JSON.parse(value) as AttentionPostRecovery;
+		const input = JSON.parse(value) as AttentionPostRecovery | null;
+		if (input === null) return undefined;
 		if (
 			!input ||
 			typeof input.reservationId !== "string" ||

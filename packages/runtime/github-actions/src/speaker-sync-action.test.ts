@@ -56,7 +56,10 @@ describe("SpeakerSyncAction", () => {
 			// Assert
 			expect(report.failure).toBeUndefined();
 			expect(report.details[0]).toContain("2");
-			expect(boundary.setOutput).toHaveBeenCalledWith("speaker-count", "2");
+			expect(
+				boundary.setOutput.mock.calls.map(([name]) => name).sort(),
+			).toEqual(["pr-body", "pr-title"]);
+
 			expect(boundary.setSecret).toHaveBeenCalledWith("secret");
 		},
 	);
@@ -69,13 +72,16 @@ describe("SpeakerSyncAction", () => {
 		const report = await SpeakerSyncAction.run();
 		// Assert
 		expect(report.failure).toBeDefined();
+		expect(boundary.setOutput.mock.calls.map(([name]) => name)).toEqual([
+			"pr-body",
+		]);
 		expect(JSON.stringify(report)).not.toMatch(/private@example.test|secret/);
 		expect(JSON.stringify(boundary.setOutput.mock.calls)).not.toMatch(
 			/private@example.test|secret/,
 		);
 		expect(boundary.setOutput).toHaveBeenCalledWith("pr-body", report.failure);
 	});
-	it("exposes the retry delay when the source is rate-limited", async () => {
+	it("reports failure without unused outputs when the source is rate-limited", async () => {
 		// Arrange
 		boundary.synchronize.mockRejectedValue(
 			new ProposalSourceError("rate-limited", 120),
@@ -84,9 +90,5 @@ describe("SpeakerSyncAction", () => {
 		const report = await SpeakerSyncAction.run();
 		// Assert
 		expect(report.failure).toBeDefined();
-		expect(boundary.setOutput).toHaveBeenCalledWith(
-			"retry-after-seconds",
-			"120",
-		);
 	});
 });

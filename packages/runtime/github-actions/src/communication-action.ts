@@ -1,14 +1,9 @@
 import { ConferenceHallInput } from "./conference-hall-input.js";
-import { createHash } from "node:crypto";
 import * as core from "@actions/core";
 import { context, getOctokit } from "@actions/github";
 import type { CommunicationDiagnostic } from "@meetup-automation/communication";
 import type { CommunicationJourneyDiagnostic } from "@meetup-automation/journey";
-import {
-	type PublicDiagnostic,
-	ResultEnvelopeFactory,
-} from "@meetup-automation/journey";
-import { ActionOutput } from "./action-output.js";
+import type { PublicDiagnostic } from "@meetup-automation/journey";
 import type { ActionReportData } from "./action-report.js";
 import { CommunicationRuntime } from "./communication.js";
 import { CommunicationComposition } from "./communication-composition.js";
@@ -88,12 +83,14 @@ export class CommunicationAction {
 			locale: messages.locale,
 			...ConferenceHallInput.read(),
 			issueNumber,
-			slidesUrl: core.getInput("slides-url"),
+			slidesUrl: core.getInput("slides-url", { required: true }),
 			slidesReady: RuntimeInput.booleanInput(
 				"slides-ready",
-				core.getInput("slides-ready") || "true",
+				core.getInput("slides-ready", { required: true }),
 			),
-			openFeedbackApiKey: core.getInput("openfeedback-api-key"),
+			openFeedbackApiKey: core.getInput("openfeedback-api-key", {
+				required: true,
+			}),
 
 			githubToken: core.getInput("github-token", { required: true }),
 			mailingsToken: core.getInput("mailings-token", { required: true }),
@@ -130,10 +127,6 @@ export class CommunicationAction {
 		}).reconcile(report);
 	}
 
-	static publicIntentIdentifier(value: string): string {
-		return `sha256:${createHash("sha256").update(value).digest("hex")}`;
-	}
-
 	static domainDiagnostic(
 		diagnostic: CommunicationDiagnostic,
 	): PublicDiagnostic {
@@ -165,21 +158,6 @@ export class CommunicationAction {
 			...outcome.runtimeDiagnostics.map(CommunicationAction.runtimeDiagnostic),
 		];
 
-		ActionOutput.setJsonOutput(
-			"result",
-			ResultEnvelopeFactory.resultEnvelope(
-				{
-					mode: outcome.mode,
-					counts: outcome.counts,
-					intentIds: outcome.intentIds.map(
-						CommunicationAction.publicIntentIdentifier,
-					),
-				},
-				diagnostics,
-			),
-		);
-		core.setOutput("planned-count", String(outcome.counts.planned));
-		core.setOutput("dispatched-count", String(outcome.counts.dispatched));
 		return {
 			details: [
 				messages.t("report.communication.mode", { mode: outcome.mode }),

@@ -4,4 +4,5 @@ import { ReferentialActions } from "../referential-actions.js";
 await ActionRunner.run(
 	"action.referential.sync-issue-form",
 	ReferentialActions.runReferentialSyncIssueFormAction,
+	false,
 );

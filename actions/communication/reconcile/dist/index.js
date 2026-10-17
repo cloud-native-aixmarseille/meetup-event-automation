@@ -32344,10 +32344,13 @@ var RuntimeInput = class {
 
 // packages/runtime/github-actions/src/action-runner.ts
 var ActionRunner = class {
-  static async run(title, operation) {
-    const messages = new ActionMessages(getInput("locale"));
+  static async run(title, operation, diagnosticsOutput) {
+    let messages = new ActionMessages("en");
     let report;
     try {
+      messages = new ActionMessages(
+        getInput("locale", { required: true })
+      );
       report = await operation(messages);
     } catch (error2) {
       const message = RuntimeInput.publicErrorMessage(error2);
@@ -32367,7 +32370,8 @@ var ActionRunner = class {
     }
     await ActionReport.write(messages.t(title), report, messages);
     if (report.failure) setFailed(report.failure);
-    ActionOutput.setDiagnosticsOutput(report.diagnostics);
+    if (diagnosticsOutput)
+      ActionOutput.setDiagnosticsOutput(report.diagnostics);
   }
 };
 
@@ -32397,9 +32401,6 @@ var ConferenceHallInput = class _ConferenceHallInput {
     return { conferenceHallEvent, conferenceHallApiKey };
   }
 };
-
-// packages/runtime/github-actions/src/communication-action.ts
-import { createHash as createHash4 } from "node:crypto";
 
 // node_modules/.pnpm/@actions+github@9.1.1/node_modules/@actions/github/lib/context.js
 import { readFileSync, existsSync as existsSync2 } from "fs";
@@ -36919,18 +36920,6 @@ var AutomationConfigFactory = class {
         "meetup-event-url-prefix": DEFAULT_PUBLICATION_URL_CONFIGURATION.meetupEventUrlPrefix,
         "cncf-event-url-prefix": DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes[0]
       }
-    };
-  }
-};
-
-// packages/application/journey/src/result/result-envelope.ts
-var ResultEnvelopeFactory = class {
-  static resultEnvelope(data, diagnostics) {
-    return {
-      schemaVersion: 1,
-      status: diagnostics.length === 0 ? "ok" : "diagnostics",
-      diagnostics,
-      data
     };
   }
 };
@@ -60132,12 +60121,14 @@ var CommunicationAction = class _CommunicationAction {
       locale: messages.locale,
       ...ConferenceHallInput.read(),
       issueNumber,
-      slidesUrl: getInput("slides-url"),
+      slidesUrl: getInput("slides-url", { required: true }),
       slidesReady: RuntimeInput.booleanInput(
         "slides-ready",
-        getInput("slides-ready") || "true"
+        getInput("slides-ready", { required: true })
       ),
-      openFeedbackApiKey: getInput("openfeedback-api-key"),
+      openFeedbackApiKey: getInput("openfeedback-api-key", {
+        required: true
+      }),
       githubToken: getInput("github-token", { required: true }),
       mailingsToken: getInput("mailings-token", { required: true }),
       slackToken: getInput("slack-token", { required: true }),
@@ -60165,9 +60156,6 @@ var CommunicationAction = class _CommunicationAction {
       })
     }).reconcile(report);
   }
-  static publicIntentIdentifier(value) {
-    return `sha256:${createHash4("sha256").update(value).digest("hex")}`;
-  }
   static domainDiagnostic(diagnostic) {
     return {
       code: `communication.${diagnostic.code}`,
@@ -60187,21 +60175,6 @@ var CommunicationAction = class _CommunicationAction {
       ...outcome.diagnostics.map(_CommunicationAction.domainDiagnostic),
       ...outcome.runtimeDiagnostics.map(_CommunicationAction.runtimeDiagnostic)
     ];
-    ActionOutput.setJsonOutput(
-      "result",
-      ResultEnvelopeFactory.resultEnvelope(
-        {
-          mode: outcome.mode,
-          counts: outcome.counts,
-          intentIds: outcome.intentIds.map(
-            _CommunicationAction.publicIntentIdentifier
-          )
-        },
-        diagnostics
-      )
-    );
-    setOutput("planned-count", String(outcome.counts.planned));
-    setOutput("dispatched-count", String(outcome.counts.dispatched));
     return {
       details: [
         messages.t("report.communication.mode", { mode: outcome.mode }),
@@ -60225,7 +60198,8 @@ var CommunicationAction = class _CommunicationAction {
 // packages/runtime/github-actions/src/entrypoints/communication-reconcile.ts
 await ActionRunner.run(
   "action.communication.reconcile",
-  CommunicationAction.runCommunicationReconcileAction
+  CommunicationAction.runCommunicationReconcileAction,
+  true
 );
 /*! Bundled license information:
 

@@ -9,19 +9,15 @@ for branch concurrency and reviewed publication.
 
 | Input                     | Required | Meaning                                   |
 | ------------------------- | -------- | ----------------------------------------- |
-| `locale`                  | No       | Report language, `en` by default or `fr`. |
+| `locale`                  | Yes       | Report language, `en` or `fr`. |
 | `github-token`            | Yes      | Token for verifying repository privacy.   |
 | `conference-hall-event`   | Yes      | CFP slug.                                 |
 | `conference-hall-api-key` | Yes      | Event Web API key.                        |
 
 | Output                | Meaning                                                |
 | --------------------- | ------------------------------------------------------ |
-| `changed`             | Whether the catalog, allocation state or form changed. |
-| `speaker-count`       | Validated candidate speaker count.                     |
-| `retry-after-seconds` | Required retry delay after rate limiting.              |
 | `pr-title`            | Localized PR title.                                    |
 | `pr-body`             | Localized review and freshness guidance.               |
-| `diagnostics`         | Redacted shared-runner diagnostic JSON.                |
 
 Any failed synchronization fails the action and prevents workflow publication.
 Committed mappings and local supplements remain unchanged. Event runs still require a fresh source profile snapshot. See [Conference Hall setup and

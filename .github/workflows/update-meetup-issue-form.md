@@ -71,15 +71,7 @@ jobs:
 
 ## Outputs
 
-| **Output**                    | **Description**                                                                              |
-| ----------------------------- | -------------------------------------------------------------------------------------------- |
-| **`is-valid`**                | Whether the private referential catalogs passed validation before issue-form projection.     |
-| **`host-count`**              | Number of valid host entries detected during referential validation.                         |
-| **`speaker-count`**           | Number of valid speaker entries detected during referential validation.                      |
-| **`referential-diagnostics`** | Redacted JSON diagnostics produced during referential validation.                            |
-| **`changed`**                 | Whether the checked-out issue form differed from the desired public projection.              |
-| **`changed-files`**           | JSON array of repository-relative files changed or that would change during synchronization. |
-| **`diagnostics`**             | Redacted JSON diagnostics produced by the issue-form projection step.                        |
+No public workflow outputs. Reports appear in action logs, annotations, and job summaries.
 
 <!-- outputs:end -->
 <!-- examples:start -->

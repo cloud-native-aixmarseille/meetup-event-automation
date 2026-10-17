@@ -3,8 +3,7 @@ description: Create OpenFeedback events, synchronize their titles, talks and spe
 inputs:
   locale:
     description: Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
-    required: false
-    default: en
+    required: true
   github-token:
     description: GitHub token with issue read and write permissions.
     required: true
@@ -33,14 +32,8 @@ inputs:
     description: Read-only Conference Hall event API key.
     required: true
 outputs:
-  result:
-    description: Versioned JSON feedback reconciliation result.
   diagnostics:
     description: Redacted JSON diagnostics.
-  feedback-url:
-    description: OpenFeedback event URL.
-  link-updated:
-    description: Whether the existing Kutt link target changed.
 runs:
   using: node24
   main: dist/index.js

@@ -1,9 +1,18 @@
 # Action reporting
 
+Public outputs must also follow the
+[action interface rules](README.md#action-interface-rules): declare and emit
+only values with an identified consumer. This includes `diagnostics`, `result`,
+and count outputs. Shared reporting in logs, annotations, and job summaries
+does not require publishing those values as action outputs.
+
 Every public action must use the shared GitHub Actions reporting boundary:
 
 - Register its bootstrap as
-  `await ActionRunner.run("action.<group>.<action>", operation)`. The English
+  `await ActionRunner.run("action.<group>.<action>", operation, diagnosticsOutput)`.
+  The required boolean matches whether the action declares a consumed
+  `diagnostics` output; the reporting contract test checks that it matches the
+  manifest. The English
   title must match the action manifest name. The runner passes one resolved
   ActionMessages into the operation. Entrypoints follow
   `src/entrypoints/<group>-<action>.ts` and are included in
@@ -13,14 +22,17 @@ Every public action must use the shared GitHub Actions reporting boundary:
   affected files, and useful next steps. Explain skipped or blocked work.
 - Return redacted `PublicDiagnostic` values with the original severity, code,
   message, optional field, and optional `fixApplied` flag. The runner owns the
-  `diagnostics` output; the action still owns its other documented outputs.
+  `diagnostics` output when exposed for a consumer; the action still owns its
+  other consumed outputs.
 - `ActionReport` renders the same facts and diagnostics in logs,
   severity-matched annotations, and an HTML-escaped job summary. Successful runs
   with no diagnostics still receive a report. Do not duplicate this rendering in
   actions or hide essential explanations exclusively in machine-readable
   outputs.
 - Exceptions pass through `RuntimeInput.publicErrorMessage` and receive a
-  failure annotation, redacted diagnostic output, and summary. Never log raw
+  failure annotation and summary, plus a redacted diagnostic output when
+  declared for a consumer. Missing locale fails before the operation; its error
+  report uses English. Never log raw
   exceptions, provider responses, contact records, credentials, or whole
   use-case results. A summary-write error must preserve the action outcome and
   existing log diagnostics; emit a safe warning without exposing the write

@@ -7,8 +7,7 @@ branding:
 inputs:
   locale:
     description: Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
-    required: false
-    default: en
+    required: true
   issue-number:
     description: GitHub issue number in the caller repository containing the meetup event document to inspect.
     required: true
@@ -28,12 +27,6 @@ inputs:
     description: Trusted bot login allowed to create or update the managed diagnostic comment, for example my-app[bot].
     required: true
 outputs:
-  result:
-    description: Versioned JSON envelope containing whether the event was skipped, the derived state, readiness, persistence flags, and redacted diagnostics.
-  state:
-    description: Derived lifecycle state for the meetup issue, such as draft, planned, ready, held, or follow-up-complete.
-  is-ready:
-    description: Whether the current meetup issue revision satisfies readiness checks.
   diagnostics:
     description: Redacted JSON diagnostics safe to expose in workflow logs and summaries.
 runs:
