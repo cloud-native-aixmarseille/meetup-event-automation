@@ -9,7 +9,48 @@ export const FR_MESSAGES = {
 	"report.speaker-sync.completed":
 		"Catalogue et formulaire préparés : {count} intervenants. Vérifiez la pull request privée avant fusion.",
 	"report.speaker-sync.failed":
-		"La synchronisation de la copie CSV a échoué. Les identités et champs locaux restent inchangés. Les profils doivent toujours être actualisés en direct ; vérifiez les accès, les identités et les modifications concurrentes avant de réessayer.",
+		"La synchronisation des intervenants a échoué pendant {stage}. Aucune branche de revue n'a été publiée. Corrigez les diagnostics ci-dessous avant de réessayer.",
+	"report.speaker-sync.stage.read-catalog": "la lecture du catalogue local",
+	"report.speaker-sync.stage.load-source":
+		"la lecture de l'export Conference Hall",
+	"report.speaker-sync.stage.merge-speakers":
+		"la fusion des identités des intervenants",
+	"report.speaker-sync.stage.validate-catalog":
+		"la validation du catalogue candidat",
+	"report.speaker-sync.stage.check-form": "la vérification du formulaire",
+	"report.speaker-sync.stage.save-catalog": "l'enregistrement du catalogue",
+	"report.speaker-sync.stage.update-form": "la mise à jour du formulaire",
+	"report.speaker-sync.stage.unknown": "la synchronisation des intervenants",
+	"diagnostic.speaker-sync.configuration":
+		"La configuration Conference Hall est invalide. Renseignez le slug du CFP dans conference-hall-event et une clé non vide dans conference-hall-api-key.",
+	"diagnostic.speaker-sync.http":
+		"Conference Hall a renvoyé un statut HTTP d'échec. Vérifiez la disponibilité du service et les paramètres Web API du CFP avant de réessayer.",
+	"diagnostic.speaker-sync.authentication":
+		"Conference Hall a refusé la clé API. Vérifiez que CONFERENCE_HALL_API_KEY correspond à la clé dans Settings > Web API du CFP et est transmise via conference-hall-api-key.",
+	"diagnostic.speaker-sync.event-not-found":
+		"Conference Hall ne trouve pas le CFP. Vérifiez que CONFERENCE_HALL_EVENT contient son slug et est transmis via conference-hall-event.",
+	"diagnostic.speaker-sync.network":
+		"La requête Conference Hall ou le transfert de la réponse a échoué. Vérifiez l'accès réseau du runner à conference-hall.io avant de réessayer.",
+	"diagnostic.speaker-sync.timeout":
+		"La requête Conference Hall a dépassé le délai de 15 secondes. Vérifiez la disponibilité du service puis réessayez.",
+	"diagnostic.speaker-sync.json":
+		"Conference Hall a renvoyé un JSON invalide. Vérifiez la réponse Web API du CFP sans publier ses données privées.",
+	"diagnostic.speaker-sync.schema":
+		"L'export Conference Hall contient un champ obligatoire absent ou invalide à la position indiquée. Vérifiez ce champ dans la réponse Web API du CFP sans publier les valeurs privées.",
+	"diagnostic.speaker-sync.response-size":
+		"La réponse Conference Hall est vide ou dépasse la limite de 5 Mio. Vérifiez la taille de l'export Web API du CFP.",
+	"diagnostic.speaker-sync.unavailable":
+		"La lecture de Conference Hall a échoué. Vérifiez le slug du CFP, la clé API et l'accès réseau du runner avant de réessayer.",
+	"diagnostic.speaker-sync.invalid":
+		"Les données de synchronisation sont invalides. Validez le CSV, les réservations d'identifiants et le formulaire, puis vérifiez l'export Conference Hall.",
+	"diagnostic.speaker-sync.mapping-required":
+		"Un intervenant CSV existant peut correspondre à un profil Conference Hall sans identité source. Vérifiez referentials/speakers.csv et renseignez source_provider, source_event et source_speaker_id sur la ligne existante. Préservez speaker_id ; les identités ne sont pas fusionnées automatiquement.",
+	"diagnostic.speaker-sync.conflict":
+		"Les identités source, les réservations d'identifiants ou les révisions du catalogue sont en conflit. Vérifiez les doublons et les modifications concurrentes avant de réessayer.",
+	"diagnostic.speaker-sync.rate-limited":
+		"Conference Hall limite les requêtes. Attendez au moins retry-after-seconds avant de réessayer ; aucune nouvelle tentative automatique n'a eu lieu.",
+	"diagnostic.speaker-sync.unexpected":
+		"Une erreur inattendue a interrompu cette étape. Vérifiez ses fichiers d'entrée et les permissions sur un runner de confiance ; les détails privés sont masqués.",
 	"report.speaker-sync.private":
 		"La synchronisation des intervenants nécessite un dépôt privé.",
 

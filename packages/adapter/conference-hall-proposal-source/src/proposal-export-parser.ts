@@ -7,40 +7,51 @@ import {
 
 export class ProposalExportParser {
 	static parse(value: unknown, event: string): ProposalSnapshot {
-		const root = ProposalExportParser.object(value);
+		const root = ProposalExportParser.object(value, "export");
 		if (!Array.isArray(root.proposals) || root.proposals.length > 10000)
-			throw new ProposalSourceError("invalid");
+			throw ProposalExportParser.invalid("proposals");
 		const speakers = new Map<string, SourceSpeaker>();
 		const ids = new Set<string>();
-		const proposals = root.proposals.map((raw): SourceProposal => {
-			const proposal = ProposalExportParser.object(raw);
-			const id = ProposalExportParser.id(proposal.id);
+		const proposals = root.proposals.map((raw, index): SourceProposal => {
+			const path = `proposals[${index}]`;
+			const proposal = ProposalExportParser.object(raw, path);
+			const id = ProposalExportParser.id(proposal.id, `${path}.id`);
 			if (
 				ids.has(id) ||
 				!Array.isArray(proposal.speakers) ||
 				proposal.speakers.length === 0
 			)
-				throw new ProposalSourceError("invalid");
+				throw ProposalExportParser.invalid(`${path}.speakers`);
 			ids.add(id);
-			const speakerIds = proposal.speakers.map((item) => {
-				const speaker = ProposalExportParser.speaker(item);
+			const speakerIds = proposal.speakers.map((item, speakerIndex) => {
+				const speakerPath = `${path}.speakers[${speakerIndex}]`;
+				const speaker = ProposalExportParser.speaker(item, speakerPath);
 				const existing = speakers.get(speaker.id);
 				if (existing && JSON.stringify(existing) !== JSON.stringify(speaker))
-					throw new ProposalSourceError("invalid");
+					throw ProposalExportParser.invalid(speakerPath);
 				speakers.set(speaker.id, speaker);
 				return speaker.id;
 			});
 			return {
 				id,
-				title: ProposalExportParser.text(proposal.title),
-				abstract: ProposalExportParser.text(proposal.abstract),
+				title: ProposalExportParser.text(proposal.title, `${path}.title`),
+				abstract: ProposalExportParser.text(
+					proposal.abstract,
+					`${path}.abstract`,
+				),
 				accepted:
 					proposal.deliberationStatus === "ACCEPTED" &&
 					[null, undefined, "PENDING", "CONFIRMED"].includes(
 						proposal.confirmationStatus as string | null | undefined,
 					),
-				languages: ProposalExportParser.strings(proposal.languages),
-				formats: ProposalExportParser.strings(proposal.formats),
+				languages: ProposalExportParser.strings(
+					proposal.languages,
+					`${path}.languages`,
+				),
+				formats: ProposalExportParser.strings(
+					proposal.formats,
+					`${path}.formats`,
+				),
 				speakerIds: [...new Set(speakerIds)],
 			};
 		});
@@ -51,17 +62,22 @@ export class ProposalExportParser {
 			proposals,
 		};
 	}
-	private static speaker(value: unknown): SourceSpeaker {
-		const speaker = ProposalExportParser.object(value);
-		const email = ProposalExportParser.text(speaker.email);
+	private static speaker(value: unknown, path: string): SourceSpeaker {
+		const speaker = ProposalExportParser.object(value, path);
+		const email = ProposalExportParser.text(speaker.email, `${path}.email`);
 		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-			throw new ProposalSourceError("invalid");
+			throw ProposalExportParser.invalid(`${path}.email`);
 		return {
-			id: ProposalExportParser.id(speaker.id),
-			displayName: ProposalExportParser.text(speaker.name),
+			id: ProposalExportParser.id(speaker.id, `${path}.id`),
+			displayName: ProposalExportParser.text(speaker.name, `${path}.name`),
 			email,
 			...("company" in speaker
-				? { company: ProposalExportParser.optionalText(speaker.company) }
+				? {
+						company: ProposalExportParser.optionalText(
+							speaker.company,
+							`${path}.company`,
+						),
+					}
 				: {}),
 			...ProposalExportParser.picture(speaker),
 		};
@@ -83,29 +99,37 @@ export class ProposalExportParser {
 			return {};
 		}
 	}
-	private static optionalText(value: unknown): string | null {
+	private static optionalText(value: unknown, path: string): string | null {
 		if (value === null || value === "") return null;
-		return ProposalExportParser.text(value);
+		return ProposalExportParser.text(value, path);
 	}
-	private static strings(value: unknown): readonly string[] {
+	private static strings(value: unknown, path: string): readonly string[] {
 		if (!Array.isArray(value) || value.length > 100)
-			throw new ProposalSourceError("invalid");
-		return value.map((item) => ProposalExportParser.text(item));
+			throw ProposalExportParser.invalid(path);
+		return value.map((item, index) =>
+			ProposalExportParser.text(item, `${path}[${index}]`),
+		);
 	}
-	private static text(value: unknown): string {
+	private static text(value: unknown, path: string): string {
 		if (typeof value !== "string" || !value.trim() || value.length > 30000)
-			throw new ProposalSourceError("invalid");
+			throw ProposalExportParser.invalid(path);
 		return value.trim();
 	}
-	private static id(value: unknown): string {
-		const id = ProposalExportParser.text(value);
+	private static id(value: unknown, path: string): string {
+		const id = ProposalExportParser.text(value, path);
 		if (!/^[a-zA-Z0-9_-]{1,200}$/.test(id))
-			throw new ProposalSourceError("invalid");
+			throw ProposalExportParser.invalid(path);
 		return id;
 	}
-	private static object(value: unknown): Record<string, unknown> {
+	private static invalid(field: string): ProposalSourceError {
+		return new ProposalSourceError("invalid", undefined, {
+			reason: "schema",
+			field,
+		});
+	}
+	private static object(value: unknown, path: string): Record<string, unknown> {
 		if (!value || typeof value !== "object" || Array.isArray(value))
-			throw new ProposalSourceError("invalid");
+			throw ProposalExportParser.invalid(path);
 		return value as Record<string, unknown>;
 	}
 }

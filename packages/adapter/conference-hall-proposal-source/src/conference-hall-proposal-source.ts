@@ -18,7 +18,9 @@ export class ConferenceHallProposalSource implements ProposalSource {
 	}
 	private async fetchSnapshot(): Promise<ProposalSnapshot> {
 		if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(this.event) || !this.apiKey.trim())
-			throw new ProposalSourceError("unavailable");
+			throw new ProposalSourceError("unavailable", undefined, {
+				reason: "configuration",
+			});
 		try {
 			const response = await this.request(
 				`https://conference-hall.io/api/v1/event/${this.event}`,
@@ -37,15 +39,32 @@ export class ConferenceHallProposalSource implements ProposalSource {
 			}
 			if (!response.ok) {
 				await response.body?.cancel();
-				throw new ProposalSourceError("unavailable");
+				throw new ProposalSourceError("unavailable", undefined, {
+					reason: "http",
+					status: response.status,
+				});
 			}
 			return ProposalExportParser.parse(
-				JSON.parse(await this.readBounded(response)),
+				await this.readJson(response),
 				this.event,
 			);
 		} catch (error) {
 			if (error instanceof ProposalSourceError) throw error;
-			throw new ProposalSourceError("unavailable");
+			throw new ProposalSourceError("unavailable", undefined, {
+				reason:
+					error instanceof Error &&
+					["TimeoutError", "AbortError"].includes(error.name)
+						? "timeout"
+						: "network",
+			});
+		}
+	}
+	private async readJson(response: Response): Promise<unknown> {
+		const text = await this.readBounded(response);
+		try {
+			return JSON.parse(text);
+		} catch {
+			throw new ProposalSourceError("invalid", undefined, { reason: "json" });
 		}
 	}
 	private async readBounded(response: Response): Promise<string> {
@@ -55,7 +74,9 @@ export class ConferenceHallProposalSource implements ProposalSource {
 			!response.body
 		) {
 			await response.body?.cancel();
-			throw new ProposalSourceError("invalid");
+			throw new ProposalSourceError("invalid", undefined, {
+				reason: "response-size",
+			});
 		}
 		const reader = response.body.getReader();
 		const decoder = new TextDecoder("utf-8", { fatal: true });
@@ -66,7 +87,10 @@ export class ConferenceHallProposalSource implements ProposalSource {
 				const { done, value } = await reader.read();
 				if (done) break;
 				size += value.byteLength;
-				if (size > limit) throw new ProposalSourceError("invalid");
+				if (size > limit)
+					throw new ProposalSourceError("invalid", undefined, {
+						reason: "response-size",
+					});
 				result += decoder.decode(value, { stream: true });
 			}
 			return result + decoder.decode();

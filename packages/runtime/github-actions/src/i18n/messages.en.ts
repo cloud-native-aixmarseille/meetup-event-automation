@@ -7,7 +7,46 @@ export const EN_MESSAGES = {
 	"report.speaker-sync.completed":
 		"Speaker catalog and form prepared: {count} speakers. Review the private pull request before merging.",
 	"report.speaker-sync.failed":
-		"Speaker snapshot synchronization failed. Existing mappings and local fields are unchanged. Live profile refresh remains required; check source access, mappings and concurrent edits before retrying.",
+		"Speaker synchronization failed during {stage}. No review branch was published. Correct the diagnostics below before retrying.",
+	"report.speaker-sync.stage.read-catalog": "reading the local speaker catalog",
+	"report.speaker-sync.stage.load-source": "loading the Conference Hall export",
+	"report.speaker-sync.stage.merge-speakers": "merging speaker identities",
+	"report.speaker-sync.stage.validate-catalog":
+		"validating the candidate catalog",
+	"report.speaker-sync.stage.check-form": "checking the issue form",
+	"report.speaker-sync.stage.save-catalog": "saving the speaker catalog",
+	"report.speaker-sync.stage.update-form": "updating the issue form",
+	"report.speaker-sync.stage.unknown": "speaker synchronization",
+	"diagnostic.speaker-sync.configuration":
+		"Conference Hall configuration is invalid. Set conference-hall-event to the CFP slug and provide a non-empty conference-hall-api-key.",
+	"diagnostic.speaker-sync.http":
+		"Conference Hall returned an unsuccessful HTTP status. Check service availability and the CFP Web API settings before retrying.",
+	"diagnostic.speaker-sync.authentication":
+		"Conference Hall rejected the API key. Verify CONFERENCE_HALL_API_KEY matches the key under this CFP's Settings > Web API and is forwarded as conference-hall-api-key.",
+	"diagnostic.speaker-sync.event-not-found":
+		"Conference Hall could not find the CFP. Verify CONFERENCE_HALL_EVENT is the CFP slug and is forwarded as conference-hall-event.",
+	"diagnostic.speaker-sync.network":
+		"The Conference Hall request or response transfer failed. Check network access to conference-hall.io from the runner before retrying.",
+	"diagnostic.speaker-sync.timeout":
+		"The Conference Hall request exceeded its 15-second timeout. Check service availability and retry.",
+	"diagnostic.speaker-sync.json":
+		"Conference Hall returned invalid JSON. Check the event Web API response; do not log or upload its private contents.",
+	"diagnostic.speaker-sync.schema":
+		"The Conference Hall export contains a missing or invalid required field at the indicated position. Check that field in the CFP Web API response; do not log private values.",
+	"diagnostic.speaker-sync.response-size":
+		"The Conference Hall response is empty or exceeds the 5 MiB limit. Check the event Web API export size.",
+	"diagnostic.speaker-sync.unavailable":
+		"Conference Hall could not be read. Verify the CFP slug, API key and runner network access before retrying.",
+	"diagnostic.speaker-sync.invalid":
+		"The speaker synchronization input is invalid. Validate the CSV, allocation state and issue form, then check the Conference Hall export.",
+	"diagnostic.speaker-sync.mapping-required":
+		"An existing CSV speaker may match a Conference Hall profile but has no source mapping. Review referentials/speakers.csv and add source_provider, source_event and source_speaker_id to the existing row. Preserve speaker_id; identities are not merged automatically.",
+	"diagnostic.speaker-sync.conflict":
+		"Speaker mappings, ID reservations or catalog revisions conflict. Check duplicate source mappings and concurrent catalog edits before retrying.",
+	"diagnostic.speaker-sync.rate-limited":
+		"Conference Hall rate-limited the request. Wait at least retry-after-seconds before retrying; no automatic retry was attempted.",
+	"diagnostic.speaker-sync.unexpected":
+		"An unexpected error stopped this stage. Check its input files and permissions on a trusted runner; private exception contents are redacted.",
 	"report.speaker-sync.private":
 		"Speaker synchronization requires a private repository.",
 

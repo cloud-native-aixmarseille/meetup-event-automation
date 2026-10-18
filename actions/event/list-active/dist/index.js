@@ -32058,7 +32058,30 @@ var EN_MESSAGES = {
   "report.speaker-sync.pr-body": "Review identity mappings, the CSV snapshot and preserved local fields. New mappings become available after merge. Existing linked profiles refresh directly from Conference Hall during event runs. The linked workflow run identifies this snapshot; automatic merge is disabled.",
   "action.referential.sync-speakers": "Synchronize Conference Hall speakers",
   "report.speaker-sync.completed": "Speaker catalog and form prepared: {count} speakers. Review the private pull request before merging.",
-  "report.speaker-sync.failed": "Speaker snapshot synchronization failed. Existing mappings and local fields are unchanged. Live profile refresh remains required; check source access, mappings and concurrent edits before retrying.",
+  "report.speaker-sync.failed": "Speaker synchronization failed during {stage}. No review branch was published. Correct the diagnostics below before retrying.",
+  "report.speaker-sync.stage.read-catalog": "reading the local speaker catalog",
+  "report.speaker-sync.stage.load-source": "loading the Conference Hall export",
+  "report.speaker-sync.stage.merge-speakers": "merging speaker identities",
+  "report.speaker-sync.stage.validate-catalog": "validating the candidate catalog",
+  "report.speaker-sync.stage.check-form": "checking the issue form",
+  "report.speaker-sync.stage.save-catalog": "saving the speaker catalog",
+  "report.speaker-sync.stage.update-form": "updating the issue form",
+  "report.speaker-sync.stage.unknown": "speaker synchronization",
+  "diagnostic.speaker-sync.configuration": "Conference Hall configuration is invalid. Set conference-hall-event to the CFP slug and provide a non-empty conference-hall-api-key.",
+  "diagnostic.speaker-sync.http": "Conference Hall returned an unsuccessful HTTP status. Check service availability and the CFP Web API settings before retrying.",
+  "diagnostic.speaker-sync.authentication": "Conference Hall rejected the API key. Verify CONFERENCE_HALL_API_KEY matches the key under this CFP's Settings > Web API and is forwarded as conference-hall-api-key.",
+  "diagnostic.speaker-sync.event-not-found": "Conference Hall could not find the CFP. Verify CONFERENCE_HALL_EVENT is the CFP slug and is forwarded as conference-hall-event.",
+  "diagnostic.speaker-sync.network": "The Conference Hall request or response transfer failed. Check network access to conference-hall.io from the runner before retrying.",
+  "diagnostic.speaker-sync.timeout": "The Conference Hall request exceeded its 15-second timeout. Check service availability and retry.",
+  "diagnostic.speaker-sync.json": "Conference Hall returned invalid JSON. Check the event Web API response; do not log or upload its private contents.",
+  "diagnostic.speaker-sync.schema": "The Conference Hall export contains a missing or invalid required field at the indicated position. Check that field in the CFP Web API response; do not log private values.",
+  "diagnostic.speaker-sync.response-size": "The Conference Hall response is empty or exceeds the 5 MiB limit. Check the event Web API export size.",
+  "diagnostic.speaker-sync.unavailable": "Conference Hall could not be read. Verify the CFP slug, API key and runner network access before retrying.",
+  "diagnostic.speaker-sync.invalid": "The speaker synchronization input is invalid. Validate the CSV, allocation state and issue form, then check the Conference Hall export.",
+  "diagnostic.speaker-sync.mapping-required": "An existing CSV speaker may match a Conference Hall profile but has no source mapping. Review referentials/speakers.csv and add source_provider, source_event and source_speaker_id to the existing row. Preserve speaker_id; identities are not merged automatically.",
+  "diagnostic.speaker-sync.conflict": "Speaker mappings, ID reservations or catalog revisions conflict. Check duplicate source mappings and concurrent catalog edits before retrying.",
+  "diagnostic.speaker-sync.rate-limited": "Conference Hall rate-limited the request. Wait at least retry-after-seconds before retrying; no automatic retry was attempted.",
+  "diagnostic.speaker-sync.unexpected": "An unexpected error stopped this stage. Check its input files and permissions on a trusted runner; private exception contents are redacted.",
   "report.speaker-sync.private": "Speaker synchronization requires a private repository.",
   "action.communication.reconcile-attention": "Reconcile organizer attention",
   "report.attention.updated": "Organizer attention status is persisted on the issue. Review its current conditions and recovery guidance.",
@@ -32133,7 +32156,30 @@ var FR_MESSAGES = {
   "report.speaker-sync.pr-body": "V\xE9rifiez les identit\xE9s, la copie CSV et les champs locaux pr\xE9serv\xE9s. Les nouvelles identit\xE9s seront disponibles apr\xE8s fusion. Les profils d\xE9j\xE0 li\xE9s sont actualis\xE9s directement depuis Conference Hall \xE0 chaque ex\xE9cution. Le workflow li\xE9 identifie cette copie ; la fusion automatique est d\xE9sactiv\xE9e.",
   "action.referential.sync-speakers": "Synchroniser les intervenants Conference Hall",
   "report.speaker-sync.completed": "Catalogue et formulaire pr\xE9par\xE9s : {count} intervenants. V\xE9rifiez la pull request priv\xE9e avant fusion.",
-  "report.speaker-sync.failed": "La synchronisation de la copie CSV a \xE9chou\xE9. Les identit\xE9s et champs locaux restent inchang\xE9s. Les profils doivent toujours \xEAtre actualis\xE9s en direct ; v\xE9rifiez les acc\xE8s, les identit\xE9s et les modifications concurrentes avant de r\xE9essayer.",
+  "report.speaker-sync.failed": "La synchronisation des intervenants a \xE9chou\xE9 pendant {stage}. Aucune branche de revue n'a \xE9t\xE9 publi\xE9e. Corrigez les diagnostics ci-dessous avant de r\xE9essayer.",
+  "report.speaker-sync.stage.read-catalog": "la lecture du catalogue local",
+  "report.speaker-sync.stage.load-source": "la lecture de l'export Conference Hall",
+  "report.speaker-sync.stage.merge-speakers": "la fusion des identit\xE9s des intervenants",
+  "report.speaker-sync.stage.validate-catalog": "la validation du catalogue candidat",
+  "report.speaker-sync.stage.check-form": "la v\xE9rification du formulaire",
+  "report.speaker-sync.stage.save-catalog": "l'enregistrement du catalogue",
+  "report.speaker-sync.stage.update-form": "la mise \xE0 jour du formulaire",
+  "report.speaker-sync.stage.unknown": "la synchronisation des intervenants",
+  "diagnostic.speaker-sync.configuration": "La configuration Conference Hall est invalide. Renseignez le slug du CFP dans conference-hall-event et une cl\xE9 non vide dans conference-hall-api-key.",
+  "diagnostic.speaker-sync.http": "Conference Hall a renvoy\xE9 un statut HTTP d'\xE9chec. V\xE9rifiez la disponibilit\xE9 du service et les param\xE8tres Web API du CFP avant de r\xE9essayer.",
+  "diagnostic.speaker-sync.authentication": "Conference Hall a refus\xE9 la cl\xE9 API. V\xE9rifiez que CONFERENCE_HALL_API_KEY correspond \xE0 la cl\xE9 dans Settings > Web API du CFP et est transmise via conference-hall-api-key.",
+  "diagnostic.speaker-sync.event-not-found": "Conference Hall ne trouve pas le CFP. V\xE9rifiez que CONFERENCE_HALL_EVENT contient son slug et est transmis via conference-hall-event.",
+  "diagnostic.speaker-sync.network": "La requ\xEAte Conference Hall ou le transfert de la r\xE9ponse a \xE9chou\xE9. V\xE9rifiez l'acc\xE8s r\xE9seau du runner \xE0 conference-hall.io avant de r\xE9essayer.",
+  "diagnostic.speaker-sync.timeout": "La requ\xEAte Conference Hall a d\xE9pass\xE9 le d\xE9lai de 15 secondes. V\xE9rifiez la disponibilit\xE9 du service puis r\xE9essayez.",
+  "diagnostic.speaker-sync.json": "Conference Hall a renvoy\xE9 un JSON invalide. V\xE9rifiez la r\xE9ponse Web API du CFP sans publier ses donn\xE9es priv\xE9es.",
+  "diagnostic.speaker-sync.schema": "L'export Conference Hall contient un champ obligatoire absent ou invalide \xE0 la position indiqu\xE9e. V\xE9rifiez ce champ dans la r\xE9ponse Web API du CFP sans publier les valeurs priv\xE9es.",
+  "diagnostic.speaker-sync.response-size": "La r\xE9ponse Conference Hall est vide ou d\xE9passe la limite de 5 Mio. V\xE9rifiez la taille de l'export Web API du CFP.",
+  "diagnostic.speaker-sync.unavailable": "La lecture de Conference Hall a \xE9chou\xE9. V\xE9rifiez le slug du CFP, la cl\xE9 API et l'acc\xE8s r\xE9seau du runner avant de r\xE9essayer.",
+  "diagnostic.speaker-sync.invalid": "Les donn\xE9es de synchronisation sont invalides. Validez le CSV, les r\xE9servations d'identifiants et le formulaire, puis v\xE9rifiez l'export Conference Hall.",
+  "diagnostic.speaker-sync.mapping-required": "Un intervenant CSV existant peut correspondre \xE0 un profil Conference Hall sans identit\xE9 source. V\xE9rifiez referentials/speakers.csv et renseignez source_provider, source_event et source_speaker_id sur la ligne existante. Pr\xE9servez speaker_id ; les identit\xE9s ne sont pas fusionn\xE9es automatiquement.",
+  "diagnostic.speaker-sync.conflict": "Les identit\xE9s source, les r\xE9servations d'identifiants ou les r\xE9visions du catalogue sont en conflit. V\xE9rifiez les doublons et les modifications concurrentes avant de r\xE9essayer.",
+  "diagnostic.speaker-sync.rate-limited": "Conference Hall limite les requ\xEAtes. Attendez au moins retry-after-seconds avant de r\xE9essayer ; aucune nouvelle tentative automatique n'a eu lieu.",
+  "diagnostic.speaker-sync.unexpected": "Une erreur inattendue a interrompu cette \xE9tape. V\xE9rifiez ses fichiers d'entr\xE9e et les permissions sur un runner de confiance ; les d\xE9tails priv\xE9s sont masqu\xE9s.",
   "report.speaker-sync.private": "La synchronisation des intervenants n\xE9cessite un d\xE9p\xF4t priv\xE9.",
   "action.communication.reconcile-attention": "Synchroniser les points \xE0 traiter par les organisateurs",
   "report.attention.updated": "Le statut des points \xE0 traiter est enregistr\xE9 sur le ticket. Consultez les conditions actuelles et les consignes de reprise.",
@@ -38982,14 +39028,16 @@ var SpeakerCatalogValidator = class _SpeakerCatalogValidator {
 
 // packages/domain/referential/src/domain/proposal-source-error.ts
 var ProposalSourceError = class extends Error {
-  constructor(code, retryAfterSeconds) {
+  constructor(code, retryAfterSeconds, context3) {
     super(`Proposal source ${code}.`);
     this.code = code;
     this.retryAfterSeconds = retryAfterSeconds;
+    this.context = context3;
     this.name = "ProposalSourceError";
   }
   code;
   retryAfterSeconds;
+  context;
 };
 
 // packages/domain/referential/src/application/use-cases/validate-referential-catalog.ts
@@ -39544,34 +39592,45 @@ var ValidateMeetupReferentials = class {
 // packages/adapter/conference-hall-proposal-source/src/proposal-export-parser.ts
 var ProposalExportParser = class _ProposalExportParser {
   static parse(value, event) {
-    const root = _ProposalExportParser.object(value);
+    const root = _ProposalExportParser.object(value, "export");
     if (!Array.isArray(root.proposals) || root.proposals.length > 1e4)
-      throw new ProposalSourceError("invalid");
+      throw _ProposalExportParser.invalid("proposals");
     const speakers = /* @__PURE__ */ new Map();
     const ids = /* @__PURE__ */ new Set();
-    const proposals = root.proposals.map((raw) => {
-      const proposal = _ProposalExportParser.object(raw);
-      const id = _ProposalExportParser.id(proposal.id);
+    const proposals = root.proposals.map((raw, index) => {
+      const path = `proposals[${index}]`;
+      const proposal = _ProposalExportParser.object(raw, path);
+      const id = _ProposalExportParser.id(proposal.id, `${path}.id`);
       if (ids.has(id) || !Array.isArray(proposal.speakers) || proposal.speakers.length === 0)
-        throw new ProposalSourceError("invalid");
+        throw _ProposalExportParser.invalid(`${path}.speakers`);
       ids.add(id);
-      const speakerIds = proposal.speakers.map((item) => {
-        const speaker = _ProposalExportParser.speaker(item);
+      const speakerIds = proposal.speakers.map((item, speakerIndex) => {
+        const speakerPath = `${path}.speakers[${speakerIndex}]`;
+        const speaker = _ProposalExportParser.speaker(item, speakerPath);
         const existing = speakers.get(speaker.id);
         if (existing && JSON.stringify(existing) !== JSON.stringify(speaker))
-          throw new ProposalSourceError("invalid");
+          throw _ProposalExportParser.invalid(speakerPath);
         speakers.set(speaker.id, speaker);
         return speaker.id;
       });
       return {
         id,
-        title: _ProposalExportParser.text(proposal.title),
-        abstract: _ProposalExportParser.text(proposal.abstract),
+        title: _ProposalExportParser.text(proposal.title, `${path}.title`),
+        abstract: _ProposalExportParser.text(
+          proposal.abstract,
+          `${path}.abstract`
+        ),
         accepted: proposal.deliberationStatus === "ACCEPTED" && [null, void 0, "PENDING", "CONFIRMED"].includes(
           proposal.confirmationStatus
         ),
-        languages: _ProposalExportParser.strings(proposal.languages),
-        formats: _ProposalExportParser.strings(proposal.formats),
+        languages: _ProposalExportParser.strings(
+          proposal.languages,
+          `${path}.languages`
+        ),
+        formats: _ProposalExportParser.strings(
+          proposal.formats,
+          `${path}.formats`
+        ),
         speakerIds: [...new Set(speakerIds)]
       };
     });
@@ -39582,16 +39641,21 @@ var ProposalExportParser = class _ProposalExportParser {
       proposals
     };
   }
-  static speaker(value) {
-    const speaker = _ProposalExportParser.object(value);
-    const email = _ProposalExportParser.text(speaker.email);
+  static speaker(value, path) {
+    const speaker = _ProposalExportParser.object(value, path);
+    const email = _ProposalExportParser.text(speaker.email, `${path}.email`);
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-      throw new ProposalSourceError("invalid");
+      throw _ProposalExportParser.invalid(`${path}.email`);
     return {
-      id: _ProposalExportParser.id(speaker.id),
-      displayName: _ProposalExportParser.text(speaker.name),
+      id: _ProposalExportParser.id(speaker.id, `${path}.id`),
+      displayName: _ProposalExportParser.text(speaker.name, `${path}.name`),
       email,
-      ..."company" in speaker ? { company: _ProposalExportParser.optionalText(speaker.company) } : {},
+      ..."company" in speaker ? {
+        company: _ProposalExportParser.optionalText(
+          speaker.company,
+          `${path}.company`
+        )
+      } : {},
       ..._ProposalExportParser.picture(speaker)
     };
   }
@@ -39608,29 +39672,37 @@ var ProposalExportParser = class _ProposalExportParser {
       return {};
     }
   }
-  static optionalText(value) {
+  static optionalText(value, path) {
     if (value === null || value === "") return null;
-    return _ProposalExportParser.text(value);
+    return _ProposalExportParser.text(value, path);
   }
-  static strings(value) {
+  static strings(value, path) {
     if (!Array.isArray(value) || value.length > 100)
-      throw new ProposalSourceError("invalid");
-    return value.map((item) => _ProposalExportParser.text(item));
+      throw _ProposalExportParser.invalid(path);
+    return value.map(
+      (item, index) => _ProposalExportParser.text(item, `${path}[${index}]`)
+    );
   }
-  static text(value) {
+  static text(value, path) {
     if (typeof value !== "string" || !value.trim() || value.length > 3e4)
-      throw new ProposalSourceError("invalid");
+      throw _ProposalExportParser.invalid(path);
     return value.trim();
   }
-  static id(value) {
-    const id = _ProposalExportParser.text(value);
+  static id(value, path) {
+    const id = _ProposalExportParser.text(value, path);
     if (!/^[a-zA-Z0-9_-]{1,200}$/.test(id))
-      throw new ProposalSourceError("invalid");
+      throw _ProposalExportParser.invalid(path);
     return id;
   }
-  static object(value) {
+  static invalid(field) {
+    return new ProposalSourceError("invalid", void 0, {
+      reason: "schema",
+      field
+    });
+  }
+  static object(value, path) {
     if (!value || typeof value !== "object" || Array.isArray(value))
-      throw new ProposalSourceError("invalid");
+      throw _ProposalExportParser.invalid(path);
     return value;
   }
 };
@@ -39652,7 +39724,9 @@ var ConferenceHallProposalSource = class {
   }
   async fetchSnapshot() {
     if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(this.event) || !this.apiKey.trim())
-      throw new ProposalSourceError("unavailable");
+      throw new ProposalSourceError("unavailable", void 0, {
+        reason: "configuration"
+      });
     try {
       const response = await this.request(
         `https://conference-hall.io/api/v1/event/${this.event}`,
@@ -39671,22 +39745,37 @@ var ConferenceHallProposalSource = class {
       }
       if (!response.ok) {
         await response.body?.cancel();
-        throw new ProposalSourceError("unavailable");
+        throw new ProposalSourceError("unavailable", void 0, {
+          reason: "http",
+          status: response.status
+        });
       }
       return ProposalExportParser.parse(
-        JSON.parse(await this.readBounded(response)),
+        await this.readJson(response),
         this.event
       );
     } catch (error2) {
       if (error2 instanceof ProposalSourceError) throw error2;
-      throw new ProposalSourceError("unavailable");
+      throw new ProposalSourceError("unavailable", void 0, {
+        reason: error2 instanceof Error && ["TimeoutError", "AbortError"].includes(error2.name) ? "timeout" : "network"
+      });
+    }
+  }
+  async readJson(response) {
+    const text = await this.readBounded(response);
+    try {
+      return JSON.parse(text);
+    } catch {
+      throw new ProposalSourceError("invalid", void 0, { reason: "json" });
     }
   }
   async readBounded(response) {
     const limit = 5 * 1024 * 1024;
     if (Number(response.headers.get("content-length")) > limit || !response.body) {
       await response.body?.cancel();
-      throw new ProposalSourceError("invalid");
+      throw new ProposalSourceError("invalid", void 0, {
+        reason: "response-size"
+      });
     }
     const reader = response.body.getReader();
     const decoder = new TextDecoder("utf-8", { fatal: true });
@@ -39697,7 +39786,10 @@ var ConferenceHallProposalSource = class {
         const { done, value } = await reader.read();
         if (done) break;
         size += value.byteLength;
-        if (size > limit) throw new ProposalSourceError("invalid");
+        if (size > limit)
+          throw new ProposalSourceError("invalid", void 0, {
+            reason: "response-size"
+          });
         result += decoder.decode(value, { stream: true });
       }
       return result + decoder.decode();

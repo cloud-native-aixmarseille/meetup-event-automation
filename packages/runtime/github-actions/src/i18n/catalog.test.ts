@@ -4,6 +4,7 @@ import { CATALOGS } from "./catalog.js";
 import type { MessageParameters } from "./message-parameters.js";
 
 const parameters = {
+	"report.speaker-sync.failed": { stage: "loading the Conference Hall export" },
 	"report.speaker-sync.completed": { count: 2 },
 	"report.feedback.changes": {
 		persisted: "true",
