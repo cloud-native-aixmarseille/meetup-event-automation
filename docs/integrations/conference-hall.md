@@ -93,8 +93,8 @@ are never downloaded. Organizer-owned fields are preserved.
 Review and merge the private PR to register new identities and update the CSV
 snapshot and generated form choices. Existing linked profiles are live from
 Conference Hall regardless of whether a later snapshot PR has merged. An
-unchanged snapshot creates no new diff or PR. A failed snapshot sync leaves local
-committed files unchanged and does not establish live source freshness.
+unchanged snapshot creates no new diff or PR. A failed snapshot sync does not
+publish candidate files or establish live source freshness.
 
 ## Diagnose speaker synchronization failures
 

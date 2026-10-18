@@ -36393,10 +36393,13 @@ var MergeSourceSpeakers = class {
     )) {
       let index = mappings.get(speaker.id);
       if (index === void 0) {
-        if (rows.some(
+        const possibleMatch = rows.findIndex(
           (row2) => !row2.source_speaker_id && (row2.mail?.trim().toLowerCase() === speaker.email.toLowerCase() || (row2.display_name || `${row2.firstname} ${row2.lastname}`).trim().toLowerCase() === speaker.displayName.toLowerCase())
-        ))
-          throw new ProposalSourceError("mapping-required");
+        );
+        if (possibleMatch !== -1)
+          throw new ProposalSourceError("mapping-required", void 0, {
+            field: `speakers[${possibleMatch}]`
+          });
         const id = this.allocate(reserved);
         index = merged.length;
         merged.push({

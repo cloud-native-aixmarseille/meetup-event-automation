@@ -23,17 +23,18 @@ export class MergeSourceSpeakers {
 		)) {
 			let index = mappings.get(speaker.id);
 			if (index === undefined) {
-				if (
-					rows.some(
-						(row) =>
-							!row.source_speaker_id &&
-							(row.mail?.trim().toLowerCase() === speaker.email.toLowerCase() ||
-								(row.display_name || `${row.firstname} ${row.lastname}`)
-									.trim()
-									.toLowerCase() === speaker.displayName.toLowerCase()),
-					)
-				)
-					throw new ProposalSourceError("mapping-required");
+				const possibleMatch = rows.findIndex(
+					(row) =>
+						!row.source_speaker_id &&
+						(row.mail?.trim().toLowerCase() === speaker.email.toLowerCase() ||
+							(row.display_name || `${row.firstname} ${row.lastname}`)
+								.trim()
+								.toLowerCase() === speaker.displayName.toLowerCase()),
+				);
+				if (possibleMatch !== -1)
+					throw new ProposalSourceError("mapping-required", undefined, {
+						field: `speakers[${possibleMatch}]`,
+					});
 				const id = this.allocate(reserved);
 				index = merged.length;
 				merged.push({

@@ -95,7 +95,12 @@ describe("MergeSourceSpeakers", () => {
 				reservedIds: [],
 			});
 		// Assert
-		expect(merge).toThrow("Proposal source mapping-required.");
+		expect(merge).toThrow(
+			expect.objectContaining({
+				code: "mapping-required",
+				context: { field: "speakers[0]" },
+			}),
+		);
 	});
 	it("clears missing source-owned affiliation and explicitly removed pictures", () => {
 		// Arrange
