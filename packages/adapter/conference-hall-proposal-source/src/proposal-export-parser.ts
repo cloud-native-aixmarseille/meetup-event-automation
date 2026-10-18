@@ -16,11 +16,8 @@ export class ProposalExportParser {
 			const path = `proposals[${index}]`;
 			const proposal = ProposalExportParser.object(raw, path);
 			const id = ProposalExportParser.id(proposal.id, `${path}.id`);
-			if (
-				ids.has(id) ||
-				!Array.isArray(proposal.speakers) ||
-				proposal.speakers.length === 0
-			)
+			if (ids.has(id)) throw ProposalExportParser.invalid(`${path}.id`);
+			if (!Array.isArray(proposal.speakers) || proposal.speakers.length === 0)
 				throw ProposalExportParser.invalid(`${path}.speakers`);
 			ids.add(id);
 			const speakerIds = proposal.speakers.map((item, speakerIndex) => {
