@@ -3,6 +3,20 @@ import { proposal, sourceExport, speaker } from "../testing/export.fixtures.js";
 import { ProposalExportParser } from "./proposal-export-parser.js";
 
 describe("ProposalExportParser", () => {
+	it("identifies the duplicate proposal identifier without exposing its value", () => {
+		// Arrange
+		const input = { proposals: [proposal, proposal] };
+
+		// Act
+		const parse = () => ProposalExportParser.parse(input, "example-cfp");
+
+		// Assert
+		expect(parse).toThrow(
+			expect.objectContaining({
+				context: { reason: "schema", field: "proposals[1].id" },
+			}),
+		);
+	});
 	it.each(["DECLINED", "WITHDRAWN", "unexpected"])(
 		"does not publish an accepted proposal with %s confirmation",
 		(confirmationStatus) => {
