@@ -2,12 +2,16 @@ import * as core from "@actions/core";
 import { context, getOctokit } from "@actions/github";
 import { ConferenceHallProposalSource } from "@meetup-automation/conference-hall-proposal-source";
 import { CsvSpeakerCatalogStore } from "@meetup-automation/csv-referential-repository";
-import { SynchronizeSourceSpeakers } from "@meetup-automation/journey";
+import {
+	SpeakerSynchronizationError,
+	SynchronizeSourceSpeakers,
+} from "@meetup-automation/journey";
 import { ProposalSourceError } from "@meetup-automation/referential";
 import { YamlIssueFormProjection } from "@meetup-automation/yaml-issue-form-projection";
 import type { ActionReportData } from "./action-report.js";
 import { ConferenceHallInput } from "./conference-hall-input.js";
 import { ActionMessages } from "./i18n/action-messages.js";
+import { SpeakerSyncFailureReport } from "./speaker-sync-failure-report.js";
 
 export class SpeakerSyncAction {
 	static async run(messages = new ActionMessages()): Promise<ActionReportData> {
@@ -47,14 +51,13 @@ export class SpeakerSyncAction {
 				diagnostics: [],
 			};
 		} catch (error) {
-			core.setOutput("pr-body", messages.t("report.speaker-sync.failed"));
-			if (error instanceof ProposalSourceError && error.retryAfterSeconds)
-				core.setOutput("retry-after-seconds", String(error.retryAfterSeconds));
-			return {
-				details: [],
-				diagnostics: [],
-				failure: messages.t("report.speaker-sync.failed"),
-			};
+			const report = SpeakerSyncFailureReport.create(error, messages);
+			core.setOutput("pr-body", report.failure);
+			const source =
+				error instanceof SpeakerSynchronizationError ? error.cause : error;
+			if (source instanceof ProposalSourceError && source.retryAfterSeconds)
+				core.setOutput("retry-after-seconds", String(source.retryAfterSeconds));
+			return report;
 		}
 	}
 }

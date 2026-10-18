@@ -26,7 +26,11 @@ describe("ProposalExportParser", () => {
 		const parse = () => ProposalExportParser.parse(input, "example-cfp");
 
 		// Assert
-		expect(parse).toThrow("Proposal source invalid.");
+		expect(parse).toThrow(
+			expect.objectContaining({
+				context: { reason: "schema", field: "proposals[0].speakers[0].email" },
+			}),
+		);
 	});
 
 	it("deduplicates event-scoped co-speakers and drops private export fields", () => {

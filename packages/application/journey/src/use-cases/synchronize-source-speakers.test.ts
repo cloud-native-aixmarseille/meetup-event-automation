@@ -84,7 +84,15 @@ describe("SynchronizeSourceSpeakers", () => {
 		// Act
 		const result = new SynchronizeSourceSpeakers(source, store, form).execute();
 		// Assert
-		await expect(result).rejects.toThrow("Proposal source invalid.");
+		await expect(result).rejects.toMatchObject({
+			stage: "validate-catalog",
+			diagnostics: expect.arrayContaining([
+				expect.objectContaining({
+					code: "referential.speaker.email.invalid",
+					field: "speakers[0].email",
+				}),
+			]),
+		});
 		expect(store.save).not.toHaveBeenCalled();
 		expect(form.synchronize).not.toHaveBeenCalled();
 	});

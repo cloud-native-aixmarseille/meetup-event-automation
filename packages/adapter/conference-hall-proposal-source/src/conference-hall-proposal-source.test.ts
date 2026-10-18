@@ -51,20 +51,69 @@ describe("ConferenceHallProposalSource", () => {
 		});
 		expect(request).toHaveBeenCalledTimes(1);
 	});
-	it.each([401, 403, 500])("redacts %s source failures", async (status) => {
+	it.each([401, 403, 404, 500])(
+		"redacts %s source failures",
+		async (status) => {
+			// Arrange
+			const request = vi
+				.fn<typeof fetch>()
+				.mockResolvedValue(new Response("PRIVATE", { status }));
+			// Act
+			const result = new ConferenceHallProposalSource(
+				"example-cfp",
+				"secret",
+				request,
+			).load();
+			// Assert
+			await expect(result).rejects.toMatchObject({
+				code: "unavailable",
+				context: { reason: "http", status },
+			});
+		},
+	);
+	it("classifies malformed JSON without exposing the response", async () => {
 		// Arrange
 		const request = vi
 			.fn<typeof fetch>()
-			.mockResolvedValue(new Response("PRIVATE", { status }));
+			.mockResolvedValue(new Response("PRIVATE"));
+
 		// Act
 		const result = new ConferenceHallProposalSource(
 			"example-cfp",
 			"secret",
 			request,
 		).load();
+
 		// Assert
-		await expect(result).rejects.toThrow("Proposal source unavailable.");
+		await expect(result).rejects.toMatchObject({
+			code: "invalid",
+			context: { reason: "json" },
+			message: "Proposal source invalid.",
+		});
 	});
+	it.each(["TimeoutError", "AbortError"])(
+		"classifies %s without exposing request details",
+		async (name) => {
+			// Arrange
+			const request = vi
+				.fn<typeof fetch>()
+				.mockRejectedValue(new DOMException("PRIVATE", name));
+
+			// Act
+			const result = new ConferenceHallProposalSource(
+				"example-cfp",
+				"secret",
+				request,
+			).load();
+
+			// Assert
+			await expect(result).rejects.toMatchObject({
+				code: "unavailable",
+				context: { reason: "timeout" },
+				message: "Proposal source unavailable.",
+			});
+		},
+	);
 	it("rejects an oversized response before parsing", async () => {
 		// Arrange
 		const request = vi

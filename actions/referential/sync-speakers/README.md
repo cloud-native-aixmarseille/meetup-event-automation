@@ -20,9 +20,12 @@ for branch concurrency and reviewed publication.
 | `speaker-count`       | Validated candidate speaker count.                     |
 | `retry-after-seconds` | Required retry delay after rate limiting.              |
 | `pr-title`            | Localized PR title.                                    |
-| `pr-body`             | Localized review and freshness guidance.               |
+| `pr-body`             | Localized review guidance or failed-stage diagnostics. |
 | `diagnostics`         | Redacted shared-runner diagnostic JSON.                |
 
 Any failed synchronization fails the action and prevents workflow publication.
+Annotations and the job summary identify the failed stage and provide recovery
+instructions. Source failures include safe HTTP statuses or zero-based invalid
+field positions; catalog validation retains its specific diagnostic codes.
 Committed mappings and local supplements remain unchanged. Event runs still require a fresh source profile snapshot. See [Conference Hall setup and
 recovery](../../../docs/integrations/conference-hall.md).

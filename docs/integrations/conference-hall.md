@@ -94,7 +94,37 @@ Review and merge the private PR to register new identities and update the CSV
 snapshot and generated form choices. Existing linked profiles are live from
 Conference Hall regardless of whether a later snapshot PR has merged. An
 unchanged snapshot creates no new diff or PR. A failed snapshot sync leaves local
-files unchanged and does not establish live source freshness.
+committed files unchanged and does not establish live source freshness.
+
+## Diagnose speaker synchronization failures
+
+Read the failed action's annotations and job summary. They identify the failed
+stage: reading the local catalog, loading the export, merging identities,
+validating the candidate, checking the form, saving the catalog or updating the
+form. The `diagnostics` output retains canonical English codes and messages;
+annotations, summaries and failed-refresh PR guidance use the selected locale.
+
+- `speaker-sync.authentication` includes HTTP 401 or 403. Verify the repository's
+  `CONFERENCE_HALL_API_KEY` matches **Settings > Web API** for the configured CFP.
+- `speaker-sync.event-not-found` includes HTTP 404. Verify the CFP slug in
+  `CONFERENCE_HALL_EVENT`.
+- `speaker-sync.schema` identifies the response field by zero-based proposal and
+  speaker positions, without logging its value. Check that field in the CFP's
+  Web API response.
+- `speaker-sync.mapping-required` requires manual identity review. Add the three
+  source mapping columns to the existing CSV row and retain its `speaker_id`.
+- Catalog validation retains specific diagnostic codes and zero-based field
+  positions. Correct those fields before retrying.
+- Network, timeout, malformed JSON, response-size, rate-limit and conflict
+  diagnostics give their own recovery instructions. Rate limiting also sets
+  `retry-after-seconds`.
+
+Unknown exceptions report the failed stage and redact private exception
+contents. Reproduce that stage on a trusted runner if further inspection is
+needed. Never publish raw exports or contact records. Failed actions do not
+publish the candidate branch; they can update an existing private PR's guidance.
+
+## Live profiles and concurrent updates
 
 Event evaluation and recipient preparation share one in-memory source snapshot
 and one local catalog revision per invocation. Email uses the current source
