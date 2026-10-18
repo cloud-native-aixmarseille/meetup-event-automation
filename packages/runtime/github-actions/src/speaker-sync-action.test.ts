@@ -1,4 +1,5 @@
 import { ProposalSourceError } from "@meetup-automation/referential";
+import { SpeakerSynchronizationError } from "@meetup-automation/journey";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SpeakerSyncAction } from "./speaker-sync-action.js";
 import { ActionMessages } from "./i18n/action-messages.js";
@@ -78,7 +79,10 @@ describe("SpeakerSyncAction", () => {
 	it("exposes the retry delay when the source is rate-limited", async () => {
 		// Arrange
 		boundary.synchronize.mockRejectedValue(
-			new ProposalSourceError("rate-limited", 120),
+			new SpeakerSynchronizationError(
+				"load-source",
+				new ProposalSourceError("rate-limited", 120),
+			),
 		);
 		// Act
 		const report = await SpeakerSyncAction.run();
