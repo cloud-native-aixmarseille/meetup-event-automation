@@ -3,8 +3,10 @@
 Conference Hall is authoritative for linked speaker profiles and selected talk
 content. Each event run reads the current CFP export and combines its
 speaker names, companies, email addresses and picture URLs with committed local
-IDs and organizer-maintained fields such as phone numbers. Profile and selected
-proposal edits take effect on the next reconciliation without a CSV merge.
+IDs and organizer-maintained fields such as phone numbers. Profiles include
+speakers from active and archived proposals; talk selection uses active proposals.
+Profile and selected proposal edits take effect on the next reconciliation
+without a CSV merge.
 Issues without proposal references retain manually maintained talk text; linked
 speaker profiles still refresh from Conference Hall.
 
@@ -23,7 +25,12 @@ secret. Both settings are required by both event workflows and every action
 that refreshes profiles or proposals. Omitted or blank values fail before
 reconciliation. Forward both settings explicitly. Requests always use
 `https://conference-hall.io`; issue content cannot choose a credential target.
-The adapter uses a 15-second timeout, a 5 MiB response limit and no redirects.
+The adapter reads both the default export and `?status=archived`, because the
+default export omits archived proposals. Each request uses a 15-second timeout,
+a 5 MiB response limit and no redirects. Matching profile IDs must have identical
+source-owned fields across both exports; conflicting profiles stop the refresh.
+Speakers without a submitted proposal are absent from these exports and need
+separate identity review before they can be linked.
 
 Run the active-event audit on a schedule as well as issue changes and manual
 requests. Source edits alone do not trigger GitHub Actions; propagation occurs
@@ -179,9 +186,10 @@ validation and form projection continue to operate on the committed snapshot.
 
 The documented API limit is 60 requests per hour per client IP. Each action
 invocation shares one in-memory snapshot; event, feedback, asset and communication
-actions resolve independently. Budget up to four requests per event,
-plus speaker sync, and allow capacity for other runners sharing an IP. Stagger
-or reduce consumer audit frequency for larger catalogs. No persisted export
+actions resolve independently. Each source snapshot requires two requests, one
+for active proposals and one for archived proposals. Budget up to eight requests
+per event, plus two for speaker sync, and allow capacity for other runners sharing
+an IP. Stagger or reduce consumer audit frequency for larger catalogs. No persisted export
 cache, artifact or raw-output channel is used.
 
 A 429 response defers work without an immediate retry. The synchronization action

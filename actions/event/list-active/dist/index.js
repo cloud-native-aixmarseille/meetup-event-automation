@@ -39728,9 +39728,21 @@ var ConferenceHallProposalSource = class {
       throw new ProposalSourceError("unavailable", void 0, {
         reason: "configuration"
       });
+    const active = await this.fetchExport("");
+    const archived = await this.fetchExport("?status=archived");
+    const speakers = /* @__PURE__ */ new Map();
+    for (const speaker of [...active.speakers, ...archived.speakers]) {
+      const existing = speakers.get(speaker.id);
+      if (existing && JSON.stringify(existing) !== JSON.stringify(speaker))
+        throw new ProposalSourceError("conflict");
+      speakers.set(speaker.id, speaker);
+    }
+    return { ...active, speakers: [...speakers.values()] };
+  }
+  async fetchExport(suffix) {
     try {
       const response = await this.request(
-        `https://conference-hall.io/api/v1/event/${this.event}`,
+        `https://conference-hall.io/api/v1/event/${this.event}${suffix}`,
         {
           headers: { "X-API-Key": this.apiKey, Accept: "application/json" },
           redirect: "error",
