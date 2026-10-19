@@ -3,6 +3,7 @@
 Status: Accepted; partially superseded by
 [ADR 0014](0014-consolidated-post-event-follow-up.md) for post-event eligibility, comments and notifications.
 The unused post-recovery command is removed by [ADR 0018](0018-remove-invariant-action-options.md).
+Closed-issue audit eligibility is superseded by [ADR 0019](0019-archive-closed-meetup-issues.md).
 
 Date: 2026-10-14
 

@@ -37846,11 +37846,12 @@ var ListActiveEvents = class _ListActiveEvents {
       if (++pages > 20) throw new EventPaginationError("audit-page-limit");
       const page = await this.dependencies.repository.listPage({
         ...input,
+        includeClosed: false,
         cursor
       });
       for (const document of page.items) {
         const identityKey = `${document.identity.repository}#${document.identity.issueNumber}`;
-        if (seenEvents.has(identityKey)) {
+        if (document.issueState === "closed" || seenEvents.has(identityKey)) {
           continue;
         }
         seenEvents.add(identityKey);

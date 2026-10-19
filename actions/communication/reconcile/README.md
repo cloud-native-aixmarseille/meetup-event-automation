@@ -44,7 +44,7 @@ Reconcile due meetup communications and dispatch them through the configured mai
     # This input is required.
     slides-ready: ""
 
-    # Direct presentation file URL from the asset action's drive-files slides-link entry. Supply on every invocation; invalid links block due email batches.
+    # Direct presentation file URL from the asset action's drive-files slides-link entry. Supply on every invocation; it may be empty when slides-ready is false. Unavailable slides block due email batches.
     # This input is required.
     slides-url: ""
 
@@ -95,7 +95,7 @@ Reconcile due meetup communications and dispatch them through the configured mai
 | **`locale`**                     | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.                                                                                                                     | **true**     | -           |
 | **`issue-number`**               | GitHub issue number in the caller repository containing the meetup event document to inspect.                                                                                                                                                          | **true**     | -           |
 | **`slides-ready`**               | Whether managed slides content is ready. False holds email batches that require slides. Copy-only slides use true.                                                                                                                                     | **true**     | -           |
-| **`slides-url`**                 | Direct presentation file URL from the asset action's drive-files slides-link entry. Supply on every invocation; invalid links block due email batches.                                                                                                 | **true**     | -           |
+| **`slides-url`**                 | Direct presentation file URL from the asset action's drive-files slides-link entry. Supply on every invocation; it may be empty when slides-ready is false. Unavailable slides block due email batches.                                                                                                 | **true**     | -           |
 | **`openfeedback-api-key`**       | OpenFeedback organization API key used to read existing talk results for speaker thank-you emails. Missing or unresolved results block the thank-you batch.                                                                                            | **true**     | -           |
 | **`github-token`**               | Token for the caller repository. Requires issues:write for approval requests, checklist completion, delivery ledger, and diagnostic comments, and metadata:read to verify approvers.                                                                   | **true**     | -           |
 | **`managed-comment-author`**     | Trusted bot login allowed to create or update managed approval, delivery ledger and communication diagnostic comments, for example my-app[bot].                                                                                                        | **true**     | -           |

@@ -62,7 +62,6 @@ export class EventActions {
 		const outcome = await container.get(ListActiveEvents).execute({
 			repository,
 			label: config.event["issue-label"],
-			includeClosed: true,
 			pageSize: 100,
 		});
 		const issueNumbers = outcome.events.map(

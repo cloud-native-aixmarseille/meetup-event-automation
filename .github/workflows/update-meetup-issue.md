@@ -21,7 +21,7 @@
 
 ## Overview
 
-Reusable workflow that checks one meetup issue and applies the due
+Reusable workflow that checks one open meetup issue and applies the due
 communication and issue updates needed to keep it current.
 
 The workflow creates a separate GitHub App installation token for

@@ -78,16 +78,19 @@ export class CommunicationAction {
 			"issue-number",
 			core.getInput("issue-number", { required: true }),
 		);
+		const slidesReady = RuntimeInput.booleanInput(
+			"slides-ready",
+			core.getInput("slides-ready", { required: true }),
+		);
 		const { owner, repo } = context.repo;
 		const outcome = await CommunicationRuntime.runCommunicationReconcile({
 			locale: messages.locale,
 			...ConferenceHallInput.read(),
 			issueNumber,
-			slidesUrl: core.getInput("slides-url", { required: true }),
-			slidesReady: RuntimeInput.booleanInput(
-				"slides-ready",
-				core.getInput("slides-ready", { required: true }),
-			),
+			slidesUrl: slidesReady
+				? core.getInput("slides-url", { required: true })
+				: undefined,
+			slidesReady,
 			openFeedbackApiKey: core.getInput("openfeedback-api-key", {
 				required: true,
 			}),

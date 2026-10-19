@@ -176,7 +176,7 @@ describe("organizer approval requests", () => {
 		expect(f.react).toHaveBeenCalledTimes(2);
 		expect(f.dispatch).toHaveBeenCalledTimes(1);
 	});
-	it("finalizes legacy requests without inventing a reference or reposting Slack", async () => {
+	it("retains a decision on a sent notification without a message reference", async () => {
 		// Arrange
 		const f = fixture();
 		f.dispatch.mockResolvedValue({ outcome: "accepted" });
@@ -185,8 +185,21 @@ describe("organizer approval requests", () => {
 		// Act
 		const result = await f.approvals.request(request);
 		// Assert
-		expect(result).toEqual({ status: "approved", notificationFailed: true });
+		expect(result).toEqual({ status: "approved", notificationFailed: false });
 		expect(f.comments[0]?.body).toContain("✅ **Approved**");
+		expect(f.react).not.toHaveBeenCalled();
+		expect(f.dispatch).toHaveBeenCalledTimes(1);
+	});
+	it("keeps an uncertain notification visible after an organizer decision without reposting", async () => {
+		// Arrange
+		const f = fixture();
+		f.dispatch.mockResolvedValue({ outcome: "uncertain" });
+		await f.approvals.request(request);
+		decision(f);
+		// Act
+		const result = await f.approvals.request(request);
+		// Assert
+		expect(result).toEqual({ status: "approved", notificationFailed: true });
 		expect(f.react).not.toHaveBeenCalled();
 		expect(f.dispatch).toHaveBeenCalledTimes(1);
 	});

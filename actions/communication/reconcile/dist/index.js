@@ -37867,11 +37867,12 @@ var ListActiveEvents = class _ListActiveEvents {
       if (++pages > 20) throw new EventPaginationError("audit-page-limit");
       const page = await this.dependencies.repository.listPage({
         ...input,
+        includeClosed: false,
         cursor
       });
       for (const document of page.items) {
         const identityKey = `${document.identity.repository}#${document.identity.issueNumber}`;
-        if (seenEvents.has(identityKey)) {
+        if (document.issueState === "closed" || seenEvents.has(identityKey)) {
           continue;
         }
         seenEvents.add(identityKey);
@@ -41450,7 +41451,7 @@ var ApprovalNotifications = class {
   async react(record, commentId) {
     if (record.kind === "email-thanks") return false;
     if (!record.decision || record.reactionSent) return false;
-    if (!record.notificationMessage) return true;
+    if (!record.notificationMessage) return record.notification !== "sent";
     const before = this.presenter.issue(record, record.decision);
     try {
       const accepted = await this.notifications.react(
@@ -60221,16 +60222,17 @@ var CommunicationAction = class _CommunicationAction {
       "issue-number",
       getInput("issue-number", { required: true })
     );
+    const slidesReady = RuntimeInput.booleanInput(
+      "slides-ready",
+      getInput("slides-ready", { required: true })
+    );
     const { owner, repo } = context2.repo;
     const outcome = await CommunicationRuntime.runCommunicationReconcile({
       locale: messages.locale,
       ...ConferenceHallInput.read(),
       issueNumber,
-      slidesUrl: getInput("slides-url", { required: true }),
-      slidesReady: RuntimeInput.booleanInput(
-        "slides-ready",
-        getInput("slides-ready", { required: true })
-      ),
+      slidesUrl: slidesReady ? getInput("slides-url", { required: true }) : void 0,
+      slidesReady,
       openFeedbackApiKey: getInput("openfeedback-api-key", {
         required: true
       }),

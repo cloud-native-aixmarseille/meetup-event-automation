@@ -333,6 +333,31 @@ describe("communication action report facts", () => {
 		);
 	});
 
+	it("reports unavailable slides without an input failure when assets have no presentation", async () => {
+		// Arrange
+		vi.stubEnv("INPUT_SLIDES-READY", "false");
+		vi.stubEnv("INPUT_SLIDES-URL", "");
+		boundary.execute.mockResolvedValue(
+			ManageMeetupCommunications.emptyCommunicationResult("check", [
+				{ code: "communication.slides-unavailable", severity: "error" },
+			]),
+		);
+
+		// Act
+		const report = await CommunicationAction.runCommunicationReconcileAction();
+
+		// Assert
+		expect(boundary.execute).toHaveBeenCalledWith(
+			expect.objectContaining({ slidesReady: false, slidesUrl: undefined }),
+		);
+		expect(report.diagnostics).toContainEqual(
+			expect.objectContaining({
+				code: "communication.slides-unavailable",
+				severity: "error",
+			}),
+		);
+	});
+
 	it.each(["report-errors-to-issue", "slides-ready"])(
 		"rejects an invalid %s before executing communications",
 		async (input) => {

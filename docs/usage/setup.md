@@ -108,13 +108,13 @@ on:
         unassigned,
         labeled,
         unlabeled,
-        closed,
       ]
 permissions: {}
 jobs:
   manage:
     if: >-
       ${{ !github.event.issue.pull_request &&
+          github.event.issue.state == 'open' &&
           (github.event_name != 'issue_comment' ||
            (github.event.action == 'edited' &&
             github.event.sender.type == 'User' &&

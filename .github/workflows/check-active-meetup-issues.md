@@ -21,7 +21,7 @@
 
 ## Overview
 
-Reusable workflow that checks active meetup issues, evaluates their current
+Reusable workflow that checks open meetup issues, evaluates their current
 state, and processes due communications under the shared per-event lock.
 Communication errors are recorded in the meetup issue without failing the audit;
 execution and comment persistence failures still fail the job.

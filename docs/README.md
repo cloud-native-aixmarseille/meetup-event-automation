@@ -84,6 +84,7 @@ for implemented behavior and contributor conventions.
 - [ADR-0016: Render the current host's public logo](adr/0016-render-host-logos.md)
 - [ADR-0017: Require explicit action inputs and consumed outputs](adr/0017-explicit-action-interfaces.md)
 - [ADR-0018: Remove invariant options and require operational output consumers](adr/0018-remove-invariant-action-options.md)
+- [ADR-0019: Archive closed meetup issues](adr/0019-archive-closed-meetup-issues.md)
 
 ## Directory layout
 
@@ -128,7 +129,8 @@ docs/
     ├── 0015-extend-asset-render-fields.md
     ├── 0016-render-host-logos.md
     ├── 0017-explicit-action-interfaces.md
-    └── 0018-remove-invariant-action-options.md
+    ├── 0018-remove-invariant-action-options.md
+    └── 0019-archive-closed-meetup-issues.md
 ```
 
 Action references stay beside `action.yml`; workflow references stay beside

@@ -432,13 +432,14 @@ describe("public reusable workflow contracts", () => {
 });
 
 describe("organizer decision workflow triggers", () => {
-	it("accepts human edits to bot requests while excluding pull requests and bot edits", async () => {
+	it("accepts human edits to bot requests only on open issues", async () => {
 		// Arrange
 		const workflow = await readWorkflow("update-meetup-issue");
 		// Act
 		const guard = workflow.jobs?.manage?.if ?? "";
 		// Assert
 		expect(guard).toContain("!github.event.issue.pull_request");
+		expect(guard).toContain("github.event.issue.state == 'open'");
 		expect(guard).toContain("github.event_name != 'issue_comment'");
 		expect(guard).toContain("github.event.action == 'edited'");
 		expect(guard).toContain("github.event.sender.type == 'User'");

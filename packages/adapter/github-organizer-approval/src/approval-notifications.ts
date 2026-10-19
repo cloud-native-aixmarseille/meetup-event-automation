@@ -45,7 +45,7 @@ export class ApprovalNotifications {
 	async react(record: StoredApproval, commentId: number): Promise<boolean> {
 		if (record.kind === "email-thanks") return false;
 		if (!record.decision || record.reactionSent) return false;
-		if (!record.notificationMessage) return true;
+		if (!record.notificationMessage) return record.notification !== "sent";
 		const before = this.presenter.issue(record, record.decision);
 		try {
 			const accepted = await this.notifications.react(

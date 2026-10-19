@@ -22,7 +22,7 @@
 
 ## Overview
 
-List active meetup issue numbers from the caller repository using the configured event label and lifecycle rules. Publish redacted diagnostics in annotations, logs, and the job summary.
+List open meetup issue numbers from the caller repository using the configured event label. Publish redacted diagnostics in annotations, logs, and the job summary.
 
 <!-- overview:end -->
 <!-- usage:start -->
@@ -60,7 +60,7 @@ List active meetup issue numbers from the caller repository using the configured
 
 | **Output**          | **Description**                                                                                                          |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| **`issue-numbers`** | JSON array of meetup issue numbers, including closed issues requiring recovery checks selected for downstream workflows. |
+| **`issue-numbers`** | JSON array of open meetup issue numbers selected for downstream workflows. |
 
 <!-- outputs:end -->
 <!-- examples:start -->
