@@ -2,6 +2,7 @@ import {
 	ProposalSourceError,
 	type ProposalSnapshot,
 	type ProposalSource,
+	type SourceSpeaker,
 } from "@meetup-automation/referential";
 import { ProposalExportParser } from "./proposal-export-parser.js";
 
@@ -21,9 +22,23 @@ export class ConferenceHallProposalSource implements ProposalSource {
 			throw new ProposalSourceError("unavailable", undefined, {
 				reason: "configuration",
 			});
+		const active = await this.fetchExport("");
+		const archived = await this.fetchExport("?status=archived");
+		const speakers = new Map<string, SourceSpeaker>();
+		for (const speaker of [...active.speakers, ...archived.speakers]) {
+			const existing = speakers.get(speaker.id);
+			if (existing && JSON.stringify(existing) !== JSON.stringify(speaker))
+				throw new ProposalSourceError("conflict");
+			speakers.set(speaker.id, speaker);
+		}
+		return { ...active, speakers: [...speakers.values()] };
+	}
+	private async fetchExport(
+		suffix: "" | "?status=archived",
+	): Promise<ProposalSnapshot> {
 		try {
 			const response = await this.request(
-				`https://conference-hall.io/api/v1/event/${this.event}`,
+				`https://conference-hall.io/api/v1/event/${this.event}${suffix}`,
 				{
 					headers: { "X-API-Key": this.apiKey, Accept: "application/json" },
 					redirect: "error",

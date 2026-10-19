@@ -115,9 +115,11 @@ describe("Conference Hall source precedence in runtime composition", () => {
 		const request = vi
 			.fn()
 			.mockResolvedValueOnce(response("Current Name", "Current title"))
+			.mockResolvedValueOnce(Response.json({ proposals: [] }))
 			.mockResolvedValueOnce(
 				response("Renamed Speaker", "Renamed title", "renamed@example.test"),
-			);
+			)
+			.mockResolvedValueOnce(Response.json({ proposals: [] }));
 		vi.stubGlobal("fetch", request);
 		const first = current.create();
 
@@ -179,7 +181,7 @@ describe("Conference Hall source precedence in runtime composition", () => {
 				speakers: [{ id: "speaker-0001", email: "renamed@example.test" }],
 			},
 		});
-		expect(request).toHaveBeenCalledTimes(2);
+		expect(request).toHaveBeenCalledTimes(4);
 		expect(
 			await readFile(join(current.workspaceRoot, "speakers.csv"), "utf8"),
 		).toBe(current.csv);
@@ -219,13 +221,16 @@ describe("Conference Hall source precedence in runtime composition", () => {
 		expect(request).toHaveBeenCalledOnce();
 	});
 
-	it("safely inherits a speaker rename in a manual agenda and retains reference identity", async () => {
+	it("safely inherits an archived speaker rename in a manual agenda and retains reference identity", async () => {
 		// Arrange
 		const current = await fixture(false);
 		const name = "Example, Person: --><script>alert(1)</script>";
 		vi.stubGlobal(
 			"fetch",
-			vi.fn().mockResolvedValue(response(name, "Unselected talk")),
+			vi
+				.fn()
+				.mockResolvedValueOnce(Response.json({ proposals: [] }))
+				.mockResolvedValueOnce(response(name, "Unselected archived talk")),
 		);
 		const container = current.create();
 
@@ -249,7 +254,7 @@ describe("Conference Hall source precedence in runtime composition", () => {
 			},
 		});
 		expect(current.document().body).not.toContain("<script>");
-		expect(current.document().body).not.toContain("Unselected talk");
+		expect(current.document().body).not.toContain("Unselected archived talk");
 		expect(decoded.event.agenda[0].speakers).toMatchObject([
 			{ id: "speaker-0001", displayName: name },
 		]);
