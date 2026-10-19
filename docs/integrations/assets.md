@@ -260,6 +260,12 @@ no integration credentials. Media type and dimensions are checked before
 mutation. Keep source images available to Google after preflight. Prefer stable
 public URLs; changing bytes at the same URL is detected on reconciliation.
 
+The repository provides a [generic speaker portrait](../../assets/template-fallbacks/generic-speaker.png)
+and [generic host logo](../../assets/template-fallbacks/generic-host.png) for
+optional image bindings. Use their raw GitHub URLs pinned to the automation
+commit deployed by the consumer, so fallback images remain publicly retrievable
+without Drive credentials or temporary delivery URLs.
+
 Both renderers use explicit center crop. Slides also accepts `CENTER_INSIDE`;
 use it for logos that should fit entirely inside their frame. Docs rejects it;
 prepare a padded logo image for `CENTER_CROP` when cropping would cut off branding.
