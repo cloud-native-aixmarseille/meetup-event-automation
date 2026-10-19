@@ -1,3 +1,7 @@
+# Goal: Keep committed action bundles consistent with their source.
+# Behavior: Rebuild all action bundles and fail if any bundle is missing or its
+# bytes differ from the committed version.
+
 name: Internal - Checks for dist
 
 on:

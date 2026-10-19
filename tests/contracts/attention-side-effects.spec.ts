@@ -4,13 +4,24 @@ import { automationActionPrefix, readWorkflow } from "./support.js";
 describe("organizer reporting composition", () => {
 	it("preserves evidence from every independent operation and reports after failed dependencies", async () => {
 		// Arrange
-		const workflow = await readWorkflow("reconcile-meetup");
+		const workflow = await readWorkflow("event-reconcile");
+		const reporting = await readWorkflow("__organizer-reconcile-reporting");
 		// Act
 		const report = workflow.jobs?.report;
-		const checklist = report?.steps?.find((step) => step.id === "checklist");
-		const attention = report?.steps?.find((step) => step.id === "attention");
+		const checklist = reporting.jobs?.report?.steps?.find(
+			(step) => step.id === "checklist",
+		);
+		const attention = reporting.jobs?.report?.steps?.find(
+			(step) => step.id === "attention",
+		);
 		// Assert
 		expect(report?.if).toContain("always()");
+		expect(report?.uses).toBe(
+			"./.github/workflows/__organizer-reconcile-reporting.yml",
+		);
+		expect(checklist?.with?.["stage-results"]).toBe(
+			`\${{ inputs.stage-results }}`,
+		);
 		expect(report?.needs).toEqual(["manage", "feedback-link"]);
 		expect(checklist?.uses).toBe(
 			`${automationActionPrefix}organizer/reconcile-checklist`,
@@ -23,29 +34,30 @@ describe("organizer reporting composition", () => {
 			checklist?.with?.["stage-results"],
 		);
 		for (const stage of [
+			"content",
 			"event",
 			"assets",
 			"pdf",
 			"feedback",
 			"communications",
 		]) {
-			expect(checklist?.with?.["stage-results"]).toContain(
+			expect(report?.with?.["stage-results"]).toContain(
 				`needs.manage.outputs.${stage}-outcome`,
 			);
-			expect(checklist?.with?.["stage-results"]).toContain(
+			expect(report?.with?.["stage-results"]).toContain(
 				`needs.manage.outputs.${stage}-diagnostics`,
 			);
 		}
-		expect(checklist?.with?.["stage-results"]).toContain(
+		expect(report?.with?.["stage-results"]).toContain(
 			"needs.feedback-link.outputs.diagnostics",
 		);
-		expect(checklist?.with?.["stage-results"]).toContain(
+		expect(report?.with?.["stage-results"]).toContain(
 			"needs.feedback-link.outputs.outcome",
 		);
 	});
 	it("allows independent event and mail work after a PDF failure while requiring prepared documents", async () => {
 		// Arrange
-		const workflow = await readWorkflow("reconcile-meetup");
+		const workflow = await readWorkflow("event-reconcile");
 		// Act
 		const steps = workflow.jobs?.manage?.steps ?? [];
 		const dependent = steps.filter((step) =>

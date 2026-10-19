@@ -41,6 +41,7 @@ export const messages = {
 	"task.event": "event validation",
 	"task.assets": "assets",
 	"task.feedback": "feedback",
+	"task.content": "content",
 	"task.communications": "communications",
 	"task.unknown": "review the issue",
 } as const;

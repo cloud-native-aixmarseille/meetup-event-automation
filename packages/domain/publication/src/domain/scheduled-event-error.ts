@@ -1,4 +1,5 @@
 export type ScheduledEventFailure =
+	| "content-review"
 	| "approval-pending"
 	| "approval-rejected"
 	| "approval-unavailable"

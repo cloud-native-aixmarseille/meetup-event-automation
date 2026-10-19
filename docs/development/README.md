@@ -111,6 +111,20 @@ updates to the pinned reusable release workflow. Keep manual documentation under
 `docs/`. See [generated references](documentation.md#generated-references) for
 ownership and regeneration. There is no local documentation generator.
 
+### Workflow organization
+
+Public workflow names follow the [lifecycle use cases](../usage/workflows.md).
+Prefix internal CI, maintenance, and implementation helpers with `__`. Keep
+workflow files flat under `.github/workflows/`; phases are filename prefixes.
+Business timing, readiness, approval, and delivery policies stay in their owning
+packages. See [workflow ownership](architecture.md#action-and-workflow-ownership)
+for composition and locking.
+
+Contract checks trace local calls from public entry points through internal
+helpers and forwarded outputs. A reachable helper is an operational caller;
+isolated CI fixtures are not. Do not exempt operational helpers merely because
+their filenames begin with `__`.
+
 ### Action interface rules
 
 Apply these requirements to every owned action and workflow input and output,
@@ -162,7 +176,10 @@ corresponding runtime responsibilities.
 Actions that use AI must follow the shared
 [AI configuration contract](../reference/configuration.md#ai-configuration)
 and parse its inputs through runtime `AiInput`. Reusable workflows must require
-and explicitly forward that contract. Inject the validated configuration through
+and explicitly forward that contract. A workflow composing text and image
+generation requires separate `ai-text-model` and `ai-image-model` inputs and
+binds each to the relevant action's `ai-model`; provider and secret remain shared.
+Inject the validated configuration through
 runtime composition; keep provider-specific credential mapping at the provider
 adapter boundary. Do not add AI settings to actions that do not use them.
 Update the shared parser and its validation when changing supported providers;

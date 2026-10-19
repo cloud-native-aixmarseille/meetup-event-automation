@@ -20,6 +20,7 @@ describe("approval rendering composition", () => {
 					issue: vi.fn().mockReturnValue("introduction"),
 				},
 				"email-thanks": { issue: vi.fn().mockReturnValue("thanks") },
+				"content-review": { issue: vi.fn().mockReturnValue("content") },
 				"meetup-publication": { issue: vi.fn().mockReturnValue("publication") },
 			};
 			const presenter = new ApprovalPresenter(codec, renderers);
@@ -28,6 +29,7 @@ describe("approval rendering composition", () => {
 				"email-introduction": "introduction",
 				"email-thanks": "thanks",
 				"meetup-publication": "publication",
+				"content-review": "content",
 			};
 
 			// Act

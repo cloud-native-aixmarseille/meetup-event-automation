@@ -1,3 +1,7 @@
+# Goal: Keep pull request titles consistent with Conventional Commits.
+# Behavior: Run the shared semantic title check when a pull request is opened,
+# edited or synchronized.
+
 name: "Pull Request - Semantic Lint"
 
 on:

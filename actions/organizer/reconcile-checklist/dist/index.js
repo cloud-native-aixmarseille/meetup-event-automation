@@ -37332,6 +37332,10 @@ var EventDomainComposition = class {
 
 // packages/application/journey/src/approval/approval-request-policy.ts
 var ApprovalRequestPolicy = class {
+  constructor(fingerprints) {
+    this.fingerprints = fingerprints;
+  }
+  fingerprints;
   reviewPhase(facts) {
     if (facts.recipientCount === 0 || facts.followUpActive === false)
       return "inactive";
@@ -37349,7 +37353,8 @@ var ApprovalRequestPolicy = class {
   }
   validate(request2) {
     this.validateIdentity(request2);
-    if (request2.kind === "meetup-publication") return;
+    if (request2.kind === "meetup-publication" || request2.kind === "content-review")
+      return;
     if (!Number.isSafeInteger(request2.recipientCount) || request2.recipientCount <= 0)
       throw new Error("Invalid approval recipient count");
     this.validateEmailCount(request2);
@@ -37366,6 +37371,8 @@ var ApprovalRequestPolicy = class {
   matches(previous, request2, status) {
     if (previous.kind !== request2.kind || previous.revision !== request2.revision || previous.eventDate !== request2.eventDate)
       return false;
+    if (previous.kind === "content-review" && request2.kind === "content-review")
+      return this.fingerprints.digest(previous.content) === this.fingerprints.digest(request2.content);
     if (previous.kind === "meetup-publication" && request2.kind === "meetup-publication")
       return previous.publication.url === request2.publication.url && previous.publication.title === request2.publication.title && previous.publication.startTime === request2.publication.startTime && previous.publication.endTime === request2.publication.endTime && previous.publication.timeZone === request2.publication.timeZone && previous.publication.venue.name === request2.publication.venue.name && previous.publication.venue.city === request2.publication.venue.city;
     return previous.recipientCount === request2.recipientCount && (status !== "pending" || this.sameDetails(previous.details, request2.details));
@@ -37410,6 +37417,7 @@ var COMMUNICATION_MESSAGES = {
   "delivery-already-recorded": "The delivery ledger already contains this intent."
 };
 var RUNTIME_MESSAGES = {
+  "communication.content-review": "Event content needs current organizer approval.",
   "communication.feedback-fetch-failed": "Feedback results could not be fetched.",
   "communication.feedback-unavailable": "Speaker thank-you emails require resolved feedback results for every talk.",
   "communication.slides-unavailable": "Email dispatch requires a valid presentation file URL and ready managed content. Resolve asset diagnostics and run reconciliation again.",
@@ -37677,13 +37685,13 @@ var EvaluateAttention = class {
   }
   approvals(facts, conditions, postEvent) {
     for (const approval of facts.approvals ?? []) {
-      const relevant = approval.kind === (postEvent ? "email-thanks" : "email-introduction") || !postEvent && approval.kind === "meetup-publication";
+      const relevant = approval.kind === (postEvent ? "email-thanks" : "email-introduction") || !postEvent && (approval.kind === "meetup-publication" || approval.kind === "content-review");
       if (approval.status === "pending" && approval.eventDate === facts.eventDate && relevant)
         conditions.push({
           ...this.condition(
             "approval-pending",
             "approvals",
-            approval.kind === "meetup-publication" ? `${approval.kind}:${approval.revision}` : approval.revision,
+            approval.kind === "meetup-publication" || approval.kind === "content-review" ? `${approval.kind}:${approval.revision}` : approval.revision,
             "approval"
           ),
           since: approval.requestedAt,
@@ -38893,7 +38901,7 @@ var ReconcileEventAssets = class {
       };
     }
     const templates = await this.repository.listTemplates();
-    this.validateTemplates(templates);
+    this.validateTemplates(templates, date);
     const month = new Intl.DateTimeFormat("en-US", {
       month: "long",
       timeZone: "UTC"
@@ -38926,7 +38934,12 @@ var ReconcileEventAssets = class {
         )
       );
     }
-    return this.reconcileFiles(container, templates, input, diagnostics);
+    return this.reconcileFiles(
+      container,
+      templates,
+      { ...input, date },
+      diagnostics
+    );
   }
   async reconcileFiles(container, templates, input, diagnostics) {
     const currentFiles = await this.repository.listFiles(container.id);
@@ -38967,7 +38980,7 @@ var ReconcileEventAssets = class {
     const instant = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
     return !Number.isNaN(instant.valueOf()) && instant.toISOString().slice(0, 10) === date;
   }
-  validateTemplates(templates) {
+  validateTemplates(templates, date) {
     if (!templates.length || templates.some(
       (template) => !template.id || !template.name.trim() || !template.kind.trim()
     ) || new Set(templates.map(({ id }) => id)).size !== templates.length || new Set(templates.map(({ kind }) => kind)).size !== templates.length) {
@@ -38975,6 +38988,8 @@ var ReconcileEventAssets = class {
         "Asset templates must have unique IDs, unique kinds, and non-empty names"
       );
     }
+    for (const template of templates)
+      this.collaborators.names.render(template.name, date);
   }
 };
 
@@ -39096,10 +39111,12 @@ var ReconcileSlidePdf = class {
 
 // packages/domain/publication/src/application/reconcile-asset-file.ts
 var ReconcileAssetFile = class {
-  constructor(repository, content) {
+  constructor(names, repository, content) {
+    this.names = names;
     this.repository = repository;
     this.content = content;
   }
+  names;
   repository;
   content;
   async execute(input) {
@@ -39185,10 +39202,7 @@ var ReconcileAssetFile = class {
   }
   async copyOrRename(input, file) {
     const { template } = input;
-    const name = template.name.replaceAll(
-      "[EVENT_DATE:YYYY-MM-DD]",
-      input.date
-    );
+    const name = this.names.render(template.name, input.date);
     if (file?.name === name && file.kind === template.kind) return file;
     input.diagnostics.push({
       code: "publication.assets.file.drift",
@@ -39228,7 +39242,7 @@ var ResolveContentValues = class {
         continue;
       }
       const key = this.collaborators.contentTextKey.of(field);
-      const text = model.text[key] || (!field.required ? field.fallback : void 0);
+      const text = this.text(field, model);
       if (!this.collaborators.contentContractPolicy.text(text))
         throw new ContentError("missing");
       values.push({
@@ -39240,7 +39254,23 @@ var ResolveContentValues = class {
     }
     return values;
   }
+  text(field, model) {
+    if (field.format !== void 0) {
+      const date = field.token === "event.date" || field.token === "next_event.date" ? model.dates?.[field.token] : void 0;
+      if (date) {
+        return this.collaborators.templates.value({
+          kind: "date",
+          value: date,
+          format: field.format
+        });
+      }
+      return field.required ? void 0 : field.fallback;
+    }
+    const text = model.text[this.collaborators.contentTextKey.of(field)] || (!field.required ? field.fallback : void 0);
+    return text === void 0 ? void 0 : this.collaborators.templates.value({ kind: "text", value: text });
+  }
   async image(field, model) {
+    if (field.token === "event.cover") return this.cover(field, model);
     const host = field.token === "host.logo";
     const picture = host ? model.hostLogo : model.pictures[field.slot];
     const hostId = host ? model.hostLogo?.hostId : void 0;
@@ -39280,6 +39310,41 @@ var ResolveContentValues = class {
         fit: field.fit
       };
     }
+  }
+  async cover(field, model) {
+    if (!model.cover) throw new ContentError("missing");
+    const validated = await this.images.validate(model.cover);
+    if (validated.fingerprint !== model.cover.fingerprint)
+      throw new ContentError("image");
+    return {
+      type: "image",
+      key: field.slot,
+      image: validated.source,
+      fingerprint: this.collaborators.contentFingerprint.of(
+        `${validated.fingerprint}:${model.cover.id}:${model.cover.description}:${field.fit}`
+      ),
+      fit: field.fit,
+      fallback: false
+    };
+  }
+};
+
+// packages/domain/publication/src/domain/asset-file-name.ts
+var AssetFileName = class {
+  constructor(templates) {
+    this.templates = templates;
+  }
+  templates;
+  render(templateName, date) {
+    return this.templates.render(templateName, (part) => {
+      if (part.entity !== "event")
+        throw new Error("Unsupported asset filename entity");
+      if (part.property !== "date")
+        throw new Error("Unsupported event filename property");
+      if (!part.argument)
+        throw new Error("Asset filename date format is required");
+      return { kind: "date", value: date, format: part.argument };
+    });
   }
 };
 
@@ -39483,21 +39548,32 @@ var ContentContractPolicy = class {
       (item) => item === field.token
     );
     const slotted = SLOTTED_TEXT_TOKENS.some((item) => item === token);
-    if (!token || typeof field.required !== "boolean" || (slotted ? !this.name(field.slot) : field.slot !== void 0) || !this.keys(field, ["type", "token", "slot", "required", "fallback"]) || (!field.required || field.fallback !== void 0) && !this.text(field.fallback))
+    if (!token || typeof field.required !== "boolean" || (slotted ? !this.name(field.slot) : field.slot !== void 0) || !this.validFormat(field) || !this.keys(field, [
+      "type",
+      "token",
+      "slot",
+      "format",
+      "required",
+      "fallback"
+    ]) || (!field.required || field.fallback !== void 0) && !this.text(field.fallback))
       throw new ContentError("contract");
     const result = {
       type: "text",
       token,
       required: field.required,
       ...typeof field.slot === "string" ? { slot: field.slot } : {},
+      ...typeof field.format === "string" ? { format: field.format } : {},
       ...typeof field.fallback === "string" ? { fallback: field.fallback } : {}
     };
     if (!this.name(this.collaborators.contentTextKey.of(result)))
       throw new ContentError("contract");
     return result;
   }
+  validFormat(field) {
+    return field.format === void 0 || (field.token === "event.date" || field.token === "next_event.date") && typeof field.format === "string" && field.format.trim().length > 0 && field.format.length <= 100 && /^[A-Za-z ./_-]+$/u.test(field.format);
+  }
   image(field, mimeType) {
-    if (field.type !== "image" || field.token !== "speaker.picture" && field.token !== "host.logo" || typeof field.required !== "boolean" || !this.name(field.slot) || !this.name(field.objectId) || !this.keys(field, [
+    if (field.type !== "image" || field.token !== "speaker.picture" && field.token !== "host.logo" && field.token !== "event.cover" || typeof field.required !== "boolean" || !this.name(field.slot) || !this.name(field.objectId) || !this.keys(field, [
       "type",
       "token",
       "slot",
@@ -39512,6 +39588,7 @@ var ContentContractPolicy = class {
     const slides = mimeType === "application/vnd.google-apps.presentation";
     if (!(slides ? this.name(field.pageId) && field.tabId === void 0 : this.name(field.tabId) && field.pageId === void 0) || field.fit !== "CENTER_CROP" && !(slides && field.fit === "CENTER_INSIDE"))
       throw new ContentError("contract");
+    this.coverContract(field);
     const fallback = this.fallback(field.fallback, field.required);
     return {
       type: "image",
@@ -39524,6 +39601,10 @@ var ContentContractPolicy = class {
       ...typeof field.tabId === "string" ? { tabId: field.tabId } : {},
       ...fallback ? { fallback } : {}
     };
+  }
+  coverContract(field) {
+    if (field.token === "event.cover" && (!field.required || field.fallback !== void 0))
+      throw new ContentError("contract");
   }
   fallback(value, required) {
     if (value === void 0 && required) return void 0;
@@ -39868,8 +39949,16 @@ var ContentRenderPlan = class {
 
 // packages/domain/publication/src/domain/content-text-key.ts
 var ContentTextKey = class {
+  constructor(fingerprints) {
+    this.fingerprints = fingerprints;
+  }
+  fingerprints;
   of(field) {
-    return field.slot ? `${field.token}:${field.slot}` : field.token;
+    return field.format !== void 0 ? `${field.token}:format:${this.fingerprints.of(field.format)}` : this.reference(field);
+  }
+  reference(field) {
+    const argument = field.format ?? field.slot;
+    return argument === void 0 ? field.token : `${field.token}:${argument}`;
   }
 };
 
@@ -40364,7 +40453,7 @@ var PublicationDomainComposition = class {
     });
   }
   contentTextKey() {
-    return new ContentTextKey();
+    return new ContentTextKey(this.contentFingerprint());
   }
   feedbackLinkSelection() {
     return new FeedbackLinkSelection({ feedbackPolicy: this.feedbackPolicy() });
@@ -40399,7 +40488,7 @@ var PublicationDomainComposition = class {
       ...args
     );
   }
-  reconcileAssetContent(...args) {
+  reconcileAssetContent(templates, ...args) {
     return new ReconcileAssetContent(
       {
         contentContractPolicy: this.contentContractPolicy(),
@@ -40408,25 +40497,30 @@ var PublicationDomainComposition = class {
         contentManifestPolicy: this.contentManifestPolicy(),
         contentRecoveryFingerprint: this.contentRecoveryFingerprint(),
         contentRecoveryPlan: this.contentRecoveryPlan(),
-        createResolveContentValues: (...args2) => this.resolveContentValues(...args2)
+        createResolveContentValues: (...args2) => this.resolveContentValues(templates, ...args2)
       },
       ...args
     );
   }
-  reconcileAssetFile(...args) {
-    return new ReconcileAssetFile(...args);
+  reconcileAssetFile(names, ...args) {
+    return new ReconcileAssetFile(names, ...args);
   }
-  reconcileEventAssets(...args) {
+  assetFileName(templates) {
+    return new AssetFileName(templates);
+  }
+  reconcileEventAssets(names, ...args) {
     return new ReconcileEventAssets(
       {
-        createReconcileAssetFile: (...args2) => this.reconcileAssetFile(...args2)
+        names,
+        createReconcileAssetFile: (...args2) => this.reconcileAssetFile(names, ...args2)
       },
       ...args
     );
   }
-  resolveContentValues(...args) {
+  resolveContentValues(templates, ...args) {
     return new ResolveContentValues(
       {
+        templates,
         contentTextKey: this.contentTextKey(),
         contentContractPolicy: this.contentContractPolicy(),
         contentFingerprint: this.contentFingerprint()
@@ -40513,12 +40607,33 @@ var AutomationConfigFactory = class {
   }
 };
 
+// packages/application/journey/src/approval/approval-value-fingerprint.ts
+var ApprovalValueFingerprint = class {
+  constructor(hash) {
+    this.hash = hash;
+  }
+  hash;
+  digest(value) {
+    return this.hash.of(JSON.stringify(this.canonical(value)));
+  }
+  canonical(value) {
+    if (value === void 0) return null;
+    if (Array.isArray(value)) return value.map((item) => this.canonical(item));
+    if (value && typeof value === "object")
+      return Object.fromEntries(
+        Object.entries(value).sort(([a], [b2]) => a < b2 ? -1 : a > b2 ? 1 : 0).map(([key, item]) => [key, this.canonical(item)])
+      );
+    return value;
+  }
+};
+
 // packages/application/journey/src/result/attention-stage-reports.ts
 var ATTENTION_STAGE_OWNERS = [
   "event",
   "assets",
   "feedback",
-  "communications"
+  "communications",
+  "content"
 ];
 
 // packages/application/journey/src/result/attention-stage-evaluation.ts
@@ -40587,6 +40702,16 @@ var AttentionStageEvaluation = class {
 
 // packages/application/journey/src/result/diagnostic-policy.ts
 var ORGANIZER_CODES = /* @__PURE__ */ new Set([
+  "publication.content.prerequisites",
+  "publication.content.pending",
+  "publication.content.rejected",
+  "publication.content.iteration-requested",
+  "publication.content.recovery",
+  "publication.content.stale",
+  "publication.content.title-review",
+  "publication.content.description-review",
+  "publication.meetup.content-review",
+  "communication.content-review",
   "publication.assets.pdf.source",
   "publication.assets.pdf.source-pending",
   "publication.assets.pdf.revision",
@@ -41384,7 +41509,9 @@ var SpeakerSynchronizationStageRunner = class {
 // packages/application/journey/src/policy-composition.ts
 var JourneyPolicyComposition = class {
   approvalRequestPolicy() {
-    return new ApprovalRequestPolicy();
+    return new ApprovalRequestPolicy(
+      new ApprovalValueFingerprint(new ContentFingerprint())
+    );
   }
   assetParticipantProjection() {
     return new AssetParticipantProjection({
@@ -41862,6 +41989,8 @@ var ManageMeetupPublication = class {
     ))
       return this.result("blocked", "source");
     const event = evaluation.event;
+    if ((await this.dependencies.contentGate.blocked(event)).length)
+      return this.result("blocked", "content-review");
     if (event.issueState !== "open" || ["cancelled", "postponed", "held"].includes(event.occurrenceStatus ?? ""))
       return this.result("skipped", "inactive");
     const draft = this.collaborators.meetupPublicationProjection.create(
@@ -41976,12 +42105,19 @@ var ManageMeetupPublication = class {
     await this.persist(current, published);
     return { status: "updated", diagnostics };
   }
-  ensureCurrent(source) {
-    return this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
+  async ensureCurrent(source) {
+    await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
       this.dependencies.repository,
       source.identity,
       source
     );
+    const evaluated = await this.dependencies.manageEvent.execute({
+      identity: source.identity,
+      sourceDocument: source,
+      mode: "check"
+    });
+    if (evaluated.skipped || (await this.dependencies.contentGate.blocked(evaluated.event)).length)
+      throw new ScheduledEventError("content-review");
   }
   result(status, code) {
     return {
@@ -42086,16 +42222,27 @@ var ReconcileMeetupDocuments = class {
     );
   }
   async reconcile(source, evaluation, hostName) {
+    const blocked = await this.dependencies.contentGate.blocked(
+      evaluation.event
+    );
+    const contentDiagnostics = blocked.map((field) => ({
+      code: `publication.content.${field}-review`,
+      severity: "error",
+      field,
+      message: "Content requires current organizer approval"
+    }));
+    const model = await this.dependencies.renderProjection?.create(
+      evaluation.event,
+      [...evaluation.diagnostics, ...contentDiagnostics]
+    );
+    const cover = await this.dependencies.contentGate.cover(evaluation.event);
     const assets = await this.dependencies.reconcileAssets.execute({
       eventId: `${source.identity.repository}#${source.identity.issueNumber}`,
       date: evaluation.event.date,
       hostName,
       existingUrl: evaluation.event.publicationLinks.assets,
       mode: "fix",
-      model: await this.dependencies.renderProjection?.create(
-        evaluation.event,
-        evaluation.diagnostics
-      ),
+      model: model ? { ...model, cover } : void 0,
       recovery: this.dependencies.recovery
     });
     await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
@@ -42120,10 +42267,13 @@ var ReconcileMeetupDocuments = class {
       assetUrl: assets.container?.url,
       files: assets.files,
       content: assets.content,
-      diagnostics: assets.diagnostics.map((item) => ({
-        ...item,
-        field: "publicationLinks.assets"
-      }))
+      diagnostics: [
+        ...contentDiagnostics,
+        ...assets.diagnostics.map((item) => ({
+          ...item,
+          field: "publicationLinks.assets"
+        }))
+      ]
     };
   }
   skipped(diagnostics) {
@@ -46116,6 +46266,46 @@ ${messages3.t("comment.resolved")}`;
 // packages/adapter/event/github-event-comment-repository/src/stage-diagnostic-guidance.ts
 var STAGE_GUIDANCE = [
   [
+    "publication.content.prerequisites",
+    ["Slides & Content", "comment.guidance.content.review"]
+  ],
+  [
+    "publication.content.pending",
+    ["Slides & Content", "comment.guidance.content.review"]
+  ],
+  [
+    "publication.content.rejected",
+    ["Slides & Content", "comment.guidance.content.review"]
+  ],
+  [
+    "publication.content.iteration-requested",
+    ["Slides & Content", "comment.guidance.content.review"]
+  ],
+  [
+    "publication.content.recovery",
+    ["Slides & Content", "comment.guidance.content.review"]
+  ],
+  [
+    "publication.content.stale",
+    ["Slides & Content", "comment.guidance.content.review"]
+  ],
+  [
+    "publication.content.title-review",
+    ["Slides & Content", "comment.guidance.content.review"]
+  ],
+  [
+    "publication.content.description-review",
+    ["Slides & Content", "comment.guidance.content.review"]
+  ],
+  [
+    "publication.meetup.content-review",
+    ["Slides & Content", "comment.guidance.content.review"]
+  ],
+  [
+    "communication.content-review",
+    ["Slides & Content", "comment.guidance.content.review"]
+  ],
+  [
     "publication.assets.pdf.source",
     ["Slides & Content", "comment.guidance.pdf.source"]
   ],
@@ -46891,6 +47081,7 @@ ${this.messages.t("comment.duplicate")}`
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/messages.en.ts
 var EN_MESSAGES = {
+  "comment.guidance.content.review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
   "comment.guidance.proposals.invalid-selection": "Enter distinct proposal numbers, one per line, from their Conference Hall URLs.",
   "comment.guidance.proposals.invalid": "Check the Conference Hall proposal selection and export format.",
   "comment.guidance.proposals.unavailable": "Conference Hall is unavailable. Check the CFP slug and API key, then retry.",
@@ -46960,6 +47151,7 @@ var EN_MESSAGES = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/messages.fr.ts
 var FR_MESSAGES = {
+  "comment.guidance.content.review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
   "comment.guidance.proposals.invalid-selection": "Saisissez les num\xE9ros des URL Conference Hall, un par ligne, sans doublons.",
   "comment.guidance.proposals.invalid": "V\xE9rifiez la s\xE9lection des propositions et le format de l'export Conference Hall.",
   "comment.guidance.proposals.unavailable": "Conference Hall est indisponible. V\xE9rifiez le slug du CFP et la cl\xE9 API, puis r\xE9essayez.",
@@ -49083,6 +49275,7 @@ var AttentionRecord = class {
         "assets",
         "feedback",
         "communications",
+        "content",
         "approvals",
         "delivery"
       ]),
@@ -49695,6 +49888,7 @@ var messages = {
   "task.event": "event validation",
   "task.assets": "assets",
   "task.feedback": "feedback",
+  "task.content": "content",
   "task.communications": "communications",
   "task.unknown": "review the issue"
 };
@@ -49739,6 +49933,7 @@ var messages2 = {
   "task.event": "validation du meetup",
   "task.assets": "ressources",
   "task.feedback": "\xE9valuations",
+  "task.content": "contenu",
   "task.communications": "communications",
   "task.unknown": "consulter le ticket"
 };
@@ -63277,7 +63472,8 @@ var AttentionStageInput = class {
       event: reports[0][1],
       assets: reports[1][1],
       feedback: reports[2][1],
-      communications: reports[3][1]
+      communications: reports[3][1],
+      content: reports[4][1]
     };
   }
   group(value) {
@@ -63657,25 +63853,180 @@ var RuntimeInputComposition = class _RuntimeInputComposition {
   }
 };
 
-// packages/runtime/github-actions/src/assets/asset-date-formatter.ts
-var AssetDateFormatter = class {
+// packages/presentation/templating/src/template-error.ts
+var TemplateError = class extends Error {
+  constructor(code) {
+    super(`Invalid template ${code}`);
+    this.code = code;
+    this.name = "TemplateError";
+  }
+  code;
+};
+
+// packages/presentation/templating/src/date-template-formatter.ts
+var DateTemplateFormatter = class {
   constructor(locale) {
     this.locale = locale;
   }
   locale;
+  format(date, pattern) {
+    const instant = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
+    if (!/^\d{4}-\d{2}-\d{2}$/u.test(date) || Number.isNaN(instant.valueOf()) || instant.toISOString().slice(0, 10) !== date)
+      throw new TemplateError("date");
+    if (pattern === "long")
+      return this.localized(instant, { dateStyle: "long" });
+    if (pattern === "weekday")
+      return this.localized(instant, { dateStyle: "full" });
+    if (pattern === "month") return this.localized(instant, { month: "long" });
+    const tokens = pattern.match(/Y+|M+|D+|d+|[ ./_-]+/gu) ?? [];
+    if (tokens.join("") !== pattern || !tokens.some((token) => /^[YMDd]/u.test(token)))
+      throw new TemplateError("format");
+    return tokens.map((token) => this.token(token, date, instant)).join("");
+  }
+  token(token, date, instant) {
+    switch (token) {
+      case "YYYY":
+        return date.slice(0, 4);
+      case "YY":
+        return date.slice(2, 4);
+      case "MM":
+        return date.slice(5, 7);
+      case "M":
+        return String(Number(date.slice(5, 7)));
+      case "DD":
+        return date.slice(8, 10);
+      case "D":
+        return String(Number(date.slice(8, 10)));
+      case "MMM":
+        return this.localized(instant, { month: "short" });
+      case "MMMM":
+        return this.localized(instant, { month: "long" });
+      case "ddd":
+        return this.localized(instant, { weekday: "short" });
+      case "dddd":
+        return this.localized(instant, { weekday: "long" });
+      default:
+        if (/^[ ./_-]+$/u.test(token)) return token;
+        throw new TemplateError("format");
+    }
+  }
+  localized(instant, options) {
+    return new Intl.DateTimeFormat(this.locale, {
+      ...options,
+      timeZone: "UTC",
+      calendar: "gregory"
+    }).format(instant);
+  }
+};
+
+// packages/presentation/templating/src/template-expression-parser.ts
+var TemplateExpressionParser = class {
+  parse(body, syntax) {
+    const match = syntax === "brackets" ? /^([A-Z][A-Z0-9]*)_([A-Z][A-Z0-9_]*)(?::([^{}[\]]+))?$/u.exec(body) : /^([a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*)(?::([^{}[\]]+))?$/u.exec(
+      body
+    );
+    if (!match) throw new TemplateError("syntax");
+    const reference = syntax === "brackets" ? `${match[1]}.${match[2]}`.toLowerCase() : match[1];
+    const argument = match[syntax === "brackets" ? 3 : 2];
+    if (argument !== void 0 && !argument.trim())
+      throw new TemplateError("syntax");
+    const separator = reference.indexOf(".");
+    return {
+      entity: separator < 0 ? "" : reference.slice(0, separator),
+      property: separator < 0 ? reference : reference.slice(separator + 1),
+      ...argument !== void 0 ? { argument } : {}
+    };
+  }
+};
+
+// packages/presentation/templating/src/template-parser.ts
+var TemplateParser = class {
+  constructor(expressions) {
+    this.expressions = expressions;
+  }
+  expressions;
+  contains(text) {
+    return /\{\{|\}\}|\[[A-Za-z0-9_]*[_:]/u.test(text);
+  }
+  parse(text) {
+    const result = [];
+    const delimiters = /\{\{|\}\}|\[[A-Za-z0-9_]*[_:]/gu;
+    for (let match = delimiters.exec(text); match; match = delimiters.exec(text)) {
+      const start = match.index;
+      if (match[0] === "}}") throw new TemplateError("syntax");
+      const brackets = match[0].startsWith("[");
+      const open2 = brackets ? 1 : 2;
+      const close = brackets ? "]" : "}}";
+      const end = text.indexOf(close, start + open2);
+      if (end < 0) throw new TemplateError("syntax");
+      const expression = this.expressions.parse(
+        text.slice(start + open2, end),
+        brackets ? "brackets" : "braces"
+      );
+      const path = expression.entity ? `${expression.entity}.${expression.property}` : expression.property;
+      result.push({
+        ...expression,
+        reference: path + (expression.argument === void 0 ? "" : `:${expression.argument}`),
+        start,
+        end: end + close.length
+      });
+      delimiters.lastIndex = end + close.length;
+    }
+    return result;
+  }
+};
+
+// packages/presentation/templating/src/template-renderer.ts
+var TemplateRenderer = class {
+  constructor(parser, dates) {
+    this.parser = parser;
+    this.dates = dates;
+  }
+  parser;
+  dates;
+  render(template, resolve4) {
+    let output = "";
+    let offset = 0;
+    for (const expression of this.parser.parse(template)) {
+      output += template.slice(offset, expression.start) + this.value(resolve4(expression));
+      offset = expression.end;
+    }
+    return output + template.slice(offset);
+  }
+  value(value) {
+    return value.kind === "text" ? value.value : this.dates.format(value.value, value.format);
+  }
+};
+
+// packages/presentation/templating/src/dependency-composition.ts
+var TemplatingComposition = class {
+  parser() {
+    return new TemplateParser(new TemplateExpressionParser());
+  }
+  dates(locale) {
+    return new DateTemplateFormatter(locale);
+  }
+  renderer(locale) {
+    return new TemplateRenderer(this.parser(), this.dates(locale));
+  }
+};
+
+// packages/runtime/github-actions/src/assets/asset-date-formatter.ts
+var AssetDateFormatter = class {
+  constructor(dates, locale) {
+    this.dates = dates;
+    this.locale = locale;
+  }
+  dates;
+  locale;
   format(date, timeZone, format = "long") {
-    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return void 0;
+    if (!date) return void 0;
     try {
       new Intl.DateTimeFormat(this.locale, { timeZone });
-      const instant = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
-      if (instant.toISOString().slice(0, 10) !== date) return void 0;
-      if (format === "numeric")
-        return `${date.slice(8, 10)}/${date.slice(5, 7)}/${date.slice(0, 4)}`;
-      const options = format === "month" ? { month: "long" } : { dateStyle: format === "weekday" ? "full" : "long" };
-      return new Intl.DateTimeFormat(this.locale, {
-        ...options,
-        timeZone: "UTC"
-      }).format(instant);
+      return this.dates.format(
+        date,
+        format === "numeric" ? "DD/MM/YYYY" : format
+      );
     } catch {
       return void 0;
     }
@@ -63713,6 +64064,10 @@ var AssetRenderPresenterImpl = class {
   format(input) {
     const { date } = this.collaborators;
     return {
+      dates: {
+        "event.date": input.date,
+        "next_event.date": input.nextEvent?.date
+      },
       text: {
         "event.title": input.title,
         "event.date": date.format(input.date, input.timeZone),
@@ -63847,6 +64202,23 @@ var DIAGNOSTICS_REFERENTIAL_FR = {
 
 // packages/runtime/github-actions/src/i18n/messages.en.ts
 var EN_MESSAGES4 = {
+  "action.event.generate-copy": "Generate event copy",
+  "action.assets.generate-cover": "Generate cover artwork",
+  "action.communication.generate-slack-post": "Generate Slack post",
+  "action.communication.generate-linkedin-post": "Generate LinkedIn post",
+  "action.organizer.review-drafts": "Review drafts",
+  "diagnostic.publication.content.prerequisites": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "diagnostic.publication.content.pending": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "diagnostic.publication.content.rejected": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "diagnostic.publication.content.iteration-requested": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "diagnostic.publication.content.recovery": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "diagnostic.publication.content.stale": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "diagnostic.publication.content.title-review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "diagnostic.publication.content.description-review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "diagnostic.publication.meetup.content-review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "diagnostic.communication.content-review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "report.content.generated": "Content generation evaluated.",
+  "report.content.reviewed": "Content reviews reconciled.",
   "action.assets.reconcile-slides-pdf": "Reconcile slides PDF",
   "action.feedback.reconcile-short-link": "Reconcile shared feedback link",
   "action.organizer.reconcile-checklist": "Reconcile organizer checklist",
@@ -63957,6 +64329,23 @@ var EN_MESSAGES4 = {
 
 // packages/runtime/github-actions/src/i18n/messages.fr.ts
 var FR_MESSAGES4 = {
+  "action.event.generate-copy": "G\xE9n\xE9rer le titre ou la description",
+  "action.assets.generate-cover": "G\xE9n\xE9rer les illustrations",
+  "action.communication.generate-slack-post": "G\xE9n\xE9rer le message Slack",
+  "action.communication.generate-linkedin-post": "G\xE9n\xE9rer la publication LinkedIn",
+  "action.organizer.review-drafts": "V\xE9rifier les propositions",
+  "diagnostic.publication.content.prerequisites": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "diagnostic.publication.content.pending": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "diagnostic.publication.content.rejected": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "diagnostic.publication.content.iteration-requested": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "diagnostic.publication.content.recovery": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "diagnostic.publication.content.stale": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "diagnostic.publication.content.title-review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "diagnostic.publication.content.description-review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "diagnostic.publication.meetup.content-review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "diagnostic.communication.content-review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "report.content.generated": "G\xE9n\xE9ration du contenu \xE9valu\xE9e.",
+  "report.content.reviewed": "Validations du contenu synchronis\xE9es.",
   "action.assets.reconcile-slides-pdf": "Mettre \xE0 jour le PDF des slides",
   "action.feedback.reconcile-short-link": "Mettre \xE0 jour le lien de feedback partag\xE9",
   "action.organizer.reconcile-checklist": "Mettre \xE0 jour la checklist organisateur",
@@ -64231,7 +64620,10 @@ var RuntimePresentationComposition = class _RuntimePresentationComposition {
     container.bind(
       RUNTIME_FACTORIES.assetDateFormatter
     ).toResolvedValue(
-      () => (...args) => new AssetDateFormatter(...args)
+      () => (...args) => new AssetDateFormatter(
+        new TemplatingComposition().dates(args[0]),
+        ...args
+      )
     );
     container.bind(
       RUNTIME_FACTORIES.assetRenderPresenter

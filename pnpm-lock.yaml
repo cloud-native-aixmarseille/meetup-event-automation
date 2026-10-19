@@ -132,6 +132,12 @@ importers:
         specifier: workspace:*
         version: link:../../../domain/event
 
+  packages/adapter/generation/gemini-generation-gateway:
+    dependencies:
+      '@meetup-automation/journey':
+        specifier: workspace:*
+        version: link:../../../application/journey
+
   packages/adapter/journey/github-organizer-approval:
     dependencies:
       '@meetup-automation/communication':
@@ -179,6 +185,9 @@ importers:
       '@meetup-automation/publication':
         specifier: workspace:*
         version: link:../../../domain/publication
+      '@meetup-automation/templating':
+        specifier: workspace:*
+        version: link:../../../presentation/templating
 
   packages/adapter/publication/google-drive-asset-repository:
     dependencies:
@@ -188,6 +197,13 @@ importers:
       '@meetup-automation/publication':
         specifier: workspace:*
         version: link:../../../domain/publication
+      image-size:
+        specifier: ^2.0.4
+        version: 2.0.4
+    devDependencies:
+      '@meetup-automation/templating':
+        specifier: workspace:*
+        version: link:../../../presentation/templating
 
   packages/adapter/publication/google-slides-content-repository:
     dependencies:
@@ -197,6 +213,9 @@ importers:
       '@meetup-automation/publication':
         specifier: workspace:*
         version: link:../../../domain/publication
+      '@meetup-automation/templating':
+        specifier: workspace:*
+        version: link:../../../presentation/templating
 
   packages/adapter/publication/https-asset-image-repository:
     dependencies:
@@ -293,6 +312,8 @@ importers:
         specifier: ^3.5.21
         version: 3.5.21
 
+  packages/presentation/templating: {}
+
   packages/runtime/github-actions:
     dependencies:
       '@actions/core':
@@ -313,6 +334,9 @@ importers:
       '@meetup-automation/event':
         specifier: workspace:*
         version: link:../../domain/event
+      '@meetup-automation/gemini-generation-gateway':
+        specifier: workspace:*
+        version: link:../../adapter/generation/gemini-generation-gateway
       '@meetup-automation/github-delivery-ledger':
         specifier: workspace:*
         version: link:../../adapter/communication/github-delivery-ledger
@@ -379,6 +403,9 @@ importers:
       '@meetup-automation/system-clock':
         specifier: workspace:*
         version: link:../../adapter/time/system-clock
+      '@meetup-automation/templating':
+        specifier: workspace:*
+        version: link:../../presentation/templating
       '@meetup-automation/yaml-issue-form-projection':
         specifier: workspace:*
         version: link:../../adapter/journey/yaml-issue-form-projection

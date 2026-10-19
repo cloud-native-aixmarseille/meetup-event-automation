@@ -162,7 +162,10 @@ export function contentFixture(
 				contentRecoveryPlan:
 					new PublicationDomainComposition().contentRecoveryPlan(),
 				createResolveContentValues: (...args) =>
-					new PublicationDomainComposition().resolveContentValues(...args),
+					new PublicationDomainComposition().resolveContentValues(
+						{ value: (value) => value.value },
+						...args,
+					),
 			},
 			dependencies.manifests,
 			{ [mimeType]: dependencies.renderer },

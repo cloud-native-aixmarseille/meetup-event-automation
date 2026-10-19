@@ -14,7 +14,7 @@ and documented in the [API reference](https://api.openfeedback.io/). It uses
 paginated reads, creation with stable IDs and updates with per-record revisions.
 
 Follow [repository setup](../usage/setup.md), then pass these settings to both
-`update-meetup-issue.yml` and `check-active-meetup-issues.yml`:
+`event-reconcile.yml` and `event-reconcile-active.yml`:
 
 | Consumer setting                 | Reusable workflow parameter   | Requirement                                                                          |
 | -------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------ |

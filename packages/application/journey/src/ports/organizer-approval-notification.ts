@@ -15,6 +15,7 @@ export type ApprovalNotificationFacts = {
 } & (
 	| { readonly kind: "email-introduction"; readonly recipientCount: number }
 	| { readonly kind: "meetup-publication" }
+	| { readonly kind: "content-review"; readonly target: string }
 );
 
 export type ApprovalNotificationRequest = ApprovalNotificationFacts & {
@@ -27,6 +28,6 @@ export interface OrganizerApprovalNotification {
 	/** Repeating the same decision reaction must be safe after ambiguous responses. */
 	react(
 		message: ApprovalNotificationMessage,
-		decision: "approved" | "rejected",
+		decision: "approved" | "rejected" | "iteration-requested",
 	): Promise<boolean>;
 }

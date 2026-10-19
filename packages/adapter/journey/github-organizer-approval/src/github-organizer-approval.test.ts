@@ -461,7 +461,10 @@ describe("organizer approval requests", () => {
 			const record = new GithubOrganizerApprovalComposition()
 				.approvalCommentCodec()
 				.read(f.comments[0]?.body ?? "");
-			if (record.kind === "meetup-publication")
+			if (
+				record.kind !== "email-introduction" &&
+				record.kind !== "email-thanks"
+			)
 				throw new Error("Expected an email request");
 			decision(f, {
 				body: f.presenter.issue(
@@ -526,6 +529,10 @@ describe("organizer approval requests", () => {
 									},
 									locale === "en" ? "fr" : "en",
 								),
+							),
+						"content-review":
+							new GithubOrganizerApprovalComposition().contentApprovalPresenter(
+								new GithubOrganizerApprovalComposition().approvalMessages("en"),
 							),
 						"meetup-publication":
 							new GithubOrganizerApprovalComposition().meetupApprovalPresenter(

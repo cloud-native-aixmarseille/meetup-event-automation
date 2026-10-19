@@ -1,3 +1,4 @@
+export type * from "./application/content-media-ports.js";
 export type * from "./application/content-ports.js";
 export type {
 	FeedbackAgenda,
@@ -34,13 +35,21 @@ export type {
 } from "./application/scheduled-event-ports.js";
 export { PublicationDomainComposition } from "./dependency-composition.js";
 export type * from "./domain/asset-content.js";
+export { AssetFileName } from "./domain/asset-file-name.js";
 export { AssetFolderUrlPolicy } from "./domain/asset-folder-url-policy.js";
 export type * from "./domain/asset-render-data.js";
+export type {
+	AssetTemplateRenderer,
+	AssetTemplateValue,
+} from "./domain/asset-template-renderer.js";
 export { CommunityEventUrlPolicy } from "./domain/community-event-url-policy.js";
 export { ContentContractPolicy } from "./domain/content-contract-policy.js";
 export { ContentError } from "./domain/content-error.js";
 export { ContentFingerprint } from "./domain/content-fingerprint.js";
+export type * from "./domain/content-media.js";
+export { ContentMediaChangedError } from "./domain/content-media-changed-error.js";
 export { ContentTextKey } from "./domain/content-text-key.js";
+export { CoverArtwork } from "./domain/cover-artwork.js";
 export { FeedbackLinkSelection } from "./domain/feedback-link-selection.js";
 export { FeedbackPolicy } from "./domain/feedback-policy.js";
 export { FeedbackResolutionError } from "./domain/feedback-resolution-error.js";

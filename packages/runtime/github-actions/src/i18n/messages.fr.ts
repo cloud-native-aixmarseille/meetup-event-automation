@@ -1,5 +1,35 @@
 import type { EN_MESSAGES } from "./messages.en.js";
 export const FR_MESSAGES = {
+	"action.event.generate-copy": "Générer le titre ou la description",
+	"action.assets.generate-cover": "Générer les illustrations",
+	"action.communication.generate-slack-post": "Générer le message Slack",
+	"action.communication.generate-linkedin-post":
+		"Générer la publication LinkedIn",
+	"action.organizer.review-drafts": "Vérifier les propositions",
+	"diagnostic.publication.content.prerequisites":
+		"Vérifiez la proposition de contenu, complétez les faits publics ou proposez un remplacement. Un contenu modifié nécessite une nouvelle validation.",
+	"diagnostic.publication.content.pending":
+		"Vérifiez la proposition de contenu, complétez les faits publics ou proposez un remplacement. Un contenu modifié nécessite une nouvelle validation.",
+	"diagnostic.publication.content.rejected":
+		"Vérifiez la proposition de contenu, complétez les faits publics ou proposez un remplacement. Un contenu modifié nécessite une nouvelle validation.",
+	"diagnostic.publication.content.iteration-requested":
+		"Vérifiez la proposition de contenu, complétez les faits publics ou proposez un remplacement. Un contenu modifié nécessite une nouvelle validation.",
+	"diagnostic.publication.content.recovery":
+		"Vérifiez la proposition de contenu, complétez les faits publics ou proposez un remplacement. Un contenu modifié nécessite une nouvelle validation.",
+	"diagnostic.publication.content.stale":
+		"Vérifiez la proposition de contenu, complétez les faits publics ou proposez un remplacement. Un contenu modifié nécessite une nouvelle validation.",
+	"diagnostic.publication.content.title-review":
+		"Vérifiez la proposition de contenu, complétez les faits publics ou proposez un remplacement. Un contenu modifié nécessite une nouvelle validation.",
+	"diagnostic.publication.content.description-review":
+		"Vérifiez la proposition de contenu, complétez les faits publics ou proposez un remplacement. Un contenu modifié nécessite une nouvelle validation.",
+	"diagnostic.publication.meetup.content-review":
+		"Vérifiez la proposition de contenu, complétez les faits publics ou proposez un remplacement. Un contenu modifié nécessite une nouvelle validation.",
+	"diagnostic.communication.content-review":
+		"Vérifiez la proposition de contenu, complétez les faits publics ou proposez un remplacement. Un contenu modifié nécessite une nouvelle validation.",
+
+	"report.content.generated": "Génération du contenu évaluée.",
+	"report.content.reviewed": "Validations du contenu synchronisées.",
+
 	"action.assets.reconcile-slides-pdf": "Mettre à jour le PDF des slides",
 	"action.feedback.reconcile-short-link":
 		"Mettre à jour le lien de feedback partagé",

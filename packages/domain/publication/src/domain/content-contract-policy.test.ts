@@ -212,3 +212,66 @@ describe("content contract input boundary", () => {
 		expect(parse).toThrowError(expect.objectContaining({ code: "contract" }));
 	});
 });
+
+describe("formatted public text contracts", () => {
+	it("allows independent formats of the same public calendar date", () => {
+		// Arrange
+		const policy = new ContentContractPolicy({
+			contentTextKey: new PublicationDomainComposition().contentTextKey(),
+		});
+		const contract = {
+			version: 1,
+			revision: "one",
+			kind: "slides",
+			fields: [
+				{
+					type: "text",
+					token: "event.date",
+					format: "D MMMM YYYY",
+					required: true,
+				},
+				{
+					type: "text",
+					token: "event.date",
+					format: "YYYY-MM-DD",
+					required: true,
+				},
+			],
+		};
+		// Act
+		const parsed = policy.parse(
+			contract,
+			"slides",
+			"application/vnd.google-apps.presentation",
+		);
+		// Assert
+		expect(parsed).toEqual(contract);
+	});
+	it.each([
+		{ token: "event.title", format: "YYYY" },
+		{ token: "talk.title", slot: "opening", format: "YYYY" },
+		{ token: "event.date", format: "" },
+		{ token: "event.date", format: 42 },
+		{ token: "event.date", slot: "opening", format: "YYYY" },
+	])("rejects invalid format contract %j", (field) => {
+		// Arrange
+		const policy = new ContentContractPolicy({
+			contentTextKey: new PublicationDomainComposition().contentTextKey(),
+		});
+		const contract = {
+			version: 1,
+			revision: "one",
+			kind: "slides",
+			fields: [{ type: "text", required: true, ...field }],
+		};
+		// Act
+		const parse = () =>
+			policy.parse(
+				contract,
+				"slides",
+				"application/vnd.google-apps.presentation",
+			);
+		// Assert
+		expect(parse).toThrow("content contract");
+	});
+});

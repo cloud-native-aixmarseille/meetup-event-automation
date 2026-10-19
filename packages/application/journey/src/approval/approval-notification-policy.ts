@@ -18,6 +18,12 @@ export class ApprovalNotificationPolicy {
 				};
 			case "meetup-publication":
 				return { kind: request.kind, eventDate: request.eventDate };
+			case "content-review":
+				return {
+					kind: request.kind,
+					eventDate: request.eventDate,
+					target: request.content.target,
+				};
 		}
 	}
 }

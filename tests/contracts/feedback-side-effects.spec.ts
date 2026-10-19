@@ -6,9 +6,22 @@ import {
 } from "./support.js";
 
 describe("feedback effect boundaries", () => {
+	it("selects the shared link only after an event run has initialized", async () => {
+		// Arrange
+		const workflow = await readWorkflow("event-reconcile");
+		// Act
+		const job = workflow.jobs?.["feedback-link"];
+		// Assert
+		expect(job?.uses).toBe(
+			"./.github/workflows/__feedback-reconcile-short-link.yml",
+		);
+		expect(job?.needs).toBe("manage");
+		expect(job?.if).toContain("!cancelled()");
+		expect(job?.if).toContain("needs.manage.outputs.initialized == 'true'");
+	});
 	it("reconciles event feedback without credentials for the shared link", async () => {
 		// Arrange
-		const workflow = await readWorkflow("reconcile-meetup");
+		const workflow = await readWorkflow("event-reconcile");
 		// Act
 		const step = workflow.jobs?.manage?.steps?.find(
 			(item) => item.id === "feedback",
@@ -24,7 +37,7 @@ describe("feedback effect boundaries", () => {
 	});
 	it("serializes repository-wide link selection and reports its outcome", async () => {
 		// Arrange
-		const workflow = await readWorkflow("reconcile-feedback-link");
+		const workflow = await readWorkflow("__feedback-reconcile-short-link");
 		// Act
 		const job = workflow.jobs?.reconcile;
 		const step = job?.steps?.find((item) => item.id === "link");

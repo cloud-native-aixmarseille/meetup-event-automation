@@ -28,16 +28,28 @@ instructions, user guides, and action and workflow references. ADRs under
 
 ## Preserve architecture decisions
 
-Keep ADRs under `docs/adr/`, including superseded records. Preserve their
-numbering, original context, alternatives, and consequences. Do not delete ADRs
-or rewrite past decisions to match the implementation during documentation
-cleanup.
+Keep one consolidated record per coherent feature or architectural scope under
+`docs/adr/`. Each record states its accepted decisions, context, alternatives,
+consequences, and decision history. Add a new scope only for a distinct concern;
+do not create a separate record for every implementation adjustment.
 
-When a decision changes, add a new ADR and update the affected records' status
-and supersession links. Keep these updates factual, including partial
-supersession. The documentation index lists all ADRs separately from current
-guides. Readers must be able to determine current behavior from the guides
-without reconstructing the decision history.
+Prefix each scope filename with a unique four-digit number, such as
+`0001-architecture.md`. Keep assigned numbers stable when adding new scopes.
+
+When a decision changes, update the accepted decision and add a dated history
+entry preserving the previous choice, the reason for replacement, and any partial
+supersession. Link related scope records when a change affects their boundaries.
+Do not erase historical rationale or present dated evidence as current validation.
+
+The original numbered records live under `docs/adr/archive/`. Preserve their
+titles, numbers, original context, alternatives, consequences, and evidence.
+Do not rewrite their bodies to match later implementation. Keep their supersession
+links and links back to the consolidated scope valid. Duplicate historical numbers
+are distinguished by title, not renumbered.
+
+The documentation index lists the scope records separately from current guides;
+the archive index inventories every original record. Readers must be able to
+determine current behavior from the guides without reconstructing decision history.
 
 ## Page placement and writing
 
@@ -46,13 +58,13 @@ started, basic usage, and links into `docs/`. Keep architecture, development
 commands, contributor rules, release mechanics, and history out of them.
 Put detailed guides under `docs/`:
 
-| Location        | Purpose                                                      |
-| --------------- | ------------------------------------------------------------ |
-| `usage/`        | Tasks for repository maintainers and meetup organizers       |
-| `reference/`    | Supported configuration, data formats, and fixed conventions |
-| `integrations/` | Service setup, automatic behavior, and operational recovery  |
-| `development/`  | Architecture, contributor instructions, and validation       |
-| `adr/`          | Preserved architecture decision history and status           |
+| Location        | Purpose                                                                 |
+| --------------- | ----------------------------------------------------------------------- |
+| `usage/`        | Tasks for repository maintainers and meetup organizers                  |
+| `reference/`    | Supported configuration, data formats, and fixed conventions            |
+| `integrations/` | Service setup, automatic behavior, and operational recovery             |
+| `development/`  | Architecture, contributor instructions, and validation                  |
+| `adr/`          | Decisions grouped by scope, with history and an original-record archive |
 
 `docs/README.md` owns the linked document inventory and directory tree.
 `CONTRIBUTING.md` and `AGENTS.md` direct contributors to the relevant guides.

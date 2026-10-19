@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as ActionInterfaceUsage from "./action-interface-usage.js";
+import type { Workflow } from "./support.js";
 
 describe("operational interface evidence", () => {
 	it.each([
@@ -98,7 +99,7 @@ describe("operational interface evidence", () => {
 describe("reusable workflow data flow", () => {
 	it("traces only inputs consumed by a called workflow into a real action", () => {
 		// Arrange
-		const workflows = new Map([
+		const workflows = new Map<string, Workflow>([
 			[
 				"child.yml",
 				{
@@ -132,7 +133,7 @@ describe("reusable workflow data flow", () => {
 	});
 	it("does not treat a called logging-only workflow as an operational consumer", () => {
 		// Arrange
-		const workflows = new Map([
+		const workflows = new Map<string, Workflow>([
 			[
 				"log.yml",
 				{
@@ -158,4 +159,121 @@ describe("reusable workflow data flow", () => {
 		// Assert
 		expect(values).toEqual([]);
 	});
+});
+
+describe("internal workflow reachability", () => {
+	it("includes nested operational helpers while excluding isolated CI exercises", () => {
+		// Arrange
+		const workflows = new Map<string, Workflow>([
+			[
+				"event.yml",
+				{ jobs: { prepare: { uses: "./.github/workflows/__prepare.yml" } } },
+			],
+			[
+				"__prepare.yml",
+				{ jobs: { report: { uses: "./.github/workflows/__report.yml" } } },
+			],
+			[
+				"__report.yml",
+				{ jobs: { cycle: { uses: "./.github/workflows/__prepare.yml" } } },
+			],
+			[
+				"__check-actions.yml",
+				{ jobs: { exercise: { uses: "./.github/workflows/__test.yml" } } },
+			],
+			["__test.yml", { jobs: {} }],
+		]);
+		// Act
+		const reachable = ActionInterfaceUsage.operationalWorkflows(workflows);
+		// Assert
+		expect([...reachable]).toEqual([
+			"event.yml",
+			"__prepare.yml",
+			"__report.yml",
+		]);
+	});
+	it.each([true, false])(
+		"traces forwarded internal outputs only to real effects: %s",
+		(effectful) => {
+			// Arrange
+			const workflows = new Map<string, Workflow>([
+				[
+					"event.yml",
+					{ jobs: { run: { uses: "./.github/workflows/__core.yml" } } },
+				],
+				[
+					"__core.yml",
+					{
+						jobs: {
+							link: { uses: "./.github/workflows/day.yml" },
+							report: {
+								uses: "./.github/workflows/__report.yml",
+								with: { value: `\${{ needs.link.outputs.outcome }}` },
+							},
+						},
+					},
+				],
+				[
+					"day.yml",
+					{
+						on: {
+							workflow_call: {
+								outputs: {
+									outcome: { value: `\${{ jobs.link.outputs.outcome }}` },
+								},
+							},
+						},
+						jobs: { link: { uses: "./.github/workflows/__link.yml" } },
+					},
+				],
+				["__link.yml", { jobs: {} }],
+				[
+					"__report.yml",
+					{
+						jobs: {
+							report: {
+								steps: effectful
+									? [
+											{
+												uses: "./actions/organizer/reconcile-checklist",
+												with: { value: `\${{ inputs.value }}` },
+											},
+										]
+									: [
+											{
+												run: 'echo "$VALUE"',
+												env: { VALUE: `\${{ inputs.value }}` },
+											},
+										],
+							},
+						},
+					},
+				],
+				[
+					"__check-actions.yml",
+					{
+						jobs: {
+							link: { uses: "./.github/workflows/__link.yml" },
+							fake: {
+								steps: [
+									{
+										uses: "./actions/organizer/reconcile-checklist",
+										with: { value: `\${{ needs.link.outputs.outcome }}` },
+									},
+								],
+							},
+						},
+					},
+				],
+			]);
+			// Act
+			const consumed = ActionInterfaceUsage.workflowOutputConsumed(
+				workflows,
+				"__link.yml",
+				"outcome",
+			);
+			// Assert
+			expect(consumed).toBe(effectful);
+		},
+	);
 });

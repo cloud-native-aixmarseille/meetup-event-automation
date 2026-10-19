@@ -14,7 +14,7 @@ Configure sharing for attendees and speakers yourself; the automation does not
 grant permissions.
 
 Follow [repository setup](../usage/setup.md), then pass these settings to both
-`update-meetup-issue.yml` and `check-active-meetup-issues.yml`:
+`event-reconcile.yml` and `event-reconcile-active.yml`:
 
 | Consumer setting                            | Reusable workflow parameter             |
 | ------------------------------------------- | --------------------------------------- |
@@ -40,8 +40,11 @@ such as `slides` or `attendance`. Use `slides` for the event presentation: email
 batches require the direct URL of that managed copy. Set this metadata through the Drive API using
 the same application credentials used by the automation.
 
-Use `[EVENT_DATE:YYYY-MM-DD]` in filenames where the event date belongs. For
-example, `Slides [EVENT_DATE:YYYY-MM-DD]` becomes `Slides 2026-10-15`.
+Filename templates use the [shared expression syntax and date formats](../reference/templating.md).
+For example, `Slides [EVENT_DATE:YYYY-MM-DD]` becomes `Slides 2026-10-15`.
+Only the event date is available in filenames, and its format is required.
+Reconciliation validates all template filenames before any folder or file
+mutation. Announcement image validation uses the same renderer and workflow locale.
 
 Templates remain copy-only unless their kind has a content contract in the
 consumer's committed `.github/meetup-asset-content.json`. Google Slides and
@@ -171,8 +174,9 @@ complete `token:slot` key must also fit within 100 characters. Assignment maps
 and the public venue and host-logo maps each accept at most 200 entries; reserved
 object keys are not valid assignment slot names.
 
-Text fields use the literal `{{token}}` spelling, or `{{token:slot}}` for a
-slotted field. The complete allowlist is:
+Text fields use the [shared template syntax](../reference/templating.md), including
+`{{token}}`, `{{token:slot}}` for a slotted field, and
+`{{event.date:FORMAT}}` for an explicitly formatted date. The complete allowlist is:
 
 | Token                                           | Public value                                                            |
 | ----------------------------------------------- | ----------------------------------------------------------------------- |
@@ -191,11 +195,29 @@ slotted field. The complete allowlist is:
 | `next_event.host.name`, `next_event.host.city`  | Next published meetup's host display name and explicit public city.     |
 
 Dates preserve the event timezone's calendar day; month and weekday names use
-the workflow locale. Numeric dates always use `DD/MM/YYYY`. Speaker lists use
+the workflow locale. The `.numeric` fields use `DD/MM/YYYY`. Speaker lists use
 English or French list formatting. Required missing values block the file;
 optional text needs an explicit non-empty fallback in the template's language.
-Values are inserted literally, including token-looking text or HTML. There are
-no expressions, arbitrary date formats, or executable template instructions.
+Values are inserted literally, including token-looking text or HTML.
+
+For an explicit date format, declare `format` on `event.date` or
+`next_event.date`, and use the same pattern in the template expression:
+
+```json
+{
+  "type": "text",
+  "token": "event.date",
+  "format": "D MMMM YYYY",
+  "required": true
+}
+```
+
+This field binds `{{event.date:D MMMM YYYY}}` or `[EVENT_DATE:D MMMM YYYY]`.
+The [date format reference](../reference/templating.md#date-formats) lists supported
+patterns. Multiple formats of the same date are distinct bindings. Format operands
+are limited to 100 characters; they apply only to calendar-date fields and cannot
+be combined with participant slots. Invalid patterns leave the file pending before
+content writes. Optional missing dates use their literal fallback.
 
 For `{{talk.title:opening}}`, declare `token: "talk.title"` and `slot: "opening"`.
 Assign that slot to the proposal's exact `provider`, `event`, and `id` in the
@@ -487,3 +509,9 @@ those locations. Enrollment validates them before marking the file as managed.
 For a missing initial sidecar, enrollment is possible only after explicitly
 restoring the authored placeholders; an already rendered file is not scanned
 for old values. Recovery runs through the normal workflow under the event lock.
+
+## Approved event cover
+
+Managed image fields support `event.cover` for the exact selected and approved
+content image. See [content review](content.md#decide-and-apply) for eligibility,
+required binding settings, and changed-image behavior.

@@ -6,6 +6,10 @@
 	"exports": "./src/index.ts",
 	"dependencies": {
 		"@googleapis/drive": "^26.0.2",
-		"@meetup-automation/publication": "workspace:*"
+		"@meetup-automation/publication": "workspace:*",
+		"image-size": "^2.0.4"
+	},
+	"devDependencies": {
+		"@meetup-automation/templating": "workspace:*"
 	}
 }

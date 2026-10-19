@@ -1,3 +1,4 @@
+import type { CoverArtworkApprovalGate } from "../assets/cover-artwork-approval-gate.js";
 import {
 	type EventDocument,
 	type EventDocumentCodec,
@@ -14,12 +15,15 @@ import type {
 } from "@meetup-automation/publication";
 import type { EventDocumentRevision } from "../ports/event-document-revision.js";
 import type { PublicDiagnostic } from "../result/result-envelope.js";
+import type { EventCopyApprovalGate } from "../event/event-copy-approval-gate.js";
 import type { AssetRenderProjection } from "./asset-render-projection.js";
 import type { ManageMeetupEvent } from "./manage-meetup-event.js";
 import type { ManageMeetupEventResult } from "./manage-meetup-event-contracts.js";
 import type { SlidesPdfSource } from "./reconcile-meetup-slides-pdf.js";
 
 interface ReconcileMeetupDocumentsDependencies {
+	readonly contentGate: Pick<EventCopyApprovalGate, "blocked"> &
+		Pick<CoverArtworkApprovalGate, "cover">;
 	readonly revision: EventDocumentRevision;
 	readonly renderProjection?: Pick<AssetRenderProjection, "create">;
 	readonly recovery?: Readonly<Record<string, ContentRecovery>>;
@@ -104,16 +108,27 @@ export class ReconcileMeetupDocuments {
 		evaluation: Extract<ManageMeetupEventResult, { skipped: false }>,
 		hostName: string,
 	): Promise<ReconcileMeetupDocumentsResult> {
+		const blocked = await this.dependencies.contentGate.blocked(
+			evaluation.event,
+		);
+		const contentDiagnostics = blocked.map((field) => ({
+			code: `publication.content.${field}-review`,
+			severity: "error" as const,
+			field,
+			message: "Content requires current organizer approval",
+		}));
+		const model = await this.dependencies.renderProjection?.create(
+			evaluation.event,
+			[...evaluation.diagnostics, ...contentDiagnostics],
+		);
+		const cover = await this.dependencies.contentGate.cover(evaluation.event);
 		const assets = await this.dependencies.reconcileAssets.execute({
 			eventId: `${source.identity.repository}#${source.identity.issueNumber}`,
 			date: evaluation.event.date,
 			hostName,
 			existingUrl: evaluation.event.publicationLinks.assets,
 			mode: "fix",
-			model: await this.dependencies.renderProjection?.create(
-				evaluation.event,
-				evaluation.diagnostics,
-			),
+			model: model ? { ...model, cover } : undefined,
 			recovery: this.dependencies.recovery,
 		});
 		await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
@@ -140,10 +155,13 @@ export class ReconcileMeetupDocuments {
 			assetUrl: assets.container?.url,
 			files: assets.files,
 			content: assets.content,
-			diagnostics: assets.diagnostics.map((item) => ({
-				...item,
-				field: "publicationLinks.assets",
-			})),
+			diagnostics: [
+				...contentDiagnostics,
+				...assets.diagnostics.map((item) => ({
+					...item,
+					field: "publicationLinks.assets",
+				})),
+			],
 		};
 	}
 

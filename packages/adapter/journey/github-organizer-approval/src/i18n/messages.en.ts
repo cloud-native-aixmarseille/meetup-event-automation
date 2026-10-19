@@ -1,4 +1,18 @@
 export const EN_MESSAGES = {
+	"approval.content.planned":
+		"Planned publication: {time}. Recheck eligibility before posting.",
+	"approval.content.slot":
+		"Image {index}: {status, select, complete {stored} reserved {outcome uncertain; no automatic retry} failed {failed} other {not requested}}.",
+
+	"approval.content.title":
+		"### Review event content: {target}\n\nLanguage: {language} · Author: {origin}",
+	"approval.content.request":
+		"Review the exact text and images above. Select exactly one choice. Approval authorizes this content; publication and sending have separate controls. Submit replacements or iteration guidance separately.\n\n{approve}\n- [{rejectMark}] Reject this content\n- [{iterateMark}] Request another iteration",
+	"approval.content.text-choice": "- [{mark}] Approve this content",
+	"approval.content.image-choice":
+		"- [{mark}] Approve image {index, number} as the cover",
+	"approval.content.final":
+		"{status, select, approved {✅ Content approved} rejected {❌ Content rejected} iteration_requested {🔄 Another iteration requested} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nSelected image: {image}\n\nThis decision is final for this revision. Changed content requires a new review.",
 	"approval.meetup.details":
 		"### Organizer confirmation: publish Meetup event\n\n**{title}**\n\n{date} · {startTime}–{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the Meetup draft]({url}) before approving publication.",
 	"approval.meetup.request":

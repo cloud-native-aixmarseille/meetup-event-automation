@@ -1,66 +1,18 @@
 import type { ReconcileCommunicationsInput } from "@meetup-automation/communication";
-import type {
-	EventDocument,
-	EventDocumentConcurrency,
-	EventRepository,
-} from "@meetup-automation/event";
+import type { EventDocument, EventRepository } from "@meetup-automation/event";
 import type {
 	CommunicationJourneyDiagnostic,
 	ManageMeetupCommunicationsInput,
 	ManageMeetupCommunicationsResult,
 } from "../communication/contracts.js";
+import type { CommunicationDeliveryPreparation } from "./communication-delivery-preparation.js";
 import type {
-	ApproveCommunicationBatch,
-	ApproveCommunicationBatchArguments,
-} from "./approve-communication-batch.js";
-import type { CommunicationChecklist } from "./communication-checklist.js";
-import type {
-	CommunicationDeliveryPreparation,
-	CommunicationDeliveryPreparationArguments,
-} from "./communication-delivery-preparation.js";
-import type { CommunicationDispatchPolicy } from "./communication-dispatch-policy.js";
-import type { CommunicationJourneyResults } from "./communication-journey-results.js";
-import type { CommunicationPlaceholders } from "./communication-placeholders.js";
-import type {
-	CompleteCommunicationChecklist,
-	CompleteCommunicationChecklistArguments,
-} from "./complete-communication-checklist.js";
-import type { ManageMeetupCommunicationsDependencies } from "./manage-meetup-communications-contracts.js";
+	ManageMeetupCommunicationsCollaborators,
+	ManageMeetupCommunicationsDependencies,
+} from "./manage-meetup-communications-contracts.js";
 import type { ManageMeetupEventResult } from "./manage-meetup-event-contracts.js";
 
 /** Coordinate event readiness, checklist completion and delivery through owned ports. */
-export interface ManageMeetupCommunicationsCollaborators {
-	readonly communicationDispatchPolicy: Pick<
-		CommunicationDispatchPolicy,
-		"isDispatchEnabled"
-	>;
-	readonly communicationJourneyResults: Pick<
-		CommunicationJourneyResults,
-		"skippedResult" | "emptyCommunicationResult" | "withRuntimeDiagnostics"
-	>;
-	readonly eventDocumentConcurrency: Pick<
-		EventDocumentConcurrency,
-		"eventDocumentsEqual"
-	>;
-	readonly communicationChecklist: Pick<
-		CommunicationChecklist,
-		"pendingRecipients"
-	>;
-	readonly communicationPlaceholders: Pick<
-		CommunicationPlaceholders,
-		"eventPlaceholders"
-	>;
-	readonly createCommunicationDeliveryPreparation: (
-		...args: CommunicationDeliveryPreparationArguments
-	) => CommunicationDeliveryPreparation;
-	readonly createApproveCommunicationBatch: (
-		...args: ApproveCommunicationBatchArguments
-	) => ApproveCommunicationBatch;
-	readonly createCompleteCommunicationChecklist: (
-		...args: CompleteCommunicationChecklistArguments
-	) => CompleteCommunicationChecklist;
-}
-
 export class ManageMeetupCommunications {
 	constructor(
 		private readonly collaborators: ManageMeetupCommunicationsCollaborators,
@@ -85,6 +37,8 @@ export class ManageMeetupCommunications {
 				runtimeDiagnostics,
 			);
 		}
+
+		await this.contentApproved(managed.event, runtimeDiagnostics);
 
 		const delivery = await this.collaborators
 			.createCommunicationDeliveryPreparation(this.dependencies)
@@ -157,6 +111,11 @@ export class ManageMeetupCommunications {
 			);
 		}
 
+		if (!(await this.contentApproved(managed.event, runtimeDiagnostics)))
+			return this.collaborators.communicationJourneyResults.emptyCommunicationResult(
+				"check",
+				runtimeDiagnostics,
+			);
 		const reconciliation = await this.dependencies
 			.reconcileCommunications(dispatchEnabled)
 			.execute({
@@ -183,6 +142,25 @@ export class ManageMeetupCommunications {
 		);
 	}
 
+	private async contentApproved(
+		event: Exclude<ManageMeetupEventResult, { skipped: true }>["event"],
+		diagnostics: CommunicationJourneyDiagnostic[],
+	): Promise<boolean> {
+		try {
+			if (!(await this.dependencies.contentGate.blocked(event)).length)
+				return true;
+			diagnostics.push({
+				code: "communication.content-review",
+				severity: "error",
+			});
+		} catch {
+			diagnostics.push({
+				code: "communication.approval-unavailable",
+				severity: "error",
+			});
+		}
+		return false;
+	}
 	private async synchronizeApprovals(
 		diagnostics: CommunicationJourneyDiagnostic[],
 	): Promise<boolean> {

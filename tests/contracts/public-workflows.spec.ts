@@ -1,6 +1,7 @@
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { operationalWorkflows } from "./action-interface-usage.js";
 import {
 	automationActionPrefix,
 	localWorkflowActionsRef,
@@ -12,28 +13,48 @@ import {
 } from "./support.js";
 
 const actionWiring = {
-	"reconcile-meetup": {
+	"event-preparation-generate-drafts": {
+		generate: [
+			"event/generate-copy",
+			"event/generate-copy",
+			"assets/generate-cover",
+			"organizer/review-drafts",
+		],
+	},
+	"event-promotion-generate-post": {
+		generate: [
+			"communication/generate-slack-post",
+			"communication/generate-linkedin-post",
+			"organizer/review-drafts",
+		],
+	},
+	"event-reconcile": {
 		manage: [
 			"feedback/reconcile-event",
+			"organizer/review-drafts",
 			"assets/reconcile-documents",
 			"assets/reconcile-slides-pdf",
 			"event/reconcile",
 			"communication/reconcile-email",
 		],
+	},
+	"__organizer-reconcile-reporting": {
 		report: ["organizer/reconcile-checklist", "organizer/reconcile-attention"],
 	},
-	"reconcile-feedback-link": { reconcile: ["feedback/reconcile-short-link"] },
-	"check-active-meetup-issues": { list: ["event/list-active"] },
-	"update-meetup-issue-form": {
+	"__feedback-reconcile-short-link": {
+		reconcile: ["feedback/reconcile-short-link"],
+	},
+	"event-reconcile-active": { list: ["event/list-active"] },
+	"issue-form-reconcile": {
 		synchronize: ["referential/validate", "issue-form/reconcile"],
 	},
-	"check-meetup-referentials-and-issue-form": {
+	"referential-check-catalog-and-form": {
 		validate: ["referential/validate", "issue-form/reconcile"],
 	},
-	"reconcile-speakers": {
+	"referential-reconcile-speakers": {
 		synchronize: ["referential/reconcile-speakers", "issue-form/reconcile"],
 	},
-	"reconcile-event-publication": { publish: ["publication/reconcile-event"] },
+	"event-publication-reconcile": { publish: ["publication/reconcile-event"] },
 };
 
 describe("public reusable workflow contracts", () => {
@@ -53,7 +74,7 @@ describe("public reusable workflow contracts", () => {
 					(step) =>
 						step.uses === localWorkflowActionsRef &&
 						step.with?.["actions-path"] ===
-							(name === "reconcile-event-publication" ? "." : "actions"),
+							(name === "event-publication-reconcile" ? "." : "actions"),
 				);
 				const actions = steps.filter((step) =>
 					step.uses?.startsWith(automationActionPrefix),
@@ -69,7 +90,7 @@ describe("public reusable workflow contracts", () => {
 	it("passes every nested workflow input and secret explicitly", async () => {
 		// Arrange
 		const files = (await readdir(join(root, ".github/workflows"))).filter(
-			(file) => file.endsWith(".yml") && !file.startsWith("__"),
+			(file) => file.endsWith(".yml"),
 		);
 		const workflows = new Map(
 			await Promise.all(
@@ -83,8 +104,8 @@ describe("public reusable workflow contracts", () => {
 			),
 		);
 		// Act
-		const calls = [...workflows.values()]
-			.flatMap((workflow) => Object.values(workflow.jobs ?? {}))
+		const calls = [...operationalWorkflows(workflows)]
+			.flatMap((file) => Object.values(workflows.get(file)?.jobs ?? {}))
 			.filter((job) => job.uses?.startsWith("./.github/workflows/"));
 		// Assert
 		expect(calls.length).toBeGreaterThan(0);
@@ -102,7 +123,7 @@ describe("public reusable workflow contracts", () => {
 	});
 	it("provides prepared slides to email while keeping PDF reconciliation independent", async () => {
 		// Arrange
-		const workflow = await readWorkflow("reconcile-meetup");
+		const workflow = await readWorkflow("event-reconcile");
 		// Act
 		const steps = workflow.jobs?.manage?.steps ?? [];
 		const documents = steps.findIndex((step) => step.id === "assets");
@@ -110,6 +131,9 @@ describe("public reusable workflow contracts", () => {
 		const email = steps.find((step) => step.id === "communications");
 		// Assert
 		expect(documents).toBeGreaterThanOrEqual(0);
+		expect(steps.findIndex((step) => step.id === "pdf")).toBeLessThan(
+			steps.findIndex((step) => step.id === "event"),
+		);
 		expect(
 			steps.findIndex((step) => step.id === "communications"),
 		).toBeGreaterThan(documents);
@@ -128,7 +152,7 @@ describe("public reusable workflow contracts", () => {
 	});
 	it("mints a revocable mailings-only token immediately before email reconciliation", async () => {
 		// Arrange
-		const workflow = await readWorkflow("reconcile-meetup");
+		const workflow = await readWorkflow("event-reconcile");
 		// Act
 		const steps = workflow.jobs?.manage?.steps ?? [];
 		const token = steps.find((step) => step.id === "mailings-token");
@@ -187,12 +211,24 @@ describe("public reusable workflow contracts", () => {
 	it("uses required client IDs for every installation token", async () => {
 		// Arrange
 		const files = (await readdir(join(root, ".github/workflows"))).filter(
-			(file) => file.endsWith(".yml") && !file.startsWith("__"),
+			(file) => file.endsWith(".yml"),
+		);
+		const catalog = new Map(
+			await Promise.all(
+				files.map(
+					async (file) =>
+						[
+							file,
+							await readYaml<Workflow>(`.github/workflows/${file}`),
+						] as const,
+				),
+			),
 		);
 		// Act
-		const workflows = await Promise.all(
-			files.map((file) => readYaml<Workflow>(`.github/workflows/${file}`)),
-		);
+		const workflows = [...operationalWorkflows(catalog)].flatMap((file) => {
+			const workflow = catalog.get(file);
+			return workflow ? [workflow] : [];
+		});
 		// Assert
 		for (const workflow of workflows)
 			for (const token of Object.values(workflow.jobs ?? {})
@@ -211,7 +247,7 @@ describe("public reusable workflow contracts", () => {
 	});
 	it("accepts human edits to trusted bot requests only on open issues", async () => {
 		// Arrange
-		const workflow = await readWorkflow("update-meetup-issue");
+		const workflow = await readWorkflow("event-reconcile");
 		// Act
 		const guard = workflow.jobs?.manage?.if ?? "";
 		// Assert
@@ -225,5 +261,27 @@ describe("public reusable workflow contracts", () => {
 			"startsWith(github.event.comment.body, '<!-- meetup-organizer-approval:v1 ')",
 		])
 			expect(guard).toContain(condition);
+	});
+});
+
+describe("event lifecycle entry points", () => {
+	it("keeps the public surface oriented around lifecycle use cases and prefixes implementation workflows", async () => {
+		// Arrange
+		const files = await readdir(join(root, ".github/workflows"));
+		// Act
+		const publicFiles = files.filter(
+			(file) => file.endsWith(".yml") && !file.startsWith("__"),
+		);
+		// Assert
+		expect(publicFiles.sort()).toEqual([
+			"event-preparation-generate-drafts.yml",
+			"event-promotion-generate-post.yml",
+			"event-publication-reconcile.yml",
+			"event-reconcile-active.yml",
+			"event-reconcile.yml",
+			"issue-form-reconcile.yml",
+			"referential-check-catalog-and-form.yml",
+			"referential-reconcile-speakers.yml",
+		]);
 	});
 });

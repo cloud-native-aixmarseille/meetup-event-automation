@@ -1,4 +1,18 @@
 export const FR_MESSAGES = {
+	"approval.content.planned":
+		"Publication prévue : {time}. Vérifiez à nouveau la validité avant publication.",
+	"approval.content.slot":
+		"Image {index} : {status, select, complete {enregistrée} reserved {résultat incertain ; aucun nouvel essai automatique} failed {échec} other {non demandée}}.",
+
+	"approval.content.title":
+		"### Vérification du contenu : {target}\n\nLangue : {language} · Auteur : {origin}",
+	"approval.content.request":
+		"Vérifiez le texte exact et les images ci-dessus. Cochez un seul choix. L'approbation autorise ce contenu ; la publication et l'envoi ont leurs propres validations. Soumettez les remplacements ou consignes séparément.\n\n{approve}\n- [{rejectMark}] Refuser ce contenu\n- [{iterateMark}] Demander une nouvelle proposition",
+	"approval.content.text-choice": "- [{mark}] Approuver ce contenu",
+	"approval.content.image-choice":
+		"- [{mark}] Approuver l'image {index, number} comme couverture",
+	"approval.content.final":
+		"{status, select, approved {✅ Contenu approuvé} rejected {❌ Contenu refusé} iteration_requested {🔄 Nouvelle proposition demandée} other {Décision enregistrée}} par @{actor} le {decidedAt}.\n\nImage sélectionnée : {image}\n\nCette décision est définitive pour cette version. Un contenu modifié nécessite une nouvelle vérification.",
 	"approval.meetup.details":
 		"### Confirmation des organisateurs : publier le meetup\n\n**{title}**\n\n{date} · {startTime}–{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Vérifiez le brouillon Meetup]({url}) avant d'approuver sa publication.",
 	"approval.meetup.request":

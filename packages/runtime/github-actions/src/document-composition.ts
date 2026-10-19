@@ -19,12 +19,16 @@ import {
 	ReconcileEventAssets,
 } from "@meetup-automation/publication";
 import type { ReferentialRepository } from "@meetup-automation/referential";
+import { TemplatingComposition } from "@meetup-automation/templating";
+import { AssetFileNameComposition } from "./asset-file-name-composition.js";
 import type { AssetContentConfigurationData } from "./assets/asset-content-configuration.js";
+import { AssetTemplateRendererImpl } from "./assets/asset-template-renderer.js";
 import {
 	EventComposition,
 	type EventCompositionInput,
 	SERVICES,
 } from "./composition.js";
+import { ContentGateComposition } from "./content-gate-composition.js";
 import { GithubActionsComposition } from "./dependency-composition.js";
 import { EventSnapshotHash } from "./event-snapshot-hash.js";
 import { PublicationPolicyComposition } from "./publication-policy-composition.js";
@@ -32,6 +36,9 @@ import { PublicationPolicyComposition } from "./publication-policy-composition.j
 export const ASSET_REPOSITORY = Symbol("AssetRepository");
 
 type PublicationInput = EventCompositionInput & {
+	readonly locale: string;
+	readonly issueNumber: number;
+	readonly commentAuthorLogin: string;
 	readonly credentials: string;
 	readonly parentFolderId: string;
 	readonly templateFolderId: string;
@@ -50,11 +57,12 @@ export class DocumentComposition {
 					contentContracts: input.contentConfiguration?.contracts,
 				}),
 		);
-		DocumentComposition.bindContent(container, input.credentials);
+		DocumentComposition.bindContent(container, input.credentials, input.locale);
 		container
 			.bind(ReconcileEventAssets)
 			.toDynamicValue((context) =>
 				new PublicationDomainComposition().reconcileEventAssets(
+					new AssetFileNameComposition().create(input.locale),
 					context.get<AssetRepository>(ASSET_REPOSITORY),
 					context.get(ReconcileAssetContent),
 				),
@@ -69,6 +77,11 @@ export class DocumentComposition {
 	): void {
 		container.bind(ReconcileMeetupDocuments).toDynamicValue((context) =>
 			new JourneyComposition().reconcileMeetupDocuments({
+				contentGate: new ContentGateComposition().create(
+					input,
+					input.issueNumber,
+					input.commentAuthorLogin,
+				),
 				revision: new EventSnapshotHash(),
 				renderProjection: new JourneyComposition().assetRenderProjection(
 					new GithubActionsComposition().assetRenderPresenterImpl(
@@ -112,6 +125,7 @@ export class DocumentComposition {
 	private static bindContent(
 		container: ReturnType<typeof EventComposition.createEventContainer>,
 		credentials: string,
+		locale: string,
 	) {
 		container.bind(ReconcileAssetContent).toDynamicValue(() => {
 			const authentication = new GoogleDriveAssetRepositoryComposition()
@@ -120,6 +134,9 @@ export class DocumentComposition {
 			const images =
 				new HttpsAssetImageRepositoryComposition().httpsAssetImageRepository();
 			return new PublicationDomainComposition().reconcileAssetContent(
+				new AssetTemplateRendererImpl(
+					new TemplatingComposition().renderer(locale),
+				),
 				new GoogleDriveAssetRepositoryComposition().googleDriveManifestRepository(
 					new GoogleDriveAssetRepositoryComposition()
 						.googleDriveAssetRepositoryFactory()

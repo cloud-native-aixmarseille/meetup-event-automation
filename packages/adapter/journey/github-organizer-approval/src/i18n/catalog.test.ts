@@ -4,6 +4,26 @@ import { CATALOGS } from "./catalog.js";
 import type { MessageParameters } from "./message-parameters.js";
 
 const parameters = {
+	"approval.content.planned": { time: "2026-10-21T07:00:00Z" },
+	"approval.content.slot": { index: 1, status: "reserved" },
+	"approval.content.title": {
+		target: "title",
+		language: "en",
+		origin: "organizer",
+	},
+	"approval.content.request": {
+		approve: "Approve",
+		rejectMark: " ",
+		iterateMark: " ",
+	},
+	"approval.content.text-choice": { mark: " " },
+	"approval.content.image-choice": { mark: " ", index: 1 },
+	"approval.content.final": {
+		status: "iteration-requested",
+		actor: "organizer",
+		decidedAt: "2099-06-01T10:00:00Z",
+		image: "",
+	},
 	"approval.meetup.details": {
 		title: "Example",
 		date: "2099-06-08",

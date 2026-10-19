@@ -11,6 +11,7 @@ export interface ManageMeetupCommunicationsInput {
 }
 
 type CommunicationJourneyDiagnosticCode =
+	| "communication.content-review"
 	| "communication.dispatch-disabled-by-config"
 	| "communication.approval-pending"
 	| "communication.approval-rejected"

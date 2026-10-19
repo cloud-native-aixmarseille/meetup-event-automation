@@ -3,7 +3,9 @@ import type {
 	ContentValue,
 	ImageField,
 	PublicAssetModel,
+	TextField,
 } from "../domain/asset-content.js";
+import type { AssetTemplateRenderer } from "../domain/asset-template-renderer.js";
 import type { ContentContractPolicy } from "../domain/content-contract-policy.js";
 import { ContentError } from "../domain/content-error.js";
 import type { ContentFingerprint } from "../domain/content-fingerprint.js";
@@ -11,6 +13,7 @@ import type { ContentTextKey } from "../domain/content-text-key.js";
 import type { AssetImageRepository } from "./content-ports.js";
 
 export interface ResolveContentValuesCollaborators {
+	readonly templates: Pick<AssetTemplateRenderer, "value">;
 	readonly contentTextKey: Pick<ContentTextKey, "of">;
 	readonly contentContractPolicy: Pick<ContentContractPolicy, "text">;
 	readonly contentFingerprint: Pick<ContentFingerprint, "of">;
@@ -33,8 +36,7 @@ export class ResolveContentValues {
 				continue;
 			}
 			const key = this.collaborators.contentTextKey.of(field);
-			const text =
-				model.text[key] || (!field.required ? field.fallback : undefined);
+			const text = this.text(field, model);
 			if (!this.collaborators.contentContractPolicy.text(text))
 				throw new ContentError("missing");
 			values.push({
@@ -47,10 +49,34 @@ export class ResolveContentValues {
 		return values;
 	}
 
+	private text(field: TextField, model: PublicAssetModel): string | undefined {
+		if (field.format !== undefined) {
+			const date =
+				field.token === "event.date" || field.token === "next_event.date"
+					? model.dates?.[field.token]
+					: undefined;
+			if (date) {
+				return this.collaborators.templates.value({
+					kind: "date",
+					value: date,
+					format: field.format,
+				});
+			}
+			return field.required ? undefined : field.fallback;
+		}
+		const text =
+			model.text[this.collaborators.contentTextKey.of(field)] ||
+			(!field.required ? field.fallback : undefined);
+		return text === undefined
+			? undefined
+			: this.collaborators.templates.value({ kind: "text", value: text });
+	}
+
 	private async image(
 		field: ImageField,
 		model: PublicAssetModel,
 	): Promise<ContentValue> {
+		if (field.token === "event.cover") return this.cover(field, model);
 		const host = field.token === "host.logo";
 		const picture = host ? model.hostLogo : model.pictures[field.slot];
 		const hostId = host ? model.hostLogo?.hostId : undefined;
@@ -95,6 +121,25 @@ export class ResolveContentValues {
 				fit: field.fit,
 			};
 		}
+	}
+	private async cover(
+		field: ImageField,
+		model: PublicAssetModel,
+	): Promise<ContentValue> {
+		if (!model.cover) throw new ContentError("missing");
+		const validated = await this.images.validate(model.cover);
+		if (validated.fingerprint !== model.cover.fingerprint)
+			throw new ContentError("image");
+		return {
+			type: "image",
+			key: field.slot,
+			image: validated.source,
+			fingerprint: this.collaborators.contentFingerprint.of(
+				`${validated.fingerprint}:${model.cover.id}:${model.cover.description}:${field.fit}`,
+			),
+			fit: field.fit,
+			fallback: false,
+		};
 	}
 }
 export type ResolveContentValuesArguments =

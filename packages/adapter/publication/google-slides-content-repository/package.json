@@ -6,6 +6,7 @@
 	"exports": "./src/index.ts",
 	"dependencies": {
 		"@meetup-automation/publication": "workspace:*",
-		"@googleapis/slides": "^10.1.1"
+		"@googleapis/slides": "^10.1.1",
+		"@meetup-automation/templating": "workspace:*"
 	}
 }

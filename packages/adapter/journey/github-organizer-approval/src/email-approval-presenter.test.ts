@@ -1,4 +1,7 @@
-import { ApprovalRequestPolicy } from "@meetup-automation/journey";
+import {
+	ApprovalRequestPolicy,
+	DraftProposalComposition,
+} from "@meetup-automation/journey";
 import { LocalizationComposition } from "@meetup-automation/localization";
 import { describe, expect, it } from "vitest";
 import {
@@ -17,7 +20,9 @@ describe("approval request details", () => {
 			// Arrange
 			const presenter = new EmailApprovalPresenter(
 				{
-					approvalRequestPolicy: new ApprovalRequestPolicy(),
+					approvalRequestPolicy: new ApprovalRequestPolicy(
+						new DraftProposalComposition().fingerprints(),
+					),
 					followUpPresenter:
 						new GithubOrganizerApprovalComposition().followUpPresenter(
 							new ApprovalMessages(
@@ -45,7 +50,10 @@ describe("approval request details", () => {
 				),
 			);
 			const record = createStoredApproval(detailedRequest);
-			if (record.kind === "meetup-publication")
+			if (
+				record.kind !== "email-introduction" &&
+				record.kind !== "email-thanks"
+			)
 				throw new Error("Expected email request");
 
 			// Act
@@ -86,11 +94,16 @@ describe("approval request details", () => {
 					],
 				},
 			});
-			if (record.kind === "meetup-publication")
+			if (
+				record.kind !== "email-introduction" &&
+				record.kind !== "email-thanks"
+			)
 				throw new Error("Expected email request");
 			const presenter = new EmailApprovalPresenter(
 				{
-					approvalRequestPolicy: new ApprovalRequestPolicy(),
+					approvalRequestPolicy: new ApprovalRequestPolicy(
+						new DraftProposalComposition().fingerprints(),
+					),
 					followUpPresenter:
 						new GithubOrganizerApprovalComposition().followUpPresenter(
 							new ApprovalMessages({
@@ -129,11 +142,13 @@ describe("approval request details", () => {
 				decidedAt: request.requestedAt,
 			},
 		};
-		if (record.kind === "meetup-publication")
+		if (record.kind !== "email-introduction" && record.kind !== "email-thanks")
 			throw new Error("Expected email request");
 		const presenter = new EmailApprovalPresenter(
 			{
-				approvalRequestPolicy: new ApprovalRequestPolicy(),
+				approvalRequestPolicy: new ApprovalRequestPolicy(
+					new DraftProposalComposition().fingerprints(),
+				),
 				followUpPresenter:
 					new GithubOrganizerApprovalComposition().followUpPresenter(
 						new ApprovalMessages({

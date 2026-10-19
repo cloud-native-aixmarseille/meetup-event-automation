@@ -100,6 +100,12 @@
 			],
 			"@meetup-automation/hcaptcha-captcha-resolver": [
 				"./packages/adapter/browser-authentication/hcaptcha-captcha-resolver/src/index.ts"
+			],
+			"@meetup-automation/gemini-generation-gateway": [
+				"./packages/adapter/generation/gemini-generation-gateway/src/index.ts"
+			],
+			"@meetup-automation/templating": [
+				"./packages/presentation/templating/src/index.ts"
 			]
 		}
 	}

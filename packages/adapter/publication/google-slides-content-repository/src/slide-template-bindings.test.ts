@@ -1,4 +1,5 @@
 import { PublicationDomainComposition } from "@meetup-automation/publication";
+import { TemplatingComposition } from "@meetup-automation/templating";
 import { describe, expect, it } from "vitest";
 import { SlideTemplateBindings } from "./slide-template-bindings.js";
 
@@ -26,6 +27,7 @@ describe("SlideTemplateBindings", () => {
 
 		// Act
 		const style = new SlideTemplateBindings({
+			templates: new TemplatingComposition().parser(),
 			contentTextKey: new PublicationDomainComposition().contentTextKey(),
 		}).style(element);
 
@@ -49,6 +51,7 @@ describe("SlideTemplateBindings", () => {
 		// Act
 		const read = () =>
 			new SlideTemplateBindings({
+				templates: new TemplatingComposition().parser(),
 				contentTextKey: new PublicationDomainComposition().contentTextKey(),
 			}).style(element);
 

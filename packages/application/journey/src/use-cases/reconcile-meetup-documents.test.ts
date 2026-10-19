@@ -2,7 +2,7 @@ import { EventDomainComposition } from "@meetup-automation/event";
 import {
 	type AssetRepository,
 	PublicationDomainComposition,
-	ReconcileEventAssets,
+	type ReconcileEventAssets,
 } from "@meetup-automation/publication";
 import { ReferentialDomainComposition } from "@meetup-automation/referential";
 import { describe, expect, it, vi } from "vitest";
@@ -292,6 +292,7 @@ function assetJourney(reconciliation?: Pick<ReconcileEventAssets, "execute">) {
 				new EventDomainComposition().eventRepositoryPatches(),
 		},
 		{
+			contentGate: { blocked: vi.fn().mockResolvedValue([]), cover: vi.fn() },
 			revision,
 			eventRepository: eventDependencies.repository,
 			documentCodec: eventDependencies.documentCodec,
@@ -332,10 +333,10 @@ function assetJourney(reconciliation?: Pick<ReconcileEventAssets, "execute">) {
 			),
 			reconcileAssets:
 				reconciliation ??
-				new ReconcileEventAssets(
+				new PublicationDomainComposition().reconcileEventAssets(
 					{
-						createReconcileAssetFile: (...args) =>
-							new PublicationDomainComposition().reconcileAssetFile(...args),
+						render: (template, date) =>
+							template.replaceAll("[EVENT_DATE:YYYY-MM-DD]", date),
 					},
 					assetRepository,
 				),

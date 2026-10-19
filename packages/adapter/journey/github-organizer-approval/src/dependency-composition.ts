@@ -1,9 +1,13 @@
 import {
+	DraftProposalComposition,
 	FollowUpApprovalPolicy,
 	JourneyPolicyComposition,
 } from "@meetup-automation/journey";
 import { LocalizationComposition } from "@meetup-automation/localization";
-import { PublicationDomainComposition } from "@meetup-automation/publication";
+import {
+	PublicAssetUrl,
+	PublicationDomainComposition,
+} from "@meetup-automation/publication";
 import { ApprovalCommentCodec } from "./approval-comment-codec.js";
 import {
 	ApprovalDecisionParser,
@@ -26,6 +30,9 @@ import {
 } from "./approval-record-factory.js";
 import { ApprovalRequestSchema } from "./approval-request-schema.js";
 import { ApprovalSchema } from "./approval-schema.js";
+import { ContentApprovalPresenter } from "./content-approval-presenter.js";
+import { ContentApprovalSchema } from "./content-approval-schema.js";
+import { ContentValueSchema } from "./content-value-schema.js";
 import { EmailApprovalDetailsSchema } from "./email-approval-details-schema.js";
 import {
 	EmailApprovalPresenter,
@@ -123,7 +130,13 @@ export class GithubOrganizerApprovalComposition {
 			"email-introduction": email,
 			"email-thanks": email,
 			"meetup-publication": this.meetupApprovalPresenter(messages),
+			"content-review": this.contentApprovalPresenter(messages),
 		});
+	}
+	contentApprovalPresenter(
+		messages: ApprovalMessages,
+	): ContentApprovalPresenter {
+		return new ContentApprovalPresenter(messages);
 	}
 
 	approvalPresenterFactory(): ApprovalPresenterFactory {
@@ -149,6 +162,11 @@ export class GithubOrganizerApprovalComposition {
 	approvalRequestSchema(): ApprovalRequestSchema {
 		return new ApprovalRequestSchema({
 			approvalSchema: this.approvalSchema(),
+			contentApprovalSchema: new ContentApprovalSchema(
+				this.approvalSchema(),
+				new DraftProposalComposition().policy(),
+				new ContentValueSchema(new PublicAssetUrl()),
+			),
 			meetupApprovalDetailsSchema: this.meetupApprovalDetailsSchema(),
 			emailApprovalDetailsSchema: this.emailApprovalDetailsSchema(),
 		});

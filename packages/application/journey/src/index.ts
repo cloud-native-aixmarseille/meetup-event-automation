@@ -1,24 +1,36 @@
 export { ApprovalNotificationPolicy } from "./approval/approval-notification-policy.js";
 export { ApprovalRequestPolicy } from "./approval/approval-request-policy.js";
 export { FollowUpApprovalPolicy } from "./approval/follow-up-approval-policy.js";
+export { CoverArtworkDrafts } from "./assets/cover-artwork-drafts.js";
+export { GenerateCoverArtwork } from "./assets/generate-cover-artwork.js";
 export { CommunicationDiagnosticProjection } from "./communication/communication-diagnostic-projection.js";
 export type {
 	CommunicationJourneyDiagnostic,
 	ManageMeetupCommunicationsInput,
 	ManageMeetupCommunicationsResult,
 } from "./communication/contracts.js";
+export { SocialPostDrafts } from "./communication/social-post-drafts.js";
 export { JourneyCommunicationComposition } from "./communication-composition.js";
 export type { AutomationConfig } from "./config/automation-config.js";
 export { AutomationConfigFactory } from "./config/automation-config.js";
 export { JourneyComposition } from "./dependency-composition.js";
+export { DraftProposalComposition } from "./draft-proposal-composition.js";
+export { EventCopyDrafts } from "./event/event-copy-drafts.js";
 export { JourneyPolicyComposition } from "./policy-composition.js";
+export type { ContentAuthority } from "./ports/content-authority.js";
+export type {
+	ContentSubmission,
+	ContentSubmissions,
+} from "./ports/content-submissions.js";
 export type { EventDocumentRevision } from "./ports/event-document-revision.js";
+export type * from "./ports/generation.js";
 export type {
 	IssueFormProjection,
 	IssueFormProjectionMode,
 	IssueFormProjectionResult,
 } from "./ports/issue-form-projection.js";
 export type {
+	ContentApprovalDetails,
 	MeetupPublicationApprovalDetails,
 	OrganizerApproval,
 	OrganizerApprovalKind,
@@ -45,6 +57,15 @@ export type {
 	OrganizerFollowUpInput,
 } from "./ports/organizer-follow-up.js";
 export { FOLLOW_UP_TASKS } from "./ports/organizer-follow-up.js";
+export * from "./proposals/content-plan-factory.js";
+export * from "./proposals/content-proposal-factory.js";
+export * from "./proposals/content-proposal-transition.js";
+export { GenerateTextProposal } from "./proposals/generate-text-proposal.js";
+export * from "./proposals/prepare-promotional-content.js";
+export * from "./proposals/promotional-content.js";
+export * from "./proposals/promotional-content-fingerprint.js";
+export * from "./proposals/promotional-content-policy.js";
+export * from "./proposals/promotional-content-ports.js";
 export { AttentionStageEvaluation } from "./result/attention-stage-evaluation.js";
 export {
 	ATTENTION_STAGE_OWNERS,
@@ -54,6 +75,21 @@ export {
 export { DiagnosticPolicy } from "./result/diagnostic-policy.js";
 export { OrganizerDiagnosticPolicy } from "./result/organizer-diagnostic-policy.js";
 export type { PublicDiagnostic } from "./result/result-envelope.js";
+export { ApplyPromotionalContent } from "./review/apply-promotional-content.js";
+export {
+	ContentFactsProjection,
+	type ContentSettings,
+} from "./review/content-facts-projection.js";
+export { ContentReview } from "./review/content-review.js";
+export { EventCopyApprovalGate } from "./event/event-copy-approval-gate.js";
+export { CoverArtworkApprovalGate } from "./assets/cover-artwork-approval-gate.js";
+export { ApplyEventCopy } from "./event/apply-event-copy.js";
+export {
+	type ContentContext,
+	ContentWorkspace,
+} from "./review/content-workspace.js";
+export { ManageContentReview } from "./review/manage-content-review.js";
+export { SubmitPromotionalContent } from "./review/submit-promotional-content.js";
 export { AssetRenderProjection } from "./use-cases/asset-render-projection.js";
 export { CommunicationJourneyResults } from "./use-cases/communication-journey-results.js";
 export { FindNextAssetEvent } from "./use-cases/find-next-asset-event.js";

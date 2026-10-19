@@ -4,6 +4,11 @@ import { CATALOGS } from "./catalog.js";
 import type { MessageParameters } from "./message-parameters.js";
 
 const parameters = {
+	"request.content": {
+		date: "2099-06-08",
+		target: "title",
+		url: "https://github.com/example/events/issues/1",
+	},
 	"request.introduction": {
 		date: "2099-06-08",
 		count: 2,

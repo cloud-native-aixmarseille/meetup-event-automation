@@ -13,7 +13,7 @@ export class GithubApprovalAttentionSource implements AttentionApprovalSource {
 	) {}
 	async synchronizeApprovals(): Promise<readonly AttentionApproval[]> {
 		const result: AttentionApproval[] = [];
-		for (const state of await this.repository.states()) {
+		for (const state of await this.repository.activeStates()) {
 			if (state.record.recipientCount === 0) continue;
 			const decision = await this.finalizer.execute(state);
 			result.push({

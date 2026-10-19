@@ -45,7 +45,9 @@ export {
 } from "./domain/diagnostic.js";
 export { EventAgendaRule } from "./domain/event-agenda-rule.js";
 export { EventChecklists } from "./domain/event-checklists.js";
+export type * from "./domain/event-copy-facts.js";
 export { EventDateRule } from "./domain/event-date-rule.js";
+export { EventCopyDescriptionDraft } from "./domain/event-copy-description-draft.js";
 export { EventDescriptionRule } from "./domain/event-description-rule.js";
 export { EventHostRule } from "./domain/event-host-rule.js";
 export { EventLinksRule } from "./domain/event-links-rule.js";
@@ -56,6 +58,7 @@ export {
 	type EventRuleEngineArguments,
 } from "./domain/event-rule-engine.js";
 export { EventRuleFactory } from "./domain/event-rule-factory.js";
+export { EventCopyTitleDraft } from "./domain/event-copy-title-draft.js";
 export { EventTitleRule } from "./domain/event-title-rule.js";
 export { IssueTitleRule } from "./domain/issue-title-rule.js";
 export {
@@ -107,3 +110,4 @@ export {
 	type EventRuleResult,
 	type ManagedLabelConfiguration,
 } from "./domain/rule-contracts.js";
+export { EventCopyAgenda } from "./domain/event-copy-agenda.js";

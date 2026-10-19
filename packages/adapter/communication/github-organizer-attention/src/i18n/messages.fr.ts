@@ -43,6 +43,7 @@ export const messages = {
 	"task.event": "validation du meetup",
 	"task.assets": "ressources",
 	"task.feedback": "évaluations",
+	"task.content": "contenu",
 	"task.communications": "communications",
 	"task.unknown": "consulter le ticket",
 } as const;

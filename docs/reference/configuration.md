@@ -43,7 +43,7 @@ does not forward it to a reusable workflow.
 
 ## Meetup publication
 
-The dedicated [Meetup publication workflow](../../.github/workflows/reconcile-event-publication.md)
+The dedicated [Meetup publication workflow](../../.github/workflows/event-publication-reconcile.yml)
 uses `MEETUP_EMAIL` and `MEETUP_PASSWORD` secrets, the shared
 [AI configuration](#ai-configuration), and the existing App and Conference Hall
 settings. Its explicit schedule and public venue mappings belong in
@@ -60,6 +60,14 @@ Actions that use AI require the same three inputs, without defaults:
 | `ai-provider` | String input `ai-provider`  | Supported provider identifier.        |
 | `ai-model`    | String input `ai-model`     | Explicit model for that provider.     |
 | `ai-api-key`  | Secret `ai-api-key`         | API key authorized to use that model. |
+
+The preparation drafts workflow composes text and image actions. It requires
+`ai-text-model` and `ai-image-model` instead of a single `ai-model`, and forwards
+each to the corresponding action's `ai-model`. Both are required for every call;
+unselected operations do not run. `ai-provider` and the `ai-api-key` secret are
+shared. See [draft generation](../integrations/content.md#generate-a-proposal)
+for selections and model capabilities. Promotion and publication workflows use
+the single-model parameters in the table.
 
 The supported provider identifier is `gemini`. Meetup publication requires a
 model with image input and structured output, with API quota available to the
@@ -198,3 +206,10 @@ and declare public venue addresses separately from private contact records.
 The [asset guide](../integrations/assets.md#author-managed-content) owns the
 versioned contract, event-specific configuration and recovery operations.
 Without this file, templates retain copy-only behavior.
+
+## Promotional content
+
+The [content guide](../integrations/content.md) owns `.github/meetup-content.json`,
+text/image model capabilities, public media prerequisites, and recovery.
+Content generation uses the shared AI inputs. Review and manual submission do
+not require AI credentials.

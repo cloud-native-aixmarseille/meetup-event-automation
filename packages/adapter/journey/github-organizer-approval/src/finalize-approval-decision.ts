@@ -21,11 +21,15 @@ export class FinalizeApprovalDecision {
 				status: decision.status,
 				actor: decision.actor,
 				decidedAt: decision.decidedAt,
+				...(decision.selectedImage
+					? { selectedImage: decision.selectedImage }
+					: {}),
 			};
 		}
 		await this.repository.save(record, state);
 		return {
 			status: decision.status,
+			...(record.kind === "content-review" ? decision : {}),
 			notificationFailed: await this.notifications.react(record, comment.id),
 		};
 	}

@@ -22,21 +22,24 @@ export const SLOTTED_TEXT_TOKENS = [
 	"speaker.name",
 ] as const;
 export type SlottedTextToken = (typeof SLOTTED_TEXT_TOKENS)[number];
+export type DateTextToken = "event.date" | "next_event.date";
 export type TextToken = (typeof TEXT_TOKENS)[number] | SlottedTextToken;
 export type TextKey =
 	| (typeof TEXT_TOKENS)[number]
+	| `${DateTextToken}:format:${string}`
 	| `${SlottedTextToken}:${string}`;
 export type ImageSource = Readonly<{ url: string; description: string }>;
 export type TextField = Readonly<{
 	type: "text";
 	token: TextToken;
 	slot?: string;
+	format?: string;
 	required: boolean;
 	fallback?: string;
 }>;
 export type ImageField = Readonly<{
 	type: "image";
-	token: "speaker.picture" | "host.logo";
+	token: "speaker.picture" | "host.logo" | "event.cover";
 	slot: string;
 	objectId: string;
 	pageId?: string;
@@ -53,8 +56,10 @@ export type ContentContract = Readonly<{
 }>;
 export type PublicAssetModel = Readonly<{
 	text: Readonly<Partial<Record<TextKey, string>>>;
+	dates?: Readonly<Partial<Record<DateTextToken, string>>>;
 	pictures: Readonly<Record<string, ImageSource & { speakerId: string }>>;
 	hostLogo?: ImageSource & { hostId: string };
+	cover?: import("./content-media.js").ContentMedia;
 }>;
 export type ContentAnchor = Readonly<{
 	objectId?: string;

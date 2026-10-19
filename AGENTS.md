@@ -156,9 +156,12 @@ history.
 - Use short, direct sentences about supported behavior. Remove legacy,
   deprecated, historical, and speculative content from current guides. Preserve
   decision history in ADRs instead of appending migration narratives or corrections.
-- Preserve ADRs, their numbering, context, alternatives, and consequences. Do
-  not delete or rewrite past decisions during cleanup. Record changed decisions
-  in new ADRs and update the affected records' status and supersession links.
+- Group ADRs by feature or architectural scope under `docs/adr/`. Update the
+  relevant record with accepted decisions and dated history; add a new scope only
+  for a distinct concern. Preserve replaced choices, rationale, and supersession.
+- Preserve original numbered records under `docs/adr/archive/`, including their
+  titles, numbers, context, alternatives, consequences, and dated evidence. Keep
+  the scope index, historical index, and links between them current.
 - Keep current architectural rationale and constraints in the relevant guide.
   Verify documented behavior against source, tests, and public manifests; do not
   change production behavior to make an inaccurate document true.

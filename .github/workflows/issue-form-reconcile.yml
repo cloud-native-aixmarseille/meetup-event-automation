@@ -1,0 +1,70 @@
+# Goal: Keep public meetup form choices aligned with the referential catalogs.
+# Behavior: Validate catalogs, render the issue form and open or update a review
+# pull request when the generated form changes.
+
+name: Issue form / Reconcile
+on:
+  workflow_call:
+    inputs:
+      locale:
+        description: Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
+        required: true
+        type: string
+      github-app-client-id:
+        description: GitHub App client ID used to mint the narrowly scoped installation token for meetup automation.
+        required: true
+        type: string
+    secrets:
+      github-app-private-key:
+        description:
+          PEM-encoded private key for the GitHub App identified by the github-app-client-id input. Used to mint a narrowly scoped
+          installation token.
+        required: true
+permissions: {}
+jobs:
+  synchronize:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Create narrowly scoped GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1
+        with:
+          client-id: ${{ inputs.github-app-client-id }}
+          private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] reusable workflow forwards explicitly scoped credentials
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-pull-requests: write
+      - name: Checkout consumer repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - id: local-workflow-actions
+        uses: hoverkraft-tech/ci-github-common/actions/local-workflow-actions@3a27d31e9ccefbe9609cc9165017ed100ff34a22
+        with:
+          actions-path: actions
+      - name: Validate referentials
+        id: referentials
+        uses: ./../self-workflow/actions/referential/validate
+        with:
+          locale: ${{ inputs.locale }}
+      - name: Render issue form
+        id: synchronize
+        uses: ./../self-workflow/actions/issue-form/reconcile
+        with:
+          locale: ${{ inputs.locale }}
+          mode: fix
+      - name: Open or update synchronization pull request
+        if: ${{ steps.synchronize.outputs.completed == 'true' && steps.synchronize.outputs.changed == 'true' }}
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          branch: chore/update-meetup-issue-form
+          delete-branch: true
+          title: "chore: update meetup issue form"
+          commit-message: "chore: update meetup issue form"
+          body: |
+            Synchronizes the meetup issue form from the validated referential
+            projection using the central meetup automation workflow.

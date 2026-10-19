@@ -1,3 +1,6 @@
+# Goal: Surface inactive issues and pull requests.
+# Behavior: Run the shared stale-item policy daily to mark inactive discussions.
+
 name: Mark stale issues and pull requests
 
 on:

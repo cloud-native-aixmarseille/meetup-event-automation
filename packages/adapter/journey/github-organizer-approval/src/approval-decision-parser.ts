@@ -19,11 +19,37 @@ export class ApprovalDecisionParser {
 			return { status: "pending" };
 
 		const normalized = body.replace(/\r\n/g, "\n").replace(/- \[X\]/g, "- [x]");
+		if (record.kind === "content-review")
+			return this.content(record, normalized);
 		for (const comment of this.comments) {
 			for (const status of ["approved", "rejected"] as const) {
 				if (normalized === comment.issue(record, { status })) return { status };
 			}
 		}
+		return { status: "pending" };
+	}
+	private content(
+		record: StoredApproval<"content-review">,
+		body: string,
+	): ApprovalDecision {
+		const approvals: ApprovalDecision[] =
+			record.content.target === "cover"
+				? record.content.draft.media.map((media) => ({
+						status: "approved",
+						selectedImage: media.id,
+					}))
+				: [{ status: "approved" }];
+		for (const decision of [
+			...approvals,
+			{ status: "rejected" } as const,
+			{ status: "iteration-requested" } as const,
+		])
+			if (
+				this.comments.some(
+					(comment) => comment.issue(record, decision) === body,
+				)
+			)
+				return decision;
 		return { status: "pending" };
 	}
 }

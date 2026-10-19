@@ -474,6 +474,7 @@ describe("typed attention stage boundary", () => {
 				assets: { outcome: "success", diagnostics: [] },
 				feedback: { outcome: "success", diagnostics: [] },
 				communications: { outcome: "success", diagnostics: [] },
+				content: { outcome: "success", diagnostics: [] },
 			});
 
 			// Act

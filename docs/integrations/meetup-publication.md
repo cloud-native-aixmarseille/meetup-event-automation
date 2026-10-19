@@ -1,6 +1,6 @@
 # Create and update Meetup events
 
-The [publication workflow](../../.github/workflows/reconcile-event-publication.md)
+The [publication workflow](../../.github/workflows/event-publication-reconcile.yml)
 synchronizes one meetup issue through Meetup's organizer site. New events are
 saved as drafts. Once the required event information is complete, automation
 requests organizer approval in a GitHub issue comment and notifies the organizer
@@ -68,7 +68,7 @@ skipped. Incomplete or stale event data blocks synchronization before browser
 access.
 Selected talks and speaker names are resolved through the existing event journey.
 
-Call `reconcile-event-publication.yml` with the issue number, locale, GitHub App client
+Call `event-publication-reconcile.yml` with the issue number, locale, GitHub App client
 ID, Conference Hall event slug, AI provider and model, organizer Slack channel, the three
 publication URL inputs, and its six required secrets.
 Consumer workflows must call it on event issue changes and on `issue_comment: [edited]` so an organizer's approval resumes publication automatically. A manual
@@ -101,7 +101,7 @@ jobs:
       ${{ github.event_name == 'workflow_dispatch' ||
           (!github.event.issue.pull_request && github.event.issue.state == 'open' &&
            contains(github.event.issue.labels.*.name, 'meetup')) }}
-    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/reconcile-event-publication.yml@RELEASE_SHA
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/event-publication-reconcile.yml@RELEASE_SHA
     with:
       issue-number: ${{ github.event.issue.number || inputs.issue-number }}
       locale: fr

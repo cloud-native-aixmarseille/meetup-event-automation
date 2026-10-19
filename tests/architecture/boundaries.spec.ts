@@ -36,6 +36,52 @@ async function filesBelow(directory: string): Promise<string[]> {
 }
 
 describe("clean architecture boundaries", () => {
+	it("keeps generation adapters independent of business domain packages", async () => {
+		// Arrange
+		const packages = await workspacePackages();
+		const applications = new Set(
+			packages
+				.filter((item) => item.layer === "application")
+				.map((item) => item.name),
+		);
+		const adapters = packages.filter((item) =>
+			item.directory.startsWith(
+				join(repositoryRoot, "packages/adapter/generation/"),
+			),
+		);
+		const violations: string[] = [];
+		// Act
+		for (const adapter of adapters) {
+			for (const dependency of adapter.dependencies) {
+				if (!applications.has(dependency))
+					violations.push(`${adapter.name}: ${dependency}`);
+			}
+			for (const file of await filesBelow(join(adapter.directory, "src"))) {
+				if (!file.endsWith(".ts")) continue;
+				const source = await readFile(file, "utf8");
+				for (const match of source.matchAll(
+					/['"](@meetup-automation\/[^'"]+)['"]/g,
+				)) {
+					if (!applications.has(match[1]))
+						violations.push(`${relative(repositoryRoot, file)}: ${match[1]}`);
+				}
+			}
+		}
+		// Assert
+		expect(adapters.length).toBeGreaterThan(0);
+		expect(violations).toEqual([]);
+	});
+	it("keeps generation contracts independent of business domain types", async () => {
+		// Arrange
+		const file = join(
+			repositoryRoot,
+			"packages/application/journey/src/ports/generation.ts",
+		);
+		// Act
+		const source = await readFile(file, "utf8");
+		// Assert
+		expect(source).not.toMatch(/\b(?:import|export)\s[^;]*\bfrom\s*["']/);
+	});
 	it("confines dependency injection to runtime composition roots", async () => {
 		// Arrange
 		const violations: string[] = [];

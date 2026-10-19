@@ -49,12 +49,19 @@ function setup() {
 			.mockResolvedValue(file),
 		updateFile: vi.fn<AssetRepository["updateFile"]>().mockResolvedValue(file),
 	};
+	const names = {
+		render: vi.fn((template: string, date: string) =>
+			template.replaceAll("[EVENT_DATE:YYYY-MM-DD]", date),
+		),
+	};
 	return {
+		names,
 		repository,
 		reconcile: new ReconcileEventAssets(
 			{
+				names,
 				createReconcileAssetFile: (...args) =>
-					new PublicationDomainComposition().reconcileAssetFile(...args),
+					new PublicationDomainComposition().reconcileAssetFile(names, ...args),
 			},
 			repository,
 		),
@@ -62,9 +69,50 @@ function setup() {
 }
 
 describe("event asset reconciliation", () => {
+	it("uses the validated calendar date for copied filenames", async () => {
+		// Arrange
+		const { repository, reconcile } = setup();
+		repository.listFiles.mockResolvedValue([]);
+
+		// Act
+		await reconcile.execute({ ...input, date: ` ${input.date} ` });
+
+		// Assert
+		expect(repository.copyTemplate).toHaveBeenCalledWith(
+			folder.id,
+			template,
+			file.name,
+		);
+	});
+
+	it.each(["[EVENT_DATE]", "[HOST_DATE:YYYY]", "[EVENT_NAME:YYYY]"])(
+		"rejects invalid catalog filename %s before any mutation",
+		async (name) => {
+			// Arrange
+			const { repository, reconcile, names } = setup();
+			names.render.mockReturnValueOnce("Slides").mockImplementationOnce(() => {
+				throw new Error("Invalid template");
+			});
+			repository.findContainer.mockResolvedValue(undefined);
+			repository.listTemplates.mockResolvedValue([
+				template,
+				{ id: "announcement", kind: "announcement", name },
+			]);
+
+			// Act
+			const result = reconcile.execute(input);
+
+			// Assert
+			await expect(result).rejects.toThrow();
+			expect(repository.ensureContainer).not.toHaveBeenCalled();
+			expect(repository.copyTemplate).not.toHaveBeenCalled();
+			expect(repository.updateFile).not.toHaveBeenCalled();
+		},
+	);
+
 	it("keeps successful files reusable when another contract fails preflight", async () => {
 		// Arrange
-		const { repository } = setup();
+		const { repository, names } = setup();
 		const content = contentFixture();
 		repository.listFiles.mockResolvedValue([]);
 		repository.listTemplates.mockResolvedValue([
@@ -86,8 +134,9 @@ describe("event asset reconciliation", () => {
 		);
 		const reconcile = new ReconcileEventAssets(
 			{
+				names,
 				createReconcileAssetFile: (...args) =>
-					new PublicationDomainComposition().reconcileAssetFile(...args),
+					new PublicationDomainComposition().reconcileAssetFile(names, ...args),
 			},
 			repository,
 			content.service,

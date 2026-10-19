@@ -16,6 +16,7 @@ describe("slotted content values", () => {
 			};
 			const resolver = new ResolveContentValues(
 				{
+					templates: { value: (value) => value.value },
 					contentTextKey: new PublicationDomainComposition().contentTextKey(),
 					contentContractPolicy:
 						new PublicationDomainComposition().contentContractPolicy(),
@@ -57,6 +58,7 @@ describe("slotted content values", () => {
 		const f = contentFixture(true, undefined, "host.logo");
 		const resolver = new ResolveContentValues(
 			{
+				templates: { value: (value) => value.value },
 				contentTextKey: new PublicationDomainComposition().contentTextKey(),
 				contentContractPolicy:
 					new PublicationDomainComposition().contentContractPolicy(),
@@ -84,6 +86,7 @@ describe("slotted content values", () => {
 		// Arrange
 		const resolver = new ResolveContentValues(
 			{
+				templates: { value: (value) => value.value },
 				contentTextKey: new PublicationDomainComposition().contentTextKey(),
 				contentContractPolicy:
 					new PublicationDomainComposition().contentContractPolicy(),
@@ -123,6 +126,7 @@ describe("slotted content values", () => {
 		// Arrange
 		const resolver = new ResolveContentValues(
 			{
+				templates: { value: (value) => value.value },
 				contentTextKey: new PublicationDomainComposition().contentTextKey(),
 				contentContractPolicy:
 					new PublicationDomainComposition().contentContractPolicy(),

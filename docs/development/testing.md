@@ -92,6 +92,7 @@ The focused `pnpm check:interfaces` command also runs in local and CI lint.
 | [Action reporting](../../tests/contracts/action-reporting.spec.ts)           | Shared runner, public reports, failure policy, and safe rendering                                                |
 | [Localization](../../tests/contracts/localization.spec.ts)                   | Catalog ownership, locale wiring, and diagnostic coverage                                                        |
 | [Public workflows](../../tests/contracts/public-workflows.spec.ts)           | Reusable workflow interfaces, permissions, secrets, pinned dependencies                                          |
+| [Generation workflows](../../tests/contracts/generation-workflows.spec.ts)   | Target validation, independent generators, shared review and selected-stage failure evidence                     |
 | [Event safeguards](../../tests/contracts/event-side-effects.spec.ts)         | Shared concurrency lock, audit gating, issue-form validation                                                     |
 | [Attention safeguards](../../tests/contracts/attention-side-effects.spec.ts) | Final execution after failure, typed outcomes, and shared concurrency                                            |
 | [Feedback safeguards](../../tests/contracts/feedback-side-effects.spec.ts)   | Feedback action credentials and workflow gating                                                                  |

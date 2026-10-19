@@ -34,21 +34,32 @@ Public actions use `actions/<scope>/<operation>`. Repeated desired-state
 operations use `reconcile`; queries and validation use `list-active` and
 `validate`. Action paths, workflow filenames and public display names describe
 business responsibilities, independently of adapter implementations. Use
-`reconcile-speakers.yml` for the speaker referential and
-`publication/reconcile-event` with `reconcile-event-publication.yml` for event
+`referential-reconcile-speakers.yml` for the speaker referential and
+`publication/reconcile-event` with `event-publication-reconcile.yml` for event
 publication. Provider identities belong in adapter wiring, integration guides
 and provider-specific settings. An action accepts only credentials and inputs
 needed by its own operation. See the [action inventory](../README.md#action-contracts).
 
-Workflows compose the operations. Issue updates and audits call
-`reconcile-meetup.yml`, which holds the repository/issue lock across event
-mutations, shared-link reconciliation and organizer reporting. Meetup publication
-uses the same lock. Shared-link writes have an additional repository/link lock
-in `reconcile-feedback-link.yml`; every invocation rereads all active candidates.
-The audit runs at most four issue pipelines concurrently. The shared-link lock
-uses [GitHub's bounded queue](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#concurrency)
-to retain pending calls. Each issue pipeline invokes this idempotent operation, so each
-pipeline can include its outcome without sharing private artifacts.
+Public workflows follow the [event lifecycle](../usage/workflows.md). Internal
+workflow filenames start with `__`, including CI and reusable implementation
+helpers. Lifecycle phases group organizer use cases; they do not introduce new
+domain states or replace the scoped action boundaries.
+
+Issue changes and audits use `event-reconcile.yml`, which owns sequencing,
+locking and reporting directly. It refreshes event facts, feedback, draft reviews
+and documents before evaluating email. Domain policies determine which email is
+due and whether PDF export is eligible. Workflows do not select a restricted
+email purpose or skip PDF evaluation by lifecycle phase.
+
+The public reconciliation workflow holds the repository/issue lock across
+mutations, shared-link reconciliation and organizer reporting. Publication and
+generation use the same issue lock. After initialization, reconciliation calls
+`__feedback-reconcile-short-link.yml` directly; that helper additionally locks by
+repository/link and rereads active candidates. The audit runs at most four issue pipelines
+concurrently. The link lock uses
+[GitHub's bounded queue](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#concurrency)
+to retain pending calls. Each issue pipeline includes the shared-link outcome
+without exchanging private artifacts.
 
 Document reconciliation passes public asset identities, protected folder IDs and
 an opaque canonical issue revision to PDF export. The revision covers repository,
@@ -56,11 +67,15 @@ issue number, state, title, sorted labels and body; the PDF operation rereads an
 checks it before effects. Private profiles and credentials stay inside the action
 that reads them. PDF failure leaves prepared slides available to email processing.
 
-Checklist reconciliation precedes attention. Document and PDF evidence form the
+`__organizer-reconcile-reporting.yml` receives stage evidence from the internal
+composition, including failed and skipped operations. Checklist reconciliation
+precedes attention. Document and PDF evidence form the
 assets stage; event-feedback and shared-link evidence form the feedback stage.
 Every member must succeed and report diagnostics before the combined stage can
 clear previous tasks. Attention runs only after checklist persistence succeeds.
 Its durable state and notifications remain independent of email delivery records.
+A skipped PDF operation leaves the asset stage incomplete; partial evidence
+cannot clear unresolved asset tasks.
 
 Speaker reconciliation writes only catalog and ID-allocation files. The workflow
 then reconciles the issue form and publishes a review branch only after both
@@ -79,6 +94,7 @@ retries.
 | `packages/application/browser-authentication` | Provider-neutral CAPTCHA inspection and resolution port                                                                                    |
 | `packages/adapter/*/*`                        | Concrete implementations of owned ports: GitHub, CSV, YAML, Drive, OpenFeedback, Kutt, Slack, system time                                  |
 | `packages/presentation/localization`          | Generic locale normalization, ICU formatting, and catalog contracts                                                                        |
+| `packages/presentation/templating`            | Feature-neutral expression parsing, occurrence ranges, literal rendering, and localized calendar-date formats                              |
 | `packages/runtime/github-actions`             | Input parsing, credentials, dependency composition, action execution, output serialization                                                 |
 
 A domain package owns its model, use cases, and ports. Journey code coordinates
@@ -96,6 +112,7 @@ the provider. Package names use `<technology>-<responsibility>`, with matching
 | `browser-authentication` | Browser CAPTCHA resolution                                             |
 | `communication`          | Delivery records, mail dispatch, organizer attention and notifications |
 | `event`                  | Event persistence, issue-document codecs and diagnostic comments       |
+| `generation`             | External text and image generation from prepared application requests  |
 | `journey`                | Organizer approvals and issue-form projection                          |
 | `publication`            | Event publication, assets, content, feedback and publication state     |
 | `referential`            | Speaker and proposal sources, catalog persistence                      |
@@ -160,6 +177,17 @@ layer depends on presentation infrastructure. Presenters own their catalogs and
 use [the localization package](localization.md) for formatting. Reusable
 workflows coordinate actions, permissions, and concurrency; business rules
 belong in TypeScript.
+
+Authored asset templates use the dedicated presentation templating package.
+It parses both supported spellings into one expression model, reports UTF-16
+occurrence ranges, and formats resolved values once. Publication defines a narrow
+`AssetTemplateRenderer` port and supplies allowlisted fields and public values;
+runtime composition injects the locale-bound implementation. The domain does not
+import the presentation package. Docs and Slides adapters use its parser while
+retaining their provider-specific shape/range, style, and ownership checks.
+Generic templating has no event registry, provider access, or authorization
+decisions. ICU message catalogs remain owned by their presenters; email templates
+are rendered by the receiving delivery workflow.
 
 ## Runtime composition
 
@@ -586,6 +614,49 @@ editable sources and export state remain in the event folder. Runtime injects
 the required destination ID. PDF readiness never changes
 the editable slides readiness or the communication link contract. See
 [PDF export and recovery](../integrations/assets.md#export-the-presentation-pdf).
+
+## Draft generation and review
+
+Event owns title and description formats, including the logistics that may
+appear in descriptions. Publication owns cover artwork and image assets.
+Communication owns social channel formats, announcement/reminder wording, and
+calendar-day timing. These domains have no dependencies on one another.
+Their draft definitions explicitly project the public facts needed by a brief.
+
+Journey coordinates those definitions with proposal persistence, source
+revalidation, organizer authority, and application. Its `proposals` and `review`
+areas own the shared lifecycle; event copy and cover artwork have separate
+application and approval-gate collaborators. The persisted version 1 evidence
+snapshot is broader than any provider brief and is never passed to a provider.
+
+The journey's `TextGeneration` and `ImageGeneration` ports accept prepared
+briefs. The image brief includes domain-owned preferred dimensions and media
+type. Generation contracts contain no domain imports and return neutral image
+bytes. Journey maps those bytes into publication's media persistence contract.
+
+Provider adapters live under `adapter/generation`; the Gemini package is
+`gemini-generation-gateway`. These adapters depend only on application packages
+within the workspace. Gemini owns capability selection, protocol encoding,
+transport bounds, response decoding, and mapping preferred dimensions to
+supported provider sizes. Event and communication policies own editorial length
+limits; the transport bounds wire responses independently. The adapter receives
+no event or proposal model and contains no meetup editorial rules.
+Runtime binds each operation to its business definition and provider capability.
+Event copy and Slack generation require no Drive service; LinkedIn verifies its
+announcement image, and artwork generation persists independent candidates.
+
+Generation actions live under `event`, `assets`, and `communication`.
+`organizer/review-drafts` shares verified review and manual-submission handling.
+The preparation workflow selects any combination of title, description and cover;
+the promotion workflow selects one destination and post type. Selection validates
+routing inputs before credentials. Text and image model inputs are bound to each
+action's shared AI interface. Selected actions remain independent on failure,
+followed by one review and `__organizer-reconcile-reporting.yml` under the event
+lock. Only selected generators and review contribute content-stage evidence.
+Editorial, timing, approval and persistence policies remain in their existing
+owners; workflow consolidation does not combine business responsibilities.
+See [draft generation and review](../integrations/content.md) for operation
+inputs, reviewed outputs, and recovery behavior.
 
 ## Privacy and trust boundaries
 

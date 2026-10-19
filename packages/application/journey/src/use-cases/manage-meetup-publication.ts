@@ -22,6 +22,7 @@ import {
 import type { OrganizerApproval } from "../ports/organizer-approval.js";
 import type { DiagnosticPolicy } from "../result/diagnostic-policy.js";
 import type { PublicDiagnostic } from "../result/result-envelope.js";
+import type { EventCopyApprovalGate } from "../event/event-copy-approval-gate.js";
 import type { ManageMeetupEvent } from "./manage-meetup-event.js";
 import type {
 	MeetupPublicationApproval,
@@ -76,6 +77,7 @@ export class ManageMeetupPublication {
 	constructor(
 		private readonly collaborators: ManageMeetupPublicationCollaborators,
 		private readonly dependencies: {
+			contentGate: Pick<EventCopyApprovalGate, "blocked">;
 			repository: EventRepository;
 			codec: EventDocumentCodec;
 			clock: EventClock;
@@ -106,6 +108,8 @@ export class ManageMeetupPublication {
 		)
 			return this.result("blocked", "source");
 		const event = evaluation.event;
+		if ((await this.dependencies.contentGate.blocked(event)).length)
+			return this.result("blocked", "content-review");
 		if (
 			event.issueState !== "open" ||
 			["cancelled", "postponed", "held"].includes(event.occurrenceStatus ?? "")
@@ -254,12 +258,22 @@ export class ManageMeetupPublication {
 		return { status: "updated", diagnostics };
 	}
 
-	private ensureCurrent(source: EventDocument): Promise<void> {
-		return this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
+	private async ensureCurrent(source: EventDocument): Promise<void> {
+		await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
 			this.dependencies.repository,
 			source.identity,
 			source,
 		);
+		const evaluated = await this.dependencies.manageEvent.execute({
+			identity: source.identity,
+			sourceDocument: source,
+			mode: "check",
+		});
+		if (
+			evaluated.skipped ||
+			(await this.dependencies.contentGate.blocked(evaluated.event)).length
+		)
+			throw new ScheduledEventError("content-review");
 	}
 
 	private result(

@@ -22,6 +22,7 @@ import {
 	type EventCompositionInput,
 	SERVICES,
 } from "./composition.js";
+import { ContentGateComposition } from "./content-gate-composition.js";
 import { GithubActionsComposition } from "./dependency-composition.js";
 import { OrganizerApprovalComposition } from "./organizer-approval-composition.js";
 
@@ -45,6 +46,11 @@ export class MeetupPublicationComposition {
 			const group = MeetupGroupUrl.fromEventUrlPrefix(prefix);
 			if (!group) throw new Error("Invalid Meetup event URL prefix");
 			return new JourneyComposition().manageMeetupPublication({
+				contentGate: new ContentGateComposition().create(
+					input,
+					input.issueNumber,
+					input.commentAuthorLogin,
+				),
 				repository: context.get<EventRepository>(SERVICES.eventRepository),
 				codec: context.get<EventDocumentCodec>(SERVICES.eventDocumentCodec),
 				clock: context.get<EventClock>(SERVICES.eventClock),

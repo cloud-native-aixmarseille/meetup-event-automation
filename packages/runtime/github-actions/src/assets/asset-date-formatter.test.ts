@@ -1,3 +1,4 @@
+import { TemplatingComposition } from "@meetup-automation/templating";
 import { describe, expect, it } from "vitest";
 import { AssetDateFormatter } from "./asset-date-formatter.js";
 
@@ -7,7 +8,10 @@ describe("asset calendar formats", () => {
 		["fr", "octobre", "jeudi 15 octobre 2026"],
 	])("formats the same event calendar day in %s", (locale, month, weekday) => {
 		// Arrange
-		const formatter = new AssetDateFormatter(locale);
+		const formatter = new AssetDateFormatter(
+			new TemplatingComposition().dates(locale),
+			locale,
+		);
 
 		// Act
 		const actual = [
@@ -27,7 +31,10 @@ describe("asset calendar formats", () => {
 		["2026-10-15", "invalid-zone"],
 	])("does not format invalid date/timezone %s %s", (date, zone) => {
 		// Arrange
-		const formatter = new AssetDateFormatter("en");
+		const formatter = new AssetDateFormatter(
+			new TemplatingComposition().dates("en"),
+			"en",
+		);
 
 		// Act
 		const actual = formatter.format(date, zone as string);

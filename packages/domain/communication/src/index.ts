@@ -79,3 +79,9 @@ export type {
 export { PostEventPolicy } from "./post-event-policy.js";
 export type { ReconcileCommunicationsDependencies } from "./reconcile-communications.js";
 export { ReconcileCommunications } from "./reconcile-communications.js";
+export {
+	type SocialPostChannel,
+	SocialPostDraft,
+	type SocialPostMilestone,
+} from "./social/social-post-draft.js";
+export { SocialPostTiming } from "./social/social-post-timing.js";

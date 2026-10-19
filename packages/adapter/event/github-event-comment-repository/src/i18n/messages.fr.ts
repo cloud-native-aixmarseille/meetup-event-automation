@@ -1,5 +1,8 @@
 import type { EN_MESSAGES } from "./messages.en.js";
 export const FR_MESSAGES = {
+	"comment.guidance.content.review":
+		"Vérifiez la proposition de contenu, complétez les faits publics ou proposez un remplacement. Un contenu modifié nécessite une nouvelle validation.",
+
 	"comment.guidance.proposals.invalid-selection":
 		"Saisissez les numéros des URL Conference Hall, un par ligne, sans doublons.",
 	"comment.guidance.proposals.invalid":

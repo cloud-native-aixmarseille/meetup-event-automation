@@ -1,4 +1,5 @@
 export interface MessageParameters {
+	"request.content": { date: string; target: string; url: string };
 	"request.introduction": { date: string; count: number; url: string };
 	"request.publication": { date: string; url: string };
 }

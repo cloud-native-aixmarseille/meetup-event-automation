@@ -38,13 +38,18 @@ export class SlackApprovalNotification
 	}
 	async react(
 		message: ApprovalNotificationMessage,
-		decision: "approved" | "rejected",
+		decision: "approved" | "rejected" | "iteration-requested",
 	): Promise<boolean> {
 		if (!this.collaborators.slackMessageReference.valid(message)) return false;
 		const { result, payload } = await this.client.post("reactions.add", {
 			channel: message.destination,
 			timestamp: message.messageId,
-			name: decision === "approved" ? "white_check_mark" : "x",
+			name:
+				decision === "approved"
+					? "white_check_mark"
+					: decision === "iteration-requested"
+						? "arrows_counterclockwise"
+						: "x",
 		});
 		return (
 			result.outcome === "accepted" || payload?.error === "already_reacted"

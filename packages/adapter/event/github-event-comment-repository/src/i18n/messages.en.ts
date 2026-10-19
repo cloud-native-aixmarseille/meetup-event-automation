@@ -1,4 +1,7 @@
 export const EN_MESSAGES = {
+	"comment.guidance.content.review":
+		"Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+
 	"comment.guidance.proposals.invalid-selection":
 		"Enter distinct proposal numbers, one per line, from their Conference Hall URLs.",
 	"comment.guidance.proposals.invalid":

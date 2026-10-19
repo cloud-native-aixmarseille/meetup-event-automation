@@ -31,6 +31,7 @@ function fixture(labels = ["meetup"]) {
 }
 function reports(overrides: Record<string, unknown> = {}) {
 	return JSON.stringify({
+		content: { outcome: "success", diagnostics: [] },
 		event: { outcome: "success", diagnostics: [] },
 		assets: { outcome: "success", diagnostics: [] },
 		feedback: { outcome: "success", diagnostics: [] },
@@ -52,6 +53,7 @@ describe("OrganizerFeedback", () => {
 		// Arrange
 		const { feedback, comments } = fixture();
 		const reports = JSON.stringify({
+			content: { outcome: "success", diagnostics: [] },
 			event: stage("event.proposals.not-found"),
 			communications: stage("communication.event-references-unresolved"),
 			assets: stage("publication.assets.file.drift", "warning", true),
@@ -93,7 +95,7 @@ describe("OrganizerFeedback", () => {
 			expect(comments.reconcileDiagnostics).not.toHaveBeenCalled();
 		},
 	);
-	it.each(["event", "assets", "feedback", "communications"])(
+	it.each(["event", "assets", "feedback", "communications", "content"])(
 		"preserves unresolved tasks until %s has completed evaluation",
 		async (owner) => {
 			// Arrange

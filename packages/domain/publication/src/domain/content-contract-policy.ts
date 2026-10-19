@@ -61,7 +61,15 @@ export class ContentContractPolicy {
 			!token ||
 			typeof field.required !== "boolean" ||
 			(slotted ? !this.name(field.slot) : field.slot !== undefined) ||
-			!this.keys(field, ["type", "token", "slot", "required", "fallback"]) ||
+			!this.validFormat(field) ||
+			!this.keys(field, [
+				"type",
+				"token",
+				"slot",
+				"format",
+				"required",
+				"fallback",
+			]) ||
 			((!field.required || field.fallback !== undefined) &&
 				!this.text(field.fallback))
 		)
@@ -71,6 +79,7 @@ export class ContentContractPolicy {
 			token,
 			required: field.required,
 			...(typeof field.slot === "string" ? { slot: field.slot } : {}),
+			...(typeof field.format === "string" ? { format: field.format } : {}),
 			...(typeof field.fallback === "string"
 				? { fallback: field.fallback }
 				: {}),
@@ -80,10 +89,23 @@ export class ContentContractPolicy {
 		return result;
 	}
 
+	private validFormat(field: Record<string, unknown>): boolean {
+		return (
+			field.format === undefined ||
+			((field.token === "event.date" || field.token === "next_event.date") &&
+				typeof field.format === "string" &&
+				field.format.trim().length > 0 &&
+				field.format.length <= 100 &&
+				/^[A-Za-z ./_-]+$/u.test(field.format))
+		);
+	}
+
 	private image(field: Record<string, unknown>, mimeType: string): ImageField {
 		if (
 			field.type !== "image" ||
-			(field.token !== "speaker.picture" && field.token !== "host.logo") ||
+			(field.token !== "speaker.picture" &&
+				field.token !== "host.logo" &&
+				field.token !== "event.cover") ||
 			typeof field.required !== "boolean" ||
 			!this.name(field.slot) ||
 			!this.name(field.objectId) ||
@@ -109,6 +131,7 @@ export class ContentContractPolicy {
 				!(slides && field.fit === "CENTER_INSIDE"))
 		)
 			throw new ContentError("contract");
+		this.coverContract(field);
 		const fallback = this.fallback(field.fallback, field.required);
 		return {
 			type: "image",
@@ -121,6 +144,14 @@ export class ContentContractPolicy {
 			...(typeof field.tabId === "string" ? { tabId: field.tabId } : {}),
 			...(fallback ? { fallback } : {}),
 		};
+	}
+
+	private coverContract(field: Record<string, unknown>): void {
+		if (
+			field.token === "event.cover" &&
+			(!field.required || field.fallback !== undefined)
+		)
+			throw new ContentError("contract");
 	}
 
 	private fallback(value: unknown, required: boolean): ImageSource | undefined {

@@ -27,7 +27,11 @@ describe("asset file failure classification", () => {
 			copyTemplate: vi.fn(),
 			updateFile: vi.fn().mockResolvedValue({ ...file, contentManaged: true }),
 		};
-		const service = new ReconcileAssetFile(repository, f.service);
+		const service = new ReconcileAssetFile(
+			{ render: (template) => template },
+			repository,
+			f.service,
+		);
 
 		// Act
 		const result = await service.execute({
@@ -94,7 +98,11 @@ describe("asset file failure classification", () => {
 				updateFile: vi.fn().mockResolvedValue(file),
 			};
 			const diagnostics: PublicationDiagnostic[] = [];
-			const service = new ReconcileAssetFile(repository, f.service);
+			const service = new ReconcileAssetFile(
+				{ render: (template) => template },
+				repository,
+				f.service,
+			);
 			let result:
 				| Awaited<ReturnType<ReconcileAssetFile["execute"]>>
 				| undefined;
