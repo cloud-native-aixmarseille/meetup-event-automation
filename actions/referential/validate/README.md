@@ -2,12 +2,20 @@
 
 # GitHub Action: Validate meetup referentials
 
+<div align="center">
+  <img src="../../../.github/logo.svg" width="60px" align="center" alt="Validate meetup referentials" />
+</div>
+
+---
+
 <!-- header:end -->
 <!-- badges:start -->
 
 [![Marketplace](https://img.shields.io/badge/Marketplace-validate--meetup--referentials-blue?logo=github-actions)](https://github.com/marketplace/actions/validate-meetup-referentials)
 [![Release](https://img.shields.io/github/v/release/cloud-native-aixmarseille/meetup-event-automation)](https://github.com/cloud-native-aixmarseille/meetup-event-automation/releases)
+[![License](https://img.shields.io/github/license/cloud-native-aixmarseille/meetup-event-automation)](http://choosealicense.com/licenses/mit/)
 [![Stars](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/main/CONTRIBUTING.md)
 
 <!-- badges:end -->
 <!-- overview:start -->
@@ -22,9 +30,11 @@ Validate the configured host and speaker catalogs and fail when invalid, returni
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/referential/validate@88fd8c3495bfbf7061bbd67d1324b0b4e4bc14d3 # main
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/referential/validate@1f22000828caf59f41d0a7d8815e5c5c0d3139f6 # 2.3.0
   with:
-    locale: en
+    # Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
+    # This input is required.
+    locale: ""
 ```
 
 <!-- usage:end -->
@@ -40,19 +50,30 @@ Validate the configured host and speaker catalogs and fail when invalid, returni
 <!-- secrets:start -->
 <!-- secrets:end -->
 <!-- outputs:start -->
-
-## Outputs
-
-No public outputs. Results are reported through logs, annotations, and the job summary.
-
 <!-- outputs:end -->
 <!-- examples:start -->
 <!-- examples:end -->
 <!-- contributing:start -->
+
+## Contributing
+
+Contributions are welcome! Please see the [contributing guidelines](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/main/CONTRIBUTING.md) for more details.
+
 <!-- contributing:end -->
 <!-- security:start -->
 <!-- security:end -->
 <!-- license:start -->
+
+## License
+
+This project is licensed under the MIT License.
+
+SPDX-License-Identifier: MIT
+
+Copyright © 2026 Cloud Native Aix-Marseille
+
+For more details, see the [license](http://choosealicense.com/licenses/mit/).
+
 <!-- license:end -->
 <!-- generated:start -->
 

@@ -2,61 +2,36 @@
 
 # GitHub Action: Reconcile organizer attention
 
+<div align="center">
+  <img src="../../../.github/logo.svg" width="60px" align="center" alt="Reconcile organizer attention" />
+</div>
+
+---
+
 <!-- header:end -->
 <!-- overview:start -->
 
 ## Overview
 
-Reconcile durable organizer conditions after integration stages, reload the issue,
-and maintain one GitHub status comment and bounded Slack messages. Post-event
-status shares the thank-you approval comment and notification flow. Run under
-`meetup-event-${{ github.repository_id }}-<issue-number>` concurrency with
-`cancel-in-progress: false`. Both public event workflows provide this lock and
-run the action after failed dependencies.
-
-See [organizer attention](../../../docs/integrations/communications.md#organizer-attention)
-for reminder policy, trust checks, daily caps, audit bounds, and uncertain delivery holds.
+Reconcile durable organizer conditions and bounded Slack reminders after all integration stages.
 
 <!-- overview:end -->
 <!-- inputs:start -->
 
 ## Inputs
 
-| Input                        | Required | Default | Purpose                                                                                             |
-| ---------------------------- | -------- | ------- | --------------------------------------------------------------------------------------------------- |
-| `locale`                     | Yes      | -       | English or French generated messages.                                                               |
-| `issue-number`               | Yes      |         | Meetup issue number.                                                                                |
-| `github-token`               | Yes      |         | GitHub App token with issue write access and comment-history read access.                           |
-| `managed-comment-author`     | Yes      |         | Trusted GitHub App bot login.                                                                       |
-| `slack-token`                | Yes      |         | Slack bot token with `chat:write` and `reactions:write`.                                            |
-| `slack-organizer-channel-id` | Yes      |         | Explicit internal organizer channel ID.                                                             |
-| `stage-results`              | Yes      |         | JSON object containing event, assets, feedback, and communications outcomes and diagnostic outputs. |
-
-`stage-results` uses each step's `outcome` and `diagnostics` output. Success and
-failure are explicit; skipped, cancelled, or absent stages are unknown. No rendered
-logs or raw provider errors are used as condition evidence. Example:
-
-```json
-{
-  "event": { "outcome": "success", "diagnostics": [] },
-  "assets": { "outcome": "failure", "diagnostics": [] },
-  "feedback": { "outcome": "skipped" },
-  "communications": { "outcome": "skipped" }
-}
-```
+| **Input**                        | **Description**                                                                                                                    | **Required** | **Default** |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
+| **`locale`**                     | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **true**     | -           |
+| **`issue-number`**               | Meetup issue number.                                                                                                               | **true**     | -           |
+| **`github-token`**               | GitHub App token with issue write access.                                                                                          | **true**     | -           |
+| **`managed-comment-author`**     | Trusted GitHub App bot login.                                                                                                      | **true**     | -           |
+| **`slack-token`**                | Slack bot token for organizer attention.                                                                                           | **true**     | -           |
+| **`slack-organizer-channel-id`** | Explicit internal organizer channel ID.                                                                                            | **true**     | -           |
+| **`stage-results`**              | JSON object of event, assets, feedback and communications outcomes and diagnostic outputs. Unexecuted stages remain unknown.       | **true**     | -           |
 
 <!-- inputs:end -->
 <!-- outputs:start -->
-
-## Outputs
-
-No public outputs. Results are reported through logs, annotations, and the job summary.
-
-The action returns public report facts on successful and skipped paths. Incomplete
-evidence or notification synchronization fails the action; persistence and execution
-exceptions also fail through the shared runner. Slack outages retain useful GitHub
-status. GitHub persistence failures prevent new posts.
-
 <!-- outputs:end -->
 <!-- generated:start -->
 
@@ -65,3 +40,75 @@ status. GitHub persistence failures prevent new posts.
 This documentation was automatically generated by [CI Dokumentor](https://github.com/hoverkraft-tech/ci-dokumentor).
 
 <!-- generated:end -->
+<!-- badges:start -->
+
+[![Marketplace](https://img.shields.io/badge/Marketplace-reconcile--organizer--attention-blue?logo=github-actions)](https://github.com/marketplace/actions/reconcile-organizer-attention)
+[![Release](https://img.shields.io/github/v/release/cloud-native-aixmarseille/meetup-event-automation)](https://github.com/cloud-native-aixmarseille/meetup-event-automation/releases)
+[![License](https://img.shields.io/github/license/cloud-native-aixmarseille/meetup-event-automation)](http://choosealicense.com/licenses/mit/)
+[![Stars](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/main/CONTRIBUTING.md)
+
+<!-- badges:end -->
+<!-- usage:start -->
+
+## Usage
+
+```yaml
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/communication/reconcile-attention@1f22000828caf59f41d0a7d8815e5c5c0d3139f6 # 2.3.0
+  with:
+    # Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
+    # This input is required.
+    locale: ""
+
+    # Meetup issue number.
+    # This input is required.
+    issue-number: ""
+
+    # GitHub App token with issue write access.
+    # This input is required.
+    github-token: ""
+
+    # Trusted GitHub App bot login.
+    # This input is required.
+    managed-comment-author: ""
+
+    # Slack bot token for organizer attention.
+    # This input is required.
+    slack-token: ""
+
+    # Explicit internal organizer channel ID.
+    # This input is required.
+    slack-organizer-channel-id: ""
+
+    # JSON object of event, assets, feedback and communications outcomes and diagnostic outputs. Unexecuted stages remain unknown.
+    # This input is required.
+    stage-results: ""
+```
+
+<!-- usage:end -->
+<!-- secrets:start -->
+<!-- secrets:end -->
+<!-- examples:start -->
+<!-- examples:end -->
+<!-- contributing:start -->
+
+## Contributing
+
+Contributions are welcome! Please see the [contributing guidelines](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/main/CONTRIBUTING.md) for more details.
+
+<!-- contributing:end -->
+<!-- security:start -->
+<!-- security:end -->
+<!-- license:start -->
+
+## License
+
+This project is licensed under the MIT License.
+
+SPDX-License-Identifier: MIT
+
+Copyright © 2026 cloud-native-aixmarseille
+
+For more details, see the [license](http://choosealicense.com/licenses/mit/).
+
+<!-- license:end -->

@@ -2,19 +2,27 @@
 
 # GitHub Action: Reconcile meetup assets
 
+<div align="center">
+  <img src="../../../.github/logo.svg" width="60px" align="center" alt="Reconcile meetup assets" />
+</div>
+
+---
+
 <!-- header:end -->
 <!-- badges:start -->
 
 [![Marketplace](https://img.shields.io/badge/Marketplace-reconcile--meetup--assets-blue?logo=github-actions)](https://github.com/marketplace/actions/reconcile-meetup-assets)
 [![Release](https://img.shields.io/github/v/release/cloud-native-aixmarseille/meetup-event-automation)](https://github.com/cloud-native-aixmarseille/meetup-event-automation/releases)
+[![License](https://img.shields.io/github/license/cloud-native-aixmarseille/meetup-event-automation)](http://choosealicense.com/licenses/mit/)
 [![Stars](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/main/CONTRIBUTING.md)
 
 <!-- badges:end -->
 <!-- overview:start -->
 
 ## Overview
 
-Reconcile the event Drive folder, template copies, and issue asset link. Populate opted-in text and image bindings in Google Slides and Docs. Publish redacted diagnostics in annotations, logs, and the job summary.
+Reconcile the event Drive folder, template copies, and issue asset link. Publish redacted diagnostics in annotations, logs, and the job summary.
 
 <!-- overview:end -->
 <!-- usage:start -->
@@ -22,12 +30,12 @@ Reconcile the event Drive folder, template copies, and issue asset link. Populat
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/publication/reconcile-assets@0123456789abcdef0123456789abcdef01234567 # replace with a release SHA containing asset reconciliation
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/publication/reconcile-assets@1f22000828caf59f41d0a7d8815e5c5c0d3139f6 # 2.3.0
   with:
-    conference-hall-event: ${{ vars.CONFERENCE_HALL_EVENT }}
-    conference-hall-api-key: ${{ secrets.CONFERENCE_HALL_API_KEY }}
-    # Required language for generated text; no default.
-    locale: en
+    # Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
+    # This input is required.
+    locale: ""
+
     # GitHub issue number containing the meetup event document.
     # This input is required.
     issue-number: ""
@@ -51,6 +59,14 @@ Reconcile the event Drive folder, template copies, and issue asset link. Populat
     # Google Drive folder ID of the template folder.
     # This input is required.
     google-drive-meetup-template-folder-id: ""
+
+    # Conference Hall CFP slug for live linked profiles and selected proposals.
+    # This input is required.
+    conference-hall-event: ""
+
+    # Read-only Conference Hall event API key.
+    # This input is required.
+    conference-hall-api-key: ""
 ```
 
 <!-- usage:end -->
@@ -60,8 +76,6 @@ Reconcile the event Drive folder, template copies, and issue asset link. Populat
 
 | **Input**                                    | **Description**                                                                                                                    | **Required** | **Default** |
 | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
-| **`conference-hall-event`**                  | Conference Hall CFP slug for live linked profiles and selected proposals.                                                          | **true**     | -           |
-| **`conference-hall-api-key`**                | Read-only Conference Hall event API key.                                                                                           | **true**     | -           |
 | **`locale`**                                 | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **true**     | -           |
 | **`issue-number`**                           | GitHub issue number containing the meetup event document.                                                                          | **true**     | -           |
 | **`github-token`**                           | Token for the caller repository. Requires issues:read and issues:write.                                                            | **true**     | -           |
@@ -69,6 +83,8 @@ Reconcile the event Drive folder, template copies, and issue asset link. Populat
 | **`google-credentials`**                     | Service-account JSON with access to the configured Drive parent and template folders.                                              | **true**     | -           |
 | **`google-drive-meetup-folder-id`**          | Google Drive folder ID of the parent meetup folder.                                                                                | **true**     | -           |
 | **`google-drive-meetup-template-folder-id`** | Google Drive folder ID of the template folder.                                                                                     | **true**     | -           |
+| **`conference-hall-event`**                  | Conference Hall CFP slug for live linked profiles and selected proposals.                                                          | **true**     | -           |
+| **`conference-hall-api-key`**                | Read-only Conference Hall event API key.                                                                                           | **true**     | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->
@@ -86,14 +102,32 @@ Reconcile the event Drive folder, template copies, and issue asset link. Populat
 <!-- outputs:end -->
 <!-- examples:start -->
 
+## Examples
+
 See [Google Drive event assets](../../../docs/integrations/assets.md) for service-account access, the committed content configuration, template authoring, stable asset identity and recovery. Forward `slides-ready` with the file URL to communications.
 
 <!-- examples:end -->
 <!-- contributing:start -->
+
+## Contributing
+
+Contributions are welcome! Please see the [contributing guidelines](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/main/CONTRIBUTING.md) for more details.
+
 <!-- contributing:end -->
 <!-- security:start -->
 <!-- security:end -->
 <!-- license:start -->
+
+## License
+
+This project is licensed under the MIT License.
+
+SPDX-License-Identifier: MIT
+
+Copyright © 2026 Cloud Native Aix-Marseille
+
+For more details, see the [license](http://choosealicense.com/licenses/mit/).
+
 <!-- license:end -->
 <!-- generated:start -->
 

@@ -2,11 +2,19 @@
 
 # GitHub Reusable Workflow: Check meetup referentials and issue form
 
+<div align="center">
+  <img src="../logo.svg" width="60px" align="center" alt="Check meetup referentials and issue form" />
+</div>
+
+---
+
 <!-- header:end -->
 <!-- badges:start -->
 
 [![Release](https://img.shields.io/github/v/release/cloud-native-aixmarseille/meetup-event-automation)](https://github.com/cloud-native-aixmarseille/meetup-event-automation/releases)
+[![License](https://img.shields.io/github/license/cloud-native-aixmarseille/meetup-event-automation)](http://choosealicense.com/licenses/mit/)
 [![Stars](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/main/CONTRIBUTING.md)
 
 <!-- badges:end -->
 <!-- overview:start -->
@@ -32,17 +40,19 @@ job summary, with affected issue-form files and instructions to resolve failures
 ```yaml
 name: Check meetup referentials and issue form
 on:
-  pull_request:
+  push:
     branches:
       - main
 permissions: {}
 jobs:
   check-meetup-referentials-and-issue-form:
-    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/check-meetup-referentials-and-issue-form.yml@88fd8c3495bfbf7061bbd67d1324b0b4e4bc14d3 # main
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/check-meetup-referentials-and-issue-form.yml@1f22000828caf59f41d0a7d8815e5c5c0d3139f6 # 2.3.0
     permissions:
       contents: read
     with:
-      locale: en
+      # Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
+      # This input is required.
+      locale: ""
 ```
 
 <!-- usage:end -->
@@ -50,27 +60,40 @@ jobs:
 
 ## Inputs
 
-| **Input**    | **Description**                                                                                                                    | **Required** | **Default** |
-| ------------ | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
-| **`locale`** | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **true**     | -           |
+### Workflow Call Inputs
+
+| **Input**    | **Description**                                                                                                                    | **Required** | **Type**   | **Default** |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- | ----------- |
+| **`locale`** | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **true**     | **string** | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->
 <!-- secrets:end -->
 <!-- outputs:start -->
-
-## Outputs
-
-No public workflow outputs. Reports appear in action logs, annotations, and job summaries.
-
 <!-- outputs:end -->
 <!-- examples:start -->
 <!-- examples:end -->
 <!-- contributing:start -->
+
+## Contributing
+
+Contributions are welcome! Please see the [contributing guidelines](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/main/CONTRIBUTING.md) for more details.
+
 <!-- contributing:end -->
 <!-- security:start -->
 <!-- security:end -->
 <!-- license:start -->
+
+## License
+
+This project is licensed under the MIT License.
+
+SPDX-License-Identifier: MIT
+
+Copyright © 2026 cloud-native-aixmarseille
+
+For more details, see the [license](http://choosealicense.com/licenses/mit/).
+
 <!-- license:end -->
 <!-- generated:start -->
 
