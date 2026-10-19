@@ -285,7 +285,14 @@ skipped. Event folders use `YYYY-MM-DD - Month - Host`, with English month
 names.
 
 Each issue owns one managed folder. Changing its date or host renames that
-folder. Each template file owns one managed copy: changes to template names or
+folder. Folders are found by their stable `meetup_event_key` metadata across
+the locations accessible to the service account. You can move completed-season
+folders into `_archives/YYYY`; reconciliation reuses them in place, keeps their
+IDs and URLs, and updates the issue's **Drive Link**. Only new event folders are
+created under the configured parent. Keep the service account's access to the
+archived folders and their files when moving them.
+
+Each template file owns one managed copy: changes to template names or
 kinds update the copy's name and metadata; changes to template contents do not
 replace existing copy contents. New templates produce new copies.
 
@@ -314,7 +321,9 @@ folder.
 If Drive succeeds but saving the issue fails, rerun to reuse the assets and save
 the link. If a Drive write times out or has an uncertain result, inspect Drive
 before retrying: an interrupted response can leave a created file or folder.
-Duplicate managed folders or copies require manual reconciliation. For access
+Duplicate managed folders or copies require manual reconciliation, including
+an event folder present both at the root and in an archive. An incomplete Drive
+search stops reconciliation before another folder can be created. For access
 errors, check service-account permissions and quota; for rate limits, retry
 later.
 

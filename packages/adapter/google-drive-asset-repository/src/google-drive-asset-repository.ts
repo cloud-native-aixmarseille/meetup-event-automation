@@ -15,8 +15,8 @@ import {
 	type GoogleDriveClient,
 	requestOptions,
 } from "./google-drive-asset-repository-contracts.js";
-import { GoogleDriveAuthentication } from "./google-drive-authentication.js";
 import { GoogleDriveAssetRepositoryError } from "./google-drive-asset-repository-error.js";
+import { GoogleDriveAuthentication } from "./google-drive-authentication.js";
 
 export class GoogleDriveAssetRepository implements AssetRepository {
 	constructor(
@@ -38,7 +38,8 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 		request: EnsureAssetContainerRequest,
 	): Promise<AssetContainer | undefined> {
 		const matches = await this.list(
-			`'${GoogleDriveAssetRepository.escapeQuery(this.options.parentFolderId)}' in parents and mimeType='${folderMimeType}' and appProperties has { key='meetup_event_key' and value='${GoogleDriveAssetRepository.key(request)}' }`,
+			`mimeType='${folderMimeType}' and appProperties has { key='meetup_event_key' and value='${GoogleDriveAssetRepository.key(request)}' }`,
+			"allDrives",
 		);
 		if (matches.length > 1)
 			throw GoogleDriveAssetRepository.failure(
@@ -49,12 +50,11 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 		if (
 			file.trashed ||
 			file.mimeType !== folderMimeType ||
-			!file.parents?.includes(this.options.parentFolderId) ||
 			file.appProperties?.meetup_event_key !==
 				GoogleDriveAssetRepository.key(request)
 		) {
 			throw GoogleDriveAssetRepository.failure(
-				"The asset folder does not match the requested event and configured parent",
+				"The asset folder does not match the requested event",
 			);
 		}
 		return GoogleDriveAssetRepository.container(file, request.eventId);
@@ -185,7 +185,10 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 		return GoogleDriveAssetRepository.assetFile(data);
 	}
 
-	private async list(query: string): Promise<DriveFile[]> {
+	private async list(
+		query: string,
+		corpora: "user" | "allDrives" = "user",
+	): Promise<DriveFile[]> {
 		const files: DriveFile[] = [];
 		let pageToken: string | undefined;
 		const tokens = new Set<string>();
@@ -194,6 +197,7 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 				this.client.files.list(
 					{
 						q: `${query} and trashed=false`,
+						corpora,
 						fields: `nextPageToken,incompleteSearch,files(${fields})`,
 						pageSize: 100,
 						pageToken,
