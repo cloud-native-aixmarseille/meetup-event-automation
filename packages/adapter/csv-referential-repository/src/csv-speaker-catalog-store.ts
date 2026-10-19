@@ -10,9 +10,6 @@ import {
 	type SpeakerSyncState,
 } from "@meetup-automation/referential";
 import { parse } from "csv-parse/sync";
-import * as babelPlugin from "prettier/plugins/babel";
-import * as estreePlugin from "prettier/plugins/estree";
-import { format } from "prettier/standalone";
 import { CsvReferentialRepository } from "./csv-referential-repository.js";
 
 const IMPORT_COLUMNS = [
@@ -28,6 +25,10 @@ const IMPORT_COLUMNS = [
 	"source_event",
 	"source_speaker_id",
 ];
+
+// Match the repository JSON formatter's default line width and visual tab width.
+const STATE_LINE_WIDTH = 80;
+const STATE_INDENT_WIDTH = 2;
 
 export class CsvSpeakerCatalogStore implements SpeakerCatalogStore {
 	constructor(private readonly root: string) {}
@@ -98,11 +99,7 @@ export class CsvSpeakerCatalogStore implements SpeakerCatalogStore {
 			...rows.map((row) => columns.map((column) => row[column] ?? "")),
 		];
 		const csv = `${lines.map((row) => row.map((value) => (/[",\r\n]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value)).join(",")).join("\n")}\n`;
-		const stateText = await format(JSON.stringify(state), {
-			parser: "json",
-			plugins: [babelPlugin, estreePlugin],
-			useTabs: true,
-		});
+		const stateText = this.serializeState(state);
 		if (csv === current.csv && stateText === current.state) return false;
 		await writeFile(join(this.root, "referentials/speakers.csv"), csv, {
 			mode: 0o600,
@@ -113,6 +110,18 @@ export class CsvSpeakerCatalogStore implements SpeakerCatalogStore {
 			{ mode: 0o600 },
 		);
 		return true;
+	}
+	private serializeState(state: SpeakerSyncState): string {
+		const text = `${JSON.stringify(state, null, "\t")}\n`;
+		const inline = `[${state.reservedIds.map((id) => JSON.stringify(id)).join(", ")}]`;
+		const property = '"reservedIds": ';
+		if (STATE_INDENT_WIDTH + property.length + inline.length > STATE_LINE_WIDTH)
+			return text;
+		const expanded = JSON.stringify(state.reservedIds, null, "\t").replaceAll(
+			"\n",
+			"\n\t",
+		);
+		return text.replace(`\t${property}${expanded}`, `\t${property}${inline}`);
 	}
 	private async sources() {
 		const csv = await readFile(
