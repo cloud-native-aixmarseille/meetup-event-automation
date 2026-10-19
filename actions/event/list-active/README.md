@@ -58,8 +58,8 @@ List open meetup issue numbers from the caller repository using the configured e
 
 ## Outputs
 
-| **Output**          | **Description**                                                                                                          |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **Output**          | **Description**                                                            |
+| ------------------- | -------------------------------------------------------------------------- |
 | **`issue-numbers`** | JSON array of open meetup issue numbers selected for downstream workflows. |
 
 <!-- outputs:end -->

@@ -99,16 +99,7 @@ on:
   issue_comment:
     types: [edited]
   issues:
-    types:
-      [
-        opened,
-        edited,
-        reopened,
-        assigned,
-        unassigned,
-        labeled,
-        unlabeled,
-      ]
+    types: [opened, edited, reopened, assigned, unassigned, labeled, unlabeled]
 permissions: {}
 jobs:
   manage:
