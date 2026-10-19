@@ -2,11 +2,19 @@
 
 # GitHub Reusable Workflow: Check active meetup issues
 
+<div align="center">
+  <img src="../logo.svg" width="60px" align="center" alt="Check active meetup issues" />
+</div>
+
+---
+
 <!-- header:end -->
 <!-- badges:start -->
 
 [![Release](https://img.shields.io/github/v/release/cloud-native-aixmarseille/meetup-event-automation)](https://github.com/cloud-native-aixmarseille/meetup-event-automation/releases)
+[![License](https://img.shields.io/github/license/cloud-native-aixmarseille/meetup-event-automation)](http://choosealicense.com/licenses/mit/)
 [![Stars](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/main/CONTRIBUTING.md)
 
 <!-- badges:end -->
 <!-- overview:start -->
@@ -15,16 +23,8 @@
 
 Reusable workflow that checks active meetup issues, evaluates their current
 state, and processes due communications under the shared per-event lock.
-Audits persist refreshed Conference Hall speaker names, selected talk content
-and source diagnostics in the issue. Both Conference Hall settings are required.
-Communication errors are recorded in a managed meetup issue comment without
-failing the audit. Execution failures and failures to read or write that comment
-still fail the job. Subsequent audits update the same comment, including when
-the errors are resolved. Diagnostics remain visible in annotations, outputs,
-and the job summary.
-
-Asset reconciliation passes the managed presentation URL into email approval
-and delivery. See [presentation link requirements](../../docs/integrations/communications.md#presentation-link).
+Communication errors are recorded in the meetup issue without failing the audit;
+execution and comment persistence failures still fail the job.
 
 The workflow creates a separate GitHub App installation token for
 `<repository-owner>/mailings` using the supplied App client ID and private key.
@@ -37,54 +37,80 @@ provide a mailing token secret.
 - **`contents`**: `read`
 - **`issues`**: `read`
 
-The final organizer attention step runs after failed dependencies under the same
-issue lock. It reloads the issue, retains unknown stages, persists GitHub status,
-and posts or edits bounded Slack reminders. Earlier action failure policies are
-preserved. See [organizer attention](../../docs/integrations/communications.md#organizer-attention)
-for the timing, audit bounds, and recovery contract.
-
-Feedback runs before asset content rendering. The workflow forwards the copied
-presentation URL and content readiness to communications under the event lock.
-Configure opt-in contracts and revision-bound recovery in the consumer's
-`.github/meetup-asset-content.json`; see [managed Drive content](../../docs/integrations/assets.md#author-managed-content).
-
 <!-- overview:end -->
 <!-- usage:start -->
 
 ## Usage
 
-Replace the placeholder revision with the full commit SHA of a published release.
-Set the variables and secrets described in [repository setup](../../docs/usage/setup.md).
-
 ```yaml
 name: Check active meetup issues
 on:
-  workflow_dispatch:
-  schedule:
-    - cron: "0 9 * * *"
+  push:
+    branches:
+      - main
 permissions: {}
 jobs:
-  audit:
-    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/check-active-meetup-issues.yml@0123456789abcdef0123456789abcdef01234567
+  check-active-meetup-issues:
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/check-active-meetup-issues.yml@1f22000828caf59f41d0a7d8815e5c5c0d3139f6 # 2.3.0
     permissions:
       contents: read
       issues: read
-    with:
-      conference-hall-event: ${{ vars.CONFERENCE_HALL_EVENT }}
-      locale: en
-      github-app-client-id: ${{ vars.CI_BOT_APP_CLIENT_ID }}
-      kutt-base-url: ${{ vars.KUTT_BASE_URL }}
-      kutt-link-id: ${{ vars.KUTT_FEEDBACK_LINK_ID }}
-      slack-organizer-channel-id: ${{ vars.SLACK_ORGANIZER_CHANNEL_ID }}
-      google-drive-meetup-folder-id: ${{ vars.GOOGLE_DRIVE_MEETUP_FOLDER_ID }}
-      google-drive-meetup-template-folder-id: ${{ vars.GOOGLE_DRIVE_MEETUP_TEMPLATE_FOLDER_ID }}
     secrets:
-      conference-hall-api-key: ${{ secrets.CONFERENCE_HALL_API_KEY }}
-      github-app-private-key: ${{ secrets.CI_BOT_APP_PRIVATE_KEY }}
-      openfeedback-api-key: ${{ secrets.OPENFEEDBACK_API_KEY }}
-      kutt-api-key: ${{ secrets.KUTT_API_KEY }}
-      google-credentials: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_CREDENTIALS }}
-      slack-token: ${{ secrets.SLACK_BOT_TOKEN }}
+      # OpenFeedback organization API key (oforg_) used to create and update events.
+      # This input is required.
+      openfeedback-api-key: ""
+
+      # API key for the owner of the existing Kutt feedback link.
+      # This input is required.
+      kutt-api-key: ""
+
+      # Google service-account JSON for Drive asset reconciliation.
+      # This input is required.
+      google-credentials: ""
+
+      # PEM-encoded private key for the GitHub App identified by the github-app-client-id input. Used to mint a narrowly scoped installation token.
+      # This input is required.
+      github-app-private-key: ""
+
+      # Slack bot token with chat:write and reactions:write for organizer notifications and decision reactions.
+      # This input is required.
+      slack-token: ""
+
+      # Read-only Conference Hall event API key.
+      # This input is required.
+      conference-hall-api-key: ""
+    with:
+      # Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
+      # This input is required.
+      locale: ""
+
+      # GitHub App client ID used to mint the narrowly scoped installation token for meetup automation.
+      # This input is required.
+      github-app-client-id: ""
+
+      # Internal meetup organizer Slack channel for approval requests and actionable organizer reminders. Public announcement channels are separate.
+      # This input is required.
+      slack-organizer-channel-id: ""
+
+      # Google Drive folder ID of the parent meetup folder used for asset reconciliation.
+      # This input is required.
+      google-drive-meetup-folder-id: ""
+
+      # Google Drive folder ID of the template folder used for asset reconciliation.
+      # This input is required.
+      google-drive-meetup-template-folder-id: ""
+
+      # HTTPS base URL of the Kutt instance, without /api/v2. No default.
+      # This input is required.
+      kutt-base-url: ""
+
+      # Existing Kutt feedback link API ID.
+      # This input is required.
+      kutt-link-id: ""
+
+      # Conference Hall CFP slug for live linked profiles and selected proposals.
+      # This input is required.
+      conference-hall-event: ""
 ```
 
 <!-- usage:end -->
@@ -96,7 +122,6 @@ jobs:
 
 | **Input**                                    | **Description**                                                                                                                              | **Required** | **Type**   | **Default** |
 | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- | ----------- |
-| **`conference-hall-event`**                  | Conference Hall CFP slug for live linked profiles and selected proposals.                                                                    | **true**     | **string** | -           |
 | **`locale`**                                 | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.           | **true**     | **string** | -           |
 | **`github-app-client-id`**                   | GitHub App client ID used to mint the narrowly scoped installation token for meetup automation.                                              | **true**     | **string** | -           |
 | **`slack-organizer-channel-id`**             | Internal meetup organizer Slack channel for approval requests and actionable organizer reminders. Public announcement channels are separate. | **true**     | **string** | -           |
@@ -104,6 +129,7 @@ jobs:
 | **`google-drive-meetup-template-folder-id`** | Google Drive folder ID of the template folder used for asset reconciliation.                                                                 | **true**     | **string** | -           |
 | **`kutt-base-url`**                          | HTTPS base URL of the Kutt instance, without /api/v2. No default.                                                                            | **true**     | **string** | -           |
 | **`kutt-link-id`**                           | Existing Kutt feedback link API ID.                                                                                                          | **true**     | **string** | -           |
+| **`conference-hall-event`**                  | Conference Hall CFP slug for live linked profiles and selected proposals.                                                                    | **true**     | **string** | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->
@@ -112,33 +138,48 @@ jobs:
 
 | **Secret**                    | **Description**                                                                                                                             | **Required** |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
-| **`conference-hall-api-key`** | Read-only Conference Hall event API key.                                                                                                    | **true**     |
+| **`openfeedback-api-key`**    | OpenFeedback organization API key (oforg_) used to create and update events.                                                                | **true**     |
+| **`kutt-api-key`**            | API key for the owner of the existing Kutt feedback link.                                                                                   | **true**     |
 | **`google-credentials`**      | Google service-account JSON for Drive asset reconciliation.                                                                                 | **true**     |
 | **`github-app-private-key`**  | PEM-encoded private key for the GitHub App identified by the github-app-client-id input. Used to mint a narrowly scoped installation token. | **true**     |
 | **`slack-token`**             | Slack bot token with chat:write and reactions:write for organizer notifications and decision reactions.                                     | **true**     |
-| **`kutt-api-key`**            | API key for the owner of the existing Kutt feedback link.                                                                                   | **true**     |
-| **`openfeedback-api-key`**    | OpenFeedback organization API key (oforg\_) used to create and update events.                                                               | **true**     |
+| **`conference-hall-api-key`** | Read-only Conference Hall event API key.                                                                                                    | **true**     |
 
 <!-- secrets:end -->
 <!-- outputs:start -->
-
-## Outputs
-
-No public workflow outputs. Reports appear in action logs, annotations, and job summaries.
-
 <!-- outputs:end -->
 <!-- examples:start -->
 
+## Examples
+
 See [feedback setup and retry behavior](../../docs/integrations/feedback.md) for
+
 the required OpenFeedback organization key and Kutt configuration. Existing
+
 feedback URLs do not waive the credential requirements.
 
 <!-- examples:end -->
 <!-- contributing:start -->
+
+## Contributing
+
+Contributions are welcome! Please see the [contributing guidelines](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/main/CONTRIBUTING.md) for more details.
+
 <!-- contributing:end -->
 <!-- security:start -->
 <!-- security:end -->
 <!-- license:start -->
+
+## License
+
+This project is licensed under the MIT License.
+
+SPDX-License-Identifier: MIT
+
+Copyright © 2026 cloud-native-aixmarseille
+
+For more details, see the [license](http://choosealicense.com/licenses/mit/).
+
 <!-- license:end -->
 <!-- generated:start -->
 

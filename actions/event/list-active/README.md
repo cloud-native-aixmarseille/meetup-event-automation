@@ -2,12 +2,20 @@
 
 # GitHub Action: List active meetup events
 
+<div align="center">
+  <img src="../../../.github/logo.svg" width="60px" align="center" alt="List active meetup events" />
+</div>
+
+---
+
 <!-- header:end -->
 <!-- badges:start -->
 
 [![Marketplace](https://img.shields.io/badge/Marketplace-list--active--meetup--events-blue?logo=github-actions)](https://github.com/marketplace/actions/list-active-meetup-events)
 [![Release](https://img.shields.io/github/v/release/cloud-native-aixmarseille/meetup-event-automation)](https://github.com/cloud-native-aixmarseille/meetup-event-automation/releases)
+[![License](https://img.shields.io/github/license/cloud-native-aixmarseille/meetup-event-automation)](http://choosealicense.com/licenses/mit/)
 [![Stars](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/main/CONTRIBUTING.md)
 
 <!-- badges:end -->
 <!-- overview:start -->
@@ -16,21 +24,18 @@
 
 List active meetup issue numbers from the caller repository using the configured event label and lifecycle rules. Publish redacted diagnostics in annotations, logs, and the job summary.
 
-Audit selection includes terminal and closed labelled issues so pending external
-delivery remains recoverable. It paginates and deduplicates with a maximum of 200
-issues and 20 pages; exceeding a bound fails explicitly. See
-[organizer attention](../../../docs/integrations/communications.md#organizer-attention).
-
 <!-- overview:end -->
 <!-- usage:start -->
 
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/event/list-active@88fd8c3495bfbf7061bbd67d1324b0b4e4bc14d3 # main
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/event/list-active@1f22000828caf59f41d0a7d8815e5c5c0d3139f6 # 2.3.0
   with:
-    # Required language for generated text; no default.
-    locale: en
+    # Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
+    # This input is required.
+    locale: ""
+
     # Token for the caller repository with issues:read permission.
     # This input is required.
     github-token: ""
@@ -61,10 +66,26 @@ issues and 20 pages; exceeding a bound fails explicitly. See
 <!-- examples:start -->
 <!-- examples:end -->
 <!-- contributing:start -->
+
+## Contributing
+
+Contributions are welcome! Please see the [contributing guidelines](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/main/CONTRIBUTING.md) for more details.
+
 <!-- contributing:end -->
 <!-- security:start -->
 <!-- security:end -->
 <!-- license:start -->
+
+## License
+
+This project is licensed under the MIT License.
+
+SPDX-License-Identifier: MIT
+
+Copyright © 2026 Cloud Native Aix-Marseille
+
+For more details, see the [license](http://choosealicense.com/licenses/mit/).
+
 <!-- license:end -->
 <!-- generated:start -->
 

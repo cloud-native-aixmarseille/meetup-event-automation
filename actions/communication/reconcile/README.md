@@ -2,12 +2,20 @@
 
 # GitHub Action: Reconcile meetup communications
 
+<div align="center">
+  <img src="../../../.github/logo.svg" width="60px" align="center" alt="Reconcile meetup communications" />
+</div>
+
+---
+
 <!-- header:end -->
 <!-- badges:start -->
 
 [![Marketplace](https://img.shields.io/badge/Marketplace-reconcile--meetup--communications-blue?logo=github-actions)](https://github.com/marketplace/actions/reconcile-meetup-communications)
 [![Release](https://img.shields.io/github/v/release/cloud-native-aixmarseille/meetup-event-automation)](https://github.com/cloud-native-aixmarseille/meetup-event-automation/releases)
+[![License](https://img.shields.io/github/license/cloud-native-aixmarseille/meetup-event-automation)](http://choosealicense.com/licenses/mit/)
 [![Stars](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/main/CONTRIBUTING.md)
 
 <!-- badges:end -->
 <!-- overview:start -->
@@ -16,67 +24,33 @@
 
 Reconcile due meetup communications and dispatch them through the configured mail and Slack gateways when event, checklist, approval and delivery checks pass. Publish redacted diagnostics in annotations, logs, and the job summary.
 
-The action uses one reconciliation path. Its shared report describes the effective
-`check` or `dispatch` mode according to event, checklist, approval and delivery checks. Run the
-action under the shared per-event lock; the reusable workflows provide it.
-
-Pass the presentation file URL as `slides-url`, using the `slides-link` entry
-from the asset action's `drive-files` output. Due email batches require a valid
-file link and ready managed content. Forward `slides-ready` from the asset action; false holds due email before approval. Copy-only slides use true. Missing links and folder URLs also block email dispatch.
-See [presentation links](../../../docs/integrations/communications.md#presentation-link).
-
-The required `slack-organizer-channel-id` selects the internal organizer channel.
-Public event announcements remain manual checklist tasks and are never sent by
-this action. See [channel selection](../../../docs/integrations/communications.md#organizer-and-public-channels).
-
-Scheduled events become eligible for thank-you emails on the next Paris calendar
-day. The [attention action](../reconcile-attention/README.md) maintains their
-shared approval/task overview and grouped Slack notifications; run it after this
-action, as both public event workflows do.
-
-Pending or rejected approval blocks mail while preserving `dispatch` mode.
-The final attention action owns organizer reminders. Approval comments and their Slack alerts
-are excluded from delivery counts. See the
-[approval flow](../../../docs/integrations/communications.md#confirm-an-email-batch).
-
-The required `report-errors-to-issue` input selects the error policy. Issue
-updates use `false` to fail on error diagnostics. Audits use `true` to record the
-report in a managed meetup issue comment and succeed after it is saved or
-confirmed current. Later runs update that comment, including when errors are
-resolved. Execution and comment persistence failures still fail the action.
-
-Speaker thank-you emails include direct results links for their talks. Supply
-`openfeedback-api-key`; see [speaker feedback results](../../../docs/integrations/communications.md#speaker-feedback-results) for prerequisites and recovery.
-
 <!-- overview:end -->
 <!-- usage:start -->
 
 ## Usage
 
-Replace `<automation-commit-sha>` with the full commit SHA of the automation
-release you use. The asset step must have the ID `assets` for this example.
-
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/communication/reconcile@<automation-commit-sha>
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/communication/reconcile@1f22000828caf59f41d0a7d8815e5c5c0d3139f6 # 2.3.0
   with:
-    conference-hall-event: ${{ vars.CONFERENCE_HALL_EVENT }}
-    conference-hall-api-key: ${{ secrets.CONFERENCE_HALL_API_KEY }}
-    # Required language for generated text; no default.
-    locale: en
+    # Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
+    # This input is required.
+    locale: ""
+
     # GitHub issue number in the caller repository containing the meetup event document to inspect.
     # This input is required.
     issue-number: ""
 
-    # Required when an email batch is due. Reconcile assets first.
-    slides-url: ${{ fromJSON(steps.assets.outputs.drive-files)['slides-link'] }}
-    slides-ready: ${{ steps.assets.outputs.slides-ready }}
+    # Whether managed slides content is ready. False holds email batches that require slides. Copy-only slides use true.
+    # This input is required.
+    slides-ready: ""
 
-    # Required for speaker thank-you emails. Reads existing OpenFeedback talks.
-    openfeedback-api-key: ${{ secrets.OPENFEEDBACK_API_KEY }}
+    # Direct presentation file URL from the asset action's drive-files slides-link entry. Supply on every invocation; invalid links block due email batches.
+    # This input is required.
+    slides-url: ""
 
-    # Required: true reports errors in the issue; false fails on error diagnostics.
-    # Use the shared event lock.
-    report-errors-to-issue: "false"
+    # OpenFeedback organization API key used to read existing talk results for speaker thank-you emails. Missing or unresolved results block the thank-you batch.
+    # This input is required.
+    openfeedback-api-key: ""
 
     # Token for the caller repository. Requires issues:write for approval requests, checklist completion, delivery ledger, and diagnostic comments, and metadata:read to verify approvers.
     # This input is required.
@@ -97,6 +71,18 @@ release you use. The asset step must have the ID `assets` for this example.
     # Slack bot token with chat:write and reactions:write for organizer notifications and decision reactions.
     # This input is required.
     slack-token: ""
+
+    # Conference Hall CFP slug for live linked profiles and selected proposals.
+    # This input is required.
+    conference-hall-event: ""
+
+    # Read-only Conference Hall event API key.
+    # This input is required.
+    conference-hall-api-key: ""
+
+    # Use true to record communication diagnostics in a managed meetup issue comment and succeed after persistence, or false to fail on error diagnostics. Execution and comment persistence failures still fail the action. Requires the shared event lock.
+    # This input is required.
+    report-errors-to-issue: ""
 ```
 
 <!-- usage:end -->
@@ -104,21 +90,21 @@ release you use. The asset step must have the ID `assets` for this example.
 
 ## Inputs
 
-| **Input**                        | **Description**                                                                                                                                                                                                        | **Required** | **Default** |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
-| **`conference-hall-event`**      | Conference Hall CFP slug for live linked profiles and selected proposals.                                                                                                                                              | **true**     | -           |
-| **`conference-hall-api-key`**    | Read-only Conference Hall event API key.                                                                                                                                                                               | **true**     | -           |
-| **`locale`**                     | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.                                                                                     | **true**     | -           |
-| **`issue-number`**               | GitHub issue number in the caller repository containing the meetup event document to inspect.                                                                                                                          | **true**     | -           |
-| **`slides-ready`**               | Whether managed slides content is ready. False holds due email batches. Copy-only slides use true.                                                                                                                     | **true**     | -           |
-| **`slides-url`**                 | Direct presentation file URL from the asset action's drive-files slides-link entry. Supply on every invocation; invalid links block due email batches.                                                                 | **true**     | -           |
-| **`openfeedback-api-key`**       | OpenFeedback organization API key used to read existing talk results for speaker thank-you emails. Missing or unresolved results block the thank-you batch.                                                            | **true**     | -           |
-| **`report-errors-to-issue`**     | Use true to record diagnostics in a managed issue comment and succeed after persistence, or false to fail on error diagnostics. Execution and comment persistence failures still fail. Requires the shared event lock. | **true**     | -           |
-| **`github-token`**               | Token for the caller repository. Requires issues:write for approval requests, checklist completion, delivery ledger, and diagnostic comments, and metadata:read to verify approvers.                                   | **true**     | -           |
-| **`managed-comment-author`**     | Trusted bot login allowed to create or update managed approval, delivery ledger and communication diagnostic comments, for example my-app[bot].                                                                        | **true**     | -           |
-| **`mailings-token`**             | Token used to dispatch due email communications to the configured mailings repository.                                                                                                                                 | **true**     | -           |
-| **`slack-organizer-channel-id`** | Internal meetup organizer Slack channel for approval requests and actionable organizer reminders. Public announcement channels are separate.                                                                           | **true**     | -           |
-| **`slack-token`**                | Slack bot token with chat:write and reactions:write for organizer notifications and decision reactions.                                                                                                                | **true**     | -           |
+| **Input**                        | **Description**                                                                                                                                                                                                                                        | **Required** | **Default** |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ----------- |
+| **`locale`**                     | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.                                                                                                                     | **true**     | -           |
+| **`issue-number`**               | GitHub issue number in the caller repository containing the meetup event document to inspect.                                                                                                                                                          | **true**     | -           |
+| **`slides-ready`**               | Whether managed slides content is ready. False holds email batches that require slides. Copy-only slides use true.                                                                                                                                     | **true**     | -           |
+| **`slides-url`**                 | Direct presentation file URL from the asset action's drive-files slides-link entry. Supply on every invocation; invalid links block due email batches.                                                                                                 | **true**     | -           |
+| **`openfeedback-api-key`**       | OpenFeedback organization API key used to read existing talk results for speaker thank-you emails. Missing or unresolved results block the thank-you batch.                                                                                            | **true**     | -           |
+| **`github-token`**               | Token for the caller repository. Requires issues:write for approval requests, checklist completion, delivery ledger, and diagnostic comments, and metadata:read to verify approvers.                                                                   | **true**     | -           |
+| **`managed-comment-author`**     | Trusted bot login allowed to create or update managed approval, delivery ledger and communication diagnostic comments, for example my-app[bot].                                                                                                        | **true**     | -           |
+| **`mailings-token`**             | Token used to dispatch due email communications to the configured mailings repository.                                                                                                                                                                 | **true**     | -           |
+| **`slack-organizer-channel-id`** | Internal meetup organizer Slack channel for approval requests and actionable organizer reminders. Public announcement channels are separate.                                                                                                           | **true**     | -           |
+| **`slack-token`**                | Slack bot token with chat:write and reactions:write for organizer notifications and decision reactions.                                                                                                                                                | **true**     | -           |
+| **`conference-hall-event`**      | Conference Hall CFP slug for live linked profiles and selected proposals.                                                                                                                                                                              | **true**     | -           |
+| **`conference-hall-api-key`**    | Read-only Conference Hall event API key.                                                                                                                                                                                                               | **true**     | -           |
+| **`report-errors-to-issue`**     | Use true to record communication diagnostics in a managed meetup issue comment and succeed after persistence, or false to fail on error diagnostics. Execution and comment persistence failures still fail the action. Requires the shared event lock. | **true**     | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->
@@ -135,10 +121,26 @@ release you use. The asset step must have the ID `assets` for this example.
 <!-- examples:start -->
 <!-- examples:end -->
 <!-- contributing:start -->
+
+## Contributing
+
+Contributions are welcome! Please see the [contributing guidelines](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/main/CONTRIBUTING.md) for more details.
+
 <!-- contributing:end -->
 <!-- security:start -->
 <!-- security:end -->
 <!-- license:start -->
+
+## License
+
+This project is licensed under the MIT License.
+
+SPDX-License-Identifier: MIT
+
+Copyright © 2026 Cloud Native Aix-Marseille
+
+For more details, see the [license](http://choosealicense.com/licenses/mit/).
+
 <!-- license:end -->
 <!-- generated:start -->
 

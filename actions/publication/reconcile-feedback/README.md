@@ -23,16 +23,16 @@ issue already has a feedback URL. Use a key beginning with `oforg_`.
 
 | **Input**                     | **Description**                                                                                                                    | **Required** | **Default** |
 | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
-| **`conference-hall-event`**   | Conference Hall CFP slug for live linked profiles and selected proposals.                                                          | **true**     | -           |
-| **`conference-hall-api-key`** | Read-only Conference Hall event API key.                                                                                           | **true**     | -           |
 | **`locale`**                  | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **true**     | -           |
 | **`github-token`**            | GitHub token with issue read and write permissions.                                                                                | **true**     | -           |
 | **`issue-number`**            | Meetup issue number.                                                                                                               | **true**     | -           |
 | **`managed-comment-author`**  | GitHub App bot login used by event evaluation.                                                                                     | **true**     | -           |
-| **`openfeedback-api-key`**    | OpenFeedback organization API key (oforg\_) used to create and update events.                                                      | **true**     | -           |
+| **`openfeedback-api-key`**    | OpenFeedback organization API key (oforg_) used to create and update events.                                                       | **true**     | -           |
 | **`kutt-api-key`**            | API key for the owner of the existing Kutt link.                                                                                   | **true**     | -           |
 | **`kutt-base-url`**           | HTTPS base URL of the Kutt instance, without /api/v2. No default.                                                                  | **true**     | -           |
 | **`kutt-link-id`**            | Existing Kutt link API ID, not the short address.                                                                                  | **true**     | -           |
+| **`conference-hall-event`**   | Conference Hall CFP slug for live linked profiles and selected proposals.                                                          | **true**     | -           |
+| **`conference-hall-api-key`** | Read-only Conference Hall event API key.                                                                                           | **true**     | -           |
 
 <!-- inputs:end -->
 
@@ -74,13 +74,11 @@ Create OpenFeedback events, synchronize their titles, talks and speakers, and up
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/publication/reconcile-feedback@8dfb3e8516e00121d0ba1eafbfb252cebda2f8ed # 2.1.0
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/publication/reconcile-feedback@1f22000828caf59f41d0a7d8815e5c5c0d3139f6 # 2.3.0
   with:
-    conference-hall-event: ${{ vars.CONFERENCE_HALL_EVENT }}
-    conference-hall-api-key: ${{ secrets.CONFERENCE_HALL_API_KEY }}
     # Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
-    # Default: `en`
-    locale: en
+    # This input is required.
+    locale: ""
 
     # GitHub token with issue read and write permissions.
     # This input is required.
@@ -109,6 +107,14 @@ Create OpenFeedback events, synchronize their titles, talks and speakers, and up
     # Existing Kutt link API ID, not the short address.
     # This input is required.
     kutt-link-id: ""
+
+    # Conference Hall CFP slug for live linked profiles and selected proposals.
+    # This input is required.
+    conference-hall-event: ""
+
+    # Read-only Conference Hall event API key.
+    # This input is required.
+    conference-hall-api-key: ""
 ```
 
 <!-- usage:end -->
