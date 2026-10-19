@@ -52,6 +52,68 @@ describe("ManageMeetupAssets", () => {
 		).not.toHaveBeenCalled();
 	});
 
+	it("repairs the issue link and managed file metadata using existing asset IDs", async () => {
+		// Arrange
+		const { eventDependencies, assetRepository, useCase } = assetJourney();
+		const existingFolder = {
+			id: "existing-folder",
+			name: "2026-09-30 - September - Example Host",
+			url: "https://drive.google.com/drive/folders/existing-folder",
+			eventId: `${identity.repository}#42`,
+		};
+		const existingFile = {
+			id: "existing-slides",
+			name: "Previous slides name",
+			templateId: "template",
+			url: "https://docs.google.com/presentation/d/existing-slides",
+		};
+		assetRepository.findContainer.mockResolvedValue(existingFolder);
+		assetRepository.listFiles.mockResolvedValue([existingFile]);
+		assetRepository.updateFile.mockResolvedValue({
+			...existingFile,
+			name: "2026-09-30 Slides",
+			kind: "slides",
+		});
+		vi.mocked(eventDependencies.documentCodec.createPatch).mockReturnValue({
+			body: "projected existing asset link",
+		});
+
+		// Act
+		const result = await useCase.execute({ identity });
+
+		// Assert
+		expect(result).toMatchObject({
+			persisted: true,
+			assetUrl: existingFolder.url,
+			files: { "slides-link": existingFile.url },
+		});
+		expect(assetRepository.listFiles).toHaveBeenCalledWith(existingFolder.id);
+		expect(assetRepository.updateFile).toHaveBeenCalledWith(
+			existingFile,
+			{
+				id: existingFile.templateId,
+				name: "[EVENT_DATE:YYYY-MM-DD] Slides",
+				kind: "slides",
+			},
+			"2026-09-30 Slides",
+		);
+		expect(assetRepository.ensureContainer).not.toHaveBeenCalled();
+		expect(assetRepository.copyTemplate).not.toHaveBeenCalled();
+		expect(
+			eventDependencies.documentCodec.createPatch,
+		).toHaveBeenLastCalledWith(sourceDocument, {
+			...event,
+			publicationLinks: {
+				...event.publicationLinks,
+				assets: existingFolder.url,
+			},
+		});
+		expect(eventDependencies.repository.applyPatch).toHaveBeenCalledWith(
+			identity,
+			{ body: "projected existing asset link" },
+		);
+	});
+
 	it("does not persist an empty codec patch", async () => {
 		// Arrange
 		const { eventDependencies, useCase } = assetJourney();

@@ -68728,9 +68728,6 @@ var folderMimeType = "application/vnd.google-apps.folder";
 var fields = "id,name,webViewLink,mimeType,parents,trashed,appProperties";
 var requestOptions = { retry: false, timeout: 3e4 };
 
-// packages/adapter/google-drive-asset-repository/src/google-drive-authentication.ts
-var import_drive = __toESM(require_build(), 1);
-
 // packages/adapter/google-drive-asset-repository/src/google-drive-asset-repository-error.ts
 var GoogleDriveAssetRepositoryError = class extends Error {
   constructor(message) {
@@ -68740,6 +68737,7 @@ var GoogleDriveAssetRepositoryError = class extends Error {
 };
 
 // packages/adapter/google-drive-asset-repository/src/google-drive-authentication.ts
+var import_drive = __toESM(require_build(), 1);
 var GoogleDriveAuthentication = class {
   static create(credentialsJson) {
     let credentials;
@@ -68779,7 +68777,8 @@ var GoogleDriveAssetRepository = class _GoogleDriveAssetRepository {
   options;
   async findContainer(request3) {
     const matches = await this.list(
-      `'${_GoogleDriveAssetRepository.escapeQuery(this.options.parentFolderId)}' in parents and mimeType='${folderMimeType}' and appProperties has { key='meetup_event_key' and value='${_GoogleDriveAssetRepository.key(request3)}' }`
+      `mimeType='${folderMimeType}' and appProperties has { key='meetup_event_key' and value='${_GoogleDriveAssetRepository.key(request3)}' }`,
+      "allDrives"
     );
     if (matches.length > 1)
       throw _GoogleDriveAssetRepository.failure(
@@ -68787,9 +68786,9 @@ var GoogleDriveAssetRepository = class _GoogleDriveAssetRepository {
       );
     const file = matches[0];
     if (!file) return void 0;
-    if (file.trashed || file.mimeType !== folderMimeType || !file.parents?.includes(this.options.parentFolderId) || file.appProperties?.meetup_event_key !== _GoogleDriveAssetRepository.key(request3)) {
+    if (file.trashed || file.mimeType !== folderMimeType || file.appProperties?.meetup_event_key !== _GoogleDriveAssetRepository.key(request3)) {
       throw _GoogleDriveAssetRepository.failure(
-        "The asset folder does not match the requested event and configured parent"
+        "The asset folder does not match the requested event"
       );
     }
     return _GoogleDriveAssetRepository.container(file, request3.eventId);
@@ -68890,7 +68889,7 @@ var GoogleDriveAssetRepository = class _GoogleDriveAssetRepository {
     );
     return _GoogleDriveAssetRepository.assetFile(data);
   }
-  async list(query) {
+  async list(query, corpora = "user") {
     const files = [];
     let pageToken;
     const tokens = /* @__PURE__ */ new Set();
@@ -68899,6 +68898,7 @@ var GoogleDriveAssetRepository = class _GoogleDriveAssetRepository {
         () => this.client.files.list(
           {
             q: `${query} and trashed=false`,
+            corpora,
             fields: `nextPageToken,incompleteSearch,files(${fields})`,
             pageSize: 100,
             pageToken,

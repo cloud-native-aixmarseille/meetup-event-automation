@@ -66,32 +66,44 @@ describe("Google Drive asset repository", () => {
 		expect(actual).toEqual([{ ...template }]);
 		expect(files.list.mock.calls[1][0]).toMatchObject({
 			pageToken: "page-2",
+			corpora: "user",
 			supportsAllDrives: true,
 			includeItemsFromAllDrives: true,
 		});
 	});
 
-	it("looks up stable event metadata and returns vendor-independent values", async () => {
-		// Arrange
-		const { files, repository } = setup();
-		files.list.mockResolvedValue({ data: { files: [folder] } });
+	it.each([options.parentFolderId, "archive-year-folder"])(
+		"reuses the event folder under parent %s",
+		async (parentId) => {
+			// Arrange
+			const { files, repository } = setup();
+			files.list.mockResolvedValue({
+				data: { files: [{ ...folder, parents: [parentId] }] },
+			});
 
-		// Act
-		const container = await repository.findContainer(request);
-		await repository.ensureContainer(request);
+			// Act
+			const container = await repository.findContainer(request);
+			await repository.ensureContainer(request);
 
-		// Assert
-		expect(container).toEqual({
-			id: folder.id,
-			name: folder.name,
-			url: "https://drive.google.com/drive/folders/folder-1",
-			eventId: request.eventId,
-		});
-		expect(files.list.mock.calls[0][0].q).toContain(eventKey);
-		expect(files.list.mock.calls[0][0].q).toContain("'parent' in parents");
-		expect(files.update).not.toHaveBeenCalled();
-		expect(files.create).not.toHaveBeenCalled();
-	});
+			// Assert
+			expect(container).toEqual({
+				id: folder.id,
+				name: folder.name,
+				url: "https://drive.google.com/drive/folders/folder-1",
+				eventId: request.eventId,
+			});
+			expect(files.list.mock.calls[0][0].q).toContain(eventKey);
+			expect(files.list.mock.calls[0][0].q).not.toContain("in parents");
+			expect(files.list.mock.calls[0][0].q).toContain("trashed=false");
+			expect(files.list.mock.calls[0][0]).toMatchObject({
+				corpora: "allDrives",
+				supportsAllDrives: true,
+				includeItemsFromAllDrives: true,
+			});
+			expect(files.update).not.toHaveBeenCalled();
+			expect(files.create).not.toHaveBeenCalled();
+		},
+	);
 
 	it("creates a tagged folder and disables automatic replay of writes", async () => {
 		// Arrange
@@ -115,41 +127,45 @@ describe("Google Drive asset repository", () => {
 		);
 	});
 
-	it("renames a folder identified by the event key without creating another", async () => {
-		// Arrange
-		const { files, repository } = setup();
-		files.list.mockResolvedValue({
-			data: {
-				files: [{ ...folder, name: "Previous name" }],
-			},
-		});
-
-		// Act
-		await repository.ensureContainer(request);
-
-		// Assert
-		expect(files.update).toHaveBeenCalledWith(
-			expect.objectContaining({
-				fileId: folder.id,
-				requestBody: {
-					name: request.title,
-					appProperties: folder.appProperties,
+	it.each([options.parentFolderId, "archive-year-folder"])(
+		"renames the event folder under parent %s without moving it",
+		async (parentId) => {
+			// Arrange
+			const { files, repository } = setup();
+			files.list.mockResolvedValue({
+				data: {
+					files: [{ ...folder, name: "Previous name", parents: [parentId] }],
 				},
-			}),
-			expect.anything(),
-		);
-		expect(files.create).not.toHaveBeenCalled();
-	});
+			});
+
+			// Act
+			await repository.ensureContainer(request);
+
+			// Assert
+			expect(files.update).toHaveBeenCalledWith(
+				expect.objectContaining({
+					fileId: folder.id,
+					requestBody: {
+						name: request.title,
+						appProperties: folder.appProperties,
+					},
+				}),
+				expect.anything(),
+			);
+			expect(files.update.mock.calls[0][0]).not.toHaveProperty("addParents");
+			expect(files.update.mock.calls[0][0]).not.toHaveProperty("removeParents");
+			expect(files.create).not.toHaveBeenCalled();
+		},
+	);
 
 	it.each([
-		{ parents: ["outside-parent"] },
 		{ mimeType: "application/pdf" },
 		{ trashed: true },
 		{ appProperties: { meetup_event_key: "another-event" } },
 		{ appProperties: {} },
 		{ appProperties: undefined },
 	])(
-		"rejects folders that do not match the requested event and parent: %j",
+		"rejects folders that do not match the requested event: %j",
 		async (override) => {
 			// Arrange
 			const { files, repository } = setup();
@@ -162,7 +178,7 @@ describe("Google Drive asset repository", () => {
 
 			// Assert
 			await expect(operation).rejects.toThrow(
-				"does not match the requested event and configured parent",
+				"does not match the requested event",
 			);
 			expect(files.create).not.toHaveBeenCalled();
 			expect(files.update).not.toHaveBeenCalled();
@@ -187,20 +203,49 @@ describe("Google Drive asset repository", () => {
 		);
 	});
 
-	it("rejects duplicate folders instead of selecting the first result", async () => {
+	it("rejects duplicate event folders across root and archive search pages", async () => {
 		// Arrange
 		const { files, repository } = setup();
-		files.list.mockResolvedValue({
-			data: { files: [folder, { ...folder, id: "duplicate" }] },
-		});
+		files.list
+			.mockResolvedValueOnce({
+				data: { files: [folder], nextPageToken: "archive-page" },
+			})
+			.mockResolvedValueOnce({
+				data: {
+					files: [
+						{ ...folder, id: "duplicate", parents: ["archive-year-folder"] },
+					],
+				},
+			});
 
 		// Act
 		const operation = repository.ensureContainer(request);
 
 		// Assert
 		await expect(operation).rejects.toThrow("Multiple asset folders");
+		expect(files.list.mock.calls[1][0].pageToken).toBe("archive-page");
+		expect(files.create).not.toHaveBeenCalled();
 		expect(files.update).not.toHaveBeenCalled();
 	});
+
+	it.each([{ incompleteSearch: true }, { nextPageToken: "repeated" }])(
+		"prevents folder creation when event lookup cannot finish: %j",
+		async (data) => {
+			// Arrange
+			const { files, repository } = setup();
+			files.list.mockResolvedValue({ data });
+
+			// Act
+			const operation = repository.ensureContainer(request);
+
+			// Assert
+			await expect(operation).rejects.toThrow(
+				/incomplete search|repeated pagination/,
+			);
+			expect(files.create).not.toHaveBeenCalled();
+			expect(files.update).not.toHaveBeenCalled();
+		},
+	);
 
 	it("copies templates and updates their names and metadata", async () => {
 		// Arrange
@@ -237,6 +282,7 @@ describe("Google Drive asset repository", () => {
 			name: "Updated slides",
 			appProperties: file.appProperties,
 		});
+		expect(files.update.mock.calls[0][0].fileId).toBe(file.id);
 	});
 
 	it("escapes search terms and tolerates absent optional file metadata", async () => {
