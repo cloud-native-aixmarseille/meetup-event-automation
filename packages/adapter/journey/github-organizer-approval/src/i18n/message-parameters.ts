@@ -1,4 +1,24 @@
 export interface MessageParameters {
+	"approval.content.planned": { time: string };
+	"approval.content.slot": { index: number; status: string };
+	"approval.content.title": {
+		target: string;
+		language: string;
+		origin: string;
+	};
+	"approval.content.request": {
+		approve: string;
+		rejectMark: string;
+		iterateMark: string;
+	};
+	"approval.content.text-choice": { mark: string };
+	"approval.content.image-choice": { mark: string; index: number };
+	"approval.content.final": {
+		status: string;
+		actor: string;
+		decidedAt: string;
+		image: string;
+	};
 	"approval.meetup.details": {
 		title: string;
 		date: string;

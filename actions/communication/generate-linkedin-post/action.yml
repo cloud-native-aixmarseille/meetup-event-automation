@@ -1,0 +1,53 @@
+name: Generate LinkedIn post
+description: Generate one durable proposal without applying it.
+inputs:
+  meetup-event-url-prefix:
+    description: HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
+    required: true
+  community-event-url-prefixes:
+    description: JSON array of nonempty HTTPS prefixes accepted for community event URLs.
+    required: true
+  asset-folder-url-prefix:
+    description: HTTPS prefix accepted for event asset folder URLs.
+    required: true
+  locale:
+    description:
+      Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales
+      fall back to English.
+    required: true
+  github-token:
+    description: GitHub token with issue read and write permissions.
+    required: true
+  issue-number:
+    description: Meetup issue number.
+    required: true
+  conference-hall-event:
+    description: Conference Hall CFP slug for live linked profiles and selected proposals.
+    required: true
+  conference-hall-api-key:
+    description: Read-only Conference Hall event API key.
+    required: true
+  managed-comment-author:
+    description: GitHub App bot login owning content and approval comments.
+    required: true
+  google-credentials:
+    description: Google service-account JSON for immutable public content media.
+    required: true
+  target:
+    description: "Draft target: linkedin:announcement/d7/d0."
+    required: true
+  ai-provider:
+    description: AI provider identifier (gemini).
+    required: true
+  ai-model:
+    description: Supported structured-text model.
+    required: true
+  ai-api-key:
+    description: API key for the selected AI provider.
+    required: true
+outputs:
+  diagnostics:
+    description: Redacted content-stage diagnostics.
+runs:
+  using: node24
+  main: dist/index.js

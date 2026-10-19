@@ -7,6 +7,7 @@ import {
 	LocaleResolver,
 	LocalizationComposition,
 } from "@meetup-automation/localization";
+import { TemplatingComposition } from "@meetup-automation/templating";
 import type { Container } from "inversify";
 import { ActionFailurePresenter } from "./action-failure-presenter.js";
 import { ActionOutput } from "./action-output.js";
@@ -152,7 +153,10 @@ export class RuntimePresentationComposition {
 			.toResolvedValue(
 				() =>
 					(...args: AssetDateFormatterArguments) =>
-						new AssetDateFormatter(...args),
+						new AssetDateFormatter(
+							new TemplatingComposition().dates(args[0]),
+							...args,
+						),
 			);
 		container
 			.bind<RuntimeFactories["assetRenderPresenter"]>(

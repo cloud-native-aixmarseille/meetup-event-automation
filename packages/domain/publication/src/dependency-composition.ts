@@ -18,10 +18,12 @@ import {
 	ResolveContentValues,
 	type ResolveContentValuesArguments,
 } from "./application/resolve-content-values.js";
+import { AssetFileName } from "./domain/asset-file-name.js";
 import {
 	AssetFolderUrlPolicy,
 	type AssetFolderUrlPolicyArguments,
 } from "./domain/asset-folder-url-policy.js";
+import type { AssetTemplateRenderer } from "./domain/asset-template-renderer.js";
 import {
 	CommunityEventUrlPolicy,
 	type CommunityEventUrlPolicyArguments,
@@ -116,7 +118,7 @@ export class PublicationDomainComposition {
 		});
 	}
 	contentTextKey(): ContentTextKey {
-		return new ContentTextKey();
+		return new ContentTextKey(this.contentFingerprint());
 	}
 	feedbackLinkSelection(): FeedbackLinkSelection {
 		return new FeedbackLinkSelection({ feedbackPolicy: this.feedbackPolicy() });
@@ -156,6 +158,7 @@ export class PublicationDomainComposition {
 		);
 	}
 	reconcileAssetContent(
+		templates: Pick<AssetTemplateRenderer, "value">,
 		...args: ReconcileAssetContentArguments
 	): ReconcileAssetContent {
 		return new ReconcileAssetContent(
@@ -167,29 +170,42 @@ export class PublicationDomainComposition {
 				contentRecoveryFingerprint: this.contentRecoveryFingerprint(),
 				contentRecoveryPlan: this.contentRecoveryPlan(),
 				createResolveContentValues: (...args) =>
-					this.resolveContentValues(...args),
+					this.resolveContentValues(templates, ...args),
 			},
 			...args,
 		);
 	}
-	reconcileAssetFile(...args: ReconcileAssetFileArguments): ReconcileAssetFile {
-		return new ReconcileAssetFile(...args);
+	reconcileAssetFile(
+		names: Pick<AssetFileName, "render">,
+		...args: ReconcileAssetFileArguments
+	): ReconcileAssetFile {
+		return new ReconcileAssetFile(names, ...args);
+	}
+	assetFileName(
+		templates: Pick<AssetTemplateRenderer, "render">,
+	): AssetFileName {
+		return new AssetFileName(templates);
 	}
 	reconcileEventAssets(
+		names: Pick<AssetFileName, "render">,
 		...args: ReconcileEventAssetsArguments
 	): ReconcileEventAssets {
 		return new ReconcileEventAssets(
 			{
-				createReconcileAssetFile: (...args) => this.reconcileAssetFile(...args),
+				names,
+				createReconcileAssetFile: (...args) =>
+					this.reconcileAssetFile(names, ...args),
 			},
 			...args,
 		);
 	}
 	resolveContentValues(
+		templates: Pick<AssetTemplateRenderer, "value">,
 		...args: ResolveContentValuesArguments
 	): ResolveContentValues {
 		return new ResolveContentValues(
 			{
+				templates,
 				contentTextKey: this.contentTextKey(),
 				contentContractPolicy: this.contentContractPolicy(),
 				contentFingerprint: this.contentFingerprint(),

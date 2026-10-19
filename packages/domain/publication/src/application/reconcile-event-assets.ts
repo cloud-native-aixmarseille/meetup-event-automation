@@ -3,6 +3,7 @@ import type {
 	ContentStatus,
 	PublicAssetModel,
 } from "../domain/asset-content.js";
+import type { AssetFileName } from "../domain/asset-file-name.js";
 import type { PublicationDiagnostic } from "../domain/model.js";
 import type {
 	AssetContainer,
@@ -27,6 +28,7 @@ export type ReconcileEventAssetsResult = Readonly<{
 export type ReconcileEventAssetsMode = "check" | "fix";
 
 export interface ReconcileEventAssetsCollaborators {
+	readonly names: Pick<AssetFileName, "render">;
 	readonly createReconcileAssetFile: (
 		...args: ReconcileAssetFileArguments
 	) => ReconcileAssetFile;
@@ -64,7 +66,7 @@ export class ReconcileEventAssets {
 		}
 		// Validate the complete template catalog before performing any mutation.
 		const templates = await this.repository.listTemplates();
-		this.validateTemplates(templates);
+		this.validateTemplates(templates, date);
 		const month = new Intl.DateTimeFormat("en-US", {
 			month: "long",
 			timeZone: "UTC",
@@ -97,7 +99,12 @@ export class ReconcileEventAssets {
 				),
 			);
 		}
-		return this.reconcileFiles(container, templates, input, diagnostics);
+		return this.reconcileFiles(
+			container,
+			templates,
+			{ ...input, date },
+			diagnostics,
+		);
 	}
 
 	private async reconcileFiles(
@@ -159,7 +166,10 @@ export class ReconcileEventAssets {
 		);
 	}
 
-	private validateTemplates(templates: readonly AssetTemplate[]): void {
+	private validateTemplates(
+		templates: readonly AssetTemplate[],
+		date: string,
+	): void {
 		if (
 			!templates.length ||
 			templates.some(
@@ -173,6 +183,8 @@ export class ReconcileEventAssets {
 				"Asset templates must have unique IDs, unique kinds, and non-empty names",
 			);
 		}
+		for (const template of templates)
+			this.collaborators.names.render(template.name, date);
 	}
 }
 export type ReconcileEventAssetsArguments =

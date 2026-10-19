@@ -27,6 +27,7 @@ describe("communication source consistency", () => {
 						: { ...sourceDocument, body: "Changed organizer content" },
 				);
 			const dependencies: ManageMeetupCommunicationsDependencies = {
+				contentGate: { blocked: vi.fn().mockResolvedValue([]) },
 				config: {
 					...config,
 					communication: { ...config.communication, "dispatch-enabled": true },

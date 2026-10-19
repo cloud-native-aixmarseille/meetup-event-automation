@@ -6,9 +6,15 @@ import {
 	ContentError,
 	type ContentTextKey,
 } from "@meetup-automation/publication";
+import {
+	TemplateError,
+	type TemplateOccurrence,
+	type TemplateParser,
+} from "@meetup-automation/templating";
 
 export interface SlideTemplateBindingsCollaborators {
-	readonly contentTextKey: Pick<ContentTextKey, "of">;
+	readonly contentTextKey: Pick<ContentTextKey, "of" | "reference">;
+	readonly templates: Pick<TemplateParser, "parse" | "contains">;
 }
 
 export class SlideTemplateBindings {
@@ -49,11 +55,19 @@ export class SlideTemplateBindings {
 		const objectId = element.objectId;
 		if (!objectId) throw new ContentError("location");
 		const text = this.text(element);
-		if (element.shape && text.includes("{{")) {
+		if (element.shape && this.collaborators.templates.contains(text)) {
+			const expressions = this.expressions(text);
+			if (
+				expressions.length !== 1 ||
+				expressions[0].start !== 0 ||
+				expressions[0].end !== text.length
+			)
+				throw new ContentError("location");
 			const field = contract.fields.find(
 				(field) =>
 					field.type === "text" &&
-					text === `{{${this.collaborators.contentTextKey.of(field)}}}`,
+					expressions[0].reference ===
+						this.collaborators.contentTextKey.reference(field),
 			);
 			if (field?.type !== "text") throw new ContentError("location");
 			this.style(element);
@@ -106,7 +120,17 @@ export class SlideTemplateBindings {
 	}
 
 	private rejectTokens(value: unknown): void {
-		if (this.allText(value).includes("{{")) throw new ContentError("location");
+		if (this.collaborators.templates.contains(this.allText(value)))
+			throw new ContentError("location");
+	}
+
+	private expressions(text: string): readonly TemplateOccurrence[] {
+		try {
+			return this.collaborators.templates.parse(text);
+		} catch (error) {
+			if (error instanceof TemplateError) throw new ContentError("location");
+			throw error;
+		}
 	}
 
 	private allText(value: unknown): string {

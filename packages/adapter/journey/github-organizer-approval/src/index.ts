@@ -3,6 +3,7 @@ export { ApprovalNotifications } from "./approval-notifications.js";
 export { ApprovalPresenter } from "./approval-presenter.js";
 export { ApprovalPresenterFactory } from "./approval-presenter-factory.js";
 export { ApprovalRecordFactory } from "./approval-record-factory.js";
+export { GithubContentStoreComposition } from "./content-store-composition.js";
 export { GithubOrganizerApprovalComposition } from "./dependency-composition.js";
 export { FinalizeApprovalDecision } from "./finalize-approval-decision.js";
 export { GithubApprovalAttentionSource } from "./github-approval-attention-source.js";

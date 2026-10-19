@@ -9,3 +9,5 @@ export { GoogleDriveAssetRepositoryFactory } from "./google-drive-asset-reposito
 export { GoogleDriveAuthentication } from "./google-drive-authentication.js";
 export { GoogleDriveManifestRepository } from "./google-drive-manifest-repository.js";
 export { GoogleDrivePdfComposition } from "./pdf-export-composition.js";
+export { GoogleDriveContentMediaComposition } from "./content-media-composition.js";
+export type { AnnouncementExport } from "./drive-announcement-image.js";

@@ -24,11 +24,30 @@ export class GithubApprovalRepository {
 				continue;
 			const record = await this.trusted.read(comment);
 			if (!record) continue;
-			if (states.some((state) => state.record.kind === record.kind))
+			if (
+				states.some(
+					(state) =>
+						state.record.kind === record.kind &&
+						(record.kind !== "content-review" ||
+							state.record.content?.key === record.content.key),
+				)
+			)
 				throw new Error("Ambiguous approval state");
 			states.push({ record, comment });
 		}
 		return states;
+	}
+	async activeStates(): Promise<readonly ApprovalState[]> {
+		const active = new Map<string, ApprovalState>();
+		for (const state of await this.states()) {
+			const record = state.record;
+			const key =
+				record.kind === "content-review"
+					? `content:${record.content.target}`
+					: record.kind;
+			active.set(key, state);
+		}
+		return [...active.values()];
 	}
 	async save(
 		record: StoredApproval,

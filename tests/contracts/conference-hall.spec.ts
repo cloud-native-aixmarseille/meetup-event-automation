@@ -70,7 +70,7 @@ describe("Conference Hall contracts", () => {
 	});
 	it("guards contact persistence with private scope, a repository lock and a branch-head lease", async () => {
 		// Arrange
-		const workflow = await readWorkflow("reconcile-speakers");
+		const workflow = await readWorkflow("referential-reconcile-speakers");
 
 		// Act
 		const job = workflow.jobs?.synchronize;
@@ -110,7 +110,7 @@ describe("Conference Hall contracts", () => {
 		expect(manifest.inputs?.["conference-hall-api-key"].required).toBe(true);
 		expect(manifest.runs?.using).toBe("node24");
 	});
-	it.each(["reconcile-meetup"])(
+	it.each(["event-reconcile"])(
 		"forwards required source credentials to each refreshing action in %s",
 		async (name) => {
 			// Arrange

@@ -31,6 +31,7 @@ import {
 	type EventCompositionInput,
 	SERVICES,
 } from "./composition.js";
+import { ContentGateComposition } from "./content-gate-composition.js";
 import { OrganizerApprovalComposition } from "./organizer-approval-composition.js";
 
 const COMMUNICATION_SERVICES = {
@@ -137,6 +138,11 @@ export class CommunicationComposition {
 				COMMUNICATION_SERVICES.mailGateway,
 			);
 			return new JourneyCommunicationComposition().manageMeetupCommunications({
+				contentGate: new ContentGateComposition().create(
+					input,
+					input.issueNumber,
+					input.commentAuthorLogin,
+				),
 				feedbackResults:
 					new OpenfeedbackEventGatewayComposition().openFeedbackTalkResultsGateway(
 						input.openFeedbackApiKey ?? "",

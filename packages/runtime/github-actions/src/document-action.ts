@@ -53,6 +53,10 @@ export class DocumentAction {
 					`${owner}/${repo}#${issueNumber}`,
 				),
 			locale: messages.locale,
+			issueNumber,
+			commentAuthorLogin: core.getInput("managed-comment-author", {
+				required: true,
+			}),
 			...this.collaborators.conferenceHallInput.read(),
 			client,
 			owner,

@@ -98,22 +98,52 @@ export function workflowOutputConsumed(
 	workflows: ReadonlyMap<string, Workflow>,
 	path: string,
 	output: string,
+	visiting: ReadonlySet<string> = new Set(),
 ): boolean {
+	const key = `${path}:${output}`;
+	if (visiting.has(key)) return false;
+	const visited = new Set([...visiting, key]);
+	const reachable = operationalWorkflows(workflows);
 	return [...workflows].some(
 		([name, workflow]) =>
-			!name.startsWith("__") &&
+			reachable.has(name) &&
 			Object.entries(workflow.jobs ?? {}).some(
 				([id, job]) =>
 					job.uses === `./.github/workflows/${path}` &&
-					Object.entries(workflow.jobs ?? {}).some(
+					(Object.entries(workflow.jobs ?? {}).some(
 						([otherId, other]) =>
 							otherId !== id &&
 							operationalValues(other, workflows).some((value) =>
 								value.includes(`needs.${id}.outputs.${output}`),
 							),
-					),
+					) ||
+						Object.entries(workflow.on?.workflow_call?.outputs ?? {}).some(
+							([exported, definition]) =>
+								strings(definition).some((value) =>
+									value.includes(`jobs.${id}.outputs.${output}`),
+								) && workflowOutputConsumed(workflows, name, exported, visited),
+						)),
 			),
 	);
+}
+
+/** Internal helpers count only when reachable from an organizer-facing workflow. */
+export function operationalWorkflows(
+	workflows: ReadonlyMap<string, Workflow>,
+): Set<string> {
+	const reachable = new Set<string>();
+	const pending = [...workflows.keys()].filter(
+		(path) => !path.startsWith("__"),
+	);
+	for (const path of pending) {
+		if (reachable.has(path)) continue;
+		reachable.add(path);
+		for (const job of Object.values(workflows.get(path)?.jobs ?? {})) {
+			const called = job.uses?.match(/^\.\/\.github\/workflows\/(.+)$/)?.[1];
+			if (called && workflows.has(called)) pending.push(called);
+		}
+	}
+	return reachable;
 }
 
 function operationalStep(step: Step): boolean {

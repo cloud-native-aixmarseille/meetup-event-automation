@@ -22,7 +22,10 @@ describe("managed content reconciliation", () => {
 				contentRecoveryPlan:
 					new PublicationDomainComposition().contentRecoveryPlan(),
 				createResolveContentValues: (...args) =>
-					new PublicationDomainComposition().resolveContentValues(...args),
+					new PublicationDomainComposition().resolveContentValues(
+						{ value: (value) => value.value },
+						...args,
+					),
 			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
@@ -86,7 +89,10 @@ describe("managed content reconciliation", () => {
 				contentRecoveryPlan:
 					new PublicationDomainComposition().contentRecoveryPlan(),
 				createResolveContentValues: (...args) =>
-					new PublicationDomainComposition().resolveContentValues(...args),
+					new PublicationDomainComposition().resolveContentValues(
+						{ value: (value) => value.value },
+						...args,
+					),
 			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
@@ -130,7 +136,10 @@ describe("managed content reconciliation", () => {
 				contentRecoveryPlan:
 					new PublicationDomainComposition().contentRecoveryPlan(),
 				createResolveContentValues: (...args) =>
-					new PublicationDomainComposition().resolveContentValues(...args),
+					new PublicationDomainComposition().resolveContentValues(
+						{ value: (value) => value.value },
+						...args,
+					),
 			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
@@ -182,7 +191,10 @@ describe("managed content reconciliation", () => {
 				contentRecoveryPlan:
 					new PublicationDomainComposition().contentRecoveryPlan(),
 				createResolveContentValues: (...args) =>
-					new PublicationDomainComposition().resolveContentValues(...args),
+					new PublicationDomainComposition().resolveContentValues(
+						{ value: (value) => value.value },
+						...args,
+					),
 			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
@@ -217,7 +229,10 @@ describe("managed content reconciliation", () => {
 				contentRecoveryPlan:
 					new PublicationDomainComposition().contentRecoveryPlan(),
 				createResolveContentValues: (...args) =>
-					new PublicationDomainComposition().resolveContentValues(...args),
+					new PublicationDomainComposition().resolveContentValues(
+						{ value: (value) => value.value },
+						...args,
+					),
 			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
@@ -261,7 +276,10 @@ describe("managed content reconciliation", () => {
 				contentRecoveryPlan:
 					new PublicationDomainComposition().contentRecoveryPlan(),
 				createResolveContentValues: (...args) =>
-					new PublicationDomainComposition().resolveContentValues(...args),
+					new PublicationDomainComposition().resolveContentValues(
+						{ value: (value) => value.value },
+						...args,
+					),
 			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
@@ -293,7 +311,10 @@ describe("managed content reconciliation", () => {
 				contentRecoveryPlan:
 					new PublicationDomainComposition().contentRecoveryPlan(),
 				createResolveContentValues: (...args) =>
-					new PublicationDomainComposition().resolveContentValues(...args),
+					new PublicationDomainComposition().resolveContentValues(
+						{ value: (value) => value.value },
+						...args,
+					),
 			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
@@ -335,7 +356,10 @@ describe("managed content reconciliation", () => {
 				contentRecoveryPlan:
 					new PublicationDomainComposition().contentRecoveryPlan(),
 				createResolveContentValues: (...args) =>
-					new PublicationDomainComposition().resolveContentValues(...args),
+					new PublicationDomainComposition().resolveContentValues(
+						{ value: (value) => value.value },
+						...args,
+					),
 			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
@@ -374,7 +398,10 @@ describe("managed content reconciliation", () => {
 				contentRecoveryPlan:
 					new PublicationDomainComposition().contentRecoveryPlan(),
 				createResolveContentValues: (...args) =>
-					new PublicationDomainComposition().resolveContentValues(...args),
+					new PublicationDomainComposition().resolveContentValues(
+						{ value: (value) => value.value },
+						...args,
+					),
 			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
@@ -429,7 +456,10 @@ describe("managed content reconciliation", () => {
 				contentRecoveryPlan:
 					new PublicationDomainComposition().contentRecoveryPlan(),
 				createResolveContentValues: (...args) =>
-					new PublicationDomainComposition().resolveContentValues(...args),
+					new PublicationDomainComposition().resolveContentValues(
+						{ value: (value) => value.value },
+						...args,
+					),
 			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
@@ -478,7 +508,10 @@ describe("managed content reconciliation", () => {
 				contentRecoveryPlan:
 					new PublicationDomainComposition().contentRecoveryPlan(),
 				createResolveContentValues: (...args) =>
-					new PublicationDomainComposition().resolveContentValues(...args),
+					new PublicationDomainComposition().resolveContentValues(
+						{ value: (value) => value.value },
+						...args,
+					),
 			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
@@ -527,7 +560,10 @@ describe("managed content reconciliation", () => {
 				contentRecoveryPlan:
 					new PublicationDomainComposition().contentRecoveryPlan(),
 				createResolveContentValues: (...args) =>
-					new PublicationDomainComposition().resolveContentValues(...args),
+					new PublicationDomainComposition().resolveContentValues(
+						{ value: (value) => value.value },
+						...args,
+					),
 			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
@@ -567,7 +603,10 @@ describe("managed content reconciliation", () => {
 				contentRecoveryPlan:
 					new PublicationDomainComposition().contentRecoveryPlan(),
 				createResolveContentValues: (...args) =>
-					new PublicationDomainComposition().resolveContentValues(...args),
+					new PublicationDomainComposition().resolveContentValues(
+						{ value: (value) => value.value },
+						...args,
+					),
 			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
@@ -601,7 +640,10 @@ describe("managed content reconciliation", () => {
 				contentRecoveryPlan:
 					new PublicationDomainComposition().contentRecoveryPlan(),
 				createResolveContentValues: (...args) =>
-					new PublicationDomainComposition().resolveContentValues(...args),
+					new PublicationDomainComposition().resolveContentValues(
+						{ value: (value) => value.value },
+						...args,
+					),
 			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
@@ -635,7 +677,10 @@ describe("managed content reconciliation", () => {
 				contentRecoveryPlan:
 					new PublicationDomainComposition().contentRecoveryPlan(),
 				createResolveContentValues: (...args) =>
-					new PublicationDomainComposition().resolveContentValues(...args),
+					new PublicationDomainComposition().resolveContentValues(
+						{ value: (value) => value.value },
+						...args,
+					),
 			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
@@ -670,7 +715,10 @@ describe("managed content reconciliation", () => {
 				contentRecoveryPlan:
 					new PublicationDomainComposition().contentRecoveryPlan(),
 				createResolveContentValues: (...args) =>
-					new PublicationDomainComposition().resolveContentValues(...args),
+					new PublicationDomainComposition().resolveContentValues(
+						{ value: (value) => value.value },
+						...args,
+					),
 			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
@@ -710,7 +758,10 @@ describe("managed content reconciliation", () => {
 				contentRecoveryPlan:
 					new PublicationDomainComposition().contentRecoveryPlan(),
 				createResolveContentValues: (...args) =>
-					new PublicationDomainComposition().resolveContentValues(...args),
+					new PublicationDomainComposition().resolveContentValues(
+						{ value: (value) => value.value },
+						...args,
+					),
 			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
@@ -754,7 +805,10 @@ describe("managed content reconciliation", () => {
 				contentRecoveryPlan:
 					new PublicationDomainComposition().contentRecoveryPlan(),
 				createResolveContentValues: (...args) =>
-					new PublicationDomainComposition().resolveContentValues(...args),
+					new PublicationDomainComposition().resolveContentValues(
+						{ value: (value) => value.value },
+						...args,
+					),
 			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
@@ -792,7 +846,10 @@ describe("managed content reconciliation", () => {
 				contentRecoveryPlan:
 					new PublicationDomainComposition().contentRecoveryPlan(),
 				createResolveContentValues: (...args) =>
-					new PublicationDomainComposition().resolveContentValues(...args),
+					new PublicationDomainComposition().resolveContentValues(
+						{ value: (value) => value.value },
+						...args,
+					),
 			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
@@ -827,7 +884,10 @@ describe("managed content reconciliation", () => {
 				contentRecoveryPlan:
 					new PublicationDomainComposition().contentRecoveryPlan(),
 				createResolveContentValues: (...args) =>
-					new PublicationDomainComposition().resolveContentValues(...args),
+					new PublicationDomainComposition().resolveContentValues(
+						{ value: (value) => value.value },
+						...args,
+					),
 			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
@@ -865,7 +925,10 @@ describe("managed content reconciliation", () => {
 				contentRecoveryPlan:
 					new PublicationDomainComposition().contentRecoveryPlan(),
 				createResolveContentValues: (...args) =>
-					new PublicationDomainComposition().resolveContentValues(...args),
+					new PublicationDomainComposition().resolveContentValues(
+						{ value: (value) => value.value },
+						...args,
+					),
 			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
@@ -902,7 +965,10 @@ describe("managed content reconciliation", () => {
 				contentRecoveryPlan:
 					new PublicationDomainComposition().contentRecoveryPlan(),
 				createResolveContentValues: (...args) =>
-					new PublicationDomainComposition().resolveContentValues(...args),
+					new PublicationDomainComposition().resolveContentValues(
+						{ value: (value) => value.value },
+						...args,
+					),
 			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },

@@ -1,3 +1,7 @@
+# Goal: Validate and package the TypeScript workspace.
+# Behavior: Delegate Node.js CI to the shared workflow, build workspace projects
+# and action bundles, and run tests with Codecov coverage reporting.
+
 name: Internal - Checks for nodejs
 
 on:

@@ -42,7 +42,7 @@
 		},
 		"packages/presentation/*": {
 			"entry": ["src/**/*.test.ts"],
-			"project": ["src/**/*.ts", "testing/**/*.ts"]
+			"project": ["{src,testing}/**/*.ts"]
 		}
 	},
 	"ignoreDependencies": ["@commitlint/config-conventional"]

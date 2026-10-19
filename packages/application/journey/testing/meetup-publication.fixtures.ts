@@ -95,6 +95,7 @@ export function publicationFixture(
 		Object.assign(currentEvent, projected);
 	});
 	const dependencies = {
+		contentGate: { blocked: vi.fn().mockResolvedValue([]) },
 		repository: deps.repository,
 		codec: deps.documentCodec,
 		clock: { now: () => "2026-09-29T12:00:00Z" },

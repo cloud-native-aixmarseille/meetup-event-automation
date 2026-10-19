@@ -4389,7 +4389,7 @@ var require_data_url = __commonJS({
 var require_webidl = __commonJS({
   "node_modules/.pnpm/undici@6.29.0/node_modules/undici/lib/web/fetch/webidl.js"(exports, module) {
     "use strict";
-    var { types: types3, inspect } = __require("node:util");
+    var { types: types4, inspect } = __require("node:util");
     var { markAsUncloneable } = __require("node:worker_threads");
     var { toUSVString } = require_util();
     var webidl = {};
@@ -4579,7 +4579,7 @@ var require_webidl = __commonJS({
           });
         }
         const result = {};
-        if (!types3.isProxy(O3)) {
+        if (!types4.isProxy(O3)) {
           const keys2 = [...Object.getOwnPropertyNames(O3), ...Object.getOwnPropertySymbols(O3)];
           for (const key of keys2) {
             const typedKey = keyConverter(key, prefix, argument);
@@ -4708,14 +4708,14 @@ var require_webidl = __commonJS({
       return x4;
     };
     webidl.converters.ArrayBuffer = function(V3, prefix, argument, opts) {
-      if (webidl.util.Type(V3) !== "Object" || !types3.isAnyArrayBuffer(V3)) {
+      if (webidl.util.Type(V3) !== "Object" || !types4.isAnyArrayBuffer(V3)) {
         throw webidl.errors.conversionFailed({
           prefix,
           argument: `${argument} ("${webidl.util.Stringify(V3)}")`,
           types: ["ArrayBuffer"]
         });
       }
-      if (opts?.allowShared === false && types3.isSharedArrayBuffer(V3)) {
+      if (opts?.allowShared === false && types4.isSharedArrayBuffer(V3)) {
         throw webidl.errors.exception({
           header: "ArrayBuffer",
           message: "SharedArrayBuffer is not allowed."
@@ -4730,14 +4730,14 @@ var require_webidl = __commonJS({
       return V3;
     };
     webidl.converters.TypedArray = function(V3, T3, prefix, name, opts) {
-      if (webidl.util.Type(V3) !== "Object" || !types3.isTypedArray(V3) || V3.constructor.name !== T3.name) {
+      if (webidl.util.Type(V3) !== "Object" || !types4.isTypedArray(V3) || V3.constructor.name !== T3.name) {
         throw webidl.errors.conversionFailed({
           prefix,
           argument: `${name} ("${webidl.util.Stringify(V3)}")`,
           types: [T3.name]
         });
       }
-      if (opts?.allowShared === false && types3.isSharedArrayBuffer(V3.buffer)) {
+      if (opts?.allowShared === false && types4.isSharedArrayBuffer(V3.buffer)) {
         throw webidl.errors.exception({
           header: "ArrayBuffer",
           message: "SharedArrayBuffer is not allowed."
@@ -4752,13 +4752,13 @@ var require_webidl = __commonJS({
       return V3;
     };
     webidl.converters.DataView = function(V3, prefix, name, opts) {
-      if (webidl.util.Type(V3) !== "Object" || !types3.isDataView(V3)) {
+      if (webidl.util.Type(V3) !== "Object" || !types4.isDataView(V3)) {
         throw webidl.errors.exception({
           header: prefix,
           message: `${name} is not a DataView.`
         });
       }
-      if (opts?.allowShared === false && types3.isSharedArrayBuffer(V3.buffer)) {
+      if (opts?.allowShared === false && types4.isSharedArrayBuffer(V3.buffer)) {
         throw webidl.errors.exception({
           header: "ArrayBuffer",
           message: "SharedArrayBuffer is not allowed."
@@ -4773,13 +4773,13 @@ var require_webidl = __commonJS({
       return V3;
     };
     webidl.converters.BufferSource = function(V3, prefix, name, opts) {
-      if (types3.isAnyArrayBuffer(V3)) {
+      if (types4.isAnyArrayBuffer(V3)) {
         return webidl.converters.ArrayBuffer(V3, prefix, name, { ...opts, allowShared: false });
       }
-      if (types3.isTypedArray(V3)) {
+      if (types4.isTypedArray(V3)) {
         return webidl.converters.TypedArray(V3, V3.constructor, prefix, name, { ...opts, allowShared: false });
       }
-      if (types3.isDataView(V3)) {
+      if (types4.isDataView(V3)) {
         return webidl.converters.DataView(V3, prefix, name, { ...opts, allowShared: false });
       }
       throw webidl.errors.conversionFailed({
@@ -6351,7 +6351,7 @@ Content-Type: ${value.type || "application/octet-stream"}\r
       }
     }
     function bodyMixinMethods(instance) {
-      const methods = {
+      const methods2 = {
         blob() {
           return consumeBody2(this, (bytes) => {
             let mimeType = bodyMimeType(this);
@@ -6409,7 +6409,7 @@ Content-Type: ${value.type || "application/octet-stream"}\r
           }, instance);
         }
       };
-      return methods;
+      return methods2;
     }
     function mixinBody(prototype) {
       Object.assign(prototype.prototype, bodyMixinMethods(prototype));
@@ -9823,7 +9823,7 @@ var require_retry_handler = __commonJS({
       return null;
     }
     var RetryHandler = class _RetryHandler {
-      constructor(opts, handlers) {
+      constructor(opts, handlers2) {
         const { retryOptions, ...dispatchOpts } = opts;
         const {
           // Retry scoped
@@ -9833,13 +9833,13 @@ var require_retry_handler = __commonJS({
           minTimeout,
           timeoutFactor,
           // Response scoped
-          methods,
+          methods: methods2,
           errorCodes,
           retryAfter,
           statusCodes
         } = retryOptions ?? {};
-        this.dispatch = handlers.dispatch;
-        this.handler = handlers.handler;
+        this.dispatch = handlers2.dispatch;
+        this.handler = handlers2.handler;
         this.opts = { ...dispatchOpts, body: wrapRequestBody(opts.body) };
         this.abort = null;
         this.aborted = false;
@@ -9853,7 +9853,7 @@ var require_retry_handler = __commonJS({
           timeoutFactor: timeoutFactor ?? 2,
           maxRetries: maxRetries ?? 5,
           // What errors we should retry
-          methods: methods ?? ["GET", "HEAD", "OPTIONS", "PUT", "DELETE", "TRACE"],
+          methods: methods2 ?? ["GET", "HEAD", "OPTIONS", "PUT", "DELETE", "TRACE"],
           // Indicates which errors to retry
           statusCodes: statusCodes ?? [500, 502, 503, 504, 429],
           // List of errors to retry
@@ -9926,14 +9926,14 @@ var require_retry_handler = __commonJS({
           timeoutFactor,
           statusCodes,
           errorCodes,
-          methods
+          methods: methods2
         } = retryOptions;
         const { counter } = state;
         if (code && code !== "UND_ERR_REQ_RETRY" && !errorCodes.includes(code)) {
           cb(err);
           return;
         }
-        if (Array.isArray(methods) && !methods.includes(method)) {
+        if (Array.isArray(methods2) && !methods2.includes(method)) {
           cb(err);
           return;
         }
@@ -13129,7 +13129,7 @@ var require_response = __commonJS({
     var { URLSerializer } = require_data_url();
     var { kConstruct } = require_symbols();
     var assert = __require("node:assert");
-    var { types: types3 } = __require("node:util");
+    var { types: types4 } = __require("node:util");
     var textEncoder = new TextEncoder("utf-8");
     var Response2 = class _Response {
       // Creates network error Response.
@@ -13450,7 +13450,7 @@ var require_response = __commonJS({
       if (isBlobLike(V3)) {
         return webidl.converters.Blob(V3, prefix, name, { strict: false });
       }
-      if (ArrayBuffer.isView(V3) || types3.isArrayBuffer(V3)) {
+      if (ArrayBuffer.isView(V3) || types4.isArrayBuffer(V3)) {
         return webidl.converters.BufferSource(V3, prefix, name);
       }
       if (util.isFormDataLike(V3)) {
@@ -15686,7 +15686,7 @@ var require_util4 = __commonJS({
     var { ProgressEvent } = require_progressevent();
     var { getEncoding } = require_encoding();
     var { serializeAMimeType, parseMIMEType } = require_data_url();
-    var { types: types3 } = __require("node:util");
+    var { types: types4 } = __require("node:util");
     var { StringDecoder } = __require("string_decoder");
     var { btoa: btoa2 } = __require("node:buffer");
     var staticPropertyDescriptors = {
@@ -15716,7 +15716,7 @@ var require_util4 = __commonJS({
               });
             }
             isFirstChunk = false;
-            if (!done && types3.isUint8Array(value)) {
+            if (!done && types4.isUint8Array(value)) {
               bytes.push(value);
               if ((fr3[kLastProgressEventFired] === void 0 || Date.now() - fr3[kLastProgressEventFired] >= 50) && !fr3[kAborted]) {
                 fr3[kLastProgressEventFired] = Date.now();
@@ -15778,11 +15778,11 @@ var require_util4 = __commonJS({
             dataURL += serializeAMimeType(parsed);
           }
           dataURL += ";base64,";
-          const decoder = new StringDecoder("latin1");
+          const decoder2 = new StringDecoder("latin1");
           for (const chunk of bytes) {
-            dataURL += btoa2(decoder.write(chunk));
+            dataURL += btoa2(decoder2.write(chunk));
           }
-          dataURL += btoa2(decoder.end());
+          dataURL += btoa2(decoder2.end());
           return dataURL;
         }
         case "Text": {
@@ -15807,11 +15807,11 @@ var require_util4 = __commonJS({
         }
         case "BinaryString": {
           let binaryString = "";
-          const decoder = new StringDecoder("latin1");
+          const decoder2 = new StringDecoder("latin1");
           for (const chunk of bytes) {
-            binaryString += decoder.write(chunk);
+            binaryString += decoder2.write(chunk);
           }
-          binaryString += decoder.end();
+          binaryString += decoder2.end();
           return binaryString;
         }
       }
@@ -18636,7 +18636,7 @@ var require_websocket = __commonJS({
     var { ByteParser } = require_receiver();
     var { kEnumerableProperty, isBlobLike } = require_util();
     var { getGlobalDispatcher } = require_global2();
-    var { types: types3 } = __require("node:util");
+    var { types: types4 } = __require("node:util");
     var { ErrorEvent, CloseEvent } = require_events();
     var { SendQueue } = require_sender();
     var WebSocket = class _WebSocket extends EventTarget {
@@ -18759,7 +18759,7 @@ var require_websocket = __commonJS({
           this.#sendQueue.add(data, () => {
             this.#bufferedAmount -= length;
           }, sendHints.string);
-        } else if (types3.isArrayBuffer(data)) {
+        } else if (types4.isArrayBuffer(data)) {
           this.#bufferedAmount += data.byteLength;
           this.#sendQueue.add(data, () => {
             this.#bufferedAmount -= data.byteLength;
@@ -18971,7 +18971,7 @@ var require_websocket = __commonJS({
         if (isBlobLike(V3)) {
           return webidl.converters.Blob(V3, { strict: false });
         }
-        if (ArrayBuffer.isView(V3) || types3.isArrayBuffer(V3)) {
+        if (ArrayBuffer.isView(V3) || types4.isArrayBuffer(V3)) {
           return webidl.converters.BufferSource(V3);
         }
       }
@@ -26079,12 +26079,12 @@ var init_fetch_blob = __esm({
        * @return {Promise<string>}
        */
       async text() {
-        const decoder = new TextDecoder();
+        const decoder2 = new TextDecoder();
         let str = "";
         for await (const part of toIterator(this.#parts, false)) {
-          str += decoder.decode(part, { stream: true });
+          str += decoder2.decode(part, { stream: true });
         }
-        str += decoder.decode();
+        str += decoder2.decode();
         return str;
       }
       /**
@@ -26503,7 +26503,7 @@ async function toFormData(Body2, ct3) {
   const entryChunks = [];
   const formData = new FormData2();
   const onPartData = (ui8a) => {
-    entryValue += decoder.decode(ui8a, { stream: true });
+    entryValue += decoder2.decode(ui8a, { stream: true });
   };
   const appendToFile = (ui8a) => {
     entryChunks.push(ui8a);
@@ -26515,8 +26515,8 @@ async function toFormData(Body2, ct3) {
   const appendEntryToFormData = () => {
     formData.append(entryName, entryValue);
   };
-  const decoder = new TextDecoder("utf-8");
-  decoder.decode();
+  const decoder2 = new TextDecoder("utf-8");
+  decoder2.decode();
   parser.onPartBegin = function() {
     parser.onPartData = onPartData;
     parser.onPartEnd = appendEntryToFormData;
@@ -26529,13 +26529,13 @@ async function toFormData(Body2, ct3) {
     entryChunks.length = 0;
   };
   parser.onHeaderField = function(ui8a) {
-    headerField += decoder.decode(ui8a, { stream: true });
+    headerField += decoder2.decode(ui8a, { stream: true });
   };
   parser.onHeaderValue = function(ui8a) {
-    headerValue += decoder.decode(ui8a, { stream: true });
+    headerValue += decoder2.decode(ui8a, { stream: true });
   };
   parser.onHeaderEnd = function() {
-    headerValue += decoder.decode();
+    headerValue += decoder2.decode();
     headerField = headerField.toLowerCase();
     if (headerField === "content-disposition") {
       const m3 = headerValue.match(/\bname=("([^"]*)"|([^()<>@,;:\\"/[\]?={}\s\t]+))/i);
@@ -46614,7 +46614,7 @@ var require_build = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.AuthPlus = exports.drive_v3 = exports.drive_v2 = exports.auth = exports.VERSIONS = void 0;
-    exports.drive = drive2;
+    exports.drive = drive3;
     var googleapis_common_1 = require_src6();
     var v2_1 = require_v2();
     Object.defineProperty(exports, "drive_v2", { enumerable: true, get: function() {
@@ -46628,7 +46628,7 @@ var require_build = __commonJS({
       v2: v2_1.drive_v2.Drive,
       v3: v3_1.drive_v3.Drive
     };
-    function drive2(versionOrOptions) {
+    function drive3(versionOrOptions) {
       return (0, googleapis_common_1.getAPI)("drive", versionOrOptions, exports.VERSIONS, this);
     }
     var auth3 = new googleapis_common_1.AuthPlus();
@@ -54232,7 +54232,7 @@ var require_lib2 = __commonJS({
       return parsedUrl.protocol === "https:";
     }
     var HttpClient3 = class {
-      constructor(userAgent2, handlers, requestOptions2) {
+      constructor(userAgent2, handlers2, requestOptions2) {
         this._ignoreSslError = false;
         this._allowRedirects = true;
         this._allowRedirectDowngrade = false;
@@ -54242,7 +54242,7 @@ var require_lib2 = __commonJS({
         this._keepAlive = false;
         this._disposed = false;
         this.userAgent = this._getUserAgentWithOrchestrationId(userAgent2);
-        this.handlers = handlers || [];
+        this.handlers = handlers2 || [];
         this.requestOptions = requestOptions2;
         if (requestOptions2) {
           if (requestOptions2.ignoreSslError != null) {
@@ -62435,6 +62435,10 @@ var AssetRenderConfiguration = class {
 
 // packages/application/journey/src/approval/approval-request-policy.ts
 var ApprovalRequestPolicy = class {
+  constructor(fingerprints) {
+    this.fingerprints = fingerprints;
+  }
+  fingerprints;
   reviewPhase(facts) {
     if (facts.recipientCount === 0 || facts.followUpActive === false)
       return "inactive";
@@ -62452,7 +62456,8 @@ var ApprovalRequestPolicy = class {
   }
   validate(request2) {
     this.validateIdentity(request2);
-    if (request2.kind === "meetup-publication") return;
+    if (request2.kind === "meetup-publication" || request2.kind === "content-review")
+      return;
     if (!Number.isSafeInteger(request2.recipientCount) || request2.recipientCount <= 0)
       throw new Error("Invalid approval recipient count");
     this.validateEmailCount(request2);
@@ -62469,6 +62474,8 @@ var ApprovalRequestPolicy = class {
   matches(previous, request2, status) {
     if (previous.kind !== request2.kind || previous.revision !== request2.revision || previous.eventDate !== request2.eventDate)
       return false;
+    if (previous.kind === "content-review" && request2.kind === "content-review")
+      return this.fingerprints.digest(previous.content) === this.fingerprints.digest(request2.content);
     if (previous.kind === "meetup-publication" && request2.kind === "meetup-publication")
       return previous.publication.url === request2.publication.url && previous.publication.title === request2.publication.title && previous.publication.startTime === request2.publication.startTime && previous.publication.endTime === request2.publication.endTime && previous.publication.timeZone === request2.publication.timeZone && previous.publication.venue.name === request2.publication.venue.name && previous.publication.venue.city === request2.publication.venue.city;
     return previous.recipientCount === request2.recipientCount && (status !== "pending" || this.sameDetails(previous.details, request2.details));
@@ -62513,6 +62520,7 @@ var COMMUNICATION_MESSAGES = {
   "delivery-already-recorded": "The delivery ledger already contains this intent."
 };
 var RUNTIME_MESSAGES = {
+  "communication.content-review": "Event content needs current organizer approval.",
   "communication.feedback-fetch-failed": "Feedback results could not be fetched.",
   "communication.feedback-unavailable": "Speaker thank-you emails require resolved feedback results for every talk.",
   "communication.slides-unavailable": "Email dispatch requires a valid presentation file URL and ready managed content. Resolve asset diagnostics and run reconciliation again.",
@@ -62780,13 +62788,13 @@ var EvaluateAttention = class {
   }
   approvals(facts, conditions, postEvent) {
     for (const approval of facts.approvals ?? []) {
-      const relevant = approval.kind === (postEvent ? "email-thanks" : "email-introduction") || !postEvent && approval.kind === "meetup-publication";
+      const relevant = approval.kind === (postEvent ? "email-thanks" : "email-introduction") || !postEvent && (approval.kind === "meetup-publication" || approval.kind === "content-review");
       if (approval.status === "pending" && approval.eventDate === facts.eventDate && relevant)
         conditions.push({
           ...this.condition(
             "approval-pending",
             "approvals",
-            approval.kind === "meetup-publication" ? `${approval.kind}:${approval.revision}` : approval.revision,
+            approval.kind === "meetup-publication" || approval.kind === "content-review" ? `${approval.kind}:${approval.revision}` : approval.revision,
             "approval"
           ),
           since: approval.requestedAt,
@@ -65008,7 +65016,7 @@ var ReconcileEventAssets = class {
       };
     }
     const templates = await this.repository.listTemplates();
-    this.validateTemplates(templates);
+    this.validateTemplates(templates, date);
     const month = new Intl.DateTimeFormat("en-US", {
       month: "long",
       timeZone: "UTC"
@@ -65041,7 +65049,12 @@ var ReconcileEventAssets = class {
         )
       );
     }
-    return this.reconcileFiles(container, templates, input, diagnostics);
+    return this.reconcileFiles(
+      container,
+      templates,
+      { ...input, date },
+      diagnostics
+    );
   }
   async reconcileFiles(container, templates, input, diagnostics) {
     const currentFiles = await this.repository.listFiles(container.id);
@@ -65082,7 +65095,7 @@ var ReconcileEventAssets = class {
     const instant = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
     return !Number.isNaN(instant.valueOf()) && instant.toISOString().slice(0, 10) === date;
   }
-  validateTemplates(templates) {
+  validateTemplates(templates, date) {
     if (!templates.length || templates.some(
       (template) => !template.id || !template.name.trim() || !template.kind.trim()
     ) || new Set(templates.map(({ id }) => id)).size !== templates.length || new Set(templates.map(({ kind }) => kind)).size !== templates.length) {
@@ -65090,6 +65103,8 @@ var ReconcileEventAssets = class {
         "Asset templates must have unique IDs, unique kinds, and non-empty names"
       );
     }
+    for (const template of templates)
+      this.collaborators.names.render(template.name, date);
   }
 };
 
@@ -65211,10 +65226,12 @@ var ReconcileSlidePdf = class {
 
 // packages/domain/publication/src/application/reconcile-asset-file.ts
 var ReconcileAssetFile = class {
-  constructor(repository, content) {
+  constructor(names, repository, content) {
+    this.names = names;
     this.repository = repository;
     this.content = content;
   }
+  names;
   repository;
   content;
   async execute(input) {
@@ -65300,10 +65317,7 @@ var ReconcileAssetFile = class {
   }
   async copyOrRename(input, file) {
     const { template } = input;
-    const name = template.name.replaceAll(
-      "[EVENT_DATE:YYYY-MM-DD]",
-      input.date
-    );
+    const name = this.names.render(template.name, input.date);
     if (file?.name === name && file.kind === template.kind) return file;
     input.diagnostics.push({
       code: "publication.assets.file.drift",
@@ -65343,7 +65357,7 @@ var ResolveContentValues = class {
         continue;
       }
       const key = this.collaborators.contentTextKey.of(field);
-      const text = model.text[key] || (!field.required ? field.fallback : void 0);
+      const text = this.text(field, model);
       if (!this.collaborators.contentContractPolicy.text(text))
         throw new ContentError("missing");
       values.push({
@@ -65355,7 +65369,23 @@ var ResolveContentValues = class {
     }
     return values;
   }
+  text(field, model) {
+    if (field.format !== void 0) {
+      const date = field.token === "event.date" || field.token === "next_event.date" ? model.dates?.[field.token] : void 0;
+      if (date) {
+        return this.collaborators.templates.value({
+          kind: "date",
+          value: date,
+          format: field.format
+        });
+      }
+      return field.required ? void 0 : field.fallback;
+    }
+    const text = model.text[this.collaborators.contentTextKey.of(field)] || (!field.required ? field.fallback : void 0);
+    return text === void 0 ? void 0 : this.collaborators.templates.value({ kind: "text", value: text });
+  }
   async image(field, model) {
+    if (field.token === "event.cover") return this.cover(field, model);
     const host = field.token === "host.logo";
     const picture = host ? model.hostLogo : model.pictures[field.slot];
     const hostId = host ? model.hostLogo?.hostId : void 0;
@@ -65395,6 +65425,41 @@ var ResolveContentValues = class {
         fit: field.fit
       };
     }
+  }
+  async cover(field, model) {
+    if (!model.cover) throw new ContentError("missing");
+    const validated = await this.images.validate(model.cover);
+    if (validated.fingerprint !== model.cover.fingerprint)
+      throw new ContentError("image");
+    return {
+      type: "image",
+      key: field.slot,
+      image: validated.source,
+      fingerprint: this.collaborators.contentFingerprint.of(
+        `${validated.fingerprint}:${model.cover.id}:${model.cover.description}:${field.fit}`
+      ),
+      fit: field.fit,
+      fallback: false
+    };
+  }
+};
+
+// packages/domain/publication/src/domain/asset-file-name.ts
+var AssetFileName = class {
+  constructor(templates) {
+    this.templates = templates;
+  }
+  templates;
+  render(templateName, date) {
+    return this.templates.render(templateName, (part) => {
+      if (part.entity !== "event")
+        throw new Error("Unsupported asset filename entity");
+      if (part.property !== "date")
+        throw new Error("Unsupported event filename property");
+      if (!part.argument)
+        throw new Error("Asset filename date format is required");
+      return { kind: "date", value: date, format: part.argument };
+    });
   }
 };
 
@@ -65598,21 +65663,32 @@ var ContentContractPolicy = class {
       (item) => item === field.token
     );
     const slotted = SLOTTED_TEXT_TOKENS.some((item) => item === token);
-    if (!token || typeof field.required !== "boolean" || (slotted ? !this.name(field.slot) : field.slot !== void 0) || !this.keys(field, ["type", "token", "slot", "required", "fallback"]) || (!field.required || field.fallback !== void 0) && !this.text(field.fallback))
+    if (!token || typeof field.required !== "boolean" || (slotted ? !this.name(field.slot) : field.slot !== void 0) || !this.validFormat(field) || !this.keys(field, [
+      "type",
+      "token",
+      "slot",
+      "format",
+      "required",
+      "fallback"
+    ]) || (!field.required || field.fallback !== void 0) && !this.text(field.fallback))
       throw new ContentError("contract");
     const result = {
       type: "text",
       token,
       required: field.required,
       ...typeof field.slot === "string" ? { slot: field.slot } : {},
+      ...typeof field.format === "string" ? { format: field.format } : {},
       ...typeof field.fallback === "string" ? { fallback: field.fallback } : {}
     };
     if (!this.name(this.collaborators.contentTextKey.of(result)))
       throw new ContentError("contract");
     return result;
   }
+  validFormat(field) {
+    return field.format === void 0 || (field.token === "event.date" || field.token === "next_event.date") && typeof field.format === "string" && field.format.trim().length > 0 && field.format.length <= 100 && /^[A-Za-z ./_-]+$/u.test(field.format);
+  }
   image(field, mimeType) {
-    if (field.type !== "image" || field.token !== "speaker.picture" && field.token !== "host.logo" || typeof field.required !== "boolean" || !this.name(field.slot) || !this.name(field.objectId) || !this.keys(field, [
+    if (field.type !== "image" || field.token !== "speaker.picture" && field.token !== "host.logo" && field.token !== "event.cover" || typeof field.required !== "boolean" || !this.name(field.slot) || !this.name(field.objectId) || !this.keys(field, [
       "type",
       "token",
       "slot",
@@ -65627,6 +65703,7 @@ var ContentContractPolicy = class {
     const slides = mimeType === "application/vnd.google-apps.presentation";
     if (!(slides ? this.name(field.pageId) && field.tabId === void 0 : this.name(field.tabId) && field.pageId === void 0) || field.fit !== "CENTER_CROP" && !(slides && field.fit === "CENTER_INSIDE"))
       throw new ContentError("contract");
+    this.coverContract(field);
     const fallback = this.fallback(field.fallback, field.required);
     return {
       type: "image",
@@ -65639,6 +65716,10 @@ var ContentContractPolicy = class {
       ...typeof field.tabId === "string" ? { tabId: field.tabId } : {},
       ...fallback ? { fallback } : {}
     };
+  }
+  coverContract(field) {
+    if (field.token === "event.cover" && (!field.required || field.fallback !== void 0))
+      throw new ContentError("contract");
   }
   fallback(value, required) {
     if (value === void 0 && required) return void 0;
@@ -65983,8 +66064,16 @@ var ContentRenderPlan = class {
 
 // packages/domain/publication/src/domain/content-text-key.ts
 var ContentTextKey = class {
+  constructor(fingerprints) {
+    this.fingerprints = fingerprints;
+  }
+  fingerprints;
   of(field) {
-    return field.slot ? `${field.token}:${field.slot}` : field.token;
+    return field.format !== void 0 ? `${field.token}:format:${this.fingerprints.of(field.format)}` : this.reference(field);
+  }
+  reference(field) {
+    const argument = field.format ?? field.slot;
+    return argument === void 0 ? field.token : `${field.token}:${argument}`;
   }
 };
 
@@ -66479,7 +66568,7 @@ var PublicationDomainComposition = class {
     });
   }
   contentTextKey() {
-    return new ContentTextKey();
+    return new ContentTextKey(this.contentFingerprint());
   }
   feedbackLinkSelection() {
     return new FeedbackLinkSelection({ feedbackPolicy: this.feedbackPolicy() });
@@ -66514,7 +66603,7 @@ var PublicationDomainComposition = class {
       ...args
     );
   }
-  reconcileAssetContent(...args) {
+  reconcileAssetContent(templates, ...args) {
     return new ReconcileAssetContent(
       {
         contentContractPolicy: this.contentContractPolicy(),
@@ -66523,25 +66612,30 @@ var PublicationDomainComposition = class {
         contentManifestPolicy: this.contentManifestPolicy(),
         contentRecoveryFingerprint: this.contentRecoveryFingerprint(),
         contentRecoveryPlan: this.contentRecoveryPlan(),
-        createResolveContentValues: (...args2) => this.resolveContentValues(...args2)
+        createResolveContentValues: (...args2) => this.resolveContentValues(templates, ...args2)
       },
       ...args
     );
   }
-  reconcileAssetFile(...args) {
-    return new ReconcileAssetFile(...args);
+  reconcileAssetFile(names, ...args) {
+    return new ReconcileAssetFile(names, ...args);
   }
-  reconcileEventAssets(...args) {
+  assetFileName(templates) {
+    return new AssetFileName(templates);
+  }
+  reconcileEventAssets(names, ...args) {
     return new ReconcileEventAssets(
       {
-        createReconcileAssetFile: (...args2) => this.reconcileAssetFile(...args2)
+        names,
+        createReconcileAssetFile: (...args2) => this.reconcileAssetFile(names, ...args2)
       },
       ...args
     );
   }
-  resolveContentValues(...args) {
+  resolveContentValues(templates, ...args) {
     return new ResolveContentValues(
       {
+        templates,
         contentTextKey: this.contentTextKey(),
         contentContractPolicy: this.contentContractPolicy(),
         contentFingerprint: this.contentFingerprint()
@@ -66628,12 +66722,33 @@ var AutomationConfigFactory = class {
   }
 };
 
+// packages/application/journey/src/approval/approval-value-fingerprint.ts
+var ApprovalValueFingerprint = class {
+  constructor(hash) {
+    this.hash = hash;
+  }
+  hash;
+  digest(value) {
+    return this.hash.of(JSON.stringify(this.canonical(value)));
+  }
+  canonical(value) {
+    if (value === void 0) return null;
+    if (Array.isArray(value)) return value.map((item) => this.canonical(item));
+    if (value && typeof value === "object")
+      return Object.fromEntries(
+        Object.entries(value).sort(([a], [b2]) => a < b2 ? -1 : a > b2 ? 1 : 0).map(([key, item]) => [key, this.canonical(item)])
+      );
+    return value;
+  }
+};
+
 // packages/application/journey/src/result/attention-stage-reports.ts
 var ATTENTION_STAGE_OWNERS = [
   "event",
   "assets",
   "feedback",
-  "communications"
+  "communications",
+  "content"
 ];
 
 // packages/application/journey/src/result/attention-stage-evaluation.ts
@@ -66702,6 +66817,16 @@ var AttentionStageEvaluation = class {
 
 // packages/application/journey/src/result/diagnostic-policy.ts
 var ORGANIZER_CODES = /* @__PURE__ */ new Set([
+  "publication.content.prerequisites",
+  "publication.content.pending",
+  "publication.content.rejected",
+  "publication.content.iteration-requested",
+  "publication.content.recovery",
+  "publication.content.stale",
+  "publication.content.title-review",
+  "publication.content.description-review",
+  "publication.meetup.content-review",
+  "communication.content-review",
   "publication.assets.pdf.source",
   "publication.assets.pdf.source-pending",
   "publication.assets.pdf.revision",
@@ -67499,7 +67624,9 @@ var SpeakerSynchronizationStageRunner = class {
 // packages/application/journey/src/policy-composition.ts
 var JourneyPolicyComposition = class {
   approvalRequestPolicy() {
-    return new ApprovalRequestPolicy();
+    return new ApprovalRequestPolicy(
+      new ApprovalValueFingerprint(new ContentFingerprint())
+    );
   }
   assetParticipantProjection() {
     return new AssetParticipantProjection({
@@ -67977,6 +68104,8 @@ var ManageMeetupPublication = class {
     ))
       return this.result("blocked", "source");
     const event = evaluation.event;
+    if ((await this.dependencies.contentGate.blocked(event)).length)
+      return this.result("blocked", "content-review");
     if (event.issueState !== "open" || ["cancelled", "postponed", "held"].includes(event.occurrenceStatus ?? ""))
       return this.result("skipped", "inactive");
     const draft = this.collaborators.meetupPublicationProjection.create(
@@ -68091,12 +68220,19 @@ var ManageMeetupPublication = class {
     await this.persist(current, published);
     return { status: "updated", diagnostics };
   }
-  ensureCurrent(source) {
-    return this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
+  async ensureCurrent(source) {
+    await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
       this.dependencies.repository,
       source.identity,
       source
     );
+    const evaluated = await this.dependencies.manageEvent.execute({
+      identity: source.identity,
+      sourceDocument: source,
+      mode: "check"
+    });
+    if (evaluated.skipped || (await this.dependencies.contentGate.blocked(evaluated.event)).length)
+      throw new ScheduledEventError("content-review");
   }
   result(status, code) {
     return {
@@ -68201,16 +68337,27 @@ var ReconcileMeetupDocuments = class {
     );
   }
   async reconcile(source, evaluation, hostName) {
+    const blocked = await this.dependencies.contentGate.blocked(
+      evaluation.event
+    );
+    const contentDiagnostics = blocked.map((field) => ({
+      code: `publication.content.${field}-review`,
+      severity: "error",
+      field,
+      message: "Content requires current organizer approval"
+    }));
+    const model = await this.dependencies.renderProjection?.create(
+      evaluation.event,
+      [...evaluation.diagnostics, ...contentDiagnostics]
+    );
+    const cover = await this.dependencies.contentGate.cover(evaluation.event);
     const assets = await this.dependencies.reconcileAssets.execute({
       eventId: `${source.identity.repository}#${source.identity.issueNumber}`,
       date: evaluation.event.date,
       hostName,
       existingUrl: evaluation.event.publicationLinks.assets,
       mode: "fix",
-      model: await this.dependencies.renderProjection?.create(
-        evaluation.event,
-        evaluation.diagnostics
-      ),
+      model: model ? { ...model, cover } : void 0,
       recovery: this.dependencies.recovery
     });
     await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
@@ -68235,10 +68382,13 @@ var ReconcileMeetupDocuments = class {
       assetUrl: assets.container?.url,
       files: assets.files,
       content: assets.content,
-      diagnostics: assets.diagnostics.map((item) => ({
-        ...item,
-        field: "publicationLinks.assets"
-      }))
+      diagnostics: [
+        ...contentDiagnostics,
+        ...assets.diagnostics.map((item) => ({
+          ...item,
+          field: "publicationLinks.assets"
+        }))
+      ]
     };
   }
   skipped(diagnostics) {
@@ -68865,7 +69015,8 @@ var AttentionStageInput = class {
       event: reports[0][1],
       assets: reports[1][1],
       feedback: reports[2][1],
-      communications: reports[3][1]
+      communications: reports[3][1],
+      content: reports[4][1]
     };
   }
   group(value) {
@@ -72618,25 +72769,180 @@ var MessageLocalizer = class {
   }
 };
 
-// packages/runtime/github-actions/src/assets/asset-date-formatter.ts
-var AssetDateFormatter = class {
+// packages/presentation/templating/src/template-error.ts
+var TemplateError = class extends Error {
+  constructor(code) {
+    super(`Invalid template ${code}`);
+    this.code = code;
+    this.name = "TemplateError";
+  }
+  code;
+};
+
+// packages/presentation/templating/src/date-template-formatter.ts
+var DateTemplateFormatter = class {
   constructor(locale) {
     this.locale = locale;
   }
   locale;
+  format(date, pattern) {
+    const instant = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
+    if (!/^\d{4}-\d{2}-\d{2}$/u.test(date) || Number.isNaN(instant.valueOf()) || instant.toISOString().slice(0, 10) !== date)
+      throw new TemplateError("date");
+    if (pattern === "long")
+      return this.localized(instant, { dateStyle: "long" });
+    if (pattern === "weekday")
+      return this.localized(instant, { dateStyle: "full" });
+    if (pattern === "month") return this.localized(instant, { month: "long" });
+    const tokens = pattern.match(/Y+|M+|D+|d+|[ ./_-]+/gu) ?? [];
+    if (tokens.join("") !== pattern || !tokens.some((token) => /^[YMDd]/u.test(token)))
+      throw new TemplateError("format");
+    return tokens.map((token) => this.token(token, date, instant)).join("");
+  }
+  token(token, date, instant) {
+    switch (token) {
+      case "YYYY":
+        return date.slice(0, 4);
+      case "YY":
+        return date.slice(2, 4);
+      case "MM":
+        return date.slice(5, 7);
+      case "M":
+        return String(Number(date.slice(5, 7)));
+      case "DD":
+        return date.slice(8, 10);
+      case "D":
+        return String(Number(date.slice(8, 10)));
+      case "MMM":
+        return this.localized(instant, { month: "short" });
+      case "MMMM":
+        return this.localized(instant, { month: "long" });
+      case "ddd":
+        return this.localized(instant, { weekday: "short" });
+      case "dddd":
+        return this.localized(instant, { weekday: "long" });
+      default:
+        if (/^[ ./_-]+$/u.test(token)) return token;
+        throw new TemplateError("format");
+    }
+  }
+  localized(instant, options) {
+    return new Intl.DateTimeFormat(this.locale, {
+      ...options,
+      timeZone: "UTC",
+      calendar: "gregory"
+    }).format(instant);
+  }
+};
+
+// packages/presentation/templating/src/template-expression-parser.ts
+var TemplateExpressionParser = class {
+  parse(body, syntax) {
+    const match = syntax === "brackets" ? /^([A-Z][A-Z0-9]*)_([A-Z][A-Z0-9_]*)(?::([^{}[\]]+))?$/u.exec(body) : /^([a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*)(?::([^{}[\]]+))?$/u.exec(
+      body
+    );
+    if (!match) throw new TemplateError("syntax");
+    const reference = syntax === "brackets" ? `${match[1]}.${match[2]}`.toLowerCase() : match[1];
+    const argument = match[syntax === "brackets" ? 3 : 2];
+    if (argument !== void 0 && !argument.trim())
+      throw new TemplateError("syntax");
+    const separator = reference.indexOf(".");
+    return {
+      entity: separator < 0 ? "" : reference.slice(0, separator),
+      property: separator < 0 ? reference : reference.slice(separator + 1),
+      ...argument !== void 0 ? { argument } : {}
+    };
+  }
+};
+
+// packages/presentation/templating/src/template-parser.ts
+var TemplateParser = class {
+  constructor(expressions) {
+    this.expressions = expressions;
+  }
+  expressions;
+  contains(text) {
+    return /\{\{|\}\}|\[[A-Za-z0-9_]*[_:]/u.test(text);
+  }
+  parse(text) {
+    const result = [];
+    const delimiters = /\{\{|\}\}|\[[A-Za-z0-9_]*[_:]/gu;
+    for (let match = delimiters.exec(text); match; match = delimiters.exec(text)) {
+      const start = match.index;
+      if (match[0] === "}}") throw new TemplateError("syntax");
+      const brackets = match[0].startsWith("[");
+      const open2 = brackets ? 1 : 2;
+      const close = brackets ? "]" : "}}";
+      const end = text.indexOf(close, start + open2);
+      if (end < 0) throw new TemplateError("syntax");
+      const expression = this.expressions.parse(
+        text.slice(start + open2, end),
+        brackets ? "brackets" : "braces"
+      );
+      const path = expression.entity ? `${expression.entity}.${expression.property}` : expression.property;
+      result.push({
+        ...expression,
+        reference: path + (expression.argument === void 0 ? "" : `:${expression.argument}`),
+        start,
+        end: end + close.length
+      });
+      delimiters.lastIndex = end + close.length;
+    }
+    return result;
+  }
+};
+
+// packages/presentation/templating/src/template-renderer.ts
+var TemplateRenderer = class {
+  constructor(parser, dates) {
+    this.parser = parser;
+    this.dates = dates;
+  }
+  parser;
+  dates;
+  render(template, resolve4) {
+    let output = "";
+    let offset = 0;
+    for (const expression of this.parser.parse(template)) {
+      output += template.slice(offset, expression.start) + this.value(resolve4(expression));
+      offset = expression.end;
+    }
+    return output + template.slice(offset);
+  }
+  value(value) {
+    return value.kind === "text" ? value.value : this.dates.format(value.value, value.format);
+  }
+};
+
+// packages/presentation/templating/src/dependency-composition.ts
+var TemplatingComposition = class {
+  parser() {
+    return new TemplateParser(new TemplateExpressionParser());
+  }
+  dates(locale) {
+    return new DateTemplateFormatter(locale);
+  }
+  renderer(locale) {
+    return new TemplateRenderer(this.parser(), this.dates(locale));
+  }
+};
+
+// packages/runtime/github-actions/src/assets/asset-date-formatter.ts
+var AssetDateFormatter = class {
+  constructor(dates, locale) {
+    this.dates = dates;
+    this.locale = locale;
+  }
+  dates;
+  locale;
   format(date, timeZone, format = "long") {
-    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return void 0;
+    if (!date) return void 0;
     try {
       new Intl.DateTimeFormat(this.locale, { timeZone });
-      const instant = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
-      if (instant.toISOString().slice(0, 10) !== date) return void 0;
-      if (format === "numeric")
-        return `${date.slice(8, 10)}/${date.slice(5, 7)}/${date.slice(0, 4)}`;
-      const options = format === "month" ? { month: "long" } : { dateStyle: format === "weekday" ? "full" : "long" };
-      return new Intl.DateTimeFormat(this.locale, {
-        ...options,
-        timeZone: "UTC"
-      }).format(instant);
+      return this.dates.format(
+        date,
+        format === "numeric" ? "DD/MM/YYYY" : format
+      );
     } catch {
       return void 0;
     }
@@ -72674,6 +72980,10 @@ var AssetRenderPresenterImpl = class {
   format(input) {
     const { date } = this.collaborators;
     return {
+      dates: {
+        "event.date": input.date,
+        "next_event.date": input.nextEvent?.date
+      },
       text: {
         "event.title": input.title,
         "event.date": date.format(input.date, input.timeZone),
@@ -72808,6 +73118,23 @@ var DIAGNOSTICS_REFERENTIAL_FR = {
 
 // packages/runtime/github-actions/src/i18n/messages.en.ts
 var EN_MESSAGES2 = {
+  "action.event.generate-copy": "Generate event copy",
+  "action.assets.generate-cover": "Generate cover artwork",
+  "action.communication.generate-slack-post": "Generate Slack post",
+  "action.communication.generate-linkedin-post": "Generate LinkedIn post",
+  "action.organizer.review-drafts": "Review drafts",
+  "diagnostic.publication.content.prerequisites": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "diagnostic.publication.content.pending": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "diagnostic.publication.content.rejected": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "diagnostic.publication.content.iteration-requested": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "diagnostic.publication.content.recovery": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "diagnostic.publication.content.stale": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "diagnostic.publication.content.title-review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "diagnostic.publication.content.description-review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "diagnostic.publication.meetup.content-review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "diagnostic.communication.content-review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "report.content.generated": "Content generation evaluated.",
+  "report.content.reviewed": "Content reviews reconciled.",
   "action.assets.reconcile-slides-pdf": "Reconcile slides PDF",
   "action.feedback.reconcile-short-link": "Reconcile shared feedback link",
   "action.organizer.reconcile-checklist": "Reconcile organizer checklist",
@@ -72918,6 +73245,23 @@ var EN_MESSAGES2 = {
 
 // packages/runtime/github-actions/src/i18n/messages.fr.ts
 var FR_MESSAGES2 = {
+  "action.event.generate-copy": "G\xE9n\xE9rer le titre ou la description",
+  "action.assets.generate-cover": "G\xE9n\xE9rer les illustrations",
+  "action.communication.generate-slack-post": "G\xE9n\xE9rer le message Slack",
+  "action.communication.generate-linkedin-post": "G\xE9n\xE9rer la publication LinkedIn",
+  "action.organizer.review-drafts": "V\xE9rifier les propositions",
+  "diagnostic.publication.content.prerequisites": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "diagnostic.publication.content.pending": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "diagnostic.publication.content.rejected": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "diagnostic.publication.content.iteration-requested": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "diagnostic.publication.content.recovery": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "diagnostic.publication.content.stale": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "diagnostic.publication.content.title-review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "diagnostic.publication.content.description-review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "diagnostic.publication.meetup.content-review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "diagnostic.communication.content-review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "report.content.generated": "G\xE9n\xE9ration du contenu \xE9valu\xE9e.",
+  "report.content.reviewed": "Validations du contenu synchronis\xE9es.",
   "action.assets.reconcile-slides-pdf": "Mettre \xE0 jour le PDF des slides",
   "action.feedback.reconcile-short-link": "Mettre \xE0 jour le lien de feedback partag\xE9",
   "action.organizer.reconcile-checklist": "Mettre \xE0 jour la checklist organisateur",
@@ -73192,7 +73536,10 @@ var RuntimePresentationComposition = class _RuntimePresentationComposition {
     container.bind(
       RUNTIME_FACTORIES.assetDateFormatter
     ).toResolvedValue(
-      () => (...args) => new AssetDateFormatter(...args)
+      () => (...args) => new AssetDateFormatter(
+        new TemplatingComposition().dates(args[0]),
+        ...args
+      )
     );
     container.bind(
       RUNTIME_FACTORIES.assetRenderPresenter
@@ -74244,6 +74591,965 @@ var GoogleDrivePdfComposition = class {
   }
 };
 
+// packages/adapter/publication/google-drive-asset-repository/src/content-media-composition.ts
+var import_drive3 = __toESM(require_build(), 1);
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/utils.js
+var decoder = new TextDecoder();
+var toUTF8String = (input, start = 0, end = input.length) => decoder.decode(input.slice(start, end));
+var toHexString = (input, start = 0, end = input.length) => input.slice(start, end).reduce((memo, i2) => memo + `0${i2.toString(16)}`.slice(-2), "");
+var getView = (input, offset) => new DataView(input.buffer, input.byteOffset + offset);
+var readInt16LE = (input, offset = 0) => getView(input, offset).getInt16(0, true);
+var readUInt16BE = (input, offset = 0) => getView(input, offset).getUint16(0, false);
+var readUInt16LE = (input, offset = 0) => getView(input, offset).getUint16(0, true);
+var readUInt24LE = (input, offset = 0) => {
+  const view = getView(input, offset);
+  return view.getUint16(0, true) + (view.getUint8(2) << 16);
+};
+var readInt32LE = (input, offset = 0) => getView(input, offset).getInt32(0, true);
+var readUInt32BE = (input, offset = 0) => getView(input, offset).getUint32(0, false);
+var readUInt32LE = (input, offset = 0) => getView(input, offset).getUint32(0, true);
+var readUInt64 = (input, offset, isBigEndian) => getView(input, offset).getBigUint64(0, !isBigEndian);
+var methods = {
+  readUInt16BE,
+  readUInt16LE,
+  readUInt32BE,
+  readUInt32LE
+};
+function readUInt(input, bits, offset = 0, isBigEndian = false) {
+  const endian = isBigEndian ? "BE" : "LE";
+  const methodName = `readUInt${bits}${endian}`;
+  return methods[methodName](input, offset);
+}
+var BOX_HEADER_SIZE = 8;
+function readBox(input, offset) {
+  if (input.length - offset < BOX_HEADER_SIZE)
+    return void 0;
+  const boxSize = readUInt32BE(input, offset);
+  if (input.length - offset < boxSize)
+    return void 0;
+  return {
+    name: toUTF8String(input, 4 + offset, 8 + offset),
+    offset,
+    size: boxSize
+  };
+}
+function findBox(input, boxName, startOffset) {
+  let currentOffset = startOffset;
+  while (currentOffset < input.length) {
+    if (input.length - currentOffset < 4)
+      break;
+    const boxSize = readUInt32BE(input, currentOffset);
+    if (boxSize < BOX_HEADER_SIZE) {
+      currentOffset += BOX_HEADER_SIZE;
+      continue;
+    }
+    const box = readBox(input, currentOffset);
+    if (!box)
+      break;
+    if (box.name === boxName)
+      return box;
+    currentOffset += box.size;
+  }
+  return void 0;
+}
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/bmp.js
+var BMP = {
+  validate: (input) => toUTF8String(input, 0, 2) === "BM",
+  calculate: (input) => ({
+    height: Math.abs(readInt32LE(input, 22)),
+    width: readUInt32LE(input, 18)
+  })
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/ico.js
+var TYPE_ICON = 1;
+var SIZE_HEADER = 2 + 2 + 2;
+var SIZE_IMAGE_ENTRY = 1 + 1 + 1 + 1 + 2 + 2 + 4 + 4;
+function getSizeFromOffset(input, offset) {
+  const value = input[offset];
+  return value === 0 ? 256 : value;
+}
+function getImageSize(input, imageIndex) {
+  const offset = SIZE_HEADER + imageIndex * SIZE_IMAGE_ENTRY;
+  return {
+    height: getSizeFromOffset(input, offset + 1),
+    width: getSizeFromOffset(input, offset)
+  };
+}
+var ICO = {
+  validate(input) {
+    const reserved = readUInt16LE(input, 0);
+    const imageCount = readUInt16LE(input, 4);
+    if (reserved !== 0 || imageCount === 0)
+      return false;
+    const imageType = readUInt16LE(input, 2);
+    return imageType === TYPE_ICON;
+  },
+  calculate(input) {
+    const nbImages = readUInt16LE(input, 4);
+    if (SIZE_HEADER + nbImages * SIZE_IMAGE_ENTRY > input.length) {
+      throw new TypeError("Invalid ICO");
+    }
+    const imageSize2 = getImageSize(input, 0);
+    if (nbImages === 1)
+      return imageSize2;
+    const images = [];
+    for (let imageIndex = 0; imageIndex < nbImages; imageIndex += 1) {
+      images.push(getImageSize(input, imageIndex));
+    }
+    return {
+      width: imageSize2.width,
+      height: imageSize2.height,
+      images
+    };
+  }
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/cur.js
+var TYPE_CURSOR = 2;
+var CUR = {
+  validate(input) {
+    const reserved = readUInt16LE(input, 0);
+    const imageCount = readUInt16LE(input, 4);
+    if (reserved !== 0 || imageCount === 0)
+      return false;
+    const imageType = readUInt16LE(input, 2);
+    return imageType === TYPE_CURSOR;
+  },
+  calculate: (input) => ICO.calculate(input)
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/dds.js
+var DDS = {
+  validate: (input) => readUInt32LE(input, 0) === 542327876,
+  calculate: (input) => ({
+    height: readUInt32LE(input, 12),
+    width: readUInt32LE(input, 16)
+  })
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/gif.js
+var gifRegexp = /^GIF8[79]a/;
+var GIF = {
+  validate: (input) => gifRegexp.test(toUTF8String(input, 0, 6)),
+  calculate: (input) => ({
+    height: readUInt16LE(input, 8),
+    width: readUInt16LE(input, 6)
+  })
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/heif.js
+var brandMap = {
+  avif: "avif",
+  mif1: "heif",
+  msf1: "heif",
+  heic: "heic",
+  heix: "heic",
+  hevc: "heic",
+  hevx: "heic"
+};
+var HEIF = {
+  validate(input) {
+    const boxType = toUTF8String(input, 4, 8);
+    if (boxType !== "ftyp")
+      return false;
+    const ftypBox = findBox(input, "ftyp", 0);
+    if (!ftypBox)
+      return false;
+    const brand = toUTF8String(input, ftypBox.offset + 8, ftypBox.offset + 12);
+    return brand in brandMap;
+  },
+  calculate(input) {
+    const metaBox = findBox(input, "meta", 0);
+    const iprpBox = metaBox && findBox(input, "iprp", metaBox.offset + 12);
+    const ipcoBox = iprpBox && findBox(input, "ipco", iprpBox.offset + 8);
+    if (!ipcoBox) {
+      throw new TypeError("Invalid HEIF, no ipco box found");
+    }
+    const type = toUTF8String(input, 8, 12);
+    const images = [];
+    let currentOffset = ipcoBox.offset + 8;
+    while (currentOffset < ipcoBox.offset + ipcoBox.size) {
+      const ispeBox = findBox(input, "ispe", currentOffset);
+      if (!ispeBox)
+        break;
+      if (ispeBox.size < 20) {
+        throw new TypeError("Invalid HEIF");
+      }
+      const rawWidth = readUInt32BE(input, ispeBox.offset + 12);
+      const rawHeight = readUInt32BE(input, ispeBox.offset + 16);
+      const clapBox = findBox(input, "clap", currentOffset);
+      let width = rawWidth;
+      const height = rawHeight;
+      if (clapBox && clapBox.size >= 16 && clapBox.offset < ipcoBox.offset + ipcoBox.size) {
+        const cropRight = readUInt32BE(input, clapBox.offset + 12);
+        width = rawWidth - cropRight;
+      }
+      images.push({ height, width });
+      const nextOffset = ispeBox.offset + ispeBox.size;
+      if (nextOffset <= currentOffset) {
+        throw new TypeError("Invalid HEIF");
+      }
+      currentOffset = nextOffset;
+    }
+    if (images.length === 0) {
+      throw new TypeError("Invalid HEIF, no sizes found");
+    }
+    return {
+      width: images[0].width,
+      height: images[0].height,
+      type,
+      ...images.length > 1 ? { images } : {}
+    };
+  }
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/icns.js
+var SIZE_HEADER2 = 4 + 4;
+var FILE_LENGTH_OFFSET = 4;
+var ENTRY_LENGTH_OFFSET = 4;
+var ICON_TYPE_SIZE = {
+  ICON: 32,
+  "ICN#": 32,
+  "icm#": 16,
+  icm4: 16,
+  icm8: 16,
+  "ics#": 16,
+  ics4: 16,
+  ics8: 16,
+  is32: 16,
+  s8mk: 16,
+  icp4: 16,
+  icl4: 32,
+  icl8: 32,
+  il32: 32,
+  l8mk: 32,
+  icp5: 32,
+  ic11: 32,
+  ich4: 48,
+  ich8: 48,
+  ih32: 48,
+  h8mk: 48,
+  icp6: 64,
+  ic12: 32,
+  it32: 128,
+  t8mk: 128,
+  ic07: 128,
+  ic08: 256,
+  ic13: 256,
+  ic09: 512,
+  ic14: 512,
+  ic10: 1024
+};
+function readImageHeader(input, imageOffset) {
+  const imageLengthOffset = imageOffset + ENTRY_LENGTH_OFFSET;
+  if (imageLengthOffset + 4 > input.length) {
+    throw new TypeError("Invalid ICNS");
+  }
+  return [
+    toUTF8String(input, imageOffset, imageLengthOffset),
+    readUInt32BE(input, imageLengthOffset)
+  ];
+}
+function getImageSize2(type) {
+  const size = ICON_TYPE_SIZE[type];
+  return { width: size, height: size, type };
+}
+var ICNS = {
+  validate: (input) => toUTF8String(input, 0, 4) === "icns",
+  calculate(input) {
+    const inputLength = input.length;
+    const fileLength = readUInt32BE(input, FILE_LENGTH_OFFSET);
+    let imageOffset = SIZE_HEADER2;
+    const images = [];
+    while (imageOffset < fileLength && imageOffset < inputLength) {
+      const imageHeader = readImageHeader(input, imageOffset);
+      const entryLength = imageHeader[1];
+      if (entryLength < 8) {
+        throw new TypeError("Invalid ICNS");
+      }
+      const imageSize2 = getImageSize2(imageHeader[0]);
+      images.push(imageSize2);
+      imageOffset += entryLength;
+    }
+    if (images.length === 0) {
+      throw new TypeError("Invalid ICNS, no sizes found");
+    }
+    return {
+      width: images[0].width,
+      height: images[0].height,
+      ...images.length > 1 ? { images } : {}
+    };
+  }
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/j2c.js
+var J2C = {
+  validate: (input) => readUInt32BE(input, 0) === 4283432785,
+  calculate: (input) => ({
+    height: readUInt32BE(input, 12),
+    width: readUInt32BE(input, 8)
+  })
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/jp2.js
+var JP2 = {
+  validate(input) {
+    const boxType = toUTF8String(input, 4, 8);
+    if (boxType !== "jP  ")
+      return false;
+    const ftypBox = findBox(input, "ftyp", 0);
+    if (!ftypBox)
+      return false;
+    const brand = toUTF8String(input, ftypBox.offset + 8, ftypBox.offset + 12);
+    return brand === "jp2 ";
+  },
+  calculate(input) {
+    const jp2hBox = findBox(input, "jp2h", 0);
+    const ihdrBox = jp2hBox && findBox(input, "ihdr", jp2hBox.offset + 8);
+    if (ihdrBox) {
+      return {
+        height: readUInt32BE(input, ihdrBox.offset + 8),
+        width: readUInt32BE(input, ihdrBox.offset + 12)
+      };
+    }
+    throw new TypeError("Unsupported JPEG 2000 format");
+  }
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/jpg.js
+var EXIF_MARKER = "45786966";
+var APP1_DATA_SIZE_BYTES = 2;
+var EXIF_HEADER_BYTES = 6;
+var TIFF_BYTE_ALIGN_BYTES = 2;
+var BIG_ENDIAN_BYTE_ALIGN = "4d4d";
+var LITTLE_ENDIAN_BYTE_ALIGN = "4949";
+var IDF_ENTRY_BYTES = 12;
+var NUM_DIRECTORY_ENTRIES_BYTES = 2;
+function isEXIF(input) {
+  return toHexString(input, 2, 6) === EXIF_MARKER;
+}
+function extractSize(input, index) {
+  return {
+    height: readUInt16BE(input, index),
+    width: readUInt16BE(input, index + 2)
+  };
+}
+function extractOrientation(exifBlock, isBigEndian) {
+  const idfOffset = 8;
+  const offset = EXIF_HEADER_BYTES + idfOffset;
+  const idfDirectoryEntries = readUInt(exifBlock, 16, offset, isBigEndian);
+  for (let directoryEntryNumber = 0; directoryEntryNumber < idfDirectoryEntries; directoryEntryNumber++) {
+    const start = offset + NUM_DIRECTORY_ENTRIES_BYTES + directoryEntryNumber * IDF_ENTRY_BYTES;
+    const end = start + IDF_ENTRY_BYTES;
+    if (start > exifBlock.length) {
+      return;
+    }
+    const block = exifBlock.slice(start, end);
+    const tagNumber = readUInt(block, 16, 0, isBigEndian);
+    if (tagNumber === 274) {
+      const dataFormat = readUInt(block, 16, 2, isBigEndian);
+      if (dataFormat !== 3) {
+        return;
+      }
+      const numberOfComponents = readUInt(block, 32, 4, isBigEndian);
+      if (numberOfComponents !== 1) {
+        return;
+      }
+      return readUInt(block, 16, 8, isBigEndian);
+    }
+  }
+}
+function validateExifBlock(input, index) {
+  const exifBlock = input.slice(APP1_DATA_SIZE_BYTES, index);
+  const byteAlign = toHexString(exifBlock, EXIF_HEADER_BYTES, EXIF_HEADER_BYTES + TIFF_BYTE_ALIGN_BYTES);
+  const isBigEndian = byteAlign === BIG_ENDIAN_BYTE_ALIGN;
+  const isLittleEndian = byteAlign === LITTLE_ENDIAN_BYTE_ALIGN;
+  if (isBigEndian || isLittleEndian) {
+    return extractOrientation(exifBlock, isBigEndian);
+  }
+}
+function validateInput(input, index) {
+  if (index > input.length) {
+    throw new TypeError("Corrupt JPG, exceeded buffer limits");
+  }
+}
+var JPG = {
+  validate: (input) => toHexString(input, 0, 2) === "ffd8",
+  calculate(_input) {
+    let input = _input.slice(4);
+    let orientation;
+    let next;
+    while (input.length) {
+      const i2 = readUInt16BE(input, 0);
+      validateInput(input, i2);
+      if (input[i2] !== 255) {
+        input = input.slice(1);
+        continue;
+      }
+      if (isEXIF(input)) {
+        orientation = validateExifBlock(input, i2);
+      }
+      next = input[i2 + 1];
+      if (next === 192 || next === 193 || next === 194) {
+        const size = extractSize(input, i2 + 5);
+        if (!orientation) {
+          return size;
+        }
+        return {
+          height: size.height,
+          orientation,
+          width: size.width
+        };
+      }
+      input = input.slice(i2 + 2);
+    }
+    throw new TypeError("Invalid JPG, no size found");
+  }
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/utils/bit-reader.js
+var BitReader = class {
+  input;
+  endianness;
+  byteOffset = 2;
+  bitOffset = 0;
+  constructor(input, endianness) {
+    this.input = input;
+    this.endianness = endianness;
+  }
+  getBits(length = 1) {
+    let result = 0;
+    let bitsRead = 0;
+    while (bitsRead < length) {
+      if (this.byteOffset >= this.input.length) {
+        throw new Error("Reached end of input");
+      }
+      const currentByte = this.input[this.byteOffset];
+      const bitsLeft = 8 - this.bitOffset;
+      const bitsToRead = Math.min(length - bitsRead, bitsLeft);
+      if (this.endianness === "little-endian") {
+        const mask = (1 << bitsToRead) - 1;
+        const bits = currentByte >> this.bitOffset & mask;
+        result |= bits << bitsRead;
+      } else {
+        const mask = (1 << bitsToRead) - 1 << 8 - this.bitOffset - bitsToRead;
+        const bits = (currentByte & mask) >> 8 - this.bitOffset - bitsToRead;
+        result = result << bitsToRead | bits;
+      }
+      bitsRead += bitsToRead;
+      this.bitOffset += bitsToRead;
+      if (this.bitOffset === 8) {
+        this.byteOffset++;
+        this.bitOffset = 0;
+      }
+    }
+    return result;
+  }
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/jxl-stream.js
+function calculateImageDimension(reader, isSmallImage) {
+  if (isSmallImage) {
+    return 8 * (1 + reader.getBits(5));
+  }
+  const sizeClass = reader.getBits(2);
+  const extraBits = [9, 13, 18, 30][sizeClass];
+  return 1 + reader.getBits(extraBits);
+}
+function calculateImageWidth(reader, isSmallImage, widthMode, height) {
+  if (isSmallImage && widthMode === 0) {
+    return 8 * (1 + reader.getBits(5));
+  }
+  if (widthMode === 0) {
+    return calculateImageDimension(reader, false);
+  }
+  const aspectRatios = [1, 1.2, 4 / 3, 1.5, 16 / 9, 5 / 4, 2];
+  return Math.floor(height * aspectRatios[widthMode - 1]);
+}
+var JXLStream = {
+  validate: (input) => {
+    return toHexString(input, 0, 2) === "ff0a";
+  },
+  calculate(input) {
+    const reader = new BitReader(input, "little-endian");
+    const isSmallImage = reader.getBits(1) === 1;
+    const height = calculateImageDimension(reader, isSmallImage);
+    const widthMode = reader.getBits(3);
+    const width = calculateImageWidth(reader, isSmallImage, widthMode, height);
+    return { width, height };
+  }
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/jxl.js
+function extractCodestream(input) {
+  const jxlcBox = findBox(input, "jxlc", 0);
+  if (jxlcBox) {
+    return input.slice(jxlcBox.offset + 8, jxlcBox.offset + jxlcBox.size);
+  }
+  const partialStreams = extractPartialStreams(input);
+  if (partialStreams.length > 0) {
+    return concatenateCodestreams(partialStreams);
+  }
+  return void 0;
+}
+function extractPartialStreams(input) {
+  const partialStreams = [];
+  let offset = 0;
+  while (offset < input.length) {
+    const jxlpBox = findBox(input, "jxlp", offset);
+    if (!jxlpBox)
+      break;
+    if (jxlpBox.size < 12) {
+      throw new TypeError("Invalid JXL");
+    }
+    partialStreams.push(input.slice(jxlpBox.offset + 12, jxlpBox.offset + jxlpBox.size));
+    offset = jxlpBox.offset + jxlpBox.size;
+  }
+  return partialStreams;
+}
+function concatenateCodestreams(partialCodestreams) {
+  const totalLength = partialCodestreams.reduce((acc, curr) => acc + curr.length, 0);
+  const codestream = new Uint8Array(totalLength);
+  let position = 0;
+  for (const partial of partialCodestreams) {
+    codestream.set(partial, position);
+    position += partial.length;
+  }
+  return codestream;
+}
+var JXL = {
+  validate: (input) => {
+    const boxType = toUTF8String(input, 4, 8);
+    if (boxType !== "JXL ")
+      return false;
+    const ftypBox = findBox(input, "ftyp", 0);
+    if (!ftypBox)
+      return false;
+    const brand = toUTF8String(input, ftypBox.offset + 8, ftypBox.offset + 12);
+    return brand === "jxl ";
+  },
+  calculate(input) {
+    const codestream = extractCodestream(input);
+    if (codestream)
+      return JXLStream.calculate(codestream);
+    throw new TypeError("Invalid JXL");
+  }
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/ktx.js
+var KTX = {
+  validate: (input) => {
+    const signature = toUTF8String(input, 1, 7);
+    return ["KTX 11", "KTX 20"].includes(signature);
+  },
+  calculate: (input) => {
+    const type = input[5] === 49 ? "ktx" : "ktx2";
+    const offset = type === "ktx" ? 36 : 20;
+    return {
+      height: readUInt32LE(input, offset + 4),
+      width: readUInt32LE(input, offset),
+      type
+    };
+  }
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/png.js
+var pngSignature = "PNG\r\n\n";
+var pngImageHeaderChunkName = "IHDR";
+var pngFriedChunkName = "CgBI";
+var PNG = {
+  validate(input) {
+    if (pngSignature === toUTF8String(input, 1, 8)) {
+      let chunkName = toUTF8String(input, 12, 16);
+      if (chunkName === pngFriedChunkName) {
+        chunkName = toUTF8String(input, 28, 32);
+      }
+      if (chunkName !== pngImageHeaderChunkName) {
+        throw new TypeError("Invalid PNG");
+      }
+      return true;
+    }
+    return false;
+  },
+  calculate(input) {
+    if (toUTF8String(input, 12, 16) === pngFriedChunkName) {
+      return {
+        height: readUInt32BE(input, 36),
+        width: readUInt32BE(input, 32)
+      };
+    }
+    return {
+      height: readUInt32BE(input, 20),
+      width: readUInt32BE(input, 16)
+    };
+  }
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/pnm.js
+var PNMTypes = {
+  P1: "pbm/ascii",
+  P2: "pgm/ascii",
+  P3: "ppm/ascii",
+  P4: "pbm",
+  P5: "pgm",
+  P6: "ppm",
+  P7: "pam",
+  PF: "pfm"
+};
+var handlers = {
+  default: (lines) => {
+    let dimensions = [];
+    while (lines.length > 0) {
+      const line = lines.shift();
+      if (line[0] === "#") {
+        continue;
+      }
+      dimensions = line.split(" ");
+      break;
+    }
+    if (dimensions.length === 2) {
+      return {
+        height: Number.parseInt(dimensions[1], 10),
+        width: Number.parseInt(dimensions[0], 10)
+      };
+    }
+    throw new TypeError("Invalid PNM");
+  },
+  pam: (lines) => {
+    const size = {};
+    while (lines.length > 0) {
+      const line = lines.shift();
+      if (line.length > 16 || line.charCodeAt(0) > 128) {
+        continue;
+      }
+      const [key, value] = line.split(" ");
+      if (key && value) {
+        size[key.toLowerCase()] = Number.parseInt(value, 10);
+      }
+      if (size.height && size.width) {
+        break;
+      }
+    }
+    if (size.height && size.width) {
+      return {
+        height: size.height,
+        width: size.width
+      };
+    }
+    throw new TypeError("Invalid PAM");
+  }
+};
+var PNM = {
+  validate: (input) => toUTF8String(input, 0, 2) in PNMTypes,
+  calculate(input) {
+    const signature = toUTF8String(input, 0, 2);
+    const type = PNMTypes[signature];
+    const lines = toUTF8String(input, 3).split(/[\r\n]+/);
+    const handler2 = handlers[type] || handlers.default;
+    return handler2(lines);
+  }
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/psd.js
+var PSD = {
+  validate: (input) => toUTF8String(input, 0, 4) === "8BPS",
+  calculate: (input) => ({
+    height: readUInt32BE(input, 14),
+    width: readUInt32BE(input, 18)
+  })
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/svg.js
+var svgReg = /<svg\s([^>"']|"[^"]*"|'[^']*')*>/;
+var extractorRegExps = {
+  height: /\sheight=(['"])([^%]+?)\1/,
+  root: svgReg,
+  viewbox: /\sviewBox=(['"])(.+?)\1/i,
+  width: /\swidth=(['"])([^%]+?)\1/
+};
+var INCH_CM = 2.54;
+var units = {
+  in: 96,
+  cm: 96 / INCH_CM,
+  em: 16,
+  ex: 8,
+  m: 96 / INCH_CM * 100,
+  mm: 96 / INCH_CM / 10,
+  pc: 96 / 72 / 12,
+  pt: 96 / 72,
+  px: 1
+};
+var unitsReg = new RegExp(`^([0-9.]+(?:e\\d+)?)(${Object.keys(units).join("|")})?$`);
+function parseLength(len) {
+  const m2 = unitsReg.exec(len);
+  if (!m2) {
+    return void 0;
+  }
+  return Math.round(Number(m2[1]) * (units[m2[2]] || 1));
+}
+function parseViewbox(viewbox) {
+  const bounds = viewbox.split(" ");
+  return {
+    height: parseLength(bounds[3]),
+    width: parseLength(bounds[2])
+  };
+}
+function parseAttributes(root) {
+  const width = root.match(extractorRegExps.width);
+  const height = root.match(extractorRegExps.height);
+  const viewbox = root.match(extractorRegExps.viewbox);
+  return {
+    height: height && parseLength(height[2]),
+    viewbox: viewbox && parseViewbox(viewbox[2]),
+    width: width && parseLength(width[2])
+  };
+}
+function calculateByDimensions(attrs) {
+  return {
+    height: attrs.height,
+    width: attrs.width
+  };
+}
+function calculateByViewbox(attrs, viewbox) {
+  const ratio = viewbox.width / viewbox.height;
+  if (attrs.width) {
+    return {
+      height: Math.floor(attrs.width / ratio),
+      width: attrs.width
+    };
+  }
+  if (attrs.height) {
+    return {
+      height: attrs.height,
+      width: Math.floor(attrs.height * ratio)
+    };
+  }
+  return {
+    height: viewbox.height,
+    width: viewbox.width
+  };
+}
+var SVG = {
+  validate: (input) => svgReg.test(toUTF8String(input, 0, 1e3)),
+  calculate(input) {
+    const root = toUTF8String(input).match(extractorRegExps.root);
+    if (root) {
+      const attrs = parseAttributes(root[0]);
+      if (attrs.width && attrs.height) {
+        return calculateByDimensions(attrs);
+      }
+      if (attrs.viewbox) {
+        return calculateByViewbox(attrs, attrs.viewbox);
+      }
+    }
+    throw new TypeError("Invalid SVG");
+  }
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/tga.js
+var TGA = {
+  validate(input) {
+    return readUInt16LE(input, 0) === 0 && readUInt16LE(input, 4) === 0;
+  },
+  calculate(input) {
+    return {
+      height: readUInt16LE(input, 14),
+      width: readUInt16LE(input, 12)
+    };
+  }
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/tiff.js
+var CONSTANTS = {
+  TAG: {
+    WIDTH: 256,
+    HEIGHT: 257,
+    COMPRESSION: 259
+  },
+  TYPE: {
+    SHORT: 3,
+    LONG: 4,
+    LONG8: 16
+  },
+  ENTRY_SIZE: {
+    STANDARD: 12,
+    BIG: 20
+  },
+  COUNT_SIZE: {
+    STANDARD: 2,
+    BIG: 8
+  }
+};
+function readIFD(input, { isBigEndian, isBigTiff }) {
+  const ifdOffset = isBigTiff ? Number(readUInt64(input, 8, isBigEndian)) : readUInt(input, 32, 4, isBigEndian);
+  const entryCountSize = isBigTiff ? CONSTANTS.COUNT_SIZE.BIG : CONSTANTS.COUNT_SIZE.STANDARD;
+  return input.slice(ifdOffset + entryCountSize);
+}
+function readTagValue(input, type, offset, isBigEndian) {
+  switch (type) {
+    case CONSTANTS.TYPE.SHORT:
+      return readUInt(input, 16, offset, isBigEndian);
+    case CONSTANTS.TYPE.LONG:
+      return readUInt(input, 32, offset, isBigEndian);
+    case CONSTANTS.TYPE.LONG8: {
+      const value = Number(readUInt64(input, offset, isBigEndian));
+      if (value > Number.MAX_SAFE_INTEGER) {
+        throw new TypeError("Value too large");
+      }
+      return value;
+    }
+    default:
+      return 0;
+  }
+}
+function nextTag(input, isBigTiff) {
+  const entrySize = isBigTiff ? CONSTANTS.ENTRY_SIZE.BIG : CONSTANTS.ENTRY_SIZE.STANDARD;
+  if (input.length > entrySize) {
+    return input.slice(entrySize);
+  }
+}
+function extractTags(input, { isBigEndian, isBigTiff }) {
+  const tags = {};
+  let temp = input;
+  while (temp?.length) {
+    const code = readUInt(temp, 16, 0, isBigEndian);
+    const type = readUInt(temp, 16, 2, isBigEndian);
+    const length = isBigTiff ? Number(readUInt64(temp, 4, isBigEndian)) : readUInt(temp, 32, 4, isBigEndian);
+    if (code === 0)
+      break;
+    if (length === 1 && (type === CONSTANTS.TYPE.SHORT || type === CONSTANTS.TYPE.LONG || isBigTiff && type === CONSTANTS.TYPE.LONG8)) {
+      const valueOffset = isBigTiff ? 12 : 8;
+      tags[code] = readTagValue(temp, type, valueOffset, isBigEndian);
+    }
+    temp = nextTag(temp, isBigTiff);
+  }
+  return tags;
+}
+function determineFormat(input) {
+  const signature = toUTF8String(input, 0, 2);
+  const version = readUInt(input, 16, 2, signature === "MM");
+  return {
+    isBigEndian: signature === "MM",
+    isBigTiff: version === 43
+  };
+}
+function validateBigTIFFHeader(input, isBigEndian) {
+  const byteSize = readUInt(input, 16, 4, isBigEndian);
+  const reserved = readUInt(input, 16, 6, isBigEndian);
+  if (byteSize !== 8 || reserved !== 0) {
+    throw new TypeError("Invalid BigTIFF header");
+  }
+}
+var signatures = /* @__PURE__ */ new Set([
+  "49492a00",
+  "4d4d002a",
+  "49492b00",
+  "4d4d002b"
+]);
+var TIFF = {
+  validate: (input) => {
+    const signature = toHexString(input, 0, 4);
+    return signatures.has(signature);
+  },
+  calculate(input) {
+    const format = determineFormat(input);
+    if (format.isBigTiff) {
+      validateBigTIFFHeader(input, format.isBigEndian);
+    }
+    const ifdBuffer = readIFD(input, format);
+    const tags = extractTags(ifdBuffer, format);
+    const info2 = {
+      height: tags[CONSTANTS.TAG.HEIGHT],
+      width: tags[CONSTANTS.TAG.WIDTH],
+      type: format.isBigTiff ? "bigtiff" : "tiff"
+    };
+    if (tags[CONSTANTS.TAG.COMPRESSION]) {
+      info2.compression = tags[CONSTANTS.TAG.COMPRESSION];
+    }
+    if (!info2.width || !info2.height) {
+      throw new TypeError("Invalid Tiff. Missing tags");
+    }
+    return info2;
+  }
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/webp.js
+function calculateExtended(input) {
+  return {
+    height: 1 + readUInt24LE(input, 7),
+    width: 1 + readUInt24LE(input, 4)
+  };
+}
+function calculateLossless(input) {
+  return {
+    height: 1 + ((input[4] & 15) << 10 | input[3] << 2 | (input[2] & 192) >> 6),
+    width: 1 + ((input[2] & 63) << 8 | input[1])
+  };
+}
+function calculateLossy(input) {
+  return {
+    height: readInt16LE(input, 8) & 16383,
+    width: readInt16LE(input, 6) & 16383
+  };
+}
+var WEBP = {
+  validate(input) {
+    const riffHeader = "RIFF" === toUTF8String(input, 0, 4);
+    const webpHeader = "WEBP" === toUTF8String(input, 8, 12);
+    const vp8Header = "VP8" === toUTF8String(input, 12, 15);
+    return riffHeader && webpHeader && vp8Header;
+  },
+  calculate(_input) {
+    const chunkHeader = toUTF8String(_input, 12, 16);
+    const input = _input.slice(20, 30);
+    if (chunkHeader === "VP8X") {
+      const extendedHeader = input[0];
+      const validStart = (extendedHeader & 192) === 0;
+      const validEnd = (extendedHeader & 1) === 0;
+      if (validStart && validEnd) {
+        return calculateExtended(input);
+      }
+      throw new TypeError("Invalid WebP");
+    }
+    if (chunkHeader === "VP8 " && input[0] !== 47) {
+      return calculateLossy(input);
+    }
+    const signature = toHexString(input, 3, 6);
+    if (chunkHeader === "VP8L" && signature !== "9d012a") {
+      return calculateLossless(input);
+    }
+    throw new TypeError("Invalid WebP");
+  }
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/index.js
+var typeHandlers = /* @__PURE__ */ new Map([
+  ["bmp", BMP],
+  ["cur", CUR],
+  ["dds", DDS],
+  ["gif", GIF],
+  ["heif", HEIF],
+  ["icns", ICNS],
+  ["ico", ICO],
+  ["j2c", J2C],
+  ["jp2", JP2],
+  ["jpg", JPG],
+  ["jxl", JXL],
+  ["jxl-stream", JXLStream],
+  ["ktx", KTX],
+  ["png", PNG],
+  ["pnm", PNM],
+  ["psd", PSD],
+  ["svg", SVG],
+  ["tga", TGA],
+  ["tiff", TIFF],
+  ["webp", WEBP]
+]);
+var types3 = Array.from(typeHandlers.keys());
+
 // packages/adapter/referential/conference-hall-proposal-source/src/conference-hall-proposal-source.ts
 var ConferenceHallProposalSource = class {
   constructor(collaborators, event, apiKey, request2, now2) {
@@ -74331,7 +75637,7 @@ var ConferenceHallProposalSource = class {
       });
     }
     const reader = response.body.getReader();
-    const decoder = new TextDecoder("utf-8", { fatal: true });
+    const decoder2 = new TextDecoder("utf-8", { fatal: true });
     let size = 0;
     let result = "";
     try {
@@ -74343,9 +75649,9 @@ var ConferenceHallProposalSource = class {
           throw new ProposalSourceError("invalid", void 0, {
             reason: "response-size"
           });
-        result += decoder.decode(value, { stream: true });
+        result += decoder2.decode(value, { stream: true });
       }
-      return result + decoder.decode();
+      return result + decoder2.decode();
     } finally {
       await reader.cancel();
       reader.releaseLock();
@@ -76666,6 +77972,46 @@ ${messages3.t("comment.resolved")}`;
 // packages/adapter/event/github-event-comment-repository/src/stage-diagnostic-guidance.ts
 var STAGE_GUIDANCE = [
   [
+    "publication.content.prerequisites",
+    ["Slides & Content", "comment.guidance.content.review"]
+  ],
+  [
+    "publication.content.pending",
+    ["Slides & Content", "comment.guidance.content.review"]
+  ],
+  [
+    "publication.content.rejected",
+    ["Slides & Content", "comment.guidance.content.review"]
+  ],
+  [
+    "publication.content.iteration-requested",
+    ["Slides & Content", "comment.guidance.content.review"]
+  ],
+  [
+    "publication.content.recovery",
+    ["Slides & Content", "comment.guidance.content.review"]
+  ],
+  [
+    "publication.content.stale",
+    ["Slides & Content", "comment.guidance.content.review"]
+  ],
+  [
+    "publication.content.title-review",
+    ["Slides & Content", "comment.guidance.content.review"]
+  ],
+  [
+    "publication.content.description-review",
+    ["Slides & Content", "comment.guidance.content.review"]
+  ],
+  [
+    "publication.meetup.content-review",
+    ["Slides & Content", "comment.guidance.content.review"]
+  ],
+  [
+    "communication.content-review",
+    ["Slides & Content", "comment.guidance.content.review"]
+  ],
+  [
     "publication.assets.pdf.source",
     ["Slides & Content", "comment.guidance.pdf.source"]
   ],
@@ -77441,6 +78787,7 @@ ${this.messages.t("comment.duplicate")}`
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/messages.en.ts
 var EN_MESSAGES3 = {
+  "comment.guidance.content.review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
   "comment.guidance.proposals.invalid-selection": "Enter distinct proposal numbers, one per line, from their Conference Hall URLs.",
   "comment.guidance.proposals.invalid": "Check the Conference Hall proposal selection and export format.",
   "comment.guidance.proposals.unavailable": "Conference Hall is unavailable. Check the CFP slug and API key, then retry.",
@@ -77510,6 +78857,7 @@ var EN_MESSAGES3 = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/messages.fr.ts
 var FR_MESSAGES3 = {
+  "comment.guidance.content.review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
   "comment.guidance.proposals.invalid-selection": "Saisissez les num\xE9ros des URL Conference Hall, un par ligne, sans doublons.",
   "comment.guidance.proposals.invalid": "V\xE9rifiez la s\xE9lection des propositions et le format de l'export Conference Hall.",
   "comment.guidance.proposals.unavailable": "Conference Hall est indisponible. V\xE9rifiez le slug du CFP et la cl\xE9 API, puis r\xE9essayez.",
@@ -79633,6 +80981,7 @@ var AttentionRecord = class {
         "assets",
         "feedback",
         "communications",
+        "content",
         "approvals",
         "delivery"
       ]),
@@ -80245,6 +81594,7 @@ var messages = {
   "task.event": "event validation",
   "task.assets": "assets",
   "task.feedback": "feedback",
+  "task.content": "content",
   "task.communications": "communications",
   "task.unknown": "review the issue"
 };
@@ -80289,6 +81639,7 @@ var messages2 = {
   "task.event": "validation du meetup",
   "task.assets": "ressources",
   "task.feedback": "\xE9valuations",
+  "task.content": "contenu",
   "task.communications": "communications",
   "task.unknown": "consulter le ticket"
 };

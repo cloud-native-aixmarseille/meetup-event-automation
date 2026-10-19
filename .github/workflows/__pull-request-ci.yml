@@ -1,3 +1,7 @@
+# Goal: Validate proposed automation changes before merging.
+# Behavior: Run shared CI for pull requests targeting any branch and for merge
+# queue groups.
+
 name: Pull request - Continuous Integration
 
 on:

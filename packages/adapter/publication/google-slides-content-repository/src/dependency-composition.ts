@@ -1,4 +1,5 @@
 import { PublicationDomainComposition } from "@meetup-automation/publication";
+import { TemplatingComposition } from "@meetup-automation/templating";
 import {
 	GoogleSlidesContentRepository,
 	type GoogleSlidesContentRepositoryArguments,
@@ -56,6 +57,7 @@ export class GoogleSlidesContentRepositoryComposition {
 	}
 	slideTemplateBindings(): SlideTemplateBindings {
 		return new SlideTemplateBindings({
+			templates: new TemplatingComposition().parser(),
 			contentTextKey: new PublicationDomainComposition().contentTextKey(),
 		});
 	}

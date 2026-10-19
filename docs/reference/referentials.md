@@ -97,7 +97,7 @@ issue instead of adding contact details to the issue.
 
 1. Edit the CSV files and preserve existing IDs.
 2. Open a pull request and wait for
-   [data validation](../../.github/workflows/check-meetup-referentials-and-issue-form.md).
+   [data validation](../../.github/workflows/referential-check-catalog-and-form.yml).
    Review invalid-record diagnostics even when CI succeeds: they block form
    updates. Only technical execution failures fail the check.
 3. Merge valid changes. The synchronization workflow opens a pull request if the
@@ -121,7 +121,7 @@ CSV files and updates the local form; it needs no GitHub token and makes no
 network requests. Review the diff before committing.
 
 The
-[synchronization workflow](../../.github/workflows/update-meetup-issue-form.md)
+[synchronization workflow](../../.github/workflows/issue-form-reconcile.yml)
 also opens a pull request when choices on the default branch need updating. It
 changes the host dropdown and, when present, the speaker reference block in the
 existing form. Maintain other form fields yourself and keep their IDs and labels

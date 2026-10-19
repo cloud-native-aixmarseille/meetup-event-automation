@@ -101,6 +101,7 @@ export class AttentionRecord {
 				"assets",
 				"feedback",
 				"communications",
+				"content",
 				"approvals",
 				"delivery",
 			]),

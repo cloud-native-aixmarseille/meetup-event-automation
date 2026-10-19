@@ -1,7 +1,23 @@
 export type OrganizerApprovalKind =
 	| "email-introduction"
 	| "email-thanks"
-	| "meetup-publication";
+	| "meetup-publication"
+	| "content-review";
+
+export interface ContentApprovalDetails {
+	readonly plannedAt?: string;
+	readonly attempts?: readonly (
+		| "not-started"
+		| "reserved"
+		| "complete"
+		| "failed"
+	)[];
+	readonly key: string;
+	readonly target: import("../proposals/promotional-content.js").ContentTarget;
+	readonly language: "en" | "fr";
+	readonly origin: string;
+	readonly draft: import("../proposals/promotional-content.js").ContentDraft;
+}
 
 export interface MeetupPublicationApprovalDetails {
 	readonly url: string;
@@ -22,17 +38,29 @@ export type OrganizerApprovalRequest = {
 			readonly recipientCount: number;
 			readonly details?: OrganizerApprovalDetails;
 			readonly publication?: never;
+			readonly content?: never;
 	  }
 	| {
 			readonly kind: "meetup-publication";
 			readonly publication: MeetupPublicationApprovalDetails;
 			readonly recipientCount?: never;
 			readonly details?: never;
+			readonly content?: never;
+	  }
+	| {
+			readonly kind: "content-review";
+			readonly content: ContentApprovalDetails;
+			readonly publication?: never;
+			readonly recipientCount?: never;
+			readonly details?: never;
 	  }
 );
 export interface OrganizerApprovalResult {
-	readonly status: "pending" | "approved" | "rejected";
+	readonly status: "pending" | "approved" | "rejected" | "iteration-requested";
 	readonly notificationFailed: boolean;
+	readonly actor?: string;
+	readonly decidedAt?: string;
+	readonly selectedImage?: string;
 }
 export interface OrganizerApproval {
 	request(input: OrganizerApprovalRequest): Promise<OrganizerApprovalResult>;

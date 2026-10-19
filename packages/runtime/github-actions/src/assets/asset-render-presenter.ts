@@ -21,6 +21,10 @@ export class AssetRenderPresenterImpl implements AssetRenderPresenter {
 	format(input: RenderInput): PublicAssetModel {
 		const { date } = this.collaborators;
 		return {
+			dates: {
+				"event.date": input.date,
+				"next_event.date": input.nextEvent?.date,
+			},
 			text: {
 				"event.title": input.title,
 				"event.date": date.format(input.date, input.timeZone),

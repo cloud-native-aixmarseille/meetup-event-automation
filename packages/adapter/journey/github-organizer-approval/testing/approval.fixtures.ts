@@ -2,6 +2,7 @@ import { GithubOrganizerApprovalComposition } from "@meetup-automation/github-or
 import {
 	ApprovalNotificationPolicy,
 	ApprovalRequestPolicy,
+	DraftProposalComposition,
 	FollowUpApprovalPolicy,
 	JourneyPolicyComposition,
 	type OrganizerApprovalNotification,
@@ -52,6 +53,10 @@ export function fixture(locale = "en") {
 						{ localeResolver: new LocalizationComposition().localeResolver() },
 						locale,
 					),
+				),
+			"content-review":
+				new GithubOrganizerApprovalComposition().contentApprovalPresenter(
+					new GithubOrganizerApprovalComposition().approvalMessages("en"),
 				),
 			"meetup-publication":
 				new GithubOrganizerApprovalComposition().meetupApprovalPresenter(
@@ -299,7 +304,9 @@ export function approvalDependencies(
 		new ResolveApprovalDecision(
 			client,
 			new ApprovalDecisionParser(
-				new ApprovalRequestPolicy(),
+				new ApprovalRequestPolicy(
+					new DraftProposalComposition().fingerprints(),
+				),
 				new GithubOrganizerApprovalComposition()
 					.approvalPresenterFactory()
 					.supportedLocales(),

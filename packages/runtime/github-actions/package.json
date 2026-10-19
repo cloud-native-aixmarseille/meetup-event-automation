@@ -34,6 +34,8 @@
 		"@meetup-automation/google-docs-content-repository": "workspace:*",
 		"@meetup-automation/https-asset-image-repository": "workspace:*",
 		"@meetup-automation/github-publication-journal": "workspace:*",
-		"@meetup-automation/hcaptcha-captcha-resolver": "workspace:*"
+		"@meetup-automation/hcaptcha-captcha-resolver": "workspace:*",
+		"@meetup-automation/gemini-generation-gateway": "workspace:*",
+		"@meetup-automation/templating": "workspace:*"
 	}
 }

@@ -1,3 +1,7 @@
+# Goal: Welcome issue and pull request authors.
+# Behavior: Delegate new issues and pull requests targeting main to the shared
+# greetings workflow.
+
 name: Greetings
 
 on:

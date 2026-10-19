@@ -1,3 +1,4 @@
+import { SlackContentApprovalPresenter } from "./slack-content-approval-presenter.js";
 import type { ApprovalNotificationRequest } from "@meetup-automation/journey";
 import { describe, expect, it } from "vitest";
 import { SlackNotificationGatewayComposition } from "./dependency-composition.js";
@@ -24,6 +25,9 @@ describe("Slack approval presentation", () => {
 					new SlackNotificationGatewayComposition().slackApprovalMessages(
 						locale,
 					),
+				),
+				"content-review": new SlackContentApprovalPresenter(
+					new SlackNotificationGatewayComposition().slackApprovalMessages("en"),
 				),
 				"meetup-publication": new SlackMeetupApprovalPresenter(
 					new SlackNotificationGatewayComposition().slackApprovalMessages(

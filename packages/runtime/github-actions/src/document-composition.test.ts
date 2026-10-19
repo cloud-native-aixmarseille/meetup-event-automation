@@ -15,6 +15,7 @@ import {
 } from "./document-composition.js";
 
 const input = {
+	locale: "en" as const,
 	...eventPublicationSettings,
 	conferenceHallEvent: "example-cfp",
 	conferenceHallApiKey: "synthetic-source-key",
@@ -45,6 +46,7 @@ describe("document-composition", () => {
 	it("allows replacing Drive before resolving the asset journey", async () => {
 		// Arrange
 		const container = DocumentComposition.createDocumentContainer({
+			issueNumber: 42,
 			...input,
 			credentials: "not-json",
 			parentFolderId: "parent",
@@ -65,7 +67,10 @@ describe("document-composition", () => {
 					contentRecoveryPlan:
 						new PublicationDomainComposition().contentRecoveryPlan(),
 					createResolveContentValues: (...args) =>
-						new PublicationDomainComposition().resolveContentValues(...args),
+						new PublicationDomainComposition().resolveContentValues(
+							{ value: (value) => value.value },
+							...args,
+						),
 				},
 				{ load: vi.fn(), save: vi.fn() },
 				{},

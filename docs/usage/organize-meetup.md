@@ -32,7 +32,7 @@ checklist covering event details, assets, feedback and communications. Fix the
 listed values or complete the requested tasks. Expected corrections and pending
 approvals block the affected operation without failing CI.
 
-The [active-issue audit](../../.github/workflows/check-active-meetup-issues.md)
+The [active-issue audit](../../.github/workflows/event-reconcile-active.yml)
 uses the same policy. Unexpected execution, source or persistence failures fail
 the workflow; open its Actions run for technical codes and counts. An incomplete
 evaluation preserves the previous checklist and reports the affected stage.
@@ -147,3 +147,10 @@ for reminder timing and recovery.
 Use the [Conference Hall guide](../integrations/conference-hall.md) for the required
 `conference-hall-event` input, `conference-hall-api-key` secret, live profile refresh, reviewed identity
 synchronization, selected proposals and consumer workflow triggers.
+
+## Draft and review promotional content
+
+Use [content generation and review](../integrations/content.md) for titles,
+descriptions, cover candidates, social announcements, and D-7/D0 reminders.
+Each revision needs content approval before use; email and initial Meetup
+publication keep their separate approvals. Social posting remains manual.

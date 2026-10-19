@@ -1,0 +1,25 @@
+{
+	"name": "gemini-generation-gateway",
+	"projectType": "library",
+	"sourceRoot": "packages/adapter/generation/gemini-generation-gateway/src",
+	"targets": {
+		"typecheck": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "tsc --noEmit -p packages/adapter/generation/gemini-generation-gateway/tsconfig.lib.json"
+			}
+		},
+		"test": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "vitest run packages/adapter/generation/gemini-generation-gateway"
+			}
+		}
+	},
+	"tags": [
+		"type:adapter",
+		"scope:generation",
+		"technology:gemini",
+		"responsibility:generation-gateway"
+	]
+}

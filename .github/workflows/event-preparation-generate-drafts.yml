@@ -1,0 +1,220 @@
+# Goal: Prepare event copy and cover proposals for organizer review.
+# Behavior: Generate selected title, description and/or cover drafts with separate
+# text and image models, then review and report results under the event lock.
+# Each target retains its own proposal and approval.
+
+name: Event / Preparation / Generate drafts
+on:
+  workflow_call:
+    inputs:
+      meetup-event-url-prefix:
+        description: HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
+        required: true
+        type: string
+      community-event-url-prefixes:
+        description: JSON array of nonempty HTTPS prefixes accepted for community event URLs.
+        required: true
+        type: string
+      asset-folder-url-prefix:
+        description: HTTPS prefix accepted for event asset folder URLs.
+        required: true
+        type: string
+      locale:
+        description: Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
+        required: true
+        type: string
+      issue-number:
+        description: Meetup issue number.
+        required: true
+        type: number
+      conference-hall-event:
+        description: Conference Hall CFP slug for live linked profiles and selected proposals.
+        required: true
+        type: string
+      google-drive-public-folder-id:
+        description: Public Drive folder for content images, shared with anyone as reader.
+        required: true
+        type: string
+      slack-organizer-channel-id:
+        description: Internal organizer channel receiving content reviews.
+        required: true
+        type: string
+      ai-provider:
+        description: AI provider identifier (gemini).
+        required: true
+        type: string
+      github-app-client-id:
+        description: GitHub App client ID for the consumer repository.
+        required: true
+        type: string
+      targets:
+        description: Nonempty JSON array selecting title, description, cover, or a combination. Duplicate and unknown targets are rejected.
+        required: true
+        type: string
+      ai-text-model:
+        description: Structured-text model used for title and description drafts.
+        required: true
+        type: string
+      ai-image-model:
+        description: Image model used for cover artwork candidates.
+        required: true
+        type: string
+    secrets:
+      conference-hall-api-key:
+        description: Read-only Conference Hall event API key.
+        required: true
+      google-credentials:
+        description: Google service-account JSON for immutable public content media.
+        required: true
+      slack-token:
+        description: Slack bot token for organizer review requests and decision reactions.
+        required: true
+      ai-api-key:
+        description: API key for the selected AI provider.
+        required: true
+      github-app-private-key:
+        description: GitHub App private key.
+        required: true
+permissions: {}
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Validate requested preparation drafts
+        id: selection
+        env:
+          REQUESTED_TARGETS: ${{ inputs.targets }}
+        run: |
+          node <<'NODE'
+          const { appendFileSync } = require('node:fs');
+          let targets;
+          try { targets = JSON.parse(process.env.REQUESTED_TARGETS); }
+          catch { throw new Error('targets must be a JSON array of title, description, or cover'); }
+          const allowed = ['title', 'description', 'cover'];
+          if (!Array.isArray(targets) || targets.length === 0 ||
+              targets.some(target => !allowed.includes(target)) || new Set(targets).size !== targets.length) {
+            throw new Error('targets must contain one or more distinct choices: title, description, cover');
+          }
+          appendFileSync(process.env.GITHUB_OUTPUT, 'operations=' + JSON.stringify(targets) + '\n');
+          NODE
+      - name: Create narrowly scoped GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1
+        with:
+          client-id: ${{ inputs.github-app-client-id }}
+          private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: read
+          permission-issues: write
+      - name: Checkout consumer repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - id: local-workflow-actions
+        uses: hoverkraft-tech/ci-github-common/actions/local-workflow-actions@3a27d31e9ccefbe9609cc9165017ed100ff34a22
+        with:
+          actions-path: actions
+      - name: Generate event title
+        id: title
+        if: ${{ !cancelled() && steps.selection.outcome == 'success' && steps.app-token.outcome == 'success' && steps.local-workflow-actions.outcome == 'success' && contains(fromJSON(steps.selection.outputs.operations), 'title') }}
+        uses: ./../self-workflow/actions/event/generate-copy # zizmor: ignore[self-repository] sibling checkout comes from the pinned reusable workflow revision
+        with:
+          meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
+          community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
+          asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}
+          locale: ${{ inputs.locale }}
+          github-token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ inputs.issue-number }}
+          conference-hall-event: ${{ inputs.conference-hall-event }}
+          conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+          managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
+          target: title
+          ai-provider: ${{ inputs.ai-provider }}
+          ai-model: ${{ inputs.ai-text-model }}
+          ai-api-key: ${{ secrets.ai-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+      - name: Generate event description
+        id: description
+        if: ${{ !cancelled() && steps.selection.outcome == 'success' && steps.app-token.outcome == 'success' && steps.local-workflow-actions.outcome == 'success' && contains(fromJSON(steps.selection.outputs.operations), 'description') }}
+        uses: ./../self-workflow/actions/event/generate-copy # zizmor: ignore[self-repository] sibling checkout comes from the pinned reusable workflow revision
+        with:
+          meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
+          community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
+          asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}
+          locale: ${{ inputs.locale }}
+          github-token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ inputs.issue-number }}
+          conference-hall-event: ${{ inputs.conference-hall-event }}
+          conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+          managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
+          target: description
+          ai-provider: ${{ inputs.ai-provider }}
+          ai-model: ${{ inputs.ai-text-model }}
+          ai-api-key: ${{ secrets.ai-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+      - name: Generate cover artwork
+        id: cover
+        if: ${{ !cancelled() && steps.selection.outcome == 'success' && steps.app-token.outcome == 'success' && steps.local-workflow-actions.outcome == 'success' && contains(fromJSON(steps.selection.outputs.operations), 'cover') }}
+        uses: ./../self-workflow/actions/assets/generate-cover # zizmor: ignore[self-repository] sibling checkout comes from the pinned reusable workflow revision
+        with:
+          meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
+          community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
+          asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}
+          locale: ${{ inputs.locale }}
+          github-token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ inputs.issue-number }}
+          conference-hall-event: ${{ inputs.conference-hall-event }}
+          conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+          managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
+          google-credentials: ${{ secrets.google-credentials }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+          google-drive-public-folder-id: ${{ inputs.google-drive-public-folder-id }}
+          ai-provider: ${{ inputs.ai-provider }}
+          ai-model: ${{ inputs.ai-image-model }}
+          ai-api-key: ${{ secrets.ai-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+      - name: Review drafts
+        id: review
+        if: ${{ !cancelled() && steps.selection.outcome == 'success' && steps.app-token.outcome == 'success' && steps.local-workflow-actions.outcome == 'success' }}
+        uses: ./../self-workflow/actions/organizer/review-drafts # zizmor: ignore[self-repository] sibling checkout comes from the pinned reusable workflow revision
+        with:
+          meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
+          community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
+          asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}
+          locale: ${{ inputs.locale }}
+          github-token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ inputs.issue-number }}
+          conference-hall-event: ${{ inputs.conference-hall-event }}
+          conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+          managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
+          google-credentials: ${{ secrets.google-credentials }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+          google-drive-public-folder-id: ${{ inputs.google-drive-public-folder-id }}
+          slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+          slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
+    outputs:
+      initialized: ${{ steps.selection.outcome == 'success' && steps.app-token.outcome == 'success' && steps.local-workflow-actions.outcome == 'success' }}
+      title-report: ${{ contains(fromJSON(steps.selection.outputs.operations || '[]'), 'title') && format('{{"outcome":{0},"diagnostics":{1}}},', toJSON(steps.title.outcome), toJSON(steps.title.outputs.diagnostics)) || '' }}
+      description-report: ${{ contains(fromJSON(steps.selection.outputs.operations || '[]'), 'description') && format('{{"outcome":{0},"diagnostics":{1}}},', toJSON(steps.description.outcome), toJSON(steps.description.outputs.diagnostics)) || '' }}
+      cover-report: ${{ contains(fromJSON(steps.selection.outputs.operations || '[]'), 'cover') && format('{{"outcome":{0},"diagnostics":{1}}},', toJSON(steps.cover.outcome), toJSON(steps.cover.outputs.diagnostics)) || '' }}
+      review-outcome: ${{ steps.review.outcome }}
+      review-diagnostics: ${{ steps.review.outputs.diagnostics }}
+  report:
+    needs: generate
+    if: ${{ always() && needs.generate.outputs.initialized == 'true' }}
+    uses: ./.github/workflows/__organizer-reconcile-reporting.yml
+    permissions:
+      contents: read
+    with:
+      meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
+      community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
+      asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}
+      locale: ${{ inputs.locale }}
+      github-app-client-id: ${{ inputs.github-app-client-id }}
+      slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
+      issue-number: ${{ inputs.issue-number }}
+      stage-results: '{"content":[${{ needs.generate.outputs.title-report }}${{ needs.generate.outputs.description-report }}${{ needs.generate.outputs.cover-report }}{"outcome":${{ toJSON(needs.generate.outputs.review-outcome) }},"diagnostics":${{ toJSON(needs.generate.outputs.review-diagnostics) }}}]}'
+    secrets:
+      github-app-private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+      slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] explicitly scoped reusable workflow credentials
+concurrency:
+  group: ${{ format('meetup-event-{0}-{1}', github.repository_id, inputs.issue-number) }}
+  cancel-in-progress: false

@@ -41,6 +41,15 @@ export class StoredApprovalSchema {
 			throw new Error("Invalid approval state");
 		if (state.decision !== undefined) {
 			this.decision(state.decision);
+			const decision = state.decision as Record<string, unknown>;
+			if (
+				value.kind !== "content-review" &&
+				(decision.status === "iteration-requested" ||
+					decision.selectedImage !== undefined)
+			)
+				throw new Error("Invalid content decision kind");
+			if (value.kind === "content-review")
+				this.contentDecision(value, decision);
 		}
 		if (state.notificationMessage !== undefined)
 			this.notificationMessage(state.notificationMessage);
@@ -56,13 +65,26 @@ export class StoredApprovalSchema {
 	private decision(value: unknown): void {
 		if (
 			!this.collaborators.approvalSchema.object(value) ||
-			(value.status !== "approved" && value.status !== "rejected") ||
+			!["approved", "rejected", "iteration-requested"].includes(
+				String(value.status),
+			) ||
 			typeof value.actor !== "string" ||
 			!/^[A-Za-z0-9-]{1,39}$/.test(value.actor) ||
 			typeof value.decidedAt !== "string" ||
 			!Number.isFinite(Date.parse(value.decidedAt))
 		)
 			throw new Error("Invalid final approval decision");
+	}
+	private contentDecision(
+		value: Pick<StoredApproval<"content-review">, "content">,
+		decision: Record<string, unknown>,
+	): void {
+		const selected = decision.selectedImage;
+		if (value.content.target === "cover" && decision.status === "approved") {
+			if (!value.content.draft.media.some((media) => media.id === selected))
+				throw new Error("Missing approved cover identity");
+		} else if (selected !== undefined)
+			throw new Error("Unexpected cover identity");
 	}
 
 	private notificationMessage(value: unknown): void {

@@ -1,6 +1,7 @@
 import { CommunicationDomainComposition } from "@meetup-automation/communication";
 import { EventDomainComposition } from "@meetup-automation/event";
 import {
+	ContentFingerprint,
 	PublicationDomainComposition,
 	type PublicationUrlPolicyEngine,
 } from "@meetup-automation/publication";
@@ -9,6 +10,7 @@ import { ApprovalRequestPolicy } from "./approval/approval-request-policy.js";
 import { MeetupPublicationRevision } from "./approval/meetup-publication-revision.js";
 import { CommunicationDiagnosticProjection } from "./communication/communication-diagnostic-projection.js";
 import { AutomationConfigFactory } from "./config/automation-config.js";
+import { ApprovalValueFingerprint } from "./approval/approval-value-fingerprint.js";
 import { AttentionStageEvaluation } from "./result/attention-stage-evaluation.js";
 import { DiagnosticPolicy } from "./result/diagnostic-policy.js";
 import { OrganizerDiagnosticPolicy } from "./result/organizer-diagnostic-policy.js";
@@ -28,7 +30,9 @@ import { MeetupPublicationProjection } from "./use-cases/meetup-publication-proj
 import { SpeakerSynchronizationStageRunner } from "./use-cases/speaker-synchronization-stage-runner.js";
 export class JourneyPolicyComposition {
 	approvalRequestPolicy(): ApprovalRequestPolicy {
-		return new ApprovalRequestPolicy();
+		return new ApprovalRequestPolicy(
+			new ApprovalValueFingerprint(new ContentFingerprint()),
+		);
 	}
 	assetParticipantProjection(): AssetParticipantProjection {
 		return new AssetParticipantProjection({

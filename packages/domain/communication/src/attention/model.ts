@@ -17,6 +17,7 @@ export type AttentionOwner =
 	| "assets"
 	| "feedback"
 	| "communications"
+	| "content"
 	| "approvals"
 	| "delivery";
 type AttentionPolicy =
@@ -92,9 +93,13 @@ export interface AttentionApproval {
 	readonly revision: string;
 	readonly requestedAt: string;
 	readonly commentId: number;
-	readonly kind: "email-introduction" | "email-thanks" | "meetup-publication";
+	readonly kind:
+		| "email-introduction"
+		| "email-thanks"
+		| "meetup-publication"
+		| "content-review";
 	readonly eventDate: string;
-	readonly status: "pending" | "approved" | "rejected";
+	readonly status: "pending" | "approved" | "rejected" | "iteration-requested";
 }
 export interface AttentionRecoveryItem {
 	readonly uncertain?: boolean;

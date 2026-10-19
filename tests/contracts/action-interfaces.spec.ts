@@ -98,21 +98,10 @@ describe("minimal explicit action interfaces", () => {
 			for (const output of Object.keys(
 				workflow.on?.workflow_call?.outputs ?? {},
 			)) {
-				const consumed = workflows.some(
-					(caller) =>
-						!caller.path.startsWith("__") &&
-						Object.entries(caller.workflow.jobs ?? {}).some(
-							([id, job]) =>
-								job.uses === `./.github/workflows/${path}` &&
-								Object.entries(caller.workflow.jobs ?? {}).some(
-									([otherId, other]) =>
-										otherId !== id &&
-										ActionInterfaceUsage.operationalValues(other).some(
-											(value) =>
-												value.includes(`needs.${id}.outputs.${output}`),
-										),
-								),
-						),
+				const consumed = ActionInterfaceUsage.workflowOutputConsumed(
+					new Map(workflows.map(({ path, workflow }) => [path, workflow])),
+					path,
+					output,
 				);
 				if (!consumed)
 					violations.push(`${path}: unused workflow output ${output}`);
@@ -152,6 +141,8 @@ describe("minimal explicit action interfaces", () => {
 				),
 			),
 		);
+		const reachable =
+			ActionInterfaceUsage.operationalWorkflows(workflowCatalog);
 		const consumed = new Map(
 			[...manifests.keys()].map((name) => [name, new Set<string>()]),
 		);
@@ -212,7 +203,8 @@ describe("minimal explicit action interfaces", () => {
 							violations.push(`${path}: ${action} omits ${input}`);
 						else if (
 							String(step.with?.[input] ?? "").trim() === "" &&
-							!(path.startsWith("__") && step["continue-on-error"] === true)
+							(!reachable.has(path) && step["continue-on-error"] === true) ===
+								false
 						)
 							violations.push(`${path}: ${action} passes an empty ${input}`);
 					}
@@ -228,7 +220,7 @@ describe("minimal explicit action interfaces", () => {
 						)
 							violations.push(`${path}: ${action} has no ${ref.output} output`);
 					}
-					if (path.startsWith("__")) continue;
+					if (!reachable.has(path)) continue;
 					for (const [input, value] of Object.entries(step.with ?? {}))
 						inputValues.get(action)?.get(input)?.push(value);
 					let operational = ActionInterfaceUsage.operationalValues(

@@ -1,4 +1,5 @@
 import { PublicationDomainComposition } from "@meetup-automation/publication";
+import { TemplatingComposition } from "@meetup-automation/templating";
 import {
 	DocumentContentLocations,
 	type DocumentContentLocationsArguments,
@@ -29,10 +30,11 @@ export class GoogleDocsContentRepositoryComposition {
 		return new DocumentContentRequests();
 	}
 	documentTabs(): DocumentTabs {
-		return new DocumentTabs();
+		return new DocumentTabs(new TemplatingComposition().parser());
 	}
 	documentTemplateBindings(): DocumentTemplateBindings {
 		return new DocumentTemplateBindings({
+			templates: new TemplatingComposition().parser(),
 			documentTabs: this.documentTabs(),
 			contentFingerprint:
 				new PublicationDomainComposition().contentFingerprint(),

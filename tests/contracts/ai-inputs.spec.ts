@@ -124,7 +124,12 @@ describe("shared AI action configuration", () => {
 				expect([...inputs, ...secrets], path).toEqual([]);
 				continue;
 			}
-			expect(inputs.sort(), path).toEqual(["ai-model", "ai-provider"]);
+			const preparation = path === "event-preparation-generate-drafts.yml";
+			expect(inputs.sort(), path).toEqual(
+				preparation
+					? ["ai-image-model", "ai-provider", "ai-text-model"]
+					: ["ai-model", "ai-provider"],
+			);
 			expect(secrets, path).toEqual(["ai-api-key"]);
 			for (const name of inputs) {
 				expect(contract?.inputs?.[name], path).toMatchObject({
@@ -136,12 +141,18 @@ describe("shared AI action configuration", () => {
 			expect(contract?.secrets?.["ai-api-key"], path).toMatchObject({
 				required: true,
 			});
-			for (const step of aiSteps)
+			for (const step of aiSteps) {
+				const model = preparation
+					? step.uses?.endsWith("assets/generate-cover")
+						? "ai-image-model"
+						: "ai-text-model"
+					: "ai-model";
 				expect(step.with, path).toMatchObject({
 					"ai-provider": workflowExpression("inputs.ai-provider"),
-					"ai-model": workflowExpression("inputs.ai-model"),
+					"ai-model": workflowExpression(`inputs.${model}`),
 					"ai-api-key": workflowExpression("secrets.ai-api-key"),
 				});
+			}
 			for (const step of steps.filter((step) => !aiSteps.includes(step)))
 				expect(JSON.stringify(step), path).not.toContain("secrets.ai-api-key");
 			for (const { steps: _steps, ...settings } of Object.values(

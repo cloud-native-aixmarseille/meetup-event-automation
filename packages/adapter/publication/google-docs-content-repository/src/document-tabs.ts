@@ -1,9 +1,11 @@
 import type { docs_v1 } from "@googleapis/docs";
 import { ContentError } from "@meetup-automation/publication";
+import type { TemplateParser } from "@meetup-automation/templating";
 
 export type DocumentTab = { id: string; content: docs_v1.Schema$DocumentTab };
 
 export class DocumentTabs {
+	constructor(private readonly templates: Pick<TemplateParser, "contains">) {}
 	all(document: docs_v1.Schema$Document): readonly DocumentTab[] {
 		const result: DocumentTab[] = [];
 		this.visit(document.tabs ?? [], result);
@@ -56,7 +58,8 @@ export class DocumentTabs {
 	}
 
 	rejectTokens(value: unknown): void {
-		if (this.allText(value).includes("{{")) throw new ContentError("location");
+		if (this.templates.contains(this.allText(value)))
+			throw new ContentError("location");
 	}
 
 	private allText(value: unknown): string {

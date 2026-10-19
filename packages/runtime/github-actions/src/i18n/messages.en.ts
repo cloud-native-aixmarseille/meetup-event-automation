@@ -1,4 +1,34 @@
 export const EN_MESSAGES = {
+	"action.event.generate-copy": "Generate event copy",
+	"action.assets.generate-cover": "Generate cover artwork",
+	"action.communication.generate-slack-post": "Generate Slack post",
+	"action.communication.generate-linkedin-post": "Generate LinkedIn post",
+	"action.organizer.review-drafts": "Review drafts",
+
+	"diagnostic.publication.content.prerequisites":
+		"Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+	"diagnostic.publication.content.pending":
+		"Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+	"diagnostic.publication.content.rejected":
+		"Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+	"diagnostic.publication.content.iteration-requested":
+		"Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+	"diagnostic.publication.content.recovery":
+		"Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+	"diagnostic.publication.content.stale":
+		"Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+	"diagnostic.publication.content.title-review":
+		"Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+	"diagnostic.publication.content.description-review":
+		"Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+	"diagnostic.publication.meetup.content-review":
+		"Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+	"diagnostic.communication.content-review":
+		"Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+
+	"report.content.generated": "Content generation evaluated.",
+	"report.content.reviewed": "Content reviews reconciled.",
+
 	"action.assets.reconcile-slides-pdf": "Reconcile slides PDF",
 	"action.feedback.reconcile-short-link": "Reconcile shared feedback link",
 	"action.organizer.reconcile-checklist": "Reconcile organizer checklist",

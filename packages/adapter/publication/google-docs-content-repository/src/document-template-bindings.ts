@@ -7,6 +7,11 @@ import {
 	type ContentFingerprint,
 	type ContentTextKey,
 } from "@meetup-automation/publication";
+import {
+	TemplateError,
+	type TemplateOccurrence,
+	type TemplateParser,
+} from "@meetup-automation/templating";
 import type { DocumentTab, DocumentTabs } from "./document-tabs.js";
 
 export interface DocumentTemplateBindingsCollaborators {
@@ -15,7 +20,8 @@ export interface DocumentTemplateBindingsCollaborators {
 		"rejectTokens" | "rejectSuggestions"
 	>;
 	readonly contentFingerprint: Pick<ContentFingerprint, "of">;
-	readonly contentTextKey: Pick<ContentTextKey, "of">;
+	readonly contentTextKey: Pick<ContentTextKey, "of" | "reference">;
+	readonly templates: Pick<TemplateParser, "parse" | "contains">;
 }
 
 export class DocumentTemplateBindings {
@@ -71,17 +77,15 @@ export class DocumentTemplateBindings {
 			const text = (structure.paragraph.elements ?? [])
 				.map((element) => element.textRun?.content ?? "\ufffc")
 				.join("");
-			if (!text.includes("{{")) continue;
+			if (!this.collaborators.templates.contains(text)) continue;
 			this.collaborators.documentTabs.rejectSuggestions(structure);
-			const matches = [...text.matchAll(/\{\{([^{}]+)\}\}/g)];
-			if (text.replace(/\{\{[^{}]+\}\}/g, "").includes("{{"))
-				throw new ContentError("location");
+			const matches = this.expressions(text);
 			this.matches(matches, structure.startIndex, tab.id, contract, bindings);
 		}
 	}
 
 	private matches(
-		matches: readonly RegExpMatchArray[],
+		matches: readonly TemplateOccurrence[],
 		startIndex: number | null | undefined,
 		tabId: string,
 		contract: ContentContract,
@@ -91,11 +95,12 @@ export class DocumentTemplateBindings {
 			const field = contract.fields.find(
 				(field) =>
 					field.type === "text" &&
-					this.collaborators.contentTextKey.of(field) === match[1],
+					this.collaborators.contentTextKey.reference(field) ===
+						match.reference,
 			);
 			if (field?.type !== "text" || startIndex == null)
 				throw new ContentError("location");
-			const start = startIndex + (match.index ?? 0);
+			const start = startIndex + match.start;
 			const id = `meetup_${tabId}_${start}`;
 			bindings.push({
 				id,
@@ -107,9 +112,18 @@ export class DocumentTemplateBindings {
 					segmentId: "",
 					rangeName: id,
 					start,
-					end: start + match[0].length,
+					end: startIndex + match.end,
 				},
 			});
+		}
+	}
+
+	private expressions(text: string): readonly TemplateOccurrence[] {
+		try {
+			return this.collaborators.templates.parse(text);
+		} catch (error) {
+			if (error instanceof TemplateError) throw new ContentError("location");
+			throw error;
 		}
 	}
 }

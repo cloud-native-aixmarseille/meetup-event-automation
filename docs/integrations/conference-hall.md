@@ -51,7 +51,7 @@ records or proposal status.
 
 ## Register identities and maintain the CSV snapshot
 
-Use the [speaker reconciliation workflow](../../.github/workflows/reconcile-speakers.md)
+Use the [speaker reconciliation workflow](../../.github/workflows/referential-reconcile-speakers.yml)
 from a private consumer repository. Its GitHub App needs Contents: write and
 Pull requests: write for that repository. Add scheduled and manual callers:
 
@@ -64,7 +64,7 @@ on:
 permissions: {}
 jobs:
   synchronize:
-    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/reconcile-speakers.yml@REPLACE_WITH_FULL_COMMIT_SHA
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/referential-reconcile-speakers.yml@REPLACE_WITH_FULL_COMMIT_SHA
     with:
       locale: en
       github-app-client-id: ${{ vars.MEETUP_AUTOMATION_APP_CLIENT_ID }}
@@ -76,7 +76,7 @@ jobs:
 
 Replace the revision placeholder with the pinned automation commit and use your
 existing GitHub App variable and secret names. Add a default-branch `push` caller
-for `check-active-meetup-issues.yml` filtered to `referentials/speakers.csv` and
+for `event-reconcile-active.yml` filtered to `referentials/speakers.csv` and
 `referentials/speaker-sync-state.json`. Forward its existing required settings
 and credentials plus the Conference Hall settings. This reevaluates active event
 approvals after a catalog merge; pull requests keep using the referential/form

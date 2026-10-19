@@ -1,3 +1,7 @@
+# Goal: Validate main and tag pushes before releasing the automation.
+# Behavior: Run shared CI, then delegate action release and generated reference
+# updates to the release workflow; tag pushes request updates for all actions.
+
 name: Internal - Main - Continuous Integration
 
 on:

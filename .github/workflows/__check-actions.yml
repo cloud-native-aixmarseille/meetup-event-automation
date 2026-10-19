@@ -1,3 +1,7 @@
+# Goal: Verify packaged actions through GitHub Actions integration tests.
+# Behavior: Exercise actions with synthetic fixtures, check outputs and rejected
+# configurations, then close the temporary meetup issue even after failures.
+
 name: Internal - Integration tests for actions
 
 on:
@@ -411,6 +415,7 @@ jobs:
         continue-on-error: true
         uses: ./actions/assets/reconcile-documents
         with:
+          managed-comment-author: synthetic-bot[bot]
           meetup-event-url-prefix: https://www.meetup.com/example-group/events/
           community-event-url-prefixes: '["https://community.example.test/events/"]'
           asset-folder-url-prefix: https://drive.google.com/drive/folders/

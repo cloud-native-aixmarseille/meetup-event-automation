@@ -5,6 +5,7 @@ export const ATTENTION_STAGE_OWNERS = [
 	"assets",
 	"feedback",
 	"communications",
+	"content",
 ] as const;
 export interface AttentionStageReport {
 	readonly outcome: AttentionStage["outcome"];

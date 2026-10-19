@@ -3,6 +3,7 @@ import type {
 	ContentStatus,
 	PublicAssetModel,
 } from "../domain/asset-content.js";
+import type { AssetFileName } from "../domain/asset-file-name.js";
 import { ContentError } from "../domain/content-error.js";
 import type { PublicationDiagnostic } from "../domain/model.js";
 import type {
@@ -26,6 +27,7 @@ type AssetFileInput = {
 
 export class ReconcileAssetFile {
 	constructor(
+		private readonly names: Pick<AssetFileName, "render">,
 		private readonly repository: AssetRepository,
 		private readonly content?: ReconcileAssetContent,
 	) {}
@@ -159,10 +161,7 @@ export class ReconcileAssetFile {
 		file?: AssetFile,
 	): Promise<AssetFile | undefined> {
 		const { template } = input;
-		const name = template.name.replaceAll(
-			"[EVENT_DATE:YYYY-MM-DD]",
-			input.date,
-		);
+		const name = this.names.render(template.name, input.date);
 		if (file?.name === name && file.kind === template.kind) return file;
 		input.diagnostics.push({
 			code: "publication.assets.file.drift",
@@ -190,6 +189,10 @@ export class ReconcileAssetFile {
 		};
 	}
 }
-export type ReconcileAssetFileArguments = ConstructorParameters<
-	typeof ReconcileAssetFile
->;
+export type ReconcileAssetFileArguments =
+	ConstructorParameters<typeof ReconcileAssetFile> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

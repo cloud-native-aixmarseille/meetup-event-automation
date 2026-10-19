@@ -5,6 +5,26 @@ import { build } from "esbuild";
 
 export const actionBundles = [
 	[
+		"packages/runtime/github-actions/src/entrypoints/event-generate-copy.ts",
+		"actions/event/generate-copy/dist/index.js",
+	],
+	[
+		"packages/runtime/github-actions/src/entrypoints/assets-generate-cover.ts",
+		"actions/assets/generate-cover/dist/index.js",
+	],
+	[
+		"packages/runtime/github-actions/src/entrypoints/communication-generate-slack-post.ts",
+		"actions/communication/generate-slack-post/dist/index.js",
+	],
+	[
+		"packages/runtime/github-actions/src/entrypoints/communication-generate-linkedin-post.ts",
+		"actions/communication/generate-linkedin-post/dist/index.js",
+	],
+	[
+		"packages/runtime/github-actions/src/entrypoints/organizer-review-drafts.ts",
+		"actions/organizer/review-drafts/dist/index.js",
+	],
+	[
 		"packages/runtime/github-actions/src/entrypoints/assets-reconcile-slides-pdf.ts",
 		"actions/assets/reconcile-slides-pdf/dist/index.js",
 	],

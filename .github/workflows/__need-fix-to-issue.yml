@@ -1,3 +1,7 @@
+# Goal: Track code fixes as GitHub issues.
+# Behavior: Pass main-branch pushes or a manually selected commit range to the
+# shared fix-to-issue workflow.
+
 name: Need fix to Issue
 
 on:

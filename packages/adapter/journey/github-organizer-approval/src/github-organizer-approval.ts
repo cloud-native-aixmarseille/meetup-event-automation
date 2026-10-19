@@ -40,7 +40,10 @@ export class GithubOrganizerApproval implements OrganizerApproval {
 		this.collaborators.approvalRequestSchema.validate(input);
 		this.collaborators.approvalRequestPolicy.validate(input);
 		const existing = (await this.repository.states()).find(
-			({ record }) => record.kind === input.kind,
+			({ record }) =>
+				record.kind === input.kind &&
+				(input.kind !== "content-review" ||
+					record.content?.key === input.content.key),
 		);
 		if (
 			existing &&
@@ -52,7 +55,8 @@ export class GithubOrganizerApproval implements OrganizerApproval {
 		) {
 			const result = await this.finalizer.execute(existing);
 			if (
-				result.status === "approved" &&
+				(result.status === "approved" ||
+					result.status === "iteration-requested") &&
 				!(await this.permissions.canApprove(
 					existing.record.decision?.actor ?? "",
 				))
@@ -88,7 +92,7 @@ export class GithubOrganizerApproval implements OrganizerApproval {
 	}
 	async synchronize(): Promise<{ notificationFailed: boolean }> {
 		let notificationFailed = false;
-		for (const state of await this.repository.states()) {
+		for (const state of await this.repository.activeStates()) {
 			const result = await this.finalizer.execute(state);
 			notificationFailed = result.notificationFailed || notificationFailed;
 		}

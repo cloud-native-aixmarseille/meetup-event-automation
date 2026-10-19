@@ -8,31 +8,28 @@ import {
 } from "./support.js";
 
 describe("event side-effect safeguards", () => {
-	it.each([
-		["update-meetup-issue", "manage", "github.event.issue.number"],
-		["check-active-meetup-issues", "audit", "matrix.issue-number"],
-	])(
-		"routes %s through the common issue pipeline",
-		async (name, jobId, identity) => {
-			// Arrange
-			const workflow = await readWorkflow(name);
-			// Act
-			const job = workflow.jobs?.[jobId];
-			// Assert
-			expect(job?.uses).toBe("./.github/workflows/reconcile-meetup.yml");
-			expect(job?.with?.["issue-number"]).toBe(workflowExpression(identity));
-			expect(job?.steps).toBeUndefined();
-			if (name === "check-active-meetup-issues")
-				expect(job?.strategy).toMatchObject({
-					"max-parallel": 4,
-					"fail-fast": false,
-				});
-		},
-	);
+	it("routes the bounded active-event audit through one-event reconciliation", async () => {
+		// Arrange
+		const workflow = await readWorkflow("event-reconcile-active");
+		// Act
+		const job = workflow.jobs?.audit;
+		// Assert
+		expect(job?.uses).toBe("./.github/workflows/event-reconcile.yml");
+		expect(job?.with?.["issue-number"]).toBe(
+			workflowExpression("matrix.issue-number"),
+		);
+		expect(job?.strategy).toMatchObject({
+			"max-parallel": 4,
+			"fail-fast": false,
+		});
+		expect(job?.steps).toBeUndefined();
+		expect(workflow.concurrency).toBeUndefined();
+		expect(job?.concurrency).toBeUndefined();
+	});
 	it("holds the same issue lock for mutations, reporting and Meetup publication", async () => {
 		// Arrange
-		const pipeline = await readWorkflow("reconcile-meetup");
-		const publication = await readWorkflow("reconcile-event-publication");
+		const pipeline = await readWorkflow("event-reconcile");
+		const publication = await readWorkflow("event-publication-reconcile");
 		// Act
 		const locks = [
 			pipeline.concurrency,
@@ -50,9 +47,10 @@ describe("event side-effect safeguards", () => {
 	});
 	it("uses scoped tokens and derives trusted authors in each effectful job", async () => {
 		// Arrange
-		const workflow = await readWorkflow("reconcile-meetup");
+		const workflow = await readWorkflow("event-reconcile");
 		// Act
-		const jobs = [workflow.jobs?.manage, workflow.jobs?.report];
+		const reporting = await readWorkflow("__organizer-reconcile-reporting");
+		const jobs = [workflow.jobs?.manage, reporting.jobs?.report];
 		// Assert
 		for (const job of jobs) {
 			const token = job?.steps?.find((step) => step.id === "app-token");
@@ -68,7 +66,7 @@ describe("event side-effect safeguards", () => {
 	});
 	it("keeps authorization and business gating inside the email operation", async () => {
 		// Arrange
-		const workflow = await readWorkflow("reconcile-meetup");
+		const workflow = await readWorkflow("event-reconcile");
 		// Act
 		const job = workflow.jobs?.manage ?? {};
 		const email = findStep(
@@ -83,7 +81,7 @@ describe("event side-effect safeguards", () => {
 	});
 	it("publishes the form only after a completed projection with changes", async () => {
 		// Arrange
-		const workflow = await readWorkflow("update-meetup-issue-form");
+		const workflow = await readWorkflow("issue-form-reconcile");
 		// Act
 		const steps = workflow.jobs?.synchronize?.steps ?? [];
 		const validation = steps.findIndex((step) => step.id === "referentials");

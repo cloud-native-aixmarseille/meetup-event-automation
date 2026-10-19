@@ -2,6 +2,6 @@
 # https://github.com/rhysd/actionlint/issues/657
 # feedback-side-effects.spec.ts checks queue: max with cancel-in-progress: false.
 paths:
-  .github/workflows/reconcile-feedback-link.yml:
+  .github/workflows/__feedback-reconcile-short-link.yml:
     ignore:
       - '^unexpected key "queue" for "concurrency" section\. expected one of "cancel-in-progress", "group"$'

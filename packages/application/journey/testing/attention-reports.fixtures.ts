@@ -17,5 +17,6 @@ export function attentionReports(
 		assets: { ...complete, ...overrides.assets },
 		feedback: { ...complete, ...overrides.feedback },
 		communications: { ...complete, ...overrides.communications },
+		content: { ...complete, ...overrides.content },
 	};
 }

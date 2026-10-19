@@ -25,15 +25,17 @@ interface StoredApprovalMetadata {
 }
 
 interface FinalApprovalDecision {
-	readonly status: "approved" | "rejected";
+	readonly status: "approved" | "rejected" | "iteration-requested";
 	readonly actor: string;
 	readonly decidedAt: string;
+	readonly selectedImage?: string;
 }
 
 export interface ApprovalDecision {
 	readonly status: OrganizerApprovalResult["status"];
 	readonly actor?: string;
 	readonly decidedAt?: string;
+	readonly selectedImage?: string;
 }
 
 export interface ApprovalState {

@@ -1,8 +1,12 @@
 import type { OrganizerApprovalRequest } from "../ports/organizer-approval.js";
 import type { OrganizerApprovalDetails } from "../ports/organizer-approval-details.js";
+import type { ApprovalValueFingerprint } from "./approval-value-fingerprint.js";
 
 /** An approval authorizes a revision and its reviewed public facts. */
 export class ApprovalRequestPolicy {
+	constructor(
+		private readonly fingerprints: Pick<ApprovalValueFingerprint, "digest">,
+	) {}
 	reviewPhase(facts: {
 		readonly recipientCount?: number;
 		readonly followUpActive?: boolean;
@@ -29,7 +33,11 @@ export class ApprovalRequestPolicy {
 
 	validate(request: OrganizerApprovalRequest): void {
 		this.validateIdentity(request);
-		if (request.kind === "meetup-publication") return;
+		if (
+			request.kind === "meetup-publication" ||
+			request.kind === "content-review"
+		)
+			return;
 		if (
 			!Number.isSafeInteger(request.recipientCount) ||
 			request.recipientCount <= 0
@@ -56,7 +64,10 @@ export class ApprovalRequestPolicy {
 	}
 
 	validateEmailCount(
-		request: Exclude<OrganizerApprovalRequest, { kind: "meetup-publication" }>,
+		request: Extract<
+			OrganizerApprovalRequest,
+			{ kind: "email-introduction" | "email-thanks" }
+		>,
 	): void {
 		if (
 			request.details &&
@@ -69,7 +80,7 @@ export class ApprovalRequestPolicy {
 	matches(
 		previous: OrganizerApprovalRequest,
 		request: OrganizerApprovalRequest,
-		status: "pending" | "approved" | "rejected",
+		status: "pending" | "approved" | "rejected" | "iteration-requested",
 	): boolean {
 		if (
 			previous.kind !== request.kind ||
@@ -77,6 +88,11 @@ export class ApprovalRequestPolicy {
 			previous.eventDate !== request.eventDate
 		)
 			return false;
+		if (previous.kind === "content-review" && request.kind === "content-review")
+			return (
+				this.fingerprints.digest(previous.content) ===
+				this.fingerprints.digest(request.content)
+			);
 		if (
 			previous.kind === "meetup-publication" &&
 			request.kind === "meetup-publication"

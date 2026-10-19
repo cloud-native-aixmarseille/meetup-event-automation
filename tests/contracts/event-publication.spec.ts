@@ -4,7 +4,7 @@ import { readYaml, type Workflow, workflowExpression } from "./support.js";
 describe("event publication workflow", () => {
 	it("serializes all issue writes with the existing event workflows and scopes the App token", async () => {
 		// Arrange
-		const path = ".github/workflows/reconcile-event-publication.yml";
+		const path = ".github/workflows/event-publication-reconcile.yml";
 
 		// Act
 		const workflow = await readYaml<Workflow>(path);

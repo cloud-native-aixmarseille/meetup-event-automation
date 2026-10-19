@@ -101,10 +101,10 @@ that includes the features you configure. GitHub requires a literal revision in
 
 ### Process issue changes
 
-`.github/workflows/meetup-issue-update.yml`:
+`.github/workflows/event-reconcile.yml`:
 
 ```yaml
-name: Update meetup issue
+name: Event / Reconcile
 on:
   issue_comment:
     types: [edited]
@@ -121,10 +121,11 @@ jobs:
             github.event.sender.type == 'User' &&
             github.event.comment.user.type == 'Bot' &&
             startsWith(github.event.comment.body, '<!-- meetup-organizer-approval:v1 '))) }}
-    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/update-meetup-issue.yml@RELEASE_SHA
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/event-reconcile.yml@RELEASE_SHA
     permissions:
       contents: read
     with:
+      issue-number: ${{ github.event.issue.number }}
       conference-hall-event: ${{ vars.CONFERENCE_HALL_EVENT }}
       meetup-event-url-prefix: ${{ vars.MEETUP_EVENT_URL_PREFIX }}
       community-event-url-prefixes: ${{ vars.COMMUNITY_EVENT_URL_PREFIXES }}
@@ -148,10 +149,10 @@ jobs:
 
 ### Run the daily audit
 
-`.github/workflows/meetup-issues-checks.yml`:
+`.github/workflows/event-reconcile-active.yml`:
 
 ```yaml
-name: Check active meetup issues
+name: Event / Reconcile active
 on:
   workflow_dispatch:
   schedule:
@@ -159,7 +160,7 @@ on:
 permissions: {}
 jobs:
   audit:
-    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/check-active-meetup-issues.yml@RELEASE_SHA
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/event-reconcile-active.yml@RELEASE_SHA
     permissions:
       contents: read
       issues: read
@@ -191,7 +192,7 @@ before the event, even when nobody edits an issue.
 
 ### Synchronize the issue form
 
-`.github/workflows/reconcile-meetup-issue-form.yml`:
+`.github/workflows/issue-form-reconcile.yml`:
 
 ```yaml
 name: Update meetup issue form
@@ -205,7 +206,7 @@ on:
 permissions: {}
 jobs:
   synchronize:
-    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/update-meetup-issue-form.yml@RELEASE_SHA
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/issue-form-reconcile.yml@RELEASE_SHA
     permissions:
       contents: read
     with:
@@ -221,7 +222,7 @@ branch has another name.
 
 ### Validate changes to referentials and the form
 
-`.github/workflows/check-meetup-data.yml`:
+`.github/workflows/referential-check-catalog-and-form.yml`:
 
 ```yaml
 name: Check meetup data
@@ -233,7 +234,7 @@ on:
 permissions: {}
 jobs:
   validate:
-    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/check-meetup-referentials-and-issue-form.yml@RELEASE_SHA
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/referential-check-catalog-and-form.yml@RELEASE_SHA
     permissions:
       contents: read
     with:

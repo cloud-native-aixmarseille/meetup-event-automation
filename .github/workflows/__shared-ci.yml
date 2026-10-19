@@ -1,3 +1,7 @@
+# Goal: Apply the same quality gates to pull request and release CI.
+# Behavior: Coordinate linting, Node.js checks, bundle verification and action
+# integration tests, alongside the Python challenge solver's lock and unit tests.
+
 name: Common Continuous Integration tasks
 
 on:

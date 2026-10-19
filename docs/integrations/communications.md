@@ -6,6 +6,12 @@ the meetup issue and alert the meetup organizer Slack channel. Post-event approv
 task status, and reminders share one follow-up comment and grouped notifications.
 Checked email tasks mean completed; after approval, the automation sends and checks them.
 
+Email reconciliation selects the currently eligible introduction or thank-you
+batch under domain timing and occurrence policies. Callers do not choose a mail
+purpose. Readiness, organizer approval, source freshness, and duplicate protection
+apply equally to one-event reconciliation and the active-event audit. Both paths
+use the same approval and delivery identities.
+
 ## Organizer and public channels
 
 An **organizer** manages the meetup, approves email batches, and resolves
@@ -384,7 +390,7 @@ Inspect technical codes and counts in the workflow summary, and organizer
 actions in the merged meetup checklist. Issue updates and scheduled audits use
 the same failure policy: expected input corrections do not fail CI; source,
 execution and persistence failures do. See the
-[audit workflow contract](../../.github/workflows/check-active-meetup-issues.md).
+[audit workflow contract](../../.github/workflows/event-reconcile-active.yml).
 
 The action report shows planned messages and attempted provider calls, including
 rejected or uncertain attempts.

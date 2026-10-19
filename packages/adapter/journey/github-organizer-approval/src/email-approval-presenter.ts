@@ -16,7 +16,10 @@ export class EmailApprovalPresenter {
 		private readonly messages: ApprovalMessages,
 	) {}
 	issue(
-		record: Exclude<StoredApproval, { kind: "meetup-publication" }>,
+		record: Extract<
+			StoredApproval,
+			{ kind: "email-introduction" | "email-thanks" }
+		>,
 		decision: ApprovalDecision,
 	): string {
 		const heading = [...this.collaborators.followUpPresenter.render(record)];

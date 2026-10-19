@@ -27912,12 +27912,22 @@ var ApprovalNotificationPolicy = class {
         };
       case "meetup-publication":
         return { kind: request2.kind, eventDate: request2.eventDate };
+      case "content-review":
+        return {
+          kind: request2.kind,
+          eventDate: request2.eventDate,
+          target: request2.content.target
+        };
     }
   }
 };
 
 // packages/application/journey/src/approval/approval-request-policy.ts
 var ApprovalRequestPolicy = class {
+  constructor(fingerprints) {
+    this.fingerprints = fingerprints;
+  }
+  fingerprints;
   reviewPhase(facts) {
     if (facts.recipientCount === 0 || facts.followUpActive === false)
       return "inactive";
@@ -27935,7 +27945,8 @@ var ApprovalRequestPolicy = class {
   }
   validate(request2) {
     this.validateIdentity(request2);
-    if (request2.kind === "meetup-publication") return;
+    if (request2.kind === "meetup-publication" || request2.kind === "content-review")
+      return;
     if (!Number.isSafeInteger(request2.recipientCount) || request2.recipientCount <= 0)
       throw new Error("Invalid approval recipient count");
     this.validateEmailCount(request2);
@@ -27952,6 +27963,8 @@ var ApprovalRequestPolicy = class {
   matches(previous, request2, status) {
     if (previous.kind !== request2.kind || previous.revision !== request2.revision || previous.eventDate !== request2.eventDate)
       return false;
+    if (previous.kind === "content-review" && request2.kind === "content-review")
+      return this.fingerprints.digest(previous.content) === this.fingerprints.digest(request2.content);
     if (previous.kind === "meetup-publication" && request2.kind === "meetup-publication")
       return previous.publication.url === request2.publication.url && previous.publication.title === request2.publication.title && previous.publication.startTime === request2.publication.startTime && previous.publication.endTime === request2.publication.endTime && previous.publication.timeZone === request2.publication.timeZone && previous.publication.venue.name === request2.publication.venue.name && previous.publication.venue.city === request2.publication.venue.city;
     return previous.recipientCount === request2.recipientCount && (status !== "pending" || this.sameDetails(previous.details, request2.details));
@@ -28003,6 +28016,34 @@ var FollowUpApprovalPolicy = class {
   }
 };
 
+// packages/application/journey/src/assets/cover-artwork-drafts.ts
+var CoverArtworkDrafts = class {
+  constructor(artwork) {
+    this.artwork = artwork;
+  }
+  artwork;
+  supports(target) {
+    return target === "cover";
+  }
+  source(plan2) {
+    return this.artwork.source(plan2.facts);
+  }
+  ready(plan2) {
+    return this.artwork.ready(plan2.facts);
+  }
+  valid(_plan, draft) {
+    return this.artwork.valid(draft.text, draft.media.length);
+  }
+  directions() {
+    return this.artwork.directions;
+  }
+  brief(plan2, direction, guidance) {
+    if (!this.supports(plan2.target))
+      throw new Error("Unsupported cover artwork target");
+    return this.artwork.brief(plan2.facts, direction, guidance);
+  }
+};
+
 // packages/application/journey/src/communication/communication-diagnostic-projection.ts
 var COMMUNICATION_MESSAGES = {
   "duplicate-intent": "A duplicate communication intent was ignored.",
@@ -28022,6 +28063,7 @@ var COMMUNICATION_MESSAGES = {
   "delivery-already-recorded": "The delivery ledger already contains this intent."
 };
 var RUNTIME_MESSAGES = {
+  "communication.content-review": "Event content needs current organizer approval.",
   "communication.feedback-fetch-failed": "Feedback results could not be fetched.",
   "communication.feedback-unavailable": "Speaker thank-you emails require resolved feedback results for every talk.",
   "communication.slides-unavailable": "Email dispatch requires a valid presentation file URL and ready managed content. Resolve asset diagnostics and run reconciliation again.",
@@ -28051,6 +28093,54 @@ var CommunicationDiagnosticProjection = class {
       severity: diagnostic.severity,
       message: RUNTIME_MESSAGES[diagnostic.code]
     };
+  }
+};
+
+// packages/application/journey/src/communication/social-post-drafts.ts
+var SocialPostDrafts = class {
+  constructor(posts) {
+    this.posts = posts;
+  }
+  posts;
+  supports(target) {
+    return target.includes(":");
+  }
+  source(plan2) {
+    const { channel } = this.destination(plan2.target);
+    return {
+      ...this.posts.source(plan2.facts, channel),
+      ...channel === "linkedin" ? { announcement: plan2.facts.announcement } : {}
+    };
+  }
+  ready(plan2) {
+    return this.posts.ready(plan2.facts) && (this.destination(plan2.target).channel !== "linkedin" || Boolean(plan2.facts.announcement));
+  }
+  valid(plan2, draft) {
+    if (!this.posts.valid(plan2.facts, draft.text)) return false;
+    if (this.destination(plan2.target).channel !== "linkedin")
+      return draft.media.length === 0;
+    const expected = plan2.facts.announcement;
+    const image = draft.media[0];
+    return draft.media.length === 1 && Boolean(expected) && image?.fingerprint === expected?.fingerprint && image?.id === expected?.id && image?.url === expected?.url && image?.sourceRevision === expected?.sourceRevision && image?.source?.id === expected?.source?.id && image?.source?.revision === expected?.source?.revision;
+  }
+  brief(plan2, guidance) {
+    const { channel, milestone } = this.destination(plan2.target);
+    return this.posts.brief(
+      plan2.facts,
+      channel,
+      milestone,
+      plan2.language,
+      guidance
+    );
+  }
+  media(plan2) {
+    return this.destination(plan2.target).channel === "linkedin" && plan2.facts.announcement ? [plan2.facts.announcement] : [];
+  }
+  destination(target) {
+    const [channel, milestone] = target.split(":");
+    if (channel !== "slack-aix" && channel !== "slack-openbar" && channel !== "linkedin" || milestone !== "announcement" && milestone !== "d7" && milestone !== "d0")
+      throw new Error("Unsupported social post destination");
+    return { channel, milestone };
   }
 };
 
@@ -28289,13 +28379,13 @@ var EvaluateAttention = class {
   }
   approvals(facts, conditions, postEvent) {
     for (const approval of facts.approvals ?? []) {
-      const relevant = approval.kind === (postEvent ? "email-thanks" : "email-introduction") || !postEvent && approval.kind === "meetup-publication";
+      const relevant = approval.kind === (postEvent ? "email-thanks" : "email-introduction") || !postEvent && (approval.kind === "meetup-publication" || approval.kind === "content-review");
       if (approval.status === "pending" && approval.eventDate === facts.eventDate && relevant)
         conditions.push({
           ...this.condition(
             "approval-pending",
             "approvals",
-            approval.kind === "meetup-publication" ? `${approval.kind}:${approval.revision}` : approval.revision,
+            approval.kind === "meetup-publication" || approval.kind === "content-review" ? `${approval.kind}:${approval.revision}` : approval.revision,
             "approval"
           ),
           since: approval.requestedAt,
@@ -29276,6 +29366,129 @@ var CommunicationDomainComposition = class {
       },
       ...args
     );
+  }
+};
+
+// packages/domain/communication/src/social/social-post-draft.ts
+var SocialPostDraft = class {
+  ready(facts) {
+    return Boolean(
+      facts.date && facts.startTime && facts.host.name && facts.host.city && facts.registrationUrl
+    ) && facts.talks.length > 0 && facts.talks.every(
+      (talk) => Boolean(talk.title.trim()) && talk.speakers.length > 0 && talk.speakers.every(
+        (speaker) => Boolean(speaker.id && speaker.name.trim())
+      )
+    );
+  }
+  valid(facts, text) {
+    return text.length <= 2800 && Boolean(facts.registrationUrl) && text.includes(facts.registrationUrl);
+  }
+  source(facts, channel) {
+    return {
+      date: facts.date,
+      startTime: facts.startTime,
+      endTime: facts.endTime,
+      timeZone: facts.timeZone,
+      host: { name: facts.host.name, city: facts.host.city },
+      talks: facts.talks.map((talk) => ({
+        id: talk.id,
+        title: talk.title,
+        abstract: talk.abstract,
+        speakers: talk.speakers.map((speaker) => ({
+          id: speaker.id,
+          name: speaker.name
+        }))
+      })),
+      aperitif: facts.aperitif,
+      registrationUrl: facts.registrationUrl,
+      ...channel === "linkedin" ? { mentions: [...facts.mentions] } : {}
+    };
+  }
+  brief(facts, channel, milestone, language, guidance) {
+    const reminder = milestone !== "announcement";
+    const opening = milestone === "d7" ? "Dans une semaine :" : "C'est aujourd'hui :";
+    return {
+      language,
+      guidance,
+      instructions: [
+        "Write one Cloud Native Aix-Marseille meetup post using only the supplied facts. Maximum 2800 characters.",
+        channel === "linkedin" ? "Use Unicode emoji. End with one short relevant hashtags paragraph and a final line containing the public host name, public speaker names, and organizer names from mentions, separated by spaced hyphens. Never invent account handles or tags." : "Use Slack emoji aliases such as :rocket:, :date:, :round_pushpin:, :beers:, :alarm_clock:. No hashtags or mention footer.",
+        `Opening: ${reminder ? opening : "Prochain Meetup"} Cloud Native Aix-Marseille ! (translate for English). Then blank line, date at startTime, host - city, blank line, Au programme :, ordered talk bullets with technology topic and public speaker names${reminder ? ", without detailed teasers" : ", each followed by one concise factual teaser"}.`,
+        "End with a short invitation and Inscrivez-vous : registrationUrl (translate for English). Use the exact registrationUrl; never shorten it. The date/time must remain explicit, including reminders. No invented countdown, scarcity or urgency. Mention an aperitif only when aperitif=true. Keep talk order and public speaker names."
+      ],
+      facts: this.source(facts, channel)
+    };
+  }
+};
+
+// packages/domain/communication/src/social/social-post-timing.ts
+var SocialPostTiming = class {
+  plannedAt(milestone, date, time, timeZone, startTime) {
+    if (milestone === "announcement") return null;
+    if (milestone === "d0" && time >= startTime)
+      throw new Error("Event-day reminder must precede event start");
+    const day = /* @__PURE__ */ new Date(`${date}T12:00:00Z`);
+    if (!Number.isFinite(day.getTime()) || day.toISOString().slice(0, 10) !== date)
+      throw new Error("Invalid content event date");
+    if (milestone === "d7") day.setUTCDate(day.getUTCDate() - 7);
+    return this.instant(day.toISOString().slice(0, 10), time, timeZone);
+  }
+  instant(date, time, timeZone) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time))
+      throw new Error("Invalid content local time");
+    const format = new Intl.DateTimeFormat("sv-SE", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23"
+    });
+    const reference = Date.parse(`${date}T${time}:00Z`);
+    const matches = [];
+    for (let offset = -840; offset <= 840; offset += 15) {
+      const candidate = new Date(reference + offset * 6e4);
+      if (format.format(candidate) === `${date} ${time}`)
+        matches.push(candidate.toISOString());
+    }
+    if (matches.length !== 1)
+      throw new Error("Ambiguous or nonexistent content local time");
+    return matches[0];
+  }
+  expired(plan2, now2) {
+    const start = this.instant(
+      plan2.facts.date,
+      plan2.facts.startTime,
+      plan2.facts.timeZone
+    );
+    if (!Number.isFinite(Date.parse(now2)) || Date.parse(now2) >= Date.parse(start))
+      return true;
+    if (!plan2.plannedAt) return false;
+    const format = new Intl.DateTimeFormat("sv-SE", {
+      timeZone: plan2.facts.timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    });
+    return format.format(new Date(now2)) > format.format(new Date(plan2.plannedAt));
+  }
+  publicationEligible(plan2, now2) {
+    const start = this.instant(
+      plan2.facts.date,
+      plan2.facts.startTime,
+      plan2.facts.timeZone
+    );
+    if (!Number.isFinite(Date.parse(now2)) || Date.parse(now2) >= Date.parse(start))
+      return false;
+    if (!plan2.plannedAt) return true;
+    const format = new Intl.DateTimeFormat("sv-SE", {
+      timeZone: plan2.facts.timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    });
+    return Date.parse(now2) >= Date.parse(plan2.plannedAt) && format.format(new Date(now2)) === format.format(new Date(plan2.plannedAt));
   }
 };
 
@@ -30625,6 +30838,112 @@ var EventDomainComposition = class {
   }
 };
 
+// packages/domain/event/src/domain/event-copy-description-draft.ts
+var EventCopyDescriptionDraft = class {
+  constructor(agenda) {
+    this.agenda = agenda;
+  }
+  agenda;
+  ready(facts) {
+    return this.agenda.ready(facts.talks) && Boolean(
+      facts.date && facts.startTime && facts.host.name && facts.host.city
+    );
+  }
+  valid(facts, text) {
+    const projected = [
+      text,
+      ...facts.talks.map(
+        (talk) => [
+          talk.title,
+          talk.speakers.map((speaker) => speaker.name).join(", "),
+          talk.abstract
+        ].filter(Boolean).join("\n")
+      )
+    ].join("\n\n");
+    return text.length <= 12e3 && projected.length <= 49e3;
+  }
+  source(facts) {
+    return {
+      date: facts.date,
+      startTime: facts.startTime,
+      endTime: facts.endTime,
+      timeZone: facts.timeZone,
+      host: { name: facts.host.name, city: facts.host.city },
+      talks: this.agenda.source(facts.talks).talks,
+      aperitif: facts.aperitif
+    };
+  }
+  brief(facts, language, guidance) {
+    return {
+      language,
+      guidance,
+      instructions: [
+        "Write one welcoming description for a Cloud Native Aix-Marseille meetup using only the supplied facts.",
+        "Use plain semantic text: welcoming emoji opening; confirmed date/time, host and city and theme; Au programme : (or English equivalent); one emoji-led title - public speaker(s) and short teaser per talk; factual connecting sentence; friendly invitation.",
+        "Keep talk order and public speaker names. Maximum 12000 characters. Do not repeat full abstracts; publication appends them. Mention an aperitif only when aperitif=true. Never invent logistics, people or promises."
+      ],
+      facts: this.source(facts)
+    };
+  }
+};
+
+// packages/domain/event/src/domain/event-copy-title-draft.ts
+var EventCopyTitleDraft = class {
+  constructor(agenda) {
+    this.agenda = agenda;
+  }
+  agenda;
+  ready(talks) {
+    return this.agenda.ready(talks);
+  }
+  valid(text) {
+    return text.length <= 80 && !/[\r\n]/.test(text) && !text.startsWith("[Meetup]");
+  }
+  source(talks) {
+    return this.agenda.source(talks);
+  }
+  brief(talks, language, guidance) {
+    return {
+      language,
+      guidance,
+      instructions: [
+        "Write a short, specific technology theme for a Cloud Native Aix-Marseille meetup, at most 80 characters on one line.",
+        "No [Meetup] prefix, date, venue or administrative wrapper. Use only the supplied topics. Do not invent technologies or claims."
+      ],
+      facts: {
+        topics: talks.map((talk) => ({
+          title: talk.title,
+          abstract: talk.abstract
+        }))
+      }
+    };
+  }
+};
+
+// packages/domain/event/src/domain/event-copy-agenda.ts
+var EventCopyAgenda = class {
+  ready(talks) {
+    return talks.length > 0 && talks.every(
+      (talk) => Boolean(talk.title.trim()) && talk.speakers.length > 0 && talk.speakers.every(
+        (speaker) => Boolean(speaker.id && speaker.name.trim())
+      )
+    );
+  }
+  source(talks) {
+    return {
+      talks: talks.map((talk) => ({
+        id: talk.id,
+        title: talk.title,
+        abstract: talk.abstract,
+        speakers: talk.speakers.map((speaker) => ({
+          id: speaker.id,
+          name: speaker.name
+        }))
+      }))
+    };
+  }
+};
+
 // packages/domain/referential/src/domain/proposal-source-error.ts
 var ProposalSourceError = class extends Error {
   constructor(code, retryAfterSeconds, context3) {
@@ -31863,7 +32182,7 @@ var ReconcileEventAssets = class {
       };
     }
     const templates = await this.repository.listTemplates();
-    this.validateTemplates(templates);
+    this.validateTemplates(templates, date);
     const month = new Intl.DateTimeFormat("en-US", {
       month: "long",
       timeZone: "UTC"
@@ -31896,7 +32215,12 @@ var ReconcileEventAssets = class {
         )
       );
     }
-    return this.reconcileFiles(container, templates, input, diagnostics);
+    return this.reconcileFiles(
+      container,
+      templates,
+      { ...input, date },
+      diagnostics
+    );
   }
   async reconcileFiles(container, templates, input, diagnostics) {
     const currentFiles = await this.repository.listFiles(container.id);
@@ -31937,7 +32261,7 @@ var ReconcileEventAssets = class {
     const instant = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
     return !Number.isNaN(instant.valueOf()) && instant.toISOString().slice(0, 10) === date;
   }
-  validateTemplates(templates) {
+  validateTemplates(templates, date) {
     if (!templates.length || templates.some(
       (template) => !template.id || !template.name.trim() || !template.kind.trim()
     ) || new Set(templates.map(({ id }) => id)).size !== templates.length || new Set(templates.map(({ kind }) => kind)).size !== templates.length) {
@@ -31945,6 +32269,8 @@ var ReconcileEventAssets = class {
         "Asset templates must have unique IDs, unique kinds, and non-empty names"
       );
     }
+    for (const template of templates)
+      this.collaborators.names.render(template.name, date);
   }
 };
 
@@ -32066,10 +32392,12 @@ var ReconcileSlidePdf = class {
 
 // packages/domain/publication/src/application/reconcile-asset-file.ts
 var ReconcileAssetFile = class {
-  constructor(repository, content) {
+  constructor(names, repository, content) {
+    this.names = names;
     this.repository = repository;
     this.content = content;
   }
+  names;
   repository;
   content;
   async execute(input) {
@@ -32155,10 +32483,7 @@ var ReconcileAssetFile = class {
   }
   async copyOrRename(input, file) {
     const { template } = input;
-    const name = template.name.replaceAll(
-      "[EVENT_DATE:YYYY-MM-DD]",
-      input.date
-    );
+    const name = this.names.render(template.name, input.date);
     if (file?.name === name && file.kind === template.kind) return file;
     input.diagnostics.push({
       code: "publication.assets.file.drift",
@@ -32198,7 +32523,7 @@ var ResolveContentValues = class {
         continue;
       }
       const key = this.collaborators.contentTextKey.of(field);
-      const text = model.text[key] || (!field.required ? field.fallback : void 0);
+      const text = this.text(field, model);
       if (!this.collaborators.contentContractPolicy.text(text))
         throw new ContentError("missing");
       values.push({
@@ -32210,7 +32535,23 @@ var ResolveContentValues = class {
     }
     return values;
   }
+  text(field, model) {
+    if (field.format !== void 0) {
+      const date = field.token === "event.date" || field.token === "next_event.date" ? model.dates?.[field.token] : void 0;
+      if (date) {
+        return this.collaborators.templates.value({
+          kind: "date",
+          value: date,
+          format: field.format
+        });
+      }
+      return field.required ? void 0 : field.fallback;
+    }
+    const text = model.text[this.collaborators.contentTextKey.of(field)] || (!field.required ? field.fallback : void 0);
+    return text === void 0 ? void 0 : this.collaborators.templates.value({ kind: "text", value: text });
+  }
   async image(field, model) {
+    if (field.token === "event.cover") return this.cover(field, model);
     const host = field.token === "host.logo";
     const picture = host ? model.hostLogo : model.pictures[field.slot];
     const hostId = host ? model.hostLogo?.hostId : void 0;
@@ -32250,6 +32591,41 @@ var ResolveContentValues = class {
         fit: field.fit
       };
     }
+  }
+  async cover(field, model) {
+    if (!model.cover) throw new ContentError("missing");
+    const validated = await this.images.validate(model.cover);
+    if (validated.fingerprint !== model.cover.fingerprint)
+      throw new ContentError("image");
+    return {
+      type: "image",
+      key: field.slot,
+      image: validated.source,
+      fingerprint: this.collaborators.contentFingerprint.of(
+        `${validated.fingerprint}:${model.cover.id}:${model.cover.description}:${field.fit}`
+      ),
+      fit: field.fit,
+      fallback: false
+    };
+  }
+};
+
+// packages/domain/publication/src/domain/asset-file-name.ts
+var AssetFileName = class {
+  constructor(templates) {
+    this.templates = templates;
+  }
+  templates;
+  render(templateName, date) {
+    return this.templates.render(templateName, (part) => {
+      if (part.entity !== "event")
+        throw new Error("Unsupported asset filename entity");
+      if (part.property !== "date")
+        throw new Error("Unsupported event filename property");
+      if (!part.argument)
+        throw new Error("Asset filename date format is required");
+      return { kind: "date", value: date, format: part.argument };
+    });
   }
 };
 
@@ -32453,21 +32829,32 @@ var ContentContractPolicy = class {
       (item) => item === field.token
     );
     const slotted = SLOTTED_TEXT_TOKENS.some((item) => item === token);
-    if (!token || typeof field.required !== "boolean" || (slotted ? !this.name(field.slot) : field.slot !== void 0) || !this.keys(field, ["type", "token", "slot", "required", "fallback"]) || (!field.required || field.fallback !== void 0) && !this.text(field.fallback))
+    if (!token || typeof field.required !== "boolean" || (slotted ? !this.name(field.slot) : field.slot !== void 0) || !this.validFormat(field) || !this.keys(field, [
+      "type",
+      "token",
+      "slot",
+      "format",
+      "required",
+      "fallback"
+    ]) || (!field.required || field.fallback !== void 0) && !this.text(field.fallback))
       throw new ContentError("contract");
     const result = {
       type: "text",
       token,
       required: field.required,
       ...typeof field.slot === "string" ? { slot: field.slot } : {},
+      ...typeof field.format === "string" ? { format: field.format } : {},
       ...typeof field.fallback === "string" ? { fallback: field.fallback } : {}
     };
     if (!this.name(this.collaborators.contentTextKey.of(result)))
       throw new ContentError("contract");
     return result;
   }
+  validFormat(field) {
+    return field.format === void 0 || (field.token === "event.date" || field.token === "next_event.date") && typeof field.format === "string" && field.format.trim().length > 0 && field.format.length <= 100 && /^[A-Za-z ./_-]+$/u.test(field.format);
+  }
   image(field, mimeType) {
-    if (field.type !== "image" || field.token !== "speaker.picture" && field.token !== "host.logo" || typeof field.required !== "boolean" || !this.name(field.slot) || !this.name(field.objectId) || !this.keys(field, [
+    if (field.type !== "image" || field.token !== "speaker.picture" && field.token !== "host.logo" && field.token !== "event.cover" || typeof field.required !== "boolean" || !this.name(field.slot) || !this.name(field.objectId) || !this.keys(field, [
       "type",
       "token",
       "slot",
@@ -32482,6 +32869,7 @@ var ContentContractPolicy = class {
     const slides = mimeType === "application/vnd.google-apps.presentation";
     if (!(slides ? this.name(field.pageId) && field.tabId === void 0 : this.name(field.tabId) && field.pageId === void 0) || field.fit !== "CENTER_CROP" && !(slides && field.fit === "CENTER_INSIDE"))
       throw new ContentError("contract");
+    this.coverContract(field);
     const fallback = this.fallback(field.fallback, field.required);
     return {
       type: "image",
@@ -32494,6 +32882,10 @@ var ContentContractPolicy = class {
       ...typeof field.tabId === "string" ? { tabId: field.tabId } : {},
       ...fallback ? { fallback } : {}
     };
+  }
+  coverContract(field) {
+    if (field.token === "event.cover" && (!field.required || field.fallback !== void 0))
+      throw new ContentError("contract");
   }
   fallback(value, required) {
     if (value === void 0 && required) return void 0;
@@ -32838,8 +33230,16 @@ var ContentRenderPlan = class {
 
 // packages/domain/publication/src/domain/content-text-key.ts
 var ContentTextKey = class {
+  constructor(fingerprints) {
+    this.fingerprints = fingerprints;
+  }
+  fingerprints;
   of(field) {
-    return field.slot ? `${field.token}:${field.slot}` : field.token;
+    return field.format !== void 0 ? `${field.token}:format:${this.fingerprints.of(field.format)}` : this.reference(field);
+  }
+  reference(field) {
+    const argument = field.format ?? field.slot;
+    return argument === void 0 ? field.token : `${field.token}:${argument}`;
   }
 };
 
@@ -33334,7 +33734,7 @@ var PublicationDomainComposition = class {
     });
   }
   contentTextKey() {
-    return new ContentTextKey();
+    return new ContentTextKey(this.contentFingerprint());
   }
   feedbackLinkSelection() {
     return new FeedbackLinkSelection({ feedbackPolicy: this.feedbackPolicy() });
@@ -33369,7 +33769,7 @@ var PublicationDomainComposition = class {
       ...args
     );
   }
-  reconcileAssetContent(...args) {
+  reconcileAssetContent(templates, ...args) {
     return new ReconcileAssetContent(
       {
         contentContractPolicy: this.contentContractPolicy(),
@@ -33378,25 +33778,30 @@ var PublicationDomainComposition = class {
         contentManifestPolicy: this.contentManifestPolicy(),
         contentRecoveryFingerprint: this.contentRecoveryFingerprint(),
         contentRecoveryPlan: this.contentRecoveryPlan(),
-        createResolveContentValues: (...args2) => this.resolveContentValues(...args2)
+        createResolveContentValues: (...args2) => this.resolveContentValues(templates, ...args2)
       },
       ...args
     );
   }
-  reconcileAssetFile(...args) {
-    return new ReconcileAssetFile(...args);
+  reconcileAssetFile(names, ...args) {
+    return new ReconcileAssetFile(names, ...args);
   }
-  reconcileEventAssets(...args) {
+  assetFileName(templates) {
+    return new AssetFileName(templates);
+  }
+  reconcileEventAssets(names, ...args) {
     return new ReconcileEventAssets(
       {
-        createReconcileAssetFile: (...args2) => this.reconcileAssetFile(...args2)
+        names,
+        createReconcileAssetFile: (...args2) => this.reconcileAssetFile(names, ...args2)
       },
       ...args
     );
   }
-  resolveContentValues(...args) {
+  resolveContentValues(templates, ...args) {
     return new ResolveContentValues(
       {
+        templates,
         contentTextKey: this.contentTextKey(),
         contentContractPolicy: this.contentContractPolicy(),
         contentFingerprint: this.contentFingerprint()
@@ -33406,6 +33811,54 @@ var PublicationDomainComposition = class {
   }
   scheduledEventPolicy() {
     return new ScheduledEventPolicy();
+  }
+};
+
+// packages/domain/publication/src/domain/cover-artwork.ts
+var CoverArtwork = class {
+  directions = [
+    "Invent an exuberant tactile clay-animation scene with expressive miniature characters and physical technology metaphors",
+    "Invent a luminous hand-painted fantasy adventure with playful creatures and technology woven into the landscape",
+    "Invent a witty retro-futurist screen-print composition with bold shapes, mechanical characters and a strong visual gag",
+    "Invent a cinematic stylized 3D underwater or aerial ecosystem where infrastructure becomes a surprising living community"
+  ];
+  ready(facts) {
+    return Boolean(facts.month.trim());
+  }
+  valid(text, imageCount) {
+    return text === "" && imageCount > 0 && imageCount <= this.directions.length;
+  }
+  source(facts) {
+    return {
+      month: facts.month,
+      talks: facts.talks.map((talk) => ({
+        id: talk.id,
+        title: talk.title,
+        abstract: talk.abstract,
+        speakers: talk.speakers.map((speaker) => ({
+          id: speaker.id,
+          name: speaker.name
+        }))
+      }))
+    };
+  }
+  brief(facts, direction, guidance) {
+    return {
+      output: { width: 1792, height: 1024, mimeType: "image/png" },
+      guidance,
+      instructions: [
+        "Create one bright, engaging, polished, humorous social-preview illustration for a Cloud Native / IT meetup. One coherent full-canvas scene, no collage, grids, panels, mockup frames or composite alternatives. Deliver exactly one image, preferably PNG 1792x1024. Fill the landscape canvas, with a readable central composition that works as a small social preview.",
+        "The only readable text anywhere is the exact supplied month. No logos containing other text, brands as lettering, code, captions, watermarks, dates, numbers or UI labels.",
+        `${direction}. Invent a specific visual metaphor using the supplied topics; vary characters, setting, palette and visual style. Technology objects should feel native to the scene. Warm, witty and professional, never generic corporate stock imagery.`
+      ],
+      facts: {
+        month: facts.month,
+        topics: facts.talks.map((talk) => ({
+          title: talk.title,
+          abstract: talk.abstract
+        }))
+      }
+    };
   }
 };
 
@@ -33483,12 +33936,33 @@ var AutomationConfigFactory = class {
   }
 };
 
+// packages/application/journey/src/approval/approval-value-fingerprint.ts
+var ApprovalValueFingerprint = class {
+  constructor(hash) {
+    this.hash = hash;
+  }
+  hash;
+  digest(value) {
+    return this.hash.of(JSON.stringify(this.canonical(value)));
+  }
+  canonical(value) {
+    if (value === void 0) return null;
+    if (Array.isArray(value)) return value.map((item) => this.canonical(item));
+    if (value && typeof value === "object")
+      return Object.fromEntries(
+        Object.entries(value).sort(([a], [b2]) => a < b2 ? -1 : a > b2 ? 1 : 0).map(([key, item]) => [key, this.canonical(item)])
+      );
+    return value;
+  }
+};
+
 // packages/application/journey/src/result/attention-stage-reports.ts
 var ATTENTION_STAGE_OWNERS = [
   "event",
   "assets",
   "feedback",
-  "communications"
+  "communications",
+  "content"
 ];
 
 // packages/application/journey/src/result/attention-stage-evaluation.ts
@@ -33557,6 +34031,16 @@ var AttentionStageEvaluation = class {
 
 // packages/application/journey/src/result/diagnostic-policy.ts
 var ORGANIZER_CODES = /* @__PURE__ */ new Set([
+  "publication.content.prerequisites",
+  "publication.content.pending",
+  "publication.content.rejected",
+  "publication.content.iteration-requested",
+  "publication.content.recovery",
+  "publication.content.stale",
+  "publication.content.title-review",
+  "publication.content.description-review",
+  "publication.meetup.content-review",
+  "communication.content-review",
   "publication.assets.pdf.source",
   "publication.assets.pdf.source-pending",
   "publication.assets.pdf.revision",
@@ -34354,7 +34838,9 @@ var SpeakerSynchronizationStageRunner = class {
 // packages/application/journey/src/policy-composition.ts
 var JourneyPolicyComposition = class {
   approvalRequestPolicy() {
-    return new ApprovalRequestPolicy();
+    return new ApprovalRequestPolicy(
+      new ApprovalValueFingerprint(new ContentFingerprint())
+    );
   }
   assetParticipantProjection() {
     return new AssetParticipantProjection({
@@ -34645,6 +35131,7 @@ var ManageMeetupCommunications = class {
         runtimeDiagnostics
       );
     }
+    await this.contentApproved(managed.event, runtimeDiagnostics);
     const delivery = await this.collaborators.createCommunicationDeliveryPreparation(this.dependencies).execute(managed.event, runtimeDiagnostics);
     const { referencesResolved } = delivery;
     if (dispatchPermitted && referencesResolved && !await this.sourceIsCurrent(sourceDocument, runtimeDiagnostics)) {
@@ -34686,6 +35173,11 @@ var ManageMeetupCommunications = class {
         runtimeDiagnostics
       );
     }
+    if (!await this.contentApproved(managed.event, runtimeDiagnostics))
+      return this.collaborators.communicationJourneyResults.emptyCommunicationResult(
+        "check",
+        runtimeDiagnostics
+      );
     const reconciliation = await this.dependencies.reconcileCommunications(dispatchEnabled).execute({
       ...deliveryInput,
       dispatchAuthorized: mailApproved
@@ -34704,6 +35196,22 @@ var ManageMeetupCommunications = class {
       reconciliation,
       runtimeDiagnostics
     );
+  }
+  async contentApproved(event, diagnostics) {
+    try {
+      if (!(await this.dependencies.contentGate.blocked(event)).length)
+        return true;
+      diagnostics.push({
+        code: "communication.content-review",
+        severity: "error"
+      });
+    } catch {
+      diagnostics.push({
+        code: "communication.approval-unavailable",
+        severity: "error"
+      });
+    }
+    return false;
   }
   async synchronizeApprovals(diagnostics) {
     try {
@@ -35300,6 +35808,8 @@ var ManageMeetupPublication = class {
     ))
       return this.result("blocked", "source");
     const event = evaluation.event;
+    if ((await this.dependencies.contentGate.blocked(event)).length)
+      return this.result("blocked", "content-review");
     if (event.issueState !== "open" || ["cancelled", "postponed", "held"].includes(event.occurrenceStatus ?? ""))
       return this.result("skipped", "inactive");
     const draft = this.collaborators.meetupPublicationProjection.create(
@@ -35414,12 +35924,19 @@ var ManageMeetupPublication = class {
     await this.persist(current, published);
     return { status: "updated", diagnostics };
   }
-  ensureCurrent(source) {
-    return this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
+  async ensureCurrent(source) {
+    await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
       this.dependencies.repository,
       source.identity,
       source
     );
+    const evaluated = await this.dependencies.manageEvent.execute({
+      identity: source.identity,
+      sourceDocument: source,
+      mode: "check"
+    });
+    if (evaluated.skipped || (await this.dependencies.contentGate.blocked(evaluated.event)).length)
+      throw new ScheduledEventError("content-review");
   }
   result(status, code) {
     return {
@@ -35524,16 +36041,27 @@ var ReconcileMeetupDocuments = class {
     );
   }
   async reconcile(source, evaluation, hostName) {
+    const blocked = await this.dependencies.contentGate.blocked(
+      evaluation.event
+    );
+    const contentDiagnostics = blocked.map((field) => ({
+      code: `publication.content.${field}-review`,
+      severity: "error",
+      field,
+      message: "Content requires current organizer approval"
+    }));
+    const model = await this.dependencies.renderProjection?.create(
+      evaluation.event,
+      [...evaluation.diagnostics, ...contentDiagnostics]
+    );
+    const cover = await this.dependencies.contentGate.cover(evaluation.event);
     const assets = await this.dependencies.reconcileAssets.execute({
       eventId: `${source.identity.repository}#${source.identity.issueNumber}`,
       date: evaluation.event.date,
       hostName,
       existingUrl: evaluation.event.publicationLinks.assets,
       mode: "fix",
-      model: await this.dependencies.renderProjection?.create(
-        evaluation.event,
-        evaluation.diagnostics
-      ),
+      model: model ? { ...model, cover } : void 0,
       recovery: this.dependencies.recovery
     });
     await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
@@ -35558,10 +36086,13 @@ var ReconcileMeetupDocuments = class {
       assetUrl: assets.container?.url,
       files: assets.files,
       content: assets.content,
-      diagnostics: assets.diagnostics.map((item) => ({
-        ...item,
-        field: "publicationLinks.assets"
-      }))
+      diagnostics: [
+        ...contentDiagnostics,
+        ...assets.diagnostics.map((item) => ({
+          ...item,
+          field: "publicationLinks.assets"
+        }))
+      ]
     };
   }
   skipped(diagnostics) {
@@ -36132,6 +36663,334 @@ var JourneyComposition = class {
       },
       ...args
     );
+  }
+};
+
+// packages/application/journey/src/event/event-copy-drafts.ts
+var EventCopyDrafts = class {
+  constructor(title, description) {
+    this.title = title;
+    this.description = description;
+  }
+  title;
+  description;
+  supports(target) {
+    return target === "title" || target === "description";
+  }
+  source(plan2) {
+    return plan2.target === "title" ? this.title.source(plan2.facts.talks) : this.description.source(plan2.facts);
+  }
+  ready(plan2) {
+    return plan2.target === "title" ? this.title.ready(plan2.facts.talks) : this.description.ready(plan2.facts);
+  }
+  valid(plan2, draft) {
+    return draft.media.length === 0 && (plan2.target === "title" ? this.title.valid(draft.text) : this.description.valid(plan2.facts, draft.text));
+  }
+  brief(plan2, guidance) {
+    if (!this.supports(plan2.target))
+      throw new Error("Unsupported event copy target");
+    return plan2.target === "title" ? this.title.brief(plan2.facts.talks, plan2.language, guidance) : this.description.brief(plan2.facts, plan2.language, guidance);
+  }
+  media() {
+    return [];
+  }
+};
+
+// packages/application/journey/src/proposals/promotional-content-fingerprint.ts
+var PromotionalContentFingerprint = class {
+  constructor(values, definitions) {
+    this.values = values;
+    this.definitions = definitions;
+  }
+  values;
+  definitions;
+  digest(value) {
+    return this.values.digest(value);
+  }
+  source(plan2) {
+    return this.digest({
+      version: 1,
+      target: plan2.target,
+      language: plan2.language,
+      plannedAt: plan2.plannedAt,
+      facts: this.definitions.source(plan2)
+    });
+  }
+  proposal(proposal, draft) {
+    return this.digest({
+      id: proposal.id,
+      recoveryRequest: proposal.recoveryRequest,
+      source: proposal.plan.sourceFingerprint,
+      origin: proposal.origin,
+      guidance: proposal.guidance,
+      prompt: proposal.promptVersion,
+      language: proposal.plan.language,
+      target: proposal.plan.target,
+      draft
+    });
+  }
+};
+
+// packages/application/journey/src/proposals/promotional-content.ts
+var CONTENT_TARGETS = [
+  "title",
+  "description",
+  "cover",
+  "slack-aix:announcement",
+  "slack-openbar:announcement",
+  "linkedin:announcement",
+  "slack-aix:d7",
+  "slack-openbar:d7",
+  "linkedin:d7",
+  "slack-aix:d0",
+  "slack-openbar:d0",
+  "linkedin:d0"
+];
+
+// packages/application/journey/src/proposals/promotional-content-policy.ts
+var PromotionalContentPolicy = class {
+  constructor(definitions) {
+    this.definitions = definitions;
+  }
+  definitions;
+  target(value) {
+    return CONTENT_TARGETS.some((target) => target === value);
+  }
+  source(plan2) {
+    return this.definition(plan2.target).source(plan2);
+  }
+  ready(plan2) {
+    return this.definition(plan2.target).ready(plan2);
+  }
+  validDraft(plan2, draft) {
+    if (draft.text && (draft.text !== draft.text.trim() || /\{[^}]+\}|```|<!--/.test(draft.text)))
+      return false;
+    if (plan2.target !== "cover" && !draft.text.trim()) return false;
+    return this.definition(plan2.target).valid(plan2, draft);
+  }
+  current(proposal, plan2) {
+    return proposal.plan.sourceFingerprint === plan2.sourceFingerprint && proposal.promptVersion === "1";
+  }
+  eligible(proposal, plan2) {
+    return this.current(proposal, plan2) && proposal.decision?.status === "approved" && proposal.draft !== null && this.validDraft(plan2, proposal.draft);
+  }
+  definition(target) {
+    const definitions = this.definitions.filter(
+      (definition) => definition.supports(target)
+    );
+    if (definitions.length !== 1)
+      throw new Error("Draft target must have exactly one business owner");
+    return definitions[0];
+  }
+};
+
+// packages/application/journey/src/draft-proposal-composition.ts
+var DraftProposalComposition = class {
+  eventCopy() {
+    return new EventCopyDrafts(
+      new EventCopyTitleDraft(new EventCopyAgenda()),
+      new EventCopyDescriptionDraft(new EventCopyAgenda())
+    );
+  }
+  artwork() {
+    return new CoverArtworkDrafts(new CoverArtwork());
+  }
+  socialPosts() {
+    return new SocialPostDrafts(new SocialPostDraft());
+  }
+  policy() {
+    return new PromotionalContentPolicy([
+      this.eventCopy(),
+      this.artwork(),
+      this.socialPosts()
+    ]);
+  }
+  fingerprints() {
+    return new PromotionalContentFingerprint(
+      new ApprovalValueFingerprint(new ContentFingerprint()),
+      this.policy()
+    );
+  }
+};
+
+// packages/application/journey/src/proposals/content-plan-factory.ts
+var ContentPlanFactory = class {
+  constructor(fingerprints, timing) {
+    this.fingerprints = fingerprints;
+    this.timing = timing;
+  }
+  fingerprints;
+  timing;
+  create(target, language, facts, reminderTime) {
+    const plan2 = {
+      target,
+      language,
+      facts,
+      plannedAt: this.timing.plannedAt(
+        target.endsWith(":d7") ? "d7" : target.endsWith(":d0") ? "d0" : "announcement",
+        facts.date,
+        reminderTime,
+        facts.timeZone,
+        facts.startTime
+      )
+    };
+    return { ...plan2, sourceFingerprint: this.fingerprints.source(plan2) };
+  }
+};
+
+// packages/application/journey/src/proposals/content-proposal-transition.ts
+var ContentProposalTransition = class {
+  constructor(fingerprints) {
+    this.fingerprints = fingerprints;
+  }
+  fingerprints;
+  validate(previous, next) {
+    for (const key of [
+      "recoveryRequest",
+      "destinationBefore",
+      "id",
+      "plan",
+      "origin",
+      "guidance",
+      "createdAt",
+      "promptVersion",
+      "version"
+    ])
+      if (!this.same(previous[key], next[key]))
+        throw new Error("Content proposal identity is immutable");
+    for (const key of ["draft", "revision", "decision", "accepted"])
+      if (previous[key] !== null && !this.same(previous[key], next[key]))
+        throw new Error("Final content evidence cannot be replaced");
+    if (next.attempts.length < previous.attempts.length)
+      throw new Error("Content reservations cannot be removed");
+    for (const [index, attempt] of previous.attempts.entries()) {
+      const updated = next.attempts[index];
+      if (attempt.id !== updated?.id || attempt.phase !== "reserved" && !this.same(attempt, updated))
+        throw new Error("Content generation evidence cannot be replaced");
+    }
+  }
+  same(left, right) {
+    return this.fingerprints.digest(left) === this.fingerprints.digest(right);
+  }
+};
+
+// packages/application/journey/src/review/content-facts-projection.ts
+var ContentFactsProjection = class {
+  create(event, publication, settings, announcement) {
+    return {
+      date: event.date,
+      startTime: publication.startTime,
+      endTime: publication.endTime,
+      timeZone: event.timeZone,
+      month: settings.months[event.date.slice(0, 7)] ?? "",
+      host: event.host?.id ? publication.venues[event.host.id] ?? { name: "", city: "" } : { name: "", city: "" },
+      talks: event.agenda.map((talk, index) => ({
+        id: talk.proposal?.id ?? `agenda-${index}`,
+        title: talk.proposal?.title ?? talk.description,
+        abstract: talk.proposal?.abstract ?? "",
+        speakers: talk.speakers.map((speaker) => ({
+          id: speaker.id ?? "",
+          name: speaker.displayName
+        }))
+      })),
+      registrationUrl: event.publicationLinks.meetup ?? "",
+      aperitif: event.logistics.aperitif === "planned",
+      mentions: settings.mentions,
+      announcement
+    };
+  }
+  active(event) {
+    return event.issueState === "open" && !["cancelled", "postponed", "held"].includes(
+      event.occurrenceStatus ?? ""
+    ) && event.proposalStatus !== "stale";
+  }
+  destination(event, target) {
+    if (target === "title") return event.eventTitle;
+    if (target === "description") return event.description;
+    return null;
+  }
+};
+
+// packages/application/journey/src/event/event-copy-approval-gate.ts
+var EventCopyApprovalGate = class {
+  constructor(store, authority, projection, plans, policy, settings) {
+    this.store = store;
+    this.authority = authority;
+    this.projection = projection;
+    this.plans = plans;
+    this.policy = policy;
+    this.settings = settings;
+  }
+  store;
+  authority;
+  projection;
+  plans;
+  policy;
+  settings;
+  async blocked(event) {
+    const { proposals } = await this.store.load();
+    const managed = proposals.filter(
+      (item) => item.plan.target === "title" || item.plan.target === "description"
+    );
+    if (!managed.length) return [];
+    const settings = await this.settings();
+    const facts = this.projection.create(
+      event,
+      settings.publication,
+      settings.content,
+      null
+    );
+    const blocked = [];
+    for (const target of ["title", "description"]) {
+      const proposal = managed.filter((item) => item.plan.target === target).at(-1);
+      if (!proposal) continue;
+      const plan2 = this.plans.create(
+        target,
+        proposal.plan.language,
+        facts,
+        settings.content.reminderTime
+      );
+      if (!proposal.accepted || proposal.accepted.text !== this.projection.destination(event, target) || !this.policy.current(proposal, plan2) || !await this.authority.authorized(proposal))
+        blocked.push(target);
+    }
+    return blocked;
+  }
+};
+
+// packages/application/journey/src/assets/cover-artwork-approval-gate.ts
+var CoverArtworkApprovalGate = class {
+  constructor(store, authority, projection, plans, policy, settings) {
+    this.store = store;
+    this.authority = authority;
+    this.projection = projection;
+    this.plans = plans;
+    this.policy = policy;
+    this.settings = settings;
+  }
+  store;
+  authority;
+  projection;
+  plans;
+  policy;
+  settings;
+  async cover(event) {
+    const proposal = (await this.store.load()).proposals.filter((item) => item.plan.target === "cover").at(-1);
+    if (proposal?.accepted?.media.length !== 1) return void 0;
+    const settings = await this.settings();
+    const plan2 = this.plans.create(
+      "cover",
+      proposal.plan.language,
+      this.projection.create(
+        event,
+        settings.publication,
+        settings.content,
+        null
+      ),
+      settings.content.reminderTime
+    );
+    if (!this.policy.current(proposal, plan2) || !await this.authority.authorized(proposal))
+      return void 0;
+    return proposal.accepted.media[0];
   }
 };
 
@@ -44743,11 +45602,29 @@ var ApprovalDecisionParser = class {
     }) !== "pending")
       return { status: "pending" };
     const normalized = body.replace(/\r\n/g, "\n").replace(/- \[X\]/g, "- [x]");
+    if (record.kind === "content-review")
+      return this.content(record, normalized);
     for (const comment of this.comments) {
       for (const status of ["approved", "rejected"]) {
         if (normalized === comment.issue(record, { status })) return { status };
       }
     }
+    return { status: "pending" };
+  }
+  content(record, body) {
+    const approvals = record.content.target === "cover" ? record.content.draft.media.map((media) => ({
+      status: "approved",
+      selectedImage: media.id
+    })) : [{ status: "approved" }];
+    for (const decision of [
+      ...approvals,
+      { status: "rejected" },
+      { status: "iteration-requested" }
+    ])
+      if (this.comments.some(
+        (comment) => comment.issue(record, decision) === body
+      ))
+        return decision;
     return { status: "pending" };
   }
 };
@@ -44835,6 +45712,13 @@ var ApprovalPresenter = class {
 
 // packages/adapter/journey/github-organizer-approval/src/i18n/messages.en.ts
 var EN_MESSAGES2 = {
+  "approval.content.planned": "Planned publication: {time}. Recheck eligibility before posting.",
+  "approval.content.slot": "Image {index}: {status, select, complete {stored} reserved {outcome uncertain; no automatic retry} failed {failed} other {not requested}}.",
+  "approval.content.title": "### Review event content: {target}\n\nLanguage: {language} \xB7 Author: {origin}",
+  "approval.content.request": "Review the exact text and images above. Select exactly one choice. Approval authorizes this content; publication and sending have separate controls. Submit replacements or iteration guidance separately.\n\n{approve}\n- [{rejectMark}] Reject this content\n- [{iterateMark}] Request another iteration",
+  "approval.content.text-choice": "- [{mark}] Approve this content",
+  "approval.content.image-choice": "- [{mark}] Approve image {index, number} as the cover",
+  "approval.content.final": "{status, select, approved {\u2705 Content approved} rejected {\u274C Content rejected} iteration_requested {\u{1F504} Another iteration requested} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nSelected image: {image}\n\nThis decision is final for this revision. Changed content requires a new review.",
   "approval.meetup.details": "### Organizer confirmation: publish Meetup event\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the Meetup draft]({url}) before approving publication.",
   "approval.meetup.request": "Repository writers: select one choice. After approval, automation publishes the reviewed draft. Event changes require a new approval.\n\n- [{approveMark}] Approve publishing this Meetup event\n- [{rejectMark}] Reject publishing this Meetup event",
   "approval.meetup.final": "{status, select, approved {\u2705 **Publication approved**} rejected {\u274C **Publication rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Automation may publish this draft after rechecking its content. The issue checkbox records verified publication.} rejected {Automation will keep this event in draft.} other {}} Event changes require a new approval.",
@@ -44857,6 +45741,13 @@ var EN_MESSAGES2 = {
 
 // packages/adapter/journey/github-organizer-approval/src/i18n/messages.fr.ts
 var FR_MESSAGES2 = {
+  "approval.content.planned": "Publication pr\xE9vue : {time}. V\xE9rifiez \xE0 nouveau la validit\xE9 avant publication.",
+  "approval.content.slot": "Image {index} : {status, select, complete {enregistr\xE9e} reserved {r\xE9sultat incertain ; aucun nouvel essai automatique} failed {\xE9chec} other {non demand\xE9e}}.",
+  "approval.content.title": "### V\xE9rification du contenu : {target}\n\nLangue : {language} \xB7 Auteur : {origin}",
+  "approval.content.request": "V\xE9rifiez le texte exact et les images ci-dessus. Cochez un seul choix. L'approbation autorise ce contenu ; la publication et l'envoi ont leurs propres validations. Soumettez les remplacements ou consignes s\xE9par\xE9ment.\n\n{approve}\n- [{rejectMark}] Refuser ce contenu\n- [{iterateMark}] Demander une nouvelle proposition",
+  "approval.content.text-choice": "- [{mark}] Approuver ce contenu",
+  "approval.content.image-choice": "- [{mark}] Approuver l'image {index, number} comme couverture",
+  "approval.content.final": "{status, select, approved {\u2705 Contenu approuv\xE9} rejected {\u274C Contenu refus\xE9} iteration_requested {\u{1F504} Nouvelle proposition demand\xE9e} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\nImage s\xE9lectionn\xE9e : {image}\n\nCette d\xE9cision est d\xE9finitive pour cette version. Un contenu modifi\xE9 n\xE9cessite une nouvelle v\xE9rification.",
   "approval.meetup.details": "### Confirmation des organisateurs : publier le meetup\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[V\xE9rifiez le brouillon Meetup]({url}) avant d'approuver sa publication.",
   "approval.meetup.request": "Organisateurs avec acc\xE8s en \xE9criture : cochez un seul choix. Apr\xE8s approbation, l'automatisation publie le brouillon v\xE9rifi\xE9. Toute modification de l'\xE9v\xE9nement n\xE9cessite une nouvelle approbation.\n\n- [{approveMark}] Approuver la publication de ce meetup\n- [{rejectMark}] Refuser la publication de ce meetup",
   "approval.meetup.final": "{status, select, approved {\u2705 **Publication approuv\xE9e**} rejected {\u274C **Publication refus\xE9e**} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\n{status, select, approved {L'automatisation peut publier ce brouillon apr\xE8s avoir v\xE9rifi\xE9 son contenu. La case de l'issue indique la publication v\xE9rifi\xE9e.} rejected {L'automatisation conserve cet \xE9v\xE9nement en brouillon.} other {}} Toute modification de l'\xE9v\xE9nement n\xE9cessite une nouvelle approbation.",
@@ -44925,6 +45816,310 @@ var ApprovalRecordFactory = class {
     };
     this.collaborators.storedApprovalSchema.validate(record);
     return record;
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/content-proposal-codec.ts
+var CONTENT_STATE_MARKER = "<!-- meetup-content-proposal:v1 ";
+var ContentProposalCodec = class {
+  constructor(values, policy, fingerprints) {
+    this.values = values;
+    this.policy = policy;
+    this.fingerprints = fingerprints;
+  }
+  values;
+  policy;
+  fingerprints;
+  read(body) {
+    if (!body.startsWith(CONTENT_STATE_MARKER) || !body.endsWith(" -->"))
+      throw new Error("Invalid content proposal marker");
+    return this.parse(JSON.parse(body.slice(CONTENT_STATE_MARKER.length, -4)));
+  }
+  write(proposal) {
+    this.parse(proposal);
+    return `${CONTENT_STATE_MARKER}${JSON.stringify(proposal).replaceAll("<", "\\u003c").replaceAll(">", "\\u003e").replaceAll("&", "\\u0026")} -->`;
+  }
+  parse(value) {
+    const item = this.values.object(value, [
+      "recoveryRequest",
+      "destinationBefore",
+      "version",
+      "promptVersion",
+      "id",
+      "plan",
+      "origin",
+      "guidance",
+      "createdAt",
+      "attempts",
+      "draft",
+      "revision",
+      "decision",
+      "accepted"
+    ]);
+    if (item.version !== 1 || item.promptVersion !== "1")
+      throw new Error("Unsupported content proposal schema");
+    const id = this.values.text(item.id, 44);
+    if (!/^content-[a-f0-9-]{36}$/.test(id))
+      throw new Error("Invalid content proposal identity");
+    const recovery = this.recovery(item.recoveryRequest);
+    const proposal = {
+      ...recovery ? { recoveryRequest: recovery } : {},
+      version: 1,
+      promptVersion: "1",
+      id,
+      plan: this.plan(item.plan),
+      origin: this.origin(item.origin),
+      guidance: this.values.text(item.guidance, 2e3),
+      destinationBefore: item.destinationBefore === null ? null : this.values.text(item.destinationBefore, 12e3),
+      createdAt: this.instant(item.createdAt),
+      attempts: this.values.list(item.attempts, 4).map((attempt) => this.attempt(attempt)),
+      draft: item.draft === null ? null : this.values.draft(item.draft),
+      revision: item.revision === null ? null : this.values.text(item.revision, 64),
+      decision: item.decision === null ? null : this.decision(item.decision),
+      accepted: item.accepted === null ? null : this.values.draft(item.accepted)
+    };
+    this.validate(proposal);
+    return proposal;
+  }
+  recovery(value) {
+    if (value === void 0) return void 0;
+    const item = this.values.object(value, [
+      "id",
+      "actor",
+      "proposalId",
+      "guidance"
+    ]);
+    return {
+      id: this.values.text(item.id, 200),
+      actor: this.values.text(item.actor, 39),
+      proposalId: this.values.text(item.proposalId, 44),
+      guidance: this.values.text(item.guidance, 2e3)
+    };
+  }
+  validate(proposal) {
+    if (proposal.draft && (!this.policy.validDraft(proposal.plan, proposal.draft) || proposal.revision !== this.fingerprints.proposal(proposal, proposal.draft)))
+      throw new Error("Invalid content proposal fingerprint");
+    if (!proposal.draft && (proposal.revision || proposal.decision || proposal.accepted))
+      throw new Error("Incomplete content proposal");
+    if (proposal.accepted && proposal.decision?.status !== "approved")
+      throw new Error("Unapproved applied content");
+    this.accepted(proposal);
+  }
+  accepted(proposal) {
+    const selected = proposal.decision?.selectedImage;
+    if (proposal.plan.target === "cover" && proposal.decision?.status === "approved" && (!selected || !proposal.draft?.media.some((image) => image.id === selected)))
+      throw new Error("Approved cover selection is missing");
+    if (selected && (proposal.plan.target !== "cover" || proposal.decision?.status !== "approved"))
+      throw new Error("Unexpected cover selection");
+    if (!proposal.accepted || !proposal.draft) return;
+    const expected = selected ? {
+      text: "",
+      media: proposal.draft.media.filter((image) => image.id === selected)
+    } : proposal.draft;
+    if (this.fingerprints.proposal(proposal, expected) !== this.fingerprints.proposal(proposal, proposal.accepted))
+      throw new Error("Accepted content differs from the approved value");
+  }
+  plan(value) {
+    const item = this.values.object(value, [
+      "target",
+      "language",
+      "facts",
+      "plannedAt",
+      "sourceFingerprint"
+    ]);
+    if (!this.policy.target(item.target) || item.language !== "en" && item.language !== "fr")
+      throw new Error("Invalid content target or language");
+    const plan2 = {
+      target: item.target,
+      language: item.language,
+      facts: this.values.facts(item.facts),
+      plannedAt: item.plannedAt === null ? null : this.instant(item.plannedAt)
+    };
+    const sourceFingerprint = this.values.text(item.sourceFingerprint, 64);
+    if (this.fingerprints.source(plan2) !== sourceFingerprint)
+      throw new Error("Invalid content source fingerprint");
+    return { ...plan2, sourceFingerprint };
+  }
+  origin(value) {
+    const item = this.values.object(value, [
+      "kind",
+      "provider",
+      "model",
+      "login",
+      "submissionId"
+    ]);
+    if (item.kind === "ai") {
+      this.values.object(value, ["kind", "provider", "model"]);
+      return {
+        kind: "ai",
+        provider: this.values.text(item.provider, 100),
+        model: this.values.text(item.model, 100)
+      };
+    }
+    if (item.kind === "organizer") {
+      this.values.object(value, ["kind", "login", "submissionId"]);
+      return {
+        kind: "organizer",
+        login: this.values.text(item.login, 39),
+        submissionId: this.values.text(item.submissionId, 200)
+      };
+    }
+    throw new Error("Invalid content author");
+  }
+  attempt(value) {
+    const item = this.values.object(value, ["id", "phase", "media"]);
+    if (item.phase !== "reserved" && item.phase !== "complete" && item.phase !== "failed")
+      throw new Error("Invalid content attempt");
+    return {
+      id: this.values.text(item.id, 200),
+      phase: item.phase,
+      ...item.media === void 0 ? {} : { media: this.values.media(item.media) }
+    };
+  }
+  decision(value) {
+    const item = this.values.object(value, [
+      "status",
+      "actor",
+      "decidedAt",
+      "selectedImage"
+    ]);
+    if (item.status !== "approved" && item.status !== "rejected" && item.status !== "iteration-requested")
+      throw new Error("Invalid content decision");
+    return {
+      status: item.status,
+      actor: this.values.text(item.actor, 39),
+      decidedAt: this.instant(item.decidedAt),
+      ...item.selectedImage === void 0 ? {} : { selectedImage: this.values.text(item.selectedImage, 200) }
+    };
+  }
+  instant(value) {
+    const text = this.values.text(value, 40);
+    if (!Number.isFinite(Date.parse(text)))
+      throw new Error("Invalid content timestamp");
+    return text;
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/content-value-schema.ts
+var ContentValueSchema = class {
+  constructor(urls) {
+    this.urls = urls;
+  }
+  urls;
+  object(value, keys) {
+    if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).some((key) => !keys.includes(key)))
+      throw new Error("Invalid content object");
+    return value;
+  }
+  text(value, max) {
+    if (typeof value !== "string" || value.length > max)
+      throw new Error("Invalid content text");
+    return value;
+  }
+  list(value, max) {
+    if (!Array.isArray(value) || value.length > max)
+      throw new Error("Invalid content list");
+    return value;
+  }
+  media(value) {
+    const item = this.object(value, [
+      "source",
+      "id",
+      "url",
+      "fingerprint",
+      "description",
+      "mimeType",
+      "width",
+      "height",
+      "sourceRevision"
+    ]);
+    const id = this.text(item.id, 200), url = this.text(item.url, 2e3);
+    const description = this.text(item.description, 1e3), sourceRevision = this.text(item.sourceRevision, 200);
+    const fingerprint = this.text(item.fingerprint, 64);
+    if (!id || !description.trim() || !sourceRevision || !this.urls.valid(url) || /[<>\r\n]/.test(url) || !/^[a-f0-9]{64}$/.test(fingerprint))
+      throw new Error("Invalid content media identity");
+    if (item.mimeType !== "image/png" && item.mimeType !== "image/jpeg")
+      throw new Error("Invalid content media format");
+    if (!Number.isSafeInteger(item.width) || !Number.isSafeInteger(item.height) || Number(item.width) <= 0 || Number(item.height) <= 0 || Number(item.width) * Number(item.height) > 25e6)
+      throw new Error("Invalid content dimensions");
+    const source = item.source === void 0 ? void 0 : this.object(item.source, ["id", "revision"]);
+    return {
+      ...source ? {
+        source: {
+          id: this.text(source.id, 200),
+          revision: this.text(source.revision, 200)
+        }
+      } : {},
+      id,
+      url,
+      description,
+      sourceRevision,
+      fingerprint,
+      mimeType: item.mimeType,
+      width: Number(item.width),
+      height: Number(item.height)
+    };
+  }
+  draft(value) {
+    const item = this.object(value, ["text", "media"]);
+    return {
+      text: this.text(item.text, 12e3),
+      media: this.list(item.media, 4).map((image) => this.media(image))
+    };
+  }
+  facts(value) {
+    const item = this.object(value, [
+      "date",
+      "startTime",
+      "endTime",
+      "timeZone",
+      "month",
+      "host",
+      "talks",
+      "registrationUrl",
+      "aperitif",
+      "mentions",
+      "announcement"
+    ]);
+    const host = this.object(item.host, ["name", "city"]);
+    const registrationUrl = this.text(item.registrationUrl, 2e3);
+    if (registrationUrl && !this.urls.valid(registrationUrl))
+      throw new Error("Invalid registration URL");
+    if (typeof item.aperitif !== "boolean")
+      throw new Error("Invalid content logistics");
+    return {
+      date: this.text(item.date, 10),
+      startTime: this.text(item.startTime, 5),
+      endTime: this.text(item.endTime, 5),
+      timeZone: this.text(item.timeZone, 100),
+      month: this.text(item.month, 40),
+      host: {
+        name: this.text(host.name, 200),
+        city: this.text(host.city, 200)
+      },
+      talks: this.list(item.talks, 10).map((talk) => this.talk(talk)),
+      registrationUrl,
+      aperitif: item.aperitif,
+      mentions: this.list(item.mentions, 20).map(
+        (name) => this.text(name, 100)
+      ),
+      announcement: item.announcement === null ? null : this.media(item.announcement)
+    };
+  }
+  talk(value) {
+    const item = this.object(value, ["id", "title", "abstract", "speakers"]);
+    return {
+      id: this.text(item.id, 200),
+      title: this.text(item.title, 500),
+      abstract: this.text(item.abstract, 3e3),
+      speakers: this.list(item.speakers, 10).map((speaker) => {
+        const person = this.object(speaker, ["id", "name"]);
+        return {
+          id: this.text(person.id, 200),
+          name: this.text(person.name, 200)
+        };
+      })
+    };
   }
 };
 
@@ -45043,6 +46238,14 @@ var ApprovalRequestSchema = class {
   validate(value) {
     if (!this.collaborators.approvalSchema.object(value) || typeof value.revision !== "string" || typeof value.eventDate !== "string" || typeof value.requestedAt !== "string")
       throw new Error("Invalid approval request");
+    if (value.kind === "content-review") {
+      if (value.publication !== void 0 || value.recipientCount !== void 0 || value.details !== void 0)
+        throw new Error("Invalid content approval fields");
+      this.collaborators.contentApprovalSchema.validate(value.content);
+      return;
+    }
+    if (value.content !== void 0)
+      throw new Error("Invalid content approval kind");
     if (value.kind === "meetup-publication") {
       if (value.recipientCount !== void 0 || value.details !== void 0)
         throw new Error("Invalid publication approval fields");
@@ -45067,6 +46270,104 @@ var ApprovalSchema = class {
   }
   text(value, maximum) {
     return typeof value === "string" && value.length <= maximum && !/[\r\n\0]/.test(value);
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/content-approval-presenter.ts
+var ContentApprovalPresenter = class {
+  constructor(messages5) {
+    this.messages = messages5;
+  }
+  messages;
+  issue(record, decision) {
+    const content = record.content;
+    return [
+      this.messages.t("approval.content.title", {
+        target: content.target,
+        language: content.language,
+        origin: this.escape(content.origin)
+      }),
+      content.plannedAt ? this.messages.t("approval.content.planned", {
+        time: content.plannedAt
+      }) : "",
+      ...(content.attempts ?? []).map(
+        (status, index) => this.messages.t("approval.content.slot", {
+          index: index + 1,
+          status: status.replaceAll("-", "_")
+        })
+      ),
+      content.draft.text ? `<pre>${this.escape(content.draft.text)}</pre>` : "",
+      ...content.draft.media.map(
+        (media) => [
+          `![${this.escape(media.description)}](<${media.url}>)`,
+          `${this.escape(media.id)} \xB7 ${this.escape(media.sourceRevision)}${media.source ? ` \xB7 ${this.escape(media.source.id)} \xB7 ${this.escape(media.source.revision)}` : ""} \xB7 ${media.width}\xD7${media.height} \xB7 ${media.mimeType} \xB7 ${media.fingerprint}`
+        ].join("\n\n")
+      ),
+      record.decision ? this.messages.t("approval.content.final", {
+        status: record.decision.status.replaceAll("-", "_"),
+        actor: record.decision.actor,
+        decidedAt: record.decision.decidedAt,
+        image: record.decision.selectedImage ?? ""
+      }) : this.controls(record, decision)
+    ].filter(Boolean).join("\n\n");
+  }
+  controls(record, decision) {
+    const images = record.content.target === "cover" ? record.content.draft.media : [];
+    const approve = images.length ? images.map(
+      (image, index) => this.messages.t("approval.content.image-choice", {
+        mark: decision.status === "approved" && decision.selectedImage === image.id ? "x" : " ",
+        index: index + 1
+      })
+    ).join("\n") : this.messages.t("approval.content.text-choice", {
+      mark: decision.status === "approved" ? "x" : " "
+    });
+    return this.messages.t("approval.content.request", {
+      approve,
+      rejectMark: decision.status === "rejected" ? "x" : " ",
+      iterateMark: decision.status === "iteration-requested" ? "x" : " "
+    });
+  }
+  escape(value) {
+    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("[", "&#91;").replaceAll("]", "&#93;");
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/content-approval-schema.ts
+var ContentApprovalSchema = class {
+  constructor(schema, policy, values) {
+    this.schema = schema;
+    this.policy = policy;
+    this.values = values;
+  }
+  schema;
+  policy;
+  values;
+  validate(value) {
+    if (!this.schema.object(value) || typeof value.key !== "string" || !/^content-[a-f0-9-]{36}$/.test(value.key) || !this.policy.target(value.target) || !["en", "fr"].includes(String(value.language)) || typeof value.origin !== "string" || !value.origin || value.origin.length > 200)
+      throw new Error("Invalid content approval");
+    this.values.object(value, [
+      "key",
+      "target",
+      "language",
+      "origin",
+      "draft",
+      "plannedAt",
+      "attempts"
+    ]);
+    const draft = this.values.draft(value.draft);
+    if (value.target === "cover" && (!draft.media.length || draft.text))
+      throw new Error("Invalid cover preview");
+    if (value.target !== "cover" && !draft.text.trim())
+      throw new Error("Missing content preview");
+    this.schedule(value);
+  }
+  schedule(value) {
+    if (value.plannedAt !== void 0 && (typeof value.plannedAt !== "string" || !Number.isFinite(Date.parse(value.plannedAt))))
+      throw new Error("Invalid planned publication time");
+    if (value.attempts !== void 0 && (!Array.isArray(value.attempts) || value.attempts.length !== 4 || value.attempts.some(
+      (phase) => !["not-started", "reserved", "complete", "failed"].includes(phase)
+    )))
+      throw new Error("Invalid cover attempt summary");
   }
 };
 
@@ -45170,12 +46471,14 @@ var FinalizeApprovalDecision = class {
       record.decision = {
         status: decision.status,
         actor: decision.actor,
-        decidedAt: decision.decidedAt
+        decidedAt: decision.decidedAt,
+        ...decision.selectedImage ? { selectedImage: decision.selectedImage } : {}
       };
     }
     await this.repository.save(record, state);
     return {
       status: decision.status,
+      ...record.kind === "content-review" ? decision : {},
       notificationFailed: await this.notifications.react(record, comment.id)
     };
   }
@@ -45234,7 +46537,7 @@ var GithubApprovalAttentionSource = class {
   finalizer;
   async synchronizeApprovals() {
     const result = [];
-    for (const state of await this.repository.states()) {
+    for (const state of await this.repository.activeStates()) {
       if (state.record.recipientCount === 0) continue;
       const decision = await this.finalizer.execute(state);
       result.push({
@@ -45390,11 +46693,22 @@ var GithubApprovalRepository = class {
         continue;
       const record = await this.trusted.read(comment);
       if (!record) continue;
-      if (states.some((state) => state.record.kind === record.kind))
+      if (states.some(
+        (state) => state.record.kind === record.kind && (record.kind !== "content-review" || state.record.content?.key === record.content.key)
+      ))
         throw new Error("Ambiguous approval state");
       states.push({ record, comment });
     }
     return states;
+  }
+  async activeStates() {
+    const active = /* @__PURE__ */ new Map();
+    for (const state of await this.states()) {
+      const record = state.record;
+      const key = record.kind === "content-review" ? `content:${record.content.target}` : record.kind;
+      active.set(key, state);
+    }
+    return [...active.values()];
   }
   async save(record, existing) {
     this.collaborators.storedApprovalSchema.validate(record);
@@ -45530,7 +46844,7 @@ var GithubOrganizerApproval = class {
     this.collaborators.approvalRequestSchema.validate(input);
     this.collaborators.approvalRequestPolicy.validate(input);
     const existing = (await this.repository.states()).find(
-      ({ record: record2 }) => record2.kind === input.kind
+      ({ record: record2 }) => record2.kind === input.kind && (input.kind !== "content-review" || record2.content?.key === input.content.key)
     );
     if (existing && this.collaborators.approvalRequestPolicy.matches(
       existing.record,
@@ -45538,7 +46852,7 @@ var GithubOrganizerApproval = class {
       existing.record.decision?.status ?? "pending"
     )) {
       const result = await this.finalizer.execute(existing);
-      if (result.status === "approved" && !await this.permissions.canApprove(
+      if ((result.status === "approved" || result.status === "iteration-requested") && !await this.permissions.canApprove(
         existing.record.decision?.actor ?? ""
       ))
         throw new Error(
@@ -45571,7 +46885,7 @@ var GithubOrganizerApproval = class {
   }
   async synchronize() {
     let notificationFailed = false;
-    for (const state of await this.repository.states()) {
+    for (const state of await this.repository.activeStates()) {
       const result = await this.finalizer.execute(state);
       notificationFailed = result.notificationFailed || notificationFailed;
     }
@@ -45739,6 +47053,11 @@ var StoredApprovalSchema = class {
       throw new Error("Invalid approval state");
     if (state.decision !== void 0) {
       this.decision(state.decision);
+      const decision = state.decision;
+      if (value.kind !== "content-review" && (decision.status === "iteration-requested" || decision.selectedImage !== void 0))
+        throw new Error("Invalid content decision kind");
+      if (value.kind === "content-review")
+        this.contentDecision(value, decision);
     }
     if (state.notificationMessage !== void 0)
       this.notificationMessage(state.notificationMessage);
@@ -45746,8 +47065,18 @@ var StoredApprovalSchema = class {
       throw new Error("Invalid approval reaction state");
   }
   decision(value) {
-    if (!this.collaborators.approvalSchema.object(value) || value.status !== "approved" && value.status !== "rejected" || typeof value.actor !== "string" || !/^[A-Za-z0-9-]{1,39}$/.test(value.actor) || typeof value.decidedAt !== "string" || !Number.isFinite(Date.parse(value.decidedAt)))
+    if (!this.collaborators.approvalSchema.object(value) || !["approved", "rejected", "iteration-requested"].includes(
+      String(value.status)
+    ) || typeof value.actor !== "string" || !/^[A-Za-z0-9-]{1,39}$/.test(value.actor) || typeof value.decidedAt !== "string" || !Number.isFinite(Date.parse(value.decidedAt)))
       throw new Error("Invalid final approval decision");
+  }
+  contentDecision(value, decision) {
+    const selected = decision.selectedImage;
+    if (value.content.target === "cover" && decision.status === "approved") {
+      if (!value.content.draft.media.some((media) => media.id === selected))
+        throw new Error("Missing approved cover identity");
+    } else if (selected !== void 0)
+      throw new Error("Unexpected cover identity");
   }
   notificationMessage(value) {
     if (!this.collaborators.approvalSchema.object(value) || typeof value.destination !== "string" || !value.destination.trim() || typeof value.messageId !== "string" || !value.messageId.trim())
@@ -45821,8 +47150,12 @@ var GithubOrganizerApprovalComposition = class {
     return new ApprovalPresenter(this.approvalCommentCodec(), {
       "email-introduction": email,
       "email-thanks": email,
-      "meetup-publication": this.meetupApprovalPresenter(messages5)
+      "meetup-publication": this.meetupApprovalPresenter(messages5),
+      "content-review": this.contentApprovalPresenter(messages5)
     });
+  }
+  contentApprovalPresenter(messages5) {
+    return new ContentApprovalPresenter(messages5);
   }
   approvalPresenterFactory() {
     return new ApprovalPresenterFactory({
@@ -45844,6 +47177,11 @@ var GithubOrganizerApprovalComposition = class {
   approvalRequestSchema() {
     return new ApprovalRequestSchema({
       approvalSchema: this.approvalSchema(),
+      contentApprovalSchema: new ContentApprovalSchema(
+        this.approvalSchema(),
+        new DraftProposalComposition().policy(),
+        new ContentValueSchema(new PublicAssetUrl())
+      ),
       meetupApprovalDetailsSchema: this.meetupApprovalDetailsSchema(),
       emailApprovalDetailsSchema: this.emailApprovalDetailsSchema()
     });
@@ -45936,6 +47274,259 @@ var GithubOrganizerApprovalComposition = class {
     return new TrustedApprovalState(
       { approvalCommentCodec: this.approvalCommentCodec() },
       ...args
+    );
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/github-content-authority.ts
+var GithubContentAuthority = class {
+  constructor(approvals, client) {
+    this.approvals = approvals;
+    this.client = client;
+  }
+  approvals;
+  client;
+  async authorized(proposal) {
+    const record = (await this.approvals.states()).find(
+      (state) => state.record.kind === "content-review" && state.record.content.key === proposal.id
+    )?.record;
+    return record?.kind === "content-review" && record.revision === proposal.revision && record.decision?.status === "approved" && record.decision.actor === proposal.decision?.actor && record.decision.decidedAt === proposal.decision?.decidedAt && record.decision.selectedImage === proposal.decision?.selectedImage && await this.client.canApprove(record.decision.actor);
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/github-content-proposal-store.ts
+var GithubContentProposalStore = class {
+  constructor(client, author, codec, fingerprints, transitions) {
+    this.client = client;
+    this.author = author;
+    this.codec = codec;
+    this.fingerprints = fingerprints;
+    this.transitions = transitions;
+  }
+  client;
+  author;
+  codec;
+  fingerprints;
+  transitions;
+  async load() {
+    const records = await this.records();
+    const proposals = records.map((record) => record.proposal);
+    return { revision: this.fingerprints.digest(proposals), proposals };
+  }
+  async save(previous, proposals) {
+    const records = await this.records();
+    if (this.fingerprints.digest(records.map((record) => record.proposal)) !== previous.revision)
+      throw new Error("Content proposals changed before persistence");
+    if (records.some(
+      (record) => !proposals.some((proposal) => proposal.id === record.proposal.id)
+    ))
+      throw new Error("Content proposal history cannot be removed");
+    for (const proposal of proposals) {
+      const existing = records.find(
+        (record) => record.proposal.id === proposal.id
+      );
+      const body = this.codec.write(proposal);
+      if (existing) {
+        this.transitions.validate(existing.proposal, proposal);
+        await this.client.replace(
+          existing.comment.id,
+          existing.comment.body ?? "",
+          body
+        );
+      } else await this.client.create(body);
+    }
+    const saved = await this.load();
+    if (proposals.some(
+      (proposal) => this.fingerprints.digest(
+        saved.proposals.find((item) => item.id === proposal.id)
+      ) !== this.fingerprints.digest(proposal)
+    ))
+      throw new Error("Content persistence readback is uncertain");
+    return saved;
+  }
+  async records() {
+    const result = [];
+    for (const comment of await this.client.list()) {
+      if (comment.user?.login.toLowerCase() !== this.author.toLowerCase() || comment.user.type !== "Bot")
+        continue;
+      const edit = await this.client.edit(comment);
+      if (edit.editor && (edit.editor.__typename !== "Bot" || edit.editor.login.toLowerCase().replace(/\[bot\]$/, "") !== this.author.toLowerCase().replace(/\[bot\]$/, ""))) {
+        await this.requireUnrelated(comment);
+        continue;
+      }
+      if (!edit.editor && edit.lastEditedAt !== null)
+        throw new Error("Content proposal editor is unavailable");
+      if (!edit.body.startsWith(CONTENT_STATE_MARKER)) continue;
+      const proposal = this.codec.read(edit.body);
+      if (result.some((record) => record.proposal.id === proposal.id))
+        throw new Error("Ambiguous content proposal state");
+      result.push({ comment, proposal });
+    }
+    return result;
+  }
+  async requireUnrelated(comment) {
+    for (const edit of await this.client.history(comment)) {
+      if (edit.deletedAt) throw new Error("Content state history was deleted");
+      if (edit.editor?.__typename !== "Bot" || edit.editor.login.toLowerCase().replace(/\[bot\]$/, "") !== this.author.toLowerCase().replace(/\[bot\]$/, ""))
+        continue;
+      if (edit.diff === null || edit.diff.startsWith(CONTENT_STATE_MARKER))
+        throw new Error("Content proposal state was edited outside automation");
+      return;
+    }
+    throw new Error("Content proposal history could not be verified");
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/github-content-recoveries.ts
+var GithubContentRecoveries = class {
+  constructor(client, values, fingerprints) {
+    this.client = client;
+    this.values = values;
+    this.fingerprints = fingerprints;
+  }
+  client;
+  values;
+  fingerprints;
+  async read() {
+    const requests = [];
+    const marker = "<!-- meetup-content-recovery:v1 -->";
+    for (const comment of await this.client.list()) {
+      if (!comment.body?.startsWith(marker) || comment.user?.type !== "User")
+        continue;
+      const edit = await this.client.edit(comment);
+      const actor = edit.editor ?? (edit.lastEditedAt === null ? { login: comment.user.login, __typename: "User" } : null);
+      if (actor?.__typename !== "User" || actor.login === "ghost" || !await this.client.canApprove(actor.login))
+        continue;
+      if (edit.body.length > 3e3)
+        throw new Error("Content recovery request exceeds limit");
+      const item = this.values.object(
+        JSON.parse(edit.body.slice(marker.length)),
+        ["proposalId", "guidance"]
+      );
+      const proposalId = this.values.text(item.proposalId, 44);
+      if (!/^content-[a-f0-9-]{36}$/.test(proposalId))
+        throw new Error("Invalid recovery proposal identity");
+      requests.push({
+        id: `${comment.id}:${this.fingerprints.digest(edit.body)}`,
+        actor: actor.login,
+        proposalId,
+        guidance: this.values.text(item.guidance, 2e3)
+      });
+    }
+    return requests;
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/github-content-submissions.ts
+var CONTENT_SUBMISSION_MARKER = "<!-- meetup-content-submission:v1 -->";
+var GithubContentSubmissions = class {
+  constructor(client, values, policy, fingerprints, urls) {
+    this.client = client;
+    this.values = values;
+    this.policy = policy;
+    this.fingerprints = fingerprints;
+    this.urls = urls;
+  }
+  client;
+  values;
+  policy;
+  fingerprints;
+  urls;
+  async read() {
+    const result = [];
+    for (const comment of await this.client.list()) {
+      if (!comment.body?.startsWith(CONTENT_SUBMISSION_MARKER) || comment.user?.type !== "User")
+        continue;
+      const edit = await this.client.edit(comment);
+      const actor = edit.editor ?? (edit.lastEditedAt === null ? { login: comment.user.login, __typename: "User" } : null);
+      if (actor?.__typename !== "User" || actor.login === "ghost" || !await this.client.canApprove(actor.login))
+        continue;
+      if (edit.body.length > 2e4)
+        throw new Error("Content submission limit exceeded");
+      const parsed = this.parse(
+        JSON.parse(edit.body.slice(CONTENT_SUBMISSION_MARKER.length))
+      );
+      result.push({
+        ...parsed,
+        actor: actor.login,
+        id: `${comment.id}:${this.fingerprints.digest({ body: edit.body, actor: actor.login })}`
+      });
+    }
+    return result;
+  }
+  async verify(submission) {
+    return (await this.read()).some(
+      (item) => item.id === submission.id && item.actor === submission.actor
+    );
+  }
+  parse(value) {
+    const item = this.values.object(value, [
+      "target",
+      "language",
+      "text",
+      "image"
+    ]);
+    if (!this.policy.target(item.target) || item.language !== "en" && item.language !== "fr")
+      throw new Error("Invalid content submission target or language");
+    let image = null;
+    if (item.image !== null) {
+      const input = this.values.object(item.image, ["url", "description"]);
+      const url = this.values.text(input.url, 2e3), description = this.values.text(input.description, 1e3);
+      if (!this.urls.valid(url) || !description.trim())
+        throw new Error("Invalid submitted image");
+      image = { url, description };
+    }
+    return {
+      target: item.target,
+      language: item.language,
+      text: this.values.text(item.text, 12e3),
+      image
+    };
+  }
+};
+
+// packages/adapter/journey/github-organizer-approval/src/content-store-composition.ts
+var GithubContentStoreComposition = class {
+  recoveries(client) {
+    return new GithubContentRecoveries(
+      client,
+      new ContentValueSchema(new PublicAssetUrl()),
+      new DraftProposalComposition().fingerprints()
+    );
+  }
+  authority(client, author, presenter) {
+    const adapter = new GithubOrganizerApprovalComposition();
+    return new GithubContentAuthority(
+      adapter.githubApprovalRepository(
+        client,
+        adapter.trustedApprovalState(client, author),
+        author,
+        presenter
+      ),
+      client
+    );
+  }
+  store(client, author) {
+    const fingerprints = new DraftProposalComposition().fingerprints();
+    return new GithubContentProposalStore(
+      client,
+      author,
+      new ContentProposalCodec(
+        new ContentValueSchema(new PublicAssetUrl()),
+        new DraftProposalComposition().policy(),
+        fingerprints
+      ),
+      fingerprints,
+      new ContentProposalTransition(fingerprints)
+    );
+  }
+  submissions(client) {
+    return new GithubContentSubmissions(
+      client,
+      new ContentValueSchema(new PublicAssetUrl()),
+      new DraftProposalComposition().policy(),
+      new DraftProposalComposition().fingerprints(),
+      new PublicAssetUrl()
     );
   }
 };
@@ -46673,12 +48264,14 @@ var SlackAttentionMessages = class extends MessageLocalizer {
 
 // packages/adapter/communication/slack-notification-gateway/src/i18n/messages.en.ts
 var EN_MESSAGES3 = {
+  "request.content": "Content review needed for {date}: {target}. Review and approve, reject, or request another iteration: {url}",
   "request.introduction": "Introduction emails \xB7 {date} \xB7 Up to {count, number} recipients\nApprove or reject: {url}",
   "request.publication": "Meetup publication \xB7 {date}\nReview the draft and approve or reject publication: {url}"
 };
 
 // packages/adapter/communication/slack-notification-gateway/src/i18n/messages.fr.ts
 var FR_MESSAGES3 = {
+  "request.content": "Contenu \xE0 v\xE9rifier pour le {date} : {target}. Approuvez, refusez ou demandez une nouvelle proposition : {url}",
   "request.introduction": "E-mails d'introduction \xB7 {date} \xB7 Au maximum {count, number} destinataires\nApprouver ou refuser : {url}",
   "request.publication": "Publication Meetup \xB7 {date}\nV\xE9rifiez le brouillon et approuvez ou refusez sa publication : {url}"
 };
@@ -46830,7 +48423,7 @@ var SlackApprovalNotification = class {
     const { result, payload } = await this.client.post("reactions.add", {
       channel: message.destination,
       timestamp: message.messageId,
-      name: decision === "approved" ? "white_check_mark" : "x"
+      name: decision === "approved" ? "white_check_mark" : decision === "iteration-requested" ? "arrows_counterclockwise" : "x"
     });
     return result.outcome === "accepted" || payload?.error === "already_reacted";
   }
@@ -47041,6 +48634,21 @@ var SlackMeetupApprovalPresenter = class {
   }
 };
 
+// packages/adapter/communication/slack-notification-gateway/src/slack-content-approval-presenter.ts
+var SlackContentApprovalPresenter = class {
+  constructor(messages5) {
+    this.messages = messages5;
+  }
+  messages;
+  render(request2) {
+    return this.messages.t("request.content", {
+      date: request2.eventDate,
+      target: request2.target,
+      url: request2.approvalUrl
+    });
+  }
+};
+
 // packages/adapter/communication/slack-notification-gateway/src/slack-message-reference.ts
 var SlackMessageReference = class {
   valid(message) {
@@ -47078,7 +48686,8 @@ var SlackNotificationGatewayComposition = class {
     const messages5 = this.slackApprovalMessages(locale);
     return new SlackApprovalPresenter({
       "email-introduction": new SlackEmailApprovalPresenter(messages5),
-      "meetup-publication": new SlackMeetupApprovalPresenter(messages5)
+      "meetup-publication": new SlackMeetupApprovalPresenter(messages5),
+      "content-review": new SlackContentApprovalPresenter(messages5)
     });
   }
   slackAttentionMessages(...args) {
@@ -49568,6 +51177,46 @@ ${messages5.t("comment.resolved")}`;
 // packages/adapter/event/github-event-comment-repository/src/stage-diagnostic-guidance.ts
 var STAGE_GUIDANCE = [
   [
+    "publication.content.prerequisites",
+    ["Slides & Content", "comment.guidance.content.review"]
+  ],
+  [
+    "publication.content.pending",
+    ["Slides & Content", "comment.guidance.content.review"]
+  ],
+  [
+    "publication.content.rejected",
+    ["Slides & Content", "comment.guidance.content.review"]
+  ],
+  [
+    "publication.content.iteration-requested",
+    ["Slides & Content", "comment.guidance.content.review"]
+  ],
+  [
+    "publication.content.recovery",
+    ["Slides & Content", "comment.guidance.content.review"]
+  ],
+  [
+    "publication.content.stale",
+    ["Slides & Content", "comment.guidance.content.review"]
+  ],
+  [
+    "publication.content.title-review",
+    ["Slides & Content", "comment.guidance.content.review"]
+  ],
+  [
+    "publication.content.description-review",
+    ["Slides & Content", "comment.guidance.content.review"]
+  ],
+  [
+    "publication.meetup.content-review",
+    ["Slides & Content", "comment.guidance.content.review"]
+  ],
+  [
+    "communication.content-review",
+    ["Slides & Content", "comment.guidance.content.review"]
+  ],
+  [
     "publication.assets.pdf.source",
     ["Slides & Content", "comment.guidance.pdf.source"]
   ],
@@ -50343,6 +51992,7 @@ ${this.messages.t("comment.duplicate")}`
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/messages.en.ts
 var EN_MESSAGES4 = {
+  "comment.guidance.content.review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
   "comment.guidance.proposals.invalid-selection": "Enter distinct proposal numbers, one per line, from their Conference Hall URLs.",
   "comment.guidance.proposals.invalid": "Check the Conference Hall proposal selection and export format.",
   "comment.guidance.proposals.unavailable": "Conference Hall is unavailable. Check the CFP slug and API key, then retry.",
@@ -50412,6 +52062,7 @@ var EN_MESSAGES4 = {
 
 // packages/adapter/event/github-event-comment-repository/src/i18n/messages.fr.ts
 var FR_MESSAGES4 = {
+  "comment.guidance.content.review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
   "comment.guidance.proposals.invalid-selection": "Saisissez les num\xE9ros des URL Conference Hall, un par ligne, sans doublons.",
   "comment.guidance.proposals.invalid": "V\xE9rifiez la s\xE9lection des propositions et le format de l'export Conference Hall.",
   "comment.guidance.proposals.unavailable": "Conference Hall est indisponible. V\xE9rifiez le slug du CFP et la cl\xE9 API, puis r\xE9essayez.",
@@ -52535,6 +54186,7 @@ var AttentionRecord = class {
         "assets",
         "feedback",
         "communications",
+        "content",
         "approvals",
         "delivery"
       ]),
@@ -53147,6 +54799,7 @@ var messages3 = {
   "task.event": "event validation",
   "task.assets": "assets",
   "task.feedback": "feedback",
+  "task.content": "content",
   "task.communications": "communications",
   "task.unknown": "review the issue"
 };
@@ -53191,6 +54844,7 @@ var messages4 = {
   "task.event": "validation du meetup",
   "task.assets": "ressources",
   "task.feedback": "\xE9valuations",
+  "task.content": "contenu",
   "task.communications": "communications",
   "task.unknown": "consulter le ticket"
 };
@@ -66697,7 +68351,8 @@ var AttentionStageInput = class {
       event: reports[0][1],
       assets: reports[1][1],
       feedback: reports[2][1],
-      communications: reports[3][1]
+      communications: reports[3][1],
+      content: reports[4][1]
     };
   }
   group(value) {
@@ -67077,25 +68732,180 @@ var RuntimeInputComposition = class _RuntimeInputComposition {
   }
 };
 
-// packages/runtime/github-actions/src/assets/asset-date-formatter.ts
-var AssetDateFormatter = class {
+// packages/presentation/templating/src/template-error.ts
+var TemplateError = class extends Error {
+  constructor(code) {
+    super(`Invalid template ${code}`);
+    this.code = code;
+    this.name = "TemplateError";
+  }
+  code;
+};
+
+// packages/presentation/templating/src/date-template-formatter.ts
+var DateTemplateFormatter = class {
   constructor(locale) {
     this.locale = locale;
   }
   locale;
+  format(date, pattern) {
+    const instant = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
+    if (!/^\d{4}-\d{2}-\d{2}$/u.test(date) || Number.isNaN(instant.valueOf()) || instant.toISOString().slice(0, 10) !== date)
+      throw new TemplateError("date");
+    if (pattern === "long")
+      return this.localized(instant, { dateStyle: "long" });
+    if (pattern === "weekday")
+      return this.localized(instant, { dateStyle: "full" });
+    if (pattern === "month") return this.localized(instant, { month: "long" });
+    const tokens = pattern.match(/Y+|M+|D+|d+|[ ./_-]+/gu) ?? [];
+    if (tokens.join("") !== pattern || !tokens.some((token) => /^[YMDd]/u.test(token)))
+      throw new TemplateError("format");
+    return tokens.map((token) => this.token(token, date, instant)).join("");
+  }
+  token(token, date, instant) {
+    switch (token) {
+      case "YYYY":
+        return date.slice(0, 4);
+      case "YY":
+        return date.slice(2, 4);
+      case "MM":
+        return date.slice(5, 7);
+      case "M":
+        return String(Number(date.slice(5, 7)));
+      case "DD":
+        return date.slice(8, 10);
+      case "D":
+        return String(Number(date.slice(8, 10)));
+      case "MMM":
+        return this.localized(instant, { month: "short" });
+      case "MMMM":
+        return this.localized(instant, { month: "long" });
+      case "ddd":
+        return this.localized(instant, { weekday: "short" });
+      case "dddd":
+        return this.localized(instant, { weekday: "long" });
+      default:
+        if (/^[ ./_-]+$/u.test(token)) return token;
+        throw new TemplateError("format");
+    }
+  }
+  localized(instant, options) {
+    return new Intl.DateTimeFormat(this.locale, {
+      ...options,
+      timeZone: "UTC",
+      calendar: "gregory"
+    }).format(instant);
+  }
+};
+
+// packages/presentation/templating/src/template-expression-parser.ts
+var TemplateExpressionParser = class {
+  parse(body, syntax) {
+    const match = syntax === "brackets" ? /^([A-Z][A-Z0-9]*)_([A-Z][A-Z0-9_]*)(?::([^{}[\]]+))?$/u.exec(body) : /^([a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*)(?::([^{}[\]]+))?$/u.exec(
+      body
+    );
+    if (!match) throw new TemplateError("syntax");
+    const reference = syntax === "brackets" ? `${match[1]}.${match[2]}`.toLowerCase() : match[1];
+    const argument = match[syntax === "brackets" ? 3 : 2];
+    if (argument !== void 0 && !argument.trim())
+      throw new TemplateError("syntax");
+    const separator = reference.indexOf(".");
+    return {
+      entity: separator < 0 ? "" : reference.slice(0, separator),
+      property: separator < 0 ? reference : reference.slice(separator + 1),
+      ...argument !== void 0 ? { argument } : {}
+    };
+  }
+};
+
+// packages/presentation/templating/src/template-parser.ts
+var TemplateParser = class {
+  constructor(expressions) {
+    this.expressions = expressions;
+  }
+  expressions;
+  contains(text) {
+    return /\{\{|\}\}|\[[A-Za-z0-9_]*[_:]/u.test(text);
+  }
+  parse(text) {
+    const result = [];
+    const delimiters = /\{\{|\}\}|\[[A-Za-z0-9_]*[_:]/gu;
+    for (let match = delimiters.exec(text); match; match = delimiters.exec(text)) {
+      const start = match.index;
+      if (match[0] === "}}") throw new TemplateError("syntax");
+      const brackets = match[0].startsWith("[");
+      const open2 = brackets ? 1 : 2;
+      const close = brackets ? "]" : "}}";
+      const end = text.indexOf(close, start + open2);
+      if (end < 0) throw new TemplateError("syntax");
+      const expression = this.expressions.parse(
+        text.slice(start + open2, end),
+        brackets ? "brackets" : "braces"
+      );
+      const path = expression.entity ? `${expression.entity}.${expression.property}` : expression.property;
+      result.push({
+        ...expression,
+        reference: path + (expression.argument === void 0 ? "" : `:${expression.argument}`),
+        start,
+        end: end + close.length
+      });
+      delimiters.lastIndex = end + close.length;
+    }
+    return result;
+  }
+};
+
+// packages/presentation/templating/src/template-renderer.ts
+var TemplateRenderer = class {
+  constructor(parser, dates) {
+    this.parser = parser;
+    this.dates = dates;
+  }
+  parser;
+  dates;
+  render(template, resolve4) {
+    let output = "";
+    let offset = 0;
+    for (const expression of this.parser.parse(template)) {
+      output += template.slice(offset, expression.start) + this.value(resolve4(expression));
+      offset = expression.end;
+    }
+    return output + template.slice(offset);
+  }
+  value(value) {
+    return value.kind === "text" ? value.value : this.dates.format(value.value, value.format);
+  }
+};
+
+// packages/presentation/templating/src/dependency-composition.ts
+var TemplatingComposition = class {
+  parser() {
+    return new TemplateParser(new TemplateExpressionParser());
+  }
+  dates(locale) {
+    return new DateTemplateFormatter(locale);
+  }
+  renderer(locale) {
+    return new TemplateRenderer(this.parser(), this.dates(locale));
+  }
+};
+
+// packages/runtime/github-actions/src/assets/asset-date-formatter.ts
+var AssetDateFormatter = class {
+  constructor(dates, locale) {
+    this.dates = dates;
+    this.locale = locale;
+  }
+  dates;
+  locale;
   format(date, timeZone, format = "long") {
-    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return void 0;
+    if (!date) return void 0;
     try {
       new Intl.DateTimeFormat(this.locale, { timeZone });
-      const instant = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
-      if (instant.toISOString().slice(0, 10) !== date) return void 0;
-      if (format === "numeric")
-        return `${date.slice(8, 10)}/${date.slice(5, 7)}/${date.slice(0, 4)}`;
-      const options = format === "month" ? { month: "long" } : { dateStyle: format === "weekday" ? "full" : "long" };
-      return new Intl.DateTimeFormat(this.locale, {
-        ...options,
-        timeZone: "UTC"
-      }).format(instant);
+      return this.dates.format(
+        date,
+        format === "numeric" ? "DD/MM/YYYY" : format
+      );
     } catch {
       return void 0;
     }
@@ -67133,6 +68943,10 @@ var AssetRenderPresenterImpl = class {
   format(input) {
     const { date } = this.collaborators;
     return {
+      dates: {
+        "event.date": input.date,
+        "next_event.date": input.nextEvent?.date
+      },
       text: {
         "event.title": input.title,
         "event.date": date.format(input.date, input.timeZone),
@@ -67267,6 +69081,23 @@ var DIAGNOSTICS_REFERENTIAL_FR = {
 
 // packages/runtime/github-actions/src/i18n/messages.en.ts
 var EN_MESSAGES7 = {
+  "action.event.generate-copy": "Generate event copy",
+  "action.assets.generate-cover": "Generate cover artwork",
+  "action.communication.generate-slack-post": "Generate Slack post",
+  "action.communication.generate-linkedin-post": "Generate LinkedIn post",
+  "action.organizer.review-drafts": "Review drafts",
+  "diagnostic.publication.content.prerequisites": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "diagnostic.publication.content.pending": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "diagnostic.publication.content.rejected": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "diagnostic.publication.content.iteration-requested": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "diagnostic.publication.content.recovery": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "diagnostic.publication.content.stale": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "diagnostic.publication.content.title-review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "diagnostic.publication.content.description-review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "diagnostic.publication.meetup.content-review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "diagnostic.communication.content-review": "Review the current content request, supply missing public facts, or submit replacement content. Changed content needs fresh approval.",
+  "report.content.generated": "Content generation evaluated.",
+  "report.content.reviewed": "Content reviews reconciled.",
   "action.assets.reconcile-slides-pdf": "Reconcile slides PDF",
   "action.feedback.reconcile-short-link": "Reconcile shared feedback link",
   "action.organizer.reconcile-checklist": "Reconcile organizer checklist",
@@ -67377,6 +69208,23 @@ var EN_MESSAGES7 = {
 
 // packages/runtime/github-actions/src/i18n/messages.fr.ts
 var FR_MESSAGES7 = {
+  "action.event.generate-copy": "G\xE9n\xE9rer le titre ou la description",
+  "action.assets.generate-cover": "G\xE9n\xE9rer les illustrations",
+  "action.communication.generate-slack-post": "G\xE9n\xE9rer le message Slack",
+  "action.communication.generate-linkedin-post": "G\xE9n\xE9rer la publication LinkedIn",
+  "action.organizer.review-drafts": "V\xE9rifier les propositions",
+  "diagnostic.publication.content.prerequisites": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "diagnostic.publication.content.pending": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "diagnostic.publication.content.rejected": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "diagnostic.publication.content.iteration-requested": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "diagnostic.publication.content.recovery": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "diagnostic.publication.content.stale": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "diagnostic.publication.content.title-review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "diagnostic.publication.content.description-review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "diagnostic.publication.meetup.content-review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "diagnostic.communication.content-review": "V\xE9rifiez la proposition de contenu, compl\xE9tez les faits publics ou proposez un remplacement. Un contenu modifi\xE9 n\xE9cessite une nouvelle validation.",
+  "report.content.generated": "G\xE9n\xE9ration du contenu \xE9valu\xE9e.",
+  "report.content.reviewed": "Validations du contenu synchronis\xE9es.",
   "action.assets.reconcile-slides-pdf": "Mettre \xE0 jour le PDF des slides",
   "action.feedback.reconcile-short-link": "Mettre \xE0 jour le lien de feedback partag\xE9",
   "action.organizer.reconcile-checklist": "Mettre \xE0 jour la checklist organisateur",
@@ -67651,7 +69499,10 @@ var RuntimePresentationComposition = class _RuntimePresentationComposition {
     container.bind(
       RUNTIME_FACTORIES.assetDateFormatter
     ).toResolvedValue(
-      () => (...args) => new AssetDateFormatter(...args)
+      () => (...args) => new AssetDateFormatter(
+        new TemplatingComposition().dates(args[0]),
+        ...args
+      )
     );
     container.bind(
       RUNTIME_FACTORIES.assetRenderPresenter
@@ -67951,6 +69802,124 @@ var EventComposition = class _EventComposition {
   }
 };
 
+// packages/runtime/github-actions/src/content-configuration.ts
+import { readFile as readFile6 } from "node:fs/promises";
+import { join as join4 } from "node:path";
+var ContentConfiguration = class {
+  constructor(input, urls) {
+    this.input = input;
+    this.urls = urls;
+  }
+  input;
+  urls;
+  async load(root) {
+    const text = await readFile6(
+      join4(root, ".github/meetup-content.json"),
+      "utf8"
+    );
+    if (Buffer.byteLength(text) > 1e5)
+      throw new Error("Content configuration exceeds limit");
+    return this.parse(JSON.parse(text));
+  }
+  parse(value) {
+    if (!this.input.isObject(value) || value.version !== 1 || Object.keys(value).some(
+      (key) => ![
+        "version",
+        "months",
+        "mentions",
+        "reminderTime",
+        "guidance",
+        "announcements"
+      ].includes(key)
+    ))
+      throw new Error("Invalid content configuration");
+    if (!this.input.isObject(value.months) || !this.input.isObject(value.announcements) || !Array.isArray(value.mentions))
+      throw new Error("Invalid content configuration maps");
+    const reminderTime = this.text(value.reminderTime, 5);
+    if (!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(reminderTime))
+      throw new Error("Invalid reminder publication time");
+    const months = {};
+    for (const [month, label] of Object.entries(value.months)) {
+      if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))
+        throw new Error("Invalid explicit event month");
+      months[month] = this.text(label, 40);
+    }
+    const announcements = {};
+    for (const [date, exported] of Object.entries(value.announcements))
+      announcements[date] = this.announcement(date, exported);
+    if (value.mentions.length > 20) throw new Error("Too many public mentions");
+    return {
+      reminderTime,
+      months,
+      announcements,
+      mentions: value.mentions.map((name) => this.text(name, 100)),
+      guidance: typeof value.guidance === "string" && value.guidance.length <= 2e3 ? value.guidance : this.text(value.guidance, 2e3)
+    };
+  }
+  announcement(date, value) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !this.input.isObject(value) || Object.keys(value).some(
+      (key) => !["sourceId", "sourceRevision", "url", "description"].includes(key)
+    ))
+      throw new Error("Invalid announcement export");
+    const url = this.text(value.url, 2e3);
+    if (!this.urls.valid(url))
+      throw new Error("Announcement image must use a public URL");
+    return {
+      sourceId: this.text(value.sourceId, 200),
+      sourceRevision: this.text(value.sourceRevision, 200),
+      url,
+      description: this.text(value.description, 1e3)
+    };
+  }
+  text(value, limit) {
+    if (typeof value !== "string" || !value.trim() || value !== value.trim() || value.length > limit)
+      throw new Error("Invalid content configuration text");
+    return value;
+  }
+};
+
+// packages/runtime/github-actions/src/content-gate-composition.ts
+var ContentGateComposition = class {
+  create(input, issueNumber, author) {
+    const adapter = new GithubOrganizerApprovalComposition();
+    const client = adapter.githubApprovalClient(
+      input.client,
+      input.owner,
+      input.repo,
+      issueNumber
+    );
+    const storage = new GithubContentStoreComposition();
+    const runtime = new GithubActionsComposition();
+    const dependencies = [
+      storage.store(client, author),
+      storage.authority(
+        client,
+        author,
+        adapter.approvalPresenter(adapter.approvalMessages(input.locale))
+      ),
+      new ContentFactsProjection(),
+      new ContentPlanFactory(
+        new DraftProposalComposition().fingerprints(),
+        new SocialPostTiming()
+      ),
+      new DraftProposalComposition().policy(),
+      async () => ({
+        publication: await runtime.meetupPublicationConfiguration().load(input.workspaceRoot ?? process.cwd()),
+        content: await new ContentConfiguration(
+          runtime.runtimeInput(),
+          new PublicAssetUrl()
+        ).load(input.workspaceRoot ?? process.cwd())
+      })
+    ];
+    const copy = new EventCopyApprovalGate(...dependencies);
+    const artwork = new CoverArtworkApprovalGate(...dependencies);
+    return {
+      blocked: copy.blocked.bind(copy),
+      cover: artwork.cover.bind(artwork)
+    };
+  }
+};
+
 // packages/runtime/github-actions/src/organizer-approval-composition.ts
 import { randomUUID as randomUUID2 } from "node:crypto";
 var OrganizerApprovalComposition = class {
@@ -68074,6 +70043,11 @@ var CommunicationComposition = class _CommunicationComposition {
         COMMUNICATION_SERVICES.mailGateway
       );
       return new JourneyCommunicationComposition().manageMeetupCommunications({
+        contentGate: new ContentGateComposition().create(
+          input,
+          input.issueNumber,
+          input.commentAuthorLogin
+        ),
         feedbackResults: new OpenfeedbackEventGatewayComposition().openFeedbackTalkResultsGateway(
           input.openFeedbackApiKey ?? ""
         ),

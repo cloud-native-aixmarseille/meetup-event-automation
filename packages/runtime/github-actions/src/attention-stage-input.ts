@@ -18,6 +18,7 @@ export class AttentionStageInput {
 			assets: reports[1][1],
 			feedback: reports[2][1],
 			communications: reports[3][1],
+			content: reports[4][1],
 		};
 	}
 	private group(value: unknown): AttentionStageReport {

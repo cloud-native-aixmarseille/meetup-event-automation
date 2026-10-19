@@ -146,7 +146,7 @@ export function githubClients(
 				? {
 						id: comment.node_id,
 						body: comment.body,
-						editor: comment.editor,
+						editor: comment.editor ?? null,
 						lastEditedAt: comment.updated_at ?? null,
 						userContentEdits: {
 							nodes: history.get(variables.id) ?? [],

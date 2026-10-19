@@ -8,7 +8,12 @@ import type {
 	AttentionRecoveryItem,
 } from "./model.js";
 export interface AttentionStage {
-	readonly owner: "event" | "assets" | "feedback" | "communications";
+	readonly owner:
+		| "event"
+		| "assets"
+		| "feedback"
+		| "communications"
+		| "content";
 	readonly outcome: "success" | "failure" | "unknown";
 	readonly blocked: boolean;
 	/** A reported event problem prevented evaluating this integration. */
@@ -137,7 +142,9 @@ export class EvaluateAttention {
 		for (const approval of facts.approvals ?? []) {
 			const relevant =
 				approval.kind === (postEvent ? "email-thanks" : "email-introduction") ||
-				(!postEvent && approval.kind === "meetup-publication");
+				(!postEvent &&
+					(approval.kind === "meetup-publication" ||
+						approval.kind === "content-review"));
 			if (
 				approval.status === "pending" &&
 				approval.eventDate === facts.eventDate &&
@@ -147,7 +154,8 @@ export class EvaluateAttention {
 					...this.condition(
 						"approval-pending",
 						"approvals",
-						approval.kind === "meetup-publication"
+						approval.kind === "meetup-publication" ||
+							approval.kind === "content-review"
 							? `${approval.kind}:${approval.revision}`
 							: approval.revision,
 						"approval",

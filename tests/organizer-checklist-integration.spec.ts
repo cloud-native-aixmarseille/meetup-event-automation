@@ -89,6 +89,7 @@ describe("single organizer checklist across event and attention runs", () => {
 		).execute(
 			identity,
 			JSON.stringify({
+				content: { outcome: "success", diagnostics: [] },
 				assets: { outcome: "success", diagnostics: [] },
 				feedback: { outcome: "success", diagnostics: [] },
 				event: {
