@@ -71,6 +71,9 @@ importers:
       csv-parse:
         specifier: ^7.0.3
         version: 7.0.3
+      prettier:
+        specifier: 3.9.9
+        version: 3.9.9
 
   packages/adapter/github-delivery-ledger:
     dependencies:
@@ -221,9 +224,6 @@ importers:
 
   packages/runtime/github-actions:
     dependencies:
-      '@meetup-automation/conference-hall-proposal-source':
-        specifier: workspace:*
-        version: link:../../adapter/conference-hall-proposal-source
       '@actions/core':
         specifier: ^3.0.1
         version: 3.0.1
@@ -233,6 +233,9 @@ importers:
       '@meetup-automation/communication':
         specifier: workspace:*
         version: link:../../domain/communication
+      '@meetup-automation/conference-hall-proposal-source':
+        specifier: workspace:*
+        version: link:../../adapter/conference-hall-proposal-source
       '@meetup-automation/csv-referential-repository':
         specifier: workspace:*
         version: link:../../adapter/csv-referential-repository

@@ -10,6 +10,9 @@ import {
 	type SpeakerSyncState,
 } from "@meetup-automation/referential";
 import { parse } from "csv-parse/sync";
+import * as babelPlugin from "prettier/plugins/babel";
+import * as estreePlugin from "prettier/plugins/estree";
+import { format } from "prettier/standalone";
 import { CsvReferentialRepository } from "./csv-referential-repository.js";
 
 const IMPORT_COLUMNS = [
@@ -95,7 +98,11 @@ export class CsvSpeakerCatalogStore implements SpeakerCatalogStore {
 			...rows.map((row) => columns.map((column) => row[column] ?? "")),
 		];
 		const csv = `${lines.map((row) => row.map((value) => (/[",\r\n]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value)).join(",")).join("\n")}\n`;
-		const stateText = `${JSON.stringify(state, null, 2)}\n`;
+		const stateText = await format(JSON.stringify(state), {
+			parser: "json",
+			plugins: [babelPlugin, estreePlugin],
+			useTabs: true,
+		});
 		if (csv === current.csv && stateText === current.state) return false;
 		await writeFile(join(this.root, "referentials/speakers.csv"), csv, {
 			mode: 0o600,
