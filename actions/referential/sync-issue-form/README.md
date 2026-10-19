@@ -24,7 +24,7 @@ Validate configured referentials and synchronize the public meetup issue form pr
 ```yaml
 - uses: cloud-native-aixmarseille/meetup-event-automation/actions/referential/sync-issue-form@88fd8c3495bfbf7061bbd67d1324b0b4e4bc14d3 # main
   with:
-    # Optional language for generated text.
+    # Required language for generated text; no default.
     locale: en
     # Use check to detect projection drift or fix to rewrite the checked-out issue form with the validated public projection.
     # This input is required.
@@ -38,7 +38,7 @@ Validate configured referentials and synchronize the public meetup issue form pr
 
 | **Input**    | **Description**                                                                                                                    | **Required** | **Default** |
 | ------------ | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
-| **`locale`** | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **false**    | `en`        |
+| **`locale`** | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **true**     | -           |
 | **`mode`**   | Use check to detect projection drift or fix to rewrite the checked-out issue form with the validated public projection.            | **true**     | -           |
 
 <!-- inputs:end -->
@@ -48,13 +48,9 @@ Validate configured referentials and synchronize the public meetup issue form pr
 
 ## Outputs
 
-| **Output**            | **Description**                                                                                    |
-| --------------------- | -------------------------------------------------------------------------------------------------- |
-| **`failure-message`** | Localized remediation for a failed action check; empty when the check succeeds.                    |
-| **`result`**          | Versioned redacted JSON envelope containing drift status, changed files, and redacted diagnostics. |
-| **`changed`**         | Whether the checked-out issue form differs from the desired public projection.                     |
-| **`changed-files`**   | JSON array of repository-relative files changed or that would change during synchronization.       |
-| **`diagnostics`**     | Redacted JSON diagnostics safe to expose in workflow logs and pull request summaries.              |
+| **Output**    | **Description**                                                                |
+| ------------- | ------------------------------------------------------------------------------ |
+| **`changed`** | Whether the checked-out issue form differs from the desired public projection. |
 
 <!-- outputs:end -->
 <!-- examples:start -->

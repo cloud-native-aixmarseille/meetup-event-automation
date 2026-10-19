@@ -13,9 +13,8 @@ on:
     inputs:
       locale:
         description: Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
-        required: false
+        required: true
         type: string
-        default: en
       github-app-client-id:
         description: GitHub App client ID used to mint the narrowly scoped installation token for meetup automation.
         required: true
@@ -63,19 +62,6 @@ on:
       conference-hall-api-key:
         description: Read-only Conference Hall event API key.
         required: true
-    outputs:
-      state:
-        description: Derived lifecycle state for the target meetup issue, such as draft, planned, ready, held, or follow-up-complete.
-        value: ${{ jobs.manage.outputs.state }}
-      is-ready:
-        description: Whether the current meetup issue revision satisfies readiness checks.
-        value: ${{ jobs.manage.outputs.is-ready }}
-      diagnostics:
-        description: Redacted JSON diagnostics produced by event reconciliation.
-        value: ${{ jobs.manage.outputs.diagnostics }}
-      communication-diagnostics:
-        description: Redacted JSON diagnostics produced by checklist completion and communication reconciliation.
-        value: ${{ jobs.manage.outputs.communication-diagnostics }}
 
 permissions: {}
 
@@ -94,11 +80,6 @@ jobs:
     concurrency:
       group: meetup-event-${{ github.repository_id }}-${{ github.event.issue.number }}
       cancel-in-progress: false
-    outputs:
-      state: ${{ steps.reconcile.outputs.state }}
-      is-ready: ${{ steps.reconcile.outputs.is-ready }}
-      diagnostics: ${{ steps.reconcile.outputs.diagnostics }}
-      communication-diagnostics: ${{ steps.communications.outputs.diagnostics }}
     steps:
       - name: Create narrowly scoped GitHub App token
         id: app-token
@@ -121,20 +102,6 @@ jobs:
         with:
           actions-path: actions
 
-      - name: Reconcile event assets
-        id: assets
-        uses: ./../self-workflow/actions/publication/reconcile-assets
-        with:
-          conference-hall-event: ${{ inputs.conference-hall-event }}
-          conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicit reusable workflow secret
-          locale: ${{ inputs.locale }}
-          issue-number: ${{ github.event.issue.number }}
-          github-token: ${{ steps.app-token.outputs.token }}
-          managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
-          google-credentials: ${{ secrets.google-credentials }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly
-          google-drive-meetup-folder-id: ${{ inputs.google-drive-meetup-folder-id }}
-          google-drive-meetup-template-folder-id: ${{ inputs.google-drive-meetup-template-folder-id }}
-
       - name: Reconcile event feedback
         id: feedback
         uses: ./../self-workflow/actions/publication/reconcile-feedback
@@ -149,6 +116,20 @@ jobs:
           kutt-link-id: ${{ inputs.kutt-link-id }}
           openfeedback-api-key: ${{ secrets.openfeedback-api-key }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly
           kutt-api-key: ${{ secrets.kutt-api-key }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly
+
+      - name: Reconcile event assets
+        id: assets
+        uses: ./../self-workflow/actions/publication/reconcile-assets
+        with:
+          conference-hall-event: ${{ inputs.conference-hall-event }}
+          conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicit reusable workflow secret
+          locale: ${{ inputs.locale }}
+          issue-number: ${{ github.event.issue.number }}
+          github-token: ${{ steps.app-token.outputs.token }}
+          managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
+          google-credentials: ${{ secrets.google-credentials }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly
+          google-drive-meetup-folder-id: ${{ inputs.google-drive-meetup-folder-id }}
+          google-drive-meetup-template-folder-id: ${{ inputs.google-drive-meetup-template-folder-id }}
 
       - name: Create mailings GitHub App token
         id: mailings-token
@@ -166,6 +147,7 @@ jobs:
         with:
           conference-hall-event: ${{ inputs.conference-hall-event }}
           conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicit reusable workflow secret
+          slides-ready: ${{ steps.assets.outputs.slides-ready }}
           slides-url: ${{ fromJSON(steps.assets.outputs.drive-files)['slides-link'] }}
           openfeedback-api-key: ${{ secrets.openfeedback-api-key }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly
           report-errors-to-issue: "false"
@@ -186,7 +168,6 @@ jobs:
           conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicit reusable workflow secret
           locale: ${{ inputs.locale }}
           issue-number: ${{ github.event.issue.number }}
-          mode: fix
           github-token: ${{ steps.app-token.outputs.token }}
           managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
 

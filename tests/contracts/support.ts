@@ -13,6 +13,7 @@ type Inputs = Record<
 >;
 
 export interface Step {
+	"continue-on-error"?: boolean;
 	env?: Record<string, unknown>;
 	id?: string;
 	if?: string;
@@ -23,6 +24,7 @@ export interface Step {
 }
 
 export interface Job {
+	outputs?: Record<string, unknown>;
 	concurrency?: {
 		"cancel-in-progress"?: boolean;
 		group?: string;
@@ -40,6 +42,7 @@ export interface Workflow {
 	jobs?: Record<string, Job>;
 	name?: string;
 	on?: {
+		workflow_dispatch?: { inputs?: Inputs };
 		workflow_call?: {
 			inputs?: Inputs;
 			outputs?: Record<string, unknown>;

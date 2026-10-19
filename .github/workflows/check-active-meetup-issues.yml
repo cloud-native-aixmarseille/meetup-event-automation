@@ -15,9 +15,8 @@ on:
     inputs:
       locale:
         description: Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
-        required: false
+        required: true
         type: string
-        default: en
       github-app-client-id:
         description: GitHub App client ID used to mint the narrowly scoped installation token for meetup automation.
         required: true
@@ -46,10 +45,6 @@ on:
         description: Conference Hall CFP slug for live linked profiles and selected proposals.
         required: true
         type: string
-    outputs:
-      issue-numbers:
-        description: JSON array of meetup issue numbers selected for audit during the listing phase.
-        value: ${{ jobs.list.outputs.issue-numbers }}
     secrets:
       openfeedback-api-key:
         description: OpenFeedback organization API key (oforg_) used to create and update events.
@@ -170,7 +165,6 @@ jobs:
           conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicit reusable workflow secret
           locale: ${{ inputs.locale }}
           issue-number: ${{ matrix.issue-number }}
-          mode: fix
           github-token: ${{ steps.app-token.outputs.token }}
           managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
 
@@ -190,6 +184,7 @@ jobs:
         with:
           conference-hall-event: ${{ inputs.conference-hall-event }}
           conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicit reusable workflow secret
+          slides-ready: ${{ steps.assets.outputs.slides-ready }}
           slides-url: ${{ fromJSON(steps.assets.outputs.drive-files)['slides-link'] }}
           openfeedback-api-key: ${{ secrets.openfeedback-api-key }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly
           locale: ${{ inputs.locale }}

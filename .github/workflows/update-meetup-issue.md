@@ -41,6 +41,11 @@ and posts or edits bounded Slack reminders. Earlier action failure policies are
 preserved. See [organizer attention](../../docs/integrations/communications.md#organizer-attention)
 for the timing, audit bounds, and recovery contract.
 
+Feedback runs before asset content rendering. The workflow forwards the copied
+presentation URL and content readiness to communications under the event lock.
+Configure opt-in contracts and revision-bound recovery in the consumer's
+`.github/meetup-asset-content.json`; see [managed Drive content](../../docs/integrations/assets.md#author-managed-content).
+
 <!-- overview:end -->
 <!-- usage:start -->
 
@@ -107,7 +112,7 @@ jobs:
 | **Input**                                    | **Description**                                                                                                                              | **Required** | **Type**   | **Default** |
 | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- | ----------- |
 | **`conference-hall-event`**                  | Conference Hall CFP slug for live linked profiles and selected proposals.                                                                    | **true**     | **string** | -           |
-| **`locale`**                                 | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.           | **false**    | **string** | `en`        |
+| **`locale`**                                 | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.           | **true**     | **string** | -           |
 | **`github-app-client-id`**                   | GitHub App client ID used to mint the narrowly scoped installation token for meetup automation.                                              | **true**     | **string** | -           |
 | **`slack-organizer-channel-id`**             | Internal meetup organizer Slack channel for approval requests and actionable organizer reminders. Public announcement channels are separate. | **true**     | **string** | -           |
 | **`google-drive-meetup-folder-id`**          | Google Drive folder ID of the parent meetup folder used for asset reconciliation.                                                            | **true**     | **string** | -           |
@@ -134,12 +139,7 @@ jobs:
 
 ## Outputs
 
-| **Output**                      | **Description**                                                                                                  |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| **`state`**                     | Derived lifecycle state for the target meetup issue, such as draft, planned, ready, held, or follow-up-complete. |
-| **`is-ready`**                  | Whether the current meetup issue revision satisfies readiness checks.                                            |
-| **`diagnostics`**               | Redacted JSON diagnostics produced by event reconciliation.                                                      |
-| **`communication-diagnostics`** | Redacted JSON diagnostics produced by checklist completion and communication reconciliation.                     |
+No public workflow outputs. Reports appear in action logs, annotations, and job summaries.
 
 <!-- outputs:end -->
 <!-- examples:start -->

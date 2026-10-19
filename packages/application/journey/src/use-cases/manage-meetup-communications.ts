@@ -279,7 +279,7 @@ export class ManageMeetupCommunications {
 			notificationRecipients: [],
 			mailPlaceholders: CommunicationPlaceholders.eventPlaceholders(
 				managed.event,
-				input.slidesUrl,
+				input.slidesReady === false ? undefined : input.slidesUrl,
 			),
 			notificationContent:
 				this.dependencies.organizerReadinessNotification.render({

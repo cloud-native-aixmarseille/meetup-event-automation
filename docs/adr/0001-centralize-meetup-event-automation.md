@@ -6,6 +6,9 @@
 - Scope: `meetup-event-automation` and `meetups`
 - Supersedes: None
 
+Action input defaults and unused public outputs are superseded by
+[ADR 0017](0017-explicit-action-interfaces.md).
+
 Implementation follow-up: [Google Drive event assets](../integrations/assets.md)
 adds the publication-owned asset use case, `google-drive-asset-repository`, and
 `actions/publication/reconcile-assets` anticipated by this decision. The asset

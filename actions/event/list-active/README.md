@@ -29,7 +29,7 @@ issues and 20 pages; exceeding a bound fails explicitly. See
 ```yaml
 - uses: cloud-native-aixmarseille/meetup-event-automation/actions/event/list-active@88fd8c3495bfbf7061bbd67d1324b0b4e4bc14d3 # main
   with:
-    # Optional language for generated text.
+    # Required language for generated text; no default.
     locale: en
     # Token for the caller repository with issues:read permission.
     # This input is required.
@@ -43,7 +43,7 @@ issues and 20 pages; exceeding a bound fails explicitly. See
 
 | **Input**          | **Description**                                                                                                                    | **Required** | **Default** |
 | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
-| **`locale`**       | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **false**    | `en`        |
+| **`locale`**       | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **true**     | -           |
 | **`github-token`** | Token for the caller repository with issues:read permission.                                                                       | **true**     | -           |
 
 <!-- inputs:end -->
@@ -55,9 +55,7 @@ issues and 20 pages; exceeding a bound fails explicitly. See
 
 | **Output**          | **Description**                                                                                                          |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| **`result`**        | Versioned JSON envelope containing the selected issue numbers, their count, and redacted diagnostics.                    |
 | **`issue-numbers`** | JSON array of meetup issue numbers, including closed issues requiring recovery checks selected for downstream workflows. |
-| **`diagnostics`**   | Redacted JSON diagnostics safe to expose in workflow logs and summaries.                                                 |
 
 <!-- outputs:end -->
 <!-- examples:start -->

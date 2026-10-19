@@ -1,7 +1,8 @@
 # Configuration
 
 Configure the consumer repository through GitHub repository variables, secrets,
-and reusable workflow inputs. There is no consumer runtime configuration file.
+and reusable workflow inputs. Optional managed asset contracts and public field
+assignments use the committed configuration described below.
 The names below match the [setup examples](../usage/setup.md); the workflow
 parameter names are the public contract.
 
@@ -38,8 +39,8 @@ does not forward it to a reusable workflow.
 
 ## Language
 
-The optional `locale` workflow input defaults to English (`en`) and also supports
-French (`fr`). Use the same `locale` in all callers. Regional French variants such as `fr-FR`
+The required `locale` workflow input accepts English (`en`) or French (`fr`)
+without a default. Use the same `locale` in all callers. Regional French variants such as `fr-FR`
 resolve to French; unsupported values fall back to English. Changing locale
 requires issue-form synchronization. See
 [localization](../development/localization.md) for covered messages and stable
@@ -100,3 +101,12 @@ manual checklist tasks and have no automation channel input. See
 Use the [Conference Hall guide](../integrations/conference-hall.md) for the required
 `conference-hall-event` input, `conference-hall-api-key` secret, live profile refresh, reviewed identity
 synchronization, selected proposals and consumer workflow triggers.
+
+## Managed asset content
+
+Commit `.github/meetup-asset-content.json` to opt template kinds into managed
+Slides or Docs rendering, assign talk/name/portrait slots by stable identity,
+and declare public venue addresses separately from private contact records.
+The [asset guide](../integrations/assets.md#author-managed-content) owns the
+versioned contract, event-specific configuration and recovery operations.
+Without this file, templates retain copy-only behavior.

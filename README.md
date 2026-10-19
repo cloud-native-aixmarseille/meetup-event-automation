@@ -29,8 +29,8 @@ reusable workflow callers. Pin every caller to the same published release commit
 - [Email and Slack](docs/integrations/communications.md): approve email batches and track automatic
   communications.
 
-Set the optional `locale` workflow input to `fr` for French generated messages;
-English is the default. Use the same locale in all four callers.
+Set the required `locale` workflow input to `en` for English or `fr` for French
+generated messages. There is no default. Use the same locale in all four callers.
 
 ## Organize a meetup
 

@@ -1,13 +1,18 @@
 # Localization
 
-All public actions and reusable workflows accept an optional `locale` input:
+Action interfaces must require an explicit `locale` input with `required: true`
+and no `default`, following the
+[action interface rules](README.md#action-interface-rules). Callers pass the
+selected language explicitly:
 
 ```yaml
 with:
   locale: fr
 ```
 
-English (`en`) is the default; French (`fr`) is supported. Regional forms such
+Reusable workflows require an explicit `locale` input without a default and
+forward its value to every owned action. English (`en`) and French (`fr`) are
+supported. Regional forms such
 as `fr-FR`, `fr-CA`, and `fr_CA` use French. Unsupported or malformed locales
 fall back to English.
 
@@ -35,6 +40,7 @@ feature wording.
 
 | Responsibility                                     | Catalogs and scoped translator                                                        |
 | -------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Asset dates and agenda text                        | `packages/runtime/github-actions/src/assets` - `AssetMessages`                        |
 | Action reports, errors, and diagnostic annotations | `packages/runtime/github-actions/src/i18n` — `ActionMessages`                         |
 | Organizer approval requests and Slack alerts       | `packages/adapter/github-organizer-approval/src/i18n` - `ApprovalMessages`            |
 | Managed issue comments                             | `packages/adapter/github-event-comment-repository/src/i18n` — `EventCommentMessages`  |

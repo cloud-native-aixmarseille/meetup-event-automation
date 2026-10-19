@@ -4,7 +4,6 @@ import {
 	type AttentionApprovalSource,
 	type AttentionRecoverySource,
 	type AttentionStage,
-	type AttentionPostRecovery,
 	type CommunicationClock,
 	type ReconcileAttention,
 } from "@meetup-automation/communication";
@@ -38,7 +37,6 @@ export class ManageMeetupAttention {
 		identity: EventIdentity,
 		stages: readonly AttentionStage[],
 		runId?: string,
-		recovery?: AttentionPostRecovery,
 	) {
 		const { repository, codec, config, clock } = this.dependencies;
 		const source = await repository.find(identity);
@@ -72,10 +70,10 @@ export class ManageMeetupAttention {
 				facts.followUpPending.includes(task),
 			),
 		});
-		const result = await this.dependencies.reconciliation.execute(
-			{ ...observation, commentId },
-			recovery,
-		);
+		const result = await this.dependencies.reconciliation.execute({
+			...observation,
+			commentId,
+		});
 		return {
 			...result,
 			skipped: false,

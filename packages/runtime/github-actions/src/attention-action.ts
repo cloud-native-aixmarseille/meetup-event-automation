@@ -32,10 +32,8 @@ export class AttentionAction {
 			},
 			AttentionStages.parse(core.getInput("stage-results", { required: true })),
 			String(context.runId),
-			AttentionStages.recovery(core.getInput("recover-post")),
 		);
-		core.setOutput("active-count", String(result.active));
-		core.setOutput("posted", String(result.posted));
+
 		return {
 			details: [
 				messages.t(

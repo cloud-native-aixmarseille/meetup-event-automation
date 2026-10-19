@@ -32,13 +32,6 @@ vi.mock(
 		...(await importOriginal<
 			typeof import("../../../application/journey/src/index.js")
 		>()),
-		ResultEnvelopeFactory: {
-			resultEnvelope: (data: unknown, diagnostics: unknown) => ({
-				schemaVersion: 1,
-				data,
-				diagnostics,
-			}),
-		},
 		ValidateMeetupReferentials: class {
 			execute = boundary.validate;
 		},
@@ -56,7 +49,7 @@ describe("referential GitHub Action boundary", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		boundary.getInput.mockImplementation((name: string) =>
-			name === "mode" ? "fix" : "",
+			name === "mode" ? "fix" : "en",
 		);
 	});
 
@@ -75,20 +68,11 @@ describe("referential GitHub Action boundary", () => {
 		const report = await ReferentialActions.runReferentialValidateAction();
 
 		// Assert
-		expect(core.setOutput).toHaveBeenCalledWith("is-valid", "true");
-		expect(core.setOutput).toHaveBeenCalledWith("host-count", "1");
-		expect(core.setOutput).toHaveBeenCalledWith("speaker-count", "1");
+
 		expect(report.diagnostics).toEqual([]);
+		expect(report.details).toContain("Valid hosts: 1; valid speakers: 1.");
+		expect(core.setOutput).not.toHaveBeenCalled();
 		expect(report.failure).toBeUndefined();
-		expect(core.setOutput).toHaveBeenCalledWith("failure-message", "");
-		expect(core.setOutput).toHaveBeenCalledWith(
-			"result",
-			JSON.stringify({
-				schemaVersion: 1,
-				data: { isValid: true, hostCount: 1, speakerCount: 1 },
-				diagnostics: [],
-			}),
-		);
 	});
 
 	it("uses zero public counts for an invalid private catalog", async () => {
@@ -116,14 +100,9 @@ describe("referential GitHub Action boundary", () => {
 			},
 		]);
 		expect(report.details).toContain("Referentials: invalid.");
+		expect(report.details).toContain("Valid hosts: 0; valid speakers: 0.");
+		expect(core.setOutput).not.toHaveBeenCalled();
 		expect(report.failure).toContain("Meetup referentials are invalid.");
-		expect(core.setOutput).toHaveBeenCalledWith(
-			"failure-message",
-			report.failure,
-		);
-		expect(core.setOutput).toHaveBeenCalledWith("is-valid", "false");
-		expect(core.setOutput).toHaveBeenCalledWith("host-count", "0");
-		expect(core.setOutput).toHaveBeenCalledWith("speaker-count", "0");
 	});
 
 	it("publishes deterministic issue-form projection outputs", async () => {
@@ -139,17 +118,17 @@ describe("referential GitHub Action boundary", () => {
 
 		// Assert
 		expect(report.details).toContain("Issue form was updated.");
+		expect(report.details).toContain(
+			"Affected files: .github/ISSUE_TEMPLATE/meetup.yml.",
+		);
+		expect(core.setOutput).toHaveBeenCalledTimes(1);
 		expect(boundary.synchronize).toHaveBeenCalledWith({
 			mode: "fix",
 		});
 		expect(core.setOutput).toHaveBeenCalledWith("changed", "true");
-		expect(core.setOutput).toHaveBeenCalledWith(
-			"changed-files",
-			'[".github/ISSUE_TEMPLATE/meetup.yml"]',
-		);
+
 		expect(report.diagnostics).toEqual([]);
 		expect(report.failure).toBeUndefined();
-		expect(core.setOutput).toHaveBeenCalledWith("failure-message", "");
 	});
 });
 
@@ -181,21 +160,14 @@ describe("referential action failure reporting", () => {
 			await ActionRunner.run(
 				"action.referential.validate",
 				ReferentialActions.runReferentialValidateAction,
+				false,
 			);
 
 			// Assert
 			expect(core.setFailed).toHaveBeenCalledWith(
 				expect.stringContaining(failure),
 			);
-			expect(core.setOutput).toHaveBeenCalledWith(
-				"failure-message",
-				expect.stringContaining(failure),
-			);
-			expect(core.setOutput).toHaveBeenCalledWith("is-valid", "false");
-			expect(core.setOutput).toHaveBeenCalledWith(
-				"diagnostics",
-				JSON.stringify(diagnostics),
-			);
+
 			expect(core.summary.write).toHaveBeenCalledOnce();
 		},
 	);
@@ -243,24 +215,15 @@ describe("referential action failure reporting", () => {
 			await ActionRunner.run(
 				"action.referential.sync-issue-form",
 				ReferentialActions.runReferentialSyncIssueFormAction,
+				false,
 			);
 
 			// Assert
 			expect(core.setFailed).toHaveBeenCalledTimes(failed ? 1 : 0);
 			expect(boundary.synchronize).toHaveBeenCalledWith({ mode });
-			expect(core.setOutput).toHaveBeenCalledWith(
-				"failure-message",
-				failed ? expect.stringMatching(/.+/) : "",
-			);
+
 			expect(core.setOutput).toHaveBeenCalledWith("changed", String(changed));
-			expect(core.setOutput).toHaveBeenCalledWith(
-				"changed-files",
-				JSON.stringify(changedFiles),
-			);
-			expect(core.setOutput).toHaveBeenCalledWith(
-				"diagnostics",
-				JSON.stringify(diagnostics),
-			);
+
 			expect(core.summary.write).toHaveBeenCalledOnce();
 		},
 	);
@@ -280,14 +243,12 @@ describe("referential action failure reporting", () => {
 		await ActionRunner.run(
 			"action.referential.sync-issue-form",
 			ReferentialActions.runReferentialSyncIssueFormAction,
+			false,
 		);
 
 		// Assert
 		expect(core.setFailed).toHaveBeenCalledOnce();
-		expect(core.setOutput).toHaveBeenCalledWith(
-			"diagnostics",
-			expect.stringContaining("action.execution.failed"),
-		);
+
 		expect(core.summary.write).toHaveBeenCalledOnce();
 	});
 });

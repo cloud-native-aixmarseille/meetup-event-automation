@@ -1,4 +1,23 @@
 export const DIAGNOSTICS_OTHER_EN = {
+	"diagnostic.publication.assets.file.drift":
+		"An event template copy is missing or its name or template metadata has changed",
+	"diagnostic.publication.assets.content.contract":
+		"Check the versioned content contract, supported MIME type, tokens, image slots and fit policy.",
+	"diagnostic.publication.assets.content.missing":
+		"Complete the required public text or link, then reconcile again. The existing copy is reused.",
+	"diagnostic.publication.assets.content.location":
+		"Place Slides tokens in whole text shapes and Docs tokens in body paragraphs. Check tab and object IDs, alt text and supported structures.",
+	"diagnostic.publication.assets.content.conflict":
+		"A managed location changed or its anchor is missing. Preserve the edit; use revision-bound restore or remove recovery in the asset content configuration.",
+	"diagnostic.publication.assets.content.recovery":
+		"Inspect the file and binding sidecar. Restore valid state or use explicit enrollment or binding recovery; do not delete the file or reset email records.",
+	"diagnostic.publication.assets.content.revision":
+		"The document changed during rendering. Reconcile again after the current edit is complete.",
+	"diagnostic.publication.assets.content.image":
+		"Check the public HTTPS image and fallback: PNG, JPEG or GIF, under 50 MB and at most 25 megapixels. Signed or private URLs are unsupported.",
+	"diagnostic.publication.assets.content.fallback":
+		"An optional image uses its validated generic fallback. The file remains ready; check the speaker assignment or host-logo configuration and public image URL.",
+
 	"diagnostic.publication.feedback.agenda":
 		"Complete talk subjects and resolve speaker references in the issue before synchronizing the feedback agenda. Existing feedback is preserved.",
 	"diagnostic.publication.feedback.unrelated": "This issue is not a meetup",

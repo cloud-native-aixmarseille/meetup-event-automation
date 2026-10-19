@@ -4,18 +4,13 @@ author: Cloud Native Aix-Marseille
 inputs:
   locale:
     description: Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
-    required: false
-    default: en
+    required: true
   github-token:
     description: Token for the caller repository with issues:read permission.
     required: true
 outputs:
-  result:
-    description: Versioned JSON envelope containing the selected issue numbers, their count, and redacted diagnostics.
   issue-numbers:
     description: JSON array of meetup issue numbers, including closed issues requiring recovery checks selected for downstream workflows.
-  diagnostics:
-    description: Redacted JSON diagnostics safe to expose in workflow logs and summaries.
 runs:
   using: node24
   main: dist/index.js

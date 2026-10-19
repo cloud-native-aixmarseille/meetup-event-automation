@@ -9,7 +9,6 @@ import {
 	type AutomationConfig,
 	ManageMeetupEvent,
 	type PublicDiagnostic,
-	ResultEnvelopeFactory,
 } from "@meetup-automation/journey";
 import { ActionOutput } from "./action-output.js";
 import type { ActionReportData } from "./action-report.js";
@@ -24,11 +23,6 @@ export class EventActions {
 		const issueNumber = RuntimeInput.positiveIntegerInput(
 			"issue-number",
 			core.getInput("issue-number", { required: true }),
-		);
-		const mode = RuntimeInput.enumInput(
-			"mode",
-			core.getInput("mode", { required: true }),
-			["check", "fix"] as const,
 		);
 		const token = core.getInput("github-token", { required: true });
 		const commentAuthorLogin = core.getInput("managed-comment-author", {
@@ -46,28 +40,9 @@ export class EventActions {
 		});
 		const outcome = await container.get(ManageMeetupEvent).execute({
 			identity: { repository, issueNumber },
-			mode,
+			mode: "fix",
 		});
-		const data = outcome.skipped
-			? { skipped: true }
-			: {
-					skipped: false,
-					state: outcome.state,
-					isReady: outcome.isReady,
-					persisted: outcome.persisted,
-					commentUpdated: outcome.commentUpdated,
-				};
-
-		ActionOutput.setJsonOutput(
-			"result",
-			ResultEnvelopeFactory.resultEnvelope(data, outcome.diagnostics),
-		);
-		core.setOutput("state", outcome.skipped ? "skipped" : outcome.state);
-		core.setOutput(
-			"is-ready",
-			outcome.skipped ? "false" : String(outcome.isReady),
-		);
-		return EventActions.reconcileReport(issueNumber, mode, outcome, messages);
+		return EventActions.reconcileReport(issueNumber, outcome, messages);
 	}
 
 	static async runEventListActiveAction(
@@ -97,13 +72,6 @@ export class EventActions {
 			EventActions.toPublicDiagnostic,
 		);
 
-		ActionOutput.setJsonOutput(
-			"result",
-			ResultEnvelopeFactory.resultEnvelope(
-				{ issueNumbers, count: issueNumbers.length },
-				diagnostics,
-			),
-		);
 		ActionOutput.setJsonOutput("issue-numbers", issueNumbers);
 		return {
 			details: [
@@ -120,12 +88,11 @@ export class EventActions {
 
 	private static reconcileReport(
 		issueNumber: number,
-		mode: string,
 		outcome: Awaited<ReturnType<ManageMeetupEvent["execute"]>>,
 		messages: ActionMessages,
 	): ActionReportData {
 		const details = [
-			messages.t("report.event.context", { issue: issueNumber, mode }),
+			messages.t("report.event.context", { issue: issueNumber, mode: "fix" }),
 		];
 		if (outcome.skipped) {
 			details.push(messages.t("report.event.skipped"));

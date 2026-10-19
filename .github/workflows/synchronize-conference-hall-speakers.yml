@@ -5,8 +5,7 @@ on:
       locale:
         description: Language for generated reports (en or fr).
         type: string
-        required: false
-        default: en
+        required: true
       github-app-client-id:
         description: GitHub App client ID for the private consumer repository.
         type: string

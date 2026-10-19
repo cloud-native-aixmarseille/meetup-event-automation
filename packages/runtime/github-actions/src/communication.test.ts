@@ -90,6 +90,22 @@ describe("automatic communication completion after approval", () => {
 		},
 	);
 
+	it("holds due email when a stable slides URL exists but its content is not ready", async () => {
+		// Arrange
+		const f = await setup();
+		// Act
+		const result = await CommunicationRuntime.runCommunicationReconcile({
+			...f.input,
+			slidesReady: false,
+		});
+		// Assert
+		expect(result.runtimeDiagnostics).toContainEqual({
+			code: "communication.slides-unavailable",
+			severity: "error",
+		});
+		expect(f.createDispatchEvent).not.toHaveBeenCalled();
+	});
+
 	it.each([undefined, "https://drive.google.com/drive/folders/event-assets"])(
 		"holds due mail without requesting approval when the presentation is unavailable: %s",
 		async (slidesUrl) => {

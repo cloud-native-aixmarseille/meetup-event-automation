@@ -194,7 +194,7 @@ describe("event side-effect safeguards", () => {
 			workflowExpression("inputs.github-app-client-id"),
 		);
 		expect(token?.with?.["permission-issues"]).toBe("write");
-		expect(event?.with?.mode).toBe("fix");
+		expect(event?.with).not.toHaveProperty("mode");
 		expect(event?.id).toBe("event");
 		expect(communication?.with).not.toHaveProperty("mode");
 		expect(communication?.with?.["report-errors-to-issue"]).toBe("true");
@@ -206,8 +206,7 @@ describe("event side-effect safeguards", () => {
 		expect(
 			(job.steps ?? []).filter(
 				(step: Step) =>
-					step.uses === `${automationActionPrefix}event/reconcile` &&
-					step.with?.mode === "fix",
+					step.uses === `${automationActionPrefix}event/reconcile`,
 			),
 		).toHaveLength(1);
 	});

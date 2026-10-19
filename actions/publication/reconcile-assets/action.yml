@@ -4,8 +4,7 @@ author: Cloud Native Aix-Marseille
 inputs:
   locale:
     description: Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
-    required: false
-    default: en
+    required: true
   issue-number:
     description: GitHub issue number containing the meetup event document.
     required: true
@@ -31,12 +30,10 @@ inputs:
     description: Read-only Conference Hall event API key.
     required: true
 outputs:
-  result:
-    description: Versioned JSON envelope containing folder and template links, persistence status, and diagnostics.
-  asset-url:
-    description: URL of the managed event folder, or an empty string when unavailable.
   drive-files:
     description: JSON map from template kind followed by -link to the corresponding copied file URL.
+  slides-ready:
+    description: Whether a slides URL exists and its content is copy-only or ready.
   diagnostics:
     description: Redacted JSON diagnostics for asset reconciliation.
 runs:

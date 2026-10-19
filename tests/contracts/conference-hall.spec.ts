@@ -87,19 +87,15 @@ describe("Conference Hall contracts", () => {
 		expect(scripts).not.toContain("--auto");
 		expect(scripts).not.toContain("git diff --cached\n");
 	});
-	it("exposes only safe counts, review text and retry information", async () => {
+	it("exposes only the review text consumed by the synchronization workflow", async () => {
 		// Arrange
 		const path = "actions/referential/sync-speakers/action.yml";
 		// Act
 		const manifest = await readYaml<ActionManifest>(path);
 		// Assert
 		expect(Object.keys(manifest.outputs ?? {}).sort()).toEqual([
-			"changed",
-			"diagnostics",
 			"pr-body",
 			"pr-title",
-			"retry-after-seconds",
-			"speaker-count",
 		]);
 		expect(manifest.inputs?.["conference-hall-api-key"].required).toBe(true);
 		expect(manifest.runs?.using).toBe("node24");

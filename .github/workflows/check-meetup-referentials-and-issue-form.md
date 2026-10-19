@@ -52,7 +52,7 @@ jobs:
 
 | **Input**    | **Description**                                                                                                                    | **Required** | **Default** |
 | ------------ | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
-| **`locale`** | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **false**    | `en`        |
+| **`locale`** | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **true**     | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->
@@ -61,15 +61,7 @@ jobs:
 
 ## Outputs
 
-| **Output**                     | **Description**                                                                              |
-| ------------------------------ | -------------------------------------------------------------------------------------------- |
-| **`is-valid`**                 | Whether the private referential catalogs passed validation.                                  |
-| **`host-count`**               | Number of valid host entries detected during referential validation.                         |
-| **`speaker-count`**            | Number of valid speaker entries detected during referential validation.                      |
-| **`referential-diagnostics`**  | Redacted JSON diagnostics produced during referential validation.                            |
-| **`issue-form-changed`**       | Whether the checked-out issue form differs from the desired public projection.               |
-| **`issue-form-changed-files`** | JSON array of repository-relative files that would change during issue-form synchronization. |
-| **`issue-form-diagnostics`**   | Redacted JSON diagnostics produced by the issue-form projection check.                       |
+No public workflow outputs. Reports appear in action logs, annotations, and job summaries.
 
 <!-- outputs:end -->
 <!-- examples:start -->

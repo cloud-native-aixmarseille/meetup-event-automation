@@ -1,7 +1,4 @@
-import type {
-	AttentionStage,
-	AttentionPostRecovery,
-} from "@meetup-automation/communication";
+import type { AttentionStage } from "@meetup-automation/communication";
 const OWNERS = ["event", "assets", "feedback", "communications"] as const;
 /** Only explicit outcomes and allowlisted diagnostic codes cross this boundary. */
 export class AttentionStages {
@@ -23,21 +20,6 @@ export class AttentionStages {
 					owner !== "event" && AttentionStages.blocked(stage?.diagnostics),
 			};
 		});
-	}
-	static recovery(value: string): AttentionPostRecovery | undefined {
-		if (!value.trim()) return undefined;
-		const input = JSON.parse(value) as AttentionPostRecovery;
-		if (
-			!input ||
-			typeof input.reservationId !== "string" ||
-			!["accepted", "not-accepted"].includes(input.outcome)
-		)
-			throw new Error("Invalid attention recovery input");
-		return {
-			reservationId: input.reservationId,
-			outcome: input.outcome,
-			message: input.message,
-		};
 	}
 	private static blocked(input: unknown): boolean {
 		let diagnostics = input;

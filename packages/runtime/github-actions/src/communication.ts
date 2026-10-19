@@ -27,6 +27,7 @@ export interface RunCommunicationReconcileInput extends ConferenceHallSettings {
 	readonly workspaceRoot?: string;
 	readonly managedCommentAuthor: string;
 	readonly slidesUrl?: string;
+	readonly slidesReady?: boolean;
 }
 
 export type RunCommunicationReconcileResult = ManageMeetupCommunicationsResult;
@@ -78,6 +79,7 @@ export class CommunicationRuntime {
 			repositoryId: input.repositoryId,
 			organizerNotificationDestination: slackOrganizerChannelId,
 			slidesUrl: input.slidesUrl,
+			slidesReady: input.slidesReady,
 		});
 		return result;
 	}

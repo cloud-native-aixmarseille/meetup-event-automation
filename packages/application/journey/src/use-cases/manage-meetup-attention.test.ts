@@ -71,7 +71,6 @@ describe("meetup attention journey", () => {
 					expect.objectContaining({ code: "stage-unknown", owner: "delivery" }),
 				]),
 			}),
-			undefined,
 		);
 	});
 	it("refuses to notify from a stale issue snapshot", async () => {

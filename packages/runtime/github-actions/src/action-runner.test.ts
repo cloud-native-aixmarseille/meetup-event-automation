@@ -19,6 +19,47 @@ vi.mock("@actions/core", () => ({
 }));
 
 describe("action runner reporting contract", () => {
+	it("fails a missing locale before invoking the action and redacts the exception", async () => {
+		// Arrange
+		const operation = vi.fn();
+		vi.mocked(core.getInput).mockImplementationOnce(() => {
+			throw new Error("Input required and not supplied: locale");
+		});
+
+		// Act
+		await ActionRunner.run("action.event.reconcile", operation, true);
+
+		// Assert
+		expect(core.getInput).toHaveBeenCalledWith("locale", { required: true });
+		expect(operation).not.toHaveBeenCalled();
+		expect(core.setFailed).toHaveBeenCalledOnce();
+		expect(core.summary.write).toHaveBeenCalledOnce();
+		expect(core.setOutput).toHaveBeenCalledWith(
+			"diagnostics",
+			expect.stringContaining("action.execution.failed"),
+		);
+	});
+
+	it.each([false, true])(
+		"keeps diagnostics in reports without emitting an unused output on failure=%s",
+		async (failure) => {
+			// Arrange
+			const operation = vi
+				.fn()
+				.mockResolvedValue({ details: ["Completed"], diagnostics: [] });
+			if (failure)
+				operation.mockRejectedValue(new Error("private source response"));
+
+			// Act
+			await ActionRunner.run("action.referential.validate", operation, false);
+
+			// Assert
+			expect(core.setOutput).not.toHaveBeenCalled();
+			expect(core.summary.write).toHaveBeenCalledOnce();
+			expect(core.setFailed).toHaveBeenCalledTimes(failure ? 1 : 0);
+		},
+	);
+
 	beforeEach(() => {
 		vi.clearAllMocks();
 		vi.mocked(core.getInput).mockReturnValue("en");
@@ -33,7 +74,7 @@ describe("action runner reporting contract", () => {
 				.mockResolvedValue({ details: [detail], diagnostics: [] });
 
 			// Act
-			await ActionRunner.run("action.event.reconcile", operation);
+			await ActionRunner.run("action.event.reconcile", operation, true);
 
 			// Assert
 			expect(operation).toHaveBeenCalledOnce();
@@ -61,7 +102,7 @@ describe("action runner reporting contract", () => {
 			.mockResolvedValue({ details: ["Invalid catalog."], diagnostics });
 
 		// Act
-		await ActionRunner.run("action.event.reconcile", operation);
+		await ActionRunner.run("action.event.reconcile", operation, true);
 
 		// Assert
 		expect(core.error).toHaveBeenCalledWith(
@@ -86,7 +127,7 @@ describe("action runner reporting contract", () => {
 		);
 
 		// Act
-		await ActionRunner.run("action.event.reconcile", operation);
+		await ActionRunner.run("action.event.reconcile", operation, true);
 
 		// Assert
 		expect(core.setFailed).toHaveBeenCalledWith("Reconciliation failed.");
@@ -103,7 +144,7 @@ describe("action runner reporting contract", () => {
 		const operation = vi.fn().mockRejectedValue(error);
 
 		// Act
-		await ActionRunner.run("action.event.reconcile", operation);
+		await ActionRunner.run("action.event.reconcile", operation, true);
 
 		// Assert
 		expect(core.error).toHaveBeenCalledWith(
@@ -131,7 +172,7 @@ describe("action runner reporting contract", () => {
 			const operation = vi.fn().mockRejectedValue(error);
 
 			// Act
-			await ActionRunner.run("action.event.reconcile", operation);
+			await ActionRunner.run("action.event.reconcile", operation, true);
 
 			// Assert
 			expect(core.setFailed).toHaveBeenCalledOnce();
@@ -168,9 +209,9 @@ describe("action runner reporting contract", () => {
 			}),
 		);
 		// Act
-		await ActionRunner.run("action.referential.validate", operation);
+		await ActionRunner.run("action.referential.validate", operation, false);
 		// Assert
-		expect(core.getInput).toHaveBeenCalledWith("locale");
+		expect(core.getInput).toHaveBeenCalledWith("locale", { required: true });
 		expect(core.info).toHaveBeenCalledWith("Référentiels : invalides.");
 		expect(core.summary.addHeading).toHaveBeenCalledWith(
 			"Valider les référentiels du meetup",
@@ -179,10 +220,7 @@ describe("action runner reporting contract", () => {
 		expect(core.error).toHaveBeenCalledWith(
 			"[referential.speaker.id.duplicate] (speakers[2].speakerId): Les identifiants stables des intervenants doivent être uniques.",
 		);
-		expect(core.setOutput).toHaveBeenCalledWith(
-			"diagnostics",
-			JSON.stringify(diagnostics),
-		);
+		expect(core.setOutput).not.toHaveBeenCalled();
 		expect(core.setFailed).not.toHaveBeenCalled();
 	});
 	it("redacts exceptions in French on every reporting surface", async () => {
@@ -192,7 +230,7 @@ describe("action runner reporting contract", () => {
 			.fn()
 			.mockRejectedValue(new Error("private@example.test"));
 		// Act
-		await ActionRunner.run("action.event.reconcile", operation);
+		await ActionRunner.run("action.event.reconcile", operation, true);
 		// Assert
 		expect(core.setFailed).toHaveBeenCalledWith(
 			expect.stringContaining("L'automatisation"),

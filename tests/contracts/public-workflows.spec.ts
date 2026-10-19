@@ -27,7 +27,7 @@ const publicWorkflowContracts = {
 			"kutt-link-id",
 			"slack-organizer-channel-id",
 		],
-		outputs: ["issue-numbers"],
+		outputs: [],
 		secrets: [
 			"conference-hall-api-key",
 			"github-app-private-key",
@@ -47,7 +47,7 @@ const publicWorkflowContracts = {
 			"kutt-link-id",
 			"slack-organizer-channel-id",
 		],
-		outputs: ["communication-diagnostics", "diagnostics", "is-ready", "state"],
+		outputs: [],
 		secrets: [
 			"conference-hall-api-key",
 			"github-app-private-key",
@@ -59,28 +59,12 @@ const publicWorkflowContracts = {
 	},
 	"update-meetup-issue-form": {
 		inputs: ["github-app-client-id"],
-		outputs: [
-			"changed",
-			"changed-files",
-			"diagnostics",
-			"host-count",
-			"is-valid",
-			"referential-diagnostics",
-			"speaker-count",
-		],
+		outputs: [],
 		secrets: ["github-app-private-key"],
 	},
 	"check-meetup-referentials-and-issue-form": {
 		inputs: [],
-		outputs: [
-			"host-count",
-			"is-valid",
-			"issue-form-changed",
-			"issue-form-changed-files",
-			"issue-form-diagnostics",
-			"referential-diagnostics",
-			"speaker-count",
-		],
+		outputs: [],
 		secrets: [],
 	},
 } as const;
@@ -98,8 +82,8 @@ const expectedActionWiring = {
 	},
 	"update-meetup-issue": {
 		manage: [
-			"publication/reconcile-assets",
 			"publication/reconcile-feedback",
+			"publication/reconcile-assets",
 			"communication/reconcile",
 			"event/reconcile",
 			"communication/reconcile-attention",
@@ -141,6 +125,9 @@ describe("public reusable workflow contracts", () => {
 			);
 			expect(steps[communicationIndex]?.with?.["openfeedback-api-key"]).toBe(
 				workflowExpression("secrets.openfeedback-api-key"),
+			);
+			expect(steps[communicationIndex]?.with?.["slides-ready"]).toBe(
+				workflowExpression("steps.assets.outputs.slides-ready"),
 			);
 			expect(steps[communicationIndex]?.with?.["slides-url"]).toBe(
 				workflowExpression(

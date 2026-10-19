@@ -25,11 +25,19 @@ vi.mock("@actions/github", () => ({
 	getOctokit: () => ({}),
 }));
 
-vi.mock("@meetup-automation/google-drive-asset-repository", () => ({
-	GoogleDriveAssetRepository: {
-		createGoogleDriveAssetRepository: mocks.createAssets,
-	},
-}));
+vi.mock(
+	"@meetup-automation/google-drive-asset-repository",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("@meetup-automation/google-drive-asset-repository")
+		>()),
+		GoogleDriveAuthentication: { create: vi.fn(() => undefined) },
+		GoogleDriveAssetRepository: {
+			createGoogleDriveAssetRepository: mocks.createAssets,
+			client: vi.fn(() => ({ files: {} })),
+		},
+	}),
+);
 
 vi.mock("@meetup-automation/journey", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@meetup-automation/journey")>()),
@@ -71,6 +79,30 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe("publication action boundary", () => {
+	it("retains the stable slides URL while reporting conflicted content as unready", async () => {
+		// Arrange
+		const url = "https://docs.google.com/presentation/d/stable-slides";
+		mocks.execute.mockResolvedValue({
+			skipped: false,
+			persisted: false,
+			files: { "slides-link": url },
+			content: { slides: "conflict" },
+			diagnostics: [],
+		});
+
+		// Act
+		await PublicationAction.runPublicationReconcileAssetsAction();
+
+		// Assert
+		expect(JSON.parse(mocks.outputs["drive-files"])).toEqual({
+			"slides-link": url,
+		});
+		expect(Object.keys(mocks.outputs).sort()).toEqual([
+			"drive-files",
+			"slides-ready",
+		]);
+		expect(mocks.outputs["slides-ready"]).toBe(false);
+	});
 	it.each([
 		"conference-hall-event",
 		"conference-hall-api-key",
@@ -107,6 +139,7 @@ describe("publication action boundary", () => {
 		expect(mocks.setSecret).toHaveBeenCalledWith("secret-json");
 		expect(mocks.createAssets).toHaveBeenCalledWith("secret-json", {
 			parentFolderId: "parent",
+			contentContracts: {},
 			templateFolderId: "templates",
 		});
 		expect(mocks.execute).toHaveBeenCalledWith(
@@ -136,9 +169,10 @@ describe("publication action boundary", () => {
 		// Assert
 		expect(mocks.createAssets).toHaveBeenCalledWith("secret-json", {
 			parentFolderId: "parent",
+			contentContracts: {},
 			templateFolderId: "templates",
 		});
-		expect(mocks.outputs["asset-url"]).toBe("");
+		expect(mocks.outputs["slides-ready"]).toBe(false);
 		expect(report.details.join("\n")).toContain(
 			"Asset reconciliation was skipped",
 		);

@@ -1395,10 +1395,10 @@ var require_util = __commonJS({
       }
       obj[kListeners] = null;
     }
-    function errorRequest(client, request2, err) {
+    function errorRequest(client, request3, err) {
       try {
-        request2.onError(err);
-        assert(request2.aborted);
+        request3.onError(err);
+        assert(request3.aborted);
       } catch (err2) {
         client.emit("error", err2);
       }
@@ -1972,7 +1972,7 @@ var require_request = __commonJS({
         return this;
       }
     };
-    function processHeader(request2, key, val) {
+    function processHeader(request3, key, val) {
       if (val && (typeof val === "object" && !Array.isArray(val))) {
         throw new InvalidArgumentError(`invalid ${key} header`);
       } else if (val === void 0) {
@@ -2019,24 +2019,24 @@ var require_request = __commonJS({
         }
       }
       if (headerName === "host") {
-        if (request2.host !== null) {
+        if (request3.host !== null) {
           throw new InvalidArgumentError("duplicate host header");
         }
         if (typeof val !== "string") {
           throw new InvalidArgumentError("invalid host header");
         }
-        request2.host = val;
+        request3.host = val;
       } else if (headerName === "content-length") {
-        if (request2.contentLength !== null) {
+        if (request3.contentLength !== null) {
           throw new InvalidArgumentError("duplicate content-length header");
         }
-        request2.contentLength = parseInt(val, 10);
-        if (!Number.isFinite(request2.contentLength)) {
+        request3.contentLength = parseInt(val, 10);
+        if (!Number.isFinite(request3.contentLength)) {
           throw new InvalidArgumentError("invalid content-length header");
         }
-      } else if (request2.contentType === null && headerName === "content-type") {
-        request2.contentType = val;
-        request2.headers.push(key, val);
+      } else if (request3.contentType === null && headerName === "content-type") {
+        request3.contentType = val;
+        request3.headers.push(key, val);
       } else if (headerName === "transfer-encoding" || headerName === "keep-alive" || headerName === "upgrade") {
         throw new InvalidArgumentError(`invalid ${headerName} header`);
       } else if (headerName === "connection") {
@@ -2045,12 +2045,12 @@ var require_request = __commonJS({
           throw new InvalidArgumentError("invalid connection header");
         }
         if (value === "close") {
-          request2.reset = true;
+          request3.reset = true;
         }
       } else if (headerName === "expect") {
         throw new NotSupportedError("expect header not supported");
       } else {
-        request2.headers.push(key, val);
+        request3.headers.push(key, val);
       }
     }
     module.exports = Request2;
@@ -3661,7 +3661,7 @@ var require_data_url = __commonJS({
 var require_webidl = __commonJS({
   "node_modules/.pnpm/undici@6.29.0/node_modules/undici/lib/web/fetch/webidl.js"(exports, module) {
     "use strict";
-    var { types: types3, inspect } = __require("node:util");
+    var { types: types4, inspect } = __require("node:util");
     var { markAsUncloneable } = __require("node:worker_threads");
     var { toUSVString } = require_util();
     var webidl = {};
@@ -3851,7 +3851,7 @@ var require_webidl = __commonJS({
           });
         }
         const result = {};
-        if (!types3.isProxy(O3)) {
+        if (!types4.isProxy(O3)) {
           const keys2 = [...Object.getOwnPropertyNames(O3), ...Object.getOwnPropertySymbols(O3)];
           for (const key of keys2) {
             const typedKey = keyConverter(key, prefix, argument);
@@ -3980,14 +3980,14 @@ var require_webidl = __commonJS({
       return x4;
     };
     webidl.converters.ArrayBuffer = function(V3, prefix, argument, opts) {
-      if (webidl.util.Type(V3) !== "Object" || !types3.isAnyArrayBuffer(V3)) {
+      if (webidl.util.Type(V3) !== "Object" || !types4.isAnyArrayBuffer(V3)) {
         throw webidl.errors.conversionFailed({
           prefix,
           argument: `${argument} ("${webidl.util.Stringify(V3)}")`,
           types: ["ArrayBuffer"]
         });
       }
-      if (opts?.allowShared === false && types3.isSharedArrayBuffer(V3)) {
+      if (opts?.allowShared === false && types4.isSharedArrayBuffer(V3)) {
         throw webidl.errors.exception({
           header: "ArrayBuffer",
           message: "SharedArrayBuffer is not allowed."
@@ -4002,14 +4002,14 @@ var require_webidl = __commonJS({
       return V3;
     };
     webidl.converters.TypedArray = function(V3, T3, prefix, name, opts) {
-      if (webidl.util.Type(V3) !== "Object" || !types3.isTypedArray(V3) || V3.constructor.name !== T3.name) {
+      if (webidl.util.Type(V3) !== "Object" || !types4.isTypedArray(V3) || V3.constructor.name !== T3.name) {
         throw webidl.errors.conversionFailed({
           prefix,
           argument: `${name} ("${webidl.util.Stringify(V3)}")`,
           types: [T3.name]
         });
       }
-      if (opts?.allowShared === false && types3.isSharedArrayBuffer(V3.buffer)) {
+      if (opts?.allowShared === false && types4.isSharedArrayBuffer(V3.buffer)) {
         throw webidl.errors.exception({
           header: "ArrayBuffer",
           message: "SharedArrayBuffer is not allowed."
@@ -4024,13 +4024,13 @@ var require_webidl = __commonJS({
       return V3;
     };
     webidl.converters.DataView = function(V3, prefix, name, opts) {
-      if (webidl.util.Type(V3) !== "Object" || !types3.isDataView(V3)) {
+      if (webidl.util.Type(V3) !== "Object" || !types4.isDataView(V3)) {
         throw webidl.errors.exception({
           header: prefix,
           message: `${name} is not a DataView.`
         });
       }
-      if (opts?.allowShared === false && types3.isSharedArrayBuffer(V3.buffer)) {
+      if (opts?.allowShared === false && types4.isSharedArrayBuffer(V3.buffer)) {
         throw webidl.errors.exception({
           header: "ArrayBuffer",
           message: "SharedArrayBuffer is not allowed."
@@ -4045,13 +4045,13 @@ var require_webidl = __commonJS({
       return V3;
     };
     webidl.converters.BufferSource = function(V3, prefix, name, opts) {
-      if (types3.isAnyArrayBuffer(V3)) {
+      if (types4.isAnyArrayBuffer(V3)) {
         return webidl.converters.ArrayBuffer(V3, prefix, name, { ...opts, allowShared: false });
       }
-      if (types3.isTypedArray(V3)) {
+      if (types4.isTypedArray(V3)) {
         return webidl.converters.TypedArray(V3, V3.constructor, prefix, name, { ...opts, allowShared: false });
       }
-      if (types3.isDataView(V3)) {
+      if (types4.isDataView(V3)) {
         return webidl.converters.DataView(V3, prefix, name, { ...opts, allowShared: false });
       }
       throw webidl.errors.conversionFailed({
@@ -4132,11 +4132,11 @@ var require_util2 = __commonJS({
     function normalizeBinaryStringToUtf8(value) {
       return Buffer.from(value, "binary").toString("utf8");
     }
-    function requestCurrentURL(request2) {
-      return request2.urlList[request2.urlList.length - 1];
+    function requestCurrentURL(request3) {
+      return request3.urlList[request3.urlList.length - 1];
     }
-    function requestBadPort(request2) {
-      const url = requestCurrentURL(request2);
+    function requestBadPort(request3) {
+      const url = requestCurrentURL(request3);
       if (urlIsHttpHttpsScheme(url) && badPortsSet.has(url.port)) {
         return "blocked";
       }
@@ -4160,7 +4160,7 @@ var require_util2 = __commonJS({
     function isValidHeaderValue(potentialValue) {
       return (potentialValue[0] === "	" || potentialValue[0] === " " || potentialValue[potentialValue.length - 1] === "	" || potentialValue[potentialValue.length - 1] === " " || potentialValue.includes("\n") || potentialValue.includes("\r") || potentialValue.includes("\0")) === false;
     }
-    function setRequestReferrerPolicyOnRedirect(request2, actualResponse) {
+    function setRequestReferrerPolicyOnRedirect(request3, actualResponse) {
       const { headersList } = actualResponse;
       const policyHeader = (headersList.get("referrer-policy", true) ?? "").split(",");
       let policy = "";
@@ -4174,7 +4174,7 @@ var require_util2 = __commonJS({
         }
       }
       if (policy !== "") {
-        request2.referrerPolicy = policy;
+        request3.referrerPolicy = policy;
       }
     }
     function crossOriginResourcePolicyCheck() {
@@ -4191,33 +4191,33 @@ var require_util2 = __commonJS({
       header = httpRequest.mode;
       httpRequest.headersList.set("sec-fetch-mode", header, true);
     }
-    function appendRequestOriginHeader(request2) {
-      let serializedOrigin = request2.origin;
+    function appendRequestOriginHeader(request3) {
+      let serializedOrigin = request3.origin;
       if (serializedOrigin === "client" || serializedOrigin === void 0) {
         return;
       }
-      if (request2.responseTainting === "cors" || request2.mode === "websocket") {
-        request2.headersList.append("origin", serializedOrigin, true);
-      } else if (request2.method !== "GET" && request2.method !== "HEAD") {
-        switch (request2.referrerPolicy) {
+      if (request3.responseTainting === "cors" || request3.mode === "websocket") {
+        request3.headersList.append("origin", serializedOrigin, true);
+      } else if (request3.method !== "GET" && request3.method !== "HEAD") {
+        switch (request3.referrerPolicy) {
           case "no-referrer":
             serializedOrigin = null;
             break;
           case "no-referrer-when-downgrade":
           case "strict-origin":
           case "strict-origin-when-cross-origin":
-            if (request2.origin && urlHasHttpsScheme(request2.origin) && !urlHasHttpsScheme(requestCurrentURL(request2))) {
+            if (request3.origin && urlHasHttpsScheme(request3.origin) && !urlHasHttpsScheme(requestCurrentURL(request3))) {
               serializedOrigin = null;
             }
             break;
           case "same-origin":
-            if (!sameOrigin(request2, requestCurrentURL(request2))) {
+            if (!sameOrigin(request3, requestCurrentURL(request3))) {
               serializedOrigin = null;
             }
             break;
           default:
         }
-        request2.headersList.append("origin", serializedOrigin, true);
+        request3.headersList.append("origin", serializedOrigin, true);
       }
     }
     function coarsenTime(timestamp, crossOriginIsolatedCapability) {
@@ -4271,26 +4271,26 @@ var require_util2 = __commonJS({
         referrerPolicy: policyContainer.referrerPolicy
       };
     }
-    function determineRequestsReferrer2(request2) {
-      const policy = request2.referrerPolicy;
+    function determineRequestsReferrer2(request3) {
+      const policy = request3.referrerPolicy;
       assert(policy);
       let referrerSource = null;
-      if (request2.referrer === "client") {
+      if (request3.referrer === "client") {
         const globalOrigin = getGlobalOrigin();
         if (!globalOrigin || globalOrigin.origin === "null") {
           return "no-referrer";
         }
         referrerSource = new URL(globalOrigin);
-      } else if (request2.referrer instanceof URL) {
-        referrerSource = request2.referrer;
+      } else if (request3.referrer instanceof URL) {
+        referrerSource = request3.referrer;
       }
       let referrerURL = stripURLForReferrer(referrerSource);
       const referrerOrigin = stripURLForReferrer(referrerSource, true);
       if (referrerURL.toString().length > 4096) {
         referrerURL = referrerOrigin;
       }
-      const areSameOrigin = sameOrigin(request2, referrerURL);
-      const isNonPotentiallyTrustWorthy = isURLPotentiallyTrustworthy(referrerURL) && !isURLPotentiallyTrustworthy(request2.url);
+      const areSameOrigin = sameOrigin(request3, referrerURL);
+      const isNonPotentiallyTrustWorthy = isURLPotentiallyTrustworthy(referrerURL) && !isURLPotentiallyTrustworthy(request3.url);
       switch (policy) {
         case "origin":
           return referrerOrigin != null ? referrerOrigin : stripURLForReferrer(referrerSource, true);
@@ -4301,7 +4301,7 @@ var require_util2 = __commonJS({
         case "origin-when-cross-origin":
           return areSameOrigin ? referrerURL : referrerOrigin;
         case "strict-origin-when-cross-origin": {
-          const currentURL = requestCurrentURL(request2);
+          const currentURL = requestCurrentURL(request3);
           if (sameOrigin(referrerURL, currentURL)) {
             return referrerURL;
           }
@@ -4462,7 +4462,7 @@ var require_util2 = __commonJS({
       }
       return true;
     }
-    function tryUpgradeRequestToAPotentiallyTrustworthyURL(request2) {
+    function tryUpgradeRequestToAPotentiallyTrustworthyURL(request3) {
     }
     function sameOrigin(A2, B2) {
       if (A2.origin === B2.origin && A2.origin === "null") {
@@ -5623,7 +5623,7 @@ Content-Type: ${value.type || "application/octet-stream"}\r
       }
     }
     function bodyMixinMethods(instance) {
-      const methods = {
+      const methods2 = {
         blob() {
           return consumeBody2(this, (bytes) => {
             let mimeType = bodyMimeType(this);
@@ -5681,7 +5681,7 @@ Content-Type: ${value.type || "application/octet-stream"}\r
           }, instance);
         }
       };
-      return methods;
+      return methods2;
     }
     function mixinBody(prototype) {
       Object.assign(prototype.prototype, bodyMixinMethods(prototype));
@@ -6031,11 +6031,11 @@ var require_client_h1 = __commonJS({
           util.destroy(socket, new SocketError("bad response", util.getSocketInfo(socket)));
           return -1;
         }
-        const request2 = client[kQueue][client[kRunningIdx]];
-        if (!request2) {
+        const request3 = client[kQueue][client[kRunningIdx]];
+        if (!request3) {
           return -1;
         }
-        request2.onResponseStarted();
+        request3.onResponseStarted();
       }
       onHeaderField(buf) {
         const len = this.headers.length;
@@ -6080,9 +6080,9 @@ var require_client_h1 = __commonJS({
         assert(!socket.destroyed);
         assert(!this.paused);
         assert((headers.length & 1) === 0);
-        const request2 = client[kQueue][client[kRunningIdx]];
-        assert(request2);
-        assert(request2.upgrade || request2.method === "CONNECT");
+        const request3 = client[kQueue][client[kRunningIdx]];
+        assert(request3);
+        assert(request3.upgrade || request3.method === "CONNECT");
         this.statusCode = null;
         this.statusText = "";
         this.shouldKeepAlive = null;
@@ -6099,9 +6099,9 @@ var require_client_h1 = __commonJS({
         client[kQueue][client[kRunningIdx]++] = null;
         client.emit("disconnect", client[kUrl], [client], new InformationalError("upgrade"));
         try {
-          request2.onUpgrade(statusCode, headers, socket, statusText);
+          request3.onUpgrade(statusCode, headers, socket, statusText);
         } catch (error2) {
-          util.errorRequest(client, request2, error2);
+          util.errorRequest(client, request3, error2);
           util.destroy(socket, error2);
         }
         client[kResume]();
@@ -6115,8 +6115,8 @@ var require_client_h1 = __commonJS({
           util.destroy(socket, new SocketError("bad response", util.getSocketInfo(socket)));
           return -1;
         }
-        const request2 = client[kQueue][client[kRunningIdx]];
-        if (!request2) {
+        const request3 = client[kQueue][client[kRunningIdx]];
+        if (!request3) {
           return -1;
         }
         assert(!this.upgrade);
@@ -6125,23 +6125,23 @@ var require_client_h1 = __commonJS({
           util.destroy(socket, new SocketError("bad response", util.getSocketInfo(socket)));
           return -1;
         }
-        if (upgrade && !request2.upgrade) {
+        if (upgrade && !request3.upgrade) {
           util.destroy(socket, new SocketError("bad upgrade", util.getSocketInfo(socket)));
           return -1;
         }
         assert(this.timeoutType === TIMEOUT_HEADERS);
         this.statusCode = statusCode;
         this.shouldKeepAlive = shouldKeepAlive || // Override llhttp value which does not allow keepAlive for HEAD.
-        request2.method === "HEAD" && !socket[kReset] && this.connection.toLowerCase() === "keep-alive";
+        request3.method === "HEAD" && !socket[kReset] && this.connection.toLowerCase() === "keep-alive";
         if (this.statusCode >= 200) {
-          const bodyTimeout = request2.bodyTimeout != null ? request2.bodyTimeout : client[kBodyTimeout];
+          const bodyTimeout = request3.bodyTimeout != null ? request3.bodyTimeout : client[kBodyTimeout];
           this.setTimeout(bodyTimeout, TIMEOUT_BODY);
         } else if (this.timeout) {
           if (this.timeout.refresh) {
             this.timeout.refresh();
           }
         }
-        if (request2.method === "CONNECT") {
+        if (request3.method === "CONNECT") {
           assert(client[kRunning] === 1);
           this.upgrade = true;
           return 2;
@@ -6172,11 +6172,11 @@ var require_client_h1 = __commonJS({
         } else {
           socket[kReset] = true;
         }
-        const pause = request2.onHeaders(statusCode, headers, this.resume, statusText) === false;
-        if (request2.aborted) {
+        const pause = request3.onHeaders(statusCode, headers, this.resume, statusText) === false;
+        if (request3.aborted) {
           return -1;
         }
-        if (request2.method === "HEAD") {
+        if (request3.method === "HEAD") {
           return 1;
         }
         if (statusCode < 200) {
@@ -6193,8 +6193,8 @@ var require_client_h1 = __commonJS({
         if (socket.destroyed) {
           return -1;
         }
-        const request2 = client[kQueue][client[kRunningIdx]];
-        assert(request2);
+        const request3 = client[kQueue][client[kRunningIdx]];
+        assert(request3);
         assert(this.timeoutType === TIMEOUT_BODY);
         if (this.timeout) {
           if (this.timeout.refresh) {
@@ -6207,7 +6207,7 @@ var require_client_h1 = __commonJS({
           return -1;
         }
         this.bytesRead += buf.length;
-        if (request2.onData(buf) === false) {
+        if (request3.onData(buf) === false) {
           return constants3.ERROR.PAUSED;
         }
       }
@@ -6221,8 +6221,8 @@ var require_client_h1 = __commonJS({
         }
         assert(statusCode >= 100);
         assert((this.headers.length & 1) === 0);
-        const request2 = client[kQueue][client[kRunningIdx]];
-        assert(request2);
+        const request3 = client[kQueue][client[kRunningIdx]];
+        assert(request3);
         this.statusCode = null;
         this.statusText = "";
         this.bytesRead = 0;
@@ -6234,11 +6234,11 @@ var require_client_h1 = __commonJS({
         if (statusCode < 200) {
           return;
         }
-        if (request2.method !== "HEAD" && contentLength && bytesRead !== parseInt(contentLength, 10)) {
+        if (request3.method !== "HEAD" && contentLength && bytesRead !== parseInt(contentLength, 10)) {
           util.destroy(socket, new ResponseContentLengthMismatchError());
           return -1;
         }
-        request2.onComplete(headers);
+        request3.onComplete(headers);
         client[kQueue][client[kRunningIdx]++] = null;
         socket[kSocketUsed] = true;
         if (socket[kWriting]) {
@@ -6337,13 +6337,13 @@ var require_client_h1 = __commonJS({
           assert(client2[kPending] === 0);
           const requests = client2[kQueue].splice(client2[kRunningIdx]);
           for (let i2 = 0; i2 < requests.length; i2++) {
-            const request2 = requests[i2];
-            util.errorRequest(client2, request2, err);
+            const request3 = requests[i2];
+            util.errorRequest(client2, request3, err);
           }
         } else if (client2[kRunning] > 0 && err.code !== "UND_ERR_INFO") {
-          const request2 = client2[kQueue][client2[kRunningIdx]];
+          const request3 = client2[kQueue][client2[kRunningIdx]];
           client2[kQueue][client2[kRunningIdx]++] = null;
-          util.errorRequest(client2, request2, err);
+          util.errorRequest(client2, request3, err);
         }
         client2[kPendingIdx] = client2[kRunningIdx];
         assert(client2[kRunning] === 0);
@@ -6373,18 +6373,18 @@ var require_client_h1 = __commonJS({
         get destroyed() {
           return socket.destroyed;
         },
-        busy(request2) {
+        busy(request3) {
           if (socket[kWriting] || socket[kReset] || socket[kBlocking] || socket[kIdleSocketValidation] === 1) {
             return true;
           }
-          if (request2) {
-            if (client[kRunning] > 0 && !request2.idempotent) {
+          if (request3) {
+            if (client[kRunning] > 0 && !request3.idempotent) {
               return true;
             }
-            if (client[kRunning] > 0 && (request2.upgrade || request2.method === "CONNECT")) {
+            if (client[kRunning] > 0 && (request3.upgrade || request3.method === "CONNECT")) {
               return true;
             }
-            if (client[kRunning] > 0 && util.bodyLength(request2.body) !== 0 && (util.isStream(request2.body) || util.isAsyncIterable(request2.body) || util.isFormDataLike(request2.body))) {
+            if (client[kRunning] > 0 && util.bodyLength(request3.body) !== 0 && (util.isStream(request3.body) || util.isAsyncIterable(request3.body) || util.isFormDataLike(request3.body))) {
               return true;
             }
           }
@@ -6450,8 +6450,8 @@ var require_client_h1 = __commonJS({
           }
         } else if (client[kRunning] > 0 && socket[kParser].statusCode < 200) {
           if (socket[kParser].timeoutType !== TIMEOUT_HEADERS) {
-            const request2 = client[kQueue][client[kRunningIdx]];
-            const headersTimeout = request2.headersTimeout != null ? request2.headersTimeout : client[kHeadersTimeout];
+            const request3 = client[kQueue][client[kRunningIdx]];
+            const headersTimeout = request3.headersTimeout != null ? request3.headersTimeout : client[kHeadersTimeout];
             socket[kParser].setTimeout(headersTimeout, TIMEOUT_HEADERS);
           }
         }
@@ -6460,26 +6460,26 @@ var require_client_h1 = __commonJS({
     function shouldSendContentLength(method) {
       return method !== "GET" && method !== "HEAD" && method !== "OPTIONS" && method !== "TRACE" && method !== "CONNECT";
     }
-    function writeH1(client, request2) {
-      const { method, path, host, upgrade, blocking, reset } = request2;
-      let { body, headers, contentLength } = request2;
+    function writeH1(client, request3) {
+      const { method, path, host, upgrade, blocking, reset } = request3;
+      let { body, headers, contentLength } = request3;
       const expectsPayload = method === "PUT" || method === "POST" || method === "PATCH" || method === "QUERY" || method === "PROPFIND" || method === "PROPPATCH";
       if (util.isFormDataLike(body)) {
         if (!extractBody) {
           extractBody = require_body().extractBody;
         }
         const [bodyStream, contentType] = extractBody(body);
-        if (request2.contentType == null) {
+        if (request3.contentType == null) {
           headers.push("content-type", contentType);
         }
         body = bodyStream.stream;
         contentLength = bodyStream.length;
-      } else if (util.isBlobLike(body) && request2.contentType == null) {
+      } else if (util.isBlobLike(body) && request3.contentType == null) {
         const contentType = body.type;
         if (contentType) {
           const contentTypeValue = `${contentType}`;
           if (!util.isValidHeaderValue(contentTypeValue)) {
-            util.errorRequest(client, request2, new InvalidArgumentError("invalid content-type header"));
+            util.errorRequest(client, request3, new InvalidArgumentError("invalid content-type header"));
             return false;
           }
           headers.push("content-type", contentTypeValue);
@@ -6491,14 +6491,14 @@ var require_client_h1 = __commonJS({
       const bodyLength = util.bodyLength(body);
       contentLength = bodyLength ?? contentLength;
       if (contentLength === null) {
-        contentLength = request2.contentLength;
+        contentLength = request3.contentLength;
       }
       if (contentLength === 0 && !expectsPayload) {
         contentLength = null;
       }
-      if (shouldSendContentLength(method) && contentLength > 0 && request2.contentLength !== null && request2.contentLength !== contentLength) {
+      if (shouldSendContentLength(method) && contentLength > 0 && request3.contentLength !== null && request3.contentLength !== contentLength) {
         if (client[kStrictContentLength]) {
-          util.errorRequest(client, request2, new RequestContentLengthMismatchError());
+          util.errorRequest(client, request3, new RequestContentLengthMismatchError());
           return false;
         }
         process.emitWarning(new RequestContentLengthMismatchError());
@@ -6506,25 +6506,25 @@ var require_client_h1 = __commonJS({
       const socket = client[kSocket];
       clearIdleSocketValidation(socket);
       const abort = (error2) => {
-        if (request2.aborted) {
+        if (request3.aborted) {
           return;
         }
-        if (request2.completed) {
-          if (request2.upgrade || request2.method === "CONNECT") {
+        if (request3.completed) {
+          if (request3.upgrade || request3.method === "CONNECT") {
             util.destroy(socket, new InformationalError("aborted"));
           }
           return;
         }
-        util.errorRequest(client, request2, error2 || new RequestAbortedError());
+        util.errorRequest(client, request3, error2 || new RequestAbortedError());
         util.destroy(body);
         util.destroy(socket, new InformationalError("aborted"));
       };
       try {
-        request2.onConnect(abort);
+        request3.onConnect(abort);
       } catch (err) {
-        util.errorRequest(client, request2, err);
+        util.errorRequest(client, request3, err);
       }
-      if (request2.aborted) {
+      if (request3.aborted) {
         return false;
       }
       if (method === "HEAD") {
@@ -6575,31 +6575,31 @@ upgrade: ${upgrade}\r
         }
       }
       if (channels.sendHeaders.hasSubscribers) {
-        channels.sendHeaders.publish({ request: request2, headers: header, socket });
+        channels.sendHeaders.publish({ request: request3, headers: header, socket });
       }
       if (!body || bodyLength === 0) {
-        writeBuffer(abort, null, client, request2, socket, contentLength, header, expectsPayload);
+        writeBuffer(abort, null, client, request3, socket, contentLength, header, expectsPayload);
       } else if (util.isBuffer(body)) {
-        writeBuffer(abort, body, client, request2, socket, contentLength, header, expectsPayload);
+        writeBuffer(abort, body, client, request3, socket, contentLength, header, expectsPayload);
       } else if (util.isBlobLike(body)) {
         if (typeof body.stream === "function") {
-          writeIterable(abort, body.stream(), client, request2, socket, contentLength, header, expectsPayload);
+          writeIterable(abort, body.stream(), client, request3, socket, contentLength, header, expectsPayload);
         } else {
-          writeBlob(abort, body, client, request2, socket, contentLength, header, expectsPayload);
+          writeBlob(abort, body, client, request3, socket, contentLength, header, expectsPayload);
         }
       } else if (util.isStream(body)) {
-        writeStream(abort, body, client, request2, socket, contentLength, header, expectsPayload);
+        writeStream(abort, body, client, request3, socket, contentLength, header, expectsPayload);
       } else if (util.isIterable(body)) {
-        writeIterable(abort, body, client, request2, socket, contentLength, header, expectsPayload);
+        writeIterable(abort, body, client, request3, socket, contentLength, header, expectsPayload);
       } else {
         assert(false);
       }
       return true;
     }
-    function writeStream(abort, body, client, request2, socket, contentLength, header, expectsPayload) {
+    function writeStream(abort, body, client, request3, socket, contentLength, header, expectsPayload) {
       assert(contentLength !== 0 || client[kRunning] === 0, "stream body cannot be pipelined");
       let finished = false;
-      const writer = new AsyncWriter({ abort, socket, request: request2, contentLength, client, expectsPayload, header });
+      const writer = new AsyncWriter({ abort, socket, request: request3, contentLength, client, expectsPayload, header });
       const onData = function(chunk) {
         if (finished) {
           return;
@@ -6665,7 +6665,7 @@ upgrade: ${upgrade}\r
         setImmediate(onClose);
       }
     }
-    function writeBuffer(abort, body, client, request2, socket, contentLength, header, expectsPayload) {
+    function writeBuffer(abort, body, client, request3, socket, contentLength, header, expectsPayload) {
       try {
         if (!body) {
           if (contentLength === 0) {
@@ -6685,18 +6685,18 @@ upgrade: ${upgrade}\r
 `, "latin1");
           socket.write(body);
           socket.uncork();
-          request2.onBodySent(body);
-          if (!expectsPayload && request2.reset !== false) {
+          request3.onBodySent(body);
+          if (!expectsPayload && request3.reset !== false) {
             socket[kReset] = true;
           }
         }
-        request2.onRequestSent();
+        request3.onRequestSent();
         client[kResume]();
       } catch (err) {
         abort(err);
       }
     }
-    async function writeBlob(abort, body, client, request2, socket, contentLength, header, expectsPayload) {
+    async function writeBlob(abort, body, client, request3, socket, contentLength, header, expectsPayload) {
       assert(contentLength === body.size, "blob body must have content length");
       try {
         if (contentLength != null && contentLength !== body.size) {
@@ -6709,9 +6709,9 @@ upgrade: ${upgrade}\r
 `, "latin1");
         socket.write(buffer);
         socket.uncork();
-        request2.onBodySent(buffer);
-        request2.onRequestSent();
-        if (!expectsPayload && request2.reset !== false) {
+        request3.onBodySent(buffer);
+        request3.onRequestSent();
+        if (!expectsPayload && request3.reset !== false) {
           socket[kReset] = true;
         }
         client[kResume]();
@@ -6719,7 +6719,7 @@ upgrade: ${upgrade}\r
         abort(err);
       }
     }
-    async function writeIterable(abort, body, client, request2, socket, contentLength, header, expectsPayload) {
+    async function writeIterable(abort, body, client, request3, socket, contentLength, header, expectsPayload) {
       assert(contentLength !== 0 || client[kRunning] === 0, "iterator body cannot be pipelined");
       let callback = null;
       function onDrain() {
@@ -6738,7 +6738,7 @@ upgrade: ${upgrade}\r
         }
       });
       socket.on("close", onDrain).on("drain", onDrain);
-      const writer = new AsyncWriter({ abort, socket, request: request2, contentLength, client, expectsPayload, header });
+      const writer = new AsyncWriter({ abort, socket, request: request3, contentLength, client, expectsPayload, header });
       try {
         for await (const chunk of body) {
           if (socket[kError]) {
@@ -6756,9 +6756,9 @@ upgrade: ${upgrade}\r
       }
     }
     var AsyncWriter = class {
-      constructor({ abort, socket, request: request2, contentLength, client, expectsPayload, header }) {
+      constructor({ abort, socket, request: request3, contentLength, client, expectsPayload, header }) {
         this.socket = socket;
-        this.request = request2;
+        this.request = request3;
         this.contentLength = contentLength;
         this.client = client;
         this.bytesWritten = 0;
@@ -6768,7 +6768,7 @@ upgrade: ${upgrade}\r
         socket[kWriting] = true;
       }
       write(chunk) {
-        const { socket, request: request2, contentLength, client, bytesWritten, expectsPayload, header } = this;
+        const { socket, request: request3, contentLength, client, bytesWritten, expectsPayload, header } = this;
         if (socket[kError]) {
           throw socket[kError];
         }
@@ -6787,7 +6787,7 @@ upgrade: ${upgrade}\r
         }
         socket.cork();
         if (bytesWritten === 0) {
-          if (!expectsPayload && request2.reset !== false) {
+          if (!expectsPayload && request3.reset !== false) {
             socket[kReset] = true;
           }
           if (contentLength === null) {
@@ -6807,7 +6807,7 @@ ${len.toString(16)}\r
         this.bytesWritten += len;
         const ret = socket.write(chunk);
         socket.uncork();
-        request2.onBodySent(chunk);
+        request3.onBodySent(chunk);
         if (!ret) {
           if (socket[kParser].timeout && socket[kParser].timeoutType === TIMEOUT_HEADERS) {
             if (socket[kParser].timeout.refresh) {
@@ -6818,8 +6818,8 @@ ${len.toString(16)}\r
         return ret;
       }
       end() {
-        const { socket, contentLength, client, bytesWritten, expectsPayload, header, request: request2 } = this;
-        request2.onRequestSent();
+        const { socket, contentLength, client, bytesWritten, expectsPayload, header, request: request3 } = this;
+        request3.onRequestSent();
         socket[kWriting] = false;
         if (socket[kError]) {
           throw socket[kError];
@@ -6964,8 +6964,8 @@ var require_client_h2 = __commonJS({
           assert(client2[kPending] === 0);
           const requests = client2[kQueue].splice(client2[kRunningIdx]);
           for (let i2 = 0; i2 < requests.length; i2++) {
-            const request2 = requests[i2];
-            util.errorRequest(client2, request2, err);
+            const request3 = requests[i2];
+            util.errorRequest(client2, request3, err);
           }
         }
       });
@@ -7059,9 +7059,9 @@ var require_client_h2 = __commonJS({
       }
       util.destroy(this[kSocket], err);
       if (client[kRunningIdx] < client[kQueue].length) {
-        const request2 = client[kQueue][client[kRunningIdx]];
+        const request3 = client[kQueue][client[kRunningIdx]];
         client[kQueue][client[kRunningIdx]++] = null;
-        util.errorRequest(client, request2, err);
+        util.errorRequest(client, request3, err);
         client[kPendingIdx] = client[kRunningIdx];
       }
       assert(client[kRunning] === 0);
@@ -7071,12 +7071,12 @@ var require_client_h2 = __commonJS({
     function shouldSendContentLength(method) {
       return method !== "GET" && method !== "HEAD" && method !== "OPTIONS" && method !== "TRACE" && method !== "CONNECT";
     }
-    function writeH2(client, request2) {
+    function writeH2(client, request3) {
       const session = client[kHTTP2Session];
-      const { method, path, host, upgrade, expectContinue, signal, headers: reqHeaders } = request2;
-      let { body } = request2;
+      const { method, path, host, upgrade, expectContinue, signal, headers: reqHeaders } = request3;
+      let { body } = request3;
       if (upgrade) {
-        util.errorRequest(client, request2, new Error("Upgrade not supported for H2"));
+        util.errorRequest(client, request3, new Error("Upgrade not supported for H2"));
         return false;
       }
       const headers = {};
@@ -7100,17 +7100,17 @@ var require_client_h2 = __commonJS({
       headers[HTTP2_HEADER_AUTHORITY] = host || `${hostname}${port ? `:${port}` : ""}`;
       headers[HTTP2_HEADER_METHOD] = method;
       const abort = (error2) => {
-        if (request2.aborted) {
+        if (request3.aborted) {
           return;
         }
-        if (request2.completed) {
+        if (request3.completed) {
           if (method === "CONNECT" && stream != null) {
             util.destroy(stream, error2 || new RequestAbortedError());
           }
           return;
         }
         error2 = error2 || new RequestAbortedError();
-        util.errorRequest(client, request2, error2);
+        util.errorRequest(client, request3, error2);
         if (stream != null) {
           util.destroy(stream, error2);
         }
@@ -7119,11 +7119,11 @@ var require_client_h2 = __commonJS({
         client[kResume]();
       };
       try {
-        request2.onConnect(abort);
+        request3.onConnect(abort);
       } catch (err) {
-        util.errorRequest(client, request2, err);
+        util.errorRequest(client, request3, err);
       }
-      if (request2.aborted) {
+      if (request3.aborted) {
         return false;
       }
       if (method === "CONNECT") {
@@ -7133,22 +7133,22 @@ var require_client_h2 = __commonJS({
         const onResponse = (headers2) => {
           upgradeResponseFinished = true;
           stream.off(errorMonitor, onUpgradeError);
-          request2.onUpgradeResponse(Number(headers2[HTTP2_HEADER_STATUS]), headers2, parseH2ResponseHeaders);
+          request3.onUpgradeResponse(Number(headers2[HTTP2_HEADER_STATUS]), headers2, parseH2ResponseHeaders);
         };
         const onUpgradeError = (error2) => {
           upgradeResponseFinished = true;
           stream.off("response", onResponse);
-          request2.onUpgradeError(error2);
+          request3.onUpgradeError(error2);
         };
         const onReady = () => {
           try {
-            request2.onUpgrade(null, null, stream);
+            request3.onUpgrade(null, null, stream);
           } catch (error2) {
             stream.off("response", onResponse);
             abort(error2);
             return;
           }
-          if (request2.aborted) {
+          if (request3.aborted) {
             return;
           }
           stream.off("error", abort);
@@ -7160,10 +7160,10 @@ var require_client_h2 = __commonJS({
         ++session[kOpenStreams];
         onReady();
         stream.once("close", () => {
-          if (!upgradeResponseFinished && request2.completed) {
+          if (!upgradeResponseFinished && request3.completed) {
             stream.off("response", onResponse);
             stream.off(errorMonitor, onUpgradeError);
-            request2.onUpgradeError(new InformationalError(`HTTP/2: "stream error" received - code ${stream.rstCode}`));
+            request3.onUpgradeError(new InformationalError(`HTTP/2: "stream error" received - code ${stream.rstCode}`));
           }
           session[kOpenStreams] -= 1;
           if (session[kOpenStreams] === 0) session.unref();
@@ -7185,14 +7185,14 @@ var require_client_h2 = __commonJS({
         contentLength = bodyStream.length;
       }
       if (contentLength == null) {
-        contentLength = request2.contentLength;
+        contentLength = request3.contentLength;
       }
       if (contentLength === 0 || !expectsPayload) {
         contentLength = null;
       }
-      if (shouldSendContentLength(method) && contentLength > 0 && request2.contentLength != null && request2.contentLength !== contentLength) {
+      if (shouldSendContentLength(method) && contentLength > 0 && request3.contentLength != null && request3.contentLength !== contentLength) {
         if (client[kStrictContentLength]) {
-          util.errorRequest(client, request2, new RequestContentLengthMismatchError());
+          util.errorRequest(client, request3, new RequestContentLengthMismatchError());
           return false;
         }
         process.emitWarning(new RequestContentLengthMismatchError());
@@ -7217,25 +7217,25 @@ var require_client_h2 = __commonJS({
       ++session[kOpenStreams];
       stream.once("response", (headers2) => {
         const { [HTTP2_HEADER_STATUS]: statusCode, ...realHeaders } = headers2;
-        request2.onResponseStarted();
-        if (request2.aborted) {
+        request3.onResponseStarted();
+        if (request3.aborted) {
           const err = new RequestAbortedError();
-          util.errorRequest(client, request2, err);
+          util.errorRequest(client, request3, err);
           util.destroy(stream, err);
           return;
         }
-        if (request2.onHeaders(Number(statusCode), parseH2Headers(realHeaders), stream.resume.bind(stream), "") === false) {
+        if (request3.onHeaders(Number(statusCode), parseH2Headers(realHeaders), stream.resume.bind(stream), "") === false) {
           stream.pause();
         }
         stream.on("data", (chunk) => {
-          if (request2.onData(chunk) === false) {
+          if (request3.onData(chunk) === false) {
             stream.pause();
           }
         });
       });
       stream.once("end", () => {
         if (stream.state?.state == null || stream.state.state < 6) {
-          request2.onComplete([]);
+          request3.onComplete([]);
         }
         if (session[kOpenStreams] === 0) {
           session.unref();
@@ -7265,7 +7265,7 @@ var require_client_h2 = __commonJS({
             stream,
             null,
             client,
-            request2,
+            request3,
             client[kSocket],
             contentLength,
             expectsPayload
@@ -7276,7 +7276,7 @@ var require_client_h2 = __commonJS({
             stream,
             body,
             client,
-            request2,
+            request3,
             client[kSocket],
             contentLength,
             expectsPayload
@@ -7288,7 +7288,7 @@ var require_client_h2 = __commonJS({
               stream,
               body.stream(),
               client,
-              request2,
+              request3,
               client[kSocket],
               contentLength,
               expectsPayload
@@ -7299,7 +7299,7 @@ var require_client_h2 = __commonJS({
               stream,
               body,
               client,
-              request2,
+              request3,
               client[kSocket],
               contentLength,
               expectsPayload
@@ -7313,7 +7313,7 @@ var require_client_h2 = __commonJS({
             stream,
             body,
             client,
-            request2,
+            request3,
             contentLength
           );
         } else if (util.isIterable(body)) {
@@ -7322,7 +7322,7 @@ var require_client_h2 = __commonJS({
             stream,
             body,
             client,
-            request2,
+            request3,
             client[kSocket],
             contentLength,
             expectsPayload
@@ -7332,7 +7332,7 @@ var require_client_h2 = __commonJS({
         }
       }
     }
-    function writeBuffer(abort, h2stream, body, client, request2, socket, contentLength, expectsPayload) {
+    function writeBuffer(abort, h2stream, body, client, request3, socket, contentLength, expectsPayload) {
       try {
         if (body != null && util.isBuffer(body)) {
           assert(contentLength === body.byteLength, "buffer body must have content length");
@@ -7340,18 +7340,18 @@ var require_client_h2 = __commonJS({
           h2stream.write(body);
           h2stream.uncork();
           h2stream.end();
-          request2.onBodySent(body);
+          request3.onBodySent(body);
         }
         if (!expectsPayload) {
           socket[kReset] = true;
         }
-        request2.onRequestSent();
+        request3.onRequestSent();
         client[kResume]();
       } catch (error2) {
         abort(error2);
       }
     }
-    function writeStream(abort, socket, expectsPayload, h2stream, body, client, request2, contentLength) {
+    function writeStream(abort, socket, expectsPayload, h2stream, body, client, request3, contentLength) {
       assert(contentLength !== 0 || client[kRunning] === 0, "stream body cannot be pipelined");
       const pipe = pipeline2(
         body,
@@ -7362,7 +7362,7 @@ var require_client_h2 = __commonJS({
             abort(err);
           } else {
             util.removeAllListeners(pipe);
-            request2.onRequestSent();
+            request3.onRequestSent();
             if (!expectsPayload) {
               socket[kReset] = true;
             }
@@ -7372,10 +7372,10 @@ var require_client_h2 = __commonJS({
       );
       util.addListener(pipe, "data", onPipeData);
       function onPipeData(chunk) {
-        request2.onBodySent(chunk);
+        request3.onBodySent(chunk);
       }
     }
-    async function writeBlob(abort, h2stream, body, client, request2, socket, contentLength, expectsPayload) {
+    async function writeBlob(abort, h2stream, body, client, request3, socket, contentLength, expectsPayload) {
       assert(contentLength === body.size, "blob body must have content length");
       try {
         if (contentLength != null && contentLength !== body.size) {
@@ -7386,8 +7386,8 @@ var require_client_h2 = __commonJS({
         h2stream.write(buffer);
         h2stream.uncork();
         h2stream.end();
-        request2.onBodySent(buffer);
-        request2.onRequestSent();
+        request3.onBodySent(buffer);
+        request3.onRequestSent();
         if (!expectsPayload) {
           socket[kReset] = true;
         }
@@ -7396,7 +7396,7 @@ var require_client_h2 = __commonJS({
         abort(err);
       }
     }
-    async function writeIterable(abort, h2stream, body, client, request2, socket, contentLength, expectsPayload) {
+    async function writeIterable(abort, h2stream, body, client, request3, socket, contentLength, expectsPayload) {
       assert(contentLength !== 0 || client[kRunning] === 0, "iterator body cannot be pipelined");
       let callback = null;
       function onDrain() {
@@ -7421,13 +7421,13 @@ var require_client_h2 = __commonJS({
             throw socket[kError];
           }
           const res = h2stream.write(chunk);
-          request2.onBodySent(chunk);
+          request3.onBodySent(chunk);
           if (!res) {
             await waitForDrain();
           }
         }
         h2stream.end();
-        request2.onRequestSent();
+        request3.onRequestSent();
         if (!expectsPayload) {
           socket[kReset] = true;
         }
@@ -7874,10 +7874,10 @@ var require_client = __commonJS({
       }
       [kDispatch](opts, handler2) {
         const origin = opts.origin || this[kUrl].origin;
-        const request2 = new Request2(origin, opts, handler2);
-        this[kQueue].push(request2);
+        const request3 = new Request2(origin, opts, handler2);
+        this[kQueue].push(request3);
         if (this[kResuming]) {
-        } else if (util.bodyLength(request2.body) == null && util.isIterable(request2.body)) {
+        } else if (util.bodyLength(request3.body) == null && util.isIterable(request3.body)) {
           this[kResuming] = 1;
           queueMicrotask(() => resume(this));
         } else {
@@ -7901,8 +7901,8 @@ var require_client = __commonJS({
         return new Promise((resolve4) => {
           const requests = this[kQueue].splice(this[kPendingIdx]);
           for (let i2 = 0; i2 < requests.length; i2++) {
-            const request2 = requests[i2];
-            util.errorRequest(this, request2, err);
+            const request3 = requests[i2];
+            util.errorRequest(this, request3, err);
           }
           const callback = () => {
             if (this[kClosedResolve]) {
@@ -7927,8 +7927,8 @@ var require_client = __commonJS({
         assert(client[kPendingIdx] === client[kRunningIdx]);
         const requests = client[kQueue].splice(client[kRunningIdx]);
         for (let i2 = 0; i2 < requests.length; i2++) {
-          const request2 = requests[i2];
-          util.errorRequest(client, request2, err);
+          const request3 = requests[i2];
+          util.errorRequest(client, request3, err);
         }
         assert(client[kSize] === 0);
       }
@@ -8031,8 +8031,8 @@ var require_client = __commonJS({
         if (err.code === "ERR_TLS_CERT_ALTNAME_INVALID") {
           assert(client[kRunning] === 0);
           while (client[kPending] > 0 && client[kQueue][client[kPendingIdx]].servername === client[kServerName]) {
-            const request2 = client[kQueue][client[kPendingIdx]++];
-            util.errorRequest(client, request2, err);
+            const request3 = client[kQueue][client[kPendingIdx]++];
+            util.errorRequest(client, request3, err);
           }
         } else {
           onError(client, err);
@@ -8089,12 +8089,12 @@ var require_client = __commonJS({
         if (client[kRunning] >= (getPipelining(client) || 1)) {
           return;
         }
-        const request2 = client[kQueue][client[kPendingIdx]];
-        if (client[kUrl].protocol === "https:" && client[kServerName] !== request2.servername) {
+        const request3 = client[kQueue][client[kPendingIdx]];
+        if (client[kUrl].protocol === "https:" && client[kServerName] !== request3.servername) {
           if (client[kRunning] > 0) {
             return;
           }
-          client[kServerName] = request2.servername;
+          client[kServerName] = request3.servername;
           client[kHTTPContext]?.destroy(new InformationalError("servername changed"), () => {
             client[kHTTPContext] = null;
             resume(client);
@@ -8110,10 +8110,10 @@ var require_client = __commonJS({
         if (client[kHTTPContext].destroyed) {
           return;
         }
-        if (client[kHTTPContext].busy(request2)) {
+        if (client[kHTTPContext].busy(request3)) {
           return;
         }
-        if (!request2.aborted && client[kHTTPContext].write(request2)) {
+        if (!request3.aborted && client[kHTTPContext].write(request3)) {
           client[kPendingIdx]++;
         } else {
           client[kQueue].splice(client[kPendingIdx], 1);
@@ -9095,7 +9095,7 @@ var require_retry_handler = __commonJS({
       return null;
     }
     var RetryHandler = class _RetryHandler {
-      constructor(opts, handlers) {
+      constructor(opts, handlers2) {
         const { retryOptions, ...dispatchOpts } = opts;
         const {
           // Retry scoped
@@ -9105,13 +9105,13 @@ var require_retry_handler = __commonJS({
           minTimeout,
           timeoutFactor,
           // Response scoped
-          methods,
+          methods: methods2,
           errorCodes,
           retryAfter,
           statusCodes
         } = retryOptions ?? {};
-        this.dispatch = handlers.dispatch;
-        this.handler = handlers.handler;
+        this.dispatch = handlers2.dispatch;
+        this.handler = handlers2.handler;
         this.opts = { ...dispatchOpts, body: wrapRequestBody(opts.body) };
         this.abort = null;
         this.aborted = false;
@@ -9125,7 +9125,7 @@ var require_retry_handler = __commonJS({
           timeoutFactor: timeoutFactor ?? 2,
           maxRetries: maxRetries ?? 5,
           // What errors we should retry
-          methods: methods ?? ["GET", "HEAD", "OPTIONS", "PUT", "DELETE", "TRACE"],
+          methods: methods2 ?? ["GET", "HEAD", "OPTIONS", "PUT", "DELETE", "TRACE"],
           // Indicates which errors to retry
           statusCodes: statusCodes ?? [500, 502, 503, 504, 429],
           // List of errors to retry
@@ -9198,14 +9198,14 @@ var require_retry_handler = __commonJS({
           timeoutFactor,
           statusCodes,
           errorCodes,
-          methods
+          methods: methods2
         } = retryOptions;
         const { counter } = state;
         if (code && code !== "UND_ERR_REQ_RETRY" && !errorCodes.includes(code)) {
           cb(err);
           return;
         }
-        if (Array.isArray(methods) && !methods.includes(method)) {
+        if (Array.isArray(methods2) && !methods2.includes(method)) {
           cb(err);
           return;
         }
@@ -9448,7 +9448,7 @@ var require_readable = __commonJS({
   "node_modules/.pnpm/undici@6.29.0/node_modules/undici/lib/api/readable.js"(exports, module) {
     "use strict";
     var assert = __require("node:assert");
-    var { Readable } = __require("node:stream");
+    var { Readable: Readable2 } = __require("node:stream");
     var { RequestAbortedError, NotSupportedError, InvalidArgumentError, AbortError: AbortError2 } = require_errors();
     var util = require_util();
     var { ReadableStreamFrom } = require_util();
@@ -9460,7 +9460,7 @@ var require_readable = __commonJS({
     var kContentLength = /* @__PURE__ */ Symbol("kContentLength");
     var noop4 = () => {
     };
-    var BodyReadable = class extends Readable {
+    var BodyReadable = class extends Readable2 {
       constructor({
         resume,
         abort,
@@ -9802,7 +9802,7 @@ var require_api_request = __commonJS({
   "node_modules/.pnpm/undici@6.29.0/node_modules/undici/lib/api/api-request.js"(exports, module) {
     "use strict";
     var assert = __require("node:assert");
-    var { Readable } = require_readable();
+    var { Readable: Readable2 } = require_readable();
     var { InvalidArgumentError, RequestAbortedError } = require_errors();
     var util = require_util();
     var { getResolveErrorBodyCallback } = require_util3();
@@ -9897,7 +9897,7 @@ var require_api_request = __commonJS({
         const parsedHeaders = responseHeaders === "raw" ? util.parseHeaders(rawHeaders) : headers;
         const contentType = parsedHeaders["content-type"];
         const contentLength = parsedHeaders["content-length"];
-        const res = new Readable({
+        const res = new Readable2({
           resume,
           abort,
           contentType,
@@ -9960,10 +9960,10 @@ var require_api_request = __commonJS({
         }
       }
     };
-    function request2(opts, callback) {
+    function request3(opts, callback) {
       if (callback === void 0) {
         return new Promise((resolve4, reject) => {
-          request2.call(this, opts, (err, data) => {
+          request3.call(this, opts, (err, data) => {
             return err ? reject(err) : resolve4(data);
           });
         });
@@ -9978,7 +9978,7 @@ var require_api_request = __commonJS({
         queueMicrotask(() => callback(err, { opaque }));
       }
     }
-    module.exports = request2;
+    module.exports = request3;
     module.exports.RequestHandler = RequestHandler;
   }
 });
@@ -10212,7 +10212,7 @@ var require_api_pipeline = __commonJS({
   "node_modules/.pnpm/undici@6.29.0/node_modules/undici/lib/api/api-pipeline.js"(exports, module) {
     "use strict";
     var {
-      Readable,
+      Readable: Readable2,
       Duplex,
       PassThrough: PassThrough3
     } = __require("node:stream");
@@ -10226,7 +10226,7 @@ var require_api_pipeline = __commonJS({
     var { addSignal, removeSignal } = require_abort_signal();
     var assert = __require("node:assert");
     var kResume = /* @__PURE__ */ Symbol("resume");
-    var PipelineRequest = class extends Readable {
+    var PipelineRequest = class extends Readable2 {
       constructor() {
         super({ autoDestroy: true });
         this[kResume] = null;
@@ -10243,7 +10243,7 @@ var require_api_pipeline = __commonJS({
         callback(err);
       }
     };
-    var PipelineResponse = class extends Readable {
+    var PipelineResponse = class extends Readable2 {
       constructor(resume) {
         super({ autoDestroy: true });
         this[kResume] = resume;
@@ -11643,8 +11643,8 @@ var require_dump = __commonJS({
 var require_dns = __commonJS({
   "node_modules/.pnpm/undici@6.29.0/node_modules/undici/lib/interceptor/dns.js"(exports, module) {
     "use strict";
-    var { isIP: isIP2 } = __require("node:net");
-    var { lookup } = __require("node:dns");
+    var { isIP: isIP3 } = __require("node:net");
+    var { lookup: lookup2 } = __require("node:dns");
     var DecoratorHandler = require_decorator_handler();
     var { InvalidArgumentError, InformationalError } = require_errors();
     var maxInt = Math.pow(2, 31) - 1;
@@ -11734,7 +11734,7 @@ var require_dns = __commonJS({
         }
       }
       #defaultLookup(origin, opts, cb) {
-        lookup(
+        lookup2(
           origin.hostname,
           {
             all: true,
@@ -11898,7 +11898,7 @@ var require_dns = __commonJS({
       return (dispatch) => {
         return function dnsInterceptor(origDispatchOpts, handler2) {
           const origin = origDispatchOpts.origin.constructor === URL ? origDispatchOpts.origin : new URL(origDispatchOpts.origin);
-          if (isIP2(origin.hostname) !== 0) {
+          if (isIP3(origin.hostname) !== 0) {
             return dispatch(origDispatchOpts, handler2);
           }
           instance.runLookup(origin, origDispatchOpts, (err, newOrigin) => {
@@ -12401,7 +12401,7 @@ var require_response = __commonJS({
     var { URLSerializer } = require_data_url();
     var { kConstruct } = require_symbols();
     var assert = __require("node:assert");
-    var { types: types3 } = __require("node:util");
+    var { types: types4 } = __require("node:util");
     var textEncoder = new TextEncoder("utf-8");
     var Response2 = class _Response {
       // Creates network error Response.
@@ -12722,7 +12722,7 @@ var require_response = __commonJS({
       if (isBlobLike(V3)) {
         return webidl.converters.Blob(V3, prefix, name, { strict: false });
       }
-      if (ArrayBuffer.isView(V3) || types3.isArrayBuffer(V3)) {
+      if (ArrayBuffer.isView(V3) || types4.isArrayBuffer(V3)) {
         return webidl.converters.BufferSource(V3, prefix, name);
       }
       if (util.isFormDataLike(V3)) {
@@ -12885,7 +12885,7 @@ var require_request2 = __commonJS({
         webidl.argumentLengthCheck(arguments, 1, prefix);
         input = webidl.converters.RequestInfo(input, prefix, "input");
         init = webidl.converters.RequestInit(init, prefix, "init");
-        let request2 = null;
+        let request3 = null;
         let fallbackMode = null;
         const baseUrl2 = environmentSettingsObject.settingsObject.baseUrl;
         let signal = null;
@@ -12902,18 +12902,18 @@ var require_request2 = __commonJS({
               "Request cannot be constructed from a URL that includes credentials: " + input
             );
           }
-          request2 = makeRequest({ urlList: [parsedURL] });
+          request3 = makeRequest({ urlList: [parsedURL] });
           fallbackMode = "cors";
         } else {
           this[kDispatcher] = init.dispatcher || input[kDispatcher];
           assert(input instanceof _Request);
-          request2 = input[kState];
+          request3 = input[kState];
           signal = input[kSignal];
         }
         const origin = environmentSettingsObject.settingsObject.origin;
         let window2 = "client";
-        if (request2.window?.constructor?.name === "EnvironmentSettingsObject" && sameOrigin(request2.window, origin)) {
-          window2 = request2.window;
+        if (request3.window?.constructor?.name === "EnvironmentSettingsObject" && sameOrigin(request3.window, origin)) {
+          window2 = request3.window;
         }
         if (init.window != null) {
           throw new TypeError(`'window' option '${window2}' must be null`);
@@ -12921,66 +12921,66 @@ var require_request2 = __commonJS({
         if ("window" in init) {
           window2 = "no-window";
         }
-        request2 = makeRequest({
+        request3 = makeRequest({
           // URL request’s URL.
           // undici implementation note: this is set as the first item in request's urlList in makeRequest
           // method request’s method.
-          method: request2.method,
+          method: request3.method,
           // header list A copy of request’s header list.
           // undici implementation note: headersList is cloned in makeRequest
-          headersList: request2.headersList,
+          headersList: request3.headersList,
           // unsafe-request flag Set.
-          unsafeRequest: request2.unsafeRequest,
+          unsafeRequest: request3.unsafeRequest,
           // client This’s relevant settings object.
           client: environmentSettingsObject.settingsObject,
           // window window.
           window: window2,
           // priority request’s priority.
-          priority: request2.priority,
+          priority: request3.priority,
           // origin request’s origin. The propagation of the origin is only significant for navigation requests
           // being handled by a service worker. In this scenario a request can have an origin that is different
           // from the current client.
-          origin: request2.origin,
+          origin: request3.origin,
           // referrer request’s referrer.
-          referrer: request2.referrer,
+          referrer: request3.referrer,
           // referrer policy request’s referrer policy.
-          referrerPolicy: request2.referrerPolicy,
+          referrerPolicy: request3.referrerPolicy,
           // mode request’s mode.
-          mode: request2.mode,
+          mode: request3.mode,
           // credentials mode request’s credentials mode.
-          credentials: request2.credentials,
+          credentials: request3.credentials,
           // cache mode request’s cache mode.
-          cache: request2.cache,
+          cache: request3.cache,
           // redirect mode request’s redirect mode.
-          redirect: request2.redirect,
+          redirect: request3.redirect,
           // integrity metadata request’s integrity metadata.
-          integrity: request2.integrity,
+          integrity: request3.integrity,
           // keepalive request’s keepalive.
-          keepalive: request2.keepalive,
+          keepalive: request3.keepalive,
           // reload-navigation flag request’s reload-navigation flag.
-          reloadNavigation: request2.reloadNavigation,
+          reloadNavigation: request3.reloadNavigation,
           // history-navigation flag request’s history-navigation flag.
-          historyNavigation: request2.historyNavigation,
+          historyNavigation: request3.historyNavigation,
           // URL list A clone of request’s URL list.
-          urlList: [...request2.urlList]
+          urlList: [...request3.urlList]
         });
         const initHasKey = Object.keys(init).length !== 0;
         if (initHasKey) {
-          if (request2.mode === "navigate") {
-            request2.mode = "same-origin";
+          if (request3.mode === "navigate") {
+            request3.mode = "same-origin";
           }
-          request2.reloadNavigation = false;
-          request2.historyNavigation = false;
-          request2.origin = "client";
-          request2.referrer = "client";
-          request2.referrerPolicy = "";
-          request2.url = request2.urlList[request2.urlList.length - 1];
-          request2.urlList = [request2.url];
+          request3.reloadNavigation = false;
+          request3.historyNavigation = false;
+          request3.origin = "client";
+          request3.referrer = "client";
+          request3.referrerPolicy = "";
+          request3.url = request3.urlList[request3.urlList.length - 1];
+          request3.urlList = [request3.url];
         }
         if (init.referrer !== void 0) {
           const referrer = init.referrer;
           if (referrer === "") {
-            request2.referrer = "no-referrer";
+            request3.referrer = "no-referrer";
           } else {
             let parsedReferrer;
             try {
@@ -12989,14 +12989,14 @@ var require_request2 = __commonJS({
               throw new TypeError(`Referrer "${referrer}" is not a valid URL.`, { cause: err });
             }
             if (parsedReferrer.protocol === "about:" && parsedReferrer.hostname === "client" || origin && !sameOrigin(parsedReferrer, environmentSettingsObject.settingsObject.baseUrl)) {
-              request2.referrer = "client";
+              request3.referrer = "client";
             } else {
-              request2.referrer = parsedReferrer;
+              request3.referrer = parsedReferrer;
             }
           }
         }
         if (init.referrerPolicy !== void 0) {
-          request2.referrerPolicy = init.referrerPolicy;
+          request3.referrerPolicy = init.referrerPolicy;
         }
         let mode;
         if (init.mode !== void 0) {
@@ -13011,33 +13011,33 @@ var require_request2 = __commonJS({
           });
         }
         if (mode != null) {
-          request2.mode = mode;
+          request3.mode = mode;
         }
         if (init.credentials !== void 0) {
-          request2.credentials = init.credentials;
+          request3.credentials = init.credentials;
         }
         if (init.cache !== void 0) {
-          request2.cache = init.cache;
+          request3.cache = init.cache;
         }
-        if (request2.cache === "only-if-cached" && request2.mode !== "same-origin") {
+        if (request3.cache === "only-if-cached" && request3.mode !== "same-origin") {
           throw new TypeError(
             "'only-if-cached' can be set only with 'same-origin' mode"
           );
         }
         if (init.redirect !== void 0) {
-          request2.redirect = init.redirect;
+          request3.redirect = init.redirect;
         }
         if (init.integrity != null) {
-          request2.integrity = String(init.integrity);
+          request3.integrity = String(init.integrity);
         }
         if (init.keepalive !== void 0) {
-          request2.keepalive = Boolean(init.keepalive);
+          request3.keepalive = Boolean(init.keepalive);
         }
         if (init.method !== void 0) {
           let method = init.method;
           const mayBeNormalized = normalizedMethodRecords[method];
           if (mayBeNormalized !== void 0) {
-            request2.method = mayBeNormalized;
+            request3.method = mayBeNormalized;
           } else {
             if (!isValidHTTPToken(method)) {
               throw new TypeError(`'${method}' is not a valid HTTP method.`);
@@ -13047,9 +13047,9 @@ var require_request2 = __commonJS({
               throw new TypeError(`'${method}' HTTP method is unsupported.`);
             }
             method = normalizedMethodRecordsBase[upperCase] ?? method;
-            request2.method = method;
+            request3.method = method;
           }
-          if (!patchMethodWarning && request2.method === "patch") {
+          if (!patchMethodWarning && request3.method === "patch") {
             process.emitWarning("Using `patch` is highly likely to result in a `405 Method Not Allowed`. `PATCH` is much more likely to succeed.", {
               code: "UNDICI-FETCH-patch"
             });
@@ -13059,7 +13059,7 @@ var require_request2 = __commonJS({
         if (init.signal !== void 0) {
           signal = init.signal;
         }
-        this[kState] = request2;
+        this[kState] = request3;
         const ac = new AbortController();
         this[kSignal] = ac.signal;
         if (signal != null) {
@@ -13087,12 +13087,12 @@ var require_request2 = __commonJS({
           }
         }
         this[kHeaders] = new Headers4(kConstruct);
-        setHeadersList(this[kHeaders], request2.headersList);
+        setHeadersList(this[kHeaders], request3.headersList);
         setHeadersGuard(this[kHeaders], "request");
         if (mode === "no-cors") {
-          if (!corsSafeListedMethodsSet.has(request2.method)) {
+          if (!corsSafeListedMethodsSet.has(request3.method)) {
             throw new TypeError(
-              `'${request2.method} is unsupported in no-cors mode.`
+              `'${request3.method} is unsupported in no-cors mode.`
             );
           }
           setHeadersGuard(this[kHeaders], "request-no-cors");
@@ -13111,14 +13111,14 @@ var require_request2 = __commonJS({
           }
         }
         const inputBody = input instanceof _Request ? input[kState].body : null;
-        if ((init.body != null || inputBody != null) && (request2.method === "GET" || request2.method === "HEAD")) {
+        if ((init.body != null || inputBody != null) && (request3.method === "GET" || request3.method === "HEAD")) {
           throw new TypeError("Request with GET/HEAD method cannot have body.");
         }
         let initBody = null;
         if (init.body != null) {
           const [extractedBody, contentType] = extractBody(
             init.body,
-            request2.keepalive
+            request3.keepalive
           );
           initBody = extractedBody;
           if (contentType && !getHeadersList(this[kHeaders]).contains("content-type", true)) {
@@ -13130,12 +13130,12 @@ var require_request2 = __commonJS({
           if (initBody != null && init.duplex == null) {
             throw new TypeError("RequestInit: duplex option is required when sending a body.");
           }
-          if (request2.mode !== "same-origin" && request2.mode !== "cors") {
+          if (request3.mode !== "same-origin" && request3.mode !== "cors") {
             throw new TypeError(
               'If request is made from ReadableStream, mode should be "same-origin" or "cors"'
             );
           }
-          request2.useCORSPreflightFlag = true;
+          request3.useCORSPreflightFlag = true;
         }
         let finalBody = inputOrInitBody;
         if (initBody == null && inputBody != null) {
@@ -13364,21 +13364,21 @@ var require_request2 = __commonJS({
         headersList: init.headersList ? new HeadersList(init.headersList) : new HeadersList()
       };
     }
-    function cloneRequest(request2) {
-      const newRequest = makeRequest({ ...request2, body: null });
-      if (request2.body != null) {
-        newRequest.body = cloneBody(newRequest, request2.body);
+    function cloneRequest(request3) {
+      const newRequest = makeRequest({ ...request3, body: null });
+      if (request3.body != null) {
+        newRequest.body = cloneBody(newRequest, request3.body);
       }
       return newRequest;
     }
     function fromInnerRequest(innerRequest, signal, guard) {
-      const request2 = new Request2(kConstruct);
-      request2[kState] = innerRequest;
-      request2[kSignal] = signal;
-      request2[kHeaders] = new Headers4(kConstruct);
-      setHeadersList(request2[kHeaders], innerRequest.headersList);
-      setHeadersGuard(request2[kHeaders], guard);
-      return request2;
+      const request3 = new Request2(kConstruct);
+      request3[kState] = innerRequest;
+      request3[kSignal] = signal;
+      request3[kHeaders] = new Headers4(kConstruct);
+      setHeadersList(request3[kHeaders], innerRequest.headersList);
+      setHeadersGuard(request3[kHeaders], guard);
+      return request3;
     }
     Object.defineProperties(Request2.prototype, {
       method: kEnumerableProperty,
@@ -13568,7 +13568,7 @@ var require_fetch = __commonJS({
       subresourceSet
     } = require_constants3();
     var EE = __require("node:events");
-    var { Readable, pipeline: pipeline2, finished } = __require("node:stream");
+    var { Readable: Readable2, pipeline: pipeline2, finished } = __require("node:stream");
     var { addAbortListener, isErrored, isReadable, bufferToLowerCasedHeaderName } = require_util();
     var { dataURLProcessor, serializeAMimeType, minimizeSupportedMimeType } = require_data_url();
     var { getGlobalDispatcher } = require_global2();
@@ -13620,14 +13620,14 @@ var require_fetch = __commonJS({
         p.reject(e2);
         return p.promise;
       }
-      const request2 = requestObject[kState];
+      const request3 = requestObject[kState];
       if (requestObject.signal.aborted) {
-        abortFetch(p, request2, null, requestObject.signal.reason);
+        abortFetch(p, request3, null, requestObject.signal.reason);
         return p.promise;
       }
-      const globalObject = request2.client.globalObject;
+      const globalObject = request3.client.globalObject;
       if (globalObject?.constructor?.name === "ServiceWorkerGlobalScope") {
-        request2.serviceWorkers = "none";
+        request3.serviceWorkers = "none";
       }
       let responseObject = null;
       let locallyAborted = false;
@@ -13639,7 +13639,7 @@ var require_fetch = __commonJS({
           assert(controller != null);
           controller.abort(requestObject.signal.reason);
           const realResponse = responseObject?.deref();
-          abortFetch(p, request2, realResponse, requestObject.signal.reason);
+          abortFetch(p, request3, realResponse, requestObject.signal.reason);
         }
       );
       const processResponse = (response) => {
@@ -13647,7 +13647,7 @@ var require_fetch = __commonJS({
           return;
         }
         if (response.aborted) {
-          abortFetch(p, request2, responseObject, controller.serializedAbortReason);
+          abortFetch(p, request3, responseObject, controller.serializedAbortReason);
           return;
         }
         if (response.type === "error") {
@@ -13659,7 +13659,7 @@ var require_fetch = __commonJS({
         p = null;
       };
       controller = fetching({
-        request: request2,
+        request: request3,
         processResponseEndOfBody: handleFetchDone,
         processResponse,
         dispatcher: requestObject[kDispatcher]
@@ -13700,12 +13700,12 @@ var require_fetch = __commonJS({
       );
     }
     var markResourceTiming = performance.markResourceTiming;
-    function abortFetch(p, request2, responseObject, error2) {
+    function abortFetch(p, request3, responseObject, error2) {
       if (p) {
         p.reject(error2);
       }
-      if (request2.body != null && isReadable(request2.body?.stream)) {
-        request2.body.stream.cancel(error2).catch((err) => {
+      if (request3.body != null && isReadable(request3.body?.stream)) {
+        request3.body.stream.cancel(error2).catch((err) => {
           if (err.code === "ERR_INVALID_STATE") {
             return;
           }
@@ -13726,7 +13726,7 @@ var require_fetch = __commonJS({
       }
     }
     function fetching({
-      request: request2,
+      request: request3,
       processRequestBodyChunkLength,
       processRequestEndOfBody,
       processResponse,
@@ -13739,9 +13739,9 @@ var require_fetch = __commonJS({
       assert(dispatcher);
       let taskDestination = null;
       let crossOriginIsolatedCapability = false;
-      if (request2.client != null) {
-        taskDestination = request2.client.globalObject;
-        crossOriginIsolatedCapability = request2.client.crossOriginIsolatedCapability;
+      if (request3.client != null) {
+        taskDestination = request3.client.globalObject;
+        crossOriginIsolatedCapability = request3.client.crossOriginIsolatedCapability;
       }
       const currentTime = coarsenedSharedCurrentTime(crossOriginIsolatedCapability);
       const timingInfo = createOpaqueTimingInfo({
@@ -13749,7 +13749,7 @@ var require_fetch = __commonJS({
       });
       const fetchParams = {
         controller: new Fetch(dispatcher),
-        request: request2,
+        request: request3,
         timingInfo,
         processRequestBodyChunkLength,
         processRequestEndOfBody,
@@ -13759,32 +13759,32 @@ var require_fetch = __commonJS({
         taskDestination,
         crossOriginIsolatedCapability
       };
-      assert(!request2.body || request2.body.stream);
-      if (request2.window === "client") {
-        request2.window = request2.client?.globalObject?.constructor?.name === "Window" ? request2.client : "no-window";
+      assert(!request3.body || request3.body.stream);
+      if (request3.window === "client") {
+        request3.window = request3.client?.globalObject?.constructor?.name === "Window" ? request3.client : "no-window";
       }
-      if (request2.origin === "client") {
-        request2.origin = request2.client.origin;
+      if (request3.origin === "client") {
+        request3.origin = request3.client.origin;
       }
-      if (request2.policyContainer === "client") {
-        if (request2.client != null) {
-          request2.policyContainer = clonePolicyContainer(
-            request2.client.policyContainer
+      if (request3.policyContainer === "client") {
+        if (request3.client != null) {
+          request3.policyContainer = clonePolicyContainer(
+            request3.client.policyContainer
           );
         } else {
-          request2.policyContainer = makePolicyContainer();
+          request3.policyContainer = makePolicyContainer();
         }
       }
-      if (!request2.headersList.contains("accept", true)) {
+      if (!request3.headersList.contains("accept", true)) {
         const value = "*/*";
-        request2.headersList.append("accept", value, true);
+        request3.headersList.append("accept", value, true);
       }
-      if (!request2.headersList.contains("accept-language", true)) {
-        request2.headersList.append("accept-language", "*", true);
+      if (!request3.headersList.contains("accept-language", true)) {
+        request3.headersList.append("accept-language", "*", true);
       }
-      if (request2.priority === null) {
+      if (request3.priority === null) {
       }
-      if (subresourceSet.has(request2.destination)) {
+      if (subresourceSet.has(request3.destination)) {
       }
       mainFetch(fetchParams).catch((err) => {
         fetchParams.controller.terminate(err);
@@ -13792,50 +13792,50 @@ var require_fetch = __commonJS({
       return fetchParams.controller;
     }
     async function mainFetch(fetchParams, recursive = false) {
-      const request2 = fetchParams.request;
+      const request3 = fetchParams.request;
       let response = null;
-      if (request2.localURLsOnly && !urlIsLocal(requestCurrentURL(request2))) {
+      if (request3.localURLsOnly && !urlIsLocal(requestCurrentURL(request3))) {
         response = makeNetworkError("local URLs only");
       }
-      tryUpgradeRequestToAPotentiallyTrustworthyURL(request2);
-      if (requestBadPort(request2) === "blocked") {
+      tryUpgradeRequestToAPotentiallyTrustworthyURL(request3);
+      if (requestBadPort(request3) === "blocked") {
         response = makeNetworkError("bad port");
       }
-      if (request2.referrerPolicy === "") {
-        request2.referrerPolicy = request2.policyContainer.referrerPolicy;
+      if (request3.referrerPolicy === "") {
+        request3.referrerPolicy = request3.policyContainer.referrerPolicy;
       }
-      if (request2.referrer !== "no-referrer") {
-        request2.referrer = determineRequestsReferrer2(request2);
+      if (request3.referrer !== "no-referrer") {
+        request3.referrer = determineRequestsReferrer2(request3);
       }
       if (response === null) {
         response = await (async () => {
-          const currentURL = requestCurrentURL(request2);
+          const currentURL = requestCurrentURL(request3);
           if (
             // - request’s current URL’s origin is same origin with request’s origin,
             //   and request’s response tainting is "basic"
-            sameOrigin(currentURL, request2.url) && request2.responseTainting === "basic" || // request’s current URL’s scheme is "data"
+            sameOrigin(currentURL, request3.url) && request3.responseTainting === "basic" || // request’s current URL’s scheme is "data"
             currentURL.protocol === "data:" || // - request’s mode is "navigate" or "websocket"
-            (request2.mode === "navigate" || request2.mode === "websocket")
+            (request3.mode === "navigate" || request3.mode === "websocket")
           ) {
-            request2.responseTainting = "basic";
+            request3.responseTainting = "basic";
             return await schemeFetch(fetchParams);
           }
-          if (request2.mode === "same-origin") {
+          if (request3.mode === "same-origin") {
             return makeNetworkError('request mode cannot be "same-origin"');
           }
-          if (request2.mode === "no-cors") {
-            if (request2.redirect !== "follow") {
+          if (request3.mode === "no-cors") {
+            if (request3.redirect !== "follow") {
               return makeNetworkError(
                 'redirect mode cannot be "follow" for "no-cors" request'
               );
             }
-            request2.responseTainting = "opaque";
+            request3.responseTainting = "opaque";
             return await schemeFetch(fetchParams);
           }
-          if (!urlIsHttpHttpsScheme(requestCurrentURL(request2))) {
+          if (!urlIsHttpHttpsScheme(requestCurrentURL(request3))) {
             return makeNetworkError("URL scheme must be a HTTP(S) scheme");
           }
-          request2.responseTainting = "cors";
+          request3.responseTainting = "cors";
           return await httpFetch(fetchParams);
         })();
       }
@@ -13843,13 +13843,13 @@ var require_fetch = __commonJS({
         return response;
       }
       if (response.status !== 0 && !response.internalResponse) {
-        if (request2.responseTainting === "cors") {
+        if (request3.responseTainting === "cors") {
         }
-        if (request2.responseTainting === "basic") {
+        if (request3.responseTainting === "basic") {
           response = filterResponse(response, "basic");
-        } else if (request2.responseTainting === "cors") {
+        } else if (request3.responseTainting === "cors") {
           response = filterResponse(response, "cors");
-        } else if (request2.responseTainting === "opaque") {
+        } else if (request3.responseTainting === "opaque") {
           response = filterResponse(response, "opaque");
         } else {
           assert(false);
@@ -13857,26 +13857,26 @@ var require_fetch = __commonJS({
       }
       let internalResponse = response.status === 0 ? response : response.internalResponse;
       if (internalResponse.urlList.length === 0) {
-        internalResponse.urlList.push(...request2.urlList);
+        internalResponse.urlList.push(...request3.urlList);
       }
-      if (!request2.timingAllowFailed) {
+      if (!request3.timingAllowFailed) {
         response.timingAllowPassed = true;
       }
-      if (response.type === "opaque" && internalResponse.status === 206 && internalResponse.rangeRequested && !request2.headers.contains("range", true)) {
+      if (response.type === "opaque" && internalResponse.status === 206 && internalResponse.rangeRequested && !request3.headers.contains("range", true)) {
         response = internalResponse = makeNetworkError();
       }
-      if (response.status !== 0 && (request2.method === "HEAD" || request2.method === "CONNECT" || nullBodyStatus.includes(internalResponse.status))) {
+      if (response.status !== 0 && (request3.method === "HEAD" || request3.method === "CONNECT" || nullBodyStatus.includes(internalResponse.status))) {
         internalResponse.body = null;
         fetchParams.controller.dump = true;
       }
-      if (request2.integrity) {
+      if (request3.integrity) {
         const processBodyError = (reason) => fetchFinale(fetchParams, makeNetworkError(reason));
-        if (request2.responseTainting === "opaque" || response.body == null) {
+        if (request3.responseTainting === "opaque" || response.body == null) {
           processBodyError(response.error);
           return;
         }
         const processBody = (bytes) => {
-          if (!bytesMatch(bytes, request2.integrity)) {
+          if (!bytesMatch(bytes, request3.integrity)) {
             processBodyError("integrity mismatch");
             return;
           }
@@ -13892,8 +13892,8 @@ var require_fetch = __commonJS({
       if (isCancelled(fetchParams) && fetchParams.request.redirectCount === 0) {
         return Promise.resolve(makeAppropriateNetworkError(fetchParams));
       }
-      const { request: request2 } = fetchParams;
-      const { protocol: scheme } = requestCurrentURL(request2);
+      const { request: request3 } = fetchParams;
+      const { protocol: scheme } = requestCurrentURL(request3);
       switch (scheme) {
         case "about:": {
           return Promise.resolve(makeNetworkError("about scheme is not supported"));
@@ -13902,19 +13902,19 @@ var require_fetch = __commonJS({
           if (!resolveObjectURL) {
             resolveObjectURL = __require("node:buffer").resolveObjectURL;
           }
-          const blobURLEntry = requestCurrentURL(request2);
+          const blobURLEntry = requestCurrentURL(request3);
           if (blobURLEntry.search.length !== 0) {
             return Promise.resolve(makeNetworkError("NetworkError when attempting to fetch resource."));
           }
           const blob = resolveObjectURL(blobURLEntry.toString());
-          if (request2.method !== "GET" || !isBlobLike(blob)) {
+          if (request3.method !== "GET" || !isBlobLike(blob)) {
             return Promise.resolve(makeNetworkError("invalid method"));
           }
           const response = makeResponse();
           const fullLength = blob.size;
           const serializedFullLength = isomorphicEncode(`${fullLength}`);
           const type = blob.type;
-          if (!request2.headersList.contains("range", true)) {
+          if (!request3.headersList.contains("range", true)) {
             const bodyWithType = extractBody(blob);
             response.statusText = "OK";
             response.body = bodyWithType[0];
@@ -13922,7 +13922,7 @@ var require_fetch = __commonJS({
             response.headersList.set("content-type", type, true);
           } else {
             response.rangeRequested = true;
-            const rangeHeader = request2.headersList.get("range", true);
+            const rangeHeader = request3.headersList.get("range", true);
             const rangeValue = simpleRangeHeaderValue(rangeHeader, true);
             if (rangeValue === "failure") {
               return Promise.resolve(makeNetworkError("failed to fetch the data URL"));
@@ -13953,7 +13953,7 @@ var require_fetch = __commonJS({
           return Promise.resolve(response);
         }
         case "data:": {
-          const currentURL = requestCurrentURL(request2);
+          const currentURL = requestCurrentURL(request3);
           const dataURLStruct = dataURLProcessor(currentURL);
           if (dataURLStruct === "failure") {
             return Promise.resolve(makeNetworkError("failed to fetch the data URL"));
@@ -14042,41 +14042,41 @@ var require_fetch = __commonJS({
       }
     }
     async function httpFetch(fetchParams) {
-      const request2 = fetchParams.request;
+      const request3 = fetchParams.request;
       let response = null;
       let actualResponse = null;
       const timingInfo = fetchParams.timingInfo;
-      if (request2.serviceWorkers === "all") {
+      if (request3.serviceWorkers === "all") {
       }
       if (response === null) {
-        if (request2.redirect === "follow") {
-          request2.serviceWorkers = "none";
+        if (request3.redirect === "follow") {
+          request3.serviceWorkers = "none";
         }
         actualResponse = response = await httpNetworkOrCacheFetch(fetchParams);
-        if (request2.responseTainting === "cors" && corsCheck(request2, response) === "failure") {
+        if (request3.responseTainting === "cors" && corsCheck(request3, response) === "failure") {
           return makeNetworkError("cors failure");
         }
-        if (TAOCheck(request2, response) === "failure") {
-          request2.timingAllowFailed = true;
+        if (TAOCheck(request3, response) === "failure") {
+          request3.timingAllowFailed = true;
         }
       }
-      if ((request2.responseTainting === "opaque" || response.type === "opaque") && crossOriginResourcePolicyCheck(
-        request2.origin,
-        request2.client,
-        request2.destination,
+      if ((request3.responseTainting === "opaque" || response.type === "opaque") && crossOriginResourcePolicyCheck(
+        request3.origin,
+        request3.client,
+        request3.destination,
         actualResponse
       ) === "blocked") {
         return makeNetworkError("blocked");
       }
       if (redirectStatusSet.has(actualResponse.status)) {
-        if (request2.redirect !== "manual") {
+        if (request3.redirect !== "manual") {
           fetchParams.controller.connection.destroy(void 0, false);
         }
-        if (request2.redirect === "error") {
+        if (request3.redirect === "error") {
           response = makeNetworkError("unexpected redirect");
-        } else if (request2.redirect === "manual") {
+        } else if (request3.redirect === "manual") {
           response = actualResponse;
-        } else if (request2.redirect === "follow") {
+        } else if (request3.redirect === "follow") {
           response = await httpRedirectFetch(fetchParams, response);
         } else {
           assert(false);
@@ -14086,13 +14086,13 @@ var require_fetch = __commonJS({
       return response;
     }
     function httpRedirectFetch(fetchParams, response) {
-      const request2 = fetchParams.request;
+      const request3 = fetchParams.request;
       const actualResponse = response.internalResponse ? response.internalResponse : response;
       let locationURL;
       try {
         locationURL = responseLocationURL(
           actualResponse,
-          requestCurrentURL(request2).hash
+          requestCurrentURL(request3).hash
         );
         if (locationURL == null) {
           return response;
@@ -14103,63 +14103,63 @@ var require_fetch = __commonJS({
       if (!urlIsHttpHttpsScheme(locationURL)) {
         return Promise.resolve(makeNetworkError("URL scheme must be a HTTP(S) scheme"));
       }
-      if (request2.redirectCount === 20) {
+      if (request3.redirectCount === 20) {
         return Promise.resolve(makeNetworkError("redirect count exceeded"));
       }
-      request2.redirectCount += 1;
-      if (request2.mode === "cors" && (locationURL.username || locationURL.password) && !sameOrigin(request2, locationURL)) {
+      request3.redirectCount += 1;
+      if (request3.mode === "cors" && (locationURL.username || locationURL.password) && !sameOrigin(request3, locationURL)) {
         return Promise.resolve(makeNetworkError('cross origin not allowed for request mode "cors"'));
       }
-      if (request2.responseTainting === "cors" && (locationURL.username || locationURL.password)) {
+      if (request3.responseTainting === "cors" && (locationURL.username || locationURL.password)) {
         return Promise.resolve(makeNetworkError(
           'URL cannot contain credentials for request mode "cors"'
         ));
       }
-      if (actualResponse.status !== 303 && request2.body != null && request2.body.source == null) {
+      if (actualResponse.status !== 303 && request3.body != null && request3.body.source == null) {
         return Promise.resolve(makeNetworkError());
       }
-      if ([301, 302].includes(actualResponse.status) && request2.method === "POST" || actualResponse.status === 303 && !GET_OR_HEAD.includes(request2.method)) {
-        request2.method = "GET";
-        request2.body = null;
+      if ([301, 302].includes(actualResponse.status) && request3.method === "POST" || actualResponse.status === 303 && !GET_OR_HEAD.includes(request3.method)) {
+        request3.method = "GET";
+        request3.body = null;
         for (const headerName of requestBodyHeader) {
-          request2.headersList.delete(headerName);
+          request3.headersList.delete(headerName);
         }
       }
-      if (!sameOrigin(requestCurrentURL(request2), locationURL)) {
-        request2.headersList.delete("authorization", true);
-        request2.headersList.delete("proxy-authorization", true);
-        request2.headersList.delete("cookie", true);
-        request2.headersList.delete("host", true);
+      if (!sameOrigin(requestCurrentURL(request3), locationURL)) {
+        request3.headersList.delete("authorization", true);
+        request3.headersList.delete("proxy-authorization", true);
+        request3.headersList.delete("cookie", true);
+        request3.headersList.delete("host", true);
       }
-      if (request2.body != null) {
-        assert(request2.body.source != null);
-        request2.body = safelyExtractBody(request2.body.source)[0];
+      if (request3.body != null) {
+        assert(request3.body.source != null);
+        request3.body = safelyExtractBody(request3.body.source)[0];
       }
       const timingInfo = fetchParams.timingInfo;
       timingInfo.redirectEndTime = timingInfo.postRedirectStartTime = coarsenedSharedCurrentTime(fetchParams.crossOriginIsolatedCapability);
       if (timingInfo.redirectStartTime === 0) {
         timingInfo.redirectStartTime = timingInfo.startTime;
       }
-      request2.urlList.push(locationURL);
-      setRequestReferrerPolicyOnRedirect(request2, actualResponse);
+      request3.urlList.push(locationURL);
+      setRequestReferrerPolicyOnRedirect(request3, actualResponse);
       return mainFetch(fetchParams, true);
     }
     async function httpNetworkOrCacheFetch(fetchParams, isAuthenticationFetch = false, isNewConnectionFetch = false) {
-      const request2 = fetchParams.request;
+      const request3 = fetchParams.request;
       let httpFetchParams = null;
       let httpRequest = null;
       let response = null;
       const httpCache = null;
       const revalidatingFlag = false;
-      if (request2.window === "no-window" && request2.redirect === "error") {
+      if (request3.window === "no-window" && request3.redirect === "error") {
         httpFetchParams = fetchParams;
-        httpRequest = request2;
+        httpRequest = request3;
       } else {
-        httpRequest = cloneRequest(request2);
+        httpRequest = cloneRequest(request3);
         httpFetchParams = { ...fetchParams };
         httpFetchParams.request = httpRequest;
       }
-      const includeCredentials = request2.credentials === "include" || request2.credentials === "same-origin" && request2.responseTainting === "basic";
+      const includeCredentials = request3.credentials === "include" || request3.credentials === "same-origin" && request3.responseTainting === "basic";
       const contentLength = httpRequest.body ? httpRequest.body.length : null;
       let contentLengthHeaderValue = null;
       if (httpRequest.body == null && ["POST", "PUT"].includes(httpRequest.method)) {
@@ -14236,7 +14236,7 @@ var require_fetch = __commonJS({
       }
       response.requestIncludesCredentials = includeCredentials;
       if (response.status === 407) {
-        if (request2.window === "no-window") {
+        if (request3.window === "no-window") {
           return makeNetworkError();
         }
         if (isCancelled(fetchParams)) {
@@ -14248,7 +14248,7 @@ var require_fetch = __commonJS({
         // response’s status is 421
         response.status === 421 && // isNewConnectionFetch is false
         !isNewConnectionFetch && // request’s body is null, or request’s body is non-null and request’s body’s source is non-null
-        (request2.body == null || request2.body.source != null)
+        (request3.body == null || request3.body.source != null)
       ) {
         if (isCancelled(fetchParams)) {
           return makeAppropriateNetworkError(fetchParams);
@@ -14278,21 +14278,21 @@ var require_fetch = __commonJS({
           }
         }
       };
-      const request2 = fetchParams.request;
+      const request3 = fetchParams.request;
       let response = null;
       const timingInfo = fetchParams.timingInfo;
       const httpCache = null;
       if (httpCache == null) {
-        request2.cache = "no-store";
+        request3.cache = "no-store";
       }
       const newConnection = forceNewConnection ? "yes" : "no";
-      if (request2.mode === "websocket") {
+      if (request3.mode === "websocket") {
       } else {
       }
       let requestBody = null;
-      if (request2.body == null && fetchParams.processRequestEndOfBody) {
+      if (request3.body == null && fetchParams.processRequestEndOfBody) {
         queueMicrotask(() => fetchParams.processRequestEndOfBody());
-      } else if (request2.body != null) {
+      } else if (request3.body != null) {
         const processBodyChunk = async function* (bytes) {
           if (isCancelled(fetchParams)) {
             return;
@@ -14320,7 +14320,7 @@ var require_fetch = __commonJS({
         };
         requestBody = (async function* () {
           try {
-            for await (const bytes of request2.body.stream) {
+            for await (const bytes of request3.body.stream) {
               yield* processBodyChunk(bytes);
             }
             processEndOfBody();
@@ -14430,17 +14430,17 @@ var require_fetch = __commonJS({
       }
       return response;
       function dispatch({ body }) {
-        const url = requestCurrentURL(request2);
+        const url = requestCurrentURL(request3);
         const agent = fetchParams.controller.dispatcher;
         return new Promise((resolve4, reject) => agent.dispatch(
           {
             path: url.pathname + url.search,
             origin: url.origin,
-            method: request2.method,
-            body: agent.isMockActive ? request2.body && (request2.body.source || request2.body.stream) : body,
-            headers: request2.headersList.entries,
+            method: request3.method,
+            body: agent.isMockActive ? request3.body && (request3.body.source || request3.body.stream) : body,
+            headers: request3.headersList.entries,
             maxRedirections: 0,
-            upgrade: request2.mode === "websocket" ? "websocket" : void 0
+            upgrade: request3.mode === "websocket" ? "websocket" : void 0
           },
           {
             body: null,
@@ -14469,10 +14469,10 @@ var require_fetch = __commonJS({
                 headersList.append(bufferToLowerCasedHeaderName(rawHeaders[i2]), rawHeaders[i2 + 1].toString("latin1"), true);
               }
               location = headersList.get("location", true);
-              this.body = new Readable({ read: resume });
+              this.body = new Readable2({ read: resume });
               const decoders = [];
-              const willFollow = location && request2.redirect === "follow" && redirectStatusSet.has(status);
-              if (request2.method !== "HEAD" && request2.method !== "CONNECT" && !nullBodyStatus.includes(status) && !willFollow) {
+              const willFollow = location && request3.redirect === "follow" && redirectStatusSet.has(status);
+              if (request3.method !== "HEAD" && request3.method !== "CONNECT" && !nullBodyStatus.includes(status) && !willFollow) {
                 const contentEncoding = headersList.get("content-encoding", true);
                 const codings = contentEncoding ? contentEncoding.toLowerCase().split(",") : [];
                 const maxContentEncodings = 5;
@@ -14958,7 +14958,7 @@ var require_util4 = __commonJS({
     var { ProgressEvent } = require_progressevent();
     var { getEncoding } = require_encoding();
     var { serializeAMimeType, parseMIMEType } = require_data_url();
-    var { types: types3 } = __require("node:util");
+    var { types: types4 } = __require("node:util");
     var { StringDecoder } = __require("string_decoder");
     var { btoa: btoa2 } = __require("node:buffer");
     var staticPropertyDescriptors = {
@@ -14988,7 +14988,7 @@ var require_util4 = __commonJS({
               });
             }
             isFirstChunk = false;
-            if (!done && types3.isUint8Array(value)) {
+            if (!done && types4.isUint8Array(value)) {
               bytes.push(value);
               if ((fr3[kLastProgressEventFired] === void 0 || Date.now() - fr3[kLastProgressEventFired] >= 50) && !fr3[kAborted]) {
                 fr3[kLastProgressEventFired] = Date.now();
@@ -15050,11 +15050,11 @@ var require_util4 = __commonJS({
             dataURL += serializeAMimeType(parsed);
           }
           dataURL += ";base64,";
-          const decoder = new StringDecoder("latin1");
+          const decoder2 = new StringDecoder("latin1");
           for (const chunk of bytes) {
-            dataURL += btoa2(decoder.write(chunk));
+            dataURL += btoa2(decoder2.write(chunk));
           }
-          dataURL += btoa2(decoder.end());
+          dataURL += btoa2(decoder2.end());
           return dataURL;
         }
         case "Text": {
@@ -15079,11 +15079,11 @@ var require_util4 = __commonJS({
         }
         case "BinaryString": {
           let binaryString = "";
-          const decoder = new StringDecoder("latin1");
+          const decoder2 = new StringDecoder("latin1");
           for (const chunk of bytes) {
-            binaryString += decoder.write(chunk);
+            binaryString += decoder2.write(chunk);
           }
-          binaryString += decoder.end();
+          binaryString += decoder2.end();
           return binaryString;
         }
       }
@@ -15455,31 +15455,31 @@ var require_cache = __commonJS({
         webidl.util.markAsUncloneable(this);
         this.#relevantRequestResponseList = arguments[1];
       }
-      async match(request2, options = {}) {
+      async match(request3, options = {}) {
         webidl.brandCheck(this, _Cache);
         const prefix = "Cache.match";
         webidl.argumentLengthCheck(arguments, 1, prefix);
-        request2 = webidl.converters.RequestInfo(request2, prefix, "request");
+        request3 = webidl.converters.RequestInfo(request3, prefix, "request");
         options = webidl.converters.CacheQueryOptions(options, prefix, "options");
-        const p = this.#internalMatchAll(request2, options, 1);
+        const p = this.#internalMatchAll(request3, options, 1);
         if (p.length === 0) {
           return;
         }
         return p[0];
       }
-      async matchAll(request2 = void 0, options = {}) {
+      async matchAll(request3 = void 0, options = {}) {
         webidl.brandCheck(this, _Cache);
         const prefix = "Cache.matchAll";
-        if (request2 !== void 0) request2 = webidl.converters.RequestInfo(request2, prefix, "request");
+        if (request3 !== void 0) request3 = webidl.converters.RequestInfo(request3, prefix, "request");
         options = webidl.converters.CacheQueryOptions(options, prefix, "options");
-        return this.#internalMatchAll(request2, options);
+        return this.#internalMatchAll(request3, options);
       }
-      async add(request2) {
+      async add(request3) {
         webidl.brandCheck(this, _Cache);
         const prefix = "Cache.add";
         webidl.argumentLengthCheck(arguments, 1, prefix);
-        request2 = webidl.converters.RequestInfo(request2, prefix, "request");
-        const requests = [request2];
+        request3 = webidl.converters.RequestInfo(request3, prefix, "request");
+        const requests = [request3];
         const responseArrayPromise = this.addAll(requests);
         return await responseArrayPromise;
       }
@@ -15489,19 +15489,19 @@ var require_cache = __commonJS({
         webidl.argumentLengthCheck(arguments, 1, prefix);
         const responsePromises = [];
         const requestList = [];
-        for (let request2 of requests) {
-          if (request2 === void 0) {
+        for (let request3 of requests) {
+          if (request3 === void 0) {
             throw webidl.errors.conversionFailed({
               prefix,
               argument: "Argument 1",
               types: ["undefined is not allowed"]
             });
           }
-          request2 = webidl.converters.RequestInfo(request2);
-          if (typeof request2 === "string") {
+          request3 = webidl.converters.RequestInfo(request3);
+          if (typeof request3 === "string") {
             continue;
           }
-          const r2 = request2[kState];
+          const r2 = request3[kState];
           if (!urlIsHttpHttpsScheme(r2.url) || r2.method !== "GET") {
             throw webidl.errors.exception({
               header: prefix,
@@ -15510,8 +15510,8 @@ var require_cache = __commonJS({
           }
         }
         const fetchControllers = [];
-        for (const request2 of requests) {
-          const r2 = new Request2(request2)[kState];
+        for (const request3 of requests) {
+          const r2 = new Request2(request3)[kState];
           if (!urlIsHttpHttpsScheme(r2.url)) {
             throw webidl.errors.exception({
               header: prefix,
@@ -15588,17 +15588,17 @@ var require_cache = __commonJS({
         });
         return cacheJobPromise.promise;
       }
-      async put(request2, response) {
+      async put(request3, response) {
         webidl.brandCheck(this, _Cache);
         const prefix = "Cache.put";
         webidl.argumentLengthCheck(arguments, 2, prefix);
-        request2 = webidl.converters.RequestInfo(request2, prefix, "request");
+        request3 = webidl.converters.RequestInfo(request3, prefix, "request");
         response = webidl.converters.Response(response, prefix, "response");
         let innerRequest = null;
-        if (request2 instanceof Request2) {
-          innerRequest = request2[kState];
+        if (request3 instanceof Request2) {
+          innerRequest = request3[kState];
         } else {
-          innerRequest = new Request2(request2)[kState];
+          innerRequest = new Request2(request3)[kState];
         }
         if (!urlIsHttpHttpsScheme(innerRequest.url) || innerRequest.method !== "GET") {
           throw webidl.errors.exception({
@@ -15669,21 +15669,21 @@ var require_cache = __commonJS({
         });
         return cacheJobPromise.promise;
       }
-      async delete(request2, options = {}) {
+      async delete(request3, options = {}) {
         webidl.brandCheck(this, _Cache);
         const prefix = "Cache.delete";
         webidl.argumentLengthCheck(arguments, 1, prefix);
-        request2 = webidl.converters.RequestInfo(request2, prefix, "request");
+        request3 = webidl.converters.RequestInfo(request3, prefix, "request");
         options = webidl.converters.CacheQueryOptions(options, prefix, "options");
         let r2 = null;
-        if (request2 instanceof Request2) {
-          r2 = request2[kState];
+        if (request3 instanceof Request2) {
+          r2 = request3[kState];
           if (r2.method !== "GET" && !options.ignoreMethod) {
             return false;
           }
         } else {
-          assert(typeof request2 === "string");
-          r2 = new Request2(request2)[kState];
+          assert(typeof request3 === "string");
+          r2 = new Request2(request3)[kState];
         }
         const operations = [];
         const operation = {
@@ -15715,25 +15715,25 @@ var require_cache = __commonJS({
        * @param {import('../../types/cache').CacheQueryOptions} options
        * @returns {Promise<readonly Request[]>}
        */
-      async keys(request2 = void 0, options = {}) {
+      async keys(request3 = void 0, options = {}) {
         webidl.brandCheck(this, _Cache);
         const prefix = "Cache.keys";
-        if (request2 !== void 0) request2 = webidl.converters.RequestInfo(request2, prefix, "request");
+        if (request3 !== void 0) request3 = webidl.converters.RequestInfo(request3, prefix, "request");
         options = webidl.converters.CacheQueryOptions(options, prefix, "options");
         let r2 = null;
-        if (request2 !== void 0) {
-          if (request2 instanceof Request2) {
-            r2 = request2[kState];
+        if (request3 !== void 0) {
+          if (request3 instanceof Request2) {
+            r2 = request3[kState];
             if (r2.method !== "GET" && !options.ignoreMethod) {
               return [];
             }
-          } else if (typeof request2 === "string") {
-            r2 = new Request2(request2)[kState];
+          } else if (typeof request3 === "string") {
+            r2 = new Request2(request3)[kState];
           }
         }
         const promise = createDeferredPromise();
         const requests = [];
-        if (request2 === void 0) {
+        if (request3 === void 0) {
           for (const requestResponse of this.#relevantRequestResponseList) {
             requests.push(requestResponse[0]);
           }
@@ -15745,9 +15745,9 @@ var require_cache = __commonJS({
         }
         queueMicrotask(() => {
           const requestList = [];
-          for (const request3 of requests) {
+          for (const request4 of requests) {
             const requestObject = fromInnerRequest(
-              request3,
+              request4,
               new AbortController().signal,
               "immutable"
             );
@@ -15865,9 +15865,9 @@ var require_cache = __commonJS({
        * @param {import('../../types/cache').CacheQueryOptions | undefined} options
        * @returns {boolean}
        */
-      #requestMatchesCachedItem(requestQuery, request2, response = null, options) {
+      #requestMatchesCachedItem(requestQuery, request3, response = null, options) {
         const queryURL = new URL(requestQuery.url);
-        const cachedURL = new URL(request2.url);
+        const cachedURL = new URL(request3.url);
         if (options?.ignoreSearch) {
           cachedURL.search = "";
           queryURL.search = "";
@@ -15883,7 +15883,7 @@ var require_cache = __commonJS({
           if (fieldValue === "*") {
             return false;
           }
-          const requestValue = request2.headersList.get(fieldValue);
+          const requestValue = request3.headersList.get(fieldValue);
           const queryValue = requestQuery.headersList.get(fieldValue);
           if (requestValue !== queryValue) {
             return false;
@@ -15891,20 +15891,20 @@ var require_cache = __commonJS({
         }
         return true;
       }
-      #internalMatchAll(request2, options, maxResponses = Infinity) {
+      #internalMatchAll(request3, options, maxResponses = Infinity) {
         let r2 = null;
-        if (request2 !== void 0) {
-          if (request2 instanceof Request2) {
-            r2 = request2[kState];
+        if (request3 !== void 0) {
+          if (request3 instanceof Request2) {
+            r2 = request3[kState];
             if (r2.method !== "GET" && !options.ignoreMethod) {
               return [];
             }
-          } else if (typeof request2 === "string") {
-            r2 = new Request2(request2)[kState];
+          } else if (typeof request3 === "string") {
+            r2 = new Request2(request3)[kState];
           }
         }
         const responses = [];
-        if (request2 === void 0) {
+        if (request3 === void 0) {
           for (const requestResponse of this.#relevantRequestResponseList) {
             responses.push(requestResponse[1]);
           }
@@ -15993,21 +15993,21 @@ var require_cachestorage = __commonJS({
         }
         webidl.util.markAsUncloneable(this);
       }
-      async match(request2, options = {}) {
+      async match(request3, options = {}) {
         webidl.brandCheck(this, _CacheStorage);
         webidl.argumentLengthCheck(arguments, 1, "CacheStorage.match");
-        request2 = webidl.converters.RequestInfo(request2);
+        request3 = webidl.converters.RequestInfo(request3);
         options = webidl.converters.MultiCacheQueryOptions(options);
         if (options.cacheName != null) {
           if (this.#caches.has(options.cacheName)) {
             const cacheList = this.#caches.get(options.cacheName);
             const cache = new Cache(kConstruct, cacheList);
-            return await cache.match(request2, options);
+            return await cache.match(request3, options);
           }
         } else {
           for (const cacheList of this.#caches.values()) {
             const cache = new Cache(kConstruct, cacheList);
-            const response = await cache.match(request2, options);
+            const response = await cache.match(request3, options);
             if (response !== void 0) {
               return response;
             }
@@ -17187,7 +17187,7 @@ var require_connection = __commonJS({
     function establishWebSocketConnection(url, protocols, client, ws2, onEstablish, options) {
       const requestURL = url;
       requestURL.protocol = url.protocol === "ws:" ? "http:" : "https:";
-      const request2 = makeRequest({
+      const request3 = makeRequest({
         urlList: [requestURL],
         client,
         serviceWorkers: "none",
@@ -17199,18 +17199,18 @@ var require_connection = __commonJS({
       });
       if (options.headers) {
         const headersList = getHeadersList(new Headers4(options.headers));
-        request2.headersList = headersList;
+        request3.headersList = headersList;
       }
       const keyValue = crypto3.randomBytes(16).toString("base64");
-      request2.headersList.append("sec-websocket-key", keyValue);
-      request2.headersList.append("sec-websocket-version", "13");
+      request3.headersList.append("sec-websocket-key", keyValue);
+      request3.headersList.append("sec-websocket-version", "13");
       for (const protocol of protocols) {
-        request2.headersList.append("sec-websocket-protocol", protocol);
+        request3.headersList.append("sec-websocket-protocol", protocol);
       }
       const permessageDeflate = "permessage-deflate; client_max_window_bits";
-      request2.headersList.append("sec-websocket-extensions", permessageDeflate);
+      request3.headersList.append("sec-websocket-extensions", permessageDeflate);
       const controller = fetching({
-        request: request2,
+        request: request3,
         useParallelQueue: true,
         dispatcher: options.dispatcher,
         processResponse(response) {
@@ -17247,7 +17247,7 @@ var require_connection = __commonJS({
           }
           const secProtocol = response.headersList.get("Sec-WebSocket-Protocol");
           if (secProtocol !== null) {
-            const requestProtocols = getDecodeSplit("sec-websocket-protocol", request2.headersList);
+            const requestProtocols = getDecodeSplit("sec-websocket-protocol", request3.headersList);
             if (requestProtocols === null || !requestProtocols.includes(secProtocol)) {
               failWebsocketConnection(ws2, "Protocol was not set in the opening handshake.");
               return;
@@ -17908,7 +17908,7 @@ var require_websocket = __commonJS({
     var { ByteParser } = require_receiver();
     var { kEnumerableProperty, isBlobLike } = require_util();
     var { getGlobalDispatcher } = require_global2();
-    var { types: types3 } = __require("node:util");
+    var { types: types4 } = __require("node:util");
     var { ErrorEvent, CloseEvent } = require_events();
     var { SendQueue } = require_sender();
     var WebSocket = class _WebSocket extends EventTarget {
@@ -18031,7 +18031,7 @@ var require_websocket = __commonJS({
           this.#sendQueue.add(data, () => {
             this.#bufferedAmount -= length;
           }, sendHints.string);
-        } else if (types3.isArrayBuffer(data)) {
+        } else if (types4.isArrayBuffer(data)) {
           this.#bufferedAmount += data.byteLength;
           this.#sendQueue.add(data, () => {
             this.#bufferedAmount -= data.byteLength;
@@ -18243,7 +18243,7 @@ var require_websocket = __commonJS({
         if (isBlobLike(V3)) {
           return webidl.converters.Blob(V3, { strict: false });
         }
-        if (ArrayBuffer.isView(V3) || types3.isArrayBuffer(V3)) {
+        if (ArrayBuffer.isView(V3) || types4.isArrayBuffer(V3)) {
           return webidl.converters.BufferSource(V3);
         }
       }
@@ -19338,7 +19338,7 @@ var require_lib = __commonJS({
       return parsedUrl.protocol === "https:";
     }
     var HttpClient3 = class {
-      constructor(userAgent2, handlers, requestOptions2) {
+      constructor(userAgent2, handlers2, requestOptions2) {
         this._ignoreSslError = false;
         this._allowRedirects = true;
         this._allowRedirectDowngrade = false;
@@ -19348,7 +19348,7 @@ var require_lib = __commonJS({
         this._keepAlive = false;
         this._disposed = false;
         this.userAgent = this._getUserAgentWithOrchestrationId(userAgent2);
-        this.handlers = handlers || [];
+        this.handlers = handlers2 || [];
         this.requestOptions = requestOptions2;
         if (requestOptions2) {
           if (requestOptions2.ignoreSslError != null) {
@@ -23065,9 +23065,9 @@ var require_ponyfill_es2018 = __commonJS({
         }
         SetUpReadableByteStreamController(stream, controller, startAlgorithm, pullAlgorithm, cancelAlgorithm, highWaterMark, autoAllocateChunkSize);
       }
-      function SetUpReadableStreamBYOBRequest(request2, controller, view) {
-        request2._associatedReadableByteStreamController = controller;
-        request2._view = view;
+      function SetUpReadableStreamBYOBRequest(request3, controller, view) {
+        request3._associatedReadableByteStreamController = controller;
+        request3._view = view;
       }
       function byobRequestBrandCheckException(name) {
         return new TypeError(`ReadableStreamBYOBRequest.prototype.${name} can only be used on a ReadableStreamBYOBRequest`);
@@ -26123,12 +26123,12 @@ var init_fetch_blob = __esm({
        * @return {Promise<string>}
        */
       async text() {
-        const decoder = new TextDecoder();
+        const decoder2 = new TextDecoder();
         let str = "";
         for await (const part of toIterator(this.#parts, false)) {
-          str += decoder.decode(part, { stream: true });
+          str += decoder2.decode(part, { stream: true });
         }
-        str += decoder.decode();
+        str += decoder2.decode();
         return str;
       }
       /**
@@ -26547,7 +26547,7 @@ async function toFormData(Body2, ct3) {
   const entryChunks = [];
   const formData = new FormData2();
   const onPartData = (ui8a) => {
-    entryValue += decoder.decode(ui8a, { stream: true });
+    entryValue += decoder2.decode(ui8a, { stream: true });
   };
   const appendToFile = (ui8a) => {
     entryChunks.push(ui8a);
@@ -26559,8 +26559,8 @@ async function toFormData(Body2, ct3) {
   const appendEntryToFormData = () => {
     formData.append(entryName, entryValue);
   };
-  const decoder = new TextDecoder("utf-8");
-  decoder.decode();
+  const decoder2 = new TextDecoder("utf-8");
+  decoder2.decode();
   parser.onPartBegin = function() {
     parser.onPartData = onPartData;
     parser.onPartEnd = appendEntryToFormData;
@@ -26573,13 +26573,13 @@ async function toFormData(Body2, ct3) {
     entryChunks.length = 0;
   };
   parser.onHeaderField = function(ui8a) {
-    headerField += decoder.decode(ui8a, { stream: true });
+    headerField += decoder2.decode(ui8a, { stream: true });
   };
   parser.onHeaderValue = function(ui8a) {
-    headerValue += decoder.decode(ui8a, { stream: true });
+    headerValue += decoder2.decode(ui8a, { stream: true });
   };
   parser.onHeaderEnd = function() {
-    headerValue += decoder.decode();
+    headerValue += decoder2.decode();
     headerField = headerField.toLowerCase();
     if (headerField === "content-disposition") {
       const m3 = headerValue.match(/\bname=("([^"]*)"|([^()<>@,;:\\"/[\]?={}\s\t]+))/i);
@@ -27078,7 +27078,7 @@ var init_body = __esm({
       "form-data doesn't follow the spec and requires special treatment. Use alternative package",
       "https://github.com/node-fetch/node-fetch/issues/1167"
     );
-    extractContentType = (body, request2) => {
+    extractContentType = (body, request3) => {
       if (body === null) {
         return null;
       }
@@ -27095,7 +27095,7 @@ var init_body = __esm({
         return null;
       }
       if (body instanceof FormData2) {
-        return `multipart/form-data; boundary=${request2[INTERNALS].boundary}`;
+        return `multipart/form-data; boundary=${request3[INTERNALS].boundary}`;
       }
       if (body && typeof body.getBoundary === "function") {
         return `multipart/form-data;boundary=${getNonSpecFormDataBoundary(body)}`;
@@ -27105,8 +27105,8 @@ var init_body = __esm({
       }
       return "text/plain;charset=UTF-8";
     };
-    getTotalBytes = (request2) => {
-      const { body } = request2[INTERNALS];
+    getTotalBytes = (request3) => {
+      const { body } = request3[INTERNALS];
       if (body === null) {
         return 0;
       }
@@ -27531,15 +27531,15 @@ function isUrlPotentiallyTrustworthy(url) {
   }
   return isOriginPotentiallyTrustworthy(url);
 }
-function determineRequestsReferrer(request2, { referrerURLCallback, referrerOriginCallback } = {}) {
-  if (request2.referrer === "no-referrer" || request2.referrerPolicy === "") {
+function determineRequestsReferrer(request3, { referrerURLCallback, referrerOriginCallback } = {}) {
+  if (request3.referrer === "no-referrer" || request3.referrerPolicy === "") {
     return null;
   }
-  const policy = request2.referrerPolicy;
-  if (request2.referrer === "about:client") {
+  const policy = request3.referrerPolicy;
+  if (request3.referrer === "about:client") {
     return "no-referrer";
   }
-  const referrerSource = request2.referrer;
+  const referrerSource = request3.referrer;
   let referrerURL = stripURLForUseAsAReferrer(referrerSource);
   let referrerOrigin = stripURLForUseAsAReferrer(referrerSource, true);
   if (referrerURL.toString().length > 4096) {
@@ -27551,7 +27551,7 @@ function determineRequestsReferrer(request2, { referrerURLCallback, referrerOrig
   if (referrerOriginCallback) {
     referrerOrigin = referrerOriginCallback(referrerOrigin);
   }
-  const currentURL = new URL(request2.url);
+  const currentURL = new URL(request3.url);
   switch (policy) {
     case "no-referrer":
       return "no-referrer";
@@ -27765,18 +27765,18 @@ var init_request = __esm({
       referrer: { enumerable: true },
       referrerPolicy: { enumerable: true }
     });
-    getNodeRequestOptions = (request2) => {
-      const { parsedURL } = request2[INTERNALS3];
-      const headers = new Headers3(request2[INTERNALS3].headers);
+    getNodeRequestOptions = (request3) => {
+      const { parsedURL } = request3[INTERNALS3];
+      const headers = new Headers3(request3[INTERNALS3].headers);
       if (!headers.has("Accept")) {
         headers.set("Accept", "*/*");
       }
       let contentLengthValue = null;
-      if (request2.body === null && /^(post|put)$/i.test(request2.method)) {
+      if (request3.body === null && /^(post|put)$/i.test(request3.method)) {
         contentLengthValue = "0";
       }
-      if (request2.body !== null) {
-        const totalBytes = getTotalBytes(request2);
+      if (request3.body !== null) {
+        const totalBytes = getTotalBytes(request3);
         if (typeof totalBytes === "number" && !Number.isNaN(totalBytes)) {
           contentLengthValue = String(totalBytes);
         }
@@ -27784,24 +27784,24 @@ var init_request = __esm({
       if (contentLengthValue) {
         headers.set("Content-Length", contentLengthValue);
       }
-      if (request2.referrerPolicy === "") {
-        request2.referrerPolicy = DEFAULT_REFERRER_POLICY;
+      if (request3.referrerPolicy === "") {
+        request3.referrerPolicy = DEFAULT_REFERRER_POLICY;
       }
-      if (request2.referrer && request2.referrer !== "no-referrer") {
-        request2[INTERNALS3].referrer = determineRequestsReferrer(request2);
+      if (request3.referrer && request3.referrer !== "no-referrer") {
+        request3[INTERNALS3].referrer = determineRequestsReferrer(request3);
       } else {
-        request2[INTERNALS3].referrer = "no-referrer";
+        request3[INTERNALS3].referrer = "no-referrer";
       }
-      if (request2[INTERNALS3].referrer instanceof URL) {
-        headers.set("Referer", request2.referrer);
+      if (request3[INTERNALS3].referrer instanceof URL) {
+        headers.set("Referer", request3.referrer);
       }
       if (!headers.has("User-Agent")) {
         headers.set("User-Agent", "node-fetch");
       }
-      if (request2.compress && !headers.has("Accept-Encoding")) {
+      if (request3.compress && !headers.has("Accept-Encoding")) {
         headers.set("Accept-Encoding", "gzip, deflate, br");
       }
-      let { agent } = request2;
+      let { agent } = request3;
       if (typeof agent === "function") {
         agent = agent(parsedURL);
       }
@@ -27810,9 +27810,9 @@ var init_request = __esm({
         // Overwrite search to retain trailing ? (issue #776)
         path: parsedURL.pathname + search,
         // The following options are not expressed in the URL
-        method: request2.method,
+        method: request3.method,
         headers: headers[/* @__PURE__ */ Symbol.for("nodejs.util.inspect.custom")](),
-        insecureHTTPParser: request2.insecureHTTPParser,
+        insecureHTTPParser: request3.insecureHTTPParser,
         agent
       };
       return {
@@ -27862,25 +27862,25 @@ import Stream2, { PassThrough as PassThrough2, pipeline as pump } from "node:str
 import { Buffer as Buffer3 } from "node:buffer";
 async function fetch3(url, options_) {
   return new Promise((resolve4, reject) => {
-    const request2 = new Request(url, options_);
-    const { parsedURL, options } = getNodeRequestOptions(request2);
+    const request3 = new Request(url, options_);
+    const { parsedURL, options } = getNodeRequestOptions(request3);
     if (!supportedSchemas.has(parsedURL.protocol)) {
       throw new TypeError(`node-fetch cannot load ${url}. URL scheme "${parsedURL.protocol.replace(/:$/, "")}" is not supported.`);
     }
     if (parsedURL.protocol === "data:") {
-      const data = dist_default(request2.url);
+      const data = dist_default(request3.url);
       const response2 = new Response(data, { headers: { "Content-Type": data.typeFull } });
       resolve4(response2);
       return;
     }
     const send = (parsedURL.protocol === "https:" ? https : http2).request;
-    const { signal } = request2;
+    const { signal } = request3;
     let response = null;
     const abort = () => {
       const error2 = new AbortError("The operation was aborted.");
       reject(error2);
-      if (request2.body && request2.body instanceof Stream2.Readable) {
-        request2.body.destroy(error2);
+      if (request3.body && request3.body instanceof Stream2.Readable) {
+        request3.body.destroy(error2);
       }
       if (!response || !response.body) {
         return;
@@ -27906,7 +27906,7 @@ async function fetch3(url, options_) {
       }
     };
     request_.on("error", (error2) => {
-      reject(new FetchError(`request to ${request2.url} failed, reason: ${error2.message}`, "system", error2));
+      reject(new FetchError(`request to ${request3.url} failed, reason: ${error2.message}`, "system", error2));
       finalize();
     });
     fixResponseChunkedTransferBadEnding(request_, (error2) => {
@@ -27936,17 +27936,17 @@ async function fetch3(url, options_) {
         const location = headers.get("Location");
         let locationURL = null;
         try {
-          locationURL = location === null ? null : new URL(location, request2.url);
+          locationURL = location === null ? null : new URL(location, request3.url);
         } catch {
-          if (request2.redirect !== "manual") {
+          if (request3.redirect !== "manual") {
             reject(new FetchError(`uri requested responds with an invalid redirect URL: ${location}`, "invalid-redirect"));
             finalize();
             return;
           }
         }
-        switch (request2.redirect) {
+        switch (request3.redirect) {
           case "error":
-            reject(new FetchError(`uri requested responds with a redirect, redirect mode is set to error: ${request2.url}`, "no-redirect"));
+            reject(new FetchError(`uri requested responds with a redirect, redirect mode is set to error: ${request3.url}`, "no-redirect"));
             finalize();
             return;
           case "manual":
@@ -27955,35 +27955,35 @@ async function fetch3(url, options_) {
             if (locationURL === null) {
               break;
             }
-            if (request2.counter >= request2.follow) {
-              reject(new FetchError(`maximum redirect reached at: ${request2.url}`, "max-redirect"));
+            if (request3.counter >= request3.follow) {
+              reject(new FetchError(`maximum redirect reached at: ${request3.url}`, "max-redirect"));
               finalize();
               return;
             }
             const requestOptions2 = {
-              headers: new Headers3(request2.headers),
-              follow: request2.follow,
-              counter: request2.counter + 1,
-              agent: request2.agent,
-              compress: request2.compress,
-              method: request2.method,
-              body: clone(request2),
-              signal: request2.signal,
-              size: request2.size,
-              referrer: request2.referrer,
-              referrerPolicy: request2.referrerPolicy
+              headers: new Headers3(request3.headers),
+              follow: request3.follow,
+              counter: request3.counter + 1,
+              agent: request3.agent,
+              compress: request3.compress,
+              method: request3.method,
+              body: clone(request3),
+              signal: request3.signal,
+              size: request3.size,
+              referrer: request3.referrer,
+              referrerPolicy: request3.referrerPolicy
             };
-            if (!isDomainOrSubdomain(request2.url, locationURL) || !isSameProtocol(request2.url, locationURL)) {
+            if (!isDomainOrSubdomain(request3.url, locationURL) || !isSameProtocol(request3.url, locationURL)) {
               for (const name of ["authorization", "www-authenticate", "cookie", "cookie2"]) {
                 requestOptions2.headers.delete(name);
               }
             }
-            if (response_.statusCode !== 303 && request2.body && options_.body instanceof Stream2.Readable) {
+            if (response_.statusCode !== 303 && request3.body && options_.body instanceof Stream2.Readable) {
               reject(new FetchError("Cannot follow redirect with body being a readable stream", "unsupported-redirect"));
               finalize();
               return;
             }
-            if (response_.statusCode === 303 || (response_.statusCode === 301 || response_.statusCode === 302) && request2.method === "POST") {
+            if (response_.statusCode === 303 || (response_.statusCode === 301 || response_.statusCode === 302) && request3.method === "POST") {
               requestOptions2.method = "GET";
               requestOptions2.body = void 0;
               requestOptions2.headers.delete("content-length");
@@ -27997,7 +27997,7 @@ async function fetch3(url, options_) {
             return;
           }
           default:
-            return reject(new TypeError(`Redirect option '${request2.redirect}' is not a valid value of RequestRedirect`));
+            return reject(new TypeError(`Redirect option '${request3.redirect}' is not a valid value of RequestRedirect`));
         }
       }
       if (signal) {
@@ -28014,16 +28014,16 @@ async function fetch3(url, options_) {
         response_.on("aborted", abortAndFinalize);
       }
       const responseOptions = {
-        url: request2.url,
+        url: request3.url,
         status: response_.statusCode,
         statusText: response_.statusMessage,
         headers,
-        size: request2.size,
-        counter: request2.counter,
-        highWaterMark: request2.highWaterMark
+        size: request3.size,
+        counter: request3.counter,
+        highWaterMark: request3.highWaterMark
       };
       const codings = headers.get("Content-Encoding");
-      if (!request2.compress || request2.method === "HEAD" || codings === null || response_.statusCode === 204 || response_.statusCode === 304) {
+      if (!request3.compress || request3.method === "HEAD" || codings === null || response_.statusCode === 204 || response_.statusCode === 304) {
         response = new Response(body, responseOptions);
         resolve4(response);
         return;
@@ -28086,19 +28086,19 @@ async function fetch3(url, options_) {
       response = new Response(body, responseOptions);
       resolve4(response);
     });
-    writeToStream(request_, request2).catch(reject);
+    writeToStream(request_, request3).catch(reject);
   });
 }
-function fixResponseChunkedTransferBadEnding(request2, errorCallback) {
+function fixResponseChunkedTransferBadEnding(request3, errorCallback) {
   const LAST_CHUNK = Buffer3.from("0\r\n\r\n");
   let isChunkedTransfer = false;
   let properLastChunkReceived = false;
   let previousChunk;
-  request2.on("response", (response) => {
+  request3.on("response", (response) => {
     const { headers } = response;
     isChunkedTransfer = headers["transfer-encoding"] === "chunked" && !headers["content-length"];
   });
-  request2.on("socket", (socket) => {
+  request3.on("socket", (socket) => {
     const onSocketClose = () => {
       if (isChunkedTransfer && !properLastChunkReceived) {
         const error2 = new Error("Premature close");
@@ -28115,7 +28115,7 @@ function fixResponseChunkedTransferBadEnding(request2, errorCallback) {
     };
     socket.prependListener("close", onSocketClose);
     socket.on("data", onData);
-    request2.on("close", () => {
+    request3.on("close", () => {
       socket.removeListener("close", onSocketClose);
       socket.removeListener("data", onData);
     });
@@ -28636,7 +28636,7 @@ var require_src2 = __commonJS({
     };
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.instance = exports.Gaxios = exports.GaxiosError = void 0;
-    exports.request = request2;
+    exports.request = request3;
     var gaxios_js_1 = require_gaxios();
     Object.defineProperty(exports, "Gaxios", { enumerable: true, get: function() {
       return gaxios_js_1.Gaxios;
@@ -28647,7 +28647,7 @@ var require_src2 = __commonJS({
     } });
     __exportStar(require_interceptor(), exports);
     exports.instance = new gaxios_js_1.Gaxios();
-    async function request2(opts) {
+    async function request3(opts) {
       return exports.instance.request(opts);
     }
   }
@@ -31161,12 +31161,12 @@ var require_base64_js = __commonJS({
     exports.byteLength = byteLength;
     exports.toByteArray = toByteArray;
     exports.fromByteArray = fromByteArray;
-    var lookup = [];
+    var lookup2 = [];
     var revLookup = [];
     var Arr = typeof Uint8Array !== "undefined" ? Uint8Array : Array;
     var code = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     for (i2 = 0, len = code.length; i2 < len; ++i2) {
-      lookup[i2] = code[i2];
+      lookup2[i2] = code[i2];
       revLookup[code.charCodeAt(i2)] = i2;
     }
     var i2;
@@ -31219,7 +31219,7 @@ var require_base64_js = __commonJS({
       return arr;
     }
     function tripletToBase64(num) {
-      return lookup[num >> 18 & 63] + lookup[num >> 12 & 63] + lookup[num >> 6 & 63] + lookup[num & 63];
+      return lookup2[num >> 18 & 63] + lookup2[num >> 12 & 63] + lookup2[num >> 6 & 63] + lookup2[num & 63];
     }
     function encodeChunk(uint8, start, end) {
       var tmp;
@@ -31242,12 +31242,12 @@ var require_base64_js = __commonJS({
       if (extraBytes === 1) {
         tmp = uint8[len2 - 1];
         parts.push(
-          lookup[tmp >> 2] + lookup[tmp << 4 & 63] + "=="
+          lookup2[tmp >> 2] + lookup2[tmp << 4 & 63] + "=="
         );
       } else if (extraBytes === 2) {
         tmp = (uint8[len2 - 2] << 8) + uint8[len2 - 1];
         parts.push(
-          lookup[tmp >> 10] + lookup[tmp >> 4 & 63] + lookup[tmp << 2 & 63] + "="
+          lookup2[tmp >> 10] + lookup2[tmp >> 4 & 63] + lookup2[tmp << 2 & 63] + "="
         );
       }
       return parts.join("");
@@ -33752,7 +33752,7 @@ var require_getCredentials = __commonJS({
     var fs5 = __require("fs");
     var util_1 = __require("util");
     var errorWithCode_1 = require_errorWithCode();
-    var readFile3 = fs5.readFile ? (0, util_1.promisify)(fs5.readFile) : async () => {
+    var readFile4 = fs5.readFile ? (0, util_1.promisify)(fs5.readFile) : async () => {
       throw new errorWithCode_1.ErrorWithCode("use key rather than keyFile.", "MISSING_CREDENTIALS");
     };
     var ExtensionFiles;
@@ -33774,7 +33774,7 @@ var require_getCredentials = __commonJS({
        * @returns A promise that resolves with the credentials.
        */
       async getCredentials() {
-        const key = await readFile3(this.keyFilePath, "utf8");
+        const key = await readFile4(this.keyFilePath, "utf8");
         let body;
         try {
           body = JSON.parse(key);
@@ -33800,7 +33800,7 @@ var require_getCredentials = __commonJS({
        * @returns A promise that resolves with the private key.
        */
       async getCredentials() {
-        const privateKey = await readFile3(this.keyFilePath, "utf8");
+        const privateKey = await readFile4(this.keyFilePath, "utf8");
         return { privateKey };
       }
     };
@@ -35430,7 +35430,7 @@ var require_filesubjecttokensupplier = __commonJS({
     exports.FileSubjectTokenSupplier = void 0;
     var util_1 = __require("util");
     var fs5 = __require("fs");
-    var readFile3 = (0, util_1.promisify)(fs5.readFile ?? (() => {
+    var readFile4 = (0, util_1.promisify)(fs5.readFile ?? (() => {
     }));
     var realpath2 = (0, util_1.promisify)(fs5.realpath ?? (() => {
     }));
@@ -35470,7 +35470,7 @@ var require_filesubjecttokensupplier = __commonJS({
           throw err;
         }
         let subjectToken;
-        const rawText = await readFile3(parsedFilePath, { encoding: "utf8" });
+        const rawText = await readFile4(parsedFilePath, { encoding: "utf8" });
         if (this.formatType === "text") {
           subjectToken = rawText;
         } else if (this.formatType === "json" && this.subjectTokenFieldName) {
@@ -41203,7 +41203,7 @@ var require_http2 = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.sessions = void 0;
-    exports.request = request2;
+    exports.request = request3;
     exports.closeSession = closeSession;
     var http22 = __require("http2");
     var zlib2 = __require("zlib");
@@ -41217,7 +41217,7 @@ var require_http2 = __commonJS({
     var { HTTP2_HEADER_CONTENT_ENCODING, HTTP2_HEADER_CONTENT_TYPE, HTTP2_HEADER_METHOD, HTTP2_HEADER_PATH, HTTP2_HEADER_STATUS } = http22.constants;
     var DEBUG = !!process2.env.HTTP2_DEBUG;
     exports.sessions = {};
-    async function request2(config) {
+    async function request3(config) {
       const opts = extend(true, {}, config);
       opts.validateStatus = opts.validateStatus || validateStatus;
       opts.responseType = opts.responseType || "json";
@@ -41974,7 +41974,7 @@ var require_discovery = __commonJS({
     var util = __require("util");
     var apirequest_1 = require_apirequest();
     var endpoint_1 = require_endpoint();
-    var readFile3 = util.promisify(fs5.readFile);
+    var readFile4 = util.promisify(fs5.readFile);
     var Discovery = class {
       transporter = new gaxios_1.Gaxios();
       options;
@@ -42067,7 +42067,7 @@ var require_discovery = __commonJS({
           }
           if (apiDiscoveryUrl && !isUrl) {
             this.log("Reading from file " + apiDiscoveryUrl);
-            const file = await readFile3(apiDiscoveryUrl, { encoding: "utf8" });
+            const file = await readFile4(apiDiscoveryUrl, { encoding: "utf8" });
             return this.makeEndpoint(JSON.parse(file));
           } else {
             this.log("Requesting " + apiDiscoveryUrl);
@@ -46681,6 +46681,1184 @@ var require_build = __commonJS({
     Object.defineProperty(exports, "AuthPlus", { enumerable: true, get: function() {
       return googleapis_common_2.AuthPlus;
     } });
+  }
+});
+
+// node_modules/.pnpm/@googleapis+docs@14.1.1_supports-color@7.2.0/node_modules/@googleapis/docs/build/v1.js
+var require_v1 = __commonJS({
+  "node_modules/.pnpm/@googleapis+docs@14.1.1_supports-color@7.2.0/node_modules/@googleapis/docs/build/v1.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.docs_v1 = void 0;
+    var googleapis_common_1 = require_src6();
+    var docs_v1;
+    (function(docs_v12) {
+      class Docs {
+        context;
+        documents;
+        constructor(options, google) {
+          this.context = {
+            _options: options || {},
+            google
+          };
+          this.documents = new Resource$Documents(this.context);
+        }
+      }
+      docs_v12.Docs = Docs;
+      class Resource$Documents {
+        context;
+        constructor(context3) {
+          this.context = context3;
+        }
+        batchUpdate(paramsOrCallback, optionsOrCallback, callback) {
+          let params = paramsOrCallback || {};
+          let options = optionsOrCallback || {};
+          if (typeof paramsOrCallback === "function") {
+            callback = paramsOrCallback;
+            params = {};
+            options = {};
+          }
+          if (typeof optionsOrCallback === "function") {
+            callback = optionsOrCallback;
+            options = {};
+          }
+          const rootUrl = options.rootUrl || "https://docs.googleapis.com/";
+          const parameters = {
+            options: Object.assign({
+              url: (rootUrl + "/v1/documents/{documentId}:batchUpdate").replace(/([^:]\/)\/+/g, "$1"),
+              method: "POST",
+              apiVersion: ""
+            }, options),
+            params,
+            requiredParams: ["documentId"],
+            pathParams: ["documentId"],
+            context: this.context
+          };
+          if (callback) {
+            (0, googleapis_common_1.createAPIRequest)(parameters, callback);
+          } else {
+            return (0, googleapis_common_1.createAPIRequest)(parameters);
+          }
+        }
+        create(paramsOrCallback, optionsOrCallback, callback) {
+          let params = paramsOrCallback || {};
+          let options = optionsOrCallback || {};
+          if (typeof paramsOrCallback === "function") {
+            callback = paramsOrCallback;
+            params = {};
+            options = {};
+          }
+          if (typeof optionsOrCallback === "function") {
+            callback = optionsOrCallback;
+            options = {};
+          }
+          const rootUrl = options.rootUrl || "https://docs.googleapis.com/";
+          const parameters = {
+            options: Object.assign({
+              url: (rootUrl + "/v1/documents").replace(/([^:]\/)\/+/g, "$1"),
+              method: "POST",
+              apiVersion: ""
+            }, options),
+            params,
+            requiredParams: [],
+            pathParams: [],
+            context: this.context
+          };
+          if (callback) {
+            (0, googleapis_common_1.createAPIRequest)(parameters, callback);
+          } else {
+            return (0, googleapis_common_1.createAPIRequest)(parameters);
+          }
+        }
+        get(paramsOrCallback, optionsOrCallback, callback) {
+          let params = paramsOrCallback || {};
+          let options = optionsOrCallback || {};
+          if (typeof paramsOrCallback === "function") {
+            callback = paramsOrCallback;
+            params = {};
+            options = {};
+          }
+          if (typeof optionsOrCallback === "function") {
+            callback = optionsOrCallback;
+            options = {};
+          }
+          const rootUrl = options.rootUrl || "https://docs.googleapis.com/";
+          const parameters = {
+            options: Object.assign({
+              url: (rootUrl + "/v1/documents/{documentId}").replace(/([^:]\/)\/+/g, "$1"),
+              method: "GET",
+              apiVersion: ""
+            }, options),
+            params,
+            requiredParams: ["documentId"],
+            pathParams: ["documentId"],
+            context: this.context
+          };
+          if (callback) {
+            (0, googleapis_common_1.createAPIRequest)(parameters, callback);
+          } else {
+            return (0, googleapis_common_1.createAPIRequest)(parameters);
+          }
+        }
+      }
+      docs_v12.Resource$Documents = Resource$Documents;
+    })(docs_v1 || (exports.docs_v1 = docs_v1 = {}));
+  }
+});
+
+// node_modules/.pnpm/@googleapis+docs@14.1.1_supports-color@7.2.0/node_modules/@googleapis/docs/build/index.js
+var require_build2 = __commonJS({
+  "node_modules/.pnpm/@googleapis+docs@14.1.1_supports-color@7.2.0/node_modules/@googleapis/docs/build/index.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.AuthPlus = exports.docs_v1 = exports.auth = exports.VERSIONS = void 0;
+    exports.docs = docs2;
+    var googleapis_common_1 = require_src6();
+    var v1_1 = require_v1();
+    Object.defineProperty(exports, "docs_v1", { enumerable: true, get: function() {
+      return v1_1.docs_v1;
+    } });
+    exports.VERSIONS = {
+      v1: v1_1.docs_v1.Docs
+    };
+    function docs2(versionOrOptions) {
+      return (0, googleapis_common_1.getAPI)("docs", versionOrOptions, exports.VERSIONS, this);
+    }
+    var auth3 = new googleapis_common_1.AuthPlus();
+    exports.auth = auth3;
+    var googleapis_common_2 = require_src6();
+    Object.defineProperty(exports, "AuthPlus", { enumerable: true, get: function() {
+      return googleapis_common_2.AuthPlus;
+    } });
+  }
+});
+
+// node_modules/.pnpm/@googleapis+slides@10.1.1_supports-color@7.2.0/node_modules/@googleapis/slides/build/v1.js
+var require_v12 = __commonJS({
+  "node_modules/.pnpm/@googleapis+slides@10.1.1_supports-color@7.2.0/node_modules/@googleapis/slides/build/v1.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.slides_v1 = void 0;
+    var googleapis_common_1 = require_src6();
+    var slides_v1;
+    (function(slides_v12) {
+      class Slides {
+        context;
+        presentations;
+        constructor(options, google) {
+          this.context = {
+            _options: options || {},
+            google
+          };
+          this.presentations = new Resource$Presentations(this.context);
+        }
+      }
+      slides_v12.Slides = Slides;
+      class Resource$Presentations {
+        context;
+        pages;
+        constructor(context3) {
+          this.context = context3;
+          this.pages = new Resource$Presentations$Pages(this.context);
+        }
+        batchUpdate(paramsOrCallback, optionsOrCallback, callback) {
+          let params = paramsOrCallback || {};
+          let options = optionsOrCallback || {};
+          if (typeof paramsOrCallback === "function") {
+            callback = paramsOrCallback;
+            params = {};
+            options = {};
+          }
+          if (typeof optionsOrCallback === "function") {
+            callback = optionsOrCallback;
+            options = {};
+          }
+          const rootUrl = options.rootUrl || "https://slides.googleapis.com/";
+          const parameters = {
+            options: Object.assign({
+              url: (rootUrl + "/v1/presentations/{presentationId}:batchUpdate").replace(/([^:]\/)\/+/g, "$1"),
+              method: "POST",
+              apiVersion: ""
+            }, options),
+            params,
+            requiredParams: ["presentationId"],
+            pathParams: ["presentationId"],
+            context: this.context
+          };
+          if (callback) {
+            (0, googleapis_common_1.createAPIRequest)(parameters, callback);
+          } else {
+            return (0, googleapis_common_1.createAPIRequest)(parameters);
+          }
+        }
+        create(paramsOrCallback, optionsOrCallback, callback) {
+          let params = paramsOrCallback || {};
+          let options = optionsOrCallback || {};
+          if (typeof paramsOrCallback === "function") {
+            callback = paramsOrCallback;
+            params = {};
+            options = {};
+          }
+          if (typeof optionsOrCallback === "function") {
+            callback = optionsOrCallback;
+            options = {};
+          }
+          const rootUrl = options.rootUrl || "https://slides.googleapis.com/";
+          const parameters = {
+            options: Object.assign({
+              url: (rootUrl + "/v1/presentations").replace(/([^:]\/)\/+/g, "$1"),
+              method: "POST",
+              apiVersion: ""
+            }, options),
+            params,
+            requiredParams: [],
+            pathParams: [],
+            context: this.context
+          };
+          if (callback) {
+            (0, googleapis_common_1.createAPIRequest)(parameters, callback);
+          } else {
+            return (0, googleapis_common_1.createAPIRequest)(parameters);
+          }
+        }
+        get(paramsOrCallback, optionsOrCallback, callback) {
+          let params = paramsOrCallback || {};
+          let options = optionsOrCallback || {};
+          if (typeof paramsOrCallback === "function") {
+            callback = paramsOrCallback;
+            params = {};
+            options = {};
+          }
+          if (typeof optionsOrCallback === "function") {
+            callback = optionsOrCallback;
+            options = {};
+          }
+          const rootUrl = options.rootUrl || "https://slides.googleapis.com/";
+          const parameters = {
+            options: Object.assign({
+              url: (rootUrl + "/v1/presentations/{+presentationId}").replace(/([^:]\/)\/+/g, "$1"),
+              method: "GET",
+              apiVersion: ""
+            }, options),
+            params,
+            requiredParams: ["presentationId"],
+            pathParams: ["presentationId"],
+            context: this.context
+          };
+          if (callback) {
+            (0, googleapis_common_1.createAPIRequest)(parameters, callback);
+          } else {
+            return (0, googleapis_common_1.createAPIRequest)(parameters);
+          }
+        }
+      }
+      slides_v12.Resource$Presentations = Resource$Presentations;
+      class Resource$Presentations$Pages {
+        context;
+        constructor(context3) {
+          this.context = context3;
+        }
+        get(paramsOrCallback, optionsOrCallback, callback) {
+          let params = paramsOrCallback || {};
+          let options = optionsOrCallback || {};
+          if (typeof paramsOrCallback === "function") {
+            callback = paramsOrCallback;
+            params = {};
+            options = {};
+          }
+          if (typeof optionsOrCallback === "function") {
+            callback = optionsOrCallback;
+            options = {};
+          }
+          const rootUrl = options.rootUrl || "https://slides.googleapis.com/";
+          const parameters = {
+            options: Object.assign({
+              url: (rootUrl + "/v1/presentations/{presentationId}/pages/{pageObjectId}").replace(/([^:]\/)\/+/g, "$1"),
+              method: "GET",
+              apiVersion: ""
+            }, options),
+            params,
+            requiredParams: ["presentationId", "pageObjectId"],
+            pathParams: ["pageObjectId", "presentationId"],
+            context: this.context
+          };
+          if (callback) {
+            (0, googleapis_common_1.createAPIRequest)(parameters, callback);
+          } else {
+            return (0, googleapis_common_1.createAPIRequest)(parameters);
+          }
+        }
+        getThumbnail(paramsOrCallback, optionsOrCallback, callback) {
+          let params = paramsOrCallback || {};
+          let options = optionsOrCallback || {};
+          if (typeof paramsOrCallback === "function") {
+            callback = paramsOrCallback;
+            params = {};
+            options = {};
+          }
+          if (typeof optionsOrCallback === "function") {
+            callback = optionsOrCallback;
+            options = {};
+          }
+          const rootUrl = options.rootUrl || "https://slides.googleapis.com/";
+          const parameters = {
+            options: Object.assign({
+              url: (rootUrl + "/v1/presentations/{presentationId}/pages/{pageObjectId}/thumbnail").replace(/([^:]\/)\/+/g, "$1"),
+              method: "GET",
+              apiVersion: ""
+            }, options),
+            params,
+            requiredParams: ["presentationId", "pageObjectId"],
+            pathParams: ["pageObjectId", "presentationId"],
+            context: this.context
+          };
+          if (callback) {
+            (0, googleapis_common_1.createAPIRequest)(parameters, callback);
+          } else {
+            return (0, googleapis_common_1.createAPIRequest)(parameters);
+          }
+        }
+      }
+      slides_v12.Resource$Presentations$Pages = Resource$Presentations$Pages;
+    })(slides_v1 || (exports.slides_v1 = slides_v1 = {}));
+  }
+});
+
+// node_modules/.pnpm/@googleapis+slides@10.1.1_supports-color@7.2.0/node_modules/@googleapis/slides/build/index.js
+var require_build3 = __commonJS({
+  "node_modules/.pnpm/@googleapis+slides@10.1.1_supports-color@7.2.0/node_modules/@googleapis/slides/build/index.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.AuthPlus = exports.slides_v1 = exports.auth = exports.VERSIONS = void 0;
+    exports.slides = slides2;
+    var googleapis_common_1 = require_src6();
+    var v1_1 = require_v12();
+    Object.defineProperty(exports, "slides_v1", { enumerable: true, get: function() {
+      return v1_1.slides_v1;
+    } });
+    exports.VERSIONS = {
+      v1: v1_1.slides_v1.Slides
+    };
+    function slides2(versionOrOptions) {
+      return (0, googleapis_common_1.getAPI)("slides", versionOrOptions, exports.VERSIONS, this);
+    }
+    var auth3 = new googleapis_common_1.AuthPlus();
+    exports.auth = auth3;
+    var googleapis_common_2 = require_src6();
+    Object.defineProperty(exports, "AuthPlus", { enumerable: true, get: function() {
+      return googleapis_common_2.AuthPlus;
+    } });
+  }
+});
+
+// node_modules/.pnpm/ipaddr.js@2.5.0/node_modules/ipaddr.js/lib/ipaddr.js
+var require_ipaddr = __commonJS({
+  "node_modules/.pnpm/ipaddr.js@2.5.0/node_modules/ipaddr.js/lib/ipaddr.js"(exports, module) {
+    (function(root) {
+      "use strict";
+      const ipv4Part = "(0?\\d+|0x[a-f0-9]+)";
+      const ipv4Regexes = {
+        fourOctet: new RegExp(`^${ipv4Part}\\.${ipv4Part}\\.${ipv4Part}\\.${ipv4Part}$`, "i"),
+        threeOctet: new RegExp(`^${ipv4Part}\\.${ipv4Part}\\.${ipv4Part}$`, "i"),
+        twoOctet: new RegExp(`^${ipv4Part}\\.${ipv4Part}$`, "i"),
+        longValue: new RegExp(`^${ipv4Part}$`, "i")
+      };
+      const octalRegex = new RegExp(`^0[0-7]+$`, "i");
+      const hexRegex = new RegExp(`^0x[a-f0-9]+$`, "i");
+      const zoneIndex = "%[0-9a-z]{1,}";
+      const ipv6Part = "(?:[0-9a-f]+::?)+";
+      const ipv6Regexes = {
+        zoneIndex: new RegExp(zoneIndex, "i"),
+        "native": new RegExp(`^(::)?(${ipv6Part})?([0-9a-f]+)?(::)?(${zoneIndex})?$`, "i"),
+        deprecatedTransitional: new RegExp(`^(?:::)(${ipv4Part}\\.${ipv4Part}\\.${ipv4Part}\\.${ipv4Part}(${zoneIndex})?)$`, "i"),
+        transitional: new RegExp(`^((?:${ipv6Part})|(?:::)(?:${ipv6Part})?)${ipv4Part}\\.${ipv4Part}\\.${ipv4Part}\\.${ipv4Part}(${zoneIndex})?$`, "i")
+      };
+      function expandIPv6(string, parts) {
+        if (string.indexOf("::") !== string.lastIndexOf("::")) {
+          return null;
+        }
+        let colonCount = 0;
+        let lastColon = -1;
+        let zoneId = (string.match(ipv6Regexes.zoneIndex) || [])[0];
+        let replacement, replacementCount;
+        if (zoneId) {
+          zoneId = zoneId.substring(1);
+          string = string.replace(/%.+$/, "");
+        }
+        while ((lastColon = string.indexOf(":", lastColon + 1)) >= 0) {
+          colonCount++;
+        }
+        if (string.substr(0, 2) === "::") {
+          colonCount--;
+        }
+        if (string.substr(-2, 2) === "::") {
+          colonCount--;
+        }
+        if (colonCount >= parts) {
+          return null;
+        }
+        replacementCount = parts - colonCount;
+        replacement = ":";
+        while (replacementCount--) {
+          replacement += "0:";
+        }
+        string = string.replace("::", replacement);
+        if (string[0] === ":") {
+          string = string.slice(1);
+        }
+        if (string[string.length - 1] === ":") {
+          string = string.slice(0, -1);
+        }
+        parts = (function() {
+          const ref = string.split(":");
+          const results = [];
+          for (let i2 = 0; i2 < ref.length; i2++) {
+            results.push(ref[i2].length > 4 ? NaN : parseInt(ref[i2], 16));
+          }
+          return results;
+        })();
+        return {
+          parts,
+          zoneId
+        };
+      }
+      function matchCIDR(first, second, partSize, cidrBits) {
+        if (first.length !== second.length) {
+          throw new Error("ipaddr: cannot match CIDR for objects with different lengths");
+        }
+        let part = 0;
+        let shift;
+        while (cidrBits > 0) {
+          shift = partSize - cidrBits;
+          if (shift < 0) {
+            shift = 0;
+          }
+          if (first[part] >> shift !== second[part] >> shift) {
+            return false;
+          }
+          cidrBits -= partSize;
+          part += 1;
+        }
+        return true;
+      }
+      function parseIntAuto(string) {
+        if (hexRegex.test(string)) {
+          return parseInt(string, 16);
+        }
+        if (string[0] === "0" && !isNaN(parseInt(string[1], 10))) {
+          if (octalRegex.test(string)) {
+            return parseInt(string, 8);
+          }
+          throw new Error(`ipaddr: cannot parse ${string} as octal`);
+        }
+        return parseInt(string, 10);
+      }
+      function padPart(part, length) {
+        while (part.length < length) {
+          part = `0${part}`;
+        }
+        return part;
+      }
+      const ipaddr2 = {};
+      ipaddr2.IPv4 = (function() {
+        function IPv4(octets) {
+          if (octets.length !== 4) {
+            throw new Error("ipaddr: ipv4 octet count should be 4");
+          }
+          let i2, octet;
+          for (i2 = 0; i2 < octets.length; i2++) {
+            octet = octets[i2];
+            if (!(0 <= octet && octet <= 255)) {
+              throw new Error("ipaddr: ipv4 octet should fit in 8 bits");
+            }
+          }
+          this.octets = octets;
+        }
+        IPv4.prototype.SpecialRanges = {
+          unspecified: [[new IPv4([0, 0, 0, 0]), 8]],
+          broadcast: [[new IPv4([255, 255, 255, 255]), 32]],
+          // RFC3171
+          multicast: [[new IPv4([224, 0, 0, 0]), 4]],
+          // RFC3927
+          linkLocal: [[new IPv4([169, 254, 0, 0]), 16]],
+          // RFC5735
+          loopback: [[new IPv4([127, 0, 0, 0]), 8]],
+          // RFC6598
+          carrierGradeNat: [[new IPv4([100, 64, 0, 0]), 10]],
+          // RFC1918
+          "private": [
+            [new IPv4([10, 0, 0, 0]), 8],
+            [new IPv4([172, 16, 0, 0]), 12],
+            [new IPv4([192, 168, 0, 0]), 16]
+          ],
+          // Reserved and testing-only ranges; RFCs 5735, 5737, 2544, 1700
+          reserved: [
+            [new IPv4([192, 0, 0, 0]), 24],
+            [new IPv4([192, 0, 2, 0]), 24],
+            [new IPv4([192, 88, 99, 0]), 24],
+            [new IPv4([198, 18, 0, 0]), 15],
+            [new IPv4([198, 51, 100, 0]), 24],
+            [new IPv4([203, 0, 113, 0]), 24],
+            [new IPv4([240, 0, 0, 0]), 4]
+          ],
+          // RFC7534, RFC7535
+          as112: [
+            [new IPv4([192, 175, 48, 0]), 24],
+            [new IPv4([192, 31, 196, 0]), 24]
+          ],
+          // RFC7450
+          amt: [
+            [new IPv4([192, 52, 193, 0]), 24]
+          ]
+        };
+        IPv4.prototype.kind = function() {
+          return "ipv4";
+        };
+        IPv4.prototype.match = function(other, cidrRange) {
+          let ref;
+          if (cidrRange === void 0) {
+            ref = other;
+            other = ref[0];
+            cidrRange = ref[1];
+          }
+          if (other.kind() !== "ipv4") {
+            throw new Error("ipaddr: cannot match ipv4 address with non-ipv4 one");
+          }
+          return matchCIDR(this.octets, other.octets, 8, cidrRange);
+        };
+        IPv4.prototype.prefixLengthFromSubnetMask = function() {
+          let cidr = 0;
+          let stop = false;
+          const zerotable = {
+            0: 8,
+            128: 7,
+            192: 6,
+            224: 5,
+            240: 4,
+            248: 3,
+            252: 2,
+            254: 1,
+            255: 0
+          };
+          let i2, octet, zeros;
+          for (i2 = 3; i2 >= 0; i2 -= 1) {
+            octet = this.octets[i2];
+            if (octet in zerotable) {
+              zeros = zerotable[octet];
+              if (stop && zeros !== 0) {
+                return null;
+              }
+              if (zeros !== 8) {
+                stop = true;
+              }
+              cidr += zeros;
+            } else {
+              return null;
+            }
+          }
+          return 32 - cidr;
+        };
+        IPv4.prototype.range = function() {
+          return ipaddr2.subnetMatch(this, this.SpecialRanges);
+        };
+        IPv4.prototype.toByteArray = function() {
+          return this.octets.slice(0);
+        };
+        IPv4.prototype.toIPv4MappedAddress = function() {
+          return ipaddr2.IPv6.parse(`::ffff:${this.toString()}`);
+        };
+        IPv4.prototype.toNormalizedString = function() {
+          return this.toString();
+        };
+        IPv4.prototype.toString = function() {
+          return this.octets.join(".");
+        };
+        return IPv4;
+      })();
+      ipaddr2.IPv4.broadcastAddressFromCIDR = function(string) {
+        try {
+          const cidr = this.parseCIDR(string);
+          const ipInterfaceOctets = cidr[0].toByteArray();
+          const subnetMaskOctets = this.subnetMaskFromPrefixLength(cidr[1]).toByteArray();
+          const octets = [];
+          let i2 = 0;
+          while (i2 < 4) {
+            octets.push(parseInt(ipInterfaceOctets[i2], 10) | parseInt(subnetMaskOctets[i2], 10) ^ 255);
+            i2++;
+          }
+          return new this(octets);
+        } catch (e2) {
+          throw new Error("ipaddr: the address does not have IPv4 CIDR format", { cause: e2 });
+        }
+      };
+      ipaddr2.IPv4.isIPv4 = function(string) {
+        return this.parser(string) !== null;
+      };
+      ipaddr2.IPv4.isValid = function(string) {
+        try {
+          new this(this.parser(string));
+          return true;
+        } catch {
+          return false;
+        }
+      };
+      ipaddr2.IPv4.isValidCIDR = function(string) {
+        try {
+          this.parseCIDR(string);
+          return true;
+        } catch {
+          return false;
+        }
+      };
+      ipaddr2.IPv4.isValidFourPartDecimal = function(string) {
+        if (ipaddr2.IPv4.isValid(string) && string.match(/^(0|[1-9]\d*)(\.(0|[1-9]\d*)){3}$/)) {
+          return true;
+        } else {
+          return false;
+        }
+      };
+      ipaddr2.IPv4.isValidCIDRFourPartDecimal = function(string) {
+        const match = string.match(/^(.+)\/(\d+)$/);
+        if (!ipaddr2.IPv4.isValidCIDR(string) || !match) {
+          return false;
+        }
+        return ipaddr2.IPv4.isValidFourPartDecimal(match[1]);
+      };
+      ipaddr2.IPv4.networkAddressFromCIDR = function(string) {
+        let cidr, i2, ipInterfaceOctets, octets, subnetMaskOctets;
+        try {
+          cidr = this.parseCIDR(string);
+          ipInterfaceOctets = cidr[0].toByteArray();
+          subnetMaskOctets = this.subnetMaskFromPrefixLength(cidr[1]).toByteArray();
+          octets = [];
+          i2 = 0;
+          while (i2 < 4) {
+            octets.push(parseInt(ipInterfaceOctets[i2], 10) & parseInt(subnetMaskOctets[i2], 10));
+            i2++;
+          }
+          return new this(octets);
+        } catch (e2) {
+          throw new Error("ipaddr: the address does not have IPv4 CIDR format", { cause: e2 });
+        }
+      };
+      ipaddr2.IPv4.parse = function(string) {
+        const parts = this.parser(string);
+        if (parts === null) {
+          throw new Error("ipaddr: string is not formatted like an IPv4 Address");
+        }
+        return new this(parts);
+      };
+      ipaddr2.IPv4.parseCIDR = function(string) {
+        let match;
+        if (match = string.match(/^(.+)\/(\d+)$/)) {
+          const maskLength = parseInt(match[2]);
+          if (maskLength >= 0 && maskLength <= 32) {
+            const parsed = [this.parse(match[1]), maskLength];
+            Object.defineProperty(parsed, "toString", {
+              value: function() {
+                return this.join("/");
+              }
+            });
+            return parsed;
+          }
+        }
+        throw new Error("ipaddr: string is not formatted like an IPv4 CIDR range");
+      };
+      ipaddr2.IPv4.parser = function(string) {
+        let match, part, value;
+        if (match = string.match(ipv4Regexes.fourOctet)) {
+          return (function() {
+            const ref = match.slice(1, 6);
+            const results = [];
+            for (let i2 = 0; i2 < ref.length; i2++) {
+              part = ref[i2];
+              results.push(parseIntAuto(part));
+            }
+            return results;
+          })();
+        } else if (match = string.match(ipv4Regexes.longValue)) {
+          value = parseIntAuto(match[1]);
+          if (value > 4294967295 || value < 0) {
+            throw new Error("ipaddr: address outside defined range");
+          }
+          return (function() {
+            const results = [];
+            let shift;
+            for (shift = 0; shift <= 24; shift += 8) {
+              results.push(value >> shift & 255);
+            }
+            return results;
+          })().reverse();
+        } else if (match = string.match(ipv4Regexes.twoOctet)) {
+          return (function() {
+            const ref = match.slice(1, 4);
+            const results = [];
+            value = parseIntAuto(ref[1]);
+            if (value > 16777215 || value < 0) {
+              throw new Error("ipaddr: address outside defined range");
+            }
+            results.push(parseIntAuto(ref[0]));
+            results.push(value >> 16 & 255);
+            results.push(value >> 8 & 255);
+            results.push(value & 255);
+            return results;
+          })();
+        } else if (match = string.match(ipv4Regexes.threeOctet)) {
+          return (function() {
+            const ref = match.slice(1, 5);
+            const results = [];
+            value = parseIntAuto(ref[2]);
+            if (value > 65535 || value < 0) {
+              throw new Error("ipaddr: address outside defined range");
+            }
+            results.push(parseIntAuto(ref[0]));
+            results.push(parseIntAuto(ref[1]));
+            results.push(value >> 8 & 255);
+            results.push(value & 255);
+            return results;
+          })();
+        } else {
+          return null;
+        }
+      };
+      ipaddr2.IPv4.subnetMaskFromPrefixLength = function(prefix) {
+        prefix = parseInt(prefix);
+        if (Number.isNaN(prefix) || prefix < 0 || prefix > 32) {
+          throw new Error("ipaddr: invalid IPv4 prefix length");
+        }
+        const octets = [0, 0, 0, 0];
+        let j3 = 0;
+        const filledOctetCount = Math.floor(prefix / 8);
+        while (j3 < filledOctetCount) {
+          octets[j3] = 255;
+          j3++;
+        }
+        if (filledOctetCount < 4) {
+          octets[filledOctetCount] = Math.pow(2, prefix % 8) - 1 << 8 - prefix % 8;
+        }
+        return new this(octets);
+      };
+      ipaddr2.IPv6 = (function() {
+        function IPv6(parts, zoneId) {
+          let i2, part;
+          if (parts.length === 16) {
+            this.parts = [];
+            for (i2 = 0; i2 <= 14; i2 += 2) {
+              this.parts.push(parts[i2] << 8 | parts[i2 + 1]);
+            }
+          } else if (parts.length === 8) {
+            this.parts = parts;
+          } else {
+            throw new Error("ipaddr: ipv6 part count should be 8 or 16");
+          }
+          for (i2 = 0; i2 < this.parts.length; i2++) {
+            part = this.parts[i2];
+            if (!(0 <= part && part <= 65535)) {
+              throw new Error("ipaddr: ipv6 part should fit in 16 bits");
+            }
+          }
+          if (zoneId) {
+            this.zoneId = zoneId;
+          }
+        }
+        IPv6.prototype.SpecialRanges = {
+          // RFC4291, here and after
+          unspecified: [new IPv6([0, 0, 0, 0, 0, 0, 0, 0]), 128],
+          linkLocal: [new IPv6([65152, 0, 0, 0, 0, 0, 0, 0]), 10],
+          multicast: [new IPv6([65280, 0, 0, 0, 0, 0, 0, 0]), 8],
+          loopback: [new IPv6([0, 0, 0, 0, 0, 0, 0, 1]), 128],
+          uniqueLocal: [new IPv6([64512, 0, 0, 0, 0, 0, 0, 0]), 7],
+          ipv4Mapped: [new IPv6([0, 0, 0, 0, 0, 65535, 0, 0]), 96],
+          // RFC3879
+          deprecatedSiteLocal: [new IPv6([65216, 0, 0, 0, 0, 0, 0, 0]), 10],
+          // RFC6666
+          discard: [new IPv6([256, 0, 0, 0, 0, 0, 0, 0]), 64],
+          // RFC6145
+          rfc6145: [new IPv6([0, 0, 0, 0, 65535, 0, 0, 0]), 96],
+          rfc6052: [
+            // RFC6052
+            [new IPv6([100, 65435, 0, 0, 0, 0, 0, 0]), 96],
+            // RFC8215
+            [new IPv6([100, 65435, 1, 0, 0, 0, 0, 0]), 48]
+          ],
+          // RFC3056
+          "6to4": [new IPv6([8194, 0, 0, 0, 0, 0, 0, 0]), 16],
+          // RFC6052, RFC6146
+          teredo: [new IPv6([8193, 0, 0, 0, 0, 0, 0, 0]), 32],
+          // RFC5180
+          benchmarking: [new IPv6([8193, 2, 0, 0, 0, 0, 0, 0]), 48],
+          // RFC7450
+          amt: [new IPv6([8193, 3, 0, 0, 0, 0, 0, 0]), 32],
+          as112v6: [
+            // RFC7535
+            [new IPv6([8193, 4, 274, 0, 0, 0, 0, 0]), 48],
+            // RFC7534
+            [new IPv6([9760, 79, 32768, 0, 0, 0, 0, 0]), 48]
+          ],
+          // RFC4843
+          deprecatedOrchid: [new IPv6([8193, 16, 0, 0, 0, 0, 0, 0]), 28],
+          // RFC7343
+          orchid2: [new IPv6([8193, 32, 0, 0, 0, 0, 0, 0]), 28],
+          // RFC9374
+          droneRemoteIdProtocolEntityTags: [new IPv6([8193, 48, 0, 0, 0, 0, 0, 0]), 28],
+          // RFC9602
+          segmentRouting: [new IPv6([24320, 0, 0, 0, 0, 0, 0, 0]), 16],
+          reserved: [
+            // RFC3849
+            [new IPv6([8193, 0, 0, 0, 0, 0, 0, 0]), 23],
+            // RFC2928
+            [new IPv6([8193, 3512, 0, 0, 0, 0, 0, 0]), 32],
+            // RFC9637
+            [new IPv6([16383, 0, 0, 0, 0, 0, 0, 0]), 20]
+          ]
+        };
+        IPv6.prototype.isIPv4MappedAddress = function() {
+          return this.range() === "ipv4Mapped";
+        };
+        IPv6.prototype.kind = function() {
+          return "ipv6";
+        };
+        IPv6.prototype.match = function(other, cidrRange) {
+          let ref;
+          if (cidrRange === void 0) {
+            ref = other;
+            other = ref[0];
+            cidrRange = ref[1];
+          }
+          if (other.kind() !== "ipv6") {
+            throw new Error("ipaddr: cannot match ipv6 address with non-ipv6 one");
+          }
+          return matchCIDR(this.parts, other.parts, 16, cidrRange);
+        };
+        IPv6.prototype.prefixLengthFromSubnetMask = function() {
+          let cidr = 0;
+          let stop = false;
+          const zerotable = {
+            0: 16,
+            32768: 15,
+            49152: 14,
+            57344: 13,
+            61440: 12,
+            63488: 11,
+            64512: 10,
+            65024: 9,
+            65280: 8,
+            65408: 7,
+            65472: 6,
+            65504: 5,
+            65520: 4,
+            65528: 3,
+            65532: 2,
+            65534: 1,
+            65535: 0
+          };
+          let part, zeros;
+          for (let i2 = 7; i2 >= 0; i2 -= 1) {
+            part = this.parts[i2];
+            if (part in zerotable) {
+              zeros = zerotable[part];
+              if (stop && zeros !== 0) {
+                return null;
+              }
+              if (zeros !== 16) {
+                stop = true;
+              }
+              cidr += zeros;
+            } else {
+              return null;
+            }
+          }
+          return 128 - cidr;
+        };
+        IPv6.prototype.range = function() {
+          return ipaddr2.subnetMatch(this, this.SpecialRanges);
+        };
+        IPv6.prototype.toByteArray = function() {
+          let part;
+          const bytes = [];
+          const ref = this.parts;
+          for (let i2 = 0; i2 < ref.length; i2++) {
+            part = ref[i2];
+            bytes.push(part >> 8);
+            bytes.push(part & 255);
+          }
+          return bytes;
+        };
+        IPv6.prototype.toFixedLengthString = function() {
+          const addr = (function() {
+            const results = [];
+            for (let i2 = 0; i2 < this.parts.length; i2++) {
+              results.push(padPart(this.parts[i2].toString(16), 4));
+            }
+            return results;
+          }).call(this).join(":");
+          let suffix = "";
+          if (this.zoneId) {
+            suffix = `%${this.zoneId}`;
+          }
+          return addr + suffix;
+        };
+        IPv6.prototype.toIPv4Address = function() {
+          if (!this.isIPv4MappedAddress()) {
+            throw new Error("ipaddr: trying to convert a generic ipv6 address to ipv4");
+          }
+          const ref = this.parts.slice(-2);
+          const high = ref[0];
+          const low = ref[1];
+          return new ipaddr2.IPv4([high >> 8, high & 255, low >> 8, low & 255]);
+        };
+        IPv6.prototype.toNormalizedString = function() {
+          const addr = (function() {
+            const results = [];
+            for (let i2 = 0; i2 < this.parts.length; i2++) {
+              results.push(this.parts[i2].toString(16));
+            }
+            return results;
+          }).call(this).join(":");
+          let suffix = "";
+          if (this.zoneId) {
+            suffix = `%${this.zoneId}`;
+          }
+          return addr + suffix;
+        };
+        IPv6.prototype.toRFC5952String = function() {
+          const regex = /((^|:)(0(:|$)){2,})/g;
+          let suffix = "";
+          if (this.zoneId) {
+            suffix = `%${this.zoneId}`;
+          }
+          const normalized = this.toNormalizedString();
+          const string = normalized.slice(0, normalized.length - suffix.length);
+          let bestMatchIndex = 0;
+          let bestMatchLength = -1;
+          let bestMatchGroups = -1;
+          let match;
+          while (match = regex.exec(string)) {
+            const groups = (match[0].match(/0/g) || []).length;
+            if (groups > bestMatchGroups) {
+              bestMatchGroups = groups;
+              bestMatchIndex = match.index;
+              bestMatchLength = match[0].length;
+            }
+          }
+          if (bestMatchLength < 0) {
+            return string + suffix;
+          }
+          return `${string.substring(0, bestMatchIndex)}::${string.substring(bestMatchIndex + bestMatchLength)}${suffix}`;
+        };
+        IPv6.prototype.toString = function() {
+          return this.toRFC5952String();
+        };
+        return IPv6;
+      })();
+      ipaddr2.IPv6.broadcastAddressFromCIDR = function(string) {
+        try {
+          const cidr = this.parseCIDR(string);
+          const ipInterfaceOctets = cidr[0].toByteArray();
+          const subnetMaskOctets = this.subnetMaskFromPrefixLength(cidr[1]).toByteArray();
+          const octets = [];
+          let i2 = 0;
+          while (i2 < 16) {
+            octets.push(parseInt(ipInterfaceOctets[i2], 10) | parseInt(subnetMaskOctets[i2], 10) ^ 255);
+            i2++;
+          }
+          return new this(octets);
+        } catch (e2) {
+          throw new Error("ipaddr: the address does not have IPv6 CIDR format", { cause: e2 });
+        }
+      };
+      ipaddr2.IPv6.isIPv6 = function(string) {
+        return this.parser(string) !== null;
+      };
+      ipaddr2.IPv6.isValid = function(string) {
+        if (typeof string === "string" && string.indexOf(":") === -1) {
+          return false;
+        }
+        try {
+          const addr = this.parser(string);
+          new this(addr.parts, addr.zoneId);
+          return true;
+        } catch {
+          return false;
+        }
+      };
+      ipaddr2.IPv6.isValidCIDR = function(string) {
+        if (typeof string === "string" && string.indexOf(":") === -1) {
+          return false;
+        }
+        try {
+          this.parseCIDR(string);
+          return true;
+        } catch {
+          return false;
+        }
+      };
+      ipaddr2.IPv6.networkAddressFromCIDR = function(string) {
+        let cidr, i2, ipInterfaceOctets, octets, subnetMaskOctets;
+        try {
+          cidr = this.parseCIDR(string);
+          ipInterfaceOctets = cidr[0].toByteArray();
+          subnetMaskOctets = this.subnetMaskFromPrefixLength(cidr[1]).toByteArray();
+          octets = [];
+          i2 = 0;
+          while (i2 < 16) {
+            octets.push(parseInt(ipInterfaceOctets[i2], 10) & parseInt(subnetMaskOctets[i2], 10));
+            i2++;
+          }
+          return new this(octets);
+        } catch (e2) {
+          throw new Error("ipaddr: the address does not have IPv6 CIDR format", { cause: e2 });
+        }
+      };
+      ipaddr2.IPv6.parse = function(string) {
+        const addr = this.parser(string);
+        if (addr === null) {
+          throw new Error("ipaddr: string is not formatted like an IPv6 Address");
+        }
+        return new this(addr.parts, addr.zoneId);
+      };
+      ipaddr2.IPv6.parseCIDR = function(string) {
+        let maskLength, match, parsed;
+        if (match = string.match(/^(.+)\/(\d+)$/)) {
+          maskLength = parseInt(match[2]);
+          if (maskLength >= 0 && maskLength <= 128) {
+            parsed = [this.parse(match[1]), maskLength];
+            Object.defineProperty(parsed, "toString", {
+              value: function() {
+                return this.join("/");
+              }
+            });
+            return parsed;
+          }
+        }
+        throw new Error("ipaddr: string is not formatted like an IPv6 CIDR range");
+      };
+      ipaddr2.IPv6.parser = function(string) {
+        let addr, i2, match, octet, octets, zoneId;
+        if (match = string.match(ipv6Regexes.deprecatedTransitional)) {
+          return this.parser(`::ffff:${match[1]}`);
+        }
+        if (ipv6Regexes.native.test(string)) {
+          return expandIPv6(string, 8);
+        }
+        if (match = string.match(ipv6Regexes.transitional)) {
+          zoneId = match[6] || "";
+          addr = match[1];
+          if (!match[1].endsWith("::")) {
+            addr = addr.slice(0, -1);
+          }
+          addr = expandIPv6(addr + zoneId, 6);
+          if (addr && addr.parts) {
+            octets = [
+              parseInt(match[2]),
+              parseInt(match[3]),
+              parseInt(match[4]),
+              parseInt(match[5])
+            ];
+            for (i2 = 0; i2 < octets.length; i2++) {
+              octet = octets[i2];
+              if (!(0 <= octet && octet <= 255)) {
+                return null;
+              }
+            }
+            addr.parts.push(octets[0] << 8 | octets[1]);
+            addr.parts.push(octets[2] << 8 | octets[3]);
+            return {
+              parts: addr.parts,
+              zoneId: addr.zoneId
+            };
+          }
+        }
+        return null;
+      };
+      ipaddr2.IPv6.subnetMaskFromPrefixLength = function(prefix) {
+        prefix = parseInt(prefix);
+        if (Number.isNaN(prefix) || prefix < 0 || prefix > 128) {
+          throw new Error("ipaddr: invalid IPv6 prefix length");
+        }
+        const octets = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        let j3 = 0;
+        const filledOctetCount = Math.floor(prefix / 8);
+        while (j3 < filledOctetCount) {
+          octets[j3] = 255;
+          j3++;
+        }
+        if (filledOctetCount < 16) {
+          octets[filledOctetCount] = Math.pow(2, prefix % 8) - 1 << 8 - prefix % 8;
+        }
+        return new this(octets);
+      };
+      ipaddr2.fromByteArray = function(bytes) {
+        const length = bytes.length;
+        if (length === 4) {
+          return new ipaddr2.IPv4(bytes);
+        } else if (length === 16) {
+          return new ipaddr2.IPv6(bytes);
+        } else {
+          throw new Error("ipaddr: the binary input is neither an IPv6 nor IPv4 address");
+        }
+      };
+      ipaddr2.isValid = function(string) {
+        return ipaddr2.IPv6.isValid(string) || ipaddr2.IPv4.isValid(string);
+      };
+      ipaddr2.isValidCIDR = function(string) {
+        return ipaddr2.IPv6.isValidCIDR(string) || ipaddr2.IPv4.isValidCIDR(string);
+      };
+      ipaddr2.parse = function(string) {
+        if (ipaddr2.IPv6.isValid(string)) {
+          return ipaddr2.IPv6.parse(string);
+        } else if (ipaddr2.IPv4.isValid(string)) {
+          return ipaddr2.IPv4.parse(string);
+        } else {
+          throw new Error("ipaddr: the address has neither IPv6 nor IPv4 format");
+        }
+      };
+      ipaddr2.parseCIDR = function(string) {
+        try {
+          return ipaddr2.IPv6.parseCIDR(string);
+        } catch {
+          try {
+            return ipaddr2.IPv4.parseCIDR(string);
+          } catch (e2) {
+            throw new Error("ipaddr: the address has neither IPv6 nor IPv4 CIDR format", { cause: e2 });
+          }
+        }
+      };
+      ipaddr2.process = function(string) {
+        const addr = this.parse(string);
+        if (addr.kind() === "ipv6" && addr.isIPv4MappedAddress()) {
+          return addr.toIPv4Address();
+        } else {
+          return addr;
+        }
+      };
+      ipaddr2.subnetMatch = function(address, rangeList, defaultName) {
+        let i2, rangeName, rangeSubnets, subnet;
+        if (defaultName === void 0 || defaultName === null) {
+          defaultName = "unicast";
+        }
+        for (rangeName in rangeList) {
+          if (Object.prototype.hasOwnProperty.call(rangeList, rangeName)) {
+            rangeSubnets = rangeList[rangeName];
+            if (rangeSubnets[0] && !(rangeSubnets[0] instanceof Array)) {
+              rangeSubnets = [rangeSubnets];
+            }
+            for (i2 = 0; i2 < rangeSubnets.length; i2++) {
+              subnet = rangeSubnets[i2];
+              if (address.kind() === subnet[0].kind() && address.match.apply(address, subnet)) {
+                return rangeName;
+              }
+            }
+          }
+        }
+        return defaultName;
+      };
+      if (typeof module !== "undefined" && module.exports) {
+        module.exports = ipaddr2;
+      } else {
+        root.ipaddr = ipaddr2;
+      }
+    })(exports);
   }
 });
 
@@ -53885,14 +55063,14 @@ var require_public_api = __commonJS({
       const { lineCounter: lineCounter2, prettyErrors } = parseOptions(options);
       const parser$1 = new parser.Parser(lineCounter2?.addNewLine);
       const composer$1 = new composer.Composer(options);
-      const docs = Array.from(composer$1.compose(parser$1.parse(source)));
+      const docs2 = Array.from(composer$1.compose(parser$1.parse(source)));
       if (prettyErrors && lineCounter2)
-        for (const doc of docs) {
+        for (const doc of docs2) {
           doc.errors.forEach(errors.prettifyError(source, lineCounter2));
           doc.warnings.forEach(errors.prettifyError(source, lineCounter2));
         }
-      if (docs.length > 0)
-        return docs;
+      if (docs2.length > 0)
+        return docs2;
       return Object.assign([], { empty: true }, composer$1.streamInfo());
     }
     function parseDocument2(source, options = {}) {
@@ -58617,7 +59795,7 @@ var MessageLocalizer = class _MessageLocalizer {
 // packages/runtime/github-actions/src/i18n/diagnostics-communication.en.ts
 var DIAGNOSTICS_COMMUNICATION_EN = {
   "diagnostic.communication.feedback-unavailable": "Thank-you emails are blocked because speaker feedback results could not be resolved. Check the OpenFeedback event link, organization API key and synchronized talks, then retry.",
-  "diagnostic.communication.slides-unavailable": "Email dispatch is blocked because the presentation file link is missing or invalid. Configure a Drive template with template_kind=slides, reconcile assets, and pass the slides-link entry from drive-files as slides-url.",
+  "diagnostic.communication.slides-unavailable": "Email dispatch requires a valid presentation file URL and ready managed content. Resolve asset diagnostics and reconcile again.",
   "diagnostic.communication.approval-pending": "Email dispatch is waiting for approval on the meetup issue.",
   "diagnostic.communication.approval-rejected": "The email batch was rejected. The recorded decision is final for this batch revision.",
   "diagnostic.communication.approval-unavailable": "The organizer approval could not be verified or persisted; email dispatch is blocked.",
@@ -58651,7 +59829,7 @@ var DIAGNOSTICS_COMMUNICATION_EN = {
 // packages/runtime/github-actions/src/i18n/diagnostics-communication.fr.ts
 var DIAGNOSTICS_COMMUNICATION_FR = {
   "diagnostic.communication.feedback-unavailable": "Les e-mails de remerciement sont bloqu\xE9s car les r\xE9sultats des retours des intervenants sont indisponibles. V\xE9rifiez le lien de l'\xE9v\xE9nement OpenFeedback, la cl\xE9 API de l'organisation et les pr\xE9sentations synchronis\xE9es, puis r\xE9essayez.",
-  "diagnostic.communication.slides-unavailable": "L'envoi des e-mails est bloqu\xE9 car le lien du fichier de pr\xE9sentation est absent ou invalide. Configurez un mod\xE8le Drive avec template_kind=slides, r\xE9conciliez les fichiers et transmettez l'entr\xE9e slides-link de drive-files dans slides-url.",
+  "diagnostic.communication.slides-unavailable": "Les envois n\xE9cessitent un lien de pr\xE9sentation valide et un contenu g\xE9r\xE9 pr\xEAt. Corrigez les diagnostics des documents puis relancez la r\xE9conciliation.",
   "diagnostic.communication.approval-pending": "Les e-mails attendent une confirmation dans le ticket du meetup.",
   "diagnostic.communication.approval-rejected": "Le lot d'e-mails a \xE9t\xE9 refus\xE9. La d\xE9cision enregistr\xE9e est d\xE9finitive pour cette version du lot.",
   "diagnostic.communication.approval-unavailable": "La confirmation des organisateurs n'a pas pu \xEAtre v\xE9rifi\xE9e ou enregistr\xE9e ; l'envoi des e-mails est bloqu\xE9.",
@@ -58784,6 +59962,15 @@ var DIAGNOSTICS_EVENT_FR = {
 
 // packages/runtime/github-actions/src/i18n/diagnostics-other.en.ts
 var DIAGNOSTICS_OTHER_EN = {
+  "diagnostic.publication.assets.file.drift": "An event template copy is missing or its name or template metadata has changed",
+  "diagnostic.publication.assets.content.contract": "Check the versioned content contract, supported MIME type, tokens, image slots and fit policy.",
+  "diagnostic.publication.assets.content.missing": "Complete the required public text or link, then reconcile again. The existing copy is reused.",
+  "diagnostic.publication.assets.content.location": "Place Slides tokens in whole text shapes and Docs tokens in body paragraphs. Check tab and object IDs, alt text and supported structures.",
+  "diagnostic.publication.assets.content.conflict": "A managed location changed or its anchor is missing. Preserve the edit; use revision-bound restore or remove recovery in the asset content configuration.",
+  "diagnostic.publication.assets.content.recovery": "Inspect the file and binding sidecar. Restore valid state or use explicit enrollment or binding recovery; do not delete the file or reset email records.",
+  "diagnostic.publication.assets.content.revision": "The document changed during rendering. Reconcile again after the current edit is complete.",
+  "diagnostic.publication.assets.content.image": "Check the public HTTPS image and fallback: PNG, JPEG or GIF, under 50 MB and at most 25 megapixels. Signed or private URLs are unsupported.",
+  "diagnostic.publication.assets.content.fallback": "An optional image uses its validated generic fallback. The file remains ready; check the speaker assignment or host-logo configuration and public image URL.",
   "diagnostic.publication.feedback.agenda": "Complete talk subjects and resolve speaker references in the issue before synchronizing the feedback agenda. Existing feedback is preserved.",
   "diagnostic.publication.feedback.unrelated": "This issue is not a meetup",
   "diagnostic.publication.feedback.inactive": "Feedback automation is inactive for this event",
@@ -58804,6 +59991,15 @@ var DIAGNOSTICS_OTHER_EN = {
 
 // packages/runtime/github-actions/src/i18n/diagnostics-other.fr.ts
 var DIAGNOSTICS_OTHER_FR = {
+  "diagnostic.publication.assets.file.drift": "Une copie du mod\xE8le manque ou son nom ou ses m\xE9tadonn\xE9es ont chang\xE9.",
+  "diagnostic.publication.assets.content.contract": "V\xE9rifiez le contrat de contenu versionn\xE9, le type MIME, les jetons, les images et le mode de cadrage.",
+  "diagnostic.publication.assets.content.missing": "Compl\xE9tez le texte ou le lien public requis, puis relancez la r\xE9conciliation. La copie existante est r\xE9utilis\xE9e.",
+  "diagnostic.publication.assets.content.location": "Placez les jetons Slides dans des formes de texte enti\xE8res et les jetons Docs dans les paragraphes du corps. V\xE9rifiez les identifiants, le texte alternatif et les structures prises en charge.",
+  "diagnostic.publication.assets.content.conflict": "Un emplacement g\xE9r\xE9 a chang\xE9 ou son ancre manque. Pr\xE9servez la modification et utilisez une restauration ou un retrait li\xE9 \xE0 la r\xE9vision dans la configuration des contenus.",
+  "diagnostic.publication.assets.content.recovery": "Inspectez le fichier et son manifeste. Restaurez un \xE9tat valide ou utilisez une inscription ou une r\xE9cup\xE9ration explicite ; ne supprimez pas le fichier et ne r\xE9initialisez pas les envois.",
+  "diagnostic.publication.assets.content.revision": "Le document a chang\xE9 pendant le rendu. Relancez la r\xE9conciliation apr\xE8s la modification en cours.",
+  "diagnostic.publication.assets.content.image": "V\xE9rifiez l'image HTTPS publique et son image de remplacement : PNG, JPEG ou GIF, moins de 50 Mo et au plus 25 m\xE9gapixels. Les URL priv\xE9es ou sign\xE9es ne sont pas prises en charge.",
+  "diagnostic.publication.assets.content.fallback": "Une image facultative utilise son image g\xE9n\xE9rique valid\xE9e. Le fichier reste pr\xEAt ; v\xE9rifiez le choix de l'intervenant ou la configuration du logo de l'h\xF4te et l'URL publique de l'image.",
   "diagnostic.publication.feedback.agenda": "Compl\xE9tez les sujets des pr\xE9sentations et r\xE9solvez les r\xE9f\xE9rences des intervenants dans l'issue avant de synchroniser le programme des retours. Les retours existants sont conserv\xE9s.",
   "diagnostic.publication.feedback.unrelated": "Ce ticket ne correspond pas \xE0 un meetup.",
   "diagnostic.publication.feedback.inactive": "L'automatisation des retours est inactive pour cet \xE9v\xE9nement.",
@@ -59216,10 +60412,13 @@ var RuntimeInput = class {
 
 // packages/runtime/github-actions/src/action-runner.ts
 var ActionRunner = class {
-  static async run(title, operation) {
-    const messages = new ActionMessages(getInput("locale"));
+  static async run(title, operation, diagnosticsOutput) {
+    let messages = new ActionMessages("en");
     let report;
     try {
+      messages = new ActionMessages(
+        getInput("locale", { required: true })
+      );
       report = await operation(messages);
     } catch (error2) {
       const message = RuntimeInput.publicErrorMessage(error2);
@@ -59239,7 +60438,8 @@ var ActionRunner = class {
     }
     await ActionReport.write(messages.t(title), report, messages);
     if (report.failure) setFailed(report.failure);
-    ActionOutput.setDiagnosticsOutput(report.diagnostics);
+    if (diagnosticsOutput)
+      ActionOutput.setDiagnosticsOutput(report.diagnostics);
   }
 };
 
@@ -60543,16 +61743,16 @@ function withDefaults2(oldEndpoint, newDefaults) {
     if (!endpointOptions.request || !endpointOptions.request.hook) {
       return fetchWrapper(endpoint2.parse(endpointOptions));
     }
-    const request2 = (route2, parameters2) => {
+    const request22 = (route2, parameters2) => {
       return fetchWrapper(
         endpoint2.parse(endpoint2.merge(route2, parameters2))
       );
     };
-    Object.assign(request2, {
+    Object.assign(request22, {
       endpoint: endpoint2,
       defaults: withDefaults2.bind(null, endpoint2)
     });
-    return endpointOptions.request.hook(request2, endpointOptions);
+    return endpointOptions.request.hook(request22, endpointOptions);
   };
   return Object.assign(newApi, {
     endpoint: endpoint2,
@@ -60568,9 +61768,9 @@ function _buildMessageForResponseErrors(data) {
 ` + data.errors.map((e2) => ` - ${e2.message}`).join("\n");
 }
 var GraphqlResponseError = class extends Error {
-  constructor(request2, headers, response) {
+  constructor(request22, headers, response) {
     super(_buildMessageForResponseErrors(response));
-    this.request = request2;
+    this.request = request22;
     this.headers = headers;
     this.response = response;
     this.errors = response.errors;
@@ -60598,7 +61798,7 @@ var NON_VARIABLE_OPTIONS = [
 ];
 var FORBIDDEN_VARIABLE_OPTIONS = ["query", "method", "url"];
 var GHES_V3_SUFFIX_REGEX = /\/api\/v3\/?$/;
-function graphql(request2, query, options) {
+function graphql(request22, query, options) {
   if (options) {
     if (typeof query === "string" && "query" in options) {
       return Promise.reject(
@@ -60628,11 +61828,11 @@ function graphql(request2, query, options) {
     result.variables[key] = parsedOptions[key];
     return result;
   }, {});
-  const baseUrl2 = parsedOptions.baseUrl || request2.endpoint.DEFAULTS.baseUrl;
+  const baseUrl2 = parsedOptions.baseUrl || request22.endpoint.DEFAULTS.baseUrl;
   if (GHES_V3_SUFFIX_REGEX.test(baseUrl2)) {
     requestOptions2.url = baseUrl2.replace(GHES_V3_SUFFIX_REGEX, "/api/graphql");
   }
-  return request2(requestOptions2).then((response) => {
+  return request22(requestOptions2).then((response) => {
     if (response.data.errors) {
       const headers = {};
       for (const key of Object.keys(response.headers)) {
@@ -60647,8 +61847,8 @@ function graphql(request2, query, options) {
     return response.data.data;
   });
 }
-function withDefaults3(request2, newDefaults) {
-  const newRequest = request2.defaults(newDefaults);
+function withDefaults3(request22, newDefaults) {
+  const newRequest = request22.defaults(newDefaults);
   const newApi = (query, options) => {
     return graphql(newRequest, query, options);
   };
@@ -60693,13 +61893,13 @@ function withAuthorizationPrefix(token) {
   }
   return `token ${token}`;
 }
-async function hook(token, request2, route, parameters) {
-  const endpoint2 = request2.endpoint.merge(
+async function hook(token, request3, route, parameters) {
+  const endpoint2 = request3.endpoint.merge(
     route,
     parameters
   );
   endpoint2.headers.authorization = withAuthorizationPrefix(token);
-  return request2(endpoint2);
+  return request3(endpoint2);
 }
 var createTokenAuth = function createTokenAuth2(token) {
   if (!token) {
@@ -63435,12 +64635,153 @@ function getOctokit(token, options, ...additionalPlugins) {
   return new GitHubWithPlugins(getOctokitOptions(token, options));
 }
 
-// packages/domain/publication/src/application/reconcile-event-assets.ts
-var ReconcileEventAssets = class _ReconcileEventAssets {
-  constructor(repository) {
+// packages/domain/publication/src/domain/content-error.ts
+var ContentError = class extends Error {
+  constructor(code) {
+    super(
+      `Asset content ${code}; review the template contract and managed bindings`
+    );
+    this.code = code;
+    this.name = "ContentError";
+  }
+  code;
+};
+
+// packages/domain/publication/src/application/reconcile-asset-file.ts
+var ReconcileAssetFile = class _ReconcileAssetFile {
+  constructor(repository, content) {
     this.repository = repository;
+    this.content = content;
   }
   repository;
+  content;
+  async execute(input) {
+    const matches = input.currentFiles.filter(
+      (file2) => file2.templateId === input.template.id
+    );
+    if (matches.length > 1)
+      throw new Error(
+        "Ambiguous event asset copies require manual reconciliation"
+      );
+    let file = matches[0];
+    const fresh = !file;
+    try {
+      await this.preflight(input, file);
+      if (!file) file = await this.copyOrRename(input);
+      if (!file)
+        return {
+          status: input.template.contentContract ? "pending" : "copy-only"
+        };
+      file = await this.enroll(input, file);
+      const status = await this.render(input, file, fresh);
+      if (!fresh && (status === "ready" || status === "copy-only"))
+        file = await this.copyOrRename(input, file);
+      return { file, status };
+    } catch (error2) {
+      if (!(error2 instanceof ContentError)) throw error2;
+      return _ReconcileAssetFile.failed(file, error2, input.diagnostics);
+    }
+  }
+  static failed(file, error2, diagnostics) {
+    diagnostics.push(_ReconcileAssetFile.diagnostic(error2.code));
+    return {
+      file,
+      status: error2.code === "conflict" ? "conflict" : error2.code === "recovery" ? "recovery-required" : "pending"
+    };
+  }
+  async enroll(input, file) {
+    if (input.recovery?.[file.id]?.operation === "enroll" && !file.contentManaged) {
+      file = await this.repository.updateFile(
+        { ...file, contentManaged: true },
+        input.template,
+        file.name
+      );
+    }
+    return file;
+  }
+  async preflight(input, file) {
+    if (file && (file.contentManaged || input.recovery?.[file.id]?.operation !== "enroll"))
+      return;
+    if (!input.template.contentContract) return;
+    if (!this.content || !input.model) throw new ContentError("missing");
+    try {
+      await this.content.preflight(
+        file?.id ?? input.template.id,
+        input.template.kind,
+        input.template.mimeType ?? "",
+        input.template.contentContract,
+        input.model
+      );
+    } catch (error2) {
+      throw error2 instanceof ContentError ? error2 : new ContentError("recovery");
+    }
+  }
+  async render(input, file, fresh) {
+    const { template } = input;
+    const recovery = input.recovery?.[file.id];
+    if (!file.contentManaged && !recovery && (!fresh || !template.contentContract))
+      return "copy-only";
+    if (input.mode === "check" || !this.content || !input.model)
+      return "pending";
+    try {
+      const outcome = await this.content.execute({
+        folderId: input.container.id,
+        fileId: file.id,
+        templateId: template.id,
+        kind: template.kind,
+        mimeType: file.mimeType ?? template.mimeType ?? "",
+        contract: template.contentContract,
+        fresh,
+        managed: file.contentManaged,
+        model: input.model,
+        recovery
+      });
+      if (outcome.fallback)
+        input.diagnostics.push(_ReconcileAssetFile.diagnostic("fallback"));
+      if (outcome.status === "pending")
+        input.diagnostics.push(_ReconcileAssetFile.diagnostic("revision"));
+      return outcome.status;
+    } catch (error2) {
+      throw error2 instanceof ContentError ? error2 : new ContentError("recovery");
+    }
+  }
+  async copyOrRename(input, file) {
+    const { template } = input;
+    const name = template.name.replaceAll(
+      "[EVENT_DATE:YYYY-MM-DD]",
+      input.date
+    );
+    if (file?.name === name && file.kind === template.kind) return file;
+    input.diagnostics.push({
+      code: "publication.assets.file.drift",
+      field: "assets",
+      severity: "warning",
+      message: "An event template copy is missing or its name or template metadata has changed",
+      fixAvailable: true,
+      fixApplied: input.mode === "fix"
+    });
+    if (input.mode !== "fix") return file;
+    return file ? this.repository.updateFile(file, template, name) : this.repository.copyTemplate(input.container.id, template, name);
+  }
+  static diagnostic(code) {
+    return {
+      code: `publication.assets.content.${code}`,
+      field: "assets",
+      severity: "warning",
+      message: "Review the asset content status, template contract, public inputs and recovery instructions before using this file",
+      fixAvailable: false
+    };
+  }
+};
+
+// packages/domain/publication/src/application/reconcile-event-assets.ts
+var ReconcileEventAssets = class _ReconcileEventAssets {
+  constructor(repository, content) {
+    this.repository = repository;
+    this.content = content;
+  }
+  repository;
+  content;
   async execute(input) {
     const date = input.date.trim();
     const host = input.hostName.trim();
@@ -63462,14 +64803,14 @@ var ReconcileEventAssets = class _ReconcileEventAssets {
       month: "long",
       timeZone: "UTC"
     }).format(/* @__PURE__ */ new Date(`${date}T00:00:00Z`));
-    const request2 = {
+    const request3 = {
       eventId: input.eventId,
       idempotencyKey: `${input.eventId}:assets:v1`,
       title: `${date} - ${month} - ${host}`
     };
     const diagnostics = [];
-    let container = await this.repository.findContainer(request2);
-    if (!container || container.name !== request2.title) {
+    let container = await this.repository.findContainer(request3);
+    if (!container || container.name !== request3.title) {
       diagnostics.push(
         _ReconcileEventAssets.diagnostic(
           "container.drift",
@@ -63478,7 +64819,7 @@ var ReconcileEventAssets = class _ReconcileEventAssets {
         )
       );
       if (input.mode === "fix")
-        container = await this.repository.ensureContainer(request2);
+        container = await this.repository.ensureContainer(request3);
     }
     if (!container) return { files: {}, diagnostics };
     if (container.url !== input.existingUrl) {
@@ -63490,20 +64831,25 @@ var ReconcileEventAssets = class _ReconcileEventAssets {
         )
       );
     }
+    return this.reconcileFiles(container, templates, input, diagnostics);
+  }
+  async reconcileFiles(container, templates, input, diagnostics) {
     const currentFiles = await this.repository.listFiles(container.id);
     const files = {};
+    const content = {};
+    const reconcile = new ReconcileAssetFile(this.repository, this.content);
     for (const template of templates) {
-      const file = await this.reconcileFile(
-        container,
+      const result = await reconcile.execute({
+        ...input,
         template,
+        container,
         currentFiles,
-        date,
-        input.mode,
         diagnostics
-      );
-      if (file?.url) files[`${template.kind}-link`] = file.url;
+      });
+      if (result.file?.url) files[`${template.kind}-link`] = result.file.url;
+      content[template.kind] = result.status;
     }
-    return { container, files, diagnostics };
+    return { container, files, content, diagnostics };
   }
   static diagnostic(code, message, fixApplied) {
     return {
@@ -63528,30 +64874,6 @@ var ReconcileEventAssets = class _ReconcileEventAssets {
         "Asset templates must have unique IDs, unique kinds, and non-empty names"
       );
     }
-  }
-  async reconcileFile(container, template, currentFiles, date, mode, diagnostics) {
-    const name = template.name.replaceAll("[EVENT_DATE:YYYY-MM-DD]", date);
-    const matches = currentFiles.filter(
-      (file2) => file2.templateId === template.id
-    );
-    if (matches.length > 1)
-      throw new Error(
-        "Ambiguous event asset copies require manual reconciliation"
-      );
-    let file = matches[0];
-    if (!file || file.name !== name || file.kind !== template.kind) {
-      diagnostics.push(
-        _ReconcileEventAssets.diagnostic(
-          "file.drift",
-          "An event template copy is missing or its name or template metadata has changed",
-          mode === "fix"
-        )
-      );
-      if (mode === "fix") {
-        file = file ? await this.repository.updateFile(file, template, name) : await this.repository.copyTemplate(container.id, template, name);
-      }
-    }
-    return file;
   }
 };
 
@@ -63825,6 +65147,577 @@ var PublicationUrlPolicyEngine = class {
   }
 };
 
+// packages/domain/publication/src/domain/content-text-key.ts
+var ContentTextKey = class {
+  static of(field) {
+    return field.slot ? `${field.token}:${field.slot}` : field.token;
+  }
+};
+
+// packages/domain/publication/src/domain/asset-content.ts
+var TEXT_TOKENS = [
+  "event.title",
+  "event.date",
+  "event.date.month",
+  "event.date.numeric",
+  "event.date.weekday",
+  "host.name",
+  "host.address",
+  "host.postal_code",
+  "host.city",
+  "agenda",
+  "event.feedback_url",
+  "next_event.date",
+  "next_event.date.numeric",
+  "next_event.host.name",
+  "next_event.host.city"
+];
+var SLOTTED_TEXT_TOKENS = [
+  "talk.title",
+  "talk.abstract",
+  "talk.speakers",
+  "speaker.name"
+];
+
+// packages/domain/publication/src/domain/content-contract-policy.ts
+var ContentContractPolicy = class _ContentContractPolicy {
+  static parse(value, kind, mimeType) {
+    const contract = value;
+    if (contract?.version !== 1 || contract.kind !== kind || !_ContentContractPolicy.name(contract.revision) || !Array.isArray(contract.fields) || !contract.fields.length || contract.fields.length > 100 || !_ContentContractPolicy.keys(contract, [
+      "version",
+      "revision",
+      "kind",
+      "fields"
+    ]) || !_ContentContractPolicy.supported(mimeType))
+      throw new ContentError("contract");
+    const keys = /* @__PURE__ */ new Set();
+    for (const field of contract.fields) {
+      if (!field || typeof field.required !== "boolean")
+        throw new ContentError("contract");
+      let key;
+      if (field.type === "text") {
+        _ContentContractPolicy.textField(field);
+        key = ContentTextKey.of(field);
+      } else {
+        _ContentContractPolicy.image(field, mimeType);
+        key = field.slot;
+      }
+      if (keys.has(key)) throw new ContentError("contract");
+      keys.add(key);
+    }
+    return contract;
+  }
+  static textField(field) {
+    const slotted = SLOTTED_TEXT_TOKENS.includes(
+      field.token
+    );
+    if (!(slotted || TEXT_TOKENS.includes(field.token)) || (slotted ? !_ContentContractPolicy.name(field.slot) : field.slot !== void 0) || !_ContentContractPolicy.name(ContentTextKey.of(field)) || !_ContentContractPolicy.keys(field, [
+      "type",
+      "token",
+      "slot",
+      "required",
+      "fallback"
+    ]) || (!field.required || field.fallback !== void 0) && !_ContentContractPolicy.text(field.fallback))
+      throw new ContentError("contract");
+  }
+  static supported(mimeType) {
+    return [
+      "application/vnd.google-apps.presentation",
+      "application/vnd.google-apps.document"
+    ].includes(mimeType);
+  }
+  static text(value) {
+    return typeof value === "string" && value.trim().length > 0 && value.length <= 2e4 && [...value].every((character) => {
+      const code = character.charCodeAt(0);
+      return (code >= 32 || code === 9 || code === 10) && (code < 57344 || code > 63743);
+    });
+  }
+  static name(value) {
+    return typeof value === "string" && /^[\w.:-]{1,100}$/.test(value);
+  }
+  static keys(value, keys) {
+    return Object.keys(value).every((key) => keys.includes(key));
+  }
+  static image(field, mimeType) {
+    if (field.type !== "image" || !["speaker.picture", "host.logo"].includes(field.token) || !_ContentContractPolicy.name(field.slot) || !_ContentContractPolicy.name(field.objectId) || !_ContentContractPolicy.keys(field, [
+      "type",
+      "token",
+      "slot",
+      "objectId",
+      "pageId",
+      "tabId",
+      "required",
+      "fallback",
+      "fit"
+    ]))
+      throw new ContentError("contract");
+    const slides2 = mimeType === "application/vnd.google-apps.presentation";
+    if (!(slides2 ? _ContentContractPolicy.name(field.pageId) && !field.tabId : _ContentContractPolicy.name(field.tabId) && !field.pageId) || !(field.fit === "CENTER_CROP" || slides2 && field.fit === "CENTER_INSIDE"))
+      throw new ContentError("contract");
+    if (!field.required || field.fallback) {
+      if (!field.fallback || !_ContentContractPolicy.text(field.fallback.url) || !_ContentContractPolicy.text(field.fallback.description) || !_ContentContractPolicy.keys(field.fallback, ["url", "description"]))
+        throw new ContentError("contract");
+    }
+  }
+};
+
+// packages/domain/publication/src/domain/content-fingerprint.ts
+import { createHash } from "node:crypto";
+var ContentFingerprint = class {
+  static of(value) {
+    return createHash("sha256").update(value).digest("hex");
+  }
+};
+
+// packages/domain/publication/src/domain/content-manifest-policy.ts
+var ContentManifestPolicy = class _ContentManifestPolicy {
+  static parse(value, fileId, templateId, mimeType) {
+    const manifest = value;
+    if (manifest?.version !== 1 || manifest.fileId !== fileId || manifest.templateId !== templateId || manifest.mimeType !== mimeType || !ContentContractPolicy.keys(manifest, [
+      "version",
+      "fileId",
+      "templateId",
+      "mimeType",
+      "contract",
+      "bindings",
+      "pending",
+      "initialRevision",
+      "recoveryId"
+    ]))
+      throw new ContentError("recovery");
+    ContentContractPolicy.parse(
+      manifest.contract,
+      manifest.contract?.kind,
+      mimeType
+    );
+    if (manifest.initialRevision !== void 0 && !ContentContractPolicy.text(manifest.initialRevision) || manifest.recoveryId !== void 0 && !/^[a-f0-9]{64}$/.test(manifest.recoveryId))
+      throw new ContentError("recovery");
+    _ContentManifestPolicy.bindings(manifest.bindings);
+    _ContentManifestPolicy.associations(manifest);
+    if (manifest.pending) {
+      if (!ContentContractPolicy.text(manifest.pending.revision) || !ContentContractPolicy.keys(manifest.pending, ["revision", "bindings"]))
+        throw new ContentError("recovery");
+      _ContentManifestPolicy.bindings(manifest.pending.bindings);
+      _ContentManifestPolicy.associations({
+        ...manifest,
+        bindings: manifest.pending.bindings
+      });
+      if (manifest.pending.bindings.length !== manifest.bindings.length || manifest.pending.bindings.some((binding, i2) => {
+        const prior = manifest.bindings[i2];
+        return prior.id !== binding.id || prior.key !== binding.key || prior.type !== binding.type || JSON.stringify(prior.anchor) !== JSON.stringify(binding.anchor);
+      }))
+        throw new ContentError("recovery");
+    }
+    return manifest;
+  }
+  static bindings(bindings) {
+    if (!Array.isArray(bindings) || bindings.length > 500 || new Set(bindings.map((binding) => binding?.id)).size !== bindings.length)
+      throw new ContentError("recovery");
+    for (const binding of bindings) {
+      if (!binding || !ContentContractPolicy.name(binding.id) || !ContentContractPolicy.name(binding.key) || !["text", "image"].includes(binding.type) || !/^[a-f0-9]{64}$/.test(binding.applied) || binding.desired !== void 0 && !/^[a-f0-9]{64}$/.test(binding.desired) || !ContentContractPolicy.keys(binding, [
+        "id",
+        "type",
+        "key",
+        "anchor",
+        "applied",
+        "desired",
+        "speakerId",
+        "hostId",
+        "fallback"
+      ]))
+        throw new ContentError("recovery");
+      _ContentManifestPolicy.anchor(binding);
+    }
+  }
+  static anchor(binding) {
+    const anchor = binding.anchor;
+    if (!anchor || !ContentContractPolicy.keys(anchor, [
+      "objectId",
+      "pageId",
+      "tabId",
+      "segmentId",
+      "rangeName",
+      "start",
+      "end"
+    ]))
+      throw new ContentError("recovery");
+    _ContentManifestPolicy.anchorValues(anchor);
+    if (binding.type === "image" && !anchor.objectId)
+      throw new ContentError("recovery");
+    if (binding.type === "text" && !anchor.objectId && !anchor.rangeName)
+      throw new ContentError("recovery");
+  }
+  static anchorValues(anchor) {
+    for (const [key, value] of Object.entries(anchor)) {
+      if (key === "start" || key === "end") {
+        if (!Number.isSafeInteger(value) || Number(value) < 1)
+          throw new ContentError("recovery");
+      } else if (value !== "" && !ContentContractPolicy.name(value))
+        throw new ContentError("recovery");
+    }
+  }
+  static associations(manifest) {
+    const anchors = /* @__PURE__ */ new Set();
+    for (const binding of manifest.bindings) {
+      const field = manifest.contract.fields.find(
+        (field2) => field2.type === binding.type && (field2.type === "text" ? ContentTextKey.of(field2) : field2.slot) === binding.key
+      );
+      const anchor = binding.anchor;
+      const key = JSON.stringify([
+        anchor.pageId,
+        anchor.tabId,
+        anchor.segmentId,
+        anchor.objectId,
+        anchor.rangeName
+      ]);
+      if (!field || anchors.has(key) || binding.fallback !== void 0 && typeof binding.fallback !== "boolean")
+        throw new ContentError("recovery");
+      anchors.add(key);
+      _ContentManifestPolicy.identity(binding, field);
+      _ContentManifestPolicy.rendererAnchor(manifest.mimeType, binding);
+    }
+  }
+  static identity(binding, field) {
+    if (binding.speakerId !== void 0 && (!/^speaker-[a-z0-9-]+$/.test(binding.speakerId) || field.type !== "image" || field.token !== "speaker.picture"))
+      throw new ContentError("recovery");
+    if (binding.hostId !== void 0 && (!/^host-[a-z0-9-]+$/.test(binding.hostId) || field.type !== "image" || field.token !== "host.logo"))
+      throw new ContentError("recovery");
+  }
+  static rendererAnchor(mimeType, binding) {
+    const anchor = binding.anchor;
+    if (mimeType.endsWith("presentation")) {
+      if (!anchor.objectId || !anchor.pageId || anchor.tabId || anchor.rangeName)
+        throw new ContentError("recovery");
+    } else if (!anchor.tabId || anchor.segmentId || binding.type === "text" && !anchor.rangeName)
+      throw new ContentError("recovery");
+  }
+};
+
+// packages/domain/publication/src/domain/content-render-plan.ts
+var ContentRenderPlan = class {
+  static changes(manifest, snapshot, values) {
+    const changes = [];
+    for (const binding of manifest.bindings) {
+      const matches = snapshot.locations.filter(
+        (location2) => location2.id === binding.id
+      );
+      const location = matches[0];
+      if (matches.length !== 1 || location.fingerprint !== binding.applied)
+        throw new ContentError("conflict");
+      const value = values.find(
+        (item) => item.key === binding.key && item.type === binding.type
+      );
+      if (!value) throw new ContentError("contract");
+      if (binding.desired !== value.fingerprint || binding.type === "text" && location.fingerprint !== value.fingerprint)
+        changes.push({ location, value });
+    }
+    return changes;
+  }
+  static pending(manifest, snapshot, changes) {
+    return {
+      ...manifest,
+      pending: {
+        revision: snapshot.revision,
+        bindings: manifest.bindings.map((binding) => {
+          const value = changes.find(
+            (change) => change.location.id === binding.id
+          )?.value;
+          return value ? {
+            ...binding,
+            desired: value.fingerprint,
+            applied: value.type === "text" ? value.fingerprint : binding.applied,
+            speakerId: value.speakerId,
+            hostId: value.hostId,
+            fallback: value.fallback
+          } : binding;
+        })
+      }
+    };
+  }
+  static settle(manifest, snapshot, confirmed) {
+    if (!manifest.pending) return manifest;
+    const next = manifest.pending.bindings;
+    const applied = next.every((binding) => {
+      const location = snapshot.locations.find(
+        (item) => item.id === binding.id
+      );
+      if (!location) throw new ContentError("conflict");
+      const prior2 = manifest.bindings.find((item) => item.id === binding.id);
+      return binding.type === "image" && binding.desired !== prior2?.desired ? confirmed : binding.applied === location.fingerprint;
+    });
+    if (applied)
+      return {
+        ...manifest,
+        pending: void 0,
+        initialRevision: next.every((binding) => binding.desired) ? void 0 : manifest.initialRevision,
+        bindings: next.map((binding) => ({
+          ...binding,
+          applied: snapshot.locations.find((item) => item.id === binding.id)?.fingerprint
+        }))
+      };
+    const prior = manifest.bindings.every(
+      (binding) => snapshot.locations.find((item) => item.id === binding.id)?.fingerprint === binding.applied
+    );
+    const uncertainImage = next.some(
+      (binding, index) => binding.type === "image" && binding.desired !== manifest.bindings[index]?.desired
+    );
+    if (!prior)
+      throw new ContentError(uncertainImage ? "recovery" : "conflict");
+    if (uncertainImage && snapshot.revision !== manifest.pending.revision)
+      throw new ContentError("recovery");
+    return { ...manifest, pending: void 0 };
+  }
+  static initial(snapshot) {
+    if (!snapshot.locations.length || snapshot.locations.length > 500 || snapshot.locations.some(
+      (location) => !ContentContractPolicy.name(location.id) || !ContentContractPolicy.name(location.key)
+    ) || new Set(snapshot.locations.map((location) => location.id)).size !== snapshot.locations.length || new Set(
+      snapshot.locations.map((location) => JSON.stringify(location.anchor))
+    ).size !== snapshot.locations.length)
+      throw new ContentError("location");
+    return snapshot.locations.map((location) => ({
+      id: location.id,
+      type: location.type,
+      key: location.key,
+      anchor: location.anchor,
+      applied: location.fingerprint
+    }));
+  }
+};
+
+// packages/domain/publication/src/application/resolve-content-values.ts
+var ResolveContentValues = class {
+  constructor(images) {
+    this.images = images;
+  }
+  images;
+  async execute(contract, model) {
+    const values = [];
+    for (const field of contract.fields) {
+      if (field.type === "image") {
+        values.push(await this.image(field, model));
+        continue;
+      }
+      const key = ContentTextKey.of(field);
+      const text = model.text[key] || (!field.required ? field.fallback : void 0);
+      if (!ContentContractPolicy.text(text)) throw new ContentError("missing");
+      values.push({
+        type: "text",
+        key,
+        text,
+        fingerprint: ContentFingerprint.of(text)
+      });
+    }
+    return values;
+  }
+  async image(field, model) {
+    const host = field.token === "host.logo";
+    const picture = host ? model.hostLogo : model.pictures[field.slot];
+    const hostId = host ? model.hostLogo?.hostId : void 0;
+    const speakerId = host ? void 0 : model.pictures[field.slot]?.speakerId;
+    const identity = hostId ?? speakerId;
+    const fallback = field.fallback ? await this.images.validate(field.fallback) : void 0;
+    try {
+      if (!picture || !(host ? /^host-[a-z0-9-]+$/ : /^speaker-[a-z0-9-]+$/).test(
+        identity ?? ""
+      ))
+        throw new ContentError("image");
+      const validated = await this.images.validate(picture);
+      return {
+        type: "image",
+        key: field.slot,
+        image: validated.source,
+        fingerprint: ContentFingerprint.of(
+          `${validated.fingerprint}:${identity}:${picture.description}:${field.fit}`
+        ),
+        speakerId,
+        hostId,
+        fallback: false,
+        fit: field.fit
+      };
+    } catch {
+      if (field.required || !field.fallback || !fallback)
+        throw new ContentError("image");
+      const validated = fallback;
+      return {
+        type: "image",
+        key: field.slot,
+        image: validated.source,
+        fingerprint: ContentFingerprint.of(
+          `${validated.fingerprint}:fallback:${field.fallback.description}:${field.fit}`
+        ),
+        fallback: true,
+        fit: field.fit
+      };
+    }
+  }
+};
+
+// packages/domain/publication/src/application/reconcile-asset-content.ts
+var ReconcileAssetContent = class {
+  constructor(manifests, renderers, images) {
+    this.manifests = manifests;
+    this.renderers = renderers;
+    this.images = images;
+  }
+  manifests;
+  renderers;
+  images;
+  async preflight(templateId, kind, mimeType, value, model) {
+    const contract = ContentContractPolicy.parse(value, kind, mimeType);
+    await new ResolveContentValues(this.images).execute(contract, model);
+    ContentRenderPlan.initial(
+      await this.renderer(mimeType).read(templateId, contract)
+    );
+  }
+  async execute(input) {
+    const renderer = this.renderer(input.mimeType);
+    let manifest = await this.load(input, renderer);
+    if (!manifest) return { status: "copy-only", fallback: false };
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const recovered = await this.recover(input, manifest, renderer);
+      manifest = recovered.manifest;
+      const snapshot = recovered.snapshot;
+      const values = await new ResolveContentValues(this.images).execute(
+        {
+          ...manifest.contract,
+          fields: manifest.contract.fields.filter(
+            (field) => recovered.manifest.bindings.some(
+              (binding) => binding.key === (field.type === "text" ? ContentTextKey.of(field) : field.slot)
+            )
+          )
+        },
+        input.model
+      );
+      const changes = ContentRenderPlan.changes(manifest, snapshot, values);
+      if (!changes.length)
+        return {
+          status: "ready",
+          fallback: values.some((value) => value.fallback)
+        };
+      manifest = ContentRenderPlan.pending(manifest, snapshot, changes);
+      await this.manifests.save(input.folderId, manifest);
+      let confirmed = false;
+      let current;
+      try {
+        const revision = await renderer.apply(input.fileId, snapshot, changes);
+        current = await renderer.read(
+          input.fileId,
+          manifest.contract,
+          manifest.bindings
+        );
+        confirmed = current.revision === revision;
+      } catch (error2) {
+        if (error2 instanceof ContentError && error2.code === "revision") {
+          manifest = { ...manifest, pending: void 0 };
+          await this.manifests.save(input.folderId, manifest);
+          continue;
+        }
+        current = await renderer.read(
+          input.fileId,
+          manifest.contract,
+          manifest.bindings,
+          manifest.pending?.revision
+        );
+      }
+      manifest = ContentRenderPlan.settle(manifest, current, confirmed);
+      await this.manifests.save(input.folderId, manifest);
+      if (!ContentRenderPlan.changes(manifest, current, values).length)
+        return {
+          status: "ready",
+          fallback: values.some((value) => value.fallback)
+        };
+    }
+    return { status: "pending", fallback: false };
+  }
+  async load(input, renderer) {
+    const stored = await this.manifests.load(input.folderId, input.fileId);
+    if (stored !== void 0)
+      return ContentManifestPolicy.parse(
+        stored,
+        input.fileId,
+        input.templateId,
+        input.mimeType
+      );
+    if (!input.fresh && input.recovery?.operation !== "enroll") {
+      if (input.managed) throw new ContentError("recovery");
+      return void 0;
+    }
+    const contract = ContentContractPolicy.parse(
+      input.contract,
+      input.kind,
+      input.mimeType
+    );
+    const snapshot = await renderer.read(input.fileId, contract);
+    if (input.recovery && snapshot.revision !== input.recovery.revision)
+      throw new ContentError("revision");
+    const bindings = ContentRenderPlan.initial(snapshot);
+    return {
+      version: 1,
+      fileId: input.fileId,
+      templateId: input.templateId,
+      mimeType: input.mimeType,
+      contract,
+      bindings,
+      initialRevision: snapshot.revision,
+      recoveryId: input.recovery ? ContentFingerprint.of(JSON.stringify(input.recovery)) : void 0,
+      pending: { revision: snapshot.revision, bindings }
+    };
+  }
+  async recover(input, original, renderer) {
+    const recovery = input.recovery && ContentFingerprint.of(JSON.stringify(input.recovery)) === original.recoveryId ? void 0 : input.recovery;
+    let manifest = original;
+    if (recovery?.operation === "remove") {
+      manifest = {
+        ...manifest,
+        pending: void 0,
+        bindings: manifest.bindings.filter(
+          (binding) => binding.id !== recovery.bindingId
+        )
+      };
+    }
+    const snapshot = await renderer.read(
+      input.fileId,
+      manifest.contract,
+      manifest.bindings,
+      manifest.initialRevision
+    );
+    if (recovery && snapshot.revision !== recovery.revision)
+      throw new ContentError("revision");
+    if (recovery?.operation === "restore") {
+      if (!manifest.bindings.some((binding) => binding.id === recovery.bindingId))
+        throw new ContentError("recovery");
+      manifest = {
+        ...manifest,
+        pending: void 0,
+        bindings: manifest.bindings.map(
+          (binding) => binding.id === recovery.bindingId ? {
+            ...binding,
+            applied: snapshot.locations.find(
+              (item) => item.id === binding.id
+            )?.fingerprint,
+            desired: void 0
+          } : binding
+        )
+      };
+    }
+    if (manifest.pending)
+      manifest = ContentRenderPlan.settle(manifest, snapshot, false);
+    if (recovery)
+      manifest = {
+        ...manifest,
+        recoveryId: ContentFingerprint.of(JSON.stringify(recovery))
+      };
+    if (manifest !== original)
+      await this.manifests.save(input.folderId, manifest);
+    return { manifest, snapshot };
+  }
+  renderer(mimeType) {
+    const renderer = this.renderers[mimeType];
+    if (!renderer) throw new ContentError("contract");
+    return renderer;
+  }
+};
+
 // packages/application/journey/src/config/automation-config.ts
 var AutomationConfigFactory = class {
   /**
@@ -63859,18 +65752,6 @@ var AutomationConfigFactory = class {
         "meetup-event-url-prefix": DEFAULT_PUBLICATION_URL_CONFIGURATION.meetupEventUrlPrefix,
         "cncf-event-url-prefix": DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes[0]
       }
-    };
-  }
-};
-
-// packages/application/journey/src/result/result-envelope.ts
-var ResultEnvelopeFactory = class {
-  static resultEnvelope(data, diagnostics) {
-    return {
-      schemaVersion: 1,
-      status: diagnostics.length === 0 ? "ok" : "diagnostics",
-      diagnostics,
-      data
     };
   }
 };
@@ -65360,7 +67241,12 @@ var ManageMeetupAssets = class {
       date: evaluation.event.date,
       hostName: evaluation.event.host.displayName,
       existingUrl: evaluation.event.publicationLinks.assets,
-      mode: "fix"
+      mode: "fix",
+      model: await this.dependencies.renderProjection?.create(
+        evaluation.event,
+        evaluation.diagnostics
+      ),
+      recovery: this.dependencies.recovery
     });
     const persisted = await this.persistAsset(source, assets.container?.url);
     return {
@@ -65368,6 +67254,7 @@ var ManageMeetupAssets = class {
       persisted,
       assetUrl: assets.container?.url,
       files: assets.files,
+      content: assets.content,
       diagnostics: assets.diagnostics.map((item) => ({
         ...item,
         field: "publicationLinks.assets"
@@ -66638,20 +68525,240 @@ var ValidateMeetupReferentials = class {
   }
 };
 
+// packages/application/journey/src/use-cases/asset-participant-projection.ts
+var AssetParticipantProjection = class _AssetParticipantProjection {
+  static create(event, catalog, assignments) {
+    const agendaIds = new Set(
+      event.agenda.flatMap(
+        (talk) => talk.speakers.map((speaker) => speaker.id)
+      )
+    );
+    const speakers = {};
+    const pictures = {};
+    for (const [slot, id] of Object.entries(assignments.speakers)) {
+      const speaker = catalog.speakers.find((item) => item.id === id);
+      if (!speaker || !agendaIds.has(id)) continue;
+      speakers[slot] = speaker.displayName;
+      if (_AssetParticipantProjection.publicUrl(speaker.pictureUrl)) {
+        pictures[slot] = {
+          speakerId: id,
+          url: speaker.pictureUrl,
+          description: speaker.displayName
+        };
+      }
+    }
+    const talks = {};
+    for (const [slot, identity] of Object.entries(assignments.talks)) {
+      const matches = event.agenda.filter(
+        (talk2) => talk2.proposal?.id === identity.id && talk2.proposal.provider === identity.provider && talk2.proposal.event === identity.event
+      );
+      if (matches.length !== 1) continue;
+      const talk = matches[0];
+      talks[slot] = {
+        title: talk.proposal?.title,
+        abstract: talk.proposal?.abstract,
+        speakers: talk.speakers.map((speaker) => speaker.displayName)
+      };
+    }
+    return { speakers, pictures, talks };
+  }
+  static publicUrl(value) {
+    if (!value) return false;
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" && !url.username && !url.password && ![...url.searchParams.keys()].some(
+        (key) => /token|signature|credential|secret|key|auth/i.test(key)
+      );
+    } catch {
+      return false;
+    }
+  }
+};
+
+// packages/application/journey/src/use-cases/asset-render-projection.ts
+var AssetRenderProjection = class {
+  constructor(presenter, repository, assignments = {
+    speakers: {},
+    talks: {},
+    venues: {}
+  }, nextEvent) {
+    this.presenter = presenter;
+    this.repository = repository;
+    this.assignments = assignments;
+    this.nextEvent = nextEvent;
+  }
+  presenter;
+  repository;
+  assignments;
+  nextEvent;
+  async create(event, diagnostics) {
+    const catalog = await new ValidateReferentialCatalog(
+      this.repository
+    ).execute();
+    const agendaValid = catalog.isValid && event.proposalStatus !== "stale" && !diagnostics.some(
+      (item) => item.severity === "error" && /agenda|referential|proposals/.test(`${item.code} ${item.field}`)
+    );
+    const participants = agendaValid ? AssetParticipantProjection.create(
+      event,
+      catalog.catalog,
+      this.assignments
+    ) : { speakers: {}, talks: {}, pictures: {} };
+    return this.presenter.format({
+      title: diagnostics.some(
+        (item) => item.severity === "error" && /title/.test(item.code)
+      ) ? void 0 : event.eventTitle,
+      date: event.date,
+      timeZone: event.timeZone,
+      hostName: event.host?.displayName,
+      hostLogo: catalog.isValid && catalog.catalog.hosts.some((host) => host.id === event.host?.id) ? this.hostLogo(event.host?.id) : void 0,
+      venue: event.host?.id ? this.assignments.venues[event.host.id] : void 0,
+      feedbackUrl: !diagnostics.some(
+        (item) => item.severity === "error" && /feedback/.test(item.code)
+      ) && AssetParticipantProjection.publicUrl(event.publicationLinks.feedback) ? event.publicationLinks.feedback : void 0,
+      agenda: agendaValid ? event.agenda.map((talk) => ({
+        title: talk.proposal?.title ?? talk.description,
+        speakers: talk.speakers.map((speaker) => speaker.displayName)
+      })) : [],
+      ...participants,
+      nextEvent: catalog.isValid ? await this.nextEvent?.find(event, catalog.catalog) : void 0
+    });
+  }
+  hostLogo(hostId) {
+    if (!hostId) return void 0;
+    const logo = this.assignments.hostLogos?.[hostId];
+    return logo && AssetParticipantProjection.publicUrl(logo.url) ? { ...logo, hostId } : void 0;
+  }
+};
+
+// packages/application/journey/src/use-cases/find-next-asset-event.ts
+var FindNextAssetEvent = class {
+  constructor(repository, codec, venues = {}) {
+    this.repository = repository;
+    this.codec = codec;
+    this.venues = venues;
+  }
+  repository;
+  codec;
+  venues;
+  async find(current, catalog) {
+    try {
+      const candidates = await this.candidates(current);
+      candidates.sort(
+        (a, b2) => a.date.localeCompare(b2.date) || a.identity.issueNumber - b2.identity.issueNumber
+      );
+      for (const candidate of candidates) {
+        const host = catalog.hosts.find(
+          (item) => item.id === candidate.host?.id
+        );
+        if (host)
+          return {
+            date: candidate.date,
+            hostName: host.displayName,
+            city: this.venues[host.id]?.city
+          };
+      }
+      return void 0;
+    } catch {
+      return void 0;
+    }
+  }
+  async candidates(current) {
+    const events = [];
+    const seen = /* @__PURE__ */ new Set();
+    const cursors = /* @__PURE__ */ new Set();
+    let cursor;
+    for (let pages = 0; pages < 20; pages++) {
+      const page = await this.repository.listPage({
+        repository: current.identity.repository,
+        label: "meetup",
+        includeClosed: false,
+        pageSize: 100,
+        cursor
+      });
+      events.push(...this.pageCandidates(page.items, current, seen));
+      cursor = page.nextCursor;
+      if (!cursor) return events;
+      if (cursors.has(cursor))
+        throw new Error("Asset event listing repeated a cursor");
+      cursors.add(cursor);
+    }
+    throw new Error("Asset event page limit exceeded");
+  }
+  pageCandidates(documents, current, seen) {
+    const events = [];
+    for (const document2 of documents) {
+      if (document2.identity.repository !== current.identity.repository || seen.has(document2.identity.issueNumber))
+        continue;
+      seen.add(document2.identity.issueNumber);
+      if (seen.size > 200)
+        throw new Error("Asset event selection limit exceeded");
+      const event = this.candidate(document2, current);
+      if (event) events.push(event);
+    }
+    return events;
+  }
+  candidate(document2, current) {
+    if (document2.issueState !== "open" || !document2.labels.includes("meetup"))
+      return void 0;
+    const decoded = this.codec.decode(document2);
+    const evaluated = new EventRuleEngine(
+      EventRuleFactory.createDefaultEventRules()
+    ).evaluate(decoded.event);
+    const event = evaluated.event;
+    const invalid = [...decoded.diagnostics, ...evaluated.diagnostics].some(
+      (item) => item.severity === "error" && (/date|host/.test(item.field ?? "") || item.code.startsWith("event.document."))
+    );
+    if (invalid || event.date <= current.date || event.occurrenceStatus !== "scheduled" || !event.confirmations.host)
+      return void 0;
+    const published = PublicationUrlPolicies.createDefaultPublicationUrlPolicies().filter((policy) => policy.id !== "asset-folder-url").some((policy) => {
+      const field = policy.id === "meetup-event-url" ? "meetup" : "community";
+      return Boolean(event.publicationLinks[field]) && !policy.evaluate({ [field]: event.publicationLinks[field] }).diagnostics.some((item) => item.severity === "error");
+    });
+    return published ? event : void 0;
+  }
+};
+
 // packages/adapter/google-drive-asset-repository/src/google-drive-asset-repository.ts
-var import_drive = __toESM(require_build(), 1);
-import { createHash } from "node:crypto";
+var import_drive2 = __toESM(require_build(), 1);
+import { createHash as createHash2 } from "node:crypto";
 
 // packages/adapter/google-drive-asset-repository/src/google-drive-asset-repository-contracts.ts
 var folderMimeType = "application/vnd.google-apps.folder";
 var fields = "id,name,webViewLink,mimeType,parents,trashed,appProperties";
 var requestOptions = { retry: false, timeout: 3e4 };
 
+// packages/adapter/google-drive-asset-repository/src/google-drive-authentication.ts
+var import_drive = __toESM(require_build(), 1);
+
 // packages/adapter/google-drive-asset-repository/src/google-drive-asset-repository-error.ts
 var GoogleDriveAssetRepositoryError = class extends Error {
   constructor(message) {
     super(message);
     this.name = "GoogleDriveAssetRepositoryError";
+  }
+};
+
+// packages/adapter/google-drive-asset-repository/src/google-drive-authentication.ts
+var GoogleDriveAuthentication = class {
+  static create(credentialsJson) {
+    let credentials;
+    try {
+      credentials = JSON.parse(credentialsJson);
+    } catch {
+      throw new GoogleDriveAssetRepositoryError(
+        "Invalid Google service-account credentials"
+      );
+    }
+    if (credentials?.type !== "service_account" || typeof credentials.client_email !== "string" || !credentials.client_email || typeof credentials.private_key !== "string" || !credentials.private_key) {
+      throw new GoogleDriveAssetRepositoryError(
+        "Invalid Google service-account credentials"
+      );
+    }
+    return new import_drive.auth.JWT({
+      email: credentials.client_email,
+      key: credentials.private_key,
+      scopes: ["https://www.googleapis.com/auth/drive"]
+    });
   }
 };
 
@@ -66669,9 +68776,9 @@ var GoogleDriveAssetRepository = class _GoogleDriveAssetRepository {
   }
   client;
   options;
-  async findContainer(request2) {
+  async findContainer(request3) {
     const matches = await this.list(
-      `'${_GoogleDriveAssetRepository.escapeQuery(this.options.parentFolderId)}' in parents and mimeType='${folderMimeType}' and appProperties has { key='meetup_event_key' and value='${_GoogleDriveAssetRepository.key(request2)}' }`
+      `'${_GoogleDriveAssetRepository.escapeQuery(this.options.parentFolderId)}' in parents and mimeType='${folderMimeType}' and appProperties has { key='meetup_event_key' and value='${_GoogleDriveAssetRepository.key(request3)}' }`
     );
     if (matches.length > 1)
       throw _GoogleDriveAssetRepository.failure(
@@ -66679,24 +68786,24 @@ var GoogleDriveAssetRepository = class _GoogleDriveAssetRepository {
       );
     const file = matches[0];
     if (!file) return void 0;
-    if (file.trashed || file.mimeType !== folderMimeType || !file.parents?.includes(this.options.parentFolderId) || file.appProperties?.meetup_event_key !== _GoogleDriveAssetRepository.key(request2)) {
+    if (file.trashed || file.mimeType !== folderMimeType || !file.parents?.includes(this.options.parentFolderId) || file.appProperties?.meetup_event_key !== _GoogleDriveAssetRepository.key(request3)) {
       throw _GoogleDriveAssetRepository.failure(
         "The asset folder does not match the requested event and configured parent"
       );
     }
-    return _GoogleDriveAssetRepository.container(file, request2.eventId);
+    return _GoogleDriveAssetRepository.container(file, request3.eventId);
   }
-  async ensureContainer(request2) {
-    const current = await this.findContainer(request2);
-    if (current?.name === request2.title) return current;
+  async ensureContainer(request3) {
+    const current = await this.findContainer(request3);
+    if (current?.name === request3.title) return current;
     const appProperties = {
-      meetup_event_key: _GoogleDriveAssetRepository.key(request2)
+      meetup_event_key: _GoogleDriveAssetRepository.key(request3)
     };
     const response = current ? await _GoogleDriveAssetRepository.remote(
       () => this.client.files.update(
         {
           fileId: current.id,
-          requestBody: { name: request2.title, appProperties },
+          requestBody: { name: request3.title, appProperties },
           fields,
           supportsAllDrives: true
         },
@@ -66706,7 +68813,7 @@ var GoogleDriveAssetRepository = class _GoogleDriveAssetRepository {
       () => this.client.files.create(
         {
           requestBody: {
-            name: request2.title,
+            name: request3.title,
             mimeType: folderMimeType,
             parents: [this.options.parentFolderId],
             appProperties
@@ -66717,7 +68824,7 @@ var GoogleDriveAssetRepository = class _GoogleDriveAssetRepository {
         requestOptions
       )
     );
-    return _GoogleDriveAssetRepository.container(response.data, request2.eventId);
+    return _GoogleDriveAssetRepository.container(response.data, request3.eventId);
   }
   async listTemplates() {
     return (await this.list(
@@ -66730,14 +68837,16 @@ var GoogleDriveAssetRepository = class _GoogleDriveAssetRepository {
       return {
         id: file.id,
         name: file.name,
-        kind: file.appProperties.template_kind
+        kind: file.appProperties.template_kind,
+        mimeType: file.mimeType ?? void 0,
+        contentContract: this.options.contentContracts?.[file.appProperties.template_kind]
       };
     });
   }
   async listFiles(containerId) {
     return (await this.list(
       `'${_GoogleDriveAssetRepository.escapeQuery(containerId)}' in parents and mimeType!='${folderMimeType}'`
-    )).map(_GoogleDriveAssetRepository.assetFile);
+    )).filter((file) => !file.appProperties?.meetup_binding_file).map(_GoogleDriveAssetRepository.assetFile);
   }
   async copyTemplate(containerId, template, name) {
     const { data } = await _GoogleDriveAssetRepository.remote(
@@ -66747,7 +68856,10 @@ var GoogleDriveAssetRepository = class _GoogleDriveAssetRepository {
           requestBody: {
             name,
             parents: [containerId],
-            appProperties: _GoogleDriveAssetRepository.templateProperties(template)
+            appProperties: {
+              ..._GoogleDriveAssetRepository.templateProperties(template),
+              ...template.contentContract ? { meetup_content: "v1" } : {}
+            }
           },
           fields,
           supportsAllDrives: true
@@ -66764,7 +68876,10 @@ var GoogleDriveAssetRepository = class _GoogleDriveAssetRepository {
           fileId: file.id,
           requestBody: {
             name,
-            appProperties: _GoogleDriveAssetRepository.templateProperties(template)
+            appProperties: {
+              ..._GoogleDriveAssetRepository.templateProperties(template),
+              ...file.contentManaged ? { meetup_content: "v1" } : {}
+            }
           },
           fields,
           supportsAllDrives: true
@@ -66807,31 +68922,19 @@ var GoogleDriveAssetRepository = class _GoogleDriveAssetRepository {
     return files;
   }
   static createGoogleDriveAssetRepository(credentialsJson, options) {
-    let credentials;
-    try {
-      credentials = JSON.parse(credentialsJson);
-    } catch {
-      throw _GoogleDriveAssetRepository.failure(
-        "Invalid Google service-account credentials"
-      );
-    }
-    if (credentials?.type !== "service_account" || typeof credentials.client_email !== "string" || !credentials.client_email || typeof credentials.private_key !== "string" || !credentials.private_key) {
-      throw _GoogleDriveAssetRepository.failure(
-        "Invalid Google service-account credentials"
-      );
-    }
-    const authentication = new import_drive.auth.JWT({
-      email: credentials.client_email,
-      key: credentials.private_key,
-      scopes: ["https://www.googleapis.com/auth/drive"]
-    });
     return new _GoogleDriveAssetRepository(
-      (0, import_drive.drive)({ version: "v3", auth: authentication }),
+      _GoogleDriveAssetRepository.client(credentialsJson),
       options
     );
   }
-  static key(request2) {
-    return createHash("sha256").update(request2.idempotencyKey).digest("hex");
+  static client(credentialsJson) {
+    return (0, import_drive2.drive)({
+      version: "v3",
+      auth: GoogleDriveAuthentication.create(credentialsJson)
+    });
+  }
+  static key(request3) {
+    return createHash2("sha256").update(request3.idempotencyKey).digest("hex");
   }
   static escapeQuery(value) {
     return value.replaceAll("\\", "\\\\").replaceAll("'", "\\'");
@@ -66861,7 +68964,9 @@ var GoogleDriveAssetRepository = class _GoogleDriveAssetRepository {
       name: file.name,
       ...file.webViewLink ? { url: file.webViewLink } : {},
       templateId: file.appProperties?.template_file_id,
-      kind: file.appProperties?.template_kind
+      kind: file.appProperties?.template_kind,
+      mimeType: file.mimeType ?? void 0,
+      contentManaged: file.appProperties?.meetup_content === "v1"
     };
   }
   static failure(message) {
@@ -66884,6 +68989,2019 @@ var GoogleDriveAssetRepository = class _GoogleDriveAssetRepository {
         "Google Drive request failed; inspect provider state before retrying an uncertain write"
       );
     }
+  }
+};
+
+// packages/adapter/google-drive-asset-repository/src/google-drive-manifest-repository.ts
+import { Readable } from "node:stream";
+var GoogleDriveManifestRepository = class {
+  constructor(client) {
+    this.client = client;
+  }
+  client;
+  async load(folderId, fileId) {
+    const id = await this.find(folderId, fileId);
+    if (!id) return void 0;
+    const { data } = await this.client.files.get(
+      { fileId: id, alt: "media", supportsAllDrives: true },
+      { ...requestOptions, responseType: "stream" }
+    );
+    const chunks = [];
+    let size = 0;
+    for await (const chunk of data) {
+      size += chunk.length;
+      if (size > 1e6) {
+        data.destroy();
+        throw new ContentError("recovery");
+      }
+      chunks.push(Buffer.from(chunk));
+    }
+    try {
+      return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+    } catch {
+      throw new ContentError("recovery");
+    }
+  }
+  async save(folderId, manifest) {
+    const id = await this.find(folderId, manifest.fileId);
+    const json = JSON.stringify(manifest);
+    if (Buffer.byteLength(json) > 1e6) throw new ContentError("recovery");
+    const media = { mimeType: "application/json", body: Readable.from([json]) };
+    if (id) {
+      await this.client.files.update(
+        { fileId: id, media, supportsAllDrives: true },
+        requestOptions
+      );
+    } else {
+      await this.client.files.create(
+        {
+          requestBody: {
+            name: `.${manifest.fileId}.bindings.json`,
+            mimeType: "application/json",
+            parents: [folderId],
+            appProperties: { meetup_binding_file: manifest.fileId }
+          },
+          media,
+          supportsAllDrives: true
+        },
+        requestOptions
+      );
+    }
+  }
+  async find(folderId, fileId) {
+    if (![folderId, fileId].every((id) => /^[\w-]+$/.test(id)))
+      throw new ContentError("recovery");
+    const { data } = await this.client.files.list(
+      {
+        q: `'${folderId}' in parents and trashed=false and appProperties has { key='meetup_binding_file' and value='${fileId}' }`,
+        fields: "nextPageToken,incompleteSearch,files(id,mimeType,parents,appProperties)",
+        pageSize: 100,
+        supportsAllDrives: true,
+        includeItemsFromAllDrives: true
+      },
+      requestOptions
+    );
+    if (data.incompleteSearch || data.nextPageToken || (data.files?.length ?? 0) > 1)
+      throw new ContentError("recovery");
+    const file = data.files?.[0];
+    if (file && (!file.id || file.mimeType !== "application/json" || !file.parents?.includes(folderId) || file.appProperties?.meetup_binding_file !== fileId))
+      throw new ContentError("recovery");
+    return file?.id ?? void 0;
+  }
+};
+
+// packages/adapter/google-docs-content-repository/src/google-docs-content-repository.ts
+var import_docs = __toESM(require_build2(), 1);
+
+// packages/adapter/google-docs-content-repository/src/document-tabs.ts
+var DocumentTabs = class _DocumentTabs {
+  static all(document2) {
+    const result = [];
+    _DocumentTabs.visit(document2.tabs ?? [], result);
+    if (!result.length || new Set(result.map((tab) => tab.id)).size !== result.length)
+      throw new ContentError("location");
+    return result;
+  }
+  static visit(tabs, result) {
+    for (const tab of tabs) {
+      if (!tab.tabProperties?.tabId || !tab.documentTab)
+        throw new ContentError("location");
+      result.push({ id: tab.tabProperties.tabId, content: tab.documentTab });
+      _DocumentTabs.visit(tab.childTabs ?? [], result);
+    }
+  }
+  static text(tab, start, end) {
+    let text = "";
+    const elements = (tab.content.body?.content ?? []).flatMap(
+      (structure) => structure.paragraph?.elements ?? []
+    );
+    for (const element of elements) {
+      if ((element.startIndex ?? 0) >= end || (element.endIndex ?? 0) <= start)
+        continue;
+      _DocumentTabs.rejectSuggestions(element);
+      if (!element.textRun?.content) throw new ContentError("location");
+      text += element.textRun.content.slice(
+        Math.max(0, start - (element.startIndex ?? 0)),
+        end - (element.startIndex ?? 0)
+      );
+    }
+    if (text.length !== end - start) throw new ContentError("location");
+    return text;
+  }
+  static rejectSuggestions(value) {
+    if (!value || typeof value !== "object") return;
+    for (const [key, item] of Object.entries(value)) {
+      if (key.startsWith("suggested") && item && Object.keys(item).length)
+        throw new ContentError("location");
+      _DocumentTabs.rejectSuggestions(item);
+    }
+  }
+  static rejectTokens(value) {
+    if (_DocumentTabs.allText(value).includes("{{"))
+      throw new ContentError("location");
+  }
+  static allText(value) {
+    if (!value || typeof value !== "object") return "";
+    return Object.entries(value).map(
+      ([key, item]) => key === "content" && typeof item === "string" ? item : _DocumentTabs.allText(item)
+    ).join("");
+  }
+};
+
+// packages/adapter/google-docs-content-repository/src/document-template-bindings.ts
+var DocumentTemplateBindings = class _DocumentTemplateBindings {
+  static discover(tabs, contract) {
+    const bindings = [];
+    for (const tab of tabs) {
+      _DocumentTemplateBindings.paragraphs(tab, contract, bindings);
+      for (const content of [
+        tab.content.headers,
+        tab.content.footers,
+        tab.content.footnotes
+      ])
+        DocumentTabs.rejectTokens(content);
+      for (const field of contract.fields) {
+        if (field.type !== "image" || field.tabId !== tab.id) continue;
+        bindings.push({
+          id: `image_${ContentFingerprint.of(`${tab.id}:${field.objectId}:${field.slot}`)}`,
+          type: "image",
+          key: field.slot,
+          anchor: { tabId: tab.id, segmentId: "", objectId: field.objectId },
+          applied: ""
+        });
+      }
+    }
+    for (const field of contract.fields) {
+      const key = field.type === "text" ? ContentTextKey.of(field) : field.slot;
+      if (!bindings.some((binding) => binding.key === key))
+        throw new ContentError("location");
+    }
+    return bindings;
+  }
+  static paragraphs(tab, contract, bindings) {
+    for (const structure of tab.content.body?.content ?? []) {
+      if (!structure.paragraph) {
+        DocumentTabs.rejectTokens(structure);
+        continue;
+      }
+      const text = (structure.paragraph.elements ?? []).map((element) => element.textRun?.content ?? "\uFFFC").join("");
+      if (!text.includes("{{")) continue;
+      DocumentTabs.rejectSuggestions(structure);
+      const matches = [...text.matchAll(/\{\{([^{}]+)\}\}/g)];
+      if (text.replace(/\{\{[^{}]+\}\}/g, "").includes("{{"))
+        throw new ContentError("location");
+      _DocumentTemplateBindings.matches(
+        matches,
+        structure.startIndex,
+        tab.id,
+        contract,
+        bindings
+      );
+    }
+  }
+  static matches(matches, startIndex, tabId, contract, bindings) {
+    for (const match of matches) {
+      const field = contract.fields.find(
+        (field2) => field2.type === "text" && ContentTextKey.of(field2) === match[1]
+      );
+      if (field?.type !== "text" || startIndex == null)
+        throw new ContentError("location");
+      const start = startIndex + (match.index ?? 0);
+      const id = `meetup_${tabId}_${start}`;
+      bindings.push({
+        id,
+        type: "text",
+        key: ContentTextKey.of(field),
+        applied: "",
+        anchor: {
+          tabId,
+          segmentId: "",
+          rangeName: id,
+          start,
+          end: start + match[0].length
+        }
+      });
+    }
+  }
+};
+
+// packages/adapter/google-docs-content-repository/src/document-content-locations.ts
+var DocumentContentLocations = class _DocumentContentLocations {
+  constructor(images) {
+    this.images = images;
+  }
+  images;
+  async read(tabs, binding, initial) {
+    const tab = tabs.find((tab2) => tab2.id === binding.anchor.tabId);
+    if (!tab || binding.anchor.segmentId) throw new ContentError("conflict");
+    if (binding.type === "image") return this.image(tab, binding);
+    const range = _DocumentContentLocations.range(tabs, binding, initial);
+    const text = DocumentTabs.text(
+      tab,
+      range.startIndex,
+      range.endIndex
+    );
+    return {
+      id: binding.id,
+      key: binding.key,
+      type: "text",
+      fingerprint: ContentFingerprint.of(text),
+      anchor: {
+        ...binding.anchor,
+        start: range.startIndex,
+        end: range.endIndex
+      }
+    };
+  }
+  static range(tabs, binding, initial) {
+    const matches = tabs.flatMap(
+      (tab) => (tab.content.namedRanges?.[binding.anchor.rangeName ?? ""]?.namedRanges ?? []).map((range2) => ({ tab, range: range2 }))
+    );
+    if (!matches.length && initial && binding.anchor.start && binding.anchor.end)
+      return {
+        tabId: binding.anchor.tabId,
+        startIndex: binding.anchor.start,
+        endIndex: binding.anchor.end
+      };
+    if (matches.length !== 1 || matches[0].tab.id !== binding.anchor.tabId || matches[0].range.ranges?.length !== 1)
+      throw new ContentError("conflict");
+    const range = matches[0].range.ranges[0];
+    if (range.segmentId || range.tabId && range.tabId !== binding.anchor.tabId || !range.startIndex || !range.endIndex || range.endIndex <= range.startIndex)
+      throw new ContentError("conflict");
+    return range;
+  }
+  async image(tab, binding) {
+    const object = tab.content.inlineObjects?.[binding.anchor.objectId ?? ""]?.inlineObjectProperties?.embeddedObject;
+    const references = (tab.content.body?.content ?? []).flatMap((item) => item.paragraph?.elements ?? []).filter(
+      (element) => element.inlineObjectElement?.inlineObjectId === binding.anchor.objectId
+    );
+    if (!object?.imageProperties?.contentUri || references.length !== 1 || !object.description?.trim())
+      throw new ContentError("conflict");
+    DocumentTabs.rejectSuggestions(object);
+    DocumentTabs.rejectSuggestions(references[0]);
+    const bytes = await this.images.observe(object.imageProperties.contentUri);
+    const {
+      contentUri: _content,
+      sourceUri: _source,
+      ...properties
+    } = object.imageProperties;
+    return {
+      id: binding.id,
+      type: "image",
+      key: binding.key,
+      anchor: binding.anchor,
+      fingerprint: ContentFingerprint.of(
+        JSON.stringify([bytes, properties, object.title, object.description])
+      )
+    };
+  }
+};
+
+// packages/adapter/google-docs-content-repository/src/document-content-requests.ts
+var DocumentContentRequests = class _DocumentContentRequests {
+  static build(tabs, changes) {
+    return [...changes].sort(
+      (a, b2) => (b2.location.anchor.start ?? 0) - (a.location.anchor.start ?? 0)
+    ).flatMap((change) => _DocumentContentRequests.change(tabs, change));
+  }
+  static change(tabs, change) {
+    const { anchor } = change.location;
+    if (change.value.type === "image")
+      return [
+        {
+          replaceImage: {
+            imageObjectId: anchor.objectId,
+            uri: change.value.image?.url,
+            tabId: anchor.tabId,
+            imageReplaceMethod: "CENTER_CROP"
+          }
+        }
+      ];
+    const tab = tabs.find((tab2) => tab2.id === anchor.tabId);
+    const named2 = tab?.content.namedRanges?.[anchor.rangeName ?? ""]?.namedRanges?.[0];
+    const style = tab?.content.body?.content?.flatMap((item) => item.paragraph?.elements ?? []).find(
+      (item) => (item.startIndex ?? 0) <= (anchor.start ?? 0) && (item.endIndex ?? 0) > (anchor.start ?? 0)
+    )?.textRun?.textStyle;
+    const range = {
+      tabId: anchor.tabId,
+      segmentId: "",
+      startIndex: anchor.start,
+      endIndex: (anchor.start ?? 0) + (change.value.text?.length ?? 0)
+    };
+    return [
+      ...named2?.namedRangeId ? [
+        {
+          deleteNamedRange: {
+            namedRangeId: named2.namedRangeId,
+            tabsCriteria: { tabIds: [anchor.tabId] }
+          }
+        }
+      ] : [],
+      { deleteContentRange: { range: { ...range, endIndex: anchor.end } } },
+      {
+        insertText: {
+          location: { tabId: anchor.tabId, segmentId: "", index: anchor.start },
+          text: change.value.text
+        }
+      },
+      { createNamedRange: { name: anchor.rangeName, range } },
+      ...style && Object.keys(style).length ? [
+        {
+          updateTextStyle: {
+            range,
+            textStyle: style,
+            fields: Object.keys(style).join(",")
+          }
+        }
+      ] : []
+    ];
+  }
+};
+
+// packages/adapter/google-docs-content-repository/src/google-docs-content-repository.ts
+var GoogleDocsContentRepository = class _GoogleDocsContentRepository {
+  constructor(client, images) {
+    this.client = client;
+    this.images = images;
+  }
+  client;
+  images;
+  current;
+  static create(authentication, images) {
+    return new _GoogleDocsContentRepository(
+      (0, import_docs.docs)({ version: "v1", auth: authentication }),
+      images
+    );
+  }
+  async read(fileId, contract, registered, initialRevision) {
+    const { data } = await this.client.documents.get(
+      {
+        documentId: fileId,
+        includeTabsContent: true,
+        suggestionsViewMode: "SUGGESTIONS_INLINE"
+      },
+      { retry: false, timeout: 3e4 }
+    );
+    if (!data.revisionId || data.documentId !== fileId)
+      throw new ContentError("location");
+    const tabs = DocumentTabs.all(data);
+    const bindings = registered ?? DocumentTemplateBindings.discover(tabs, contract);
+    const reader = new DocumentContentLocations(this.images);
+    const locations = [];
+    for (const binding of bindings)
+      locations.push(
+        await reader.read(
+          tabs,
+          binding,
+          !registered || data.revisionId === initialRevision
+        )
+      );
+    this.current = data;
+    return { revision: data.revisionId, locations };
+  }
+  async apply(fileId, snapshot, changes) {
+    if (!this.current || this.current.documentId !== fileId || this.current.revisionId !== snapshot.revision)
+      throw new ContentError("revision");
+    const requests = DocumentContentRequests.build(
+      DocumentTabs.all(this.current),
+      changes
+    );
+    try {
+      const { data } = await this.client.documents.batchUpdate(
+        {
+          documentId: fileId,
+          requestBody: {
+            requests,
+            writeControl: { requiredRevisionId: snapshot.revision }
+          }
+        },
+        { retry: false, timeout: 3e4 }
+      );
+      return data.writeControl?.requiredRevisionId ?? "";
+    } catch (error2) {
+      if (/revision/i.test(String(error2?.message)))
+        throw new ContentError("revision");
+      throw new ContentError("recovery");
+    }
+  }
+};
+
+// packages/adapter/google-slides-content-repository/src/google-slides-content-repository.ts
+var import_slides = __toESM(require_build3(), 1);
+
+// packages/adapter/google-slides-content-repository/src/slide-template-bindings.ts
+var SlideTemplateBindings = class _SlideTemplateBindings {
+  static discover(presentation, contract) {
+    const bindings = [];
+    for (const page of presentation.slides ?? []) {
+      if (!page.objectId) throw new ContentError("location");
+      for (const element of page.pageElements ?? [])
+        _SlideTemplateBindings.element(
+          element,
+          page.objectId,
+          contract,
+          bindings
+        );
+      _SlideTemplateBindings.rejectTokens(page.slideProperties?.notesPage);
+    }
+    _SlideTemplateBindings.rejectTokens(presentation.masters);
+    _SlideTemplateBindings.rejectTokens(presentation.layouts);
+    for (const field of contract.fields) {
+      const key = field.type === "text" ? ContentTextKey.of(field) : field.slot;
+      if (!bindings.some((binding) => binding.key === key))
+        throw new ContentError("location");
+    }
+    return bindings;
+  }
+  static element(element, pageId, contract, bindings) {
+    const objectId = element.objectId;
+    if (!objectId) throw new ContentError("location");
+    const text = _SlideTemplateBindings.text(element);
+    if (element.shape && text.includes("{{")) {
+      const field = contract.fields.find(
+        (field2) => field2.type === "text" && text === `{{${ContentTextKey.of(field2)}}}`
+      );
+      if (field?.type !== "text") throw new ContentError("location");
+      _SlideTemplateBindings.style(element);
+      bindings.push({
+        id: objectId,
+        type: "text",
+        key: ContentTextKey.of(field),
+        anchor: { objectId, pageId },
+        applied: ""
+      });
+    }
+    _SlideTemplateBindings.rejectTokens(element.table);
+    _SlideTemplateBindings.rejectTokens(element.elementGroup);
+    for (const field of contract.fields) {
+      if (field.type !== "image" || field.objectId !== objectId || field.pageId !== pageId)
+        continue;
+      if (!element.image || !element.description?.trim())
+        throw new ContentError("location");
+      bindings.push({
+        id: objectId,
+        type: "image",
+        key: field.slot,
+        anchor: { objectId, pageId },
+        applied: ""
+      });
+    }
+  }
+  static text(element) {
+    return (element.shape?.text?.textElements ?? []).map((item) => item.textRun?.content ?? "").join("").replace(/\n$/, "");
+  }
+  static style(element) {
+    const runs = (element.shape?.text?.textElements ?? []).filter(
+      (item) => item.textRun?.content?.trim()
+    );
+    if (new Set(runs.map((item) => JSON.stringify(item.textRun?.style ?? {}))).size > 1)
+      throw new ContentError("location");
+    return runs[0]?.textRun?.style ?? {};
+  }
+  static rejectTokens(value) {
+    if (_SlideTemplateBindings.allText(value).includes("{{"))
+      throw new ContentError("location");
+  }
+  static allText(value) {
+    if (!value || typeof value !== "object") return "";
+    return Object.entries(value).map(
+      ([key, item]) => key === "content" && typeof item === "string" ? item : _SlideTemplateBindings.allText(item)
+    ).join("");
+  }
+};
+
+// packages/adapter/google-slides-content-repository/src/google-slides-content-repository.ts
+var GoogleSlidesContentRepository = class _GoogleSlidesContentRepository {
+  constructor(client, images) {
+    this.client = client;
+    this.images = images;
+  }
+  client;
+  images;
+  current;
+  static create(authentication, images) {
+    return new _GoogleSlidesContentRepository(
+      (0, import_slides.slides)({ version: "v1", auth: authentication }),
+      images
+    );
+  }
+  async read(fileId, contract, registered) {
+    const { data } = await this.client.presentations.get(
+      { presentationId: fileId },
+      { retry: false, timeout: 3e4 }
+    );
+    if (!data.revisionId || data.presentationId !== fileId)
+      throw new ContentError("location");
+    const bindings = registered ?? SlideTemplateBindings.discover(data, contract);
+    const locations = [];
+    for (const binding of bindings) {
+      const element = _GoogleSlidesContentRepository.element(data, binding);
+      let fingerprint;
+      if (binding.type === "text") {
+        if (!element.shape) throw new ContentError("conflict");
+        fingerprint = ContentFingerprint.of(
+          SlideTemplateBindings.text(element)
+        );
+      } else {
+        if (!element.image?.contentUrl) throw new ContentError("conflict");
+        const bytes = await this.images.observe(element.image.contentUrl);
+        fingerprint = ContentFingerprint.of(
+          JSON.stringify([
+            bytes,
+            element.image.imageProperties,
+            element.description
+          ])
+        );
+      }
+      locations.push({
+        id: binding.id,
+        key: binding.key,
+        type: binding.type,
+        anchor: binding.anchor,
+        fingerprint
+      });
+    }
+    this.current = data;
+    return { revision: data.revisionId, locations };
+  }
+  async apply(fileId, snapshot, changes) {
+    const current = this.current;
+    if (!current || current.presentationId !== fileId || current.revisionId !== snapshot.revision)
+      throw new ContentError("revision");
+    const requests = changes.flatMap(
+      (change) => _GoogleSlidesContentRepository.requests(current, change)
+    );
+    try {
+      const { data } = await this.client.presentations.batchUpdate(
+        {
+          presentationId: fileId,
+          requestBody: {
+            requests,
+            writeControl: { requiredRevisionId: snapshot.revision }
+          }
+        },
+        { retry: false, timeout: 3e4 }
+      );
+      return data.writeControl?.requiredRevisionId ?? "";
+    } catch (error2) {
+      if (/revision/i.test(String(error2?.message)))
+        throw new ContentError("revision");
+      throw new ContentError("recovery");
+    }
+  }
+  static requests(current, change) {
+    const objectId = change.location.anchor.objectId;
+    if (change.value.type === "image")
+      return [
+        {
+          replaceImage: {
+            imageObjectId: objectId,
+            url: change.value.image?.url,
+            imageReplaceMethod: change.value.fit
+          }
+        },
+        {
+          updatePageElementAltText: {
+            objectId,
+            description: change.value.image?.description
+          }
+        }
+      ];
+    const element = _GoogleSlidesContentRepository.element(
+      current,
+      change.location
+    );
+    const style = SlideTemplateBindings.style(element);
+    return [
+      { deleteText: { objectId, textRange: { type: "ALL" } } },
+      { insertText: { objectId, insertionIndex: 0, text: change.value.text } },
+      ...Object.keys(style).length ? [
+        {
+          updateTextStyle: {
+            objectId,
+            textRange: { type: "ALL" },
+            style,
+            fields: Object.keys(style).join(",")
+          }
+        }
+      ] : []
+    ];
+  }
+  static element(current, binding) {
+    const pages = current.slides?.filter(
+      (page) => page.objectId === binding.anchor.pageId
+    ) ?? [];
+    const elements = pages.flatMap((page) => page.pageElements ?? []).filter((element) => element.objectId === binding.anchor.objectId);
+    if (pages.length !== 1 || elements.length !== 1)
+      throw new ContentError("conflict");
+    return elements[0];
+  }
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/utils.js
+var decoder = new TextDecoder();
+var toUTF8String = (input, start = 0, end = input.length) => decoder.decode(input.slice(start, end));
+var toHexString = (input, start = 0, end = input.length) => input.slice(start, end).reduce((memo, i2) => memo + `0${i2.toString(16)}`.slice(-2), "");
+var getView = (input, offset) => new DataView(input.buffer, input.byteOffset + offset);
+var readInt16LE = (input, offset = 0) => getView(input, offset).getInt16(0, true);
+var readUInt16BE = (input, offset = 0) => getView(input, offset).getUint16(0, false);
+var readUInt16LE = (input, offset = 0) => getView(input, offset).getUint16(0, true);
+var readUInt24LE = (input, offset = 0) => {
+  const view = getView(input, offset);
+  return view.getUint16(0, true) + (view.getUint8(2) << 16);
+};
+var readInt32LE = (input, offset = 0) => getView(input, offset).getInt32(0, true);
+var readUInt32BE = (input, offset = 0) => getView(input, offset).getUint32(0, false);
+var readUInt32LE = (input, offset = 0) => getView(input, offset).getUint32(0, true);
+var readUInt64 = (input, offset, isBigEndian) => getView(input, offset).getBigUint64(0, !isBigEndian);
+var methods = {
+  readUInt16BE,
+  readUInt16LE,
+  readUInt32BE,
+  readUInt32LE
+};
+function readUInt(input, bits, offset = 0, isBigEndian = false) {
+  const endian = isBigEndian ? "BE" : "LE";
+  const methodName = `readUInt${bits}${endian}`;
+  return methods[methodName](input, offset);
+}
+var BOX_HEADER_SIZE = 8;
+function readBox(input, offset) {
+  if (input.length - offset < BOX_HEADER_SIZE)
+    return void 0;
+  const boxSize = readUInt32BE(input, offset);
+  if (input.length - offset < boxSize)
+    return void 0;
+  return {
+    name: toUTF8String(input, 4 + offset, 8 + offset),
+    offset,
+    size: boxSize
+  };
+}
+function findBox(input, boxName, startOffset) {
+  let currentOffset = startOffset;
+  while (currentOffset < input.length) {
+    if (input.length - currentOffset < 4)
+      break;
+    const boxSize = readUInt32BE(input, currentOffset);
+    if (boxSize < BOX_HEADER_SIZE) {
+      currentOffset += BOX_HEADER_SIZE;
+      continue;
+    }
+    const box = readBox(input, currentOffset);
+    if (!box)
+      break;
+    if (box.name === boxName)
+      return box;
+    currentOffset += box.size;
+  }
+  return void 0;
+}
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/bmp.js
+var BMP = {
+  validate: (input) => toUTF8String(input, 0, 2) === "BM",
+  calculate: (input) => ({
+    height: Math.abs(readInt32LE(input, 22)),
+    width: readUInt32LE(input, 18)
+  })
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/ico.js
+var TYPE_ICON = 1;
+var SIZE_HEADER = 2 + 2 + 2;
+var SIZE_IMAGE_ENTRY = 1 + 1 + 1 + 1 + 2 + 2 + 4 + 4;
+function getSizeFromOffset(input, offset) {
+  const value = input[offset];
+  return value === 0 ? 256 : value;
+}
+function getImageSize(input, imageIndex) {
+  const offset = SIZE_HEADER + imageIndex * SIZE_IMAGE_ENTRY;
+  return {
+    height: getSizeFromOffset(input, offset + 1),
+    width: getSizeFromOffset(input, offset)
+  };
+}
+var ICO = {
+  validate(input) {
+    const reserved = readUInt16LE(input, 0);
+    const imageCount = readUInt16LE(input, 4);
+    if (reserved !== 0 || imageCount === 0)
+      return false;
+    const imageType = readUInt16LE(input, 2);
+    return imageType === TYPE_ICON;
+  },
+  calculate(input) {
+    const nbImages = readUInt16LE(input, 4);
+    if (SIZE_HEADER + nbImages * SIZE_IMAGE_ENTRY > input.length) {
+      throw new TypeError("Invalid ICO");
+    }
+    const imageSize2 = getImageSize(input, 0);
+    if (nbImages === 1)
+      return imageSize2;
+    const images = [];
+    for (let imageIndex = 0; imageIndex < nbImages; imageIndex += 1) {
+      images.push(getImageSize(input, imageIndex));
+    }
+    return {
+      width: imageSize2.width,
+      height: imageSize2.height,
+      images
+    };
+  }
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/cur.js
+var TYPE_CURSOR = 2;
+var CUR = {
+  validate(input) {
+    const reserved = readUInt16LE(input, 0);
+    const imageCount = readUInt16LE(input, 4);
+    if (reserved !== 0 || imageCount === 0)
+      return false;
+    const imageType = readUInt16LE(input, 2);
+    return imageType === TYPE_CURSOR;
+  },
+  calculate: (input) => ICO.calculate(input)
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/dds.js
+var DDS = {
+  validate: (input) => readUInt32LE(input, 0) === 542327876,
+  calculate: (input) => ({
+    height: readUInt32LE(input, 12),
+    width: readUInt32LE(input, 16)
+  })
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/gif.js
+var gifRegexp = /^GIF8[79]a/;
+var GIF = {
+  validate: (input) => gifRegexp.test(toUTF8String(input, 0, 6)),
+  calculate: (input) => ({
+    height: readUInt16LE(input, 8),
+    width: readUInt16LE(input, 6)
+  })
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/heif.js
+var brandMap = {
+  avif: "avif",
+  mif1: "heif",
+  msf1: "heif",
+  heic: "heic",
+  heix: "heic",
+  hevc: "heic",
+  hevx: "heic"
+};
+var HEIF = {
+  validate(input) {
+    const boxType = toUTF8String(input, 4, 8);
+    if (boxType !== "ftyp")
+      return false;
+    const ftypBox = findBox(input, "ftyp", 0);
+    if (!ftypBox)
+      return false;
+    const brand = toUTF8String(input, ftypBox.offset + 8, ftypBox.offset + 12);
+    return brand in brandMap;
+  },
+  calculate(input) {
+    const metaBox = findBox(input, "meta", 0);
+    const iprpBox = metaBox && findBox(input, "iprp", metaBox.offset + 12);
+    const ipcoBox = iprpBox && findBox(input, "ipco", iprpBox.offset + 8);
+    if (!ipcoBox) {
+      throw new TypeError("Invalid HEIF, no ipco box found");
+    }
+    const type = toUTF8String(input, 8, 12);
+    const images = [];
+    let currentOffset = ipcoBox.offset + 8;
+    while (currentOffset < ipcoBox.offset + ipcoBox.size) {
+      const ispeBox = findBox(input, "ispe", currentOffset);
+      if (!ispeBox)
+        break;
+      if (ispeBox.size < 20) {
+        throw new TypeError("Invalid HEIF");
+      }
+      const rawWidth = readUInt32BE(input, ispeBox.offset + 12);
+      const rawHeight = readUInt32BE(input, ispeBox.offset + 16);
+      const clapBox = findBox(input, "clap", currentOffset);
+      let width = rawWidth;
+      const height = rawHeight;
+      if (clapBox && clapBox.size >= 16 && clapBox.offset < ipcoBox.offset + ipcoBox.size) {
+        const cropRight = readUInt32BE(input, clapBox.offset + 12);
+        width = rawWidth - cropRight;
+      }
+      images.push({ height, width });
+      const nextOffset = ispeBox.offset + ispeBox.size;
+      if (nextOffset <= currentOffset) {
+        throw new TypeError("Invalid HEIF");
+      }
+      currentOffset = nextOffset;
+    }
+    if (images.length === 0) {
+      throw new TypeError("Invalid HEIF, no sizes found");
+    }
+    return {
+      width: images[0].width,
+      height: images[0].height,
+      type,
+      ...images.length > 1 ? { images } : {}
+    };
+  }
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/icns.js
+var SIZE_HEADER2 = 4 + 4;
+var FILE_LENGTH_OFFSET = 4;
+var ENTRY_LENGTH_OFFSET = 4;
+var ICON_TYPE_SIZE = {
+  ICON: 32,
+  "ICN#": 32,
+  "icm#": 16,
+  icm4: 16,
+  icm8: 16,
+  "ics#": 16,
+  ics4: 16,
+  ics8: 16,
+  is32: 16,
+  s8mk: 16,
+  icp4: 16,
+  icl4: 32,
+  icl8: 32,
+  il32: 32,
+  l8mk: 32,
+  icp5: 32,
+  ic11: 32,
+  ich4: 48,
+  ich8: 48,
+  ih32: 48,
+  h8mk: 48,
+  icp6: 64,
+  ic12: 32,
+  it32: 128,
+  t8mk: 128,
+  ic07: 128,
+  ic08: 256,
+  ic13: 256,
+  ic09: 512,
+  ic14: 512,
+  ic10: 1024
+};
+function readImageHeader(input, imageOffset) {
+  const imageLengthOffset = imageOffset + ENTRY_LENGTH_OFFSET;
+  if (imageLengthOffset + 4 > input.length) {
+    throw new TypeError("Invalid ICNS");
+  }
+  return [
+    toUTF8String(input, imageOffset, imageLengthOffset),
+    readUInt32BE(input, imageLengthOffset)
+  ];
+}
+function getImageSize2(type) {
+  const size = ICON_TYPE_SIZE[type];
+  return { width: size, height: size, type };
+}
+var ICNS = {
+  validate: (input) => toUTF8String(input, 0, 4) === "icns",
+  calculate(input) {
+    const inputLength = input.length;
+    const fileLength = readUInt32BE(input, FILE_LENGTH_OFFSET);
+    let imageOffset = SIZE_HEADER2;
+    const images = [];
+    while (imageOffset < fileLength && imageOffset < inputLength) {
+      const imageHeader = readImageHeader(input, imageOffset);
+      const entryLength = imageHeader[1];
+      if (entryLength < 8) {
+        throw new TypeError("Invalid ICNS");
+      }
+      const imageSize2 = getImageSize2(imageHeader[0]);
+      images.push(imageSize2);
+      imageOffset += entryLength;
+    }
+    if (images.length === 0) {
+      throw new TypeError("Invalid ICNS, no sizes found");
+    }
+    return {
+      width: images[0].width,
+      height: images[0].height,
+      ...images.length > 1 ? { images } : {}
+    };
+  }
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/j2c.js
+var J2C = {
+  validate: (input) => readUInt32BE(input, 0) === 4283432785,
+  calculate: (input) => ({
+    height: readUInt32BE(input, 12),
+    width: readUInt32BE(input, 8)
+  })
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/jp2.js
+var JP2 = {
+  validate(input) {
+    const boxType = toUTF8String(input, 4, 8);
+    if (boxType !== "jP  ")
+      return false;
+    const ftypBox = findBox(input, "ftyp", 0);
+    if (!ftypBox)
+      return false;
+    const brand = toUTF8String(input, ftypBox.offset + 8, ftypBox.offset + 12);
+    return brand === "jp2 ";
+  },
+  calculate(input) {
+    const jp2hBox = findBox(input, "jp2h", 0);
+    const ihdrBox = jp2hBox && findBox(input, "ihdr", jp2hBox.offset + 8);
+    if (ihdrBox) {
+      return {
+        height: readUInt32BE(input, ihdrBox.offset + 8),
+        width: readUInt32BE(input, ihdrBox.offset + 12)
+      };
+    }
+    throw new TypeError("Unsupported JPEG 2000 format");
+  }
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/jpg.js
+var EXIF_MARKER = "45786966";
+var APP1_DATA_SIZE_BYTES = 2;
+var EXIF_HEADER_BYTES = 6;
+var TIFF_BYTE_ALIGN_BYTES = 2;
+var BIG_ENDIAN_BYTE_ALIGN = "4d4d";
+var LITTLE_ENDIAN_BYTE_ALIGN = "4949";
+var IDF_ENTRY_BYTES = 12;
+var NUM_DIRECTORY_ENTRIES_BYTES = 2;
+function isEXIF(input) {
+  return toHexString(input, 2, 6) === EXIF_MARKER;
+}
+function extractSize(input, index) {
+  return {
+    height: readUInt16BE(input, index),
+    width: readUInt16BE(input, index + 2)
+  };
+}
+function extractOrientation(exifBlock, isBigEndian) {
+  const idfOffset = 8;
+  const offset = EXIF_HEADER_BYTES + idfOffset;
+  const idfDirectoryEntries = readUInt(exifBlock, 16, offset, isBigEndian);
+  for (let directoryEntryNumber = 0; directoryEntryNumber < idfDirectoryEntries; directoryEntryNumber++) {
+    const start = offset + NUM_DIRECTORY_ENTRIES_BYTES + directoryEntryNumber * IDF_ENTRY_BYTES;
+    const end = start + IDF_ENTRY_BYTES;
+    if (start > exifBlock.length) {
+      return;
+    }
+    const block = exifBlock.slice(start, end);
+    const tagNumber = readUInt(block, 16, 0, isBigEndian);
+    if (tagNumber === 274) {
+      const dataFormat = readUInt(block, 16, 2, isBigEndian);
+      if (dataFormat !== 3) {
+        return;
+      }
+      const numberOfComponents = readUInt(block, 32, 4, isBigEndian);
+      if (numberOfComponents !== 1) {
+        return;
+      }
+      return readUInt(block, 16, 8, isBigEndian);
+    }
+  }
+}
+function validateExifBlock(input, index) {
+  const exifBlock = input.slice(APP1_DATA_SIZE_BYTES, index);
+  const byteAlign = toHexString(exifBlock, EXIF_HEADER_BYTES, EXIF_HEADER_BYTES + TIFF_BYTE_ALIGN_BYTES);
+  const isBigEndian = byteAlign === BIG_ENDIAN_BYTE_ALIGN;
+  const isLittleEndian = byteAlign === LITTLE_ENDIAN_BYTE_ALIGN;
+  if (isBigEndian || isLittleEndian) {
+    return extractOrientation(exifBlock, isBigEndian);
+  }
+}
+function validateInput(input, index) {
+  if (index > input.length) {
+    throw new TypeError("Corrupt JPG, exceeded buffer limits");
+  }
+}
+var JPG = {
+  validate: (input) => toHexString(input, 0, 2) === "ffd8",
+  calculate(_input) {
+    let input = _input.slice(4);
+    let orientation;
+    let next;
+    while (input.length) {
+      const i2 = readUInt16BE(input, 0);
+      validateInput(input, i2);
+      if (input[i2] !== 255) {
+        input = input.slice(1);
+        continue;
+      }
+      if (isEXIF(input)) {
+        orientation = validateExifBlock(input, i2);
+      }
+      next = input[i2 + 1];
+      if (next === 192 || next === 193 || next === 194) {
+        const size = extractSize(input, i2 + 5);
+        if (!orientation) {
+          return size;
+        }
+        return {
+          height: size.height,
+          orientation,
+          width: size.width
+        };
+      }
+      input = input.slice(i2 + 2);
+    }
+    throw new TypeError("Invalid JPG, no size found");
+  }
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/utils/bit-reader.js
+var BitReader = class {
+  input;
+  endianness;
+  byteOffset = 2;
+  bitOffset = 0;
+  constructor(input, endianness) {
+    this.input = input;
+    this.endianness = endianness;
+  }
+  getBits(length = 1) {
+    let result = 0;
+    let bitsRead = 0;
+    while (bitsRead < length) {
+      if (this.byteOffset >= this.input.length) {
+        throw new Error("Reached end of input");
+      }
+      const currentByte = this.input[this.byteOffset];
+      const bitsLeft = 8 - this.bitOffset;
+      const bitsToRead = Math.min(length - bitsRead, bitsLeft);
+      if (this.endianness === "little-endian") {
+        const mask = (1 << bitsToRead) - 1;
+        const bits = currentByte >> this.bitOffset & mask;
+        result |= bits << bitsRead;
+      } else {
+        const mask = (1 << bitsToRead) - 1 << 8 - this.bitOffset - bitsToRead;
+        const bits = (currentByte & mask) >> 8 - this.bitOffset - bitsToRead;
+        result = result << bitsToRead | bits;
+      }
+      bitsRead += bitsToRead;
+      this.bitOffset += bitsToRead;
+      if (this.bitOffset === 8) {
+        this.byteOffset++;
+        this.bitOffset = 0;
+      }
+    }
+    return result;
+  }
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/jxl-stream.js
+function calculateImageDimension(reader, isSmallImage) {
+  if (isSmallImage) {
+    return 8 * (1 + reader.getBits(5));
+  }
+  const sizeClass = reader.getBits(2);
+  const extraBits = [9, 13, 18, 30][sizeClass];
+  return 1 + reader.getBits(extraBits);
+}
+function calculateImageWidth(reader, isSmallImage, widthMode, height) {
+  if (isSmallImage && widthMode === 0) {
+    return 8 * (1 + reader.getBits(5));
+  }
+  if (widthMode === 0) {
+    return calculateImageDimension(reader, false);
+  }
+  const aspectRatios = [1, 1.2, 4 / 3, 1.5, 16 / 9, 5 / 4, 2];
+  return Math.floor(height * aspectRatios[widthMode - 1]);
+}
+var JXLStream = {
+  validate: (input) => {
+    return toHexString(input, 0, 2) === "ff0a";
+  },
+  calculate(input) {
+    const reader = new BitReader(input, "little-endian");
+    const isSmallImage = reader.getBits(1) === 1;
+    const height = calculateImageDimension(reader, isSmallImage);
+    const widthMode = reader.getBits(3);
+    const width = calculateImageWidth(reader, isSmallImage, widthMode, height);
+    return { width, height };
+  }
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/jxl.js
+function extractCodestream(input) {
+  const jxlcBox = findBox(input, "jxlc", 0);
+  if (jxlcBox) {
+    return input.slice(jxlcBox.offset + 8, jxlcBox.offset + jxlcBox.size);
+  }
+  const partialStreams = extractPartialStreams(input);
+  if (partialStreams.length > 0) {
+    return concatenateCodestreams(partialStreams);
+  }
+  return void 0;
+}
+function extractPartialStreams(input) {
+  const partialStreams = [];
+  let offset = 0;
+  while (offset < input.length) {
+    const jxlpBox = findBox(input, "jxlp", offset);
+    if (!jxlpBox)
+      break;
+    if (jxlpBox.size < 12) {
+      throw new TypeError("Invalid JXL");
+    }
+    partialStreams.push(input.slice(jxlpBox.offset + 12, jxlpBox.offset + jxlpBox.size));
+    offset = jxlpBox.offset + jxlpBox.size;
+  }
+  return partialStreams;
+}
+function concatenateCodestreams(partialCodestreams) {
+  const totalLength = partialCodestreams.reduce((acc, curr) => acc + curr.length, 0);
+  const codestream = new Uint8Array(totalLength);
+  let position = 0;
+  for (const partial of partialCodestreams) {
+    codestream.set(partial, position);
+    position += partial.length;
+  }
+  return codestream;
+}
+var JXL = {
+  validate: (input) => {
+    const boxType = toUTF8String(input, 4, 8);
+    if (boxType !== "JXL ")
+      return false;
+    const ftypBox = findBox(input, "ftyp", 0);
+    if (!ftypBox)
+      return false;
+    const brand = toUTF8String(input, ftypBox.offset + 8, ftypBox.offset + 12);
+    return brand === "jxl ";
+  },
+  calculate(input) {
+    const codestream = extractCodestream(input);
+    if (codestream)
+      return JXLStream.calculate(codestream);
+    throw new TypeError("Invalid JXL");
+  }
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/ktx.js
+var KTX = {
+  validate: (input) => {
+    const signature = toUTF8String(input, 1, 7);
+    return ["KTX 11", "KTX 20"].includes(signature);
+  },
+  calculate: (input) => {
+    const type = input[5] === 49 ? "ktx" : "ktx2";
+    const offset = type === "ktx" ? 36 : 20;
+    return {
+      height: readUInt32LE(input, offset + 4),
+      width: readUInt32LE(input, offset),
+      type
+    };
+  }
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/png.js
+var pngSignature = "PNG\r\n\n";
+var pngImageHeaderChunkName = "IHDR";
+var pngFriedChunkName = "CgBI";
+var PNG = {
+  validate(input) {
+    if (pngSignature === toUTF8String(input, 1, 8)) {
+      let chunkName = toUTF8String(input, 12, 16);
+      if (chunkName === pngFriedChunkName) {
+        chunkName = toUTF8String(input, 28, 32);
+      }
+      if (chunkName !== pngImageHeaderChunkName) {
+        throw new TypeError("Invalid PNG");
+      }
+      return true;
+    }
+    return false;
+  },
+  calculate(input) {
+    if (toUTF8String(input, 12, 16) === pngFriedChunkName) {
+      return {
+        height: readUInt32BE(input, 36),
+        width: readUInt32BE(input, 32)
+      };
+    }
+    return {
+      height: readUInt32BE(input, 20),
+      width: readUInt32BE(input, 16)
+    };
+  }
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/pnm.js
+var PNMTypes = {
+  P1: "pbm/ascii",
+  P2: "pgm/ascii",
+  P3: "ppm/ascii",
+  P4: "pbm",
+  P5: "pgm",
+  P6: "ppm",
+  P7: "pam",
+  PF: "pfm"
+};
+var handlers = {
+  default: (lines) => {
+    let dimensions = [];
+    while (lines.length > 0) {
+      const line = lines.shift();
+      if (line[0] === "#") {
+        continue;
+      }
+      dimensions = line.split(" ");
+      break;
+    }
+    if (dimensions.length === 2) {
+      return {
+        height: Number.parseInt(dimensions[1], 10),
+        width: Number.parseInt(dimensions[0], 10)
+      };
+    }
+    throw new TypeError("Invalid PNM");
+  },
+  pam: (lines) => {
+    const size = {};
+    while (lines.length > 0) {
+      const line = lines.shift();
+      if (line.length > 16 || line.charCodeAt(0) > 128) {
+        continue;
+      }
+      const [key, value] = line.split(" ");
+      if (key && value) {
+        size[key.toLowerCase()] = Number.parseInt(value, 10);
+      }
+      if (size.height && size.width) {
+        break;
+      }
+    }
+    if (size.height && size.width) {
+      return {
+        height: size.height,
+        width: size.width
+      };
+    }
+    throw new TypeError("Invalid PAM");
+  }
+};
+var PNM = {
+  validate: (input) => toUTF8String(input, 0, 2) in PNMTypes,
+  calculate(input) {
+    const signature = toUTF8String(input, 0, 2);
+    const type = PNMTypes[signature];
+    const lines = toUTF8String(input, 3).split(/[\r\n]+/);
+    const handler2 = handlers[type] || handlers.default;
+    return handler2(lines);
+  }
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/psd.js
+var PSD = {
+  validate: (input) => toUTF8String(input, 0, 4) === "8BPS",
+  calculate: (input) => ({
+    height: readUInt32BE(input, 14),
+    width: readUInt32BE(input, 18)
+  })
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/svg.js
+var svgReg = /<svg\s([^>"']|"[^"]*"|'[^']*')*>/;
+var extractorRegExps = {
+  height: /\sheight=(['"])([^%]+?)\1/,
+  root: svgReg,
+  viewbox: /\sviewBox=(['"])(.+?)\1/i,
+  width: /\swidth=(['"])([^%]+?)\1/
+};
+var INCH_CM = 2.54;
+var units = {
+  in: 96,
+  cm: 96 / INCH_CM,
+  em: 16,
+  ex: 8,
+  m: 96 / INCH_CM * 100,
+  mm: 96 / INCH_CM / 10,
+  pc: 96 / 72 / 12,
+  pt: 96 / 72,
+  px: 1
+};
+var unitsReg = new RegExp(`^([0-9.]+(?:e\\d+)?)(${Object.keys(units).join("|")})?$`);
+function parseLength(len) {
+  const m2 = unitsReg.exec(len);
+  if (!m2) {
+    return void 0;
+  }
+  return Math.round(Number(m2[1]) * (units[m2[2]] || 1));
+}
+function parseViewbox(viewbox) {
+  const bounds = viewbox.split(" ");
+  return {
+    height: parseLength(bounds[3]),
+    width: parseLength(bounds[2])
+  };
+}
+function parseAttributes(root) {
+  const width = root.match(extractorRegExps.width);
+  const height = root.match(extractorRegExps.height);
+  const viewbox = root.match(extractorRegExps.viewbox);
+  return {
+    height: height && parseLength(height[2]),
+    viewbox: viewbox && parseViewbox(viewbox[2]),
+    width: width && parseLength(width[2])
+  };
+}
+function calculateByDimensions(attrs) {
+  return {
+    height: attrs.height,
+    width: attrs.width
+  };
+}
+function calculateByViewbox(attrs, viewbox) {
+  const ratio = viewbox.width / viewbox.height;
+  if (attrs.width) {
+    return {
+      height: Math.floor(attrs.width / ratio),
+      width: attrs.width
+    };
+  }
+  if (attrs.height) {
+    return {
+      height: attrs.height,
+      width: Math.floor(attrs.height * ratio)
+    };
+  }
+  return {
+    height: viewbox.height,
+    width: viewbox.width
+  };
+}
+var SVG = {
+  validate: (input) => svgReg.test(toUTF8String(input, 0, 1e3)),
+  calculate(input) {
+    const root = toUTF8String(input).match(extractorRegExps.root);
+    if (root) {
+      const attrs = parseAttributes(root[0]);
+      if (attrs.width && attrs.height) {
+        return calculateByDimensions(attrs);
+      }
+      if (attrs.viewbox) {
+        return calculateByViewbox(attrs, attrs.viewbox);
+      }
+    }
+    throw new TypeError("Invalid SVG");
+  }
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/tga.js
+var TGA = {
+  validate(input) {
+    return readUInt16LE(input, 0) === 0 && readUInt16LE(input, 4) === 0;
+  },
+  calculate(input) {
+    return {
+      height: readUInt16LE(input, 14),
+      width: readUInt16LE(input, 12)
+    };
+  }
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/tiff.js
+var CONSTANTS = {
+  TAG: {
+    WIDTH: 256,
+    HEIGHT: 257,
+    COMPRESSION: 259
+  },
+  TYPE: {
+    SHORT: 3,
+    LONG: 4,
+    LONG8: 16
+  },
+  ENTRY_SIZE: {
+    STANDARD: 12,
+    BIG: 20
+  },
+  COUNT_SIZE: {
+    STANDARD: 2,
+    BIG: 8
+  }
+};
+function readIFD(input, { isBigEndian, isBigTiff }) {
+  const ifdOffset = isBigTiff ? Number(readUInt64(input, 8, isBigEndian)) : readUInt(input, 32, 4, isBigEndian);
+  const entryCountSize = isBigTiff ? CONSTANTS.COUNT_SIZE.BIG : CONSTANTS.COUNT_SIZE.STANDARD;
+  return input.slice(ifdOffset + entryCountSize);
+}
+function readTagValue(input, type, offset, isBigEndian) {
+  switch (type) {
+    case CONSTANTS.TYPE.SHORT:
+      return readUInt(input, 16, offset, isBigEndian);
+    case CONSTANTS.TYPE.LONG:
+      return readUInt(input, 32, offset, isBigEndian);
+    case CONSTANTS.TYPE.LONG8: {
+      const value = Number(readUInt64(input, offset, isBigEndian));
+      if (value > Number.MAX_SAFE_INTEGER) {
+        throw new TypeError("Value too large");
+      }
+      return value;
+    }
+    default:
+      return 0;
+  }
+}
+function nextTag(input, isBigTiff) {
+  const entrySize = isBigTiff ? CONSTANTS.ENTRY_SIZE.BIG : CONSTANTS.ENTRY_SIZE.STANDARD;
+  if (input.length > entrySize) {
+    return input.slice(entrySize);
+  }
+}
+function extractTags(input, { isBigEndian, isBigTiff }) {
+  const tags = {};
+  let temp = input;
+  while (temp?.length) {
+    const code = readUInt(temp, 16, 0, isBigEndian);
+    const type = readUInt(temp, 16, 2, isBigEndian);
+    const length = isBigTiff ? Number(readUInt64(temp, 4, isBigEndian)) : readUInt(temp, 32, 4, isBigEndian);
+    if (code === 0)
+      break;
+    if (length === 1 && (type === CONSTANTS.TYPE.SHORT || type === CONSTANTS.TYPE.LONG || isBigTiff && type === CONSTANTS.TYPE.LONG8)) {
+      const valueOffset = isBigTiff ? 12 : 8;
+      tags[code] = readTagValue(temp, type, valueOffset, isBigEndian);
+    }
+    temp = nextTag(temp, isBigTiff);
+  }
+  return tags;
+}
+function determineFormat(input) {
+  const signature = toUTF8String(input, 0, 2);
+  const version = readUInt(input, 16, 2, signature === "MM");
+  return {
+    isBigEndian: signature === "MM",
+    isBigTiff: version === 43
+  };
+}
+function validateBigTIFFHeader(input, isBigEndian) {
+  const byteSize = readUInt(input, 16, 4, isBigEndian);
+  const reserved = readUInt(input, 16, 6, isBigEndian);
+  if (byteSize !== 8 || reserved !== 0) {
+    throw new TypeError("Invalid BigTIFF header");
+  }
+}
+var signatures = /* @__PURE__ */ new Set([
+  "49492a00",
+  "4d4d002a",
+  "49492b00",
+  "4d4d002b"
+]);
+var TIFF = {
+  validate: (input) => {
+    const signature = toHexString(input, 0, 4);
+    return signatures.has(signature);
+  },
+  calculate(input) {
+    const format = determineFormat(input);
+    if (format.isBigTiff) {
+      validateBigTIFFHeader(input, format.isBigEndian);
+    }
+    const ifdBuffer = readIFD(input, format);
+    const tags = extractTags(ifdBuffer, format);
+    const info2 = {
+      height: tags[CONSTANTS.TAG.HEIGHT],
+      width: tags[CONSTANTS.TAG.WIDTH],
+      type: format.isBigTiff ? "bigtiff" : "tiff"
+    };
+    if (tags[CONSTANTS.TAG.COMPRESSION]) {
+      info2.compression = tags[CONSTANTS.TAG.COMPRESSION];
+    }
+    if (!info2.width || !info2.height) {
+      throw new TypeError("Invalid Tiff. Missing tags");
+    }
+    return info2;
+  }
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/webp.js
+function calculateExtended(input) {
+  return {
+    height: 1 + readUInt24LE(input, 7),
+    width: 1 + readUInt24LE(input, 4)
+  };
+}
+function calculateLossless(input) {
+  return {
+    height: 1 + ((input[4] & 15) << 10 | input[3] << 2 | (input[2] & 192) >> 6),
+    width: 1 + ((input[2] & 63) << 8 | input[1])
+  };
+}
+function calculateLossy(input) {
+  return {
+    height: readInt16LE(input, 8) & 16383,
+    width: readInt16LE(input, 6) & 16383
+  };
+}
+var WEBP = {
+  validate(input) {
+    const riffHeader = "RIFF" === toUTF8String(input, 0, 4);
+    const webpHeader = "WEBP" === toUTF8String(input, 8, 12);
+    const vp8Header = "VP8" === toUTF8String(input, 12, 15);
+    return riffHeader && webpHeader && vp8Header;
+  },
+  calculate(_input) {
+    const chunkHeader = toUTF8String(_input, 12, 16);
+    const input = _input.slice(20, 30);
+    if (chunkHeader === "VP8X") {
+      const extendedHeader = input[0];
+      const validStart = (extendedHeader & 192) === 0;
+      const validEnd = (extendedHeader & 1) === 0;
+      if (validStart && validEnd) {
+        return calculateExtended(input);
+      }
+      throw new TypeError("Invalid WebP");
+    }
+    if (chunkHeader === "VP8 " && input[0] !== 47) {
+      return calculateLossy(input);
+    }
+    const signature = toHexString(input, 3, 6);
+    if (chunkHeader === "VP8L" && signature !== "9d012a") {
+      return calculateLossless(input);
+    }
+    throw new TypeError("Invalid WebP");
+  }
+};
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/types/index.js
+var typeHandlers = /* @__PURE__ */ new Map([
+  ["bmp", BMP],
+  ["cur", CUR],
+  ["dds", DDS],
+  ["gif", GIF],
+  ["heif", HEIF],
+  ["icns", ICNS],
+  ["ico", ICO],
+  ["j2c", J2C],
+  ["jp2", JP2],
+  ["jpg", JPG],
+  ["jxl", JXL],
+  ["jxl-stream", JXLStream],
+  ["ktx", KTX],
+  ["png", PNG],
+  ["pnm", PNM],
+  ["psd", PSD],
+  ["svg", SVG],
+  ["tga", TGA],
+  ["tiff", TIFF],
+  ["webp", WEBP]
+]);
+var types3 = Array.from(typeHandlers.keys());
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/detector.js
+var firstBytes = /* @__PURE__ */ new Map([
+  [0, "heif"],
+  [56, "psd"],
+  [66, "bmp"],
+  [68, "dds"],
+  [71, "gif"],
+  [73, "tiff"],
+  [77, "tiff"],
+  [82, "webp"],
+  [105, "icns"],
+  [137, "png"],
+  [255, "jpg"]
+]);
+function detector(input) {
+  const byte = input[0];
+  const type = firstBytes.get(byte);
+  if (type && typeHandlers.get(type)?.validate(input)) {
+    return type;
+  }
+  return types3.find((type2) => typeHandlers.get(type2)?.validate(input));
+}
+
+// node_modules/.pnpm/image-size@2.0.4/node_modules/image-size/dist/esm/lookup.js
+var globalOptions = {
+  disabledTypes: []
+};
+function imageSize(input) {
+  const type = detector(input);
+  if (typeof type !== "undefined") {
+    if (globalOptions.disabledTypes.indexOf(type) > -1) {
+      throw new TypeError(`disabled file type: ${type}`);
+    }
+    const size = typeHandlers.get(type)?.calculate(input);
+    if (size !== void 0) {
+      size.type = size.type ?? type;
+      if (size.images && size.images.length > 1) {
+        const largestImage = size.images.reduce((largest, current) => {
+          return current.width * current.height > largest.width * largest.height ? current : largest;
+        }, size.images[0]);
+        size.width = largestImage.width;
+        size.height = largestImage.height;
+      }
+      return size;
+    }
+  }
+  throw new TypeError(`unsupported file type: ${type}`);
+}
+
+// packages/adapter/https-asset-image-repository/src/bounded-image-download.ts
+import { lookup } from "node:dns/promises";
+import { request as request2 } from "node:https";
+
+// packages/adapter/https-asset-image-repository/src/public-image-url.ts
+var import_ipaddr = __toESM(require_ipaddr(), 1);
+import { isIP as isIP2 } from "node:net";
+var PublicImageUrl = class _PublicImageUrl {
+  static parse(value, temporary = false) {
+    const url = new URL(value);
+    if (url.protocol !== "https:" || url.username || url.password || url.hash || url.port && url.port !== "443" || !temporary && Buffer.byteLength(value) > 2048)
+      throw new ContentError("image");
+    if (!temporary && [...url.searchParams.keys()].some(
+      (key) => /token|signature|credential|secret|key|auth|expires/i.test(key)
+    ))
+      throw new ContentError("image");
+    const host = url.hostname.replace(/^\[|\]$/g, "");
+    if (isIP2(host) && !_PublicImageUrl.publicAddress(host))
+      throw new ContentError("image");
+    if (!host.includes(".") || /(?:^|\.)(?:localhost|local|internal|test|invalid)$/.test(host))
+      throw new ContentError("image");
+    return url;
+  }
+  static publicAddress(address) {
+    try {
+      return import_ipaddr.default.process(address).range() === "unicast";
+    } catch {
+      return false;
+    }
+  }
+};
+
+// packages/adapter/https-asset-image-repository/src/bounded-image-download.ts
+var BoundedImageDownload = class _BoundedImageDownload {
+  constructor(resolve4 = lookup, send = request2) {
+    this.resolve = resolve4;
+    this.send = send;
+  }
+  resolve;
+  send;
+  async get(value, temporary = false) {
+    let url = PublicImageUrl.parse(value, temporary);
+    const signal = AbortSignal.timeout(15e3);
+    for (let redirect = 0; redirect <= 3; redirect++) {
+      const addresses = await this.addresses(url.hostname, signal);
+      if (!addresses.length || addresses.some((item) => !PublicImageUrl.publicAddress(item.address)))
+        throw new ContentError("image");
+      const response = await new Promise((resolve4, reject) => {
+        const req = this.send(
+          url,
+          {
+            signal,
+            agent: false,
+            lookup: (_host, options, callback) => options.all ? callback(null, addresses) : callback(null, addresses[0].address, addresses[0].family)
+          },
+          resolve4
+        );
+        req.on("error", reject);
+        req.end();
+      });
+      if ([301, 302, 303, 307, 308].includes(response.statusCode ?? 0)) {
+        response.destroy();
+        if (!response.headers.location) throw new ContentError("image");
+        url = PublicImageUrl.parse(
+          new URL(response.headers.location, url).href,
+          temporary
+        );
+        continue;
+      }
+      if (response.statusCode !== 200 || response.headers["content-encoding"]) {
+        response.destroy();
+        throw new ContentError("image");
+      }
+      return {
+        bytes: await _BoundedImageDownload.body(response),
+        mediaType: (response.headers["content-type"] ?? "").split(";")[0].toLowerCase(),
+        url: url.href
+      };
+    }
+    throw new ContentError("image");
+  }
+  static async body(response) {
+    const chunks = [];
+    let size = 0;
+    for await (const chunk of response) {
+      size += chunk.length;
+      if (size >= 5e7) {
+        response.destroy();
+        throw new ContentError("image");
+      }
+      chunks.push(chunk);
+    }
+    return Buffer.concat(chunks);
+  }
+  async addresses(hostname, signal) {
+    signal.throwIfAborted();
+    let cancel;
+    try {
+      return await Promise.race([
+        this.resolve(hostname.replace(/^\[|\]$/g, ""), { all: true }),
+        new Promise((_resolve, reject) => {
+          cancel = () => reject(new ContentError("image"));
+          signal.addEventListener("abort", cancel, { once: true });
+        })
+      ]);
+    } finally {
+      if (cancel) signal.removeEventListener("abort", cancel);
+    }
+  }
+};
+
+// packages/adapter/https-asset-image-repository/src/https-asset-image-repository.ts
+var HttpsAssetImageRepository = class {
+  constructor(download = new BoundedImageDownload()) {
+    this.download = download;
+  }
+  download;
+  async validate(source) {
+    try {
+      if (!source.description?.trim()) throw new ContentError("image");
+      const result = await this.download.get(source.url);
+      const size = imageSize(result.bytes);
+      const mimeTypes = {
+        png: "image/png",
+        jpg: "image/jpeg",
+        gif: "image/gif"
+      };
+      if (!size.type || mimeTypes[size.type] !== result.mediaType || !size.width || !size.height || size.width * size.height > 25e6)
+        throw new ContentError("image");
+      return {
+        fingerprint: ContentFingerprint.of(result.bytes),
+        source: { url: result.url, description: source.description }
+      };
+    } catch {
+      throw new ContentError("image");
+    }
+  }
+  async observe(url) {
+    try {
+      const { bytes } = await this.download.get(url, true);
+      return ContentFingerprint.of(bytes);
+    } catch {
+      throw new ContentError("image");
+    }
+  }
+};
+
+// packages/runtime/github-actions/src/assets/messages.en.ts
+var EN_MESSAGES2 = {
+  "asset.agenda.talk": "{title} - {speakers}"
+};
+
+// packages/runtime/github-actions/src/assets/messages.fr.ts
+var FR_MESSAGES2 = {
+  "asset.agenda.talk": "{title} - {speakers}"
+};
+
+// packages/runtime/github-actions/src/assets/catalog.ts
+var CATALOGS2 = { en: EN_MESSAGES2, fr: FR_MESSAGES2 };
+
+// packages/runtime/github-actions/src/assets/asset-messages.ts
+var AssetMessages = class extends MessageLocalizer {
+  constructor(locale = "en") {
+    super(CATALOGS2, locale);
+  }
+};
+
+// packages/runtime/github-actions/src/assets/asset-date-formatter.ts
+var AssetDateFormatter = class {
+  constructor(locale) {
+    this.locale = locale;
+  }
+  locale;
+  format(date, timeZone, format = "long") {
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return void 0;
+    try {
+      new Intl.DateTimeFormat(this.locale, { timeZone });
+      const instant = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
+      if (instant.toISOString().slice(0, 10) !== date) return void 0;
+      if (format === "numeric")
+        return `${date.slice(8, 10)}/${date.slice(5, 7)}/${date.slice(0, 4)}`;
+      const options = format === "month" ? { month: "long" } : { dateStyle: format === "weekday" ? "full" : "long" };
+      return new Intl.DateTimeFormat(this.locale, {
+        ...options,
+        timeZone: "UTC"
+      }).format(instant);
+    } catch {
+      return void 0;
+    }
+  }
+};
+
+// packages/runtime/github-actions/src/assets/asset-render-presenter.ts
+var AssetRenderPresenterImpl = class {
+  constructor(messages = new AssetMessages()) {
+    this.messages = messages;
+  }
+  messages;
+  format(input) {
+    const date = new AssetDateFormatter(this.messages.locale);
+    return {
+      text: {
+        "event.title": input.title,
+        "event.date": date.format(input.date, input.timeZone),
+        "event.date.month": date.format(input.date, input.timeZone, "month"),
+        "event.date.numeric": date.format(
+          input.date,
+          input.timeZone,
+          "numeric"
+        ),
+        "event.date.weekday": date.format(
+          input.date,
+          input.timeZone,
+          "weekday"
+        ),
+        "host.name": input.hostName,
+        "host.address": input.venue?.address,
+        "host.postal_code": input.venue?.postalCode,
+        "host.city": input.venue?.city,
+        "event.feedback_url": input.feedbackUrl,
+        "next_event.date": date.format(input.nextEvent?.date, input.timeZone),
+        "next_event.date.numeric": date.format(
+          input.nextEvent?.date,
+          input.timeZone,
+          "numeric"
+        ),
+        "next_event.host.name": input.nextEvent?.hostName,
+        "next_event.host.city": input.nextEvent?.city,
+        agenda: input.agenda.map(
+          (talk) => this.messages.t("asset.agenda.talk", {
+            title: talk.title,
+            speakers: this.names(talk.speakers)
+          })
+        ).join("\n"),
+        ...this.slots(input)
+      },
+      pictures: input.pictures,
+      hostLogo: input.hostLogo
+    };
+  }
+  slots(input) {
+    const text = {};
+    for (const [slot, talk] of Object.entries(input.talks ?? {})) {
+      text[`talk.title:${slot}`] = talk.title;
+      text[`talk.abstract:${slot}`] = talk.abstract;
+      text[`talk.speakers:${slot}`] = this.names(talk.speakers);
+    }
+    for (const [slot, name] of Object.entries(input.speakers ?? {}))
+      text[`speaker.name:${slot}`] = name;
+    return text;
+  }
+  names(speakers) {
+    return new Intl.ListFormat(this.messages.locale, {
+      style: "long",
+      type: "conjunction"
+    }).format(speakers);
+  }
+};
+
+// packages/runtime/github-actions/src/assets/asset-content-configuration.ts
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+
+// packages/runtime/github-actions/src/assets/asset-render-configuration.ts
+var AssetRenderConfiguration = class _AssetRenderConfiguration {
+  static parse(event, venues, hostLogos) {
+    const speakers = _AssetRenderConfiguration.record(event.speakers ?? {});
+    const talks = _AssetRenderConfiguration.record(event.talks ?? {});
+    const publicVenues = _AssetRenderConfiguration.record(venues ?? {});
+    for (const [slot, id] of Object.entries(speakers)) {
+      if (!_AssetRenderConfiguration.slot(slot) || typeof id !== "string" || !/^speaker-[a-z0-9-]+$/.test(id))
+        throw new Error("Invalid asset speaker assignment");
+    }
+    for (const [slot, value] of Object.entries(talks)) {
+      const identity = _AssetRenderConfiguration.record(value);
+      if (!_AssetRenderConfiguration.slot(slot) || !ContentContractPolicy.keys(identity, ["provider", "event", "id"]) || ![identity.provider, identity.event, identity.id].every(
+        (item) => typeof item === "string" && /^[a-zA-Z0-9_-]{1,200}$/.test(item)
+      ))
+        throw new Error("Invalid asset talk assignment");
+    }
+    for (const [id, value] of Object.entries(publicVenues)) {
+      const venue = _AssetRenderConfiguration.record(value);
+      if (!/^host-[a-z0-9-]+$/.test(id) || !ContentContractPolicy.keys(venue, ["address", "postalCode", "city"]) || ![venue.address, venue.postalCode, venue.city].every(
+        ContentContractPolicy.text
+      ))
+        throw new Error("Invalid public asset venue");
+    }
+    return {
+      speakers,
+      talks,
+      venues: publicVenues,
+      hostLogos: _AssetRenderConfiguration.logos(hostLogos)
+    };
+  }
+  static logos(input) {
+    const logos = _AssetRenderConfiguration.record(input ?? {});
+    for (const [hostId, value] of Object.entries(logos)) {
+      const logo = _AssetRenderConfiguration.record(value);
+      if (!/^host-[a-z0-9-]+$/.test(hostId) || !ContentContractPolicy.keys(logo, ["url", "description"]) || ![logo.url, logo.description].every(ContentContractPolicy.text))
+        throw new Error("Invalid public host logo");
+    }
+    return logos;
+  }
+  static slot(value) {
+    return ContentContractPolicy.name(value) && !["__proto__", "prototype", "constructor"].includes(value);
+  }
+  static record(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).length > 200)
+      throw new Error("Invalid asset render configuration");
+    return value;
+  }
+};
+
+// packages/runtime/github-actions/src/assets/asset-content-configuration.ts
+var AssetContentConfiguration = class _AssetContentConfiguration {
+  static usesNextEvent(contracts) {
+    return Object.values(contracts).some((contract) => {
+      const fields2 = contract?.fields;
+      return Array.isArray(fields2) && fields2.some(
+        (field) => typeof field?.token === "string" && field.token.startsWith("next_event.")
+      );
+    });
+  }
+  static async load(root, eventId) {
+    let text;
+    try {
+      text = await readFile(
+        join(root, ".github/meetup-asset-content.json"),
+        "utf8"
+      );
+    } catch (error2) {
+      if (error2.code === "ENOENT")
+        return {
+          contracts: {},
+          speakers: {},
+          talks: {},
+          venues: {},
+          hostLogos: {},
+          recovery: {}
+        };
+      throw error2;
+    }
+    if (Buffer.byteLength(text) > 1e6)
+      throw new Error("Asset content configuration is too large");
+    return _AssetContentConfiguration.parse(JSON.parse(text), eventId);
+  }
+  static parse(input, eventId) {
+    const root = input;
+    if (root?.version !== 1 || !_AssetContentConfiguration.record(root.contracts) || !ContentContractPolicy.keys(root, [
+      "version",
+      "contracts",
+      "events",
+      "venues",
+      "hostLogos"
+    ]) || root.events !== void 0 && !_AssetContentConfiguration.record(root.events))
+      throw new Error("Invalid asset content configuration");
+    const event = root.events?.[eventId] ?? {};
+    if (!_AssetContentConfiguration.record(event) || !ContentContractPolicy.keys(event, ["speakers", "talks", "recovery"]))
+      throw new Error("Invalid asset event configuration");
+    const assignments = AssetRenderConfiguration.parse(
+      event,
+      root.venues,
+      root.hostLogos
+    );
+    const recovery = event.recovery ?? {};
+    if (!_AssetContentConfiguration.record(recovery))
+      throw new Error("Invalid asset speaker assignments");
+    for (const [id, operation] of Object.entries(recovery)) {
+      if (!ContentContractPolicy.name(id) || !operation || !["enroll", "restore", "remove"].includes(operation.operation) || !ContentContractPolicy.text(operation.revision) || operation.operation !== "enroll" && !ContentContractPolicy.name(operation.bindingId) || !ContentContractPolicy.keys(operation, [
+        "operation",
+        "revision",
+        "bindingId"
+      ]))
+        throw new Error("Invalid asset recovery operation");
+    }
+    return { contracts: root.contracts, ...assignments, recovery };
+  }
+  static record(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
   }
 };
 
@@ -67008,10 +71126,10 @@ var ProposalExportParser = class _ProposalExportParser {
 
 // packages/adapter/conference-hall-proposal-source/src/conference-hall-proposal-source.ts
 var ConferenceHallProposalSource = class {
-  constructor(event, apiKey, request2 = fetch) {
+  constructor(event, apiKey, request3 = fetch) {
     this.event = event;
     this.apiKey = apiKey;
-    this.request = request2;
+    this.request = request3;
   }
   event;
   apiKey;
@@ -67089,7 +71207,7 @@ var ConferenceHallProposalSource = class {
       });
     }
     const reader = response.body.getReader();
-    const decoder = new TextDecoder("utf-8", { fatal: true });
+    const decoder2 = new TextDecoder("utf-8", { fatal: true });
     let size = 0;
     let result = "";
     try {
@@ -67101,9 +71219,9 @@ var ConferenceHallProposalSource = class {
           throw new ProposalSourceError("invalid", void 0, {
             reason: "response-size"
           });
-        result += decoder.decode(value, { stream: true });
+        result += decoder2.decode(value, { stream: true });
       }
-      return result + decoder.decode();
+      return result + decoder2.decode();
     } finally {
       await reader.cancel();
       reader.releaseLock();
@@ -67117,7 +71235,7 @@ var ConferenceHallProposalSource = class {
 };
 
 // packages/adapter/csv-referential-repository/src/csv-referential-repository.ts
-import { readFile } from "node:fs/promises";
+import { readFile as readFile2 } from "node:fs/promises";
 import { isAbsolute, relative, resolve } from "node:path";
 
 // node_modules/.pnpm/csv-parse@7.0.3/node_modules/csv-parse/lib/api/CsvError.js
@@ -68832,14 +72950,14 @@ var CsvReferentialRepository = class _CsvReferentialRepository {
   options;
   async load() {
     const [hostsSource, speakersSource] = await Promise.all([
-      readFile(
+      readFile2(
         _CsvReferentialRepository.localPath(
           this.options.workspaceRoot,
           this.options.hostsPath
         ),
         "utf8"
       ),
-      readFile(
+      readFile2(
         _CsvReferentialRepository.localPath(
           this.options.workspaceRoot,
           this.options.speakersPath
@@ -69167,7 +73285,7 @@ var GUIDANCE = /* @__PURE__ */ new Map([
 ]);
 
 // packages/adapter/github-event-comment-repository/src/i18n/messages.en.ts
-var EN_MESSAGES2 = {
+var EN_MESSAGES3 = {
   "comment.guidance.source-profiles": "Conference Hall speaker profiles could not be refreshed. Check CFP access and linked speaker identities, then retry after any rate-limit window. Cached profiles and contacts are not authoritative.",
   "comment.guidance.proposals": "The selected Conference Hall proposals could not be refreshed. The last agenda is stale. Check CFP access, accepted status and merged speaker mappings; retry after the source rate-limit window if needed.",
   "comment.guidance.event.link.feedback.invalid": "Enter a valid HTTPS link to the OpenFeedback event page.",
@@ -69231,7 +73349,7 @@ var EN_MESSAGES2 = {
 };
 
 // packages/adapter/github-event-comment-repository/src/i18n/messages.fr.ts
-var FR_MESSAGES2 = {
+var FR_MESSAGES3 = {
   "comment.guidance.source-profiles": "Les profils Conference Hall n'ont pas pu \xEAtre actualis\xE9s. V\xE9rifiez les acc\xE8s au CFP et les identit\xE9s li\xE9es, puis r\xE9essayez apr\xE8s tout d\xE9lai impos\xE9. Les profils et contacts en cache ne font pas autorit\xE9.",
   "comment.guidance.proposals": "Les propositions Conference Hall ne peuvent pas \xEAtre actualis\xE9es. Le dernier programme est p\xE9rim\xE9. V\xE9rifiez les acc\xE8s au CFP, les acceptations et les identit\xE9s fusionn\xE9es ; r\xE9essayez apr\xE8s la limite API si n\xE9cessaire.",
   "comment.guidance.event.link.feedback.invalid": "Saisissez un lien HTTPS valide vers la page de l'\xE9v\xE9nement OpenFeedback.",
@@ -69295,15 +73413,15 @@ var FR_MESSAGES2 = {
 };
 
 // packages/adapter/github-event-comment-repository/src/i18n/catalog.ts
-var CATALOGS2 = {
-  en: { ...EN_MESSAGES2 },
-  fr: { ...FR_MESSAGES2 }
+var CATALOGS3 = {
+  en: { ...EN_MESSAGES3 },
+  fr: { ...FR_MESSAGES3 }
 };
 
 // packages/adapter/github-event-comment-repository/src/i18n/event-comment-messages.ts
 var EventCommentMessages = class extends MessageLocalizer {
   constructor(locale = "en") {
-    super(CATALOGS2, locale);
+    super(CATALOGS3, locale);
   }
 };
 
@@ -70897,7 +75015,7 @@ var SystemEventClock = class {
 };
 
 // packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-projection.ts
-import { readFile as readFile2, realpath, stat as stat3, writeFile as writeFile2 } from "node:fs/promises";
+import { readFile as readFile3, realpath, stat as stat3, writeFile as writeFile2 } from "node:fs/promises";
 import { isAbsolute as isAbsolute2, relative as relative2, resolve as resolve2, sep as sep2 } from "node:path";
 
 // node_modules/.pnpm/prettier@3.9.9/node_modules/prettier/plugins/yaml.mjs
@@ -78158,27 +82276,27 @@ var $i2 = { parse: de2(du), formatAST: de2(Fu), formatDoc: de2(Eu), printToDoc: 
 var import_yaml = __toESM(require_dist3(), 1);
 
 // packages/adapter/yaml-issue-form-projection/src/i18n/messages.en.ts
-var EN_MESSAGES3 = {
+var EN_MESSAGES4 = {
   "form.speakers.guidance": "Select speakers by copying one or more references into the agenda.",
   "form.speakers.show": "Show available speaker references"
 };
 
 // packages/adapter/yaml-issue-form-projection/src/i18n/messages.fr.ts
-var FR_MESSAGES3 = {
+var FR_MESSAGES4 = {
   "form.speakers.guidance": "S\xE9lectionnez les intervenants en copiant une ou plusieurs r\xE9f\xE9rences dans le programme.",
   "form.speakers.show": "Afficher les r\xE9f\xE9rences des intervenants disponibles"
 };
 
 // packages/adapter/yaml-issue-form-projection/src/i18n/catalog.ts
-var CATALOGS3 = {
-  en: { ...EN_MESSAGES3 },
-  fr: { ...FR_MESSAGES3 }
+var CATALOGS4 = {
+  en: { ...EN_MESSAGES4 },
+  fr: { ...FR_MESSAGES4 }
 };
 
 // packages/adapter/yaml-issue-form-projection/src/i18n/issue-form-messages.ts
 var IssueFormMessages = class extends MessageLocalizer {
   constructor(locale = "en") {
-    super(CATALOGS3, locale);
+    super(CATALOGS4, locale);
   }
 };
 
@@ -78198,7 +82316,7 @@ var YamlIssueFormProjection = class _YamlIssueFormProjection {
   async synchronize(input) {
     this.assertInput(input);
     const issueFormPath = await this.resolveIssueFormPath(input.issueFormPath);
-    const source = await readFile2(issueFormPath.absolutePath, "utf8");
+    const source = await readFile3(issueFormPath.absolutePath, "utf8");
     const document2 = (0, import_yaml.parseDocument)(source, {
       strict: true,
       uniqueKeys: true
@@ -84031,25 +88149,59 @@ var EventComposition = class _EventComposition {
 
 // packages/runtime/github-actions/src/publication-composition.ts
 var ASSET_REPOSITORY = /* @__PURE__ */ Symbol("AssetRepository");
-var PublicationComposition = class {
+var PublicationComposition = class _PublicationComposition {
   static createPublicationContainer(input) {
     const container = EventComposition.createEventContainer(input);
+    const repository = container.get(
+      SERVICES.referentialRepository
+    );
+    let catalog;
+    container.rebind(SERVICES.referentialRepository).toConstantValue({
+      load: () => {
+        catalog ??= repository.load();
+        return catalog;
+      }
+    });
     container.bind(ASSET_REPOSITORY).toDynamicValue(
       () => GoogleDriveAssetRepository.createGoogleDriveAssetRepository(
         input.credentials,
         {
           parentFolderId: input.parentFolderId,
-          templateFolderId: input.templateFolderId
+          templateFolderId: input.templateFolderId,
+          contentContracts: input.contentConfiguration?.contracts
         }
       )
     );
+    _PublicationComposition.bindContent(container, input.credentials);
     container.bind(ReconcileEventAssets).toDynamicValue(
       (context3) => new ReconcileEventAssets(
-        context3.get(ASSET_REPOSITORY)
+        context3.get(ASSET_REPOSITORY),
+        context3.get(ReconcileAssetContent)
       )
     );
+    _PublicationComposition.bindManageAssets(container, input);
+    return container;
+  }
+  static bindManageAssets(container, input) {
     container.bind(ManageMeetupAssets).toDynamicValue(
       (context3) => new ManageMeetupAssets({
+        renderProjection: new AssetRenderProjection(
+          new AssetRenderPresenterImpl(new AssetMessages(input.locale)),
+          context3.get(SERVICES.referentialRepository),
+          input.contentConfiguration ?? {
+            speakers: {},
+            talks: {},
+            venues: {}
+          },
+          AssetContentConfiguration.usesNextEvent(
+            input.contentConfiguration?.contracts ?? {}
+          ) ? new FindNextAssetEvent(
+            context3.get(SERVICES.eventRepository),
+            context3.get(SERVICES.eventDocumentCodec),
+            input.contentConfiguration?.venues
+          ) : void 0
+        ),
+        recovery: input.contentConfiguration?.recovery,
         eventRepository: context3.get(
           SERVICES.eventRepository
         ),
@@ -84060,7 +88212,22 @@ var PublicationComposition = class {
         reconcileAssets: context3.get(ReconcileEventAssets)
       })
     );
-    return container;
+  }
+  static bindContent(container, credentials) {
+    container.bind(ReconcileAssetContent).toDynamicValue(() => {
+      const authentication = GoogleDriveAuthentication.create(credentials);
+      const images = new HttpsAssetImageRepository();
+      return new ReconcileAssetContent(
+        new GoogleDriveManifestRepository(
+          GoogleDriveAssetRepository.client(credentials)
+        ),
+        {
+          "application/vnd.google-apps.presentation": GoogleSlidesContentRepository.create(authentication, images),
+          "application/vnd.google-apps.document": GoogleDocsContentRepository.create(authentication, images)
+        },
+        images
+      );
+    });
   }
 };
 
@@ -84081,6 +88248,10 @@ var PublicationAction = class _PublicationAction {
     });
     const { owner, repo } = context2.repo;
     const container = PublicationComposition.createPublicationContainer({
+      contentConfiguration: await AssetContentConfiguration.load(
+        process.cwd(),
+        `${owner}/${repo}#${issueNumber}`
+      ),
       locale: messages.locale,
       ...ConferenceHallInput.read(),
       client,
@@ -84104,20 +88275,11 @@ var PublicationAction = class _PublicationAction {
     return _PublicationAction.report(issueNumber, outcome, messages);
   }
   static report(issueNumber, outcome, messages) {
-    ActionOutput.setJsonOutput(
-      "result",
-      ResultEnvelopeFactory.resultEnvelope(
-        {
-          skipped: outcome.skipped,
-          persisted: outcome.persisted,
-          assetUrl: outcome.assetUrl,
-          files: outcome.files
-        },
-        outcome.diagnostics
-      )
-    );
     ActionOutput.setJsonOutput("drive-files", outcome.files);
-    setOutput("asset-url", outcome.assetUrl ?? "");
+    setOutput(
+      "slides-ready",
+      ["copy-only", "ready"].includes(outcome.content?.slides ?? "copy-only") && Boolean(outcome.files["slides-link"])
+    );
     return {
       details: [
         messages.t("report.event.context", { issue: issueNumber, mode: "fix" }),
@@ -84135,7 +88297,8 @@ var PublicationAction = class _PublicationAction {
 // packages/runtime/github-actions/src/entrypoints/publication-reconcile-assets.ts
 await ActionRunner.run(
   "action.publication.reconcile-assets",
-  PublicationAction.runPublicationReconcileAssetsAction
+  PublicationAction.runPublicationReconcileAssetsAction,
+  true
 );
 /*! Bundled license information:
 
@@ -84165,6 +88328,8 @@ safe-buffer/index.js:
   (*! safe-buffer. MIT License. Feross Aboukhadijeh <https://feross.org/opensource> *)
 
 @googleapis/drive/build/index.js:
+@googleapis/docs/build/index.js:
+@googleapis/slides/build/index.js:
   (*! THIS FILE IS AUTO-GENERATED *)
 
 reflect-metadata/ReflectLite.js:

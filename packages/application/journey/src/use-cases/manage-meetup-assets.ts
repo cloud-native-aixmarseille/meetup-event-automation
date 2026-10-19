@@ -7,11 +7,19 @@ import {
 	EventRepositoryPatches,
 	ReconcileEvent,
 } from "@meetup-automation/event";
-import type { ReconcileEventAssets } from "@meetup-automation/publication";
+import type {
+	ContentRecovery,
+	ContentStatus,
+	ReconcileEventAssets,
+} from "@meetup-automation/publication";
 import type { PublicDiagnostic } from "../result/result-envelope.js";
 import type { ManageMeetupEvent } from "./manage-meetup-event.js";
 
+import type { AssetRenderProjection } from "./asset-render-projection.js";
+
 interface ManageMeetupAssetsDependencies {
+	readonly renderProjection?: AssetRenderProjection;
+	readonly recovery?: Readonly<Record<string, ContentRecovery>>;
 	readonly eventRepository: EventRepository;
 	readonly documentCodec: EventDocumentCodec;
 	readonly manageEvent: Pick<ManageMeetupEvent, "execute">;
@@ -26,6 +34,7 @@ export class ManageMeetupAssets {
 		persisted: boolean;
 		assetUrl?: string;
 		files: Readonly<Record<string, string>>;
+		content?: Readonly<Record<string, ContentStatus>>;
 		diagnostics: readonly PublicDiagnostic[];
 	}> {
 		const source = await this.dependencies.eventRepository.find(input.identity);
@@ -72,6 +81,11 @@ export class ManageMeetupAssets {
 			hostName: evaluation.event.host.displayName,
 			existingUrl: evaluation.event.publicationLinks.assets,
 			mode: "fix",
+			model: await this.dependencies.renderProjection?.create(
+				evaluation.event,
+				evaluation.diagnostics,
+			),
+			recovery: this.dependencies.recovery,
 		});
 		const persisted = await this.persistAsset(source, assets.container?.url);
 		return {
@@ -79,6 +93,7 @@ export class ManageMeetupAssets {
 			persisted,
 			assetUrl: assets.container?.url,
 			files: assets.files,
+			content: assets.content,
 			diagnostics: assets.diagnostics.map((item) => ({
 				...item,
 				field: "publicationLinks.assets",

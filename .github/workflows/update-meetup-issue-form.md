@@ -38,7 +38,7 @@ jobs:
     permissions:
       contents: read
     with:
-      # Optional language for generated text.
+      # Required language for generated text; no default.
       locale: en
       # GitHub App client ID used to mint the narrowly scoped installation token for meetup automation.
       # This input is required.
@@ -56,7 +56,7 @@ jobs:
 
 | **Input**                  | **Description**                                                                                                                    | **Required** | **Type** |
 | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | -------- |
-| **`locale`**               | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **false**    | `en`     |
+| **`locale`**               | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **true**     | -        |
 | **`github-app-client-id`** | GitHub App client ID for meetup automation token creation.                                                                         | **true**     | `string` |
 
 <!-- inputs:end -->
@@ -71,15 +71,7 @@ jobs:
 
 ## Outputs
 
-| **Output**                    | **Description**                                                                              |
-| ----------------------------- | -------------------------------------------------------------------------------------------- |
-| **`is-valid`**                | Whether the private referential catalogs passed validation before issue-form projection.     |
-| **`host-count`**              | Number of valid host entries detected during referential validation.                         |
-| **`speaker-count`**           | Number of valid speaker entries detected during referential validation.                      |
-| **`referential-diagnostics`** | Redacted JSON diagnostics produced during referential validation.                            |
-| **`changed`**                 | Whether the checked-out issue form differed from the desired public projection.              |
-| **`changed-files`**           | JSON array of repository-relative files changed or that would change during synchronization. |
-| **`diagnostics`**             | Redacted JSON diagnostics produced by the issue-form projection step.                        |
+No public workflow outputs. Reports appear in action logs, annotations, and job summaries.
 
 <!-- outputs:end -->
 <!-- examples:start -->

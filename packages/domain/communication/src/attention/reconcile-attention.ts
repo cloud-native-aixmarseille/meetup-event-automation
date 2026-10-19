@@ -1,7 +1,3 @@
-import {
-	RecoverAttentionPost,
-	type AttentionPostRecovery,
-} from "./recover-attention-post.js";
 import type { CommunicationClock } from "../ports.js";
 import { AttentionEpisodes } from "./attention-episodes.js";
 import { AttentionPolicy } from "./attention-policy.js";
@@ -19,14 +15,10 @@ export class ReconcileAttention {
 		private readonly notification: AttentionNotification,
 		private readonly clock: CommunicationClock,
 	) {}
-	async execute(
-		observation: AttentionObservation,
-		recovery?: AttentionPostRecovery,
-	): Promise<AttentionResult> {
+	async execute(observation: AttentionObservation): Promise<AttentionResult> {
 		const now = this.clock.now();
 		const day = AttentionPolicy.day(now);
 		const previous = await this.repository.load();
-		if (recovery) RecoverAttentionPost.apply(previous, recovery, now);
 		const state = AttentionEpisodes.reconcile(previous, observation, now);
 		// A failed write stops here, before any outbound Slack operation.
 		await this.repository.save(state);

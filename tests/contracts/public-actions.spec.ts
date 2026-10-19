@@ -13,9 +13,8 @@ const actionContracts = [
 			"slack-organizer-channel-id",
 			"slack-token",
 			"stage-results",
-			"recover-post",
 		],
-		outputs: ["active-count", "posted", "diagnostics"],
+		outputs: [],
 	},
 	{
 		directory: "actions/publication/reconcile-feedback",
@@ -30,7 +29,7 @@ const actionContracts = [
 			"kutt-link-id",
 			"openfeedback-api-key",
 		],
-		outputs: ["result", "diagnostics", "feedback-url", "link-updated"],
+		outputs: ["diagnostics"],
 	},
 	{
 		directory: "actions/publication/reconcile-assets",
@@ -44,7 +43,7 @@ const actionContracts = [
 			"issue-number",
 			"managed-comment-author",
 		],
-		outputs: ["asset-url", "diagnostics", "drive-files", "result"],
+		outputs: ["drive-files", "slides-ready", "diagnostics"],
 	},
 	{
 		directory: "actions/event/reconcile",
@@ -54,37 +53,23 @@ const actionContracts = [
 			"github-token",
 			"issue-number",
 			"managed-comment-author",
-			"mode",
 		],
-		outputs: ["diagnostics", "is-ready", "result", "state"],
+		outputs: ["diagnostics"],
 	},
 	{
 		directory: "actions/event/list-active",
 		inputs: ["github-token"],
-		outputs: ["diagnostics", "issue-numbers", "result"],
+		outputs: ["issue-numbers"],
 	},
 	{
 		directory: "actions/referential/validate",
 		inputs: [],
-		outputs: [
-			"failure-message",
-			"diagnostics",
-			"host-count",
-			"is-valid",
-			"result",
-			"speaker-count",
-		],
+		outputs: [],
 	},
 	{
 		directory: "actions/referential/sync-issue-form",
 		inputs: ["mode"],
-		outputs: [
-			"changed",
-			"changed-files",
-			"diagnostics",
-			"failure-message",
-			"result",
-		],
+		outputs: ["changed"],
 	},
 	{
 		directory: "actions/communication/reconcile",
@@ -93,6 +78,7 @@ const actionContracts = [
 			"conference-hall-event",
 			"openfeedback-api-key",
 			"slides-url",
+			"slides-ready",
 			"report-errors-to-issue",
 			"github-token",
 			"issue-number",
@@ -101,7 +87,7 @@ const actionContracts = [
 			"slack-organizer-channel-id",
 			"slack-token",
 		],
-		outputs: ["diagnostics", "dispatched-count", "planned-count", "result"],
+		outputs: ["diagnostics"],
 	},
 ] as const;
 
@@ -135,7 +121,7 @@ describe("public action contracts", () => {
 		},
 	);
 
-	it.each(["event/reconcile", "referential/sync-issue-form"])(
+	it.each(["referential/sync-issue-form"])(
 		"requires an explicit mode for %s",
 		async (action) => {
 			// Arrange

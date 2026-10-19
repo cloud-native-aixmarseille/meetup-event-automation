@@ -58,10 +58,13 @@ stable; source failure blocks delivery instead of using cached addresses.
 
 Emails use the managed presentation file URL for `eventSlidesUrl`. Both event
 workflows reconcile assets before communications and pass the `slides-link`
-entry from the asset action's `drive-files` output. Configure the presentation
+entry from the asset action's `drive-files` output together with `slides-ready`. Configure the presentation
 template with `template_kind=slides`; see [Drive templates](assets.md#prepare-templates).
 
-When calling the communication action directly, supply that URL as `slides-url`.
+When calling the communication action directly, supply that URL as `slides-url`
+and forward `slides-ready`. False holds due emails even when the URL exists.
+Managed content changes do not resend completed emails; approved batch inputs
+include the stable URL, not a frozen document snapshot.
 It accepts HTTPS Google Slides presentation links and Google Drive file links.
 A due email batch with a missing or invalid link is held with the
 `communication.slides-unavailable` diagnostic, before requesting approval.
@@ -330,41 +333,26 @@ delete metadata to force a retry.
 A new Slack post is reserved in GitHub before dispatch. Definitive nonacceptance
 can retry after at least five minutes or Slack's longer `Retry-After` interval.
 An ambiguous acknowledgement retains its pending reservation across days and
-locale changes. It never automatically posts again until the outcome is verified.
+locale changes. It never automatically posts again while the pending reservation remains.
 Known-message updates can safely retry. This is duplicate protection, not an
 exactly-once delivery guarantee; GitHub writes still have a final race with human
 edits despite pre-write snapshot checks.
 
-To recover, verify the message in the configured organizer channel. In a manually
-run workflow holding the same repository/issue concurrency lock, call the attention
-action with its normal inputs and the optional `recover-post` JSON. Copy the exact
-`reservationId` from the attention record in the managed status comment's source
-(the shared follow-up comment after the event). For a verified
-accepted post, supply its stored-channel-compatible Slack reference:
-
-```json
-{
-  "reservationId": "attention:47268:4083991200000",
-  "outcome": "accepted",
-  "message": { "destination": "C12345", "messageId": "123.456" }
-}
-```
-
-For verified nonacceptance, use the same reservation ID with
-`"outcome":"not-accepted"` and omit `message`. Stale reservation IDs are rejected.
-A human edit to the comment cannot authorize recovery. Recovering attention does
-not alter email reservations or final approval decisions.
+For an ambiguous post, inspect the configured organizer channel and the stored
+reservation before any intervention. The automation retains the hold; rerunning
+the workflow does not release it. Do not delete or edit trusted state to force a
+retry. Email reservations and final approval decisions remain independent.
 
 ## Diagnose and recover
 
-Inspect `communication-diagnostics` on issue-update runs and the daily audit's
+Inspect communication diagnostics on issue-update runs and the daily audit's
 summary. The audit records communication errors in a managed issue comment and
 succeeds once the comment is saved or confirmed current. Execution and comment
 persistence failures still fail the job. See the
 [audit workflow contract](../../.github/workflows/check-active-meetup-issues.md).
 
-`planned-count` counts planned messages; `dispatched-count` counts
-planned-message provider calls, including rejected or uncertain attempts.
+The action report shows planned messages and attempted provider calls, including
+rejected or uncertain attempts.
 Organizer approval comments, Slack alerts and decision reactions are excluded
 from these delivery counts.
 

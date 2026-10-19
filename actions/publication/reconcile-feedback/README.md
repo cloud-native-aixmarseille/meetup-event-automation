@@ -25,7 +25,7 @@ issue already has a feedback URL. Use a key beginning with `oforg_`.
 | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
 | **`conference-hall-event`**   | Conference Hall CFP slug for live linked profiles and selected proposals.                                                          | **true**     | -           |
 | **`conference-hall-api-key`** | Read-only Conference Hall event API key.                                                                                           | **true**     | -           |
-| **`locale`**                  | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **false**    | `en`        |
+| **`locale`**                  | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **true**     | -           |
 | **`github-token`**            | GitHub token with issue read and write permissions.                                                                                | **true**     | -           |
 | **`issue-number`**            | Meetup issue number.                                                                                                               | **true**     | -           |
 | **`managed-comment-author`**  | GitHub App bot login used by event evaluation.                                                                                     | **true**     | -           |
@@ -40,12 +40,9 @@ issue already has a feedback URL. Use a key beginning with `oforg_`.
 
 ## Outputs
 
-| **Output**         | **Description**                                |
-| ------------------ | ---------------------------------------------- |
-| **`result`**       | Versioned JSON feedback reconciliation result. |
-| **`diagnostics`**  | Redacted JSON diagnostics.                     |
-| **`feedback-url`** | OpenFeedback event URL.                        |
-| **`link-updated`** | Whether the existing Kutt link target changed. |
+| **Output**        | **Description**            |
+| ----------------- | -------------------------- |
+| **`diagnostics`** | Redacted JSON diagnostics. |
 
 <!-- outputs:end -->
 

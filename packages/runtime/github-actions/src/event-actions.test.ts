@@ -9,7 +9,6 @@ vi.mock("@actions/core", () => ({
 			"conference-hall-event": "example-cfp",
 			"conference-hall-api-key": "synthetic-source-key",
 			"issue-number": "42",
-			mode: "check",
 			"github-token": "private-token",
 			"managed-comment-author": "automation[bot]",
 		})[name],
@@ -67,7 +66,11 @@ describe("event action report facts", () => {
 			const report = await EventActions.runEventReconcileAction();
 
 			// Assert
-			expect(report.details).toContain("Issue: #42; mode: check.");
+			expect(boundary.execute).toHaveBeenCalledWith({
+				identity: { repository: "community/meetups", issueNumber: 42 },
+				mode: "fix",
+			});
+			expect(report.details).toContain("Issue: #42; mode: fix.");
 			expect(report.details.join("\n")).toContain(
 				isReady
 					? "Event state: ready; ready: true."
@@ -79,7 +82,7 @@ describe("event action report facts", () => {
 			expect(report.diagnostics).toEqual(diagnostics);
 			expect(report.failure).toBeUndefined();
 			expect(JSON.stringify(report)).not.toContain("contact@example.test");
-			expect(core.setOutput).toHaveBeenCalledWith("is-ready", String(isReady));
+			expect(core.setOutput).not.toHaveBeenCalled();
 		},
 	);
 
@@ -94,7 +97,6 @@ describe("event action report facts", () => {
 		expect(report.details).toContain(
 			"Skipped: the issue is not a configured meetup event.",
 		);
-		expect(core.setOutput).toHaveBeenCalledWith("state", "skipped");
 	});
 
 	it.each([{ issueNumbers: [] }, { issueNumbers: [12, 34] }])(
