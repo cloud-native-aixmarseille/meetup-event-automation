@@ -47,7 +47,7 @@ recovery](../../../docs/integrations/conference-hall.md).
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/referential/sync-speakers@1f22000828caf59f41d0a7d8815e5c5c0d3139f6 # 2.3.0
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/referential/sync-speakers@c96cf1e15b7a8a824a706582f6ba328374a888df # 2.3.1
   with:
     # Language for generated reports (en or fr).
     # This input is required.

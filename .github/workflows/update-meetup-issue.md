@@ -48,7 +48,7 @@ on:
 permissions: {}
 jobs:
   update-meetup-issue:
-    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/update-meetup-issue.yml@1f22000828caf59f41d0a7d8815e5c5c0d3139f6 # 2.3.0
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/update-meetup-issue.yml@c96cf1e15b7a8a824a706582f6ba328374a888df # 2.3.1
     permissions:
       contents: read
     secrets:
@@ -134,7 +134,7 @@ jobs:
 
 | **Secret**                    | **Description**                                                                                                                             | **Required** |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
-| **`openfeedback-api-key`**    | OpenFeedback organization API key (oforg\_) used to create and update events.                                                               | **true**     |
+| **`openfeedback-api-key`**    | OpenFeedback organization API key (oforg_) used to create and update events.                                                                | **true**     |
 | **`kutt-api-key`**            | API key for the owner of the existing Kutt feedback link.                                                                                   | **true**     |
 | **`google-credentials`**      | Google service-account JSON for Drive asset reconciliation.                                                                                 | **true**     |
 | **`github-app-private-key`**  | PEM-encoded private key for the GitHub App identified by the github-app-client-id input. Used to mint a narrowly scoped installation token. | **true**     |
