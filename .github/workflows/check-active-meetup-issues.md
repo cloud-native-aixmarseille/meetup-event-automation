@@ -21,7 +21,7 @@
 
 ## Overview
 
-Reusable workflow that checks active meetup issues, evaluates their current
+Reusable workflow that checks open meetup issues, evaluates their current
 state, and processes due communications under the shared per-event lock.
 Communication errors are recorded in the meetup issue without failing the audit;
 execution and comment persistence failures still fail the job.
@@ -138,7 +138,7 @@ jobs:
 
 | **Secret**                    | **Description**                                                                                                                             | **Required** |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
-| **`openfeedback-api-key`**    | OpenFeedback organization API key (oforg_) used to create and update events.                                                                | **true**     |
+| **`openfeedback-api-key`**    | OpenFeedback organization API key (oforg\_) used to create and update events.                                                               | **true**     |
 | **`kutt-api-key`**            | API key for the owner of the existing Kutt feedback link.                                                                                   | **true**     |
 | **`google-credentials`**      | Google service-account JSON for Drive asset reconciliation.                                                                                 | **true**     |
 | **`github-app-private-key`**  | PEM-encoded private key for the GitHub App identified by the github-app-client-id input. Used to mint a narrowly scoped installation token. | **true**     |

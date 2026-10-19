@@ -62,7 +62,9 @@ entry from the asset action's `drive-files` output together with `slides-ready`.
 template with `template_kind=slides`; see [Drive templates](assets.md#prepare-templates).
 
 When calling the communication action directly, supply that URL as `slides-url`
-and forward `slides-ready`. False holds due emails even when the URL exists.
+and forward `slides-ready`. When assets cannot provide a presentation, pass an
+empty `slides-url` with `slides-ready: false`. False holds due emails even when
+the URL exists.
 Managed content changes do not resend completed emails; approved batch inputs
 include the stable URL, not a frozen document snapshot.
 It accepts HTTPS Google Slides presentation links and Google Drive file links.
@@ -316,12 +318,20 @@ persistence prevents new Slack posts; workflow failures and GitHub's normal
 notifications are the fallback. A schedule that never runs needs external
 workflow monitoring.
 
-Audits paginate all labelled meetup issues, including terminal and closed issues,
-because unresolved external delivery cannot be inferred from lifecycle alone.
-Selection is bounded to 200 distinct issues and 20 pages; exceeding either limit
-fails listing explicitly instead of silently dropping recovery work. Remove the
-meetup label from archived issues only after verifying their delivery records and
-attention status. A past date alone never confirms occurrence.
+Audits paginate open labelled meetup issues. Closed issues are excluded before
+form parsing; their forms, assets and delivery records are left unchanged.
+Issue-update workflows also skip closed issues, including approval edits.
+Open cancelled and postponed issues remain eligible for delivery diagnostics.
+Selection is bounded to 200 distinct open issues and 20 pages; exceeding either
+limit fails listing explicitly instead of silently dropping work.
+
+Keep an issue open until follow-up and delivery checks are complete. Closure
+archives it; closure does not confirm that a pending or uncertain request was
+accepted. If uncertainty is discovered after closure, check the provider and
+resolve it explicitly using the retained records before considering another
+send. Closed issues receive no automatic recovery checks or reminders. Do not
+delete delivery or approval records to force retries. A past date alone never
+confirms occurrence.
 
 ### Recover an uncertain attention post
 
@@ -359,9 +369,10 @@ from these delivery counts.
 A `communication.approval-notification-failed` diagnostic can mean a request
 alert or decision reaction was not confirmed. Check the bot's channel membership
 and its `chat:write` and `reactions:write` scopes. A request without a stored
-Slack message reference cannot receive an automatic reaction; its GitHub
-decision remains authoritative and the automation does not post a duplicate
-alert. Do not delete approval comments or their edit history to retry a decision.
+Slack message reference cannot receive an automatic reaction. If its notification
+is confirmed sent, this missing reaction reference is not a notification failure;
+an unconfirmed notification remains actionable. The GitHub decision remains
+authoritative and the automation does not post a duplicate alert. Do not delete approval comments or their edit history to retry a decision.
 
 A `communication.checklist-update-failed` diagnostic means dispatch results were
 recorded but issue completion could not be saved, for example after a concurrent

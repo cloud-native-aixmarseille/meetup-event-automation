@@ -10,7 +10,6 @@ import type { EventRepository } from "../ports/event-repository.js";
 export type ListActiveEventsInput = Readonly<{
 	repository: string;
 	label?: string;
-	includeClosed?: boolean;
 	pageSize?: number;
 }>;
 

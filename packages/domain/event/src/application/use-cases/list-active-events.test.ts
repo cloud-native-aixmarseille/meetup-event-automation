@@ -15,7 +15,7 @@ import { EventPaginationError } from "./event-pagination-error.js";
 import { ListActiveEvents } from "./list-active-events.js";
 
 describe("ListActiveEvents", () => {
-	it("paginates and deduplicates while retaining terminal issues for recovery", async () => {
+	it("paginates and deduplicates open issues regardless of occurrence status", async () => {
 		// Arrange
 		const activeDocument = {
 			...document,
@@ -85,9 +85,38 @@ describe("ListActiveEvents", () => {
 		// Assert
 		expect(listPage).toHaveBeenNthCalledWith(
 			2,
-			expect.objectContaining({ cursor: "page-2" }),
+			expect.objectContaining({ cursor: "page-2", includeClosed: false }),
 		);
 		expect(actual).toEqual([1, 2, 3]);
+	});
+
+	it("excludes closed documents before parsing or evaluating their forms", async () => {
+		// Arrange
+		const closedDocument = {
+			...document,
+			issueState: "closed" as const,
+			body: "Archived event",
+		};
+		const repository: EventRepository = {
+			find: vi.fn(),
+			applyPatch: vi.fn(),
+			listPage: vi.fn().mockResolvedValue({ items: [closedDocument] }),
+		};
+		const codec = createCodec(new Map());
+		const decode = vi.spyOn(codec, "decode");
+		const useCase = new ListActiveEvents({
+			repository,
+			documentCodec: codec,
+			clock: createClock(),
+		});
+		// Act
+		const result = await useCase.execute({ repository: identity.repository });
+		// Assert
+		expect(result).toEqual({ events: [], diagnostics: [] });
+		expect(decode).not.toHaveBeenCalled();
+		expect(repository.listPage).toHaveBeenCalledWith(
+			expect.objectContaining({ includeClosed: false }),
+		);
 	});
 
 	it("rejects a repeated pagination cursor", async () => {

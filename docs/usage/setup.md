@@ -99,22 +99,13 @@ on:
   issue_comment:
     types: [edited]
   issues:
-    types:
-      [
-        opened,
-        edited,
-        reopened,
-        assigned,
-        unassigned,
-        labeled,
-        unlabeled,
-        closed,
-      ]
+    types: [opened, edited, reopened, assigned, unassigned, labeled, unlabeled]
 permissions: {}
 jobs:
   manage:
     if: >-
       ${{ !github.event.issue.pull_request &&
+          github.event.issue.state == 'open' &&
           (github.event_name != 'issue_comment' ||
            (github.event.action == 'edited' &&
             github.event.sender.type == 'User' &&

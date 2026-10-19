@@ -117,9 +117,10 @@ emails, with completion recorded after accepted dispatch. Publish slides, share
 OpenFeedback reports, import attendance into CNCF, and complete social posts
 manually in the issue checklist. The mailings workflow reports the email result.
 
-The audit includes events with unfinished follow-up and delivery recovery.
-Task reminders stop on closure, cancellation, or postponement; verify uncertain
-external deliveries even after closing the issue.
+Keep the issue open while follow-up or delivery checks remain unfinished.
+Closing it archives the event and excludes it from automatic audits and issue
+updates. Check the provider explicitly if a delivery outcome is uncertain after
+closure; see [delivery recovery](../integrations/communications.md).
 
 ## Resolve organizer attention
 
