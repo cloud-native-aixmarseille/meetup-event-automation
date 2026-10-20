@@ -14,9 +14,9 @@ describe("referential action report facts", () => {
 			};
 			const diagnostics = [
 				{
-					code: "referential.example",
+					code: "referential.speaker.id.invalid",
 					severity: "warning" as const,
-					message: "Review the catalog.",
+					message: "Invalid stable identifier.",
 				},
 			];
 
@@ -24,92 +24,59 @@ describe("referential action report facts", () => {
 			const report = ReferentialActionReport.validation(counts, diagnostics);
 
 			// Assert
-			expect(report.details).toContain(
-				isValid ? "Referentials: valid." : "Referentials: invalid.",
-			);
-			expect(report.details).toContain(
-				isValid
-					? "Valid hosts: 3; valid speakers: 7."
-					: "Valid hosts: 0; valid speakers: 0.",
-			);
-			expect(
-				report.details.join("\n").includes("zero-based record positions"),
-			).toBe(!isValid);
+			expect(report.details).toEqual([
+				isValid ? "referentials=valid" : "referentials=invalid",
+				isValid ? "hosts=3 speakers=7" : "hosts=0 speakers=0",
+			]);
 			expect(report.diagnostics).toEqual(diagnostics);
-			expect(report.failure).toBe(
-				isValid
-					? undefined
-					: "Meetup referentials are invalid. Correct the catalog fields listed in the validation annotations and job summary.",
-			);
-		},
-	);
-
-	it.each([
-		{ mode: "check", status: "Issue form is out of date.", guidance: true },
-		{ mode: "fix", status: "Issue form was updated.", guidance: false },
-	] as const)(
-		"reports affected files in $mode mode",
-		({ mode, status, guidance }) => {
-			// Arrange
-			const result = {
-				changed: true,
-				changedFiles: [".github/ISSUE_TEMPLATE/example.yml"],
-				diagnostics: [],
-			};
-
-			// Act
-			const report = ReferentialActionReport.issueForm(mode, result);
-
-			// Assert
-			expect(report.details).toContain(status);
-			expect(report.details).toContain(
-				"Affected files: .github/ISSUE_TEMPLATE/example.yml.",
-			);
-			expect(report.details.join("\n").includes("drift does not block")).toBe(
-				guidance,
-			);
 			expect(report.failure).toBeUndefined();
 		},
 	);
 
 	it.each([
-		{
-			locale: "en",
-			guidance:
-				"Issue-form drift does not block this check. Synchronization can run after merge.",
-		},
-		{
-			locale: "fr",
-			guidance:
-				"Le décalage du formulaire ne bloque pas cette vérification. La synchronisation peut être exécutée après la fusion.",
-		},
-	])(
-		"reports allowed drift with advisory guidance in $locale",
-		({ locale, guidance }) => {
-			// Arrange
-			const result = {
-				changed: true,
-				changedFiles: [".github/ISSUE_TEMPLATE/example.yml"],
-				diagnostics: [],
-			};
-			const messages = new ActionMessages(locale);
+		{ mode: "check", status: "issue_form=stale" },
+		{ mode: "fix", status: "issue_form=updated" },
+	] as const)("reports affected files in $mode mode", ({ mode, status }) => {
+		// Arrange
+		const result = {
+			changed: true,
+			changedFiles: [".github/ISSUE_TEMPLATE/example.yml"],
+			diagnostics: [],
+		};
 
-			// Act
-			const report = ReferentialActionReport.issueForm(
-				"check",
-				result,
-				messages,
-			);
+		// Act
+		const report = ReferentialActionReport.issueForm(mode, result);
 
-			// Assert
-			expect(report.failure).toBeUndefined();
-			expect(report.details).toContain(guidance);
-			expect(report.details.join("\n")).toContain(
-				".github/ISSUE_TEMPLATE/example.yml",
-			);
-			expect(report.details.join("\n")).not.toContain("mode: fix");
-		},
-	);
+		// Assert
+		expect(report.details).toEqual([
+			status,
+			"files=.github/ISSUE_TEMPLATE/example.yml",
+		]);
+		expect(report.failure).toBeUndefined();
+	});
+
+	it.each(["en", "fr"])("keeps technical facts concise in %s", (locale) => {
+		// Arrange
+		const result = {
+			changed: true,
+			changedFiles: [".github/ISSUE_TEMPLATE/example.yml"],
+			diagnostics: [],
+		};
+
+		// Act
+		const report = ReferentialActionReport.issueForm(
+			"check",
+			result,
+			new ActionMessages(locale),
+		);
+
+		// Assert
+		expect(report.details).toEqual([
+			"issue_form=stale",
+			"files=.github/ISSUE_TEMPLATE/example.yml",
+		]);
+		expect(report.failure).toBeUndefined();
+	});
 
 	it.each(["check", "fix"] as const)(
 		"reports an unchanged issue form as current in %s mode",
@@ -121,13 +88,13 @@ describe("referential action report facts", () => {
 			const report = ReferentialActionReport.issueForm(mode, result);
 
 			// Assert
-			expect(report.details).toEqual(["Issue form is up to date."]);
+			expect(report.details).toEqual(["issue_form=current"]);
 			expect(report.failure).toBeUndefined();
 		},
 	);
 
 	it.each(["check", "fix"] as const)(
-		"fails blocked synchronization in %s mode without claiming the issue form is current",
+		"reports organizer blockers in %s mode without failing or claiming the form is current",
 		(mode) => {
 			// Arrange
 			const result = {
@@ -148,12 +115,10 @@ describe("referential action report facts", () => {
 
 			// Assert
 			expect(report.details).toEqual([
-				"Issue form synchronization is blocked by invalid referentials.",
+				"issue_form=blocked reason=invalid-referentials",
 			]);
 			expect(report.diagnostics).toEqual(result.diagnostics);
-			expect(report.failure).toBe(
-				"Meetup referentials are invalid. Correct the catalog fields listed in the validation annotations and job summary.",
-			);
+			expect(report.failure).toBeUndefined();
 		},
 	);
 });

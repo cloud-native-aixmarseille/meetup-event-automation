@@ -6,7 +6,6 @@ import {
 	document,
 	identity,
 } from "../../../testing/event-repository.fixtures.js";
-import type { EventCommentRepository } from "../ports/event-comment-repository.js";
 import type {
 	EventDocument,
 	EventRepository,
@@ -30,13 +29,9 @@ describe("ReconcileEvent", () => {
 			applyPatch: vi.fn(),
 			listPage: vi.fn(),
 		};
-		const comments: EventCommentRepository = {
-			reconcileDiagnostics: vi.fn(),
-		};
 		const useCase = new ReconcileEvent({
 			repository,
 			documentCodec: createCodec(new Map([[42, event]])),
-			commentRepository: comments,
 			clock: createClock(),
 		});
 
@@ -51,10 +46,9 @@ describe("ReconcileEvent", () => {
 		);
 		expect(result.persisted).toBe(false);
 		expect(repository.applyPatch).not.toHaveBeenCalled();
-		expect(comments.reconcileDiagnostics).not.toHaveBeenCalled();
 	});
 
-	it("persists a minimal projection and reconciles one managed comment in fix mode", async () => {
+	it("persists a minimal issue projection in fix mode", async () => {
 		// Arrange
 		const event = createTestEvent({
 			identity,
@@ -66,13 +60,9 @@ describe("ReconcileEvent", () => {
 			applyPatch: vi.fn().mockResolvedValue(undefined),
 			listPage: vi.fn(),
 		};
-		const comments: EventCommentRepository = {
-			reconcileDiagnostics: vi.fn().mockResolvedValue({ changed: true }),
-		};
 		const useCase = new ReconcileEvent({
 			repository,
 			documentCodec: createCodec(new Map([[42, event]])),
-			commentRepository: comments,
 			clock: createClock(),
 		});
 
@@ -87,9 +77,7 @@ describe("ReconcileEvent", () => {
 				issueTitle: "[Meetup] - 2026-09-30 - Cloud Native Evening",
 			}),
 		);
-		expect(comments.reconcileDiagnostics).toHaveBeenCalledOnce();
 		expect(result.persisted).toBe(true);
-		expect(result.commentUpdated).toBe(true);
 	});
 
 	it("does not write an empty repository patch", async () => {
@@ -105,13 +93,9 @@ describe("ReconcileEvent", () => {
 			applyPatch: vi.fn(),
 			listPage: vi.fn(),
 		};
-		const comments: EventCommentRepository = {
-			reconcileDiagnostics: vi.fn().mockResolvedValue({ changed: false }),
-		};
 		const useCase = new ReconcileEvent({
 			repository,
 			documentCodec: createCodec(new Map([[42, event]])),
-			commentRepository: comments,
 			clock: createClock(),
 		});
 
@@ -141,7 +125,6 @@ describe("ReconcileEvent", () => {
 		const useCase = new ReconcileEvent({
 			repository,
 			documentCodec: createCodec(new Map([[42, event]])),
-			commentRepository: { reconcileDiagnostics: vi.fn() },
 			clock: createClock(),
 		});
 
@@ -165,7 +148,6 @@ describe("ReconcileEvent", () => {
 		const useCase = new ReconcileEvent({
 			repository,
 			documentCodec: createCodec(new Map()),
-			commentRepository: { reconcileDiagnostics: vi.fn() },
 			clock: createClock(),
 		});
 

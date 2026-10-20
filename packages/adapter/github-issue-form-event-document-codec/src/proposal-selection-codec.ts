@@ -30,7 +30,7 @@ export class ProposalSelectionCodec {
 			(markers[0] && !/^1:(current|stale)$/.test(markers[0]))
 		)
 			diagnostics.push({
-				code: "event.proposals.invalid",
+				code: "event.proposals.invalid-selection",
 				severity: "error",
 				category: "invalid",
 				field: "agenda",

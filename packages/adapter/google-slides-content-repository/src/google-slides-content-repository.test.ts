@@ -1,8 +1,33 @@
-import { describe, expect, it } from "vitest";
 import { ContentFingerprint } from "@meetup-automation/publication";
+import { describe, expect, it } from "vitest";
 import { slidesFixture } from "../testing/slides.fixtures.js";
 
 describe("Slides content repository", () => {
+	it("propagates an unexpected provider write failure for technical reporting", async () => {
+		// Arrange
+		const f = slidesFixture();
+		const error = new Error("Synthetic authentication failure");
+		const snapshot = await f.repository.read("file", f.contract);
+		f.client.presentations.batchUpdate.mockRejectedValueOnce(error);
+
+		// Act
+		const result = f.repository.apply("file", snapshot, [
+			{
+				location: snapshot.locations[0],
+				value: {
+					type: "text",
+					key: "event.title",
+					text: "Public meetup",
+					fingerprint: ContentFingerprint.of("Public meetup"),
+				},
+			},
+		]);
+
+		// Assert
+		await expect(result).rejects.toBe(error);
+		expect(f.client.presentations.batchUpdate).toHaveBeenCalledOnce();
+	});
+
 	it("renders a slotted talk title and follows its shape after the placeholder disappears", async () => {
 		// Arrange
 		const f = slidesFixture();

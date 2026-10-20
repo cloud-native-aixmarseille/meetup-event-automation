@@ -11,6 +11,8 @@ export interface AttentionStage {
 	readonly owner: "event" | "assets" | "feedback" | "communications";
 	readonly outcome: "success" | "failure" | "unknown";
 	readonly blocked: boolean;
+	/** A reported event problem prevented evaluating this integration. */
+	readonly prerequisiteBlocked?: boolean;
 }
 export interface AttentionFacts {
 	readonly eventDate: string;
@@ -67,19 +69,8 @@ export class EvaluateAttention {
 		evaluated: AttentionOwner[],
 		conditions: AttentionCondition[],
 	): void {
-		for (const stage of facts.stages) {
-			if (stage.outcome !== "unknown") evaluated.push(stage.owner);
-			if (stage.outcome === "success" && !stage.blocked) continue;
-			const unknown = stage.outcome === "unknown";
-			conditions.push(
-				EvaluateAttention.condition(
-					unknown ? "stage-unknown" : "integration-failure",
-					stage.owner,
-					stage.owner,
-					unknown ? "none" : "daily",
-				),
-			);
-		}
+		for (const stage of facts.stages)
+			EvaluateAttention.stage(stage, evaluated, conditions);
 		for (const owner of ["approvals", "delivery"] as const) {
 			const available =
 				owner === "approvals" ? facts.approvals : facts.recovery;
@@ -88,6 +79,29 @@ export class EvaluateAttention {
 					EvaluateAttention.condition("stage-unknown", owner, owner, "none"),
 				);
 		}
+	}
+	private static stage(
+		stage: AttentionStage,
+		evaluated: AttentionOwner[],
+		conditions: AttentionCondition[],
+	): void {
+		if (stage.prerequisiteBlocked) return;
+		if (stage.outcome !== "unknown") evaluated.push(stage.owner);
+		if (stage.outcome === "success" && !stage.blocked) return;
+		const unknown = stage.outcome === "unknown";
+		conditions.push(
+			EvaluateAttention.condition(
+				unknown ? "stage-unknown" : "integration-failure",
+				stage.owner,
+				EvaluateAttention.stageResource(stage),
+				unknown ? "none" : "daily",
+			),
+		);
+	}
+	private static stageResource(stage: AttentionStage): string {
+		return stage.owner === "event" && stage.outcome === "success"
+			? "event-data"
+			: stage.owner;
 	}
 	private static tasks(
 		facts: AttentionFacts,

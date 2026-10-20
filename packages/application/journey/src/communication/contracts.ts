@@ -3,7 +3,6 @@ import type { ReconcileCommunicationsResult } from "@meetup-automation/communica
 export interface ManageMeetupCommunicationsInput {
 	readonly issueNumber: number;
 
-	readonly organizerNotificationDestination: string;
 	readonly owner: string;
 	readonly repo: string;
 	readonly repositoryId?: string;
@@ -19,7 +18,9 @@ type CommunicationJourneyDiagnosticCode =
 	| "communication.approval-notification-failed"
 	| "communication.slides-unavailable"
 	| "communication.feedback-unavailable"
+	| "communication.feedback-fetch-failed"
 	| "communication.checklist-update-failed"
+	| "communication.checklist-concurrently-modified"
 	| "communication.event-skipped"
 	| "communication.event-concurrently-modified"
 	| "communication.event-references-unresolved"

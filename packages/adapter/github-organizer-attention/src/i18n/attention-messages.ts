@@ -4,16 +4,10 @@ export interface MessageParameters {
 	"attention.redirect": { url: string };
 	"slack.title": { issue: string };
 	"slack.more": { count: number };
-	"slack.manual-publication": { task: string };
-	"slack.integration-failure": { task: string };
-	"slack.follow-up": { task: string };
-	"slack.stage-unknown": { task: string };
-	"attention.date": { date: string };
-	"attention.resolved": { count: number };
-	"attention.manual-publication": { task: string };
-	"attention.integration-failure": { task: string };
-	"attention.follow-up": { task: string };
-	"attention.stage-unknown": { task: string };
+	"action.manual-publication": { task: string };
+	"action.integration-failure": { task: string };
+	"action.follow-up": { task: string };
+	"action.stage-unknown": { task: string };
 }
 export class AttentionMessages extends MessageLocalizer<
 	MessageId,
@@ -21,6 +15,12 @@ export class AttentionMessages extends MessageLocalizer<
 > {
 	constructor(locale = "en") {
 		super(CATALOGS, locale);
+	}
+	failure(resource: string): string {
+		const key = `failure.${resource}` as MessageId;
+		return Object.hasOwn(CATALOGS.en, key)
+			? this.t(key)
+			: this.t("action.integration-failure", { task: this.task(resource) });
 	}
 	task(resource: string): string {
 		const key = `task.${resource}` as MessageId;

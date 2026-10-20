@@ -1,15 +1,16 @@
 import {
-	AttentionPolicy,
 	type AttentionContent,
 	type AttentionEpisode,
+	AttentionPolicy,
 	type AttentionState,
 	type AttentionView,
 } from "@meetup-automation/communication";
+import { AttentionDiagnosticChecklist } from "./attention-diagnostic-checklist.js";
 import { AttentionRecord } from "./attention-record.js";
 import { AttentionMessages } from "./i18n/attention-messages.js";
 export class AttentionPresenter implements AttentionContent {
 	private readonly issueUrl: string;
-	private diagnosticComments: readonly number[] = [];
+	private readonly diagnostics = new AttentionDiagnosticChecklist();
 	constructor(
 		private readonly repository: string,
 		private readonly issueNumber: number,
@@ -23,10 +24,13 @@ export class AttentionPresenter implements AttentionContent {
 			throw new Error("Invalid attention issue identity");
 		this.issueUrl = `https://github.com/${repository}/issues/${issueNumber}`;
 	}
-	setDiagnosticComments(ids: readonly number[]): void {
-		this.diagnosticComments = ids.filter(
-			(id) => Number.isSafeInteger(id) && id > 0,
-		);
+	setDiagnosticComment(id: number, body: string): void {
+		this.diagnostics.set(id, body);
+	}
+	retired(commentId: number): string {
+		return [this.diagnostics.prefix(), this.redirect(commentId)]
+			.filter(Boolean)
+			.join("\n\n");
 	}
 	redirect(commentId: number): string {
 		return this.messages.t("attention.redirect", {
@@ -34,58 +38,96 @@ export class AttentionPresenter implements AttentionContent {
 		});
 	}
 	issue(state: AttentionState): string {
-		return [AttentionRecord.marker(state), this.details(state)].join("\n\n");
+		return [
+			this.diagnostics.prefix(),
+			AttentionRecord.marker(state),
+			this.details(state),
+		]
+			.filter(Boolean)
+			.join("\n\n");
 	}
 	details(state: AttentionState): string {
 		const view = AttentionPolicy.view(state);
-		const lines = [
-			`## ${this.messages.t("attention.title")}`,
-			this.date(state),
-			...this.status(state),
-		];
-		for (const episode of view.conditions)
+		const lines = this.status(state);
+		for (const episode of view.conditions) {
 			if (
-				!state.commentId ||
-				!["follow-up", "approval-pending"].includes(episode.condition.code)
+				this.diagnostics.includes(episode) ||
+				(episode.status !== "unknown" &&
+					this.diagnostics.containsAction(this.action(episode))) ||
+				(state.commentId &&
+					["follow-up", "approval-pending"].includes(episode.condition.code))
 			)
-				lines.push(
-					`- ${this.text(episode)} ([${this.messages.t("attention.full")}](${this.url(episode, state)}))`,
-				);
-		if (!view.conditions.length) lines.push(this.messages.t("attention.clear"));
-		lines.push(
-			this.messages.t("attention.resolved", {
-				count: state.episodes.filter((item) => item.status === "resolved")
-					.length,
-			}),
-		);
-		for (const id of this.diagnosticComments)
-			lines.push(
-				`[${this.messages.t("attention.diagnostics")}](${this.issueUrl}#issuecomment-${id})`,
-			);
-		return lines.join("\n\n");
+				continue;
+			const url = this.url(episode, state);
+			const link =
+				url === this.overviewUrl(state)
+					? ""
+					: ` ([${this.messages.t("slack.review")}](${url}))`;
+			lines.push(`- [ ] ${this.text(episode)}${link}`);
+		}
+		if (!view.conditions.length && !this.diagnostics.prefix() && !lines.length)
+			lines.push(this.messages.t("attention.clear"));
+		return [...new Set(lines)].join("\n");
 	}
 	render(view: AttentionView): string {
 		const title = this.messages.t("slack.title", {
 			issue: String(this.issueNumber),
 		});
-		const icon = view.conditions.length ? "⚠️" : "✅";
+		const actions = this.slackActions(view);
+		const icon = actions.length ? "⚠️" : "✅";
 		const date = this.slackDate(view.state.eventDate);
 		const lines = [
 			`${icon} *${this.link(this.overviewUrl(view.state), title)}*${date ? ` · ${date}` : ""}`,
 			"",
 		];
-		for (const episode of view.conditions.slice(0, 3))
-			lines.push(this.slackCondition(episode, view.state));
-		if (!view.conditions.length)
+		lines.push(...actions.slice(0, 6));
+		if (!actions.length)
 			lines.push(AttentionPresenter.escape(this.messages.t("attention.clear")));
-		if (view.conditions.length > 3)
+		if (actions.length > 6)
 			lines.push(
 				this.link(
 					this.overviewUrl(view.state),
-					this.messages.t("slack.more", { count: view.conditions.length - 3 }),
+					this.messages.t("slack.more", { count: actions.length - 6 }),
 				),
 			);
 		return lines.join("\n");
+	}
+	private slackActions(view: AttentionView): string[] {
+		const remaining = view.conditions.filter(
+			(episode) => !this.diagnostics.includes(episode),
+		);
+		const urgent = remaining.filter((episode) =>
+			["delivery-recovery", "approval-pending", "integration-failure"].includes(
+				episode.condition.code,
+			),
+		);
+		const checklist = view.state.stopped
+			? []
+			: this.diagnostics
+					.lines()
+					.filter(
+						(line) =>
+							!remaining.some((episode) =>
+								line.endsWith(`**: ${this.action(episode)}`),
+							),
+					);
+		checklist.sort(
+			(left, right) =>
+				Number(right.includes("Conference Hall")) -
+				Number(left.includes("Conference Hall")),
+		);
+		return [
+			...new Set([
+				...urgent.map((episode) => this.slackCondition(episode, view.state)),
+				...checklist.map(
+					(line) =>
+						`• ${AttentionPresenter.escape(line.replace(/^- \[ \] /, "").replaceAll("**", ""))}`,
+				),
+				...remaining
+					.filter((episode) => !urgent.includes(episode))
+					.map((episode) => this.slackCondition(episode, view.state)),
+			]),
+		];
 	}
 	private slackDate(date: string): string {
 		if (AttentionPolicy.eventDay(date) === undefined) return "";
@@ -100,9 +142,7 @@ export class AttentionPresenter implements AttentionContent {
 		episode: AttentionEpisode,
 		state: AttentionState,
 	): string {
-		const text = this.messages.t(`slack.${episode.condition.code}`, {
-			task: this.messages.task(episode.condition.resource),
-		});
+		const text = this.action(episode);
 		const url = this.url(episode, state);
 		const label = this.messages.t(
 			episode.condition.commentId ||
@@ -110,7 +150,8 @@ export class AttentionPresenter implements AttentionContent {
 				? "slack.review"
 				: "slack.run",
 		);
-		const link = url === this.issueUrl ? "" : ` · ${this.link(url, label)}`;
+		const link =
+			url === this.overviewUrl(state) ? "" : ` · ${this.link(url, label)}`;
 		const unknown =
 			episode.status === "unknown"
 				? ` _(${AttentionPresenter.escape(this.messages.t("slack.unknown"))})_`
@@ -126,28 +167,23 @@ export class AttentionPresenter implements AttentionContent {
 			.replaceAll("<", "&lt;")
 			.replaceAll(">", "&gt;");
 	}
-	private date(state: AttentionState): string {
-		return this.messages.t("attention.date", {
-			date: /^\d{4}-\d{2}-\d{2}$/.test(state.eventDate) ? state.eventDate : "—",
-		});
-	}
 	private status(state: AttentionState): string[] {
-		const lines: string[] = [];
-		if (state.stopped) lines.push(this.messages.t("attention.stopped"));
-		if (state.post?.status === "pending")
-			lines.push(this.messages.t("attention.pending"));
-		if (state.post?.status === "retry")
-			lines.push(this.messages.t("attention.retry"));
-		return lines;
+		return state.post?.status === "pending"
+			? [`- [ ] ${this.messages.t("attention.pending")}`]
+			: [];
 	}
 	private text(episode: AttentionEpisode): string {
-		const task = this.messages.task(episode.condition.resource);
-		const text = this.messages.t(`attention.${episode.condition.code}`, {
-			task,
-		});
+		const text = this.action(episode);
 		return episode.status === "unknown"
-			? `${text} ${this.messages.t("attention.unknown")}`
+			? `${text} (${this.messages.t("slack.unknown")})`
 			: text;
+	}
+	private action(episode: AttentionEpisode): string {
+		return episode.condition.code === "integration-failure"
+			? this.messages.failure(episode.condition.resource)
+			: this.messages.t(`action.${episode.condition.code}`, {
+					task: this.messages.task(episode.condition.resource),
+				});
 	}
 	private url(episode: AttentionEpisode, state: AttentionState): string {
 		if (
@@ -166,8 +202,9 @@ export class AttentionPresenter implements AttentionContent {
 		return this.overviewUrl(state);
 	}
 	private overviewUrl(state: AttentionState): string {
-		return state.commentId
-			? `${this.issueUrl}#issuecomment-${state.commentId}`
+		const commentId = state.commentId ?? this.diagnostics.commentId;
+		return commentId
+			? `${this.issueUrl}#issuecomment-${commentId}`
 			: this.issueUrl;
 	}
 }

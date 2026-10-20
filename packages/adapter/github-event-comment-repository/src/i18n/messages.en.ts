@@ -1,22 +1,27 @@
 export const EN_MESSAGES = {
-	"comment.guidance.source-profiles":
-		"Conference Hall speaker profiles could not be refreshed. Check CFP access and linked speaker identities, then retry after any rate-limit window. Cached profiles and contacts are not authoritative.",
-	"comment.guidance.proposals":
-		"The selected Conference Hall proposals could not be refreshed. The last agenda is stale. Check CFP access, accepted status and merged speaker mappings; retry after the source rate-limit window if needed.",
-
+	"comment.guidance.proposals.invalid-selection":
+		"Enter distinct proposal numbers, one per line, from their Conference Hall URLs.",
+	"comment.guidance.proposals.invalid":
+		"Check the Conference Hall proposal selection and export format.",
+	"comment.guidance.proposals.unavailable":
+		"Conference Hall is unavailable. Check the CFP slug and API key, then retry.",
+	"comment.guidance.proposals.rate-limited":
+		"Conference Hall rate limit reached. Wait before retrying.",
+	"comment.guidance.proposals.mapping-required":
+		"Synchronize Conference Hall speakers and merge their identity mappings, then retry.",
+	"comment.guidance.proposals.conflict":
+		"Conflicting Conference Hall identifiers. Check the proposal and speaker mappings.",
+	"comment.guidance.proposals.not-found":
+		"Proposal number not found in this CFP. Check its Conference Hall URL.",
+	"comment.guidance.proposals.not-accepted":
+		"Accept the selected proposal in Conference Hall and check that the speaker has not declined.",
 	"comment.guidance.event.link.feedback.invalid":
 		"Enter a valid HTTPS link to the OpenFeedback event page.",
-	"comment.resolved":
-		"All previously reported issues have been resolved. No changes are currently needed.",
+	"comment.resolved": "✅ Event details complete.",
 	"comment.duplicate": "Superseded duplicate automation comment.",
-	"comment.introduction":
-		"Found the following items to complete in the meetup issue:",
-	"comment.guidance":
-		"Please update the issue description or labels to address these items. This checklist will refresh automatically.",
-	"comment.unknown":
-		"An additional validation check needs attention. Review the workflow diagnostics with a maintainer.",
+	"comment.unknown": "Ask a maintainer to review the workflow diagnostics.",
 	"comment.referential":
-		"Ask a maintainer to correct the hosting or speaker catalog using the referential validation workflow diagnostics.",
+		"Ask a maintainer to correct the host or speaker catalog.",
 	"comment.agenda.item": "Agenda (item {item}{speaker})",
 	"comment.agenda.speaker-suffix": ", speaker {speaker}",
 	"comment.agenda.speaker": "Agenda (speaker {speaker})",

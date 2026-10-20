@@ -44,6 +44,6 @@ export class RuntimeInput {
 		if (error instanceof Error && SAFE_ERROR_NAMES.has(error.name)) {
 			return `${error.name}: ${error.message}`;
 		}
-		return "Meetup automation failed; inspect debug logs using a trusted runner";
+		return "Unexpected technical failure.";
 	}
 }

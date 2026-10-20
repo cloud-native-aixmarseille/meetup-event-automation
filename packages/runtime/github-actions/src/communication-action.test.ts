@@ -43,7 +43,6 @@ describe("communication action report facts", () => {
 		vi.clearAllMocks();
 		boundary.listComments.mockResolvedValue({ data: [], headers: {} });
 		for (const [name, value] of Object.entries({
-			"report-errors-to-issue": "false",
 			locale: "en",
 			"slides-ready": "true",
 			"openfeedback-api-key": "oforg_synthetic-key",
@@ -69,7 +68,6 @@ describe("communication action report facts", () => {
 		"openfeedback-api-key",
 		"conference-hall-event",
 		"conference-hall-api-key",
-		"report-errors-to-issue",
 		"mailings-token",
 		"slack-token",
 		"slack-organizer-channel-id",
@@ -101,16 +99,10 @@ describe("communication action report facts", () => {
 		expect(boundary.execute).not.toHaveBeenCalled();
 	});
 
-	it.each([
-		["warning", false],
-		["error", false],
-		["warning", true],
-		["error", true],
-	] as const)(
-		"redacts %s diagnostics with issue reporting %s",
-		async (severity, issueReporting) => {
+	it.each(["warning", "error"] as const)(
+		"reports safe technical facts for %s diagnostics",
+		async (severity) => {
 			// Arrange
-			vi.stubEnv("INPUT_REPORT-ERRORS-TO-ISSUE", String(issueReporting));
 			boundary.execute.mockResolvedValue({
 				mode: "check",
 				counts: {
@@ -147,12 +139,9 @@ describe("communication action report facts", () => {
 				await CommunicationAction.runCommunicationReconcileAction();
 
 			// Assert
-			expect(report.details).toContain("Communication mode: check.");
+			expect(report.details).toContain("communication_mode=check");
 			expect(report.details.join("\n")).toContain(
-				"Planned: 2; due: 1; dispatched: 0.",
-			);
-			expect(report.details.join("\n")).toContain(
-				"Reconcile uncertain deliveries",
+				"planned=2 due=1 dispatched=0",
 			);
 			expect(report.diagnostics).toContainEqual({
 				code: "communication.gateway-delivery-uncertain",
@@ -165,18 +154,9 @@ describe("communication action report facts", () => {
 				message:
 					"Delivery results are recorded but checklist completion could not be persisted.",
 			});
-			expect(Boolean(report.failure)).toBe(
-				severity === "error" && !issueReporting,
-			);
-			expect(boundary.createComment).toHaveBeenCalledTimes(
-				severity === "error" && issueReporting ? 1 : 0,
-			);
-			expect(boundary.listComments).toHaveBeenCalledTimes(
-				issueReporting ? 1 : 0,
-			);
-			expect(JSON.stringify(boundary.createComment.mock.calls)).not.toContain(
-				"private",
-			);
+			expect(report.failure).toBeUndefined();
+			expect(boundary.createComment).not.toHaveBeenCalled();
+			expect(boundary.listComments).not.toHaveBeenCalled();
 
 			expect(
 				JSON.stringify([report, vi.mocked(core.setOutput).mock.calls]),
@@ -216,83 +196,27 @@ describe("communication action report facts", () => {
 				slackOrganizerChannelId: "organizer-channel-id",
 			}),
 		);
-		expect(report.details).toContain("Communication mode: dispatch.");
-		expect(report.details.join("\n")).toContain("Accepted: 1;");
+		expect(report.details).toContain("communication_mode=dispatch");
+		expect(report.details.join("\n")).toContain("accepted=1");
 		expect(report.details.join("\n")).not.toContain("before retrying");
 		expect(report.details.join("\n")).not.toContain("before any resend");
 		expect(report.diagnostics).toEqual([]);
 		expect(report.failure).toBeUndefined();
 	});
 
-	it("keeps the job successful after publishing error diagnostics to the issue", async () => {
-		// Arrange
-		vi.stubEnv("INPUT_REPORT-ERRORS-TO-ISSUE", "true");
-		boundary.execute.mockResolvedValue(
-			ManageMeetupCommunications.emptyCommunicationResult("check", [
-				{
-					code: "communication.event-references-unresolved",
-					severity: "error",
-				},
-			]),
-		);
-
-		// Act
-		await ActionRunner.run(
-			"action.communication.reconcile",
-			CommunicationAction.runCommunicationReconcileAction,
-			true,
-		);
-
-		// Assert
-		expect(boundary.createComment).toHaveBeenCalledWith(
-			expect.objectContaining({
-				owner: "community",
-				repo: "meetups",
-				issue_number: 42,
-				body: expect.stringContaining(
-					"communication.event-references-unresolved",
-				),
-			}),
-		);
-		expect(core.error).toHaveBeenCalled();
-		expect(core.setOutput).toHaveBeenCalledWith(
-			"diagnostics",
-			expect.stringContaining('"severity":"error"'),
-		);
-		expect(core.setFailed).not.toHaveBeenCalled();
-	});
-
 	it.each([
-		"execute",
-		"listComments",
-		"createComment",
-		"updateComment",
+		["communication.event-references-unresolved", "error", false],
+		["communication.approval-pending", "warning", false],
+		["communication.checklist-update-failed", "warning", true],
+		["communication.approval-unavailable", "error", true],
 	] as const)(
-		"fails safely when %s fails with issue reporting enabled",
-		async (operation) => {
+		"uses technical classification for %s with severity %s",
+		async (code, severity, fails) => {
 			// Arrange
-			vi.stubEnv("INPUT_REPORT-ERRORS-TO-ISSUE", "true");
 			boundary.execute.mockResolvedValue(
 				ManageMeetupCommunications.emptyCommunicationResult("check", [
-					{
-						code: "communication.event-references-unresolved",
-						severity: "error",
-					},
+					{ code, severity },
 				]),
-			);
-			if (operation === "updateComment")
-				boundary.listComments.mockResolvedValue({
-					data: [
-						{
-							id: 17,
-							body: "<!-- meetup-automation:communication-diagnostics:v1 -->\nOld report",
-							user: { login: "automation[bot]" },
-						},
-					],
-					headers: {},
-				});
-			boundary[operation].mockRejectedValueOnce(
-				new Error("private provider response"),
 			);
 
 			// Act
@@ -303,19 +227,47 @@ describe("communication action report facts", () => {
 			);
 
 			// Assert
-			expect(core.setFailed).toHaveBeenCalledOnce();
+			expect(core.setFailed).toHaveBeenCalledTimes(fails ? 1 : 0);
 			expect(core.setOutput).toHaveBeenCalledWith(
 				"diagnostics",
-				expect.stringContaining("action.execution.failed"),
+				expect.stringContaining(`"severity":"${severity}"`),
 			);
-			expect(
-				JSON.stringify([
-					vi.mocked(core.setFailed).mock.calls,
-					vi.mocked(core.summary.addRaw).mock.calls,
-				]),
-			).not.toContain("private provider response");
+			expect(boundary.listComments).not.toHaveBeenCalled();
+			expect(boundary.createComment).not.toHaveBeenCalled();
+			expect(boundary.updateComment).not.toHaveBeenCalled();
+			expect(core.error).not.toHaveBeenCalled();
+			expect(core.warning).not.toHaveBeenCalled();
 		},
 	);
+
+	it("redacts unexpected execution failures", async () => {
+		// Arrange
+		boundary.execute.mockRejectedValueOnce(
+			new Error("private provider response"),
+		);
+
+		// Act
+		await ActionRunner.run(
+			"action.communication.reconcile",
+			CommunicationAction.runCommunicationReconcileAction,
+			true,
+		);
+
+		// Assert
+		expect(core.setFailed).toHaveBeenCalledExactlyOnceWith(
+			"Unexpected technical failure.",
+		);
+		expect(core.setOutput).toHaveBeenCalledWith(
+			"diagnostics",
+			expect.stringContaining("action.execution.failed"),
+		);
+		expect(
+			JSON.stringify([
+				vi.mocked(core.setFailed).mock.calls,
+				vi.mocked(core.summary.addRaw).mock.calls,
+			]),
+		).not.toContain("private provider response");
+	});
 
 	it("preserves explicit false slides readiness", async () => {
 		// Arrange
@@ -358,7 +310,7 @@ describe("communication action report facts", () => {
 		);
 	});
 
-	it.each(["report-errors-to-issue", "slides-ready"])(
+	it.each(["slides-ready"])(
 		"rejects an invalid %s before executing communications",
 		async (input) => {
 			// Arrange

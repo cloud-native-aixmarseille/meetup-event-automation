@@ -22,7 +22,7 @@
 
 ## Overview
 
-Reconcile the event Drive folder, template copies, and issue asset link. Publish redacted diagnostics in annotations, logs, and the job summary.
+Reconcile the event Drive folder, template copies, and issue asset link. Report concise technical facts and diagnostic codes in logs and the job summary.
 
 <!-- overview:end -->
 <!-- usage:start -->
@@ -43,10 +43,6 @@ Reconcile the event Drive folder, template copies, and issue asset link. Publish
     # Token for the caller repository. Requires issues:read and issues:write.
     # This input is required.
     github-token: ""
-
-    # Trusted GitHub App bot login used by the event composition.
-    # This input is required.
-    managed-comment-author: ""
 
     # Service-account JSON with access to the configured Drive parent and template folders.
     # This input is required.
@@ -79,7 +75,6 @@ Reconcile the event Drive folder, template copies, and issue asset link. Publish
 | **`locale`**                                 | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **true**     | -           |
 | **`issue-number`**                           | GitHub issue number containing the meetup event document.                                                                          | **true**     | -           |
 | **`github-token`**                           | Token for the caller repository. Requires issues:read and issues:write.                                                            | **true**     | -           |
-| **`managed-comment-author`**                 | Trusted GitHub App bot login used by the event composition.                                                                        | **true**     | -           |
 | **`google-credentials`**                     | Service-account JSON with access to the configured Drive parent and template folders.                                              | **true**     | -           |
 | **`google-drive-meetup-folder-id`**          | Google Drive folder ID of the parent meetup folder.                                                                                | **true**     | -           |
 | **`google-drive-meetup-template-folder-id`** | Google Drive folder ID of the template folder.                                                                                     | **true**     | -           |

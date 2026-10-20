@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
 	automationActionPrefix,
 	findStep,
-	managedAuthor,
 	readWorkflow,
 	workflowExpression,
 } from "./support.js";
@@ -41,7 +40,6 @@ describe("feedback workflow safeguards", () => {
 			expect(step?.with).not.toHaveProperty("mode");
 			expect(step?.with).toMatchObject({
 				locale: workflowExpression("inputs.locale"),
-				"managed-comment-author": managedAuthor,
 				"openfeedback-api-key": workflowExpression(
 					"secrets.openfeedback-api-key",
 				),

@@ -10,6 +10,7 @@ import {
 } from "./diagnostic-presentation.js";
 import { GitHubEventCommentRepositoryConfigurationError } from "./github-event-comment-repository-configuration-error.js";
 import {
+	COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER,
 	DUPLICATE_COMMENT_MARKER,
 	EVENT_DIAGNOSTIC_COMMENT_MARKER,
 	type GitHubEventCommentRepositoryClient,
@@ -29,7 +30,7 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 
 	constructor(
 		private readonly client: GitHubEventCommentRepositoryClient,
-		options: GitHubEventCommentRepositoryOptions,
+		private readonly options: GitHubEventCommentRepositoryOptions,
 	) {
 		this.messages = new EventCommentMessages(options.locale);
 		this.owner = GitHubEventCommentRepository.requireRepositoryPart(
@@ -52,15 +53,31 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 		const managedComments = await this.listManagedComments(
 			identity.issueNumber,
 		);
-		const [canonical, ...duplicates] = managedComments;
-		let changed = await this.minimizeDuplicates(duplicates);
-		const body = GitHubEventCommentRepository.renderDiagnosticComment(
+		const retired = managedComments.filter((comment) =>
+			comment.body.startsWith(COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER),
+		);
+		const [canonical, ...duplicates] = managedComments.filter(
+			(comment) => !retired.includes(comment),
+		);
+		let changed = await this.retireComments(identity.issueNumber, duplicates);
+		let body = GitHubEventCommentRepository.renderDiagnosticComment(
 			diagnostics,
 			this.messages,
 		);
+		if (canonical && this.options.retainedContent) {
+			const retained = await this.options.retainedContent.load(
+				identity.issueNumber,
+				canonical.id,
+				canonical.body,
+			);
+			if (retained) body += `\n\n${retained}`;
+		}
 
 		if (!canonical) {
-			if (!diagnostics.some((item) => item.severity !== "info")) {
+			if (
+				!retired.length &&
+				!diagnostics.some((item) => item.severity !== "info")
+			) {
 				return { changed };
 			}
 			await this.client.rest.issues.createComment({
@@ -69,6 +86,7 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 				issue_number: identity.issueNumber,
 				body,
 			});
+			await this.retireComments(identity.issueNumber, retired, true);
 			return { changed: true };
 		}
 
@@ -77,7 +95,12 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 			changed = true;
 		}
 
-		return { changed };
+		const retiredChanged = await this.retireComments(
+			identity.issueNumber,
+			retired,
+			true,
+		);
+		return { changed: changed || retiredChanged };
 	}
 
 	private async listManagedComments(
@@ -123,7 +146,14 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 	}
 
 	private isManagedComment(comment: ManagedComment): boolean {
-		if (!comment.body.startsWith(EVENT_DIAGNOSTIC_COMMENT_MARKER)) {
+		if (
+			!comment.body.startsWith(EVENT_DIAGNOSTIC_COMMENT_MARKER) &&
+			!(
+				this.options.retireCommunicationReports &&
+				this.authorLogin &&
+				comment.body.startsWith(COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER)
+			)
+		) {
 			return false;
 		}
 		return (
@@ -132,10 +162,29 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 		);
 	}
 
-	private async minimizeDuplicates(
+	private async retireComments(
+		issueNumber: number,
 		duplicates: readonly ManagedComment[],
+		deleteReports = false,
 	): Promise<boolean> {
 		for (const duplicate of duplicates) {
+			if (
+				this.options.retainedContent &&
+				(await this.options.retainedContent.load(
+					issueNumber,
+					duplicate.id,
+					duplicate.body,
+				))
+			)
+				throw new Error("Duplicate diagnostic comment contains managed state");
+			if (deleteReports && this.client.rest.issues.deleteComment) {
+				await this.client.rest.issues.deleteComment({
+					owner: this.owner,
+					repo: this.repo,
+					comment_id: duplicate.id,
+				});
+				continue;
+			}
 			await this.updateComment(
 				duplicate.id,
 				`${DUPLICATE_COMMENT_MARKER}\n\n${this.messages.t("comment.duplicate")}`,
@@ -174,7 +223,7 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 	): string {
 		const actionable = new Map<string, DiagnosticPresentation>();
 		for (const item of diagnostics) {
-			if (item.severity === "info") {
+			if (DiagnosticPresenter.suppressed(item, diagnostics)) {
 				continue;
 			}
 			const presentation = DiagnosticPresenter.presentDiagnostic(
@@ -202,15 +251,7 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 			)
 			.map(({ field, message }) => `- [ ] **${field}**: ${message}`);
 
-		return [
-			EVENT_DIAGNOSTIC_COMMENT_MARKER,
-			"",
-			messages.t("comment.introduction"),
-			"",
-			...lines,
-			"",
-			messages.t("comment.guidance"),
-		].join("\n");
+		return [EVENT_DIAGNOSTIC_COMMENT_MARKER, "", ...lines].join("\n");
 	}
 
 	private static mapComment(data: unknown): ManagedComment | null {

@@ -73,16 +73,6 @@ export class ReconcileEvent {
 			);
 		}
 
-		let commentUpdated = false;
-		if (input.mode === "fix") {
-			const commentResult =
-				await this.dependencies.commentRepository.reconcileDiagnostics(
-					input.identity,
-					readiness.diagnostics,
-				);
-			commentUpdated = commentResult.changed;
-		}
-
 		return {
 			event: evaluated.event,
 			diagnostics: readiness.diagnostics,
@@ -91,7 +81,6 @@ export class ReconcileEvent {
 			readiness,
 			lifecycle,
 			persisted: shouldPersist,
-			commentUpdated,
 		};
 	}
 

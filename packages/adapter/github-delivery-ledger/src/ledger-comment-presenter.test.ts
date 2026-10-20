@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { inspectLedgerComment } from "../testing/ledger-comment.js";
 import {
+	DELIVERY_LEDGER_MARKER,
 	type StoredEntry,
 	type StoredLedger,
-	DELIVERY_LEDGER_MARKER,
 } from "./github-delivery-ledger-contracts.js";
-import { LedgerCommentPresenter } from "./ledger-comment-presenter.js";
 import { LedgerMessages } from "./i18n/ledger-messages.js";
+import { LedgerCommentPresenter } from "./ledger-comment-presenter.js";
 
 const entry: StoredEntry = {
 	idempotencyKey: "opaque-key",
@@ -67,7 +67,7 @@ describe("LedgerCommentPresenter", () => {
 			});
 
 			// Assert
-			expect(body).toContain("check the provider before retrying");
+			expect(body).toContain("Check the provider before retrying");
 			expect(body).not.toContain("Request accepted");
 		},
 	);
@@ -85,7 +85,7 @@ describe("LedgerCommentPresenter", () => {
 
 		// Assert
 		expect(body).toContain("Speaker introduction email: Request accepted (2)");
-		expect(body).toContain("check its result for actual delivery");
+		expect(body).toContain("inbox delivery is unverified");
 	});
 
 	it.each([

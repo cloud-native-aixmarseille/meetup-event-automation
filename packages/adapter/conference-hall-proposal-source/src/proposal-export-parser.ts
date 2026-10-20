@@ -31,6 +31,10 @@ export class ProposalExportParser {
 			});
 			return {
 				id,
+				number: ProposalExportParser.number(
+					proposal.proposalNumber,
+					`${path}.proposalNumber`,
+				),
 				title: ProposalExportParser.text(proposal.title, `${path}.title`),
 				abstract: ProposalExportParser.text(
 					proposal.abstract,
@@ -78,6 +82,12 @@ export class ProposalExportParser {
 				: {}),
 			...ProposalExportParser.picture(speaker),
 		};
+	}
+	private static number(value: unknown, path: string): number | undefined {
+		if (value === undefined || value === null) return undefined;
+		if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 1)
+			throw ProposalExportParser.invalid(path);
+		return value;
 	}
 	private static picture(
 		speaker: Record<string, unknown>,

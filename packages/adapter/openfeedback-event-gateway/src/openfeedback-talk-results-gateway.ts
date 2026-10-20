@@ -1,5 +1,6 @@
 import {
 	FeedbackPolicy,
+	FeedbackResolutionError,
 	type FeedbackTalkResult,
 	type FeedbackTalkResultsGateway,
 } from "@meetup-automation/publication";
@@ -19,10 +20,7 @@ export class OpenFeedbackTalkResultsGateway
 	async resolve(
 		input: Parameters<FeedbackTalkResultsGateway["resolve"]>[0],
 	): Promise<readonly FeedbackTalkResult[]> {
-		const eventId = new URL(FeedbackPolicy.pollUrl(input.url)).pathname.split(
-			"/",
-		)[1];
-		if (!eventId) throw new Error("Feedback event identity is missing");
+		const eventId = OpenFeedbackTalkResultsGateway.eventId(input.url);
 		const records = new OpenFeedbackRecordsGateway(
 			new OpenFeedbackClient(this.apiKey, this.fetcher),
 		);
@@ -43,12 +41,22 @@ export class OpenFeedbackTalkResultsGateway
 				JSON.stringify([...stored.speakers].sort()) !==
 					JSON.stringify([...talk.speakers].sort())
 			)
-				throw new Error("Feedback talk results are unavailable");
+				throw new FeedbackResolutionError("unavailable");
 			return {
 				title: talk.title,
 				url: `https://openfeedback.io/${eventId}/0/${encodeURIComponent(talk.id)}?displayVotes=true`,
 				speakerIds: source.speakers.map((speaker) => speaker.id),
 			};
 		});
+	}
+
+	private static eventId(url: string): string {
+		try {
+			const id = new URL(FeedbackPolicy.pollUrl(url)).pathname.split("/")[1];
+			if (id) return id;
+		} catch {
+			// Invalid organizer input does not indicate a failed provider request.
+		}
+		throw new FeedbackResolutionError("unavailable");
 	}
 }

@@ -2,13 +2,13 @@ export interface MessageParameters {
 	"report.speaker-sync.failed": { stage: string };
 	"report.speaker-sync.completed": { count: number };
 	"report.feedback.changes": { persisted: string; linkUpdated: string };
-	"report.fix-applied": { applied: string };
 	"report.failed": { reason: string };
+	"report.technical-failure": { codes: string };
 	"report.referential.counts": { hosts: number; speakers: number };
 	"report.issue-form.files": { files: string };
 	"report.event.context": { issue: number; mode: string };
 	"report.event.state": { state: string; ready: string };
-	"report.event.persisted": { persisted: string; comment: string };
+	"report.event.persisted": { persisted: string };
 	"report.events.count": { count: number };
 	"report.events.issues": { issues: string };
 	"report.assets.counts": { persisted: string; count: number };

@@ -14,8 +14,10 @@ speaker profiles still refresh from Conference Hall.
 
 In Conference Hall, open the CFP's **Settings > Web API** page. Generate an event
 key and inspect its example response from `GET /api/v1/event/<event-slug>`.
-Copy proposal `id` values and each speaker's `id`; proposal numbers and dashboard
-URLs are not IDs. The API exports event-scoped speaker identities shared across
+Organizers select talks by the number at the end of the dashboard URL. The
+automation matches it to the export's `proposalNumber` and stores the internal
+`id` as the canonical agenda identity. Speaker mappings use each speaker's export `id`.
+The API exports event-scoped speaker identities shared across
 proposals. Verify that the deployed service returns the documented full export
 before enabling synchronization. Do not save or upload the raw response.
 
@@ -105,11 +107,11 @@ publish candidate files or establish live source freshness.
 
 ## Diagnose speaker synchronization failures
 
-Read the failed action's annotations and job summary. They identify the failed
-stage: reading the local catalog, loading the export, merging identities,
+Read the job summary for the stage and diagnostic code: reading the local catalog, loading the export, merging identities,
 validating the candidate, checking the form, saving the catalog or updating the
-form. The `diagnostics` output retains canonical English codes and messages;
-annotations, summaries and failed-refresh PR guidance use the selected locale.
+form. CI uses technical codes and safe field positions; the existing private PR
+receives concise localized guidance. Catalog corrections and mapping review block
+publication without failing CI. Source/API and unexpected execution failures fail.
 
 - `speaker-sync.authentication` includes HTTP 401 or 403. Verify the repository's
   `CONFERENCE_HALL_API_KEY` matches **Settings > Web API** for the configured CFP.
@@ -122,14 +124,15 @@ annotations, summaries and failed-refresh PR guidance use the selected locale.
   source mapping columns to the existing CSV row and retain its `speaker_id`.
 - Catalog validation retains specific diagnostic codes and zero-based field
   positions. Correct those fields before retrying.
-- Network, timeout, malformed JSON, response-size, rate-limit and conflict
-  diagnostics give their own recovery instructions. Rate limiting also sets
-  `retry-after-seconds`.
+- Network, timeout, malformed JSON, response-size and rate-limit diagnostics
+  require restoring source access before retrying. Identity conflicts require
+  reviewing the mappings.
 
 Unknown exceptions report the failed stage and redact private exception
 contents. Reproduce that stage on a trusted runner if further inspection is
 needed. Never publish raw exports or contact records. Failed actions do not
-publish the candidate branch; they can update an existing private PR's guidance.
+publish the candidate branch. Blocked runs emit no `pr-title`, so the workflow
+can update an existing private PR's guidance without publishing candidate files.
 
 ## Live profiles and concurrent updates
 
@@ -153,9 +156,11 @@ Use the `conference_hall_proposals` textarea from the
 [issue form template](../../__tests__/meetup-issue-template.yml), with the heading
 `Conference Hall proposals`, as the form's only talk input. Omit the manual
 `agenda` textarea and the `<!-- Available speakers -->` Markdown block.
-Enter one proposal ID per line in presentation order. The first successful
-reconciliation adds **Agenda** to the issue; subsequent runs refresh it from the
-selected proposals. Leaving the selection blank keeps the draft incomplete until
+Enter one accepted proposal number per line in presentation order. For example,
+use `42` for a dashboard URL ending in `/proposals/42`. Use distinct positive whole
+numbers. The first successful reconciliation adds **Agenda** to the issue;
+subsequent runs refresh it from the selected proposals.
+Leaving the selection blank keeps the draft incomplete until
 talks are selected. Only selected, accepted proposals are projected. Declined
 speaker confirmation, unknown states, missing IDs, duplicate selections and missing
 committed speaker mappings stop the refresh. Acceptance does not confirm meetup
@@ -168,8 +173,10 @@ presenters; current issue and form presenters use text and do not download or
 embed portraits. Unrelated issue sections remain intact.
 
 Failed refreshes preserve the last agenda verbatim, mark it stale, and publish
-English/French recovery guidance. Mail dispatch and feedback synchronization
-requiring those talks stop. Independent host/date asset work can continue. To
+specific English/French guidance for invalid numbers, missing proposals,
+acceptance, identity mappings, invalid exports, unavailable access, and rate limits.
+Mail dispatch and feedback synchronization requiring those talks stop.
+Independent host/date asset work can continue. To
 explicitly return an issue to manual management, remove both the proposal field
 contents and the `meetup-proposals` marker, then review the manual agenda and
 stable speaker references before reconciliation.

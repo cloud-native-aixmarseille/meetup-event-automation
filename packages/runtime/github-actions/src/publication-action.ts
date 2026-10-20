@@ -22,9 +22,6 @@ export class PublicationAction {
 		const client = getOctokit(
 			core.getInput("github-token", { required: true }),
 		);
-		const commentAuthorLogin = core.getInput("managed-comment-author", {
-			required: true,
-		});
 		const { owner, repo } = context.repo;
 		const container = PublicationComposition.createPublicationContainer({
 			contentConfiguration: await AssetContentConfiguration.load(
@@ -36,7 +33,6 @@ export class PublicationAction {
 			client,
 			owner,
 			repo,
-			commentAuthorLogin,
 			credentials,
 			parentFolderId: core.getInput("google-drive-meetup-folder-id", {
 				required: true,

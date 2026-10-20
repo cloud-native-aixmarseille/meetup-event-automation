@@ -2,6 +2,9 @@
 
 Status: Accepted; other action modes partially superseded by [ADR 0006](0006-explicit-reconciliation-behavior.md); communication approval superseded by [ADR 0007](0007-automatic-communication-checklists.md)
 
+Failure classification and feedback ownership are governed by
+[ADR 0021](0021-separate-technical-and-organizer-feedback.md).
+
 Date: 2026-09-30
 
 Partially supersedes [ADR 0001](0001-centralize-meetup-event-automation.md) for

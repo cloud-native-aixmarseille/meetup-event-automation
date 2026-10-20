@@ -23,7 +23,6 @@ const actionContracts = [
 			"conference-hall-event",
 			"github-token",
 			"issue-number",
-			"managed-comment-author",
 			"kutt-api-key",
 			"kutt-base-url",
 			"kutt-link-id",
@@ -41,7 +40,6 @@ const actionContracts = [
 			"google-drive-meetup-folder-id",
 			"google-drive-meetup-template-folder-id",
 			"issue-number",
-			"managed-comment-author",
 		],
 		outputs: ["drive-files", "slides-ready", "diagnostics"],
 	},
@@ -52,7 +50,6 @@ const actionContracts = [
 			"conference-hall-event",
 			"github-token",
 			"issue-number",
-			"managed-comment-author",
 		],
 		outputs: ["diagnostics"],
 	},
@@ -79,7 +76,6 @@ const actionContracts = [
 			"openfeedback-api-key",
 			"slides-url",
 			"slides-ready",
-			"report-errors-to-issue",
 			"github-token",
 			"issue-number",
 			"mailings-token",
@@ -173,7 +169,7 @@ describe("public action contracts", () => {
 		},
 	);
 
-	it("requires managed authors and exposes no communication execution switches", async () => {
+	it("requires a managed author only for communication and exposes no execution switches", async () => {
 		// Arrange
 		const event = await readYaml<ActionManifest>(
 			"actions/event/reconcile/action.yml",
@@ -185,16 +181,10 @@ describe("public action contracts", () => {
 		);
 
 		// Assert
-		expect(event.inputs?.["managed-comment-author"]?.required).toBe(true);
+		expect(event.inputs).not.toHaveProperty("managed-comment-author");
 		expect(communication.inputs?.["managed-comment-author"]?.required).toBe(
 			true,
 		);
-		expect(communication.inputs?.["report-errors-to-issue"]?.required).toBe(
-			true,
-		);
-		expect(
-			communication.inputs?.["report-errors-to-issue"]?.default,
-		).toBeUndefined();
 		expect(communication.inputs).not.toHaveProperty("mode");
 		expect(communication.inputs).not.toHaveProperty("dispatch-authorized");
 		expect(communication.inputs).not.toHaveProperty("slack-channel-id");

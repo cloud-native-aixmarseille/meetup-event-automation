@@ -9,6 +9,45 @@ export type DiagnosticPresentation = Readonly<{
 }>;
 
 export class DiagnosticPresenter {
+	static suppressed(
+		item: EventDiagnostic,
+		diagnostics: readonly EventDiagnostic[],
+	): boolean {
+		if (item.severity === "info") return true;
+		const causes = DiagnosticPresenter.PREREQUISITES.get(item.code);
+		return (
+			causes?.some((prefix) =>
+				diagnostics.some(
+					(cause) =>
+						cause !== item &&
+						cause.severity !== "info" &&
+						cause.code.startsWith(prefix),
+				),
+			) ?? false
+		);
+	}
+	private static readonly PREREQUISITES = new Map([
+		["event.agenda.missing", ["event.proposals."]],
+		["publication.assets.prerequisites", ["event.", "referential.reference."]],
+		[
+			"publication.feedback.prerequisites",
+			["event.", "referential.reference."],
+		],
+		[
+			"publication.feedback.agenda",
+			["event.agenda.", "event.proposals.", "referential.reference.speaker."],
+		],
+		["communication.event-references-unresolved", ["referential.reference."]],
+		[
+			"communication.referential-catalog-invalid",
+			["referential.host.", "referential.speaker.", "referential.contact."],
+		],
+		["communication.slides-unavailable", ["publication.assets."]],
+		[
+			"communication.feedback-unavailable",
+			["publication.feedback.", "event.proposals.", "event.agenda."],
+		],
+	]);
 	private static readonly FIELD_ALIASES = new Map([
 		...FIELD_ORDER.map((field): [string, string] => [field, field]),
 		["eventTitle", "Event Title"],

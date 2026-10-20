@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { state } from "../testing/attention.fixtures.js";
 import { ATTENTION_MARKER, AttentionRecord } from "./attention-record.js";
+
 describe("attention record validation", () => {
 	it.each([
 		{ version: 2 },

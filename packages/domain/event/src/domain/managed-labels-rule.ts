@@ -27,9 +27,11 @@ export class ManagedLabelsRule implements EventRule {
 		const expected = [
 			...unmanaged,
 			this.configuration.meetup,
-			event.confirmations.host
-				? this.configuration.hostConfirmed
-				: this.configuration.hostNeeded,
+			...(event.confirmations.host
+				? [this.configuration.hostConfirmed]
+				: event.host?.displayName.trim()
+					? []
+					: [this.configuration.hostNeeded]),
 			event.confirmations.speakers
 				? this.configuration.speakersConfirmed
 				: this.configuration.speakersNeeded,

@@ -1,16 +1,18 @@
 import type {
+	ContentChange,
 	ContentContract,
 	ContentManifest,
 	ContentRecovery,
 	ContentSnapshot,
 	ContentStatus,
+	ContentValue,
 	PublicAssetModel,
 } from "../domain/asset-content.js";
 import { ContentContractPolicy } from "../domain/content-contract-policy.js";
+import { ContentError } from "../domain/content-error.js";
+import { ContentFingerprint } from "../domain/content-fingerprint.js";
 import { ContentManifestPolicy } from "../domain/content-manifest-policy.js";
 import { ContentRenderPlan } from "../domain/content-render-plan.js";
-import { ContentFingerprint } from "../domain/content-fingerprint.js";
-import { ContentError } from "../domain/content-error.js";
 import { ContentTextKey } from "../domain/content-text-key.js";
 import type {
 	AssetContentRepository,
@@ -86,38 +88,73 @@ export class ReconcileAssetContent {
 				};
 			manifest = ContentRenderPlan.pending(manifest, snapshot, changes);
 			await this.manifests.save(input.folderId, manifest);
-			let confirmed = false;
-			let current: ContentSnapshot;
-			try {
-				const revision = await renderer.apply(input.fileId, snapshot, changes);
-				current = await renderer.read(
-					input.fileId,
-					manifest.contract,
-					manifest.bindings,
-				);
-				confirmed = current.revision === revision;
-			} catch (error) {
-				if (error instanceof ContentError && error.code === "revision") {
-					manifest = { ...manifest, pending: undefined };
-					await this.manifests.save(input.folderId, manifest);
-					continue;
-				}
-				current = await renderer.read(
-					input.fileId,
-					manifest.contract,
-					manifest.bindings,
-					manifest.pending?.revision,
-				);
-			}
-			manifest = ContentRenderPlan.settle(manifest, current, confirmed);
-			await this.manifests.save(input.folderId, manifest);
-			if (!ContentRenderPlan.changes(manifest, current, values).length)
+			const written = await this.write(
+				input,
+				renderer,
+				manifest,
+				snapshot,
+				changes,
+				values,
+				attempt === 0,
+			);
+			manifest = written.manifest;
+			if (written.complete)
 				return {
 					status: "ready",
 					fallback: values.some((value) => value.fallback),
 				};
 		}
 		return { status: "pending", fallback: false };
+	}
+
+	private async write(
+		input: ReconcileContentInput,
+		renderer: AssetContentRepository,
+		manifest: ContentManifest,
+		snapshot: ContentSnapshot,
+		changes: readonly ContentChange[],
+		values: readonly ContentValue[],
+		retry: boolean,
+	): Promise<{ manifest: ContentManifest; complete: boolean }> {
+		let confirmed = false;
+		let failure: { error: unknown } | undefined;
+		let current: ContentSnapshot;
+		try {
+			const revision = await renderer.apply(input.fileId, snapshot, changes);
+			current = await renderer.read(
+				input.fileId,
+				manifest.contract,
+				manifest.bindings,
+			);
+			confirmed = current.revision === revision;
+		} catch (error) {
+			if (error instanceof ContentError && error.code === "revision") {
+				const retriable = { ...manifest, pending: undefined };
+				await this.manifests.save(input.folderId, retriable);
+				return { manifest: retriable, complete: false };
+			}
+			failure = { error };
+			current = await renderer.read(
+				input.fileId,
+				manifest.contract,
+				manifest.bindings,
+				manifest.pending?.revision,
+			);
+		}
+		try {
+			const settled = ContentRenderPlan.settle(manifest, current, confirmed);
+			const complete = !ContentRenderPlan.changes(settled, current, values)
+				.length;
+			if (failure && !complete) {
+				if (retry) return { manifest: settled, complete };
+				throw failure.error;
+			}
+			await this.manifests.save(input.folderId, settled);
+			return { manifest: settled, complete };
+		} catch (error) {
+			// Keep the saved pending write for recovery and preserve technical faults.
+			throw failure ? failure.error : error;
+		}
 	}
 
 	private async load(

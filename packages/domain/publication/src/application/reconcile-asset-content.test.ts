@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { contentFixture } from "../../testing/content.fixtures.js";
-import { ContentFingerprint } from "../domain/content-fingerprint.js";
 import { ContentError } from "../domain/content-error.js";
+import { ContentFingerprint } from "../domain/content-fingerprint.js";
 
 describe("managed content reconciliation", () => {
 	it("updates a host logo on host reassignment, byte changes, and removal", async () => {
@@ -272,14 +272,66 @@ describe("managed content reconciliation", () => {
 		expect(f.state.manifest?.pending).toBeUndefined();
 	});
 
-	it("requires recovery after an uncertain image write", async () => {
+	it("reports an uncertain image write as a technical failure and retains recovery state", async () => {
 		// Arrange
 		const f = contentFixture(true);
 		f.state.failAfterApply = true;
 		// Act
 		const result = f.service.execute(f.input);
 		// Assert
-		await expect(result).rejects.toBeInstanceOf(ContentError);
+		await expect(result).rejects.toThrow("uncertain response");
+		expect(f.renderer.apply).toHaveBeenCalledTimes(1);
+		expect(f.state.manifest?.pending).toBeDefined();
+	});
+
+	it("shows organizer recovery on a later run after an uncertain image write", async () => {
+		// Arrange
+		const f = contentFixture(true);
+		f.state.failAfterApply = true;
+		await f.service.execute(f.input).catch(() => undefined);
+
+		// Act
+		const result = f.service.execute({ ...f.input, fresh: false });
+
+		// Assert
+		await expect(result).rejects.toMatchObject({ code: "recovery" });
+		expect(f.renderer.apply).toHaveBeenCalledTimes(1);
+		expect(f.state.manifest?.pending).toBeDefined();
+	});
+
+	it("preserves a failed write after safe retries confirm no changes", async () => {
+		// Arrange
+		const f = contentFixture();
+		const error = new Error("Synthetic provider authentication failure");
+		vi.mocked(f.renderer.apply).mockRejectedValue(error);
+
+		// Act
+		const result = f.service.execute(f.input);
+
+		// Assert
+		await expect(result).rejects.toBe(error);
+		expect(f.renderer.apply).toHaveBeenCalledTimes(2);
+		expect(f.state.manifest?.pending).toBeDefined();
+		expect(f.state.content.get("title")).toBe(
+			ContentFingerprint.of("{{event.title}}"),
+		);
+	});
+
+	it("preserves the technical failure when a partial write requires recovery", async () => {
+		// Arrange
+		const f = contentFixture();
+		const error = new Error("Synthetic transport failure");
+		vi.mocked(f.renderer.apply).mockImplementationOnce(async () => {
+			f.state.content.set("title", ContentFingerprint.of("Partial value"));
+			f.state.revision++;
+			throw error;
+		});
+
+		// Act
+		const result = f.service.execute(f.input);
+
+		// Assert
+		await expect(result).rejects.toBe(error);
 		expect(f.renderer.apply).toHaveBeenCalledTimes(1);
 		expect(f.state.manifest?.pending).toBeDefined();
 	});

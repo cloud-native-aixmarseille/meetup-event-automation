@@ -23,8 +23,8 @@
 
 Reusable workflow that checks open meetup issues, evaluates their current
 state, and processes due communications under the shared per-event lock.
-Communication errors are recorded in the meetup issue without failing the audit;
-execution and comment persistence failures still fail the job.
+Organizer corrections are merged into the meetup checklist without failing CI.
+Unexpected execution, source and persistence failures fail the audit.
 
 The workflow creates a separate GitHub App installation token for
 `<repository-owner>/mailings` using the supplied App client ID and private key.

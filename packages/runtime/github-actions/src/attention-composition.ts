@@ -6,6 +6,7 @@ import {
 	type AttentionRepository,
 } from "@meetup-automation/communication";
 import type {
+	EventCommentRepository,
 	EventDocumentCodec,
 	EventRepository,
 } from "@meetup-automation/event";
@@ -40,18 +41,35 @@ import {
 	SERVICES,
 	type EventDocumentCompositionInput,
 } from "./composition.js";
+import { OrganizerFeedback } from "./organizer-feedback.js";
 const ATTENTION_SERVICES = {
 	repository: Symbol("AttentionRepository"),
 	notification: Symbol("AttentionNotification"),
 };
 type AttentionCompositionInput = EventDocumentCompositionInput & {
+	commentAuthorLogin: string;
 	issueNumber: number;
 	slackToken: string;
 	slackOrganizerChannelId: string;
 };
 export class AttentionComposition {
 	static create(input: AttentionCompositionInput) {
-		const container = EventComposition.createDocumentContainer(input);
+		const container = EventComposition.createDocumentContainer({
+			...input,
+			retireCommunicationReports: true,
+		});
+		container
+			.bind(OrganizerFeedback)
+			.toDynamicValue(
+				(context) =>
+					new OrganizerFeedback(
+						context.get<EventRepository>(SERVICES.eventRepository),
+						context.get<EventCommentRepository>(
+							SERVICES.eventCommentRepository,
+						),
+						context.get<AutomationConfig>(SERVICES.config).event["issue-label"],
+					),
+			);
 		container
 			.bind(SystemCommunicationClock)
 			.toDynamicValue(() => new SystemCommunicationClock());

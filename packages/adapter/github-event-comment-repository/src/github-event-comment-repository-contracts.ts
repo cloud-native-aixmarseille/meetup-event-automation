@@ -3,6 +3,8 @@ export const EVENT_DIAGNOSTIC_COMMENT_MARKER =
 
 export const DUPLICATE_COMMENT_MARKER =
 	"<!-- meetup-automation:event-diagnostics-duplicate:v1 -->";
+export const COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER =
+	"<!-- meetup-automation:communication-diagnostics:v1 -->";
 
 type GitHubRequestResult = Readonly<{
 	data: unknown;
@@ -32,6 +34,11 @@ export interface GitHubEventCommentRepositoryClient {
 				comment_id: number;
 				body: string;
 			}): Promise<unknown>;
+			deleteComment?(parameters: {
+				owner: string;
+				repo: string;
+				comment_id: number;
+			}): Promise<unknown>;
 		};
 	};
 	readonly minimizeComment?: (parameters: {
@@ -46,6 +53,11 @@ export type GitHubEventCommentRepositoryOptions = Readonly<{
 	/** Restrict managed comments to this bot login when it is known. */
 	authorLogin?: string;
 	locale?: string;
+	/** Retire separate stage reports only after their merged checklist is saved. */
+	retireCommunicationReports?: boolean;
+	retainedContent?: {
+		load(issueNumber: number, commentId: number, body: string): Promise<string>;
+	};
 }>;
 
 export type ManagedComment = Readonly<{

@@ -1,6 +1,8 @@
 import { createHash } from "node:crypto";
-import type { FeedbackAgenda } from "@meetup-automation/publication";
-import { OpenFeedbackAgendaConflictError } from "./openfeedback-agenda-conflict-error.js";
+import {
+	type FeedbackAgenda,
+	FeedbackResolutionError,
+} from "@meetup-automation/publication";
 import type {
 	OpenFeedbackAgendaData,
 	OpenFeedbackSpeaker,
@@ -77,7 +79,7 @@ export class OpenFeedbackAgendaPlan {
 								OpenFeedbackAgendaPlan.normalize(item.name) ===
 								OpenFeedbackAgendaPlan.normalize(speaker.name),
 						);
-				if (matches.length > 1) throw new OpenFeedbackAgendaConflictError();
+				if (matches.length > 1) throw new FeedbackResolutionError("conflict");
 				speakers.set(speaker.id, {
 					id: matches[0]?.id ?? stableId,
 					name: speaker.name,
@@ -88,7 +90,7 @@ export class OpenFeedbackAgendaPlan {
 			new Set([...speakers.values()].map((speaker) => speaker.id)).size !==
 			speakers.size
 		)
-			throw new OpenFeedbackAgendaConflictError();
+			throw new FeedbackResolutionError("conflict");
 		return speakers;
 	}
 
@@ -98,7 +100,7 @@ export class OpenFeedbackAgendaPlan {
 		stableIds: ReadonlySet<string>,
 	): OpenFeedbackTalk[] {
 		if (new Set(incoming.map((talk) => talk.id)).size !== incoming.length)
-			throw new OpenFeedbackAgendaConflictError();
+			throw new FeedbackResolutionError("conflict");
 		const used = new Set<string>();
 		const resolved = new Map<OpenFeedbackTalk, OpenFeedbackTalk>();
 		for (const talk of incoming) {
@@ -128,13 +130,13 @@ export class OpenFeedbackAgendaPlan {
 					OpenFeedbackAgendaPlan.sameSpeakers(item, talk),
 			);
 			if (matches.length > 1 || (matches.length === 1 && pending.length > 1))
-				throw new OpenFeedbackAgendaConflictError();
+				throw new FeedbackResolutionError("conflict");
 			const id = matches[0]?.id ?? talk.id;
 			if (
 				used.has(id) ||
 				(!matches[0] && current.some((item) => item.id === id))
 			)
-				throw new OpenFeedbackAgendaConflictError();
+				throw new FeedbackResolutionError("conflict");
 			resolved.set(talk, { ...talk, id });
 			used.add(id);
 		}
@@ -155,7 +157,7 @@ export class OpenFeedbackAgendaPlan {
 						OpenFeedbackAgendaPlan.normalize(talk.title) &&
 					OpenFeedbackAgendaPlan.sameSpeakers(item, talk),
 			);
-			if (matches.length > 1) throw new OpenFeedbackAgendaConflictError();
+			if (matches.length > 1) throw new FeedbackResolutionError("conflict");
 			if (matches[0]) {
 				resolved.set(talk, { ...talk, id: matches[0].id });
 				used.add(matches[0].id);
@@ -183,7 +185,7 @@ export class OpenFeedbackAgendaPlan {
 					OpenFeedbackAgendaPlan.normalize(item.title) === title,
 			);
 			if (matches.length > 1 || pending.length > 1)
-				throw new OpenFeedbackAgendaConflictError();
+				throw new FeedbackResolutionError("conflict");
 			resolved.set(talk, { ...talk, id: matches[0].id });
 			used.add(matches[0].id);
 		}

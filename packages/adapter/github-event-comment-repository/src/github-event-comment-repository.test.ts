@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { GitHubEventCommentRepository } from "./github-event-comment-repository.js";
 import { GitHubEventCommentRepositoryConfigurationError } from "./github-event-comment-repository-configuration-error.js";
 import {
+	COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER,
 	EVENT_DIAGNOSTIC_COMMENT_MARKER,
 	type GitHubEventCommentRepositoryClient,
 } from "./github-event-comment-repository-contracts.js";
@@ -52,6 +53,52 @@ function comment(id: number, body: string, login = "meetup-bot") {
 }
 
 describe("renderDiagnosticComment", () => {
+	it.each([
+		[
+			"en",
+			"invalid-selection",
+			"Enter distinct proposal numbers, one per line, from their Conference Hall URLs.",
+		],
+		[
+			"fr",
+			"invalid-selection",
+			"Saisissez les numéros des URL Conference Hall, un par ligne, sans doublons.",
+		],
+		[
+			"en",
+			"not-found",
+			"Proposal number not found in this CFP. Check its Conference Hall URL.",
+		],
+		[
+			"fr",
+			"not-found",
+			"Numéro de proposition introuvable dans ce CFP. Vérifiez son URL Conference Hall.",
+		],
+	])(
+		"explains proposal %s %s using visible numbers",
+		(locale, code, guidance) => {
+			// Arrange
+			const messages = new EventCommentMessages(locale);
+			const diagnostics = [
+				{
+					...errorDiagnostic,
+					code: `event.proposals.${code}`,
+					field: "agenda",
+				},
+			];
+
+			// Act
+			const body = GitHubEventCommentRepository.renderDiagnosticComment(
+				diagnostics,
+				messages,
+			);
+
+			// Assert
+			expect(body).toContain(guidance);
+			expect(body).not.toContain(errorDiagnostic.message);
+		},
+	);
+
 	it.each([
 		["en", "Enter a valid HTTPS link to the OpenFeedback event page."],
 		[
@@ -112,13 +159,11 @@ describe("renderDiagnosticComment", () => {
 		expect(body).toContain(EVENT_DIAGNOSTIC_COMMENT_MARKER);
 		expect(body).toContain("**Event Date**: Saisissez une date valide"); // codespell:ignore valide
 		expect(body).toContain("**Programme (élément 1, intervenant 2)**");
-		expect(body).toContain("Une vérification supplémentaire");
+		expect(body).toContain("Demandez à un responsable de consulter"); // codespell:ignore responsable
 		expect(body).not.toContain("private@example.test");
 		expect(body).not.toContain(errorDiagnostic.message);
 		expect(resolved).toContain(EVENT_DIAGNOSTIC_COMMENT_MARKER);
-		expect(resolved).toContain(
-			"Tous les problèmes signalés précédemment ont été résolus.",
-		);
+		expect(resolved).toContain("✅ Informations complètes."); // codespell:ignore informations
 	});
 
 	it("renders incomplete event fields as an actionable checklist in form order", () => {
@@ -149,16 +194,12 @@ describe("renderDiagnosticComment", () => {
 		// Assert
 		expect(body).toBe(`${EVENT_DIAGNOSTIC_COMMENT_MARKER}
 
-Found the following items to complete in the meetup issue:
-
 - [ ] **Event Title**: Add a title for the event.
 - [ ] **Event Description**: Add a short description of the event.
 - [ ] **Meetup Link**: Add the link to the Meetup event page.
 - [ ] **CNCF Link**: Add the link to the CNCF / OCGroups event page.
 - [ ] **Drive Link**: Add the link to the event's Google Drive folder.
-- [ ] **Speaker confirmation**: Confirm the speakers, then add the \`speakers:confirmed\` label.
-
-Please update the issue description or labels to address these items. This checklist will refresh automatically.`);
+- [ ] **Speaker confirmation**: Confirm the speakers, then add the \`speakers:confirmed\` label.`);
 		expect(actual).toBe(body);
 	});
 
@@ -274,7 +315,7 @@ Please update the issue description or labels to address these items. This check
 		expect(body).toContain("**Event Date**: Enter a valid calendar date");
 		expect(body).toContain("**Referentials**: Ask a maintainer to correct");
 		expect(body).toContain(
-			"**Meetup issue**: An additional validation check needs attention",
+			"**Meetup issue**: Ask a maintainer to review the workflow diagnostics.",
 		);
 		expect(body).not.toContain("alice@example.com");
 		expect(body).not.toContain("Private Street");
@@ -298,12 +339,183 @@ Please update the issue description or labels to address these items. This check
 			GitHubEventCommentRepository.renderDiagnosticComment(diagnostics);
 
 		// Assert
-		expect(body).toContain("No changes are currently needed");
+		expect(body).toContain("✅ Event details complete.");
 		expect(body).not.toContain("event.date.normalized");
 	});
 });
 
 describe("GitHubEventCommentRepository", () => {
+	it("deletes a trusted state-free stage report after the merged checklist is saved", async () => {
+		// Arrange
+		const github = client();
+		const deleteComment = vi.fn();
+		const value = {
+			...github.value,
+			rest: { issues: { ...github.value.rest.issues, deleteComment } },
+		};
+		github.listComments.mockResolvedValue({
+			data: [
+				comment(12, `${COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER}\nOld errors`),
+			],
+		});
+		const load = vi.fn().mockResolvedValue("");
+		const repository = new GitHubEventCommentRepository(value, {
+			owner: "example",
+			repo: "meetups",
+			authorLogin: "meetup-bot",
+			retireCommunicationReports: true,
+			retainedContent: { load },
+		});
+
+		// Act
+		await repository.reconcileDiagnostics(identity, [errorDiagnostic]);
+
+		// Assert
+		expect(deleteComment).toHaveBeenCalledWith({
+			owner: "example",
+			repo: "meetups",
+			comment_id: 12,
+		});
+		expect(github.createComment.mock.invocationCallOrder[0]).toBeLessThan(
+			deleteComment.mock.invocationCallOrder[0] ?? 0,
+		);
+		expect(load.mock.invocationCallOrder[0]).toBeLessThan(
+			deleteComment.mock.invocationCallOrder[0] ?? 0,
+		);
+		expect(github.updateComment).not.toHaveBeenCalled();
+		expect(github.minimizeComment).not.toHaveBeenCalled();
+	});
+
+	it("preserves stage comments that contain trusted delivery state", async () => {
+		// Arrange
+		const github = client();
+		const deleteComment = vi.fn();
+		const value = {
+			...github.value,
+			rest: { issues: { ...github.value.rest.issues, deleteComment } },
+		};
+		github.listComments.mockResolvedValue({
+			data: [
+				comment(12, `${COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER}\nStored state`),
+			],
+		});
+		const repository = new GitHubEventCommentRepository(value, {
+			owner: "example",
+			repo: "meetups",
+			authorLogin: "meetup-bot",
+			retireCommunicationReports: true,
+			retainedContent: {
+				load: vi.fn().mockResolvedValue("Reserved delivery state"),
+			},
+		});
+
+		// Act
+		const result = repository.reconcileDiagnostics(identity, [errorDiagnostic]);
+
+		// Assert
+		await expect(result).rejects.toThrow(
+			"Duplicate diagnostic comment contains managed state",
+		);
+		expect(deleteComment).not.toHaveBeenCalled();
+		expect(github.updateComment).not.toHaveBeenCalled();
+		expect(github.minimizeComment).not.toHaveBeenCalled();
+	});
+
+	it("retires trusted stage reports only after saving their merged checklist", async () => {
+		// Arrange
+		const github = client();
+		github.listComments.mockResolvedValue({
+			data: [
+				comment(12, `${COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER}\nOld errors`),
+				comment(
+					13,
+					`${COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER}\nOther report`,
+					"someone-else",
+				),
+			],
+		});
+		const repository = new GitHubEventCommentRepository(github.value, {
+			owner: "example",
+			repo: "meetups",
+			authorLogin: "meetup-bot",
+			retireCommunicationReports: true,
+		});
+		const diagnostics = [
+			{
+				...errorDiagnostic,
+				code: "communication.missing-mail-destination",
+				field: undefined,
+			},
+		];
+
+		// Act
+		const result = await repository.reconcileDiagnostics(identity, diagnostics);
+
+		// Assert
+		expect(result.changed).toBe(true);
+		expect(github.createComment).toHaveBeenCalledWith(
+			expect.objectContaining({
+				body: expect.stringContaining(
+					"**Communication**: Add an email address",
+				),
+			}),
+		);
+		expect(github.updateComment).toHaveBeenCalledOnce();
+		expect(github.updateComment).toHaveBeenCalledWith(
+			expect.objectContaining({ comment_id: 12 }),
+		);
+		expect(github.createComment.mock.invocationCallOrder[0]).toBeLessThan(
+			github.updateComment.mock.invocationCallOrder[0] ?? 0,
+		);
+		expect(github.minimizeComment).toHaveBeenCalledWith({
+			commentId: 12,
+			classifier: "OUTDATED",
+		});
+	});
+
+	it("preserves stage reports when the merged checklist cannot be persisted", async () => {
+		// Arrange
+		const github = client();
+		github.listComments.mockResolvedValue({
+			data: [
+				comment(12, `${COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER}\nOld errors`),
+			],
+		});
+		github.createComment.mockRejectedValue(new Error("Write failed"));
+		const repository = new GitHubEventCommentRepository(github.value, {
+			owner: "example",
+			repo: "meetups",
+			authorLogin: "meetup-bot",
+			retireCommunicationReports: true,
+		});
+
+		// Act
+		const result = repository.reconcileDiagnostics(identity, [errorDiagnostic]);
+
+		// Assert
+		await expect(result).rejects.toThrow("Write failed");
+		expect(github.updateComment).not.toHaveBeenCalled();
+		expect(github.minimizeComment).not.toHaveBeenCalled();
+	});
+
+	it("leaves separate stage reports alone during event-only reconciliation", async () => {
+		// Arrange
+		const github = client();
+		github.listComments.mockResolvedValue({
+			data: [
+				comment(12, `${COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER}\nOld errors`),
+			],
+		});
+		const repository = adapter(github.value, "meetup-bot");
+
+		// Act
+		await repository.reconcileDiagnostics(identity, [errorDiagnostic]);
+
+		// Assert
+		expect(github.createComment).toHaveBeenCalledOnce();
+		expect(github.updateComment).not.toHaveBeenCalled();
+		expect(github.minimizeComment).not.toHaveBeenCalled();
+	});
 	it("creates one managed comment when actionable diagnostics appear", async () => {
 		// Arrange
 		const github = client();
@@ -416,7 +628,7 @@ describe("GitHubEventCommentRepository", () => {
 		expect(github.updateComment).toHaveBeenLastCalledWith(
 			expect.objectContaining({
 				comment_id: 5,
-				body: expect.stringContaining("No changes are currently needed"),
+				body: expect.stringContaining("✅ Event details complete."),
 			}),
 		);
 	});

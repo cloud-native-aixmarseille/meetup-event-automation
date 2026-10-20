@@ -14,6 +14,7 @@ import {
 	type FeedbackEventGateway,
 	type FeedbackLinkGateway,
 	FeedbackPolicy,
+	FeedbackResolutionError,
 } from "@meetup-automation/publication";
 import { FeedbackAgendaProjection } from "./feedback-agenda-projection.js";
 import type { PublicDiagnostic } from "../result/result-envelope.js";
@@ -90,7 +91,20 @@ export class ManageMeetupFeedback {
 				"agenda",
 				"Complete talk subjects and resolve speaker references before creating feedback",
 			);
-		return this.synchronizeFeedback(source, event, agenda);
+		return this.synchronizeFeedback(source, event, agenda).catch(
+			(error: unknown) => {
+				if (
+					!(error instanceof FeedbackResolutionError) ||
+					error.kind !== "conflict"
+				)
+					throw error;
+				return this.skipped(
+					"conflict",
+					"Resolve ambiguous feedback talk or speaker identities before synchronizing",
+					"warning",
+				);
+			},
+		);
 	}
 
 	private async synchronizeFeedback(
@@ -262,7 +276,11 @@ export class ManageMeetupFeedback {
 		);
 	}
 
-	private skipped(code: string, message: string): ManageMeetupFeedbackResult {
+	private skipped(
+		code: string,
+		message: string,
+		severity: "info" | "warning" = "info",
+	): ManageMeetupFeedbackResult {
 		return {
 			skipped: true,
 			persisted: false,
@@ -270,7 +288,7 @@ export class ManageMeetupFeedback {
 			diagnostics: [
 				{
 					code: `publication.feedback.${code}`,
-					severity: "info",
+					severity,
 					field: "publicationLinks.feedback",
 					message,
 				},

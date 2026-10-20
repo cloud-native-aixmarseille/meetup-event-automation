@@ -1,23 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { inspectCatalog } from "../../../../presentation/localization/testing/catalog-contract.js";
-import { CATALOGS } from "./catalog.js";
 import type { MessageParameters } from "./attention-messages.js";
+import { CATALOGS } from "./catalog.js";
+
 const parameters = {
 	"attention.redirect": {
 		url: "https://github.com/example/meetups/issues/42#issuecomment-100",
 	},
 	"slack.title": { issue: "42" },
 	"slack.more": { count: 2 },
-	"slack.manual-publication": { task: "publication" },
-	"slack.integration-failure": { task: "assets" },
-	"slack.follow-up": { task: "thanks" },
-	"slack.stage-unknown": { task: "feedback" },
-	"attention.date": { date: "2099-06-08" },
-	"attention.resolved": { count: 2 },
-	"attention.manual-publication": { task: "publication" },
-	"attention.integration-failure": { task: "assets" },
-	"attention.follow-up": { task: "thanks" },
-	"attention.stage-unknown": { task: "feedback" },
+	"action.manual-publication": { task: "publication" },
+	"action.integration-failure": { task: "assets" },
+	"action.follow-up": { task: "thanks" },
+	"action.stage-unknown": { task: "feedback" },
 } satisfies { [Key in keyof MessageParameters]: MessageParameters[Key] };
 describe("attention catalogs", () => {
 	it.each(["en", "fr"] as const)(

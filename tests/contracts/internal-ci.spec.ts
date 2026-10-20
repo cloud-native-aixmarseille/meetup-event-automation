@@ -140,7 +140,6 @@ describe("internal CI contracts", () => {
 		expect(eventJob?.permissions?.issues).toBe("write");
 		expect(communication?.with).not.toHaveProperty("mode");
 		expect(communication?.with).not.toHaveProperty("dispatch-authorized");
-		expect(communication?.with?.["report-errors-to-issue"]).toBe("false");
 		expect(fixture?.with?.script).toContain("- [x] Mail introduction");
 		expect(assertions?.run).toContain('all(.[]; .severity != "error")');
 		expect(communication?.with?.["slides-ready"]).toBe("true");

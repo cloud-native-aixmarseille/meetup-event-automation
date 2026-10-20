@@ -22,7 +22,7 @@
 
 ## Overview
 
-List open meetup issue numbers from the caller repository using the configured event label. Publish redacted diagnostics in annotations, logs, and the job summary.
+List open meetup issue numbers from the caller repository using the configured event label. Report concise technical facts and diagnostic codes in logs and the job summary.
 
 <!-- overview:end -->
 <!-- usage:start -->

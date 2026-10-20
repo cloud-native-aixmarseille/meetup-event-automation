@@ -1,12 +1,13 @@
-import { ConferenceHallInput } from "./conference-hall-input.js";
 import * as core from "@actions/core";
-import { context, getOctokit } from "@actions/github";
+import { context } from "@actions/github";
 import type { CommunicationDiagnostic } from "@meetup-automation/communication";
-import type { CommunicationJourneyDiagnostic } from "@meetup-automation/journey";
-import type { PublicDiagnostic } from "@meetup-automation/journey";
+import type {
+	CommunicationJourneyDiagnostic,
+	PublicDiagnostic,
+} from "@meetup-automation/journey";
 import type { ActionReportData } from "./action-report.js";
 import { CommunicationRuntime } from "./communication.js";
-import { CommunicationComposition } from "./communication-composition.js";
+import { ConferenceHallInput } from "./conference-hall-input.js";
 import { ActionMessages } from "./i18n/action-messages.js";
 import { RuntimeInput } from "./runtime-input.js";
 
@@ -39,6 +40,8 @@ const COMMUNICATION_MESSAGES: Readonly<
 const RUNTIME_MESSAGES: Readonly<
 	Record<CommunicationJourneyDiagnostic["code"], string>
 > = {
+	"communication.feedback-fetch-failed":
+		"Feedback results could not be fetched.",
 	"communication.feedback-unavailable":
 		"Speaker thank-you emails require resolved feedback results for every talk.",
 	"communication.slides-unavailable":
@@ -55,6 +58,8 @@ const RUNTIME_MESSAGES: Readonly<
 		"Communication dispatch is disabled by repository configuration.",
 	"communication.checklist-update-failed":
 		"Delivery results are recorded but checklist completion could not be persisted.",
+	"communication.checklist-concurrently-modified":
+		"Delivery results are recorded; an organizer edit postponed checklist completion.",
 	"communication.event-skipped": "The issue is not a configured meetup event.",
 	"communication.event-concurrently-modified":
 		"The meetup issue changed while communications were being reconciled; no delivery was attempted.",
@@ -70,10 +75,6 @@ export class CommunicationAction {
 	static async runCommunicationReconcileAction(
 		messages = new ActionMessages(),
 	): Promise<ActionReportData> {
-		const reportErrorsToIssue = RuntimeInput.booleanInput(
-			"report-errors-to-issue",
-			core.getInput("report-errors-to-issue", { required: true }),
-		);
 		const issueNumber = RuntimeInput.positiveIntegerInput(
 			"issue-number",
 			core.getInput("issue-number", { required: true }),
@@ -108,26 +109,7 @@ export class CommunicationAction {
 				required: true,
 			}),
 		});
-		const report = CommunicationAction.report(outcome, messages);
-		return reportErrorsToIssue
-			? CommunicationAction.reportToIssue(issueNumber, report, messages)
-			: report;
-	}
-
-	private static async reportToIssue(
-		issueNumber: number,
-		report: ActionReportData,
-		messages: ActionMessages,
-	): Promise<ActionReportData> {
-		return CommunicationComposition.createIssueReport({
-			...context.repo,
-			issueNumber,
-			locale: messages.locale,
-			client: getOctokit(core.getInput("github-token", { required: true })),
-			commentAuthorLogin: core.getInput("managed-comment-author", {
-				required: true,
-			}),
-		}).reconcile(report);
+		return CommunicationAction.report(outcome, messages);
 	}
 
 	static domainDiagnostic(
@@ -170,19 +152,8 @@ export class CommunicationAction {
 					recorded: outcome.counts.alreadyRecorded,
 				}),
 				messages.t("report.communication.uncertain", outcome.counts),
-				...(diagnostics.length > 0
-					? [messages.t("report.communication.guidance")]
-					: []),
-				...(outcome.counts.uncertain > 0
-					? [messages.t("report.communication.uncertain-guidance")]
-					: []),
 			],
 			diagnostics,
-			...(diagnostics.some(({ severity }) => severity === "error")
-				? {
-						failure: messages.t("report.communication.failed"),
-					}
-				: {}),
 		};
 	}
 }

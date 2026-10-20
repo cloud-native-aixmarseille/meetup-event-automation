@@ -101,6 +101,7 @@ jobs:
           conference-hall-event: ${{ inputs.conference-hall-event }}
           conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicitly forwarded reusable workflow secret
       - name: Publish private review branch
+        if: ${{ steps.synchronize.outputs.pr-title != '' }}
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
@@ -127,8 +128,8 @@ jobs:
           fi
           rm "$body_file"
 
-      - name: Report failed source refresh on the existing private PR
-        if: ${{ failure() && steps.synchronize.outcome == 'failure' }}
+      - name: Report blocked synchronization on the existing private PR
+        if: ${{ always() && steps.synchronize.outputs.pr-title == '' && steps.synchronize.outputs.pr-body != '' }}
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}

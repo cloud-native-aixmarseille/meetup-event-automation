@@ -1,4 +1,5 @@
 import * as core from "@actions/core";
+import { EventConcurrentModificationError } from "@meetup-automation/event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ActionRunner } from "./action-runner.js";
 
@@ -19,6 +20,57 @@ vi.mock("@actions/core", () => ({
 }));
 
 describe("action runner reporting contract", () => {
+	it("skips a typed concurrent edit without failing or exposing the event identity", async () => {
+		// Arrange
+		const operation = vi.fn().mockRejectedValue(
+			new EventConcurrentModificationError({
+				repository: "private@example.test",
+				issueNumber: 42,
+			}),
+		);
+
+		// Act
+		await ActionRunner.run("action.event.reconcile", operation, true);
+
+		// Assert
+		expect(core.setFailed).not.toHaveBeenCalled();
+		expect(core.info).toHaveBeenCalledWith("info event.concurrently-modified");
+		expect(core.setOutput).toHaveBeenCalledWith(
+			"diagnostics",
+			JSON.stringify([
+				{
+					code: "event.concurrently-modified",
+					severity: "info",
+					message: "event.concurrently-modified",
+				},
+			]),
+		);
+		expect(
+			JSON.stringify([
+				vi.mocked(core.info).mock.calls,
+				vi.mocked(core.setOutput).mock.calls,
+				vi.mocked(core.summary.addRaw).mock.calls,
+			]),
+		).not.toContain("private@example.test");
+	});
+
+	it("does not downgrade an unknown error that mentions concurrent edits", async () => {
+		// Arrange
+		const operation = vi
+			.fn()
+			.mockRejectedValue(new Error("The event changed during reconciliation"));
+
+		// Act
+		await ActionRunner.run("action.event.reconcile", operation, true);
+
+		// Assert
+		expect(core.setFailed).toHaveBeenCalledOnce();
+		expect(core.setOutput).toHaveBeenCalledWith(
+			"diagnostics",
+			expect.stringContaining("action.execution.failed"),
+		);
+	});
+
 	it("fails a missing locale before invoking the action and redacts the exception", async () => {
 		// Arrange
 		const operation = vi.fn();
@@ -91,7 +143,7 @@ describe("action runner reporting contract", () => {
 		// Arrange
 		const diagnostics = [
 			{
-				code: "example.invalid",
+				code: "referential.speaker.id.duplicate",
 				severity: "error",
 				field: "records[1].id",
 				message: "Correct the identifier.",
@@ -105,9 +157,10 @@ describe("action runner reporting contract", () => {
 		await ActionRunner.run("action.event.reconcile", operation, true);
 
 		// Assert
-		expect(core.error).toHaveBeenCalledWith(
-			"[example.invalid] (records[1].id): Correct the identifier.",
+		expect(core.info).toHaveBeenCalledWith(
+			"error referential.speaker.id.duplicate field=records[1].id",
 		);
+		expect(core.error).not.toHaveBeenCalled();
 		expect(core.setOutput).toHaveBeenCalledWith(
 			"diagnostics",
 			JSON.stringify(diagnostics),
@@ -132,9 +185,62 @@ describe("action runner reporting contract", () => {
 		// Assert
 		expect(core.setFailed).toHaveBeenCalledWith("Reconciliation failed.");
 		expect(core.summary.addRaw).toHaveBeenCalledWith(
-			expect.stringContaining("Action failed: Reconciliation failed."),
+			expect.stringContaining("failure=Reconciliation failed."),
 		);
 		expect(core.setOutput).toHaveBeenCalledWith("diagnostics", "[]");
+	});
+
+	it.each([
+		["communication.ledger-read-failed", "error"],
+		["communication.approval-notification-failed", "warning"],
+		["future.technical-failure", "error"],
+	] as const)(
+		"fails on technical diagnostic %s while preserving its severity",
+		async (code, severity) => {
+			// Arrange
+			const diagnostic = { code, severity, message: "Public diagnostic." };
+			const operation = vi.fn().mockResolvedValue({
+				details: [],
+				diagnostics: [diagnostic, diagnostic],
+			});
+
+			// Act
+			await ActionRunner.run("action.communication.reconcile", operation, true);
+
+			// Assert
+			expect(core.setFailed).toHaveBeenCalledExactlyOnceWith(
+				`technical_failure=${code}`,
+			);
+			expect(core.setOutput).toHaveBeenCalledWith(
+				"diagnostics",
+				JSON.stringify([diagnostic, diagnostic]),
+			);
+			expect(core.error).not.toHaveBeenCalled();
+			expect(core.warning).not.toHaveBeenCalled();
+		},
+	);
+
+	it("keeps an explicit failure when technical diagnostics are also present", async () => {
+		// Arrange
+		const operation = vi.fn().mockResolvedValue({
+			details: [],
+			diagnostics: [
+				{
+					code: "communication.ledger-read-failed",
+					severity: "error",
+					message: "The ledger could not be loaded.",
+				},
+			],
+			failure: "persistence=failed",
+		});
+
+		// Act
+		await ActionRunner.run("action.communication.reconcile", operation, false);
+
+		// Assert
+		expect(core.setFailed).toHaveBeenCalledExactlyOnceWith(
+			"persistence=failed",
+		);
 	});
 
 	it("reports safe exception messages in annotations, diagnostics output, and the summary", async () => {
@@ -147,9 +253,8 @@ describe("action runner reporting contract", () => {
 		await ActionRunner.run("action.event.reconcile", operation, true);
 
 		// Assert
-		expect(core.error).toHaveBeenCalledWith(
-			"[action.execution.failed]: EventNotFoundError: The event could not be found.",
-		);
+		expect(core.info).toHaveBeenCalledWith("error action.execution.failed");
+		expect(core.error).not.toHaveBeenCalled();
 		expect(core.summary.addRaw).toHaveBeenCalledWith(
 			expect.stringContaining("The event could not be found."),
 		);
@@ -178,7 +283,7 @@ describe("action runner reporting contract", () => {
 			expect(core.setFailed).toHaveBeenCalledOnce();
 			expect(core.summary.write).toHaveBeenCalledOnce();
 			expect(core.summary.addRaw).toHaveBeenCalledWith(
-				expect.stringContaining("Review the action inputs"),
+				expect.stringContaining("failure=Unexpected technical failure."),
 			);
 			expect(
 				JSON.stringify([
@@ -212,14 +317,15 @@ describe("action runner reporting contract", () => {
 		await ActionRunner.run("action.referential.validate", operation, false);
 		// Assert
 		expect(core.getInput).toHaveBeenCalledWith("locale", { required: true });
-		expect(core.info).toHaveBeenCalledWith("Référentiels : invalides.");
+		expect(core.info).toHaveBeenCalledWith("referentials=invalid");
 		expect(core.summary.addHeading).toHaveBeenCalledWith(
 			"Valider les référentiels du meetup",
 			2,
 		);
-		expect(core.error).toHaveBeenCalledWith(
-			"[referential.speaker.id.duplicate] (speakers[2].speakerId): Les identifiants stables des intervenants doivent être uniques.",
+		expect(core.info).toHaveBeenCalledWith(
+			"error referential.speaker.id.duplicate field=speakers[2].speakerId",
 		);
+		expect(core.error).not.toHaveBeenCalled();
 		expect(core.setOutput).not.toHaveBeenCalled();
 		expect(core.setFailed).not.toHaveBeenCalled();
 	});
@@ -232,14 +338,10 @@ describe("action runner reporting contract", () => {
 		// Act
 		await ActionRunner.run("action.event.reconcile", operation, true);
 		// Assert
-		expect(core.setFailed).toHaveBeenCalledWith(
-			expect.stringContaining("L'automatisation"),
-		);
-		expect(core.error).toHaveBeenCalledWith(
-			expect.stringContaining("L'automatisation"),
-		);
+		expect(core.setFailed).toHaveBeenCalledWith("Erreur technique inattendue.");
+		expect(core.error).not.toHaveBeenCalled();
 		expect(core.summary.addRaw).toHaveBeenCalledWith(
-			expect.stringContaining("Vérifiez les paramètres"),
+			expect.stringContaining("failure=Erreur technique inattendue."),
 		);
 		expect(
 			JSON.stringify([

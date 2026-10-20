@@ -43,7 +43,6 @@ describe("event side-effect safeguards", () => {
 			expect(step?.with).not.toHaveProperty("mode");
 			expect(step?.with).toMatchObject({
 				"google-credentials": workflowExpression("secrets.google-credentials"),
-				"managed-comment-author": managedAuthor,
 				"google-drive-meetup-folder-id": workflowExpression(
 					"inputs.google-drive-meetup-folder-id",
 				),
@@ -97,7 +96,10 @@ describe("event side-effect safeguards", () => {
 		"derives managed authors from the scoped token in %s",
 		async (workflowName, jobName) => {
 			// Arrange
-			const actions = ["event/reconcile", "communication/reconcile"];
+			const actions = [
+				"communication/reconcile",
+				"communication/reconcile-attention",
+			];
 
 			// Act
 			const workflow = await readWorkflow(workflowName);
@@ -128,12 +130,10 @@ describe("event side-effect safeguards", () => {
 	it.each([
 		{
 			job: "manage",
-			reportErrorsToIssue: "false",
 			workflow: "update-meetup-issue",
 		},
 		{
 			job: "audit",
-			reportErrorsToIssue: "true",
 			workflow: "check-active-meetup-issues",
 		},
 	] as const)(
@@ -154,9 +154,6 @@ describe("event side-effect safeguards", () => {
 			expect(job.concurrency?.["cancel-in-progress"]).toBe(false);
 			expect(step?.with).not.toHaveProperty("mode");
 			expect(step?.with).not.toHaveProperty("dispatch-authorized");
-			expect(step?.with?.["report-errors-to-issue"]).toBe(
-				item.reportErrorsToIssue,
-			);
 		},
 	);
 
@@ -197,7 +194,6 @@ describe("event side-effect safeguards", () => {
 		expect(event?.with).not.toHaveProperty("mode");
 		expect(event?.id).toBe("event");
 		expect(communication?.with).not.toHaveProperty("mode");
-		expect(communication?.with?.["report-errors-to-issue"]).toBe("true");
 		expect(communication).not.toHaveProperty("continue-on-error");
 		expect(communication?.with?.["slack-organizer-channel-id"]).toBe(
 			workflowExpression("inputs.slack-organizer-channel-id"),

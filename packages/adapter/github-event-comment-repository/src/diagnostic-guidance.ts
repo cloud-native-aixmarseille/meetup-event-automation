@@ -1,4 +1,5 @@
 import type { MessageId } from "./i18n/catalog.js";
+import { STAGE_GUIDANCE } from "./stage-diagnostic-guidance.js";
 export const FIELD_ORDER = [
 	"Event Title",
 	"Event Date",
@@ -30,34 +31,57 @@ export const GUIDANCE = new Map<
 		message: Extract<MessageId, `comment.guidance.${string}`>,
 	]
 >([
+	...STAGE_GUIDANCE,
+	[
+		"event.proposals.invalid-selection",
+		["Agenda", "comment.guidance.proposals.invalid-selection"],
+	],
+	[
+		"event.proposals.not-found",
+		["Agenda", "comment.guidance.proposals.not-found"],
+	],
+	[
+		"event.proposals.not-accepted",
+		["Agenda", "comment.guidance.proposals.not-accepted"],
+	],
+
 	[
 		"referential.source.unavailable",
-		["Agenda", "comment.guidance.source-profiles"],
+		["Agenda", "comment.guidance.proposals.unavailable"],
 	],
 	[
 		"referential.source.invalid",
-		["Agenda", "comment.guidance.source-profiles"],
+		["Agenda", "comment.guidance.proposals.invalid"],
 	],
 	[
 		"referential.source.rate-limited",
-		["Agenda", "comment.guidance.source-profiles"],
+		["Agenda", "comment.guidance.proposals.rate-limited"],
 	],
 	[
 		"referential.source.mapping-required",
-		["Agenda", "comment.guidance.source-profiles"],
+		["Agenda", "comment.guidance.proposals.mapping-required"],
 	],
 	[
 		"referential.source.conflict",
-		["Agenda", "comment.guidance.source-profiles"],
+		["Agenda", "comment.guidance.proposals.conflict"],
 	],
-	["event.proposals.unavailable", ["Agenda", "comment.guidance.proposals"]],
-	["event.proposals.invalid", ["Agenda", "comment.guidance.proposals"]],
-	["event.proposals.rate-limited", ["Agenda", "comment.guidance.proposals"]],
+	[
+		"event.proposals.unavailable",
+		["Agenda", "comment.guidance.proposals.unavailable"],
+	],
+	["event.proposals.invalid", ["Agenda", "comment.guidance.proposals.invalid"]],
+	[
+		"event.proposals.rate-limited",
+		["Agenda", "comment.guidance.proposals.rate-limited"],
+	],
 	[
 		"event.proposals.mapping-required",
-		["Agenda", "comment.guidance.proposals"],
+		["Agenda", "comment.guidance.proposals.mapping-required"],
 	],
-	["event.proposals.conflict", ["Agenda", "comment.guidance.proposals"]],
+	[
+		"event.proposals.conflict",
+		["Agenda", "comment.guidance.proposals.conflict"],
+	],
 	[
 		"event.title.missing",
 		["Event Title", "comment.guidance.event.title.missing"],

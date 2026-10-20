@@ -16,17 +16,19 @@ supported. Regional forms such
 as `fr-FR`, `fr-CA`, and `fr_CA` use French. Unsupported or malformed locales
 fall back to English.
 
-The selected language applies to logs, diagnostic annotations, job summaries,
-workflow failure guidance, managed issue comments, generated speaker guidance,
-and organizer notifications. Use the same locale for every workflow in a
-consumer repository, especially referential checks and issue-form updates.
+The selected language applies to managed issue comments, generated speaker
+guidance, organizer notifications and safe failure messages. CI facts use compact
+technical keys; diagnostic codes and field metadata are language independent.
+Use the same locale for every workflow in a consumer repository, especially
+referential checks and issue-form updates.
 Changing locale makes the generated form stale until it is synchronized again.
 
 Diagnostic JSON retains canonical English messages and stable codes, fields, and
 severities. Existing labels, issue headings, IDs, comment markers, and
-ledger formats also stay stable. Unknown diagnostic codes retain their
-redacted English explanation. Static workflow metadata and externally rendered
-email bodies are outside these catalogs.
+ledger formats also stay stable. Unknown diagnostic codes remain visible as
+technical identifiers in CI and fail closed when they are not informational.
+Organizer comments use safe localized guidance for unknown codes. Static workflow
+metadata and externally rendered email bodies are outside these catalogs.
 
 Changing notification language does not resend deliveries already recorded
 in the ledger.
@@ -38,16 +40,15 @@ The shared `packages/presentation/localization` package wraps
 formatting, locale normalization, and typed catalog contracts. It contains no
 feature wording.
 
-| Responsibility                                     | Catalogs and scoped translator                                                        |
-| -------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| Asset dates and agenda text                        | `packages/runtime/github-actions/src/assets` - `AssetMessages`                        |
-| Action reports, errors, and diagnostic annotations | `packages/runtime/github-actions/src/i18n` — `ActionMessages`                         |
-| Organizer approval requests and Slack alerts       | `packages/adapter/github-organizer-approval/src/i18n` - `ApprovalMessages`            |
-| Managed issue comments                             | `packages/adapter/github-event-comment-repository/src/i18n` — `EventCommentMessages`  |
-| Issue-form speaker guidance                        | `packages/adapter/yaml-issue-form-projection/src/i18n` — `IssueFormMessages`          |
-| Organizer notification content                     | `packages/runtime/github-actions/src/notifications` — `OrganizerNotificationMessages` |
-| Organizer attention status and Slack content       | `packages/adapter/github-organizer-attention/src/i18n` - `AttentionMessages`          |
-| Communication status comments                      | `packages/adapter/github-delivery-ledger/src/i18n` — `LedgerMessages`                 |
+| Responsibility                                         | Catalogs and scoped translator                                                       |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| Asset dates and agenda text                            | `packages/runtime/github-actions/src/assets` - `AssetMessages`                       |
+| Technical reports, safe errors, and speaker review PRs | `packages/runtime/github-actions/src/i18n` — `ActionMessages`                        |
+| Organizer approval requests and Slack alerts           | `packages/adapter/github-organizer-approval/src/i18n` - `ApprovalMessages`           |
+| Managed issue comments                                 | `packages/adapter/github-event-comment-repository/src/i18n` — `EventCommentMessages` |
+| Issue-form speaker guidance                            | `packages/adapter/yaml-issue-form-projection/src/i18n` — `IssueFormMessages`         |
+| Organizer attention status and Slack content           | `packages/adapter/github-organizer-attention/src/i18n` - `AttentionMessages`         |
+| Communication status comments                          | `packages/adapter/github-delivery-ledger/src/i18n` — `LedgerMessages`                |
 
 Keep wording, keys, parameter types, and catalog tests with the presenter that
 owns them. Pass the resolved locale across package boundaries; each owner

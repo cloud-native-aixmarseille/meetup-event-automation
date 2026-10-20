@@ -6,7 +6,10 @@ export interface FeedbackLinkGateway {
 }
 
 export interface FeedbackEventGateway {
-	/** Synchronize an existing event, or create/recover one by its stable source key. */
+	/**
+	 * Synchronize an existing event, or create/recover one by its stable source key.
+	 * Ambiguous organizer data raises FeedbackResolutionError("conflict").
+	 */
 	ensureEvent(input: {
 		readonly key: string;
 		readonly name: string;

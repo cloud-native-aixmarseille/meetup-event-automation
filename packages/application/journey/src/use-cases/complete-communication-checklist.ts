@@ -1,5 +1,6 @@
 import type { MailCommunicationKind } from "@meetup-automation/communication";
 import {
+	EventConcurrentModificationError,
 	type EventDocument,
 	type EventDocumentCodec,
 	type EventRepository,
@@ -46,12 +47,15 @@ export class CompleteCommunicationChecklist {
 				);
 			const current = await this.repository.find(source.identity);
 			if (!current || !ReconcileEvent.eventDocumentsEqual(current, source))
-				throw new Error("Checklist source changed");
+				throw new EventConcurrentModificationError(source.identity);
 			await this.repository.applyPatch(source.identity, { body: patch.body });
-		} catch {
+		} catch (error) {
+			const concurrent = error instanceof EventConcurrentModificationError;
 			diagnostics.push({
-				code: "communication.checklist-update-failed",
-				severity: "error",
+				code: concurrent
+					? "communication.checklist-concurrently-modified"
+					: "communication.checklist-update-failed",
+				severity: concurrent ? "warning" : "error",
 			});
 		}
 	}

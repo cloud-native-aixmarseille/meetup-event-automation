@@ -279,7 +279,7 @@ describe("automatic communication completion after approval", () => {
 
 		// Assert
 		expect(result.runtimeDiagnostics).toContainEqual({
-			code: "communication.feedback-unavailable",
+			code: "communication.feedback-fetch-failed",
 			severity: "error",
 		});
 		expect(f.createDispatchEvent).not.toHaveBeenCalled();
@@ -492,8 +492,8 @@ describe("automatic communication completion after approval", () => {
 		);
 		// Assert
 		expect(first.runtimeDiagnostics).toContainEqual({
-			code: "communication.checklist-update-failed",
-			severity: "error",
+			code: "communication.checklist-concurrently-modified",
+			severity: "warning",
 		});
 		expect(second.counts.dispatched).toBe(0);
 		expect(f.issue.body).toContain("- [x] Cover image");

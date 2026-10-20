@@ -90,8 +90,10 @@ It never creates or updates feedback records while preparing email.
 
 A pending thank-you batch with speaker recipients is held before approval if the
 OpenFeedback event link, credentials, agenda, or matching talks are unavailable.
-The diagnostic is `communication.feedback-unavailable`. Check the event link and
-key, synchronize the agenda, resolve ambiguous matches in OpenFeedback, and retry.
+Missing agenda, links or matching talks produce
+`communication.feedback-unavailable` for organizers. Provider failures produce
+`communication.feedback-fetch-failed` and fail CI. Synchronize the agenda or
+restore source access before retrying.
 Introductions and completed batches do not require feedback lookup. Link changes
 are included in the approval fingerprint; accepted deliveries keep their existing
 idempotency keys and are not resent.
@@ -254,10 +256,19 @@ for the actual email result.
 ## Organizer attention
 
 Both workflows finish with the [attention action](../../actions/communication/reconcile-attention/README.md),
-under the shared repository/issue lock. Before the event, the bot maintains an
-**Organizer attention** comment. From the day after the event, one **Post-event
+under the shared repository/issue lock. Before the event, diagnostics and
+organizer tasks share one checkbox comment. The final action merges all four
+stages after complete successful evaluations, removes fixed and duplicate
+diagnostics, and keeps the concrete cause when another stage reports a dependent
+blockage. Incomplete or technically failed stages preserve the previous
+diagnostic rows. The bot reuses the original diagnostic comment and adds only
+tasks not already covered by its guidance. It verifies
+bot revisions before retaining notification state, and saves that state in the
+shared comment before removing a separate attention comment. Interrupted
+consolidation resumes without losing a Slack reservation. From the day after the event, one **Post-event
 follow-up** comment holds the thank-you approval, all five task statuses, and
-current integration or delivery diagnostics:
+remaining integration or delivery actions. Field corrections stay in the merged
+diagnostic checklist. Follow-up tasks cover:
 
 - Thank the host and speakers, with one approval for the complete email batch.
 - Share slides on Meetup.
@@ -296,9 +307,15 @@ wording, and unrelated issue edits do not restart episodes.
 Due conditions share one Slack attention message per issue and local day. Later
 changes edit that message using its stored channel and timestamp. Slack uses
 [formatted text](https://docs.slack.dev/messaging/formatting-message-text/) with a
-linked meetup heading, a localized date when known, and at most three concise
-actions, errors first. An overflow link gives the number of additional tasks.
-Run and comment links have short labels; detailed guidance remains on GitHub.
+linked meetup heading, a localized date when known, and at most six actions.
+Delivery recovery, approvals, and independent integration failures come first,
+followed by the checklist's concrete field guidance, with Conference Hall blockers
+before other missing fields. Repeated approval and delivery recovery actions keep
+one direct link. Dependent email and feedback stages do not add duplicate
+prerequisite alerts; independent technical failures retain their run links.
+Previous failures in those stages remain unverified until an independent
+evaluation succeeds. An overflow link gives the number of additional tasks.
+Run and comment links have short labels; the heading links to the shared checklist.
 Missing dates and lifecycle boilerplate are omitted from Slack. Automatic link
 previews and channel-wide mentions are disabled. Only the first post requests
 fresh attention. Later failures that day therefore require organizers to read
@@ -310,8 +327,8 @@ Introduction approval messages and their decision reactions remain separate. Pub
 announcement checkboxes remain manual and use separate destinations.
 
 The final action runs even after failed dependencies. Skipped or cancelled stages
-are unknown and cannot resolve previous conditions. The original actions retain
-their failure policies. Notification failures fail the attention action without
+are unknown and cannot resolve previous conditions. Expected organizer corrections keep CI successful; unexpected technical
+failures fail under the [shared reporting policy](../development/reporting.md). Notification failures fail the attention action without
 creating recursive notification conditions. GitHub status is persisted before
 Slack is contacted, so it remains useful during a Slack outage. Failed GitHub
 persistence prevents new Slack posts; workflow failures and GitHub's normal
@@ -355,10 +372,10 @@ retry. Email reservations and final approval decisions remain independent.
 
 ## Diagnose and recover
 
-Inspect communication diagnostics on issue-update runs and the daily audit's
-summary. The audit records communication errors in a managed issue comment and
-succeeds once the comment is saved or confirmed current. Execution and comment
-persistence failures still fail the job. See the
+Inspect technical codes and counts in the workflow summary, and organizer
+actions in the merged meetup checklist. Issue updates and scheduled audits use
+the same failure policy: expected input corrections do not fail CI; source,
+execution and persistence failures do. See the
 [audit workflow contract](../../.github/workflows/check-active-meetup-issues.md).
 
 The action report shows planned messages and attempted provider calls, including
@@ -374,9 +391,12 @@ is confirmed sent, this missing reaction reference is not a notification failure
 an unconfirmed notification remains actionable. The GitHub decision remains
 authoritative and the automation does not post a duplicate alert. Do not delete approval comments or their edit history to retry a decision.
 
-A `communication.checklist-update-failed` diagnostic means dispatch results were
-recorded but issue completion could not be saved, for example after a concurrent
-edit. Run reconciliation again; accepted messages will not be sent twice.
+A `communication.checklist-concurrently-modified` diagnostic means the issue was
+edited after dispatch. The automation preserves the edit and records the
+remaining checklist work without failing CI. A
+`communication.checklist-update-failed` diagnostic identifies an unexpected
+rendering or persistence failure and fails CI. Run reconciliation again in either
+case; accepted messages will not be sent twice.
 
 The bot maintains one **Communication status** comment on the meetup issue. It
 groups message requests by type and status, without listing recipients. The

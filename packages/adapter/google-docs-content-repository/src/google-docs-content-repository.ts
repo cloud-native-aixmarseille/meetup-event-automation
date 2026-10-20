@@ -3,15 +3,15 @@ import {
 	type AssetContentRepository,
 	type AssetImageRepository,
 	type ContentBinding,
-	type ContentContract,
-	type ContentSnapshot,
 	type ContentChange,
+	type ContentContract,
 	ContentError,
+	type ContentSnapshot,
 } from "@meetup-automation/publication";
-import { DocumentTabs } from "./document-tabs.js";
-import { DocumentTemplateBindings } from "./document-template-bindings.js";
 import { DocumentContentLocations } from "./document-content-locations.js";
 import { DocumentContentRequests } from "./document-content-requests.js";
+import { DocumentTabs } from "./document-tabs.js";
+import { DocumentTemplateBindings } from "./document-template-bindings.js";
 
 export class GoogleDocsContentRepository implements AssetContentRepository {
 	private current?: docs_v1.Schema$Document;
@@ -93,7 +93,7 @@ export class GoogleDocsContentRepository implements AssetContentRepository {
 		} catch (error) {
 			if (/revision/i.test(String((error as Error)?.message)))
 				throw new ContentError("revision");
-			throw new ContentError("recovery");
+			throw error;
 		}
 	}
 }

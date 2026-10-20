@@ -22,7 +22,7 @@
 
 ## Overview
 
-Reconcile due meetup communications and dispatch them through the configured mail and Slack gateways when event, checklist, approval and delivery checks pass. Publish redacted diagnostics in annotations, logs, and the job summary.
+Reconcile due meetup communications and dispatch them through the configured mail and Slack gateways when event, checklist, approval and delivery checks pass. Report concise technical facts and diagnostic codes in logs and the job summary.
 
 <!-- overview:end -->
 <!-- usage:start -->
@@ -52,11 +52,11 @@ Reconcile due meetup communications and dispatch them through the configured mai
     # This input is required.
     openfeedback-api-key: ""
 
-    # Token for the caller repository. Requires issues:write for approval requests, checklist completion, delivery ledger, and diagnostic comments, and metadata:read to verify approvers.
+    # Token for the caller repository. Requires issues:write for approval requests, checklist completion and the delivery ledger, and metadata:read to verify approvers.
     # This input is required.
     github-token: ""
 
-    # Trusted bot login allowed to create or update managed approval, delivery ledger and communication diagnostic comments, for example my-app[bot].
+    # Trusted bot login allowed to create or update managed approval and delivery ledger comments, for example my-app[bot].
     # This input is required.
     managed-comment-author: ""
 
@@ -79,10 +79,6 @@ Reconcile due meetup communications and dispatch them through the configured mai
     # Read-only Conference Hall event API key.
     # This input is required.
     conference-hall-api-key: ""
-
-    # Use true to record communication diagnostics in a managed meetup issue comment and succeed after persistence, or false to fail on error diagnostics. Execution and comment persistence failures still fail the action. Requires the shared event lock.
-    # This input is required.
-    report-errors-to-issue: ""
 ```
 
 <!-- usage:end -->
@@ -90,21 +86,20 @@ Reconcile due meetup communications and dispatch them through the configured mai
 
 ## Inputs
 
-| **Input**                        | **Description**                                                                                                                                                                                                                                        | **Required** | **Default** |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ----------- |
-| **`locale`**                     | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.                                                                                                                     | **true**     | -           |
-| **`issue-number`**               | GitHub issue number in the caller repository containing the meetup event document to inspect.                                                                                                                                                          | **true**     | -           |
-| **`slides-ready`**               | Whether managed slides content is ready. False holds email batches that require slides. Copy-only slides use true.                                                                                                                                     | **true**     | -           |
-| **`slides-url`**                 | Direct presentation file URL from the asset action's drive-files slides-link entry. Supply on every invocation; it may be empty when slides-ready is false. Unavailable slides block due email batches.                                                | **true**     | -           |
-| **`openfeedback-api-key`**       | OpenFeedback organization API key used to read existing talk results for speaker thank-you emails. Missing or unresolved results block the thank-you batch.                                                                                            | **true**     | -           |
-| **`github-token`**               | Token for the caller repository. Requires issues:write for approval requests, checklist completion, delivery ledger, and diagnostic comments, and metadata:read to verify approvers.                                                                   | **true**     | -           |
-| **`managed-comment-author`**     | Trusted bot login allowed to create or update managed approval, delivery ledger and communication diagnostic comments, for example my-app[bot].                                                                                                        | **true**     | -           |
-| **`mailings-token`**             | Token used to dispatch due email communications to the configured mailings repository.                                                                                                                                                                 | **true**     | -           |
-| **`slack-organizer-channel-id`** | Internal meetup organizer Slack channel for approval requests and actionable organizer reminders. Public announcement channels are separate.                                                                                                           | **true**     | -           |
-| **`slack-token`**                | Slack bot token with chat:write and reactions:write for organizer notifications and decision reactions.                                                                                                                                                | **true**     | -           |
-| **`conference-hall-event`**      | Conference Hall CFP slug for live linked profiles and selected proposals.                                                                                                                                                                              | **true**     | -           |
-| **`conference-hall-api-key`**    | Read-only Conference Hall event API key.                                                                                                                                                                                                               | **true**     | -           |
-| **`report-errors-to-issue`**     | Use true to record communication diagnostics in a managed meetup issue comment and succeed after persistence, or false to fail on error diagnostics. Execution and comment persistence failures still fail the action. Requires the shared event lock. | **true**     | -           |
+| **Input**                        | **Description**                                                                                                                                                                                         | **Required** | **Default** |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
+| **`locale`**                     | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.                                                                      | **true**     | -           |
+| **`issue-number`**               | GitHub issue number in the caller repository containing the meetup event document to inspect.                                                                                                           | **true**     | -           |
+| **`slides-ready`**               | Whether managed slides content is ready. False holds email batches that require slides. Copy-only slides use true.                                                                                      | **true**     | -           |
+| **`slides-url`**                 | Direct presentation file URL from the asset action's drive-files slides-link entry. Supply on every invocation; it may be empty when slides-ready is false. Unavailable slides block due email batches. | **true**     | -           |
+| **`openfeedback-api-key`**       | OpenFeedback organization API key used to read existing talk results for speaker thank-you emails. Missing or unresolved results block the thank-you batch.                                             | **true**     | -           |
+| **`github-token`**               | Token for the caller repository. Requires issues:write for approval requests, checklist completion and the delivery ledger, and metadata:read to verify approvers.                                      | **true**     | -           |
+| **`managed-comment-author`**     | Trusted bot login allowed to create or update managed approval and delivery ledger comments, for example my-app[bot].                                                                                   | **true**     | -           |
+| **`mailings-token`**             | Token used to dispatch due email communications to the configured mailings repository.                                                                                                                  | **true**     | -           |
+| **`slack-organizer-channel-id`** | Internal meetup organizer Slack channel for approval requests and actionable organizer reminders. Public announcement channels are separate.                                                            | **true**     | -           |
+| **`slack-token`**                | Slack bot token with chat:write and reactions:write for organizer notifications and decision reactions.                                                                                                 | **true**     | -           |
+| **`conference-hall-event`**      | Conference Hall CFP slug for live linked profiles and selected proposals.                                                                                                                               | **true**     | -           |
+| **`conference-hall-api-key`**    | Read-only Conference Hall event API key.                                                                                                                                                                | **true**     | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->

@@ -2,6 +2,9 @@
 
 Status: Accepted (implemented)
 
+The proposal selection input is superseded by
+[ADR 0020](0020-unified-organizer-checklist.md).
+
 Date: 2026-10-14
 
 Updated: 2026-10-16

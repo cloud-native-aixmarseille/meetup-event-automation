@@ -5,9 +5,9 @@ import {
 	type ContentBinding,
 	type ContentChange,
 	type ContentContract,
-	type ContentSnapshot,
 	ContentError,
 	ContentFingerprint,
+	type ContentSnapshot,
 	type ObservedLocation,
 } from "@meetup-automation/publication";
 import { SlideTemplateBindings } from "./slide-template-bindings.js";
@@ -104,7 +104,7 @@ export class GoogleSlidesContentRepository implements AssetContentRepository {
 		} catch (error) {
 			if (/revision/i.test(String((error as Error)?.message)))
 				throw new ContentError("revision");
-			throw new ContentError("recovery");
+			throw error;
 		}
 	}
 

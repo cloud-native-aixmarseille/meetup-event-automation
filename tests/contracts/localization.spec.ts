@@ -4,13 +4,15 @@ import type { CommunicationDiagnostic } from "@meetup-automation/communication";
 import type { CommunicationJourneyDiagnostic } from "@meetup-automation/journey";
 import type { ReferentialDiagnostic } from "@meetup-automation/referential";
 import { describe, expect, expectTypeOf, it } from "vitest";
-import { TEXT_TOKENS } from "../../packages/domain/publication/src/domain/asset-content.js";
-import type { EventCommentMessages } from "../../packages/adapter/github-event-comment-repository/src/i18n/event-comment-messages.js";
+import { GUIDANCE } from "../../packages/adapter/github-event-comment-repository/src/diagnostic-guidance.js";
+import { DiagnosticPresenter } from "../../packages/adapter/github-event-comment-repository/src/diagnostic-presentation.js";
+import { EventCommentMessages } from "../../packages/adapter/github-event-comment-repository/src/i18n/event-comment-messages.js";
+import type { STAGE_GUIDANCE } from "../../packages/adapter/github-event-comment-repository/src/stage-diagnostic-guidance.js";
 import type { IssueFormMessages } from "../../packages/adapter/yaml-issue-form-projection/src/i18n/issue-form-messages.js";
+import { DiagnosticPolicy } from "../../packages/application/journey/src/result/diagnostic-policy.js";
 import { ActionMessages } from "../../packages/runtime/github-actions/src/i18n/action-messages.js";
 import type { MessageId } from "../../packages/runtime/github-actions/src/i18n/catalog.js";
-import type { OrganizerNotificationMessages } from "../../packages/runtime/github-actions/src/notifications/organizer-notification-messages.js";
-import { CATALOGS as NOTIFICATION_CATALOGS } from "../../packages/runtime/github-actions/src/notifications/catalog.js";
+import { DIAGNOSTICS_REFERENTIAL_EN } from "../../packages/runtime/github-actions/src/i18n/diagnostics-referential.en.js";
 import {
 	type ActionManifest,
 	automationActionPrefix,
@@ -73,41 +75,101 @@ describe("localization contract", () => {
 				}
 		}
 	});
-	it("provides a French translation for statically declared public diagnostic codes", async () => {
+	it("localizes registered organizer guidance in its owning presenter", () => {
 		// Arrange
-		const paths = (
-			await readdir(join(root, "packages"), { recursive: true })
-		).filter(
-			(path) =>
-				path.includes("/src/") &&
-				path.endsWith(".ts") &&
-				!path.endsWith(".test.ts") &&
-				!path.includes("node_modules") &&
-				!path.startsWith("presentation/"),
-		);
-		const messages = new ActionMessages("fr");
+		const english = new EventCommentMessages("en");
+		const french = new EventCommentMessages("fr");
+		const privateMessage = "private@example.test";
 		// Act
-		const codes = new Set<string>();
-		for (const path of paths) {
-			const source = await readFile(join(root, "packages", path), "utf8");
-			// Template token IDs are protocol fields, not diagnostic message codes.
-			for (const match of source.matchAll(
-				/"(?:((?:event|referential|publication|issue-form|communication)\.[a-z-]+(?:\.[a-z-]+)*))"/g,
-			))
-				if (
-					!Object.hasOwn(NOTIFICATION_CATALOGS.en, match[1] ?? "") &&
-					!TEXT_TOKENS.some((token) => token === match[1])
-				)
-					codes.add(match[1]);
+		const guidance = [...GUIDANCE].map(([code, [, key]]) => ({
+			key,
+			english: DiagnosticPresenter.presentDiagnostic(
+				{
+					code,
+					severity: "error",
+					category: "invalid",
+					message: privateMessage,
+				},
+				english,
+			),
+			french: DiagnosticPresenter.presentDiagnostic(
+				{
+					code,
+					severity: "error",
+					category: "invalid",
+					message: privateMessage,
+				},
+				french,
+			),
+		}));
+		// Assert
+		expect(guidance.length).toBeGreaterThan(0);
+		for (const item of guidance) {
+			expect(item.english.message).toBe(english.t(item.key));
+			expect(item.french.message).toBe(french.t(item.key));
+			expect(item.french.message).not.toBe(item.english.message);
+			expect(item.french.message).not.toContain(privateMessage);
 		}
-		const missing = [...codes].filter(
+	});
+	it("handles every communication code as guidance or filtered information", () => {
+		// Arrange
+		const informational = [
+			"communication.duplicate-intent",
+			"communication.delivery-already-recorded",
+			"communication.dispatch-disabled-by-config",
+			"communication.event-skipped",
+		] as const;
+		type PublicCodes =
+			| `communication.${CommunicationDiagnostic["code"]}`
+			| CommunicationJourneyDiagnostic["code"];
+		type CoveredCodes =
+			| (typeof STAGE_GUIDANCE)[number][0]
+			| (typeof informational)[number];
+		// Act
+		const classifications = informational.map((code) =>
+			DiagnosticPolicy.classify({ code, severity: "warning" }),
+		);
+		// Assert
+		expect(classifications).toEqual(informational.map(() => "informational"));
+		expectTypeOf<Exclude<PublicCodes, CoveredCodes>>().toEqualTypeOf<never>();
+	});
+	it.each([
+		["new.diagnostic", "comment.unknown"],
+		["referential.speaker.custom-field.invalid", "comment.referential"],
+	] as const)(
+		"uses safe localized guidance for extensible diagnostic %s",
+		(code, key) => {
+			// Arrange
+			const messages = new EventCommentMessages("fr");
+			const diagnostic = {
+				code,
+				severity: "error" as const,
+				category: "invalid" as const,
+				message: "private@example.test",
+				field: "private@example.test",
+			};
+			// Act
+			const presented = DiagnosticPresenter.presentDiagnostic(
+				diagnostic,
+				messages,
+			);
+			// Assert
+			expect(presented.message).toBe(messages.t(key));
+			expect(JSON.stringify(presented)).not.toContain("private@example.test");
+		},
+	);
+	it("localizes referential diagnostics used in speaker review pull requests", () => {
+		// Arrange
+		const messages = new ActionMessages("fr");
+		const codes = Object.keys(DIAGNOSTICS_REFERENTIAL_EN).map((key) =>
+			key.replace(/^diagnostic\./, ""),
+		);
+		// Act
+		const missing = codes.filter(
 			(code) => messages.diagnostic(code, "MISSING") === "MISSING",
 		);
 		// Assert
-		expect(codes.size).toBeGreaterThan(80);
 		expect(missing).toEqual([]);
-		expectTypeOf<`diagnostic.communication.${CommunicationDiagnostic["code"]}`>().toExtend<MessageId>();
-		expectTypeOf<`diagnostic.${CommunicationJourneyDiagnostic["code"]}`>().toExtend<MessageId>();
 		expectTypeOf<`diagnostic.${ReferentialDiagnostic["code"]}`>().toExtend<MessageId>();
 	});
 	it("keeps feature catalogs and application dependencies out of shared formatting infrastructure", async () => {
@@ -140,7 +202,6 @@ describe("localization contract", () => {
 		type ReportKeys = Parameters<ActionMessages["t"]>[0];
 		type CommentKeys = Parameters<EventCommentMessages["t"]>[0];
 		type FormKeys = Parameters<IssueFormMessages["t"]>[0];
-		type NotificationKeys = Parameters<OrganizerNotificationMessages["t"]>[0];
 		// Act
 		type ForeignReportKeys = Exclude<
 			ReportKeys,
@@ -152,14 +213,9 @@ describe("localization contract", () => {
 		>;
 		type ForeignCommentKeys = Exclude<CommentKeys, `comment.${string}`>;
 		type ForeignFormKeys = Exclude<FormKeys, `form.${string}`>;
-		type ForeignNotificationKeys = Exclude<
-			NotificationKeys,
-			`communication.${string}`
-		>;
 		// Assert
 		expectTypeOf<ForeignReportKeys>().toEqualTypeOf<never>();
 		expectTypeOf<ForeignCommentKeys>().toEqualTypeOf<never>();
 		expectTypeOf<ForeignFormKeys>().toEqualTypeOf<never>();
-		expectTypeOf<ForeignNotificationKeys>().toEqualTypeOf<never>();
 	});
 });

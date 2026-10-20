@@ -1,3 +1,4 @@
+import { EventConcurrentModificationError } from "@meetup-automation/event";
 import { describe, expect, it, vi } from "vitest";
 import { createTestEvent } from "../../../../domain/event/testing/event.fixtures.js";
 import { AutomationConfigFactory } from "../config/automation-config.js";
@@ -5,6 +6,7 @@ import {
 	ManageMeetupAttention,
 	type ManageMeetupAttentionDependencies,
 } from "./manage-meetup-attention.js";
+
 function fixture() {
 	const event = createTestEvent({ date: "2099-06-08" });
 	const document = {
@@ -82,7 +84,9 @@ describe("meetup attention journey", () => {
 		// Act
 		const execute = f.useCase.execute(f.document.identity, []);
 		// Assert
-		await expect(execute).rejects.toThrow("changed during evaluation");
+		await expect(execute).rejects.toBeInstanceOf(
+			EventConcurrentModificationError,
+		);
 		expect(f.execute).not.toHaveBeenCalled();
 	});
 	it("skips unrelated issues", async () => {

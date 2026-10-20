@@ -1,5 +1,5 @@
 name: Reconcile organizer attention
-description: Reconcile durable organizer conditions and bounded Slack reminders after all integration stages.
+description: Merge stage diagnostics into the organizer checklist and reconcile bounded Slack reminders.
 inputs:
   locale:
     description: Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.

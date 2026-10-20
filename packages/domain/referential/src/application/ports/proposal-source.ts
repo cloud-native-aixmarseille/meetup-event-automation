@@ -7,6 +7,7 @@ export interface SourceSpeaker {
 }
 export interface SourceProposal {
 	readonly id: string;
+	readonly number?: number;
 	readonly title: string;
 	readonly abstract: string;
 	readonly accepted: boolean;

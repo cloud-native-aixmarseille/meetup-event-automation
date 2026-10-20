@@ -58,7 +58,6 @@ beforeEach(() => {
 		"conference-hall-api-key": "synthetic-source-key",
 		"issue-number": "42",
 		"github-token": "github-test-token",
-		"managed-comment-author": "test[bot]",
 		"google-credentials": "secret-json",
 		"google-drive-meetup-folder-id": "parent",
 		"google-drive-meetup-template-folder-id": "templates",
@@ -149,7 +148,7 @@ describe("publication action boundary", () => {
 		);
 		expect(actual).toHaveProperty("slides-link");
 		expect(report.diagnostics).toEqual([]);
-		expect(report.details).toContain("Asset reconciliation completed.");
+		expect(report.details).toContain("assets=completed");
 		expect(actual1).not.toContain("secret-json");
 	});
 
@@ -173,8 +172,6 @@ describe("publication action boundary", () => {
 			templateFolderId: "templates",
 		});
 		expect(mocks.outputs["slides-ready"]).toBe(false);
-		expect(report.details.join("\n")).toContain(
-			"Asset reconciliation was skipped",
-		);
+		expect(report.details.join("\n")).toContain("assets=skipped");
 	});
 });

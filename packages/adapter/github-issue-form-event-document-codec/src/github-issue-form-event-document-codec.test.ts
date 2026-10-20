@@ -676,7 +676,7 @@ it("round-trips feedback links while preserving unmanaged issue content", () => 
 it("preserves the last managed agenda verbatim when proposal refresh fails", () => {
 	// Arrange
 	const source = document({
-		body: `${LEGACY_BODY}\n### Conference Hall proposals\n\nproposal-one\n`,
+		body: `${LEGACY_BODY}\n### Conference Hall proposals\n\n17\n`,
 	});
 	const codec = new GitHubIssueFormEventDocumentCodec();
 	const decoded = codec.decode(source).event;
@@ -703,7 +703,7 @@ it("preserves the last managed agenda verbatim when proposal refresh fails", () 
 it("round-trips imported punctuation and prevents names from breaking managed comments", () => {
 	// Arrange
 	const source = document({
-		body: `${LEGACY_BODY}\n### Conference Hall proposals\n\nproposal-one\n`,
+		body: `${LEGACY_BODY}\n### Conference Hall proposals\n\n17\n`,
 	});
 	const codec = new GitHubIssueFormEventDocumentCodec();
 	const decoded = codec.decode(source).event;

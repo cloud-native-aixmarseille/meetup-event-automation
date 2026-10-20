@@ -40,7 +40,10 @@ local changes; conflicts or a human-authored branch head require reconciliation.
 An exact-head push lease prevents replacing a concurrently updated PR branch.
 Unchanged input opens no new PR. No automatic merge is enabled.
 
-The PR links its latest successful snapshot refresh. Failed runs preserve the
+The workflow publishes only when candidate preparation emits `pr-title`.
+Expected catalog or mapping corrections keep CI successful but block publication;
+technical failures fail CI. Both can update guidance on an existing private PR.
+The PR links its latest successful snapshot refresh. Blocked runs preserve the
 last merged snapshot. Existing linked profiles refresh directly from Conference
 Hall during event runs, independently of snapshot PR merges. New identities
 become available after their mappings are merged. Merging

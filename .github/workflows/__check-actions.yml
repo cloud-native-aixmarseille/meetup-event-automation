@@ -307,7 +307,6 @@ jobs:
           conference-hall-api-key: synthetic-key
           issue-number: ${{ needs.prepare-synthetic-issue.outputs.issue-number }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          managed-comment-author: integration-tests[bot]
 
       - name: Assert event reconciliation
         shell: bash
@@ -358,7 +357,6 @@ jobs:
           slides-ready: "true"
           slides-url: https://docs.google.com/presentation/d/synthetic-slides/edit
           openfeedback-api-key: oforg_synthetic-key
-          report-errors-to-issue: "false"
           issue-number: ${{ needs.prepare-synthetic-issue.outputs.issue-number }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           managed-comment-author: integration-tests[bot]
@@ -394,7 +392,6 @@ jobs:
           conference-hall-api-key: synthetic-key
           issue-number: "1"
           github-token: ${{ github.token }}
-          managed-comment-author: integration-tests[bot]
           google-credentials: ""
           google-drive-meetup-folder-id: synthetic-parent-folder
           google-drive-meetup-template-folder-id: synthetic-template-folder
@@ -429,7 +426,6 @@ jobs:
           conference-hall-api-key: synthetic-key
           issue-number: "1"
           github-token: ${{ github.token }}
-          managed-comment-author: integration-tests[bot]
           openfeedback-api-key: ""
           kutt-api-key: synthetic-key
           kutt-base-url: https://short.example.test
@@ -445,7 +441,6 @@ jobs:
           conference-hall-api-key: synthetic-key
           issue-number: "1"
           github-token: ${{ github.token }}
-          managed-comment-author: integration-tests[bot]
           openfeedback-api-key: oforg_synthetic-key
           kutt-api-key: ""
           kutt-base-url: https://short.example.test
@@ -461,7 +456,6 @@ jobs:
           conference-hall-api-key: synthetic-key
           issue-number: "1"
           github-token: ${{ github.token }}
-          managed-comment-author: integration-tests[bot]
           openfeedback-api-key: oforg_synthetic-key
           kutt-api-key: synthetic-key
           kutt-base-url: https://short.example.test
@@ -477,7 +471,6 @@ jobs:
           conference-hall-api-key: synthetic-key
           issue-number: "1"
           github-token: ${{ github.token }}
-          managed-comment-author: integration-tests[bot]
           openfeedback-api-key: oforg_synthetic-key
           kutt-api-key: synthetic-key
           kutt-link-id: synthetic-link

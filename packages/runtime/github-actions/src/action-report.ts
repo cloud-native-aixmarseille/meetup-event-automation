@@ -6,7 +6,7 @@ import { ActionMessages } from "./i18n/action-messages.js";
 export interface ActionReportData {
 	readonly details: readonly string[];
 	readonly diagnostics: readonly PublicDiagnostic[];
-	/** Failure policy belongs to the action; diagnostics alone do not fail a run. */
+	/** Explicit technical failure; the runner also classifies diagnostic codes. */
 	readonly failure?: string;
 }
 
@@ -16,32 +16,17 @@ export class ActionReport {
 		report: ActionReportData,
 		messages = new ActionMessages(),
 	): Promise<void> {
-		const lines = [...report.details];
-		core.info(title);
-		for (const detail of report.details) {
-			// Keep multiline values from injecting workflow commands into plain logs.
-			core.info(detail.replaceAll("\r", "\\r").replaceAll("\n", "\\n"));
-		}
+		const lines = new Set(report.details);
 		for (const item of report.diagnostics) {
-			const message = ActionReport.diagnosticMessage(
-				item,
-				report.failure,
-				messages,
-			);
-			if (item.severity === "error") core.error(message);
-			else if (item.severity === "warning") core.warning(message);
-			else core.notice(message);
-			lines.push(
-				`${messages.t(`report.severity.${item.severity}`)}: ${message}`,
-			);
-		}
-		if (report.diagnostics.length === 0) {
-			core.info(messages.t("report.no-diagnostics"));
-			lines.push(messages.t("report.no-diagnostics"));
+			lines.add(ActionReport.diagnosticMessage(item));
 		}
 		if (report.failure)
-			lines.push(messages.t("report.failed", { reason: report.failure }));
-		const content = lines
+			lines.add(messages.t("report.failed", { reason: report.failure }));
+		for (const line of lines) {
+			// Keep multiline values from injecting workflow commands into plain logs.
+			core.info(line.replaceAll("\r", "\\r").replaceAll("\n", "\\n"));
+		}
+		const content = [...lines]
 			.join("\n")
 			.replaceAll("&", "&amp;")
 			.replaceAll("<", "&lt;")
@@ -56,20 +41,10 @@ export class ActionReport {
 			core.warning(messages.t("report.summary-unavailable"));
 		}
 	}
-	private static diagnosticMessage(
-		item: PublicDiagnostic,
-		failure: string | undefined,
-		messages: ActionMessages,
-	): string {
-		const field = item.field ? ` (${item.field})` : "";
+	private static diagnosticMessage(item: PublicDiagnostic): string {
+		const field = item.field ? ` field=${item.field}` : "";
 		const fixed =
-			item.fixApplied === undefined
-				? ""
-				: ` [${messages.t("report.fix-applied", { applied: String(item.fixApplied) })}]`;
-		const translated =
-			item.code === "action.execution.failed" && failure
-				? failure
-				: messages.diagnostic(item.code, item.message);
-		return `[${item.code}]${field}: ${translated}${fixed}`;
+			item.fixApplied === undefined ? "" : ` fix_applied=${item.fixApplied}`;
+		return `${item.severity} ${item.code}${field}${fixed}`;
 	}
 }

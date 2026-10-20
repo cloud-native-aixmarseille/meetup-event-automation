@@ -5,6 +5,12 @@ Status: Accepted; partially superseded by
 The unused post-recovery command is removed by [ADR 0018](0018-remove-invariant-action-options.md).
 Closed-issue audit eligibility is superseded by [ADR 0019](0019-archive-closed-meetup-issues.md).
 
+Failure classification and feedback ownership are governed by
+[ADR 0021](0021-separate-technical-and-organizer-feedback.md).
+
+Pre-event checklist ownership and Slack presentation are superseded by
+[ADR 0020](0020-unified-organizer-checklist.md).
+
 Date: 2026-10-14
 
 ## Context

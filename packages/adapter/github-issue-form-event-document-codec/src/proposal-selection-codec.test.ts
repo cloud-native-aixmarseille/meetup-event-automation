@@ -1,18 +1,41 @@
-import { describe, expect, it } from "vitest";
 import type { EventDiagnostic } from "@meetup-automation/event";
+import { describe, expect, it } from "vitest";
 import { ProposalSelectionCodec } from "./proposal-selection-codec.js";
 
 describe("ProposalSelectionCodec", () => {
-	it("reads explicitly ordered IDs while requiring a fresh source check", () => {
+	it.each([
+		"<!-- meetup-proposals:unsupported -->",
+		"<!-- meetup-proposals:1:stale -->\n<!-- meetup-proposals:1:current -->",
+	])(
+		"reports malformed selection metadata as organizer input: %s",
+		(marker) => {
+			// Arrange
+			const diagnostics: EventDiagnostic[] = [];
+			const body = `${marker}\n### Conference Hall proposals\n\n17\n`;
+
+			// Act
+			const result = ProposalSelectionCodec.read(body, diagnostics);
+
+			// Assert
+			expect(result.proposalStatus).toBe("stale");
+			expect(diagnostics).toContainEqual(
+				expect.objectContaining({
+					code: "event.proposals.invalid-selection",
+				}),
+			);
+		},
+	);
+
+	it("reads explicitly ordered proposal numbers while requiring a fresh source check", () => {
 		// Arrange
 		const body =
-			"<!-- meetup-proposals:1:current -->\n### Conference Hall proposals\n\nsecond\nfirst\n";
+			"<!-- meetup-proposals:1:current -->\n### Conference Hall proposals\n\n38\n17\n";
 		const diagnostics: EventDiagnostic[] = [];
 		// Act
 		const result = ProposalSelectionCodec.read(body, diagnostics);
 		// Assert
 		expect(result).toEqual({
-			proposalReferences: ["second", "first"],
+			proposalReferences: ["38", "17"],
 			proposalStatus: "stale" as const,
 		});
 		expect(diagnostics).toEqual([]);
@@ -33,7 +56,7 @@ describe("ProposalSelectionCodec", () => {
 		const body =
 			"<!-- meetup-proposals:1:current -->\n### Organizer notes\n\nKeep these notes\n";
 		const event = {
-			proposalReferences: ["first"],
+			proposalReferences: ["17"],
 			proposalStatus: "stale" as const,
 		};
 		// Act

@@ -8,7 +8,7 @@ export class ActionMessages extends MessageLocalizer<
 	constructor(locale = "en") {
 		super(CATALOGS, locale);
 	}
-	/** The fallback must already be redacted by the public diagnostic boundary. */
+	/** Private speaker-sync PR guidance; the fallback must already be redacted. */
 	diagnostic(code: string, fallback: string): string {
 		const key = `diagnostic.${code}` as Extract<
 			MessageId,

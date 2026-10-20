@@ -13,7 +13,7 @@
 
 ## Overview
 
-Reconcile durable organizer conditions and bounded Slack reminders after all integration stages.
+Merge stage diagnostics into the organizer checklist and reconcile bounded Slack reminders.
 
 <!-- overview:end -->
 <!-- inputs:start -->

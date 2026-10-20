@@ -7,7 +7,11 @@ import {
 export const ATTENTION_MARKER = "<!-- meetup-organizer-attention:v1 ";
 export class AttentionRecord {
 	static read(body: string): AttentionState {
-		const line = body.split("\n", 1)[0];
+		const lines = body
+			.split("\n")
+			.filter((line) => line.startsWith(ATTENTION_MARKER));
+		if (lines.length !== 1) throw new Error("Invalid attention record");
+		const line = lines[0];
 		if (!line?.startsWith(ATTENTION_MARKER) || !line.endsWith(" -->"))
 			throw new Error("Invalid attention record");
 		const state = JSON.parse(

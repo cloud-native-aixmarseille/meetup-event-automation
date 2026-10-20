@@ -127,9 +127,6 @@ export function createEventDependencies(): ReconcileEventDependencies {
 			decode: vi.fn().mockReturnValue({ event, diagnostics: [] }),
 			createPatch: vi.fn().mockReturnValue({}),
 		},
-		commentRepository: {
-			reconcileDiagnostics: vi.fn().mockResolvedValue({ changed: false }),
-		},
 		clock: { now: () => "2026-10-01T10:00:00Z" },
 	};
 }

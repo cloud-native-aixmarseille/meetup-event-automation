@@ -186,7 +186,6 @@ describe("event journey selection", () => {
 			decode: vi.fn(),
 			createPatch: vi.fn(),
 		},
-		commentRepository: { reconcileDiagnostics: vi.fn() },
 		clock: { now: () => "2026-09-04T10:00:00Z" },
 	});
 

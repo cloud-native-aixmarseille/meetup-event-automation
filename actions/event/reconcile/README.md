@@ -22,7 +22,7 @@
 
 ## Overview
 
-Read one meetup issue, derive lifecycle and readiness, and persist safe issue and managed-comment updates. Publish redacted diagnostics in annotations, logs, and the job summary.
+Read one meetup issue, derive lifecycle and readiness, and persist safe issue updates. Return diagnostics for the final organizer report.
 
 <!-- overview:end -->
 <!-- usage:start -->
@@ -48,13 +48,9 @@ Read one meetup issue, derive lifecycle and readiness, and persist safe issue an
     # This input is required.
     conference-hall-api-key: ""
 
-    # Token for the caller repository. Requires issues:write for issue normalization and managed diagnostic comments.
+    # Token for the caller repository. Requires issues:write for issue normalization.
     # This input is required.
     github-token: ""
-
-    # Trusted bot login allowed to create or update the managed diagnostic comment, for example my-app[bot].
-    # This input is required.
-    managed-comment-author: ""
 ```
 
 <!-- usage:end -->
@@ -68,8 +64,7 @@ Read one meetup issue, derive lifecycle and readiness, and persist safe issue an
 | **`issue-number`**            | GitHub issue number in the caller repository containing the meetup event document to inspect.                                      | **true**     | -           |
 | **`conference-hall-event`**   | Conference Hall CFP slug for live linked profiles and selected proposals.                                                          | **true**     | -           |
 | **`conference-hall-api-key`** | Read-only Conference Hall event API key.                                                                                           | **true**     | -           |
-| **`github-token`**            | Token for the caller repository. Requires issues:write for issue normalization and managed diagnostic comments.                    | **true**     | -           |
-| **`managed-comment-author`**  | Trusted bot login allowed to create or update the managed diagnostic comment, for example my-app[bot].                             | **true**     | -           |
+| **`github-token`**            | Token for the caller repository. Requires issues:write for issue normalization.                                                    | **true**     | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->

@@ -66,13 +66,25 @@ Every public GitHub Action must follow the Action reporting contract in
 `await ActionRunner.run` with its action title message ID and the explicit
 diagnostic-output flag matching its manifest, and return
 `ActionReportData` on every normal path, including skips. The shared
-runner/reporter owns diagnostic outputs, logs, severity-matched annotations,
-escaped job summaries, and redacted exception reporting. Include public outcome
-facts and actionable guidance; never expose private records or raw exceptions.
-Preserve each action's failure policy explicitly through `report.failure`. Add
-or update behavior tests and keep `tests/contracts/action-reporting.spec.ts`
-enforcing this for every published action. Do not add action-specific logging or
-summary implementations.
+runner/reporter owns diagnostic outputs, technical logs, escaped job summaries,
+and redacted exception reporting. Never expose private records or raw exceptions.
+Do not add action-specific logging or summary implementations.
+
+Enforce these [feedback rules](docs/development/reporting.md#required-feedback-rules)
+in every implementation, refactor, and review:
+
+1. CI must report concise technical facts. Expected organizer corrections must
+   not fail jobs; use the shared `DiagnosticPolicy` to distinguish them from
+   unexpected technical failures.
+2. Issue comments and Slack must share concise, deduplicated actions from the
+   merged checklist. Do not create separate reports of the same organizer task.
+3. Incomplete runs must preserve unresolved tasks. Missing, skipped, failed, or
+   concurrently invalidated stages are not evidence of resolution.
+
+Add or update focused behavior coverage for changed feedback behavior using
+the [reporting validation requirements](docs/development/reporting.md#validation).
+Keep `tests/contracts/action-reporting.spec.ts` enforcing shared reporting
+ownership for every published action.
 
 Generated user-facing text must use its presenter's scoped translator and
 owner-local English/French ICU catalogs. The shared

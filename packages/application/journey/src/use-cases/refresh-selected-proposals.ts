@@ -1,10 +1,11 @@
 import type { EventDiagnostic, MeetupEvent } from "@meetup-automation/event";
 import {
-	ProposalSourceError,
-	type ProposalSource,
 	type ProposalSnapshot,
+	type ProposalSource,
+	ProposalSourceError,
 	type ReferentialCatalog,
 } from "@meetup-automation/referential";
+import { ProposalSelectionError } from "./proposal-selection-error.js";
 
 export class RefreshSelectedProposals {
 	constructor(private readonly source: ProposalSource) {}
@@ -13,8 +14,12 @@ export class RefreshSelectedProposals {
 		catalog: ReferentialCatalog,
 		diagnostics: EventDiagnostic[],
 	): Promise<MeetupEvent> {
-		const ids = event.proposalReferences;
-		if (!ids?.length) return event;
+		const numbers = event.proposalReferences;
+		if (!numbers?.length) return event;
+		for (let index = diagnostics.length - 1; index >= 0; index--) {
+			if (diagnostics[index].code === "event.agenda.missing")
+				diagnostics.splice(index, 1);
+		}
 		try {
 			if (
 				diagnostics.some(
@@ -24,14 +29,17 @@ export class RefreshSelectedProposals {
 						item.severity === "error",
 				)
 			)
-				throw new ProposalSourceError("invalid");
+				return { ...event, proposalStatus: "stale" };
 			if (
-				new Set(ids).size !== ids.length ||
-				!ids.every((id) => /^[a-zA-Z0-9_-]{1,200}$/.test(id))
+				new Set(numbers).size !== numbers.length ||
+				!numbers.every(
+					(value) =>
+						/^[1-9]\d*$/.test(value) && Number.isSafeInteger(Number(value)),
+				)
 			)
-				throw new ProposalSourceError("invalid");
+				throw new ProposalSelectionError("invalid-selection");
 			const snapshot = await this.source.load();
-			const agenda = this.project(ids, snapshot, catalog);
+			const agenda = this.project(numbers, snapshot, catalog);
 			for (let index = diagnostics.length - 1; index >= 0; index--) {
 				if (diagnostics[index].code.startsWith("event.agenda."))
 					diagnostics.splice(index, 1);
@@ -39,7 +47,10 @@ export class RefreshSelectedProposals {
 			return { ...event, agenda, proposalStatus: "current" };
 		} catch (error) {
 			const code =
-				error instanceof ProposalSourceError ? error.code : "unavailable";
+				error instanceof ProposalSourceError ||
+				error instanceof ProposalSelectionError
+					? error.code
+					: "unavailable";
 			diagnostics.push({
 				code: `event.proposals.${code}`,
 				severity: "error",
@@ -52,13 +63,21 @@ export class RefreshSelectedProposals {
 		}
 	}
 	private project(
-		ids: readonly string[],
+		numbers: readonly string[],
 		snapshot: ProposalSnapshot,
 		catalog: ReferentialCatalog,
 	) {
-		return ids.map((id) => {
-			const proposal = snapshot.proposals.find((item) => item.id === id);
-			if (!proposal?.accepted) throw new ProposalSourceError("invalid");
+		const selected = new Set<string>();
+		return numbers.map((number) => {
+			const matches = snapshot.proposals.filter(
+				(item) => item.number === Number(number),
+			);
+			if (!matches.length) throw new ProposalSelectionError("not-found");
+			if (matches.length !== 1) throw new ProposalSourceError("conflict");
+			const proposal = matches[0];
+			if (selected.has(proposal.id)) throw new ProposalSourceError("invalid");
+			selected.add(proposal.id);
+			if (!proposal.accepted) throw new ProposalSelectionError("not-accepted");
 			const speakers = proposal.speakerIds.map((speakerId) => {
 				const matches = catalog.speakers.filter(
 					(speaker) =>

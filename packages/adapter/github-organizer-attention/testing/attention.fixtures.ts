@@ -74,6 +74,12 @@ export function fixture() {
 		graphql,
 		rest: {
 			issues: {
+				deleteComment: vi.fn(async ({ comment_id }: { comment_id: number }) => {
+					const index = comments.findIndex(
+						(comment) => comment.id === comment_id,
+					);
+					comments.splice(index, 1);
+				}),
 				listComments: list,
 				createComment: create,
 				updateComment: update,

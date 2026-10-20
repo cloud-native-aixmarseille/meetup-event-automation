@@ -64,8 +64,10 @@ Imported record IDs are preserved. Incomplete records and references to deleted
 speakers do not block synchronization of other talks; unrelated records remain
 untouched.
 Edit one talk at a time when several talks share the same speakers;
-ambiguous matches fail without writing the agenda. Changes to both the title and
-speaker group can create a new talk. Review such changes in OpenFeedback.
+ambiguous matches block agenda writes and appear as
+`publication.feedback.conflict` in the organizer checklist without failing CI.
+Changes to both the title and speaker group can create a new talk. Review such
+changes in OpenFeedback.
 
 Talks and speakers remain editable in OpenFeedback. The issue owns synchronized
 titles and names; changes to these fields in OpenFeedback can be overwritten on

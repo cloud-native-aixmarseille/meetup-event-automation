@@ -9,7 +9,7 @@ Open a new issue with the **Meetup** form. Fill in:
 - **Event Title** and **Event Date** (`YYYY-MM-DD`).
 - **Hoster**, using the generated choices.
 - **Event Description**, with the public event summary.
-- **Conference Hall proposals**, with one accepted proposal ID per line, in
+- **Conference Hall proposals**, with one accepted proposal number per line, in
   presentation order. You can leave this blank while planning the event.
 
 The automation generates **Agenda** from the selected proposals after submission.
@@ -27,16 +27,19 @@ the private [referentials](../reference/referentials.md).
 
 ## Resolve diagnostics and confirm participation
 
-The issue workflow normalizes supported fields and updates a diagnostic comment.
-Read that comment and fix missing or invalid values. If the workflow fails, open
-its Actions run to identify the failing integration or configuration.
+The issue workflow normalizes supported fields and finishes with one organizer
+checklist covering event details, assets, feedback and communications. Fix the
+listed values or complete the requested tasks. Expected corrections and pending
+approvals block the affected operation without failing CI.
 
 The [active-issue audit](../../.github/workflows/check-active-meetup-issues.md)
-records communication errors in a managed comment and can finish successfully
-while those errors still need attention. Review the issue comments after an audit.
+uses the same policy. Unexpected execution, source or persistence failures fail
+the workflow; open its Actions run for technical codes and counts. An incomplete
+evaluation preserves the previous checklist and reports the affected stage.
 
 After confirming participation, add `hoster:confirmed` and `speakers:confirmed`.
-The automation maintains the corresponding `needed` labels. A ready event has
+Selecting a host removes `hoster:needed`; it does not confirm participation.
+Speaker `needed` labels follow their confirmation state. A ready event has
 valid required fields, resolved host and speaker references, both confirmations,
 Meetup/CNCF/Drive links, and no blocking diagnostics. The **OpenFeedback Link**
 field may stay empty until the automation creates the feedback event.
@@ -47,8 +50,8 @@ Publish the event on Meetup and the CNCF community platform, then fill in
 ## Prepare assets and feedback
 
 The workflow creates the [Drive event folder](../integrations/assets.md), copies
-the configured templates, and fills **Drive Link**. Check the Actions report if
-asset preparation fails.
+the configured templates, and fills **Drive Link**. Follow the organizer checklist
+for content corrections and the linked Actions run for technical failures.
 
 Leave **OpenFeedback Link** empty to have the event created automatically using
 the required [organization API key](../integrations/feedback.md). A valid existing
@@ -124,11 +127,12 @@ closure; see [delivery recovery](../integrations/communications.md).
 
 ## Resolve organizer attention
 
-Before the event, use **Organizer attention** for the current task list. After the
-event, use the shared **Post-event follow-up** comment for approval, task progress,
-and diagnostics. Slack groups post-event reminders and approval into one message
-per issue and local day and updates that message as conditions change. A later
-failure may appear as an edit without a fresh notification.
+Use the merged diagnostic checklist for missing fields, content corrections and
+publication tasks. After the event, the **Post-event follow-up** comment holds
+approval controls, task progress and remaining integration or delivery actions.
+Slack combines the relevant checklist items, approvals and recovery tasks in one
+message per issue and local day. Later changes update that message, so a failure
+may appear as an edit without a fresh notification.
 
 See [organizer attention](../integrations/communications.md#organizer-attention)
 for reminder timing and recovery.

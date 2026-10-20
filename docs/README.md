@@ -85,6 +85,8 @@ for implemented behavior and contributor conventions.
 - [ADR-0017: Require explicit action inputs and consumed outputs](adr/0017-explicit-action-interfaces.md)
 - [ADR-0018: Remove invariant options and require operational output consumers](adr/0018-remove-invariant-action-options.md)
 - [ADR-0019: Archive closed meetup issues](adr/0019-archive-closed-meetup-issues.md)
+- [ADR-0020: Use one organizer checklist and visible proposal numbers](adr/0020-unified-organizer-checklist.md)
+- [ADR-0021: Separate technical failures from organizer feedback](adr/0021-separate-technical-and-organizer-feedback.md)
 
 ## Directory layout
 
@@ -130,7 +132,9 @@ docs/
     ├── 0016-render-host-logos.md
     ├── 0017-explicit-action-interfaces.md
     ├── 0018-remove-invariant-action-options.md
-    └── 0019-archive-closed-meetup-issues.md
+    ├── 0019-archive-closed-meetup-issues.md
+    ├── 0020-unified-organizer-checklist.md
+    └── 0021-separate-technical-and-organizer-feedback.md
 ```
 
 Action references stay beside `action.yml`; workflow references stay beside
