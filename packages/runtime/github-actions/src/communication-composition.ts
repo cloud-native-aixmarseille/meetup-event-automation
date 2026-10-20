@@ -1,9 +1,3 @@
-import {
-	GithubOrganizerApproval,
-	GithubApprovalClient,
-	ApprovalPresenter,
-	ApprovalMessages,
-} from "@meetup-automation/github-organizer-approval";
 import { getOctokit } from "@actions/github";
 import {
 	type DeliveryLedger,
@@ -22,30 +16,31 @@ import {
 	LedgerMessages,
 	ScopedGithubLedgerCommentClient,
 } from "@meetup-automation/github-delivery-ledger";
+import {
+	ApprovalMessages,
+	ApprovalPresenter,
+	GithubApprovalClient,
+	GithubOrganizerApproval,
+} from "@meetup-automation/github-organizer-approval";
 import { GithubRepositoryDispatchMailGateway } from "@meetup-automation/github-repository-dispatch-mail-gateway";
-import { OpenFeedbackTalkResultsGateway } from "@meetup-automation/openfeedback-event-gateway";
 import {
 	type AutomationConfig,
 	ManageMeetupCommunications,
 	ManageMeetupEvent,
 } from "@meetup-automation/journey";
+import { OpenFeedbackTalkResultsGateway } from "@meetup-automation/openfeedback-event-gateway";
 import type { ReferentialRepository } from "@meetup-automation/referential";
 import {
-	SlackNotificationGateway,
 	SlackApprovalNotification,
+	SlackNotificationGateway,
 } from "@meetup-automation/slack-notification-gateway";
 import { SystemCommunicationClock } from "@meetup-automation/system-clock";
 import type { Container } from "inversify";
-import { CommunicationIssueReport } from "./communication-issue-report.js";
 import {
 	EventComposition,
 	type EventCompositionInput,
-	type EventDocumentCompositionInput,
 	SERVICES,
 } from "./composition.js";
-import { ActionMessages } from "./i18n/action-messages.js";
-import { OrganizerReadinessPresenter } from "./notifications/organizer-readiness-presenter.js";
-import { OrganizerNotificationMessages } from "./notifications/organizer-notification-messages.js";
 
 const COMMUNICATION_SERVICES = {
 	mailGateway: Symbol("MailGateway"),
@@ -54,6 +49,7 @@ const COMMUNICATION_SERVICES = {
 };
 
 type CommunicationCompositionInput = EventCompositionInput & {
+	readonly commentAuthorLogin: string;
 	readonly issueNumber: number;
 	readonly mailingsToken: string;
 	readonly openFeedbackApiKey?: string;
@@ -64,21 +60,6 @@ type CommunicationCompositionInput = EventCompositionInput & {
 type DeliveryLedgerFactory = (dispatchAuthorized: boolean) => DeliveryLedger;
 
 export class CommunicationComposition {
-	static createIssueReport(
-		input: EventDocumentCompositionInput & { readonly issueNumber: number },
-	): CommunicationIssueReport {
-		return new CommunicationIssueReport(
-			new ScopedGithubLedgerCommentClient(
-				input.client,
-				input.owner,
-				input.repo,
-				input.issueNumber,
-			),
-			input.commentAuthorLogin,
-			new ActionMessages(input.locale),
-		);
-	}
-
 	static createCommunicationContainer(input: CommunicationCompositionInput) {
 		const container = EventComposition.createEventContainer(input);
 		CommunicationComposition.bindRepositories(container);
@@ -168,9 +149,6 @@ export class CommunicationComposition {
 					input.openFeedbackApiKey ?? "",
 				),
 				clock,
-				organizerReadinessNotification: new OrganizerReadinessPresenter(
-					new OrganizerNotificationMessages(input.locale),
-				),
 				organizerApproval: new GithubOrganizerApproval(
 					new GithubApprovalClient(
 						input.client,

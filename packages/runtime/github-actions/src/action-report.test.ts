@@ -19,7 +19,7 @@ describe("shared action reporting", () => {
 	beforeEach(() => vi.clearAllMocks());
 
 	it.each(["error", "warning", "info"] as const)(
-		"publishes %s diagnostics with their code, field, and message",
+		"logs technical %s diagnostics without organizer prose or annotations",
 		async (severity) => {
 			// Arrange
 			const diagnostics = [
@@ -27,48 +27,42 @@ describe("shared action reporting", () => {
 					code: "example.invalid",
 					severity,
 					field: "records[2].id",
-					message: "Identifiers must be unique.",
+					message: "Correct the duplicate identifier before retrying.",
 				},
 			];
-			const annotation = {
-				error: core.error,
-				warning: core.warning,
-				info: core.notice,
-			}[severity];
 
 			// Act
 			await ActionReport.write("Example action", {
-				details: ["Validation completed."],
+				details: ["validation=completed"],
 				diagnostics,
 			});
 
 			// Assert
-			expect(annotation).toHaveBeenCalledWith(
-				"[example.invalid] (records[2].id): Identifiers must be unique.",
+			expect(core.info).toHaveBeenCalledWith(
+				`${severity} example.invalid field=records[2].id`,
 			);
-			expect(core.info).toHaveBeenCalledWith("Validation completed.");
 			expect(core.summary.addHeading).toHaveBeenCalledWith("Example action", 2);
 			expect(core.summary.addRaw).toHaveBeenCalledWith(
-				expect.stringContaining("records[2].id"),
+				`<pre>validation=completed\n${severity} example.invalid field=records[2].id</pre>\n`,
 			);
-			expect(core.summary.addRaw).toHaveBeenCalledWith(
-				expect.stringContaining("Identifiers must be unique."),
-			);
+			expect(core.error).not.toHaveBeenCalled();
+			expect(core.warning).not.toHaveBeenCalled();
+			expect(core.notice).not.toHaveBeenCalled();
 			expect(core.summary.write).toHaveBeenCalledOnce();
 		},
 	);
 
-	it("reports successful operations even when no diagnostics exist", async () => {
+	it("reports successful operations without empty-diagnostic boilerplate", async () => {
 		// Arrange
-		const report = { details: ["Active events: 0."], diagnostics: [] };
+		const report = { details: ["active_events=0"], diagnostics: [] };
 
 		// Act
 		await ActionReport.write("Example action", report);
 
 		// Assert
-		expect(core.info).toHaveBeenCalledWith("No diagnostics.");
+		expect(core.info).toHaveBeenCalledExactlyOnceWith("active_events=0");
 		expect(core.summary.addRaw).toHaveBeenCalledWith(
-			expect.stringContaining("Active events: 0.\nNo diagnostics."),
+			"<pre>active_events=0</pre>\n",
 		);
 		expect(core.error).not.toHaveBeenCalled();
 	});
@@ -90,24 +84,51 @@ describe("shared action reporting", () => {
 			await ActionReport.write("Example action", { details: [], diagnostics });
 
 			// Assert
-			expect(core.notice).toHaveBeenCalledWith(
-				expect.stringContaining(String(fixApplied)),
+			expect(core.info).toHaveBeenCalledExactlyOnceWith(
+				`info example.normalized fix_applied=${fixApplied}`,
 			);
 			expect(core.summary.addRaw).toHaveBeenCalledWith(
-				expect.stringContaining("fix applied:"),
+				expect.stringContaining(`fix_applied=${fixApplied}`),
 			);
 		},
 	);
 
-	it("escapes summary content and keeps multiline details from becoming workflow commands", async () => {
+	it("deduplicates identical facts and diagnostic locations", async () => {
+		// Arrange
+		const diagnostic = {
+			code: "example.invalid",
+			severity: "error" as const,
+			field: "records[2].id",
+			message: "Correct the identifier.",
+		};
+
+		// Act
+		await ActionReport.write("Example action", {
+			details: ["validation=completed", "validation=completed"],
+			diagnostics: [
+				diagnostic,
+				diagnostic,
+				{ ...diagnostic, field: "records[3].id" },
+			],
+		});
+
+		// Assert
+		expect(core.info).toHaveBeenCalledTimes(3);
+		expect(core.summary.addRaw).toHaveBeenCalledWith(
+			"<pre>validation=completed\nerror example.invalid field=records[2].id\nerror example.invalid field=records[3].id</pre>\n",
+		);
+	});
+
+	it("escapes summary content and keeps multiline fields from becoming workflow commands", async () => {
 		// Arrange
 		const report = {
-			details: ["File: <example>&.yml\r\n::error::injected"],
+			details: ["file=<example>&.yml\r\n::error::injected"],
 			diagnostics: [
 				{
 					code: "example.warning",
 					severity: "warning" as const,
-					message: "</pre><b>Example & text</b>",
+					field: "</pre><b>text</b>\n::error::injected",
+					message: "Correct the identifier.",
 				},
 			],
 		};
@@ -117,22 +138,23 @@ describe("shared action reporting", () => {
 
 		// Assert
 		expect(core.info).toHaveBeenCalledWith(
-			"File: <example>&.yml\\r\\n::error::injected",
+			"file=<example>&.yml\\r\\n::error::injected",
+		);
+		expect(core.info).toHaveBeenCalledWith(
+			"warning example.warning field=</pre><b>text</b>\\n::error::injected",
 		);
 		expect(core.summary.addRaw).toHaveBeenCalledWith(
 			expect.stringContaining("&lt;example&gt;&amp;.yml"),
 		);
 		expect(core.summary.addRaw).toHaveBeenCalledWith(
-			expect.stringContaining(
-				"&lt;/pre&gt;&lt;b&gt;Example &amp; text&lt;/b&gt;",
-			),
+			expect.stringContaining("&lt;/pre&gt;&lt;b&gt;text&lt;/b&gt;"),
 		);
 	});
 
 	it("prints only selected report fields, not arbitrary diagnostic metadata", async () => {
 		// Arrange
 		const report = {
-			details: ["Delivery deferred."],
+			details: ["delivery=deferred"],
 			privateData: "private@example.test",
 			diagnostics: [
 				{
@@ -151,7 +173,6 @@ describe("shared action reporting", () => {
 		expect(
 			JSON.stringify([
 				vi.mocked(core.info).mock.calls,
-				vi.mocked(core.notice).mock.calls,
 				vi.mocked(core.summary.addRaw).mock.calls,
 			]),
 		).not.toContain("private@example.test");
@@ -163,7 +184,7 @@ describe("shared action reporting", () => {
 			new Error("private summary failure"),
 		);
 		const report = {
-			details: ["Validation completed."],
+			details: ["validation=completed"],
 			diagnostics: [
 				{
 					code: "example.invalid",
@@ -177,15 +198,8 @@ describe("shared action reporting", () => {
 		await ActionReport.write("Example action", report);
 
 		// Assert
-		expect(core.error).toHaveBeenCalledWith(
-			"[example.invalid]: Correct the catalog.",
-		);
-		expect(core.warning).toHaveBeenCalledWith(
-			"The job summary could not be written; the action report is available in the logs and annotations.",
-		);
+		expect(core.info).toHaveBeenCalledWith("error example.invalid");
+		expect(core.warning).toHaveBeenCalledExactlyOnceWith("summary=unavailable");
 		expect(core.summary.clear).toHaveBeenCalledOnce();
-		expect(JSON.stringify(vi.mocked(core.warning).mock.calls)).not.toContain(
-			"private summary failure",
-		);
 	});
 });

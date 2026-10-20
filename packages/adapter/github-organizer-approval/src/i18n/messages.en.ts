@@ -1,15 +1,12 @@
 export const EN_MESSAGES = {
 	"follow-up.title": "## Post-event follow-up · {date}",
 	"follow-up.instructions":
-		"This overview follows the issue's Post event checklist. Complete manual tasks there. Email approval below authorizes the thank-you batch; it does not complete the other tasks. Email tasks are checked after accepted dispatch.",
+		"Update manual tasks in the issue's Post event checklist.",
 	"follow-up.task":
 		"{task, select, thank_host {Thank the host} thank_speakers {Thank the speakers} share_slides {Share slides on Meetup} import_attendance {Import attendance into CNCF} share_social {Share on social networks} other {Post-event task}}",
-	"follow-up.stopped":
-		"Follow-up is paused: the event is not currently eligible. No email approval is requested.",
-	"follow-up.waiting":
-		"Email approval will appear here when the thank-you batch is ready. Check the workflow diagnostics if preparation is blocked.",
-	"follow-up.emails-complete":
-		"The issue checklist has no pending thank-you emails.",
+	"follow-up.stopped": "Follow-up paused.",
+	"follow-up.waiting": "Thank-you emails are not ready for approval.",
+	"follow-up.emails-complete": "No thank-you emails pending.",
 	"approval.details.summary": "Review email details",
 	"approval.details.email":
 		"{kind, select, host_introduction {Introduction for the host contact} speaker_introduction {Introduction for the speaker} host_thanks {Thank-you email for the host contact} speaker_thanks {Thank-you email for the speaker} other {Email}}",
@@ -19,13 +16,13 @@ export const EN_MESSAGES = {
 		"{kind, select, meetup {Meetup event} community {CNCF community event} slides {Meetup presentation} other {Event link}}",
 	"approval.details.feedback": "Feedback results: {title}",
 	"approval.details.omitted-emails":
-		"{count, plural, one {# additional email is included in this batch but omitted from this summary.} other {# additional emails are included in this batch but omitted from this summary.}}",
+		"{count, plural, one {# more email in this batch.} other {# more emails in this batch.}}",
 	"approval.details.omitted-links":
-		"{count, plural, one {# additional link is included in this email but omitted from this summary.} other {# additional links are included in this email but omitted from this summary.}}",
+		"{count, plural, one {# more link.} other {# more links.}}",
 	"approval.final":
-		"### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\nEvent date: {date}. This batch covers up to {count, number} recipients; completed deliveries are skipped.\n\n{status, select, approved {✅ **Approved**} rejected {❌ **Rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\nThis decision is final for this batch revision. {status, select, approved {Approved emails can be sent when delivery checks pass. Email completion is tracked in the issue checklist.} rejected {This batch will not be sent.} other {}} Changed event details or recipients require a new confirmation.",
+		"### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\n{date} · Up to {count, number} recipients.\n\n{status, select, approved {✅ **Approved**} rejected {❌ **Rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Approved for dispatch; completed deliveries are skipped.} rejected {This batch will not be sent.} other {}} Batch changes require a new approval.",
 	"approval.request":
-		"### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\nEvent date: {date}. This batch covers up to {count, number} recipients; completed deliveries are skipped.\n\nOrganizers with repository write access: check one choice below. Leave both unchecked to wait. Selecting both is invalid and keeps the request pending.\n\n- [{approveMark}] Approve sending this batch\n- [{rejectMark}] Reject sending this batch\n\nApproval applies to this batch revision. Changed event details or recipients require a new confirmation. The email checkboxes in the issue are checked after accepted dispatch.",
+		"### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\n{date} · Up to {count, number} recipients. Completed deliveries are skipped.\n\nRepository writers: select one choice.\n\n- [{approveMark}] Approve sending this batch\n- [{rejectMark}] Reject sending this batch\n\nBatch changes require a new approval.",
 	"approval.slack":
-		"Organizer confirmation needed: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}} for {date}, up to {count, number} recipients. Open the request and check Approve or Reject: {url}",
+		"{kind, select, introduction {Introduction emails} thanks {Thank-you emails} other {Action}} · {date} · Up to {count, number} recipients\nApprove or reject: {url}",
 } as const;

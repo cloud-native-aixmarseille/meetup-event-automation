@@ -3,9 +3,10 @@ import {
 	type ReferentialRepository,
 } from "@meetup-automation/referential";
 import type { EventDocument, MeetupEvent } from "@meetup-automation/event";
-import type {
-	FeedbackEventGateway,
-	FeedbackLinkGateway,
+import {
+	type FeedbackEventGateway,
+	type FeedbackLinkGateway,
+	FeedbackResolutionError,
 } from "@meetup-automation/publication";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -83,6 +84,32 @@ function journey(
 }
 
 describe("meetup feedback journey", () => {
+	it("reports conflicting feedback identities without updating the issue or shared link", async () => {
+		// Arrange
+		const { deps, events, links, useCase } = journey();
+		const error = new FeedbackResolutionError("conflict");
+		error.message = "private provider contents";
+		events.ensureEvent.mockRejectedValue(error);
+
+		// Act
+		const result = await useCase.execute({ identity });
+
+		// Assert
+		expect(result).toMatchObject({
+			skipped: true,
+			persisted: false,
+			linkUpdated: false,
+			diagnostics: [
+				{
+					code: "publication.feedback.conflict",
+					severity: "warning",
+				},
+			],
+		});
+		expect(JSON.stringify(result)).not.toContain("private provider contents");
+		expect(deps.repository.applyPatch).not.toHaveBeenCalled();
+		expect(links.updateTarget).not.toHaveBeenCalled();
+	});
 	it("keeps feedback unchanged when live profiles cannot be refreshed, including a manual agenda", async () => {
 		// Arrange
 		const { useCase, events, links } = journey({}, undefined, {
@@ -162,9 +189,6 @@ describe("meetup feedback journey", () => {
 				agenda: feedbackAgenda,
 				url: feedbackUrl,
 			});
-			expect(
-				deps.commentRepository.reconcileDiagnostics,
-			).not.toHaveBeenCalled();
 		},
 	);
 

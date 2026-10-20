@@ -25,7 +25,7 @@ An evening about platforms.
 };
 
 describe("IssueFormReader", () => {
-	it.each(["proposal-one", "_No response_"])(
+	it.each(["17", "_No response_"])(
 		"accepts a proposal form without an agenda for selection %s",
 		(selection) => {
 			// Arrange
@@ -71,7 +71,7 @@ describe("IssueFormReader", () => {
 			// Arrange
 			const source = {
 				...document,
-				body: `${document.body}\n### Conference Hall proposals\n\nproposal-one\n\n### Agenda\n\n_No response_\n\n### ${heading}\n\n_No response_\n`,
+				body: `${document.body}\n### Conference Hall proposals\n\n17\n\n### Agenda\n\n_No response_\n\n### ${heading}\n\n_No response_\n`,
 			};
 
 			// Act

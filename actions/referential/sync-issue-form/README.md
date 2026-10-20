@@ -22,7 +22,7 @@
 
 ## Overview
 
-Validate configured referentials and synchronize the public meetup issue form projection. Fail on errors in either mode; report projection drift in check mode without failing. Successful updates in fix mode pass. Publish redacted diagnostics in annotations, logs, and the job summary.
+Validate referentials and synchronize the public meetup issue form. Invalid records and projection drift are reported without failing CI; technical failures still fail.
 
 <!-- overview:end -->
 <!-- usage:start -->

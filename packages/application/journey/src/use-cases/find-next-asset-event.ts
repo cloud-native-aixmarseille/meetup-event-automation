@@ -2,14 +2,14 @@ import {
 	type EventDocument,
 	type EventDocumentCodec,
 	type EventRepository,
-	type MeetupEvent,
 	EventRuleEngine,
 	EventRuleFactory,
+	type MeetupEvent,
 } from "@meetup-automation/event";
 import {
+	type PublicAssetVenue,
 	PublicationUrlPolicies,
 	type PublicNextAssetEvent,
-	type PublicAssetVenue,
 } from "@meetup-automation/publication";
 import type { ReferentialCatalog } from "@meetup-automation/referential";
 
@@ -24,29 +24,22 @@ export class FindNextAssetEvent {
 		current: MeetupEvent,
 		catalog: ReferentialCatalog,
 	): Promise<PublicNextAssetEvent | undefined> {
-		try {
-			const candidates = await this.candidates(current);
-			candidates.sort(
-				(a, b) =>
-					a.date.localeCompare(b.date) ||
-					a.identity.issueNumber - b.identity.issueNumber,
-			);
-			for (const candidate of candidates) {
-				const host = catalog.hosts.find(
-					(item) => item.id === candidate.host?.id,
-				);
-				if (host)
-					return {
-						date: candidate.date,
-						hostName: host.displayName,
-						city: this.venues[host.id]?.city,
-					};
-			}
-			return undefined;
-		} catch {
-			// An incomplete listing must not select a later event from partial data.
-			return undefined;
+		const candidates = await this.candidates(current);
+		candidates.sort(
+			(a, b) =>
+				a.date.localeCompare(b.date) ||
+				a.identity.issueNumber - b.identity.issueNumber,
+		);
+		for (const candidate of candidates) {
+			const host = catalog.hosts.find((item) => item.id === candidate.host?.id);
+			if (host)
+				return {
+					date: candidate.date,
+					hostName: host.displayName,
+					city: this.venues[host.id]?.city,
+				};
 		}
+		return undefined;
 	}
 
 	private async candidates(current: MeetupEvent): Promise<MeetupEvent[]> {

@@ -1,4 +1,6 @@
 import * as core from "@actions/core";
+import { EventConcurrentModificationError } from "@meetup-automation/event";
+import { DiagnosticPolicy } from "@meetup-automation/journey";
 import { ActionOutput } from "./action-output.js";
 import { ActionReport, type ActionReportData } from "./action-report.js";
 import { ActionMessages } from "./i18n/action-messages.js";
@@ -18,21 +20,42 @@ export class ActionRunner {
 				core.getInput("locale", { required: true }),
 			);
 			report = await operation(messages);
+			const failures = report.diagnostics
+				.filter((item) => DiagnosticPolicy.isTechnicalFailure(item))
+				.map((item) => item.code);
+			if (!report.failure && failures.length > 0) {
+				report = {
+					...report,
+					failure: messages.t("report.technical-failure", {
+						codes: [...new Set(failures)].join(", "),
+					}),
+				};
+			}
 		} catch (error) {
-			const message = RuntimeInput.publicErrorMessage(error);
-			report = {
-				details: [
-					messages.t("report.execution.failed"),
-					messages.t("report.execution.guidance"),
-				],
-				diagnostics: [
-					{ code: "action.execution.failed", severity: "error", message },
-				],
-				failure: messages.error(
-					error instanceof Error ? error.name : "",
-					message,
-				),
-			};
+			if (error instanceof EventConcurrentModificationError) {
+				report = {
+					details: [],
+					diagnostics: [
+						{
+							code: "event.concurrently-modified",
+							severity: "info",
+							message: "event.concurrently-modified",
+						},
+					],
+				};
+			} else {
+				const message = RuntimeInput.publicErrorMessage(error);
+				report = {
+					details: [],
+					diagnostics: [
+						{ code: "action.execution.failed", severity: "error", message },
+					],
+					failure: messages.error(
+						error instanceof Error ? error.name : "",
+						message,
+					),
+				};
+			}
 		}
 		await ActionReport.write(messages.t(title), report, messages);
 		if (report.failure) core.setFailed(report.failure);

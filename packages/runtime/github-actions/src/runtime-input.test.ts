@@ -93,7 +93,7 @@ describe("GitHub Action input and error boundary", () => {
 		// No additional setup is needed.
 
 		// Act
-		const actual = RuntimeInput.booleanInput("report-errors-to-issue", "true");
+		const actual = RuntimeInput.booleanInput("slides-ready", "true");
 		const act = () =>
 			RuntimeInput.positiveIntegerInput("issue-number", "9007199254740992");
 
@@ -115,8 +115,6 @@ describe("GitHub Action input and error boundary", () => {
 
 		// Assert
 		expect(actual).toBe("EventNotFoundError: configuration is invalid");
-		expect(actual1).toBe(
-			"Meetup automation failed; inspect debug logs using a trusted runner",
-		);
+		expect(actual1).toBe("Unexpected technical failure.");
 	});
 });

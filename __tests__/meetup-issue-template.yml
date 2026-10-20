@@ -35,7 +35,7 @@
     "id": "conference_hall_proposals"
     "attributes":
       "label": "Conference Hall proposals"
-      "description": "Enter one accepted CFP proposal ID per line, in presentation order. The agenda is generated automatically from Conference Hall; edit talks and speaker profiles there."
+      "description": "Enter one accepted proposal number per line, in presentation order (e.g. 42 for .../proposals/42). The agenda is generated automatically."
     "validations":
       "required": false
   - "type": "input"

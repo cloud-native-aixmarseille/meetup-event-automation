@@ -10,9 +10,6 @@ inputs:
   issue-number:
     description: Meetup issue number.
     required: true
-  managed-comment-author:
-    description: GitHub App bot login used by event evaluation.
-    required: true
   openfeedback-api-key:
     description: OpenFeedback organization API key (`oforg_`) used to create and update events.
     required: true

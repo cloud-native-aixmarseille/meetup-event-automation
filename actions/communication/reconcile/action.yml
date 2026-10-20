@@ -1,5 +1,5 @@
 name: Reconcile meetup communications
-description: Reconcile due meetup communications and dispatch them through the configured mail and Slack gateways when event, checklist, approval and delivery checks pass. Publish redacted diagnostics in annotations, logs, and the job summary.
+description: Reconcile due meetup communications and dispatch them through the configured mail and Slack gateways when event, checklist, approval and delivery checks pass. Report concise technical facts and diagnostic codes in logs and the job summary.
 author: Cloud Native Aix-Marseille
 inputs:
   locale:
@@ -18,10 +18,10 @@ inputs:
     description: OpenFeedback organization API key used to read existing talk results for speaker thank-you emails. Missing or unresolved results block the thank-you batch.
     required: true
   github-token:
-    description: Token for the caller repository. Requires issues:write for approval requests, checklist completion, delivery ledger, and diagnostic comments, and metadata:read to verify approvers.
+    description: Token for the caller repository. Requires issues:write for approval requests, checklist completion and the delivery ledger, and metadata:read to verify approvers.
     required: true
   managed-comment-author:
-    description: Trusted bot login allowed to create or update managed approval, delivery ledger and communication diagnostic comments, for example my-app[bot].
+    description: Trusted bot login allowed to create or update managed approval and delivery ledger comments, for example my-app[bot].
     required: true
   mailings-token:
     description: Token used to dispatch due email communications to the configured mailings repository.
@@ -37,9 +37,6 @@ inputs:
     required: true
   conference-hall-api-key:
     description: Read-only Conference Hall event API key.
-    required: true
-  report-errors-to-issue:
-    description: Use true to record communication diagnostics in a managed meetup issue comment and succeed after persistence, or false to fail on error diagnostics. Execution and comment persistence failures still fail the action. Requires the shared event lock.
     required: true
 outputs:
   diagnostics:

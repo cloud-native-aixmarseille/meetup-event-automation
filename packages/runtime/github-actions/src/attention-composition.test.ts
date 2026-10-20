@@ -105,7 +105,7 @@ describe("attention runtime composition", () => {
 		]);
 		expect(f.comments).toHaveLength(1);
 		expect(f.comments[0]?.body).toContain('"status":"accepted"');
-		expect(f.comments[0]?.body).toContain("organisateurs");
+		expect(f.comments[0]?.body).toContain("- [ ] Confirmez l'hôte");
 		expect(f.comments[0]?.body).not.toContain("private-token");
 	});
 });
@@ -123,8 +123,8 @@ describe("post-event attention composition", () => {
 		// Assert
 		expect(result.posted).toBe(true);
 		expect(f.comments).toHaveLength(1);
-		expect(body).toContain("Email approval will appear here");
-		expect(body).toContain("Review the failed or blocked stage");
+		expect(body).toContain("Thank-you emails are not ready for approval.");
+		expect(body).toContain("Email preparation or delivery failed.");
 		expect(body).toContain("/actions/runs/123");
 		expect(body).not.toContain("- [ ] Approve");
 	});
@@ -218,7 +218,7 @@ describe("post-event attention composition", () => {
 		expect(state.post?.status).toBe("pending");
 		expect(f.fetcher).toHaveBeenCalledTimes(1);
 		expect(f.comments).toHaveLength(2);
-		expect(f.comments[0]?.body).toContain("shared follow-up comment");
+		expect(f.comments[0]?.body).toContain("Post-event tasks and approvals");
 		expect(f.comments[0]?.body).not.toContain("meetup-organizer-attention:v1");
 	});
 });

@@ -279,7 +279,7 @@ describe("organizer approval requests", () => {
 					? body.replace("- [ ] Reject", "- [x] Reject")
 					: variant === "command"
 						? `${body}\n/approve approval-synthetic`
-						: body.replace("up to 2", "up to 1");
+						: body.replace("Up to 2", "Up to 1");
 			decision(f, { body: altered });
 			// Act
 			const result = await f.approvals.request(request);
@@ -530,7 +530,7 @@ describe("shared post-event follow-up", () => {
 		});
 		// Assert
 		expect(commentId).toBe(100);
-		expect(waiting).toContain("Email approval will appear here");
+		expect(waiting).toContain("Thank-you emails are not ready for approval.");
 		expect(waiting).not.toContain("- [ ]");
 		expect(result.status).toBe("pending");
 		expect(f.comments).toHaveLength(1);
@@ -599,7 +599,7 @@ describe("shared post-event follow-up", () => {
 		});
 		const body = f.comments[0]?.body ?? "";
 		// Assert
-		expect(body).toContain("Follow-up is paused");
+		expect(body).toContain("Follow-up paused.");
 		expect(body).not.toContain("- [ ]");
 		expect(f.comments).toHaveLength(1);
 	});

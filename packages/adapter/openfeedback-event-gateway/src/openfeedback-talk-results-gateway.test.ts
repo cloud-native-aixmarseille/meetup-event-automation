@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { FeedbackResolutionError } from "@meetup-automation/publication";
 import {
 	agenda,
 	speakerPage,
@@ -106,7 +107,10 @@ describe("OpenFeedback talk results", () => {
 			const operation = gateway.resolve(input);
 
 			// Assert
-			await expect(operation).rejects.toThrow();
+			await expect(operation).rejects.toThrow(FeedbackResolutionError);
+			await expect(operation).rejects.toMatchObject({
+				kind: kind === "ambiguous" ? "conflict" : "unavailable",
+			});
 			expect(fetcher).toHaveBeenCalledTimes(2);
 			expect(
 				fetcher.mock.calls.every(([, options]) => options?.method === "GET"),
@@ -114,24 +118,46 @@ describe("OpenFeedback talk results", () => {
 		},
 	);
 
-	it("rejects an invalid event URL before contacting a provider", async () => {
+	it.each([
+		"not a URL",
+		"https://example.invalid/event",
+		"http://openfeedback.io/event",
+		"https://openfeedback.io/event/unexpected",
+	])(
+		"treats invalid organizer URL %s as unavailable before provider access",
+		async (url) => {
+			// Arrange
+			const fetcher = vi.fn<typeof fetch>();
+			const gateway = new OpenFeedbackTalkResultsGateway(
+				"oforg_synthetic",
+				fetcher,
+			);
+
+			// Act
+			const operation = gateway.resolve({ ...input, url });
+
+			// Assert
+			await expect(operation).rejects.toThrow(FeedbackResolutionError);
+			await expect(operation).rejects.toMatchObject({ kind: "unavailable" });
+			expect(fetcher).not.toHaveBeenCalled();
+		},
+	);
+
+	it("preserves transport failures as technical exceptions", async () => {
 		// Arrange
-		const fetcher = vi.fn<typeof fetch>();
+		const fetcher = vi
+			.fn<typeof fetch>()
+			.mockRejectedValue(new Error("private transport details"));
 		const gateway = new OpenFeedbackTalkResultsGateway(
 			"oforg_synthetic",
 			fetcher,
 		);
 
 		// Act
-		const operation = gateway.resolve({
-			...input,
-			url: "https://example.invalid/event",
-		});
+		const operation = gateway.resolve(input);
 
 		// Assert
-		await expect(operation).rejects.toThrow(
-			"Feedback link must be an OpenFeedback event URL",
-		);
-		expect(fetcher).not.toHaveBeenCalled();
+		await expect(operation).rejects.not.toBeInstanceOf(FeedbackResolutionError);
+		await expect(operation).rejects.toThrow("OpenFeedback request failed");
 	});
 });

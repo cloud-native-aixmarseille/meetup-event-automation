@@ -1,8 +1,33 @@
-import { describe, expect, it } from "vitest";
 import { ContentFingerprint } from "@meetup-automation/publication";
+import { describe, expect, it } from "vitest";
 import { docsFixture, paragraph } from "../testing/docs.fixtures.js";
 
 describe("Docs content repository", () => {
+	it("propagates an unexpected provider write failure for technical reporting", async () => {
+		// Arrange
+		const f = docsFixture();
+		const error = new Error("Synthetic authentication failure");
+		const snapshot = await f.repository.read("file", f.contract);
+		f.client.documents.batchUpdate.mockRejectedValueOnce(error);
+
+		// Act
+		const result = f.repository.apply("file", snapshot, [
+			{
+				location: snapshot.locations[0],
+				value: {
+					type: "text",
+					key: "event.title",
+					text: "Public meetup",
+					fingerprint: ContentFingerprint.of("Public meetup"),
+				},
+			},
+		]);
+
+		// Assert
+		await expect(result).rejects.toBe(error);
+		expect(f.client.documents.batchUpdate).toHaveBeenCalledOnce();
+	});
+
 	it("binds and renders slotted speaker names in body prose", async () => {
 		// Arrange
 		const f = docsFixture();

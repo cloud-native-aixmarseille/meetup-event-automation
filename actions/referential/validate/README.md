@@ -22,7 +22,7 @@
 
 ## Overview
 
-Validate the configured host and speaker catalogs and fail when invalid, returning only redacted counts and diagnostics. Publish redacted diagnostics in annotations, logs, and the job summary.
+Validate host and speaker catalogs and report redacted counts and diagnostic codes. Invalid records block dependent work; only technical failures fail CI.
 
 <!-- overview:end -->
 <!-- usage:start -->

@@ -1,13 +1,13 @@
-import { describe, expect, it, vi } from "vitest";
 import type { MeetupEvent } from "@meetup-automation/event";
 import type { HostId } from "@meetup-automation/referential";
-import { FindNextAssetEvent } from "./find-next-asset-event.js";
-import { event } from "../../testing/meetup-journey.fixtures.js";
+import { describe, expect, it, vi } from "vitest";
 import {
 	nextCandidate,
 	nextEventFixture,
 	publicCatalog,
 } from "../../testing/asset-render.fixtures.js";
+import { event } from "../../testing/meetup-journey.fixtures.js";
+import { FindNextAssetEvent } from "./find-next-asset-event.js";
 
 describe("next public meetup for assets", () => {
 	it("selects the earliest later published meetup across all pages", async () => {
@@ -93,7 +93,7 @@ describe("next public meetup for assets", () => {
 	});
 
 	it.each(["failure", "repeated-cursor", "issue-limit", "page-limit"])(
-		"does not select from incomplete data: %s",
+		"reports a technical failure for incomplete data: %s",
 		async (failure) => {
 			// Arrange
 			const f = nextEventFixture([nextCandidate()]);
@@ -121,12 +121,17 @@ describe("next public meetup for assets", () => {
 					}),
 				);
 			const finder = new FindNextAssetEvent(f.repository, f.codec);
+			let error: unknown;
 
 			// Act
-			const actual = await finder.find(event, publicCatalog);
+			try {
+				await finder.find(event, publicCatalog);
+			} catch (caught) {
+				error = caught;
+			}
 
 			// Assert
-			expect(actual).toBeUndefined();
+			expect(error).toBeInstanceOf(Error);
 		},
 	);
 });

@@ -27665,12 +27665,958 @@ function error(message, properties = {}) {
 function warning(message, properties = {}) {
   issueCommand("warning", toCommandProperties(properties), message instanceof Error ? message.toString() : message);
 }
-function notice(message, properties = {}) {
-  issueCommand("notice", toCommandProperties(properties), message instanceof Error ? message.toString() : message);
-}
 function info(message) {
   process.stdout.write(message + os4.EOL);
 }
+
+// packages/domain/event/src/application/use-cases/event-concurrent-modification-error.ts
+var EventConcurrentModificationError = class extends Error {
+  constructor(identity) {
+    super(
+      `Meetup event ${identity.repository}#${identity.issueNumber} changed during reconciliation`
+    );
+    this.name = "EventConcurrentModificationError";
+  }
+};
+
+// packages/domain/event/src/domain/model.ts
+var POST_EVENT_TASK_NAMES = Object.freeze({
+  thankHost: "Mail thanks hoster",
+  thankSpeakers: "Mail thanks speakers",
+  shareSlides: "Share slides to meetup",
+  importAttendance: "Sync attendees from tally sheet to CNCF",
+  shareOnSocialNetworks: "Social networks"
+});
+var EXPECTED_POST_EVENT_TASK_NAMES = Object.freeze([
+  POST_EVENT_TASK_NAMES.thankHost,
+  POST_EVENT_TASK_NAMES.thankSpeakers,
+  POST_EVENT_TASK_NAMES.shareSlides,
+  POST_EVENT_TASK_NAMES.importAttendance,
+  POST_EVENT_TASK_NAMES.shareOnSocialNetworks
+]);
+
+// packages/domain/event/src/domain/patch.ts
+var EMPTY_EVENT_PATCH = Object.freeze({ operations: [] });
+
+// packages/domain/event/src/domain/rule-contracts.ts
+var DEFAULT_MANAGED_LABEL_CONFIGURATION = Object.freeze({
+  meetup: "meetup",
+  hostNeeded: "hoster:needed",
+  hostConfirmed: "hoster:confirmed",
+  speakersNeeded: "speakers:needed",
+  speakersConfirmed: "speakers:confirmed",
+  occurrencePostponed: "event:postponed",
+  occurrenceHeld: "event:held",
+  occurrenceCancelled: "event:cancelled"
+});
+
+// packages/domain/event/src/domain/dto-contracts.ts
+var OCCURRENCE_STATUS_LABELS = Object.freeze({
+  scheduled: null,
+  postponed: "event:postponed",
+  held: "event:held",
+  cancelled: "event:cancelled"
+});
+
+// packages/domain/publication/src/domain/url-policy-contracts.ts
+var DEFAULT_PUBLICATION_URL_CONFIGURATION = Object.freeze({
+  meetupEventUrlPrefix: "https://www.meetup.com/cloud-native-aix-marseille/events/",
+  communityEventUrlPrefixes: Object.freeze([
+    "https://ocgroups.dev/cncf/group/cloud-native-aix-marseille/event/",
+    "https://community.cncf.io/events/details/cncf-cloud-native-aix-marseille-presents-"
+  ]),
+  assetFolderUrlPrefix: "https://drive.google.com/drive/folders/"
+});
+
+// packages/application/journey/src/result/diagnostic-policy.ts
+var ORGANIZER_CODES = /* @__PURE__ */ new Set([
+  "event.agenda.description.missing",
+  "event.agenda.legacy-line-invalid",
+  "event.agenda.missing",
+  "event.agenda.normalized",
+  "event.agenda.speaker.invalid",
+  "event.agenda.speaker.missing",
+  "event.confirmation.host.missing",
+  "event.confirmation.speakers.missing",
+  "event.date.invalid",
+  "event.date.missing",
+  "event.description.missing",
+  "event.document.checkbox.invalid",
+  "event.document.heading.duplicate",
+  "event.document.heading.missing",
+  "event.document.invalid-agenda-type",
+  "event.document.invalid-field-type",
+  "event.document.invalid-hoster-entry",
+  "event.document.invalid-hoster-type",
+  "event.document.legacy-schema",
+  "event.document.reference-metadata.duplicate",
+  "event.document.reference-metadata.invalid",
+  "event.document.reference-metadata.legacy",
+  "event.document.reference-metadata.missing",
+  "event.document.reference-metadata.stale",
+  "event.document.schema-marker.duplicate",
+  "event.document.schema-version.unsupported",
+  "event.hoster.invalid",
+  "event.hoster.missing",
+  "event.hoster.multiple",
+  "event.hoster.normalized",
+  "event.issue-title.normalized",
+  "event.labels.normalized",
+  "event.link.assets.invalid",
+  "event.link.community.invalid",
+  "event.link.feedback.invalid",
+  "event.link.meetup.invalid",
+  "event.links.normalized",
+  "event.logistics.intent.invalid",
+  "event.occurrence-status.invalid",
+  "event.occurrence-status.label-conflict",
+  "event.proposals.conflict",
+  "event.proposals.invalid-selection",
+  "event.proposals.mapping-required",
+  "event.proposals.not-accepted",
+  "event.proposals.not-found",
+  "event.title.missing",
+  "referential.contact.address.invalid",
+  "referential.contact.email.invalid",
+  "referential.contact.id.duplicate",
+  "referential.contact.id.invalid",
+  "referential.contact.name.invalid",
+  "referential.contact.phone.invalid",
+  "referential.host.display-name.duplicate",
+  "referential.host.display-name.invalid",
+  "referential.host.id.conflict",
+  "referential.host.id.invalid",
+  "referential.reference.host.ambiguous",
+  "referential.reference.host.display-name-mismatch",
+  "referential.reference.host.invalid",
+  "referential.reference.host.unknown",
+  "referential.reference.speaker.ambiguous",
+  "referential.reference.speaker.display-name-mismatch",
+  "referential.reference.speaker.invalid",
+  "referential.reference.speaker.unknown",
+  "referential.source.conflict",
+  "referential.source.mapping-required",
+  "referential.speaker.company.invalid",
+  "referential.speaker.display-name.duplicate",
+  "referential.speaker.display-name.invalid",
+  "referential.speaker.email.invalid",
+  "referential.speaker.first-name.invalid",
+  "referential.speaker.id.duplicate",
+  "referential.speaker.id.invalid",
+  "referential.speaker.last-name.invalid",
+  "referential.speaker.mapping.invalid",
+  "referential.speaker.phone.invalid",
+  "communication.approval-pending",
+  "communication.approval-rejected",
+  "communication.event-concurrently-modified",
+  "communication.checklist-concurrently-modified",
+  "communication.event-references-unresolved",
+  "communication.feedback-unavailable",
+  "communication.invalid-event-date",
+  "communication.missing-mail-destination",
+  "communication.occurrence-status-unknown",
+  "communication.referential-catalog-invalid",
+  "communication.slides-unavailable",
+  "publication.asset-url.invalid",
+  "publication.assets.content.contract",
+  "publication.assets.content.missing",
+  "publication.assets.content.location",
+  "publication.assets.content.conflict",
+  "publication.assets.content.recovery",
+  "publication.assets.content.revision",
+  "publication.assets.content.image",
+  "publication.assets.file.drift",
+  "publication.assets.missing",
+  "publication.assets.prerequisites",
+  "publication.community-url.invalid",
+  "publication.community.missing",
+  "publication.feedback.agenda",
+  "publication.feedback.ambiguous-date",
+  "publication.feedback.current-event",
+  "publication.feedback.conflict",
+  "publication.feedback.prerequisites",
+  "publication.meetup-url.invalid",
+  "publication.meetup.missing",
+  "issue-form.out-of-date",
+  "speaker-sync.invalid",
+  "speaker-sync.mapping-required",
+  "speaker-sync.conflict"
+]);
+var INFORMATIONAL_CODES = /* @__PURE__ */ new Set([
+  "event.concurrently-modified",
+  "communication.delivery-already-recorded",
+  "communication.dispatch-disabled-by-config",
+  "communication.duplicate-intent",
+  "communication.event-skipped",
+  "publication.assets.content.fallback",
+  "publication.feedback.inactive",
+  "publication.feedback.unrelated",
+  "issue-form.updated"
+]);
+var DiagnosticPolicy = class _DiagnosticPolicy {
+  static classify(diagnostic) {
+    if (diagnostic.fixApplied === true || diagnostic.severity === "info" || INFORMATIONAL_CODES.has(diagnostic.code))
+      return "informational";
+    return ORGANIZER_CODES.has(diagnostic.code) ? "organizer" : "technical";
+  }
+  static isTechnicalFailure(diagnostic) {
+    return _DiagnosticPolicy.classify(diagnostic) === "technical";
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/project-referential-choices.ts
+var ProjectReferentialChoices = class {
+  execute(catalog) {
+    return Object.freeze({
+      hostOptions: Object.freeze(catalog.hosts.map((host) => host.displayName)),
+      speakerReferences: Object.freeze(
+        catalog.speakers.map(
+          (speaker) => catalog.speakers.filter(
+            (other) => other.displayName.toLowerCase() === speaker.displayName.toLowerCase()
+          ).length > 1 ? `${speaker.displayName} [${speaker.id}]` : speaker.displayName
+        )
+      )
+    });
+  }
+};
+
+// packages/domain/referential/src/domain/identifiers.ts
+var HOST_ID_PATTERN = /^host-[0-9]{4}$/;
+var CONTACT_ID_PATTERN = /^contact-[0-9]{4}$/;
+var SPEAKER_ID_PATTERN = /^speaker-[0-9]{4}$/;
+var ReferentialIdentifiers = class {
+  static asHostId(value) {
+    return HOST_ID_PATTERN.test(value) ? value : void 0;
+  }
+  static asContactId(value) {
+    return CONTACT_ID_PATTERN.test(value) ? value : void 0;
+  }
+  static asSpeakerId(value) {
+    return SPEAKER_ID_PATTERN.test(value) ? value : void 0;
+  }
+};
+
+// packages/domain/referential/src/domain/referential-catalog.ts
+var ReferentialCatalogOperations = class _ReferentialCatalogOperations {
+  static normalizeDisplayName(value) {
+    return value.normalize("NFC").trim().replace(/\s+/g, " ");
+  }
+  static displayNameKey(value) {
+    return _ReferentialCatalogOperations.normalizeDisplayName(
+      value
+    ).toLowerCase();
+  }
+  static freezeCatalog(hosts, speakers) {
+    for (const host of hosts) {
+      for (const contact of host.contacts) {
+        Object.freeze(contact);
+      }
+      Object.freeze(host.contacts);
+      Object.freeze(host);
+    }
+    for (const speaker of speakers) {
+      Object.freeze(speaker);
+    }
+    return Object.freeze({
+      hosts: Object.freeze([...hosts]),
+      speakers: Object.freeze([...speakers])
+    });
+  }
+};
+
+// packages/domain/referential/src/domain/referential-diagnostic.ts
+var ReferentialDiagnostics = class {
+  static diagnostic(code, severity, path, message) {
+    return Object.freeze({ code, severity, path, message });
+  }
+  static freezeDiagnostics(diagnostics) {
+    return Object.freeze([...diagnostics]);
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/validate-referential-catalog-contracts.ts
+var EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// packages/domain/referential/src/application/use-cases/referential-record-fields.ts
+var ReferentialRecordFields = class {
+  static requiredText(value, code, path, message, diagnostics) {
+    if (typeof value !== "string") {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(code, "error", path, message)
+      );
+      return void 0;
+    }
+    const normalized = ReferentialCatalogOperations.normalizeDisplayName(value);
+    if (!normalized) {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(code, "error", path, message)
+      );
+      return void 0;
+    }
+    return normalized;
+  }
+  static optionalText(value, code, path, message, diagnostics) {
+    if (value === void 0 || value === null || value === "") {
+      return void 0;
+    }
+    if (typeof value !== "string") {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(code, "error", path, message)
+      );
+      return null;
+    }
+    return value.normalize("NFC").trim() || void 0;
+  }
+  static email(value, code, path, message, diagnostics) {
+    if (typeof value !== "string") {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(code, "error", path, message)
+      );
+      return void 0;
+    }
+    const normalized = value.normalize("NFC").trim().toLowerCase();
+    if (!EMAIL_PATTERN.test(normalized)) {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(code, "error", path, message)
+      );
+      return void 0;
+    }
+    return normalized;
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/host-catalog-validator.ts
+var HostCatalogValidator = class _HostCatalogValidator {
+  static validateHosts(records, diagnostics) {
+    const hostsById = /* @__PURE__ */ new Map();
+    const contactIds = /* @__PURE__ */ new Set();
+    for (const [index, record] of records.entries()) {
+      const parsed = _HostCatalogValidator.parseHostRecord(
+        record,
+        index,
+        diagnostics
+      );
+      if (!parsed) {
+        continue;
+      }
+      if (contactIds.has(parsed.contact.id)) {
+        diagnostics.push(
+          ReferentialDiagnostics.diagnostic(
+            "referential.contact.id.duplicate",
+            "error",
+            `hosts[${index}].contactId`,
+            "Contact stable identifiers must be unique."
+          )
+        );
+        continue;
+      }
+      contactIds.add(parsed.contact.id);
+      const host = hostsById.get(parsed.hostId);
+      if (!host) {
+        hostsById.set(parsed.hostId, {
+          ...record.source ? { source: Object.freeze({ ...record.source }) } : {},
+          id: parsed.hostId,
+          displayName: parsed.displayName,
+          contacts: [parsed.contact]
+        });
+        continue;
+      }
+      if (host.displayName !== parsed.displayName) {
+        diagnostics.push(
+          ReferentialDiagnostics.diagnostic(
+            "referential.host.id.conflict",
+            "error",
+            `hosts[${index}].hostId`,
+            "A host stable identifier cannot describe different host names."
+          )
+        );
+        continue;
+      }
+      host.contacts.push(parsed.contact);
+    }
+    return [...hostsById.values()].map((host) => ({
+      ...host.source ? { source: host.source } : {},
+      id: host.id,
+      displayName: host.displayName,
+      contacts: host.contacts
+    }));
+  }
+  static parseHostRecord(record, index, diagnostics) {
+    const hostId = _HostCatalogValidator.hostId(record, index, diagnostics);
+    const displayName = ReferentialRecordFields.requiredText(
+      record.displayName,
+      "referential.host.display-name.invalid",
+      `hosts[${index}].displayName`,
+      "Host display name must be a non-empty string.",
+      diagnostics
+    );
+    const contactId = _HostCatalogValidator.contactId(
+      record,
+      index,
+      diagnostics
+    );
+    const contactName = ReferentialRecordFields.requiredText(
+      record.contactName,
+      "referential.contact.name.invalid",
+      `hosts[${index}].contactName`,
+      "Contact name must be a non-empty string.",
+      diagnostics
+    );
+    const email = ReferentialRecordFields.email(
+      record.email,
+      "referential.contact.email.invalid",
+      `hosts[${index}].email`,
+      "Host contact email address is invalid.",
+      diagnostics
+    );
+    const phone = ReferentialRecordFields.optionalText(
+      record.phone,
+      "referential.contact.phone.invalid",
+      `hosts[${index}].phone`,
+      "Host contact phone must be a string when provided.",
+      diagnostics
+    );
+    const address = ReferentialRecordFields.requiredText(
+      record.address,
+      "referential.contact.address.invalid",
+      `hosts[${index}].address`,
+      "Host contact address must be a non-empty string.",
+      diagnostics
+    );
+    if (!hostId || !displayName || !contactId || !contactName || !email || address === void 0 || phone === null) {
+      return void 0;
+    }
+    return {
+      hostId,
+      displayName,
+      contact: {
+        id: contactId,
+        name: contactName,
+        email,
+        ...phone ? { phone } : {},
+        address
+      }
+    };
+  }
+  static hostId(record, index, diagnostics) {
+    const hostIdValue = ReferentialRecordFields.requiredText(
+      record.hostId,
+      "referential.host.id.invalid",
+      `hosts[${index}].hostId`,
+      "Host stable identifier must be a non-empty string.",
+      diagnostics
+    );
+    const hostId = hostIdValue ? ReferentialIdentifiers.asHostId(hostIdValue) : void 0;
+    if (hostIdValue && !hostId) {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(
+          "referential.host.id.invalid",
+          "error",
+          `hosts[${index}].hostId`,
+          "Host stable identifier must use the opaque host-0001 format."
+        )
+      );
+    }
+    return hostId;
+  }
+  static contactId(record, index, diagnostics) {
+    const contactIdValue = ReferentialRecordFields.requiredText(
+      record.contactId,
+      "referential.contact.id.invalid",
+      `hosts[${index}].contactId`,
+      "Contact stable identifier must be a non-empty string.",
+      diagnostics
+    );
+    const contactId = contactIdValue ? ReferentialIdentifiers.asContactId(contactIdValue) : void 0;
+    if (contactIdValue && !contactId) {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(
+          "referential.contact.id.invalid",
+          "error",
+          `hosts[${index}].contactId`,
+          "Contact stable identifier must use the opaque contact-0001 format."
+        )
+      );
+    }
+    return contactId;
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/speaker-source-fields.ts
+var SpeakerSourceFields = class _SpeakerSourceFields {
+  static read(record, index, diagnostics) {
+    const values = [
+      record.sourceProvider,
+      record.sourceEvent,
+      record.sourceSpeakerId
+    ];
+    const hasMapping = values.some(
+      (value) => value !== void 0 && value !== ""
+    );
+    if (hasMapping && !values.every(
+      (value) => typeof value === "string" && /^[a-zA-Z0-9_-]{1,200}$/.test(value)
+    )) {
+      _SpeakerSourceFields.invalid(index, diagnostics);
+      return {};
+    }
+    return {
+      ...hasMapping ? {
+        sourceIdentity: {
+          provider: String(record.sourceProvider),
+          event: String(record.sourceEvent),
+          speakerId: String(record.sourceSpeakerId)
+        }
+      } : {},
+      ..._SpeakerSourceFields.pictureUrl(record.pictureUrl) ? { pictureUrl: String(record.pictureUrl) } : {}
+    };
+  }
+  static pictureUrl(value) {
+    if (typeof value !== "string" || value.length > 2048) return void 0;
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" && !url.username && !url.password ? url.href : void 0;
+    } catch {
+      return void 0;
+    }
+  }
+  static validateMappings(speakers, diagnostics) {
+    const identities = /* @__PURE__ */ new Set();
+    for (const [index, speaker] of speakers.entries()) {
+      if (!speaker.sourceIdentity) continue;
+      const key = JSON.stringify(speaker.sourceIdentity);
+      if (identities.has(key)) _SpeakerSourceFields.invalid(index, diagnostics);
+      identities.add(key);
+    }
+  }
+  static invalid(index, diagnostics) {
+    diagnostics.push({
+      code: "referential.speaker.mapping.invalid",
+      severity: "error",
+      path: `speakers[${index}].sourceIdentity`,
+      message: "Source mappings must be complete, scoped and unique."
+    });
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/speaker-catalog-validator.ts
+var SpeakerCatalogValidator = class _SpeakerCatalogValidator {
+  static validateSpeakers(records, diagnostics) {
+    const speakers = [];
+    const speakerIds = /* @__PURE__ */ new Set();
+    for (const [index, record] of records.entries()) {
+      const speakerId = _SpeakerCatalogValidator.speakerId(
+        record,
+        index,
+        diagnostics
+      );
+      const { firstName, lastName, company, email, phone, displayName } = _SpeakerCatalogValidator.contactFields(record, index, diagnostics);
+      if (!speakerId || !displayName || firstName === null || lastName === null || company === null || !email || phone === null) {
+        continue;
+      }
+      if (speakerIds.has(speakerId)) {
+        diagnostics.push(
+          ReferentialDiagnostics.diagnostic(
+            "referential.speaker.id.duplicate",
+            "error",
+            `speakers[${index}].speakerId`,
+            "Speaker stable identifiers must be unique."
+          )
+        );
+        continue;
+      }
+      speakerIds.add(speakerId);
+      speakers.push({
+        ...record.source ? { source: Object.freeze({ ...record.source }) } : {},
+        id: speakerId,
+        firstName: firstName ?? "",
+        lastName: lastName ?? "",
+        displayName,
+        company: company ?? "",
+        ...SpeakerSourceFields.read(record, index, diagnostics),
+        email,
+        ...phone ? { phone } : {}
+      });
+    }
+    return speakers;
+  }
+  static speakerId(record, index, diagnostics) {
+    const speakerIdValue = ReferentialRecordFields.requiredText(
+      record.speakerId,
+      "referential.speaker.id.invalid",
+      `speakers[${index}].speakerId`,
+      "Speaker stable identifier must be a non-empty string.",
+      diagnostics
+    );
+    const speakerId = speakerIdValue ? ReferentialIdentifiers.asSpeakerId(speakerIdValue) : void 0;
+    if (speakerIdValue && !speakerId) {
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(
+          "referential.speaker.id.invalid",
+          "error",
+          `speakers[${index}].speakerId`,
+          "Speaker stable identifier must use the speaker-* slug format."
+        )
+      );
+    }
+    return speakerId;
+  }
+  static contactFields(record, index, diagnostics) {
+    const firstName = ReferentialRecordFields.optionalText(
+      record.firstName,
+      "referential.speaker.first-name.invalid",
+      `speakers[${index}].firstName`,
+      "Speaker first name must be a non-empty string.",
+      diagnostics
+    );
+    const lastName = ReferentialRecordFields.optionalText(
+      record.lastName,
+      "referential.speaker.last-name.invalid",
+      `speakers[${index}].lastName`,
+      "Speaker last name must be a non-empty string.",
+      diagnostics
+    );
+    const company = ReferentialRecordFields.optionalText(
+      record.company,
+      "referential.speaker.company.invalid",
+      `speakers[${index}].company`,
+      "Speaker company must be a non-empty string.",
+      diagnostics
+    );
+    const email = ReferentialRecordFields.email(
+      record.email,
+      "referential.speaker.email.invalid",
+      `speakers[${index}].email`,
+      "Speaker email address is invalid.",
+      diagnostics
+    );
+    const phone = ReferentialRecordFields.optionalText(
+      record.phone,
+      "referential.speaker.phone.invalid",
+      `speakers[${index}].phone`,
+      "Speaker phone must be a string when provided.",
+      diagnostics
+    );
+    const displayName = ReferentialRecordFields.requiredText(
+      record.displayName || (firstName && lastName ? `${firstName} ${lastName}` : ""),
+      "referential.speaker.display-name.invalid",
+      `speakers[${index}].displayName`,
+      "A display name or both structured names are required.",
+      diagnostics
+    );
+    return { firstName, lastName, company, email, phone, displayName };
+  }
+};
+
+// packages/domain/referential/src/domain/proposal-source-error.ts
+var ProposalSourceError = class extends Error {
+  constructor(code, retryAfterSeconds, context3) {
+    super(`Proposal source ${code}.`);
+    this.code = code;
+    this.retryAfterSeconds = retryAfterSeconds;
+    this.context = context3;
+    this.name = "ProposalSourceError";
+  }
+  code;
+  retryAfterSeconds;
+  context;
+};
+
+// packages/domain/referential/src/application/use-cases/validate-referential-catalog.ts
+var ValidateReferentialCatalog = class {
+  constructor(repository) {
+    this.repository = repository;
+  }
+  repository;
+  async execute(rawCatalog) {
+    try {
+      return this.validate(rawCatalog ?? await this.loadCatalog());
+    } catch (error2) {
+      if (!(error2 instanceof ProposalSourceError)) throw error2;
+      return Object.freeze({
+        isValid: false,
+        diagnostics: ReferentialDiagnostics.freezeDiagnostics([
+          ReferentialDiagnostics.diagnostic(
+            `referential.source.${error2.code}`,
+            "error",
+            "speakers",
+            "Source-owned speaker profiles could not be refreshed. Check source access and identity mappings before retrying."
+          )
+        ])
+      });
+    }
+  }
+  validate(input) {
+    const diagnostics = [];
+    const hosts = HostCatalogValidator.validateHosts(input.hosts, diagnostics);
+    const speakers = SpeakerCatalogValidator.validateSpeakers(
+      input.speakers,
+      diagnostics
+    );
+    this.reportDuplicateDisplayNames(
+      hosts,
+      "referential.host.display-name.duplicate",
+      "hosts",
+      "Duplicate normalized host display names are not allowed; keep one stable host per public name.",
+      diagnostics
+    );
+    SpeakerSourceFields.validateMappings(speakers, diagnostics);
+    const frozenDiagnostics = ReferentialDiagnostics.freezeDiagnostics(diagnostics);
+    if (diagnostics.some(({ severity }) => severity === "error")) {
+      return Object.freeze({
+        isValid: false,
+        diagnostics: frozenDiagnostics
+      });
+    }
+    return Object.freeze({
+      isValid: true,
+      catalog: ReferentialCatalogOperations.freezeCatalog(hosts, speakers),
+      diagnostics: frozenDiagnostics
+    });
+  }
+  async loadCatalog() {
+    if (!this.repository) {
+      throw new Error(
+        "A referential repository or an explicit raw catalog is required."
+      );
+    }
+    return this.repository.load();
+  }
+  reportDuplicateDisplayNames(entities, code, path, message, diagnostics) {
+    const counts = /* @__PURE__ */ new Map();
+    for (const entity of entities) {
+      const key = ReferentialCatalogOperations.displayNameKey(
+        entity.displayName
+      );
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    let ambiguityIndex = 0;
+    for (const count of counts.values()) {
+      if (count < 2) {
+        continue;
+      }
+      diagnostics.push(
+        ReferentialDiagnostics.diagnostic(
+          code,
+          "error",
+          `${path}.ambiguities[${ambiguityIndex}]`,
+          message
+        )
+      );
+      ambiguityIndex += 1;
+    }
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/merge-source-speakers.ts
+var MergeSourceSpeakers = class {
+  execute(rows, snapshot, state) {
+    const reserved = /* @__PURE__ */ new Set([
+      ...state.reservedIds,
+      ...rows.map((row) => row.speaker_id)
+    ]);
+    const mappings = this.mappings(rows, snapshot);
+    const merged = rows.map((row) => ({ ...row }));
+    for (const speaker of [...snapshot.speakers].sort(
+      (a, b2) => a.id.localeCompare(b2.id, "en")
+    )) {
+      let index = mappings.get(speaker.id);
+      if (index === void 0) {
+        const possibleMatch = rows.findIndex(
+          (row2) => !row2.source_speaker_id && (row2.mail?.trim().toLowerCase() === speaker.email.toLowerCase() || (row2.display_name || `${row2.firstname} ${row2.lastname}`).trim().toLowerCase() === speaker.displayName.toLowerCase())
+        );
+        if (possibleMatch !== -1)
+          throw new ProposalSourceError("mapping-required", void 0, {
+            field: `speakers[${possibleMatch}]`
+          });
+        const id = this.allocate(reserved);
+        index = merged.length;
+        merged.push({
+          speaker_id: id,
+          firstname: "",
+          lastname: "",
+          phone: "",
+          source_provider: snapshot.provider,
+          source_event: snapshot.event,
+          source_speaker_id: speaker.id
+        });
+        mappings.set(speaker.id, index);
+      }
+      const row = merged[index];
+      row.display_name = speaker.displayName;
+      row.mail = speaker.email;
+      row.company = speaker.company ?? "";
+      row.picture_url = speaker.pictureUrl ?? "";
+    }
+    return {
+      rows: merged,
+      state: { version: 1, reservedIds: [...reserved].sort() }
+    };
+  }
+  mappings(rows, snapshot) {
+    const mappings = /* @__PURE__ */ new Map();
+    for (const [index, row] of rows.entries()) {
+      if (row.source_provider !== snapshot.provider || row.source_event !== snapshot.event)
+        continue;
+      if (!row.source_speaker_id || mappings.has(row.source_speaker_id))
+        throw new ProposalSourceError("conflict");
+      mappings.set(row.source_speaker_id, index);
+    }
+    return mappings;
+  }
+  allocate(reserved) {
+    const maximum = Math.max(
+      0,
+      ...[...reserved].map((id2) => Number(id2.replace(/^speaker-/, "")))
+    );
+    if (!Number.isInteger(maximum) || maximum >= 9999)
+      throw new ProposalSourceError("conflict");
+    const id = `speaker-${String(maximum + 1).padStart(4, "0")}`;
+    reserved.add(id);
+    return id;
+  }
+};
+
+// packages/domain/communication/src/model.ts
+var MAIL_TEMPLATE_NAMES = {
+  hostIntroduction: "meetup-intro-hosting",
+  speakerIntroduction: "meetup-intro-speakers",
+  hostThanks: "meetup-thanks-hosting",
+  speakerThanks: "meetup-thanks-speakers"
+};
+
+// packages/domain/communication/src/plan-communications-contracts.ts
+var MAIL_POLICIES = {
+  introduction: {
+    hosting: {
+      kind: "host-introduction",
+      templateName: MAIL_TEMPLATE_NAMES.hostIntroduction
+    },
+    speaker: {
+      kind: "speaker-introduction",
+      templateName: MAIL_TEMPLATE_NAMES.speakerIntroduction
+    }
+  },
+  thanks: {
+    hosting: {
+      kind: "host-thanks",
+      templateName: MAIL_TEMPLATE_NAMES.hostThanks
+    },
+    speaker: {
+      kind: "speaker-thanks",
+      templateName: MAIL_TEMPLATE_NAMES.speakerThanks
+    }
+  }
+};
+
+// packages/domain/communication/src/reconcile-communications.ts
+var DEFAULT_DISPATCH_CAPABILITIES = Object.freeze({
+  mail: true,
+  notification: true
+});
+
+// packages/application/journey/src/use-cases/manage-meetup-communications-contracts.ts
+var UNRESOLVED_MAIL_RECIPIENTS = Object.freeze({
+  resolved: false,
+  recipients: Object.freeze([])
+});
+
+// packages/application/journey/src/use-cases/speaker-synchronization-error.ts
+var SpeakerSynchronizationError = class _SpeakerSynchronizationError extends Error {
+  constructor(stage, cause, diagnostics = []) {
+    super(`Speaker synchronization failed during ${stage}.`, { cause });
+    this.stage = stage;
+    this.diagnostics = diagnostics;
+    this.name = "SpeakerSynchronizationError";
+  }
+  stage;
+  diagnostics;
+  static async at(stage, operation) {
+    try {
+      return await operation();
+    } catch (error2) {
+      if (error2 instanceof _SpeakerSynchronizationError) throw error2;
+      throw new _SpeakerSynchronizationError(stage, error2);
+    }
+  }
+};
+
+// packages/application/journey/src/use-cases/synchronize-source-speakers.ts
+var SynchronizeSourceSpeakers = class {
+  constructor(source, store, form) {
+    this.source = source;
+    this.store = store;
+    this.form = form;
+  }
+  source;
+  store;
+  form;
+  async execute() {
+    const original = await SpeakerSynchronizationError.at(
+      "read-catalog",
+      () => this.store.read()
+    );
+    const snapshot = await SpeakerSynchronizationError.at(
+      "load-source",
+      () => this.source.load()
+    );
+    const merged = await SpeakerSynchronizationError.at(
+      "merge-speakers",
+      () => new MergeSourceSpeakers().execute(
+        original.rows,
+        snapshot,
+        original.state
+      )
+    );
+    const catalog = await SpeakerSynchronizationError.at(
+      "validate-catalog",
+      async () => this.validate(await this.store.candidate(merged.rows))
+    );
+    await SpeakerSynchronizationError.at(
+      "check-form",
+      () => this.project(catalog, "check")
+    );
+    const changed = await SpeakerSynchronizationError.at(
+      "save-catalog",
+      () => this.store.save(original, merged.rows, merged.state)
+    );
+    const form = await SpeakerSynchronizationError.at(
+      "update-form",
+      () => this.project(catalog, "fix")
+    );
+    return {
+      changed: changed || form.changed,
+      speakerCount: catalog.speakers.length
+    };
+  }
+  async validate(input) {
+    const validation = await new ValidateReferentialCatalog().execute(input);
+    if (!validation.isValid)
+      throw new SpeakerSynchronizationError(
+        "validate-catalog",
+        void 0,
+        validation.diagnostics.map(({ path, ...item }) => ({
+          ...item,
+          field: path
+        }))
+      );
+    return validation.catalog;
+  }
+  async project(catalog, mode) {
+    const result = await this.form.synchronize({
+      issueFormPath: ".github/ISSUE_TEMPLATE/meetup.yml",
+      occurrenceStatusFieldId: "event_status",
+      catalog,
+      mode
+    });
+    if (result.diagnostics.some((item) => item.severity === "error"))
+      throw new SpeakerSynchronizationError(
+        mode === "check" ? "check-form" : "update-form",
+        void 0,
+        result.diagnostics
+      );
+    return result;
+  }
+};
 
 // packages/runtime/github-actions/src/action-output.ts
 var ActionOutput = class _ActionOutput {
@@ -31042,232 +31988,6 @@ var MessageLocalizer = class _MessageLocalizer {
   }
 };
 
-// packages/runtime/github-actions/src/i18n/diagnostics-communication.en.ts
-var DIAGNOSTICS_COMMUNICATION_EN = {
-  "diagnostic.communication.feedback-unavailable": "Thank-you emails are blocked because speaker feedback results could not be resolved. Check the OpenFeedback event link, organization API key and synchronized talks, then retry.",
-  "diagnostic.communication.slides-unavailable": "Email dispatch requires a valid presentation file URL and ready managed content. Resolve asset diagnostics and reconcile again.",
-  "diagnostic.communication.approval-pending": "Email dispatch is waiting for approval on the meetup issue.",
-  "diagnostic.communication.approval-rejected": "The email batch was rejected. The recorded decision is final for this batch revision.",
-  "diagnostic.communication.approval-unavailable": "The organizer approval could not be verified or persisted; email dispatch is blocked.",
-  "diagnostic.communication.approval-notification-failed": "The Slack approval notification or decision reaction was not confirmed. Review the request on the meetup issue. Check the bot's channel membership and chat:write and reactions:write scopes; legacy alerts without a saved message reference cannot receive automatic reactions.",
-  "diagnostic.communication.duplicate-intent": "A duplicate communication intent was ignored.",
-  "diagnostic.communication.gateway-delivery-uncertain": "A gateway could not confirm delivery.",
-  "diagnostic.communication.gateway-delivery-rejected": "A gateway definitively rejected the delivery request.",
-  "diagnostic.communication.gateway-delivery-deferred": "A gateway deferred the request; a later retry remains safe.",
-  "diagnostic.communication.gateway-threw-ambiguous-error": "A gateway failed without a definitive delivery outcome.",
-  "diagnostic.communication.invalid-clock": "The communication clock is invalid.",
-  "diagnostic.communication.invalid-event-date": "The event date is invalid.",
-  "diagnostic.communication.invalid-identifier": "A stable communication identifier is invalid.",
-  "diagnostic.communication.invalid-readiness-window": "The readiness reminder window is invalid.",
-  "diagnostic.communication.invalid-time-zone": "The configured time zone is invalid.",
-  "diagnostic.communication.ledger-read-failed": "The delivery ledger could not be read.",
-  "diagnostic.communication.ledger-reservation-failed": "The delivery could not be reserved safely.",
-  "diagnostic.communication.ledger-status-write-failed": "The delivery status could not be recorded.",
-  "diagnostic.communication.missing-mail-destination": "An opted-in mail recipient has no destination.",
-  "diagnostic.communication.missing-notification-content": "Notification content is unavailable.",
-  "diagnostic.communication.occurrence-status-unknown": "The event occurrence status must be explicit.",
-  "diagnostic.communication.delivery-already-recorded": "The delivery ledger already contains this intent.",
-  "diagnostic.communication.dispatch-disabled-by-config": "Communication dispatch is disabled by repository configuration.",
-  "diagnostic.communication.checklist-update-failed": "Email dispatch results are recorded, but the checklist could not be updated. Run reconciliation again to recover without resending accepted messages.",
-  "diagnostic.communication.event-skipped": "The issue is not a configured meetup event.",
-  "diagnostic.communication.event-concurrently-modified": "The meetup issue changed while communications were being reconciled; no delivery was attempted.",
-  "diagnostic.communication.event-references-unresolved": "Event participants could not be resolved to stable identifiers.",
-  "diagnostic.communication.github-credential-missing": "The GitHub credential is unavailable.",
-  "diagnostic.communication.referential-catalog-invalid": "Communications are disabled because the referential catalog is invalid."
-};
-
-// packages/runtime/github-actions/src/i18n/diagnostics-communication.fr.ts
-var DIAGNOSTICS_COMMUNICATION_FR = {
-  "diagnostic.communication.feedback-unavailable": "Les e-mails de remerciement sont bloqu\xE9s car les r\xE9sultats des retours des intervenants sont indisponibles. V\xE9rifiez le lien de l'\xE9v\xE9nement OpenFeedback, la cl\xE9 API de l'organisation et les pr\xE9sentations synchronis\xE9es, puis r\xE9essayez.",
-  "diagnostic.communication.slides-unavailable": "Les envois n\xE9cessitent un lien de pr\xE9sentation valide et un contenu g\xE9r\xE9 pr\xEAt. Corrigez les diagnostics des documents puis relancez la r\xE9conciliation.",
-  "diagnostic.communication.approval-pending": "Les e-mails attendent une confirmation dans le ticket du meetup.",
-  "diagnostic.communication.approval-rejected": "Le lot d'e-mails a \xE9t\xE9 refus\xE9. La d\xE9cision enregistr\xE9e est d\xE9finitive pour cette version du lot.",
-  "diagnostic.communication.approval-unavailable": "La confirmation des organisateurs n'a pas pu \xEAtre v\xE9rifi\xE9e ou enregistr\xE9e ; l'envoi des e-mails est bloqu\xE9.",
-  "diagnostic.communication.approval-notification-failed": "La notification Slack ou la r\xE9action \xE0 la d\xE9cision n'a pas \xE9t\xE9 confirm\xE9e. Consultez la demande dans le ticket du meetup. V\xE9rifiez que le bot est membre du canal et poss\xE8de les autorisations chat:write et reactions:write ; les anciennes alertes sans r\xE9f\xE9rence de message enregistr\xE9e ne peuvent pas recevoir de r\xE9action automatique.",
-  "diagnostic.communication.duplicate-intent": "Une intention de communication en double a \xE9t\xE9 ignor\xE9e.",
-  "diagnostic.communication.gateway-delivery-uncertain": "Un service n'a pas pu confirmer la livraison.",
-  "diagnostic.communication.gateway-delivery-rejected": "Un service a refus\xE9 d\xE9finitivement la demande de livraison.",
-  "diagnostic.communication.gateway-delivery-deferred": "Un service a diff\xE9r\xE9 la demande ; une nouvelle tentative reste s\xFBre.",
-  "diagnostic.communication.gateway-threw-ambiguous-error": "Un service a \xE9chou\xE9 sans r\xE9sultat de livraison d\xE9finitif.",
-  "diagnostic.communication.invalid-clock": "L'horloge des communications est invalide.",
-  "diagnostic.communication.invalid-event-date": "La date de l'\xE9v\xE9nement est invalide.",
-  "diagnostic.communication.invalid-identifier": "Un identifiant stable de communication est invalide.",
-  "diagnostic.communication.invalid-readiness-window": "La p\xE9riode de rappel de pr\xE9paration est invalide.",
-  "diagnostic.communication.invalid-time-zone": "Le fuseau horaire configur\xE9 est invalide.",
-  "diagnostic.communication.ledger-read-failed": "Le registre des livraisons n'a pas pu \xEAtre lu.",
-  "diagnostic.communication.ledger-reservation-failed": "La livraison n'a pas pu \xEAtre r\xE9serv\xE9e de mani\xE8re s\xFBre.",
-  "diagnostic.communication.ledger-status-write-failed": "L'\xE9tat de la livraison n'a pas pu \xEAtre enregistr\xE9.",
-  "diagnostic.communication.missing-mail-destination": "Un destinataire ayant accept\xE9 les e-mails n'a pas d'adresse.",
-  "diagnostic.communication.missing-notification-content": "Le contenu de la notification est indisponible.",
-  "diagnostic.communication.occurrence-status-unknown": "Le statut de l'\xE9v\xE9nement doit \xEAtre explicite.",
-  "diagnostic.communication.delivery-already-recorded": "Le registre des livraisons contient d\xE9j\xE0 cette intention.",
-  "diagnostic.communication.dispatch-disabled-by-config": "L'envoi des communications est d\xE9sactiv\xE9 par la configuration du d\xE9p\xF4t.",
-  "diagnostic.communication.checklist-update-failed": "Les r\xE9sultats des envois sont enregistr\xE9s, mais la liste de t\xE2ches n'a pas pu \xEAtre mise \xE0 jour. Relancez la r\xE9conciliation pour la restaurer sans renvoyer les messages accept\xE9s.",
-  "diagnostic.communication.event-skipped": "L'issue n'est pas un \xE9v\xE9nement meetup configur\xE9.",
-  "diagnostic.communication.event-concurrently-modified": "L'issue a chang\xE9 pendant la pr\xE9paration des communications ; aucun envoi n'a \xE9t\xE9 tent\xE9.",
-  "diagnostic.communication.event-references-unresolved": "Les participants n'ont pas pu \xEAtre associ\xE9s \xE0 des identifiants stables.",
-  "diagnostic.communication.github-credential-missing": "Les identifiants GitHub sont indisponibles.",
-  "diagnostic.communication.referential-catalog-invalid": "Les communications sont d\xE9sactiv\xE9es car le catalogue de r\xE9f\xE9rences est invalide."
-};
-
-// packages/runtime/github-actions/src/i18n/diagnostics-event.en.ts
-var DIAGNOSTICS_EVENT_EN = {
-  "diagnostic.event.proposals.invalid": "Selected proposals could not be refreshed; the last agenda is stale. Check source access, acceptance and reviewed speaker mappings.",
-  "diagnostic.event.proposals.unavailable": "Selected proposals could not be refreshed; the last agenda is stale. Check source access, acceptance and reviewed speaker mappings.",
-  "diagnostic.event.proposals.rate-limited": "Selected proposals could not be refreshed; the last agenda is stale. Check source access, acceptance and reviewed speaker mappings.",
-  "diagnostic.event.proposals.mapping-required": "Selected proposals could not be refreshed; the last agenda is stale. Check source access, acceptance and reviewed speaker mappings.",
-  "diagnostic.event.proposals.conflict": "Selected proposals could not be refreshed; the last agenda is stale. Check source access, acceptance and reviewed speaker mappings.",
-  "diagnostic.event.link.feedback.invalid": "The feedback link must be a valid HTTPS URL.",
-  "diagnostic.event.document.reference-metadata.duplicate": "The event document contains duplicate reference metadata",
-  "diagnostic.event.document.reference-metadata.invalid": "Stable reference metadata is malformed",
-  "diagnostic.event.document.reference-metadata.legacy": "Unbound stable reference metadata cannot safely restore participant IDs",
-  "diagnostic.event.document.reference-metadata.stale": "Stable reference metadata does not match visible participants",
-  "diagnostic.event.document.reference-metadata.missing": "Stable reference metadata is missing",
-  "diagnostic.event.document.schema-marker.duplicate": "The event document contains duplicate schema markers",
-  "diagnostic.event.document.schema-version.unsupported": "The event document schema version is unsupported",
-  "diagnostic.event.agenda.missing": "At least one agenda entry is required",
-  "diagnostic.event.agenda.normalized": "The agenda can be normalized safely",
-  "diagnostic.event.agenda.speaker.missing": "Each agenda entry must have at least one speaker",
-  "diagnostic.event.agenda.speaker.invalid": "Speaker display name must not be empty",
-  "diagnostic.event.agenda.description.missing": "Agenda entry description must not be empty",
-  "diagnostic.event.date.missing": "An event date is required",
-  "diagnostic.event.date.invalid": "Event date must be a real calendar date formatted as YYYY-MM-DD",
-  "diagnostic.event.description.missing": "An event description is required",
-  "diagnostic.event.hoster.missing": "A host must be selected",
-  "diagnostic.event.hoster.invalid": "Host display name must not be empty",
-  "diagnostic.event.hoster.normalized": "The host reference can be normalized safely",
-  "diagnostic.event.links.normalized": "Publication links can be normalized safely",
-  "diagnostic.event.occurrence-status.label-conflict": "Occurrence status labels are mutually exclusive; keep only one of event:postponed, event:held, or event:cancelled",
-  "diagnostic.event.occurrence-status.invalid": "Occurrence status must be scheduled, postponed, held, or cancelled",
-  "diagnostic.event.title.missing": "An event title is required",
-  "diagnostic.event.document.invalid-hoster-type": "The legacy hoster field must be an array",
-  "diagnostic.event.hoster.multiple": "A meetup event must have exactly one host",
-  "diagnostic.event.document.invalid-hoster-entry": "The legacy hoster entry must be a string",
-  "diagnostic.event.document.invalid-agenda-type": "The legacy agenda field must be a string",
-  "diagnostic.event.labels.normalized": "Managed meetup labels can be reconciled safely",
-  "diagnostic.event.document.legacy-schema": "The legacy event document was migrated to schema version 1",
-  "diagnostic.event.confirmation.host.missing": "Host confirmation is required before the event is ready",
-  "diagnostic.event.confirmation.speakers.missing": "Speaker confirmation is required before the event is ready",
-  "diagnostic.event.agenda.legacy-line-invalid": "Use - Speaker: Talk description for each agenda line.",
-  "diagnostic.event.link.meetup.invalid": "The Meetup publication link must be a valid HTTPS URL.",
-  "diagnostic.event.link.community.invalid": "The CNCF / OCGroups publication link must be a valid HTTPS URL.",
-  "diagnostic.event.link.assets.invalid": "The asset folder link must be a valid HTTPS URL.",
-  "diagnostic.event.logistics.intent.invalid": "Choose Yes or No, or leave the response empty if undecided.",
-  "diagnostic.event.document.heading.missing": "A required issue section heading is missing.",
-  "diagnostic.event.document.heading.duplicate": "An issue section heading is duplicated.",
-  "diagnostic.event.document.checkbox.invalid": "Use - [ ] Task or - [x] Task for checkboxes.",
-  "diagnostic.event.document.invalid-field-type": "The issue field must contain text.",
-  "diagnostic.event.issue-title.normalized": "The issue title can be normalized safely."
-};
-
-// packages/runtime/github-actions/src/i18n/diagnostics-event.fr.ts
-var DIAGNOSTICS_EVENT_FR = {
-  "diagnostic.event.proposals.invalid": "Les propositions ne peuvent pas \xEAtre actualis\xE9es. Le dernier programme est p\xE9rim\xE9 ; v\xE9rifiez les acc\xE8s, les acceptations et les identit\xE9s valid\xE9es.",
-  "diagnostic.event.proposals.unavailable": "Les propositions ne peuvent pas \xEAtre actualis\xE9es. Le dernier programme est p\xE9rim\xE9 ; v\xE9rifiez les acc\xE8s, les acceptations et les identit\xE9s valid\xE9es.",
-  "diagnostic.event.proposals.rate-limited": "Les propositions ne peuvent pas \xEAtre actualis\xE9es. Le dernier programme est p\xE9rim\xE9 ; v\xE9rifiez les acc\xE8s, les acceptations et les identit\xE9s valid\xE9es.",
-  "diagnostic.event.proposals.mapping-required": "Les propositions ne peuvent pas \xEAtre actualis\xE9es. Le dernier programme est p\xE9rim\xE9 ; v\xE9rifiez les acc\xE8s, les acceptations et les identit\xE9s valid\xE9es.",
-  "diagnostic.event.proposals.conflict": "Les propositions ne peuvent pas \xEAtre actualis\xE9es. Le dernier programme est p\xE9rim\xE9 ; v\xE9rifiez les acc\xE8s, les acceptations et les identit\xE9s valid\xE9es.",
-  "diagnostic.event.link.feedback.invalid": "Le lien des retours doit \xEAtre une URL HTTPS valide.",
-  "diagnostic.event.document.reference-metadata.duplicate": "Le document contient des m\xE9tadonn\xE9es de r\xE9f\xE9rences en double.",
-  "diagnostic.event.document.reference-metadata.invalid": "Les m\xE9tadonn\xE9es des r\xE9f\xE9rences stables sont mal form\xE9es.",
-  "diagnostic.event.document.reference-metadata.legacy": "Les anciennes m\xE9tadonn\xE9es ne permettent pas de r\xE9tablir les identifiants des participants de mani\xE8re s\xFBre.",
-  "diagnostic.event.document.reference-metadata.stale": "Les m\xE9tadonn\xE9es des r\xE9f\xE9rences stables ne correspondent pas aux participants visibles.",
-  "diagnostic.event.document.reference-metadata.missing": "Les m\xE9tadonn\xE9es des r\xE9f\xE9rences stables sont manquantes.",
-  "diagnostic.event.document.schema-marker.duplicate": "Le document contient des marqueurs de sch\xE9ma en double.",
-  "diagnostic.event.document.schema-version.unsupported": "La version du sch\xE9ma du document n'est pas prise en charge.",
-  "diagnostic.event.agenda.missing": "Le programme doit contenir au moins une conf\xE9rence.",
-  "diagnostic.event.agenda.normalized": "Le programme peut \xEAtre normalis\xE9 sans risque.",
-  "diagnostic.event.agenda.speaker.missing": "Chaque conf\xE9rence doit avoir au moins un intervenant.",
-  "diagnostic.event.agenda.speaker.invalid": "Le nom de l'intervenant ne doit pas \xEAtre vide.",
-  "diagnostic.event.agenda.description.missing": "La description de la conf\xE9rence ne doit pas \xEAtre vide.",
-  "diagnostic.event.date.missing": "La date de l'\xE9v\xE9nement est obligatoire.",
-  "diagnostic.event.date.invalid": "La date doit \xEAtre une date r\xE9elle au format AAAA-MM-JJ.",
-  "diagnostic.event.description.missing": "La description de l'\xE9v\xE9nement est obligatoire.",
-  "diagnostic.event.hoster.missing": "Un h\xF4te doit \xEAtre s\xE9lectionn\xE9.",
-  "diagnostic.event.hoster.invalid": "Le nom de l'h\xF4te ne doit pas \xEAtre vide.",
-  "diagnostic.event.hoster.normalized": "La r\xE9f\xE9rence de l'h\xF4te peut \xEAtre normalis\xE9e sans risque.",
-  "diagnostic.event.links.normalized": "Les liens de publication peuvent \xEAtre normalis\xE9s sans risque.",
-  "diagnostic.event.occurrence-status.label-conflict": "Les labels de statut s'excluent mutuellement ; conservez uniquement event:postponed, event:held ou event:cancelled.",
-  "diagnostic.event.occurrence-status.invalid": "Le statut doit \xEAtre scheduled, postponed, held ou cancelled.",
-  "diagnostic.event.title.missing": "Le titre de l'\xE9v\xE9nement est obligatoire.",
-  "diagnostic.event.document.invalid-hoster-type": "L'ancien champ hoster doit \xEAtre un tableau.",
-  "diagnostic.event.hoster.multiple": "L'\xE9v\xE9nement doit avoir exactement un h\xF4te.",
-  "diagnostic.event.document.invalid-hoster-entry": "L'ancienne r\xE9f\xE9rence d'h\xF4te doit \xEAtre une cha\xEEne de caract\xE8res.",
-  "diagnostic.event.document.invalid-agenda-type": "L'ancien champ agenda doit \xEAtre une cha\xEEne de caract\xE8res.",
-  "diagnostic.event.labels.normalized": "Les labels g\xE9r\xE9s par l'automatisation peuvent \xEAtre synchronis\xE9s sans risque.",
-  "diagnostic.event.document.legacy-schema": "L'ancien document a \xE9t\xE9 migr\xE9 vers la version 1 du sch\xE9ma.",
-  "diagnostic.event.confirmation.host.missing": "La confirmation de l'h\xF4te est n\xE9cessaire pour que l'\xE9v\xE9nement soit pr\xEAt.",
-  "diagnostic.event.confirmation.speakers.missing": "La confirmation des intervenants est n\xE9cessaire pour que l'\xE9v\xE9nement soit pr\xEAt.",
-  "diagnostic.event.agenda.legacy-line-invalid": "Utilisez - Intervenant: Description pour chaque ligne du programme.",
-  "diagnostic.event.link.meetup.invalid": "Le lien Meetup doit \xEAtre une URL HTTPS valide.",
-  "diagnostic.event.link.community.invalid": "Le lien CNCF / OCGroups doit \xEAtre une URL HTTPS valide.",
-  "diagnostic.event.link.assets.invalid": "Le lien vers le dossier des fichiers doit \xEAtre une URL HTTPS valide.",
-  "diagnostic.event.logistics.intent.invalid": "Choisissez Yes ou No, ou laissez la r\xE9ponse vide si elle reste ind\xE9cise.",
-  "diagnostic.event.document.heading.missing": "Un en-t\xEAte de section obligatoire est manquant.",
-  "diagnostic.event.document.heading.duplicate": "Un en-t\xEAte de section est pr\xE9sent en double.",
-  "diagnostic.event.document.checkbox.invalid": "Utilisez - [ ] T\xE2che ou - [x] T\xE2che pour les cases \xE0 cocher.",
-  "diagnostic.event.document.invalid-field-type": "Le champ de l'issue doit contenir du texte.",
-  "diagnostic.event.issue-title.normalized": "Le titre de l'issue peut \xEAtre normalis\xE9 sans risque."
-};
-
-// packages/runtime/github-actions/src/i18n/diagnostics-other.en.ts
-var DIAGNOSTICS_OTHER_EN = {
-  "diagnostic.publication.assets.file.drift": "An event template copy is missing or its name or template metadata has changed",
-  "diagnostic.publication.assets.content.contract": "Check the versioned content contract, supported MIME type, tokens, image slots and fit policy.",
-  "diagnostic.publication.assets.content.missing": "Complete the required public text or link, then reconcile again. The existing copy is reused.",
-  "diagnostic.publication.assets.content.location": "Place Slides tokens in whole text shapes and Docs tokens in body paragraphs. Check tab and object IDs, alt text and supported structures.",
-  "diagnostic.publication.assets.content.conflict": "A managed location changed or its anchor is missing. Preserve the edit; use revision-bound restore or remove recovery in the asset content configuration.",
-  "diagnostic.publication.assets.content.recovery": "Inspect the file and binding sidecar. Restore valid state or use explicit enrollment or binding recovery; do not delete the file or reset email records.",
-  "diagnostic.publication.assets.content.revision": "The document changed during rendering. Reconcile again after the current edit is complete.",
-  "diagnostic.publication.assets.content.image": "Check the public HTTPS image and fallback: PNG, JPEG or GIF, under 50 MB and at most 25 megapixels. Signed or private URLs are unsupported.",
-  "diagnostic.publication.assets.content.fallback": "An optional image uses its validated generic fallback. The file remains ready; check the speaker assignment or host-logo configuration and public image URL.",
-  "diagnostic.publication.feedback.agenda": "Complete talk subjects and resolve speaker references in the issue before synchronizing the feedback agenda. Existing feedback is preserved.",
-  "diagnostic.publication.feedback.unrelated": "This issue is not a meetup",
-  "diagnostic.publication.feedback.inactive": "Feedback automation is inactive for this event",
-  "diagnostic.publication.feedback.prerequisites": "Resolve the event title, date and feedback link before updating feedback",
-  "diagnostic.publication.feedback.current-event": "An active meetup takes place today; keep its shared feedback link until the event day ends",
-  "diagnostic.publication.feedback.ambiguous-date": "Several active meetups share this date; update the shared feedback link manually",
-  "diagnostic.publication.assets.prerequisites": "Resolve the event host and date before reconciling assets",
-  "diagnostic.publication.community-url.invalid": "Community event URL must use an approved CNCF/OCGroups prefix and identifier",
-  "diagnostic.publication.meetup.missing": "The Meetup publication link is required.",
-  "diagnostic.publication.community.missing": "The CNCF / OCGroups publication link is required.",
-  "diagnostic.publication.assets.missing": "The event asset folder link is required.",
-  "diagnostic.publication.meetup-url.invalid": "Use this group's Meetup event URL, ending with the numeric event ID.",
-  "diagnostic.publication.asset-url.invalid": "Use a Google Drive folder URL.",
-  "diagnostic.issue-form.out-of-date": "Issue form requires synchronization.",
-  "diagnostic.issue-form.updated": "Issue form was synchronized.",
-  "diagnostic.action.execution.failed": "Meetup automation failed; inspect debug logs using a trusted runner"
-};
-
-// packages/runtime/github-actions/src/i18n/diagnostics-other.fr.ts
-var DIAGNOSTICS_OTHER_FR = {
-  "diagnostic.publication.assets.file.drift": "Une copie du mod\xE8le manque ou son nom ou ses m\xE9tadonn\xE9es ont chang\xE9.",
-  "diagnostic.publication.assets.content.contract": "V\xE9rifiez le contrat de contenu versionn\xE9, le type MIME, les jetons, les images et le mode de cadrage.",
-  "diagnostic.publication.assets.content.missing": "Compl\xE9tez le texte ou le lien public requis, puis relancez la r\xE9conciliation. La copie existante est r\xE9utilis\xE9e.",
-  "diagnostic.publication.assets.content.location": "Placez les jetons Slides dans des formes de texte enti\xE8res et les jetons Docs dans les paragraphes du corps. V\xE9rifiez les identifiants, le texte alternatif et les structures prises en charge.",
-  "diagnostic.publication.assets.content.conflict": "Un emplacement g\xE9r\xE9 a chang\xE9 ou son ancre manque. Pr\xE9servez la modification et utilisez une restauration ou un retrait li\xE9 \xE0 la r\xE9vision dans la configuration des contenus.",
-  "diagnostic.publication.assets.content.recovery": "Inspectez le fichier et son manifeste. Restaurez un \xE9tat valide ou utilisez une inscription ou une r\xE9cup\xE9ration explicite ; ne supprimez pas le fichier et ne r\xE9initialisez pas les envois.",
-  "diagnostic.publication.assets.content.revision": "Le document a chang\xE9 pendant le rendu. Relancez la r\xE9conciliation apr\xE8s la modification en cours.",
-  "diagnostic.publication.assets.content.image": "V\xE9rifiez l'image HTTPS publique et son image de remplacement : PNG, JPEG ou GIF, moins de 50 Mo et au plus 25 m\xE9gapixels. Les URL priv\xE9es ou sign\xE9es ne sont pas prises en charge.",
-  "diagnostic.publication.assets.content.fallback": "Une image facultative utilise son image g\xE9n\xE9rique valid\xE9e. Le fichier reste pr\xEAt ; v\xE9rifiez le choix de l'intervenant ou la configuration du logo de l'h\xF4te et l'URL publique de l'image.",
-  "diagnostic.publication.feedback.agenda": "Compl\xE9tez les sujets des pr\xE9sentations et r\xE9solvez les r\xE9f\xE9rences des intervenants dans l'issue avant de synchroniser le programme des retours. Les retours existants sont conserv\xE9s.",
-  "diagnostic.publication.feedback.unrelated": "Ce ticket ne correspond pas \xE0 un meetup.",
-  "diagnostic.publication.feedback.inactive": "L'automatisation des retours est inactive pour cet \xE9v\xE9nement.",
-  "diagnostic.publication.feedback.prerequisites": "Corrigez le titre, la date et le lien des retours avant de mettre \xE0 jour les retours.",
-  "diagnostic.publication.feedback.current-event": "Un meetup actif a lieu aujourd'hui ; conservez son lien partag\xE9 de retours jusqu'\xE0 la fin de la journ\xE9e.",
-  "diagnostic.publication.feedback.ambiguous-date": "Plusieurs meetups actifs ont lieu \xE0 cette date ; mettez \xE0 jour le lien partag\xE9 des retours manuellement.",
-  "diagnostic.publication.assets.prerequisites": "R\xE9solvez les r\xE9f\xE9rences de l'h\xF4te et de la date avant de synchroniser les fichiers.",
-  "diagnostic.publication.community-url.invalid": "L'URL doit utiliser un pr\xE9fixe CNCF/OCGroups autoris\xE9 et un identifiant.",
-  "diagnostic.publication.meetup.missing": "Le lien de publication Meetup est obligatoire.",
-  "diagnostic.publication.community.missing": "Le lien de publication CNCF / OCGroups est obligatoire.",
-  "diagnostic.publication.assets.missing": "Le lien vers le dossier des fichiers est obligatoire.",
-  "diagnostic.publication.meetup-url.invalid": "Utilisez l'URL Meetup de ce groupe, termin\xE9e par l'identifiant num\xE9rique de l'\xE9v\xE9nement.",
-  "diagnostic.publication.asset-url.invalid": "Utilisez une URL de dossier Google Drive.",
-  "diagnostic.issue-form.out-of-date": "Le formulaire d'issue doit \xEAtre synchronis\xE9.",
-  "diagnostic.issue-form.updated": "Le formulaire d'issue a \xE9t\xE9 synchronis\xE9.",
-  "diagnostic.action.execution.failed": "L'automatisation a \xE9chou\xE9 ; consultez les journaux de d\xE9bogage sur un ex\xE9cuteur de confiance."
-};
-
 // packages/runtime/github-actions/src/i18n/diagnostics-referential.en.ts
 var DIAGNOSTICS_REFERENTIAL_EN = {
   "diagnostic.referential.source.unavailable": "Conference Hall speaker profiles are unavailable. Check CFP access and retry; cached contacts are not used.",
@@ -31344,215 +32064,181 @@ var DIAGNOSTICS_REFERENTIAL_FR = {
 
 // packages/runtime/github-actions/src/i18n/messages.en.ts
 var EN_MESSAGES = {
+  "diagnostic.issue-form.out-of-date": "Synchronize the issue form.",
+  "diagnostic.issue-form.updated": "Issue form synchronized.",
   "report.speaker-sync.pr-title": "feat(referential): synchronize Conference Hall speakers",
-  "report.speaker-sync.pr-body": "Review identity mappings, the CSV snapshot and preserved local fields. New mappings become available after merge. Existing linked profiles refresh directly from Conference Hall during event runs. The linked workflow run identifies this snapshot; automatic merge is disabled.",
+  "report.speaker-sync.pr-body": "Review speaker identity mappings and preserved local CSV fields before merging.",
   "action.referential.sync-speakers": "Synchronize Conference Hall speakers",
-  "report.speaker-sync.completed": "Speaker catalog and form prepared: {count} speakers. Review the private pull request before merging.",
-  "report.speaker-sync.failed": "Speaker synchronization failed during {stage}. No review branch was published. Correct the diagnostics below before retrying.",
-  "report.speaker-sync.stage.read-catalog": "reading the local speaker catalog",
-  "report.speaker-sync.stage.load-source": "loading the Conference Hall export",
-  "report.speaker-sync.stage.merge-speakers": "merging speaker identities",
-  "report.speaker-sync.stage.validate-catalog": "validating the candidate catalog",
-  "report.speaker-sync.stage.check-form": "checking the issue form",
-  "report.speaker-sync.stage.save-catalog": "saving the speaker catalog",
-  "report.speaker-sync.stage.update-form": "updating the issue form",
-  "report.speaker-sync.stage.unknown": "speaker synchronization",
-  "diagnostic.speaker-sync.configuration": "Conference Hall configuration is invalid. Set conference-hall-event to the CFP slug and provide a non-empty conference-hall-api-key.",
-  "diagnostic.speaker-sync.http": "Conference Hall returned an unsuccessful HTTP status. Check service availability and the CFP Web API settings before retrying.",
-  "diagnostic.speaker-sync.authentication": "Conference Hall rejected the API key. Verify CONFERENCE_HALL_API_KEY matches the key under this CFP's Settings > Web API and is forwarded as conference-hall-api-key.",
-  "diagnostic.speaker-sync.event-not-found": "Conference Hall could not find the CFP. Verify CONFERENCE_HALL_EVENT is the CFP slug and is forwarded as conference-hall-event.",
-  "diagnostic.speaker-sync.network": "The Conference Hall request or response transfer failed. Check network access to conference-hall.io from the runner before retrying.",
-  "diagnostic.speaker-sync.timeout": "The Conference Hall request exceeded its 15-second timeout. Check service availability and retry.",
-  "diagnostic.speaker-sync.json": "Conference Hall returned invalid JSON. Check the event Web API response; do not log or upload its private contents.",
-  "diagnostic.speaker-sync.schema": "The Conference Hall export contains a missing or invalid required field at the indicated position. Check that field in the CFP Web API response; do not log private values.",
-  "diagnostic.speaker-sync.response-size": "The Conference Hall response is empty or exceeds the 5 MiB limit. Check the event Web API export size.",
-  "diagnostic.speaker-sync.unavailable": "Conference Hall could not be read. Verify the CFP slug, API key and runner network access before retrying.",
-  "diagnostic.speaker-sync.invalid": "The speaker synchronization input is invalid. Validate the CSV, allocation state and issue form, then check the Conference Hall export.",
-  "diagnostic.speaker-sync.mapping-required": "An existing CSV speaker may match a Conference Hall profile but has no source mapping. Review referentials/speakers.csv and add source_provider, source_event and source_speaker_id to the existing row. Preserve speaker_id; identities are not merged automatically.",
-  "diagnostic.speaker-sync.conflict": "Speaker mappings, ID reservations or catalog revisions conflict. Check duplicate source mappings and concurrent catalog edits before retrying.",
-  "diagnostic.speaker-sync.rate-limited": "Conference Hall rate-limited the request. Wait at least retry-after-seconds before retrying; no automatic retry was attempted.",
-  "diagnostic.speaker-sync.unexpected": "An unexpected error stopped this stage. Check its input files and permissions on a trusted runner; private exception contents are redacted.",
-  "report.speaker-sync.private": "Speaker synchronization requires a private repository.",
+  "report.speaker-sync.completed": "speaker_sync=completed speakers={count}",
+  "report.speaker-sync.failed": "speaker_sync=blocked stage={stage}",
+  "report.speaker-sync.stage.read-catalog": "read-catalog",
+  "report.speaker-sync.stage.load-source": "load-source",
+  "report.speaker-sync.stage.merge-speakers": "merge-speakers",
+  "report.speaker-sync.stage.validate-catalog": "validate-catalog",
+  "report.speaker-sync.stage.check-form": "check-form",
+  "report.speaker-sync.stage.save-catalog": "save-catalog",
+  "report.speaker-sync.stage.update-form": "update-form",
+  "report.speaker-sync.stage.unknown": "unknown",
+  "diagnostic.speaker-sync.configuration": "Set the CFP slug and Web API key.",
+  "diagnostic.speaker-sync.http": "Conference Hall returned an HTTP error; retry when the service is available.",
+  "diagnostic.speaker-sync.authentication": "Check the API key in the CFP's Settings > Web API.",
+  "diagnostic.speaker-sync.event-not-found": "Check the CFP slug in CONFERENCE_HALL_EVENT.",
+  "diagnostic.speaker-sync.network": "Check runner network access to conference-hall.io.",
+  "diagnostic.speaker-sync.timeout": "Conference Hall exceeded the 15-second timeout; retry.",
+  "diagnostic.speaker-sync.json": "The CFP Web API returned invalid JSON.",
+  "diagnostic.speaker-sync.schema": "Correct the indicated required field in the CFP Web API export.",
+  "diagnostic.speaker-sync.response-size": "The CFP Web API response must contain 1 byte to 5 MiB.",
+  "diagnostic.speaker-sync.unavailable": "Check the CFP slug, API key and runner network access.",
+  "diagnostic.speaker-sync.invalid": "Check the speaker CSV, allocation state and issue form.",
+  "diagnostic.speaker-sync.mapping-required": "Link the existing speaker using source_provider, source_event and source_speaker_id in referentials/speakers.csv; preserve speaker_id.",
+  "diagnostic.speaker-sync.conflict": "Resolve duplicate source mappings or concurrent catalog edits.",
+  "diagnostic.speaker-sync.rate-limited": "Conference Hall rate limit reached; retry after the API cooldown.",
+  "diagnostic.speaker-sync.unexpected": "Unexpected technical failure during speaker synchronization.",
+  "report.speaker-sync.private": "speaker_sync=blocked reason=private-repository-required",
   "action.communication.reconcile-attention": "Reconcile organizer attention",
-  "report.attention.updated": "Organizer attention status is persisted on the issue. Review its current conditions and recovery guidance.",
-  "report.attention.skipped": "The issue is not a configured meetup event; attention reconciliation was skipped.",
-  "report.attention.failed": "Organizer attention could not be fully synchronized. Review the GitHub status and verify uncertain deliveries before recovery.",
+  "report.attention.updated": "attention=persisted",
+  "report.attention.skipped": "attention=skipped reason=unrelated-issue",
+  "report.attention.failed": "attention=synchronization-failed",
   "action.publication.reconcile-feedback": "Reconcile meetup feedback",
-  "report.feedback.skipped": "Feedback reconciliation was skipped; review the diagnostics for the reason.",
-  "report.feedback.completed": "Feedback reconciliation completed.",
-  "report.feedback.changes": "Issue changes persisted: {persisted, select, true {true} other {false}}; shared feedback link updated: {linkUpdated, select, true {true} other {false}}.",
-  "report.feedback.guidance": "Review feedback diagnostics. Talk titles and speaker names follow the issue agenda; manage schedules, photos and removed talks in OpenFeedback.",
-  "error.OpenFeedbackAgendaConflictError": "Several feedback talks or speakers match the issue agenda. Resolve duplicate names or edit one talk at a time before retrying; existing feedback was preserved.",
-  "error.EventNotFoundError": "The event could not be found. Check the issue number and repository.",
-  "error.EventConcurrentModificationError": "The event changed during reconciliation. Rerun against its latest version.",
-  "error.GoogleDriveAssetRepositoryError": "Google Drive asset reconciliation failed. Check credentials, folders and permissions.",
-  "error.GitHubEventRepositoryConfigurationError": "The event repository configuration is invalid. Check the repository settings.",
+  "report.feedback.skipped": "feedback=skipped",
+  "report.feedback.completed": "feedback=completed",
+  "report.feedback.changes": "issue_persisted={persisted} feedback_link_updated={linkUpdated}",
+  "error.EventNotFoundError": "The event could not be found.",
+  "error.EventConcurrentModificationError": "The event changed during reconciliation.",
+  "error.GoogleDriveAssetRepositoryError": "Google Drive asset reconciliation failed.",
+  "error.GitHubEventRepositoryConfigurationError": "The event repository configuration is invalid.",
   "error.GitHubEventRepositoryScopeError": "The event is outside the configured repository scope.",
-  "error.GitHubEventRepositoryResponseError": "GitHub returned an invalid event response. Check service availability and repository access.",
-  "error.GitHubEventCommentRepositoryConfigurationError": "The comment repository configuration is invalid. Check the repository and bot settings.",
+  "error.GitHubEventRepositoryResponseError": "GitHub returned an invalid event response.",
+  "error.GitHubEventCommentRepositoryConfigurationError": "The comment repository configuration is invalid.",
   "error.GitHubEventCommentRepositoryScopeError": "The comment is outside the configured repository scope.",
-  "error.GitHubEventCommentRepositoryResponseError": "GitHub returned an invalid comment response. Check service availability and repository access.",
+  "error.GitHubEventCommentRepositoryResponseError": "GitHub returned an invalid comment response.",
   "action.referential.validate": "Validate meetup referentials",
   "action.referential.sync-issue-form": "Synchronize meetup issue form",
   "action.event.reconcile": "Reconcile meetup event",
   "action.event.list-active": "List active meetup events",
   "action.communication.reconcile": "Reconcile meetup communications",
   "action.publication.reconcile-assets": "Reconcile meetup assets",
-  "report.no-diagnostics": "No diagnostics.",
-  "report.fix-applied": "fix applied: {applied, select, true {true} other {false}}",
-  "report.failed": "Action failed: {reason}",
-  "report.summary-unavailable": "The job summary could not be written; the action report is available in the logs and annotations.",
-  "report.severity.error": "error",
-  "report.severity.warning": "warning",
-  "report.severity.info": "info",
-  "report.execution.failed": "Action execution failed before a result was available.",
-  "report.execution.guidance": "Review the action inputs and service configuration. Reproduce on a trusted runner if private debugging is required.",
-  "report.error.unexpected": "Meetup automation failed; inspect debug logs using a trusted runner",
-  "report.referential.valid": "Referentials: valid.",
-  "report.referential.invalid": "Referentials: invalid.",
-  "report.referential.counts": "Valid hosts: {hosts, number}; valid speakers: {speakers, number}.",
-  "report.referential.guidance": "Correct the catalog fields listed below, then rerun validation. Field indexes are zero-based record positions.",
-  "report.issue-form.blocked": "Issue form synchronization is blocked by invalid referentials.",
-  "report.issue-form.stale": "Issue form is out of date.",
-  "report.issue-form.drift-allowed": "Issue-form drift does not block this check. Synchronization can run after merge.",
-  "report.issue-form.updated": "Issue form was updated.",
-  "report.issue-form.current": "Issue form is up to date.",
-  "report.issue-form.files": "Affected files: {files}.",
-  "report.event.context": "Issue: #{issue}; mode: {mode}.",
-  "report.event.skipped": "Skipped: the issue is not a configured meetup event.",
-  "report.event.state": "Event state: {state}; ready: {ready, select, true {true} other {false}}.",
-  "report.event.persisted": "Issue changes persisted: {persisted, select, true {true} other {false}}; diagnostic comment updated: {comment, select, true {true} other {false}}.",
-  "report.event.guidance": "Resolve the event fields and pending tasks listed in the diagnostics.",
-  "report.events.count": "Active events: {count, number}.",
-  "report.events.issues": "Issue numbers: {issues}.",
-  "report.events.empty": "No active meetup events were found.",
-  "report.assets.skipped": "Asset reconciliation was skipped: the event is ineligible or prerequisites are incomplete.",
-  "report.assets.completed": "Asset reconciliation completed.",
-  "report.assets.counts": "Issue changes persisted: {persisted, select, true {true} other {false}}; asset files: {count, number}.",
-  "report.communication.mode": "Communication mode: {mode}.",
-  "report.communication.planned": "Planned: {planned, number}; due: {due, number}; dispatched: {dispatched, number}.",
-  "report.communication.accepted": "Accepted: {accepted, number}; already recorded: {recorded, number}; deferred: {deferred, number}.",
-  "report.communication.uncertain": "Uncertain: {uncertain, number}; rejected: {rejected, number}.",
-  "report.communication.guidance": "Review checklist and delivery diagnostics before retrying.",
-  "report.communication.uncertain-guidance": "Reconcile uncertain deliveries with the provider and ledger before any resend.",
-  "report.communication.issue-reported": "Communication diagnostics are recorded in the meetup issue; reported errors do not fail this audit.",
-  "report.communication.failed": "Communication reconciliation failed; inspect the diagnostic annotations and job summary.",
-  "workflow.referential.failed": "Meetup referentials are invalid. Correct the catalog fields listed in the validation annotations and job summary."
+  "report.failed": "failure={reason}",
+  "report.technical-failure": "technical_failure={codes}",
+  "report.summary-unavailable": "summary=unavailable",
+  "report.error.unexpected": "Unexpected technical failure.",
+  "report.referential.valid": "referentials=valid",
+  "report.referential.invalid": "referentials=invalid",
+  "report.referential.counts": "hosts={hosts, number} speakers={speakers, number}",
+  "report.issue-form.blocked": "issue_form=blocked reason=invalid-referentials",
+  "report.issue-form.stale": "issue_form=stale",
+  "report.issue-form.updated": "issue_form=updated",
+  "report.issue-form.current": "issue_form=current",
+  "report.issue-form.files": "files={files}",
+  "report.event.context": "issue={issue} mode={mode}",
+  "report.event.skipped": "event=skipped reason=unrelated-issue",
+  "report.event.state": "state={state} ready={ready}",
+  "report.event.persisted": "issue_persisted={persisted}",
+  "report.events.count": "active_events={count, number}",
+  "report.events.issues": "issues={issues}",
+  "report.events.empty": "active_events=0",
+  "report.assets.skipped": "assets=skipped",
+  "report.assets.completed": "assets=completed",
+  "report.assets.counts": "issue_persisted={persisted} asset_files={count, number}",
+  "report.communication.mode": "communication_mode={mode}",
+  "report.communication.planned": "planned={planned, number} due={due, number} dispatched={dispatched, number}",
+  "report.communication.accepted": "accepted={accepted, number} recorded={recorded, number} deferred={deferred, number}",
+  "report.communication.uncertain": "uncertain={uncertain, number} rejected={rejected, number}"
 };
 
 // packages/runtime/github-actions/src/i18n/messages.fr.ts
 var FR_MESSAGES = {
+  "diagnostic.issue-form.out-of-date": "Synchronisez le formulaire d'issue.",
+  "diagnostic.issue-form.updated": "Formulaire d'issue synchronis\xE9.",
   "report.speaker-sync.pr-title": "feat(referential): synchroniser les intervenants Conference Hall",
-  "report.speaker-sync.pr-body": "V\xE9rifiez les identit\xE9s, la copie CSV et les champs locaux pr\xE9serv\xE9s. Les nouvelles identit\xE9s seront disponibles apr\xE8s fusion. Les profils d\xE9j\xE0 li\xE9s sont actualis\xE9s directement depuis Conference Hall \xE0 chaque ex\xE9cution. Le workflow li\xE9 identifie cette copie ; la fusion automatique est d\xE9sactiv\xE9e.",
+  "report.speaker-sync.pr-body": "V\xE9rifiez les identit\xE9s des intervenants et les champs locaux du CSV avant fusion.",
   "action.referential.sync-speakers": "Synchroniser les intervenants Conference Hall",
-  "report.speaker-sync.completed": "Catalogue et formulaire pr\xE9par\xE9s : {count} intervenants. V\xE9rifiez la pull request priv\xE9e avant fusion.",
-  "report.speaker-sync.failed": "La synchronisation des intervenants a \xE9chou\xE9 pendant {stage}. Aucune branche de revue n'a \xE9t\xE9 publi\xE9e. Corrigez les diagnostics ci-dessous avant de r\xE9essayer.",
-  "report.speaker-sync.stage.read-catalog": "la lecture du catalogue local",
-  "report.speaker-sync.stage.load-source": "la lecture de l'export Conference Hall",
-  "report.speaker-sync.stage.merge-speakers": "la fusion des identit\xE9s des intervenants",
-  "report.speaker-sync.stage.validate-catalog": "la validation du catalogue candidat",
-  "report.speaker-sync.stage.check-form": "la v\xE9rification du formulaire",
-  "report.speaker-sync.stage.save-catalog": "l'enregistrement du catalogue",
-  "report.speaker-sync.stage.update-form": "la mise \xE0 jour du formulaire",
-  "report.speaker-sync.stage.unknown": "la synchronisation des intervenants",
-  "diagnostic.speaker-sync.configuration": "La configuration Conference Hall est invalide. Renseignez le slug du CFP dans conference-hall-event et une cl\xE9 non vide dans conference-hall-api-key.",
-  "diagnostic.speaker-sync.http": "Conference Hall a renvoy\xE9 un statut HTTP d'\xE9chec. V\xE9rifiez la disponibilit\xE9 du service et les param\xE8tres Web API du CFP avant de r\xE9essayer.",
-  "diagnostic.speaker-sync.authentication": "Conference Hall a refus\xE9 la cl\xE9 API. V\xE9rifiez que CONFERENCE_HALL_API_KEY correspond \xE0 la cl\xE9 dans Settings > Web API du CFP et est transmise via conference-hall-api-key.",
-  "diagnostic.speaker-sync.event-not-found": "Conference Hall ne trouve pas le CFP. V\xE9rifiez que CONFERENCE_HALL_EVENT contient son slug et est transmis via conference-hall-event.",
-  "diagnostic.speaker-sync.network": "La requ\xEAte Conference Hall ou le transfert de la r\xE9ponse a \xE9chou\xE9. V\xE9rifiez l'acc\xE8s r\xE9seau du runner \xE0 conference-hall.io avant de r\xE9essayer.",
-  "diagnostic.speaker-sync.timeout": "La requ\xEAte Conference Hall a d\xE9pass\xE9 le d\xE9lai de 15 secondes. V\xE9rifiez la disponibilit\xE9 du service puis r\xE9essayez.",
-  "diagnostic.speaker-sync.json": "Conference Hall a renvoy\xE9 un JSON invalide. V\xE9rifiez la r\xE9ponse Web API du CFP sans publier ses donn\xE9es priv\xE9es.",
-  "diagnostic.speaker-sync.schema": "L'export Conference Hall contient un champ obligatoire absent ou invalide \xE0 la position indiqu\xE9e. V\xE9rifiez ce champ dans la r\xE9ponse Web API du CFP sans publier les valeurs priv\xE9es.",
-  "diagnostic.speaker-sync.response-size": "La r\xE9ponse Conference Hall est vide ou d\xE9passe la limite de 5 Mio. V\xE9rifiez la taille de l'export Web API du CFP.",
-  "diagnostic.speaker-sync.unavailable": "La lecture de Conference Hall a \xE9chou\xE9. V\xE9rifiez le slug du CFP, la cl\xE9 API et l'acc\xE8s r\xE9seau du runner avant de r\xE9essayer.",
-  "diagnostic.speaker-sync.invalid": "Les donn\xE9es de synchronisation sont invalides. Validez le CSV, les r\xE9servations d'identifiants et le formulaire, puis v\xE9rifiez l'export Conference Hall.",
-  "diagnostic.speaker-sync.mapping-required": "Un intervenant CSV existant peut correspondre \xE0 un profil Conference Hall sans identit\xE9 source. V\xE9rifiez referentials/speakers.csv et renseignez source_provider, source_event et source_speaker_id sur la ligne existante. Pr\xE9servez speaker_id ; les identit\xE9s ne sont pas fusionn\xE9es automatiquement.",
-  "diagnostic.speaker-sync.conflict": "Les identit\xE9s source, les r\xE9servations d'identifiants ou les r\xE9visions du catalogue sont en conflit. V\xE9rifiez les doublons et les modifications concurrentes avant de r\xE9essayer.",
-  "diagnostic.speaker-sync.rate-limited": "Conference Hall limite les requ\xEAtes. Attendez au moins retry-after-seconds avant de r\xE9essayer ; aucune nouvelle tentative automatique n'a eu lieu.",
-  "diagnostic.speaker-sync.unexpected": "Une erreur inattendue a interrompu cette \xE9tape. V\xE9rifiez ses fichiers d'entr\xE9e et les permissions sur un runner de confiance ; les d\xE9tails priv\xE9s sont masqu\xE9s.",
-  "report.speaker-sync.private": "La synchronisation des intervenants n\xE9cessite un d\xE9p\xF4t priv\xE9.",
+  "report.speaker-sync.completed": "speaker_sync=completed speakers={count}",
+  "report.speaker-sync.failed": "speaker_sync=blocked stage={stage}",
+  "report.speaker-sync.stage.read-catalog": "read-catalog",
+  "report.speaker-sync.stage.load-source": "load-source",
+  "report.speaker-sync.stage.merge-speakers": "merge-speakers",
+  "report.speaker-sync.stage.validate-catalog": "validate-catalog",
+  "report.speaker-sync.stage.check-form": "check-form",
+  "report.speaker-sync.stage.save-catalog": "save-catalog",
+  "report.speaker-sync.stage.update-form": "update-form",
+  "report.speaker-sync.stage.unknown": "unknown",
+  "diagnostic.speaker-sync.configuration": "Configurez le slug du CFP et sa cl\xE9 Web API.",
+  "diagnostic.speaker-sync.http": "Conference Hall renvoie une erreur HTTP ; r\xE9essayez quand le service est disponible.",
+  "diagnostic.speaker-sync.authentication": "V\xE9rifiez la cl\xE9 API dans Settings > Web API du CFP.",
+  "diagnostic.speaker-sync.event-not-found": "V\xE9rifiez le slug du CFP dans CONFERENCE_HALL_EVENT.",
+  "diagnostic.speaker-sync.network": "V\xE9rifiez l'acc\xE8s r\xE9seau de l'ex\xE9cuteur \xE0 conference-hall.io.",
+  "diagnostic.speaker-sync.timeout": "Conference Hall a d\xE9pass\xE9 le d\xE9lai de 15 secondes ; r\xE9essayez.",
+  "diagnostic.speaker-sync.json": "La Web API du CFP a renvoy\xE9 un JSON invalide.",
+  "diagnostic.speaker-sync.schema": "Corrigez le champ obligatoire indiqu\xE9 dans l'export Web API du CFP.",
+  "diagnostic.speaker-sync.response-size": "La r\xE9ponse Web API du CFP doit contenir entre 1 octet et 5 Mio.",
+  "diagnostic.speaker-sync.unavailable": "V\xE9rifiez le slug du CFP, sa cl\xE9 API et l'acc\xE8s r\xE9seau de l'ex\xE9cuteur.",
+  "diagnostic.speaker-sync.invalid": "V\xE9rifiez le CSV des intervenants, les identifiants r\xE9serv\xE9s et le formulaire d'issue.",
+  "diagnostic.speaker-sync.mapping-required": "Renseignez source_provider, source_event et source_speaker_id pour l'intervenant existant dans referentials/speakers.csv ; conservez speaker_id.",
+  "diagnostic.speaker-sync.conflict": "Corrigez les correspondances en double ou les modifications concurrentes du catalogue.",
+  "diagnostic.speaker-sync.rate-limited": "Limite API Conference Hall atteinte ; r\xE9essayez apr\xE8s le d\xE9lai impos\xE9.",
+  "diagnostic.speaker-sync.unexpected": "Erreur technique inattendue pendant la synchronisation des intervenants.",
+  "report.speaker-sync.private": "speaker_sync=blocked reason=private-repository-required",
   "action.communication.reconcile-attention": "Synchroniser les points \xE0 traiter par les organisateurs",
-  "report.attention.updated": "Le statut des points \xE0 traiter est enregistr\xE9 sur le ticket. Consultez les conditions actuelles et les consignes de reprise.",
-  "report.attention.skipped": "Le ticket ne correspond pas \xE0 un meetup configur\xE9 ; la synchronisation a \xE9t\xE9 ignor\xE9e.",
-  "report.attention.failed": "La synchronisation des points \xE0 traiter est incompl\xE8te. Consultez le statut GitHub et v\xE9rifiez les envois incertains avant toute reprise.",
+  "report.attention.updated": "attention=persisted",
+  "report.attention.skipped": "attention=skipped reason=unrelated-issue",
+  "report.attention.failed": "attention=synchronization-failed",
   "action.publication.reconcile-feedback": "V\xE9rifier et mettre \xE0 jour les retours du meetup",
-  "report.feedback.skipped": "La mise \xE0 jour des retours a \xE9t\xE9 ignor\xE9e ; consultez les diagnostics pour conna\xEEtre la raison.",
-  "report.feedback.completed": "La v\xE9rification et la mise \xE0 jour des retours sont termin\xE9es.",
-  "report.feedback.changes": "Modifications du ticket enregistr\xE9es : {persisted, select, true {oui} other {non}} ; lien partag\xE9 des retours mis \xE0 jour : {linkUpdated, select, true {oui} other {non}}.",
-  "report.feedback.guidance": "Consultez les diagnostics des retours. Les titres et les noms des intervenants suivent le programme de l'issue ; g\xE9rez les horaires, les photos et les pr\xE9sentations retir\xE9es dans OpenFeedback.",
-  "error.OpenFeedbackAgendaConflictError": "Plusieurs pr\xE9sentations ou intervenants correspondent au programme de l'issue. Corrigez les noms en double ou modifiez une pr\xE9sentation \xE0 la fois avant de r\xE9essayer ; les retours existants sont conserv\xE9s.",
-  "error.EventNotFoundError": "L'\xE9v\xE9nement est introuvable. V\xE9rifiez le num\xE9ro d'issue et le d\xE9p\xF4t.",
-  "error.EventConcurrentModificationError": "L'\xE9v\xE9nement a chang\xE9 pendant la synchronisation. Relancez-la sur sa derni\xE8re version.",
-  "error.GoogleDriveAssetRepositoryError": "La synchronisation des fichiers Google Drive a \xE9chou\xE9. V\xE9rifiez les identifiants, les dossiers configur\xE9s et les autorisations.",
-  "error.GitHubEventRepositoryConfigurationError": "La configuration du d\xE9p\xF4t d'\xE9v\xE9nements est invalide. V\xE9rifiez les param\xE8tres du d\xE9p\xF4t.",
+  "report.feedback.skipped": "feedback=skipped",
+  "report.feedback.completed": "feedback=completed",
+  "report.feedback.changes": "issue_persisted={persisted} feedback_link_updated={linkUpdated}",
+  "error.EventNotFoundError": "L'\xE9v\xE9nement est introuvable.",
+  "error.EventConcurrentModificationError": "L'\xE9v\xE9nement a chang\xE9 pendant la synchronisation.",
+  "error.GoogleDriveAssetRepositoryError": "La synchronisation des fichiers Google Drive a \xE9chou\xE9.",
+  "error.GitHubEventRepositoryConfigurationError": "La configuration du d\xE9p\xF4t d'\xE9v\xE9nements est invalide.",
   "error.GitHubEventRepositoryScopeError": "L'\xE9v\xE9nement est hors du p\xE9rim\xE8tre du d\xE9p\xF4t configur\xE9.",
-  "error.GitHubEventRepositoryResponseError": "La r\xE9ponse GitHub pour l'\xE9v\xE9nement est invalide. V\xE9rifiez la disponibilit\xE9 du service et l'acc\xE8s au d\xE9p\xF4t.",
-  "error.GitHubEventCommentRepositoryConfigurationError": "La configuration du d\xE9p\xF4t de commentaires est invalide. V\xE9rifiez les param\xE8tres du d\xE9p\xF4t et du bot.",
+  "error.GitHubEventRepositoryResponseError": "La r\xE9ponse GitHub pour l'\xE9v\xE9nement est invalide.",
+  "error.GitHubEventCommentRepositoryConfigurationError": "La configuration du d\xE9p\xF4t de commentaires est invalide.",
   "error.GitHubEventCommentRepositoryScopeError": "Le commentaire est hors du p\xE9rim\xE8tre du d\xE9p\xF4t configur\xE9.",
-  "error.GitHubEventCommentRepositoryResponseError": "La r\xE9ponse GitHub pour les commentaires est invalide. V\xE9rifiez la disponibilit\xE9 du service et l'acc\xE8s au d\xE9p\xF4t.",
+  "error.GitHubEventCommentRepositoryResponseError": "La r\xE9ponse GitHub pour les commentaires est invalide.",
   "action.referential.validate": "Valider les r\xE9f\xE9rentiels du meetup",
   "action.referential.sync-issue-form": "Synchroniser le formulaire du meetup",
   "action.event.reconcile": "V\xE9rifier et mettre \xE0 jour le meetup",
   "action.event.list-active": "Lister les meetups actifs",
   "action.communication.reconcile": "V\xE9rifier et envoyer les communications du meetup",
   "action.publication.reconcile-assets": "V\xE9rifier et mettre \xE0 jour les ressources du meetup",
-  "report.no-diagnostics": "Aucun diagnostic.",
-  "report.fix-applied": "correction appliqu\xE9e : {applied, select, true {oui} other {non}}",
-  "report.failed": "\xC9chec de l'action : {reason}",
-  "report.summary-unavailable": "Le r\xE9sum\xE9 de la t\xE2che n'a pas pu \xEAtre \xE9crit ; le rapport est disponible dans les journaux et les annotations.",
-  "report.severity.error": "erreur",
-  "report.severity.warning": "avertissement",
-  "report.severity.info": "information",
-  "report.execution.failed": "L'action a \xE9chou\xE9 avant de produire un r\xE9sultat.",
-  "report.execution.guidance": "V\xE9rifiez les param\xE8tres de l'action et la configuration des services. Reproduisez le probl\xE8me sur un ex\xE9cuteur de confiance si un d\xE9bogage priv\xE9 est n\xE9cessaire.",
-  "report.error.unexpected": "L'automatisation du meetup a \xE9chou\xE9 ; effectuez le diagnostic sur un ex\xE9cuteur de confiance.",
-  "report.referential.valid": "R\xE9f\xE9rentiels : valides.",
-  "report.referential.invalid": "R\xE9f\xE9rentiels : invalides.",
-  "report.referential.counts": "Structures d'accueil valides : {hosts, number} ; intervenants valides : {speakers, number}.",
-  "report.referential.guidance": "Corrigez les champs du r\xE9f\xE9rentiel indiqu\xE9s ci-dessous, puis relancez la validation. Les indices d\xE9signent la position des enregistrements, \xE0 partir de z\xE9ro.",
-  "report.issue-form.blocked": "La synchronisation du formulaire est bloqu\xE9e par des r\xE9f\xE9rentiels invalides.",
-  "report.issue-form.stale": "Le formulaire n'est pas \xE0 jour.",
-  "report.issue-form.drift-allowed": "Le d\xE9calage du formulaire ne bloque pas cette v\xE9rification. La synchronisation peut \xEAtre ex\xE9cut\xE9e apr\xE8s la fusion.",
-  "report.issue-form.updated": "Le formulaire a \xE9t\xE9 mis \xE0 jour.",
-  "report.issue-form.current": "Le formulaire est \xE0 jour.",
-  "report.issue-form.files": "Fichiers concern\xE9s : {files}.",
-  "report.event.context": "Ticket : #{issue} ; mode : {mode}.",
-  "report.event.skipped": "Ignor\xE9 : ce ticket ne correspond pas \xE0 un meetup configur\xE9.",
-  "report.event.state": "\xC9tat du meetup : {state} ; pr\xEAt : {ready, select, true {oui} other {non}}.",
-  "report.event.persisted": "Modifications du ticket enregistr\xE9es : {persisted, select, true {oui} other {non}} ; commentaire de diagnostic mis \xE0 jour : {comment, select, true {oui} other {non}}.",
-  "report.event.guidance": "Corrigez les champs du meetup et terminez les t\xE2ches indiqu\xE9es dans les diagnostics.",
-  "report.events.count": "{count, plural, =0 {Aucun meetup actif.} one {# meetup actif.} other {# meetups actifs.}}",
-  "report.events.issues": "Num\xE9ros des tickets : {issues}.",
-  "report.events.empty": "Aucun meetup actif n'a \xE9t\xE9 trouv\xE9.",
-  "report.assets.skipped": "La mise \xE0 jour des ressources a \xE9t\xE9 ignor\xE9e : le meetup n'est pas \xE9ligible ou des pr\xE9requis manquent.",
-  "report.assets.completed": "La v\xE9rification et la mise \xE0 jour des ressources sont termin\xE9es.",
-  "report.assets.counts": "Modifications du ticket enregistr\xE9es : {persisted, select, true {oui} other {non}} ; fichiers de ressources : {count, number}.",
-  "report.communication.mode": "Mode de communication : {mode}.",
-  "report.communication.planned": "Planifi\xE9es : {planned, number} ; \xE0 envoyer : {due, number} ; tentatives d'envoi : {dispatched, number}.",
-  "report.communication.accepted": "Accept\xE9es : {accepted, number} ; d\xE9j\xE0 enregistr\xE9es : {recorded, number} ; diff\xE9r\xE9es : {deferred, number}.",
-  "report.communication.uncertain": "R\xE9sultats incertains : {uncertain, number} ; rejets : {rejected, number}.",
-  "report.communication.guidance": "Consultez les diagnostics de liste de t\xE2ches et d'envoi avant de r\xE9essayer.",
-  "report.communication.uncertain-guidance": "V\xE9rifiez les envois incertains aupr\xE8s du fournisseur et dans le registre avant tout nouvel envoi.",
-  "report.communication.issue-reported": "Les diagnostics de communication sont enregistr\xE9s dans le ticket du meetup ; les erreurs signal\xE9es ne font pas \xE9chouer cette v\xE9rification.",
-  "report.communication.failed": "La v\xE9rification des communications a \xE9chou\xE9 ; consultez les annotations de diagnostic et le r\xE9sum\xE9 de la t\xE2che.",
-  "workflow.referential.failed": "Les r\xE9f\xE9rentiels du meetup sont invalides. Corrigez les champs indiqu\xE9s dans les annotations de validation et le r\xE9sum\xE9 de la t\xE2che."
+  "report.failed": "failure={reason}",
+  "report.technical-failure": "technical_failure={codes}",
+  "report.summary-unavailable": "summary=unavailable",
+  "report.error.unexpected": "Erreur technique inattendue.",
+  "report.referential.valid": "referentials=valid",
+  "report.referential.invalid": "referentials=invalid",
+  "report.referential.counts": "hosts={hosts, number} speakers={speakers, number}",
+  "report.issue-form.blocked": "issue_form=blocked reason=invalid-referentials",
+  "report.issue-form.stale": "issue_form=stale",
+  "report.issue-form.updated": "issue_form=updated",
+  "report.issue-form.current": "issue_form=current",
+  "report.issue-form.files": "files={files}",
+  "report.event.context": "issue={issue} mode={mode}",
+  "report.event.skipped": "event=skipped reason=unrelated-issue",
+  "report.event.state": "state={state} ready={ready}",
+  "report.event.persisted": "issue_persisted={persisted}",
+  "report.events.count": "active_events={count, number}",
+  "report.events.issues": "issues={issues}",
+  "report.events.empty": "active_events=0",
+  "report.assets.skipped": "assets=skipped",
+  "report.assets.completed": "assets=completed",
+  "report.assets.counts": "issue_persisted={persisted} asset_files={count, number}",
+  "report.communication.mode": "communication_mode={mode}",
+  "report.communication.planned": "planned={planned, number} due={due, number} dispatched={dispatched, number}",
+  "report.communication.accepted": "accepted={accepted, number} recorded={recorded, number} deferred={deferred, number}",
+  "report.communication.uncertain": "uncertain={uncertain, number} rejected={rejected, number}"
 };
 
 // packages/runtime/github-actions/src/i18n/catalog.ts
 var CATALOGS = {
   en: {
     ...EN_MESSAGES,
-    ...DIAGNOSTICS_REFERENTIAL_EN,
-    ...DIAGNOSTICS_EVENT_EN,
-    ...DIAGNOSTICS_COMMUNICATION_EN,
-    ...DIAGNOSTICS_OTHER_EN
+    ...DIAGNOSTICS_REFERENTIAL_EN
   },
   fr: {
     ...FR_MESSAGES,
-    ...DIAGNOSTICS_REFERENTIAL_FR,
-    ...DIAGNOSTICS_EVENT_FR,
-    ...DIAGNOSTICS_COMMUNICATION_FR,
-    ...DIAGNOSTICS_OTHER_FR
+    ...DIAGNOSTICS_REFERENTIAL_FR
   }
 };
 
@@ -31561,7 +32247,7 @@ var ActionMessages = class extends MessageLocalizer {
   constructor(locale = "en") {
     super(CATALOGS, locale);
   }
-  /** The fallback must already be redacted by the public diagnostic boundary. */
+  /** Private speaker-sync PR guidance; the fallback must already be redacted. */
   diagnostic(code, fallback) {
     const key = `diagnostic.${code}`;
     return this.locale === "en" || !Object.hasOwn(CATALOGS.en, key) ? fallback : this.t(key);
@@ -31576,31 +32262,16 @@ var ActionMessages = class extends MessageLocalizer {
 // packages/runtime/github-actions/src/action-report.ts
 var ActionReport = class _ActionReport {
   static async write(title, report, messages = new ActionMessages()) {
-    const lines = [...report.details];
-    info(title);
-    for (const detail of report.details) {
-      info(detail.replaceAll("\r", "\\r").replaceAll("\n", "\\n"));
-    }
+    const lines = new Set(report.details);
     for (const item of report.diagnostics) {
-      const message = _ActionReport.diagnosticMessage(
-        item,
-        report.failure,
-        messages
-      );
-      if (item.severity === "error") error(message);
-      else if (item.severity === "warning") warning(message);
-      else notice(message);
-      lines.push(
-        `${messages.t(`report.severity.${item.severity}`)}: ${message}`
-      );
-    }
-    if (report.diagnostics.length === 0) {
-      info(messages.t("report.no-diagnostics"));
-      lines.push(messages.t("report.no-diagnostics"));
+      lines.add(_ActionReport.diagnosticMessage(item));
     }
     if (report.failure)
-      lines.push(messages.t("report.failed", { reason: report.failure }));
-    const content = lines.join("\n").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+      lines.add(messages.t("report.failed", { reason: report.failure }));
+    for (const line of lines) {
+      info(line.replaceAll("\r", "\\r").replaceAll("\n", "\\n"));
+    }
+    const content = [...lines].join("\n").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
     try {
       await summary.addHeading(title, 2).addRaw(`<pre>${content}</pre>
 `).write();
@@ -31609,11 +32280,10 @@ var ActionReport = class _ActionReport {
       warning(messages.t("report.summary-unavailable"));
     }
   }
-  static diagnosticMessage(item, failure, messages) {
-    const field = item.field ? ` (${item.field})` : "";
-    const fixed = item.fixApplied === void 0 ? "" : ` [${messages.t("report.fix-applied", { applied: String(item.fixApplied) })}]`;
-    const translated = item.code === "action.execution.failed" && failure ? failure : messages.diagnostic(item.code, item.message);
-    return `[${item.code}]${field}: ${translated}${fixed}`;
+  static diagnosticMessage(item) {
+    const field = item.field ? ` field=${item.field}` : "";
+    const fixed = item.fixApplied === void 0 ? "" : ` fix_applied=${item.fixApplied}`;
+    return `${item.severity} ${item.code}${field}${fixed}`;
   }
 };
 
@@ -31656,7 +32326,7 @@ var RuntimeInput = class {
     if (error2 instanceof Error && SAFE_ERROR_NAMES.has(error2.name)) {
       return `${error2.name}: ${error2.message}`;
     }
-    return "Meetup automation failed; inspect debug logs using a trusted runner";
+    return "Unexpected technical failure.";
   }
 };
 
@@ -31670,21 +32340,40 @@ var ActionRunner = class {
         getInput("locale", { required: true })
       );
       report = await operation(messages);
+      const failures = report.diagnostics.filter((item) => DiagnosticPolicy.isTechnicalFailure(item)).map((item) => item.code);
+      if (!report.failure && failures.length > 0) {
+        report = {
+          ...report,
+          failure: messages.t("report.technical-failure", {
+            codes: [...new Set(failures)].join(", ")
+          })
+        };
+      }
     } catch (error2) {
-      const message = RuntimeInput.publicErrorMessage(error2);
-      report = {
-        details: [
-          messages.t("report.execution.failed"),
-          messages.t("report.execution.guidance")
-        ],
-        diagnostics: [
-          { code: "action.execution.failed", severity: "error", message }
-        ],
-        failure: messages.error(
-          error2 instanceof Error ? error2.name : "",
-          message
-        )
-      };
+      if (error2 instanceof EventConcurrentModificationError) {
+        report = {
+          details: [],
+          diagnostics: [
+            {
+              code: "event.concurrently-modified",
+              severity: "info",
+              message: "event.concurrently-modified"
+            }
+          ]
+        };
+      } else {
+        const message = RuntimeInput.publicErrorMessage(error2);
+        report = {
+          details: [],
+          diagnostics: [
+            { code: "action.execution.failed", severity: "error", message }
+          ],
+          failure: messages.error(
+            error2 instanceof Error ? error2.name : "",
+            message
+          )
+        };
+      }
     }
     await ActionReport.write(messages.t(title), report, messages);
     if (report.failure) setFailed(report.failure);
@@ -35858,618 +36547,6 @@ function getOctokit(token, options, ...additionalPlugins) {
   return new GitHubWithPlugins(getOctokitOptions(token, options));
 }
 
-// packages/domain/referential/src/application/use-cases/project-referential-choices.ts
-var ProjectReferentialChoices = class {
-  execute(catalog) {
-    return Object.freeze({
-      hostOptions: Object.freeze(catalog.hosts.map((host) => host.displayName)),
-      speakerReferences: Object.freeze(
-        catalog.speakers.map(
-          (speaker) => catalog.speakers.filter(
-            (other) => other.displayName.toLowerCase() === speaker.displayName.toLowerCase()
-          ).length > 1 ? `${speaker.displayName} [${speaker.id}]` : speaker.displayName
-        )
-      )
-    });
-  }
-};
-
-// packages/domain/referential/src/domain/identifiers.ts
-var HOST_ID_PATTERN = /^host-[0-9]{4}$/;
-var CONTACT_ID_PATTERN = /^contact-[0-9]{4}$/;
-var SPEAKER_ID_PATTERN = /^speaker-[0-9]{4}$/;
-var ReferentialIdentifiers = class {
-  static asHostId(value) {
-    return HOST_ID_PATTERN.test(value) ? value : void 0;
-  }
-  static asContactId(value) {
-    return CONTACT_ID_PATTERN.test(value) ? value : void 0;
-  }
-  static asSpeakerId(value) {
-    return SPEAKER_ID_PATTERN.test(value) ? value : void 0;
-  }
-};
-
-// packages/domain/referential/src/domain/referential-catalog.ts
-var ReferentialCatalogOperations = class _ReferentialCatalogOperations {
-  static normalizeDisplayName(value) {
-    return value.normalize("NFC").trim().replace(/\s+/g, " ");
-  }
-  static displayNameKey(value) {
-    return _ReferentialCatalogOperations.normalizeDisplayName(
-      value
-    ).toLowerCase();
-  }
-  static freezeCatalog(hosts, speakers) {
-    for (const host of hosts) {
-      for (const contact of host.contacts) {
-        Object.freeze(contact);
-      }
-      Object.freeze(host.contacts);
-      Object.freeze(host);
-    }
-    for (const speaker of speakers) {
-      Object.freeze(speaker);
-    }
-    return Object.freeze({
-      hosts: Object.freeze([...hosts]),
-      speakers: Object.freeze([...speakers])
-    });
-  }
-};
-
-// packages/domain/referential/src/domain/referential-diagnostic.ts
-var ReferentialDiagnostics = class {
-  static diagnostic(code, severity, path, message) {
-    return Object.freeze({ code, severity, path, message });
-  }
-  static freezeDiagnostics(diagnostics) {
-    return Object.freeze([...diagnostics]);
-  }
-};
-
-// packages/domain/referential/src/application/use-cases/validate-referential-catalog-contracts.ts
-var EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-// packages/domain/referential/src/application/use-cases/referential-record-fields.ts
-var ReferentialRecordFields = class {
-  static requiredText(value, code, path, message, diagnostics) {
-    if (typeof value !== "string") {
-      diagnostics.push(
-        ReferentialDiagnostics.diagnostic(code, "error", path, message)
-      );
-      return void 0;
-    }
-    const normalized = ReferentialCatalogOperations.normalizeDisplayName(value);
-    if (!normalized) {
-      diagnostics.push(
-        ReferentialDiagnostics.diagnostic(code, "error", path, message)
-      );
-      return void 0;
-    }
-    return normalized;
-  }
-  static optionalText(value, code, path, message, diagnostics) {
-    if (value === void 0 || value === null || value === "") {
-      return void 0;
-    }
-    if (typeof value !== "string") {
-      diagnostics.push(
-        ReferentialDiagnostics.diagnostic(code, "error", path, message)
-      );
-      return null;
-    }
-    return value.normalize("NFC").trim() || void 0;
-  }
-  static email(value, code, path, message, diagnostics) {
-    if (typeof value !== "string") {
-      diagnostics.push(
-        ReferentialDiagnostics.diagnostic(code, "error", path, message)
-      );
-      return void 0;
-    }
-    const normalized = value.normalize("NFC").trim().toLowerCase();
-    if (!EMAIL_PATTERN.test(normalized)) {
-      diagnostics.push(
-        ReferentialDiagnostics.diagnostic(code, "error", path, message)
-      );
-      return void 0;
-    }
-    return normalized;
-  }
-};
-
-// packages/domain/referential/src/application/use-cases/host-catalog-validator.ts
-var HostCatalogValidator = class _HostCatalogValidator {
-  static validateHosts(records, diagnostics) {
-    const hostsById = /* @__PURE__ */ new Map();
-    const contactIds = /* @__PURE__ */ new Set();
-    for (const [index, record] of records.entries()) {
-      const parsed = _HostCatalogValidator.parseHostRecord(
-        record,
-        index,
-        diagnostics
-      );
-      if (!parsed) {
-        continue;
-      }
-      if (contactIds.has(parsed.contact.id)) {
-        diagnostics.push(
-          ReferentialDiagnostics.diagnostic(
-            "referential.contact.id.duplicate",
-            "error",
-            `hosts[${index}].contactId`,
-            "Contact stable identifiers must be unique."
-          )
-        );
-        continue;
-      }
-      contactIds.add(parsed.contact.id);
-      const host = hostsById.get(parsed.hostId);
-      if (!host) {
-        hostsById.set(parsed.hostId, {
-          ...record.source ? { source: Object.freeze({ ...record.source }) } : {},
-          id: parsed.hostId,
-          displayName: parsed.displayName,
-          contacts: [parsed.contact]
-        });
-        continue;
-      }
-      if (host.displayName !== parsed.displayName) {
-        diagnostics.push(
-          ReferentialDiagnostics.diagnostic(
-            "referential.host.id.conflict",
-            "error",
-            `hosts[${index}].hostId`,
-            "A host stable identifier cannot describe different host names."
-          )
-        );
-        continue;
-      }
-      host.contacts.push(parsed.contact);
-    }
-    return [...hostsById.values()].map((host) => ({
-      ...host.source ? { source: host.source } : {},
-      id: host.id,
-      displayName: host.displayName,
-      contacts: host.contacts
-    }));
-  }
-  static parseHostRecord(record, index, diagnostics) {
-    const hostId = _HostCatalogValidator.hostId(record, index, diagnostics);
-    const displayName = ReferentialRecordFields.requiredText(
-      record.displayName,
-      "referential.host.display-name.invalid",
-      `hosts[${index}].displayName`,
-      "Host display name must be a non-empty string.",
-      diagnostics
-    );
-    const contactId = _HostCatalogValidator.contactId(
-      record,
-      index,
-      diagnostics
-    );
-    const contactName = ReferentialRecordFields.requiredText(
-      record.contactName,
-      "referential.contact.name.invalid",
-      `hosts[${index}].contactName`,
-      "Contact name must be a non-empty string.",
-      diagnostics
-    );
-    const email = ReferentialRecordFields.email(
-      record.email,
-      "referential.contact.email.invalid",
-      `hosts[${index}].email`,
-      "Host contact email address is invalid.",
-      diagnostics
-    );
-    const phone = ReferentialRecordFields.optionalText(
-      record.phone,
-      "referential.contact.phone.invalid",
-      `hosts[${index}].phone`,
-      "Host contact phone must be a string when provided.",
-      diagnostics
-    );
-    const address = ReferentialRecordFields.requiredText(
-      record.address,
-      "referential.contact.address.invalid",
-      `hosts[${index}].address`,
-      "Host contact address must be a non-empty string.",
-      diagnostics
-    );
-    if (!hostId || !displayName || !contactId || !contactName || !email || address === void 0 || phone === null) {
-      return void 0;
-    }
-    return {
-      hostId,
-      displayName,
-      contact: {
-        id: contactId,
-        name: contactName,
-        email,
-        ...phone ? { phone } : {},
-        address
-      }
-    };
-  }
-  static hostId(record, index, diagnostics) {
-    const hostIdValue = ReferentialRecordFields.requiredText(
-      record.hostId,
-      "referential.host.id.invalid",
-      `hosts[${index}].hostId`,
-      "Host stable identifier must be a non-empty string.",
-      diagnostics
-    );
-    const hostId = hostIdValue ? ReferentialIdentifiers.asHostId(hostIdValue) : void 0;
-    if (hostIdValue && !hostId) {
-      diagnostics.push(
-        ReferentialDiagnostics.diagnostic(
-          "referential.host.id.invalid",
-          "error",
-          `hosts[${index}].hostId`,
-          "Host stable identifier must use the opaque host-0001 format."
-        )
-      );
-    }
-    return hostId;
-  }
-  static contactId(record, index, diagnostics) {
-    const contactIdValue = ReferentialRecordFields.requiredText(
-      record.contactId,
-      "referential.contact.id.invalid",
-      `hosts[${index}].contactId`,
-      "Contact stable identifier must be a non-empty string.",
-      diagnostics
-    );
-    const contactId = contactIdValue ? ReferentialIdentifiers.asContactId(contactIdValue) : void 0;
-    if (contactIdValue && !contactId) {
-      diagnostics.push(
-        ReferentialDiagnostics.diagnostic(
-          "referential.contact.id.invalid",
-          "error",
-          `hosts[${index}].contactId`,
-          "Contact stable identifier must use the opaque contact-0001 format."
-        )
-      );
-    }
-    return contactId;
-  }
-};
-
-// packages/domain/referential/src/application/use-cases/speaker-source-fields.ts
-var SpeakerSourceFields = class _SpeakerSourceFields {
-  static read(record, index, diagnostics) {
-    const values = [
-      record.sourceProvider,
-      record.sourceEvent,
-      record.sourceSpeakerId
-    ];
-    const hasMapping = values.some(
-      (value) => value !== void 0 && value !== ""
-    );
-    if (hasMapping && !values.every(
-      (value) => typeof value === "string" && /^[a-zA-Z0-9_-]{1,200}$/.test(value)
-    )) {
-      _SpeakerSourceFields.invalid(index, diagnostics);
-      return {};
-    }
-    return {
-      ...hasMapping ? {
-        sourceIdentity: {
-          provider: String(record.sourceProvider),
-          event: String(record.sourceEvent),
-          speakerId: String(record.sourceSpeakerId)
-        }
-      } : {},
-      ..._SpeakerSourceFields.pictureUrl(record.pictureUrl) ? { pictureUrl: String(record.pictureUrl) } : {}
-    };
-  }
-  static pictureUrl(value) {
-    if (typeof value !== "string" || value.length > 2048) return void 0;
-    try {
-      const url = new URL(value);
-      return url.protocol === "https:" && !url.username && !url.password ? url.href : void 0;
-    } catch {
-      return void 0;
-    }
-  }
-  static validateMappings(speakers, diagnostics) {
-    const identities = /* @__PURE__ */ new Set();
-    for (const [index, speaker] of speakers.entries()) {
-      if (!speaker.sourceIdentity) continue;
-      const key = JSON.stringify(speaker.sourceIdentity);
-      if (identities.has(key)) _SpeakerSourceFields.invalid(index, diagnostics);
-      identities.add(key);
-    }
-  }
-  static invalid(index, diagnostics) {
-    diagnostics.push({
-      code: "referential.speaker.mapping.invalid",
-      severity: "error",
-      path: `speakers[${index}].sourceIdentity`,
-      message: "Source mappings must be complete, scoped and unique."
-    });
-  }
-};
-
-// packages/domain/referential/src/application/use-cases/speaker-catalog-validator.ts
-var SpeakerCatalogValidator = class _SpeakerCatalogValidator {
-  static validateSpeakers(records, diagnostics) {
-    const speakers = [];
-    const speakerIds = /* @__PURE__ */ new Set();
-    for (const [index, record] of records.entries()) {
-      const speakerId = _SpeakerCatalogValidator.speakerId(
-        record,
-        index,
-        diagnostics
-      );
-      const { firstName, lastName, company, email, phone, displayName } = _SpeakerCatalogValidator.contactFields(record, index, diagnostics);
-      if (!speakerId || !displayName || firstName === null || lastName === null || company === null || !email || phone === null) {
-        continue;
-      }
-      if (speakerIds.has(speakerId)) {
-        diagnostics.push(
-          ReferentialDiagnostics.diagnostic(
-            "referential.speaker.id.duplicate",
-            "error",
-            `speakers[${index}].speakerId`,
-            "Speaker stable identifiers must be unique."
-          )
-        );
-        continue;
-      }
-      speakerIds.add(speakerId);
-      speakers.push({
-        ...record.source ? { source: Object.freeze({ ...record.source }) } : {},
-        id: speakerId,
-        firstName: firstName ?? "",
-        lastName: lastName ?? "",
-        displayName,
-        company: company ?? "",
-        ...SpeakerSourceFields.read(record, index, diagnostics),
-        email,
-        ...phone ? { phone } : {}
-      });
-    }
-    return speakers;
-  }
-  static speakerId(record, index, diagnostics) {
-    const speakerIdValue = ReferentialRecordFields.requiredText(
-      record.speakerId,
-      "referential.speaker.id.invalid",
-      `speakers[${index}].speakerId`,
-      "Speaker stable identifier must be a non-empty string.",
-      diagnostics
-    );
-    const speakerId = speakerIdValue ? ReferentialIdentifiers.asSpeakerId(speakerIdValue) : void 0;
-    if (speakerIdValue && !speakerId) {
-      diagnostics.push(
-        ReferentialDiagnostics.diagnostic(
-          "referential.speaker.id.invalid",
-          "error",
-          `speakers[${index}].speakerId`,
-          "Speaker stable identifier must use the speaker-* slug format."
-        )
-      );
-    }
-    return speakerId;
-  }
-  static contactFields(record, index, diagnostics) {
-    const firstName = ReferentialRecordFields.optionalText(
-      record.firstName,
-      "referential.speaker.first-name.invalid",
-      `speakers[${index}].firstName`,
-      "Speaker first name must be a non-empty string.",
-      diagnostics
-    );
-    const lastName = ReferentialRecordFields.optionalText(
-      record.lastName,
-      "referential.speaker.last-name.invalid",
-      `speakers[${index}].lastName`,
-      "Speaker last name must be a non-empty string.",
-      diagnostics
-    );
-    const company = ReferentialRecordFields.optionalText(
-      record.company,
-      "referential.speaker.company.invalid",
-      `speakers[${index}].company`,
-      "Speaker company must be a non-empty string.",
-      diagnostics
-    );
-    const email = ReferentialRecordFields.email(
-      record.email,
-      "referential.speaker.email.invalid",
-      `speakers[${index}].email`,
-      "Speaker email address is invalid.",
-      diagnostics
-    );
-    const phone = ReferentialRecordFields.optionalText(
-      record.phone,
-      "referential.speaker.phone.invalid",
-      `speakers[${index}].phone`,
-      "Speaker phone must be a string when provided.",
-      diagnostics
-    );
-    const displayName = ReferentialRecordFields.requiredText(
-      record.displayName || (firstName && lastName ? `${firstName} ${lastName}` : ""),
-      "referential.speaker.display-name.invalid",
-      `speakers[${index}].displayName`,
-      "A display name or both structured names are required.",
-      diagnostics
-    );
-    return { firstName, lastName, company, email, phone, displayName };
-  }
-};
-
-// packages/domain/referential/src/domain/proposal-source-error.ts
-var ProposalSourceError = class extends Error {
-  constructor(code, retryAfterSeconds, context3) {
-    super(`Proposal source ${code}.`);
-    this.code = code;
-    this.retryAfterSeconds = retryAfterSeconds;
-    this.context = context3;
-    this.name = "ProposalSourceError";
-  }
-  code;
-  retryAfterSeconds;
-  context;
-};
-
-// packages/domain/referential/src/application/use-cases/validate-referential-catalog.ts
-var ValidateReferentialCatalog = class {
-  constructor(repository) {
-    this.repository = repository;
-  }
-  repository;
-  async execute(rawCatalog) {
-    try {
-      return this.validate(rawCatalog ?? await this.loadCatalog());
-    } catch (error2) {
-      if (!(error2 instanceof ProposalSourceError)) throw error2;
-      return Object.freeze({
-        isValid: false,
-        diagnostics: ReferentialDiagnostics.freezeDiagnostics([
-          ReferentialDiagnostics.diagnostic(
-            `referential.source.${error2.code}`,
-            "error",
-            "speakers",
-            "Source-owned speaker profiles could not be refreshed. Check source access and identity mappings before retrying."
-          )
-        ])
-      });
-    }
-  }
-  validate(input) {
-    const diagnostics = [];
-    const hosts = HostCatalogValidator.validateHosts(input.hosts, diagnostics);
-    const speakers = SpeakerCatalogValidator.validateSpeakers(
-      input.speakers,
-      diagnostics
-    );
-    this.reportDuplicateDisplayNames(
-      hosts,
-      "referential.host.display-name.duplicate",
-      "hosts",
-      "Duplicate normalized host display names are not allowed; keep one stable host per public name.",
-      diagnostics
-    );
-    SpeakerSourceFields.validateMappings(speakers, diagnostics);
-    const frozenDiagnostics = ReferentialDiagnostics.freezeDiagnostics(diagnostics);
-    if (diagnostics.some(({ severity }) => severity === "error")) {
-      return Object.freeze({
-        isValid: false,
-        diagnostics: frozenDiagnostics
-      });
-    }
-    return Object.freeze({
-      isValid: true,
-      catalog: ReferentialCatalogOperations.freezeCatalog(hosts, speakers),
-      diagnostics: frozenDiagnostics
-    });
-  }
-  async loadCatalog() {
-    if (!this.repository) {
-      throw new Error(
-        "A referential repository or an explicit raw catalog is required."
-      );
-    }
-    return this.repository.load();
-  }
-  reportDuplicateDisplayNames(entities, code, path, message, diagnostics) {
-    const counts = /* @__PURE__ */ new Map();
-    for (const entity of entities) {
-      const key = ReferentialCatalogOperations.displayNameKey(
-        entity.displayName
-      );
-      counts.set(key, (counts.get(key) ?? 0) + 1);
-    }
-    let ambiguityIndex = 0;
-    for (const count of counts.values()) {
-      if (count < 2) {
-        continue;
-      }
-      diagnostics.push(
-        ReferentialDiagnostics.diagnostic(
-          code,
-          "error",
-          `${path}.ambiguities[${ambiguityIndex}]`,
-          message
-        )
-      );
-      ambiguityIndex += 1;
-    }
-  }
-};
-
-// packages/domain/referential/src/application/use-cases/merge-source-speakers.ts
-var MergeSourceSpeakers = class {
-  execute(rows, snapshot, state) {
-    const reserved = /* @__PURE__ */ new Set([
-      ...state.reservedIds,
-      ...rows.map((row) => row.speaker_id)
-    ]);
-    const mappings = this.mappings(rows, snapshot);
-    const merged = rows.map((row) => ({ ...row }));
-    for (const speaker of [...snapshot.speakers].sort(
-      (a, b2) => a.id.localeCompare(b2.id, "en")
-    )) {
-      let index = mappings.get(speaker.id);
-      if (index === void 0) {
-        const possibleMatch = rows.findIndex(
-          (row2) => !row2.source_speaker_id && (row2.mail?.trim().toLowerCase() === speaker.email.toLowerCase() || (row2.display_name || `${row2.firstname} ${row2.lastname}`).trim().toLowerCase() === speaker.displayName.toLowerCase())
-        );
-        if (possibleMatch !== -1)
-          throw new ProposalSourceError("mapping-required", void 0, {
-            field: `speakers[${possibleMatch}]`
-          });
-        const id = this.allocate(reserved);
-        index = merged.length;
-        merged.push({
-          speaker_id: id,
-          firstname: "",
-          lastname: "",
-          phone: "",
-          source_provider: snapshot.provider,
-          source_event: snapshot.event,
-          source_speaker_id: speaker.id
-        });
-        mappings.set(speaker.id, index);
-      }
-      const row = merged[index];
-      row.display_name = speaker.displayName;
-      row.mail = speaker.email;
-      row.company = speaker.company ?? "";
-      row.picture_url = speaker.pictureUrl ?? "";
-    }
-    return {
-      rows: merged,
-      state: { version: 1, reservedIds: [...reserved].sort() }
-    };
-  }
-  mappings(rows, snapshot) {
-    const mappings = /* @__PURE__ */ new Map();
-    for (const [index, row] of rows.entries()) {
-      if (row.source_provider !== snapshot.provider || row.source_event !== snapshot.event)
-        continue;
-      if (!row.source_speaker_id || mappings.has(row.source_speaker_id))
-        throw new ProposalSourceError("conflict");
-      mappings.set(row.source_speaker_id, index);
-    }
-    return mappings;
-  }
-  allocate(reserved) {
-    const maximum = Math.max(
-      0,
-      ...[...reserved].map((id2) => Number(id2.replace(/^speaker-/, "")))
-    );
-    if (!Number.isInteger(maximum) || maximum >= 9999)
-      throw new ProposalSourceError("conflict");
-    const id = `speaker-${String(maximum + 1).padStart(4, "0")}`;
-    reserved.add(id);
-    return id;
-  }
-};
-
 // packages/adapter/conference-hall-proposal-source/src/proposal-export-parser.ts
 var ProposalExportParser = class _ProposalExportParser {
   static parse(value, event) {
@@ -36497,6 +36574,10 @@ var ProposalExportParser = class _ProposalExportParser {
       });
       return {
         id,
+        number: _ProposalExportParser.number(
+          proposal.proposalNumber,
+          `${path}.proposalNumber`
+        ),
         title: _ProposalExportParser.text(proposal.title, `${path}.title`),
         abstract: _ProposalExportParser.text(
           proposal.abstract,
@@ -36540,6 +36621,12 @@ var ProposalExportParser = class _ProposalExportParser {
       } : {},
       ..._ProposalExportParser.picture(speaker)
     };
+  }
+  static number(value, path) {
+    if (value === void 0 || value === null) return void 0;
+    if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 1)
+      throw _ProposalExportParser.invalid(path);
+    return value;
   }
   static picture(speaker) {
     if (!("picture" in speaker)) return {};
@@ -38620,197 +38707,6 @@ var CsvSpeakerCatalogStore = class {
     return state.version === 1 && Array.isArray(state.reservedIds) && state.reservedIds.every(
       (id) => typeof id === "string" && /^speaker-\d{4}$/.test(id)
     );
-  }
-};
-
-// packages/domain/publication/src/domain/url-policy-contracts.ts
-var DEFAULT_PUBLICATION_URL_CONFIGURATION = Object.freeze({
-  meetupEventUrlPrefix: "https://www.meetup.com/cloud-native-aix-marseille/events/",
-  communityEventUrlPrefixes: Object.freeze([
-    "https://ocgroups.dev/cncf/group/cloud-native-aix-marseille/event/",
-    "https://community.cncf.io/events/details/cncf-cloud-native-aix-marseille-presents-"
-  ]),
-  assetFolderUrlPrefix: "https://drive.google.com/drive/folders/"
-});
-
-// packages/domain/event/src/domain/model.ts
-var POST_EVENT_TASK_NAMES = Object.freeze({
-  thankHost: "Mail thanks hoster",
-  thankSpeakers: "Mail thanks speakers",
-  shareSlides: "Share slides to meetup",
-  importAttendance: "Sync attendees from tally sheet to CNCF",
-  shareOnSocialNetworks: "Social networks"
-});
-var EXPECTED_POST_EVENT_TASK_NAMES = Object.freeze([
-  POST_EVENT_TASK_NAMES.thankHost,
-  POST_EVENT_TASK_NAMES.thankSpeakers,
-  POST_EVENT_TASK_NAMES.shareSlides,
-  POST_EVENT_TASK_NAMES.importAttendance,
-  POST_EVENT_TASK_NAMES.shareOnSocialNetworks
-]);
-
-// packages/domain/event/src/domain/patch.ts
-var EMPTY_EVENT_PATCH = Object.freeze({ operations: [] });
-
-// packages/domain/event/src/domain/rule-contracts.ts
-var DEFAULT_MANAGED_LABEL_CONFIGURATION = Object.freeze({
-  meetup: "meetup",
-  hostNeeded: "hoster:needed",
-  hostConfirmed: "hoster:confirmed",
-  speakersNeeded: "speakers:needed",
-  speakersConfirmed: "speakers:confirmed",
-  occurrencePostponed: "event:postponed",
-  occurrenceHeld: "event:held",
-  occurrenceCancelled: "event:cancelled"
-});
-
-// packages/domain/event/src/domain/dto-contracts.ts
-var OCCURRENCE_STATUS_LABELS = Object.freeze({
-  scheduled: null,
-  postponed: "event:postponed",
-  held: "event:held",
-  cancelled: "event:cancelled"
-});
-
-// packages/domain/communication/src/model.ts
-var MAIL_TEMPLATE_NAMES = {
-  hostIntroduction: "meetup-intro-hosting",
-  speakerIntroduction: "meetup-intro-speakers",
-  hostThanks: "meetup-thanks-hosting",
-  speakerThanks: "meetup-thanks-speakers"
-};
-
-// packages/domain/communication/src/plan-communications-contracts.ts
-var MAIL_POLICIES = {
-  introduction: {
-    hosting: {
-      kind: "host-introduction",
-      templateName: MAIL_TEMPLATE_NAMES.hostIntroduction
-    },
-    speaker: {
-      kind: "speaker-introduction",
-      templateName: MAIL_TEMPLATE_NAMES.speakerIntroduction
-    }
-  },
-  thanks: {
-    hosting: {
-      kind: "host-thanks",
-      templateName: MAIL_TEMPLATE_NAMES.hostThanks
-    },
-    speaker: {
-      kind: "speaker-thanks",
-      templateName: MAIL_TEMPLATE_NAMES.speakerThanks
-    }
-  }
-};
-
-// packages/domain/communication/src/reconcile-communications.ts
-var DEFAULT_DISPATCH_CAPABILITIES = Object.freeze({
-  mail: true,
-  notification: true
-});
-
-// packages/application/journey/src/use-cases/manage-meetup-communications-contracts.ts
-var UNRESOLVED_MAIL_RECIPIENTS = Object.freeze({
-  resolved: false,
-  recipients: Object.freeze([])
-});
-
-// packages/application/journey/src/use-cases/speaker-synchronization-error.ts
-var SpeakerSynchronizationError = class _SpeakerSynchronizationError extends Error {
-  constructor(stage, cause, diagnostics = []) {
-    super(`Speaker synchronization failed during ${stage}.`, { cause });
-    this.stage = stage;
-    this.diagnostics = diagnostics;
-    this.name = "SpeakerSynchronizationError";
-  }
-  stage;
-  diagnostics;
-  static async at(stage, operation) {
-    try {
-      return await operation();
-    } catch (error2) {
-      if (error2 instanceof _SpeakerSynchronizationError) throw error2;
-      throw new _SpeakerSynchronizationError(stage, error2);
-    }
-  }
-};
-
-// packages/application/journey/src/use-cases/synchronize-source-speakers.ts
-var SynchronizeSourceSpeakers = class {
-  constructor(source, store, form) {
-    this.source = source;
-    this.store = store;
-    this.form = form;
-  }
-  source;
-  store;
-  form;
-  async execute() {
-    const original = await SpeakerSynchronizationError.at(
-      "read-catalog",
-      () => this.store.read()
-    );
-    const snapshot = await SpeakerSynchronizationError.at(
-      "load-source",
-      () => this.source.load()
-    );
-    const merged = await SpeakerSynchronizationError.at(
-      "merge-speakers",
-      () => new MergeSourceSpeakers().execute(
-        original.rows,
-        snapshot,
-        original.state
-      )
-    );
-    const catalog = await SpeakerSynchronizationError.at(
-      "validate-catalog",
-      async () => this.validate(await this.store.candidate(merged.rows))
-    );
-    await SpeakerSynchronizationError.at(
-      "check-form",
-      () => this.project(catalog, "check")
-    );
-    const changed = await SpeakerSynchronizationError.at(
-      "save-catalog",
-      () => this.store.save(original, merged.rows, merged.state)
-    );
-    const form = await SpeakerSynchronizationError.at(
-      "update-form",
-      () => this.project(catalog, "fix")
-    );
-    return {
-      changed: changed || form.changed,
-      speakerCount: catalog.speakers.length
-    };
-  }
-  async validate(input) {
-    const validation = await new ValidateReferentialCatalog().execute(input);
-    if (!validation.isValid)
-      throw new SpeakerSynchronizationError(
-        "validate-catalog",
-        void 0,
-        validation.diagnostics.map(({ path, ...item }) => ({
-          ...item,
-          field: path
-        }))
-      );
-    return validation.catalog;
-  }
-  async project(catalog, mode) {
-    const result = await this.form.synchronize({
-      issueFormPath: ".github/ISSUE_TEMPLATE/meetup.yml",
-      occurrenceStatusFieldId: "event_status",
-      catalog,
-      mode
-    });
-    if (result.diagnostics.some((item) => item.severity === "error"))
-      throw new SpeakerSynchronizationError(
-        mode === "check" ? "check-form" : "update-form",
-        void 0,
-        result.diagnostics
-      );
-    return result;
   }
 };
 
@@ -46341,14 +46237,15 @@ var SpeakerSyncFailureReport = class _SpeakerSyncFailureReport {
     const stage = messages.t(
       `report.speaker-sync.stage.${failure?.stage ?? "unknown"}`
     );
-    const reason = diagnostics.map(
-      (item) => `[${item.code}]${item.field ? ` (${item.field})` : ""}: ${messages.diagnostic(item.code, item.message)}`
+    const guidance = diagnostics.map(
+      (item) => `- ${item.field ? `${item.field}: ` : ""}${messages.diagnostic(item.code, item.message)}`
     ).join("\n");
     return {
-      details: [],
-      diagnostics,
-      failure: `${messages.t("report.speaker-sync.failed", { stage })}
-${reason}`
+      report: {
+        details: [messages.t("report.speaker-sync.failed", { stage })],
+        diagnostics
+      },
+      prBody: guidance
     };
   }
   static diagnostic(error2) {
@@ -46359,7 +46256,7 @@ ${reason}`
     const kind = reason === "http" && (status === 401 || status === 403) ? "authentication" : reason === "http" && status === 404 ? "event-not-found" : reason;
     const code = `speaker-sync.${kind}`;
     const field = context3?.field;
-    const safeField = field && /^(?:export|proposals(?:\[\d+\])?(?:\.(?:id|title|abstract|speakers|email|name|company|languages|formats)(?:\[\d+\])?)*|speakers\[\d+\])$/.test(
+    const safeField = field && /^(?:export|proposals(?:\[\d+\])?(?:\.(?:id|proposalNumber|title|abstract|speakers|email|name|company|languages|formats)(?:\[\d+\])?)*|speakers\[\d+\])$/.test(
       field
     ) ? field : void 0;
     return {
@@ -46408,8 +46305,11 @@ var SpeakerSyncAction = class {
         diagnostics: []
       };
     } catch (error2) {
-      const report = SpeakerSyncFailureReport.create(error2, messages);
-      setOutput("pr-body", report.failure);
+      const { report, prBody } = SpeakerSyncFailureReport.create(
+        error2,
+        messages
+      );
+      setOutput("pr-body", prBody);
       return report;
     }
   }

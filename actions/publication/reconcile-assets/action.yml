@@ -1,5 +1,5 @@
 name: Reconcile meetup assets
-description: Reconcile the event Drive folder, template copies, and issue asset link. Publish redacted diagnostics in annotations, logs, and the job summary.
+description: Reconcile the event Drive folder, template copies, and issue asset link. Report concise technical facts and diagnostic codes in logs and the job summary.
 author: Cloud Native Aix-Marseille
 inputs:
   locale:
@@ -10,9 +10,6 @@ inputs:
     required: true
   github-token:
     description: Token for the caller repository. Requires issues:read and issues:write.
-    required: true
-  managed-comment-author:
-    description: Trusted GitHub App bot login used by the event composition.
     required: true
   google-credentials:
     description: Service-account JSON with access to the configured Drive parent and template folders.

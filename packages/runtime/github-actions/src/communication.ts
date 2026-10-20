@@ -1,7 +1,3 @@
-import {
-	ConferenceHallInput,
-	type ConferenceHallSettings,
-} from "./conference-hall-input.js";
 import { getOctokit } from "@actions/github";
 import {
 	AutomationConfigFactory,
@@ -9,8 +5,12 @@ import {
 	ManageMeetupCommunications,
 	type ManageMeetupCommunicationsResult,
 } from "@meetup-automation/journey";
+import { MessageLocalizer } from "@meetup-automation/localization";
 import { CommunicationComposition } from "./communication-composition.js";
-import { OrganizerNotificationMessages } from "./notifications/organizer-notification-messages.js";
+import {
+	ConferenceHallInput,
+	type ConferenceHallSettings,
+} from "./conference-hall-input.js";
 
 export interface RunCommunicationReconcileInput extends ConferenceHallSettings {
 	readonly locale?: string;
@@ -55,9 +55,8 @@ export class CommunicationRuntime {
 		const mailingsToken = input.mailingsToken.trim();
 		const slackToken = input.slackToken.trim();
 		const slackOrganizerChannelId = input.slackOrganizerChannelId.trim();
-		const messages = new OrganizerNotificationMessages(input.locale);
 		const container = CommunicationComposition.createCommunicationContainer({
-			locale: messages.locale,
+			locale: MessageLocalizer.resolveLocale(input.locale ?? "en"),
 			conferenceHallEvent: input.conferenceHallEvent,
 			conferenceHallApiKey: input.conferenceHallApiKey,
 			client: getOctokit(githubToken),
@@ -77,7 +76,6 @@ export class CommunicationRuntime {
 			owner: input.owner,
 			repo: input.repo,
 			repositoryId: input.repositoryId,
-			organizerNotificationDestination: slackOrganizerChannelId,
 			slidesUrl: input.slidesUrl,
 			slidesReady: input.slidesReady,
 		});

@@ -17,13 +17,17 @@ describe("SpeakerSyncFailureReport", () => {
 			const error = new SpeakerSynchronizationError("load-source", source);
 
 			// Act
-			const report = SpeakerSyncFailureReport.create(
+			const { report, prBody } = SpeakerSyncFailureReport.create(
 				error,
 				new ActionMessages(),
 			);
 
 			// Assert
-			expect(report.failure).toContain("loading the Conference Hall export");
+			expect(report.details).toEqual([
+				"speaker_sync=blocked stage=load-source",
+			]);
+			expect(report.failure).toBeUndefined();
+			expect(prBody).toContain(`HTTP ${status}`);
 			expect(report.diagnostics[0].field).toBe(`HTTP ${status}`);
 			expect(report.diagnostics[0].code).toBe(
 				status === 404
@@ -32,7 +36,7 @@ describe("SpeakerSyncFailureReport", () => {
 						? "speaker-sync.http"
 						: "speaker-sync.authentication",
 			);
-			expect(JSON.stringify(report)).not.toMatch(
+			expect(JSON.stringify({ report, prBody })).not.toMatch(
 				/PRIVATE|private@example.test/,
 			);
 		},
@@ -50,15 +54,16 @@ describe("SpeakerSyncFailureReport", () => {
 			);
 
 			// Act
-			const report = SpeakerSyncFailureReport.create(
+			const { report, prBody } = SpeakerSyncFailureReport.create(
 				error,
 				new ActionMessages(locale),
 			);
 
 			// Assert
-			expect(report.failure).toContain(
+			expect(prBody).toContain(
 				locale === "fr" ? "champ obligatoire" : "required field",
 			);
+			expect(report.failure).toBeUndefined();
 			expect(report.diagnostics[0]).toMatchObject({
 				code: "speaker-sync.schema",
 				field: "proposals[2].speakers[0].email",
@@ -74,12 +79,18 @@ describe("SpeakerSyncFailureReport", () => {
 		);
 
 		// Act
-		const report = SpeakerSyncFailureReport.create(error, new ActionMessages());
+		const { report, prBody } = SpeakerSyncFailureReport.create(
+			error,
+			new ActionMessages(),
+		);
 
 		// Assert
-		expect(report.failure).toContain("checking the issue form");
+		expect(report.details).toEqual(["speaker_sync=blocked stage=check-form"]);
+		expect(prBody).toContain("Unexpected technical failure");
 		expect(report.diagnostics[0].code).toBe("speaker-sync.unexpected");
-		expect(JSON.stringify(report)).not.toMatch(/PRIVATE|private@example.test/);
+		expect(JSON.stringify({ report, prBody })).not.toMatch(
+			/PRIVATE|private@example.test/,
+		);
 	});
 	it("does not expose arbitrary source field names", () => {
 		// Arrange
@@ -89,10 +100,34 @@ describe("SpeakerSyncFailureReport", () => {
 		});
 
 		// Act
-		const report = SpeakerSyncFailureReport.create(error, new ActionMessages());
+		const { report, prBody } = SpeakerSyncFailureReport.create(
+			error,
+			new ActionMessages(),
+		);
 
 		// Assert
 		expect(report.diagnostics[0].field).toBeUndefined();
-		expect(JSON.stringify(report)).not.toMatch(/PRIVATE|private@example.test/);
+		expect(JSON.stringify({ report, prBody })).not.toMatch(
+			/PRIVATE|private@example.test/,
+		);
+	});
+	it("preserves the public proposal-number field without exposing its value", () => {
+		// Arrange
+		const error = new ProposalSourceError("invalid", undefined, {
+			reason: "schema",
+			field: "proposals[2].proposalNumber",
+		});
+		error.message = "PRIVATE invalid proposal value";
+
+		// Act
+		const { report, prBody } = SpeakerSyncFailureReport.create(
+			error,
+			new ActionMessages(),
+		);
+
+		// Assert
+		expect(report.diagnostics[0].field).toBe("proposals[2].proposalNumber");
+		expect(prBody).toContain("- proposals[2].proposalNumber:");
+		expect(JSON.stringify({ report, prBody })).not.toContain("PRIVATE");
 	});
 });

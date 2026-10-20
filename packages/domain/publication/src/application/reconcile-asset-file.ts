@@ -106,19 +106,13 @@ export class ReconcileAssetFile {
 			return;
 		if (!input.template.contentContract) return;
 		if (!this.content || !input.model) throw new ContentError("missing");
-		try {
-			await this.content.preflight(
-				file?.id ?? input.template.id,
-				input.template.kind,
-				input.template.mimeType ?? "",
-				input.template.contentContract,
-				input.model,
-			);
-		} catch (error) {
-			throw error instanceof ContentError
-				? error
-				: new ContentError("recovery");
-		}
+		await this.content.preflight(
+			file?.id ?? input.template.id,
+			input.template.kind,
+			input.template.mimeType ?? "",
+			input.template.contentContract,
+			input.model,
+		);
 	}
 
 	private async render(
@@ -136,29 +130,23 @@ export class ReconcileAssetFile {
 			return "copy-only";
 		if (input.mode === "check" || !this.content || !input.model)
 			return "pending";
-		try {
-			const outcome = await this.content.execute({
-				folderId: input.container.id,
-				fileId: file.id,
-				templateId: template.id,
-				kind: template.kind,
-				mimeType: file.mimeType ?? template.mimeType ?? "",
-				contract: template.contentContract as ContentContract | undefined,
-				fresh,
-				managed: file.contentManaged,
-				model: input.model,
-				recovery,
-			});
-			if (outcome.fallback)
-				input.diagnostics.push(ReconcileAssetFile.diagnostic("fallback"));
-			if (outcome.status === "pending")
-				input.diagnostics.push(ReconcileAssetFile.diagnostic("revision"));
-			return outcome.status;
-		} catch (error) {
-			throw error instanceof ContentError
-				? error
-				: new ContentError("recovery");
-		}
+		const outcome = await this.content.execute({
+			folderId: input.container.id,
+			fileId: file.id,
+			templateId: template.id,
+			kind: template.kind,
+			mimeType: file.mimeType ?? template.mimeType ?? "",
+			contract: template.contentContract as ContentContract | undefined,
+			fresh,
+			managed: file.contentManaged,
+			model: input.model,
+			recovery,
+		});
+		if (outcome.fallback)
+			input.diagnostics.push(ReconcileAssetFile.diagnostic("fallback"));
+		if (outcome.status === "pending")
+			input.diagnostics.push(ReconcileAssetFile.diagnostic("revision"));
+		return outcome.status;
 	}
 
 	private async copyOrRename(

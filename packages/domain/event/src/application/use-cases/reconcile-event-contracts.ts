@@ -5,7 +5,6 @@ import type { EventPatch } from "../../domain/patch.js";
 import type { EventReadiness } from "../../domain/readiness.js";
 import type { EventRule } from "../../domain/rule-contracts.js";
 import type { EventClock } from "../ports/event-clock.js";
-import type { EventCommentRepository } from "../ports/event-comment-repository.js";
 import type { EventDocumentCodec } from "../ports/event-document-codec.js";
 import type {
 	EventDocument,
@@ -30,13 +29,11 @@ export type ReconcileEventResult = Readonly<{
 	readiness: EventReadiness;
 	lifecycle: EventLifecycleEvaluation;
 	persisted: boolean;
-	commentUpdated: boolean;
 }>;
 
 export type ReconcileEventDependencies = Readonly<{
 	repository: EventRepository;
 	documentCodec: EventDocumentCodec;
-	commentRepository: EventCommentRepository;
 	clock: EventClock;
 	rules?: readonly EventRule[];
 }>;

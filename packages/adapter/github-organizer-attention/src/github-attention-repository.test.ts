@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { fixture, state } from "../testing/attention.fixtures.js";
 import { GithubAttentionRepository } from "./github-attention-repository.js";
+
 describe("trusted durable attention repository", () => {
 	it("creates one bot-owned status and skips unchanged writes", async () => {
 		// Arrange

@@ -12,6 +12,7 @@ import {
 } from "@meetup-automation/event";
 import { GitHubEventCommentRepository } from "@meetup-automation/github-event-comment-repository";
 import { GitHubEventRepository } from "@meetup-automation/github-event-repository";
+import { AttentionCommentRetention } from "@meetup-automation/github-organizer-attention";
 import { GitHubIssueFormEventDocumentCodec } from "@meetup-automation/github-issue-form-event-document-codec";
 import {
 	type AutomationConfig,
@@ -62,7 +63,8 @@ export interface EventDocumentCompositionInput
 	readonly client: GitHubClient;
 	readonly owner: string;
 	readonly repo: string;
-	readonly commentAuthorLogin: string;
+	readonly commentAuthorLogin?: string;
+	readonly retireCommunicationReports?: boolean;
 }
 
 export interface EventCompositionInput
@@ -135,9 +137,6 @@ export class EventComposition {
 					repository: context.get<EventRepository>(SERVICES.eventRepository),
 					documentCodec: context.get<EventDocumentCodec>(
 						SERVICES.eventDocumentCodec,
-					),
-					commentRepository: context.get<EventCommentRepository>(
-						SERVICES.eventCommentRepository,
 					),
 					clock: context.get<EventClock>(SERVICES.eventClock),
 					rules: EventRuleFactory.createDefaultEventRules({
@@ -233,17 +232,26 @@ export class EventComposition {
 						config.event["required-confirmation-labels"][1],
 				});
 			});
-		container
-			.bind<EventCommentRepository>(SERVICES.eventCommentRepository)
-			.toDynamicValue(
-				() =>
-					new GitHubEventCommentRepository(input.client, {
-						owner: input.owner,
-						repo: input.repo,
-						authorLogin: input.commentAuthorLogin,
-						locale: input.locale,
-					}),
-			);
+		const commentAuthorLogin = input.commentAuthorLogin;
+		if (commentAuthorLogin)
+			container
+				.bind<EventCommentRepository>(SERVICES.eventCommentRepository)
+				.toDynamicValue(
+					() =>
+						new GitHubEventCommentRepository(input.client, {
+							owner: input.owner,
+							repo: input.repo,
+							authorLogin: commentAuthorLogin,
+							locale: input.locale,
+							retireCommunicationReports: input.retireCommunicationReports,
+							retainedContent: new AttentionCommentRetention(
+								input.client,
+								input.owner,
+								input.repo,
+								commentAuthorLogin,
+							),
+						}),
+				);
 		container
 			.bind<EventClock>(SERVICES.eventClock)
 			.toDynamicValue(() => new SystemEventClock());

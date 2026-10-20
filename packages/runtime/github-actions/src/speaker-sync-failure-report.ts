@@ -4,8 +4,16 @@ import type { PublicDiagnostic } from "@meetup-automation/journey";
 import type { ActionReportData } from "./action-report.js";
 import { ActionMessages } from "./i18n/action-messages.js";
 
+interface SpeakerSyncBlockedReport {
+	readonly report: ActionReportData;
+	readonly prBody: string;
+}
+
 export class SpeakerSyncFailureReport {
-	static create(error: unknown, messages: ActionMessages): ActionReportData {
+	static create(
+		error: unknown,
+		messages: ActionMessages,
+	): SpeakerSyncBlockedReport {
 		const failure =
 			error instanceof SpeakerSynchronizationError ? error : undefined;
 		const cause = failure?.cause ?? error;
@@ -15,16 +23,18 @@ export class SpeakerSyncFailureReport {
 		const stage = messages.t(
 			`report.speaker-sync.stage.${failure?.stage ?? "unknown"}`,
 		);
-		const reason = diagnostics
+		const guidance = diagnostics
 			.map(
 				(item) =>
-					`[${item.code}]${item.field ? ` (${item.field})` : ""}: ${messages.diagnostic(item.code, item.message)}`,
+					`- ${item.field ? `${item.field}: ` : ""}${messages.diagnostic(item.code, item.message)}`,
 			)
 			.join("\n");
 		return {
-			details: [],
-			diagnostics,
-			failure: `${messages.t("report.speaker-sync.failed", { stage })}\n${reason}`,
+			report: {
+				details: [messages.t("report.speaker-sync.failed", { stage })],
+				diagnostics,
+			},
+			prBody: guidance,
 		};
 	}
 	private static diagnostic(error: unknown): PublicDiagnostic {
@@ -42,7 +52,7 @@ export class SpeakerSyncFailureReport {
 		const field = context?.field;
 		const safeField =
 			field &&
-			/^(?:export|proposals(?:\[\d+\])?(?:\.(?:id|title|abstract|speakers|email|name|company|languages|formats)(?:\[\d+\])?)*|speakers\[\d+\])$/.test(
+			/^(?:export|proposals(?:\[\d+\])?(?:\.(?:id|proposalNumber|title|abstract|speakers|email|name|company|languages|formats)(?:\[\d+\])?)*|speakers\[\d+\])$/.test(
 				field,
 			)
 				? field

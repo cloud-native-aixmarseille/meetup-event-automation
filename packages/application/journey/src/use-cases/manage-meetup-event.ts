@@ -73,12 +73,7 @@ export class ManageMeetupEvent {
 			readiness,
 			now: eventDependencies.clock.now(),
 		});
-		const { persisted, commentUpdated } = await this.persist(
-			sourceDocument,
-			event,
-			input.mode,
-			readiness.diagnostics,
-		);
+		const persisted = await this.persist(sourceDocument, event, input.mode);
 
 		return {
 			skipped: false,
@@ -87,7 +82,6 @@ export class ManageMeetupEvent {
 			isReady: readiness.isReady,
 			manualPublicationTasks,
 			persisted,
-			commentUpdated,
 			diagnostics: [
 				...readiness.diagnostics.map(
 					EventDiagnosticProjection.toPublicDiagnostic,
@@ -162,38 +156,26 @@ export class ManageMeetupEvent {
 		sourceDocument: EventDocument,
 		event: MeetupEvent,
 		mode: "check" | "fix",
-		diagnostics: readonly EventDiagnostic[],
 	) {
 		const eventDependencies = this.dependencies.eventDependencies;
 		const repositoryPatch = eventDependencies.documentCodec.createPatch(
 			sourceDocument,
 			event,
 		);
-		let persisted = false;
-		let commentUpdated = false;
-		if (mode === "fix") {
-			if (
-				!EventRepositoryPatches.eventRepositoryPatchIsEmpty(repositoryPatch)
-			) {
-				await ReconcileEvent.ensureEventDocumentIsCurrent(
-					eventDependencies.repository,
-					sourceDocument.identity,
-					sourceDocument,
-				);
-				await eventDependencies.repository.applyPatch(
-					sourceDocument.identity,
-					repositoryPatch,
-				);
-				persisted = true;
-			}
-			commentUpdated = (
-				await eventDependencies.commentRepository.reconcileDiagnostics(
-					sourceDocument.identity,
-					diagnostics,
-				)
-			).changed;
-		}
-
-		return { persisted, commentUpdated };
+		if (
+			mode === "check" ||
+			EventRepositoryPatches.eventRepositoryPatchIsEmpty(repositoryPatch)
+		)
+			return false;
+		await ReconcileEvent.ensureEventDocumentIsCurrent(
+			eventDependencies.repository,
+			sourceDocument.identity,
+			sourceDocument,
+		);
+		await eventDependencies.repository.applyPatch(
+			sourceDocument.identity,
+			repositoryPatch,
+		);
+		return true;
 	}
 }

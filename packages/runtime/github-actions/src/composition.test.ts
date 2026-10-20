@@ -3,7 +3,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { getOctokit } from "@actions/github";
 import type {
-	EventCommentRepository,
 	EventDocument,
 	EventDocumentCodec,
 	EventRepository,
@@ -193,7 +192,6 @@ An evening about reliable platforms.
 			client: getOctokit("synthetic-test-token"),
 			owner: "example",
 			repo: "events",
-			commentAuthorLogin: "automation[bot]",
 			workspaceRoot,
 			repositoryRef: options.repositoryRef,
 			config: {
@@ -204,11 +202,6 @@ An evening about reliable platforms.
 		container
 			.rebind<EventRepository>(SERVICES.eventRepository)
 			.toConstantValue(repository);
-		container
-			.rebind<EventCommentRepository>(SERVICES.eventCommentRepository)
-			.toConstantValue({
-				reconcileDiagnostics: vi.fn().mockResolvedValue({ changed: false }),
-			});
 		return {
 			manage: container.get(ManageMeetupEvent),
 			codec: container.get<EventDocumentCodec>(SERVICES.eventDocumentCodec),

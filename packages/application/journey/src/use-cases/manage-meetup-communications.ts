@@ -1,4 +1,3 @@
-import { ApproveCommunicationBatch } from "./approve-communication-batch.js";
 import type {
 	ReconcileCommunicationsInput,
 	ReconcileCommunicationsResult,
@@ -13,11 +12,12 @@ import type {
 	ManageMeetupCommunicationsInput,
 	ManageMeetupCommunicationsResult,
 } from "../communication/contracts.js";
-import { CommunicationChecklist } from "./communication-checklist.js";
-import { CompleteCommunicationChecklist } from "./complete-communication-checklist.js";
 import type { AutomationConfig } from "../config/automation-config.js";
+import { ApproveCommunicationBatch } from "./approve-communication-batch.js";
+import { CommunicationChecklist } from "./communication-checklist.js";
 import { CommunicationDeliveryPreparation } from "./communication-delivery-preparation.js";
 import { CommunicationPlaceholders } from "./communication-placeholders.js";
+import { CompleteCommunicationChecklist } from "./complete-communication-checklist.js";
 import type { ManageMeetupCommunicationsDependencies } from "./manage-meetup-communications-contracts.js";
 import type { ManageMeetupEventResult } from "./manage-meetup-event-contracts.js";
 
@@ -47,7 +47,7 @@ export class ManageMeetupCommunications {
 
 		const delivery = await new CommunicationDeliveryPreparation(
 			this.dependencies,
-		).execute(input, managed.event, runtimeDiagnostics);
+		).execute(managed.event, runtimeDiagnostics);
 		const { referencesResolved } = delivery;
 
 		if (
@@ -120,7 +120,7 @@ export class ManageMeetupCommunications {
 				...deliveryInput,
 				dispatchCapabilities: {
 					mail: mailApproved,
-					notification: delivery.notificationConfigured,
+					notification: false,
 				},
 			});
 
@@ -179,14 +179,9 @@ export class ManageMeetupCommunications {
 		expected: EventDocument,
 		diagnostics: CommunicationJourneyDiagnostic[],
 	): Promise<boolean> {
-		try {
-			const current = await repository.find(expected.identity);
-			if (current && ReconcileEvent.eventDocumentsEqual(current, expected)) {
-				return true;
-			}
-		} catch {
-			// A failed consistency read is indistinguishable from a stale source here.
-		}
+		const current = await repository.find(expected.identity);
+		if (current && ReconcileEvent.eventDocumentsEqual(current, expected))
+			return true;
 		diagnostics.push({
 			code: "communication.event-concurrently-modified",
 			severity: "error",
@@ -261,7 +256,7 @@ export class ManageMeetupCommunications {
 			mode: dispatchEnabled ? "dispatch" : "check",
 			dispatchCapabilities: {
 				mail: true,
-				notification: delivery.notificationConfigured,
+				notification: false,
 			},
 			repositoryId: input.repositoryId?.trim() || repositoryName,
 			eventId: `issue-${input.issueNumber}`,
@@ -281,15 +276,6 @@ export class ManageMeetupCommunications {
 				managed.event,
 				input.slidesReady === false ? undefined : input.slidesUrl,
 			),
-			notificationContent:
-				this.dependencies.organizerReadinessNotification.render({
-					repository: repositoryName,
-					issueNumber: input.issueNumber,
-					eventDate: managed.event.date,
-					reasons: managed.diagnostics
-						.filter((item) => item.severity !== "info" && !item.fixApplied)
-						.map(({ code, field }) => ({ code, field })),
-				}),
 		};
 	}
 

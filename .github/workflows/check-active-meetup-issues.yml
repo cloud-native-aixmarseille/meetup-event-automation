@@ -1,7 +1,7 @@
 # Reusable workflow that checks open meetup issues, evaluates their current
 # state, and processes due communications under the shared per-event lock.
-# Communication errors are recorded in the meetup issue without failing the audit;
-# execution and comment persistence failures still fail the job.
+# Expected organizer tasks share one checklist; unexpected technical failures
+# fail the audit under the same policy as issue-triggered reconciliation.
 #
 # The workflow creates a separate GitHub App installation token for
 # `<repository-owner>/mailings` using the supplied App client ID and private key.
@@ -137,7 +137,6 @@ jobs:
           locale: ${{ inputs.locale }}
           issue-number: ${{ matrix.issue-number }}
           github-token: ${{ steps.app-token.outputs.token }}
-          managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
           kutt-base-url: ${{ inputs.kutt-base-url }}
           kutt-link-id: ${{ inputs.kutt-link-id }}
           openfeedback-api-key: ${{ secrets.openfeedback-api-key }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly
@@ -145,6 +144,7 @@ jobs:
 
       - name: Reconcile event assets
         id: assets
+        if: ${{ !cancelled() && steps.app-token.outcome == 'success' && steps.local-workflow-actions.outcome == 'success' }}
         uses: ./../self-workflow/actions/publication/reconcile-assets
         with:
           conference-hall-event: ${{ inputs.conference-hall-event }}
@@ -152,13 +152,13 @@ jobs:
           locale: ${{ inputs.locale }}
           issue-number: ${{ matrix.issue-number }}
           github-token: ${{ steps.app-token.outputs.token }}
-          managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
           google-credentials: ${{ secrets.google-credentials }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly
           google-drive-meetup-folder-id: ${{ inputs.google-drive-meetup-folder-id }}
           google-drive-meetup-template-folder-id: ${{ inputs.google-drive-meetup-template-folder-id }}
 
       - name: Evaluate current event state
         id: event
+        if: ${{ !cancelled() && steps.app-token.outcome == 'success' && steps.local-workflow-actions.outcome == 'success' }}
         uses: ./../self-workflow/actions/event/reconcile
         with:
           conference-hall-event: ${{ inputs.conference-hall-event }}
@@ -166,10 +166,10 @@ jobs:
           locale: ${{ inputs.locale }}
           issue-number: ${{ matrix.issue-number }}
           github-token: ${{ steps.app-token.outputs.token }}
-          managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
 
       - name: Create mailings GitHub App token
         id: mailings-token
+        if: ${{ steps.assets.outputs.drive-files != '' && steps.assets.outputs.slides-ready != '' }}
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           client-id: ${{ inputs.github-app-client-id }}
@@ -180,6 +180,7 @@ jobs:
 
       - name: Reconcile communications
         id: communications
+        if: ${{ steps.assets.outputs.drive-files != '' && steps.assets.outputs.slides-ready != '' }}
         uses: ./../self-workflow/actions/communication/reconcile
         with:
           conference-hall-event: ${{ inputs.conference-hall-event }}
@@ -194,7 +195,6 @@ jobs:
           mailings-token: ${{ steps.mailings-token.outputs.token }}
           slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
           slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly to avoid secrets: inherit
-          report-errors-to-issue: "true"
 
       - name: Reconcile organizer attention
         id: attention

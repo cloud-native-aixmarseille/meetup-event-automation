@@ -46,7 +46,7 @@ async function fixture(selected = true) {
 		issueState: "open",
 		issueTitle: "Example Meetup",
 		labels: ["meetup"],
-		body: `### Event Title\n\nExample Meetup\n\n### Event Date\n\n2026-11-05\n\n### Hoster\n\nExample Venue\n\n### Event Description\n\nExample\n\n### Agenda\n\n- Old Name [speaker-0001]: Old talk\n${selected ? "\n### Conference Hall proposals\n\nproposal-one\n" : ""}`,
+		body: `### Event Title\n\nExample Meetup\n\n### Event Date\n\n2026-11-05\n\n### Hoster\n\nExample Venue\n\n### Event Description\n\nExample\n\n### Agenda\n\n- Old Name [speaker-0001]: Old talk\n${selected ? "\n### Conference Hall proposals\n\n17\n" : ""}`,
 	};
 	const repository: EventRepository = {
 		find: vi.fn(async () => document),
@@ -93,6 +93,7 @@ function response(name: string, title: string, email = "current@example.test") {
 			proposals: [
 				{
 					id: "proposal-one",
+					proposalNumber: 17,
 					title,
 					abstract: "Current abstract",
 					deliberationStatus: "ACCEPTED",

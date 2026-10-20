@@ -1,23 +1,29 @@
 import type { EN_MESSAGES } from "./messages.en.js";
 export const FR_MESSAGES = {
-	"comment.guidance.source-profiles":
-		"Les profils Conference Hall n'ont pas pu être actualisés. Vérifiez les accès au CFP et les identités liées, puis réessayez après tout délai imposé. Les profils et contacts en cache ne font pas autorité.",
-	"comment.guidance.proposals":
-		"Les propositions Conference Hall ne peuvent pas être actualisées. Le dernier programme est périmé. Vérifiez les accès au CFP, les acceptations et les identités fusionnées ; réessayez après la limite API si nécessaire.",
-
+	"comment.guidance.proposals.invalid-selection":
+		"Saisissez les numéros des URL Conference Hall, un par ligne, sans doublons.",
+	"comment.guidance.proposals.invalid":
+		"Vérifiez la sélection des propositions et le format de l'export Conference Hall.",
+	"comment.guidance.proposals.unavailable":
+		"Conference Hall est indisponible. Vérifiez le slug du CFP et la clé API, puis réessayez.",
+	"comment.guidance.proposals.rate-limited":
+		"Limite API Conference Hall atteinte. Patientez avant de réessayer.",
+	"comment.guidance.proposals.mapping-required":
+		"Synchronisez les intervenants Conference Hall et fusionnez leurs identités, puis réessayez.",
+	"comment.guidance.proposals.conflict":
+		"Identifiants Conference Hall en conflit. Vérifiez les propositions et les identités des intervenants.",
+	"comment.guidance.proposals.not-found":
+		"Numéro de proposition introuvable dans ce CFP. Vérifiez son URL Conference Hall.",
+	"comment.guidance.proposals.not-accepted":
+		"Acceptez la proposition dans Conference Hall et vérifiez que l'intervenant ne l'a pas refusée.",
 	"comment.guidance.event.link.feedback.invalid":
 		"Saisissez un lien HTTPS valide vers la page de l'événement OpenFeedback.",
-	"comment.resolved":
-		"Tous les problèmes signalés précédemment ont été résolus. Aucune modification n'est nécessaire.",
+	"comment.resolved": "✅ Informations complètes.",
 	"comment.duplicate": "Ce commentaire automatique en double a été remplacé.",
-	"comment.introduction":
-		"Voici les éléments à compléter dans le ticket du meetup :",
-	"comment.guidance":
-		"Mettez à jour la description du ticket ou ses étiquettes pour traiter ces éléments. Cette liste sera actualisée automatiquement.",
 	"comment.unknown":
-		"Une vérification supplémentaire nécessite votre attention. Consultez les diagnostics du workflow avec un responsable.",
+		"Demandez à un responsable de consulter les diagnostics du workflow.",
 	"comment.referential":
-		"Demandez à un responsable de corriger les référentiels des structures d'accueil ou des intervenants à l'aide des diagnostics du workflow de validation.",
+		"Demandez à un responsable de corriger le référentiel des hôtes ou des intervenants.",
 	"comment.agenda.item": "Programme (élément {item}{speaker})",
 	"comment.agenda.speaker-suffix": ", intervenant {speaker}",
 	"comment.agenda.speaker": "Programme (intervenant {speaker})",

@@ -216,9 +216,12 @@ in the same repository with scheduled status, a confirmed resolved host, a valid
 date, and a valid Meetup or CNCF publication URL. Same-date ties use the lowest
 issue number. Cancelled, postponed, held, unpublished, and same-day events are
 excluded. The name of the host comes from the validated referential; its city comes
-from the same public venue map. Missing data or an incomplete/failed listing
-produces missing fields. Lookup is limited to 200 distinct issues and 20 pages;
-it never selects from a partial result or edits candidate issues.
+from the same public venue map. A complete listing without an eligible candidate
+leaves the next-event fields missing; an unavailable public venue value also
+remains missing. API or unexpected decoding failures fail the action. Lookup
+is limited to 200 distinct issues and 20 pages; repeated cursors or exceeded
+limits fail explicitly. It never selects from a partial result or edits candidate
+issues.
 
 In Slides, put each text token in an entire, ungrouped text shape with uniform
 text styling. Repeated tokens use separate shapes. Tables, grouped shapes,
@@ -332,8 +335,9 @@ The direct
 assets on every invocation. Call it under the shared event workflow lock. Its
 `drive-files` output maps each `<template_kind>-link` to a copied file URL.
 `slides-ready` is true only when a slides URL exists and its content is copy-only
-or ready. Rendering problems and recovery guidance appear in the shared report
-and `diagnostics` output. The managed folder URL is saved on the issue.
+or ready. Rendering codes appear in the technical report and `diagnostics`
+output; organizer corrections and recovery guidance appear in the merged
+checklist. The managed folder URL is saved on the issue.
 Both event workflows produce feedback before rendering and pass the
 `slides-link` entry and `slides-ready` to communications. An existing URL alone
 does not make opted-in content ready. Pending or conflicted slides hold due

@@ -142,4 +142,36 @@ describe("actionable attention conditions", () => {
 			"stage-unknown",
 		]);
 	});
+	it("defers dependent stages without clearing their previous failures or creating duplicate alerts", () => {
+		// Arrange
+		const input = facts({
+			stages: [
+				{ owner: "event", outcome: "success", blocked: true },
+				{
+					owner: "communications",
+					outcome: "failure",
+					blocked: false,
+					prerequisiteBlocked: true,
+				},
+				{
+					owner: "feedback",
+					outcome: "success",
+					blocked: false,
+					prerequisiteBlocked: true,
+				},
+			],
+		});
+		// Act
+		const result = EvaluateAttention.execute(
+			input,
+			new Date("2099-06-01T10:00:00Z"),
+		);
+		// Assert
+		expect(result.conditions).toMatchObject([
+			{ code: "integration-failure", owner: "event", resource: "event-data" },
+		]);
+		expect(result.conditions).toHaveLength(1);
+		expect(result.evaluated).not.toContain("communications");
+		expect(result.evaluated).not.toContain("feedback");
+	});
 });

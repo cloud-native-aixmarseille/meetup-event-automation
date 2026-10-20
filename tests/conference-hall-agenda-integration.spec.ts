@@ -31,7 +31,7 @@ An evening about platforms.
 
 ### Conference Hall proposals
 
-proposal-one
+17
 
 ### Organizer notes
 
@@ -46,6 +46,7 @@ const snapshot: ProposalSnapshot = {
 	proposals: [
 		{
 			id: "proposal-one",
+			number: 17,
 			title: "Reliable platforms",
 			abstract: "A public abstract",
 			accepted: true,
@@ -83,9 +84,6 @@ function fixture(sourceDocument = document) {
 			repository,
 			documentCodec: new GitHubIssueFormEventDocumentCodec(),
 			clock: { now: () => "2026-10-01T12:00:00Z" },
-			commentRepository: {
-				reconcileDiagnostics: vi.fn().mockResolvedValue({ changed: true }),
-			},
 		},
 	});
 	return { useCase, repository, proposalSource };
@@ -116,15 +114,14 @@ describe("Conference Hall agenda generation", () => {
 		expect(first.event.proposalStatus).toBe("current");
 		expect(first.event.agenda[0]).toMatchObject({
 			description: "Reliable platforms: A public abstract",
+			proposal: { id: "proposal-one" },
 			speakers: [{ id: "speaker-0001", displayName: "Example Speaker" }],
 		});
 		expect(first.diagnostics).not.toContainEqual(
 			expect.objectContaining({ code: "event.document.heading.missing" }),
 		);
 		expect(firstPatch.body).toContain("### Agenda");
-		expect(firstPatch.body).toContain(
-			"### Conference Hall proposals\n\nproposal-one",
-		);
+		expect(firstPatch.body).toContain("### Conference Hall proposals\n\n17");
 		expect(firstPatch.body).toContain("### Organizer notes\n\nKeep this note.");
 		expect(firstPatch.body).not.toContain("speaker@example.test");
 		expect(refreshed.event.proposalStatus).toBe("current");
@@ -139,7 +136,7 @@ describe("Conference Hall agenda generation", () => {
 		// Arrange
 		const source = {
 			...document,
-			body: document.body.replace("proposal-one", "_No response_"),
+			body: document.body.replace("\n\n17\n", "\n\n_No response_\n"),
 		};
 		const { useCase, proposalSource } = fixture(source);
 

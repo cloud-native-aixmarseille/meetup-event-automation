@@ -132,9 +132,10 @@ and orchestration when they have different reasons to change.
 
 ## Action reports and generated messages
 
-All actions use the shared runner to produce logs, annotations, diagnostic
-outputs, and escaped job summaries. Actions return public facts and explicit
-failure policy; they do not implement their own logging or summaries. Follow
+All actions use the shared runner to produce technical logs, failure annotations,
+consumed diagnostic outputs, and escaped job summaries. Actions return concise
+technical facts; the shared `DiagnosticPolicy` owns failure classification.
+They do not implement their own logging or summaries. Follow
 [the reporting contract](reporting.md).
 
 Each presenter owns its English/French ICU catalogs, argument types, and tests.
@@ -202,7 +203,11 @@ Organizer attention has separate domain-owned conditions, episodes, reminder win
 and notification reservations. The journey gathers typed stage outcomes and
 reloads the event; failed evidence stays unknown. The GitHub attention adapter
 verifies bot authorship and revision history, validates and persists state, and
-projects localized status before the Slack adapter posts or updates a message.
+projects localized tasks alongside the event diagnostic checklist before the Slack
+adapter posts or updates a message. Diagnostic writes retain only verified
+bot-authored attention metadata and task content through an injected retention
+collaborator. Consolidation persists reservations before removing a separate
+attention comment; equal copied states allow recovery after an interrupted removal.
 Runtime composition injects the clock and ports. A pending post blocks further
 posts across days and requires operator investigation. Existing mail records and
 approval decisions remain independent. Once follow-up begins, the approval adapter

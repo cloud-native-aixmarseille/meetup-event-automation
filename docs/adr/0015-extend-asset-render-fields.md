@@ -1,6 +1,7 @@
 # ADR 0015: Render explicit participant, venue, and next-meetup fields
 
-Status: Accepted
+Status: Accepted. Next-meetup lookup failure handling is superseded by
+[ADR 0021](0021-separate-technical-and-organizer-feedback.md).
 
 Date: 2026-10-17
 

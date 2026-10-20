@@ -47,6 +47,7 @@ export type {
 	FeedbackLinkGateway,
 } from "./application/feedback-ports.js";
 export { FeedbackPolicy } from "./domain/feedback-policy.js";
+export { FeedbackResolutionError } from "./domain/feedback-resolution-error.js";
 export type {
 	FeedbackAgenda,
 	FeedbackTalk,

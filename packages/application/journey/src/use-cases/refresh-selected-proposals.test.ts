@@ -1,10 +1,10 @@
-import { describe, expect, it, vi } from "vitest";
 import type { EventDiagnostic } from "@meetup-automation/event";
 import {
-	ProposalSourceError,
 	type ProposalSnapshot,
+	ProposalSourceError,
 	ValidateReferentialCatalog,
 } from "@meetup-automation/referential";
+import { describe, expect, it, vi } from "vitest";
 import { event } from "../../testing/meetup-journey.fixtures.js";
 import { RefreshSelectedProposals } from "./refresh-selected-proposals.js";
 
@@ -15,6 +15,7 @@ const snapshot: ProposalSnapshot = {
 	proposals: [
 		{
 			id: "first",
+			number: 17,
 			title: "Renamed talk",
 			abstract: "Public abstract",
 			accepted: true,
@@ -24,6 +25,7 @@ const snapshot: ProposalSnapshot = {
 		},
 		{
 			id: "second",
+			number: 38,
 			title: "Second talk",
 			abstract: "Second abstract",
 			accepted: true,
@@ -54,14 +56,69 @@ async function catalog() {
 }
 
 describe("RefreshSelectedProposals", () => {
-	it("uses explicit order and every mapped co-speaker, including equal display names", async () => {
+	it.each([
+		"event.proposals.invalid-selection",
+		"event.document.heading.duplicate",
+	])(
+		"preserves organizer diagnosis %s without attempting source access",
+		async (code) => {
+			// Arrange
+			const source = { load: vi.fn().mockResolvedValue(snapshot) };
+			const diagnostics: EventDiagnostic[] = [
+				{
+					code,
+					severity: "error",
+					category: "invalid",
+					message: "Synthetic invalid organizer input",
+				},
+			];
+			const committed = await catalog();
+
+			// Act
+			const result = await new RefreshSelectedProposals(source).execute(
+				{ ...event, proposalReferences: ["17"] },
+				committed,
+				diagnostics,
+			);
+
+			// Assert
+			expect(result.proposalStatus).toBe("stale");
+			expect(result.agenda).toEqual(event.agenda);
+			expect(diagnostics.map((item) => item.code)).toEqual([code]);
+			expect(source.load).not.toHaveBeenCalled();
+		},
+	);
+
+	it("reports malformed provider exports as technical source failures", async () => {
+		// Arrange
+		const source = {
+			load: vi.fn().mockRejectedValue(new ProposalSourceError("invalid")),
+		};
+		const diagnostics: EventDiagnostic[] = [];
+		const committed = await catalog();
+
+		// Act
+		const result = await new RefreshSelectedProposals(source).execute(
+			{ ...event, proposalReferences: ["17"] },
+			committed,
+			diagnostics,
+		);
+
+		// Assert
+		expect(result.proposalStatus).toBe("stale");
+		expect(diagnostics.map((item) => item.code)).toEqual([
+			"event.proposals.invalid",
+		]);
+	});
+
+	it("resolves proposal numbers in order, preserving canonical identities and every mapped co-speaker", async () => {
 		// Arrange
 		const source = { load: vi.fn().mockResolvedValue(snapshot) };
 		const diagnostics: EventDiagnostic[] = [];
 		const committed = await catalog();
 		// Act
 		const result = await new RefreshSelectedProposals(source).execute(
-			{ ...event, proposalReferences: ["second", "first"] },
+			{ ...event, proposalReferences: ["38", "17"] },
 			committed,
 			diagnostics,
 		);
@@ -78,7 +135,16 @@ describe("RefreshSelectedProposals", () => {
 		expect(result.confirmations).toEqual(event.confirmations);
 		expect(diagnostics).toEqual([]);
 	});
-	it.each([["first", "first"], ["foreign"], ["https://other.test"]])(
+	it.each([
+		["17", "17"],
+		["first"],
+		["https://other.test/proposals/17"],
+		["0"],
+		["-17"],
+		["1.5"],
+		["01"],
+		["9007199254740992"],
+	])(
 		"keeps the last agenda stale for invalid selection %j",
 		async (...proposalReferences) => {
 			// Arrange
@@ -94,7 +160,8 @@ describe("RefreshSelectedProposals", () => {
 			// Assert
 			expect(result.proposalStatus).toBe("stale");
 			expect(result.agenda).toEqual(event.agenda);
-			expect(diagnostics[0].code).toBe("event.proposals.invalid");
+			expect(diagnostics[0].code).toBe("event.proposals.invalid-selection");
+			expect(source.load).not.toHaveBeenCalled();
 		},
 	);
 	it("requires a committed mapping before projecting a speaker", async () => {
@@ -103,7 +170,7 @@ describe("RefreshSelectedProposals", () => {
 		const diagnostics: EventDiagnostic[] = [];
 		// Act
 		const result = await new RefreshSelectedProposals(source).execute(
-			{ ...event, proposalReferences: ["first"] },
+			{ ...event, proposalReferences: ["17"] },
 			{ hosts: [], speakers: [] },
 			diagnostics,
 		);
@@ -123,7 +190,7 @@ describe("RefreshSelectedProposals", () => {
 		const committed = await catalog();
 		// Act
 		const result = await new RefreshSelectedProposals(source).execute(
-			{ ...event, proposalReferences: ["first"] },
+			{ ...event, proposalReferences: ["17"] },
 			committed,
 			diagnostics,
 		);
@@ -131,4 +198,87 @@ describe("RefreshSelectedProposals", () => {
 		expect(result.proposalStatus).toBe("stale");
 		expect(diagnostics[0].code).toBe("event.proposals.rate-limited");
 	});
+	it("matches the public number even when another proposal has that internal ID", async () => {
+		// Arrange
+		const source = {
+			load: vi.fn().mockResolvedValue({
+				...snapshot,
+				proposals: [
+					{ ...snapshot.proposals[0], id: "38" },
+					snapshot.proposals[1],
+				],
+			}),
+		};
+		const diagnostics: EventDiagnostic[] = [];
+		const committed = await catalog();
+		// Act
+		const result = await new RefreshSelectedProposals(source).execute(
+			{ ...event, proposalReferences: ["38"] },
+			committed,
+			diagnostics,
+		);
+		// Assert
+		expect(result.proposalStatus).toBe("current");
+		expect(result.agenda.map((entry) => entry.proposal?.id)).toEqual([
+			"second",
+		]);
+		expect(diagnostics).toEqual([]);
+	});
+	it.each([
+		["99", snapshot, "not-found"],
+		[
+			"17",
+			{
+				...snapshot,
+				proposals: [{ ...snapshot.proposals[0], id: "17", number: undefined }],
+			},
+			"not-found",
+		],
+		[
+			"17",
+			{
+				...snapshot,
+				proposals: [{ ...snapshot.proposals[0], accepted: false }],
+			},
+			"not-accepted",
+		],
+		[
+			"17",
+			{
+				...snapshot,
+				proposals: [
+					...snapshot.proposals,
+					{ ...snapshot.proposals[1], number: 17 },
+				],
+			},
+			"conflict",
+		],
+	] as const)(
+		"explains selection failure for %s as %s",
+		async (id, data, code) => {
+			// Arrange
+			const source = { load: vi.fn().mockResolvedValue(data) };
+			const diagnostics: EventDiagnostic[] = [
+				{
+					code: "event.agenda.missing",
+					category: "incomplete",
+					severity: "warning",
+					message: "Missing agenda",
+				},
+			];
+			const committed = await catalog();
+			// Act
+			const result = await new RefreshSelectedProposals(source).execute(
+				{ ...event, proposalReferences: [id] },
+				committed,
+				diagnostics,
+			);
+			// Assert
+			expect(result.proposalStatus).toBe("stale");
+			expect(result.agenda).toEqual(event.agenda);
+			expect(diagnostics.map((item) => item.code)).toEqual([
+				`event.proposals.${code}`,
+			]);
+		},
+	);
 });

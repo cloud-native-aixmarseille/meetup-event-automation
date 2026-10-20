@@ -28,9 +28,6 @@ export class FeedbackAction {
 			client: getOctokit(core.getInput("github-token", { required: true })),
 			owner,
 			repo,
-			commentAuthorLogin: core.getInput("managed-comment-author", {
-				required: true,
-			}),
 			kuttApiKey,
 			kuttBaseUrl,
 			kuttLinkId,
@@ -71,7 +68,6 @@ export class FeedbackAction {
 					persisted: String(result.persisted),
 					linkUpdated: String(result.linkUpdated),
 				}),
-				messages.t("report.feedback.guidance"),
 			],
 			diagnostics,
 		};

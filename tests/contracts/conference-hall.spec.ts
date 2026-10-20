@@ -74,6 +74,7 @@ describe("Conference Hall contracts", () => {
 		// Act
 		const job = workflow.jobs?.synchronize;
 		const scripts = job?.steps?.map((step) => step.run ?? "").join("\n");
+		const publish = job?.steps?.find((step) => step.run?.includes("git push"));
 		// Assert
 		expect(job?.if).toBe("github.event.repository.private == true");
 		expect(job?.concurrency).toEqual({
@@ -86,6 +87,9 @@ describe("Conference Hall contracts", () => {
 		expect(scripts).toContain('"$EXPECTED_BASE"');
 		expect(scripts).not.toContain("--auto");
 		expect(scripts).not.toContain("git diff --cached\n");
+		expect(publish?.if).toBe(
+			workflowExpression("steps.synchronize.outputs.pr-title != ''"),
+		);
 	});
 	it("exposes only the review text consumed by the synchronization workflow", async () => {
 		// Arrange

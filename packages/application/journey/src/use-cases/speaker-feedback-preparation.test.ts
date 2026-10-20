@@ -1,4 +1,5 @@
 import type { MailRecipient } from "@meetup-automation/communication";
+import { FeedbackResolutionError } from "@meetup-automation/publication";
 import { describe, expect, it, vi } from "vitest";
 import { event } from "../../testing/meetup-journey.fixtures.js";
 import type { CommunicationJourneyDiagnostic } from "../communication/contracts.js";
@@ -53,6 +54,32 @@ const talks = [
 ];
 
 describe("speaker feedback email preparation", () => {
+	it.each(["unavailable", "conflict"] as const)(
+		"reports expected feedback %s as organizer work",
+		async (kind) => {
+			// Arrange
+			const error = new FeedbackResolutionError(kind);
+			error.message = "private provider contents";
+			const gateway = { resolve: vi.fn().mockRejectedValue(error) };
+			const diagnostics: CommunicationJourneyDiagnostic[] = [];
+
+			// Act
+			const result = await new SpeakerFeedbackPreparation(gateway).execute(
+				held,
+				recipients,
+				diagnostics,
+			);
+
+			// Assert
+			expect(result).toEqual(recipients);
+			expect(diagnostics).toEqual([
+				{
+					code: "communication.feedback-unavailable",
+					severity: "error",
+				},
+			]);
+		},
+	);
 	it("includes every relevant talk for each speaker without leaking another speaker's talks", async () => {
 		// Arrange
 		const gateway = { resolve: vi.fn().mockResolvedValue(talks) };
@@ -123,7 +150,13 @@ describe("speaker feedback email preparation", () => {
 			// Assert
 			expect(result).toEqual(recipients);
 			expect(diagnostics).toEqual([
-				{ code: "communication.feedback-unavailable", severity: "error" },
+				{
+					code:
+						failure === "provider-failure"
+							? "communication.feedback-fetch-failed"
+							: "communication.feedback-unavailable",
+					severity: "error",
+				},
 			]);
 		},
 	);

@@ -38,6 +38,11 @@ export interface GithubAttentionApi {
 	): Promise<Response>;
 	readonly rest: {
 		readonly issues: {
+			deleteComment(input: {
+				owner: string;
+				repo: string;
+				comment_id: number;
+			}): Promise<unknown>;
 			listComments(input: {
 				owner: string;
 				repo: string;
@@ -124,6 +129,18 @@ export class GithubAttentionClient {
 		if (current?.body !== before)
 			throw new Error("Attention comment changed before persistence");
 		await this.update(commentId, after);
+	}
+	async remove(commentId: number, before: string): Promise<void> {
+		const current = (await this.list()).find(
+			(comment) => comment.id === commentId,
+		);
+		if (current?.body !== before)
+			throw new Error("Attention comment changed before removal");
+		await this.api.rest.issues.deleteComment({
+			owner: this.owner,
+			repo: this.repo,
+			comment_id: commentId,
+		});
 	}
 	async edit(comment: AttentionComment): Promise<AttentionCommentEdit> {
 		if (!comment.node_id)

@@ -1,24 +1,25 @@
 import {
-	EvaluateAttention,
-	PostEventPolicy,
 	type AttentionApprovalSource,
 	type AttentionRecoverySource,
 	type AttentionStage,
 	type CommunicationClock,
+	EvaluateAttention,
+	PostEventPolicy,
 	type ReconcileAttention,
 } from "@meetup-automation/communication";
 import {
+	EventConcurrentModificationError,
 	type EventDocumentCodec,
 	type EventIdentity,
 	type EventRepository,
 	ReconcileEvent,
 } from "@meetup-automation/event";
 import type { AutomationConfig } from "../config/automation-config.js";
-import { AttentionEventFacts } from "./attention-event-facts.js";
 import {
 	FOLLOW_UP_TASKS,
 	type OrganizerFollowUp,
 } from "../ports/organizer-follow-up.js";
+import { AttentionEventFacts } from "./attention-event-facts.js";
 export interface ManageMeetupAttentionDependencies {
 	readonly config: AutomationConfig;
 	readonly repository: EventRepository;
@@ -56,7 +57,7 @@ export class ManageMeetupAttention {
 		);
 		const current = await repository.find(identity);
 		if (!current || !ReconcileEvent.eventDocumentsEqual(source, current))
-			throw new Error("Attention issue changed during evaluation");
+			throw new EventConcurrentModificationError(identity);
 		const commentId = await this.dependencies.followUp.synchronizeFollowUp({
 			eventDate: facts.eventDate,
 			requestedAt: clock.now().toISOString(),

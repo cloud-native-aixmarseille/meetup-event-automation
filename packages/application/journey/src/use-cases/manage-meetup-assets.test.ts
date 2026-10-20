@@ -47,9 +47,6 @@ describe("ManageMeetupAssets", () => {
 			publicationLinks: { ...event.publicationLinks, assets: result.assetUrl },
 		});
 		expect(eventDependencies.repository.applyPatch).toHaveBeenCalledOnce();
-		expect(
-			eventDependencies.commentRepository.reconcileDiagnostics,
-		).not.toHaveBeenCalled();
 	});
 
 	it("repairs the issue link and managed file metadata using existing asset IDs", async () => {

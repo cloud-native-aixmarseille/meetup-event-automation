@@ -1,6 +1,8 @@
 import { ProposalSourceError } from "@meetup-automation/referential";
 import { SpeakerSynchronizationError } from "@meetup-automation/journey";
+import * as core from "@actions/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ActionRunner } from "./action-runner.js";
 import { SpeakerSyncAction } from "./speaker-sync-action.js";
 import { ActionMessages } from "./i18n/action-messages.js";
 
@@ -15,6 +17,15 @@ vi.mock("@actions/core", () => ({
 		name === "conference-hall-event" ? "example-cfp" : "secret",
 	setOutput: boundary.setOutput,
 	setSecret: boundary.setSecret,
+	setFailed: vi.fn(),
+	info: vi.fn(),
+	warning: vi.fn(),
+	summary: {
+		addHeading: vi.fn().mockReturnThis(),
+		addRaw: vi.fn().mockReturnThis(),
+		write: vi.fn().mockResolvedValue(undefined),
+		clear: vi.fn(),
+	},
 }));
 vi.mock("@actions/github", () => ({
 	context: { repo: { owner: "example", repo: "meetups" } },
@@ -39,7 +50,7 @@ describe("SpeakerSyncAction", () => {
 		const report = await SpeakerSyncAction.run();
 		// Assert
 		expect(report.failure).toBe(
-			"Speaker synchronization requires a private repository.",
+			"speaker_sync=blocked reason=private-repository-required",
 		);
 		expect(boundary.synchronize).not.toHaveBeenCalled();
 		expect(boundary.setOutput).not.toHaveBeenCalled();
@@ -64,7 +75,7 @@ describe("SpeakerSyncAction", () => {
 			expect(boundary.setSecret).toHaveBeenCalledWith("secret");
 		},
 	);
-	it("fails without exposing private exception contents", async () => {
+	it("reports unexpected failures without exposing private exception contents", async () => {
 		// Arrange
 		boundary.synchronize.mockRejectedValue(
 			new Error("private@example.test secret"),
@@ -72,7 +83,8 @@ describe("SpeakerSyncAction", () => {
 		// Act
 		const report = await SpeakerSyncAction.run();
 		// Assert
-		expect(report.failure).toBeDefined();
+		expect(report.failure).toBeUndefined();
+		expect(report.diagnostics[0].code).toBe("speaker-sync.unexpected");
 		expect(boundary.setOutput.mock.calls.map(([name]) => name)).toEqual([
 			"pr-body",
 		]);
@@ -80,7 +92,10 @@ describe("SpeakerSyncAction", () => {
 		expect(JSON.stringify(boundary.setOutput.mock.calls)).not.toMatch(
 			/private@example.test|secret/,
 		);
-		expect(boundary.setOutput).toHaveBeenCalledWith("pr-body", report.failure);
+		expect(boundary.setOutput).toHaveBeenCalledWith(
+			"pr-body",
+			"- Unexpected technical failure during speaker synchronization.",
+		);
 	});
 	it("reports rate-limit diagnostics through the report and PR guidance", async () => {
 		// Arrange
@@ -93,7 +108,8 @@ describe("SpeakerSyncAction", () => {
 		// Act
 		const report = await SpeakerSyncAction.run();
 		// Assert
-		expect(report.failure).toContain("loading the Conference Hall export");
+		expect(report.failure).toBeUndefined();
+		expect(report.details).toEqual(["speaker_sync=blocked stage=load-source"]);
 		expect(report.diagnostics).toEqual([
 			expect.objectContaining({
 				code: "speaker-sync.rate-limited",
@@ -101,7 +117,43 @@ describe("SpeakerSyncAction", () => {
 			}),
 		]);
 		expect(boundary.setOutput.mock.calls).toEqual([
-			["pr-body", report.failure],
+			[
+				"pr-body",
+				"- Conference Hall rate limit reached; retry after the API cooldown.",
+			],
 		]);
 	});
+
+	it.each([
+		["speaker-sync.mapping-required", false],
+		["referential.speaker.email.invalid", false],
+		["speaker-sync.unexpected", true],
+	] as const)(
+		"blocks candidate publication for %s and fails only technical errors",
+		async (code, fails) => {
+			// Arrange
+			boundary.synchronize.mockRejectedValue(
+				new SpeakerSynchronizationError("merge-speakers", undefined, [
+					{ code, severity: "error", message: "Public diagnostic." },
+				]),
+			);
+
+			// Act
+			await ActionRunner.run(
+				"action.referential.sync-speakers",
+				SpeakerSyncAction.run,
+				false,
+			);
+
+			// Assert
+			expect(core.setFailed).toHaveBeenCalledTimes(fails ? 1 : 0);
+			expect(boundary.setOutput.mock.calls.map(([name]) => name)).toEqual([
+				"pr-body",
+			]);
+			expect(boundary.setOutput).toHaveBeenCalledWith(
+				"pr-body",
+				"- Public diagnostic.",
+			);
+		},
+	);
 });

@@ -37,7 +37,6 @@ beforeEach(() => {
 		"conference-hall-api-key": "synthetic-source-key",
 		"issue-number": "12",
 		"github-token": "synthetic-token",
-		"managed-comment-author": "example[bot]",
 		"kutt-api-key": "synthetic-key",
 		"kutt-base-url": "https://short.example.test",
 		"kutt-link-id": "link-1",
@@ -96,9 +95,9 @@ describe("feedback action boundary", () => {
 		const report = await FeedbackAction.run();
 
 		// Assert
-		expect(report.details).toContain("Feedback reconciliation completed.");
+		expect(report.details).toContain("feedback=completed");
 		expect(report.details).toContain(
-			"Issue changes persisted: true; shared feedback link updated: true.",
+			"issue_persisted=true feedback_link_updated=true",
 		);
 		expect(report.diagnostics).toEqual([]);
 		expect(mocks.outputs.diagnostics).toBeUndefined();
@@ -146,9 +145,7 @@ describe("feedback action boundary", () => {
 		const report = await FeedbackAction.run();
 
 		// Assert
-		expect(report.details).toContain(
-			"Feedback reconciliation was skipped; review the diagnostics for the reason.",
-		);
+		expect(report.details).toContain("feedback=skipped");
 		expect(report.diagnostics).toEqual(diagnostics);
 		expect(report.failure).toBeUndefined();
 		expect(mocks.outputs).toEqual({});
@@ -166,13 +163,11 @@ describe("feedback action boundary", () => {
 		expect(mocks.compose).toHaveBeenCalledWith(
 			expect.objectContaining({ locale: "fr" }),
 		);
-		expect(report.details).toContain("Ticket : #12 ; mode : fix.");
+		expect(report.details).toContain("issue=12 mode=fix");
 		expect(report.details).toContain(
-			"Modifications du ticket enregistrées : oui ; lien partagé des retours mis à jour : oui.", // codespell:ignore mis
+			"issue_persisted=true feedback_link_updated=true",
 		);
-		expect(report.details).toContain(
-			"Consultez les diagnostics des retours. Les titres et les noms des intervenants suivent le programme de l'issue ; gérez les horaires, les photos et les présentations retirées dans OpenFeedback.",
-		);
+		expect(report.details).toHaveLength(3);
 		expect(report.diagnostics).toEqual([]);
 	});
 

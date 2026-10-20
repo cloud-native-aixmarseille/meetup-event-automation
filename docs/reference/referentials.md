@@ -80,7 +80,7 @@ quotes, or newlines.
 ## Use references in issues
 
 Choose a host from the generated dropdown. For Conference Hall talks, select
-proposal IDs and let the automation generate the agenda and speaker references;
+proposal numbers and let the automation generate the agenda and speaker references;
 see [select talks](../integrations/conference-hall.md#select-talks).
 
 In manually managed issues without proposal selections, copy speaker names from
@@ -98,8 +98,8 @@ issue instead of adding contact details to the issue.
 1. Edit the CSV files and preserve existing IDs.
 2. Open a pull request and wait for
    [data validation](../../.github/workflows/check-meetup-referentials-and-issue-form.md).
-   Invalid catalogs and projection errors fail the check; stale choices are
-   advisory.
+   Review invalid-record diagnostics even when CI succeeds: they block form
+   updates. Only technical execution failures fail the check.
 3. Merge valid changes. The synchronization workflow opens a pull request if the
    generated choices need updating. Review and merge that update.
 

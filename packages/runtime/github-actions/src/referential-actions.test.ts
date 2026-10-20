@@ -70,7 +70,7 @@ describe("referential GitHub Action boundary", () => {
 		// Assert
 
 		expect(report.diagnostics).toEqual([]);
-		expect(report.details).toContain("Valid hosts: 1; valid speakers: 1.");
+		expect(report.details).toContain("hosts=1 speakers=1");
 		expect(core.setOutput).not.toHaveBeenCalled();
 		expect(report.failure).toBeUndefined();
 	});
@@ -81,7 +81,7 @@ describe("referential GitHub Action boundary", () => {
 			isValid: false,
 			diagnostics: [
 				{
-					code: "referential.invalid",
+					code: "referential.speaker.id.invalid",
 					severity: "error",
 					message: "Invalid row",
 				},
@@ -94,15 +94,15 @@ describe("referential GitHub Action boundary", () => {
 		// Assert
 		expect(report.diagnostics).toEqual([
 			{
-				code: "referential.invalid",
+				code: "referential.speaker.id.invalid",
 				severity: "error",
 				message: "Invalid row",
 			},
 		]);
-		expect(report.details).toContain("Referentials: invalid.");
-		expect(report.details).toContain("Valid hosts: 0; valid speakers: 0.");
+		expect(report.details).toContain("referentials=invalid");
+		expect(report.details).toContain("hosts=0 speakers=0");
 		expect(core.setOutput).not.toHaveBeenCalled();
-		expect(report.failure).toContain("Meetup referentials are invalid.");
+		expect(report.failure).toBeUndefined();
 	});
 
 	it("publishes deterministic issue-form projection outputs", async () => {
@@ -117,10 +117,8 @@ describe("referential GitHub Action boundary", () => {
 		const report = await ReferentialActions.runReferentialSyncIssueFormAction();
 
 		// Assert
-		expect(report.details).toContain("Issue form was updated.");
-		expect(report.details).toContain(
-			"Affected files: .github/ISSUE_TEMPLATE/meetup.yml.",
-		);
+		expect(report.details).toContain("issue_form=updated");
+		expect(report.details).toContain("files=.github/ISSUE_TEMPLATE/meetup.yml");
 		expect(core.setOutput).toHaveBeenCalledTimes(1);
 		expect(boundary.synchronize).toHaveBeenCalledWith({
 			mode: "fix",
@@ -137,24 +135,23 @@ describe("referential action failure reporting", () => {
 		vi.clearAllMocks();
 	});
 
-	it.each([
-		{ locale: "en", failure: "Meetup referentials are invalid." },
-		{ locale: "fr", failure: "Les référentiels du meetup sont invalides." },
-	])(
-		"fails invalid validation with localized guidance in $locale",
-		async ({ locale, failure }) => {
+	it.each(["en", "fr"])(
+		"reports invalid catalog data without failing in %s",
+		async (locale) => {
 			// Arrange
 			boundary.getInput.mockImplementation((name: string) =>
 				name === "locale" ? locale : "",
 			);
-			const diagnostics = [
-				{
-					code: "referential.invalid",
-					severity: "error",
-					message: "Invalid row",
-				},
-			];
-			boundary.validate.mockResolvedValue({ isValid: false, diagnostics });
+			boundary.validate.mockResolvedValue({
+				isValid: false,
+				diagnostics: [
+					{
+						code: "referential.speaker.id.invalid",
+						severity: "error",
+						message: "Invalid stable identifier.",
+					},
+				],
+			});
 
 			// Act
 			await ActionRunner.run(
@@ -164,51 +161,56 @@ describe("referential action failure reporting", () => {
 			);
 
 			// Assert
-			expect(core.setFailed).toHaveBeenCalledWith(
-				expect.stringContaining(failure),
+			expect(core.setFailed).not.toHaveBeenCalled();
+			expect(core.info).toHaveBeenCalledWith(
+				"error referential.speaker.id.invalid",
 			);
-
+			expect(core.error).not.toHaveBeenCalled();
 			expect(core.summary.write).toHaveBeenCalledOnce();
 		},
 	);
 
 	it.each([
-		{ mode: "check", changed: true, severity: "warning", failed: false },
-		{ mode: "check", changed: true, severity: "error", failed: true },
-		{ mode: "check", changed: false, severity: "warning", failed: false },
-		{ mode: "check", changed: false, severity: "error", failed: true },
-		{ mode: "fix", changed: true, severity: "warning", failed: false },
-		{ mode: "fix", changed: true, severity: "error", failed: true },
-		{ mode: "fix", changed: false, severity: "warning", failed: false },
-		{ mode: "fix", changed: false, severity: "error", failed: true },
+		{
+			mode: "check",
+			changed: true,
+			code: "issue-form.out-of-date",
+			severity: "warning",
+			fails: false,
+		},
+		{
+			mode: "check",
+			changed: false,
+			code: "referential.speaker.id.invalid",
+			severity: "error",
+			fails: false,
+		},
+		{
+			mode: "fix",
+			changed: false,
+			code: "referential.speaker.id.invalid",
+			severity: "error",
+			fails: false,
+		},
+		{
+			mode: "fix",
+			changed: false,
+			code: "unexpected.storage-failure",
+			severity: "error",
+			fails: true,
+		},
 	])(
-		"sets failure=$failed for $mode with changed=$changed, $severity diagnostics",
-		async ({ mode, changed, severity, failed }) => {
+		"classifies $code in $mode mode",
+		async ({ mode, changed, code, severity, fails }) => {
 			// Arrange
-			const inputs: Record<string, string> = {
-				mode,
-				locale: "en",
-			};
+			const inputs: Record<string, string> = { mode, locale: "en" };
 			boundary.getInput.mockImplementation(
 				(name: string) => inputs[name] ?? "",
 			);
-			const diagnostics = [
-				{
-					code:
-						changed && mode === "check"
-							? "issue-form.out-of-date"
-							: "referential.example",
-					severity,
-					message: "Review the catalog.",
-				},
-			];
-			const changedFiles = changed
-				? [".github/ISSUE_TEMPLATE/example.yml"]
-				: [];
 			boundary.synchronize.mockResolvedValue({
 				changed,
-				changedFiles,
-				diagnostics,
+				changedFiles: changed ? [".github/ISSUE_TEMPLATE/example.yml"] : [],
+				diagnostics: [{ code, severity, message: "Public diagnostic." }],
 			});
 
 			// Act
@@ -219,11 +221,9 @@ describe("referential action failure reporting", () => {
 			);
 
 			// Assert
-			expect(core.setFailed).toHaveBeenCalledTimes(failed ? 1 : 0);
+			expect(core.setFailed).toHaveBeenCalledTimes(fails ? 1 : 0);
 			expect(boundary.synchronize).toHaveBeenCalledWith({ mode });
-
 			expect(core.setOutput).toHaveBeenCalledWith("changed", String(changed));
-
 			expect(core.summary.write).toHaveBeenCalledOnce();
 		},
 	);

@@ -10,7 +10,6 @@ vi.mock("@actions/core", () => ({
 			"conference-hall-api-key": "synthetic-source-key",
 			"issue-number": "42",
 			"github-token": "private-token",
-			"managed-comment-author": "automation[bot]",
 		})[name],
 	setOutput: vi.fn(),
 	setSecret: vi.fn(),
@@ -57,7 +56,6 @@ describe("event action report facts", () => {
 				state: isReady ? "ready" : "draft",
 				isReady,
 				persisted: false,
-				commentUpdated: false,
 				diagnostics,
 				event: { privateData: "contact@example.test" },
 			});
@@ -70,15 +68,11 @@ describe("event action report facts", () => {
 				identity: { repository: "community/meetups", issueNumber: 42 },
 				mode: "fix",
 			});
-			expect(report.details).toContain("Issue: #42; mode: fix.");
+			expect(report.details).toContain("issue=42 mode=fix");
 			expect(report.details.join("\n")).toContain(
-				isReady
-					? "Event state: ready; ready: true."
-					: "Event state: draft; ready: false.",
+				isReady ? "state=ready ready=true" : "state=draft ready=false",
 			);
-			expect(
-				report.details.join("\n").includes("Resolve the event fields"),
-			).toBe(!isReady);
+			expect(report.details).toHaveLength(3);
 			expect(report.diagnostics).toEqual(diagnostics);
 			expect(report.failure).toBeUndefined();
 			expect(JSON.stringify(report)).not.toContain("contact@example.test");
@@ -94,9 +88,7 @@ describe("event action report facts", () => {
 		const report = await EventActions.runEventReconcileAction();
 
 		// Assert
-		expect(report.details).toContain(
-			"Skipped: the issue is not a configured meetup event.",
-		);
+		expect(report.details).toContain("event=skipped reason=unrelated-issue");
 	});
 
 	it.each([{ issueNumbers: [] }, { issueNumbers: [12, 34] }])(
@@ -125,9 +117,7 @@ describe("event action report facts", () => {
 
 			// Assert
 			expect(report.details.join("\n")).toContain(
-				issueNumbers.length === 0
-					? "No active meetup events were found."
-					: "Issue numbers: 12, 34.",
+				issueNumbers.length === 0 ? "active_events=0" : "issues=12, 34",
 			);
 			expect(report.diagnostics).toEqual([
 				{

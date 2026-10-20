@@ -286,7 +286,11 @@ describe("public reusable workflow contracts", () => {
 			expect(token.uses).toMatch(
 				/^actions\/create-github-app-token@[0-9a-f]{40}$/,
 			);
-			expect(token.if).toBeUndefined();
+			expect(token.if).toBe(
+				workflowExpression(
+					"steps.assets.outputs.drive-files != '' && steps.assets.outputs.slides-ready != ''",
+				),
+			);
 			expect(token.with).toEqual({
 				"client-id": workflowExpression("inputs.github-app-client-id"),
 				"private-key": workflowExpression("secrets.github-app-private-key"),

@@ -120,4 +120,39 @@ describe("ProposalExportParser", () => {
 		// Assert
 		expect(parse).toThrow("Proposal source invalid.");
 	});
+	it("keeps the public proposal number alongside the internal export identity", () => {
+		// Arrange
+		const input = { proposals: [{ ...proposal, proposalNumber: 17 }] };
+		// Act
+		const result = ProposalExportParser.parse(input, "example-cfp");
+		// Assert
+		expect(result.proposals[0]).toMatchObject({ id: proposal.id, number: 17 });
+	});
+	it.each([undefined, null])(
+		"keeps profiles available when the proposal number is %s",
+		(proposalNumber) => {
+			// Arrange
+			const input = { proposals: [{ ...proposal, proposalNumber }] };
+			// Act
+			const result = ProposalExportParser.parse(input, "example-cfp");
+			// Assert
+			expect(result.proposals[0].number).toBeUndefined();
+			expect(result.speakers[0].id).toBe(speaker.id);
+		},
+	);
+	it.each([0, -1, 1.5, "17", Number.MAX_SAFE_INTEGER + 1])(
+		"rejects invalid public proposal number %s",
+		(proposalNumber) => {
+			// Arrange
+			const input = { proposals: [{ ...proposal, proposalNumber }] };
+			// Act
+			const parse = () => ProposalExportParser.parse(input, "example-cfp");
+			// Assert
+			expect(parse).toThrow(
+				expect.objectContaining({
+					context: { reason: "schema", field: "proposals[0].proposalNumber" },
+				}),
+			);
+		},
+	);
 });

@@ -29,6 +29,5 @@ export type ManageMeetupEventResult =
 			isReady: boolean;
 			manualPublicationTasks: readonly ManualPublicationTask[];
 			persisted: boolean;
-			commentUpdated: boolean;
 			diagnostics: readonly PublicDiagnostic[];
 	  };

@@ -25,9 +25,6 @@ export class EventActions {
 			core.getInput("issue-number", { required: true }),
 		);
 		const token = core.getInput("github-token", { required: true });
-		const commentAuthorLogin = core.getInput("managed-comment-author", {
-			required: true,
-		});
 		const { owner, repo } = context.repo;
 		const repository = `${owner}/${repo}`;
 		const container = EventComposition.createEventContainer({
@@ -36,7 +33,6 @@ export class EventActions {
 			client: getOctokit(token),
 			owner,
 			repo,
-			commentAuthorLogin,
 		});
 		const outcome = await container.get(ManageMeetupEvent).execute({
 			identity: { repository, issueNumber },
@@ -56,7 +52,6 @@ export class EventActions {
 			client: getOctokit(token),
 			owner,
 			repo,
-			commentAuthorLogin: "github-actions[bot]",
 		});
 		const config = container.get<AutomationConfig>(SERVICES.config);
 		const outcome = await container.get(ListActiveEvents).execute({
@@ -103,10 +98,8 @@ export class EventActions {
 				}),
 				messages.t("report.event.persisted", {
 					persisted: String(outcome.persisted),
-					comment: String(outcome.commentUpdated),
 				}),
 			);
-			if (!outcome.isReady) details.push(messages.t("report.event.guidance"));
 		}
 		return { details, diagnostics: outcome.diagnostics };
 	}

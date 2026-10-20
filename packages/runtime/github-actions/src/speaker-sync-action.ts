@@ -46,8 +46,11 @@ export class SpeakerSyncAction {
 				diagnostics: [],
 			};
 		} catch (error) {
-			const report = SpeakerSyncFailureReport.create(error, messages);
-			core.setOutput("pr-body", report.failure);
+			const { report, prBody } = SpeakerSyncFailureReport.create(
+				error,
+				messages,
+			);
+			core.setOutput("pr-body", prBody);
 			return report;
 		}
 	}

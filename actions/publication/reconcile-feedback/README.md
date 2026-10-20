@@ -26,7 +26,6 @@ issue already has a feedback URL. Use a key beginning with `oforg_`.
 | **`locale`**                  | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **true**     | -           |
 | **`github-token`**            | GitHub token with issue read and write permissions.                                                                                | **true**     | -           |
 | **`issue-number`**            | Meetup issue number.                                                                                                               | **true**     | -           |
-| **`managed-comment-author`**  | GitHub App bot login used by event evaluation.                                                                                     | **true**     | -           |
 | **`openfeedback-api-key`**    | OpenFeedback organization API key (`oforg_`) used to create and update events.                                                     | **true**     | -           |
 | **`kutt-api-key`**            | API key for the owner of the existing Kutt link.                                                                                   | **true**     | -           |
 | **`kutt-base-url`**           | HTTPS base URL of the Kutt instance, without /api/v2. No default.                                                                  | **true**     | -           |
@@ -87,10 +86,6 @@ Create OpenFeedback events, synchronize their titles, talks and speakers, and up
     # Meetup issue number.
     # This input is required.
     issue-number: ""
-
-    # GitHub App bot login used by event evaluation.
-    # This input is required.
-    managed-comment-author: ""
 
     # OpenFeedback organization API key (`oforg_`) used to create and update events.
     # This input is required.

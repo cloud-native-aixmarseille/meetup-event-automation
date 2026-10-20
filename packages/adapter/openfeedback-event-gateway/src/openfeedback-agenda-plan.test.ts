@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { FeedbackResolutionError } from "@meetup-automation/publication";
 import { agenda, snapshot } from "../testing/feedback-agenda.fixtures.js";
 import { OpenFeedbackAgendaPlan } from "./openfeedback-agenda-plan.js";
 
@@ -152,7 +153,7 @@ describe("feedback agenda identities", () => {
 			OpenFeedbackAgendaPlan.create("example/meetups#12", changed, current);
 
 		// Assert
-		expect(plan).toThrow("ambiguous talk or speaker identities");
+		expect(plan).toThrow(new FeedbackResolutionError("conflict"));
 	});
 
 	it("rejects two source identities matching the same remote speaker", () => {
@@ -174,7 +175,7 @@ describe("feedback agenda identities", () => {
 			OpenFeedbackAgendaPlan.create("example/meetups#12", changed, snapshot);
 
 		// Assert
-		expect(plan).toThrow("ambiguous talk or speaker identities");
+		expect(plan).toThrow(new FeedbackResolutionError("conflict"));
 	});
 
 	it("supports several talks by the same speaker and preserves IDs after reordering", () => {
@@ -222,7 +223,7 @@ describe("feedback agenda identities", () => {
 			OpenFeedbackAgendaPlan.create("example/meetups#12", changed, current);
 
 		// Assert
-		expect(plan).toThrow("ambiguous talk or speaker identities");
+		expect(plan).toThrow(new FeedbackResolutionError("conflict"));
 	});
 
 	it("rejects duplicate names in the remote speaker catalog", () => {
@@ -240,7 +241,7 @@ describe("feedback agenda identities", () => {
 			OpenFeedbackAgendaPlan.create("example/meetups#12", agenda, current);
 
 		// Assert
-		expect(plan).toThrow("ambiguous talk or speaker identities");
+		expect(plan).toThrow(new FeedbackResolutionError("conflict"));
 	});
 
 	it("does not include unrelated remote records in updates", () => {
@@ -273,7 +274,7 @@ describe("feedback agenda identities", () => {
 			OpenFeedbackAgendaPlan.create("example/meetups#12", duplicated, snapshot);
 
 		// Assert
-		expect(plan).toThrow("ambiguous talk or speaker identities");
+		expect(plan).toThrow(new FeedbackResolutionError("conflict"));
 	});
 
 	it("does not overwrite a generated ID whose title and speakers were both changed", () => {
@@ -294,6 +295,6 @@ describe("feedback agenda identities", () => {
 			OpenFeedbackAgendaPlan.create("example/meetups#12", agenda, remote);
 
 		// Assert
-		expect(plan).toThrow("ambiguous talk or speaker identities");
+		expect(plan).toThrow(new FeedbackResolutionError("conflict"));
 	});
 });

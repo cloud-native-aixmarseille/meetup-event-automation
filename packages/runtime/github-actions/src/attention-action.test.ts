@@ -2,7 +2,7 @@ import * as core from "@actions/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AttentionAction } from "./attention-action.js";
 import { ActionMessages } from "./i18n/action-messages.js";
-const boundary = vi.hoisted(() => ({ execute: vi.fn() }));
+const boundary = vi.hoisted(() => ({ execute: vi.fn(), feedback: vi.fn() }));
 vi.mock("@actions/core", () => ({
 	getInput: (name: string) =>
 		({
@@ -21,7 +21,14 @@ vi.mock("@actions/github", () => ({
 }));
 vi.mock("./attention-composition.js", () => ({
 	AttentionComposition: {
-		create: () => ({ get: () => ({ execute: boundary.execute }) }),
+		create: () => ({
+			get: (service: { name: string }) => ({
+				execute:
+					service.name === "OrganizerFeedback"
+						? boundary.feedback
+						: boundary.execute,
+			}),
+		}),
 	},
 }));
 describe("attention action reporting", () => {
@@ -40,8 +47,11 @@ describe("attention action reporting", () => {
 			const report = await AttentionAction.run(new ActionMessages("fr"));
 			// Assert
 			expect(Boolean(report.failure)).toBe(notificationFailed);
-			expect(report.details.join(" ")).toContain("ticket");
+			expect(report.details.join(" ")).toContain("attention=persisted");
 			expect(core.setOutput).not.toHaveBeenCalled();
+			expect(boundary.feedback.mock.invocationCallOrder[0]).toBeLessThan(
+				boundary.execute.mock.invocationCallOrder[0],
+			);
 
 			expect(JSON.stringify(report)).not.toContain("private");
 		},

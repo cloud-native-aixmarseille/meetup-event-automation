@@ -112,7 +112,6 @@ jobs:
           locale: ${{ inputs.locale }}
           issue-number: ${{ github.event.issue.number }}
           github-token: ${{ steps.app-token.outputs.token }}
-          managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
           kutt-base-url: ${{ inputs.kutt-base-url }}
           kutt-link-id: ${{ inputs.kutt-link-id }}
           openfeedback-api-key: ${{ secrets.openfeedback-api-key }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly
@@ -120,6 +119,7 @@ jobs:
 
       - name: Reconcile event assets
         id: assets
+        if: ${{ !cancelled() && steps.app-token.outcome == 'success' && steps.local-workflow-actions.outcome == 'success' }}
         uses: ./../self-workflow/actions/publication/reconcile-assets
         with:
           conference-hall-event: ${{ inputs.conference-hall-event }}
@@ -127,13 +127,13 @@ jobs:
           locale: ${{ inputs.locale }}
           issue-number: ${{ github.event.issue.number }}
           github-token: ${{ steps.app-token.outputs.token }}
-          managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
           google-credentials: ${{ secrets.google-credentials }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly
           google-drive-meetup-folder-id: ${{ inputs.google-drive-meetup-folder-id }}
           google-drive-meetup-template-folder-id: ${{ inputs.google-drive-meetup-template-folder-id }}
 
       - name: Create mailings GitHub App token
         id: mailings-token
+        if: ${{ steps.assets.outputs.drive-files != '' && steps.assets.outputs.slides-ready != '' }}
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           client-id: ${{ inputs.github-app-client-id }}
@@ -144,6 +144,7 @@ jobs:
 
       - name: Reconcile communications
         id: communications
+        if: ${{ steps.assets.outputs.drive-files != '' && steps.assets.outputs.slides-ready != '' }}
         uses: ./../self-workflow/actions/communication/reconcile
         with:
           conference-hall-event: ${{ inputs.conference-hall-event }}
@@ -151,7 +152,6 @@ jobs:
           slides-ready: ${{ steps.assets.outputs.slides-ready }}
           slides-url: ${{ fromJSON(steps.assets.outputs.drive-files)['slides-link'] }}
           openfeedback-api-key: ${{ secrets.openfeedback-api-key }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly
-          report-errors-to-issue: "false"
           locale: ${{ inputs.locale }}
           issue-number: ${{ github.event.issue.number }}
           github-token: ${{ steps.app-token.outputs.token }}
@@ -162,7 +162,7 @@ jobs:
 
       - name: Reconcile event
         id: reconcile
-        if: always()
+        if: ${{ !cancelled() && steps.app-token.outcome == 'success' && steps.local-workflow-actions.outcome == 'success' }}
         uses: ./../self-workflow/actions/event/reconcile
         with:
           conference-hall-event: ${{ inputs.conference-hall-event }}
@@ -170,7 +170,6 @@ jobs:
           locale: ${{ inputs.locale }}
           issue-number: ${{ github.event.issue.number }}
           github-token: ${{ steps.app-token.outputs.token }}
-          managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
 
       - name: Reconcile organizer attention
         id: attention

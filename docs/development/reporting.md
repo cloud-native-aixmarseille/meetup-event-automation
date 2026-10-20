@@ -1,64 +1,98 @@
 # Action reporting
 
-Public outputs must also follow the
-[action interface rules](README.md#action-interface-rules): declare and emit
-only values with an identified consumer. This includes `diagnostics`, `result`,
-and count outputs. Shared reporting in logs, annotations, and job summaries
-does not require publishing those values as action outputs.
+CI reports execution facts. Meetup comments and Slack report organizer actions.
+Use the shared reporting boundary for every public action; do not render the same
+organizer guidance separately in each workflow step.
 
-Every public action must use the shared GitHub Actions reporting boundary:
+## Required feedback rules
 
-- Register its bootstrap as
-  `await ActionRunner.run("action.<group>.<action>", operation, diagnosticsOutput)`.
-  The required boolean matches whether the action declares a consumed
-  `diagnostics` output; the reporting contract test checks that it matches the
-  manifest. The English
-  title must match the action manifest name. The runner passes one resolved
-  ActionMessages into the operation. Entrypoints follow
-  `src/entrypoints/<group>-<action>.ts` and are included in
-  `scripts/build-actions.mjs`.
-- Return `ActionReportData` on every normal path, including skipped actions.
-  Select public facts explicitly: outcome, mode, counts, persistence status,
-  affected files, and useful next steps. Explain skipped or blocked work.
-- Return redacted `PublicDiagnostic` values with the original severity, code,
-  message, optional field, and optional `fixApplied` flag. The runner owns the
-  `diagnostics` output when exposed for a consumer; the action still owns its
-  other consumed outputs.
-- `ActionReport` renders the same facts and diagnostics in logs,
-  severity-matched annotations, and an HTML-escaped job summary. Successful runs
-  with no diagnostics still receive a report. Do not duplicate this rendering in
-  actions or hide essential explanations exclusively in machine-readable
-  outputs.
-- Exceptions pass through `RuntimeInput.publicErrorMessage` and receive a
-  failure annotation and summary, plus a redacted diagnostic output when
-  declared for a consumer. Missing locale fails before the operation; its error
-  report uses English. Never log raw
-  exceptions, provider responses, contact records, credentials, or whole
-  use-case results. A summary-write error must preserve the action outcome and
-  existing log diagnostics; emit a safe warning without exposing the write
-  error.
-- Keep exit status separate from diagnostic severity. Set `report.failure` only
-  when the action's documented policy requires failure. For example, referential
-  validation fails on invalid catalogs. Issue-form synchronization fails on
-  error diagnostics in either mode. Projection drift is advisory in check mode:
-  it is reported without failing because synchronization runs after merge.
-  Successful updates in fix mode do not fail. Communication reconciliation requires
-  an explicit reporting policy: `report-errors-to-issue: false` fails on error
-  diagnostics, as used by issue updates. With `report-errors-to-issue: true`, it
-  succeeds after persisting its redacted report in a managed meetup issue
-  comment. An unchanged trusted comment also counts as persisted. Execution
-  failures and failed comment reads or writes still fail the action. Actions own
-  these policies through the shared runner;
-  calling workflows do not need separate enforcement steps. Organizer attention
-  fails when evidence or notification synchronization is incomplete; GitHub
-  persistence failures also fail through the shared exception boundary. Reporting changes
-  must not silently change these policies.
+These rules are mandatory for implementations, refactors, and reviews:
 
-`tests/contracts/action-reporting.spec.ts` discovers every action manifest and
-enforces the shared runner and reporting ownership. The runner's typed operation
-requires report data on every returned path. Add behavioral tests beside the
-changed action for public facts, diagnostics, redaction, and relevant
-skip/failure paths; shared renderer and runner tests cover transport and
-exception behavior. Update action descriptions and generated readmes, then
-rebuild all affected bundles and run
-[the development checks](README.md#choose-checks-for-the-change).
+1. **CI reports concise technical facts.** Expected organizer corrections must
+   not fail jobs. Bugs and unexpected technical failures must fail; use the shared
+   classification instead of diagnostic severity or workflow-specific exceptions.
+2. **Issue comments and Slack share concise, deduplicated actions.** Use the
+   merged checklist, remove repeated prerequisites and filler, and preserve direct
+   approval and recovery links.
+3. **Incomplete runs preserve unresolved tasks.** Missing, skipped, failed, or
+   concurrently invalidated stages must not clear previous tasks. Clear tasks
+   only when completed evaluation confirms resolution.
+
+## Technical action reports
+
+Register each bootstrap with
+`await ActionRunner.run("action.<group>.<action>", operation, diagnosticsOutput)`.
+The required boolean must match a consumed `diagnostics` output in the manifest.
+Return `ActionReportData` on every normal path, including skipped or blocked work.
+
+- Select short technical facts: mode, state, counts, persistence and affected files.
+  Use the runtime catalog's `key=value` messages.
+- Retain redacted diagnostic codes, severity, field and `fixApplied` in consumed
+  JSON outputs. Never include provider responses, credentials or contact records.
+- `ActionReport` deduplicates facts and renders codes with safe field metadata in
+  logs and an escaped summary. Expected validation diagnostics do not create
+  failure annotations. Do not add introductions, recovery paragraphs or empty
+  diagnostic messages to successful CI reports.
+- `ActionRunner` applies the shared application `DiagnosticPolicy`. Expected
+  validation, incomplete meetup data, proposal selection, catalog corrections,
+  approval waits and reviewed recovery tasks do not fail CI. They still prevent
+  dependent writes or dispatch until their own preconditions pass.
+- Unexpected exceptions, source/API failures, unconfirmed new deliveries and
+  failed persistence fail CI. Classification is independent of severity: a
+  technical delivery warning can fail, while an invalid-input error does not.
+  Unknown warning/error codes fail closed. Fixed diagnostics and informational
+  results do not fail. Keep explicit `report.failure` only for technical failures
+  without a diagnostic, such as unavailable notification evidence.
+- Exceptions are redacted by `RuntimeInput.publicErrorMessage`. Missing locale
+  fails before execution and uses English. A summary-write failure emits a safe
+  warning and preserves the original result.
+
+The same policy applies to issue updates and scheduled audits. Never use
+`continue-on-error` to hide a technical failure or make failure depend on where a
+report was posted. A successful step can represent a safely blocked operation;
+publish changes only when its completion evidence is present. Speaker catalog
+publication requires the completed synchronization's `pr-title` output.
+Mailing token creation and communications skip when completed asset outputs are absent.
+
+## Organizer feedback
+
+The final attention action is the sole diagnostic checklist writer. It merges
+event, asset, feedback and communication reports through `OrganizerFeedback`.
+It removes duplicates,
+fixed items and derivative prerequisite messages. The comment presenter owns
+concise localized guidance; raw diagnostic messages never become organizer text.
+Slack reuses this checklist alongside verified approvals and recovery tasks.
+
+The checklist is replaced only after all four stages report completed evaluation.
+A missing, failed or concurrently invalidated stage preserves previous tasks;
+new diagnostic tasks wait for a complete run. Technical attention still reports
+the failed stage. This avoids treating an unevaluated task as resolved.
+Successful consolidated persistence precedes retirement of an obsolete separate
+communication report. Existing bot-state verification, pending delivery
+reservations and post-event approval controls remain authoritative. Failed
+comment persistence prevents a new Slack notification and fails the action.
+
+Workflow stage results carry the consumed diagnostic outputs. Stages that did
+not execute remain unknown, and dependent blockage cannot resolve an earlier
+unverified technical failure. The final attention step runs after earlier
+failures when its GitHub setup is available.
+
+## Validation
+
+`tests/contracts/action-reporting.spec.ts` enforces runner and rendering ownership.
+Changes to feedback behavior must include focused regression coverage for the
+affected rules:
+
+- Expected organizer corrections keep jobs successful while unexpected technical
+  faults fail, including when diagnostics use the same severity.
+- Issue comments and Slack reuse concise actions without repeating prerequisite
+  messages; approval and recovery links remain available.
+- Incomplete reports retain unresolved tasks; a completed rerun can clear
+  confirmed resolutions without losing pending delivery or approval state.
+
+Retain coverage for exception redaction, uncertain deliveries and publication
+gates. Keep action manifests,
+workflow callers and their references aligned; expose only outputs with an actual
+consumer under the [action interface rules](README.md#action-interface-rules).
+Run the [development checks](README.md#choose-checks-for-the-change) and rebuild
+committed action bundles after production changes.

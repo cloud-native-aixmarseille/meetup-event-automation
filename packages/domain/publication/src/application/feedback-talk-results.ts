@@ -7,7 +7,10 @@ export interface FeedbackTalkResult {
 }
 
 export interface FeedbackTalkResultsGateway {
-	/** Read existing talk identities without creating or updating feedback records. */
+	/**
+	 * Read existing talk identities without creating or updating feedback records.
+	 * Missing or ambiguous records raise FeedbackResolutionError.
+	 */
 	resolve(input: {
 		readonly key: string;
 		readonly url: string;

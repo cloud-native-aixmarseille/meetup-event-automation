@@ -6,6 +6,7 @@ import { AttentionComposition } from "./attention-composition.js";
 import { AttentionStages } from "./attention-stages.js";
 import { ActionMessages } from "./i18n/action-messages.js";
 import { RuntimeInput } from "./runtime-input.js";
+import { OrganizerFeedback } from "./organizer-feedback.js";
 export class AttentionAction {
 	static async run(messages = new ActionMessages()): Promise<ActionReportData> {
 		const issueNumber = RuntimeInput.positiveIntegerInput(
@@ -25,14 +26,19 @@ export class AttentionAction {
 				required: true,
 			}),
 		});
-		const result = await container.get(ManageMeetupAttention).execute(
-			{
-				repository: `${context.repo.owner}/${context.repo.repo}`,
-				issueNumber,
-			},
-			AttentionStages.parse(core.getInput("stage-results", { required: true })),
-			String(context.runId),
-		);
+		const identity = {
+			repository: `${context.repo.owner}/${context.repo.repo}`,
+			issueNumber,
+		};
+		const stageResults = core.getInput("stage-results", { required: true });
+		await container.get(OrganizerFeedback).execute(identity, stageResults);
+		const result = await container
+			.get(ManageMeetupAttention)
+			.execute(
+				identity,
+				AttentionStages.parse(stageResults),
+				String(context.runId),
+			);
 
 		return {
 			details: [

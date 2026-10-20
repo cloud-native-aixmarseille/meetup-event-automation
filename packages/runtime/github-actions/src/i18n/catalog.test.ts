@@ -10,11 +10,11 @@ const parameters = {
 		persisted: "true",
 		linkUpdated: "false",
 	},
-	"report.fix-applied": {
-		applied: "true",
-	},
 	"report.failed": {
 		reason: "Safe reason.",
+	},
+	"report.technical-failure": {
+		codes: "communication.delivery.failed",
 	},
 	"report.referential.counts": {
 		hosts: 2,
@@ -33,7 +33,6 @@ const parameters = {
 	},
 	"report.event.persisted": {
 		persisted: "false",
-		comment: "true",
 	},
 	"report.events.count": {
 		count: 2,
