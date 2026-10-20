@@ -91,6 +91,7 @@ for implemented behavior and contributor conventions.
 - [ADR-0020: Use one organizer checklist and visible proposal numbers](adr/0020-unified-organizer-checklist.md)
 - [ADR-0021: Separate technical failures from organizer feedback](adr/0021-separate-technical-and-organizer-feedback.md)
 - [ADR-0022: Inject stateless collaborators](adr/0022-inject-stateless-collaborators.md)
+- [ADR-0023: Export a static PDF final asset from the slides](adr/0023-export-pdf-final-asset.md)
 
 ## Directory layout
 
@@ -140,7 +141,8 @@ docs/
     ├── 0019-archive-closed-meetup-issues.md
     ├── 0020-unified-organizer-checklist.md
     ├── 0021-separate-technical-and-organizer-feedback.md
-    └── 0022-inject-stateless-collaborators.md
+    ├── 0022-inject-stateless-collaborators.md
+    └── 0023-export-pdf-final-asset.md
 ```
 
 Action references stay beside `action.yml`; workflow references stay beside
