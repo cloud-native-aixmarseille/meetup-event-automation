@@ -23,8 +23,8 @@
 
 Reusable workflow that checks open meetup issues, evaluates their current
 state, and processes due communications under the shared per-event lock.
-Organizer corrections are merged into the meetup checklist without failing CI.
-Unexpected execution, source and persistence failures fail the audit.
+Expected organizer tasks share one checklist; unexpected technical failures
+fail the audit under the same policy as issue-triggered reconciliation.
 
 The workflow creates a separate GitHub App installation token for
 `<repository-owner>/mailings` using the supplied App client ID and private key.
@@ -51,7 +51,7 @@ on:
 permissions: {}
 jobs:
   check-active-meetup-issues:
-    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/check-active-meetup-issues.yml@c96cf1e15b7a8a824a706582f6ba328374a888df # 2.3.1
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/check-active-meetup-issues.yml@5a80cd5013781ff071bea0dfda49044bc4071c5f # 2.3.2
     permissions:
       contents: read
       issues: read

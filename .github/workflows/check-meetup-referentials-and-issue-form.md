@@ -24,9 +24,8 @@
 Reusable workflow that checks referential catalogs and the generated meetup
 issue-form projection for consumer pull requests.
 Projection drift is advisory because synchronization runs after merge to main.
-Invalid referentials block projection without failing the check. Technical
-execution and persistence failures still fail. Logs and the job summary contain
-concise diagnostic codes, fields and affected issue-form files.
+Invalid referentials block projection without failing CI. Technical failures
+still fail. Logs and summaries contain concise codes, fields and affected files.
 
 ### Permissions
 
@@ -46,7 +45,7 @@ on:
 permissions: {}
 jobs:
   check-meetup-referentials-and-issue-form:
-    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/check-meetup-referentials-and-issue-form.yml@c96cf1e15b7a8a824a706582f6ba328374a888df # 2.3.1
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/check-meetup-referentials-and-issue-form.yml@5a80cd5013781ff071bea0dfda49044bc4071c5f # 2.3.2
     permissions:
       contents: read
     with:
