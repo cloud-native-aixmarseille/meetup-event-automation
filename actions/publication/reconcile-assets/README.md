@@ -30,7 +30,7 @@ Reconcile the event Drive folder, template copies, and issue asset link. Report 
 ## Usage
 
 ```yaml
-- uses: cloud-native-aixmarseille/meetup-event-automation/actions/publication/reconcile-assets@c96cf1e15b7a8a824a706582f6ba328374a888df # 2.3.1
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/publication/reconcile-assets@5a80cd5013781ff071bea0dfda49044bc4071c5f # 2.3.2
   with:
     # Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
     # This input is required.

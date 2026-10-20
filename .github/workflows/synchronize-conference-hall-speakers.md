@@ -64,7 +64,7 @@ on:
 permissions: {}
 jobs:
   synchronize-conference-hall-speakers:
-    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/synchronize-conference-hall-speakers.yml@c96cf1e15b7a8a824a706582f6ba328374a888df # 2.3.1
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/synchronize-conference-hall-speakers.yml@5a80cd5013781ff071bea0dfda49044bc4071c5f # 2.3.2
     permissions:
       contents: read
     secrets:
