@@ -55,6 +55,12 @@ Keep action and workflow contract references beside their YAML manifests.
 `docs/README.md` owns the linked document inventory and directory tree.
 `CONTRIBUTING.md` and `AGENTS.md` direct contributors to the relevant guides.
 
+Preserve CI Dokumentor's paired section comments, such as `<!-- header:start -->`
+and `<!-- header:end -->`, in action and workflow references. Generate interface
+sections from the corresponding YAML manifest. Put manually maintained behavior,
+setup, and recovery guidance outside generated sections so regeneration preserves
+it.
+
 Give each page one purpose and one audience. State the task or behavior first,
 then prerequisites, steps, expected results, and relevant limitations. Use plain,
 direct language and the straight ASCII apostrophe (`'`). Remove filler,
