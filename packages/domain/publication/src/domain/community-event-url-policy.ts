@@ -11,8 +11,12 @@ export class CommunityEventUrlPolicy implements PublicationUrlPolicy {
 		return PublicationLinkEvaluation.evaluateLink({
 			references,
 			path: "community",
-			prefixes: this.prefixes,
-			identifierPattern: /^[0-9a-z-]+$/,
+			isValid: (value) =>
+				PublicationLinkEvaluation.matchesPrefix(
+					value,
+					this.prefixes,
+					/^[0-9a-z-]+$/,
+				),
 			code: "publication.community-url.invalid",
 			message:
 				"Community event URL must use an approved CNCF/OCGroups prefix and identifier",

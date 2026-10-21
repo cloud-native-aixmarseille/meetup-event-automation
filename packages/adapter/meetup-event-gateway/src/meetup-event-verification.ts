@@ -1,24 +1,26 @@
 import type {
+	MeetupEventUrl,
 	SavedScheduledEvent,
 	ScheduledEvent,
 } from "@meetup-automation/publication";
 import type { Page } from "playwright-core";
 import { MeetupCalendar } from "./meetup-calendar.js";
 import { MeetupVenue } from "./meetup-venue.js";
+import { MeetupBrowserRoutes } from "./meetup-browser-routes.js";
 
 export class MeetupEventVerification {
 	constructor(private readonly page: Page) {}
 
 	async verify(
 		event: ScheduledEvent,
-		url: string,
+		url: MeetupEventUrl,
 	): Promise<{
 		matches: boolean;
 		status: SavedScheduledEvent["status"];
 	}> {
-		const editorUrl = `${url}edit/`;
+		const editorUrl = MeetupBrowserRoutes.edit(url);
 		await this.page.goto(editorUrl, { waitUntil: "domcontentloaded" });
-		if (this.page.url().replace(/\/$/, "") !== editorUrl.replace(/\/$/, ""))
+		if (!MeetupBrowserRoutes.matchesEditor(this.page.url(), editorUrl))
 			throw new Error("The saved event editor is unavailable");
 		const status = await this.status();
 		const announcement = this.page.getByTestId("announcement-close-btn");

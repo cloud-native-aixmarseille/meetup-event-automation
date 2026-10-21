@@ -26,6 +26,9 @@ export {
 	type ManualPublicationTaskStatus,
 } from "./domain/manual-task-policy.js";
 export { MeetupEventUrlPolicy } from "./domain/meetup-event-url-policy.js";
+export { MeetupEventUrl } from "./domain/meetup-event-url.js";
+export { MeetupGroupUrl } from "./domain/meetup-group-url.js";
+export { MEETUP_ORIGIN } from "./domain/meetup-url-contracts.js";
 export {
 	type PublicationDiagnostic,
 	PublicationDiagnostics,

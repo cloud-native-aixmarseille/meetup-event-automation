@@ -22,6 +22,7 @@ import {
 	type MeetupPublicationSettings,
 } from "@meetup-automation/journey";
 import { MeetupEventGateway } from "@meetup-automation/meetup-event-gateway";
+import { MeetupGroupUrl } from "@meetup-automation/publication";
 import {
 	EventComposition,
 	type EventCompositionInput,
@@ -47,6 +48,8 @@ export class MeetupPublicationComposition {
 			const prefix = context.get<AutomationConfig>(SERVICES.config).publication[
 				"meetup-event-url-prefix"
 			];
+			const group = MeetupGroupUrl.fromEventUrlPrefix(prefix);
+			if (!group) throw new Error("Invalid Meetup event URL prefix");
 			return new ManageMeetupPublication({
 				repository: context.get<EventRepository>(SERVICES.eventRepository),
 				codec: context.get<EventDocumentCodec>(SERVICES.eventDocumentCodec),
@@ -74,7 +77,7 @@ export class MeetupPublicationComposition {
 					),
 					input.geminiApiKey,
 					input.geminiModel,
-					prefix.replace(/events\/$/, ""),
+					group.value,
 				),
 			});
 		});

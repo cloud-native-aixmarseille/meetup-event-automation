@@ -1,4 +1,6 @@
 import {
+	MeetupEventUrl,
+	MeetupGroupUrl,
 	type SavedScheduledEvent,
 	type ScheduledEvent,
 	ScheduledEventError,
@@ -7,14 +9,18 @@ import type { Page } from "playwright-core";
 import { MeetupCalendar } from "./meetup-calendar.js";
 import { MeetupEventVerification } from "./meetup-event-verification.js";
 import { MeetupVenue } from "./meetup-venue.js";
+import { MeetupBrowserRoutes } from "./meetup-browser-routes.js";
 
 export class MeetupEventEditor {
+	private readonly group: MeetupGroupUrl;
+
 	constructor(
 		private readonly page: Page,
-		private readonly groupUrl: string,
+		groupUrl: string,
 	) {
-		if (!/^https:\/\/www\.meetup\.com\/[a-z0-9-]+\/$/.test(groupUrl))
-			throw new ScheduledEventError("editor");
+		const group = MeetupGroupUrl.parse(groupUrl);
+		if (!group) throw new ScheduledEventError("editor");
+		this.group = group;
 		page.setDefaultTimeout(15_000);
 		page.setDefaultNavigationTimeout(30_000);
 	}
@@ -25,8 +31,8 @@ export class MeetupEventEditor {
 		beforeSubmit: () => Promise<void>,
 		onSaved: (url: string) => Promise<void>,
 	): Promise<SavedScheduledEvent> {
-		if (url && !this.eventUrl(url)) throw new ScheduledEventError("editor");
-		const identity = url ? this.eventUrl(url) : undefined;
+		const identity = MeetupEventUrl.parse(url, this.group);
+		if (url && !identity) throw new ScheduledEventError("editor");
 		const verification = new MeetupEventVerification(this.page);
 		const existing = identity
 			? await verification.verify(event, identity).catch(() => {
@@ -34,8 +40,8 @@ export class MeetupEventEditor {
 				})
 			: undefined;
 		if (identity && existing?.matches) {
-			await onSaved(identity);
-			return { url: identity, status: existing.status };
+			await onSaved(identity.value);
+			return { url: identity.value, status: existing.status };
 		}
 		const status = await this.prepare(event, identity).catch(() => {
 			throw new ScheduledEventError("editor");
@@ -45,19 +51,19 @@ export class MeetupEventEditor {
 		// Keep concurrency and durable-reservation failures separate from browser errors.
 		await beforeSubmit();
 		const savedUrl = await this.submit(identity, status);
-		await onSaved(savedUrl);
+		await onSaved(savedUrl.value);
 		const saved = await verification
 			.verify(event, savedUrl)
 			.catch(() => undefined);
 		if (!saved?.matches || saved.status !== status)
 			throw new ScheduledEventError("verification");
-		return { url: savedUrl, status: saved.status };
+		return { url: savedUrl.value, status: saved.status };
 	}
 
 	private async submit(
-		url: string | undefined,
+		url: MeetupEventUrl | undefined,
 		status: SavedScheduledEvent["status"],
-	): Promise<string> {
+	): Promise<MeetupEventUrl> {
 		try {
 			// Preview saves a draft and opens its identity URL. Save as draft instead
 			// redirects to the drafts list, losing the identity needed for safe retries.
@@ -69,11 +75,15 @@ export class MeetupEventEditor {
 							.filter({ visible: true });
 			await submit.click();
 			await this.page.waitForURL(
-				(value) => this.eventUrl(value.href) !== undefined,
+				(value) =>
+					MeetupBrowserRoutes.eventLocation(value, this.group) !== undefined,
 				{ waitUntil: "domcontentloaded" },
 			);
-			const saved = this.eventUrl(this.page.url());
-			if (!saved || (url && saved !== url))
+			const saved = MeetupBrowserRoutes.eventLocation(
+				new URL(this.page.url()),
+				this.group,
+			);
+			if (!saved || (url && saved.value !== url.value))
 				throw new Error("Unexpected event identity");
 			return saved;
 		} catch {
@@ -84,11 +94,13 @@ export class MeetupEventEditor {
 
 	private async prepare(
 		event: ScheduledEvent,
-		url: string | undefined,
+		url: MeetupEventUrl | undefined,
 	): Promise<SavedScheduledEvent["status"]> {
-		const editorUrl = url ? `${url}edit/` : `${this.groupUrl}schedule/`;
+		const editorUrl = url
+			? MeetupBrowserRoutes.edit(url)
+			: MeetupBrowserRoutes.schedule(this.group);
 		await this.page.goto(editorUrl, { waitUntil: "domcontentloaded" });
-		if (this.page.url().replace(/\/$/, "") !== editorUrl.replace(/\/$/, ""))
+		if (!MeetupBrowserRoutes.matchesEditor(this.page.url(), editorUrl))
 			throw new Error("The organizer editor is unavailable");
 		const status = await new MeetupEventVerification(this.page).status();
 		const announcement = this.page.getByTestId("announcement-close-btn");
@@ -105,15 +117,5 @@ export class MeetupEventEditor {
 			.fill(event.description);
 		await new MeetupVenue(this.page).select(event.venue);
 		return status;
-	}
-
-	private eventUrl(value: string): string | undefined {
-		const url = new URL(value);
-		const prefix = `${this.groupUrl}events/`;
-		const normalized = `${url.origin}${url.pathname}`;
-		return normalized.startsWith(prefix) &&
-			/^[1-9]\d*\/?$/.test(normalized.slice(prefix.length))
-			? `${normalized.replace(/\/$/, "")}/`
-			: undefined;
 	}
 }

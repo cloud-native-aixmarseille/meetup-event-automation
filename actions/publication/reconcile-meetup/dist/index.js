@@ -29868,8 +29868,7 @@ var PublicationLinkEvaluation = class _PublicationLinkEvaluation {
   static evaluateLink({
     references,
     path,
-    prefixes,
-    identifierPattern,
+    isValid,
     code,
     message
   }) {
@@ -29878,11 +29877,7 @@ var PublicationLinkEvaluation = class _PublicationLinkEvaluation {
       return _PublicationLinkEvaluation.emptyEvaluation(references);
     }
     const normalized = raw.trim().replace(/\/$/, "");
-    const matchingPrefix = prefixes.find(
-      (prefix) => normalized.startsWith(prefix)
-    );
-    const identifier = matchingPrefix ? normalized.slice(matchingPrefix.length) : void 0;
-    if (!_PublicationLinkEvaluation.isHttpsUrl(normalized) || !matchingPrefix || !identifier || !identifierPattern.test(identifier)) {
+    if (!isValid(raw.trim())) {
       return {
         references,
         diagnostics: [
@@ -29933,6 +29928,14 @@ var PublicationLinkEvaluation = class _PublicationLinkEvaluation {
       return false;
     }
   }
+  static matchesPrefix(value, prefixes, identifierPattern) {
+    const normalized = value.replace(/\/$/, "");
+    const prefix = prefixes.find(
+      (candidate) => normalized.startsWith(candidate)
+    );
+    const identifier = prefix ? normalized.slice(prefix.length) : void 0;
+    return _PublicationLinkEvaluation.isHttpsUrl(normalized) && !!identifier && identifierPattern.test(identifier);
+  }
 };
 
 // packages/domain/publication/src/domain/asset-folder-url-policy.ts
@@ -29946,8 +29949,11 @@ var AssetFolderUrlPolicy = class {
     return PublicationLinkEvaluation.evaluateLink({
       references,
       path: "assets",
-      prefixes: [this.prefix],
-      identifierPattern: /^[a-zA-Z0-9_-]+$/,
+      isValid: (value) => PublicationLinkEvaluation.matchesPrefix(
+        value,
+        [this.prefix],
+        /^[a-zA-Z0-9_-]+$/
+      ),
       code: "publication.asset-url.invalid",
       message: `Asset folder URL must start with ${this.prefix} and end with a folder identifier`
     });
@@ -29965,8 +29971,11 @@ var CommunityEventUrlPolicy = class {
     return PublicationLinkEvaluation.evaluateLink({
       references,
       path: "community",
-      prefixes: this.prefixes,
-      identifierPattern: /^[0-9a-z-]+$/,
+      isValid: (value) => PublicationLinkEvaluation.matchesPrefix(
+        value,
+        this.prefixes,
+        /^[0-9a-z-]+$/
+      ),
       code: "publication.community-url.invalid",
       message: "Community event URL must use an approved CNCF/OCGroups prefix and identifier"
     });
@@ -30042,6 +30051,52 @@ var ManualPublicationPolicy = class _ManualPublicationPolicy {
   }
 };
 
+// packages/domain/publication/src/domain/meetup-url-contracts.ts
+var MEETUP_ORIGIN = "https://www.meetup.com";
+
+// packages/domain/publication/src/domain/meetup-group-url.ts
+var MeetupGroupUrl = class _MeetupGroupUrl {
+  constructor(value) {
+    this.value = value;
+  }
+  value;
+  static parse(value) {
+    const prefix = `${MEETUP_ORIGIN}/`;
+    if (typeof value !== "string" || !value.startsWith(prefix) || !value.endsWith("/"))
+      return void 0;
+    const slug = value.slice(prefix.length, -1);
+    return slug.length > 0 && !/[^a-z0-9-]/.test(slug) ? new _MeetupGroupUrl(value) : void 0;
+  }
+  static fromEventUrlPrefix(value) {
+    return value.endsWith("events/") ? _MeetupGroupUrl.parse(value.slice(0, -"events/".length)) : void 0;
+  }
+  get eventUrlPrefix() {
+    return `${this.value}events/`;
+  }
+};
+
+// packages/domain/publication/src/domain/meetup-event-url.ts
+var MeetupEventUrl = class _MeetupEventUrl {
+  constructor(group, identifier) {
+    this.group = group;
+    this.identifier = identifier;
+  }
+  group;
+  identifier;
+  static parse(value, group) {
+    if (typeof value !== "string") return void 0;
+    const match = /^(.*\/)events\/([1-9]\d*)\/?$/.exec(value);
+    if (!match || match[0] !== value) return void 0;
+    const parsedGroup = MeetupGroupUrl.parse(match[1]);
+    if (!parsedGroup || group && parsedGroup.value !== group.value)
+      return void 0;
+    return new _MeetupEventUrl(parsedGroup, match[2]);
+  }
+  get value() {
+    return `${this.group.eventUrlPrefix}${this.identifier}/`;
+  }
+};
+
 // packages/domain/publication/src/domain/meetup-event-url-policy.ts
 var MeetupEventUrlPolicy = class {
   constructor(prefix) {
@@ -30050,11 +30105,11 @@ var MeetupEventUrlPolicy = class {
   prefix;
   id = "meetup-event-url";
   evaluate(references) {
+    const group = MeetupGroupUrl.fromEventUrlPrefix(this.prefix);
     return PublicationLinkEvaluation.evaluateLink({
       references,
       path: "meetup",
-      prefixes: [this.prefix],
-      identifierPattern: /^\d+$/,
+      isValid: (value) => !!group && !!MeetupEventUrl.parse(value, group),
       code: "publication.meetup-url.invalid",
       message: `Meetup URL must start with ${this.prefix} and end with a numeric event identifier`
     });
@@ -30087,7 +30142,7 @@ var PublicationDiagnostics = class {
 
 // packages/domain/publication/src/domain/url-policy-contracts.ts
 var DEFAULT_PUBLICATION_URL_CONFIGURATION = Object.freeze({
-  meetupEventUrlPrefix: "https://www.meetup.com/cloud-native-aix-marseille/events/",
+  meetupEventUrlPrefix: `${MEETUP_ORIGIN}/cloud-native-aix-marseille/events/`,
   communityEventUrlPrefixes: Object.freeze([
     "https://ocgroups.dev/cncf/group/cloud-native-aix-marseille/event/",
     "https://community.cncf.io/events/details/cncf-cloud-native-aix-marseille-presents-"
@@ -31726,6 +31781,12 @@ var MeetupPublicationProjection = class {
 };
 
 // packages/application/journey/src/use-cases/manage-meetup-publication.ts
+var PUBLICATION_LINK_FIELDS = [
+  "publicationLinks.meetup",
+  "publicationLinks.community",
+  "publicationLinks.assets",
+  "publicationLinks.feedback"
+];
 var ManageMeetupPublication = class {
   constructor(dependencies) {
     this.dependencies = dependencies;
@@ -31752,24 +31813,20 @@ var ManageMeetupPublication = class {
     if (evaluation.diagnostics.some(
       (item) => item.code === "event.document.checkbox.invalid" && item.field === "Communication"
     ) || !draft || !ScheduledEventPolicy.valid(draft, this.dependencies.clock.now()) || evaluation.diagnostics.some(
-      (item) => item.severity === "error" && ![
-        "publicationLinks.community",
-        "publicationLinks.assets",
-        "publicationLinks.feedback",
-        "publicationLinks.meetup"
-      ].includes(item.field ?? "")
+      (item) => item.severity === "error" && !PUBLICATION_LINK_FIELDS.includes(item.field ?? "")
     ))
       return this.result("blocked", "prerequisites");
     return this.synchronize(source, draft, event.publicationLinks.meetup);
   }
   async synchronize(source, draft, supplied) {
     const record = await this.dependencies.journal.load();
-    if (supplied && record?.url && supplied.replace(/\/$/, "") !== record.url.replace(/\/$/, ""))
-      return this.result("blocked", "conflict");
-    const candidate = supplied ?? record?.url;
-    if (candidate && !this.validUrl(candidate))
+    const suppliedUrl = this.eventUrl(supplied);
+    const recordedUrl = this.eventUrl(record?.url);
+    if (supplied && !suppliedUrl || record?.url && !recordedUrl)
       return this.result("blocked", "link");
-    const url = candidate ? `${candidate.replace(/\/$/, "")}/` : void 0;
+    if (suppliedUrl && recordedUrl && suppliedUrl.value !== recordedUrl.value)
+      return this.result("blocked", "conflict");
+    const url = (suppliedUrl ?? recordedUrl)?.value;
     if (!url && record) return this.result("blocked", "uncertain");
     try {
       const saved = await this.dependencies.gateway.save(
@@ -31781,12 +31838,12 @@ var ManageMeetupPublication = class {
           await this.ensureCurrent(source);
         },
         async (savedUrl) => {
-          if (!this.validUrl(savedUrl))
+          if (!this.eventUrl(savedUrl))
             throw new ScheduledEventError("verification");
           await this.dependencies.journal.record(savedUrl);
         }
       );
-      if (!this.validUrl(saved.url) || !url && saved.status !== "draft")
+      if (!this.eventUrl(saved.url) || !url && saved.status !== "draft")
         throw new ScheduledEventError("verification");
       return await this.complete(source, draft, saved);
     } catch (error2) {
@@ -31794,9 +31851,11 @@ var ManageMeetupPublication = class {
       return this.result("blocked", error2.kind);
     }
   }
-  validUrl(value) {
-    const prefix = this.dependencies.meetupUrlPrefix;
-    return value.startsWith(prefix) && /^[1-9]\d*\/?$/.test(value.slice(prefix.length));
+  eventUrl(value) {
+    const group = MeetupGroupUrl.fromEventUrlPrefix(
+      this.dependencies.meetupUrlPrefix
+    );
+    return group ? MeetupEventUrl.parse(value, group) : void 0;
   }
   async persist(source, saved) {
     await this.ensureCurrent(source);
@@ -39939,9 +39998,7 @@ import { randomUUID as randomUUID2 } from "node:crypto";
 // packages/adapter/github-organizer-approval/src/meetup-approval-details.ts
 var MeetupApprovalDetails = class _MeetupApprovalDetails {
   static validate(value) {
-    if (!value || !_MeetupApprovalDetails.text(value.url, 2048) || !/^https:\/\/www\.meetup\.com\/[a-z0-9-]+\/events\/[1-9]\d*\/$/.test(
-      value.url
-    ) || !_MeetupApprovalDetails.text(value.title, 80) || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value.startTime) || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value.endTime) || !_MeetupApprovalDetails.text(value.timeZone, 100) || !_MeetupApprovalDetails.text(value.venue?.name, 500) || !_MeetupApprovalDetails.text(value.venue?.city, 500))
+    if (!value || !_MeetupApprovalDetails.text(value.url, 2048) || MeetupEventUrl.parse(value.url)?.value !== value.url || !_MeetupApprovalDetails.text(value.title, 80) || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value.startTime) || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value.endTime) || !_MeetupApprovalDetails.text(value.timeZone, 100) || !_MeetupApprovalDetails.text(value.venue?.name, 500) || !_MeetupApprovalDetails.text(value.venue?.city, 500))
       throw new Error("Invalid Meetup approval details");
   }
   static text(value, maximum) {
@@ -41163,6 +41220,34 @@ var MeetupVenue = class {
   }
 };
 
+// packages/adapter/meetup-event-gateway/src/meetup-browser-routes.ts
+var MeetupBrowserRoutes = class _MeetupBrowserRoutes {
+  static login = `${MEETUP_ORIGIN}/login/`;
+  static account = `${MEETUP_ORIGIN}/account/management/`;
+  static schedule(group) {
+    return `${group.value}schedule/`;
+  }
+  static edit(event) {
+    return `${event.value}edit/`;
+  }
+  static isMeetupLocation(url) {
+    return url.origin === MEETUP_ORIGIN && !url.username && !url.password;
+  }
+  static isPath(url, path) {
+    return _MeetupBrowserRoutes.isMeetupLocation(url) && (url.pathname === path || url.pathname.startsWith(`${path}/`));
+  }
+  static matchesEditor(location, expected) {
+    return location.replace(/\/$/, "") === expected.replace(/\/$/, "");
+  }
+  static eventLocation(location, group) {
+    if (!_MeetupBrowserRoutes.isMeetupLocation(location)) return void 0;
+    return MeetupEventUrl.parse(
+      `${location.origin}${location.pathname}`,
+      group
+    );
+  }
+};
+
 // packages/adapter/meetup-event-gateway/src/meetup-event-verification.ts
 var MeetupEventVerification = class _MeetupEventVerification {
   constructor(page) {
@@ -41170,9 +41255,9 @@ var MeetupEventVerification = class _MeetupEventVerification {
   }
   page;
   async verify(event, url) {
-    const editorUrl = `${url}edit/`;
+    const editorUrl = MeetupBrowserRoutes.edit(url);
     await this.page.goto(editorUrl, { waitUntil: "domcontentloaded" });
-    if (this.page.url().replace(/\/$/, "") !== editorUrl.replace(/\/$/, ""))
+    if (!MeetupBrowserRoutes.matchesEditor(this.page.url(), editorUrl))
       throw new Error("The saved event editor is unavailable");
     const status = await this.status();
     const announcement = this.page.getByTestId("announcement-close-btn");
@@ -41212,10 +41297,12 @@ var MeetupEventPublisher = class {
   page;
   groupUrl;
   async publish(event, url, beforePublish) {
-    if (!/^https:\/\/www\.meetup\.com\/[a-z0-9-]+\/$/.test(this.groupUrl) || !url.startsWith(`${this.groupUrl}events/`) || !/^[1-9]\d*\/$/.test(url.slice(`${this.groupUrl}events/`.length)))
+    const group = MeetupGroupUrl.parse(this.groupUrl);
+    const identity = group && MeetupEventUrl.parse(url, group);
+    if (!identity || identity.value !== url)
       throw new ScheduledEventError("editor");
     const verification = new MeetupEventVerification(this.page);
-    const current = await verification.verify(event, url).catch(() => {
+    const current = await verification.verify(event, identity).catch(() => {
       throw new ScheduledEventError("verification");
     });
     if (!current.matches) throw new ScheduledEventError("verification");
@@ -41228,13 +41315,13 @@ var MeetupEventPublisher = class {
     try {
       await publish.click();
       await this.page.waitForURL(
-        (value) => `${value.origin}${value.pathname}`.replace(/\/$/, "") === url.replace(/\/$/, ""),
+        (value) => MeetupBrowserRoutes.eventLocation(value, identity.group)?.value === url,
         { waitUntil: "domcontentloaded" }
       );
     } catch {
       throw new ScheduledEventError("uncertain");
     }
-    const saved = await verification.verify(event, url).catch(() => void 0);
+    const saved = await verification.verify(event, identity).catch(() => void 0);
     if (!saved?.matches || saved.status !== "published")
       throw new ScheduledEventError("verification");
     return { url, status: "published" };
@@ -41245,24 +41332,24 @@ var MeetupEventPublisher = class {
 var MeetupEventEditor = class {
   constructor(page, groupUrl) {
     this.page = page;
-    this.groupUrl = groupUrl;
-    if (!/^https:\/\/www\.meetup\.com\/[a-z0-9-]+\/$/.test(groupUrl))
-      throw new ScheduledEventError("editor");
+    const group = MeetupGroupUrl.parse(groupUrl);
+    if (!group) throw new ScheduledEventError("editor");
+    this.group = group;
     page.setDefaultTimeout(15e3);
     page.setDefaultNavigationTimeout(3e4);
   }
   page;
-  groupUrl;
+  group;
   async save(event, url, beforeSubmit, onSaved) {
-    if (url && !this.eventUrl(url)) throw new ScheduledEventError("editor");
-    const identity = url ? this.eventUrl(url) : void 0;
+    const identity = MeetupEventUrl.parse(url, this.group);
+    if (url && !identity) throw new ScheduledEventError("editor");
     const verification = new MeetupEventVerification(this.page);
     const existing = identity ? await verification.verify(event, identity).catch(() => {
       throw new ScheduledEventError("editor");
     }) : void 0;
     if (identity && existing?.matches) {
-      await onSaved(identity);
-      return { url: identity, status: existing.status };
+      await onSaved(identity.value);
+      return { url: identity.value, status: existing.status };
     }
     const status = await this.prepare(event, identity).catch(() => {
       throw new ScheduledEventError("editor");
@@ -41271,22 +41358,25 @@ var MeetupEventEditor = class {
       throw new ScheduledEventError("editor");
     await beforeSubmit();
     const savedUrl = await this.submit(identity, status);
-    await onSaved(savedUrl);
+    await onSaved(savedUrl.value);
     const saved = await verification.verify(event, savedUrl).catch(() => void 0);
     if (!saved?.matches || saved.status !== status)
       throw new ScheduledEventError("verification");
-    return { url: savedUrl, status: saved.status };
+    return { url: savedUrl.value, status: saved.status };
   }
   async submit(url, status) {
     try {
       const submit = status === "draft" ? this.page.getByTestId("event-preview-btn").filter({ visible: true }) : this.page.getByRole("button", { name: "Save changes", exact: true }).filter({ visible: true });
       await submit.click();
       await this.page.waitForURL(
-        (value) => this.eventUrl(value.href) !== void 0,
+        (value) => MeetupBrowserRoutes.eventLocation(value, this.group) !== void 0,
         { waitUntil: "domcontentloaded" }
       );
-      const saved = this.eventUrl(this.page.url());
-      if (!saved || url && saved !== url)
+      const saved = MeetupBrowserRoutes.eventLocation(
+        new URL(this.page.url()),
+        this.group
+      );
+      if (!saved || url && saved.value !== url.value)
         throw new Error("Unexpected event identity");
       return saved;
     } catch {
@@ -41294,9 +41384,9 @@ var MeetupEventEditor = class {
     }
   }
   async prepare(event, url) {
-    const editorUrl = url ? `${url}edit/` : `${this.groupUrl}schedule/`;
+    const editorUrl = url ? MeetupBrowserRoutes.edit(url) : MeetupBrowserRoutes.schedule(this.group);
     await this.page.goto(editorUrl, { waitUntil: "domcontentloaded" });
-    if (this.page.url().replace(/\/$/, "") !== editorUrl.replace(/\/$/, ""))
+    if (!MeetupBrowserRoutes.matchesEditor(this.page.url(), editorUrl))
       throw new Error("The organizer editor is unavailable");
     const status = await new MeetupEventVerification(this.page).status();
     const announcement = this.page.getByTestId("announcement-close-btn");
@@ -41311,16 +41401,9 @@ var MeetupEventEditor = class {
     await new MeetupVenue(this.page).select(event.venue);
     return status;
   }
-  eventUrl(value) {
-    const url = new URL(value);
-    const prefix = `${this.groupUrl}events/`;
-    const normalized = `${url.origin}${url.pathname}`;
-    return normalized.startsWith(prefix) && /^[1-9]\d*\/?$/.test(normalized.slice(prefix.length)) ? `${normalized.replace(/\/$/, "")}/` : void 0;
-  }
 };
 
 // packages/adapter/meetup-event-gateway/src/meetup-login-page.ts
-var ORIGIN = "https://www.meetup.com";
 var CHALLENGE = 'iframe[src*="hcaptcha.com"], iframe[src*="/recaptcha/"], input[autocomplete="one-time-code"]';
 var MeetupLoginPage = class {
   constructor(page, challenge) {
@@ -41332,7 +41415,7 @@ var MeetupLoginPage = class {
   page;
   challenge;
   async login(email, password) {
-    await this.page.goto(`${ORIGIN}/login/`, {
+    await this.page.goto(MeetupBrowserRoutes.login, {
       waitUntil: "domcontentloaded"
     });
     await this.dismissCookieNotice();
@@ -41351,7 +41434,7 @@ var MeetupLoginPage = class {
     await submit.click();
     try {
       await this.page.waitForURL(
-        (url) => url.origin === ORIGIN && !url.pathname.startsWith("/login"),
+        (url) => MeetupBrowserRoutes.isMeetupLocation(url) && !url.pathname.startsWith("/login"),
         { timeout: 15e3, waitUntil: "domcontentloaded" }
       );
     } catch {
@@ -41362,7 +41445,7 @@ var MeetupLoginPage = class {
     return this.verifyAccount(email);
   }
   async verifyAccount(email) {
-    await this.page.goto(`${ORIGIN}/account/management/`, {
+    await this.page.goto(MeetupBrowserRoutes.account, {
       waitUntil: "domcontentloaded"
     });
     if (await this.hasChallenge()) return "challenge-required";
@@ -41374,7 +41457,7 @@ var MeetupLoginPage = class {
   }
   isMeetupPath(path) {
     const url = new URL(this.page.url());
-    return url.origin === ORIGIN && (url.pathname === path || url.pathname.startsWith(`${path}/`));
+    return MeetupBrowserRoutes.isPath(url, path);
   }
   async hasChallenge() {
     if (await this.hcaptchaPassed()) return this.hasOtherChallenge();
@@ -59316,6 +59399,8 @@ var MeetupPublicationComposition = class _MeetupPublicationComposition {
     const container = EventComposition.createEventContainer(input);
     container.bind(ManageMeetupPublication).toDynamicValue((context3) => {
       const prefix = context3.get(SERVICES.config).publication["meetup-event-url-prefix"];
+      const group = MeetupGroupUrl.fromEventUrlPrefix(prefix);
+      if (!group) throw new Error("Invalid Meetup event URL prefix");
       return new ManageMeetupPublication({
         repository: context3.get(SERVICES.eventRepository),
         codec: context3.get(SERVICES.eventDocumentCodec),
@@ -59343,7 +59428,7 @@ var MeetupPublicationComposition = class _MeetupPublicationComposition {
           ),
           input.geminiApiKey,
           input.geminiModel,
-          prefix.replace(/events\/$/, "")
+          group.value
         )
       });
     });

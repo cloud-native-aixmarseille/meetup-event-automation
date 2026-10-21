@@ -27718,9 +27718,12 @@ var OCCURRENCE_STATUS_LABELS = Object.freeze({
   cancelled: "event:cancelled"
 });
 
+// packages/domain/publication/src/domain/meetup-url-contracts.ts
+var MEETUP_ORIGIN = "https://www.meetup.com";
+
 // packages/domain/publication/src/domain/url-policy-contracts.ts
 var DEFAULT_PUBLICATION_URL_CONFIGURATION = Object.freeze({
-  meetupEventUrlPrefix: "https://www.meetup.com/cloud-native-aix-marseille/events/",
+  meetupEventUrlPrefix: `${MEETUP_ORIGIN}/cloud-native-aix-marseille/events/`,
   communityEventUrlPrefixes: Object.freeze([
     "https://ocgroups.dev/cncf/group/cloud-native-aix-marseille/event/",
     "https://community.cncf.io/events/details/cncf-cloud-native-aix-marseille-presents-"

@@ -74,6 +74,11 @@ The CNCF URL policy also accepts
 `https://community.cncf.io/events/details/cncf-cloud-native-aix-marseille-presents-…`.
 Use Drive folder URLs for assets and OpenFeedback event URLs for feedback.
 
+Meetup event links must use the configured group and a positive decimal event ID
+without leading zeros. Query parameters and fragments are not part of an event
+identity. A final slash is optional in issue links; automation stores canonical
+links with a final slash in its publication journal and approval requests.
+
 ## Labels
 
 Create these labels in the consumer repository:

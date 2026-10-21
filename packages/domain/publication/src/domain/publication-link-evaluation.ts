@@ -9,8 +9,7 @@ export class PublicationLinkEvaluation {
 	static evaluateLink<P extends keyof PublicationReferences>({
 		references,
 		path,
-		prefixes,
-		identifierPattern,
+		isValid,
 		code,
 		message,
 	}: EvaluateLinkInput<P>): PublicationEvaluation {
@@ -20,19 +19,7 @@ export class PublicationLinkEvaluation {
 		}
 
 		const normalized = raw.trim().replace(/\/$/, "");
-		const matchingPrefix = prefixes.find((prefix) =>
-			normalized.startsWith(prefix),
-		);
-		const identifier = matchingPrefix
-			? normalized.slice(matchingPrefix.length)
-			: undefined;
-
-		if (
-			!PublicationLinkEvaluation.isHttpsUrl(normalized) ||
-			!matchingPrefix ||
-			!identifier ||
-			!identifierPattern.test(identifier)
-		) {
+		if (!isValid(raw.trim())) {
 			return {
 				references,
 				diagnostics: [
@@ -89,5 +76,22 @@ export class PublicationLinkEvaluation {
 		} catch {
 			return false;
 		}
+	}
+
+	static matchesPrefix(
+		value: string,
+		prefixes: readonly string[],
+		identifierPattern: RegExp,
+	): boolean {
+		const normalized = value.replace(/\/$/, "");
+		const prefix = prefixes.find((candidate) =>
+			normalized.startsWith(candidate),
+		);
+		const identifier = prefix ? normalized.slice(prefix.length) : undefined;
+		return (
+			PublicationLinkEvaluation.isHttpsUrl(normalized) &&
+			!!identifier &&
+			identifierPattern.test(identifier)
+		);
 	}
 }

@@ -178,19 +178,20 @@ describe("Meetup browser event editor", () => {
 		expect(state.publishClicks).toBe(0);
 	});
 
-	it("rejects event links outside the configured group without navigation", async () => {
+	it.each([
+		"https://www.meetup.com/other/events/12345/",
+		`${eventUrl}?token=private`,
+		`${eventUrl}#details`,
+		"https://www.meetup.com/example-group/events/0123/",
+		"not a URL",
+	])("rejects invalid event links without navigation: %s", async (url) => {
 		// Arrange
 		const state = await editorFixture(context);
 		const page = await context.newPage();
 		const editor = new MeetupEventEditor(page, groupUrl);
 
 		// Act
-		const result = editor.save(
-			desiredEvent,
-			"https://www.meetup.com/other/events/12345/",
-			vi.fn(),
-			vi.fn(),
-		);
+		const result = editor.save(desiredEvent, url, vi.fn(), vi.fn());
 
 		// Assert
 		await expect(result).rejects.toMatchObject({ kind: "editor" });

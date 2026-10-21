@@ -116,6 +116,9 @@ importers:
       '@meetup-automation/localization':
         specifier: workspace:*
         version: link:../../presentation/localization
+      '@meetup-automation/publication':
+        specifier: workspace:*
+        version: link:../../domain/publication
 
   packages/adapter/github-organizer-attention:
     dependencies:

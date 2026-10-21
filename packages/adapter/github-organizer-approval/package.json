@@ -5,6 +5,7 @@
 	"type": "module",
 	"exports": "./src/index.ts",
 	"dependencies": {
+		"@meetup-automation/publication": "workspace:*",
 		"@meetup-automation/journey": "workspace:*",
 		"@meetup-automation/localization": "workspace:*",
 		"@meetup-automation/communication": "workspace:*"

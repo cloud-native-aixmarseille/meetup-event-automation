@@ -3,12 +3,15 @@ import {
 	type EventDocument,
 	type EventDocumentCodec,
 	type EventIdentity,
+	type EventPublicationLinks,
 	type EventRepository,
 	EventRepositoryPatches,
 	MeetupPublicationChecklist,
 	ReconcileEvent,
 } from "@meetup-automation/event";
 import {
+	MeetupEventUrl,
+	MeetupGroupUrl,
 	type PublicationJournal,
 	type SavedScheduledEvent,
 	type ScheduledEvent,
@@ -31,6 +34,16 @@ export type MeetupPublicationResult = Readonly<{
 	reviewUrl?: string;
 	diagnostics: readonly PublicDiagnostic[];
 }>;
+
+// Errors on the event's own publication-link fields never block drafting: the
+// Meetup link is managed here and the others target unrelated channels. Typed
+// against EventPublicationLinks so a renamed link field fails to compile.
+const PUBLICATION_LINK_FIELDS: readonly string[] = [
+	"publicationLinks.meetup",
+	"publicationLinks.community",
+	"publicationLinks.assets",
+	"publicationLinks.feedback",
+] satisfies `publicationLinks.${keyof EventPublicationLinks}`[];
 
 export class ManageMeetupPublication {
 	constructor(
@@ -79,12 +92,7 @@ export class ManageMeetupPublication {
 			evaluation.diagnostics.some(
 				(item) =>
 					item.severity === "error" &&
-					![
-						"publicationLinks.community",
-						"publicationLinks.assets",
-						"publicationLinks.feedback",
-						"publicationLinks.meetup",
-					].includes(item.field ?? ""),
+					!PUBLICATION_LINK_FIELDS.includes(item.field ?? ""),
 			)
 		)
 			return this.result("blocked", "prerequisites");
@@ -97,16 +105,13 @@ export class ManageMeetupPublication {
 		supplied: string | undefined,
 	): Promise<MeetupPublicationResult> {
 		const record = await this.dependencies.journal.load();
-		if (
-			supplied &&
-			record?.url &&
-			supplied.replace(/\/$/, "") !== record.url.replace(/\/$/, "")
-		)
-			return this.result("blocked", "conflict");
-		const candidate = supplied ?? record?.url;
-		if (candidate && !this.validUrl(candidate))
+		const suppliedUrl = this.eventUrl(supplied);
+		const recordedUrl = this.eventUrl(record?.url);
+		if ((supplied && !suppliedUrl) || (record?.url && !recordedUrl))
 			return this.result("blocked", "link");
-		const url = candidate ? `${candidate.replace(/\/$/, "")}/` : undefined;
+		if (suppliedUrl && recordedUrl && suppliedUrl.value !== recordedUrl.value)
+			return this.result("blocked", "conflict");
+		const url = (suppliedUrl ?? recordedUrl)?.value;
 		if (!url && record) return this.result("blocked", "uncertain");
 		try {
 			const saved = await this.dependencies.gateway.save(
@@ -118,12 +123,12 @@ export class ManageMeetupPublication {
 					await this.ensureCurrent(source);
 				},
 				async (savedUrl) => {
-					if (!this.validUrl(savedUrl))
+					if (!this.eventUrl(savedUrl))
 						throw new ScheduledEventError("verification");
 					await this.dependencies.journal.record(savedUrl);
 				},
 			);
-			if (!this.validUrl(saved.url) || (!url && saved.status !== "draft"))
+			if (!this.eventUrl(saved.url) || (!url && saved.status !== "draft"))
 				throw new ScheduledEventError("verification");
 			return await this.complete(source, draft, saved);
 		} catch (error) {
@@ -132,12 +137,11 @@ export class ManageMeetupPublication {
 		}
 	}
 
-	private validUrl(value: string): boolean {
-		const prefix = this.dependencies.meetupUrlPrefix;
-		return (
-			value.startsWith(prefix) &&
-			/^[1-9]\d*\/?$/.test(value.slice(prefix.length))
+	private eventUrl(value: unknown): MeetupEventUrl | undefined {
+		const group = MeetupGroupUrl.fromEventUrlPrefix(
+			this.dependencies.meetupUrlPrefix,
 		);
+		return group ? MeetupEventUrl.parse(value, group) : undefined;
 	}
 
 	private async persist(
