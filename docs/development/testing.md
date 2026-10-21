@@ -92,8 +92,11 @@ The focused `pnpm check:interfaces` command also runs in local and CI lint.
 | [Journey integration](../../tests/journey-referential-integration.spec.ts)   | Event, catalog, codec, and issue-form behavior together                      |
 
 [`__check-actions.yml`](../../.github/workflows/__check-actions.yml) exercises
-bundled actions in CI using a synthetic issue and catalog fixtures. Its cleanup
-job closes the test issue. Do not replace these fixtures with live meetup
+bundled actions in CI using a synthetic issue and catalog fixtures. After
+creation, preparation waits until the same active-issue listing used by the action
+can see the fixture. The bounded wait fails setup if visibility does not converge,
+while preserving the issue number for cleanup even when preparation fails. Its
+cleanup job closes the test issue. Do not replace these fixtures with live meetup
 issues. Communication integration checks use a synthetic issue with its introduction
 task already completed and assert that diagnostics contain no errors. Runtime and
 journey tests verify planning and dispatch counts with controlled collaborators.

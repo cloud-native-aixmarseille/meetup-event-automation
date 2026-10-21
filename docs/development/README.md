@@ -84,7 +84,9 @@ after its own rebuild, including missing files, independently of Git staging.
 Main and pull-request CI use
 [`__shared-ci.yml`](../../.github/workflows/__shared-ci.yml). It runs the shared
 linter, Node.js checks, bundle verification, and action integration tests
-against a synthetic issue. `lint:ci` emits SARIF; `test:ci` emits JUnit and
+against a synthetic issue. Pull-request CI runs for changes targeting `main`
+and `stack/**` branches, so each layer of a stacked pull request is validated.
+`lint:ci` emits SARIF; `test:ci` emits JUnit and
 coverage reports. These reporting entrypoints must remain compatible with the
 shared CI workflows.
 

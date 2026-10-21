@@ -39,6 +39,9 @@ describe("internal CI contracts", () => {
 		// Assert
 		expect(main.jobs?.ci.uses).toBe("./.github/workflows/__shared-ci.yml");
 		expect(pullRequest.jobs?.ci).toEqual(main.jobs?.ci);
+		expect(pullRequest.on?.pull_request).toMatchObject({
+			branches: ["main", "stack/**"],
+		});
 		expect(shared.jobs?.["check-actions"]).toMatchObject({
 			needs: ["check-nodejs", "check-dist"],
 			uses: "./.github/workflows/__check-actions.yml",
@@ -112,6 +115,49 @@ describe("internal CI contracts", () => {
 			"test-communication-reconcile",
 		]);
 		expect(dedicatedVitestGateOccurrences).toBe(0);
+	});
+
+	it("waits for fixture visibility before action checks and preserves cleanup on setup failure", async () => {
+		// Arrange
+		const workflow = await readWorkflow("__check-actions");
+
+		// Act
+		const preparation = workflow.jobs?.["prepare-synthetic-issue"];
+		const steps = preparation?.steps ?? [];
+		const creationIndex = steps.findIndex((step) => step.id === "create-issue");
+		const readinessIndex = steps.findIndex((step) =>
+			String(step.with?.script).includes("waitForSyntheticIssue"),
+		);
+		const readiness = steps[readinessIndex];
+		const cleanup = workflow.jobs?.["cleanup-synthetic-issue"];
+		const closeIssue = cleanup?.steps?.find(
+			(step) => step.name === "Close synthetic meetup issue",
+		);
+
+		// Assert
+		expect(creationIndex).toBeGreaterThanOrEqual(0);
+		expect(readinessIndex).toBeGreaterThan(creationIndex);
+		expect(preparation?.outputs?.["issue-number"]).toBe(
+			workflowExpression("steps.create-issue.outputs.issue-number"),
+		);
+		expect(steps[creationIndex]?.with?.script).toContain(
+			"core.setOutput('issue-number', String(issue.data.number))",
+		);
+		expect(readiness?.env?.ISSUE_NUMBER).toBe(
+			workflowExpression("steps.create-issue.outputs.issue-number"),
+		);
+		expect(readiness?.with?.script).toContain(
+			"scripts/wait-for-synthetic-issue.mjs",
+		);
+		expect(readiness?.with?.script).toContain("await waitForSyntheticIssue({");
+		expect(readiness?.["continue-on-error"]).not.toBe(true);
+		expect(cleanup?.if).toBe("always()");
+		expect(closeIssue?.if).toBe(
+			"needs.prepare-synthetic-issue.outputs.issue-number != ''",
+		);
+		expect(closeIssue?.env?.ISSUE_NUMBER).toBe(
+			workflowExpression("needs.prepare-synthetic-issue.outputs.issue-number"),
+		);
 	});
 
 	it("runs event and communication integration checks under the same synthetic event lock", async () => {

@@ -114,6 +114,23 @@ jobs:
 
             core.setOutput('issue-number', String(issue.data.number));
 
+      - name: Wait for synthetic meetup issue visibility
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          ISSUE_NUMBER: ${{ steps.create-issue.outputs.issue-number }}
+        with:
+          script: |
+            const { resolve } = require('node:path');
+            const { pathToFileURL } = require('node:url');
+            const { waitForSyntheticIssue } = await import(
+              pathToFileURL(resolve('scripts/wait-for-synthetic-issue.mjs')).href
+            );
+            await waitForSyntheticIssue({
+              github,
+              ...context.repo,
+              issueNumber: Number(process.env.ISSUE_NUMBER),
+            });
+
   test-referential-validate:
     name: Test referential validate action
     runs-on: ubuntu-latest
