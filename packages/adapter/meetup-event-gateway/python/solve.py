@@ -55,9 +55,9 @@ class MeetupChallenge:
             or not location.hostname
             or location.username
             or location.password
-            or page.url != target_url
-            or location.path not in ("/login", "/login/")
         ):
+            return "unavailable"
+        if page.url != target_url or location.path not in ("/login", "/login/"):
             return "unavailable"
         for selector in ('input[name="email"]', 'input[name="current-password"]'):
             if await page.locator(selector).input_value():
