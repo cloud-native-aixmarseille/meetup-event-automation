@@ -31,10 +31,12 @@ describe("bounded image retrieval", () => {
 			resolve as unknown as typeof lookup,
 			send as unknown as typeof request,
 		);
+
 		// Act
 		const result = await download.get(
 			"https://images.example.org/portrait.png",
 		);
+
 		// Assert
 		expect(result.bytes.toString()).toBe("image");
 		expect(send.mock.calls[0][1]).toMatchObject({
@@ -63,8 +65,10 @@ describe("bounded image retrieval", () => {
 			resolve as unknown as typeof lookup,
 			send as unknown as typeof request,
 		);
+
 		// Act
 		const result = download.get("https://images.example.org/a.png");
+
 		// Assert
 		await expect(result).rejects.toMatchObject({ code: "image" });
 		expect(send).toHaveBeenCalledTimes(1);
@@ -89,8 +93,10 @@ describe("bounded image retrieval", () => {
 			resolve as unknown as typeof lookup,
 			send as unknown as typeof request,
 		);
+
 		// Act
 		const result = download.get("https://images.example.org/a.png");
+
 		// Assert
 		await expect(result).rejects.toMatchObject({ code: "image" });
 	});

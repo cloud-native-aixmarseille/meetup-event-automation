@@ -29,8 +29,10 @@ describe("Drive binding sidecars", () => {
 		const repository = new GoogleDriveManifestRepository({
 			files,
 		} as unknown as GoogleDriveClient);
+
 		// Act
 		await repository.save("folder", manifest);
+
 		// Assert
 		expect(files.create).toHaveBeenCalledWith(
 			expect.objectContaining({
@@ -68,8 +70,10 @@ describe("Drive binding sidecars", () => {
 		const repository = new GoogleDriveManifestRepository({
 			files,
 		} as unknown as GoogleDriveClient);
+
 		// Act
 		const result = await repository.load("folder", "file");
+
 		// Assert
 		expect(result).toEqual(manifest);
 		expect(files.get).toHaveBeenCalledWith(
@@ -90,8 +94,10 @@ describe("Drive binding sidecars", () => {
 		const repository = new GoogleDriveManifestRepository({
 			files,
 		} as unknown as GoogleDriveClient);
+
 		// Act
 		const result = repository.load("folder", "file");
+
 		// Assert
 		await expect(result).rejects.toMatchObject({ code: "recovery" });
 		expect(files.get).not.toHaveBeenCalled();

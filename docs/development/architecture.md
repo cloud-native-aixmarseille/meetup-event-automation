@@ -135,6 +135,122 @@ in a class to bypass them. Review responsibility and dependency direction even
 when numeric checks pass. Split parsing, validation, presentation, persistence,
 and orchestration when they have different reasons to change.
 
+## Clean Architecture, Clean Code, and SOLID
+
+These are required design criteria for implementation, refactoring, and review.
+Passing lint, complexity limits, type checks, or tests does not establish that
+responsibilities are correctly separated. Apply the criteria to the affected
+behavior and its callers; avoid unrelated repository-wide rewrites.
+
+### Responsibility boundaries
+
+Give each component one cohesive responsibility and one reason to change.
+Explain that responsibility in terms of behavior, not a vague name such as
+`Record`, `Manager`, or `Helper`. Moving methods into extra files or putting
+functions behind a static class does not by itself create a useful boundary.
+
+Assign behavior to its owner:
+
+- Domain models and policies own business invariants, semantic equality, and
+  valid state transitions.
+- Application use cases coordinate those policies and effects through ports.
+  They do not interpret vendor payloads or format channel-specific messages.
+- Adapter codecs own external representations, schema versions, and structural
+  validation. Parsing and encoding the same representation can belong together.
+  Business eligibility and approval decisions belong outside the codec.
+- Presenters own output formatting and their catalogs. Reading an organizer's
+  choice, verifying their permission, and deciding whether an effect is allowed
+  are separate responsibilities.
+- Effectful adapters own provider access. Runtime composition wires dependencies;
+  it does not become a second implementation of business rules.
+
+For example, an approval comment codec can decode JSON metadata and encode its
+escaped marker. Request matching, business validation, identity generation,
+permission verification, and notification delivery have separate reasons to
+change and must not accumulate in that codec.
+
+Distinguish structural validation at an external boundary from business
+invariants enforced by the owning model or policy. Do not make inner-layer
+contracts change merely to fit a storage format. Keep persistence fields in
+adapter-owned records and explicitly map them to application data.
+
+### Apply SOLID to concrete behavior
+
+- **Single responsibility:** split behavior when it has different owners or
+  reasons to change. Keep cohesive operations together; do not create a class
+  for every condition or field.
+- **Open/closed:** isolate varying policies and provider implementations behind
+  the existing contracts that own them. Repeated kind/provider switches across
+  validation, persistence, and orchestration indicate missing boundaries.
+  One exhaustive dispatch over a closed discriminated union can be appropriate
+  at a boundary. Introduce a strategy or registry only for an actual variation.
+- **Liskov substitution:** each implementation must honor its port's accepted
+  inputs, results, failures, and retry/idempotency guarantees. Do not silently
+  ignore unsupported operations or add hidden preconditions. Test substitutable
+  implementations against the behavior callers rely on.
+- **Interface segregation:** ports expose the capabilities their callers need.
+  Split unrelated capabilities rather than forcing callers or test doubles to
+  implement irrelevant methods. An adapter may implement several focused ports.
+- **Dependency inversion:** inner layers depend on their owned abstractions;
+  outer adapters implement them. Inject stateful and effectful collaborators,
+  including clocks and identity sources when behavior depends on them.
+  Deterministic local transformations do not need an interface solely to satisfy
+  a pattern.
+
+### Clean Code at data and effect boundaries
+
+- Parse external input as `unknown` and narrow its shape before reading fields.
+  A type assertion such as `JSON.parse(text) as StoredRecord` is not validation.
+  Validate required fields, variants, and contradictory states before exposing
+  typed data or performing effects.
+- Use explicit state variants and named predicates for business concepts.
+  Prefer small guard clauses and focused validation steps to mixed boolean
+  expressions that combine shape checks, permissions, and business rules.
+- Define equality in terms of the fields and normalization rules that matter.
+  Do not use `JSON.stringify` as a shortcut for domain equality. If serialized
+  bytes are intentionally the contract, document canonicalization and test
+  ordering, omitted fields, and relevant variants.
+- Keep queries, validation, and encoding free of hidden writes or identity/time
+  generation. Make effects explicit at their owning boundary; a static method
+  is not pure merely because its class has no instance state.
+- Use descriptive names and narrow inputs. Introduce named failure categories
+  when callers must distinguish invalid data, denied authorization, and uncertain
+  external outcomes. Preserve those distinctions through orchestration.
+- Tests verify observable contracts, including invalid input, state transitions,
+  retries, and data preservation where applicable. Tests that reproduce private
+  branching or only prove a method delegates do not establish sound design.
+
+### Required design review
+
+Before implementing a behavior change, identify its owning layer, the
+responsibilities that change, and the contracts crossing those boundaries. Before
+marking it ready for review:
+
+1. Review each affected component and relevant caller for one cohesive
+   responsibility. Check that policies are not hidden in codecs, presenters,
+   persistence helpers, or runtime wiring.
+2. Trace dependencies and data across ports. Verify input validation, state
+   invariants, semantic equality, and explicit effects independently of file
+   placement and class size.
+3. Check relevant SOLID contracts and failure behavior. Preserve approval
+   integrity, permission checks, concurrency guards, idempotency, and recovery
+   when moving code.
+4. Fix violations introduced or expanded by the change. If an existing concern
+   remains outside its scope, identify it explicitly; do not imply that the
+   component is fully compliant.
+5. Include concise evidence in the PR description or handoff: the affected
+   owners and boundaries, any material trade-off, and the checks actually run.
+   Reference the implementation and behavior tests where useful.
+
+CI enforces dependency layers, cycles, public contracts, and structural limits.
+The structure check also rejects JSON parsing asserted directly into model types
+and equality comparisons through `JSON.stringify`. It cannot establish that a
+custom decoder validates every invariant or that a fingerprint includes every
+material field; those contracts need behavior tests and review.
+Responsibility cohesion, meaningful abstractions, and correct policy placement
+also require code review. Do not claim that a passing architecture suite proves
+Clean Architecture or SOLID compliance.
+
 ## Action reports and generated messages
 
 All actions use the shared runner to produce technical logs, failure annotations,

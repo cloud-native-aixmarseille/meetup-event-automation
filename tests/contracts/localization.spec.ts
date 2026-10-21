@@ -28,10 +28,12 @@ describe("localization contract", () => {
 		const paths = (
 			await readdir(join(root, "actions"), { recursive: true })
 		).filter((path) => path.endsWith("/action.yml"));
+
 		// Act
 		const actions = await Promise.all(
 			paths.map((path) => readYaml<ActionManifest>(join("actions", path))),
 		);
+
 		// Assert
 		expect(actions.length).toBeGreaterThan(0);
 		for (const action of actions) {
@@ -46,6 +48,7 @@ describe("localization contract", () => {
 		const paths = (await readdir(join(root, ".github/workflows"))).filter(
 			(path) => path.endsWith(".yml"),
 		);
+
 		// Act
 		const workflows = await Promise.all(
 			paths.map((path) => readYaml<Workflow>(join(".github/workflows", path))),
@@ -57,6 +60,7 @@ describe("localization contract", () => {
 				),
 			),
 		);
+
 		// Assert
 		expect(publicWorkflows.length).toBeGreaterThan(0);
 		for (const workflow of publicWorkflows) {
@@ -80,6 +84,7 @@ describe("localization contract", () => {
 		const english = new EventCommentMessages("en");
 		const french = new EventCommentMessages("fr");
 		const privateMessage = "private@example.test";
+
 		// Act
 		const guidance = [...GUIDANCE].map(([code, [, key]]) => ({
 			key,
@@ -102,6 +107,7 @@ describe("localization contract", () => {
 				french,
 			),
 		}));
+
 		// Assert
 		expect(guidance.length).toBeGreaterThan(0);
 		for (const item of guidance) {
@@ -125,10 +131,12 @@ describe("localization contract", () => {
 		type CoveredCodes =
 			| (typeof STAGE_GUIDANCE)[number][0]
 			| (typeof informational)[number];
+
 		// Act
 		const classifications = informational.map((code) =>
 			DiagnosticPolicy.classify({ code, severity: "warning" }),
 		);
+
 		// Assert
 		expect(classifications).toEqual(informational.map(() => "informational"));
 		expectTypeOf<Exclude<PublicCodes, CoveredCodes>>().toEqualTypeOf<never>();
@@ -148,11 +156,13 @@ describe("localization contract", () => {
 				message: "private@example.test",
 				field: "private@example.test",
 			};
+
 			// Act
 			const presented = DiagnosticPresenter.presentDiagnostic(
 				diagnostic,
 				messages,
 			);
+
 			// Assert
 			expect(presented.message).toBe(messages.t(key));
 			expect(JSON.stringify(presented)).not.toContain("private@example.test");
@@ -164,10 +174,12 @@ describe("localization contract", () => {
 		const codes = Object.keys(DIAGNOSTICS_REFERENTIAL_EN).map((key) =>
 			key.replace(/^diagnostic\./, ""),
 		);
+
 		// Act
 		const missing = codes.filter(
 			(code) => messages.diagnostic(code, "MISSING") === "MISSING",
 		);
+
 		// Assert
 		expect(missing).toEqual([]);
 		expectTypeOf<`diagnostic.${ReferentialDiagnostic["code"]}`>().toExtend<MessageId>();
@@ -178,6 +190,7 @@ describe("localization contract", () => {
 		const files = (await readdir(directory, { recursive: true })).filter(
 			(path) => path.endsWith(".ts") && !path.endsWith(".test.ts"),
 		);
+
 		// Act
 		const sources = await Promise.all(
 			files.map(async (path) => ({
@@ -191,6 +204,7 @@ describe("localization contract", () => {
 				source,
 			),
 		);
+
 		// Assert
 		expect(files.length).toBeGreaterThan(0);
 		expect(catalogs).toEqual([]);
@@ -202,6 +216,7 @@ describe("localization contract", () => {
 		type ReportKeys = Parameters<ActionMessages["t"]>[0];
 		type CommentKeys = Parameters<EventCommentMessages["t"]>[0];
 		type FormKeys = Parameters<IssueFormMessages["t"]>[0];
+
 		// Act
 		type ForeignReportKeys = Exclude<
 			ReportKeys,
@@ -213,6 +228,7 @@ describe("localization contract", () => {
 		>;
 		type ForeignCommentKeys = Exclude<CommentKeys, `comment.${string}`>;
 		type ForeignFormKeys = Exclude<FormKeys, `form.${string}`>;
+
 		// Assert
 		expectTypeOf<ForeignReportKeys>().toEqualTypeOf<never>();
 		expectTypeOf<ForeignCommentKeys>().toEqualTypeOf<never>();

@@ -43,8 +43,10 @@ describe("attention action reporting", () => {
 				skipped: false,
 				notificationFailed,
 			});
+
 			// Act
 			const report = await AttentionAction.run(new ActionMessages("fr"));
+
 			// Assert
 			expect(Boolean(report.failure)).toBe(notificationFailed);
 			expect(report.details.join(" ")).toContain("attention=persisted");
@@ -64,8 +66,10 @@ describe("attention action reporting", () => {
 			skipped: true,
 			notificationFailed: false,
 		});
+
 		// Act
 		const report = await AttentionAction.run();
+
 		// Assert
 		expect(report.details.join(" ")).toContain("skipped");
 		expect(report.failure).toBeUndefined();

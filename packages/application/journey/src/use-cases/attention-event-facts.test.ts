@@ -18,11 +18,13 @@ describe("public attention event facts", () => {
 				],
 			},
 		});
+
 		// Act
 		const result = AttentionEventFacts.create(
 			{ event, diagnostics: [] },
 			AutomationConfigFactory.createAutomationConfig(),
 		);
+
 		// Assert
 		expect(result.followUpPending).toEqual([
 			"share-slides",
@@ -42,11 +44,13 @@ describe("public attention event facts", () => {
 				postEvent: [],
 			},
 		});
+
 		// Act
 		const result = AttentionEventFacts.create(
 			{ event, diagnostics: [] },
 			AutomationConfigFactory.createAutomationConfig(),
 		);
+
 		// Assert
 		expect(result.publicationPending).toContain("public-slack-community");
 		expect(result.followUpPending).toContain("thank-host");
@@ -55,11 +59,13 @@ describe("public attention event facts", () => {
 	it("projects invalid imported dates as missing data without publishing their text", () => {
 		// Arrange
 		const event = createTestEvent({ date: "private@example.test" });
+
 		// Act
 		const result = AttentionEventFacts.create(
 			{ event, diagnostics: [] },
 			AutomationConfigFactory.createAutomationConfig(),
 		);
+
 		// Assert
 		expect(result.eventDate).toBe("");
 		expect(result.requiredDataMissing).toBe(true);

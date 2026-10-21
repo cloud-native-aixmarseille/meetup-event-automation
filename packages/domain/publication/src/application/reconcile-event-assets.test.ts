@@ -75,11 +75,13 @@ describe("event asset reconciliation", () => {
 			}),
 		);
 		const reconcile = new ReconcileEventAssets(repository, content.service);
+
 		// Act
 		const result = await reconcile.execute({
 			...input,
 			model: content.input.model,
 		});
+
 		// Assert
 		expect(result.content).toEqual({
 			slides: "pending",

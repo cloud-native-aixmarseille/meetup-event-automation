@@ -116,12 +116,14 @@ describe("RefreshSelectedProposals", () => {
 		const source = { load: vi.fn().mockResolvedValue(snapshot) };
 		const diagnostics: EventDiagnostic[] = [];
 		const committed = await catalog();
+
 		// Act
 		const result = await new RefreshSelectedProposals(source).execute(
 			{ ...event, proposalReferences: ["38", "17"] },
 			committed,
 			diagnostics,
 		);
+
 		// Assert
 		expect(result.proposalStatus).toBe("current");
 		expect(result.agenda.map((entry) => entry.proposal?.id)).toEqual([
@@ -151,12 +153,14 @@ describe("RefreshSelectedProposals", () => {
 			const diagnostics: EventDiagnostic[] = [];
 			const committed = await catalog();
 			const source = { load: vi.fn().mockResolvedValue(snapshot) };
+
 			// Act
 			const result = await new RefreshSelectedProposals(source).execute(
 				{ ...event, proposalReferences },
 				committed,
 				diagnostics,
 			);
+
 			// Assert
 			expect(result.proposalStatus).toBe("stale");
 			expect(result.agenda).toEqual(event.agenda);
@@ -168,12 +172,14 @@ describe("RefreshSelectedProposals", () => {
 		// Arrange
 		const source = { load: vi.fn().mockResolvedValue(snapshot) };
 		const diagnostics: EventDiagnostic[] = [];
+
 		// Act
 		const result = await new RefreshSelectedProposals(source).execute(
 			{ ...event, proposalReferences: ["17"] },
 			{ hosts: [], speakers: [] },
 			diagnostics,
 		);
+
 		// Assert
 		expect(result.agenda).toEqual(event.agenda);
 		expect(result.proposalStatus).toBe("stale");
@@ -188,12 +194,14 @@ describe("RefreshSelectedProposals", () => {
 		};
 		const diagnostics: EventDiagnostic[] = [];
 		const committed = await catalog();
+
 		// Act
 		const result = await new RefreshSelectedProposals(source).execute(
 			{ ...event, proposalReferences: ["17"] },
 			committed,
 			diagnostics,
 		);
+
 		// Assert
 		expect(result.proposalStatus).toBe("stale");
 		expect(diagnostics[0].code).toBe("event.proposals.rate-limited");
@@ -211,12 +219,14 @@ describe("RefreshSelectedProposals", () => {
 		};
 		const diagnostics: EventDiagnostic[] = [];
 		const committed = await catalog();
+
 		// Act
 		const result = await new RefreshSelectedProposals(source).execute(
 			{ ...event, proposalReferences: ["38"] },
 			committed,
 			diagnostics,
 		);
+
 		// Assert
 		expect(result.proposalStatus).toBe("current");
 		expect(result.agenda.map((entry) => entry.proposal?.id)).toEqual([
@@ -267,12 +277,14 @@ describe("RefreshSelectedProposals", () => {
 				},
 			];
 			const committed = await catalog();
+
 			// Act
 			const result = await new RefreshSelectedProposals(source).execute(
 				{ ...event, proposalReferences: [id] },
 				committed,
 				diagnostics,
 			);
+
 			// Assert
 			expect(result.proposalStatus).toBe("stale");
 			expect(result.agenda).toEqual(event.agenda);

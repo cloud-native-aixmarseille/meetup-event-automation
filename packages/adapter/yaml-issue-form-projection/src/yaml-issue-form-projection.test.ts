@@ -248,12 +248,14 @@ describe("YamlIssueFormProjection", () => {
 		};
 		await french.synchronize(input);
 		const content = await readFile(target.absolutePath, "utf8");
+
 		// Act
 		const current = await french.synchronize({ ...input, mode: "check" });
 		const english = await new YamlIssueFormProjection({
 			workspaceRoot: target.workspaceRoot,
 		}).synchronize({ ...input, mode: "check" });
 		const after = await readFile(target.absolutePath, "utf8");
+
 		// Assert
 		expect(content).toContain(
 			"Afficher les références des intervenants disponibles",

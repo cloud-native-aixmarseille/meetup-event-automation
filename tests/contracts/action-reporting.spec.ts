@@ -36,21 +36,26 @@ describe("public action reporting contract", () => {
 					entrypoint,
 					manifest,
 					statements: ast.program.body,
+					title: new ActionMessages().t(
+						`action.${directory.replaceAll("/", ".")}` as Extract<
+							MessageId,
+							`action.${string}`
+						>,
+					),
 				};
 			}),
 		);
 
 		// Assert
 		expect(actions.length).toBeGreaterThan(0);
-		for (const { directory, entrypoint, manifest, statements } of actions) {
-			expect(
-				new ActionMessages().t(
-					`action.${directory.replaceAll("/", ".")}` as Extract<
-						MessageId,
-						`action.${string}`
-					>,
-				),
-			).toBe(manifest.name);
+		for (const {
+			directory,
+			entrypoint,
+			manifest,
+			statements,
+			title,
+		} of actions) {
+			expect(title).toBe(manifest.name);
 			expect(buildSource, directory).toContain(entrypoint);
 			expect(buildSource, directory).toContain(
 				`actions/${directory}/dist/index.js`,

@@ -16,8 +16,10 @@ describe("scoped GitHub approval client", () => {
 				data: [{ id: 2, body: "second page" }],
 				headers: {},
 			});
+
 		// Act
 		const comments = await client.list();
+
 		// Assert
 		expect(comments.map((comment) => comment.id)).toEqual([1, 2]);
 		expect(f.list).toHaveBeenLastCalledWith({
@@ -66,8 +68,10 @@ describe("verified approval history", () => {
 				},
 			},
 		});
+
 		// Act
 		const result = await client.history(comment);
+
 		// Assert
 		expect(result).toEqual([recent, original]);
 		expect(f.graphql).toHaveBeenLastCalledWith(
@@ -113,8 +117,10 @@ describe("verified approval history", () => {
 							},
 			},
 		});
+
 		// Act
 		const result = client.history(comment);
+
 		// Assert
 		await expect(result).rejects.toThrow();
 		expect(f.graphql).toHaveBeenCalledTimes(2);

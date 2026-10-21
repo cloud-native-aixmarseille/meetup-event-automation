@@ -440,8 +440,10 @@ describe("organizer decision workflow triggers", () => {
 	it("accepts human edits to bot requests only on open issues", async () => {
 		// Arrange
 		const workflow = await readWorkflow("update-meetup-issue");
+
 		// Act
 		const guard = workflow.jobs?.manage?.if ?? "";
+
 		// Assert
 		expect(guard).toContain("!github.event.issue.pull_request");
 		expect(guard).toContain("github.event.issue.state == 'open'");

@@ -12,6 +12,16 @@ decision history. Update authoritative guides in place and remove historical,
 deprecated, or superseded content from them. [AGENTS.md](../../AGENTS.md) also
 applies to agent-assisted work.
 
+## Design and review
+
+The [Clean Architecture, Clean Code, and SOLID criteria](architecture.md#clean-architecture-clean-code-and-solid)
+are mandatory for implementations and refactors. Identify responsibility and
+layer ownership before editing, then complete the
+[design review](architecture.md#required-design-review) before presenting the
+change as ready. Include concise evidence of the affected boundaries and relevant
+checks in the PR description. CI complements this review; it cannot establish
+responsibility cohesion or correct business-policy placement on its own.
+
 ## Setup
 
 Use Node.js 24 and the pnpm version in [`package.json`](../../package.json).

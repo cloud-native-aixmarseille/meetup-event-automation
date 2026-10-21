@@ -109,8 +109,10 @@ describe("ListActiveEvents", () => {
 			documentCodec: codec,
 			clock: createClock(),
 		});
+
 		// Act
 		const result = await useCase.execute({ repository: identity.repository });
+
 		// Assert
 		expect(result).toEqual({ events: [], diagnostics: [] });
 		expect(decode).not.toHaveBeenCalled();
@@ -164,8 +166,10 @@ describe("ListActiveEvents", () => {
 			documentCodec: createCodec(events),
 			clock: createClock(),
 		});
+
 		// Act
 		const operation = useCase.execute({ repository: identity.repository });
+
 		// Assert
 		await expect(operation).rejects.toThrow("audit-issue-limit");
 	});

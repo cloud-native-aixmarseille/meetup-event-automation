@@ -20,8 +20,12 @@ Please note we have a code of conduct, please follow it in all your interactions
    current rationale in the relevant guide and repair its links and index.
 4. Run the [checks appropriate to the change](docs/development/README.md#choose-checks-for-the-change).
    Include rebuilt action bundles after production changes.
-5. Open a pull request describing the problem, resulting behavior, and checks
-   run. Wait for maintainer review and passing CI before merging.
+5. Complete the [required design review](docs/development/architecture.md#required-design-review)
+   for code changes. Identify responsibility and dependency boundaries and resolve
+   design violations introduced or expanded by the change.
+6. Open a pull request describing the problem, resulting behavior, design-review
+   evidence, and checks run. Wait for maintainer review and passing CI before
+   merging.
 
 ## Code of Conduct
 

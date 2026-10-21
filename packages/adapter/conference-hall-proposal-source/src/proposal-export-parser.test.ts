@@ -53,8 +53,10 @@ describe("ProposalExportParser", () => {
 			...sourceExport,
 			proposals: [proposal, { ...proposal, id: "proposal-two" }],
 		};
+
 		// Act
 		const result = ProposalExportParser.parse(input, "example-cfp");
+
 		// Assert
 		expect(result.speakers).toHaveLength(1);
 		expect(result.proposals).toHaveLength(2);
@@ -68,8 +70,10 @@ describe("ProposalExportParser", () => {
 		(deliberationStatus) => {
 			// Arrange
 			const input = { proposals: [{ ...proposal, deliberationStatus }] };
+
 			// Act
 			const result = ProposalExportParser.parse(input, "example-cfp");
+
 			// Assert
 			expect(result.proposals[0].accepted).toBe(false);
 		},
@@ -87,8 +91,10 @@ describe("ProposalExportParser", () => {
 			const input = {
 				proposals: [{ ...proposal, speakers: [{ ...profile, ...picture }] }],
 			};
+
 			// Act
 			const result = ProposalExportParser.parse(input, "example-cfp");
+
 			// Assert
 			expect(result.speakers[0]).not.toHaveProperty("pictureUrl");
 		},
@@ -98,8 +104,10 @@ describe("ProposalExportParser", () => {
 		const input = {
 			proposals: [{ ...proposal, speakers: [{ ...speaker, picture: null }] }],
 		};
+
 		// Act
 		const result = ProposalExportParser.parse(input, "example-cfp");
+
 		// Assert
 		expect(result.speakers[0].pictureUrl).toBeNull();
 	});
@@ -115,16 +123,20 @@ describe("ProposalExportParser", () => {
 				},
 			],
 		};
+
 		// Act
 		const parse = () => ProposalExportParser.parse(input, "example-cfp");
+
 		// Assert
 		expect(parse).toThrow("Proposal source invalid.");
 	});
 	it("keeps the public proposal number alongside the internal export identity", () => {
 		// Arrange
 		const input = { proposals: [{ ...proposal, proposalNumber: 17 }] };
+
 		// Act
 		const result = ProposalExportParser.parse(input, "example-cfp");
+
 		// Assert
 		expect(result.proposals[0]).toMatchObject({ id: proposal.id, number: 17 });
 	});
@@ -133,8 +145,10 @@ describe("ProposalExportParser", () => {
 		(proposalNumber) => {
 			// Arrange
 			const input = { proposals: [{ ...proposal, proposalNumber }] };
+
 			// Act
 			const result = ProposalExportParser.parse(input, "example-cfp");
+
 			// Assert
 			expect(result.proposals[0].number).toBeUndefined();
 			expect(result.speakers[0].id).toBe(speaker.id);
@@ -145,8 +159,10 @@ describe("ProposalExportParser", () => {
 		(proposalNumber) => {
 			// Arrange
 			const input = { proposals: [{ ...proposal, proposalNumber }] };
+
 			// Act
 			const parse = () => ProposalExportParser.parse(input, "example-cfp");
+
 			// Assert
 			expect(parse).toThrow(
 				expect.objectContaining({

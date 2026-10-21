@@ -14,6 +14,18 @@ inventory in the documentation index instead of listing individual guides here.
 
 Prefer minimal, deterministic changes and keep documentation in sync with code.
 
+Apply the mandatory [Clean Architecture, Clean Code, and SOLID criteria](docs/development/architecture.md#clean-architecture-clean-code-and-solid)
+and complete the [design review](docs/development/architecture.md#required-design-review)
+for every implementation, refactor, and code review. Identify the owning layer
+and responsibilities before editing; inspect affected callers before completion.
+Separate business policies, external codecs, presentation, authorization, and
+effects according to their reasons to change. A class wrapper, an extracted
+helper, or passing numeric checks is not evidence of separation of concerns.
+Fix violations introduced or expanded by the change and report any remaining
+concern explicitly. Include concise responsibility/dependency review evidence
+alongside validation results in the PR description or handoff. Do not claim
+Clean Architecture or SOLID compliance from automated checks alone.
+
 Use the straight ASCII apostrophe (`'`, U+0027) in source text, translations,
 tests, and documentation. Do not use typographic apostrophes (U+2019).
 

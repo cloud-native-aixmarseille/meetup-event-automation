@@ -7,6 +7,7 @@ import {
 } from "../../testing/attention.fixtures.js";
 import { EvaluateAttention } from "./evaluate-attention.js";
 import { ReconcileAttention } from "./reconcile-attention.js";
+
 describe("durable attention reconciliation", () => {
 	it("continues recovery reminders after closure when delivery evidence becomes unavailable", async () => {
 		// Arrange
@@ -88,6 +89,7 @@ describe("durable attention reconciliation", () => {
 			severity: "error",
 			policy: "daily",
 		});
+
 		// Act
 		await fixture.useCase.execute(observation());
 		await fixture.useCase.execute(observation());
@@ -96,6 +98,7 @@ describe("durable attention reconciliation", () => {
 		);
 		await fixture.useCase.execute(observation({ conditions: [] }));
 		await fixture.useCase.execute(observation());
+
 		// Assert
 		expect(fixture.notification.post).toHaveBeenCalledTimes(1);
 		expect(fixture.notification.update).toHaveBeenCalledTimes(3);
@@ -108,11 +111,13 @@ describe("durable attention reconciliation", () => {
 		// Arrange
 		const fixture = reconciliationFixture();
 		fixture.time("2099-06-07T10:00:00Z");
+
 		// Act
 		await fixture.useCase.execute(observation());
 		await fixture.useCase.execute(observation());
 		fixture.time("2099-06-08T10:00:00Z");
 		await fixture.useCase.execute(observation());
+
 		// Assert
 		expect(fixture.notification.post).toHaveBeenCalledTimes(2);
 		expect(fixture.state()?.episodes[0]?.lastWindow).toBe("preparation:0");
@@ -127,6 +132,7 @@ describe("durable attention reconciliation", () => {
 		const initial = new ReconcileAttention(fixture.repository, notification, {
 			now: () => new Date("2099-06-01T10:00:00Z"),
 		});
+
 		// Act
 		await initial.execute(observation());
 		fixture.time("2099-06-05T10:00:00Z");
@@ -134,6 +140,7 @@ describe("durable attention reconciliation", () => {
 		const result = await fixture.useCase.execute(
 			observation({ conditions: [] }),
 		);
+
 		// Assert
 		expect(result.notificationFailed).toBe(true);
 		expect(fixture.notification.post).not.toHaveBeenCalled();
@@ -145,8 +152,10 @@ describe("durable attention reconciliation", () => {
 		fixture.repository.save
 			.mockImplementationOnce(async () => {})
 			.mockRejectedValueOnce(new Error("private provider error"));
+
 		// Act
 		const operation = fixture.useCase.execute(observation());
+
 		// Assert
 		await expect(operation).rejects.toThrow("private provider error");
 		expect(fixture.notification.post).not.toHaveBeenCalled();
@@ -160,8 +169,10 @@ describe("durable attention reconciliation", () => {
 				throw new Error("write unavailable");
 			await persist?.(state);
 		});
+
 		// Act
 		const operation = fixture.useCase.execute(observation());
+
 		// Assert
 		await expect(operation).rejects.toThrow("write unavailable");
 		expect(fixture.state()?.post?.status).toBe("pending");
@@ -181,6 +192,7 @@ describe("durable attention reconciliation", () => {
 			},
 			{ now: () => new Date("2099-06-01T10:00:00Z") },
 		);
+
 		// Act
 		await initial.execute(observation());
 		fixture.time("2099-06-01T10:05:00Z");
@@ -188,6 +200,7 @@ describe("durable attention reconciliation", () => {
 		const before = fixture.notification.post.mock.calls.length;
 		fixture.time("2099-06-01T10:10:00Z");
 		await fixture.useCase.execute(observation());
+
 		// Assert
 		expect(before).toBe(0);
 		expect(fixture.notification.post).toHaveBeenCalledTimes(1);
@@ -196,6 +209,7 @@ describe("durable attention reconciliation", () => {
 		// Arrange
 		const fixture = reconciliationFixture();
 		fixture.notification.update.mockResolvedValueOnce(false);
+
 		// Act
 		await fixture.useCase.execute(observation());
 		const failed = await fixture.useCase.execute(
@@ -204,6 +218,7 @@ describe("durable attention reconciliation", () => {
 		const retried = await fixture.useCase.execute(
 			observation({ conditions: [] }),
 		);
+
 		// Assert
 		expect(failed.notificationFailed).toBe(true);
 		expect(retried.notificationFailed).toBe(false);

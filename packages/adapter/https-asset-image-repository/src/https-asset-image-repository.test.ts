@@ -22,8 +22,10 @@ describe("image preflight", () => {
 			url: source.url,
 		});
 		const repository = new HttpsAssetImageRepository(download);
+
 		// Act
 		const result = await repository.validate(source);
+
 		// Assert
 		expect(result).toEqual({ fingerprint: ContentFingerprint.of(png), source });
 	});
@@ -39,8 +41,10 @@ describe("image preflight", () => {
 				url: source.url,
 			});
 			const repository = new HttpsAssetImageRepository(download);
+
 			// Act
 			const result = repository.validate(source);
+
 			// Assert
 			await expect(result).rejects.toMatchObject({ code: "image" });
 		},
@@ -58,8 +62,10 @@ describe("image preflight", () => {
 			url: source.url,
 		});
 		const repository = new HttpsAssetImageRepository(download);
+
 		// Act
 		const result = repository.validate(source);
+
 		// Assert
 		await expect(result).rejects.toMatchObject({ code: "image" });
 	});

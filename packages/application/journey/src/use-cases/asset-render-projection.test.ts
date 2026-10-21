@@ -202,9 +202,11 @@ describe("asset public projection", () => {
 				venues: {},
 			},
 		);
+
 		// Act
 		await projection.create(event, []);
 		const payload = vi.mocked(presenter.format).mock.calls[0][0];
+
 		// Assert
 		expect(payload.pictures).toEqual({
 			portrait: {
@@ -243,8 +245,10 @@ describe("asset public projection", () => {
 			{ load: vi.fn(async () => catalog) },
 			{ speakers: { portrait: "speaker-0001" }, talks: {}, venues: {} },
 		);
+
 		// Act
 		await projection.create({ ...event, agenda: [] }, []);
+
 		// Assert
 		expect(vi.mocked(presenter.format).mock.calls[0][0].pictures).toEqual({});
 	});

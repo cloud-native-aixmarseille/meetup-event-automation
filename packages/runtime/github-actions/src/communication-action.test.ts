@@ -90,8 +90,10 @@ describe("communication action report facts", () => {
 		// Arrange
 		vi.stubEnv("INPUT_SLACK-ORGANIZER-CHANNEL-ID", "");
 		vi.stubEnv("INPUT_SLACK-CHANNEL-ID", "public-channel-id");
+
 		// Act
 		const operation = CommunicationAction.runCommunicationReconcileAction();
+
 		// Assert
 		await expect(operation).rejects.toThrow(
 			"Input required and not supplied: slack-organizer-channel-id",

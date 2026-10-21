@@ -9,8 +9,10 @@ describe("owned message catalogs", () => {
 		(locale) => {
 			// Arrange
 			const catalog = CATALOGS[locale];
+
 			// Act
 			const inspected = inspectCatalog(CATALOGS, locale, parameters);
+
 			// Assert
 			expect(Object.keys(catalog).sort()).toEqual(
 				Object.keys(CATALOGS.en).sort(),

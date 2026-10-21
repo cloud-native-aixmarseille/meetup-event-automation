@@ -9,6 +9,20 @@ import {
 } from "./support.js";
 
 describe("internal CI contracts", () => {
+	it("keeps the Makefile CI entrypoint free of automatic repairs", async () => {
+		// Arrange
+		const path = join(root, "Makefile");
+
+		// Act
+		const source = await readFile(path, "utf8");
+		const recipe = source.match(/^ci:[^\n]*\n((?:\t[^\n]*\n)+)/m)?.[1];
+
+		// Assert
+		expect(recipe).toBeDefined();
+		expect(recipe).toContain("$(MAKE) quality");
+		expect(recipe).toContain("$(call run_linter)");
+		expect(recipe).not.toMatch(/(?:audit|lint)-fix|\|\|\s*true/);
+	});
 	it("routes main and pull-request CI through the shared workflow", async () => {
 		// Arrange
 		const workflowDirectory = join(root, ".github/workflows");

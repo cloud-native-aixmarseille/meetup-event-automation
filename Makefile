@@ -60,14 +60,14 @@ check-contracts: ## Validate workflow and action contracts
 check-dist: ## Check that the dist folder is up to date
 	$(PNPM) check:dist
 
-ci: setup ## Execute all CI quality gates
-	$(MAKE) audit-fix || true
-	$(MAKE) lint-fix
+ci: setup ## Execute all CI quality gates without repairing source or dependencies
 	$(MAKE) quality
+	$(call run_linter)
 
 # Biome runs through pnpm with the version in the lockfile.
 # Keep container linters isolated from host-installed dependencies, as in CI.
 define run_linter
+	set -eu; \
 	DEFAULT_WORKSPACE="$(CURDIR)"; \
 	LINTER_IMAGE="linter:latest"; \
 	LINTER_GIT_DIR="$$(git rev-parse --path-format=absolute --git-common-dir)"; \

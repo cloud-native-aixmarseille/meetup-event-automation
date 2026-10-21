@@ -38,12 +38,14 @@ describe("communication checklist", () => {
 					],
 				},
 			};
+
 			// Act
 			const pending = CommunicationChecklist.pendingRecipients(
 				input,
 				recipients,
 			);
 			const completed = CommunicationChecklist.complete(input, ["host-thanks"]);
+
 			// Assert
 			expect(pending).toEqual([recipients[0]]);
 			expect(completed.postEvent).toEqual([
@@ -76,8 +78,10 @@ describe("communication checklist", () => {
 					communication: [{ name: "Mail introduction", completed: false }],
 				},
 			};
+
 			// Act
 			const result = CommunicationChecklist.complete(input, kinds);
+
 			// Assert
 			expect(result.communication).toEqual([
 				{ name: "Mail introduction", completed },
@@ -101,12 +105,14 @@ describe("communication checklist", () => {
 				postEvent: [combined],
 			},
 		};
+
 		// Act
 		const result = CommunicationChecklist.complete(input, ["speaker-thanks"]);
 		const pending = CommunicationChecklist.pendingRecipients(
 			{ ...input, operationalChecklists: result },
 			recipients,
 		);
+
 		// Assert
 		expect(result.postEvent).toEqual([
 			combined,
@@ -128,11 +134,13 @@ describe("communication checklist", () => {
 				],
 			},
 		};
+
 		// Act
 		const pending = CommunicationChecklist.pendingRecipients(input, recipients);
 		const result = CommunicationChecklist.complete(input, [
 			"speaker-introduction",
 		]);
+
 		// Assert
 		expect(pending).toEqual([recipients[1]]);
 		expect(result.communication.every((item) => item.completed)).toBe(true);
