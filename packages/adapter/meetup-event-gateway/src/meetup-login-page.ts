@@ -1,8 +1,8 @@
 import type { PublicationAuthenticationStatus } from "./meetup-session-status.js";
 import type { Page } from "playwright-core";
 import type { LoginChallenge } from "./hcaptcha-challenge.js";
+import { MeetupBrowserRoutes } from "./meetup-browser-routes.js";
 
-const ORIGIN = "https://www.meetup.com";
 const CHALLENGE =
 	'iframe[src*="hcaptcha.com"], iframe[src*="/recaptcha/"], input[autocomplete="one-time-code"]';
 
@@ -20,7 +20,7 @@ export class MeetupLoginPage {
 		email: string,
 		password: string,
 	): Promise<PublicationAuthenticationStatus> {
-		await this.page.goto(`${ORIGIN}/login/`, {
+		await this.page.goto(MeetupBrowserRoutes.login, {
 			waitUntil: "domcontentloaded",
 		});
 		await this.dismissCookieNotice();
@@ -41,7 +41,9 @@ export class MeetupLoginPage {
 		await submit.click();
 		try {
 			await this.page.waitForURL(
-				(url) => url.origin === ORIGIN && !url.pathname.startsWith("/login"),
+				(url) =>
+					MeetupBrowserRoutes.isMeetupLocation(url) &&
+					!url.pathname.startsWith("/login"),
 				{ timeout: 15_000, waitUntil: "domcontentloaded" },
 			);
 		} catch {
@@ -53,7 +55,7 @@ export class MeetupLoginPage {
 	}
 
 	async verifyAccount(email: string): Promise<PublicationAuthenticationStatus> {
-		await this.page.goto(`${ORIGIN}/account/management/`, {
+		await this.page.goto(MeetupBrowserRoutes.account, {
 			waitUntil: "domcontentloaded",
 		});
 		if (await this.hasChallenge()) return "challenge-required";
@@ -71,10 +73,7 @@ export class MeetupLoginPage {
 
 	private isMeetupPath(path: string): boolean {
 		const url = new URL(this.page.url());
-		return (
-			url.origin === ORIGIN &&
-			(url.pathname === path || url.pathname.startsWith(`${path}/`))
-		);
+		return MeetupBrowserRoutes.isPath(url, path);
 	}
 
 	private async hasChallenge(): Promise<boolean> {

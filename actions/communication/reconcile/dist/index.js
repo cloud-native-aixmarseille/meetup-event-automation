@@ -29868,8 +29868,7 @@ var PublicationLinkEvaluation = class _PublicationLinkEvaluation {
   static evaluateLink({
     references,
     path,
-    prefixes,
-    identifierPattern,
+    isValid,
     code,
     message
   }) {
@@ -29878,11 +29877,7 @@ var PublicationLinkEvaluation = class _PublicationLinkEvaluation {
       return _PublicationLinkEvaluation.emptyEvaluation(references);
     }
     const normalized = raw.trim().replace(/\/$/, "");
-    const matchingPrefix = prefixes.find(
-      (prefix) => normalized.startsWith(prefix)
-    );
-    const identifier = matchingPrefix ? normalized.slice(matchingPrefix.length) : void 0;
-    if (!_PublicationLinkEvaluation.isHttpsUrl(normalized) || !matchingPrefix || !identifier || !identifierPattern.test(identifier)) {
+    if (!isValid(raw.trim())) {
       return {
         references,
         diagnostics: [
@@ -29933,6 +29928,14 @@ var PublicationLinkEvaluation = class _PublicationLinkEvaluation {
       return false;
     }
   }
+  static matchesPrefix(value, prefixes, identifierPattern) {
+    const normalized = value.replace(/\/$/, "");
+    const prefix = prefixes.find(
+      (candidate) => normalized.startsWith(candidate)
+    );
+    const identifier = prefix ? normalized.slice(prefix.length) : void 0;
+    return _PublicationLinkEvaluation.isHttpsUrl(normalized) && !!identifier && identifierPattern.test(identifier);
+  }
 };
 
 // packages/domain/publication/src/domain/asset-folder-url-policy.ts
@@ -29946,8 +29949,11 @@ var AssetFolderUrlPolicy = class {
     return PublicationLinkEvaluation.evaluateLink({
       references,
       path: "assets",
-      prefixes: [this.prefix],
-      identifierPattern: /^[a-zA-Z0-9_-]+$/,
+      isValid: (value) => PublicationLinkEvaluation.matchesPrefix(
+        value,
+        [this.prefix],
+        /^[a-zA-Z0-9_-]+$/
+      ),
       code: "publication.asset-url.invalid",
       message: `Asset folder URL must start with ${this.prefix} and end with a folder identifier`
     });
@@ -29986,8 +29992,11 @@ var CommunityEventUrlPolicy = class {
     return PublicationLinkEvaluation.evaluateLink({
       references,
       path: "community",
-      prefixes: this.prefixes,
-      identifierPattern: /^[0-9a-z-]+$/,
+      isValid: (value) => PublicationLinkEvaluation.matchesPrefix(
+        value,
+        this.prefixes,
+        /^[0-9a-z-]+$/
+      ),
       code: "publication.community-url.invalid",
       message: "Community event URL must use an approved CNCF/OCGroups prefix and identifier"
     });
@@ -30063,6 +30072,52 @@ var ManualPublicationPolicy = class _ManualPublicationPolicy {
   }
 };
 
+// packages/domain/publication/src/domain/meetup-url-contracts.ts
+var MEETUP_ORIGIN = "https://www.meetup.com";
+
+// packages/domain/publication/src/domain/meetup-group-url.ts
+var MeetupGroupUrl = class _MeetupGroupUrl {
+  constructor(value) {
+    this.value = value;
+  }
+  value;
+  static parse(value) {
+    const prefix = `${MEETUP_ORIGIN}/`;
+    if (typeof value !== "string" || !value.startsWith(prefix) || !value.endsWith("/"))
+      return void 0;
+    const slug = value.slice(prefix.length, -1);
+    return slug.length > 0 && !/[^a-z0-9-]/.test(slug) ? new _MeetupGroupUrl(value) : void 0;
+  }
+  static fromEventUrlPrefix(value) {
+    return value.endsWith("events/") ? _MeetupGroupUrl.parse(value.slice(0, -"events/".length)) : void 0;
+  }
+  get eventUrlPrefix() {
+    return `${this.value}events/`;
+  }
+};
+
+// packages/domain/publication/src/domain/meetup-event-url.ts
+var MeetupEventUrl = class _MeetupEventUrl {
+  constructor(group, identifier) {
+    this.group = group;
+    this.identifier = identifier;
+  }
+  group;
+  identifier;
+  static parse(value, group) {
+    if (typeof value !== "string") return void 0;
+    const match = /^(.*\/)events\/([1-9]\d*)\/?$/.exec(value);
+    if (!match || match[0] !== value) return void 0;
+    const parsedGroup = MeetupGroupUrl.parse(match[1]);
+    if (!parsedGroup || group && parsedGroup.value !== group.value)
+      return void 0;
+    return new _MeetupEventUrl(parsedGroup, match[2]);
+  }
+  get value() {
+    return `${this.group.eventUrlPrefix}${this.identifier}/`;
+  }
+};
+
 // packages/domain/publication/src/domain/meetup-event-url-policy.ts
 var MeetupEventUrlPolicy = class {
   constructor(prefix) {
@@ -30071,11 +30126,11 @@ var MeetupEventUrlPolicy = class {
   prefix;
   id = "meetup-event-url";
   evaluate(references) {
+    const group = MeetupGroupUrl.fromEventUrlPrefix(this.prefix);
     return PublicationLinkEvaluation.evaluateLink({
       references,
       path: "meetup",
-      prefixes: [this.prefix],
-      identifierPattern: /^\d+$/,
+      isValid: (value) => !!group && !!MeetupEventUrl.parse(value, group),
       code: "publication.meetup-url.invalid",
       message: `Meetup URL must start with ${this.prefix} and end with a numeric event identifier`
     });
@@ -30108,7 +30163,7 @@ var PublicationDiagnostics = class {
 
 // packages/domain/publication/src/domain/url-policy-contracts.ts
 var DEFAULT_PUBLICATION_URL_CONFIGURATION = Object.freeze({
-  meetupEventUrlPrefix: "https://www.meetup.com/cloud-native-aix-marseille/events/",
+  meetupEventUrlPrefix: `${MEETUP_ORIGIN}/cloud-native-aix-marseille/events/`,
   communityEventUrlPrefixes: Object.freeze([
     "https://ocgroups.dev/cncf/group/cloud-native-aix-marseille/event/",
     "https://community.cncf.io/events/details/cncf-cloud-native-aix-marseille-presents-"
@@ -41378,9 +41433,7 @@ import { randomUUID as randomUUID2 } from "node:crypto";
 // packages/adapter/github-organizer-approval/src/meetup-approval-details.ts
 var MeetupApprovalDetails = class _MeetupApprovalDetails {
   static validate(value) {
-    if (!value || !_MeetupApprovalDetails.text(value.url, 2048) || !/^https:\/\/www\.meetup\.com\/[a-z0-9-]+\/events\/[1-9]\d*\/$/.test(
-      value.url
-    ) || !_MeetupApprovalDetails.text(value.title, 80) || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value.startTime) || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value.endTime) || !_MeetupApprovalDetails.text(value.timeZone, 100) || !_MeetupApprovalDetails.text(value.venue?.name, 500) || !_MeetupApprovalDetails.text(value.venue?.city, 500))
+    if (!value || !_MeetupApprovalDetails.text(value.url, 2048) || MeetupEventUrl.parse(value.url)?.value !== value.url || !_MeetupApprovalDetails.text(value.title, 80) || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value.startTime) || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value.endTime) || !_MeetupApprovalDetails.text(value.timeZone, 100) || !_MeetupApprovalDetails.text(value.venue?.name, 500) || !_MeetupApprovalDetails.text(value.venue?.city, 500))
       throw new Error("Invalid Meetup approval details");
   }
   static text(value, maximum) {

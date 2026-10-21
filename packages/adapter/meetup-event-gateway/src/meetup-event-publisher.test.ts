@@ -96,20 +96,23 @@ describe("approved Meetup publication", () => {
 		await expect(result).rejects.toMatchObject({ kind: "verification" });
 		expect(state.publishClicks).toBe(1);
 	});
-	it("rejects foreign event identities before navigation", async () => {
-		// Arrange
-		const page = await context.newPage();
-		const publisher = new MeetupEventPublisher(page, groupUrl);
+	it.each([
+		"https://www.meetup.com/other/events/12345/",
+		`${eventUrl}?token=private`,
+		eventUrl.slice(0, -1),
+	])(
+		"rejects identities outside the canonical approval contract: %s",
+		async (url) => {
+			// Arrange
+			const page = await context.newPage();
+			const publisher = new MeetupEventPublisher(page, groupUrl);
 
-		// Act
-		const result = publisher.publish(
-			desiredEvent,
-			"https://www.meetup.com/other/events/12345/",
-			vi.fn(),
-		);
+			// Act
+			const result = publisher.publish(desiredEvent, url, vi.fn());
 
-		// Assert
-		await expect(result).rejects.toMatchObject({ kind: "editor" });
-		expect(page.url()).toBe("about:blank");
-	});
+			// Assert
+			await expect(result).rejects.toMatchObject({ kind: "editor" });
+			expect(page.url()).toBe("about:blank");
+		},
+	);
 });

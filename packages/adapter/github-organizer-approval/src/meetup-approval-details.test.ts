@@ -16,6 +16,8 @@ describe("publication approval facts", () => {
 	it.each([
 		{ url: "javascript:alert(1)" },
 		{ url: "https://www.meetup.com/example/events/123/?token=private" },
+		{ url: publicationRequest.publication.url.slice(0, -1) },
+		{ url: "https://www.meetup.com/example/events/0123/" },
 		{ title: "" },
 		{ title: "x".repeat(81) },
 		{ startTime: "18:30\nscript" },

@@ -1,13 +1,12 @@
 import type { MeetupPublicationApprovalDetails } from "@meetup-automation/journey";
+import { MeetupEventUrl } from "@meetup-automation/publication";
 
 export class MeetupApprovalDetails {
 	static validate(value: MeetupPublicationApprovalDetails): void {
 		if (
 			!value ||
 			!MeetupApprovalDetails.text(value.url, 2048) ||
-			!/^https:\/\/www\.meetup\.com\/[a-z0-9-]+\/events\/[1-9]\d*\/$/.test(
-				value.url,
-			) ||
+			MeetupEventUrl.parse(value.url)?.value !== value.url ||
 			!MeetupApprovalDetails.text(value.title, 80) ||
 			!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value.startTime) ||
 			!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value.endTime) ||

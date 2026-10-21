@@ -286,6 +286,46 @@ describe("Meetup event publication", () => {
 		expect(gateway.save).not.toHaveBeenCalled();
 	});
 
+	it("recognizes the journal identity when the issue omits its trailing slash", async () => {
+		// Arrange
+		const { useCase, gateway, journal } = publicationFixture(
+			{ publicationLinks: { meetup: publicationUrl.slice(0, -1) } },
+			{ url: publicationUrl },
+		);
+
+		// Act
+		const result = await useCase.execute(identity);
+
+		// Assert
+		expect(result.status).toBe("updated");
+		expect(gateway.save.mock.calls[0]?.[1]).toBe(publicationUrl);
+		expect(journal.reserve).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		`${publicationUrl}?token=private`,
+		"https://www.meetup.com/other-group/events/12345/",
+		"https://www.meetup.com/example-group/events/0123/",
+	])(
+		"rejects invalid journal identities before remote effects: %s",
+		async (url) => {
+			// Arrange
+			const { useCase, gateway, journal, approval } = publicationFixture(
+				{},
+				{ url },
+			);
+
+			// Act
+			const result = await useCase.execute(identity);
+
+			// Assert
+			expect(result.diagnostics[0]?.code).toBe("publication.meetup.link");
+			expect(gateway.save).not.toHaveBeenCalled();
+			expect(journal.reserve).not.toHaveBeenCalled();
+			expect(approval.request).not.toHaveBeenCalled();
+		},
+	);
+
 	it("blocks submission if the issue changes while the editor is being prepared", async () => {
 		// Arrange
 		const { useCase, deps, journal, current } = publicationFixture();

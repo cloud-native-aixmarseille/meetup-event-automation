@@ -1,10 +1,13 @@
 import {
+	MeetupEventUrl,
+	MeetupGroupUrl,
 	type SavedScheduledEvent,
 	type ScheduledEvent,
 	ScheduledEventError,
 } from "@meetup-automation/publication";
 import type { Page } from "playwright-core";
 import { MeetupEventVerification } from "./meetup-event-verification.js";
+import { MeetupBrowserRoutes } from "./meetup-browser-routes.js";
 
 export class MeetupEventPublisher {
 	constructor(
@@ -19,14 +22,12 @@ export class MeetupEventPublisher {
 		url: string,
 		beforePublish: () => Promise<void>,
 	): Promise<SavedScheduledEvent> {
-		if (
-			!/^https:\/\/www\.meetup\.com\/[a-z0-9-]+\/$/.test(this.groupUrl) ||
-			!url.startsWith(`${this.groupUrl}events/`) ||
-			!/^[1-9]\d*\/$/.test(url.slice(`${this.groupUrl}events/`.length))
-		)
+		const group = MeetupGroupUrl.parse(this.groupUrl);
+		const identity = group && MeetupEventUrl.parse(url, group);
+		if (!identity || identity.value !== url)
 			throw new ScheduledEventError("editor");
 		const verification = new MeetupEventVerification(this.page);
-		const current = await verification.verify(event, url).catch(() => {
+		const current = await verification.verify(event, identity).catch(() => {
 			throw new ScheduledEventError("verification");
 		});
 		if (!current.matches) throw new ScheduledEventError("verification");
@@ -43,14 +44,16 @@ export class MeetupEventPublisher {
 			await publish.click();
 			await this.page.waitForURL(
 				(value) =>
-					`${value.origin}${value.pathname}`.replace(/\/$/, "") ===
-					url.replace(/\/$/, ""),
+					MeetupBrowserRoutes.eventLocation(value, identity.group)?.value ===
+					url,
 				{ waitUntil: "domcontentloaded" },
 			);
 		} catch {
 			throw new ScheduledEventError("uncertain");
 		}
-		const saved = await verification.verify(event, url).catch(() => undefined);
+		const saved = await verification
+			.verify(event, identity)
+			.catch(() => undefined);
 		if (!saved?.matches || saved.status !== "published")
 			throw new ScheduledEventError("verification");
 		return { url, status: "published" };

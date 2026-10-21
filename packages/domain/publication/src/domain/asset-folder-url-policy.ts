@@ -11,8 +11,12 @@ export class AssetFolderUrlPolicy implements PublicationUrlPolicy {
 		return PublicationLinkEvaluation.evaluateLink({
 			references,
 			path: "assets",
-			prefixes: [this.prefix],
-			identifierPattern: /^[a-zA-Z0-9_-]+$/,
+			isValid: (value) =>
+				PublicationLinkEvaluation.matchesPrefix(
+					value,
+					[this.prefix],
+					/^[a-zA-Z0-9_-]+$/,
+				),
 			code: "publication.asset-url.invalid",
 			message: `Asset folder URL must start with ${this.prefix} and end with a folder identifier`,
 		});
