@@ -1,4 +1,24 @@
-# Create or update Meetup event
+<!-- header:start -->
+
+# GitHub Action: Create or update Meetup event
+
+<!-- header:end -->
+<!-- badges:start -->
+
+[![Marketplace](https://img.shields.io/badge/Marketplace-create--or--update--meetup--event-blue?logo=github-actions)](https://github.com/marketplace/actions/create-or-update-meetup-event)
+[![Release](https://img.shields.io/github/v/release/cloud-native-aixmarseille/meetup-event-automation)](https://github.com/cloud-native-aixmarseille/meetup-event-automation/releases)
+[![Stars](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)
+
+<!-- badges:end -->
+<!-- overview:start -->
+
+## Overview
+
+Create or update a Meetup draft and publish it after verified organizer approval.
+
+<!-- overview:end -->
+
+## Publication behavior
 
 Create the event described by a consumer issue as a draft, or update its existing
 Meetup event. Request organizer approval through the shared issue-comment and
@@ -8,24 +28,94 @@ published events, and synchronizes **Meetup event published** under
 [Meetup publication](../../../docs/integrations/meetup-publication.md)
 for configuration, prerequisites, recovery, and privacy boundaries.
 
-## Inputs
+Password whitespace is preserved. The selected model must support image input
+and structured output.
 
 Every input is required and has no default.
+Replace `<FULL_COMMIT_SHA>` in the usage template with a published revision that
+includes this action, and supply your repository's input values.
 
-| Input                        | Purpose                                                       |
-| ---------------------------- | ------------------------------------------------------------- |
-| `issue-number`               | Source meetup issue number.                                   |
-| `locale`                     | Report language (`en` or `fr`).                               |
-| `github-token`               | Consumer token with contents read and issues write.           |
-| `managed-comment-author`     | GitHub App bot login owning the publication journal.          |
-| `conference-hall-event`      | Conference Hall CFP slug.                                     |
-| `conference-hall-api-key`    | Read-only event API key.                                      |
-| `meetup-email`               | Authorized organizer account email.                           |
-| `meetup-password`            | Organizer password; whitespace is preserved.                  |
-| `gemini-api-key`             | Gemini key for pre-login hCaptcha handling.                   |
-| `slack-token`                | Slack bot token for approval requests and decision reactions. |
-| `slack-organizer-channel-id` | Organizer Slack channel for publication approval.             |
-| `gemini-model`               | Explicit model supporting image input and structured output.  |
+<!-- usage:start -->
+
+## Usage
+
+```yaml
+- uses: cloud-native-aixmarseille/meetup-event-automation/actions/publication/reconcile-meetup@<FULL_COMMIT_SHA>
+  with:
+    # Slack bot token for organizer approval notifications and decision reactions.
+    # This input is required.
+    slack-token: ""
+
+    # Organizer Slack channel receiving publication approval requests.
+    # This input is required.
+    slack-organizer-channel-id: ""
+
+    # Meetup source issue number.
+    # This input is required.
+    issue-number: ""
+
+    # Consumer repository token with contents read and issues write.
+    # This input is required.
+    github-token: ""
+
+    # Login of the GitHub App bot that owns the publication journal.
+    # This input is required.
+    managed-comment-author: ""
+
+    # Conference Hall CFP slug used to resolve the current event agenda.
+    # This input is required.
+    conference-hall-event: ""
+
+    # Read-only Conference Hall event API key.
+    # This input is required.
+    conference-hall-api-key: ""
+
+    # Language for the publication report (en or fr).
+    # This input is required.
+    locale: ""
+
+    # Email of the authorized Meetup organizer account.
+    # This input is required.
+    meetup-email: ""
+
+    # Password of the authorized Meetup organizer account.
+    # This input is required.
+    meetup-password: ""
+
+    # Gemini API key used for pre-login hCaptcha challenges.
+    # This input is required.
+    gemini-api-key: ""
+
+    # Gemini vision model available to the supplied API key.
+    # This input is required.
+    gemini-model: ""
+```
+
+<!-- usage:end -->
+<!-- inputs:start -->
+
+## Inputs
+
+| **Input**                        | **Description**                                                              | **Required** | **Default** |
+| -------------------------------- | ---------------------------------------------------------------------------- | ------------ | ----------- |
+| **`slack-token`**                | Slack bot token for organizer approval notifications and decision reactions. | **true**     | -           |
+| **`slack-organizer-channel-id`** | Organizer Slack channel receiving publication approval requests.             | **true**     | -           |
+| **`issue-number`**               | Meetup source issue number.                                                  | **true**     | -           |
+| **`github-token`**               | Consumer repository token with contents read and issues write.               | **true**     | -           |
+| **`managed-comment-author`**     | Login of the GitHub App bot that owns the publication journal.               | **true**     | -           |
+| **`conference-hall-event`**      | Conference Hall CFP slug used to resolve the current event agenda.           | **true**     | -           |
+| **`conference-hall-api-key`**    | Read-only Conference Hall event API key.                                     | **true**     | -           |
+| **`locale`**                     | Language for the publication report (en or fr).                              | **true**     | -           |
+| **`meetup-email`**               | Email of the authorized Meetup organizer account.                            | **true**     | -           |
+| **`meetup-password`**            | Password of the authorized Meetup organizer account.                         | **true**     | -           |
+| **`gemini-api-key`**             | Gemini API key used for pre-login hCaptcha challenges.                       | **true**     | -           |
+| **`gemini-model`**               | Gemini vision model available to the supplied API key.                       | **true**     | -           |
+
+<!-- inputs:end -->
+<!-- secrets:start -->
+<!-- secrets:end -->
+<!-- outputs:start -->
+<!-- outputs:end -->
 
 ## Execution
 
@@ -35,3 +125,19 @@ solver dependencies, scopes credentials, and holds the event concurrency lock.
 Direct callers must provide the same runtime and lock. There are no action
 outputs. The journal retains the remote identity for recovery. The shared action report provides a draft review URL, status,
 and recovery guidance.
+
+<!-- examples:start -->
+<!-- examples:end -->
+<!-- contributing:start -->
+<!-- contributing:end -->
+<!-- security:start -->
+<!-- security:end -->
+<!-- license:start -->
+<!-- license:end -->
+<!-- generated:start -->
+
+---
+
+This documentation was automatically generated by [CI Dokumentor](https://github.com/hoverkraft-tech/ci-dokumentor).
+
+<!-- generated:end -->
