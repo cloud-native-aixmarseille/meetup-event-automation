@@ -36,7 +36,6 @@ describe("Meetup event identity", () => {
 		"https://www.meetup.com/example-group/events/%31/",
 		"https://www.meetup.com/example-group/events/other/../123/",
 		"https://www.meetup.com\\example-group/events/123/",
-		"https://www.meetup.com.evil.test/example-group/events/123/",
 		"https://www.meetup.com@evil.test/example-group/events/123/",
 		"https://user:password@www.meetup.com/example-group/events/123/",
 		"https://www.meetup.com:443/example-group/events/123/",
@@ -53,13 +52,20 @@ describe("Meetup event identity", () => {
 	});
 
 	it.each([
-		["example-group", true],
-		["other-group", false],
-	])("checks membership in the configured group: %s", (slug, accepted) => {
+		["https://events.example.test:8443/example-group/events/12345/", true],
+		["https://events.example.test:8443/other-group/events/12345/", false],
+		["https://events.example.test/example-group/events/12345/", false],
+		[
+			"https://events.example.test.evil.test:8443/example-group/events/12345/",
+			false,
+		],
+		["https://www.meetup.com/example-group/events/12345/", false],
+	])("checks the configured origin and group: %s", (input, accepted) => {
 		// Arrange
-		const group = MeetupGroupUrl.parse("https://www.meetup.com/example-group/");
+		const group = MeetupGroupUrl.parse(
+			"https://events.example.test:8443/example-group/",
+		);
 		if (!group) throw new Error("Invalid fixture");
-		const input = `https://www.meetup.com/${slug}/events/12345/`;
 
 		// Act
 		const result = MeetupEventUrl.parse(input, group);

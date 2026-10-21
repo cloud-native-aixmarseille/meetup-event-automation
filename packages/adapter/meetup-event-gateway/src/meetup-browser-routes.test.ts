@@ -2,14 +2,17 @@ import { MeetupEventUrl, MeetupGroupUrl } from "@meetup-automation/publication";
 import { describe, expect, it } from "vitest";
 import { MeetupBrowserRoutes } from "./meetup-browser-routes.js";
 
-const group = MeetupGroupUrl.parse("https://www.meetup.com/example-group/");
+const origin = "https://events.example.test:8443";
+const group = MeetupGroupUrl.parse(
+	"https://events.example.test:8443/example-group/",
+);
 if (!group) throw new Error("Invalid fixture");
 
 describe("Meetup browser routes", () => {
 	it("constructs organizer routes from validated identities", () => {
 		// Arrange
 		const event = MeetupEventUrl.parse(
-			"https://www.meetup.com/example-group/events/12345/",
+			"https://events.example.test:8443/example-group/events/12345/",
 		);
 		if (!event) throw new Error("Invalid fixture");
 
@@ -18,20 +21,24 @@ describe("Meetup browser routes", () => {
 		const edit = new MeetupBrowserRoutes().edit(event);
 
 		// Assert
-		expect(schedule).toBe("https://www.meetup.com/example-group/schedule/");
-		expect(edit).toBe(
-			"https://www.meetup.com/example-group/events/12345/edit/",
+		expect(schedule).toBe(
+			"https://events.example.test:8443/example-group/schedule/",
 		);
-		expect(MeetupBrowserRoutes.login).toBe("https://www.meetup.com/login/");
-		expect(MeetupBrowserRoutes.account).toBe(
-			"https://www.meetup.com/account/management/",
+		expect(edit).toBe(
+			"https://events.example.test:8443/example-group/events/12345/edit/",
+		);
+		expect(new MeetupBrowserRoutes().login(origin)).toBe(
+			"https://events.example.test:8443/login/",
+		);
+		expect(new MeetupBrowserRoutes().account(origin)).toBe(
+			"https://events.example.test:8443/account/management/",
 		);
 	});
 
 	it("extracts only event identity from a browser redirect", () => {
 		// Arrange
 		const location = new URL(
-			"https://www.meetup.com/example-group/events/12345?source=preview#details",
+			"https://events.example.test:8443/example-group/events/12345?source=preview#details",
 		);
 
 		// Act
@@ -39,15 +46,15 @@ describe("Meetup browser routes", () => {
 
 		// Assert
 		expect(event?.value).toBe(
-			"https://www.meetup.com/example-group/events/12345/",
+			"https://events.example.test:8443/example-group/events/12345/",
 		);
 	});
 
 	it.each([
-		"https://www.meetup.com/other-group/events/12345/",
+		"https://events.example.test:8443/other-group/events/12345/",
 		"https://untrusted.example/example-group/events/12345/",
 		"https://user:password@www.meetup.com/example-group/events/12345/",
-		"https://www.meetup.com/example-group/events/12345/edit/",
+		"https://events.example.test:8443/example-group/events/12345/edit/",
 		"http://www.meetup.com/example-group/events/12345/",
 	])("rejects an unexpected event redirect: %s", (value) => {
 		// Arrange
@@ -61,17 +68,19 @@ describe("Meetup browser routes", () => {
 	});
 
 	it.each([
-		["https://www.meetup.com/login/?returnUri=%2Faccount", true],
-		["https://www.meetup.com/login", true],
-		["https://www.meetup.com/login-other", false],
+		["https://events.example.test:8443/login/?returnUri=%2Faccount", true],
+		["https://events.example.test:8443/login", true],
+		["https://events.example.test:8443/login-other", false],
 		["https://untrusted.example/login/", false],
+		["https://events.example.test/login/", false],
+		["https://events.example.test.evil.test:8443/login/", false],
 		["https://user:password@www.meetup.com/login/", false],
 	])("checks the login origin and path: %s", (value, expected) => {
 		// Arrange
 		const location = new URL(value);
 
 		// Act
-		const result = new MeetupBrowserRoutes().isPath(location, "/login");
+		const result = new MeetupBrowserRoutes().isPath(location, "/login", origin);
 
 		// Assert
 		expect(result).toBe(expected);
@@ -87,7 +96,8 @@ describe("Meetup browser routes", () => {
 		"requires the exact editor route, allowing one final slash: %s",
 		(suffix, expected) => {
 			// Arrange
-			const editor = "https://www.meetup.com/example-group/events/12345/edit";
+			const editor =
+				"https://events.example.test:8443/example-group/events/12345/edit";
 
 			// Act
 			const result = new MeetupBrowserRoutes().matchesEditor(

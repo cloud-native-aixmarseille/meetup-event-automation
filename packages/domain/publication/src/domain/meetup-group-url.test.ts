@@ -2,30 +2,36 @@ import { describe, expect, it } from "vitest";
 import { MeetupGroupUrl } from "./meetup-group-url.js";
 
 describe("Meetup group identity", () => {
-	it("derives the configured event prefix from a group", () => {
-		// Arrange
-		const url = "https://www.meetup.com/example-group/";
+	it.each(["https://www.meetup.com", "https://events.example.test:8443"])(
+		"derives identities from the supplied origin: %s",
+		(origin) => {
+			// Arrange
+			const url = `${origin}/example-group/`;
 
-		// Act
-		const group = MeetupGroupUrl.parse(url);
+			// Act
+			const group = MeetupGroupUrl.parse(url);
 
-		// Assert
-		expect(group?.value).toBe(url);
-		expect(group?.eventUrlPrefix).toBe(
-			"https://www.meetup.com/example-group/events/",
-		);
-	});
+			// Assert
+			expect(group?.value).toBe(url);
+			expect(group?.eventUrlPrefix).toBe(`${origin}/example-group/events/`);
+			expect(group?.origin).toBe(origin);
+		},
+	);
 
-	it("resolves a group from the configured event prefix", () => {
-		// Arrange
-		const prefix = "https://www.meetup.com/example-group/events/";
+	it.each(["https://www.meetup.com", "https://events.example.test:8443"])(
+		"resolves the supplied origin and group from the event prefix: %s",
+		(origin) => {
+			// Arrange
+			const prefix = `${origin}/example-group/events/`;
 
-		// Act
-		const group = MeetupGroupUrl.fromEventUrlPrefix(prefix);
+			// Act
+			const group = MeetupGroupUrl.fromEventUrlPrefix(prefix);
 
-		// Assert
-		expect(group?.value).toBe("https://www.meetup.com/example-group/");
-	});
+			// Assert
+			expect(group?.value).toBe(`${origin}/example-group/`);
+			expect(group?.origin).toBe(origin);
+		},
+	);
 
 	it.each([
 		undefined,
@@ -42,7 +48,8 @@ describe("Meetup group identity", () => {
 		"https://www.meetup.com/%65xample-group/",
 		"https://www.meetup.com:443/example-group/",
 		"https://user@www.meetup.com/example-group/",
-		"https://www.meetup.com.evil.test/example-group/",
+		"https://www.meetup.com/example-group/?",
+		"https://www.meetup.com/example-group/#",
 		"http://www.meetup.com/example-group/",
 	])("rejects noncanonical group URLs: %j", (value) => {
 		// Arrange
@@ -59,7 +66,7 @@ describe("Meetup group identity", () => {
 		"https://www.meetup.com/example-group/events",
 		"https://www.meetup.com/example-group/events/123/",
 		"https://www.meetup.com/example-group/schedule/",
-		"https://untrusted.example/example-group/events/",
+		"http://events.example.test/example-group/events/",
 	])("rejects invalid configured event prefixes: %s", (prefix) => {
 		// Arrange
 		// The table supplies the configuration.

@@ -60819,9 +60819,6 @@ var ManualPublicationPolicy = class {
   }
 };
 
-// packages/domain/publication/src/domain/meetup-url-contracts.ts
-var MEETUP_ORIGIN = "https://www.meetup.com";
-
 // packages/domain/publication/src/domain/meetup-group-url.ts
 var MeetupGroupUrl = class _MeetupGroupUrl {
   constructor(value) {
@@ -60829,17 +60826,25 @@ var MeetupGroupUrl = class _MeetupGroupUrl {
   }
   value;
   static parse(value) {
-    const prefix = `${MEETUP_ORIGIN}/`;
-    if (typeof value !== "string" || !value.startsWith(prefix) || !value.endsWith("/"))
+    if (typeof value !== "string") return void 0;
+    let url;
+    try {
+      url = new URL(value);
+    } catch {
       return void 0;
-    const slug = value.slice(prefix.length, -1);
-    return slug.length > 0 && !/[^a-z0-9-]/.test(slug) ? new _MeetupGroupUrl(value) : void 0;
+    }
+    if (url.protocol !== "https:" || !url.hostname || url.username || url.password || value !== `${url.origin}${url.pathname}` || !/^\/[a-z0-9-]+\/$/.test(url.pathname))
+      return void 0;
+    return new _MeetupGroupUrl(value);
   }
   static fromEventUrlPrefix(value) {
     return value.endsWith("events/") ? _MeetupGroupUrl.parse(value.slice(0, -"events/".length)) : void 0;
   }
   get eventUrlPrefix() {
     return `${this.value}events/`;
+  }
+  get origin() {
+    return new URL(this.value).origin;
   }
 };
 

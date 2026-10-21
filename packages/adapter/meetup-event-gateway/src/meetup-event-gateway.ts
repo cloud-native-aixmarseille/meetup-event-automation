@@ -1,4 +1,5 @@
 import {
+	MeetupGroupUrl,
 	type SavedScheduledEvent,
 	type ScheduledEvent,
 	ScheduledEventError,
@@ -32,13 +33,19 @@ export interface MeetupEventGatewayCollaborators {
 }
 
 export class MeetupEventGateway implements ScheduledEventGateway {
+	private readonly group: MeetupGroupUrl;
+
 	constructor(
 		private readonly collaborators: MeetupEventGatewayCollaborators,
 		private readonly browserType: Pick<BrowserType, "launch">,
 		private readonly credentials: { email: string; password: string },
 		private readonly challenge: LoginChallenge,
-		private readonly groupUrl: string,
-	) {}
+		groupUrl: string,
+	) {
+		const group = MeetupGroupUrl.parse(groupUrl);
+		if (!group) throw new ScheduledEventError("editor");
+		this.group = group;
+	}
 
 	async save(
 		event: ScheduledEvent,
@@ -48,7 +55,7 @@ export class MeetupEventGateway implements ScheduledEventGateway {
 	): Promise<SavedScheduledEvent> {
 		return this.withSession(event, (page) =>
 			this.collaborators
-				.createMeetupEventEditor(page, this.groupUrl)
+				.createMeetupEventEditor(page, this.group.value)
 				.save(event, url, beforeSubmit, onSaved),
 		);
 	}
@@ -60,7 +67,7 @@ export class MeetupEventGateway implements ScheduledEventGateway {
 	): Promise<SavedScheduledEvent> {
 		return this.withSession(event, (page) =>
 			this.collaborators
-				.createMeetupEventPublisher(page, this.groupUrl)
+				.createMeetupEventPublisher(page, this.group.value)
 				.publish(event, url, beforePublish),
 		);
 	}
@@ -91,7 +98,7 @@ export class MeetupEventGateway implements ScheduledEventGateway {
 			});
 			const page = await context.newPage();
 			const status = await this.collaborators
-				.createMeetupLoginPage(page, this.challenge)
+				.createMeetupLoginPage(page, this.challenge, this.group.origin)
 				.login(this.credentials.email, this.credentials.password)
 				.catch(() => "unavailable");
 			if (status !== "verified")

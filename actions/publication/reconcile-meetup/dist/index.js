@@ -32841,9 +32841,6 @@ var ManualPublicationPolicy = class {
   }
 };
 
-// packages/domain/publication/src/domain/meetup-url-contracts.ts
-var MEETUP_ORIGIN = "https://www.meetup.com";
-
 // packages/domain/publication/src/domain/meetup-group-url.ts
 var MeetupGroupUrl = class _MeetupGroupUrl {
   constructor(value) {
@@ -32851,17 +32848,25 @@ var MeetupGroupUrl = class _MeetupGroupUrl {
   }
   value;
   static parse(value) {
-    const prefix = `${MEETUP_ORIGIN}/`;
-    if (typeof value !== "string" || !value.startsWith(prefix) || !value.endsWith("/"))
+    if (typeof value !== "string") return void 0;
+    let url;
+    try {
+      url = new URL(value);
+    } catch {
       return void 0;
-    const slug = value.slice(prefix.length, -1);
-    return slug.length > 0 && !/[^a-z0-9-]/.test(slug) ? new _MeetupGroupUrl(value) : void 0;
+    }
+    if (url.protocol !== "https:" || !url.hostname || url.username || url.password || value !== `${url.origin}${url.pathname}` || !/^\/[a-z0-9-]+\/$/.test(url.pathname))
+      return void 0;
+    return new _MeetupGroupUrl(value);
   }
   static fromEventUrlPrefix(value) {
     return value.endsWith("events/") ? _MeetupGroupUrl.parse(value.slice(0, -"events/".length)) : void 0;
   }
   get eventUrlPrefix() {
     return `${this.value}events/`;
+  }
+  get origin() {
+    return new URL(this.value).origin;
   }
 };
 
@@ -46242,7 +46247,12 @@ var HcaptchaChallenge = class {
     const browser = page.context().browser();
     if (!browser) throw new Error("Browser unavailable.");
     const endpoint2 = await this.collaborators.chromiumEndpoint.read(browser);
-    const result = await this.process.run(endpoint2, this.apiKey, this.model);
+    const result = await this.process.run({
+      endpoint: endpoint2,
+      apiKey: this.apiKey,
+      model: this.model,
+      targetUrl: page.url()
+    });
     if (result === "unavailable")
       throw new Error("Challenge solver unavailable.");
     return result === "solved";
@@ -46275,10 +46285,10 @@ var HcaptchaProcess = class {
   }
   directory;
   launch;
-  async run(endpoint2, apiKey, model) {
-    const scratch = await mkdtemp(join4(tmpdir(), "meetup-hcaptcha-"));
+  async run(request2) {
+    const scratch = await mkdtemp(join4(tmpdir(), "hcaptcha-"));
     try {
-      return await this.execute(scratch, { endpoint: endpoint2, apiKey, model });
+      return await this.execute(scratch, request2);
     } catch {
       return "unavailable";
     } finally {
@@ -46357,25 +46367,29 @@ var HcaptchaProcessFactory = class {
 
 // packages/adapter/meetup-event-gateway/src/meetup-browser-routes.ts
 var MeetupBrowserRoutes = class {
-  static login = `${MEETUP_ORIGIN}/login/`;
-  static account = `${MEETUP_ORIGIN}/account/management/`;
+  login(origin) {
+    return `${origin}/login/`;
+  }
+  account(origin) {
+    return `${origin}/account/management/`;
+  }
   schedule(group) {
     return `${group.value}schedule/`;
   }
   edit(event) {
     return `${event.value}edit/`;
   }
-  isMeetupLocation(url) {
-    return url.origin === MEETUP_ORIGIN && !url.username && !url.password;
+  isMeetupLocation(url, origin) {
+    return url.origin === origin && !url.username && !url.password;
   }
-  isPath(url, path) {
-    return this.isMeetupLocation(url) && (url.pathname === path || url.pathname.startsWith(`${path}/`));
+  isPath(url, path, origin) {
+    return this.isMeetupLocation(url, origin) && (url.pathname === path || url.pathname.startsWith(`${path}/`));
   }
   matchesEditor(location, expected) {
     return location.replace(/\/$/, "") === expected.replace(/\/$/, "");
   }
   eventLocation(location, group) {
-    if (!this.isMeetupLocation(location)) return void 0;
+    if (!this.isMeetupLocation(location, group.origin)) return void 0;
     return MeetupEventUrl.parse(
       `${location.origin}${location.pathname}`,
       group
@@ -46530,23 +46544,25 @@ var MeetupEventGateway = class {
     this.browserType = browserType;
     this.credentials = credentials;
     this.challenge = challenge;
-    this.groupUrl = groupUrl;
+    const group = MeetupGroupUrl.parse(groupUrl);
+    if (!group) throw new ScheduledEventError("editor");
+    this.group = group;
   }
   collaborators;
   browserType;
   credentials;
   challenge;
-  groupUrl;
+  group;
   async save(event, url, beforeSubmit, onSaved) {
     return this.withSession(
       event,
-      (page) => this.collaborators.createMeetupEventEditor(page, this.groupUrl).save(event, url, beforeSubmit, onSaved)
+      (page) => this.collaborators.createMeetupEventEditor(page, this.group.value).save(event, url, beforeSubmit, onSaved)
     );
   }
   async publish(event, url, beforePublish) {
     return this.withSession(
       event,
-      (page) => this.collaborators.createMeetupEventPublisher(page, this.groupUrl).publish(event, url, beforePublish)
+      (page) => this.collaborators.createMeetupEventPublisher(page, this.group.value).publish(event, url, beforePublish)
     );
   }
   async withSession(event, operation) {
@@ -46569,7 +46585,7 @@ var MeetupEventGateway = class {
         viewport: { width: 1440, height: 1e3 }
       });
       const page = await context3.newPage();
-      const status = await this.collaborators.createMeetupLoginPage(page, this.challenge).login(this.credentials.email, this.credentials.password).catch(() => "unavailable");
+      const status = await this.collaborators.createMeetupLoginPage(page, this.challenge, this.group.origin).login(this.credentials.email, this.credentials.password).catch(() => "unavailable");
       if (status !== "verified")
         throw new ScheduledEventError(
           ["unavailable", "unexpected-page"].includes(status) ? "unavailable" : "authentication"
@@ -46693,20 +46709,25 @@ var MeetupEventVerification = class {
 // packages/adapter/meetup-event-gateway/src/meetup-login-page.ts
 var CHALLENGE = 'iframe[src*="hcaptcha.com"], iframe[src*="/recaptcha/"], input[autocomplete="one-time-code"]';
 var MeetupLoginPage = class {
-  constructor(collaborators, page, challenge) {
+  constructor(collaborators, page, challenge, origin) {
     this.collaborators = collaborators;
     this.page = page;
     this.challenge = challenge;
+    this.origin = origin;
     page.setDefaultTimeout(15e3);
     page.setDefaultNavigationTimeout(3e4);
   }
   collaborators;
   page;
   challenge;
+  origin;
   async login(email, password) {
-    await this.page.goto(MeetupBrowserRoutes.login, {
-      waitUntil: "domcontentloaded"
-    });
+    await this.page.goto(
+      this.collaborators.meetupBrowserRoutes.login(this.origin),
+      {
+        waitUntil: "domcontentloaded"
+      }
+    );
     await this.dismissCookieNotice();
     if (!this.isMeetupPath("/login")) return "unexpected-page";
     await this.page.locator('input[name="email"]').waitFor();
@@ -46723,7 +46744,10 @@ var MeetupLoginPage = class {
     await submit.click();
     try {
       await this.page.waitForURL(
-        (url) => this.collaborators.meetupBrowserRoutes.isMeetupLocation(url) && !url.pathname.startsWith("/login"),
+        (url) => this.collaborators.meetupBrowserRoutes.isMeetupLocation(
+          url,
+          this.origin
+        ) && !url.pathname.startsWith("/login"),
         { timeout: 15e3, waitUntil: "domcontentloaded" }
       );
     } catch {
@@ -46734,9 +46758,12 @@ var MeetupLoginPage = class {
     return this.verifyAccount(email);
   }
   async verifyAccount(email) {
-    await this.page.goto(MeetupBrowserRoutes.account, {
-      waitUntil: "domcontentloaded"
-    });
+    await this.page.goto(
+      this.collaborators.meetupBrowserRoutes.account(this.origin),
+      {
+        waitUntil: "domcontentloaded"
+      }
+    );
     if (await this.hasChallenge()) return "challenge-required";
     if (this.isMeetupPath("/login")) return "session-not-reusable";
     if (!this.isMeetupPath("/account/management")) return "unexpected-page";
@@ -46746,7 +46773,11 @@ var MeetupLoginPage = class {
   }
   isMeetupPath(path) {
     const url = new URL(this.page.url());
-    return this.collaborators.meetupBrowserRoutes.isPath(url, path);
+    return this.collaborators.meetupBrowserRoutes.isPath(
+      url,
+      path,
+      this.origin
+    );
   }
   async hasChallenge() {
     if (await this.hcaptchaPassed()) return this.hasOtherChallenge();

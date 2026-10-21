@@ -68,8 +68,11 @@ The three reusable event workflows forward these inputs explicitly. Event listin
 and referential actions do not use them. Keep each setting consistent across the
 consumer's issue-update, audit, and Meetup-publication callers.
 
-`meetup-event-url-prefix` identifies the authorized Meetup group and ends in
-`/events/`. `community-event-url-prefixes` is a JSON string containing a nonempty
+`meetup-event-url-prefix` supplies the HTTPS origin and authorized Meetup group
+and ends in `/events/`. Login, account navigation, and event redirects use that
+origin, including its port when specified. Event links must match both that
+origin and group; no provider origin is supplied by the code.
+`community-event-url-prefixes` is a JSON string containing a nonempty
 array of nonempty HTTPS URL prefixes. `asset-folder-url-prefix` is the HTTPS
 prefix accepted for event asset folders; it must match the folder URLs emitted
 by the configured asset provider. Prefixes cannot contain credentials, query

@@ -54,7 +54,6 @@ export {
 export { MeetupEventUrl } from "./domain/meetup-event-url.js";
 export { MeetupEventUrlPolicy } from "./domain/meetup-event-url-policy.js";
 export { MeetupGroupUrl } from "./domain/meetup-group-url.js";
-export { MEETUP_ORIGIN } from "./domain/meetup-url-contracts.js";
 export {
 	type PublicationDiagnostic,
 	PublicationDiagnostics,

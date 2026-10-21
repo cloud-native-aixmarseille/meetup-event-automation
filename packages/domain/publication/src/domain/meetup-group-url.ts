@@ -1,20 +1,24 @@
-import { MEETUP_ORIGIN } from "./meetup-url-contracts.js";
-
 export class MeetupGroupUrl {
 	private constructor(readonly value: string) {}
 
 	static parse(value: unknown): MeetupGroupUrl | undefined {
-		const prefix = `${MEETUP_ORIGIN}/`;
+		if (typeof value !== "string") return undefined;
+		let url: URL;
+		try {
+			url = new URL(value);
+		} catch {
+			return undefined;
+		}
 		if (
-			typeof value !== "string" ||
-			!value.startsWith(prefix) ||
-			!value.endsWith("/")
+			url.protocol !== "https:" ||
+			!url.hostname ||
+			url.username ||
+			url.password ||
+			value !== `${url.origin}${url.pathname}` ||
+			!/^\/[a-z0-9-]+\/$/.test(url.pathname)
 		)
 			return undefined;
-		const slug = value.slice(prefix.length, -1);
-		return slug.length > 0 && !/[^a-z0-9-]/.test(slug)
-			? new MeetupGroupUrl(value)
-			: undefined;
+		return new MeetupGroupUrl(value);
 	}
 
 	static fromEventUrlPrefix(value: string): MeetupGroupUrl | undefined {
@@ -25,5 +29,9 @@ export class MeetupGroupUrl {
 
 	get eventUrlPrefix(): string {
 		return `${this.value}events/`;
+	}
+
+	get origin(): string {
+		return new URL(this.value).origin;
 	}
 }

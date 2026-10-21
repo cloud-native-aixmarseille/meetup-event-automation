@@ -41,6 +41,58 @@ function publicationFixture(...args: Parameters<typeof setupPublication>) {
 }
 
 describe("Meetup event publication", () => {
+	it("records a draft and requests approval using the configured origin", async () => {
+		// Arrange
+		const { useCase, dependencies, gateway, journal, approval } =
+			publicationFixture();
+		const prefix = "https://events.example.test:8443/example-group/events/";
+		const url = `${prefix}12345/`;
+		dependencies.meetupUrlPrefix = prefix;
+		gateway.save.mockImplementation(async (_, __, before, after) => {
+			await before();
+			await after(url);
+			return { url, status: "draft" };
+		});
+
+		// Act
+		const result = await useCase.execute(identity);
+
+		// Assert
+		expect(result).toMatchObject({ status: "draft", reviewUrl: url });
+		expect(journal.record).toHaveBeenCalledExactlyOnceWith(url);
+		expect(approval.request).toHaveBeenCalledWith(
+			expect.objectContaining({
+				publication: expect.objectContaining({ url }),
+			}),
+		);
+		expect(gateway.publish).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		"https://www.meetup.com/example-group/events/12345/",
+		"https://events.example.test/example-group/events/12345/",
+		"https://events.example.test:8443/other-group/events/12345/",
+	])(
+		"blocks event links outside the configured origin and group: %s",
+		async (url) => {
+			// Arrange
+			const { useCase, dependencies, gateway, approval } = publicationFixture({
+				publicationLinks: { meetup: url },
+			});
+			dependencies.meetupUrlPrefix =
+				"https://events.example.test:8443/example-group/events/";
+
+			// Act
+			const result = await useCase.execute(identity);
+
+			// Assert
+			expect(result.status).toBe("blocked");
+			expect(gateway.save).not.toHaveBeenCalled();
+			expect(gateway.publish).not.toHaveBeenCalled();
+			expect(approval.request).not.toHaveBeenCalled();
+		},
+	);
+
 	it("creates a draft and records its identity without marking the issue published", async () => {
 		// Arrange
 		const { useCase, gateway, journal, deps } = publicationFixture();

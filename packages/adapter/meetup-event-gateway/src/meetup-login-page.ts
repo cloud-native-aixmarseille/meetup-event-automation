@@ -1,6 +1,6 @@
 import type { Page } from "playwright-core";
 import type { LoginChallenge } from "./hcaptcha-challenge.js";
-import { MeetupBrowserRoutes } from "./meetup-browser-routes.js";
+import type { MeetupBrowserRoutes } from "./meetup-browser-routes.js";
 import type { PublicationAuthenticationStatus } from "./meetup-session-status.js";
 
 const CHALLENGE =
@@ -10,7 +10,7 @@ const CHALLENGE =
 export interface MeetupLoginPageCollaborators {
 	readonly meetupBrowserRoutes: Pick<
 		MeetupBrowserRoutes,
-		"isMeetupLocation" | "isPath"
+		"login" | "account" | "isMeetupLocation" | "isPath"
 	>;
 }
 
@@ -19,6 +19,7 @@ export class MeetupLoginPage {
 		private readonly collaborators: MeetupLoginPageCollaborators,
 		private readonly page: Page,
 		private readonly challenge: LoginChallenge,
+		private readonly origin: string,
 	) {
 		page.setDefaultTimeout(15_000);
 		page.setDefaultNavigationTimeout(30_000);
@@ -28,9 +29,12 @@ export class MeetupLoginPage {
 		email: string,
 		password: string,
 	): Promise<PublicationAuthenticationStatus> {
-		await this.page.goto(MeetupBrowserRoutes.login, {
-			waitUntil: "domcontentloaded",
-		});
+		await this.page.goto(
+			this.collaborators.meetupBrowserRoutes.login(this.origin),
+			{
+				waitUntil: "domcontentloaded",
+			},
+		);
 		await this.dismissCookieNotice();
 		if (!this.isMeetupPath("/login")) return "unexpected-page";
 		await this.page.locator('input[name="email"]').waitFor();
@@ -50,8 +54,10 @@ export class MeetupLoginPage {
 		try {
 			await this.page.waitForURL(
 				(url) =>
-					this.collaborators.meetupBrowserRoutes.isMeetupLocation(url) &&
-					!url.pathname.startsWith("/login"),
+					this.collaborators.meetupBrowserRoutes.isMeetupLocation(
+						url,
+						this.origin,
+					) && !url.pathname.startsWith("/login"),
 				{ timeout: 15_000, waitUntil: "domcontentloaded" },
 			);
 		} catch {
@@ -63,9 +69,12 @@ export class MeetupLoginPage {
 	}
 
 	async verifyAccount(email: string): Promise<PublicationAuthenticationStatus> {
-		await this.page.goto(MeetupBrowserRoutes.account, {
-			waitUntil: "domcontentloaded",
-		});
+		await this.page.goto(
+			this.collaborators.meetupBrowserRoutes.account(this.origin),
+			{
+				waitUntil: "domcontentloaded",
+			},
+		);
 		if (await this.hasChallenge()) return "challenge-required";
 		if (this.isMeetupPath("/login")) return "session-not-reusable";
 		if (!this.isMeetupPath("/account/management")) return "unexpected-page";
@@ -81,7 +90,11 @@ export class MeetupLoginPage {
 
 	private isMeetupPath(path: string): boolean {
 		const url = new URL(this.page.url());
-		return this.collaborators.meetupBrowserRoutes.isPath(url, path);
+		return this.collaborators.meetupBrowserRoutes.isPath(
+			url,
+			path,
+			this.origin,
+		);
 	}
 
 	private async hasChallenge(): Promise<boolean> {

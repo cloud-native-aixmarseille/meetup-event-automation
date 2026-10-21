@@ -4,7 +4,7 @@ import { MeetupEventGatewayComposition } from "./dependency-composition.js";
 import { MeetupLoginPage } from "./meetup-login-page.js";
 
 function fixture() {
-	let url = "https://www.meetup.com/login/";
+	let url = "https://events.example.test:8443/login/";
 	const email = {
 		waitFor: vi.fn().mockResolvedValue(undefined),
 		fill: vi.fn().mockResolvedValue(undefined),
@@ -35,7 +35,7 @@ function fixture() {
 		}),
 		url: () => url,
 		waitForURL: vi.fn().mockImplementation(async () => {
-			url = "https://www.meetup.com/home";
+			url = "https://events.example.test:8443/home";
 		}),
 		locator: vi.fn().mockImplementation((selector) => {
 			if (selector === 'input[name="email"]') return email;
@@ -66,6 +66,7 @@ function fixture() {
 			},
 			page,
 			solver,
+			"https://events.example.test:8443",
 		),
 		page,
 		email,
@@ -84,6 +85,24 @@ function fixture() {
 }
 
 describe("Meetup login page", () => {
+	it("does not enter credentials on an origin different from the supplied input", async () => {
+		// Arrange
+		const { login, page, redirect, email, password, submit } = fixture();
+		vi.mocked(page.goto).mockImplementation(async () => {
+			redirect("https://www.meetup.com/login/");
+			return null;
+		});
+
+		// Act
+		const result = await login.login("organizer@example.test", "secret");
+
+		// Assert
+		expect(result).toBe("unexpected-page");
+		expect(email.fill).not.toHaveBeenCalled();
+		expect(password.fill).not.toHaveBeenCalled();
+		expect(submit.click).not.toHaveBeenCalled();
+	});
+
 	it("does not enter credentials after a solver redirects to another site", async () => {
 		// Arrange
 		const { login, challenge, solver, email, redirect } = fixture();
@@ -201,7 +220,7 @@ describe("Meetup login page", () => {
 		expect(submit.click).toHaveBeenCalledOnce();
 		expect(email.inputValue).toHaveBeenCalledOnce();
 		expect(page.goto).toHaveBeenLastCalledWith(
-			"https://www.meetup.com/account/management/",
+			"https://events.example.test:8443/account/management/",
 			{
 				waitUntil: "domcontentloaded",
 			},
@@ -224,7 +243,9 @@ describe("Meetup login page", () => {
 		// Arrange
 		const { login, page, redirect, email } = fixture();
 		vi.mocked(page.goto).mockImplementation(async () => {
-			redirect("https://www.meetup.com/login/?returnUri=%2Faccount%2F");
+			redirect(
+				"https://events.example.test:8443/login/?returnUri=%2Faccount%2F",
+			);
 			return null;
 		});
 

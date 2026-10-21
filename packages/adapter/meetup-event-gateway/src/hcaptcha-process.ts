@@ -4,6 +4,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Readable } from "node:stream";
 
+export interface HcaptchaProcessRequest {
+	readonly endpoint: string;
+	readonly targetUrl: string;
+	readonly apiKey: string;
+	readonly model: string;
+}
+
 export type ChallengeResult = "solved" | "blocked" | "unavailable";
 
 /** Linux process boundary: credentials on stdin; only a fixed status on fd 3. */
@@ -17,14 +24,10 @@ export class HcaptchaProcess {
 		) => ChildProcess,
 	) {}
 
-	async run(
-		endpoint: string,
-		apiKey: string,
-		model: string,
-	): Promise<ChallengeResult> {
-		const scratch = await mkdtemp(join(tmpdir(), "meetup-hcaptcha-"));
+	async run(request: HcaptchaProcessRequest): Promise<ChallengeResult> {
+		const scratch = await mkdtemp(join(tmpdir(), "hcaptcha-"));
 		try {
-			return await this.execute(scratch, { endpoint, apiKey, model });
+			return await this.execute(scratch, request);
 		} catch {
 			return "unavailable";
 		} finally {
@@ -34,7 +37,7 @@ export class HcaptchaProcess {
 
 	private execute(
 		scratch: string,
-		request: { endpoint: string; apiKey: string; model: string },
+		request: HcaptchaProcessRequest,
 	): Promise<ChallengeResult> {
 		return new Promise((resolve) => {
 			const child = this.launch(

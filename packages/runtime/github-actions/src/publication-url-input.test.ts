@@ -6,7 +6,7 @@ const settings = [
 		name: "meetup-event-url-prefix",
 		read: "readMeetupEventUrlPrefix",
 		validate: "validateMeetupEventUrlPrefix",
-		value: "https://www.meetup.com/example-group/events/",
+		value: "https://events.example.test:8443/example-group/events/",
 	},
 	{
 		name: "community-event-url-prefixes",
@@ -171,7 +171,6 @@ describe("PublicationUrlInput", () => {
 		"https://www.meetup.com/example-group/",
 		"https://www.meetup.com/example-group/events",
 		"https://www.meetup.com/example-group/events/123/",
-		"https://different.example.test/example-group/events/",
 	])("requires the Meetup group event prefix: %s", (prefix) => {
 		// Arrange
 		const parser = new PublicationUrlInput();
