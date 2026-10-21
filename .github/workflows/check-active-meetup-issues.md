@@ -82,15 +82,15 @@ jobs:
     with:
       # HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
       # This input is required.
-      meetup-event-url-prefix: ${{ vars.MEETUP_EVENT_URL_PREFIX }}
+      meetup-event-url-prefix: ""
 
       # JSON array of nonempty HTTPS prefixes accepted for community event URLs.
       # This input is required.
-      community-event-url-prefixes: ${{ vars.COMMUNITY_EVENT_URL_PREFIXES }}
+      community-event-url-prefixes: ""
 
       # HTTPS prefix accepted for event asset folder URLs.
       # This input is required.
-      asset-folder-url-prefix: ${{ vars.ASSET_FOLDER_URL_PREFIX }}
+      asset-folder-url-prefix: ""
 
       # Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
       # This input is required.
@@ -134,6 +134,9 @@ jobs:
 
 | **Input**                                    | **Description**                                                                                                                              | **Required** | **Type**   | **Default** |
 | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- | ----------- |
+| **`meetup-event-url-prefix`**                | HTTPS event URL prefix for the authorized Meetup group, ending in /events/.                                                                  | **true**     | **string** | -           |
+| **`community-event-url-prefixes`**           | JSON array of nonempty HTTPS prefixes accepted for community event URLs.                                                                     | **true**     | **string** | -           |
+| **`asset-folder-url-prefix`**                | HTTPS prefix accepted for event asset folder URLs.                                                                                           | **true**     | **string** | -           |
 | **`locale`**                                 | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.           | **true**     | **string** | -           |
 | **`github-app-client-id`**                   | GitHub App client ID used to mint the narrowly scoped installation token for meetup automation.                                              | **true**     | **string** | -           |
 | **`slack-organizer-channel-id`**             | Internal meetup organizer Slack channel for approval requests and actionable organizer reminders. Public announcement channels are separate. | **true**     | **string** | -           |
@@ -142,9 +145,6 @@ jobs:
 | **`kutt-base-url`**                          | HTTPS base URL of the Kutt instance, without /api/v2. No default.                                                                            | **true**     | **string** | -           |
 | **`kutt-link-id`**                           | Existing Kutt feedback link API ID.                                                                                                          | **true**     | **string** | -           |
 | **`conference-hall-event`**                  | Conference Hall CFP slug for live linked profiles and selected proposals.                                                                    | **true**     | **string** | -           |
-| **`meetup-event-url-prefix`**                | HTTPS event URL prefix for the authorized Meetup group, ending in /events/.                                                                  | **true**     | **string** | -           |
-| **`community-event-url-prefixes`**           | JSON array of nonempty HTTPS prefixes accepted for community event URLs.                                                                     | **true**     | **string** | -           |
-| **`asset-folder-url-prefix`**                | HTTPS prefix accepted for event asset folder URLs.                                                                                           | **true**     | **string** | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->
