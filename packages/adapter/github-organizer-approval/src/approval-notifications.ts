@@ -22,7 +22,11 @@ export class ApprovalNotifications {
 		try {
 			const result = await this.notifications.send({
 				destination: this.channelId,
-				content: this.presenter.slack(record, this.client.url(commentId)),
+				eventDate: record.eventDate,
+				approvalUrl: this.client.url(commentId),
+				...(record.kind === "meetup-publication"
+					? { kind: record.kind }
+					: { kind: record.kind, recipientCount: record.recipientCount }),
 			});
 			record.notification =
 				result.outcome === "accepted"

@@ -34,6 +34,7 @@ import {
 } from "@meetup-automation/journey";
 import {
 	SlackApprovalNotification,
+	SlackApprovalPresenter,
 	SlackAttentionNotification,
 } from "@meetup-automation/slack-notification-gateway";
 import {
@@ -127,7 +128,10 @@ export class AttentionComposition {
 			),
 			input.commentAuthorLogin,
 			new ApprovalPresenter(new ApprovalMessages(input.locale)),
-			new SlackApprovalNotification(input.slackToken),
+			new SlackApprovalNotification(
+				input.slackToken,
+				new SlackApprovalPresenter(input.locale),
+			),
 			input.slackOrganizerChannelId,
 		);
 	}

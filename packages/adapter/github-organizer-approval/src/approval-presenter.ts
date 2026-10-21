@@ -1,85 +1,25 @@
-import {
-	type ApprovalDecision,
-	ApprovalRecord,
-	type StoredApproval,
-} from "./approval-record.js";
+import type { ApprovalDecision, StoredApproval } from "./approval-record.js";
 import { ApprovalMessages } from "./i18n/approval-messages.js";
-import { ApprovalDetailsPresenter } from "./approval-details-presenter.js";
-import { FollowUpPresenter } from "./follow-up-presenter.js";
-
+import { CATALOGS } from "./i18n/catalog.js";
+import { EmailApprovalPresenter } from "./email-approval-presenter.js";
 import { MeetupApprovalPresenter } from "./meetup-approval-presenter.js";
 
+/** Renders issue comments through the presenter for their approval kind. */
 export class ApprovalPresenter {
-	constructor(private readonly messages: ApprovalMessages) {}
+	private readonly email: EmailApprovalPresenter;
+	private readonly meetup: MeetupApprovalPresenter;
+	constructor(messages: ApprovalMessages) {
+		this.email = new EmailApprovalPresenter(messages);
+		this.meetup = new MeetupApprovalPresenter(messages);
+	}
 	issue(record: StoredApproval, decision: ApprovalDecision): string {
-		if (record.kind === "meetup-publication")
-			return new MeetupApprovalPresenter(this.messages).issue(record, decision);
-		const heading = [
-			ApprovalRecord.marker(record),
-			...new FollowUpPresenter(this.messages).render(record),
-		];
-		if (record.recipientCount === 0 || record.followUp?.active === false)
-			return [...heading, record.followUp?.attentionDetails ?? ""]
-				.join("\n\n")
-				.trimEnd();
-		const details = record.details
-			? [new ApprovalDetailsPresenter(this.messages).render(record.details)]
-			: [];
-		if (record.followUp?.attentionDetails)
-			details.push(record.followUp.attentionDetails);
-		if (record.decision)
-			return [
-				...heading,
-				this.messages.t("approval.final", {
-					kind: record.kind.replace("email-", ""),
-					date: record.eventDate,
-					count: record.recipientCount,
-					status: record.decision.status,
-					actor: record.decision.actor,
-					decidedAt: record.decision.decidedAt,
-				}),
-				...details,
-			].join("\n\n");
-		return [
-			...heading,
-			this.messages.t("approval.request", {
-				kind: record.kind.replace("email-", ""),
-				date: record.eventDate,
-				count: record.recipientCount,
-				approveMark: decision.status === "approved" ? "x" : " ",
-				rejectMark: decision.status === "rejected" ? "x" : " ",
-			}),
-			...details,
-		].join("\n\n");
+		return record.kind === "meetup-publication"
+			? this.meetup.issue(record, decision)
+			: this.email.issue(record, decision);
 	}
-	decision(record: StoredApproval, body: string): ApprovalDecision {
-		if (
-			record.decision ||
-			record.recipientCount === 0 ||
-			record.followUp?.active === false
-		)
-			return { status: "pending" };
-		const normalized = body.replace(/\r\n/g, "\n").replace(/- \[X\]/g, "- [x]");
-		for (const locale of ["en", "fr"]) {
-			const presenter = new ApprovalPresenter(new ApprovalMessages(locale));
-			for (const status of ["approved", "rejected"] as const) {
-				if (normalized === presenter.issue(record, { status }))
-					return { status };
-			}
-		}
-		return { status: "pending" };
-	}
-	slack(record: StoredApproval, url: string): string {
-		if (record.kind === "meetup-publication")
-			return this.messages.t("approval.meetup.slack", {
-				date: record.eventDate,
-				url,
-			});
-		return this.messages.t("approval.slack", {
-			kind: record.kind.replace("email-", ""),
-			date: record.eventDate,
-			count: record.recipientCount,
-			url,
-		});
+	static supportedLocales(): readonly ApprovalPresenter[] {
+		return Object.keys(CATALOGS).map(
+			(locale) => new ApprovalPresenter(new ApprovalMessages(locale)),
+		);
 	}
 }

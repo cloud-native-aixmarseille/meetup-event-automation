@@ -20,10 +20,6 @@ const parameters = {
 		actor: "organizer",
 		decidedAt: "2099-06-01T10:00:00Z",
 	},
-	"approval.meetup.slack": {
-		date: "2099-06-08",
-		url: "https://github.com/example/events/issues/42#issuecomment-100",
-	},
 	"follow-up.title": { date: "2099-06-08" },
 	"follow-up.instructions": {},
 	"follow-up.task": { task: "thank_host" },
@@ -51,12 +47,6 @@ const parameters = {
 		count: 2,
 		approveMark: " ",
 		rejectMark: " ",
-	},
-	"approval.slack": {
-		kind: "thanks",
-		date: "2099-06-08",
-		count: 2,
-		url: "https://github.com/example/meetups/issues/42#issuecomment-100",
 	},
 } satisfies { [Key in keyof MessageParameters]: MessageParameters[Key] };
 describe("owned message catalogs", () => {
