@@ -7,8 +7,7 @@ This guide configures a consumer repository to run the published automation. You
 need repository administration access, a GitHub App installation, Google Drive
 service-account access, a Slack bot, an OpenFeedback organization API key, and an
 existing Kutt short link. See
-[configuration](../reference/configuration.md) for all settings and fixed
-community conventions.
+[configuration](../reference/configuration.md) for all settings and supported conventions.
 
 ## 1. Add the event data files
 
@@ -49,16 +48,23 @@ repository-scoped tokens it needs and revokes them when the job ends.
 
 Add the following repository settings:
 
-| Type     | Name                      | Value                                                               |
-| -------- | ------------------------- | ------------------------------------------------------------------- |
-| Variable | `CONFERENCE_HALL_EVENT`   | CFP slug, such as `meetup-cloud-native-aix-marseille`.              |
-| Secret   | `CONFERENCE_HALL_API_KEY` | Read-only event key from Conference Hall's Web API settings.        |
-| Variable | `CI_BOT_APP_CLIENT_ID`    | GitHub App client ID.                                               |
-| Secret   | `CI_BOT_APP_PRIVATE_KEY`  | App private key in PEM format.                                      |
-| Variable | `KUTT_BASE_URL`           | HTTPS base URL of the Kutt instance, without `/api/v2`; no default. |
-| Variable | `KUTT_FEEDBACK_LINK_ID`   | API ID of the existing Kutt short link.                             |
-| Secret   | `OPENFEEDBACK_API_KEY`    | OpenFeedback organization API key beginning with `oforg_`.          |
-| Secret   | `KUTT_API_KEY`            | API key of that link's owner.                                       |
+| Type     | Name                           | Value                                                               |
+| -------- | ------------------------------ | ------------------------------------------------------------------- |
+| Variable | `MEETUP_EVENT_URL_PREFIX`      | Authorized Meetup group event URL prefix.                           |
+| Variable | `COMMUNITY_EVENT_URL_PREFIXES` | JSON array of accepted community event URL prefixes.                |
+| Variable | `ASSET_FOLDER_URL_PREFIX`      | Accepted event asset folder URL prefix.                             |
+| Variable | `CONFERENCE_HALL_EVENT`        | CFP slug, such as `meetup-cloud-native-aix-marseille`.              |
+| Secret   | `CONFERENCE_HALL_API_KEY`      | Read-only event key from Conference Hall's Web API settings.        |
+| Variable | `CI_BOT_APP_CLIENT_ID`         | GitHub App client ID.                                               |
+| Secret   | `CI_BOT_APP_PRIVATE_KEY`       | App private key in PEM format.                                      |
+| Variable | `KUTT_BASE_URL`                | HTTPS base URL of the Kutt instance, without `/api/v2`; no default. |
+| Variable | `KUTT_FEEDBACK_LINK_ID`        | API ID of the existing Kutt short link.                             |
+| Secret   | `OPENFEEDBACK_API_KEY`         | OpenFeedback organization API key beginning with `oforg_`.          |
+| Secret   | `KUTT_API_KEY`                 | API key of that link's owner.                                       |
+
+Configure the [publication URL inputs](../reference/configuration.md#publication-url-inputs)
+for your community and use the same three values in every event workflow. The
+community prefix variable contains JSON, not a comma-separated string.
 
 Both event workflows require the Conference Hall slug and API key, the
 OpenFeedback key and all three Kutt settings,
@@ -119,6 +125,9 @@ jobs:
       contents: read
     with:
       conference-hall-event: ${{ vars.CONFERENCE_HALL_EVENT }}
+      meetup-event-url-prefix: ${{ vars.MEETUP_EVENT_URL_PREFIX }}
+      community-event-url-prefixes: ${{ vars.COMMUNITY_EVENT_URL_PREFIXES }}
+      asset-folder-url-prefix: ${{ vars.ASSET_FOLDER_URL_PREFIX }}
       locale: en
       github-app-client-id: ${{ vars.CI_BOT_APP_CLIENT_ID }}
       kutt-base-url: ${{ vars.KUTT_BASE_URL }}
@@ -154,6 +163,9 @@ jobs:
       issues: read
     with:
       conference-hall-event: ${{ vars.CONFERENCE_HALL_EVENT }}
+      meetup-event-url-prefix: ${{ vars.MEETUP_EVENT_URL_PREFIX }}
+      community-event-url-prefixes: ${{ vars.COMMUNITY_EVENT_URL_PREFIXES }}
+      asset-folder-url-prefix: ${{ vars.ASSET_FOLDER_URL_PREFIX }}
       locale: en
       github-app-client-id: ${{ vars.CI_BOT_APP_CLIENT_ID }}
       kutt-base-url: ${{ vars.KUTT_BASE_URL }}

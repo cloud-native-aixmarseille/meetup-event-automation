@@ -5,6 +5,7 @@ import { PublicationComposition } from "./publication-composition.js";
 export class PublicationActionComposition {
 	publicationAction(): PublicationAction {
 		return new PublicationAction({
+			publicationUrlInput: new GithubActionsComposition().publicationUrlInput(),
 			createJourney: (input) =>
 				PublicationComposition.createPublicationContainer(input).get(
 					ManageMeetupAssets,

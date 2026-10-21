@@ -11,6 +11,7 @@ import {
 import {
 	catalog,
 	config,
+	publicationUrls,
 } from "../packages/application/journey/testing/meetup-journey.fixtures.js";
 import type { EventDocument } from "../packages/domain/event/src/index.js";
 import { EventDomainComposition } from "../packages/domain/event/src/index.js";
@@ -98,6 +99,7 @@ function fixture(sourceDocument = document) {
 		},
 		{
 			config,
+			publicationUrls,
 			proposalSource,
 			referentialRepository: {
 				load: vi.fn().mockResolvedValue({

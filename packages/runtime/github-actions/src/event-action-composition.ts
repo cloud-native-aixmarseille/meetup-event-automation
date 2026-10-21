@@ -9,6 +9,7 @@ import { EventActions } from "./event-actions.js";
 export class EventActionComposition {
 	eventActions(): EventActions {
 		return new EventActions({
+			publicationUrlInput: new GithubActionsComposition().publicationUrlInput(),
 			createEventJourney: (input) =>
 				EventComposition.createEventContainer(input).get(ManageMeetupEvent),
 			createEventListing: (input) => {

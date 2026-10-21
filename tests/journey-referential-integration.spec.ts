@@ -7,6 +7,7 @@ import {
 	SynchronizeMeetupIssueForm,
 	ValidateMeetupReferentials,
 } from "../packages/application/journey/src/index.js";
+import { publicationUrls } from "../packages/application/journey/testing/meetup-journey.fixtures.js";
 import type {
 	EventDocument,
 	ReconcileEventDependencies,
@@ -31,12 +32,6 @@ const config: AutomationConfig = {
 		"mailings-repository": "cloud-native-aixmarseille/mailings",
 		"dispatch-enabled": false,
 		"policy-version": 1,
-	},
-	publication: {
-		"meetup-event-url-prefix":
-			"https://www.meetup.com/cloud-native-aix-marseille/events/",
-		"cncf-event-url-prefix":
-			"https://ocgroups.dev/cncf/group/cloud-native-aix-marseille/event/",
 	},
 };
 
@@ -69,6 +64,7 @@ const dependenciesFor = (rawCatalog: RawReferentialCatalog) => {
 	return {
 		dependencies: {
 			config,
+			publicationUrls,
 			referentialRepository,
 		},
 		loadCatalog,
@@ -240,6 +236,7 @@ describe("event journey selection", () => {
 			{
 				proposalSource: { load: vi.fn() },
 				config,
+				publicationUrls,
 				referentialRepository: {
 					load: vi.fn().mockResolvedValue(catalog),
 				},
@@ -297,6 +294,7 @@ describe("event journey selection", () => {
 			{
 				proposalSource: { load: vi.fn() },
 				config,
+				publicationUrls,
 				referentialRepository: {
 					load: vi.fn().mockResolvedValue(catalog),
 				},

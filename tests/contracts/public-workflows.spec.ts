@@ -19,6 +19,9 @@ import {
 const publicWorkflowContracts = {
 	"check-active-meetup-issues": {
 		inputs: [
+			"asset-folder-url-prefix",
+			"community-event-url-prefixes",
+			"meetup-event-url-prefix",
 			"conference-hall-event",
 			"github-app-client-id",
 			"google-drive-meetup-folder-id",
@@ -39,6 +42,9 @@ const publicWorkflowContracts = {
 	},
 	"update-meetup-issue": {
 		inputs: [
+			"asset-folder-url-prefix",
+			"community-event-url-prefixes",
+			"meetup-event-url-prefix",
 			"conference-hall-event",
 			"github-app-client-id",
 			"google-drive-meetup-folder-id",

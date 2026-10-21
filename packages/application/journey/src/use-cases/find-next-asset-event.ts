@@ -10,18 +10,15 @@ import type {
 } from "@meetup-automation/event";
 import type {
 	PublicAssetVenue,
+	PublicationUrlConfiguration,
+	PublicationUrlPolicies,
 	PublicNextAssetEvent,
 } from "@meetup-automation/publication";
 import type { ReferentialCatalog } from "@meetup-automation/referential";
-import type { AutomationConfig } from "../config/automation-config.js";
-import type { ConfiguredPublicationPolicies } from "../config/configured-publication-policies.js";
 
 export interface FindNextAssetEventCollaborators {
 	readonly eventRuleFactory: Pick<EventRuleFactory, "createDefaultEventRules">;
-	readonly configuredPublicationPolicies: Pick<
-		ConfiguredPublicationPolicies,
-		"create"
-	>;
+	readonly publicationUrlPolicies: Pick<PublicationUrlPolicies, "create">;
 	readonly meetupPublicationChecklist: Pick<
 		MeetupPublicationChecklist,
 		"isPublished"
@@ -37,7 +34,7 @@ export class FindNextAssetEvent {
 		private readonly repository: Pick<EventRepository, "listPage">,
 		private readonly codec: EventDocumentCodec,
 		private readonly eventLabel: string,
-		private readonly publication: AutomationConfig["publication"],
+		private readonly publicationUrls: PublicationUrlConfiguration,
 		private readonly venues: Readonly<Record<string, PublicAssetVenue>> = {},
 	) {}
 
@@ -136,8 +133,8 @@ export class FindNextAssetEvent {
 			!event.confirmations.host
 		)
 			return undefined;
-		const published = this.collaborators.configuredPublicationPolicies
-			.create(this.publication)
+		const published = this.collaborators.publicationUrlPolicies
+			.create(this.publicationUrls)
 			.filter((policy) => policy.id !== "asset-folder-url")
 			.some((policy) => {
 				const field = policy.id === "meetup-event-url" ? "meetup" : "community";

@@ -10,6 +10,7 @@ import { GithubActionsComposition } from "./dependency-composition.js";
 export class CommunicationActionComposition {
 	communicationAction(): CommunicationAction {
 		return new CommunicationAction({
+			publicationUrlInput: new GithubActionsComposition().publicationUrlInput(),
 			runtimeInput: new GithubActionsComposition().runtimeInput(),
 			communicationRuntime: this.communicationRuntime(),
 			conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),

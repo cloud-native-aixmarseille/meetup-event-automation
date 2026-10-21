@@ -1,6 +1,10 @@
 import * as core from "@actions/core";
 import { LocalizationComposition } from "@meetup-automation/localization";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	publicationUrlInputs,
+	publicationUrls,
+} from "../testing/publication-urls.fixtures.js";
 import { GithubActionsComposition } from "./dependency-composition.js";
 import { ActionMessages } from "./i18n/action-messages.js";
 import { MeetupPublicationAction } from "./meetup-publication-action.js";
@@ -31,6 +35,7 @@ vi.mock("./meetup-publication-composition.js", () => ({
 beforeEach(() => {
 	vi.clearAllMocks();
 	mocks.inputs = {
+		...publicationUrlInputs,
 		"issue-number": "42",
 		"meetup-email": "organizer@example.test",
 		"meetup-password": " synthetic-password ",
@@ -68,6 +73,9 @@ describe("Meetup publication action", () => {
 		const result = await subject().run(messages);
 
 		// Assert
+		expect(mocks.create).toHaveBeenCalledWith(
+			expect.objectContaining({ publicationUrls }),
+		);
 		expect(mocks.execute).toHaveBeenCalledWith({
 			repository: "example/events",
 			issueNumber: 42,
@@ -119,6 +127,9 @@ describe("Meetup publication action", () => {
 	});
 
 	it.each([
+		"meetup-event-url-prefix",
+		"community-event-url-prefixes",
+		"asset-folder-url-prefix",
 		"meetup-email",
 		"meetup-password",
 		"gemini-api-key",
@@ -147,6 +158,7 @@ describe("Meetup publication action", () => {
 
 function subject() {
 	return new MeetupPublicationAction({
+		publicationUrlInput: new GithubActionsComposition().publicationUrlInput(),
 		createJourney: (input) => mocks.create(input).get(),
 		runtimeInput: new GithubActionsComposition().runtimeInput(),
 		conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),

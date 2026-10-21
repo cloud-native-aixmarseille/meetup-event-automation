@@ -82,14 +82,13 @@ export class PublicationLinkEvaluation {
 		identifierPattern: RegExp,
 	): boolean {
 		const normalized = value.replace(/\/$/, "");
-		const prefix = prefixes.find((candidate) =>
-			normalized.startsWith(candidate),
-		);
-		const identifier = prefix ? normalized.slice(prefix.length) : undefined;
 		return (
 			this.isHttpsUrl(normalized) &&
-			!!identifier &&
-			identifierPattern.test(identifier)
+			prefixes.some((prefix) => {
+				if (!normalized.startsWith(prefix)) return false;
+				const identifier = normalized.slice(prefix.length);
+				return Boolean(identifier) && identifierPattern.test(identifier);
+			})
 		);
 	}
 }

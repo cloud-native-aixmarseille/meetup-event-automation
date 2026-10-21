@@ -178,6 +178,8 @@ describe("event side-effect safeguards", () => {
 
 		// Assert
 		expect(sortedKeys(workflow.on?.workflow_call?.inputs)).toEqual([
+			"asset-folder-url-prefix",
+			"community-event-url-prefixes",
 			"conference-hall-event",
 			"github-app-client-id",
 			"google-drive-meetup-folder-id",
@@ -185,6 +187,7 @@ describe("event side-effect safeguards", () => {
 			"kutt-base-url",
 			"kutt-link-id",
 			"locale",
+			"meetup-event-url-prefix",
 			"slack-organizer-channel-id",
 		]);
 		expect(token?.with?.["client-id"]).toBe(

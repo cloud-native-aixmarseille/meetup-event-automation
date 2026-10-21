@@ -3,6 +3,18 @@ name: Create or update Meetup event
 on:
   workflow_call:
     inputs:
+      meetup-event-url-prefix:
+        description: HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
+        required: true
+        type: string
+      community-event-url-prefixes:
+        description: JSON array of nonempty HTTPS prefixes accepted for community event URLs.
+        required: true
+        type: string
+      asset-folder-url-prefix:
+        description: HTTPS prefix accepted for event asset folder URLs.
+        required: true
+        type: string
       slack-organizer-channel-id:
         description: Organizer Slack channel receiving publication approval requests.
         required: true
@@ -114,6 +126,9 @@ jobs:
       - name: Create or update the issue's Meetup event
         uses: ./../self-workflow/actions/publication/reconcile-meetup
         with:
+          meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
+          community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
+          asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}
           issue-number: ${{ inputs.issue-number }}
           github-token: ${{ steps.app-token.outputs.token }}
           managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}

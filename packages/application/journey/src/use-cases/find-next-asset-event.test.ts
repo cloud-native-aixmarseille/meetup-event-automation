@@ -1,5 +1,6 @@
 import type { MeetupEvent } from "@meetup-automation/event";
 import { EventDomainComposition } from "@meetup-automation/event";
+import { PublicationDomainComposition } from "@meetup-automation/publication";
 import type { HostId } from "@meetup-automation/referential";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -7,8 +8,10 @@ import {
 	nextEventFixture,
 	publicCatalog,
 } from "../../testing/asset-render.fixtures.js";
-import { config, event } from "../../testing/meetup-journey.fixtures.js";
-import { JourneyPolicyComposition } from "../policy-composition.js";
+import {
+	event,
+	publicationUrls,
+} from "../../testing/meetup-journey.fixtures.js";
 import { FindNextAssetEvent } from "./find-next-asset-event.js";
 
 describe("next public meetup for assets", () => {
@@ -16,6 +19,9 @@ describe("next public meetup for assets", () => {
 		{ meetup: "https://www.meetup.com/regional-group/events/123/" },
 		{
 			community: "https://ocgroups.dev/cncf/group/regional-group/event/evening",
+		},
+		{
+			community: "https://regional.example.test/events/evening",
 		},
 	])(
 		"uses configured group identities and event labels: %j",
@@ -37,8 +43,8 @@ describe("next public meetup for assets", () => {
 			const finder = new FindNextAssetEvent(
 				{
 					eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
-					configuredPublicationPolicies:
-						new JourneyPolicyComposition().configuredPublicationPolicies(),
+					publicationUrlPolicies:
+						new PublicationDomainComposition().publicationUrlPolicies(),
 					meetupPublicationChecklist:
 						new EventDomainComposition().meetupPublicationChecklist(),
 					createEventRuleEngine: (...args) =>
@@ -48,10 +54,12 @@ describe("next public meetup for assets", () => {
 				f.codec,
 				eventLabel,
 				{
-					"meetup-event-url-prefix":
-						"https://www.meetup.com/regional-group/events/",
-					"cncf-event-url-prefix":
+					meetupEventUrlPrefix: "https://www.meetup.com/regional-group/events/",
+					communityEventUrlPrefixes: [
 						"https://ocgroups.dev/cncf/group/regional-group/event/",
+						"https://regional.example.test/events/",
+					],
+					assetFolderUrlPrefix: publicationUrls.assetFolderUrlPrefix,
 				},
 			);
 
@@ -78,8 +86,8 @@ describe("next public meetup for assets", () => {
 		const finder = new FindNextAssetEvent(
 			{
 				eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
-				configuredPublicationPolicies:
-					new JourneyPolicyComposition().configuredPublicationPolicies(),
+				publicationUrlPolicies:
+					new PublicationDomainComposition().publicationUrlPolicies(),
 				meetupPublicationChecklist:
 					new EventDomainComposition().meetupPublicationChecklist(),
 				createEventRuleEngine: (...args) =>
@@ -88,7 +96,7 @@ describe("next public meetup for assets", () => {
 			f.repository,
 			f.codec,
 			"meetup",
-			config.publication,
+			publicationUrls,
 			{
 				"host-0001": {
 					address: "Public place",
@@ -125,6 +133,12 @@ describe("next public meetup for assets", () => {
 		{ confirmations: { host: false, speakers: true } },
 		{ publicationLinks: {} },
 		{ publicationLinks: { meetup: "https://example.test/not-a-meetup" } },
+		{
+			publicationLinks: {
+				community:
+					"https://community.cncf.io/events/details/cncf-cloud-native-aix-marseille-presents-platform-engineering",
+			},
+		},
 		{ host: { id: "host-missing", displayName: "Unresolved" } },
 	])("ignores ineligible next meetups", async (override) => {
 		// Arrange
@@ -132,8 +146,8 @@ describe("next public meetup for assets", () => {
 		const finder = new FindNextAssetEvent(
 			{
 				eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
-				configuredPublicationPolicies:
-					new JourneyPolicyComposition().configuredPublicationPolicies(),
+				publicationUrlPolicies:
+					new PublicationDomainComposition().publicationUrlPolicies(),
 				meetupPublicationChecklist:
 					new EventDomainComposition().meetupPublicationChecklist(),
 				createEventRuleEngine: (...args) =>
@@ -142,7 +156,7 @@ describe("next public meetup for assets", () => {
 			f.repository,
 			f.codec,
 			"meetup",
-			config.publication,
+			publicationUrls,
 		);
 
 		// Act
@@ -168,8 +182,8 @@ describe("next public meetup for assets", () => {
 		const finder = new FindNextAssetEvent(
 			{
 				eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
-				configuredPublicationPolicies:
-					new JourneyPolicyComposition().configuredPublicationPolicies(),
+				publicationUrlPolicies:
+					new PublicationDomainComposition().publicationUrlPolicies(),
 				meetupPublicationChecklist:
 					new EventDomainComposition().meetupPublicationChecklist(),
 				createEventRuleEngine: (...args) =>
@@ -178,7 +192,7 @@ describe("next public meetup for assets", () => {
 			f.repository,
 			f.codec,
 			"meetup",
-			config.publication,
+			publicationUrls,
 		);
 
 		// Act
@@ -222,8 +236,8 @@ describe("next public meetup for assets", () => {
 			const finder = new FindNextAssetEvent(
 				{
 					eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
-					configuredPublicationPolicies:
-						new JourneyPolicyComposition().configuredPublicationPolicies(),
+					publicationUrlPolicies:
+						new PublicationDomainComposition().publicationUrlPolicies(),
 					meetupPublicationChecklist:
 						new EventDomainComposition().meetupPublicationChecklist(),
 					createEventRuleEngine: (...args) =>
@@ -232,7 +246,7 @@ describe("next public meetup for assets", () => {
 				f.repository,
 				f.codec,
 				"meetup",
-				config.publication,
+				publicationUrls,
 			);
 			let error: unknown;
 
@@ -262,8 +276,8 @@ describe("next public meetup for assets", () => {
 			const finder = new FindNextAssetEvent(
 				{
 					eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
-					configuredPublicationPolicies:
-						new JourneyPolicyComposition().configuredPublicationPolicies(),
+					publicationUrlPolicies:
+						new PublicationDomainComposition().publicationUrlPolicies(),
 					meetupPublicationChecklist:
 						new EventDomainComposition().meetupPublicationChecklist(),
 					createEventRuleEngine: (...args) =>
@@ -272,7 +286,7 @@ describe("next public meetup for assets", () => {
 				f.repository,
 				f.codec,
 				"meetup",
-				config.publication,
+				publicationUrls,
 			);
 
 			// Act

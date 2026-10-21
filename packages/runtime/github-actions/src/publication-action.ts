@@ -7,9 +7,11 @@ import type { AssetContentConfiguration } from "./assets/asset-content-configura
 import type { ConferenceHallInput } from "./conference-hall-input.js";
 import type { ActionMessages } from "./i18n/action-messages.js";
 import type { PublicationComposition } from "./publication-composition.js";
+import type { PublicationUrlInput } from "./publication-url-input.js";
 import type { RuntimeInput } from "./runtime-input.js";
 
 export interface PublicationActionCollaborators {
+	readonly publicationUrlInput: Pick<PublicationUrlInput, "read">;
 	readonly createJourney: (
 		input: Parameters<
 			typeof PublicationComposition.createPublicationContainer
@@ -38,6 +40,7 @@ export class PublicationAction {
 		);
 		const { owner, repo } = context.repo;
 		const journey = this.collaborators.createJourney({
+			publicationUrls: this.collaborators.publicationUrlInput.read(),
 			contentConfiguration:
 				await this.collaborators.assetContentConfiguration.load(
 					process.cwd(),

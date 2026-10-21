@@ -82,6 +82,18 @@ jobs:
       # This input is required.
       gemini-api-key: ""
     with:
+      # HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
+      # This input is required.
+      meetup-event-url-prefix: ""
+
+      # JSON array of nonempty HTTPS prefixes accepted for community event URLs.
+      # This input is required.
+      community-event-url-prefixes: ""
+
+      # HTTPS prefix accepted for event asset folder URLs.
+      # This input is required.
+      asset-folder-url-prefix: ""
+
       # Organizer Slack channel receiving publication approval requests.
       # This input is required.
       slack-organizer-channel-id: ""
@@ -114,14 +126,17 @@ jobs:
 
 ### Workflow Call Inputs
 
-| **Input**                        | **Description**                                                  | **Required** | **Type**   | **Default** |
-| -------------------------------- | ---------------------------------------------------------------- | ------------ | ---------- | ----------- |
-| **`slack-organizer-channel-id`** | Organizer Slack channel receiving publication approval requests. | **true**     | **string** | -           |
-| **`issue-number`**               | Meetup source issue number.                                      | **true**     | **number** | -           |
-| **`github-app-client-id`**       | GitHub App client ID for the consumer repository.                | **true**     | **string** | -           |
-| **`conference-hall-event`**      | Conference Hall CFP slug for the current event agenda.           | **true**     | **string** | -           |
-| **`locale`**                     | Language for the publication report (en or fr).                  | **true**     | **string** | -           |
-| **`gemini-model`**               | Gemini vision model used for pre-login hCaptcha challenges.      | **true**     | **string** | -           |
+| **Input**                          | **Description**                                                             | **Required** | **Type**   | **Default** |
+| ---------------------------------- | --------------------------------------------------------------------------- | ------------ | ---------- | ----------- |
+| **`meetup-event-url-prefix`**      | HTTPS event URL prefix for the authorized Meetup group, ending in /events/. | **true**     | **string** | -           |
+| **`community-event-url-prefixes`** | JSON array of nonempty HTTPS prefixes accepted for community event URLs.    | **true**     | **string** | -           |
+| **`asset-folder-url-prefix`**      | HTTPS prefix accepted for event asset folder URLs.                          | **true**     | **string** | -           |
+| **`slack-organizer-channel-id`**   | Organizer Slack channel receiving publication approval requests.            | **true**     | **string** | -           |
+| **`issue-number`**                 | Meetup source issue number.                                                 | **true**     | **number** | -           |
+| **`github-app-client-id`**         | GitHub App client ID for the consumer repository.                           | **true**     | **string** | -           |
+| **`conference-hall-event`**        | Conference Hall CFP slug for the current event agenda.                      | **true**     | **string** | -           |
+| **`locale`**                       | Language for the publication report (en or fr).                             | **true**     | **string** | -           |
+| **`gemini-model`**                 | Gemini vision model used for pre-login hCaptcha challenges.                 | **true**     | **string** | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->

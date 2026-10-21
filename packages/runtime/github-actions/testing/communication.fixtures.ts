@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { vi } from "vitest";
 import type { CommunicationRuntime } from "../src/communication.js";
+import { publicationUrls } from "./publication-urls.fixtures.js";
 
 const temporaryRoots: string[] = [];
 export async function cleanupCommunicationFixtures() {
@@ -41,6 +42,7 @@ export function runtimeInput(
 	> = {},
 ): Parameters<CommunicationRuntime["runCommunicationReconcile"]>[0] {
 	return {
+		publicationUrls,
 		locale: "en",
 		slidesReady: true,
 		conferenceHallEvent: "example-cfp",
@@ -235,11 +237,11 @@ Public event description.
 
 ### Meetup Link
 
-https://www.meetup.com/cloud-native-aix-marseille/events/123
+https://www.meetup.com/example-meetups/events/123
 
 ### CNCF Link
 
-https://ocgroups.dev/cncf/group/cloud-native-aix-marseille/event/platform-night
+https://ocgroups.dev/cncf/group/example-meetups/event/platform-night
 
 ### Drive Link
 

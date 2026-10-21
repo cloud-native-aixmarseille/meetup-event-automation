@@ -2,6 +2,7 @@ import * as core from "@actions/core";
 import { ManageMeetupAttention } from "@meetup-automation/journey";
 import { LocalizationComposition } from "@meetup-automation/localization";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { publicationUrlInputs } from "../testing/publication-urls.fixtures.js";
 import { AttentionAction } from "./attention-action.js";
 import { AttentionComposition } from "./attention-composition.js";
 import { GithubActionsComposition } from "./dependency-composition.js";
@@ -12,6 +13,7 @@ const boundary = vi.hoisted(() => ({ execute: vi.fn(), feedback: vi.fn() }));
 vi.mock("@actions/core", () => ({
 	getInput: (name: string) =>
 		({
+			...publicationUrlInputs,
 			"issue-number": "42",
 			"github-token": "private-token",
 			"managed-comment-author": "automation[bot]",
@@ -52,6 +54,8 @@ describe("attention action reporting", () => {
 
 			// Act
 			const report = await new AttentionAction({
+				publicationUrlInput:
+					new GithubActionsComposition().publicationUrlInput(),
 				createAttention: (input) => {
 					const container = AttentionComposition.create(input);
 					return {
@@ -90,6 +94,7 @@ describe("attention action reporting", () => {
 
 		// Act
 		const report = await new AttentionAction({
+			publicationUrlInput: new GithubActionsComposition().publicationUrlInput(),
 			createAttention: (input) => {
 				const container = AttentionComposition.create(input);
 				return {

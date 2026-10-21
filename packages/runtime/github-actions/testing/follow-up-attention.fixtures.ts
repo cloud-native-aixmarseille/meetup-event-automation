@@ -11,6 +11,10 @@ import { fixture } from "../../../adapter/github-organizer-approval/testing/appr
 import { createTestEvent } from "../../../domain/event/testing/event.fixtures.js";
 import { AttentionComposition } from "../src/attention-composition.js";
 import { SERVICES } from "../src/composition.js";
+import {
+	publicationLinks,
+	publicationUrls,
+} from "./publication-urls.fixtures.js";
 export function followUpFixture() {
 	const f = fixture();
 	const client = getOctokit("synthetic-token");
@@ -31,7 +35,7 @@ export function followUpFixture() {
 	);
 	vi.stubGlobal("fetch", fetcher);
 	const current = {
-		event: createTestEvent({ date: "2099-06-08" }),
+		event: createTestEvent({ publicationLinks, date: "2099-06-08" }),
 		now: new Date("2099-06-09T10:00:00Z"),
 	};
 	const stages = ["event", "assets", "feedback", "communications"].map(
@@ -46,6 +50,7 @@ export function followUpFixture() {
 		stageResults: readonly AttentionStage[] = stages,
 	) {
 		const container = AttentionComposition.create({
+			publicationUrls,
 			client,
 			owner: "example",
 			repo: "meetups",

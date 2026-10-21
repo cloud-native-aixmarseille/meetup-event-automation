@@ -21,6 +21,11 @@ at the GitHub Actions boundary. See the
 [configuration reference](../reference/configuration.md) for the supported
 consumer settings.
 
+Publication URL prefixes are required caller inputs. Runtime validates their
+shape and injects the typed configuration into event evaluation, publication,
+communication and attention. Domain policies contain no community-specific URL
+defaults. Listing and referential operations do not require publication settings.
+
 ## Package ownership
 
 | Package area                         | Responsibility                                                                                                                             |

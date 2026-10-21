@@ -24,6 +24,7 @@ import {
 	ValidateMeetupReferentials,
 } from "@meetup-automation/journey";
 import type { Locale } from "@meetup-automation/localization";
+import type { PublicationUrlConfiguration } from "@meetup-automation/publication";
 import {
 	type ProposalSource,
 	ReferentialDomainComposition,
@@ -68,7 +69,9 @@ export interface EventDocumentCompositionInput
 
 export interface EventCompositionInput
 	extends EventDocumentCompositionInput,
-		ConferenceHallSettings {}
+		ConferenceHallSettings {
+	readonly publicationUrls: PublicationUrlConfiguration;
+}
 
 export class EventComposition {
 	/** One container per invocation: no credentials or cached data survive a run. */
@@ -173,10 +176,14 @@ export class EventComposition {
 		const sourceSettings = new GithubActionsComposition()
 			.conferenceHallInput()
 			.validate(input);
+		const publicationUrls = new GithubActionsComposition()
+			.publicationUrlInput()
+			.validate(input.publicationUrls);
 		const container = EventComposition.createDocumentContainer(input);
 		EventComposition.bindProposalSource(container, sourceSettings);
 		container.bind(ManageMeetupEvent).toDynamicValue((context) =>
 			new JourneyComposition().manageMeetupEvent({
+				publicationUrls,
 				proposalSource: context.get<ProposalSource>(SERVICES.proposalSource),
 				config: context.get<AutomationConfig>(SERVICES.config),
 				referentialRepository: context.get<ReferentialRepository>(

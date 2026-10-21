@@ -7,11 +7,11 @@ import {
 import type {
 	ManualPublicationPolicy,
 	ManualPublicationTask,
+	PublicationUrlConfiguration,
+	PublicationUrlPolicies,
 	PublicationUrlPolicyEngine,
 	PublicationUrlPolicyEngineArguments,
 } from "@meetup-automation/publication";
-import type { AutomationConfig } from "../config/automation-config.js";
-import type { ConfiguredPublicationPolicies } from "../config/configured-publication-policies.js";
 import type { PublicDiagnostic } from "../result/result-envelope.js";
 
 export interface EventPublicationEvaluationCollaborators {
@@ -19,10 +19,7 @@ export interface EventPublicationEvaluationCollaborators {
 		MeetupPublicationChecklist,
 		"isPublished"
 	>;
-	readonly configuredPublicationPolicies: Pick<
-		ConfiguredPublicationPolicies,
-		"create"
-	>;
+	readonly publicationUrlPolicies: Pick<PublicationUrlPolicies, "create">;
 	readonly manualPublicationPolicy: Pick<
 		ManualPublicationPolicy,
 		"planManualPublicationTasks"
@@ -39,7 +36,7 @@ export class EventPublicationEvaluation {
 
 	evaluatePublication(
 		event: MeetupEvent,
-		config: AutomationConfig,
+		publicationUrls: PublicationUrlConfiguration,
 	): { event: MeetupEvent; diagnostics: EventDiagnostic[] } {
 		const diagnostics: EventDiagnostic[] = [];
 		for (const field of ["meetup", "community", "assets"] as const) {
@@ -68,9 +65,7 @@ export class EventPublicationEvaluation {
 			});
 		}
 		const engine = this.collaborators.createPublicationUrlPolicyEngine(
-			this.collaborators.configuredPublicationPolicies.create(
-				config.publication,
-			),
+			this.collaborators.publicationUrlPolicies.create(publicationUrls),
 		);
 		const evaluation = engine.evaluate(event.publicationLinks);
 		diagnostics.push(

@@ -7,7 +7,6 @@ import type {
 import { GithubOrganizerApprovalComposition } from "@meetup-automation/github-organizer-approval";
 import { GithubPublicationJournalComposition } from "@meetup-automation/github-publication-journal";
 import {
-	type AutomationConfig,
 	JourneyComposition,
 	ManageMeetupEvent,
 	ManageMeetupPublication,
@@ -39,9 +38,7 @@ export class MeetupPublicationComposition {
 	) {
 		const container = EventComposition.createEventContainer(input);
 		container.bind(ManageMeetupPublication).toDynamicValue((context) => {
-			const prefix = context.get<AutomationConfig>(SERVICES.config).publication[
-				"meetup-event-url-prefix"
-			];
+			const prefix = input.publicationUrls.meetupEventUrlPrefix;
 			const group = MeetupGroupUrl.fromEventUrlPrefix(prefix);
 			if (!group) throw new Error("Invalid Meetup event URL prefix");
 			return new JourneyComposition().manageMeetupPublication({

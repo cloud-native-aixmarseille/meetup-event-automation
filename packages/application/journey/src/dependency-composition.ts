@@ -76,8 +76,8 @@ export class JourneyComposition {
 		return new FindNextAssetEvent(
 			{
 				eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
-				configuredPublicationPolicies:
-					new JourneyPolicyComposition().configuredPublicationPolicies(),
+				publicationUrlPolicies:
+					new PublicationDomainComposition().publicationUrlPolicies(),
 				meetupPublicationChecklist:
 					new EventDomainComposition().meetupPublicationChecklist(),
 				createEventRuleEngine: (...args) =>

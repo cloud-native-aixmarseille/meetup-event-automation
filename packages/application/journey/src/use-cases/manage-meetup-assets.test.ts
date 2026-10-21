@@ -12,6 +12,7 @@ import {
 	createEventDependencies,
 	event,
 	identity,
+	publicationUrls,
 	sourceDocument,
 } from "../../testing/meetup-journey.fixtures.js";
 import { JourneyComposition } from "../dependency-composition.js";
@@ -311,6 +312,7 @@ function assetJourney(reconciliation?: Pick<ReconcileEventAssets, "execute">) {
 				{
 					proposalSource: { load: vi.fn() },
 					config,
+					publicationUrls,
 					eventDependencies,
 					referentialRepository: { load: async () => catalog },
 				},

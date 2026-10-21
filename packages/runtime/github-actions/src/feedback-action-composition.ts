@@ -5,6 +5,7 @@ import { FeedbackComposition } from "./feedback-composition.js";
 export class FeedbackActionComposition {
 	feedbackAction(): FeedbackAction {
 		return new FeedbackAction({
+			publicationUrlInput: new GithubActionsComposition().publicationUrlInput(),
 			createJourney: (input) =>
 				FeedbackComposition.createFeedbackContainer(input).get(
 					ManageMeetupFeedback,

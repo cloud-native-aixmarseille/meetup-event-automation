@@ -1,6 +1,15 @@
 name: Reconcile organizer attention
 description: Merge stage diagnostics into the organizer checklist and reconcile bounded Slack reminders.
 inputs:
+  meetup-event-url-prefix:
+    description: HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
+    required: true
+  community-event-url-prefixes:
+    description: JSON array of nonempty HTTPS prefixes accepted for community event URLs.
+    required: true
+  asset-folder-url-prefix:
+    description: HTTPS prefix accepted for event asset folder URLs.
+    required: true
   locale:
     description: Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
     required: true

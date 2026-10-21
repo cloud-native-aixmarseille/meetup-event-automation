@@ -35,10 +35,14 @@ import {
 	OrganizerFeedback,
 	type OrganizerFeedbackArguments,
 } from "./organizer-feedback.js";
+import { PublicationUrlInput } from "./publication-url-input.js";
 import { ReferentialActionReport } from "./referential-action-report.js";
 import { RuntimeInput } from "./runtime-input.js";
 import { SpeakerSyncFailureReport } from "./speaker-sync-failure-report.js";
 export class GithubActionsComposition {
+	publicationUrlInput(): PublicationUrlInput {
+		return new PublicationUrlInput(this.runtimeInput());
+	}
 	actionFailurePresenter(): ActionFailurePresenter {
 		return new ActionFailurePresenter();
 	}
@@ -109,6 +113,7 @@ export class GithubActionsComposition {
 	}
 	communicationInput(): CommunicationInput {
 		return new CommunicationInput({
+			publicationUrlInput: this.publicationUrlInput(),
 			conferenceHallInput: this.conferenceHallInput(),
 		});
 	}

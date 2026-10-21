@@ -32,12 +32,6 @@ describe("opinionated automation configuration", () => {
 				"dispatch-enabled": true,
 				"policy-version": 1,
 			},
-			publication: {
-				"meetup-event-url-prefix":
-					"https://www.meetup.com/cloud-native-aix-marseille/events/",
-				"cncf-event-url-prefix":
-					"https://ocgroups.dev/cncf/group/cloud-native-aix-marseille/event/",
-			},
 		});
 	});
 	it("disables communication for repository-independent workspace operations", () => {

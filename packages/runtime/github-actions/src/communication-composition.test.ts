@@ -18,6 +18,7 @@ import {
 	ValidateReferentialCatalog,
 } from "@meetup-automation/referential";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { publicationUrls } from "../testing/publication-urls.fixtures.js";
 import { CommunicationComposition } from "./communication-composition.js";
 import { SERVICES } from "./composition.js";
 
@@ -58,6 +59,7 @@ async function fixture(selected = true) {
 	};
 	const create = () => {
 		const container = CommunicationComposition.createCommunicationContainer({
+			publicationUrls,
 			client: getOctokit("synthetic-test-token"),
 			owner: "example",
 			repo: "events",

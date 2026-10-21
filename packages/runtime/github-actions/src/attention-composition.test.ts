@@ -24,6 +24,10 @@ import {
 import { fixture } from "../../../adapter/github-organizer-attention/testing/attention.fixtures.js";
 import { createTestEvent } from "../../../domain/event/testing/event.fixtures.js";
 import { followUpFixture } from "../testing/follow-up-attention.fixtures.js";
+import {
+	publicationLinks,
+	publicationUrls,
+} from "../testing/publication-urls.fixtures.js";
 import { AttentionComposition } from "./attention-composition.js";
 import { SERVICES } from "./composition.js";
 
@@ -48,6 +52,7 @@ describe("attention runtime composition", () => {
 		);
 		vi.stubGlobal("fetch", fetcher);
 		const event = createTestEvent({
+			publicationLinks,
 			date: "2099-06-08",
 			confirmations: { host: false, speakers: false },
 		});
@@ -70,6 +75,7 @@ describe("attention runtime composition", () => {
 		}));
 		const runs = (["en", "fr"] as const).map((locale) => {
 			const container = AttentionComposition.create({
+				publicationUrls,
 				client,
 				owner: "example",
 				repo: "meetups",

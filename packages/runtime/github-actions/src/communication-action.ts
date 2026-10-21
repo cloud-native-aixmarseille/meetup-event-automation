@@ -5,9 +5,11 @@ import type { ActionReportData } from "./action-report.js";
 import type { CommunicationRuntime } from "./communication.js";
 import type { ConferenceHallInput } from "./conference-hall-input.js";
 import type { ActionMessages } from "./i18n/action-messages.js";
+import type { PublicationUrlInput } from "./publication-url-input.js";
 import type { RuntimeInput } from "./runtime-input.js";
 
 export interface CommunicationActionCollaborators {
+	readonly publicationUrlInput: Pick<PublicationUrlInput, "read">;
 	readonly runtimeInput: Pick<
 		RuntimeInput,
 		"positiveIntegerInput" | "booleanInput"
@@ -42,6 +44,7 @@ export class CommunicationAction {
 		const { owner, repo } = context.repo;
 		const outcome =
 			await this.collaborators.communicationRuntime.runCommunicationReconcile({
+				publicationUrls: this.collaborators.publicationUrlInput.read(),
 				locale: messages.locale,
 				...this.collaborators.conferenceHallInput.read(),
 				issueNumber,

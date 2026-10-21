@@ -7,12 +7,86 @@ import {
 	createEventDependencies,
 	event,
 	identity,
+	publicationUrls,
 } from "../../testing/meetup-journey.fixtures.js";
 import { JourneyComposition } from "../dependency-composition.js";
 import { JourneyPolicyComposition } from "../policy-composition.js";
 import { ManageMeetupEvent } from "./manage-meetup-event.js";
 
 describe("ManageMeetupEvent manual publication tasks", () => {
+	it.each([
+		"https://regional.example.test/events/cloud-native-evening",
+		"https://community.example.test/meetups/cloud-native-evening",
+	])(
+		"evaluates publication against all supplied URL prefixes: %s",
+		async (community) => {
+			// Arrange
+			const eventDependencies = createEventDependencies();
+			vi.mocked(eventDependencies.documentCodec.decode).mockReturnValue({
+				event: {
+					...event,
+					publicationLinks: {
+						meetup: "https://www.meetup.com/regional-group/events/123456789",
+						community,
+						assets: "https://assets.example.test/folders/folder-1",
+					},
+				},
+				diagnostics: [],
+			});
+			const useCase = new ManageMeetupEvent(
+				{
+					eventPublicationEvaluation:
+						new JourneyPolicyComposition().eventPublicationEvaluation(),
+					eventReadinessPolicy:
+						new EventDomainComposition().eventReadinessPolicy(),
+					eventLifecycle: new EventDomainComposition().eventLifecycle(),
+					eventDiagnosticProjection:
+						new JourneyPolicyComposition().eventDiagnosticProjection(),
+					eventParticipantResolution:
+						new JourneyPolicyComposition().eventParticipantResolution(),
+					eventRepositoryPatches:
+						new EventDomainComposition().eventRepositoryPatches(),
+					eventDocumentConcurrency:
+						new EventDomainComposition().eventDocumentConcurrency(),
+					createReconcileEvent: (...args) =>
+						new EventDomainComposition().reconcileEvent(...args),
+					createValidateReferentialCatalog: (...args) =>
+						new ReferentialDomainComposition().validateReferentialCatalog(
+							...args,
+						),
+					createRefreshSelectedProposals: (...args) =>
+						new JourneyComposition().refreshSelectedProposals(...args),
+					createResolveEventReferences: (...args) =>
+						new ReferentialDomainComposition().resolveEventReferences(...args),
+				},
+				{
+					proposalSource: { load: vi.fn() },
+					config,
+					publicationUrls: {
+						meetupEventUrlPrefix:
+							"https://www.meetup.com/regional-group/events/",
+						communityEventUrlPrefixes: [
+							"https://regional.example.test/events/",
+							"https://community.example.test/meetups/",
+						],
+						assetFolderUrlPrefix: "https://assets.example.test/folders/",
+					},
+					referentialRepository: { load: async () => catalog },
+					eventDependencies,
+				},
+			);
+
+			// Act
+			const result = await useCase.execute({ identity, mode: "check" });
+
+			// Assert
+			expect(result).toMatchObject({ skipped: false, isReady: true });
+			expect(result.diagnostics).not.toContainEqual(
+				expect.objectContaining({ severity: "error" }),
+			);
+		},
+	);
+
 	it.each([false, true])(
 		"requires a published Meetup event for readiness: %s",
 		async (completed) => {
@@ -58,6 +132,7 @@ describe("ManageMeetupEvent manual publication tasks", () => {
 				{
 					proposalSource: { load: vi.fn() },
 					config,
+					publicationUrls,
 					referentialRepository: { load: async () => catalog },
 					eventDependencies,
 				},
@@ -126,6 +201,7 @@ describe("ManageMeetupEvent manual publication tasks", () => {
 			{
 				proposalSource: { load: vi.fn() },
 				config,
+				publicationUrls,
 				referentialRepository: { load: async () => catalog },
 				eventDependencies: {
 					...createEventDependencies(),
@@ -180,6 +256,7 @@ describe("ManageMeetupEvent manual publication tasks", () => {
 			{
 				proposalSource: { load: vi.fn() },
 				config,
+				publicationUrls,
 				referentialRepository: {
 					load: vi.fn().mockResolvedValue(catalog),
 				},

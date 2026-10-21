@@ -25,6 +25,10 @@ The credential is the service-account JSON, including `type`, `client_email` and
 contain IDs, not URLs, and must differ. Missing or invalid settings fail asset
 reconciliation.
 
+Asset reconciliation also requires the three [publication URL inputs](../reference/configuration.md#publication-url-inputs).
+Use the asset folder prefix for Drive Link validation and the configured Meetup
+and community prefixes when selecting the next event to promote.
+
 ## Prepare templates
 
 The template folder must contain at least one file and no subfolders. Each file

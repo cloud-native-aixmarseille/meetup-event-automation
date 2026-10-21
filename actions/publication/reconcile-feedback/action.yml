@@ -1,6 +1,15 @@
 name: Reconcile meetup feedback
 description: Create OpenFeedback events, synchronize their titles, talks and speakers, and update the existing Kutt link from the day before through the event day.
 inputs:
+  meetup-event-url-prefix:
+    description: HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
+    required: true
+  community-event-url-prefixes:
+    description: JSON array of nonempty HTTPS prefixes accepted for community event URLs.
+    required: true
+  asset-folder-url-prefix:
+    description: HTTPS prefix accepted for event asset folder URLs.
+    required: true
   locale:
     description: Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
     required: true

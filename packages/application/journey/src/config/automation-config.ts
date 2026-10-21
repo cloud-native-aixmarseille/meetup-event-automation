@@ -1,5 +1,3 @@
-import { DEFAULT_PUBLICATION_URL_CONFIGURATION } from "@meetup-automation/publication";
-
 export interface AutomationConfig {
 	readonly timezone: string;
 	readonly event: Readonly<{
@@ -14,18 +12,10 @@ export interface AutomationConfig {
 		"dispatch-enabled": boolean;
 		"policy-version": number;
 	}>;
-	readonly publication: Readonly<{
-		"meetup-event-url-prefix": string;
-		"cncf-event-url-prefix": string;
-	}>;
 }
 
 export class AutomationConfigFactory {
-	/**
-	 * Automation behavior is owned and versioned by this repository. Consumer
-	 * repositories do not provide a runtime configuration file anymore. Without
-	 * a repository owner, workspace-only operations leave communication disabled.
-	 */
+	/** Fixed workflow conventions; caller-owned publication URLs are injected separately. */
 	createAutomationConfig(repositoryOwner?: string): AutomationConfig {
 		return {
 			timezone: "Europe/Paris",
@@ -48,12 +38,6 @@ export class AutomationConfigFactory {
 					: "",
 				"dispatch-enabled": Boolean(repositoryOwner),
 				"policy-version": 1,
-			},
-			publication: {
-				"meetup-event-url-prefix":
-					DEFAULT_PUBLICATION_URL_CONFIGURATION.meetupEventUrlPrefix,
-				"cncf-event-url-prefix":
-					DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes[0],
 			},
 		};
 	}

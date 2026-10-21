@@ -32,6 +32,9 @@ model with image input, structured output, and available API quota. The workflow
 also requires the existing GitHub App and Conference Hall credentials; see
 [setup](../usage/setup.md). Forward each credential explicitly, including the
 Slack bot token and organizer channel used for approval notifications and reactions.
+Pass the three required [publication URL inputs](../reference/configuration.md#publication-url-inputs)
+from the same repository variables used by issue updates and audits. The Meetup
+prefix selects the organizer group used by the browser and event URL validation.
 
 Create `.github/meetup-publication.json` in the consumer repository:
 
@@ -64,8 +67,8 @@ access.
 Selected talks and speaker names are resolved through the existing event journey.
 
 Call `reconcile-meetup-event.yml` with the issue number, locale, GitHub App client
-ID, Conference Hall event slug, Gemini model, organizer Slack channel, and its
-six required secrets.
+ID, Conference Hall event slug, Gemini model, organizer Slack channel, the three
+publication URL inputs, and its six required secrets.
 Consumer workflows must call it on event issue changes and on `issue_comment: [edited]` so an organizer's approval resumes publication automatically. A manual
 run also supports recovery. Pin all consumer automation callers to the same
 published full commit SHA so they understand the shared approval records.
@@ -102,6 +105,9 @@ jobs:
       locale: fr
       github-app-client-id: ${{ vars.CI_BOT_APP_CLIENT_ID }}
       conference-hall-event: ${{ vars.CONFERENCE_HALL_EVENT }}
+      meetup-event-url-prefix: ${{ vars.MEETUP_EVENT_URL_PREFIX }}
+      community-event-url-prefixes: ${{ vars.COMMUNITY_EVENT_URL_PREFIXES }}
+      asset-folder-url-prefix: ${{ vars.ASSET_FOLDER_URL_PREFIX }}
       gemini-model: ${{ vars.GEMINI_MODEL }}
       slack-organizer-channel-id: ${{ vars.SLACK_ORGANIZER_CHANNEL_ID }}
     secrets:

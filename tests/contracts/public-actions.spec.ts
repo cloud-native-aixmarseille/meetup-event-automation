@@ -7,6 +7,9 @@ const actionContracts = [
 	{
 		directory: "actions/communication/reconcile-attention",
 		inputs: [
+			"asset-folder-url-prefix",
+			"community-event-url-prefixes",
+			"meetup-event-url-prefix",
 			"github-token",
 			"issue-number",
 			"managed-comment-author",
@@ -19,6 +22,9 @@ const actionContracts = [
 	{
 		directory: "actions/publication/reconcile-feedback",
 		inputs: [
+			"asset-folder-url-prefix",
+			"community-event-url-prefixes",
+			"meetup-event-url-prefix",
 			"conference-hall-api-key",
 			"conference-hall-event",
 			"github-token",
@@ -33,6 +39,9 @@ const actionContracts = [
 	{
 		directory: "actions/publication/reconcile-assets",
 		inputs: [
+			"asset-folder-url-prefix",
+			"community-event-url-prefixes",
+			"meetup-event-url-prefix",
 			"conference-hall-api-key",
 			"conference-hall-event",
 			"github-token",
@@ -46,6 +55,9 @@ const actionContracts = [
 	{
 		directory: "actions/event/reconcile",
 		inputs: [
+			"asset-folder-url-prefix",
+			"community-event-url-prefixes",
+			"meetup-event-url-prefix",
 			"conference-hall-api-key",
 			"conference-hall-event",
 			"github-token",
@@ -71,6 +83,9 @@ const actionContracts = [
 	{
 		directory: "actions/communication/reconcile",
 		inputs: [
+			"asset-folder-url-prefix",
+			"community-event-url-prefixes",
+			"meetup-event-url-prefix",
 			"conference-hall-api-key",
 			"conference-hall-event",
 			"openfeedback-api-key",

@@ -13,6 +13,18 @@ name: Check active meetup issues
 on:
   workflow_call:
     inputs:
+      meetup-event-url-prefix:
+        description: HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
+        required: true
+        type: string
+      community-event-url-prefixes:
+        description: JSON array of nonempty HTTPS prefixes accepted for community event URLs.
+        required: true
+        type: string
+      asset-folder-url-prefix:
+        description: HTTPS prefix accepted for event asset folder URLs.
+        required: true
+        type: string
       locale:
         description: Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
         required: true
@@ -132,6 +144,9 @@ jobs:
         id: feedback
         uses: ./../self-workflow/actions/publication/reconcile-feedback
         with:
+          meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
+          community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
+          asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}
           conference-hall-event: ${{ inputs.conference-hall-event }}
           conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicit reusable workflow secret
           locale: ${{ inputs.locale }}
@@ -147,6 +162,9 @@ jobs:
         if: ${{ !cancelled() && steps.app-token.outcome == 'success' && steps.local-workflow-actions.outcome == 'success' }}
         uses: ./../self-workflow/actions/publication/reconcile-assets
         with:
+          meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
+          community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
+          asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}
           conference-hall-event: ${{ inputs.conference-hall-event }}
           conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicit reusable workflow secret
           locale: ${{ inputs.locale }}
@@ -161,6 +179,9 @@ jobs:
         if: ${{ !cancelled() && steps.app-token.outcome == 'success' && steps.local-workflow-actions.outcome == 'success' }}
         uses: ./../self-workflow/actions/event/reconcile
         with:
+          meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
+          community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
+          asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}
           conference-hall-event: ${{ inputs.conference-hall-event }}
           conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicit reusable workflow secret
           locale: ${{ inputs.locale }}
@@ -183,6 +204,9 @@ jobs:
         if: ${{ steps.assets.outputs.drive-files != '' && steps.assets.outputs.slides-ready != '' }}
         uses: ./../self-workflow/actions/communication/reconcile
         with:
+          meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
+          community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
+          asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}
           conference-hall-event: ${{ inputs.conference-hall-event }}
           conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicit reusable workflow secret
           slides-ready: ${{ steps.assets.outputs.slides-ready }}
@@ -201,6 +225,9 @@ jobs:
         if: ${{ always() && steps.app-token.outcome == 'success' && steps.local-workflow-actions.outcome == 'success' }}
         uses: ./../self-workflow/actions/communication/reconcile-attention
         with:
+          meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
+          community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
+          asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}
           locale: ${{ inputs.locale }}
           issue-number: ${{ matrix.issue-number }}
           github-token: ${{ steps.app-token.outputs.token }}

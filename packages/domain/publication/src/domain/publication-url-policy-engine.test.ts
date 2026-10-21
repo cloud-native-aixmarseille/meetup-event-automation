@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { publicationUrls } from "../../testing/publication-urls.fixtures.js";
 import { PublicationDomainComposition } from "../dependency-composition.js";
 import { PublicationUrlPolicyEngine } from "./publication-url-policy-engine.js";
 
@@ -12,16 +13,15 @@ describe("publication URL policies", () => {
 			},
 			new PublicationDomainComposition()
 				.publicationUrlPolicies()
-				.createDefaultPublicationUrlPolicies(),
+				.create(publicationUrls),
 		);
 
 		// Act
 		const result = engine.evaluate({
-			meetup:
-				"https://www.meetup.com/cloud-native-aix-marseille/events/123456789",
+			meetup: "https://www.meetup.com/example-meetups/events/123456789",
 			community:
-				"https://ocgroups.dev/cncf/group/cloud-native-aix-marseille/event/cloud-native-evening",
-			assets: "https://drive.google.com/drive/folders/abc_DEF-123",
+				"https://ocgroups.dev/cncf/group/example-meetups/event/cloud-native-evening",
+			assets: "https://assets.example.test/folders/abc_DEF-123",
 		});
 
 		// Assert
@@ -29,7 +29,7 @@ describe("publication URL policies", () => {
 		expect(result.patch.operations).toEqual([]);
 	});
 
-	it("accepts the legacy CNCF community URL", () => {
+	it("accepts another explicitly configured community prefix", () => {
 		// Arrange
 		// No additional setup is needed.
 
@@ -41,10 +41,9 @@ describe("publication URL policies", () => {
 			},
 			new PublicationDomainComposition()
 				.publicationUrlPolicies()
-				.createDefaultPublicationUrlPolicies(),
+				.create(publicationUrls),
 		).evaluate({
-			community:
-				"https://community.cncf.io/events/details/cncf-cloud-native-aix-marseille-presents-platform-engineering",
+			community: "https://community.example.test/events/platform-engineering",
 		});
 
 		// Assert
@@ -54,8 +53,7 @@ describe("publication URL policies", () => {
 	it("normalizes outer whitespace and trailing slashes immutably", () => {
 		// Arrange
 		const source = {
-			meetup:
-				" https://www.meetup.com/cloud-native-aix-marseille/events/123456789/ ",
+			meetup: " https://www.meetup.com/example-meetups/events/123456789/ ",
 		};
 
 		// Act
@@ -66,15 +64,15 @@ describe("publication URL policies", () => {
 			},
 			new PublicationDomainComposition()
 				.publicationUrlPolicies()
-				.createDefaultPublicationUrlPolicies(),
+				.create(publicationUrls),
 		).evaluate(source);
 
 		// Assert
 		expect(source.meetup).toBe(
-			" https://www.meetup.com/cloud-native-aix-marseille/events/123456789/ ",
+			" https://www.meetup.com/example-meetups/events/123456789/ ",
 		);
 		expect(result.references.meetup).toBe(
-			"https://www.meetup.com/cloud-native-aix-marseille/events/123456789",
+			"https://www.meetup.com/example-meetups/events/123456789",
 		);
 		expect(result.patch.operations).toHaveLength(1);
 		expect(result.diagnostics[0]).toMatchObject({
@@ -84,9 +82,67 @@ describe("publication URL policies", () => {
 	});
 
 	it.each([
+		{
+			prefixes: [
+				"https://community.example.test/",
+				"https://community.example.test/events/",
+			],
+		},
+		{
+			prefixes: [
+				"https://community.example.test/events/",
+				"https://community.example.test/",
+			],
+		},
+	])(
+		"accepts overlapping configured prefixes in either order: $prefixes",
+		({ prefixes }) => {
+			// Arrange
+			const engine = new PublicationUrlPolicyEngine(
+				{
+					publicationDiagnostics:
+						new PublicationDomainComposition().publicationDiagnostics(),
+				},
+				new PublicationDomainComposition().publicationUrlPolicies().create({
+					...publicationUrls,
+					communityEventUrlPrefixes: prefixes,
+				}),
+			);
+
+			// Act
+			const result = engine.evaluate({
+				community: "https://community.example.test/events/platform-evening",
+			});
+
+			// Assert
+			expect(result.diagnostics).toEqual([]);
+		},
+	);
+
+	it.each([
 		[
 			"meetup",
-			"https://www.meetup.com/cloud-native-aix-marseille/events/not-numeric",
+			"https://www.meetup.com/cloud-native-aix-marseille/events/123456789",
+			"publication.meetup-url.invalid",
+		],
+		[
+			"community",
+			"https://ocgroups.dev/cncf/group/cloud-native-aix-marseille/event/cloud-native-evening",
+			"publication.community-url.invalid",
+		],
+		[
+			"community",
+			"https://community.cncf.io/events/details/cncf-cloud-native-aix-marseille-presents-platform-engineering",
+			"publication.community-url.invalid",
+		],
+		[
+			"assets",
+			"https://drive.google.com/drive/folders/folder-1",
+			"publication.asset-url.invalid",
+		],
+		[
+			"meetup",
+			"https://www.meetup.com/example-meetups/events/not-numeric",
 			"publication.meetup-url.invalid",
 		],
 		[
@@ -96,7 +152,7 @@ describe("publication URL policies", () => {
 		],
 		[
 			"assets",
-			"http://drive.google.com/drive/folders/abc",
+			"http://assets.example.test/folders/abc",
 			"publication.asset-url.invalid",
 		],
 	] as const)("rejects invalid %s references", (field, value, expectedCode) => {
@@ -111,7 +167,7 @@ describe("publication URL policies", () => {
 			},
 			new PublicationDomainComposition()
 				.publicationUrlPolicies()
-				.createDefaultPublicationUrlPolicies(),
+				.create(publicationUrls),
 		).evaluate({ [field]: value });
 
 		// Assert
