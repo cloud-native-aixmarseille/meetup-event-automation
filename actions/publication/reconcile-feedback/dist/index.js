@@ -29630,6 +29630,58 @@ var CommunityEventUrlPolicy = class {
   }
 };
 
+// packages/domain/publication/src/domain/feedback-policy.ts
+var FeedbackPolicy = class _FeedbackPolicy {
+  static validDate(value) {
+    const date = /* @__PURE__ */ new Date(`${value}T00:00:00Z`);
+    return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(date.valueOf()) && date.toISOString().slice(0, 10) === value;
+  }
+  static pollUrl(value) {
+    const url = new URL(value);
+    if (url.origin !== "https://openfeedback.io" || url.username || url.password || !/^\/[a-zA-Z0-9_-]+(?:\/(?:\d{4}-\d{2}-\d{2}|0))?\/?$/.test(
+      url.pathname
+    ) || url.search || url.hash)
+      throw new Error("Feedback link must be an OpenFeedback event URL");
+    return url.href.replace(/\/$/, "");
+  }
+  static isLinkUpdateDue(date, now2, timeZone) {
+    if (!_FeedbackPolicy.validDate(date)) return false;
+    const updateDate = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
+    updateDate.setUTCDate(updateDate.getUTCDate() - 1);
+    const today = new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).format(new Date(now2));
+    return today >= updateDate.toISOString().slice(0, 10) && today <= date;
+  }
+};
+
+// packages/domain/publication/src/domain/feedback-link-selection.ts
+var FeedbackLinkSelection = class {
+  static conflict(candidate, targetDate, now2, timeZone) {
+    if (!candidate.isOpen || candidate.occurrenceStatus === "cancelled" || candidate.occurrenceStatus === "postponed")
+      return void 0;
+    if (candidate.date === targetDate) return "ambiguous-date";
+    if (candidate.date < targetDate && FeedbackPolicy.isLinkUpdateDue(candidate.date, now2, timeZone))
+      return "current-event";
+    return void 0;
+  }
+};
+
+// packages/domain/publication/src/domain/feedback-resolution-error.ts
+var FeedbackResolutionError = class extends Error {
+  constructor(kind) {
+    super(
+      kind === "conflict" ? "The feedback agenda contains ambiguous talk or speaker identities" : "Feedback talk results are unavailable"
+    );
+    this.kind = kind;
+    this.name = "FeedbackResolutionError";
+  }
+  kind;
+};
+
 // packages/domain/publication/src/domain/manual-task-policy.ts
 var ManualPublicationPolicy = class _ManualPublicationPolicy {
   /** Tracks organizer approvals and manual work required for publication. */
@@ -29834,46 +29886,6 @@ var PublicationUrlPolicyEngine = class {
       patch: Object.freeze({ operations: Object.freeze(operations) })
     };
   }
-};
-
-// packages/domain/publication/src/domain/feedback-policy.ts
-var FeedbackPolicy = class _FeedbackPolicy {
-  static validDate(value) {
-    const date = /* @__PURE__ */ new Date(`${value}T00:00:00Z`);
-    return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(date.valueOf()) && date.toISOString().slice(0, 10) === value;
-  }
-  static pollUrl(value) {
-    const url = new URL(value);
-    if (url.origin !== "https://openfeedback.io" || url.username || url.password || !/^\/[a-zA-Z0-9_-]+(?:\/(?:\d{4}-\d{2}-\d{2}|0))?\/?$/.test(
-      url.pathname
-    ) || url.search || url.hash)
-      throw new Error("Feedback link must be an OpenFeedback event URL");
-    return url.href.replace(/\/$/, "");
-  }
-  static isLinkUpdateDue(date, now2, timeZone) {
-    if (!_FeedbackPolicy.validDate(date)) return false;
-    const updateDate = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
-    updateDate.setUTCDate(updateDate.getUTCDate() - 1);
-    const today = new Intl.DateTimeFormat("en-CA", {
-      timeZone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit"
-    }).format(new Date(now2));
-    return today >= updateDate.toISOString().slice(0, 10) && today <= date;
-  }
-};
-
-// packages/domain/publication/src/domain/feedback-resolution-error.ts
-var FeedbackResolutionError = class extends Error {
-  constructor(kind) {
-    super(
-      kind === "conflict" ? "The feedback agenda contains ambiguous talk or speaker identities" : "Feedback talk results are unavailable"
-    );
-    this.kind = kind;
-    this.name = "FeedbackResolutionError";
-  }
-  kind;
 };
 
 // packages/application/journey/src/config/automation-config.ts
@@ -30856,6 +30868,22 @@ var SourceSpeakerEquality = class {
   }
 };
 
+// packages/application/journey/src/config/configured-publication-policies.ts
+var ConfiguredPublicationPolicies = class {
+  static create(publication) {
+    return PublicationUrlPolicies.createDefaultPublicationUrlPolicies({
+      ...DEFAULT_PUBLICATION_URL_CONFIGURATION,
+      meetupEventUrlPrefix: publication["meetup-event-url-prefix"],
+      communityEventUrlPrefixes: [
+        publication["cncf-event-url-prefix"],
+        ...DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes.slice(
+          1
+        )
+      ]
+    });
+  }
+};
+
 // packages/domain/communication/src/model.ts
 var MAIL_TEMPLATE_NAMES = {
   hostIntroduction: "meetup-intro-hosting",
@@ -30935,16 +30963,7 @@ var EventPublicationEvaluation = class _EventPublicationEvaluation {
       });
     }
     const engine = new PublicationUrlPolicyEngine(
-      PublicationUrlPolicies.createDefaultPublicationUrlPolicies({
-        ...DEFAULT_PUBLICATION_URL_CONFIGURATION,
-        meetupEventUrlPrefix: config.publication["meetup-event-url-prefix"],
-        communityEventUrlPrefixes: [
-          config.publication["cncf-event-url-prefix"],
-          ...DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes.slice(
-            1
-          )
-        ]
-      })
+      ConfiguredPublicationPolicies.create(config.publication)
     );
     const evaluation = engine.evaluate(event.publicationLinks);
     diagnostics.push(
@@ -31003,31 +31022,41 @@ var UNRESOLVED_MAIL_RECIPIENTS = Object.freeze({
 });
 
 // packages/application/journey/src/use-cases/feedback-agenda-projection.ts
-var FeedbackAgendaProjection = class {
+var FeedbackAgendaProjection = class _FeedbackAgendaProjection {
   static create(event, diagnostics) {
-    if (event.agenda.length === 0 || diagnostics.some(
-      (item) => item.severity === "error" && (item.code.startsWith("referential.") && !item.code.startsWith("referential.reference.host.") || item.code.startsWith("event.agenda."))
-    ) || event.agenda.some(
-      (entry) => !entry.description.trim() || entry.speakers.length === 0 || entry.speakers.some(
-        (speaker) => !speaker.id || !speaker.displayName.trim()
-      )
-    ))
+    if (!event.agenda.length || _FeedbackAgendaProjection.blocked(diagnostics))
       return void 0;
+    const talks = [];
+    for (const entry of event.agenda) {
+      const talk = _FeedbackAgendaProjection.talk(entry);
+      if (!talk) return void 0;
+      talks.push(talk);
+    }
+    return { talks };
+  }
+  static blocked(diagnostics) {
+    return diagnostics.some(
+      (item) => item.severity === "error" && (item.code.startsWith("referential.") && !item.code.startsWith("referential.reference.host.") || item.code.startsWith("event.agenda."))
+    );
+  }
+  static talk(entry) {
+    if (!entry.description.trim() || !entry.speakers.length) return void 0;
+    const speakers = [];
+    for (const speaker of entry.speakers) {
+      if (!speaker.id || !speaker.displayName.trim()) return void 0;
+      speakers.push({ id: speaker.id, name: speaker.displayName.trim() });
+    }
     return {
-      talks: event.agenda.map((entry) => ({
-        title: entry.proposal?.title ?? entry.description.trim(),
-        ...entry.proposal ? {
-          sourceIdentity: JSON.stringify([
-            entry.proposal.provider,
-            entry.proposal.event,
-            entry.proposal.id
-          ])
-        } : {},
-        speakers: entry.speakers.map((speaker) => ({
-          id: speaker.id,
-          name: speaker.displayName.trim()
-        }))
-      }))
+      title: entry.proposal?.title ?? entry.description.trim(),
+      ...entry.proposal ? {
+        // A fixed tuple makes provider identity independent of JSON key order.
+        sourceIdentity: JSON.stringify([
+          entry.proposal.provider,
+          entry.proposal.event,
+          entry.proposal.id
+        ])
+      } : {},
+      speakers
     };
   }
 };
@@ -31451,46 +31480,41 @@ var ManageMeetupFeedback = class _ManageMeetupFeedback {
   async linkConflict(source, target, now2) {
     let cursor;
     const visited = /* @__PURE__ */ new Set();
-    do {
+    for (let pages = 0; pages < 20; pages++) {
       const page = await this.dependencies.eventRepository.listPage({
         repository: source.identity.repository,
-        label: "meetup",
+        label: this.dependencies.eventLabel,
         cursor
       });
       for (const document of page.items) {
         if (document.identity.issueNumber === source.identity.issueNumber)
           continue;
         const { event } = this.dependencies.documentCodec.decode(document);
-        const conflict = _ManageMeetupFeedback.conflictingEvent(
-          event,
-          target,
-          now2
+        const conflict = FeedbackLinkSelection.conflict(
+          {
+            date: event.date,
+            isOpen: event.issueState === "open",
+            occurrenceStatus: event.occurrenceStatus
+          },
+          target.date,
+          now2,
+          target.timeZone
         );
-        if (conflict) return conflict;
+        if (conflict) return _ManageMeetupFeedback.conflictDiagnostic(conflict);
       }
       cursor = page.nextCursor;
-      if (cursor && visited.has(cursor))
-        throw new Error("Feedback event pagination did not advance");
-      if (cursor) visited.add(cursor);
-    } while (cursor);
-    return void 0;
+      if (!cursor) return void 0;
+      if (visited.has(cursor)) throw new EventPaginationError(cursor);
+      visited.add(cursor);
+    }
+    throw new EventPaginationError("feedback-page-limit");
   }
-  static conflictingEvent(event, target, now2) {
-    if (event.issueState !== "open" || event.occurrenceStatus === "cancelled" || event.occurrenceStatus === "postponed")
-      return void 0;
-    if (event.date === target.date)
-      return {
-        code: "publication.feedback.ambiguous-date",
-        severity: "warning",
-        message: "Several active meetups share this date; update the shared feedback link manually"
-      };
-    if (event.date < target.date && FeedbackPolicy.isLinkUpdateDue(event.date, now2, target.timeZone))
-      return {
-        code: "publication.feedback.current-event",
-        severity: "info",
-        message: "An active meetup takes place today; keep its shared feedback link until the event day ends"
-      };
-    return void 0;
+  static conflictDiagnostic(conflict) {
+    return {
+      code: `publication.feedback.${conflict}`,
+      severity: conflict === "ambiguous-date" ? "warning" : "info",
+      message: conflict === "ambiguous-date" ? "Several active meetups share this date; update the shared feedback link manually" : "An active meetup takes place today; keep its shared feedback link until the event day ends"
+    };
   }
   ensureCurrent(source) {
     return ReconcileEvent.ensureEventDocumentIsCurrent(
@@ -58256,6 +58280,7 @@ var FeedbackComposition = class {
     );
     container.bind(ManageMeetupFeedback).toDynamicValue(
       (context3) => new ManageMeetupFeedback({
+        eventLabel: context3.get(SERVICES.config).event["issue-label"],
         eventRepository: context3.get(
           SERVICES.eventRepository
         ),

@@ -29623,27 +29623,6 @@ var AssetFolderUrlPolicy = class {
   }
 };
 
-// packages/domain/publication/src/domain/presentation-file-url.ts
-var PresentationFileUrl = class {
-  static normalize(value) {
-    if (!value?.trim()) return void 0;
-    try {
-      const url = new URL(value.trim());
-      if (url.protocol !== "https:" || url.username || url.password || url.port)
-        return void 0;
-      const presentation = url.hostname === "docs.google.com" && /^\/presentation\/d\/[a-zA-Z0-9_-]+(?:\/(?:edit|view|preview|present))?\/?$/.test(
-        url.pathname
-      );
-      const file = url.hostname === "drive.google.com" && /^\/file\/d\/[a-zA-Z0-9_-]+(?:\/(?:view|preview|edit))?\/?$/.test(
-        url.pathname
-      );
-      return presentation || file ? url.href : void 0;
-    } catch {
-      return void 0;
-    }
-  }
-};
-
 // packages/domain/publication/src/domain/community-event-url-policy.ts
 var CommunityEventUrlPolicy = class {
   constructor(prefixes) {
@@ -29664,6 +29643,46 @@ var CommunityEventUrlPolicy = class {
       message: "Community event URL must use an approved CNCF/OCGroups prefix and identifier"
     });
   }
+};
+
+// packages/domain/publication/src/domain/feedback-policy.ts
+var FeedbackPolicy = class _FeedbackPolicy {
+  static validDate(value) {
+    const date = /* @__PURE__ */ new Date(`${value}T00:00:00Z`);
+    return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(date.valueOf()) && date.toISOString().slice(0, 10) === value;
+  }
+  static pollUrl(value) {
+    const url = new URL(value);
+    if (url.origin !== "https://openfeedback.io" || url.username || url.password || !/^\/[a-zA-Z0-9_-]+(?:\/(?:\d{4}-\d{2}-\d{2}|0))?\/?$/.test(
+      url.pathname
+    ) || url.search || url.hash)
+      throw new Error("Feedback link must be an OpenFeedback event URL");
+    return url.href.replace(/\/$/, "");
+  }
+  static isLinkUpdateDue(date, now2, timeZone) {
+    if (!_FeedbackPolicy.validDate(date)) return false;
+    const updateDate = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
+    updateDate.setUTCDate(updateDate.getUTCDate() - 1);
+    const today = new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).format(new Date(now2));
+    return today >= updateDate.toISOString().slice(0, 10) && today <= date;
+  }
+};
+
+// packages/domain/publication/src/domain/feedback-resolution-error.ts
+var FeedbackResolutionError = class extends Error {
+  constructor(kind) {
+    super(
+      kind === "conflict" ? "The feedback agenda contains ambiguous talk or speaker identities" : "Feedback talk results are unavailable"
+    );
+    this.kind = kind;
+    this.name = "FeedbackResolutionError";
+  }
+  kind;
 };
 
 // packages/domain/publication/src/domain/manual-task-policy.ts
@@ -29824,6 +29843,27 @@ var PublicationDiagnostics = class {
   }
 };
 
+// packages/domain/publication/src/domain/presentation-file-url.ts
+var PresentationFileUrl = class {
+  static normalize(value) {
+    if (!value?.trim()) return void 0;
+    try {
+      const url = new URL(value.trim());
+      if (url.protocol !== "https:" || url.username || url.password || url.port)
+        return void 0;
+      const presentation = url.hostname === "docs.google.com" && /^\/presentation\/d\/[a-zA-Z0-9_-]+(?:\/(?:edit|view|preview|present))?\/?$/.test(
+        url.pathname
+      );
+      const file = url.hostname === "drive.google.com" && /^\/file\/d\/[a-zA-Z0-9_-]+(?:\/(?:view|preview|edit))?\/?$/.test(
+        url.pathname
+      );
+      return presentation || file ? url.href : void 0;
+    } catch {
+      return void 0;
+    }
+  }
+};
+
 // packages/domain/publication/src/domain/url-policy-contracts.ts
 var DEFAULT_PUBLICATION_URL_CONFIGURATION = Object.freeze({
   meetupEventUrlPrefix: `${MEETUP_ORIGIN}/cloud-native-aix-marseille/events/`,
@@ -29870,46 +29910,6 @@ var PublicationUrlPolicyEngine = class {
       patch: Object.freeze({ operations: Object.freeze(operations) })
     };
   }
-};
-
-// packages/domain/publication/src/domain/feedback-policy.ts
-var FeedbackPolicy = class _FeedbackPolicy {
-  static validDate(value) {
-    const date = /* @__PURE__ */ new Date(`${value}T00:00:00Z`);
-    return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(date.valueOf()) && date.toISOString().slice(0, 10) === value;
-  }
-  static pollUrl(value) {
-    const url = new URL(value);
-    if (url.origin !== "https://openfeedback.io" || url.username || url.password || !/^\/[a-zA-Z0-9_-]+(?:\/(?:\d{4}-\d{2}-\d{2}|0))?\/?$/.test(
-      url.pathname
-    ) || url.search || url.hash)
-      throw new Error("Feedback link must be an OpenFeedback event URL");
-    return url.href.replace(/\/$/, "");
-  }
-  static isLinkUpdateDue(date, now2, timeZone) {
-    if (!_FeedbackPolicy.validDate(date)) return false;
-    const updateDate = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
-    updateDate.setUTCDate(updateDate.getUTCDate() - 1);
-    const today = new Intl.DateTimeFormat("en-CA", {
-      timeZone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit"
-    }).format(new Date(now2));
-    return today >= updateDate.toISOString().slice(0, 10) && today <= date;
-  }
-};
-
-// packages/domain/publication/src/domain/feedback-resolution-error.ts
-var FeedbackResolutionError = class extends Error {
-  constructor(kind) {
-    super(
-      kind === "conflict" ? "The feedback agenda contains ambiguous talk or speaker identities" : "Feedback talk results are unavailable"
-    );
-    this.kind = kind;
-    this.name = "FeedbackResolutionError";
-  }
-  kind;
 };
 
 // packages/application/journey/src/config/automation-config.ts
@@ -30901,6 +30901,22 @@ var SourceSpeakerEquality = class {
   }
 };
 
+// packages/application/journey/src/config/configured-publication-policies.ts
+var ConfiguredPublicationPolicies = class {
+  static create(publication) {
+    return PublicationUrlPolicies.createDefaultPublicationUrlPolicies({
+      ...DEFAULT_PUBLICATION_URL_CONFIGURATION,
+      meetupEventUrlPrefix: publication["meetup-event-url-prefix"],
+      communityEventUrlPrefixes: [
+        publication["cncf-event-url-prefix"],
+        ...DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes.slice(
+          1
+        )
+      ]
+    });
+  }
+};
+
 // packages/domain/communication/src/idempotency.ts
 var SAFE_IDENTIFIER_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$/;
 var CommunicationIdempotency = class _CommunicationIdempotency {
@@ -31638,16 +31654,7 @@ var EventPublicationEvaluation = class _EventPublicationEvaluation {
       });
     }
     const engine = new PublicationUrlPolicyEngine(
-      PublicationUrlPolicies.createDefaultPublicationUrlPolicies({
-        ...DEFAULT_PUBLICATION_URL_CONFIGURATION,
-        meetupEventUrlPrefix: config.publication["meetup-event-url-prefix"],
-        communityEventUrlPrefixes: [
-          config.publication["cncf-event-url-prefix"],
-          ...DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes.slice(
-            1
-          )
-        ]
-      })
+      ConfiguredPublicationPolicies.create(config.publication)
     );
     const evaluation = engine.evaluate(event.publicationLinks);
     diagnostics.push(
@@ -31968,31 +31975,41 @@ var CommunicationRecipients = class _CommunicationRecipients {
 };
 
 // packages/application/journey/src/use-cases/feedback-agenda-projection.ts
-var FeedbackAgendaProjection = class {
+var FeedbackAgendaProjection = class _FeedbackAgendaProjection {
   static create(event, diagnostics) {
-    if (event.agenda.length === 0 || diagnostics.some(
-      (item) => item.severity === "error" && (item.code.startsWith("referential.") && !item.code.startsWith("referential.reference.host.") || item.code.startsWith("event.agenda."))
-    ) || event.agenda.some(
-      (entry) => !entry.description.trim() || entry.speakers.length === 0 || entry.speakers.some(
-        (speaker) => !speaker.id || !speaker.displayName.trim()
-      )
-    ))
+    if (!event.agenda.length || _FeedbackAgendaProjection.blocked(diagnostics))
       return void 0;
+    const talks = [];
+    for (const entry of event.agenda) {
+      const talk = _FeedbackAgendaProjection.talk(entry);
+      if (!talk) return void 0;
+      talks.push(talk);
+    }
+    return { talks };
+  }
+  static blocked(diagnostics) {
+    return diagnostics.some(
+      (item) => item.severity === "error" && (item.code.startsWith("referential.") && !item.code.startsWith("referential.reference.host.") || item.code.startsWith("event.agenda."))
+    );
+  }
+  static talk(entry) {
+    if (!entry.description.trim() || !entry.speakers.length) return void 0;
+    const speakers = [];
+    for (const speaker of entry.speakers) {
+      if (!speaker.id || !speaker.displayName.trim()) return void 0;
+      speakers.push({ id: speaker.id, name: speaker.displayName.trim() });
+    }
     return {
-      talks: event.agenda.map((entry) => ({
-        title: entry.proposal?.title ?? entry.description.trim(),
-        ...entry.proposal ? {
-          sourceIdentity: JSON.stringify([
-            entry.proposal.provider,
-            entry.proposal.event,
-            entry.proposal.id
-          ])
-        } : {},
-        speakers: entry.speakers.map((speaker) => ({
-          id: speaker.id,
-          name: speaker.displayName.trim()
-        }))
-      }))
+      title: entry.proposal?.title ?? entry.description.trim(),
+      ...entry.proposal ? {
+        // A fixed tuple makes provider identity independent of JSON key order.
+        sourceIdentity: JSON.stringify([
+          entry.proposal.provider,
+          entry.proposal.event,
+          entry.proposal.id
+        ])
+      } : {},
+      speakers
     };
   }
 };

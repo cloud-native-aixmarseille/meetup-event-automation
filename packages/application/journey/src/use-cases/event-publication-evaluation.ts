@@ -5,13 +5,12 @@ import {
 	POST_EVENT_TASK_NAMES,
 } from "@meetup-automation/event";
 import {
-	DEFAULT_PUBLICATION_URL_CONFIGURATION,
 	ManualPublicationPolicy,
 	type ManualPublicationTask,
-	PublicationUrlPolicies,
 	PublicationUrlPolicyEngine,
 } from "@meetup-automation/publication";
 import type { AutomationConfig } from "../config/automation-config.js";
+import { ConfiguredPublicationPolicies } from "../config/configured-publication-policies.js";
 import type { PublicDiagnostic } from "../result/result-envelope.js";
 
 export class EventPublicationEvaluation {
@@ -46,16 +45,7 @@ export class EventPublicationEvaluation {
 			});
 		}
 		const engine = new PublicationUrlPolicyEngine(
-			PublicationUrlPolicies.createDefaultPublicationUrlPolicies({
-				...DEFAULT_PUBLICATION_URL_CONFIGURATION,
-				meetupEventUrlPrefix: config.publication["meetup-event-url-prefix"],
-				communityEventUrlPrefixes: [
-					config.publication["cncf-event-url-prefix"],
-					...DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes.slice(
-						1,
-					),
-				],
-			}),
+			ConfiguredPublicationPolicies.create(config.publication),
 		);
 		const evaluation = engine.evaluate(event.publicationLinks);
 		diagnostics.push(

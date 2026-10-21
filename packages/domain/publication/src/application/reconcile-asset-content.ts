@@ -1,6 +1,5 @@
 import type {
 	ContentChange,
-	ContentContract,
 	ContentManifest,
 	ContentRecovery,
 	ContentSnapshot,
@@ -10,8 +9,9 @@ import type {
 } from "../domain/asset-content.js";
 import { ContentContractPolicy } from "../domain/content-contract-policy.js";
 import { ContentError } from "../domain/content-error.js";
-import { ContentFingerprint } from "../domain/content-fingerprint.js";
 import { ContentManifestPolicy } from "../domain/content-manifest-policy.js";
+import { ContentRecoveryFingerprint } from "../domain/content-recovery-fingerprint.js";
+import { ContentRecoveryPlan } from "../domain/content-recovery-plan.js";
 import { ContentRenderPlan } from "../domain/content-render-plan.js";
 import { ContentTextKey } from "../domain/content-text-key.js";
 import type {
@@ -27,7 +27,7 @@ export type ReconcileContentInput = Readonly<{
 	templateId: string;
 	kind: string;
 	mimeType: string;
-	contract?: ContentContract;
+	contract?: unknown;
 	fresh?: boolean;
 	model: PublicAssetModel;
 	recovery?: ContentRecovery;
@@ -191,7 +191,7 @@ export class ReconcileAssetContent {
 			bindings,
 			initialRevision: snapshot.revision,
 			recoveryId: input.recovery
-				? ContentFingerprint.of(JSON.stringify(input.recovery))
+				? ContentRecoveryFingerprint.create(input.recovery)
 				: undefined,
 			pending: { revision: snapshot.revision, bindings },
 		};
@@ -202,58 +202,15 @@ export class ReconcileAssetContent {
 		original: ContentManifest,
 		renderer: AssetContentRepository,
 	) {
-		const recovery =
-			input.recovery &&
-			ContentFingerprint.of(JSON.stringify(input.recovery)) ===
-				original.recoveryId
-				? undefined
-				: input.recovery;
-		let manifest = original;
-		if (recovery?.operation === "remove") {
-			manifest = {
-				...manifest,
-				pending: undefined,
-				bindings: manifest.bindings.filter(
-					(binding) => binding.id !== recovery.bindingId,
-				),
-			};
-		}
+		const recovery = ContentRecoveryPlan.active(original, input.recovery);
+		const prepared = ContentRecoveryPlan.beforeRead(original, recovery);
 		const snapshot = await renderer.read(
 			input.fileId,
-			manifest.contract,
-			manifest.bindings,
-			manifest.initialRevision,
+			prepared.contract,
+			prepared.bindings,
+			prepared.initialRevision,
 		);
-		if (recovery && snapshot.revision !== recovery.revision)
-			throw new ContentError("revision");
-		if (recovery?.operation === "restore") {
-			if (
-				!manifest.bindings.some((binding) => binding.id === recovery.bindingId)
-			)
-				throw new ContentError("recovery");
-			manifest = {
-				...manifest,
-				pending: undefined,
-				bindings: manifest.bindings.map((binding) =>
-					binding.id === recovery.bindingId
-						? {
-								...binding,
-								applied: snapshot.locations.find(
-									(item) => item.id === binding.id,
-								)?.fingerprint as string,
-								desired: undefined,
-							}
-						: binding,
-				),
-			};
-		}
-		if (manifest.pending)
-			manifest = ContentRenderPlan.settle(manifest, snapshot, false);
-		if (recovery)
-			manifest = {
-				...manifest,
-				recoveryId: ContentFingerprint.of(JSON.stringify(recovery)),
-			};
+		const manifest = ContentRecoveryPlan.settle(prepared, snapshot, recovery);
 		if (manifest !== original)
 			await this.manifests.save(input.folderId, manifest);
 		return { manifest, snapshot };

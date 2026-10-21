@@ -1,8 +1,9 @@
 import type { MeetupEvent } from "@meetup-automation/event";
-import type {
-	AssetRenderAssignments,
-	AssetRenderPresenter,
-	PublicAssetModel,
+import {
+	type AssetRenderAssignments,
+	type AssetRenderPresenter,
+	type PublicAssetModel,
+	PublicAssetUrl,
 } from "@meetup-automation/publication";
 import {
 	type ReferentialRepository,
@@ -66,8 +67,7 @@ export class AssetRenderProjection {
 			feedbackUrl:
 				!diagnostics.some(
 					(item) => item.severity === "error" && /feedback/.test(item.code),
-				) &&
-				AssetParticipantProjection.publicUrl(event.publicationLinks.feedback)
+				) && PublicAssetUrl.valid(event.publicationLinks.feedback)
 					? event.publicationLinks.feedback
 					: undefined,
 			agenda: agendaValid
@@ -86,7 +86,7 @@ export class AssetRenderProjection {
 	private hostLogo(hostId?: string): PublicAssetModel["hostLogo"] {
 		if (!hostId) return undefined;
 		const logo = this.assignments.hostLogos?.[hostId];
-		return logo && AssetParticipantProjection.publicUrl(logo.url)
+		return logo && PublicAssetUrl.valid(logo.url)
 			? { ...logo, hostId }
 			: undefined;
 	}

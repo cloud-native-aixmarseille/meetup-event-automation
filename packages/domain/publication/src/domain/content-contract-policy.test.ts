@@ -132,12 +132,14 @@ describe("template contracts", () => {
 	])("rejects invalid contracts before rendering", (input) => {
 		// Arrange
 		let error: unknown;
+
 		// Act
 		try {
 			ContentContractPolicy.parse(input, "slides", mimeType);
 		} catch (caught) {
 			error = caught;
 		}
+
 		// Assert
 		expect(error).toMatchObject({ code: "contract" });
 	});
@@ -161,6 +163,7 @@ describe("template contracts", () => {
 				],
 			};
 			let error: unknown;
+
 			// Act
 			try {
 				ContentContractPolicy.parse(
@@ -171,8 +174,33 @@ describe("template contracts", () => {
 			} catch (caught) {
 				error = caught;
 			}
+
 			// Assert
 			expect(error).toMatchObject({ code: "contract" });
 		},
 	);
+});
+
+describe("content contract input boundary", () => {
+	it.each([
+		null,
+		[],
+		false,
+		{ ...contract, fields: [null] },
+		{
+			...contract,
+			fields: [
+				{ type: "text", token: "event.title", required: true, fallback: false },
+			],
+		},
+	])("rejects malformed shapes before exposing typed fields", (input) => {
+		// Arrange
+		const kind = "slides";
+
+		// Act
+		const parse = () => ContentContractPolicy.parse(input, kind, mimeType);
+
+		// Assert
+		expect(parse).toThrowError(expect.objectContaining({ code: "contract" }));
+	});
 });

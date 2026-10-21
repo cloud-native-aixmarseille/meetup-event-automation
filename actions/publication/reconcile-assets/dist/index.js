@@ -42180,6 +42180,155 @@ var require_src6 = __commonJS({
   }
 });
 
+// node_modules/.pnpm/@googleapis+docs@14.1.1_supports-color@7.2.0/node_modules/@googleapis/docs/build/v1.js
+var require_v1 = __commonJS({
+  "node_modules/.pnpm/@googleapis+docs@14.1.1_supports-color@7.2.0/node_modules/@googleapis/docs/build/v1.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.docs_v1 = void 0;
+    var googleapis_common_1 = require_src6();
+    var docs_v1;
+    (function(docs_v12) {
+      class Docs {
+        context;
+        documents;
+        constructor(options, google) {
+          this.context = {
+            _options: options || {},
+            google
+          };
+          this.documents = new Resource$Documents(this.context);
+        }
+      }
+      docs_v12.Docs = Docs;
+      class Resource$Documents {
+        context;
+        constructor(context3) {
+          this.context = context3;
+        }
+        batchUpdate(paramsOrCallback, optionsOrCallback, callback) {
+          let params = paramsOrCallback || {};
+          let options = optionsOrCallback || {};
+          if (typeof paramsOrCallback === "function") {
+            callback = paramsOrCallback;
+            params = {};
+            options = {};
+          }
+          if (typeof optionsOrCallback === "function") {
+            callback = optionsOrCallback;
+            options = {};
+          }
+          const rootUrl = options.rootUrl || "https://docs.googleapis.com/";
+          const parameters = {
+            options: Object.assign({
+              url: (rootUrl + "/v1/documents/{documentId}:batchUpdate").replace(/([^:]\/)\/+/g, "$1"),
+              method: "POST",
+              apiVersion: ""
+            }, options),
+            params,
+            requiredParams: ["documentId"],
+            pathParams: ["documentId"],
+            context: this.context
+          };
+          if (callback) {
+            (0, googleapis_common_1.createAPIRequest)(parameters, callback);
+          } else {
+            return (0, googleapis_common_1.createAPIRequest)(parameters);
+          }
+        }
+        create(paramsOrCallback, optionsOrCallback, callback) {
+          let params = paramsOrCallback || {};
+          let options = optionsOrCallback || {};
+          if (typeof paramsOrCallback === "function") {
+            callback = paramsOrCallback;
+            params = {};
+            options = {};
+          }
+          if (typeof optionsOrCallback === "function") {
+            callback = optionsOrCallback;
+            options = {};
+          }
+          const rootUrl = options.rootUrl || "https://docs.googleapis.com/";
+          const parameters = {
+            options: Object.assign({
+              url: (rootUrl + "/v1/documents").replace(/([^:]\/)\/+/g, "$1"),
+              method: "POST",
+              apiVersion: ""
+            }, options),
+            params,
+            requiredParams: [],
+            pathParams: [],
+            context: this.context
+          };
+          if (callback) {
+            (0, googleapis_common_1.createAPIRequest)(parameters, callback);
+          } else {
+            return (0, googleapis_common_1.createAPIRequest)(parameters);
+          }
+        }
+        get(paramsOrCallback, optionsOrCallback, callback) {
+          let params = paramsOrCallback || {};
+          let options = optionsOrCallback || {};
+          if (typeof paramsOrCallback === "function") {
+            callback = paramsOrCallback;
+            params = {};
+            options = {};
+          }
+          if (typeof optionsOrCallback === "function") {
+            callback = optionsOrCallback;
+            options = {};
+          }
+          const rootUrl = options.rootUrl || "https://docs.googleapis.com/";
+          const parameters = {
+            options: Object.assign({
+              url: (rootUrl + "/v1/documents/{documentId}").replace(/([^:]\/)\/+/g, "$1"),
+              method: "GET",
+              apiVersion: ""
+            }, options),
+            params,
+            requiredParams: ["documentId"],
+            pathParams: ["documentId"],
+            context: this.context
+          };
+          if (callback) {
+            (0, googleapis_common_1.createAPIRequest)(parameters, callback);
+          } else {
+            return (0, googleapis_common_1.createAPIRequest)(parameters);
+          }
+        }
+      }
+      docs_v12.Resource$Documents = Resource$Documents;
+    })(docs_v1 || (exports.docs_v1 = docs_v1 = {}));
+  }
+});
+
+// node_modules/.pnpm/@googleapis+docs@14.1.1_supports-color@7.2.0/node_modules/@googleapis/docs/build/index.js
+var require_build = __commonJS({
+  "node_modules/.pnpm/@googleapis+docs@14.1.1_supports-color@7.2.0/node_modules/@googleapis/docs/build/index.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.AuthPlus = exports.docs_v1 = exports.auth = exports.VERSIONS = void 0;
+    exports.docs = docs2;
+    var googleapis_common_1 = require_src6();
+    var v1_1 = require_v1();
+    Object.defineProperty(exports, "docs_v1", { enumerable: true, get: function() {
+      return v1_1.docs_v1;
+    } });
+    exports.VERSIONS = {
+      v1: v1_1.docs_v1.Docs
+    };
+    function docs2(versionOrOptions) {
+      return (0, googleapis_common_1.getAPI)("docs", versionOrOptions, exports.VERSIONS, this);
+    }
+    var auth3 = new googleapis_common_1.AuthPlus();
+    exports.auth = auth3;
+    var googleapis_common_2 = require_src6();
+    Object.defineProperty(exports, "AuthPlus", { enumerable: true, get: function() {
+      return googleapis_common_2.AuthPlus;
+    } });
+  }
+});
+
 // node_modules/.pnpm/@googleapis+drive@26.0.2_supports-color@7.2.0/node_modules/@googleapis/drive/build/v2.js
 var require_v2 = __commonJS({
   "node_modules/.pnpm/@googleapis+drive@26.0.2_supports-color@7.2.0/node_modules/@googleapis/drive/build/v2.js"(exports) {
@@ -46653,7 +46802,7 @@ var require_v3 = __commonJS({
 });
 
 // node_modules/.pnpm/@googleapis+drive@26.0.2_supports-color@7.2.0/node_modules/@googleapis/drive/build/index.js
-var require_build = __commonJS({
+var require_build2 = __commonJS({
   "node_modules/.pnpm/@googleapis+drive@26.0.2_supports-color@7.2.0/node_modules/@googleapis/drive/build/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -46674,155 +46823,6 @@ var require_build = __commonJS({
     };
     function drive2(versionOrOptions) {
       return (0, googleapis_common_1.getAPI)("drive", versionOrOptions, exports.VERSIONS, this);
-    }
-    var auth3 = new googleapis_common_1.AuthPlus();
-    exports.auth = auth3;
-    var googleapis_common_2 = require_src6();
-    Object.defineProperty(exports, "AuthPlus", { enumerable: true, get: function() {
-      return googleapis_common_2.AuthPlus;
-    } });
-  }
-});
-
-// node_modules/.pnpm/@googleapis+docs@14.1.1_supports-color@7.2.0/node_modules/@googleapis/docs/build/v1.js
-var require_v1 = __commonJS({
-  "node_modules/.pnpm/@googleapis+docs@14.1.1_supports-color@7.2.0/node_modules/@googleapis/docs/build/v1.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.docs_v1 = void 0;
-    var googleapis_common_1 = require_src6();
-    var docs_v1;
-    (function(docs_v12) {
-      class Docs {
-        context;
-        documents;
-        constructor(options, google) {
-          this.context = {
-            _options: options || {},
-            google
-          };
-          this.documents = new Resource$Documents(this.context);
-        }
-      }
-      docs_v12.Docs = Docs;
-      class Resource$Documents {
-        context;
-        constructor(context3) {
-          this.context = context3;
-        }
-        batchUpdate(paramsOrCallback, optionsOrCallback, callback) {
-          let params = paramsOrCallback || {};
-          let options = optionsOrCallback || {};
-          if (typeof paramsOrCallback === "function") {
-            callback = paramsOrCallback;
-            params = {};
-            options = {};
-          }
-          if (typeof optionsOrCallback === "function") {
-            callback = optionsOrCallback;
-            options = {};
-          }
-          const rootUrl = options.rootUrl || "https://docs.googleapis.com/";
-          const parameters = {
-            options: Object.assign({
-              url: (rootUrl + "/v1/documents/{documentId}:batchUpdate").replace(/([^:]\/)\/+/g, "$1"),
-              method: "POST",
-              apiVersion: ""
-            }, options),
-            params,
-            requiredParams: ["documentId"],
-            pathParams: ["documentId"],
-            context: this.context
-          };
-          if (callback) {
-            (0, googleapis_common_1.createAPIRequest)(parameters, callback);
-          } else {
-            return (0, googleapis_common_1.createAPIRequest)(parameters);
-          }
-        }
-        create(paramsOrCallback, optionsOrCallback, callback) {
-          let params = paramsOrCallback || {};
-          let options = optionsOrCallback || {};
-          if (typeof paramsOrCallback === "function") {
-            callback = paramsOrCallback;
-            params = {};
-            options = {};
-          }
-          if (typeof optionsOrCallback === "function") {
-            callback = optionsOrCallback;
-            options = {};
-          }
-          const rootUrl = options.rootUrl || "https://docs.googleapis.com/";
-          const parameters = {
-            options: Object.assign({
-              url: (rootUrl + "/v1/documents").replace(/([^:]\/)\/+/g, "$1"),
-              method: "POST",
-              apiVersion: ""
-            }, options),
-            params,
-            requiredParams: [],
-            pathParams: [],
-            context: this.context
-          };
-          if (callback) {
-            (0, googleapis_common_1.createAPIRequest)(parameters, callback);
-          } else {
-            return (0, googleapis_common_1.createAPIRequest)(parameters);
-          }
-        }
-        get(paramsOrCallback, optionsOrCallback, callback) {
-          let params = paramsOrCallback || {};
-          let options = optionsOrCallback || {};
-          if (typeof paramsOrCallback === "function") {
-            callback = paramsOrCallback;
-            params = {};
-            options = {};
-          }
-          if (typeof optionsOrCallback === "function") {
-            callback = optionsOrCallback;
-            options = {};
-          }
-          const rootUrl = options.rootUrl || "https://docs.googleapis.com/";
-          const parameters = {
-            options: Object.assign({
-              url: (rootUrl + "/v1/documents/{documentId}").replace(/([^:]\/)\/+/g, "$1"),
-              method: "GET",
-              apiVersion: ""
-            }, options),
-            params,
-            requiredParams: ["documentId"],
-            pathParams: ["documentId"],
-            context: this.context
-          };
-          if (callback) {
-            (0, googleapis_common_1.createAPIRequest)(parameters, callback);
-          } else {
-            return (0, googleapis_common_1.createAPIRequest)(parameters);
-          }
-        }
-      }
-      docs_v12.Resource$Documents = Resource$Documents;
-    })(docs_v1 || (exports.docs_v1 = docs_v1 = {}));
-  }
-});
-
-// node_modules/.pnpm/@googleapis+docs@14.1.1_supports-color@7.2.0/node_modules/@googleapis/docs/build/index.js
-var require_build2 = __commonJS({
-  "node_modules/.pnpm/@googleapis+docs@14.1.1_supports-color@7.2.0/node_modules/@googleapis/docs/build/index.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.AuthPlus = exports.docs_v1 = exports.auth = exports.VERSIONS = void 0;
-    exports.docs = docs2;
-    var googleapis_common_1 = require_src6();
-    var v1_1 = require_v1();
-    Object.defineProperty(exports, "docs_v1", { enumerable: true, get: function() {
-      return v1_1.docs_v1;
-    } });
-    exports.VERSIONS = {
-      v1: v1_1.docs_v1.Docs
-    };
-    function docs2(versionOrOptions) {
-      return (0, googleapis_common_1.getAPI)("docs", versionOrOptions, exports.VERSIONS, this);
     }
     var auth3 = new googleapis_common_1.AuthPlus();
     exports.auth = auth3;
@@ -57533,6 +57533,31 @@ var MeetupPublicationChecklist = class _MeetupPublicationChecklist {
   }
 };
 
+// packages/domain/publication/src/domain/asset-content.ts
+var TEXT_TOKENS = [
+  "event.title",
+  "event.date",
+  "event.date.month",
+  "event.date.numeric",
+  "event.date.weekday",
+  "host.name",
+  "host.address",
+  "host.postal_code",
+  "host.city",
+  "agenda",
+  "event.feedback_url",
+  "next_event.date",
+  "next_event.date.numeric",
+  "next_event.host.name",
+  "next_event.host.city"
+];
+var SLOTTED_TEXT_TOKENS = [
+  "talk.title",
+  "talk.abstract",
+  "talk.speakers",
+  "speaker.name"
+];
+
 // packages/domain/publication/src/domain/content-error.ts
 var ContentError = class extends Error {
   constructor(code) {
@@ -57543,6 +57568,719 @@ var ContentError = class extends Error {
     this.name = "ContentError";
   }
   code;
+};
+
+// packages/domain/publication/src/domain/content-text-key.ts
+var ContentTextKey = class {
+  static of(field) {
+    return field.slot ? `${field.token}:${field.slot}` : field.token;
+  }
+};
+
+// packages/domain/publication/src/domain/content-contract-policy.ts
+var ContentContractPolicy = class _ContentContractPolicy {
+  static parse(value, kind, mimeType) {
+    if (!_ContentContractPolicy.record(value) || value.version !== 1 || typeof value.kind !== "string" || value.kind !== kind || !_ContentContractPolicy.name(value.revision) || !Array.isArray(value.fields) || !value.fields.length || value.fields.length > 100 || !_ContentContractPolicy.keys(value, [
+      "version",
+      "revision",
+      "kind",
+      "fields"
+    ]) || !_ContentContractPolicy.supported(mimeType))
+      throw new ContentError("contract");
+    const fields2 = value.fields.map(
+      (field) => _ContentContractPolicy.field(field, mimeType)
+    );
+    const keys = fields2.map(
+      (field) => field.type === "text" ? ContentTextKey.of(field) : field.slot
+    );
+    if (new Set(keys).size !== keys.length) throw new ContentError("contract");
+    return { version: 1, kind: value.kind, revision: value.revision, fields: fields2 };
+  }
+  static field(value, mimeType) {
+    if (!_ContentContractPolicy.record(value))
+      throw new ContentError("contract");
+    return value.type === "text" ? _ContentContractPolicy.textField(value) : _ContentContractPolicy.image(value, mimeType);
+  }
+  static textField(field) {
+    const token = [...TEXT_TOKENS, ...SLOTTED_TEXT_TOKENS].find(
+      (item) => item === field.token
+    );
+    const slotted = SLOTTED_TEXT_TOKENS.some((item) => item === token);
+    if (!token || typeof field.required !== "boolean" || (slotted ? !_ContentContractPolicy.name(field.slot) : field.slot !== void 0) || !_ContentContractPolicy.keys(field, [
+      "type",
+      "token",
+      "slot",
+      "required",
+      "fallback"
+    ]) || (!field.required || field.fallback !== void 0) && !_ContentContractPolicy.text(field.fallback))
+      throw new ContentError("contract");
+    const result = {
+      type: "text",
+      token,
+      required: field.required,
+      ...typeof field.slot === "string" ? { slot: field.slot } : {},
+      ...typeof field.fallback === "string" ? { fallback: field.fallback } : {}
+    };
+    if (!_ContentContractPolicy.name(ContentTextKey.of(result)))
+      throw new ContentError("contract");
+    return result;
+  }
+  static image(field, mimeType) {
+    if (field.type !== "image" || field.token !== "speaker.picture" && field.token !== "host.logo" || typeof field.required !== "boolean" || !_ContentContractPolicy.name(field.slot) || !_ContentContractPolicy.name(field.objectId) || !_ContentContractPolicy.keys(field, [
+      "type",
+      "token",
+      "slot",
+      "objectId",
+      "pageId",
+      "tabId",
+      "required",
+      "fallback",
+      "fit"
+    ]))
+      throw new ContentError("contract");
+    const slides2 = mimeType === "application/vnd.google-apps.presentation";
+    if (!(slides2 ? _ContentContractPolicy.name(field.pageId) && field.tabId === void 0 : _ContentContractPolicy.name(field.tabId) && field.pageId === void 0) || field.fit !== "CENTER_CROP" && !(slides2 && field.fit === "CENTER_INSIDE"))
+      throw new ContentError("contract");
+    const fallback = _ContentContractPolicy.fallback(
+      field.fallback,
+      field.required
+    );
+    return {
+      type: "image",
+      token: field.token,
+      required: field.required,
+      slot: field.slot,
+      objectId: field.objectId,
+      fit: field.fit,
+      ...typeof field.pageId === "string" ? { pageId: field.pageId } : {},
+      ...typeof field.tabId === "string" ? { tabId: field.tabId } : {},
+      ...fallback ? { fallback } : {}
+    };
+  }
+  static fallback(value, required) {
+    if (value === void 0 && required) return void 0;
+    if (!_ContentContractPolicy.record(value) || !_ContentContractPolicy.text(value.url) || !_ContentContractPolicy.text(value.description) || !_ContentContractPolicy.keys(value, ["url", "description"]))
+      throw new ContentError("contract");
+    return { url: value.url, description: value.description };
+  }
+  static supported(mimeType) {
+    return [
+      "application/vnd.google-apps.presentation",
+      "application/vnd.google-apps.document"
+    ].includes(mimeType);
+  }
+  static text(value) {
+    return typeof value === "string" && value.trim().length > 0 && value.length <= 2e4 && [...value].every((character) => {
+      const code = character.charCodeAt(0);
+      return (code >= 32 || code === 9 || code === 10) && (code < 57344 || code > 63743);
+    });
+  }
+  static name(value) {
+    return typeof value === "string" && /^[\w.:-]{1,100}$/.test(value);
+  }
+  static keys(value, keys) {
+    return Object.keys(value).every((key) => keys.includes(key));
+  }
+  static record(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
+  }
+};
+
+// packages/domain/publication/src/domain/content-anchor-identity.ts
+var ContentAnchorIdentity = class {
+  static equal(left, right) {
+    return left.objectId === right.objectId && left.pageId === right.pageId && left.tabId === right.tabId && left.segmentId === right.segmentId && left.rangeName === right.rangeName && left.start === right.start && left.end === right.end;
+  }
+  static locationKey(anchor) {
+    return JSON.stringify([
+      anchor.pageId,
+      anchor.tabId,
+      anchor.segmentId,
+      anchor.objectId,
+      anchor.rangeName
+    ]);
+  }
+};
+
+// packages/domain/publication/src/domain/content-binding-policy.ts
+var ContentBindingPolicy = class _ContentBindingPolicy {
+  static parseMany(value) {
+    if (!Array.isArray(value) || value.length > 500)
+      throw new ContentError("recovery");
+    const bindings = value.map(
+      (item) => _ContentBindingPolicy.parse(item)
+    );
+    if (new Set(bindings.map((binding) => binding.id)).size !== bindings.length)
+      throw new ContentError("recovery");
+    return bindings;
+  }
+  static parse(value) {
+    if (!ContentContractPolicy.record(value) || !ContentContractPolicy.name(value.id) || !ContentContractPolicy.name(value.key) || value.type !== "text" && value.type !== "image" || !_ContentBindingPolicy.hash(value.applied) || value.desired !== void 0 && !_ContentBindingPolicy.hash(value.desired) || !ContentContractPolicy.keys(value, [
+      "id",
+      "type",
+      "key",
+      "anchor",
+      "applied",
+      "desired",
+      "speakerId",
+      "hostId",
+      "fallback"
+    ]))
+      throw new ContentError("recovery");
+    const identities = _ContentBindingPolicy.identities(value);
+    const anchor = _ContentBindingPolicy.anchor(value.anchor);
+    if (value.type === "image" ? !anchor.objectId : !anchor.objectId && !anchor.rangeName)
+      throw new ContentError("recovery");
+    return {
+      id: value.id,
+      key: value.key,
+      type: value.type,
+      applied: value.applied,
+      anchor,
+      ...typeof value.desired === "string" ? { desired: value.desired } : {},
+      ...identities
+    };
+  }
+  static identities(value) {
+    if (value.speakerId !== void 0 && typeof value.speakerId !== "string" || value.hostId !== void 0 && typeof value.hostId !== "string" || value.fallback !== void 0 && typeof value.fallback !== "boolean")
+      throw new ContentError("recovery");
+    return {
+      ...typeof value.speakerId === "string" ? { speakerId: value.speakerId } : {},
+      ...typeof value.hostId === "string" ? { hostId: value.hostId } : {},
+      ...typeof value.fallback === "boolean" ? { fallback: value.fallback } : {}
+    };
+  }
+  static anchor(value) {
+    if (!ContentContractPolicy.record(value) || !ContentContractPolicy.keys(value, [
+      "objectId",
+      "pageId",
+      "tabId",
+      "segmentId",
+      "rangeName",
+      "start",
+      "end"
+    ]))
+      throw new ContentError("recovery");
+    _ContentBindingPolicy.validateAnchorValues(value);
+    return {
+      ...typeof value.objectId === "string" ? { objectId: value.objectId } : {},
+      ...typeof value.pageId === "string" ? { pageId: value.pageId } : {},
+      ...typeof value.tabId === "string" ? { tabId: value.tabId } : {},
+      ...typeof value.segmentId === "string" ? { segmentId: value.segmentId } : {},
+      ...typeof value.rangeName === "string" ? { rangeName: value.rangeName } : {},
+      ...typeof value.start === "number" ? { start: value.start } : {},
+      ...typeof value.end === "number" ? { end: value.end } : {}
+    };
+  }
+  static validateAnchorValues(value) {
+    for (const [key, entry] of Object.entries(value)) {
+      if (key === "start" || key === "end") {
+        if (typeof entry !== "number" || !Number.isSafeInteger(entry) || entry < 1)
+          throw new ContentError("recovery");
+      } else if (entry !== "" && !ContentContractPolicy.name(entry))
+        throw new ContentError("recovery");
+    }
+  }
+  static hash(value) {
+    return typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
+  }
+};
+
+// packages/domain/publication/src/domain/content-manifest-policy.ts
+var ContentManifestPolicy = class _ContentManifestPolicy {
+  static parse(value, fileId, templateId, mimeType) {
+    const manifest = _ContentManifestPolicy.state(
+      value,
+      fileId,
+      templateId,
+      mimeType
+    );
+    _ContentManifestPolicy.associations(manifest);
+    if (!manifest.pending) return manifest;
+    _ContentManifestPolicy.associations({
+      ...manifest,
+      bindings: manifest.pending.bindings
+    });
+    if (manifest.pending.bindings.length !== manifest.bindings.length || manifest.pending.bindings.some((binding, index) => {
+      const prior = manifest.bindings[index];
+      return prior.id !== binding.id || prior.key !== binding.key || prior.type !== binding.type || !ContentAnchorIdentity.equal(prior.anchor, binding.anchor);
+    }))
+      throw new ContentError("recovery");
+    return manifest;
+  }
+  static state(value, fileId, templateId, mimeType) {
+    if (!ContentContractPolicy.record(value) || value.version !== 1 || value.fileId !== fileId || value.templateId !== templateId || value.mimeType !== mimeType || !ContentContractPolicy.keys(value, [
+      "version",
+      "fileId",
+      "templateId",
+      "mimeType",
+      "contract",
+      "bindings",
+      "pending",
+      "initialRevision",
+      "recoveryId"
+    ]) || !ContentContractPolicy.record(value.contract) || typeof value.contract.kind !== "string")
+      throw new ContentError("recovery");
+    if (value.initialRevision !== void 0 && !ContentContractPolicy.text(value.initialRevision) || value.recoveryId !== void 0 && (typeof value.recoveryId !== "string" || !/^[a-f0-9]{64}$/.test(value.recoveryId)))
+      throw new ContentError("recovery");
+    const pending = _ContentManifestPolicy.pending(value.pending);
+    return {
+      version: 1,
+      fileId,
+      templateId,
+      mimeType,
+      contract: ContentContractPolicy.parse(
+        value.contract,
+        value.contract.kind,
+        mimeType
+      ),
+      bindings: ContentBindingPolicy.parseMany(value.bindings),
+      ...pending ? { pending } : {},
+      ...typeof value.initialRevision === "string" ? { initialRevision: value.initialRevision } : {},
+      ...typeof value.recoveryId === "string" ? { recoveryId: value.recoveryId } : {}
+    };
+  }
+  static pending(value) {
+    if (value === void 0) return void 0;
+    if (!ContentContractPolicy.record(value) || !ContentContractPolicy.text(value.revision) || !ContentContractPolicy.keys(value, ["revision", "bindings"]))
+      throw new ContentError("recovery");
+    return {
+      revision: value.revision,
+      bindings: ContentBindingPolicy.parseMany(value.bindings)
+    };
+  }
+  static associations(manifest) {
+    const anchors = /* @__PURE__ */ new Set();
+    for (const binding of manifest.bindings) {
+      const field = manifest.contract.fields.find(
+        (field2) => field2.type === binding.type && (field2.type === "text" ? ContentTextKey.of(field2) : field2.slot) === binding.key
+      );
+      const anchor = binding.anchor;
+      const key = ContentAnchorIdentity.locationKey(anchor);
+      if (!field || anchors.has(key) || binding.fallback !== void 0 && typeof binding.fallback !== "boolean")
+        throw new ContentError("recovery");
+      anchors.add(key);
+      _ContentManifestPolicy.identity(binding, field);
+      _ContentManifestPolicy.rendererAnchor(manifest.mimeType, binding);
+    }
+  }
+  static identity(binding, field) {
+    if (binding.speakerId !== void 0 && (!/^speaker-[a-z0-9-]+$/.test(binding.speakerId) || field.type !== "image" || field.token !== "speaker.picture"))
+      throw new ContentError("recovery");
+    if (binding.hostId !== void 0 && (!/^host-[a-z0-9-]+$/.test(binding.hostId) || field.type !== "image" || field.token !== "host.logo"))
+      throw new ContentError("recovery");
+  }
+  static rendererAnchor(mimeType, binding) {
+    const anchor = binding.anchor;
+    if (mimeType.endsWith("presentation")) {
+      if (!anchor.objectId || !anchor.pageId || anchor.tabId || anchor.rangeName)
+        throw new ContentError("recovery");
+    } else if (!anchor.tabId || anchor.segmentId || binding.type === "text" && !anchor.rangeName)
+      throw new ContentError("recovery");
+  }
+};
+
+// packages/domain/publication/src/domain/content-fingerprint.ts
+import { createHash } from "node:crypto";
+var ContentFingerprint = class {
+  static of(value) {
+    return createHash("sha256").update(value).digest("hex");
+  }
+};
+
+// packages/domain/publication/src/domain/content-recovery-fingerprint.ts
+var ContentRecoveryFingerprint = class {
+  static create(recovery) {
+    return ContentFingerprint.of(
+      JSON.stringify({
+        operation: recovery.operation,
+        revision: recovery.revision,
+        bindingId: recovery.bindingId
+      })
+    );
+  }
+  static matches(recovery, fingerprint) {
+    if (!fingerprint) return false;
+    const orders = [
+      ["operation", "revision", "bindingId"],
+      ["operation", "bindingId", "revision"],
+      ["revision", "operation", "bindingId"],
+      ["revision", "bindingId", "operation"],
+      ["bindingId", "operation", "revision"],
+      ["bindingId", "revision", "operation"]
+    ];
+    return orders.some(
+      (keys) => ContentFingerprint.of(
+        JSON.stringify(
+          Object.fromEntries(keys.map((key) => [key, recovery[key]]))
+        )
+      ) === fingerprint
+    );
+  }
+};
+
+// packages/domain/publication/src/domain/content-render-plan.ts
+var ContentRenderPlan = class _ContentRenderPlan {
+  static changes(manifest, snapshot, values) {
+    const changes = [];
+    for (const binding of manifest.bindings) {
+      const matches = snapshot.locations.filter(
+        (location2) => location2.id === binding.id
+      );
+      const location = matches[0];
+      if (matches.length !== 1 || location.fingerprint !== binding.applied)
+        throw new ContentError("conflict");
+      const value = values.find(
+        (item) => item.key === binding.key && item.type === binding.type
+      );
+      if (!value) throw new ContentError("contract");
+      if (binding.desired !== value.fingerprint || binding.type === "text" && location.fingerprint !== value.fingerprint)
+        changes.push({ location, value });
+    }
+    return changes;
+  }
+  static pending(manifest, snapshot, changes) {
+    return {
+      ...manifest,
+      pending: {
+        revision: snapshot.revision,
+        bindings: manifest.bindings.map((binding) => {
+          const value = changes.find(
+            (change) => change.location.id === binding.id
+          )?.value;
+          return value ? {
+            ...binding,
+            desired: value.fingerprint,
+            applied: value.type === "text" ? value.fingerprint : binding.applied,
+            speakerId: value.speakerId,
+            hostId: value.hostId,
+            fallback: value.fallback
+          } : binding;
+        })
+      }
+    };
+  }
+  static settle(manifest, snapshot, confirmed) {
+    if (!manifest.pending) return manifest;
+    const next = manifest.pending.bindings;
+    const applied = next.every((binding) => {
+      const location = snapshot.locations.find(
+        (item) => item.id === binding.id
+      );
+      if (!location) throw new ContentError("conflict");
+      const prior2 = manifest.bindings.find((item) => item.id === binding.id);
+      return binding.type === "image" && binding.desired !== prior2?.desired ? confirmed : binding.applied === location.fingerprint;
+    });
+    if (applied)
+      return {
+        ...manifest,
+        pending: void 0,
+        initialRevision: next.every((binding) => binding.desired) ? void 0 : manifest.initialRevision,
+        bindings: next.map((binding) => ({
+          ...binding,
+          applied: _ContentRenderPlan.fingerprint(snapshot, binding.id)
+        }))
+      };
+    const prior = manifest.bindings.every(
+      (binding) => snapshot.locations.find((item) => item.id === binding.id)?.fingerprint === binding.applied
+    );
+    const uncertainImage = next.some(
+      (binding, index) => binding.type === "image" && binding.desired !== manifest.bindings[index]?.desired
+    );
+    if (!prior)
+      throw new ContentError(uncertainImage ? "recovery" : "conflict");
+    if (uncertainImage && snapshot.revision !== manifest.pending.revision)
+      throw new ContentError("recovery");
+    return { ...manifest, pending: void 0 };
+  }
+  static initial(snapshot) {
+    if (!snapshot.locations.length || snapshot.locations.length > 500 || snapshot.locations.some(
+      (location) => !ContentContractPolicy.name(location.id) || !ContentContractPolicy.name(location.key)
+    ) || new Set(snapshot.locations.map((location) => location.id)).size !== snapshot.locations.length || snapshot.locations.some(
+      (location, index) => snapshot.locations.slice(0, index).some(
+        (prior) => ContentAnchorIdentity.equal(prior.anchor, location.anchor)
+      )
+    ))
+      throw new ContentError("location");
+    return snapshot.locations.map((location) => ({
+      id: location.id,
+      type: location.type,
+      key: location.key,
+      anchor: location.anchor,
+      applied: location.fingerprint
+    }));
+  }
+  static fingerprint(snapshot, bindingId) {
+    const matches = snapshot.locations.filter(
+      (location) => location.id === bindingId
+    );
+    if (matches.length !== 1) throw new ContentError("conflict");
+    return matches[0].fingerprint;
+  }
+};
+
+// packages/domain/publication/src/domain/content-recovery-plan.ts
+var ContentRecoveryPlan = class _ContentRecoveryPlan {
+  static active(manifest, recovery) {
+    return recovery && !ContentRecoveryFingerprint.matches(recovery, manifest.recoveryId) ? recovery : void 0;
+  }
+  static beforeRead(manifest, recovery) {
+    if (recovery?.operation !== "remove") return manifest;
+    return {
+      ...manifest,
+      pending: void 0,
+      bindings: manifest.bindings.filter(
+        (binding) => binding.id !== recovery.bindingId
+      )
+    };
+  }
+  static settle(original, snapshot, recovery) {
+    if (recovery && snapshot.revision !== recovery.revision)
+      throw new ContentError("revision");
+    let manifest = recovery?.operation === "restore" ? _ContentRecoveryPlan.restore(original, snapshot, recovery.bindingId) : original;
+    if (manifest.pending)
+      manifest = ContentRenderPlan.settle(manifest, snapshot, false);
+    return recovery ? { ...manifest, recoveryId: ContentRecoveryFingerprint.create(recovery) } : manifest;
+  }
+  static restore(manifest, snapshot, bindingId) {
+    if (!manifest.bindings.some((binding) => binding.id === bindingId))
+      throw new ContentError("recovery");
+    return {
+      ...manifest,
+      pending: void 0,
+      bindings: manifest.bindings.map(
+        (binding) => binding.id === bindingId ? {
+          ...binding,
+          applied: ContentRenderPlan.fingerprint(snapshot, binding.id),
+          desired: void 0
+        } : binding
+      )
+    };
+  }
+};
+
+// packages/domain/publication/src/application/resolve-content-values.ts
+var ResolveContentValues = class {
+  constructor(images) {
+    this.images = images;
+  }
+  images;
+  async execute(contract, model) {
+    const values = [];
+    for (const field of contract.fields) {
+      if (field.type === "image") {
+        values.push(await this.image(field, model));
+        continue;
+      }
+      const key = ContentTextKey.of(field);
+      const text = model.text[key] || (!field.required ? field.fallback : void 0);
+      if (!ContentContractPolicy.text(text)) throw new ContentError("missing");
+      values.push({
+        type: "text",
+        key,
+        text,
+        fingerprint: ContentFingerprint.of(text)
+      });
+    }
+    return values;
+  }
+  async image(field, model) {
+    const host = field.token === "host.logo";
+    const picture = host ? model.hostLogo : model.pictures[field.slot];
+    const hostId = host ? model.hostLogo?.hostId : void 0;
+    const speakerId = host ? void 0 : model.pictures[field.slot]?.speakerId;
+    const identity = hostId ?? speakerId;
+    const fallback = field.fallback ? await this.images.validate(field.fallback) : void 0;
+    try {
+      if (!picture || !(host ? /^host-[a-z0-9-]+$/ : /^speaker-[a-z0-9-]+$/).test(
+        identity ?? ""
+      ))
+        throw new ContentError("image");
+      const validated = await this.images.validate(picture);
+      return {
+        type: "image",
+        key: field.slot,
+        image: validated.source,
+        fingerprint: ContentFingerprint.of(
+          `${validated.fingerprint}:${identity}:${picture.description}:${field.fit}`
+        ),
+        speakerId,
+        hostId,
+        fallback: false,
+        fit: field.fit
+      };
+    } catch {
+      if (field.required || !field.fallback || !fallback)
+        throw new ContentError("image");
+      const validated = fallback;
+      return {
+        type: "image",
+        key: field.slot,
+        image: validated.source,
+        fingerprint: ContentFingerprint.of(
+          `${validated.fingerprint}:fallback:${field.fallback.description}:${field.fit}`
+        ),
+        fallback: true,
+        fit: field.fit
+      };
+    }
+  }
+};
+
+// packages/domain/publication/src/application/reconcile-asset-content.ts
+var ReconcileAssetContent = class {
+  constructor(manifests, renderers, images) {
+    this.manifests = manifests;
+    this.renderers = renderers;
+    this.images = images;
+  }
+  manifests;
+  renderers;
+  images;
+  async preflight(templateId, kind, mimeType, value, model) {
+    const contract = ContentContractPolicy.parse(value, kind, mimeType);
+    await new ResolveContentValues(this.images).execute(contract, model);
+    ContentRenderPlan.initial(
+      await this.renderer(mimeType).read(templateId, contract)
+    );
+  }
+  async execute(input) {
+    const renderer = this.renderer(input.mimeType);
+    let manifest = await this.load(input, renderer);
+    if (!manifest) return { status: "copy-only", fallback: false };
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const recovered = await this.recover(input, manifest, renderer);
+      manifest = recovered.manifest;
+      const snapshot = recovered.snapshot;
+      const values = await new ResolveContentValues(this.images).execute(
+        {
+          ...manifest.contract,
+          fields: manifest.contract.fields.filter(
+            (field) => recovered.manifest.bindings.some(
+              (binding) => binding.key === (field.type === "text" ? ContentTextKey.of(field) : field.slot)
+            )
+          )
+        },
+        input.model
+      );
+      const changes = ContentRenderPlan.changes(manifest, snapshot, values);
+      if (!changes.length)
+        return {
+          status: "ready",
+          fallback: values.some((value) => value.fallback)
+        };
+      manifest = ContentRenderPlan.pending(manifest, snapshot, changes);
+      await this.manifests.save(input.folderId, manifest);
+      const written = await this.write(
+        input,
+        renderer,
+        manifest,
+        snapshot,
+        changes,
+        values,
+        attempt === 0
+      );
+      manifest = written.manifest;
+      if (written.complete)
+        return {
+          status: "ready",
+          fallback: values.some((value) => value.fallback)
+        };
+    }
+    return { status: "pending", fallback: false };
+  }
+  async write(input, renderer, manifest, snapshot, changes, values, retry) {
+    let confirmed = false;
+    let failure;
+    let current;
+    try {
+      const revision = await renderer.apply(input.fileId, snapshot, changes);
+      current = await renderer.read(
+        input.fileId,
+        manifest.contract,
+        manifest.bindings
+      );
+      confirmed = current.revision === revision;
+    } catch (error2) {
+      if (error2 instanceof ContentError && error2.code === "revision") {
+        const retriable = { ...manifest, pending: void 0 };
+        await this.manifests.save(input.folderId, retriable);
+        return { manifest: retriable, complete: false };
+      }
+      failure = { error: error2 };
+      current = await renderer.read(
+        input.fileId,
+        manifest.contract,
+        manifest.bindings,
+        manifest.pending?.revision
+      );
+    }
+    try {
+      const settled = ContentRenderPlan.settle(manifest, current, confirmed);
+      const complete = !ContentRenderPlan.changes(settled, current, values).length;
+      if (failure && !complete) {
+        if (retry) return { manifest: settled, complete };
+        throw failure.error;
+      }
+      await this.manifests.save(input.folderId, settled);
+      return { manifest: settled, complete };
+    } catch (error2) {
+      throw failure ? failure.error : error2;
+    }
+  }
+  async load(input, renderer) {
+    const stored = await this.manifests.load(input.folderId, input.fileId);
+    if (stored !== void 0)
+      return ContentManifestPolicy.parse(
+        stored,
+        input.fileId,
+        input.templateId,
+        input.mimeType
+      );
+    if (!input.fresh && input.recovery?.operation !== "enroll") {
+      if (input.managed) throw new ContentError("recovery");
+      return void 0;
+    }
+    const contract = ContentContractPolicy.parse(
+      input.contract,
+      input.kind,
+      input.mimeType
+    );
+    const snapshot = await renderer.read(input.fileId, contract);
+    if (input.recovery && snapshot.revision !== input.recovery.revision)
+      throw new ContentError("revision");
+    const bindings = ContentRenderPlan.initial(snapshot);
+    return {
+      version: 1,
+      fileId: input.fileId,
+      templateId: input.templateId,
+      mimeType: input.mimeType,
+      contract,
+      bindings,
+      initialRevision: snapshot.revision,
+      recoveryId: input.recovery ? ContentRecoveryFingerprint.create(input.recovery) : void 0,
+      pending: { revision: snapshot.revision, bindings }
+    };
+  }
+  async recover(input, original, renderer) {
+    const recovery = ContentRecoveryPlan.active(original, input.recovery);
+    const prepared = ContentRecoveryPlan.beforeRead(original, recovery);
+    const snapshot = await renderer.read(
+      input.fileId,
+      prepared.contract,
+      prepared.bindings,
+      prepared.initialRevision
+    );
+    const manifest = ContentRecoveryPlan.settle(prepared, snapshot, recovery);
+    if (manifest !== original)
+      await this.manifests.save(input.folderId, manifest);
+    return { manifest, snapshot };
+  }
+  renderer(mimeType) {
+    const renderer = this.renderers[mimeType];
+    if (!renderer) throw new ContentError("contract");
+    return renderer;
+  }
 };
 
 // packages/domain/publication/src/application/reconcile-asset-file.ts
@@ -57588,7 +58326,7 @@ var ReconcileAssetFile = class _ReconcileAssetFile {
     };
   }
   async enroll(input, file) {
-    if (input.recovery?.[file.id]?.operation === "enroll" && !file.contentManaged) {
+    if (input.mode === "fix" && input.recovery?.[file.id]?.operation === "enroll" && !file.contentManaged) {
       file = await this.repository.updateFile(
         { ...file, contentManaged: true },
         input.template,
@@ -58044,6 +58782,21 @@ var PublicationDiagnostics = class {
   }
 };
 
+// packages/domain/publication/src/domain/public-asset-url.ts
+var PublicAssetUrl = class {
+  static valid(value) {
+    if (!value) return false;
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" && !url.username && !url.password && ![...url.searchParams.keys()].some(
+        (key) => /token|signature|credential|secret|key|auth/i.test(key)
+      );
+    } catch {
+      return false;
+    }
+  }
+};
+
 // packages/domain/publication/src/domain/url-policy-contracts.ts
 var DEFAULT_PUBLICATION_URL_CONFIGURATION = Object.freeze({
   meetupEventUrlPrefix: `${MEETUP_ORIGIN}/cloud-native-aix-marseille/events/`,
@@ -58089,601 +58842,6 @@ var PublicationUrlPolicyEngine = class {
       diagnostics: Object.freeze(diagnostics),
       patch: Object.freeze({ operations: Object.freeze(operations) })
     };
-  }
-};
-
-// packages/domain/publication/src/domain/content-text-key.ts
-var ContentTextKey = class {
-  static of(field) {
-    return field.slot ? `${field.token}:${field.slot}` : field.token;
-  }
-};
-
-// packages/domain/publication/src/domain/asset-content.ts
-var TEXT_TOKENS = [
-  "event.title",
-  "event.date",
-  "event.date.month",
-  "event.date.numeric",
-  "event.date.weekday",
-  "host.name",
-  "host.address",
-  "host.postal_code",
-  "host.city",
-  "agenda",
-  "event.feedback_url",
-  "next_event.date",
-  "next_event.date.numeric",
-  "next_event.host.name",
-  "next_event.host.city"
-];
-var SLOTTED_TEXT_TOKENS = [
-  "talk.title",
-  "talk.abstract",
-  "talk.speakers",
-  "speaker.name"
-];
-
-// packages/domain/publication/src/domain/content-contract-policy.ts
-var ContentContractPolicy = class _ContentContractPolicy {
-  static parse(value, kind, mimeType) {
-    const contract = value;
-    if (contract?.version !== 1 || contract.kind !== kind || !_ContentContractPolicy.name(contract.revision) || !Array.isArray(contract.fields) || !contract.fields.length || contract.fields.length > 100 || !_ContentContractPolicy.keys(contract, [
-      "version",
-      "revision",
-      "kind",
-      "fields"
-    ]) || !_ContentContractPolicy.supported(mimeType))
-      throw new ContentError("contract");
-    const keys = /* @__PURE__ */ new Set();
-    for (const field of contract.fields) {
-      if (!field || typeof field.required !== "boolean")
-        throw new ContentError("contract");
-      let key;
-      if (field.type === "text") {
-        _ContentContractPolicy.textField(field);
-        key = ContentTextKey.of(field);
-      } else {
-        _ContentContractPolicy.image(field, mimeType);
-        key = field.slot;
-      }
-      if (keys.has(key)) throw new ContentError("contract");
-      keys.add(key);
-    }
-    return contract;
-  }
-  static textField(field) {
-    const slotted = SLOTTED_TEXT_TOKENS.includes(
-      field.token
-    );
-    if (!(slotted || TEXT_TOKENS.includes(field.token)) || (slotted ? !_ContentContractPolicy.name(field.slot) : field.slot !== void 0) || !_ContentContractPolicy.name(ContentTextKey.of(field)) || !_ContentContractPolicy.keys(field, [
-      "type",
-      "token",
-      "slot",
-      "required",
-      "fallback"
-    ]) || (!field.required || field.fallback !== void 0) && !_ContentContractPolicy.text(field.fallback))
-      throw new ContentError("contract");
-  }
-  static supported(mimeType) {
-    return [
-      "application/vnd.google-apps.presentation",
-      "application/vnd.google-apps.document"
-    ].includes(mimeType);
-  }
-  static text(value) {
-    return typeof value === "string" && value.trim().length > 0 && value.length <= 2e4 && [...value].every((character) => {
-      const code = character.charCodeAt(0);
-      return (code >= 32 || code === 9 || code === 10) && (code < 57344 || code > 63743);
-    });
-  }
-  static name(value) {
-    return typeof value === "string" && /^[\w.:-]{1,100}$/.test(value);
-  }
-  static keys(value, keys) {
-    return Object.keys(value).every((key) => keys.includes(key));
-  }
-  static image(field, mimeType) {
-    if (field.type !== "image" || !["speaker.picture", "host.logo"].includes(field.token) || !_ContentContractPolicy.name(field.slot) || !_ContentContractPolicy.name(field.objectId) || !_ContentContractPolicy.keys(field, [
-      "type",
-      "token",
-      "slot",
-      "objectId",
-      "pageId",
-      "tabId",
-      "required",
-      "fallback",
-      "fit"
-    ]))
-      throw new ContentError("contract");
-    const slides2 = mimeType === "application/vnd.google-apps.presentation";
-    if (!(slides2 ? _ContentContractPolicy.name(field.pageId) && !field.tabId : _ContentContractPolicy.name(field.tabId) && !field.pageId) || !(field.fit === "CENTER_CROP" || slides2 && field.fit === "CENTER_INSIDE"))
-      throw new ContentError("contract");
-    if (!field.required || field.fallback) {
-      if (!field.fallback || !_ContentContractPolicy.text(field.fallback.url) || !_ContentContractPolicy.text(field.fallback.description) || !_ContentContractPolicy.keys(field.fallback, ["url", "description"]))
-        throw new ContentError("contract");
-    }
-  }
-};
-
-// packages/domain/publication/src/domain/content-fingerprint.ts
-import { createHash } from "node:crypto";
-var ContentFingerprint = class {
-  static of(value) {
-    return createHash("sha256").update(value).digest("hex");
-  }
-};
-
-// packages/domain/publication/src/domain/content-manifest-policy.ts
-var ContentManifestPolicy = class _ContentManifestPolicy {
-  static parse(value, fileId, templateId, mimeType) {
-    const manifest = value;
-    if (manifest?.version !== 1 || manifest.fileId !== fileId || manifest.templateId !== templateId || manifest.mimeType !== mimeType || !ContentContractPolicy.keys(manifest, [
-      "version",
-      "fileId",
-      "templateId",
-      "mimeType",
-      "contract",
-      "bindings",
-      "pending",
-      "initialRevision",
-      "recoveryId"
-    ]))
-      throw new ContentError("recovery");
-    ContentContractPolicy.parse(
-      manifest.contract,
-      manifest.contract?.kind,
-      mimeType
-    );
-    if (manifest.initialRevision !== void 0 && !ContentContractPolicy.text(manifest.initialRevision) || manifest.recoveryId !== void 0 && !/^[a-f0-9]{64}$/.test(manifest.recoveryId))
-      throw new ContentError("recovery");
-    _ContentManifestPolicy.bindings(manifest.bindings);
-    _ContentManifestPolicy.associations(manifest);
-    if (manifest.pending) {
-      if (!ContentContractPolicy.text(manifest.pending.revision) || !ContentContractPolicy.keys(manifest.pending, ["revision", "bindings"]))
-        throw new ContentError("recovery");
-      _ContentManifestPolicy.bindings(manifest.pending.bindings);
-      _ContentManifestPolicy.associations({
-        ...manifest,
-        bindings: manifest.pending.bindings
-      });
-      if (manifest.pending.bindings.length !== manifest.bindings.length || manifest.pending.bindings.some((binding, i2) => {
-        const prior = manifest.bindings[i2];
-        return prior.id !== binding.id || prior.key !== binding.key || prior.type !== binding.type || JSON.stringify(prior.anchor) !== JSON.stringify(binding.anchor);
-      }))
-        throw new ContentError("recovery");
-    }
-    return manifest;
-  }
-  static bindings(bindings) {
-    if (!Array.isArray(bindings) || bindings.length > 500 || new Set(bindings.map((binding) => binding?.id)).size !== bindings.length)
-      throw new ContentError("recovery");
-    for (const binding of bindings) {
-      if (!binding || !ContentContractPolicy.name(binding.id) || !ContentContractPolicy.name(binding.key) || !["text", "image"].includes(binding.type) || !/^[a-f0-9]{64}$/.test(binding.applied) || binding.desired !== void 0 && !/^[a-f0-9]{64}$/.test(binding.desired) || !ContentContractPolicy.keys(binding, [
-        "id",
-        "type",
-        "key",
-        "anchor",
-        "applied",
-        "desired",
-        "speakerId",
-        "hostId",
-        "fallback"
-      ]))
-        throw new ContentError("recovery");
-      _ContentManifestPolicy.anchor(binding);
-    }
-  }
-  static anchor(binding) {
-    const anchor = binding.anchor;
-    if (!anchor || !ContentContractPolicy.keys(anchor, [
-      "objectId",
-      "pageId",
-      "tabId",
-      "segmentId",
-      "rangeName",
-      "start",
-      "end"
-    ]))
-      throw new ContentError("recovery");
-    _ContentManifestPolicy.anchorValues(anchor);
-    if (binding.type === "image" && !anchor.objectId)
-      throw new ContentError("recovery");
-    if (binding.type === "text" && !anchor.objectId && !anchor.rangeName)
-      throw new ContentError("recovery");
-  }
-  static anchorValues(anchor) {
-    for (const [key, value] of Object.entries(anchor)) {
-      if (key === "start" || key === "end") {
-        if (!Number.isSafeInteger(value) || Number(value) < 1)
-          throw new ContentError("recovery");
-      } else if (value !== "" && !ContentContractPolicy.name(value))
-        throw new ContentError("recovery");
-    }
-  }
-  static associations(manifest) {
-    const anchors = /* @__PURE__ */ new Set();
-    for (const binding of manifest.bindings) {
-      const field = manifest.contract.fields.find(
-        (field2) => field2.type === binding.type && (field2.type === "text" ? ContentTextKey.of(field2) : field2.slot) === binding.key
-      );
-      const anchor = binding.anchor;
-      const key = JSON.stringify([
-        anchor.pageId,
-        anchor.tabId,
-        anchor.segmentId,
-        anchor.objectId,
-        anchor.rangeName
-      ]);
-      if (!field || anchors.has(key) || binding.fallback !== void 0 && typeof binding.fallback !== "boolean")
-        throw new ContentError("recovery");
-      anchors.add(key);
-      _ContentManifestPolicy.identity(binding, field);
-      _ContentManifestPolicy.rendererAnchor(manifest.mimeType, binding);
-    }
-  }
-  static identity(binding, field) {
-    if (binding.speakerId !== void 0 && (!/^speaker-[a-z0-9-]+$/.test(binding.speakerId) || field.type !== "image" || field.token !== "speaker.picture"))
-      throw new ContentError("recovery");
-    if (binding.hostId !== void 0 && (!/^host-[a-z0-9-]+$/.test(binding.hostId) || field.type !== "image" || field.token !== "host.logo"))
-      throw new ContentError("recovery");
-  }
-  static rendererAnchor(mimeType, binding) {
-    const anchor = binding.anchor;
-    if (mimeType.endsWith("presentation")) {
-      if (!anchor.objectId || !anchor.pageId || anchor.tabId || anchor.rangeName)
-        throw new ContentError("recovery");
-    } else if (!anchor.tabId || anchor.segmentId || binding.type === "text" && !anchor.rangeName)
-      throw new ContentError("recovery");
-  }
-};
-
-// packages/domain/publication/src/domain/content-render-plan.ts
-var ContentRenderPlan = class {
-  static changes(manifest, snapshot, values) {
-    const changes = [];
-    for (const binding of manifest.bindings) {
-      const matches = snapshot.locations.filter(
-        (location2) => location2.id === binding.id
-      );
-      const location = matches[0];
-      if (matches.length !== 1 || location.fingerprint !== binding.applied)
-        throw new ContentError("conflict");
-      const value = values.find(
-        (item) => item.key === binding.key && item.type === binding.type
-      );
-      if (!value) throw new ContentError("contract");
-      if (binding.desired !== value.fingerprint || binding.type === "text" && location.fingerprint !== value.fingerprint)
-        changes.push({ location, value });
-    }
-    return changes;
-  }
-  static pending(manifest, snapshot, changes) {
-    return {
-      ...manifest,
-      pending: {
-        revision: snapshot.revision,
-        bindings: manifest.bindings.map((binding) => {
-          const value = changes.find(
-            (change) => change.location.id === binding.id
-          )?.value;
-          return value ? {
-            ...binding,
-            desired: value.fingerprint,
-            applied: value.type === "text" ? value.fingerprint : binding.applied,
-            speakerId: value.speakerId,
-            hostId: value.hostId,
-            fallback: value.fallback
-          } : binding;
-        })
-      }
-    };
-  }
-  static settle(manifest, snapshot, confirmed) {
-    if (!manifest.pending) return manifest;
-    const next = manifest.pending.bindings;
-    const applied = next.every((binding) => {
-      const location = snapshot.locations.find(
-        (item) => item.id === binding.id
-      );
-      if (!location) throw new ContentError("conflict");
-      const prior2 = manifest.bindings.find((item) => item.id === binding.id);
-      return binding.type === "image" && binding.desired !== prior2?.desired ? confirmed : binding.applied === location.fingerprint;
-    });
-    if (applied)
-      return {
-        ...manifest,
-        pending: void 0,
-        initialRevision: next.every((binding) => binding.desired) ? void 0 : manifest.initialRevision,
-        bindings: next.map((binding) => ({
-          ...binding,
-          applied: snapshot.locations.find((item) => item.id === binding.id)?.fingerprint
-        }))
-      };
-    const prior = manifest.bindings.every(
-      (binding) => snapshot.locations.find((item) => item.id === binding.id)?.fingerprint === binding.applied
-    );
-    const uncertainImage = next.some(
-      (binding, index) => binding.type === "image" && binding.desired !== manifest.bindings[index]?.desired
-    );
-    if (!prior)
-      throw new ContentError(uncertainImage ? "recovery" : "conflict");
-    if (uncertainImage && snapshot.revision !== manifest.pending.revision)
-      throw new ContentError("recovery");
-    return { ...manifest, pending: void 0 };
-  }
-  static initial(snapshot) {
-    if (!snapshot.locations.length || snapshot.locations.length > 500 || snapshot.locations.some(
-      (location) => !ContentContractPolicy.name(location.id) || !ContentContractPolicy.name(location.key)
-    ) || new Set(snapshot.locations.map((location) => location.id)).size !== snapshot.locations.length || new Set(
-      snapshot.locations.map((location) => JSON.stringify(location.anchor))
-    ).size !== snapshot.locations.length)
-      throw new ContentError("location");
-    return snapshot.locations.map((location) => ({
-      id: location.id,
-      type: location.type,
-      key: location.key,
-      anchor: location.anchor,
-      applied: location.fingerprint
-    }));
-  }
-};
-
-// packages/domain/publication/src/application/resolve-content-values.ts
-var ResolveContentValues = class {
-  constructor(images) {
-    this.images = images;
-  }
-  images;
-  async execute(contract, model) {
-    const values = [];
-    for (const field of contract.fields) {
-      if (field.type === "image") {
-        values.push(await this.image(field, model));
-        continue;
-      }
-      const key = ContentTextKey.of(field);
-      const text = model.text[key] || (!field.required ? field.fallback : void 0);
-      if (!ContentContractPolicy.text(text)) throw new ContentError("missing");
-      values.push({
-        type: "text",
-        key,
-        text,
-        fingerprint: ContentFingerprint.of(text)
-      });
-    }
-    return values;
-  }
-  async image(field, model) {
-    const host = field.token === "host.logo";
-    const picture = host ? model.hostLogo : model.pictures[field.slot];
-    const hostId = host ? model.hostLogo?.hostId : void 0;
-    const speakerId = host ? void 0 : model.pictures[field.slot]?.speakerId;
-    const identity = hostId ?? speakerId;
-    const fallback = field.fallback ? await this.images.validate(field.fallback) : void 0;
-    try {
-      if (!picture || !(host ? /^host-[a-z0-9-]+$/ : /^speaker-[a-z0-9-]+$/).test(
-        identity ?? ""
-      ))
-        throw new ContentError("image");
-      const validated = await this.images.validate(picture);
-      return {
-        type: "image",
-        key: field.slot,
-        image: validated.source,
-        fingerprint: ContentFingerprint.of(
-          `${validated.fingerprint}:${identity}:${picture.description}:${field.fit}`
-        ),
-        speakerId,
-        hostId,
-        fallback: false,
-        fit: field.fit
-      };
-    } catch {
-      if (field.required || !field.fallback || !fallback)
-        throw new ContentError("image");
-      const validated = fallback;
-      return {
-        type: "image",
-        key: field.slot,
-        image: validated.source,
-        fingerprint: ContentFingerprint.of(
-          `${validated.fingerprint}:fallback:${field.fallback.description}:${field.fit}`
-        ),
-        fallback: true,
-        fit: field.fit
-      };
-    }
-  }
-};
-
-// packages/domain/publication/src/application/reconcile-asset-content.ts
-var ReconcileAssetContent = class {
-  constructor(manifests, renderers, images) {
-    this.manifests = manifests;
-    this.renderers = renderers;
-    this.images = images;
-  }
-  manifests;
-  renderers;
-  images;
-  async preflight(templateId, kind, mimeType, value, model) {
-    const contract = ContentContractPolicy.parse(value, kind, mimeType);
-    await new ResolveContentValues(this.images).execute(contract, model);
-    ContentRenderPlan.initial(
-      await this.renderer(mimeType).read(templateId, contract)
-    );
-  }
-  async execute(input) {
-    const renderer = this.renderer(input.mimeType);
-    let manifest = await this.load(input, renderer);
-    if (!manifest) return { status: "copy-only", fallback: false };
-    for (let attempt = 0; attempt < 2; attempt++) {
-      const recovered = await this.recover(input, manifest, renderer);
-      manifest = recovered.manifest;
-      const snapshot = recovered.snapshot;
-      const values = await new ResolveContentValues(this.images).execute(
-        {
-          ...manifest.contract,
-          fields: manifest.contract.fields.filter(
-            (field) => recovered.manifest.bindings.some(
-              (binding) => binding.key === (field.type === "text" ? ContentTextKey.of(field) : field.slot)
-            )
-          )
-        },
-        input.model
-      );
-      const changes = ContentRenderPlan.changes(manifest, snapshot, values);
-      if (!changes.length)
-        return {
-          status: "ready",
-          fallback: values.some((value) => value.fallback)
-        };
-      manifest = ContentRenderPlan.pending(manifest, snapshot, changes);
-      await this.manifests.save(input.folderId, manifest);
-      const written = await this.write(
-        input,
-        renderer,
-        manifest,
-        snapshot,
-        changes,
-        values,
-        attempt === 0
-      );
-      manifest = written.manifest;
-      if (written.complete)
-        return {
-          status: "ready",
-          fallback: values.some((value) => value.fallback)
-        };
-    }
-    return { status: "pending", fallback: false };
-  }
-  async write(input, renderer, manifest, snapshot, changes, values, retry) {
-    let confirmed = false;
-    let failure;
-    let current;
-    try {
-      const revision = await renderer.apply(input.fileId, snapshot, changes);
-      current = await renderer.read(
-        input.fileId,
-        manifest.contract,
-        manifest.bindings
-      );
-      confirmed = current.revision === revision;
-    } catch (error2) {
-      if (error2 instanceof ContentError && error2.code === "revision") {
-        const retriable = { ...manifest, pending: void 0 };
-        await this.manifests.save(input.folderId, retriable);
-        return { manifest: retriable, complete: false };
-      }
-      failure = { error: error2 };
-      current = await renderer.read(
-        input.fileId,
-        manifest.contract,
-        manifest.bindings,
-        manifest.pending?.revision
-      );
-    }
-    try {
-      const settled = ContentRenderPlan.settle(manifest, current, confirmed);
-      const complete = !ContentRenderPlan.changes(settled, current, values).length;
-      if (failure && !complete) {
-        if (retry) return { manifest: settled, complete };
-        throw failure.error;
-      }
-      await this.manifests.save(input.folderId, settled);
-      return { manifest: settled, complete };
-    } catch (error2) {
-      throw failure ? failure.error : error2;
-    }
-  }
-  async load(input, renderer) {
-    const stored = await this.manifests.load(input.folderId, input.fileId);
-    if (stored !== void 0)
-      return ContentManifestPolicy.parse(
-        stored,
-        input.fileId,
-        input.templateId,
-        input.mimeType
-      );
-    if (!input.fresh && input.recovery?.operation !== "enroll") {
-      if (input.managed) throw new ContentError("recovery");
-      return void 0;
-    }
-    const contract = ContentContractPolicy.parse(
-      input.contract,
-      input.kind,
-      input.mimeType
-    );
-    const snapshot = await renderer.read(input.fileId, contract);
-    if (input.recovery && snapshot.revision !== input.recovery.revision)
-      throw new ContentError("revision");
-    const bindings = ContentRenderPlan.initial(snapshot);
-    return {
-      version: 1,
-      fileId: input.fileId,
-      templateId: input.templateId,
-      mimeType: input.mimeType,
-      contract,
-      bindings,
-      initialRevision: snapshot.revision,
-      recoveryId: input.recovery ? ContentFingerprint.of(JSON.stringify(input.recovery)) : void 0,
-      pending: { revision: snapshot.revision, bindings }
-    };
-  }
-  async recover(input, original, renderer) {
-    const recovery = input.recovery && ContentFingerprint.of(JSON.stringify(input.recovery)) === original.recoveryId ? void 0 : input.recovery;
-    let manifest = original;
-    if (recovery?.operation === "remove") {
-      manifest = {
-        ...manifest,
-        pending: void 0,
-        bindings: manifest.bindings.filter(
-          (binding) => binding.id !== recovery.bindingId
-        )
-      };
-    }
-    const snapshot = await renderer.read(
-      input.fileId,
-      manifest.contract,
-      manifest.bindings,
-      manifest.initialRevision
-    );
-    if (recovery && snapshot.revision !== recovery.revision)
-      throw new ContentError("revision");
-    if (recovery?.operation === "restore") {
-      if (!manifest.bindings.some((binding) => binding.id === recovery.bindingId))
-        throw new ContentError("recovery");
-      manifest = {
-        ...manifest,
-        pending: void 0,
-        bindings: manifest.bindings.map(
-          (binding) => binding.id === recovery.bindingId ? {
-            ...binding,
-            applied: snapshot.locations.find(
-              (item) => item.id === binding.id
-            )?.fingerprint,
-            desired: void 0
-          } : binding
-        )
-      };
-    }
-    if (manifest.pending)
-      manifest = ContentRenderPlan.settle(manifest, snapshot, false);
-    if (recovery)
-      manifest = {
-        ...manifest,
-        recoveryId: ContentFingerprint.of(JSON.stringify(recovery))
-      };
-    if (manifest !== original)
-      await this.manifests.save(input.folderId, manifest);
-    return { manifest, snapshot };
-  }
-  renderer(mimeType) {
-    const renderer = this.renderers[mimeType];
-    if (!renderer) throw new ContentError("contract");
-    return renderer;
   }
 };
 
@@ -59668,7 +59826,7 @@ var SourceSpeakerEquality = class {
 };
 
 // packages/application/journey/src/use-cases/asset-participant-projection.ts
-var AssetParticipantProjection = class _AssetParticipantProjection {
+var AssetParticipantProjection = class {
   static create(event, catalog, assignments) {
     const agendaIds = new Set(
       event.agenda.flatMap(
@@ -59681,7 +59839,7 @@ var AssetParticipantProjection = class _AssetParticipantProjection {
       const speaker = catalog.speakers.find((item) => item.id === id);
       if (!speaker || !agendaIds.has(id)) continue;
       speakers[slot] = speaker.displayName;
-      if (_AssetParticipantProjection.publicUrl(speaker.pictureUrl)) {
+      if (PublicAssetUrl.valid(speaker.pictureUrl)) {
         pictures[slot] = {
           speakerId: id,
           url: speaker.pictureUrl,
@@ -59696,24 +59854,14 @@ var AssetParticipantProjection = class _AssetParticipantProjection {
       );
       if (matches.length !== 1) continue;
       const talk = matches[0];
+      if (!talk.proposal) continue;
       talks[slot] = {
-        title: talk.proposal?.title,
+        title: talk.proposal.title,
         abstract: talk.proposal?.abstract,
         speakers: talk.speakers.map((speaker) => speaker.displayName)
       };
     }
     return { speakers, pictures, talks };
-  }
-  static publicUrl(value) {
-    if (!value) return false;
-    try {
-      const url = new URL(value);
-      return url.protocol === "https:" && !url.username && !url.password && ![...url.searchParams.keys()].some(
-        (key) => /token|signature|credential|secret|key|auth/i.test(key)
-      );
-    } catch {
-      return false;
-    }
   }
 };
 
@@ -59756,7 +59904,7 @@ var AssetRenderProjection = class {
       venue: event.host?.id ? this.assignments.venues[event.host.id] : void 0,
       feedbackUrl: !diagnostics.some(
         (item) => item.severity === "error" && /feedback/.test(item.code)
-      ) && AssetParticipantProjection.publicUrl(event.publicationLinks.feedback) ? event.publicationLinks.feedback : void 0,
+      ) && PublicAssetUrl.valid(event.publicationLinks.feedback) ? event.publicationLinks.feedback : void 0,
       agenda: agendaValid ? event.agenda.map((talk) => ({
         title: talk.proposal?.title ?? talk.description,
         speakers: talk.speakers.map((speaker) => speaker.displayName)
@@ -59768,19 +59916,39 @@ var AssetRenderProjection = class {
   hostLogo(hostId) {
     if (!hostId) return void 0;
     const logo = this.assignments.hostLogos?.[hostId];
-    return logo && AssetParticipantProjection.publicUrl(logo.url) ? { ...logo, hostId } : void 0;
+    return logo && PublicAssetUrl.valid(logo.url) ? { ...logo, hostId } : void 0;
+  }
+};
+
+// packages/application/journey/src/config/configured-publication-policies.ts
+var ConfiguredPublicationPolicies = class {
+  static create(publication) {
+    return PublicationUrlPolicies.createDefaultPublicationUrlPolicies({
+      ...DEFAULT_PUBLICATION_URL_CONFIGURATION,
+      meetupEventUrlPrefix: publication["meetup-event-url-prefix"],
+      communityEventUrlPrefixes: [
+        publication["cncf-event-url-prefix"],
+        ...DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes.slice(
+          1
+        )
+      ]
+    });
   }
 };
 
 // packages/application/journey/src/use-cases/find-next-asset-event.ts
 var FindNextAssetEvent = class {
-  constructor(repository, codec, venues = {}) {
+  constructor(repository, codec, eventLabel, publication, venues = {}) {
     this.repository = repository;
     this.codec = codec;
+    this.eventLabel = eventLabel;
+    this.publication = publication;
     this.venues = venues;
   }
   repository;
   codec;
+  eventLabel;
+  publication;
   venues;
   async find(current, catalog) {
     const candidates = await this.candidates(current);
@@ -59806,7 +59974,7 @@ var FindNextAssetEvent = class {
     for (let pages = 0; pages < 20; pages++) {
       const page = await this.repository.listPage({
         repository: current.identity.repository,
-        label: "meetup",
+        label: this.eventLabel,
         includeClosed: false,
         pageSize: 100,
         cursor
@@ -59834,7 +60002,7 @@ var FindNextAssetEvent = class {
     return events;
   }
   candidate(document2, current) {
-    if (document2.issueState !== "open" || !document2.labels.includes("meetup"))
+    if (document2.issueState !== "open" || !document2.labels.includes(this.eventLabel))
       return void 0;
     const decoded = this.codec.decode(document2);
     const evaluated = new EventRuleEngine(
@@ -59846,7 +60014,7 @@ var FindNextAssetEvent = class {
     );
     if (invalid || event.date <= current.date || event.occurrenceStatus !== "scheduled" || !event.confirmations.host)
       return void 0;
-    const published = PublicationUrlPolicies.createDefaultPublicationUrlPolicies().filter((policy) => policy.id !== "asset-folder-url").some((policy) => {
+    const published = ConfiguredPublicationPolicies.create(this.publication).filter((policy) => policy.id !== "asset-folder-url").some((policy) => {
       const field = policy.id === "meetup-event-url" ? "meetup" : "community";
       return Boolean(event.publicationLinks[field]) && (field !== "meetup" || MeetupPublicationChecklist.isPublished(event)) && !policy.evaluate({ [field]: event.publicationLinks[field] }).diagnostics.some((item) => item.severity === "error");
     });
@@ -60024,16 +60192,7 @@ var EventPublicationEvaluation = class _EventPublicationEvaluation {
       });
     }
     const engine = new PublicationUrlPolicyEngine(
-      PublicationUrlPolicies.createDefaultPublicationUrlPolicies({
-        ...DEFAULT_PUBLICATION_URL_CONFIGURATION,
-        meetupEventUrlPrefix: config.publication["meetup-event-url-prefix"],
-        communityEventUrlPrefixes: [
-          config.publication["cncf-event-url-prefix"],
-          ...DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes.slice(
-            1
-          )
-        ]
-      })
+      ConfiguredPublicationPolicies.create(config.publication)
     );
     const evaluation = engine.evaluate(event.publicationLinks);
     diagnostics.push(
@@ -68404,365 +68563,8 @@ function getOctokit(token, options, ...additionalPlugins) {
   return new GitHubWithPlugins(getOctokitOptions(token, options));
 }
 
-// packages/adapter/google-drive-asset-repository/src/google-drive-asset-repository.ts
-var import_drive2 = __toESM(require_build(), 1);
-import { createHash as createHash2 } from "node:crypto";
-
-// packages/adapter/google-drive-asset-repository/src/google-drive-asset-repository-error.ts
-var GoogleDriveAssetRepositoryError = class extends Error {
-  constructor(message) {
-    super(message);
-    this.name = "GoogleDriveAssetRepositoryError";
-  }
-};
-
-// packages/adapter/google-drive-asset-repository/src/drive-asset-metadata.ts
-var DriveAssetMetadata = class {
-  static templateProperties(template) {
-    return { template_file_id: template.id, template_kind: template.kind };
-  }
-  static container(file, eventId) {
-    if (typeof file.id !== "string" || !file.id || typeof file.name !== "string" || !file.name)
-      throw new GoogleDriveAssetRepositoryError(
-        "Google Drive returned an invalid asset folder"
-      );
-    return {
-      id: file.id,
-      name: file.name,
-      url: `https://drive.google.com/drive/folders/${file.id}`,
-      eventId
-    };
-  }
-  static assetFile(file) {
-    if (typeof file.id !== "string" || !file.id || typeof file.name !== "string" || !file.name)
-      throw new GoogleDriveAssetRepositoryError(
-        "Google Drive returned an invalid asset file"
-      );
-    return {
-      id: file.id,
-      name: file.name,
-      ...file.webViewLink ? { url: file.webViewLink } : {},
-      templateId: file.appProperties?.template_file_id,
-      kind: file.appProperties?.template_kind,
-      mimeType: file.mimeType ?? void 0,
-      contentManaged: file.appProperties?.meetup_content === "v1"
-    };
-  }
-};
-
-// packages/adapter/google-drive-asset-repository/src/google-drive-asset-repository-contracts.ts
-var folderMimeType = "application/vnd.google-apps.folder";
-var fields = "id,name,webViewLink,mimeType,parents,trashed,appProperties";
-var requestOptions = { retry: false, timeout: 3e4 };
-
-// packages/adapter/google-drive-asset-repository/src/google-drive-authentication.ts
-var import_drive = __toESM(require_build(), 1);
-var GoogleDriveAuthentication = class {
-  static create(credentialsJson) {
-    let credentials;
-    try {
-      credentials = JSON.parse(credentialsJson);
-    } catch {
-      throw new GoogleDriveAssetRepositoryError(
-        "Invalid Google service-account credentials"
-      );
-    }
-    if (!credentials || typeof credentials !== "object" || Array.isArray(credentials) || !("type" in credentials) || credentials.type !== "service_account" || !("client_email" in credentials) || typeof credentials.client_email !== "string" || !credentials.client_email || !("private_key" in credentials) || typeof credentials.private_key !== "string" || !credentials.private_key) {
-      throw new GoogleDriveAssetRepositoryError(
-        "Invalid Google service-account credentials"
-      );
-    }
-    return new import_drive.auth.JWT({
-      email: credentials.client_email,
-      key: credentials.private_key,
-      scopes: ["https://www.googleapis.com/auth/drive"]
-    });
-  }
-};
-
-// packages/adapter/google-drive-asset-repository/src/google-drive-asset-repository.ts
-var GoogleDriveAssetRepository = class _GoogleDriveAssetRepository {
-  constructor(client, options) {
-    this.client = client;
-    this.options = options;
-    if (![options.parentFolderId, options.templateFolderId].every(
-      (id) => /^[\w-]+$/.test(id)
-    ) || options.parentFolderId === options.templateFolderId)
-      throw _GoogleDriveAssetRepository.failure(
-        "Distinct Google Drive parent and template folder IDs are required"
-      );
-  }
-  client;
-  options;
-  async findContainer(request3) {
-    const matches = await this.list(
-      `mimeType='${folderMimeType}' and appProperties has { key='meetup_event_key' and value='${_GoogleDriveAssetRepository.key(request3)}' }`,
-      "allDrives"
-    );
-    if (matches.length > 1)
-      throw _GoogleDriveAssetRepository.failure(
-        "Multiple asset folders match this event; manual reconciliation is required"
-      );
-    const file = matches[0];
-    if (!file) return void 0;
-    if (file.trashed || file.mimeType !== folderMimeType || file.appProperties?.meetup_event_key !== _GoogleDriveAssetRepository.key(request3)) {
-      throw _GoogleDriveAssetRepository.failure(
-        "The asset folder does not match the requested event"
-      );
-    }
-    return DriveAssetMetadata.container(file, request3.eventId);
-  }
-  async ensureContainer(request3) {
-    const current = await this.findContainer(request3);
-    if (current?.name === request3.title) return current;
-    const appProperties = {
-      meetup_event_key: _GoogleDriveAssetRepository.key(request3)
-    };
-    const response = current ? await _GoogleDriveAssetRepository.remote(
-      () => this.client.files.update(
-        {
-          fileId: current.id,
-          requestBody: { name: request3.title, appProperties },
-          fields,
-          supportsAllDrives: true
-        },
-        requestOptions
-      )
-    ) : await _GoogleDriveAssetRepository.remote(
-      () => this.client.files.create(
-        {
-          requestBody: {
-            name: request3.title,
-            mimeType: folderMimeType,
-            parents: [this.options.parentFolderId],
-            appProperties
-          },
-          fields,
-          supportsAllDrives: true
-        },
-        requestOptions
-      )
-    );
-    return DriveAssetMetadata.container(response.data, request3.eventId);
-  }
-  async listTemplates() {
-    return (await this.list(
-      `'${_GoogleDriveAssetRepository.escapeQuery(this.options.templateFolderId)}' in parents`
-    )).map((file) => {
-      if (!file.id || !file.name || !file.appProperties?.template_kind || file.mimeType === folderMimeType)
-        throw _GoogleDriveAssetRepository.failure(
-          "Every asset template must be a file with an ID, name, and template_kind"
-        );
-      return {
-        id: file.id,
-        name: file.name,
-        kind: file.appProperties.template_kind,
-        mimeType: file.mimeType ?? void 0,
-        contentContract: this.options.contentContracts?.[file.appProperties.template_kind]
-      };
-    });
-  }
-  async listFiles(containerId) {
-    return (await this.list(
-      `'${_GoogleDriveAssetRepository.escapeQuery(containerId)}' in parents and mimeType!='${folderMimeType}'`
-    )).filter((file) => !file.appProperties?.meetup_binding_file).map(DriveAssetMetadata.assetFile);
-  }
-  async copyTemplate(containerId, template, name) {
-    const { data } = await _GoogleDriveAssetRepository.remote(
-      () => this.client.files.copy(
-        {
-          fileId: template.id,
-          requestBody: {
-            name,
-            parents: [containerId],
-            appProperties: {
-              ...DriveAssetMetadata.templateProperties(template),
-              ...template.contentContract ? { meetup_content: "v1" } : {}
-            }
-          },
-          fields,
-          supportsAllDrives: true
-        },
-        requestOptions
-      )
-    );
-    return DriveAssetMetadata.assetFile(data);
-  }
-  async updateFile(file, template, name) {
-    const { data } = await _GoogleDriveAssetRepository.remote(
-      () => this.client.files.update(
-        {
-          fileId: file.id,
-          requestBody: {
-            name,
-            appProperties: {
-              ...DriveAssetMetadata.templateProperties(template),
-              ...file.contentManaged ? { meetup_content: "v1" } : {}
-            }
-          },
-          fields,
-          supportsAllDrives: true
-        },
-        requestOptions
-      )
-    );
-    return DriveAssetMetadata.assetFile(data);
-  }
-  async list(query, corpora = "user") {
-    const files = [];
-    let pageToken;
-    const tokens = /* @__PURE__ */ new Set();
-    do {
-      const { data } = await _GoogleDriveAssetRepository.remote(
-        () => this.client.files.list(
-          {
-            q: `${query} and trashed=false`,
-            corpora,
-            fields: `nextPageToken,incompleteSearch,files(${fields})`,
-            pageSize: 100,
-            pageToken,
-            supportsAllDrives: true,
-            includeItemsFromAllDrives: true
-          },
-          requestOptions
-        )
-      );
-      if (data.incompleteSearch)
-        throw _GoogleDriveAssetRepository.failure(
-          "Google Drive returned an incomplete search; reconciliation was stopped"
-        );
-      files.push(...data.files ?? []);
-      pageToken = data.nextPageToken || void 0;
-      if (pageToken && tokens.has(pageToken))
-        throw _GoogleDriveAssetRepository.failure(
-          "Google Drive returned a repeated pagination token"
-        );
-      if (pageToken) tokens.add(pageToken);
-    } while (pageToken);
-    return files;
-  }
-  static createGoogleDriveAssetRepository(credentialsJson, options) {
-    return new _GoogleDriveAssetRepository(
-      _GoogleDriveAssetRepository.client(credentialsJson),
-      options
-    );
-  }
-  static client(credentialsJson) {
-    return (0, import_drive2.drive)({
-      version: "v3",
-      auth: GoogleDriveAuthentication.create(credentialsJson)
-    });
-  }
-  static key(request3) {
-    return createHash2("sha256").update(request3.idempotencyKey).digest("hex");
-  }
-  static escapeQuery(value) {
-    return value.replaceAll("\\", "\\\\").replaceAll("'", "\\'");
-  }
-  static failure(message) {
-    return new GoogleDriveAssetRepositoryError(message);
-  }
-  static async remote(operation) {
-    try {
-      return await operation();
-    } catch (error2) {
-      const response = error2 !== null && typeof error2 === "object" && "response" in error2 ? error2.response : void 0;
-      const status = response !== null && typeof response === "object" && "status" in response ? response.status : void 0;
-      if (status === 429)
-        throw _GoogleDriveAssetRepository.failure(
-          "Google Drive rate limit reached; retry reconciliation later"
-        );
-      if (status === 401 || status === 403)
-        throw _GoogleDriveAssetRepository.failure(
-          "Google Drive denied access; check credentials, folder access, and quota"
-        );
-      throw _GoogleDriveAssetRepository.failure(
-        "Google Drive request failed; inspect provider state before retrying an uncertain write"
-      );
-    }
-  }
-};
-
-// packages/adapter/google-drive-asset-repository/src/google-drive-manifest-repository.ts
-import { Readable } from "node:stream";
-var GoogleDriveManifestRepository = class {
-  constructor(client) {
-    this.client = client;
-  }
-  client;
-  async load(folderId, fileId) {
-    const id = await this.find(folderId, fileId);
-    if (!id) return void 0;
-    const { data } = await this.client.files.get(
-      { fileId: id, alt: "media", supportsAllDrives: true },
-      { ...requestOptions, responseType: "stream" }
-    );
-    const chunks = [];
-    let size = 0;
-    for await (const chunk of data) {
-      size += chunk.length;
-      if (size > 1e6) {
-        data.destroy();
-        throw new ContentError("recovery");
-      }
-      chunks.push(Buffer.from(chunk));
-    }
-    try {
-      return JSON.parse(Buffer.concat(chunks).toString("utf8"));
-    } catch {
-      throw new ContentError("recovery");
-    }
-  }
-  async save(folderId, manifest) {
-    const id = await this.find(folderId, manifest.fileId);
-    const json = JSON.stringify(manifest);
-    if (Buffer.byteLength(json) > 1e6) throw new ContentError("recovery");
-    const media = { mimeType: "application/json", body: Readable.from([json]) };
-    if (id) {
-      await this.client.files.update(
-        { fileId: id, media, supportsAllDrives: true },
-        requestOptions
-      );
-    } else {
-      await this.client.files.create(
-        {
-          requestBody: {
-            name: `.${manifest.fileId}.bindings.json`,
-            mimeType: "application/json",
-            parents: [folderId],
-            appProperties: { meetup_binding_file: manifest.fileId }
-          },
-          media,
-          supportsAllDrives: true
-        },
-        requestOptions
-      );
-    }
-  }
-  async find(folderId, fileId) {
-    if (![folderId, fileId].every((id) => /^[\w-]+$/.test(id)))
-      throw new ContentError("recovery");
-    const { data } = await this.client.files.list(
-      {
-        q: `'${folderId}' in parents and trashed=false and appProperties has { key='meetup_binding_file' and value='${fileId}' }`,
-        fields: "nextPageToken,incompleteSearch,files(id,mimeType,parents,appProperties)",
-        pageSize: 100,
-        supportsAllDrives: true,
-        includeItemsFromAllDrives: true
-      },
-      requestOptions
-    );
-    if (data.incompleteSearch || data.nextPageToken || (data.files?.length ?? 0) > 1)
-      throw new ContentError("recovery");
-    const file = data.files?.[0];
-    if (file && (!file.id || file.mimeType !== "application/json" || !file.parents?.includes(folderId) || file.appProperties?.meetup_binding_file !== fileId))
-      throw new ContentError("recovery");
-    return file?.id ?? void 0;
-  }
-};
-
 // packages/adapter/google-docs-content-repository/src/google-docs-content-repository.ts
-var import_docs = __toESM(require_build2(), 1);
+var import_docs = __toESM(require_build(), 1);
 
 // packages/adapter/google-docs-content-repository/src/document-tabs.ts
 var DocumentTabs = class _DocumentTabs {
@@ -69094,6 +68896,363 @@ var GoogleDocsContentRepository = class _GoogleDocsContentRepository {
         throw new ContentError("revision");
       throw error2;
     }
+  }
+};
+
+// packages/adapter/google-drive-asset-repository/src/google-drive-asset-repository.ts
+var import_drive2 = __toESM(require_build2(), 1);
+import { createHash as createHash2 } from "node:crypto";
+
+// packages/adapter/google-drive-asset-repository/src/google-drive-asset-repository-error.ts
+var GoogleDriveAssetRepositoryError = class extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "GoogleDriveAssetRepositoryError";
+  }
+};
+
+// packages/adapter/google-drive-asset-repository/src/drive-asset-metadata.ts
+var DriveAssetMetadata = class {
+  static templateProperties(template) {
+    return { template_file_id: template.id, template_kind: template.kind };
+  }
+  static container(file, eventId) {
+    if (typeof file.id !== "string" || !file.id || typeof file.name !== "string" || !file.name)
+      throw new GoogleDriveAssetRepositoryError(
+        "Google Drive returned an invalid asset folder"
+      );
+    return {
+      id: file.id,
+      name: file.name,
+      url: `https://drive.google.com/drive/folders/${file.id}`,
+      eventId
+    };
+  }
+  static assetFile(file) {
+    if (typeof file.id !== "string" || !file.id || typeof file.name !== "string" || !file.name)
+      throw new GoogleDriveAssetRepositoryError(
+        "Google Drive returned an invalid asset file"
+      );
+    return {
+      id: file.id,
+      name: file.name,
+      ...file.webViewLink ? { url: file.webViewLink } : {},
+      templateId: file.appProperties?.template_file_id,
+      kind: file.appProperties?.template_kind,
+      mimeType: file.mimeType ?? void 0,
+      contentManaged: file.appProperties?.meetup_content === "v1"
+    };
+  }
+};
+
+// packages/adapter/google-drive-asset-repository/src/google-drive-asset-repository-contracts.ts
+var folderMimeType = "application/vnd.google-apps.folder";
+var fields = "id,name,webViewLink,mimeType,parents,trashed,appProperties";
+var requestOptions = { retry: false, timeout: 3e4 };
+
+// packages/adapter/google-drive-asset-repository/src/google-drive-authentication.ts
+var import_drive = __toESM(require_build2(), 1);
+var GoogleDriveAuthentication = class {
+  static create(credentialsJson) {
+    let credentials;
+    try {
+      credentials = JSON.parse(credentialsJson);
+    } catch {
+      throw new GoogleDriveAssetRepositoryError(
+        "Invalid Google service-account credentials"
+      );
+    }
+    if (!credentials || typeof credentials !== "object" || Array.isArray(credentials) || !("type" in credentials) || credentials.type !== "service_account" || !("client_email" in credentials) || typeof credentials.client_email !== "string" || !credentials.client_email || !("private_key" in credentials) || typeof credentials.private_key !== "string" || !credentials.private_key) {
+      throw new GoogleDriveAssetRepositoryError(
+        "Invalid Google service-account credentials"
+      );
+    }
+    return new import_drive.auth.JWT({
+      email: credentials.client_email,
+      key: credentials.private_key,
+      scopes: ["https://www.googleapis.com/auth/drive"]
+    });
+  }
+};
+
+// packages/adapter/google-drive-asset-repository/src/google-drive-asset-repository.ts
+var GoogleDriveAssetRepository = class _GoogleDriveAssetRepository {
+  constructor(client, options) {
+    this.client = client;
+    this.options = options;
+    if (![options.parentFolderId, options.templateFolderId].every(
+      (id) => /^[\w-]+$/.test(id)
+    ) || options.parentFolderId === options.templateFolderId)
+      throw _GoogleDriveAssetRepository.failure(
+        "Distinct Google Drive parent and template folder IDs are required"
+      );
+  }
+  client;
+  options;
+  async findContainer(request3) {
+    const matches = await this.list(
+      `mimeType='${folderMimeType}' and appProperties has { key='meetup_event_key' and value='${_GoogleDriveAssetRepository.key(request3)}' }`,
+      "allDrives"
+    );
+    if (matches.length > 1)
+      throw _GoogleDriveAssetRepository.failure(
+        "Multiple asset folders match this event; manual reconciliation is required"
+      );
+    const file = matches[0];
+    if (!file) return void 0;
+    if (file.trashed || file.mimeType !== folderMimeType || file.appProperties?.meetup_event_key !== _GoogleDriveAssetRepository.key(request3)) {
+      throw _GoogleDriveAssetRepository.failure(
+        "The asset folder does not match the requested event"
+      );
+    }
+    return DriveAssetMetadata.container(file, request3.eventId);
+  }
+  async ensureContainer(request3) {
+    const current = await this.findContainer(request3);
+    if (current?.name === request3.title) return current;
+    const appProperties = {
+      meetup_event_key: _GoogleDriveAssetRepository.key(request3)
+    };
+    const response = current ? await _GoogleDriveAssetRepository.remote(
+      () => this.client.files.update(
+        {
+          fileId: current.id,
+          requestBody: { name: request3.title, appProperties },
+          fields,
+          supportsAllDrives: true
+        },
+        requestOptions
+      )
+    ) : await _GoogleDriveAssetRepository.remote(
+      () => this.client.files.create(
+        {
+          requestBody: {
+            name: request3.title,
+            mimeType: folderMimeType,
+            parents: [this.options.parentFolderId],
+            appProperties
+          },
+          fields,
+          supportsAllDrives: true
+        },
+        requestOptions
+      )
+    );
+    return DriveAssetMetadata.container(response.data, request3.eventId);
+  }
+  async listTemplates() {
+    return (await this.list(
+      `'${_GoogleDriveAssetRepository.escapeQuery(this.options.templateFolderId)}' in parents`
+    )).map((file) => {
+      if (!file.id || !file.name || !file.appProperties?.template_kind || file.mimeType === folderMimeType)
+        throw _GoogleDriveAssetRepository.failure(
+          "Every asset template must be a file with an ID, name, and template_kind"
+        );
+      return {
+        id: file.id,
+        name: file.name,
+        kind: file.appProperties.template_kind,
+        mimeType: file.mimeType ?? void 0,
+        contentContract: this.options.contentContracts?.[file.appProperties.template_kind]
+      };
+    });
+  }
+  async listFiles(containerId) {
+    return (await this.list(
+      `'${_GoogleDriveAssetRepository.escapeQuery(containerId)}' in parents and mimeType!='${folderMimeType}'`
+    )).filter((file) => !file.appProperties?.meetup_binding_file).map(DriveAssetMetadata.assetFile);
+  }
+  async copyTemplate(containerId, template, name) {
+    const { data } = await _GoogleDriveAssetRepository.remote(
+      () => this.client.files.copy(
+        {
+          fileId: template.id,
+          requestBody: {
+            name,
+            parents: [containerId],
+            appProperties: {
+              ...DriveAssetMetadata.templateProperties(template),
+              ...template.contentContract ? { meetup_content: "v1" } : {}
+            }
+          },
+          fields,
+          supportsAllDrives: true
+        },
+        requestOptions
+      )
+    );
+    return DriveAssetMetadata.assetFile(data);
+  }
+  async updateFile(file, template, name) {
+    const { data } = await _GoogleDriveAssetRepository.remote(
+      () => this.client.files.update(
+        {
+          fileId: file.id,
+          requestBody: {
+            name,
+            appProperties: {
+              ...DriveAssetMetadata.templateProperties(template),
+              ...file.contentManaged ? { meetup_content: "v1" } : {}
+            }
+          },
+          fields,
+          supportsAllDrives: true
+        },
+        requestOptions
+      )
+    );
+    return DriveAssetMetadata.assetFile(data);
+  }
+  async list(query, corpora = "user") {
+    const files = [];
+    let pageToken;
+    const tokens = /* @__PURE__ */ new Set();
+    do {
+      const { data } = await _GoogleDriveAssetRepository.remote(
+        () => this.client.files.list(
+          {
+            q: `${query} and trashed=false`,
+            corpora,
+            fields: `nextPageToken,incompleteSearch,files(${fields})`,
+            pageSize: 100,
+            pageToken,
+            supportsAllDrives: true,
+            includeItemsFromAllDrives: true
+          },
+          requestOptions
+        )
+      );
+      if (data.incompleteSearch)
+        throw _GoogleDriveAssetRepository.failure(
+          "Google Drive returned an incomplete search; reconciliation was stopped"
+        );
+      files.push(...data.files ?? []);
+      pageToken = data.nextPageToken || void 0;
+      if (pageToken && tokens.has(pageToken))
+        throw _GoogleDriveAssetRepository.failure(
+          "Google Drive returned a repeated pagination token"
+        );
+      if (pageToken) tokens.add(pageToken);
+    } while (pageToken);
+    return files;
+  }
+  static createGoogleDriveAssetRepository(credentialsJson, options) {
+    return new _GoogleDriveAssetRepository(
+      _GoogleDriveAssetRepository.client(credentialsJson),
+      options
+    );
+  }
+  static client(credentialsJson) {
+    return (0, import_drive2.drive)({
+      version: "v3",
+      auth: GoogleDriveAuthentication.create(credentialsJson)
+    });
+  }
+  static key(request3) {
+    return createHash2("sha256").update(request3.idempotencyKey).digest("hex");
+  }
+  static escapeQuery(value) {
+    return value.replaceAll("\\", "\\\\").replaceAll("'", "\\'");
+  }
+  static failure(message) {
+    return new GoogleDriveAssetRepositoryError(message);
+  }
+  static async remote(operation) {
+    try {
+      return await operation();
+    } catch (error2) {
+      const response = error2 !== null && typeof error2 === "object" && "response" in error2 ? error2.response : void 0;
+      const status = response !== null && typeof response === "object" && "status" in response ? response.status : void 0;
+      if (status === 429)
+        throw _GoogleDriveAssetRepository.failure(
+          "Google Drive rate limit reached; retry reconciliation later"
+        );
+      if (status === 401 || status === 403)
+        throw _GoogleDriveAssetRepository.failure(
+          "Google Drive denied access; check credentials, folder access, and quota"
+        );
+      throw _GoogleDriveAssetRepository.failure(
+        "Google Drive request failed; inspect provider state before retrying an uncertain write"
+      );
+    }
+  }
+};
+
+// packages/adapter/google-drive-asset-repository/src/google-drive-manifest-repository.ts
+import { Readable } from "node:stream";
+var GoogleDriveManifestRepository = class {
+  constructor(client) {
+    this.client = client;
+  }
+  client;
+  async load(folderId, fileId) {
+    const id = await this.find(folderId, fileId);
+    if (!id) return void 0;
+    const { data } = await this.client.files.get(
+      { fileId: id, alt: "media", supportsAllDrives: true },
+      { ...requestOptions, responseType: "stream" }
+    );
+    const chunks = [];
+    let size = 0;
+    for await (const chunk of data) {
+      size += chunk.length;
+      if (size > 1e6) {
+        data.destroy();
+        throw new ContentError("recovery");
+      }
+      chunks.push(Buffer.from(chunk));
+    }
+    try {
+      return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+    } catch {
+      throw new ContentError("recovery");
+    }
+  }
+  async save(folderId, manifest) {
+    const id = await this.find(folderId, manifest.fileId);
+    const json = JSON.stringify(manifest);
+    if (Buffer.byteLength(json) > 1e6) throw new ContentError("recovery");
+    const media = { mimeType: "application/json", body: Readable.from([json]) };
+    if (id) {
+      await this.client.files.update(
+        { fileId: id, media, supportsAllDrives: true },
+        requestOptions
+      );
+    } else {
+      await this.client.files.create(
+        {
+          requestBody: {
+            name: `.${manifest.fileId}.bindings.json`,
+            mimeType: "application/json",
+            parents: [folderId],
+            appProperties: { meetup_binding_file: manifest.fileId }
+          },
+          media,
+          supportsAllDrives: true
+        },
+        requestOptions
+      );
+    }
+  }
+  async find(folderId, fileId) {
+    if (![folderId, fileId].every((id) => /^[\w-]+$/.test(id)))
+      throw new ContentError("recovery");
+    const { data } = await this.client.files.list(
+      {
+        q: `'${folderId}' in parents and trashed=false and appProperties has { key='meetup_binding_file' and value='${fileId}' }`,
+        fields: "nextPageToken,incompleteSearch,files(id,mimeType,parents,appProperties)",
+        pageSize: 100,
+        supportsAllDrives: true,
+        includeItemsFromAllDrives: true
+      },
+      requestOptions
+    );
+    if (data.incompleteSearch || data.nextPageToken || (data.files?.length ?? 0) > 1)
+      throw new ContentError("recovery");
+    const file = data.files?.[0];
+    if (file && (!file.id || file.mimeType !== "application/json" || !file.parents?.includes(folderId) || file.appProperties?.meetup_binding_file !== fileId))
+      throw new ContentError("recovery");
+    return file?.id ?? void 0;
   }
 };
 
@@ -70485,118 +70644,6 @@ var HttpsAssetImageRepository = class {
   }
 };
 
-// packages/runtime/github-actions/src/assets/messages.en.ts
-var EN_MESSAGES2 = {
-  "asset.agenda.talk": "{title} - {speakers}"
-};
-
-// packages/runtime/github-actions/src/assets/messages.fr.ts
-var FR_MESSAGES2 = {
-  "asset.agenda.talk": "{title} - {speakers}"
-};
-
-// packages/runtime/github-actions/src/assets/catalog.ts
-var CATALOGS2 = { en: EN_MESSAGES2, fr: FR_MESSAGES2 };
-
-// packages/runtime/github-actions/src/assets/asset-messages.ts
-var AssetMessages = class extends MessageLocalizer {
-  constructor(locale = "en") {
-    super(CATALOGS2, locale);
-  }
-};
-
-// packages/runtime/github-actions/src/assets/asset-date-formatter.ts
-var AssetDateFormatter = class {
-  constructor(locale) {
-    this.locale = locale;
-  }
-  locale;
-  format(date, timeZone, format = "long") {
-    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return void 0;
-    try {
-      new Intl.DateTimeFormat(this.locale, { timeZone });
-      const instant = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
-      if (instant.toISOString().slice(0, 10) !== date) return void 0;
-      if (format === "numeric")
-        return `${date.slice(8, 10)}/${date.slice(5, 7)}/${date.slice(0, 4)}`;
-      const options = format === "month" ? { month: "long" } : { dateStyle: format === "weekday" ? "full" : "long" };
-      return new Intl.DateTimeFormat(this.locale, {
-        ...options,
-        timeZone: "UTC"
-      }).format(instant);
-    } catch {
-      return void 0;
-    }
-  }
-};
-
-// packages/runtime/github-actions/src/assets/asset-render-presenter.ts
-var AssetRenderPresenterImpl = class {
-  constructor(messages3 = new AssetMessages()) {
-    this.messages = messages3;
-  }
-  messages;
-  format(input) {
-    const date = new AssetDateFormatter(this.messages.locale);
-    return {
-      text: {
-        "event.title": input.title,
-        "event.date": date.format(input.date, input.timeZone),
-        "event.date.month": date.format(input.date, input.timeZone, "month"),
-        "event.date.numeric": date.format(
-          input.date,
-          input.timeZone,
-          "numeric"
-        ),
-        "event.date.weekday": date.format(
-          input.date,
-          input.timeZone,
-          "weekday"
-        ),
-        "host.name": input.hostName,
-        "host.address": input.venue?.address,
-        "host.postal_code": input.venue?.postalCode,
-        "host.city": input.venue?.city,
-        "event.feedback_url": input.feedbackUrl,
-        "next_event.date": date.format(input.nextEvent?.date, input.timeZone),
-        "next_event.date.numeric": date.format(
-          input.nextEvent?.date,
-          input.timeZone,
-          "numeric"
-        ),
-        "next_event.host.name": input.nextEvent?.hostName,
-        "next_event.host.city": input.nextEvent?.city,
-        agenda: input.agenda.map(
-          (talk) => this.messages.t("asset.agenda.talk", {
-            title: talk.title,
-            speakers: this.names(talk.speakers)
-          })
-        ).join("\n"),
-        ...this.slots(input)
-      },
-      pictures: input.pictures,
-      hostLogo: input.hostLogo
-    };
-  }
-  slots(input) {
-    const text = {};
-    for (const [slot, talk] of Object.entries(input.talks ?? {})) {
-      text[`talk.title:${slot}`] = talk.title;
-      text[`talk.abstract:${slot}`] = talk.abstract;
-      text[`talk.speakers:${slot}`] = this.names(talk.speakers);
-    }
-    for (const [slot, name] of Object.entries(input.speakers ?? {}))
-      text[`speaker.name:${slot}`] = name;
-    return text;
-  }
-  names(speakers) {
-    return new Intl.ListFormat(this.messages.locale, {
-      style: "long",
-      type: "conjunction"
-    }).format(speakers);
-  }
-};
-
 // packages/runtime/github-actions/src/assets/asset-content-configuration.ts
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -70781,6 +70828,118 @@ var AssetContentConfiguration = class _AssetContentConfiguration {
       };
     }
     return result;
+  }
+};
+
+// packages/runtime/github-actions/src/assets/messages.en.ts
+var EN_MESSAGES2 = {
+  "asset.agenda.talk": "{title} - {speakers}"
+};
+
+// packages/runtime/github-actions/src/assets/messages.fr.ts
+var FR_MESSAGES2 = {
+  "asset.agenda.talk": "{title} - {speakers}"
+};
+
+// packages/runtime/github-actions/src/assets/catalog.ts
+var CATALOGS2 = { en: EN_MESSAGES2, fr: FR_MESSAGES2 };
+
+// packages/runtime/github-actions/src/assets/asset-messages.ts
+var AssetMessages = class extends MessageLocalizer {
+  constructor(locale = "en") {
+    super(CATALOGS2, locale);
+  }
+};
+
+// packages/runtime/github-actions/src/assets/asset-date-formatter.ts
+var AssetDateFormatter = class {
+  constructor(locale) {
+    this.locale = locale;
+  }
+  locale;
+  format(date, timeZone, format = "long") {
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return void 0;
+    try {
+      new Intl.DateTimeFormat(this.locale, { timeZone });
+      const instant = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
+      if (instant.toISOString().slice(0, 10) !== date) return void 0;
+      if (format === "numeric")
+        return `${date.slice(8, 10)}/${date.slice(5, 7)}/${date.slice(0, 4)}`;
+      const options = format === "month" ? { month: "long" } : { dateStyle: format === "weekday" ? "full" : "long" };
+      return new Intl.DateTimeFormat(this.locale, {
+        ...options,
+        timeZone: "UTC"
+      }).format(instant);
+    } catch {
+      return void 0;
+    }
+  }
+};
+
+// packages/runtime/github-actions/src/assets/asset-render-presenter.ts
+var AssetRenderPresenterImpl = class {
+  constructor(messages3 = new AssetMessages()) {
+    this.messages = messages3;
+  }
+  messages;
+  format(input) {
+    const date = new AssetDateFormatter(this.messages.locale);
+    return {
+      text: {
+        "event.title": input.title,
+        "event.date": date.format(input.date, input.timeZone),
+        "event.date.month": date.format(input.date, input.timeZone, "month"),
+        "event.date.numeric": date.format(
+          input.date,
+          input.timeZone,
+          "numeric"
+        ),
+        "event.date.weekday": date.format(
+          input.date,
+          input.timeZone,
+          "weekday"
+        ),
+        "host.name": input.hostName,
+        "host.address": input.venue?.address,
+        "host.postal_code": input.venue?.postalCode,
+        "host.city": input.venue?.city,
+        "event.feedback_url": input.feedbackUrl,
+        "next_event.date": date.format(input.nextEvent?.date, input.timeZone),
+        "next_event.date.numeric": date.format(
+          input.nextEvent?.date,
+          input.timeZone,
+          "numeric"
+        ),
+        "next_event.host.name": input.nextEvent?.hostName,
+        "next_event.host.city": input.nextEvent?.city,
+        agenda: input.agenda.map(
+          (talk) => this.messages.t("asset.agenda.talk", {
+            title: talk.title,
+            speakers: this.names(talk.speakers)
+          })
+        ).join("\n"),
+        ...this.slots(input)
+      },
+      pictures: input.pictures,
+      hostLogo: input.hostLogo
+    };
+  }
+  slots(input) {
+    const text = {};
+    for (const [slot, talk] of Object.entries(input.talks ?? {})) {
+      text[`talk.title:${slot}`] = talk.title;
+      text[`talk.abstract:${slot}`] = talk.abstract;
+      text[`talk.speakers:${slot}`] = this.names(talk.speakers);
+    }
+    for (const [slot, name] of Object.entries(input.speakers ?? {}))
+      text[`speaker.name:${slot}`] = name;
+    return text;
+  }
+  names(speakers) {
+    return new Intl.ListFormat(this.messages.locale, {
+      style: "long",
+      type: "conjunction"
+    }).format(speakers);
   }
 };
 
@@ -89005,16 +89164,6 @@ var ASSET_REPOSITORY = /* @__PURE__ */ Symbol("AssetRepository");
 var PublicationComposition = class _PublicationComposition {
   static createPublicationContainer(input) {
     const container = EventComposition.createEventContainer(input);
-    const repository = container.get(
-      SERVICES.referentialRepository
-    );
-    let catalog;
-    container.rebind(SERVICES.referentialRepository).toConstantValue({
-      load: () => {
-        catalog ??= repository.load();
-        return catalog;
-      }
-    });
     container.bind(ASSET_REPOSITORY).toDynamicValue(
       () => GoogleDriveAssetRepository.createGoogleDriveAssetRepository(
         input.credentials,
@@ -89051,6 +89200,8 @@ var PublicationComposition = class _PublicationComposition {
           ) ? new FindNextAssetEvent(
             context3.get(SERVICES.eventRepository),
             context3.get(SERVICES.eventDocumentCodec),
+            context3.get(SERVICES.config).event["issue-label"],
+            context3.get(SERVICES.config).publication,
             input.contentConfiguration?.venues
           ) : void 0
         ),
@@ -89176,8 +89327,8 @@ node-domexception/index.js:
 safe-buffer/index.js:
   (*! safe-buffer. MIT License. Feross Aboukhadijeh <https://feross.org/opensource> *)
 
-@googleapis/drive/build/index.js:
 @googleapis/docs/build/index.js:
+@googleapis/drive/build/index.js:
 @googleapis/slides/build/index.js:
   (*! THIS FILE IS AUTO-GENERATED *)
 

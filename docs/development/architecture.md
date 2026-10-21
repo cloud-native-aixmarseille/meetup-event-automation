@@ -263,6 +263,9 @@ the runtime asset presenter owns localized dates and agenda text. Drive stores
 copies and binding sidecars; separate Docs and Slides adapters implement the
 content port. The HTTPS image adapter bounds retrieval and validates media.
 Content batches use provider revision controls and a persisted pending intent.
+Recovery transitions and anchor equality belong to publication policies.
+Recovery fingerprints use explicit ordered fields and recognize the persisted
+identities of completed operations, so JSON property order cannot repeat a recovery.
 Text can recover by matching pending fingerprints; uncertain images require
 explicit recovery when embedded observations cannot prove success. File URLs and
 content readiness remain separate; communication holds pending managed slides.

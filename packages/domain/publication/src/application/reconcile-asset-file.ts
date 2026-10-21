@@ -1,5 +1,4 @@
 import type {
-	ContentContract,
 	ContentRecovery,
 	ContentStatus,
 	PublicAssetModel,
@@ -83,6 +82,7 @@ export class ReconcileAssetFile {
 		file: AssetFile,
 	): Promise<AssetFile> {
 		if (
+			input.mode === "fix" &&
 			input.recovery?.[file.id]?.operation === "enroll" &&
 			!file.contentManaged
 		) {
@@ -136,7 +136,7 @@ export class ReconcileAssetFile {
 			templateId: template.id,
 			kind: template.kind,
 			mimeType: file.mimeType ?? template.mimeType ?? "",
-			contract: template.contentContract as ContentContract | undefined,
+			contract: template.contentContract,
 			fresh,
 			managed: file.contentManaged,
 			model: input.model,

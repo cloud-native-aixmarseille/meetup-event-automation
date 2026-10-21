@@ -1,13 +1,13 @@
-import {
-	ProposalSourceError,
-	type ReferentialRepository,
-} from "@meetup-automation/referential";
 import type { EventDocument, MeetupEvent } from "@meetup-automation/event";
 import {
 	type FeedbackEventGateway,
 	type FeedbackLinkGateway,
 	FeedbackResolutionError,
 } from "@meetup-automation/publication";
+import {
+	ProposalSourceError,
+	type ReferentialRepository,
+} from "@meetup-automation/referential";
 import { describe, expect, it, vi } from "vitest";
 import {
 	catalog,
@@ -68,6 +68,7 @@ function journey(
 			.mockResolvedValue(true),
 	};
 	const useCase = new ManageMeetupFeedback({
+		eventLabel: "meetup",
 		eventRepository: deps.repository,
 		documentCodec: deps.documentCodec,
 		clock: { now: () => now },
@@ -84,6 +85,32 @@ function journey(
 }
 
 describe("meetup feedback journey", () => {
+	it.each(["repeated", "unbounded"] as const)(
+		"does not switch the shared link after %s event pagination",
+		async (failure) => {
+			// Arrange
+			const { deps, links, useCase } = journey();
+			vi.mocked(deps.repository.listPage).mockImplementation(
+				async ({ cursor }) => ({
+					items: [],
+					nextCursor:
+						failure === "repeated" ? "same" : String(Number(cursor ?? "0") + 1),
+				}),
+			);
+
+			// Act
+			const operation = useCase.execute({ identity });
+
+			// Assert
+			await expect(operation).rejects.toMatchObject({
+				name: "EventPaginationError",
+			});
+			expect(deps.repository.listPage).toHaveBeenCalledTimes(
+				failure === "repeated" ? 2 : 20,
+			);
+			expect(links.updateTarget).not.toHaveBeenCalled();
+		},
+	);
 	it("reports conflicting feedback identities without updating the issue or shared link", async () => {
 		// Arrange
 		const { deps, events, links, useCase } = journey();
@@ -139,8 +166,10 @@ describe("meetup feedback journey", () => {
 			agenda: [],
 			publicationLinks: event.publicationLinks,
 		});
+
 		// Act
 		const result = await useCase.execute({ identity });
+
 		// Assert
 		expect(result.skipped).toBe(true);
 		expect(result.diagnostics).toContainEqual(
@@ -153,8 +182,10 @@ describe("meetup feedback journey", () => {
 	it("preserves the existing poll when the issue agenda is incomplete", async () => {
 		// Arrange
 		const { events, useCase } = journey({ agenda: [] });
+
 		// Act
 		const result = await useCase.execute({ identity });
+
 		// Assert
 		expect(events.ensureEvent.mock.calls[0][0]).not.toHaveProperty("agenda");
 		expect(result.feedbackUrl).toBe(feedbackUrl);

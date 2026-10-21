@@ -2,32 +2,33 @@ import type {
 	EventDocumentCodec,
 	EventRepository,
 } from "@meetup-automation/event";
+import { GoogleDocsContentRepository } from "@meetup-automation/google-docs-content-repository";
 import {
 	GoogleDriveAssetRepository,
-	GoogleDriveManifestRepository,
 	GoogleDriveAuthentication,
+	GoogleDriveManifestRepository,
 } from "@meetup-automation/google-drive-asset-repository";
-import { GoogleDocsContentRepository } from "@meetup-automation/google-docs-content-repository";
 import { GoogleSlidesContentRepository } from "@meetup-automation/google-slides-content-repository";
 import { HttpsAssetImageRepository } from "@meetup-automation/https-asset-image-repository";
+import {
+	AssetRenderProjection,
+	type AutomationConfig,
+	FindNextAssetEvent,
+	ManageMeetupAssets,
+	ManageMeetupEvent,
+} from "@meetup-automation/journey";
+import {
+	type AssetRepository,
+	ReconcileAssetContent,
+	ReconcileEventAssets,
+} from "@meetup-automation/publication";
 import type { ReferentialRepository } from "@meetup-automation/referential";
-import { AssetRenderPresenterImpl } from "./assets/asset-render-presenter.js";
-import { AssetMessages } from "./assets/asset-messages.js";
 import {
 	AssetContentConfiguration,
 	type AssetContentConfigurationData,
 } from "./assets/asset-content-configuration.js";
-import {
-	ManageMeetupAssets,
-	ManageMeetupEvent,
-	AssetRenderProjection,
-	FindNextAssetEvent,
-} from "@meetup-automation/journey";
-import {
-	type AssetRepository,
-	ReconcileEventAssets,
-	ReconcileAssetContent,
-} from "@meetup-automation/publication";
+import { AssetMessages } from "./assets/asset-messages.js";
+import { AssetRenderPresenterImpl } from "./assets/asset-render-presenter.js";
 import {
 	EventComposition,
 	type EventCompositionInput,
@@ -46,18 +47,6 @@ type PublicationInput = EventCompositionInput & {
 export class PublicationComposition {
 	static createPublicationContainer(input: PublicationInput) {
 		const container = EventComposition.createEventContainer(input);
-		const repository = container.get<ReferentialRepository>(
-			SERVICES.referentialRepository,
-		);
-		let catalog: ReturnType<ReferentialRepository["load"]> | undefined;
-		container
-			.rebind<ReferentialRepository>(SERVICES.referentialRepository)
-			.toConstantValue({
-				load: () => {
-					catalog ??= repository.load();
-					return catalog;
-				},
-			});
 		container.bind<AssetRepository>(ASSET_REPOSITORY).toDynamicValue(() =>
 			GoogleDriveAssetRepository.createGoogleDriveAssetRepository(
 				input.credentials,
@@ -103,6 +92,10 @@ export class PublicationComposition {
 							? new FindNextAssetEvent(
 									context.get<EventRepository>(SERVICES.eventRepository),
 									context.get<EventDocumentCodec>(SERVICES.eventDocumentCodec),
+									context.get<AutomationConfig>(SERVICES.config).event[
+										"issue-label"
+									],
+									context.get<AutomationConfig>(SERVICES.config).publication,
 									input.contentConfiguration?.venues,
 								)
 							: undefined,

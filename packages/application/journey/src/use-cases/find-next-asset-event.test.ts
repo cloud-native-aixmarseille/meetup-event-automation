@@ -6,10 +6,50 @@ import {
 	nextEventFixture,
 	publicCatalog,
 } from "../../testing/asset-render.fixtures.js";
-import { event } from "../../testing/meetup-journey.fixtures.js";
+import { config, event } from "../../testing/meetup-journey.fixtures.js";
 import { FindNextAssetEvent } from "./find-next-asset-event.js";
 
 describe("next public meetup for assets", () => {
+	it.each([
+		{ meetup: "https://www.meetup.com/regional-group/events/123/" },
+		{
+			community: "https://ocgroups.dev/cncf/group/regional-group/event/evening",
+		},
+	])(
+		"uses configured group identities and event labels: %j",
+		async (publicationLinks) => {
+			// Arrange
+			const eventLabel = "community-event";
+			const candidate = nextCandidate(43, {
+				labels: [
+					...event.labels.filter((label) => label !== "meetup"),
+					eventLabel,
+				],
+				publicationLinks,
+				operationalChecklists: {
+					...event.operationalChecklists,
+					communication: [{ name: "Meetup event published", completed: true }],
+				},
+			});
+			const f = nextEventFixture([candidate]);
+			const finder = new FindNextAssetEvent(f.repository, f.codec, eventLabel, {
+				"meetup-event-url-prefix":
+					"https://www.meetup.com/regional-group/events/",
+				"cncf-event-url-prefix":
+					"https://ocgroups.dev/cncf/group/regional-group/event/",
+			});
+
+			// Act
+			const result = await finder.find(event, publicCatalog);
+
+			// Assert
+			expect(result?.hostName).toBe("Public Host");
+			expect(f.repository.listPage).toHaveBeenCalledWith(
+				expect.objectContaining({ label: eventLabel }),
+			);
+		},
+	);
+
 	it("selects the earliest later published meetup across all pages", async () => {
 		// Arrange
 		const f = nextEventFixture([
@@ -19,13 +59,19 @@ describe("next public meetup for assets", () => {
 		vi.mocked(f.repository.listPage)
 			.mockResolvedValueOnce({ items: [f.documents[0]], nextCursor: "page2" })
 			.mockResolvedValueOnce({ items: [f.documents[1]] });
-		const finder = new FindNextAssetEvent(f.repository, f.codec, {
-			"host-0001": {
-				address: "Public place",
-				postalCode: "13001",
-				city: "Marseille",
+		const finder = new FindNextAssetEvent(
+			f.repository,
+			f.codec,
+			"meetup",
+			config.publication,
+			{
+				"host-0001": {
+					address: "Public place",
+					postalCode: "13001",
+					city: "Marseille",
+				},
 			},
-		});
+		);
 
 		// Act
 		const actual = await finder.find(event, publicCatalog);
@@ -58,7 +104,12 @@ describe("next public meetup for assets", () => {
 	])("ignores ineligible next meetups", async (override) => {
 		// Arrange
 		const f = nextEventFixture([nextCandidate(43, override)]);
-		const finder = new FindNextAssetEvent(f.repository, f.codec);
+		const finder = new FindNextAssetEvent(
+			f.repository,
+			f.codec,
+			"meetup",
+			config.publication,
+		);
 
 		// Act
 		const actual = await finder.find(event, publicCatalog);
@@ -80,7 +131,12 @@ describe("next public meetup for assets", () => {
 			}),
 			nextCandidate(43),
 		]);
-		const finder = new FindNextAssetEvent(f.repository, f.codec);
+		const finder = new FindNextAssetEvent(
+			f.repository,
+			f.codec,
+			"meetup",
+			config.publication,
+		);
 
 		// Act
 		const actual = await finder.find(event, {
@@ -120,7 +176,12 @@ describe("next public meetup for assets", () => {
 						nextCursor: String(Number(cursor ?? 0) + 1),
 					}),
 				);
-			const finder = new FindNextAssetEvent(f.repository, f.codec);
+			const finder = new FindNextAssetEvent(
+				f.repository,
+				f.codec,
+				"meetup",
+				config.publication,
+			);
 			let error: unknown;
 
 			// Act
@@ -146,7 +207,12 @@ describe("next public meetup for assets", () => {
 				},
 			});
 			const f = nextEventFixture([candidate]);
-			const finder = new FindNextAssetEvent(f.repository, f.codec);
+			const finder = new FindNextAssetEvent(
+				f.repository,
+				f.codec,
+				"meetup",
+				config.publication,
+			);
 
 			// Act
 			const result = await finder.find(event, publicCatalog);
