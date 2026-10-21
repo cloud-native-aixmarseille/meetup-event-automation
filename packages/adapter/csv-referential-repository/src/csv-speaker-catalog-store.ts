@@ -5,62 +5,36 @@ import {
 	ProposalSourceError,
 	type RawSpeakerRecord,
 	type SpeakerCatalogDocument,
+	type SpeakerCatalogEntry,
 	type SpeakerCatalogStore,
-	type SpeakerCsvRow,
-	type SpeakerSyncState,
 } from "@meetup-automation/referential";
-import { parse } from "csv-parse/sync";
 import { CsvReferentialRepository } from "./csv-referential-repository.js";
-
-const IMPORT_COLUMNS = [
-	"speaker_id",
-	"firstname",
-	"lastname",
-	"company",
-	"mail",
-	"phone",
-	"display_name",
-	"picture_url",
-	"source_provider",
-	"source_event",
-	"source_speaker_id",
-];
-
-// Match the repository JSON formatter's default line width and visual tab width.
-const STATE_LINE_WIDTH = 80;
-const STATE_INDENT_WIDTH = 2;
+import { SpeakerAllocationHistory } from "./speaker-allocation-history.js";
+import { SpeakerAllocationStateCodec } from "./speaker-allocation-state-codec.js";
+import { SpeakerCatalogCsv } from "./speaker-catalog-csv.js";
 
 export class CsvSpeakerCatalogStore implements SpeakerCatalogStore {
-	constructor(private readonly root: string) {}
+	constructor(
+		private readonly root: string,
+		private readonly history: Pick<
+			SpeakerAllocationHistory,
+			"read"
+		> = new SpeakerAllocationHistory(root),
+	) {}
+
 	async read(): Promise<SpeakerCatalogDocument> {
-		const { csv, state } = await this.sources();
-		const records = parse(csv, {
-			bom: true,
-			skip_empty_lines: true,
-		}) as string[][];
-		const columns = records.shift() ?? [];
-		if (
-			!columns.includes("speaker_id") ||
-			new Set(columns).size !== columns.length
-		)
-			throw new ProposalSourceError("invalid");
-		const rows = records.map((values) =>
-			Object.fromEntries(
-				columns.map((column, index) => [column, values[index]]),
-			),
-		);
-		const parsed: unknown = state
-			? JSON.parse(state)
-			: { version: 1, reservedIds: [] };
-		if (!this.validState(parsed)) throw new ProposalSourceError("invalid");
+		const { csv, state, historicalIds } = await this.sources();
 		return {
-			columns,
-			rows,
-			state: parsed,
-			revision: this.revision(csv, state),
+			entries: SpeakerCatalogCsv.decode(csv),
+			reservedIds:
+				state === undefined
+					? historicalIds
+					: SpeakerAllocationStateCodec.decode(state),
+			revision: this.revision(csv, state, historicalIds),
 		};
 	}
-	async candidate(rows: readonly SpeakerCsvRow[]) {
+
+	async candidate(entries: readonly SpeakerCatalogEntry[]) {
 		const existing = await new CsvReferentialRepository({
 			workspaceRoot: this.root,
 			hostsPath: "referentials/hosting.csv",
@@ -68,38 +42,38 @@ export class CsvSpeakerCatalogStore implements SpeakerCatalogStore {
 		}).load();
 		return {
 			hosts: existing.hosts,
-			speakers: rows.map(
-				(row): RawSpeakerRecord => ({
-					speakerId: row.speaker_id,
-					displayName: row.display_name,
-					firstName: row.firstname,
-					lastName: row.lastname,
-					company: row.company,
-					email: row.mail,
-					phone: row.phone,
-					pictureUrl: row.picture_url,
-					sourceProvider: row.source_provider,
-					sourceEvent: row.source_event,
-					sourceSpeakerId: row.source_speaker_id,
+			speakers: entries.map(
+				(entry): RawSpeakerRecord => ({
+					speakerId: entry.id,
+					displayName: entry.displayName,
+					firstName: entry.firstName,
+					lastName: entry.lastName,
+					company: entry.company,
+					email: entry.email,
+					phone: entry.phone,
+					pictureUrl: entry.pictureUrl,
+					sourceProvider: entry.sourceIdentity?.provider,
+					sourceEvent: entry.sourceIdentity?.event,
+					sourceSpeakerId: entry.sourceIdentity?.speakerId,
 				}),
 			),
 		};
 	}
+
 	async save(
 		original: SpeakerCatalogDocument,
-		rows: readonly SpeakerCsvRow[],
-		state: SpeakerSyncState,
+		entries: readonly SpeakerCatalogEntry[],
+		reservedIds: readonly string[],
 	): Promise<boolean> {
 		const current = await this.sources();
-		if (this.revision(current.csv, current.state) !== original.revision)
+		if (
+			this.revision(current.csv, current.state, current.historicalIds) !==
+			original.revision
+		)
 			throw new ProposalSourceError("conflict");
-		const columns = [...new Set([...original.columns, ...IMPORT_COLUMNS])];
-		const lines = [
-			columns,
-			...rows.map((row) => columns.map((column) => row[column] ?? "")),
-		];
-		const csv = `${lines.map((row) => row.map((value) => (/[",\r\n]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value)).join(",")).join("\n")}\n`;
-		const stateText = this.serializeState(state);
+		// Reload the exact revision rather than relying on per-instance cached CSV state.
+		const csv = SpeakerCatalogCsv.encode(current.csv, entries);
+		const stateText = SpeakerAllocationStateCodec.encode(reservedIds);
 		if (csv === current.csv && stateText === current.state) return false;
 		await writeFile(join(this.root, "referentials/speakers.csv"), csv, {
 			mode: 0o600,
@@ -111,48 +85,38 @@ export class CsvSpeakerCatalogStore implements SpeakerCatalogStore {
 		);
 		return true;
 	}
-	private serializeState(state: SpeakerSyncState): string {
-		const text = `${JSON.stringify(state, null, "\t")}\n`;
-		const inline = `[${state.reservedIds.map((id) => JSON.stringify(id)).join(", ")}]`;
-		const property = '"reservedIds": ';
-		if (STATE_INDENT_WIDTH + property.length + inline.length > STATE_LINE_WIDTH)
-			return text;
-		const expanded = JSON.stringify(state.reservedIds, null, "\t").replaceAll(
-			"\n",
-			"\n\t",
-		);
-		return text.replace(`\t${property}${expanded}`, `\t${property}${inline}`);
-	}
+
 	private async sources() {
 		const csv = await readFile(
 			join(this.root, "referentials/speakers.csv"),
 			"utf8",
 		);
-		let state = "";
+		let state: string | undefined;
 		try {
 			state = await readFile(
 				join(this.root, "referentials/speaker-sync-state.json"),
 				"utf8",
 			);
 		} catch (error) {
-			if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
-		}
-		return { csv, state };
-	}
-	private revision(csv: string, state: string): string {
-		return createHash("sha256")
-			.update(JSON.stringify([csv, state]))
-			.digest("hex");
-	}
-	private validState(value: unknown): value is SpeakerSyncState {
-		if (!value || typeof value !== "object") return false;
-		const state = value as SpeakerSyncState;
-		return (
-			state.version === 1 &&
-			Array.isArray(state.reservedIds) &&
-			state.reservedIds.every(
-				(id) => typeof id === "string" && /^speaker-\d{4}$/.test(id),
+			if (
+				!(error instanceof Error) ||
+				!("code" in error) ||
+				error.code !== "ENOENT"
 			)
-		);
+				throw error;
+		}
+		const historicalIds = state === undefined ? await this.history.read() : [];
+		return { csv, state, historicalIds };
+	}
+
+	private revision(
+		csv: string,
+		state: string | undefined,
+		historicalIds: readonly string[],
+	): string {
+		// Exact source bytes form the optimistic concurrency token, including formatting.
+		return createHash("sha256")
+			.update(JSON.stringify([csv, state, historicalIds]))
+			.digest("hex");
 	}
 }

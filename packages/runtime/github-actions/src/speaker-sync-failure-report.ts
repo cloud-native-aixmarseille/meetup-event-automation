@@ -1,5 +1,8 @@
 import { SpeakerSynchronizationError } from "@meetup-automation/journey";
-import { ProposalSourceError } from "@meetup-automation/referential";
+import {
+	ProposalSourceError,
+	SpeakerCatalogHistoryError,
+} from "@meetup-automation/referential";
 import type { PublicDiagnostic } from "@meetup-automation/journey";
 import type { ActionReportData } from "./action-report.js";
 import { ActionMessages } from "./i18n/action-messages.js";
@@ -38,6 +41,14 @@ export class SpeakerSyncFailureReport {
 		};
 	}
 	private static diagnostic(error: unknown): PublicDiagnostic {
+		if (error instanceof SpeakerCatalogHistoryError)
+			return {
+				code: "speaker-sync.history-unavailable",
+				severity: "error",
+				message: new ActionMessages().t(
+					"diagnostic.speaker-sync.history-unavailable",
+				),
+			};
 		const source = error instanceof ProposalSourceError ? error : undefined;
 		const context = source?.context;
 		const reason = context?.reason ?? source?.code ?? "unexpected";

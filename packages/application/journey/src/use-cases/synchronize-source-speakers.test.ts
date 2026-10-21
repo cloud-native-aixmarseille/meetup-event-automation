@@ -1,10 +1,14 @@
-import { describe, expect, it, vi } from "vitest";
 import type {
 	ProposalSnapshot,
 	SpeakerCatalogStore,
 } from "@meetup-automation/referential";
+import { describe, expect, it, vi } from "vitest";
 import { SynchronizeSourceSpeakers } from "./synchronize-source-speakers.js";
 
+const config = {
+	"issue-form": ".github/ISSUE_TEMPLATE/community-event.yml",
+	"occurrence-status-field": "occurrence",
+};
 const snapshot: ProposalSnapshot = {
 	provider: "conference-hall",
 	event: "example-cfp",
@@ -18,9 +22,8 @@ function dependencies() {
 	const store: SpeakerCatalogStore = {
 		read: vi.fn().mockResolvedValue({
 			revision: "revision",
-			rows: [],
-			columns: [],
-			state: { version: 1, reservedIds: [] },
+			entries: [],
+			reservedIds: [],
 		}),
 		candidate: vi.fn().mockResolvedValue({
 			hosts: [],
@@ -49,12 +52,15 @@ describe("SynchronizeSourceSpeakers", () => {
 	it("validates the complete candidate and projects the same catalog before and after persistence", async () => {
 		// Arrange
 		const { source, store, form } = dependencies();
+
 		// Act
 		const result = await new SynchronizeSourceSpeakers(
 			source,
 			store,
 			form,
+			config,
 		).execute();
+
 		// Assert
 		expect(result).toEqual({ changed: true, speakerCount: 1 });
 		expect(source.load).toHaveBeenCalledTimes(1);
@@ -65,6 +71,12 @@ describe("SynchronizeSourceSpeakers", () => {
 		expect(form.synchronize.mock.calls[0][0].catalog).toBe(
 			form.synchronize.mock.calls[1][0].catalog,
 		);
+		for (const [input] of form.synchronize.mock.calls) {
+			expect(input).toMatchObject({
+				issueFormPath: config["issue-form"],
+				occurrenceStatusFieldId: config["occurrence-status-field"],
+			});
+		}
 	});
 	it("leaves the catalog and form untouched when required source fields are invalid", async () => {
 		// Arrange
@@ -81,8 +93,15 @@ describe("SynchronizeSourceSpeakers", () => {
 				},
 			],
 		});
+
 		// Act
-		const result = new SynchronizeSourceSpeakers(source, store, form).execute();
+		const result = new SynchronizeSourceSpeakers(
+			source,
+			store,
+			form,
+			config,
+		).execute();
+
 		// Assert
 		await expect(result).rejects.toMatchObject({
 			stage: "validate-catalog",

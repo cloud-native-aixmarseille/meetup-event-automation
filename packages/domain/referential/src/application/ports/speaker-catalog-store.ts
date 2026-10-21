@@ -1,18 +1,19 @@
 import type { RawReferentialCatalog } from "../../domain/referential-catalog.js";
-import type { SpeakerCsvRow, SpeakerSyncState } from "./proposal-source.js";
+import type { SpeakerCatalogEntry } from "../../domain/speaker-catalog-entry.js";
 
 export interface SpeakerCatalogDocument {
 	readonly revision: string;
-	readonly columns: readonly string[];
-	readonly rows: readonly SpeakerCsvRow[];
-	readonly state: SpeakerSyncState;
+	readonly entries: readonly SpeakerCatalogEntry[];
+	readonly reservedIds: readonly string[];
 }
 export interface SpeakerCatalogStore {
 	read(): Promise<SpeakerCatalogDocument>;
-	candidate(rows: readonly SpeakerCsvRow[]): Promise<RawReferentialCatalog>;
+	candidate(
+		entries: readonly SpeakerCatalogEntry[],
+	): Promise<RawReferentialCatalog>;
 	save(
 		original: SpeakerCatalogDocument,
-		rows: readonly SpeakerCsvRow[],
-		state: SpeakerSyncState,
+		entries: readonly SpeakerCatalogEntry[],
+		reservedIds: readonly string[],
 	): Promise<boolean>;
 }

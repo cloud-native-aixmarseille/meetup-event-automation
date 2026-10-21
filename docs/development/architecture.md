@@ -97,6 +97,11 @@ registers identities and preserves local fields and allocation history. The even
 owns proposal selection and managed agenda projection. Stale proposals block
 talk-dependent mail and feedback effects. See [Conference Hall](../integrations/conference-hall.md).
 
+Speaker synchronization uses provider-neutral catalog entries and reserved IDs.
+The CSV adapter owns column names, unknown local-column preservation and the
+allocation file schema. It reloads the source revision before saving; callers
+do not carry CSV rows or storage schema versions through domain ports.
+
 Communication planning and participant resolution share the same catalog
 snapshot. The runtime converts available credentials into capabilities before
 calling the journey. Its delivery factory receives the final dispatch

@@ -2,7 +2,10 @@ import * as core from "@actions/core";
 import { context, getOctokit } from "@actions/github";
 import { ConferenceHallProposalSource } from "@meetup-automation/conference-hall-proposal-source";
 import { CsvSpeakerCatalogStore } from "@meetup-automation/csv-referential-repository";
-import { SynchronizeSourceSpeakers } from "@meetup-automation/journey";
+import {
+	AutomationConfigFactory,
+	SynchronizeSourceSpeakers,
+} from "@meetup-automation/journey";
 import { YamlIssueFormProjection } from "@meetup-automation/yaml-issue-form-projection";
 import type { ActionReportData } from "./action-report.js";
 import { ConferenceHallInput } from "./conference-hall-input.js";
@@ -33,6 +36,8 @@ export class SpeakerSyncAction {
 					workspaceRoot: process.cwd(),
 					locale: messages.locale,
 				}),
+				AutomationConfigFactory.createAutomationConfig(context.repo.owner)
+					.event,
 			).execute();
 			core.setOutput("pr-title", messages.t("report.speaker-sync.pr-title"));
 			core.setOutput("pr-body", messages.t("report.speaker-sync.pr-body"));

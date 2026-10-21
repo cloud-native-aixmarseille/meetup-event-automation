@@ -1,8 +1,9 @@
 import {
-	ProposalSourceError,
 	type ProposalSnapshot,
+	ProposalSourceError,
 	type SourceProposal,
 	type SourceSpeaker,
+	SourceSpeakerEquality,
 } from "@meetup-automation/referential";
 
 export class ProposalExportParser {
@@ -24,7 +25,7 @@ export class ProposalExportParser {
 				const speakerPath = `${path}.speakers[${speakerIndex}]`;
 				const speaker = ProposalExportParser.speaker(item, speakerPath);
 				const existing = speakers.get(speaker.id);
-				if (existing && JSON.stringify(existing) !== JSON.stringify(speaker))
+				if (existing && !SourceSpeakerEquality.equal(existing, speaker))
 					throw ProposalExportParser.invalid(speakerPath);
 				speakers.set(speaker.id, speaker);
 				return speaker.id;
@@ -42,9 +43,9 @@ export class ProposalExportParser {
 				),
 				accepted:
 					proposal.deliberationStatus === "ACCEPTED" &&
-					[null, undefined, "PENDING", "CONFIRMED"].includes(
-						proposal.confirmationStatus as string | null | undefined,
-					),
+					(proposal.confirmationStatus == null ||
+						proposal.confirmationStatus === "PENDING" ||
+						proposal.confirmationStatus === "CONFIRMED"),
 				languages: ProposalExportParser.strings(
 					proposal.languages,
 					`${path}.languages`,

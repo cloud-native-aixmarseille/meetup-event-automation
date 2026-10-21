@@ -1,5 +1,11 @@
-import { ProposalSourceError } from "@meetup-automation/referential";
-import { SpeakerSynchronizationError } from "@meetup-automation/journey";
+import {
+	ProposalSourceError,
+	SpeakerCatalogHistoryError,
+} from "@meetup-automation/referential";
+import {
+	AutomationConfigFactory,
+	SpeakerSynchronizationError,
+} from "@meetup-automation/journey";
 import * as core from "@actions/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ActionRunner } from "./action-runner.js";
@@ -9,6 +15,7 @@ import { ActionMessages } from "./i18n/action-messages.js";
 const boundary = vi.hoisted(() => ({
 	get: vi.fn(),
 	synchronize: vi.fn(),
+	createSynchronizer: vi.fn(),
 	setOutput: vi.fn(),
 	setSecret: vi.fn(),
 }));
@@ -34,6 +41,9 @@ vi.mock("@actions/github", () => ({
 vi.mock("../../../application/journey/src/index.js", async (original) => ({
 	...(await original<object>()),
 	SynchronizeSourceSpeakers: class {
+		constructor(...dependencies: unknown[]) {
+			boundary.createSynchronizer(...dependencies);
+		}
 		execute = boundary.synchronize;
 	},
 }));
@@ -46,14 +56,36 @@ describe("SpeakerSyncAction", () => {
 	it("rejects a public destination before reading the source or writing contacts", async () => {
 		// Arrange
 		boundary.get.mockResolvedValue({ data: { private: false } });
+
 		// Act
 		const report = await SpeakerSyncAction.run();
+
 		// Assert
 		expect(report.failure).toBe(
 			"speaker_sync=blocked reason=private-repository-required",
 		);
 		expect(boundary.synchronize).not.toHaveBeenCalled();
 		expect(boundary.setOutput).not.toHaveBeenCalled();
+	});
+	it("passes the shared event configuration to speaker synchronization", async () => {
+		// Arrange
+		const config = AutomationConfigFactory.createAutomationConfig("example");
+		const event = {
+			...config.event,
+			"issue-form": ".github/ISSUE_TEMPLATE/community-event.yml",
+			"occurrence-status-field": "occurrence",
+		};
+		vi.spyOn(
+			AutomationConfigFactory,
+			"createAutomationConfig",
+		).mockReturnValueOnce({ ...config, event });
+		boundary.synchronize.mockResolvedValue({ changed: false, speakerCount: 0 });
+
+		// Act
+		await SpeakerSyncAction.run();
+
+		// Assert
+		expect(boundary.createSynchronizer.mock.calls[0][3]).toBe(event);
 	});
 	it.each(["en", "fr"])(
 		"reports safe counts and review guidance in %s",
@@ -63,8 +95,10 @@ describe("SpeakerSyncAction", () => {
 				changed: true,
 				speakerCount: 2,
 			});
+
 			// Act
 			const report = await SpeakerSyncAction.run(new ActionMessages(locale));
+
 			// Assert
 			expect(report.failure).toBeUndefined();
 			expect(report.details[0]).toContain("2");
@@ -80,8 +114,10 @@ describe("SpeakerSyncAction", () => {
 		boundary.synchronize.mockRejectedValue(
 			new Error("private@example.test secret"),
 		);
+
 		// Act
 		const report = await SpeakerSyncAction.run();
+
 		// Assert
 		expect(report.failure).toBeUndefined();
 		expect(report.diagnostics[0].code).toBe("speaker-sync.unexpected");
@@ -105,8 +141,10 @@ describe("SpeakerSyncAction", () => {
 				new ProposalSourceError("rate-limited", 120),
 			),
 		);
+
 		// Act
 		const report = await SpeakerSyncAction.run();
+
 		// Assert
 		expect(report.failure).toBeUndefined();
 		expect(report.details).toEqual(["speaker_sync=blocked stage=load-source"]);
@@ -122,6 +160,35 @@ describe("SpeakerSyncAction", () => {
 				"- Conference Hall rate limit reached; retry after the API cooldown.",
 			],
 		]);
+	});
+
+	it("fails the action for unavailable catalog history and emits only safe retry guidance", async () => {
+		// Arrange
+		const cause = new SpeakerCatalogHistoryError();
+		cause.message = "PRIVATE private@example.test git history failed";
+		boundary.synchronize.mockRejectedValue(
+			new SpeakerSynchronizationError("read-catalog", cause),
+		);
+
+		// Act
+		await ActionRunner.run(
+			"action.referential.sync-speakers",
+			SpeakerSyncAction.run,
+			false,
+		);
+
+		// Assert
+		expect(core.setFailed).toHaveBeenCalledOnce();
+		expect(boundary.setOutput.mock.calls.map(([name]) => name)).toEqual([
+			"pr-body",
+		]);
+		expect(boundary.setOutput).toHaveBeenCalledWith(
+			"pr-body",
+			expect.stringContaining("complete repository history (fetch-depth: 0)"),
+		);
+		expect(JSON.stringify(boundary.setOutput.mock.calls)).not.toMatch(
+			/CFP|PRIVATE|private@example.test/,
+		);
 	});
 
 	it.each([

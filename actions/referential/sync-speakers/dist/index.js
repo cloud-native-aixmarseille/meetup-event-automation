@@ -11108,7 +11108,7 @@ var require_mock_interceptor = __commonJS({
 var require_mock_client = __commonJS({
   "node_modules/.pnpm/undici@6.29.0/node_modules/undici/lib/mock/mock-client.js"(exports, module) {
     "use strict";
-    var { promisify } = __require("node:util");
+    var { promisify: promisify2 } = __require("node:util");
     var Client = require_client();
     var { buildMockDispatch } = require_mock_utils();
     var {
@@ -11148,7 +11148,7 @@ var require_mock_client = __commonJS({
         return new MockInterceptor(opts, this[kDispatches]);
       }
       async [kClose]() {
-        await promisify(this[kOriginalClose])();
+        await promisify2(this[kOriginalClose])();
         this[kConnected] = 0;
         this[kMockAgent][Symbols.kClients].delete(this[kOrigin]);
       }
@@ -11161,7 +11161,7 @@ var require_mock_client = __commonJS({
 var require_mock_pool = __commonJS({
   "node_modules/.pnpm/undici@6.29.0/node_modules/undici/lib/mock/mock-pool.js"(exports, module) {
     "use strict";
-    var { promisify } = __require("node:util");
+    var { promisify: promisify2 } = __require("node:util");
     var Pool = require_pool();
     var { buildMockDispatch } = require_mock_utils();
     var {
@@ -11201,7 +11201,7 @@ var require_mock_pool = __commonJS({
         return new MockInterceptor(opts, this[kDispatches]);
       }
       async [kClose]() {
-        await promisify(this[kOriginalClose])();
+        await promisify2(this[kOriginalClose])();
         this[kConnected] = 0;
         this[kMockAgent][Symbols.kClients].delete(this[kOrigin]);
       }
@@ -23803,10 +23803,10 @@ var require_resolve_block_map = __commonJS({
       let offset = bm.offset;
       let commentEnd = null;
       for (const collItem of bm.items) {
-        const { start, key, sep: sep3, value } = collItem;
+        const { start, key, sep: sep4, value } = collItem;
         const keyProps = resolveProps.resolveProps(start, {
           indicator: "explicit-key-ind",
-          next: key ?? sep3?.[0],
+          next: key ?? sep4?.[0],
           offset,
           onError,
           parentIndent: bm.indent,
@@ -23820,7 +23820,7 @@ var require_resolve_block_map = __commonJS({
             else if ("indent" in key && key.indent !== bm.indent)
               onError(offset, "BAD_INDENT", startColMsg);
           }
-          if (!keyProps.anchor && !keyProps.tag && !sep3) {
+          if (!keyProps.anchor && !keyProps.tag && !sep4) {
             commentEnd = keyProps.end;
             if (keyProps.comment) {
               if (map.comment)
@@ -23844,7 +23844,7 @@ var require_resolve_block_map = __commonJS({
         ctx.atKey = false;
         if (utilMapIncludes.mapIncludes(ctx, map.items, keyNode))
           onError(keyStart, "DUPLICATE_KEY", "Map keys must be unique");
-        const valueProps = resolveProps.resolveProps(sep3 ?? [], {
+        const valueProps = resolveProps.resolveProps(sep4 ?? [], {
           indicator: "map-value-ind",
           next: value,
           offset: keyNode.range[2],
@@ -23860,7 +23860,7 @@ var require_resolve_block_map = __commonJS({
             if (ctx.options.strict && keyProps.start < valueProps.found.offset - 1024)
               onError(keyNode.range, "KEY_OVER_1024_CHARS", "The : indicator must be at most 1024 chars after the start of an implicit block mapping key");
           }
-          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : composeEmptyNode(ctx, offset, sep3, null, valueProps, onError);
+          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : composeEmptyNode(ctx, offset, sep4, null, valueProps, onError);
           if (ctx.schema.compat)
             utilFlowIndentCheck.flowIndentCheck(bm.indent, value, onError);
           offset = valueNode.range[2];
@@ -23951,7 +23951,7 @@ var require_resolve_end = __commonJS({
       let comment = "";
       if (end) {
         let hasSpace = false;
-        let sep3 = "";
+        let sep4 = "";
         for (const token of end) {
           const { source, type } = token;
           switch (type) {
@@ -23965,13 +23965,13 @@ var require_resolve_end = __commonJS({
               if (!comment)
                 comment = cb;
               else
-                comment += sep3 + cb;
-              sep3 = "";
+                comment += sep4 + cb;
+              sep4 = "";
               break;
             }
             case "newline":
               if (comment)
-                sep3 += source;
+                sep4 += source;
               hasSpace = true;
               break;
             default:
@@ -24014,18 +24014,18 @@ var require_resolve_flow_collection = __commonJS({
       let offset = fc.offset + fc.start.source.length;
       for (let i = 0; i < fc.items.length; ++i) {
         const collItem = fc.items[i];
-        const { start, key, sep: sep3, value } = collItem;
+        const { start, key, sep: sep4, value } = collItem;
         const props = resolveProps.resolveProps(start, {
           flow: fcName,
           indicator: "explicit-key-ind",
-          next: key ?? sep3?.[0],
+          next: key ?? sep4?.[0],
           offset,
           onError,
           parentIndent: fc.indent,
           startOnNewline: false
         });
         if (!props.found) {
-          if (!props.anchor && !props.tag && !sep3 && !value) {
+          if (!props.anchor && !props.tag && !sep4 && !value) {
             if (i === 0 && props.comma)
               onError(props.comma, "UNEXPECTED_TOKEN", `Unexpected , in ${fcName}`);
             else if (i < fc.items.length - 1)
@@ -24079,8 +24079,8 @@ var require_resolve_flow_collection = __commonJS({
             }
           }
         }
-        if (!isMap && !sep3 && !props.found) {
-          const valueNode = value ? composeNode(ctx, value, props, onError) : composeEmptyNode(ctx, props.end, sep3, null, props, onError);
+        if (!isMap && !sep4 && !props.found) {
+          const valueNode = value ? composeNode(ctx, value, props, onError) : composeEmptyNode(ctx, props.end, sep4, null, props, onError);
           coll.items.push(valueNode);
           offset = valueNode.range[2];
           if (isBlock(value))
@@ -24092,7 +24092,7 @@ var require_resolve_flow_collection = __commonJS({
           if (isBlock(key))
             onError(keyNode.range, "BLOCK_IN_FLOW", blockMsg);
           ctx.atKey = false;
-          const valueProps = resolveProps.resolveProps(sep3 ?? [], {
+          const valueProps = resolveProps.resolveProps(sep4 ?? [], {
             flow: fcName,
             indicator: "map-value-ind",
             next: value,
@@ -24103,8 +24103,8 @@ var require_resolve_flow_collection = __commonJS({
           });
           if (valueProps.found) {
             if (!isMap && !props.found && ctx.options.strict) {
-              if (sep3)
-                for (const st3 of sep3) {
+              if (sep4)
+                for (const st3 of sep4) {
                   if (st3 === valueProps.found)
                     break;
                   if (st3.type === "newline") {
@@ -24121,7 +24121,7 @@ var require_resolve_flow_collection = __commonJS({
             else
               onError(valueProps.start, "MISSING_CHAR", `Missing , or : between ${fcName} items`);
           }
-          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : valueProps.found ? composeEmptyNode(ctx, valueProps.end, sep3, null, valueProps, onError) : null;
+          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : valueProps.found ? composeEmptyNode(ctx, valueProps.end, sep4, null, valueProps, onError) : null;
           if (valueNode) {
             if (isBlock(value))
               onError(valueNode.range, "BLOCK_IN_FLOW", blockMsg);
@@ -24301,7 +24301,7 @@ var require_resolve_block_scalar = __commonJS({
           chompStart = i + 1;
       }
       let value = "";
-      let sep3 = "";
+      let sep4 = "";
       let prevMoreIndented = false;
       for (let i = 0; i < contentStart; ++i)
         value += lines[i][0].slice(trimIndent) + "\n";
@@ -24318,24 +24318,24 @@ var require_resolve_block_scalar = __commonJS({
           indent = "";
         }
         if (type === Scalar.Scalar.BLOCK_LITERAL) {
-          value += sep3 + indent.slice(trimIndent) + content;
-          sep3 = "\n";
+          value += sep4 + indent.slice(trimIndent) + content;
+          sep4 = "\n";
         } else if (indent.length > trimIndent || content[0] === "	") {
-          if (sep3 === " ")
-            sep3 = "\n";
-          else if (!prevMoreIndented && sep3 === "\n")
-            sep3 = "\n\n";
-          value += sep3 + indent.slice(trimIndent) + content;
-          sep3 = "\n";
+          if (sep4 === " ")
+            sep4 = "\n";
+          else if (!prevMoreIndented && sep4 === "\n")
+            sep4 = "\n\n";
+          value += sep4 + indent.slice(trimIndent) + content;
+          sep4 = "\n";
           prevMoreIndented = true;
         } else if (content === "") {
-          if (sep3 === "\n")
+          if (sep4 === "\n")
             value += "\n";
           else
-            sep3 = "\n";
+            sep4 = "\n";
         } else {
-          value += sep3 + content;
-          sep3 = " ";
+          value += sep4 + content;
+          sep4 = " ";
           prevMoreIndented = false;
         }
       }
@@ -24518,25 +24518,25 @@ var require_resolve_flow_scalar = __commonJS({
         trimBoth = /^[ \t]+|[ \t]+$/g;
       }
       let res = match[1].replace(trimEnd4, "");
-      let sep3 = " ";
+      let sep4 = " ";
       let pos = line.lastIndex;
       while (match = line.exec(source)) {
         const lm = match[1].replace(trimBoth, "");
         if (lm === "") {
-          if (sep3 === "\n")
-            res += sep3;
+          if (sep4 === "\n")
+            res += sep4;
           else
-            sep3 = "\n";
+            sep4 = "\n";
         } else {
-          res += sep3 + lm;
-          sep3 = " ";
+          res += sep4 + lm;
+          sep4 = " ";
         }
         pos = line.lastIndex;
       }
       const last = /[ \t]*(.*)/sy;
       last.lastIndex = pos;
       match = last.exec(source);
-      return res + sep3 + (match?.[1] ?? "");
+      return res + sep4 + (match?.[1] ?? "");
     }
     function doubleQuotedValue(source, onError) {
       let res = "";
@@ -25346,14 +25346,14 @@ var require_cst_stringify = __commonJS({
         }
       }
     }
-    function stringifyItem({ start, key, sep: sep3, value }) {
+    function stringifyItem({ start, key, sep: sep4, value }) {
       let res = "";
       for (const st3 of start)
         res += st3.source;
       if (key)
         res += stringifyToken(key);
-      if (sep3)
-        for (const st3 of sep3)
+      if (sep4)
+        for (const st3 of sep4)
           res += st3.source;
       if (value)
         res += stringifyToken(value);
@@ -26520,18 +26520,18 @@ var require_parser = __commonJS({
         if (this.type === "map-value-ind") {
           const prev = getPrevProps(this.peek(2));
           const start = getFirstKeyStartProps(prev);
-          let sep3;
+          let sep4;
           if (scalar.end) {
-            sep3 = scalar.end;
-            sep3.push(this.sourceToken);
+            sep4 = scalar.end;
+            sep4.push(this.sourceToken);
             delete scalar.end;
           } else
-            sep3 = [this.sourceToken];
+            sep4 = [this.sourceToken];
           const map = {
             type: "block-map",
             offset: scalar.offset,
             indent: scalar.indent,
-            items: [{ start, key: scalar, sep: sep3 }]
+            items: [{ start, key: scalar, sep: sep4 }]
           };
           this.onKeyLine = true;
           this.stack[this.stack.length - 1] = map;
@@ -26684,15 +26684,15 @@ var require_parser = __commonJS({
                 } else if (isFlowToken(it3.key) && !includesToken(it3.sep, "newline")) {
                   const start2 = getFirstKeyStartProps(it3.start);
                   const key = it3.key;
-                  const sep3 = it3.sep;
-                  sep3.push(this.sourceToken);
+                  const sep4 = it3.sep;
+                  sep4.push(this.sourceToken);
                   delete it3.key;
                   delete it3.sep;
                   this.stack.push({
                     type: "block-map",
                     offset: this.offset,
                     indent: this.indent,
-                    items: [{ start: start2, key, sep: sep3 }]
+                    items: [{ start: start2, key, sep: sep4 }]
                   });
                 } else if (start.length > 0) {
                   it3.sep = it3.sep.concat(start, this.sourceToken);
@@ -26886,13 +26886,13 @@ var require_parser = __commonJS({
             const prev = getPrevProps(parent);
             const start = getFirstKeyStartProps(prev);
             fixFlowSeqItems(fc);
-            const sep3 = fc.end.splice(1, fc.end.length);
-            sep3.push(this.sourceToken);
+            const sep4 = fc.end.splice(1, fc.end.length);
+            sep4.push(this.sourceToken);
             const map = {
               type: "block-map",
               offset: fc.offset,
               indent: fc.indent,
-              items: [{ start, key: fc, sep: sep3 }]
+              items: [{ start, key: fc, sep: sep4 }]
             };
             this.onKeyLine = true;
             this.stack[this.stack.length - 1] = map;
@@ -27731,6 +27731,44 @@ var DEFAULT_PUBLICATION_URL_CONFIGURATION = Object.freeze({
   assetFolderUrlPrefix: "https://drive.google.com/drive/folders/"
 });
 
+// packages/application/journey/src/config/automation-config.ts
+var AutomationConfigFactory = class {
+  /**
+   * Automation behavior is owned and versioned by this repository. Consumer
+   * repositories do not provide a runtime configuration file anymore. Without
+   * a repository owner, workspace-only operations leave communication disabled.
+   */
+  static createAutomationConfig(repositoryOwner) {
+    return {
+      timezone: "Europe/Paris",
+      event: {
+        "issue-label": "meetup",
+        "issue-form": ".github/ISSUE_TEMPLATE/meetup.yml",
+        "occurrence-status-field": "event_status",
+        "required-confirmation-labels": [
+          "hoster:confirmed",
+          "speakers:confirmed"
+        ]
+      },
+      referentials: {
+        hosts: "referentials/hosting.csv",
+        speakers: "referentials/speakers.csv"
+      },
+      communication: {
+        "readiness-window-days": 7,
+        "mailings-repository": repositoryOwner ? `${repositoryOwner}/mailings` : "",
+        "slack-enabled": true,
+        "dispatch-enabled": Boolean(repositoryOwner),
+        "policy-version": 1
+      },
+      publication: {
+        "meetup-event-url-prefix": DEFAULT_PUBLICATION_URL_CONFIGURATION.meetupEventUrlPrefix,
+        "cncf-event-url-prefix": DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes[0]
+      }
+    };
+  }
+};
+
 // packages/application/journey/src/result/diagnostic-policy.ts
 var ORGANIZER_CODES = /* @__PURE__ */ new Set([
   "publication.meetup.authentication",
@@ -27872,6 +27910,92 @@ var DiagnosticPolicy = class _DiagnosticPolicy {
   }
   static isTechnicalFailure(diagnostic) {
     return _DiagnosticPolicy.classify(diagnostic) === "technical";
+  }
+};
+
+// packages/domain/referential/src/domain/proposal-source-error.ts
+var ProposalSourceError = class extends Error {
+  constructor(code, retryAfterSeconds, context3) {
+    super(`Proposal source ${code}.`);
+    this.code = code;
+    this.retryAfterSeconds = retryAfterSeconds;
+    this.context = context3;
+    this.name = "ProposalSourceError";
+  }
+  code;
+  retryAfterSeconds;
+  context;
+};
+
+// packages/domain/referential/src/application/use-cases/merge-source-speakers.ts
+var MergeSourceSpeakers = class {
+  execute(entries, snapshot, reservedIds) {
+    const reserved = /* @__PURE__ */ new Set([...reservedIds, ...entries.map((row) => row.id)]);
+    const mappings = this.mappings(entries, snapshot);
+    const merged = entries.map((row) => ({ ...row }));
+    for (const speaker of [...snapshot.speakers].sort(
+      (a, b2) => a.id.localeCompare(b2.id, "en")
+    )) {
+      let index = mappings.get(speaker.id);
+      if (index === void 0) {
+        const possibleMatch = entries.findIndex(
+          (row2) => !row2.sourceIdentity?.speakerId && (row2.email?.trim().toLowerCase() === speaker.email.toLowerCase() || (row2.displayName || `${row2.firstName} ${row2.lastName}`).trim().toLowerCase() === speaker.displayName.toLowerCase())
+        );
+        if (possibleMatch !== -1)
+          throw new ProposalSourceError("mapping-required", void 0, {
+            field: `speakers[${possibleMatch}]`
+          });
+        const id = this.allocate(reserved);
+        index = merged.length;
+        merged.push({
+          id,
+          firstName: "",
+          lastName: "",
+          phone: "",
+          displayName: "",
+          email: "",
+          company: "",
+          pictureUrl: "",
+          sourceIdentity: {
+            provider: snapshot.provider,
+            event: snapshot.event,
+            speakerId: speaker.id
+          }
+        });
+        mappings.set(speaker.id, index);
+      }
+      const row = merged[index];
+      row.displayName = speaker.displayName;
+      row.email = speaker.email;
+      row.company = speaker.company ?? "";
+      row.pictureUrl = speaker.pictureUrl ?? "";
+    }
+    return {
+      entries: merged,
+      reservedIds: [...reserved].sort()
+    };
+  }
+  mappings(entries, snapshot) {
+    const mappings = /* @__PURE__ */ new Map();
+    for (const [index, row] of entries.entries()) {
+      if (row.sourceIdentity?.provider !== snapshot.provider || row.sourceIdentity?.event !== snapshot.event)
+        continue;
+      if (!row.sourceIdentity?.speakerId || mappings.has(row.sourceIdentity?.speakerId))
+        throw new ProposalSourceError("conflict");
+      mappings.set(row.sourceIdentity?.speakerId, index);
+    }
+    return mappings;
+  }
+  allocate(reserved) {
+    const maximum = Math.max(
+      0,
+      ...[...reserved].map((id2) => Number(id2.replace(/^speaker-/, "")))
+    );
+    if (!Number.isInteger(maximum) || maximum >= 9999)
+      throw new ProposalSourceError("conflict");
+    const id = `speaker-${String(maximum + 1).padStart(4, "0")}`;
+    reserved.add(id);
+    return id;
   }
 };
 
@@ -28191,12 +28315,15 @@ var SpeakerSourceFields = class _SpeakerSourceFields {
     }
   }
   static validateMappings(speakers, diagnostics) {
-    const identities = /* @__PURE__ */ new Set();
+    const identities = [];
     for (const [index, speaker] of speakers.entries()) {
-      if (!speaker.sourceIdentity) continue;
-      const key = JSON.stringify(speaker.sourceIdentity);
-      if (identities.has(key)) _SpeakerSourceFields.invalid(index, diagnostics);
-      identities.add(key);
+      const identity = speaker.sourceIdentity;
+      if (!identity) continue;
+      if (identities.some(
+        (existing) => existing.provider === identity.provider && existing.event === identity.event && existing.speakerId === identity.speakerId
+      ))
+        _SpeakerSourceFields.invalid(index, diagnostics);
+      identities.push(identity);
     }
   }
   static invalid(index, diagnostics) {
@@ -28318,20 +28445,6 @@ var SpeakerCatalogValidator = class _SpeakerCatalogValidator {
   }
 };
 
-// packages/domain/referential/src/domain/proposal-source-error.ts
-var ProposalSourceError = class extends Error {
-  constructor(code, retryAfterSeconds, context3) {
-    super(`Proposal source ${code}.`);
-    this.code = code;
-    this.retryAfterSeconds = retryAfterSeconds;
-    this.context = context3;
-    this.name = "ProposalSourceError";
-  }
-  code;
-  retryAfterSeconds;
-  context;
-};
-
 // packages/domain/referential/src/application/use-cases/validate-referential-catalog.ts
 var ValidateReferentialCatalog = class {
   constructor(repository) {
@@ -28418,72 +28531,18 @@ var ValidateReferentialCatalog = class {
   }
 };
 
-// packages/domain/referential/src/application/use-cases/merge-source-speakers.ts
-var MergeSourceSpeakers = class {
-  execute(rows, snapshot, state) {
-    const reserved = /* @__PURE__ */ new Set([
-      ...state.reservedIds,
-      ...rows.map((row) => row.speaker_id)
-    ]);
-    const mappings = this.mappings(rows, snapshot);
-    const merged = rows.map((row) => ({ ...row }));
-    for (const speaker of [...snapshot.speakers].sort(
-      (a, b2) => a.id.localeCompare(b2.id, "en")
-    )) {
-      let index = mappings.get(speaker.id);
-      if (index === void 0) {
-        const possibleMatch = rows.findIndex(
-          (row2) => !row2.source_speaker_id && (row2.mail?.trim().toLowerCase() === speaker.email.toLowerCase() || (row2.display_name || `${row2.firstname} ${row2.lastname}`).trim().toLowerCase() === speaker.displayName.toLowerCase())
-        );
-        if (possibleMatch !== -1)
-          throw new ProposalSourceError("mapping-required", void 0, {
-            field: `speakers[${possibleMatch}]`
-          });
-        const id = this.allocate(reserved);
-        index = merged.length;
-        merged.push({
-          speaker_id: id,
-          firstname: "",
-          lastname: "",
-          phone: "",
-          source_provider: snapshot.provider,
-          source_event: snapshot.event,
-          source_speaker_id: speaker.id
-        });
-        mappings.set(speaker.id, index);
-      }
-      const row = merged[index];
-      row.display_name = speaker.displayName;
-      row.mail = speaker.email;
-      row.company = speaker.company ?? "";
-      row.picture_url = speaker.pictureUrl ?? "";
-    }
-    return {
-      rows: merged,
-      state: { version: 1, reservedIds: [...reserved].sort() }
-    };
+// packages/domain/referential/src/domain/source-speaker-equality.ts
+var SourceSpeakerEquality = class {
+  static equal(left, right) {
+    return left.id === right.id && left.displayName === right.displayName && left.email === right.email && left.company === right.company && left.pictureUrl === right.pictureUrl;
   }
-  mappings(rows, snapshot) {
-    const mappings = /* @__PURE__ */ new Map();
-    for (const [index, row] of rows.entries()) {
-      if (row.source_provider !== snapshot.provider || row.source_event !== snapshot.event)
-        continue;
-      if (!row.source_speaker_id || mappings.has(row.source_speaker_id))
-        throw new ProposalSourceError("conflict");
-      mappings.set(row.source_speaker_id, index);
-    }
-    return mappings;
-  }
-  allocate(reserved) {
-    const maximum = Math.max(
-      0,
-      ...[...reserved].map((id2) => Number(id2.replace(/^speaker-/, "")))
-    );
-    if (!Number.isInteger(maximum) || maximum >= 9999)
-      throw new ProposalSourceError("conflict");
-    const id = `speaker-${String(maximum + 1).padStart(4, "0")}`;
-    reserved.add(id);
-    return id;
+};
+
+// packages/domain/referential/src/domain/speaker-catalog-history-error.ts
+var SpeakerCatalogHistoryError = class extends Error {
+  constructor() {
+    super("Speaker catalog allocation history is unavailable.");
+    this.name = "SpeakerCatalogHistoryError";
   }
 };
 
@@ -28553,14 +28612,16 @@ var SpeakerSynchronizationError = class _SpeakerSynchronizationError extends Err
 
 // packages/application/journey/src/use-cases/synchronize-source-speakers.ts
 var SynchronizeSourceSpeakers = class {
-  constructor(source, store, form) {
+  constructor(source, store, form, config) {
     this.source = source;
     this.store = store;
     this.form = form;
+    this.config = config;
   }
   source;
   store;
   form;
+  config;
   async execute() {
     const original = await SpeakerSynchronizationError.at(
       "read-catalog",
@@ -28573,14 +28634,14 @@ var SynchronizeSourceSpeakers = class {
     const merged = await SpeakerSynchronizationError.at(
       "merge-speakers",
       () => new MergeSourceSpeakers().execute(
-        original.rows,
+        original.entries,
         snapshot,
-        original.state
+        original.reservedIds
       )
     );
     const catalog = await SpeakerSynchronizationError.at(
       "validate-catalog",
-      async () => this.validate(await this.store.candidate(merged.rows))
+      async () => this.validate(await this.store.candidate(merged.entries))
     );
     await SpeakerSynchronizationError.at(
       "check-form",
@@ -28588,7 +28649,7 @@ var SynchronizeSourceSpeakers = class {
     );
     const changed = await SpeakerSynchronizationError.at(
       "save-catalog",
-      () => this.store.save(original, merged.rows, merged.state)
+      () => this.store.save(original, merged.entries, merged.reservedIds)
     );
     const form = await SpeakerSynchronizationError.at(
       "update-form",
@@ -28614,8 +28675,8 @@ var SynchronizeSourceSpeakers = class {
   }
   async project(catalog, mode) {
     const result = await this.form.synchronize({
-      issueFormPath: ".github/ISSUE_TEMPLATE/meetup.yml",
-      occurrenceStatusFieldId: "event_status",
+      issueFormPath: this.config["issue-form"],
+      occurrenceStatusFieldId: this.config["occurrence-status-field"],
       catalog,
       mode
     });
@@ -36599,7 +36660,7 @@ var ProposalExportParser = class _ProposalExportParser {
         const speakerPath = `${path}.speakers[${speakerIndex}]`;
         const speaker = _ProposalExportParser.speaker(item, speakerPath);
         const existing = speakers.get(speaker.id);
-        if (existing && JSON.stringify(existing) !== JSON.stringify(speaker))
+        if (existing && !SourceSpeakerEquality.equal(existing, speaker))
           throw _ProposalExportParser.invalid(speakerPath);
         speakers.set(speaker.id, speaker);
         return speaker.id;
@@ -36615,9 +36676,7 @@ var ProposalExportParser = class _ProposalExportParser {
           proposal.abstract,
           `${path}.abstract`
         ),
-        accepted: proposal.deliberationStatus === "ACCEPTED" && [null, void 0, "PENDING", "CONFIRMED"].includes(
-          proposal.confirmationStatus
-        ),
+        accepted: proposal.deliberationStatus === "ACCEPTED" && (proposal.confirmationStatus == null || proposal.confirmationStatus === "PENDING" || proposal.confirmationStatus === "CONFIRMED"),
         languages: _ProposalExportParser.strings(
           proposal.languages,
           `${path}.languages`
@@ -36710,14 +36769,16 @@ var ProposalExportParser = class _ProposalExportParser {
 
 // packages/adapter/conference-hall-proposal-source/src/conference-hall-proposal-source.ts
 var ConferenceHallProposalSource = class {
-  constructor(event, apiKey, request2 = fetch) {
+  constructor(event, apiKey, request2 = fetch, now2 = Date.now) {
     this.event = event;
     this.apiKey = apiKey;
     this.request = request2;
+    this.now = now2;
   }
   event;
   apiKey;
   request;
+  now;
   snapshot;
   load() {
     this.snapshot ??= this.fetchSnapshot();
@@ -36733,7 +36794,7 @@ var ConferenceHallProposalSource = class {
     const speakers = /* @__PURE__ */ new Map();
     for (const speaker of [...active.speakers, ...archived.speakers]) {
       const existing = speakers.get(speaker.id);
-      if (existing && JSON.stringify(existing) !== JSON.stringify(speaker))
+      if (existing && !SourceSpeakerEquality.equal(existing, speaker))
         throw new ProposalSourceError("conflict");
       speakers.set(speaker.id, speaker);
     }
@@ -36814,13 +36875,13 @@ var ConferenceHallProposalSource = class {
   retryAfter(value) {
     if (value && /^\d+$/.test(value)) return Math.max(1, Number(value));
     const date = value ? Date.parse(value) : Number.NaN;
-    return Number.isFinite(date) ? Math.max(1, Math.ceil((date - Date.now()) / 1e3)) : 3600;
+    return Number.isFinite(date) ? Math.max(1, Math.ceil((date - this.now()) / 1e3)) : 3600;
   }
 };
 
 // packages/adapter/csv-referential-repository/src/csv-referential-repository.ts
-import { readFile } from "node:fs/promises";
-import { isAbsolute, relative, resolve } from "node:path";
+import { readFile, realpath } from "node:fs/promises";
+import { isAbsolute, relative, resolve, sep as sep2 } from "node:path";
 
 // node_modules/.pnpm/csv-parse@7.0.3/node_modules/csv-parse/lib/api/CsvError.js
 var CsvError = class _CsvError extends Error {
@@ -38526,33 +38587,13 @@ var parse4 = function(data, opts = {}) {
   return records;
 };
 
-// packages/adapter/csv-referential-repository/src/csv-referential-repository.ts
-var CsvReferentialRepository = class _CsvReferentialRepository {
-  constructor(options) {
-    this.options = options;
-  }
-  options;
-  async load() {
-    const [hostsSource, speakersSource] = await Promise.all([
-      readFile(
-        _CsvReferentialRepository.localPath(
-          this.options.workspaceRoot,
-          this.options.hostsPath
-        ),
-        "utf8"
-      ),
-      readFile(
-        _CsvReferentialRepository.localPath(
-          this.options.workspaceRoot,
-          this.options.speakersPath
-        ),
-        "utf8"
-      )
-    ]);
-    const hosts = _CsvReferentialRepository.parseRows(
+// packages/adapter/csv-referential-repository/src/csv-referential-codec.ts
+var CsvReferentialCodec = class _CsvReferentialCodec {
+  static decode(hostsSource, speakersSource, hostsPath, speakersPath) {
+    const hosts = _CsvReferentialCodec.parseRows(
       hostsSource
     ).map(({ row, line }) => ({
-      source: { path: this.options.hostsPath, line },
+      source: { path: hostsPath, line },
       hostId: row.host_id,
       displayName: row.name,
       contactId: row.contact_id,
@@ -38561,10 +38602,10 @@ var CsvReferentialRepository = class _CsvReferentialRepository {
       phone: row.phone || void 0,
       address: row.address
     }));
-    const speakers = _CsvReferentialRepository.parseRows(
+    const speakers = _CsvReferentialCodec.parseRows(
       speakersSource
     ).map(({ row, line }) => ({
-      source: { path: this.options.speakersPath, line },
+      source: { path: speakersPath, line },
       speakerId: row.speaker_id,
       displayName: row.display_name,
       pictureUrl: row.picture_url,
@@ -38579,17 +38620,6 @@ var CsvReferentialRepository = class _CsvReferentialRepository {
     }));
     return { hosts, speakers };
   }
-  static localPath(rootInput, relativeInput) {
-    const root = resolve(rootInput);
-    const absolute = resolve(root, relativeInput);
-    const child = relative(root, absolute);
-    if (isAbsolute(child) || child === ".." || child.startsWith(`..${process.platform === "win32" ? "\\" : "/"}`)) {
-      throw new Error(
-        `Referential path must stay inside the checkout: ${relativeInput}`
-      );
-    }
-    return absolute;
-  }
   static parseRows(source) {
     const records = parse4(source.replace(/\r\n?/g, "\n"), {
       bom: true,
@@ -38599,10 +38629,68 @@ var CsvReferentialRepository = class _CsvReferentialRepository {
       info: true,
       raw: true
     });
-    return records.map(({ record, info: info2, raw }) => ({
-      row: record,
-      line: info2.lines - (raw.trimStart().replace(/\n$/, "").match(/\n/g)?.length ?? 0)
-    }));
+    if (!Array.isArray(records)) throw new Error("Invalid CSV catalog records");
+    return records.map((value) => {
+      if (!_CsvReferentialCodec.record(value))
+        throw new Error("Invalid CSV catalog record");
+      return {
+        row: value.record,
+        line: value.info.lines - (value.raw.trimStart().replace(/\n$/, "").match(/\n/g)?.length ?? 0)
+      };
+    });
+  }
+  static record(value) {
+    if (!_CsvReferentialCodec.object(value)) return false;
+    return _CsvReferentialCodec.object(value.record) && Object.values(value.record).every((item) => typeof item === "string") && _CsvReferentialCodec.object(value.info) && typeof value.info.lines === "number" && Number.isSafeInteger(value.info.lines) && value.info.lines > 0 && typeof value.raw === "string";
+  }
+  static object(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
+  }
+};
+
+// packages/adapter/csv-referential-repository/src/csv-referential-repository.ts
+var CsvReferentialRepository = class _CsvReferentialRepository {
+  constructor(options) {
+    this.options = options;
+  }
+  options;
+  async load() {
+    const [hostsSource, speakersSource] = await Promise.all([
+      readFile(
+        await _CsvReferentialRepository.localPath(
+          this.options.workspaceRoot,
+          this.options.hostsPath
+        ),
+        "utf8"
+      ),
+      readFile(
+        await _CsvReferentialRepository.localPath(
+          this.options.workspaceRoot,
+          this.options.speakersPath
+        ),
+        "utf8"
+      )
+    ]);
+    return CsvReferentialCodec.decode(
+      hostsSource,
+      speakersSource,
+      this.options.hostsPath,
+      this.options.speakersPath
+    );
+  }
+  static async localPath(rootInput, relativeInput) {
+    const root = await realpath(resolve(rootInput));
+    const absolute = resolve(root, relativeInput);
+    _CsvReferentialRepository.assertInside(root, absolute);
+    const resolved = await realpath(absolute);
+    _CsvReferentialRepository.assertInside(root, resolved);
+    return resolved;
+  }
+  static assertInside(root, candidate) {
+    const child = relative(root, candidate);
+    if (isAbsolute(child) || child === ".." || child.startsWith(`..${sep2}`)) {
+      throw new Error("Referential path must stay inside the checkout");
+    }
   }
 };
 
@@ -38610,6 +38698,87 @@ var CsvReferentialRepository = class _CsvReferentialRepository {
 import { createHash } from "node:crypto";
 import { readFile as readFile2, writeFile as writeFile2 } from "node:fs/promises";
 import { join } from "node:path";
+
+// packages/adapter/csv-referential-repository/src/speaker-allocation-history.ts
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+var SpeakerAllocationHistory = class {
+  constructor(root, command = promisify(execFile)) {
+    this.root = root;
+    this.command = command;
+  }
+  root;
+  command;
+  async read() {
+    const options = {
+      cwd: this.root,
+      encoding: "utf8",
+      timeout: 3e4,
+      maxBuffer: 16 * 1024 * 1024
+    };
+    try {
+      const shallow = await this.command(
+        "git",
+        ["rev-parse", "--is-shallow-repository"],
+        options
+      );
+      if (shallow.stdout.trim() !== "false")
+        throw new SpeakerCatalogHistoryError();
+      const history = await this.command(
+        "git",
+        ["log", "--all", "--format=", "-p", "--", "referentials/speakers.csv"],
+        options
+      );
+      const words = history.stdout.match(/\b[\w-]+\b/g) ?? [];
+      return [
+        ...new Set(words.filter(ReferentialIdentifiers.asSpeakerId))
+      ].sort();
+    } catch {
+      throw new SpeakerCatalogHistoryError();
+    }
+  }
+};
+
+// packages/adapter/csv-referential-repository/src/speaker-allocation-state-codec.ts
+var STATE_LINE_WIDTH = 80;
+var STATE_INDENT_WIDTH = 2;
+var SpeakerAllocationStateCodec = class _SpeakerAllocationStateCodec {
+  static decode(source) {
+    let value;
+    try {
+      value = JSON.parse(source);
+    } catch {
+      throw new ProposalSourceError("invalid");
+    }
+    if (!_SpeakerAllocationStateCodec.validState(value))
+      throw new ProposalSourceError("invalid");
+    return [...value.reservedIds];
+  }
+  static encode(reservedIds) {
+    const state = { version: 1, reservedIds };
+    const text = `${JSON.stringify(state, null, "	")}
+`;
+    const inline = `[${state.reservedIds.map((id) => JSON.stringify(id)).join(", ")}]`;
+    const property = '"reservedIds": ';
+    if (STATE_INDENT_WIDTH + property.length + inline.length > STATE_LINE_WIDTH)
+      return text;
+    const expanded = JSON.stringify(state.reservedIds, null, "	").replaceAll(
+      "\n",
+      "\n	"
+    );
+    return text.replace(`	${property}${expanded}`, `	${property}${inline}`);
+  }
+  static validState(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value))
+      return false;
+    const state = value;
+    return state.version === 1 && Array.isArray(state.reservedIds) && state.reservedIds.every(
+      (id) => typeof id === "string" && ReferentialIdentifiers.asSpeakerId(id) !== void 0
+    );
+  }
+};
+
+// packages/adapter/csv-referential-repository/src/speaker-catalog-csv.ts
 var IMPORT_COLUMNS = [
   "speaker_id",
   "firstname",
@@ -38623,37 +38792,102 @@ var IMPORT_COLUMNS = [
   "source_event",
   "source_speaker_id"
 ];
-var STATE_LINE_WIDTH = 80;
-var STATE_INDENT_WIDTH = 2;
-var CsvSpeakerCatalogStore = class {
-  constructor(root) {
-    this.root = root;
+var SpeakerCatalogCsv = class _SpeakerCatalogCsv {
+  static decode(source) {
+    return _SpeakerCatalogCsv.document(source).rows.map((row) => ({
+      id: row.speaker_id ?? "",
+      firstName: row.firstname ?? "",
+      lastName: row.lastname ?? "",
+      phone: row.phone ?? "",
+      displayName: row.display_name ?? "",
+      email: row.mail ?? "",
+      company: row.company ?? "",
+      pictureUrl: row.picture_url ?? "",
+      ...[row.source_provider, row.source_event, row.source_speaker_id].some(
+        Boolean
+      ) ? {
+        sourceIdentity: {
+          provider: row.source_provider ?? "",
+          event: row.source_event ?? "",
+          speakerId: row.source_speaker_id ?? ""
+        }
+      } : {}
+    }));
   }
-  root;
-  async read() {
-    const { csv, state } = await this.sources();
-    const records = parse4(csv, {
+  static encode(source, entries) {
+    const original = _SpeakerCatalogCsv.document(source);
+    const columns = [.../* @__PURE__ */ new Set([...original.columns, ...IMPORT_COLUMNS])];
+    const records = new Map(original.rows.map((row) => [row.speaker_id, row]));
+    if (records.size !== original.rows.length || new Set(entries.map((entry) => entry.id)).size !== entries.length)
+      throw new ProposalSourceError("conflict");
+    const rows = entries.map((entry) => ({
+      ...records.get(entry.id),
+      speaker_id: entry.id,
+      firstname: entry.firstName,
+      lastname: entry.lastName,
+      phone: entry.phone,
+      display_name: entry.displayName,
+      mail: entry.email,
+      company: entry.company,
+      picture_url: entry.pictureUrl,
+      source_provider: entry.sourceIdentity?.provider ?? "",
+      source_event: entry.sourceIdentity?.event ?? "",
+      source_speaker_id: entry.sourceIdentity?.speakerId ?? ""
+    }));
+    const lines = [
+      columns,
+      ...rows.map(
+        (row) => columns.map((column) => row[column] ?? "")
+      )
+    ];
+    return `${lines.map((row) => row.map(_SpeakerCatalogCsv.escape).join(",")).join("\n")}
+`;
+  }
+  static document(source) {
+    const parsed = parse4(source, {
       bom: true,
       skip_empty_lines: true
+    });
+    if (!Array.isArray(parsed)) throw new ProposalSourceError("invalid");
+    const records = parsed.map((row) => {
+      if (!Array.isArray(row) || !row.every((value) => typeof value === "string"))
+        throw new ProposalSourceError("invalid");
+      return row;
     });
     const columns = records.shift() ?? [];
     if (!columns.includes("speaker_id") || new Set(columns).size !== columns.length)
       throw new ProposalSourceError("invalid");
-    const rows = records.map(
-      (values) => Object.fromEntries(
-        columns.map((column, index) => [column, values[index]])
-      )
-    );
-    const parsed = state ? JSON.parse(state) : { version: 1, reservedIds: [] };
-    if (!this.validState(parsed)) throw new ProposalSourceError("invalid");
     return {
       columns,
-      rows,
-      state: parsed,
-      revision: this.revision(csv, state)
+      rows: records.map(
+        (values) => Object.fromEntries(
+          columns.map((column, index) => [column, values[index]])
+        )
+      )
     };
   }
-  async candidate(rows) {
+  static escape(value) {
+    return /[",\r\n]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value;
+  }
+};
+
+// packages/adapter/csv-referential-repository/src/csv-speaker-catalog-store.ts
+var CsvSpeakerCatalogStore = class {
+  constructor(root, history = new SpeakerAllocationHistory(root)) {
+    this.root = root;
+    this.history = history;
+  }
+  root;
+  history;
+  async read() {
+    const { csv, state, historicalIds } = await this.sources();
+    return {
+      entries: SpeakerCatalogCsv.decode(csv),
+      reservedIds: state === void 0 ? historicalIds : SpeakerAllocationStateCodec.decode(state),
+      revision: this.revision(csv, state, historicalIds)
+    };
+  }
+  async candidate(entries) {
     const existing = await new CsvReferentialRepository({
       workspaceRoot: this.root,
       hostsPath: "referentials/hosting.csv",
@@ -38661,35 +38895,29 @@ var CsvSpeakerCatalogStore = class {
     }).load();
     return {
       hosts: existing.hosts,
-      speakers: rows.map(
-        (row) => ({
-          speakerId: row.speaker_id,
-          displayName: row.display_name,
-          firstName: row.firstname,
-          lastName: row.lastname,
-          company: row.company,
-          email: row.mail,
-          phone: row.phone,
-          pictureUrl: row.picture_url,
-          sourceProvider: row.source_provider,
-          sourceEvent: row.source_event,
-          sourceSpeakerId: row.source_speaker_id
+      speakers: entries.map(
+        (entry) => ({
+          speakerId: entry.id,
+          displayName: entry.displayName,
+          firstName: entry.firstName,
+          lastName: entry.lastName,
+          company: entry.company,
+          email: entry.email,
+          phone: entry.phone,
+          pictureUrl: entry.pictureUrl,
+          sourceProvider: entry.sourceIdentity?.provider,
+          sourceEvent: entry.sourceIdentity?.event,
+          sourceSpeakerId: entry.sourceIdentity?.speakerId
         })
       )
     };
   }
-  async save(original, rows, state) {
+  async save(original, entries, reservedIds) {
     const current = await this.sources();
-    if (this.revision(current.csv, current.state) !== original.revision)
+    if (this.revision(current.csv, current.state, current.historicalIds) !== original.revision)
       throw new ProposalSourceError("conflict");
-    const columns = [.../* @__PURE__ */ new Set([...original.columns, ...IMPORT_COLUMNS])];
-    const lines = [
-      columns,
-      ...rows.map((row) => columns.map((column) => row[column] ?? ""))
-    ];
-    const csv = `${lines.map((row) => row.map((value) => /[",\r\n]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value).join(",")).join("\n")}
-`;
-    const stateText = this.serializeState(state);
+    const csv = SpeakerCatalogCsv.encode(current.csv, entries);
+    const stateText = SpeakerAllocationStateCodec.encode(reservedIds);
     if (csv === current.csv && stateText === current.state) return false;
     await writeFile2(join(this.root, "referentials/speakers.csv"), csv, {
       mode: 384
@@ -38701,50 +38929,32 @@ var CsvSpeakerCatalogStore = class {
     );
     return true;
   }
-  serializeState(state) {
-    const text = `${JSON.stringify(state, null, "	")}
-`;
-    const inline = `[${state.reservedIds.map((id) => JSON.stringify(id)).join(", ")}]`;
-    const property = '"reservedIds": ';
-    if (STATE_INDENT_WIDTH + property.length + inline.length > STATE_LINE_WIDTH)
-      return text;
-    const expanded = JSON.stringify(state.reservedIds, null, "	").replaceAll(
-      "\n",
-      "\n	"
-    );
-    return text.replace(`	${property}${expanded}`, `	${property}${inline}`);
-  }
   async sources() {
     const csv = await readFile2(
       join(this.root, "referentials/speakers.csv"),
       "utf8"
     );
-    let state = "";
+    let state;
     try {
       state = await readFile2(
         join(this.root, "referentials/speaker-sync-state.json"),
         "utf8"
       );
     } catch (error2) {
-      if (error2.code !== "ENOENT") throw error2;
+      if (!(error2 instanceof Error) || !("code" in error2) || error2.code !== "ENOENT")
+        throw error2;
     }
-    return { csv, state };
+    const historicalIds = state === void 0 ? await this.history.read() : [];
+    return { csv, state, historicalIds };
   }
-  revision(csv, state) {
-    return createHash("sha256").update(JSON.stringify([csv, state])).digest("hex");
-  }
-  validState(value) {
-    if (!value || typeof value !== "object") return false;
-    const state = value;
-    return state.version === 1 && Array.isArray(state.reservedIds) && state.reservedIds.every(
-      (id) => typeof id === "string" && /^speaker-\d{4}$/.test(id)
-    );
+  revision(csv, state, historicalIds) {
+    return createHash("sha256").update(JSON.stringify([csv, state, historicalIds])).digest("hex");
   }
 };
 
 // packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-projection.ts
-import { readFile as readFile3, realpath, stat as stat2, writeFile as writeFile3 } from "node:fs/promises";
-import { isAbsolute as isAbsolute2, relative as relative2, resolve as resolve2, sep as sep2 } from "node:path";
+import { readFile as readFile3, realpath as realpath2, stat as stat2, writeFile as writeFile3 } from "node:fs/promises";
+import { isAbsolute as isAbsolute2, relative as relative2, resolve as resolve2, sep as sep3 } from "node:path";
 
 // node_modules/.pnpm/prettier@3.9.9/node_modules/prettier/plugins/yaml.mjs
 var yaml_exports = {};
@@ -46000,9 +46210,6 @@ async function Vi2(t7, e) {
 var Wi2 = de2(it2, 0);
 var $i2 = { parse: de2(du), formatAST: de2(Fu), formatDoc: de2(Eu), printToDoc: de2(Cu), printDocToString: de2(hu) };
 
-// packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-projection.ts
-var import_yaml = __toESM(require_dist(), 1);
-
 // packages/adapter/yaml-issue-form-projection/src/i18n/messages.en.ts
 var EN_MESSAGES2 = {
   "form.speakers.guidance": "Select speakers by copying one or more references into the agenda.",
@@ -46032,19 +46239,38 @@ var IssueFormMessages = class extends MessageLocalizer {
 var HOST_FIELD_ID = "hoster";
 var AVAILABLE_SPEAKERS_MARKER = "<!-- Available speakers -->";
 
-// packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-projection.ts
-var YamlIssueFormProjection = class _YamlIssueFormProjection {
-  constructor(options) {
-    this.options = options;
-    this.messages = new IssueFormMessages(options.locale);
+// packages/adapter/yaml-issue-form-projection/src/speaker-references-presenter.ts
+var SpeakerReferencesPresenter = class _SpeakerReferencesPresenter {
+  constructor(messages) {
+    this.messages = messages;
   }
-  options;
   messages;
-  choices = new ProjectReferentialChoices();
-  async synchronize(input) {
-    this.assertInput(input);
-    const issueFormPath = await this.resolveIssueFormPath(input.issueFormPath);
-    const source = await readFile3(issueFormPath.absolutePath, "utf8");
+  render(speakers) {
+    const references = speakers.map(
+      (speaker) => `- <code>${_SpeakerReferencesPresenter.escapeHtml(speaker)}</code>`
+    ).join("\n");
+    return [
+      AVAILABLE_SPEAKERS_MARKER,
+      "",
+      this.messages.t("form.speakers.guidance"),
+      "",
+      "<details>",
+      `<summary>${this.messages.t("form.speakers.show")}</summary>`,
+      "",
+      references,
+      "",
+      "</details>"
+    ].join("\n");
+  }
+  static escapeHtml(value) {
+    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+  }
+};
+
+// packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-document.ts
+var import_yaml = __toESM(require_dist(), 1);
+var YamlIssueFormDocument = class _YamlIssueFormDocument {
+  static project(source, hostOptions, speakersMarkdown, occurrenceStatusFieldId) {
     const document = (0, import_yaml.parseDocument)(source, {
       strict: true,
       uniqueKeys: true
@@ -46053,36 +46279,29 @@ var YamlIssueFormProjection = class _YamlIssueFormProjection {
       throw new Error("Issue form is not valid YAML.");
     }
     const issueForm = document.toJS({ maxAliasCount: 100 });
-    if (!_YamlIssueFormProjection.isRecord(issueForm) || !Array.isArray(issueForm.body)) {
+    if (!_YamlIssueFormDocument.isRecord(issueForm) || !Array.isArray(issueForm.body)) {
       throw new Error("Issue form must contain a body array.");
     }
     const body = issueForm.body;
-    const hostIndex = this.findSingleFieldIndex(
+    const hostIndex = _YamlIssueFormDocument.findSingleFieldIndex(
       body,
       HOST_FIELD_ID,
       "dropdown"
     );
-    const speakersIndex = this.findSpeakersMarkdownIndex(body);
-    const statusIndex = this.findOptionalFieldIndex(
+    const speakersIndex = _YamlIssueFormDocument.findSpeakersMarkdownIndex(body);
+    const statusIndex = _YamlIssueFormDocument.findOptionalFieldIndex(
       body,
-      input.occurrenceStatusFieldId
-    );
-    const projection = this.choices.execute(input.catalog);
-    const speakersMarkdown = this.renderSpeakersMarkdown(
-      projection.speakerReferences
+      occurrenceStatusFieldId
     );
     let changed = false;
-    if (!_YamlIssueFormProjection.sameStringArray(
-      _YamlIssueFormProjection.fieldOptions(body[hostIndex]),
-      projection.hostOptions
+    if (!_YamlIssueFormDocument.sameStringArray(
+      _YamlIssueFormDocument.fieldOptions(body[hostIndex]),
+      hostOptions
     )) {
-      document.setIn(
-        ["body", hostIndex, "attributes", "options"],
-        projection.hostOptions
-      );
+      document.setIn(["body", hostIndex, "attributes", "options"], hostOptions);
       changed = true;
     }
-    if (speakersIndex !== void 0 && _YamlIssueFormProjection.fieldValue(body[speakersIndex]) !== speakersMarkdown) {
+    if (speakersIndex !== void 0 && _YamlIssueFormDocument.fieldValue(body[speakersIndex]) !== speakersMarkdown) {
       document.setIn(
         ["body", speakersIndex, "attributes", "value"],
         speakersMarkdown
@@ -46093,6 +46312,102 @@ var YamlIssueFormProjection = class _YamlIssueFormProjection {
       document.deleteIn(["body", statusIndex]);
       changed = true;
     }
+    return { document, changed };
+  }
+  static findSingleFieldIndex(body, fieldId, expectedType) {
+    const indexes = body.flatMap(
+      (item, index2) => _YamlIssueFormDocument.isRecord(item) && item.id === fieldId ? [index2] : []
+    );
+    if (indexes.length !== 1) {
+      throw new Error(`Issue form must contain exactly one ${fieldId} field.`);
+    }
+    const index = indexes[0];
+    const field = body[index];
+    if (!_YamlIssueFormDocument.isRecord(field) || field.type !== expectedType) {
+      throw new Error(`Issue-form field ${fieldId} must be a ${expectedType}.`);
+    }
+    if (!_YamlIssueFormDocument.isRecord(field.attributes)) {
+      throw new Error(`Issue-form field ${fieldId} must have attributes.`);
+    }
+    return index;
+  }
+  static findOptionalFieldIndex(body, fieldId) {
+    const indexes = body.flatMap(
+      (item, index) => _YamlIssueFormDocument.isRecord(item) && item.id === fieldId ? [index] : []
+    );
+    if (indexes.length > 1) {
+      throw new Error(`Issue form contains duplicate ${fieldId} fields.`);
+    }
+    return indexes[0];
+  }
+  static findSpeakersMarkdownIndex(body) {
+    const indexes = body.flatMap((item, index) => {
+      if (!_YamlIssueFormDocument.isRecord(item) || item.type !== "markdown") {
+        return [];
+      }
+      const value = _YamlIssueFormDocument.fieldValue(item);
+      return value?.includes(AVAILABLE_SPEAKERS_MARKER) ? [index] : [];
+    });
+    if (indexes.length === 0 && _YamlIssueFormDocument.findOptionalFieldIndex(
+      body,
+      "conference_hall_proposals"
+    ) !== void 0) {
+      _YamlIssueFormDocument.findSingleFieldIndex(
+        body,
+        "conference_hall_proposals",
+        "textarea"
+      );
+      return void 0;
+    }
+    if (indexes.length !== 1) {
+      throw new Error(
+        "Issue form must contain exactly one Available speakers markdown block."
+      );
+    }
+    return indexes[0];
+  }
+  static isRecord(value) {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+  }
+  static fieldOptions(field) {
+    if (!_YamlIssueFormDocument.isRecord(field) || !_YamlIssueFormDocument.isRecord(field.attributes)) {
+      return void 0;
+    }
+    return field.attributes.options;
+  }
+  static fieldValue(field) {
+    if (!_YamlIssueFormDocument.isRecord(field) || !_YamlIssueFormDocument.isRecord(field.attributes)) {
+      return void 0;
+    }
+    return typeof field.attributes.value === "string" ? field.attributes.value : void 0;
+  }
+  static sameStringArray(actual, expected) {
+    return Array.isArray(actual) && actual.length === expected.length && actual.every((value, index) => value === expected[index]);
+  }
+};
+
+// packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-projection.ts
+var YamlIssueFormProjection = class {
+  constructor(options) {
+    this.options = options;
+    this.presenter = new SpeakerReferencesPresenter(
+      new IssueFormMessages(options.locale)
+    );
+  }
+  options;
+  presenter;
+  choices = new ProjectReferentialChoices();
+  async synchronize(input) {
+    this.assertInput(input);
+    const issueFormPath = await this.resolveIssueFormPath(input.issueFormPath);
+    const source = await readFile3(issueFormPath.absolutePath, "utf8");
+    const projection = this.choices.execute(input.catalog);
+    const { changed, document } = YamlIssueFormDocument.project(
+      source,
+      projection.hostOptions,
+      this.presenter.render(projection.speakerReferences),
+      input.occurrenceStatusFieldId
+    );
     if (changed && input.mode === "fix") {
       const content = await Pu(document.toString(), {
         parser: "yaml",
@@ -46111,10 +46426,10 @@ var YamlIssueFormProjection = class _YamlIssueFormProjection {
     }
   }
   async resolveIssueFormPath(inputPath) {
-    const root = await realpath(resolve2(this.options.workspaceRoot));
+    const root = await realpath2(resolve2(this.options.workspaceRoot));
     const candidate = resolve2(root, inputPath);
     this.assertInsideWorkspace(root, candidate);
-    const absolutePath = await realpath(candidate);
+    const absolutePath = await realpath2(candidate);
     this.assertInsideWorkspace(root, absolutePath);
     const metadata = await stat2(absolutePath);
     if (!metadata.isFile()) {
@@ -46122,76 +46437,14 @@ var YamlIssueFormProjection = class _YamlIssueFormProjection {
     }
     return {
       absolutePath,
-      relativePath: relative2(root, candidate).split(sep2).join("/")
+      relativePath: relative2(root, candidate).split(sep3).join("/")
     };
   }
   assertInsideWorkspace(root, candidate) {
     const childPath = relative2(root, candidate);
-    if (isAbsolute2(childPath) || childPath === ".." || childPath.startsWith(`..${sep2}`) || childPath === "") {
+    if (isAbsolute2(childPath) || childPath === ".." || childPath.startsWith(`..${sep3}`) || childPath === "") {
       throw new Error("Issue-form path must stay inside the checkout.");
     }
-  }
-  findSingleFieldIndex(body, fieldId, expectedType) {
-    const indexes = body.flatMap(
-      (item, index2) => _YamlIssueFormProjection.isRecord(item) && item.id === fieldId ? [index2] : []
-    );
-    if (indexes.length !== 1) {
-      throw new Error(`Issue form must contain exactly one ${fieldId} field.`);
-    }
-    const index = indexes[0];
-    const field = body[index];
-    if (!_YamlIssueFormProjection.isRecord(field) || field.type !== expectedType) {
-      throw new Error(`Issue-form field ${fieldId} must be a ${expectedType}.`);
-    }
-    if (!_YamlIssueFormProjection.isRecord(field.attributes)) {
-      throw new Error(`Issue-form field ${fieldId} must have attributes.`);
-    }
-    return index;
-  }
-  findOptionalFieldIndex(body, fieldId) {
-    const indexes = body.flatMap(
-      (item, index) => _YamlIssueFormProjection.isRecord(item) && item.id === fieldId ? [index] : []
-    );
-    if (indexes.length > 1) {
-      throw new Error(`Issue form contains duplicate ${fieldId} fields.`);
-    }
-    return indexes[0];
-  }
-  findSpeakersMarkdownIndex(body) {
-    const indexes = body.flatMap((item, index) => {
-      if (!_YamlIssueFormProjection.isRecord(item) || item.type !== "markdown") {
-        return [];
-      }
-      const value = _YamlIssueFormProjection.fieldValue(item);
-      return value?.includes(AVAILABLE_SPEAKERS_MARKER) ? [index] : [];
-    });
-    if (indexes.length === 0 && this.findOptionalFieldIndex(body, "conference_hall_proposals") !== void 0) {
-      this.findSingleFieldIndex(body, "conference_hall_proposals", "textarea");
-      return void 0;
-    }
-    if (indexes.length !== 1) {
-      throw new Error(
-        "Issue form must contain exactly one Available speakers markdown block."
-      );
-    }
-    return indexes[0];
-  }
-  renderSpeakersMarkdown(speakers) {
-    const references = speakers.map(
-      (speaker) => `- <code>${_YamlIssueFormProjection.escapeHtml(speaker)}</code>`
-    ).join("\n");
-    return [
-      AVAILABLE_SPEAKERS_MARKER,
-      "",
-      this.messages.t("form.speakers.guidance"),
-      "",
-      "<details>",
-      `<summary>${this.messages.t("form.speakers.show")}</summary>`,
-      "",
-      references,
-      "",
-      "</details>"
-    ].join("\n");
   }
   result(changed, relativePath, mode) {
     const changedFiles = Object.freeze(changed ? [relativePath] : []);
@@ -46209,27 +46462,6 @@ var YamlIssueFormProjection = class _YamlIssueFormProjection {
       )
     ]) : Object.freeze([]);
     return Object.freeze({ changed, changedFiles, diagnostics });
-  }
-  static isRecord(value) {
-    return typeof value === "object" && value !== null && !Array.isArray(value);
-  }
-  static fieldOptions(field) {
-    if (!_YamlIssueFormProjection.isRecord(field) || !_YamlIssueFormProjection.isRecord(field.attributes)) {
-      return void 0;
-    }
-    return field.attributes.options;
-  }
-  static fieldValue(field) {
-    if (!_YamlIssueFormProjection.isRecord(field) || !_YamlIssueFormProjection.isRecord(field.attributes)) {
-      return void 0;
-    }
-    return typeof field.attributes.value === "string" ? field.attributes.value : void 0;
-  }
-  static escapeHtml(value) {
-    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-  }
-  static sameStringArray(actual, expected) {
-    return Array.isArray(actual) && actual.length === expected.length && actual.every((value, index) => value === expected[index]);
   }
 };
 
@@ -46281,6 +46513,14 @@ var SpeakerSyncFailureReport = class _SpeakerSyncFailureReport {
     };
   }
   static diagnostic(error2) {
+    if (error2 instanceof SpeakerCatalogHistoryError)
+      return {
+        code: "speaker-sync.history-unavailable",
+        severity: "error",
+        message: new ActionMessages().t(
+          "diagnostic.speaker-sync.history-unavailable"
+        )
+      };
     const source = error2 instanceof ProposalSourceError ? error2 : void 0;
     const context3 = source?.context;
     const reason = context3?.reason ?? source?.code ?? "unexpected";
@@ -46324,7 +46564,8 @@ var SpeakerSyncAction = class {
         new YamlIssueFormProjection({
           workspaceRoot: process.cwd(),
           locale: messages.locale
-        })
+        }),
+        AutomationConfigFactory.createAutomationConfig(context2.repo.owner).event
       ).execute();
       setOutput("pr-title", messages.t("report.speaker-sync.pr-title"));
       setOutput("pr-body", messages.t("report.speaker-sync.pr-body"));

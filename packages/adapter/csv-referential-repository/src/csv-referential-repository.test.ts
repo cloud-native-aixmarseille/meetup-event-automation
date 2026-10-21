@@ -1,10 +1,30 @@
-import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { CsvReferentialRepository } from "./csv-referential-repository.js";
 
 describe("CsvReferentialRepository", () => {
+	it("rejects catalog symlinks pointing outside the checkout", async () => {
+		// Arrange
+		const parent = await mkdtemp(join(tmpdir(), "meetup-csv-links-"));
+		const root = join(parent, "checkout");
+		await mkdir(root);
+		await writeFile(join(parent, "private.csv"), "host_id,name\n");
+		await symlink(join(parent, "private.csv"), join(root, "hosts.csv"));
+		const repository = new CsvReferentialRepository({
+			workspaceRoot: root,
+			hostsPath: "hosts.csv",
+			speakersPath: "speakers.csv",
+		});
+
+		// Act
+		const operation = repository.load();
+
+		// Assert
+		await expect(operation).rejects.toThrow("inside the checkout");
+		await rm(parent, { recursive: true, force: true });
+	});
 	it("maps the checked-out CSV files without logging contact data", async () => {
 		// Arrange
 		const root = await mkdtemp(join(tmpdir(), "meetup-csv-"));

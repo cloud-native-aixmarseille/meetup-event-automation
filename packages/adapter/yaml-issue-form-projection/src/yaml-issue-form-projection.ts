@@ -7,25 +7,25 @@ import type {
 import { ProjectReferentialChoices } from "@meetup-automation/referential";
 import * as yamlPlugin from "prettier/plugins/yaml";
 import { format } from "prettier/standalone";
-import { parseDocument } from "yaml";
 import { IssueFormMessages } from "./i18n/issue-form-messages.js";
-import {
-	AVAILABLE_SPEAKERS_MARKER,
-	HOST_FIELD_ID,
-	type IssueFormProjectionDiagnostic,
-	type IssueFormProjectionResult,
-	type ResolvedIssueFormPath,
-	type SynchronizeIssueFormInput,
-	type UnknownRecord,
-	type YamlIssueFormProjectionOptions,
+import { SpeakerReferencesPresenter } from "./speaker-references-presenter.js";
+import { YamlIssueFormDocument } from "./yaml-issue-form-document.js";
+import type {
+	IssueFormProjectionDiagnostic,
+	IssueFormProjectionResult,
+	ResolvedIssueFormPath,
+	SynchronizeIssueFormInput,
+	YamlIssueFormProjectionOptions,
 } from "./yaml-issue-form-projection-contracts.js";
 
 export class YamlIssueFormProjection implements IssueFormProjection {
-	private readonly messages: IssueFormMessages;
+	private readonly presenter: SpeakerReferencesPresenter;
 	private readonly choices = new ProjectReferentialChoices();
 
 	constructor(private readonly options: YamlIssueFormProjectionOptions) {
-		this.messages = new IssueFormMessages(options.locale);
+		this.presenter = new SpeakerReferencesPresenter(
+			new IssueFormMessages(options.locale),
+		);
 	}
 
 	async synchronize(
@@ -34,69 +34,13 @@ export class YamlIssueFormProjection implements IssueFormProjection {
 		this.assertInput(input);
 		const issueFormPath = await this.resolveIssueFormPath(input.issueFormPath);
 		const source = await readFile(issueFormPath.absolutePath, "utf8");
-		const document = parseDocument(source, {
-			strict: true,
-			uniqueKeys: true,
-		});
-
-		if (document.errors.length > 0) {
-			throw new Error("Issue form is not valid YAML.");
-		}
-
-		const issueForm = document.toJS({ maxAliasCount: 100 }) as unknown;
-		if (
-			!YamlIssueFormProjection.isRecord(issueForm) ||
-			!Array.isArray(issueForm.body)
-		) {
-			throw new Error("Issue form must contain a body array.");
-		}
-
-		const body = issueForm.body;
-		const hostIndex = this.findSingleFieldIndex(
-			body,
-			HOST_FIELD_ID,
-			"dropdown",
-		);
-		const speakersIndex = this.findSpeakersMarkdownIndex(body);
-		const statusIndex = this.findOptionalFieldIndex(
-			body,
+		const projection = this.choices.execute(input.catalog);
+		const { changed, document } = YamlIssueFormDocument.project(
+			source,
+			projection.hostOptions,
+			this.presenter.render(projection.speakerReferences),
 			input.occurrenceStatusFieldId,
 		);
-		const projection = this.choices.execute(input.catalog);
-		const speakersMarkdown = this.renderSpeakersMarkdown(
-			projection.speakerReferences,
-		);
-
-		let changed = false;
-		if (
-			!YamlIssueFormProjection.sameStringArray(
-				YamlIssueFormProjection.fieldOptions(body[hostIndex]),
-				projection.hostOptions,
-			)
-		) {
-			document.setIn(
-				["body", hostIndex, "attributes", "options"],
-				projection.hostOptions,
-			);
-			changed = true;
-		}
-
-		if (
-			speakersIndex !== undefined &&
-			YamlIssueFormProjection.fieldValue(body[speakersIndex]) !==
-				speakersMarkdown
-		) {
-			document.setIn(
-				["body", speakersIndex, "attributes", "value"],
-				speakersMarkdown,
-			);
-			changed = true;
-		}
-
-		if (statusIndex !== undefined) {
-			document.deleteIn(["body", statusIndex]);
-			changed = true;
-		}
 
 		if (changed && input.mode === "fix") {
 			const content = await format(document.toString(), {
@@ -150,98 +94,6 @@ export class YamlIssueFormProjection implements IssueFormProjection {
 		}
 	}
 
-	private findSingleFieldIndex(
-		body: readonly unknown[],
-		fieldId: string,
-		expectedType: string,
-	): number {
-		const indexes = body.flatMap((item, index) =>
-			YamlIssueFormProjection.isRecord(item) && item.id === fieldId
-				? [index]
-				: [],
-		);
-		if (indexes.length !== 1) {
-			throw new Error(`Issue form must contain exactly one ${fieldId} field.`);
-		}
-
-		const index = indexes[0];
-		const field = body[index];
-		if (
-			!YamlIssueFormProjection.isRecord(field) ||
-			field.type !== expectedType
-		) {
-			throw new Error(`Issue-form field ${fieldId} must be a ${expectedType}.`);
-		}
-		if (!YamlIssueFormProjection.isRecord(field.attributes)) {
-			throw new Error(`Issue-form field ${fieldId} must have attributes.`);
-		}
-
-		return index;
-	}
-
-	private findOptionalFieldIndex(
-		body: readonly unknown[],
-		fieldId: string,
-	): number | undefined {
-		const indexes = body.flatMap((item, index) =>
-			YamlIssueFormProjection.isRecord(item) && item.id === fieldId
-				? [index]
-				: [],
-		);
-		if (indexes.length > 1) {
-			throw new Error(`Issue form contains duplicate ${fieldId} fields.`);
-		}
-		return indexes[0];
-	}
-
-	private findSpeakersMarkdownIndex(
-		body: readonly unknown[],
-	): number | undefined {
-		const indexes = body.flatMap((item, index) => {
-			if (!YamlIssueFormProjection.isRecord(item) || item.type !== "markdown") {
-				return [];
-			}
-			const value = YamlIssueFormProjection.fieldValue(item);
-			return value?.includes(AVAILABLE_SPEAKERS_MARKER) ? [index] : [];
-		});
-		if (
-			indexes.length === 0 &&
-			this.findOptionalFieldIndex(body, "conference_hall_proposals") !==
-				undefined
-		) {
-			this.findSingleFieldIndex(body, "conference_hall_proposals", "textarea");
-			return undefined;
-		}
-		if (indexes.length !== 1) {
-			throw new Error(
-				"Issue form must contain exactly one Available speakers markdown block.",
-			);
-		}
-		return indexes[0];
-	}
-
-	private renderSpeakersMarkdown(speakers: readonly string[]): string {
-		const references = speakers
-			.map(
-				(speaker) =>
-					`- <code>${YamlIssueFormProjection.escapeHtml(speaker)}</code>`,
-			)
-			.join("\n");
-
-		return [
-			AVAILABLE_SPEAKERS_MARKER,
-			"",
-			this.messages.t("form.speakers.guidance"),
-			"",
-			"<details>",
-			`<summary>${this.messages.t("form.speakers.show")}</summary>`,
-			"",
-			references,
-			"",
-			"</details>",
-		].join("\n");
-	}
-
 	private result(
 		changed: boolean,
 		relativePath: string,
@@ -267,49 +119,5 @@ export class YamlIssueFormProjection implements IssueFormProjection {
 			: Object.freeze([]);
 
 		return Object.freeze({ changed, changedFiles, diagnostics });
-	}
-
-	private static isRecord(value: unknown): value is UnknownRecord {
-		return typeof value === "object" && value !== null && !Array.isArray(value);
-	}
-
-	private static fieldOptions(field: unknown): unknown {
-		if (
-			!YamlIssueFormProjection.isRecord(field) ||
-			!YamlIssueFormProjection.isRecord(field.attributes)
-		) {
-			return undefined;
-		}
-		return field.attributes.options;
-	}
-
-	private static fieldValue(field: unknown): string | undefined {
-		if (
-			!YamlIssueFormProjection.isRecord(field) ||
-			!YamlIssueFormProjection.isRecord(field.attributes)
-		) {
-			return undefined;
-		}
-		return typeof field.attributes.value === "string"
-			? field.attributes.value
-			: undefined;
-	}
-
-	private static escapeHtml(value: string): string {
-		return value
-			.replaceAll("&", "&amp;")
-			.replaceAll("<", "&lt;")
-			.replaceAll(">", "&gt;");
-	}
-
-	private static sameStringArray(
-		actual: unknown,
-		expected: readonly string[],
-	): boolean {
-		return (
-			Array.isArray(actual) &&
-			actual.length === expected.length &&
-			actual.every((value, index) => value === expected[index])
-		);
 	}
 }

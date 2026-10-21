@@ -4,10 +4,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { CsvSpeakerCatalogStore } from "./csv-speaker-catalog-store.js";
 
 const directories: string[] = [];
+const noHistory = { read: async () => [] };
 afterEach(async () => {
 	await Promise.all(
 		directories
@@ -55,9 +56,9 @@ describe("CsvSpeakerCatalogStore", () => {
 			);
 			config.vcs.enabled = false;
 			await writeFile(join(root, "biome.json"), JSON.stringify(config));
-			const store = new CsvSpeakerCatalogStore(root);
+			const store = new CsvSpeakerCatalogStore(root, noHistory);
 			const original = await store.read();
-			const state = { version: 1 as const, reservedIds };
+			const state = reservedIds;
 			const formatter = fileURLToPath(
 				new URL(
 					"../../../../node_modules/@biomejs/biome/bin/biome",
@@ -66,9 +67,9 @@ describe("CsvSpeakerCatalogStore", () => {
 			);
 
 			// Act
-			await store.save(original, original.rows, state);
+			await store.save(original, original.entries, state);
 			const current = await store.read();
-			const unchanged = await store.save(current, current.rows, state);
+			const unchanged = await store.save(current, current.entries, state);
 			const formatted = await promisify(execFile)(
 				process.execPath,
 				[formatter, "format", "referentials/speaker-sync-state.json"],
@@ -76,7 +77,7 @@ describe("CsvSpeakerCatalogStore", () => {
 			);
 
 			// Assert
-			expect(current.state).toEqual(state);
+			expect(current.reservedIds).toEqual(state);
 			expect(unchanged).toBe(false);
 			expect(formatted.stderr).toBe("");
 		},
@@ -84,36 +85,119 @@ describe("CsvSpeakerCatalogStore", () => {
 	it("round-trips unknown columns and local field whitespace and avoids repeated writes", async () => {
 		// Arrange
 		const root = await workspace();
-		const store = new CsvSpeakerCatalogStore(root);
+		const store = new CsvSpeakerCatalogStore(root, noHistory);
 		const original = await store.read();
-		const state = { version: 1 as const, reservedIds: ["speaker-0001"] };
+		const state = ["speaker-0001"];
+
 		// Act
-		const changed = await store.save(original, original.rows, state);
+		const changed = await new CsvSpeakerCatalogStore(root, noHistory).save(
+			original,
+			original.entries,
+			state,
+		);
 		const current = await store.read();
-		const unchanged = await store.save(current, current.rows, state);
+		const unchanged = await store.save(current, current.entries, state);
+		const currentCsv = await readFile(
+			join(root, "referentials/speakers.csv"),
+			"utf8",
+		);
+
 		// Assert
 		expect(changed).toBe(true);
 		expect(unchanged).toBe(false);
-		expect(current.rows[0]).toMatchObject({
+		expect(current.entries[0]).toMatchObject({
 			phone: "  local phone  ",
-			notes: "private, notes",
-			speaker_id: "speaker-0001",
+			id: "speaker-0001",
 		});
+		expect(currentCsv).toContain('"private, notes"');
 	});
 	it("rejects concurrent catalog edits before writing", async () => {
 		// Arrange
 		const root = await workspace();
-		const store = new CsvSpeakerCatalogStore(root);
+		const store = new CsvSpeakerCatalogStore(root, noHistory);
 		const original = await store.read();
 		const modified =
 			"speaker_id,display_name,mail\nspeaker-0009,Edited,edited@example.test\n";
 		await writeFile(join(root, "referentials/speakers.csv"), modified);
+
 		// Act
-		const save = store.save(original, original.rows, original.state);
+		const failure = await store
+			.save(original, original.entries, original.reservedIds)
+			.catch((error: unknown) => error);
+		const currentCsv = await readFile(
+			join(root, "referentials/speakers.csv"),
+			"utf8",
+		);
+
 		// Assert
-		await expect(save).rejects.toThrow("Proposal source conflict.");
-		expect(
-			await readFile(join(root, "referentials/speakers.csv"), "utf8"),
-		).toBe(modified);
+		expect(failure).toMatchObject({ message: "Proposal source conflict." });
+		expect(currentCsv).toBe(modified);
 	});
+	it("loads deleted ID reservations before allocation and persists them without a workflow bootstrap", async () => {
+		// Arrange
+		const root = await workspace();
+		const history = { read: vi.fn().mockResolvedValue(["speaker-0008"]) };
+		const store = new CsvSpeakerCatalogStore(root, history);
+
+		// Act
+		const original = await store.read();
+		await store.save(original, original.entries, original.reservedIds);
+		const current = await store.read();
+
+		// Assert
+		expect(original.reservedIds).toEqual(["speaker-0008"]);
+		expect(current.reservedIds).toEqual(original.reservedIds);
+		expect(history.read).toHaveBeenCalledTimes(2);
+	});
+
+	it("rejects a changed historical reservation snapshot before persisting new IDs", async () => {
+		// Arrange
+		const root = await workspace();
+		const history = {
+			read: vi
+				.fn()
+				.mockResolvedValueOnce(["speaker-0008"])
+				.mockResolvedValueOnce(["speaker-0009"]),
+		};
+		const store = new CsvSpeakerCatalogStore(root, history);
+		const original = await store.read();
+		const originalCsv = await readFile(
+			join(root, "referentials/speakers.csv"),
+			"utf8",
+		);
+
+		// Act
+		const failure = await store
+			.save(original, original.entries, original.reservedIds)
+			.catch((error: unknown) => error);
+		const currentCsv = await readFile(
+			join(root, "referentials/speakers.csv"),
+			"utf8",
+		);
+
+		// Assert
+		expect(failure).toMatchObject({ code: "conflict" });
+		expect(currentCsv).toBe(originalCsv);
+	});
+
+	it.each(["", "{broken", '{"version":2,"reservedIds":[]}'])(
+		"rejects malformed existing allocation state without replacing it with history: %s",
+		async (state) => {
+			// Arrange
+			const root = await workspace();
+			await writeFile(
+				join(root, "referentials/speaker-sync-state.json"),
+				state,
+			);
+			const history = { read: vi.fn() };
+			const store = new CsvSpeakerCatalogStore(root, history);
+
+			// Act
+			const result = store.read();
+
+			// Assert
+			await expect(result).rejects.toMatchObject({ code: "invalid" });
+			expect(history.read).not.toHaveBeenCalled();
+		},
+	);
 });

@@ -1,10 +1,46 @@
 import { SpeakerSynchronizationError } from "@meetup-automation/journey";
-import { ProposalSourceError } from "@meetup-automation/referential";
+import {
+	ProposalSourceError,
+	SpeakerCatalogHistoryError,
+} from "@meetup-automation/referential";
 import { describe, expect, it } from "vitest";
 import { ActionMessages } from "./i18n/action-messages.js";
 import { SpeakerSyncFailureReport } from "./speaker-sync-failure-report.js";
 
 describe("SpeakerSyncFailureReport", () => {
+	it.each(["en", "fr"])(
+		"reports catalog history failures with accurate safe %s guidance",
+		(locale) => {
+			// Arrange
+			const cause = new SpeakerCatalogHistoryError();
+			cause.message = "PRIVATE private@example.test git history failed";
+			const error = new SpeakerSynchronizationError("read-catalog", cause);
+
+			// Act
+			const { report, prBody } = SpeakerSyncFailureReport.create(
+				error,
+				new ActionMessages(locale),
+			);
+
+			// Assert
+			expect(report.diagnostics).toEqual([
+				{
+					code: "speaker-sync.history-unavailable",
+					severity: "error",
+					message: expect.stringContaining("Speaker ID history is unavailable"),
+				},
+			]);
+			expect(prBody).toContain(
+				locale === "fr"
+					? "tout l'historique du dépôt"
+					: "complete repository history",
+			);
+			expect(prBody).toContain("fetch-depth: 0");
+			expect(JSON.stringify({ report, prBody })).not.toMatch(
+				/CFP|API key|PRIVATE|private@example.test/,
+			);
+		},
+	);
 	it.each([401, 403, 404, 500])(
 		"reports actionable HTTP %s failures without provider contents",
 		(status) => {
