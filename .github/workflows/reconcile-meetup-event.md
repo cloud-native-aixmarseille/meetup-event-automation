@@ -38,6 +38,7 @@ drafts and published events; **Meetup event published** under **Communication**
 records the verified status. The authoritative setup and recovery guide is [Meetup publication](../../docs/integrations/meetup-publication.md).
 
 All inputs and secrets are required; there are no defaults or workflow outputs.
+AI settings follow the shared [AI configuration contract](../../docs/reference/configuration.md#ai-configuration).
 Replace `<FULL_COMMIT_SHA>` in the usage template with a published revision that
 includes this workflow, and supply your repository's input values and secrets.
 
@@ -78,9 +79,9 @@ jobs:
       # This input is required.
       meetup-password: ""
 
-      # Gemini API key used by hCaptcha Challenger.
+      # API key for the selected AI provider.
       # This input is required.
-      gemini-api-key: ""
+      ai-api-key: ""
     with:
       # HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
       # This input is required.
@@ -114,9 +115,13 @@ jobs:
       # This input is required.
       locale: ""
 
-      # Gemini vision model used for pre-login hCaptcha challenges.
+      # AI provider identifier (gemini).
       # This input is required.
-      gemini-model: ""
+      ai-provider: ""
+
+      # Model identifier for the selected AI provider.
+      # This input is required.
+      ai-model: ""
 ```
 
 <!-- usage:end -->
@@ -136,7 +141,8 @@ jobs:
 | **`github-app-client-id`**         | GitHub App client ID for the consumer repository.                           | **true**     | **string** | -           |
 | **`conference-hall-event`**        | Conference Hall CFP slug for the current event agenda.                      | **true**     | **string** | -           |
 | **`locale`**                       | Language for the publication report (en or fr).                             | **true**     | **string** | -           |
-| **`gemini-model`**                 | Gemini vision model used for pre-login hCaptcha challenges.                 | **true**     | **string** | -           |
+| **`ai-provider`**                  | AI provider identifier (gemini).                                            | **true**     | **string** | -           |
+| **`ai-model`**                     | Model identifier for the selected AI provider.                              | **true**     | **string** | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->
@@ -150,7 +156,7 @@ jobs:
 | **`conference-hall-api-key`** | Read-only Conference Hall event API key.                       | **true**     |
 | **`meetup-email`**            | Email of the authorized Meetup organizer account.              | **true**     |
 | **`meetup-password`**         | Password of the authorized Meetup organizer account.           | **true**     |
-| **`gemini-api-key`**          | Gemini API key used by hCaptcha Challenger.                    | **true**     |
+| **`ai-api-key`**              | API key for the selected AI provider.                          | **true**     |
 
 <!-- secrets:end -->
 <!-- outputs:start -->
@@ -165,7 +171,7 @@ mints a consumer-scoped App token with contents read and issues write.
 
 The job holds `meetup-event-REPOSITORY_ID-ISSUE_NUMBER`, the same lock used by other
 event writers, with cancellation disabled and a 15-minute timeout. Meetup and
-Gemini credentials reach only the publication step. The workflow uploads no
+AI credentials reach only the publication step. The workflow uploads no
 browser state or artifacts. Callers subscribe to event issue changes and `issue_comment: [edited]` to
 resume approved publication automatically, and pin a published full commit SHA.
 The reusable workflow filters comment events to human edits of bot publication

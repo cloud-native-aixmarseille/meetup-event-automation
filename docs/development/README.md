@@ -155,6 +155,15 @@ Reusable workflows require inputs explicitly too and forward them to actions.
 See [localization](localization.md) and [action reporting](reporting.md) for the
 corresponding runtime responsibilities.
 
+Actions that use AI must follow the shared
+[AI configuration contract](../reference/configuration.md#ai-configuration)
+and parse its inputs through runtime `AiInput`. Reusable workflows must require
+and explicitly forward that contract. Inject the validated configuration through
+runtime composition; keep provider-specific credential mapping at the provider
+adapter boundary. Do not add AI settings to actions that do not use them.
+Update the shared parser and its validation when changing supported providers;
+do not add an action-specific parser or provider-specific public inputs.
+
 Keep current architectural rationale in the relevant development guide.
 Preserve [ADRs](../README.md#architecture-decisions) as decision history, with
 clear status and supersession links. Follow the

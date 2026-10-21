@@ -39,8 +39,9 @@ beforeEach(() => {
 		"issue-number": "42",
 		"meetup-email": "organizer@example.test",
 		"meetup-password": " synthetic-password ",
-		"gemini-api-key": "synthetic-key",
-		"gemini-model": "example-model",
+		"ai-api-key": "synthetic-key",
+		"ai-provider": "gemini",
+		"ai-model": "example-model",
 		"slack-token": "synthetic-slack-token",
 		"slack-organizer-channel-id": "C12345",
 		"github-token": "synthetic-token",
@@ -74,7 +75,14 @@ describe("Meetup publication action", () => {
 
 		// Assert
 		expect(mocks.create).toHaveBeenCalledWith(
-			expect.objectContaining(eventPublicationSettings),
+			expect.objectContaining({
+				...eventPublicationSettings,
+				ai: {
+					provider: "gemini",
+					model: "example-model",
+					apiKey: "synthetic-key",
+				},
+			}),
 		);
 		expect(mocks.execute).toHaveBeenCalledWith({
 			repository: "example/events",
@@ -132,8 +140,9 @@ describe("Meetup publication action", () => {
 		"asset-folder-url-prefix",
 		"meetup-email",
 		"meetup-password",
-		"gemini-api-key",
-		"gemini-model",
+		"ai-api-key",
+		"ai-provider",
+		"ai-model",
 		"github-token",
 		"issue-number",
 		"slack-token",
@@ -158,6 +167,7 @@ describe("Meetup publication action", () => {
 
 function subject() {
 	return new MeetupPublicationAction({
+		aiInput: new GithubActionsComposition().aiInput(),
 		publicationUrlInput: new GithubActionsComposition().publicationUrlInput(),
 		createJourney: (input) => mocks.create(input).get(),
 		runtimeInput: new GithubActionsComposition().runtimeInput(),

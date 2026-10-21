@@ -43,11 +43,50 @@ does not forward it to a reusable workflow.
 ## Meetup publication
 
 The dedicated [Meetup publication workflow](../../.github/workflows/reconcile-meetup-event.md)
-uses `MEETUP_EMAIL`, `MEETUP_PASSWORD`, and `GEMINI_API_KEY` secrets,
-`GEMINI_MODEL`, and the existing App and Conference Hall settings. Its explicit
-schedule and public venue mappings belong in `.github/meetup-publication.json`.
+uses `MEETUP_EMAIL` and `MEETUP_PASSWORD` secrets, the shared
+[AI configuration](#ai-configuration), and the existing App and Conference Hall
+settings. Its explicit schedule and public venue mappings belong in
+`.github/meetup-publication.json`.
 See [Meetup publication](../integrations/meetup-publication.md) for the schema,
 caller, prerequisites, and interrupted-run recovery.
+
+## AI configuration
+
+Actions that use AI require the same three inputs, without defaults:
+
+| Action input  | Reusable workflow parameter | Purpose                               |
+| ------------- | --------------------------- | ------------------------------------- |
+| `ai-provider` | String input `ai-provider`  | Supported provider identifier.        |
+| `ai-model`    | String input `ai-model`     | Explicit model for that provider.     |
+| `ai-api-key`  | Secret `ai-api-key`         | API key authorized to use that model. |
+
+The supported provider identifier is `gemini`. Meetup publication requires a
+model with image input and structured output, with API quota available to the
+supplied key. Both model and key must be nonblank. There is no automatic provider
+or model selection. Actions without AI behavior do not accept these inputs.
+
+The shared runtime `AiInput` parser validates these inputs and masks the API key
+before use. Runtime composition injects the validated configuration and maps it
+to the provider adapter's credentials. Provider-specific names remain inside
+that boundary; public callers use the shared names above.
+
+Repository variable and secret names belong to the caller. `AI_PROVIDER`,
+`AI_MODEL`, and `AI_API_KEY` are suitable storage names, but an existing secret
+can be forwarded directly without renaming it. For example, this partial
+reusable workflow caller uses a stored `GEMINI_API_KEY`:
+
+```yaml
+with:
+  ai-provider: ${{ vars.AI_PROVIDER }}
+  ai-model: ${{ vars.AI_MODEL }}
+secrets:
+  ai-api-key: ${{ secrets.GEMINI_API_KEY }}
+```
+
+Set `AI_PROVIDER` to `gemini` and `AI_MODEL` to the intended supported model.
+Forward the key explicitly as a reusable workflow secret, or as `ai-api-key`
+under `with` when invoking an action directly. Keep keys out of repository
+variables and committed files.
 
 ## Language
 

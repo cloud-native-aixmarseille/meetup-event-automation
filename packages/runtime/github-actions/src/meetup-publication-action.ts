@@ -2,6 +2,7 @@ import * as core from "@actions/core";
 import { context, getOctokit } from "@actions/github";
 import type { ManageMeetupPublication } from "@meetup-automation/journey";
 import type { ActionReportData } from "./action-report.js";
+import type { AiInput } from "./ai-input.js";
 import type { ConferenceHallInput } from "./conference-hall-input.js";
 import type { ActionMessages } from "./i18n/action-messages.js";
 import type { MeetupPublicationComposition } from "./meetup-publication-composition.js";
@@ -10,6 +11,7 @@ import type { PublicationUrlInput } from "./publication-url-input.js";
 import type { RuntimeInput } from "./runtime-input.js";
 
 export interface MeetupPublicationActionCollaborators {
+	readonly aiInput: Pick<AiInput, "read">;
 	readonly publicationUrlInput: Pick<
 		PublicationUrlInput,
 		| "readMeetupEventUrlPrefix"
@@ -39,7 +41,7 @@ export class MeetupPublicationAction {
 		);
 		const email = this.secret("meetup-email");
 		const password = this.secret("meetup-password");
-		const geminiApiKey = this.secret("gemini-api-key");
+		const ai = this.collaborators.aiInput.read();
 		const githubToken = this.secret("github-token");
 		const { owner, repo } = context.repo;
 		const journey = this.collaborators.createJourney({
@@ -57,12 +59,11 @@ export class MeetupPublicationAction {
 			client: getOctokit(githubToken),
 			email,
 			password,
-			geminiApiKey,
+			ai,
 			slackToken: this.secret("slack-token"),
 			slackOrganizerChannelId: core.getInput("slack-organizer-channel-id", {
 				required: true,
 			}),
-			geminiModel: core.getInput("gemini-model", { required: true }),
 			commentAuthorLogin: core.getInput("managed-comment-author", {
 				required: true,
 			}),

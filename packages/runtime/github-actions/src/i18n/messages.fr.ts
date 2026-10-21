@@ -31,7 +31,7 @@ export const FR_MESSAGES = {
 	"diagnostic.publication.meetup.uncertain":
 		"Synchronisation interrompue. Vérifiez Meetup et inscrivez le lien vérifié du brouillon ou de l'événement publié dans Meetup Link avant de relancer. Laissez Meetup event published décoché tant que la publication n'est pas confirmée. Ne supprimez le journal qu'après avoir vérifié qu'aucun événement n'a été créé.",
 	"diagnostic.publication.meetup.authentication":
-		"Connexion organisateur non vérifiée. Vérifiez le compte, les identifiants et Gemini ; terminez manuellement toute vérification non prise en charge.",
+		"Connexion organisateur non vérifiée. Vérifiez le compte, les identifiants et la configuration IA ; terminez manuellement toute vérification non prise en charge.",
 	"diagnostic.publication.meetup.editor":
 		"Impossible de préparer l'éditeur Meetup. Vérifiez les droits organisateur, le lieu configuré et les sélecteurs du navigateur.",
 	"diagnostic.publication.meetup.verification":

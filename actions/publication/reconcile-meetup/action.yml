@@ -40,11 +40,14 @@ inputs:
   meetup-password:
     description: Password of the authorized Meetup organizer account.
     required: true
-  gemini-api-key:
-    description: Gemini API key used for pre-login hCaptcha challenges.
+  ai-provider:
+    description: AI provider identifier (gemini).
     required: true
-  gemini-model:
-    description: Gemini vision model available to the supplied API key.
+  ai-model:
+    description: Model identifier for the selected AI provider.
+    required: true
+  ai-api-key:
+    description: API key for the selected AI provider.
     required: true
 runs:
   using: node24

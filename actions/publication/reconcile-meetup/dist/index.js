@@ -39541,6 +39541,54 @@ var ActionRunner = class {
   }
 };
 
+// packages/runtime/github-actions/src/ai-input.ts
+var AiInput = class {
+  constructor(runtimeInput) {
+    this.runtimeInput = runtimeInput;
+  }
+  runtimeInput;
+  read() {
+    const apiKey = getInput("ai-api-key", {
+      required: true,
+      trimWhitespace: false
+    });
+    setSecret(apiKey);
+    const normalizedApiKey = apiKey.trim();
+    if (normalizedApiKey && normalizedApiKey !== apiKey)
+      setSecret(normalizedApiKey);
+    return this.validate({
+      provider: getInput("ai-provider", {
+        required: true,
+        trimWhitespace: false
+      }),
+      model: getInput("ai-model", {
+        required: true,
+        trimWhitespace: false
+      }),
+      apiKey
+    });
+  }
+  validate(input) {
+    if (!this.runtimeInput.isObject(input))
+      throw new Error("Invalid AI configuration");
+    const provider = this.requiredString(input.provider, "ai-provider");
+    if (provider !== "gemini")
+      throw new Error("Invalid input: ai-provider. Supported provider: gemini");
+    return {
+      provider,
+      model: this.requiredString(input.model, "ai-model"),
+      apiKey: this.requiredString(input.apiKey, "ai-api-key")
+    };
+  }
+  requiredString(value, name) {
+    if (typeof value !== "string") throw new Error(`Invalid input: ${name}`);
+    const normalized = value.trim();
+    if (!normalized)
+      throw new Error(`Input required and not supplied: ${name}`);
+    return normalized;
+  }
+};
+
 // packages/runtime/github-actions/src/assets/asset-content-configuration.ts
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -40096,7 +40144,7 @@ var EN_MESSAGES2 = {
   "diagnostic.publication.meetup.link": "Set a valid event URL belonging to the configured Meetup group.",
   "diagnostic.publication.meetup.conflict": "The issue link and recorded Meetup event differ. Restore the recorded event link before running again.",
   "diagnostic.publication.meetup.uncertain": "Synchronization was interrupted. Check Meetup and enter the verified draft or published event URL in Meetup Link before running again. Leave Meetup event published unchecked until publication is confirmed. Delete the journal only if an organizer has verified that no event was created.",
-  "diagnostic.publication.meetup.authentication": "Organizer login could not be verified. Check the account, credentials, and Gemini configuration; complete any unsupported challenge interactively.",
+  "diagnostic.publication.meetup.authentication": "Organizer login could not be verified. Check the account, credentials, and AI configuration; complete any unsupported challenge interactively.",
   "diagnostic.publication.meetup.editor": "The Meetup editor could not be prepared. Check organizer permissions, the configured venue, and browser selectors.",
   "diagnostic.publication.meetup.verification": "Meetup did not return the expected saved event fields. Its identity is recorded; inspect the event and rerun to update it.",
   "diagnostic.issue-form.out-of-date": "Synchronize the issue form.",
@@ -40201,7 +40249,7 @@ var FR_MESSAGES2 = {
   "diagnostic.publication.meetup.link": "Renseignez une URL d'\xE9v\xE9nement valide du groupe Meetup configur\xE9.",
   "diagnostic.publication.meetup.conflict": "Le lien de l'issue diff\xE8re de l'\xE9v\xE9nement enregistr\xE9. R\xE9tablissez le lien enregistr\xE9 avant de relancer.",
   "diagnostic.publication.meetup.uncertain": "Synchronisation interrompue. V\xE9rifiez Meetup et inscrivez le lien v\xE9rifi\xE9 du brouillon ou de l'\xE9v\xE9nement publi\xE9 dans Meetup Link avant de relancer. Laissez Meetup event published d\xE9coch\xE9 tant que la publication n'est pas confirm\xE9e. Ne supprimez le journal qu'apr\xE8s avoir v\xE9rifi\xE9 qu'aucun \xE9v\xE9nement n'a \xE9t\xE9 cr\xE9\xE9.",
-  "diagnostic.publication.meetup.authentication": "Connexion organisateur non v\xE9rifi\xE9e. V\xE9rifiez le compte, les identifiants et Gemini ; terminez manuellement toute v\xE9rification non prise en charge.",
+  "diagnostic.publication.meetup.authentication": "Connexion organisateur non v\xE9rifi\xE9e. V\xE9rifiez le compte, les identifiants et la configuration IA ; terminez manuellement toute v\xE9rification non prise en charge.",
   "diagnostic.publication.meetup.editor": "Impossible de pr\xE9parer l'\xE9diteur Meetup. V\xE9rifiez les droits organisateur, le lieu configur\xE9 et les s\xE9lecteurs du navigateur.",
   "diagnostic.publication.meetup.verification": "Les champs enregistr\xE9s sur Meetup ne correspondent pas. L'identit\xE9 est conserv\xE9e ; v\xE9rifiez l'\xE9v\xE9nement puis relancez sa mise \xE0 jour.",
   "diagnostic.issue-form.out-of-date": "Synchronisez le formulaire d'issue.",
@@ -40547,6 +40595,9 @@ var SpeakerSyncFailureReport = class {
 
 // packages/runtime/github-actions/src/dependency-composition.ts
 var GithubActionsComposition = class {
+  aiInput() {
+    return new AiInput(this.runtimeInput());
+  }
   publicationUrlInput() {
     return new PublicationUrlInput();
   }
@@ -44828,7 +44879,7 @@ var MeetupPublicationAction = class {
     );
     const email = this.secret("meetup-email");
     const password = this.secret("meetup-password");
-    const geminiApiKey = this.secret("gemini-api-key");
+    const ai3 = this.collaborators.aiInput.read();
     const githubToken = this.secret("github-token");
     const { owner, repo } = context2.repo;
     const journey = this.collaborators.createJourney({
@@ -44843,12 +44894,11 @@ var MeetupPublicationAction = class {
       client: getOctokit(githubToken),
       email,
       password,
-      geminiApiKey,
+      ai: ai3,
       slackToken: this.secret("slack-token"),
       slackOrganizerChannelId: getInput("slack-organizer-channel-id", {
         required: true
       }),
-      geminiModel: getInput("gemini-model", { required: true }),
       commentAuthorLogin: getInput("managed-comment-author", {
         required: true
       }),
@@ -46604,15 +46654,11 @@ var MeetupEventGatewayFactory = class {
     this.collaborators = collaborators;
   }
   collaborators;
-  create(credentials, solverDirectory, geminiApiKey, geminiModel, groupUrl) {
+  create(credentials, challenge, groupUrl) {
     return this.collaborators.createMeetupEventGateway(
       chromium,
       credentials,
-      this.collaborators.hcaptchaChallengeFactory.create(
-        solverDirectory,
-        geminiApiKey,
-        geminiModel
-      ),
+      challenge,
       groupUrl
     );
   }
@@ -46921,7 +46967,6 @@ var MeetupEventGatewayComposition = class {
   }
   meetupEventGatewayFactory() {
     return new MeetupEventGatewayFactory({
-      hcaptchaChallengeFactory: this.hcaptchaChallengeFactory(),
       createMeetupEventGateway: (...args) => this.meetupEventGateway(...args)
     });
   }
@@ -66942,6 +66987,7 @@ var OrganizerApprovalComposition = class {
 // packages/runtime/github-actions/src/meetup-publication-composition.ts
 var MeetupPublicationComposition = class _MeetupPublicationComposition {
   static create(input) {
+    const ai3 = new GithubActionsComposition().aiInput().validate(input.ai);
     const container = EventComposition.createEventContainer(input);
     container.bind(ManageMeetupPublication).toDynamicValue((context3) => {
       const prefix = input.meetupEventUrlPrefix;
@@ -66966,19 +67012,24 @@ var MeetupPublicationComposition = class _MeetupPublicationComposition {
         ),
         gateway: new MeetupEventGatewayComposition().meetupEventGatewayFactory().create(
           { email: input.email, password: input.password },
-          fileURLToPath(
-            new URL(
-              "../../../../packages/adapter/meetup-event-gateway/python/",
-              import.meta.url
-            )
-          ),
-          input.geminiApiKey,
-          input.geminiModel,
+          _MeetupPublicationComposition.challenge(ai3),
           group.value
         )
       });
     });
     return container;
+  }
+  static challenge(ai3) {
+    return new MeetupEventGatewayComposition().hcaptchaChallengeFactory().create(
+      fileURLToPath(
+        new URL(
+          "../../../../packages/adapter/meetup-event-gateway/python/",
+          import.meta.url
+        )
+      ),
+      ai3.apiKey,
+      ai3.model
+    );
   }
   static approval(input) {
     return OrganizerApprovalComposition.create(
@@ -67007,6 +67058,7 @@ var MeetupPublicationComposition = class _MeetupPublicationComposition {
 var MeetupActionComposition = class {
   meetupPublicationAction() {
     return new MeetupPublicationAction({
+      aiInput: new GithubActionsComposition().aiInput(),
       publicationUrlInput: new GithubActionsComposition().publicationUrlInput(),
       createJourney: (input) => MeetupPublicationComposition.create(input).get(ManageMeetupPublication),
       runtimeInput: new GithubActionsComposition().runtimeInput(),

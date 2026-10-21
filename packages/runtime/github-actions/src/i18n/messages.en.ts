@@ -29,7 +29,7 @@ export const EN_MESSAGES = {
 	"diagnostic.publication.meetup.uncertain":
 		"Synchronization was interrupted. Check Meetup and enter the verified draft or published event URL in Meetup Link before running again. Leave Meetup event published unchecked until publication is confirmed. Delete the journal only if an organizer has verified that no event was created.",
 	"diagnostic.publication.meetup.authentication":
-		"Organizer login could not be verified. Check the account, credentials, and Gemini configuration; complete any unsupported challenge interactively.",
+		"Organizer login could not be verified. Check the account, credentials, and AI configuration; complete any unsupported challenge interactively.",
 	"diagnostic.publication.meetup.editor":
 		"The Meetup editor could not be prepared. Check organizer permissions, the configured venue, and browser selectors.",
 	"diagnostic.publication.meetup.verification":

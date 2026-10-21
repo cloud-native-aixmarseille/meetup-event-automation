@@ -26,10 +26,10 @@ recovery journal also retains the event identity for retries.
 ## Configure the consumer repository
 
 Use a verified organizer account with password login and permission to schedule
-events for the configured group. Set Actions secrets `MEETUP_EMAIL`,
-`MEETUP_PASSWORD`, and `GEMINI_API_KEY`. Set variable `GEMINI_MODEL` to a Gemini
-model with image input, structured output, and available API quota. The workflow
-also requires the existing GitHub App and Conference Hall credentials; see
+events for the configured group. Set Actions secrets `MEETUP_EMAIL` and
+`MEETUP_PASSWORD`, then provide the shared
+[AI configuration](../reference/configuration.md#ai-configuration) for challenge
+handling. The workflow also requires the existing GitHub App and Conference Hall credentials; see
 [setup](../usage/setup.md). Forward each credential explicitly, including the
 Slack bot token and organizer channel used for approval notifications and reactions.
 Pass the three required [publication URL inputs](../reference/configuration.md#publication-url-inputs)
@@ -67,7 +67,7 @@ access.
 Selected talks and speaker names are resolved through the existing event journey.
 
 Call `reconcile-meetup-event.yml` with the issue number, locale, GitHub App client
-ID, Conference Hall event slug, Gemini model, organizer Slack channel, the three
+ID, Conference Hall event slug, AI provider and model, organizer Slack channel, the three
 publication URL inputs, and its six required secrets.
 Consumer workflows must call it on event issue changes and on `issue_comment: [edited]` so an organizer's approval resumes publication automatically. A manual
 run also supports recovery. Pin all consumer automation callers to the same
@@ -108,14 +108,15 @@ jobs:
       meetup-event-url-prefix: ${{ vars.MEETUP_EVENT_URL_PREFIX }}
       community-event-url-prefixes: ${{ vars.COMMUNITY_EVENT_URL_PREFIXES }}
       asset-folder-url-prefix: ${{ vars.ASSET_FOLDER_URL_PREFIX }}
-      gemini-model: ${{ vars.GEMINI_MODEL }}
+      ai-provider: ${{ vars.AI_PROVIDER }}
+      ai-model: ${{ vars.AI_MODEL }}
       slack-organizer-channel-id: ${{ vars.SLACK_ORGANIZER_CHANNEL_ID }}
     secrets:
       github-app-private-key: ${{ secrets.CI_BOT_APP_PRIVATE_KEY }}
       conference-hall-api-key: ${{ secrets.CONFERENCE_HALL_API_KEY }}
       meetup-email: ${{ secrets.MEETUP_EMAIL }}
       meetup-password: ${{ secrets.MEETUP_PASSWORD }}
-      gemini-api-key: ${{ secrets.GEMINI_API_KEY }}
+      ai-api-key: ${{ secrets.GEMINI_API_KEY }}
       slack-token: ${{ secrets.SLACK_BOT_TOKEN }}
 ```
 

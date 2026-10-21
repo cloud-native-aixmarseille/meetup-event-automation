@@ -15,11 +15,13 @@ import {
 import { MeetupEventGatewayComposition } from "@meetup-automation/meetup-event-gateway";
 import { MeetupGroupUrl } from "@meetup-automation/publication";
 import { SlackNotificationGatewayComposition } from "@meetup-automation/slack-notification-gateway";
+import type { AiConfiguration } from "./ai-configuration.js";
 import {
 	EventComposition,
 	type EventCompositionInput,
 	SERVICES,
 } from "./composition.js";
+import { GithubActionsComposition } from "./dependency-composition.js";
 import { OrganizerApprovalComposition } from "./organizer-approval-composition.js";
 
 export class MeetupPublicationComposition {
@@ -30,12 +32,12 @@ export class MeetupPublicationComposition {
 			settings: MeetupPublicationSettings;
 			email: string;
 			password: string;
-			geminiApiKey: string;
-			geminiModel: string;
+			ai: AiConfiguration;
 			slackToken: string;
 			slackOrganizerChannelId: string;
 		},
 	) {
+		const ai = new GithubActionsComposition().aiInput().validate(input.ai);
 		const container = EventComposition.createEventContainer(input);
 		container.bind(ManageMeetupPublication).toDynamicValue((context) => {
 			const prefix = input.meetupEventUrlPrefix;
@@ -63,19 +65,26 @@ export class MeetupPublicationComposition {
 					.meetupEventGatewayFactory()
 					.create(
 						{ email: input.email, password: input.password },
-						fileURLToPath(
-							new URL(
-								"../../../../packages/adapter/meetup-event-gateway/python/",
-								import.meta.url,
-							),
-						),
-						input.geminiApiKey,
-						input.geminiModel,
+						MeetupPublicationComposition.challenge(ai),
 						group.value,
 					),
 			});
 		});
 		return container;
+	}
+	private static challenge(ai: AiConfiguration) {
+		return new MeetupEventGatewayComposition()
+			.hcaptchaChallengeFactory()
+			.create(
+				fileURLToPath(
+					new URL(
+						"../../../../packages/adapter/meetup-event-gateway/python/",
+						import.meta.url,
+					),
+				),
+				ai.apiKey,
+				ai.model,
+			);
 	}
 	private static approval(
 		input: EventCompositionInput & {

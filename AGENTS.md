@@ -80,6 +80,13 @@ Keep `pnpm check:interfaces` in both local and CI lint commands. Its checks must
 reject constant flags, empty-only inputs, and logging-only output references;
 new script consumers need reviewed data-flow checks rather than a blanket bypass.
 
+For actions that use AI, enforce the shared
+[AI configuration contract](docs/reference/configuration.md#ai-configuration)
+and its runtime `AiInput` parser, as required by the
+[development guide](docs/development/README.md#action-interface-rules).
+Keep provider-specific credential mapping at the adapter boundary and omit AI
+inputs from actions that do not use AI.
+
 Every public GitHub Action must follow the Action reporting contract in
 [the action reporting guide](docs/development/reporting.md): use
 `await runner.run` on the composed `ActionRunner` instance with its action title message ID and the explicit
