@@ -4,6 +4,26 @@ import { CATALOGS } from "./catalog.js";
 import type { MessageParameters } from "./message-parameters.js";
 
 const parameters = {
+	"approval.meetup.details": {
+		title: "Example",
+		date: "2099-06-08",
+		startTime: "18:45",
+		endTime: "20:45",
+		timeZone: "Europe/Paris",
+		venue: "Example Venue",
+		city: "Marseille",
+		url: "https://www.meetup.com/example/events/123/",
+	},
+	"approval.meetup.request": { approveMark: " ", rejectMark: " " },
+	"approval.meetup.final": {
+		status: "approved",
+		actor: "organizer",
+		decidedAt: "2099-06-01T10:00:00Z",
+	},
+	"approval.meetup.slack": {
+		date: "2099-06-08",
+		url: "https://github.com/example/events/issues/42#issuecomment-100",
+	},
 	"follow-up.title": { date: "2099-06-08" },
 	"follow-up.instructions": {},
 	"follow-up.task": { task: "thank_host" },

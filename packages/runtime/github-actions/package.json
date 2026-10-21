@@ -5,6 +5,7 @@
 	"type": "module",
 	"exports": "./src/index.ts",
 	"dependencies": {
+		"@meetup-automation/meetup-event-gateway": "workspace:*",
 		"@actions/core": "^3.0.1",
 		"@actions/github": "^9.1.1",
 		"@meetup-automation/communication": "workspace:*",
@@ -31,6 +32,7 @@
 		"@meetup-automation/conference-hall-proposal-source": "workspace:*",
 		"@meetup-automation/google-slides-content-repository": "workspace:*",
 		"@meetup-automation/google-docs-content-repository": "workspace:*",
-		"@meetup-automation/https-asset-image-repository": "workspace:*"
+		"@meetup-automation/https-asset-image-repository": "workspace:*",
+		"@meetup-automation/github-publication-journal": "workspace:*"
 	}
 }

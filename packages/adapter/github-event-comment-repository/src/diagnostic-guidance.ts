@@ -116,6 +116,10 @@ export const GUIDANCE = new Map<
 		["Agenda", "comment.guidance.event.agenda.description.missing"],
 	],
 	[
+		"publication.meetup.unpublished",
+		["Meetup Link", "comment.guidance.publication.meetup.unpublished"],
+	],
+	[
 		"publication.meetup.missing",
 		["Meetup Link", "comment.guidance.publication.meetup.missing"],
 	],

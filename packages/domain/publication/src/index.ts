@@ -65,3 +65,12 @@ export { ContentContractPolicy } from "./domain/content-contract-policy.js";
 export { ContentFingerprint } from "./domain/content-fingerprint.js";
 export { ContentError } from "./domain/content-error.js";
 export { ReconcileAssetContent } from "./application/reconcile-asset-content.js";
+export type {
+	ScheduledEvent,
+	ScheduledEventGateway,
+	SavedScheduledEvent,
+	PublicationJournal,
+	PublicationRecord,
+} from "./application/scheduled-event-ports.js";
+export { ScheduledEventError } from "./domain/scheduled-event-error.js";
+export { ScheduledEventPolicy } from "./domain/scheduled-event-policy.js";

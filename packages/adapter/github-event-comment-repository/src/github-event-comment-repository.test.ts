@@ -166,6 +166,35 @@ describe("renderDiagnosticComment", () => {
 		expect(resolved).toContain("✅ Informations complètes."); // codespell:ignore informations
 	});
 
+	it.each(["en", "fr"] as const)(
+		"renders publication status guidance in %s",
+		(locale) => {
+			// Arrange
+			const diagnostic: EventDiagnostic = {
+				code: "publication.meetup.unpublished",
+				severity: "warning",
+				category: "incomplete",
+				field: "publicationLinks.meetup",
+				message: "Internal message",
+			};
+			const messages = new EventCommentMessages(locale);
+
+			// Act
+			const body = GitHubEventCommentRepository.renderDiagnosticComment(
+				[diagnostic, diagnostic],
+				messages,
+			);
+
+			// Assert
+			expect(body).toContain("Meetup");
+			expect(body).toContain(
+				locale === "fr" ? "Approuvez ou refusez" : "Approve or reject",
+			);
+			expect(body.match(/- \[ \] \*\*Meetup Link/g)).toHaveLength(1);
+			expect(body).not.toContain("Internal message");
+		},
+	);
+
 	it("renders incomplete event fields as an actionable checklist in form order", () => {
 		// Arrange
 		const diagnostics = [

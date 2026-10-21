@@ -1,0 +1,14 @@
+[extend]
+useDefault = true
+
+[[rules]]
+id = "generic-api-key"
+
+[[rules.allowlists]]
+description = "Prettier AST visitor function in the generated Meetup action; contains no credential literal."
+condition = "AND"
+regexTarget = "line"
+paths = ['''(^|/)actions/publication/reconcile-meetup/dist/index\.js$''']
+regexes = [
+  '''^\s*return [\w$]+ === "getVisitorKeys" \? \([\w$]+ \?\? \([\w$]+ = [\w$]+\.getVisitorKeys \? [\w$]+\([\w$]+\.getVisitorKeys, [\w$]+\.massageAstNode \|\| [\w$]+\.embed\) : [\w$]+\), [\w$]+\) : Reflect\.get\([\w$]+, [\w$]+, [\w$]+\);$''',
+]

@@ -23,11 +23,13 @@ page for each topic below.
 - [Google Drive assets](integrations/assets.md)
 - [OpenFeedback and Kutt](integrations/feedback.md)
 - [Email and Slack](integrations/communications.md)
+- [Meetup event publication](integrations/meetup-publication.md)
 
 ## Workflow contracts
 
 | Workflow                                                                                              | Purpose                                                    |
 | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| [Create or update Meetup event](../.github/workflows/reconcile-meetup-event.md)                       | Create/update drafts and publish after organizer approval. |
 | [Synchronize Conference Hall speakers](../.github/workflows/synchronize-conference-hall-speakers.md)  | Prepare a private catalog and form review PR.              |
 | [Update meetup issue](../.github/workflows/update-meetup-issue.md)                                    | Process issue changes.                                     |
 | [Check active meetup issues](../.github/workflows/check-active-meetup-issues.md)                      | Run the scheduled or manual audit.                         |
@@ -38,6 +40,7 @@ page for each topic below.
 
 | Action                                                                                  | Purpose                                                                                |
 | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| [Create or update Meetup event](../actions/publication/reconcile-meetup/README.md)      | Create a draft or update the event described by a meetup issue.                        |
 | [Reconcile event](../actions/event/reconcile/README.md)                                 | Validate and normalize one meetup issue.                                               |
 | [List active events](../actions/event/list-active/README.md)                            | Select issues for an audit.                                                            |
 | [Synchronize speakers](../actions/referential/sync-speakers/README.md)                  | Prepare a validated private speaker catalog from Conference Hall.                      |
@@ -102,6 +105,7 @@ docs/
 ├── integrations/
 │   ├── conference-hall.md
 │   ├── assets.md
+│   ├── meetup-publication.md
 │   ├── feedback.md
 │   └── communications.md
 ├── development/

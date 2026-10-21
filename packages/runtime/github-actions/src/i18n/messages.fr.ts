@@ -1,5 +1,42 @@
 import type { EN_MESSAGES } from "./messages.en.js";
 export const FR_MESSAGES = {
+	"diagnostic.publication.meetup.approval-pending":
+		"Approuvez ou refusez la publication dans le commentaire d'approbation. L'événement reste en brouillon avant approbation.",
+	"diagnostic.publication.meetup.approval-rejected":
+		"La publication a été refusée. L'événement reste en brouillon ; toute modification nécessite une nouvelle approbation.",
+	"diagnostic.publication.meetup.approval-unavailable":
+		"Impossible de vérifier l'approbation de publication. Vérifiez le commentaire et les permissions de la GitHub App avant de relancer.",
+	"diagnostic.publication.meetup.approval-notification-failed":
+		"La notification d'approbation n'a pas pu être confirmée. Consultez le commentaire d'approbation dans l'issue.",
+
+	"diagnostic.publication.meetup.source":
+		"La lecture des sources a échoué. Résolvez les diagnostics techniques des sources avant de synchroniser.",
+	"diagnostic.publication.meetup.unavailable":
+		"Le démarrage du navigateur ou la connexion a échoué. Vérifiez les dépendances, le réseau, le solveur et les sélecteurs de connexion.",
+	"action.publication.reconcile-meetup":
+		"Créer ou mettre à jour un événement Meetup",
+	"report.meetup.draft": "evenement_meetup=brouillon approbation=requise",
+	"report.meetup.review":
+		"Vérifiez le brouillon : {url}. Approuvez sa publication dans le commentaire ; l'automatisation le publie et coche Meetup event published après vérification.",
+	"report.meetup.updated": "evenement_meetup=synchronise",
+	"report.meetup.skipped": "evenement_meetup=ignore",
+	"report.meetup.blocked": "evenement_meetup=bloque",
+	"diagnostic.publication.meetup.inactive":
+		"La publication Meetup est inactive pour cette issue.",
+	"diagnostic.publication.meetup.prerequisites":
+		"Complétez la date future, le titre, la description, les confirmations, le programme résolu et le lieu public, puis corrigez les cases mal formées dans Communication avant de synchroniser.",
+	"diagnostic.publication.meetup.link":
+		"Renseignez une URL d'événement valide du groupe Meetup configuré.",
+	"diagnostic.publication.meetup.conflict":
+		"Le lien de l'issue diffère de l'événement enregistré. Rétablissez le lien enregistré avant de relancer.",
+	"diagnostic.publication.meetup.uncertain":
+		"Synchronisation interrompue. Vérifiez Meetup et inscrivez le lien vérifié du brouillon ou de l'événement publié dans Meetup Link avant de relancer. Laissez Meetup event published décoché tant que la publication n'est pas confirmée. Ne supprimez le journal qu'après avoir vérifié qu'aucun événement n'a été créé.",
+	"diagnostic.publication.meetup.authentication":
+		"Connexion organisateur non vérifiée. Vérifiez le compte, les identifiants et Gemini ; terminez manuellement toute vérification non prise en charge.",
+	"diagnostic.publication.meetup.editor":
+		"Impossible de préparer l'éditeur Meetup. Vérifiez les droits organisateur, le lieu configuré et les sélecteurs du navigateur.",
+	"diagnostic.publication.meetup.verification":
+		"Les champs enregistrés sur Meetup ne correspondent pas. L'identité est conservée ; vérifiez l'événement puis relancez sa mise à jour.",
 	"diagnostic.issue-form.out-of-date": "Synchronisez le formulaire d'issue.",
 	"diagnostic.issue-form.updated": "Formulaire d'issue synchronisé.",
 	"report.speaker-sync.pr-title":

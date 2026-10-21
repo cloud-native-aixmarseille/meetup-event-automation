@@ -16,6 +16,9 @@
 		"resolveJsonModule": true,
 		"types": ["node", "vitest/globals"],
 		"paths": {
+			"@meetup-automation/meetup-event-gateway": [
+				"./packages/adapter/meetup-event-gateway/src/index.ts"
+			],
 			"@meetup-automation/event": ["./packages/domain/event/src/index.ts"],
 			"@meetup-automation/referential": [
 				"./packages/domain/referential/src/index.ts"
@@ -88,6 +91,9 @@
 			],
 			"@meetup-automation/https-asset-image-repository": [
 				"./packages/adapter/https-asset-image-repository/src/index.ts"
+			],
+			"@meetup-automation/github-publication-journal": [
+				"./packages/adapter/github-publication-journal/src/index.ts"
 			]
 		}
 	}

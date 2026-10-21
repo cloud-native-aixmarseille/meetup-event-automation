@@ -179,6 +179,11 @@ export class AttentionPresenter implements AttentionContent {
 			: text;
 	}
 	private action(episode: AttentionEpisode): string {
+		if (
+			episode.condition.code === "approval-pending" &&
+			episode.condition.resource.startsWith("meetup-publication:")
+		)
+			return this.messages.t("action.meetup-approval-pending");
 		return episode.condition.code === "integration-failure"
 			? this.messages.failure(episode.condition.resource)
 			: this.messages.t(`action.${episode.condition.code}`, {

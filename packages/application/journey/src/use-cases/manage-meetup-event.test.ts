@@ -3,11 +3,56 @@ import {
 	catalog,
 	config,
 	createEventDependencies,
+	event,
 	identity,
 } from "../../testing/meetup-journey.fixtures.js";
 import { ManageMeetupEvent } from "./manage-meetup-event.js";
 
 describe("ManageMeetupEvent manual publication tasks", () => {
+	it.each([false, true])(
+		"requires a published Meetup event for readiness: %s",
+		async (completed) => {
+			// Arrange
+			const eventDependencies = createEventDependencies();
+			vi.mocked(eventDependencies.documentCodec.decode).mockReturnValue({
+				event: {
+					...event,
+					occurrenceStatus: "scheduled",
+					operationalChecklists: {
+						...event.operationalChecklists,
+						communication: [{ name: "Meetup event published", completed }],
+					},
+				},
+				diagnostics: [],
+			});
+			const useCase = new ManageMeetupEvent({
+				proposalSource: { load: vi.fn() },
+				config,
+				referentialRepository: { load: async () => catalog },
+				eventDependencies,
+			});
+
+			// Act
+			const result = await useCase.execute({ identity, mode: "check" });
+
+			// Assert
+			expect(result.skipped).toBe(false);
+			if (result.skipped) throw new Error("Expected a managed event");
+			expect(result.isReady).toBe(completed);
+			expect(
+				result.diagnostics.some(
+					(item) => item.code === "publication.meetup.unpublished",
+				),
+			).toBe(!completed);
+			expect(result.manualPublicationTasks).toContainEqual(
+				expect.objectContaining({
+					kind: "publish-meetup-event",
+					status: completed ? "completed" : "pending",
+				}),
+			);
+		},
+	);
+
 	it("honors injected rules instead of replacing them with defaults", async () => {
 		// Arrange
 		const evaluate = vi.fn().mockReturnValue({

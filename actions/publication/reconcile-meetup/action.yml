@@ -1,0 +1,42 @@
+name: Create or update Meetup event
+description: Create or update a Meetup draft and publish it after verified organizer approval.
+inputs:
+  slack-token:
+    description: Slack bot token for organizer approval notifications and decision reactions.
+    required: true
+  slack-organizer-channel-id:
+    description: Organizer Slack channel receiving publication approval requests.
+    required: true
+  issue-number:
+    description: Meetup source issue number.
+    required: true
+  github-token:
+    description: Consumer repository token with contents read and issues write.
+    required: true
+  managed-comment-author:
+    description: Login of the GitHub App bot that owns the publication journal.
+    required: true
+  conference-hall-event:
+    description: Conference Hall CFP slug used to resolve the current event agenda.
+    required: true
+  conference-hall-api-key:
+    description: Read-only Conference Hall event API key.
+    required: true
+  locale:
+    description: Language for the publication report (en or fr).
+    required: true
+  meetup-email:
+    description: Email of the authorized Meetup organizer account.
+    required: true
+  meetup-password:
+    description: Password of the authorized Meetup organizer account.
+    required: true
+  gemini-api-key:
+    description: Gemini API key used for pre-login hCaptcha challenges.
+    required: true
+  gemini-model:
+    description: Gemini vision model available to the supplied API key.
+    required: true
+runs:
+  using: node24
+  main: dist/index.js

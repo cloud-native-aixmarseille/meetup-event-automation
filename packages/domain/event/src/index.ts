@@ -61,6 +61,7 @@ export {
 	type EventLifecycleEvaluation,
 } from "./domain/lifecycle.js";
 export { ManagedLabelsRule } from "./domain/managed-labels-rule.js";
+export { MeetupPublicationChecklist } from "./domain/meetup-publication-checklist.js";
 export { MeetupEventMigration } from "./domain/meetup-event-migration.js";
 export {
 	type AgendaEntry,

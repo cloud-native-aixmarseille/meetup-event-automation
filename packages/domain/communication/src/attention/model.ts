@@ -93,7 +93,7 @@ export interface AttentionApproval {
 	readonly revision: string;
 	readonly requestedAt: string;
 	readonly commentId: number;
-	readonly kind: "email-introduction" | "email-thanks";
+	readonly kind: "email-introduction" | "email-thanks" | "meetup-publication";
 	readonly eventDate: string;
 	readonly status: "pending" | "approved" | "rejected";
 }

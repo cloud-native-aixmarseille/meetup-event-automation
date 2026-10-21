@@ -7,9 +7,13 @@ import { ApprovalMessages } from "./i18n/approval-messages.js";
 import { ApprovalDetailsPresenter } from "./approval-details-presenter.js";
 import { FollowUpPresenter } from "./follow-up-presenter.js";
 
+import { MeetupApprovalPresenter } from "./meetup-approval-presenter.js";
+
 export class ApprovalPresenter {
 	constructor(private readonly messages: ApprovalMessages) {}
 	issue(record: StoredApproval, decision: ApprovalDecision): string {
+		if (record.kind === "meetup-publication")
+			return new MeetupApprovalPresenter(this.messages).issue(record, decision);
 		const heading = [
 			ApprovalRecord.marker(record),
 			...new FollowUpPresenter(this.messages).render(record),
@@ -66,6 +70,11 @@ export class ApprovalPresenter {
 		return { status: "pending" };
 	}
 	slack(record: StoredApproval, url: string): string {
+		if (record.kind === "meetup-publication")
+			return this.messages.t("approval.meetup.slack", {
+				date: record.eventDate,
+				url,
+			});
 		return this.messages.t("approval.slack", {
 			kind: record.kind.replace("email-", ""),
 			date: record.eventDate,

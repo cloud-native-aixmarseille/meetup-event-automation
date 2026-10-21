@@ -79,7 +79,7 @@ export const event: MeetupEvent = {
 	},
 	operationalChecklists: {
 		slidesAndContent: [],
-		communication: [],
+		communication: [{ name: "Meetup event published", completed: true }],
 		postEvent: [
 			{ name: "Mail thanks hoster", completed: true },
 			{ name: "Mail thanks speakers", completed: true },

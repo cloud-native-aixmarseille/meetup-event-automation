@@ -1,6 +1,7 @@
 import {
 	type EventDiagnostic,
 	type MeetupEvent,
+	MeetupPublicationChecklist,
 	POST_EVENT_TASK_NAMES,
 } from "@meetup-automation/event";
 import {
@@ -30,6 +31,19 @@ export class EventPublicationEvaluation {
 					message: `${field} publication link is required before the event is ready`,
 				});
 			}
+		}
+		if (
+			event.publicationLinks.meetup &&
+			!MeetupPublicationChecklist.isPublished(event)
+		) {
+			diagnostics.push({
+				code: "publication.meetup.unpublished",
+				severity: "warning",
+				category: "incomplete",
+				field: "publicationLinks.meetup",
+				message:
+					"Meetup publication must be confirmed in the Communication checklist before the event is ready",
+			});
 		}
 		const engine = new PublicationUrlPolicyEngine(
 			PublicationUrlPolicies.createDefaultPublicationUrlPolicies({
@@ -74,6 +88,7 @@ export class EventPublicationEvaluation {
 			timeZone: event.timeZone,
 			occurrenceStatus: event.occurrenceStatus,
 			references: event.publicationLinks,
+			meetupPublished: MeetupPublicationChecklist.isPublished(event),
 			slidesPublished: EventPublicationEvaluation.checklistTaskIsCompleted(
 				event.operationalChecklists.postEvent,
 				POST_EVENT_TASK_NAMES.shareSlides,

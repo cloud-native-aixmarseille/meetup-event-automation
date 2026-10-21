@@ -172,7 +172,7 @@ explicit destination through `slack-organizer-channel-id`. Public Slack
 announcement tasks are manual and do not share this routing.
 
 The journey's `OrganizerApproval` port gates each due email batch. The GitHub
-adapter owns trusted request comments, localized approval choices and final
+adapter owns trusted email and Meetup publication request comments, localized approval choices and final
 results, GitHub GraphQL editor/history verification, current write-permission
 checks, and issue/Slack presentation. It durably records the verified human
 identity and final decision in the original bot comment before authorizing mail.
@@ -198,6 +198,12 @@ and uncertain intents are not automatically resent. A definitively deferred
 attempt releases its reservation for a safe retry. The GitHub ledger depends on
 the shared workflow lock; do not dispatch outside the official workflows or
 claim exactly-once delivery.
+
+Meetup publication approval binds the complete projected event and draft URL to
+a SHA-256 revision. The browser publishes only an existing matching draft after
+rechecking the issue snapshot and trusted approval. Publication is verified before
+the issue checkbox is checked. Draft creation and publication are separate gateway
+operations; a saved URL and approval are independently durable for retries.
 
 Organizer attention has separate domain-owned conditions, episodes, reminder windows,
 and notification reservations. The journey gathers typed stage outcomes and

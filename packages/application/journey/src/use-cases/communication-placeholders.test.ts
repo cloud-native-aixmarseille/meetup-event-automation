@@ -3,6 +3,11 @@ import { CommunicationPlaceholders } from "./communication-placeholders.js";
 
 const event = {
 	date: "2099-06-08",
+	operationalChecklists: {
+		slidesAndContent: [],
+		postEvent: [],
+		communication: [{ name: "Meetup event published", completed: true }],
+	},
 	publicationLinks: {
 		meetup: "https://www.meetup.com/example-group/events/123",
 		community: "https://community.example.test/event",
@@ -50,4 +55,21 @@ describe("email event placeholders", () => {
 			);
 		},
 	);
+	it("withholds the draft link from email placeholders", () => {
+		// Arrange
+		const draft = {
+			...event,
+			operationalChecklists: {
+				...event.operationalChecklists,
+				communication: [{ name: "Meetup event published", completed: false }],
+			},
+		};
+
+		// Act
+		const result = CommunicationPlaceholders.eventPlaceholders(draft);
+
+		// Assert
+		expect(result).not.toHaveProperty("eventMeetupUrl");
+		expect(result.eventCncfUrl).toBe(event.publicationLinks.community);
+	});
 });

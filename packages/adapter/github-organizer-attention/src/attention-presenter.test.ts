@@ -290,4 +290,25 @@ describe("localized attention projection", () => {
 		expect(comment).toContain("- [ ]");
 		expect(comment).not.toContain("Points résolus");
 	});
+	it("keeps one Meetup publication approval action and its direct link", () => {
+		// Arrange
+		const presenter = new AttentionPresenter("example/meetups", 42);
+		const action = "Approve or reject Meetup publication.";
+		presenter.setDiagnosticComment(
+			100,
+			`<!-- meetup-automation:event-diagnostics:v1 -->\n\n- [ ] **Meetup Link**: ${action}`,
+		);
+		const approval = episode("approval-pending", "meetup-publication:revision");
+		approval.condition = { ...approval.condition, commentId: 200 };
+		const value = { ...state(), post: undefined, episodes: [approval] };
+
+		// Act
+		const slack = presenter.render({ state: value, conditions: [approval] });
+		const issue = presenter.issue(value);
+
+		// Assert
+		expect(slack.split(action)).toHaveLength(2);
+		expect(issue.split(action)).toHaveLength(2);
+		expect(slack).toContain("#issuecomment-200|Review details");
+	});
 });

@@ -5,6 +5,7 @@ import {
 	EventRuleEngine,
 	EventRuleFactory,
 	type MeetupEvent,
+	MeetupPublicationChecklist,
 } from "@meetup-automation/event";
 import {
 	type PublicAssetVenue,
@@ -118,6 +119,8 @@ export class FindNextAssetEvent {
 						policy.id === "meetup-event-url" ? "meetup" : "community";
 					return (
 						Boolean(event.publicationLinks[field]) &&
+						(field !== "meetup" ||
+							MeetupPublicationChecklist.isPublished(event)) &&
 						!policy
 							.evaluate({ [field]: event.publicationLinks[field] })
 							.diagnostics.some((item) => item.severity === "error")

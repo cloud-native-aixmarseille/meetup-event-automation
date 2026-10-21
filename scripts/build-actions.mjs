@@ -5,6 +5,10 @@ import { build } from "esbuild";
 
 export const actionBundles = [
 	[
+		"packages/runtime/github-actions/src/entrypoints/publication-reconcile-meetup.ts",
+		"actions/publication/reconcile-meetup/dist/index.js",
+	],
+	[
 		"packages/runtime/github-actions/src/entrypoints/referential-sync-speakers.ts",
 		"actions/referential/sync-speakers/dist/index.js",
 	],
@@ -49,6 +53,7 @@ export async function buildActionBundles() {
 			entryPoints: [entryPoint],
 			outfile,
 			bundle: true,
+			external: ["playwright-core"],
 			format: "esm",
 			platform: "node",
 			target: "node24",

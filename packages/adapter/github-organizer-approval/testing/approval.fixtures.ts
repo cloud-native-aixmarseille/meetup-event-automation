@@ -10,13 +10,13 @@ import {
 } from "../src/github-approval-client.js";
 import { GithubOrganizerApproval } from "../src/github-organizer-approval.js";
 import { ApprovalMessages } from "../src/i18n/approval-messages.js";
-export const request: OrganizerApprovalRequest = {
+export const request = {
 	kind: "email-introduction",
 	revision: "a".repeat(64),
 	eventDate: "2099-06-08",
 	recipientCount: 2,
 	requestedAt: "2099-06-01T10:00:00.000Z",
-};
+} satisfies OrganizerApprovalRequest;
 export function fixture(locale = "en") {
 	const comments: ApprovalComment[] = [];
 	const edits = new Map<string, ApprovalCommentEdit>();
@@ -149,3 +149,18 @@ export function decision(
 		...(f.history.get(comment.node_id) ?? []),
 	]);
 }
+
+export const publicationRequest = {
+	kind: "meetup-publication",
+	revision: "b".repeat(64),
+	eventDate: "2099-06-08",
+	requestedAt: request.requestedAt,
+	publication: {
+		url: "https://www.meetup.com/example/events/12345/",
+		title: "Cloud Native Evening",
+		startTime: "18:45",
+		endTime: "20:45",
+		timeZone: "Europe/Paris",
+		venue: { name: "Public Venue", city: "Marseille" },
+	},
+} satisfies OrganizerApprovalRequest;

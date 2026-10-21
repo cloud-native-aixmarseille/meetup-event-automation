@@ -248,6 +248,7 @@ https://drive.google.com/drive/folders/public-event-assets
 https://openfeedback.io/event-1
 
 ### Communication
+- [x] Meetup event published
 
 - [ ] Mail introduction
 - [ ] Cover image

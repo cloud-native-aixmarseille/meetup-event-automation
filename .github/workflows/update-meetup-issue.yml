@@ -45,7 +45,7 @@ on:
         type: string
     secrets:
       openfeedback-api-key:
-        description: OpenFeedback organization API key (oforg_) used to create and update events.
+        description: OpenFeedback organization API key (`oforg_`) used to create and update events.
         required: true
       kutt-api-key:
         description: API key for the owner of the existing Kutt feedback link.

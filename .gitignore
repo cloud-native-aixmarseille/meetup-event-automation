@@ -1,5 +1,9 @@
 # Dependency directory
 node_modules
+.venv/
+__pycache__/
+.mypy_cache/
+.ruff_cache/
 
 # Rest pulled from https://github.com/github/gitignore/blob/master/Node.gitignore
 # Logs

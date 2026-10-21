@@ -135,7 +135,8 @@ export class EvaluateAttention {
 	): void {
 		for (const approval of facts.approvals ?? []) {
 			const relevant =
-				approval.kind === (postEvent ? "email-thanks" : "email-introduction");
+				approval.kind === (postEvent ? "email-thanks" : "email-introduction") ||
+				(!postEvent && approval.kind === "meetup-publication");
 			if (
 				approval.status === "pending" &&
 				approval.eventDate === facts.eventDate &&
@@ -145,7 +146,9 @@ export class EvaluateAttention {
 					...EvaluateAttention.condition(
 						"approval-pending",
 						"approvals",
-						approval.revision,
+						approval.kind === "meetup-publication"
+							? `${approval.kind}:${approval.revision}`
+							: approval.revision,
 						"approval",
 					),
 					since: approval.requestedAt,

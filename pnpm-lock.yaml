@@ -47,6 +47,9 @@ importers:
       nx:
         specifier: ^23.3.0
         version: 23.3.0
+      playwright-core:
+        specifier: 1.64.1
+        version: 1.64.1
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
@@ -123,6 +126,12 @@ importers:
         specifier: workspace:*
         version: link:../../presentation/localization
 
+  packages/adapter/github-publication-journal:
+    dependencies:
+      '@meetup-automation/publication':
+        specifier: workspace:*
+        version: link:../../domain/publication
+
   packages/adapter/github-repository-dispatch-mail-gateway:
     dependencies:
       '@meetup-automation/communication':
@@ -173,6 +182,15 @@ importers:
       '@meetup-automation/publication':
         specifier: workspace:*
         version: link:../../domain/publication
+
+  packages/adapter/meetup-event-gateway:
+    dependencies:
+      '@meetup-automation/publication':
+        specifier: workspace:*
+        version: link:../../domain/publication
+      playwright-core:
+        specifier: 1.64.1
+        version: 1.64.1
 
   packages/adapter/openfeedback-event-gateway:
     dependencies:
@@ -251,9 +269,6 @@ importers:
 
   packages/runtime/github-actions:
     dependencies:
-      '@meetup-automation/conference-hall-proposal-source':
-        specifier: workspace:*
-        version: link:../../adapter/conference-hall-proposal-source
       '@actions/core':
         specifier: ^3.0.1
         version: 3.0.1
@@ -263,6 +278,9 @@ importers:
       '@meetup-automation/communication':
         specifier: workspace:*
         version: link:../../domain/communication
+      '@meetup-automation/conference-hall-proposal-source':
+        specifier: workspace:*
+        version: link:../../adapter/conference-hall-proposal-source
       '@meetup-automation/csv-referential-repository':
         specifier: workspace:*
         version: link:../../adapter/csv-referential-repository
@@ -287,6 +305,9 @@ importers:
       '@meetup-automation/github-organizer-attention':
         specifier: workspace:*
         version: link:../../adapter/github-organizer-attention
+      '@meetup-automation/github-publication-journal':
+        specifier: workspace:*
+        version: link:../../adapter/github-publication-journal
       '@meetup-automation/github-repository-dispatch-mail-gateway':
         specifier: workspace:*
         version: link:../../adapter/github-repository-dispatch-mail-gateway
@@ -311,6 +332,9 @@ importers:
       '@meetup-automation/localization':
         specifier: workspace:*
         version: link:../../presentation/localization
+      '@meetup-automation/meetup-event-gateway':
+        specifier: workspace:*
+        version: link:../../adapter/meetup-event-gateway
       '@meetup-automation/openfeedback-event-gateway':
         specifier: workspace:*
         version: link:../../adapter/openfeedback-event-gateway
@@ -2032,6 +2056,11 @@ packages:
 
   plantuml-parser@0.4.0:
     resolution: {integrity: sha512-IwbkQNgQK/kvXbSYxZWZpcAItk46ECZm6QFA66+smFZqSIjdglXGNTFniO2VLPpgt8uY8EE0uLOsGgvBrerU5Q==}
+    hasBin: true
+
+  playwright-core@1.64.1:
+    resolution: {integrity: sha512-BC4s8y6SEVA6Q1rSxZTto8hI1KUI3xXlHGZgvGqP4IqPdI/a6FX9H29IDNz7vKo9l21b6LfYosScPL6M3xxyDQ==}
+    engines: {node: '>=20'}
     hasBin: true
 
   postcss@8.5.28:
@@ -3941,6 +3970,8 @@ snapshots:
       require-dir: 1.2.0
       serialize-error: 7.0.1
       yargs: 16.2.2
+
+  playwright-core@1.64.1: {}
 
   postcss@8.5.28:
     dependencies:
