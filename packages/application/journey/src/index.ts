@@ -1,4 +1,6 @@
+export { ApprovalNotificationPolicy } from "./approval/approval-notification-policy.js";
 export { ApprovalRequestPolicy } from "./approval/approval-request-policy.js";
+export { CommunicationDiagnosticProjection } from "./communication/communication-diagnostic-projection.js";
 export type {
 	CommunicationJourneyDiagnostic,
 	ManageMeetupCommunicationsInput,
@@ -24,6 +26,7 @@ export type {
 	OrganizerApprovalDetails,
 } from "./ports/organizer-approval-details.js";
 export type {
+	ApprovalNotificationFacts,
 	ApprovalNotificationMessage,
 	ApprovalNotificationRequest,
 	ApprovalNotificationResult,
@@ -75,4 +78,3 @@ export type {
 	ValidateMeetupReferentialsResult,
 } from "./use-cases/validate-meetup-referentials.js";
 export { ValidateMeetupReferentials } from "./use-cases/validate-meetup-referentials.js";
-export { CommunicationDiagnosticProjection } from "./communication/communication-diagnostic-projection.js";
