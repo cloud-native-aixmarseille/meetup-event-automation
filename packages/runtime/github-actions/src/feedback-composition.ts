@@ -4,6 +4,7 @@ import type {
 	EventRepository,
 } from "@meetup-automation/event";
 import {
+	type AutomationConfig,
 	ManageMeetupEvent,
 	ManageMeetupFeedback,
 } from "@meetup-automation/journey";
@@ -50,6 +51,9 @@ export class FeedbackComposition {
 		container.bind(ManageMeetupFeedback).toDynamicValue(
 			(context) =>
 				new ManageMeetupFeedback({
+					eventLabel: context.get<AutomationConfig>(SERVICES.config).event[
+						"issue-label"
+					],
 					eventRepository: context.get<EventRepository>(
 						SERVICES.eventRepository,
 					),

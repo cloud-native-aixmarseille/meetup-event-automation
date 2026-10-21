@@ -3,8 +3,8 @@ import type {
 	PublicAssetModel,
 	TextKey,
 } from "@meetup-automation/publication";
-import { AssetMessages } from "./asset-messages.js";
 import { AssetDateFormatter } from "./asset-date-formatter.js";
+import { AssetMessages } from "./asset-messages.js";
 
 type RenderInput = Parameters<AssetRenderPresenter["format"]>[0];
 

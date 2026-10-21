@@ -7,17 +7,20 @@ import {
 	type MeetupEvent,
 	MeetupPublicationChecklist,
 } from "@meetup-automation/event";
-import {
-	type PublicAssetVenue,
-	PublicationUrlPolicies,
-	type PublicNextAssetEvent,
+import type {
+	PublicAssetVenue,
+	PublicNextAssetEvent,
 } from "@meetup-automation/publication";
 import type { ReferentialCatalog } from "@meetup-automation/referential";
+import type { AutomationConfig } from "../config/automation-config.js";
+import { ConfiguredPublicationPolicies } from "../config/configured-publication-policies.js";
 
 export class FindNextAssetEvent {
 	constructor(
-		private readonly repository: EventRepository,
+		private readonly repository: Pick<EventRepository, "listPage">,
 		private readonly codec: EventDocumentCodec,
+		private readonly eventLabel: string,
+		private readonly publication: AutomationConfig["publication"],
 		private readonly venues: Readonly<Record<string, PublicAssetVenue>> = {},
 	) {}
 
@@ -51,7 +54,7 @@ export class FindNextAssetEvent {
 		for (let pages = 0; pages < 20; pages++) {
 			const page = await this.repository.listPage({
 				repository: current.identity.repository,
-				label: "meetup",
+				label: this.eventLabel,
 				includeClosed: false,
 				pageSize: 100,
 				cursor,
@@ -91,7 +94,10 @@ export class FindNextAssetEvent {
 		document: EventDocument,
 		current: MeetupEvent,
 	): MeetupEvent | undefined {
-		if (document.issueState !== "open" || !document.labels.includes("meetup"))
+		if (
+			document.issueState !== "open" ||
+			!document.labels.includes(this.eventLabel)
+		)
 			return undefined;
 		const decoded = this.codec.decode(document);
 		const evaluated = new EventRuleEngine(
@@ -111,21 +117,19 @@ export class FindNextAssetEvent {
 			!event.confirmations.host
 		)
 			return undefined;
-		const published =
-			PublicationUrlPolicies.createDefaultPublicationUrlPolicies()
-				.filter((policy) => policy.id !== "asset-folder-url")
-				.some((policy) => {
-					const field =
-						policy.id === "meetup-event-url" ? "meetup" : "community";
-					return (
-						Boolean(event.publicationLinks[field]) &&
-						(field !== "meetup" ||
-							MeetupPublicationChecklist.isPublished(event)) &&
-						!policy
-							.evaluate({ [field]: event.publicationLinks[field] })
-							.diagnostics.some((item) => item.severity === "error")
-					);
-				});
+		const published = ConfiguredPublicationPolicies.create(this.publication)
+			.filter((policy) => policy.id !== "asset-folder-url")
+			.some((policy) => {
+				const field = policy.id === "meetup-event-url" ? "meetup" : "community";
+				return (
+					Boolean(event.publicationLinks[field]) &&
+					(field !== "meetup" ||
+						MeetupPublicationChecklist.isPublished(event)) &&
+					!policy
+						.evaluate({ [field]: event.publicationLinks[field] })
+						.diagnostics.some((item) => item.severity === "error")
+				);
+			});
 		return published ? event : undefined;
 	}
 }

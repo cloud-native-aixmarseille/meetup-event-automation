@@ -42,3 +42,57 @@ describe("manifest image identities", () => {
 		},
 	);
 });
+
+describe("manifest shape and anchor ownership", () => {
+	it.each([
+		null,
+		[],
+		false,
+		{
+			version: 1,
+			fileId: "file",
+			templateId: "template",
+			mimeType: "slides",
+			contract: [],
+		},
+	])("rejects untrusted shapes with a recovery failure", (input) => {
+		// Arrange
+		const identity = { file: "file", template: "template", mime: "slides" };
+
+		// Act
+		const parse = () =>
+			ContentManifestPolicy.parse(
+				input,
+				identity.file,
+				identity.template,
+				identity.mime,
+			);
+
+		// Assert
+		expect(parse).toThrowError(expect.objectContaining({ code: "recovery" }));
+	});
+
+	it("accepts the same pending anchors with reordered properties", async () => {
+		// Arrange
+		const f = contentFixture();
+		await f.service.execute(f.input);
+		const manifest = f.state.manifest;
+		if (!manifest) throw new Error("Missing manifest fixture");
+		const bindings = manifest.bindings.map((binding) => ({
+			...binding,
+			anchor: Object.fromEntries(Object.entries(binding.anchor).reverse()),
+		}));
+		const input = { ...manifest, pending: { revision: "2", bindings } };
+
+		// Act
+		const parsed = ContentManifestPolicy.parse(
+			input,
+			f.input.fileId,
+			f.input.templateId,
+			f.input.mimeType,
+		);
+
+		// Assert
+		expect(parsed.pending?.bindings).toEqual(bindings);
+	});
+});

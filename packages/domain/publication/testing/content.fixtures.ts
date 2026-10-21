@@ -10,9 +10,9 @@ import type {
 	ContentContract,
 	ContentManifest,
 	ContentValue,
+	ImageField,
 	PublicAssetModel,
 	TextField,
-	ImageField,
 } from "../src/domain/asset-content.js";
 import { ContentFingerprint } from "../src/domain/content-fingerprint.js";
 import { ContentTextKey } from "../src/domain/content-text-key.js";
@@ -29,7 +29,7 @@ export const model: PublicAssetModel = {
 	pictures: {},
 };
 
-export function contentFixture(
+export function contentDependencies(
 	image = false,
 	textField: TextField = { type: "text", token: "event.title", required: true },
 	imageToken: ImageField["token"] = "speaker.picture",
@@ -123,11 +123,6 @@ export function contentFixture(
 			return String(state.revision);
 		}),
 	};
-	const service = new ReconcileAssetContent(
-		manifests,
-		{ [mimeType]: renderer },
-		images,
-	);
 	const input = {
 		folderId: "folder",
 		fileId: "copy",
@@ -139,5 +134,19 @@ export function contentFixture(
 		managed: true,
 		model: { text: { [textKey]: "Public meetup" }, pictures: {} },
 	};
-	return { service, input, state, renderer, manifests, images, writes };
+	return { input, state, renderer, manifests, images, writes };
+}
+
+export function contentFixture(
+	...args: Parameters<typeof contentDependencies>
+) {
+	const dependencies = contentDependencies(...args);
+	return {
+		...dependencies,
+		service: new ReconcileAssetContent(
+			dependencies.manifests,
+			{ [mimeType]: dependencies.renderer },
+			dependencies.images,
+		),
+	};
 }

@@ -29511,6 +29511,14 @@ var MeetupPublicationChecklist = class _MeetupPublicationChecklist {
   }
 };
 
+// packages/domain/publication/src/domain/content-fingerprint.ts
+import { createHash } from "node:crypto";
+var ContentFingerprint = class {
+  static of(value) {
+    return createHash("sha256").update(value).digest("hex");
+  }
+};
+
 // packages/domain/publication/src/domain/publication-link-evaluation.ts
 var PublicationLinkEvaluation = class _PublicationLinkEvaluation {
   static evaluateLink({
@@ -29833,14 +29841,6 @@ var PublicationUrlPolicyEngine = class {
       diagnostics: Object.freeze(diagnostics),
       patch: Object.freeze({ operations: Object.freeze(operations) })
     };
-  }
-};
-
-// packages/domain/publication/src/domain/content-fingerprint.ts
-import { createHash } from "node:crypto";
-var ContentFingerprint = class {
-  static of(value) {
-    return createHash("sha256").update(value).digest("hex");
   }
 };
 
@@ -30892,6 +30892,22 @@ var SourceSpeakerEquality = class {
   }
 };
 
+// packages/application/journey/src/config/configured-publication-policies.ts
+var ConfiguredPublicationPolicies = class {
+  static create(publication) {
+    return PublicationUrlPolicies.createDefaultPublicationUrlPolicies({
+      ...DEFAULT_PUBLICATION_URL_CONFIGURATION,
+      meetupEventUrlPrefix: publication["meetup-event-url-prefix"],
+      communityEventUrlPrefixes: [
+        publication["cncf-event-url-prefix"],
+        ...DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes.slice(
+          1
+        )
+      ]
+    });
+  }
+};
+
 // packages/domain/communication/src/model.ts
 var MAIL_TEMPLATE_NAMES = {
   hostIntroduction: "meetup-intro-hosting",
@@ -30971,16 +30987,7 @@ var EventPublicationEvaluation = class _EventPublicationEvaluation {
       });
     }
     const engine = new PublicationUrlPolicyEngine(
-      PublicationUrlPolicies.createDefaultPublicationUrlPolicies({
-        ...DEFAULT_PUBLICATION_URL_CONFIGURATION,
-        meetupEventUrlPrefix: config.publication["meetup-event-url-prefix"],
-        communityEventUrlPrefixes: [
-          config.publication["cncf-event-url-prefix"],
-          ...DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes.slice(
-            1
-          )
-        ]
-      })
+      ConfiguredPublicationPolicies.create(config.publication)
     );
     const evaluation = engine.evaluate(event.publicationLinks);
     diagnostics.push(

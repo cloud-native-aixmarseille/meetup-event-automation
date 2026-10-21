@@ -5,8 +5,9 @@ import type {
 	ContentSnapshot,
 	ContentValue,
 } from "./asset-content.js";
-import { ContentError } from "./content-error.js";
+import { ContentAnchorIdentity } from "./content-anchor-identity.js";
 import { ContentContractPolicy } from "./content-contract-policy.js";
+import { ContentError } from "./content-error.js";
 
 export class ContentRenderPlan {
 	static changes(
@@ -90,8 +91,7 @@ export class ContentRenderPlan {
 					: manifest.initialRevision,
 				bindings: next.map((binding) => ({
 					...binding,
-					applied: snapshot.locations.find((item) => item.id === binding.id)
-						?.fingerprint as string,
+					applied: ContentRenderPlan.fingerprint(snapshot, binding.id),
 				})),
 			};
 		const prior = manifest.bindings.every(
@@ -122,9 +122,13 @@ export class ContentRenderPlan {
 			) ||
 			new Set(snapshot.locations.map((location) => location.id)).size !==
 				snapshot.locations.length ||
-			new Set(
-				snapshot.locations.map((location) => JSON.stringify(location.anchor)),
-			).size !== snapshot.locations.length
+			snapshot.locations.some((location, index) =>
+				snapshot.locations
+					.slice(0, index)
+					.some((prior) =>
+						ContentAnchorIdentity.equal(prior.anchor, location.anchor),
+					),
+			)
 		)
 			throw new ContentError("location");
 		return snapshot.locations.map((location) => ({
@@ -134,5 +138,13 @@ export class ContentRenderPlan {
 			anchor: location.anchor,
 			applied: location.fingerprint,
 		}));
+	}
+
+	static fingerprint(snapshot: ContentSnapshot, bindingId: string): string {
+		const matches = snapshot.locations.filter(
+			(location) => location.id === bindingId,
+		);
+		if (matches.length !== 1) throw new ContentError("conflict");
+		return matches[0].fingerprint;
 	}
 }

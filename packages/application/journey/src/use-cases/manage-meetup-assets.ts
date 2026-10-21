@@ -13,12 +13,11 @@ import type {
 	ReconcileEventAssets,
 } from "@meetup-automation/publication";
 import type { PublicDiagnostic } from "../result/result-envelope.js";
+import type { AssetRenderProjection } from "./asset-render-projection.js";
 import type { ManageMeetupEvent } from "./manage-meetup-event.js";
 
-import type { AssetRenderProjection } from "./asset-render-projection.js";
-
 interface ManageMeetupAssetsDependencies {
-	readonly renderProjection?: AssetRenderProjection;
+	readonly renderProjection?: Pick<AssetRenderProjection, "create">;
 	readonly recovery?: Readonly<Record<string, ContentRecovery>>;
 	readonly eventRepository: EventRepository;
 	readonly documentCodec: EventDocumentCodec;

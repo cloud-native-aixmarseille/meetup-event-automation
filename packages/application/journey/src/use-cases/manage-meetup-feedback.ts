@@ -4,6 +4,7 @@ import {
 	type EventDocumentCodec,
 	type EventIdentity,
 	EventNotFoundError,
+	EventPaginationError,
 	type EventRepository,
 	EventRepositoryPatches,
 	type MeetupEvent,
@@ -12,16 +13,19 @@ import {
 import {
 	type FeedbackAgenda,
 	type FeedbackEventGateway,
+	type FeedbackLinkConflict,
 	type FeedbackLinkGateway,
+	FeedbackLinkSelection,
 	FeedbackPolicy,
 	FeedbackResolutionError,
 } from "@meetup-automation/publication";
-import { FeedbackAgendaProjection } from "./feedback-agenda-projection.js";
 import type { PublicDiagnostic } from "../result/result-envelope.js";
+import { FeedbackAgendaProjection } from "./feedback-agenda-projection.js";
 import type { ManageMeetupEvent } from "./manage-meetup-event.js";
 
 interface FeedbackDependencies {
 	readonly eventRepository: EventRepository;
+	readonly eventLabel: string;
 	readonly documentCodec: EventDocumentCodec;
 	readonly manageEvent: Pick<ManageMeetupEvent, "execute">;
 	readonly clock: EventClock;
@@ -212,60 +216,47 @@ export class ManageMeetupFeedback {
 	): Promise<PublicDiagnostic | undefined> {
 		let cursor: string | undefined;
 		const visited = new Set<string>();
-		do {
+		for (let pages = 0; pages < 20; pages++) {
 			const page = await this.dependencies.eventRepository.listPage({
 				repository: source.identity.repository,
-				label: "meetup",
+				label: this.dependencies.eventLabel,
 				cursor,
 			});
 			for (const document of page.items) {
 				if (document.identity.issueNumber === source.identity.issueNumber)
 					continue;
 				const { event } = this.dependencies.documentCodec.decode(document);
-				const conflict = ManageMeetupFeedback.conflictingEvent(
-					event,
-					target,
+				const conflict = FeedbackLinkSelection.conflict(
+					{
+						date: event.date,
+						isOpen: event.issueState === "open",
+						occurrenceStatus: event.occurrenceStatus,
+					},
+					target.date,
 					now,
+					target.timeZone,
 				);
-				if (conflict) return conflict;
+				if (conflict) return ManageMeetupFeedback.conflictDiagnostic(conflict);
 			}
 			cursor = page.nextCursor;
-			if (cursor && visited.has(cursor))
-				throw new Error("Feedback event pagination did not advance");
-			if (cursor) visited.add(cursor);
-		} while (cursor);
-		return undefined;
+			if (!cursor) return undefined;
+			if (visited.has(cursor)) throw new EventPaginationError(cursor);
+			visited.add(cursor);
+		}
+		throw new EventPaginationError("feedback-page-limit");
 	}
 
-	private static conflictingEvent(
-		event: MeetupEvent,
-		target: MeetupEvent,
-		now: string,
-	): PublicDiagnostic | undefined {
-		if (
-			event.issueState !== "open" ||
-			event.occurrenceStatus === "cancelled" ||
-			event.occurrenceStatus === "postponed"
-		)
-			return undefined;
-		if (event.date === target.date)
-			return {
-				code: "publication.feedback.ambiguous-date",
-				severity: "warning",
-				message:
-					"Several active meetups share this date; update the shared feedback link manually",
-			};
-		if (
-			event.date < target.date &&
-			FeedbackPolicy.isLinkUpdateDue(event.date, now, target.timeZone)
-		)
-			return {
-				code: "publication.feedback.current-event",
-				severity: "info",
-				message:
-					"An active meetup takes place today; keep its shared feedback link until the event day ends",
-			};
-		return undefined;
+	private static conflictDiagnostic(
+		conflict: FeedbackLinkConflict,
+	): PublicDiagnostic {
+		return {
+			code: `publication.feedback.${conflict}`,
+			severity: conflict === "ambiguous-date" ? "warning" : "info",
+			message:
+				conflict === "ambiguous-date"
+					? "Several active meetups share this date; update the shared feedback link manually"
+					: "An active meetup takes place today; keep its shared feedback link until the event day ends",
+		};
 	}
 
 	private ensureCurrent(source: EventDocument) {
