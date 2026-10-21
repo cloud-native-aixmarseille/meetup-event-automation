@@ -43,7 +43,7 @@ Return `ActionReportData` on every normal path, including skipped or blocked wor
   Unknown warning/error codes fail closed. Fixed diagnostics and informational
   results do not fail. Keep explicit `report.failure` only for technical failures
   without a diagnostic, such as unavailable notification evidence.
-- Exceptions are redacted by `RuntimeInput.publicErrorMessage`. Missing locale
+- Exceptions are redacted by `ActionFailurePresenter.publicErrorMessage`. Missing locale
   fails before execution and uses English. A summary-write failure emits a safe
   warning and preserves the original result.
 

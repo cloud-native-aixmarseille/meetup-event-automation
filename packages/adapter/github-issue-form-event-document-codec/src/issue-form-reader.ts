@@ -3,9 +3,7 @@ import {
 	EventDiagnostics,
 	type EventDocument,
 	type EventDocumentDecodeResult,
-	type LegacyMeetupIssueBodyDto,
 	type MeetupEvent,
-	MeetupEventMigration,
 	MeetupEventOperations,
 } from "@meetup-automation/event";
 import { EventReferenceMetadata } from "./event-reference-metadata.js";
@@ -15,10 +13,12 @@ import {
 	type Section,
 } from "./github-issue-form-event-document-codec-contracts.js";
 import { IssueFormChecklists } from "./issue-form-checklists.js";
+import type { IssueFormBody } from "./issue-form-event-input.js";
+import { IssueFormEventMapper } from "./issue-form-event-mapper.js";
 import { IssueFormSections } from "./issue-form-sections.js";
 import { ManagedIssueMarkers } from "./managed-issue-markers.js";
-import { ProposalSelectionCodec } from "./proposal-selection-codec.js";
 import { ParticipantLinks } from "./participant-links.js";
+import { ProposalSelectionCodec } from "./proposal-selection-codec.js";
 
 type Sections = ReadonlyMap<string, readonly Section[]>;
 
@@ -39,7 +39,7 @@ export class IssueFormReader {
 		const schema = ManagedIssueMarkers.readSchema(document.body, diagnostics);
 		const parsedBody = this.readBody(sections, diagnostics);
 		const operations = this.readOperations(sections, diagnostics);
-		const migrated = MeetupEventMigration.migrateMeetupEventDto({
+		const migrated = IssueFormEventMapper.map({
 			repository: document.identity.repository,
 			issueNumber: document.identity.issueNumber,
 			issueState: document.issueState,
@@ -80,7 +80,7 @@ export class IssueFormReader {
 	private readBody(
 		sections: Sections,
 		diagnostics: EventDiagnostic[],
-	): LegacyMeetupIssueBodyDto {
+	): IssueFormBody {
 		const read = (heading: string, required = false) =>
 			IssueFormSections.readSection(sections, heading, required, diagnostics);
 		return {

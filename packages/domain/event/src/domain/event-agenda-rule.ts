@@ -1,4 +1,5 @@
 import { type EventDiagnostic, EventDiagnostics } from "./diagnostic.js";
+import { EventAgendaEquality } from "./event-agenda-equality.js";
 import { EventParticipantNormalization } from "./event-participant-normalization.js";
 import { EventRuleResults } from "./event-rule-results.js";
 import type { AgendaEntry, MeetupEvent } from "./model.js";
@@ -24,12 +25,7 @@ export class EventAgendaRule implements EventRule {
 		});
 
 		const operations: EventPatchOperation[] = [];
-		if (
-			!EventParticipantNormalization.agendaEqual(
-				event.agenda,
-				normalizedEntries,
-			)
-		) {
+		if (!EventAgendaEquality.equals(event.agenda, normalizedEntries)) {
 			operations.push(
 				EventPatches.replaceEventField(
 					"agenda",

@@ -2,6 +2,7 @@ import type {
 	PublicationJournal,
 	PublicationRecord,
 } from "@meetup-automation/publication";
+import { PublicationCommentCodec } from "./publication-comment-codec.js";
 
 type Comment = {
 	id: number;
@@ -27,8 +28,6 @@ interface JournalClient {
 	};
 }
 
-const MARKER = "<!-- meetup-publication:v1\n";
-
 export class GithubPublicationJournal implements PublicationJournal {
 	constructor(
 		private readonly client: JournalClient,
@@ -42,20 +41,7 @@ export class GithubPublicationJournal implements PublicationJournal {
 	async load(): Promise<PublicationRecord | undefined> {
 		const comment = await this.find();
 		if (!comment) return undefined;
-		const body = comment.body ?? "";
-		if (!body.endsWith("\n-->"))
-			throw new Error("Publication journal is corrupted");
-		const value: unknown = JSON.parse(body.slice(MARKER.length, -4));
-		if (!value || typeof value !== "object")
-			throw new Error("Publication journal is corrupted");
-		const record = value as { state?: unknown; url?: unknown };
-		if (record.state === "pending" && record.url === undefined) return {};
-		if (
-			(record.state === "saved" || record.state === "published") &&
-			typeof record.url === "string"
-		)
-			return { url: record.url };
-		throw new Error("Publication journal is corrupted");
+		return PublicationCommentCodec.decode(comment.body ?? "");
 	}
 
 	async reserve(): Promise<void> {
@@ -63,7 +49,7 @@ export class GithubPublicationJournal implements PublicationJournal {
 			throw new Error("Publication creation was already reserved");
 		await this.client.rest.issues.createComment({
 			...this.scope,
-			body: `${MARKER}${JSON.stringify({ state: "pending" })}\n-->`,
+			body: PublicationCommentCodec.encode({}),
 		});
 		if (!(await this.load()))
 			throw new Error("Publication reservation was not persisted");
@@ -75,7 +61,7 @@ export class GithubPublicationJournal implements PublicationJournal {
 			throw new Error("Publication journal identity conflict");
 		if (existing?.url === url) return;
 		const comment = await this.find();
-		const body = `${MARKER}${JSON.stringify({ state: "saved", url })}\n-->`;
+		const body = PublicationCommentCodec.encode({ url });
 		if (comment) {
 			await this.client.rest.issues.updateComment({
 				owner: this.scope.owner,
@@ -98,7 +84,7 @@ export class GithubPublicationJournal implements PublicationJournal {
 				...response.data.filter(
 					(comment) =>
 						comment.user?.login.toLowerCase() === this.author.toLowerCase() &&
-						comment.body?.startsWith(MARKER),
+						comment.body?.startsWith(PublicationCommentCodec.marker),
 				),
 			);
 			if (matches.length > 1) throw new Error("Multiple publication journals");

@@ -56710,6 +56710,30 @@ var EventDiagnostics = class {
   }
 };
 
+// packages/domain/event/src/domain/event-agenda-equality.ts
+var EventAgendaEquality = class _EventAgendaEquality {
+  static equals(left, right) {
+    return left.length === right.length && left.every(
+      (entry, index) => _EventAgendaEquality.entry(entry, right[index])
+    );
+  }
+  static entry(left, right) {
+    return left.description === right.description && left.speakers.length === right.speakers.length && left.speakers.every(
+      (speaker, index) => _EventAgendaEquality.speaker(speaker, right.speakers[index])
+    ) && _EventAgendaEquality.proposal(left.proposal, right.proposal);
+  }
+  static speaker(left, right) {
+    return left.id === right.id && left.displayName === right.displayName && left.pictureUrl === right.pictureUrl && left.source?.path === right.source?.path && left.source?.line === right.source?.line;
+  }
+  static proposal(left, right) {
+    if (!left || !right) return left === right;
+    return left.provider === right.provider && left.event === right.event && left.id === right.id && left.title === right.title && left.abstract === right.abstract && _EventAgendaEquality.sequence(left.languages, right.languages) && _EventAgendaEquality.sequence(left.formats, right.formats);
+  }
+  static sequence(left, right) {
+    return left.length === right.length && left.every((value, index) => value === right[index]);
+  }
+};
+
 // packages/domain/event/src/domain/event-participant-normalization.ts
 var EventParticipantNormalization = class _EventParticipantNormalization {
   static normalizeParticipant(participant) {
@@ -56734,16 +56758,28 @@ var EventParticipantNormalization = class _EventParticipantNormalization {
       description: entry.description.trim()
     };
   }
-  static agendaEqual(left, right) {
-    return JSON.stringify(left) === JSON.stringify(right);
-  }
-  static arraysEqual(left, right) {
-    return left.length === right.length && left.every((value, index) => value === right[index]);
-  }
 };
 
 // packages/domain/event/src/domain/event-rule-results.ts
-var EventRuleResults = class {
+var EventRuleResults = class _EventRuleResults {
+  static emptyResult() {
+    return { diagnostics: [], patch: EMPTY_EVENT_PATCH };
+  }
+  static normalizedResult(operation, code, field, message) {
+    return {
+      diagnostics: [
+        EventDiagnostics.diagnostic({
+          code,
+          severity: "info",
+          category: "normalization",
+          field,
+          message,
+          fixAvailable: true
+        })
+      ],
+      patch: EventPatches.createEventPatch([operation])
+    };
+  }
   static missing(code, field, message) {
     return {
       diagnostics: [
@@ -56774,9 +56810,9 @@ var EventRuleResults = class {
   }
   static normalizeString(current, normalized, path, reason) {
     if (current === normalized) {
-      return EventRuleFactory.emptyResult();
+      return _EventRuleResults.emptyResult();
     }
-    return EventRuleFactory.normalizedResult(
+    return _EventRuleResults.normalizedResult(
       EventPatches.replaceEventField(path, normalized, reason),
       `event.${path}.normalized`,
       path,
@@ -56802,10 +56838,7 @@ var EventAgendaRule = class {
       return this.normalizeEntry(entry, entryIndex, diagnostics);
     });
     const operations = [];
-    if (!EventParticipantNormalization.agendaEqual(
-      event.agenda,
-      normalizedEntries
-    )) {
+    if (!EventAgendaEquality.equals(event.agenda, normalizedEntries)) {
       operations.push(
         EventPatches.replaceEventField(
           "agenda",
@@ -56978,9 +57011,9 @@ var EventHostRule = class {
       );
     }
     if (EventParticipantNormalization.participantsEqual(event.host, normalized)) {
-      return EventRuleFactory.emptyResult();
+      return EventRuleResults.emptyResult();
     }
-    return EventRuleFactory.normalizedResult(
+    return EventRuleResults.normalizedResult(
       EventPatches.replaceEventField(
         "host",
         normalized,
@@ -57007,7 +57040,7 @@ var EventLinksRule = class {
         continue;
       }
       const value = link.trim().replace(/\/$/, "");
-      if (!EventRuleFactory.isHttpsUrl(value)) {
+      if (!this.isHttpsUrl(value)) {
         diagnostics.push(
           EventDiagnostics.diagnostic({
             code: `event.link.${key}.invalid`,
@@ -57048,6 +57081,13 @@ var EventLinksRule = class {
       ])
     };
   }
+  isHttpsUrl(value) {
+    try {
+      return new URL(value).protocol === "https:";
+    } catch {
+      return false;
+    }
+  }
 };
 
 // packages/domain/event/src/domain/event-title-rule.ts
@@ -57078,13 +57118,13 @@ var IssueTitleRule = class {
   dependencies = ["event-date", "event-title"];
   evaluate(event) {
     if (!EventDateValidation.isValidIsoDate(event.date) || event.eventTitle === "") {
-      return EventRuleFactory.emptyResult();
+      return EventRuleResults.emptyResult();
     }
     const expected = `[Meetup] - ${event.date} - ${event.eventTitle}`;
     if (event.issueTitle === expected) {
-      return EventRuleFactory.emptyResult();
+      return EventRuleResults.emptyResult();
     }
-    return EventRuleFactory.normalizedResult(
+    return EventRuleResults.normalizedResult(
       EventPatches.replaceEventField(
         "issueTitle",
         expected,
@@ -57116,10 +57156,10 @@ var ManagedLabelsRule = class {
       event.confirmations.speakers ? this.configuration.speakersConfirmed : this.configuration.speakersNeeded,
       ...occurrenceLabels
     ];
-    if (EventRuleFactory.labelsMatch(event.labels, expected)) {
-      return EventRuleFactory.emptyResult();
+    if (this.labelsMatch(event.labels, expected)) {
+      return EventRuleResults.emptyResult();
     }
-    return EventRuleFactory.normalizedResult(
+    return EventRuleResults.normalizedResult(
       EventPatches.replaceEventField(
         "labels",
         expected,
@@ -57129,6 +57169,10 @@ var ManagedLabelsRule = class {
       "labels",
       "Managed meetup labels can be reconciled safely"
     );
+  }
+  labelsMatch(actual, expected) {
+    const sorted = [...expected].sort();
+    return actual.length === expected.length && [...actual].sort().every((label, index) => label === sorted[index]);
   }
 };
 
@@ -57145,7 +57189,7 @@ var DEFAULT_MANAGED_LABEL_CONFIGURATION = Object.freeze({
 });
 
 // packages/domain/event/src/domain/event-rule-factory.ts
-var EventRuleFactory = class _EventRuleFactory {
+var EventRuleFactory = class {
   static createDefaultEventRules(labelConfiguration = DEFAULT_MANAGED_LABEL_CONFIGURATION) {
     return [
       new EventDateRule(),
@@ -57157,37 +57201,6 @@ var EventRuleFactory = class _EventRuleFactory {
       new IssueTitleRule(),
       new ManagedLabelsRule(labelConfiguration)
     ];
-  }
-  static labelsMatch(actual, expected) {
-    return EventParticipantNormalization.arraysEqual(actual, expected) || _EventRuleFactory.sameMembers(actual, expected);
-  }
-  static sameMembers(left, right) {
-    return left.length === right.length && left.every((label) => right.includes(label));
-  }
-  static emptyResult() {
-    return { diagnostics: [], patch: EMPTY_EVENT_PATCH };
-  }
-  static normalizedResult(operation, code, field, message) {
-    return {
-      diagnostics: [
-        EventDiagnostics.diagnostic({
-          code,
-          severity: "info",
-          category: "normalization",
-          field,
-          message,
-          fixAvailable: true
-        })
-      ],
-      patch: EventPatches.createEventPatch([operation])
-    };
-  }
-  static isHttpsUrl(value) {
-    try {
-      return new URL(value).protocol === "https:";
-    } catch {
-      return false;
-    }
   }
 };
 
@@ -57448,6 +57461,46 @@ var ReconcileEvent = class _ReconcileEvent {
   }
 };
 
+// packages/domain/event/src/domain/occurrence-status.ts
+var OCCURRENCE_STATUSES = [
+  "scheduled",
+  "postponed",
+  "held",
+  "cancelled"
+];
+var OCCURRENCE_STATUS_LABELS = Object.freeze({
+  scheduled: null,
+  postponed: "event:postponed",
+  held: "event:held",
+  cancelled: "event:cancelled"
+});
+
+// packages/domain/event/src/domain/event-occurrence-parser.ts
+var EventOccurrenceParser = class {
+  static readOccurrenceStatus(labels, issueState, fieldStatus, diagnostics) {
+    const explicitStatuses = OCCURRENCE_STATUSES.filter((status) => {
+      const label = OCCURRENCE_STATUS_LABELS[status];
+      return label !== null && labels.includes(label);
+    });
+    if (explicitStatuses.length > 1) {
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.occurrence-status.label-conflict",
+          severity: "error",
+          category: "invalid",
+          field: "labels",
+          message: "Occurrence status labels are mutually exclusive; keep only one of event:postponed, event:held, or event:cancelled"
+        })
+      );
+      return explicitStatuses[0] ?? (issueState === "closed" ? "held" : "scheduled");
+    }
+    if (explicitStatuses.length === 1) {
+      return explicitStatuses[0];
+    }
+    return fieldStatus ?? (issueState === "closed" ? "held" : "scheduled");
+  }
+};
+
 // packages/domain/event/src/domain/meetup-publication-checklist.ts
 var MeetupPublicationChecklist = class _MeetupPublicationChecklist {
   static taskName = "Meetup event published";
@@ -57477,411 +57530,6 @@ var MeetupPublicationChecklist = class _MeetupPublicationChecklist {
       ...event,
       operationalChecklists: { ...event.operationalChecklists, communication }
     };
-  }
-};
-
-// packages/domain/event/src/domain/dto-contracts.ts
-var STABLE_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._:-]*$/;
-var OCCURRENCE_STATUSES = [
-  "scheduled",
-  "postponed",
-  "held",
-  "cancelled"
-];
-var OCCURRENCE_STATUS_LABELS = Object.freeze({
-  scheduled: null,
-  postponed: "event:postponed",
-  held: "event:held",
-  cancelled: "event:cancelled"
-});
-
-// packages/domain/event/src/domain/event-occurrence-parser.ts
-var EventOccurrenceParser = class _EventOccurrenceParser {
-  static readOccurrenceStatus(labels, issueState, legacyValue, diagnostics) {
-    const explicitStatuses = OCCURRENCE_STATUSES.filter((status) => {
-      const label = OCCURRENCE_STATUS_LABELS[status];
-      return label !== null && labels.includes(label);
-    });
-    if (explicitStatuses.length > 1) {
-      diagnostics.push(
-        EventDiagnostics.diagnostic({
-          code: "event.occurrence-status.label-conflict",
-          severity: "error",
-          category: "invalid",
-          field: "labels",
-          message: "Occurrence status labels are mutually exclusive; keep only one of event:postponed, event:held, or event:cancelled"
-        })
-      );
-      return explicitStatuses[0] ?? (issueState === "closed" ? "held" : "scheduled");
-    }
-    if (explicitStatuses.length === 1) {
-      return explicitStatuses[0];
-    }
-    const legacyStatus = _EventOccurrenceParser.readLegacyOccurrenceStatus(
-      legacyValue,
-      diagnostics
-    );
-    if (legacyStatus !== void 0) {
-      return legacyStatus;
-    }
-    return issueState === "closed" ? "held" : "scheduled";
-  }
-  static readLegacyOccurrenceStatus(value, diagnostics) {
-    if (value === void 0 || value === null || value === "") {
-      return void 0;
-    }
-    if (typeof value === "string" && OCCURRENCE_STATUSES.includes(value)) {
-      return value;
-    }
-    diagnostics.push(
-      EventDiagnostics.diagnostic({
-        code: "event.occurrence-status.invalid",
-        severity: "error",
-        category: "invalid",
-        field: "event_status",
-        message: "Occurrence status must be scheduled, postponed, held, or cancelled"
-      })
-    );
-    return void 0;
-  }
-};
-
-// packages/domain/event/src/domain/participant-reference-parser.ts
-var ParticipantReferenceParser = class _ParticipantReferenceParser {
-  static parseParticipantReference(value) {
-    const trimmed = value.trim();
-    const markdownLinkLabel = _ParticipantReferenceParser.parseMarkdownLinkLabel(trimmed);
-    if (markdownLinkLabel !== void 0) {
-      return { displayName: markdownLinkLabel };
-    }
-    const stableReference = _ParticipantReferenceParser.parseStableIdReference(trimmed);
-    if (stableReference) {
-      return stableReference;
-    }
-    return { displayName: trimmed };
-  }
-  static parseLegacyAgendaLine(line) {
-    let cursor = 0;
-    cursor = _ParticipantReferenceParser.skipHorizontalWhitespace(line, cursor);
-    if (line[cursor] !== "-") {
-      return void 0;
-    }
-    cursor += 1;
-    if (!_ParticipantReferenceParser.isHorizontalWhitespaceCharacter(
-      line[cursor] ?? ""
-    )) {
-      return void 0;
-    }
-    cursor = _ParticipantReferenceParser.skipHorizontalWhitespace(line, cursor);
-    const content = line.slice(cursor);
-    for (let index = 0; index < content.length; index += 1) {
-      if (content[index] !== ":") {
-        continue;
-      }
-      if (!_ParticipantReferenceParser.isHorizontalWhitespaceCharacter(
-        content[index + 1] ?? ""
-      )) {
-        continue;
-      }
-      const speakers = content.slice(0, index).trimEnd();
-      if (speakers === "") {
-        return void 0;
-      }
-      let descriptionStart = index + 1;
-      while (descriptionStart < content.length && _ParticipantReferenceParser.isHorizontalWhitespaceCharacter(
-        content[descriptionStart]
-      )) {
-        descriptionStart += 1;
-      }
-      return {
-        speakers,
-        description: content.slice(descriptionStart)
-      };
-    }
-    return void 0;
-  }
-  static parseMarkdownLinkLabel(value) {
-    if (!value.startsWith("[") || !value.endsWith(")")) {
-      return void 0;
-    }
-    const closingBracket = value.indexOf("]");
-    if (closingBracket <= 1 || value[closingBracket + 1] !== "(") {
-      return void 0;
-    }
-    const target = value.slice(closingBracket + 2, -1);
-    if (target === "" || target.includes(")")) {
-      return void 0;
-    }
-    return value.slice(1, closingBracket).trim();
-  }
-  static parseStableIdReference(value) {
-    if (!value.endsWith("]")) {
-      return void 0;
-    }
-    const openingBracket = value.lastIndexOf("[");
-    if (openingBracket <= 0 || !_ParticipantReferenceParser.isWhitespaceCharacter(
-      value[openingBracket - 1] ?? ""
-    )) {
-      return void 0;
-    }
-    const id = value.slice(openingBracket + 1, -1);
-    if (!STABLE_ID_PATTERN.test(id)) {
-      return void 0;
-    }
-    const displayName = value.slice(0, openingBracket).trim();
-    if (displayName === "") {
-      return void 0;
-    }
-    return {
-      displayName,
-      id
-    };
-  }
-  static isHorizontalWhitespaceCharacter(value) {
-    return value === " " || value === "	";
-  }
-  static isWhitespaceCharacter(value) {
-    return _ParticipantReferenceParser.isHorizontalWhitespaceCharacter(value) || value === "\n" || value === "\r";
-  }
-  static skipHorizontalWhitespace(line, cursor) {
-    while (cursor < line.length && _ParticipantReferenceParser.isHorizontalWhitespaceCharacter(line[cursor])) {
-      cursor += 1;
-    }
-    return cursor;
-  }
-};
-
-// packages/domain/event/src/domain/legacy-event-fields.ts
-var LegacyEventFields = class _LegacyEventFields {
-  static readString(value, field, diagnostics) {
-    if (value === void 0 || value === null) {
-      return "";
-    }
-    if (typeof value === "string") {
-      return value;
-    }
-    diagnostics.push(
-      EventDiagnostics.diagnostic({
-        code: "event.document.invalid-field-type",
-        severity: "error",
-        category: "invalid",
-        field,
-        message: `The ${field} field must be a string`
-      })
-    );
-    return "";
-  }
-  static readOptionalString(value, field, diagnostics) {
-    if (value === void 0 || value === null || value === "") {
-      return void 0;
-    }
-    return _LegacyEventFields.readString(value, field, diagnostics);
-  }
-  static readLegacyHost(value, diagnostics) {
-    if (value === void 0 || value === null) {
-      return void 0;
-    }
-    if (!Array.isArray(value)) {
-      diagnostics.push(
-        EventDiagnostics.diagnostic({
-          code: "event.document.invalid-hoster-type",
-          severity: "error",
-          category: "invalid",
-          field: "hoster",
-          message: "The legacy hoster field must be an array"
-        })
-      );
-      return void 0;
-    }
-    if (value.length > 1) {
-      diagnostics.push(
-        EventDiagnostics.diagnostic({
-          code: "event.hoster.multiple",
-          severity: "error",
-          category: "invalid",
-          field: "hoster",
-          message: "A meetup event must have exactly one host"
-        })
-      );
-    }
-    const first = value[0];
-    if (first === void 0) {
-      return void 0;
-    }
-    if (typeof first !== "string") {
-      diagnostics.push(
-        EventDiagnostics.diagnostic({
-          code: "event.document.invalid-hoster-entry",
-          severity: "error",
-          category: "invalid",
-          field: "hoster",
-          message: "The legacy hoster entry must be a string"
-        })
-      );
-      return void 0;
-    }
-    return ParticipantReferenceParser.parseParticipantReference(first);
-  }
-  static readLegacyAgenda(value, diagnostics) {
-    if (value === void 0 || value === null || value === "") {
-      return [];
-    }
-    if (typeof value !== "string") {
-      diagnostics.push(
-        EventDiagnostics.diagnostic({
-          code: "event.document.invalid-agenda-type",
-          severity: "error",
-          category: "invalid",
-          field: "agenda",
-          message: "The legacy agenda field must be a string"
-        })
-      );
-      return [];
-    }
-    const entries = [];
-    for (const [index, line] of value.split("\n").entries()) {
-      if (line.trim() === "") {
-        continue;
-      }
-      const agendaLine = ParticipantReferenceParser.parseLegacyAgendaLine(line);
-      if (!agendaLine) {
-        diagnostics.push(
-          EventDiagnostics.diagnostic({
-            code: "event.agenda.legacy-line-invalid",
-            severity: "error",
-            category: "invalid",
-            field: `agenda.${index}`,
-            message: `Agenda line ${index + 1} does not match "- <speaker(s)>: <description>"`
-          })
-        );
-        continue;
-      }
-      entries.push({
-        speakers: agendaLine.speakers.split(",").map(
-          (speaker) => ParticipantReferenceParser.parseParticipantReference(speaker)
-        ),
-        description: agendaLine.description
-      });
-    }
-    return entries;
-  }
-};
-
-// packages/domain/event/src/domain/meetup-event-migration.ts
-var MeetupEventMigration = class _MeetupEventMigration {
-  static parseParticipantReference(value) {
-    return ParticipantReferenceParser.parseParticipantReference(value);
-  }
-  static migrateMeetupEventDto(dto) {
-    if (dto.schemaVersion === EVENT_SCHEMA_VERSION) {
-      return {
-        event: MeetupEventOperations.cloneMeetupEvent(dto),
-        diagnostics: []
-      };
-    }
-    return _MeetupEventMigration.migrateLegacyDto(dto);
-  }
-  static migrateLegacyDto(dto) {
-    const diagnostics = [];
-    const body = dto.parsedBody;
-    const { eventTitle, date, description, host, agenda, occurrenceStatus } = _MeetupEventMigration.legacyFields(dto, diagnostics);
-    const event = {
-      schemaVersion: EVENT_SCHEMA_VERSION,
-      identity: {
-        repository: dto.repository,
-        issueNumber: dto.issueNumber
-      },
-      issueState: dto.issueState ?? "open",
-      issueTitle: dto.issueTitle,
-      labels: [...dto.labels ?? []],
-      eventTitle,
-      date,
-      description,
-      host,
-      agenda,
-      publicationLinks: _MeetupEventMigration.publicationLinks(
-        body,
-        diagnostics
-      ),
-      occurrenceStatus,
-      timeZone: dto.timeZone ?? "Europe/Paris",
-      confirmations: {
-        host: dto.labels?.includes("hoster:confirmed") ?? false,
-        speakers: dto.labels?.includes("speakers:confirmed") ?? false
-      },
-      logistics: {
-        aperitif: "unspecified",
-        postEventVenue: "unspecified"
-      },
-      operationalChecklists: {
-        slidesAndContent: [],
-        communication: [],
-        postEvent: []
-      },
-      // A legacy flag has no named task evidence and cannot prove completion.
-      followUpComplete: false
-    };
-    diagnostics.unshift(
-      EventDiagnostics.diagnostic({
-        code: "event.document.legacy-schema",
-        severity: "info",
-        category: "migration",
-        message: "The legacy event document was migrated to schema version 1",
-        fixAvailable: true
-      })
-    );
-    return { event, diagnostics };
-  }
-  static publicationLinks(body, diagnostics) {
-    return {
-      meetup: LegacyEventFields.readOptionalString(
-        body.meetup_link,
-        "meetup_link",
-        diagnostics
-      ),
-      community: LegacyEventFields.readOptionalString(
-        body.cncf_link,
-        "cncf_link",
-        diagnostics
-      ),
-      feedback: LegacyEventFields.readOptionalString(
-        body.openfeedback_link,
-        "openfeedback_link",
-        diagnostics
-      ),
-      assets: LegacyEventFields.readOptionalString(
-        body.drive_link,
-        "drive_link",
-        diagnostics
-      )
-    };
-  }
-  static legacyFields(dto, diagnostics) {
-    const body = dto.parsedBody;
-    const eventTitle = LegacyEventFields.readString(
-      body.event_title,
-      "event_title",
-      diagnostics
-    );
-    const date = LegacyEventFields.readString(
-      body.event_date,
-      "event_date",
-      diagnostics
-    );
-    const description = LegacyEventFields.readString(
-      body.event_description,
-      "event_description",
-      diagnostics
-    );
-    const host = LegacyEventFields.readLegacyHost(body.hoster, diagnostics);
-    const agenda = LegacyEventFields.readLegacyAgenda(body.agenda, diagnostics);
-    const occurrenceStatus = EventOccurrenceParser.readOccurrenceStatus(
-      dto.labels ?? [],
-      dto.issueState ?? "open",
-      body.event_status,
-      diagnostics
-    );
-    return { eventTitle, date, description, host, agenda, occurrenceStatus };
   }
 };
 
@@ -60766,6 +60414,28 @@ var ValidateMeetupReferentials = class {
       message: item.message
     }));
     return validation.isValid ? { isValid: true, config, catalog: validation.catalog, diagnostics } : { isValid: false, config, diagnostics };
+  }
+};
+
+// packages/runtime/github-actions/src/action-failure-presenter.ts
+var SAFE_ERROR_NAMES = /* @__PURE__ */ new Set([
+  "GoogleDriveAssetRepositoryError",
+  "EventNotFoundError",
+  "EventConcurrentModificationError",
+  "GitHubEventRepositoryConfigurationError",
+  "GitHubEventRepositoryScopeError",
+  "GitHubEventRepositoryResponseError",
+  "GitHubEventCommentRepositoryConfigurationError",
+  "GitHubEventCommentRepositoryScopeError",
+  "GitHubEventCommentRepositoryResponseError"
+]);
+var ActionFailurePresenter = class {
+  /** Never expose provider responses, input values, or contact data in failures. */
+  static publicErrorMessage(error2) {
+    if (error2 instanceof Error && SAFE_ERROR_NAMES.has(error2.name)) {
+      return `${error2.name}: ${error2.message}`;
+    }
+    return "Unexpected technical failure.";
   }
 };
 
@@ -64223,7 +63893,7 @@ var EN_MESSAGES = {
   "diagnostic.publication.meetup.unavailable": "Browser login or startup failed. Check runtime installation, connectivity, solver configuration, and the login page selectors.",
   "action.publication.reconcile-meetup": "Create or update Meetup event",
   "report.meetup.draft": "meetup_event=draft approval=required",
-  "report.meetup.review": "Review the draft: {url}. Approve publication in the organizer approval comment; automation publishes it and checks Meetup event published after verification.",
+  "report.meetup.review": "meetup_url={url}",
   "report.meetup.updated": "meetup_event=synchronized",
   "report.meetup.skipped": "meetup_event=skipped",
   "report.meetup.blocked": "meetup_event=blocked",
@@ -64260,6 +63930,7 @@ var EN_MESSAGES = {
   "diagnostic.speaker-sync.schema": "Correct the indicated required field in the CFP Web API export.",
   "diagnostic.speaker-sync.response-size": "The CFP Web API response must contain 1 byte to 5 MiB.",
   "diagnostic.speaker-sync.unavailable": "Check the CFP slug, API key and runner network access.",
+  "diagnostic.speaker-sync.history-unavailable": "Speaker ID history is unavailable. Fetch the complete repository history (fetch-depth: 0) and verify Git can read it before retrying.",
   "diagnostic.speaker-sync.invalid": "Check the speaker CSV, allocation state and issue form.",
   "diagnostic.speaker-sync.mapping-required": "Link the existing speaker using source_provider, source_event and source_speaker_id in referentials/speakers.csv; preserve speaker_id.",
   "diagnostic.speaker-sync.conflict": "Resolve duplicate source mappings or concurrent catalog edits.",
@@ -64327,7 +63998,7 @@ var FR_MESSAGES = {
   "diagnostic.publication.meetup.unavailable": "Le d\xE9marrage du navigateur ou la connexion a \xE9chou\xE9. V\xE9rifiez les d\xE9pendances, le r\xE9seau, le solveur et les s\xE9lecteurs de connexion.",
   "action.publication.reconcile-meetup": "Cr\xE9er ou mettre \xE0 jour un \xE9v\xE9nement Meetup",
   "report.meetup.draft": "evenement_meetup=brouillon approbation=requise",
-  "report.meetup.review": "V\xE9rifiez le brouillon : {url}. Approuvez sa publication dans le commentaire ; l'automatisation le publie et coche Meetup event published apr\xE8s v\xE9rification.",
+  "report.meetup.review": "meetup_url={url}",
   "report.meetup.updated": "evenement_meetup=synchronise",
   "report.meetup.skipped": "evenement_meetup=ignore",
   "report.meetup.blocked": "evenement_meetup=bloque",
@@ -64363,6 +64034,7 @@ var FR_MESSAGES = {
   "diagnostic.speaker-sync.json": "La Web API du CFP a renvoy\xE9 un JSON invalide.",
   "diagnostic.speaker-sync.schema": "Corrigez le champ obligatoire indiqu\xE9 dans l'export Web API du CFP.",
   "diagnostic.speaker-sync.response-size": "La r\xE9ponse Web API du CFP doit contenir entre 1 octet et 5 Mio.",
+  "diagnostic.speaker-sync.history-unavailable": "L'historique des identifiants d'intervenants est indisponible. R\xE9cup\xE9rez tout l'historique du d\xE9p\xF4t (fetch-depth: 0) et v\xE9rifiez que Git peut le lire avant de r\xE9essayer.",
   "diagnostic.speaker-sync.unavailable": "V\xE9rifiez le slug du CFP, sa cl\xE9 API et l'acc\xE8s r\xE9seau de l'ex\xE9cuteur.",
   "diagnostic.speaker-sync.invalid": "V\xE9rifiez le CSV des intervenants, les identifiants r\xE9serv\xE9s et le formulaire d'issue.",
   "diagnostic.speaker-sync.mapping-required": "Renseignez source_provider, source_event et source_speaker_id pour l'intervenant existant dans referentials/speakers.csv ; conservez speaker_id.",
@@ -64478,49 +64150,6 @@ var ActionReport = class _ActionReport {
   }
 };
 
-// packages/runtime/github-actions/src/runtime-input.ts
-var SAFE_ERROR_NAMES = /* @__PURE__ */ new Set([
-  "GoogleDriveAssetRepositoryError",
-  "EventNotFoundError",
-  "EventConcurrentModificationError",
-  "GitHubEventRepositoryConfigurationError",
-  "GitHubEventRepositoryScopeError",
-  "GitHubEventRepositoryResponseError",
-  "GitHubEventCommentRepositoryConfigurationError",
-  "GitHubEventCommentRepositoryScopeError",
-  "GitHubEventCommentRepositoryResponseError"
-]);
-var RuntimeInput = class {
-  static positiveIntegerInput(name, value) {
-    if (!/^\d+$/.test(value)) {
-      throw new Error(`${name} must be a positive integer`);
-    }
-    const parsed = Number(value);
-    if (!Number.isSafeInteger(parsed) || parsed <= 0) {
-      throw new Error(`${name} must be a positive integer`);
-    }
-    return parsed;
-  }
-  static enumInput(name, value, allowed) {
-    if (!allowed.includes(value)) {
-      throw new Error(`${name} must be one of: ${allowed.join(", ")}`);
-    }
-    return value;
-  }
-  static booleanInput(name, value) {
-    if (value === "true") return true;
-    if (value === "false") return false;
-    throw new Error(`${name} must be true or false`);
-  }
-  /** Never expose provider responses, input values, or contact data in failures. */
-  static publicErrorMessage(error2) {
-    if (error2 instanceof Error && SAFE_ERROR_NAMES.has(error2.name)) {
-      return `${error2.name}: ${error2.message}`;
-    }
-    return "Unexpected technical failure.";
-  }
-};
-
 // packages/runtime/github-actions/src/action-runner.ts
 var ActionRunner = class {
   static async run(title, operation, diagnosticsOutput) {
@@ -64553,7 +64182,7 @@ var ActionRunner = class {
           ]
         };
       } else {
-        const message = RuntimeInput.publicErrorMessage(error2);
+        const message = ActionFailurePresenter.publicErrorMessage(error2);
         report = {
           details: [],
           diagnostics: [
@@ -68769,11 +68398,6 @@ function getOctokit(token, options, ...additionalPlugins) {
 var import_drive2 = __toESM(require_build(), 1);
 import { createHash as createHash2 } from "node:crypto";
 
-// packages/adapter/google-drive-asset-repository/src/google-drive-asset-repository-contracts.ts
-var folderMimeType = "application/vnd.google-apps.folder";
-var fields = "id,name,webViewLink,mimeType,parents,trashed,appProperties";
-var requestOptions = { retry: false, timeout: 3e4 };
-
 // packages/adapter/google-drive-asset-repository/src/google-drive-asset-repository-error.ts
 var GoogleDriveAssetRepositoryError = class extends Error {
   constructor(message) {
@@ -68781,6 +68405,45 @@ var GoogleDriveAssetRepositoryError = class extends Error {
     this.name = "GoogleDriveAssetRepositoryError";
   }
 };
+
+// packages/adapter/google-drive-asset-repository/src/drive-asset-metadata.ts
+var DriveAssetMetadata = class {
+  static templateProperties(template) {
+    return { template_file_id: template.id, template_kind: template.kind };
+  }
+  static container(file, eventId) {
+    if (typeof file.id !== "string" || !file.id || typeof file.name !== "string" || !file.name)
+      throw new GoogleDriveAssetRepositoryError(
+        "Google Drive returned an invalid asset folder"
+      );
+    return {
+      id: file.id,
+      name: file.name,
+      url: `https://drive.google.com/drive/folders/${file.id}`,
+      eventId
+    };
+  }
+  static assetFile(file) {
+    if (typeof file.id !== "string" || !file.id || typeof file.name !== "string" || !file.name)
+      throw new GoogleDriveAssetRepositoryError(
+        "Google Drive returned an invalid asset file"
+      );
+    return {
+      id: file.id,
+      name: file.name,
+      ...file.webViewLink ? { url: file.webViewLink } : {},
+      templateId: file.appProperties?.template_file_id,
+      kind: file.appProperties?.template_kind,
+      mimeType: file.mimeType ?? void 0,
+      contentManaged: file.appProperties?.meetup_content === "v1"
+    };
+  }
+};
+
+// packages/adapter/google-drive-asset-repository/src/google-drive-asset-repository-contracts.ts
+var folderMimeType = "application/vnd.google-apps.folder";
+var fields = "id,name,webViewLink,mimeType,parents,trashed,appProperties";
+var requestOptions = { retry: false, timeout: 3e4 };
 
 // packages/adapter/google-drive-asset-repository/src/google-drive-authentication.ts
 var import_drive = __toESM(require_build(), 1);
@@ -68794,7 +68457,7 @@ var GoogleDriveAuthentication = class {
         "Invalid Google service-account credentials"
       );
     }
-    if (credentials?.type !== "service_account" || typeof credentials.client_email !== "string" || !credentials.client_email || typeof credentials.private_key !== "string" || !credentials.private_key) {
+    if (!credentials || typeof credentials !== "object" || Array.isArray(credentials) || !("type" in credentials) || credentials.type !== "service_account" || !("client_email" in credentials) || typeof credentials.client_email !== "string" || !credentials.client_email || !("private_key" in credentials) || typeof credentials.private_key !== "string" || !credentials.private_key) {
       throw new GoogleDriveAssetRepositoryError(
         "Invalid Google service-account credentials"
       );
@@ -68837,7 +68500,7 @@ var GoogleDriveAssetRepository = class _GoogleDriveAssetRepository {
         "The asset folder does not match the requested event"
       );
     }
-    return _GoogleDriveAssetRepository.container(file, request3.eventId);
+    return DriveAssetMetadata.container(file, request3.eventId);
   }
   async ensureContainer(request3) {
     const current = await this.findContainer(request3);
@@ -68870,7 +68533,7 @@ var GoogleDriveAssetRepository = class _GoogleDriveAssetRepository {
         requestOptions
       )
     );
-    return _GoogleDriveAssetRepository.container(response.data, request3.eventId);
+    return DriveAssetMetadata.container(response.data, request3.eventId);
   }
   async listTemplates() {
     return (await this.list(
@@ -68892,7 +68555,7 @@ var GoogleDriveAssetRepository = class _GoogleDriveAssetRepository {
   async listFiles(containerId) {
     return (await this.list(
       `'${_GoogleDriveAssetRepository.escapeQuery(containerId)}' in parents and mimeType!='${folderMimeType}'`
-    )).filter((file) => !file.appProperties?.meetup_binding_file).map(_GoogleDriveAssetRepository.assetFile);
+    )).filter((file) => !file.appProperties?.meetup_binding_file).map(DriveAssetMetadata.assetFile);
   }
   async copyTemplate(containerId, template, name) {
     const { data } = await _GoogleDriveAssetRepository.remote(
@@ -68903,7 +68566,7 @@ var GoogleDriveAssetRepository = class _GoogleDriveAssetRepository {
             name,
             parents: [containerId],
             appProperties: {
-              ..._GoogleDriveAssetRepository.templateProperties(template),
+              ...DriveAssetMetadata.templateProperties(template),
               ...template.contentContract ? { meetup_content: "v1" } : {}
             }
           },
@@ -68913,7 +68576,7 @@ var GoogleDriveAssetRepository = class _GoogleDriveAssetRepository {
         requestOptions
       )
     );
-    return _GoogleDriveAssetRepository.assetFile(data);
+    return DriveAssetMetadata.assetFile(data);
   }
   async updateFile(file, template, name) {
     const { data } = await _GoogleDriveAssetRepository.remote(
@@ -68923,7 +68586,7 @@ var GoogleDriveAssetRepository = class _GoogleDriveAssetRepository {
           requestBody: {
             name,
             appProperties: {
-              ..._GoogleDriveAssetRepository.templateProperties(template),
+              ...DriveAssetMetadata.templateProperties(template),
               ...file.contentManaged ? { meetup_content: "v1" } : {}
             }
           },
@@ -68933,7 +68596,7 @@ var GoogleDriveAssetRepository = class _GoogleDriveAssetRepository {
         requestOptions
       )
     );
-    return _GoogleDriveAssetRepository.assetFile(data);
+    return DriveAssetMetadata.assetFile(data);
   }
   async list(query, corpora = "user") {
     const files = [];
@@ -68986,36 +68649,6 @@ var GoogleDriveAssetRepository = class _GoogleDriveAssetRepository {
   static escapeQuery(value) {
     return value.replaceAll("\\", "\\\\").replaceAll("'", "\\'");
   }
-  static templateProperties(template) {
-    return { template_file_id: template.id, template_kind: template.kind };
-  }
-  static container(file, eventId) {
-    if (!file.id || !file.name)
-      throw _GoogleDriveAssetRepository.failure(
-        "Google Drive returned an invalid asset folder"
-      );
-    return {
-      id: file.id,
-      name: file.name,
-      url: `https://drive.google.com/drive/folders/${file.id}`,
-      eventId
-    };
-  }
-  static assetFile(file) {
-    if (!file.id || !file.name)
-      throw _GoogleDriveAssetRepository.failure(
-        "Google Drive returned an invalid asset file"
-      );
-    return {
-      id: file.id,
-      name: file.name,
-      ...file.webViewLink ? { url: file.webViewLink } : {},
-      templateId: file.appProperties?.template_file_id,
-      kind: file.appProperties?.template_kind,
-      mimeType: file.mimeType ?? void 0,
-      contentManaged: file.appProperties?.meetup_content === "v1"
-    };
-  }
   static failure(message) {
     return new GoogleDriveAssetRepositoryError(message);
   }
@@ -69023,7 +68656,8 @@ var GoogleDriveAssetRepository = class _GoogleDriveAssetRepository {
     try {
       return await operation();
     } catch (error2) {
-      const status = error2?.response?.status;
+      const response = error2 !== null && typeof error2 === "object" && "response" in error2 ? error2.response : void 0;
+      const status = response !== null && typeof response === "object" && "status" in response ? response.status : void 0;
       if (status === 429)
         throw _GoogleDriveAssetRepository.failure(
           "Google Drive rate limit reached; retry reconciliation later"
@@ -69186,11 +68820,7 @@ var DocumentContentLocations = class _DocumentContentLocations {
     if (!tab || binding.anchor.segmentId) throw new ContentError("conflict");
     if (binding.type === "image") return this.image(tab, binding);
     const range = _DocumentContentLocations.range(tabs, binding, initial);
-    const text = DocumentTabs.text(
-      tab,
-      range.startIndex,
-      range.endIndex
-    );
+    const text = DocumentTabs.text(tab, range.startIndex, range.endIndex);
     return {
       id: binding.id,
       key: binding.key,
@@ -69216,9 +68846,9 @@ var DocumentContentLocations = class _DocumentContentLocations {
     if (matches.length !== 1 || matches[0].tab.id !== binding.anchor.tabId || matches[0].range.ranges?.length !== 1)
       throw new ContentError("conflict");
     const range = matches[0].range.ranges[0];
-    if (range.segmentId || range.tabId && range.tabId !== binding.anchor.tabId || !range.startIndex || !range.endIndex || range.endIndex <= range.startIndex)
+    if (range.segmentId || range.tabId && range.tabId !== binding.anchor.tabId || typeof range.startIndex !== "number" || typeof range.endIndex !== "number" || !Number.isSafeInteger(range.startIndex) || !Number.isSafeInteger(range.endIndex) || range.startIndex <= 0 || range.endIndex <= range.startIndex)
       throw new ContentError("conflict");
-    return range;
+    return { ...range, startIndex: range.startIndex, endIndex: range.endIndex };
   }
   async image(tab, binding) {
     const object = tab.content.inlineObjects?.[binding.anchor.objectId ?? ""]?.inlineObjectProperties?.embeddedObject;
@@ -69241,6 +68871,9 @@ var DocumentContentLocations = class _DocumentContentLocations {
       key: binding.key,
       anchor: binding.anchor,
       fingerprint: ContentFingerprint.of(
+        // Persisted observation bytes preserve provider property order.
+        // Do not canonicalize this representation without also handling
+        // existing binding fingerprints and uncertain image recovery.
         JSON.stringify([bytes, properties, object.title, object.description])
       )
     };
@@ -69256,6 +68889,7 @@ var DocumentContentRequests = class _DocumentContentRequests {
   }
   static change(tabs, change) {
     const { anchor } = change.location;
+    if (!anchor.tabId) throw new ContentError("conflict");
     if (change.value.type === "image")
       return [
         {
@@ -69446,7 +69080,7 @@ var GoogleDocsContentRepository = class _GoogleDocsContentRepository {
       );
       return data.writeControl?.requiredRevisionId ?? "";
     } catch (error2) {
-      if (/revision/i.test(String(error2?.message)))
+      if (error2 instanceof Error && /revision/i.test(error2.message))
         throw new ContentError("revision");
       throw error2;
     }
@@ -69456,7 +69090,21 @@ var GoogleDocsContentRepository = class _GoogleDocsContentRepository {
 // packages/adapter/google-slides-content-repository/src/google-slides-content-repository.ts
 var import_slides = __toESM(require_build3(), 1);
 
+// packages/adapter/google-slides-content-repository/src/slide-content-element.ts
+var SlideContentElement = class {
+  static find(current, binding) {
+    const pages = current.slides?.filter(
+      (page) => page.objectId === binding.anchor.pageId
+    ) ?? [];
+    const elements = pages.flatMap((page) => page.pageElements ?? []).filter((element) => element.objectId === binding.anchor.objectId);
+    if (pages.length !== 1 || elements.length !== 1)
+      throw new ContentError("conflict");
+    return elements[0];
+  }
+};
+
 // packages/adapter/google-slides-content-repository/src/slide-template-bindings.ts
+import { isDeepStrictEqual } from "node:util";
 var SlideTemplateBindings = class _SlideTemplateBindings {
   static discover(presentation, contract) {
     const bindings = [];
@@ -69521,9 +69169,10 @@ var SlideTemplateBindings = class _SlideTemplateBindings {
     const runs = (element.shape?.text?.textElements ?? []).filter(
       (item) => item.textRun?.content?.trim()
     );
-    if (new Set(runs.map((item) => JSON.stringify(item.textRun?.style ?? {}))).size > 1)
+    const style = runs[0]?.textRun?.style ?? {};
+    if (runs.some((item) => !isDeepStrictEqual(item.textRun?.style ?? {}, style)))
       throw new ContentError("location");
-    return runs[0]?.textRun?.style ?? {};
+    return style;
   }
   static rejectTokens(value) {
     if (_SlideTemplateBindings.allText(value).includes("{{"))
@@ -69534,6 +69183,86 @@ var SlideTemplateBindings = class _SlideTemplateBindings {
     return Object.entries(value).map(
       ([key, item]) => key === "content" && typeof item === "string" ? item : _SlideTemplateBindings.allText(item)
     ).join("");
+  }
+};
+
+// packages/adapter/google-slides-content-repository/src/slide-content-locations.ts
+var SlideContentLocations = class {
+  constructor(images) {
+    this.images = images;
+  }
+  images;
+  async read(data, bindings) {
+    const locations = [];
+    for (const binding of bindings) {
+      const element = SlideContentElement.find(data, binding);
+      let fingerprint;
+      if (binding.type === "text") {
+        if (!element.shape) throw new ContentError("conflict");
+        fingerprint = ContentFingerprint.of(
+          SlideTemplateBindings.text(element)
+        );
+      } else {
+        if (!element.image?.contentUrl) throw new ContentError("conflict");
+        const bytes = await this.images.observe(element.image.contentUrl);
+        fingerprint = ContentFingerprint.of(
+          // This persisted byte contract preserves provider property order;
+          // changing it requires recovery for existing image bindings.
+          JSON.stringify([
+            bytes,
+            element.image.imageProperties,
+            element.description
+          ])
+        );
+      }
+      locations.push({
+        id: binding.id,
+        key: binding.key,
+        type: binding.type,
+        anchor: binding.anchor,
+        fingerprint
+      });
+    }
+    return locations;
+  }
+};
+
+// packages/adapter/google-slides-content-repository/src/slide-content-requests.ts
+var SlideContentRequests = class {
+  static build(current, change) {
+    const objectId = change.location.anchor.objectId;
+    if (change.value.type === "image")
+      return [
+        {
+          replaceImage: {
+            imageObjectId: objectId,
+            url: change.value.image?.url,
+            imageReplaceMethod: change.value.fit
+          }
+        },
+        {
+          updatePageElementAltText: {
+            objectId,
+            description: change.value.image?.description
+          }
+        }
+      ];
+    const element = SlideContentElement.find(current, change.location);
+    const style = SlideTemplateBindings.style(element);
+    return [
+      { deleteText: { objectId, textRange: { type: "ALL" } } },
+      { insertText: { objectId, insertionIndex: 0, text: change.value.text } },
+      ...Object.keys(style).length ? [
+        {
+          updateTextStyle: {
+            objectId,
+            textRange: { type: "ALL" },
+            style,
+            fields: Object.keys(style).join(",")
+          }
+        }
+      ] : []
+    ];
   }
 };
 
@@ -69560,34 +69289,10 @@ var GoogleSlidesContentRepository = class _GoogleSlidesContentRepository {
     if (!data.revisionId || data.presentationId !== fileId)
       throw new ContentError("location");
     const bindings = registered ?? SlideTemplateBindings.discover(data, contract);
-    const locations = [];
-    for (const binding of bindings) {
-      const element = _GoogleSlidesContentRepository.element(data, binding);
-      let fingerprint;
-      if (binding.type === "text") {
-        if (!element.shape) throw new ContentError("conflict");
-        fingerprint = ContentFingerprint.of(
-          SlideTemplateBindings.text(element)
-        );
-      } else {
-        if (!element.image?.contentUrl) throw new ContentError("conflict");
-        const bytes = await this.images.observe(element.image.contentUrl);
-        fingerprint = ContentFingerprint.of(
-          JSON.stringify([
-            bytes,
-            element.image.imageProperties,
-            element.description
-          ])
-        );
-      }
-      locations.push({
-        id: binding.id,
-        key: binding.key,
-        type: binding.type,
-        anchor: binding.anchor,
-        fingerprint
-      });
-    }
+    const locations = await new SlideContentLocations(this.images).read(
+      data,
+      bindings
+    );
     this.current = data;
     return { revision: data.revisionId, locations };
   }
@@ -69596,7 +69301,7 @@ var GoogleSlidesContentRepository = class _GoogleSlidesContentRepository {
     if (!current || current.presentationId !== fileId || current.revisionId !== snapshot.revision)
       throw new ContentError("revision");
     const requests = changes.flatMap(
-      (change) => _GoogleSlidesContentRepository.requests(current, change)
+      (change) => SlideContentRequests.build(current, change)
     );
     try {
       const { data } = await this.client.presentations.batchUpdate(
@@ -69611,57 +69316,10 @@ var GoogleSlidesContentRepository = class _GoogleSlidesContentRepository {
       );
       return data.writeControl?.requiredRevisionId ?? "";
     } catch (error2) {
-      if (/revision/i.test(String(error2?.message)))
+      if (error2 instanceof Error && /revision/i.test(error2.message))
         throw new ContentError("revision");
       throw error2;
     }
-  }
-  static requests(current, change) {
-    const objectId = change.location.anchor.objectId;
-    if (change.value.type === "image")
-      return [
-        {
-          replaceImage: {
-            imageObjectId: objectId,
-            url: change.value.image?.url,
-            imageReplaceMethod: change.value.fit
-          }
-        },
-        {
-          updatePageElementAltText: {
-            objectId,
-            description: change.value.image?.description
-          }
-        }
-      ];
-    const element = _GoogleSlidesContentRepository.element(
-      current,
-      change.location
-    );
-    const style = SlideTemplateBindings.style(element);
-    return [
-      { deleteText: { objectId, textRange: { type: "ALL" } } },
-      { insertText: { objectId, insertionIndex: 0, text: change.value.text } },
-      ...Object.keys(style).length ? [
-        {
-          updateTextStyle: {
-            objectId,
-            textRange: { type: "ALL" },
-            style,
-            fields: Object.keys(style).join(",")
-          }
-        }
-      ] : []
-    ];
-  }
-  static element(current, binding) {
-    const pages = current.slides?.filter(
-      (page) => page.objectId === binding.anchor.pageId
-    ) ?? [];
-    const elements = pages.flatMap((page) => page.pageElements ?? []).filter((element) => element.objectId === binding.anchor.objectId);
-    if (pages.length !== 1 || elements.length !== 1)
-      throw new ContentError("conflict");
-    return elements[0];
   }
 };
 
@@ -70933,51 +70591,108 @@ var AssetRenderPresenterImpl = class {
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
+// packages/runtime/github-actions/src/runtime-input.ts
+var RuntimeInput = class {
+  static positiveIntegerInput(name, value) {
+    if (!/^\d+$/.test(value)) {
+      throw new Error(`${name} must be a positive integer`);
+    }
+    const parsed = Number(value);
+    if (!Number.isSafeInteger(parsed) || parsed <= 0) {
+      throw new Error(`${name} must be a positive integer`);
+    }
+    return parsed;
+  }
+  static enumInput(name, value, allowed) {
+    const parsed = allowed.find((candidate) => candidate === value);
+    if (parsed === void 0) {
+      throw new Error(`${name} must be one of: ${allowed.join(", ")}`);
+    }
+    return parsed;
+  }
+  static isObject(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
+  }
+  static booleanInput(name, value) {
+    if (value === "true") return true;
+    if (value === "false") return false;
+    throw new Error(`${name} must be true or false`);
+  }
+};
+
 // packages/runtime/github-actions/src/assets/asset-render-configuration.ts
 var AssetRenderConfiguration = class _AssetRenderConfiguration {
   static parse(event, venues, hostLogos) {
-    const speakers = _AssetRenderConfiguration.record(event.speakers ?? {});
-    const talks = _AssetRenderConfiguration.record(event.talks ?? {});
-    const publicVenues = _AssetRenderConfiguration.record(venues ?? {});
-    for (const [slot, id] of Object.entries(speakers)) {
-      if (!_AssetRenderConfiguration.slot(slot) || typeof id !== "string" || !/^speaker-[a-z0-9-]+$/.test(id))
-        throw new Error("Invalid asset speaker assignment");
-    }
-    for (const [slot, value] of Object.entries(talks)) {
-      const identity = _AssetRenderConfiguration.record(value);
-      if (!_AssetRenderConfiguration.slot(slot) || !ContentContractPolicy.keys(identity, ["provider", "event", "id"]) || ![identity.provider, identity.event, identity.id].every(
-        (item) => typeof item === "string" && /^[a-zA-Z0-9_-]{1,200}$/.test(item)
-      ))
-        throw new Error("Invalid asset talk assignment");
-    }
-    for (const [id, value] of Object.entries(publicVenues)) {
-      const venue = _AssetRenderConfiguration.record(value);
-      if (!/^host-[a-z0-9-]+$/.test(id) || !ContentContractPolicy.keys(venue, ["address", "postalCode", "city"]) || ![venue.address, venue.postalCode, venue.city].every(
-        ContentContractPolicy.text
-      ))
-        throw new Error("Invalid public asset venue");
-    }
     return {
-      speakers,
-      talks,
-      venues: publicVenues,
+      speakers: _AssetRenderConfiguration.speakers(event.speakers),
+      talks: _AssetRenderConfiguration.talks(event.talks),
+      venues: _AssetRenderConfiguration.venues(venues),
       hostLogos: _AssetRenderConfiguration.logos(hostLogos)
     };
   }
-  static logos(input) {
-    const logos = _AssetRenderConfiguration.record(input ?? {});
-    for (const [hostId, value] of Object.entries(logos)) {
-      const logo = _AssetRenderConfiguration.record(value);
-      if (!/^host-[a-z0-9-]+$/.test(hostId) || !ContentContractPolicy.keys(logo, ["url", "description"]) || ![logo.url, logo.description].every(ContentContractPolicy.text))
-        throw new Error("Invalid public host logo");
+  static speakers(input) {
+    const result = {};
+    for (const [slot, id] of Object.entries(
+      _AssetRenderConfiguration.record(input === void 0 ? {} : input)
+    )) {
+      if (!_AssetRenderConfiguration.slot(slot) || typeof id !== "string" || !/^speaker-[a-z0-9-]+$/.test(id))
+        throw new Error("Invalid asset speaker assignment");
+      result[slot] = id;
     }
-    return logos;
+    return result;
+  }
+  static talks(input) {
+    const result = {};
+    for (const [slot, value] of Object.entries(
+      _AssetRenderConfiguration.record(input === void 0 ? {} : input)
+    )) {
+      const identity = _AssetRenderConfiguration.record(value);
+      if (!_AssetRenderConfiguration.slot(slot) || !ContentContractPolicy.keys(identity, ["provider", "event", "id"]) || !_AssetRenderConfiguration.identity(identity.provider) || !_AssetRenderConfiguration.identity(identity.event) || !_AssetRenderConfiguration.identity(identity.id))
+        throw new Error("Invalid asset talk assignment");
+      result[slot] = {
+        provider: identity.provider,
+        event: identity.event,
+        id: identity.id
+      };
+    }
+    return result;
+  }
+  static venues(input) {
+    const result = {};
+    for (const [id, value] of Object.entries(
+      _AssetRenderConfiguration.record(input === void 0 ? {} : input)
+    )) {
+      const venue = _AssetRenderConfiguration.record(value);
+      if (!/^host-[a-z0-9-]+$/.test(id) || !ContentContractPolicy.keys(venue, ["address", "postalCode", "city"]) || !ContentContractPolicy.text(venue.address) || !ContentContractPolicy.text(venue.postalCode) || !ContentContractPolicy.text(venue.city))
+        throw new Error("Invalid public asset venue");
+      result[id] = {
+        address: venue.address,
+        postalCode: venue.postalCode,
+        city: venue.city
+      };
+    }
+    return result;
+  }
+  static logos(input) {
+    const result = {};
+    for (const [hostId, value] of Object.entries(
+      _AssetRenderConfiguration.record(input === void 0 ? {} : input)
+    )) {
+      const logo = _AssetRenderConfiguration.record(value);
+      if (!/^host-[a-z0-9-]+$/.test(hostId) || !ContentContractPolicy.keys(logo, ["url", "description"]) || !ContentContractPolicy.text(logo.url) || !ContentContractPolicy.text(logo.description))
+        throw new Error("Invalid public host logo");
+      result[hostId] = { url: logo.url, description: logo.description };
+    }
+    return result;
   }
   static slot(value) {
     return ContentContractPolicy.name(value) && !["__proto__", "prototype", "constructor"].includes(value);
   }
+  static identity(value) {
+    return typeof value === "string" && /^[a-zA-Z0-9_-]{1,200}$/.test(value);
+  }
   static record(value) {
-    if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).length > 200)
+    if (!RuntimeInput.isObject(value) || Object.keys(value).length > 200)
       throw new Error("Invalid asset render configuration");
     return value;
   }
@@ -70987,9 +70702,9 @@ var AssetRenderConfiguration = class _AssetRenderConfiguration {
 var AssetContentConfiguration = class _AssetContentConfiguration {
   static usesNextEvent(contracts) {
     return Object.values(contracts).some((contract) => {
-      const fields2 = contract?.fields;
+      const fields2 = RuntimeInput.isObject(contract) ? contract.fields : void 0;
       return Array.isArray(fields2) && fields2.some(
-        (field) => typeof field?.token === "string" && field.token.startsWith("next_event.")
+        (field) => RuntimeInput.isObject(field) && typeof field.token === "string" && field.token.startsWith("next_event.")
       );
     });
   }
@@ -71001,7 +70716,7 @@ var AssetContentConfiguration = class _AssetContentConfiguration {
         "utf8"
       );
     } catch (error2) {
-      if (error2.code === "ENOENT")
+      if (RuntimeInput.isObject(error2) && error2.code === "ENOENT")
         return {
           contracts: {},
           speakers: {},
@@ -71016,39 +70731,46 @@ var AssetContentConfiguration = class _AssetContentConfiguration {
       throw new Error("Asset content configuration is too large");
     return _AssetContentConfiguration.parse(JSON.parse(text), eventId);
   }
-  static parse(input, eventId) {
-    const root = input;
-    if (root?.version !== 1 || !_AssetContentConfiguration.record(root.contracts) || !ContentContractPolicy.keys(root, [
+  static parse(root, eventId) {
+    if (!RuntimeInput.isObject(root) || root.version !== 1 || !RuntimeInput.isObject(root.contracts) || !ContentContractPolicy.keys(root, [
       "version",
       "contracts",
       "events",
       "venues",
       "hostLogos"
-    ]) || root.events !== void 0 && !_AssetContentConfiguration.record(root.events))
+    ]) || root.events !== void 0 && !RuntimeInput.isObject(root.events))
       throw new Error("Invalid asset content configuration");
-    const event = root.events?.[eventId] ?? {};
-    if (!_AssetContentConfiguration.record(event) || !ContentContractPolicy.keys(event, ["speakers", "talks", "recovery"]))
+    const selected = RuntimeInput.isObject(root.events) ? root.events[eventId] : void 0;
+    const event = selected === void 0 ? {} : selected;
+    if (!RuntimeInput.isObject(event) || !ContentContractPolicy.keys(event, ["speakers", "talks", "recovery"]))
       throw new Error("Invalid asset event configuration");
     const assignments = AssetRenderConfiguration.parse(
       event,
       root.venues,
       root.hostLogos
     );
-    const recovery = event.recovery ?? {};
-    if (!_AssetContentConfiguration.record(recovery))
-      throw new Error("Invalid asset speaker assignments");
-    for (const [id, operation] of Object.entries(recovery)) {
-      if (!ContentContractPolicy.name(id) || !operation || !["enroll", "restore", "remove"].includes(operation.operation) || !ContentContractPolicy.text(operation.revision) || operation.operation !== "enroll" && !ContentContractPolicy.name(operation.bindingId) || !ContentContractPolicy.keys(operation, [
+    const recovery = _AssetContentConfiguration.recovery(event.recovery);
+    return { contracts: root.contracts, ...assignments, recovery };
+  }
+  static recovery(input) {
+    const value = input === void 0 ? {} : input;
+    if (!RuntimeInput.isObject(value))
+      throw new Error("Invalid asset recovery operations");
+    const result = {};
+    for (const [id, operation] of Object.entries(value)) {
+      if (!ContentContractPolicy.name(id) || !RuntimeInput.isObject(operation) || operation.operation !== "enroll" && operation.operation !== "restore" && operation.operation !== "remove" || !ContentContractPolicy.text(operation.revision) || operation.operation !== "enroll" && !ContentContractPolicy.name(operation.bindingId) || operation.bindingId !== void 0 && !ContentContractPolicy.name(operation.bindingId) || !ContentContractPolicy.keys(operation, [
         "operation",
         "revision",
         "bindingId"
       ]))
         throw new Error("Invalid asset recovery operation");
+      result[id] = {
+        operation: operation.operation,
+        revision: operation.revision,
+        ...typeof operation.bindingId === "string" ? { bindingId: operation.bindingId } : {}
+      };
     }
-    return { contracts: root.contracts, ...assignments, recovery };
-  }
-  static record(value) {
-    return value !== null && typeof value === "object" && !Array.isArray(value);
+    return result;
   }
 };
 
@@ -74153,6 +73875,75 @@ var GitHubEventRepositoryScopeError = class extends Error {
   }
 };
 
+// packages/adapter/github-event-repository/src/github-issue-document-codec.ts
+var GitHubIssueDocumentCodec = class _GitHubIssueDocumentCodec {
+  /** Map one GitHub issue response or webhook snapshot into the domain document. */
+  static decode(data, repository) {
+    const issue2 = _GitHubIssueDocumentCodec.asRecord(data, "GitHub issue");
+    if (issue2.pull_request !== void 0 && issue2.pull_request !== null) {
+      return null;
+    }
+    if (!Number.isSafeInteger(issue2.number) || Number(issue2.number) <= 0) {
+      throw new GitHubEventRepositoryResponseError(
+        "GitHub issue number must be a positive integer"
+      );
+    }
+    if (typeof issue2.title !== "string") {
+      throw new GitHubEventRepositoryResponseError(
+        "GitHub issue title must be a string"
+      );
+    }
+    if (issue2.state !== "open" && issue2.state !== "closed") {
+      throw new GitHubEventRepositoryResponseError(
+        "GitHub issue state must be open or closed"
+      );
+    }
+    if (issue2.body !== null && typeof issue2.body !== "string") {
+      throw new GitHubEventRepositoryResponseError(
+        "GitHub issue body must be a string or null"
+      );
+    }
+    if (!Array.isArray(issue2.labels)) {
+      throw new GitHubEventRepositoryResponseError(
+        "GitHub issue labels must be an array"
+      );
+    }
+    return {
+      identity: { repository, issueNumber: Number(issue2.number) },
+      issueState: issue2.state,
+      issueTitle: issue2.title,
+      labels: _GitHubIssueDocumentCodec.mapLabels(issue2.labels),
+      body: issue2.body ?? ""
+    };
+  }
+  static mapLabels(labels) {
+    const result = [];
+    for (const label of labels) {
+      let name;
+      if (typeof label === "string") {
+        name = label;
+      } else if (_GitHubIssueDocumentCodec.isRecord(label) && typeof label.name === "string") {
+        name = label.name;
+      }
+      if (name && !result.includes(name)) {
+        result.push(name);
+      }
+    }
+    return Object.freeze(result);
+  }
+  static asRecord(value, label) {
+    if (!_GitHubIssueDocumentCodec.isRecord(value)) {
+      throw new GitHubEventRepositoryResponseError(
+        `${label} must be an object`
+      );
+    }
+    return value;
+  }
+  static isRecord(value) {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+  }
+};
+
 // packages/adapter/github-event-repository/src/github-event-repository.ts
 var GitHubEventRepository = class _GitHubEventRepository {
   constructor(client, options) {
@@ -74179,7 +73970,7 @@ var GitHubEventRepository = class _GitHubEventRepository {
         repo: this.repo,
         issue_number: identity.issueNumber
       });
-      const document2 = _GitHubEventRepository.mapGitHubIssueDocument(
+      const document2 = GitHubIssueDocumentCodec.decode(
         response.data,
         this.repositoryName
       );
@@ -74239,10 +74030,7 @@ var GitHubEventRepository = class _GitHubEventRepository {
       );
     }
     const items = response.data.map(
-      (issue2) => _GitHubEventRepository.mapGitHubIssueDocument(
-        issue2,
-        this.repositoryName
-      )
+      (issue2) => GitHubIssueDocumentCodec.decode(issue2, this.repositoryName)
     ).filter((issue2) => issue2 !== null);
     const linkHeader = _GitHubEventRepository.readHeader(
       response.headers,
@@ -74270,60 +74058,6 @@ var GitHubEventRepository = class _GitHubEventRepository {
       );
     }
     return normalized;
-  }
-  /** Map one GitHub issue response or webhook snapshot into the domain document. */
-  static mapGitHubIssueDocument(data, repository) {
-    const issue2 = _GitHubEventRepository.asRecord(data, "GitHub issue");
-    if (issue2.pull_request !== void 0 && issue2.pull_request !== null) {
-      return null;
-    }
-    if (!Number.isInteger(issue2.number) || Number(issue2.number) <= 0) {
-      throw new GitHubEventRepositoryResponseError(
-        "GitHub issue number must be a positive integer"
-      );
-    }
-    if (typeof issue2.title !== "string") {
-      throw new GitHubEventRepositoryResponseError(
-        "GitHub issue title must be a string"
-      );
-    }
-    if (issue2.state !== "open" && issue2.state !== "closed") {
-      throw new GitHubEventRepositoryResponseError(
-        "GitHub issue state must be open or closed"
-      );
-    }
-    if (issue2.body !== null && typeof issue2.body !== "string") {
-      throw new GitHubEventRepositoryResponseError(
-        "GitHub issue body must be a string or null"
-      );
-    }
-    if (!Array.isArray(issue2.labels)) {
-      throw new GitHubEventRepositoryResponseError(
-        "GitHub issue labels must be an array"
-      );
-    }
-    return {
-      identity: { repository, issueNumber: Number(issue2.number) },
-      issueState: issue2.state,
-      issueTitle: issue2.title,
-      labels: _GitHubEventRepository.mapLabels(issue2.labels),
-      body: issue2.body ?? ""
-    };
-  }
-  static mapLabels(labels) {
-    const result = [];
-    for (const label of labels) {
-      let name;
-      if (typeof label === "string") {
-        name = label;
-      } else if (_GitHubEventRepository.isRecord(label) && typeof label.name === "string") {
-        name = label.name;
-      }
-      if (name && !result.includes(name)) {
-        result.push(name);
-      }
-    }
-    return Object.freeze(result);
   }
   static parseCursor(cursor) {
     if (cursor === void 0) {
@@ -74359,14 +74093,6 @@ var GitHubEventRepository = class _GitHubEventRepository {
   static readHeader(headers, name) {
     const value = headers?.[name];
     return typeof value === "string" ? value : void 0;
-  }
-  static asRecord(value, label) {
-    if (!_GitHubEventRepository.isRecord(value)) {
-      throw new GitHubEventRepositoryResponseError(
-        `${label} must be an object`
-      );
-    }
-    return value;
   }
   static isRecord(value) {
     return typeof value === "object" && value !== null;
@@ -74684,7 +74410,7 @@ var AttentionCommentRetention = class {
 var CURRENT_SCHEMA_MARKER = "<!-- meetup-event-schema:1 -->";
 var SCHEMA_MARKER_NAME = "meetup-event-schema";
 var REFERENCE_MARKER_NAME = "meetup-event-references";
-var STABLE_ID_PATTERN2 = /^[a-zA-Z0-9][a-zA-Z0-9._:-]*$/;
+var STABLE_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._:-]*$/;
 var HEADINGS = Object.freeze({
   eventTitle: "Event Title",
   date: "Event Date",
@@ -74982,7 +74708,7 @@ var ReferenceMetadataShape = class _ReferenceMetadataShape {
       return false;
     }
     const candidate = value;
-    if (candidate.hostId !== null && (typeof candidate.hostId !== "string" || !STABLE_ID_PATTERN2.test(candidate.hostId))) {
+    if (candidate.hostId !== null && (typeof candidate.hostId !== "string" || !STABLE_ID_PATTERN.test(candidate.hostId))) {
       return false;
     }
     if (!Array.isArray(candidate.agendaSpeakerIds)) {
@@ -74990,7 +74716,7 @@ var ReferenceMetadataShape = class _ReferenceMetadataShape {
     }
     return candidate.agendaSpeakerIds.every(
       (entry) => Array.isArray(entry) && entry.every(
-        (id) => id === null || typeof id === "string" && STABLE_ID_PATTERN2.test(id)
+        (id) => id === null || typeof id === "string" && STABLE_ID_PATTERN.test(id)
       )
     );
   }
@@ -74999,7 +74725,7 @@ var ReferenceMetadataShape = class _ReferenceMetadataShape {
       return false;
     }
     const candidate = value;
-    return typeof candidate.id === "string" && STABLE_ID_PATTERN2.test(candidate.id) && typeof candidate.displayName === "string" && candidate.displayName.length > 0 && candidate.displayName === ReferenceBindings.normalizeVisibleDisplayName(candidate.displayName);
+    return typeof candidate.id === "string" && STABLE_ID_PATTERN.test(candidate.id) && typeof candidate.displayName === "string" && candidate.displayName.length > 0 && candidate.displayName === ReferenceBindings.normalizeVisibleDisplayName(candidate.displayName);
   }
 };
 
@@ -75088,7 +74814,12 @@ var EventReferenceMetadata = class _EventReferenceMetadata {
     };
   }
   static referenceMetadataEqual(left, right) {
-    return JSON.stringify(left) === JSON.stringify(right);
+    return _EventReferenceMetadata.sameBinding(left.host, right.host) && left.speakers.length === right.speakers.length && left.speakers.every(
+      (speaker, index) => _EventReferenceMetadata.sameBinding(speaker, right.speakers[index])
+    );
+  }
+  static sameBinding(left, right) {
+    return left === null || right === null ? left === right : left.id === right.id && left.displayName === right.displayName;
   }
   static legacyMetadataDiagnostic() {
     return EventDiagnostics.diagnostic({
@@ -75342,6 +75073,354 @@ var IssueFormChecklists = class _IssueFormChecklists {
   }
 };
 
+// packages/adapter/github-issue-form-event-document-codec/src/participant-reference-parser.ts
+var ParticipantReferenceParser = class _ParticipantReferenceParser {
+  static parseParticipantReference(value) {
+    const trimmed = value.trim();
+    const markdownLinkLabel = _ParticipantReferenceParser.parseMarkdownLinkLabel(trimmed);
+    if (markdownLinkLabel !== void 0) {
+      return { displayName: markdownLinkLabel };
+    }
+    const stableReference = _ParticipantReferenceParser.parseStableIdReference(trimmed);
+    if (stableReference) {
+      return stableReference;
+    }
+    return { displayName: trimmed };
+  }
+  static parseAgendaLine(line) {
+    let cursor = 0;
+    cursor = _ParticipantReferenceParser.skipHorizontalWhitespace(line, cursor);
+    if (line[cursor] !== "-") {
+      return void 0;
+    }
+    cursor += 1;
+    if (!_ParticipantReferenceParser.isHorizontalWhitespaceCharacter(
+      line[cursor] ?? ""
+    )) {
+      return void 0;
+    }
+    cursor = _ParticipantReferenceParser.skipHorizontalWhitespace(line, cursor);
+    const content = line.slice(cursor);
+    for (let index = 0; index < content.length; index += 1) {
+      if (content[index] !== ":") {
+        continue;
+      }
+      if (!_ParticipantReferenceParser.isHorizontalWhitespaceCharacter(
+        content[index + 1] ?? ""
+      )) {
+        continue;
+      }
+      const speakers = content.slice(0, index).trimEnd();
+      if (speakers === "") {
+        return void 0;
+      }
+      let descriptionStart = index + 1;
+      while (descriptionStart < content.length && _ParticipantReferenceParser.isHorizontalWhitespaceCharacter(
+        content[descriptionStart]
+      )) {
+        descriptionStart += 1;
+      }
+      return {
+        speakers,
+        description: content.slice(descriptionStart)
+      };
+    }
+    return void 0;
+  }
+  static parseMarkdownLinkLabel(value) {
+    if (!value.startsWith("[") || !value.endsWith(")")) {
+      return void 0;
+    }
+    const closingBracket = value.indexOf("]");
+    if (closingBracket <= 1 || value[closingBracket + 1] !== "(") {
+      return void 0;
+    }
+    const target = value.slice(closingBracket + 2, -1);
+    if (target === "" || target.includes(")")) {
+      return void 0;
+    }
+    return value.slice(1, closingBracket).trim();
+  }
+  static parseStableIdReference(value) {
+    if (!value.endsWith("]")) {
+      return void 0;
+    }
+    const openingBracket = value.lastIndexOf("[");
+    if (openingBracket <= 0 || !_ParticipantReferenceParser.isWhitespaceCharacter(
+      value[openingBracket - 1] ?? ""
+    )) {
+      return void 0;
+    }
+    const id = value.slice(openingBracket + 1, -1);
+    if (!STABLE_ID_PATTERN.test(id)) {
+      return void 0;
+    }
+    const displayName = value.slice(0, openingBracket).trim();
+    if (displayName === "") {
+      return void 0;
+    }
+    return {
+      displayName,
+      id
+    };
+  }
+  static isHorizontalWhitespaceCharacter(value) {
+    return value === " " || value === "	";
+  }
+  static isWhitespaceCharacter(value) {
+    return _ParticipantReferenceParser.isHorizontalWhitespaceCharacter(value) || value === "\n" || value === "\r";
+  }
+  static skipHorizontalWhitespace(line, cursor) {
+    while (cursor < line.length && _ParticipantReferenceParser.isHorizontalWhitespaceCharacter(line[cursor])) {
+      cursor += 1;
+    }
+    return cursor;
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/issue-form-fields.ts
+var IssueFormFields = class _IssueFormFields {
+  static readString(value, field, diagnostics) {
+    if (value === void 0 || value === null) {
+      return "";
+    }
+    if (typeof value === "string") {
+      return value;
+    }
+    diagnostics.push(
+      EventDiagnostics.diagnostic({
+        code: "event.document.invalid-field-type",
+        severity: "error",
+        category: "invalid",
+        field,
+        message: `The ${field} field must be a string`
+      })
+    );
+    return "";
+  }
+  static readOptionalString(value, field, diagnostics) {
+    if (value === void 0 || value === null || value === "") {
+      return void 0;
+    }
+    return _IssueFormFields.readString(value, field, diagnostics);
+  }
+  static readHost(value, diagnostics) {
+    if (value === void 0 || value === null) {
+      return void 0;
+    }
+    if (!Array.isArray(value)) {
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.document.invalid-hoster-type",
+          severity: "error",
+          category: "invalid",
+          field: "hoster",
+          message: "The hoster field must be an array"
+        })
+      );
+      return void 0;
+    }
+    if (value.length > 1) {
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.hoster.multiple",
+          severity: "error",
+          category: "invalid",
+          field: "hoster",
+          message: "A meetup event must have exactly one host"
+        })
+      );
+    }
+    const first = value[0];
+    if (first === void 0) {
+      return void 0;
+    }
+    if (typeof first !== "string") {
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.document.invalid-hoster-entry",
+          severity: "error",
+          category: "invalid",
+          field: "hoster",
+          message: "The hoster entry must be a string"
+        })
+      );
+      return void 0;
+    }
+    return ParticipantReferenceParser.parseParticipantReference(first);
+  }
+  static readAgenda(value, diagnostics) {
+    if (value === void 0 || value === null || value === "") {
+      return [];
+    }
+    if (typeof value !== "string") {
+      diagnostics.push(
+        EventDiagnostics.diagnostic({
+          code: "event.document.invalid-agenda-type",
+          severity: "error",
+          category: "invalid",
+          field: "agenda",
+          message: "The agenda field must be a string"
+        })
+      );
+      return [];
+    }
+    const entries = [];
+    for (const [index, line] of value.split("\n").entries()) {
+      if (line.trim() === "") {
+        continue;
+      }
+      const agendaLine = ParticipantReferenceParser.parseAgendaLine(line);
+      if (!agendaLine) {
+        diagnostics.push(
+          EventDiagnostics.diagnostic({
+            code: "event.agenda.legacy-line-invalid",
+            severity: "error",
+            category: "invalid",
+            field: `agenda.${index}`,
+            message: `Agenda line ${index + 1} does not match "- <speaker(s)>: <description>"`
+          })
+        );
+        continue;
+      }
+      entries.push({
+        speakers: agendaLine.speakers.split(",").map(
+          (speaker) => ParticipantReferenceParser.parseParticipantReference(speaker)
+        ),
+        description: agendaLine.description
+      });
+    }
+    return entries;
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/issue-form-event-mapper.ts
+var IssueFormEventMapper = class _IssueFormEventMapper {
+  static map(dto) {
+    const diagnostics = [];
+    const body = dto.parsedBody;
+    const { eventTitle, date, description, host, agenda, occurrenceStatus } = _IssueFormEventMapper.fields(dto, diagnostics);
+    const event = {
+      schemaVersion: EVENT_SCHEMA_VERSION,
+      identity: {
+        repository: dto.repository,
+        issueNumber: dto.issueNumber
+      },
+      issueState: dto.issueState ?? "open",
+      issueTitle: dto.issueTitle,
+      labels: [...dto.labels ?? []],
+      eventTitle,
+      date,
+      description,
+      host,
+      agenda,
+      publicationLinks: _IssueFormEventMapper.publicationLinks(
+        body,
+        diagnostics
+      ),
+      occurrenceStatus,
+      timeZone: dto.timeZone ?? "Europe/Paris",
+      confirmations: {
+        host: dto.labels?.includes("hoster:confirmed") ?? false,
+        speakers: dto.labels?.includes("speakers:confirmed") ?? false
+      },
+      logistics: {
+        aperitif: "unspecified",
+        postEventVenue: "unspecified"
+      },
+      operationalChecklists: {
+        slidesAndContent: [],
+        communication: [],
+        postEvent: []
+      },
+      // Only named checklist evidence can prove follow-up completion.
+      followUpComplete: false
+    };
+    diagnostics.unshift(
+      EventDiagnostics.diagnostic({
+        code: "event.document.legacy-schema",
+        severity: "info",
+        category: "migration",
+        message: "The legacy event document was migrated to schema version 1",
+        fixAvailable: true
+      })
+    );
+    return { event, diagnostics };
+  }
+  static publicationLinks(body, diagnostics) {
+    return {
+      meetup: IssueFormFields.readOptionalString(
+        body.meetup_link,
+        "meetup_link",
+        diagnostics
+      ),
+      community: IssueFormFields.readOptionalString(
+        body.cncf_link,
+        "cncf_link",
+        diagnostics
+      ),
+      feedback: IssueFormFields.readOptionalString(
+        body.openfeedback_link,
+        "openfeedback_link",
+        diagnostics
+      ),
+      assets: IssueFormFields.readOptionalString(
+        body.drive_link,
+        "drive_link",
+        diagnostics
+      )
+    };
+  }
+  static fields(dto, diagnostics) {
+    const body = dto.parsedBody;
+    const eventTitle = IssueFormFields.readString(
+      body.event_title,
+      "event_title",
+      diagnostics
+    );
+    const date = IssueFormFields.readString(
+      body.event_date,
+      "event_date",
+      diagnostics
+    );
+    const description = IssueFormFields.readString(
+      body.event_description,
+      "event_description",
+      diagnostics
+    );
+    const host = IssueFormFields.readHost(body.hoster, diagnostics);
+    const agenda = IssueFormFields.readAgenda(body.agenda, diagnostics);
+    const occurrenceStatus = EventOccurrenceParser.readOccurrenceStatus(
+      dto.labels ?? [],
+      dto.issueState ?? "open",
+      _IssueFormEventMapper.occurrenceField(dto, diagnostics),
+      diagnostics
+    );
+    return { eventTitle, date, description, host, agenda, occurrenceStatus };
+  }
+  static occurrenceField(dto, diagnostics) {
+    if (OCCURRENCE_STATUSES.some((status2) => {
+      const label = OCCURRENCE_STATUS_LABELS[status2];
+      return label !== null && dto.labels?.includes(label);
+    }))
+      return void 0;
+    const value = dto.parsedBody.event_status;
+    if (value === void 0 || value === null || value === "") return void 0;
+    const status = OCCURRENCE_STATUSES.find((candidate) => candidate === value);
+    if (status) return status;
+    diagnostics.push(
+      EventDiagnostics.diagnostic({
+        code: "event.occurrence-status.invalid",
+        severity: "error",
+        category: "invalid",
+        field: "event_status",
+        message: "Occurrence status must be scheduled, postponed, held, or cancelled"
+      })
+    );
+    return void 0;
+  }
+};
+
 // packages/adapter/github-issue-form-event-document-codec/src/proposal-selection-codec.ts
 var ProposalSelectionCodec = class _ProposalSelectionCodec {
   static read(body, diagnostics) {
@@ -75477,7 +75556,7 @@ var IssueFormReader = class {
     const schema = ManagedIssueMarkers.readSchema(document2.body, diagnostics);
     const parsedBody = this.readBody(sections, diagnostics);
     const operations = this.readOperations(sections, diagnostics);
-    const migrated = MeetupEventMigration.migrateMeetupEventDto({
+    const migrated = IssueFormEventMapper.map({
       repository: document2.identity.repository,
       issueNumber: document2.identity.issueNumber,
       issueState: document2.issueState,

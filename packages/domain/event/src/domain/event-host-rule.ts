@@ -1,5 +1,4 @@
 import { EventParticipantNormalization } from "./event-participant-normalization.js";
-import { EventRuleFactory } from "./event-rule-factory.js";
 import { EventRuleResults } from "./event-rule-results.js";
 import type { MeetupEvent } from "./model.js";
 import { EventPatches } from "./patch.js";
@@ -32,10 +31,10 @@ export class EventHostRule implements EventRule {
 		if (
 			EventParticipantNormalization.participantsEqual(event.host, normalized)
 		) {
-			return EventRuleFactory.emptyResult();
+			return EventRuleResults.emptyResult();
 		}
 
-		return EventRuleFactory.normalizedResult(
+		return EventRuleResults.normalizedResult(
 			EventPatches.replaceEventField(
 				"host",
 				normalized,

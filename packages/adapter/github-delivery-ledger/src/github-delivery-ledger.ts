@@ -1,20 +1,21 @@
-import { createHash } from "node:crypto";
 import type {
-	AttentionRecoverySource,
 	AttentionRecoveryItem,
+	AttentionRecoverySource,
 	DeliveryLedger,
 	DeliveryLedgerEntry,
 	DeliveryReservation,
 	DeliveryReservationResult,
 } from "@meetup-automation/communication";
 import type { GithubLedgerCommentClient } from "./comment-client.js";
-import { LedgerCommentPresenter } from "./ledger-comment-presenter.js";
 import {
 	DELIVERY_LEDGER_MARKER,
 	type GithubDeliveryLedgerOptions,
 	type StoredEntry,
 	type StoredLedger,
 } from "./github-delivery-ledger-contracts.js";
+import { LedgerCommentCodec } from "./ledger-comment-codec.js";
+import { LedgerCommentPresenter } from "./ledger-comment-presenter.js";
+import { LedgerEntryMapping } from "./ledger-entry-mapping.js";
 
 export class GithubDeliveryLedger
 	implements DeliveryLedger, AttentionRecoverySource
@@ -43,11 +44,11 @@ export class GithubDeliveryLedger
 	}
 	async find(idempotencyKey: string): Promise<DeliveryLedgerEntry | undefined> {
 		const { ledger } = await this.#load();
-		const protectedKey = GithubDeliveryLedger.protectIdentifier(idempotencyKey);
+		const protectedKey = LedgerEntryMapping.protectIdentifier(idempotencyKey);
 		const entry = ledger.entries.find(
 			(candidate) => candidate.idempotencyKey === protectedKey,
 		);
-		return entry ? GithubDeliveryLedger.publicEntry(entry) : undefined;
+		return entry ? LedgerEntryMapping.publicEntry(entry) : undefined;
 	}
 
 	async reservePending(
@@ -55,7 +56,7 @@ export class GithubDeliveryLedger
 	): Promise<DeliveryReservationResult> {
 		this.#assertDispatchAuthorized();
 		const state = await this.#load();
-		const protectedKey = GithubDeliveryLedger.protectIdentifier(
+		const protectedKey = LedgerEntryMapping.protectIdentifier(
 			reservation.idempotencyKey,
 		);
 		const existing = state.ledger.entries.find(
@@ -64,19 +65,19 @@ export class GithubDeliveryLedger
 		if (existing) {
 			return {
 				reserved: false,
-				entry: GithubDeliveryLedger.publicEntry(existing),
+				entry: LedgerEntryMapping.publicEntry(existing),
 			};
 		}
 
 		const entry: StoredEntry = {
 			idempotencyKey: protectedKey,
-			intentId: GithubDeliveryLedger.protectIdentifier(reservation.intentId),
-			repositoryId: GithubDeliveryLedger.protectIdentifier(
+			intentId: LedgerEntryMapping.protectIdentifier(reservation.intentId),
+			repositoryId: LedgerEntryMapping.protectIdentifier(
 				reservation.repositoryId,
 			),
-			eventId: GithubDeliveryLedger.protectIdentifier(reservation.eventId),
+			eventId: LedgerEntryMapping.protectIdentifier(reservation.eventId),
 			kind: reservation.kind,
-			recipientId: GithubDeliveryLedger.protectIdentifier(
+			recipientId: LedgerEntryMapping.protectIdentifier(
 				reservation.recipientId,
 			),
 			policyVersion: reservation.policyVersion,
@@ -87,7 +88,7 @@ export class GithubDeliveryLedger
 		await this.#save(state.commentId, state.ledger);
 		return {
 			reserved: true,
-			entry: { ...GithubDeliveryLedger.publicEntry(entry), status: "pending" },
+			entry: { ...LedgerEntryMapping.publicEntry(entry), status: "pending" },
 		};
 	}
 
@@ -127,7 +128,7 @@ export class GithubDeliveryLedger
 	async releasePending(idempotencyKey: string): Promise<void> {
 		this.#assertDispatchAuthorized();
 		const state = await this.#load();
-		const protectedKey = GithubDeliveryLedger.protectIdentifier(idempotencyKey);
+		const protectedKey = LedgerEntryMapping.protectIdentifier(idempotencyKey);
 		const index = state.ledger.entries.findIndex(
 			(entry) => entry.idempotencyKey === protectedKey,
 		);
@@ -146,7 +147,7 @@ export class GithubDeliveryLedger
 	): Promise<void> {
 		this.#assertDispatchAuthorized();
 		const state = await this.#load();
-		const protectedKey = GithubDeliveryLedger.protectIdentifier(idempotencyKey);
+		const protectedKey = LedgerEntryMapping.protectIdentifier(idempotencyKey);
 		const index = state.ledger.entries.findIndex(
 			(entry) => entry.idempotencyKey === protectedKey,
 		);
@@ -162,7 +163,7 @@ export class GithubDeliveryLedger
 			status,
 			updatedAt,
 			...(diagnosticCode
-				? { diagnosticCode: GithubDeliveryLedger.safeCode(diagnosticCode) }
+				? { diagnosticCode: LedgerEntryMapping.safeCode(diagnosticCode) }
 				: {}),
 		};
 		await this.#save(state.commentId, state.ledger);
@@ -183,7 +184,7 @@ export class GithubDeliveryLedger
 		}
 		return {
 			commentId: comment.id,
-			ledger: GithubDeliveryLedger.parseLedger(comment.body),
+			ledger: LedgerCommentCodec.decode(comment.body),
 		};
 	}
 
@@ -208,90 +209,5 @@ export class GithubDeliveryLedger
 				"Delivery ledger writes require the reusable workflow concurrency lock",
 			);
 		}
-	}
-
-	private static parseLedger(body: string): StoredLedger {
-		const openingFence = "```json";
-		const start = body.indexOf(openingFence);
-		const end = body.indexOf("```", start + openingFence.length);
-		const json =
-			start < 0 || end < 0
-				? ""
-				: body.slice(start + openingFence.length, end).trim();
-		if (!json) {
-			throw new Error("Managed delivery ledger comment is corrupted");
-		}
-		const value = JSON.parse(json) as {
-			schemaVersion?: unknown;
-			entries?: unknown;
-		};
-		if (
-			(value.schemaVersion !== 1 && value.schemaVersion !== 2) ||
-			!Array.isArray(value.entries)
-		) {
-			throw new Error("Managed delivery ledger schema is unsupported");
-		}
-		for (const entry of value.entries) {
-			if (!GithubDeliveryLedger.isStoredEntry(entry)) {
-				throw new Error("Managed delivery ledger entry is corrupted");
-			}
-		}
-		return {
-			schemaVersion: 2,
-			entries: value.entries.map(GithubDeliveryLedger.protectStoredEntry),
-		};
-	}
-
-	private static publicEntry(entry: StoredEntry): DeliveryLedgerEntry {
-		return {
-			idempotencyKey: entry.idempotencyKey,
-			intentId: entry.intentId,
-			status: entry.status,
-			updatedAt: entry.updatedAt,
-		};
-	}
-
-	private static isStoredEntry(value: unknown): value is StoredEntry {
-		if (!value || typeof value !== "object") return false;
-		const entry = value as Record<string, unknown>;
-		return (
-			typeof entry.idempotencyKey === "string" &&
-			typeof entry.intentId === "string" &&
-			["pending", "accepted", "uncertain", "rejected"].includes(
-				String(entry.status),
-			) &&
-			typeof entry.updatedAt === "string" &&
-			typeof entry.repositoryId === "string" &&
-			typeof entry.eventId === "string" &&
-			typeof entry.kind === "string" &&
-			typeof entry.recipientId === "string" &&
-			typeof entry.policyVersion === "string"
-		);
-	}
-
-	private static safeCode(code: string): string {
-		return /^[a-z0-9][a-z0-9._-]{0,63}$/.test(code)
-			? code
-			: "unsafe-diagnostic-code-redacted";
-	}
-
-	private static protectStoredEntry(entry: StoredEntry): StoredEntry {
-		return {
-			...entry,
-			idempotencyKey: GithubDeliveryLedger.protectIdentifier(
-				entry.idempotencyKey,
-			),
-			intentId: GithubDeliveryLedger.protectIdentifier(entry.intentId),
-			repositoryId: GithubDeliveryLedger.protectIdentifier(entry.repositoryId),
-			eventId: GithubDeliveryLedger.protectIdentifier(entry.eventId),
-			recipientId: GithubDeliveryLedger.protectIdentifier(entry.recipientId),
-		};
-	}
-
-	private static protectIdentifier(value: string): string {
-		if (/^sha256:[0-9a-f]{64}$/.test(value)) {
-			return value;
-		}
-		return `sha256:${createHash("sha256").update(value).digest("hex")}`;
 	}
 }

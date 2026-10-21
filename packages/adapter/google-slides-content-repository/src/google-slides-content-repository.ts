@@ -6,10 +6,10 @@ import {
 	type ContentChange,
 	type ContentContract,
 	ContentError,
-	ContentFingerprint,
 	type ContentSnapshot,
-	type ObservedLocation,
 } from "@meetup-automation/publication";
+import { SlideContentLocations } from "./slide-content-locations.js";
+import { SlideContentRequests } from "./slide-content-requests.js";
 import { SlideTemplateBindings } from "./slide-template-bindings.js";
 
 export class GoogleSlidesContentRepository implements AssetContentRepository {
@@ -42,34 +42,10 @@ export class GoogleSlidesContentRepository implements AssetContentRepository {
 			throw new ContentError("location");
 		const bindings =
 			registered ?? SlideTemplateBindings.discover(data, contract);
-		const locations: ObservedLocation[] = [];
-		for (const binding of bindings) {
-			const element = GoogleSlidesContentRepository.element(data, binding);
-			let fingerprint: string;
-			if (binding.type === "text") {
-				if (!element.shape) throw new ContentError("conflict");
-				fingerprint = ContentFingerprint.of(
-					SlideTemplateBindings.text(element),
-				);
-			} else {
-				if (!element.image?.contentUrl) throw new ContentError("conflict");
-				const bytes = await this.images.observe(element.image.contentUrl);
-				fingerprint = ContentFingerprint.of(
-					JSON.stringify([
-						bytes,
-						element.image.imageProperties,
-						element.description,
-					]),
-				);
-			}
-			locations.push({
-				id: binding.id,
-				key: binding.key,
-				type: binding.type,
-				anchor: binding.anchor,
-				fingerprint,
-			});
-		}
+		const locations = await new SlideContentLocations(this.images).read(
+			data,
+			bindings,
+		);
 		this.current = data;
 		return { revision: data.revisionId, locations };
 	}
@@ -87,7 +63,7 @@ export class GoogleSlidesContentRepository implements AssetContentRepository {
 		)
 			throw new ContentError("revision");
 		const requests = changes.flatMap((change) =>
-			GoogleSlidesContentRepository.requests(current, change),
+			SlideContentRequests.build(current, change),
 		);
 		try {
 			const { data } = await this.client.presentations.batchUpdate(
@@ -102,69 +78,9 @@ export class GoogleSlidesContentRepository implements AssetContentRepository {
 			);
 			return data.writeControl?.requiredRevisionId ?? "";
 		} catch (error) {
-			if (/revision/i.test(String((error as Error)?.message)))
+			if (error instanceof Error && /revision/i.test(error.message))
 				throw new ContentError("revision");
 			throw error;
 		}
-	}
-
-	private static requests(
-		current: slides_v1.Schema$Presentation,
-		change: ContentChange,
-	): slides_v1.Schema$Request[] {
-		const objectId = change.location.anchor.objectId;
-		if (change.value.type === "image")
-			return [
-				{
-					replaceImage: {
-						imageObjectId: objectId,
-						url: change.value.image?.url,
-						imageReplaceMethod: change.value.fit,
-					},
-				},
-				{
-					updatePageElementAltText: {
-						objectId,
-						description: change.value.image?.description,
-					},
-				},
-			];
-		const element = GoogleSlidesContentRepository.element(
-			current,
-			change.location,
-		);
-		const style = SlideTemplateBindings.style(element);
-		return [
-			{ deleteText: { objectId, textRange: { type: "ALL" } } },
-			{ insertText: { objectId, insertionIndex: 0, text: change.value.text } },
-			...(Object.keys(style).length
-				? [
-						{
-							updateTextStyle: {
-								objectId,
-								textRange: { type: "ALL" },
-								style,
-								fields: Object.keys(style).join(","),
-							},
-						},
-					]
-				: []),
-		];
-	}
-
-	private static element(
-		current: slides_v1.Schema$Presentation,
-		binding: Pick<ContentBinding, "anchor">,
-	): slides_v1.Schema$PageElement {
-		const pages =
-			current.slides?.filter(
-				(page) => page.objectId === binding.anchor.pageId,
-			) ?? [];
-		const elements = pages
-			.flatMap((page) => page.pageElements ?? [])
-			.filter((element) => element.objectId === binding.anchor.objectId);
-		if (pages.length !== 1 || elements.length !== 1)
-			throw new ContentError("conflict");
-		return elements[0];
 	}
 }

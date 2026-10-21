@@ -1,5 +1,5 @@
 import { EventDateValidation } from "./event-date-validation.js";
-import { EventRuleFactory } from "./event-rule-factory.js";
+import { EventRuleResults } from "./event-rule-results.js";
 import type { MeetupEvent } from "./model.js";
 import { EventPatches } from "./patch.js";
 import type { EventRule, EventRuleResult } from "./rule-contracts.js";
@@ -13,15 +13,15 @@ export class IssueTitleRule implements EventRule {
 			!EventDateValidation.isValidIsoDate(event.date) ||
 			event.eventTitle === ""
 		) {
-			return EventRuleFactory.emptyResult();
+			return EventRuleResults.emptyResult();
 		}
 
 		const expected = `[Meetup] - ${event.date} - ${event.eventTitle}`;
 		if (event.issueTitle === expected) {
-			return EventRuleFactory.emptyResult();
+			return EventRuleResults.emptyResult();
 		}
 
-		return EventRuleFactory.normalizedResult(
+		return EventRuleResults.normalizedResult(
 			EventPatches.replaceEventField(
 				"issueTitle",
 				expected,

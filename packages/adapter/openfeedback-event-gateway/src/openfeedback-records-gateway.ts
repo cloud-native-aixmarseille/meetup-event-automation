@@ -1,9 +1,10 @@
-import { OpenFeedbackClient } from "./openfeedback-client.js";
-import { OpenFeedbackResourceId } from "./openfeedback-resource-id.js";
 import type {
 	OpenFeedbackSpeaker,
 	OpenFeedbackTalk,
 } from "./openfeedback-agenda-snapshot.js";
+import { OpenFeedbackClient } from "./openfeedback-client.js";
+import { OpenFeedbackRecordEquality } from "./openfeedback-record-equality.js";
+import { OpenFeedbackResourceId } from "./openfeedback-resource-id.js";
 
 type RecordKind = "speakers" | "talks";
 type FeedbackRecord = OpenFeedbackSpeaker | OpenFeedbackTalk;
@@ -48,8 +49,7 @@ export class OpenFeedbackRecordsGateway {
 		previous: (FeedbackRecord & { readonly revision: string }) | undefined,
 	): Promise<void> {
 		const { id, ...fields } = record;
-		if (previous && OpenFeedbackRecordsGateway.unchanged(fields, previous))
-			return;
+		if (previous && OpenFeedbackRecordEquality.equal(record, previous)) return;
 		const base = `/events/${eventId}/${kind}`;
 		const response = previous
 			? await this.client.request(
@@ -62,21 +62,6 @@ export class OpenFeedbackRecordsGateway {
 				)
 			: await this.client.request(base, "POST", record);
 		await OpenFeedbackClient.read(response, id);
-	}
-
-	private static unchanged(
-		fields: Omit<FeedbackRecord, "id">,
-		previous: FeedbackRecord,
-	): boolean {
-		return Object.entries(fields).every(([key, value]) => {
-			const stored = (previous as unknown as Record<string, unknown>)[key];
-			if (key === "speakers" && Array.isArray(stored) && Array.isArray(value))
-				return (
-					JSON.stringify([...stored].sort()) ===
-					JSON.stringify([...value].sort())
-				);
-			return JSON.stringify(stored) === JSON.stringify(value);
-		});
 	}
 
 	private static validCursor(value: unknown): value is string | null {

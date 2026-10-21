@@ -1,5 +1,6 @@
 import type { MailCommunicationKind } from "@meetup-automation/communication";
 import {
+	EventChecklists,
 	EventConcurrentModificationError,
 	type EventDocument,
 	type EventDocumentCodec,
@@ -29,8 +30,10 @@ export class CompleteCommunicationChecklist {
 				accepted,
 			);
 			if (
-				JSON.stringify(operationalChecklists) ===
-				JSON.stringify(event.operationalChecklists)
+				EventChecklists.equal(
+					operationalChecklists,
+					event.operationalChecklists,
+				)
 			)
 				return;
 			const patch = this.codec.createPatch(source, {
@@ -41,7 +44,7 @@ export class CompleteCommunicationChecklist {
 				throw new Error("Checklist completion could not be rendered");
 			const rendered = this.codec.decode({ ...source, body: patch.body }).event
 				.operationalChecklists;
-			if (JSON.stringify(rendered) !== JSON.stringify(operationalChecklists))
+			if (!EventChecklists.equal(rendered, operationalChecklists))
 				throw new Error(
 					"Checklist completion was not preserved by the document codec",
 				);

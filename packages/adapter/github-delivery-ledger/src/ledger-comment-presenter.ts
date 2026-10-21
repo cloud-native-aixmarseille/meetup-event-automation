@@ -3,6 +3,7 @@ import {
 	type StoredLedger,
 } from "./github-delivery-ledger-contracts.js";
 import { LedgerMessages } from "./i18n/ledger-messages.js";
+import { LedgerCommentCodec } from "./ledger-comment-codec.js";
 
 export class LedgerCommentPresenter {
 	constructor(private readonly messages = new LedgerMessages()) {}
@@ -41,13 +42,7 @@ export class LedgerCommentPresenter {
 		if (ledger.entries.some((entry) => entry.status !== "accepted")) {
 			lines.push(this.messages.t("ledger.attention"));
 		}
-		// Retain the stable JSON fence for existing readers, hidden in rendered Markdown.
-		const json = JSON.stringify(ledger, null, 2).replace(
-			/[<>&`-]/g,
-			(character) =>
-				`\\u${character.charCodeAt(0).toString(16).padStart(4, "0")}`,
-		);
-		lines.push(`<!--\n\`\`\`json\n${json}\n\`\`\`\n-->`);
+		lines.push(LedgerCommentCodec.encode(ledger));
 		return lines.join("\n\n");
 	}
 }

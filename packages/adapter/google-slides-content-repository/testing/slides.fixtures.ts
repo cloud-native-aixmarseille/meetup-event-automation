@@ -4,7 +4,6 @@ import type {
 	AssetImageRepository,
 	ContentContract,
 } from "@meetup-automation/publication";
-import { GoogleSlidesContentRepository } from "../src/google-slides-content-repository.js";
 
 export function slidesFixture() {
 	const contract: ContentContract = {
@@ -52,25 +51,25 @@ export function slidesFixture() {
 	const client = {
 		presentations: {
 			get: vi.fn(async () => ({ data: presentation })),
-			batchUpdate: vi.fn(async () => ({
-				data: { writeControl: { requiredRevisionId: "rev2" } },
-			})),
+			batchUpdate: vi.fn(
+				async (
+					_request: slides_v1.Params$Resource$Presentations$Batchupdate,
+				) => ({
+					data: { writeControl: { requiredRevisionId: "rev2" } },
+				}),
+			),
 		},
 	};
 	const images: AssetImageRepository = {
 		validate: vi.fn(),
 		observe: vi.fn(async () => "embedded-bytes"),
 	};
-	const repository = new GoogleSlidesContentRepository(
-		client as unknown as Pick<slides_v1.Slides, "presentations">,
-		images,
-	);
 	return {
 		contract,
 		presentation,
 		client,
 		images,
-		repository,
+		api: client as unknown as Pick<slides_v1.Slides, "presentations">,
 		page: presentation.slides?.[0] as slides_v1.Schema$Page,
 		firstShape: presentation.slides?.[0]
 			.pageElements?.[0] as slides_v1.Schema$PageElement,

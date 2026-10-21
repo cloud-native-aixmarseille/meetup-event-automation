@@ -1,15 +1,3 @@
-const SAFE_ERROR_NAMES = new Set([
-	"GoogleDriveAssetRepositoryError",
-	"EventNotFoundError",
-	"EventConcurrentModificationError",
-	"GitHubEventRepositoryConfigurationError",
-	"GitHubEventRepositoryScopeError",
-	"GitHubEventRepositoryResponseError",
-	"GitHubEventCommentRepositoryConfigurationError",
-	"GitHubEventCommentRepositoryScopeError",
-	"GitHubEventCommentRepositoryResponseError",
-]);
-
 export class RuntimeInput {
 	static positiveIntegerInput(name: string, value: string): number {
 		if (!/^\d+$/.test(value)) {
@@ -27,23 +15,20 @@ export class RuntimeInput {
 		value: string,
 		allowed: readonly T[],
 	): T {
-		if (!allowed.includes(value as T)) {
+		const parsed = allowed.find((candidate) => candidate === value);
+		if (parsed === undefined) {
 			throw new Error(`${name} must be one of: ${allowed.join(", ")}`);
 		}
-		return value as T;
+		return parsed;
+	}
+
+	static isObject(value: unknown): value is Record<string, unknown> {
+		return value !== null && typeof value === "object" && !Array.isArray(value);
 	}
 
 	static booleanInput(name: string, value: string): boolean {
 		if (value === "true") return true;
 		if (value === "false") return false;
 		throw new Error(`${name} must be true or false`);
-	}
-
-	/** Never expose provider responses, input values, or contact data in failures. */
-	static publicErrorMessage(error: unknown): string {
-		if (error instanceof Error && SAFE_ERROR_NAMES.has(error.name)) {
-			return `${error.name}: ${error.message}`;
-		}
-		return "Unexpected technical failure.";
 	}
 }

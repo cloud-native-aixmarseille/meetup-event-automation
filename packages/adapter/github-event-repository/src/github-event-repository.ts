@@ -13,6 +13,7 @@ import type {
 } from "./github-event-repository-contracts.js";
 import { GitHubEventRepositoryResponseError } from "./github-event-repository-response-error.js";
 import { GitHubEventRepositoryScopeError } from "./github-event-repository-scope-error.js";
+import { GitHubIssueDocumentCodec } from "./github-issue-document-codec.js";
 
 export class GitHubEventRepository implements EventRepository {
 	private readonly owner: string;
@@ -43,7 +44,7 @@ export class GitHubEventRepository implements EventRepository {
 				repo: this.repo,
 				issue_number: identity.issueNumber,
 			});
-			const document = GitHubEventRepository.mapGitHubIssueDocument(
+			const document = GitHubIssueDocumentCodec.decode(
 				response.data,
 				this.repositoryName,
 			);
@@ -124,10 +125,7 @@ export class GitHubEventRepository implements EventRepository {
 
 		const items = response.data
 			.map((issue) =>
-				GitHubEventRepository.mapGitHubIssueDocument(
-					issue,
-					this.repositoryName,
-				),
+				GitHubIssueDocumentCodec.decode(issue, this.repositoryName),
 			)
 			.filter((issue): issue is EventDocument => issue !== null);
 		const linkHeader = GitHubEventRepository.readHeader(
@@ -165,69 +163,6 @@ export class GitHubEventRepository implements EventRepository {
 			);
 		}
 		return normalized;
-	}
-
-	/** Map one GitHub issue response or webhook snapshot into the domain document. */
-	static mapGitHubIssueDocument(
-		data: unknown,
-		repository: string,
-	): EventDocument | null {
-		const issue = GitHubEventRepository.asRecord(data, "GitHub issue");
-		if (issue.pull_request !== undefined && issue.pull_request !== null) {
-			return null;
-		}
-		if (!Number.isInteger(issue.number) || Number(issue.number) <= 0) {
-			throw new GitHubEventRepositoryResponseError(
-				"GitHub issue number must be a positive integer",
-			);
-		}
-		if (typeof issue.title !== "string") {
-			throw new GitHubEventRepositoryResponseError(
-				"GitHub issue title must be a string",
-			);
-		}
-		if (issue.state !== "open" && issue.state !== "closed") {
-			throw new GitHubEventRepositoryResponseError(
-				"GitHub issue state must be open or closed",
-			);
-		}
-		if (issue.body !== null && typeof issue.body !== "string") {
-			throw new GitHubEventRepositoryResponseError(
-				"GitHub issue body must be a string or null",
-			);
-		}
-		if (!Array.isArray(issue.labels)) {
-			throw new GitHubEventRepositoryResponseError(
-				"GitHub issue labels must be an array",
-			);
-		}
-
-		return {
-			identity: { repository, issueNumber: Number(issue.number) },
-			issueState: issue.state,
-			issueTitle: issue.title,
-			labels: GitHubEventRepository.mapLabels(issue.labels),
-			body: issue.body ?? "",
-		};
-	}
-
-	private static mapLabels(labels: readonly unknown[]): readonly string[] {
-		const result: string[] = [];
-		for (const label of labels) {
-			let name: string | undefined;
-			if (typeof label === "string") {
-				name = label;
-			} else if (
-				GitHubEventRepository.isRecord(label) &&
-				typeof label.name === "string"
-			) {
-				name = label.name;
-			}
-			if (name && !result.includes(name)) {
-				result.push(name);
-			}
-		}
-		return Object.freeze(result);
 	}
 
 	private static parseCursor(cursor: string | undefined): number {
@@ -273,18 +208,6 @@ export class GitHubEventRepository implements EventRepository {
 	): string | undefined {
 		const value = headers?.[name];
 		return typeof value === "string" ? value : undefined;
-	}
-
-	private static asRecord(
-		value: unknown,
-		label: string,
-	): Record<string, unknown> {
-		if (!GitHubEventRepository.isRecord(value)) {
-			throw new GitHubEventRepositoryResponseError(
-				`${label} must be an object`,
-			);
-		}
-		return value;
 	}
 
 	private static isRecord(value: unknown): value is Record<string, unknown> {

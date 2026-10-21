@@ -1,5 +1,4 @@
 import { type EventDiagnostic, EventDiagnostics } from "./diagnostic.js";
-import { EventRuleFactory } from "./event-rule-factory.js";
 import type { MeetupEvent } from "./model.js";
 import { EMPTY_EVENT_PATCH, EventPatches } from "./patch.js";
 import type { EventRule, EventRuleResult } from "./rule-contracts.js";
@@ -26,7 +25,7 @@ export class EventLinksRule implements EventRule {
 			}
 
 			const value = link.trim().replace(/\/$/, "");
-			if (!EventRuleFactory.isHttpsUrl(value)) {
+			if (!this.isHttpsUrl(value)) {
 				diagnostics.push(
 					EventDiagnostics.diagnostic({
 						code: `event.link.${key}.invalid`,
@@ -69,5 +68,12 @@ export class EventLinksRule implements EventRule {
 				),
 			]),
 		};
+	}
+	private isHttpsUrl(value: string): boolean {
+		try {
+			return new URL(value).protocol === "https:";
+		} catch {
+			return false;
+		}
 	}
 }

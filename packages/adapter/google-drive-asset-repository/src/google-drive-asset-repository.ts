@@ -7,6 +7,7 @@ import type {
 	AssetTemplate,
 	EnsureAssetContainerRequest,
 } from "@meetup-automation/publication";
+import { DriveAssetMetadata } from "./drive-asset-metadata.js";
 import {
 	type DriveFile,
 	fields,
@@ -57,7 +58,7 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 				"The asset folder does not match the requested event",
 			);
 		}
-		return GoogleDriveAssetRepository.container(file, request.eventId);
+		return DriveAssetMetadata.container(file, request.eventId);
 	}
 
 	async ensureContainer(
@@ -95,7 +96,7 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 						requestOptions,
 					),
 				);
-		return GoogleDriveAssetRepository.container(response.data, request.eventId);
+		return DriveAssetMetadata.container(response.data, request.eventId);
 	}
 
 	async listTemplates(): Promise<readonly AssetTemplate[]> {
@@ -131,7 +132,7 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 			)
 		)
 			.filter((file) => !file.appProperties?.meetup_binding_file)
-			.map(GoogleDriveAssetRepository.assetFile);
+			.map(DriveAssetMetadata.assetFile);
 	}
 
 	async copyTemplate(
@@ -147,7 +148,7 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 						name,
 						parents: [containerId],
 						appProperties: {
-							...GoogleDriveAssetRepository.templateProperties(template),
+							...DriveAssetMetadata.templateProperties(template),
 							...(template.contentContract ? { meetup_content: "v1" } : {}),
 						},
 					},
@@ -157,7 +158,7 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 				requestOptions,
 			),
 		);
-		return GoogleDriveAssetRepository.assetFile(data);
+		return DriveAssetMetadata.assetFile(data);
 	}
 
 	async updateFile(
@@ -172,7 +173,7 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 					requestBody: {
 						name,
 						appProperties: {
-							...GoogleDriveAssetRepository.templateProperties(template),
+							...DriveAssetMetadata.templateProperties(template),
 							...(file.contentManaged ? { meetup_content: "v1" } : {}),
 						},
 					},
@@ -182,7 +183,7 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 				requestOptions,
 			),
 		);
-		return GoogleDriveAssetRepository.assetFile(data);
+		return DriveAssetMetadata.assetFile(data);
 	}
 
 	private async list(
@@ -247,41 +248,6 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 		return value.replaceAll("\\", "\\\\").replaceAll("'", "\\'");
 	}
 
-	private static templateProperties(
-		template: AssetTemplate,
-	): Record<string, string> {
-		return { template_file_id: template.id, template_kind: template.kind };
-	}
-
-	private static container(file: DriveFile, eventId: string): AssetContainer {
-		if (!file.id || !file.name)
-			throw GoogleDriveAssetRepository.failure(
-				"Google Drive returned an invalid asset folder",
-			);
-		return {
-			id: file.id,
-			name: file.name,
-			url: `https://drive.google.com/drive/folders/${file.id}`,
-			eventId,
-		};
-	}
-
-	private static assetFile(file: DriveFile): AssetFile {
-		if (!file.id || !file.name)
-			throw GoogleDriveAssetRepository.failure(
-				"Google Drive returned an invalid asset file",
-			);
-		return {
-			id: file.id,
-			name: file.name,
-			...(file.webViewLink ? { url: file.webViewLink } : {}),
-			templateId: file.appProperties?.template_file_id,
-			kind: file.appProperties?.template_kind,
-			mimeType: file.mimeType ?? undefined,
-			contentManaged: file.appProperties?.meetup_content === "v1",
-		};
-	}
-
 	private static failure(message: string): GoogleDriveAssetRepositoryError {
 		return new GoogleDriveAssetRepositoryError(message);
 	}
@@ -290,8 +256,16 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 		try {
 			return await operation();
 		} catch (error) {
-			const status = (error as { response?: { status?: number } } | null)
-				?.response?.status;
+			const response =
+				error !== null && typeof error === "object" && "response" in error
+					? error.response
+					: undefined;
+			const status =
+				response !== null &&
+				typeof response === "object" &&
+				"status" in response
+					? response.status
+					: undefined;
 			if (status === 429)
 				throw GoogleDriveAssetRepository.failure(
 					"Google Drive rate limit reached; retry reconciliation later",

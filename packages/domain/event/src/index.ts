@@ -38,18 +38,13 @@ export {
 	type EventDiagnostic,
 	EventDiagnostics,
 } from "./domain/diagnostic.js";
-export type {
-	EventDtoMigrationResult,
-	LegacyMeetupEventDto,
-	LegacyMeetupIssueBodyDto,
-	MeetupEventDto,
-	MeetupEventDtoV1,
-} from "./domain/dto-contracts.js";
 export { EventAgendaRule } from "./domain/event-agenda-rule.js";
+export { EventChecklists } from "./domain/event-checklists.js";
 export { EventDateRule } from "./domain/event-date-rule.js";
 export { EventDescriptionRule } from "./domain/event-description-rule.js";
 export { EventHostRule } from "./domain/event-host-rule.js";
 export { EventLinksRule } from "./domain/event-links-rule.js";
+export { EventOccurrenceParser } from "./domain/event-occurrence-parser.js";
 export { EventRuleConfigurationError } from "./domain/event-rule-configuration-error.js";
 export { EventRuleEngine } from "./domain/event-rule-engine.js";
 export { EventRuleFactory } from "./domain/event-rule-factory.js";
@@ -62,7 +57,6 @@ export {
 } from "./domain/lifecycle.js";
 export { ManagedLabelsRule } from "./domain/managed-labels-rule.js";
 export { MeetupPublicationChecklist } from "./domain/meetup-publication-checklist.js";
-export { MeetupEventMigration } from "./domain/meetup-event-migration.js";
 export {
 	type AgendaEntry,
 	EVENT_SCHEMA_VERSION,
@@ -82,6 +76,10 @@ export {
 	type ParticipantReference,
 	POST_EVENT_TASK_NAMES,
 } from "./domain/model.js";
+export {
+	OCCURRENCE_STATUS_LABELS,
+	OCCURRENCE_STATUSES,
+} from "./domain/occurrence-status.js";
 export {
 	EMPTY_EVENT_PATCH,
 	type EventPatch,

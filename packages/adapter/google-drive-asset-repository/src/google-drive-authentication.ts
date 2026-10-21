@@ -2,11 +2,7 @@ import { auth } from "@googleapis/drive";
 import { GoogleDriveAssetRepositoryError } from "./google-drive-asset-repository-error.js";
 export class GoogleDriveAuthentication {
 	static create(credentialsJson: string) {
-		let credentials: {
-			type?: unknown;
-			client_email?: unknown;
-			private_key?: unknown;
-		};
+		let credentials: unknown;
 		try {
 			credentials = JSON.parse(credentialsJson);
 		} catch {
@@ -15,9 +11,15 @@ export class GoogleDriveAuthentication {
 			);
 		}
 		if (
-			credentials?.type !== "service_account" ||
+			!credentials ||
+			typeof credentials !== "object" ||
+			Array.isArray(credentials) ||
+			!("type" in credentials) ||
+			credentials.type !== "service_account" ||
+			!("client_email" in credentials) ||
 			typeof credentials.client_email !== "string" ||
 			!credentials.client_email ||
+			!("private_key" in credentials) ||
 			typeof credentials.private_key !== "string" ||
 			!credentials.private_key
 		) {
