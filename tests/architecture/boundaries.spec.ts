@@ -2,7 +2,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { basename, join, relative } from "node:path";
 import { projectFiles } from "archunit";
 import { describe, expect, it } from "vitest";
-import { workspacePackageDirectories } from "../scripts/workspace-packages.mjs";
+import { workspacePackageDirectories } from "./workspace-packages.js";
 
 const repositoryRoot = process.cwd();
 const workspaceNamespace = "@meetup-automation/";
@@ -148,6 +148,26 @@ describe("clean architecture boundaries", () => {
 	describe("archunit clean architecture boundaries", {
 		timeout: 30_000,
 	}, () => {
+		it.each(["tests/**", "packages/runtime/github-actions/packaging/**"])(
+			"keeps production independent of %s",
+			async (toolingPath) => {
+				// Arrange
+				const productionFiles = projectFiles(tsConfigPath).inPath(
+					"packages/**/src/**/*.ts",
+					{ except: ["**/*.test.ts", "**/*.spec.ts"] },
+				);
+
+				// Act
+				const rule = productionFiles
+					.shouldNot()
+					.dependOnFiles()
+					.inPath(toolingPath);
+
+				// Assert
+				await expect(rule).toPassAsync();
+			},
+		);
+
 		it("keeps the domain layer free from outer-layer imports", async () => {
 			// Arrange
 			// No additional setup is needed.

@@ -52,10 +52,39 @@ and `responsibility:` tags in `project.json`. Keep unrelated responsibilities in
 separate adapters. Do not introduce generic `utils`, `helpers`, or `shared`
 packages; keep behavior in the context that owns it.
 
+## Repository tooling ownership
+
+Repository tooling belongs to the concern it supports:
+
+| Location                                     | Responsibility                                                         |
+| -------------------------------------------- | ---------------------------------------------------------------------- |
+| `packages/runtime/github-actions/packaging/` | Action bundle entrypoints, build settings, and bundle freshness checks |
+| `tests/architecture/`                        | Repository structure, dependency boundaries, and workspace discovery   |
+| `tests/architecture/rules/`                  | Syntax and placement rules used by architecture assertions             |
+| `tests/contracts/`                           | Public interface assertions and their analysis helpers                 |
+| `tests/integration/github-actions/`          | Synthetic GitHub Actions integration fixtures and polling              |
+
+Place new tools with their owner; do not introduce a root `scripts/`, `tools/`,
+or `helpers/` catchall. Keep business policies and runtime effects in production
+packages. Production modules must not import test or packaging implementations;
+the architecture checks enforce that direction.
+
+Test-owned analysis helpers use TypeScript and adjacent `.test.ts` files. Node
+entrypoints used without compilation use `.mjs`. The integration issue poller
+is dependency-free because CI loads it before installing workspace dependencies.
+Packaging commands run from the repository root and own only the action build.
+
+Root package commands delegate to these owners. `pnpm check:structure` runs
+the repository assertions in `tests/architecture/structure.spec.ts`; do not
+duplicate their discovery or orchestration in another CLI.
+`pnpm check:architecture` also runs boundary assertions and the rule helpers' tests.
+See [testing](testing.md) for test placement and [commands](README.md#commands)
+for the supported entrypoints.
+
 ## Dependency direction
 
 The workspace dependency rules are enforced by
-[`tests/architecture.spec.ts`](../../tests/architecture.spec.ts).
+[`tests/architecture/boundaries.spec.ts`](../../tests/architecture/boundaries.spec.ts).
 
 | Layer        | Allowed workspace dependencies             |
 | ------------ | ------------------------------------------ |

@@ -32,9 +32,16 @@ tests, and documentation. Do not use typographic apostrophes (U+2019).
 Unit tests must live beside their source component and use its exact basename
 plus `.test.ts` (for example, `policy.ts` and `policy.test.ts`). Split tests of
 independent components into matching files. Import the component directly; put
-shared fixtures in package `testing/` folders. Reserve root `tests/*.spec.ts`
-for repository-wide integration, architecture, and contract checks. The
-structure check enforces unit-test location and naming.
+shared fixtures in package `testing/` folders. Use `tests/**/*.spec.ts`
+for repository-wide integration, architecture, and contract checks. Test-owned
+helpers have adjacent `.test.ts` files under their architecture, contract, or
+integration owner. The structure check enforces unit-test location and naming.
+
+Follow [repository tooling ownership](docs/development/architecture.md#repository-tooling-ownership)
+when adding build tools, checkers, or CI fixtures. Place them beside their owner,
+keep business behavior in production packages, and keep production imports
+independent of test and packaging implementations. Do not create a root tooling
+catchall or duplicate repository checks in standalone CLIs.
 
 Tests must describe general behavior using synthetic fixtures, without naming
 live issues or production incidents. Every test case must have explicit

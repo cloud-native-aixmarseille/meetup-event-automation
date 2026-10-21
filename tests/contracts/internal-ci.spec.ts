@@ -53,9 +53,7 @@ describe("internal CI contracts", () => {
 		// Assert
 		expect(main.jobs?.ci.uses).toBe("./.github/workflows/__shared-ci.yml");
 		expect(pullRequest.jobs?.ci).toEqual(main.jobs?.ci);
-		expect(pullRequest.on?.pull_request).toMatchObject({
-			branches: ["main", "stack/**"],
-		});
+		expect(pullRequest.on?.pull_request).toEqual({});
 		expect(shared.jobs?.["check-actions"]).toMatchObject({
 			needs: ["check-nodejs", "check-dist"],
 			uses: "./.github/workflows/__check-actions.yml",
@@ -161,7 +159,7 @@ describe("internal CI contracts", () => {
 			workflowExpression("steps.create-issue.outputs.issue-number"),
 		);
 		expect(readiness?.with?.script).toContain(
-			"scripts/wait-for-synthetic-issue.mjs",
+			"tests/integration/github-actions/wait-for-synthetic-issue.mjs",
 		);
 		expect(readiness?.with?.script).toContain("await waitForSyntheticIssue({");
 		expect(readiness?.["continue-on-error"]).not.toBe(true);

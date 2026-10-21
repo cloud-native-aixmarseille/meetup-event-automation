@@ -14,7 +14,7 @@ describe("public action reporting contract", () => {
 			await readdir(join(root, "actions"), { recursive: true })
 		).filter((path) => path.endsWith("/action.yml"));
 		const buildSource = await readFile(
-			join(root, "scripts/build-actions.mjs"),
+			join(root, "packages/runtime/github-actions/packaging/build-actions.mjs"),
 			"utf8",
 		);
 

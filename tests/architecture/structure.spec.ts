@@ -4,8 +4,8 @@ import { tmpdir } from "node:os";
 import { join, relative, resolve } from "node:path";
 import { promisify } from "node:util";
 import { describe, expect, it } from "vitest";
-import { ProductionCodeStructure } from "../../scripts/production-code-structure.mjs";
-import { UnitTestLayout } from "../../scripts/unit-test-layout.mjs";
+import { ProductionCodeStructure } from "./production-code-structure.js";
+import { UnitTestLayout } from "./rules/unit-test-layout.js";
 
 const sourcePath = "packages/domain/example/src/example.ts";
 async function biomeFixture(source: string): Promise<string> {
@@ -99,7 +99,7 @@ describe("production code structure", () => {
 		const paths = (
 			await Promise.all([
 				source.sourceFiles("packages"),
-				source.sourceFiles("scripts"),
+				source.sourceFiles("tests"),
 			])
 		).flat();
 		const layout = new UnitTestLayout(

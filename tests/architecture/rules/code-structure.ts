@@ -1,6 +1,12 @@
 import { parse } from "@babel/parser";
-import { DependencyInjection } from "./dependency-injection.mjs";
-import { SerializationBoundaries } from "./serialization-boundaries.mjs";
+import {
+	type ClassDeclaration,
+	type ClassExpression,
+	isNode,
+} from "@babel/types";
+import { DependencyInjection } from "./dependency-injection.js";
+import { SerializationBoundaries } from "./serialization-boundaries.js";
+import type { StructureViolation } from "./structure-violation.js";
 
 const behaviors = new Set([
 	"FunctionDeclaration",
@@ -12,12 +18,10 @@ const behaviors = new Set([
 
 /** Repository policy: production behavior has a class owner; entrypoints re-export. */
 export class CodeStructure {
-	constructor(filename) {
-		this.filename = filename;
-	}
+	constructor(private readonly filename: string) {}
 
-	inspect(source) {
-		const violations = [];
+	inspect(source: string): StructureViolation[] {
+		const violations: StructureViolation[] = [];
 		const ast = parse(source, {
 			sourceType: "module",
 			plugins: ["typescript"],
@@ -34,7 +38,7 @@ export class CodeStructure {
 					continue;
 				violations.push({
 					rule: "entrypoint-exports",
-					line: statement.loc.start.line,
+					line: statement.loc?.start.line ?? 1,
 					message:
 						"Package entrypoints must only import or re-export named declarations.",
 				});
@@ -42,8 +46,12 @@ export class CodeStructure {
 		}
 		const serialization = new SerializationBoundaries();
 		const injection = new DependencyInjection(this.filename, ast.program);
-		const visit = (node, inClass = false, owner) => {
-			if (!node || typeof node !== "object") return;
+		const visit = (
+			node: unknown,
+			inClass = false,
+			owner?: ClassDeclaration | ClassExpression,
+		): void => {
+			if (!isNode(node)) return;
 			if (node.type === "ClassDeclaration" || node.type === "ClassExpression")
 				owner = node;
 			violations.push(
@@ -54,7 +62,7 @@ export class CodeStructure {
 			if (!owned && behaviors.has(node.type)) {
 				violations.push({
 					rule: "class-owned-behavior",
-					line: node.loc.start.line,
+					line: node.loc?.start.line ?? 1,
 					message:
 						"Move production behavior into a focused class; callbacks belong inside class methods.",
 				});

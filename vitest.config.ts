@@ -39,8 +39,8 @@ export default defineConfig({
 		include: [
 			"src/**/*.{spec,test}.ts",
 			"packages/**/src/**/*.test.ts",
-			"scripts/**/*.test.ts",
-			"tests/**/*.spec.ts",
+			"packages/runtime/github-actions/packaging/**/*.test.ts",
+			"tests/**/*.{spec,test}.ts",
 		],
 	},
 });

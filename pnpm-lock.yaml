@@ -23,6 +23,9 @@ importers:
       '@babel/parser':
         specifier: ^8.0.7
         version: 8.0.7
+      '@babel/types':
+        specifier: 8.0.6
+        version: 8.0.6
       '@biomejs/biome':
         specifier: ^2.5.15
         version: 2.5.15

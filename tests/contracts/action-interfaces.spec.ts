@@ -2,7 +2,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parse } from "@babel/parser";
 import { describe, expect, it } from "vitest";
-import * as ActionInterfaceUsage from "../../scripts/action-interface-usage.js";
+import * as ActionInterfaceUsage from "./action-interface-usage.js";
 import {
 	type ActionManifest,
 	readYaml,
@@ -28,7 +28,7 @@ describe("minimal explicit action interfaces", () => {
 			"tests/contracts/action-interfaces.spec.ts",
 		);
 		expect(scripts["check:interfaces"]).toContain(
-			"scripts/action-interface-usage.test.ts",
+			"tests/contracts/action-interface-usage.test.ts",
 		);
 	});
 

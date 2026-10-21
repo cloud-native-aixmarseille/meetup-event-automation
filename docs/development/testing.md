@@ -14,18 +14,23 @@ privacy, and idempotency when relevant to the change.
 
 ## File placement
 
-| Test                                                   | Location                                                           |
-| ------------------------------------------------------ | ------------------------------------------------------------------ |
-| Component unit test                                    | Beside its source, with the exact basename plus `.test.ts`         |
-| Tooling unit test                                      | Beside the script: `scripts/check.mjs` and `scripts/check.test.ts` |
-| Shared package fixtures/builders                       | The package's `testing/` directory                                 |
-| Repository integration, architecture, or contract test | `tests/**/*.spec.ts`                                               |
+| Test                                                   | Location                                                                                                                              |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Component unit test                                    | Beside its source, with the exact basename plus `.test.ts`                                                                            |
+| Tooling unit test                                      | Beside its helper under the [owning directory](architecture.md#repository-tooling-ownership), with the exact basename plus `.test.ts` |
+| Shared package fixtures/builders                       | The package's `testing/` directory                                                                                                    |
+| Repository integration, architecture, or contract test | `tests/**/*.spec.ts`                                                                                                                  |
 
 Import the component directly. Split independently tested components into
-matching files. Do not put unit tests under root `tests/` or name them
-`.spec.ts`. `pnpm check:structure`, lint, and contract tests enforce placement
-and sibling source names. Production TypeScript configurations exclude unit
-tests; spec configurations include them.
+matching files. Production unit tests belong under the package's `src/`.
+Helpers owned by `tests/architecture/`, `tests/contracts/`, or
+`tests/integration/` have adjacent unit tests there; packaging unit tests belong
+beside the packaging module. For example, `tests/architecture/rules/check.ts`
+has `check.test.ts` beside it. Reserve `.spec.ts` for repository assertions.
+`pnpm check:structure` and lint enforce placement and sibling source names.
+Vitest discovers these owned unit tests and repository assertions, and the root
+TypeScript check includes their helpers. Production TypeScript configurations
+exclude unit tests; spec configurations include them.
 
 ## Arrange, Act, Assert
 
@@ -79,8 +84,8 @@ The focused `pnpm check:interfaces` command also runs in local and CI lint.
 
 | Check                                                                        | What it verifies                                                                                                 |
 | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| [Architecture](../../tests/architecture.spec.ts)                             | Dependency layers, package entrypoints, cycles, adapter names, DI boundaries                                     |
-| [Code structure](../../tests/contracts/code-structure.spec.ts)               | Biome limits, class ownership, unit-test layout, unsafe JSON casts and comparisons                               |
+| [Architecture](../../tests/architecture/boundaries.spec.ts)                  | Dependency layers, package entrypoints, cycles, adapter names, DI boundaries, production isolation from tooling  |
+| [Code structure](../../tests/architecture/structure.spec.ts)                 | Biome limits, class ownership, unit-test layout, unsafe JSON casts and comparisons                               |
 | [Public actions](../../tests/contracts/public-actions.spec.ts)               | Action inputs, outputs, runtime, dispatch authorization                                                          |
 | [Action interfaces](../../tests/contracts/action-interfaces.spec.ts)         | Required inputs without defaults, explicit caller wiring, consumed outputs                                       |
 | [AI inputs](../../tests/contracts/ai-inputs.spec.ts)                         | Shared [AI configuration](../reference/configuration.md#ai-configuration), parser ownership, workflow forwarding |
@@ -99,6 +104,8 @@ job closes the test issue, including when fixture preparation fails after creati
 Preparation waits for the created issue to appear in the same open, labeled
 issue listing used by the action. This bounded check allows GitHub's listing to
 reflect the new fixture before action checks start; API failures remain failures.
+The dependency-free poller and its unit tests live in
+[`tests/integration/github-actions/`](../../tests/integration/github-actions/).
 Do not replace these fixtures with live meetup issues.
 Communication integration checks use a synthetic issue with its introduction
 task already completed and assert that diagnostics contain no errors. Runtime and

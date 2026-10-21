@@ -1,9 +1,11 @@
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 
-export async function workspacePackageDirectories(layerRoot) {
+export async function workspacePackageDirectories(
+	layerRoot: string,
+): Promise<string[]> {
 	const entries = await readdir(layerRoot, { withFileTypes: true });
-	const directories = [];
+	const directories: string[] = [];
 	for (const entry of entries) {
 		if (!entry.isDirectory() || entry.name === "node_modules") continue;
 		const directory = join(layerRoot, entry.name);

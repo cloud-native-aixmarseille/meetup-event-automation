@@ -48,8 +48,8 @@ Run commands from the repository root.
 | `pnpm test`               | Run all unit, integration, architecture, and contract tests                                       |
 | `pnpm test:watch`         | Run Vitest in watch mode                                                                          |
 | `pnpm test:cov`           | Run tests with coverage thresholds                                                                |
-| `pnpm check:architecture` | Check package boundaries, imports, and cycles                                                     |
-| `pnpm check:contracts`    | Check action, workflow, CI, and code-structure contracts                                          |
+| `pnpm check:architecture` | Check dependency boundaries, structure, and architecture rule helpers                             |
+| `pnpm check:contracts`    | Check action, workflow, and CI contracts and their analysis helpers                               |
 | `pnpm check:interfaces`   | Reject optional/defaulted inputs, constant flags, empty-only inputs, and unused outputs           |
 | `pnpm check:structure`    | Check class ownership, entrypoints, and unit-test placement                                       |
 | `pnpm check:knip`         | Find unused code and dependencies                                                                 |
@@ -84,18 +84,20 @@ from a linked Git worktree.
   examples, `pnpm check:contracts`, and `make lint`. Do not add
   implementation-mirroring tests or rebuild bundles for prose changes.
 
-[`scripts/build-actions.mjs`](../../scripts/build-actions.mjs) owns the bundle
+[`packages/runtime/github-actions/packaging/build-actions.mjs`](../../packages/runtime/github-actions/packaging/build-actions.mjs) owns the bundle
 entrypoints and build settings. Edit source, then run `pnpm package`; never edit
 `actions/**/dist/index.js` directly. `check:dist` compares files before and
 after its own rebuild, including missing files, independently of Git staging.
+See [repository tooling ownership](architecture.md#repository-tooling-ownership)
+for placement of build tools, repository checks, and CI fixtures.
 
 ## CI and public documentation
 
 Main and pull-request CI use
 [`__shared-ci.yml`](../../.github/workflows/__shared-ci.yml). It runs the shared
 linter, Node.js checks, bundle verification, and action integration tests
-against a synthetic issue. Pull-request CI runs for changes targeting `main`
-and `stack/**` branches, so each layer of a stacked pull request is validated.
+against a synthetic issue. Pull-request CI runs for every target branch, so
+each layer of a stacked pull request is validated regardless of its base name.
 `lint:ci` emits SARIF; `test:ci` emits JUnit and
 coverage reports. These reporting entrypoints must remain compatible with the
 shared CI workflows.

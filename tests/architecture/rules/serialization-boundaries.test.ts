@@ -1,6 +1,6 @@
 import { parse } from "@babel/parser";
 import { describe, expect, it } from "vitest";
-import { SerializationBoundaries } from "./serialization-boundaries.mjs";
+import { SerializationBoundaries } from "./serialization-boundaries.js";
 
 describe("SerializationBoundaries", () => {
 	it.each([
