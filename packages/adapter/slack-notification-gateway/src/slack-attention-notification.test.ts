@@ -1,8 +1,9 @@
+import type { AttentionView } from "@meetup-automation/communication";
 import { describe, expect, it, vi } from "vitest";
 import { SlackAttentionNotification } from "./slack-attention-notification.js";
-import type { AttentionView } from "@meetup-automation/communication";
+
 const view: AttentionView = {
-	state: { version: 1, eventDate: "", stopped: false, episodes: [] },
+	state: { eventDate: "", stopped: false, episodes: [] },
 	conditions: [],
 };
 describe("Slack attention transport", () => {
@@ -25,6 +26,7 @@ describe("Slack attention transport", () => {
 			},
 			fetcher,
 		);
+
 		// Act
 		const posted = await notification.post(view);
 		const updated = await notification.update(
@@ -35,6 +37,7 @@ describe("Slack attention transport", () => {
 			url,
 			body: JSON.parse(input.body),
 		}));
+
 		// Assert
 		expect(posted).toEqual({
 			outcome: "accepted",
@@ -78,8 +81,10 @@ describe("Slack attention transport", () => {
 			{ render: () => "Status" },
 			fetcher,
 		);
+
 		// Act
 		const result = await notification.post(view);
+
 		// Assert
 		expect(result).toEqual({ outcome: "uncertain" });
 	});
@@ -97,8 +102,10 @@ describe("Slack attention transport", () => {
 			{ render: () => "Status" },
 			fetcher,
 		);
+
 		// Act
 		const result = await notification.post(view);
+
 		// Assert
 		expect(result).toEqual({ outcome: "retry", retryAfterSeconds: 600 });
 	});
@@ -113,8 +120,10 @@ describe("Slack attention transport", () => {
 			{ render: () => "Status" },
 			fetcher,
 		);
+
 		// Act
 		const result = await notification.post(view);
+
 		// Assert
 		expect(result).toEqual({ outcome: "uncertain" });
 	});

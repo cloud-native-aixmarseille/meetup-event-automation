@@ -15,11 +15,8 @@ function baseInput(
 		readiness: "ready",
 		occurrenceStatus: "scheduled",
 		policyVersion: "communication-v2",
-		readinessWindowDays: 7,
 		mailRecipients: [mailRecipient("host-1", "hosting", "host@example.test")],
-		notificationRecipients: [notificationRecipient()],
 		mailPlaceholders: { eventTitle: "A meetup" },
-		notificationContent: "The meetup is not ready",
 		now: new Date("2026-06-01T10:00:00.000Z"),
 		...override,
 	};
@@ -56,17 +53,18 @@ function mailRecipient(
 	};
 }
 
-function notificationRecipient(receivesCommunications = true) {
-	return {
-		channel: "notification" as const,
-		recipientId: "organizers-slack",
-		role: "organizers" as const,
-		destination: "slack-organizer-channel-id",
-		receivesCommunications,
-	};
-}
-
 describe("PlanCommunications", () => {
+	it("waits for readiness before planning introductory mail", () => {
+		// Arrange
+		const input = baseInput({ readiness: "not-ready" });
+
+		// Act
+		const result = planner.execute(input);
+
+		// Assert
+		expect(result.intents).toEqual([]);
+		expect(result.diagnostics).toEqual([]);
+	});
 	it("plans host and speaker introductions only for opted-in recipients when ready", () => {
 		// Arrange
 		// No additional setup is needed.
@@ -159,96 +157,6 @@ describe("PlanCommunications", () => {
 		);
 	});
 
-	it.each([
-		["2026-06-08T10:00:00.000Z", "2026-06-08"],
-		["2026-06-01T10:00:00.000Z", "2026-06-08"],
-	] as const)(
-		"plans reminders at inclusive window boundary %s",
-		(now, eventDate) => {
-			// Arrange
-			const input = notReadyInput({ now: new Date(now), eventDate });
-
-			// Act
-			const result = planner.execute(input);
-
-			// Assert
-			expect(result.intents).toEqual([
-				expect.objectContaining({
-					channel: "notification",
-					kind: "readiness-reminder",
-					content: "The meetup is not ready",
-				}),
-			]);
-		},
-	);
-
-	it.each([
-		["before the window", "2026-05-31T10:00:00.000Z", "2026-06-08"],
-		["after the event", "2026-06-09T10:00:00.000Z", "2026-06-08"],
-	])("does not plan a reminder %s", (_label, now, eventDate) => {
-		// Arrange
-		// No additional setup is needed.
-
-		// Act
-		const result = planner.execute(
-			notReadyInput({ now: new Date(now), eventDate }),
-		);
-
-		// Assert
-		expect(result.intents).toEqual([]);
-	});
-
-	it("uses the Europe/Paris civil date across the spring DST transition", () => {
-		// Arrange
-		// No additional setup is needed.
-
-		// Act
-		const beforeLocalMidnight = planner.execute(
-			notReadyInput({
-				eventDate: "2026-03-29",
-				now: new Date("2026-03-28T22:30:00.000Z"),
-				readinessWindowDays: 0,
-			}),
-		);
-		const afterLocalMidnight = planner.execute(
-			notReadyInput({
-				eventDate: "2026-03-29",
-				now: new Date("2026-03-28T23:30:00.000Z"),
-				readinessWindowDays: 0,
-			}),
-		);
-
-		// Assert
-		expect(beforeLocalMidnight.intents).toHaveLength(0);
-		expect(afterLocalMidnight.intents).toHaveLength(1);
-	});
-
-	it("uses civil days and remains stable through the repeated fall DST hour", () => {
-		// Arrange
-		// No additional setup is needed.
-
-		// Act
-		const summerOffsetOccurrence = planner.execute(
-			notReadyInput({
-				eventDate: "2026-11-01",
-				now: new Date("2026-10-25T00:30:00.000Z"),
-			}),
-		);
-		const winterOffsetOccurrence = planner.execute(
-			notReadyInput({
-				eventDate: "2026-11-01",
-				now: new Date("2026-10-25T01:30:00.000Z"),
-			}),
-		);
-
-		// Assert
-		expect(summerOffsetOccurrence.intents).toHaveLength(1);
-		expect(winterOffsetOccurrence.intents).toHaveLength(1);
-		expect(summerOffsetOccurrence.intents[0]?.idempotencyKey).toBe(
-			winterOffsetOccurrence.intents[0]?.idempotencyKey,
-		);
-	});
-
 	it("plans thanks for held events and elapsed scheduled dates", () => {
 		// Arrange
 		// No additional setup is needed.
@@ -284,11 +192,6 @@ describe("PlanCommunications", () => {
 				templateName: MAIL_TEMPLATE_NAMES.speakerThanks,
 			}),
 		]);
-		expect(held.intents).not.toEqual(
-			expect.arrayContaining([
-				expect.objectContaining({ kind: "readiness-reminder" }),
-			]),
-		);
 		expect(merelyPast.intents).toEqual(
 			expect.arrayContaining([
 				expect.objectContaining({ kind: "host-thanks" }),
@@ -408,60 +311,10 @@ describe("PlanCommunications", () => {
 		expect(actual).not.toContain("private@example.test");
 	});
 
-	it("skips opted-out and invalid notification recipients", () => {
-		// Arrange
-		// No additional setup is needed.
-
-		// Act
-		const result = planner.execute(
-			notReadyInput({
-				notificationRecipients: [
-					notificationRecipient(false),
-					{
-						...notificationRecipient(),
-						recipientId: "private@example.test",
-					},
-				],
-			}),
-		);
-
-		// Assert
-		expect(result.intents).toEqual([]);
-		expect(result.diagnostics).toEqual([
-			{ code: "invalid-identifier", severity: "error" },
-		]);
-	});
-
-	it("requires content before planning a readiness notification", () => {
-		// Arrange
-		// No additional setup is needed.
-
-		// Act
-		const result = planner.execute(notReadyInput({ notificationContent: " " }));
-
-		// Assert
-		expect(result).toEqual({
-			intents: [],
-			diagnostics: [
-				{ code: "missing-notification-content", severity: "error" },
-			],
-		});
-	});
-
 	it.each([
 		["invalid event date", { eventDate: "2026-02-30" }, "invalid-event-date"],
 		["non-ISO event date", { eventDate: "08/06/2026" }, "invalid-event-date"],
 		["invalid time zone", { timeZone: "Mars/Olympus" }, "invalid-time-zone"],
-		[
-			"invalid readiness window",
-			{ readinessWindowDays: -1 },
-			"invalid-readiness-window",
-		],
-		[
-			"fractional readiness window",
-			{ readinessWindowDays: 1.5 },
-			"invalid-readiness-window",
-		],
 	] as const)("fails closed for an %s", (_label, override, diagnosticCode) => {
 		// Arrange
 		// No additional setup is needed.

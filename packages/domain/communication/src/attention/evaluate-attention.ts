@@ -1,3 +1,5 @@
+import { PostEventPolicy } from "../post-event-policy.js";
+import { AttentionPolicy } from "./attention-policy.js";
 import type {
 	AttentionApproval,
 	AttentionCondition,
@@ -5,8 +7,6 @@ import type {
 	AttentionOwner,
 	AttentionRecoveryItem,
 } from "./model.js";
-import { AttentionPolicy } from "./attention-policy.js";
-import { PostEventPolicy } from "../post-event-policy.js";
 export interface AttentionStage {
 	readonly owner: "event" | "assets" | "feedback" | "communications";
 	readonly outcome: "success" | "failure" | "unknown";

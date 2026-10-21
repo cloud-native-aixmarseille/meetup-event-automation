@@ -1,6 +1,6 @@
 import {
-	type CommunicationKind,
 	MAIL_TEMPLATE_NAMES,
+	type MailCommunicationKind,
 	type MailRecipient,
 	type MailTemplateName,
 } from "./model.js";
@@ -12,7 +12,7 @@ export type LocalDate = {
 };
 
 export type MailPolicy = {
-	readonly kind: CommunicationKind;
+	readonly kind: MailCommunicationKind;
 	readonly templateName: MailTemplateName;
 };
 

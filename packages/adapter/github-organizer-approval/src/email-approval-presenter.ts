@@ -1,11 +1,8 @@
-import {
-	type ApprovalDecision,
-	ApprovalRecord,
-	type StoredApproval,
-} from "./approval-record.js";
-import type { ApprovalMessages } from "./i18n/approval-messages.js";
+import { ApprovalCommentCodec } from "./approval-comment-codec.js";
 import { ApprovalDetailsPresenter } from "./approval-details-presenter.js";
+import type { ApprovalDecision, StoredApproval } from "./approval-state.js";
 import { FollowUpPresenter } from "./follow-up-presenter.js";
+import type { ApprovalMessages } from "./i18n/approval-messages.js";
 
 export class EmailApprovalPresenter {
 	constructor(private readonly messages: ApprovalMessages) {}
@@ -14,7 +11,7 @@ export class EmailApprovalPresenter {
 		decision: ApprovalDecision,
 	): string {
 		const heading = [
-			ApprovalRecord.marker(record),
+			ApprovalCommentCodec.marker(record),
 			...new FollowUpPresenter(this.messages).render(record),
 		];
 		if (record.recipientCount === 0 || record.followUp?.active === false)

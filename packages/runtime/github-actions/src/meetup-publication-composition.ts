@@ -8,12 +8,7 @@ import {
 	ApprovalMessages,
 	ApprovalPresenter,
 	GithubApprovalClient,
-	GithubOrganizerApproval,
 } from "@meetup-automation/github-organizer-approval";
-import {
-	SlackApprovalNotification,
-	SlackApprovalPresenter,
-} from "@meetup-automation/slack-notification-gateway";
 import { GithubPublicationJournal } from "@meetup-automation/github-publication-journal";
 import {
 	type AutomationConfig,
@@ -24,10 +19,15 @@ import {
 import { MeetupEventGateway } from "@meetup-automation/meetup-event-gateway";
 import { MeetupGroupUrl } from "@meetup-automation/publication";
 import {
+	SlackApprovalNotification,
+	SlackApprovalPresenter,
+} from "@meetup-automation/slack-notification-gateway";
+import {
 	EventComposition,
 	type EventCompositionInput,
 	SERVICES,
 } from "./composition.js";
+import { OrganizerApprovalComposition } from "./organizer-approval-composition.js";
 
 export class MeetupPublicationComposition {
 	static create(
@@ -91,7 +91,7 @@ export class MeetupPublicationComposition {
 			slackOrganizerChannelId: string;
 		},
 	) {
-		return new GithubOrganizerApproval(
+		return OrganizerApprovalComposition.create(
 			new GithubApprovalClient(
 				input.client,
 				input.owner,
@@ -105,6 +105,6 @@ export class MeetupPublicationComposition {
 				new SlackApprovalPresenter(input.locale),
 			),
 			input.slackOrganizerChannelId,
-		);
+		).approval;
 	}
 }

@@ -83,10 +83,6 @@ export class CommunicationResults {
 		};
 	}
 
-	static isValidInstant(value: Date): boolean {
-		return value instanceof Date && Number.isFinite(value.getTime());
-	}
-
 	static safeDetailCode(value: string | undefined): string | undefined {
 		return [
 			"ambiguous-response",

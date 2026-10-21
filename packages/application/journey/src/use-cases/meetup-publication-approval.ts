@@ -1,9 +1,9 @@
 import type { EventClock } from "@meetup-automation/event";
 import {
-	ContentFingerprint,
 	type ScheduledEvent,
 	ScheduledEventError,
 } from "@meetup-automation/publication";
+import { MeetupPublicationRevision } from "../approval/meetup-publication-revision.js";
 import type {
 	OrganizerApproval,
 	OrganizerApprovalResult,
@@ -21,7 +21,7 @@ export class MeetupPublicationApproval {
 		try {
 			return await this.approvals.request({
 				kind: "meetup-publication",
-				revision: ContentFingerprint.of(JSON.stringify({ url, event })),
+				revision: MeetupPublicationRevision.of(event, url),
 				eventDate: event.date,
 				requestedAt: this.clock.now(),
 				publication: {

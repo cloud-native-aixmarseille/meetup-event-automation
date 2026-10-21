@@ -7,8 +7,6 @@ const parameters = {
 	"attention.redirect": {
 		url: "https://github.com/example/meetups/issues/42#issuecomment-100",
 	},
-	"slack.title": { issue: "42" },
-	"slack.more": { count: 2 },
 	"action.manual-publication": { task: "publication" },
 	"action.integration-failure": { task: "assets" },
 	"action.follow-up": { task: "thanks" },
@@ -20,8 +18,10 @@ describe("attention catalogs", () => {
 		(locale) => {
 			// Arrange
 			const catalog = CATALOGS[locale];
+
 			// Act
 			const inspected = inspectCatalog(CATALOGS, locale, parameters);
+
 			// Assert
 			expect(Object.keys(catalog).sort()).toEqual(
 				Object.keys(CATALOGS.en).sort(),

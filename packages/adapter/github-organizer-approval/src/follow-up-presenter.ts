@@ -1,5 +1,5 @@
 import { FOLLOW_UP_TASKS } from "@meetup-automation/journey";
-import type { StoredApproval } from "./approval-record.js";
+import type { StoredApproval } from "./approval-state.js";
 import type { ApprovalMessages } from "./i18n/approval-messages.js";
 export class FollowUpPresenter {
 	constructor(private readonly messages: ApprovalMessages) {}

@@ -7,23 +7,13 @@ import type {
 	CommunicationIntent,
 	GatewayDispatchResult,
 } from "./model.js";
-import type {
-	DeliveryLedger,
-	MailGateway,
-	NotificationGateway,
-} from "./ports.js";
+import type { DeliveryLedger, MailGateway } from "./ports.js";
 export class CommunicationDispatcher {
 	readonly #ledger: DeliveryLedger;
 	readonly #mailGateway: MailGateway;
-	readonly #notificationGateway: NotificationGateway;
-	constructor(
-		ledger: DeliveryLedger,
-		mailGateway: MailGateway,
-		notificationGateway: NotificationGateway,
-	) {
+	constructor(ledger: DeliveryLedger, mailGateway: MailGateway) {
 		this.#ledger = ledger;
 		this.#mailGateway = mailGateway;
-		this.#notificationGateway = notificationGateway;
 	}
 	async execute(
 		intent: CommunicationIntent,
@@ -33,10 +23,7 @@ export class CommunicationDispatcher {
 	): Promise<boolean> {
 		let dispatchResult: GatewayDispatchResult;
 		try {
-			dispatchResult =
-				intent.channel === "mail"
-					? await this.#mailGateway.dispatch(intent)
-					: await this.#notificationGateway.dispatch(intent);
+			dispatchResult = await this.#mailGateway.dispatch(intent);
 		} catch {
 			counts.uncertain += 1;
 			diagnostics.push({

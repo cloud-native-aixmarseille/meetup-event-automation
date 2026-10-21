@@ -4,10 +4,7 @@ import type {
 	EventDiagnostic,
 	EventIdentity,
 } from "@meetup-automation/event";
-import {
-	type DiagnosticPresentation,
-	DiagnosticPresenter,
-} from "./diagnostic-presentation.js";
+import { DiagnosticCommentPresenter } from "./diagnostic-comment-presenter.js";
 import { GitHubEventCommentRepositoryConfigurationError } from "./github-event-comment-repository-configuration-error.js";
 import {
 	COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER,
@@ -26,7 +23,7 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 	private readonly owner: string;
 	private readonly repo: string;
 	private readonly repositoryName: string;
-	private readonly authorLogin: string | undefined;
+	private readonly authorLogin: string;
 
 	constructor(
 		private readonly client: GitHubEventCommentRepositoryClient,
@@ -42,7 +39,11 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 			"repo",
 		);
 		this.repositoryName = `${this.owner}/${this.repo}`;
-		this.authorLogin = options.authorLogin?.trim() || undefined;
+		this.authorLogin = options.authorLogin.trim();
+		if (!this.authorLogin)
+			throw new GitHubEventCommentRepositoryConfigurationError(
+				"Managed comment author is required",
+			);
 	}
 
 	async reconcileDiagnostics(
@@ -60,10 +61,7 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 			(comment) => !retired.includes(comment),
 		);
 		let changed = await this.retireComments(identity.issueNumber, duplicates);
-		let body = GitHubEventCommentRepository.renderDiagnosticComment(
-			diagnostics,
-			this.messages,
-		);
+		let body = DiagnosticCommentPresenter.render(diagnostics, this.messages);
 		if (canonical && this.options.retainedContent) {
 			const retained = await this.options.retainedContent.load(
 				identity.issueNumber,
@@ -157,7 +155,7 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 			return false;
 		}
 		return (
-			this.authorLogin === undefined ||
+			comment.authorType === "Bot" &&
 			comment.authorLogin?.toLowerCase() === this.authorLogin.toLowerCase()
 		);
 	}
@@ -217,43 +215,6 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 		}
 	}
 
-	static renderDiagnosticComment(
-		diagnostics: readonly EventDiagnostic[],
-		messages = new EventCommentMessages(),
-	): string {
-		const actionable = new Map<string, DiagnosticPresentation>();
-		for (const item of diagnostics) {
-			if (DiagnosticPresenter.suppressed(item, diagnostics)) {
-				continue;
-			}
-			const presentation = DiagnosticPresenter.presentDiagnostic(
-				item,
-				messages,
-			);
-			actionable.set(
-				`${presentation.field}:${presentation.message}`,
-				presentation,
-			);
-		}
-
-		if (actionable.size === 0) {
-			return `${EVENT_DIAGNOSTIC_COMMENT_MARKER}\n\n${messages.t("comment.resolved")}`;
-		}
-
-		const lines = [...actionable.values()]
-			.sort(
-				(left, right) =>
-					left.order - right.order ||
-					left.field.localeCompare(right.field, messages.locale, {
-						numeric: true,
-					}) ||
-					left.message.localeCompare(right.message, messages.locale),
-			)
-			.map(({ field, message }) => `- [ ] **${field}**: ${message}`);
-
-		return [EVENT_DIAGNOSTIC_COMMENT_MARKER, "", ...lines].join("\n");
-	}
-
 	private static mapComment(data: unknown): ManagedComment | null {
 		if (!GitHubEventCommentRepository.isRecord(data)) {
 			throw new GitHubEventCommentRepositoryResponseError(
@@ -281,6 +242,7 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 			id: Number(data.id),
 			body: data.body,
 			authorLogin: typeof user?.login === "string" ? user.login : undefined,
+			authorType: typeof user?.type === "string" ? user.type : undefined,
 		};
 	}
 
@@ -306,6 +268,6 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 	}
 
 	private static isRecord(value: unknown): value is Record<string, unknown> {
-		return typeof value === "object" && value !== null;
+		return typeof value === "object" && value !== null && !Array.isArray(value);
 	}
 }

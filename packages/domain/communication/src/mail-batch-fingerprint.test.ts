@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { MailBatchFingerprint } from "./mail-batch-fingerprint.js";
 import type { MailMessageIntent } from "./model.js";
+
 const message: MailMessageIntent = {
 	channel: "mail",
 	kind: "speaker-introduction",
@@ -21,6 +22,43 @@ const message: MailMessageIntent = {
 	placeholders: { eventDate: "2099-06-08", firstName: "Alex" },
 };
 describe("mail batch fingerprints", () => {
+	it("ignores property order inside feedback talks without ignoring their content order", () => {
+		// Arrange
+		const first = { title: "First talk", url: "https://example.test/first" };
+		const second = { title: "Second talk", url: "https://example.test/second" };
+		const ordered = {
+			...message,
+			placeholders: { speakerFeedbackTalks: [first, second] },
+		};
+		const reorderedProperties = {
+			...message,
+			placeholders: {
+				speakerFeedbackTalks: [
+					{ url: first.url, title: first.title },
+					{ url: second.url, title: second.title },
+				],
+			},
+		};
+		const reorderedTalks = {
+			...message,
+			placeholders: { speakerFeedbackTalks: [second, first] },
+		};
+
+		// Act
+		const original = MailBatchFingerprint.create("2099-06-08", "Europe/Paris", [
+			ordered,
+		]);
+		const same = MailBatchFingerprint.create("2099-06-08", "Europe/Paris", [
+			reorderedProperties,
+		]);
+		const changed = MailBatchFingerprint.create("2099-06-08", "Europe/Paris", [
+			reorderedTalks,
+		]);
+
+		// Assert
+		expect(same).toBe(original);
+		expect(changed).not.toBe(original);
+	});
 	it("is stable across recipient and placeholder ordering", () => {
 		// Arrange
 		const second = {
@@ -32,6 +70,7 @@ describe("mail batch fingerprints", () => {
 			message,
 			second,
 		]);
+
 		// Act
 		const actual = MailBatchFingerprint.create("2099-06-08", "Europe/Paris", [
 			second,
@@ -40,6 +79,7 @@ describe("mail batch fingerprints", () => {
 				placeholders: { firstName: "Alex", eventDate: "2099-06-08" },
 			},
 		]);
+
 		// Assert
 		expect(actual).toBe(expected);
 		expect(actual).toMatch(/^[a-f0-9]{64}$/);
@@ -57,10 +97,12 @@ describe("mail batch fingerprints", () => {
 		const original = MailBatchFingerprint.create("2099-06-08", "Europe/Paris", [
 			message,
 		]);
+
 		// Act
 		const actual = MailBatchFingerprint.create("2099-06-08", "Europe/Paris", [
 			changed,
 		]);
+
 		// Assert
 		expect(actual).not.toBe(original);
 	});
@@ -69,10 +111,12 @@ describe("mail batch fingerprints", () => {
 		const original = MailBatchFingerprint.create("2099-06-08", "Europe/Paris", [
 			message,
 		]);
+
 		// Act
 		const actual = MailBatchFingerprint.create("2099-06-09", "Europe/Paris", [
 			message,
 		]);
+
 		// Assert
 		expect(actual).not.toBe(original);
 	});

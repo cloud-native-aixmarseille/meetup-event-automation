@@ -20,12 +20,9 @@ export interface AttentionNotification {
 	): Promise<boolean>;
 }
 export interface AttentionApprovalSource {
-	readAttention(): Promise<readonly AttentionApproval[]>;
+	/** Finalizes verified organizer choices before returning their current state. */
+	synchronizeApprovals(): Promise<readonly AttentionApproval[]>;
 }
 export interface AttentionRecoverySource {
 	readAttention(): Promise<readonly AttentionRecoveryItem[]>;
-}
-
-export interface AttentionContent {
-	render(view: AttentionView): string;
 }

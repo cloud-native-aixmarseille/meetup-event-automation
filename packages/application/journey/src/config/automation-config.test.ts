@@ -27,9 +27,7 @@ describe("opinionated automation configuration", () => {
 				speakers: "referentials/speakers.csv",
 			},
 			communication: {
-				"readiness-window-days": 7,
 				"mailings-repository": "example-community/mailings",
-				"slack-enabled": true,
 				"dispatch-enabled": true,
 				"policy-version": 1,
 			},

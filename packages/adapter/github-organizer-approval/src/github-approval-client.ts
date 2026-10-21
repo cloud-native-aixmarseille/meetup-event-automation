@@ -1,75 +1,10 @@
-type ApprovalHistoryResponse = {
-	node: {
-		id: string;
-		body: string;
-		userContentEdits: {
-			nodes: readonly ApprovalContentEdit[];
-			pageInfo: { hasNextPage: boolean; endCursor: string | null };
-		};
-	} | null;
-};
-
-export interface ApprovalComment {
-	readonly id: number;
-	readonly node_id?: string;
-	readonly body?: string | null;
-	readonly created_at?: string;
-	readonly updated_at?: string;
-	readonly user?: { readonly login: string; readonly type?: string } | null;
-}
-export interface ApprovalCommentEdit {
-	readonly id: string;
-	readonly body: string;
-	readonly lastEditedAt: string | null;
-	readonly editor: {
-		readonly login: string;
-		readonly __typename: string;
-	} | null;
-}
-export interface ApprovalContentEdit {
-	readonly diff: string | null;
-	readonly deletedAt: string | null;
-	readonly editor: ApprovalCommentEdit["editor"];
-}
-export interface GithubApprovalApi {
-	graphql<Response>(
-		query: string,
-		variables: { id: string; after?: string },
-	): Promise<Response>;
-	readonly rest: {
-		readonly issues: {
-			listComments(input: {
-				owner: string;
-				repo: string;
-				issue_number: number;
-				page: number;
-				per_page: number;
-			}): Promise<{
-				data: readonly ApprovalComment[];
-				headers: { link?: string };
-			}>;
-			createComment(input: {
-				owner: string;
-				repo: string;
-				issue_number: number;
-				body: string;
-			}): Promise<{ data: { id: number } }>;
-			updateComment(input: {
-				owner: string;
-				repo: string;
-				comment_id: number;
-				body: string;
-			}): Promise<unknown>;
-		};
-		readonly repos: {
-			getCollaboratorPermissionLevel(input: {
-				owner: string;
-				repo: string;
-				username: string;
-			}): Promise<{ data: { permission: string } }>;
-		};
-	};
-}
+import type {
+	ApprovalComment,
+	ApprovalCommentEdit,
+	ApprovalContentEdit,
+	GithubApprovalApi,
+} from "./github-approval-contracts.js";
+import { GithubApprovalResponse } from "./github-approval-response.js";
 
 /** Scoped issue and permission access. No issue text is executable input. */
 export class GithubApprovalClient {
@@ -83,15 +18,14 @@ export class GithubApprovalClient {
 		const comments: ApprovalComment[] = [];
 		let page = 1;
 		while (true) {
-			const response = await this.api.rest.issues.listComments({
+			const raw: unknown = await this.api.rest.issues.listComments({
 				owner: this.owner,
 				repo: this.repo,
 				issue_number: this.issue,
 				page,
 				per_page: 100,
 			});
-			if (!Array.isArray(response.data))
-				throw new Error("Invalid approval comment response");
+			const response = GithubApprovalResponse.comments(raw);
 			comments.push(...response.data);
 			const next = response.headers.link
 				? /<[^>]+>;\s*rel="next"/.test(response.headers.link)
@@ -102,15 +36,13 @@ export class GithubApprovalClient {
 	}
 	async create(body: string): Promise<number> {
 		if (body.length > 60000) throw new Error("Approval comment limit exceeded");
-		const response = await this.api.rest.issues.createComment({
+		const response: unknown = await this.api.rest.issues.createComment({
 			owner: this.owner,
 			repo: this.repo,
 			issue_number: this.issue,
 			body,
 		});
-		if (!Number.isSafeInteger(response.data.id) || response.data.id <= 0)
-			throw new Error("Invalid approval comment identity");
-		return response.data.id;
+		return GithubApprovalResponse.identity(response);
 	}
 	async update(commentId: number, body: string): Promise<void> {
 		if (body.length > 60000) throw new Error("Approval comment limit exceeded");
@@ -122,16 +54,14 @@ export class GithubApprovalClient {
 		});
 	}
 	async canApprove(username: string): Promise<boolean> {
-		const response = await this.api.rest.repos.getCollaboratorPermissionLevel({
-			owner: this.owner,
-			repo: this.repo,
-			username,
-		});
-		return (
-			response.data.permission === "write" ||
-			response.data.permission === "maintain" ||
-			response.data.permission === "admin"
-		);
+		const response: unknown =
+			await this.api.rest.repos.getCollaboratorPermissionLevel({
+				owner: this.owner,
+				repo: this.repo,
+				username,
+			});
+		const permission = GithubApprovalResponse.permission(response);
+		return ["write", "maintain", "admin"].includes(permission);
 	}
 	async replace(
 		commentId: number,
@@ -149,7 +79,7 @@ export class GithubApprovalClient {
 	async edit(comment: ApprovalComment): Promise<ApprovalCommentEdit> {
 		if (!comment.node_id)
 			throw new Error("Missing approval comment node identity");
-		const result = await this.api.graphql<{ node: ApprovalCommentEdit | null }>(
+		const result = await this.api.graphql<unknown>(
 			`query ApprovalCommentEditor($id: ID!) {
 				node(id: $id) {
 					... on IssueComment {
@@ -159,12 +89,7 @@ export class GithubApprovalClient {
 			}`,
 			{ id: comment.node_id },
 		);
-		if (
-			result.node?.id !== comment.node_id ||
-			result.node.body !== comment.body
-		)
-			throw new Error("Approval comment changed during verification");
-		return result.node;
+		return GithubApprovalResponse.edit(result, comment);
 	}
 	url(commentId: number): string {
 		return `https://github.com/${this.owner}/${this.repo}/issues/${this.issue}#issuecomment-${commentId}`;
@@ -177,9 +102,8 @@ export class GithubApprovalClient {
 		const edits: ApprovalContentEdit[] = [];
 		let after: string | undefined;
 		do {
-			const response: ApprovalHistoryResponse =
-				await this.api.graphql<ApprovalHistoryResponse>(
-					`query ApprovalCommentHistory($id: ID!, $after: String) {
+			const response: unknown = await this.api.graphql<unknown>(
+				`query ApprovalCommentHistory($id: ID!, $after: String) {
 				node(id: $id) { ... on IssueComment {
 					id body userContentEdits(first: 100, after: $after) {
 						nodes { diff deletedAt editor { login __typename } }
@@ -187,16 +111,9 @@ export class GithubApprovalClient {
 					}
 				} }
 			}`,
-					{ id: comment.node_id, ...(after ? { after } : {}) },
-				);
-			if (
-				response.node?.id !== comment.node_id ||
-				response.node.body !== comment.body
-			)
-				throw new Error("Approval comment changed during history verification");
-			const history = response.node.userContentEdits;
-			if (!Array.isArray(history?.nodes) || !history.pageInfo)
-				throw new Error("Approval history is unavailable");
+				{ id: comment.node_id, ...(after ? { after } : {}) },
+			);
+			const history = GithubApprovalResponse.history(response, comment);
 			edits.push(...history.nodes);
 			if (!history.pageInfo.hasNextPage) return edits;
 			const next = history.pageInfo.endCursor;

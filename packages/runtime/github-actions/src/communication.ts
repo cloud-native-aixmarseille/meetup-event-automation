@@ -1,34 +1,17 @@
 import { getOctokit } from "@actions/github";
 import {
 	AutomationConfigFactory,
-	type CommunicationJourneyDiagnostic,
 	ManageMeetupCommunications,
 	type ManageMeetupCommunicationsResult,
 } from "@meetup-automation/journey";
 import { MessageLocalizer } from "@meetup-automation/localization";
 import { CommunicationComposition } from "./communication-composition.js";
 import {
-	ConferenceHallInput,
-	type ConferenceHallSettings,
-} from "./conference-hall-input.js";
+	CommunicationInput,
+	type RunCommunicationReconcileInput,
+} from "./communication-input.js";
 
-export interface RunCommunicationReconcileInput extends ConferenceHallSettings {
-	readonly locale?: string;
-	readonly issueNumber: number;
-
-	readonly githubToken: string;
-	readonly mailingsToken: string;
-	readonly openFeedbackApiKey?: string;
-	readonly slackToken: string;
-	readonly slackOrganizerChannelId: string;
-	readonly owner: string;
-	readonly repo: string;
-	readonly repositoryId?: string;
-	readonly workspaceRoot?: string;
-	readonly managedCommentAuthor: string;
-	readonly slidesUrl?: string;
-	readonly slidesReady?: boolean;
-}
+export type { RunCommunicationReconcileInput } from "./communication-input.js";
 
 export type RunCommunicationReconcileResult = ManageMeetupCommunicationsResult;
 
@@ -37,26 +20,14 @@ export class CommunicationRuntime {
 	static async runCommunicationReconcile(
 		input: RunCommunicationReconcileInput,
 	): Promise<RunCommunicationReconcileResult> {
-		CommunicationRuntime.assertInput(input);
+		CommunicationInput.validate(input);
 		const config = AutomationConfigFactory.createAutomationConfig(input.owner);
-		const runtimeDiagnostics: CommunicationJourneyDiagnostic[] = [];
 		const githubToken = input.githubToken.trim();
-		if (!githubToken) {
-			ManageMeetupCommunications.isDispatchEnabled(config, runtimeDiagnostics);
-			runtimeDiagnostics.push({
-				code: "communication.github-credential-missing",
-				severity: "error",
-			});
-			return ManageMeetupCommunications.emptyCommunicationResult(
-				"check",
-				runtimeDiagnostics,
-			);
-		}
 		const mailingsToken = input.mailingsToken.trim();
 		const slackToken = input.slackToken.trim();
 		const slackOrganizerChannelId = input.slackOrganizerChannelId.trim();
 		const container = CommunicationComposition.createCommunicationContainer({
-			locale: MessageLocalizer.resolveLocale(input.locale ?? "en"),
+			locale: MessageLocalizer.resolveLocale(input.locale),
 			conferenceHallEvent: input.conferenceHallEvent,
 			conferenceHallApiKey: input.conferenceHallApiKey,
 			client: getOctokit(githubToken),
@@ -80,30 +51,5 @@ export class CommunicationRuntime {
 			slidesReady: input.slidesReady,
 		});
 		return result;
-	}
-
-	static assertInput(input: RunCommunicationReconcileInput): void {
-		ConferenceHallInput.validate(input);
-		if (!Number.isSafeInteger(input.issueNumber) || input.issueNumber <= 0) {
-			throw new Error("issueNumber must be a positive integer");
-		}
-		if (
-			!CommunicationRuntime.isRepositoryPart(input.owner) ||
-			!CommunicationRuntime.isRepositoryPart(input.repo)
-		) {
-			throw new Error(
-				"owner and repo must be valid GitHub repository segments",
-			);
-		}
-		if (!input.slackOrganizerChannelId.trim()) {
-			throw new Error("slackOrganizerChannelId must not be empty");
-		}
-		if (!input.managedCommentAuthor.trim()) {
-			throw new Error("managedCommentAuthor must not be empty");
-		}
-	}
-
-	static isRepositoryPart(value: string): boolean {
-		return /^[A-Za-z0-9_.-]+$/.test(value);
 	}
 }

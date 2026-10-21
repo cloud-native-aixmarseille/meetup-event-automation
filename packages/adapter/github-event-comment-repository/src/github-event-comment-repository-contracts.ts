@@ -50,8 +50,8 @@ export interface GitHubEventCommentRepositoryClient {
 export type GitHubEventCommentRepositoryOptions = Readonly<{
 	owner: string;
 	repo: string;
-	/** Restrict managed comments to this bot login when it is known. */
-	authorLogin?: string;
+	/** Only this configured GitHub App bot can own managed comments. */
+	authorLogin: string;
 	locale?: string;
 	/** Retire separate stage reports only after their merged checklist is saved. */
 	retireCommunicationReports?: boolean;
@@ -64,4 +64,5 @@ export type ManagedComment = Readonly<{
 	id: number;
 	body: string;
 	authorLogin?: string;
+	authorType?: string;
 }>;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { publicationRequest } from "../testing/approval.fixtures.js";
-import { MeetupApprovalDetails } from "./meetup-approval-details.js";
+import { MeetupApprovalDetailsSchema } from "./meetup-approval-details-schema.js";
 
 describe("publication approval facts", () => {
 	it("accepts the public draft summary", () => {
@@ -8,7 +8,7 @@ describe("publication approval facts", () => {
 		const value = publicationRequest.publication;
 
 		// Act
-		const result = MeetupApprovalDetails.validate(value);
+		const result = MeetupApprovalDetailsSchema.validate(value);
 
 		// Assert
 		expect(result).toBeUndefined();
@@ -33,7 +33,7 @@ describe("publication approval facts", () => {
 
 		// Act
 		try {
-			MeetupApprovalDetails.validate(value);
+			MeetupApprovalDetailsSchema.validate(value);
 		} catch (caught) {
 			error = caught;
 		}

@@ -1,8 +1,8 @@
+import type { GithubAttentionClient } from "./github-attention-client.js";
 import type {
 	AttentionComment,
 	AttentionCommentEdit,
-	GithubAttentionClient,
-} from "./github-attention-client.js";
+} from "./github-attention-contracts.js";
 /** Human-editable metadata is never delivery authority. Recover the last bot revision. */
 export class TrustedAttentionState {
 	constructor(

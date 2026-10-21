@@ -1,8 +1,13 @@
-import type {
-	AttentionRepository,
-	AttentionState,
+import {
+	type AttentionRepository,
+	type AttentionState,
+	AttentionStateEquality,
 } from "@meetup-automation/communication";
-import { DIAGNOSTIC_MARKER } from "./attention-diagnostic-checklist.js";
+
+import {
+	type AttentionDiagnosticChecklist,
+	DIAGNOSTIC_MARKER,
+} from "./attention-diagnostic-checklist.js";
 import type { AttentionPresenter } from "./attention-presenter.js";
 import { ATTENTION_MARKER, AttentionRecord } from "./attention-record.js";
 import type { GithubAttentionClient } from "./github-attention-client.js";
@@ -18,6 +23,7 @@ export class GithubAttentionRepository implements AttentionRepository {
 		private readonly client: GithubAttentionClient,
 		private readonly author: string,
 		private readonly presenter: AttentionPresenter,
+		private readonly checklist: AttentionDiagnosticChecklist,
 	) {}
 	async load(): Promise<AttentionState | undefined> {
 		const trusted = new TrustedAttentionState(this.client, this.author);
@@ -37,7 +43,7 @@ export class GithubAttentionRepository implements AttentionRepository {
 			const snapshot = { id: comment.id, body: comment.body ?? "" };
 			if (body.startsWith(DIAGNOSTIC_MARKER) && !diagnostic) {
 				diagnostic = snapshot;
-				this.presenter.setDiagnosticComment(comment.id, body);
+				this.checklist.set(comment.id, body);
 			}
 			if (body.includes(ATTENTION_MARKER))
 				records.push({
@@ -65,8 +71,7 @@ export class GithubAttentionRepository implements AttentionRepository {
 				!canonical?.diagnostic ||
 				records.every((item) => item.diagnostic) ||
 				records.some(
-					(item) =>
-						JSON.stringify(item.state) !== JSON.stringify(canonical.state),
+					(item) => !AttentionStateEquality.equal(item.state, canonical.state),
 				))
 		)
 			throw new Error("Multiple attention records");
@@ -80,7 +85,7 @@ export class GithubAttentionRepository implements AttentionRepository {
 		if (!this.loaded)
 			throw new Error("Attention state must be loaded before writing");
 		await this.consolidate();
-		const body = this.presenter.issue(state);
+		const body = this.presenter.issue(state, AttentionRecord.marker(state));
 		if (body.length > 60000) throw new Error("Attention record limit exceeded");
 		if (this.snapshot) {
 			if (this.snapshot.body === body) return;
@@ -104,7 +109,10 @@ export class GithubAttentionRepository implements AttentionRepository {
 		if (!this.obsolete || !this.snapshot || !this.previous) return;
 		// Persist the exact reservation before retiring its source. A retry can
 		// recognize identical records after interruption between these writes.
-		const body = this.presenter.issue(this.previous);
+		const body = this.presenter.issue(
+			this.previous,
+			AttentionRecord.marker(this.previous),
+		);
 		if (body.length > 60000) throw new Error("Attention record limit exceeded");
 		await this.client.replace(this.snapshot.id, this.snapshot.body, body);
 		this.snapshot.body = body;

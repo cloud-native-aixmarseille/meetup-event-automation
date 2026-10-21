@@ -33,11 +33,6 @@ export type DeliveryStatus = "pending" | "accepted" | "uncertain" | "rejected";
 
 export type ReconcileMode = "check" | "dispatch";
 
-export type CommunicationDispatchCapabilities = Readonly<{
-	mail: boolean;
-	notification: boolean;
-}>;
-
 export type MailRecipientRole = "hosting" | "speaker";
 
 type MailPlaceholders = Readonly<
@@ -60,12 +55,6 @@ export type MailRecipient = Recipient & {
 	readonly placeholders?: MailPlaceholders;
 };
 
-export type NotificationRecipient = Recipient & {
-	readonly channel: "notification";
-	readonly role: "organizers";
-	readonly destination: string;
-};
-
 type CommunicationIntentBase = {
 	readonly intentId: string;
 	readonly idempotencyKey: string;
@@ -84,13 +73,7 @@ export type MailMessageIntent = CommunicationIntentBase & {
 	readonly placeholders: MailPlaceholders;
 };
 
-export type NotificationMessageIntent = CommunicationIntentBase & {
-	readonly channel: "notification";
-	readonly recipient: NotificationRecipient;
-	readonly content: string;
-};
-
-export type CommunicationIntent = MailMessageIntent | NotificationMessageIntent;
+export type CommunicationIntent = MailMessageIntent;
 
 export type CommunicationDiagnosticCode =
 	| "duplicate-intent"
@@ -101,13 +84,11 @@ export type CommunicationDiagnosticCode =
 	| "invalid-clock"
 	| "invalid-event-date"
 	| "invalid-identifier"
-	| "invalid-readiness-window"
 	| "invalid-time-zone"
 	| "ledger-read-failed"
 	| "ledger-reservation-failed"
 	| "ledger-status-write-failed"
 	| "missing-mail-destination"
-	| "missing-notification-content"
 	| "occurrence-status-unknown"
 	| "delivery-already-recorded";
 
@@ -189,11 +170,8 @@ export type PlanCommunicationsInput = {
 	readonly readiness: EventReadiness;
 	readonly occurrenceStatus: EventOccurrenceStatus;
 	readonly policyVersion: string;
-	readonly readinessWindowDays: number;
 	readonly mailRecipients: readonly MailRecipient[];
-	readonly notificationRecipients: readonly NotificationRecipient[];
 	readonly mailPlaceholders?: MailPlaceholders;
-	readonly notificationContent?: string;
 	/** Explicit instant. The planner never reads system time. */
 	readonly now: Date;
 };
@@ -208,8 +186,8 @@ export type ReconcileCommunicationsInput = Omit<
 	"now"
 > & {
 	readonly mode: ReconcileMode;
-	/** Runtime gateway availability; it never changes the business plan. */
-	readonly dispatchCapabilities?: CommunicationDispatchCapabilities;
+	/** Explicit authorization to deliver the planned mail batch. */
+	readonly dispatchAuthorized: boolean;
 };
 
 export type ReconcileCommunicationCounts = {

@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { facts } from "../../testing/attention.fixtures.js";
 import {
-	EvaluateAttention,
 	type AttentionFacts,
+	EvaluateAttention,
 } from "./evaluate-attention.js";
+
 describe("actionable attention conditions", () => {
 	it.each([
 		{ closed: true },
@@ -48,11 +49,13 @@ describe("actionable attention conditions", () => {
 		(occurrence) => {
 			// Arrange
 			const input = facts({ occurrence, followUpPending: ["thank-host"] });
+
 			// Act
 			const result = EvaluateAttention.execute(
 				input,
 				new Date("2099-06-10T10:00:00Z"),
 			);
+
 			// Assert
 			expect(result.conditions.map((item) => item.code)).toEqual(["follow-up"]);
 		},
@@ -67,11 +70,13 @@ describe("actionable attention conditions", () => {
 				followUpPending: ["thank-host"],
 				recovery: [{ key: "sha256:abc" }],
 			});
+
 			// Act
 			const result = EvaluateAttention.execute(
 				input,
 				new Date("2099-06-01T10:00:00Z"),
 			);
+
 			// Assert
 			expect(result.stopped).toBe(true);
 			expect(result.conditions.map((item) => item.code)).toEqual([
@@ -95,11 +100,13 @@ describe("actionable attention conditions", () => {
 					},
 				],
 			});
+
 			// Act
 			const result = EvaluateAttention.execute(
 				input,
 				new Date("2099-06-02T10:00:00Z"),
 			);
+
 			// Assert
 			expect(result.conditions.map((item) => item.code)).toEqual(
 				status === "pending" ? ["approval-pending"] : [],
@@ -109,11 +116,13 @@ describe("actionable attention conditions", () => {
 	it("uses a weekly data-quality condition for an unscheduled event", () => {
 		// Arrange
 		const input = facts({ eventDate: "" });
+
 		// Act
 		const result = EvaluateAttention.execute(
 			input,
 			new Date("2099-06-01T10:00:00Z"),
 		);
+
 		// Assert
 		expect(result.conditions).toMatchObject([
 			{ code: "missing-date", policy: "weekly" },
@@ -128,11 +137,13 @@ describe("actionable attention conditions", () => {
 				{ owner: "feedback", outcome: "unknown", blocked: false },
 			],
 		});
+
 		// Act
 		const result = EvaluateAttention.execute(
 			input,
 			new Date("2099-06-01T10:00:00Z"),
 		);
+
 		// Assert
 		expect(result.evaluated).toContain("assets");
 		expect(result.evaluated).not.toContain("feedback");
@@ -161,11 +172,13 @@ describe("actionable attention conditions", () => {
 				},
 			],
 		});
+
 		// Act
 		const result = EvaluateAttention.execute(
 			input,
 			new Date("2099-06-01T10:00:00Z"),
 		);
+
 		// Assert
 		expect(result.conditions).toMatchObject([
 			{ code: "integration-failure", owner: "event", resource: "event-data" },

@@ -71,7 +71,6 @@ interface AttentionPost {
 }
 export interface AttentionState {
 	commentId?: number;
-	readonly version: 1;
 	eventDate: string;
 	stopped: boolean;
 	episodes: AttentionEpisode[];

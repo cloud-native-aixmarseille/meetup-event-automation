@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { FollowUpRecord, type StoredFollowUp } from "./follow-up-record.js";
+import { FollowUpSchema, type StoredFollowUp } from "./follow-up-schema.js";
+
 describe("follow-up state validation", () => {
 	it.each([
 		{ pendingTasks: ["unknown-task"] },
@@ -15,8 +16,10 @@ describe("follow-up state validation", () => {
 			pendingTasks: ["thank-host"],
 			...override,
 		} as StoredFollowUp;
+
 		// Act
-		const validate = () => FollowUpRecord.validate(record);
+		const validate = () => FollowUpSchema.validate(record);
+
 		// Assert
 		expect(validate).toThrow("Invalid post-event follow-up state");
 	});

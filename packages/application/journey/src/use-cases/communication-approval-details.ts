@@ -14,7 +14,7 @@ export class CommunicationApprovalDetails {
 		const ordered = [...mails].sort((left, right) =>
 			left.idempotencyKey.localeCompare(right.idempotencyKey),
 		);
-		const emails = ordered.slice(0, 20).map((mail) => {
+		const emails = ordered.map((mail) => {
 			const links = CommunicationApprovalDetails.links(mail);
 			const name =
 				mail.recipient.role === "hosting"
@@ -24,24 +24,12 @@ export class CommunicationApprovalDetails {
 							.find((speaker) => speaker.id === mail.recipientId)?.displayName;
 			return {
 				kind: mail.kind,
-				recipientName: CommunicationApprovalDetails.text(name ?? ""),
-				links: links.slice(0, 8),
-				omittedLinks: links.length - Math.min(links.length, 8),
+				recipientName: name ?? "",
+				links,
+				omittedLinks: 0,
 			};
 		});
-		// Leave room for metadata, escaped HTML and the approval controls in a GitHub comment.
-		while (JSON.stringify(emails).length > 4_000) {
-			const largest = [...emails].sort(
-				(a, b) => JSON.stringify(b).length - JSON.stringify(a).length,
-			)[0];
-			if (largest?.links.length) {
-				largest.links.pop();
-				largest.omittedLinks++;
-			} else {
-				emails.pop();
-			}
-		}
-		return { emails, omittedEmails: mails.length - emails.length };
+		return { emails, omittedEmails: 0 };
 	}
 
 	private static links(mail: MailMessageIntent): ApprovalEmailLink[] {
@@ -50,7 +38,7 @@ export class CommunicationApprovalDetails {
 			if (!talks || typeof talks === "string") return [];
 			return talks.map(({ title, url }) => ({
 				kind: "feedback",
-				title: CommunicationApprovalDetails.text(title),
+				title,
 				url,
 			}));
 		}
@@ -65,12 +53,5 @@ export class CommunicationApprovalDetails {
 			if (typeof url === "string" && url) links.push({ kind, url });
 		}
 		return links;
-	}
-
-	private static text(value: string): string {
-		const normalized = value.trim().replace(/\s+/g, " ");
-		return normalized.length <= 200
-			? normalized
-			: `${normalized.slice(0, 197)}...`;
 	}
 }

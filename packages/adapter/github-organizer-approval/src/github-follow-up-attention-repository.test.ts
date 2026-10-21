@@ -1,12 +1,11 @@
-import { describe, expect, it, vi } from "vitest";
 import type { AttentionState } from "@meetup-automation/communication";
+import { describe, expect, it, vi } from "vitest";
 import { GithubFollowUpAttentionRepository } from "./github-follow-up-attention-repository.js";
 
 describe("follow-up attention persistence", () => {
 	it("preserves the previous reservation when copying into the shared comment fails", async () => {
 		// Arrange
 		const state: AttentionState = {
-			version: 1,
 			eventDate: "2099-06-08",
 			stopped: false,
 			episodes: [],
@@ -34,9 +33,11 @@ describe("follow-up attention persistence", () => {
 			{ read: vi.fn(), marker: vi.fn().mockReturnValue("serialized-state") },
 			{ details: vi.fn().mockReturnValue("public-details") },
 		);
+
 		// Act
 		const loaded = await repository.load();
 		const save = repository.save(loaded as AttentionState);
+
 		// Assert
 		await expect(save).rejects.toThrow("GitHub write unavailable");
 		expect(loaded?.post?.status).toBe("pending");
@@ -66,8 +67,10 @@ describe("follow-up attention persistence", () => {
 			},
 			{ details: vi.fn() },
 		);
+
 		// Act
 		const load = repository.load();
+
 		// Assert
 		await expect(load).rejects.toThrow("Invalid attention state");
 		expect(previous.retire).not.toHaveBeenCalled();

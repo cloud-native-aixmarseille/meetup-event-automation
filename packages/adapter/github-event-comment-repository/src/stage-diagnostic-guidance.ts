@@ -65,18 +65,12 @@ export const STAGE_GUIDANCE = [
 		"communication.invalid-identifier",
 		["Communication", "comment.guidance.communication.configuration"],
 	],
-	[
-		"communication.invalid-readiness-window",
-		["Communication", "comment.guidance.communication.configuration"],
-	],
+
 	[
 		"communication.invalid-time-zone",
 		["Communication", "comment.guidance.communication.configuration"],
 	],
-	[
-		"communication.github-credential-missing",
-		["Communication", "comment.guidance.communication.configuration"],
-	],
+
 	[
 		"communication.ledger-read-failed",
 		["Communication", "comment.guidance.communication.ledger"],
@@ -89,10 +83,7 @@ export const STAGE_GUIDANCE = [
 		"communication.missing-mail-destination",
 		["Communication", "comment.guidance.communication.destination"],
 	],
-	[
-		"communication.missing-notification-content",
-		["Communication", "comment.guidance.communication.content"],
-	],
+
 	[
 		"communication.checklist-update-failed",
 		["Communication", "comment.guidance.communication.checklist"],

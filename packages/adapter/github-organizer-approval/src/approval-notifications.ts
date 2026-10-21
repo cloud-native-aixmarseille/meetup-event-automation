@@ -1,6 +1,6 @@
 import type { OrganizerApprovalNotification } from "@meetup-automation/journey";
 import type { ApprovalPresenter } from "./approval-presenter.js";
-import type { StoredApproval } from "./approval-record.js";
+import type { StoredApproval } from "./approval-state.js";
 import type { GithubApprovalClient } from "./github-approval-client.js";
 
 /** Reserve new posts, retain their destination, and safely retry decision reactions. */

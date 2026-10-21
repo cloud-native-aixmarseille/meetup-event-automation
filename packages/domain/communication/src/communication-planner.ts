@@ -2,10 +2,9 @@ import { CommunicationIdempotency } from "./idempotency.js";
 import type {
 	CommunicationDiagnostic,
 	CommunicationIntent,
-	CommunicationKind,
+	MailCommunicationKind,
 	MailMessageIntent,
 	MailRecipient,
-	NotificationMessageIntent,
 	PlanCommunicationsInput,
 	PlanCommunicationsResult,
 } from "./model.js";
@@ -61,50 +60,7 @@ export class CommunicationPlanner {
 		}
 	}
 
-	static planReadinessNotifications(
-		input: PlanCommunicationsInput,
-		intents: CommunicationIntent[],
-		diagnostics: CommunicationDiagnostic[],
-	): void {
-		if (!input.notificationContent?.trim()) {
-			diagnostics.push(
-				CommunicationPlanner.errorDiagnostic("missing-notification-content"),
-			);
-			return;
-		}
-
-		for (const recipient of input.notificationRecipients) {
-			if (!recipient.receivesCommunications) {
-				continue;
-			}
-
-			if (
-				!CommunicationIdempotency.isSafeCommunicationIdentifier(
-					recipient.recipientId,
-				)
-			) {
-				diagnostics.push(
-					CommunicationPlanner.errorDiagnostic("invalid-identifier"),
-				);
-				continue;
-			}
-
-			const base = CommunicationPlanner.createIntentBase(
-				input,
-				"readiness-reminder",
-				recipient.recipientId,
-			);
-			const intent: NotificationMessageIntent = {
-				...base,
-				channel: "notification",
-				recipient: { ...recipient },
-				content: input.notificationContent,
-			};
-			intents.push(intent);
-		}
-	}
-
-	static createIntentBase<Kind extends CommunicationKind>(
+	static createIntentBase<Kind extends MailCommunicationKind>(
 		input: PlanCommunicationsInput,
 		kind: Kind,
 		recipientId: string,

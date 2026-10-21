@@ -1,22 +1,26 @@
-import { followUpFixture } from "../testing/follow-up-attention.fixtures.js";
-import {
-	decision,
-	request,
-} from "../../../adapter/github-organizer-approval/testing/approval.fixtures.js";
-import { AttentionRecord } from "@meetup-automation/github-organizer-attention";
 import { getOctokit } from "@actions/github";
+import type { AttentionStage } from "@meetup-automation/communication";
 import type {
 	EventDocumentCodec,
 	EventRepository,
 } from "@meetup-automation/event";
+import {
+	GithubOrganizerApproval,
+	GithubOrganizerFollowUp,
+} from "@meetup-automation/github-organizer-approval";
+import { AttentionRecord } from "@meetup-automation/github-organizer-attention";
 import { ManageMeetupAttention } from "@meetup-automation/journey";
 import { SystemCommunicationClock } from "@meetup-automation/system-clock";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+	decision,
+	request,
+} from "../../../adapter/github-organizer-approval/testing/approval.fixtures.js";
 import { fixture } from "../../../adapter/github-organizer-attention/testing/attention.fixtures.js";
 import { createTestEvent } from "../../../domain/event/testing/event.fixtures.js";
+import { followUpFixture } from "../testing/follow-up-attention.fixtures.js";
 import { AttentionComposition } from "./attention-composition.js";
 import { SERVICES } from "./composition.js";
-import type { AttentionStage } from "@meetup-automation/communication";
 
 describe("attention runtime composition", () => {
 	afterEach(() => vi.unstubAllGlobals());
@@ -90,10 +94,12 @@ describe("attention runtime composition", () => {
 				);
 			return container.get(ManageMeetupAttention);
 		});
+
 		// Act
 		const first = await runs[0].execute(event.identity, stages, "123");
 		const second = await runs[1].execute(event.identity, stages, "124");
 		const urls = fetcher.mock.calls.map((call) => call[0]);
+
 		// Assert
 		expect(first.posted).toBe(true);
 		expect(first.notificationFailed).toBe(false);
@@ -115,11 +121,13 @@ describe("post-event attention composition", () => {
 	it("keeps blocked preparation and recovery guidance visible alongside task progress", async () => {
 		// Arrange
 		const f = followUpFixture();
+
 		// Act
 		const result = await f.run("en", [
 			{ owner: "communications", outcome: "failure", blocked: true },
 		]);
 		const body = f.comments[0]?.body ?? "";
+
 		// Assert
 		expect(result.posted).toBe(true);
 		expect(f.comments).toHaveLength(1);
@@ -132,13 +140,27 @@ describe("post-event attention composition", () => {
 	it("uses one approval and task comment, with one notification for all follow-up tasks", async () => {
 		// Arrange
 		const f = followUpFixture();
+		const approvals = new GithubOrganizerApproval(
+			f.repository,
+			f.records,
+			f.finalizer,
+			f.notifications,
+			f.client,
+		);
+		const followUp = new GithubOrganizerFollowUp(
+			f.repository,
+			f.records,
+			f.finalizer,
+		);
+
 		// Act
 		const first = await f.run();
-		await f.approvals.request({ ...request, kind: "email-thanks" });
+		await approvals.request({ ...request, kind: "email-thanks" });
 		const second = await f.run();
 		const body = f.comments[0]?.body ?? "";
-		const shared = await f.approvals.followUpAttention();
+		const shared = await followUp.followUpAttention();
 		const state = AttentionRecord.read(shared?.body ?? "");
+
 		// Assert
 		expect(first.posted).toBe(true);
 		expect(second.posted).toBe(false);
@@ -164,8 +186,15 @@ describe("post-event attention composition", () => {
 	it("preserves approval while task progress and locale change without another post", async () => {
 		// Arrange
 		const f = followUpFixture();
+		const approvals = new GithubOrganizerApproval(
+			f.repository,
+			f.records,
+			f.finalizer,
+			f.notifications,
+			f.client,
+		);
 		await f.run();
-		await f.approvals.request({ ...request, kind: "email-thanks" });
+		await approvals.request({ ...request, kind: "email-thanks" });
 		decision(f);
 		f.current.event = {
 			...f.current.event,
@@ -180,12 +209,14 @@ describe("post-event attention composition", () => {
 				],
 			},
 		};
+
 		// Act
 		const result = await f.run("fr");
-		const approved = await f.approvals.request({
+		const approved = await approvals.request({
 			...request,
 			kind: "email-thanks",
 		});
+
 		// Assert
 		expect(result.active).toBe(0);
 		expect(result.notificationFailed).toBe(false);
@@ -203,15 +234,22 @@ describe("post-event attention composition", () => {
 	it("moves an uncertain existing notification reservation before retiring the previous overview", async () => {
 		// Arrange
 		const f = followUpFixture();
+		const followUp = new GithubOrganizerFollowUp(
+			f.repository,
+			f.records,
+			f.finalizer,
+		);
 		f.current.now = new Date("2099-06-01T10:00:00Z");
 		f.fetcher.mockRejectedValueOnce(new Error("lost acknowledgement"));
 		await f.run();
 		f.current.now = new Date("2099-06-09T10:00:00Z");
+
 		// Act
 		const migrated = await f.run();
 		const retry = await f.run();
-		const shared = await f.approvals.followUpAttention();
+		const shared = await followUp.followUpAttention();
 		const state = AttentionRecord.read(shared?.body ?? "");
+
 		// Assert
 		expect(migrated.notificationFailed).toBe(true);
 		expect(retry.notificationFailed).toBe(true);

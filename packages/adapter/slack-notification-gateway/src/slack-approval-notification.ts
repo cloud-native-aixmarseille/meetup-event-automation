@@ -6,6 +6,7 @@ import type {
 } from "@meetup-automation/journey";
 import { SlackApiClient } from "./slack-api-client.js";
 import type { SlackApprovalPresenter } from "./slack-approval-presenter.js";
+import { SlackMessageReference } from "./slack-message-reference.js";
 import type { SlackFetch } from "./slack-notification-gateway-contracts.js";
 
 export class SlackApprovalNotification
@@ -27,22 +28,16 @@ export class SlackApprovalNotification
 			text: this.presenter.render(input),
 		});
 		if (result.outcome !== "accepted") return result;
-		if (
-			typeof payload?.channel !== "string" ||
-			!/^[CGD][A-Z0-9]+$/.test(payload.channel) ||
-			typeof payload.ts !== "string" ||
-			!/^\d+\.\d+$/.test(payload.ts)
-		)
-			return { outcome: "uncertain", diagnosticCode: "ambiguous-response" };
-		return {
-			outcome: "accepted",
-			message: { destination: payload.channel, messageId: payload.ts },
-		};
+		const message = SlackMessageReference.read(payload, input.destination);
+		return message
+			? { outcome: "accepted", message }
+			: { outcome: "uncertain", diagnosticCode: "ambiguous-response" };
 	}
 	async react(
 		message: ApprovalNotificationMessage,
 		decision: "approved" | "rejected",
 	): Promise<boolean> {
+		if (!SlackMessageReference.valid(message)) return false;
 		const { result, payload } = await this.client.post("reactions.add", {
 			channel: message.destination,
 			timestamp: message.messageId,

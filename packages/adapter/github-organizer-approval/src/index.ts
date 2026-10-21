@@ -1,5 +1,14 @@
+export { ApprovalDecisionParser } from "./approval-decision-parser.js";
+export { ApprovalNotifications } from "./approval-notifications.js";
 export { ApprovalPresenter } from "./approval-presenter.js";
+export { ApprovalRecordFactory } from "./approval-record-factory.js";
+export { FinalizeApprovalDecision } from "./finalize-approval-decision.js";
+export { GithubApprovalAttentionSource } from "./github-approval-attention-source.js";
 export { GithubApprovalClient } from "./github-approval-client.js";
-export { GithubOrganizerApproval } from "./github-organizer-approval.js";
-export { ApprovalMessages } from "./i18n/approval-messages.js";
+export { GithubApprovalRepository } from "./github-approval-repository.js";
 export { GithubFollowUpAttentionRepository } from "./github-follow-up-attention-repository.js";
+export { GithubOrganizerApproval } from "./github-organizer-approval.js";
+export { GithubOrganizerFollowUp } from "./github-organizer-follow-up.js";
+export { ApprovalMessages } from "./i18n/approval-messages.js";
+export { ResolveApprovalDecision } from "./resolve-approval-decision.js";
+export { TrustedApprovalState } from "./trusted-approval-state.js";

@@ -138,6 +138,11 @@ describe("Conference Hall source precedence in runtime composition", () => {
 		const changedCatalog = await new ValidateReferentialCatalog(
 			second.get<ReferentialRepository>(SERVICES.referentialRepository),
 		).execute();
+		const preservedCsv = await readFile(
+			join(current.workspaceRoot, "speakers.csv"),
+			"utf8",
+		);
+		const updatedDocument = current.document();
 
 		// Assert
 		expect(result).toMatchObject({
@@ -183,10 +188,8 @@ describe("Conference Hall source precedence in runtime composition", () => {
 			},
 		});
 		expect(request).toHaveBeenCalledTimes(4);
-		expect(
-			await readFile(join(current.workspaceRoot, "speakers.csv"), "utf8"),
-		).toBe(current.csv);
-		expect(current.document().body).not.toMatch(
+		expect(preservedCsv).toBe(current.csv);
+		expect(updatedDocument.body).not.toMatch(
 			/current@example|renamed@example|local phone|Private Address/,
 		);
 	});

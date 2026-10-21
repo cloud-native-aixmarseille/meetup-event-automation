@@ -1,9 +1,9 @@
+import { AttentionPolicy } from "./attention-policy.js";
 import type {
 	AttentionEpisode,
 	AttentionObservation,
 	AttentionState,
 } from "./model.js";
-import { AttentionPolicy } from "./attention-policy.js";
 export class AttentionEpisodes {
 	static reconcile(
 		previous: AttentionState | undefined,
@@ -13,7 +13,6 @@ export class AttentionEpisodes {
 		const state: AttentionState = previous
 			? structuredClone(previous)
 			: {
-					version: 1,
 					eventDate: observation.eventDate,
 					stopped: observation.stopped,
 					episodes: [],

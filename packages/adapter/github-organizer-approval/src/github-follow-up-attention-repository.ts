@@ -6,14 +6,14 @@ import type {
 	FollowUpAttentionCodec,
 	FollowUpAttentionPresentation,
 } from "@meetup-automation/journey";
-import type { GithubOrganizerApproval } from "./github-organizer-approval.js";
+import type { GithubOrganizerFollowUp } from "./github-organizer-follow-up.js";
 
 /** Moves notification reservations into the shared comment before retiring the old view. */
 export class GithubFollowUpAttentionRepository implements AttentionRepository {
 	private sharedCommentId?: number;
 	constructor(
 		private readonly approvals: Pick<
-			GithubOrganizerApproval,
+			GithubOrganizerFollowUp,
 			"followUpAttention" | "saveFollowUpAttention"
 		>,
 		private readonly previous: AttentionRepository & {

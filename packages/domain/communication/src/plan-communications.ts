@@ -1,12 +1,12 @@
 import { CommunicationCalendar } from "./communication-calendar.js";
 import { CommunicationPlanner } from "./communication-planner.js";
-import { PostEventPolicy } from "./post-event-policy.js";
 import type {
 	CommunicationDiagnostic,
 	CommunicationIntent,
 	PlanCommunicationsInput,
 	PlanCommunicationsResult,
 } from "./model.js";
+import { PostEventPolicy } from "./post-event-policy.js";
 
 export class PlanCommunications {
 	execute(input: PlanCommunicationsInput): PlanCommunicationsResult {
@@ -67,15 +67,11 @@ export class PlanCommunications {
 			};
 		}
 
-		const daysUntilEvent =
-			CommunicationCalendar.toEpochDay(eventDate) -
-			CommunicationCalendar.toEpochDay(currentDate);
-		return this.planDue(input, daysUntilEvent, diagnostics);
+		return this.planDue(input, diagnostics);
 	}
 
 	private planDue(
 		input: PlanCommunicationsInput,
-		daysUntilEvent: number,
 		diagnostics: CommunicationDiagnostic[],
 	) {
 		const intents: CommunicationIntent[] = [];
@@ -99,27 +95,6 @@ export class PlanCommunications {
 			return CommunicationPlanner.deduplicateIntents(intents, diagnostics);
 		}
 
-		if (
-			!Number.isInteger(input.readinessWindowDays) ||
-			input.readinessWindowDays < 0
-		) {
-			return {
-				intents: [],
-				diagnostics: [
-					CommunicationPlanner.errorDiagnostic("invalid-readiness-window"),
-				],
-			};
-		}
-
-		if (daysUntilEvent > input.readinessWindowDays) {
-			return { intents: [], diagnostics };
-		}
-
-		CommunicationPlanner.planReadinessNotifications(
-			input,
-			intents,
-			diagnostics,
-		);
-		return CommunicationPlanner.deduplicateIntents(intents, diagnostics);
+		return { intents, diagnostics };
 	}
 }

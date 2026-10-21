@@ -93,11 +93,13 @@ describe("automatic communication completion after approval", () => {
 	it("holds due email when a stable slides URL exists but its content is not ready", async () => {
 		// Arrange
 		const f = await setup();
+
 		// Act
 		const result = await CommunicationRuntime.runCommunicationReconcile({
 			...f.input,
 			slidesReady: false,
 		});
+
 		// Assert
 		expect(result.runtimeDiagnostics).toContainEqual({
 			code: "communication.slides-unavailable",
@@ -177,11 +179,13 @@ describe("automatic communication completion after approval", () => {
 		async (owner) => {
 			// Arrange
 			const f = await setup();
+
 			// Act
 			const result = await CommunicationRuntime.runCommunicationReconcile({
 				...f.input,
 				owner,
 			});
+
 			// Assert
 			expect(result.mode).toBe("dispatch");
 			expect(result.counts.accepted).toBe(2);
@@ -207,10 +211,12 @@ describe("automatic communication completion after approval", () => {
 				state === "checked" ? "- [x] Mail introduction" : "",
 			);
 			const f = await setup({ body });
+
 			// Act
 			const result = await CommunicationRuntime.runCommunicationReconcile(
 				f.input,
 			);
+
 			// Assert
 			expect(result.counts.planned).toBe(0);
 			expect(f.createDispatchEvent).not.toHaveBeenCalled();
@@ -233,10 +239,12 @@ describe("automatic communication completion after approval", () => {
 				"speakers:confirmed",
 			],
 		});
+
 		// Act
 		const result = await CommunicationRuntime.runCommunicationReconcile(
 			f.input,
 		);
+
 		// Assert
 		expect(result.counts.accepted).toBe(1);
 		expect(f.createDispatchEvent).toHaveBeenCalledWith(
@@ -359,10 +367,12 @@ describe("automatic communication completion after approval", () => {
 			f.createDispatchEvent
 				.mockResolvedValueOnce({ status: 204 })
 				.mockRejectedValueOnce({ status });
+
 			// Act
 			const result = await CommunicationRuntime.runCommunicationReconcile(
 				f.input,
 			);
+
 			// Assert
 			expect(result.counts.accepted).toBe(1);
 			expect(f.issue.body).toContain("- [ ] Mail introduction");
@@ -376,6 +386,7 @@ describe("automatic communication completion after approval", () => {
 		f.createDispatchEvent
 			.mockResolvedValueOnce({ status: 204 })
 			.mockRejectedValueOnce({ status: 429 });
+
 		// Act
 		const first = await CommunicationRuntime.runCommunicationReconcile(f.input);
 		const second = await CommunicationRuntime.runCommunicationReconcile(
@@ -385,6 +396,7 @@ describe("automatic communication completion after approval", () => {
 			...f.input,
 			locale: "fr",
 		});
+
 		// Assert
 		expect(first.counts.deferred).toBe(1);
 		expect(second.counts.alreadyRecorded).toBe(1);
@@ -402,10 +414,12 @@ describe("automatic communication completion after approval", () => {
 				"- [ ] Cover image\nOrganizer notes to preserve.",
 			),
 		});
+
 		// Act
 		const result = await CommunicationRuntime.runCommunicationReconcile(
 			f.input,
 		);
+
 		// Assert
 		expect(result.counts.accepted).toBe(2);
 		expect(result.runtimeDiagnostics).toContainEqual({
@@ -421,11 +435,13 @@ describe("automatic communication completion after approval", () => {
 		// Arrange
 		const f = await setup();
 		f.updateIssue.mockRejectedValueOnce(new Error("private provider response"));
+
 		// Act
 		const first = await CommunicationRuntime.runCommunicationReconcile(f.input);
 		const second = await CommunicationRuntime.runCommunicationReconcile(
 			f.input,
 		);
+
 		// Assert
 		expect(first.runtimeDiagnostics).toContainEqual({
 			code: "communication.checklist-update-failed",
@@ -441,6 +457,7 @@ describe("automatic communication completion after approval", () => {
 	it("does not resend accepted deliveries when a completion checkbox is unchecked", async () => {
 		// Arrange
 		const f = await setup();
+
 		// Act
 		await CommunicationRuntime.runCommunicationReconcile(f.input);
 		f.issue.body = f.issue.body.replace(
@@ -450,6 +467,7 @@ describe("automatic communication completion after approval", () => {
 		const result = await CommunicationRuntime.runCommunicationReconcile(
 			f.input,
 		);
+
 		// Assert
 		expect(result.counts.alreadyRecorded).toBe(2);
 		expect(f.createDispatchEvent).toHaveBeenCalledTimes(2);
@@ -462,10 +480,12 @@ describe("automatic communication completion after approval", () => {
 		f.getIssue
 			.mockResolvedValueOnce(githubIssueResponse("2099-06-08"))
 			.mockResolvedValue(githubIssueResponse("2099-06-09"));
+
 		// Act
 		const result = await CommunicationRuntime.runCommunicationReconcile(
 			f.input,
 		);
+
 		// Assert
 		expect(result.mode).toBe("check");
 		expect(result.runtimeDiagnostics).toContainEqual({
@@ -485,11 +505,13 @@ describe("automatic communication completion after approval", () => {
 			);
 			return { status: 204 };
 		});
+
 		// Act
 		const first = await CommunicationRuntime.runCommunicationReconcile(f.input);
 		const second = await CommunicationRuntime.runCommunicationReconcile(
 			f.input,
 		);
+
 		// Assert
 		expect(first.runtimeDiagnostics).toContainEqual({
 			code: "communication.checklist-concurrently-modified",
@@ -517,12 +539,14 @@ describe("automatic communication completion after approval", () => {
 		f.createDispatchEvent
 			.mockResolvedValueOnce({ status: 204 })
 			.mockRejectedValueOnce({ status: 429 });
+
 		// Act
 		const first = await CommunicationRuntime.runCommunicationReconcile(f.input);
 		const incompleteBody = f.issue.body;
 		const second = await CommunicationRuntime.runCommunicationReconcile(
 			f.input,
 		);
+
 		// Assert
 		expect(first.counts.accepted).toBe(1);
 		expect(incompleteBody).toContain("- [ ] Mail introduction speakers");
@@ -538,10 +562,12 @@ describe("automatic communication completion after approval", () => {
 			const f = await setup({
 				labels: ["meetup", status, "hoster:confirmed", "speakers:confirmed"],
 			});
+
 			// Act
 			const result = await CommunicationRuntime.runCommunicationReconcile(
 				f.input,
 			);
+
 			// Assert
 			expect(result.counts.dispatched).toBe(0);
 			expect(f.updateIssue).not.toHaveBeenCalled();
@@ -557,6 +583,7 @@ describe("automatic communication completion after approval", () => {
 			const f = await setup({ eventDate: "2026-09-04", labels: ["meetup"] });
 			const fetcher = vi.fn();
 			vi.stubGlobal("fetch", fetcher);
+
 			// Act
 			const first = await CommunicationRuntime.runCommunicationReconcile({
 				...f.input,
@@ -568,6 +595,7 @@ describe("automatic communication completion after approval", () => {
 				locale: "fr",
 				slidesUrl: undefined,
 			});
+
 			// Assert
 			expect(first.counts.accepted).toBe(0);
 			expect(second.counts.accepted).toBe(0);
@@ -584,10 +612,12 @@ describe("automatic communication completion after approval", () => {
 			join(f.workspaceRoot, "referentials/hosting.csv"),
 			"invalid_header\ninvalid_value\n",
 		);
+
 		// Act
 		const result = await CommunicationRuntime.runCommunicationReconcile(
 			f.input,
 		);
+
 		// Assert
 		expect(result.mode).toBe("check");
 		expect(result.runtimeDiagnostics).toContainEqual({
@@ -609,6 +639,7 @@ describe("organizer approval for email batches", () => {
 			ok: true,
 			json: async () => ({ ok: false, error: "missing_scope" }),
 		} as Response);
+
 		// Act
 		const sent = await CommunicationRuntime.runCommunicationReconcile(f.input);
 		const completedBody = f.issue.body;
@@ -621,6 +652,7 @@ describe("organizer approval for email batches", () => {
 			f.input,
 		);
 		await CommunicationRuntime.runCommunicationReconcile(f.input);
+
 		// Assert
 		expect(sent.counts.accepted).toBe(2);
 		expect(sent.runtimeDiagnostics).toContainEqual({
@@ -642,11 +674,13 @@ describe("organizer approval for email batches", () => {
 		const f = await setup();
 		await CommunicationRuntime.runCommunicationReconcile(f.input);
 		approveBatch(f, "Reject");
+
 		// Act
 		const result = await CommunicationRuntime.runCommunicationReconcile(
 			f.input,
 		);
 		await CommunicationRuntime.runCommunicationReconcile(f.input);
+
 		// Assert
 		expect(result.runtimeDiagnostics).toContainEqual({
 			code: "communication.approval-rejected",
@@ -808,6 +842,7 @@ describe("organizer approval for email batches", () => {
 	it("requests approval in the issue and Slack, then sends and completes only after approval", async () => {
 		// Arrange
 		const f = await setup();
+
 		// Act
 		const pending = await CommunicationRuntime.runCommunicationReconcile(
 			f.input,
@@ -820,6 +855,7 @@ describe("organizer approval for email batches", () => {
 			f.input,
 		);
 		await CommunicationRuntime.runCommunicationReconcile(f.input);
+
 		// Assert
 		expect(pending.runtimeDiagnostics).toContainEqual({
 			code: "communication.approval-pending",
@@ -834,7 +870,7 @@ describe("organizer approval for email batches", () => {
 		const notification = JSON.parse(
 			vi.mocked(fetch).mock.calls[0]?.[1]?.body as string,
 		);
-		expect(notification.channel).toBe("organizer-channel-id");
+		expect(notification.channel).toBe("C12345");
 		expect(f.issue.body).toContain("- [ ] Slack - Public Community");
 		expect(notification.text).toContain(
 			"https://github.com/organization/meetups/issues/42#issuecomment-",
@@ -868,10 +904,12 @@ describe("organizer approval for email batches", () => {
 			join(f.workspaceRoot, "referentials/speakers.csv"),
 			"speaker_id,firstname,lastname,company,mail,phone\nspeaker-0001,Ada,Speaker,Public Company,changed@example.invalid,\n",
 		);
+
 		// Act
 		const result = await CommunicationRuntime.runCommunicationReconcile(
 			f.input,
 		);
+
 		// Assert
 		expect(result.counts.dispatched).toBe(0);
 		expect(result.runtimeDiagnostics).toContainEqual({
@@ -894,12 +932,14 @@ describe("organizer approval for email batches", () => {
 		f.createDispatchEvent
 			.mockResolvedValueOnce({ status: 204 })
 			.mockRejectedValueOnce({ status: 429 });
+
 		// Act
 		const first = await CommunicationRuntime.runCommunicationReconcile(f.input);
 		const partial = f.issue.body;
 		const second = await CommunicationRuntime.runCommunicationReconcile(
 			f.input,
 		);
+
 		// Assert
 		expect(first.counts.deferred).toBe(1);
 		expect(partial).toContain("- [x] Mail introduction hoster");
@@ -916,10 +956,12 @@ describe("organizer approval for email batches", () => {
 		approveBatch(f);
 		await CommunicationRuntime.runCommunicationReconcile(f.input);
 		f.issue.labels = [...f.issue.labels, "event:held"];
+
 		// Act
 		const result = await CommunicationRuntime.runCommunicationReconcile(
 			f.input,
 		);
+
 		// Assert
 		expect(result.counts.dispatched).toBe(0);
 		expect(
@@ -935,10 +977,12 @@ describe("organizer approval for email batches", () => {
 		f.github.rest.issues.listComments.mockRejectedValueOnce(
 			new Error("temporary ledger failure"),
 		);
+
 		// Act
 		const result = await CommunicationRuntime.runCommunicationReconcile(
 			f.input,
 		);
+
 		// Assert
 		expect(result.counts.dispatched).toBe(0);
 		expect(result.runtimeDiagnostics).toContainEqual({
@@ -954,10 +998,12 @@ describe("organizer approval for email batches", () => {
 		await CommunicationRuntime.runCommunicationReconcile(f.input);
 		approveBatch(f);
 		f.permission.mockRejectedValue(new Error("private provider error"));
+
 		// Act
 		const result = await CommunicationRuntime.runCommunicationReconcile(
 			f.input,
 		);
+
 		// Assert
 		expect(result.counts.dispatched).toBe(0);
 		expect(result.runtimeDiagnostics).toContainEqual({
@@ -972,10 +1018,12 @@ describe("organizer approval for email batches", () => {
 		await CommunicationRuntime.runCommunicationReconcile(f.input);
 		approveBatch(f);
 		f.graphql.mockRejectedValue(new Error("private GraphQL error"));
+
 		// Act
 		const result = await CommunicationRuntime.runCommunicationReconcile(
 			f.input,
 		);
+
 		// Assert
 		expect(result.runtimeDiagnostics).toContainEqual({
 			code: "communication.approval-unavailable",
@@ -1013,8 +1061,10 @@ describe("organizer notification routing", () => {
 			...runtimeInput("/synthetic/workspace"),
 			slackOrganizerChannelId: "  ",
 		};
+
 		// Act
 		const result = CommunicationRuntime.runCommunicationReconcile(input);
+
 		// Assert
 		await expect(result).rejects.toThrow(
 			"slackOrganizerChannelId must not be empty",
@@ -1033,6 +1083,7 @@ describe("scheduled post-event thanks", () => {
 		const pending = await CommunicationRuntime.runCommunicationReconcile(
 			f.input,
 		);
+
 		// Assert
 		expect(pending.counts.accepted).toBe(0);
 		expect(f.createDispatchEvent).not.toHaveBeenCalled();
@@ -1043,10 +1094,12 @@ describe("scheduled post-event thanks", () => {
 		).toHaveLength(1);
 		// Arrange: approve the prepared batch.
 		approveBatch(f);
+
 		// Act
 		const approved = await CommunicationRuntime.runCommunicationReconcile(
 			f.input,
 		);
+
 		// Assert
 		expect(approved.counts.accepted).toBe(2);
 		expect(

@@ -1,7 +1,7 @@
-import type { ApprovalDecision, StoredApproval } from "./approval-record.js";
+import type { ApprovalDecision, StoredApproval } from "./approval-state.js";
+import { EmailApprovalPresenter } from "./email-approval-presenter.js";
 import { ApprovalMessages } from "./i18n/approval-messages.js";
 import { CATALOGS } from "./i18n/catalog.js";
-import { EmailApprovalPresenter } from "./email-approval-presenter.js";
 import { MeetupApprovalPresenter } from "./meetup-approval-presenter.js";
 
 /** Renders issue comments through the presenter for their approval kind. */

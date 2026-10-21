@@ -38,6 +38,7 @@ describe("single organizer checklist across event and attention runs", () => {
 			),
 		});
 		const attention = state();
+
 		// Act
 		await comments.reconcileDiagnostics(identity, [diagnostic]);
 		await f.repository.load();
@@ -79,6 +80,8 @@ describe("single organizer checklist across event and attention runs", () => {
 		const loaded = await f.repository.load();
 		if (!loaded) throw new Error("Missing attention state");
 		await f.repository.save(loaded);
+		const retainedAttention = AttentionRecord.read(f.comments[0].body ?? "");
+
 		// Assert
 		expect(f.comments).toHaveLength(1);
 		expect(f.comments[0].id).toBe(100);
@@ -89,9 +92,7 @@ describe("single organizer checklist across event and attention runs", () => {
 		expect(f.comments[0].body).not.toContain("Private source detail");
 		expect(f.comments[0].body).not.toContain("**Communication**");
 		expect(loaded?.post).toEqual(attention.post);
-		expect(AttentionRecord.read(f.comments[0].body ?? "").post?.status).toBe(
-			"pending",
-		);
+		expect(retainedAttention.post?.status).toBe("pending");
 	});
 	it("recovers consolidation after removal fails without losing notification authority", async () => {
 		// Arrange
@@ -102,11 +103,14 @@ describe("single organizer checklist across event and attention runs", () => {
 			authorLogin: "automation[bot]",
 		});
 		await comments.reconcileDiagnostics(identity, [diagnostic]);
-		await f.client.create(f.presenter.issue(state()));
+		await f.client.create(
+			f.presenter.issue(state(), AttentionRecord.marker(state())),
+		);
 		await f.repository.load();
 		f.api.rest.issues.deleteComment.mockRejectedValueOnce(
 			new Error("Unavailable"),
 		);
+
 		// Act
 		const failure = await f.repository.save(state()).then(
 			() => undefined,
@@ -116,10 +120,12 @@ describe("single organizer checklist across event and attention runs", () => {
 			f.client,
 			"automation[bot]",
 			f.presenter,
+			f.checklist,
 		);
 		const loaded = await retry.load();
 		if (!loaded) throw new Error("Missing attention state");
 		await retry.save(loaded);
+
 		// Assert
 		expect(failure).toBe("Unavailable");
 		expect(f.comments).toHaveLength(1);

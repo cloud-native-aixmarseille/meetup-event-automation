@@ -25,7 +25,7 @@ function fixture() {
 		repository: { find, applyPatch: vi.fn(), listPage: vi.fn() },
 		codec: { decode: () => ({ event, diagnostics: [] }), createPatch: vi.fn() },
 		followUp: { synchronizeFollowUp: vi.fn().mockResolvedValue(undefined) },
-		approvals: { readAttention: vi.fn().mockResolvedValue([]) },
+		approvals: { synchronizeApprovals: vi.fn().mockResolvedValue([]) },
 		recovery: { readAttention: vi.fn().mockResolvedValue([]) },
 		reconciliation: { execute },
 		clock: { now: () => new Date("2099-06-01T10:00:00Z") },
@@ -42,6 +42,7 @@ describe("meetup attention journey", () => {
 	it("rechecks the issue and forwards public facts despite a failed dependency", async () => {
 		// Arrange
 		const f = fixture();
+
 		// Act
 		const result = await f.useCase.execute(
 			f.document.identity,
@@ -49,6 +50,7 @@ describe("meetup attention journey", () => {
 			"123",
 		);
 		const observation = f.execute.mock.calls[0]?.[0];
+
 		// Assert
 		expect(result.skipped).toBe(false);
 		expect(f.find).toHaveBeenCalledTimes(2);
@@ -63,8 +65,10 @@ describe("meetup attention journey", () => {
 		vi.mocked(f.dependencies.recovery.readAttention).mockRejectedValue(
 			new Error("provider payload"),
 		);
+
 		// Act
 		const result = await f.useCase.execute(f.document.identity, []);
+
 		// Assert
 		expect(result.notificationFailed).toBe(true);
 		expect(f.execute).toHaveBeenCalledWith(
@@ -81,8 +85,10 @@ describe("meetup attention journey", () => {
 		f.find
 			.mockResolvedValueOnce(f.document)
 			.mockResolvedValueOnce({ ...f.document, body: "updated" });
+
 		// Act
 		const execute = f.useCase.execute(f.document.identity, []);
+
 		// Assert
 		await expect(execute).rejects.toBeInstanceOf(
 			EventConcurrentModificationError,
@@ -93,8 +99,10 @@ describe("meetup attention journey", () => {
 		// Arrange
 		const f = fixture();
 		f.find.mockResolvedValue({ ...f.document, labels: [] });
+
 		// Act
 		const result = await f.useCase.execute(f.document.identity, []);
+
 		// Assert
 		expect(result.skipped).toBe(true);
 		expect(f.execute).not.toHaveBeenCalled();

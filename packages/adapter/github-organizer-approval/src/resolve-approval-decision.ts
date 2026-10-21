@@ -1,9 +1,7 @@
 import type { ApprovalDecisionParser } from "./approval-decision-parser.js";
-import type { ApprovalDecision, StoredApproval } from "./approval-record.js";
-import type {
-	ApprovalComment,
-	GithubApprovalClient,
-} from "./github-approval-client.js";
+import type { ApprovalDecision, StoredApproval } from "./approval-state.js";
+import type { GithubApprovalClient } from "./github-approval-client.js";
+import type { ApprovalComment } from "./github-approval-contracts.js";
 
 /** Verify the editor of the exact current request, never its original bot author. */
 export class ResolveApprovalDecision {
