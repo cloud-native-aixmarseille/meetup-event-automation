@@ -30,3 +30,6 @@ export class FinalizeApprovalDecision {
 		};
 	}
 }
+export type FinalizeApprovalDecisionArguments = ConstructorParameters<
+	typeof FinalizeApprovalDecision
+>;

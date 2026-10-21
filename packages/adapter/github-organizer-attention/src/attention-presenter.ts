@@ -1,21 +1,33 @@
-import {
-	type AttentionEpisode,
+import type {
+	AttentionEpisode,
 	AttentionPolicy,
-	type AttentionState,
+	AttentionState,
 	AttentionTaskSelection,
 } from "@meetup-automation/communication";
 import type { AttentionDiagnosticChecklist } from "./attention-diagnostic-checklist.js";
-import { AttentionMessages } from "./i18n/attention-messages.js";
+import type {
+	AttentionMessages,
+	AttentionMessagesArguments,
+} from "./i18n/attention-messages.js";
+export interface AttentionPresenterCollaborators {
+	readonly attentionPolicy: Pick<AttentionPolicy, "view">;
+	readonly attentionTaskSelection: Pick<AttentionTaskSelection, "select">;
+	readonly createAttentionMessages: (
+		...args: AttentionMessagesArguments
+	) => AttentionMessages;
+}
+
 export class AttentionPresenter {
 	private readonly issueUrl: string;
 	constructor(
+		private readonly collaborators: AttentionPresenterCollaborators,
 		private readonly repository: string,
 		issueNumber: number,
 		private readonly diagnostics: Pick<
 			AttentionDiagnosticChecklist,
 			"read" | "prefix"
 		>,
-		private readonly messages = new AttentionMessages(),
+		private readonly messages = collaborators.createAttentionMessages(),
 	) {
 		if (
 			!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository) ||
@@ -41,9 +53,9 @@ export class AttentionPresenter {
 			.join("\n\n");
 	}
 	details(state: AttentionState): string {
-		const view = AttentionPolicy.view(state);
+		const view = this.collaborators.attentionPolicy.view(state);
 		const lines = this.status(state);
-		for (const episode of AttentionTaskSelection.select(
+		for (const episode of this.collaborators.attentionTaskSelection.select(
 			view,
 			this.diagnostics.read(),
 		).details) {
@@ -104,3 +116,10 @@ export class AttentionPresenter {
 			: this.issueUrl;
 	}
 }
+export type AttentionPresenterArguments =
+	ConstructorParameters<typeof AttentionPresenter> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

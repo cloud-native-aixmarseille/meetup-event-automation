@@ -1,6 +1,6 @@
 import type { EventDiagnostic } from "@meetup-automation/event";
 import { describe, expect, it, vi } from "vitest";
-import { DiagnosticCommentPresenter } from "./diagnostic-comment-presenter.js";
+import { GithubEventCommentRepositoryComposition } from "./dependency-composition.js";
 import { GitHubEventCommentRepository } from "./github-event-comment-repository.js";
 import { GitHubEventCommentRepositoryConfigurationError } from "./github-event-comment-repository-configuration-error.js";
 import {
@@ -41,11 +41,22 @@ function adapter(
 	github: GitHubEventCommentRepositoryClient,
 	authorLogin = "meetup-bot",
 ) {
-	return new GitHubEventCommentRepository(github, {
-		owner: "example",
-		repo: "meetups",
-		authorLogin,
-	});
+	return new GitHubEventCommentRepository(
+		{
+			diagnosticCommentPresenter:
+				new GithubEventCommentRepositoryComposition().diagnosticCommentPresenter(),
+			createEventCommentMessages: (...args) =>
+				new GithubEventCommentRepositoryComposition().eventCommentMessages(
+					...args,
+				),
+		},
+		github,
+		{
+			owner: "example",
+			repo: "meetups",
+			authorLogin,
+		},
+	);
 }
 
 function comment(id: number, body: string, login = "meetup-bot") {
@@ -67,13 +78,24 @@ describe("GitHubEventCommentRepository", () => {
 			],
 		});
 		const load = vi.fn().mockResolvedValue("");
-		const repository = new GitHubEventCommentRepository(value, {
-			owner: "example",
-			repo: "meetups",
-			authorLogin: "meetup-bot",
-			retireCommunicationReports: true,
-			retainedContent: { load },
-		});
+		const repository = new GitHubEventCommentRepository(
+			{
+				diagnosticCommentPresenter:
+					new GithubEventCommentRepositoryComposition().diagnosticCommentPresenter(),
+				createEventCommentMessages: (...args) =>
+					new GithubEventCommentRepositoryComposition().eventCommentMessages(
+						...args,
+					),
+			},
+			value,
+			{
+				owner: "example",
+				repo: "meetups",
+				authorLogin: "meetup-bot",
+				retireCommunicationReports: true,
+				retainedContent: { load },
+			},
+		);
 
 		// Act
 		await repository.reconcileDiagnostics(identity, [errorDiagnostic]);
@@ -107,15 +129,26 @@ describe("GitHubEventCommentRepository", () => {
 				comment(12, `${COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER}\nStored state`),
 			],
 		});
-		const repository = new GitHubEventCommentRepository(value, {
-			owner: "example",
-			repo: "meetups",
-			authorLogin: "meetup-bot",
-			retireCommunicationReports: true,
-			retainedContent: {
-				load: vi.fn().mockResolvedValue("Reserved delivery state"),
+		const repository = new GitHubEventCommentRepository(
+			{
+				diagnosticCommentPresenter:
+					new GithubEventCommentRepositoryComposition().diagnosticCommentPresenter(),
+				createEventCommentMessages: (...args) =>
+					new GithubEventCommentRepositoryComposition().eventCommentMessages(
+						...args,
+					),
 			},
-		});
+			value,
+			{
+				owner: "example",
+				repo: "meetups",
+				authorLogin: "meetup-bot",
+				retireCommunicationReports: true,
+				retainedContent: {
+					load: vi.fn().mockResolvedValue("Reserved delivery state"),
+				},
+			},
+		);
 
 		// Act
 		const result = repository.reconcileDiagnostics(identity, [errorDiagnostic]);
@@ -142,12 +175,23 @@ describe("GitHubEventCommentRepository", () => {
 				),
 			],
 		});
-		const repository = new GitHubEventCommentRepository(github.value, {
-			owner: "example",
-			repo: "meetups",
-			authorLogin: "meetup-bot",
-			retireCommunicationReports: true,
-		});
+		const repository = new GitHubEventCommentRepository(
+			{
+				diagnosticCommentPresenter:
+					new GithubEventCommentRepositoryComposition().diagnosticCommentPresenter(),
+				createEventCommentMessages: (...args) =>
+					new GithubEventCommentRepositoryComposition().eventCommentMessages(
+						...args,
+					),
+			},
+			github.value,
+			{
+				owner: "example",
+				repo: "meetups",
+				authorLogin: "meetup-bot",
+				retireCommunicationReports: true,
+			},
+		);
 		const diagnostics = [
 			{
 				...errorDiagnostic,
@@ -190,12 +234,23 @@ describe("GitHubEventCommentRepository", () => {
 			],
 		});
 		github.createComment.mockRejectedValue(new Error("Write failed"));
-		const repository = new GitHubEventCommentRepository(github.value, {
-			owner: "example",
-			repo: "meetups",
-			authorLogin: "meetup-bot",
-			retireCommunicationReports: true,
-		});
+		const repository = new GitHubEventCommentRepository(
+			{
+				diagnosticCommentPresenter:
+					new GithubEventCommentRepositoryComposition().diagnosticCommentPresenter(),
+				createEventCommentMessages: (...args) =>
+					new GithubEventCommentRepositoryComposition().eventCommentMessages(
+						...args,
+					),
+			},
+			github.value,
+			{
+				owner: "example",
+				repo: "meetups",
+				authorLogin: "meetup-bot",
+				retireCommunicationReports: true,
+			},
+		);
 
 		// Act
 		const result = repository.reconcileDiagnostics(identity, [errorDiagnostic]);
@@ -270,7 +325,9 @@ describe("GitHubEventCommentRepository", () => {
 	it("does not update a canonical comment whose content is unchanged", async () => {
 		// Arrange
 		const github = client();
-		const body = DiagnosticCommentPresenter.render([errorDiagnostic]);
+		const body = new GithubEventCommentRepositoryComposition()
+			.diagnosticCommentPresenter()
+			.render([errorDiagnostic]);
 		github.listComments.mockResolvedValue({ data: [comment(5, body)] });
 
 		// Act
@@ -317,7 +374,14 @@ describe("GitHubEventCommentRepository", () => {
 		const github = client();
 		github.updateComment.mockResolvedValue({ data: {} });
 		github.listComments.mockResolvedValueOnce({
-			data: [comment(5, DiagnosticCommentPresenter.render([errorDiagnostic]))],
+			data: [
+				comment(
+					5,
+					new GithubEventCommentRepositoryComposition()
+						.diagnosticCommentPresenter()
+						.render([errorDiagnostic]),
+				),
+			],
 		});
 
 		// Act
@@ -335,7 +399,9 @@ describe("GitHubEventCommentRepository", () => {
 	it("paginates and deterministically tombstones duplicate managed comments", async () => {
 		// Arrange
 		const github = client();
-		const body = DiagnosticCommentPresenter.render([errorDiagnostic]);
+		const body = new GithubEventCommentRepositoryComposition()
+			.diagnosticCommentPresenter()
+			.render([errorDiagnostic]);
 		github.listComments
 			.mockResolvedValueOnce({
 				data: [comment(9, body), comment(3, body)],
@@ -434,11 +500,22 @@ describe("GitHubEventCommentRepository", () => {
 
 		// Act
 		const construct = () =>
-			new GitHubEventCommentRepository(github.value, {
-				owner: "",
-				repo: "x",
-				authorLogin: "meetup-bot",
-			});
+			new GitHubEventCommentRepository(
+				{
+					diagnosticCommentPresenter:
+						new GithubEventCommentRepositoryComposition().diagnosticCommentPresenter(),
+					createEventCommentMessages: (...args) =>
+						new GithubEventCommentRepositoryComposition().eventCommentMessages(
+							...args,
+						),
+				},
+				github.value,
+				{
+					owner: "",
+					repo: "x",
+					authorLogin: "meetup-bot",
+				},
+			);
 
 		// Assert
 		expect(construct).toThrow(GitHubEventCommentRepositoryConfigurationError);

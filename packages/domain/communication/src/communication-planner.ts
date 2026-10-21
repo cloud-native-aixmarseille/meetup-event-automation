@@ -1,4 +1,4 @@
-import { CommunicationIdempotency } from "./idempotency.js";
+import type { CommunicationIdempotency } from "./idempotency.js";
 import type {
 	CommunicationDiagnostic,
 	CommunicationIntent,
@@ -10,8 +10,19 @@ import type {
 } from "./model.js";
 import { MAIL_POLICIES } from "./plan-communications-contracts.js";
 
+export interface CommunicationPlannerCollaborators {
+	readonly communicationIdempotency: Pick<
+		CommunicationIdempotency,
+		"isSafeCommunicationIdentifier" | "createCommunicationIdempotencyKey"
+	>;
+}
+
 export class CommunicationPlanner {
-	static planMailMessages(
+	constructor(
+		private readonly collaborators: CommunicationPlannerCollaborators,
+	) {}
+
+	planMailMessages(
 		input: PlanCommunicationsInput,
 		policyName: keyof typeof MAIL_POLICIES,
 		intents: CommunicationIntent[],
@@ -23,25 +34,21 @@ export class CommunicationPlanner {
 			}
 
 			if (
-				!CommunicationIdempotency.isSafeCommunicationIdentifier(
+				!this.collaborators.communicationIdempotency.isSafeCommunicationIdentifier(
 					recipient.recipientId,
 				)
 			) {
-				diagnostics.push(
-					CommunicationPlanner.errorDiagnostic("invalid-identifier"),
-				);
+				diagnostics.push(this.errorDiagnostic("invalid-identifier"));
 				continue;
 			}
 
 			if (recipient.email.trim().length === 0) {
-				diagnostics.push(
-					CommunicationPlanner.errorDiagnostic("missing-mail-destination"),
-				);
+				diagnostics.push(this.errorDiagnostic("missing-mail-destination"));
 				continue;
 			}
 
 			const policy = MAIL_POLICIES[policyName][recipient.role];
-			const base = CommunicationPlanner.createIntentBase(
+			const base = this.createIntentBase(
 				input,
 				policy.kind,
 				recipient.recipientId,
@@ -49,7 +56,7 @@ export class CommunicationPlanner {
 			const intent: MailMessageIntent = {
 				...base,
 				channel: "mail",
-				recipient: CommunicationPlanner.cloneMailRecipient(recipient),
+				recipient: this.cloneMailRecipient(recipient),
 				templateName: policy.templateName,
 				placeholders: {
 					...(input.mailPlaceholders ?? {}),
@@ -60,19 +67,21 @@ export class CommunicationPlanner {
 		}
 	}
 
-	static createIntentBase<Kind extends MailCommunicationKind>(
+	createIntentBase<Kind extends MailCommunicationKind>(
 		input: PlanCommunicationsInput,
 		kind: Kind,
 		recipientId: string,
 	) {
 		const idempotencyKey =
-			CommunicationIdempotency.createCommunicationIdempotencyKey({
-				repositoryId: input.repositoryId,
-				eventId: input.eventId,
-				kind,
-				recipientId,
-				policyVersion: input.policyVersion,
-			});
+			this.collaborators.communicationIdempotency.createCommunicationIdempotencyKey(
+				{
+					repositoryId: input.repositoryId,
+					eventId: input.eventId,
+					kind,
+					recipientId,
+					policyVersion: input.policyVersion,
+				},
+			);
 
 		return {
 			intentId: idempotencyKey,
@@ -85,7 +94,7 @@ export class CommunicationPlanner {
 		} as const;
 	}
 
-	static cloneMailRecipient(recipient: MailRecipient): MailRecipient {
+	cloneMailRecipient(recipient: MailRecipient): MailRecipient {
 		return {
 			...recipient,
 			...(recipient.placeholders
@@ -94,7 +103,7 @@ export class CommunicationPlanner {
 		};
 	}
 
-	static deduplicateIntents(
+	deduplicateIntents(
 		intents: readonly CommunicationIntent[],
 		diagnostics: CommunicationDiagnostic[],
 	): PlanCommunicationsResult {
@@ -102,7 +111,7 @@ export class CommunicationPlanner {
 		for (const intent of intents) {
 			if (uniqueIntents.has(intent.idempotencyKey)) {
 				diagnostics.push({
-					...CommunicationPlanner.warningDiagnostic("duplicate-intent"),
+					...this.warningDiagnostic("duplicate-intent"),
 					intentId: intent.intentId,
 				});
 				continue;
@@ -116,19 +125,21 @@ export class CommunicationPlanner {
 		};
 	}
 
-	static hasValidBaseIdentifiers(input: PlanCommunicationsInput): boolean {
+	hasValidBaseIdentifiers(input: PlanCommunicationsInput): boolean {
 		return [input.repositoryId, input.eventId, input.policyVersion].every(
-			CommunicationIdempotency.isSafeCommunicationIdentifier,
+			this.collaborators.communicationIdempotency.isSafeCommunicationIdentifier.bind(
+				this.collaborators.communicationIdempotency,
+			),
 		);
 	}
 
-	static errorDiagnostic(
+	errorDiagnostic(
 		code: CommunicationDiagnostic["code"],
 	): CommunicationDiagnostic {
 		return { code, severity: "error" };
 	}
 
-	static warningDiagnostic(
+	warningDiagnostic(
 		code: CommunicationDiagnostic["code"],
 	): CommunicationDiagnostic {
 		return { code, severity: "warning" };

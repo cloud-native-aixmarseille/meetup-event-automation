@@ -1,8 +1,11 @@
-import { describe, expect, it, vi } from "vitest";
 import type { AssetRenderPresenter } from "@meetup-automation/publication";
-import { catalog, event } from "../../testing/meetup-journey.fixtures.js";
-import { AssetRenderProjection } from "./asset-render-projection.js";
+import { PublicationDomainComposition } from "@meetup-automation/publication";
+import { ReferentialDomainComposition } from "@meetup-automation/referential";
+import { describe, expect, it, vi } from "vitest";
 import { talk } from "../../testing/asset-render.fixtures.js";
+import { catalog, event } from "../../testing/meetup-journey.fixtures.js";
+import { JourneyPolicyComposition } from "../policy-composition.js";
+import { AssetRenderProjection } from "./asset-render-projection.js";
 
 describe("asset public projection", () => {
 	it.each([
@@ -26,6 +29,15 @@ describe("asset public projection", () => {
 			format: vi.fn(() => ({ text: {}, pictures: {} })),
 		};
 		const projection = new AssetRenderProjection(
+			{
+				assetParticipantProjection:
+					new JourneyPolicyComposition().assetParticipantProjection(),
+				publicAssetUrl: new PublicationDomainComposition().publicAssetUrl(),
+				createValidateReferentialCatalog: (...args) =>
+					new ReferentialDomainComposition().validateReferentialCatalog(
+						...args,
+					),
+			},
 			presenter,
 			{
 				load: vi.fn(async () =>
@@ -81,6 +93,15 @@ describe("asset public projection", () => {
 			};
 			const nextEvent = { find: vi.fn() };
 			const projection = new AssetRenderProjection(
+				{
+					assetParticipantProjection:
+						new JourneyPolicyComposition().assetParticipantProjection(),
+					publicAssetUrl: new PublicationDomainComposition().publicAssetUrl(),
+					createValidateReferentialCatalog: (...args) =>
+						new ReferentialDomainComposition().validateReferentialCatalog(
+							...args,
+						),
+				},
 				presenter,
 				{
 					load: vi.fn(async () =>
@@ -150,6 +171,15 @@ describe("asset public projection", () => {
 		};
 		const next = { date: "2026-11-01", hostName: "Next Host", city: "Aix" };
 		const projection = new AssetRenderProjection(
+			{
+				assetParticipantProjection:
+					new JourneyPolicyComposition().assetParticipantProjection(),
+				publicAssetUrl: new PublicationDomainComposition().publicAssetUrl(),
+				createValidateReferentialCatalog: (...args) =>
+					new ReferentialDomainComposition().validateReferentialCatalog(
+						...args,
+					),
+			},
 			presenter,
 			{ load: vi.fn(async () => catalog) },
 			{
@@ -194,6 +224,15 @@ describe("asset public projection", () => {
 			format: vi.fn(() => ({ text: {}, pictures: {} })),
 		};
 		const projection = new AssetRenderProjection(
+			{
+				assetParticipantProjection:
+					new JourneyPolicyComposition().assetParticipantProjection(),
+				publicAssetUrl: new PublicationDomainComposition().publicAssetUrl(),
+				createValidateReferentialCatalog: (...args) =>
+					new ReferentialDomainComposition().validateReferentialCatalog(
+						...args,
+					),
+			},
 			presenter,
 			{ load: vi.fn(async () => source) },
 			{
@@ -241,6 +280,15 @@ describe("asset public projection", () => {
 			format: vi.fn(() => ({ text: {}, pictures: {} })),
 		};
 		const projection = new AssetRenderProjection(
+			{
+				assetParticipantProjection:
+					new JourneyPolicyComposition().assetParticipantProjection(),
+				publicAssetUrl: new PublicationDomainComposition().publicAssetUrl(),
+				createValidateReferentialCatalog: (...args) =>
+					new ReferentialDomainComposition().validateReferentialCatalog(
+						...args,
+					),
+			},
 			presenter,
 			{ load: vi.fn(async () => catalog) },
 			{ speakers: { portrait: "speaker-0001" }, talks: {}, venues: {} },

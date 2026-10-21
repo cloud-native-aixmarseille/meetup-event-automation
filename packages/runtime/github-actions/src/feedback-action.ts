@@ -1,30 +1,46 @@
-import { ConferenceHallInput } from "./conference-hall-input.js";
 import * as core from "@actions/core";
 import { context, getOctokit } from "@actions/github";
-import { ManageMeetupFeedback } from "@meetup-automation/journey";
+import type { ManageMeetupFeedback } from "@meetup-automation/journey";
 import type { ActionReportData } from "./action-report.js";
-import { FeedbackComposition } from "./feedback-composition.js";
-import { ActionMessages } from "./i18n/action-messages.js";
-import { RuntimeInput } from "./runtime-input.js";
+import type { ConferenceHallInput } from "./conference-hall-input.js";
+import type { FeedbackComposition } from "./feedback-composition.js";
+import type {
+	ActionMessages,
+	ActionMessagesArguments,
+} from "./i18n/action-messages.js";
+import type { RuntimeInput } from "./runtime-input.js";
+
+export interface FeedbackActionCollaborators {
+	readonly createJourney: (
+		input: Parameters<typeof FeedbackComposition.createFeedbackContainer>[0],
+	) => Pick<ManageMeetupFeedback, "execute">;
+	readonly runtimeInput: Pick<RuntimeInput, "positiveIntegerInput">;
+	readonly conferenceHallInput: Pick<ConferenceHallInput, "read">;
+	readonly createActionMessages: (
+		...args: ActionMessagesArguments
+	) => ActionMessages;
+}
 
 export class FeedbackAction {
-	static async run(messages = new ActionMessages()): Promise<ActionReportData> {
-		const issueNumber = RuntimeInput.positiveIntegerInput(
+	constructor(private readonly collaborators: FeedbackActionCollaborators) {}
+
+	async run(
+		messages = this.collaborators.createActionMessages(),
+	): Promise<ActionReportData> {
+		const issueNumber = this.collaborators.runtimeInput.positiveIntegerInput(
 			"issue-number",
 			core.getInput("issue-number", { required: true }),
 		);
-		const kuttApiKey = FeedbackAction.requiredInput("kutt-api-key");
+		const kuttApiKey = this.requiredInput("kutt-api-key");
 		core.setSecret(kuttApiKey);
-		const kuttLinkId = FeedbackAction.requiredInput("kutt-link-id");
-		const kuttBaseUrl = FeedbackAction.requiredInput("kutt-base-url");
-		const openFeedbackApiKey = FeedbackAction.requiredInput(
-			"openfeedback-api-key",
-		);
+		const kuttLinkId = this.requiredInput("kutt-link-id");
+		const kuttBaseUrl = this.requiredInput("kutt-base-url");
+		const openFeedbackApiKey = this.requiredInput("openfeedback-api-key");
 		core.setSecret(openFeedbackApiKey);
 		const { owner, repo } = context.repo;
-		const container = FeedbackComposition.createFeedbackContainer({
+		const journey = this.collaborators.createJourney({
 			locale: messages.locale,
-			...ConferenceHallInput.read(),
+			...this.collaborators.conferenceHallInput.read(),
 			client: getOctokit(core.getInput("github-token", { required: true })),
 			owner,
 			repo,
@@ -33,13 +49,13 @@ export class FeedbackAction {
 			kuttLinkId,
 			openFeedbackApiKey,
 		});
-		const outcome = await container.get(ManageMeetupFeedback).execute({
+		const outcome = await journey.execute({
 			identity: { repository: `${owner}/${repo}`, issueNumber },
 		});
-		return FeedbackAction.report(issueNumber, outcome, messages);
+		return this.report(issueNumber, outcome, messages);
 	}
 
-	private static requiredInput(
+	private requiredInput(
 		name:
 			| "kutt-api-key"
 			| "kutt-base-url"
@@ -51,7 +67,7 @@ export class FeedbackAction {
 		return value;
 	}
 
-	private static report(
+	private report(
 		issueNumber: number,
 		outcome: Awaited<ReturnType<ManageMeetupFeedback["execute"]>>,
 		messages: ActionMessages,

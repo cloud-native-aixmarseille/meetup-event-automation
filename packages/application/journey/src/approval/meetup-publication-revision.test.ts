@@ -1,5 +1,5 @@
 import {
-	ContentFingerprint,
+	PublicationDomainComposition,
 	type ScheduledEvent,
 } from "@meetup-automation/publication";
 import { describe, expect, it } from "vitest";
@@ -19,12 +19,17 @@ const url = "https://www.meetup.com/example/events/123/";
 describe("reviewed publication revision", () => {
 	it("preserves the serialized public event contract", () => {
 		// Arrange
-		const expected = ContentFingerprint.of(
-			'{"url":"https://www.meetup.com/example/events/123/","event":{"title":"Cloud Native Evening","description":"Public agenda","date":"2099-06-08","startTime":"18:30","endTime":"20:30","timeZone":"Europe/Paris","venue":{"name":"Example Venue","city":"Marseille"}}}',
-		);
+		const expected = new PublicationDomainComposition()
+			.contentFingerprint()
+			.of(
+				'{"url":"https://www.meetup.com/example/events/123/","event":{"title":"Cloud Native Evening","description":"Public agenda","date":"2099-06-08","startTime":"18:30","endTime":"20:30","timeZone":"Europe/Paris","venue":{"name":"Example Venue","city":"Marseille"}}}',
+			);
 
 		// Act
-		const revision = MeetupPublicationRevision.of(event, url);
+		const revision = new MeetupPublicationRevision({
+			contentFingerprint:
+				new PublicationDomainComposition().contentFingerprint(),
+		}).of(event, url);
 
 		// Assert
 		expect(revision).toBe(expected);
@@ -48,8 +53,14 @@ describe("reviewed publication revision", () => {
 		};
 
 		// Act
-		const original = MeetupPublicationRevision.of(event, url);
-		const same = MeetupPublicationRevision.of(reordered, url);
+		const original = new MeetupPublicationRevision({
+			contentFingerprint:
+				new PublicationDomainComposition().contentFingerprint(),
+		}).of(event, url);
+		const same = new MeetupPublicationRevision({
+			contentFingerprint:
+				new PublicationDomainComposition().contentFingerprint(),
+		}).of(reordered, url);
 
 		// Assert
 		expect(same).toBe(original);

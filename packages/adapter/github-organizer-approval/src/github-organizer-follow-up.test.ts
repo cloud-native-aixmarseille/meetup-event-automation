@@ -1,6 +1,7 @@
+import { JourneyPolicyComposition } from "@meetup-automation/journey";
 import { describe, expect, it } from "vitest";
 import { decision, fixture, request } from "../testing/approval.fixtures.js";
-import { ApprovalCommentCodec } from "./approval-comment-codec.js";
+import { GithubOrganizerApprovalComposition } from "./dependency-composition.js";
 import { GithubOrganizerApproval } from "./github-organizer-approval.js";
 import { GithubOrganizerFollowUp } from "./github-organizer-follow-up.js";
 
@@ -21,6 +22,14 @@ describe("shared post-event follow-up", () => {
 		// Arrange
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
+			{
+				approvalRequestSchema:
+					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+				approvalDetailsPreview:
+					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+			},
 			f.repository,
 			f.records,
 			f.finalizer,
@@ -55,6 +64,14 @@ describe("shared post-event follow-up", () => {
 		// Arrange
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
+			{
+				approvalRequestSchema:
+					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+				approvalDetailsPreview:
+					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+			},
 			f.repository,
 			f.records,
 			f.finalizer,
@@ -78,7 +95,9 @@ describe("shared post-event follow-up", () => {
 			...request,
 			kind: "email-thanks",
 		});
-		const record = ApprovalCommentCodec.read(f.comments[0]?.body ?? "");
+		const record = new GithubOrganizerApprovalComposition()
+			.approvalCommentCodec()
+			.read(f.comments[0]?.body ?? "");
 
 		// Assert
 		expect(result.status).toBe("approved");
@@ -96,6 +115,14 @@ describe("shared post-event follow-up", () => {
 		// Arrange
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
+			{
+				approvalRequestSchema:
+					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+				approvalDetailsPreview:
+					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+			},
 			f.repository,
 			f.records,
 			f.finalizer,
@@ -132,6 +159,14 @@ describe("shared post-event follow-up", () => {
 		// Arrange
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
+			{
+				approvalRequestSchema:
+					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+				approvalDetailsPreview:
+					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+			},
 			f.repository,
 			f.records,
 			f.finalizer,

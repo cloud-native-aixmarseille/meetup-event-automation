@@ -1,17 +1,29 @@
-import {
-	type AttentionChecklistSource,
-	type AttentionEpisode,
+import type {
+	AttentionChecklistSource,
+	AttentionEpisode,
 	AttentionPolicy,
-	type AttentionState,
+	AttentionState,
 	AttentionTaskSelection,
-	type AttentionView,
+	AttentionView,
 } from "@meetup-automation/communication";
-import { SlackAttentionMessages } from "./attention-i18n/slack-attention-messages.js";
+import type {
+	SlackAttentionMessages,
+	SlackAttentionMessagesArguments,
+} from "./attention-i18n/slack-attention-messages.js";
 /** Formats the selected public task facts for Slack, without storage or task policy. */
+export interface SlackAttentionPresenterCollaborators {
+	readonly attentionTaskSelection: Pick<AttentionTaskSelection, "select">;
+	readonly attentionPolicy: Pick<AttentionPolicy, "eventDay">;
+	readonly createSlackAttentionMessages: (
+		...args: SlackAttentionMessagesArguments
+	) => SlackAttentionMessages;
+}
+
 export class SlackAttentionPresenter {
 	private readonly issueUrl: string;
 	private readonly messages: SlackAttentionMessages;
 	constructor(
+		private readonly collaborators: SlackAttentionPresenterCollaborators,
 		private readonly repository: string,
 		private readonly issueNumber: number,
 		locale: string | undefined,
@@ -24,7 +36,7 @@ export class SlackAttentionPresenter {
 		)
 			throw new Error("Invalid attention issue identity");
 		this.issueUrl = `https://github.com/${repository}/issues/${issueNumber}`;
-		this.messages = new SlackAttentionMessages(locale);
+		this.messages = this.collaborators.createSlackAttentionMessages(locale);
 	}
 	render(view: AttentionView): string {
 		const title = this.messages.t("slack.title", {
@@ -39,9 +51,7 @@ export class SlackAttentionPresenter {
 		];
 		lines.push(...actions.slice(0, 6));
 		if (!actions.length)
-			lines.push(
-				SlackAttentionPresenter.escape(this.messages.t("attention.clear")),
-			);
+			lines.push(this.escape(this.messages.t("attention.clear")));
 		if (actions.length > 6)
 			lines.push(
 				this.link(
@@ -52,7 +62,7 @@ export class SlackAttentionPresenter {
 		return lines.join("\n");
 	}
 	private slackActions(view: AttentionView): string[] {
-		const selection = AttentionTaskSelection.select(
+		const selection = this.collaborators.attentionTaskSelection.select(
 			view,
 			this.checklist.read(),
 		);
@@ -62,8 +72,7 @@ export class SlackAttentionPresenter {
 					this.slackCondition(episode, view.state),
 				),
 				...selection.checklist.map(
-					(entry) =>
-						`• ${SlackAttentionPresenter.escape(`${entry.label}: ${entry.description}`)}`,
+					(entry) => `• ${this.escape(`${entry.label}: ${entry.description}`)}`,
 				),
 				...selection.remaining.map((episode) =>
 					this.slackCondition(episode, view.state),
@@ -72,7 +81,8 @@ export class SlackAttentionPresenter {
 		];
 	}
 	private slackDate(date: string): string {
-		if (AttentionPolicy.eventDay(date) === undefined) return "";
+		if (this.collaborators.attentionPolicy.eventDay(date) === undefined)
+			return "";
 		return new Intl.DateTimeFormat(this.messages.locale, {
 			day: "numeric",
 			month: "short",
@@ -96,14 +106,14 @@ export class SlackAttentionPresenter {
 			url === this.overviewUrl(state) ? "" : ` · ${this.link(url, label)}`;
 		const unknown =
 			episode.status === "unknown"
-				? ` _(${SlackAttentionPresenter.escape(this.messages.t("slack.unknown"))})_`
+				? ` _(${this.escape(this.messages.t("slack.unknown"))})_`
 				: "";
-		return `• ${SlackAttentionPresenter.escape(text)}${unknown}${link}`;
+		return `• ${this.escape(text)}${unknown}${link}`;
 	}
 	private link(url: string, label: string): string {
-		return `<${SlackAttentionPresenter.escape(url)}|${SlackAttentionPresenter.escape(label)}>`;
+		return `<${this.escape(url)}|${this.escape(label)}>`;
 	}
-	private static escape(value: string): string {
+	private escape(value: string): string {
 		return value
 			.replaceAll("&", "&amp;")
 			.replaceAll("<", "&lt;")
@@ -144,3 +154,10 @@ export class SlackAttentionPresenter {
 			: this.issueUrl;
 	}
 }
+export type SlackAttentionPresenterArguments =
+	ConstructorParameters<typeof SlackAttentionPresenter> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

@@ -1,3 +1,5 @@
+import { EventDomainComposition } from "@meetup-automation/event";
+import { PublicationDomainComposition } from "@meetup-automation/publication";
 import { describe, expect, it } from "vitest";
 import { CommunicationPlaceholders } from "./communication-placeholders.js";
 
@@ -22,10 +24,12 @@ describe("email event placeholders", () => {
 			"https://docs.google.com/presentation/d/event-slides/edit";
 
 		// Act
-		const result = CommunicationPlaceholders.eventPlaceholders(
-			event,
-			slidesUrl,
-		);
+		const result = new CommunicationPlaceholders({
+			presentationFileUrl:
+				new PublicationDomainComposition().presentationFileUrl(),
+			meetupPublicationChecklist:
+				new EventDomainComposition().meetupPublicationChecklist(),
+		}).eventPlaceholders(event, slidesUrl);
 
 		// Assert
 		expect(result).toEqual({
@@ -43,10 +47,12 @@ describe("email event placeholders", () => {
 			// Use the event with a valid asset folder.
 
 			// Act
-			const result = CommunicationPlaceholders.eventPlaceholders(
-				event,
-				slidesUrl,
-			);
+			const result = new CommunicationPlaceholders({
+				presentationFileUrl:
+					new PublicationDomainComposition().presentationFileUrl(),
+				meetupPublicationChecklist:
+					new EventDomainComposition().meetupPublicationChecklist(),
+			}).eventPlaceholders(event, slidesUrl);
 
 			// Assert
 			expect(result).not.toHaveProperty("eventSlidesUrl");
@@ -66,7 +72,12 @@ describe("email event placeholders", () => {
 		};
 
 		// Act
-		const result = CommunicationPlaceholders.eventPlaceholders(draft);
+		const result = new CommunicationPlaceholders({
+			presentationFileUrl:
+				new PublicationDomainComposition().presentationFileUrl(),
+			meetupPublicationChecklist:
+				new EventDomainComposition().meetupPublicationChecklist(),
+		}).eventPlaceholders(draft);
 
 		// Assert
 		expect(result).not.toHaveProperty("eventMeetupUrl");

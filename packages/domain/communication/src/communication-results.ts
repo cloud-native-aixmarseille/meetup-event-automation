@@ -11,7 +11,7 @@ export type MutableCounts = {
 	-readonly [Key in keyof ReconcileCommunicationCounts]: ReconcileCommunicationCounts[Key];
 };
 export class CommunicationResults {
-	static recordExisting(
+	recordExisting(
 		intentId: string,
 		entry: DeliveryLedgerEntry,
 		counts: MutableCounts,
@@ -26,7 +26,7 @@ export class CommunicationResults {
 		});
 	}
 
-	static result(
+	result(
 		mode: ReconcileCommunicationsInput["mode"],
 		intents: readonly CommunicationIntent[],
 		counts: ReconcileCommunicationCounts,
@@ -36,16 +36,13 @@ export class CommunicationResults {
 		return {
 			mode,
 			intentIds: intents.map((intent) => intent.intentId),
-			completedMailKinds: CommunicationResults.completedMailKinds(
-				intents,
-				acceptedIds,
-			),
+			completedMailKinds: this.completedMailKinds(intents, acceptedIds),
 			counts: { ...counts },
 			diagnostics: [...diagnostics],
 		};
 	}
 
-	static completedMailKinds(
+	completedMailKinds(
 		intents: readonly CommunicationIntent[],
 		acceptedIds: ReadonlySet<string>,
 	): readonly MailCommunicationKind[] {
@@ -60,7 +57,7 @@ export class CommunicationResults {
 		return [...groups].filter(([, accepted]) => accepted).map(([kind]) => kind);
 	}
 
-	static emptyResult(
+	emptyResult(
 		mode: ReconcileCommunicationsInput["mode"],
 		diagnostic: CommunicationDiagnostic,
 	): ReconcileCommunicationsResult {
@@ -83,7 +80,7 @@ export class CommunicationResults {
 		};
 	}
 
-	static safeDetailCode(value: string | undefined): string | undefined {
+	safeDetailCode(value: string | undefined): string | undefined {
 		return [
 			"ambiguous-response",
 			"connection-reset",

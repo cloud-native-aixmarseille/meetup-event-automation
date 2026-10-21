@@ -1,8 +1,11 @@
-import { ActionRunner } from "../action-runner.js";
-import { PublicationAction } from "../publication-action.js";
+import { GithubActionsComposition } from "../dependency-composition.js";
+import { PublicationActionComposition } from "../publication-action-composition.js";
 
-await ActionRunner.run(
+const runner = new GithubActionsComposition().actionRunner();
+const action = new PublicationActionComposition().publicationAction();
+
+await runner.run(
 	"action.publication.reconcile-assets",
-	PublicationAction.runPublicationReconcileAssetsAction,
+	action.runPublicationReconcileAssetsAction.bind(action),
 	true,
 );

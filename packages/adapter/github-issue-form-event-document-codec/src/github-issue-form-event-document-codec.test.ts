@@ -1,8 +1,9 @@
 import {
 	type EventDocument,
+	EventDomainComposition,
 	type MeetupEvent,
-	MeetupPublicationChecklist,
 } from "@meetup-automation/event";
+import { GithubIssueFormEventDocumentCodecComposition } from "./dependency-composition.js";
 import { GitHubIssueFormEventDocumentCodec } from "./github-issue-form-event-document-codec.js";
 
 const LEGACY_BODY = `Introductory text that is not managed.
@@ -156,7 +157,16 @@ describe("GitHubIssueFormEventDocumentCodec", () => {
 		// No additional setup is needed.
 
 		// Act
-		const result = new GitHubIssueFormEventDocumentCodec().decode(document());
+		const result = new GitHubIssueFormEventDocumentCodec({
+			createIssueFormReader: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormReader(
+					...args,
+				),
+			createIssueFormWriter: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormWriter(
+					...args,
+				),
+		}).decode(document());
 		const actual = result.diagnostics.map(({ code }) => code);
 
 		// Assert
@@ -205,9 +215,16 @@ describe("GitHubIssueFormEventDocumentCodec", () => {
 		);
 
 		// Act
-		const result = new GitHubIssueFormEventDocumentCodec().decode(
-			document({ body }),
-		);
+		const result = new GitHubIssueFormEventDocumentCodec({
+			createIssueFormReader: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormReader(
+					...args,
+				),
+			createIssueFormWriter: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormWriter(
+					...args,
+				),
+		}).decode(document({ body }));
 
 		// Assert
 		expect(result.event.followUpComplete).toBe(false);
@@ -225,13 +242,26 @@ describe("GitHubIssueFormEventDocumentCodec", () => {
 		);
 
 		// Act
-		const result = new GitHubIssueFormEventDocumentCodec().decode(
-			document({ body }),
-		);
-		const patch = new GitHubIssueFormEventDocumentCodec().createPatch(
-			document({ body }),
-			result.event,
-		);
+		const result = new GitHubIssueFormEventDocumentCodec({
+			createIssueFormReader: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormReader(
+					...args,
+				),
+			createIssueFormWriter: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormWriter(
+					...args,
+				),
+		}).decode(document({ body }));
+		const patch = new GitHubIssueFormEventDocumentCodec({
+			createIssueFormReader: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormReader(
+					...args,
+				),
+			createIssueFormWriter: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormWriter(
+					...args,
+				),
+		}).createPatch(document({ body }), result.event);
 
 		// Assert
 		expect(result.event.operationalChecklists.postEvent).toHaveLength(5);
@@ -252,9 +282,16 @@ describe("GitHubIssueFormEventDocumentCodec", () => {
 ${LEGACY_BODY}`;
 
 		// Act
-		const result = new GitHubIssueFormEventDocumentCodec().decode(
-			document({ body }),
-		);
+		const result = new GitHubIssueFormEventDocumentCodec({
+			createIssueFormReader: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormReader(
+					...args,
+				),
+			createIssueFormWriter: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormWriter(
+					...args,
+				),
+		}).decode(document({ body }));
 		const actual = result.event.agenda[0].speakers.map(({ id }) => id);
 		const actual1 = result.diagnostics.map(({ code }) => code);
 
@@ -271,9 +308,16 @@ ${LEGACY_BODY}`;
 ${LEGACY_BODY}`;
 
 		// Act
-		const result = new GitHubIssueFormEventDocumentCodec().decode(
-			document({ body }),
-		);
+		const result = new GitHubIssueFormEventDocumentCodec({
+			createIssueFormReader: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormReader(
+					...args,
+				),
+			createIssueFormWriter: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormWriter(
+					...args,
+				),
+		}).decode(document({ body }));
 		const actual = result.event.agenda[0].speakers.map(({ id }) => id);
 
 		// Assert
@@ -288,9 +332,16 @@ ${LEGACY_BODY}`;
 ${LEGACY_BODY}`;
 
 		// Act
-		const result = new GitHubIssueFormEventDocumentCodec().decode(
-			document({ body }),
-		);
+		const result = new GitHubIssueFormEventDocumentCodec({
+			createIssueFormReader: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormReader(
+					...args,
+				),
+			createIssueFormWriter: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormWriter(
+					...args,
+				),
+		}).decode(document({ body }));
 		const actual = result.diagnostics.map(({ code }) => code);
 		const actual1 = result.diagnostics.map(({ code }) => code);
 
@@ -342,9 +393,16 @@ finished
 `;
 
 		// Act
-		const result = new GitHubIssueFormEventDocumentCodec().decode(
-			document({ body: malformed }),
-		);
+		const result = new GitHubIssueFormEventDocumentCodec({
+			createIssueFormReader: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormReader(
+					...args,
+				),
+			createIssueFormWriter: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormWriter(
+					...args,
+				),
+		}).decode(document({ body: malformed }));
 
 		// Assert
 		expect(result.diagnostics.map(({ code }) => code)).toEqual(
@@ -364,10 +422,16 @@ finished
 		const source = document();
 
 		// Act
-		const patch = new GitHubIssueFormEventDocumentCodec().createPatch(
-			source,
-			normalizedEvent(),
-		);
+		const patch = new GitHubIssueFormEventDocumentCodec({
+			createIssueFormReader: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormReader(
+					...args,
+				),
+			createIssueFormWriter: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormWriter(
+					...args,
+				),
+		}).createPatch(source, normalizedEvent());
 
 		// Assert
 		expect(patch.issueTitle).toBe(
@@ -399,9 +463,21 @@ finished
 
 	it("renders resolved catalog locations with the caller repository, revision, and paths", () => {
 		// Arrange
-		const codec = new GitHubIssueFormEventDocumentCodec({
-			repositoryRef: "catalog/update",
-		});
+		const codec = new GitHubIssueFormEventDocumentCodec(
+			{
+				createIssueFormReader: (...args) =>
+					new GithubIssueFormEventDocumentCodecComposition().issueFormReader(
+						...args,
+					),
+				createIssueFormWriter: (...args) =>
+					new GithubIssueFormEventDocumentCodecComposition().issueFormWriter(
+						...args,
+					),
+			},
+			{
+				repositoryRef: "catalog/update",
+			},
+		);
 		const source = document({
 			identity: { repository: "example/events", issueNumber: 42 },
 		});
@@ -441,9 +517,21 @@ finished
 
 	it("round-trips linked participants without losing navigation or producing another patch", () => {
 		// Arrange
-		const codec = new GitHubIssueFormEventDocumentCodec({
-			repositoryRef: "catalog-revision",
-		});
+		const codec = new GitHubIssueFormEventDocumentCodec(
+			{
+				createIssueFormReader: (...args) =>
+					new GithubIssueFormEventDocumentCodecComposition().issueFormReader(
+						...args,
+					),
+				createIssueFormWriter: (...args) =>
+					new GithubIssueFormEventDocumentCodecComposition().issueFormWriter(
+						...args,
+					),
+			},
+			{
+				repositoryRef: "catalog-revision",
+			},
+		);
 		const event = normalizedEvent({
 			host: {
 				id: "host-0001",
@@ -479,7 +567,16 @@ finished
 
 	it("round-trips bound reference metadata without producing another patch", () => {
 		// Arrange
-		const codec = new GitHubIssueFormEventDocumentCodec();
+		const codec = new GitHubIssueFormEventDocumentCodec({
+			createIssueFormReader: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormReader(
+					...args,
+				),
+			createIssueFormWriter: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormWriter(
+					...args,
+				),
+		});
 		const event = normalizedEvent();
 
 		// Act
@@ -503,7 +600,16 @@ finished
 
 	it("keeps an edited visible host ID instead of stale bound metadata", () => {
 		// Arrange
-		const codec = new GitHubIssueFormEventDocumentCodec();
+		const codec = new GitHubIssueFormEventDocumentCodec({
+			createIssueFormReader: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormReader(
+					...args,
+				),
+			createIssueFormWriter: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormWriter(
+					...args,
+				),
+		});
 		const event = normalizedEvent();
 		const patch = codec.createPatch(document(), event);
 		const changedBody = (patch.body ?? LEGACY_BODY).replace(
@@ -525,7 +631,16 @@ finished
 
 	it("does not attach a stale host ID to an edited name-only host", () => {
 		// Arrange
-		const codec = new GitHubIssueFormEventDocumentCodec();
+		const codec = new GitHubIssueFormEventDocumentCodec({
+			createIssueFormReader: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormReader(
+					...args,
+				),
+			createIssueFormWriter: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormWriter(
+					...args,
+				),
+		});
 		const patch = codec.createPatch(document(), normalizedEvent());
 		const changedBody = (patch.body ?? LEGACY_BODY).replace(
 			"### Hoster\n\nAix Tech Hub",
@@ -541,7 +656,16 @@ finished
 
 	it("restores name-bound speaker IDs after reordering without binding a changed speaker", () => {
 		// Arrange
-		const codec = new GitHubIssueFormEventDocumentCodec();
+		const codec = new GitHubIssueFormEventDocumentCodec({
+			createIssueFormReader: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormReader(
+					...args,
+				),
+			createIssueFormWriter: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormWriter(
+					...args,
+				),
+		});
 		const patch = codec.createPatch(document(), normalizedEvent());
 		const changedBody = (patch.body ?? LEGACY_BODY).replace(
 			"- Ada Lovelace, Grace Hopper: Platform history",
@@ -560,7 +684,16 @@ finished
 
 	it("keeps edited visible speaker IDs when speakers are reordered", () => {
 		// Arrange
-		const codec = new GitHubIssueFormEventDocumentCodec();
+		const codec = new GitHubIssueFormEventDocumentCodec({
+			createIssueFormReader: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormReader(
+					...args,
+				),
+			createIssueFormWriter: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormWriter(
+					...args,
+				),
+		});
 		const patch = codec.createPatch(document(), normalizedEvent());
 		const changedBody = (patch.body ?? LEGACY_BODY).replace(
 			"- Ada Lovelace, Grace Hopper: Platform history",
@@ -584,10 +717,16 @@ finished
 		});
 
 		// Act
-		const patch = new GitHubIssueFormEventDocumentCodec().createPatch(
-			source,
-			normalizedEvent({ publicationLinks: {} }),
-		);
+		const patch = new GitHubIssueFormEventDocumentCodec({
+			createIssueFormReader: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormReader(
+					...args,
+				),
+			createIssueFormWriter: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormWriter(
+					...args,
+				),
+		}).createPatch(source, normalizedEvent({ publicationLinks: {} }));
 
 		// Assert
 		expect(patch.body).toContain("Unmanaged prologue.");
@@ -611,13 +750,26 @@ finished
 		);
 
 		// Act
-		const result = new GitHubIssueFormEventDocumentCodec().decode(
-			document({ body }),
-		);
-		const patch = new GitHubIssueFormEventDocumentCodec().createPatch(
-			document({ body }),
-			result.event,
-		);
+		const result = new GitHubIssueFormEventDocumentCodec({
+			createIssueFormReader: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormReader(
+					...args,
+				),
+			createIssueFormWriter: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormWriter(
+					...args,
+				),
+		}).decode(document({ body }));
+		const patch = new GitHubIssueFormEventDocumentCodec({
+			createIssueFormReader: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormReader(
+					...args,
+				),
+			createIssueFormWriter: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormWriter(
+					...args,
+				),
+		}).createPatch(document({ body }), result.event);
 
 		// Assert
 		expect(result.event.logistics.aperitif).toBe("unspecified");
@@ -637,11 +789,23 @@ finished
 		// No additional setup is needed.
 
 		// Act
-		const result = new GitHubIssueFormEventDocumentCodec({
-			timeZone: "UTC",
-			hostConfirmationLabel: "host:approved",
-			speakersConfirmationLabel: "speakers:approved",
-		}).decode(document({ labels: ["host:approved", "speakers:approved"] }));
+		const result = new GitHubIssueFormEventDocumentCodec(
+			{
+				createIssueFormReader: (...args) =>
+					new GithubIssueFormEventDocumentCodecComposition().issueFormReader(
+						...args,
+					),
+				createIssueFormWriter: (...args) =>
+					new GithubIssueFormEventDocumentCodecComposition().issueFormWriter(
+						...args,
+					),
+			},
+			{
+				timeZone: "UTC",
+				hostConfirmationLabel: "host:approved",
+				speakersConfirmationLabel: "speakers:approved",
+			},
+		).decode(document({ labels: ["host:approved", "speakers:approved"] }));
 
 		// Assert
 		expect(result.event.timeZone).toBe("UTC");
@@ -656,7 +820,16 @@ const CURRENT_MARKER_FOR_TEST = "<!-- meetup-event-schema:1 -->";
 
 it("round-trips feedback links while preserving unmanaged issue content", () => {
 	// Arrange
-	const codec = new GitHubIssueFormEventDocumentCodec();
+	const codec = new GitHubIssueFormEventDocumentCodec({
+		createIssueFormReader: (...args) =>
+			new GithubIssueFormEventDocumentCodecComposition().issueFormReader(
+				...args,
+			),
+		createIssueFormWriter: (...args) =>
+			new GithubIssueFormEventDocumentCodecComposition().issueFormWriter(
+				...args,
+			),
+	});
 	const source = document();
 	const event = normalizedEvent({
 		publicationLinks: { feedback: "https://openfeedback.io/example-poll" },
@@ -682,7 +855,16 @@ it("preserves the last managed agenda verbatim when proposal refresh fails", () 
 	const source = document({
 		body: `${LEGACY_BODY}\n### Conference Hall proposals\n\n17\n`,
 	});
-	const codec = new GitHubIssueFormEventDocumentCodec();
+	const codec = new GitHubIssueFormEventDocumentCodec({
+		createIssueFormReader: (...args) =>
+			new GithubIssueFormEventDocumentCodecComposition().issueFormReader(
+				...args,
+			),
+		createIssueFormWriter: (...args) =>
+			new GithubIssueFormEventDocumentCodecComposition().issueFormWriter(
+				...args,
+			),
+	});
 	const decoded = codec.decode(source).event;
 	const stale = {
 		...decoded,
@@ -709,7 +891,16 @@ it("round-trips imported punctuation and prevents names from breaking managed co
 	const source = document({
 		body: `${LEGACY_BODY}\n### Conference Hall proposals\n\n17\n`,
 	});
-	const codec = new GitHubIssueFormEventDocumentCodec();
+	const codec = new GitHubIssueFormEventDocumentCodec({
+		createIssueFormReader: (...args) =>
+			new GithubIssueFormEventDocumentCodecComposition().issueFormReader(
+				...args,
+			),
+		createIssueFormWriter: (...args) =>
+			new GithubIssueFormEventDocumentCodecComposition().issueFormWriter(
+				...args,
+			),
+	});
 	const decoded = codec.decode(source).event;
 	const name = "Example, Person: --><script>alert(1)</script>";
 	const selected = {
@@ -742,12 +933,20 @@ it.each([false, true])(
 	"roundtrips the Meetup URL and publication checkbox: %s",
 	(published) => {
 		// Arrange
-		const codec = new GitHubIssueFormEventDocumentCodec();
+		const codec = new GitHubIssueFormEventDocumentCodec({
+			createIssueFormReader: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormReader(
+					...args,
+				),
+			createIssueFormWriter: (...args) =>
+				new GithubIssueFormEventDocumentCodecComposition().issueFormWriter(
+					...args,
+				),
+		});
 		const source = document();
-		const event = MeetupPublicationChecklist.withStatus(
-			codec.decode(source).event,
-			published,
-		);
+		const event = new EventDomainComposition()
+			.meetupPublicationChecklist()
+			.withStatus(codec.decode(source).event, published);
 
 		// Act
 		const patch = codec.createPatch(source, event);

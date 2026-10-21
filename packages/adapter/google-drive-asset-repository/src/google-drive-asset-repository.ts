@@ -1,5 +1,4 @@
 import { createHash } from "node:crypto";
-import { drive } from "@googleapis/drive";
 import type {
 	AssetContainer,
 	AssetFile,
@@ -7,7 +6,7 @@ import type {
 	AssetTemplate,
 	EnsureAssetContainerRequest,
 } from "@meetup-automation/publication";
-import { DriveAssetMetadata } from "./drive-asset-metadata.js";
+import type { DriveAssetMetadata } from "./drive-asset-metadata.js";
 import {
 	type DriveFile,
 	fields,
@@ -17,10 +16,17 @@ import {
 	requestOptions,
 } from "./google-drive-asset-repository-contracts.js";
 import { GoogleDriveAssetRepositoryError } from "./google-drive-asset-repository-error.js";
-import { GoogleDriveAuthentication } from "./google-drive-authentication.js";
+
+export interface GoogleDriveAssetRepositoryCollaborators {
+	readonly driveAssetMetadata: Pick<
+		DriveAssetMetadata,
+		"container" | "assetFile" | "templateProperties"
+	>;
+}
 
 export class GoogleDriveAssetRepository implements AssetRepository {
 	constructor(
+		private readonly collaborators: GoogleDriveAssetRepositoryCollaborators,
 		private readonly client: GoogleDriveClient,
 		private readonly options: GoogleDriveAssetOptions,
 	) {
@@ -30,7 +36,7 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 			) ||
 			options.parentFolderId === options.templateFolderId
 		)
-			throw GoogleDriveAssetRepository.failure(
+			throw this.failure(
 				"Distinct Google Drive parent and template folder IDs are required",
 			);
 	}
@@ -39,11 +45,11 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 		request: EnsureAssetContainerRequest,
 	): Promise<AssetContainer | undefined> {
 		const matches = await this.list(
-			`mimeType='${folderMimeType}' and appProperties has { key='meetup_event_key' and value='${GoogleDriveAssetRepository.key(request)}' }`,
+			`mimeType='${folderMimeType}' and appProperties has { key='meetup_event_key' and value='${this.key(request)}' }`,
 			"allDrives",
 		);
 		if (matches.length > 1)
-			throw GoogleDriveAssetRepository.failure(
+			throw this.failure(
 				"Multiple asset folders match this event; manual reconciliation is required",
 			);
 		const file = matches[0];
@@ -51,14 +57,14 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 		if (
 			file.trashed ||
 			file.mimeType !== folderMimeType ||
-			file.appProperties?.meetup_event_key !==
-				GoogleDriveAssetRepository.key(request)
+			file.appProperties?.meetup_event_key !== this.key(request)
 		) {
-			throw GoogleDriveAssetRepository.failure(
-				"The asset folder does not match the requested event",
-			);
+			throw this.failure("The asset folder does not match the requested event");
 		}
-		return DriveAssetMetadata.container(file, request.eventId);
+		return this.collaborators.driveAssetMetadata.container(
+			file,
+			request.eventId,
+		);
 	}
 
 	async ensureContainer(
@@ -67,10 +73,10 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 		const current = await this.findContainer(request);
 		if (current?.name === request.title) return current;
 		const appProperties = {
-			meetup_event_key: GoogleDriveAssetRepository.key(request),
+			meetup_event_key: this.key(request),
 		};
 		const response = current
-			? await GoogleDriveAssetRepository.remote(() =>
+			? await this.remote(() =>
 					this.client.files.update(
 						{
 							fileId: current.id,
@@ -81,7 +87,7 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 						requestOptions,
 					),
 				)
-			: await GoogleDriveAssetRepository.remote(() =>
+			: await this.remote(() =>
 					this.client.files.create(
 						{
 							requestBody: {
@@ -96,13 +102,16 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 						requestOptions,
 					),
 				);
-		return DriveAssetMetadata.container(response.data, request.eventId);
+		return this.collaborators.driveAssetMetadata.container(
+			response.data,
+			request.eventId,
+		);
 	}
 
 	async listTemplates(): Promise<readonly AssetTemplate[]> {
 		return (
 			await this.list(
-				`'${GoogleDriveAssetRepository.escapeQuery(this.options.templateFolderId)}' in parents`,
+				`'${this.escapeQuery(this.options.templateFolderId)}' in parents`,
 			)
 		).map((file) => {
 			if (
@@ -111,7 +120,7 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 				!file.appProperties?.template_kind ||
 				file.mimeType === folderMimeType
 			)
-				throw GoogleDriveAssetRepository.failure(
+				throw this.failure(
 					"Every asset template must be a file with an ID, name, and template_kind",
 				);
 			return {
@@ -128,11 +137,15 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 	async listFiles(containerId: string): Promise<readonly AssetFile[]> {
 		return (
 			await this.list(
-				`'${GoogleDriveAssetRepository.escapeQuery(containerId)}' in parents and mimeType!='${folderMimeType}'`,
+				`'${this.escapeQuery(containerId)}' in parents and mimeType!='${folderMimeType}'`,
 			)
 		)
 			.filter((file) => !file.appProperties?.meetup_binding_file)
-			.map(DriveAssetMetadata.assetFile);
+			.map(
+				this.collaborators.driveAssetMetadata.assetFile.bind(
+					this.collaborators.driveAssetMetadata,
+				),
+			);
 	}
 
 	async copyTemplate(
@@ -140,7 +153,7 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 		template: AssetTemplate,
 		name: string,
 	): Promise<AssetFile> {
-		const { data } = await GoogleDriveAssetRepository.remote(() =>
+		const { data } = await this.remote(() =>
 			this.client.files.copy(
 				{
 					fileId: template.id,
@@ -148,7 +161,9 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 						name,
 						parents: [containerId],
 						appProperties: {
-							...DriveAssetMetadata.templateProperties(template),
+							...this.collaborators.driveAssetMetadata.templateProperties(
+								template,
+							),
 							...(template.contentContract ? { meetup_content: "v1" } : {}),
 						},
 					},
@@ -158,7 +173,7 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 				requestOptions,
 			),
 		);
-		return DriveAssetMetadata.assetFile(data);
+		return this.collaborators.driveAssetMetadata.assetFile(data);
 	}
 
 	async updateFile(
@@ -166,14 +181,16 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 		template: AssetTemplate,
 		name: string,
 	): Promise<AssetFile> {
-		const { data } = await GoogleDriveAssetRepository.remote(() =>
+		const { data } = await this.remote(() =>
 			this.client.files.update(
 				{
 					fileId: file.id,
 					requestBody: {
 						name,
 						appProperties: {
-							...DriveAssetMetadata.templateProperties(template),
+							...this.collaborators.driveAssetMetadata.templateProperties(
+								template,
+							),
 							...(file.contentManaged ? { meetup_content: "v1" } : {}),
 						},
 					},
@@ -183,7 +200,7 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 				requestOptions,
 			),
 		);
-		return DriveAssetMetadata.assetFile(data);
+		return this.collaborators.driveAssetMetadata.assetFile(data);
 	}
 
 	private async list(
@@ -194,7 +211,7 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 		let pageToken: string | undefined;
 		const tokens = new Set<string>();
 		do {
-			const { data } = await GoogleDriveAssetRepository.remote(() =>
+			const { data } = await this.remote(() =>
 				this.client.files.list(
 					{
 						q: `${query} and trashed=false`,
@@ -209,50 +226,31 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 				),
 			);
 			if (data.incompleteSearch)
-				throw GoogleDriveAssetRepository.failure(
+				throw this.failure(
 					"Google Drive returned an incomplete search; reconciliation was stopped",
 				);
 			files.push(...(data.files ?? []));
 			pageToken = data.nextPageToken || undefined;
 			if (pageToken && tokens.has(pageToken))
-				throw GoogleDriveAssetRepository.failure(
-					"Google Drive returned a repeated pagination token",
-				);
+				throw this.failure("Google Drive returned a repeated pagination token");
 			if (pageToken) tokens.add(pageToken);
 		} while (pageToken);
 		return files;
 	}
 
-	static createGoogleDriveAssetRepository(
-		credentialsJson: string,
-		options: GoogleDriveAssetOptions,
-	): GoogleDriveAssetRepository {
-		return new GoogleDriveAssetRepository(
-			GoogleDriveAssetRepository.client(credentialsJson),
-			options,
-		);
-	}
-
-	static client(credentialsJson: string): GoogleDriveClient {
-		return drive({
-			version: "v3",
-			auth: GoogleDriveAuthentication.create(credentialsJson),
-		});
-	}
-
-	private static key(request: EnsureAssetContainerRequest): string {
+	private key(request: EnsureAssetContainerRequest): string {
 		return createHash("sha256").update(request.idempotencyKey).digest("hex");
 	}
 
-	private static escapeQuery(value: string): string {
+	private escapeQuery(value: string): string {
 		return value.replaceAll("\\", "\\\\").replaceAll("'", "\\'");
 	}
 
-	private static failure(message: string): GoogleDriveAssetRepositoryError {
+	private failure(message: string): GoogleDriveAssetRepositoryError {
 		return new GoogleDriveAssetRepositoryError(message);
 	}
 
-	private static async remote<T>(operation: () => Promise<T>): Promise<T> {
+	private async remote<T>(operation: () => Promise<T>): Promise<T> {
 		try {
 			return await operation();
 		} catch (error) {
@@ -267,16 +265,23 @@ export class GoogleDriveAssetRepository implements AssetRepository {
 					? response.status
 					: undefined;
 			if (status === 429)
-				throw GoogleDriveAssetRepository.failure(
+				throw this.failure(
 					"Google Drive rate limit reached; retry reconciliation later",
 				);
 			if (status === 401 || status === 403)
-				throw GoogleDriveAssetRepository.failure(
+				throw this.failure(
 					"Google Drive denied access; check credentials, folder access, and quota",
 				);
-			throw GoogleDriveAssetRepository.failure(
+			throw this.failure(
 				"Google Drive request failed; inspect provider state before retrying an uncertain write",
 			);
 		}
 	}
 }
+export type GoogleDriveAssetRepositoryArguments =
+	ConstructorParameters<typeof GoogleDriveAssetRepository> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

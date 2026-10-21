@@ -9,7 +9,7 @@ describe("KuttLinkResponse", () => {
 			const payload = value;
 
 			// Act
-			const parse = () => KuttLinkResponse.link(payload);
+			const parse = () => new KuttLinkResponse().link(payload);
 
 			// Assert
 			expect(parse).toThrow("Invalid Kutt link response");
@@ -23,7 +23,7 @@ describe("KuttLinkResponse", () => {
 			const payload = value;
 
 			// Act
-			const parse = () => KuttLinkResponse.page(payload);
+			const parse = () => new KuttLinkResponse().page(payload);
 
 			// Assert
 			expect(parse).toThrow(/Invalid Kutt/);
@@ -40,7 +40,7 @@ describe("KuttLinkResponse", () => {
 		};
 
 		// Act
-		const parsed = KuttLinkResponse.page({
+		const parsed = new KuttLinkResponse().page({
 			total: 1,
 			data: [{ ...link, secret: "private" }],
 		});

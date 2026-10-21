@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { FollowUpSchema, type StoredFollowUp } from "./follow-up-schema.js";
+import { GithubOrganizerApprovalComposition } from "./dependency-composition.js";
+import type { StoredFollowUp } from "./follow-up-schema.js";
+import { FollowUpSchema } from "./follow-up-schema.js";
 
 describe("follow-up state validation", () => {
 	it.each([
@@ -18,7 +20,11 @@ describe("follow-up state validation", () => {
 		} as StoredFollowUp;
 
 		// Act
-		const validate = () => FollowUpSchema.validate(record);
+		const validate = () =>
+			new FollowUpSchema({
+				approvalSchema:
+					new GithubOrganizerApprovalComposition().approvalSchema(),
+			}).validate(record);
 
 		// Assert
 		expect(validate).toThrow("Invalid post-event follow-up state");

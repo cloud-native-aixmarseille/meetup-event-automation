@@ -26,7 +26,7 @@ export class AutomationConfigFactory {
 	 * repositories do not provide a runtime configuration file anymore. Without
 	 * a repository owner, workspace-only operations leave communication disabled.
 	 */
-	static createAutomationConfig(repositoryOwner?: string): AutomationConfig {
+	createAutomationConfig(repositoryOwner?: string): AutomationConfig {
 		return {
 			timezone: "Europe/Paris",
 			event: {

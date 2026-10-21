@@ -5,11 +5,12 @@ import type {
 } from "@meetup-automation/event";
 import {
 	type AutomationConfig,
+	JourneyComposition,
 	ManageMeetupEvent,
 	ManageMeetupFeedback,
 } from "@meetup-automation/journey";
-import { KuttFeedbackLinkGateway } from "@meetup-automation/kutt-feedback-link-gateway";
-import { OpenFeedbackEventGateway } from "@meetup-automation/openfeedback-event-gateway";
+import { KuttFeedbackLinkGatewayComposition } from "@meetup-automation/kutt-feedback-link-gateway";
+import { OpenfeedbackEventGatewayComposition } from "@meetup-automation/openfeedback-event-gateway";
 import type {
 	FeedbackEventGateway,
 	FeedbackLinkGateway,
@@ -36,35 +37,33 @@ export class FeedbackComposition {
 		container
 			.bind<FeedbackEventGateway>(FEEDBACK_EVENTS)
 			.toDynamicValue(() =>
-				OpenFeedbackEventGateway.create(input.openFeedbackApiKey),
+				new OpenfeedbackEventGatewayComposition()
+					.openFeedbackEventGatewayFactory()
+					.create(input.openFeedbackApiKey),
 			);
 		container
 			.bind<FeedbackLinkGateway>(FEEDBACK_LINKS)
-			.toDynamicValue(
-				() =>
-					new KuttFeedbackLinkGateway(
-						input.kuttApiKey,
-						input.kuttLinkId,
-						input.kuttBaseUrl,
-					),
+			.toDynamicValue(() =>
+				new KuttFeedbackLinkGatewayComposition().kuttFeedbackLinkGateway(
+					input.kuttApiKey,
+					input.kuttLinkId,
+					input.kuttBaseUrl,
+				),
 			);
-		container.bind(ManageMeetupFeedback).toDynamicValue(
-			(context) =>
-				new ManageMeetupFeedback({
-					eventLabel: context.get<AutomationConfig>(SERVICES.config).event[
-						"issue-label"
-					],
-					eventRepository: context.get<EventRepository>(
-						SERVICES.eventRepository,
-					),
-					documentCodec: context.get<EventDocumentCodec>(
-						SERVICES.eventDocumentCodec,
-					),
-					clock: context.get<EventClock>(SERVICES.eventClock),
-					manageEvent: context.get(ManageMeetupEvent),
-					links: context.get<FeedbackLinkGateway>(FEEDBACK_LINKS),
-					events: context.get<FeedbackEventGateway>(FEEDBACK_EVENTS),
-				}),
+		container.bind(ManageMeetupFeedback).toDynamicValue((context) =>
+			new JourneyComposition().manageMeetupFeedback({
+				eventLabel: context.get<AutomationConfig>(SERVICES.config).event[
+					"issue-label"
+				],
+				eventRepository: context.get<EventRepository>(SERVICES.eventRepository),
+				documentCodec: context.get<EventDocumentCodec>(
+					SERVICES.eventDocumentCodec,
+				),
+				clock: context.get<EventClock>(SERVICES.eventClock),
+				manageEvent: context.get(ManageMeetupEvent),
+				links: context.get<FeedbackLinkGateway>(FEEDBACK_LINKS),
+				events: context.get<FeedbackEventGateway>(FEEDBACK_EVENTS),
+			}),
 		);
 		return container;
 	}

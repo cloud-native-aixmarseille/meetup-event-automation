@@ -6,6 +6,7 @@ import {
 	document,
 	identity,
 } from "../../../testing/event-repository.fixtures.js";
+import { EventDomainComposition } from "../../dependency-composition.js";
 import type {
 	EventDocument,
 	EventRepository,
@@ -29,11 +30,25 @@ describe("ReconcileEvent", () => {
 			applyPatch: vi.fn(),
 			listPage: vi.fn(),
 		};
-		const useCase = new ReconcileEvent({
-			repository,
-			documentCodec: createCodec(new Map([[42, event]])),
-			clock: createClock(),
-		});
+		const useCase = new ReconcileEvent(
+			{
+				eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
+				eventDocumentConcurrency:
+					new EventDomainComposition().eventDocumentConcurrency(),
+				eventReadinessPolicy:
+					new EventDomainComposition().eventReadinessPolicy(),
+				eventLifecycle: new EventDomainComposition().eventLifecycle(),
+				eventRepositoryPatches:
+					new EventDomainComposition().eventRepositoryPatches(),
+				createEventRuleEngine: (...args) =>
+					new EventDomainComposition().eventRuleEngine(...args),
+			},
+			{
+				repository,
+				documentCodec: createCodec(new Map([[42, event]])),
+				clock: createClock(),
+			},
+		);
 
 		// Act
 		const result = await useCase.execute({ identity, mode: "check" });
@@ -60,11 +75,25 @@ describe("ReconcileEvent", () => {
 			applyPatch: vi.fn().mockResolvedValue(undefined),
 			listPage: vi.fn(),
 		};
-		const useCase = new ReconcileEvent({
-			repository,
-			documentCodec: createCodec(new Map([[42, event]])),
-			clock: createClock(),
-		});
+		const useCase = new ReconcileEvent(
+			{
+				eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
+				eventDocumentConcurrency:
+					new EventDomainComposition().eventDocumentConcurrency(),
+				eventReadinessPolicy:
+					new EventDomainComposition().eventReadinessPolicy(),
+				eventLifecycle: new EventDomainComposition().eventLifecycle(),
+				eventRepositoryPatches:
+					new EventDomainComposition().eventRepositoryPatches(),
+				createEventRuleEngine: (...args) =>
+					new EventDomainComposition().eventRuleEngine(...args),
+			},
+			{
+				repository,
+				documentCodec: createCodec(new Map([[42, event]])),
+				clock: createClock(),
+			},
+		);
 
 		// Act
 		const result = await useCase.execute({ identity, mode: "fix" });
@@ -93,11 +122,25 @@ describe("ReconcileEvent", () => {
 			applyPatch: vi.fn(),
 			listPage: vi.fn(),
 		};
-		const useCase = new ReconcileEvent({
-			repository,
-			documentCodec: createCodec(new Map([[42, event]])),
-			clock: createClock(),
-		});
+		const useCase = new ReconcileEvent(
+			{
+				eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
+				eventDocumentConcurrency:
+					new EventDomainComposition().eventDocumentConcurrency(),
+				eventReadinessPolicy:
+					new EventDomainComposition().eventReadinessPolicy(),
+				eventLifecycle: new EventDomainComposition().eventLifecycle(),
+				eventRepositoryPatches:
+					new EventDomainComposition().eventRepositoryPatches(),
+				createEventRuleEngine: (...args) =>
+					new EventDomainComposition().eventRuleEngine(...args),
+			},
+			{
+				repository,
+				documentCodec: createCodec(new Map([[42, event]])),
+				clock: createClock(),
+			},
+		);
 
 		// Act
 		const result = await useCase.execute({ identity, mode: "fix" });
@@ -122,11 +165,25 @@ describe("ReconcileEvent", () => {
 			applyPatch: vi.fn(),
 			listPage: vi.fn(),
 		};
-		const useCase = new ReconcileEvent({
-			repository,
-			documentCodec: createCodec(new Map([[42, event]])),
-			clock: createClock(),
-		});
+		const useCase = new ReconcileEvent(
+			{
+				eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
+				eventDocumentConcurrency:
+					new EventDomainComposition().eventDocumentConcurrency(),
+				eventReadinessPolicy:
+					new EventDomainComposition().eventReadinessPolicy(),
+				eventLifecycle: new EventDomainComposition().eventLifecycle(),
+				eventRepositoryPatches:
+					new EventDomainComposition().eventRepositoryPatches(),
+				createEventRuleEngine: (...args) =>
+					new EventDomainComposition().eventRuleEngine(...args),
+			},
+			{
+				repository,
+				documentCodec: createCodec(new Map([[42, event]])),
+				clock: createClock(),
+			},
+		);
 
 		// Act
 		const operation = useCase.execute({ identity, mode: "fix" });
@@ -145,11 +202,25 @@ describe("ReconcileEvent", () => {
 			applyPatch: vi.fn(),
 			listPage: vi.fn(),
 		};
-		const useCase = new ReconcileEvent({
-			repository,
-			documentCodec: createCodec(new Map()),
-			clock: createClock(),
-		});
+		const useCase = new ReconcileEvent(
+			{
+				eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
+				eventDocumentConcurrency:
+					new EventDomainComposition().eventDocumentConcurrency(),
+				eventReadinessPolicy:
+					new EventDomainComposition().eventReadinessPolicy(),
+				eventLifecycle: new EventDomainComposition().eventLifecycle(),
+				eventRepositoryPatches:
+					new EventDomainComposition().eventRepositoryPatches(),
+				createEventRuleEngine: (...args) =>
+					new EventDomainComposition().eventRuleEngine(...args),
+			},
+			{
+				repository,
+				documentCodec: createCodec(new Map()),
+				clock: createClock(),
+			},
+		);
 
 		// Act
 		const operation = useCase.execute({ identity, mode: "check" });

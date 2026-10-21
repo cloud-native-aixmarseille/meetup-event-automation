@@ -1,6 +1,6 @@
 import { Readable } from "node:stream";
-import { describe, expect, it, vi } from "vitest";
 import type { ContentManifest } from "@meetup-automation/publication";
+import { describe, expect, it, vi } from "vitest";
 import type { GoogleDriveClient } from "./google-drive-asset-repository-contracts.js";
 import { GoogleDriveManifestRepository } from "./google-drive-manifest-repository.js";
 

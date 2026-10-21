@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { SlackNotificationGatewayComposition } from "./dependency-composition.js";
 import { SlackApprovalNotification } from "./slack-approval-notification.js";
 import { SlackApprovalPresenter } from "./slack-approval-presenter.js";
 
@@ -15,8 +16,22 @@ describe("Slack approval notification", () => {
 			}),
 		});
 		const gateway = new SlackApprovalNotification(
+			{
+				slackMessageReference:
+					new SlackNotificationGatewayComposition().slackMessageReference(),
+				createSlackApiClient: (...args) =>
+					new SlackNotificationGatewayComposition().slackApiClient(...args),
+			},
 			"private-token",
-			new SlackApprovalPresenter("en"),
+			new SlackApprovalPresenter(
+				{
+					createSlackApprovalMessages: (...args) =>
+						new SlackNotificationGatewayComposition().slackApprovalMessages(
+							...args,
+						),
+				},
+				"en",
+			),
 			fetcher,
 		);
 
@@ -54,8 +69,22 @@ describe("Slack approval notification", () => {
 		async (payload) => {
 			// Arrange
 			const gateway = new SlackApprovalNotification(
+				{
+					slackMessageReference:
+						new SlackNotificationGatewayComposition().slackMessageReference(),
+					createSlackApiClient: (...args) =>
+						new SlackNotificationGatewayComposition().slackApiClient(...args),
+				},
 				"token",
-				new SlackApprovalPresenter("en"),
+				new SlackApprovalPresenter(
+					{
+						createSlackApprovalMessages: (...args) =>
+							new SlackNotificationGatewayComposition().slackApprovalMessages(
+								...args,
+							),
+					},
+					"en",
+				),
 				vi.fn().mockResolvedValue({ ok: true, json: async () => payload }),
 			);
 
@@ -86,8 +115,22 @@ describe("Slack approval notification", () => {
 				.fn()
 				.mockResolvedValue({ ok: true, json: async () => ({ ok: true }) });
 			const gateway = new SlackApprovalNotification(
+				{
+					slackMessageReference:
+						new SlackNotificationGatewayComposition().slackMessageReference(),
+					createSlackApiClient: (...args) =>
+						new SlackNotificationGatewayComposition().slackApiClient(...args),
+				},
 				"token",
-				new SlackApprovalPresenter("en"),
+				new SlackApprovalPresenter(
+					{
+						createSlackApprovalMessages: (...args) =>
+							new SlackNotificationGatewayComposition().slackApprovalMessages(
+								...args,
+							),
+					},
+					"en",
+				),
 				fetcher,
 			);
 
@@ -119,8 +162,22 @@ describe("Slack approval notification", () => {
 	] as const)("handles the reaction response %s", async (error, expected) => {
 		// Arrange
 		const gateway = new SlackApprovalNotification(
+			{
+				slackMessageReference:
+					new SlackNotificationGatewayComposition().slackMessageReference(),
+				createSlackApiClient: (...args) =>
+					new SlackNotificationGatewayComposition().slackApiClient(...args),
+			},
 			"token",
-			new SlackApprovalPresenter("en"),
+			new SlackApprovalPresenter(
+				{
+					createSlackApprovalMessages: (...args) =>
+						new SlackNotificationGatewayComposition().slackApprovalMessages(
+							...args,
+						),
+				},
+				"en",
+			),
 			vi.fn().mockResolvedValue({
 				ok: true,
 				json: async () => ({ ok: false, error }),
@@ -139,8 +196,22 @@ describe("Slack approval notification", () => {
 	it("allows a later reaction retry after an uncertain transport outcome", async () => {
 		// Arrange
 		const gateway = new SlackApprovalNotification(
+			{
+				slackMessageReference:
+					new SlackNotificationGatewayComposition().slackMessageReference(),
+				createSlackApiClient: (...args) =>
+					new SlackNotificationGatewayComposition().slackApiClient(...args),
+			},
 			"token",
-			new SlackApprovalPresenter("en"),
+			new SlackApprovalPresenter(
+				{
+					createSlackApprovalMessages: (...args) =>
+						new SlackNotificationGatewayComposition().slackApprovalMessages(
+							...args,
+						),
+				},
+				"en",
+			),
 			vi.fn().mockRejectedValue(new Error("private provider failure")),
 		);
 

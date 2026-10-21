@@ -4,13 +4,26 @@ import type {
 	SynchronizeMeetupIssueFormResult,
 } from "@meetup-automation/journey";
 import type { ActionReportData } from "./action-report.js";
-import { ActionMessages } from "./i18n/action-messages.js";
+import type {
+	ActionMessages,
+	ActionMessagesArguments,
+} from "./i18n/action-messages.js";
+
+export interface ReferentialActionReportCollaborators {
+	readonly createActionMessages: (
+		...args: ActionMessagesArguments
+	) => ActionMessages;
+}
 
 export class ReferentialActionReport {
-	static validation(
+	constructor(
+		private readonly collaborators: ReferentialActionReportCollaborators,
+	) {}
+
+	validation(
 		result: { isValid: boolean; hostCount: number; speakerCount: number },
 		diagnostics: readonly PublicDiagnostic[],
-		messages = new ActionMessages(),
+		messages = this.collaborators.createActionMessages(),
 	): ActionReportData {
 		const details = [
 			messages.t(
@@ -29,10 +42,10 @@ export class ReferentialActionReport {
 		};
 	}
 
-	static issueForm(
+	issueForm(
 		mode: IssueFormProjectionMode,
 		result: SynchronizeMeetupIssueFormResult,
-		messages = new ActionMessages(),
+		messages = this.collaborators.createActionMessages(),
 	): ActionReportData {
 		const details: string[] = [];
 		if (result.diagnostics.some((item) => item.severity === "error")) {

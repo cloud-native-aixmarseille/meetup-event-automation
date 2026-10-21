@@ -56,16 +56,16 @@ export class ReconcileAssetFile {
 			return { file, status };
 		} catch (error) {
 			if (!(error instanceof ContentError)) throw error;
-			return ReconcileAssetFile.failed(file, error, input.diagnostics);
+			return this.failed(file, error, input.diagnostics);
 		}
 	}
 
-	private static failed(
+	private failed(
 		file: AssetFile | undefined,
 		error: ContentError,
 		diagnostics: PublicationDiagnostic[],
 	): { file?: AssetFile; status: ContentStatus } {
-		diagnostics.push(ReconcileAssetFile.diagnostic(error.code));
+		diagnostics.push(this.diagnostic(error.code));
 		return {
 			file,
 			status:
@@ -142,10 +142,9 @@ export class ReconcileAssetFile {
 			model: input.model,
 			recovery,
 		});
-		if (outcome.fallback)
-			input.diagnostics.push(ReconcileAssetFile.diagnostic("fallback"));
+		if (outcome.fallback) input.diagnostics.push(this.diagnostic("fallback"));
 		if (outcome.status === "pending")
-			input.diagnostics.push(ReconcileAssetFile.diagnostic("revision"));
+			input.diagnostics.push(this.diagnostic("revision"));
 		return outcome.status;
 	}
 
@@ -180,7 +179,7 @@ export class ReconcileAssetFile {
 			: this.repository.copyTemplate(input.container.id, template, name);
 	}
 
-	private static diagnostic(code: string): PublicationDiagnostic {
+	private diagnostic(code: string): PublicationDiagnostic {
 		return {
 			code: `publication.assets.content.${code}`,
 			field: "assets",
@@ -191,3 +190,6 @@ export class ReconcileAssetFile {
 		};
 	}
 }
+export type ReconcileAssetFileArguments = ConstructorParameters<
+	typeof ReconcileAssetFile
+>;

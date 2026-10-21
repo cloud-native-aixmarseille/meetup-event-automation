@@ -1,13 +1,29 @@
 import type { OrganizerApprovalRequest } from "@meetup-automation/journey";
-import { ApprovalSchema } from "./approval-schema.js";
-import { EmailApprovalDetailsSchema } from "./email-approval-details-schema.js";
-import { MeetupApprovalDetailsSchema } from "./meetup-approval-details-schema.js";
+import type { ApprovalSchema } from "./approval-schema.js";
+import type { EmailApprovalDetailsSchema } from "./email-approval-details-schema.js";
+import type { MeetupApprovalDetailsSchema } from "./meetup-approval-details-schema.js";
 
 /** Narrow the request part of external metadata without trusting asserted types. */
+export interface ApprovalRequestSchemaCollaborators {
+	readonly approvalSchema: Pick<ApprovalSchema, "object" | "count">;
+	readonly meetupApprovalDetailsSchema: Pick<
+		MeetupApprovalDetailsSchema,
+		"validate"
+	>;
+	readonly emailApprovalDetailsSchema: Pick<
+		EmailApprovalDetailsSchema,
+		"validate"
+	>;
+}
+
 export class ApprovalRequestSchema {
-	static validate(value: unknown): asserts value is OrganizerApprovalRequest {
+	constructor(
+		private readonly collaborators: ApprovalRequestSchemaCollaborators,
+	) {}
+
+	validate(value: unknown): asserts value is OrganizerApprovalRequest {
 		if (
-			!ApprovalSchema.object(value) ||
+			!this.collaborators.approvalSchema.object(value) ||
 			typeof value.revision !== "string" ||
 			typeof value.eventDate !== "string" ||
 			typeof value.requestedAt !== "string"
@@ -16,15 +32,17 @@ export class ApprovalRequestSchema {
 		if (value.kind === "meetup-publication") {
 			if (value.recipientCount !== undefined || value.details !== undefined)
 				throw new Error("Invalid publication approval fields");
-			MeetupApprovalDetailsSchema.validate(value.publication);
+			this.collaborators.meetupApprovalDetailsSchema.validate(
+				value.publication,
+			);
 			return;
 		}
 		if (
 			(value.kind !== "email-introduction" && value.kind !== "email-thanks") ||
 			value.publication !== undefined ||
-			!ApprovalSchema.count(value.recipientCount)
+			!this.collaborators.approvalSchema.count(value.recipientCount)
 		)
 			throw new Error("Invalid approval request");
-		EmailApprovalDetailsSchema.validate(value.details);
+		this.collaborators.emailApprovalDetailsSchema.validate(value.details);
 	}
 }

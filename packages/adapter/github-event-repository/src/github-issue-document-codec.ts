@@ -3,8 +3,8 @@ import { GitHubEventRepositoryResponseError } from "./github-event-repository-re
 
 export class GitHubIssueDocumentCodec {
 	/** Map one GitHub issue response or webhook snapshot into the domain document. */
-	static decode(data: unknown, repository: string): EventDocument | null {
-		const issue = GitHubIssueDocumentCodec.asRecord(data, "GitHub issue");
+	decode(data: unknown, repository: string): EventDocument | null {
+		const issue = this.asRecord(data, "GitHub issue");
 		if (issue.pull_request !== undefined && issue.pull_request !== null) {
 			return null;
 		}
@@ -38,21 +38,18 @@ export class GitHubIssueDocumentCodec {
 			identity: { repository, issueNumber: Number(issue.number) },
 			issueState: issue.state,
 			issueTitle: issue.title,
-			labels: GitHubIssueDocumentCodec.mapLabels(issue.labels),
+			labels: this.mapLabels(issue.labels),
 			body: issue.body ?? "",
 		};
 	}
 
-	private static mapLabels(labels: readonly unknown[]): readonly string[] {
+	private mapLabels(labels: readonly unknown[]): readonly string[] {
 		const result: string[] = [];
 		for (const label of labels) {
 			let name: string | undefined;
 			if (typeof label === "string") {
 				name = label;
-			} else if (
-				GitHubIssueDocumentCodec.isRecord(label) &&
-				typeof label.name === "string"
-			) {
+			} else if (this.isRecord(label) && typeof label.name === "string") {
 				name = label.name;
 			}
 			if (name && !result.includes(name)) {
@@ -62,11 +59,8 @@ export class GitHubIssueDocumentCodec {
 		return Object.freeze(result);
 	}
 
-	private static asRecord(
-		value: unknown,
-		label: string,
-	): Record<string, unknown> {
-		if (!GitHubIssueDocumentCodec.isRecord(value)) {
+	private asRecord(value: unknown, label: string): Record<string, unknown> {
+		if (!this.isRecord(value)) {
 			throw new GitHubEventRepositoryResponseError(
 				`${label} must be an object`,
 			);
@@ -74,7 +68,7 @@ export class GitHubIssueDocumentCodec {
 		return value;
 	}
 
-	private static isRecord(value: unknown): value is Record<string, unknown> {
+	private isRecord(value: unknown): value is Record<string, unknown> {
 		return typeof value === "object" && value !== null && !Array.isArray(value);
 	}
 }

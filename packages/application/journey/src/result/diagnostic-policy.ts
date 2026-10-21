@@ -139,7 +139,7 @@ const INFORMATIONAL_CODES = new Set([
 
 /** Expected organizer work never determines a workflow's technical outcome. */
 export class DiagnosticPolicy {
-	static classify(diagnostic: Diagnostic): DiagnosticCategory {
+	classify(diagnostic: Diagnostic): DiagnosticCategory {
 		if (
 			diagnostic.fixApplied === true ||
 			diagnostic.severity === "info" ||
@@ -149,7 +149,7 @@ export class DiagnosticPolicy {
 		return ORGANIZER_CODES.has(diagnostic.code) ? "organizer" : "technical";
 	}
 
-	static isTechnicalFailure(diagnostic: Diagnostic): boolean {
-		return DiagnosticPolicy.classify(diagnostic) === "technical";
+	isTechnicalFailure(diagnostic: Diagnostic): boolean {
+		return this.classify(diagnostic) === "technical";
 	}
 }

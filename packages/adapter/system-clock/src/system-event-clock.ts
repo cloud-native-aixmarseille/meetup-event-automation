@@ -7,3 +7,6 @@ export class SystemEventClock implements EventClock {
 		return this.dateFactory().toISOString();
 	}
 }
+export type SystemEventClockArguments = ConstructorParameters<
+	typeof SystemEventClock
+>;

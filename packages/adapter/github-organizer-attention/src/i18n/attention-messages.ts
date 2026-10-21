@@ -1,4 +1,7 @@
-import { MessageLocalizer } from "@meetup-automation/localization";
+import {
+	MessageLocalizer,
+	type MessageLocalizerCollaborators,
+} from "@meetup-automation/localization";
 import { CATALOGS, type MessageId } from "./catalog.js";
 export interface MessageParameters {
 	"attention.redirect": { url: string };
@@ -11,8 +14,8 @@ export class AttentionMessages extends MessageLocalizer<
 	MessageId,
 	MessageParameters
 > {
-	constructor(locale = "en") {
-		super(CATALOGS, locale);
+	constructor(collaborators: MessageLocalizerCollaborators, locale = "en") {
+		super(collaborators, CATALOGS, locale);
 	}
 	failure(resource: string): string {
 		const key = `failure.${resource}` as MessageId;
@@ -25,3 +28,10 @@ export class AttentionMessages extends MessageLocalizer<
 		return this.t(Object.hasOwn(CATALOGS.en, key) ? key : "task.unknown");
 	}
 }
+export type AttentionMessagesArguments =
+	ConstructorParameters<typeof AttentionMessages> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

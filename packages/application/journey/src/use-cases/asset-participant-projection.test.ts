@@ -1,7 +1,8 @@
+import { PublicationDomainComposition } from "@meetup-automation/publication";
 import { describe, expect, it } from "vitest";
-import { AssetParticipantProjection } from "./asset-participant-projection.js";
-import { event } from "../../testing/meetup-journey.fixtures.js";
 import { publicCatalog, talk } from "../../testing/asset-render.fixtures.js";
+import { event } from "../../testing/meetup-journey.fixtures.js";
+import { AssetParticipantProjection } from "./asset-participant-projection.js";
 
 const assignments = {
 	speakers: { portrait: "speaker-0001" },
@@ -24,16 +25,12 @@ describe("asset participant slots", () => {
 		};
 
 		// Act
-		const before = AssetParticipantProjection.create(
-			{ ...event, agenda: [talk, other] },
-			publicCatalog,
-			assignments,
-		);
-		const after = AssetParticipantProjection.create(
-			{ ...event, agenda: [other, talk] },
-			publicCatalog,
-			assignments,
-		);
+		const before = new AssetParticipantProjection({
+			publicAssetUrl: new PublicationDomainComposition().publicAssetUrl(),
+		}).create({ ...event, agenda: [talk, other] }, publicCatalog, assignments);
+		const after = new AssetParticipantProjection({
+			publicAssetUrl: new PublicationDomainComposition().publicAssetUrl(),
+		}).create({ ...event, agenda: [other, talk] }, publicCatalog, assignments);
 
 		// Assert
 		expect(after).toEqual(before);
@@ -65,11 +62,9 @@ describe("asset participant slots", () => {
 			const current = { ...event, agenda };
 
 			// Act
-			const actual = AssetParticipantProjection.create(
-				current,
-				publicCatalog,
-				assignments,
-			);
+			const actual = new AssetParticipantProjection({
+				publicAssetUrl: new PublicationDomainComposition().publicAssetUrl(),
+			}).create(current, publicCatalog, assignments);
 
 			// Assert
 			expect(actual).toEqual({ speakers: {}, talks: {}, pictures: {} });
@@ -81,11 +76,9 @@ describe("asset participant slots", () => {
 		const current = { ...event, agenda: [talk, talk] };
 
 		// Act
-		const actual = AssetParticipantProjection.create(
-			current,
-			publicCatalog,
-			assignments,
-		);
+		const actual = new AssetParticipantProjection({
+			publicAssetUrl: new PublicationDomainComposition().publicAssetUrl(),
+		}).create(current, publicCatalog, assignments);
 
 		// Assert
 		expect(actual.talks).toEqual({});
@@ -110,11 +103,9 @@ describe("asset participant slots", () => {
 			};
 
 			// Act
-			const actual = AssetParticipantProjection.create(
-				{ ...event, agenda: [talk] },
-				catalog,
-				assignments,
-			);
+			const actual = new AssetParticipantProjection({
+				publicAssetUrl: new PublicationDomainComposition().publicAssetUrl(),
+			}).create({ ...event, agenda: [talk] }, catalog, assignments);
 
 			// Assert
 			expect(actual.pictures).toEqual({});

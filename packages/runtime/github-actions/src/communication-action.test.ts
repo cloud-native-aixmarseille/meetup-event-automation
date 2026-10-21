@@ -1,8 +1,8 @@
 import * as core from "@actions/core";
-import { ManageMeetupCommunications } from "@meetup-automation/journey";
+import { JourneyPolicyComposition } from "@meetup-automation/journey";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ActionRunner } from "./action-runner.js";
 import { CommunicationAction } from "./communication-action.js";
+import { GithubActionsComposition } from "./dependency-composition.js";
 
 const boundary = vi.hoisted(() => ({
 	execute: vi.fn(),
@@ -33,9 +33,6 @@ vi.mock("@actions/github", () => ({
 		payload: {},
 		actor: "maintainer",
 	},
-}));
-vi.mock("./communication.js", () => ({
-	CommunicationRuntime: { runCommunicationReconcile: boundary.execute },
 }));
 
 describe("communication action report facts", () => {
@@ -76,7 +73,7 @@ describe("communication action report facts", () => {
 		vi.stubEnv(`INPUT_${input.toUpperCase()}`, "");
 
 		// Act
-		const operation = CommunicationAction.runCommunicationReconcileAction();
+		const operation = subject().runCommunicationReconcileAction();
 
 		// Assert
 		await expect(operation).rejects.toThrow(
@@ -92,7 +89,7 @@ describe("communication action report facts", () => {
 		vi.stubEnv("INPUT_SLACK-CHANNEL-ID", "public-channel-id");
 
 		// Act
-		const operation = CommunicationAction.runCommunicationReconcileAction();
+		const operation = subject().runCommunicationReconcileAction();
 
 		// Assert
 		await expect(operation).rejects.toThrow(
@@ -137,8 +134,7 @@ describe("communication action report facts", () => {
 			});
 
 			// Act
-			const report =
-				await CommunicationAction.runCommunicationReconcileAction();
+			const report = await subject().runCommunicationReconcileAction();
 
 			// Assert
 			expect(report.details).toContain("communication_mode=check");
@@ -187,7 +183,7 @@ describe("communication action report facts", () => {
 		});
 
 		// Act
-		const report = await CommunicationAction.runCommunicationReconcileAction();
+		const report = await subject().runCommunicationReconcileAction();
 
 		// Assert
 		expect(boundary.execute).toHaveBeenCalledWith(
@@ -216,17 +212,19 @@ describe("communication action report facts", () => {
 		async (code, severity, fails) => {
 			// Arrange
 			boundary.execute.mockResolvedValue(
-				ManageMeetupCommunications.emptyCommunicationResult("check", [
-					{ code, severity },
-				]),
+				new JourneyPolicyComposition()
+					.communicationJourneyResults()
+					.emptyCommunicationResult("check", [{ code, severity }]),
 			);
 
 			// Act
-			await ActionRunner.run(
-				"action.communication.reconcile",
-				CommunicationAction.runCommunicationReconcileAction,
-				true,
-			);
+			await new GithubActionsComposition()
+				.actionRunner()
+				.run(
+					"action.communication.reconcile",
+					subject().runCommunicationReconcileAction.bind(subject()),
+					true,
+				);
 
 			// Assert
 			expect(core.setFailed).toHaveBeenCalledTimes(fails ? 1 : 0);
@@ -249,11 +247,13 @@ describe("communication action report facts", () => {
 		);
 
 		// Act
-		await ActionRunner.run(
-			"action.communication.reconcile",
-			CommunicationAction.runCommunicationReconcileAction,
-			true,
-		);
+		await new GithubActionsComposition()
+			.actionRunner()
+			.run(
+				"action.communication.reconcile",
+				subject().runCommunicationReconcileAction.bind(subject()),
+				true,
+			);
 
 		// Assert
 		expect(core.setFailed).toHaveBeenCalledExactlyOnceWith(
@@ -275,11 +275,13 @@ describe("communication action report facts", () => {
 		// Arrange
 		vi.stubEnv("INPUT_SLIDES-READY", "false");
 		boundary.execute.mockResolvedValue(
-			ManageMeetupCommunications.emptyCommunicationResult("check", []),
+			new JourneyPolicyComposition()
+				.communicationJourneyResults()
+				.emptyCommunicationResult("check", []),
 		);
 
 		// Act
-		await CommunicationAction.runCommunicationReconcileAction();
+		await subject().runCommunicationReconcileAction();
 
 		// Assert
 		expect(boundary.execute).toHaveBeenCalledWith(
@@ -292,13 +294,15 @@ describe("communication action report facts", () => {
 		vi.stubEnv("INPUT_SLIDES-READY", "false");
 		vi.stubEnv("INPUT_SLIDES-URL", "");
 		boundary.execute.mockResolvedValue(
-			ManageMeetupCommunications.emptyCommunicationResult("check", [
-				{ code: "communication.slides-unavailable", severity: "error" },
-			]),
+			new JourneyPolicyComposition()
+				.communicationJourneyResults()
+				.emptyCommunicationResult("check", [
+					{ code: "communication.slides-unavailable", severity: "error" },
+				]),
 		);
 
 		// Act
-		const report = await CommunicationAction.runCommunicationReconcileAction();
+		const report = await subject().runCommunicationReconcileAction();
 
 		// Assert
 		expect(boundary.execute).toHaveBeenCalledWith(
@@ -319,7 +323,7 @@ describe("communication action report facts", () => {
 			vi.stubEnv(`INPUT_${input.toUpperCase()}`, "invalid");
 
 			// Act
-			const result = CommunicationAction.runCommunicationReconcileAction();
+			const result = subject().runCommunicationReconcileAction();
 
 			// Assert
 			await expect(result).rejects.toThrow(`${input} must be true or false`);
@@ -327,3 +331,15 @@ describe("communication action report facts", () => {
 		},
 	);
 });
+
+function subject() {
+	return new CommunicationAction({
+		runtimeInput: new GithubActionsComposition().runtimeInput(),
+		communicationRuntime: { runCommunicationReconcile: boundary.execute },
+		conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),
+		communicationDiagnosticProjection:
+			new JourneyPolicyComposition().communicationDiagnosticProjection(),
+		createActionMessages: (...args) =>
+			new GithubActionsComposition().actionMessages(...args),
+	});
+}

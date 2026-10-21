@@ -47,7 +47,7 @@ export type PublicationEvaluation = Readonly<{
 }>;
 
 export class PublicationDiagnostics {
-	static applyPublicationPatch(
+	applyPublicationPatch(
 		references: PublicationReferences,
 		patch: PublicationPatch,
 	): PublicationReferences {

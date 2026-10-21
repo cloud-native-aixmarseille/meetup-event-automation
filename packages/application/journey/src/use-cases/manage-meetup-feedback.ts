@@ -1,37 +1,20 @@
 import {
-	type EventClock,
 	type EventDocument,
-	type EventDocumentCodec,
 	type EventIdentity,
 	EventNotFoundError,
 	EventPaginationError,
-	type EventRepository,
-	EventRepositoryPatches,
 	type MeetupEvent,
-	ReconcileEvent,
 } from "@meetup-automation/event";
 import {
 	type FeedbackAgenda,
-	type FeedbackEventGateway,
 	type FeedbackLinkConflict,
-	type FeedbackLinkGateway,
-	FeedbackLinkSelection,
-	FeedbackPolicy,
 	FeedbackResolutionError,
 } from "@meetup-automation/publication";
 import type { PublicDiagnostic } from "../result/result-envelope.js";
-import { FeedbackAgendaProjection } from "./feedback-agenda-projection.js";
-import type { ManageMeetupEvent } from "./manage-meetup-event.js";
-
-interface FeedbackDependencies {
-	readonly eventRepository: EventRepository;
-	readonly eventLabel: string;
-	readonly documentCodec: EventDocumentCodec;
-	readonly manageEvent: Pick<ManageMeetupEvent, "execute">;
-	readonly clock: EventClock;
-	readonly links: FeedbackLinkGateway;
-	readonly events: FeedbackEventGateway;
-}
+import type {
+	FeedbackDependencies,
+	ManageMeetupFeedbackCollaborators,
+} from "./manage-meetup-feedback-contracts.js";
 
 export type ManageMeetupFeedbackResult = Readonly<{
 	skipped: boolean;
@@ -42,7 +25,10 @@ export type ManageMeetupFeedbackResult = Readonly<{
 }>;
 
 export class ManageMeetupFeedback {
-	constructor(private readonly dependencies: FeedbackDependencies) {}
+	constructor(
+		private readonly collaborators: ManageMeetupFeedbackCollaborators,
+		private readonly dependencies: FeedbackDependencies,
+	) {}
 
 	async execute(input: {
 		identity: EventIdentity;
@@ -79,14 +65,14 @@ export class ManageMeetupFeedback {
 				"Feedback automation is inactive for this event",
 			);
 		if (
-			!FeedbackPolicy.validDate(event.date) ||
-			ManageMeetupFeedback.invalid(evaluation.diagnostics)
+			!this.collaborators.feedbackPolicy.validDate(event.date) ||
+			this.invalid(evaluation.diagnostics)
 		)
 			return this.skipped(
 				"prerequisites",
 				"Resolve the event date and feedback link before updating feedback",
 			);
-		const agenda = FeedbackAgendaProjection.create(
+		const agenda = this.collaborators.feedbackAgendaProjection.create(
 			event,
 			evaluation.diagnostics,
 		);
@@ -130,13 +116,17 @@ export class ManageMeetupFeedback {
 			scheduleUrl: `https://github.com/${repository}/issues/${issueNumber}`,
 			...(agenda ? { agenda } : {}),
 			...(event.publicationLinks.feedback
-				? { url: FeedbackPolicy.pollUrl(event.publicationLinks.feedback) }
+				? {
+						url: this.collaborators.feedbackPolicy.pollUrl(
+							event.publicationLinks.feedback,
+						),
+					}
 				: {}),
 		});
 		const result = await this.reconcile(
 			source,
 			event,
-			FeedbackPolicy.pollUrl(url),
+			this.collaborators.feedbackPolicy.pollUrl(url),
 		);
 		if (agenda) return result;
 		return {
@@ -164,7 +154,13 @@ export class ManageMeetupFeedback {
 		const diagnostics: PublicDiagnostic[] = [];
 		let linkUpdated = false;
 		const now = this.dependencies.clock.now();
-		if (FeedbackPolicy.isLinkUpdateDue(event.date, now, event.timeZone)) {
+		if (
+			this.collaborators.feedbackPolicy.isLinkUpdateDue(
+				event.date,
+				now,
+				event.timeZone,
+			)
+		) {
 			const conflict = await this.linkConflict(source, event, now);
 			if (conflict) diagnostics.push(conflict);
 			else {
@@ -181,7 +177,7 @@ export class ManageMeetupFeedback {
 		};
 	}
 
-	private static invalid(diagnostics: readonly PublicDiagnostic[]): boolean {
+	private invalid(diagnostics: readonly PublicDiagnostic[]): boolean {
 		const fields = /date|feedback/i;
 		return diagnostics.some(
 			(item) =>
@@ -202,7 +198,11 @@ export class ManageMeetupFeedback {
 			...original,
 			publicationLinks: { ...original.publicationLinks, feedback: feedbackUrl },
 		});
-		if (EventRepositoryPatches.eventRepositoryPatchIsEmpty(patch))
+		if (
+			this.collaborators.eventRepositoryPatches.eventRepositoryPatchIsEmpty(
+				patch,
+			)
+		)
 			return { persisted: false, current: source };
 		await this.ensureCurrent(source);
 		await this.dependencies.eventRepository.applyPatch(source.identity, patch);
@@ -226,7 +226,7 @@ export class ManageMeetupFeedback {
 				if (document.identity.issueNumber === source.identity.issueNumber)
 					continue;
 				const { event } = this.dependencies.documentCodec.decode(document);
-				const conflict = FeedbackLinkSelection.conflict(
+				const conflict = this.collaborators.feedbackLinkSelection.conflict(
 					{
 						date: event.date,
 						isOpen: event.issueState === "open",
@@ -236,7 +236,7 @@ export class ManageMeetupFeedback {
 					now,
 					target.timeZone,
 				);
-				if (conflict) return ManageMeetupFeedback.conflictDiagnostic(conflict);
+				if (conflict) return this.conflictDiagnostic(conflict);
 			}
 			cursor = page.nextCursor;
 			if (!cursor) return undefined;
@@ -246,9 +246,7 @@ export class ManageMeetupFeedback {
 		throw new EventPaginationError("feedback-page-limit");
 	}
 
-	private static conflictDiagnostic(
-		conflict: FeedbackLinkConflict,
-	): PublicDiagnostic {
+	private conflictDiagnostic(conflict: FeedbackLinkConflict): PublicDiagnostic {
 		return {
 			code: `publication.feedback.${conflict}`,
 			severity: conflict === "ambiguous-date" ? "warning" : "info",
@@ -260,7 +258,7 @@ export class ManageMeetupFeedback {
 	}
 
 	private ensureCurrent(source: EventDocument) {
-		return ReconcileEvent.ensureEventDocumentIsCurrent(
+		return this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
 			this.dependencies.eventRepository,
 			source.identity,
 			source,
@@ -287,3 +285,10 @@ export class ManageMeetupFeedback {
 		};
 	}
 }
+export type ManageMeetupFeedbackArguments =
+	ConstructorParameters<typeof ManageMeetupFeedback> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

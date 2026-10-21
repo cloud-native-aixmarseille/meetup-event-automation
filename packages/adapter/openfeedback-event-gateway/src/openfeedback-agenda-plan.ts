@@ -8,15 +8,26 @@ import type {
 	OpenFeedbackSpeaker,
 	OpenFeedbackTalk,
 } from "./openfeedback-agenda-snapshot.js";
-import { OpenFeedbackRecordEquality } from "./openfeedback-record-equality.js";
+import type { OpenFeedbackRecordEquality } from "./openfeedback-record-equality.js";
+
+export interface OpenFeedbackAgendaPlanCollaborators {
+	readonly openFeedbackRecordEquality: Pick<
+		OpenFeedbackRecordEquality,
+		"sameSpeakers"
+	>;
+}
 
 export class OpenFeedbackAgendaPlan {
-	static create(
+	constructor(
+		private readonly collaborators: OpenFeedbackAgendaPlanCollaborators,
+	) {}
+
+	create(
 		key: string,
 		agenda: FeedbackAgenda,
 		current: OpenFeedbackAgendaData,
 	): OpenFeedbackAgendaData {
-		const speakers = OpenFeedbackAgendaPlan.matchSpeakers(key, agenda, current);
+		const speakers = this.matchSpeakers(key, agenda, current);
 		const candidates = agenda.talks.map((talk) => {
 			const ids = [
 				...new Set(
@@ -26,7 +37,7 @@ export class OpenFeedbackAgendaPlan {
 				),
 			].sort();
 			return {
-				id: OpenFeedbackAgendaPlan.id(
+				id: this.id(
 					"talk",
 					talk.sourceIdentity
 						? JSON.stringify([key, talk.sourceIdentity])
@@ -41,11 +52,7 @@ export class OpenFeedbackAgendaPlan {
 				.filter((_, index) => agenda.talks[index].sourceIdentity)
 				.map((talk) => talk.id),
 		);
-		const talks = OpenFeedbackAgendaPlan.matchTalks(
-			candidates,
-			current.talks,
-			stableIds,
-		);
+		const talks = this.matchTalks(candidates, current.talks, stableIds);
 		if (
 			talks.length > 100 ||
 			speakers.size > 100 ||
@@ -59,7 +66,7 @@ export class OpenFeedbackAgendaPlan {
 		};
 	}
 
-	private static matchSpeakers(
+	private matchSpeakers(
 		key: string,
 		agenda: FeedbackAgenda,
 		current: OpenFeedbackAgendaData,
@@ -68,17 +75,13 @@ export class OpenFeedbackAgendaPlan {
 		for (const talk of agenda.talks) {
 			for (const speaker of talk.speakers) {
 				if (speakers.has(speaker.id)) continue;
-				const stableId = OpenFeedbackAgendaPlan.id(
-					"speaker",
-					`${key}:${speaker.id}`,
-				);
+				const stableId = this.id("speaker", `${key}:${speaker.id}`);
 				const found = current.speakers.find((item) => item.id === stableId);
 				const matches = found
 					? [found]
 					: current.speakers.filter(
 							(item) =>
-								OpenFeedbackAgendaPlan.normalize(item.name) ===
-								OpenFeedbackAgendaPlan.normalize(speaker.name),
+								this.normalize(item.name) === this.normalize(speaker.name),
 						);
 				if (matches.length > 1) throw new FeedbackResolutionError("conflict");
 				speakers.set(speaker.id, {
@@ -95,7 +98,7 @@ export class OpenFeedbackAgendaPlan {
 		return speakers;
 	}
 
-	private static matchTalks(
+	private matchTalks(
 		incoming: readonly OpenFeedbackTalk[],
 		current: readonly OpenFeedbackTalk[],
 		stableIds: ReadonlySet<string>,
@@ -113,22 +116,19 @@ export class OpenFeedbackAgendaPlan {
 				used.add(talk.id);
 			}
 		}
-		OpenFeedbackAgendaPlan.matchExactTalks(
+		this.matchExactTalks(
 			incoming.filter((talk) => !resolved.has(talk)),
 			current,
 			resolved,
 			used,
 		);
-		OpenFeedbackAgendaPlan.matchTitles(incoming, current, resolved, used);
+		this.matchTitles(incoming, current, resolved, used);
 		for (const talk of incoming.filter((item) => !resolved.has(item))) {
 			const matches = current.filter(
-				(item) =>
-					!used.has(item.id) && OpenFeedbackAgendaPlan.sameSpeakers(item, talk),
+				(item) => !used.has(item.id) && this.sameSpeakers(item, talk),
 			);
 			const pending = incoming.filter(
-				(item) =>
-					!resolved.has(item) &&
-					OpenFeedbackAgendaPlan.sameSpeakers(item, talk),
+				(item) => !resolved.has(item) && this.sameSpeakers(item, talk),
 			);
 			if (matches.length > 1 || (matches.length === 1 && pending.length > 1))
 				throw new FeedbackResolutionError("conflict");
@@ -144,7 +144,7 @@ export class OpenFeedbackAgendaPlan {
 		return incoming.map((talk) => resolved.get(talk) as OpenFeedbackTalk);
 	}
 
-	private static matchExactTalks(
+	private matchExactTalks(
 		incoming: readonly OpenFeedbackTalk[],
 		current: readonly OpenFeedbackTalk[],
 		resolved: Map<OpenFeedbackTalk, OpenFeedbackTalk>,
@@ -154,9 +154,8 @@ export class OpenFeedbackAgendaPlan {
 			const matches = current.filter(
 				(item) =>
 					!used.has(item.id) &&
-					OpenFeedbackAgendaPlan.normalize(item.title) ===
-						OpenFeedbackAgendaPlan.normalize(talk.title) &&
-					OpenFeedbackAgendaPlan.sameSpeakers(item, talk),
+					this.normalize(item.title) === this.normalize(talk.title) &&
+					this.sameSpeakers(item, talk),
 			);
 			if (matches.length > 1) throw new FeedbackResolutionError("conflict");
 			if (matches[0]) {
@@ -166,24 +165,20 @@ export class OpenFeedbackAgendaPlan {
 		}
 	}
 
-	private static matchTitles(
+	private matchTitles(
 		incoming: readonly OpenFeedbackTalk[],
 		current: readonly OpenFeedbackTalk[],
 		resolved: Map<OpenFeedbackTalk, OpenFeedbackTalk>,
 		used: Set<string>,
 	): void {
 		for (const talk of incoming.filter((item) => !resolved.has(item))) {
-			const title = OpenFeedbackAgendaPlan.normalize(talk.title);
+			const title = this.normalize(talk.title);
 			const matches = current.filter(
-				(item) =>
-					!used.has(item.id) &&
-					OpenFeedbackAgendaPlan.normalize(item.title) === title,
+				(item) => !used.has(item.id) && this.normalize(item.title) === title,
 			);
 			if (matches.length === 0) continue;
 			const pending = incoming.filter(
-				(item) =>
-					!resolved.has(item) &&
-					OpenFeedbackAgendaPlan.normalize(item.title) === title,
+				(item) => !resolved.has(item) && this.normalize(item.title) === title,
 			);
 			if (matches.length > 1 || pending.length > 1)
 				throw new FeedbackResolutionError("conflict");
@@ -192,18 +187,21 @@ export class OpenFeedbackAgendaPlan {
 		}
 	}
 
-	private static sameSpeakers(
+	private sameSpeakers(
 		left: OpenFeedbackTalk,
 		right: OpenFeedbackTalk,
 	): boolean {
-		return OpenFeedbackRecordEquality.sameSpeakers(left, right);
+		return this.collaborators.openFeedbackRecordEquality.sameSpeakers(
+			left,
+			right,
+		);
 	}
 
-	private static id(kind: string, key: string): string {
+	private id(kind: string, key: string): string {
 		return `meetup-${kind}-${createHash("sha256").update(key).digest("hex")}`;
 	}
 
-	private static normalize(value: string): string {
+	private normalize(value: string): string {
 		return value.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US");
 	}
 }

@@ -1,3 +1,5 @@
+import { JourneyPolicyComposition } from "@meetup-automation/journey";
+import { LocalizationComposition } from "@meetup-automation/localization";
 import { describe, expect, it } from "vitest";
 import {
 	approvalDependencies,
@@ -6,8 +8,8 @@ import {
 	publicationRequest,
 	request,
 } from "../testing/approval.fixtures.js";
-import { ApprovalCommentCodec } from "./approval-comment-codec.js";
 import { ApprovalPresenter } from "./approval-presenter.js";
+import { GithubOrganizerApprovalComposition } from "./dependency-composition.js";
 import { GithubOrganizerApproval } from "./github-organizer-approval.js";
 import { ApprovalMessages } from "./i18n/approval-messages.js";
 
@@ -16,6 +18,14 @@ describe("organizer approval requests", () => {
 		// Arrange
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
+			{
+				approvalRequestSchema:
+					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+				approvalDetailsPreview:
+					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+			},
 			f.repository,
 			f.records,
 			f.finalizer,
@@ -30,7 +40,9 @@ describe("organizer approval requests", () => {
 		const failure = await approvals
 			.request(request)
 			.catch((error: unknown) => error);
-		const record = ApprovalCommentCodec.read(f.comments[0]?.body ?? "");
+		const record = new GithubOrganizerApprovalComposition()
+			.approvalCommentCodec()
+			.read(f.comments[0]?.body ?? "");
 
 		// Assert
 		expect(failure).toEqual(new Error("write failed"));
@@ -41,6 +53,14 @@ describe("organizer approval requests", () => {
 		// Arrange
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
+			{
+				approvalRequestSchema:
+					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+				approvalDetailsPreview:
+					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+			},
 			f.repository,
 			f.records,
 			f.finalizer,
@@ -56,7 +76,9 @@ describe("organizer approval requests", () => {
 
 		// Act
 		const first = await approvals.synchronize();
-		const recorded = ApprovalCommentCodec.read(f.comments[0]?.body ?? "");
+		const recorded = new GithubOrganizerApprovalComposition()
+			.approvalCommentCodec()
+			.read(f.comments[0]?.body ?? "");
 		const second = await approvals.synchronize();
 
 		// Assert
@@ -72,6 +94,14 @@ describe("organizer approval requests", () => {
 		// Arrange
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
+			{
+				approvalRequestSchema:
+					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+				approvalDetailsPreview:
+					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+			},
 			f.repository,
 			f.records,
 			f.finalizer,
@@ -79,7 +109,9 @@ describe("organizer approval requests", () => {
 			f.client,
 		);
 		await approvals.request(request);
-		const record = ApprovalCommentCodec.read(f.comments[0]?.body ?? "");
+		const record = new GithubOrganizerApprovalComposition()
+			.approvalCommentCodec()
+			.read(f.comments[0]?.body ?? "");
 		record.decision = {
 			status: "approved",
 			actor: "organizer",
@@ -100,6 +132,14 @@ describe("organizer approval requests", () => {
 		// Arrange
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
+			{
+				approvalRequestSchema:
+					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+				approvalDetailsPreview:
+					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+			},
 			f.repository,
 			f.records,
 			f.finalizer,
@@ -109,7 +149,9 @@ describe("organizer approval requests", () => {
 		await approvals.request(request);
 		decision(f, {}, "rejected");
 		await approvals.synchronize();
-		const original = ApprovalCommentCodec.read(f.comments[0]?.body ?? "");
+		const original = new GithubOrganizerApprovalComposition()
+			.approvalCommentCodec()
+			.read(f.comments[0]?.body ?? "");
 		f.dispatch.mockResolvedValueOnce({
 			outcome: "accepted",
 			message: { destination: "C67890", messageId: "200.001" },
@@ -120,7 +162,9 @@ describe("organizer approval requests", () => {
 			...request,
 			revision: "b".repeat(64),
 		});
-		const replacement = ApprovalCommentCodec.read(f.comments[0]?.body ?? "");
+		const replacement = new GithubOrganizerApprovalComposition()
+			.approvalCommentCodec()
+			.read(f.comments[0]?.body ?? "");
 		decision(f);
 		await approvals.synchronize();
 
@@ -141,6 +185,14 @@ describe("organizer approval requests", () => {
 			// Arrange
 			const f = fixture();
 			const approvals = new GithubOrganizerApproval(
+				{
+					approvalRequestSchema:
+						new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+					approvalRequestPolicy:
+						new JourneyPolicyComposition().approvalRequestPolicy(),
+					approvalDetailsPreview:
+						new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+				},
 				f.repository,
 				f.records,
 				f.finalizer,
@@ -178,6 +230,14 @@ describe("organizer approval requests", () => {
 			// Arrange
 			const f = fixture();
 			const approvals = new GithubOrganizerApproval(
+				{
+					approvalRequestSchema:
+						new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+					approvalRequestPolicy:
+						new JourneyPolicyComposition().approvalRequestPolicy(),
+					approvalDetailsPreview:
+						new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+				},
 				f.repository,
 				f.records,
 				f.finalizer,
@@ -208,6 +268,14 @@ describe("organizer approval requests", () => {
 		// Arrange
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
+			{
+				approvalRequestSchema:
+					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+				approvalDetailsPreview:
+					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+			},
 			f.repository,
 			f.records,
 			f.finalizer,
@@ -232,6 +300,14 @@ describe("organizer approval requests", () => {
 		// Arrange
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
+			{
+				approvalRequestSchema:
+					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+				approvalDetailsPreview:
+					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+			},
 			f.repository,
 			f.records,
 			f.finalizer,
@@ -259,6 +335,14 @@ describe("organizer approval requests", () => {
 		// Arrange
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
+			{
+				approvalRequestSchema:
+					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+				approvalDetailsPreview:
+					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+			},
 			f.repository,
 			f.records,
 			f.finalizer,
@@ -282,6 +366,14 @@ describe("organizer approval requests", () => {
 		// Arrange
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
+			{
+				approvalRequestSchema:
+					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+				approvalDetailsPreview:
+					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+			},
 			f.repository,
 			f.records,
 			f.finalizer,
@@ -304,6 +396,14 @@ describe("organizer approval requests", () => {
 		// Arrange
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
+			{
+				approvalRequestSchema:
+					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+				approvalDetailsPreview:
+					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+			},
 			f.repository,
 			f.records,
 			f.finalizer,
@@ -328,6 +428,14 @@ describe("organizer approval requests", () => {
 			// Arrange
 			const f = fixture();
 			const approvals = new GithubOrganizerApproval(
+				{
+					approvalRequestSchema:
+						new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+					approvalRequestPolicy:
+						new JourneyPolicyComposition().approvalRequestPolicy(),
+					approvalDetailsPreview:
+						new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+				},
 				f.repository,
 				f.records,
 				f.finalizer,
@@ -335,7 +443,9 @@ describe("organizer approval requests", () => {
 				f.client,
 			);
 			await approvals.request(request);
-			const record = ApprovalCommentCodec.read(f.comments[0]?.body ?? "");
+			const record = new GithubOrganizerApprovalComposition()
+				.approvalCommentCodec()
+				.read(f.comments[0]?.body ?? "");
 			if (record.kind === "meetup-publication")
 				throw new Error("Expected an email request");
 			decision(f, {
@@ -360,6 +470,14 @@ describe("organizer approval requests", () => {
 			// Arrange
 			const f = fixture(locale);
 			const approvals = new GithubOrganizerApproval(
+				{
+					approvalRequestSchema:
+						new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+					approvalRequestPolicy:
+						new JourneyPolicyComposition().approvalRequestPolicy(),
+					approvalDetailsPreview:
+						new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+				},
 				f.repository,
 				f.records,
 				f.finalizer,
@@ -371,11 +489,32 @@ describe("organizer approval requests", () => {
 			const translatedDependencies = approvalDependencies(
 				f.client,
 				new ApprovalPresenter(
-					new ApprovalMessages(locale === "en" ? "fr" : "en"),
+					{
+						createEmailApprovalPresenter: (...args) =>
+							new GithubOrganizerApprovalComposition().emailApprovalPresenter(
+								...args,
+							),
+						createMeetupApprovalPresenter: (...args) =>
+							new GithubOrganizerApprovalComposition().meetupApprovalPresenter(
+								...args,
+							),
+					},
+					new ApprovalMessages(
+						{ localeResolver: new LocalizationComposition().localeResolver() },
+						locale === "en" ? "fr" : "en",
+					),
 				),
 				{ send: f.dispatch, react: f.react },
 			);
 			const translated = new GithubOrganizerApproval(
+				{
+					approvalRequestSchema:
+						new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+					approvalRequestPolicy:
+						new JourneyPolicyComposition().approvalRequestPolicy(),
+					approvalDetailsPreview:
+						new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+				},
 				translatedDependencies.repository,
 				translatedDependencies.records,
 				translatedDependencies.finalizer,
@@ -403,6 +542,14 @@ describe("organizer approval requests", () => {
 			// Arrange
 			const f = fixture();
 			const approvals = new GithubOrganizerApproval(
+				{
+					approvalRequestSchema:
+						new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+					approvalRequestPolicy:
+						new JourneyPolicyComposition().approvalRequestPolicy(),
+					approvalDetailsPreview:
+						new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+				},
 				f.repository,
 				f.records,
 				f.finalizer,
@@ -434,6 +581,14 @@ describe("organizer approval requests", () => {
 			// Arrange
 			const f = fixture();
 			const approvals = new GithubOrganizerApproval(
+				{
+					approvalRequestSchema:
+						new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+					approvalRequestPolicy:
+						new JourneyPolicyComposition().approvalRequestPolicy(),
+					approvalDetailsPreview:
+						new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+				},
 				f.repository,
 				f.records,
 				f.finalizer,
@@ -460,6 +615,14 @@ describe("organizer approval requests", () => {
 		// Arrange
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
+			{
+				approvalRequestSchema:
+					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+				approvalDetailsPreview:
+					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+			},
 			f.repository,
 			f.records,
 			f.finalizer,
@@ -485,6 +648,14 @@ describe("organizer approval requests", () => {
 		// Arrange
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
+			{
+				approvalRequestSchema:
+					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+				approvalDetailsPreview:
+					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+			},
 			f.repository,
 			f.records,
 			f.finalizer,
@@ -511,6 +682,14 @@ describe("organizer approval requests", () => {
 			// Arrange
 			const f = fixture(locale);
 			const approvals = new GithubOrganizerApproval(
+				{
+					approvalRequestSchema:
+						new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+					approvalRequestPolicy:
+						new JourneyPolicyComposition().approvalRequestPolicy(),
+					approvalDetailsPreview:
+						new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+				},
 				f.repository,
 				f.records,
 				f.finalizer,
@@ -541,6 +720,14 @@ describe("organizer approval requests", () => {
 			// Arrange
 			const f = fixture();
 			const approvals = new GithubOrganizerApproval(
+				{
+					approvalRequestSchema:
+						new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+					approvalRequestPolicy:
+						new JourneyPolicyComposition().approvalRequestPolicy(),
+					approvalDetailsPreview:
+						new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+				},
 				f.repository,
 				f.records,
 				f.finalizer,
@@ -566,6 +753,14 @@ describe("organizer approval requests", () => {
 			// Arrange
 			const f = fixture();
 			const approvals = new GithubOrganizerApproval(
+				{
+					approvalRequestSchema:
+						new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+					approvalRequestPolicy:
+						new JourneyPolicyComposition().approvalRequestPolicy(),
+					approvalDetailsPreview:
+						new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+				},
 				f.repository,
 				f.records,
 				f.finalizer,
@@ -594,6 +789,14 @@ describe("organizer approval requests", () => {
 		// Arrange
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
+			{
+				approvalRequestSchema:
+					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+				approvalDetailsPreview:
+					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+			},
 			f.repository,
 			f.records,
 			f.finalizer,
@@ -615,6 +818,14 @@ describe("organizer approval requests", () => {
 		// Arrange
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
+			{
+				approvalRequestSchema:
+					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+				approvalDetailsPreview:
+					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+			},
 			f.repository,
 			f.records,
 			f.finalizer,
@@ -638,6 +849,14 @@ describe("organizer approval requests", () => {
 		// Arrange
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
+			{
+				approvalRequestSchema:
+					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+				approvalDetailsPreview:
+					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+			},
 			f.repository,
 			f.records,
 			f.finalizer,
@@ -664,6 +883,14 @@ describe("organizer approval requests", () => {
 		// Arrange
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
+			{
+				approvalRequestSchema:
+					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+				approvalDetailsPreview:
+					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+			},
 			f.repository,
 			f.records,
 			f.finalizer,
@@ -687,6 +914,14 @@ describe("organizer approval requests", () => {
 		// Arrange
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
+			{
+				approvalRequestSchema:
+					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+				approvalDetailsPreview:
+					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+			},
 			f.repository,
 			f.records,
 			f.finalizer,
@@ -710,6 +945,14 @@ describe("organizer approval requests", () => {
 		// Arrange
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
+			{
+				approvalRequestSchema:
+					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+				approvalDetailsPreview:
+					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+			},
 			f.repository,
 			f.records,
 			f.finalizer,
@@ -731,6 +974,14 @@ describe("organizer approval requests", () => {
 		// Arrange
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
+			{
+				approvalRequestSchema:
+					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+				approvalDetailsPreview:
+					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+			},
 			f.repository,
 			f.records,
 			f.finalizer,
@@ -754,6 +1005,14 @@ describe("organizer approval requests", () => {
 		// Arrange
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
+			{
+				approvalRequestSchema:
+					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+				approvalDetailsPreview:
+					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+			},
 			f.repository,
 			f.records,
 			f.finalizer,
@@ -778,6 +1037,14 @@ describe("Meetup publication approvals", () => {
 			// Arrange
 			const f = fixture();
 			const approvals = new GithubOrganizerApproval(
+				{
+					approvalRequestSchema:
+						new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+					approvalRequestPolicy:
+						new JourneyPolicyComposition().approvalRequestPolicy(),
+					approvalDetailsPreview:
+						new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+				},
 				f.repository,
 				f.records,
 				f.finalizer,
@@ -813,6 +1080,14 @@ describe("Meetup publication approvals", () => {
 		// Arrange
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
+			{
+				approvalRequestSchema:
+					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+				approvalDetailsPreview:
+					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+			},
 			f.repository,
 			f.records,
 			f.finalizer,
@@ -845,6 +1120,14 @@ describe("Meetup publication approvals", () => {
 		// Arrange
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
+			{
+				approvalRequestSchema:
+					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+				approvalDetailsPreview:
+					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+			},
 			f.repository,
 			f.records,
 			f.finalizer,
@@ -865,6 +1148,14 @@ describe("Meetup publication approvals", () => {
 		// Arrange
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
+			{
+				approvalRequestSchema:
+					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+				approvalDetailsPreview:
+					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+			},
 			f.repository,
 			f.records,
 			f.finalizer,
@@ -872,7 +1163,9 @@ describe("Meetup publication approvals", () => {
 			f.client,
 		);
 		await approvals.request(publicationRequest);
-		const record = ApprovalCommentCodec.read(f.comments[0]?.body ?? "");
+		const record = new GithubOrganizerApprovalComposition()
+			.approvalCommentCodec()
+			.read(f.comments[0]?.body ?? "");
 		if (record.kind !== "meetup-publication")
 			throw new Error("Expected publication request");
 		decision(f, {

@@ -1,9 +1,9 @@
 import { isIP } from "node:net";
-import ipaddr from "ipaddr.js";
 import { ContentError } from "@meetup-automation/publication";
+import ipaddr from "ipaddr.js";
 
 export class PublicImageUrl {
-	static parse(value: string, temporary = false): URL {
+	parse(value: string, temporary = false): URL {
 		const url = new URL(value);
 		if (
 			url.protocol !== "https:" ||
@@ -22,7 +22,7 @@ export class PublicImageUrl {
 		)
 			throw new ContentError("image");
 		const host = url.hostname.replace(/^\[|\]$/g, "");
-		if (isIP(host) && !PublicImageUrl.publicAddress(host))
+		if (isIP(host) && !this.publicAddress(host))
 			throw new ContentError("image");
 		if (
 			!host.includes(".") ||
@@ -32,7 +32,7 @@ export class PublicImageUrl {
 		return url;
 	}
 
-	static publicAddress(address: string): boolean {
+	publicAddress(address: string): boolean {
 		try {
 			return ipaddr.process(address).range() === "unicast";
 		} catch {

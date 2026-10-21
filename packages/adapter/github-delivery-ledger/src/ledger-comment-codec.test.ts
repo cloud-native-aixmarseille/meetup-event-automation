@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { GithubDeliveryLedgerComposition } from "./dependency-composition.js";
 import { LedgerCommentCodec } from "./ledger-comment-codec.js";
 
 const entry = {
@@ -28,8 +29,14 @@ describe("LedgerCommentCodec", () => {
 		})}\n\`\`\``;
 
 		// Act
-		const decoded = LedgerCommentCodec.decode(body);
-		const encoded = LedgerCommentCodec.encode(decoded);
+		const decoded = new LedgerCommentCodec({
+			ledgerEntryMapping:
+				new GithubDeliveryLedgerComposition().ledgerEntryMapping(),
+		}).decode(body);
+		const encoded = new LedgerCommentCodec({
+			ledgerEntryMapping:
+				new GithubDeliveryLedgerComposition().ledgerEntryMapping(),
+		}).encode(decoded);
 
 		// Assert
 		expect(decoded.entries[0]).not.toHaveProperty("contact");
@@ -55,7 +62,11 @@ describe("LedgerCommentCodec", () => {
 		const body = `\`\`\`json\n${JSON.stringify(value)}\n\`\`\``;
 
 		// Act
-		const decode = () => LedgerCommentCodec.decode(body);
+		const decode = () =>
+			new LedgerCommentCodec({
+				ledgerEntryMapping:
+					new GithubDeliveryLedgerComposition().ledgerEntryMapping(),
+			}).decode(body);
 
 		// Assert
 		expect(decode).toThrow(/ledger/);
@@ -69,7 +80,11 @@ describe("LedgerCommentCodec", () => {
 		})}\n\`\`\``;
 
 		// Act
-		const decode = () => LedgerCommentCodec.decode(body);
+		const decode = () =>
+			new LedgerCommentCodec({
+				ledgerEntryMapping:
+					new GithubDeliveryLedgerComposition().ledgerEntryMapping(),
+			}).decode(body);
 
 		// Assert
 		expect(decode).toThrow("duplicate identities");

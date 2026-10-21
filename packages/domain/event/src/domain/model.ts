@@ -120,7 +120,7 @@ export class MeetupEventOperations {
 	 * A post-event checklist is complete only when it contains each expected task
 	 * exactly once, contains no additional task, and every task is completed.
 	 */
-	static postEventChecklistIsComplete(
+	postEventChecklistIsComplete(
 		items: readonly OperationalChecklistItem[],
 	): boolean {
 		if (items.length !== EXPECTED_POST_EVENT_TASK_NAMES.length) {
@@ -140,7 +140,7 @@ export class MeetupEventOperations {
 		);
 	}
 
-	static cloneMeetupEvent(event: MeetupEvent): MeetupEvent {
+	cloneMeetupEvent(event: MeetupEvent): MeetupEvent {
 		const operationalChecklists = {
 			slidesAndContent: event.operationalChecklists.slidesAndContent.map(
 				(item) => ({ ...item }),
@@ -167,9 +167,7 @@ export class MeetupEventOperations {
 			operationalChecklists,
 			followUpComplete:
 				event.followUpComplete &&
-				MeetupEventOperations.postEventChecklistIsComplete(
-					operationalChecklists.postEvent,
-				),
+				this.postEventChecklistIsComplete(operationalChecklists.postEvent),
 		};
 	}
 }

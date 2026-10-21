@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { createTestEvent } from "../../testing/event.fixtures.js";
+import { EventDomainComposition } from "../dependency-composition.js";
 import { EventLifecycle } from "./lifecycle.js";
 import { EXPECTED_POST_EVENT_TASK_NAMES } from "./model.js";
-import { EventReadinessPolicy } from "./readiness.js";
 
 describe("EventLifecycle", () => {
 	it("does not infer held from a past event date", () => {
@@ -13,8 +13,13 @@ describe("EventLifecycle", () => {
 		});
 
 		// Act
-		const readiness = EventReadinessPolicy.evaluateEventReadiness(event, []);
-		const lifecycle = EventLifecycle.evaluateEventLifecycle({
+		const readiness = new EventDomainComposition()
+			.eventReadinessPolicy()
+			.evaluateEventReadiness(event, []);
+		const lifecycle = new EventLifecycle({
+			meetupEventOperations:
+				new EventDomainComposition().meetupEventOperations(),
+		}).evaluateEventLifecycle({
 			event,
 			readiness,
 			now: "2030-01-01T00:00:00Z",
@@ -34,9 +39,14 @@ describe("EventLifecycle", () => {
 		const event = createTestEvent({ occurrenceStatus });
 
 		// Act
-		const lifecycle = EventLifecycle.evaluateEventLifecycle({
+		const lifecycle = new EventLifecycle({
+			meetupEventOperations:
+				new EventDomainComposition().meetupEventOperations(),
+		}).evaluateEventLifecycle({
 			event,
-			readiness: EventReadinessPolicy.evaluateEventReadiness(event, []),
+			readiness: new EventDomainComposition()
+				.eventReadinessPolicy()
+				.evaluateEventReadiness(event, []),
 			now: "2026-09-04T10:00:00+02:00",
 		});
 
@@ -59,9 +69,14 @@ describe("EventLifecycle", () => {
 		});
 
 		// Act
-		const state = EventLifecycle.evaluateEventLifecycle({
+		const state = new EventLifecycle({
+			meetupEventOperations:
+				new EventDomainComposition().meetupEventOperations(),
+		}).evaluateEventLifecycle({
 			event,
-			readiness: EventReadinessPolicy.evaluateEventReadiness(event, []),
+			readiness: new EventDomainComposition()
+				.eventReadinessPolicy()
+				.evaluateEventReadiness(event, []),
 			now: "2026-09-04T10:00:00+02:00",
 		}).state;
 
@@ -81,9 +96,14 @@ describe("EventLifecycle", () => {
 		});
 
 		// Act
-		const state = EventLifecycle.evaluateEventLifecycle({
+		const state = new EventLifecycle({
+			meetupEventOperations:
+				new EventDomainComposition().meetupEventOperations(),
+		}).evaluateEventLifecycle({
 			event,
-			readiness: EventReadinessPolicy.evaluateEventReadiness(event, []),
+			readiness: new EventDomainComposition()
+				.eventReadinessPolicy()
+				.evaluateEventReadiness(event, []),
 			now: "2026-09-04T10:00:00+02:00",
 		}).state;
 
@@ -99,9 +119,14 @@ describe("EventLifecycle", () => {
 		});
 
 		// Act
-		const lifecycle = EventLifecycle.evaluateEventLifecycle({
+		const lifecycle = new EventLifecycle({
+			meetupEventOperations:
+				new EventDomainComposition().meetupEventOperations(),
+		}).evaluateEventLifecycle({
 			event,
-			readiness: EventReadinessPolicy.evaluateEventReadiness(event, []),
+			readiness: new EventDomainComposition()
+				.eventReadinessPolicy()
+				.evaluateEventReadiness(event, []),
 			now: "2026-09-04T10:00:00+02:00",
 		});
 

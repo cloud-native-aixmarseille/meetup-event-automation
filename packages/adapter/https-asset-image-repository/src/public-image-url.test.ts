@@ -17,7 +17,7 @@ describe("public image URLs", () => {
 
 		// Act
 		try {
-			PublicImageUrl.parse(value);
+			new PublicImageUrl().parse(value);
 		} catch {
 			rejected = true;
 		}
@@ -42,7 +42,7 @@ describe("public image URLs", () => {
 		const value = address;
 
 		// Act
-		const allowed = PublicImageUrl.publicAddress(value);
+		const allowed = new PublicImageUrl().publicAddress(value);
 
 		// Assert
 		expect(allowed).toBe(false);
@@ -53,7 +53,7 @@ describe("public image URLs", () => {
 		const value = "https://images.example.org/portrait.png";
 
 		// Act
-		const result = PublicImageUrl.parse(value);
+		const result = new PublicImageUrl().parse(value);
 
 		// Assert
 		expect(result.href).toBe(value);

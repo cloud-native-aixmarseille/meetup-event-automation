@@ -1,3 +1,4 @@
+export { GithubEventCommentRepositoryComposition } from "./dependency-composition.js";
 export { GitHubEventCommentRepository } from "./github-event-comment-repository.js";
 export { GitHubEventCommentRepositoryConfigurationError } from "./github-event-comment-repository-configuration-error.js";
 export {

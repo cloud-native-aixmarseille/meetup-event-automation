@@ -15,7 +15,11 @@ describe("feedback eligibility", () => {
 			const date = "2026-09-30";
 
 			// Act
-			const result = FeedbackPolicy.isLinkUpdateDue(date, now, "Europe/Paris");
+			const result = new FeedbackPolicy().isLinkUpdateDue(
+				date,
+				now,
+				"Europe/Paris",
+			);
 
 			// Assert
 			expect(result).toBe(true);
@@ -33,7 +37,11 @@ describe("feedback eligibility", () => {
 			const date = "2026-09-30";
 
 			// Act
-			const result = FeedbackPolicy.isLinkUpdateDue(date, now, "Europe/Paris");
+			const result = new FeedbackPolicy().isLinkUpdateDue(
+				date,
+				now,
+				"Europe/Paris",
+			);
 
 			// Assert
 			expect(result).toBe(false);
@@ -50,7 +58,7 @@ describe("feedback eligibility", () => {
 		const timeZone = "Europe/Paris";
 
 		// Act
-		const result = FeedbackPolicy.isLinkUpdateDue(date, now, timeZone);
+		const result = new FeedbackPolicy().isLinkUpdateDue(date, now, timeZone);
 
 		// Assert
 		expect(result).toBe(true);
@@ -76,7 +84,7 @@ describe("feedback eligibility", () => {
 			const timeZone = "Europe/Paris";
 
 			// Act
-			const result = FeedbackPolicy.isLinkUpdateDue(date, now, timeZone);
+			const result = new FeedbackPolicy().isLinkUpdateDue(date, now, timeZone);
 
 			// Assert
 			expect(result).toBe(expected);
@@ -90,7 +98,11 @@ describe("feedback eligibility", () => {
 			const now = "2027-02-28T10:00:00Z";
 
 			// Act
-			const result = FeedbackPolicy.isLinkUpdateDue(date, now, "Europe/Paris");
+			const result = new FeedbackPolicy().isLinkUpdateDue(
+				date,
+				now,
+				"Europe/Paris",
+			);
 
 			// Assert
 			expect(result).toBe(false);
@@ -110,7 +122,7 @@ describe("feedback eligibility", () => {
 		// Use the supplied URL.
 
 		// Act
-		const parse = () => FeedbackPolicy.pollUrl(url);
+		const parse = () => new FeedbackPolicy().pollUrl(url);
 
 		// Assert
 		expect(parse).toThrow();
@@ -126,7 +138,7 @@ it.each([
 	const expected = url.replace(/\/$/, "");
 
 	// Act
-	const result = FeedbackPolicy.pollUrl(url);
+	const result = new FeedbackPolicy().pollUrl(url);
 
 	// Assert
 	expect(result).toBe(expected);
@@ -141,7 +153,7 @@ it.each([
 	// Use the supplied calendar date.
 
 	// Act
-	const result = FeedbackPolicy.validDate(value);
+	const result = new FeedbackPolicy().validDate(value);
 
 	// Assert
 	expect(result).toBe(valid);

@@ -1,4 +1,5 @@
 import type { MeetupEvent } from "@meetup-automation/event";
+import { EventDomainComposition } from "@meetup-automation/event";
 import type { HostId } from "@meetup-automation/referential";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -7,6 +8,7 @@ import {
 	publicCatalog,
 } from "../../testing/asset-render.fixtures.js";
 import { config, event } from "../../testing/meetup-journey.fixtures.js";
+import { JourneyPolicyComposition } from "../policy-composition.js";
 import { FindNextAssetEvent } from "./find-next-asset-event.js";
 
 describe("next public meetup for assets", () => {
@@ -32,12 +34,26 @@ describe("next public meetup for assets", () => {
 				},
 			});
 			const f = nextEventFixture([candidate]);
-			const finder = new FindNextAssetEvent(f.repository, f.codec, eventLabel, {
-				"meetup-event-url-prefix":
-					"https://www.meetup.com/regional-group/events/",
-				"cncf-event-url-prefix":
-					"https://ocgroups.dev/cncf/group/regional-group/event/",
-			});
+			const finder = new FindNextAssetEvent(
+				{
+					eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
+					configuredPublicationPolicies:
+						new JourneyPolicyComposition().configuredPublicationPolicies(),
+					meetupPublicationChecklist:
+						new EventDomainComposition().meetupPublicationChecklist(),
+					createEventRuleEngine: (...args) =>
+						new EventDomainComposition().eventRuleEngine(...args),
+				},
+				f.repository,
+				f.codec,
+				eventLabel,
+				{
+					"meetup-event-url-prefix":
+						"https://www.meetup.com/regional-group/events/",
+					"cncf-event-url-prefix":
+						"https://ocgroups.dev/cncf/group/regional-group/event/",
+				},
+			);
 
 			// Act
 			const result = await finder.find(event, publicCatalog);
@@ -60,6 +76,15 @@ describe("next public meetup for assets", () => {
 			.mockResolvedValueOnce({ items: [f.documents[0]], nextCursor: "page2" })
 			.mockResolvedValueOnce({ items: [f.documents[1]] });
 		const finder = new FindNextAssetEvent(
+			{
+				eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
+				configuredPublicationPolicies:
+					new JourneyPolicyComposition().configuredPublicationPolicies(),
+				meetupPublicationChecklist:
+					new EventDomainComposition().meetupPublicationChecklist(),
+				createEventRuleEngine: (...args) =>
+					new EventDomainComposition().eventRuleEngine(...args),
+			},
 			f.repository,
 			f.codec,
 			"meetup",
@@ -105,6 +130,15 @@ describe("next public meetup for assets", () => {
 		// Arrange
 		const f = nextEventFixture([nextCandidate(43, override)]);
 		const finder = new FindNextAssetEvent(
+			{
+				eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
+				configuredPublicationPolicies:
+					new JourneyPolicyComposition().configuredPublicationPolicies(),
+				meetupPublicationChecklist:
+					new EventDomainComposition().meetupPublicationChecklist(),
+				createEventRuleEngine: (...args) =>
+					new EventDomainComposition().eventRuleEngine(...args),
+			},
 			f.repository,
 			f.codec,
 			"meetup",
@@ -132,6 +166,15 @@ describe("next public meetup for assets", () => {
 			nextCandidate(43),
 		]);
 		const finder = new FindNextAssetEvent(
+			{
+				eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
+				configuredPublicationPolicies:
+					new JourneyPolicyComposition().configuredPublicationPolicies(),
+				meetupPublicationChecklist:
+					new EventDomainComposition().meetupPublicationChecklist(),
+				createEventRuleEngine: (...args) =>
+					new EventDomainComposition().eventRuleEngine(...args),
+			},
 			f.repository,
 			f.codec,
 			"meetup",
@@ -177,6 +220,15 @@ describe("next public meetup for assets", () => {
 					}),
 				);
 			const finder = new FindNextAssetEvent(
+				{
+					eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
+					configuredPublicationPolicies:
+						new JourneyPolicyComposition().configuredPublicationPolicies(),
+					meetupPublicationChecklist:
+						new EventDomainComposition().meetupPublicationChecklist(),
+					createEventRuleEngine: (...args) =>
+						new EventDomainComposition().eventRuleEngine(...args),
+				},
 				f.repository,
 				f.codec,
 				"meetup",
@@ -208,6 +260,15 @@ describe("next public meetup for assets", () => {
 			});
 			const f = nextEventFixture([candidate]);
 			const finder = new FindNextAssetEvent(
+				{
+					eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
+					configuredPublicationPolicies:
+						new JourneyPolicyComposition().configuredPublicationPolicies(),
+					meetupPublicationChecklist:
+						new EventDomainComposition().meetupPublicationChecklist(),
+					createEventRuleEngine: (...args) =>
+						new EventDomainComposition().eventRuleEngine(...args),
+				},
 				f.repository,
 				f.codec,
 				"meetup",

@@ -13,7 +13,7 @@ describe("OpenFeedbackRecordEquality", () => {
 		};
 
 		// Act
-		const equal = OpenFeedbackRecordEquality.equal(first, second);
+		const equal = new OpenFeedbackRecordEquality().equal(first, second);
 
 		// Assert
 		expect(equal).toBe(true);
@@ -30,7 +30,7 @@ describe("OpenFeedbackRecordEquality", () => {
 		const first = { id: "talk-1", title: "Example", speakers: ["a"] };
 
 		// Act
-		const equal = OpenFeedbackRecordEquality.equal(first, second);
+		const equal = new OpenFeedbackRecordEquality().equal(first, second);
 
 		// Assert
 		expect(equal).toBe(false);

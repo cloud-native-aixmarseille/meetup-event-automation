@@ -5,38 +5,32 @@ import type {
 } from "./model.js";
 /** Episode order and omitted optional fields do not change reservation authority. */
 export class AttentionStateEquality {
-	static equal(left: AttentionState, right: AttentionState): boolean {
+	equal(left: AttentionState, right: AttentionState): boolean {
 		return (
 			left.eventDate === right.eventDate &&
 			left.stopped === right.stopped &&
 			left.runId === right.runId &&
 			left.commentId === right.commentId &&
-			AttentionStateEquality.post(left.post, right.post) &&
+			this.post(left.post, right.post) &&
 			left.episodes.length === right.episodes.length &&
 			left.episodes.every((episode) => {
 				const counterpart = right.episodes.find(
 					(item) => item.condition.key === episode.condition.key,
 				);
-				return (
-					counterpart !== undefined &&
-					AttentionStateEquality.episode(episode, counterpart)
-				);
+				return counterpart !== undefined && this.episode(episode, counterpart);
 			})
 		);
 	}
-	private static episode(
-		left: AttentionEpisode,
-		right: AttentionEpisode,
-	): boolean {
+	private episode(left: AttentionEpisode, right: AttentionEpisode): boolean {
 		return (
 			left.episode === right.episode &&
 			left.openedAt === right.openedAt &&
 			left.status === right.status &&
 			left.lastWindow === right.lastWindow &&
-			AttentionStateEquality.condition(left.condition, right.condition)
+			this.condition(left.condition, right.condition)
 		);
 	}
-	private static condition(
+	private condition(
 		left: AttentionCondition,
 		right: AttentionCondition,
 	): boolean {
@@ -52,7 +46,7 @@ export class AttentionStateEquality {
 			left.recovery === right.recovery
 		);
 	}
-	private static post(
+	private post(
 		left: AttentionState["post"],
 		right: AttentionState["post"],
 	): boolean {

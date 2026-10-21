@@ -2,11 +2,24 @@ import type {
 	MeetupEvent,
 	ParticipantReference,
 } from "@meetup-automation/event";
-import { ProposalSelectionCodec } from "./proposal-selection-codec.js";
-import { ReferenceBindings } from "./reference-bindings.js";
+import type { ProposalSelectionCodec } from "./proposal-selection-codec.js";
+import type { ReferenceBindings } from "./reference-bindings.js";
+
+export interface ParticipantLinksCollaborators {
+	readonly referenceBindings: Pick<
+		ReferenceBindings,
+		"normalizeVisibleDisplayName"
+	>;
+	readonly proposalSelectionCodec: Pick<
+		ProposalSelectionCodec,
+		"unescape" | "escape"
+	>;
+}
 
 export class ParticipantLinks {
-	static readSourceLinks(
+	constructor(private readonly collaborators: ParticipantLinksCollaborators) {}
+
+	readSourceLinks(
 		value: string,
 		repository: string,
 	): ReadonlyMap<string, ParticipantReference["source"]> {
@@ -26,9 +39,10 @@ export class ParticipantLinks {
 					path: decodeURIComponent(location[1]),
 					line: Number(location[2]),
 				};
-				const name = ReferenceBindings.normalizeVisibleDisplayName(
-					ProposalSelectionCodec.unescape(match[1]),
-				);
+				const name =
+					this.collaborators.referenceBindings.normalizeVisibleDisplayName(
+						this.collaborators.proposalSelectionCodec.unescape(match[1]),
+					);
 				const previous = sources.get(name);
 				// Conflicting links for a repeated speaker must be resolved from the catalog.
 				sources.set(
@@ -45,13 +59,13 @@ export class ParticipantLinks {
 		return sources;
 	}
 
-	static restoreSourceLocation(
+	restoreSourceLocation(
 		participant: ParticipantReference,
 		sources: ReadonlyMap<string, ParticipantReference["source"]>,
 	): ParticipantReference {
 		const source = participant.id
 			? sources.get(
-					ReferenceBindings.normalizeVisibleDisplayName(
+					this.collaborators.referenceBindings.normalizeVisibleDisplayName(
 						participant.displayName,
 					),
 				)
@@ -59,21 +73,21 @@ export class ParticipantLinks {
 		return source ? { ...participant, source } : participant;
 	}
 
-	static encodeUrlSegment(value: string): string {
+	encodeUrlSegment(value: string): string {
 		return encodeURIComponent(value).replace(
 			/[!'()*]/g,
 			(character) => `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
 		);
 	}
 
-	static renderAgenda(
+	renderAgenda(
 		event: MeetupEvent,
 		renderParticipant: (participant: ParticipantReference) => string,
 	): string {
 		return event.agenda
 			.map(
 				(entry) =>
-					`- ${entry.speakers.map(renderParticipant).join(", ")}: ${event.proposalStatus === "current" ? ProposalSelectionCodec.escape(entry.description) : entry.description}`,
+					`- ${entry.speakers.map(renderParticipant).join(", ")}: ${event.proposalStatus === "current" ? this.collaborators.proposalSelectionCodec.escape(entry.description) : entry.description}`,
 			)
 			.join("\n");
 	}

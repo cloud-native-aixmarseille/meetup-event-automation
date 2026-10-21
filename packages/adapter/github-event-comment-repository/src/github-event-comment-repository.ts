@@ -4,7 +4,7 @@ import type {
 	EventDiagnostic,
 	EventIdentity,
 } from "@meetup-automation/event";
-import { DiagnosticCommentPresenter } from "./diagnostic-comment-presenter.js";
+import type { DiagnosticCommentPresenter } from "./diagnostic-comment-presenter.js";
 import { GitHubEventCommentRepositoryConfigurationError } from "./github-event-comment-repository-configuration-error.js";
 import {
 	COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER,
@@ -16,7 +16,20 @@ import {
 } from "./github-event-comment-repository-contracts.js";
 import { GitHubEventCommentRepositoryResponseError } from "./github-event-comment-repository-response-error.js";
 import { GitHubEventCommentRepositoryScopeError } from "./github-event-comment-repository-scope-error.js";
-import { EventCommentMessages } from "./i18n/event-comment-messages.js";
+import type {
+	EventCommentMessages,
+	EventCommentMessagesArguments,
+} from "./i18n/event-comment-messages.js";
+
+export interface GitHubEventCommentRepositoryCollaborators {
+	readonly diagnosticCommentPresenter: Pick<
+		DiagnosticCommentPresenter,
+		"render"
+	>;
+	readonly createEventCommentMessages: (
+		...args: EventCommentMessagesArguments
+	) => EventCommentMessages;
+}
 
 export class GitHubEventCommentRepository implements EventCommentRepository {
 	private readonly messages: EventCommentMessages;
@@ -26,18 +39,15 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 	private readonly authorLogin: string;
 
 	constructor(
+		private readonly collaborators: GitHubEventCommentRepositoryCollaborators,
 		private readonly client: GitHubEventCommentRepositoryClient,
 		private readonly options: GitHubEventCommentRepositoryOptions,
 	) {
-		this.messages = new EventCommentMessages(options.locale);
-		this.owner = GitHubEventCommentRepository.requireRepositoryPart(
-			options.owner,
-			"owner",
+		this.messages = this.collaborators.createEventCommentMessages(
+			options.locale,
 		);
-		this.repo = GitHubEventCommentRepository.requireRepositoryPart(
-			options.repo,
-			"repo",
-		);
+		this.owner = this.requireRepositoryPart(options.owner, "owner");
+		this.repo = this.requireRepositoryPart(options.repo, "repo");
 		this.repositoryName = `${this.owner}/${this.repo}`;
 		this.authorLogin = options.authorLogin.trim();
 		if (!this.authorLogin)
@@ -61,7 +71,10 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 			(comment) => !retired.includes(comment),
 		);
 		let changed = await this.retireComments(identity.issueNumber, duplicates);
-		let body = DiagnosticCommentPresenter.render(diagnostics, this.messages);
+		let body = this.collaborators.diagnosticCommentPresenter.render(
+			diagnostics,
+			this.messages,
+		);
 		if (canonical && this.options.retainedContent) {
 			const retained = await this.options.retainedContent.load(
 				identity.issueNumber,
@@ -123,16 +136,13 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 			}
 
 			for (const rawComment of response.data) {
-				const comment = GitHubEventCommentRepository.mapComment(rawComment);
+				const comment = this.mapComment(rawComment);
 				if (comment && this.isManagedComment(comment)) {
 					comments.push(comment);
 				}
 			}
 
-			const linkHeader = GitHubEventCommentRepository.readHeader(
-				response.headers,
-				"link",
-			);
+			const linkHeader = this.readHeader(response.headers, "link");
 			hasNextPage =
 				linkHeader === undefined
 					? response.data.length === 100
@@ -215,8 +225,8 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 		}
 	}
 
-	private static mapComment(data: unknown): ManagedComment | null {
-		if (!GitHubEventCommentRepository.isRecord(data)) {
+	private mapComment(data: unknown): ManagedComment | null {
+		if (!this.isRecord(data)) {
 			throw new GitHubEventCommentRepositoryResponseError(
 				"GitHub comment must be an object",
 			);
@@ -235,9 +245,7 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 			);
 		}
 
-		const user = GitHubEventCommentRepository.isRecord(data.user)
-			? data.user
-			: undefined;
+		const user = this.isRecord(data.user) ? data.user : undefined;
 		return {
 			id: Number(data.id),
 			body: data.body,
@@ -246,10 +254,7 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 		};
 	}
 
-	private static requireRepositoryPart(
-		value: string,
-		name: "owner" | "repo",
-	): string {
+	private requireRepositoryPart(value: string, name: "owner" | "repo"): string {
 		const normalized = value.trim();
 		if (normalized === "" || normalized.includes("/")) {
 			throw new GitHubEventCommentRepositoryConfigurationError(
@@ -259,7 +264,7 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 		return normalized;
 	}
 
-	private static readHeader(
+	private readHeader(
 		headers: Readonly<Record<string, unknown>> | undefined,
 		name: string,
 	): string | undefined {
@@ -267,7 +272,14 @@ export class GitHubEventCommentRepository implements EventCommentRepository {
 		return typeof value === "string" ? value : undefined;
 	}
 
-	private static isRecord(value: unknown): value is Record<string, unknown> {
+	private isRecord(value: unknown): value is Record<string, unknown> {
 		return typeof value === "object" && value !== null && !Array.isArray(value);
 	}
 }
+export type GitHubEventCommentRepositoryArguments =
+	ConstructorParameters<typeof GitHubEventCommentRepository> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

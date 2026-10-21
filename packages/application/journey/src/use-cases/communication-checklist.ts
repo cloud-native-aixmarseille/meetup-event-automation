@@ -31,7 +31,7 @@ const TASKS = {
 
 /** Map email tasks to delivery groups; a checked task records completed work. */
 export class CommunicationChecklist {
-	static pendingRecipients(
+	pendingRecipients(
 		event: MeetupEvent,
 		recipients: readonly MailRecipient[],
 		thanks = event.occurrenceStatus === "held",
@@ -45,16 +45,16 @@ export class CommunicationChecklist {
 					: thanks
 						? "speaker-thanks"
 						: "speaker-introduction";
-			return CommunicationChecklist.status(event, kind) === "pending";
+			return this.status(event, kind) === "pending";
 		});
 	}
-	static status(
+	status(
 		event: MeetupEvent,
 		kind: MailCommunicationKind,
 	): "missing" | "pending" | "completed" {
 		const task = TASKS[kind];
 		const matches = event.operationalChecklists[task.section].filter((item) =>
-			CommunicationChecklist.matches(item, task.names),
+			this.matches(item, task.names),
 		);
 		return matches.some((item) => item.completed)
 			? "completed"
@@ -63,7 +63,7 @@ export class CommunicationChecklist {
 				: "missing";
 	}
 
-	static complete(
+	complete(
 		event: MeetupEvent,
 		accepted: readonly MailCommunicationKind[],
 	): EventOperationalChecklists {
@@ -73,23 +73,13 @@ export class CommunicationChecklist {
 			...item,
 			completed:
 				item.completed ||
-				CommunicationChecklist.accepted(
-					item,
-					"communication",
-					completed,
-					checklists,
-				),
+				this.accepted(item, "communication", completed, checklists),
 		}));
 		const postEvent = checklists.postEvent.map((item) => ({
 			...item,
 			completed:
 				item.completed ||
-				CommunicationChecklist.accepted(
-					item,
-					"postEvent",
-					completed,
-					checklists,
-				),
+				this.accepted(item, "postEvent", completed, checklists),
 		}));
 		// A combined legacy task also includes manual report sharing. Record only its email portion.
 		if (
@@ -102,7 +92,7 @@ export class CommunicationChecklist {
 		return { ...checklists, communication, postEvent };
 	}
 
-	private static accepted(
+	private accepted(
 		item: OperationalChecklistItem,
 		section: "communication" | "postEvent",
 		accepted: ReadonlySet<MailCommunicationKind>,
@@ -112,7 +102,7 @@ export class CommunicationChecklist {
 		const kinds = (Object.keys(TASKS) as MailCommunicationKind[]).filter(
 			(kind) =>
 				TASKS[kind].section === section &&
-				CommunicationChecklist.matches(item, TASKS[kind].names),
+				this.matches(item, TASKS[kind].names),
 		);
 		return (
 			kinds.length > 0 &&
@@ -121,14 +111,13 @@ export class CommunicationChecklist {
 					accepted.has(kind) ||
 					checklists[section].some(
 						(other) =>
-							other.completed &&
-							CommunicationChecklist.matches(other, TASKS[kind].names),
+							other.completed && this.matches(other, TASKS[kind].names),
 					),
 			)
 		);
 	}
 
-	private static matches(
+	private matches(
 		item: OperationalChecklistItem,
 		names: readonly string[],
 	): boolean {

@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { CsvReferentialRepository } from "./csv-referential-repository.js";
+import { CsvReferentialRepositoryComposition } from "./dependency-composition.js";
 
 describe("CsvReferentialRepository", () => {
 	it("rejects catalog symlinks pointing outside the checkout", async () => {
@@ -12,11 +13,17 @@ describe("CsvReferentialRepository", () => {
 		await mkdir(root);
 		await writeFile(join(parent, "private.csv"), "host_id,name\n");
 		await symlink(join(parent, "private.csv"), join(root, "hosts.csv"));
-		const repository = new CsvReferentialRepository({
-			workspaceRoot: root,
-			hostsPath: "hosts.csv",
-			speakersPath: "speakers.csv",
-		});
+		const repository = new CsvReferentialRepository(
+			{
+				csvReferentialCodec:
+					new CsvReferentialRepositoryComposition().csvReferentialCodec(),
+			},
+			{
+				workspaceRoot: root,
+				hostsPath: "hosts.csv",
+				speakersPath: "speakers.csv",
+			},
+		);
 
 		// Act
 		const operation = repository.load();
@@ -41,11 +48,17 @@ describe("CsvReferentialRepository", () => {
 		);
 
 		// Act
-		const result = await new CsvReferentialRepository({
-			workspaceRoot: root,
-			hostsPath: "referentials/hosts.csv",
-			speakersPath: "referentials/speakers.csv",
-		}).load();
+		const result = await new CsvReferentialRepository(
+			{
+				csvReferentialCodec:
+					new CsvReferentialRepositoryComposition().csvReferentialCodec(),
+			},
+			{
+				workspaceRoot: root,
+				hostsPath: "referentials/hosts.csv",
+				speakersPath: "referentials/speakers.csv",
+			},
+		).load();
 
 		// Assert
 		expect(result.hosts).toHaveLength(1);
@@ -77,11 +90,17 @@ describe("CsvReferentialRepository", () => {
 					"speaker-0047,Renée,Example,Example,renee@example.test,",
 				].join(newline),
 			);
-			const repository = new CsvReferentialRepository({
-				workspaceRoot: root,
-				hostsPath: "venues.csv",
-				speakersPath: "presenters.csv",
-			});
+			const repository = new CsvReferentialRepository(
+				{
+					csvReferentialCodec:
+						new CsvReferentialRepositoryComposition().csvReferentialCodec(),
+				},
+				{
+					workspaceRoot: root,
+					hostsPath: "venues.csv",
+					speakersPath: "presenters.csv",
+				},
+			);
 
 			// Act
 			const result = await repository.load();
@@ -113,11 +132,17 @@ describe("CsvReferentialRepository", () => {
 		const root = await mkdtemp(join(tmpdir(), "meetup-csv-"));
 
 		// Act
-		const operation = new CsvReferentialRepository({
-			workspaceRoot: root,
-			hostsPath: "../hosts.csv",
-			speakersPath: "speakers.csv",
-		}).load();
+		const operation = new CsvReferentialRepository(
+			{
+				csvReferentialCodec:
+					new CsvReferentialRepositoryComposition().csvReferentialCodec(),
+			},
+			{
+				workspaceRoot: root,
+				hostsPath: "../hosts.csv",
+				speakersPath: "speakers.csv",
+			},
+		).load();
 
 		// Assert
 		await expect(operation).rejects.toThrow(/inside the checkout/);

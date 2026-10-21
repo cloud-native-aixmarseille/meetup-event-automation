@@ -1,4 +1,4 @@
-import { slides, type slides_v1 } from "@googleapis/slides";
+import type { slides_v1 } from "@googleapis/slides";
 import {
 	type AssetContentRepository,
 	type AssetImageRepository,
@@ -8,26 +8,28 @@ import {
 	ContentError,
 	type ContentSnapshot,
 } from "@meetup-automation/publication";
-import { SlideContentLocations } from "./slide-content-locations.js";
-import { SlideContentRequests } from "./slide-content-requests.js";
-import { SlideTemplateBindings } from "./slide-template-bindings.js";
+import type {
+	SlideContentLocations,
+	SlideContentLocationsArguments,
+} from "./slide-content-locations.js";
+import type { SlideContentRequests } from "./slide-content-requests.js";
+import type { SlideTemplateBindings } from "./slide-template-bindings.js";
+
+export interface GoogleSlidesContentRepositoryCollaborators {
+	readonly slideTemplateBindings: Pick<SlideTemplateBindings, "discover">;
+	readonly slideContentRequests: Pick<SlideContentRequests, "build">;
+	readonly createSlideContentLocations: (
+		...args: SlideContentLocationsArguments
+	) => SlideContentLocations;
+}
 
 export class GoogleSlidesContentRepository implements AssetContentRepository {
 	private current?: slides_v1.Schema$Presentation;
 	constructor(
+		private readonly collaborators: GoogleSlidesContentRepositoryCollaborators,
 		private readonly client: Pick<slides_v1.Slides, "presentations">,
 		private readonly images: AssetImageRepository,
 	) {}
-
-	static create(
-		authentication: ConstructorParameters<typeof slides_v1.Slides>[0]["auth"],
-		images: AssetImageRepository,
-	): GoogleSlidesContentRepository {
-		return new GoogleSlidesContentRepository(
-			slides({ version: "v1", auth: authentication }),
-			images,
-		);
-	}
 
 	async read(
 		fileId: string,
@@ -41,11 +43,11 @@ export class GoogleSlidesContentRepository implements AssetContentRepository {
 		if (!data.revisionId || data.presentationId !== fileId)
 			throw new ContentError("location");
 		const bindings =
-			registered ?? SlideTemplateBindings.discover(data, contract);
-		const locations = await new SlideContentLocations(this.images).read(
-			data,
-			bindings,
-		);
+			registered ??
+			this.collaborators.slideTemplateBindings.discover(data, contract);
+		const locations = await this.collaborators
+			.createSlideContentLocations(this.images)
+			.read(data, bindings);
 		this.current = data;
 		return { revision: data.revisionId, locations };
 	}
@@ -63,7 +65,7 @@ export class GoogleSlidesContentRepository implements AssetContentRepository {
 		)
 			throw new ContentError("revision");
 		const requests = changes.flatMap((change) =>
-			SlideContentRequests.build(current, change),
+			this.collaborators.slideContentRequests.build(current, change),
 		);
 		try {
 			const { data } = await this.client.presentations.batchUpdate(
@@ -84,3 +86,10 @@ export class GoogleSlidesContentRepository implements AssetContentRepository {
 		}
 	}
 }
+export type GoogleSlidesContentRepositoryArguments =
+	ConstructorParameters<typeof GoogleSlidesContentRepository> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

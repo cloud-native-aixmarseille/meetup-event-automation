@@ -3,13 +3,21 @@ import {
 	type AssetImageRepository,
 	type ContentBinding,
 	ContentError,
-	ContentFingerprint,
+	type ContentFingerprint,
 	type ObservedLocation,
 } from "@meetup-automation/publication";
-import { type DocumentTab, DocumentTabs } from "./document-tabs.js";
+import type { DocumentTab, DocumentTabs } from "./document-tabs.js";
+
+export interface DocumentContentLocationsCollaborators {
+	readonly documentTabs: Pick<DocumentTabs, "text" | "rejectSuggestions">;
+	readonly contentFingerprint: Pick<ContentFingerprint, "of">;
+}
 
 export class DocumentContentLocations {
-	constructor(private readonly images: AssetImageRepository) {}
+	constructor(
+		private readonly collaborators: DocumentContentLocationsCollaborators,
+		private readonly images: AssetImageRepository,
+	) {}
 
 	async read(
 		tabs: readonly DocumentTab[],
@@ -19,13 +27,17 @@ export class DocumentContentLocations {
 		const tab = tabs.find((tab) => tab.id === binding.anchor.tabId);
 		if (!tab || binding.anchor.segmentId) throw new ContentError("conflict");
 		if (binding.type === "image") return this.image(tab, binding);
-		const range = DocumentContentLocations.range(tabs, binding, initial);
-		const text = DocumentTabs.text(tab, range.startIndex, range.endIndex);
+		const range = this.range(tabs, binding, initial);
+		const text = this.collaborators.documentTabs.text(
+			tab,
+			range.startIndex,
+			range.endIndex,
+		);
 		return {
 			id: binding.id,
 			key: binding.key,
 			type: "text",
-			fingerprint: ContentFingerprint.of(text),
+			fingerprint: this.collaborators.contentFingerprint.of(text),
 			anchor: {
 				...binding.anchor,
 				start: range.startIndex,
@@ -34,7 +46,7 @@ export class DocumentContentLocations {
 		};
 	}
 
-	private static range(
+	private range(
 		tabs: readonly DocumentTab[],
 		binding: ContentBinding,
 		initial: boolean,
@@ -97,8 +109,8 @@ export class DocumentContentLocations {
 			!object.description?.trim()
 		)
 			throw new ContentError("conflict");
-		DocumentTabs.rejectSuggestions(object);
-		DocumentTabs.rejectSuggestions(references[0]);
+		this.collaborators.documentTabs.rejectSuggestions(object);
+		this.collaborators.documentTabs.rejectSuggestions(references[0]);
 		const bytes = await this.images.observe(object.imageProperties.contentUri);
 		const {
 			contentUri: _content,
@@ -110,7 +122,7 @@ export class DocumentContentLocations {
 			type: "image",
 			key: binding.key,
 			anchor: binding.anchor,
-			fingerprint: ContentFingerprint.of(
+			fingerprint: this.collaborators.contentFingerprint.of(
 				// Persisted observation bytes preserve provider property order.
 				// Do not canonicalize this representation without also handling
 				// existing binding fingerprints and uncertain image recovery.
@@ -119,3 +131,10 @@ export class DocumentContentLocations {
 		};
 	}
 }
+export type DocumentContentLocationsArguments =
+	ConstructorParameters<typeof DocumentContentLocations> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

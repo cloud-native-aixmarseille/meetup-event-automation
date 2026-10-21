@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { JourneyPolicyComposition } from "../policy-composition.js";
 import { OrganizerDiagnosticPolicy } from "./organizer-diagnostic-policy.js";
 import type { PublicDiagnostic } from "./result-envelope.js";
 
@@ -19,7 +20,9 @@ describe("organizer diagnostic root causes", () => {
 		const diagnostics = [item, { ...diagnostic, code: cause }];
 
 		// Act
-		const suppressed = OrganizerDiagnosticPolicy.suppressed(item, diagnostics);
+		const suppressed = new OrganizerDiagnosticPolicy({
+			diagnosticPolicy: new JourneyPolicyComposition().diagnosticPolicy(),
+		}).suppressed(item, diagnostics);
 
 		// Assert
 		expect(suppressed).toBe(true);
@@ -30,7 +33,9 @@ describe("organizer diagnostic root causes", () => {
 		const item = { ...diagnostic, code: "publication.assets.prerequisites" };
 
 		// Act
-		const suppressed = OrganizerDiagnosticPolicy.suppressed(item, [item]);
+		const suppressed = new OrganizerDiagnosticPolicy({
+			diagnosticPolicy: new JourneyPolicyComposition().diagnosticPolicy(),
+		}).suppressed(item, [item]);
 
 		// Assert
 		expect(suppressed).toBe(false);
@@ -45,7 +50,9 @@ describe("organizer diagnostic root causes", () => {
 		];
 
 		// Act
-		const suppressed = OrganizerDiagnosticPolicy.suppressed(item, diagnostics);
+		const suppressed = new OrganizerDiagnosticPolicy({
+			diagnosticPolicy: new JourneyPolicyComposition().diagnosticPolicy(),
+		}).suppressed(item, diagnostics);
 
 		// Assert
 		expect(suppressed).toBe(false);

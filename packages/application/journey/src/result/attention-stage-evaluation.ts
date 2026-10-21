@@ -3,35 +3,42 @@ import {
 	ATTENTION_STAGE_OWNERS,
 	type AttentionStageReports,
 } from "./attention-stage-reports.js";
-import { DiagnosticPolicy } from "./diagnostic-policy.js";
-import { OrganizerDiagnosticPolicy } from "./organizer-diagnostic-policy.js";
+import type { DiagnosticPolicy } from "./diagnostic-policy.js";
+import type { OrganizerDiagnosticPolicy } from "./organizer-diagnostic-policy.js";
 import type { PublicDiagnostic } from "./result-envelope.js";
 /** Classifies stage evidence; a failed or absent evaluation cannot resolve work. */
+export interface AttentionStageEvaluationCollaborators {
+	readonly diagnosticPolicy: Pick<
+		DiagnosticPolicy,
+		"isTechnicalFailure" | "classify"
+	>;
+	readonly organizerDiagnosticPolicy: Pick<
+		OrganizerDiagnosticPolicy,
+		"derivative"
+	>;
+}
+
 export class AttentionStageEvaluation {
-	static evaluate(input: AttentionStageReports): readonly AttentionStage[] {
+	constructor(
+		private readonly collaborators: AttentionStageEvaluationCollaborators,
+	) {}
+
+	evaluate(input: AttentionStageReports): readonly AttentionStage[] {
 		const eventDiagnostics = input.event.diagnostics;
 		return ATTENTION_STAGE_OWNERS.map((owner) => {
 			const { outcome, diagnostics } = input[owner];
 			const blocked = diagnostics.some(
 				(item) =>
-					DiagnosticPolicy.isTechnicalFailure(item) &&
-					!AttentionStageEvaluation.eventPrerequisite(
-						item.code,
-						owner,
-						eventDiagnostics,
-					),
+					this.collaborators.diagnosticPolicy.isTechnicalFailure(item) &&
+					!this.eventPrerequisite(item.code, owner, eventDiagnostics),
 			);
 			const prerequisiteBlocked =
 				outcome !== "unknown" &&
 				!blocked &&
 				diagnostics.some(
 					(item) =>
-						AttentionStageEvaluation.organizerPrerequisite(item) ||
-						AttentionStageEvaluation.eventPrerequisite(
-							item.code,
-							owner,
-							eventDiagnostics,
-						),
+						this.organizerPrerequisite(item) ||
+						this.eventPrerequisite(item.code, owner, eventDiagnostics),
 				);
 			return {
 				owner,
@@ -41,9 +48,7 @@ export class AttentionStageEvaluation {
 			};
 		});
 	}
-	static diagnostics(
-		input: AttentionStageReports,
-	): readonly PublicDiagnostic[] {
+	diagnostics(input: AttentionStageReports): readonly PublicDiagnostic[] {
 		const diagnostics = new Map<string, PublicDiagnostic>();
 		for (const owner of ATTENTION_STAGE_OWNERS)
 			for (const item of input[owner].diagnostics)
@@ -56,10 +61,11 @@ export class AttentionStageEvaluation {
 			(item) =>
 				!["action.execution.failed", "event.concurrently-modified"].includes(
 					item.code,
-				) && !OrganizerDiagnosticPolicy.derivative(item, merged),
+				) &&
+				!this.collaborators.organizerDiagnosticPolicy.derivative(item, merged),
 		);
 	}
-	static complete(input: AttentionStageReports): boolean {
+	complete(input: AttentionStageReports): boolean {
 		return ATTENTION_STAGE_OWNERS.every((owner) => {
 			const stage = input[owner];
 			return (
@@ -67,16 +73,16 @@ export class AttentionStageEvaluation {
 				stage.reported &&
 				!stage.diagnostics.some(
 					(item) =>
-						DiagnosticPolicy.isTechnicalFailure(item) ||
+						this.collaborators.diagnosticPolicy.isTechnicalFailure(item) ||
 						item.code === "event.concurrently-modified",
 				)
 			);
 		});
 	}
-	private static organizerPrerequisite(item: PublicDiagnostic): boolean {
+	private organizerPrerequisite(item: PublicDiagnostic): boolean {
 		if (item.code === "event.concurrently-modified") return true;
 		return (
-			DiagnosticPolicy.classify(item) === "organizer" &&
+			this.collaborators.diagnosticPolicy.classify(item) === "organizer" &&
 			![
 				"communication.approval-pending",
 				"communication.approval-rejected",
@@ -84,7 +90,7 @@ export class AttentionStageEvaluation {
 		);
 	}
 
-	private static eventPrerequisite(
+	private eventPrerequisite(
 		code: string,
 		owner: string,
 		eventDiagnostics: readonly PublicDiagnostic[],
@@ -92,7 +98,8 @@ export class AttentionStageEvaluation {
 		if (owner === "event") return false;
 		return eventDiagnostics.some((item) => {
 			if (
-				DiagnosticPolicy.classify(item) === "informational" ||
+				this.collaborators.diagnosticPolicy.classify(item) ===
+					"informational" ||
 				!/^(event|referential)\./.test(item.code)
 			)
 				return false;

@@ -1,12 +1,26 @@
-import {
-	type EventDiagnostic,
+import type {
+	EventDiagnostic,
 	EventDiagnostics,
 } from "@meetup-automation/event";
 import type { Section } from "./github-issue-form-event-document-codec-contracts.js";
-import { MarkdownLines } from "./markdown-lines.js";
+import type { MarkdownLines } from "./markdown-lines.js";
+
+export interface IssueFormSectionsCollaborators {
+	readonly markdownLines: Pick<
+		MarkdownLines,
+		| "findLineEnd"
+		| "findNextLineStart"
+		| "parseHeadingLine"
+		| "trimTrailingWhitespace"
+		| "trimLeadingWhitespace"
+	>;
+	readonly eventDiagnostics: Pick<EventDiagnostics, "diagnostic">;
+}
 
 export class IssueFormSections {
-	static parseSections(body: string): ReadonlyMap<string, readonly Section[]> {
+	constructor(private readonly collaborators: IssueFormSectionsCollaborators) {}
+
+	parseSections(body: string): ReadonlyMap<string, readonly Section[]> {
 		const sections = new Map<string, Section[]>();
 		let pending:
 			| Readonly<{
@@ -17,15 +31,21 @@ export class IssueFormSections {
 			| undefined;
 
 		for (let cursor = 0; cursor < body.length; ) {
-			const lineEnd = MarkdownLines.findLineEnd(body, cursor);
-			const nextLineStart = MarkdownLines.findNextLineStart(body, lineEnd);
-			const heading = MarkdownLines.parseHeadingLine(
+			const lineEnd = this.collaborators.markdownLines.findLineEnd(
+				body,
+				cursor,
+			);
+			const nextLineStart = this.collaborators.markdownLines.findNextLineStart(
+				body,
+				lineEnd,
+			);
+			const heading = this.collaborators.markdownLines.parseHeadingLine(
 				body.slice(cursor, lineEnd),
 			);
 
 			if (heading !== undefined) {
 				if (pending) {
-					IssueFormSections.appendSection(sections, {
+					this.appendSection(sections, {
 						heading: pending.heading,
 						headingStart: pending.headingStart,
 						contentStart: pending.contentStart,
@@ -44,7 +64,7 @@ export class IssueFormSections {
 		}
 
 		if (pending) {
-			IssueFormSections.appendSection(sections, {
+			this.appendSection(sections, {
 				heading: pending.heading,
 				headingStart: pending.headingStart,
 				contentStart: pending.contentStart,
@@ -56,25 +76,18 @@ export class IssueFormSections {
 		return sections;
 	}
 
-	static appendSection(
-		sections: Map<string, Section[]>,
-		section: Section,
-	): void {
+	appendSection(sections: Map<string, Section[]>, section: Section): void {
 		const existing = sections.get(section.heading) ?? [];
 		sections.set(section.heading, [...existing, section]);
 	}
 
-	static cleanResponse(value: string): string {
+	cleanResponse(value: string): string {
 		const trimmed = value.trim();
 		return trimmed === "_No response_" ? "" : trimmed;
 	}
 
-	static replaceOrAppendSection(
-		body: string,
-		heading: string,
-		value: string,
-	): string {
-		const section = IssueFormSections.parseSections(body).get(heading)?.[0];
+	replaceOrAppendSection(body: string, heading: string, value: string): string {
+		const section = this.parseSections(body).get(heading)?.[0];
 		const normalizedValue = value.trim();
 		if (!section) {
 			if (!normalizedValue) {
@@ -84,22 +97,22 @@ export class IssueFormSections {
 				body.length === 0 || body.endsWith("\n\n") ? "" : "\n\n";
 			return `${body}${separator}### ${heading}\n\n${normalizedValue}\n`;
 		}
-		if (IssueFormSections.cleanResponse(section.value) === normalizedValue) {
+		if (this.cleanResponse(section.value) === normalizedValue) {
 			return body;
 		}
 		return `${body.slice(0, section.contentStart)}\n${normalizedValue}\n\n${body.slice(section.contentEnd)}`;
 	}
 
-	static removeSection(body: string, heading: string): string {
-		const section = IssueFormSections.parseSections(body).get(heading)?.[0];
+	removeSection(body: string, heading: string): string {
+		const section = this.parseSections(body).get(heading)?.[0];
 		if (!section) {
 			return body;
 		}
 
-		const before = MarkdownLines.trimTrailingWhitespace(
+		const before = this.collaborators.markdownLines.trimTrailingWhitespace(
 			body.slice(0, section.headingStart),
 		);
-		const after = MarkdownLines.trimLeadingWhitespace(
+		const after = this.collaborators.markdownLines.trimLeadingWhitespace(
 			body.slice(section.contentEnd),
 		);
 		if (before === "") {
@@ -111,7 +124,7 @@ export class IssueFormSections {
 		return `${before}\n\n${after}`;
 	}
 
-	static readSection(
+	readSection(
 		sections: ReadonlyMap<string, readonly Section[]>,
 		heading: string,
 		required: boolean,
@@ -121,7 +134,7 @@ export class IssueFormSections {
 		if (matches.length === 0) {
 			if (required) {
 				diagnostics.push(
-					EventDiagnostics.diagnostic({
+					this.collaborators.eventDiagnostics.diagnostic({
 						code: "event.document.heading.missing",
 						severity: "error",
 						category: "invalid",
@@ -135,7 +148,7 @@ export class IssueFormSections {
 		}
 		if (matches.length > 1) {
 			diagnostics.push(
-				EventDiagnostics.diagnostic({
+				this.collaborators.eventDiagnostics.diagnostic({
 					code: "event.document.heading.duplicate",
 					severity: "error",
 					category: "invalid",
@@ -144,6 +157,6 @@ export class IssueFormSections {
 				}),
 			);
 		}
-		return IssueFormSections.cleanResponse(matches[0].value);
+		return this.cleanResponse(matches[0].value);
 	}
 }

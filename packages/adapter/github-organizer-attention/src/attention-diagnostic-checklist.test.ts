@@ -3,11 +3,15 @@ import {
 	AttentionDiagnosticChecklist,
 	DIAGNOSTIC_MARKER,
 } from "./attention-diagnostic-checklist.js";
+import { GithubOrganizerAttentionComposition } from "./dependency-composition.js";
 
 describe("diagnostic checklist decoding", () => {
 	it("decodes public headings and removes duplicate lines", () => {
 		// Arrange
-		const checklist = new AttentionDiagnosticChecklist();
+		const checklist = new AttentionDiagnosticChecklist({
+			createAttentionMessages: (...args) =>
+				new GithubOrganizerAttentionComposition().attentionMessages(...args),
+		});
 		const line = "- [ ] **Event Date**: Set the event date.";
 
 		// Act
@@ -35,7 +39,10 @@ describe("diagnostic checklist decoding", () => {
 		"recognizes existing localized public action %s",
 		(description, action) => {
 			// Arrange
-			const checklist = new AttentionDiagnosticChecklist();
+			const checklist = new AttentionDiagnosticChecklist({
+				createAttentionMessages: (...args) =>
+					new GithubOrganizerAttentionComposition().attentionMessages(...args),
+			});
 
 			// Act
 			checklist.set(
@@ -50,7 +57,10 @@ describe("diagnostic checklist decoding", () => {
 	);
 	it("excludes stored attention details from the diagnostic source", () => {
 		// Arrange
-		const checklist = new AttentionDiagnosticChecklist();
+		const checklist = new AttentionDiagnosticChecklist({
+			createAttentionMessages: (...args) =>
+				new GithubOrganizerAttentionComposition().attentionMessages(...args),
+		});
 
 		// Act
 		checklist.set(

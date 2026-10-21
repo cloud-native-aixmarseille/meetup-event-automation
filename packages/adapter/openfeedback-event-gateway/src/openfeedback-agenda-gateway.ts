@@ -1,10 +1,21 @@
 import type { FeedbackAgenda } from "@meetup-automation/publication";
+import type { OpenFeedbackAgendaPlan } from "./openfeedback-agenda-plan.js";
+import type { OpenFeedbackAgendaSnapshot } from "./openfeedback-agenda-snapshot.js";
 import type { OpenFeedbackRecordsGateway } from "./openfeedback-records-gateway.js";
-import { OpenFeedbackAgendaPlan } from "./openfeedback-agenda-plan.js";
-import { OpenFeedbackAgendaSnapshot } from "./openfeedback-agenda-snapshot.js";
+
+export interface OpenFeedbackAgendaGatewayCollaborators {
+	readonly openFeedbackAgendaSnapshot: Pick<
+		OpenFeedbackAgendaSnapshot,
+		"parse"
+	>;
+	readonly openFeedbackAgendaPlan: Pick<OpenFeedbackAgendaPlan, "create">;
+}
 
 export class OpenFeedbackAgendaGateway {
-	constructor(private readonly records: OpenFeedbackRecordsGateway) {}
+	constructor(
+		private readonly collaborators: OpenFeedbackAgendaGatewayCollaborators,
+		private readonly records: OpenFeedbackRecordsGateway,
+	) {}
 
 	async synchronize(
 		id: string,
@@ -13,8 +24,15 @@ export class OpenFeedbackAgendaGateway {
 	): Promise<void> {
 		const speakers = await this.records.list(id, "speakers");
 		const talks = await this.records.list(id, "talks");
-		const current = OpenFeedbackAgendaSnapshot.parse({ speakers, talks });
-		const changes = OpenFeedbackAgendaPlan.create(key, agenda, current);
+		const current = this.collaborators.openFeedbackAgendaSnapshot.parse({
+			speakers,
+			talks,
+		});
+		const changes = this.collaborators.openFeedbackAgendaPlan.create(
+			key,
+			agenda,
+			current,
+		);
 		for (const speaker of changes.speakers)
 			await this.records.synchronize(
 				id,
@@ -31,3 +49,10 @@ export class OpenFeedbackAgendaGateway {
 			);
 	}
 }
+export type OpenFeedbackAgendaGatewayArguments =
+	ConstructorParameters<typeof OpenFeedbackAgendaGateway> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

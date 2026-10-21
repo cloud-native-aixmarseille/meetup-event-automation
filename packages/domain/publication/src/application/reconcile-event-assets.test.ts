@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
+import { contentFixture } from "../../testing/content.fixtures.js";
+import { PublicationDomainComposition } from "../dependency-composition.js";
 import type { AssetRepository, AssetTemplate } from "./ports.js";
 import { ReconcileEventAssets } from "./reconcile-event-assets.js";
-import { contentFixture } from "../../testing/content.fixtures.js";
 
 const input = {
 	eventId: "community/meetups#42",
@@ -48,7 +49,16 @@ function setup() {
 			.mockResolvedValue(file),
 		updateFile: vi.fn<AssetRepository["updateFile"]>().mockResolvedValue(file),
 	};
-	return { repository, reconcile: new ReconcileEventAssets(repository) };
+	return {
+		repository,
+		reconcile: new ReconcileEventAssets(
+			{
+				createReconcileAssetFile: (...args) =>
+					new PublicationDomainComposition().reconcileAssetFile(...args),
+			},
+			repository,
+		),
+	};
 }
 
 describe("event asset reconciliation", () => {
@@ -74,7 +84,14 @@ describe("event asset reconciliation", () => {
 				url: "https://drive.google.com/file/d/attendance-copy/view",
 			}),
 		);
-		const reconcile = new ReconcileEventAssets(repository, content.service);
+		const reconcile = new ReconcileEventAssets(
+			{
+				createReconcileAssetFile: (...args) =>
+					new PublicationDomainComposition().reconcileAssetFile(...args),
+			},
+			repository,
+			content.service,
+		);
 
 		// Act
 		const result = await reconcile.execute({

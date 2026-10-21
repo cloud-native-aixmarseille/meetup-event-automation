@@ -7,3 +7,6 @@ export class SystemCommunicationClock implements CommunicationClock {
 		return this.dateFactory();
 	}
 }
+export type SystemCommunicationClockArguments = ConstructorParameters<
+	typeof SystemCommunicationClock
+>;

@@ -20,7 +20,10 @@ describe("scheduled event validation", () => {
 			const input = { ...event, date, startTime: "02:30", endTime: "04:30" };
 
 			// Act
-			const result = ScheduledEventPolicy.valid(input, "2026-09-01T10:00:00Z");
+			const result = new ScheduledEventPolicy().valid(
+				input,
+				"2026-09-01T10:00:00Z",
+			);
 
 			// Assert
 			expect(result).toBe(false);
@@ -46,7 +49,10 @@ describe("scheduled event validation", () => {
 			const input = { ...event, ...overrides };
 
 			// Act
-			const result = ScheduledEventPolicy.valid(input, "2026-09-01T10:00:00Z");
+			const result = new ScheduledEventPolicy().valid(
+				input,
+				"2026-09-01T10:00:00Z",
+			);
 
 			// Assert
 			expect(result).toBe(false);
@@ -65,7 +71,7 @@ describe("scheduled event validation", () => {
 			const input = { ...event };
 
 			// Act
-			const result = ScheduledEventPolicy.valid(input, now);
+			const result = new ScheduledEventPolicy().valid(input, now);
 
 			// Assert
 			expect(result).toBe(expected);

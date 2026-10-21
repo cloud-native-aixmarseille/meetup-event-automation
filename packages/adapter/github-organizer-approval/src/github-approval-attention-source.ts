@@ -28,3 +28,6 @@ export class GithubApprovalAttentionSource implements AttentionApprovalSource {
 		return result;
 	}
 }
+export type GithubApprovalAttentionSourceArguments = ConstructorParameters<
+	typeof GithubApprovalAttentionSource
+>;

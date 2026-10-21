@@ -2,15 +2,28 @@ import type {
 	OpenFeedbackSpeaker,
 	OpenFeedbackTalk,
 } from "./openfeedback-agenda-snapshot.js";
-import { OpenFeedbackClient } from "./openfeedback-client.js";
-import { OpenFeedbackRecordEquality } from "./openfeedback-record-equality.js";
-import { OpenFeedbackResourceId } from "./openfeedback-resource-id.js";
+import type { OpenFeedbackClient } from "./openfeedback-client.js";
+import type { OpenFeedbackRecordEquality } from "./openfeedback-record-equality.js";
+import type { OpenFeedbackResourceId } from "./openfeedback-resource-id.js";
+import type { OpenFeedbackResponse } from "./openfeedback-response.js";
 
 type RecordKind = "speakers" | "talks";
 type FeedbackRecord = OpenFeedbackSpeaker | OpenFeedbackTalk;
 
+export interface OpenFeedbackRecordsGatewayCollaborators {
+	readonly openFeedbackResponse: Pick<OpenFeedbackResponse, "read">;
+	readonly openFeedbackRecordEquality: Pick<
+		OpenFeedbackRecordEquality,
+		"equal"
+	>;
+	readonly openFeedbackResourceId: Pick<OpenFeedbackResourceId, "isValid">;
+}
+
 export class OpenFeedbackRecordsGateway {
-	constructor(private readonly client: OpenFeedbackClient) {}
+	constructor(
+		private readonly collaborators: OpenFeedbackRecordsGatewayCollaborators,
+		private readonly client: OpenFeedbackClient,
+	) {}
 
 	async list(eventId: string, kind: RecordKind): Promise<unknown[]> {
 		const records: unknown[] = [];
@@ -19,17 +32,13 @@ export class OpenFeedbackRecordsGateway {
 		for (;;) {
 			const query = cursor ? `&after=${encodeURIComponent(cursor)}` : "";
 			const path = `/events/${eventId}/${kind}?limit=100${query}`;
-			const body = await OpenFeedbackClient.read(
+			const body = await this.collaborators.openFeedbackResponse.read(
 				await this.client.request(path, "GET"),
 				eventId,
 			);
 			const page = body[kind];
 			const next = body.nextCursor;
-			if (
-				!Array.isArray(page) ||
-				page.length > 100 ||
-				!OpenFeedbackRecordsGateway.validCursor(next)
-			)
+			if (!Array.isArray(page) || page.length > 100 || !this.validCursor(next))
 				throw new Error("Invalid OpenFeedback list response");
 			records.push(...page);
 			if (records.length > 200 || (records.length === 200 && next !== null))
@@ -49,7 +58,11 @@ export class OpenFeedbackRecordsGateway {
 		previous: (FeedbackRecord & { readonly revision: string }) | undefined,
 	): Promise<void> {
 		const { id, ...fields } = record;
-		if (previous && OpenFeedbackRecordEquality.equal(record, previous)) return;
+		if (
+			previous &&
+			this.collaborators.openFeedbackRecordEquality.equal(record, previous)
+		)
+			return;
 		const base = `/events/${eventId}/${kind}`;
 		const response = previous
 			? await this.client.request(
@@ -61,10 +74,19 @@ export class OpenFeedbackRecordsGateway {
 					},
 				)
 			: await this.client.request(base, "POST", record);
-		await OpenFeedbackClient.read(response, id);
+		await this.collaborators.openFeedbackResponse.read(response, id);
 	}
 
-	private static validCursor(value: unknown): value is string | null {
-		return value === null || OpenFeedbackResourceId.isValid(value);
+	private validCursor(value: unknown): value is string | null {
+		return (
+			value === null || this.collaborators.openFeedbackResourceId.isValid(value)
+		);
 	}
 }
+export type OpenFeedbackRecordsGatewayArguments =
+	ConstructorParameters<typeof OpenFeedbackRecordsGateway> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

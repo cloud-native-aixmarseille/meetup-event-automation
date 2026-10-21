@@ -1,16 +1,22 @@
 import { FOLLOW_UP_TASKS, type FollowUpTask } from "@meetup-automation/journey";
-import { ApprovalSchema } from "./approval-schema.js";
+import type { ApprovalSchema } from "./approval-schema.js";
 export interface StoredFollowUp {
 	readonly active: boolean;
 	readonly pendingTasks: readonly FollowUpTask[];
 	readonly attention?: string;
 	readonly attentionDetails?: string;
 }
+export interface FollowUpSchemaCollaborators {
+	readonly approvalSchema: Pick<ApprovalSchema, "object">;
+}
+
 export class FollowUpSchema {
-	static validate(value: unknown): asserts value is StoredFollowUp | undefined {
+	constructor(private readonly collaborators: FollowUpSchemaCollaborators) {}
+
+	validate(value: unknown): asserts value is StoredFollowUp | undefined {
 		if (value === undefined) return;
 		if (
-			!ApprovalSchema.object(value) ||
+			!this.collaborators.approvalSchema.object(value) ||
 			typeof value.active !== "boolean" ||
 			!Array.isArray(value.pendingTasks) ||
 			value.pendingTasks.length > FOLLOW_UP_TASKS.length ||

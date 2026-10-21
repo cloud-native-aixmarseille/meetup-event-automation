@@ -5,12 +5,19 @@ import type {
 	ContentSnapshot,
 	ContentValue,
 } from "./asset-content.js";
-import { ContentAnchorIdentity } from "./content-anchor-identity.js";
-import { ContentContractPolicy } from "./content-contract-policy.js";
+import type { ContentAnchorIdentity } from "./content-anchor-identity.js";
+import type { ContentContractPolicy } from "./content-contract-policy.js";
 import { ContentError } from "./content-error.js";
 
+export interface ContentRenderPlanCollaborators {
+	readonly contentContractPolicy: Pick<ContentContractPolicy, "name">;
+	readonly contentAnchorIdentity: Pick<ContentAnchorIdentity, "equal">;
+}
+
 export class ContentRenderPlan {
-	static changes(
+	constructor(private readonly collaborators: ContentRenderPlanCollaborators) {}
+
+	changes(
 		manifest: ContentManifest,
 		snapshot: ContentSnapshot,
 		values: readonly ContentValue[],
@@ -36,7 +43,7 @@ export class ContentRenderPlan {
 		return changes;
 	}
 
-	static pending(
+	pending(
 		manifest: ContentManifest,
 		snapshot: ContentSnapshot,
 		changes: readonly ContentChange[],
@@ -65,7 +72,7 @@ export class ContentRenderPlan {
 		};
 	}
 
-	static settle(
+	settle(
 		manifest: ContentManifest,
 		snapshot: ContentSnapshot,
 		confirmed: boolean,
@@ -91,7 +98,7 @@ export class ContentRenderPlan {
 					: manifest.initialRevision,
 				bindings: next.map((binding) => ({
 					...binding,
-					applied: ContentRenderPlan.fingerprint(snapshot, binding.id),
+					applied: this.fingerprint(snapshot, binding.id),
 				})),
 			};
 		const prior = manifest.bindings.every(
@@ -111,14 +118,14 @@ export class ContentRenderPlan {
 		return { ...manifest, pending: undefined };
 	}
 
-	static initial(snapshot: ContentSnapshot): readonly ContentBinding[] {
+	initial(snapshot: ContentSnapshot): readonly ContentBinding[] {
 		if (
 			!snapshot.locations.length ||
 			snapshot.locations.length > 500 ||
 			snapshot.locations.some(
 				(location) =>
-					!ContentContractPolicy.name(location.id) ||
-					!ContentContractPolicy.name(location.key),
+					!this.collaborators.contentContractPolicy.name(location.id) ||
+					!this.collaborators.contentContractPolicy.name(location.key),
 			) ||
 			new Set(snapshot.locations.map((location) => location.id)).size !==
 				snapshot.locations.length ||
@@ -126,7 +133,10 @@ export class ContentRenderPlan {
 				snapshot.locations
 					.slice(0, index)
 					.some((prior) =>
-						ContentAnchorIdentity.equal(prior.anchor, location.anchor),
+						this.collaborators.contentAnchorIdentity.equal(
+							prior.anchor,
+							location.anchor,
+						),
 					),
 			)
 		)
@@ -140,7 +150,7 @@ export class ContentRenderPlan {
 		}));
 	}
 
-	static fingerprint(snapshot: ContentSnapshot, bindingId: string): string {
+	fingerprint(snapshot: ContentSnapshot, bindingId: string): string {
 		const matches = snapshot.locations.filter(
 			(location) => location.id === bindingId,
 		);

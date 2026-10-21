@@ -1,7 +1,7 @@
 import type { AttentionState } from "./model.js";
 /** Invariants of persisted and newly reconciled notification authority. */
 export class AttentionStateRules {
-	static validate(state: AttentionState): void {
+	validate(state: AttentionState): void {
 		if (
 			new Set(state.episodes.map((item) => item.condition.key)).size !==
 			state.episodes.length

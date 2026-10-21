@@ -1,5 +1,9 @@
 export type { IssueFormProjectionMode } from "@meetup-automation/journey";
-export { YamlIssueFormProjection } from "./yaml-issue-form-projection.js";
+export { YamlIssueFormProjectionComposition } from "./dependency-composition.js";
+export {
+	YamlIssueFormProjection,
+	type YamlIssueFormProjectionArguments,
+} from "./yaml-issue-form-projection.js";
 export type {
 	IssueFormProjectionDiagnostic,
 	IssueFormProjectionResult,

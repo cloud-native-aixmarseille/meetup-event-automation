@@ -3,7 +3,7 @@ import type { MeetupEvent, OperationalChecklistItem } from "./model.js";
 export class MeetupPublicationChecklist {
 	static readonly taskName = "Meetup event published";
 
-	static isPublished(
+	isPublished(
 		event: Pick<MeetupEvent, "publicationLinks" | "operationalChecklists">,
 	): boolean {
 		const matches = event.operationalChecklists.communication.filter(
@@ -16,7 +16,7 @@ export class MeetupPublicationChecklist {
 		);
 	}
 
-	static withStatus(event: MeetupEvent, published: boolean): MeetupEvent {
+	withStatus(event: MeetupEvent, published: boolean): MeetupEvent {
 		const communication: OperationalChecklistItem[] = [];
 		let found = false;
 		for (const item of event.operationalChecklists.communication) {

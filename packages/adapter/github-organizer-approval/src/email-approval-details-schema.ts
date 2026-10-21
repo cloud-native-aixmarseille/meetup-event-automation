@@ -3,27 +3,35 @@ import type {
 	ApprovalEmailLink,
 	OrganizerApprovalDetails,
 } from "@meetup-automation/journey";
-import { ApprovalSchema } from "./approval-schema.js";
+import type { ApprovalSchema } from "./approval-schema.js";
+
+export interface EmailApprovalDetailsSchemaCollaborators {
+	readonly approvalSchema: Pick<ApprovalSchema, "object" | "count" | "text">;
+}
 
 export class EmailApprovalDetailsSchema {
-	static validate(
+	constructor(
+		private readonly collaborators: EmailApprovalDetailsSchemaCollaborators,
+	) {}
+
+	validate(
 		details: unknown,
 	): asserts details is OrganizerApprovalDetails | undefined {
 		if (details === undefined) return;
 		if (
-			!ApprovalSchema.object(details) ||
+			!this.collaborators.approvalSchema.object(details) ||
 			!Array.isArray(details.emails) ||
 			details.emails.length > 20 ||
-			!ApprovalSchema.count(details.omittedEmails) ||
+			!this.collaborators.approvalSchema.count(details.omittedEmails) ||
 			JSON.stringify(details).length > 12_000 ||
-			!details.emails.every(EmailApprovalDetailsSchema.email)
+			!details.emails.every(this.email.bind(this))
 		)
 			throw new Error("Invalid approval details");
 	}
 
-	private static email(email: unknown): email is ApprovalEmailDetail {
+	private email(email: unknown): email is ApprovalEmailDetail {
 		return (
-			ApprovalSchema.object(email) &&
+			this.collaborators.approvalSchema.object(email) &&
 			typeof email.kind === "string" &&
 			[
 				"host-introduction",
@@ -31,25 +39,26 @@ export class EmailApprovalDetailsSchema {
 				"host-thanks",
 				"speaker-thanks",
 			].includes(email.kind) &&
-			ApprovalSchema.text(email.recipientName, 200) &&
-			ApprovalSchema.count(email.omittedLinks) &&
+			this.collaborators.approvalSchema.text(email.recipientName, 200) &&
+			this.collaborators.approvalSchema.count(email.omittedLinks) &&
 			Array.isArray(email.links) &&
 			email.links.length <= 8 &&
-			email.links.every(EmailApprovalDetailsSchema.link)
+			email.links.every(this.link.bind(this))
 		);
 	}
 
-	private static link(link: unknown): link is ApprovalEmailLink {
+	private link(link: unknown): link is ApprovalEmailLink {
 		return (
-			ApprovalSchema.object(link) &&
+			this.collaborators.approvalSchema.object(link) &&
 			typeof link.kind === "string" &&
 			["meetup", "community", "slides", "feedback"].includes(link.kind) &&
-			(link.title === undefined || ApprovalSchema.text(link.title, 200)) &&
-			EmailApprovalDetailsSchema.url(link.url)
+			(link.title === undefined ||
+				this.collaborators.approvalSchema.text(link.title, 200)) &&
+			this.url(link.url)
 		);
 	}
 
-	private static url(value: unknown): boolean {
+	private url(value: unknown): boolean {
 		if (
 			typeof value !== "string" ||
 			value.length > 2048 ||

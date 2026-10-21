@@ -2,7 +2,9 @@ import type {
 	ProposalSnapshot,
 	SpeakerCatalogStore,
 } from "@meetup-automation/referential";
+import { ReferentialDomainComposition } from "@meetup-automation/referential";
 import { describe, expect, it, vi } from "vitest";
+import { JourneyPolicyComposition } from "../policy-composition.js";
 import { SynchronizeSourceSpeakers } from "./synchronize-source-speakers.js";
 
 const config = {
@@ -55,6 +57,16 @@ describe("SynchronizeSourceSpeakers", () => {
 
 		// Act
 		const result = await new SynchronizeSourceSpeakers(
+			{
+				speakerSynchronizationStageRunner:
+					new JourneyPolicyComposition().speakerSynchronizationStageRunner(),
+				createMergeSourceSpeakers: (...args) =>
+					new ReferentialDomainComposition().mergeSourceSpeakers(...args),
+				createValidateReferentialCatalog: (...args) =>
+					new ReferentialDomainComposition().validateReferentialCatalog(
+						...args,
+					),
+			},
 			source,
 			store,
 			form,
@@ -96,6 +108,16 @@ describe("SynchronizeSourceSpeakers", () => {
 
 		// Act
 		const result = new SynchronizeSourceSpeakers(
+			{
+				speakerSynchronizationStageRunner:
+					new JourneyPolicyComposition().speakerSynchronizationStageRunner(),
+				createMergeSourceSpeakers: (...args) =>
+					new ReferentialDomainComposition().mergeSourceSpeakers(...args),
+				createValidateReferentialCatalog: (...args) =>
+					new ReferentialDomainComposition().validateReferentialCatalog(
+						...args,
+					),
+			},
 			source,
 			store,
 			form,

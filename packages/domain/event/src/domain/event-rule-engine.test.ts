@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { createTestEvent } from "../../testing/event.fixtures.js";
+import { EventDomainComposition } from "../dependency-composition.js";
 import { EventRuleConfigurationError } from "./event-rule-configuration-error.js";
 import { EventRuleEngine } from "./event-rule-engine.js";
-import { EventRuleFactory } from "./event-rule-factory.js";
 import { EMPTY_EVENT_PATCH } from "./patch.js";
 import type { EventRule } from "./rule-contracts.js";
 
@@ -30,7 +30,11 @@ describe("EventRuleEngine", () => {
 
 		// Act
 		const result = new EventRuleEngine(
-			EventRuleFactory.createDefaultEventRules(),
+			{
+				eventRuleOrdering: new EventDomainComposition().eventRuleOrdering(),
+				eventPatches: new EventDomainComposition().eventPatches(),
+			},
+			new EventDomainComposition().eventRuleFactory().createDefaultEventRules(),
 		).evaluate(source);
 		const actual = result.diagnostics.every((item) => item.fixAvailable);
 
@@ -59,7 +63,11 @@ describe("EventRuleEngine", () => {
 
 		// Act
 		const result = new EventRuleEngine(
-			EventRuleFactory.createDefaultEventRules(),
+			{
+				eventRuleOrdering: new EventDomainComposition().eventRuleOrdering(),
+				eventPatches: new EventDomainComposition().eventPatches(),
+			},
+			new EventDomainComposition().eventRuleFactory().createDefaultEventRules(),
 		).evaluate(
 			createTestEvent({
 				date: "2025-02-29",
@@ -92,7 +100,11 @@ describe("EventRuleEngine", () => {
 
 		// Act
 		const result = new EventRuleEngine(
-			EventRuleFactory.createDefaultEventRules(),
+			{
+				eventRuleOrdering: new EventDomainComposition().eventRuleOrdering(),
+				eventPatches: new EventDomainComposition().eventPatches(),
+			},
+			new EventDomainComposition().eventRuleFactory().createDefaultEventRules(),
 		).evaluate(
 			createTestEvent({
 				agenda: [
@@ -118,7 +130,11 @@ describe("EventRuleEngine", () => {
 
 		// Act
 		const result = new EventRuleEngine(
-			EventRuleFactory.createDefaultEventRules(),
+			{
+				eventRuleOrdering: new EventDomainComposition().eventRuleOrdering(),
+				eventPatches: new EventDomainComposition().eventPatches(),
+			},
+			new EventDomainComposition().eventRuleFactory().createDefaultEventRules(),
 		).evaluate(
 			createTestEvent({
 				date: "2024-02-29",
@@ -141,7 +157,11 @@ describe("EventRuleEngine", () => {
 
 		// Act
 		const result = new EventRuleEngine(
-			EventRuleFactory.createDefaultEventRules(),
+			{
+				eventRuleOrdering: new EventDomainComposition().eventRuleOrdering(),
+				eventPatches: new EventDomainComposition().eventPatches(),
+			},
+			new EventDomainComposition().eventRuleFactory().createDefaultEventRules(),
 		).evaluate(
 			createTestEvent({
 				labels: [
@@ -174,7 +194,14 @@ describe("EventRuleEngine", () => {
 		};
 
 		// Act
-		const act = () => new EventRuleEngine([rule]);
+		const act = () =>
+			new EventRuleEngine(
+				{
+					eventRuleOrdering: new EventDomainComposition().eventRuleOrdering(),
+					eventPatches: new EventDomainComposition().eventPatches(),
+				},
+				[rule],
+			);
 
 		// Assert
 		expect(act).toThrowError(
@@ -198,7 +225,14 @@ describe("EventRuleEngine", () => {
 		};
 
 		// Act
-		const act = () => new EventRuleEngine([first, second]);
+		const act = () =>
+			new EventRuleEngine(
+				{
+					eventRuleOrdering: new EventDomainComposition().eventRuleOrdering(),
+					eventPatches: new EventDomainComposition().eventPatches(),
+				},
+				[first, second],
+			);
 
 		// Assert
 		expect(act).toThrowError(/Cyclic event rule dependency/);
@@ -213,7 +247,14 @@ describe("EventRuleEngine", () => {
 		};
 
 		// Act
-		const act = () => new EventRuleEngine([rule, rule]);
+		const act = () =>
+			new EventRuleEngine(
+				{
+					eventRuleOrdering: new EventDomainComposition().eventRuleOrdering(),
+					eventPatches: new EventDomainComposition().eventPatches(),
+				},
+				[rule, rule],
+			);
 
 		// Assert
 		expect(act).toThrowError('Duplicate event rule "same"');

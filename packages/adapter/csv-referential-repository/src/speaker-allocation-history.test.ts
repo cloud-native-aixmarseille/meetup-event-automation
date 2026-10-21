@@ -4,7 +4,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
-import { SpeakerCatalogHistoryError } from "@meetup-automation/referential";
+import {
+	ReferentialDomainComposition,
+	SpeakerCatalogHistoryError,
+} from "@meetup-automation/referential";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { SpeakerAllocationHistory } from "./speaker-allocation-history.js";
 
@@ -51,7 +54,13 @@ describe("SpeakerAllocationHistory", () => {
 		await writeFile(catalog, "speaker_id,display_name\nspeaker-0009,Ninth\n");
 		await git(["commit", "--quiet", "--no-gpg-sign", "-am", "Another event"]);
 		await git(["checkout", "--quiet", "main"]);
-		const history = new SpeakerAllocationHistory(root);
+		const history = new SpeakerAllocationHistory(
+			{
+				referentialIdentifiers:
+					new ReferentialDomainComposition().referentialIdentifiers(),
+			},
+			root,
+		);
 
 		// Act
 		const reserved = await history.read();
@@ -72,7 +81,13 @@ describe("SpeakerAllocationHistory", () => {
 			pathToFileURL(root).href,
 			shallow,
 		]);
-		const history = new SpeakerAllocationHistory(shallow);
+		const history = new SpeakerAllocationHistory(
+			{
+				referentialIdentifiers:
+					new ReferentialDomainComposition().referentialIdentifiers(),
+			},
+			shallow,
+		);
 
 		// Act
 		const result = history.read();
@@ -91,6 +106,10 @@ describe("SpeakerAllocationHistory", () => {
 					"+speaker-0002,Name\n-speaker-0001,Name\n+speaker-0002,Name\n+speaker-99999,Invalid\n",
 			});
 		const history = new SpeakerAllocationHistory(
+			{
+				referentialIdentifiers:
+					new ReferentialDomainComposition().referentialIdentifiers(),
+			},
 			"/checkout with spaces",
 			command,
 		);
@@ -121,7 +140,14 @@ describe("SpeakerAllocationHistory", () => {
 			.mockRejectedValueOnce(
 				new Error("private@example.test git history failed"),
 			);
-		const history = new SpeakerAllocationHistory("/checkout", command);
+		const history = new SpeakerAllocationHistory(
+			{
+				referentialIdentifiers:
+					new ReferentialDomainComposition().referentialIdentifiers(),
+			},
+			"/checkout",
+			command,
+		);
 
 		// Act
 		const result = history.read();

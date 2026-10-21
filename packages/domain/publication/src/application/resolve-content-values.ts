@@ -4,14 +4,23 @@ import type {
 	ImageField,
 	PublicAssetModel,
 } from "../domain/asset-content.js";
-import { ContentContractPolicy } from "../domain/content-contract-policy.js";
+import type { ContentContractPolicy } from "../domain/content-contract-policy.js";
 import { ContentError } from "../domain/content-error.js";
-import { ContentFingerprint } from "../domain/content-fingerprint.js";
-import { ContentTextKey } from "../domain/content-text-key.js";
+import type { ContentFingerprint } from "../domain/content-fingerprint.js";
+import type { ContentTextKey } from "../domain/content-text-key.js";
 import type { AssetImageRepository } from "./content-ports.js";
 
+export interface ResolveContentValuesCollaborators {
+	readonly contentTextKey: Pick<ContentTextKey, "of">;
+	readonly contentContractPolicy: Pick<ContentContractPolicy, "text">;
+	readonly contentFingerprint: Pick<ContentFingerprint, "of">;
+}
+
 export class ResolveContentValues {
-	constructor(private readonly images: AssetImageRepository) {}
+	constructor(
+		private readonly collaborators: ResolveContentValuesCollaborators,
+		private readonly images: AssetImageRepository,
+	) {}
 
 	async execute(
 		contract: ContentContract,
@@ -23,15 +32,16 @@ export class ResolveContentValues {
 				values.push(await this.image(field, model));
 				continue;
 			}
-			const key = ContentTextKey.of(field);
+			const key = this.collaborators.contentTextKey.of(field);
 			const text =
 				model.text[key] || (!field.required ? field.fallback : undefined);
-			if (!ContentContractPolicy.text(text)) throw new ContentError("missing");
+			if (!this.collaborators.contentContractPolicy.text(text))
+				throw new ContentError("missing");
 			values.push({
 				type: "text",
 				key,
 				text,
-				fingerprint: ContentFingerprint.of(text),
+				fingerprint: this.collaborators.contentFingerprint.of(text),
 			});
 		}
 		return values;
@@ -62,7 +72,7 @@ export class ResolveContentValues {
 				type: "image",
 				key: field.slot,
 				image: validated.source,
-				fingerprint: ContentFingerprint.of(
+				fingerprint: this.collaborators.contentFingerprint.of(
 					`${validated.fingerprint}:${identity}:${picture.description}:${field.fit}`,
 				),
 				speakerId,
@@ -78,7 +88,7 @@ export class ResolveContentValues {
 				type: "image",
 				key: field.slot,
 				image: validated.source,
-				fingerprint: ContentFingerprint.of(
+				fingerprint: this.collaborators.contentFingerprint.of(
 					`${validated.fingerprint}:fallback:${field.fallback.description}:${field.fit}`,
 				),
 				fallback: true,
@@ -87,3 +97,10 @@ export class ResolveContentValues {
 		}
 	}
 }
+export type ResolveContentValuesArguments =
+	ConstructorParameters<typeof ResolveContentValues> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

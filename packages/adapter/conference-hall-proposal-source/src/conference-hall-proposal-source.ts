@@ -3,13 +3,19 @@ import {
 	type ProposalSource,
 	ProposalSourceError,
 	type SourceSpeaker,
-	SourceSpeakerEquality,
+	type SourceSpeakerEquality,
 } from "@meetup-automation/referential";
-import { ProposalExportParser } from "./proposal-export-parser.js";
+import type { ProposalExportParser } from "./proposal-export-parser.js";
+
+export interface ConferenceHallProposalSourceCollaborators {
+	readonly sourceSpeakerEquality: Pick<SourceSpeakerEquality, "equal">;
+	readonly proposalExportParser: Pick<ProposalExportParser, "parse">;
+}
 
 export class ConferenceHallProposalSource implements ProposalSource {
 	private snapshot?: Promise<ProposalSnapshot>;
 	constructor(
+		private readonly collaborators: ConferenceHallProposalSourceCollaborators,
 		private readonly event: string,
 		private readonly apiKey: string,
 		private readonly request: typeof fetch = fetch,
@@ -29,7 +35,10 @@ export class ConferenceHallProposalSource implements ProposalSource {
 		const speakers = new Map<string, SourceSpeaker>();
 		for (const speaker of [...active.speakers, ...archived.speakers]) {
 			const existing = speakers.get(speaker.id);
-			if (existing && !SourceSpeakerEquality.equal(existing, speaker))
+			if (
+				existing &&
+				!this.collaborators.sourceSpeakerEquality.equal(existing, speaker)
+			)
 				throw new ProposalSourceError("conflict");
 			speakers.set(speaker.id, speaker);
 		}
@@ -61,7 +70,7 @@ export class ConferenceHallProposalSource implements ProposalSource {
 					status: response.status,
 				});
 			}
-			return ProposalExportParser.parse(
+			return this.collaborators.proposalExportParser.parse(
 				await this.readJson(response),
 				this.event,
 			);
@@ -124,3 +133,10 @@ export class ConferenceHallProposalSource implements ProposalSource {
 			: 3600;
 	}
 }
+export type ConferenceHallProposalSourceArguments =
+	ConstructorParameters<typeof ConferenceHallProposalSource> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

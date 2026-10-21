@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
-	workflowExpression,
+	type ActionManifest,
 	readWorkflow,
 	readYaml,
-	type ActionManifest,
+	workflowExpression,
 } from "./support.js";
 
 describe("Conference Hall contracts", () => {

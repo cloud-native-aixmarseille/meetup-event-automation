@@ -1,5 +1,7 @@
 import type { EventDiagnostic } from "@meetup-automation/event";
+import { LocalizationComposition } from "@meetup-automation/localization";
 import { describe, expect, it } from "vitest";
+import { GithubEventCommentRepositoryComposition } from "./dependency-composition.js";
 import { DiagnosticPresenter } from "./diagnostic-presentation.js";
 import { EventCommentMessages } from "./i18n/event-comment-messages.js";
 
@@ -43,9 +45,17 @@ describe("organizer diagnostic presentation", () => {
 			const item = { ...diagnostic, code };
 
 			// Act
-			const result = DiagnosticPresenter.presentDiagnostic(
+			const result = new DiagnosticPresenter({
+				createEventCommentMessages: (...args) =>
+					new GithubEventCommentRepositoryComposition().eventCommentMessages(
+						...args,
+					),
+			}).presentDiagnostic(
 				item,
-				new EventCommentMessages(locale),
+				new EventCommentMessages(
+					{ localeResolver: new LocalizationComposition().localeResolver() },
+					locale,
+				),
 			);
 
 			// Assert

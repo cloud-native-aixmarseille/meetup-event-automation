@@ -2,37 +2,34 @@ import type { ParticipantReference } from "@meetup-automation/event";
 import type { StableReferenceBinding } from "./github-issue-form-event-document-codec-contracts.js";
 
 export class ReferenceBindings {
-	static referenceBinding(
+	referenceBinding(
 		participant: ParticipantReference,
 		id: string,
 	): StableReferenceBinding {
 		return {
 			id,
-			displayName: ReferenceBindings.normalizeVisibleDisplayName(
-				participant.displayName,
-			),
+			displayName: this.normalizeVisibleDisplayName(participant.displayName),
 		};
 	}
 
-	static normalizeVisibleDisplayName(displayName: string): string {
+	normalizeVisibleDisplayName(displayName: string): string {
 		return displayName.trim().replace(/\s+/g, " ");
 	}
 
-	static restoreBoundReference(
+	restoreBoundReference(
 		participant: ParticipantReference | undefined,
 		binding: StableReferenceBinding | null,
 	): ParticipantReference | undefined {
 		if (!participant || participant.id || !binding) {
 			return participant;
 		}
-		return ReferenceBindings.normalizeVisibleDisplayName(
-			participant.displayName,
-		) === binding.displayName
+		return this.normalizeVisibleDisplayName(participant.displayName) ===
+			binding.displayName
 			? { ...participant, id: binding.id }
 			: participant;
 	}
 
-	static restoreBoundSpeaker(
+	restoreBoundSpeaker(
 		participant: ParticipantReference,
 		bindings: readonly StableReferenceBinding[],
 	): ParticipantReference {
@@ -40,7 +37,7 @@ export class ReferenceBindings {
 			return participant;
 		}
 
-		const visibleName = ReferenceBindings.normalizeVisibleDisplayName(
+		const visibleName = this.normalizeVisibleDisplayName(
 			participant.displayName,
 		);
 		const matchingIds = new Set(

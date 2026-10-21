@@ -111,3 +111,6 @@ export class RefreshSelectedProposals {
 		});
 	}
 }
+export type RefreshSelectedProposalsArguments = ConstructorParameters<
+	typeof RefreshSelectedProposals
+>;

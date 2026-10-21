@@ -40,11 +40,13 @@ describe("communication checklist", () => {
 			};
 
 			// Act
-			const pending = CommunicationChecklist.pendingRecipients(
+			const pending = new CommunicationChecklist().pendingRecipients(
 				input,
 				recipients,
 			);
-			const completed = CommunicationChecklist.complete(input, ["host-thanks"]);
+			const completed = new CommunicationChecklist().complete(input, [
+				"host-thanks",
+			]);
 
 			// Assert
 			expect(pending).toEqual([recipients[0]]);
@@ -80,7 +82,7 @@ describe("communication checklist", () => {
 			};
 
 			// Act
-			const result = CommunicationChecklist.complete(input, kinds);
+			const result = new CommunicationChecklist().complete(input, kinds);
 
 			// Assert
 			expect(result.communication).toEqual([
@@ -107,8 +109,10 @@ describe("communication checklist", () => {
 		};
 
 		// Act
-		const result = CommunicationChecklist.complete(input, ["speaker-thanks"]);
-		const pending = CommunicationChecklist.pendingRecipients(
+		const result = new CommunicationChecklist().complete(input, [
+			"speaker-thanks",
+		]);
+		const pending = new CommunicationChecklist().pendingRecipients(
 			{ ...input, operationalChecklists: result },
 			recipients,
 		);
@@ -136,8 +140,11 @@ describe("communication checklist", () => {
 		};
 
 		// Act
-		const pending = CommunicationChecklist.pendingRecipients(input, recipients);
-		const result = CommunicationChecklist.complete(input, [
+		const pending = new CommunicationChecklist().pendingRecipients(
+			input,
+			recipients,
+		);
+		const result = new CommunicationChecklist().complete(input, [
 			"speaker-introduction",
 		]);
 

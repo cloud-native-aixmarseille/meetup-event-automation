@@ -2,6 +2,7 @@ import type { DeliveryReservation } from "@meetup-automation/communication";
 import { describe, expect, it } from "vitest";
 import { inspectLedgerComment } from "../testing/ledger-comment.js";
 import type { GithubLedgerComment } from "./comment-client.js";
+import { GithubDeliveryLedgerComposition } from "./dependency-composition.js";
 import { GithubDeliveryLedger } from "./github-delivery-ledger.js";
 import { DELIVERY_LEDGER_MARKER } from "./github-delivery-ledger-contracts.js";
 
@@ -37,10 +38,21 @@ describe("GithubDeliveryLedger", () => {
 	it("keeps blocked and uncertain requests visible until acceptance is verified", async () => {
 		// Arrange
 		const comments = new MemoryComments();
-		const ledger = new GithubDeliveryLedger(comments, {
-			dispatchAuthorized: true,
-			authorLogin: "automation[bot]",
-		});
+		const ledger = new GithubDeliveryLedger(
+			{
+				ledgerEntryMapping:
+					new GithubDeliveryLedgerComposition().ledgerEntryMapping(),
+				ledgerCommentCodec:
+					new GithubDeliveryLedgerComposition().ledgerCommentCodec(),
+				createLedgerCommentPresenter: (...args) =>
+					new GithubDeliveryLedgerComposition().ledgerCommentPresenter(...args),
+			},
+			comments,
+			{
+				dispatchAuthorized: true,
+				authorLogin: "automation[bot]",
+			},
+		);
 
 		// Act
 		await ledger.reservePending(reservation);
@@ -69,10 +81,21 @@ describe("GithubDeliveryLedger", () => {
 	it("persists pending before accepting and refuses another reservation", async () => {
 		// Arrange
 		const comments = new MemoryComments();
-		const ledger = new GithubDeliveryLedger(comments, {
-			dispatchAuthorized: true,
-			authorLogin: "automation[bot]",
-		});
+		const ledger = new GithubDeliveryLedger(
+			{
+				ledgerEntryMapping:
+					new GithubDeliveryLedgerComposition().ledgerEntryMapping(),
+				ledgerCommentCodec:
+					new GithubDeliveryLedgerComposition().ledgerCommentCodec(),
+				createLedgerCommentPresenter: (...args) =>
+					new GithubDeliveryLedgerComposition().ledgerCommentPresenter(...args),
+			},
+			comments,
+			{
+				dispatchAuthorized: true,
+				authorLogin: "automation[bot]",
+			},
+		);
 
 		// Act
 		const pending = await ledger.reservePending(reservation);
@@ -106,10 +129,21 @@ describe("GithubDeliveryLedger", () => {
 
 	it("rejects writes outside the workflow lock", async () => {
 		// Arrange
-		const ledger = new GithubDeliveryLedger(new MemoryComments(), {
-			dispatchAuthorized: false,
-			authorLogin: "automation[bot]",
-		});
+		const ledger = new GithubDeliveryLedger(
+			{
+				ledgerEntryMapping:
+					new GithubDeliveryLedgerComposition().ledgerEntryMapping(),
+				ledgerCommentCodec:
+					new GithubDeliveryLedgerComposition().ledgerCommentCodec(),
+				createLedgerCommentPresenter: (...args) =>
+					new GithubDeliveryLedgerComposition().ledgerCommentPresenter(...args),
+			},
+			new MemoryComments(),
+			{
+				dispatchAuthorized: false,
+				authorLogin: "automation[bot]",
+			},
+		);
 
 		// Act
 		const operation = ledger.reservePending(reservation);
@@ -120,10 +154,21 @@ describe("GithubDeliveryLedger", () => {
 
 	it("preserves uncertain deliveries rather than making them retryable", async () => {
 		// Arrange
-		const ledger = new GithubDeliveryLedger(new MemoryComments(), {
-			dispatchAuthorized: true,
-			authorLogin: "automation[bot]",
-		});
+		const ledger = new GithubDeliveryLedger(
+			{
+				ledgerEntryMapping:
+					new GithubDeliveryLedgerComposition().ledgerEntryMapping(),
+				ledgerCommentCodec:
+					new GithubDeliveryLedgerComposition().ledgerCommentCodec(),
+				createLedgerCommentPresenter: (...args) =>
+					new GithubDeliveryLedgerComposition().ledgerCommentPresenter(...args),
+			},
+			new MemoryComments(),
+			{
+				dispatchAuthorized: true,
+				authorLogin: "automation[bot]",
+			},
+		);
 
 		// Act
 		await ledger.reservePending(reservation);
@@ -142,10 +187,21 @@ describe("GithubDeliveryLedger", () => {
 
 	it("releases only pending deliveries after a definitive retryable response", async () => {
 		// Arrange
-		const ledger = new GithubDeliveryLedger(new MemoryComments(), {
-			dispatchAuthorized: true,
-			authorLogin: "automation[bot]",
-		});
+		const ledger = new GithubDeliveryLedger(
+			{
+				ledgerEntryMapping:
+					new GithubDeliveryLedgerComposition().ledgerEntryMapping(),
+				ledgerCommentCodec:
+					new GithubDeliveryLedgerComposition().ledgerCommentCodec(),
+				createLedgerCommentPresenter: (...args) =>
+					new GithubDeliveryLedgerComposition().ledgerCommentPresenter(...args),
+			},
+			new MemoryComments(),
+			{
+				dispatchAuthorized: true,
+				authorLogin: "automation[bot]",
+			},
+		);
 
 		// Act
 		await ledger.reservePending(reservation);
@@ -167,10 +223,21 @@ describe("GithubDeliveryLedger", () => {
 			authorLogin: "untrusted-user",
 			body: `${"<!-- meetup-automation-delivery-ledger:v1 -->"}\n\n\`\`\`json\n{"schemaVersion":1,"entries":[]}\n\`\`\``,
 		});
-		const ledger = new GithubDeliveryLedger(comments, {
-			dispatchAuthorized: true,
-			authorLogin: "automation[bot]",
-		});
+		const ledger = new GithubDeliveryLedger(
+			{
+				ledgerEntryMapping:
+					new GithubDeliveryLedgerComposition().ledgerEntryMapping(),
+				ledgerCommentCodec:
+					new GithubDeliveryLedgerComposition().ledgerCommentCodec(),
+				createLedgerCommentPresenter: (...args) =>
+					new GithubDeliveryLedgerComposition().ledgerCommentPresenter(...args),
+			},
+			comments,
+			{
+				dispatchAuthorized: true,
+				authorLogin: "automation[bot]",
+			},
+		);
 
 		// Act
 		const actual = await ledger.reservePending(reservation);
@@ -203,10 +270,23 @@ describe("GithubDeliveryLedger", () => {
 					},
 				)}\n\`\`\``,
 			});
-			const ledger = new GithubDeliveryLedger(comments, {
-				dispatchAuthorized: true,
-				authorLogin: "automation[bot]",
-			});
+			const ledger = new GithubDeliveryLedger(
+				{
+					ledgerEntryMapping:
+						new GithubDeliveryLedgerComposition().ledgerEntryMapping(),
+					ledgerCommentCodec:
+						new GithubDeliveryLedgerComposition().ledgerCommentCodec(),
+					createLedgerCommentPresenter: (...args) =>
+						new GithubDeliveryLedgerComposition().ledgerCommentPresenter(
+							...args,
+						),
+				},
+				comments,
+				{
+					dispatchAuthorized: true,
+					authorLogin: "automation[bot]",
+				},
+			);
 
 			// Act
 			const entry = await ledger.find(reservation.idempotencyKey);
@@ -247,10 +327,21 @@ describe("GithubDeliveryLedger", () => {
 		const comments = new MemoryComments();
 		const body = `${DELIVERY_LEDGER_MARKER}\n\n${block}`;
 		comments.comments.push({ id: 1, body, authorLogin: "automation[bot]" });
-		const ledger = new GithubDeliveryLedger(comments, {
-			dispatchAuthorized: true,
-			authorLogin: "automation[bot]",
-		});
+		const ledger = new GithubDeliveryLedger(
+			{
+				ledgerEntryMapping:
+					new GithubDeliveryLedgerComposition().ledgerEntryMapping(),
+				ledgerCommentCodec:
+					new GithubDeliveryLedgerComposition().ledgerCommentCodec(),
+				createLedgerCommentPresenter: (...args) =>
+					new GithubDeliveryLedgerComposition().ledgerCommentPresenter(...args),
+			},
+			comments,
+			{
+				dispatchAuthorized: true,
+				authorLogin: "automation[bot]",
+			},
+		);
 
 		// Act
 		const operation = ledger.reservePending(reservation);
@@ -282,10 +373,23 @@ describe("GithubDeliveryLedger", () => {
 				authorLogin: "automation[bot]",
 				body: `${DELIVERY_LEDGER_MARKER}\n\n\`\`\`json${whitespace}${JSON.stringify(value)}${whitespace}\`\`\`\n\n</details>`,
 			});
-			const ledger = new GithubDeliveryLedger(comments, {
-				dispatchAuthorized: false,
-				authorLogin: "automation[bot]",
-			});
+			const ledger = new GithubDeliveryLedger(
+				{
+					ledgerEntryMapping:
+						new GithubDeliveryLedgerComposition().ledgerEntryMapping(),
+					ledgerCommentCodec:
+						new GithubDeliveryLedgerComposition().ledgerCommentCodec(),
+					createLedgerCommentPresenter: (...args) =>
+						new GithubDeliveryLedgerComposition().ledgerCommentPresenter(
+							...args,
+						),
+				},
+				comments,
+				{
+					dispatchAuthorized: false,
+					authorLogin: "automation[bot]",
+				},
+			);
 
 			// Act
 			const entry = await ledger.find(reservation.idempotencyKey);

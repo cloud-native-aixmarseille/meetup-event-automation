@@ -1,5 +1,7 @@
 import type { ContentBinding } from "@meetup-automation/publication";
+import { PublicationDomainComposition } from "@meetup-automation/publication";
 import { describe, expect, it, vi } from "vitest";
+import { GoogleSlidesContentRepositoryComposition } from "./dependency-composition.js";
 import { SlideContentLocations } from "./slide-content-locations.js";
 
 describe("SlideContentLocations", () => {
@@ -20,10 +22,20 @@ describe("SlideContentLocations", () => {
 		"preserves stored observation bytes for provider property variant %#",
 		async (properties, expected) => {
 			// Arrange
-			const reader = new SlideContentLocations({
-				validate: vi.fn(),
-				observe: vi.fn(async () => "embedded-bytes"),
-			});
+			const reader = new SlideContentLocations(
+				{
+					slideContentElement:
+						new GoogleSlidesContentRepositoryComposition().slideContentElement(),
+					contentFingerprint:
+						new PublicationDomainComposition().contentFingerprint(),
+					slideTemplateBindings:
+						new GoogleSlidesContentRepositoryComposition().slideTemplateBindings(),
+				},
+				{
+					validate: vi.fn(),
+					observe: vi.fn(async () => "embedded-bytes"),
+				},
+			);
 			const presentation = {
 				slides: [
 					{

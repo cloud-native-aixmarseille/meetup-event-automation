@@ -1,5 +1,7 @@
+import { PublicationDomainComposition } from "@meetup-automation/publication";
 import { describe, expect, it } from "vitest";
 import { publicationRequest } from "../testing/approval.fixtures.js";
+import { GithubOrganizerApprovalComposition } from "./dependency-composition.js";
 import { MeetupApprovalDetailsSchema } from "./meetup-approval-details-schema.js";
 
 describe("publication approval facts", () => {
@@ -8,7 +10,11 @@ describe("publication approval facts", () => {
 		const value = publicationRequest.publication;
 
 		// Act
-		const result = MeetupApprovalDetailsSchema.validate(value);
+		const result = new MeetupApprovalDetailsSchema({
+			approvalSchema: new GithubOrganizerApprovalComposition().approvalSchema(),
+			scheduledEventPolicy:
+				new PublicationDomainComposition().scheduledEventPolicy(),
+		}).validate(value);
 
 		// Assert
 		expect(result).toBeUndefined();
@@ -29,11 +35,19 @@ describe("publication approval facts", () => {
 	])("rejects invalid or injectable approval facts: %j", (override) => {
 		// Arrange
 		const value = { ...publicationRequest.publication, ...override };
+		const schema: MeetupApprovalDetailsSchema = new MeetupApprovalDetailsSchema(
+			{
+				approvalSchema:
+					new GithubOrganizerApprovalComposition().approvalSchema(),
+				scheduledEventPolicy:
+					new PublicationDomainComposition().scheduledEventPolicy(),
+			},
+		);
 		let error: unknown;
 
 		// Act
 		try {
-			MeetupApprovalDetailsSchema.validate(value);
+			schema.validate(value);
 		} catch (caught) {
 			error = caught;
 		}

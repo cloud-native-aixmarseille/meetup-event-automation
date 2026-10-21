@@ -1,20 +1,40 @@
-import {
-	type RawReferentialCatalog,
+import { ProposalSourceError } from "../../domain/proposal-source-error.js";
+import type {
+	RawReferentialCatalog,
 	ReferentialCatalogOperations,
 } from "../../domain/referential-catalog.js";
-import {
-	type ReferentialDiagnostic,
+import type {
+	ReferentialDiagnostic,
 	ReferentialDiagnostics,
 } from "../../domain/referential-diagnostic.js";
 import type { ReferentialRepository } from "../ports/referential-repository.js";
-import { HostCatalogValidator } from "./host-catalog-validator.js";
-import { SpeakerSourceFields } from "./speaker-source-fields.js";
-import { SpeakerCatalogValidator } from "./speaker-catalog-validator.js";
+import type { HostCatalogValidator } from "./host-catalog-validator.js";
+import type { SpeakerCatalogValidator } from "./speaker-catalog-validator.js";
+import type { SpeakerSourceFields } from "./speaker-source-fields.js";
 import type { ReferentialCatalogValidation } from "./validate-referential-catalog-contracts.js";
-import { ProposalSourceError } from "../../domain/proposal-source-error.js";
+
+export interface ValidateReferentialCatalogCollaborators {
+	readonly referentialDiagnostics: Pick<
+		ReferentialDiagnostics,
+		"freezeDiagnostics" | "diagnostic"
+	>;
+	readonly hostCatalogValidator: Pick<HostCatalogValidator, "validateHosts">;
+	readonly speakerCatalogValidator: Pick<
+		SpeakerCatalogValidator,
+		"validateSpeakers"
+	>;
+	readonly speakerSourceFields: Pick<SpeakerSourceFields, "validateMappings">;
+	readonly referentialCatalogOperations: Pick<
+		ReferentialCatalogOperations,
+		"freezeCatalog" | "displayNameKey"
+	>;
+}
 
 export class ValidateReferentialCatalog {
-	constructor(private readonly repository?: ReferentialRepository) {}
+	constructor(
+		private readonly collaborators: ValidateReferentialCatalogCollaborators,
+		private readonly repository?: ReferentialRepository,
+	) {}
 
 	async execute(
 		rawCatalog?: RawReferentialCatalog,
@@ -25,25 +45,30 @@ export class ValidateReferentialCatalog {
 			if (!(error instanceof ProposalSourceError)) throw error;
 			return Object.freeze({
 				isValid: false as const,
-				diagnostics: ReferentialDiagnostics.freezeDiagnostics([
-					ReferentialDiagnostics.diagnostic(
-						`referential.source.${error.code}`,
-						"error",
-						"speakers",
-						"Source-owned speaker profiles could not be refreshed. Check source access and identity mappings before retrying.",
-					),
-				]),
+				diagnostics:
+					this.collaborators.referentialDiagnostics.freezeDiagnostics([
+						this.collaborators.referentialDiagnostics.diagnostic(
+							`referential.source.${error.code}`,
+							"error",
+							"speakers",
+							"Source-owned speaker profiles could not be refreshed. Check source access and identity mappings before retrying.",
+						),
+					]),
 			});
 		}
 	}
 
 	private validate(input: RawReferentialCatalog): ReferentialCatalogValidation {
 		const diagnostics: ReferentialDiagnostic[] = [];
-		const hosts = HostCatalogValidator.validateHosts(input.hosts, diagnostics);
-		const speakers = SpeakerCatalogValidator.validateSpeakers(
-			input.speakers,
+		const hosts = this.collaborators.hostCatalogValidator.validateHosts(
+			input.hosts,
 			diagnostics,
 		);
+		const speakers =
+			this.collaborators.speakerCatalogValidator.validateSpeakers(
+				input.speakers,
+				diagnostics,
+			);
 
 		this.reportDuplicateDisplayNames(
 			hosts,
@@ -53,9 +78,12 @@ export class ValidateReferentialCatalog {
 			diagnostics,
 		);
 
-		SpeakerSourceFields.validateMappings(speakers, diagnostics);
+		this.collaborators.speakerSourceFields.validateMappings(
+			speakers,
+			diagnostics,
+		);
 		const frozenDiagnostics =
-			ReferentialDiagnostics.freezeDiagnostics(diagnostics);
+			this.collaborators.referentialDiagnostics.freezeDiagnostics(diagnostics);
 		if (diagnostics.some(({ severity }) => severity === "error")) {
 			return Object.freeze({
 				isValid: false as const,
@@ -65,7 +93,10 @@ export class ValidateReferentialCatalog {
 
 		return Object.freeze({
 			isValid: true as const,
-			catalog: ReferentialCatalogOperations.freezeCatalog(hosts, speakers),
+			catalog: this.collaborators.referentialCatalogOperations.freezeCatalog(
+				hosts,
+				speakers,
+			),
 			diagnostics: frozenDiagnostics,
 		});
 	}
@@ -82,16 +113,17 @@ export class ValidateReferentialCatalog {
 
 	private reportDuplicateDisplayNames(
 		entities: readonly Readonly<{ displayName: string }>[],
-		code: Parameters<typeof ReferentialDiagnostics.diagnostic>[0],
+		code: Parameters<ReferentialDiagnostics["diagnostic"]>[0],
 		path: string,
 		message: string,
 		diagnostics: ReferentialDiagnostic[],
 	): void {
 		const counts = new Map<string, number>();
 		for (const entity of entities) {
-			const key = ReferentialCatalogOperations.displayNameKey(
-				entity.displayName,
-			);
+			const key =
+				this.collaborators.referentialCatalogOperations.displayNameKey(
+					entity.displayName,
+				);
 			counts.set(key, (counts.get(key) ?? 0) + 1);
 		}
 
@@ -101,7 +133,7 @@ export class ValidateReferentialCatalog {
 				continue;
 			}
 			diagnostics.push(
-				ReferentialDiagnostics.diagnostic(
+				this.collaborators.referentialDiagnostics.diagnostic(
 					code,
 					"error",
 					`${path}.ambiguities[${ambiguityIndex}]`,
@@ -112,3 +144,10 @@ export class ValidateReferentialCatalog {
 		}
 	}
 }
+export type ValidateReferentialCatalogArguments =
+	ConstructorParameters<typeof ValidateReferentialCatalog> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

@@ -1,19 +1,38 @@
-import { PostEventPolicy } from "@meetup-automation/communication";
+import type { PostEventPolicy } from "@meetup-automation/communication";
 import type { MeetupEvent } from "@meetup-automation/event";
-import {
-	type ReferentialCatalog,
+import type {
+	ReferentialCatalog,
 	ValidateReferentialCatalog,
+	ValidateReferentialCatalogArguments,
 } from "@meetup-automation/referential";
 import type { CommunicationJourneyDiagnostic } from "../communication/contracts.js";
-import { CommunicationRecipients } from "./communication-recipients.js";
+import type { CommunicationRecipients } from "./communication-recipients.js";
 import {
 	type ManageMeetupCommunicationsDependencies,
 	UNRESOLVED_MAIL_RECIPIENTS,
 } from "./manage-meetup-communications-contracts.js";
-import { SpeakerFeedbackPreparation } from "./speaker-feedback-preparation.js";
+import type {
+	SpeakerFeedbackPreparation,
+	SpeakerFeedbackPreparationArguments,
+} from "./speaker-feedback-preparation.js";
+
+export interface CommunicationDeliveryPreparationCollaborators {
+	readonly postEventPolicy: Pick<PostEventPolicy, "isDue">;
+	readonly communicationRecipients: Pick<
+		CommunicationRecipients,
+		"resolveMailRecipients"
+	>;
+	readonly createSpeakerFeedbackPreparation: (
+		...args: SpeakerFeedbackPreparationArguments
+	) => SpeakerFeedbackPreparation;
+	readonly createValidateReferentialCatalog: (
+		...args: ValidateReferentialCatalogArguments
+	) => ValidateReferentialCatalog;
+}
 
 export class CommunicationDeliveryPreparation {
 	constructor(
+		private readonly collaborators: CommunicationDeliveryPreparationCollaborators,
 		private readonly dependencies: Pick<
 			ManageMeetupCommunicationsDependencies,
 			"referentialRepository" | "feedbackResults" | "clock"
@@ -23,7 +42,7 @@ export class CommunicationDeliveryPreparation {
 		event: MeetupEvent,
 		runtimeDiagnostics: CommunicationJourneyDiagnostic[],
 	) {
-		const postEvent = PostEventPolicy.isDue({
+		const postEvent = this.collaborators.postEventPolicy.isDue({
 			eventDate: event.date,
 			timeZone: event.timeZone,
 			occurrenceStatus: event.occurrenceStatus ?? "unknown",
@@ -38,7 +57,7 @@ export class CommunicationDeliveryPreparation {
 			});
 		const mailRecipientResolution =
 			catalog && event.proposalStatus !== "stale"
-				? CommunicationRecipients.resolveMailRecipients(
+				? this.collaborators.communicationRecipients.resolveMailRecipients(
 						event,
 						catalog,
 						runtimeDiagnostics,
@@ -47,14 +66,14 @@ export class CommunicationDeliveryPreparation {
 		const referencesResolved =
 			catalog !== undefined && mailRecipientResolution.resolved;
 		const recipients = referencesResolved
-			? await new SpeakerFeedbackPreparation(
-					this.dependencies.feedbackResults,
-				).execute(
-					event,
-					mailRecipientResolution.recipients,
-					runtimeDiagnostics,
-					postEvent,
-				)
+			? await this.collaborators
+					.createSpeakerFeedbackPreparation(this.dependencies.feedbackResults)
+					.execute(
+						event,
+						mailRecipientResolution.recipients,
+						runtimeDiagnostics,
+						postEvent,
+					)
 			: mailRecipientResolution.recipients;
 		return {
 			postEvent,
@@ -63,9 +82,9 @@ export class CommunicationDeliveryPreparation {
 		};
 	}
 	private async catalog(runtimeDiagnostics: CommunicationJourneyDiagnostic[]) {
-		const validation = await new ValidateReferentialCatalog(
-			this.dependencies.referentialRepository,
-		).execute();
+		const validation = await this.collaborators
+			.createValidateReferentialCatalog(this.dependencies.referentialRepository)
+			.execute();
 		let catalog: ReferentialCatalog | undefined;
 		if (validation.isValid) {
 			catalog = validation.catalog;
@@ -79,3 +98,10 @@ export class CommunicationDeliveryPreparation {
 		return catalog;
 	}
 }
+export type CommunicationDeliveryPreparationArguments =
+	ConstructorParameters<typeof CommunicationDeliveryPreparation> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

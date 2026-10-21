@@ -4,44 +4,37 @@ import type {
 } from "@meetup-automation/event";
 
 export class EventParticipantResolution {
-	static renderReference(reference: {
-		id?: string;
-		displayName: string;
-	}): string {
+	renderReference(reference: { id?: string; displayName: string }): string {
 		return reference.id
 			? `${reference.displayName} [${reference.id}]`
 			: reference.displayName;
 	}
 
-	static enrichStableReferences(
+	enrichStableReferences(
 		event: MeetupEvent,
 		host: ParticipantReference,
 		speakers: readonly ParticipantReference[],
 	): MeetupEvent {
 		return {
 			...event,
-			host: EventParticipantResolution.resolvedParticipant(host),
+			host: this.resolvedParticipant(host),
 			agenda: event.agenda.map((entry) => ({
 				...entry,
 				speakers: entry.speakers.map((reference) => {
 					const matches = speakers.filter((speaker) =>
 						reference.id
 							? speaker.id === reference.id
-							: EventParticipantResolution.canonical(speaker.displayName) ===
-								EventParticipantResolution.canonical(reference.displayName),
+							: this.canonical(speaker.displayName) ===
+								this.canonical(reference.displayName),
 					);
 					const speaker = matches.length === 1 ? matches[0] : undefined;
-					return speaker
-						? EventParticipantResolution.resolvedParticipant(speaker)
-						: reference;
+					return speaker ? this.resolvedParticipant(speaker) : reference;
 				}),
 			})),
 		};
 	}
 
-	static resolvedParticipant(
-		reference: ParticipantReference,
-	): ParticipantReference {
+	resolvedParticipant(reference: ParticipantReference): ParticipantReference {
 		return {
 			id: reference.id,
 			displayName: reference.displayName,
@@ -50,7 +43,7 @@ export class EventParticipantResolution {
 		};
 	}
 
-	static canonical(value: string): string {
+	canonical(value: string): string {
 		return value.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US");
 	}
 }

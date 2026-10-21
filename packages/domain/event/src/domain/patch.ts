@@ -1,4 +1,4 @@
-import { type MeetupEvent, MeetupEventOperations } from "./model.js";
+import type { MeetupEvent, MeetupEventOperations } from "./model.js";
 
 export type EventPatchPath =
 	| "issueTitle"
@@ -31,8 +31,17 @@ export type EventPatch = Readonly<{
 
 export const EMPTY_EVENT_PATCH: EventPatch = Object.freeze({ operations: [] });
 
+export interface EventPatchesCollaborators {
+	readonly meetupEventOperations: Pick<
+		MeetupEventOperations,
+		"postEventChecklistIsComplete"
+	>;
+}
+
 export class EventPatches {
-	static replaceEventField<P extends EventPatchPath>(
+	constructor(private readonly collaborators: EventPatchesCollaborators) {}
+
+	replaceEventField<P extends EventPatchPath>(
 		path: P,
 		value: MeetupEvent[P],
 		reason: string,
@@ -45,26 +54,22 @@ export class EventPatches {
 		}) as unknown as Extract<EventPatchOperation, { path: P }>;
 	}
 
-	static createEventPatch(
-		operations: readonly EventPatchOperation[],
-	): EventPatch {
+	createEventPatch(operations: readonly EventPatchOperation[]): EventPatch {
 		return Object.freeze({ operations: Object.freeze([...operations]) });
 	}
 
-	static mergeEventPatches(...patches: readonly EventPatch[]): EventPatch {
-		return EventPatches.createEventPatch(
-			patches.flatMap((patch) => patch.operations),
-		);
+	mergeEventPatches(...patches: readonly EventPatch[]): EventPatch {
+		return this.createEventPatch(patches.flatMap((patch) => patch.operations));
 	}
 
-	static applyEventPatch(event: MeetupEvent, patch: EventPatch): MeetupEvent {
+	applyEventPatch(event: MeetupEvent, patch: EventPatch): MeetupEvent {
 		return patch.operations.reduce<MeetupEvent>(
-			(current, operation) => EventPatches.applyOperation(current, operation),
+			(current, operation) => this.applyOperation(current, operation),
 			event,
 		);
 	}
 
-	static applyOperation(
+	applyOperation(
 		event: MeetupEvent,
 		operation: EventPatchOperation,
 	): MeetupEvent {
@@ -117,7 +122,7 @@ export class EventPatches {
 					operationalChecklists,
 					followUpComplete:
 						event.followUpComplete &&
-						MeetupEventOperations.postEventChecklistIsComplete(
+						this.collaborators.meetupEventOperations.postEventChecklistIsComplete(
 							operationalChecklists.postEvent,
 						),
 				};
@@ -127,7 +132,7 @@ export class EventPatches {
 					...event,
 					followUpComplete:
 						operation.value &&
-						MeetupEventOperations.postEventChecklistIsComplete(
+						this.collaborators.meetupEventOperations.postEventChecklistIsComplete(
 							event.operationalChecklists.postEvent,
 						),
 				};

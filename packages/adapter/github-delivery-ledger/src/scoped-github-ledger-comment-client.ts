@@ -59,7 +59,7 @@ export class ScopedGithubLedgerCommentClient
 			if (!Array.isArray(response.data)) {
 				throw new Error("GitHub delivery ledger comment response is invalid");
 			}
-			ScopedGithubLedgerCommentClient.appendComments(response.data, comments);
+			this.appendComments(response.data, comments);
 
 			const link = response.headers.link;
 			const hasNext =
@@ -91,13 +91,13 @@ export class ScopedGithubLedgerCommentClient
 		});
 	}
 
-	private static appendComments(
+	private appendComments(
 		values: readonly unknown[],
 		comments: GithubLedgerComment[],
 	) {
 		for (const value of values) {
 			if (
-				!ScopedGithubLedgerCommentClient.object(value) ||
+				!this.object(value) ||
 				typeof value.id !== "number" ||
 				!Number.isSafeInteger(value.id) ||
 				value.id <= 0 ||
@@ -107,16 +107,14 @@ export class ScopedGithubLedgerCommentClient
 			const author = value.user;
 			if (
 				author != null &&
-				(!ScopedGithubLedgerCommentClient.object(author) ||
-					typeof author.login !== "string")
+				(!this.object(author) || typeof author.login !== "string")
 			)
 				throw new Error("GitHub delivery ledger comment author is invalid");
 			if (typeof value.body === "string") {
 				comments.push({
 					id: value.id,
 					body: value.body,
-					...(ScopedGithubLedgerCommentClient.object(author) &&
-					typeof author.login === "string"
+					...(this.object(author) && typeof author.login === "string"
 						? { authorLogin: author.login }
 						: {}),
 				});
@@ -124,7 +122,10 @@ export class ScopedGithubLedgerCommentClient
 		}
 	}
 
-	private static object(value: unknown): value is Record<string, unknown> {
+	private object(value: unknown): value is Record<string, unknown> {
 		return value !== null && typeof value === "object" && !Array.isArray(value);
 	}
 }
+export type ScopedGithubLedgerCommentClientArguments = ConstructorParameters<
+	typeof ScopedGithubLedgerCommentClient
+>;

@@ -3,10 +3,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
 	type RawReferentialCatalog,
+	ReferentialDomainComposition,
 	ValidateReferentialCatalog,
 } from "@meetup-automation/referential";
 import { check, format } from "prettier";
 import { parse, stringify } from "yaml";
+import { YamlIssueFormProjectionComposition } from "./dependency-composition.js";
 import { YamlIssueFormProjection } from "./yaml-issue-form-projection.js";
 
 const PRIVATE_CONTACT_VALUES = {
@@ -71,7 +73,18 @@ async function catalog() {
 			},
 		],
 	};
-	const validation = await new ValidateReferentialCatalog().execute(raw);
+	const validation = await new ValidateReferentialCatalog({
+		referentialDiagnostics:
+			new ReferentialDomainComposition().referentialDiagnostics(),
+		hostCatalogValidator:
+			new ReferentialDomainComposition().hostCatalogValidator(),
+		speakerCatalogValidator:
+			new ReferentialDomainComposition().speakerCatalogValidator(),
+		speakerSourceFields:
+			new ReferentialDomainComposition().speakerSourceFields(),
+		referentialCatalogOperations:
+			new ReferentialDomainComposition().referentialCatalogOperations(),
+	}).execute(raw);
 	if (!validation.isValid) {
 		throw new Error("Test catalog must be valid");
 	}
@@ -131,9 +144,23 @@ describe("YamlIssueFormProjection", () => {
 		};
 		form.body.push(proposals);
 		const target = await fixture(stringify(form));
-		const adapter = new YamlIssueFormProjection({
-			workspaceRoot: target.workspaceRoot,
-		});
+		const adapter = new YamlIssueFormProjection(
+			{
+				yamlIssueFormDocument:
+					new YamlIssueFormProjectionComposition().yamlIssueFormDocument(),
+				createProjectReferentialChoices: (...args) =>
+					new ReferentialDomainComposition().projectReferentialChoices(...args),
+				createSpeakerReferencesPresenter: (...args) =>
+					new YamlIssueFormProjectionComposition().speakerReferencesPresenter(
+						...args,
+					),
+				createIssueFormMessages: (...args) =>
+					new YamlIssueFormProjectionComposition().issueFormMessages(...args),
+			},
+			{
+				workspaceRoot: target.workspaceRoot,
+			},
+		);
 		const input = {
 			issueFormPath: target.issueFormPath,
 			occurrenceStatusFieldId: "event_status",
@@ -170,9 +197,23 @@ describe("YamlIssueFormProjection", () => {
 			(field: { type: string }) => field.type !== "markdown",
 		);
 		const target = await fixture(stringify(form));
-		const adapter = new YamlIssueFormProjection({
-			workspaceRoot: target.workspaceRoot,
-		});
+		const adapter = new YamlIssueFormProjection(
+			{
+				yamlIssueFormDocument:
+					new YamlIssueFormProjectionComposition().yamlIssueFormDocument(),
+				createProjectReferentialChoices: (...args) =>
+					new ReferentialDomainComposition().projectReferentialChoices(...args),
+				createSpeakerReferencesPresenter: (...args) =>
+					new YamlIssueFormProjectionComposition().speakerReferencesPresenter(
+						...args,
+					),
+				createIssueFormMessages: (...args) =>
+					new YamlIssueFormProjectionComposition().issueFormMessages(...args),
+			},
+			{
+				workspaceRoot: target.workspaceRoot,
+			},
+		);
 		const input = {
 			issueFormPath: target.issueFormPath,
 			occurrenceStatusFieldId: "event_status",
@@ -210,9 +251,23 @@ describe("YamlIssueFormProjection", () => {
 			parser: "yaml",
 		});
 		const target = await fixture(source);
-		const adapter = new YamlIssueFormProjection({
-			workspaceRoot: target.workspaceRoot,
-		});
+		const adapter = new YamlIssueFormProjection(
+			{
+				yamlIssueFormDocument:
+					new YamlIssueFormProjectionComposition().yamlIssueFormDocument(),
+				createProjectReferentialChoices: (...args) =>
+					new ReferentialDomainComposition().projectReferentialChoices(...args),
+				createSpeakerReferencesPresenter: (...args) =>
+					new YamlIssueFormProjectionComposition().speakerReferencesPresenter(
+						...args,
+					),
+				createIssueFormMessages: (...args) =>
+					new YamlIssueFormProjectionComposition().issueFormMessages(...args),
+			},
+			{
+				workspaceRoot: target.workspaceRoot,
+			},
+		);
 		const input = {
 			issueFormPath: target.issueFormPath,
 			occurrenceStatusFieldId: "event_status",
@@ -236,10 +291,24 @@ describe("YamlIssueFormProjection", () => {
 	it("produces a stable French projection and detects drift when the requested locale changes", async () => {
 		// Arrange
 		const target = await fixture();
-		const french = new YamlIssueFormProjection({
-			workspaceRoot: target.workspaceRoot,
-			locale: "fr",
-		});
+		const french = new YamlIssueFormProjection(
+			{
+				yamlIssueFormDocument:
+					new YamlIssueFormProjectionComposition().yamlIssueFormDocument(),
+				createProjectReferentialChoices: (...args) =>
+					new ReferentialDomainComposition().projectReferentialChoices(...args),
+				createSpeakerReferencesPresenter: (...args) =>
+					new YamlIssueFormProjectionComposition().speakerReferencesPresenter(
+						...args,
+					),
+				createIssueFormMessages: (...args) =>
+					new YamlIssueFormProjectionComposition().issueFormMessages(...args),
+			},
+			{
+				workspaceRoot: target.workspaceRoot,
+				locale: "fr",
+			},
+		);
 		const input = {
 			issueFormPath: target.issueFormPath,
 			occurrenceStatusFieldId: "event_status",
@@ -251,9 +320,23 @@ describe("YamlIssueFormProjection", () => {
 
 		// Act
 		const current = await french.synchronize({ ...input, mode: "check" });
-		const english = await new YamlIssueFormProjection({
-			workspaceRoot: target.workspaceRoot,
-		}).synchronize({ ...input, mode: "check" });
+		const english = await new YamlIssueFormProjection(
+			{
+				yamlIssueFormDocument:
+					new YamlIssueFormProjectionComposition().yamlIssueFormDocument(),
+				createProjectReferentialChoices: (...args) =>
+					new ReferentialDomainComposition().projectReferentialChoices(...args),
+				createSpeakerReferencesPresenter: (...args) =>
+					new YamlIssueFormProjectionComposition().speakerReferencesPresenter(
+						...args,
+					),
+				createIssueFormMessages: (...args) =>
+					new YamlIssueFormProjectionComposition().issueFormMessages(...args),
+			},
+			{
+				workspaceRoot: target.workspaceRoot,
+			},
+		).synchronize({ ...input, mode: "check" });
 		const after = await readFile(target.absolutePath, "utf8");
 
 		// Assert
@@ -271,9 +354,23 @@ describe("YamlIssueFormProjection", () => {
 	it("updates referential projections, removes the occurrence dropdown, and preserves unrelated fields", async () => {
 		// Arrange
 		const target = await fixture();
-		const adapter = new YamlIssueFormProjection({
-			workspaceRoot: target.workspaceRoot,
-		});
+		const adapter = new YamlIssueFormProjection(
+			{
+				yamlIssueFormDocument:
+					new YamlIssueFormProjectionComposition().yamlIssueFormDocument(),
+				createProjectReferentialChoices: (...args) =>
+					new ReferentialDomainComposition().projectReferentialChoices(...args),
+				createSpeakerReferencesPresenter: (...args) =>
+					new YamlIssueFormProjectionComposition().speakerReferencesPresenter(
+						...args,
+					),
+				createIssueFormMessages: (...args) =>
+					new YamlIssueFormProjectionComposition().issueFormMessages(...args),
+			},
+			{
+				workspaceRoot: target.workspaceRoot,
+			},
+		);
 
 		// Act
 		const result = await adapter.synchronize({
@@ -353,9 +450,23 @@ describe("YamlIssueFormProjection", () => {
 		const before = await readFile(target.absolutePath, "utf8");
 
 		// Act
-		const result = await new YamlIssueFormProjection({
-			workspaceRoot: target.workspaceRoot,
-		}).synchronize({
+		const result = await new YamlIssueFormProjection(
+			{
+				yamlIssueFormDocument:
+					new YamlIssueFormProjectionComposition().yamlIssueFormDocument(),
+				createProjectReferentialChoices: (...args) =>
+					new ReferentialDomainComposition().projectReferentialChoices(...args),
+				createSpeakerReferencesPresenter: (...args) =>
+					new YamlIssueFormProjectionComposition().speakerReferencesPresenter(
+						...args,
+					),
+				createIssueFormMessages: (...args) =>
+					new YamlIssueFormProjectionComposition().issueFormMessages(...args),
+			},
+			{
+				workspaceRoot: target.workspaceRoot,
+			},
+		).synchronize({
 			issueFormPath: target.issueFormPath,
 			occurrenceStatusFieldId: "occurrence_state",
 			catalog: await catalog(),
@@ -379,9 +490,23 @@ describe("YamlIssueFormProjection", () => {
 	it("is deterministic and performs no write once the projection is current", async () => {
 		// Arrange
 		const target = await fixture();
-		const adapter = new YamlIssueFormProjection({
-			workspaceRoot: target.workspaceRoot,
-		});
+		const adapter = new YamlIssueFormProjection(
+			{
+				yamlIssueFormDocument:
+					new YamlIssueFormProjectionComposition().yamlIssueFormDocument(),
+				createProjectReferentialChoices: (...args) =>
+					new ReferentialDomainComposition().projectReferentialChoices(...args),
+				createSpeakerReferencesPresenter: (...args) =>
+					new YamlIssueFormProjectionComposition().speakerReferencesPresenter(
+						...args,
+					),
+				createIssueFormMessages: (...args) =>
+					new YamlIssueFormProjectionComposition().issueFormMessages(...args),
+			},
+			{
+				workspaceRoot: target.workspaceRoot,
+			},
+		);
 		const input = {
 			issueFormPath: target.issueFormPath,
 			occurrenceStatusFieldId: "event_status",
@@ -425,9 +550,25 @@ describe("YamlIssueFormProjection", () => {
 					? INITIAL_FORM.replace("body:\n", `body:\n${statusField}`)
 					: INITIAL_FORM + statusField;
 			const target = await fixture(source);
-			const adapter = new YamlIssueFormProjection({
-				workspaceRoot: target.workspaceRoot,
-			});
+			const adapter = new YamlIssueFormProjection(
+				{
+					yamlIssueFormDocument:
+						new YamlIssueFormProjectionComposition().yamlIssueFormDocument(),
+					createProjectReferentialChoices: (...args) =>
+						new ReferentialDomainComposition().projectReferentialChoices(
+							...args,
+						),
+					createSpeakerReferencesPresenter: (...args) =>
+						new YamlIssueFormProjectionComposition().speakerReferencesPresenter(
+							...args,
+						),
+					createIssueFormMessages: (...args) =>
+						new YamlIssueFormProjectionComposition().issueFormMessages(...args),
+				},
+				{
+					workspaceRoot: target.workspaceRoot,
+				},
+			);
 			const input = {
 				issueFormPath: target.issueFormPath,
 				occurrenceStatusFieldId: "lifecycle",
@@ -452,9 +593,23 @@ describe("YamlIssueFormProjection", () => {
 	it("rejects traversal outside the checkout", async () => {
 		// Arrange
 		const target = await fixture();
-		const adapter = new YamlIssueFormProjection({
-			workspaceRoot: target.workspaceRoot,
-		});
+		const adapter = new YamlIssueFormProjection(
+			{
+				yamlIssueFormDocument:
+					new YamlIssueFormProjectionComposition().yamlIssueFormDocument(),
+				createProjectReferentialChoices: (...args) =>
+					new ReferentialDomainComposition().projectReferentialChoices(...args),
+				createSpeakerReferencesPresenter: (...args) =>
+					new YamlIssueFormProjectionComposition().speakerReferencesPresenter(
+						...args,
+					),
+				createIssueFormMessages: (...args) =>
+					new YamlIssueFormProjectionComposition().issueFormMessages(...args),
+			},
+			{
+				workspaceRoot: target.workspaceRoot,
+			},
+		);
 
 		// Act
 		const operation = adapter.synchronize({
@@ -478,9 +633,23 @@ describe("YamlIssueFormProjection", () => {
 		await symlink(outside.absolutePath, symlinkPath);
 
 		// Act
-		const operation = new YamlIssueFormProjection({
-			workspaceRoot: target.workspaceRoot,
-		}).synchronize({
+		const operation = new YamlIssueFormProjection(
+			{
+				yamlIssueFormDocument:
+					new YamlIssueFormProjectionComposition().yamlIssueFormDocument(),
+				createProjectReferentialChoices: (...args) =>
+					new ReferentialDomainComposition().projectReferentialChoices(...args),
+				createSpeakerReferencesPresenter: (...args) =>
+					new YamlIssueFormProjectionComposition().speakerReferencesPresenter(
+						...args,
+					),
+				createIssueFormMessages: (...args) =>
+					new YamlIssueFormProjectionComposition().issueFormMessages(...args),
+			},
+			{
+				workspaceRoot: target.workspaceRoot,
+			},
+		).synchronize({
 			issueFormPath: "linked.yml",
 			occurrenceStatusFieldId: "event_status",
 			catalog: await catalog(),
@@ -496,9 +665,23 @@ describe("YamlIssueFormProjection", () => {
 	it("rejects malformed form structure", async () => {
 		// Arrange
 		const target = await fixture("name: Meetup\nbody: invalid\n");
-		const adapter = new YamlIssueFormProjection({
-			workspaceRoot: target.workspaceRoot,
-		});
+		const adapter = new YamlIssueFormProjection(
+			{
+				yamlIssueFormDocument:
+					new YamlIssueFormProjectionComposition().yamlIssueFormDocument(),
+				createProjectReferentialChoices: (...args) =>
+					new ReferentialDomainComposition().projectReferentialChoices(...args),
+				createSpeakerReferencesPresenter: (...args) =>
+					new YamlIssueFormProjectionComposition().speakerReferencesPresenter(
+						...args,
+					),
+				createIssueFormMessages: (...args) =>
+					new YamlIssueFormProjectionComposition().issueFormMessages(...args),
+			},
+			{
+				workspaceRoot: target.workspaceRoot,
+			},
+		);
 
 		// Act
 		const operation = adapter.synchronize({

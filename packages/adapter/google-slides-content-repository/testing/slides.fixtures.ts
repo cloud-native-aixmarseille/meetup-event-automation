@@ -1,9 +1,9 @@
 import type { slides_v1 } from "@googleapis/slides";
-import { vi } from "vitest";
 import type {
 	AssetImageRepository,
 	ContentContract,
 } from "@meetup-automation/publication";
+import { vi } from "vitest";
 
 export function slidesFixture() {
 	const contract: ContentContract = {

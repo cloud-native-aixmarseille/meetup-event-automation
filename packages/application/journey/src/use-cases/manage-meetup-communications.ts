@@ -1,29 +1,69 @@
+import type { ReconcileCommunicationsInput } from "@meetup-automation/communication";
 import type {
-	ReconcileCommunicationsInput,
-	ReconcileCommunicationsResult,
-} from "@meetup-automation/communication";
-import {
-	type EventDocument,
-	type EventRepository,
-	ReconcileEvent,
+	EventDocument,
+	EventDocumentConcurrency,
+	EventRepository,
 } from "@meetup-automation/event";
 import type {
 	CommunicationJourneyDiagnostic,
 	ManageMeetupCommunicationsInput,
 	ManageMeetupCommunicationsResult,
 } from "../communication/contracts.js";
-import type { AutomationConfig } from "../config/automation-config.js";
-import { ApproveCommunicationBatch } from "./approve-communication-batch.js";
-import { CommunicationChecklist } from "./communication-checklist.js";
-import { CommunicationDeliveryPreparation } from "./communication-delivery-preparation.js";
-import { CommunicationPlaceholders } from "./communication-placeholders.js";
-import { CompleteCommunicationChecklist } from "./complete-communication-checklist.js";
+import type {
+	ApproveCommunicationBatch,
+	ApproveCommunicationBatchArguments,
+} from "./approve-communication-batch.js";
+import type { CommunicationChecklist } from "./communication-checklist.js";
+import type {
+	CommunicationDeliveryPreparation,
+	CommunicationDeliveryPreparationArguments,
+} from "./communication-delivery-preparation.js";
+import type { CommunicationDispatchPolicy } from "./communication-dispatch-policy.js";
+import type { CommunicationJourneyResults } from "./communication-journey-results.js";
+import type { CommunicationPlaceholders } from "./communication-placeholders.js";
+import type {
+	CompleteCommunicationChecklist,
+	CompleteCommunicationChecklistArguments,
+} from "./complete-communication-checklist.js";
 import type { ManageMeetupCommunicationsDependencies } from "./manage-meetup-communications-contracts.js";
 import type { ManageMeetupEventResult } from "./manage-meetup-event-contracts.js";
 
 /** Coordinate event readiness, checklist completion and delivery through owned ports. */
+export interface ManageMeetupCommunicationsCollaborators {
+	readonly communicationDispatchPolicy: Pick<
+		CommunicationDispatchPolicy,
+		"isDispatchEnabled"
+	>;
+	readonly communicationJourneyResults: Pick<
+		CommunicationJourneyResults,
+		"skippedResult" | "emptyCommunicationResult" | "withRuntimeDiagnostics"
+	>;
+	readonly eventDocumentConcurrency: Pick<
+		EventDocumentConcurrency,
+		"eventDocumentsEqual"
+	>;
+	readonly communicationChecklist: Pick<
+		CommunicationChecklist,
+		"pendingRecipients"
+	>;
+	readonly communicationPlaceholders: Pick<
+		CommunicationPlaceholders,
+		"eventPlaceholders"
+	>;
+	readonly createCommunicationDeliveryPreparation: (
+		...args: CommunicationDeliveryPreparationArguments
+	) => CommunicationDeliveryPreparation;
+	readonly createApproveCommunicationBatch: (
+		...args: ApproveCommunicationBatchArguments
+	) => ApproveCommunicationBatch;
+	readonly createCompleteCommunicationChecklist: (
+		...args: CompleteCommunicationChecklistArguments
+	) => CompleteCommunicationChecklist;
+}
+
 export class ManageMeetupCommunications {
 	constructor(
+		private readonly collaborators: ManageMeetupCommunicationsCollaborators,
 		private readonly dependencies: ManageMeetupCommunicationsDependencies,
 	) {}
 
@@ -32,22 +72,23 @@ export class ManageMeetupCommunications {
 	): Promise<ManageMeetupCommunicationsResult> {
 		const runtimeDiagnostics: CommunicationJourneyDiagnostic[] = [];
 		const config = this.dependencies.config;
-		const dispatchPermitted = ManageMeetupCommunications.isDispatchEnabled(
-			config,
-			runtimeDiagnostics,
-		);
+		const dispatchPermitted =
+			this.collaborators.communicationDispatchPolicy.isDispatchEnabled(
+				config,
+				runtimeDiagnostics,
+			);
 		const { sourceDocument, managed } = await this.loadEvent(input);
 
 		if (managed.skipped) {
-			return ManageMeetupCommunications.skippedResult(
+			return this.collaborators.communicationJourneyResults.skippedResult(
 				dispatchPermitted,
 				runtimeDiagnostics,
 			);
 		}
 
-		const delivery = await new CommunicationDeliveryPreparation(
-			this.dependencies,
-		).execute(managed.event, runtimeDiagnostics);
+		const delivery = await this.collaborators
+			.createCommunicationDeliveryPreparation(this.dependencies)
+			.execute(managed.event, runtimeDiagnostics);
 		const { referencesResolved } = delivery;
 
 		if (
@@ -55,7 +96,7 @@ export class ManageMeetupCommunications {
 			referencesResolved &&
 			!(await this.sourceIsCurrent(sourceDocument, runtimeDiagnostics))
 		) {
-			return ManageMeetupCommunications.emptyCommunicationResult(
+			return this.collaborators.communicationJourneyResults.emptyCommunicationResult(
 				"check",
 				runtimeDiagnostics,
 			);
@@ -93,22 +134,24 @@ export class ManageMeetupCommunications {
 		const mailApproved =
 			dispatchEnabled &&
 			(await this.synchronizeApprovals(runtimeDiagnostics)) &&
-			(await new ApproveCommunicationBatch(
-				this.dependencies.organizerApproval,
-				this.dependencies.clock,
-				this.dependencies.reconcileCommunications(false),
-			).execute(
-				deliveryInput,
-				delivery.mailRecipientResolution.recipients,
-				managed.event,
-				runtimeDiagnostics,
-			));
+			(await this.collaborators
+				.createApproveCommunicationBatch(
+					this.dependencies.organizerApproval,
+					this.dependencies.clock,
+					this.dependencies.reconcileCommunications(false),
+				)
+				.execute(
+					deliveryInput,
+					delivery.mailRecipientResolution.recipients,
+					managed.event,
+					runtimeDiagnostics,
+				));
 
 		if (
 			dispatchEnabled &&
 			!(await this.sourceIsCurrent(sourceDocument, runtimeDiagnostics))
 		) {
-			return ManageMeetupCommunications.emptyCommunicationResult(
+			return this.collaborators.communicationJourneyResults.emptyCommunicationResult(
 				"check",
 				runtimeDiagnostics,
 			);
@@ -122,35 +165,24 @@ export class ManageMeetupCommunications {
 			});
 
 		if (dispatchEnabled) {
-			await new CompleteCommunicationChecklist(
-				this.dependencies.eventRepository,
-				this.dependencies.eventDocumentCodec,
-			).execute(
-				sourceDocument,
-				reconciliation.completedMailKinds,
-				runtimeDiagnostics,
-			);
+			await this.collaborators
+				.createCompleteCommunicationChecklist(
+					this.dependencies.eventRepository,
+					this.dependencies.eventDocumentCodec,
+				)
+				.execute(
+					sourceDocument,
+					reconciliation.completedMailKinds,
+					runtimeDiagnostics,
+				);
 		}
 
-		return ManageMeetupCommunications.withRuntimeDiagnostics(
+		return this.collaborators.communicationJourneyResults.withRuntimeDiagnostics(
 			reconciliation,
 			runtimeDiagnostics,
 		);
 	}
 
-	static isDispatchEnabled(
-		config: AutomationConfig,
-		diagnostics: CommunicationJourneyDiagnostic[],
-	): boolean {
-		const enabledByConfig = config.communication["dispatch-enabled"];
-		if (!enabledByConfig) {
-			diagnostics.push({
-				code: "communication.dispatch-disabled-by-config",
-				severity: "warning",
-			});
-		}
-		return enabledByConfig;
-	}
 	private async synchronizeApprovals(
 		diagnostics: CommunicationJourneyDiagnostic[],
 	): Promise<boolean> {
@@ -171,53 +203,25 @@ export class ManageMeetupCommunications {
 		}
 	}
 
-	private static async eventSourceIsCurrent(
+	private async eventSourceIsCurrent(
 		repository: EventRepository,
 		expected: EventDocument,
 		diagnostics: CommunicationJourneyDiagnostic[],
 	): Promise<boolean> {
 		const current = await repository.find(expected.identity);
-		if (current && ReconcileEvent.eventDocumentsEqual(current, expected))
+		if (
+			current &&
+			this.collaborators.eventDocumentConcurrency.eventDocumentsEqual(
+				current,
+				expected,
+			)
+		)
 			return true;
 		diagnostics.push({
 			code: "communication.event-concurrently-modified",
 			severity: "error",
 		});
 		return false;
-	}
-
-	private static withRuntimeDiagnostics(
-		result: ReconcileCommunicationsResult,
-		runtimeDiagnostics: readonly CommunicationJourneyDiagnostic[],
-	): ManageMeetupCommunicationsResult {
-		return {
-			...result,
-			runtimeDiagnostics: Object.freeze([...runtimeDiagnostics]),
-		};
-	}
-
-	static emptyCommunicationResult(
-		mode: "check" | "dispatch",
-		runtimeDiagnostics: readonly CommunicationJourneyDiagnostic[],
-	): ManageMeetupCommunicationsResult {
-		return {
-			mode,
-			intentIds: [],
-			completedMailKinds: [],
-			counts: {
-				planned: 0,
-				due: 0,
-				alreadyRecorded: 0,
-				reserved: 0,
-				dispatched: 0,
-				accepted: 0,
-				uncertain: 0,
-				rejected: 0,
-				deferred: 0,
-			},
-			diagnostics: [],
-			runtimeDiagnostics: Object.freeze([...runtimeDiagnostics]),
-		};
 	}
 
 	private async loadEvent(input: ManageMeetupCommunicationsInput) {
@@ -259,15 +263,17 @@ export class ManageMeetupCommunications {
 			readiness: managed.isReady ? "ready" : "not-ready",
 			occurrenceStatus: managed.event.occurrenceStatus ?? "unknown",
 			policyVersion: String(config.communication["policy-version"]),
-			mailRecipients: CommunicationChecklist.pendingRecipients(
-				managed.event,
-				delivery.mailRecipientResolution.recipients,
-				delivery.postEvent,
-			),
-			mailPlaceholders: CommunicationPlaceholders.eventPlaceholders(
-				managed.event,
-				input.slidesReady === false ? undefined : input.slidesUrl,
-			),
+			mailRecipients:
+				this.collaborators.communicationChecklist.pendingRecipients(
+					managed.event,
+					delivery.mailRecipientResolution.recipients,
+					delivery.postEvent,
+				),
+			mailPlaceholders:
+				this.collaborators.communicationPlaceholders.eventPlaceholders(
+					managed.event,
+					input.slidesReady === false ? undefined : input.slidesUrl,
+				),
 		};
 	}
 
@@ -275,24 +281,17 @@ export class ManageMeetupCommunications {
 		source: EventDocument,
 		diagnostics: CommunicationJourneyDiagnostic[],
 	) {
-		return ManageMeetupCommunications.eventSourceIsCurrent(
+		return this.eventSourceIsCurrent(
 			this.dependencies.eventRepository,
 			source,
 			diagnostics,
 		);
 	}
-
-	private static skippedResult(
-		dispatchPermitted: boolean,
-		runtimeDiagnostics: CommunicationJourneyDiagnostic[],
-	) {
-		runtimeDiagnostics.push({
-			code: "communication.event-skipped",
-			severity: "info",
-		});
-		return ManageMeetupCommunications.emptyCommunicationResult(
-			dispatchPermitted ? "dispatch" : "check",
-			runtimeDiagnostics,
-		);
-	}
 }
+export type ManageMeetupCommunicationsArguments =
+	ConstructorParameters<typeof ManageMeetupCommunications> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

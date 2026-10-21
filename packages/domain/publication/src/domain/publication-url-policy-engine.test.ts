@@ -1,12 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { PublicationUrlPolicies } from "./publication-url-policies.js";
+import { PublicationDomainComposition } from "../dependency-composition.js";
 import { PublicationUrlPolicyEngine } from "./publication-url-policy-engine.js";
 
 describe("publication URL policies", () => {
 	it("accepts canonical provider references", () => {
 		// Arrange
 		const engine = new PublicationUrlPolicyEngine(
-			PublicationUrlPolicies.createDefaultPublicationUrlPolicies(),
+			{
+				publicationDiagnostics:
+					new PublicationDomainComposition().publicationDiagnostics(),
+			},
+			new PublicationDomainComposition()
+				.publicationUrlPolicies()
+				.createDefaultPublicationUrlPolicies(),
 		);
 
 		// Act
@@ -29,7 +35,13 @@ describe("publication URL policies", () => {
 
 		// Act
 		const result = new PublicationUrlPolicyEngine(
-			PublicationUrlPolicies.createDefaultPublicationUrlPolicies(),
+			{
+				publicationDiagnostics:
+					new PublicationDomainComposition().publicationDiagnostics(),
+			},
+			new PublicationDomainComposition()
+				.publicationUrlPolicies()
+				.createDefaultPublicationUrlPolicies(),
 		).evaluate({
 			community:
 				"https://community.cncf.io/events/details/cncf-cloud-native-aix-marseille-presents-platform-engineering",
@@ -48,7 +60,13 @@ describe("publication URL policies", () => {
 
 		// Act
 		const result = new PublicationUrlPolicyEngine(
-			PublicationUrlPolicies.createDefaultPublicationUrlPolicies(),
+			{
+				publicationDiagnostics:
+					new PublicationDomainComposition().publicationDiagnostics(),
+			},
+			new PublicationDomainComposition()
+				.publicationUrlPolicies()
+				.createDefaultPublicationUrlPolicies(),
 		).evaluate(source);
 
 		// Assert
@@ -87,7 +105,13 @@ describe("publication URL policies", () => {
 
 		// Act
 		const result = new PublicationUrlPolicyEngine(
-			PublicationUrlPolicies.createDefaultPublicationUrlPolicies(),
+			{
+				publicationDiagnostics:
+					new PublicationDomainComposition().publicationDiagnostics(),
+			},
+			new PublicationDomainComposition()
+				.publicationUrlPolicies()
+				.createDefaultPublicationUrlPolicies(),
 		).evaluate({ [field]: value });
 
 		// Assert

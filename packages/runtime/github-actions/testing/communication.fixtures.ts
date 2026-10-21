@@ -37,9 +37,9 @@ speaker-0001,Ada,Speaker,Public Company,speaker@example.invalid,
 export function runtimeInput(
 	workspaceRoot: string,
 	override: Partial<
-		Parameters<typeof CommunicationRuntime.runCommunicationReconcile>[0]
+		Parameters<CommunicationRuntime["runCommunicationReconcile"]>[0]
 	> = {},
-): Parameters<typeof CommunicationRuntime.runCommunicationReconcile>[0] {
+): Parameters<CommunicationRuntime["runCommunicationReconcile"]>[0] {
 	return {
 		locale: "en",
 		slidesReady: true,

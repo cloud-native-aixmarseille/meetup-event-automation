@@ -1,10 +1,10 @@
-import { describe, expect, it } from "vitest";
 import type { ScheduledEvent } from "@meetup-automation/publication";
+import { describe, expect, it } from "vitest";
 import {
 	publicationFixture,
 	publicationUrl,
 } from "../../testing/meetup-publication.fixtures.js";
-import { MeetupPublicationProjection } from "./meetup-publication-projection.js";
+import { JourneyPolicyComposition } from "../policy-composition.js";
 import { MeetupPublicationApproval } from "./meetup-publication-approval.js";
 
 describe("Meetup publication approval revision", () => {
@@ -21,12 +21,15 @@ describe("Meetup publication approval revision", () => {
 		async (change) => {
 			// Arrange
 			const f = publicationFixture();
-			const event = MeetupPublicationProjection.create(
-				f.currentEvent,
-				f.dependencies.settings,
-			);
+			const event = new JourneyPolicyComposition()
+				.meetupPublicationProjection()
+				.create(f.currentEvent, f.dependencies.settings);
 			if (!event) throw new Error("Expected event fixture");
 			const approval = new MeetupPublicationApproval(
+				{
+					meetupPublicationRevision:
+						new JourneyPolicyComposition().meetupPublicationRevision(),
+				},
 				f.approval,
 				f.dependencies.clock,
 			);
@@ -44,12 +47,15 @@ describe("Meetup publication approval revision", () => {
 	it("binds approval to the remote draft identity", async () => {
 		// Arrange
 		const f = publicationFixture();
-		const event = MeetupPublicationProjection.create(
-			f.currentEvent,
-			f.dependencies.settings,
-		);
+		const event = new JourneyPolicyComposition()
+			.meetupPublicationProjection()
+			.create(f.currentEvent, f.dependencies.settings);
 		if (!event) throw new Error("Expected event fixture");
 		const approval = new MeetupPublicationApproval(
+			{
+				meetupPublicationRevision:
+					new JourneyPolicyComposition().meetupPublicationRevision(),
+			},
 			f.approval,
 			f.dependencies.clock,
 		);

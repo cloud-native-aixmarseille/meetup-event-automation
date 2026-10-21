@@ -1,14 +1,22 @@
 import type { MeetupEvent } from "@meetup-automation/event";
-import {
-	type AssetRenderAssignments,
-	type ImageSource,
-	type PublicAssetTalk,
+import type {
+	AssetRenderAssignments,
+	ImageSource,
+	PublicAssetTalk,
 	PublicAssetUrl,
 } from "@meetup-automation/publication";
 import type { ReferentialCatalog } from "@meetup-automation/referential";
 
+export interface AssetParticipantProjectionCollaborators {
+	readonly publicAssetUrl: Pick<PublicAssetUrl, "valid">;
+}
+
 export class AssetParticipantProjection {
-	static create(
+	constructor(
+		private readonly collaborators: AssetParticipantProjectionCollaborators,
+	) {}
+
+	create(
 		event: MeetupEvent,
 		catalog: ReferentialCatalog,
 		assignments: AssetRenderAssignments,
@@ -24,7 +32,7 @@ export class AssetParticipantProjection {
 			const speaker = catalog.speakers.find((item) => item.id === id);
 			if (!speaker || !agendaIds.has(id)) continue;
 			speakers[slot] = speaker.displayName;
-			if (PublicAssetUrl.valid(speaker.pictureUrl)) {
+			if (this.collaborators.publicAssetUrl.valid(speaker.pictureUrl)) {
 				pictures[slot] = {
 					speakerId: id,
 					url: speaker.pictureUrl,

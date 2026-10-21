@@ -1,7 +1,10 @@
+import { CommunicationDomainComposition } from "@meetup-automation/communication";
+import { EventDomainComposition } from "@meetup-automation/event";
 import { describe, expect, it } from "vitest";
 import { createTestEvent } from "../../../../domain/event/testing/event.fixtures.js";
-import { AutomationConfigFactory } from "../config/automation-config.js";
+import { JourneyPolicyComposition } from "../policy-composition.js";
 import { AttentionEventFacts } from "./attention-event-facts.js";
+
 describe("public attention event facts", () => {
 	it.each([
 		"Thanks speakers",
@@ -20,9 +23,20 @@ describe("public attention event facts", () => {
 		});
 
 		// Act
-		const result = AttentionEventFacts.create(
+		const result = new AttentionEventFacts({
+			eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
+			eventPublicationEvaluation:
+				new JourneyPolicyComposition().eventPublicationEvaluation(),
+			attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+			communicationChecklist:
+				new JourneyPolicyComposition().communicationChecklist(),
+			createEventRuleEngine: (...args) =>
+				new EventDomainComposition().eventRuleEngine(...args),
+		}).create(
 			{ event, diagnostics: [] },
-			AutomationConfigFactory.createAutomationConfig(),
+			new JourneyPolicyComposition()
+				.automationConfigFactory()
+				.createAutomationConfig(),
 		);
 
 		// Assert
@@ -46,9 +60,20 @@ describe("public attention event facts", () => {
 		});
 
 		// Act
-		const result = AttentionEventFacts.create(
+		const result = new AttentionEventFacts({
+			eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
+			eventPublicationEvaluation:
+				new JourneyPolicyComposition().eventPublicationEvaluation(),
+			attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+			communicationChecklist:
+				new JourneyPolicyComposition().communicationChecklist(),
+			createEventRuleEngine: (...args) =>
+				new EventDomainComposition().eventRuleEngine(...args),
+		}).create(
 			{ event, diagnostics: [] },
-			AutomationConfigFactory.createAutomationConfig(),
+			new JourneyPolicyComposition()
+				.automationConfigFactory()
+				.createAutomationConfig(),
 		);
 
 		// Assert
@@ -61,9 +86,20 @@ describe("public attention event facts", () => {
 		const event = createTestEvent({ date: "private@example.test" });
 
 		// Act
-		const result = AttentionEventFacts.create(
+		const result = new AttentionEventFacts({
+			eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
+			eventPublicationEvaluation:
+				new JourneyPolicyComposition().eventPublicationEvaluation(),
+			attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+			communicationChecklist:
+				new JourneyPolicyComposition().communicationChecklist(),
+			createEventRuleEngine: (...args) =>
+				new EventDomainComposition().eventRuleEngine(...args),
+		}).create(
 			{ event, diagnostics: [] },
-			AutomationConfigFactory.createAutomationConfig(),
+			new JourneyPolicyComposition()
+				.automationConfigFactory()
+				.createAutomationConfig(),
 		);
 
 		// Assert

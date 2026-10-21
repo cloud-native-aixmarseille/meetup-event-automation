@@ -1,7 +1,7 @@
 import type { EventDiagnostic } from "./diagnostic.js";
-import {
-	type EventLifecycleState,
-	type MeetupEvent,
+import type {
+	EventLifecycleState,
+	MeetupEvent,
 	MeetupEventOperations,
 } from "./model.js";
 import type { EventReadiness } from "./readiness.js";
@@ -19,12 +19,21 @@ export type EvaluateEventLifecycleInput = Readonly<{
 	now: string;
 }>;
 
+export interface EventLifecycleCollaborators {
+	readonly meetupEventOperations: Pick<
+		MeetupEventOperations,
+		"postEventChecklistIsComplete"
+	>;
+}
+
 export class EventLifecycle {
+	constructor(private readonly collaborators: EventLifecycleCollaborators) {}
+
 	/**
 	 * Derives lifecycle exclusively from event facts and an explicitly supplied
 	 * instant. In particular, a past date never implies that an event was held.
 	 */
-	static evaluateEventLifecycle({
+	evaluateEventLifecycle({
 		event,
 		readiness,
 		now,
@@ -41,7 +50,7 @@ export class EventLifecycle {
 			case "held":
 				state =
 					event.followUpComplete &&
-					MeetupEventOperations.postEventChecklistIsComplete(
+					this.collaborators.meetupEventOperations.postEventChecklistIsComplete(
 						event.operationalChecklists.postEvent,
 					)
 						? "follow-up-complete"
@@ -49,7 +58,7 @@ export class EventLifecycle {
 				break;
 			case "scheduled":
 			case undefined:
-				if (!EventLifecycle.hasMinimumPlanningFacts(event)) {
+				if (!this.hasMinimumPlanningFacts(event)) {
 					state = "draft";
 				} else {
 					state = readiness.isReady ? "ready" : "planned";
@@ -65,7 +74,7 @@ export class EventLifecycle {
 		};
 	}
 
-	static hasMinimumPlanningFacts(event: MeetupEvent): boolean {
+	hasMinimumPlanningFacts(event: MeetupEvent): boolean {
 		return event.date.trim() !== "" && event.eventTitle.trim() !== "";
 	}
 }

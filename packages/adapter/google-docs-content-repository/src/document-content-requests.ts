@@ -6,7 +6,7 @@ import {
 import type { DocumentTab } from "./document-tabs.js";
 
 export class DocumentContentRequests {
-	static build(
+	build(
 		tabs: readonly DocumentTab[],
 		changes: readonly ContentChange[],
 	): docs_v1.Schema$Request[] {
@@ -15,10 +15,10 @@ export class DocumentContentRequests {
 				(a, b) =>
 					(b.location.anchor.start ?? 0) - (a.location.anchor.start ?? 0),
 			)
-			.flatMap((change) => DocumentContentRequests.change(tabs, change));
+			.flatMap((change) => this.change(tabs, change));
 	}
 
-	private static change(
+	private change(
 		tabs: readonly DocumentTab[],
 		change: ContentChange,
 	): docs_v1.Schema$Request[] {

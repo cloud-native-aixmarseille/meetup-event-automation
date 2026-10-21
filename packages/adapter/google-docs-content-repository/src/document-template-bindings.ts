@@ -1,32 +1,45 @@
-import { ContentTextKey } from "@meetup-automation/publication";
 import type {
 	ContentBinding,
 	ContentContract,
 } from "@meetup-automation/publication";
 import {
 	ContentError,
-	ContentFingerprint,
+	type ContentFingerprint,
+	type ContentTextKey,
 } from "@meetup-automation/publication";
-import { DocumentTabs, type DocumentTab } from "./document-tabs.js";
+import type { DocumentTab, DocumentTabs } from "./document-tabs.js";
+
+export interface DocumentTemplateBindingsCollaborators {
+	readonly documentTabs: Pick<
+		DocumentTabs,
+		"rejectTokens" | "rejectSuggestions"
+	>;
+	readonly contentFingerprint: Pick<ContentFingerprint, "of">;
+	readonly contentTextKey: Pick<ContentTextKey, "of">;
+}
 
 export class DocumentTemplateBindings {
-	static discover(
+	constructor(
+		private readonly collaborators: DocumentTemplateBindingsCollaborators,
+	) {}
+
+	discover(
 		tabs: readonly DocumentTab[],
 		contract: ContentContract,
 	): readonly ContentBinding[] {
 		const bindings: ContentBinding[] = [];
 		for (const tab of tabs) {
-			DocumentTemplateBindings.paragraphs(tab, contract, bindings);
+			this.paragraphs(tab, contract, bindings);
 			for (const content of [
 				tab.content.headers,
 				tab.content.footers,
 				tab.content.footnotes,
 			])
-				DocumentTabs.rejectTokens(content);
+				this.collaborators.documentTabs.rejectTokens(content);
 			for (const field of contract.fields) {
 				if (field.type !== "image" || field.tabId !== tab.id) continue;
 				bindings.push({
-					id: `image_${ContentFingerprint.of(`${tab.id}:${field.objectId}:${field.slot}`)}`,
+					id: `image_${this.collaborators.contentFingerprint.of(`${tab.id}:${field.objectId}:${field.slot}`)}`,
 					type: "image",
 					key: field.slot,
 					anchor: { tabId: tab.id, segmentId: "", objectId: field.objectId },
@@ -35,42 +48,39 @@ export class DocumentTemplateBindings {
 			}
 		}
 		for (const field of contract.fields) {
-			const key = field.type === "text" ? ContentTextKey.of(field) : field.slot;
+			const key =
+				field.type === "text"
+					? this.collaborators.contentTextKey.of(field)
+					: field.slot;
 			if (!bindings.some((binding) => binding.key === key))
 				throw new ContentError("location");
 		}
 		return bindings;
 	}
 
-	private static paragraphs(
+	private paragraphs(
 		tab: DocumentTab,
 		contract: ContentContract,
 		bindings: ContentBinding[],
 	): void {
 		for (const structure of tab.content.body?.content ?? []) {
 			if (!structure.paragraph) {
-				DocumentTabs.rejectTokens(structure);
+				this.collaborators.documentTabs.rejectTokens(structure);
 				continue;
 			}
 			const text = (structure.paragraph.elements ?? [])
 				.map((element) => element.textRun?.content ?? "\ufffc")
 				.join("");
 			if (!text.includes("{{")) continue;
-			DocumentTabs.rejectSuggestions(structure);
+			this.collaborators.documentTabs.rejectSuggestions(structure);
 			const matches = [...text.matchAll(/\{\{([^{}]+)\}\}/g)];
 			if (text.replace(/\{\{[^{}]+\}\}/g, "").includes("{{"))
 				throw new ContentError("location");
-			DocumentTemplateBindings.matches(
-				matches,
-				structure.startIndex,
-				tab.id,
-				contract,
-				bindings,
-			);
+			this.matches(matches, structure.startIndex, tab.id, contract, bindings);
 		}
 	}
 
-	private static matches(
+	private matches(
 		matches: readonly RegExpMatchArray[],
 		startIndex: number | null | undefined,
 		tabId: string,
@@ -80,7 +90,8 @@ export class DocumentTemplateBindings {
 		for (const match of matches) {
 			const field = contract.fields.find(
 				(field) =>
-					field.type === "text" && ContentTextKey.of(field) === match[1],
+					field.type === "text" &&
+					this.collaborators.contentTextKey.of(field) === match[1],
 			);
 			if (field?.type !== "text" || startIndex == null)
 				throw new ContentError("location");
@@ -89,7 +100,7 @@ export class DocumentTemplateBindings {
 			bindings.push({
 				id,
 				type: "text",
-				key: ContentTextKey.of(field),
+				key: this.collaborators.contentTextKey.of(field),
 				applied: "",
 				anchor: {
 					tabId: tabId,

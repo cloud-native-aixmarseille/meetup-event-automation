@@ -27,7 +27,7 @@ describe("required Conference Hall inputs", () => {
 		vi.stubEnv(`INPUT_${name?.toUpperCase()}`, value);
 
 		// Act
-		const read = () => ConferenceHallInput.read();
+		const read = () => new ConferenceHallInput().read();
 
 		// Assert
 		expect(read).toThrow(`Input required and not supplied: ${name}`);
@@ -39,7 +39,7 @@ describe("required Conference Hall inputs", () => {
 		vi.stubEnv("INPUT_CONFERENCE-HALL-API-KEY", " synthetic-source-key ");
 
 		// Act
-		const input = ConferenceHallInput.read();
+		const input = new ConferenceHallInput().read();
 
 		// Assert
 		expect(input).toEqual({

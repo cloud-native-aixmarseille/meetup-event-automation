@@ -1,11 +1,11 @@
 import {
 	type EventDocument,
 	type EventDocumentCodec,
+	type EventDocumentConcurrency,
 	type EventIdentity,
 	EventNotFoundError,
 	type EventRepository,
-	EventRepositoryPatches,
-	ReconcileEvent,
+	type EventRepositoryPatches,
 } from "@meetup-automation/event";
 import type {
 	ContentRecovery,
@@ -25,8 +25,22 @@ interface ManageMeetupAssetsDependencies {
 	readonly reconcileAssets: Pick<ReconcileEventAssets, "execute">;
 }
 
+export interface ManageMeetupAssetsCollaborators {
+	readonly eventDocumentConcurrency: Pick<
+		EventDocumentConcurrency,
+		"ensureEventDocumentIsCurrent"
+	>;
+	readonly eventRepositoryPatches: Pick<
+		EventRepositoryPatches,
+		"eventRepositoryPatchIsEmpty"
+	>;
+}
+
 export class ManageMeetupAssets {
-	constructor(private readonly dependencies: ManageMeetupAssetsDependencies) {}
+	constructor(
+		private readonly collaborators: ManageMeetupAssetsCollaborators,
+		private readonly dependencies: ManageMeetupAssetsDependencies,
+	) {}
 
 	async execute(input: { identity: EventIdentity }): Promise<{
 		skipped: boolean;
@@ -69,7 +83,7 @@ export class ManageMeetupAssets {
 				],
 			};
 		}
-		await ReconcileEvent.ensureEventDocumentIsCurrent(
+		await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
 			this.dependencies.eventRepository,
 			input.identity,
 			source,
@@ -116,8 +130,12 @@ export class ManageMeetupAssets {
 					assets: assetUrl,
 				},
 			});
-			if (!EventRepositoryPatches.eventRepositoryPatchIsEmpty(patch)) {
-				await ReconcileEvent.ensureEventDocumentIsCurrent(
+			if (
+				!this.collaborators.eventRepositoryPatches.eventRepositoryPatchIsEmpty(
+					patch,
+				)
+			) {
+				await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
 					this.dependencies.eventRepository,
 					source.identity,
 					source,
@@ -133,3 +151,10 @@ export class ManageMeetupAssets {
 		return persisted;
 	}
 }
+export type ManageMeetupAssetsArguments =
+	ConstructorParameters<typeof ManageMeetupAssets> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

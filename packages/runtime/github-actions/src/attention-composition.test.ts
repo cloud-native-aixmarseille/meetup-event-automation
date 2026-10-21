@@ -6,10 +6,14 @@ import type {
 } from "@meetup-automation/event";
 import {
 	GithubOrganizerApproval,
+	GithubOrganizerApprovalComposition,
 	GithubOrganizerFollowUp,
 } from "@meetup-automation/github-organizer-approval";
-import { AttentionRecord } from "@meetup-automation/github-organizer-attention";
-import { ManageMeetupAttention } from "@meetup-automation/journey";
+import { GithubOrganizerAttentionComposition } from "@meetup-automation/github-organizer-attention";
+import {
+	JourneyPolicyComposition,
+	ManageMeetupAttention,
+} from "@meetup-automation/journey";
 import { SystemCommunicationClock } from "@meetup-automation/system-clock";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
@@ -141,6 +145,14 @@ describe("post-event attention composition", () => {
 		// Arrange
 		const f = followUpFixture();
 		const approvals = new GithubOrganizerApproval(
+			{
+				approvalRequestSchema:
+					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+				approvalDetailsPreview:
+					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+			},
 			f.repository,
 			f.records,
 			f.finalizer,
@@ -159,7 +171,9 @@ describe("post-event attention composition", () => {
 		const second = await f.run();
 		const body = f.comments[0]?.body ?? "";
 		const shared = await followUp.followUpAttention();
-		const state = AttentionRecord.read(shared?.body ?? "");
+		const state = new GithubOrganizerAttentionComposition()
+			.attentionRecord()
+			.read(shared?.body ?? "");
 
 		// Assert
 		expect(first.posted).toBe(true);
@@ -187,6 +201,14 @@ describe("post-event attention composition", () => {
 		// Arrange
 		const f = followUpFixture();
 		const approvals = new GithubOrganizerApproval(
+			{
+				approvalRequestSchema:
+					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+				approvalDetailsPreview:
+					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+			},
 			f.repository,
 			f.records,
 			f.finalizer,
@@ -248,7 +270,9 @@ describe("post-event attention composition", () => {
 		const migrated = await f.run();
 		const retry = await f.run();
 		const shared = await followUp.followUpAttention();
-		const state = AttentionRecord.read(shared?.body ?? "");
+		const state = new GithubOrganizerAttentionComposition()
+			.attentionRecord()
+			.read(shared?.body ?? "");
 
 		// Assert
 		expect(migrated.notificationFailed).toBe(true);

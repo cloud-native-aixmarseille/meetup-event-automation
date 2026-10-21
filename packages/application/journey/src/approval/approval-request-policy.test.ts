@@ -43,7 +43,11 @@ describe("approval request identity", () => {
 		};
 
 		// Act
-		const same = ApprovalRequestPolicy.matches(request, reordered, "pending");
+		const same = new ApprovalRequestPolicy().matches(
+			request,
+			reordered,
+			"pending",
+		);
 
 		// Assert
 		expect(same).toBe(true);
@@ -56,7 +60,11 @@ describe("approval request identity", () => {
 			const changed = { ...request, revision: "b".repeat(64) };
 
 			// Act
-			const same = ApprovalRequestPolicy.matches(request, changed, status);
+			const same = new ApprovalRequestPolicy().matches(
+				request,
+				changed,
+				status,
+			);
 
 			// Assert
 			expect(same).toBe(false);
@@ -70,7 +78,11 @@ describe("approval request identity", () => {
 			const changed = { ...request, details: undefined };
 
 			// Act
-			const same = ApprovalRequestPolicy.matches(request, changed, status);
+			const same = new ApprovalRequestPolicy().matches(
+				request,
+				changed,
+				status,
+			);
 
 			// Assert
 			expect(same).toBe(status !== "pending");
@@ -88,7 +100,7 @@ describe("approval request identity", () => {
 		const input = { ...request, ...override };
 
 		// Act
-		const validate = () => ApprovalRequestPolicy.validate(input);
+		const validate = () => new ApprovalRequestPolicy().validate(input);
 
 		// Assert
 		expect(validate).toThrow();

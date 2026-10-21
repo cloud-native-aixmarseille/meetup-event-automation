@@ -1,18 +1,28 @@
 import type { PublicationEvaluation, PublicationReferences } from "./model.js";
-import { PublicationLinkEvaluation } from "./publication-link-evaluation.js";
+import type { PublicationLinkEvaluation } from "./publication-link-evaluation.js";
 import type { PublicationUrlPolicy } from "./url-policy-contracts.js";
+
+export interface CommunityEventUrlPolicyCollaborators {
+	readonly publicationLinkEvaluation: Pick<
+		PublicationLinkEvaluation,
+		"evaluateLink" | "matchesPrefix"
+	>;
+}
 
 export class CommunityEventUrlPolicy implements PublicationUrlPolicy {
 	readonly id = "community-event-url";
 
-	constructor(private readonly prefixes: readonly string[]) {}
+	constructor(
+		private readonly collaborators: CommunityEventUrlPolicyCollaborators,
+		private readonly prefixes: readonly string[],
+	) {}
 
 	evaluate(references: PublicationReferences): PublicationEvaluation {
-		return PublicationLinkEvaluation.evaluateLink({
+		return this.collaborators.publicationLinkEvaluation.evaluateLink({
 			references,
 			path: "community",
 			isValid: (value) =>
-				PublicationLinkEvaluation.matchesPrefix(
+				this.collaborators.publicationLinkEvaluation.matchesPrefix(
 					value,
 					this.prefixes,
 					/^[0-9a-z-]+$/,
@@ -23,3 +33,10 @@ export class CommunityEventUrlPolicy implements PublicationUrlPolicy {
 		});
 	}
 }
+export type CommunityEventUrlPolicyArguments =
+	ConstructorParameters<typeof CommunityEventUrlPolicy> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

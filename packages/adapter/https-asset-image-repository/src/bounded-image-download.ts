@@ -1,12 +1,17 @@
-import { lookup } from "node:dns/promises";
 import type { LookupAddress } from "node:dns";
-import { request } from "node:https";
+import { lookup } from "node:dns/promises";
 import type { IncomingMessage } from "node:http";
+import { request } from "node:https";
 import { ContentError } from "@meetup-automation/publication";
-import { PublicImageUrl } from "./public-image-url.js";
+import type { PublicImageUrl } from "./public-image-url.js";
+
+export interface BoundedImageDownloadCollaborators {
+	readonly publicImageUrl: Pick<PublicImageUrl, "parse" | "publicAddress">;
+}
 
 export class BoundedImageDownload {
 	constructor(
+		private readonly collaborators: BoundedImageDownloadCollaborators,
 		private readonly resolve = lookup,
 		private readonly send = request,
 	) {}
@@ -15,13 +20,16 @@ export class BoundedImageDownload {
 		value: string,
 		temporary = false,
 	): Promise<{ bytes: Buffer; mediaType: string; url: string }> {
-		let url = PublicImageUrl.parse(value, temporary);
+		let url = this.collaborators.publicImageUrl.parse(value, temporary);
 		const signal = AbortSignal.timeout(15_000);
 		for (let redirect = 0; redirect <= 3; redirect++) {
 			const addresses = await this.addresses(url.hostname, signal);
 			if (
 				!addresses.length ||
-				addresses.some((item) => !PublicImageUrl.publicAddress(item.address))
+				addresses.some(
+					(item) =>
+						!this.collaborators.publicImageUrl.publicAddress(item.address),
+				)
 			)
 				throw new ContentError("image");
 			const response = await new Promise<IncomingMessage>((resolve, reject) => {
@@ -44,7 +52,7 @@ export class BoundedImageDownload {
 			if ([301, 302, 303, 307, 308].includes(response.statusCode ?? 0)) {
 				response.destroy();
 				if (!response.headers.location) throw new ContentError("image");
-				url = PublicImageUrl.parse(
+				url = this.collaborators.publicImageUrl.parse(
 					new URL(response.headers.location, url).href,
 					temporary,
 				);
@@ -55,7 +63,7 @@ export class BoundedImageDownload {
 				throw new ContentError("image");
 			}
 			return {
-				bytes: await BoundedImageDownload.body(response),
+				bytes: await this.body(response),
 				mediaType: (response.headers["content-type"] ?? "")
 					.split(";")[0]
 					.toLowerCase(),
@@ -65,7 +73,7 @@ export class BoundedImageDownload {
 		throw new ContentError("image");
 	}
 
-	private static async body(response: IncomingMessage): Promise<Buffer> {
+	private async body(response: IncomingMessage): Promise<Buffer> {
 		const chunks: Buffer[] = [];
 		let size = 0;
 		for await (const chunk of response) {
@@ -98,3 +106,10 @@ export class BoundedImageDownload {
 		}
 	}
 }
+export type BoundedImageDownloadArguments =
+	ConstructorParameters<typeof BoundedImageDownload> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

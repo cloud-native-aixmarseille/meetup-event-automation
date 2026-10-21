@@ -1,11 +1,21 @@
-import { MessageLocalizer } from "@meetup-automation/localization";
+import {
+	MessageLocalizer,
+	type MessageLocalizerCollaborators,
+} from "@meetup-automation/localization";
 import { CATALOGS, type MessageId } from "./catalog.js";
 import type { MessageParameters } from "./message-parameters.js";
 export class ApprovalMessages extends MessageLocalizer<
 	MessageId,
 	MessageParameters
 > {
-	constructor(locale = "en") {
-		super(CATALOGS, locale);
+	constructor(collaborators: MessageLocalizerCollaborators, locale = "en") {
+		super(collaborators, CATALOGS, locale);
 	}
 }
+export type ApprovalMessagesArguments =
+	ConstructorParameters<typeof ApprovalMessages> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

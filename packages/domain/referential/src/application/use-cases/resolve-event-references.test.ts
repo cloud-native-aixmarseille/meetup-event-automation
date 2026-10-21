@@ -3,12 +3,24 @@ import {
 	rawCatalog,
 	speakerRecord,
 } from "../../../testing/referential.fixtures.js";
+import { ReferentialDomainComposition } from "../../dependency-composition.js";
 import type { ReferentialCatalog } from "../../domain/referential-catalog.js";
 import { ResolveEventReferences } from "./resolve-event-references.js";
 import { ValidateReferentialCatalog } from "./validate-referential-catalog.js";
 
 async function validCatalog() {
-	const result = await new ValidateReferentialCatalog().execute(
+	const result = await new ValidateReferentialCatalog({
+		referentialDiagnostics:
+			new ReferentialDomainComposition().referentialDiagnostics(),
+		hostCatalogValidator:
+			new ReferentialDomainComposition().hostCatalogValidator(),
+		speakerCatalogValidator:
+			new ReferentialDomainComposition().speakerCatalogValidator(),
+		speakerSourceFields:
+			new ReferentialDomainComposition().speakerSourceFields(),
+		referentialCatalogOperations:
+			new ReferentialDomainComposition().referentialCatalogOperations(),
+	}).execute(
 		rawCatalog({
 			hosts: [
 				hostRecord(),
@@ -39,7 +51,14 @@ describe("ResolveEventReferences", () => {
 		// Use the shared fixtures.
 
 		// Act
-		const result = new ResolveEventReferences().execute(await validCatalog(), {
+		const result = new ResolveEventReferences({
+			referentialDiagnostics:
+				new ReferentialDomainComposition().referentialDiagnostics(),
+			referentialIdentifiers:
+				new ReferentialDomainComposition().referentialIdentifiers(),
+			referentialCatalogOperations:
+				new ReferentialDomainComposition().referentialCatalogOperations(),
+		}).execute(await validCatalog(), {
 			hostReference: " example   host ",
 			speakerReferences: ["example speaker", "Other Speaker"],
 		});
@@ -61,7 +80,14 @@ describe("ResolveEventReferences", () => {
 		// Use the shared fixtures.
 
 		// Act
-		const result = new ResolveEventReferences().execute(await validCatalog(), {
+		const result = new ResolveEventReferences({
+			referentialDiagnostics:
+				new ReferentialDomainComposition().referentialDiagnostics(),
+			referentialIdentifiers:
+				new ReferentialDomainComposition().referentialIdentifiers(),
+			referentialCatalogOperations:
+				new ReferentialDomainComposition().referentialCatalogOperations(),
+		}).execute(await validCatalog(), {
 			hostReference: "Old Host Name [host-0001]",
 			speakerReferences: ["Old Speaker Name [speaker-0001]"],
 		});
@@ -100,7 +126,14 @@ describe("ResolveEventReferences", () => {
 		};
 
 		// Act
-		const ambiguous = new ResolveEventReferences().execute(ambiguousCatalog, {
+		const ambiguous = new ResolveEventReferences({
+			referentialDiagnostics:
+				new ReferentialDomainComposition().referentialDiagnostics(),
+			referentialIdentifiers:
+				new ReferentialDomainComposition().referentialIdentifiers(),
+			referentialCatalogOperations:
+				new ReferentialDomainComposition().referentialCatalogOperations(),
+		}).execute(ambiguousCatalog, {
 			hostReference: "Example Host",
 			speakerReferences: ["Example Speaker"],
 		});
@@ -134,7 +167,14 @@ describe("ResolveEventReferences", () => {
 		};
 
 		// Act
-		const explicit = new ResolveEventReferences().execute(ambiguousCatalog, {
+		const explicit = new ResolveEventReferences({
+			referentialDiagnostics:
+				new ReferentialDomainComposition().referentialDiagnostics(),
+			referentialIdentifiers:
+				new ReferentialDomainComposition().referentialIdentifiers(),
+			referentialCatalogOperations:
+				new ReferentialDomainComposition().referentialCatalogOperations(),
+		}).execute(ambiguousCatalog, {
 			hostReference: "Example Host [host-0002]",
 			speakerReferences: ["Example Speaker [speaker-0002]"],
 		});
@@ -148,7 +188,14 @@ describe("ResolveEventReferences", () => {
 		// No additional setup is needed.
 
 		// Act
-		const result = new ResolveEventReferences().execute(await validCatalog(), {
+		const result = new ResolveEventReferences({
+			referentialDiagnostics:
+				new ReferentialDomainComposition().referentialDiagnostics(),
+			referentialIdentifiers:
+				new ReferentialDomainComposition().referentialIdentifiers(),
+			referentialCatalogOperations:
+				new ReferentialDomainComposition().referentialCatalogOperations(),
+		}).execute(await validCatalog(), {
 			hostReference: "Example Host [bad-id]",
 			speakerReferences: ["Example Speaker [speaker-9999]"],
 		});

@@ -1,8 +1,11 @@
-import { CommunicationCalendar } from "./communication-calendar.js";
-import { CommunicationDispatcher } from "./communication-dispatcher.js";
-import {
+import type { CommunicationCalendar } from "./communication-calendar.js";
+import type {
+	CommunicationDispatcher,
+	CommunicationDispatcherArguments,
+} from "./communication-dispatcher.js";
+import type {
 	CommunicationResults,
-	type MutableCounts,
+	MutableCounts,
 } from "./communication-results.js";
 import type {
 	CommunicationDiagnostic,
@@ -25,17 +28,31 @@ export type ReconcileCommunicationsDependencies = {
 	readonly mailGateway: MailGateway;
 };
 
+export interface ReconcileCommunicationsCollaborators {
+	readonly communicationResults: Pick<
+		CommunicationResults,
+		"emptyResult" | "result" | "recordExisting"
+	>;
+	readonly communicationCalendar: Pick<CommunicationCalendar, "isValidInstant">;
+	readonly createCommunicationDispatcher: (
+		...args: CommunicationDispatcherArguments
+	) => CommunicationDispatcher;
+}
+
 export class ReconcileCommunications {
 	readonly #planner: PlanCommunications;
 	readonly #clock: CommunicationClock;
 	readonly #ledger: DeliveryLedger;
 	readonly #dispatcher: CommunicationDispatcher;
 
-	constructor(dependencies: ReconcileCommunicationsDependencies) {
+	constructor(
+		private readonly collaborators: ReconcileCommunicationsCollaborators,
+		dependencies: ReconcileCommunicationsDependencies,
+	) {
 		this.#planner = dependencies.planner;
 		this.#clock = dependencies.clock;
 		this.#ledger = dependencies.ledger;
-		this.#dispatcher = new CommunicationDispatcher(
+		this.#dispatcher = this.collaborators.createCommunicationDispatcher(
 			dependencies.ledger,
 			dependencies.mailGateway,
 		);
@@ -48,13 +65,13 @@ export class ReconcileCommunications {
 		try {
 			now = this.#clock.now();
 		} catch {
-			return CommunicationResults.emptyResult(input.mode, {
+			return this.collaborators.communicationResults.emptyResult(input.mode, {
 				code: "invalid-clock",
 				severity: "error",
 			});
 		}
-		if (!CommunicationCalendar.isValidInstant(now)) {
-			return CommunicationResults.emptyResult(input.mode, {
+		if (!this.collaborators.communicationCalendar.isValidInstant(now)) {
+			return this.collaborators.communicationResults.emptyResult(input.mode, {
 				code: "invalid-clock",
 				severity: "error",
 			});
@@ -90,7 +107,7 @@ export class ReconcileCommunications {
 			if (accepted) acceptedIds.add(intent.intentId);
 		}
 
-		return CommunicationResults.result(
+		return this.collaborators.communicationResults.result(
 			mode,
 			plan.intents,
 			counts,
@@ -155,7 +172,7 @@ export class ReconcileCommunications {
 		}
 
 		if (existing) {
-			CommunicationResults.recordExisting(
+			this.collaborators.communicationResults.recordExisting(
 				intent.intentId,
 				existing,
 				counts,
@@ -178,7 +195,7 @@ export class ReconcileCommunications {
 		}
 
 		if (!reservation.reserved) {
-			CommunicationResults.recordExisting(
+			this.collaborators.communicationResults.recordExisting(
 				intent.intentId,
 				reservation.entry,
 				counts,
@@ -192,3 +209,10 @@ export class ReconcileCommunications {
 		return this.#dispatcher.execute(intent, timestamp, counts, diagnostics);
 	}
 }
+export type ReconcileCommunicationsArguments =
+	ConstructorParameters<typeof ReconcileCommunications> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { CommunicationDomainComposition } from "./dependency-composition.js";
 import type {
 	DeliveryLedgerEntry,
 	ReconcileCommunicationsInput,
@@ -536,12 +537,28 @@ describe("ReconcileCommunications", () => {
 });
 
 function reconciler() {
-	return new ReconcileCommunications({
-		planner: new PlanCommunications(),
-		clock,
-		ledger,
-		mailGateway,
-	});
+	return new ReconcileCommunications(
+		{
+			communicationResults:
+				new CommunicationDomainComposition().communicationResults(),
+			communicationCalendar:
+				new CommunicationDomainComposition().communicationCalendar(),
+			createCommunicationDispatcher: (...args) =>
+				new CommunicationDomainComposition().communicationDispatcher(...args),
+		},
+		{
+			planner: new PlanCommunications({
+				communicationPlanner:
+					new CommunicationDomainComposition().communicationPlanner(),
+				communicationCalendar:
+					new CommunicationDomainComposition().communicationCalendar(),
+				postEventPolicy: new CommunicationDomainComposition().postEventPolicy(),
+			}),
+			clock,
+			ledger,
+			mailGateway,
+		},
+	);
 }
 
 function input(

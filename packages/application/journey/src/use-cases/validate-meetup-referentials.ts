@@ -1,7 +1,8 @@
-import {
-	type ReferentialCatalog,
-	type ReferentialRepository,
+import type {
+	ReferentialCatalog,
+	ReferentialRepository,
 	ValidateReferentialCatalog,
+	ValidateReferentialCatalogArguments,
 } from "@meetup-automation/referential";
 import type { AutomationConfig } from "../config/automation-config.js";
 import type { PublicDiagnostic } from "../result/result-envelope.js";
@@ -24,17 +25,24 @@ export type ValidateMeetupReferentialsResult =
 			diagnostics: readonly PublicDiagnostic[];
 	  };
 
+export interface ValidateMeetupReferentialsCollaborators {
+	readonly createValidateReferentialCatalog: (
+		...args: ValidateReferentialCatalogArguments
+	) => ValidateReferentialCatalog;
+}
+
 export class ValidateMeetupReferentials {
 	constructor(
+		private readonly collaborators: ValidateMeetupReferentialsCollaborators,
 		private readonly dependencies: ValidateMeetupReferentialsDependencies,
 	) {}
 
 	async execute(): Promise<ValidateMeetupReferentialsResult> {
 		const config = this.dependencies.config;
 		const repository = this.dependencies.referentialRepository;
-		const validation = await new ValidateReferentialCatalog(
-			repository,
-		).execute();
+		const validation = await this.collaborators
+			.createValidateReferentialCatalog(repository)
+			.execute();
 		const diagnostics = validation.diagnostics.map((item) => ({
 			code: item.code,
 			severity: item.severity,
@@ -46,3 +54,10 @@ export class ValidateMeetupReferentials {
 			: { isValid: false, config, diagnostics };
 	}
 }
+export type ValidateMeetupReferentialsArguments =
+	ConstructorParameters<typeof ValidateMeetupReferentials> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

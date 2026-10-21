@@ -5478,7 +5478,7 @@ var require_body = __commonJS({
         });
       }
       assert(isReadableStreamLike(stream));
-      let action = null;
+      let action2 = null;
       let source = null;
       let length = null;
       let type = null;
@@ -5531,7 +5531,7 @@ Content-Type: ${value.type || "application/octet-stream"}\r
           length = null;
         }
         source = object;
-        action = async function* () {
+        action2 = async function* () {
           for (const part of blobParts) {
             if (part.stream) {
               yield* part.stream();
@@ -5561,11 +5561,11 @@ Content-Type: ${value.type || "application/octet-stream"}\r
       if (typeof source === "string" || util.isBuffer(source)) {
         length = Buffer.byteLength(source);
       }
-      if (action != null) {
+      if (action2 != null) {
         let iterator2;
         stream = new ReadableStream({
           async start() {
-            iterator2 = action(object)[Symbol.asyncIterator]();
+            iterator2 = action2(object)[Symbol.asyncIterator]();
           },
           async pull(controller) {
             const { value, done } = await iterator2.next();
@@ -19068,778 +19068,6 @@ var require_undici = __commonJS({
   }
 });
 
-// node_modules/.pnpm/@actions+http-client@3.0.2/node_modules/@actions/http-client/lib/proxy.js
-var require_proxy = __commonJS({
-  "node_modules/.pnpm/@actions+http-client@3.0.2/node_modules/@actions/http-client/lib/proxy.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.getProxyUrl = getProxyUrl2;
-    exports.checkBypass = checkBypass;
-    function getProxyUrl2(reqUrl) {
-      const usingSsl = reqUrl.protocol === "https:";
-      if (checkBypass(reqUrl)) {
-        return void 0;
-      }
-      const proxyVar = (() => {
-        if (usingSsl) {
-          return process.env["https_proxy"] || process.env["HTTPS_PROXY"];
-        } else {
-          return process.env["http_proxy"] || process.env["HTTP_PROXY"];
-        }
-      })();
-      if (proxyVar) {
-        try {
-          return new DecodedURL(proxyVar);
-        } catch (_a2) {
-          if (!proxyVar.startsWith("http://") && !proxyVar.startsWith("https://"))
-            return new DecodedURL(`http://${proxyVar}`);
-        }
-      } else {
-        return void 0;
-      }
-    }
-    function checkBypass(reqUrl) {
-      if (!reqUrl.hostname) {
-        return false;
-      }
-      const reqHost = reqUrl.hostname;
-      if (isLoopbackAddress(reqHost)) {
-        return true;
-      }
-      const noProxy = process.env["no_proxy"] || process.env["NO_PROXY"] || "";
-      if (!noProxy) {
-        return false;
-      }
-      let reqPort;
-      if (reqUrl.port) {
-        reqPort = Number(reqUrl.port);
-      } else if (reqUrl.protocol === "http:") {
-        reqPort = 80;
-      } else if (reqUrl.protocol === "https:") {
-        reqPort = 443;
-      }
-      const upperReqHosts = [reqUrl.hostname.toUpperCase()];
-      if (typeof reqPort === "number") {
-        upperReqHosts.push(`${upperReqHosts[0]}:${reqPort}`);
-      }
-      for (const upperNoProxyItem of noProxy.split(",").map((x3) => x3.trim().toUpperCase()).filter((x3) => x3)) {
-        if (upperNoProxyItem === "*" || upperReqHosts.some((x3) => x3 === upperNoProxyItem || x3.endsWith(`.${upperNoProxyItem}`) || upperNoProxyItem.startsWith(".") && x3.endsWith(`${upperNoProxyItem}`))) {
-          return true;
-        }
-      }
-      return false;
-    }
-    function isLoopbackAddress(host) {
-      const hostLower = host.toLowerCase();
-      return hostLower === "localhost" || hostLower.startsWith("127.") || hostLower.startsWith("[::1]") || hostLower.startsWith("[0:0:0:0:0:0:0:1]");
-    }
-    var DecodedURL = class extends URL {
-      constructor(url, base) {
-        super(url, base);
-        this._decodedUsername = decodeURIComponent(super.username);
-        this._decodedPassword = decodeURIComponent(super.password);
-      }
-      get username() {
-        return this._decodedUsername;
-      }
-      get password() {
-        return this._decodedPassword;
-      }
-    };
-  }
-});
-
-// node_modules/.pnpm/@actions+http-client@3.0.2/node_modules/@actions/http-client/lib/index.js
-var require_lib = __commonJS({
-  "node_modules/.pnpm/@actions+http-client@3.0.2/node_modules/@actions/http-client/lib/index.js"(exports) {
-    "use strict";
-    var __createBinding = exports && exports.__createBinding || (Object.create ? (function(o, m, k2, k22) {
-      if (k22 === void 0) k22 = k2;
-      var desc = Object.getOwnPropertyDescriptor(m, k2);
-      if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-        desc = { enumerable: true, get: function() {
-          return m[k2];
-        } };
-      }
-      Object.defineProperty(o, k22, desc);
-    }) : (function(o, m, k2, k22) {
-      if (k22 === void 0) k22 = k2;
-      o[k22] = m[k2];
-    }));
-    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? (function(o, v3) {
-      Object.defineProperty(o, "default", { enumerable: true, value: v3 });
-    }) : function(o, v3) {
-      o["default"] = v3;
-    });
-    var __importStar = exports && exports.__importStar || /* @__PURE__ */ (function() {
-      var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function(o2) {
-          var ar3 = [];
-          for (var k2 in o2) if (Object.prototype.hasOwnProperty.call(o2, k2)) ar3[ar3.length] = k2;
-          return ar3;
-        };
-        return ownKeys(o);
-      };
-      return function(mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) {
-          for (var k2 = ownKeys(mod), i = 0; i < k2.length; i++) if (k2[i] !== "default") __createBinding(result, mod, k2[i]);
-        }
-        __setModuleDefault(result, mod);
-        return result;
-      };
-    })();
-    var __awaiter3 = exports && exports.__awaiter || function(thisArg, _arguments, P2, generator) {
-      function adopt(value) {
-        return value instanceof P2 ? value : new P2(function(resolve3) {
-          resolve3(value);
-        });
-      }
-      return new (P2 || (P2 = Promise))(function(resolve3, reject) {
-        function fulfilled(value) {
-          try {
-            step(generator.next(value));
-          } catch (e) {
-            reject(e);
-          }
-        }
-        function rejected(value) {
-          try {
-            step(generator["throw"](value));
-          } catch (e) {
-            reject(e);
-          }
-        }
-        function step(result) {
-          result.done ? resolve3(result.value) : adopt(result.value).then(fulfilled, rejected);
-        }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-      });
-    };
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.HttpClient = exports.HttpClientResponse = exports.HttpClientError = exports.MediaTypes = exports.Headers = exports.HttpCodes = void 0;
-    exports.getProxyUrl = getProxyUrl2;
-    exports.isHttps = isHttps;
-    var http = __importStar(__require("http"));
-    var https = __importStar(__require("https"));
-    var pm = __importStar(require_proxy());
-    var tunnel2 = __importStar(require_tunnel2());
-    var undici_1 = require_undici();
-    var HttpCodes2;
-    (function(HttpCodes3) {
-      HttpCodes3[HttpCodes3["OK"] = 200] = "OK";
-      HttpCodes3[HttpCodes3["MultipleChoices"] = 300] = "MultipleChoices";
-      HttpCodes3[HttpCodes3["MovedPermanently"] = 301] = "MovedPermanently";
-      HttpCodes3[HttpCodes3["ResourceMoved"] = 302] = "ResourceMoved";
-      HttpCodes3[HttpCodes3["SeeOther"] = 303] = "SeeOther";
-      HttpCodes3[HttpCodes3["NotModified"] = 304] = "NotModified";
-      HttpCodes3[HttpCodes3["UseProxy"] = 305] = "UseProxy";
-      HttpCodes3[HttpCodes3["SwitchProxy"] = 306] = "SwitchProxy";
-      HttpCodes3[HttpCodes3["TemporaryRedirect"] = 307] = "TemporaryRedirect";
-      HttpCodes3[HttpCodes3["PermanentRedirect"] = 308] = "PermanentRedirect";
-      HttpCodes3[HttpCodes3["BadRequest"] = 400] = "BadRequest";
-      HttpCodes3[HttpCodes3["Unauthorized"] = 401] = "Unauthorized";
-      HttpCodes3[HttpCodes3["PaymentRequired"] = 402] = "PaymentRequired";
-      HttpCodes3[HttpCodes3["Forbidden"] = 403] = "Forbidden";
-      HttpCodes3[HttpCodes3["NotFound"] = 404] = "NotFound";
-      HttpCodes3[HttpCodes3["MethodNotAllowed"] = 405] = "MethodNotAllowed";
-      HttpCodes3[HttpCodes3["NotAcceptable"] = 406] = "NotAcceptable";
-      HttpCodes3[HttpCodes3["ProxyAuthenticationRequired"] = 407] = "ProxyAuthenticationRequired";
-      HttpCodes3[HttpCodes3["RequestTimeout"] = 408] = "RequestTimeout";
-      HttpCodes3[HttpCodes3["Conflict"] = 409] = "Conflict";
-      HttpCodes3[HttpCodes3["Gone"] = 410] = "Gone";
-      HttpCodes3[HttpCodes3["TooManyRequests"] = 429] = "TooManyRequests";
-      HttpCodes3[HttpCodes3["InternalServerError"] = 500] = "InternalServerError";
-      HttpCodes3[HttpCodes3["NotImplemented"] = 501] = "NotImplemented";
-      HttpCodes3[HttpCodes3["BadGateway"] = 502] = "BadGateway";
-      HttpCodes3[HttpCodes3["ServiceUnavailable"] = 503] = "ServiceUnavailable";
-      HttpCodes3[HttpCodes3["GatewayTimeout"] = 504] = "GatewayTimeout";
-    })(HttpCodes2 || (exports.HttpCodes = HttpCodes2 = {}));
-    var Headers2;
-    (function(Headers3) {
-      Headers3["Accept"] = "accept";
-      Headers3["ContentType"] = "content-type";
-    })(Headers2 || (exports.Headers = Headers2 = {}));
-    var MediaTypes2;
-    (function(MediaTypes3) {
-      MediaTypes3["ApplicationJson"] = "application/json";
-    })(MediaTypes2 || (exports.MediaTypes = MediaTypes2 = {}));
-    function getProxyUrl2(serverUrl) {
-      const proxyUrl = pm.getProxyUrl(new URL(serverUrl));
-      return proxyUrl ? proxyUrl.href : "";
-    }
-    var HttpRedirectCodes2 = [
-      HttpCodes2.MovedPermanently,
-      HttpCodes2.ResourceMoved,
-      HttpCodes2.SeeOther,
-      HttpCodes2.TemporaryRedirect,
-      HttpCodes2.PermanentRedirect
-    ];
-    var HttpResponseRetryCodes2 = [
-      HttpCodes2.BadGateway,
-      HttpCodes2.ServiceUnavailable,
-      HttpCodes2.GatewayTimeout
-    ];
-    var RetryableHttpVerbs = ["OPTIONS", "GET", "DELETE", "HEAD"];
-    var ExponentialBackoffCeiling = 10;
-    var ExponentialBackoffTimeSlice = 5;
-    var HttpClientError = class _HttpClientError extends Error {
-      constructor(message, statusCode) {
-        super(message);
-        this.name = "HttpClientError";
-        this.statusCode = statusCode;
-        Object.setPrototypeOf(this, _HttpClientError.prototype);
-      }
-    };
-    exports.HttpClientError = HttpClientError;
-    var HttpClientResponse = class {
-      constructor(message) {
-        this.message = message;
-      }
-      readBody() {
-        return __awaiter3(this, void 0, void 0, function* () {
-          return new Promise((resolve3) => __awaiter3(this, void 0, void 0, function* () {
-            let output = Buffer.alloc(0);
-            this.message.on("data", (chunk) => {
-              output = Buffer.concat([output, chunk]);
-            });
-            this.message.on("end", () => {
-              resolve3(output.toString());
-            });
-          }));
-        });
-      }
-      readBodyBuffer() {
-        return __awaiter3(this, void 0, void 0, function* () {
-          return new Promise((resolve3) => __awaiter3(this, void 0, void 0, function* () {
-            const chunks = [];
-            this.message.on("data", (chunk) => {
-              chunks.push(chunk);
-            });
-            this.message.on("end", () => {
-              resolve3(Buffer.concat(chunks));
-            });
-          }));
-        });
-      }
-    };
-    exports.HttpClientResponse = HttpClientResponse;
-    function isHttps(requestUrl) {
-      const parsedUrl = new URL(requestUrl);
-      return parsedUrl.protocol === "https:";
-    }
-    var HttpClient3 = class {
-      constructor(userAgent2, handlers, requestOptions) {
-        this._ignoreSslError = false;
-        this._allowRedirects = true;
-        this._allowRedirectDowngrade = false;
-        this._maxRedirects = 50;
-        this._allowRetries = false;
-        this._maxRetries = 1;
-        this._keepAlive = false;
-        this._disposed = false;
-        this.userAgent = this._getUserAgentWithOrchestrationId(userAgent2);
-        this.handlers = handlers || [];
-        this.requestOptions = requestOptions;
-        if (requestOptions) {
-          if (requestOptions.ignoreSslError != null) {
-            this._ignoreSslError = requestOptions.ignoreSslError;
-          }
-          this._socketTimeout = requestOptions.socketTimeout;
-          if (requestOptions.allowRedirects != null) {
-            this._allowRedirects = requestOptions.allowRedirects;
-          }
-          if (requestOptions.allowRedirectDowngrade != null) {
-            this._allowRedirectDowngrade = requestOptions.allowRedirectDowngrade;
-          }
-          if (requestOptions.maxRedirects != null) {
-            this._maxRedirects = Math.max(requestOptions.maxRedirects, 0);
-          }
-          if (requestOptions.keepAlive != null) {
-            this._keepAlive = requestOptions.keepAlive;
-          }
-          if (requestOptions.allowRetries != null) {
-            this._allowRetries = requestOptions.allowRetries;
-          }
-          if (requestOptions.maxRetries != null) {
-            this._maxRetries = requestOptions.maxRetries;
-          }
-        }
-      }
-      options(requestUrl, additionalHeaders) {
-        return __awaiter3(this, void 0, void 0, function* () {
-          return this.request("OPTIONS", requestUrl, null, additionalHeaders || {});
-        });
-      }
-      get(requestUrl, additionalHeaders) {
-        return __awaiter3(this, void 0, void 0, function* () {
-          return this.request("GET", requestUrl, null, additionalHeaders || {});
-        });
-      }
-      del(requestUrl, additionalHeaders) {
-        return __awaiter3(this, void 0, void 0, function* () {
-          return this.request("DELETE", requestUrl, null, additionalHeaders || {});
-        });
-      }
-      post(requestUrl, data, additionalHeaders) {
-        return __awaiter3(this, void 0, void 0, function* () {
-          return this.request("POST", requestUrl, data, additionalHeaders || {});
-        });
-      }
-      patch(requestUrl, data, additionalHeaders) {
-        return __awaiter3(this, void 0, void 0, function* () {
-          return this.request("PATCH", requestUrl, data, additionalHeaders || {});
-        });
-      }
-      put(requestUrl, data, additionalHeaders) {
-        return __awaiter3(this, void 0, void 0, function* () {
-          return this.request("PUT", requestUrl, data, additionalHeaders || {});
-        });
-      }
-      head(requestUrl, additionalHeaders) {
-        return __awaiter3(this, void 0, void 0, function* () {
-          return this.request("HEAD", requestUrl, null, additionalHeaders || {});
-        });
-      }
-      sendStream(verb, requestUrl, stream, additionalHeaders) {
-        return __awaiter3(this, void 0, void 0, function* () {
-          return this.request(verb, requestUrl, stream, additionalHeaders);
-        });
-      }
-      /**
-       * Gets a typed object from an endpoint
-       * Be aware that not found returns a null.  Other errors (4xx, 5xx) reject the promise
-       */
-      getJson(requestUrl_1) {
-        return __awaiter3(this, arguments, void 0, function* (requestUrl, additionalHeaders = {}) {
-          additionalHeaders[Headers2.Accept] = this._getExistingOrDefaultHeader(additionalHeaders, Headers2.Accept, MediaTypes2.ApplicationJson);
-          const res = yield this.get(requestUrl, additionalHeaders);
-          return this._processResponse(res, this.requestOptions);
-        });
-      }
-      postJson(requestUrl_1, obj_1) {
-        return __awaiter3(this, arguments, void 0, function* (requestUrl, obj, additionalHeaders = {}) {
-          const data = JSON.stringify(obj, null, 2);
-          additionalHeaders[Headers2.Accept] = this._getExistingOrDefaultHeader(additionalHeaders, Headers2.Accept, MediaTypes2.ApplicationJson);
-          additionalHeaders[Headers2.ContentType] = this._getExistingOrDefaultContentTypeHeader(additionalHeaders, MediaTypes2.ApplicationJson);
-          const res = yield this.post(requestUrl, data, additionalHeaders);
-          return this._processResponse(res, this.requestOptions);
-        });
-      }
-      putJson(requestUrl_1, obj_1) {
-        return __awaiter3(this, arguments, void 0, function* (requestUrl, obj, additionalHeaders = {}) {
-          const data = JSON.stringify(obj, null, 2);
-          additionalHeaders[Headers2.Accept] = this._getExistingOrDefaultHeader(additionalHeaders, Headers2.Accept, MediaTypes2.ApplicationJson);
-          additionalHeaders[Headers2.ContentType] = this._getExistingOrDefaultContentTypeHeader(additionalHeaders, MediaTypes2.ApplicationJson);
-          const res = yield this.put(requestUrl, data, additionalHeaders);
-          return this._processResponse(res, this.requestOptions);
-        });
-      }
-      patchJson(requestUrl_1, obj_1) {
-        return __awaiter3(this, arguments, void 0, function* (requestUrl, obj, additionalHeaders = {}) {
-          const data = JSON.stringify(obj, null, 2);
-          additionalHeaders[Headers2.Accept] = this._getExistingOrDefaultHeader(additionalHeaders, Headers2.Accept, MediaTypes2.ApplicationJson);
-          additionalHeaders[Headers2.ContentType] = this._getExistingOrDefaultContentTypeHeader(additionalHeaders, MediaTypes2.ApplicationJson);
-          const res = yield this.patch(requestUrl, data, additionalHeaders);
-          return this._processResponse(res, this.requestOptions);
-        });
-      }
-      /**
-       * Makes a raw http request.
-       * All other methods such as get, post, patch, and request ultimately call this.
-       * Prefer get, del, post and patch
-       */
-      request(verb, requestUrl, data, headers) {
-        return __awaiter3(this, void 0, void 0, function* () {
-          if (this._disposed) {
-            throw new Error("Client has already been disposed.");
-          }
-          const parsedUrl = new URL(requestUrl);
-          let info2 = this._prepareRequest(verb, parsedUrl, headers);
-          const maxTries = this._allowRetries && RetryableHttpVerbs.includes(verb) ? this._maxRetries + 1 : 1;
-          let numTries = 0;
-          let response;
-          do {
-            response = yield this.requestRaw(info2, data);
-            if (response && response.message && response.message.statusCode === HttpCodes2.Unauthorized) {
-              let authenticationHandler;
-              for (const handler2 of this.handlers) {
-                if (handler2.canHandleAuthentication(response)) {
-                  authenticationHandler = handler2;
-                  break;
-                }
-              }
-              if (authenticationHandler) {
-                return authenticationHandler.handleAuthentication(this, info2, data);
-              } else {
-                return response;
-              }
-            }
-            let redirectsRemaining = this._maxRedirects;
-            while (response.message.statusCode && HttpRedirectCodes2.includes(response.message.statusCode) && this._allowRedirects && redirectsRemaining > 0) {
-              const redirectUrl = response.message.headers["location"];
-              if (!redirectUrl) {
-                break;
-              }
-              const parsedRedirectUrl = new URL(redirectUrl);
-              if (parsedUrl.protocol === "https:" && parsedUrl.protocol !== parsedRedirectUrl.protocol && !this._allowRedirectDowngrade) {
-                throw new Error("Redirect from HTTPS to HTTP protocol. This downgrade is not allowed for security reasons. If you want to allow this behavior, set the allowRedirectDowngrade option to true.");
-              }
-              yield response.readBody();
-              if (parsedRedirectUrl.hostname !== parsedUrl.hostname) {
-                for (const header in headers) {
-                  if (header.toLowerCase() === "authorization") {
-                    delete headers[header];
-                  }
-                }
-              }
-              info2 = this._prepareRequest(verb, parsedRedirectUrl, headers);
-              response = yield this.requestRaw(info2, data);
-              redirectsRemaining--;
-            }
-            if (!response.message.statusCode || !HttpResponseRetryCodes2.includes(response.message.statusCode)) {
-              return response;
-            }
-            numTries += 1;
-            if (numTries < maxTries) {
-              yield response.readBody();
-              yield this._performExponentialBackoff(numTries);
-            }
-          } while (numTries < maxTries);
-          return response;
-        });
-      }
-      /**
-       * Needs to be called if keepAlive is set to true in request options.
-       */
-      dispose() {
-        if (this._agent) {
-          this._agent.destroy();
-        }
-        this._disposed = true;
-      }
-      /**
-       * Raw request.
-       * @param info
-       * @param data
-       */
-      requestRaw(info2, data) {
-        return __awaiter3(this, void 0, void 0, function* () {
-          return new Promise((resolve3, reject) => {
-            function callbackForResult(err, res) {
-              if (err) {
-                reject(err);
-              } else if (!res) {
-                reject(new Error("Unknown error"));
-              } else {
-                resolve3(res);
-              }
-            }
-            this.requestRawWithCallback(info2, data, callbackForResult);
-          });
-        });
-      }
-      /**
-       * Raw request with callback.
-       * @param info
-       * @param data
-       * @param onResult
-       */
-      requestRawWithCallback(info2, data, onResult) {
-        if (typeof data === "string") {
-          if (!info2.options.headers) {
-            info2.options.headers = {};
-          }
-          info2.options.headers["Content-Length"] = Buffer.byteLength(data, "utf8");
-        }
-        let callbackCalled = false;
-        function handleResult(err, res) {
-          if (!callbackCalled) {
-            callbackCalled = true;
-            onResult(err, res);
-          }
-        }
-        const req = info2.httpModule.request(info2.options, (msg) => {
-          const res = new HttpClientResponse(msg);
-          handleResult(void 0, res);
-        });
-        let socket;
-        req.on("socket", (sock) => {
-          socket = sock;
-        });
-        req.setTimeout(this._socketTimeout || 3 * 6e4, () => {
-          if (socket) {
-            socket.end();
-          }
-          handleResult(new Error(`Request timeout: ${info2.options.path}`));
-        });
-        req.on("error", function(err) {
-          handleResult(err);
-        });
-        if (data && typeof data === "string") {
-          req.write(data, "utf8");
-        }
-        if (data && typeof data !== "string") {
-          data.on("close", function() {
-            req.end();
-          });
-          data.pipe(req);
-        } else {
-          req.end();
-        }
-      }
-      /**
-       * Gets an http agent. This function is useful when you need an http agent that handles
-       * routing through a proxy server - depending upon the url and proxy environment variables.
-       * @param serverUrl  The server URL where the request will be sent. For example, https://api.github.com
-       */
-      getAgent(serverUrl) {
-        const parsedUrl = new URL(serverUrl);
-        return this._getAgent(parsedUrl);
-      }
-      getAgentDispatcher(serverUrl) {
-        const parsedUrl = new URL(serverUrl);
-        const proxyUrl = pm.getProxyUrl(parsedUrl);
-        const useProxy = proxyUrl && proxyUrl.hostname;
-        if (!useProxy) {
-          return;
-        }
-        return this._getProxyAgentDispatcher(parsedUrl, proxyUrl);
-      }
-      _prepareRequest(method, requestUrl, headers) {
-        const info2 = {};
-        info2.parsedUrl = requestUrl;
-        const usingSsl = info2.parsedUrl.protocol === "https:";
-        info2.httpModule = usingSsl ? https : http;
-        const defaultPort = usingSsl ? 443 : 80;
-        info2.options = {};
-        info2.options.host = info2.parsedUrl.hostname;
-        info2.options.port = info2.parsedUrl.port ? parseInt(info2.parsedUrl.port) : defaultPort;
-        info2.options.path = (info2.parsedUrl.pathname || "") + (info2.parsedUrl.search || "");
-        info2.options.method = method;
-        info2.options.headers = this._mergeHeaders(headers);
-        if (this.userAgent != null) {
-          info2.options.headers["user-agent"] = this.userAgent;
-        }
-        info2.options.agent = this._getAgent(info2.parsedUrl);
-        if (this.handlers) {
-          for (const handler2 of this.handlers) {
-            handler2.prepareRequest(info2.options);
-          }
-        }
-        return info2;
-      }
-      _mergeHeaders(headers) {
-        if (this.requestOptions && this.requestOptions.headers) {
-          return Object.assign({}, lowercaseKeys2(this.requestOptions.headers), lowercaseKeys2(headers || {}));
-        }
-        return lowercaseKeys2(headers || {});
-      }
-      /**
-       * Gets an existing header value or returns a default.
-       * Handles converting number header values to strings since HTTP headers must be strings.
-       * Note: This returns string | string[] since some headers can have multiple values.
-       * For headers that must always be a single string (like Content-Type), use the
-       * specialized _getExistingOrDefaultContentTypeHeader method instead.
-       */
-      _getExistingOrDefaultHeader(additionalHeaders, header, _default) {
-        let clientHeader;
-        if (this.requestOptions && this.requestOptions.headers) {
-          const headerValue = lowercaseKeys2(this.requestOptions.headers)[header];
-          if (headerValue) {
-            clientHeader = typeof headerValue === "number" ? headerValue.toString() : headerValue;
-          }
-        }
-        const additionalValue = additionalHeaders[header];
-        if (additionalValue !== void 0) {
-          return typeof additionalValue === "number" ? additionalValue.toString() : additionalValue;
-        }
-        if (clientHeader !== void 0) {
-          return clientHeader;
-        }
-        return _default;
-      }
-      /**
-       * Specialized version of _getExistingOrDefaultHeader for Content-Type header.
-       * Always returns a single string (not an array) since Content-Type should be a single value.
-       * Converts arrays to comma-separated strings and numbers to strings to ensure type safety.
-       * This was split from _getExistingOrDefaultHeader to provide stricter typing for callers
-       * that assign the result to places expecting a string (e.g., additionalHeaders[Headers.ContentType]).
-       */
-      _getExistingOrDefaultContentTypeHeader(additionalHeaders, _default) {
-        let clientHeader;
-        if (this.requestOptions && this.requestOptions.headers) {
-          const headerValue = lowercaseKeys2(this.requestOptions.headers)[Headers2.ContentType];
-          if (headerValue) {
-            if (typeof headerValue === "number") {
-              clientHeader = String(headerValue);
-            } else if (Array.isArray(headerValue)) {
-              clientHeader = headerValue.join(", ");
-            } else {
-              clientHeader = headerValue;
-            }
-          }
-        }
-        const additionalValue = additionalHeaders[Headers2.ContentType];
-        if (additionalValue !== void 0) {
-          if (typeof additionalValue === "number") {
-            return String(additionalValue);
-          } else if (Array.isArray(additionalValue)) {
-            return additionalValue.join(", ");
-          } else {
-            return additionalValue;
-          }
-        }
-        if (clientHeader !== void 0) {
-          return clientHeader;
-        }
-        return _default;
-      }
-      _getAgent(parsedUrl) {
-        let agent;
-        const proxyUrl = pm.getProxyUrl(parsedUrl);
-        const useProxy = proxyUrl && proxyUrl.hostname;
-        if (this._keepAlive && useProxy) {
-          agent = this._proxyAgent;
-        }
-        if (!useProxy) {
-          agent = this._agent;
-        }
-        if (agent) {
-          return agent;
-        }
-        const usingSsl = parsedUrl.protocol === "https:";
-        let maxSockets = 100;
-        if (this.requestOptions) {
-          maxSockets = this.requestOptions.maxSockets || http.globalAgent.maxSockets;
-        }
-        if (proxyUrl && proxyUrl.hostname) {
-          const agentOptions = {
-            maxSockets,
-            keepAlive: this._keepAlive,
-            proxy: Object.assign(Object.assign({}, (proxyUrl.username || proxyUrl.password) && {
-              proxyAuth: `${proxyUrl.username}:${proxyUrl.password}`
-            }), { host: proxyUrl.hostname, port: proxyUrl.port })
-          };
-          let tunnelAgent;
-          const overHttps = proxyUrl.protocol === "https:";
-          if (usingSsl) {
-            tunnelAgent = overHttps ? tunnel2.httpsOverHttps : tunnel2.httpsOverHttp;
-          } else {
-            tunnelAgent = overHttps ? tunnel2.httpOverHttps : tunnel2.httpOverHttp;
-          }
-          agent = tunnelAgent(agentOptions);
-          this._proxyAgent = agent;
-        }
-        if (!agent) {
-          const options = { keepAlive: this._keepAlive, maxSockets };
-          agent = usingSsl ? new https.Agent(options) : new http.Agent(options);
-          this._agent = agent;
-        }
-        if (usingSsl && this._ignoreSslError) {
-          agent.options = Object.assign(agent.options || {}, {
-            rejectUnauthorized: false
-          });
-        }
-        return agent;
-      }
-      _getProxyAgentDispatcher(parsedUrl, proxyUrl) {
-        let proxyAgent;
-        if (this._keepAlive) {
-          proxyAgent = this._proxyAgentDispatcher;
-        }
-        if (proxyAgent) {
-          return proxyAgent;
-        }
-        const usingSsl = parsedUrl.protocol === "https:";
-        proxyAgent = new undici_1.ProxyAgent(Object.assign({ uri: proxyUrl.href, pipelining: !this._keepAlive ? 0 : 1 }, (proxyUrl.username || proxyUrl.password) && {
-          token: `Basic ${Buffer.from(`${proxyUrl.username}:${proxyUrl.password}`).toString("base64")}`
-        }));
-        this._proxyAgentDispatcher = proxyAgent;
-        if (usingSsl && this._ignoreSslError) {
-          proxyAgent.options = Object.assign(proxyAgent.options.requestTls || {}, {
-            rejectUnauthorized: false
-          });
-        }
-        return proxyAgent;
-      }
-      _getUserAgentWithOrchestrationId(userAgent2) {
-        const baseUserAgent = userAgent2 || "actions/http-client";
-        const orchId = process.env["ACTIONS_ORCHESTRATION_ID"];
-        if (orchId) {
-          const sanitizedId = orchId.replace(/[^a-z0-9_.-]/gi, "_");
-          return `${baseUserAgent} actions_orchestration_id/${sanitizedId}`;
-        }
-        return baseUserAgent;
-      }
-      _performExponentialBackoff(retryNumber) {
-        return __awaiter3(this, void 0, void 0, function* () {
-          retryNumber = Math.min(ExponentialBackoffCeiling, retryNumber);
-          const ms2 = ExponentialBackoffTimeSlice * Math.pow(2, retryNumber);
-          return new Promise((resolve3) => setTimeout(() => resolve3(), ms2));
-        });
-      }
-      _processResponse(res, options) {
-        return __awaiter3(this, void 0, void 0, function* () {
-          return new Promise((resolve3, reject) => __awaiter3(this, void 0, void 0, function* () {
-            const statusCode = res.message.statusCode || 0;
-            const response = {
-              statusCode,
-              result: null,
-              headers: {}
-            };
-            if (statusCode === HttpCodes2.NotFound) {
-              resolve3(response);
-            }
-            function dateTimeDeserializer(key, value) {
-              if (typeof value === "string") {
-                const a = new Date(value);
-                if (!isNaN(a.valueOf())) {
-                  return a;
-                }
-              }
-              return value;
-            }
-            let obj;
-            let contents;
-            try {
-              contents = yield res.readBody();
-              if (contents && contents.length > 0) {
-                if (options && options.deserializeDates) {
-                  obj = JSON.parse(contents, dateTimeDeserializer);
-                } else {
-                  obj = JSON.parse(contents);
-                }
-                response.result = obj;
-              }
-              response.headers = res.message.headers;
-            } catch (err) {
-            }
-            if (statusCode > 299) {
-              let msg;
-              if (obj && obj.message) {
-                msg = obj.message;
-              } else if (contents && contents.length > 0) {
-                msg = contents;
-              } else {
-                msg = `Failed request: (${statusCode})`;
-              }
-              const err = new HttpClientError(msg, statusCode);
-              err.result = response.result;
-              reject(err);
-            } else {
-              resolve3(response);
-            }
-          }));
-        });
-      }
-    };
-    exports.HttpClient = HttpClient3;
-    var lowercaseKeys2 = (obj) => Object.keys(obj).reduce((c, k2) => (c[k2.toLowerCase()] = obj[k2], c), {});
-  }
-});
-
 // node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/nodes/identity.js
 var require_identity = __commonJS({
   "node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/nodes/identity.js"(exports) {
@@ -27170,504 +26398,2082 @@ var require_dist = __commonJS({
   }
 });
 
-// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/command.js
-import * as os from "os";
-
-// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/utils.js
-function toCommandValue(input) {
-  if (input === null || input === void 0) {
-    return "";
-  } else if (typeof input === "string" || input instanceof String) {
-    return input;
-  }
-  return JSON.stringify(input);
-}
-function toCommandProperties(annotationProperties) {
-  if (!Object.keys(annotationProperties).length) {
-    return {};
-  }
-  return {
-    title: annotationProperties.title,
-    file: annotationProperties.file,
-    line: annotationProperties.startLine,
-    endLine: annotationProperties.endLine,
-    col: annotationProperties.startColumn,
-    endColumn: annotationProperties.endColumn
-  };
-}
-
-// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/command.js
-function issueCommand(command, properties, message) {
-  const cmd = new Command(command, properties, message);
-  process.stdout.write(cmd.toString() + os.EOL);
-}
-var CMD_STRING = "::";
-var Command = class {
-  constructor(command, properties, message) {
-    if (!command) {
-      command = "missing.command";
+// node_modules/.pnpm/@actions+http-client@3.0.2/node_modules/@actions/http-client/lib/proxy.js
+var require_proxy = __commonJS({
+  "node_modules/.pnpm/@actions+http-client@3.0.2/node_modules/@actions/http-client/lib/proxy.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.getProxyUrl = getProxyUrl2;
+    exports.checkBypass = checkBypass;
+    function getProxyUrl2(reqUrl) {
+      const usingSsl = reqUrl.protocol === "https:";
+      if (checkBypass(reqUrl)) {
+        return void 0;
+      }
+      const proxyVar = (() => {
+        if (usingSsl) {
+          return process.env["https_proxy"] || process.env["HTTPS_PROXY"];
+        } else {
+          return process.env["http_proxy"] || process.env["HTTP_PROXY"];
+        }
+      })();
+      if (proxyVar) {
+        try {
+          return new DecodedURL(proxyVar);
+        } catch (_a2) {
+          if (!proxyVar.startsWith("http://") && !proxyVar.startsWith("https://"))
+            return new DecodedURL(`http://${proxyVar}`);
+        }
+      } else {
+        return void 0;
+      }
     }
-    this.command = command;
-    this.properties = properties;
-    this.message = message;
+    function checkBypass(reqUrl) {
+      if (!reqUrl.hostname) {
+        return false;
+      }
+      const reqHost = reqUrl.hostname;
+      if (isLoopbackAddress(reqHost)) {
+        return true;
+      }
+      const noProxy = process.env["no_proxy"] || process.env["NO_PROXY"] || "";
+      if (!noProxy) {
+        return false;
+      }
+      let reqPort;
+      if (reqUrl.port) {
+        reqPort = Number(reqUrl.port);
+      } else if (reqUrl.protocol === "http:") {
+        reqPort = 80;
+      } else if (reqUrl.protocol === "https:") {
+        reqPort = 443;
+      }
+      const upperReqHosts = [reqUrl.hostname.toUpperCase()];
+      if (typeof reqPort === "number") {
+        upperReqHosts.push(`${upperReqHosts[0]}:${reqPort}`);
+      }
+      for (const upperNoProxyItem of noProxy.split(",").map((x3) => x3.trim().toUpperCase()).filter((x3) => x3)) {
+        if (upperNoProxyItem === "*" || upperReqHosts.some((x3) => x3 === upperNoProxyItem || x3.endsWith(`.${upperNoProxyItem}`) || upperNoProxyItem.startsWith(".") && x3.endsWith(`${upperNoProxyItem}`))) {
+          return true;
+        }
+      }
+      return false;
+    }
+    function isLoopbackAddress(host) {
+      const hostLower = host.toLowerCase();
+      return hostLower === "localhost" || hostLower.startsWith("127.") || hostLower.startsWith("[::1]") || hostLower.startsWith("[0:0:0:0:0:0:0:1]");
+    }
+    var DecodedURL = class extends URL {
+      constructor(url, base) {
+        super(url, base);
+        this._decodedUsername = decodeURIComponent(super.username);
+        this._decodedPassword = decodeURIComponent(super.password);
+      }
+      get username() {
+        return this._decodedUsername;
+      }
+      get password() {
+        return this._decodedPassword;
+      }
+    };
   }
-  toString() {
-    let cmdStr = CMD_STRING + this.command;
-    if (this.properties && Object.keys(this.properties).length > 0) {
-      cmdStr += " ";
-      let first = true;
-      for (const key in this.properties) {
-        if (this.properties.hasOwnProperty(key)) {
-          const val = this.properties[key];
-          if (val) {
-            if (first) {
-              first = false;
-            } else {
-              cmdStr += ",";
-            }
-            cmdStr += `${key}=${escapeProperty(val)}`;
+});
+
+// node_modules/.pnpm/@actions+http-client@3.0.2/node_modules/@actions/http-client/lib/index.js
+var require_lib = __commonJS({
+  "node_modules/.pnpm/@actions+http-client@3.0.2/node_modules/@actions/http-client/lib/index.js"(exports) {
+    "use strict";
+    var __createBinding = exports && exports.__createBinding || (Object.create ? (function(o, m, k2, k22) {
+      if (k22 === void 0) k22 = k2;
+      var desc = Object.getOwnPropertyDescriptor(m, k2);
+      if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m[k2];
+        } };
+      }
+      Object.defineProperty(o, k22, desc);
+    }) : (function(o, m, k2, k22) {
+      if (k22 === void 0) k22 = k2;
+      o[k22] = m[k2];
+    }));
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? (function(o, v3) {
+      Object.defineProperty(o, "default", { enumerable: true, value: v3 });
+    }) : function(o, v3) {
+      o["default"] = v3;
+    });
+    var __importStar = exports && exports.__importStar || /* @__PURE__ */ (function() {
+      var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function(o2) {
+          var ar3 = [];
+          for (var k2 in o2) if (Object.prototype.hasOwnProperty.call(o2, k2)) ar3[ar3.length] = k2;
+          return ar3;
+        };
+        return ownKeys(o);
+      };
+      return function(mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) {
+          for (var k2 = ownKeys(mod), i = 0; i < k2.length; i++) if (k2[i] !== "default") __createBinding(result, mod, k2[i]);
+        }
+        __setModuleDefault(result, mod);
+        return result;
+      };
+    })();
+    var __awaiter3 = exports && exports.__awaiter || function(thisArg, _arguments, P2, generator) {
+      function adopt(value) {
+        return value instanceof P2 ? value : new P2(function(resolve3) {
+          resolve3(value);
+        });
+      }
+      return new (P2 || (P2 = Promise))(function(resolve3, reject) {
+        function fulfilled(value) {
+          try {
+            step(generator.next(value));
+          } catch (e) {
+            reject(e);
+          }
+        }
+        function rejected(value) {
+          try {
+            step(generator["throw"](value));
+          } catch (e) {
+            reject(e);
+          }
+        }
+        function step(result) {
+          result.done ? resolve3(result.value) : adopt(result.value).then(fulfilled, rejected);
+        }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+      });
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.HttpClient = exports.HttpClientResponse = exports.HttpClientError = exports.MediaTypes = exports.Headers = exports.HttpCodes = void 0;
+    exports.getProxyUrl = getProxyUrl2;
+    exports.isHttps = isHttps;
+    var http = __importStar(__require("http"));
+    var https = __importStar(__require("https"));
+    var pm = __importStar(require_proxy());
+    var tunnel2 = __importStar(require_tunnel2());
+    var undici_1 = require_undici();
+    var HttpCodes2;
+    (function(HttpCodes3) {
+      HttpCodes3[HttpCodes3["OK"] = 200] = "OK";
+      HttpCodes3[HttpCodes3["MultipleChoices"] = 300] = "MultipleChoices";
+      HttpCodes3[HttpCodes3["MovedPermanently"] = 301] = "MovedPermanently";
+      HttpCodes3[HttpCodes3["ResourceMoved"] = 302] = "ResourceMoved";
+      HttpCodes3[HttpCodes3["SeeOther"] = 303] = "SeeOther";
+      HttpCodes3[HttpCodes3["NotModified"] = 304] = "NotModified";
+      HttpCodes3[HttpCodes3["UseProxy"] = 305] = "UseProxy";
+      HttpCodes3[HttpCodes3["SwitchProxy"] = 306] = "SwitchProxy";
+      HttpCodes3[HttpCodes3["TemporaryRedirect"] = 307] = "TemporaryRedirect";
+      HttpCodes3[HttpCodes3["PermanentRedirect"] = 308] = "PermanentRedirect";
+      HttpCodes3[HttpCodes3["BadRequest"] = 400] = "BadRequest";
+      HttpCodes3[HttpCodes3["Unauthorized"] = 401] = "Unauthorized";
+      HttpCodes3[HttpCodes3["PaymentRequired"] = 402] = "PaymentRequired";
+      HttpCodes3[HttpCodes3["Forbidden"] = 403] = "Forbidden";
+      HttpCodes3[HttpCodes3["NotFound"] = 404] = "NotFound";
+      HttpCodes3[HttpCodes3["MethodNotAllowed"] = 405] = "MethodNotAllowed";
+      HttpCodes3[HttpCodes3["NotAcceptable"] = 406] = "NotAcceptable";
+      HttpCodes3[HttpCodes3["ProxyAuthenticationRequired"] = 407] = "ProxyAuthenticationRequired";
+      HttpCodes3[HttpCodes3["RequestTimeout"] = 408] = "RequestTimeout";
+      HttpCodes3[HttpCodes3["Conflict"] = 409] = "Conflict";
+      HttpCodes3[HttpCodes3["Gone"] = 410] = "Gone";
+      HttpCodes3[HttpCodes3["TooManyRequests"] = 429] = "TooManyRequests";
+      HttpCodes3[HttpCodes3["InternalServerError"] = 500] = "InternalServerError";
+      HttpCodes3[HttpCodes3["NotImplemented"] = 501] = "NotImplemented";
+      HttpCodes3[HttpCodes3["BadGateway"] = 502] = "BadGateway";
+      HttpCodes3[HttpCodes3["ServiceUnavailable"] = 503] = "ServiceUnavailable";
+      HttpCodes3[HttpCodes3["GatewayTimeout"] = 504] = "GatewayTimeout";
+    })(HttpCodes2 || (exports.HttpCodes = HttpCodes2 = {}));
+    var Headers2;
+    (function(Headers3) {
+      Headers3["Accept"] = "accept";
+      Headers3["ContentType"] = "content-type";
+    })(Headers2 || (exports.Headers = Headers2 = {}));
+    var MediaTypes2;
+    (function(MediaTypes3) {
+      MediaTypes3["ApplicationJson"] = "application/json";
+    })(MediaTypes2 || (exports.MediaTypes = MediaTypes2 = {}));
+    function getProxyUrl2(serverUrl) {
+      const proxyUrl = pm.getProxyUrl(new URL(serverUrl));
+      return proxyUrl ? proxyUrl.href : "";
+    }
+    var HttpRedirectCodes2 = [
+      HttpCodes2.MovedPermanently,
+      HttpCodes2.ResourceMoved,
+      HttpCodes2.SeeOther,
+      HttpCodes2.TemporaryRedirect,
+      HttpCodes2.PermanentRedirect
+    ];
+    var HttpResponseRetryCodes2 = [
+      HttpCodes2.BadGateway,
+      HttpCodes2.ServiceUnavailable,
+      HttpCodes2.GatewayTimeout
+    ];
+    var RetryableHttpVerbs = ["OPTIONS", "GET", "DELETE", "HEAD"];
+    var ExponentialBackoffCeiling = 10;
+    var ExponentialBackoffTimeSlice = 5;
+    var HttpClientError = class _HttpClientError extends Error {
+      constructor(message, statusCode) {
+        super(message);
+        this.name = "HttpClientError";
+        this.statusCode = statusCode;
+        Object.setPrototypeOf(this, _HttpClientError.prototype);
+      }
+    };
+    exports.HttpClientError = HttpClientError;
+    var HttpClientResponse = class {
+      constructor(message) {
+        this.message = message;
+      }
+      readBody() {
+        return __awaiter3(this, void 0, void 0, function* () {
+          return new Promise((resolve3) => __awaiter3(this, void 0, void 0, function* () {
+            let output = Buffer.alloc(0);
+            this.message.on("data", (chunk) => {
+              output = Buffer.concat([output, chunk]);
+            });
+            this.message.on("end", () => {
+              resolve3(output.toString());
+            });
+          }));
+        });
+      }
+      readBodyBuffer() {
+        return __awaiter3(this, void 0, void 0, function* () {
+          return new Promise((resolve3) => __awaiter3(this, void 0, void 0, function* () {
+            const chunks = [];
+            this.message.on("data", (chunk) => {
+              chunks.push(chunk);
+            });
+            this.message.on("end", () => {
+              resolve3(Buffer.concat(chunks));
+            });
+          }));
+        });
+      }
+    };
+    exports.HttpClientResponse = HttpClientResponse;
+    function isHttps(requestUrl) {
+      const parsedUrl = new URL(requestUrl);
+      return parsedUrl.protocol === "https:";
+    }
+    var HttpClient3 = class {
+      constructor(userAgent2, handlers, requestOptions) {
+        this._ignoreSslError = false;
+        this._allowRedirects = true;
+        this._allowRedirectDowngrade = false;
+        this._maxRedirects = 50;
+        this._allowRetries = false;
+        this._maxRetries = 1;
+        this._keepAlive = false;
+        this._disposed = false;
+        this.userAgent = this._getUserAgentWithOrchestrationId(userAgent2);
+        this.handlers = handlers || [];
+        this.requestOptions = requestOptions;
+        if (requestOptions) {
+          if (requestOptions.ignoreSslError != null) {
+            this._ignoreSslError = requestOptions.ignoreSslError;
+          }
+          this._socketTimeout = requestOptions.socketTimeout;
+          if (requestOptions.allowRedirects != null) {
+            this._allowRedirects = requestOptions.allowRedirects;
+          }
+          if (requestOptions.allowRedirectDowngrade != null) {
+            this._allowRedirectDowngrade = requestOptions.allowRedirectDowngrade;
+          }
+          if (requestOptions.maxRedirects != null) {
+            this._maxRedirects = Math.max(requestOptions.maxRedirects, 0);
+          }
+          if (requestOptions.keepAlive != null) {
+            this._keepAlive = requestOptions.keepAlive;
+          }
+          if (requestOptions.allowRetries != null) {
+            this._allowRetries = requestOptions.allowRetries;
+          }
+          if (requestOptions.maxRetries != null) {
+            this._maxRetries = requestOptions.maxRetries;
           }
         }
       }
-    }
-    cmdStr += `${CMD_STRING}${escapeData(this.message)}`;
-    return cmdStr;
-  }
-};
-function escapeData(s) {
-  return toCommandValue(s).replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
-}
-function escapeProperty(s) {
-  return toCommandValue(s).replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A").replace(/:/g, "%3A").replace(/,/g, "%2C");
-}
-
-// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/file-command.js
-import * as crypto from "crypto";
-import * as fs from "fs";
-import * as os2 from "os";
-function issueFileCommand(command, message) {
-  const filePath = process.env[`GITHUB_${command}`];
-  if (!filePath) {
-    throw new Error(`Unable to find environment variable for file command ${command}`);
-  }
-  if (!fs.existsSync(filePath)) {
-    throw new Error(`Missing file at path: ${filePath}`);
-  }
-  fs.appendFileSync(filePath, `${toCommandValue(message)}${os2.EOL}`, {
-    encoding: "utf8"
-  });
-}
-function prepareKeyValueMessage(key, value) {
-  const delimiter = `ghadelimiter_${crypto.randomUUID()}`;
-  const convertedValue = toCommandValue(value);
-  if (key.includes(delimiter)) {
-    throw new Error(`Unexpected input: name should not contain the delimiter "${delimiter}"`);
-  }
-  if (convertedValue.includes(delimiter)) {
-    throw new Error(`Unexpected input: value should not contain the delimiter "${delimiter}"`);
-  }
-  return `${key}<<${delimiter}${os2.EOL}${convertedValue}${os2.EOL}${delimiter}`;
-}
-
-// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/core.js
-import * as os4 from "os";
-
-// node_modules/.pnpm/@actions+http-client@4.0.1/node_modules/@actions/http-client/lib/index.js
-var tunnel = __toESM(require_tunnel2(), 1);
-var import_undici = __toESM(require_undici(), 1);
-var HttpCodes;
-(function(HttpCodes2) {
-  HttpCodes2[HttpCodes2["OK"] = 200] = "OK";
-  HttpCodes2[HttpCodes2["MultipleChoices"] = 300] = "MultipleChoices";
-  HttpCodes2[HttpCodes2["MovedPermanently"] = 301] = "MovedPermanently";
-  HttpCodes2[HttpCodes2["ResourceMoved"] = 302] = "ResourceMoved";
-  HttpCodes2[HttpCodes2["SeeOther"] = 303] = "SeeOther";
-  HttpCodes2[HttpCodes2["NotModified"] = 304] = "NotModified";
-  HttpCodes2[HttpCodes2["UseProxy"] = 305] = "UseProxy";
-  HttpCodes2[HttpCodes2["SwitchProxy"] = 306] = "SwitchProxy";
-  HttpCodes2[HttpCodes2["TemporaryRedirect"] = 307] = "TemporaryRedirect";
-  HttpCodes2[HttpCodes2["PermanentRedirect"] = 308] = "PermanentRedirect";
-  HttpCodes2[HttpCodes2["BadRequest"] = 400] = "BadRequest";
-  HttpCodes2[HttpCodes2["Unauthorized"] = 401] = "Unauthorized";
-  HttpCodes2[HttpCodes2["PaymentRequired"] = 402] = "PaymentRequired";
-  HttpCodes2[HttpCodes2["Forbidden"] = 403] = "Forbidden";
-  HttpCodes2[HttpCodes2["NotFound"] = 404] = "NotFound";
-  HttpCodes2[HttpCodes2["MethodNotAllowed"] = 405] = "MethodNotAllowed";
-  HttpCodes2[HttpCodes2["NotAcceptable"] = 406] = "NotAcceptable";
-  HttpCodes2[HttpCodes2["ProxyAuthenticationRequired"] = 407] = "ProxyAuthenticationRequired";
-  HttpCodes2[HttpCodes2["RequestTimeout"] = 408] = "RequestTimeout";
-  HttpCodes2[HttpCodes2["Conflict"] = 409] = "Conflict";
-  HttpCodes2[HttpCodes2["Gone"] = 410] = "Gone";
-  HttpCodes2[HttpCodes2["TooManyRequests"] = 429] = "TooManyRequests";
-  HttpCodes2[HttpCodes2["InternalServerError"] = 500] = "InternalServerError";
-  HttpCodes2[HttpCodes2["NotImplemented"] = 501] = "NotImplemented";
-  HttpCodes2[HttpCodes2["BadGateway"] = 502] = "BadGateway";
-  HttpCodes2[HttpCodes2["ServiceUnavailable"] = 503] = "ServiceUnavailable";
-  HttpCodes2[HttpCodes2["GatewayTimeout"] = 504] = "GatewayTimeout";
-})(HttpCodes || (HttpCodes = {}));
-var Headers;
-(function(Headers2) {
-  Headers2["Accept"] = "accept";
-  Headers2["ContentType"] = "content-type";
-})(Headers || (Headers = {}));
-var MediaTypes;
-(function(MediaTypes2) {
-  MediaTypes2["ApplicationJson"] = "application/json";
-})(MediaTypes || (MediaTypes = {}));
-var HttpRedirectCodes = [
-  HttpCodes.MovedPermanently,
-  HttpCodes.ResourceMoved,
-  HttpCodes.SeeOther,
-  HttpCodes.TemporaryRedirect,
-  HttpCodes.PermanentRedirect
-];
-var HttpResponseRetryCodes = [
-  HttpCodes.BadGateway,
-  HttpCodes.ServiceUnavailable,
-  HttpCodes.GatewayTimeout
-];
-
-// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/summary.js
-import { EOL as EOL3 } from "os";
-import { constants, promises } from "fs";
-var __awaiter = function(thisArg, _arguments, P2, generator) {
-  function adopt(value) {
-    return value instanceof P2 ? value : new P2(function(resolve3) {
-      resolve3(value);
-    });
-  }
-  return new (P2 || (P2 = Promise))(function(resolve3, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
+      options(requestUrl, additionalHeaders) {
+        return __awaiter3(this, void 0, void 0, function* () {
+          return this.request("OPTIONS", requestUrl, null, additionalHeaders || {});
+        });
       }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
+      get(requestUrl, additionalHeaders) {
+        return __awaiter3(this, void 0, void 0, function* () {
+          return this.request("GET", requestUrl, null, additionalHeaders || {});
+        });
       }
-    }
-    function step(result) {
-      result.done ? resolve3(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-var { access, appendFile, writeFile } = promises;
-var SUMMARY_ENV_VAR = "GITHUB_STEP_SUMMARY";
-var Summary = class {
-  constructor() {
-    this._buffer = "";
-  }
-  /**
-   * Finds the summary file path from the environment, rejects if env var is not found or file does not exist
-   * Also checks r/w permissions.
-   *
-   * @returns step summary file path
-   */
-  filePath() {
-    return __awaiter(this, void 0, void 0, function* () {
-      if (this._filePath) {
-        return this._filePath;
+      del(requestUrl, additionalHeaders) {
+        return __awaiter3(this, void 0, void 0, function* () {
+          return this.request("DELETE", requestUrl, null, additionalHeaders || {});
+        });
       }
-      const pathFromEnv = process.env[SUMMARY_ENV_VAR];
-      if (!pathFromEnv) {
-        throw new Error(`Unable to find environment variable for $${SUMMARY_ENV_VAR}. Check if your runtime environment supports job summaries.`);
+      post(requestUrl, data, additionalHeaders) {
+        return __awaiter3(this, void 0, void 0, function* () {
+          return this.request("POST", requestUrl, data, additionalHeaders || {});
+        });
       }
-      try {
-        yield access(pathFromEnv, constants.R_OK | constants.W_OK);
-      } catch (_a2) {
-        throw new Error(`Unable to access summary file: '${pathFromEnv}'. Check if the file has correct read/write permissions.`);
+      patch(requestUrl, data, additionalHeaders) {
+        return __awaiter3(this, void 0, void 0, function* () {
+          return this.request("PATCH", requestUrl, data, additionalHeaders || {});
+        });
       }
-      this._filePath = pathFromEnv;
-      return this._filePath;
-    });
-  }
-  /**
-   * Wraps content in an HTML tag, adding any HTML attributes
-   *
-   * @param {string} tag HTML tag to wrap
-   * @param {string | null} content content within the tag
-   * @param {[attribute: string]: string} attrs key-value list of HTML attributes to add
-   *
-   * @returns {string} content wrapped in HTML element
-   */
-  wrap(tag, content, attrs = {}) {
-    const htmlAttrs = Object.entries(attrs).map(([key, value]) => ` ${key}="${value}"`).join("");
-    if (!content) {
-      return `<${tag}${htmlAttrs}>`;
-    }
-    return `<${tag}${htmlAttrs}>${content}</${tag}>`;
-  }
-  /**
-   * Writes text in the buffer to the summary buffer file and empties buffer. Will append by default.
-   *
-   * @param {SummaryWriteOptions} [options] (optional) options for write operation
-   *
-   * @returns {Promise<Summary>} summary instance
-   */
-  write(options) {
-    return __awaiter(this, void 0, void 0, function* () {
-      const overwrite = !!(options === null || options === void 0 ? void 0 : options.overwrite);
-      const filePath = yield this.filePath();
-      const writeFunc = overwrite ? writeFile : appendFile;
-      yield writeFunc(filePath, this._buffer, { encoding: "utf8" });
-      return this.emptyBuffer();
-    });
-  }
-  /**
-   * Clears the summary buffer and wipes the summary file
-   *
-   * @returns {Summary} summary instance
-   */
-  clear() {
-    return __awaiter(this, void 0, void 0, function* () {
-      return this.emptyBuffer().write({ overwrite: true });
-    });
-  }
-  /**
-   * Returns the current summary buffer as a string
-   *
-   * @returns {string} string of summary buffer
-   */
-  stringify() {
-    return this._buffer;
-  }
-  /**
-   * If the summary buffer is empty
-   *
-   * @returns {boolen} true if the buffer is empty
-   */
-  isEmptyBuffer() {
-    return this._buffer.length === 0;
-  }
-  /**
-   * Resets the summary buffer without writing to summary file
-   *
-   * @returns {Summary} summary instance
-   */
-  emptyBuffer() {
-    this._buffer = "";
-    return this;
-  }
-  /**
-   * Adds raw text to the summary buffer
-   *
-   * @param {string} text content to add
-   * @param {boolean} [addEOL=false] (optional) append an EOL to the raw text (default: false)
-   *
-   * @returns {Summary} summary instance
-   */
-  addRaw(text, addEOL = false) {
-    this._buffer += text;
-    return addEOL ? this.addEOL() : this;
-  }
-  /**
-   * Adds the operating system-specific end-of-line marker to the buffer
-   *
-   * @returns {Summary} summary instance
-   */
-  addEOL() {
-    return this.addRaw(EOL3);
-  }
-  /**
-   * Adds an HTML codeblock to the summary buffer
-   *
-   * @param {string} code content to render within fenced code block
-   * @param {string} lang (optional) language to syntax highlight code
-   *
-   * @returns {Summary} summary instance
-   */
-  addCodeBlock(code, lang) {
-    const attrs = Object.assign({}, lang && { lang });
-    const element = this.wrap("pre", this.wrap("code", code), attrs);
-    return this.addRaw(element).addEOL();
-  }
-  /**
-   * Adds an HTML list to the summary buffer
-   *
-   * @param {string[]} items list of items to render
-   * @param {boolean} [ordered=false] (optional) if the rendered list should be ordered or not (default: false)
-   *
-   * @returns {Summary} summary instance
-   */
-  addList(items, ordered = false) {
-    const tag = ordered ? "ol" : "ul";
-    const listItems = items.map((item) => this.wrap("li", item)).join("");
-    const element = this.wrap(tag, listItems);
-    return this.addRaw(element).addEOL();
-  }
-  /**
-   * Adds an HTML table to the summary buffer
-   *
-   * @param {SummaryTableCell[]} rows table rows
-   *
-   * @returns {Summary} summary instance
-   */
-  addTable(rows) {
-    const tableBody = rows.map((row) => {
-      const cells = row.map((cell) => {
-        if (typeof cell === "string") {
-          return this.wrap("td", cell);
+      put(requestUrl, data, additionalHeaders) {
+        return __awaiter3(this, void 0, void 0, function* () {
+          return this.request("PUT", requestUrl, data, additionalHeaders || {});
+        });
+      }
+      head(requestUrl, additionalHeaders) {
+        return __awaiter3(this, void 0, void 0, function* () {
+          return this.request("HEAD", requestUrl, null, additionalHeaders || {});
+        });
+      }
+      sendStream(verb, requestUrl, stream, additionalHeaders) {
+        return __awaiter3(this, void 0, void 0, function* () {
+          return this.request(verb, requestUrl, stream, additionalHeaders);
+        });
+      }
+      /**
+       * Gets a typed object from an endpoint
+       * Be aware that not found returns a null.  Other errors (4xx, 5xx) reject the promise
+       */
+      getJson(requestUrl_1) {
+        return __awaiter3(this, arguments, void 0, function* (requestUrl, additionalHeaders = {}) {
+          additionalHeaders[Headers2.Accept] = this._getExistingOrDefaultHeader(additionalHeaders, Headers2.Accept, MediaTypes2.ApplicationJson);
+          const res = yield this.get(requestUrl, additionalHeaders);
+          return this._processResponse(res, this.requestOptions);
+        });
+      }
+      postJson(requestUrl_1, obj_1) {
+        return __awaiter3(this, arguments, void 0, function* (requestUrl, obj, additionalHeaders = {}) {
+          const data = JSON.stringify(obj, null, 2);
+          additionalHeaders[Headers2.Accept] = this._getExistingOrDefaultHeader(additionalHeaders, Headers2.Accept, MediaTypes2.ApplicationJson);
+          additionalHeaders[Headers2.ContentType] = this._getExistingOrDefaultContentTypeHeader(additionalHeaders, MediaTypes2.ApplicationJson);
+          const res = yield this.post(requestUrl, data, additionalHeaders);
+          return this._processResponse(res, this.requestOptions);
+        });
+      }
+      putJson(requestUrl_1, obj_1) {
+        return __awaiter3(this, arguments, void 0, function* (requestUrl, obj, additionalHeaders = {}) {
+          const data = JSON.stringify(obj, null, 2);
+          additionalHeaders[Headers2.Accept] = this._getExistingOrDefaultHeader(additionalHeaders, Headers2.Accept, MediaTypes2.ApplicationJson);
+          additionalHeaders[Headers2.ContentType] = this._getExistingOrDefaultContentTypeHeader(additionalHeaders, MediaTypes2.ApplicationJson);
+          const res = yield this.put(requestUrl, data, additionalHeaders);
+          return this._processResponse(res, this.requestOptions);
+        });
+      }
+      patchJson(requestUrl_1, obj_1) {
+        return __awaiter3(this, arguments, void 0, function* (requestUrl, obj, additionalHeaders = {}) {
+          const data = JSON.stringify(obj, null, 2);
+          additionalHeaders[Headers2.Accept] = this._getExistingOrDefaultHeader(additionalHeaders, Headers2.Accept, MediaTypes2.ApplicationJson);
+          additionalHeaders[Headers2.ContentType] = this._getExistingOrDefaultContentTypeHeader(additionalHeaders, MediaTypes2.ApplicationJson);
+          const res = yield this.patch(requestUrl, data, additionalHeaders);
+          return this._processResponse(res, this.requestOptions);
+        });
+      }
+      /**
+       * Makes a raw http request.
+       * All other methods such as get, post, patch, and request ultimately call this.
+       * Prefer get, del, post and patch
+       */
+      request(verb, requestUrl, data, headers) {
+        return __awaiter3(this, void 0, void 0, function* () {
+          if (this._disposed) {
+            throw new Error("Client has already been disposed.");
+          }
+          const parsedUrl = new URL(requestUrl);
+          let info2 = this._prepareRequest(verb, parsedUrl, headers);
+          const maxTries = this._allowRetries && RetryableHttpVerbs.includes(verb) ? this._maxRetries + 1 : 1;
+          let numTries = 0;
+          let response;
+          do {
+            response = yield this.requestRaw(info2, data);
+            if (response && response.message && response.message.statusCode === HttpCodes2.Unauthorized) {
+              let authenticationHandler;
+              for (const handler2 of this.handlers) {
+                if (handler2.canHandleAuthentication(response)) {
+                  authenticationHandler = handler2;
+                  break;
+                }
+              }
+              if (authenticationHandler) {
+                return authenticationHandler.handleAuthentication(this, info2, data);
+              } else {
+                return response;
+              }
+            }
+            let redirectsRemaining = this._maxRedirects;
+            while (response.message.statusCode && HttpRedirectCodes2.includes(response.message.statusCode) && this._allowRedirects && redirectsRemaining > 0) {
+              const redirectUrl = response.message.headers["location"];
+              if (!redirectUrl) {
+                break;
+              }
+              const parsedRedirectUrl = new URL(redirectUrl);
+              if (parsedUrl.protocol === "https:" && parsedUrl.protocol !== parsedRedirectUrl.protocol && !this._allowRedirectDowngrade) {
+                throw new Error("Redirect from HTTPS to HTTP protocol. This downgrade is not allowed for security reasons. If you want to allow this behavior, set the allowRedirectDowngrade option to true.");
+              }
+              yield response.readBody();
+              if (parsedRedirectUrl.hostname !== parsedUrl.hostname) {
+                for (const header in headers) {
+                  if (header.toLowerCase() === "authorization") {
+                    delete headers[header];
+                  }
+                }
+              }
+              info2 = this._prepareRequest(verb, parsedRedirectUrl, headers);
+              response = yield this.requestRaw(info2, data);
+              redirectsRemaining--;
+            }
+            if (!response.message.statusCode || !HttpResponseRetryCodes2.includes(response.message.statusCode)) {
+              return response;
+            }
+            numTries += 1;
+            if (numTries < maxTries) {
+              yield response.readBody();
+              yield this._performExponentialBackoff(numTries);
+            }
+          } while (numTries < maxTries);
+          return response;
+        });
+      }
+      /**
+       * Needs to be called if keepAlive is set to true in request options.
+       */
+      dispose() {
+        if (this._agent) {
+          this._agent.destroy();
         }
-        const { header, data, colspan, rowspan } = cell;
-        const tag = header ? "th" : "td";
-        const attrs = Object.assign(Object.assign({}, colspan && { colspan }), rowspan && { rowspan });
-        return this.wrap(tag, data, attrs);
-      }).join("");
-      return this.wrap("tr", cells);
-    }).join("");
-    const element = this.wrap("table", tableBody);
-    return this.addRaw(element).addEOL();
+        this._disposed = true;
+      }
+      /**
+       * Raw request.
+       * @param info
+       * @param data
+       */
+      requestRaw(info2, data) {
+        return __awaiter3(this, void 0, void 0, function* () {
+          return new Promise((resolve3, reject) => {
+            function callbackForResult(err, res) {
+              if (err) {
+                reject(err);
+              } else if (!res) {
+                reject(new Error("Unknown error"));
+              } else {
+                resolve3(res);
+              }
+            }
+            this.requestRawWithCallback(info2, data, callbackForResult);
+          });
+        });
+      }
+      /**
+       * Raw request with callback.
+       * @param info
+       * @param data
+       * @param onResult
+       */
+      requestRawWithCallback(info2, data, onResult) {
+        if (typeof data === "string") {
+          if (!info2.options.headers) {
+            info2.options.headers = {};
+          }
+          info2.options.headers["Content-Length"] = Buffer.byteLength(data, "utf8");
+        }
+        let callbackCalled = false;
+        function handleResult(err, res) {
+          if (!callbackCalled) {
+            callbackCalled = true;
+            onResult(err, res);
+          }
+        }
+        const req = info2.httpModule.request(info2.options, (msg) => {
+          const res = new HttpClientResponse(msg);
+          handleResult(void 0, res);
+        });
+        let socket;
+        req.on("socket", (sock) => {
+          socket = sock;
+        });
+        req.setTimeout(this._socketTimeout || 3 * 6e4, () => {
+          if (socket) {
+            socket.end();
+          }
+          handleResult(new Error(`Request timeout: ${info2.options.path}`));
+        });
+        req.on("error", function(err) {
+          handleResult(err);
+        });
+        if (data && typeof data === "string") {
+          req.write(data, "utf8");
+        }
+        if (data && typeof data !== "string") {
+          data.on("close", function() {
+            req.end();
+          });
+          data.pipe(req);
+        } else {
+          req.end();
+        }
+      }
+      /**
+       * Gets an http agent. This function is useful when you need an http agent that handles
+       * routing through a proxy server - depending upon the url and proxy environment variables.
+       * @param serverUrl  The server URL where the request will be sent. For example, https://api.github.com
+       */
+      getAgent(serverUrl) {
+        const parsedUrl = new URL(serverUrl);
+        return this._getAgent(parsedUrl);
+      }
+      getAgentDispatcher(serverUrl) {
+        const parsedUrl = new URL(serverUrl);
+        const proxyUrl = pm.getProxyUrl(parsedUrl);
+        const useProxy = proxyUrl && proxyUrl.hostname;
+        if (!useProxy) {
+          return;
+        }
+        return this._getProxyAgentDispatcher(parsedUrl, proxyUrl);
+      }
+      _prepareRequest(method, requestUrl, headers) {
+        const info2 = {};
+        info2.parsedUrl = requestUrl;
+        const usingSsl = info2.parsedUrl.protocol === "https:";
+        info2.httpModule = usingSsl ? https : http;
+        const defaultPort = usingSsl ? 443 : 80;
+        info2.options = {};
+        info2.options.host = info2.parsedUrl.hostname;
+        info2.options.port = info2.parsedUrl.port ? parseInt(info2.parsedUrl.port) : defaultPort;
+        info2.options.path = (info2.parsedUrl.pathname || "") + (info2.parsedUrl.search || "");
+        info2.options.method = method;
+        info2.options.headers = this._mergeHeaders(headers);
+        if (this.userAgent != null) {
+          info2.options.headers["user-agent"] = this.userAgent;
+        }
+        info2.options.agent = this._getAgent(info2.parsedUrl);
+        if (this.handlers) {
+          for (const handler2 of this.handlers) {
+            handler2.prepareRequest(info2.options);
+          }
+        }
+        return info2;
+      }
+      _mergeHeaders(headers) {
+        if (this.requestOptions && this.requestOptions.headers) {
+          return Object.assign({}, lowercaseKeys2(this.requestOptions.headers), lowercaseKeys2(headers || {}));
+        }
+        return lowercaseKeys2(headers || {});
+      }
+      /**
+       * Gets an existing header value or returns a default.
+       * Handles converting number header values to strings since HTTP headers must be strings.
+       * Note: This returns string | string[] since some headers can have multiple values.
+       * For headers that must always be a single string (like Content-Type), use the
+       * specialized _getExistingOrDefaultContentTypeHeader method instead.
+       */
+      _getExistingOrDefaultHeader(additionalHeaders, header, _default) {
+        let clientHeader;
+        if (this.requestOptions && this.requestOptions.headers) {
+          const headerValue = lowercaseKeys2(this.requestOptions.headers)[header];
+          if (headerValue) {
+            clientHeader = typeof headerValue === "number" ? headerValue.toString() : headerValue;
+          }
+        }
+        const additionalValue = additionalHeaders[header];
+        if (additionalValue !== void 0) {
+          return typeof additionalValue === "number" ? additionalValue.toString() : additionalValue;
+        }
+        if (clientHeader !== void 0) {
+          return clientHeader;
+        }
+        return _default;
+      }
+      /**
+       * Specialized version of _getExistingOrDefaultHeader for Content-Type header.
+       * Always returns a single string (not an array) since Content-Type should be a single value.
+       * Converts arrays to comma-separated strings and numbers to strings to ensure type safety.
+       * This was split from _getExistingOrDefaultHeader to provide stricter typing for callers
+       * that assign the result to places expecting a string (e.g., additionalHeaders[Headers.ContentType]).
+       */
+      _getExistingOrDefaultContentTypeHeader(additionalHeaders, _default) {
+        let clientHeader;
+        if (this.requestOptions && this.requestOptions.headers) {
+          const headerValue = lowercaseKeys2(this.requestOptions.headers)[Headers2.ContentType];
+          if (headerValue) {
+            if (typeof headerValue === "number") {
+              clientHeader = String(headerValue);
+            } else if (Array.isArray(headerValue)) {
+              clientHeader = headerValue.join(", ");
+            } else {
+              clientHeader = headerValue;
+            }
+          }
+        }
+        const additionalValue = additionalHeaders[Headers2.ContentType];
+        if (additionalValue !== void 0) {
+          if (typeof additionalValue === "number") {
+            return String(additionalValue);
+          } else if (Array.isArray(additionalValue)) {
+            return additionalValue.join(", ");
+          } else {
+            return additionalValue;
+          }
+        }
+        if (clientHeader !== void 0) {
+          return clientHeader;
+        }
+        return _default;
+      }
+      _getAgent(parsedUrl) {
+        let agent;
+        const proxyUrl = pm.getProxyUrl(parsedUrl);
+        const useProxy = proxyUrl && proxyUrl.hostname;
+        if (this._keepAlive && useProxy) {
+          agent = this._proxyAgent;
+        }
+        if (!useProxy) {
+          agent = this._agent;
+        }
+        if (agent) {
+          return agent;
+        }
+        const usingSsl = parsedUrl.protocol === "https:";
+        let maxSockets = 100;
+        if (this.requestOptions) {
+          maxSockets = this.requestOptions.maxSockets || http.globalAgent.maxSockets;
+        }
+        if (proxyUrl && proxyUrl.hostname) {
+          const agentOptions = {
+            maxSockets,
+            keepAlive: this._keepAlive,
+            proxy: Object.assign(Object.assign({}, (proxyUrl.username || proxyUrl.password) && {
+              proxyAuth: `${proxyUrl.username}:${proxyUrl.password}`
+            }), { host: proxyUrl.hostname, port: proxyUrl.port })
+          };
+          let tunnelAgent;
+          const overHttps = proxyUrl.protocol === "https:";
+          if (usingSsl) {
+            tunnelAgent = overHttps ? tunnel2.httpsOverHttps : tunnel2.httpsOverHttp;
+          } else {
+            tunnelAgent = overHttps ? tunnel2.httpOverHttps : tunnel2.httpOverHttp;
+          }
+          agent = tunnelAgent(agentOptions);
+          this._proxyAgent = agent;
+        }
+        if (!agent) {
+          const options = { keepAlive: this._keepAlive, maxSockets };
+          agent = usingSsl ? new https.Agent(options) : new http.Agent(options);
+          this._agent = agent;
+        }
+        if (usingSsl && this._ignoreSslError) {
+          agent.options = Object.assign(agent.options || {}, {
+            rejectUnauthorized: false
+          });
+        }
+        return agent;
+      }
+      _getProxyAgentDispatcher(parsedUrl, proxyUrl) {
+        let proxyAgent;
+        if (this._keepAlive) {
+          proxyAgent = this._proxyAgentDispatcher;
+        }
+        if (proxyAgent) {
+          return proxyAgent;
+        }
+        const usingSsl = parsedUrl.protocol === "https:";
+        proxyAgent = new undici_1.ProxyAgent(Object.assign({ uri: proxyUrl.href, pipelining: !this._keepAlive ? 0 : 1 }, (proxyUrl.username || proxyUrl.password) && {
+          token: `Basic ${Buffer.from(`${proxyUrl.username}:${proxyUrl.password}`).toString("base64")}`
+        }));
+        this._proxyAgentDispatcher = proxyAgent;
+        if (usingSsl && this._ignoreSslError) {
+          proxyAgent.options = Object.assign(proxyAgent.options.requestTls || {}, {
+            rejectUnauthorized: false
+          });
+        }
+        return proxyAgent;
+      }
+      _getUserAgentWithOrchestrationId(userAgent2) {
+        const baseUserAgent = userAgent2 || "actions/http-client";
+        const orchId = process.env["ACTIONS_ORCHESTRATION_ID"];
+        if (orchId) {
+          const sanitizedId = orchId.replace(/[^a-z0-9_.-]/gi, "_");
+          return `${baseUserAgent} actions_orchestration_id/${sanitizedId}`;
+        }
+        return baseUserAgent;
+      }
+      _performExponentialBackoff(retryNumber) {
+        return __awaiter3(this, void 0, void 0, function* () {
+          retryNumber = Math.min(ExponentialBackoffCeiling, retryNumber);
+          const ms2 = ExponentialBackoffTimeSlice * Math.pow(2, retryNumber);
+          return new Promise((resolve3) => setTimeout(() => resolve3(), ms2));
+        });
+      }
+      _processResponse(res, options) {
+        return __awaiter3(this, void 0, void 0, function* () {
+          return new Promise((resolve3, reject) => __awaiter3(this, void 0, void 0, function* () {
+            const statusCode = res.message.statusCode || 0;
+            const response = {
+              statusCode,
+              result: null,
+              headers: {}
+            };
+            if (statusCode === HttpCodes2.NotFound) {
+              resolve3(response);
+            }
+            function dateTimeDeserializer(key, value) {
+              if (typeof value === "string") {
+                const a = new Date(value);
+                if (!isNaN(a.valueOf())) {
+                  return a;
+                }
+              }
+              return value;
+            }
+            let obj;
+            let contents;
+            try {
+              contents = yield res.readBody();
+              if (contents && contents.length > 0) {
+                if (options && options.deserializeDates) {
+                  obj = JSON.parse(contents, dateTimeDeserializer);
+                } else {
+                  obj = JSON.parse(contents);
+                }
+                response.result = obj;
+              }
+              response.headers = res.message.headers;
+            } catch (err) {
+            }
+            if (statusCode > 299) {
+              let msg;
+              if (obj && obj.message) {
+                msg = obj.message;
+              } else if (contents && contents.length > 0) {
+                msg = contents;
+              } else {
+                msg = `Failed request: (${statusCode})`;
+              }
+              const err = new HttpClientError(msg, statusCode);
+              err.result = response.result;
+              reject(err);
+            } else {
+              resolve3(response);
+            }
+          }));
+        });
+      }
+    };
+    exports.HttpClient = HttpClient3;
+    var lowercaseKeys2 = (obj) => Object.keys(obj).reduce((c, k2) => (c[k2.toLowerCase()] = obj[k2], c), {});
   }
-  /**
-   * Adds a collapsable HTML details element to the summary buffer
-   *
-   * @param {string} label text for the closed state
-   * @param {string} content collapsable content
-   *
-   * @returns {Summary} summary instance
-   */
-  addDetails(label, content) {
-    const element = this.wrap("details", this.wrap("summary", label) + content);
-    return this.addRaw(element).addEOL();
+});
+
+// packages/application/journey/src/approval/approval-request-policy.ts
+var ApprovalRequestPolicy = class {
+  validate(request2) {
+    this.validateIdentity(request2);
+    if (request2.kind === "meetup-publication") return;
+    if (!Number.isSafeInteger(request2.recipientCount) || request2.recipientCount <= 0)
+      throw new Error("Invalid approval recipient count");
+    this.validateEmailCount(request2);
   }
-  /**
-   * Adds an HTML image tag to the summary buffer
-   *
-   * @param {string} src path to the image you to embed
-   * @param {string} alt text description of the image
-   * @param {SummaryImageOptions} options (optional) addition image attributes
-   *
-   * @returns {Summary} summary instance
-   */
-  addImage(src, alt, options) {
-    const { width, height } = options || {};
-    const attrs = Object.assign(Object.assign({}, width && { width }), height && { height });
-    const element = this.wrap("img", null, Object.assign({ src, alt }, attrs));
-    return this.addRaw(element).addEOL();
+  validateIdentity(request2) {
+    const date = /* @__PURE__ */ new Date(`${request2.eventDate}T12:00:00Z`);
+    if (!/^[a-f0-9]{64}$/.test(request2.revision) || !/^\d{4}-\d{2}-\d{2}$/.test(request2.eventDate) || !Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== request2.eventDate || !Number.isFinite(Date.parse(request2.requestedAt)))
+      throw new Error("Invalid approval request");
   }
-  /**
-   * Adds an HTML section heading element
-   *
-   * @param {string} text heading text
-   * @param {number | string} [level=1] (optional) the heading level, default: 1
-   *
-   * @returns {Summary} summary instance
-   */
-  addHeading(text, level) {
-    const tag = `h${level}`;
-    const allowedTag = ["h1", "h2", "h3", "h4", "h5", "h6"].includes(tag) ? tag : "h1";
-    const element = this.wrap(allowedTag, text);
-    return this.addRaw(element).addEOL();
+  validateEmailCount(request2) {
+    if (request2.details && request2.details.emails.length + request2.details.omittedEmails !== request2.recipientCount)
+      throw new Error("Invalid approval details");
   }
-  /**
-   * Adds an HTML thematic break (<hr>) to the summary buffer
-   *
-   * @returns {Summary} summary instance
-   */
-  addSeparator() {
-    const element = this.wrap("hr", null);
-    return this.addRaw(element).addEOL();
+  matches(previous, request2, status) {
+    if (previous.kind !== request2.kind || previous.revision !== request2.revision || previous.eventDate !== request2.eventDate)
+      return false;
+    if (previous.kind === "meetup-publication" && request2.kind === "meetup-publication")
+      return previous.publication.url === request2.publication.url && previous.publication.title === request2.publication.title && previous.publication.startTime === request2.publication.startTime && previous.publication.endTime === request2.publication.endTime && previous.publication.timeZone === request2.publication.timeZone && previous.publication.venue.name === request2.publication.venue.name && previous.publication.venue.city === request2.publication.venue.city;
+    return previous.recipientCount === request2.recipientCount && (status !== "pending" || this.sameDetails(previous.details, request2.details));
   }
-  /**
-   * Adds an HTML line break (<br>) to the summary buffer
-   *
-   * @returns {Summary} summary instance
-   */
-  addBreak() {
-    const element = this.wrap("br", null);
-    return this.addRaw(element).addEOL();
-  }
-  /**
-   * Adds an HTML blockquote to the summary buffer
-   *
-   * @param {string} text quote text
-   * @param {string} cite (optional) citation url
-   *
-   * @returns {Summary} summary instance
-   */
-  addQuote(text, cite) {
-    const attrs = Object.assign({}, cite && { cite });
-    const element = this.wrap("blockquote", text, attrs);
-    return this.addRaw(element).addEOL();
-  }
-  /**
-   * Adds an HTML anchor tag to the summary buffer
-   *
-   * @param {string} text link text/content
-   * @param {string} href hyperlink
-   *
-   * @returns {Summary} summary instance
-   */
-  addLink(text, href) {
-    const element = this.wrap("a", text, { href });
-    return this.addRaw(element).addEOL();
+  sameDetails(left, right) {
+    if (!left || !right) return left === right;
+    return left.omittedEmails === right.omittedEmails && left.emails.length === right.emails.length && left.emails.every((email, index) => {
+      const other = right.emails[index];
+      return other !== void 0 && email.kind === other.kind && email.recipientName === other.recipientName && email.omittedLinks === other.omittedLinks && email.links.length === other.links.length && email.links.every((link, linkIndex) => {
+        const otherLink = other.links[linkIndex];
+        return otherLink !== void 0 && link.kind === otherLink.kind && link.url === otherLink.url && link.title === otherLink.title;
+      });
+    });
   }
 };
-var _summary = new Summary();
-var summary = _summary;
 
-// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/platform.js
-import os3 from "os";
-
-// node_modules/.pnpm/@actions+io@3.0.2/node_modules/@actions/io/lib/io-util.js
-import * as fs2 from "fs";
-var { chmod, copyFile, lstat, mkdir, open, readdir, rename, rm, rmdir, stat, symlink, unlink } = fs2.promises;
-var IS_WINDOWS = process.platform === "win32";
-var READONLY = fs2.constants.O_RDONLY;
-
-// node_modules/.pnpm/@actions+exec@3.0.0/node_modules/@actions/exec/lib/toolrunner.js
-var IS_WINDOWS2 = process.platform === "win32";
-
-// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/platform.js
-var platform = os3.platform();
-var arch = os3.arch();
-
-// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/core.js
-var ExitCode;
-(function(ExitCode2) {
-  ExitCode2[ExitCode2["Success"] = 0] = "Success";
-  ExitCode2[ExitCode2["Failure"] = 1] = "Failure";
-})(ExitCode || (ExitCode = {}));
-function setSecret(secret) {
-  issueCommand("add-mask", {}, secret);
-}
-function getInput(name, options) {
-  const val = process.env[`INPUT_${name.replace(/ /g, "_").toUpperCase()}`] || "";
-  if (options && options.required && !val) {
-    throw new Error(`Input required and not supplied: ${name}`);
+// packages/application/journey/src/communication/communication-diagnostic-projection.ts
+var COMMUNICATION_MESSAGES = {
+  "duplicate-intent": "A duplicate communication intent was ignored.",
+  "gateway-delivery-uncertain": "A gateway could not confirm delivery.",
+  "gateway-delivery-rejected": "A gateway definitively rejected the delivery request.",
+  "gateway-delivery-deferred": "A gateway deferred the request; a later retry remains safe.",
+  "gateway-threw-ambiguous-error": "A gateway failed without a definitive delivery outcome.",
+  "invalid-clock": "The communication clock is invalid.",
+  "invalid-event-date": "The event date is invalid.",
+  "invalid-identifier": "A stable communication identifier is invalid.",
+  "invalid-time-zone": "The configured time zone is invalid.",
+  "ledger-read-failed": "The delivery ledger could not be read.",
+  "ledger-reservation-failed": "The delivery could not be reserved safely.",
+  "ledger-status-write-failed": "The delivery status could not be recorded.",
+  "missing-mail-destination": "An opted-in mail recipient has no destination.",
+  "occurrence-status-unknown": "The event occurrence status must be explicit.",
+  "delivery-already-recorded": "The delivery ledger already contains this intent."
+};
+var RUNTIME_MESSAGES = {
+  "communication.feedback-fetch-failed": "Feedback results could not be fetched.",
+  "communication.feedback-unavailable": "Speaker thank-you emails require resolved feedback results for every talk.",
+  "communication.slides-unavailable": "Email dispatch requires a valid presentation file URL and ready managed content. Resolve asset diagnostics and run reconciliation again.",
+  "communication.approval-pending": "Email dispatch is waiting for approval on the meetup issue.",
+  "communication.approval-rejected": "The email batch was rejected. The recorded decision is final for this batch revision.",
+  "communication.approval-unavailable": "The organizer approval could not be verified or persisted; email dispatch is blocked.",
+  "communication.approval-notification-failed": "The Slack approval notification or decision reaction was not confirmed. Review the request on the meetup issue.",
+  "communication.dispatch-disabled-by-config": "Communication dispatch is disabled by repository configuration.",
+  "communication.checklist-update-failed": "Delivery results are recorded but checklist completion could not be persisted.",
+  "communication.checklist-concurrently-modified": "Delivery results are recorded; an organizer edit postponed checklist completion.",
+  "communication.event-skipped": "The issue is not a configured meetup event.",
+  "communication.event-concurrently-modified": "The meetup issue changed while communications were being reconciled; no delivery was attempted.",
+  "communication.event-references-unresolved": "Event participants could not be resolved to stable identifiers.",
+  "communication.referential-catalog-invalid": "Communications are disabled because the referential catalog is invalid."
+};
+var CommunicationDiagnosticProjection = class {
+  domainDiagnostic(diagnostic) {
+    return {
+      code: `communication.${diagnostic.code}`,
+      severity: diagnostic.severity,
+      message: COMMUNICATION_MESSAGES[diagnostic.code]
+    };
   }
-  if (options && options.trimWhitespace === false) {
-    return val;
+  runtimeDiagnostic(diagnostic) {
+    return {
+      code: diagnostic.code,
+      severity: diagnostic.severity,
+      message: RUNTIME_MESSAGES[diagnostic.code]
+    };
   }
-  return val.trim();
-}
-function setOutput(name, value) {
-  const filePath = process.env["GITHUB_OUTPUT"] || "";
-  if (filePath) {
-    return issueFileCommand("OUTPUT", prepareKeyValueMessage(name, value));
+};
+
+// packages/domain/communication/src/attention/attention-policy.ts
+var AttentionPolicy = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
   }
-  process.stdout.write(os4.EOL);
-  issueCommand("set-output", { name }, toCommandValue(value));
-}
-function setFailed(message) {
-  process.exitCode = ExitCode.Failure;
-  error(message);
-}
-function error(message, properties = {}) {
-  issueCommand("error", toCommandProperties(properties), message instanceof Error ? message.toString() : message);
-}
-function warning(message, properties = {}) {
-  issueCommand("warning", toCommandProperties(properties), message instanceof Error ? message.toString() : message);
-}
-function info(message) {
-  process.stdout.write(message + os4.EOL);
-}
+  collaborators;
+  day(now2) {
+    const local = this.collaborators.communicationCalendar.getLocalDate(
+      now2,
+      "Europe/Paris"
+    );
+    if (!local) throw new Error("Invalid attention clock");
+    return this.collaborators.communicationCalendar.toEpochDay(local);
+  }
+  eventDay(date) {
+    const local = this.collaborators.communicationCalendar.parseIsoLocalDate(date);
+    return local ? this.collaborators.communicationCalendar.toEpochDay(local) : void 0;
+  }
+  window(episode, date, now2) {
+    const day = this.day(now2);
+    const policy = episode.condition.policy;
+    if (policy === "daily") return `day:${day}`;
+    if (policy === "weekly")
+      return `week:${Math.floor((day - this.day(new Date(episode.openedAt))) / 7)}`;
+    if (policy === "approval") {
+      const age = now2.getTime() - Date.parse(episode.condition.since ?? episode.openedAt);
+      return age >= 864e5 ? `day:${day}` : void 0;
+    }
+    const eventDay = this.eventDay(date);
+    if (eventDay === void 0) return void 0;
+    return this.milestone(policy, day - eventDay);
+  }
+  milestone(policy, elapsed) {
+    if (policy === "preparation") {
+      if (elapsed < -7 || elapsed > 0) return void 0;
+      const milestone = [0, 1, 3, 7].find((days) => elapsed >= -days);
+      return `preparation:${milestone}`;
+    }
+    if ((policy === "occurrence" || policy === "follow-up") && elapsed >= 1)
+      return `${policy}:${elapsed >= 7 ? 7 : 1}`;
+    return void 0;
+  }
+  view(state) {
+    return {
+      state,
+      conditions: state.episodes.filter((item) => item.status === "active" || item.status === "unknown").sort(this.compare.bind(this))
+    };
+  }
+  compare(left, right) {
+    const severity = Number(right.condition.severity === "error") - Number(left.condition.severity === "error");
+    return severity || left.openedAt.localeCompare(right.openedAt) || left.condition.key.localeCompare(right.condition.key);
+  }
+};
+
+// packages/domain/communication/src/attention/attention-state-equality.ts
+var AttentionStateEquality = class {
+  equal(left, right) {
+    return left.eventDate === right.eventDate && left.stopped === right.stopped && left.runId === right.runId && left.commentId === right.commentId && this.post(left.post, right.post) && left.episodes.length === right.episodes.length && left.episodes.every((episode) => {
+      const counterpart = right.episodes.find(
+        (item) => item.condition.key === episode.condition.key
+      );
+      return counterpart !== void 0 && this.episode(episode, counterpart);
+    });
+  }
+  episode(left, right) {
+    return left.episode === right.episode && left.openedAt === right.openedAt && left.status === right.status && left.lastWindow === right.lastWindow && this.condition(left.condition, right.condition);
+  }
+  condition(left, right) {
+    return left.key === right.key && left.code === right.code && left.owner === right.owner && left.resource === right.resource && left.severity === right.severity && left.policy === right.policy && left.since === right.since && left.commentId === right.commentId && left.recovery === right.recovery;
+  }
+  post(left, right) {
+    if (!left || !right) return left === right;
+    return left.reservationId === right.reservationId && left.day === right.day && left.reservedAt === right.reservedAt && left.status === right.status && left.retryAt === right.retryAt && left.fingerprint === right.fingerprint && left.message?.destination === right.message?.destination && left.message?.messageId === right.message?.messageId;
+  }
+};
+
+// packages/domain/communication/src/attention/attention-state-rules.ts
+var AttentionStateRules = class {
+  validate(state) {
+    if (new Set(state.episodes.map((item) => item.condition.key)).size !== state.episodes.length)
+      throw new Error("Duplicate attention condition");
+    for (const episode of state.episodes)
+      if (episode.condition.key !== `${episode.condition.code}:${episode.condition.resource}`)
+        throw new Error("Invalid attention resource");
+    const post = state.post;
+    if (!post) return;
+    if (post.status === "accepted" && !post.message)
+      throw new Error("Missing accepted attention reference");
+    if (post.status !== "accepted" && (post.message !== void 0 || post.fingerprint !== void 0))
+      throw new Error(
+        "Unconfirmed attention reservation has delivery authority"
+      );
+    if (post.status !== "retry" && post.retryAt !== void 0)
+      throw new Error("Unexpected attention retry");
+  }
+};
+
+// packages/domain/communication/src/attention/attention-task-selection.ts
+var AttentionTaskSelection = class _AttentionTaskSelection {
+  select(view, checklist) {
+    const conditions = view.conditions.filter(
+      (episode) => !this.covered(episode, checklist.entries)
+    );
+    const tasks = view.state.stopped ? [] : checklist.entries.filter(
+      (entry) => !conditions.some(
+        (episode) => entry.action !== void 0 && entry.action === this.action(episode)
+      )
+    );
+    const urgent = conditions.filter(this.urgent.bind(this));
+    return {
+      urgent,
+      checklist: [...tasks].sort(
+        (left, right) => Number(right.field === "agenda") - Number(left.field === "agenda")
+      ),
+      remaining: conditions.filter((episode) => !this.urgent(episode)),
+      details: conditions.filter(
+        (episode) => !(view.state.commentId && ["follow-up", "approval-pending"].includes(episode.condition.code)) && !(episode.status !== "unknown" && checklist.entries.some(
+          (entry) => entry.action !== void 0 && entry.action === this.action(episode)
+        ))
+      )
+    };
+  }
+  urgent(episode) {
+    return [
+      "delivery-recovery",
+      "approval-pending",
+      "integration-failure"
+    ].includes(episode.condition.code);
+  }
+  action(episode) {
+    if (episode.condition.code === "delivery-recovery")
+      return "delivery-recovery";
+    if (episode.condition.code !== "approval-pending") return void 0;
+    return episode.condition.resource.startsWith("meetup-publication:") ? "meetup-approval" : "email-approval";
+  }
+  covered(episode, entries) {
+    if (!entries.length) return false;
+    const { code, resource } = episode.condition;
+    if (code === "required-data" || code === "integration-failure" && resource === "event-data")
+      return true;
+    const fields = code === "manual-publication" ? _AttentionTaskSelection.RESOURCE_FIELDS.get(resource) : _AttentionTaskSelection.CONDITION_FIELDS.get(code);
+    return fields?.some((field) => entries.some((entry) => entry.field === field)) ?? false;
+  }
+  static CONDITION_FIELDS = /* @__PURE__ */ new Map([
+    ["missing-date", ["date"]],
+    ["host-confirmation", ["host", "host-confirmation"]],
+    ["speaker-confirmation", ["speaker-confirmation"]]
+  ]);
+  static RESOURCE_FIELDS = /* @__PURE__ */ new Map([
+    ["publish-meetup-event", ["meetup"]],
+    ["publish-community-event", ["community"]]
+  ]);
+};
+
+// packages/domain/communication/src/attention/evaluate-attention.ts
+var EvaluateAttention = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  execute(facts, now2) {
+    const stopped = facts.closed || facts.occurrence === "cancelled" || facts.occurrence === "postponed";
+    const conditions = [];
+    if (!stopped) this.tasks(facts, now2, conditions);
+    const evaluated = [];
+    if (!stopped) this.stages(facts, evaluated, conditions);
+    if (facts.approvals) evaluated.push("approvals");
+    if (facts.recovery) evaluated.push("delivery");
+    for (const item of (facts.recovery ?? []).filter(
+      (item2) => !item2.resolved && (!stopped || item2.uncertain !== false)
+    ))
+      conditions.push({
+        ...this.condition("delivery-recovery", "delivery", item.key, "daily"),
+        recovery: item.uncertain === false ? void 0 : true,
+        commentId: item.commentId
+      });
+    return {
+      conditions,
+      evaluated,
+      verifiedRecovery: (facts.recovery ?? []).filter((item) => item.uncertain === false).map((item) => `delivery-recovery:${item.key}`),
+      stopped,
+      eventDate: facts.eventDate,
+      runId: facts.runId
+    };
+  }
+  stages(facts, evaluated, conditions) {
+    for (const stage of facts.stages) this.stage(stage, evaluated, conditions);
+    for (const owner of ["approvals", "delivery"]) {
+      const available = owner === "approvals" ? facts.approvals : facts.recovery;
+      if (!available)
+        conditions.push(this.condition("stage-unknown", owner, owner, "none"));
+    }
+  }
+  stage(stage, evaluated, conditions) {
+    if (stage.prerequisiteBlocked) return;
+    if (stage.outcome !== "unknown") evaluated.push(stage.owner);
+    if (stage.outcome === "success" && !stage.blocked) return;
+    const unknown = stage.outcome === "unknown";
+    conditions.push(
+      this.condition(
+        unknown ? "stage-unknown" : "integration-failure",
+        stage.owner,
+        this.stageResource(stage),
+        unknown ? "none" : "daily"
+      )
+    );
+  }
+  stageResource(stage) {
+    return stage.owner === "event" && stage.outcome === "success" ? "event-data" : stage.owner;
+  }
+  tasks(facts, now2, conditions) {
+    const eventDay = this.collaborators.attentionPolicy.eventDay(
+      facts.eventDate
+    );
+    const day = this.collaborators.attentionPolicy.day(now2);
+    const postEvent = this.collaborators.postEventPolicy.isDue({
+      eventDate: facts.eventDate,
+      timeZone: "Europe/Paris",
+      occurrenceStatus: facts.occurrence,
+      now: now2
+    });
+    if (eventDay === void 0)
+      conditions.push(
+        this.condition("missing-date", "event", "date", "weekly")
+      );
+    this.preparation(facts, eventDay, day, conditions);
+    if (postEvent)
+      for (const task of facts.followUpPending)
+        conditions.push(
+          this.condition("follow-up", "event", task, "follow-up")
+        );
+    this.approvals(facts, conditions, postEvent);
+  }
+  approvals(facts, conditions, postEvent) {
+    for (const approval of facts.approvals ?? []) {
+      const relevant = approval.kind === (postEvent ? "email-thanks" : "email-introduction") || !postEvent && approval.kind === "meetup-publication";
+      if (approval.status === "pending" && approval.eventDate === facts.eventDate && relevant)
+        conditions.push({
+          ...this.condition(
+            "approval-pending",
+            "approvals",
+            approval.kind === "meetup-publication" ? `${approval.kind}:${approval.revision}` : approval.revision,
+            "approval"
+          ),
+          since: approval.requestedAt,
+          commentId: approval.commentId
+        });
+    }
+  }
+  preparation(facts, eventDay, day, conditions) {
+    if (facts.occurrence === "scheduled" && (eventDay === void 0 || day <= eventDay)) {
+      if (!facts.hostConfirmed)
+        conditions.push(
+          this.condition("host-confirmation", "event", "host", "preparation")
+        );
+      if (!facts.speakersConfirmed)
+        conditions.push(
+          this.condition(
+            "speaker-confirmation",
+            "event",
+            "speakers",
+            "preparation"
+          )
+        );
+      if (facts.requiredDataMissing)
+        conditions.push(
+          this.condition("required-data", "event", "event", "preparation")
+        );
+      for (const task of facts.publicationPending)
+        conditions.push(
+          this.condition("manual-publication", "event", task, "preparation")
+        );
+    }
+  }
+  condition(code, owner, resource, policy) {
+    return {
+      key: `${code}:${resource}`,
+      code,
+      owner,
+      resource,
+      policy,
+      severity: ["integration-failure", "delivery-recovery"].includes(code) ? "error" : "warning"
+    };
+  }
+};
+
+// packages/domain/communication/src/attention/reconcile-attention.ts
+var ReconcileAttention = class {
+  constructor(collaborators, repository, notification, clock) {
+    this.collaborators = collaborators;
+    this.repository = repository;
+    this.notification = notification;
+    this.clock = clock;
+  }
+  collaborators;
+  repository;
+  notification;
+  clock;
+  async execute(observation) {
+    const now2 = this.clock.now();
+    const day = this.collaborators.attentionPolicy.day(now2);
+    const previous = await this.repository.load();
+    const state = this.collaborators.attentionEpisodes.reconcile(
+      previous,
+      observation,
+      now2
+    );
+    await this.repository.save(state);
+    const view = this.collaborators.attentionPolicy.view(state);
+    const base = {
+      active: view.conditions.length,
+      posted: false,
+      notificationFailed: false
+    };
+    if (state.post?.status === "pending")
+      return { ...base, notificationFailed: true };
+    const due = this.collaborators.attentionEpisodes.due(state, now2);
+    if (state.post?.status === "retry" && Date.parse(state.post.retryAt ?? "") > now2.getTime())
+      return { ...base, notificationFailed: true };
+    if (due.length && state.post?.day !== day || due.length && state.post?.status === "retry")
+      return this.post(state, now2);
+    return this.update(state, now2);
+  }
+  async update(state, now2) {
+    const view = this.collaborators.attentionPolicy.view(state);
+    const base = {
+      active: view.conditions.length,
+      posted: false,
+      notificationFailed: false
+    };
+    if (!state.post?.message) return base;
+    const fingerprint = this.notification.fingerprint(view);
+    if (fingerprint !== state.post.fingerprint) {
+      if (!await this.notification.update(state.post.message, view))
+        return { ...base, notificationFailed: true };
+      state.post.fingerprint = fingerprint;
+    }
+    if (state.post.day === this.collaborators.attentionPolicy.day(now2))
+      this.collaborators.attentionEpisodes.acknowledge(state, now2);
+    await this.repository.save(state);
+    return base;
+  }
+  async post(state, now2) {
+    const day = this.collaborators.attentionPolicy.day(now2);
+    state.post = {
+      reservationId: `attention:${day}:${now2.getTime()}`,
+      day,
+      reservedAt: now2.toISOString(),
+      status: "pending"
+    };
+    await this.repository.save(state);
+    const view = this.collaborators.attentionPolicy.view(state);
+    let result;
+    try {
+      result = await this.notification.post(view);
+    } catch {
+      result = { outcome: "uncertain" };
+    }
+    if (result.outcome === "accepted") {
+      state.post.status = "accepted";
+      state.post.message = result.message;
+      state.post.fingerprint = this.notification.fingerprint(view);
+      this.collaborators.attentionEpisodes.acknowledge(state, now2);
+    } else if (result.outcome === "retry") {
+      state.post.status = "retry";
+      const delay = Math.max(300, result.retryAfterSeconds ?? 300);
+      state.post.retryAt = new Date(now2.getTime() + delay * 1e3).toISOString();
+    }
+    await this.repository.save(state);
+    return {
+      active: view.conditions.length,
+      posted: result.outcome === "accepted",
+      notificationFailed: result.outcome !== "accepted"
+    };
+  }
+};
+
+// packages/domain/communication/src/attention/attention-episodes.ts
+var AttentionEpisodes = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  reconcile(previous, observation, now2) {
+    const state = previous ? structuredClone(previous) : {
+      eventDate: observation.eventDate,
+      stopped: observation.stopped,
+      episodes: []
+    };
+    const changedDate = state.eventDate !== observation.eventDate;
+    const conditions = new Map(
+      observation.conditions.map((condition) => [condition.key, condition])
+    );
+    for (const episode of state.episodes) {
+      const condition = conditions.get(episode.condition.key);
+      if (condition) {
+        conditions.delete(condition.key);
+        if (episode.status === "resolved" || episode.status === "stopped") {
+          episode.episode += 1;
+          episode.openedAt = now2.toISOString();
+          episode.lastWindow = void 0;
+        }
+        episode.condition = condition;
+        episode.status = "active";
+        if (changedDate && episode.lastWindow && ["preparation", "occurrence", "follow-up"].includes(condition.policy))
+          episode.lastWindow = this.collaborators.attentionPolicy.window(
+            episode,
+            observation.eventDate,
+            now2
+          );
+      } else {
+        episode.status = this.absentStatus(episode, observation);
+      }
+    }
+    for (const condition of conditions.values())
+      state.episodes.push({
+        condition,
+        episode: 1,
+        openedAt: now2.toISOString(),
+        status: "active"
+      });
+    state.eventDate = observation.eventDate;
+    state.stopped = observation.stopped;
+    state.runId = observation.runId;
+    state.commentId = observation.commentId;
+    return state;
+  }
+  absentStatus(episode, observation) {
+    if (episode.condition.recovery && (episode.status === "active" || episode.status === "unknown") && !observation.verifiedRecovery?.includes(episode.condition.key))
+      return "unknown";
+    if (observation.stopped && !episode.condition.recovery) return "stopped";
+    if (observation.evaluated.includes(episode.condition.owner))
+      return "resolved";
+    return episode.status === "active" ? "unknown" : episode.status;
+  }
+  due(state, now2) {
+    return this.collaborators.attentionPolicy.view(state).conditions.filter((episode) => {
+      const window = this.collaborators.attentionPolicy.window(
+        episode,
+        state.eventDate,
+        now2
+      );
+      return window !== void 0 && window !== episode.lastWindow;
+    });
+  }
+  acknowledge(state, now2) {
+    for (const episode of this.collaborators.attentionPolicy.view(state).conditions) {
+      const window = this.collaborators.attentionPolicy.window(
+        episode,
+        state.eventDate,
+        now2
+      );
+      if (window) episode.lastWindow = window;
+    }
+  }
+};
+
+// packages/domain/communication/src/communication-calendar.ts
+var CommunicationCalendar = class {
+  parseIsoLocalDate(value) {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    if (!match) {
+      return void 0;
+    }
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    const candidate = new Date(Date.UTC(year, month - 1, day));
+    if (candidate.getUTCFullYear() !== year || candidate.getUTCMonth() !== month - 1 || candidate.getUTCDate() !== day) {
+      return void 0;
+    }
+    return { year, month, day };
+  }
+  getLocalDate(instant, timeZone) {
+    try {
+      const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }).formatToParts(instant);
+      const values = new Map(parts.map((part) => [part.type, part.value]));
+      const year = Number(values.get("year"));
+      const month = Number(values.get("month"));
+      const day = Number(values.get("day"));
+      if (![year, month, day].every(Number.isInteger)) {
+        return void 0;
+      }
+      return { year, month, day };
+    } catch {
+      return void 0;
+    }
+  }
+  toEpochDay(date) {
+    return Math.floor(
+      Date.UTC(date.year, date.month - 1, date.day) / 864e5
+    );
+  }
+  isValidInstant(value) {
+    return value instanceof Date && Number.isFinite(value.getTime());
+  }
+};
+
+// packages/domain/communication/src/communication-dispatcher.ts
+var CommunicationDispatcher = class {
+  constructor(collaborators, ledger, mailGateway) {
+    this.collaborators = collaborators;
+    this.#ledger = ledger;
+    this.#mailGateway = mailGateway;
+  }
+  collaborators;
+  #ledger;
+  #mailGateway;
+  async execute(intent, timestamp, counts, diagnostics) {
+    let dispatchResult;
+    try {
+      dispatchResult = await this.#mailGateway.dispatch(intent);
+    } catch {
+      counts.uncertain += 1;
+      diagnostics.push({
+        code: "gateway-threw-ambiguous-error",
+        severity: "error",
+        intentId: intent.intentId
+      });
+      await this.#markUncertain(
+        intent,
+        timestamp,
+        "gateway-threw-ambiguous-error",
+        diagnostics
+      );
+      return false;
+    }
+    if (dispatchResult.outcome === "deferred") {
+      await this.defer(intent, dispatchResult, counts, diagnostics);
+      return false;
+    }
+    if (dispatchResult.outcome === "rejected") {
+      counts.rejected += 1;
+      diagnostics.push({
+        code: "gateway-delivery-rejected",
+        severity: "error",
+        intentId: intent.intentId,
+        detailCode: dispatchResult.diagnosticCode
+      });
+      try {
+        await this.#ledger.markRejected(
+          intent.idempotencyKey,
+          timestamp,
+          dispatchResult.diagnosticCode
+        );
+      } catch {
+        diagnostics.push({
+          code: "ledger-status-write-failed",
+          severity: "error",
+          intentId: intent.intentId
+        });
+      }
+      return false;
+    }
+    if (dispatchResult.outcome === "uncertain") {
+      const detailCode = this.collaborators.communicationResults.safeDetailCode(
+        dispatchResult.diagnosticCode
+      );
+      counts.uncertain += 1;
+      diagnostics.push({
+        code: "gateway-delivery-uncertain",
+        severity: "error",
+        intentId: intent.intentId,
+        ...detailCode ? { detailCode } : {}
+      });
+      await this.#markUncertain(
+        intent,
+        timestamp,
+        detailCode ?? "gateway-delivery-uncertain",
+        diagnostics
+      );
+      return false;
+    }
+    return this.accept(intent, timestamp, counts, diagnostics);
+  }
+  async #markUncertain(intent, timestamp, diagnosticCode, diagnostics) {
+    try {
+      await this.#ledger.markUncertain(
+        intent.idempotencyKey,
+        timestamp,
+        diagnosticCode
+      );
+    } catch {
+      diagnostics.push({
+        code: "ledger-status-write-failed",
+        severity: "error",
+        intentId: intent.intentId
+      });
+    }
+  }
+  async defer(intent, dispatchResult, counts, diagnostics) {
+    counts.deferred += 1;
+    diagnostics.push({
+      code: "gateway-delivery-deferred",
+      severity: "warning",
+      intentId: intent.intentId,
+      detailCode: dispatchResult.diagnosticCode
+    });
+    try {
+      await this.#ledger.releasePending(intent.idempotencyKey);
+    } catch {
+      diagnostics.push({
+        code: "ledger-status-write-failed",
+        severity: "error",
+        intentId: intent.intentId
+      });
+    }
+    return;
+  }
+  async accept(intent, timestamp, counts, diagnostics) {
+    counts.accepted += 1;
+    try {
+      await this.#ledger.markAccepted(intent.idempotencyKey, timestamp);
+      return true;
+    } catch {
+      diagnostics.push({
+        code: "ledger-status-write-failed",
+        severity: "error",
+        intentId: intent.intentId
+      });
+    }
+    return false;
+  }
+};
+
+// packages/domain/communication/src/model.ts
+var MAIL_TEMPLATE_NAMES = {
+  hostIntroduction: "meetup-intro-hosting",
+  speakerIntroduction: "meetup-intro-speakers",
+  hostThanks: "meetup-thanks-hosting",
+  speakerThanks: "meetup-thanks-speakers"
+};
+
+// packages/domain/communication/src/plan-communications-contracts.ts
+var MAIL_POLICIES = {
+  introduction: {
+    hosting: {
+      kind: "host-introduction",
+      templateName: MAIL_TEMPLATE_NAMES.hostIntroduction
+    },
+    speaker: {
+      kind: "speaker-introduction",
+      templateName: MAIL_TEMPLATE_NAMES.speakerIntroduction
+    }
+  },
+  thanks: {
+    hosting: {
+      kind: "host-thanks",
+      templateName: MAIL_TEMPLATE_NAMES.hostThanks
+    },
+    speaker: {
+      kind: "speaker-thanks",
+      templateName: MAIL_TEMPLATE_NAMES.speakerThanks
+    }
+  }
+};
+
+// packages/domain/communication/src/communication-planner.ts
+var CommunicationPlanner = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  planMailMessages(input, policyName, intents, diagnostics) {
+    for (const recipient of input.mailRecipients) {
+      if (!recipient.receivesCommunications) {
+        continue;
+      }
+      if (!this.collaborators.communicationIdempotency.isSafeCommunicationIdentifier(
+        recipient.recipientId
+      )) {
+        diagnostics.push(this.errorDiagnostic("invalid-identifier"));
+        continue;
+      }
+      if (recipient.email.trim().length === 0) {
+        diagnostics.push(this.errorDiagnostic("missing-mail-destination"));
+        continue;
+      }
+      const policy = MAIL_POLICIES[policyName][recipient.role];
+      const base = this.createIntentBase(
+        input,
+        policy.kind,
+        recipient.recipientId
+      );
+      const intent = {
+        ...base,
+        channel: "mail",
+        recipient: this.cloneMailRecipient(recipient),
+        templateName: policy.templateName,
+        placeholders: {
+          ...input.mailPlaceholders ?? {},
+          ...recipient.placeholders ?? {}
+        }
+      };
+      intents.push(intent);
+    }
+  }
+  createIntentBase(input, kind, recipientId) {
+    const idempotencyKey = this.collaborators.communicationIdempotency.createCommunicationIdempotencyKey(
+      {
+        repositoryId: input.repositoryId,
+        eventId: input.eventId,
+        kind,
+        recipientId,
+        policyVersion: input.policyVersion
+      }
+    );
+    return {
+      intentId: idempotencyKey,
+      idempotencyKey,
+      repositoryId: input.repositoryId,
+      eventId: input.eventId,
+      policyVersion: input.policyVersion,
+      kind,
+      recipientId
+    };
+  }
+  cloneMailRecipient(recipient) {
+    return {
+      ...recipient,
+      ...recipient.placeholders ? { placeholders: { ...recipient.placeholders } } : {}
+    };
+  }
+  deduplicateIntents(intents, diagnostics) {
+    const uniqueIntents = /* @__PURE__ */ new Map();
+    for (const intent of intents) {
+      if (uniqueIntents.has(intent.idempotencyKey)) {
+        diagnostics.push({
+          ...this.warningDiagnostic("duplicate-intent"),
+          intentId: intent.intentId
+        });
+        continue;
+      }
+      uniqueIntents.set(intent.idempotencyKey, intent);
+    }
+    return {
+      intents: [...uniqueIntents.values()],
+      diagnostics
+    };
+  }
+  hasValidBaseIdentifiers(input) {
+    return [input.repositoryId, input.eventId, input.policyVersion].every(
+      this.collaborators.communicationIdempotency.isSafeCommunicationIdentifier.bind(
+        this.collaborators.communicationIdempotency
+      )
+    );
+  }
+  errorDiagnostic(code) {
+    return { code, severity: "error" };
+  }
+  warningDiagnostic(code) {
+    return { code, severity: "warning" };
+  }
+};
+
+// packages/domain/communication/src/communication-results.ts
+var CommunicationResults = class {
+  recordExisting(intentId, entry, counts, diagnostics) {
+    counts.alreadyRecorded += 1;
+    diagnostics.push({
+      code: "delivery-already-recorded",
+      severity: "info",
+      intentId,
+      deliveryStatus: entry.status
+    });
+  }
+  result(mode, intents, counts, diagnostics, acceptedIds) {
+    return {
+      mode,
+      intentIds: intents.map((intent) => intent.intentId),
+      completedMailKinds: this.completedMailKinds(intents, acceptedIds),
+      counts: { ...counts },
+      diagnostics: [...diagnostics]
+    };
+  }
+  completedMailKinds(intents, acceptedIds) {
+    const groups = /* @__PURE__ */ new Map();
+    for (const intent of intents) {
+      if (intent.channel !== "mail") continue;
+      groups.set(
+        intent.kind,
+        (groups.get(intent.kind) ?? true) && acceptedIds.has(intent.intentId)
+      );
+    }
+    return [...groups].filter(([, accepted]) => accepted).map(([kind]) => kind);
+  }
+  emptyResult(mode, diagnostic) {
+    return {
+      mode,
+      intentIds: [],
+      completedMailKinds: [],
+      counts: {
+        planned: 0,
+        due: 0,
+        alreadyRecorded: 0,
+        reserved: 0,
+        dispatched: 0,
+        accepted: 0,
+        uncertain: 0,
+        rejected: 0,
+        deferred: 0
+      },
+      diagnostics: [diagnostic]
+    };
+  }
+  safeDetailCode(value) {
+    return [
+      "ambiguous-response",
+      "connection-reset",
+      "provider-timeout",
+      "unknown-provider-state"
+    ].includes(value ?? "") ? value : void 0;
+  }
+};
+
+// packages/domain/communication/src/idempotency.ts
+var SAFE_IDENTIFIER_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$/;
+var CommunicationIdempotency = class {
+  isSafeCommunicationIdentifier(value) {
+    return SAFE_IDENTIFIER_PATTERN.test(value);
+  }
+  createCommunicationIdempotencyKey(components) {
+    const values = [
+      components.repositoryId,
+      components.eventId,
+      components.recipientId,
+      components.policyVersion
+    ];
+    if (!values.every(this.isSafeCommunicationIdentifier.bind(this))) {
+      throw new Error(
+        "Communication identifiers must be stable, opaque, and PII-free"
+      );
+    }
+    return [
+      "meetup-communication:v1",
+      `repository=${encodeURIComponent(components.repositoryId)}`,
+      `event=${encodeURIComponent(components.eventId)}`,
+      `kind=${components.kind}`,
+      `recipient=${encodeURIComponent(components.recipientId)}`,
+      `policy=${encodeURIComponent(components.policyVersion)}`
+    ].join("|");
+  }
+};
+
+// packages/domain/communication/src/mail-batch-fingerprint.ts
+import { createHash } from "node:crypto";
+var MailBatchFingerprint = class {
+  create(eventDate, timeZone, intents) {
+    const messages = intents.map((intent) => ({
+      id: intent.idempotencyKey,
+      destination: intent.recipient.email,
+      template: intent.templateName,
+      placeholders: Object.entries(intent.placeholders).sort(([a], [b2]) => a.localeCompare(b2)).map(([key, value]) => [
+        key,
+        typeof value === "string" ? value : value.map(({ title, url }) => ({ title, url }))
+      ])
+    })).sort((a, b2) => a.id.localeCompare(b2.id));
+    return createHash("sha256").update(JSON.stringify({ eventDate, timeZone, messages })).digest("hex");
+  }
+};
+
+// packages/domain/communication/src/plan-communications.ts
+var PlanCommunications = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  execute(input) {
+    const diagnostics = [];
+    if (!this.collaborators.communicationPlanner.hasValidBaseIdentifiers(input)) {
+      return {
+        intents: [],
+        diagnostics: [
+          this.collaborators.communicationPlanner.errorDiagnostic(
+            "invalid-identifier"
+          )
+        ]
+      };
+    }
+    if (!this.collaborators.communicationCalendar.isValidInstant(input.now)) {
+      return {
+        intents: [],
+        diagnostics: [
+          this.collaborators.communicationPlanner.errorDiagnostic(
+            "invalid-clock"
+          )
+        ]
+      };
+    }
+    if (input.occurrenceStatus === "cancelled" || input.occurrenceStatus === "postponed") {
+      return { intents: [], diagnostics };
+    }
+    if (input.occurrenceStatus === "unknown") {
+      return {
+        intents: [],
+        diagnostics: [
+          this.collaborators.communicationPlanner.warningDiagnostic(
+            "occurrence-status-unknown"
+          )
+        ]
+      };
+    }
+    const eventDate = this.collaborators.communicationCalendar.parseIsoLocalDate(
+      input.eventDate
+    );
+    if (!eventDate) {
+      return {
+        intents: [],
+        diagnostics: [
+          this.collaborators.communicationPlanner.errorDiagnostic(
+            "invalid-event-date"
+          )
+        ]
+      };
+    }
+    const currentDate = this.collaborators.communicationCalendar.getLocalDate(
+      input.now,
+      input.timeZone
+    );
+    if (!currentDate) {
+      return {
+        intents: [],
+        diagnostics: [
+          this.collaborators.communicationPlanner.errorDiagnostic(
+            "invalid-time-zone"
+          )
+        ]
+      };
+    }
+    return this.planDue(input, diagnostics);
+  }
+  planDue(input, diagnostics) {
+    const intents = [];
+    if (this.collaborators.postEventPolicy.isDue(input)) {
+      this.collaborators.communicationPlanner.planMailMessages(
+        input,
+        "thanks",
+        intents,
+        diagnostics
+      );
+      return this.collaborators.communicationPlanner.deduplicateIntents(
+        intents,
+        diagnostics
+      );
+    }
+    if (input.readiness === "ready") {
+      this.collaborators.communicationPlanner.planMailMessages(
+        input,
+        "introduction",
+        intents,
+        diagnostics
+      );
+      return this.collaborators.communicationPlanner.deduplicateIntents(
+        intents,
+        diagnostics
+      );
+    }
+    return { intents, diagnostics };
+  }
+};
+
+// packages/domain/communication/src/post-event-policy.ts
+var PostEventPolicy = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  isDue(input) {
+    if (!["scheduled", "held"].includes(input.occurrenceStatus)) return false;
+    if (!this.collaborators.communicationCalendar.isValidInstant(input.now))
+      return false;
+    const event = this.collaborators.communicationCalendar.parseIsoLocalDate(
+      input.eventDate
+    );
+    const today = this.collaborators.communicationCalendar.getLocalDate(
+      input.now,
+      input.timeZone
+    );
+    if (!event || !today) return false;
+    return input.occurrenceStatus === "held" || this.collaborators.communicationCalendar.toEpochDay(today) > this.collaborators.communicationCalendar.toEpochDay(event);
+  }
+};
+
+// packages/domain/communication/src/reconcile-communications.ts
+var ReconcileCommunications = class {
+  constructor(collaborators, dependencies) {
+    this.collaborators = collaborators;
+    this.#planner = dependencies.planner;
+    this.#clock = dependencies.clock;
+    this.#ledger = dependencies.ledger;
+    this.#dispatcher = this.collaborators.createCommunicationDispatcher(
+      dependencies.ledger,
+      dependencies.mailGateway
+    );
+  }
+  collaborators;
+  #planner;
+  #clock;
+  #ledger;
+  #dispatcher;
+  async execute(input) {
+    let now2;
+    try {
+      now2 = this.#clock.now();
+    } catch {
+      return this.collaborators.communicationResults.emptyResult(input.mode, {
+        code: "invalid-clock",
+        severity: "error"
+      });
+    }
+    if (!this.collaborators.communicationCalendar.isValidInstant(now2)) {
+      return this.collaborators.communicationResults.emptyResult(input.mode, {
+        code: "invalid-clock",
+        severity: "error"
+      });
+    }
+    const { mode, dispatchAuthorized, ...planningInput } = input;
+    const plan = this.#planner.execute({ ...planningInput, now: now2 });
+    const diagnostics = [...plan.diagnostics];
+    const counts = {
+      planned: plan.intents.length,
+      due: 0,
+      alreadyRecorded: 0,
+      reserved: 0,
+      dispatched: 0,
+      accepted: 0,
+      uncertain: 0,
+      rejected: 0,
+      deferred: 0
+    };
+    const timestamp = now2.toISOString();
+    const acceptedIds = /* @__PURE__ */ new Set();
+    for (const intent of plan.intents) {
+      const accepted = await this.processIntent(
+        intent,
+        timestamp,
+        mode,
+        dispatchAuthorized,
+        counts,
+        diagnostics
+      );
+      if (accepted) acceptedIds.add(intent.intentId);
+    }
+    return this.collaborators.communicationResults.result(
+      mode,
+      plan.intents,
+      counts,
+      diagnostics,
+      acceptedIds
+    );
+  }
+  async #findExisting(intent, diagnostics) {
+    try {
+      return await this.#ledger.find(intent.idempotencyKey);
+    } catch {
+      diagnostics.push({
+        code: "ledger-read-failed",
+        severity: "error",
+        intentId: intent.intentId
+      });
+      return "read-failed";
+    }
+  }
+  async #reserve(intent, timestamp, diagnostics) {
+    try {
+      return await this.#ledger.reservePending({
+        idempotencyKey: intent.idempotencyKey,
+        intentId: intent.intentId,
+        repositoryId: intent.repositoryId,
+        eventId: intent.eventId,
+        kind: intent.kind,
+        recipientId: intent.recipientId,
+        policyVersion: intent.policyVersion,
+        reservedAt: timestamp
+      });
+    } catch {
+      diagnostics.push({
+        code: "ledger-reservation-failed",
+        severity: "error",
+        intentId: intent.intentId
+      });
+      return "reservation-failed";
+    }
+  }
+  async processIntent(intent, timestamp, mode, dispatchAuthorized, counts, diagnostics) {
+    const existing = await this.#findExisting(intent, diagnostics);
+    if (existing === "read-failed") {
+      return;
+    }
+    if (existing) {
+      this.collaborators.communicationResults.recordExisting(
+        intent.intentId,
+        existing,
+        counts,
+        diagnostics
+      );
+      return existing.status === "accepted";
+    }
+    counts.due += 1;
+    if (mode === "check") {
+      return;
+    }
+    if (!dispatchAuthorized) {
+      return;
+    }
+    const reservation = await this.#reserve(intent, timestamp, diagnostics);
+    if (reservation === "reservation-failed") {
+      return;
+    }
+    if (!reservation.reserved) {
+      this.collaborators.communicationResults.recordExisting(
+        intent.intentId,
+        reservation.entry,
+        counts,
+        diagnostics
+      );
+      return reservation.entry.status === "accepted";
+    }
+    counts.reserved += 1;
+    counts.dispatched += 1;
+    return this.#dispatcher.execute(intent, timestamp, counts, diagnostics);
+  }
+};
+
+// packages/domain/communication/src/dependency-composition.ts
+var CommunicationDomainComposition = class {
+  attentionEpisodes() {
+    return new AttentionEpisodes({ attentionPolicy: this.attentionPolicy() });
+  }
+  attentionPolicy() {
+    return new AttentionPolicy({
+      communicationCalendar: this.communicationCalendar()
+    });
+  }
+  attentionStateEquality() {
+    return new AttentionStateEquality();
+  }
+  attentionStateRules() {
+    return new AttentionStateRules();
+  }
+  attentionTaskSelection() {
+    return new AttentionTaskSelection();
+  }
+  communicationCalendar() {
+    return new CommunicationCalendar();
+  }
+  communicationDispatcher(...args) {
+    return new CommunicationDispatcher(
+      { communicationResults: this.communicationResults() },
+      ...args
+    );
+  }
+  communicationIdempotency() {
+    return new CommunicationIdempotency();
+  }
+  communicationPlanner() {
+    return new CommunicationPlanner({
+      communicationIdempotency: this.communicationIdempotency()
+    });
+  }
+  communicationResults() {
+    return new CommunicationResults();
+  }
+  evaluateAttention() {
+    return new EvaluateAttention({
+      attentionPolicy: this.attentionPolicy(),
+      postEventPolicy: this.postEventPolicy()
+    });
+  }
+  mailBatchFingerprint() {
+    return new MailBatchFingerprint();
+  }
+  planCommunications() {
+    return new PlanCommunications({
+      communicationPlanner: this.communicationPlanner(),
+      communicationCalendar: this.communicationCalendar(),
+      postEventPolicy: this.postEventPolicy()
+    });
+  }
+  postEventPolicy() {
+    return new PostEventPolicy({
+      communicationCalendar: this.communicationCalendar()
+    });
+  }
+  reconcileAttention(...args) {
+    return new ReconcileAttention(
+      {
+        attentionPolicy: this.attentionPolicy(),
+        attentionEpisodes: this.attentionEpisodes()
+      },
+      ...args
+    );
+  }
+  reconcileCommunications(...args) {
+    return new ReconcileCommunications(
+      {
+        communicationResults: this.communicationResults(),
+        communicationCalendar: this.communicationCalendar(),
+        createCommunicationDispatcher: (...args2) => this.communicationDispatcher(...args2)
+      },
+      ...args
+    );
+  }
+};
+
+// packages/domain/event/src/application/ports/event-repository.ts
+var EventRepositoryPatches = class {
+  eventRepositoryPatchIsEmpty(patch) {
+    return patch.issueTitle === void 0 && patch.labels === void 0 && patch.body === void 0;
+  }
+};
 
 // packages/domain/event/src/application/use-cases/event-concurrent-modification-error.ts
 var EventConcurrentModificationError = class extends Error {
@@ -27676,6 +28482,1060 @@ var EventConcurrentModificationError = class extends Error {
       `Meetup event ${identity.repository}#${identity.issueNumber} changed during reconciliation`
     );
     this.name = "EventConcurrentModificationError";
+  }
+};
+
+// packages/domain/event/src/application/use-cases/event-not-found-error.ts
+var EventNotFoundError = class extends Error {
+  constructor(identity) {
+    super(
+      `Meetup event ${identity.repository}#${identity.issueNumber} was not found`
+    );
+    this.name = "EventNotFoundError";
+  }
+};
+
+// packages/domain/event/src/application/use-cases/event-document-concurrency.ts
+var EventDocumentConcurrency = class {
+  async ensureEventDocumentIsCurrent(repository, identity, expected) {
+    const current = await repository.find(identity);
+    if (!current) {
+      throw new EventNotFoundError(identity);
+    }
+    if (!this.eventDocumentsEqual(current, expected)) {
+      throw new EventConcurrentModificationError(identity);
+    }
+  }
+  eventDocumentsEqual(left, right) {
+    const leftLabels = [...left.labels].sort(this.compareText.bind(this));
+    const rightLabels = [...right.labels].sort(this.compareText.bind(this));
+    return this.sameIdentity(left.identity, right.identity) && left.issueState === right.issueState && left.issueTitle === right.issueTitle && left.body === right.body && leftLabels.length === rightLabels.length && leftLabels.every((label, index) => label === rightLabels[index]);
+  }
+  compareText(left, right) {
+    return left < right ? -1 : left > right ? 1 : 0;
+  }
+  sameIdentity(left, right) {
+    return left.issueNumber === right.issueNumber && left.repository.toLowerCase() === right.repository.toLowerCase();
+  }
+};
+
+// packages/domain/event/src/application/use-cases/event-pagination-error.ts
+var EventPaginationError = class extends Error {
+  constructor(cursor) {
+    super(`Event repository repeated pagination cursor "${cursor}"`);
+    this.name = "EventPaginationError";
+  }
+};
+
+// packages/domain/event/src/application/use-cases/list-active-events.ts
+var ListActiveEvents = class {
+  constructor(collaborators, dependencies) {
+    this.collaborators = collaborators;
+    this.dependencies = dependencies;
+    this.ruleEngine = this.collaborators.createEventRuleEngine(
+      dependencies.rules ?? this.collaborators.eventRuleFactory.createDefaultEventRules()
+    );
+  }
+  collaborators;
+  dependencies;
+  ruleEngine;
+  async execute(input) {
+    const activeEvents = [];
+    const allDiagnostics = [];
+    const seenCursors = /* @__PURE__ */ new Set();
+    const seenEvents = /* @__PURE__ */ new Set();
+    const now2 = this.dependencies.clock.now();
+    let pages = 0;
+    let cursor;
+    do {
+      if (++pages > 20) throw new EventPaginationError("audit-page-limit");
+      const page = await this.dependencies.repository.listPage({
+        ...input,
+        includeClosed: false,
+        cursor
+      });
+      for (const document of page.items) {
+        const identityKey = `${document.identity.repository}#${document.identity.issueNumber}`;
+        if (document.issueState === "closed" || seenEvents.has(identityKey)) {
+          continue;
+        }
+        seenEvents.add(identityKey);
+        this.checkLimit(seenEvents.size);
+        const decoded = this.dependencies.documentCodec.decode(document);
+        const evaluated = this.ruleEngine.evaluate(decoded.event);
+        const eventDiagnostics = [
+          ...decoded.diagnostics,
+          ...evaluated.diagnostics
+        ];
+        const readiness = this.collaborators.eventReadinessPolicy.evaluateEventReadiness(
+          evaluated.event,
+          eventDiagnostics
+        );
+        const lifecycle = this.collaborators.eventLifecycle.evaluateEventLifecycle({
+          event: evaluated.event,
+          readiness,
+          now: now2
+        });
+        allDiagnostics.push(...readiness.diagnostics);
+        activeEvents.push({
+          identity: { ...document.identity },
+          event: evaluated.event,
+          readiness,
+          lifecycle
+        });
+      }
+      cursor = page.nextCursor;
+      if (cursor) {
+        if (seenCursors.has(cursor)) {
+          throw new EventPaginationError(cursor);
+        }
+        seenCursors.add(cursor);
+      }
+    } while (cursor);
+    return {
+      events: Object.freeze(activeEvents),
+      diagnostics: Object.freeze(allDiagnostics)
+    };
+  }
+  checkLimit(count) {
+    if (count > 200) throw new EventPaginationError("audit-issue-limit");
+  }
+};
+
+// packages/domain/event/src/application/use-cases/reconcile-event.ts
+var ReconcileEvent = class {
+  constructor(collaborators, dependencies) {
+    this.collaborators = collaborators;
+    this.dependencies = dependencies;
+    this.ruleEngine = this.collaborators.createEventRuleEngine(
+      dependencies.rules ?? this.collaborators.eventRuleFactory.createDefaultEventRules()
+    );
+  }
+  collaborators;
+  dependencies;
+  ruleEngine;
+  async execute(input) {
+    const document = input.sourceDocument ?? await this.dependencies.repository.find(input.identity);
+    if (!document) {
+      throw new EventNotFoundError(input.identity);
+    }
+    if (!this.collaborators.eventDocumentConcurrency.sameIdentity(
+      document.identity,
+      input.identity
+    )) {
+      throw new EventNotFoundError(input.identity);
+    }
+    const decoded = this.dependencies.documentCodec.decode(document);
+    const evaluated = this.ruleEngine.evaluate(decoded.event);
+    const diagnostics = [
+      ...decoded.diagnostics,
+      ...evaluated.diagnostics
+    ];
+    const readiness = this.collaborators.eventReadinessPolicy.evaluateEventReadiness(
+      evaluated.event,
+      diagnostics
+    );
+    const lifecycle = this.collaborators.eventLifecycle.evaluateEventLifecycle({
+      event: evaluated.event,
+      readiness,
+      now: this.dependencies.clock.now()
+    });
+    const repositoryPatch = this.dependencies.documentCodec.createPatch(
+      document,
+      evaluated.event
+    );
+    const shouldPersist = input.mode === "fix" && !this.collaborators.eventRepositoryPatches.eventRepositoryPatchIsEmpty(
+      repositoryPatch
+    );
+    if (shouldPersist) {
+      await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
+        this.dependencies.repository,
+        input.identity,
+        document
+      );
+      await this.dependencies.repository.applyPatch(
+        input.identity,
+        repositoryPatch
+      );
+    }
+    return {
+      event: evaluated.event,
+      diagnostics: readiness.diagnostics,
+      normalizationPatch: evaluated.patch,
+      repositoryPatch,
+      readiness,
+      lifecycle,
+      persisted: shouldPersist
+    };
+  }
+};
+
+// packages/domain/event/src/domain/diagnostic.ts
+var EventDiagnostics = class {
+  diagnostic(value) {
+    return Object.freeze({ ...value });
+  }
+};
+
+// packages/domain/event/src/domain/event-agenda-equality.ts
+var EventAgendaEquality = class {
+  equals(left, right) {
+    return left.length === right.length && left.every((entry, index) => this.entry(entry, right[index]));
+  }
+  entry(left, right) {
+    return left.description === right.description && left.speakers.length === right.speakers.length && left.speakers.every(
+      (speaker, index) => this.speaker(speaker, right.speakers[index])
+    ) && this.proposal(left.proposal, right.proposal);
+  }
+  speaker(left, right) {
+    return left.id === right.id && left.displayName === right.displayName && left.pictureUrl === right.pictureUrl && left.source?.path === right.source?.path && left.source?.line === right.source?.line;
+  }
+  proposal(left, right) {
+    if (!left || !right) return left === right;
+    return left.provider === right.provider && left.event === right.event && left.id === right.id && left.title === right.title && left.abstract === right.abstract && this.sequence(left.languages, right.languages) && this.sequence(left.formats, right.formats);
+  }
+  sequence(left, right) {
+    return left.length === right.length && left.every((value, index) => value === right[index]);
+  }
+};
+
+// packages/domain/event/src/domain/event-agenda-rule.ts
+var EventAgendaRule = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  id = "event-agenda";
+  dependencies = [];
+  evaluate(event) {
+    if (event.agenda.length === 0) {
+      return this.collaborators.eventRuleResults.missing(
+        "event.agenda.missing",
+        "agenda",
+        "At least one agenda entry is required"
+      );
+    }
+    const diagnostics = [];
+    const normalizedEntries = event.agenda.map((entry, entryIndex) => {
+      return this.normalizeEntry(entry, entryIndex, diagnostics);
+    });
+    const operations = [];
+    if (!this.collaborators.eventAgendaEquality.equals(
+      event.agenda,
+      normalizedEntries
+    )) {
+      operations.push(
+        this.collaborators.eventPatches.replaceEventField(
+          "agenda",
+          normalizedEntries,
+          "Normalize agenda"
+        )
+      );
+      diagnostics.push(
+        this.collaborators.eventDiagnostics.diagnostic({
+          code: "event.agenda.normalized",
+          severity: "info",
+          category: "normalization",
+          field: "agenda",
+          message: "The agenda can be normalized safely",
+          fixAvailable: true
+        })
+      );
+    }
+    return {
+      diagnostics,
+      patch: this.collaborators.eventPatches.createEventPatch(operations)
+    };
+  }
+  normalizeEntry(entry, entryIndex, diagnostics) {
+    const normalized = this.collaborators.eventParticipantNormalization.normalizeAgendaEntry(
+      entry
+    );
+    if (normalized.speakers.length === 0) {
+      diagnostics.push(
+        this.collaborators.eventDiagnostics.diagnostic({
+          code: "event.agenda.speaker.missing",
+          severity: "error",
+          category: "invalid",
+          field: `agenda.${entryIndex}.speakers`,
+          message: "Each agenda entry must have at least one speaker"
+        })
+      );
+    }
+    for (const [speakerIndex, speaker] of normalized.speakers.entries()) {
+      if (speaker.displayName === "") {
+        diagnostics.push(
+          this.collaborators.eventDiagnostics.diagnostic({
+            code: "event.agenda.speaker.invalid",
+            severity: "error",
+            category: "invalid",
+            field: `agenda.${entryIndex}.speakers.${speakerIndex}`,
+            message: "Speaker display name must not be empty"
+          })
+        );
+      }
+    }
+    if (normalized.description === "") {
+      diagnostics.push(
+        this.collaborators.eventDiagnostics.diagnostic({
+          code: "event.agenda.description.missing",
+          severity: "error",
+          category: "invalid",
+          field: `agenda.${entryIndex}.description`,
+          message: "Agenda entry description must not be empty"
+        })
+      );
+    }
+    return normalized;
+  }
+};
+
+// packages/domain/event/src/domain/event-checklists.ts
+var EventChecklists = class {
+  equal(left, right) {
+    return this.itemsEqual(left.slidesAndContent, right.slidesAndContent) && this.itemsEqual(left.communication, right.communication) && this.itemsEqual(left.postEvent, right.postEvent);
+  }
+  itemsEqual(left, right) {
+    return left.length === right.length && left.every(
+      (item, index) => item.name === right[index].name && item.completed === right[index].completed
+    );
+  }
+};
+
+// packages/domain/event/src/domain/event-date-rule.ts
+var EventDateRule = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  id = "event-date";
+  dependencies = [];
+  evaluate(event) {
+    const value = event.date.trim();
+    if (value === "") {
+      return this.collaborators.eventRuleResults.missing(
+        "event.date.missing",
+        "date",
+        "An event date is required"
+      );
+    }
+    if (!this.collaborators.eventDateValidation.isValidIsoDate(value)) {
+      return this.collaborators.eventRuleResults.invalid(
+        "event.date.invalid",
+        "date",
+        "Event date must be a real calendar date formatted as YYYY-MM-DD"
+      );
+    }
+    return this.collaborators.eventRuleResults.normalizeString(
+      event.date,
+      value,
+      "date",
+      "Normalize event date"
+    );
+  }
+};
+
+// packages/domain/event/src/domain/event-date-validation.ts
+var EventDateValidation = class {
+  isValidIsoDate(value) {
+    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) {
+      return false;
+    }
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    if (month < 1 || month > 12 || day < 1) {
+      return false;
+    }
+    const monthLengths = [
+      31,
+      this.isLeapYear(year) ? 29 : 28,
+      31,
+      30,
+      31,
+      30,
+      31,
+      31,
+      30,
+      31,
+      30,
+      31
+    ];
+    return day <= monthLengths[month - 1];
+  }
+  isLeapYear(year) {
+    return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  }
+};
+
+// packages/domain/event/src/domain/event-description-rule.ts
+var EventDescriptionRule = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  id = "event-description";
+  dependencies = [];
+  evaluate(event) {
+    const value = event.description.trim();
+    if (value === "") {
+      return this.collaborators.eventRuleResults.missing(
+        "event.description.missing",
+        "description",
+        "An event description is required"
+      );
+    }
+    return this.collaborators.eventRuleResults.normalizeString(
+      event.description,
+      value,
+      "description",
+      "Trim event description"
+    );
+  }
+};
+
+// packages/domain/event/src/domain/event-host-rule.ts
+var EventHostRule = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  id = "event-host";
+  dependencies = [];
+  evaluate(event) {
+    if (!event.host) {
+      return this.collaborators.eventRuleResults.missing(
+        "event.hoster.missing",
+        "host",
+        "A host must be selected"
+      );
+    }
+    const normalized = this.collaborators.eventParticipantNormalization.normalizeParticipant(
+      event.host
+    );
+    if (normalized.displayName === "") {
+      return this.collaborators.eventRuleResults.invalid(
+        "event.hoster.invalid",
+        "host",
+        "Host display name must not be empty"
+      );
+    }
+    if (this.collaborators.eventParticipantNormalization.participantsEqual(
+      event.host,
+      normalized
+    )) {
+      return this.collaborators.eventRuleResults.emptyResult();
+    }
+    return this.collaborators.eventRuleResults.normalizedResult(
+      this.collaborators.eventPatches.replaceEventField(
+        "host",
+        normalized,
+        "Normalize host reference"
+      ),
+      "event.hoster.normalized",
+      "host",
+      "The host reference can be normalized safely"
+    );
+  }
+};
+
+// packages/domain/event/src/domain/patch.ts
+var EMPTY_EVENT_PATCH = Object.freeze({ operations: [] });
+var EventPatches = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  replaceEventField(path, value, reason) {
+    return Object.freeze({
+      op: "replace",
+      path,
+      value,
+      reason
+    });
+  }
+  createEventPatch(operations) {
+    return Object.freeze({ operations: Object.freeze([...operations]) });
+  }
+  mergeEventPatches(...patches) {
+    return this.createEventPatch(patches.flatMap((patch) => patch.operations));
+  }
+  applyEventPatch(event, patch) {
+    return patch.operations.reduce(
+      (current, operation) => this.applyOperation(current, operation),
+      event
+    );
+  }
+  applyOperation(event, operation) {
+    switch (operation.path) {
+      case "issueTitle":
+        return { ...event, issueTitle: operation.value };
+      case "labels":
+        return { ...event, labels: [...operation.value] };
+      case "eventTitle":
+        return { ...event, eventTitle: operation.value };
+      case "date":
+        return { ...event, date: operation.value };
+      case "description":
+        return { ...event, description: operation.value };
+      case "host":
+        return {
+          ...event,
+          host: operation.value ? { ...operation.value } : void 0
+        };
+      case "agenda":
+        return {
+          ...event,
+          agenda: operation.value.map((entry) => ({
+            ...entry,
+            speakers: entry.speakers.map((speaker) => ({ ...speaker }))
+          }))
+        };
+      case "publicationLinks":
+        return { ...event, publicationLinks: { ...operation.value } };
+      case "occurrenceStatus":
+        return { ...event, occurrenceStatus: operation.value };
+      case "timeZone":
+        return { ...event, timeZone: operation.value };
+      case "confirmations":
+        return { ...event, confirmations: { ...operation.value } };
+      case "logistics":
+        return { ...event, logistics: { ...operation.value } };
+      case "operationalChecklists": {
+        const operationalChecklists = {
+          slidesAndContent: operation.value.slidesAndContent.map((item) => ({
+            ...item
+          })),
+          communication: operation.value.communication.map((item) => ({
+            ...item
+          })),
+          postEvent: operation.value.postEvent.map((item) => ({ ...item }))
+        };
+        return {
+          ...event,
+          operationalChecklists,
+          followUpComplete: event.followUpComplete && this.collaborators.meetupEventOperations.postEventChecklistIsComplete(
+            operationalChecklists.postEvent
+          )
+        };
+      }
+      case "followUpComplete":
+        return {
+          ...event,
+          followUpComplete: operation.value && this.collaborators.meetupEventOperations.postEventChecklistIsComplete(
+            event.operationalChecklists.postEvent
+          )
+        };
+    }
+  }
+};
+
+// packages/domain/event/src/domain/event-links-rule.ts
+var EventLinksRule = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  id = "event-links";
+  dependencies = [];
+  evaluate(event) {
+    const diagnostics = [];
+    const normalized = { ...event.publicationLinks };
+    let changed = false;
+    for (const key of ["meetup", "community", "assets", "feedback"]) {
+      const link = event.publicationLinks[key];
+      if (link === void 0 || link.trim() === "") {
+        continue;
+      }
+      const value = link.trim().replace(/\/$/, "");
+      if (!this.isHttpsUrl(value)) {
+        diagnostics.push(
+          this.collaborators.eventDiagnostics.diagnostic({
+            code: `event.link.${key}.invalid`,
+            severity: "error",
+            category: "invalid",
+            field: `publicationLinks.${key}`,
+            message: `${key} link must be a valid HTTPS URL`
+          })
+        );
+        continue;
+      }
+      if (value !== link) {
+        normalized[key] = value;
+        changed = true;
+      }
+    }
+    if (!changed) {
+      return { diagnostics, patch: EMPTY_EVENT_PATCH };
+    }
+    diagnostics.push(
+      this.collaborators.eventDiagnostics.diagnostic({
+        code: "event.links.normalized",
+        severity: "info",
+        category: "normalization",
+        field: "publicationLinks",
+        message: "Publication links can be normalized safely",
+        fixAvailable: true
+      })
+    );
+    return {
+      diagnostics,
+      patch: this.collaborators.eventPatches.createEventPatch([
+        this.collaborators.eventPatches.replaceEventField(
+          "publicationLinks",
+          normalized,
+          "Trim publication links and remove trailing slashes"
+        )
+      ])
+    };
+  }
+  isHttpsUrl(value) {
+    try {
+      return new URL(value).protocol === "https:";
+    } catch {
+      return false;
+    }
+  }
+};
+
+// packages/domain/event/src/domain/occurrence-status.ts
+var OCCURRENCE_STATUSES = [
+  "scheduled",
+  "postponed",
+  "held",
+  "cancelled"
+];
+var OCCURRENCE_STATUS_LABELS = Object.freeze({
+  scheduled: null,
+  postponed: "event:postponed",
+  held: "event:held",
+  cancelled: "event:cancelled"
+});
+
+// packages/domain/event/src/domain/event-occurrence-parser.ts
+var EventOccurrenceParser = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  readOccurrenceStatus(labels, issueState, fieldStatus, diagnostics) {
+    const explicitStatuses = OCCURRENCE_STATUSES.filter((status) => {
+      const label = OCCURRENCE_STATUS_LABELS[status];
+      return label !== null && labels.includes(label);
+    });
+    if (explicitStatuses.length > 1) {
+      diagnostics.push(
+        this.collaborators.eventDiagnostics.diagnostic({
+          code: "event.occurrence-status.label-conflict",
+          severity: "error",
+          category: "invalid",
+          field: "labels",
+          message: "Occurrence status labels are mutually exclusive; keep only one of event:postponed, event:held, or event:cancelled"
+        })
+      );
+      return explicitStatuses[0] ?? (issueState === "closed" ? "held" : "scheduled");
+    }
+    if (explicitStatuses.length === 1) {
+      return explicitStatuses[0];
+    }
+    return fieldStatus ?? (issueState === "closed" ? "held" : "scheduled");
+  }
+};
+
+// packages/domain/event/src/domain/event-participant-normalization.ts
+var EventParticipantNormalization = class {
+  normalizeParticipant(participant) {
+    const displayName = participant.displayName.trim();
+    const id = participant.id?.trim();
+    return id ? {
+      ...participant,
+      displayName,
+      id,
+      ...participant.source ? { source: participant.source } : {}
+    } : { displayName };
+  }
+  participantsEqual(left, right) {
+    return left.displayName === right.displayName && left.id === right.id;
+  }
+  normalizeAgendaEntry(entry) {
+    return {
+      ...entry,
+      speakers: entry.speakers.map(this.normalizeParticipant.bind(this)),
+      description: entry.description.trim()
+    };
+  }
+};
+
+// packages/domain/event/src/domain/event-rule-engine.ts
+var EventRuleEngine = class {
+  constructor(collaborators, rules) {
+    this.collaborators = collaborators;
+    this.orderedRules = this.collaborators.eventRuleOrdering.sortRules(rules);
+  }
+  collaborators;
+  orderedRules;
+  evaluate(event) {
+    let normalizedEvent = event;
+    const diagnostics = [];
+    const operations = [];
+    for (const rule of this.orderedRules) {
+      const result = rule.evaluate(normalizedEvent);
+      diagnostics.push(...result.diagnostics);
+      operations.push(...result.patch.operations);
+      normalizedEvent = this.collaborators.eventPatches.applyEventPatch(
+        normalizedEvent,
+        result.patch
+      );
+    }
+    return {
+      event: normalizedEvent,
+      diagnostics: Object.freeze(diagnostics),
+      patch: this.collaborators.eventPatches.createEventPatch(operations)
+    };
+  }
+  get ruleIds() {
+    return this.orderedRules.map((rule) => rule.id);
+  }
+};
+
+// packages/domain/event/src/domain/rule-contracts.ts
+var DEFAULT_MANAGED_LABEL_CONFIGURATION = Object.freeze({
+  meetup: "meetup",
+  hostNeeded: "hoster:needed",
+  hostConfirmed: "hoster:confirmed",
+  speakersNeeded: "speakers:needed",
+  speakersConfirmed: "speakers:confirmed",
+  occurrencePostponed: "event:postponed",
+  occurrenceHeld: "event:held",
+  occurrenceCancelled: "event:cancelled"
+});
+
+// packages/domain/event/src/domain/event-rule-factory.ts
+var EventRuleFactory = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  createDefaultEventRules(labelConfiguration = DEFAULT_MANAGED_LABEL_CONFIGURATION) {
+    return [
+      this.collaborators.createEventDateRule(),
+      this.collaborators.createEventTitleRule(),
+      this.collaborators.createEventDescriptionRule(),
+      this.collaborators.createEventHostRule(),
+      this.collaborators.createEventAgendaRule(),
+      this.collaborators.createEventLinksRule(),
+      this.collaborators.createIssueTitleRule(),
+      this.collaborators.createManagedLabelsRule(labelConfiguration)
+    ];
+  }
+};
+
+// packages/domain/event/src/domain/event-rule-configuration-error.ts
+var EventRuleConfigurationError = class extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "EventRuleConfigurationError";
+  }
+};
+
+// packages/domain/event/src/domain/event-rule-ordering.ts
+var EventRuleOrdering = class {
+  sortRules(rules) {
+    const byId = /* @__PURE__ */ new Map();
+    for (const rule of rules) {
+      if (byId.has(rule.id)) {
+        throw new EventRuleConfigurationError(
+          `Duplicate event rule "${rule.id}"`
+        );
+      }
+      byId.set(rule.id, rule);
+    }
+    for (const rule of rules) {
+      for (const dependency of rule.dependencies) {
+        if (!byId.has(dependency)) {
+          throw new EventRuleConfigurationError(
+            `Event rule "${rule.id}" has missing dependency "${dependency}"`
+          );
+        }
+      }
+    }
+    const permanent = /* @__PURE__ */ new Set();
+    const temporary = /* @__PURE__ */ new Set();
+    const ordered = [];
+    const visit = (rule, path) => {
+      if (temporary.has(rule.id)) {
+        throw new EventRuleConfigurationError(
+          `Cyclic event rule dependency: ${[...path, rule.id].join(" -> ")}`
+        );
+      }
+      if (permanent.has(rule.id)) {
+        return;
+      }
+      temporary.add(rule.id);
+      for (const dependencyId of rule.dependencies) {
+        const dependency = byId.get(dependencyId);
+        if (!dependency) {
+          throw new EventRuleConfigurationError(
+            `Event rule "${rule.id}" has missing dependency "${dependencyId}"`
+          );
+        }
+        visit(dependency, [...path, rule.id]);
+      }
+      temporary.delete(rule.id);
+      permanent.add(rule.id);
+      ordered.push(rule);
+    };
+    for (const rule of rules) {
+      visit(rule, []);
+    }
+    return Object.freeze(ordered);
+  }
+};
+
+// packages/domain/event/src/domain/event-rule-results.ts
+var EventRuleResults = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  emptyResult() {
+    return { diagnostics: [], patch: EMPTY_EVENT_PATCH };
+  }
+  normalizedResult(operation, code, field, message) {
+    return {
+      diagnostics: [
+        this.collaborators.eventDiagnostics.diagnostic({
+          code,
+          severity: "info",
+          category: "normalization",
+          field,
+          message,
+          fixAvailable: true
+        })
+      ],
+      patch: this.collaborators.eventPatches.createEventPatch([operation])
+    };
+  }
+  missing(code, field, message) {
+    return {
+      diagnostics: [
+        this.collaborators.eventDiagnostics.diagnostic({
+          code,
+          severity: "warning",
+          category: "incomplete",
+          field,
+          message
+        })
+      ],
+      patch: EMPTY_EVENT_PATCH
+    };
+  }
+  invalid(code, field, message) {
+    return {
+      diagnostics: [
+        this.collaborators.eventDiagnostics.diagnostic({
+          code,
+          severity: "error",
+          category: "invalid",
+          field,
+          message
+        })
+      ],
+      patch: EMPTY_EVENT_PATCH
+    };
+  }
+  normalizeString(current, normalized, path, reason) {
+    if (current === normalized) {
+      return this.emptyResult();
+    }
+    return this.normalizedResult(
+      this.collaborators.eventPatches.replaceEventField(
+        path,
+        normalized,
+        reason
+      ),
+      `event.${path}.normalized`,
+      path,
+      `${path} can be normalized safely`
+    );
+  }
+};
+
+// packages/domain/event/src/domain/event-title-rule.ts
+var EventTitleRule = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  id = "event-title";
+  dependencies = [];
+  evaluate(event) {
+    const value = event.eventTitle.trim();
+    if (value === "") {
+      return this.collaborators.eventRuleResults.missing(
+        "event.title.missing",
+        "eventTitle",
+        "An event title is required"
+      );
+    }
+    return this.collaborators.eventRuleResults.normalizeString(
+      event.eventTitle,
+      value,
+      "eventTitle",
+      "Trim event title"
+    );
+  }
+};
+
+// packages/domain/event/src/domain/issue-title-rule.ts
+var IssueTitleRule = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  id = "issue-title";
+  dependencies = ["event-date", "event-title"];
+  evaluate(event) {
+    if (!this.collaborators.eventDateValidation.isValidIsoDate(event.date) || event.eventTitle === "") {
+      return this.collaborators.eventRuleResults.emptyResult();
+    }
+    const expected = `[Meetup] - ${event.date} - ${event.eventTitle}`;
+    if (event.issueTitle === expected) {
+      return this.collaborators.eventRuleResults.emptyResult();
+    }
+    return this.collaborators.eventRuleResults.normalizedResult(
+      this.collaborators.eventPatches.replaceEventField(
+        "issueTitle",
+        expected,
+        "Project canonical issue title"
+      ),
+      "event.issue-title.normalized",
+      "issueTitle",
+      `Issue title should be "${expected}"`
+    );
+  }
+};
+
+// packages/domain/event/src/domain/lifecycle.ts
+var EventLifecycle = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  /**
+   * Derives lifecycle exclusively from event facts and an explicitly supplied
+   * instant. In particular, a past date never implies that an event was held.
+   */
+  evaluateEventLifecycle({
+    event,
+    readiness,
+    now: now2
+  }) {
+    let state;
+    switch (event.occurrenceStatus) {
+      case "cancelled":
+        state = "cancelled";
+        break;
+      case "postponed":
+        state = "postponed";
+        break;
+      case "held":
+        state = event.followUpComplete && this.collaborators.meetupEventOperations.postEventChecklistIsComplete(
+          event.operationalChecklists.postEvent
+        ) ? "follow-up-complete" : "held";
+        break;
+      case "scheduled":
+      case void 0:
+        if (!this.hasMinimumPlanningFacts(event)) {
+          state = "draft";
+        } else {
+          state = readiness.isReady ? "ready" : "planned";
+        }
+        break;
+    }
+    return {
+      state,
+      evaluatedAt: now2,
+      timeZone: event.timeZone,
+      diagnostics: readiness.diagnostics
+    };
+  }
+  hasMinimumPlanningFacts(event) {
+    return event.date.trim() !== "" && event.eventTitle.trim() !== "";
+  }
+};
+
+// packages/domain/event/src/domain/managed-labels-rule.ts
+var ManagedLabelsRule = class {
+  constructor(collaborators, configuration) {
+    this.collaborators = collaborators;
+    this.configuration = configuration;
+  }
+  collaborators;
+  configuration;
+  id = "managed-labels";
+  dependencies = ["event-host", "event-agenda"];
+  evaluate(event) {
+    const managed = Object.values(this.configuration);
+    const unmanaged = event.labels.filter((label) => !managed.includes(label));
+    const occurrenceLabels = event.occurrenceStatus === "postponed" ? [this.configuration.occurrencePostponed] : event.occurrenceStatus === "held" ? [this.configuration.occurrenceHeld] : event.occurrenceStatus === "cancelled" ? [this.configuration.occurrenceCancelled] : [];
+    const expected = [
+      ...unmanaged,
+      this.configuration.meetup,
+      ...event.confirmations.host ? [this.configuration.hostConfirmed] : event.host?.displayName.trim() ? [] : [this.configuration.hostNeeded],
+      event.confirmations.speakers ? this.configuration.speakersConfirmed : this.configuration.speakersNeeded,
+      ...occurrenceLabels
+    ];
+    if (this.labelsMatch(event.labels, expected)) {
+      return this.collaborators.eventRuleResults.emptyResult();
+    }
+    return this.collaborators.eventRuleResults.normalizedResult(
+      this.collaborators.eventPatches.replaceEventField(
+        "labels",
+        expected,
+        "Project managed lifecycle labels"
+      ),
+      "event.labels.normalized",
+      "labels",
+      "Managed meetup labels can be reconciled safely"
+    );
+  }
+  labelsMatch(actual, expected) {
+    const sorted = [...expected].sort();
+    return actual.length === expected.length && [...actual].sort().every((label, index) => label === sorted[index]);
+  }
+};
+
+// packages/domain/event/src/domain/meetup-publication-checklist.ts
+var MeetupPublicationChecklist = class _MeetupPublicationChecklist {
+  static taskName = "Meetup event published";
+  isPublished(event) {
+    const matches = event.operationalChecklists.communication.filter(
+      (item) => item.name === _MeetupPublicationChecklist.taskName
+    );
+    return Boolean(event.publicationLinks.meetup) && matches.length === 1 && matches[0]?.completed === true;
+  }
+  withStatus(event, published) {
+    const communication = [];
+    let found = false;
+    for (const item of event.operationalChecklists.communication) {
+      if (item.name !== _MeetupPublicationChecklist.taskName) {
+        communication.push(item);
+        continue;
+      }
+      if (!found) communication.push({ name: item.name, completed: published });
+      found = true;
+    }
+    if (!found)
+      communication.push({
+        name: _MeetupPublicationChecklist.taskName,
+        completed: published
+      });
+    return {
+      ...event,
+      operationalChecklists: { ...event.operationalChecklists, communication }
+    };
   }
 };
 
@@ -27694,32 +29554,2694 @@ var EXPECTED_POST_EVENT_TASK_NAMES = Object.freeze([
   POST_EVENT_TASK_NAMES.importAttendance,
   POST_EVENT_TASK_NAMES.shareOnSocialNetworks
 ]);
+var MeetupEventOperations = class {
+  /**
+   * A post-event checklist is complete only when it contains each expected task
+   * exactly once, contains no additional task, and every task is completed.
+   */
+  postEventChecklistIsComplete(items) {
+    if (items.length !== EXPECTED_POST_EVENT_TASK_NAMES.length) {
+      return false;
+    }
+    const itemByName = /* @__PURE__ */ new Map();
+    for (const item of items) {
+      if (itemByName.has(item.name)) {
+        return false;
+      }
+      itemByName.set(item.name, item);
+    }
+    return EXPECTED_POST_EVENT_TASK_NAMES.every(
+      (name) => itemByName.get(name)?.completed === true
+    );
+  }
+  cloneMeetupEvent(event) {
+    const operationalChecklists = {
+      slidesAndContent: event.operationalChecklists.slidesAndContent.map(
+        (item) => ({ ...item })
+      ),
+      communication: event.operationalChecklists.communication.map((item) => ({
+        ...item
+      })),
+      postEvent: event.operationalChecklists.postEvent.map((item) => ({
+        ...item
+      }))
+    };
+    return {
+      ...event,
+      identity: { ...event.identity },
+      labels: [...event.labels],
+      host: event.host ? { ...event.host } : void 0,
+      agenda: event.agenda.map((entry) => ({
+        ...entry,
+        speakers: entry.speakers.map((speaker) => ({ ...speaker }))
+      })),
+      publicationLinks: { ...event.publicationLinks },
+      confirmations: { ...event.confirmations },
+      logistics: { ...event.logistics },
+      operationalChecklists,
+      followUpComplete: event.followUpComplete && this.postEventChecklistIsComplete(operationalChecklists.postEvent)
+    };
+  }
+};
 
-// packages/domain/event/src/domain/patch.ts
-var EMPTY_EVENT_PATCH = Object.freeze({ operations: [] });
+// packages/domain/event/src/domain/readiness.ts
+var EventReadinessPolicy = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  evaluateEventReadiness(event, diagnostics) {
+    const readinessDiagnostics = [...diagnostics];
+    if (event.occurrenceStatus === "cancelled") {
+      return {
+        status: "incomplete",
+        isReady: false,
+        diagnostics: readinessDiagnostics
+      };
+    }
+    if (event.occurrenceStatus === "postponed") {
+      return {
+        status: "incomplete",
+        isReady: false,
+        diagnostics: readinessDiagnostics
+      };
+    }
+    if (readinessDiagnostics.some((item) => item.severity === "error")) {
+      return {
+        status: "invalid",
+        isReady: false,
+        diagnostics: readinessDiagnostics
+      };
+    }
+    if (!event.confirmations.host) {
+      readinessDiagnostics.push(
+        this.collaborators.eventDiagnostics.diagnostic({
+          code: "event.confirmation.host.missing",
+          severity: "warning",
+          category: "incomplete",
+          field: "confirmations.host",
+          message: "Host confirmation is required before the event is ready"
+        })
+      );
+    }
+    if (!event.confirmations.speakers) {
+      readinessDiagnostics.push(
+        this.collaborators.eventDiagnostics.diagnostic({
+          code: "event.confirmation.speakers.missing",
+          severity: "warning",
+          category: "incomplete",
+          field: "confirmations.speakers",
+          message: "Speaker confirmation is required before the event is ready"
+        })
+      );
+    }
+    const incomplete = readinessDiagnostics.some(
+      (item) => item.category === "incomplete"
+    );
+    return {
+      status: incomplete ? "incomplete" : "ready",
+      isReady: !incomplete,
+      diagnostics: Object.freeze(readinessDiagnostics)
+    };
+  }
+};
 
-// packages/domain/event/src/domain/rule-contracts.ts
-var DEFAULT_MANAGED_LABEL_CONFIGURATION = Object.freeze({
-  meetup: "meetup",
-  hostNeeded: "hoster:needed",
-  hostConfirmed: "hoster:confirmed",
-  speakersNeeded: "speakers:needed",
-  speakersConfirmed: "speakers:confirmed",
-  occurrencePostponed: "event:postponed",
-  occurrenceHeld: "event:held",
-  occurrenceCancelled: "event:cancelled"
-});
+// packages/domain/event/src/dependency-composition.ts
+var EventDomainComposition = class {
+  eventAgendaEquality() {
+    return new EventAgendaEquality();
+  }
+  eventAgendaRule() {
+    return new EventAgendaRule({
+      eventRuleResults: this.eventRuleResults(),
+      eventAgendaEquality: this.eventAgendaEquality(),
+      eventPatches: this.eventPatches(),
+      eventDiagnostics: this.eventDiagnostics(),
+      eventParticipantNormalization: this.eventParticipantNormalization()
+    });
+  }
+  eventChecklists() {
+    return new EventChecklists();
+  }
+  eventDateRule() {
+    return new EventDateRule({
+      eventRuleResults: this.eventRuleResults(),
+      eventDateValidation: this.eventDateValidation()
+    });
+  }
+  eventDateValidation() {
+    return new EventDateValidation();
+  }
+  eventDescriptionRule() {
+    return new EventDescriptionRule({
+      eventRuleResults: this.eventRuleResults()
+    });
+  }
+  eventDiagnostics() {
+    return new EventDiagnostics();
+  }
+  eventDocumentConcurrency() {
+    return new EventDocumentConcurrency();
+  }
+  eventHostRule() {
+    return new EventHostRule({
+      eventRuleResults: this.eventRuleResults(),
+      eventParticipantNormalization: this.eventParticipantNormalization(),
+      eventPatches: this.eventPatches()
+    });
+  }
+  eventLifecycle() {
+    return new EventLifecycle({
+      meetupEventOperations: this.meetupEventOperations()
+    });
+  }
+  eventLinksRule() {
+    return new EventLinksRule({
+      eventDiagnostics: this.eventDiagnostics(),
+      eventPatches: this.eventPatches()
+    });
+  }
+  eventOccurrenceParser() {
+    return new EventOccurrenceParser({
+      eventDiagnostics: this.eventDiagnostics()
+    });
+  }
+  eventParticipantNormalization() {
+    return new EventParticipantNormalization();
+  }
+  eventPatches() {
+    return new EventPatches({
+      meetupEventOperations: this.meetupEventOperations()
+    });
+  }
+  eventReadinessPolicy() {
+    return new EventReadinessPolicy({
+      eventDiagnostics: this.eventDiagnostics()
+    });
+  }
+  eventRepositoryPatches() {
+    return new EventRepositoryPatches();
+  }
+  eventRuleEngine(...args) {
+    return new EventRuleEngine(
+      {
+        eventRuleOrdering: this.eventRuleOrdering(),
+        eventPatches: this.eventPatches()
+      },
+      ...args
+    );
+  }
+  eventRuleFactory() {
+    return new EventRuleFactory({
+      createEventDateRule: () => this.eventDateRule(),
+      createEventTitleRule: () => this.eventTitleRule(),
+      createEventDescriptionRule: () => this.eventDescriptionRule(),
+      createEventHostRule: () => this.eventHostRule(),
+      createEventAgendaRule: () => this.eventAgendaRule(),
+      createEventLinksRule: () => this.eventLinksRule(),
+      createIssueTitleRule: () => this.issueTitleRule(),
+      createManagedLabelsRule: (...args) => this.managedLabelsRule(...args)
+    });
+  }
+  eventRuleOrdering() {
+    return new EventRuleOrdering();
+  }
+  eventRuleResults() {
+    return new EventRuleResults({
+      eventDiagnostics: this.eventDiagnostics(),
+      eventPatches: this.eventPatches()
+    });
+  }
+  eventTitleRule() {
+    return new EventTitleRule({ eventRuleResults: this.eventRuleResults() });
+  }
+  issueTitleRule() {
+    return new IssueTitleRule({
+      eventDateValidation: this.eventDateValidation(),
+      eventRuleResults: this.eventRuleResults(),
+      eventPatches: this.eventPatches()
+    });
+  }
+  listActiveEvents(...args) {
+    return new ListActiveEvents(
+      {
+        eventRuleFactory: this.eventRuleFactory(),
+        eventReadinessPolicy: this.eventReadinessPolicy(),
+        eventLifecycle: this.eventLifecycle(),
+        createEventRuleEngine: (...args2) => this.eventRuleEngine(...args2)
+      },
+      ...args
+    );
+  }
+  managedLabelsRule(...args) {
+    return new ManagedLabelsRule(
+      {
+        eventRuleResults: this.eventRuleResults(),
+        eventPatches: this.eventPatches()
+      },
+      ...args
+    );
+  }
+  meetupEventOperations() {
+    return new MeetupEventOperations();
+  }
+  meetupPublicationChecklist() {
+    return new MeetupPublicationChecklist();
+  }
+  reconcileEvent(...args) {
+    return new ReconcileEvent(
+      {
+        eventRuleFactory: this.eventRuleFactory(),
+        eventDocumentConcurrency: this.eventDocumentConcurrency(),
+        eventReadinessPolicy: this.eventReadinessPolicy(),
+        eventLifecycle: this.eventLifecycle(),
+        eventRepositoryPatches: this.eventRepositoryPatches(),
+        createEventRuleEngine: (...args2) => this.eventRuleEngine(...args2)
+      },
+      ...args
+    );
+  }
+};
 
-// packages/domain/event/src/domain/occurrence-status.ts
-var OCCURRENCE_STATUS_LABELS = Object.freeze({
-  scheduled: null,
-  postponed: "event:postponed",
-  held: "event:held",
-  cancelled: "event:cancelled"
-});
+// packages/domain/referential/src/domain/proposal-source-error.ts
+var ProposalSourceError = class extends Error {
+  constructor(code, retryAfterSeconds, context3) {
+    super(`Proposal source ${code}.`);
+    this.code = code;
+    this.retryAfterSeconds = retryAfterSeconds;
+    this.context = context3;
+    this.name = "ProposalSourceError";
+  }
+  code;
+  retryAfterSeconds;
+  context;
+};
+
+// packages/domain/referential/src/application/use-cases/merge-source-speakers.ts
+var MergeSourceSpeakers = class {
+  execute(entries, snapshot, reservedIds) {
+    const reserved = /* @__PURE__ */ new Set([...reservedIds, ...entries.map((row) => row.id)]);
+    const mappings = this.mappings(entries, snapshot);
+    const merged = entries.map((row) => ({ ...row }));
+    for (const speaker of [...snapshot.speakers].sort(
+      (a, b2) => a.id.localeCompare(b2.id, "en")
+    )) {
+      let index = mappings.get(speaker.id);
+      if (index === void 0) {
+        const possibleMatch = entries.findIndex(
+          (row2) => !row2.sourceIdentity?.speakerId && (row2.email?.trim().toLowerCase() === speaker.email.toLowerCase() || (row2.displayName || `${row2.firstName} ${row2.lastName}`).trim().toLowerCase() === speaker.displayName.toLowerCase())
+        );
+        if (possibleMatch !== -1)
+          throw new ProposalSourceError("mapping-required", void 0, {
+            field: `speakers[${possibleMatch}]`
+          });
+        const id = this.allocate(reserved);
+        index = merged.length;
+        merged.push({
+          id,
+          firstName: "",
+          lastName: "",
+          phone: "",
+          displayName: "",
+          email: "",
+          company: "",
+          pictureUrl: "",
+          sourceIdentity: {
+            provider: snapshot.provider,
+            event: snapshot.event,
+            speakerId: speaker.id
+          }
+        });
+        mappings.set(speaker.id, index);
+      }
+      const row = merged[index];
+      row.displayName = speaker.displayName;
+      row.email = speaker.email;
+      row.company = speaker.company ?? "";
+      row.pictureUrl = speaker.pictureUrl ?? "";
+    }
+    return {
+      entries: merged,
+      reservedIds: [...reserved].sort()
+    };
+  }
+  mappings(entries, snapshot) {
+    const mappings = /* @__PURE__ */ new Map();
+    for (const [index, row] of entries.entries()) {
+      if (row.sourceIdentity?.provider !== snapshot.provider || row.sourceIdentity?.event !== snapshot.event)
+        continue;
+      if (!row.sourceIdentity?.speakerId || mappings.has(row.sourceIdentity?.speakerId))
+        throw new ProposalSourceError("conflict");
+      mappings.set(row.sourceIdentity?.speakerId, index);
+    }
+    return mappings;
+  }
+  allocate(reserved) {
+    const maximum = Math.max(
+      0,
+      ...[...reserved].map((id2) => Number(id2.replace(/^speaker-/, "")))
+    );
+    if (!Number.isInteger(maximum) || maximum >= 9999)
+      throw new ProposalSourceError("conflict");
+    const id = `speaker-${String(maximum + 1).padStart(4, "0")}`;
+    reserved.add(id);
+    return id;
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/project-referential-choices.ts
+var ProjectReferentialChoices = class {
+  execute(catalog) {
+    return Object.freeze({
+      hostOptions: Object.freeze(catalog.hosts.map((host) => host.displayName)),
+      speakerReferences: Object.freeze(
+        catalog.speakers.map(
+          (speaker) => catalog.speakers.filter(
+            (other) => other.displayName.toLowerCase() === speaker.displayName.toLowerCase()
+          ).length > 1 ? `${speaker.displayName} [${speaker.id}]` : speaker.displayName
+        )
+      )
+    });
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/resolve-event-references.ts
+var EXPLICIT_REFERENCE_PATTERN = /^(.*?)\s+\[([^\]]+)]\s*$/;
+var ResolveEventReferences = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  execute(catalog, command) {
+    const diagnostics = [];
+    const host = this.resolveHost(
+      catalog.hosts,
+      command.hostReference,
+      diagnostics
+    );
+    const speakers = command.speakerReferences.map(
+      (reference, index) => this.resolveSpeaker(catalog.speakers, reference, index, diagnostics)
+    ).filter((speaker) => speaker !== void 0);
+    const frozenDiagnostics = this.collaborators.referentialDiagnostics.freezeDiagnostics(diagnostics);
+    if (!host || diagnostics.some(({ severity }) => severity === "error")) {
+      return Object.freeze({
+        resolved: false,
+        diagnostics: frozenDiagnostics
+      });
+    }
+    const uniqueSpeakers = [
+      ...new Map(speakers.map((speaker) => [speaker.id, speaker])).values()
+    ];
+    return Object.freeze({
+      resolved: true,
+      host,
+      speakers: Object.freeze(uniqueSpeakers),
+      diagnostics: frozenDiagnostics
+    });
+  }
+  resolveHost(hosts, reference, diagnostics) {
+    const parsed = this.parseReference(reference);
+    if (!parsed) {
+      diagnostics.push(
+        this.collaborators.referentialDiagnostics.diagnostic(
+          "referential.reference.host.invalid",
+          "error",
+          "hostReference",
+          "Host reference must be a display name or use Display name [host-0001] syntax."
+        )
+      );
+      return void 0;
+    }
+    if (parsed.stableId !== void 0) {
+      const id = this.collaborators.referentialIdentifiers.asHostId(
+        parsed.stableId
+      );
+      if (!id) {
+        diagnostics.push(
+          this.collaborators.referentialDiagnostics.diagnostic(
+            "referential.reference.host.invalid",
+            "error",
+            "hostReference",
+            "Explicit host reference contains an invalid stable identifier."
+          )
+        );
+        return void 0;
+      }
+      const host = hosts.find((candidate) => candidate.id === id);
+      if (!host) {
+        diagnostics.push(
+          this.collaborators.referentialDiagnostics.diagnostic(
+            "referential.reference.host.unknown",
+            "error",
+            "hostReference",
+            "Explicit host stable identifier is not present in the catalog."
+          )
+        );
+        return void 0;
+      }
+      if (this.collaborators.referentialCatalogOperations.displayNameKey(
+        host.displayName
+      ) !== this.collaborators.referentialCatalogOperations.displayNameKey(
+        parsed.displayName
+      )) {
+        diagnostics.push(
+          this.collaborators.referentialDiagnostics.diagnostic(
+            "referential.reference.host.display-name-mismatch",
+            "warning",
+            "hostReference",
+            "Host display name is stale; the stable identifier remains authoritative."
+          )
+        );
+      }
+      return host;
+    }
+    return this.hostByName(hosts, parsed, diagnostics);
+  }
+  resolveSpeaker(speakers, reference, index, diagnostics) {
+    const path = `speakerReferences[${index}]`;
+    const parsed = this.parseReference(reference);
+    if (!parsed) {
+      diagnostics.push(
+        this.collaborators.referentialDiagnostics.diagnostic(
+          "referential.reference.speaker.invalid",
+          "error",
+          path,
+          "Speaker reference must be a display name or use Display name [speaker-0001] syntax."
+        )
+      );
+      return void 0;
+    }
+    if (parsed.stableId !== void 0) {
+      const id = this.collaborators.referentialIdentifiers.asSpeakerId(
+        parsed.stableId
+      );
+      if (!id) {
+        diagnostics.push(
+          this.collaborators.referentialDiagnostics.diagnostic(
+            "referential.reference.speaker.invalid",
+            "error",
+            path,
+            "Explicit speaker reference contains an invalid stable identifier."
+          )
+        );
+        return void 0;
+      }
+      const speaker = speakers.find((candidate) => candidate.id === id);
+      if (!speaker) {
+        diagnostics.push(
+          this.collaborators.referentialDiagnostics.diagnostic(
+            "referential.reference.speaker.unknown",
+            "error",
+            path,
+            "Explicit speaker stable identifier is not present in the catalog."
+          )
+        );
+        return void 0;
+      }
+      if (this.collaborators.referentialCatalogOperations.displayNameKey(
+        speaker.displayName
+      ) !== this.collaborators.referentialCatalogOperations.displayNameKey(
+        parsed.displayName
+      )) {
+        diagnostics.push(
+          this.collaborators.referentialDiagnostics.diagnostic(
+            "referential.reference.speaker.display-name-mismatch",
+            "warning",
+            path,
+            "Speaker display name is stale; the stable identifier remains authoritative."
+          )
+        );
+      }
+      return speaker;
+    }
+    return this.speakerByName(speakers, parsed, path, diagnostics);
+  }
+  parseReference(reference) {
+    if (typeof reference !== "string") {
+      return void 0;
+    }
+    const normalized = this.collaborators.referentialCatalogOperations.normalizeDisplayName(
+      reference
+    );
+    if (!normalized) {
+      return void 0;
+    }
+    const explicit = normalized.match(EXPLICIT_REFERENCE_PATTERN);
+    if (!explicit) {
+      return { displayName: normalized };
+    }
+    const displayName = this.collaborators.referentialCatalogOperations.normalizeDisplayName(
+      explicit[1]
+    );
+    const stableId = explicit[2].trim();
+    if (!displayName || !stableId) {
+      return void 0;
+    }
+    return { displayName, stableId };
+  }
+  hostByName(hosts, parsed, diagnostics) {
+    const matches = hosts.filter(
+      (host) => this.collaborators.referentialCatalogOperations.displayNameKey(
+        host.displayName
+      ) === this.collaborators.referentialCatalogOperations.displayNameKey(
+        parsed.displayName
+      )
+    );
+    if (matches.length === 1) {
+      return matches[0];
+    }
+    diagnostics.push(
+      this.collaborators.referentialDiagnostics.diagnostic(
+        matches.length === 0 ? "referential.reference.host.unknown" : "referential.reference.host.ambiguous",
+        "error",
+        "hostReference",
+        matches.length === 0 ? "Legacy host display name is not present in the catalog." : "Legacy host display name is ambiguous; include the stable identifier."
+      )
+    );
+    return void 0;
+  }
+  speakerByName(speakers, parsed, path, diagnostics) {
+    const matches = speakers.filter(
+      (speaker) => this.collaborators.referentialCatalogOperations.displayNameKey(
+        speaker.displayName
+      ) === this.collaborators.referentialCatalogOperations.displayNameKey(
+        parsed.displayName
+      )
+    );
+    if (matches.length === 1) {
+      return matches[0];
+    }
+    diagnostics.push(
+      this.collaborators.referentialDiagnostics.diagnostic(
+        matches.length === 0 ? "referential.reference.speaker.unknown" : "referential.reference.speaker.ambiguous",
+        "error",
+        path,
+        matches.length === 0 ? "Legacy speaker display name is not present in the catalog." : "Legacy speaker display name is ambiguous; include the stable identifier."
+      )
+    );
+    return void 0;
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/source-speaker-referential-repository.ts
+var SourceSpeakerReferentialRepository = class {
+  constructor(local, source, scope) {
+    this.local = local;
+    this.source = source;
+    this.scope = scope;
+  }
+  local;
+  source;
+  scope;
+  snapshot;
+  load() {
+    this.snapshot ??= this.refresh();
+    return this.snapshot;
+  }
+  async refresh() {
+    const catalog = await this.local.load();
+    if (!catalog.speakers.some((row) => this.isLinked(row))) return catalog;
+    const snapshot = await this.loadSource();
+    const profiles = new Map(
+      snapshot.speakers.map((speaker) => [speaker.id, speaker])
+    );
+    if (profiles.size !== snapshot.speakers.length)
+      throw new ProposalSourceError("conflict");
+    const speakers = catalog.speakers.map((row) => {
+      if (!this.isLinked(row)) return row;
+      const speaker = typeof row.sourceSpeakerId === "string" ? profiles.get(row.sourceSpeakerId.trim()) : void 0;
+      if (!speaker) throw new ProposalSourceError("mapping-required");
+      return {
+        ...row,
+        displayName: speaker.displayName,
+        email: speaker.email,
+        company: speaker.company ?? "",
+        pictureUrl: speaker.pictureUrl ?? ""
+      };
+    });
+    return { ...catalog, speakers };
+  }
+  isLinked(row) {
+    return typeof row.sourceProvider === "string" && row.sourceProvider.trim() === this.scope.provider && typeof row.sourceEvent === "string" && row.sourceEvent.trim() === this.scope.event;
+  }
+  async loadSource() {
+    try {
+      const snapshot = await this.source.load();
+      if (snapshot.provider !== this.scope.provider || snapshot.event !== this.scope.event)
+        throw new ProposalSourceError("invalid");
+      return snapshot;
+    } catch (error2) {
+      throw error2 instanceof ProposalSourceError ? error2 : new ProposalSourceError("unavailable");
+    }
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/validate-referential-catalog.ts
+var ValidateReferentialCatalog = class {
+  constructor(collaborators, repository) {
+    this.collaborators = collaborators;
+    this.repository = repository;
+  }
+  collaborators;
+  repository;
+  async execute(rawCatalog) {
+    try {
+      return this.validate(rawCatalog ?? await this.loadCatalog());
+    } catch (error2) {
+      if (!(error2 instanceof ProposalSourceError)) throw error2;
+      return Object.freeze({
+        isValid: false,
+        diagnostics: this.collaborators.referentialDiagnostics.freezeDiagnostics([
+          this.collaborators.referentialDiagnostics.diagnostic(
+            `referential.source.${error2.code}`,
+            "error",
+            "speakers",
+            "Source-owned speaker profiles could not be refreshed. Check source access and identity mappings before retrying."
+          )
+        ])
+      });
+    }
+  }
+  validate(input) {
+    const diagnostics = [];
+    const hosts = this.collaborators.hostCatalogValidator.validateHosts(
+      input.hosts,
+      diagnostics
+    );
+    const speakers = this.collaborators.speakerCatalogValidator.validateSpeakers(
+      input.speakers,
+      diagnostics
+    );
+    this.reportDuplicateDisplayNames(
+      hosts,
+      "referential.host.display-name.duplicate",
+      "hosts",
+      "Duplicate normalized host display names are not allowed; keep one stable host per public name.",
+      diagnostics
+    );
+    this.collaborators.speakerSourceFields.validateMappings(
+      speakers,
+      diagnostics
+    );
+    const frozenDiagnostics = this.collaborators.referentialDiagnostics.freezeDiagnostics(diagnostics);
+    if (diagnostics.some(({ severity }) => severity === "error")) {
+      return Object.freeze({
+        isValid: false,
+        diagnostics: frozenDiagnostics
+      });
+    }
+    return Object.freeze({
+      isValid: true,
+      catalog: this.collaborators.referentialCatalogOperations.freezeCatalog(
+        hosts,
+        speakers
+      ),
+      diagnostics: frozenDiagnostics
+    });
+  }
+  async loadCatalog() {
+    if (!this.repository) {
+      throw new Error(
+        "A referential repository or an explicit raw catalog is required."
+      );
+    }
+    return this.repository.load();
+  }
+  reportDuplicateDisplayNames(entities, code, path, message, diagnostics) {
+    const counts = /* @__PURE__ */ new Map();
+    for (const entity of entities) {
+      const key = this.collaborators.referentialCatalogOperations.displayNameKey(
+        entity.displayName
+      );
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    let ambiguityIndex = 0;
+    for (const count of counts.values()) {
+      if (count < 2) {
+        continue;
+      }
+      diagnostics.push(
+        this.collaborators.referentialDiagnostics.diagnostic(
+          code,
+          "error",
+          `${path}.ambiguities[${ambiguityIndex}]`,
+          message
+        )
+      );
+      ambiguityIndex += 1;
+    }
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/host-catalog-validator.ts
+var HostCatalogValidator = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  validateHosts(records, diagnostics) {
+    const hostsById = /* @__PURE__ */ new Map();
+    const contactIds = /* @__PURE__ */ new Set();
+    for (const [index, record] of records.entries()) {
+      const parsed = this.parseHostRecord(record, index, diagnostics);
+      if (!parsed) {
+        continue;
+      }
+      if (contactIds.has(parsed.contact.id)) {
+        diagnostics.push(
+          this.collaborators.referentialDiagnostics.diagnostic(
+            "referential.contact.id.duplicate",
+            "error",
+            `hosts[${index}].contactId`,
+            "Contact stable identifiers must be unique."
+          )
+        );
+        continue;
+      }
+      contactIds.add(parsed.contact.id);
+      const host = hostsById.get(parsed.hostId);
+      if (!host) {
+        hostsById.set(parsed.hostId, {
+          ...record.source ? { source: Object.freeze({ ...record.source }) } : {},
+          id: parsed.hostId,
+          displayName: parsed.displayName,
+          contacts: [parsed.contact]
+        });
+        continue;
+      }
+      if (host.displayName !== parsed.displayName) {
+        diagnostics.push(
+          this.collaborators.referentialDiagnostics.diagnostic(
+            "referential.host.id.conflict",
+            "error",
+            `hosts[${index}].hostId`,
+            "A host stable identifier cannot describe different host names."
+          )
+        );
+        continue;
+      }
+      host.contacts.push(parsed.contact);
+    }
+    return [...hostsById.values()].map((host) => ({
+      ...host.source ? { source: host.source } : {},
+      id: host.id,
+      displayName: host.displayName,
+      contacts: host.contacts
+    }));
+  }
+  parseHostRecord(record, index, diagnostics) {
+    const hostId = this.hostId(record, index, diagnostics);
+    const displayName = this.collaborators.referentialRecordFields.requiredText(
+      record.displayName,
+      "referential.host.display-name.invalid",
+      `hosts[${index}].displayName`,
+      "Host display name must be a non-empty string.",
+      diagnostics
+    );
+    const contactId = this.contactId(record, index, diagnostics);
+    const contactName = this.collaborators.referentialRecordFields.requiredText(
+      record.contactName,
+      "referential.contact.name.invalid",
+      `hosts[${index}].contactName`,
+      "Contact name must be a non-empty string.",
+      diagnostics
+    );
+    const email = this.collaborators.referentialRecordFields.email(
+      record.email,
+      "referential.contact.email.invalid",
+      `hosts[${index}].email`,
+      "Host contact email address is invalid.",
+      diagnostics
+    );
+    const phone = this.collaborators.referentialRecordFields.optionalText(
+      record.phone,
+      "referential.contact.phone.invalid",
+      `hosts[${index}].phone`,
+      "Host contact phone must be a string when provided.",
+      diagnostics
+    );
+    const address = this.collaborators.referentialRecordFields.requiredText(
+      record.address,
+      "referential.contact.address.invalid",
+      `hosts[${index}].address`,
+      "Host contact address must be a non-empty string.",
+      diagnostics
+    );
+    if (!hostId || !displayName || !contactId || !contactName || !email || address === void 0 || phone === null) {
+      return void 0;
+    }
+    return {
+      hostId,
+      displayName,
+      contact: {
+        id: contactId,
+        name: contactName,
+        email,
+        ...phone ? { phone } : {},
+        address
+      }
+    };
+  }
+  hostId(record, index, diagnostics) {
+    const hostIdValue = this.collaborators.referentialRecordFields.requiredText(
+      record.hostId,
+      "referential.host.id.invalid",
+      `hosts[${index}].hostId`,
+      "Host stable identifier must be a non-empty string.",
+      diagnostics
+    );
+    const hostId = hostIdValue ? this.collaborators.referentialIdentifiers.asHostId(hostIdValue) : void 0;
+    if (hostIdValue && !hostId) {
+      diagnostics.push(
+        this.collaborators.referentialDiagnostics.diagnostic(
+          "referential.host.id.invalid",
+          "error",
+          `hosts[${index}].hostId`,
+          "Host stable identifier must use the opaque host-0001 format."
+        )
+      );
+    }
+    return hostId;
+  }
+  contactId(record, index, diagnostics) {
+    const contactIdValue = this.collaborators.referentialRecordFields.requiredText(
+      record.contactId,
+      "referential.contact.id.invalid",
+      `hosts[${index}].contactId`,
+      "Contact stable identifier must be a non-empty string.",
+      diagnostics
+    );
+    const contactId = contactIdValue ? this.collaborators.referentialIdentifiers.asContactId(contactIdValue) : void 0;
+    if (contactIdValue && !contactId) {
+      diagnostics.push(
+        this.collaborators.referentialDiagnostics.diagnostic(
+          "referential.contact.id.invalid",
+          "error",
+          `hosts[${index}].contactId`,
+          "Contact stable identifier must use the opaque contact-0001 format."
+        )
+      );
+    }
+    return contactId;
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/validate-referential-catalog-contracts.ts
+var EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// packages/domain/referential/src/application/use-cases/referential-record-fields.ts
+var ReferentialRecordFields = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  requiredText(value, code, path, message, diagnostics) {
+    if (typeof value !== "string") {
+      diagnostics.push(
+        this.collaborators.referentialDiagnostics.diagnostic(
+          code,
+          "error",
+          path,
+          message
+        )
+      );
+      return void 0;
+    }
+    const normalized = this.collaborators.referentialCatalogOperations.normalizeDisplayName(
+      value
+    );
+    if (!normalized) {
+      diagnostics.push(
+        this.collaborators.referentialDiagnostics.diagnostic(
+          code,
+          "error",
+          path,
+          message
+        )
+      );
+      return void 0;
+    }
+    return normalized;
+  }
+  optionalText(value, code, path, message, diagnostics) {
+    if (value === void 0 || value === null || value === "") {
+      return void 0;
+    }
+    if (typeof value !== "string") {
+      diagnostics.push(
+        this.collaborators.referentialDiagnostics.diagnostic(
+          code,
+          "error",
+          path,
+          message
+        )
+      );
+      return null;
+    }
+    return value.normalize("NFC").trim() || void 0;
+  }
+  email(value, code, path, message, diagnostics) {
+    if (typeof value !== "string") {
+      diagnostics.push(
+        this.collaborators.referentialDiagnostics.diagnostic(
+          code,
+          "error",
+          path,
+          message
+        )
+      );
+      return void 0;
+    }
+    const normalized = value.normalize("NFC").trim().toLowerCase();
+    if (!EMAIL_PATTERN.test(normalized)) {
+      diagnostics.push(
+        this.collaborators.referentialDiagnostics.diagnostic(
+          code,
+          "error",
+          path,
+          message
+        )
+      );
+      return void 0;
+    }
+    return normalized;
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/speaker-catalog-validator.ts
+var SpeakerCatalogValidator = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  validateSpeakers(records, diagnostics) {
+    const speakers = [];
+    const speakerIds = /* @__PURE__ */ new Set();
+    for (const [index, record] of records.entries()) {
+      const speakerId = this.speakerId(record, index, diagnostics);
+      const { firstName, lastName, company, email, phone, displayName } = this.contactFields(record, index, diagnostics);
+      if (!speakerId || !displayName || firstName === null || lastName === null || company === null || !email || phone === null) {
+        continue;
+      }
+      if (speakerIds.has(speakerId)) {
+        diagnostics.push(
+          this.collaborators.referentialDiagnostics.diagnostic(
+            "referential.speaker.id.duplicate",
+            "error",
+            `speakers[${index}].speakerId`,
+            "Speaker stable identifiers must be unique."
+          )
+        );
+        continue;
+      }
+      speakerIds.add(speakerId);
+      speakers.push({
+        ...record.source ? { source: Object.freeze({ ...record.source }) } : {},
+        id: speakerId,
+        firstName: firstName ?? "",
+        lastName: lastName ?? "",
+        displayName,
+        company: company ?? "",
+        ...this.collaborators.speakerSourceFields.read(
+          record,
+          index,
+          diagnostics
+        ),
+        email,
+        ...phone ? { phone } : {}
+      });
+    }
+    return speakers;
+  }
+  speakerId(record, index, diagnostics) {
+    const speakerIdValue = this.collaborators.referentialRecordFields.requiredText(
+      record.speakerId,
+      "referential.speaker.id.invalid",
+      `speakers[${index}].speakerId`,
+      "Speaker stable identifier must be a non-empty string.",
+      diagnostics
+    );
+    const speakerId = speakerIdValue ? this.collaborators.referentialIdentifiers.asSpeakerId(speakerIdValue) : void 0;
+    if (speakerIdValue && !speakerId) {
+      diagnostics.push(
+        this.collaborators.referentialDiagnostics.diagnostic(
+          "referential.speaker.id.invalid",
+          "error",
+          `speakers[${index}].speakerId`,
+          "Speaker stable identifier must use the speaker-* slug format."
+        )
+      );
+    }
+    return speakerId;
+  }
+  contactFields(record, index, diagnostics) {
+    const firstName = this.collaborators.referentialRecordFields.optionalText(
+      record.firstName,
+      "referential.speaker.first-name.invalid",
+      `speakers[${index}].firstName`,
+      "Speaker first name must be a non-empty string.",
+      diagnostics
+    );
+    const lastName = this.collaborators.referentialRecordFields.optionalText(
+      record.lastName,
+      "referential.speaker.last-name.invalid",
+      `speakers[${index}].lastName`,
+      "Speaker last name must be a non-empty string.",
+      diagnostics
+    );
+    const company = this.collaborators.referentialRecordFields.optionalText(
+      record.company,
+      "referential.speaker.company.invalid",
+      `speakers[${index}].company`,
+      "Speaker company must be a non-empty string.",
+      diagnostics
+    );
+    const email = this.collaborators.referentialRecordFields.email(
+      record.email,
+      "referential.speaker.email.invalid",
+      `speakers[${index}].email`,
+      "Speaker email address is invalid.",
+      diagnostics
+    );
+    const phone = this.collaborators.referentialRecordFields.optionalText(
+      record.phone,
+      "referential.speaker.phone.invalid",
+      `speakers[${index}].phone`,
+      "Speaker phone must be a string when provided.",
+      diagnostics
+    );
+    const displayName = this.collaborators.referentialRecordFields.requiredText(
+      record.displayName || (firstName && lastName ? `${firstName} ${lastName}` : ""),
+      "referential.speaker.display-name.invalid",
+      `speakers[${index}].displayName`,
+      "A display name or both structured names are required.",
+      diagnostics
+    );
+    return { firstName, lastName, company, email, phone, displayName };
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/speaker-source-fields.ts
+var SpeakerSourceFields = class {
+  read(record, index, diagnostics) {
+    const values = [
+      record.sourceProvider,
+      record.sourceEvent,
+      record.sourceSpeakerId
+    ];
+    const hasMapping = values.some(
+      (value) => value !== void 0 && value !== ""
+    );
+    if (hasMapping && !values.every(
+      (value) => typeof value === "string" && /^[a-zA-Z0-9_-]{1,200}$/.test(value)
+    )) {
+      this.invalid(index, diagnostics);
+      return {};
+    }
+    return {
+      ...hasMapping ? {
+        sourceIdentity: {
+          provider: String(record.sourceProvider),
+          event: String(record.sourceEvent),
+          speakerId: String(record.sourceSpeakerId)
+        }
+      } : {},
+      ...this.pictureUrl(record.pictureUrl) ? { pictureUrl: String(record.pictureUrl) } : {}
+    };
+  }
+  pictureUrl(value) {
+    if (typeof value !== "string" || value.length > 2048) return void 0;
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" && !url.username && !url.password ? url.href : void 0;
+    } catch {
+      return void 0;
+    }
+  }
+  validateMappings(speakers, diagnostics) {
+    const identities = [];
+    for (const [index, speaker] of speakers.entries()) {
+      const identity = speaker.sourceIdentity;
+      if (!identity) continue;
+      if (identities.some(
+        (existing) => existing.provider === identity.provider && existing.event === identity.event && existing.speakerId === identity.speakerId
+      ))
+        this.invalid(index, diagnostics);
+      identities.push(identity);
+    }
+  }
+  invalid(index, diagnostics) {
+    diagnostics.push({
+      code: "referential.speaker.mapping.invalid",
+      severity: "error",
+      path: `speakers[${index}].sourceIdentity`,
+      message: "Source mappings must be complete, scoped and unique."
+    });
+  }
+};
+
+// packages/domain/referential/src/domain/identifiers.ts
+var HOST_ID_PATTERN = /^host-[0-9]{4}$/;
+var CONTACT_ID_PATTERN = /^contact-[0-9]{4}$/;
+var SPEAKER_ID_PATTERN = /^speaker-[0-9]{4}$/;
+var ReferentialIdentifiers = class {
+  asHostId(value) {
+    return HOST_ID_PATTERN.test(value) ? value : void 0;
+  }
+  asContactId(value) {
+    return CONTACT_ID_PATTERN.test(value) ? value : void 0;
+  }
+  asSpeakerId(value) {
+    return SPEAKER_ID_PATTERN.test(value) ? value : void 0;
+  }
+};
+
+// packages/domain/referential/src/domain/referential-catalog.ts
+var ReferentialCatalogOperations = class {
+  normalizeDisplayName(value) {
+    return value.normalize("NFC").trim().replace(/\s+/g, " ");
+  }
+  displayNameKey(value) {
+    return this.normalizeDisplayName(value).toLowerCase();
+  }
+  freezeCatalog(hosts, speakers) {
+    for (const host of hosts) {
+      for (const contact of host.contacts) {
+        Object.freeze(contact);
+      }
+      Object.freeze(host.contacts);
+      Object.freeze(host);
+    }
+    for (const speaker of speakers) {
+      Object.freeze(speaker);
+    }
+    return Object.freeze({
+      hosts: Object.freeze([...hosts]),
+      speakers: Object.freeze([...speakers])
+    });
+  }
+};
+
+// packages/domain/referential/src/domain/referential-diagnostic.ts
+var ReferentialDiagnostics = class {
+  diagnostic(code, severity, path, message) {
+    return Object.freeze({ code, severity, path, message });
+  }
+  freezeDiagnostics(diagnostics) {
+    return Object.freeze([...diagnostics]);
+  }
+};
+
+// packages/domain/referential/src/domain/source-speaker-equality.ts
+var SourceSpeakerEquality = class {
+  equal(left, right) {
+    return left.id === right.id && left.displayName === right.displayName && left.email === right.email && left.company === right.company && left.pictureUrl === right.pictureUrl;
+  }
+};
+
+// packages/domain/referential/src/dependency-composition.ts
+var ReferentialDomainComposition = class {
+  hostCatalogValidator() {
+    return new HostCatalogValidator({
+      referentialDiagnostics: this.referentialDiagnostics(),
+      referentialRecordFields: this.referentialRecordFields(),
+      referentialIdentifiers: this.referentialIdentifiers()
+    });
+  }
+  mergeSourceSpeakers() {
+    return new MergeSourceSpeakers();
+  }
+  projectReferentialChoices() {
+    return new ProjectReferentialChoices();
+  }
+  referentialCatalogOperations() {
+    return new ReferentialCatalogOperations();
+  }
+  referentialDiagnostics() {
+    return new ReferentialDiagnostics();
+  }
+  referentialIdentifiers() {
+    return new ReferentialIdentifiers();
+  }
+  referentialRecordFields() {
+    return new ReferentialRecordFields({
+      referentialDiagnostics: this.referentialDiagnostics(),
+      referentialCatalogOperations: this.referentialCatalogOperations()
+    });
+  }
+  resolveEventReferences() {
+    return new ResolveEventReferences({
+      referentialDiagnostics: this.referentialDiagnostics(),
+      referentialIdentifiers: this.referentialIdentifiers(),
+      referentialCatalogOperations: this.referentialCatalogOperations()
+    });
+  }
+  sourceSpeakerEquality() {
+    return new SourceSpeakerEquality();
+  }
+  sourceSpeakerReferentialRepository(...args) {
+    return new SourceSpeakerReferentialRepository(...args);
+  }
+  speakerCatalogValidator() {
+    return new SpeakerCatalogValidator({
+      referentialDiagnostics: this.referentialDiagnostics(),
+      speakerSourceFields: this.speakerSourceFields(),
+      referentialRecordFields: this.referentialRecordFields(),
+      referentialIdentifiers: this.referentialIdentifiers()
+    });
+  }
+  speakerSourceFields() {
+    return new SpeakerSourceFields();
+  }
+  validateReferentialCatalog(...args) {
+    return new ValidateReferentialCatalog(
+      {
+        referentialDiagnostics: this.referentialDiagnostics(),
+        hostCatalogValidator: this.hostCatalogValidator(),
+        speakerCatalogValidator: this.speakerCatalogValidator(),
+        speakerSourceFields: this.speakerSourceFields(),
+        referentialCatalogOperations: this.referentialCatalogOperations()
+      },
+      ...args
+    );
+  }
+};
+
+// packages/domain/referential/src/domain/speaker-catalog-history-error.ts
+var SpeakerCatalogHistoryError = class extends Error {
+  constructor() {
+    super("Speaker catalog allocation history is unavailable.");
+    this.name = "SpeakerCatalogHistoryError";
+  }
+};
+
+// packages/domain/publication/src/domain/content-error.ts
+var ContentError = class extends Error {
+  constructor(code) {
+    super(
+      `Asset content ${code}; review the template contract and managed bindings`
+    );
+    this.code = code;
+    this.name = "ContentError";
+  }
+  code;
+};
+
+// packages/domain/publication/src/application/reconcile-asset-content.ts
+var ReconcileAssetContent = class {
+  constructor(collaborators, manifests, renderers, images) {
+    this.collaborators = collaborators;
+    this.manifests = manifests;
+    this.renderers = renderers;
+    this.images = images;
+  }
+  collaborators;
+  manifests;
+  renderers;
+  images;
+  async preflight(templateId, kind, mimeType, value, model) {
+    const contract = this.collaborators.contentContractPolicy.parse(
+      value,
+      kind,
+      mimeType
+    );
+    await this.collaborators.createResolveContentValues(this.images).execute(contract, model);
+    this.collaborators.contentRenderPlan.initial(
+      await this.renderer(mimeType).read(templateId, contract)
+    );
+  }
+  async execute(input) {
+    const renderer = this.renderer(input.mimeType);
+    let manifest = await this.load(input, renderer);
+    if (!manifest) return { status: "copy-only", fallback: false };
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const recovered = await this.recover(input, manifest, renderer);
+      manifest = recovered.manifest;
+      const snapshot = recovered.snapshot;
+      const values = await this.collaborators.createResolveContentValues(this.images).execute(
+        {
+          ...manifest.contract,
+          fields: manifest.contract.fields.filter(
+            (field) => recovered.manifest.bindings.some(
+              (binding) => binding.key === (field.type === "text" ? this.collaborators.contentTextKey.of(field) : field.slot)
+            )
+          )
+        },
+        input.model
+      );
+      const changes = this.collaborators.contentRenderPlan.changes(
+        manifest,
+        snapshot,
+        values
+      );
+      if (!changes.length)
+        return {
+          status: "ready",
+          fallback: values.some((value) => value.fallback)
+        };
+      manifest = this.collaborators.contentRenderPlan.pending(
+        manifest,
+        snapshot,
+        changes
+      );
+      await this.manifests.save(input.folderId, manifest);
+      const written = await this.write(
+        input,
+        renderer,
+        manifest,
+        snapshot,
+        changes,
+        values,
+        attempt === 0
+      );
+      manifest = written.manifest;
+      if (written.complete)
+        return {
+          status: "ready",
+          fallback: values.some((value) => value.fallback)
+        };
+    }
+    return { status: "pending", fallback: false };
+  }
+  async write(input, renderer, manifest, snapshot, changes, values, retry) {
+    let confirmed = false;
+    let failure;
+    let current;
+    try {
+      const revision = await renderer.apply(input.fileId, snapshot, changes);
+      current = await renderer.read(
+        input.fileId,
+        manifest.contract,
+        manifest.bindings
+      );
+      confirmed = current.revision === revision;
+    } catch (error2) {
+      if (error2 instanceof ContentError && error2.code === "revision") {
+        const retriable = { ...manifest, pending: void 0 };
+        await this.manifests.save(input.folderId, retriable);
+        return { manifest: retriable, complete: false };
+      }
+      failure = { error: error2 };
+      current = await renderer.read(
+        input.fileId,
+        manifest.contract,
+        manifest.bindings,
+        manifest.pending?.revision
+      );
+    }
+    try {
+      const settled = this.collaborators.contentRenderPlan.settle(
+        manifest,
+        current,
+        confirmed
+      );
+      const complete = !this.collaborators.contentRenderPlan.changes(
+        settled,
+        current,
+        values
+      ).length;
+      if (failure && !complete) {
+        if (retry) return { manifest: settled, complete };
+        throw failure.error;
+      }
+      await this.manifests.save(input.folderId, settled);
+      return { manifest: settled, complete };
+    } catch (error2) {
+      throw failure ? failure.error : error2;
+    }
+  }
+  async load(input, renderer) {
+    const stored = await this.manifests.load(input.folderId, input.fileId);
+    if (stored !== void 0)
+      return this.collaborators.contentManifestPolicy.parse(
+        stored,
+        input.fileId,
+        input.templateId,
+        input.mimeType
+      );
+    if (!input.fresh && input.recovery?.operation !== "enroll") {
+      if (input.managed) throw new ContentError("recovery");
+      return void 0;
+    }
+    const contract = this.collaborators.contentContractPolicy.parse(
+      input.contract,
+      input.kind,
+      input.mimeType
+    );
+    const snapshot = await renderer.read(input.fileId, contract);
+    if (input.recovery && snapshot.revision !== input.recovery.revision)
+      throw new ContentError("revision");
+    const bindings = this.collaborators.contentRenderPlan.initial(snapshot);
+    return {
+      version: 1,
+      fileId: input.fileId,
+      templateId: input.templateId,
+      mimeType: input.mimeType,
+      contract,
+      bindings,
+      initialRevision: snapshot.revision,
+      recoveryId: input.recovery ? this.collaborators.contentRecoveryFingerprint.create(input.recovery) : void 0,
+      pending: { revision: snapshot.revision, bindings }
+    };
+  }
+  async recover(input, original, renderer) {
+    const recovery = this.collaborators.contentRecoveryPlan.active(
+      original,
+      input.recovery
+    );
+    const prepared = this.collaborators.contentRecoveryPlan.beforeRead(
+      original,
+      recovery
+    );
+    const snapshot = await renderer.read(
+      input.fileId,
+      prepared.contract,
+      prepared.bindings,
+      prepared.initialRevision
+    );
+    const manifest = this.collaborators.contentRecoveryPlan.settle(
+      prepared,
+      snapshot,
+      recovery
+    );
+    if (manifest !== original)
+      await this.manifests.save(input.folderId, manifest);
+    return { manifest, snapshot };
+  }
+  renderer(mimeType) {
+    const renderer = this.renderers[mimeType];
+    if (!renderer) throw new ContentError("contract");
+    return renderer;
+  }
+};
+
+// packages/domain/publication/src/application/reconcile-event-assets.ts
+var ReconcileEventAssets = class {
+  constructor(collaborators, repository, content) {
+    this.collaborators = collaborators;
+    this.repository = repository;
+    this.content = content;
+  }
+  collaborators;
+  repository;
+  content;
+  async execute(input) {
+    const date = input.date.trim();
+    const host = input.hostName.trim();
+    if (!this.validDate(date) || !host) {
+      return {
+        files: {},
+        diagnostics: [
+          this.diagnostic(
+            "prerequisites",
+            "A valid event date and resolved host are required to reconcile assets",
+            false
+          )
+        ]
+      };
+    }
+    const templates = await this.repository.listTemplates();
+    this.validateTemplates(templates);
+    const month = new Intl.DateTimeFormat("en-US", {
+      month: "long",
+      timeZone: "UTC"
+    }).format(/* @__PURE__ */ new Date(`${date}T00:00:00Z`));
+    const request2 = {
+      eventId: input.eventId,
+      idempotencyKey: `${input.eventId}:assets:v1`,
+      title: `${date} - ${month} - ${host}`
+    };
+    const diagnostics = [];
+    let container = await this.repository.findContainer(request2);
+    if (!container || container.name !== request2.title) {
+      diagnostics.push(
+        this.diagnostic(
+          "container.drift",
+          "The event asset folder must be created or renamed",
+          input.mode === "fix"
+        )
+      );
+      if (input.mode === "fix")
+        container = await this.repository.ensureContainer(request2);
+    }
+    if (!container) return { files: {}, diagnostics };
+    if (container.url !== input.existingUrl) {
+      diagnostics.push(
+        this.diagnostic(
+          "link.drift",
+          "The event asset link must reference the managed folder",
+          input.mode === "fix"
+        )
+      );
+    }
+    return this.reconcileFiles(container, templates, input, diagnostics);
+  }
+  async reconcileFiles(container, templates, input, diagnostics) {
+    const currentFiles = await this.repository.listFiles(container.id);
+    const files = {};
+    const content = {};
+    const reconcile = this.collaborators.createReconcileAssetFile(
+      this.repository,
+      this.content
+    );
+    for (const template of templates) {
+      const result = await reconcile.execute({
+        ...input,
+        template,
+        container,
+        currentFiles,
+        diagnostics
+      });
+      if (result.file?.url) files[`${template.kind}-link`] = result.file.url;
+      content[template.kind] = result.status;
+    }
+    return { container, files, content, diagnostics };
+  }
+  diagnostic(code, message, fixApplied) {
+    return {
+      code: `publication.assets.${code}`,
+      field: "assets",
+      severity: "warning",
+      message,
+      fixAvailable: code !== "prerequisites",
+      fixApplied
+    };
+  }
+  validDate(date) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
+    const instant = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
+    return !Number.isNaN(instant.valueOf()) && instant.toISOString().slice(0, 10) === date;
+  }
+  validateTemplates(templates) {
+    if (!templates.length || templates.some(
+      (template) => !template.id || !template.name.trim() || !template.kind.trim()
+    ) || new Set(templates.map(({ id }) => id)).size !== templates.length || new Set(templates.map(({ kind }) => kind)).size !== templates.length) {
+      throw new Error(
+        "Asset templates must have unique IDs, unique kinds, and non-empty names"
+      );
+    }
+  }
+};
+
+// packages/domain/publication/src/application/reconcile-asset-file.ts
+var ReconcileAssetFile = class {
+  constructor(repository, content) {
+    this.repository = repository;
+    this.content = content;
+  }
+  repository;
+  content;
+  async execute(input) {
+    const matches = input.currentFiles.filter(
+      (file2) => file2.templateId === input.template.id
+    );
+    if (matches.length > 1)
+      throw new Error(
+        "Ambiguous event asset copies require manual reconciliation"
+      );
+    let file = matches[0];
+    const fresh = !file;
+    try {
+      await this.preflight(input, file);
+      if (!file) file = await this.copyOrRename(input);
+      if (!file)
+        return {
+          status: input.template.contentContract ? "pending" : "copy-only"
+        };
+      file = await this.enroll(input, file);
+      const status = await this.render(input, file, fresh);
+      if (!fresh && (status === "ready" || status === "copy-only"))
+        file = await this.copyOrRename(input, file);
+      return { file, status };
+    } catch (error2) {
+      if (!(error2 instanceof ContentError)) throw error2;
+      return this.failed(file, error2, input.diagnostics);
+    }
+  }
+  failed(file, error2, diagnostics) {
+    diagnostics.push(this.diagnostic(error2.code));
+    return {
+      file,
+      status: error2.code === "conflict" ? "conflict" : error2.code === "recovery" ? "recovery-required" : "pending"
+    };
+  }
+  async enroll(input, file) {
+    if (input.mode === "fix" && input.recovery?.[file.id]?.operation === "enroll" && !file.contentManaged) {
+      file = await this.repository.updateFile(
+        { ...file, contentManaged: true },
+        input.template,
+        file.name
+      );
+    }
+    return file;
+  }
+  async preflight(input, file) {
+    if (file && (file.contentManaged || input.recovery?.[file.id]?.operation !== "enroll"))
+      return;
+    if (!input.template.contentContract) return;
+    if (!this.content || !input.model) throw new ContentError("missing");
+    await this.content.preflight(
+      file?.id ?? input.template.id,
+      input.template.kind,
+      input.template.mimeType ?? "",
+      input.template.contentContract,
+      input.model
+    );
+  }
+  async render(input, file, fresh) {
+    const { template } = input;
+    const recovery = input.recovery?.[file.id];
+    if (!file.contentManaged && !recovery && (!fresh || !template.contentContract))
+      return "copy-only";
+    if (input.mode === "check" || !this.content || !input.model)
+      return "pending";
+    const outcome = await this.content.execute({
+      folderId: input.container.id,
+      fileId: file.id,
+      templateId: template.id,
+      kind: template.kind,
+      mimeType: file.mimeType ?? template.mimeType ?? "",
+      contract: template.contentContract,
+      fresh,
+      managed: file.contentManaged,
+      model: input.model,
+      recovery
+    });
+    if (outcome.fallback) input.diagnostics.push(this.diagnostic("fallback"));
+    if (outcome.status === "pending")
+      input.diagnostics.push(this.diagnostic("revision"));
+    return outcome.status;
+  }
+  async copyOrRename(input, file) {
+    const { template } = input;
+    const name = template.name.replaceAll(
+      "[EVENT_DATE:YYYY-MM-DD]",
+      input.date
+    );
+    if (file?.name === name && file.kind === template.kind) return file;
+    input.diagnostics.push({
+      code: "publication.assets.file.drift",
+      field: "assets",
+      severity: "warning",
+      message: "An event template copy is missing or its name or template metadata has changed",
+      fixAvailable: true,
+      fixApplied: input.mode === "fix"
+    });
+    if (input.mode !== "fix") return file;
+    return file ? this.repository.updateFile(file, template, name) : this.repository.copyTemplate(input.container.id, template, name);
+  }
+  diagnostic(code) {
+    return {
+      code: `publication.assets.content.${code}`,
+      field: "assets",
+      severity: "warning",
+      message: "Review the asset content status, template contract, public inputs and recovery instructions before using this file",
+      fixAvailable: false
+    };
+  }
+};
+
+// packages/domain/publication/src/application/resolve-content-values.ts
+var ResolveContentValues = class {
+  constructor(collaborators, images) {
+    this.collaborators = collaborators;
+    this.images = images;
+  }
+  collaborators;
+  images;
+  async execute(contract, model) {
+    const values = [];
+    for (const field of contract.fields) {
+      if (field.type === "image") {
+        values.push(await this.image(field, model));
+        continue;
+      }
+      const key = this.collaborators.contentTextKey.of(field);
+      const text = model.text[key] || (!field.required ? field.fallback : void 0);
+      if (!this.collaborators.contentContractPolicy.text(text))
+        throw new ContentError("missing");
+      values.push({
+        type: "text",
+        key,
+        text,
+        fingerprint: this.collaborators.contentFingerprint.of(text)
+      });
+    }
+    return values;
+  }
+  async image(field, model) {
+    const host = field.token === "host.logo";
+    const picture = host ? model.hostLogo : model.pictures[field.slot];
+    const hostId = host ? model.hostLogo?.hostId : void 0;
+    const speakerId = host ? void 0 : model.pictures[field.slot]?.speakerId;
+    const identity = hostId ?? speakerId;
+    const fallback = field.fallback ? await this.images.validate(field.fallback) : void 0;
+    try {
+      if (!picture || !(host ? /^host-[a-z0-9-]+$/ : /^speaker-[a-z0-9-]+$/).test(
+        identity ?? ""
+      ))
+        throw new ContentError("image");
+      const validated = await this.images.validate(picture);
+      return {
+        type: "image",
+        key: field.slot,
+        image: validated.source,
+        fingerprint: this.collaborators.contentFingerprint.of(
+          `${validated.fingerprint}:${identity}:${picture.description}:${field.fit}`
+        ),
+        speakerId,
+        hostId,
+        fallback: false,
+        fit: field.fit
+      };
+    } catch {
+      if (field.required || !field.fallback || !fallback)
+        throw new ContentError("image");
+      const validated = fallback;
+      return {
+        type: "image",
+        key: field.slot,
+        image: validated.source,
+        fingerprint: this.collaborators.contentFingerprint.of(
+          `${validated.fingerprint}:fallback:${field.fallback.description}:${field.fit}`
+        ),
+        fallback: true,
+        fit: field.fit
+      };
+    }
+  }
+};
+
+// packages/domain/publication/src/domain/asset-folder-url-policy.ts
+var AssetFolderUrlPolicy = class {
+  constructor(collaborators, prefix) {
+    this.collaborators = collaborators;
+    this.prefix = prefix;
+  }
+  collaborators;
+  prefix;
+  id = "asset-folder-url";
+  evaluate(references) {
+    return this.collaborators.publicationLinkEvaluation.evaluateLink({
+      references,
+      path: "assets",
+      isValid: (value) => this.collaborators.publicationLinkEvaluation.matchesPrefix(
+        value,
+        [this.prefix],
+        /^[a-zA-Z0-9_-]+$/
+      ),
+      code: "publication.asset-url.invalid",
+      message: `Asset folder URL must start with ${this.prefix} and end with a folder identifier`
+    });
+  }
+};
+
+// packages/domain/publication/src/domain/community-event-url-policy.ts
+var CommunityEventUrlPolicy = class {
+  constructor(collaborators, prefixes) {
+    this.collaborators = collaborators;
+    this.prefixes = prefixes;
+  }
+  collaborators;
+  prefixes;
+  id = "community-event-url";
+  evaluate(references) {
+    return this.collaborators.publicationLinkEvaluation.evaluateLink({
+      references,
+      path: "community",
+      isValid: (value) => this.collaborators.publicationLinkEvaluation.matchesPrefix(
+        value,
+        this.prefixes,
+        /^[0-9a-z-]+$/
+      ),
+      code: "publication.community-url.invalid",
+      message: "Community event URL must use an approved CNCF/OCGroups prefix and identifier"
+    });
+  }
+};
+
+// packages/domain/publication/src/domain/content-anchor-identity.ts
+var ContentAnchorIdentity = class {
+  equal(left, right) {
+    return left.objectId === right.objectId && left.pageId === right.pageId && left.tabId === right.tabId && left.segmentId === right.segmentId && left.rangeName === right.rangeName && left.start === right.start && left.end === right.end;
+  }
+  locationKey(anchor) {
+    return JSON.stringify([
+      anchor.pageId,
+      anchor.tabId,
+      anchor.segmentId,
+      anchor.objectId,
+      anchor.rangeName
+    ]);
+  }
+};
+
+// packages/domain/publication/src/domain/content-binding-policy.ts
+var ContentBindingPolicy = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  parseMany(value) {
+    if (!Array.isArray(value) || value.length > 500)
+      throw new ContentError("recovery");
+    const bindings = value.map((item) => this.parse(item));
+    if (new Set(bindings.map((binding) => binding.id)).size !== bindings.length)
+      throw new ContentError("recovery");
+    return bindings;
+  }
+  parse(value) {
+    if (!this.collaborators.contentContractPolicy.record(value) || !this.collaborators.contentContractPolicy.name(value.id) || !this.collaborators.contentContractPolicy.name(value.key) || value.type !== "text" && value.type !== "image" || !this.hash(value.applied) || value.desired !== void 0 && !this.hash(value.desired) || !this.collaborators.contentContractPolicy.keys(value, [
+      "id",
+      "type",
+      "key",
+      "anchor",
+      "applied",
+      "desired",
+      "speakerId",
+      "hostId",
+      "fallback"
+    ]))
+      throw new ContentError("recovery");
+    const identities = this.identities(value);
+    const anchor = this.anchor(value.anchor);
+    if (value.type === "image" ? !anchor.objectId : !anchor.objectId && !anchor.rangeName)
+      throw new ContentError("recovery");
+    return {
+      id: value.id,
+      key: value.key,
+      type: value.type,
+      applied: value.applied,
+      anchor,
+      ...typeof value.desired === "string" ? { desired: value.desired } : {},
+      ...identities
+    };
+  }
+  identities(value) {
+    if (value.speakerId !== void 0 && typeof value.speakerId !== "string" || value.hostId !== void 0 && typeof value.hostId !== "string" || value.fallback !== void 0 && typeof value.fallback !== "boolean")
+      throw new ContentError("recovery");
+    return {
+      ...typeof value.speakerId === "string" ? { speakerId: value.speakerId } : {},
+      ...typeof value.hostId === "string" ? { hostId: value.hostId } : {},
+      ...typeof value.fallback === "boolean" ? { fallback: value.fallback } : {}
+    };
+  }
+  anchor(value) {
+    if (!this.collaborators.contentContractPolicy.record(value) || !this.collaborators.contentContractPolicy.keys(value, [
+      "objectId",
+      "pageId",
+      "tabId",
+      "segmentId",
+      "rangeName",
+      "start",
+      "end"
+    ]))
+      throw new ContentError("recovery");
+    this.validateAnchorValues(value);
+    return {
+      ...typeof value.objectId === "string" ? { objectId: value.objectId } : {},
+      ...typeof value.pageId === "string" ? { pageId: value.pageId } : {},
+      ...typeof value.tabId === "string" ? { tabId: value.tabId } : {},
+      ...typeof value.segmentId === "string" ? { segmentId: value.segmentId } : {},
+      ...typeof value.rangeName === "string" ? { rangeName: value.rangeName } : {},
+      ...typeof value.start === "number" ? { start: value.start } : {},
+      ...typeof value.end === "number" ? { end: value.end } : {}
+    };
+  }
+  validateAnchorValues(value) {
+    for (const [key, entry] of Object.entries(value)) {
+      if (key === "start" || key === "end") {
+        if (typeof entry !== "number" || !Number.isSafeInteger(entry) || entry < 1)
+          throw new ContentError("recovery");
+      } else if (entry !== "" && !this.collaborators.contentContractPolicy.name(entry))
+        throw new ContentError("recovery");
+    }
+  }
+  hash(value) {
+    return typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
+  }
+};
+
+// packages/domain/publication/src/domain/asset-content.ts
+var TEXT_TOKENS = [
+  "event.title",
+  "event.date",
+  "event.date.month",
+  "event.date.numeric",
+  "event.date.weekday",
+  "host.name",
+  "host.address",
+  "host.postal_code",
+  "host.city",
+  "agenda",
+  "event.feedback_url",
+  "next_event.date",
+  "next_event.date.numeric",
+  "next_event.host.name",
+  "next_event.host.city"
+];
+var SLOTTED_TEXT_TOKENS = [
+  "talk.title",
+  "talk.abstract",
+  "talk.speakers",
+  "speaker.name"
+];
+
+// packages/domain/publication/src/domain/content-contract-policy.ts
+var ContentContractPolicy = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  parse(value, kind, mimeType) {
+    if (!this.record(value) || value.version !== 1 || typeof value.kind !== "string" || value.kind !== kind || !this.name(value.revision) || !Array.isArray(value.fields) || !value.fields.length || value.fields.length > 100 || !this.keys(value, ["version", "revision", "kind", "fields"]) || !this.supported(mimeType))
+      throw new ContentError("contract");
+    const fields = value.fields.map(
+      (field) => this.field(field, mimeType)
+    );
+    const keys = fields.map(
+      (field) => field.type === "text" ? this.collaborators.contentTextKey.of(field) : field.slot
+    );
+    if (new Set(keys).size !== keys.length) throw new ContentError("contract");
+    return { version: 1, kind: value.kind, revision: value.revision, fields };
+  }
+  field(value, mimeType) {
+    if (!this.record(value)) throw new ContentError("contract");
+    return value.type === "text" ? this.textField(value) : this.image(value, mimeType);
+  }
+  textField(field) {
+    const token = [...TEXT_TOKENS, ...SLOTTED_TEXT_TOKENS].find(
+      (item) => item === field.token
+    );
+    const slotted = SLOTTED_TEXT_TOKENS.some((item) => item === token);
+    if (!token || typeof field.required !== "boolean" || (slotted ? !this.name(field.slot) : field.slot !== void 0) || !this.keys(field, ["type", "token", "slot", "required", "fallback"]) || (!field.required || field.fallback !== void 0) && !this.text(field.fallback))
+      throw new ContentError("contract");
+    const result = {
+      type: "text",
+      token,
+      required: field.required,
+      ...typeof field.slot === "string" ? { slot: field.slot } : {},
+      ...typeof field.fallback === "string" ? { fallback: field.fallback } : {}
+    };
+    if (!this.name(this.collaborators.contentTextKey.of(result)))
+      throw new ContentError("contract");
+    return result;
+  }
+  image(field, mimeType) {
+    if (field.type !== "image" || field.token !== "speaker.picture" && field.token !== "host.logo" || typeof field.required !== "boolean" || !this.name(field.slot) || !this.name(field.objectId) || !this.keys(field, [
+      "type",
+      "token",
+      "slot",
+      "objectId",
+      "pageId",
+      "tabId",
+      "required",
+      "fallback",
+      "fit"
+    ]))
+      throw new ContentError("contract");
+    const slides = mimeType === "application/vnd.google-apps.presentation";
+    if (!(slides ? this.name(field.pageId) && field.tabId === void 0 : this.name(field.tabId) && field.pageId === void 0) || field.fit !== "CENTER_CROP" && !(slides && field.fit === "CENTER_INSIDE"))
+      throw new ContentError("contract");
+    const fallback = this.fallback(field.fallback, field.required);
+    return {
+      type: "image",
+      token: field.token,
+      required: field.required,
+      slot: field.slot,
+      objectId: field.objectId,
+      fit: field.fit,
+      ...typeof field.pageId === "string" ? { pageId: field.pageId } : {},
+      ...typeof field.tabId === "string" ? { tabId: field.tabId } : {},
+      ...fallback ? { fallback } : {}
+    };
+  }
+  fallback(value, required) {
+    if (value === void 0 && required) return void 0;
+    if (!this.record(value) || !this.text(value.url) || !this.text(value.description) || !this.keys(value, ["url", "description"]))
+      throw new ContentError("contract");
+    return { url: value.url, description: value.description };
+  }
+  supported(mimeType) {
+    return [
+      "application/vnd.google-apps.presentation",
+      "application/vnd.google-apps.document"
+    ].includes(mimeType);
+  }
+  text(value) {
+    return typeof value === "string" && value.trim().length > 0 && value.length <= 2e4 && [...value].every((character) => {
+      const code = character.charCodeAt(0);
+      return (code >= 32 || code === 9 || code === 10) && (code < 57344 || code > 63743);
+    });
+  }
+  name(value) {
+    return typeof value === "string" && /^[\w.:-]{1,100}$/.test(value);
+  }
+  keys(value, keys) {
+    return Object.keys(value).every((key) => keys.includes(key));
+  }
+  record(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
+  }
+};
+
+// packages/domain/publication/src/domain/content-fingerprint.ts
+import { createHash as createHash2 } from "node:crypto";
+var ContentFingerprint = class {
+  of(value) {
+    return createHash2("sha256").update(value).digest("hex");
+  }
+};
+
+// packages/domain/publication/src/domain/content-manifest-policy.ts
+var ContentManifestPolicy = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  parse(value, fileId, templateId, mimeType) {
+    const manifest = this.state(value, fileId, templateId, mimeType);
+    this.associations(manifest);
+    if (!manifest.pending) return manifest;
+    this.associations({
+      ...manifest,
+      bindings: manifest.pending.bindings
+    });
+    if (manifest.pending.bindings.length !== manifest.bindings.length || manifest.pending.bindings.some((binding, index) => {
+      const prior = manifest.bindings[index];
+      return prior.id !== binding.id || prior.key !== binding.key || prior.type !== binding.type || !this.collaborators.contentAnchorIdentity.equal(
+        prior.anchor,
+        binding.anchor
+      );
+    }))
+      throw new ContentError("recovery");
+    return manifest;
+  }
+  state(value, fileId, templateId, mimeType) {
+    if (!this.collaborators.contentContractPolicy.record(value) || value.version !== 1 || value.fileId !== fileId || value.templateId !== templateId || value.mimeType !== mimeType || !this.collaborators.contentContractPolicy.keys(value, [
+      "version",
+      "fileId",
+      "templateId",
+      "mimeType",
+      "contract",
+      "bindings",
+      "pending",
+      "initialRevision",
+      "recoveryId"
+    ]) || !this.collaborators.contentContractPolicy.record(value.contract) || typeof value.contract.kind !== "string")
+      throw new ContentError("recovery");
+    if (value.initialRevision !== void 0 && !this.collaborators.contentContractPolicy.text(
+      value.initialRevision
+    ) || value.recoveryId !== void 0 && (typeof value.recoveryId !== "string" || !/^[a-f0-9]{64}$/.test(value.recoveryId)))
+      throw new ContentError("recovery");
+    const pending = this.pending(value.pending);
+    return {
+      version: 1,
+      fileId,
+      templateId,
+      mimeType,
+      contract: this.collaborators.contentContractPolicy.parse(
+        value.contract,
+        value.contract.kind,
+        mimeType
+      ),
+      bindings: this.collaborators.contentBindingPolicy.parseMany(
+        value.bindings
+      ),
+      ...pending ? { pending } : {},
+      ...typeof value.initialRevision === "string" ? { initialRevision: value.initialRevision } : {},
+      ...typeof value.recoveryId === "string" ? { recoveryId: value.recoveryId } : {}
+    };
+  }
+  pending(value) {
+    if (value === void 0) return void 0;
+    if (!this.collaborators.contentContractPolicy.record(value) || !this.collaborators.contentContractPolicy.text(value.revision) || !this.collaborators.contentContractPolicy.keys(value, [
+      "revision",
+      "bindings"
+    ]))
+      throw new ContentError("recovery");
+    return {
+      revision: value.revision,
+      bindings: this.collaborators.contentBindingPolicy.parseMany(
+        value.bindings
+      )
+    };
+  }
+  associations(manifest) {
+    const anchors = /* @__PURE__ */ new Set();
+    for (const binding of manifest.bindings) {
+      const field = manifest.contract.fields.find(
+        (field2) => field2.type === binding.type && (field2.type === "text" ? this.collaborators.contentTextKey.of(field2) : field2.slot) === binding.key
+      );
+      const anchor = binding.anchor;
+      const key = this.collaborators.contentAnchorIdentity.locationKey(anchor);
+      if (!field || anchors.has(key) || binding.fallback !== void 0 && typeof binding.fallback !== "boolean")
+        throw new ContentError("recovery");
+      anchors.add(key);
+      this.identity(binding, field);
+      this.rendererAnchor(manifest.mimeType, binding);
+    }
+  }
+  identity(binding, field) {
+    if (binding.speakerId !== void 0 && (!/^speaker-[a-z0-9-]+$/.test(binding.speakerId) || field.type !== "image" || field.token !== "speaker.picture"))
+      throw new ContentError("recovery");
+    if (binding.hostId !== void 0 && (!/^host-[a-z0-9-]+$/.test(binding.hostId) || field.type !== "image" || field.token !== "host.logo"))
+      throw new ContentError("recovery");
+  }
+  rendererAnchor(mimeType, binding) {
+    const anchor = binding.anchor;
+    if (mimeType.endsWith("presentation")) {
+      if (!anchor.objectId || !anchor.pageId || anchor.tabId || anchor.rangeName)
+        throw new ContentError("recovery");
+    } else if (!anchor.tabId || anchor.segmentId || binding.type === "text" && !anchor.rangeName)
+      throw new ContentError("recovery");
+  }
+};
+
+// packages/domain/publication/src/domain/content-recovery-fingerprint.ts
+var ContentRecoveryFingerprint = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  create(recovery) {
+    return this.collaborators.contentFingerprint.of(
+      JSON.stringify({
+        operation: recovery.operation,
+        revision: recovery.revision,
+        bindingId: recovery.bindingId
+      })
+    );
+  }
+  matches(recovery, fingerprint) {
+    if (!fingerprint) return false;
+    const orders = [
+      ["operation", "revision", "bindingId"],
+      ["operation", "bindingId", "revision"],
+      ["revision", "operation", "bindingId"],
+      ["revision", "bindingId", "operation"],
+      ["bindingId", "operation", "revision"],
+      ["bindingId", "revision", "operation"]
+    ];
+    return orders.some(
+      (keys) => this.collaborators.contentFingerprint.of(
+        JSON.stringify(
+          Object.fromEntries(keys.map((key) => [key, recovery[key]]))
+        )
+      ) === fingerprint
+    );
+  }
+};
+
+// packages/domain/publication/src/domain/content-recovery-plan.ts
+var ContentRecoveryPlan = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  active(manifest, recovery) {
+    return recovery && !this.collaborators.contentRecoveryFingerprint.matches(
+      recovery,
+      manifest.recoveryId
+    ) ? recovery : void 0;
+  }
+  beforeRead(manifest, recovery) {
+    if (recovery?.operation !== "remove") return manifest;
+    return {
+      ...manifest,
+      pending: void 0,
+      bindings: manifest.bindings.filter(
+        (binding) => binding.id !== recovery.bindingId
+      )
+    };
+  }
+  settle(original, snapshot, recovery) {
+    if (recovery && snapshot.revision !== recovery.revision)
+      throw new ContentError("revision");
+    let manifest = recovery?.operation === "restore" ? this.restore(original, snapshot, recovery.bindingId) : original;
+    if (manifest.pending)
+      manifest = this.collaborators.contentRenderPlan.settle(
+        manifest,
+        snapshot,
+        false
+      );
+    return recovery ? {
+      ...manifest,
+      recoveryId: this.collaborators.contentRecoveryFingerprint.create(recovery)
+    } : manifest;
+  }
+  restore(manifest, snapshot, bindingId) {
+    if (!manifest.bindings.some((binding) => binding.id === bindingId))
+      throw new ContentError("recovery");
+    return {
+      ...manifest,
+      pending: void 0,
+      bindings: manifest.bindings.map(
+        (binding) => binding.id === bindingId ? {
+          ...binding,
+          applied: this.collaborators.contentRenderPlan.fingerprint(
+            snapshot,
+            binding.id
+          ),
+          desired: void 0
+        } : binding
+      )
+    };
+  }
+};
+
+// packages/domain/publication/src/domain/content-render-plan.ts
+var ContentRenderPlan = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  changes(manifest, snapshot, values) {
+    const changes = [];
+    for (const binding of manifest.bindings) {
+      const matches = snapshot.locations.filter(
+        (location2) => location2.id === binding.id
+      );
+      const location = matches[0];
+      if (matches.length !== 1 || location.fingerprint !== binding.applied)
+        throw new ContentError("conflict");
+      const value = values.find(
+        (item) => item.key === binding.key && item.type === binding.type
+      );
+      if (!value) throw new ContentError("contract");
+      if (binding.desired !== value.fingerprint || binding.type === "text" && location.fingerprint !== value.fingerprint)
+        changes.push({ location, value });
+    }
+    return changes;
+  }
+  pending(manifest, snapshot, changes) {
+    return {
+      ...manifest,
+      pending: {
+        revision: snapshot.revision,
+        bindings: manifest.bindings.map((binding) => {
+          const value = changes.find(
+            (change) => change.location.id === binding.id
+          )?.value;
+          return value ? {
+            ...binding,
+            desired: value.fingerprint,
+            applied: value.type === "text" ? value.fingerprint : binding.applied,
+            speakerId: value.speakerId,
+            hostId: value.hostId,
+            fallback: value.fallback
+          } : binding;
+        })
+      }
+    };
+  }
+  settle(manifest, snapshot, confirmed) {
+    if (!manifest.pending) return manifest;
+    const next = manifest.pending.bindings;
+    const applied = next.every((binding) => {
+      const location = snapshot.locations.find(
+        (item) => item.id === binding.id
+      );
+      if (!location) throw new ContentError("conflict");
+      const prior2 = manifest.bindings.find((item) => item.id === binding.id);
+      return binding.type === "image" && binding.desired !== prior2?.desired ? confirmed : binding.applied === location.fingerprint;
+    });
+    if (applied)
+      return {
+        ...manifest,
+        pending: void 0,
+        initialRevision: next.every((binding) => binding.desired) ? void 0 : manifest.initialRevision,
+        bindings: next.map((binding) => ({
+          ...binding,
+          applied: this.fingerprint(snapshot, binding.id)
+        }))
+      };
+    const prior = manifest.bindings.every(
+      (binding) => snapshot.locations.find((item) => item.id === binding.id)?.fingerprint === binding.applied
+    );
+    const uncertainImage = next.some(
+      (binding, index) => binding.type === "image" && binding.desired !== manifest.bindings[index]?.desired
+    );
+    if (!prior)
+      throw new ContentError(uncertainImage ? "recovery" : "conflict");
+    if (uncertainImage && snapshot.revision !== manifest.pending.revision)
+      throw new ContentError("recovery");
+    return { ...manifest, pending: void 0 };
+  }
+  initial(snapshot) {
+    if (!snapshot.locations.length || snapshot.locations.length > 500 || snapshot.locations.some(
+      (location) => !this.collaborators.contentContractPolicy.name(location.id) || !this.collaborators.contentContractPolicy.name(location.key)
+    ) || new Set(snapshot.locations.map((location) => location.id)).size !== snapshot.locations.length || snapshot.locations.some(
+      (location, index) => snapshot.locations.slice(0, index).some(
+        (prior) => this.collaborators.contentAnchorIdentity.equal(
+          prior.anchor,
+          location.anchor
+        )
+      )
+    ))
+      throw new ContentError("location");
+    return snapshot.locations.map((location) => ({
+      id: location.id,
+      type: location.type,
+      key: location.key,
+      anchor: location.anchor,
+      applied: location.fingerprint
+    }));
+  }
+  fingerprint(snapshot, bindingId) {
+    const matches = snapshot.locations.filter(
+      (location) => location.id === bindingId
+    );
+    if (matches.length !== 1) throw new ContentError("conflict");
+    return matches[0].fingerprint;
+  }
+};
+
+// packages/domain/publication/src/domain/content-text-key.ts
+var ContentTextKey = class {
+  of(field) {
+    return field.slot ? `${field.token}:${field.slot}` : field.token;
+  }
+};
+
+// packages/domain/publication/src/domain/feedback-link-selection.ts
+var FeedbackLinkSelection = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  conflict(candidate, targetDate, now2, timeZone) {
+    if (!candidate.isOpen || candidate.occurrenceStatus === "cancelled" || candidate.occurrenceStatus === "postponed")
+      return void 0;
+    if (candidate.date === targetDate) return "ambiguous-date";
+    if (candidate.date < targetDate && this.collaborators.feedbackPolicy.isLinkUpdateDue(
+      candidate.date,
+      now2,
+      timeZone
+    ))
+      return "current-event";
+    return void 0;
+  }
+};
+
+// packages/domain/publication/src/domain/feedback-policy.ts
+var FeedbackPolicy = class {
+  validDate(value) {
+    const date = /* @__PURE__ */ new Date(`${value}T00:00:00Z`);
+    return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(date.valueOf()) && date.toISOString().slice(0, 10) === value;
+  }
+  pollUrl(value) {
+    const url = new URL(value);
+    if (url.origin !== "https://openfeedback.io" || url.username || url.password || !/^\/[a-zA-Z0-9_-]+(?:\/(?:\d{4}-\d{2}-\d{2}|0))?\/?$/.test(
+      url.pathname
+    ) || url.search || url.hash)
+      throw new Error("Feedback link must be an OpenFeedback event URL");
+    return url.href.replace(/\/$/, "");
+  }
+  isLinkUpdateDue(date, now2, timeZone) {
+    if (!this.validDate(date)) return false;
+    const updateDate = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
+    updateDate.setUTCDate(updateDate.getUTCDate() - 1);
+    const today = new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).format(new Date(now2));
+    return today >= updateDate.toISOString().slice(0, 10) && today <= date;
+  }
+};
+
+// packages/domain/publication/src/domain/manual-task-policy.ts
+var ManualPublicationPolicy = class {
+  /** Tracks organizer approvals and manual work required for publication. */
+  planManualPublicationTasks(event) {
+    if (event.occurrenceStatus === "cancelled") {
+      return Object.freeze(
+        this.allTaskKinds().map((kind) => ({
+          kind,
+          status: "not-applicable",
+          reason: "The event is cancelled"
+        }))
+      );
+    }
+    const occurrenceConfirmed = event.occurrenceStatus === "held";
+    return Object.freeze([
+      this.task(
+        "publish-meetup-event",
+        Boolean(event.references.meetup) && event.meetupPublished,
+        "Approve publishing the event to Meetup"
+      ),
+      this.task(
+        "publish-community-event",
+        Boolean(event.references.community),
+        "Publish the event to the CNCF community platform"
+      ),
+      this.task(
+        "create-asset-folder",
+        Boolean(event.references.assets),
+        "Create the event asset folder"
+      ),
+      occurrenceConfirmed ? this.task(
+        "publish-slides",
+        event.slidesPublished,
+        "Publish post-event slides"
+      ) : this.notApplicable(
+        "publish-slides",
+        "Slides are published only after occurrence is explicitly confirmed"
+      ),
+      occurrenceConfirmed ? this.task(
+        "import-attendance",
+        event.attendanceImported,
+        "Import post-event attendance"
+      ) : this.notApplicable(
+        "import-attendance",
+        "Attendance is imported only after occurrence is explicitly confirmed"
+      )
+    ]);
+  }
+  task(kind, completed, reason) {
+    return {
+      kind,
+      status: completed ? "completed" : "pending",
+      reason
+    };
+  }
+  notApplicable(kind, reason) {
+    return { kind, status: "not-applicable", reason };
+  }
+  allTaskKinds() {
+    return [
+      "publish-meetup-event",
+      "publish-community-event",
+      "create-asset-folder",
+      "publish-slides",
+      "import-attendance"
+    ];
+  }
+};
 
 // packages/domain/publication/src/domain/meetup-url-contracts.ts
 var MEETUP_ORIGIN = "https://www.meetup.com";
+
+// packages/domain/publication/src/domain/meetup-group-url.ts
+var MeetupGroupUrl = class _MeetupGroupUrl {
+  constructor(value) {
+    this.value = value;
+  }
+  value;
+  static parse(value) {
+    const prefix = `${MEETUP_ORIGIN}/`;
+    if (typeof value !== "string" || !value.startsWith(prefix) || !value.endsWith("/"))
+      return void 0;
+    const slug = value.slice(prefix.length, -1);
+    return slug.length > 0 && !/[^a-z0-9-]/.test(slug) ? new _MeetupGroupUrl(value) : void 0;
+  }
+  static fromEventUrlPrefix(value) {
+    return value.endsWith("events/") ? _MeetupGroupUrl.parse(value.slice(0, -"events/".length)) : void 0;
+  }
+  get eventUrlPrefix() {
+    return `${this.value}events/`;
+  }
+};
+
+// packages/domain/publication/src/domain/meetup-event-url.ts
+var MeetupEventUrl = class _MeetupEventUrl {
+  constructor(group, identifier) {
+    this.group = group;
+    this.identifier = identifier;
+  }
+  group;
+  identifier;
+  static parse(value, group) {
+    if (typeof value !== "string") return void 0;
+    const match = /^(.*\/)events\/([1-9]\d*)\/?$/.exec(value);
+    if (!match || match[0] !== value) return void 0;
+    const parsedGroup = MeetupGroupUrl.parse(match[1]);
+    if (!parsedGroup || group && parsedGroup.value !== group.value)
+      return void 0;
+    return new _MeetupEventUrl(parsedGroup, match[2]);
+  }
+  get value() {
+    return `${this.group.eventUrlPrefix}${this.identifier}/`;
+  }
+};
+
+// packages/domain/publication/src/domain/meetup-event-url-policy.ts
+var MeetupEventUrlPolicy = class {
+  constructor(collaborators, prefix) {
+    this.collaborators = collaborators;
+    this.prefix = prefix;
+  }
+  collaborators;
+  prefix;
+  id = "meetup-event-url";
+  evaluate(references) {
+    const group = MeetupGroupUrl.fromEventUrlPrefix(this.prefix);
+    return this.collaborators.publicationLinkEvaluation.evaluateLink({
+      references,
+      path: "meetup",
+      isValid: (value) => !!group && !!MeetupEventUrl.parse(value, group),
+      code: "publication.meetup-url.invalid",
+      message: `Meetup URL must start with ${this.prefix} and end with a numeric event identifier`
+    });
+  }
+};
+
+// packages/domain/publication/src/domain/model.ts
+var PublicationDiagnostics = class {
+  applyPublicationPatch(references, patch) {
+    const result = { ...references };
+    for (const operation of patch.operations) {
+      switch (operation.path) {
+        case "meetup":
+          result.meetup = operation.value;
+          break;
+        case "community":
+          result.community = operation.value;
+          break;
+        case "feedback":
+          result.feedback = operation.value;
+          break;
+        case "assets":
+          result.assets = operation.value;
+          break;
+      }
+    }
+    return result;
+  }
+};
+
+// packages/domain/publication/src/domain/presentation-file-url.ts
+var PresentationFileUrl = class {
+  normalize(value) {
+    if (!value?.trim()) return void 0;
+    try {
+      const url = new URL(value.trim());
+      if (url.protocol !== "https:" || url.username || url.password || url.port)
+        return void 0;
+      const presentation = url.hostname === "docs.google.com" && /^\/presentation\/d\/[a-zA-Z0-9_-]+(?:\/(?:edit|view|preview|present))?\/?$/.test(
+        url.pathname
+      );
+      const file = url.hostname === "drive.google.com" && /^\/file\/d\/[a-zA-Z0-9_-]+(?:\/(?:view|preview|edit))?\/?$/.test(
+        url.pathname
+      );
+      return presentation || file ? url.href : void 0;
+    } catch {
+      return void 0;
+    }
+  }
+};
+
+// packages/domain/publication/src/domain/public-asset-url.ts
+var PublicAssetUrl = class {
+  valid(value) {
+    if (!value) return false;
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" && !url.username && !url.password && ![...url.searchParams.keys()].some(
+        (key) => /token|signature|credential|secret|key|auth/i.test(key)
+      );
+    } catch {
+      return false;
+    }
+  }
+};
+
+// packages/domain/publication/src/domain/publication-link-evaluation.ts
+var PublicationLinkEvaluation = class {
+  evaluateLink({
+    references,
+    path,
+    isValid,
+    code,
+    message
+  }) {
+    const raw = references[path];
+    if (raw === void 0 || raw === "") {
+      return this.emptyEvaluation(references);
+    }
+    const normalized = raw.trim().replace(/\/$/, "");
+    if (!isValid(raw.trim())) {
+      return {
+        references,
+        diagnostics: [
+          Object.freeze({
+            code,
+            severity: "error",
+            field: path,
+            message
+          })
+        ],
+        patch: Object.freeze({ operations: [] })
+      };
+    }
+    if (raw === normalized) {
+      return this.emptyEvaluation(references);
+    }
+    const operation = Object.freeze({
+      op: "replace",
+      path,
+      value: normalized,
+      reason: "Trim URL and remove its trailing slash"
+    });
+    return {
+      references: { ...references, [path]: normalized },
+      diagnostics: [
+        Object.freeze({
+          code: `publication.${path}.normalized`,
+          severity: "info",
+          field: path,
+          message: `${path} URL can be normalized safely`,
+          fixAvailable: true
+        })
+      ],
+      patch: Object.freeze({ operations: Object.freeze([operation]) })
+    };
+  }
+  emptyEvaluation(references) {
+    return {
+      references,
+      diagnostics: [],
+      patch: Object.freeze({ operations: [] })
+    };
+  }
+  isHttpsUrl(value) {
+    try {
+      return new URL(value).protocol === "https:";
+    } catch {
+      return false;
+    }
+  }
+  matchesPrefix(value, prefixes, identifierPattern) {
+    const normalized = value.replace(/\/$/, "");
+    const prefix = prefixes.find(
+      (candidate) => normalized.startsWith(candidate)
+    );
+    const identifier = prefix ? normalized.slice(prefix.length) : void 0;
+    return this.isHttpsUrl(normalized) && !!identifier && identifierPattern.test(identifier);
+  }
+};
 
 // packages/domain/publication/src/domain/url-policy-contracts.ts
 var DEFAULT_PUBLICATION_URL_CONFIGURATION = Object.freeze({
@@ -27731,6 +32253,279 @@ var DEFAULT_PUBLICATION_URL_CONFIGURATION = Object.freeze({
   assetFolderUrlPrefix: "https://drive.google.com/drive/folders/"
 });
 
+// packages/domain/publication/src/domain/publication-url-policies.ts
+var PublicationUrlPolicies = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  createDefaultPublicationUrlPolicies(configuration = DEFAULT_PUBLICATION_URL_CONFIGURATION) {
+    return Object.freeze([
+      this.collaborators.createMeetupEventUrlPolicy(
+        configuration.meetupEventUrlPrefix
+      ),
+      this.collaborators.createCommunityEventUrlPolicy(
+        configuration.communityEventUrlPrefixes
+      ),
+      this.collaborators.createAssetFolderUrlPolicy(
+        configuration.assetFolderUrlPrefix
+      )
+    ]);
+  }
+};
+
+// packages/domain/publication/src/domain/publication-url-policy-engine.ts
+var PublicationUrlPolicyEngine = class {
+  constructor(collaborators, policies) {
+    this.collaborators = collaborators;
+    this.policies = policies;
+  }
+  collaborators;
+  policies;
+  evaluate(references) {
+    let normalized = references;
+    const diagnostics = [];
+    const operations = [];
+    for (const policy of this.policies) {
+      const result = policy.evaluate(normalized);
+      diagnostics.push(...result.diagnostics);
+      operations.push(...result.patch.operations);
+      normalized = this.collaborators.publicationDiagnostics.applyPublicationPatch(
+        normalized,
+        result.patch
+      );
+    }
+    return {
+      references: normalized,
+      diagnostics: Object.freeze(diagnostics),
+      patch: Object.freeze({ operations: Object.freeze(operations) })
+    };
+  }
+};
+
+// packages/domain/publication/src/domain/scheduled-event-policy.ts
+var ScheduledEventPolicy = class {
+  valid(event, now2) {
+    if (!event.title.trim() || event.title.length > 80 || !event.description.trim() || event.description.length > 49e3 || !event.venue.name.trim() || !event.venue.city.trim() || !this.validTime(event.startTime) || !this.validTime(event.endTime) || event.endTime <= event.startTime || !/^\d{4}-\d{2}-\d{2}$/.test(event.date))
+      return false;
+    const date = /* @__PURE__ */ new Date(`${event.date}T12:00:00Z`);
+    if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== event.date)
+      return false;
+    try {
+      const format = new Intl.DateTimeFormat("sv-SE", {
+        timeZone: event.timeZone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23"
+      });
+      const start = this.instant(event.date, event.startTime, format);
+      const end = this.instant(event.date, event.endTime, format);
+      return start !== void 0 && end !== void 0 && start > Date.parse(now2) && end > start;
+    } catch {
+      return false;
+    }
+  }
+  validTime(value) {
+    return /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
+  }
+  instant(date, time, format) {
+    const reference = Date.parse(`${date}T${time}:00Z`);
+    let match;
+    for (let offset = -840; offset <= 840; offset += 15) {
+      const candidate = reference + offset * 6e4;
+      if (format.format(candidate) !== `${date} ${time}`) continue;
+      if (match !== void 0) return void 0;
+      match = candidate;
+    }
+    return match;
+  }
+};
+
+// packages/domain/publication/src/dependency-composition.ts
+var PublicationDomainComposition = class {
+  assetFolderUrlPolicy(...args) {
+    return new AssetFolderUrlPolicy(
+      { publicationLinkEvaluation: this.publicationLinkEvaluation() },
+      ...args
+    );
+  }
+  communityEventUrlPolicy(...args) {
+    return new CommunityEventUrlPolicy(
+      { publicationLinkEvaluation: this.publicationLinkEvaluation() },
+      ...args
+    );
+  }
+  contentAnchorIdentity() {
+    return new ContentAnchorIdentity();
+  }
+  contentBindingPolicy() {
+    return new ContentBindingPolicy({
+      contentContractPolicy: this.contentContractPolicy()
+    });
+  }
+  contentContractPolicy() {
+    return new ContentContractPolicy({ contentTextKey: this.contentTextKey() });
+  }
+  contentFingerprint() {
+    return new ContentFingerprint();
+  }
+  contentManifestPolicy() {
+    return new ContentManifestPolicy({
+      contentAnchorIdentity: this.contentAnchorIdentity(),
+      contentContractPolicy: this.contentContractPolicy(),
+      contentBindingPolicy: this.contentBindingPolicy(),
+      contentTextKey: this.contentTextKey()
+    });
+  }
+  contentRecoveryFingerprint() {
+    return new ContentRecoveryFingerprint({
+      contentFingerprint: this.contentFingerprint()
+    });
+  }
+  contentRecoveryPlan() {
+    return new ContentRecoveryPlan({
+      contentRecoveryFingerprint: this.contentRecoveryFingerprint(),
+      contentRenderPlan: this.contentRenderPlan()
+    });
+  }
+  contentRenderPlan() {
+    return new ContentRenderPlan({
+      contentContractPolicy: this.contentContractPolicy(),
+      contentAnchorIdentity: this.contentAnchorIdentity()
+    });
+  }
+  contentTextKey() {
+    return new ContentTextKey();
+  }
+  feedbackLinkSelection() {
+    return new FeedbackLinkSelection({ feedbackPolicy: this.feedbackPolicy() });
+  }
+  feedbackPolicy() {
+    return new FeedbackPolicy();
+  }
+  manualPublicationPolicy() {
+    return new ManualPublicationPolicy();
+  }
+  meetupEventUrlPolicy(...args) {
+    return new MeetupEventUrlPolicy(
+      { publicationLinkEvaluation: this.publicationLinkEvaluation() },
+      ...args
+    );
+  }
+  presentationFileUrl() {
+    return new PresentationFileUrl();
+  }
+  publicAssetUrl() {
+    return new PublicAssetUrl();
+  }
+  publicationDiagnostics() {
+    return new PublicationDiagnostics();
+  }
+  publicationLinkEvaluation() {
+    return new PublicationLinkEvaluation();
+  }
+  publicationUrlPolicies() {
+    return new PublicationUrlPolicies({
+      createMeetupEventUrlPolicy: (...args) => this.meetupEventUrlPolicy(...args),
+      createCommunityEventUrlPolicy: (...args) => this.communityEventUrlPolicy(...args),
+      createAssetFolderUrlPolicy: (...args) => this.assetFolderUrlPolicy(...args)
+    });
+  }
+  publicationUrlPolicyEngine(...args) {
+    return new PublicationUrlPolicyEngine(
+      { publicationDiagnostics: this.publicationDiagnostics() },
+      ...args
+    );
+  }
+  reconcileAssetContent(...args) {
+    return new ReconcileAssetContent(
+      {
+        contentContractPolicy: this.contentContractPolicy(),
+        contentRenderPlan: this.contentRenderPlan(),
+        contentTextKey: this.contentTextKey(),
+        contentManifestPolicy: this.contentManifestPolicy(),
+        contentRecoveryFingerprint: this.contentRecoveryFingerprint(),
+        contentRecoveryPlan: this.contentRecoveryPlan(),
+        createResolveContentValues: (...args2) => this.resolveContentValues(...args2)
+      },
+      ...args
+    );
+  }
+  reconcileAssetFile(...args) {
+    return new ReconcileAssetFile(...args);
+  }
+  reconcileEventAssets(...args) {
+    return new ReconcileEventAssets(
+      {
+        createReconcileAssetFile: (...args2) => this.reconcileAssetFile(...args2)
+      },
+      ...args
+    );
+  }
+  resolveContentValues(...args) {
+    return new ResolveContentValues(
+      {
+        contentTextKey: this.contentTextKey(),
+        contentContractPolicy: this.contentContractPolicy(),
+        contentFingerprint: this.contentFingerprint()
+      },
+      ...args
+    );
+  }
+  scheduledEventPolicy() {
+    return new ScheduledEventPolicy();
+  }
+};
+
+// packages/domain/publication/src/domain/feedback-resolution-error.ts
+var FeedbackResolutionError = class extends Error {
+  constructor(kind) {
+    super(
+      kind === "conflict" ? "The feedback agenda contains ambiguous talk or speaker identities" : "Feedback talk results are unavailable"
+    );
+    this.kind = kind;
+    this.name = "FeedbackResolutionError";
+  }
+  kind;
+};
+
+// packages/domain/publication/src/domain/scheduled-event-error.ts
+var ScheduledEventError = class extends Error {
+  constructor(kind) {
+    super(`Event publication failed: ${kind}`);
+    this.kind = kind;
+    this.name = "ScheduledEventError";
+  }
+  kind;
+};
+
+// packages/application/journey/src/approval/meetup-publication-revision.ts
+var MeetupPublicationRevision = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  of(event, url) {
+    return this.collaborators.contentFingerprint.of(
+      JSON.stringify({
+        url,
+        event: {
+          title: event.title,
+          description: event.description,
+          date: event.date,
+          startTime: event.startTime,
+          endTime: event.endTime,
+          timeZone: event.timeZone,
+          venue: { name: event.venue.name, city: event.venue.city }
+        }
+      })
+    );
+  }
+};
+
 // packages/application/journey/src/config/automation-config.ts
 var AutomationConfigFactory = class {
   /**
@@ -27738,7 +32533,7 @@ var AutomationConfigFactory = class {
    * repositories do not provide a runtime configuration file anymore. Without
    * a repository owner, workspace-only operations leave communication disabled.
    */
-  static createAutomationConfig(repositoryOwner) {
+  createAutomationConfig(repositoryOwner) {
     return {
       timezone: "Europe/Paris",
       event: {
@@ -27764,6 +32559,100 @@ var AutomationConfigFactory = class {
         "cncf-event-url-prefix": DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes[0]
       }
     };
+  }
+};
+
+// packages/application/journey/src/config/configured-publication-policies.ts
+var ConfiguredPublicationPolicies = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  create(publication) {
+    return this.collaborators.publicationUrlPolicies.createDefaultPublicationUrlPolicies(
+      {
+        ...DEFAULT_PUBLICATION_URL_CONFIGURATION,
+        meetupEventUrlPrefix: publication["meetup-event-url-prefix"],
+        communityEventUrlPrefixes: [
+          publication["cncf-event-url-prefix"],
+          ...DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes.slice(
+            1
+          )
+        ]
+      }
+    );
+  }
+};
+
+// packages/application/journey/src/result/attention-stage-reports.ts
+var ATTENTION_STAGE_OWNERS = [
+  "event",
+  "assets",
+  "feedback",
+  "communications"
+];
+
+// packages/application/journey/src/result/attention-stage-evaluation.ts
+var AttentionStageEvaluation = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  evaluate(input) {
+    const eventDiagnostics = input.event.diagnostics;
+    return ATTENTION_STAGE_OWNERS.map((owner) => {
+      const { outcome, diagnostics } = input[owner];
+      const blocked = diagnostics.some(
+        (item) => this.collaborators.diagnosticPolicy.isTechnicalFailure(item) && !this.eventPrerequisite(item.code, owner, eventDiagnostics)
+      );
+      const prerequisiteBlocked = outcome !== "unknown" && !blocked && diagnostics.some(
+        (item) => this.organizerPrerequisite(item) || this.eventPrerequisite(item.code, owner, eventDiagnostics)
+      );
+      return {
+        owner,
+        outcome,
+        blocked,
+        ...prerequisiteBlocked ? { prerequisiteBlocked: true } : {}
+      };
+    });
+  }
+  diagnostics(input) {
+    const diagnostics = /* @__PURE__ */ new Map();
+    for (const owner of ATTENTION_STAGE_OWNERS)
+      for (const item of input[owner].diagnostics)
+        diagnostics.set(
+          `${item.code}:${item.field ?? ""}:${item.severity}`,
+          item
+        );
+    const merged = [...diagnostics.values()];
+    return merged.filter(
+      (item) => !["action.execution.failed", "event.concurrently-modified"].includes(
+        item.code
+      ) && !this.collaborators.organizerDiagnosticPolicy.derivative(item, merged)
+    );
+  }
+  complete(input) {
+    return ATTENTION_STAGE_OWNERS.every((owner) => {
+      const stage = input[owner];
+      return stage.outcome === "success" && stage.reported && !stage.diagnostics.some(
+        (item) => this.collaborators.diagnosticPolicy.isTechnicalFailure(item) || item.code === "event.concurrently-modified"
+      );
+    });
+  }
+  organizerPrerequisite(item) {
+    if (item.code === "event.concurrently-modified") return true;
+    return this.collaborators.diagnosticPolicy.classify(item) === "organizer" && ![
+      "communication.approval-pending",
+      "communication.approval-rejected"
+    ].includes(item.code);
+  }
+  eventPrerequisite(code, owner, eventDiagnostics) {
+    if (owner === "event") return false;
+    return eventDiagnostics.some((item) => {
+      if (this.collaborators.diagnosticPolicy.classify(item) === "informational" || !/^(event|referential)\./.test(item.code))
+        return false;
+      return item.code === code || code === "communication.event-references-unresolved" || code === "communication.referential-catalog-invalid" && item.code.startsWith("referential.");
+    });
   }
 };
 
@@ -27900,679 +32789,365 @@ var INFORMATIONAL_CODES = /* @__PURE__ */ new Set([
   "publication.feedback.unrelated",
   "issue-form.updated"
 ]);
-var DiagnosticPolicy = class _DiagnosticPolicy {
-  static classify(diagnostic) {
+var DiagnosticPolicy = class {
+  classify(diagnostic) {
     if (diagnostic.fixApplied === true || diagnostic.severity === "info" || INFORMATIONAL_CODES.has(diagnostic.code))
       return "informational";
     return ORGANIZER_CODES.has(diagnostic.code) ? "organizer" : "technical";
   }
-  static isTechnicalFailure(diagnostic) {
-    return _DiagnosticPolicy.classify(diagnostic) === "technical";
+  isTechnicalFailure(diagnostic) {
+    return this.classify(diagnostic) === "technical";
   }
 };
 
-// packages/domain/referential/src/domain/proposal-source-error.ts
-var ProposalSourceError = class extends Error {
-  constructor(code, retryAfterSeconds, context3) {
-    super(`Proposal source ${code}.`);
-    this.code = code;
-    this.retryAfterSeconds = retryAfterSeconds;
-    this.context = context3;
-    this.name = "ProposalSourceError";
+// packages/application/journey/src/result/organizer-diagnostic-policy.ts
+var OrganizerDiagnosticPolicy = class _OrganizerDiagnosticPolicy {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
   }
-  code;
-  retryAfterSeconds;
-  context;
-};
-
-// packages/domain/referential/src/application/use-cases/merge-source-speakers.ts
-var MergeSourceSpeakers = class {
-  execute(entries, snapshot, reservedIds) {
-    const reserved = /* @__PURE__ */ new Set([...reservedIds, ...entries.map((row) => row.id)]);
-    const mappings = this.mappings(entries, snapshot);
-    const merged = entries.map((row) => ({ ...row }));
-    for (const speaker of [...snapshot.speakers].sort(
-      (a, b2) => a.id.localeCompare(b2.id, "en")
-    )) {
-      let index = mappings.get(speaker.id);
-      if (index === void 0) {
-        const possibleMatch = entries.findIndex(
-          (row2) => !row2.sourceIdentity?.speakerId && (row2.email?.trim().toLowerCase() === speaker.email.toLowerCase() || (row2.displayName || `${row2.firstName} ${row2.lastName}`).trim().toLowerCase() === speaker.displayName.toLowerCase())
-        );
-        if (possibleMatch !== -1)
-          throw new ProposalSourceError("mapping-required", void 0, {
-            field: `speakers[${possibleMatch}]`
-          });
-        const id = this.allocate(reserved);
-        index = merged.length;
-        merged.push({
-          id,
-          firstName: "",
-          lastName: "",
-          phone: "",
-          displayName: "",
-          email: "",
-          company: "",
-          pictureUrl: "",
-          sourceIdentity: {
-            provider: snapshot.provider,
-            event: snapshot.event,
-            speakerId: speaker.id
-          }
-        });
-        mappings.set(speaker.id, index);
-      }
-      const row = merged[index];
-      row.displayName = speaker.displayName;
-      row.email = speaker.email;
-      row.company = speaker.company ?? "";
-      row.pictureUrl = speaker.pictureUrl ?? "";
-    }
-    return {
-      entries: merged,
-      reservedIds: [...reserved].sort()
-    };
-  }
-  mappings(entries, snapshot) {
-    const mappings = /* @__PURE__ */ new Map();
-    for (const [index, row] of entries.entries()) {
-      if (row.sourceIdentity?.provider !== snapshot.provider || row.sourceIdentity?.event !== snapshot.event)
-        continue;
-      if (!row.sourceIdentity?.speakerId || mappings.has(row.sourceIdentity?.speakerId))
-        throw new ProposalSourceError("conflict");
-      mappings.set(row.sourceIdentity?.speakerId, index);
-    }
-    return mappings;
-  }
-  allocate(reserved) {
-    const maximum = Math.max(
-      0,
-      ...[...reserved].map((id2) => Number(id2.replace(/^speaker-/, "")))
-    );
-    if (!Number.isInteger(maximum) || maximum >= 9999)
-      throw new ProposalSourceError("conflict");
-    const id = `speaker-${String(maximum + 1).padStart(4, "0")}`;
-    reserved.add(id);
-    return id;
-  }
-};
-
-// packages/domain/referential/src/application/use-cases/project-referential-choices.ts
-var ProjectReferentialChoices = class {
-  execute(catalog) {
-    return Object.freeze({
-      hostOptions: Object.freeze(catalog.hosts.map((host) => host.displayName)),
-      speakerReferences: Object.freeze(
-        catalog.speakers.map(
-          (speaker) => catalog.speakers.filter(
-            (other) => other.displayName.toLowerCase() === speaker.displayName.toLowerCase()
-          ).length > 1 ? `${speaker.displayName} [${speaker.id}]` : speaker.displayName
-        )
+  collaborators;
+  suppressed(item, diagnostics) {
+    if (item.severity === "info" || item.fixApplied === true) return true;
+    const causes = _OrganizerDiagnosticPolicy.PREREQUISITES.get(item.code);
+    return causes?.some(
+      (prefix) => diagnostics.some(
+        (cause) => cause !== item && cause.severity !== "info" && cause.fixApplied !== true && cause.code.startsWith(prefix)
       )
-    });
+    ) ?? false;
   }
-};
-
-// packages/domain/referential/src/domain/identifiers.ts
-var HOST_ID_PATTERN = /^host-[0-9]{4}$/;
-var CONTACT_ID_PATTERN = /^contact-[0-9]{4}$/;
-var SPEAKER_ID_PATTERN = /^speaker-[0-9]{4}$/;
-var ReferentialIdentifiers = class {
-  static asHostId(value) {
-    return HOST_ID_PATTERN.test(value) ? value : void 0;
-  }
-  static asContactId(value) {
-    return CONTACT_ID_PATTERN.test(value) ? value : void 0;
-  }
-  static asSpeakerId(value) {
-    return SPEAKER_ID_PATTERN.test(value) ? value : void 0;
-  }
-};
-
-// packages/domain/referential/src/domain/referential-catalog.ts
-var ReferentialCatalogOperations = class _ReferentialCatalogOperations {
-  static normalizeDisplayName(value) {
-    return value.normalize("NFC").trim().replace(/\s+/g, " ");
-  }
-  static displayNameKey(value) {
-    return _ReferentialCatalogOperations.normalizeDisplayName(
-      value
-    ).toLowerCase();
-  }
-  static freezeCatalog(hosts, speakers) {
-    for (const host of hosts) {
-      for (const contact of host.contacts) {
-        Object.freeze(contact);
-      }
-      Object.freeze(host.contacts);
-      Object.freeze(host);
-    }
-    for (const speaker of speakers) {
-      Object.freeze(speaker);
-    }
-    return Object.freeze({
-      hosts: Object.freeze([...hosts]),
-      speakers: Object.freeze([...speakers])
-    });
-  }
-};
-
-// packages/domain/referential/src/domain/referential-diagnostic.ts
-var ReferentialDiagnostics = class {
-  static diagnostic(code, severity, path, message) {
-    return Object.freeze({ code, severity, path, message });
-  }
-  static freezeDiagnostics(diagnostics) {
-    return Object.freeze([...diagnostics]);
-  }
-};
-
-// packages/domain/referential/src/application/use-cases/validate-referential-catalog-contracts.ts
-var EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-// packages/domain/referential/src/application/use-cases/referential-record-fields.ts
-var ReferentialRecordFields = class {
-  static requiredText(value, code, path, message, diagnostics) {
-    if (typeof value !== "string") {
-      diagnostics.push(
-        ReferentialDiagnostics.diagnostic(code, "error", path, message)
-      );
-      return void 0;
-    }
-    const normalized = ReferentialCatalogOperations.normalizeDisplayName(value);
-    if (!normalized) {
-      diagnostics.push(
-        ReferentialDiagnostics.diagnostic(code, "error", path, message)
-      );
-      return void 0;
-    }
-    return normalized;
-  }
-  static optionalText(value, code, path, message, diagnostics) {
-    if (value === void 0 || value === null || value === "") {
-      return void 0;
-    }
-    if (typeof value !== "string") {
-      diagnostics.push(
-        ReferentialDiagnostics.diagnostic(code, "error", path, message)
-      );
-      return null;
-    }
-    return value.normalize("NFC").trim() || void 0;
-  }
-  static email(value, code, path, message, diagnostics) {
-    if (typeof value !== "string") {
-      diagnostics.push(
-        ReferentialDiagnostics.diagnostic(code, "error", path, message)
-      );
-      return void 0;
-    }
-    const normalized = value.normalize("NFC").trim().toLowerCase();
-    if (!EMAIL_PATTERN.test(normalized)) {
-      diagnostics.push(
-        ReferentialDiagnostics.diagnostic(code, "error", path, message)
-      );
-      return void 0;
-    }
-    return normalized;
-  }
-};
-
-// packages/domain/referential/src/application/use-cases/host-catalog-validator.ts
-var HostCatalogValidator = class _HostCatalogValidator {
-  static validateHosts(records, diagnostics) {
-    const hostsById = /* @__PURE__ */ new Map();
-    const contactIds = /* @__PURE__ */ new Set();
-    for (const [index, record] of records.entries()) {
-      const parsed = _HostCatalogValidator.parseHostRecord(
-        record,
-        index,
-        diagnostics
-      );
-      if (!parsed) {
-        continue;
-      }
-      if (contactIds.has(parsed.contact.id)) {
-        diagnostics.push(
-          ReferentialDiagnostics.diagnostic(
-            "referential.contact.id.duplicate",
-            "error",
-            `hosts[${index}].contactId`,
-            "Contact stable identifiers must be unique."
-          )
-        );
-        continue;
-      }
-      contactIds.add(parsed.contact.id);
-      const host = hostsById.get(parsed.hostId);
-      if (!host) {
-        hostsById.set(parsed.hostId, {
-          ...record.source ? { source: Object.freeze({ ...record.source }) } : {},
-          id: parsed.hostId,
-          displayName: parsed.displayName,
-          contacts: [parsed.contact]
-        });
-        continue;
-      }
-      if (host.displayName !== parsed.displayName) {
-        diagnostics.push(
-          ReferentialDiagnostics.diagnostic(
-            "referential.host.id.conflict",
-            "error",
-            `hosts[${index}].hostId`,
-            "A host stable identifier cannot describe different host names."
-          )
-        );
-        continue;
-      }
-      host.contacts.push(parsed.contact);
-    }
-    return [...hostsById.values()].map((host) => ({
-      ...host.source ? { source: host.source } : {},
-      id: host.id,
-      displayName: host.displayName,
-      contacts: host.contacts
-    }));
-  }
-  static parseHostRecord(record, index, diagnostics) {
-    const hostId = _HostCatalogValidator.hostId(record, index, diagnostics);
-    const displayName = ReferentialRecordFields.requiredText(
-      record.displayName,
-      "referential.host.display-name.invalid",
-      `hosts[${index}].displayName`,
-      "Host display name must be a non-empty string.",
-      diagnostics
-    );
-    const contactId = _HostCatalogValidator.contactId(
-      record,
-      index,
-      diagnostics
-    );
-    const contactName = ReferentialRecordFields.requiredText(
-      record.contactName,
-      "referential.contact.name.invalid",
-      `hosts[${index}].contactName`,
-      "Contact name must be a non-empty string.",
-      diagnostics
-    );
-    const email = ReferentialRecordFields.email(
-      record.email,
-      "referential.contact.email.invalid",
-      `hosts[${index}].email`,
-      "Host contact email address is invalid.",
-      diagnostics
-    );
-    const phone = ReferentialRecordFields.optionalText(
-      record.phone,
-      "referential.contact.phone.invalid",
-      `hosts[${index}].phone`,
-      "Host contact phone must be a string when provided.",
-      diagnostics
-    );
-    const address = ReferentialRecordFields.requiredText(
-      record.address,
-      "referential.contact.address.invalid",
-      `hosts[${index}].address`,
-      "Host contact address must be a non-empty string.",
-      diagnostics
-    );
-    if (!hostId || !displayName || !contactId || !contactName || !email || address === void 0 || phone === null) {
-      return void 0;
-    }
-    return {
-      hostId,
-      displayName,
-      contact: {
-        id: contactId,
-        name: contactName,
-        email,
-        ...phone ? { phone } : {},
-        address
-      }
+  static PREREQUISITES = /* @__PURE__ */ new Map([
+    ["event.agenda.missing", ["event.proposals."]],
+    ["publication.assets.prerequisites", ["event.", "referential.reference."]],
+    [
+      "publication.feedback.prerequisites",
+      ["event.", "referential.reference."]
+    ],
+    [
+      "publication.feedback.agenda",
+      ["event.agenda.", "event.proposals.", "referential.reference.speaker."]
+    ],
+    ["communication.event-references-unresolved", ["referential.reference."]],
+    [
+      "communication.referential-catalog-invalid",
+      ["referential.host.", "referential.speaker.", "referential.contact."]
+    ],
+    ["communication.slides-unavailable", ["publication.assets."]],
+    [
+      "communication.feedback-unavailable",
+      ["publication.feedback.", "event.proposals.", "event.agenda."]
+    ]
+  ]);
+  derivative(item, diagnostics) {
+    const roots = {
+      "communication.event-references-unresolved": /^(event\.(proposals\.|agenda\.|hoster\.|document\.reference-metadata\.)|referential\.)/,
+      "communication.referential-catalog-invalid": /^referential\./,
+      "communication.slides-unavailable": /^publication\.assets\.content\./,
+      "communication.feedback-unavailable": /^(publication\.feedback\.(agenda|prerequisites|conflict)|event\.link\.feedback\.invalid)$/,
+      "publication.feedback.agenda": /^event\.(agenda\.|proposals\.)/,
+      "publication.assets.prerequisites": /^event\.(date\.|hoster\.)/
     };
-  }
-  static hostId(record, index, diagnostics) {
-    const hostIdValue = ReferentialRecordFields.requiredText(
-      record.hostId,
-      "referential.host.id.invalid",
-      `hosts[${index}].hostId`,
-      "Host stable identifier must be a non-empty string.",
-      diagnostics
+    const root = roots[item.code];
+    return root !== void 0 && diagnostics.some(
+      (candidate) => root.test(candidate.code) && this.collaborators.diagnosticPolicy.classify(candidate) !== "informational"
     );
-    const hostId = hostIdValue ? ReferentialIdentifiers.asHostId(hostIdValue) : void 0;
-    if (hostIdValue && !hostId) {
-      diagnostics.push(
-        ReferentialDiagnostics.diagnostic(
-          "referential.host.id.invalid",
-          "error",
-          `hosts[${index}].hostId`,
-          "Host stable identifier must use the opaque host-0001 format."
-        )
-      );
-    }
-    return hostId;
-  }
-  static contactId(record, index, diagnostics) {
-    const contactIdValue = ReferentialRecordFields.requiredText(
-      record.contactId,
-      "referential.contact.id.invalid",
-      `hosts[${index}].contactId`,
-      "Contact stable identifier must be a non-empty string.",
-      diagnostics
-    );
-    const contactId = contactIdValue ? ReferentialIdentifiers.asContactId(contactIdValue) : void 0;
-    if (contactIdValue && !contactId) {
-      diagnostics.push(
-        ReferentialDiagnostics.diagnostic(
-          "referential.contact.id.invalid",
-          "error",
-          `hosts[${index}].contactId`,
-          "Contact stable identifier must use the opaque contact-0001 format."
-        )
-      );
-    }
-    return contactId;
   }
 };
 
-// packages/domain/referential/src/application/use-cases/speaker-source-fields.ts
-var SpeakerSourceFields = class _SpeakerSourceFields {
-  static read(record, index, diagnostics) {
-    const values = [
-      record.sourceProvider,
-      record.sourceEvent,
-      record.sourceSpeakerId
+// packages/application/journey/src/use-cases/asset-participant-projection.ts
+var AssetParticipantProjection = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  create(event, catalog, assignments) {
+    const agendaIds = new Set(
+      event.agenda.flatMap(
+        (talk) => talk.speakers.map((speaker) => speaker.id)
+      )
+    );
+    const speakers = {};
+    const pictures = {};
+    for (const [slot, id] of Object.entries(assignments.speakers)) {
+      const speaker = catalog.speakers.find((item) => item.id === id);
+      if (!speaker || !agendaIds.has(id)) continue;
+      speakers[slot] = speaker.displayName;
+      if (this.collaborators.publicAssetUrl.valid(speaker.pictureUrl)) {
+        pictures[slot] = {
+          speakerId: id,
+          url: speaker.pictureUrl,
+          description: speaker.displayName
+        };
+      }
+    }
+    const talks = {};
+    for (const [slot, identity] of Object.entries(assignments.talks)) {
+      const matches = event.agenda.filter(
+        (talk2) => talk2.proposal?.id === identity.id && talk2.proposal.provider === identity.provider && talk2.proposal.event === identity.event
+      );
+      if (matches.length !== 1) continue;
+      const talk = matches[0];
+      if (!talk.proposal) continue;
+      talks[slot] = {
+        title: talk.proposal.title,
+        abstract: talk.proposal?.abstract,
+        speakers: talk.speakers.map((speaker) => speaker.displayName)
+      };
+    }
+    return { speakers, pictures, talks };
+  }
+};
+
+// packages/application/journey/src/ports/organizer-follow-up.ts
+var FOLLOW_UP_TASKS = [
+  "thank-host",
+  "thank-speakers",
+  "share-slides",
+  "import-attendance",
+  "share-social"
+];
+
+// packages/application/journey/src/use-cases/attention-event-facts.ts
+var AttentionEventFacts = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  create(decoded, config) {
+    const evaluated = this.collaborators.createEventRuleEngine(
+      this.collaborators.eventRuleFactory.createDefaultEventRules()
+    ).evaluate(decoded.event);
+    const publication = this.collaborators.eventPublicationEvaluation.evaluatePublication(
+      evaluated.event,
+      config
+    );
+    const event = publication.event;
+    const diagnostics = [
+      ...decoded.diagnostics,
+      ...evaluated.diagnostics,
+      ...publication.diagnostics
     ];
-    const hasMapping = values.some(
-      (value) => value !== void 0 && value !== ""
+    const tasks = this.collaborators.eventPublicationEvaluation.planEventManualPublicationTasks(
+      event
     );
-    if (hasMapping && !values.every(
-      (value) => typeof value === "string" && /^[a-zA-Z0-9_-]{1,200}$/.test(value)
-    )) {
-      _SpeakerSourceFields.invalid(index, diagnostics);
-      return {};
-    }
     return {
-      ...hasMapping ? {
-        sourceIdentity: {
-          provider: String(record.sourceProvider),
-          event: String(record.sourceEvent),
-          speakerId: String(record.sourceSpeakerId)
-        }
-      } : {},
-      ..._SpeakerSourceFields.pictureUrl(record.pictureUrl) ? { pictureUrl: String(record.pictureUrl) } : {}
+      eventDate: this.collaborators.attentionPolicy.eventDay(event.date) === void 0 ? "" : event.date,
+      closed: event.issueState === "closed",
+      occurrence: event.occurrenceStatus ?? "scheduled",
+      requiredDataMissing: diagnostics.some(
+        (item) => item.category === "invalid" || item.category === "incomplete"
+      ),
+      hostConfirmed: event.confirmations.host,
+      speakersConfirmed: event.confirmations.speakers,
+      publicationPending: [
+        ...tasks.filter(
+          (task) => task.status === "pending" && !["publish-slides", "import-attendance"].includes(task.kind)
+        ).map((task) => task.kind),
+        ...this.announcements(event.operationalChecklists.communication)
+      ],
+      followUpPending: this.followUp(event)
     };
   }
-  static pictureUrl(value) {
-    if (typeof value !== "string" || value.length > 2048) return void 0;
-    try {
-      const url = new URL(value);
-      return url.protocol === "https:" && !url.username && !url.password ? url.href : void 0;
-    } catch {
-      return void 0;
-    }
-  }
-  static validateMappings(speakers, diagnostics) {
-    const identities = [];
-    for (const [index, speaker] of speakers.entries()) {
-      const identity = speaker.sourceIdentity;
-      if (!identity) continue;
-      if (identities.some(
-        (existing) => existing.provider === identity.provider && existing.event === identity.event && existing.speakerId === identity.speakerId
-      ))
-        _SpeakerSourceFields.invalid(index, diagnostics);
-      identities.push(identity);
-    }
-  }
-  static invalid(index, diagnostics) {
-    diagnostics.push({
-      code: "referential.speaker.mapping.invalid",
-      severity: "error",
-      path: `speakers[${index}].sourceIdentity`,
-      message: "Source mappings must be complete, scoped and unique."
+  followUp(event) {
+    return EXPECTED_POST_EVENT_TASK_NAMES.flatMap((name, index) => {
+      const completed = index < 2 ? this.collaborators.communicationChecklist.status(
+        event,
+        index === 0 ? "host-thanks" : "speaker-thanks"
+      ) === "completed" : this.collaborators.eventPublicationEvaluation.checklistTaskIsCompleted(
+        event.operationalChecklists.postEvent,
+        name
+      );
+      return completed ? [] : [FOLLOW_UP_TASKS[index]];
     });
   }
-};
-
-// packages/domain/referential/src/application/use-cases/speaker-catalog-validator.ts
-var SpeakerCatalogValidator = class _SpeakerCatalogValidator {
-  static validateSpeakers(records, diagnostics) {
-    const speakers = [];
-    const speakerIds = /* @__PURE__ */ new Set();
-    for (const [index, record] of records.entries()) {
-      const speakerId = _SpeakerCatalogValidator.speakerId(
-        record,
-        index,
-        diagnostics
-      );
-      const { firstName, lastName, company, email, phone, displayName } = _SpeakerCatalogValidator.contactFields(record, index, diagnostics);
-      if (!speakerId || !displayName || firstName === null || lastName === null || company === null || !email || phone === null) {
-        continue;
-      }
-      if (speakerIds.has(speakerId)) {
-        diagnostics.push(
-          ReferentialDiagnostics.diagnostic(
-            "referential.speaker.id.duplicate",
-            "error",
-            `speakers[${index}].speakerId`,
-            "Speaker stable identifiers must be unique."
-          )
-        );
-        continue;
-      }
-      speakerIds.add(speakerId);
-      speakers.push({
-        ...record.source ? { source: Object.freeze({ ...record.source }) } : {},
-        id: speakerId,
-        firstName: firstName ?? "",
-        lastName: lastName ?? "",
-        displayName,
-        company: company ?? "",
-        ...SpeakerSourceFields.read(record, index, diagnostics),
-        email,
-        ...phone ? { phone } : {}
-      });
-    }
-    return speakers;
-  }
-  static speakerId(record, index, diagnostics) {
-    const speakerIdValue = ReferentialRecordFields.requiredText(
-      record.speakerId,
-      "referential.speaker.id.invalid",
-      `speakers[${index}].speakerId`,
-      "Speaker stable identifier must be a non-empty string.",
-      diagnostics
-    );
-    const speakerId = speakerIdValue ? ReferentialIdentifiers.asSpeakerId(speakerIdValue) : void 0;
-    if (speakerIdValue && !speakerId) {
-      diagnostics.push(
-        ReferentialDiagnostics.diagnostic(
-          "referential.speaker.id.invalid",
-          "error",
-          `speakers[${index}].speakerId`,
-          "Speaker stable identifier must use the speaker-* slug format."
-        )
-      );
-    }
-    return speakerId;
-  }
-  static contactFields(record, index, diagnostics) {
-    const firstName = ReferentialRecordFields.optionalText(
-      record.firstName,
-      "referential.speaker.first-name.invalid",
-      `speakers[${index}].firstName`,
-      "Speaker first name must be a non-empty string.",
-      diagnostics
-    );
-    const lastName = ReferentialRecordFields.optionalText(
-      record.lastName,
-      "referential.speaker.last-name.invalid",
-      `speakers[${index}].lastName`,
-      "Speaker last name must be a non-empty string.",
-      diagnostics
-    );
-    const company = ReferentialRecordFields.optionalText(
-      record.company,
-      "referential.speaker.company.invalid",
-      `speakers[${index}].company`,
-      "Speaker company must be a non-empty string.",
-      diagnostics
-    );
-    const email = ReferentialRecordFields.email(
-      record.email,
-      "referential.speaker.email.invalid",
-      `speakers[${index}].email`,
-      "Speaker email address is invalid.",
-      diagnostics
-    );
-    const phone = ReferentialRecordFields.optionalText(
-      record.phone,
-      "referential.speaker.phone.invalid",
-      `speakers[${index}].phone`,
-      "Speaker phone must be a string when provided.",
-      diagnostics
-    );
-    const displayName = ReferentialRecordFields.requiredText(
-      record.displayName || (firstName && lastName ? `${firstName} ${lastName}` : ""),
-      "referential.speaker.display-name.invalid",
-      `speakers[${index}].displayName`,
-      "A display name or both structured names are required.",
-      diagnostics
-    );
-    return { firstName, lastName, company, email, phone, displayName };
+  announcements(items) {
+    const tasks = [
+      ["Slack - AixMarseille.Tech", "public-slack-local"],
+      ["Slack - OpenBaR", "public-slack-community"],
+      ["Social networks", "public-social"]
+    ];
+    return tasks.filter(
+      ([name]) => items.some((item) => item.name === name && !item.completed)
+    ).map(([, resource]) => resource);
   }
 };
 
-// packages/domain/referential/src/application/use-cases/validate-referential-catalog.ts
-var ValidateReferentialCatalog = class {
-  constructor(repository) {
-    this.repository = repository;
-  }
-  repository;
-  async execute(rawCatalog) {
-    try {
-      return this.validate(rawCatalog ?? await this.loadCatalog());
-    } catch (error2) {
-      if (!(error2 instanceof ProposalSourceError)) throw error2;
-      return Object.freeze({
-        isValid: false,
-        diagnostics: ReferentialDiagnostics.freezeDiagnostics([
-          ReferentialDiagnostics.diagnostic(
-            `referential.source.${error2.code}`,
-            "error",
-            "speakers",
-            "Source-owned speaker profiles could not be refreshed. Check source access and identity mappings before retrying."
-          )
-        ])
-      });
-    }
-  }
-  validate(input) {
-    const diagnostics = [];
-    const hosts = HostCatalogValidator.validateHosts(input.hosts, diagnostics);
-    const speakers = SpeakerCatalogValidator.validateSpeakers(
-      input.speakers,
-      diagnostics
+// packages/application/journey/src/use-cases/communication-approval-details.ts
+var CommunicationApprovalDetails = class {
+  create(event, mails) {
+    const ordered = [...mails].sort(
+      (left, right) => left.idempotencyKey.localeCompare(right.idempotencyKey)
     );
-    this.reportDuplicateDisplayNames(
-      hosts,
-      "referential.host.display-name.duplicate",
-      "hosts",
-      "Duplicate normalized host display names are not allowed; keep one stable host per public name.",
-      diagnostics
-    );
-    SpeakerSourceFields.validateMappings(speakers, diagnostics);
-    const frozenDiagnostics = ReferentialDiagnostics.freezeDiagnostics(diagnostics);
-    if (diagnostics.some(({ severity }) => severity === "error")) {
-      return Object.freeze({
-        isValid: false,
-        diagnostics: frozenDiagnostics
-      });
-    }
-    return Object.freeze({
-      isValid: true,
-      catalog: ReferentialCatalogOperations.freezeCatalog(hosts, speakers),
-      diagnostics: frozenDiagnostics
+    const emails = ordered.map((mail) => {
+      const links = this.links(mail);
+      const name = mail.recipient.role === "hosting" ? event.host?.displayName : event.agenda.flatMap((talk) => talk.speakers).find((speaker) => speaker.id === mail.recipientId)?.displayName;
+      return {
+        kind: mail.kind,
+        recipientName: name ?? "",
+        links,
+        omittedLinks: 0
+      };
     });
+    return { emails, omittedEmails: 0 };
   }
-  async loadCatalog() {
-    if (!this.repository) {
-      throw new Error(
-        "A referential repository or an explicit raw catalog is required."
-      );
+  links(mail) {
+    if (mail.kind === "speaker-thanks") {
+      const talks = mail.placeholders.speakerFeedbackTalks;
+      if (!talks || typeof talks === "string") return [];
+      return talks.map(({ title, url }) => ({
+        kind: "feedback",
+        title,
+        url
+      }));
     }
-    return this.repository.load();
-  }
-  reportDuplicateDisplayNames(entities, code, path, message, diagnostics) {
-    const counts = /* @__PURE__ */ new Map();
-    for (const entity of entities) {
-      const key = ReferentialCatalogOperations.displayNameKey(
-        entity.displayName
-      );
-      counts.set(key, (counts.get(key) ?? 0) + 1);
+    if (mail.kind === "host-thanks") return [];
+    const links = [];
+    for (const [kind, placeholder] of [
+      ["meetup", "eventMeetupUrl"],
+      ["community", "eventCncfUrl"],
+      ["slides", "eventSlidesUrl"]
+    ]) {
+      const url = mail.placeholders[placeholder];
+      if (typeof url === "string" && url) links.push({ kind, url });
     }
-    let ambiguityIndex = 0;
-    for (const count of counts.values()) {
-      if (count < 2) {
-        continue;
-      }
-      diagnostics.push(
-        ReferentialDiagnostics.diagnostic(
-          code,
-          "error",
-          `${path}.ambiguities[${ambiguityIndex}]`,
-          message
-        )
-      );
-      ambiguityIndex += 1;
-    }
+    return links;
   }
 };
 
-// packages/domain/referential/src/domain/source-speaker-equality.ts
-var SourceSpeakerEquality = class {
-  static equal(left, right) {
-    return left.id === right.id && left.displayName === right.displayName && left.email === right.email && left.company === right.company && left.pictureUrl === right.pictureUrl;
-  }
-};
-
-// packages/domain/referential/src/domain/speaker-catalog-history-error.ts
-var SpeakerCatalogHistoryError = class extends Error {
-  constructor() {
-    super("Speaker catalog allocation history is unavailable.");
-    this.name = "SpeakerCatalogHistoryError";
-  }
-};
-
-// packages/domain/communication/src/model.ts
-var MAIL_TEMPLATE_NAMES = {
-  hostIntroduction: "meetup-intro-hosting",
-  speakerIntroduction: "meetup-intro-speakers",
-  hostThanks: "meetup-thanks-hosting",
-  speakerThanks: "meetup-thanks-speakers"
-};
-
-// packages/domain/communication/src/plan-communications-contracts.ts
-var MAIL_POLICIES = {
-  introduction: {
-    hosting: {
-      kind: "host-introduction",
-      templateName: MAIL_TEMPLATE_NAMES.hostIntroduction
-    },
-    speaker: {
-      kind: "speaker-introduction",
-      templateName: MAIL_TEMPLATE_NAMES.speakerIntroduction
-    }
+// packages/application/journey/src/use-cases/communication-checklist.ts
+var INTRODUCTION = "Mail introduction";
+var LEGACY_SPEAKER_THANKS = "Thanks speakers and share openfeedback reports";
+var TASKS = {
+  "host-introduction": {
+    section: "communication",
+    names: ["Mail introduction hoster", INTRODUCTION]
   },
-  thanks: {
-    hosting: {
-      kind: "host-thanks",
-      templateName: MAIL_TEMPLATE_NAMES.hostThanks
-    },
-    speaker: {
-      kind: "speaker-thanks",
-      templateName: MAIL_TEMPLATE_NAMES.speakerThanks
+  "speaker-introduction": {
+    section: "communication",
+    names: ["Mail introduction speakers", INTRODUCTION]
+  },
+  "host-thanks": {
+    section: "postEvent",
+    names: ["Mail thanks hoster", "Thanks hoster"]
+  },
+  "speaker-thanks": {
+    section: "postEvent",
+    names: ["Mail thanks speakers", "Thanks speakers", LEGACY_SPEAKER_THANKS]
+  }
+};
+var CommunicationChecklist = class {
+  pendingRecipients(event, recipients, thanks = event.occurrenceStatus === "held") {
+    return recipients.filter((recipient) => {
+      const kind = recipient.role === "hosting" ? thanks ? "host-thanks" : "host-introduction" : thanks ? "speaker-thanks" : "speaker-introduction";
+      return this.status(event, kind) === "pending";
+    });
+  }
+  status(event, kind) {
+    const task = TASKS[kind];
+    const matches = event.operationalChecklists[task.section].filter(
+      (item) => this.matches(item, task.names)
+    );
+    return matches.some((item) => item.completed) ? "completed" : matches.length ? "pending" : "missing";
+  }
+  complete(event, accepted) {
+    const completed = new Set(accepted);
+    const checklists = event.operationalChecklists;
+    const communication = checklists.communication.map((item) => ({
+      ...item,
+      completed: item.completed || this.accepted(item, "communication", completed, checklists)
+    }));
+    const postEvent = checklists.postEvent.map((item) => ({
+      ...item,
+      completed: item.completed || this.accepted(item, "postEvent", completed, checklists)
+    }));
+    if (completed.has("speaker-thanks") && postEvent.some((item) => item.name === LEGACY_SPEAKER_THANKS) && !postEvent.some((item) => item.name === "Mail thanks speakers")) {
+      postEvent.push({ name: "Mail thanks speakers", completed: true });
     }
+    return { ...checklists, communication, postEvent };
+  }
+  accepted(item, section, accepted, checklists) {
+    if (item.name === LEGACY_SPEAKER_THANKS) return false;
+    const kinds = Object.keys(TASKS).filter(
+      (kind) => TASKS[kind].section === section && this.matches(item, TASKS[kind].names)
+    );
+    return kinds.length > 0 && kinds.every(
+      (kind) => accepted.has(kind) || checklists[section].some(
+        (other) => other.completed && this.matches(other, TASKS[kind].names)
+      )
+    );
+  }
+  matches(item, names) {
+    return names.includes(item.name);
+  }
+};
+
+// packages/application/journey/src/use-cases/communication-dispatch-policy.ts
+var CommunicationDispatchPolicy = class {
+  isDispatchEnabled(config, diagnostics) {
+    const enabledByConfig = config.communication["dispatch-enabled"];
+    if (!enabledByConfig) {
+      diagnostics.push({
+        code: "communication.dispatch-disabled-by-config",
+        severity: "warning"
+      });
+    }
+    return enabledByConfig;
+  }
+};
+
+// packages/application/journey/src/use-cases/communication-journey-results.ts
+var CommunicationJourneyResults = class {
+  withRuntimeDiagnostics(result, runtimeDiagnostics) {
+    return {
+      ...result,
+      runtimeDiagnostics: Object.freeze([...runtimeDiagnostics])
+    };
+  }
+  emptyCommunicationResult(mode, runtimeDiagnostics) {
+    return {
+      mode,
+      intentIds: [],
+      completedMailKinds: [],
+      counts: {
+        planned: 0,
+        due: 0,
+        alreadyRecorded: 0,
+        reserved: 0,
+        dispatched: 0,
+        accepted: 0,
+        uncertain: 0,
+        rejected: 0,
+        deferred: 0
+      },
+      diagnostics: [],
+      runtimeDiagnostics: Object.freeze([...runtimeDiagnostics])
+    };
+  }
+  skippedResult(dispatchPermitted, runtimeDiagnostics) {
+    runtimeDiagnostics.push({
+      code: "communication.event-skipped",
+      severity: "info"
+    });
+    return this.emptyCommunicationResult(
+      dispatchPermitted ? "dispatch" : "check",
+      runtimeDiagnostics
+    );
+  }
+};
+
+// packages/application/journey/src/use-cases/communication-placeholders.ts
+var CommunicationPlaceholders = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  eventPlaceholders(event, slidesUrl) {
+    const presentationUrl = this.collaborators.presentationFileUrl.normalize(slidesUrl);
+    return {
+      eventDate: event.date,
+      ...this.collaborators.meetupPublicationChecklist.isPublished(event) && event.publicationLinks.meetup ? { eventMeetupUrl: event.publicationLinks.meetup } : {},
+      ...event.publicationLinks.community ? { eventCncfUrl: event.publicationLinks.community } : {},
+      ...presentationUrl ? { eventSlidesUrl: presentationUrl } : {}
+    };
   }
 };
 
@@ -28582,8 +33157,275 @@ var UNRESOLVED_MAIL_RECIPIENTS = Object.freeze({
   recipients: Object.freeze([])
 });
 
+// packages/application/journey/src/use-cases/communication-recipients.ts
+var CommunicationRecipients = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  resolveMailRecipients(event, catalog, diagnostics) {
+    const resolution = this.collaborators.createResolveEventReferences().execute(catalog, {
+      hostReference: event.host ? this.renderReference(event.host) : "",
+      speakerReferences: event.agenda.flatMap(
+        (entry) => entry.speakers.map(this.renderReference.bind(this))
+      )
+    });
+    if (!resolution.resolved) {
+      diagnostics.push({
+        code: "communication.event-references-unresolved",
+        severity: "error"
+      });
+      return UNRESOLVED_MAIL_RECIPIENTS;
+    }
+    const eventHost = resolution.host;
+    const primaryContact = eventHost.contacts[0];
+    const hostingAddress = primaryContact?.address ?? "";
+    const recipients = primaryContact ? [
+      {
+        channel: "mail",
+        role: "hosting",
+        recipientId: primaryContact.id,
+        receivesCommunications: true,
+        email: primaryContact.email,
+        placeholders: { hostingName: eventHost.displayName }
+      }
+    ] : [];
+    for (const speaker of resolution.speakers) {
+      recipients.push(
+        this.speakerRecipient(speaker, eventHost.displayName, hostingAddress)
+      );
+    }
+    return { resolved: true, recipients: Object.freeze(recipients) };
+  }
+  speakerRecipient(speaker, hostingName, hostingAddress) {
+    return {
+      channel: "mail",
+      role: "speaker",
+      recipientId: speaker.id,
+      receivesCommunications: true,
+      email: speaker.email,
+      placeholders: {
+        speakerName: speaker.sourceIdentity ? speaker.displayName : speaker.firstName || speaker.displayName,
+        hostingName,
+        hostingAddress
+      }
+    };
+  }
+  renderReference(reference) {
+    return reference.id ? `${reference.displayName} [${reference.id}]` : reference.displayName;
+  }
+};
+
+// packages/application/journey/src/use-cases/event-diagnostic-projection.ts
+var EventDiagnosticProjection = class {
+  toEventDiagnostic(code, severity, field, message) {
+    return {
+      code,
+      severity,
+      category: severity === "error" ? "invalid" : "migration",
+      field,
+      message
+    };
+  }
+  toPublicDiagnostic(item) {
+    return {
+      code: item.code,
+      severity: item.severity,
+      field: item.field,
+      message: item.message,
+      fixApplied: false
+    };
+  }
+};
+
+// packages/application/journey/src/use-cases/event-participant-resolution.ts
+var EventParticipantResolution = class {
+  renderReference(reference) {
+    return reference.id ? `${reference.displayName} [${reference.id}]` : reference.displayName;
+  }
+  enrichStableReferences(event, host, speakers) {
+    return {
+      ...event,
+      host: this.resolvedParticipant(host),
+      agenda: event.agenda.map((entry) => ({
+        ...entry,
+        speakers: entry.speakers.map((reference) => {
+          const matches = speakers.filter(
+            (speaker2) => reference.id ? speaker2.id === reference.id : this.canonical(speaker2.displayName) === this.canonical(reference.displayName)
+          );
+          const speaker = matches.length === 1 ? matches[0] : void 0;
+          return speaker ? this.resolvedParticipant(speaker) : reference;
+        })
+      }))
+    };
+  }
+  resolvedParticipant(reference) {
+    return {
+      id: reference.id,
+      displayName: reference.displayName,
+      ...reference.pictureUrl ? { pictureUrl: reference.pictureUrl } : {},
+      ...reference.source ? { source: reference.source } : {}
+    };
+  }
+  canonical(value) {
+    return value.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US");
+  }
+};
+
+// packages/application/journey/src/use-cases/event-publication-evaluation.ts
+var EventPublicationEvaluation = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  evaluatePublication(event, config) {
+    const diagnostics = [];
+    for (const field of ["meetup", "community", "assets"]) {
+      const value = event.publicationLinks[field];
+      if (!value) {
+        diagnostics.push({
+          code: `publication.${field}.missing`,
+          severity: "warning",
+          category: "incomplete",
+          field: `publicationLinks.${field}`,
+          message: `${field} publication link is required before the event is ready`
+        });
+      }
+    }
+    if (event.publicationLinks.meetup && !this.collaborators.meetupPublicationChecklist.isPublished(event)) {
+      diagnostics.push({
+        code: "publication.meetup.unpublished",
+        severity: "warning",
+        category: "incomplete",
+        field: "publicationLinks.meetup",
+        message: "Meetup publication must be confirmed in the Communication checklist before the event is ready"
+      });
+    }
+    const engine = this.collaborators.createPublicationUrlPolicyEngine(
+      this.collaborators.configuredPublicationPolicies.create(
+        config.publication
+      )
+    );
+    const evaluation = engine.evaluate(event.publicationLinks);
+    diagnostics.push(
+      ...evaluation.diagnostics.map((item) => ({
+        code: item.code,
+        severity: item.severity,
+        category: item.severity === "error" ? "invalid" : "normalization",
+        field: `publicationLinks.${item.field}`,
+        message: item.message,
+        fixAvailable: item.fixAvailable
+      }))
+    );
+    return {
+      event: { ...event, publicationLinks: evaluation.references },
+      diagnostics
+    };
+  }
+  planEventManualPublicationTasks(event) {
+    return this.collaborators.manualPublicationPolicy.planManualPublicationTasks(
+      {
+        eventId: `${event.identity.repository}#${event.identity.issueNumber}`,
+        title: event.eventTitle,
+        description: event.description,
+        date: event.date,
+        timeZone: event.timeZone,
+        occurrenceStatus: event.occurrenceStatus,
+        references: event.publicationLinks,
+        meetupPublished: this.collaborators.meetupPublicationChecklist.isPublished(event),
+        slidesPublished: this.checklistTaskIsCompleted(
+          event.operationalChecklists.postEvent,
+          POST_EVENT_TASK_NAMES.shareSlides
+        ),
+        attendanceImported: this.checklistTaskIsCompleted(
+          event.operationalChecklists.postEvent,
+          POST_EVENT_TASK_NAMES.importAttendance
+        )
+      }
+    );
+  }
+  checklistTaskIsCompleted(items, name) {
+    const matches = items.filter((item) => item.name === name);
+    return matches.length === 1 && matches[0]?.completed === true;
+  }
+  pendingManualTaskDiagnostics(tasks) {
+    return tasks.filter((task) => task.status === "pending").map((task) => ({
+      code: `publication.manual-task.${task.kind}.pending`,
+      severity: "info",
+      field: `manualPublicationTasks.${task.kind}`,
+      message: `Manual task pending: ${task.reason}`
+    }));
+  }
+};
+
+// packages/application/journey/src/use-cases/feedback-agenda-projection.ts
+var FeedbackAgendaProjection = class {
+  create(event, diagnostics) {
+    if (!event.agenda.length || this.blocked(diagnostics)) return void 0;
+    const talks = [];
+    for (const entry of event.agenda) {
+      const talk = this.talk(entry);
+      if (!talk) return void 0;
+      talks.push(talk);
+    }
+    return { talks };
+  }
+  blocked(diagnostics) {
+    return diagnostics.some(
+      (item) => item.severity === "error" && (item.code.startsWith("referential.") && !item.code.startsWith("referential.reference.host.") || item.code.startsWith("event.agenda."))
+    );
+  }
+  talk(entry) {
+    if (!entry.description.trim() || !entry.speakers.length) return void 0;
+    const speakers = [];
+    for (const speaker of entry.speakers) {
+      if (!speaker.id || !speaker.displayName.trim()) return void 0;
+      speakers.push({ id: speaker.id, name: speaker.displayName.trim() });
+    }
+    return {
+      title: entry.proposal?.title ?? entry.description.trim(),
+      ...entry.proposal ? {
+        // A fixed tuple makes provider identity independent of JSON key order.
+        sourceIdentity: JSON.stringify([
+          entry.proposal.provider,
+          entry.proposal.event,
+          entry.proposal.id
+        ])
+      } : {},
+      speakers
+    };
+  }
+};
+
+// packages/application/journey/src/use-cases/meetup-publication-projection.ts
+var MeetupPublicationProjection = class {
+  create(event, settings) {
+    const venue = event.host?.id ? settings.venues[event.host.id] : void 0;
+    if (!venue || !event.description.trim() || !event.confirmations.host || !event.confirmations.speakers || event.proposalStatus === "stale" || !event.agenda.length || event.agenda.some(
+      (talk) => !talk.description.trim() || !talk.speakers.length || talk.speakers.some((speaker) => !speaker.id)
+    ))
+      return void 0;
+    const talks = event.agenda.map(
+      (talk) => [
+        talk.description,
+        talk.speakers.map((speaker) => speaker.displayName).join(", "),
+        talk.proposal?.abstract
+      ].filter(Boolean).join("\n")
+    );
+    return {
+      title: event.eventTitle.trim(),
+      description: [event.description.trim(), ...talks].join("\n\n"),
+      date: event.date,
+      startTime: settings.startTime,
+      endTime: settings.endTime,
+      timeZone: event.timeZone,
+      venue
+    };
+  }
+};
+
 // packages/application/journey/src/use-cases/speaker-synchronization-error.ts
-var SpeakerSynchronizationError = class _SpeakerSynchronizationError extends Error {
+var SpeakerSynchronizationError = class extends Error {
   constructor(stage, cause, diagnostics = []) {
     super(`Speaker synchronization failed during ${stage}.`, { cause });
     this.stage = stage;
@@ -28592,58 +33434,1180 @@ var SpeakerSynchronizationError = class _SpeakerSynchronizationError extends Err
   }
   stage;
   diagnostics;
-  static async at(stage, operation) {
+};
+
+// packages/application/journey/src/use-cases/speaker-synchronization-stage-runner.ts
+var SpeakerSynchronizationStageRunner = class {
+  async at(stage, operation) {
     try {
       return await operation();
     } catch (error2) {
-      if (error2 instanceof _SpeakerSynchronizationError) throw error2;
-      throw new _SpeakerSynchronizationError(stage, error2);
+      if (error2 instanceof SpeakerSynchronizationError) throw error2;
+      throw new SpeakerSynchronizationError(stage, error2);
     }
+  }
+};
+
+// packages/application/journey/src/policy-composition.ts
+var JourneyPolicyComposition = class {
+  approvalRequestPolicy() {
+    return new ApprovalRequestPolicy();
+  }
+  assetParticipantProjection() {
+    return new AssetParticipantProjection({
+      publicAssetUrl: new PublicationDomainComposition().publicAssetUrl()
+    });
+  }
+  attentionEventFacts() {
+    return new AttentionEventFacts({
+      eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
+      eventPublicationEvaluation: this.eventPublicationEvaluation(),
+      attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+      communicationChecklist: this.communicationChecklist(),
+      createEventRuleEngine: (...args) => new EventDomainComposition().eventRuleEngine(...args)
+    });
+  }
+  attentionStageEvaluation() {
+    return new AttentionStageEvaluation({
+      diagnosticPolicy: this.diagnosticPolicy(),
+      organizerDiagnosticPolicy: this.organizerDiagnosticPolicy()
+    });
+  }
+  automationConfigFactory() {
+    return new AutomationConfigFactory();
+  }
+  communicationApprovalDetails() {
+    return new CommunicationApprovalDetails();
+  }
+  communicationChecklist() {
+    return new CommunicationChecklist();
+  }
+  communicationDiagnosticProjection() {
+    return new CommunicationDiagnosticProjection();
+  }
+  communicationDispatchPolicy() {
+    return new CommunicationDispatchPolicy();
+  }
+  communicationJourneyResults() {
+    return new CommunicationJourneyResults();
+  }
+  communicationPlaceholders() {
+    return new CommunicationPlaceholders({
+      presentationFileUrl: new PublicationDomainComposition().presentationFileUrl(),
+      meetupPublicationChecklist: new EventDomainComposition().meetupPublicationChecklist()
+    });
+  }
+  communicationRecipients() {
+    return new CommunicationRecipients({
+      createResolveEventReferences: () => new ReferentialDomainComposition().resolveEventReferences()
+    });
+  }
+  configuredPublicationPolicies() {
+    return new ConfiguredPublicationPolicies({
+      publicationUrlPolicies: new PublicationDomainComposition().publicationUrlPolicies()
+    });
+  }
+  diagnosticPolicy() {
+    return new DiagnosticPolicy();
+  }
+  eventDiagnosticProjection() {
+    return new EventDiagnosticProjection();
+  }
+  eventParticipantResolution() {
+    return new EventParticipantResolution();
+  }
+  eventPublicationEvaluation() {
+    return new EventPublicationEvaluation({
+      meetupPublicationChecklist: new EventDomainComposition().meetupPublicationChecklist(),
+      configuredPublicationPolicies: this.configuredPublicationPolicies(),
+      manualPublicationPolicy: new PublicationDomainComposition().manualPublicationPolicy(),
+      createPublicationUrlPolicyEngine: (...args) => new PublicationDomainComposition().publicationUrlPolicyEngine(...args)
+    });
+  }
+  feedbackAgendaProjection() {
+    return new FeedbackAgendaProjection();
+  }
+  meetupPublicationProjection() {
+    return new MeetupPublicationProjection();
+  }
+  meetupPublicationRevision() {
+    return new MeetupPublicationRevision({
+      contentFingerprint: new PublicationDomainComposition().contentFingerprint()
+    });
+  }
+  organizerDiagnosticPolicy() {
+    return new OrganizerDiagnosticPolicy({
+      diagnosticPolicy: this.diagnosticPolicy()
+    });
+  }
+  speakerSynchronizationStageRunner() {
+    return new SpeakerSynchronizationStageRunner();
+  }
+};
+
+// packages/application/journey/src/use-cases/asset-render-projection.ts
+var AssetRenderProjection = class {
+  constructor(collaborators, presenter, repository, assignments = {
+    speakers: {},
+    talks: {},
+    venues: {}
+  }, nextEvent) {
+    this.collaborators = collaborators;
+    this.presenter = presenter;
+    this.repository = repository;
+    this.assignments = assignments;
+    this.nextEvent = nextEvent;
+  }
+  collaborators;
+  presenter;
+  repository;
+  assignments;
+  nextEvent;
+  async create(event, diagnostics) {
+    const catalog = await this.collaborators.createValidateReferentialCatalog(this.repository).execute();
+    const agendaValid = catalog.isValid && event.proposalStatus !== "stale" && !diagnostics.some(
+      (item) => item.severity === "error" && /agenda|referential|proposals/.test(`${item.code} ${item.field}`)
+    );
+    const participants = agendaValid ? this.collaborators.assetParticipantProjection.create(
+      event,
+      catalog.catalog,
+      this.assignments
+    ) : { speakers: {}, talks: {}, pictures: {} };
+    return this.presenter.format({
+      title: diagnostics.some(
+        (item) => item.severity === "error" && /title/.test(item.code)
+      ) ? void 0 : event.eventTitle,
+      date: event.date,
+      timeZone: event.timeZone,
+      hostName: event.host?.displayName,
+      hostLogo: catalog.isValid && catalog.catalog.hosts.some((host) => host.id === event.host?.id) ? this.hostLogo(event.host?.id) : void 0,
+      venue: event.host?.id ? this.assignments.venues[event.host.id] : void 0,
+      feedbackUrl: !diagnostics.some(
+        (item) => item.severity === "error" && /feedback/.test(item.code)
+      ) && this.collaborators.publicAssetUrl.valid(event.publicationLinks.feedback) ? event.publicationLinks.feedback : void 0,
+      agenda: agendaValid ? event.agenda.map((talk) => ({
+        title: talk.proposal?.title ?? talk.description,
+        speakers: talk.speakers.map((speaker) => speaker.displayName)
+      })) : [],
+      ...participants,
+      nextEvent: catalog.isValid ? await this.nextEvent?.find(event, catalog.catalog) : void 0
+    });
+  }
+  hostLogo(hostId) {
+    if (!hostId) return void 0;
+    const logo = this.assignments.hostLogos?.[hostId];
+    return logo && this.collaborators.publicAssetUrl.valid(logo.url) ? { ...logo, hostId } : void 0;
+  }
+};
+
+// packages/application/journey/src/use-cases/find-next-asset-event.ts
+var FindNextAssetEvent = class {
+  constructor(collaborators, repository, codec, eventLabel, publication, venues = {}) {
+    this.collaborators = collaborators;
+    this.repository = repository;
+    this.codec = codec;
+    this.eventLabel = eventLabel;
+    this.publication = publication;
+    this.venues = venues;
+  }
+  collaborators;
+  repository;
+  codec;
+  eventLabel;
+  publication;
+  venues;
+  async find(current, catalog) {
+    const candidates = await this.candidates(current);
+    candidates.sort(
+      (a, b2) => a.date.localeCompare(b2.date) || a.identity.issueNumber - b2.identity.issueNumber
+    );
+    for (const candidate of candidates) {
+      const host = catalog.hosts.find((item) => item.id === candidate.host?.id);
+      if (host)
+        return {
+          date: candidate.date,
+          hostName: host.displayName,
+          city: this.venues[host.id]?.city
+        };
+    }
+    return void 0;
+  }
+  async candidates(current) {
+    const events = [];
+    const seen = /* @__PURE__ */ new Set();
+    const cursors = /* @__PURE__ */ new Set();
+    let cursor;
+    for (let pages = 0; pages < 20; pages++) {
+      const page = await this.repository.listPage({
+        repository: current.identity.repository,
+        label: this.eventLabel,
+        includeClosed: false,
+        pageSize: 100,
+        cursor
+      });
+      events.push(...this.pageCandidates(page.items, current, seen));
+      cursor = page.nextCursor;
+      if (!cursor) return events;
+      if (cursors.has(cursor))
+        throw new Error("Asset event listing repeated a cursor");
+      cursors.add(cursor);
+    }
+    throw new Error("Asset event page limit exceeded");
+  }
+  pageCandidates(documents, current, seen) {
+    const events = [];
+    for (const document of documents) {
+      if (document.identity.repository !== current.identity.repository || seen.has(document.identity.issueNumber))
+        continue;
+      seen.add(document.identity.issueNumber);
+      if (seen.size > 200)
+        throw new Error("Asset event selection limit exceeded");
+      const event = this.candidate(document, current);
+      if (event) events.push(event);
+    }
+    return events;
+  }
+  candidate(document, current) {
+    if (document.issueState !== "open" || !document.labels.includes(this.eventLabel))
+      return void 0;
+    const decoded = this.codec.decode(document);
+    const evaluated = this.collaborators.createEventRuleEngine(
+      this.collaborators.eventRuleFactory.createDefaultEventRules()
+    ).evaluate(decoded.event);
+    const event = evaluated.event;
+    const invalid = [...decoded.diagnostics, ...evaluated.diagnostics].some(
+      (item) => item.severity === "error" && (/date|host/.test(item.field ?? "") || item.code.startsWith("event.document."))
+    );
+    if (invalid || event.date <= current.date || event.occurrenceStatus !== "scheduled" || !event.confirmations.host)
+      return void 0;
+    const published = this.collaborators.configuredPublicationPolicies.create(this.publication).filter((policy) => policy.id !== "asset-folder-url").some((policy) => {
+      const field = policy.id === "meetup-event-url" ? "meetup" : "community";
+      return Boolean(event.publicationLinks[field]) && (field !== "meetup" || this.collaborators.meetupPublicationChecklist.isPublished(event)) && !policy.evaluate({ [field]: event.publicationLinks[field] }).diagnostics.some((item) => item.severity === "error");
+    });
+    return published ? event : void 0;
+  }
+};
+
+// packages/application/journey/src/use-cases/manage-meetup-assets.ts
+var ManageMeetupAssets = class {
+  constructor(collaborators, dependencies) {
+    this.collaborators = collaborators;
+    this.dependencies = dependencies;
+  }
+  collaborators;
+  dependencies;
+  async execute(input) {
+    const source = await this.dependencies.eventRepository.find(input.identity);
+    if (!source) throw new EventNotFoundError(input.identity);
+    const evaluation = await this.dependencies.manageEvent.execute({
+      ...input,
+      mode: "check",
+      sourceDocument: source
+    });
+    if (evaluation.skipped || evaluation.event.occurrenceStatus === "cancelled")
+      return { skipped: true, persisted: false, files: {}, diagnostics: [] };
+    if (!evaluation.event.host?.id || evaluation.diagnostics.some(
+      (item) => item.severity === "error" && (item.code.startsWith("referential.") || /host|date/i.test(item.field ?? ""))
+    )) {
+      return {
+        skipped: true,
+        persisted: false,
+        files: {},
+        diagnostics: [
+          {
+            code: "publication.assets.prerequisites",
+            severity: "warning",
+            field: "publicationLinks.assets",
+            message: "Resolve the event host and date before reconciling assets"
+          }
+        ]
+      };
+    }
+    await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
+      this.dependencies.eventRepository,
+      input.identity,
+      source
+    );
+    const assets = await this.dependencies.reconcileAssets.execute({
+      eventId: `${input.identity.repository}#${input.identity.issueNumber}`,
+      date: evaluation.event.date,
+      hostName: evaluation.event.host.displayName,
+      existingUrl: evaluation.event.publicationLinks.assets,
+      mode: "fix",
+      model: await this.dependencies.renderProjection?.create(
+        evaluation.event,
+        evaluation.diagnostics
+      ),
+      recovery: this.dependencies.recovery
+    });
+    const persisted = await this.persistAsset(source, assets.container?.url);
+    return {
+      skipped: false,
+      persisted,
+      assetUrl: assets.container?.url,
+      files: assets.files,
+      content: assets.content,
+      diagnostics: assets.diagnostics.map((item) => ({
+        ...item,
+        field: "publicationLinks.assets"
+      }))
+    };
+  }
+  async persistAsset(source, assetUrl) {
+    let persisted = false;
+    if (assetUrl) {
+      const original = this.dependencies.documentCodec.decode(source).event;
+      const patch = this.dependencies.documentCodec.createPatch(source, {
+        ...original,
+        publicationLinks: {
+          ...original.publicationLinks,
+          assets: assetUrl
+        }
+      });
+      if (!this.collaborators.eventRepositoryPatches.eventRepositoryPatchIsEmpty(
+        patch
+      )) {
+        await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
+          this.dependencies.eventRepository,
+          source.identity,
+          source
+        );
+        await this.dependencies.eventRepository.applyPatch(
+          source.identity,
+          patch
+        );
+        persisted = true;
+      }
+    }
+    return persisted;
+  }
+};
+
+// packages/application/journey/src/use-cases/manage-meetup-attention.ts
+var ManageMeetupAttention = class {
+  constructor(collaborators, dependencies) {
+    this.collaborators = collaborators;
+    this.dependencies = dependencies;
+  }
+  collaborators;
+  dependencies;
+  async execute(identity, stages, runId) {
+    const { repository, codec, config, clock } = this.dependencies;
+    const source = await repository.find(identity);
+    if (!source) throw new Error("Attention issue is unavailable");
+    if (!source.labels.includes(config.event["issue-label"]))
+      return {
+        skipped: true,
+        active: 0,
+        posted: false,
+        notificationFailed: false
+      };
+    const facts = this.collaborators.attentionEventFacts.create(
+      codec.decode(source),
+      config
+    );
+    const evidence = await this.synchronizeEvidence();
+    const now2 = clock.now();
+    const observation = this.collaborators.evaluateAttention.execute(
+      { ...facts, ...evidence, stages, runId },
+      now2
+    );
+    const current = await repository.find(identity);
+    if (!current || !this.collaborators.eventDocumentConcurrency.eventDocumentsEqual(
+      source,
+      current
+    ))
+      throw new EventConcurrentModificationError(identity);
+    const commentId = await this.dependencies.followUp.synchronizeFollowUp({
+      eventDate: facts.eventDate,
+      requestedAt: now2.toISOString(),
+      active: this.collaborators.postEventPolicy.isDue({
+        eventDate: facts.eventDate,
+        occurrenceStatus: facts.occurrence,
+        timeZone: "Europe/Paris",
+        now: now2
+      }),
+      pendingTasks: FOLLOW_UP_TASKS.filter(
+        (task) => facts.followUpPending.includes(task)
+      )
+    });
+    const result = await this.dependencies.reconciliation.execute({
+      ...observation,
+      commentId
+    });
+    return {
+      ...result,
+      skipped: false,
+      notificationFailed: result.notificationFailed || evidence.approvals === void 0 || evidence.recovery === void 0
+    };
+  }
+  async synchronizeEvidence() {
+    const [approvals, recovery] = await Promise.allSettled([
+      this.dependencies.approvals.synchronizeApprovals(),
+      this.dependencies.recovery.readAttention()
+    ]);
+    return {
+      approvals: approvals.status === "fulfilled" ? approvals.value : void 0,
+      recovery: recovery.status === "fulfilled" ? recovery.value : void 0
+    };
+  }
+};
+
+// packages/application/journey/src/use-cases/manage-meetup-event.ts
+var ManageMeetupEvent = class {
+  constructor(collaborators, dependencies) {
+    this.collaborators = collaborators;
+    this.dependencies = dependencies;
+  }
+  collaborators;
+  dependencies;
+  async execute(input) {
+    const config = this.dependencies.config;
+    const eventDependencies = this.dependencies.eventDependencies;
+    const sourceDocument = input.sourceDocument ?? await eventDependencies.repository.find(input.identity);
+    if (!sourceDocument) {
+      throw new EventNotFoundError(input.identity);
+    }
+    if (!sourceDocument.labels.includes(config.event["issue-label"])) {
+      return { skipped: true, diagnostics: [] };
+    }
+    const eventResult = await this.collaborators.createReconcileEvent(eventDependencies).execute({
+      identity: input.identity,
+      mode: "check",
+      sourceDocument
+    });
+    const eventDiagnostics = [...eventResult.diagnostics];
+    let event = await this.resolveParticipants(
+      eventResult.event,
+      eventDiagnostics
+    );
+    const publication = this.collaborators.eventPublicationEvaluation.evaluatePublication(
+      event,
+      config
+    );
+    event = publication.event;
+    eventDiagnostics.push(...publication.diagnostics);
+    const manualPublicationTasks = this.collaborators.eventPublicationEvaluation.planEventManualPublicationTasks(
+      event
+    );
+    const readiness = this.collaborators.eventReadinessPolicy.evaluateEventReadiness(
+      event,
+      eventDiagnostics
+    );
+    const lifecycle = this.collaborators.eventLifecycle.evaluateEventLifecycle({
+      event,
+      readiness,
+      now: eventDependencies.clock.now()
+    });
+    const persisted = await this.persist(sourceDocument, event, input.mode);
+    return {
+      skipped: false,
+      event,
+      state: lifecycle.state,
+      isReady: readiness.isReady,
+      manualPublicationTasks,
+      persisted,
+      diagnostics: [
+        ...readiness.diagnostics.map(
+          this.collaborators.eventDiagnosticProjection.toPublicDiagnostic.bind(
+            this.collaborators.eventDiagnosticProjection
+          )
+        ),
+        ...this.collaborators.eventPublicationEvaluation.pendingManualTaskDiagnostics(
+          manualPublicationTasks
+        )
+      ]
+    };
+  }
+  async resolveParticipants(event, eventDiagnostics) {
+    const catalogValidation = await this.collaborators.createValidateReferentialCatalog(this.dependencies.referentialRepository).execute();
+    if (catalogValidation.isValid) {
+      event = await this.collaborators.createRefreshSelectedProposals(this.dependencies.proposalSource).execute(event, catalogValidation.catalog, eventDiagnostics);
+      const speakerReferences = event.agenda.flatMap(
+        (entry) => entry.speakers.map(
+          this.collaborators.eventParticipantResolution.renderReference.bind(
+            this.collaborators.eventParticipantResolution
+          )
+        )
+      );
+      const resolution = this.collaborators.createResolveEventReferences().execute(catalogValidation.catalog, {
+        hostReference: event.host ? this.collaborators.eventParticipantResolution.renderReference(
+          event.host
+        ) : "",
+        speakerReferences
+      });
+      eventDiagnostics.push(
+        ...resolution.diagnostics.map(
+          (item) => this.collaborators.eventDiagnosticProjection.toEventDiagnostic(
+            item.code,
+            item.severity,
+            item.path,
+            item.message
+          )
+        )
+      );
+      if (resolution.resolved) {
+        event = this.collaborators.eventParticipantResolution.enrichStableReferences(
+          event,
+          resolution.host,
+          resolution.speakers
+        );
+      }
+    } else {
+      if (event.proposalReferences?.length)
+        event = { ...event, proposalStatus: "stale" };
+      eventDiagnostics.push(
+        ...catalogValidation.diagnostics.map(
+          (item) => this.collaborators.eventDiagnosticProjection.toEventDiagnostic(
+            item.code,
+            item.severity,
+            item.path,
+            item.message
+          )
+        )
+      );
+    }
+    return event;
+  }
+  async persist(sourceDocument, event, mode) {
+    const eventDependencies = this.dependencies.eventDependencies;
+    const repositoryPatch = eventDependencies.documentCodec.createPatch(
+      sourceDocument,
+      event
+    );
+    if (mode === "check" || this.collaborators.eventRepositoryPatches.eventRepositoryPatchIsEmpty(
+      repositoryPatch
+    ))
+      return false;
+    await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
+      eventDependencies.repository,
+      sourceDocument.identity,
+      sourceDocument
+    );
+    await eventDependencies.repository.applyPatch(
+      sourceDocument.identity,
+      repositoryPatch
+    );
+    return true;
+  }
+};
+
+// packages/application/journey/src/use-cases/manage-meetup-feedback.ts
+var ManageMeetupFeedback = class {
+  constructor(collaborators, dependencies) {
+    this.collaborators = collaborators;
+    this.dependencies = dependencies;
+  }
+  collaborators;
+  dependencies;
+  async execute(input) {
+    const source = await this.dependencies.eventRepository.find(input.identity);
+    if (!source) throw new EventNotFoundError(input.identity);
+    const evaluation = await this.dependencies.manageEvent.execute({
+      ...input,
+      mode: "check",
+      sourceDocument: source
+    });
+    if (evaluation.skipped)
+      return this.skipped("unrelated", "This issue is not a meetup");
+    const event = evaluation.event;
+    if (event.proposalStatus === "stale" || evaluation.diagnostics.some(
+      (item) => item.code.startsWith("referential.source.")
+    ))
+      return {
+        skipped: true,
+        persisted: false,
+        linkUpdated: false,
+        diagnostics: evaluation.diagnostics
+      };
+    if (event.issueState === "closed" || event.occurrenceStatus === "cancelled" || event.occurrenceStatus === "postponed")
+      return this.skipped(
+        "inactive",
+        "Feedback automation is inactive for this event"
+      );
+    if (!this.collaborators.feedbackPolicy.validDate(event.date) || this.invalid(evaluation.diagnostics))
+      return this.skipped(
+        "prerequisites",
+        "Resolve the event date and feedback link before updating feedback"
+      );
+    const agenda = this.collaborators.feedbackAgendaProjection.create(
+      event,
+      evaluation.diagnostics
+    );
+    if (!agenda && !event.publicationLinks.feedback)
+      return this.skipped(
+        "agenda",
+        "Complete talk subjects and resolve speaker references before creating feedback"
+      );
+    return this.synchronizeFeedback(source, event, agenda).catch(
+      (error2) => {
+        if (!(error2 instanceof FeedbackResolutionError) || error2.kind !== "conflict")
+          throw error2;
+        return this.skipped(
+          "conflict",
+          "Resolve ambiguous feedback talk or speaker identities before synchronizing",
+          "warning"
+        );
+      }
+    );
+  }
+  async synchronizeFeedback(source, event, agenda) {
+    const name = event.eventTitle.trim().slice(0, 100);
+    if (!name)
+      return this.skipped(
+        "prerequisites",
+        "Set an event title before updating feedback"
+      );
+    await this.ensureCurrent(source);
+    const { repository, issueNumber } = source.identity;
+    const url = await this.dependencies.events.ensureEvent({
+      key: `${repository.toLowerCase()}#${issueNumber}`,
+      name,
+      scheduleUrl: `https://github.com/${repository}/issues/${issueNumber}`,
+      ...agenda ? { agenda } : {},
+      ...event.publicationLinks.feedback ? {
+        url: this.collaborators.feedbackPolicy.pollUrl(
+          event.publicationLinks.feedback
+        )
+      } : {}
+    });
+    const result = await this.reconcile(
+      source,
+      event,
+      this.collaborators.feedbackPolicy.pollUrl(url)
+    );
+    if (agenda) return result;
+    return {
+      ...result,
+      diagnostics: [
+        ...result.diagnostics,
+        {
+          code: "publication.feedback.agenda",
+          severity: "warning",
+          field: "publicationLinks.feedback",
+          message: "Complete talk subjects and resolve speaker references before synchronizing the feedback agenda"
+        }
+      ]
+    };
+  }
+  async reconcile(source, event, url) {
+    await this.ensureCurrent(source);
+    const { persisted, current } = await this.persist(source, url);
+    const diagnostics = [];
+    let linkUpdated = false;
+    const now2 = this.dependencies.clock.now();
+    if (this.collaborators.feedbackPolicy.isLinkUpdateDue(
+      event.date,
+      now2,
+      event.timeZone
+    )) {
+      const conflict = await this.linkConflict(source, event, now2);
+      if (conflict) diagnostics.push(conflict);
+      else {
+        await this.ensureCurrent(current);
+        linkUpdated = await this.dependencies.links.updateTarget(url);
+      }
+    }
+    return {
+      skipped: false,
+      persisted,
+      feedbackUrl: url,
+      linkUpdated,
+      diagnostics
+    };
+  }
+  invalid(diagnostics) {
+    const fields = /date|feedback/i;
+    return diagnostics.some(
+      (item) => item.severity === "error" && (item.code.startsWith("event.document.") || fields.test(item.field ?? ""))
+    );
+  }
+  async persist(source, feedbackUrl) {
+    const original = this.dependencies.documentCodec.decode(source).event;
+    if (original.publicationLinks.feedback === feedbackUrl)
+      return { persisted: false, current: source };
+    const patch = this.dependencies.documentCodec.createPatch(source, {
+      ...original,
+      publicationLinks: { ...original.publicationLinks, feedback: feedbackUrl }
+    });
+    if (this.collaborators.eventRepositoryPatches.eventRepositoryPatchIsEmpty(
+      patch
+    ))
+      return { persisted: false, current: source };
+    await this.ensureCurrent(source);
+    await this.dependencies.eventRepository.applyPatch(source.identity, patch);
+    return { persisted: true, current: { ...source, ...patch } };
+  }
+  async linkConflict(source, target, now2) {
+    let cursor;
+    const visited = /* @__PURE__ */ new Set();
+    for (let pages = 0; pages < 20; pages++) {
+      const page = await this.dependencies.eventRepository.listPage({
+        repository: source.identity.repository,
+        label: this.dependencies.eventLabel,
+        cursor
+      });
+      for (const document of page.items) {
+        if (document.identity.issueNumber === source.identity.issueNumber)
+          continue;
+        const { event } = this.dependencies.documentCodec.decode(document);
+        const conflict = this.collaborators.feedbackLinkSelection.conflict(
+          {
+            date: event.date,
+            isOpen: event.issueState === "open",
+            occurrenceStatus: event.occurrenceStatus
+          },
+          target.date,
+          now2,
+          target.timeZone
+        );
+        if (conflict) return this.conflictDiagnostic(conflict);
+      }
+      cursor = page.nextCursor;
+      if (!cursor) return void 0;
+      if (visited.has(cursor)) throw new EventPaginationError(cursor);
+      visited.add(cursor);
+    }
+    throw new EventPaginationError("feedback-page-limit");
+  }
+  conflictDiagnostic(conflict) {
+    return {
+      code: `publication.feedback.${conflict}`,
+      severity: conflict === "ambiguous-date" ? "warning" : "info",
+      message: conflict === "ambiguous-date" ? "Several active meetups share this date; update the shared feedback link manually" : "An active meetup takes place today; keep its shared feedback link until the event day ends"
+    };
+  }
+  ensureCurrent(source) {
+    return this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
+      this.dependencies.eventRepository,
+      source.identity,
+      source
+    );
+  }
+  skipped(code, message, severity = "info") {
+    return {
+      skipped: true,
+      persisted: false,
+      linkUpdated: false,
+      diagnostics: [
+        {
+          code: `publication.feedback.${code}`,
+          severity,
+          field: "publicationLinks.feedback",
+          message
+        }
+      ]
+    };
+  }
+};
+
+// packages/application/journey/src/use-cases/manage-meetup-publication.ts
+var PUBLICATION_LINK_FIELDS = [
+  "publicationLinks.meetup",
+  "publicationLinks.community",
+  "publicationLinks.assets",
+  "publicationLinks.feedback"
+];
+var ManageMeetupPublication = class {
+  constructor(collaborators, dependencies) {
+    this.collaborators = collaborators;
+    this.dependencies = dependencies;
+  }
+  collaborators;
+  dependencies;
+  async execute(identity) {
+    const source = await this.dependencies.repository.find(identity);
+    if (!source) throw new Error("Meetup source issue was not found");
+    const evaluation = await this.dependencies.manageEvent.execute({
+      identity,
+      mode: "check",
+      sourceDocument: source
+    });
+    if (evaluation.skipped) return this.result("skipped", "inactive");
+    if (evaluation.diagnostics.some(
+      this.collaborators.diagnosticPolicy.isTechnicalFailure.bind(
+        this.collaborators.diagnosticPolicy
+      )
+    ))
+      return this.result("blocked", "source");
+    const event = evaluation.event;
+    if (event.issueState !== "open" || ["cancelled", "postponed", "held"].includes(event.occurrenceStatus ?? ""))
+      return this.result("skipped", "inactive");
+    const draft = this.collaborators.meetupPublicationProjection.create(
+      event,
+      this.dependencies.settings
+    );
+    if (evaluation.diagnostics.some(
+      (item) => item.code === "event.document.checkbox.invalid" && item.field === "Communication"
+    ) || !draft || !this.collaborators.scheduledEventPolicy.valid(
+      draft,
+      this.dependencies.clock.now()
+    ) || evaluation.diagnostics.some(
+      (item) => item.severity === "error" && !PUBLICATION_LINK_FIELDS.includes(item.field ?? "")
+    ))
+      return this.result("blocked", "prerequisites");
+    return this.synchronize(source, draft, event.publicationLinks.meetup);
+  }
+  async synchronize(source, draft, supplied) {
+    const record = await this.dependencies.journal.load();
+    const suppliedUrl = this.eventUrl(supplied);
+    const recordedUrl = this.eventUrl(record?.url);
+    if (supplied && !suppliedUrl || record?.url && !recordedUrl)
+      return this.result("blocked", "link");
+    if (suppliedUrl && recordedUrl && suppliedUrl.value !== recordedUrl.value)
+      return this.result("blocked", "conflict");
+    const url = (suppliedUrl ?? recordedUrl)?.value;
+    if (!url && record) return this.result("blocked", "uncertain");
+    try {
+      const saved = await this.dependencies.gateway.save(
+        draft,
+        url,
+        async () => {
+          await this.ensureCurrent(source);
+          if (!url) await this.dependencies.journal.reserve();
+          await this.ensureCurrent(source);
+        },
+        async (savedUrl) => {
+          if (!this.eventUrl(savedUrl))
+            throw new ScheduledEventError("verification");
+          await this.dependencies.journal.record(savedUrl);
+        }
+      );
+      if (!this.eventUrl(saved.url) || !url && saved.status !== "draft")
+        throw new ScheduledEventError("verification");
+      return await this.complete(source, draft, saved);
+    } catch (error2) {
+      if (!(error2 instanceof ScheduledEventError)) throw error2;
+      return this.result("blocked", error2.kind);
+    }
+  }
+  eventUrl(value) {
+    const group = MeetupGroupUrl.fromEventUrlPrefix(
+      this.dependencies.meetupUrlPrefix
+    );
+    return group ? MeetupEventUrl.parse(value, group) : void 0;
+  }
+  async persist(source, saved) {
+    await this.ensureCurrent(source);
+    const event = this.dependencies.codec.decode(source).event;
+    const updated = this.collaborators.meetupPublicationChecklist.withStatus(
+      event,
+      saved.status === "published"
+    );
+    const patch = this.dependencies.codec.createPatch(source, {
+      ...updated,
+      publicationLinks: { ...event.publicationLinks, meetup: saved.url }
+    });
+    if (!this.collaborators.eventRepositoryPatches.eventRepositoryPatchIsEmpty(
+      patch
+    )) {
+      await this.ensureCurrent(source);
+      await this.dependencies.repository.applyPatch(source.identity, patch);
+    }
+    return { ...source, ...patch };
+  }
+  async complete(source, event, saved) {
+    const current = await this.persist(source, saved);
+    if (saved.status === "published")
+      return { status: "updated", diagnostics: [] };
+    await this.ensureCurrent(current);
+    const approval = this.collaborators.createMeetupPublicationApproval(
+      this.dependencies.approval,
+      this.dependencies.clock
+    );
+    const decision = await approval.request(event, saved.url);
+    const diagnostics = decision.notificationFailed ? this.result("blocked", "approval-notification-failed").diagnostics : [];
+    if (decision.status !== "approved")
+      return {
+        status: "draft",
+        reviewUrl: saved.url,
+        diagnostics: [
+          ...diagnostics,
+          ...this.result("blocked", `approval-${decision.status}`).diagnostics
+        ]
+      };
+    const published = await this.dependencies.gateway.publish(
+      event,
+      saved.url,
+      async () => {
+        await this.ensureCurrent(current);
+        if (!this.collaborators.scheduledEventPolicy.valid(
+          event,
+          this.dependencies.clock.now()
+        ))
+          throw new ScheduledEventError("verification");
+        await approval.requireApproved(event, saved.url);
+        await this.ensureCurrent(current);
+      }
+    );
+    if (published.status !== "published" || published.url !== saved.url)
+      throw new ScheduledEventError("verification");
+    await this.persist(current, published);
+    return { status: "updated", diagnostics };
+  }
+  ensureCurrent(source) {
+    return this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
+      this.dependencies.repository,
+      source.identity,
+      source
+    );
+  }
+  result(status, code) {
+    return {
+      status,
+      diagnostics: [
+        {
+          code: `publication.meetup.${code}`,
+          severity: [
+            "editor",
+            "verification",
+            "source",
+            "unavailable",
+            "approval-unavailable",
+            "approval-notification-failed"
+          ].includes(code) ? "error" : status === "blocked" ? "warning" : "info",
+          field: "publicationLinks.meetup",
+          message: `Meetup publication: ${code}`
+        }
+      ]
+    };
+  }
+};
+
+// packages/application/journey/src/use-cases/meetup-publication-approval.ts
+var MeetupPublicationApproval = class {
+  constructor(collaborators, approvals, clock) {
+    this.collaborators = collaborators;
+    this.approvals = approvals;
+    this.clock = clock;
+  }
+  collaborators;
+  approvals;
+  clock;
+  async request(event, url) {
+    try {
+      return await this.approvals.request({
+        kind: "meetup-publication",
+        revision: this.collaborators.meetupPublicationRevision.of(event, url),
+        eventDate: event.date,
+        requestedAt: this.clock.now(),
+        publication: {
+          url,
+          title: event.title,
+          startTime: event.startTime,
+          endTime: event.endTime,
+          timeZone: event.timeZone,
+          venue: event.venue
+        }
+      });
+    } catch {
+      throw new ScheduledEventError("approval-unavailable");
+    }
+  }
+  async requireApproved(event, url) {
+    const result = await this.request(event, url);
+    if (result.status !== "approved")
+      throw new ScheduledEventError(
+        result.status === "pending" ? "approval-pending" : "approval-rejected"
+      );
+  }
+};
+
+// packages/application/journey/src/use-cases/reconcile-organizer-feedback.ts
+var ReconcileOrganizerFeedback = class {
+  constructor(collaborators, events, comments, meetupLabel) {
+    this.collaborators = collaborators;
+    this.events = events;
+    this.comments = comments;
+    this.meetupLabel = meetupLabel;
+  }
+  collaborators;
+  events;
+  comments;
+  meetupLabel;
+  async execute(identity, stageResults) {
+    const diagnostics = this.collaborators.attentionStageEvaluation.diagnostics(stageResults);
+    if (!this.collaborators.attentionStageEvaluation.complete(stageResults))
+      return;
+    const source = await this.events.find(identity);
+    if (!source) throw new Error("Organizer feedback issue is unavailable");
+    if (!source.labels.includes(this.meetupLabel)) return;
+    await this.comments.reconcileDiagnostics(
+      identity,
+      diagnostics.filter((item) => item.severity !== "info" && item.fixApplied !== true).map((item) => ({
+        ...item,
+        category: item.severity === "error" ? "invalid" : "incomplete"
+      }))
+    );
+  }
+};
+
+// packages/application/journey/src/use-cases/proposal-selection-error.ts
+var ProposalSelectionError = class extends Error {
+  constructor(code) {
+    super(`Proposal selection ${code}.`);
+    this.code = code;
+    this.name = "ProposalSelectionError";
+  }
+  code;
+};
+
+// packages/application/journey/src/use-cases/refresh-selected-proposals.ts
+var RefreshSelectedProposals = class {
+  constructor(source) {
+    this.source = source;
+  }
+  source;
+  async execute(event, catalog, diagnostics) {
+    const numbers = event.proposalReferences;
+    if (!numbers?.length) return event;
+    for (let index = diagnostics.length - 1; index >= 0; index--) {
+      if (diagnostics[index].code === "event.agenda.missing")
+        diagnostics.splice(index, 1);
+    }
+    try {
+      if (diagnostics.some(
+        (item) => (item.code.startsWith("event.proposals.") || item.code.startsWith("event.document.")) && item.severity === "error"
+      ))
+        return { ...event, proposalStatus: "stale" };
+      if (new Set(numbers).size !== numbers.length || !numbers.every(
+        (value) => /^[1-9]\d*$/.test(value) && Number.isSafeInteger(Number(value))
+      ))
+        throw new ProposalSelectionError("invalid-selection");
+      const snapshot = await this.source.load();
+      const agenda = this.project(numbers, snapshot, catalog);
+      for (let index = diagnostics.length - 1; index >= 0; index--) {
+        if (diagnostics[index].code.startsWith("event.agenda."))
+          diagnostics.splice(index, 1);
+      }
+      return { ...event, agenda, proposalStatus: "current" };
+    } catch (error2) {
+      const code = error2 instanceof ProposalSourceError || error2 instanceof ProposalSelectionError ? error2.code : "unavailable";
+      diagnostics.push({
+        code: `event.proposals.${code}`,
+        severity: "error",
+        category: "invalid",
+        field: "agenda",
+        message: "Selected proposals could not be refreshed; the last agenda is stale. Check source access, acceptance and reviewed speaker mappings."
+      });
+      return { ...event, proposalStatus: "stale" };
+    }
+  }
+  project(numbers, snapshot, catalog) {
+    const selected = /* @__PURE__ */ new Set();
+    return numbers.map((number) => {
+      const matches = snapshot.proposals.filter(
+        (item) => item.number === Number(number)
+      );
+      if (!matches.length) throw new ProposalSelectionError("not-found");
+      if (matches.length !== 1) throw new ProposalSourceError("conflict");
+      const proposal = matches[0];
+      if (selected.has(proposal.id)) throw new ProposalSourceError("invalid");
+      selected.add(proposal.id);
+      if (!proposal.accepted) throw new ProposalSelectionError("not-accepted");
+      const speakers = proposal.speakerIds.map((speakerId) => {
+        const matches2 = catalog.speakers.filter(
+          (speaker2) => speaker2.sourceIdentity?.provider === snapshot.provider && speaker2.sourceIdentity.event === snapshot.event && speaker2.sourceIdentity.speakerId === speakerId
+        );
+        if (matches2.length !== 1)
+          throw new ProposalSourceError("mapping-required");
+        const speaker = matches2[0];
+        return {
+          id: speaker.id,
+          displayName: speaker.displayName,
+          source: speaker.source,
+          pictureUrl: speaker.pictureUrl
+        };
+      });
+      return {
+        speakers,
+        description: `${proposal.title}: ${proposal.abstract}`,
+        proposal: {
+          provider: snapshot.provider,
+          event: snapshot.event,
+          id: proposal.id,
+          title: proposal.title,
+          abstract: proposal.abstract,
+          languages: proposal.languages,
+          formats: proposal.formats
+        }
+      };
+    });
+  }
+};
+
+// packages/application/journey/src/use-cases/synchronize-meetup-issue-form.ts
+var SynchronizeMeetupIssueForm = class {
+  constructor(dependencies) {
+    this.dependencies = dependencies;
+  }
+  dependencies;
+  async execute(input) {
+    const validation = await this.dependencies.validateReferentials.execute();
+    if (!validation.isValid) {
+      return {
+        changed: false,
+        changedFiles: [],
+        diagnostics: validation.diagnostics
+      };
+    }
+    const projection = await this.dependencies.issueFormProjection.synchronize({
+      issueFormPath: validation.config.event["issue-form"],
+      occurrenceStatusFieldId: validation.config.event["occurrence-status-field"],
+      catalog: validation.catalog,
+      mode: input.mode
+    });
+    return {
+      changed: projection.changed,
+      changedFiles: projection.changedFiles,
+      diagnostics: [
+        ...validation.diagnostics,
+        ...projection.diagnostics.map((item) => ({ ...item }))
+      ]
+    };
   }
 };
 
 // packages/application/journey/src/use-cases/synchronize-source-speakers.ts
 var SynchronizeSourceSpeakers = class {
-  constructor(source, store, form, config) {
+  constructor(collaborators, source, store, form, config) {
+    this.collaborators = collaborators;
     this.source = source;
     this.store = store;
     this.form = form;
     this.config = config;
   }
+  collaborators;
   source;
   store;
   form;
   config;
   async execute() {
-    const original = await SpeakerSynchronizationError.at(
+    const original = await this.collaborators.speakerSynchronizationStageRunner.at(
       "read-catalog",
       () => this.store.read()
     );
-    const snapshot = await SpeakerSynchronizationError.at(
+    const snapshot = await this.collaborators.speakerSynchronizationStageRunner.at(
       "load-source",
       () => this.source.load()
     );
-    const merged = await SpeakerSynchronizationError.at(
+    const merged = await this.collaborators.speakerSynchronizationStageRunner.at(
       "merge-speakers",
-      () => new MergeSourceSpeakers().execute(
-        original.entries,
-        snapshot,
-        original.reservedIds
-      )
+      () => this.collaborators.createMergeSourceSpeakers().execute(original.entries, snapshot, original.reservedIds)
     );
-    const catalog = await SpeakerSynchronizationError.at(
+    const catalog = await this.collaborators.speakerSynchronizationStageRunner.at(
       "validate-catalog",
       async () => this.validate(await this.store.candidate(merged.entries))
     );
-    await SpeakerSynchronizationError.at(
+    await this.collaborators.speakerSynchronizationStageRunner.at(
       "check-form",
       () => this.project(catalog, "check")
     );
-    const changed = await SpeakerSynchronizationError.at(
+    const changed = await this.collaborators.speakerSynchronizationStageRunner.at(
       "save-catalog",
       () => this.store.save(original, merged.entries, merged.reservedIds)
     );
-    const form = await SpeakerSynchronizationError.at(
+    const form = await this.collaborators.speakerSynchronizationStageRunner.at(
       "update-form",
       () => this.project(catalog, "fix")
     );
@@ -28653,7 +34617,7 @@ var SynchronizeSourceSpeakers = class {
     };
   }
   async validate(input) {
-    const validation = await new ValidateReferentialCatalog().execute(input);
+    const validation = await this.collaborators.createValidateReferentialCatalog().execute(input);
     if (!validation.isValid)
       throw new SpeakerSynchronizationError(
         "validate-catalog",
@@ -28682,35 +34646,183 @@ var SynchronizeSourceSpeakers = class {
   }
 };
 
-// packages/runtime/github-actions/src/action-failure-presenter.ts
-var SAFE_ERROR_NAMES = /* @__PURE__ */ new Set([
-  "GoogleDriveAssetRepositoryError",
-  "EventNotFoundError",
-  "EventConcurrentModificationError",
-  "GitHubEventRepositoryConfigurationError",
-  "GitHubEventRepositoryScopeError",
-  "GitHubEventRepositoryResponseError",
-  "GitHubEventCommentRepositoryConfigurationError",
-  "GitHubEventCommentRepositoryScopeError",
-  "GitHubEventCommentRepositoryResponseError"
-]);
-var ActionFailurePresenter = class {
-  /** Never expose provider responses, input values, or contact data in failures. */
-  static publicErrorMessage(error2) {
-    if (error2 instanceof Error && SAFE_ERROR_NAMES.has(error2.name)) {
-      return `${error2.name}: ${error2.message}`;
-    }
-    return "Unexpected technical failure.";
+// packages/application/journey/src/use-cases/validate-meetup-referentials.ts
+var ValidateMeetupReferentials = class {
+  constructor(collaborators, dependencies) {
+    this.collaborators = collaborators;
+    this.dependencies = dependencies;
+  }
+  collaborators;
+  dependencies;
+  async execute() {
+    const config = this.dependencies.config;
+    const repository = this.dependencies.referentialRepository;
+    const validation = await this.collaborators.createValidateReferentialCatalog(repository).execute();
+    const diagnostics = validation.diagnostics.map((item) => ({
+      code: item.code,
+      severity: item.severity,
+      field: item.path,
+      message: item.message
+    }));
+    return validation.isValid ? { isValid: true, config, catalog: validation.catalog, diagnostics } : { isValid: false, config, diagnostics };
   }
 };
 
-// packages/runtime/github-actions/src/action-output.ts
-var ActionOutput = class _ActionOutput {
-  static setJsonOutput(name, value) {
-    setOutput(name, JSON.stringify(value));
+// packages/application/journey/src/dependency-composition.ts
+var JourneyComposition = class {
+  assetRenderProjection(...args) {
+    return new AssetRenderProjection(
+      {
+        assetParticipantProjection: new JourneyPolicyComposition().assetParticipantProjection(),
+        publicAssetUrl: new PublicationDomainComposition().publicAssetUrl(),
+        createValidateReferentialCatalog: (...args2) => new ReferentialDomainComposition().validateReferentialCatalog(
+          ...args2
+        )
+      },
+      ...args
+    );
   }
-  static setDiagnosticsOutput(diagnostics) {
-    _ActionOutput.setJsonOutput("diagnostics", diagnostics);
+  findNextAssetEvent(...args) {
+    return new FindNextAssetEvent(
+      {
+        eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
+        configuredPublicationPolicies: new JourneyPolicyComposition().configuredPublicationPolicies(),
+        meetupPublicationChecklist: new EventDomainComposition().meetupPublicationChecklist(),
+        createEventRuleEngine: (...args2) => new EventDomainComposition().eventRuleEngine(...args2)
+      },
+      ...args
+    );
+  }
+  manageMeetupAssets(...args) {
+    return new ManageMeetupAssets(
+      {
+        eventDocumentConcurrency: new EventDomainComposition().eventDocumentConcurrency(),
+        eventRepositoryPatches: new EventDomainComposition().eventRepositoryPatches()
+      },
+      ...args
+    );
+  }
+  manageMeetupAttention(...args) {
+    return new ManageMeetupAttention(
+      {
+        attentionEventFacts: new JourneyPolicyComposition().attentionEventFacts(),
+        evaluateAttention: new CommunicationDomainComposition().evaluateAttention(),
+        eventDocumentConcurrency: new EventDomainComposition().eventDocumentConcurrency(),
+        postEventPolicy: new CommunicationDomainComposition().postEventPolicy()
+      },
+      ...args
+    );
+  }
+  manageMeetupEvent(...args) {
+    return new ManageMeetupEvent(
+      {
+        eventPublicationEvaluation: new JourneyPolicyComposition().eventPublicationEvaluation(),
+        eventReadinessPolicy: new EventDomainComposition().eventReadinessPolicy(),
+        eventLifecycle: new EventDomainComposition().eventLifecycle(),
+        eventDiagnosticProjection: new JourneyPolicyComposition().eventDiagnosticProjection(),
+        eventParticipantResolution: new JourneyPolicyComposition().eventParticipantResolution(),
+        eventRepositoryPatches: new EventDomainComposition().eventRepositoryPatches(),
+        eventDocumentConcurrency: new EventDomainComposition().eventDocumentConcurrency(),
+        createReconcileEvent: (...args2) => new EventDomainComposition().reconcileEvent(...args2),
+        createValidateReferentialCatalog: (...args2) => new ReferentialDomainComposition().validateReferentialCatalog(
+          ...args2
+        ),
+        createRefreshSelectedProposals: (...args2) => this.refreshSelectedProposals(...args2),
+        createResolveEventReferences: (...args2) => new ReferentialDomainComposition().resolveEventReferences(...args2)
+      },
+      ...args
+    );
+  }
+  manageMeetupFeedback(...args) {
+    return new ManageMeetupFeedback(
+      {
+        feedbackPolicy: new PublicationDomainComposition().feedbackPolicy(),
+        feedbackAgendaProjection: new JourneyPolicyComposition().feedbackAgendaProjection(),
+        eventRepositoryPatches: new EventDomainComposition().eventRepositoryPatches(),
+        feedbackLinkSelection: new PublicationDomainComposition().feedbackLinkSelection(),
+        eventDocumentConcurrency: new EventDomainComposition().eventDocumentConcurrency()
+      },
+      ...args
+    );
+  }
+  manageMeetupPublication(...args) {
+    return new ManageMeetupPublication(
+      {
+        diagnosticPolicy: new JourneyPolicyComposition().diagnosticPolicy(),
+        meetupPublicationProjection: new JourneyPolicyComposition().meetupPublicationProjection(),
+        scheduledEventPolicy: new PublicationDomainComposition().scheduledEventPolicy(),
+        meetupPublicationChecklist: new EventDomainComposition().meetupPublicationChecklist(),
+        eventRepositoryPatches: new EventDomainComposition().eventRepositoryPatches(),
+        eventDocumentConcurrency: new EventDomainComposition().eventDocumentConcurrency(),
+        createMeetupPublicationApproval: (...args2) => this.meetupPublicationApproval(...args2)
+      },
+      ...args
+    );
+  }
+  meetupPublicationApproval(...args) {
+    return new MeetupPublicationApproval(
+      {
+        meetupPublicationRevision: new JourneyPolicyComposition().meetupPublicationRevision()
+      },
+      ...args
+    );
+  }
+  reconcileOrganizerFeedback(...args) {
+    return new ReconcileOrganizerFeedback(
+      {
+        attentionStageEvaluation: new JourneyPolicyComposition().attentionStageEvaluation()
+      },
+      ...args
+    );
+  }
+  refreshSelectedProposals(...args) {
+    return new RefreshSelectedProposals(...args);
+  }
+  synchronizeMeetupIssueForm(...args) {
+    return new SynchronizeMeetupIssueForm(...args);
+  }
+  synchronizeSourceSpeakers(...args) {
+    return new SynchronizeSourceSpeakers(
+      {
+        speakerSynchronizationStageRunner: new JourneyPolicyComposition().speakerSynchronizationStageRunner(),
+        createMergeSourceSpeakers: (...args2) => new ReferentialDomainComposition().mergeSourceSpeakers(...args2),
+        createValidateReferentialCatalog: (...args2) => new ReferentialDomainComposition().validateReferentialCatalog(
+          ...args2
+        )
+      },
+      ...args
+    );
+  }
+  validateMeetupReferentials(...args) {
+    return new ValidateMeetupReferentials(
+      {
+        createValidateReferentialCatalog: (...args2) => new ReferentialDomainComposition().validateReferentialCatalog(
+          ...args2
+        )
+      },
+      ...args
+    );
+  }
+};
+
+// packages/presentation/localization/src/locale-resolver.ts
+var LocaleResolver = class {
+  resolveLocale(requested) {
+    try {
+      const language = new Intl.Locale(
+        requested.trim().replaceAll("_", "-") || "en"
+      ).language;
+      return language === "fr" ? "fr" : "en";
+    } catch {
+      return "en";
+    }
+  }
+};
+
+// packages/presentation/localization/src/dependency-composition.ts
+var LocalizationComposition = class {
+  localeResolver() {
+    return new LocaleResolver();
   }
 };
 
@@ -32035,34 +38147,26 @@ function createIntl(config, cache) {
 }
 
 // packages/presentation/localization/src/message-localizer.ts
-var MessageLocalizer = class _MessageLocalizer {
-  constructor(catalogs, locale = "en") {
+var MessageLocalizer = class {
+  constructor(collaborators, catalogs, locale = "en") {
+    this.collaborators = collaborators;
     this.catalogs = catalogs;
-    this.locale = _MessageLocalizer.resolveLocale(locale);
+    this.locale = this.collaborators.localeResolver.resolveLocale(locale);
     this.intl = createIntl(
       {
         locale: this.locale,
         defaultLocale: "en",
         messages: catalogs[this.locale],
-        onError: _MessageLocalizer.keepFormattingErrorsPrivate,
-        onWarn: _MessageLocalizer.keepFormattingErrorsPrivate
+        onError: this.keepFormattingErrorsPrivate.bind(this),
+        onWarn: this.keepFormattingErrorsPrivate.bind(this)
       },
       createIntlCache()
     );
   }
+  collaborators;
   catalogs;
   locale;
   intl;
-  static resolveLocale(requested) {
-    try {
-      const language = new Intl.Locale(
-        requested.trim().replaceAll("_", "-") || "en"
-      ).language;
-      return language === "fr" ? "fr" : "en";
-    } catch {
-      return "en";
-    }
-  }
   t(key, ...args) {
     return this.intl.formatMessage(
       { id: key, defaultMessage: this.catalogs.en[key] },
@@ -32070,7 +38174,1087 @@ var MessageLocalizer = class _MessageLocalizer {
       { ignoreTag: true }
     );
   }
-  static keepFormattingErrorsPrivate() {
+  keepFormattingErrorsPrivate() {
+  }
+};
+
+// packages/runtime/github-actions/src/action-failure-presenter.ts
+var SAFE_ERROR_NAMES = /* @__PURE__ */ new Set([
+  "GoogleDriveAssetRepositoryError",
+  "EventNotFoundError",
+  "EventConcurrentModificationError",
+  "GitHubEventRepositoryConfigurationError",
+  "GitHubEventRepositoryScopeError",
+  "GitHubEventRepositoryResponseError",
+  "GitHubEventCommentRepositoryConfigurationError",
+  "GitHubEventCommentRepositoryScopeError",
+  "GitHubEventCommentRepositoryResponseError"
+]);
+var ActionFailurePresenter = class {
+  /** Never expose provider responses, input values, or contact data in failures. */
+  publicErrorMessage(error2) {
+    if (error2 instanceof Error && SAFE_ERROR_NAMES.has(error2.name)) {
+      return `${error2.name}: ${error2.message}`;
+    }
+    return "Unexpected technical failure.";
+  }
+};
+
+// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/command.js
+import * as os from "os";
+
+// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/utils.js
+function toCommandValue(input) {
+  if (input === null || input === void 0) {
+    return "";
+  } else if (typeof input === "string" || input instanceof String) {
+    return input;
+  }
+  return JSON.stringify(input);
+}
+function toCommandProperties(annotationProperties) {
+  if (!Object.keys(annotationProperties).length) {
+    return {};
+  }
+  return {
+    title: annotationProperties.title,
+    file: annotationProperties.file,
+    line: annotationProperties.startLine,
+    endLine: annotationProperties.endLine,
+    col: annotationProperties.startColumn,
+    endColumn: annotationProperties.endColumn
+  };
+}
+
+// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/command.js
+function issueCommand(command, properties, message) {
+  const cmd = new Command(command, properties, message);
+  process.stdout.write(cmd.toString() + os.EOL);
+}
+var CMD_STRING = "::";
+var Command = class {
+  constructor(command, properties, message) {
+    if (!command) {
+      command = "missing.command";
+    }
+    this.command = command;
+    this.properties = properties;
+    this.message = message;
+  }
+  toString() {
+    let cmdStr = CMD_STRING + this.command;
+    if (this.properties && Object.keys(this.properties).length > 0) {
+      cmdStr += " ";
+      let first = true;
+      for (const key in this.properties) {
+        if (this.properties.hasOwnProperty(key)) {
+          const val = this.properties[key];
+          if (val) {
+            if (first) {
+              first = false;
+            } else {
+              cmdStr += ",";
+            }
+            cmdStr += `${key}=${escapeProperty(val)}`;
+          }
+        }
+      }
+    }
+    cmdStr += `${CMD_STRING}${escapeData(this.message)}`;
+    return cmdStr;
+  }
+};
+function escapeData(s) {
+  return toCommandValue(s).replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
+}
+function escapeProperty(s) {
+  return toCommandValue(s).replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A").replace(/:/g, "%3A").replace(/,/g, "%2C");
+}
+
+// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/file-command.js
+import * as crypto from "crypto";
+import * as fs from "fs";
+import * as os2 from "os";
+function issueFileCommand(command, message) {
+  const filePath = process.env[`GITHUB_${command}`];
+  if (!filePath) {
+    throw new Error(`Unable to find environment variable for file command ${command}`);
+  }
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`Missing file at path: ${filePath}`);
+  }
+  fs.appendFileSync(filePath, `${toCommandValue(message)}${os2.EOL}`, {
+    encoding: "utf8"
+  });
+}
+function prepareKeyValueMessage(key, value) {
+  const delimiter = `ghadelimiter_${crypto.randomUUID()}`;
+  const convertedValue = toCommandValue(value);
+  if (key.includes(delimiter)) {
+    throw new Error(`Unexpected input: name should not contain the delimiter "${delimiter}"`);
+  }
+  if (convertedValue.includes(delimiter)) {
+    throw new Error(`Unexpected input: value should not contain the delimiter "${delimiter}"`);
+  }
+  return `${key}<<${delimiter}${os2.EOL}${convertedValue}${os2.EOL}${delimiter}`;
+}
+
+// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/core.js
+import * as os4 from "os";
+
+// node_modules/.pnpm/@actions+http-client@4.0.1/node_modules/@actions/http-client/lib/index.js
+var tunnel = __toESM(require_tunnel2(), 1);
+var import_undici = __toESM(require_undici(), 1);
+var HttpCodes;
+(function(HttpCodes2) {
+  HttpCodes2[HttpCodes2["OK"] = 200] = "OK";
+  HttpCodes2[HttpCodes2["MultipleChoices"] = 300] = "MultipleChoices";
+  HttpCodes2[HttpCodes2["MovedPermanently"] = 301] = "MovedPermanently";
+  HttpCodes2[HttpCodes2["ResourceMoved"] = 302] = "ResourceMoved";
+  HttpCodes2[HttpCodes2["SeeOther"] = 303] = "SeeOther";
+  HttpCodes2[HttpCodes2["NotModified"] = 304] = "NotModified";
+  HttpCodes2[HttpCodes2["UseProxy"] = 305] = "UseProxy";
+  HttpCodes2[HttpCodes2["SwitchProxy"] = 306] = "SwitchProxy";
+  HttpCodes2[HttpCodes2["TemporaryRedirect"] = 307] = "TemporaryRedirect";
+  HttpCodes2[HttpCodes2["PermanentRedirect"] = 308] = "PermanentRedirect";
+  HttpCodes2[HttpCodes2["BadRequest"] = 400] = "BadRequest";
+  HttpCodes2[HttpCodes2["Unauthorized"] = 401] = "Unauthorized";
+  HttpCodes2[HttpCodes2["PaymentRequired"] = 402] = "PaymentRequired";
+  HttpCodes2[HttpCodes2["Forbidden"] = 403] = "Forbidden";
+  HttpCodes2[HttpCodes2["NotFound"] = 404] = "NotFound";
+  HttpCodes2[HttpCodes2["MethodNotAllowed"] = 405] = "MethodNotAllowed";
+  HttpCodes2[HttpCodes2["NotAcceptable"] = 406] = "NotAcceptable";
+  HttpCodes2[HttpCodes2["ProxyAuthenticationRequired"] = 407] = "ProxyAuthenticationRequired";
+  HttpCodes2[HttpCodes2["RequestTimeout"] = 408] = "RequestTimeout";
+  HttpCodes2[HttpCodes2["Conflict"] = 409] = "Conflict";
+  HttpCodes2[HttpCodes2["Gone"] = 410] = "Gone";
+  HttpCodes2[HttpCodes2["TooManyRequests"] = 429] = "TooManyRequests";
+  HttpCodes2[HttpCodes2["InternalServerError"] = 500] = "InternalServerError";
+  HttpCodes2[HttpCodes2["NotImplemented"] = 501] = "NotImplemented";
+  HttpCodes2[HttpCodes2["BadGateway"] = 502] = "BadGateway";
+  HttpCodes2[HttpCodes2["ServiceUnavailable"] = 503] = "ServiceUnavailable";
+  HttpCodes2[HttpCodes2["GatewayTimeout"] = 504] = "GatewayTimeout";
+})(HttpCodes || (HttpCodes = {}));
+var Headers;
+(function(Headers2) {
+  Headers2["Accept"] = "accept";
+  Headers2["ContentType"] = "content-type";
+})(Headers || (Headers = {}));
+var MediaTypes;
+(function(MediaTypes2) {
+  MediaTypes2["ApplicationJson"] = "application/json";
+})(MediaTypes || (MediaTypes = {}));
+var HttpRedirectCodes = [
+  HttpCodes.MovedPermanently,
+  HttpCodes.ResourceMoved,
+  HttpCodes.SeeOther,
+  HttpCodes.TemporaryRedirect,
+  HttpCodes.PermanentRedirect
+];
+var HttpResponseRetryCodes = [
+  HttpCodes.BadGateway,
+  HttpCodes.ServiceUnavailable,
+  HttpCodes.GatewayTimeout
+];
+
+// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/summary.js
+import { EOL as EOL3 } from "os";
+import { constants, promises } from "fs";
+var __awaiter = function(thisArg, _arguments, P2, generator) {
+  function adopt(value) {
+    return value instanceof P2 ? value : new P2(function(resolve3) {
+      resolve3(value);
+    });
+  }
+  return new (P2 || (P2 = Promise))(function(resolve3, reject) {
+    function fulfilled(value) {
+      try {
+        step(generator.next(value));
+      } catch (e) {
+        reject(e);
+      }
+    }
+    function rejected(value) {
+      try {
+        step(generator["throw"](value));
+      } catch (e) {
+        reject(e);
+      }
+    }
+    function step(result) {
+      result.done ? resolve3(result.value) : adopt(result.value).then(fulfilled, rejected);
+    }
+    step((generator = generator.apply(thisArg, _arguments || [])).next());
+  });
+};
+var { access, appendFile, writeFile } = promises;
+var SUMMARY_ENV_VAR = "GITHUB_STEP_SUMMARY";
+var Summary = class {
+  constructor() {
+    this._buffer = "";
+  }
+  /**
+   * Finds the summary file path from the environment, rejects if env var is not found or file does not exist
+   * Also checks r/w permissions.
+   *
+   * @returns step summary file path
+   */
+  filePath() {
+    return __awaiter(this, void 0, void 0, function* () {
+      if (this._filePath) {
+        return this._filePath;
+      }
+      const pathFromEnv = process.env[SUMMARY_ENV_VAR];
+      if (!pathFromEnv) {
+        throw new Error(`Unable to find environment variable for $${SUMMARY_ENV_VAR}. Check if your runtime environment supports job summaries.`);
+      }
+      try {
+        yield access(pathFromEnv, constants.R_OK | constants.W_OK);
+      } catch (_a2) {
+        throw new Error(`Unable to access summary file: '${pathFromEnv}'. Check if the file has correct read/write permissions.`);
+      }
+      this._filePath = pathFromEnv;
+      return this._filePath;
+    });
+  }
+  /**
+   * Wraps content in an HTML tag, adding any HTML attributes
+   *
+   * @param {string} tag HTML tag to wrap
+   * @param {string | null} content content within the tag
+   * @param {[attribute: string]: string} attrs key-value list of HTML attributes to add
+   *
+   * @returns {string} content wrapped in HTML element
+   */
+  wrap(tag, content, attrs = {}) {
+    const htmlAttrs = Object.entries(attrs).map(([key, value]) => ` ${key}="${value}"`).join("");
+    if (!content) {
+      return `<${tag}${htmlAttrs}>`;
+    }
+    return `<${tag}${htmlAttrs}>${content}</${tag}>`;
+  }
+  /**
+   * Writes text in the buffer to the summary buffer file and empties buffer. Will append by default.
+   *
+   * @param {SummaryWriteOptions} [options] (optional) options for write operation
+   *
+   * @returns {Promise<Summary>} summary instance
+   */
+  write(options) {
+    return __awaiter(this, void 0, void 0, function* () {
+      const overwrite = !!(options === null || options === void 0 ? void 0 : options.overwrite);
+      const filePath = yield this.filePath();
+      const writeFunc = overwrite ? writeFile : appendFile;
+      yield writeFunc(filePath, this._buffer, { encoding: "utf8" });
+      return this.emptyBuffer();
+    });
+  }
+  /**
+   * Clears the summary buffer and wipes the summary file
+   *
+   * @returns {Summary} summary instance
+   */
+  clear() {
+    return __awaiter(this, void 0, void 0, function* () {
+      return this.emptyBuffer().write({ overwrite: true });
+    });
+  }
+  /**
+   * Returns the current summary buffer as a string
+   *
+   * @returns {string} string of summary buffer
+   */
+  stringify() {
+    return this._buffer;
+  }
+  /**
+   * If the summary buffer is empty
+   *
+   * @returns {boolen} true if the buffer is empty
+   */
+  isEmptyBuffer() {
+    return this._buffer.length === 0;
+  }
+  /**
+   * Resets the summary buffer without writing to summary file
+   *
+   * @returns {Summary} summary instance
+   */
+  emptyBuffer() {
+    this._buffer = "";
+    return this;
+  }
+  /**
+   * Adds raw text to the summary buffer
+   *
+   * @param {string} text content to add
+   * @param {boolean} [addEOL=false] (optional) append an EOL to the raw text (default: false)
+   *
+   * @returns {Summary} summary instance
+   */
+  addRaw(text, addEOL = false) {
+    this._buffer += text;
+    return addEOL ? this.addEOL() : this;
+  }
+  /**
+   * Adds the operating system-specific end-of-line marker to the buffer
+   *
+   * @returns {Summary} summary instance
+   */
+  addEOL() {
+    return this.addRaw(EOL3);
+  }
+  /**
+   * Adds an HTML codeblock to the summary buffer
+   *
+   * @param {string} code content to render within fenced code block
+   * @param {string} lang (optional) language to syntax highlight code
+   *
+   * @returns {Summary} summary instance
+   */
+  addCodeBlock(code, lang) {
+    const attrs = Object.assign({}, lang && { lang });
+    const element = this.wrap("pre", this.wrap("code", code), attrs);
+    return this.addRaw(element).addEOL();
+  }
+  /**
+   * Adds an HTML list to the summary buffer
+   *
+   * @param {string[]} items list of items to render
+   * @param {boolean} [ordered=false] (optional) if the rendered list should be ordered or not (default: false)
+   *
+   * @returns {Summary} summary instance
+   */
+  addList(items, ordered = false) {
+    const tag = ordered ? "ol" : "ul";
+    const listItems = items.map((item) => this.wrap("li", item)).join("");
+    const element = this.wrap(tag, listItems);
+    return this.addRaw(element).addEOL();
+  }
+  /**
+   * Adds an HTML table to the summary buffer
+   *
+   * @param {SummaryTableCell[]} rows table rows
+   *
+   * @returns {Summary} summary instance
+   */
+  addTable(rows) {
+    const tableBody = rows.map((row) => {
+      const cells = row.map((cell) => {
+        if (typeof cell === "string") {
+          return this.wrap("td", cell);
+        }
+        const { header, data, colspan, rowspan } = cell;
+        const tag = header ? "th" : "td";
+        const attrs = Object.assign(Object.assign({}, colspan && { colspan }), rowspan && { rowspan });
+        return this.wrap(tag, data, attrs);
+      }).join("");
+      return this.wrap("tr", cells);
+    }).join("");
+    const element = this.wrap("table", tableBody);
+    return this.addRaw(element).addEOL();
+  }
+  /**
+   * Adds a collapsable HTML details element to the summary buffer
+   *
+   * @param {string} label text for the closed state
+   * @param {string} content collapsable content
+   *
+   * @returns {Summary} summary instance
+   */
+  addDetails(label, content) {
+    const element = this.wrap("details", this.wrap("summary", label) + content);
+    return this.addRaw(element).addEOL();
+  }
+  /**
+   * Adds an HTML image tag to the summary buffer
+   *
+   * @param {string} src path to the image you to embed
+   * @param {string} alt text description of the image
+   * @param {SummaryImageOptions} options (optional) addition image attributes
+   *
+   * @returns {Summary} summary instance
+   */
+  addImage(src, alt, options) {
+    const { width, height } = options || {};
+    const attrs = Object.assign(Object.assign({}, width && { width }), height && { height });
+    const element = this.wrap("img", null, Object.assign({ src, alt }, attrs));
+    return this.addRaw(element).addEOL();
+  }
+  /**
+   * Adds an HTML section heading element
+   *
+   * @param {string} text heading text
+   * @param {number | string} [level=1] (optional) the heading level, default: 1
+   *
+   * @returns {Summary} summary instance
+   */
+  addHeading(text, level) {
+    const tag = `h${level}`;
+    const allowedTag = ["h1", "h2", "h3", "h4", "h5", "h6"].includes(tag) ? tag : "h1";
+    const element = this.wrap(allowedTag, text);
+    return this.addRaw(element).addEOL();
+  }
+  /**
+   * Adds an HTML thematic break (<hr>) to the summary buffer
+   *
+   * @returns {Summary} summary instance
+   */
+  addSeparator() {
+    const element = this.wrap("hr", null);
+    return this.addRaw(element).addEOL();
+  }
+  /**
+   * Adds an HTML line break (<br>) to the summary buffer
+   *
+   * @returns {Summary} summary instance
+   */
+  addBreak() {
+    const element = this.wrap("br", null);
+    return this.addRaw(element).addEOL();
+  }
+  /**
+   * Adds an HTML blockquote to the summary buffer
+   *
+   * @param {string} text quote text
+   * @param {string} cite (optional) citation url
+   *
+   * @returns {Summary} summary instance
+   */
+  addQuote(text, cite) {
+    const attrs = Object.assign({}, cite && { cite });
+    const element = this.wrap("blockquote", text, attrs);
+    return this.addRaw(element).addEOL();
+  }
+  /**
+   * Adds an HTML anchor tag to the summary buffer
+   *
+   * @param {string} text link text/content
+   * @param {string} href hyperlink
+   *
+   * @returns {Summary} summary instance
+   */
+  addLink(text, href) {
+    const element = this.wrap("a", text, { href });
+    return this.addRaw(element).addEOL();
+  }
+};
+var _summary = new Summary();
+var summary = _summary;
+
+// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/platform.js
+import os3 from "os";
+
+// node_modules/.pnpm/@actions+io@3.0.2/node_modules/@actions/io/lib/io-util.js
+import * as fs2 from "fs";
+var { chmod, copyFile, lstat, mkdir, open, readdir, rename, rm, rmdir, stat, symlink, unlink } = fs2.promises;
+var IS_WINDOWS = process.platform === "win32";
+var READONLY = fs2.constants.O_RDONLY;
+
+// node_modules/.pnpm/@actions+exec@3.0.0/node_modules/@actions/exec/lib/toolrunner.js
+var IS_WINDOWS2 = process.platform === "win32";
+
+// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/platform.js
+var platform = os3.platform();
+var arch = os3.arch();
+
+// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/core.js
+var ExitCode;
+(function(ExitCode2) {
+  ExitCode2[ExitCode2["Success"] = 0] = "Success";
+  ExitCode2[ExitCode2["Failure"] = 1] = "Failure";
+})(ExitCode || (ExitCode = {}));
+function setSecret(secret) {
+  issueCommand("add-mask", {}, secret);
+}
+function getInput(name, options) {
+  const val = process.env[`INPUT_${name.replace(/ /g, "_").toUpperCase()}`] || "";
+  if (options && options.required && !val) {
+    throw new Error(`Input required and not supplied: ${name}`);
+  }
+  if (options && options.trimWhitespace === false) {
+    return val;
+  }
+  return val.trim();
+}
+function setOutput(name, value) {
+  const filePath = process.env["GITHUB_OUTPUT"] || "";
+  if (filePath) {
+    return issueFileCommand("OUTPUT", prepareKeyValueMessage(name, value));
+  }
+  process.stdout.write(os4.EOL);
+  issueCommand("set-output", { name }, toCommandValue(value));
+}
+function setFailed(message) {
+  process.exitCode = ExitCode.Failure;
+  error(message);
+}
+function error(message, properties = {}) {
+  issueCommand("error", toCommandProperties(properties), message instanceof Error ? message.toString() : message);
+}
+function warning(message, properties = {}) {
+  issueCommand("warning", toCommandProperties(properties), message instanceof Error ? message.toString() : message);
+}
+function info(message) {
+  process.stdout.write(message + os4.EOL);
+}
+
+// packages/runtime/github-actions/src/action-output.ts
+var ActionOutput = class {
+  setJsonOutput(name, value) {
+    setOutput(name, JSON.stringify(value));
+  }
+  setDiagnosticsOutput(diagnostics) {
+    this.setJsonOutput("diagnostics", diagnostics);
+  }
+};
+
+// packages/runtime/github-actions/src/action-report.ts
+var ActionReport = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  async write(title, report, messages = this.collaborators.createActionMessages()) {
+    const lines = new Set(report.details);
+    for (const item of report.diagnostics) {
+      lines.add(this.diagnosticMessage(item));
+    }
+    if (report.failure)
+      lines.add(messages.t("report.failed", { reason: report.failure }));
+    for (const line of lines) {
+      info(line.replaceAll("\r", "\\r").replaceAll("\n", "\\n"));
+    }
+    const content = [...lines].join("\n").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+    try {
+      await summary.addHeading(title, 2).addRaw(`<pre>${content}</pre>
+`).write();
+    } catch {
+      summary.clear();
+      warning(messages.t("report.summary-unavailable"));
+    }
+  }
+  diagnosticMessage(item) {
+    const field = item.field ? ` field=${item.field}` : "";
+    const fixed = item.fixApplied === void 0 ? "" : ` fix_applied=${item.fixApplied}`;
+    return `${item.severity} ${item.code}${field}${fixed}`;
+  }
+};
+
+// packages/runtime/github-actions/src/action-runner.ts
+var ActionRunner = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  async run(title, operation, diagnosticsOutput) {
+    let messages = this.collaborators.createActionMessages("en");
+    let report;
+    try {
+      messages = this.collaborators.createActionMessages(
+        getInput("locale", { required: true })
+      );
+      report = await operation(messages);
+      const failures = report.diagnostics.filter(
+        (item) => this.collaborators.diagnosticPolicy.isTechnicalFailure(item)
+      ).map((item) => item.code);
+      if (!report.failure && failures.length > 0) {
+        report = {
+          ...report,
+          failure: messages.t("report.technical-failure", {
+            codes: [...new Set(failures)].join(", ")
+          })
+        };
+      }
+    } catch (error2) {
+      if (error2 instanceof EventConcurrentModificationError) {
+        report = {
+          details: [],
+          diagnostics: [
+            {
+              code: "event.concurrently-modified",
+              severity: "info",
+              message: "event.concurrently-modified"
+            }
+          ]
+        };
+      } else {
+        const message = this.collaborators.actionFailurePresenter.publicErrorMessage(error2);
+        report = {
+          details: [],
+          diagnostics: [
+            { code: "action.execution.failed", severity: "error", message }
+          ],
+          failure: messages.error(
+            error2 instanceof Error ? error2.name : "",
+            message
+          )
+        };
+      }
+    }
+    await this.collaborators.actionReport.write(
+      messages.t(title),
+      report,
+      messages
+    );
+    if (report.failure) setFailed(report.failure);
+    if (diagnosticsOutput)
+      this.collaborators.actionOutput.setDiagnosticsOutput(report.diagnostics);
+  }
+};
+
+// packages/runtime/github-actions/src/assets/asset-content-configuration.ts
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+var AssetContentConfiguration = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  usesNextEvent(contracts) {
+    return Object.values(contracts).some((contract) => {
+      const fields = this.collaborators.runtimeInput.isObject(contract) ? contract.fields : void 0;
+      return Array.isArray(fields) && fields.some(
+        (field) => this.collaborators.runtimeInput.isObject(field) && typeof field.token === "string" && field.token.startsWith("next_event.")
+      );
+    });
+  }
+  async load(root, eventId) {
+    let text;
+    try {
+      text = await readFile(
+        join(root, ".github/meetup-asset-content.json"),
+        "utf8"
+      );
+    } catch (error2) {
+      if (this.collaborators.runtimeInput.isObject(error2) && error2.code === "ENOENT")
+        return {
+          contracts: {},
+          speakers: {},
+          talks: {},
+          venues: {},
+          hostLogos: {},
+          recovery: {}
+        };
+      throw error2;
+    }
+    if (Buffer.byteLength(text) > 1e6)
+      throw new Error("Asset content configuration is too large");
+    return this.parse(JSON.parse(text), eventId);
+  }
+  parse(root, eventId) {
+    if (!this.collaborators.runtimeInput.isObject(root) || root.version !== 1 || !this.collaborators.runtimeInput.isObject(root.contracts) || !this.collaborators.contentContractPolicy.keys(root, [
+      "version",
+      "contracts",
+      "events",
+      "venues",
+      "hostLogos"
+    ]) || root.events !== void 0 && !this.collaborators.runtimeInput.isObject(root.events))
+      throw new Error("Invalid asset content configuration");
+    const selected = this.collaborators.runtimeInput.isObject(root.events) ? root.events[eventId] : void 0;
+    const event = selected === void 0 ? {} : selected;
+    if (!this.collaborators.runtimeInput.isObject(event) || !this.collaborators.contentContractPolicy.keys(event, [
+      "speakers",
+      "talks",
+      "recovery"
+    ]))
+      throw new Error("Invalid asset event configuration");
+    const assignments = this.collaborators.assetRenderConfiguration.parse(
+      event,
+      root.venues,
+      root.hostLogos
+    );
+    const recovery = this.recovery(event.recovery);
+    return { contracts: root.contracts, ...assignments, recovery };
+  }
+  recovery(input) {
+    const value = input === void 0 ? {} : input;
+    if (!this.collaborators.runtimeInput.isObject(value))
+      throw new Error("Invalid asset recovery operations");
+    const result = {};
+    for (const [id, operation] of Object.entries(value)) {
+      if (!this.collaborators.contentContractPolicy.name(id) || !this.collaborators.runtimeInput.isObject(operation) || operation.operation !== "enroll" && operation.operation !== "restore" && operation.operation !== "remove" || !this.collaborators.contentContractPolicy.text(operation.revision) || operation.operation !== "enroll" && !this.collaborators.contentContractPolicy.name(
+        operation.bindingId
+      ) || operation.bindingId !== void 0 && !this.collaborators.contentContractPolicy.name(
+        operation.bindingId
+      ) || !this.collaborators.contentContractPolicy.keys(operation, [
+        "operation",
+        "revision",
+        "bindingId"
+      ]))
+        throw new Error("Invalid asset recovery operation");
+      result[id] = {
+        operation: operation.operation,
+        revision: operation.revision,
+        ...typeof operation.bindingId === "string" ? { bindingId: operation.bindingId } : {}
+      };
+    }
+    return result;
+  }
+};
+
+// packages/runtime/github-actions/src/assets/asset-date-formatter.ts
+var AssetDateFormatter = class {
+  constructor(locale) {
+    this.locale = locale;
+  }
+  locale;
+  format(date, timeZone, format = "long") {
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return void 0;
+    try {
+      new Intl.DateTimeFormat(this.locale, { timeZone });
+      const instant = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
+      if (instant.toISOString().slice(0, 10) !== date) return void 0;
+      if (format === "numeric")
+        return `${date.slice(8, 10)}/${date.slice(5, 7)}/${date.slice(0, 4)}`;
+      const options = format === "month" ? { month: "long" } : { dateStyle: format === "weekday" ? "full" : "long" };
+      return new Intl.DateTimeFormat(this.locale, {
+        ...options,
+        timeZone: "UTC"
+      }).format(instant);
+    } catch {
+      return void 0;
+    }
+  }
+};
+
+// packages/runtime/github-actions/src/assets/messages.en.ts
+var EN_MESSAGES = {
+  "asset.agenda.talk": "{title} - {speakers}"
+};
+
+// packages/runtime/github-actions/src/assets/messages.fr.ts
+var FR_MESSAGES = {
+  "asset.agenda.talk": "{title} - {speakers}"
+};
+
+// packages/runtime/github-actions/src/assets/catalog.ts
+var CATALOGS = { en: EN_MESSAGES, fr: FR_MESSAGES };
+
+// packages/runtime/github-actions/src/assets/asset-messages.ts
+var AssetMessages = class extends MessageLocalizer {
+  constructor(collaborators, locale = "en") {
+    super(collaborators, CATALOGS, locale);
+  }
+};
+
+// packages/runtime/github-actions/src/assets/asset-render-configuration.ts
+var AssetRenderConfiguration = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  parse(event, venues, hostLogos) {
+    return {
+      speakers: this.speakers(event.speakers),
+      talks: this.talks(event.talks),
+      venues: this.venues(venues),
+      hostLogos: this.logos(hostLogos)
+    };
+  }
+  speakers(input) {
+    const result = {};
+    for (const [slot, id] of Object.entries(
+      this.record(input === void 0 ? {} : input)
+    )) {
+      if (!this.slot(slot) || typeof id !== "string" || !/^speaker-[a-z0-9-]+$/.test(id))
+        throw new Error("Invalid asset speaker assignment");
+      result[slot] = id;
+    }
+    return result;
+  }
+  talks(input) {
+    const result = {};
+    for (const [slot, value] of Object.entries(
+      this.record(input === void 0 ? {} : input)
+    )) {
+      const identity = this.record(value);
+      if (!this.slot(slot) || !this.collaborators.contentContractPolicy.keys(identity, [
+        "provider",
+        "event",
+        "id"
+      ]) || !this.identity(identity.provider) || !this.identity(identity.event) || !this.identity(identity.id))
+        throw new Error("Invalid asset talk assignment");
+      result[slot] = {
+        provider: identity.provider,
+        event: identity.event,
+        id: identity.id
+      };
+    }
+    return result;
+  }
+  venues(input) {
+    const result = {};
+    for (const [id, value] of Object.entries(
+      this.record(input === void 0 ? {} : input)
+    )) {
+      const venue = this.record(value);
+      if (!/^host-[a-z0-9-]+$/.test(id) || !this.collaborators.contentContractPolicy.keys(venue, [
+        "address",
+        "postalCode",
+        "city"
+      ]) || !this.collaborators.contentContractPolicy.text(venue.address) || !this.collaborators.contentContractPolicy.text(venue.postalCode) || !this.collaborators.contentContractPolicy.text(venue.city))
+        throw new Error("Invalid public asset venue");
+      result[id] = {
+        address: venue.address,
+        postalCode: venue.postalCode,
+        city: venue.city
+      };
+    }
+    return result;
+  }
+  logos(input) {
+    const result = {};
+    for (const [hostId, value] of Object.entries(
+      this.record(input === void 0 ? {} : input)
+    )) {
+      const logo = this.record(value);
+      if (!/^host-[a-z0-9-]+$/.test(hostId) || !this.collaborators.contentContractPolicy.keys(logo, [
+        "url",
+        "description"
+      ]) || !this.collaborators.contentContractPolicy.text(logo.url) || !this.collaborators.contentContractPolicy.text(logo.description))
+        throw new Error("Invalid public host logo");
+      result[hostId] = { url: logo.url, description: logo.description };
+    }
+    return result;
+  }
+  slot(value) {
+    return this.collaborators.contentContractPolicy.name(value) && !["__proto__", "prototype", "constructor"].includes(value);
+  }
+  identity(value) {
+    return typeof value === "string" && /^[a-zA-Z0-9_-]{1,200}$/.test(value);
+  }
+  record(value) {
+    if (!this.collaborators.runtimeInput.isObject(value) || Object.keys(value).length > 200)
+      throw new Error("Invalid asset render configuration");
+    return value;
+  }
+};
+
+// packages/runtime/github-actions/src/assets/asset-render-presenter.ts
+var AssetRenderPresenterImpl = class {
+  constructor(collaborators, messages = collaborators.createAssetMessages()) {
+    this.collaborators = collaborators;
+    this.messages = messages;
+  }
+  collaborators;
+  messages;
+  format(input) {
+    const date = this.collaborators.createAssetDateFormatter(
+      this.messages.locale
+    );
+    return {
+      text: {
+        "event.title": input.title,
+        "event.date": date.format(input.date, input.timeZone),
+        "event.date.month": date.format(input.date, input.timeZone, "month"),
+        "event.date.numeric": date.format(
+          input.date,
+          input.timeZone,
+          "numeric"
+        ),
+        "event.date.weekday": date.format(
+          input.date,
+          input.timeZone,
+          "weekday"
+        ),
+        "host.name": input.hostName,
+        "host.address": input.venue?.address,
+        "host.postal_code": input.venue?.postalCode,
+        "host.city": input.venue?.city,
+        "event.feedback_url": input.feedbackUrl,
+        "next_event.date": date.format(input.nextEvent?.date, input.timeZone),
+        "next_event.date.numeric": date.format(
+          input.nextEvent?.date,
+          input.timeZone,
+          "numeric"
+        ),
+        "next_event.host.name": input.nextEvent?.hostName,
+        "next_event.host.city": input.nextEvent?.city,
+        agenda: input.agenda.map(
+          (talk) => this.messages.t("asset.agenda.talk", {
+            title: talk.title,
+            speakers: this.names(talk.speakers)
+          })
+        ).join("\n"),
+        ...this.slots(input)
+      },
+      pictures: input.pictures,
+      hostLogo: input.hostLogo
+    };
+  }
+  slots(input) {
+    const text = {};
+    for (const [slot, talk] of Object.entries(input.talks ?? {})) {
+      text[`talk.title:${slot}`] = talk.title;
+      text[`talk.abstract:${slot}`] = talk.abstract;
+      text[`talk.speakers:${slot}`] = this.names(talk.speakers);
+    }
+    for (const [slot, name] of Object.entries(input.speakers ?? {}))
+      text[`speaker.name:${slot}`] = name;
+    return text;
+  }
+  names(speakers) {
+    return new Intl.ListFormat(this.messages.locale, {
+      style: "long",
+      type: "conjunction"
+    }).format(speakers);
+  }
+};
+
+// packages/runtime/github-actions/src/attention-stage-input.ts
+var AttentionStageInput = class {
+  parse(value) {
+    const input = JSON.parse(value);
+    if (!this.isRecord(input))
+      throw new Error("Invalid attention stage results");
+    const reports = ATTENTION_STAGE_OWNERS.map(
+      (owner) => [owner, this.stage(input[owner])]
+    );
+    return {
+      event: reports[0][1],
+      assets: reports[1][1],
+      feedback: reports[2][1],
+      communications: reports[3][1]
+    };
+  }
+  stage(value) {
+    if (value !== void 0 && !this.isRecord(value))
+      throw new Error("Invalid attention stage");
+    const stage = value ?? {};
+    return {
+      outcome: stage.outcome === "success" || stage.outcome === "failure" ? stage.outcome : "unknown",
+      diagnostics: this.readDiagnostics(stage.diagnostics),
+      reported: stage.diagnostics !== void 0 && stage.diagnostics !== ""
+    };
+  }
+  isRecord(value) {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+  }
+  readDiagnostics(input) {
+    let diagnostics = input;
+    if (typeof diagnostics === "string") {
+      if (!diagnostics) return [];
+      try {
+        diagnostics = JSON.parse(diagnostics);
+      } catch {
+        throw new Error("Invalid attention stage diagnostics");
+      }
+    }
+    if (diagnostics === void 0) return [];
+    if (!Array.isArray(diagnostics))
+      throw new Error("Invalid attention stage diagnostics");
+    return diagnostics.map((item) => {
+      if (!item || typeof item !== "object" || Array.isArray(item))
+        throw new Error("Invalid attention stage diagnostic");
+      const { code, severity, field, fixApplied } = item;
+      if (typeof code !== "string" || !/^(event|publication|communication|referential|action)\.[a-z.-]{1,120}$/.test(
+        code
+      ) || severity !== "error" && severity !== "warning" && severity !== "info")
+        throw new Error("Invalid attention stage diagnostic");
+      return {
+        code,
+        severity,
+        message: code,
+        ...this.safeField(field) ? { field } : {},
+        ...typeof fixApplied === "boolean" ? { fixApplied } : {}
+      };
+    });
+  }
+  safeField(field) {
+    if (typeof field !== "string" || field.length > 160) return false;
+    return ["Aperitif", "Restaurant / Bar"].includes(field) || /^(agenda|assets|date|description|host|hoster|hosts|speakers|title|name|labels|confirmations|event_status|occurrenceStatus|publicationLinks)(?:\[\d{1,6}\]|\.(?:[a-zA-Z][a-zA-Z-]{0,40}|\d{1,6}))*$/.test(
+      field
+    );
+  }
+};
+
+// packages/runtime/github-actions/src/attention-stages.ts
+var AttentionStages = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  parse(value) {
+    return this.collaborators.attentionStageEvaluation.evaluate(
+      this.collaborators.attentionStageInput.parse(value)
+    );
+  }
+  diagnostics(value) {
+    return this.collaborators.attentionStageEvaluation.diagnostics(
+      this.collaborators.attentionStageInput.parse(value)
+    );
+  }
+  hasCompleteReports(value) {
+    return this.collaborators.attentionStageEvaluation.complete(
+      this.collaborators.attentionStageInput.parse(value)
+    );
+  }
+};
+
+// packages/runtime/github-actions/src/communication-input.ts
+var CommunicationInput = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  validate(input) {
+    this.collaborators.conferenceHallInput.validate(input);
+    for (const field of [
+      "locale",
+      "githubToken",
+      "mailingsToken",
+      "slackToken",
+      "openFeedbackApiKey"
+    ])
+      if (!input[field]?.trim())
+        throw new Error(`Input required and not supplied: ${field}`);
+    if (typeof input.slidesReady !== "boolean")
+      throw new Error("slidesReady must be an explicit boolean");
+    if (!Number.isSafeInteger(input.issueNumber) || input.issueNumber <= 0) {
+      throw new Error("issueNumber must be a positive integer");
+    }
+    if (!this.isRepositoryPart(input.owner) || !this.isRepositoryPart(input.repo)) {
+      throw new Error(
+        "owner and repo must be valid GitHub repository segments"
+      );
+    }
+    if (!input.slackOrganizerChannelId.trim()) {
+      throw new Error("slackOrganizerChannelId must not be empty");
+    }
+    if (!input.managedCommentAuthor.trim()) {
+      throw new Error("managedCommentAuthor must not be empty");
+    }
+  }
+  isRepositoryPart(value) {
+    return /^[A-Za-z0-9_.-]+$/.test(value);
+  }
+};
+
+// packages/runtime/github-actions/src/conference-hall-input.ts
+var ConferenceHallInput = class {
+  read() {
+    const conferenceHallApiKey = getInput("conference-hall-api-key", {
+      required: true
+    });
+    setSecret(conferenceHallApiKey);
+    return this.validate({
+      conferenceHallEvent: getInput("conference-hall-event", {
+        required: true
+      }),
+      conferenceHallApiKey
+    });
+  }
+  validate(input) {
+    const conferenceHallEvent = input.conferenceHallEvent?.trim();
+    const conferenceHallApiKey = input.conferenceHallApiKey?.trim();
+    if (!conferenceHallEvent)
+      throw new Error("Input required and not supplied: conference-hall-event");
+    if (!conferenceHallApiKey)
+      throw new Error(
+        "Input required and not supplied: conference-hall-api-key"
+      );
+    return { conferenceHallEvent, conferenceHallApiKey };
   }
 };
 
@@ -32149,7 +39333,7 @@ var DIAGNOSTICS_REFERENTIAL_FR = {
 };
 
 // packages/runtime/github-actions/src/i18n/messages.en.ts
-var EN_MESSAGES = {
+var EN_MESSAGES2 = {
   "diagnostic.publication.meetup.approval-pending": "Approve or reject publication in the organizer approval comment. The event remains a draft until approved.",
   "diagnostic.publication.meetup.approval-rejected": "Publication was rejected. The event remains a draft; changed event content requires a new approval.",
   "diagnostic.publication.meetup.approval-unavailable": "Publication approval could not be verified. Check the approval comment and GitHub App permissions before retrying.",
@@ -32254,7 +39438,7 @@ var EN_MESSAGES = {
 };
 
 // packages/runtime/github-actions/src/i18n/messages.fr.ts
-var FR_MESSAGES = {
+var FR_MESSAGES2 = {
   "diagnostic.publication.meetup.approval-pending": "Approuvez ou refusez la publication dans le commentaire d'approbation. L'\xE9v\xE9nement reste en brouillon avant approbation.",
   "diagnostic.publication.meetup.approval-rejected": "La publication a \xE9t\xE9 refus\xE9e. L'\xE9v\xE9nement reste en brouillon ; toute modification n\xE9cessite une nouvelle approbation.",
   "diagnostic.publication.meetup.approval-unavailable": "Impossible de v\xE9rifier l'approbation de publication. V\xE9rifiez le commentaire et les permissions de la GitHub App avant de relancer.",
@@ -32359,4414 +39543,321 @@ var FR_MESSAGES = {
 };
 
 // packages/runtime/github-actions/src/i18n/catalog.ts
-var CATALOGS = {
+var CATALOGS2 = {
   en: {
-    ...EN_MESSAGES,
+    ...EN_MESSAGES2,
     ...DIAGNOSTICS_REFERENTIAL_EN
   },
   fr: {
-    ...FR_MESSAGES,
+    ...FR_MESSAGES2,
     ...DIAGNOSTICS_REFERENTIAL_FR
   }
 };
 
 // packages/runtime/github-actions/src/i18n/action-messages.ts
 var ActionMessages = class extends MessageLocalizer {
-  constructor(locale = "en") {
-    super(CATALOGS, locale);
+  constructor(collaborators, locale = "en") {
+    super(collaborators, CATALOGS2, locale);
   }
   /** Private speaker-sync PR guidance; the fallback must already be redacted. */
   diagnostic(code, fallback) {
     const key = `diagnostic.${code}`;
-    return this.locale === "en" || !Object.hasOwn(CATALOGS.en, key) ? fallback : this.t(key);
+    return this.locale === "en" || !Object.hasOwn(CATALOGS2.en, key) ? fallback : this.t(key);
   }
   error(name, publicFallback) {
     const key = `error.${name}`;
     if (this.locale === "en") return publicFallback;
-    return Object.hasOwn(CATALOGS.en, key) ? this.t(key) : this.t("report.error.unexpected");
+    return Object.hasOwn(CATALOGS2.en, key) ? this.t(key) : this.t("report.error.unexpected");
   }
 };
 
-// packages/runtime/github-actions/src/action-report.ts
-var ActionReport = class _ActionReport {
-  static async write(title, report, messages = new ActionMessages()) {
-    const lines = new Set(report.details);
-    for (const item of report.diagnostics) {
-      lines.add(_ActionReport.diagnosticMessage(item));
-    }
-    if (report.failure)
-      lines.add(messages.t("report.failed", { reason: report.failure }));
-    for (const line of lines) {
-      info(line.replaceAll("\r", "\\r").replaceAll("\n", "\\n"));
-    }
-    const content = [...lines].join("\n").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-    try {
-      await summary.addHeading(title, 2).addRaw(`<pre>${content}</pre>
-`).write();
-    } catch {
-      summary.clear();
-      warning(messages.t("report.summary-unavailable"));
-    }
+// packages/runtime/github-actions/src/meetup-publication-configuration.ts
+import { readFile as readFile2 } from "node:fs/promises";
+import { join as join2 } from "node:path";
+var MeetupPublicationConfiguration = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
   }
-  static diagnosticMessage(item) {
-    const field = item.field ? ` field=${item.field}` : "";
-    const fixed = item.fixApplied === void 0 ? "" : ` fix_applied=${item.fixApplied}`;
-    return `${item.severity} ${item.code}${field}${fixed}`;
+  collaborators;
+  async load(root) {
+    const text = await readFile2(
+      join2(root, ".github/meetup-publication.json"),
+      "utf8"
+    );
+    if (Buffer.byteLength(text) > 1e5)
+      throw new Error("Meetup publication configuration is too large");
+    return this.parse(JSON.parse(text));
+  }
+  parse(input) {
+    if (!this.collaborators.runtimeInput.isObject(input) || input.version !== 1 || typeof input.startTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(input.startTime) || typeof input.endTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(input.endTime) || input.endTime <= input.startTime || !this.collaborators.runtimeInput.isObject(input.venues))
+      throw new Error("Invalid Meetup publication configuration");
+    const venues = {};
+    for (const [id, venue] of Object.entries(input.venues)) {
+      if (!/^host-[a-z0-9-]+$/.test(id) || !this.collaborators.runtimeInput.isObject(venue) || !this.text(venue.name) || !this.text(venue.city))
+        throw new Error("Invalid public Meetup venue mapping");
+      venues[id] = { name: venue.name, city: venue.city };
+    }
+    return { startTime: input.startTime, endTime: input.endTime, venues };
+  }
+  text(value) {
+    return typeof value === "string" && value.trim() === value && value.length > 0 && value.length <= 200 && !/[\r\n<>]/.test(value);
   }
 };
 
-// packages/runtime/github-actions/src/action-runner.ts
-var ActionRunner = class {
-  static async run(title, operation, diagnosticsOutput) {
-    let messages = new ActionMessages("en");
-    let report;
-    try {
-      messages = new ActionMessages(
-        getInput("locale", { required: true })
-      );
-      report = await operation(messages);
-      const failures = report.diagnostics.filter((item) => DiagnosticPolicy.isTechnicalFailure(item)).map((item) => item.code);
-      if (!report.failure && failures.length > 0) {
-        report = {
-          ...report,
-          failure: messages.t("report.technical-failure", {
-            codes: [...new Set(failures)].join(", ")
-          })
-        };
-      }
-    } catch (error2) {
-      if (error2 instanceof EventConcurrentModificationError) {
-        report = {
-          details: [],
-          diagnostics: [
-            {
-              code: "event.concurrently-modified",
-              severity: "info",
-              message: "event.concurrently-modified"
-            }
-          ]
-        };
-      } else {
-        const message = ActionFailurePresenter.publicErrorMessage(error2);
-        report = {
-          details: [],
-          diagnostics: [
-            { code: "action.execution.failed", severity: "error", message }
-          ],
-          failure: messages.error(
-            error2 instanceof Error ? error2.name : "",
-            message
-          )
-        };
-      }
-    }
-    await ActionReport.write(messages.t(title), report, messages);
-    if (report.failure) setFailed(report.failure);
-    if (diagnosticsOutput)
-      ActionOutput.setDiagnosticsOutput(report.diagnostics);
+// packages/runtime/github-actions/src/organizer-feedback.ts
+var OrganizerFeedback = class {
+  constructor(collaborators, events, comments, meetupLabel) {
+    this.collaborators = collaborators;
+    this.reconciliation = this.collaborators.createReconcileOrganizerFeedback(
+      events,
+      comments,
+      meetupLabel
+    );
+  }
+  collaborators;
+  reconciliation;
+  async execute(identity, stageResults) {
+    await this.reconciliation.execute(
+      identity,
+      this.collaborators.attentionStageInput.parse(stageResults)
+    );
   }
 };
 
-// node_modules/.pnpm/@actions+github@9.1.1/node_modules/@actions/github/lib/context.js
-import { readFileSync, existsSync as existsSync2 } from "fs";
-import { EOL as EOL5 } from "os";
-var Context = class {
-  /**
-   * Hydrate the context from the environment
-   */
-  constructor() {
-    var _a2, _b, _c;
-    this.payload = {};
-    if (process.env.GITHUB_EVENT_PATH) {
-      if (existsSync2(process.env.GITHUB_EVENT_PATH)) {
-        this.payload = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, { encoding: "utf8" }));
-      } else {
-        const path = process.env.GITHUB_EVENT_PATH;
-        process.stdout.write(`GITHUB_EVENT_PATH ${path} does not exist${EOL5}`);
-      }
-    }
-    this.eventName = process.env.GITHUB_EVENT_NAME;
-    this.sha = process.env.GITHUB_SHA;
-    this.ref = process.env.GITHUB_REF;
-    this.workflow = process.env.GITHUB_WORKFLOW;
-    this.action = process.env.GITHUB_ACTION;
-    this.actor = process.env.GITHUB_ACTOR;
-    this.job = process.env.GITHUB_JOB;
-    this.runAttempt = parseInt(process.env.GITHUB_RUN_ATTEMPT, 10);
-    this.runNumber = parseInt(process.env.GITHUB_RUN_NUMBER, 10);
-    this.runId = parseInt(process.env.GITHUB_RUN_ID, 10);
-    this.apiUrl = (_a2 = process.env.GITHUB_API_URL) !== null && _a2 !== void 0 ? _a2 : `https://api.github.com`;
-    this.serverUrl = (_b = process.env.GITHUB_SERVER_URL) !== null && _b !== void 0 ? _b : `https://github.com`;
-    this.graphqlUrl = (_c = process.env.GITHUB_GRAPHQL_URL) !== null && _c !== void 0 ? _c : `https://api.github.com/graphql`;
+// packages/runtime/github-actions/src/referential-action-report.ts
+var ReferentialActionReport = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
   }
-  get issue() {
-    const payload = this.payload;
-    return Object.assign(Object.assign({}, this.repo), { number: (payload.issue || payload.pull_request || payload).number });
-  }
-  get repo() {
-    if (process.env.GITHUB_REPOSITORY) {
-      const [owner, repo] = process.env.GITHUB_REPOSITORY.split("/");
-      return { owner, repo };
-    }
-    if (this.payload.repository) {
-      return {
-        owner: this.payload.repository.owner.login,
-        repo: this.payload.repository.name
-      };
-    }
-    throw new Error("context.repo requires a GITHUB_REPOSITORY environment variable like 'owner/repo'");
-  }
-};
-
-// node_modules/.pnpm/@actions+github@9.1.1/node_modules/@actions/github/lib/internal/utils.js
-var httpClient = __toESM(require_lib(), 1);
-var import_undici2 = __toESM(require_undici(), 1);
-var __awaiter2 = function(thisArg, _arguments, P2, generator) {
-  function adopt(value) {
-    return value instanceof P2 ? value : new P2(function(resolve3) {
-      resolve3(value);
-    });
-  }
-  return new (P2 || (P2 = Promise))(function(resolve3, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve3(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-function getAuthString(token, options) {
-  if (!token && !options.auth) {
-    throw new Error("Parameter token or opts.auth is required");
-  } else if (token && options.auth) {
-    throw new Error("Parameters token and opts.auth may not both be specified");
-  }
-  return typeof options.auth === "string" ? options.auth : `token ${token}`;
-}
-function getProxyAgent(destinationUrl) {
-  const hc = new httpClient.HttpClient();
-  return hc.getAgent(destinationUrl);
-}
-function getProxyAgentDispatcher(destinationUrl) {
-  const hc = new httpClient.HttpClient();
-  return hc.getAgentDispatcher(destinationUrl);
-}
-function getProxyFetch(destinationUrl) {
-  const httpDispatcher = getProxyAgentDispatcher(destinationUrl);
-  const proxyFetch = (url, opts) => __awaiter2(this, void 0, void 0, function* () {
-    return (0, import_undici2.fetch)(url, Object.assign(Object.assign({}, opts), { dispatcher: httpDispatcher }));
-  });
-  return proxyFetch;
-}
-function getApiBaseUrl() {
-  return process.env["GITHUB_API_URL"] || "https://api.github.com";
-}
-function getUserAgentWithOrchestrationId(baseUserAgent) {
-  var _a2;
-  const orchId = (_a2 = process.env["ACTIONS_ORCHESTRATION_ID"]) === null || _a2 === void 0 ? void 0 : _a2.trim();
-  if (orchId) {
-    const sanitizedId = orchId.replace(/[^a-z0-9_.-]/gi, "_");
-    const tag = `actions_orchestration_id/${sanitizedId}`;
-    if (baseUserAgent === null || baseUserAgent === void 0 ? void 0 : baseUserAgent.includes(tag))
-      return baseUserAgent;
-    const ua2 = baseUserAgent ? `${baseUserAgent} ` : "";
-    return `${ua2}${tag}`;
-  }
-  return baseUserAgent;
-}
-
-// node_modules/.pnpm/universal-user-agent@7.0.3/node_modules/universal-user-agent/index.js
-function getUserAgent() {
-  if (typeof navigator === "object" && "userAgent" in navigator) {
-    return navigator.userAgent;
-  }
-  if (typeof process === "object" && process.version !== void 0) {
-    return `Node.js/${process.version.substr(1)} (${process.platform}; ${process.arch})`;
-  }
-  return "<environment undetectable>";
-}
-
-// node_modules/.pnpm/before-after-hook@4.0.0/node_modules/before-after-hook/lib/register.js
-function register(state, name, method, options) {
-  if (typeof method !== "function") {
-    throw new Error("method for before hook must be a function");
-  }
-  if (!options) {
-    options = {};
-  }
-  if (Array.isArray(name)) {
-    return name.reverse().reduce((callback, name2) => {
-      return register.bind(null, state, name2, callback, options);
-    }, method)();
-  }
-  return Promise.resolve().then(() => {
-    if (!state.registry[name]) {
-      return method(options);
-    }
-    return state.registry[name].reduce((method2, registered) => {
-      return registered.hook.bind(null, method2, options);
-    }, method)();
-  });
-}
-
-// node_modules/.pnpm/before-after-hook@4.0.0/node_modules/before-after-hook/lib/add.js
-function addHook(state, kind, name, hook2) {
-  const orig = hook2;
-  if (!state.registry[name]) {
-    state.registry[name] = [];
-  }
-  if (kind === "before") {
-    hook2 = (method, options) => {
-      return Promise.resolve().then(orig.bind(null, options)).then(method.bind(null, options));
+  collaborators;
+  validation(result, diagnostics, messages = this.collaborators.createActionMessages()) {
+    const details = [
+      messages.t(
+        result.isValid ? "report.referential.valid" : "report.referential.invalid"
+      ),
+      messages.t("report.referential.counts", {
+        hosts: result.hostCount,
+        speakers: result.speakerCount
+      })
+    ];
+    return {
+      details,
+      diagnostics
     };
   }
-  if (kind === "after") {
-    hook2 = (method, options) => {
-      let result;
-      return Promise.resolve().then(method.bind(null, options)).then((result_) => {
-        result = result_;
-        return orig(result, options);
-      }).then(() => {
-        return result;
-      });
-    };
-  }
-  if (kind === "error") {
-    hook2 = (method, options) => {
-      return Promise.resolve().then(method.bind(null, options)).catch((error2) => {
-        return orig(error2, options);
-      });
-    };
-  }
-  state.registry[name].push({
-    hook: hook2,
-    orig
-  });
-}
-
-// node_modules/.pnpm/before-after-hook@4.0.0/node_modules/before-after-hook/lib/remove.js
-function removeHook(state, name, method) {
-  if (!state.registry[name]) {
-    return;
-  }
-  const index = state.registry[name].map((registered) => {
-    return registered.orig;
-  }).indexOf(method);
-  if (index === -1) {
-    return;
-  }
-  state.registry[name].splice(index, 1);
-}
-
-// node_modules/.pnpm/before-after-hook@4.0.0/node_modules/before-after-hook/index.js
-var bind = Function.bind;
-var bindable = bind.bind(bind);
-function bindApi(hook2, state, name) {
-  const removeHookRef = bindable(removeHook, null).apply(
-    null,
-    name ? [state, name] : [state]
-  );
-  hook2.api = { remove: removeHookRef };
-  hook2.remove = removeHookRef;
-  ["before", "error", "after", "wrap"].forEach((kind) => {
-    const args = name ? [state, kind, name] : [state, kind];
-    hook2[kind] = hook2.api[kind] = bindable(addHook, null).apply(null, args);
-  });
-}
-function Singular() {
-  const singularHookName = /* @__PURE__ */ Symbol("Singular");
-  const singularHookState = {
-    registry: {}
-  };
-  const singularHook = register.bind(null, singularHookState, singularHookName);
-  bindApi(singularHook, singularHookState, singularHookName);
-  return singularHook;
-}
-function Collection() {
-  const state = {
-    registry: {}
-  };
-  const hook2 = register.bind(null, state);
-  bindApi(hook2, state);
-  return hook2;
-}
-var before_after_hook_default = { Singular, Collection };
-
-// node_modules/.pnpm/@octokit+endpoint@11.0.5/node_modules/@octokit/endpoint/dist-bundle/index.js
-var VERSION = "0.0.0-development";
-var userAgent = `octokit-endpoint.js/${VERSION} ${getUserAgent()}`;
-var DEFAULTS = {
-  method: "GET",
-  baseUrl: "https://api.github.com",
-  headers: {
-    accept: "application/vnd.github.v3+json",
-    "user-agent": userAgent
-  },
-  mediaType: {
-    format: ""
-  }
-};
-function lowercaseKeys(object) {
-  if (!object) {
-    return {};
-  }
-  return Object.keys(object).reduce((newObj, key) => {
-    newObj[key.toLowerCase()] = object[key];
-    return newObj;
-  }, {});
-}
-function isPlainObject(value) {
-  if (typeof value !== "object" || value === null) return false;
-  if (Object.prototype.toString.call(value) !== "[object Object]") return false;
-  const proto = Object.getPrototypeOf(value);
-  if (proto === null) return true;
-  const Ctor = Object.prototype.hasOwnProperty.call(proto, "constructor") && proto.constructor;
-  return typeof Ctor === "function" && Ctor instanceof Ctor && Function.prototype.call(Ctor) === Function.prototype.call(value);
-}
-function mergeDeep(defaults2, options) {
-  const result = Object.assign({}, defaults2);
-  Object.keys(options).forEach((key) => {
-    if (isPlainObject(options[key])) {
-      if (!(key in defaults2)) Object.assign(result, { [key]: options[key] });
-      else result[key] = mergeDeep(defaults2[key], options[key]);
-    } else {
-      Object.assign(result, { [key]: options[key] });
-    }
-  });
-  return result;
-}
-function removeUndefinedProperties(obj) {
-  for (const key in obj) {
-    if (obj[key] === void 0) {
-      delete obj[key];
-    }
-  }
-  return obj;
-}
-function merge(defaults2, route, options) {
-  if (typeof route === "string") {
-    let [method, url] = route.split(" ");
-    options = Object.assign(url ? { method, url } : { url: method }, options);
-  } else {
-    options = Object.assign({}, route);
-  }
-  options.headers = lowercaseKeys(options.headers);
-  removeUndefinedProperties(options);
-  removeUndefinedProperties(options.headers);
-  const mergedOptions = mergeDeep(defaults2 || {}, options);
-  if (options.url === "/graphql") {
-    if (defaults2 && defaults2.mediaType.previews?.length) {
-      mergedOptions.mediaType.previews = defaults2.mediaType.previews.filter(
-        (preview) => !mergedOptions.mediaType.previews.includes(preview)
-      ).concat(mergedOptions.mediaType.previews);
-    }
-    mergedOptions.mediaType.previews = (mergedOptions.mediaType.previews || []).map((preview) => preview.replace(/-preview/, ""));
-  }
-  return mergedOptions;
-}
-function addQueryParameters(url, parameters) {
-  const separator = /\?/.test(url) ? "&" : "?";
-  const names = Object.keys(parameters);
-  if (names.length === 0) {
-    return url;
-  }
-  return url + separator + names.map((name) => {
-    if (name === "q") {
-      return "q=" + parameters.q.split("+").map(encodeURIComponent).join("+");
-    }
-    return `${name}=${encodeURIComponent(parameters[name])}`;
-  }).join("&");
-}
-var urlVariableRegex = /\{[^{}}]+\}/g;
-function removeNonChars(variableName) {
-  return variableName.replace(/(?:^\W+)|(?:(?<!\W)\W+$)/g, "").split(/,/);
-}
-function extractUrlVariableNames(url) {
-  const matches = url.match(urlVariableRegex);
-  if (!matches) {
-    return [];
-  }
-  return matches.map(removeNonChars).reduce((a, b2) => a.concat(b2), []);
-}
-function omit(object, keysToOmit) {
-  const result = { __proto__: null };
-  for (const key of Object.keys(object)) {
-    if (keysToOmit.indexOf(key) === -1) {
-      result[key] = object[key];
-    }
-  }
-  return result;
-}
-function encodeReserved(str) {
-  return str.split(/(%[0-9A-Fa-f]{2})/g).map(function(part) {
-    if (!/%[0-9A-Fa-f]/.test(part)) {
-      part = encodeURI(part).replace(/%5B/g, "[").replace(/%5D/g, "]");
-    }
-    return part;
-  }).join("");
-}
-function encodeUnreserved(str) {
-  return encodeURIComponent(str).replace(/[!'()*]/g, function(c) {
-    return "%" + c.charCodeAt(0).toString(16).toUpperCase();
-  });
-}
-function encodeValue(operator, value, key) {
-  value = operator === "+" || operator === "#" ? encodeReserved(value) : encodeUnreserved(value);
-  if (key) {
-    return encodeUnreserved(key) + "=" + value;
-  } else {
-    return value;
-  }
-}
-function isDefined(value) {
-  return value !== void 0 && value !== null;
-}
-function isKeyOperator(operator) {
-  return operator === ";" || operator === "&" || operator === "?";
-}
-function getValues(context3, operator, key, modifier) {
-  var value = context3[key], result = [];
-  if (isDefined(value) && value !== "") {
-    if (typeof value === "string" || typeof value === "number" || typeof value === "bigint" || typeof value === "boolean") {
-      value = value.toString();
-      if (modifier && modifier !== "*") {
-        value = value.substring(0, parseInt(modifier, 10));
-      }
-      result.push(
-        encodeValue(operator, value, isKeyOperator(operator) ? key : "")
+  issueForm(mode, result, messages = this.collaborators.createActionMessages()) {
+    const details = [];
+    if (result.diagnostics.some((item) => item.severity === "error")) {
+      details.push(messages.t("report.issue-form.blocked"));
+    } else if (result.changed) {
+      details.push(
+        mode === "check" ? messages.t("report.issue-form.stale") : messages.t("report.issue-form.updated"),
+        messages.t("report.issue-form.files", {
+          files: result.changedFiles.join(", ")
+        })
       );
     } else {
-      if (modifier === "*") {
-        if (Array.isArray(value)) {
-          value.filter(isDefined).forEach(function(value2) {
-            result.push(
-              encodeValue(operator, value2, isKeyOperator(operator) ? key : "")
-            );
-          });
-        } else {
-          Object.keys(value).forEach(function(k2) {
-            if (isDefined(value[k2])) {
-              result.push(encodeValue(operator, value[k2], k2));
-            }
-          });
-        }
-      } else {
-        const tmp = [];
-        if (Array.isArray(value)) {
-          value.filter(isDefined).forEach(function(value2) {
-            tmp.push(encodeValue(operator, value2));
-          });
-        } else {
-          Object.keys(value).forEach(function(k2) {
-            if (isDefined(value[k2])) {
-              tmp.push(encodeUnreserved(k2));
-              tmp.push(encodeValue(operator, value[k2].toString()));
-            }
-          });
-        }
-        if (isKeyOperator(operator)) {
-          result.push(encodeUnreserved(key) + "=" + tmp.join(","));
-        } else if (tmp.length !== 0) {
-          result.push(tmp.join(","));
-        }
-      }
+      details.push(messages.t("report.issue-form.current"));
     }
-  } else {
-    if (operator === ";") {
-      if (isDefined(value)) {
-        result.push(encodeUnreserved(key));
-      }
-    } else if (value === "" && (operator === "&" || operator === "?")) {
-      result.push(encodeUnreserved(key) + "=");
-    } else if (value === "") {
-      result.push("");
-    }
+    return { details, diagnostics: result.diagnostics };
   }
-  return result;
-}
-function parseUrl(template) {
-  return {
-    expand: expand.bind(null, template)
-  };
-}
-function expand(template, context3) {
-  var operators = ["+", "#", ".", "/", ";", "?", "&"];
-  template = template.replace(
-    /\{([^\{\}]+)\}|([^\{\}]+)/g,
-    function(_2, expression, literal) {
-      if (expression) {
-        let operator = "";
-        const values = [];
-        if (operators.indexOf(expression.charAt(0)) !== -1) {
-          operator = expression.charAt(0);
-          expression = expression.substr(1);
-        }
-        expression.split(/,/g).forEach(function(variable) {
-          var tmp = /([^:\*]*)(?::(\d+)|(\*))?/.exec(variable);
-          values.push(getValues(context3, operator, tmp[1], tmp[2] || tmp[3]));
-        });
-        if (operator && operator !== "+") {
-          var separator = ",";
-          if (operator === "?") {
-            separator = "&";
-          } else if (operator !== "#") {
-            separator = operator;
-          }
-          return (values.length !== 0 ? operator : "") + values.join(separator);
-        } else {
-          return values.join(",");
-        }
-      } else {
-        return encodeReserved(literal);
-      }
-    }
-  );
-  if (template === "/") {
-    return template;
-  } else {
-    return template.replace(/\/$/, "");
-  }
-}
-function parse2(options) {
-  let method = options.method.toUpperCase();
-  let url = (options.url || "/").replace(/:([a-z]\w+)/g, "{$1}");
-  let headers = Object.assign({}, options.headers);
-  let body;
-  let parameters = omit(options, [
-    "method",
-    "baseUrl",
-    "url",
-    "headers",
-    "request",
-    "mediaType"
-  ]);
-  const urlVariableNames = extractUrlVariableNames(url);
-  url = parseUrl(url).expand(parameters);
-  if (!/^http/.test(url)) {
-    url = options.baseUrl + url;
-  }
-  const omittedParameters = Object.keys(options).filter((option) => urlVariableNames.includes(option)).concat("baseUrl");
-  const remainingParameters = omit(parameters, omittedParameters);
-  const isBinaryRequest = /application\/octet-stream/i.test(headers.accept);
-  if (!isBinaryRequest) {
-    if (options.mediaType.format) {
-      headers.accept = headers.accept.split(/,/).map(
-        (format) => format.replace(
-          /application\/vnd(\.\w+)(\.v3)?(\.\w+)?(\+json)?$/,
-          `application/vnd$1$2.${options.mediaType.format}`
-        )
-      ).join(",");
-    }
-    if (url.endsWith("/graphql")) {
-      if (options.mediaType.previews?.length) {
-        const previewsFromAcceptHeader = headers.accept.match(/(?<![\w-])[\w-]+(?=-preview)/g) || [];
-        headers.accept = previewsFromAcceptHeader.concat(options.mediaType.previews).map((preview) => {
-          const format = options.mediaType.format ? `.${options.mediaType.format}` : "+json";
-          return `application/vnd.github.${preview}-preview${format}`;
-        }).join(",");
-      }
-    }
-  }
-  if (["GET", "HEAD"].includes(method)) {
-    url = addQueryParameters(url, remainingParameters);
-  } else {
-    if ("data" in remainingParameters) {
-      body = remainingParameters.data;
-    } else {
-      if (Object.keys(remainingParameters).length) {
-        body = remainingParameters;
-      }
-    }
-  }
-  if (!headers["content-type"] && typeof body !== "undefined") {
-    headers["content-type"] = "application/json; charset=utf-8";
-  }
-  if (["PATCH", "PUT"].includes(method) && typeof body === "undefined") {
-    body = "";
-  }
-  return Object.assign(
-    { method, url, headers },
-    typeof body !== "undefined" ? { body } : null,
-    options.request ? { request: options.request } : null
-  );
-}
-function endpointWithDefaults(defaults2, route, options) {
-  return parse2(merge(defaults2, route, options));
-}
-function withDefaults(oldDefaults, newDefaults) {
-  const DEFAULTS2 = merge(oldDefaults, newDefaults);
-  const endpoint2 = endpointWithDefaults.bind(null, DEFAULTS2);
-  return Object.assign(endpoint2, {
-    DEFAULTS: DEFAULTS2,
-    defaults: withDefaults.bind(null, DEFAULTS2),
-    merge: merge.bind(null, DEFAULTS2),
-    parse: parse2
-  });
-}
-var endpoint = withDefaults(null, DEFAULTS);
-
-// node_modules/.pnpm/content-type@3.1.1/node_modules/content-type/dist/index.js
-var SP = 32;
-var HTAB = 9;
-var SEMI = 59;
-var EQ = 61;
-var DQUOTE = 34;
-var BSLASH = 92;
-var COMMA = 44;
-var LOWER_CASE = 1;
-var OWS = 2;
-var SEMI_FLAG = 4;
-var COMMA_FLAG = 8;
-var TOKEN_FLAG = 16;
-var NON_ASCII = 65280;
-var CASE_FLAGS = LOWER_CASE | NON_ASCII;
-var CHAR_MAP = new Uint8Array(256);
-CHAR_MAP[HTAB] |= OWS;
-CHAR_MAP[SP] |= OWS;
-CHAR_MAP[SEMI] |= SEMI_FLAG;
-CHAR_MAP[COMMA] |= COMMA_FLAG;
-for (let code = 128; code <= 255; code++) {
-  CHAR_MAP[code] |= LOWER_CASE;
-}
-for (const char of "!#$%&'*+-.^_`|~") {
-  CHAR_MAP[char.charCodeAt(0)] |= TOKEN_FLAG;
-}
-for (let code = 48; code <= 57; code++) {
-  CHAR_MAP[code] |= TOKEN_FLAG;
-}
-for (let code = 65; code <= 90; code++) {
-  CHAR_MAP[code] |= LOWER_CASE | TOKEN_FLAG;
-}
-for (let code = 97; code <= 122; code++) {
-  CHAR_MAP[code] |= TOKEN_FLAG;
-}
-var NullObject = /* @__PURE__ */ (() => {
-  const C2 = function() {
-  };
-  C2.prototype = /* @__PURE__ */ Object.create(null);
-  return C2;
-})();
-function parse3(header, options) {
-  const stopFlags = SEMI_FLAG | (options?.comma === true ? COMMA_FLAG : 0);
-  const len = header.length;
-  let valueStart = options?.start ?? 0;
-  while ((CHAR_MAP[header.charCodeAt(valueStart)] & OWS) !== 0) {
-    valueStart++;
-  }
-  let index = valueStart;
-  let typeFlags = 0;
-  let whitespace = -1;
-  let stop = options?.parameters === false ? COMMA_FLAG : 0;
-  while (index < len) {
-    const code = header.charCodeAt(index);
-    const flags = CHAR_MAP[code];
-    if ((flags & stopFlags) !== 0) {
-      stop |= flags & COMMA_FLAG;
-      break;
-    }
-    if ((flags & OWS) !== 0) {
-      if (whitespace === -1)
-        whitespace = index;
-    } else {
-      whitespace = -1;
-    }
-    typeFlags |= code & NON_ASCII | flags;
-    index++;
-  }
-  const valueEnd = whitespace === -1 ? index : whitespace;
-  const value = header.slice(valueStart, valueEnd);
-  const type = (typeFlags & CASE_FLAGS) === 0 ? value : value.toLowerCase();
-  if (index === len || stop !== 0) {
-    return { type, index, parameters: new NullObject() };
-  }
-  return parseParameters(header, type, index, len, stopFlags);
-}
-function parseParameters(header, type, index, len, stopFlags) {
-  const parameters = new NullObject();
-  parameter: while (index < len) {
-    index++;
-    while ((CHAR_MAP[header.charCodeAt(index)] & OWS) !== 0) {
-      index++;
-    }
-    const keyStart = index;
-    let keyFlags = 0;
-    let keyWhitespace = -1;
-    while (index < len) {
-      const code = header.charCodeAt(index);
-      const flags = CHAR_MAP[code];
-      if ((flags & stopFlags) !== 0) {
-        if ((flags & COMMA_FLAG) !== 0)
-          break parameter;
-        continue parameter;
-      }
-      if (code === EQ) {
-        const keyEnd = keyWhitespace === -1 ? index : keyWhitespace;
-        const value = header.slice(keyStart, keyEnd);
-        const key = (keyFlags & CASE_FLAGS) === 0 ? value : value.toLowerCase();
-        index++;
-        while ((CHAR_MAP[header.charCodeAt(index)] & OWS) !== 0) {
-          index++;
-        }
-        if (index < len && header.charCodeAt(index) === DQUOTE) {
-          const quotedStart = ++index;
-          let escaped = false;
-          while (index < len) {
-            const code2 = header.charCodeAt(index);
-            if (code2 === DQUOTE) {
-              if (parameters[key] === void 0) {
-                parameters[key] = escaped ? unescapeQuotedPairs(header, quotedStart, index) : header.slice(quotedStart, index);
-              }
-              index++;
-              let stop2 = 0;
-              while (index < len) {
-                const code3 = header.charCodeAt(index);
-                const flags2 = CHAR_MAP[code3];
-                if ((flags2 & stopFlags) !== 0) {
-                  stop2 = flags2 & COMMA_FLAG;
-                  break;
-                }
-                index++;
-              }
-              if (stop2 !== 0)
-                break parameter;
-              continue parameter;
-            }
-            if (code2 === BSLASH && index + 1 < len) {
-              escaped = true;
-              index += 2;
-              continue;
-            }
-            index++;
-          }
-          continue parameter;
-        }
-        const valueStart = index;
-        let stop = 0;
-        let valueWhitespace = -1;
-        while (index < len) {
-          const code2 = header.charCodeAt(index);
-          const flags2 = CHAR_MAP[code2];
-          if ((flags2 & stopFlags) !== 0) {
-            stop = flags2 & COMMA_FLAG;
-            break;
-          }
-          if ((flags2 & OWS) !== 0) {
-            if (valueWhitespace === -1)
-              valueWhitespace = index;
-          } else {
-            valueWhitespace = -1;
-          }
-          index++;
-        }
-        if (parameters[key] === void 0) {
-          const valueEnd = valueWhitespace === -1 ? index : valueWhitespace;
-          parameters[key] = header.slice(valueStart, valueEnd);
-        }
-        if (stop !== 0)
-          break parameter;
-        continue parameter;
-      }
-      if ((flags & OWS) !== 0) {
-        if (keyWhitespace === -1)
-          keyWhitespace = index;
-      } else {
-        keyWhitespace = -1;
-      }
-      keyFlags |= code & NON_ASCII | flags;
-      index++;
-    }
-  }
-  return { type, index, parameters };
-}
-function unescapeQuotedPairs(str, start, end) {
-  let result = "";
-  for (let index = start; index < end; index++) {
-    if (str.charCodeAt(index) === BSLASH) {
-      result += str.slice(start, index);
-      start = ++index;
-    }
-  }
-  return result + str.slice(start, end);
-}
-
-// node_modules/.pnpm/json-with-bigint@3.5.12/node_modules/json-with-bigint/json-with-bigint.js
-var intRegex = /^-?\d+$/;
-var noiseValue = /^-?\d+n+$/;
-var originalStringify = JSON.stringify;
-var originalParse = JSON.parse;
-var customFormat = /^-?\d+n$/;
-var bigIntsStringify = /([\[:])?"(-?\d+)n"($|\s*[,\}\]])/g;
-var noiseStringify = /([\[:])?("-?\d+n+)n("$|"\s*[,\}\]])/g;
-var isUnstringifiable = (val) => val === void 0 || typeof val === "function" || typeof val === "symbol";
-var isRawJSON = (val) => val !== null && typeof val === "object" && val.constructor && val.constructor.name === "RawJSON";
-var stringifyIteratively = (rootValue, replacer, spaceParam) => {
-  let space = "";
-  if (typeof spaceParam === "number") {
-    space = " ".repeat(Math.min(10, Math.max(0, Math.floor(spaceParam))));
-  } else if (typeof spaceParam === "string") {
-    space = spaceParam.slice(0, 10);
-  }
-  const isFunctionReplacer = typeof replacer === "function";
-  const propertyList = Array.isArray(replacer) ? new Set(replacer.map(String)) : null;
-  const prepareVal = (parent, key, val) => {
-    const isObject = val !== null && typeof val === "object";
-    const hasToJSON = isObject && typeof val.toJSON === "function";
-    if (hasToJSON) {
-      val = val.toJSON(key);
-    }
-    const isNoise = typeof val === "string" && noiseValue.test(val);
-    if (isNoise) return val + "n";
-    const isBigInt = typeof val === "bigint";
-    if (isBigInt) {
-      const supportsRawJSON = "rawJSON" in JSON;
-      if (supportsRawJSON) return JSON.rawJSON(val.toString());
-      return val.toString() + "n";
-    }
-    if (isFunctionReplacer) {
-      val = replacer.call(parent, key, val);
-    }
-    const isPostReplacerObject = val !== null && typeof val === "object";
-    if (isPostReplacerObject) {
-      const isPrimitiveWrapper = val instanceof Number || val instanceof String || val instanceof Boolean;
-      if (isPrimitiveWrapper) {
-        val = val.valueOf();
-      }
-    }
-    return val;
-  };
-  const rootProcessed = prepareVal({ "": rootValue }, "", rootValue);
-  if (isUnstringifiable(rootProcessed)) {
-    return void 0;
-  }
-  const isRootPrimitive = rootProcessed === null || typeof rootProcessed !== "object";
-  const isRootNativeRawJSON = isRawJSON(rootProcessed);
-  if (isRootPrimitive || isRootNativeRawJSON) {
-    return originalStringify(rootProcessed);
-  }
-  const chunks = [];
-  let level = 0;
-  const stack = [
-    {
-      parent: { "": rootProcessed },
-      key: "",
-      val: rootProcessed,
-      isArray: Array.isArray(rootProcessed),
-      keys: Array.isArray(rootProcessed) ? null : Object.keys(rootProcessed),
-      index: 0,
-      first: true
-    }
-  ];
-  const visited = new WeakSet([rootProcessed]);
-  while (stack.length > 0) {
-    const node = stack[stack.length - 1];
-    if (node.index === 0) {
-      chunks.push(node.isArray ? "[" : "{");
-      level++;
-    }
-    let isDone = false;
-    if (node.isArray) {
-      if (node.index < node.val.length) {
-        if (!node.first) chunks.push(",");
-        if (space) chunks.push("\n" + space.repeat(level));
-        const childRaw = node.val[node.index];
-        const childVal = prepareVal(node.val, String(node.index), childRaw);
-        if (isUnstringifiable(childVal)) {
-          chunks.push("null");
-          node.first = false;
-          node.index++;
-        } else {
-          const isComplexObject = childVal !== null && typeof childVal === "object";
-          const isNativeRaw = isRawJSON(childVal);
-          if (isComplexObject && !isNativeRaw) {
-            if (visited.has(childVal)) {
-              throw new TypeError("Converting circular structure to JSON");
-            }
-            visited.add(childVal);
-            stack.push({
-              parent: node.val,
-              key: String(node.index),
-              val: childVal,
-              isArray: Array.isArray(childVal),
-              keys: Array.isArray(childVal) ? null : Object.keys(childVal),
-              index: 0,
-              first: true
-            });
-            node.first = false;
-            node.index++;
-          } else {
-            chunks.push(originalStringify(childVal));
-            node.first = false;
-            node.index++;
-          }
-        }
-      } else {
-        isDone = true;
-      }
-    } else {
-      while (node.index < node.keys.length) {
-        const k2 = node.keys[node.index++];
-        const isFilteredOutByArray = propertyList && !propertyList.has(k2);
-        if (isFilteredOutByArray) continue;
-        const childRaw = node.val[k2];
-        const childVal = prepareVal(node.val, k2, childRaw);
-        if (isUnstringifiable(childVal)) continue;
-        if (!node.first) chunks.push(",");
-        if (space) {
-          chunks.push("\n" + space.repeat(level) + originalStringify(k2) + ": ");
-        } else {
-          chunks.push(originalStringify(k2) + ":");
-        }
-        const isComplexObject = childVal !== null && typeof childVal === "object";
-        const isNativeRaw = isRawJSON(childVal);
-        if (isComplexObject && !isNativeRaw) {
-          if (visited.has(childVal)) {
-            throw new TypeError("Converting circular structure to JSON");
-          }
-          visited.add(childVal);
-          stack.push({
-            parent: node.val,
-            key: k2,
-            val: childVal,
-            isArray: Array.isArray(childVal),
-            keys: Array.isArray(childVal) ? null : Object.keys(childVal),
-            index: 0,
-            first: true
-          });
-          node.first = false;
-          break;
-        } else {
-          chunks.push(originalStringify(childVal));
-          node.first = false;
-        }
-      }
-      const isNodeFullyProcessed = node.index >= node.keys.length && stack[stack.length - 1] === node;
-      if (isNodeFullyProcessed) {
-        isDone = true;
-      }
-    }
-    if (isDone) {
-      level--;
-      if (!node.first && space) chunks.push("\n" + space.repeat(level));
-      chunks.push(node.isArray ? "]" : "}");
-      visited.delete(node.val);
-      stack.pop();
-    }
-  }
-  return chunks.join("");
 };
-var JSONStringify = (value, replacer, space) => {
-  try {
-    const supportsRawJSON = "rawJSON" in JSON;
-    if (supportsRawJSON) {
-      return originalStringify(
-        value,
-        (key, val) => {
-          if (typeof val === "bigint") return JSON.rawJSON(val.toString());
-          const hasFunctionReplacer = typeof replacer === "function";
-          if (hasFunctionReplacer) return replacer(key, val);
-          const isKeyInArrayReplacer = Array.isArray(replacer) && replacer.includes(key);
-          if (isKeyInArrayReplacer) return val;
-          return val;
-        },
-        space
-      );
+
+// packages/runtime/github-actions/src/runtime-input.ts
+var RuntimeInput = class {
+  positiveIntegerInput(name, value) {
+    if (!/^\d+$/.test(value)) {
+      throw new Error(`${name} must be a positive integer`);
     }
-    if (!value) return originalStringify(value, replacer, space);
-    const convertedToCustomJSON = originalStringify(
-      value,
-      (key, val) => {
-        const isNoise = typeof val === "string" && noiseValue.test(val);
-        if (isNoise) return val.toString() + "n";
-        if (typeof val === "bigint") return val.toString() + "n";
-        const hasFunctionReplacer = typeof replacer === "function";
-        if (hasFunctionReplacer) return replacer(key, val);
-        const isKeyInArrayReplacer = Array.isArray(replacer) && replacer.includes(key);
-        if (isKeyInArrayReplacer) return val;
-        return val;
+    const parsed = Number(value);
+    if (!Number.isSafeInteger(parsed) || parsed <= 0) {
+      throw new Error(`${name} must be a positive integer`);
+    }
+    return parsed;
+  }
+  enumInput(name, value, allowed) {
+    const parsed = allowed.find((candidate) => candidate === value);
+    if (parsed === void 0) {
+      throw new Error(`${name} must be one of: ${allowed.join(", ")}`);
+    }
+    return parsed;
+  }
+  isObject(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
+  }
+  booleanInput(name, value) {
+    if (value === "true") return true;
+    if (value === "false") return false;
+    throw new Error(`${name} must be true or false`);
+  }
+};
+
+// packages/runtime/github-actions/src/speaker-sync-failure-report.ts
+var SpeakerSyncFailureReport = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  create(error2, messages) {
+    const failure = error2 instanceof SpeakerSynchronizationError ? error2 : void 0;
+    const cause = failure?.cause ?? error2;
+    const diagnostics = failure?.diagnostics.length ? failure.diagnostics : [this.diagnostic(cause)];
+    const stage = messages.t(
+      `report.speaker-sync.stage.${failure?.stage ?? "unknown"}`
+    );
+    const guidance = diagnostics.map(
+      (item) => `- ${item.field ? `${item.field}: ` : ""}${messages.diagnostic(item.code, item.message)}`
+    ).join("\n");
+    return {
+      report: {
+        details: [messages.t("report.speaker-sync.failed", { stage })],
+        diagnostics
       },
-      space
-    );
-    const processedJSON = convertedToCustomJSON.replace(
-      bigIntsStringify,
-      "$1$2$3"
-    );
-    const denoisedJSON = processedJSON.replace(noiseStringify, "$1$2$3");
-    return denoisedJSON;
-  } catch (error2) {
-    if (error2 instanceof RangeError) {
-      const convertedJSON = stringifyIteratively(value, replacer, space);
-      if (convertedJSON === void 0) return void 0;
-      const supportsRawJSON = "rawJSON" in JSON;
-      if (supportsRawJSON) return convertedJSON;
-      const processedJSON = convertedJSON.replace(bigIntsStringify, "$1$2$3");
-      return processedJSON.replace(noiseStringify, "$1$2$3");
-    }
-    throw error2;
-  }
-};
-var featureCache = /* @__PURE__ */ new Map();
-var isContextSourceSupported = () => {
-  const parseFingerprint = JSON.parse.toString();
-  if (featureCache.has(parseFingerprint)) {
-    return featureCache.get(parseFingerprint);
-  }
-  try {
-    const result = JSON.parse(
-      "1",
-      (_2, __, context3) => !!context3?.source && context3.source === "1"
-    );
-    featureCache.set(parseFingerprint, result);
-    return result;
-  } catch {
-    featureCache.set(parseFingerprint, false);
-    return false;
-  }
-};
-var convertMarkedBigIntsReviver = (key, value, context3, userReviver) => {
-  const isCustomFormatBigInt = typeof value === "string" && customFormat.test(value);
-  if (isCustomFormatBigInt) return BigInt(value.slice(0, -1));
-  const isNoiseValue = typeof value === "string" && noiseValue.test(value);
-  if (isNoiseValue) return value.slice(0, -1);
-  const hasUserReviver = typeof userReviver === "function";
-  if (!hasUserReviver) return value;
-  return userReviver(key, value, context3);
-};
-var JSONParseV2 = (text, reviver) => {
-  return JSON.parse(text, (key, value, context3) => {
-    const isNumber = typeof value === "number";
-    const isOutOfBounds = value > Number.MAX_SAFE_INTEGER || value < Number.MIN_SAFE_INTEGER;
-    const isBigNumber = isNumber && isOutOfBounds;
-    const isInt = context3 && intRegex.test(context3.source);
-    const isBigInt = isBigNumber && isInt;
-    if (isBigInt) return BigInt(context3.source);
-    const hasCustomReviver = typeof reviver === "function";
-    if (!hasCustomReviver) return value;
-    return reviver(key, value, context3);
-  });
-};
-var MAX_INT = Number.MAX_SAFE_INTEGER.toString();
-var MAX_DIGITS = MAX_INT.length;
-var stringsOrLargeNumbers = /"(?:[^"\\]|\\.)*"|-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?/g;
-var noiseValueWithQuotes = /^"-?\d+n+"$/;
-var applyReviverIteratively = (parsed, userReviver) => {
-  const rootHolder = { "": parsed };
-  const stack = [{ parent: rootHolder, key: "", visited: false }];
-  while (stack.length > 0) {
-    const node = stack[stack.length - 1];
-    if (!node.visited) {
-      node.visited = true;
-      const value = node.parent[node.key];
-      const isComplexObject = value !== null && typeof value === "object";
-      if (isComplexObject) {
-        const keys = Object.keys(value);
-        for (let i = keys.length - 1; i >= 0; i--) {
-          stack.push({ parent: value, key: keys[i], visited: false });
-        }
-      }
-    } else {
-      const { parent, key } = node;
-      let value = parent[key];
-      if (typeof value === "string") {
-        const isCustomFormatBigInt = customFormat.test(value);
-        if (isCustomFormatBigInt) {
-          value = BigInt(value.slice(0, -1));
-        } else {
-          const isNoise = noiseValue.test(value);
-          if (isNoise) value = value.slice(0, -1);
-        }
-      }
-      const hasUserReviver = typeof userReviver === "function";
-      if (hasUserReviver) {
-        value = userReviver.call(parent, key, value);
-      }
-      const isDeleted = value === void 0;
-      if (isDeleted) {
-        delete parent[key];
-      } else {
-        parent[key] = value;
-      }
-      stack.pop();
-    }
-  }
-  return rootHolder[""];
-};
-var serializeBigInts = (text) => {
-  return text.replace(
-    stringsOrLargeNumbers,
-    (match, digits, fractional, exponential) => {
-      const isString = match[0] === '"';
-      const isNoise = isString && noiseValueWithQuotes.test(match);
-      if (isNoise) return match.substring(0, match.length - 1) + 'n"';
-      const hasFractionalOrExponential = fractional || exponential;
-      const isLessThanMaxSafeInt = digits && (digits.length < MAX_DIGITS || digits.length === MAX_DIGITS && digits <= MAX_INT);
-      const isStandardValue = isString || hasFractionalOrExponential || isLessThanMaxSafeInt;
-      if (isStandardValue) return match;
-      return '"' + match + 'n"';
-    }
-  );
-};
-var JSONParse = (text, reviver) => {
-  if (!text) return originalParse(text, reviver);
-  try {
-    if (isContextSourceSupported()) return JSONParseV2(text, reviver);
-    const serializedData = serializeBigInts(text);
-    return originalParse(
-      serializedData,
-      (key, value, context3) => convertMarkedBigIntsReviver(key, value, context3, reviver)
-    );
-  } catch (error2) {
-    if (error2 instanceof RangeError) {
-      const serializedData = serializeBigInts(text);
-      const parsed = originalParse(serializedData);
-      return applyReviverIteratively(parsed, reviver);
-    }
-    throw error2;
-  }
-};
-
-// node_modules/.pnpm/@octokit+request-error@7.1.2/node_modules/@octokit/request-error/dist-src/index.js
-var RequestError = class extends Error {
-  name;
-  /**
-   * http status code
-   */
-  status;
-  /**
-   * Request options that lead to the error.
-   */
-  request;
-  /**
-   * Response object if a response was received
-   */
-  response;
-  constructor(message, statusCode, options) {
-    super(message, { cause: options.cause });
-    this.name = "HttpError";
-    this.status = Number.parseInt(statusCode);
-    if (Number.isNaN(this.status)) {
-      this.status = 0;
-    }
-    if ("response" in options) {
-      this.response = options.response;
-    }
-    const requestCopy = Object.assign({}, options.request);
-    if (options.request.headers.authorization) {
-      requestCopy.headers = Object.assign({}, options.request.headers, {
-        authorization: options.request.headers.authorization.replace(
-          /(?<! ) .*$/,
-          " [REDACTED]"
-        )
-      });
-    }
-    requestCopy.url = requestCopy.url.replace(/\bclient_secret=\w+/g, "client_secret=[REDACTED]").replace(/\baccess_token=\w+/g, "access_token=[REDACTED]");
-    this.request = requestCopy;
-  }
-};
-
-// node_modules/.pnpm/@octokit+request@10.0.16/node_modules/@octokit/request/dist-bundle/index.js
-var VERSION2 = "10.0.16";
-var defaults_default = {
-  headers: {
-    "user-agent": `octokit-request.js/${VERSION2} ${getUserAgent()}`
-  }
-};
-function isPlainObject2(value) {
-  if (typeof value !== "object" || value === null) return false;
-  if (Object.prototype.toString.call(value) !== "[object Object]") return false;
-  const proto = Object.getPrototypeOf(value);
-  if (proto === null) return true;
-  const Ctor = Object.prototype.hasOwnProperty.call(proto, "constructor") && proto.constructor;
-  return typeof Ctor === "function" && Ctor instanceof Ctor && Function.prototype.call(Ctor) === Function.prototype.call(value);
-}
-var noop = () => "";
-async function fetchWrapper(requestOptions) {
-  const fetch3 = requestOptions.request?.fetch || globalThis.fetch;
-  if (!fetch3) {
-    throw new Error(
-      "fetch is not set. Please pass a fetch implementation as new Octokit({ request: { fetch }}). Learn more at https://github.com/octokit/octokit.js/#fetch-missing"
-    );
-  }
-  const log = requestOptions.request?.log || console;
-  const parseSuccessResponseBody = requestOptions.request?.parseSuccessResponseBody !== false;
-  const body = isPlainObject2(requestOptions.body) || Array.isArray(requestOptions.body) ? JSONStringify(requestOptions.body) : requestOptions.body;
-  const requestHeaders = Object.fromEntries(
-    Object.entries(requestOptions.headers).map(([name, value]) => [
-      name,
-      String(value)
-    ])
-  );
-  let fetchResponse;
-  try {
-    fetchResponse = await fetch3(requestOptions.url, {
-      method: requestOptions.method,
-      body,
-      redirect: requestOptions.request?.redirect,
-      headers: requestHeaders,
-      signal: requestOptions.request?.signal,
-      // duplex must be set if request.body is ReadableStream or Async Iterables.
-      // See https://fetch.spec.whatwg.org/#dom-requestinit-duplex.
-      ...requestOptions.body && { duplex: "half" }
-    });
-  } catch (error2) {
-    let message = "Unknown Error";
-    if (error2 instanceof Error) {
-      if (error2.name === "AbortError") {
-        error2.status = 500;
-        throw error2;
-      }
-      message = error2.message;
-      if (error2.name === "TypeError" && "cause" in error2) {
-        if (error2.cause instanceof Error) {
-          message = error2.cause.message;
-        } else if (typeof error2.cause === "string") {
-          message = error2.cause;
-        }
-      }
-    }
-    const requestError = new RequestError(message, 500, {
-      request: requestOptions
-    });
-    requestError.cause = error2;
-    throw requestError;
-  }
-  const status = fetchResponse.status;
-  const url = fetchResponse.url;
-  const responseHeaders = {};
-  for (const [key, value] of fetchResponse.headers) {
-    responseHeaders[key] = value;
-  }
-  const octokitResponse = {
-    url,
-    status,
-    headers: responseHeaders,
-    data: ""
-  };
-  if ("deprecation" in responseHeaders) {
-    const matches = responseHeaders.link && responseHeaders.link.match(/<([^<>]+)>; rel="deprecation"/);
-    const deprecationLink = matches && matches.pop();
-    log.warn(
-      `[@octokit/request] "${requestOptions.method} ${requestOptions.url}" is deprecated. It is scheduled to be removed on ${responseHeaders.sunset}${deprecationLink ? `. See ${deprecationLink}` : ""}`
-    );
-  }
-  if (status === 204 || status === 205) {
-    return octokitResponse;
-  }
-  if (requestOptions.method === "HEAD") {
-    if (status < 400) {
-      return octokitResponse;
-    }
-    throw new RequestError(fetchResponse.statusText, status, {
-      response: octokitResponse,
-      request: requestOptions
-    });
-  }
-  if (status === 304) {
-    octokitResponse.data = await getResponseData(fetchResponse);
-    throw new RequestError("Not modified", status, {
-      response: octokitResponse,
-      request: requestOptions
-    });
-  }
-  if (status >= 400) {
-    octokitResponse.data = await getResponseData(fetchResponse);
-    throw new RequestError(toErrorMessage(octokitResponse.data), status, {
-      response: octokitResponse,
-      request: requestOptions
-    });
-  }
-  octokitResponse.data = parseSuccessResponseBody ? await getResponseData(fetchResponse) : fetchResponse.body;
-  return octokitResponse;
-}
-async function getResponseData(response) {
-  const contentType = response.headers.get("content-type");
-  if (!contentType) {
-    return response.text().catch(noop);
-  }
-  const mimetype = parse3(contentType);
-  if (isJSONResponse(mimetype)) {
-    let text = "";
-    try {
-      text = await response.text();
-      return JSONParse(text);
-    } catch (err) {
-      return text;
-    }
-  } else if (mimetype.type.startsWith("text/") || // `application/octet-stream` is the canonical "arbitrary binary" type
-  // (RFC 2046) and must never be decoded as text, even when the response
-  // carries a (misleading) `charset=utf-8` parameter — see #751.
-  mimetype.parameters.charset?.toLowerCase() === "utf-8" && mimetype.type !== "application/octet-stream") {
-    return response.text().catch(noop);
-  } else {
-    return response.arrayBuffer().catch(
-      /* v8 ignore next -- @preserve */
-      () => new ArrayBuffer(0)
-    );
-  }
-}
-function isJSONResponse(mimetype) {
-  return mimetype.type === "application/json" || mimetype.type === "application/scim+json";
-}
-function toErrorMessage(data) {
-  if (typeof data === "string") {
-    return data;
-  }
-  if (data instanceof ArrayBuffer) {
-    return "Unknown error";
-  }
-  if (typeof data === "object" && data !== null && "message" in data) {
-    const objectData = data;
-    const suffix = "documentation_url" in objectData ? ` - ${objectData.documentation_url}` : "";
-    return Array.isArray(objectData.errors) ? `${objectData.message}: ${objectData.errors.map((v3) => JSON.stringify(v3)).join(", ")}${suffix}` : `${objectData.message}${suffix}`;
-  }
-  return `Unknown error: ${JSON.stringify(data)}`;
-}
-function withDefaults2(oldEndpoint, newDefaults) {
-  const endpoint2 = oldEndpoint.defaults(newDefaults);
-  const newApi = function(route, parameters) {
-    const endpointOptions = endpoint2.merge(route, parameters);
-    if (!endpointOptions.request || !endpointOptions.request.hook) {
-      return fetchWrapper(endpoint2.parse(endpointOptions));
-    }
-    const request2 = (route2, parameters2) => {
-      return fetchWrapper(
-        endpoint2.parse(endpoint2.merge(route2, parameters2))
-      );
-    };
-    Object.assign(request2, {
-      endpoint: endpoint2,
-      defaults: withDefaults2.bind(null, endpoint2)
-    });
-    return endpointOptions.request.hook(request2, endpointOptions);
-  };
-  return Object.assign(newApi, {
-    endpoint: endpoint2,
-    defaults: withDefaults2.bind(null, endpoint2)
-  });
-}
-var request = withDefaults2(endpoint, defaults_default);
-
-// node_modules/.pnpm/@octokit+graphql@9.0.5/node_modules/@octokit/graphql/dist-bundle/index.js
-var VERSION3 = "0.0.0-development";
-function _buildMessageForResponseErrors(data) {
-  return `Request failed due to following response errors:
-` + data.errors.map((e) => ` - ${e.message}`).join("\n");
-}
-var GraphqlResponseError = class extends Error {
-  constructor(request2, headers, response) {
-    super(_buildMessageForResponseErrors(response));
-    this.request = request2;
-    this.headers = headers;
-    this.response = response;
-    this.errors = response.errors;
-    this.data = response.data;
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
-    }
-  }
-  request;
-  headers;
-  response;
-  name = "GraphqlResponseError";
-  errors;
-  data;
-};
-var NON_VARIABLE_OPTIONS = [
-  "method",
-  "baseUrl",
-  "url",
-  "headers",
-  "request",
-  "query",
-  "mediaType",
-  "operationName"
-];
-var FORBIDDEN_VARIABLE_OPTIONS = ["query", "method", "url"];
-var GHES_V3_SUFFIX_REGEX = /\/api\/v3\/?$/;
-function graphql(request2, query, options) {
-  if (options) {
-    if (typeof query === "string" && "query" in options) {
-      return Promise.reject(
-        new Error(`[@octokit/graphql] "query" cannot be used as variable name`)
-      );
-    }
-    for (const key in options) {
-      if (!FORBIDDEN_VARIABLE_OPTIONS.includes(key)) continue;
-      return Promise.reject(
-        new Error(
-          `[@octokit/graphql] "${key}" cannot be used as variable name`
-        )
-      );
-    }
-  }
-  const parsedOptions = typeof query === "string" ? Object.assign({ query }, options) : query;
-  const requestOptions = Object.keys(
-    parsedOptions
-  ).reduce((result, key) => {
-    if (NON_VARIABLE_OPTIONS.includes(key)) {
-      result[key] = parsedOptions[key];
-      return result;
-    }
-    if (!result.variables) {
-      result.variables = {};
-    }
-    result.variables[key] = parsedOptions[key];
-    return result;
-  }, {});
-  const baseUrl2 = parsedOptions.baseUrl || request2.endpoint.DEFAULTS.baseUrl;
-  if (GHES_V3_SUFFIX_REGEX.test(baseUrl2)) {
-    requestOptions.url = baseUrl2.replace(GHES_V3_SUFFIX_REGEX, "/api/graphql");
-  }
-  return request2(requestOptions).then((response) => {
-    if (response.data.errors) {
-      const headers = {};
-      for (const key of Object.keys(response.headers)) {
-        headers[key] = response.headers[key];
-      }
-      throw new GraphqlResponseError(
-        requestOptions,
-        headers,
-        response.data
-      );
-    }
-    return response.data.data;
-  });
-}
-function withDefaults3(request2, newDefaults) {
-  const newRequest = request2.defaults(newDefaults);
-  const newApi = (query, options) => {
-    return graphql(newRequest, query, options);
-  };
-  return Object.assign(newApi, {
-    defaults: withDefaults3.bind(null, newRequest),
-    endpoint: newRequest.endpoint
-  });
-}
-var graphql2 = withDefaults3(request, {
-  headers: {
-    "user-agent": `octokit-graphql.js/${VERSION3} ${getUserAgent()}`
-  },
-  method: "POST",
-  url: "/graphql"
-});
-function withCustomRequest(customRequest) {
-  return withDefaults3(customRequest, {
-    method: "POST",
-    url: "/graphql"
-  });
-}
-
-// node_modules/.pnpm/@octokit+auth-token@6.0.0/node_modules/@octokit/auth-token/dist-bundle/index.js
-var b64url = "(?:[a-zA-Z0-9_-]+)";
-var sep = "\\.";
-var jwtRE = new RegExp(`^${b64url}${sep}${b64url}${sep}${b64url}$`);
-var isJWT = jwtRE.test.bind(jwtRE);
-async function auth(token) {
-  const isApp = isJWT(token);
-  const isInstallation = token.startsWith("v1.") || token.startsWith("ghs_");
-  const isUserToServer = token.startsWith("ghu_");
-  const tokenType = isApp ? "app" : isInstallation ? "installation" : isUserToServer ? "user-to-server" : "oauth";
-  return {
-    type: "token",
-    token,
-    tokenType
-  };
-}
-function withAuthorizationPrefix(token) {
-  if (token.split(/\./).length === 3) {
-    return `bearer ${token}`;
-  }
-  return `token ${token}`;
-}
-async function hook(token, request2, route, parameters) {
-  const endpoint2 = request2.endpoint.merge(
-    route,
-    parameters
-  );
-  endpoint2.headers.authorization = withAuthorizationPrefix(token);
-  return request2(endpoint2);
-}
-var createTokenAuth = function createTokenAuth2(token) {
-  if (!token) {
-    throw new Error("[@octokit/auth-token] No token passed to createTokenAuth");
-  }
-  if (typeof token !== "string") {
-    throw new Error(
-      "[@octokit/auth-token] Token passed to createTokenAuth is not a string"
-    );
-  }
-  token = token.replace(/^(token|bearer) +/i, "");
-  return Object.assign(auth.bind(null, token), {
-    hook: hook.bind(null, token)
-  });
-};
-
-// node_modules/.pnpm/@octokit+core@7.0.8/node_modules/@octokit/core/dist-src/version.js
-var VERSION4 = "7.0.8";
-
-// node_modules/.pnpm/@octokit+core@7.0.8/node_modules/@octokit/core/dist-src/index.js
-var noop2 = () => {
-};
-var consoleWarn = console.warn.bind(console);
-var consoleError = console.error.bind(console);
-function createLogger(logger = {}) {
-  if (typeof logger.debug !== "function") {
-    logger.debug = noop2;
-  }
-  if (typeof logger.info !== "function") {
-    logger.info = noop2;
-  }
-  if (typeof logger.warn !== "function") {
-    logger.warn = consoleWarn;
-  }
-  if (typeof logger.error !== "function") {
-    logger.error = consoleError;
-  }
-  return logger;
-}
-var userAgentTrail = `octokit-core.js/${VERSION4} ${getUserAgent()}`;
-var Octokit = class {
-  static VERSION = VERSION4;
-  static defaults(defaults2) {
-    const OctokitWithDefaults = class extends this {
-      constructor(...args) {
-        const options = args[0] || {};
-        if (typeof defaults2 === "function") {
-          super(defaults2(options));
-          return;
-        }
-        super(
-          Object.assign(
-            {},
-            defaults2,
-            options,
-            options.userAgent && defaults2.userAgent ? {
-              userAgent: `${options.userAgent} ${defaults2.userAgent}`
-            } : null
-          )
-        );
-      }
-    };
-    return OctokitWithDefaults;
-  }
-  static plugins = [];
-  /**
-   * Attach a plugin (or many) to your Octokit instance.
-   *
-   * @example
-   * const API = Octokit.plugin(plugin1, plugin2, plugin3, ...)
-   */
-  static plugin(...newPlugins) {
-    const currentPlugins = this.plugins;
-    const NewOctokit = class extends this {
-      static plugins = currentPlugins.concat(
-        newPlugins.filter((plugin) => !currentPlugins.includes(plugin))
-      );
-    };
-    return NewOctokit;
-  }
-  constructor(options = {}) {
-    const hook2 = new before_after_hook_default.Collection();
-    const requestDefaults = {
-      baseUrl: request.endpoint.DEFAULTS.baseUrl,
-      headers: {},
-      request: Object.assign({}, options.request, {
-        // @ts-ignore internal usage only, no need to type
-        hook: hook2.bind(null, "request")
-      }),
-      mediaType: {
-        previews: [],
-        format: ""
-      }
-    };
-    requestDefaults.headers["user-agent"] = options.userAgent ? `${options.userAgent} ${userAgentTrail}` : userAgentTrail;
-    if (options.baseUrl) {
-      requestDefaults.baseUrl = options.baseUrl;
-    }
-    if (options.previews) {
-      requestDefaults.mediaType.previews = options.previews;
-    }
-    if (options.timeZone) {
-      requestDefaults.headers["time-zone"] = options.timeZone;
-    }
-    this.request = request.defaults(requestDefaults);
-    this.graphql = withCustomRequest(this.request).defaults(requestDefaults);
-    this.log = createLogger(options.log);
-    this.hook = hook2;
-    if (!options.authStrategy) {
-      if (!options.auth) {
-        this.auth = async () => ({
-          type: "unauthenticated"
-        });
-      } else {
-        const auth2 = createTokenAuth(options.auth);
-        hook2.wrap("request", auth2.hook);
-        this.auth = auth2;
-      }
-    } else {
-      const { authStrategy, ...otherOptions } = options;
-      const auth2 = authStrategy(
-        Object.assign(
-          {
-            request: this.request,
-            log: this.log,
-            // we pass the current octokit instance as well as its constructor options
-            // to allow for authentication strategies that return a new octokit instance
-            // that shares the same internal state as the current one. The original
-            // requirement for this was the "event-octokit" authentication strategy
-            // of https://github.com/probot/octokit-auth-probot.
-            octokit: this,
-            octokitOptions: otherOptions
-          },
-          options.auth
-        )
-      );
-      hook2.wrap("request", auth2.hook);
-      this.auth = auth2;
-    }
-    const classConstructor = this.constructor;
-    for (let i = 0; i < classConstructor.plugins.length; ++i) {
-      Object.assign(this, classConstructor.plugins[i](this, options));
-    }
-  }
-  // assigned during constructor
-  request;
-  graphql;
-  log;
-  hook;
-  // TODO: type `octokit.auth` based on passed options.authStrategy
-  auth;
-};
-
-// node_modules/.pnpm/@octokit+plugin-rest-endpoint-methods@17.0.0_@octokit+core@7.0.8/node_modules/@octokit/plugin-rest-endpoint-methods/dist-src/version.js
-var VERSION5 = "17.0.0";
-
-// node_modules/.pnpm/@octokit+plugin-rest-endpoint-methods@17.0.0_@octokit+core@7.0.8/node_modules/@octokit/plugin-rest-endpoint-methods/dist-src/generated/endpoints.js
-var Endpoints = {
-  actions: {
-    addCustomLabelsToSelfHostedRunnerForOrg: [
-      "POST /orgs/{org}/actions/runners/{runner_id}/labels"
-    ],
-    addCustomLabelsToSelfHostedRunnerForRepo: [
-      "POST /repos/{owner}/{repo}/actions/runners/{runner_id}/labels"
-    ],
-    addRepoAccessToSelfHostedRunnerGroupInOrg: [
-      "PUT /orgs/{org}/actions/runner-groups/{runner_group_id}/repositories/{repository_id}"
-    ],
-    addSelectedRepoToOrgSecret: [
-      "PUT /orgs/{org}/actions/secrets/{secret_name}/repositories/{repository_id}"
-    ],
-    addSelectedRepoToOrgVariable: [
-      "PUT /orgs/{org}/actions/variables/{name}/repositories/{repository_id}"
-    ],
-    approveWorkflowRun: [
-      "POST /repos/{owner}/{repo}/actions/runs/{run_id}/approve"
-    ],
-    cancelWorkflowRun: [
-      "POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel"
-    ],
-    createEnvironmentVariable: [
-      "POST /repos/{owner}/{repo}/environments/{environment_name}/variables"
-    ],
-    createHostedRunnerForOrg: ["POST /orgs/{org}/actions/hosted-runners"],
-    createOrUpdateEnvironmentSecret: [
-      "PUT /repos/{owner}/{repo}/environments/{environment_name}/secrets/{secret_name}"
-    ],
-    createOrUpdateOrgSecret: ["PUT /orgs/{org}/actions/secrets/{secret_name}"],
-    createOrUpdateRepoSecret: [
-      "PUT /repos/{owner}/{repo}/actions/secrets/{secret_name}"
-    ],
-    createOrgVariable: ["POST /orgs/{org}/actions/variables"],
-    createRegistrationTokenForOrg: [
-      "POST /orgs/{org}/actions/runners/registration-token"
-    ],
-    createRegistrationTokenForRepo: [
-      "POST /repos/{owner}/{repo}/actions/runners/registration-token"
-    ],
-    createRemoveTokenForOrg: ["POST /orgs/{org}/actions/runners/remove-token"],
-    createRemoveTokenForRepo: [
-      "POST /repos/{owner}/{repo}/actions/runners/remove-token"
-    ],
-    createRepoVariable: ["POST /repos/{owner}/{repo}/actions/variables"],
-    createWorkflowDispatch: [
-      "POST /repos/{owner}/{repo}/actions/workflows/{workflow_id}/dispatches"
-    ],
-    deleteActionsCacheById: [
-      "DELETE /repos/{owner}/{repo}/actions/caches/{cache_id}"
-    ],
-    deleteActionsCacheByKey: [
-      "DELETE /repos/{owner}/{repo}/actions/caches{?key,ref}"
-    ],
-    deleteArtifact: [
-      "DELETE /repos/{owner}/{repo}/actions/artifacts/{artifact_id}"
-    ],
-    deleteCustomImageFromOrg: [
-      "DELETE /orgs/{org}/actions/hosted-runners/images/custom/{image_definition_id}"
-    ],
-    deleteCustomImageVersionFromOrg: [
-      "DELETE /orgs/{org}/actions/hosted-runners/images/custom/{image_definition_id}/versions/{version}"
-    ],
-    deleteEnvironmentSecret: [
-      "DELETE /repos/{owner}/{repo}/environments/{environment_name}/secrets/{secret_name}"
-    ],
-    deleteEnvironmentVariable: [
-      "DELETE /repos/{owner}/{repo}/environments/{environment_name}/variables/{name}"
-    ],
-    deleteHostedRunnerForOrg: [
-      "DELETE /orgs/{org}/actions/hosted-runners/{hosted_runner_id}"
-    ],
-    deleteOrgSecret: ["DELETE /orgs/{org}/actions/secrets/{secret_name}"],
-    deleteOrgVariable: ["DELETE /orgs/{org}/actions/variables/{name}"],
-    deleteRepoSecret: [
-      "DELETE /repos/{owner}/{repo}/actions/secrets/{secret_name}"
-    ],
-    deleteRepoVariable: [
-      "DELETE /repos/{owner}/{repo}/actions/variables/{name}"
-    ],
-    deleteSelfHostedRunnerFromOrg: [
-      "DELETE /orgs/{org}/actions/runners/{runner_id}"
-    ],
-    deleteSelfHostedRunnerFromRepo: [
-      "DELETE /repos/{owner}/{repo}/actions/runners/{runner_id}"
-    ],
-    deleteWorkflowRun: ["DELETE /repos/{owner}/{repo}/actions/runs/{run_id}"],
-    deleteWorkflowRunLogs: [
-      "DELETE /repos/{owner}/{repo}/actions/runs/{run_id}/logs"
-    ],
-    disableSelectedRepositoryGithubActionsOrganization: [
-      "DELETE /orgs/{org}/actions/permissions/repositories/{repository_id}"
-    ],
-    disableWorkflow: [
-      "PUT /repos/{owner}/{repo}/actions/workflows/{workflow_id}/disable"
-    ],
-    downloadArtifact: [
-      "GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id}/{archive_format}"
-    ],
-    downloadJobLogsForWorkflowRun: [
-      "GET /repos/{owner}/{repo}/actions/jobs/{job_id}/logs"
-    ],
-    downloadWorkflowRunAttemptLogs: [
-      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/attempts/{attempt_number}/logs"
-    ],
-    downloadWorkflowRunLogs: [
-      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/logs"
-    ],
-    enableSelectedRepositoryGithubActionsOrganization: [
-      "PUT /orgs/{org}/actions/permissions/repositories/{repository_id}"
-    ],
-    enableWorkflow: [
-      "PUT /repos/{owner}/{repo}/actions/workflows/{workflow_id}/enable"
-    ],
-    forceCancelWorkflowRun: [
-      "POST /repos/{owner}/{repo}/actions/runs/{run_id}/force-cancel"
-    ],
-    generateRunnerJitconfigForOrg: [
-      "POST /orgs/{org}/actions/runners/generate-jitconfig"
-    ],
-    generateRunnerJitconfigForRepo: [
-      "POST /repos/{owner}/{repo}/actions/runners/generate-jitconfig"
-    ],
-    getActionsCacheList: ["GET /repos/{owner}/{repo}/actions/caches"],
-    getActionsCacheUsage: ["GET /repos/{owner}/{repo}/actions/cache/usage"],
-    getActionsCacheUsageByRepoForOrg: [
-      "GET /orgs/{org}/actions/cache/usage-by-repository"
-    ],
-    getActionsCacheUsageForOrg: ["GET /orgs/{org}/actions/cache/usage"],
-    getAllowedActionsOrganization: [
-      "GET /orgs/{org}/actions/permissions/selected-actions"
-    ],
-    getAllowedActionsRepository: [
-      "GET /repos/{owner}/{repo}/actions/permissions/selected-actions"
-    ],
-    getArtifact: ["GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id}"],
-    getCustomImageForOrg: [
-      "GET /orgs/{org}/actions/hosted-runners/images/custom/{image_definition_id}"
-    ],
-    getCustomImageVersionForOrg: [
-      "GET /orgs/{org}/actions/hosted-runners/images/custom/{image_definition_id}/versions/{version}"
-    ],
-    getCustomOidcSubClaimForRepo: [
-      "GET /repos/{owner}/{repo}/actions/oidc/customization/sub"
-    ],
-    getEnvironmentPublicKey: [
-      "GET /repos/{owner}/{repo}/environments/{environment_name}/secrets/public-key"
-    ],
-    getEnvironmentSecret: [
-      "GET /repos/{owner}/{repo}/environments/{environment_name}/secrets/{secret_name}"
-    ],
-    getEnvironmentVariable: [
-      "GET /repos/{owner}/{repo}/environments/{environment_name}/variables/{name}"
-    ],
-    getGithubActionsDefaultWorkflowPermissionsOrganization: [
-      "GET /orgs/{org}/actions/permissions/workflow"
-    ],
-    getGithubActionsDefaultWorkflowPermissionsRepository: [
-      "GET /repos/{owner}/{repo}/actions/permissions/workflow"
-    ],
-    getGithubActionsPermissionsOrganization: [
-      "GET /orgs/{org}/actions/permissions"
-    ],
-    getGithubActionsPermissionsRepository: [
-      "GET /repos/{owner}/{repo}/actions/permissions"
-    ],
-    getHostedRunnerForOrg: [
-      "GET /orgs/{org}/actions/hosted-runners/{hosted_runner_id}"
-    ],
-    getHostedRunnersGithubOwnedImagesForOrg: [
-      "GET /orgs/{org}/actions/hosted-runners/images/github-owned"
-    ],
-    getHostedRunnersLimitsForOrg: [
-      "GET /orgs/{org}/actions/hosted-runners/limits"
-    ],
-    getHostedRunnersMachineSpecsForOrg: [
-      "GET /orgs/{org}/actions/hosted-runners/machine-sizes"
-    ],
-    getHostedRunnersPartnerImagesForOrg: [
-      "GET /orgs/{org}/actions/hosted-runners/images/partner"
-    ],
-    getHostedRunnersPlatformsForOrg: [
-      "GET /orgs/{org}/actions/hosted-runners/platforms"
-    ],
-    getJobForWorkflowRun: ["GET /repos/{owner}/{repo}/actions/jobs/{job_id}"],
-    getOrgPublicKey: ["GET /orgs/{org}/actions/secrets/public-key"],
-    getOrgSecret: ["GET /orgs/{org}/actions/secrets/{secret_name}"],
-    getOrgVariable: ["GET /orgs/{org}/actions/variables/{name}"],
-    getPendingDeploymentsForRun: [
-      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/pending_deployments"
-    ],
-    getRepoPermissions: [
-      "GET /repos/{owner}/{repo}/actions/permissions",
-      {},
-      { renamed: ["actions", "getGithubActionsPermissionsRepository"] }
-    ],
-    getRepoPublicKey: ["GET /repos/{owner}/{repo}/actions/secrets/public-key"],
-    getRepoSecret: ["GET /repos/{owner}/{repo}/actions/secrets/{secret_name}"],
-    getRepoVariable: ["GET /repos/{owner}/{repo}/actions/variables/{name}"],
-    getReviewsForRun: [
-      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/approvals"
-    ],
-    getSelfHostedRunnerForOrg: ["GET /orgs/{org}/actions/runners/{runner_id}"],
-    getSelfHostedRunnerForRepo: [
-      "GET /repos/{owner}/{repo}/actions/runners/{runner_id}"
-    ],
-    getWorkflow: ["GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}"],
-    getWorkflowAccessToRepository: [
-      "GET /repos/{owner}/{repo}/actions/permissions/access"
-    ],
-    getWorkflowRun: ["GET /repos/{owner}/{repo}/actions/runs/{run_id}"],
-    getWorkflowRunAttempt: [
-      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/attempts/{attempt_number}"
-    ],
-    getWorkflowRunUsage: [
-      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/timing"
-    ],
-    getWorkflowUsage: [
-      "GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/timing"
-    ],
-    listArtifactsForRepo: ["GET /repos/{owner}/{repo}/actions/artifacts"],
-    listCustomImageVersionsForOrg: [
-      "GET /orgs/{org}/actions/hosted-runners/images/custom/{image_definition_id}/versions"
-    ],
-    listCustomImagesForOrg: [
-      "GET /orgs/{org}/actions/hosted-runners/images/custom"
-    ],
-    listEnvironmentSecrets: [
-      "GET /repos/{owner}/{repo}/environments/{environment_name}/secrets"
-    ],
-    listEnvironmentVariables: [
-      "GET /repos/{owner}/{repo}/environments/{environment_name}/variables"
-    ],
-    listGithubHostedRunnersInGroupForOrg: [
-      "GET /orgs/{org}/actions/runner-groups/{runner_group_id}/hosted-runners"
-    ],
-    listHostedRunnersForOrg: ["GET /orgs/{org}/actions/hosted-runners"],
-    listJobsForWorkflowRun: [
-      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/jobs"
-    ],
-    listJobsForWorkflowRunAttempt: [
-      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/attempts/{attempt_number}/jobs"
-    ],
-    listLabelsForSelfHostedRunnerForOrg: [
-      "GET /orgs/{org}/actions/runners/{runner_id}/labels"
-    ],
-    listLabelsForSelfHostedRunnerForRepo: [
-      "GET /repos/{owner}/{repo}/actions/runners/{runner_id}/labels"
-    ],
-    listOrgSecrets: ["GET /orgs/{org}/actions/secrets"],
-    listOrgVariables: ["GET /orgs/{org}/actions/variables"],
-    listRepoOrganizationSecrets: [
-      "GET /repos/{owner}/{repo}/actions/organization-secrets"
-    ],
-    listRepoOrganizationVariables: [
-      "GET /repos/{owner}/{repo}/actions/organization-variables"
-    ],
-    listRepoSecrets: ["GET /repos/{owner}/{repo}/actions/secrets"],
-    listRepoVariables: ["GET /repos/{owner}/{repo}/actions/variables"],
-    listRepoWorkflows: ["GET /repos/{owner}/{repo}/actions/workflows"],
-    listRunnerApplicationsForOrg: ["GET /orgs/{org}/actions/runners/downloads"],
-    listRunnerApplicationsForRepo: [
-      "GET /repos/{owner}/{repo}/actions/runners/downloads"
-    ],
-    listSelectedReposForOrgSecret: [
-      "GET /orgs/{org}/actions/secrets/{secret_name}/repositories"
-    ],
-    listSelectedReposForOrgVariable: [
-      "GET /orgs/{org}/actions/variables/{name}/repositories"
-    ],
-    listSelectedRepositoriesEnabledGithubActionsOrganization: [
-      "GET /orgs/{org}/actions/permissions/repositories"
-    ],
-    listSelfHostedRunnersForOrg: ["GET /orgs/{org}/actions/runners"],
-    listSelfHostedRunnersForRepo: ["GET /repos/{owner}/{repo}/actions/runners"],
-    listWorkflowRunArtifacts: [
-      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts"
-    ],
-    listWorkflowRuns: [
-      "GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs"
-    ],
-    listWorkflowRunsForRepo: ["GET /repos/{owner}/{repo}/actions/runs"],
-    reRunJobForWorkflowRun: [
-      "POST /repos/{owner}/{repo}/actions/jobs/{job_id}/rerun"
-    ],
-    reRunWorkflow: ["POST /repos/{owner}/{repo}/actions/runs/{run_id}/rerun"],
-    reRunWorkflowFailedJobs: [
-      "POST /repos/{owner}/{repo}/actions/runs/{run_id}/rerun-failed-jobs"
-    ],
-    removeAllCustomLabelsFromSelfHostedRunnerForOrg: [
-      "DELETE /orgs/{org}/actions/runners/{runner_id}/labels"
-    ],
-    removeAllCustomLabelsFromSelfHostedRunnerForRepo: [
-      "DELETE /repos/{owner}/{repo}/actions/runners/{runner_id}/labels"
-    ],
-    removeCustomLabelFromSelfHostedRunnerForOrg: [
-      "DELETE /orgs/{org}/actions/runners/{runner_id}/labels/{name}"
-    ],
-    removeCustomLabelFromSelfHostedRunnerForRepo: [
-      "DELETE /repos/{owner}/{repo}/actions/runners/{runner_id}/labels/{name}"
-    ],
-    removeSelectedRepoFromOrgSecret: [
-      "DELETE /orgs/{org}/actions/secrets/{secret_name}/repositories/{repository_id}"
-    ],
-    removeSelectedRepoFromOrgVariable: [
-      "DELETE /orgs/{org}/actions/variables/{name}/repositories/{repository_id}"
-    ],
-    reviewCustomGatesForRun: [
-      "POST /repos/{owner}/{repo}/actions/runs/{run_id}/deployment_protection_rule"
-    ],
-    reviewPendingDeploymentsForRun: [
-      "POST /repos/{owner}/{repo}/actions/runs/{run_id}/pending_deployments"
-    ],
-    setAllowedActionsOrganization: [
-      "PUT /orgs/{org}/actions/permissions/selected-actions"
-    ],
-    setAllowedActionsRepository: [
-      "PUT /repos/{owner}/{repo}/actions/permissions/selected-actions"
-    ],
-    setCustomLabelsForSelfHostedRunnerForOrg: [
-      "PUT /orgs/{org}/actions/runners/{runner_id}/labels"
-    ],
-    setCustomLabelsForSelfHostedRunnerForRepo: [
-      "PUT /repos/{owner}/{repo}/actions/runners/{runner_id}/labels"
-    ],
-    setCustomOidcSubClaimForRepo: [
-      "PUT /repos/{owner}/{repo}/actions/oidc/customization/sub"
-    ],
-    setGithubActionsDefaultWorkflowPermissionsOrganization: [
-      "PUT /orgs/{org}/actions/permissions/workflow"
-    ],
-    setGithubActionsDefaultWorkflowPermissionsRepository: [
-      "PUT /repos/{owner}/{repo}/actions/permissions/workflow"
-    ],
-    setGithubActionsPermissionsOrganization: [
-      "PUT /orgs/{org}/actions/permissions"
-    ],
-    setGithubActionsPermissionsRepository: [
-      "PUT /repos/{owner}/{repo}/actions/permissions"
-    ],
-    setSelectedReposForOrgSecret: [
-      "PUT /orgs/{org}/actions/secrets/{secret_name}/repositories"
-    ],
-    setSelectedReposForOrgVariable: [
-      "PUT /orgs/{org}/actions/variables/{name}/repositories"
-    ],
-    setSelectedRepositoriesEnabledGithubActionsOrganization: [
-      "PUT /orgs/{org}/actions/permissions/repositories"
-    ],
-    setWorkflowAccessToRepository: [
-      "PUT /repos/{owner}/{repo}/actions/permissions/access"
-    ],
-    updateEnvironmentVariable: [
-      "PATCH /repos/{owner}/{repo}/environments/{environment_name}/variables/{name}"
-    ],
-    updateHostedRunnerForOrg: [
-      "PATCH /orgs/{org}/actions/hosted-runners/{hosted_runner_id}"
-    ],
-    updateOrgVariable: ["PATCH /orgs/{org}/actions/variables/{name}"],
-    updateRepoVariable: [
-      "PATCH /repos/{owner}/{repo}/actions/variables/{name}"
-    ]
-  },
-  activity: {
-    checkRepoIsStarredByAuthenticatedUser: ["GET /user/starred/{owner}/{repo}"],
-    deleteRepoSubscription: ["DELETE /repos/{owner}/{repo}/subscription"],
-    deleteThreadSubscription: [
-      "DELETE /notifications/threads/{thread_id}/subscription"
-    ],
-    getFeeds: ["GET /feeds"],
-    getRepoSubscription: ["GET /repos/{owner}/{repo}/subscription"],
-    getThread: ["GET /notifications/threads/{thread_id}"],
-    getThreadSubscriptionForAuthenticatedUser: [
-      "GET /notifications/threads/{thread_id}/subscription"
-    ],
-    listEventsForAuthenticatedUser: ["GET /users/{username}/events"],
-    listNotificationsForAuthenticatedUser: ["GET /notifications"],
-    listOrgEventsForAuthenticatedUser: [
-      "GET /users/{username}/events/orgs/{org}"
-    ],
-    listPublicEvents: ["GET /events"],
-    listPublicEventsForRepoNetwork: ["GET /networks/{owner}/{repo}/events"],
-    listPublicEventsForUser: ["GET /users/{username}/events/public"],
-    listPublicOrgEvents: ["GET /orgs/{org}/events"],
-    listReceivedEventsForUser: ["GET /users/{username}/received_events"],
-    listReceivedPublicEventsForUser: [
-      "GET /users/{username}/received_events/public"
-    ],
-    listRepoEvents: ["GET /repos/{owner}/{repo}/events"],
-    listRepoNotificationsForAuthenticatedUser: [
-      "GET /repos/{owner}/{repo}/notifications"
-    ],
-    listReposStarredByAuthenticatedUser: ["GET /user/starred"],
-    listReposStarredByUser: ["GET /users/{username}/starred"],
-    listReposWatchedByUser: ["GET /users/{username}/subscriptions"],
-    listStargazersForRepo: ["GET /repos/{owner}/{repo}/stargazers"],
-    listWatchedReposForAuthenticatedUser: ["GET /user/subscriptions"],
-    listWatchersForRepo: ["GET /repos/{owner}/{repo}/subscribers"],
-    markNotificationsAsRead: ["PUT /notifications"],
-    markRepoNotificationsAsRead: ["PUT /repos/{owner}/{repo}/notifications"],
-    markThreadAsDone: ["DELETE /notifications/threads/{thread_id}"],
-    markThreadAsRead: ["PATCH /notifications/threads/{thread_id}"],
-    setRepoSubscription: ["PUT /repos/{owner}/{repo}/subscription"],
-    setThreadSubscription: [
-      "PUT /notifications/threads/{thread_id}/subscription"
-    ],
-    starRepoForAuthenticatedUser: ["PUT /user/starred/{owner}/{repo}"],
-    unstarRepoForAuthenticatedUser: ["DELETE /user/starred/{owner}/{repo}"]
-  },
-  apps: {
-    addRepoToInstallation: [
-      "PUT /user/installations/{installation_id}/repositories/{repository_id}",
-      {},
-      { renamed: ["apps", "addRepoToInstallationForAuthenticatedUser"] }
-    ],
-    addRepoToInstallationForAuthenticatedUser: [
-      "PUT /user/installations/{installation_id}/repositories/{repository_id}"
-    ],
-    checkToken: ["POST /applications/{client_id}/token"],
-    createFromManifest: ["POST /app-manifests/{code}/conversions"],
-    createInstallationAccessToken: [
-      "POST /app/installations/{installation_id}/access_tokens"
-    ],
-    deleteAuthorization: ["DELETE /applications/{client_id}/grant"],
-    deleteInstallation: ["DELETE /app/installations/{installation_id}"],
-    deleteToken: ["DELETE /applications/{client_id}/token"],
-    getAuthenticated: ["GET /app"],
-    getBySlug: ["GET /apps/{app_slug}"],
-    getInstallation: ["GET /app/installations/{installation_id}"],
-    getOrgInstallation: ["GET /orgs/{org}/installation"],
-    getRepoInstallation: ["GET /repos/{owner}/{repo}/installation"],
-    getSubscriptionPlanForAccount: [
-      "GET /marketplace_listing/accounts/{account_id}"
-    ],
-    getSubscriptionPlanForAccountStubbed: [
-      "GET /marketplace_listing/stubbed/accounts/{account_id}"
-    ],
-    getUserInstallation: ["GET /users/{username}/installation"],
-    getWebhookConfigForApp: ["GET /app/hook/config"],
-    getWebhookDelivery: ["GET /app/hook/deliveries/{delivery_id}"],
-    listAccountsForPlan: ["GET /marketplace_listing/plans/{plan_id}/accounts"],
-    listAccountsForPlanStubbed: [
-      "GET /marketplace_listing/stubbed/plans/{plan_id}/accounts"
-    ],
-    listInstallationReposForAuthenticatedUser: [
-      "GET /user/installations/{installation_id}/repositories"
-    ],
-    listInstallationRequestsForAuthenticatedApp: [
-      "GET /app/installation-requests"
-    ],
-    listInstallations: ["GET /app/installations"],
-    listInstallationsForAuthenticatedUser: ["GET /user/installations"],
-    listPlans: ["GET /marketplace_listing/plans"],
-    listPlansStubbed: ["GET /marketplace_listing/stubbed/plans"],
-    listReposAccessibleToInstallation: ["GET /installation/repositories"],
-    listSubscriptionsForAuthenticatedUser: ["GET /user/marketplace_purchases"],
-    listSubscriptionsForAuthenticatedUserStubbed: [
-      "GET /user/marketplace_purchases/stubbed"
-    ],
-    listWebhookDeliveries: ["GET /app/hook/deliveries"],
-    redeliverWebhookDelivery: [
-      "POST /app/hook/deliveries/{delivery_id}/attempts"
-    ],
-    removeRepoFromInstallation: [
-      "DELETE /user/installations/{installation_id}/repositories/{repository_id}",
-      {},
-      { renamed: ["apps", "removeRepoFromInstallationForAuthenticatedUser"] }
-    ],
-    removeRepoFromInstallationForAuthenticatedUser: [
-      "DELETE /user/installations/{installation_id}/repositories/{repository_id}"
-    ],
-    resetToken: ["PATCH /applications/{client_id}/token"],
-    revokeInstallationAccessToken: ["DELETE /installation/token"],
-    scopeToken: ["POST /applications/{client_id}/token/scoped"],
-    suspendInstallation: ["PUT /app/installations/{installation_id}/suspended"],
-    unsuspendInstallation: [
-      "DELETE /app/installations/{installation_id}/suspended"
-    ],
-    updateWebhookConfigForApp: ["PATCH /app/hook/config"]
-  },
-  billing: {
-    getGithubActionsBillingOrg: ["GET /orgs/{org}/settings/billing/actions"],
-    getGithubActionsBillingUser: [
-      "GET /users/{username}/settings/billing/actions"
-    ],
-    getGithubBillingPremiumRequestUsageReportOrg: [
-      "GET /organizations/{org}/settings/billing/premium_request/usage"
-    ],
-    getGithubBillingPremiumRequestUsageReportUser: [
-      "GET /users/{username}/settings/billing/premium_request/usage"
-    ],
-    getGithubBillingUsageReportOrg: [
-      "GET /organizations/{org}/settings/billing/usage"
-    ],
-    getGithubBillingUsageReportUser: [
-      "GET /users/{username}/settings/billing/usage"
-    ],
-    getGithubPackagesBillingOrg: ["GET /orgs/{org}/settings/billing/packages"],
-    getGithubPackagesBillingUser: [
-      "GET /users/{username}/settings/billing/packages"
-    ],
-    getSharedStorageBillingOrg: [
-      "GET /orgs/{org}/settings/billing/shared-storage"
-    ],
-    getSharedStorageBillingUser: [
-      "GET /users/{username}/settings/billing/shared-storage"
-    ]
-  },
-  campaigns: {
-    createCampaign: ["POST /orgs/{org}/campaigns"],
-    deleteCampaign: ["DELETE /orgs/{org}/campaigns/{campaign_number}"],
-    getCampaignSummary: ["GET /orgs/{org}/campaigns/{campaign_number}"],
-    listOrgCampaigns: ["GET /orgs/{org}/campaigns"],
-    updateCampaign: ["PATCH /orgs/{org}/campaigns/{campaign_number}"]
-  },
-  checks: {
-    create: ["POST /repos/{owner}/{repo}/check-runs"],
-    createSuite: ["POST /repos/{owner}/{repo}/check-suites"],
-    get: ["GET /repos/{owner}/{repo}/check-runs/{check_run_id}"],
-    getSuite: ["GET /repos/{owner}/{repo}/check-suites/{check_suite_id}"],
-    listAnnotations: [
-      "GET /repos/{owner}/{repo}/check-runs/{check_run_id}/annotations"
-    ],
-    listForRef: ["GET /repos/{owner}/{repo}/commits/{ref}/check-runs"],
-    listForSuite: [
-      "GET /repos/{owner}/{repo}/check-suites/{check_suite_id}/check-runs"
-    ],
-    listSuitesForRef: ["GET /repos/{owner}/{repo}/commits/{ref}/check-suites"],
-    rerequestRun: [
-      "POST /repos/{owner}/{repo}/check-runs/{check_run_id}/rerequest"
-    ],
-    rerequestSuite: [
-      "POST /repos/{owner}/{repo}/check-suites/{check_suite_id}/rerequest"
-    ],
-    setSuitesPreferences: [
-      "PATCH /repos/{owner}/{repo}/check-suites/preferences"
-    ],
-    update: ["PATCH /repos/{owner}/{repo}/check-runs/{check_run_id}"]
-  },
-  codeScanning: {
-    commitAutofix: [
-      "POST /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}/autofix/commits"
-    ],
-    createAutofix: [
-      "POST /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}/autofix"
-    ],
-    createVariantAnalysis: [
-      "POST /repos/{owner}/{repo}/code-scanning/codeql/variant-analyses"
-    ],
-    deleteAnalysis: [
-      "DELETE /repos/{owner}/{repo}/code-scanning/analyses/{analysis_id}{?confirm_delete}"
-    ],
-    deleteCodeqlDatabase: [
-      "DELETE /repos/{owner}/{repo}/code-scanning/codeql/databases/{language}"
-    ],
-    getAlert: [
-      "GET /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}",
-      {},
-      { renamedParameters: { alert_id: "alert_number" } }
-    ],
-    getAnalysis: [
-      "GET /repos/{owner}/{repo}/code-scanning/analyses/{analysis_id}"
-    ],
-    getAutofix: [
-      "GET /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}/autofix"
-    ],
-    getCodeqlDatabase: [
-      "GET /repos/{owner}/{repo}/code-scanning/codeql/databases/{language}"
-    ],
-    getDefaultSetup: ["GET /repos/{owner}/{repo}/code-scanning/default-setup"],
-    getSarif: ["GET /repos/{owner}/{repo}/code-scanning/sarifs/{sarif_id}"],
-    getVariantAnalysis: [
-      "GET /repos/{owner}/{repo}/code-scanning/codeql/variant-analyses/{codeql_variant_analysis_id}"
-    ],
-    getVariantAnalysisRepoTask: [
-      "GET /repos/{owner}/{repo}/code-scanning/codeql/variant-analyses/{codeql_variant_analysis_id}/repos/{repo_owner}/{repo_name}"
-    ],
-    listAlertInstances: [
-      "GET /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}/instances"
-    ],
-    listAlertsForOrg: ["GET /orgs/{org}/code-scanning/alerts"],
-    listAlertsForRepo: ["GET /repos/{owner}/{repo}/code-scanning/alerts"],
-    listAlertsInstances: [
-      "GET /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}/instances",
-      {},
-      { renamed: ["codeScanning", "listAlertInstances"] }
-    ],
-    listCodeqlDatabases: [
-      "GET /repos/{owner}/{repo}/code-scanning/codeql/databases"
-    ],
-    listRecentAnalyses: ["GET /repos/{owner}/{repo}/code-scanning/analyses"],
-    updateAlert: [
-      "PATCH /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}"
-    ],
-    updateDefaultSetup: [
-      "PATCH /repos/{owner}/{repo}/code-scanning/default-setup"
-    ],
-    uploadSarif: ["POST /repos/{owner}/{repo}/code-scanning/sarifs"]
-  },
-  codeSecurity: {
-    attachConfiguration: [
-      "POST /orgs/{org}/code-security/configurations/{configuration_id}/attach"
-    ],
-    attachEnterpriseConfiguration: [
-      "POST /enterprises/{enterprise}/code-security/configurations/{configuration_id}/attach"
-    ],
-    createConfiguration: ["POST /orgs/{org}/code-security/configurations"],
-    createConfigurationForEnterprise: [
-      "POST /enterprises/{enterprise}/code-security/configurations"
-    ],
-    deleteConfiguration: [
-      "DELETE /orgs/{org}/code-security/configurations/{configuration_id}"
-    ],
-    deleteConfigurationForEnterprise: [
-      "DELETE /enterprises/{enterprise}/code-security/configurations/{configuration_id}"
-    ],
-    detachConfiguration: [
-      "DELETE /orgs/{org}/code-security/configurations/detach"
-    ],
-    getConfiguration: [
-      "GET /orgs/{org}/code-security/configurations/{configuration_id}"
-    ],
-    getConfigurationForRepository: [
-      "GET /repos/{owner}/{repo}/code-security-configuration"
-    ],
-    getConfigurationsForEnterprise: [
-      "GET /enterprises/{enterprise}/code-security/configurations"
-    ],
-    getConfigurationsForOrg: ["GET /orgs/{org}/code-security/configurations"],
-    getDefaultConfigurations: [
-      "GET /orgs/{org}/code-security/configurations/defaults"
-    ],
-    getDefaultConfigurationsForEnterprise: [
-      "GET /enterprises/{enterprise}/code-security/configurations/defaults"
-    ],
-    getRepositoriesForConfiguration: [
-      "GET /orgs/{org}/code-security/configurations/{configuration_id}/repositories"
-    ],
-    getRepositoriesForEnterpriseConfiguration: [
-      "GET /enterprises/{enterprise}/code-security/configurations/{configuration_id}/repositories"
-    ],
-    getSingleConfigurationForEnterprise: [
-      "GET /enterprises/{enterprise}/code-security/configurations/{configuration_id}"
-    ],
-    setConfigurationAsDefault: [
-      "PUT /orgs/{org}/code-security/configurations/{configuration_id}/defaults"
-    ],
-    setConfigurationAsDefaultForEnterprise: [
-      "PUT /enterprises/{enterprise}/code-security/configurations/{configuration_id}/defaults"
-    ],
-    updateConfiguration: [
-      "PATCH /orgs/{org}/code-security/configurations/{configuration_id}"
-    ],
-    updateEnterpriseConfiguration: [
-      "PATCH /enterprises/{enterprise}/code-security/configurations/{configuration_id}"
-    ]
-  },
-  codesOfConduct: {
-    getAllCodesOfConduct: ["GET /codes_of_conduct"],
-    getConductCode: ["GET /codes_of_conduct/{key}"]
-  },
-  codespaces: {
-    addRepositoryForSecretForAuthenticatedUser: [
-      "PUT /user/codespaces/secrets/{secret_name}/repositories/{repository_id}"
-    ],
-    addSelectedRepoToOrgSecret: [
-      "PUT /orgs/{org}/codespaces/secrets/{secret_name}/repositories/{repository_id}"
-    ],
-    checkPermissionsForDevcontainer: [
-      "GET /repos/{owner}/{repo}/codespaces/permissions_check"
-    ],
-    codespaceMachinesForAuthenticatedUser: [
-      "GET /user/codespaces/{codespace_name}/machines"
-    ],
-    createForAuthenticatedUser: ["POST /user/codespaces"],
-    createOrUpdateOrgSecret: [
-      "PUT /orgs/{org}/codespaces/secrets/{secret_name}"
-    ],
-    createOrUpdateRepoSecret: [
-      "PUT /repos/{owner}/{repo}/codespaces/secrets/{secret_name}"
-    ],
-    createOrUpdateSecretForAuthenticatedUser: [
-      "PUT /user/codespaces/secrets/{secret_name}"
-    ],
-    createWithPrForAuthenticatedUser: [
-      "POST /repos/{owner}/{repo}/pulls/{pull_number}/codespaces"
-    ],
-    createWithRepoForAuthenticatedUser: [
-      "POST /repos/{owner}/{repo}/codespaces"
-    ],
-    deleteForAuthenticatedUser: ["DELETE /user/codespaces/{codespace_name}"],
-    deleteFromOrganization: [
-      "DELETE /orgs/{org}/members/{username}/codespaces/{codespace_name}"
-    ],
-    deleteOrgSecret: ["DELETE /orgs/{org}/codespaces/secrets/{secret_name}"],
-    deleteRepoSecret: [
-      "DELETE /repos/{owner}/{repo}/codespaces/secrets/{secret_name}"
-    ],
-    deleteSecretForAuthenticatedUser: [
-      "DELETE /user/codespaces/secrets/{secret_name}"
-    ],
-    exportForAuthenticatedUser: [
-      "POST /user/codespaces/{codespace_name}/exports"
-    ],
-    getCodespacesForUserInOrg: [
-      "GET /orgs/{org}/members/{username}/codespaces"
-    ],
-    getExportDetailsForAuthenticatedUser: [
-      "GET /user/codespaces/{codespace_name}/exports/{export_id}"
-    ],
-    getForAuthenticatedUser: ["GET /user/codespaces/{codespace_name}"],
-    getOrgPublicKey: ["GET /orgs/{org}/codespaces/secrets/public-key"],
-    getOrgSecret: ["GET /orgs/{org}/codespaces/secrets/{secret_name}"],
-    getPublicKeyForAuthenticatedUser: [
-      "GET /user/codespaces/secrets/public-key"
-    ],
-    getRepoPublicKey: [
-      "GET /repos/{owner}/{repo}/codespaces/secrets/public-key"
-    ],
-    getRepoSecret: [
-      "GET /repos/{owner}/{repo}/codespaces/secrets/{secret_name}"
-    ],
-    getSecretForAuthenticatedUser: [
-      "GET /user/codespaces/secrets/{secret_name}"
-    ],
-    listDevcontainersInRepositoryForAuthenticatedUser: [
-      "GET /repos/{owner}/{repo}/codespaces/devcontainers"
-    ],
-    listForAuthenticatedUser: ["GET /user/codespaces"],
-    listInOrganization: [
-      "GET /orgs/{org}/codespaces",
-      {},
-      { renamedParameters: { org_id: "org" } }
-    ],
-    listInRepositoryForAuthenticatedUser: [
-      "GET /repos/{owner}/{repo}/codespaces"
-    ],
-    listOrgSecrets: ["GET /orgs/{org}/codespaces/secrets"],
-    listRepoSecrets: ["GET /repos/{owner}/{repo}/codespaces/secrets"],
-    listRepositoriesForSecretForAuthenticatedUser: [
-      "GET /user/codespaces/secrets/{secret_name}/repositories"
-    ],
-    listSecretsForAuthenticatedUser: ["GET /user/codespaces/secrets"],
-    listSelectedReposForOrgSecret: [
-      "GET /orgs/{org}/codespaces/secrets/{secret_name}/repositories"
-    ],
-    preFlightWithRepoForAuthenticatedUser: [
-      "GET /repos/{owner}/{repo}/codespaces/new"
-    ],
-    publishForAuthenticatedUser: [
-      "POST /user/codespaces/{codespace_name}/publish"
-    ],
-    removeRepositoryForSecretForAuthenticatedUser: [
-      "DELETE /user/codespaces/secrets/{secret_name}/repositories/{repository_id}"
-    ],
-    removeSelectedRepoFromOrgSecret: [
-      "DELETE /orgs/{org}/codespaces/secrets/{secret_name}/repositories/{repository_id}"
-    ],
-    repoMachinesForAuthenticatedUser: [
-      "GET /repos/{owner}/{repo}/codespaces/machines"
-    ],
-    setRepositoriesForSecretForAuthenticatedUser: [
-      "PUT /user/codespaces/secrets/{secret_name}/repositories"
-    ],
-    setSelectedReposForOrgSecret: [
-      "PUT /orgs/{org}/codespaces/secrets/{secret_name}/repositories"
-    ],
-    startForAuthenticatedUser: ["POST /user/codespaces/{codespace_name}/start"],
-    stopForAuthenticatedUser: ["POST /user/codespaces/{codespace_name}/stop"],
-    stopInOrganization: [
-      "POST /orgs/{org}/members/{username}/codespaces/{codespace_name}/stop"
-    ],
-    updateForAuthenticatedUser: ["PATCH /user/codespaces/{codespace_name}"]
-  },
-  copilot: {
-    addCopilotSeatsForTeams: [
-      "POST /orgs/{org}/copilot/billing/selected_teams"
-    ],
-    addCopilotSeatsForUsers: [
-      "POST /orgs/{org}/copilot/billing/selected_users"
-    ],
-    cancelCopilotSeatAssignmentForTeams: [
-      "DELETE /orgs/{org}/copilot/billing/selected_teams"
-    ],
-    cancelCopilotSeatAssignmentForUsers: [
-      "DELETE /orgs/{org}/copilot/billing/selected_users"
-    ],
-    copilotMetricsForOrganization: ["GET /orgs/{org}/copilot/metrics"],
-    copilotMetricsForTeam: ["GET /orgs/{org}/team/{team_slug}/copilot/metrics"],
-    getCopilotOrganizationDetails: ["GET /orgs/{org}/copilot/billing"],
-    getCopilotSeatDetailsForUser: [
-      "GET /orgs/{org}/members/{username}/copilot"
-    ],
-    listCopilotSeats: ["GET /orgs/{org}/copilot/billing/seats"]
-  },
-  credentials: { revoke: ["POST /credentials/revoke"] },
-  dependabot: {
-    addSelectedRepoToOrgSecret: [
-      "PUT /orgs/{org}/dependabot/secrets/{secret_name}/repositories/{repository_id}"
-    ],
-    createOrUpdateOrgSecret: [
-      "PUT /orgs/{org}/dependabot/secrets/{secret_name}"
-    ],
-    createOrUpdateRepoSecret: [
-      "PUT /repos/{owner}/{repo}/dependabot/secrets/{secret_name}"
-    ],
-    deleteOrgSecret: ["DELETE /orgs/{org}/dependabot/secrets/{secret_name}"],
-    deleteRepoSecret: [
-      "DELETE /repos/{owner}/{repo}/dependabot/secrets/{secret_name}"
-    ],
-    getAlert: ["GET /repos/{owner}/{repo}/dependabot/alerts/{alert_number}"],
-    getOrgPublicKey: ["GET /orgs/{org}/dependabot/secrets/public-key"],
-    getOrgSecret: ["GET /orgs/{org}/dependabot/secrets/{secret_name}"],
-    getRepoPublicKey: [
-      "GET /repos/{owner}/{repo}/dependabot/secrets/public-key"
-    ],
-    getRepoSecret: [
-      "GET /repos/{owner}/{repo}/dependabot/secrets/{secret_name}"
-    ],
-    listAlertsForEnterprise: [
-      "GET /enterprises/{enterprise}/dependabot/alerts"
-    ],
-    listAlertsForOrg: ["GET /orgs/{org}/dependabot/alerts"],
-    listAlertsForRepo: ["GET /repos/{owner}/{repo}/dependabot/alerts"],
-    listOrgSecrets: ["GET /orgs/{org}/dependabot/secrets"],
-    listRepoSecrets: ["GET /repos/{owner}/{repo}/dependabot/secrets"],
-    listSelectedReposForOrgSecret: [
-      "GET /orgs/{org}/dependabot/secrets/{secret_name}/repositories"
-    ],
-    removeSelectedRepoFromOrgSecret: [
-      "DELETE /orgs/{org}/dependabot/secrets/{secret_name}/repositories/{repository_id}"
-    ],
-    repositoryAccessForOrg: [
-      "GET /organizations/{org}/dependabot/repository-access"
-    ],
-    setRepositoryAccessDefaultLevel: [
-      "PUT /organizations/{org}/dependabot/repository-access/default-level"
-    ],
-    setSelectedReposForOrgSecret: [
-      "PUT /orgs/{org}/dependabot/secrets/{secret_name}/repositories"
-    ],
-    updateAlert: [
-      "PATCH /repos/{owner}/{repo}/dependabot/alerts/{alert_number}"
-    ],
-    updateRepositoryAccessForOrg: [
-      "PATCH /organizations/{org}/dependabot/repository-access"
-    ]
-  },
-  dependencyGraph: {
-    createRepositorySnapshot: [
-      "POST /repos/{owner}/{repo}/dependency-graph/snapshots"
-    ],
-    diffRange: [
-      "GET /repos/{owner}/{repo}/dependency-graph/compare/{basehead}"
-    ],
-    exportSbom: ["GET /repos/{owner}/{repo}/dependency-graph/sbom"]
-  },
-  emojis: { get: ["GET /emojis"] },
-  enterpriseTeamMemberships: {
-    add: [
-      "PUT /enterprises/{enterprise}/teams/{enterprise-team}/memberships/{username}"
-    ],
-    bulkAdd: [
-      "POST /enterprises/{enterprise}/teams/{enterprise-team}/memberships/add"
-    ],
-    bulkRemove: [
-      "POST /enterprises/{enterprise}/teams/{enterprise-team}/memberships/remove"
-    ],
-    get: [
-      "GET /enterprises/{enterprise}/teams/{enterprise-team}/memberships/{username}"
-    ],
-    list: ["GET /enterprises/{enterprise}/teams/{enterprise-team}/memberships"],
-    remove: [
-      "DELETE /enterprises/{enterprise}/teams/{enterprise-team}/memberships/{username}"
-    ]
-  },
-  enterpriseTeamOrganizations: {
-    add: [
-      "PUT /enterprises/{enterprise}/teams/{enterprise-team}/organizations/{org}"
-    ],
-    bulkAdd: [
-      "POST /enterprises/{enterprise}/teams/{enterprise-team}/organizations/add"
-    ],
-    bulkRemove: [
-      "POST /enterprises/{enterprise}/teams/{enterprise-team}/organizations/remove"
-    ],
-    delete: [
-      "DELETE /enterprises/{enterprise}/teams/{enterprise-team}/organizations/{org}"
-    ],
-    getAssignment: [
-      "GET /enterprises/{enterprise}/teams/{enterprise-team}/organizations/{org}"
-    ],
-    getAssignments: [
-      "GET /enterprises/{enterprise}/teams/{enterprise-team}/organizations"
-    ]
-  },
-  enterpriseTeams: {
-    create: ["POST /enterprises/{enterprise}/teams"],
-    delete: ["DELETE /enterprises/{enterprise}/teams/{team_slug}"],
-    get: ["GET /enterprises/{enterprise}/teams/{team_slug}"],
-    list: ["GET /enterprises/{enterprise}/teams"],
-    update: ["PATCH /enterprises/{enterprise}/teams/{team_slug}"]
-  },
-  gists: {
-    checkIsStarred: ["GET /gists/{gist_id}/star"],
-    create: ["POST /gists"],
-    createComment: ["POST /gists/{gist_id}/comments"],
-    delete: ["DELETE /gists/{gist_id}"],
-    deleteComment: ["DELETE /gists/{gist_id}/comments/{comment_id}"],
-    fork: ["POST /gists/{gist_id}/forks"],
-    get: ["GET /gists/{gist_id}"],
-    getComment: ["GET /gists/{gist_id}/comments/{comment_id}"],
-    getRevision: ["GET /gists/{gist_id}/{sha}"],
-    list: ["GET /gists"],
-    listComments: ["GET /gists/{gist_id}/comments"],
-    listCommits: ["GET /gists/{gist_id}/commits"],
-    listForUser: ["GET /users/{username}/gists"],
-    listForks: ["GET /gists/{gist_id}/forks"],
-    listPublic: ["GET /gists/public"],
-    listStarred: ["GET /gists/starred"],
-    star: ["PUT /gists/{gist_id}/star"],
-    unstar: ["DELETE /gists/{gist_id}/star"],
-    update: ["PATCH /gists/{gist_id}"],
-    updateComment: ["PATCH /gists/{gist_id}/comments/{comment_id}"]
-  },
-  git: {
-    createBlob: ["POST /repos/{owner}/{repo}/git/blobs"],
-    createCommit: ["POST /repos/{owner}/{repo}/git/commits"],
-    createRef: ["POST /repos/{owner}/{repo}/git/refs"],
-    createTag: ["POST /repos/{owner}/{repo}/git/tags"],
-    createTree: ["POST /repos/{owner}/{repo}/git/trees"],
-    deleteRef: ["DELETE /repos/{owner}/{repo}/git/refs/{ref}"],
-    getBlob: ["GET /repos/{owner}/{repo}/git/blobs/{file_sha}"],
-    getCommit: ["GET /repos/{owner}/{repo}/git/commits/{commit_sha}"],
-    getRef: ["GET /repos/{owner}/{repo}/git/ref/{ref}"],
-    getTag: ["GET /repos/{owner}/{repo}/git/tags/{tag_sha}"],
-    getTree: ["GET /repos/{owner}/{repo}/git/trees/{tree_sha}"],
-    listMatchingRefs: ["GET /repos/{owner}/{repo}/git/matching-refs/{ref}"],
-    updateRef: ["PATCH /repos/{owner}/{repo}/git/refs/{ref}"]
-  },
-  gitignore: {
-    getAllTemplates: ["GET /gitignore/templates"],
-    getTemplate: ["GET /gitignore/templates/{name}"]
-  },
-  hostedCompute: {
-    createNetworkConfigurationForOrg: [
-      "POST /orgs/{org}/settings/network-configurations"
-    ],
-    deleteNetworkConfigurationFromOrg: [
-      "DELETE /orgs/{org}/settings/network-configurations/{network_configuration_id}"
-    ],
-    getNetworkConfigurationForOrg: [
-      "GET /orgs/{org}/settings/network-configurations/{network_configuration_id}"
-    ],
-    getNetworkSettingsForOrg: [
-      "GET /orgs/{org}/settings/network-settings/{network_settings_id}"
-    ],
-    listNetworkConfigurationsForOrg: [
-      "GET /orgs/{org}/settings/network-configurations"
-    ],
-    updateNetworkConfigurationForOrg: [
-      "PATCH /orgs/{org}/settings/network-configurations/{network_configuration_id}"
-    ]
-  },
-  interactions: {
-    getRestrictionsForAuthenticatedUser: ["GET /user/interaction-limits"],
-    getRestrictionsForOrg: ["GET /orgs/{org}/interaction-limits"],
-    getRestrictionsForRepo: ["GET /repos/{owner}/{repo}/interaction-limits"],
-    getRestrictionsForYourPublicRepos: [
-      "GET /user/interaction-limits",
-      {},
-      { renamed: ["interactions", "getRestrictionsForAuthenticatedUser"] }
-    ],
-    removeRestrictionsForAuthenticatedUser: ["DELETE /user/interaction-limits"],
-    removeRestrictionsForOrg: ["DELETE /orgs/{org}/interaction-limits"],
-    removeRestrictionsForRepo: [
-      "DELETE /repos/{owner}/{repo}/interaction-limits"
-    ],
-    removeRestrictionsForYourPublicRepos: [
-      "DELETE /user/interaction-limits",
-      {},
-      { renamed: ["interactions", "removeRestrictionsForAuthenticatedUser"] }
-    ],
-    setRestrictionsForAuthenticatedUser: ["PUT /user/interaction-limits"],
-    setRestrictionsForOrg: ["PUT /orgs/{org}/interaction-limits"],
-    setRestrictionsForRepo: ["PUT /repos/{owner}/{repo}/interaction-limits"],
-    setRestrictionsForYourPublicRepos: [
-      "PUT /user/interaction-limits",
-      {},
-      { renamed: ["interactions", "setRestrictionsForAuthenticatedUser"] }
-    ]
-  },
-  issues: {
-    addAssignees: [
-      "POST /repos/{owner}/{repo}/issues/{issue_number}/assignees"
-    ],
-    addBlockedByDependency: [
-      "POST /repos/{owner}/{repo}/issues/{issue_number}/dependencies/blocked_by"
-    ],
-    addLabels: ["POST /repos/{owner}/{repo}/issues/{issue_number}/labels"],
-    addSubIssue: [
-      "POST /repos/{owner}/{repo}/issues/{issue_number}/sub_issues"
-    ],
-    checkUserCanBeAssigned: ["GET /repos/{owner}/{repo}/assignees/{assignee}"],
-    checkUserCanBeAssignedToIssue: [
-      "GET /repos/{owner}/{repo}/issues/{issue_number}/assignees/{assignee}"
-    ],
-    create: ["POST /repos/{owner}/{repo}/issues"],
-    createComment: [
-      "POST /repos/{owner}/{repo}/issues/{issue_number}/comments"
-    ],
-    createLabel: ["POST /repos/{owner}/{repo}/labels"],
-    createMilestone: ["POST /repos/{owner}/{repo}/milestones"],
-    deleteComment: [
-      "DELETE /repos/{owner}/{repo}/issues/comments/{comment_id}"
-    ],
-    deleteLabel: ["DELETE /repos/{owner}/{repo}/labels/{name}"],
-    deleteMilestone: [
-      "DELETE /repos/{owner}/{repo}/milestones/{milestone_number}"
-    ],
-    get: ["GET /repos/{owner}/{repo}/issues/{issue_number}"],
-    getComment: ["GET /repos/{owner}/{repo}/issues/comments/{comment_id}"],
-    getEvent: ["GET /repos/{owner}/{repo}/issues/events/{event_id}"],
-    getLabel: ["GET /repos/{owner}/{repo}/labels/{name}"],
-    getMilestone: ["GET /repos/{owner}/{repo}/milestones/{milestone_number}"],
-    getParent: ["GET /repos/{owner}/{repo}/issues/{issue_number}/parent"],
-    list: ["GET /issues"],
-    listAssignees: ["GET /repos/{owner}/{repo}/assignees"],
-    listComments: ["GET /repos/{owner}/{repo}/issues/{issue_number}/comments"],
-    listCommentsForRepo: ["GET /repos/{owner}/{repo}/issues/comments"],
-    listDependenciesBlockedBy: [
-      "GET /repos/{owner}/{repo}/issues/{issue_number}/dependencies/blocked_by"
-    ],
-    listDependenciesBlocking: [
-      "GET /repos/{owner}/{repo}/issues/{issue_number}/dependencies/blocking"
-    ],
-    listEvents: ["GET /repos/{owner}/{repo}/issues/{issue_number}/events"],
-    listEventsForRepo: ["GET /repos/{owner}/{repo}/issues/events"],
-    listEventsForTimeline: [
-      "GET /repos/{owner}/{repo}/issues/{issue_number}/timeline"
-    ],
-    listForAuthenticatedUser: ["GET /user/issues"],
-    listForOrg: ["GET /orgs/{org}/issues"],
-    listForRepo: ["GET /repos/{owner}/{repo}/issues"],
-    listLabelsForMilestone: [
-      "GET /repos/{owner}/{repo}/milestones/{milestone_number}/labels"
-    ],
-    listLabelsForRepo: ["GET /repos/{owner}/{repo}/labels"],
-    listLabelsOnIssue: [
-      "GET /repos/{owner}/{repo}/issues/{issue_number}/labels"
-    ],
-    listMilestones: ["GET /repos/{owner}/{repo}/milestones"],
-    listSubIssues: [
-      "GET /repos/{owner}/{repo}/issues/{issue_number}/sub_issues"
-    ],
-    lock: ["PUT /repos/{owner}/{repo}/issues/{issue_number}/lock"],
-    removeAllLabels: [
-      "DELETE /repos/{owner}/{repo}/issues/{issue_number}/labels"
-    ],
-    removeAssignees: [
-      "DELETE /repos/{owner}/{repo}/issues/{issue_number}/assignees"
-    ],
-    removeDependencyBlockedBy: [
-      "DELETE /repos/{owner}/{repo}/issues/{issue_number}/dependencies/blocked_by/{issue_id}"
-    ],
-    removeLabel: [
-      "DELETE /repos/{owner}/{repo}/issues/{issue_number}/labels/{name}"
-    ],
-    removeSubIssue: [
-      "DELETE /repos/{owner}/{repo}/issues/{issue_number}/sub_issue"
-    ],
-    reprioritizeSubIssue: [
-      "PATCH /repos/{owner}/{repo}/issues/{issue_number}/sub_issues/priority"
-    ],
-    setLabels: ["PUT /repos/{owner}/{repo}/issues/{issue_number}/labels"],
-    unlock: ["DELETE /repos/{owner}/{repo}/issues/{issue_number}/lock"],
-    update: ["PATCH /repos/{owner}/{repo}/issues/{issue_number}"],
-    updateComment: ["PATCH /repos/{owner}/{repo}/issues/comments/{comment_id}"],
-    updateLabel: ["PATCH /repos/{owner}/{repo}/labels/{name}"],
-    updateMilestone: [
-      "PATCH /repos/{owner}/{repo}/milestones/{milestone_number}"
-    ]
-  },
-  licenses: {
-    get: ["GET /licenses/{license}"],
-    getAllCommonlyUsed: ["GET /licenses"],
-    getForRepo: ["GET /repos/{owner}/{repo}/license"]
-  },
-  markdown: {
-    render: ["POST /markdown"],
-    renderRaw: [
-      "POST /markdown/raw",
-      { headers: { "content-type": "text/plain; charset=utf-8" } }
-    ]
-  },
-  meta: {
-    get: ["GET /meta"],
-    getAllVersions: ["GET /versions"],
-    getOctocat: ["GET /octocat"],
-    getZen: ["GET /zen"],
-    root: ["GET /"]
-  },
-  migrations: {
-    deleteArchiveForAuthenticatedUser: [
-      "DELETE /user/migrations/{migration_id}/archive"
-    ],
-    deleteArchiveForOrg: [
-      "DELETE /orgs/{org}/migrations/{migration_id}/archive"
-    ],
-    downloadArchiveForOrg: [
-      "GET /orgs/{org}/migrations/{migration_id}/archive"
-    ],
-    getArchiveForAuthenticatedUser: [
-      "GET /user/migrations/{migration_id}/archive"
-    ],
-    getStatusForAuthenticatedUser: ["GET /user/migrations/{migration_id}"],
-    getStatusForOrg: ["GET /orgs/{org}/migrations/{migration_id}"],
-    listForAuthenticatedUser: ["GET /user/migrations"],
-    listForOrg: ["GET /orgs/{org}/migrations"],
-    listReposForAuthenticatedUser: [
-      "GET /user/migrations/{migration_id}/repositories"
-    ],
-    listReposForOrg: ["GET /orgs/{org}/migrations/{migration_id}/repositories"],
-    listReposForUser: [
-      "GET /user/migrations/{migration_id}/repositories",
-      {},
-      { renamed: ["migrations", "listReposForAuthenticatedUser"] }
-    ],
-    startForAuthenticatedUser: ["POST /user/migrations"],
-    startForOrg: ["POST /orgs/{org}/migrations"],
-    unlockRepoForAuthenticatedUser: [
-      "DELETE /user/migrations/{migration_id}/repos/{repo_name}/lock"
-    ],
-    unlockRepoForOrg: [
-      "DELETE /orgs/{org}/migrations/{migration_id}/repos/{repo_name}/lock"
-    ]
-  },
-  oidc: {
-    getOidcCustomSubTemplateForOrg: [
-      "GET /orgs/{org}/actions/oidc/customization/sub"
-    ],
-    updateOidcCustomSubTemplateForOrg: [
-      "PUT /orgs/{org}/actions/oidc/customization/sub"
-    ]
-  },
-  orgs: {
-    addSecurityManagerTeam: [
-      "PUT /orgs/{org}/security-managers/teams/{team_slug}",
-      {},
-      {
-        deprecated: "octokit.rest.orgs.addSecurityManagerTeam() is deprecated, see https://docs.github.com/rest/orgs/security-managers#add-a-security-manager-team"
-      }
-    ],
-    assignTeamToOrgRole: [
-      "PUT /orgs/{org}/organization-roles/teams/{team_slug}/{role_id}"
-    ],
-    assignUserToOrgRole: [
-      "PUT /orgs/{org}/organization-roles/users/{username}/{role_id}"
-    ],
-    blockUser: ["PUT /orgs/{org}/blocks/{username}"],
-    cancelInvitation: ["DELETE /orgs/{org}/invitations/{invitation_id}"],
-    checkBlockedUser: ["GET /orgs/{org}/blocks/{username}"],
-    checkMembershipForUser: ["GET /orgs/{org}/members/{username}"],
-    checkPublicMembershipForUser: ["GET /orgs/{org}/public_members/{username}"],
-    convertMemberToOutsideCollaborator: [
-      "PUT /orgs/{org}/outside_collaborators/{username}"
-    ],
-    createArtifactStorageRecord: [
-      "POST /orgs/{org}/artifacts/metadata/storage-record"
-    ],
-    createInvitation: ["POST /orgs/{org}/invitations"],
-    createIssueType: ["POST /orgs/{org}/issue-types"],
-    createWebhook: ["POST /orgs/{org}/hooks"],
-    customPropertiesForOrgsCreateOrUpdateOrganizationValues: [
-      "PATCH /organizations/{org}/org-properties/values"
-    ],
-    customPropertiesForOrgsGetOrganizationValues: [
-      "GET /organizations/{org}/org-properties/values"
-    ],
-    customPropertiesForReposCreateOrUpdateOrganizationDefinition: [
-      "PUT /orgs/{org}/properties/schema/{custom_property_name}"
-    ],
-    customPropertiesForReposCreateOrUpdateOrganizationDefinitions: [
-      "PATCH /orgs/{org}/properties/schema"
-    ],
-    customPropertiesForReposCreateOrUpdateOrganizationValues: [
-      "PATCH /orgs/{org}/properties/values"
-    ],
-    customPropertiesForReposDeleteOrganizationDefinition: [
-      "DELETE /orgs/{org}/properties/schema/{custom_property_name}"
-    ],
-    customPropertiesForReposGetOrganizationDefinition: [
-      "GET /orgs/{org}/properties/schema/{custom_property_name}"
-    ],
-    customPropertiesForReposGetOrganizationDefinitions: [
-      "GET /orgs/{org}/properties/schema"
-    ],
-    customPropertiesForReposGetOrganizationValues: [
-      "GET /orgs/{org}/properties/values"
-    ],
-    delete: ["DELETE /orgs/{org}"],
-    deleteAttestationsBulk: ["POST /orgs/{org}/attestations/delete-request"],
-    deleteAttestationsById: [
-      "DELETE /orgs/{org}/attestations/{attestation_id}"
-    ],
-    deleteAttestationsBySubjectDigest: [
-      "DELETE /orgs/{org}/attestations/digest/{subject_digest}"
-    ],
-    deleteIssueType: ["DELETE /orgs/{org}/issue-types/{issue_type_id}"],
-    deleteWebhook: ["DELETE /orgs/{org}/hooks/{hook_id}"],
-    disableSelectedRepositoryImmutableReleasesOrganization: [
-      "DELETE /orgs/{org}/settings/immutable-releases/repositories/{repository_id}"
-    ],
-    enableSelectedRepositoryImmutableReleasesOrganization: [
-      "PUT /orgs/{org}/settings/immutable-releases/repositories/{repository_id}"
-    ],
-    get: ["GET /orgs/{org}"],
-    getImmutableReleasesSettings: [
-      "GET /orgs/{org}/settings/immutable-releases"
-    ],
-    getImmutableReleasesSettingsRepositories: [
-      "GET /orgs/{org}/settings/immutable-releases/repositories"
-    ],
-    getMembershipForAuthenticatedUser: ["GET /user/memberships/orgs/{org}"],
-    getMembershipForUser: ["GET /orgs/{org}/memberships/{username}"],
-    getOrgRole: ["GET /orgs/{org}/organization-roles/{role_id}"],
-    getOrgRulesetHistory: ["GET /orgs/{org}/rulesets/{ruleset_id}/history"],
-    getOrgRulesetVersion: [
-      "GET /orgs/{org}/rulesets/{ruleset_id}/history/{version_id}"
-    ],
-    getWebhook: ["GET /orgs/{org}/hooks/{hook_id}"],
-    getWebhookConfigForOrg: ["GET /orgs/{org}/hooks/{hook_id}/config"],
-    getWebhookDelivery: [
-      "GET /orgs/{org}/hooks/{hook_id}/deliveries/{delivery_id}"
-    ],
-    list: ["GET /organizations"],
-    listAppInstallations: ["GET /orgs/{org}/installations"],
-    listArtifactStorageRecords: [
-      "GET /orgs/{org}/artifacts/{subject_digest}/metadata/storage-records"
-    ],
-    listAttestationRepositories: ["GET /orgs/{org}/attestations/repositories"],
-    listAttestations: ["GET /orgs/{org}/attestations/{subject_digest}"],
-    listAttestationsBulk: [
-      "POST /orgs/{org}/attestations/bulk-list{?per_page,before,after}"
-    ],
-    listBlockedUsers: ["GET /orgs/{org}/blocks"],
-    listFailedInvitations: ["GET /orgs/{org}/failed_invitations"],
-    listForAuthenticatedUser: ["GET /user/orgs"],
-    listForUser: ["GET /users/{username}/orgs"],
-    listInvitationTeams: ["GET /orgs/{org}/invitations/{invitation_id}/teams"],
-    listIssueTypes: ["GET /orgs/{org}/issue-types"],
-    listMembers: ["GET /orgs/{org}/members"],
-    listMembershipsForAuthenticatedUser: ["GET /user/memberships/orgs"],
-    listOrgRoleTeams: ["GET /orgs/{org}/organization-roles/{role_id}/teams"],
-    listOrgRoleUsers: ["GET /orgs/{org}/organization-roles/{role_id}/users"],
-    listOrgRoles: ["GET /orgs/{org}/organization-roles"],
-    listOrganizationFineGrainedPermissions: [
-      "GET /orgs/{org}/organization-fine-grained-permissions"
-    ],
-    listOutsideCollaborators: ["GET /orgs/{org}/outside_collaborators"],
-    listPatGrantRepositories: [
-      "GET /orgs/{org}/personal-access-tokens/{pat_id}/repositories"
-    ],
-    listPatGrantRequestRepositories: [
-      "GET /orgs/{org}/personal-access-token-requests/{pat_request_id}/repositories"
-    ],
-    listPatGrantRequests: ["GET /orgs/{org}/personal-access-token-requests"],
-    listPatGrants: ["GET /orgs/{org}/personal-access-tokens"],
-    listPendingInvitations: ["GET /orgs/{org}/invitations"],
-    listPublicMembers: ["GET /orgs/{org}/public_members"],
-    listSecurityManagerTeams: [
-      "GET /orgs/{org}/security-managers",
-      {},
-      {
-        deprecated: "octokit.rest.orgs.listSecurityManagerTeams() is deprecated, see https://docs.github.com/rest/orgs/security-managers#list-security-manager-teams"
-      }
-    ],
-    listWebhookDeliveries: ["GET /orgs/{org}/hooks/{hook_id}/deliveries"],
-    listWebhooks: ["GET /orgs/{org}/hooks"],
-    pingWebhook: ["POST /orgs/{org}/hooks/{hook_id}/pings"],
-    redeliverWebhookDelivery: [
-      "POST /orgs/{org}/hooks/{hook_id}/deliveries/{delivery_id}/attempts"
-    ],
-    removeMember: ["DELETE /orgs/{org}/members/{username}"],
-    removeMembershipForUser: ["DELETE /orgs/{org}/memberships/{username}"],
-    removeOutsideCollaborator: [
-      "DELETE /orgs/{org}/outside_collaborators/{username}"
-    ],
-    removePublicMembershipForAuthenticatedUser: [
-      "DELETE /orgs/{org}/public_members/{username}"
-    ],
-    removeSecurityManagerTeam: [
-      "DELETE /orgs/{org}/security-managers/teams/{team_slug}",
-      {},
-      {
-        deprecated: "octokit.rest.orgs.removeSecurityManagerTeam() is deprecated, see https://docs.github.com/rest/orgs/security-managers#remove-a-security-manager-team"
-      }
-    ],
-    reviewPatGrantRequest: [
-      "POST /orgs/{org}/personal-access-token-requests/{pat_request_id}"
-    ],
-    reviewPatGrantRequestsInBulk: [
-      "POST /orgs/{org}/personal-access-token-requests"
-    ],
-    revokeAllOrgRolesTeam: [
-      "DELETE /orgs/{org}/organization-roles/teams/{team_slug}"
-    ],
-    revokeAllOrgRolesUser: [
-      "DELETE /orgs/{org}/organization-roles/users/{username}"
-    ],
-    revokeOrgRoleTeam: [
-      "DELETE /orgs/{org}/organization-roles/teams/{team_slug}/{role_id}"
-    ],
-    revokeOrgRoleUser: [
-      "DELETE /orgs/{org}/organization-roles/users/{username}/{role_id}"
-    ],
-    setImmutableReleasesSettings: [
-      "PUT /orgs/{org}/settings/immutable-releases"
-    ],
-    setImmutableReleasesSettingsRepositories: [
-      "PUT /orgs/{org}/settings/immutable-releases/repositories"
-    ],
-    setMembershipForUser: ["PUT /orgs/{org}/memberships/{username}"],
-    setPublicMembershipForAuthenticatedUser: [
-      "PUT /orgs/{org}/public_members/{username}"
-    ],
-    unblockUser: ["DELETE /orgs/{org}/blocks/{username}"],
-    update: ["PATCH /orgs/{org}"],
-    updateIssueType: ["PUT /orgs/{org}/issue-types/{issue_type_id}"],
-    updateMembershipForAuthenticatedUser: [
-      "PATCH /user/memberships/orgs/{org}"
-    ],
-    updatePatAccess: ["POST /orgs/{org}/personal-access-tokens/{pat_id}"],
-    updatePatAccesses: ["POST /orgs/{org}/personal-access-tokens"],
-    updateWebhook: ["PATCH /orgs/{org}/hooks/{hook_id}"],
-    updateWebhookConfigForOrg: ["PATCH /orgs/{org}/hooks/{hook_id}/config"]
-  },
-  packages: {
-    deletePackageForAuthenticatedUser: [
-      "DELETE /user/packages/{package_type}/{package_name}"
-    ],
-    deletePackageForOrg: [
-      "DELETE /orgs/{org}/packages/{package_type}/{package_name}"
-    ],
-    deletePackageForUser: [
-      "DELETE /users/{username}/packages/{package_type}/{package_name}"
-    ],
-    deletePackageVersionForAuthenticatedUser: [
-      "DELETE /user/packages/{package_type}/{package_name}/versions/{package_version_id}"
-    ],
-    deletePackageVersionForOrg: [
-      "DELETE /orgs/{org}/packages/{package_type}/{package_name}/versions/{package_version_id}"
-    ],
-    deletePackageVersionForUser: [
-      "DELETE /users/{username}/packages/{package_type}/{package_name}/versions/{package_version_id}"
-    ],
-    getAllPackageVersionsForAPackageOwnedByAnOrg: [
-      "GET /orgs/{org}/packages/{package_type}/{package_name}/versions",
-      {},
-      { renamed: ["packages", "getAllPackageVersionsForPackageOwnedByOrg"] }
-    ],
-    getAllPackageVersionsForAPackageOwnedByTheAuthenticatedUser: [
-      "GET /user/packages/{package_type}/{package_name}/versions",
-      {},
-      {
-        renamed: [
-          "packages",
-          "getAllPackageVersionsForPackageOwnedByAuthenticatedUser"
-        ]
-      }
-    ],
-    getAllPackageVersionsForPackageOwnedByAuthenticatedUser: [
-      "GET /user/packages/{package_type}/{package_name}/versions"
-    ],
-    getAllPackageVersionsForPackageOwnedByOrg: [
-      "GET /orgs/{org}/packages/{package_type}/{package_name}/versions"
-    ],
-    getAllPackageVersionsForPackageOwnedByUser: [
-      "GET /users/{username}/packages/{package_type}/{package_name}/versions"
-    ],
-    getPackageForAuthenticatedUser: [
-      "GET /user/packages/{package_type}/{package_name}"
-    ],
-    getPackageForOrganization: [
-      "GET /orgs/{org}/packages/{package_type}/{package_name}"
-    ],
-    getPackageForUser: [
-      "GET /users/{username}/packages/{package_type}/{package_name}"
-    ],
-    getPackageVersionForAuthenticatedUser: [
-      "GET /user/packages/{package_type}/{package_name}/versions/{package_version_id}"
-    ],
-    getPackageVersionForOrganization: [
-      "GET /orgs/{org}/packages/{package_type}/{package_name}/versions/{package_version_id}"
-    ],
-    getPackageVersionForUser: [
-      "GET /users/{username}/packages/{package_type}/{package_name}/versions/{package_version_id}"
-    ],
-    listDockerMigrationConflictingPackagesForAuthenticatedUser: [
-      "GET /user/docker/conflicts"
-    ],
-    listDockerMigrationConflictingPackagesForOrganization: [
-      "GET /orgs/{org}/docker/conflicts"
-    ],
-    listDockerMigrationConflictingPackagesForUser: [
-      "GET /users/{username}/docker/conflicts"
-    ],
-    listPackagesForAuthenticatedUser: ["GET /user/packages"],
-    listPackagesForOrganization: ["GET /orgs/{org}/packages"],
-    listPackagesForUser: ["GET /users/{username}/packages"],
-    restorePackageForAuthenticatedUser: [
-      "POST /user/packages/{package_type}/{package_name}/restore{?token}"
-    ],
-    restorePackageForOrg: [
-      "POST /orgs/{org}/packages/{package_type}/{package_name}/restore{?token}"
-    ],
-    restorePackageForUser: [
-      "POST /users/{username}/packages/{package_type}/{package_name}/restore{?token}"
-    ],
-    restorePackageVersionForAuthenticatedUser: [
-      "POST /user/packages/{package_type}/{package_name}/versions/{package_version_id}/restore"
-    ],
-    restorePackageVersionForOrg: [
-      "POST /orgs/{org}/packages/{package_type}/{package_name}/versions/{package_version_id}/restore"
-    ],
-    restorePackageVersionForUser: [
-      "POST /users/{username}/packages/{package_type}/{package_name}/versions/{package_version_id}/restore"
-    ]
-  },
-  privateRegistries: {
-    createOrgPrivateRegistry: ["POST /orgs/{org}/private-registries"],
-    deleteOrgPrivateRegistry: [
-      "DELETE /orgs/{org}/private-registries/{secret_name}"
-    ],
-    getOrgPrivateRegistry: ["GET /orgs/{org}/private-registries/{secret_name}"],
-    getOrgPublicKey: ["GET /orgs/{org}/private-registries/public-key"],
-    listOrgPrivateRegistries: ["GET /orgs/{org}/private-registries"],
-    updateOrgPrivateRegistry: [
-      "PATCH /orgs/{org}/private-registries/{secret_name}"
-    ]
-  },
-  projects: {
-    addItemForOrg: ["POST /orgs/{org}/projectsV2/{project_number}/items"],
-    addItemForUser: [
-      "POST /users/{username}/projectsV2/{project_number}/items"
-    ],
-    deleteItemForOrg: [
-      "DELETE /orgs/{org}/projectsV2/{project_number}/items/{item_id}"
-    ],
-    deleteItemForUser: [
-      "DELETE /users/{username}/projectsV2/{project_number}/items/{item_id}"
-    ],
-    getFieldForOrg: [
-      "GET /orgs/{org}/projectsV2/{project_number}/fields/{field_id}"
-    ],
-    getFieldForUser: [
-      "GET /users/{username}/projectsV2/{project_number}/fields/{field_id}"
-    ],
-    getForOrg: ["GET /orgs/{org}/projectsV2/{project_number}"],
-    getForUser: ["GET /users/{username}/projectsV2/{project_number}"],
-    getOrgItem: ["GET /orgs/{org}/projectsV2/{project_number}/items/{item_id}"],
-    getUserItem: [
-      "GET /users/{username}/projectsV2/{project_number}/items/{item_id}"
-    ],
-    listFieldsForOrg: ["GET /orgs/{org}/projectsV2/{project_number}/fields"],
-    listFieldsForUser: [
-      "GET /users/{username}/projectsV2/{project_number}/fields"
-    ],
-    listForOrg: ["GET /orgs/{org}/projectsV2"],
-    listForUser: ["GET /users/{username}/projectsV2"],
-    listItemsForOrg: ["GET /orgs/{org}/projectsV2/{project_number}/items"],
-    listItemsForUser: [
-      "GET /users/{username}/projectsV2/{project_number}/items"
-    ],
-    updateItemForOrg: [
-      "PATCH /orgs/{org}/projectsV2/{project_number}/items/{item_id}"
-    ],
-    updateItemForUser: [
-      "PATCH /users/{username}/projectsV2/{project_number}/items/{item_id}"
-    ]
-  },
-  pulls: {
-    checkIfMerged: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/merge"],
-    create: ["POST /repos/{owner}/{repo}/pulls"],
-    createReplyForReviewComment: [
-      "POST /repos/{owner}/{repo}/pulls/{pull_number}/comments/{comment_id}/replies"
-    ],
-    createReview: ["POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews"],
-    createReviewComment: [
-      "POST /repos/{owner}/{repo}/pulls/{pull_number}/comments"
-    ],
-    deletePendingReview: [
-      "DELETE /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}"
-    ],
-    deleteReviewComment: [
-      "DELETE /repos/{owner}/{repo}/pulls/comments/{comment_id}"
-    ],
-    dismissReview: [
-      "PUT /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}/dismissals"
-    ],
-    get: ["GET /repos/{owner}/{repo}/pulls/{pull_number}"],
-    getReview: [
-      "GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}"
-    ],
-    getReviewComment: ["GET /repos/{owner}/{repo}/pulls/comments/{comment_id}"],
-    list: ["GET /repos/{owner}/{repo}/pulls"],
-    listCommentsForReview: [
-      "GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}/comments"
-    ],
-    listCommits: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/commits"],
-    listFiles: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/files"],
-    listRequestedReviewers: [
-      "GET /repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers"
-    ],
-    listReviewComments: [
-      "GET /repos/{owner}/{repo}/pulls/{pull_number}/comments"
-    ],
-    listReviewCommentsForRepo: ["GET /repos/{owner}/{repo}/pulls/comments"],
-    listReviews: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews"],
-    merge: ["PUT /repos/{owner}/{repo}/pulls/{pull_number}/merge"],
-    removeRequestedReviewers: [
-      "DELETE /repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers"
-    ],
-    requestReviewers: [
-      "POST /repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers"
-    ],
-    submitReview: [
-      "POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}/events"
-    ],
-    update: ["PATCH /repos/{owner}/{repo}/pulls/{pull_number}"],
-    updateBranch: [
-      "PUT /repos/{owner}/{repo}/pulls/{pull_number}/update-branch"
-    ],
-    updateReview: [
-      "PUT /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}"
-    ],
-    updateReviewComment: [
-      "PATCH /repos/{owner}/{repo}/pulls/comments/{comment_id}"
-    ]
-  },
-  rateLimit: { get: ["GET /rate_limit"] },
-  reactions: {
-    createForCommitComment: [
-      "POST /repos/{owner}/{repo}/comments/{comment_id}/reactions"
-    ],
-    createForIssue: [
-      "POST /repos/{owner}/{repo}/issues/{issue_number}/reactions"
-    ],
-    createForIssueComment: [
-      "POST /repos/{owner}/{repo}/issues/comments/{comment_id}/reactions"
-    ],
-    createForPullRequestReviewComment: [
-      "POST /repos/{owner}/{repo}/pulls/comments/{comment_id}/reactions"
-    ],
-    createForRelease: [
-      "POST /repos/{owner}/{repo}/releases/{release_id}/reactions"
-    ],
-    createForTeamDiscussionCommentInOrg: [
-      "POST /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}/reactions"
-    ],
-    createForTeamDiscussionInOrg: [
-      "POST /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/reactions"
-    ],
-    deleteForCommitComment: [
-      "DELETE /repos/{owner}/{repo}/comments/{comment_id}/reactions/{reaction_id}"
-    ],
-    deleteForIssue: [
-      "DELETE /repos/{owner}/{repo}/issues/{issue_number}/reactions/{reaction_id}"
-    ],
-    deleteForIssueComment: [
-      "DELETE /repos/{owner}/{repo}/issues/comments/{comment_id}/reactions/{reaction_id}"
-    ],
-    deleteForPullRequestComment: [
-      "DELETE /repos/{owner}/{repo}/pulls/comments/{comment_id}/reactions/{reaction_id}"
-    ],
-    deleteForRelease: [
-      "DELETE /repos/{owner}/{repo}/releases/{release_id}/reactions/{reaction_id}"
-    ],
-    deleteForTeamDiscussion: [
-      "DELETE /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/reactions/{reaction_id}"
-    ],
-    deleteForTeamDiscussionComment: [
-      "DELETE /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}/reactions/{reaction_id}"
-    ],
-    listForCommitComment: [
-      "GET /repos/{owner}/{repo}/comments/{comment_id}/reactions"
-    ],
-    listForIssue: ["GET /repos/{owner}/{repo}/issues/{issue_number}/reactions"],
-    listForIssueComment: [
-      "GET /repos/{owner}/{repo}/issues/comments/{comment_id}/reactions"
-    ],
-    listForPullRequestReviewComment: [
-      "GET /repos/{owner}/{repo}/pulls/comments/{comment_id}/reactions"
-    ],
-    listForRelease: [
-      "GET /repos/{owner}/{repo}/releases/{release_id}/reactions"
-    ],
-    listForTeamDiscussionCommentInOrg: [
-      "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}/reactions"
-    ],
-    listForTeamDiscussionInOrg: [
-      "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/reactions"
-    ]
-  },
-  repos: {
-    acceptInvitation: [
-      "PATCH /user/repository_invitations/{invitation_id}",
-      {},
-      { renamed: ["repos", "acceptInvitationForAuthenticatedUser"] }
-    ],
-    acceptInvitationForAuthenticatedUser: [
-      "PATCH /user/repository_invitations/{invitation_id}"
-    ],
-    addAppAccessRestrictions: [
-      "POST /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/apps",
-      {},
-      { mapToData: "apps" }
-    ],
-    addCollaborator: ["PUT /repos/{owner}/{repo}/collaborators/{username}"],
-    addStatusCheckContexts: [
-      "POST /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks/contexts",
-      {},
-      { mapToData: "contexts" }
-    ],
-    addTeamAccessRestrictions: [
-      "POST /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/teams",
-      {},
-      { mapToData: "teams" }
-    ],
-    addUserAccessRestrictions: [
-      "POST /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/users",
-      {},
-      { mapToData: "users" }
-    ],
-    cancelPagesDeployment: [
-      "POST /repos/{owner}/{repo}/pages/deployments/{pages_deployment_id}/cancel"
-    ],
-    checkAutomatedSecurityFixes: [
-      "GET /repos/{owner}/{repo}/automated-security-fixes"
-    ],
-    checkCollaborator: ["GET /repos/{owner}/{repo}/collaborators/{username}"],
-    checkImmutableReleases: ["GET /repos/{owner}/{repo}/immutable-releases"],
-    checkPrivateVulnerabilityReporting: [
-      "GET /repos/{owner}/{repo}/private-vulnerability-reporting"
-    ],
-    checkVulnerabilityAlerts: [
-      "GET /repos/{owner}/{repo}/vulnerability-alerts"
-    ],
-    codeownersErrors: ["GET /repos/{owner}/{repo}/codeowners/errors"],
-    compareCommits: ["GET /repos/{owner}/{repo}/compare/{base}...{head}"],
-    compareCommitsWithBasehead: [
-      "GET /repos/{owner}/{repo}/compare/{basehead}"
-    ],
-    createAttestation: ["POST /repos/{owner}/{repo}/attestations"],
-    createAutolink: ["POST /repos/{owner}/{repo}/autolinks"],
-    createCommitComment: [
-      "POST /repos/{owner}/{repo}/commits/{commit_sha}/comments"
-    ],
-    createCommitSignatureProtection: [
-      "POST /repos/{owner}/{repo}/branches/{branch}/protection/required_signatures"
-    ],
-    createCommitStatus: ["POST /repos/{owner}/{repo}/statuses/{sha}"],
-    createDeployKey: ["POST /repos/{owner}/{repo}/keys"],
-    createDeployment: ["POST /repos/{owner}/{repo}/deployments"],
-    createDeploymentBranchPolicy: [
-      "POST /repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies"
-    ],
-    createDeploymentProtectionRule: [
-      "POST /repos/{owner}/{repo}/environments/{environment_name}/deployment_protection_rules"
-    ],
-    createDeploymentStatus: [
-      "POST /repos/{owner}/{repo}/deployments/{deployment_id}/statuses"
-    ],
-    createDispatchEvent: ["POST /repos/{owner}/{repo}/dispatches"],
-    createForAuthenticatedUser: ["POST /user/repos"],
-    createFork: ["POST /repos/{owner}/{repo}/forks"],
-    createInOrg: ["POST /orgs/{org}/repos"],
-    createOrUpdateEnvironment: [
-      "PUT /repos/{owner}/{repo}/environments/{environment_name}"
-    ],
-    createOrUpdateFileContents: ["PUT /repos/{owner}/{repo}/contents/{path}"],
-    createOrgRuleset: ["POST /orgs/{org}/rulesets"],
-    createPagesDeployment: ["POST /repos/{owner}/{repo}/pages/deployments"],
-    createPagesSite: ["POST /repos/{owner}/{repo}/pages"],
-    createRelease: ["POST /repos/{owner}/{repo}/releases"],
-    createRepoRuleset: ["POST /repos/{owner}/{repo}/rulesets"],
-    createUsingTemplate: [
-      "POST /repos/{template_owner}/{template_repo}/generate"
-    ],
-    createWebhook: ["POST /repos/{owner}/{repo}/hooks"],
-    customPropertiesForReposCreateOrUpdateRepositoryValues: [
-      "PATCH /repos/{owner}/{repo}/properties/values"
-    ],
-    customPropertiesForReposGetRepositoryValues: [
-      "GET /repos/{owner}/{repo}/properties/values"
-    ],
-    declineInvitation: [
-      "DELETE /user/repository_invitations/{invitation_id}",
-      {},
-      { renamed: ["repos", "declineInvitationForAuthenticatedUser"] }
-    ],
-    declineInvitationForAuthenticatedUser: [
-      "DELETE /user/repository_invitations/{invitation_id}"
-    ],
-    delete: ["DELETE /repos/{owner}/{repo}"],
-    deleteAccessRestrictions: [
-      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/restrictions"
-    ],
-    deleteAdminBranchProtection: [
-      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/enforce_admins"
-    ],
-    deleteAnEnvironment: [
-      "DELETE /repos/{owner}/{repo}/environments/{environment_name}"
-    ],
-    deleteAutolink: ["DELETE /repos/{owner}/{repo}/autolinks/{autolink_id}"],
-    deleteBranchProtection: [
-      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection"
-    ],
-    deleteCommitComment: ["DELETE /repos/{owner}/{repo}/comments/{comment_id}"],
-    deleteCommitSignatureProtection: [
-      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/required_signatures"
-    ],
-    deleteDeployKey: ["DELETE /repos/{owner}/{repo}/keys/{key_id}"],
-    deleteDeployment: [
-      "DELETE /repos/{owner}/{repo}/deployments/{deployment_id}"
-    ],
-    deleteDeploymentBranchPolicy: [
-      "DELETE /repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies/{branch_policy_id}"
-    ],
-    deleteFile: ["DELETE /repos/{owner}/{repo}/contents/{path}"],
-    deleteInvitation: [
-      "DELETE /repos/{owner}/{repo}/invitations/{invitation_id}"
-    ],
-    deleteOrgRuleset: ["DELETE /orgs/{org}/rulesets/{ruleset_id}"],
-    deletePagesSite: ["DELETE /repos/{owner}/{repo}/pages"],
-    deletePullRequestReviewProtection: [
-      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/required_pull_request_reviews"
-    ],
-    deleteRelease: ["DELETE /repos/{owner}/{repo}/releases/{release_id}"],
-    deleteReleaseAsset: [
-      "DELETE /repos/{owner}/{repo}/releases/assets/{asset_id}"
-    ],
-    deleteRepoRuleset: ["DELETE /repos/{owner}/{repo}/rulesets/{ruleset_id}"],
-    deleteWebhook: ["DELETE /repos/{owner}/{repo}/hooks/{hook_id}"],
-    disableAutomatedSecurityFixes: [
-      "DELETE /repos/{owner}/{repo}/automated-security-fixes"
-    ],
-    disableDeploymentProtectionRule: [
-      "DELETE /repos/{owner}/{repo}/environments/{environment_name}/deployment_protection_rules/{protection_rule_id}"
-    ],
-    disableImmutableReleases: [
-      "DELETE /repos/{owner}/{repo}/immutable-releases"
-    ],
-    disablePrivateVulnerabilityReporting: [
-      "DELETE /repos/{owner}/{repo}/private-vulnerability-reporting"
-    ],
-    disableVulnerabilityAlerts: [
-      "DELETE /repos/{owner}/{repo}/vulnerability-alerts"
-    ],
-    downloadArchive: [
-      "GET /repos/{owner}/{repo}/zipball/{ref}",
-      {},
-      { renamed: ["repos", "downloadZipballArchive"] }
-    ],
-    downloadTarballArchive: ["GET /repos/{owner}/{repo}/tarball/{ref}"],
-    downloadZipballArchive: ["GET /repos/{owner}/{repo}/zipball/{ref}"],
-    enableAutomatedSecurityFixes: [
-      "PUT /repos/{owner}/{repo}/automated-security-fixes"
-    ],
-    enableImmutableReleases: ["PUT /repos/{owner}/{repo}/immutable-releases"],
-    enablePrivateVulnerabilityReporting: [
-      "PUT /repos/{owner}/{repo}/private-vulnerability-reporting"
-    ],
-    enableVulnerabilityAlerts: [
-      "PUT /repos/{owner}/{repo}/vulnerability-alerts"
-    ],
-    generateReleaseNotes: [
-      "POST /repos/{owner}/{repo}/releases/generate-notes"
-    ],
-    get: ["GET /repos/{owner}/{repo}"],
-    getAccessRestrictions: [
-      "GET /repos/{owner}/{repo}/branches/{branch}/protection/restrictions"
-    ],
-    getAdminBranchProtection: [
-      "GET /repos/{owner}/{repo}/branches/{branch}/protection/enforce_admins"
-    ],
-    getAllDeploymentProtectionRules: [
-      "GET /repos/{owner}/{repo}/environments/{environment_name}/deployment_protection_rules"
-    ],
-    getAllEnvironments: ["GET /repos/{owner}/{repo}/environments"],
-    getAllStatusCheckContexts: [
-      "GET /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks/contexts"
-    ],
-    getAllTopics: ["GET /repos/{owner}/{repo}/topics"],
-    getAppsWithAccessToProtectedBranch: [
-      "GET /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/apps"
-    ],
-    getAutolink: ["GET /repos/{owner}/{repo}/autolinks/{autolink_id}"],
-    getBranch: ["GET /repos/{owner}/{repo}/branches/{branch}"],
-    getBranchProtection: [
-      "GET /repos/{owner}/{repo}/branches/{branch}/protection"
-    ],
-    getBranchRules: ["GET /repos/{owner}/{repo}/rules/branches/{branch}"],
-    getClones: ["GET /repos/{owner}/{repo}/traffic/clones"],
-    getCodeFrequencyStats: ["GET /repos/{owner}/{repo}/stats/code_frequency"],
-    getCollaboratorPermissionLevel: [
-      "GET /repos/{owner}/{repo}/collaborators/{username}/permission"
-    ],
-    getCombinedStatusForRef: ["GET /repos/{owner}/{repo}/commits/{ref}/status"],
-    getCommit: ["GET /repos/{owner}/{repo}/commits/{ref}"],
-    getCommitActivityStats: ["GET /repos/{owner}/{repo}/stats/commit_activity"],
-    getCommitComment: ["GET /repos/{owner}/{repo}/comments/{comment_id}"],
-    getCommitSignatureProtection: [
-      "GET /repos/{owner}/{repo}/branches/{branch}/protection/required_signatures"
-    ],
-    getCommunityProfileMetrics: ["GET /repos/{owner}/{repo}/community/profile"],
-    getContent: ["GET /repos/{owner}/{repo}/contents/{path}"],
-    getContributorsStats: ["GET /repos/{owner}/{repo}/stats/contributors"],
-    getCustomDeploymentProtectionRule: [
-      "GET /repos/{owner}/{repo}/environments/{environment_name}/deployment_protection_rules/{protection_rule_id}"
-    ],
-    getDeployKey: ["GET /repos/{owner}/{repo}/keys/{key_id}"],
-    getDeployment: ["GET /repos/{owner}/{repo}/deployments/{deployment_id}"],
-    getDeploymentBranchPolicy: [
-      "GET /repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies/{branch_policy_id}"
-    ],
-    getDeploymentStatus: [
-      "GET /repos/{owner}/{repo}/deployments/{deployment_id}/statuses/{status_id}"
-    ],
-    getEnvironment: [
-      "GET /repos/{owner}/{repo}/environments/{environment_name}"
-    ],
-    getLatestPagesBuild: ["GET /repos/{owner}/{repo}/pages/builds/latest"],
-    getLatestRelease: ["GET /repos/{owner}/{repo}/releases/latest"],
-    getOrgRuleSuite: ["GET /orgs/{org}/rulesets/rule-suites/{rule_suite_id}"],
-    getOrgRuleSuites: ["GET /orgs/{org}/rulesets/rule-suites"],
-    getOrgRuleset: ["GET /orgs/{org}/rulesets/{ruleset_id}"],
-    getOrgRulesets: ["GET /orgs/{org}/rulesets"],
-    getPages: ["GET /repos/{owner}/{repo}/pages"],
-    getPagesBuild: ["GET /repos/{owner}/{repo}/pages/builds/{build_id}"],
-    getPagesDeployment: [
-      "GET /repos/{owner}/{repo}/pages/deployments/{pages_deployment_id}"
-    ],
-    getPagesHealthCheck: ["GET /repos/{owner}/{repo}/pages/health"],
-    getParticipationStats: ["GET /repos/{owner}/{repo}/stats/participation"],
-    getPullRequestReviewProtection: [
-      "GET /repos/{owner}/{repo}/branches/{branch}/protection/required_pull_request_reviews"
-    ],
-    getPunchCardStats: ["GET /repos/{owner}/{repo}/stats/punch_card"],
-    getReadme: ["GET /repos/{owner}/{repo}/readme"],
-    getReadmeInDirectory: ["GET /repos/{owner}/{repo}/readme/{dir}"],
-    getRelease: ["GET /repos/{owner}/{repo}/releases/{release_id}"],
-    getReleaseAsset: ["GET /repos/{owner}/{repo}/releases/assets/{asset_id}"],
-    getReleaseByTag: ["GET /repos/{owner}/{repo}/releases/tags/{tag}"],
-    getRepoRuleSuite: [
-      "GET /repos/{owner}/{repo}/rulesets/rule-suites/{rule_suite_id}"
-    ],
-    getRepoRuleSuites: ["GET /repos/{owner}/{repo}/rulesets/rule-suites"],
-    getRepoRuleset: ["GET /repos/{owner}/{repo}/rulesets/{ruleset_id}"],
-    getRepoRulesetHistory: [
-      "GET /repos/{owner}/{repo}/rulesets/{ruleset_id}/history"
-    ],
-    getRepoRulesetVersion: [
-      "GET /repos/{owner}/{repo}/rulesets/{ruleset_id}/history/{version_id}"
-    ],
-    getRepoRulesets: ["GET /repos/{owner}/{repo}/rulesets"],
-    getStatusChecksProtection: [
-      "GET /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks"
-    ],
-    getTeamsWithAccessToProtectedBranch: [
-      "GET /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/teams"
-    ],
-    getTopPaths: ["GET /repos/{owner}/{repo}/traffic/popular/paths"],
-    getTopReferrers: ["GET /repos/{owner}/{repo}/traffic/popular/referrers"],
-    getUsersWithAccessToProtectedBranch: [
-      "GET /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/users"
-    ],
-    getViews: ["GET /repos/{owner}/{repo}/traffic/views"],
-    getWebhook: ["GET /repos/{owner}/{repo}/hooks/{hook_id}"],
-    getWebhookConfigForRepo: [
-      "GET /repos/{owner}/{repo}/hooks/{hook_id}/config"
-    ],
-    getWebhookDelivery: [
-      "GET /repos/{owner}/{repo}/hooks/{hook_id}/deliveries/{delivery_id}"
-    ],
-    listActivities: ["GET /repos/{owner}/{repo}/activity"],
-    listAttestations: [
-      "GET /repos/{owner}/{repo}/attestations/{subject_digest}"
-    ],
-    listAutolinks: ["GET /repos/{owner}/{repo}/autolinks"],
-    listBranches: ["GET /repos/{owner}/{repo}/branches"],
-    listBranchesForHeadCommit: [
-      "GET /repos/{owner}/{repo}/commits/{commit_sha}/branches-where-head"
-    ],
-    listCollaborators: ["GET /repos/{owner}/{repo}/collaborators"],
-    listCommentsForCommit: [
-      "GET /repos/{owner}/{repo}/commits/{commit_sha}/comments"
-    ],
-    listCommitCommentsForRepo: ["GET /repos/{owner}/{repo}/comments"],
-    listCommitStatusesForRef: [
-      "GET /repos/{owner}/{repo}/commits/{ref}/statuses"
-    ],
-    listCommits: ["GET /repos/{owner}/{repo}/commits"],
-    listContributors: ["GET /repos/{owner}/{repo}/contributors"],
-    listCustomDeploymentRuleIntegrations: [
-      "GET /repos/{owner}/{repo}/environments/{environment_name}/deployment_protection_rules/apps"
-    ],
-    listDeployKeys: ["GET /repos/{owner}/{repo}/keys"],
-    listDeploymentBranchPolicies: [
-      "GET /repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies"
-    ],
-    listDeploymentStatuses: [
-      "GET /repos/{owner}/{repo}/deployments/{deployment_id}/statuses"
-    ],
-    listDeployments: ["GET /repos/{owner}/{repo}/deployments"],
-    listForAuthenticatedUser: ["GET /user/repos"],
-    listForOrg: ["GET /orgs/{org}/repos"],
-    listForUser: ["GET /users/{username}/repos"],
-    listForks: ["GET /repos/{owner}/{repo}/forks"],
-    listInvitations: ["GET /repos/{owner}/{repo}/invitations"],
-    listInvitationsForAuthenticatedUser: ["GET /user/repository_invitations"],
-    listLanguages: ["GET /repos/{owner}/{repo}/languages"],
-    listPagesBuilds: ["GET /repos/{owner}/{repo}/pages/builds"],
-    listPublic: ["GET /repositories"],
-    listPullRequestsAssociatedWithCommit: [
-      "GET /repos/{owner}/{repo}/commits/{commit_sha}/pulls"
-    ],
-    listReleaseAssets: [
-      "GET /repos/{owner}/{repo}/releases/{release_id}/assets"
-    ],
-    listReleases: ["GET /repos/{owner}/{repo}/releases"],
-    listTags: ["GET /repos/{owner}/{repo}/tags"],
-    listTeams: ["GET /repos/{owner}/{repo}/teams"],
-    listWebhookDeliveries: [
-      "GET /repos/{owner}/{repo}/hooks/{hook_id}/deliveries"
-    ],
-    listWebhooks: ["GET /repos/{owner}/{repo}/hooks"],
-    merge: ["POST /repos/{owner}/{repo}/merges"],
-    mergeUpstream: ["POST /repos/{owner}/{repo}/merge-upstream"],
-    pingWebhook: ["POST /repos/{owner}/{repo}/hooks/{hook_id}/pings"],
-    redeliverWebhookDelivery: [
-      "POST /repos/{owner}/{repo}/hooks/{hook_id}/deliveries/{delivery_id}/attempts"
-    ],
-    removeAppAccessRestrictions: [
-      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/apps",
-      {},
-      { mapToData: "apps" }
-    ],
-    removeCollaborator: [
-      "DELETE /repos/{owner}/{repo}/collaborators/{username}"
-    ],
-    removeStatusCheckContexts: [
-      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks/contexts",
-      {},
-      { mapToData: "contexts" }
-    ],
-    removeStatusCheckProtection: [
-      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks"
-    ],
-    removeTeamAccessRestrictions: [
-      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/teams",
-      {},
-      { mapToData: "teams" }
-    ],
-    removeUserAccessRestrictions: [
-      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/users",
-      {},
-      { mapToData: "users" }
-    ],
-    renameBranch: ["POST /repos/{owner}/{repo}/branches/{branch}/rename"],
-    replaceAllTopics: ["PUT /repos/{owner}/{repo}/topics"],
-    requestPagesBuild: ["POST /repos/{owner}/{repo}/pages/builds"],
-    setAdminBranchProtection: [
-      "POST /repos/{owner}/{repo}/branches/{branch}/protection/enforce_admins"
-    ],
-    setAppAccessRestrictions: [
-      "PUT /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/apps",
-      {},
-      { mapToData: "apps" }
-    ],
-    setStatusCheckContexts: [
-      "PUT /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks/contexts",
-      {},
-      { mapToData: "contexts" }
-    ],
-    setTeamAccessRestrictions: [
-      "PUT /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/teams",
-      {},
-      { mapToData: "teams" }
-    ],
-    setUserAccessRestrictions: [
-      "PUT /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/users",
-      {},
-      { mapToData: "users" }
-    ],
-    testPushWebhook: ["POST /repos/{owner}/{repo}/hooks/{hook_id}/tests"],
-    transfer: ["POST /repos/{owner}/{repo}/transfer"],
-    update: ["PATCH /repos/{owner}/{repo}"],
-    updateBranchProtection: [
-      "PUT /repos/{owner}/{repo}/branches/{branch}/protection"
-    ],
-    updateCommitComment: ["PATCH /repos/{owner}/{repo}/comments/{comment_id}"],
-    updateDeploymentBranchPolicy: [
-      "PUT /repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies/{branch_policy_id}"
-    ],
-    updateInformationAboutPagesSite: ["PUT /repos/{owner}/{repo}/pages"],
-    updateInvitation: [
-      "PATCH /repos/{owner}/{repo}/invitations/{invitation_id}"
-    ],
-    updateOrgRuleset: ["PUT /orgs/{org}/rulesets/{ruleset_id}"],
-    updatePullRequestReviewProtection: [
-      "PATCH /repos/{owner}/{repo}/branches/{branch}/protection/required_pull_request_reviews"
-    ],
-    updateRelease: ["PATCH /repos/{owner}/{repo}/releases/{release_id}"],
-    updateReleaseAsset: [
-      "PATCH /repos/{owner}/{repo}/releases/assets/{asset_id}"
-    ],
-    updateRepoRuleset: ["PUT /repos/{owner}/{repo}/rulesets/{ruleset_id}"],
-    updateStatusCheckPotection: [
-      "PATCH /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks",
-      {},
-      { renamed: ["repos", "updateStatusCheckProtection"] }
-    ],
-    updateStatusCheckProtection: [
-      "PATCH /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks"
-    ],
-    updateWebhook: ["PATCH /repos/{owner}/{repo}/hooks/{hook_id}"],
-    updateWebhookConfigForRepo: [
-      "PATCH /repos/{owner}/{repo}/hooks/{hook_id}/config"
-    ],
-    uploadReleaseAsset: [
-      "POST /repos/{owner}/{repo}/releases/{release_id}/assets{?name,label}",
-      { baseUrl: "https://uploads.github.com" }
-    ]
-  },
-  search: {
-    code: ["GET /search/code"],
-    commits: ["GET /search/commits"],
-    issuesAndPullRequests: ["GET /search/issues"],
-    labels: ["GET /search/labels"],
-    repos: ["GET /search/repositories"],
-    topics: ["GET /search/topics"],
-    users: ["GET /search/users"]
-  },
-  secretScanning: {
-    createPushProtectionBypass: [
-      "POST /repos/{owner}/{repo}/secret-scanning/push-protection-bypasses"
-    ],
-    getAlert: [
-      "GET /repos/{owner}/{repo}/secret-scanning/alerts/{alert_number}"
-    ],
-    getScanHistory: ["GET /repos/{owner}/{repo}/secret-scanning/scan-history"],
-    listAlertsForOrg: ["GET /orgs/{org}/secret-scanning/alerts"],
-    listAlertsForRepo: ["GET /repos/{owner}/{repo}/secret-scanning/alerts"],
-    listLocationsForAlert: [
-      "GET /repos/{owner}/{repo}/secret-scanning/alerts/{alert_number}/locations"
-    ],
-    listOrgPatternConfigs: [
-      "GET /orgs/{org}/secret-scanning/pattern-configurations"
-    ],
-    updateAlert: [
-      "PATCH /repos/{owner}/{repo}/secret-scanning/alerts/{alert_number}"
-    ],
-    updateOrgPatternConfigs: [
-      "PATCH /orgs/{org}/secret-scanning/pattern-configurations"
-    ]
-  },
-  securityAdvisories: {
-    createFork: [
-      "POST /repos/{owner}/{repo}/security-advisories/{ghsa_id}/forks"
-    ],
-    createPrivateVulnerabilityReport: [
-      "POST /repos/{owner}/{repo}/security-advisories/reports"
-    ],
-    createRepositoryAdvisory: [
-      "POST /repos/{owner}/{repo}/security-advisories"
-    ],
-    createRepositoryAdvisoryCveRequest: [
-      "POST /repos/{owner}/{repo}/security-advisories/{ghsa_id}/cve"
-    ],
-    getGlobalAdvisory: ["GET /advisories/{ghsa_id}"],
-    getRepositoryAdvisory: [
-      "GET /repos/{owner}/{repo}/security-advisories/{ghsa_id}"
-    ],
-    listGlobalAdvisories: ["GET /advisories"],
-    listOrgRepositoryAdvisories: ["GET /orgs/{org}/security-advisories"],
-    listRepositoryAdvisories: ["GET /repos/{owner}/{repo}/security-advisories"],
-    updateRepositoryAdvisory: [
-      "PATCH /repos/{owner}/{repo}/security-advisories/{ghsa_id}"
-    ]
-  },
-  teams: {
-    addOrUpdateMembershipForUserInOrg: [
-      "PUT /orgs/{org}/teams/{team_slug}/memberships/{username}"
-    ],
-    addOrUpdateRepoPermissionsInOrg: [
-      "PUT /orgs/{org}/teams/{team_slug}/repos/{owner}/{repo}"
-    ],
-    checkPermissionsForRepoInOrg: [
-      "GET /orgs/{org}/teams/{team_slug}/repos/{owner}/{repo}"
-    ],
-    create: ["POST /orgs/{org}/teams"],
-    createDiscussionCommentInOrg: [
-      "POST /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments"
-    ],
-    createDiscussionInOrg: ["POST /orgs/{org}/teams/{team_slug}/discussions"],
-    deleteDiscussionCommentInOrg: [
-      "DELETE /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}"
-    ],
-    deleteDiscussionInOrg: [
-      "DELETE /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}"
-    ],
-    deleteInOrg: ["DELETE /orgs/{org}/teams/{team_slug}"],
-    getByName: ["GET /orgs/{org}/teams/{team_slug}"],
-    getDiscussionCommentInOrg: [
-      "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}"
-    ],
-    getDiscussionInOrg: [
-      "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}"
-    ],
-    getMembershipForUserInOrg: [
-      "GET /orgs/{org}/teams/{team_slug}/memberships/{username}"
-    ],
-    list: ["GET /orgs/{org}/teams"],
-    listChildInOrg: ["GET /orgs/{org}/teams/{team_slug}/teams"],
-    listDiscussionCommentsInOrg: [
-      "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments"
-    ],
-    listDiscussionsInOrg: ["GET /orgs/{org}/teams/{team_slug}/discussions"],
-    listForAuthenticatedUser: ["GET /user/teams"],
-    listMembersInOrg: ["GET /orgs/{org}/teams/{team_slug}/members"],
-    listPendingInvitationsInOrg: [
-      "GET /orgs/{org}/teams/{team_slug}/invitations"
-    ],
-    listReposInOrg: ["GET /orgs/{org}/teams/{team_slug}/repos"],
-    removeMembershipForUserInOrg: [
-      "DELETE /orgs/{org}/teams/{team_slug}/memberships/{username}"
-    ],
-    removeRepoInOrg: [
-      "DELETE /orgs/{org}/teams/{team_slug}/repos/{owner}/{repo}"
-    ],
-    updateDiscussionCommentInOrg: [
-      "PATCH /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}"
-    ],
-    updateDiscussionInOrg: [
-      "PATCH /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}"
-    ],
-    updateInOrg: ["PATCH /orgs/{org}/teams/{team_slug}"]
-  },
-  users: {
-    addEmailForAuthenticated: [
-      "POST /user/emails",
-      {},
-      { renamed: ["users", "addEmailForAuthenticatedUser"] }
-    ],
-    addEmailForAuthenticatedUser: ["POST /user/emails"],
-    addSocialAccountForAuthenticatedUser: ["POST /user/social_accounts"],
-    block: ["PUT /user/blocks/{username}"],
-    checkBlocked: ["GET /user/blocks/{username}"],
-    checkFollowingForUser: ["GET /users/{username}/following/{target_user}"],
-    checkPersonIsFollowedByAuthenticated: ["GET /user/following/{username}"],
-    createGpgKeyForAuthenticated: [
-      "POST /user/gpg_keys",
-      {},
-      { renamed: ["users", "createGpgKeyForAuthenticatedUser"] }
-    ],
-    createGpgKeyForAuthenticatedUser: ["POST /user/gpg_keys"],
-    createPublicSshKeyForAuthenticated: [
-      "POST /user/keys",
-      {},
-      { renamed: ["users", "createPublicSshKeyForAuthenticatedUser"] }
-    ],
-    createPublicSshKeyForAuthenticatedUser: ["POST /user/keys"],
-    createSshSigningKeyForAuthenticatedUser: ["POST /user/ssh_signing_keys"],
-    deleteAttestationsBulk: [
-      "POST /users/{username}/attestations/delete-request"
-    ],
-    deleteAttestationsById: [
-      "DELETE /users/{username}/attestations/{attestation_id}"
-    ],
-    deleteAttestationsBySubjectDigest: [
-      "DELETE /users/{username}/attestations/digest/{subject_digest}"
-    ],
-    deleteEmailForAuthenticated: [
-      "DELETE /user/emails",
-      {},
-      { renamed: ["users", "deleteEmailForAuthenticatedUser"] }
-    ],
-    deleteEmailForAuthenticatedUser: ["DELETE /user/emails"],
-    deleteGpgKeyForAuthenticated: [
-      "DELETE /user/gpg_keys/{gpg_key_id}",
-      {},
-      { renamed: ["users", "deleteGpgKeyForAuthenticatedUser"] }
-    ],
-    deleteGpgKeyForAuthenticatedUser: ["DELETE /user/gpg_keys/{gpg_key_id}"],
-    deletePublicSshKeyForAuthenticated: [
-      "DELETE /user/keys/{key_id}",
-      {},
-      { renamed: ["users", "deletePublicSshKeyForAuthenticatedUser"] }
-    ],
-    deletePublicSshKeyForAuthenticatedUser: ["DELETE /user/keys/{key_id}"],
-    deleteSocialAccountForAuthenticatedUser: ["DELETE /user/social_accounts"],
-    deleteSshSigningKeyForAuthenticatedUser: [
-      "DELETE /user/ssh_signing_keys/{ssh_signing_key_id}"
-    ],
-    follow: ["PUT /user/following/{username}"],
-    getAuthenticated: ["GET /user"],
-    getById: ["GET /user/{account_id}"],
-    getByUsername: ["GET /users/{username}"],
-    getContextForUser: ["GET /users/{username}/hovercard"],
-    getGpgKeyForAuthenticated: [
-      "GET /user/gpg_keys/{gpg_key_id}",
-      {},
-      { renamed: ["users", "getGpgKeyForAuthenticatedUser"] }
-    ],
-    getGpgKeyForAuthenticatedUser: ["GET /user/gpg_keys/{gpg_key_id}"],
-    getPublicSshKeyForAuthenticated: [
-      "GET /user/keys/{key_id}",
-      {},
-      { renamed: ["users", "getPublicSshKeyForAuthenticatedUser"] }
-    ],
-    getPublicSshKeyForAuthenticatedUser: ["GET /user/keys/{key_id}"],
-    getSshSigningKeyForAuthenticatedUser: [
-      "GET /user/ssh_signing_keys/{ssh_signing_key_id}"
-    ],
-    list: ["GET /users"],
-    listAttestations: ["GET /users/{username}/attestations/{subject_digest}"],
-    listAttestationsBulk: [
-      "POST /users/{username}/attestations/bulk-list{?per_page,before,after}"
-    ],
-    listBlockedByAuthenticated: [
-      "GET /user/blocks",
-      {},
-      { renamed: ["users", "listBlockedByAuthenticatedUser"] }
-    ],
-    listBlockedByAuthenticatedUser: ["GET /user/blocks"],
-    listEmailsForAuthenticated: [
-      "GET /user/emails",
-      {},
-      { renamed: ["users", "listEmailsForAuthenticatedUser"] }
-    ],
-    listEmailsForAuthenticatedUser: ["GET /user/emails"],
-    listFollowedByAuthenticated: [
-      "GET /user/following",
-      {},
-      { renamed: ["users", "listFollowedByAuthenticatedUser"] }
-    ],
-    listFollowedByAuthenticatedUser: ["GET /user/following"],
-    listFollowersForAuthenticatedUser: ["GET /user/followers"],
-    listFollowersForUser: ["GET /users/{username}/followers"],
-    listFollowingForUser: ["GET /users/{username}/following"],
-    listGpgKeysForAuthenticated: [
-      "GET /user/gpg_keys",
-      {},
-      { renamed: ["users", "listGpgKeysForAuthenticatedUser"] }
-    ],
-    listGpgKeysForAuthenticatedUser: ["GET /user/gpg_keys"],
-    listGpgKeysForUser: ["GET /users/{username}/gpg_keys"],
-    listPublicEmailsForAuthenticated: [
-      "GET /user/public_emails",
-      {},
-      { renamed: ["users", "listPublicEmailsForAuthenticatedUser"] }
-    ],
-    listPublicEmailsForAuthenticatedUser: ["GET /user/public_emails"],
-    listPublicKeysForUser: ["GET /users/{username}/keys"],
-    listPublicSshKeysForAuthenticated: [
-      "GET /user/keys",
-      {},
-      { renamed: ["users", "listPublicSshKeysForAuthenticatedUser"] }
-    ],
-    listPublicSshKeysForAuthenticatedUser: ["GET /user/keys"],
-    listSocialAccountsForAuthenticatedUser: ["GET /user/social_accounts"],
-    listSocialAccountsForUser: ["GET /users/{username}/social_accounts"],
-    listSshSigningKeysForAuthenticatedUser: ["GET /user/ssh_signing_keys"],
-    listSshSigningKeysForUser: ["GET /users/{username}/ssh_signing_keys"],
-    setPrimaryEmailVisibilityForAuthenticated: [
-      "PATCH /user/email/visibility",
-      {},
-      { renamed: ["users", "setPrimaryEmailVisibilityForAuthenticatedUser"] }
-    ],
-    setPrimaryEmailVisibilityForAuthenticatedUser: [
-      "PATCH /user/email/visibility"
-    ],
-    unblock: ["DELETE /user/blocks/{username}"],
-    unfollow: ["DELETE /user/following/{username}"],
-    updateAuthenticated: ["PATCH /user"]
-  }
-};
-var endpoints_default = Endpoints;
-
-// node_modules/.pnpm/@octokit+plugin-rest-endpoint-methods@17.0.0_@octokit+core@7.0.8/node_modules/@octokit/plugin-rest-endpoint-methods/dist-src/endpoints-to-methods.js
-var endpointMethodsMap = /* @__PURE__ */ new Map();
-for (const [scope, endpoints] of Object.entries(endpoints_default)) {
-  for (const [methodName, endpoint2] of Object.entries(endpoints)) {
-    const [route, defaults2, decorations] = endpoint2;
-    const [method, url] = route.split(/ /);
-    const endpointDefaults = Object.assign(
-      {
-        method,
-        url
-      },
-      defaults2
-    );
-    if (!endpointMethodsMap.has(scope)) {
-      endpointMethodsMap.set(scope, /* @__PURE__ */ new Map());
-    }
-    endpointMethodsMap.get(scope).set(methodName, {
-      scope,
-      methodName,
-      endpointDefaults,
-      decorations
-    });
-  }
-}
-var handler = {
-  has({ scope }, methodName) {
-    return endpointMethodsMap.get(scope).has(methodName);
-  },
-  getOwnPropertyDescriptor(target, methodName) {
-    return {
-      value: this.get(target, methodName),
-      // ensures method is in the cache
-      configurable: true,
-      writable: true,
-      enumerable: true
-    };
-  },
-  defineProperty(target, methodName, descriptor) {
-    Object.defineProperty(target.cache, methodName, descriptor);
-    return true;
-  },
-  deleteProperty(target, methodName) {
-    delete target.cache[methodName];
-    return true;
-  },
-  ownKeys({ scope }) {
-    return [...endpointMethodsMap.get(scope).keys()];
-  },
-  set(target, methodName, value) {
-    return target.cache[methodName] = value;
-  },
-  get({ octokit, scope, cache }, methodName) {
-    if (cache[methodName]) {
-      return cache[methodName];
-    }
-    const method = endpointMethodsMap.get(scope).get(methodName);
-    if (!method) {
-      return void 0;
-    }
-    const { endpointDefaults, decorations } = method;
-    if (decorations) {
-      cache[methodName] = decorate(
-        octokit,
-        scope,
-        methodName,
-        endpointDefaults,
-        decorations
-      );
-    } else {
-      cache[methodName] = octokit.request.defaults(endpointDefaults);
-    }
-    return cache[methodName];
-  }
-};
-function endpointsToMethods(octokit) {
-  const newMethods = {};
-  for (const scope of endpointMethodsMap.keys()) {
-    newMethods[scope] = new Proxy({ octokit, scope, cache: {} }, handler);
-  }
-  return newMethods;
-}
-function decorate(octokit, scope, methodName, defaults2, decorations) {
-  const requestWithDefaults = octokit.request.defaults(defaults2);
-  function withDecorations(...args) {
-    let options = requestWithDefaults.endpoint.merge(...args);
-    if (decorations.mapToData) {
-      options = Object.assign({}, options, {
-        data: options[decorations.mapToData],
-        [decorations.mapToData]: void 0
-      });
-      return requestWithDefaults(options);
-    }
-    if (decorations.renamed) {
-      const [newScope, newMethodName] = decorations.renamed;
-      octokit.log.warn(
-        `octokit.${scope}.${methodName}() has been renamed to octokit.${newScope}.${newMethodName}()`
-      );
-    }
-    if (decorations.deprecated) {
-      octokit.log.warn(decorations.deprecated);
-    }
-    if (decorations.renamedParameters) {
-      const options2 = requestWithDefaults.endpoint.merge(...args);
-      for (const [name, alias] of Object.entries(
-        decorations.renamedParameters
-      )) {
-        if (name in options2) {
-          octokit.log.warn(
-            `"${name}" parameter is deprecated for "octokit.${scope}.${methodName}()". Use "${alias}" instead`
-          );
-          if (!(alias in options2)) {
-            options2[alias] = options2[name];
-          }
-          delete options2[name];
-        }
-      }
-      return requestWithDefaults(options2);
-    }
-    return requestWithDefaults(...args);
-  }
-  return Object.assign(withDecorations, requestWithDefaults);
-}
-
-// node_modules/.pnpm/@octokit+plugin-rest-endpoint-methods@17.0.0_@octokit+core@7.0.8/node_modules/@octokit/plugin-rest-endpoint-methods/dist-src/index.js
-function restEndpointMethods(octokit) {
-  const api = endpointsToMethods(octokit);
-  return {
-    rest: api
-  };
-}
-restEndpointMethods.VERSION = VERSION5;
-function legacyRestEndpointMethods(octokit) {
-  const api = endpointsToMethods(octokit);
-  return {
-    ...api,
-    rest: api
-  };
-}
-legacyRestEndpointMethods.VERSION = VERSION5;
-
-// node_modules/.pnpm/@octokit+plugin-paginate-rest@14.0.0_@octokit+core@7.0.8/node_modules/@octokit/plugin-paginate-rest/dist-bundle/index.js
-var VERSION6 = "0.0.0-development";
-function normalizePaginatedListResponse(response) {
-  if (!response.data) {
-    return {
-      ...response,
-      data: []
+      prBody: guidance
     };
   }
-  const responseNeedsNormalization = ("total_count" in response.data || "total_commits" in response.data) && !("url" in response.data);
-  if (!responseNeedsNormalization) return response;
-  const incompleteResults = response.data.incomplete_results;
-  const repositorySelection = response.data.repository_selection;
-  const totalCount = response.data.total_count;
-  const totalCommits = response.data.total_commits;
-  delete response.data.incomplete_results;
-  delete response.data.repository_selection;
-  delete response.data.total_count;
-  delete response.data.total_commits;
-  const namespaceKey = Object.keys(response.data)[0];
-  const data = response.data[namespaceKey];
-  response.data = data;
-  if (typeof incompleteResults !== "undefined") {
-    response.data.incomplete_results = incompleteResults;
-  }
-  if (typeof repositorySelection !== "undefined") {
-    response.data.repository_selection = repositorySelection;
-  }
-  response.data.total_count = totalCount;
-  response.data.total_commits = totalCommits;
-  return response;
-}
-function iterator(octokit, route, parameters) {
-  const options = typeof route === "function" ? route.endpoint(parameters) : octokit.request.endpoint(route, parameters);
-  const requestMethod = typeof route === "function" ? route : octokit.request;
-  const method = options.method;
-  const headers = options.headers;
-  let url = options.url;
-  return {
-    [Symbol.asyncIterator]: () => ({
-      async next() {
-        if (!url) return { done: true };
-        try {
-          const response = await requestMethod({ method, url, headers });
-          const normalizedResponse = normalizePaginatedListResponse(response);
-          url = ((normalizedResponse.headers.link || "").match(
-            /<([^<>]+)>;\s*rel="next"/
-          ) || [])[1];
-          if (!url && "total_commits" in normalizedResponse.data) {
-            const parsedUrl = new URL(normalizedResponse.url);
-            const params = parsedUrl.searchParams;
-            const page = parseInt(params.get("page") || "1", 10);
-            const per_page = parseInt(params.get("per_page") || "250", 10);
-            if (page * per_page < normalizedResponse.data.total_commits) {
-              params.set("page", String(page + 1));
-              url = parsedUrl.toString();
-            }
-          }
-          return { value: normalizedResponse };
-        } catch (error2) {
-          if (error2.status !== 409) throw error2;
-          url = "";
-          return {
-            value: {
-              status: 200,
-              headers: {},
-              data: []
-            }
-          };
-        }
-      }
-    })
-  };
-}
-function paginate(octokit, route, parameters, mapFn) {
-  if (typeof parameters === "function") {
-    mapFn = parameters;
-    parameters = void 0;
-  }
-  return gather(
-    octokit,
-    [],
-    iterator(octokit, route, parameters)[Symbol.asyncIterator](),
-    mapFn
-  );
-}
-function gather(octokit, results, iterator2, mapFn) {
-  return iterator2.next().then((result) => {
-    if (result.done) {
-      return results;
-    }
-    let earlyExit = false;
-    function done() {
-      earlyExit = true;
-    }
-    results = results.concat(
-      mapFn ? mapFn(result.value, done) : result.value.data
-    );
-    if (earlyExit) {
-      return results;
-    }
-    return gather(octokit, results, iterator2, mapFn);
-  });
-}
-var composePaginateRest = Object.assign(paginate, {
-  iterator
-});
-function paginateRest(octokit) {
-  return {
-    paginate: Object.assign(paginate.bind(null, octokit), {
-      iterator: iterator.bind(null, octokit)
-    })
-  };
-}
-paginateRest.VERSION = VERSION6;
-
-// node_modules/.pnpm/@actions+github@9.1.1/node_modules/@actions/github/lib/utils.js
-var context = new Context();
-var baseUrl = getApiBaseUrl();
-var defaults = {
-  baseUrl,
-  request: {
-    agent: getProxyAgent(baseUrl),
-    fetch: getProxyFetch(baseUrl)
-  }
-};
-var GitHub = Octokit.plugin(restEndpointMethods, paginateRest).defaults(defaults);
-function getOctokitOptions(token, options) {
-  const opts = Object.assign({}, options || {});
-  const auth2 = getAuthString(token, opts);
-  if (auth2) {
-    opts.auth = auth2;
-  }
-  const userAgent2 = getUserAgentWithOrchestrationId(opts.userAgent);
-  if (userAgent2) {
-    opts.userAgent = userAgent2;
-  }
-  return opts;
-}
-
-// node_modules/.pnpm/@actions+github@9.1.1/node_modules/@actions/github/lib/github.js
-var context2 = new Context();
-function getOctokit(token, options, ...additionalPlugins) {
-  const GitHubWithPlugins = GitHub.plugin(...additionalPlugins);
-  return new GitHubWithPlugins(getOctokitOptions(token, options));
-}
-
-// packages/adapter/conference-hall-proposal-source/src/proposal-export-parser.ts
-var ProposalExportParser = class _ProposalExportParser {
-  static parse(value, event) {
-    const root = _ProposalExportParser.object(value, "export");
-    if (!Array.isArray(root.proposals) || root.proposals.length > 1e4)
-      throw _ProposalExportParser.invalid("proposals");
-    const speakers = /* @__PURE__ */ new Map();
-    const ids = /* @__PURE__ */ new Set();
-    const proposals = root.proposals.map((raw, index) => {
-      const path = `proposals[${index}]`;
-      const proposal = _ProposalExportParser.object(raw, path);
-      const id = _ProposalExportParser.id(proposal.id, `${path}.id`);
-      if (ids.has(id)) throw _ProposalExportParser.invalid(`${path}.id`);
-      if (!Array.isArray(proposal.speakers) || proposal.speakers.length === 0)
-        throw _ProposalExportParser.invalid(`${path}.speakers`);
-      ids.add(id);
-      const speakerIds = proposal.speakers.map((item, speakerIndex) => {
-        const speakerPath = `${path}.speakers[${speakerIndex}]`;
-        const speaker = _ProposalExportParser.speaker(item, speakerPath);
-        const existing = speakers.get(speaker.id);
-        if (existing && !SourceSpeakerEquality.equal(existing, speaker))
-          throw _ProposalExportParser.invalid(speakerPath);
-        speakers.set(speaker.id, speaker);
-        return speaker.id;
-      });
+  diagnostic(error2) {
+    if (error2 instanceof SpeakerCatalogHistoryError)
       return {
-        id,
-        number: _ProposalExportParser.number(
-          proposal.proposalNumber,
-          `${path}.proposalNumber`
-        ),
-        title: _ProposalExportParser.text(proposal.title, `${path}.title`),
-        abstract: _ProposalExportParser.text(
-          proposal.abstract,
-          `${path}.abstract`
-        ),
-        accepted: proposal.deliberationStatus === "ACCEPTED" && (proposal.confirmationStatus == null || proposal.confirmationStatus === "PENDING" || proposal.confirmationStatus === "CONFIRMED"),
-        languages: _ProposalExportParser.strings(
-          proposal.languages,
-          `${path}.languages`
-        ),
-        formats: _ProposalExportParser.strings(
-          proposal.formats,
-          `${path}.formats`
-        ),
-        speakerIds: [...new Set(speakerIds)]
+        code: "speaker-sync.history-unavailable",
+        severity: "error",
+        message: this.collaborators.createActionMessages().t("diagnostic.speaker-sync.history-unavailable")
       };
-    });
-    return {
-      provider: "conference-hall",
-      event,
-      speakers: [...speakers.values()],
-      proposals
-    };
-  }
-  static speaker(value, path) {
-    const speaker = _ProposalExportParser.object(value, path);
-    const email = _ProposalExportParser.text(speaker.email, `${path}.email`);
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-      throw _ProposalExportParser.invalid(`${path}.email`);
-    return {
-      id: _ProposalExportParser.id(speaker.id, `${path}.id`),
-      displayName: _ProposalExportParser.text(speaker.name, `${path}.name`),
-      email,
-      ..."company" in speaker ? {
-        company: _ProposalExportParser.optionalText(
-          speaker.company,
-          `${path}.company`
-        )
-      } : {},
-      ..._ProposalExportParser.picture(speaker)
-    };
-  }
-  static number(value, path) {
-    if (value === void 0 || value === null) return void 0;
-    if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 1)
-      throw _ProposalExportParser.invalid(path);
-    return value;
-  }
-  static picture(speaker) {
-    if (!("picture" in speaker)) return {};
-    if (speaker.picture === null || speaker.picture === "")
-      return { pictureUrl: null };
-    if (typeof speaker.picture !== "string" || speaker.picture.length > 2048)
-      return {};
-    try {
-      const url = new URL(speaker.picture);
-      return url.protocol === "https:" && !url.username && !url.password ? { pictureUrl: url.href } : {};
-    } catch {
-      return {};
-    }
-  }
-  static optionalText(value, path) {
-    if (value === null || value === "") return null;
-    return _ProposalExportParser.text(value, path);
-  }
-  static strings(value, path) {
-    if (!Array.isArray(value) || value.length > 100)
-      throw _ProposalExportParser.invalid(path);
-    return value.map(
-      (item, index) => _ProposalExportParser.text(item, `${path}[${index}]`)
-    );
-  }
-  static text(value, path) {
-    if (typeof value !== "string" || !value.trim() || value.length > 3e4)
-      throw _ProposalExportParser.invalid(path);
-    return value.trim();
-  }
-  static id(value, path) {
-    const id = _ProposalExportParser.text(value, path);
-    if (!/^[a-zA-Z0-9_-]{1,200}$/.test(id))
-      throw _ProposalExportParser.invalid(path);
-    return id;
-  }
-  static invalid(field) {
-    return new ProposalSourceError("invalid", void 0, {
-      reason: "schema",
+    const source = error2 instanceof ProposalSourceError ? error2 : void 0;
+    const context3 = source?.context;
+    const reason = context3?.reason ?? source?.code ?? "unexpected";
+    const status = context3?.status;
+    const kind = reason === "http" && (status === 401 || status === 403) ? "authentication" : reason === "http" && status === 404 ? "event-not-found" : reason;
+    const code = `speaker-sync.${kind}`;
+    const field = context3?.field;
+    const safeField = field && /^(?:export|proposals(?:\[\d+\])?(?:\.(?:id|proposalNumber|title|abstract|speakers|email|name|company|languages|formats)(?:\[\d+\])?)*|speakers\[\d+\])$/.test(
       field
+    ) ? field : void 0;
+    return {
+      code,
+      severity: "error",
+      message: this.collaborators.createActionMessages().t(`diagnostic.${code}`),
+      field: Number.isInteger(status) && Number(status) >= 100 && Number(status) <= 599 ? `HTTP ${status}` : safeField
+    };
+  }
+};
+
+// packages/runtime/github-actions/src/dependency-composition.ts
+var GithubActionsComposition = class {
+  actionFailurePresenter() {
+    return new ActionFailurePresenter();
+  }
+  actionMessages(...args) {
+    return new ActionMessages(
+      { localeResolver: new LocalizationComposition().localeResolver() },
+      ...args
+    );
+  }
+  actionOutput() {
+    return new ActionOutput();
+  }
+  actionReport() {
+    return new ActionReport({
+      createActionMessages: (...args) => this.actionMessages(...args)
     });
   }
-  static object(value, path) {
-    if (!value || typeof value !== "object" || Array.isArray(value))
-      throw _ProposalExportParser.invalid(path);
-    return value;
+  actionRunner() {
+    return new ActionRunner({
+      diagnosticPolicy: new JourneyPolicyComposition().diagnosticPolicy(),
+      actionFailurePresenter: this.actionFailurePresenter(),
+      actionReport: this.actionReport(),
+      actionOutput: this.actionOutput(),
+      createActionMessages: (...args) => this.actionMessages(...args)
+    });
+  }
+  assetContentConfiguration() {
+    return new AssetContentConfiguration({
+      runtimeInput: this.runtimeInput(),
+      contentContractPolicy: new PublicationDomainComposition().contentContractPolicy(),
+      assetRenderConfiguration: this.assetRenderConfiguration()
+    });
+  }
+  assetDateFormatter(...args) {
+    return new AssetDateFormatter(...args);
+  }
+  assetMessages(...args) {
+    return new AssetMessages(
+      { localeResolver: new LocalizationComposition().localeResolver() },
+      ...args
+    );
+  }
+  assetRenderConfiguration() {
+    return new AssetRenderConfiguration({
+      contentContractPolicy: new PublicationDomainComposition().contentContractPolicy(),
+      runtimeInput: this.runtimeInput()
+    });
+  }
+  assetRenderPresenterImpl(...args) {
+    return new AssetRenderPresenterImpl(
+      {
+        createAssetMessages: (...args2) => this.assetMessages(...args2),
+        createAssetDateFormatter: (...args2) => this.assetDateFormatter(...args2)
+      },
+      ...args
+    );
+  }
+  attentionStageInput() {
+    return new AttentionStageInput();
+  }
+  attentionStages() {
+    return new AttentionStages({
+      attentionStageEvaluation: new JourneyPolicyComposition().attentionStageEvaluation(),
+      attentionStageInput: this.attentionStageInput()
+    });
+  }
+  communicationInput() {
+    return new CommunicationInput({
+      conferenceHallInput: this.conferenceHallInput()
+    });
+  }
+  conferenceHallInput() {
+    return new ConferenceHallInput();
+  }
+  meetupPublicationConfiguration() {
+    return new MeetupPublicationConfiguration({
+      runtimeInput: this.runtimeInput(),
+      scheduledEventPolicy: new PublicationDomainComposition().scheduledEventPolicy()
+    });
+  }
+  organizerFeedback(...args) {
+    return new OrganizerFeedback(
+      {
+        attentionStageInput: this.attentionStageInput(),
+        createReconcileOrganizerFeedback: (...args2) => new JourneyComposition().reconcileOrganizerFeedback(...args2)
+      },
+      ...args
+    );
+  }
+  referentialActionReport() {
+    return new ReferentialActionReport({
+      createActionMessages: (...args) => this.actionMessages(...args)
+    });
+  }
+  runtimeInput() {
+    return new RuntimeInput();
+  }
+  speakerSyncFailureReport() {
+    return new SpeakerSyncFailureReport({
+      createActionMessages: (...args) => this.actionMessages(...args)
+    });
   }
 };
 
 // packages/adapter/conference-hall-proposal-source/src/conference-hall-proposal-source.ts
 var ConferenceHallProposalSource = class {
-  constructor(event, apiKey, request2 = fetch, now2 = Date.now) {
+  constructor(collaborators, event, apiKey, request2 = fetch, now2 = Date.now) {
+    this.collaborators = collaborators;
     this.event = event;
     this.apiKey = apiKey;
     this.request = request2;
     this.now = now2;
   }
+  collaborators;
   event;
   apiKey;
   request;
@@ -36786,7 +39877,7 @@ var ConferenceHallProposalSource = class {
     const speakers = /* @__PURE__ */ new Map();
     for (const speaker of [...active.speakers, ...archived.speakers]) {
       const existing = speakers.get(speaker.id);
-      if (existing && !SourceSpeakerEquality.equal(existing, speaker))
+      if (existing && !this.collaborators.sourceSpeakerEquality.equal(existing, speaker))
         throw new ProposalSourceError("conflict");
       speakers.set(speaker.id, speaker);
     }
@@ -36816,7 +39907,7 @@ var ConferenceHallProposalSource = class {
           status: response.status
         });
       }
-      return ProposalExportParser.parse(
+      return this.collaborators.proposalExportParser.parse(
         await this.readJson(response),
         this.event
       );
@@ -36871,9 +39962,274 @@ var ConferenceHallProposalSource = class {
   }
 };
 
+// packages/adapter/conference-hall-proposal-source/src/proposal-export-parser.ts
+var ProposalExportParser = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  parse(value, event) {
+    const root = this.object(value, "export");
+    if (!Array.isArray(root.proposals) || root.proposals.length > 1e4)
+      throw this.invalid("proposals");
+    const speakers = /* @__PURE__ */ new Map();
+    const ids = /* @__PURE__ */ new Set();
+    const proposals = root.proposals.map((raw, index) => {
+      const path = `proposals[${index}]`;
+      const proposal = this.object(raw, path);
+      const id = this.id(proposal.id, `${path}.id`);
+      if (ids.has(id)) throw this.invalid(`${path}.id`);
+      if (!Array.isArray(proposal.speakers) || proposal.speakers.length === 0)
+        throw this.invalid(`${path}.speakers`);
+      ids.add(id);
+      const speakerIds = proposal.speakers.map((item, speakerIndex) => {
+        const speakerPath = `${path}.speakers[${speakerIndex}]`;
+        const speaker = this.speaker(item, speakerPath);
+        const existing = speakers.get(speaker.id);
+        if (existing && !this.collaborators.sourceSpeakerEquality.equal(existing, speaker))
+          throw this.invalid(speakerPath);
+        speakers.set(speaker.id, speaker);
+        return speaker.id;
+      });
+      return {
+        id,
+        number: this.number(proposal.proposalNumber, `${path}.proposalNumber`),
+        title: this.text(proposal.title, `${path}.title`),
+        abstract: this.text(proposal.abstract, `${path}.abstract`),
+        accepted: proposal.deliberationStatus === "ACCEPTED" && (proposal.confirmationStatus == null || proposal.confirmationStatus === "PENDING" || proposal.confirmationStatus === "CONFIRMED"),
+        languages: this.strings(proposal.languages, `${path}.languages`),
+        formats: this.strings(proposal.formats, `${path}.formats`),
+        speakerIds: [...new Set(speakerIds)]
+      };
+    });
+    return {
+      provider: "conference-hall",
+      event,
+      speakers: [...speakers.values()],
+      proposals
+    };
+  }
+  speaker(value, path) {
+    const speaker = this.object(value, path);
+    const email = this.text(speaker.email, `${path}.email`);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      throw this.invalid(`${path}.email`);
+    return {
+      id: this.id(speaker.id, `${path}.id`),
+      displayName: this.text(speaker.name, `${path}.name`),
+      email,
+      ..."company" in speaker ? {
+        company: this.optionalText(speaker.company, `${path}.company`)
+      } : {},
+      ...this.picture(speaker)
+    };
+  }
+  number(value, path) {
+    if (value === void 0 || value === null) return void 0;
+    if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 1)
+      throw this.invalid(path);
+    return value;
+  }
+  picture(speaker) {
+    if (!("picture" in speaker)) return {};
+    if (speaker.picture === null || speaker.picture === "")
+      return { pictureUrl: null };
+    if (typeof speaker.picture !== "string" || speaker.picture.length > 2048)
+      return {};
+    try {
+      const url = new URL(speaker.picture);
+      return url.protocol === "https:" && !url.username && !url.password ? { pictureUrl: url.href } : {};
+    } catch {
+      return {};
+    }
+  }
+  optionalText(value, path) {
+    if (value === null || value === "") return null;
+    return this.text(value, path);
+  }
+  strings(value, path) {
+    if (!Array.isArray(value) || value.length > 100) throw this.invalid(path);
+    return value.map((item, index) => this.text(item, `${path}[${index}]`));
+  }
+  text(value, path) {
+    if (typeof value !== "string" || !value.trim() || value.length > 3e4)
+      throw this.invalid(path);
+    return value.trim();
+  }
+  id(value, path) {
+    const id = this.text(value, path);
+    if (!/^[a-zA-Z0-9_-]{1,200}$/.test(id)) throw this.invalid(path);
+    return id;
+  }
+  invalid(field) {
+    return new ProposalSourceError("invalid", void 0, {
+      reason: "schema",
+      field
+    });
+  }
+  object(value, path) {
+    if (!value || typeof value !== "object" || Array.isArray(value))
+      throw this.invalid(path);
+    return value;
+  }
+};
+
+// packages/adapter/conference-hall-proposal-source/src/dependency-composition.ts
+var ConferenceHallProposalSourceComposition = class {
+  conferenceHallProposalSource(...args) {
+    return new ConferenceHallProposalSource(
+      {
+        sourceSpeakerEquality: new ReferentialDomainComposition().sourceSpeakerEquality(),
+        proposalExportParser: this.proposalExportParser()
+      },
+      ...args
+    );
+  }
+  proposalExportParser() {
+    return new ProposalExportParser({
+      sourceSpeakerEquality: new ReferentialDomainComposition().sourceSpeakerEquality()
+    });
+  }
+};
+
 // packages/adapter/csv-referential-repository/src/csv-referential-repository.ts
-import { readFile, realpath } from "node:fs/promises";
-import { isAbsolute, relative, resolve, sep as sep2 } from "node:path";
+import { readFile as readFile3, realpath } from "node:fs/promises";
+import { isAbsolute, relative, resolve, sep } from "node:path";
+var CsvReferentialRepository = class {
+  constructor(collaborators, options) {
+    this.collaborators = collaborators;
+    this.options = options;
+  }
+  collaborators;
+  options;
+  async load() {
+    const [hostsSource, speakersSource] = await Promise.all([
+      readFile3(
+        await this.localPath(
+          this.options.workspaceRoot,
+          this.options.hostsPath
+        ),
+        "utf8"
+      ),
+      readFile3(
+        await this.localPath(
+          this.options.workspaceRoot,
+          this.options.speakersPath
+        ),
+        "utf8"
+      )
+    ]);
+    return this.collaborators.csvReferentialCodec.decode(
+      hostsSource,
+      speakersSource,
+      this.options.hostsPath,
+      this.options.speakersPath
+    );
+  }
+  async localPath(rootInput, relativeInput) {
+    const root = await realpath(resolve(rootInput));
+    const absolute = resolve(root, relativeInput);
+    this.assertInside(root, absolute);
+    const resolved = await realpath(absolute);
+    this.assertInside(root, resolved);
+    return resolved;
+  }
+  assertInside(root, candidate) {
+    const child = relative(root, candidate);
+    if (isAbsolute(child) || child === ".." || child.startsWith(`..${sep}`)) {
+      throw new Error("Referential path must stay inside the checkout");
+    }
+  }
+};
+
+// packages/adapter/csv-referential-repository/src/csv-speaker-catalog-store.ts
+import { createHash as createHash3 } from "node:crypto";
+import { readFile as readFile4, writeFile as writeFile2 } from "node:fs/promises";
+import { join as join3 } from "node:path";
+var CsvSpeakerCatalogStore = class {
+  constructor(collaborators, root, history = collaborators.createSpeakerAllocationHistory(root)) {
+    this.collaborators = collaborators;
+    this.root = root;
+    this.history = history;
+  }
+  collaborators;
+  root;
+  history;
+  async read() {
+    const { csv, state, historicalIds } = await this.sources();
+    return {
+      entries: this.collaborators.speakerCatalogCsv.decode(csv),
+      reservedIds: state === void 0 ? historicalIds : this.collaborators.speakerAllocationStateCodec.decode(state),
+      revision: this.revision(csv, state, historicalIds)
+    };
+  }
+  async candidate(entries) {
+    const existing = await this.collaborators.createCsvReferentialRepository({
+      workspaceRoot: this.root,
+      hostsPath: "referentials/hosting.csv",
+      speakersPath: "referentials/speakers.csv"
+    }).load();
+    return {
+      hosts: existing.hosts,
+      speakers: entries.map(
+        (entry) => ({
+          speakerId: entry.id,
+          displayName: entry.displayName,
+          firstName: entry.firstName,
+          lastName: entry.lastName,
+          company: entry.company,
+          email: entry.email,
+          phone: entry.phone,
+          pictureUrl: entry.pictureUrl,
+          sourceProvider: entry.sourceIdentity?.provider,
+          sourceEvent: entry.sourceIdentity?.event,
+          sourceSpeakerId: entry.sourceIdentity?.speakerId
+        })
+      )
+    };
+  }
+  async save(original, entries, reservedIds) {
+    const current = await this.sources();
+    if (this.revision(current.csv, current.state, current.historicalIds) !== original.revision)
+      throw new ProposalSourceError("conflict");
+    const csv = this.collaborators.speakerCatalogCsv.encode(
+      current.csv,
+      entries
+    );
+    const stateText = this.collaborators.speakerAllocationStateCodec.encode(reservedIds);
+    if (csv === current.csv && stateText === current.state) return false;
+    await writeFile2(join3(this.root, "referentials/speakers.csv"), csv, {
+      mode: 384
+    });
+    await writeFile2(
+      join3(this.root, "referentials/speaker-sync-state.json"),
+      stateText,
+      { mode: 384 }
+    );
+    return true;
+  }
+  async sources() {
+    const csv = await readFile4(
+      join3(this.root, "referentials/speakers.csv"),
+      "utf8"
+    );
+    let state;
+    try {
+      state = await readFile4(
+        join3(this.root, "referentials/speaker-sync-state.json"),
+        "utf8"
+      );
+    } catch (error2) {
+      if (!(error2 instanceof Error) || !("code" in error2) || error2.code !== "ENOENT")
+        throw error2;
+    }
+    const historicalIds = state === void 0 ? await this.history.read() : [];
+    return { csv, state, historicalIds };
+  }
+  revision(csv, state, historicalIds) {
+    return createHash3("sha256").update(JSON.stringify([csv, state, historicalIds])).digest("hex");
+  }
+};
 
 // node_modules/.pnpm/csv-parse@7.0.3/node_modules/csv-parse/lib/api/CsvError.js
 var CsvError = class _CsvError extends Error {
@@ -38560,7 +41916,7 @@ var transform = function(original_options = {}) {
 };
 
 // node_modules/.pnpm/csv-parse@7.0.3/node_modules/csv-parse/lib/sync.js
-var parse4 = function(data, opts = {}) {
+var parse2 = function(data, opts = {}) {
   if (typeof data === "string") {
     data = Buffer.from(data);
   }
@@ -38580,40 +41936,40 @@ var parse4 = function(data, opts = {}) {
 };
 
 // packages/adapter/csv-referential-repository/src/csv-referential-codec.ts
-var CsvReferentialCodec = class _CsvReferentialCodec {
-  static decode(hostsSource, speakersSource, hostsPath, speakersPath) {
-    const hosts = _CsvReferentialCodec.parseRows(
-      hostsSource
-    ).map(({ row, line }) => ({
-      source: { path: hostsPath, line },
-      hostId: row.host_id,
-      displayName: row.name,
-      contactId: row.contact_id,
-      contactName: row.contact,
-      email: row.mail,
-      phone: row.phone || void 0,
-      address: row.address
-    }));
-    const speakers = _CsvReferentialCodec.parseRows(
-      speakersSource
-    ).map(({ row, line }) => ({
-      source: { path: speakersPath, line },
-      speakerId: row.speaker_id,
-      displayName: row.display_name,
-      pictureUrl: row.picture_url,
-      sourceProvider: row.source_provider,
-      sourceEvent: row.source_event,
-      sourceSpeakerId: row.source_speaker_id,
-      firstName: row.firstname,
-      lastName: row.lastname,
-      company: row.company,
-      email: row.mail,
-      phone: row.phone || void 0
-    }));
+var CsvReferentialCodec = class {
+  decode(hostsSource, speakersSource, hostsPath, speakersPath) {
+    const hosts = this.parseRows(hostsSource).map(
+      ({ row, line }) => ({
+        source: { path: hostsPath, line },
+        hostId: row.host_id,
+        displayName: row.name,
+        contactId: row.contact_id,
+        contactName: row.contact,
+        email: row.mail,
+        phone: row.phone || void 0,
+        address: row.address
+      })
+    );
+    const speakers = this.parseRows(speakersSource).map(
+      ({ row, line }) => ({
+        source: { path: speakersPath, line },
+        speakerId: row.speaker_id,
+        displayName: row.display_name,
+        pictureUrl: row.picture_url,
+        sourceProvider: row.source_provider,
+        sourceEvent: row.source_event,
+        sourceSpeakerId: row.source_speaker_id,
+        firstName: row.firstname,
+        lastName: row.lastname,
+        company: row.company,
+        email: row.mail,
+        phone: row.phone || void 0
+      })
+    );
     return { hosts, speakers };
   }
-  static parseRows(source) {
-    const records = parse4(source.replace(/\r\n?/g, "\n"), {
+  parseRows(source) {
+    const records = parse2(source.replace(/\r\n?/g, "\n"), {
       bom: true,
       columns: true,
       skip_empty_lines: true,
@@ -38623,82 +41979,32 @@ var CsvReferentialCodec = class _CsvReferentialCodec {
     });
     if (!Array.isArray(records)) throw new Error("Invalid CSV catalog records");
     return records.map((value) => {
-      if (!_CsvReferentialCodec.record(value))
-        throw new Error("Invalid CSV catalog record");
+      if (!this.record(value)) throw new Error("Invalid CSV catalog record");
       return {
         row: value.record,
         line: value.info.lines - (value.raw.trimStart().replace(/\n$/, "").match(/\n/g)?.length ?? 0)
       };
     });
   }
-  static record(value) {
-    if (!_CsvReferentialCodec.object(value)) return false;
-    return _CsvReferentialCodec.object(value.record) && Object.values(value.record).every((item) => typeof item === "string") && _CsvReferentialCodec.object(value.info) && typeof value.info.lines === "number" && Number.isSafeInteger(value.info.lines) && value.info.lines > 0 && typeof value.raw === "string";
+  record(value) {
+    if (!this.object(value)) return false;
+    return this.object(value.record) && Object.values(value.record).every((item) => typeof item === "string") && this.object(value.info) && typeof value.info.lines === "number" && Number.isSafeInteger(value.info.lines) && value.info.lines > 0 && typeof value.raw === "string";
   }
-  static object(value) {
+  object(value) {
     return value !== null && typeof value === "object" && !Array.isArray(value);
   }
 };
-
-// packages/adapter/csv-referential-repository/src/csv-referential-repository.ts
-var CsvReferentialRepository = class _CsvReferentialRepository {
-  constructor(options) {
-    this.options = options;
-  }
-  options;
-  async load() {
-    const [hostsSource, speakersSource] = await Promise.all([
-      readFile(
-        await _CsvReferentialRepository.localPath(
-          this.options.workspaceRoot,
-          this.options.hostsPath
-        ),
-        "utf8"
-      ),
-      readFile(
-        await _CsvReferentialRepository.localPath(
-          this.options.workspaceRoot,
-          this.options.speakersPath
-        ),
-        "utf8"
-      )
-    ]);
-    return CsvReferentialCodec.decode(
-      hostsSource,
-      speakersSource,
-      this.options.hostsPath,
-      this.options.speakersPath
-    );
-  }
-  static async localPath(rootInput, relativeInput) {
-    const root = await realpath(resolve(rootInput));
-    const absolute = resolve(root, relativeInput);
-    _CsvReferentialRepository.assertInside(root, absolute);
-    const resolved = await realpath(absolute);
-    _CsvReferentialRepository.assertInside(root, resolved);
-    return resolved;
-  }
-  static assertInside(root, candidate) {
-    const child = relative(root, candidate);
-    if (isAbsolute(child) || child === ".." || child.startsWith(`..${sep2}`)) {
-      throw new Error("Referential path must stay inside the checkout");
-    }
-  }
-};
-
-// packages/adapter/csv-referential-repository/src/csv-speaker-catalog-store.ts
-import { createHash } from "node:crypto";
-import { readFile as readFile2, writeFile as writeFile2 } from "node:fs/promises";
-import { join } from "node:path";
 
 // packages/adapter/csv-referential-repository/src/speaker-allocation-history.ts
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 var SpeakerAllocationHistory = class {
-  constructor(root, command = promisify(execFile)) {
+  constructor(collaborators, root, command = promisify(execFile)) {
+    this.collaborators = collaborators;
     this.root = root;
     this.command = command;
   }
+  collaborators;
   root;
   command;
   async read() {
@@ -38723,7 +42029,13 @@ var SpeakerAllocationHistory = class {
       );
       const words = history.stdout.match(/\b[\w-]+\b/g) ?? [];
       return [
-        ...new Set(words.filter(ReferentialIdentifiers.asSpeakerId))
+        ...new Set(
+          words.filter(
+            this.collaborators.referentialIdentifiers.asSpeakerId.bind(
+              this.collaborators.referentialIdentifiers
+            )
+          )
+        )
       ].sort();
     } catch {
       throw new SpeakerCatalogHistoryError();
@@ -38734,19 +42046,22 @@ var SpeakerAllocationHistory = class {
 // packages/adapter/csv-referential-repository/src/speaker-allocation-state-codec.ts
 var STATE_LINE_WIDTH = 80;
 var STATE_INDENT_WIDTH = 2;
-var SpeakerAllocationStateCodec = class _SpeakerAllocationStateCodec {
-  static decode(source) {
+var SpeakerAllocationStateCodec = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  decode(source) {
     let value;
     try {
       value = JSON.parse(source);
     } catch {
       throw new ProposalSourceError("invalid");
     }
-    if (!_SpeakerAllocationStateCodec.validState(value))
-      throw new ProposalSourceError("invalid");
+    if (!this.validState(value)) throw new ProposalSourceError("invalid");
     return [...value.reservedIds];
   }
-  static encode(reservedIds) {
+  encode(reservedIds) {
     const state = { version: 1, reservedIds };
     const text = `${JSON.stringify(state, null, "	")}
 `;
@@ -38760,12 +42075,12 @@ var SpeakerAllocationStateCodec = class _SpeakerAllocationStateCodec {
     );
     return text.replace(`	${property}${expanded}`, `	${property}${inline}`);
   }
-  static validState(value) {
+  validState(value) {
     if (!value || typeof value !== "object" || Array.isArray(value))
       return false;
     const state = value;
     return state.version === 1 && Array.isArray(state.reservedIds) && state.reservedIds.every(
-      (id) => typeof id === "string" && ReferentialIdentifiers.asSpeakerId(id) !== void 0
+      (id) => typeof id === "string" && this.collaborators.referentialIdentifiers.asSpeakerId(id) !== void 0
     );
   }
 };
@@ -38784,9 +42099,9 @@ var IMPORT_COLUMNS = [
   "source_event",
   "source_speaker_id"
 ];
-var SpeakerCatalogCsv = class _SpeakerCatalogCsv {
-  static decode(source) {
-    return _SpeakerCatalogCsv.document(source).rows.map((row) => ({
+var SpeakerCatalogCsv = class {
+  decode(source) {
+    return this.document(source).rows.map((row) => ({
       id: row.speaker_id ?? "",
       firstName: row.firstname ?? "",
       lastName: row.lastname ?? "",
@@ -38806,8 +42121,8 @@ var SpeakerCatalogCsv = class _SpeakerCatalogCsv {
       } : {}
     }));
   }
-  static encode(source, entries) {
-    const original = _SpeakerCatalogCsv.document(source);
+  encode(source, entries) {
+    const original = this.document(source);
     const columns = [.../* @__PURE__ */ new Set([...original.columns, ...IMPORT_COLUMNS])];
     const records = new Map(original.rows.map((row) => [row.speaker_id, row]));
     if (records.size !== original.rows.length || new Set(entries.map((entry) => entry.id)).size !== entries.length)
@@ -38832,11 +42147,11 @@ var SpeakerCatalogCsv = class _SpeakerCatalogCsv {
         (row) => columns.map((column) => row[column] ?? "")
       )
     ];
-    return `${lines.map((row) => row.map(_SpeakerCatalogCsv.escape).join(",")).join("\n")}
+    return `${lines.map((row) => row.map(this.escape.bind(this)).join(",")).join("\n")}
 `;
   }
-  static document(source) {
-    const parsed = parse4(source, {
+  document(source) {
+    const parsed = parse2(source, {
       bom: true,
       skip_empty_lines: true
     });
@@ -38858,95 +42173,218 @@ var SpeakerCatalogCsv = class _SpeakerCatalogCsv {
       )
     };
   }
-  static escape(value) {
+  escape(value) {
     return /[",\r\n]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value;
   }
 };
 
-// packages/adapter/csv-referential-repository/src/csv-speaker-catalog-store.ts
-var CsvSpeakerCatalogStore = class {
-  constructor(root, history = new SpeakerAllocationHistory(root)) {
-    this.root = root;
-    this.history = history;
+// packages/adapter/csv-referential-repository/src/dependency-composition.ts
+var CsvReferentialRepositoryComposition = class {
+  csvReferentialCodec() {
+    return new CsvReferentialCodec();
   }
-  root;
-  history;
-  async read() {
-    const { csv, state, historicalIds } = await this.sources();
-    return {
-      entries: SpeakerCatalogCsv.decode(csv),
-      reservedIds: state === void 0 ? historicalIds : SpeakerAllocationStateCodec.decode(state),
-      revision: this.revision(csv, state, historicalIds)
-    };
+  csvReferentialRepository(...args) {
+    return new CsvReferentialRepository(
+      { csvReferentialCodec: this.csvReferentialCodec() },
+      ...args
+    );
   }
-  async candidate(entries) {
-    const existing = await new CsvReferentialRepository({
-      workspaceRoot: this.root,
-      hostsPath: "referentials/hosting.csv",
-      speakersPath: "referentials/speakers.csv"
-    }).load();
-    return {
-      hosts: existing.hosts,
-      speakers: entries.map(
-        (entry) => ({
-          speakerId: entry.id,
-          displayName: entry.displayName,
-          firstName: entry.firstName,
-          lastName: entry.lastName,
-          company: entry.company,
-          email: entry.email,
-          phone: entry.phone,
-          pictureUrl: entry.pictureUrl,
-          sourceProvider: entry.sourceIdentity?.provider,
-          sourceEvent: entry.sourceIdentity?.event,
-          sourceSpeakerId: entry.sourceIdentity?.speakerId
-        })
-      )
-    };
+  csvSpeakerCatalogStore(...args) {
+    return new CsvSpeakerCatalogStore(
+      {
+        speakerCatalogCsv: this.speakerCatalogCsv(),
+        speakerAllocationStateCodec: this.speakerAllocationStateCodec(),
+        createSpeakerAllocationHistory: (...args2) => this.speakerAllocationHistory(...args2),
+        createCsvReferentialRepository: (...args2) => this.csvReferentialRepository(...args2)
+      },
+      ...args
+    );
   }
-  async save(original, entries, reservedIds) {
-    const current = await this.sources();
-    if (this.revision(current.csv, current.state, current.historicalIds) !== original.revision)
-      throw new ProposalSourceError("conflict");
-    const csv = SpeakerCatalogCsv.encode(current.csv, entries);
-    const stateText = SpeakerAllocationStateCodec.encode(reservedIds);
-    if (csv === current.csv && stateText === current.state) return false;
-    await writeFile2(join(this.root, "referentials/speakers.csv"), csv, {
-      mode: 384
+  speakerAllocationHistory(...args) {
+    return new SpeakerAllocationHistory(
+      {
+        referentialIdentifiers: new ReferentialDomainComposition().referentialIdentifiers()
+      },
+      ...args
+    );
+  }
+  speakerAllocationStateCodec() {
+    return new SpeakerAllocationStateCodec({
+      referentialIdentifiers: new ReferentialDomainComposition().referentialIdentifiers()
     });
-    await writeFile2(
-      join(this.root, "referentials/speaker-sync-state.json"),
-      stateText,
-      { mode: 384 }
-    );
-    return true;
   }
-  async sources() {
-    const csv = await readFile2(
-      join(this.root, "referentials/speakers.csv"),
-      "utf8"
-    );
-    let state;
-    try {
-      state = await readFile2(
-        join(this.root, "referentials/speaker-sync-state.json"),
-        "utf8"
-      );
-    } catch (error2) {
-      if (!(error2 instanceof Error) || !("code" in error2) || error2.code !== "ENOENT")
-        throw error2;
+  speakerCatalogCsv() {
+    return new SpeakerCatalogCsv();
+  }
+};
+
+// packages/adapter/yaml-issue-form-projection/src/i18n/messages.en.ts
+var EN_MESSAGES3 = {
+  "form.speakers.guidance": "Select speakers by copying one or more references into the agenda.",
+  "form.speakers.show": "Show available speaker references"
+};
+
+// packages/adapter/yaml-issue-form-projection/src/i18n/messages.fr.ts
+var FR_MESSAGES3 = {
+  "form.speakers.guidance": "S\xE9lectionnez les intervenants en copiant une ou plusieurs r\xE9f\xE9rences dans le programme.",
+  "form.speakers.show": "Afficher les r\xE9f\xE9rences des intervenants disponibles"
+};
+
+// packages/adapter/yaml-issue-form-projection/src/i18n/catalog.ts
+var CATALOGS3 = {
+  en: { ...EN_MESSAGES3 },
+  fr: { ...FR_MESSAGES3 }
+};
+
+// packages/adapter/yaml-issue-form-projection/src/i18n/issue-form-messages.ts
+var IssueFormMessages = class extends MessageLocalizer {
+  constructor(collaborators, locale = "en") {
+    super(collaborators, CATALOGS3, locale);
+  }
+};
+
+// packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-projection-contracts.ts
+var HOST_FIELD_ID = "hoster";
+var AVAILABLE_SPEAKERS_MARKER = "<!-- Available speakers -->";
+
+// packages/adapter/yaml-issue-form-projection/src/speaker-references-presenter.ts
+var SpeakerReferencesPresenter = class {
+  constructor(messages) {
+    this.messages = messages;
+  }
+  messages;
+  render(speakers) {
+    const references = speakers.map((speaker) => `- <code>${this.escapeHtml(speaker)}</code>`).join("\n");
+    return [
+      AVAILABLE_SPEAKERS_MARKER,
+      "",
+      this.messages.t("form.speakers.guidance"),
+      "",
+      "<details>",
+      `<summary>${this.messages.t("form.speakers.show")}</summary>`,
+      "",
+      references,
+      "",
+      "</details>"
+    ].join("\n");
+  }
+  escapeHtml(value) {
+    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+  }
+};
+
+// packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-document.ts
+var import_yaml = __toESM(require_dist(), 1);
+var YamlIssueFormDocument = class {
+  project(source, hostOptions, speakersMarkdown, occurrenceStatusFieldId) {
+    const document = (0, import_yaml.parseDocument)(source, {
+      strict: true,
+      uniqueKeys: true
+    });
+    if (document.errors.length > 0) {
+      throw new Error("Issue form is not valid YAML.");
     }
-    const historicalIds = state === void 0 ? await this.history.read() : [];
-    return { csv, state, historicalIds };
+    const issueForm = document.toJS({ maxAliasCount: 100 });
+    if (!this.isRecord(issueForm) || !Array.isArray(issueForm.body)) {
+      throw new Error("Issue form must contain a body array.");
+    }
+    const body = issueForm.body;
+    const hostIndex = this.findSingleFieldIndex(
+      body,
+      HOST_FIELD_ID,
+      "dropdown"
+    );
+    const speakersIndex = this.findSpeakersMarkdownIndex(body);
+    const statusIndex = this.findOptionalFieldIndex(
+      body,
+      occurrenceStatusFieldId
+    );
+    let changed = false;
+    if (!this.sameStringArray(this.fieldOptions(body[hostIndex]), hostOptions)) {
+      document.setIn(["body", hostIndex, "attributes", "options"], hostOptions);
+      changed = true;
+    }
+    if (speakersIndex !== void 0 && this.fieldValue(body[speakersIndex]) !== speakersMarkdown) {
+      document.setIn(
+        ["body", speakersIndex, "attributes", "value"],
+        speakersMarkdown
+      );
+      changed = true;
+    }
+    if (statusIndex !== void 0) {
+      document.deleteIn(["body", statusIndex]);
+      changed = true;
+    }
+    return { document, changed };
   }
-  revision(csv, state, historicalIds) {
-    return createHash("sha256").update(JSON.stringify([csv, state, historicalIds])).digest("hex");
+  findSingleFieldIndex(body, fieldId, expectedType) {
+    const indexes = body.flatMap(
+      (item, index2) => this.isRecord(item) && item.id === fieldId ? [index2] : []
+    );
+    if (indexes.length !== 1) {
+      throw new Error(`Issue form must contain exactly one ${fieldId} field.`);
+    }
+    const index = indexes[0];
+    const field = body[index];
+    if (!this.isRecord(field) || field.type !== expectedType) {
+      throw new Error(`Issue-form field ${fieldId} must be a ${expectedType}.`);
+    }
+    if (!this.isRecord(field.attributes)) {
+      throw new Error(`Issue-form field ${fieldId} must have attributes.`);
+    }
+    return index;
+  }
+  findOptionalFieldIndex(body, fieldId) {
+    const indexes = body.flatMap(
+      (item, index) => this.isRecord(item) && item.id === fieldId ? [index] : []
+    );
+    if (indexes.length > 1) {
+      throw new Error(`Issue form contains duplicate ${fieldId} fields.`);
+    }
+    return indexes[0];
+  }
+  findSpeakersMarkdownIndex(body) {
+    const indexes = body.flatMap((item, index) => {
+      if (!this.isRecord(item) || item.type !== "markdown") {
+        return [];
+      }
+      const value = this.fieldValue(item);
+      return value?.includes(AVAILABLE_SPEAKERS_MARKER) ? [index] : [];
+    });
+    if (indexes.length === 0 && this.findOptionalFieldIndex(body, "conference_hall_proposals") !== void 0) {
+      this.findSingleFieldIndex(body, "conference_hall_proposals", "textarea");
+      return void 0;
+    }
+    if (indexes.length !== 1) {
+      throw new Error(
+        "Issue form must contain exactly one Available speakers markdown block."
+      );
+    }
+    return indexes[0];
+  }
+  isRecord(value) {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+  }
+  fieldOptions(field) {
+    if (!this.isRecord(field) || !this.isRecord(field.attributes)) {
+      return void 0;
+    }
+    return field.attributes.options;
+  }
+  fieldValue(field) {
+    if (!this.isRecord(field) || !this.isRecord(field.attributes)) {
+      return void 0;
+    }
+    return typeof field.attributes.value === "string" ? field.attributes.value : void 0;
+  }
+  sameStringArray(actual, expected) {
+    return Array.isArray(actual) && actual.length === expected.length && actual.every((value, index) => value === expected[index]);
   }
 };
 
 // packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-projection.ts
-import { readFile as readFile3, realpath as realpath2, stat as stat2, writeFile as writeFile3 } from "node:fs/promises";
-import { isAbsolute as isAbsolute2, relative as relative2, resolve as resolve2, sep as sep3 } from "node:path";
+import { readFile as readFile5, realpath as realpath2, stat as stat2, writeFile as writeFile3 } from "node:fs/promises";
+import { isAbsolute as isAbsolute2, relative as relative2, resolve as resolve2, sep as sep2 } from "node:path";
 
 // node_modules/.pnpm/prettier@3.9.9/node_modules/prettier/plugins/yaml.mjs
 var yaml_exports = {};
@@ -46202,199 +49640,26 @@ async function Vi2(t7, e) {
 var Wi2 = de2(it2, 0);
 var $i2 = { parse: de2(du), formatAST: de2(Fu), formatDoc: de2(Eu), printToDoc: de2(Cu), printDocToString: de2(hu) };
 
-// packages/adapter/yaml-issue-form-projection/src/i18n/messages.en.ts
-var EN_MESSAGES2 = {
-  "form.speakers.guidance": "Select speakers by copying one or more references into the agenda.",
-  "form.speakers.show": "Show available speaker references"
-};
-
-// packages/adapter/yaml-issue-form-projection/src/i18n/messages.fr.ts
-var FR_MESSAGES2 = {
-  "form.speakers.guidance": "S\xE9lectionnez les intervenants en copiant une ou plusieurs r\xE9f\xE9rences dans le programme.",
-  "form.speakers.show": "Afficher les r\xE9f\xE9rences des intervenants disponibles"
-};
-
-// packages/adapter/yaml-issue-form-projection/src/i18n/catalog.ts
-var CATALOGS2 = {
-  en: { ...EN_MESSAGES2 },
-  fr: { ...FR_MESSAGES2 }
-};
-
-// packages/adapter/yaml-issue-form-projection/src/i18n/issue-form-messages.ts
-var IssueFormMessages = class extends MessageLocalizer {
-  constructor(locale = "en") {
-    super(CATALOGS2, locale);
-  }
-};
-
-// packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-projection-contracts.ts
-var HOST_FIELD_ID = "hoster";
-var AVAILABLE_SPEAKERS_MARKER = "<!-- Available speakers -->";
-
-// packages/adapter/yaml-issue-form-projection/src/speaker-references-presenter.ts
-var SpeakerReferencesPresenter = class _SpeakerReferencesPresenter {
-  constructor(messages) {
-    this.messages = messages;
-  }
-  messages;
-  render(speakers) {
-    const references = speakers.map(
-      (speaker) => `- <code>${_SpeakerReferencesPresenter.escapeHtml(speaker)}</code>`
-    ).join("\n");
-    return [
-      AVAILABLE_SPEAKERS_MARKER,
-      "",
-      this.messages.t("form.speakers.guidance"),
-      "",
-      "<details>",
-      `<summary>${this.messages.t("form.speakers.show")}</summary>`,
-      "",
-      references,
-      "",
-      "</details>"
-    ].join("\n");
-  }
-  static escapeHtml(value) {
-    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-  }
-};
-
-// packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-document.ts
-var import_yaml = __toESM(require_dist(), 1);
-var YamlIssueFormDocument = class _YamlIssueFormDocument {
-  static project(source, hostOptions, speakersMarkdown, occurrenceStatusFieldId) {
-    const document = (0, import_yaml.parseDocument)(source, {
-      strict: true,
-      uniqueKeys: true
-    });
-    if (document.errors.length > 0) {
-      throw new Error("Issue form is not valid YAML.");
-    }
-    const issueForm = document.toJS({ maxAliasCount: 100 });
-    if (!_YamlIssueFormDocument.isRecord(issueForm) || !Array.isArray(issueForm.body)) {
-      throw new Error("Issue form must contain a body array.");
-    }
-    const body = issueForm.body;
-    const hostIndex = _YamlIssueFormDocument.findSingleFieldIndex(
-      body,
-      HOST_FIELD_ID,
-      "dropdown"
-    );
-    const speakersIndex = _YamlIssueFormDocument.findSpeakersMarkdownIndex(body);
-    const statusIndex = _YamlIssueFormDocument.findOptionalFieldIndex(
-      body,
-      occurrenceStatusFieldId
-    );
-    let changed = false;
-    if (!_YamlIssueFormDocument.sameStringArray(
-      _YamlIssueFormDocument.fieldOptions(body[hostIndex]),
-      hostOptions
-    )) {
-      document.setIn(["body", hostIndex, "attributes", "options"], hostOptions);
-      changed = true;
-    }
-    if (speakersIndex !== void 0 && _YamlIssueFormDocument.fieldValue(body[speakersIndex]) !== speakersMarkdown) {
-      document.setIn(
-        ["body", speakersIndex, "attributes", "value"],
-        speakersMarkdown
-      );
-      changed = true;
-    }
-    if (statusIndex !== void 0) {
-      document.deleteIn(["body", statusIndex]);
-      changed = true;
-    }
-    return { document, changed };
-  }
-  static findSingleFieldIndex(body, fieldId, expectedType) {
-    const indexes = body.flatMap(
-      (item, index2) => _YamlIssueFormDocument.isRecord(item) && item.id === fieldId ? [index2] : []
-    );
-    if (indexes.length !== 1) {
-      throw new Error(`Issue form must contain exactly one ${fieldId} field.`);
-    }
-    const index = indexes[0];
-    const field = body[index];
-    if (!_YamlIssueFormDocument.isRecord(field) || field.type !== expectedType) {
-      throw new Error(`Issue-form field ${fieldId} must be a ${expectedType}.`);
-    }
-    if (!_YamlIssueFormDocument.isRecord(field.attributes)) {
-      throw new Error(`Issue-form field ${fieldId} must have attributes.`);
-    }
-    return index;
-  }
-  static findOptionalFieldIndex(body, fieldId) {
-    const indexes = body.flatMap(
-      (item, index) => _YamlIssueFormDocument.isRecord(item) && item.id === fieldId ? [index] : []
-    );
-    if (indexes.length > 1) {
-      throw new Error(`Issue form contains duplicate ${fieldId} fields.`);
-    }
-    return indexes[0];
-  }
-  static findSpeakersMarkdownIndex(body) {
-    const indexes = body.flatMap((item, index) => {
-      if (!_YamlIssueFormDocument.isRecord(item) || item.type !== "markdown") {
-        return [];
-      }
-      const value = _YamlIssueFormDocument.fieldValue(item);
-      return value?.includes(AVAILABLE_SPEAKERS_MARKER) ? [index] : [];
-    });
-    if (indexes.length === 0 && _YamlIssueFormDocument.findOptionalFieldIndex(
-      body,
-      "conference_hall_proposals"
-    ) !== void 0) {
-      _YamlIssueFormDocument.findSingleFieldIndex(
-        body,
-        "conference_hall_proposals",
-        "textarea"
-      );
-      return void 0;
-    }
-    if (indexes.length !== 1) {
-      throw new Error(
-        "Issue form must contain exactly one Available speakers markdown block."
-      );
-    }
-    return indexes[0];
-  }
-  static isRecord(value) {
-    return typeof value === "object" && value !== null && !Array.isArray(value);
-  }
-  static fieldOptions(field) {
-    if (!_YamlIssueFormDocument.isRecord(field) || !_YamlIssueFormDocument.isRecord(field.attributes)) {
-      return void 0;
-    }
-    return field.attributes.options;
-  }
-  static fieldValue(field) {
-    if (!_YamlIssueFormDocument.isRecord(field) || !_YamlIssueFormDocument.isRecord(field.attributes)) {
-      return void 0;
-    }
-    return typeof field.attributes.value === "string" ? field.attributes.value : void 0;
-  }
-  static sameStringArray(actual, expected) {
-    return Array.isArray(actual) && actual.length === expected.length && actual.every((value, index) => value === expected[index]);
-  }
-};
-
 // packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-projection.ts
 var YamlIssueFormProjection = class {
-  constructor(options) {
+  constructor(collaborators, options) {
+    this.collaborators = collaborators;
     this.options = options;
-    this.presenter = new SpeakerReferencesPresenter(
-      new IssueFormMessages(options.locale)
+    this.choices = this.collaborators.createProjectReferentialChoices();
+    this.presenter = this.collaborators.createSpeakerReferencesPresenter(
+      this.collaborators.createIssueFormMessages(options.locale)
     );
   }
+  collaborators;
   options;
   presenter;
-  choices = new ProjectReferentialChoices();
+  choices;
   async synchronize(input) {
     this.assertInput(input);
     const issueFormPath = await this.resolveIssueFormPath(input.issueFormPath);
-    const source = await readFile3(issueFormPath.absolutePath, "utf8");
+    const source = await readFile5(issueFormPath.absolutePath, "utf8");
     const projection = this.choices.execute(input.catalog);
-    const { changed, document } = YamlIssueFormDocument.project(
+    const { changed, document } = this.collaborators.yamlIssueFormDocument.project(
       source,
       projection.hostOptions,
       this.presenter.render(projection.speakerReferences),
@@ -46429,12 +49694,12 @@ var YamlIssueFormProjection = class {
     }
     return {
       absolutePath,
-      relativePath: relative2(root, candidate).split(sep3).join("/")
+      relativePath: relative2(root, candidate).split(sep2).join("/")
     };
   }
   assertInsideWorkspace(root, candidate) {
     const childPath = relative2(root, candidate);
-    if (isAbsolute2(childPath) || childPath === ".." || childPath.startsWith(`..${sep3}`) || childPath === "") {
+    if (isAbsolute2(childPath) || childPath === ".." || childPath.startsWith(`..${sep2}`) || childPath === "") {
       throw new Error("Issue-form path must stay inside the checkout.");
     }
   }
@@ -46457,84 +49722,4205 @@ var YamlIssueFormProjection = class {
   }
 };
 
-// packages/runtime/github-actions/src/conference-hall-input.ts
-var ConferenceHallInput = class _ConferenceHallInput {
-  static read() {
-    const conferenceHallApiKey = getInput("conference-hall-api-key", {
-      required: true
-    });
-    setSecret(conferenceHallApiKey);
-    return _ConferenceHallInput.validate({
-      conferenceHallEvent: getInput("conference-hall-event", {
-        required: true
-      }),
-      conferenceHallApiKey
-    });
+// packages/adapter/yaml-issue-form-projection/src/dependency-composition.ts
+var YamlIssueFormProjectionComposition = class {
+  issueFormMessages(...args) {
+    return new IssueFormMessages(
+      { localeResolver: new LocalizationComposition().localeResolver() },
+      ...args
+    );
   }
-  static validate(input) {
-    const conferenceHallEvent = input.conferenceHallEvent?.trim();
-    const conferenceHallApiKey = input.conferenceHallApiKey?.trim();
-    if (!conferenceHallEvent)
-      throw new Error("Input required and not supplied: conference-hall-event");
-    if (!conferenceHallApiKey)
-      throw new Error(
-        "Input required and not supplied: conference-hall-api-key"
-      );
-    return { conferenceHallEvent, conferenceHallApiKey };
+  speakerReferencesPresenter(...args) {
+    return new SpeakerReferencesPresenter(...args);
+  }
+  yamlIssueFormDocument() {
+    return new YamlIssueFormDocument();
+  }
+  yamlIssueFormProjection(...args) {
+    return new YamlIssueFormProjection(
+      {
+        yamlIssueFormDocument: this.yamlIssueFormDocument(),
+        createProjectReferentialChoices: (...args2) => new ReferentialDomainComposition().projectReferentialChoices(...args2),
+        createSpeakerReferencesPresenter: (...args2) => this.speakerReferencesPresenter(...args2),
+        createIssueFormMessages: (...args2) => this.issueFormMessages(...args2)
+      },
+      ...args
+    );
   }
 };
 
-// packages/runtime/github-actions/src/speaker-sync-failure-report.ts
-var SpeakerSyncFailureReport = class _SpeakerSyncFailureReport {
-  static create(error2, messages) {
-    const failure = error2 instanceof SpeakerSynchronizationError ? error2 : void 0;
-    const cause = failure?.cause ?? error2;
-    const diagnostics = failure?.diagnostics.length ? failure.diagnostics : [_SpeakerSyncFailureReport.diagnostic(cause)];
-    const stage = messages.t(
-      `report.speaker-sync.stage.${failure?.stage ?? "unknown"}`
-    );
-    const guidance = diagnostics.map(
-      (item) => `- ${item.field ? `${item.field}: ` : ""}${messages.diagnostic(item.code, item.message)}`
-    ).join("\n");
-    return {
-      report: {
-        details: [messages.t("report.speaker-sync.failed", { stage })],
-        diagnostics
-      },
-      prBody: guidance
-    };
+// node_modules/.pnpm/@actions+github@9.1.1/node_modules/@actions/github/lib/context.js
+import { readFileSync, existsSync as existsSync2 } from "fs";
+import { EOL as EOL5 } from "os";
+var Context = class {
+  /**
+   * Hydrate the context from the environment
+   */
+  constructor() {
+    var _a2, _b, _c;
+    this.payload = {};
+    if (process.env.GITHUB_EVENT_PATH) {
+      if (existsSync2(process.env.GITHUB_EVENT_PATH)) {
+        this.payload = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, { encoding: "utf8" }));
+      } else {
+        const path = process.env.GITHUB_EVENT_PATH;
+        process.stdout.write(`GITHUB_EVENT_PATH ${path} does not exist${EOL5}`);
+      }
+    }
+    this.eventName = process.env.GITHUB_EVENT_NAME;
+    this.sha = process.env.GITHUB_SHA;
+    this.ref = process.env.GITHUB_REF;
+    this.workflow = process.env.GITHUB_WORKFLOW;
+    this.action = process.env.GITHUB_ACTION;
+    this.actor = process.env.GITHUB_ACTOR;
+    this.job = process.env.GITHUB_JOB;
+    this.runAttempt = parseInt(process.env.GITHUB_RUN_ATTEMPT, 10);
+    this.runNumber = parseInt(process.env.GITHUB_RUN_NUMBER, 10);
+    this.runId = parseInt(process.env.GITHUB_RUN_ID, 10);
+    this.apiUrl = (_a2 = process.env.GITHUB_API_URL) !== null && _a2 !== void 0 ? _a2 : `https://api.github.com`;
+    this.serverUrl = (_b = process.env.GITHUB_SERVER_URL) !== null && _b !== void 0 ? _b : `https://github.com`;
+    this.graphqlUrl = (_c = process.env.GITHUB_GRAPHQL_URL) !== null && _c !== void 0 ? _c : `https://api.github.com/graphql`;
   }
-  static diagnostic(error2) {
-    if (error2 instanceof SpeakerCatalogHistoryError)
+  get issue() {
+    const payload = this.payload;
+    return Object.assign(Object.assign({}, this.repo), { number: (payload.issue || payload.pull_request || payload).number });
+  }
+  get repo() {
+    if (process.env.GITHUB_REPOSITORY) {
+      const [owner, repo] = process.env.GITHUB_REPOSITORY.split("/");
+      return { owner, repo };
+    }
+    if (this.payload.repository) {
       return {
-        code: "speaker-sync.history-unavailable",
-        severity: "error",
-        message: new ActionMessages().t(
-          "diagnostic.speaker-sync.history-unavailable"
-        )
+        owner: this.payload.repository.owner.login,
+        repo: this.payload.repository.name
       };
-    const source = error2 instanceof ProposalSourceError ? error2 : void 0;
-    const context3 = source?.context;
-    const reason = context3?.reason ?? source?.code ?? "unexpected";
-    const status = context3?.status;
-    const kind = reason === "http" && (status === 401 || status === 403) ? "authentication" : reason === "http" && status === 404 ? "event-not-found" : reason;
-    const code = `speaker-sync.${kind}`;
-    const field = context3?.field;
-    const safeField = field && /^(?:export|proposals(?:\[\d+\])?(?:\.(?:id|proposalNumber|title|abstract|speakers|email|name|company|languages|formats)(?:\[\d+\])?)*|speakers\[\d+\])$/.test(
-      field
-    ) ? field : void 0;
-    return {
-      code,
-      severity: "error",
-      message: new ActionMessages().t(`diagnostic.${code}`),
-      field: Number.isInteger(status) && Number(status) >= 100 && Number(status) <= 599 ? `HTTP ${status}` : safeField
-    };
+    }
+    throw new Error("context.repo requires a GITHUB_REPOSITORY environment variable like 'owner/repo'");
   }
 };
+
+// node_modules/.pnpm/@actions+github@9.1.1/node_modules/@actions/github/lib/internal/utils.js
+var httpClient = __toESM(require_lib(), 1);
+var import_undici2 = __toESM(require_undici(), 1);
+var __awaiter2 = function(thisArg, _arguments, P2, generator) {
+  function adopt(value) {
+    return value instanceof P2 ? value : new P2(function(resolve3) {
+      resolve3(value);
+    });
+  }
+  return new (P2 || (P2 = Promise))(function(resolve3, reject) {
+    function fulfilled(value) {
+      try {
+        step(generator.next(value));
+      } catch (e) {
+        reject(e);
+      }
+    }
+    function rejected(value) {
+      try {
+        step(generator["throw"](value));
+      } catch (e) {
+        reject(e);
+      }
+    }
+    function step(result) {
+      result.done ? resolve3(result.value) : adopt(result.value).then(fulfilled, rejected);
+    }
+    step((generator = generator.apply(thisArg, _arguments || [])).next());
+  });
+};
+function getAuthString(token, options) {
+  if (!token && !options.auth) {
+    throw new Error("Parameter token or opts.auth is required");
+  } else if (token && options.auth) {
+    throw new Error("Parameters token and opts.auth may not both be specified");
+  }
+  return typeof options.auth === "string" ? options.auth : `token ${token}`;
+}
+function getProxyAgent(destinationUrl) {
+  const hc = new httpClient.HttpClient();
+  return hc.getAgent(destinationUrl);
+}
+function getProxyAgentDispatcher(destinationUrl) {
+  const hc = new httpClient.HttpClient();
+  return hc.getAgentDispatcher(destinationUrl);
+}
+function getProxyFetch(destinationUrl) {
+  const httpDispatcher = getProxyAgentDispatcher(destinationUrl);
+  const proxyFetch = (url, opts) => __awaiter2(this, void 0, void 0, function* () {
+    return (0, import_undici2.fetch)(url, Object.assign(Object.assign({}, opts), { dispatcher: httpDispatcher }));
+  });
+  return proxyFetch;
+}
+function getApiBaseUrl() {
+  return process.env["GITHUB_API_URL"] || "https://api.github.com";
+}
+function getUserAgentWithOrchestrationId(baseUserAgent) {
+  var _a2;
+  const orchId = (_a2 = process.env["ACTIONS_ORCHESTRATION_ID"]) === null || _a2 === void 0 ? void 0 : _a2.trim();
+  if (orchId) {
+    const sanitizedId = orchId.replace(/[^a-z0-9_.-]/gi, "_");
+    const tag = `actions_orchestration_id/${sanitizedId}`;
+    if (baseUserAgent === null || baseUserAgent === void 0 ? void 0 : baseUserAgent.includes(tag))
+      return baseUserAgent;
+    const ua2 = baseUserAgent ? `${baseUserAgent} ` : "";
+    return `${ua2}${tag}`;
+  }
+  return baseUserAgent;
+}
+
+// node_modules/.pnpm/universal-user-agent@7.0.3/node_modules/universal-user-agent/index.js
+function getUserAgent() {
+  if (typeof navigator === "object" && "userAgent" in navigator) {
+    return navigator.userAgent;
+  }
+  if (typeof process === "object" && process.version !== void 0) {
+    return `Node.js/${process.version.substr(1)} (${process.platform}; ${process.arch})`;
+  }
+  return "<environment undetectable>";
+}
+
+// node_modules/.pnpm/before-after-hook@4.0.0/node_modules/before-after-hook/lib/register.js
+function register(state, name, method, options) {
+  if (typeof method !== "function") {
+    throw new Error("method for before hook must be a function");
+  }
+  if (!options) {
+    options = {};
+  }
+  if (Array.isArray(name)) {
+    return name.reverse().reduce((callback, name2) => {
+      return register.bind(null, state, name2, callback, options);
+    }, method)();
+  }
+  return Promise.resolve().then(() => {
+    if (!state.registry[name]) {
+      return method(options);
+    }
+    return state.registry[name].reduce((method2, registered) => {
+      return registered.hook.bind(null, method2, options);
+    }, method)();
+  });
+}
+
+// node_modules/.pnpm/before-after-hook@4.0.0/node_modules/before-after-hook/lib/add.js
+function addHook(state, kind, name, hook2) {
+  const orig = hook2;
+  if (!state.registry[name]) {
+    state.registry[name] = [];
+  }
+  if (kind === "before") {
+    hook2 = (method, options) => {
+      return Promise.resolve().then(orig.bind(null, options)).then(method.bind(null, options));
+    };
+  }
+  if (kind === "after") {
+    hook2 = (method, options) => {
+      let result;
+      return Promise.resolve().then(method.bind(null, options)).then((result_) => {
+        result = result_;
+        return orig(result, options);
+      }).then(() => {
+        return result;
+      });
+    };
+  }
+  if (kind === "error") {
+    hook2 = (method, options) => {
+      return Promise.resolve().then(method.bind(null, options)).catch((error2) => {
+        return orig(error2, options);
+      });
+    };
+  }
+  state.registry[name].push({
+    hook: hook2,
+    orig
+  });
+}
+
+// node_modules/.pnpm/before-after-hook@4.0.0/node_modules/before-after-hook/lib/remove.js
+function removeHook(state, name, method) {
+  if (!state.registry[name]) {
+    return;
+  }
+  const index = state.registry[name].map((registered) => {
+    return registered.orig;
+  }).indexOf(method);
+  if (index === -1) {
+    return;
+  }
+  state.registry[name].splice(index, 1);
+}
+
+// node_modules/.pnpm/before-after-hook@4.0.0/node_modules/before-after-hook/index.js
+var bind = Function.bind;
+var bindable = bind.bind(bind);
+function bindApi(hook2, state, name) {
+  const removeHookRef = bindable(removeHook, null).apply(
+    null,
+    name ? [state, name] : [state]
+  );
+  hook2.api = { remove: removeHookRef };
+  hook2.remove = removeHookRef;
+  ["before", "error", "after", "wrap"].forEach((kind) => {
+    const args = name ? [state, kind, name] : [state, kind];
+    hook2[kind] = hook2.api[kind] = bindable(addHook, null).apply(null, args);
+  });
+}
+function Singular() {
+  const singularHookName = /* @__PURE__ */ Symbol("Singular");
+  const singularHookState = {
+    registry: {}
+  };
+  const singularHook = register.bind(null, singularHookState, singularHookName);
+  bindApi(singularHook, singularHookState, singularHookName);
+  return singularHook;
+}
+function Collection() {
+  const state = {
+    registry: {}
+  };
+  const hook2 = register.bind(null, state);
+  bindApi(hook2, state);
+  return hook2;
+}
+var before_after_hook_default = { Singular, Collection };
+
+// node_modules/.pnpm/@octokit+endpoint@11.0.5/node_modules/@octokit/endpoint/dist-bundle/index.js
+var VERSION = "0.0.0-development";
+var userAgent = `octokit-endpoint.js/${VERSION} ${getUserAgent()}`;
+var DEFAULTS = {
+  method: "GET",
+  baseUrl: "https://api.github.com",
+  headers: {
+    accept: "application/vnd.github.v3+json",
+    "user-agent": userAgent
+  },
+  mediaType: {
+    format: ""
+  }
+};
+function lowercaseKeys(object) {
+  if (!object) {
+    return {};
+  }
+  return Object.keys(object).reduce((newObj, key) => {
+    newObj[key.toLowerCase()] = object[key];
+    return newObj;
+  }, {});
+}
+function isPlainObject(value) {
+  if (typeof value !== "object" || value === null) return false;
+  if (Object.prototype.toString.call(value) !== "[object Object]") return false;
+  const proto = Object.getPrototypeOf(value);
+  if (proto === null) return true;
+  const Ctor = Object.prototype.hasOwnProperty.call(proto, "constructor") && proto.constructor;
+  return typeof Ctor === "function" && Ctor instanceof Ctor && Function.prototype.call(Ctor) === Function.prototype.call(value);
+}
+function mergeDeep(defaults2, options) {
+  const result = Object.assign({}, defaults2);
+  Object.keys(options).forEach((key) => {
+    if (isPlainObject(options[key])) {
+      if (!(key in defaults2)) Object.assign(result, { [key]: options[key] });
+      else result[key] = mergeDeep(defaults2[key], options[key]);
+    } else {
+      Object.assign(result, { [key]: options[key] });
+    }
+  });
+  return result;
+}
+function removeUndefinedProperties(obj) {
+  for (const key in obj) {
+    if (obj[key] === void 0) {
+      delete obj[key];
+    }
+  }
+  return obj;
+}
+function merge(defaults2, route, options) {
+  if (typeof route === "string") {
+    let [method, url] = route.split(" ");
+    options = Object.assign(url ? { method, url } : { url: method }, options);
+  } else {
+    options = Object.assign({}, route);
+  }
+  options.headers = lowercaseKeys(options.headers);
+  removeUndefinedProperties(options);
+  removeUndefinedProperties(options.headers);
+  const mergedOptions = mergeDeep(defaults2 || {}, options);
+  if (options.url === "/graphql") {
+    if (defaults2 && defaults2.mediaType.previews?.length) {
+      mergedOptions.mediaType.previews = defaults2.mediaType.previews.filter(
+        (preview) => !mergedOptions.mediaType.previews.includes(preview)
+      ).concat(mergedOptions.mediaType.previews);
+    }
+    mergedOptions.mediaType.previews = (mergedOptions.mediaType.previews || []).map((preview) => preview.replace(/-preview/, ""));
+  }
+  return mergedOptions;
+}
+function addQueryParameters(url, parameters) {
+  const separator = /\?/.test(url) ? "&" : "?";
+  const names = Object.keys(parameters);
+  if (names.length === 0) {
+    return url;
+  }
+  return url + separator + names.map((name) => {
+    if (name === "q") {
+      return "q=" + parameters.q.split("+").map(encodeURIComponent).join("+");
+    }
+    return `${name}=${encodeURIComponent(parameters[name])}`;
+  }).join("&");
+}
+var urlVariableRegex = /\{[^{}}]+\}/g;
+function removeNonChars(variableName) {
+  return variableName.replace(/(?:^\W+)|(?:(?<!\W)\W+$)/g, "").split(/,/);
+}
+function extractUrlVariableNames(url) {
+  const matches = url.match(urlVariableRegex);
+  if (!matches) {
+    return [];
+  }
+  return matches.map(removeNonChars).reduce((a, b2) => a.concat(b2), []);
+}
+function omit(object, keysToOmit) {
+  const result = { __proto__: null };
+  for (const key of Object.keys(object)) {
+    if (keysToOmit.indexOf(key) === -1) {
+      result[key] = object[key];
+    }
+  }
+  return result;
+}
+function encodeReserved(str) {
+  return str.split(/(%[0-9A-Fa-f]{2})/g).map(function(part) {
+    if (!/%[0-9A-Fa-f]/.test(part)) {
+      part = encodeURI(part).replace(/%5B/g, "[").replace(/%5D/g, "]");
+    }
+    return part;
+  }).join("");
+}
+function encodeUnreserved(str) {
+  return encodeURIComponent(str).replace(/[!'()*]/g, function(c) {
+    return "%" + c.charCodeAt(0).toString(16).toUpperCase();
+  });
+}
+function encodeValue(operator, value, key) {
+  value = operator === "+" || operator === "#" ? encodeReserved(value) : encodeUnreserved(value);
+  if (key) {
+    return encodeUnreserved(key) + "=" + value;
+  } else {
+    return value;
+  }
+}
+function isDefined(value) {
+  return value !== void 0 && value !== null;
+}
+function isKeyOperator(operator) {
+  return operator === ";" || operator === "&" || operator === "?";
+}
+function getValues(context3, operator, key, modifier) {
+  var value = context3[key], result = [];
+  if (isDefined(value) && value !== "") {
+    if (typeof value === "string" || typeof value === "number" || typeof value === "bigint" || typeof value === "boolean") {
+      value = value.toString();
+      if (modifier && modifier !== "*") {
+        value = value.substring(0, parseInt(modifier, 10));
+      }
+      result.push(
+        encodeValue(operator, value, isKeyOperator(operator) ? key : "")
+      );
+    } else {
+      if (modifier === "*") {
+        if (Array.isArray(value)) {
+          value.filter(isDefined).forEach(function(value2) {
+            result.push(
+              encodeValue(operator, value2, isKeyOperator(operator) ? key : "")
+            );
+          });
+        } else {
+          Object.keys(value).forEach(function(k2) {
+            if (isDefined(value[k2])) {
+              result.push(encodeValue(operator, value[k2], k2));
+            }
+          });
+        }
+      } else {
+        const tmp = [];
+        if (Array.isArray(value)) {
+          value.filter(isDefined).forEach(function(value2) {
+            tmp.push(encodeValue(operator, value2));
+          });
+        } else {
+          Object.keys(value).forEach(function(k2) {
+            if (isDefined(value[k2])) {
+              tmp.push(encodeUnreserved(k2));
+              tmp.push(encodeValue(operator, value[k2].toString()));
+            }
+          });
+        }
+        if (isKeyOperator(operator)) {
+          result.push(encodeUnreserved(key) + "=" + tmp.join(","));
+        } else if (tmp.length !== 0) {
+          result.push(tmp.join(","));
+        }
+      }
+    }
+  } else {
+    if (operator === ";") {
+      if (isDefined(value)) {
+        result.push(encodeUnreserved(key));
+      }
+    } else if (value === "" && (operator === "&" || operator === "?")) {
+      result.push(encodeUnreserved(key) + "=");
+    } else if (value === "") {
+      result.push("");
+    }
+  }
+  return result;
+}
+function parseUrl(template) {
+  return {
+    expand: expand.bind(null, template)
+  };
+}
+function expand(template, context3) {
+  var operators = ["+", "#", ".", "/", ";", "?", "&"];
+  template = template.replace(
+    /\{([^\{\}]+)\}|([^\{\}]+)/g,
+    function(_2, expression, literal) {
+      if (expression) {
+        let operator = "";
+        const values = [];
+        if (operators.indexOf(expression.charAt(0)) !== -1) {
+          operator = expression.charAt(0);
+          expression = expression.substr(1);
+        }
+        expression.split(/,/g).forEach(function(variable) {
+          var tmp = /([^:\*]*)(?::(\d+)|(\*))?/.exec(variable);
+          values.push(getValues(context3, operator, tmp[1], tmp[2] || tmp[3]));
+        });
+        if (operator && operator !== "+") {
+          var separator = ",";
+          if (operator === "?") {
+            separator = "&";
+          } else if (operator !== "#") {
+            separator = operator;
+          }
+          return (values.length !== 0 ? operator : "") + values.join(separator);
+        } else {
+          return values.join(",");
+        }
+      } else {
+        return encodeReserved(literal);
+      }
+    }
+  );
+  if (template === "/") {
+    return template;
+  } else {
+    return template.replace(/\/$/, "");
+  }
+}
+function parse3(options) {
+  let method = options.method.toUpperCase();
+  let url = (options.url || "/").replace(/:([a-z]\w+)/g, "{$1}");
+  let headers = Object.assign({}, options.headers);
+  let body;
+  let parameters = omit(options, [
+    "method",
+    "baseUrl",
+    "url",
+    "headers",
+    "request",
+    "mediaType"
+  ]);
+  const urlVariableNames = extractUrlVariableNames(url);
+  url = parseUrl(url).expand(parameters);
+  if (!/^http/.test(url)) {
+    url = options.baseUrl + url;
+  }
+  const omittedParameters = Object.keys(options).filter((option) => urlVariableNames.includes(option)).concat("baseUrl");
+  const remainingParameters = omit(parameters, omittedParameters);
+  const isBinaryRequest = /application\/octet-stream/i.test(headers.accept);
+  if (!isBinaryRequest) {
+    if (options.mediaType.format) {
+      headers.accept = headers.accept.split(/,/).map(
+        (format) => format.replace(
+          /application\/vnd(\.\w+)(\.v3)?(\.\w+)?(\+json)?$/,
+          `application/vnd$1$2.${options.mediaType.format}`
+        )
+      ).join(",");
+    }
+    if (url.endsWith("/graphql")) {
+      if (options.mediaType.previews?.length) {
+        const previewsFromAcceptHeader = headers.accept.match(/(?<![\w-])[\w-]+(?=-preview)/g) || [];
+        headers.accept = previewsFromAcceptHeader.concat(options.mediaType.previews).map((preview) => {
+          const format = options.mediaType.format ? `.${options.mediaType.format}` : "+json";
+          return `application/vnd.github.${preview}-preview${format}`;
+        }).join(",");
+      }
+    }
+  }
+  if (["GET", "HEAD"].includes(method)) {
+    url = addQueryParameters(url, remainingParameters);
+  } else {
+    if ("data" in remainingParameters) {
+      body = remainingParameters.data;
+    } else {
+      if (Object.keys(remainingParameters).length) {
+        body = remainingParameters;
+      }
+    }
+  }
+  if (!headers["content-type"] && typeof body !== "undefined") {
+    headers["content-type"] = "application/json; charset=utf-8";
+  }
+  if (["PATCH", "PUT"].includes(method) && typeof body === "undefined") {
+    body = "";
+  }
+  return Object.assign(
+    { method, url, headers },
+    typeof body !== "undefined" ? { body } : null,
+    options.request ? { request: options.request } : null
+  );
+}
+function endpointWithDefaults(defaults2, route, options) {
+  return parse3(merge(defaults2, route, options));
+}
+function withDefaults(oldDefaults, newDefaults) {
+  const DEFAULTS2 = merge(oldDefaults, newDefaults);
+  const endpoint2 = endpointWithDefaults.bind(null, DEFAULTS2);
+  return Object.assign(endpoint2, {
+    DEFAULTS: DEFAULTS2,
+    defaults: withDefaults.bind(null, DEFAULTS2),
+    merge: merge.bind(null, DEFAULTS2),
+    parse: parse3
+  });
+}
+var endpoint = withDefaults(null, DEFAULTS);
+
+// node_modules/.pnpm/content-type@3.1.1/node_modules/content-type/dist/index.js
+var SP = 32;
+var HTAB = 9;
+var SEMI = 59;
+var EQ = 61;
+var DQUOTE = 34;
+var BSLASH = 92;
+var COMMA = 44;
+var LOWER_CASE = 1;
+var OWS = 2;
+var SEMI_FLAG = 4;
+var COMMA_FLAG = 8;
+var TOKEN_FLAG = 16;
+var NON_ASCII = 65280;
+var CASE_FLAGS = LOWER_CASE | NON_ASCII;
+var CHAR_MAP = new Uint8Array(256);
+CHAR_MAP[HTAB] |= OWS;
+CHAR_MAP[SP] |= OWS;
+CHAR_MAP[SEMI] |= SEMI_FLAG;
+CHAR_MAP[COMMA] |= COMMA_FLAG;
+for (let code = 128; code <= 255; code++) {
+  CHAR_MAP[code] |= LOWER_CASE;
+}
+for (const char of "!#$%&'*+-.^_`|~") {
+  CHAR_MAP[char.charCodeAt(0)] |= TOKEN_FLAG;
+}
+for (let code = 48; code <= 57; code++) {
+  CHAR_MAP[code] |= TOKEN_FLAG;
+}
+for (let code = 65; code <= 90; code++) {
+  CHAR_MAP[code] |= LOWER_CASE | TOKEN_FLAG;
+}
+for (let code = 97; code <= 122; code++) {
+  CHAR_MAP[code] |= TOKEN_FLAG;
+}
+var NullObject = /* @__PURE__ */ (() => {
+  const C2 = function() {
+  };
+  C2.prototype = /* @__PURE__ */ Object.create(null);
+  return C2;
+})();
+function parse4(header, options) {
+  const stopFlags = SEMI_FLAG | (options?.comma === true ? COMMA_FLAG : 0);
+  const len = header.length;
+  let valueStart = options?.start ?? 0;
+  while ((CHAR_MAP[header.charCodeAt(valueStart)] & OWS) !== 0) {
+    valueStart++;
+  }
+  let index = valueStart;
+  let typeFlags = 0;
+  let whitespace = -1;
+  let stop = options?.parameters === false ? COMMA_FLAG : 0;
+  while (index < len) {
+    const code = header.charCodeAt(index);
+    const flags = CHAR_MAP[code];
+    if ((flags & stopFlags) !== 0) {
+      stop |= flags & COMMA_FLAG;
+      break;
+    }
+    if ((flags & OWS) !== 0) {
+      if (whitespace === -1)
+        whitespace = index;
+    } else {
+      whitespace = -1;
+    }
+    typeFlags |= code & NON_ASCII | flags;
+    index++;
+  }
+  const valueEnd = whitespace === -1 ? index : whitespace;
+  const value = header.slice(valueStart, valueEnd);
+  const type = (typeFlags & CASE_FLAGS) === 0 ? value : value.toLowerCase();
+  if (index === len || stop !== 0) {
+    return { type, index, parameters: new NullObject() };
+  }
+  return parseParameters(header, type, index, len, stopFlags);
+}
+function parseParameters(header, type, index, len, stopFlags) {
+  const parameters = new NullObject();
+  parameter: while (index < len) {
+    index++;
+    while ((CHAR_MAP[header.charCodeAt(index)] & OWS) !== 0) {
+      index++;
+    }
+    const keyStart = index;
+    let keyFlags = 0;
+    let keyWhitespace = -1;
+    while (index < len) {
+      const code = header.charCodeAt(index);
+      const flags = CHAR_MAP[code];
+      if ((flags & stopFlags) !== 0) {
+        if ((flags & COMMA_FLAG) !== 0)
+          break parameter;
+        continue parameter;
+      }
+      if (code === EQ) {
+        const keyEnd = keyWhitespace === -1 ? index : keyWhitespace;
+        const value = header.slice(keyStart, keyEnd);
+        const key = (keyFlags & CASE_FLAGS) === 0 ? value : value.toLowerCase();
+        index++;
+        while ((CHAR_MAP[header.charCodeAt(index)] & OWS) !== 0) {
+          index++;
+        }
+        if (index < len && header.charCodeAt(index) === DQUOTE) {
+          const quotedStart = ++index;
+          let escaped = false;
+          while (index < len) {
+            const code2 = header.charCodeAt(index);
+            if (code2 === DQUOTE) {
+              if (parameters[key] === void 0) {
+                parameters[key] = escaped ? unescapeQuotedPairs(header, quotedStart, index) : header.slice(quotedStart, index);
+              }
+              index++;
+              let stop2 = 0;
+              while (index < len) {
+                const code3 = header.charCodeAt(index);
+                const flags2 = CHAR_MAP[code3];
+                if ((flags2 & stopFlags) !== 0) {
+                  stop2 = flags2 & COMMA_FLAG;
+                  break;
+                }
+                index++;
+              }
+              if (stop2 !== 0)
+                break parameter;
+              continue parameter;
+            }
+            if (code2 === BSLASH && index + 1 < len) {
+              escaped = true;
+              index += 2;
+              continue;
+            }
+            index++;
+          }
+          continue parameter;
+        }
+        const valueStart = index;
+        let stop = 0;
+        let valueWhitespace = -1;
+        while (index < len) {
+          const code2 = header.charCodeAt(index);
+          const flags2 = CHAR_MAP[code2];
+          if ((flags2 & stopFlags) !== 0) {
+            stop = flags2 & COMMA_FLAG;
+            break;
+          }
+          if ((flags2 & OWS) !== 0) {
+            if (valueWhitespace === -1)
+              valueWhitespace = index;
+          } else {
+            valueWhitespace = -1;
+          }
+          index++;
+        }
+        if (parameters[key] === void 0) {
+          const valueEnd = valueWhitespace === -1 ? index : valueWhitespace;
+          parameters[key] = header.slice(valueStart, valueEnd);
+        }
+        if (stop !== 0)
+          break parameter;
+        continue parameter;
+      }
+      if ((flags & OWS) !== 0) {
+        if (keyWhitespace === -1)
+          keyWhitespace = index;
+      } else {
+        keyWhitespace = -1;
+      }
+      keyFlags |= code & NON_ASCII | flags;
+      index++;
+    }
+  }
+  return { type, index, parameters };
+}
+function unescapeQuotedPairs(str, start, end) {
+  let result = "";
+  for (let index = start; index < end; index++) {
+    if (str.charCodeAt(index) === BSLASH) {
+      result += str.slice(start, index);
+      start = ++index;
+    }
+  }
+  return result + str.slice(start, end);
+}
+
+// node_modules/.pnpm/json-with-bigint@3.5.12/node_modules/json-with-bigint/json-with-bigint.js
+var intRegex = /^-?\d+$/;
+var noiseValue = /^-?\d+n+$/;
+var originalStringify = JSON.stringify;
+var originalParse = JSON.parse;
+var customFormat = /^-?\d+n$/;
+var bigIntsStringify = /([\[:])?"(-?\d+)n"($|\s*[,\}\]])/g;
+var noiseStringify = /([\[:])?("-?\d+n+)n("$|"\s*[,\}\]])/g;
+var isUnstringifiable = (val) => val === void 0 || typeof val === "function" || typeof val === "symbol";
+var isRawJSON = (val) => val !== null && typeof val === "object" && val.constructor && val.constructor.name === "RawJSON";
+var stringifyIteratively = (rootValue, replacer, spaceParam) => {
+  let space = "";
+  if (typeof spaceParam === "number") {
+    space = " ".repeat(Math.min(10, Math.max(0, Math.floor(spaceParam))));
+  } else if (typeof spaceParam === "string") {
+    space = spaceParam.slice(0, 10);
+  }
+  const isFunctionReplacer = typeof replacer === "function";
+  const propertyList = Array.isArray(replacer) ? new Set(replacer.map(String)) : null;
+  const prepareVal = (parent, key, val) => {
+    const isObject = val !== null && typeof val === "object";
+    const hasToJSON = isObject && typeof val.toJSON === "function";
+    if (hasToJSON) {
+      val = val.toJSON(key);
+    }
+    const isNoise = typeof val === "string" && noiseValue.test(val);
+    if (isNoise) return val + "n";
+    const isBigInt = typeof val === "bigint";
+    if (isBigInt) {
+      const supportsRawJSON = "rawJSON" in JSON;
+      if (supportsRawJSON) return JSON.rawJSON(val.toString());
+      return val.toString() + "n";
+    }
+    if (isFunctionReplacer) {
+      val = replacer.call(parent, key, val);
+    }
+    const isPostReplacerObject = val !== null && typeof val === "object";
+    if (isPostReplacerObject) {
+      const isPrimitiveWrapper = val instanceof Number || val instanceof String || val instanceof Boolean;
+      if (isPrimitiveWrapper) {
+        val = val.valueOf();
+      }
+    }
+    return val;
+  };
+  const rootProcessed = prepareVal({ "": rootValue }, "", rootValue);
+  if (isUnstringifiable(rootProcessed)) {
+    return void 0;
+  }
+  const isRootPrimitive = rootProcessed === null || typeof rootProcessed !== "object";
+  const isRootNativeRawJSON = isRawJSON(rootProcessed);
+  if (isRootPrimitive || isRootNativeRawJSON) {
+    return originalStringify(rootProcessed);
+  }
+  const chunks = [];
+  let level = 0;
+  const stack = [
+    {
+      parent: { "": rootProcessed },
+      key: "",
+      val: rootProcessed,
+      isArray: Array.isArray(rootProcessed),
+      keys: Array.isArray(rootProcessed) ? null : Object.keys(rootProcessed),
+      index: 0,
+      first: true
+    }
+  ];
+  const visited = new WeakSet([rootProcessed]);
+  while (stack.length > 0) {
+    const node = stack[stack.length - 1];
+    if (node.index === 0) {
+      chunks.push(node.isArray ? "[" : "{");
+      level++;
+    }
+    let isDone = false;
+    if (node.isArray) {
+      if (node.index < node.val.length) {
+        if (!node.first) chunks.push(",");
+        if (space) chunks.push("\n" + space.repeat(level));
+        const childRaw = node.val[node.index];
+        const childVal = prepareVal(node.val, String(node.index), childRaw);
+        if (isUnstringifiable(childVal)) {
+          chunks.push("null");
+          node.first = false;
+          node.index++;
+        } else {
+          const isComplexObject = childVal !== null && typeof childVal === "object";
+          const isNativeRaw = isRawJSON(childVal);
+          if (isComplexObject && !isNativeRaw) {
+            if (visited.has(childVal)) {
+              throw new TypeError("Converting circular structure to JSON");
+            }
+            visited.add(childVal);
+            stack.push({
+              parent: node.val,
+              key: String(node.index),
+              val: childVal,
+              isArray: Array.isArray(childVal),
+              keys: Array.isArray(childVal) ? null : Object.keys(childVal),
+              index: 0,
+              first: true
+            });
+            node.first = false;
+            node.index++;
+          } else {
+            chunks.push(originalStringify(childVal));
+            node.first = false;
+            node.index++;
+          }
+        }
+      } else {
+        isDone = true;
+      }
+    } else {
+      while (node.index < node.keys.length) {
+        const k2 = node.keys[node.index++];
+        const isFilteredOutByArray = propertyList && !propertyList.has(k2);
+        if (isFilteredOutByArray) continue;
+        const childRaw = node.val[k2];
+        const childVal = prepareVal(node.val, k2, childRaw);
+        if (isUnstringifiable(childVal)) continue;
+        if (!node.first) chunks.push(",");
+        if (space) {
+          chunks.push("\n" + space.repeat(level) + originalStringify(k2) + ": ");
+        } else {
+          chunks.push(originalStringify(k2) + ":");
+        }
+        const isComplexObject = childVal !== null && typeof childVal === "object";
+        const isNativeRaw = isRawJSON(childVal);
+        if (isComplexObject && !isNativeRaw) {
+          if (visited.has(childVal)) {
+            throw new TypeError("Converting circular structure to JSON");
+          }
+          visited.add(childVal);
+          stack.push({
+            parent: node.val,
+            key: k2,
+            val: childVal,
+            isArray: Array.isArray(childVal),
+            keys: Array.isArray(childVal) ? null : Object.keys(childVal),
+            index: 0,
+            first: true
+          });
+          node.first = false;
+          break;
+        } else {
+          chunks.push(originalStringify(childVal));
+          node.first = false;
+        }
+      }
+      const isNodeFullyProcessed = node.index >= node.keys.length && stack[stack.length - 1] === node;
+      if (isNodeFullyProcessed) {
+        isDone = true;
+      }
+    }
+    if (isDone) {
+      level--;
+      if (!node.first && space) chunks.push("\n" + space.repeat(level));
+      chunks.push(node.isArray ? "]" : "}");
+      visited.delete(node.val);
+      stack.pop();
+    }
+  }
+  return chunks.join("");
+};
+var JSONStringify = (value, replacer, space) => {
+  try {
+    const supportsRawJSON = "rawJSON" in JSON;
+    if (supportsRawJSON) {
+      return originalStringify(
+        value,
+        (key, val) => {
+          if (typeof val === "bigint") return JSON.rawJSON(val.toString());
+          const hasFunctionReplacer = typeof replacer === "function";
+          if (hasFunctionReplacer) return replacer(key, val);
+          const isKeyInArrayReplacer = Array.isArray(replacer) && replacer.includes(key);
+          if (isKeyInArrayReplacer) return val;
+          return val;
+        },
+        space
+      );
+    }
+    if (!value) return originalStringify(value, replacer, space);
+    const convertedToCustomJSON = originalStringify(
+      value,
+      (key, val) => {
+        const isNoise = typeof val === "string" && noiseValue.test(val);
+        if (isNoise) return val.toString() + "n";
+        if (typeof val === "bigint") return val.toString() + "n";
+        const hasFunctionReplacer = typeof replacer === "function";
+        if (hasFunctionReplacer) return replacer(key, val);
+        const isKeyInArrayReplacer = Array.isArray(replacer) && replacer.includes(key);
+        if (isKeyInArrayReplacer) return val;
+        return val;
+      },
+      space
+    );
+    const processedJSON = convertedToCustomJSON.replace(
+      bigIntsStringify,
+      "$1$2$3"
+    );
+    const denoisedJSON = processedJSON.replace(noiseStringify, "$1$2$3");
+    return denoisedJSON;
+  } catch (error2) {
+    if (error2 instanceof RangeError) {
+      const convertedJSON = stringifyIteratively(value, replacer, space);
+      if (convertedJSON === void 0) return void 0;
+      const supportsRawJSON = "rawJSON" in JSON;
+      if (supportsRawJSON) return convertedJSON;
+      const processedJSON = convertedJSON.replace(bigIntsStringify, "$1$2$3");
+      return processedJSON.replace(noiseStringify, "$1$2$3");
+    }
+    throw error2;
+  }
+};
+var featureCache = /* @__PURE__ */ new Map();
+var isContextSourceSupported = () => {
+  const parseFingerprint = JSON.parse.toString();
+  if (featureCache.has(parseFingerprint)) {
+    return featureCache.get(parseFingerprint);
+  }
+  try {
+    const result = JSON.parse(
+      "1",
+      (_2, __, context3) => !!context3?.source && context3.source === "1"
+    );
+    featureCache.set(parseFingerprint, result);
+    return result;
+  } catch {
+    featureCache.set(parseFingerprint, false);
+    return false;
+  }
+};
+var convertMarkedBigIntsReviver = (key, value, context3, userReviver) => {
+  const isCustomFormatBigInt = typeof value === "string" && customFormat.test(value);
+  if (isCustomFormatBigInt) return BigInt(value.slice(0, -1));
+  const isNoiseValue = typeof value === "string" && noiseValue.test(value);
+  if (isNoiseValue) return value.slice(0, -1);
+  const hasUserReviver = typeof userReviver === "function";
+  if (!hasUserReviver) return value;
+  return userReviver(key, value, context3);
+};
+var JSONParseV2 = (text, reviver) => {
+  return JSON.parse(text, (key, value, context3) => {
+    const isNumber = typeof value === "number";
+    const isOutOfBounds = value > Number.MAX_SAFE_INTEGER || value < Number.MIN_SAFE_INTEGER;
+    const isBigNumber = isNumber && isOutOfBounds;
+    const isInt = context3 && intRegex.test(context3.source);
+    const isBigInt = isBigNumber && isInt;
+    if (isBigInt) return BigInt(context3.source);
+    const hasCustomReviver = typeof reviver === "function";
+    if (!hasCustomReviver) return value;
+    return reviver(key, value, context3);
+  });
+};
+var MAX_INT = Number.MAX_SAFE_INTEGER.toString();
+var MAX_DIGITS = MAX_INT.length;
+var stringsOrLargeNumbers = /"(?:[^"\\]|\\.)*"|-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?/g;
+var noiseValueWithQuotes = /^"-?\d+n+"$/;
+var applyReviverIteratively = (parsed, userReviver) => {
+  const rootHolder = { "": parsed };
+  const stack = [{ parent: rootHolder, key: "", visited: false }];
+  while (stack.length > 0) {
+    const node = stack[stack.length - 1];
+    if (!node.visited) {
+      node.visited = true;
+      const value = node.parent[node.key];
+      const isComplexObject = value !== null && typeof value === "object";
+      if (isComplexObject) {
+        const keys = Object.keys(value);
+        for (let i = keys.length - 1; i >= 0; i--) {
+          stack.push({ parent: value, key: keys[i], visited: false });
+        }
+      }
+    } else {
+      const { parent, key } = node;
+      let value = parent[key];
+      if (typeof value === "string") {
+        const isCustomFormatBigInt = customFormat.test(value);
+        if (isCustomFormatBigInt) {
+          value = BigInt(value.slice(0, -1));
+        } else {
+          const isNoise = noiseValue.test(value);
+          if (isNoise) value = value.slice(0, -1);
+        }
+      }
+      const hasUserReviver = typeof userReviver === "function";
+      if (hasUserReviver) {
+        value = userReviver.call(parent, key, value);
+      }
+      const isDeleted = value === void 0;
+      if (isDeleted) {
+        delete parent[key];
+      } else {
+        parent[key] = value;
+      }
+      stack.pop();
+    }
+  }
+  return rootHolder[""];
+};
+var serializeBigInts = (text) => {
+  return text.replace(
+    stringsOrLargeNumbers,
+    (match, digits, fractional, exponential) => {
+      const isString = match[0] === '"';
+      const isNoise = isString && noiseValueWithQuotes.test(match);
+      if (isNoise) return match.substring(0, match.length - 1) + 'n"';
+      const hasFractionalOrExponential = fractional || exponential;
+      const isLessThanMaxSafeInt = digits && (digits.length < MAX_DIGITS || digits.length === MAX_DIGITS && digits <= MAX_INT);
+      const isStandardValue = isString || hasFractionalOrExponential || isLessThanMaxSafeInt;
+      if (isStandardValue) return match;
+      return '"' + match + 'n"';
+    }
+  );
+};
+var JSONParse = (text, reviver) => {
+  if (!text) return originalParse(text, reviver);
+  try {
+    if (isContextSourceSupported()) return JSONParseV2(text, reviver);
+    const serializedData = serializeBigInts(text);
+    return originalParse(
+      serializedData,
+      (key, value, context3) => convertMarkedBigIntsReviver(key, value, context3, reviver)
+    );
+  } catch (error2) {
+    if (error2 instanceof RangeError) {
+      const serializedData = serializeBigInts(text);
+      const parsed = originalParse(serializedData);
+      return applyReviverIteratively(parsed, reviver);
+    }
+    throw error2;
+  }
+};
+
+// node_modules/.pnpm/@octokit+request-error@7.1.2/node_modules/@octokit/request-error/dist-src/index.js
+var RequestError = class extends Error {
+  name;
+  /**
+   * http status code
+   */
+  status;
+  /**
+   * Request options that lead to the error.
+   */
+  request;
+  /**
+   * Response object if a response was received
+   */
+  response;
+  constructor(message, statusCode, options) {
+    super(message, { cause: options.cause });
+    this.name = "HttpError";
+    this.status = Number.parseInt(statusCode);
+    if (Number.isNaN(this.status)) {
+      this.status = 0;
+    }
+    if ("response" in options) {
+      this.response = options.response;
+    }
+    const requestCopy = Object.assign({}, options.request);
+    if (options.request.headers.authorization) {
+      requestCopy.headers = Object.assign({}, options.request.headers, {
+        authorization: options.request.headers.authorization.replace(
+          /(?<! ) .*$/,
+          " [REDACTED]"
+        )
+      });
+    }
+    requestCopy.url = requestCopy.url.replace(/\bclient_secret=\w+/g, "client_secret=[REDACTED]").replace(/\baccess_token=\w+/g, "access_token=[REDACTED]");
+    this.request = requestCopy;
+  }
+};
+
+// node_modules/.pnpm/@octokit+request@10.0.16/node_modules/@octokit/request/dist-bundle/index.js
+var VERSION2 = "10.0.16";
+var defaults_default = {
+  headers: {
+    "user-agent": `octokit-request.js/${VERSION2} ${getUserAgent()}`
+  }
+};
+function isPlainObject2(value) {
+  if (typeof value !== "object" || value === null) return false;
+  if (Object.prototype.toString.call(value) !== "[object Object]") return false;
+  const proto = Object.getPrototypeOf(value);
+  if (proto === null) return true;
+  const Ctor = Object.prototype.hasOwnProperty.call(proto, "constructor") && proto.constructor;
+  return typeof Ctor === "function" && Ctor instanceof Ctor && Function.prototype.call(Ctor) === Function.prototype.call(value);
+}
+var noop = () => "";
+async function fetchWrapper(requestOptions) {
+  const fetch3 = requestOptions.request?.fetch || globalThis.fetch;
+  if (!fetch3) {
+    throw new Error(
+      "fetch is not set. Please pass a fetch implementation as new Octokit({ request: { fetch }}). Learn more at https://github.com/octokit/octokit.js/#fetch-missing"
+    );
+  }
+  const log = requestOptions.request?.log || console;
+  const parseSuccessResponseBody = requestOptions.request?.parseSuccessResponseBody !== false;
+  const body = isPlainObject2(requestOptions.body) || Array.isArray(requestOptions.body) ? JSONStringify(requestOptions.body) : requestOptions.body;
+  const requestHeaders = Object.fromEntries(
+    Object.entries(requestOptions.headers).map(([name, value]) => [
+      name,
+      String(value)
+    ])
+  );
+  let fetchResponse;
+  try {
+    fetchResponse = await fetch3(requestOptions.url, {
+      method: requestOptions.method,
+      body,
+      redirect: requestOptions.request?.redirect,
+      headers: requestHeaders,
+      signal: requestOptions.request?.signal,
+      // duplex must be set if request.body is ReadableStream or Async Iterables.
+      // See https://fetch.spec.whatwg.org/#dom-requestinit-duplex.
+      ...requestOptions.body && { duplex: "half" }
+    });
+  } catch (error2) {
+    let message = "Unknown Error";
+    if (error2 instanceof Error) {
+      if (error2.name === "AbortError") {
+        error2.status = 500;
+        throw error2;
+      }
+      message = error2.message;
+      if (error2.name === "TypeError" && "cause" in error2) {
+        if (error2.cause instanceof Error) {
+          message = error2.cause.message;
+        } else if (typeof error2.cause === "string") {
+          message = error2.cause;
+        }
+      }
+    }
+    const requestError = new RequestError(message, 500, {
+      request: requestOptions
+    });
+    requestError.cause = error2;
+    throw requestError;
+  }
+  const status = fetchResponse.status;
+  const url = fetchResponse.url;
+  const responseHeaders = {};
+  for (const [key, value] of fetchResponse.headers) {
+    responseHeaders[key] = value;
+  }
+  const octokitResponse = {
+    url,
+    status,
+    headers: responseHeaders,
+    data: ""
+  };
+  if ("deprecation" in responseHeaders) {
+    const matches = responseHeaders.link && responseHeaders.link.match(/<([^<>]+)>; rel="deprecation"/);
+    const deprecationLink = matches && matches.pop();
+    log.warn(
+      `[@octokit/request] "${requestOptions.method} ${requestOptions.url}" is deprecated. It is scheduled to be removed on ${responseHeaders.sunset}${deprecationLink ? `. See ${deprecationLink}` : ""}`
+    );
+  }
+  if (status === 204 || status === 205) {
+    return octokitResponse;
+  }
+  if (requestOptions.method === "HEAD") {
+    if (status < 400) {
+      return octokitResponse;
+    }
+    throw new RequestError(fetchResponse.statusText, status, {
+      response: octokitResponse,
+      request: requestOptions
+    });
+  }
+  if (status === 304) {
+    octokitResponse.data = await getResponseData(fetchResponse);
+    throw new RequestError("Not modified", status, {
+      response: octokitResponse,
+      request: requestOptions
+    });
+  }
+  if (status >= 400) {
+    octokitResponse.data = await getResponseData(fetchResponse);
+    throw new RequestError(toErrorMessage(octokitResponse.data), status, {
+      response: octokitResponse,
+      request: requestOptions
+    });
+  }
+  octokitResponse.data = parseSuccessResponseBody ? await getResponseData(fetchResponse) : fetchResponse.body;
+  return octokitResponse;
+}
+async function getResponseData(response) {
+  const contentType = response.headers.get("content-type");
+  if (!contentType) {
+    return response.text().catch(noop);
+  }
+  const mimetype = parse4(contentType);
+  if (isJSONResponse(mimetype)) {
+    let text = "";
+    try {
+      text = await response.text();
+      return JSONParse(text);
+    } catch (err) {
+      return text;
+    }
+  } else if (mimetype.type.startsWith("text/") || // `application/octet-stream` is the canonical "arbitrary binary" type
+  // (RFC 2046) and must never be decoded as text, even when the response
+  // carries a (misleading) `charset=utf-8` parameter — see #751.
+  mimetype.parameters.charset?.toLowerCase() === "utf-8" && mimetype.type !== "application/octet-stream") {
+    return response.text().catch(noop);
+  } else {
+    return response.arrayBuffer().catch(
+      /* v8 ignore next -- @preserve */
+      () => new ArrayBuffer(0)
+    );
+  }
+}
+function isJSONResponse(mimetype) {
+  return mimetype.type === "application/json" || mimetype.type === "application/scim+json";
+}
+function toErrorMessage(data) {
+  if (typeof data === "string") {
+    return data;
+  }
+  if (data instanceof ArrayBuffer) {
+    return "Unknown error";
+  }
+  if (typeof data === "object" && data !== null && "message" in data) {
+    const objectData = data;
+    const suffix = "documentation_url" in objectData ? ` - ${objectData.documentation_url}` : "";
+    return Array.isArray(objectData.errors) ? `${objectData.message}: ${objectData.errors.map((v3) => JSON.stringify(v3)).join(", ")}${suffix}` : `${objectData.message}${suffix}`;
+  }
+  return `Unknown error: ${JSON.stringify(data)}`;
+}
+function withDefaults2(oldEndpoint, newDefaults) {
+  const endpoint2 = oldEndpoint.defaults(newDefaults);
+  const newApi = function(route, parameters) {
+    const endpointOptions = endpoint2.merge(route, parameters);
+    if (!endpointOptions.request || !endpointOptions.request.hook) {
+      return fetchWrapper(endpoint2.parse(endpointOptions));
+    }
+    const request2 = (route2, parameters2) => {
+      return fetchWrapper(
+        endpoint2.parse(endpoint2.merge(route2, parameters2))
+      );
+    };
+    Object.assign(request2, {
+      endpoint: endpoint2,
+      defaults: withDefaults2.bind(null, endpoint2)
+    });
+    return endpointOptions.request.hook(request2, endpointOptions);
+  };
+  return Object.assign(newApi, {
+    endpoint: endpoint2,
+    defaults: withDefaults2.bind(null, endpoint2)
+  });
+}
+var request = withDefaults2(endpoint, defaults_default);
+
+// node_modules/.pnpm/@octokit+graphql@9.0.5/node_modules/@octokit/graphql/dist-bundle/index.js
+var VERSION3 = "0.0.0-development";
+function _buildMessageForResponseErrors(data) {
+  return `Request failed due to following response errors:
+` + data.errors.map((e) => ` - ${e.message}`).join("\n");
+}
+var GraphqlResponseError = class extends Error {
+  constructor(request2, headers, response) {
+    super(_buildMessageForResponseErrors(response));
+    this.request = request2;
+    this.headers = headers;
+    this.response = response;
+    this.errors = response.errors;
+    this.data = response.data;
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
+  }
+  request;
+  headers;
+  response;
+  name = "GraphqlResponseError";
+  errors;
+  data;
+};
+var NON_VARIABLE_OPTIONS = [
+  "method",
+  "baseUrl",
+  "url",
+  "headers",
+  "request",
+  "query",
+  "mediaType",
+  "operationName"
+];
+var FORBIDDEN_VARIABLE_OPTIONS = ["query", "method", "url"];
+var GHES_V3_SUFFIX_REGEX = /\/api\/v3\/?$/;
+function graphql(request2, query, options) {
+  if (options) {
+    if (typeof query === "string" && "query" in options) {
+      return Promise.reject(
+        new Error(`[@octokit/graphql] "query" cannot be used as variable name`)
+      );
+    }
+    for (const key in options) {
+      if (!FORBIDDEN_VARIABLE_OPTIONS.includes(key)) continue;
+      return Promise.reject(
+        new Error(
+          `[@octokit/graphql] "${key}" cannot be used as variable name`
+        )
+      );
+    }
+  }
+  const parsedOptions = typeof query === "string" ? Object.assign({ query }, options) : query;
+  const requestOptions = Object.keys(
+    parsedOptions
+  ).reduce((result, key) => {
+    if (NON_VARIABLE_OPTIONS.includes(key)) {
+      result[key] = parsedOptions[key];
+      return result;
+    }
+    if (!result.variables) {
+      result.variables = {};
+    }
+    result.variables[key] = parsedOptions[key];
+    return result;
+  }, {});
+  const baseUrl2 = parsedOptions.baseUrl || request2.endpoint.DEFAULTS.baseUrl;
+  if (GHES_V3_SUFFIX_REGEX.test(baseUrl2)) {
+    requestOptions.url = baseUrl2.replace(GHES_V3_SUFFIX_REGEX, "/api/graphql");
+  }
+  return request2(requestOptions).then((response) => {
+    if (response.data.errors) {
+      const headers = {};
+      for (const key of Object.keys(response.headers)) {
+        headers[key] = response.headers[key];
+      }
+      throw new GraphqlResponseError(
+        requestOptions,
+        headers,
+        response.data
+      );
+    }
+    return response.data.data;
+  });
+}
+function withDefaults3(request2, newDefaults) {
+  const newRequest = request2.defaults(newDefaults);
+  const newApi = (query, options) => {
+    return graphql(newRequest, query, options);
+  };
+  return Object.assign(newApi, {
+    defaults: withDefaults3.bind(null, newRequest),
+    endpoint: newRequest.endpoint
+  });
+}
+var graphql2 = withDefaults3(request, {
+  headers: {
+    "user-agent": `octokit-graphql.js/${VERSION3} ${getUserAgent()}`
+  },
+  method: "POST",
+  url: "/graphql"
+});
+function withCustomRequest(customRequest) {
+  return withDefaults3(customRequest, {
+    method: "POST",
+    url: "/graphql"
+  });
+}
+
+// node_modules/.pnpm/@octokit+auth-token@6.0.0/node_modules/@octokit/auth-token/dist-bundle/index.js
+var b64url = "(?:[a-zA-Z0-9_-]+)";
+var sep3 = "\\.";
+var jwtRE = new RegExp(`^${b64url}${sep3}${b64url}${sep3}${b64url}$`);
+var isJWT = jwtRE.test.bind(jwtRE);
+async function auth(token) {
+  const isApp = isJWT(token);
+  const isInstallation = token.startsWith("v1.") || token.startsWith("ghs_");
+  const isUserToServer = token.startsWith("ghu_");
+  const tokenType = isApp ? "app" : isInstallation ? "installation" : isUserToServer ? "user-to-server" : "oauth";
+  return {
+    type: "token",
+    token,
+    tokenType
+  };
+}
+function withAuthorizationPrefix(token) {
+  if (token.split(/\./).length === 3) {
+    return `bearer ${token}`;
+  }
+  return `token ${token}`;
+}
+async function hook(token, request2, route, parameters) {
+  const endpoint2 = request2.endpoint.merge(
+    route,
+    parameters
+  );
+  endpoint2.headers.authorization = withAuthorizationPrefix(token);
+  return request2(endpoint2);
+}
+var createTokenAuth = function createTokenAuth2(token) {
+  if (!token) {
+    throw new Error("[@octokit/auth-token] No token passed to createTokenAuth");
+  }
+  if (typeof token !== "string") {
+    throw new Error(
+      "[@octokit/auth-token] Token passed to createTokenAuth is not a string"
+    );
+  }
+  token = token.replace(/^(token|bearer) +/i, "");
+  return Object.assign(auth.bind(null, token), {
+    hook: hook.bind(null, token)
+  });
+};
+
+// node_modules/.pnpm/@octokit+core@7.0.8/node_modules/@octokit/core/dist-src/version.js
+var VERSION4 = "7.0.8";
+
+// node_modules/.pnpm/@octokit+core@7.0.8/node_modules/@octokit/core/dist-src/index.js
+var noop2 = () => {
+};
+var consoleWarn = console.warn.bind(console);
+var consoleError = console.error.bind(console);
+function createLogger(logger = {}) {
+  if (typeof logger.debug !== "function") {
+    logger.debug = noop2;
+  }
+  if (typeof logger.info !== "function") {
+    logger.info = noop2;
+  }
+  if (typeof logger.warn !== "function") {
+    logger.warn = consoleWarn;
+  }
+  if (typeof logger.error !== "function") {
+    logger.error = consoleError;
+  }
+  return logger;
+}
+var userAgentTrail = `octokit-core.js/${VERSION4} ${getUserAgent()}`;
+var Octokit = class {
+  static VERSION = VERSION4;
+  static defaults(defaults2) {
+    const OctokitWithDefaults = class extends this {
+      constructor(...args) {
+        const options = args[0] || {};
+        if (typeof defaults2 === "function") {
+          super(defaults2(options));
+          return;
+        }
+        super(
+          Object.assign(
+            {},
+            defaults2,
+            options,
+            options.userAgent && defaults2.userAgent ? {
+              userAgent: `${options.userAgent} ${defaults2.userAgent}`
+            } : null
+          )
+        );
+      }
+    };
+    return OctokitWithDefaults;
+  }
+  static plugins = [];
+  /**
+   * Attach a plugin (or many) to your Octokit instance.
+   *
+   * @example
+   * const API = Octokit.plugin(plugin1, plugin2, plugin3, ...)
+   */
+  static plugin(...newPlugins) {
+    const currentPlugins = this.plugins;
+    const NewOctokit = class extends this {
+      static plugins = currentPlugins.concat(
+        newPlugins.filter((plugin) => !currentPlugins.includes(plugin))
+      );
+    };
+    return NewOctokit;
+  }
+  constructor(options = {}) {
+    const hook2 = new before_after_hook_default.Collection();
+    const requestDefaults = {
+      baseUrl: request.endpoint.DEFAULTS.baseUrl,
+      headers: {},
+      request: Object.assign({}, options.request, {
+        // @ts-ignore internal usage only, no need to type
+        hook: hook2.bind(null, "request")
+      }),
+      mediaType: {
+        previews: [],
+        format: ""
+      }
+    };
+    requestDefaults.headers["user-agent"] = options.userAgent ? `${options.userAgent} ${userAgentTrail}` : userAgentTrail;
+    if (options.baseUrl) {
+      requestDefaults.baseUrl = options.baseUrl;
+    }
+    if (options.previews) {
+      requestDefaults.mediaType.previews = options.previews;
+    }
+    if (options.timeZone) {
+      requestDefaults.headers["time-zone"] = options.timeZone;
+    }
+    this.request = request.defaults(requestDefaults);
+    this.graphql = withCustomRequest(this.request).defaults(requestDefaults);
+    this.log = createLogger(options.log);
+    this.hook = hook2;
+    if (!options.authStrategy) {
+      if (!options.auth) {
+        this.auth = async () => ({
+          type: "unauthenticated"
+        });
+      } else {
+        const auth2 = createTokenAuth(options.auth);
+        hook2.wrap("request", auth2.hook);
+        this.auth = auth2;
+      }
+    } else {
+      const { authStrategy, ...otherOptions } = options;
+      const auth2 = authStrategy(
+        Object.assign(
+          {
+            request: this.request,
+            log: this.log,
+            // we pass the current octokit instance as well as its constructor options
+            // to allow for authentication strategies that return a new octokit instance
+            // that shares the same internal state as the current one. The original
+            // requirement for this was the "event-octokit" authentication strategy
+            // of https://github.com/probot/octokit-auth-probot.
+            octokit: this,
+            octokitOptions: otherOptions
+          },
+          options.auth
+        )
+      );
+      hook2.wrap("request", auth2.hook);
+      this.auth = auth2;
+    }
+    const classConstructor = this.constructor;
+    for (let i = 0; i < classConstructor.plugins.length; ++i) {
+      Object.assign(this, classConstructor.plugins[i](this, options));
+    }
+  }
+  // assigned during constructor
+  request;
+  graphql;
+  log;
+  hook;
+  // TODO: type `octokit.auth` based on passed options.authStrategy
+  auth;
+};
+
+// node_modules/.pnpm/@octokit+plugin-rest-endpoint-methods@17.0.0_@octokit+core@7.0.8/node_modules/@octokit/plugin-rest-endpoint-methods/dist-src/version.js
+var VERSION5 = "17.0.0";
+
+// node_modules/.pnpm/@octokit+plugin-rest-endpoint-methods@17.0.0_@octokit+core@7.0.8/node_modules/@octokit/plugin-rest-endpoint-methods/dist-src/generated/endpoints.js
+var Endpoints = {
+  actions: {
+    addCustomLabelsToSelfHostedRunnerForOrg: [
+      "POST /orgs/{org}/actions/runners/{runner_id}/labels"
+    ],
+    addCustomLabelsToSelfHostedRunnerForRepo: [
+      "POST /repos/{owner}/{repo}/actions/runners/{runner_id}/labels"
+    ],
+    addRepoAccessToSelfHostedRunnerGroupInOrg: [
+      "PUT /orgs/{org}/actions/runner-groups/{runner_group_id}/repositories/{repository_id}"
+    ],
+    addSelectedRepoToOrgSecret: [
+      "PUT /orgs/{org}/actions/secrets/{secret_name}/repositories/{repository_id}"
+    ],
+    addSelectedRepoToOrgVariable: [
+      "PUT /orgs/{org}/actions/variables/{name}/repositories/{repository_id}"
+    ],
+    approveWorkflowRun: [
+      "POST /repos/{owner}/{repo}/actions/runs/{run_id}/approve"
+    ],
+    cancelWorkflowRun: [
+      "POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel"
+    ],
+    createEnvironmentVariable: [
+      "POST /repos/{owner}/{repo}/environments/{environment_name}/variables"
+    ],
+    createHostedRunnerForOrg: ["POST /orgs/{org}/actions/hosted-runners"],
+    createOrUpdateEnvironmentSecret: [
+      "PUT /repos/{owner}/{repo}/environments/{environment_name}/secrets/{secret_name}"
+    ],
+    createOrUpdateOrgSecret: ["PUT /orgs/{org}/actions/secrets/{secret_name}"],
+    createOrUpdateRepoSecret: [
+      "PUT /repos/{owner}/{repo}/actions/secrets/{secret_name}"
+    ],
+    createOrgVariable: ["POST /orgs/{org}/actions/variables"],
+    createRegistrationTokenForOrg: [
+      "POST /orgs/{org}/actions/runners/registration-token"
+    ],
+    createRegistrationTokenForRepo: [
+      "POST /repos/{owner}/{repo}/actions/runners/registration-token"
+    ],
+    createRemoveTokenForOrg: ["POST /orgs/{org}/actions/runners/remove-token"],
+    createRemoveTokenForRepo: [
+      "POST /repos/{owner}/{repo}/actions/runners/remove-token"
+    ],
+    createRepoVariable: ["POST /repos/{owner}/{repo}/actions/variables"],
+    createWorkflowDispatch: [
+      "POST /repos/{owner}/{repo}/actions/workflows/{workflow_id}/dispatches"
+    ],
+    deleteActionsCacheById: [
+      "DELETE /repos/{owner}/{repo}/actions/caches/{cache_id}"
+    ],
+    deleteActionsCacheByKey: [
+      "DELETE /repos/{owner}/{repo}/actions/caches{?key,ref}"
+    ],
+    deleteArtifact: [
+      "DELETE /repos/{owner}/{repo}/actions/artifacts/{artifact_id}"
+    ],
+    deleteCustomImageFromOrg: [
+      "DELETE /orgs/{org}/actions/hosted-runners/images/custom/{image_definition_id}"
+    ],
+    deleteCustomImageVersionFromOrg: [
+      "DELETE /orgs/{org}/actions/hosted-runners/images/custom/{image_definition_id}/versions/{version}"
+    ],
+    deleteEnvironmentSecret: [
+      "DELETE /repos/{owner}/{repo}/environments/{environment_name}/secrets/{secret_name}"
+    ],
+    deleteEnvironmentVariable: [
+      "DELETE /repos/{owner}/{repo}/environments/{environment_name}/variables/{name}"
+    ],
+    deleteHostedRunnerForOrg: [
+      "DELETE /orgs/{org}/actions/hosted-runners/{hosted_runner_id}"
+    ],
+    deleteOrgSecret: ["DELETE /orgs/{org}/actions/secrets/{secret_name}"],
+    deleteOrgVariable: ["DELETE /orgs/{org}/actions/variables/{name}"],
+    deleteRepoSecret: [
+      "DELETE /repos/{owner}/{repo}/actions/secrets/{secret_name}"
+    ],
+    deleteRepoVariable: [
+      "DELETE /repos/{owner}/{repo}/actions/variables/{name}"
+    ],
+    deleteSelfHostedRunnerFromOrg: [
+      "DELETE /orgs/{org}/actions/runners/{runner_id}"
+    ],
+    deleteSelfHostedRunnerFromRepo: [
+      "DELETE /repos/{owner}/{repo}/actions/runners/{runner_id}"
+    ],
+    deleteWorkflowRun: ["DELETE /repos/{owner}/{repo}/actions/runs/{run_id}"],
+    deleteWorkflowRunLogs: [
+      "DELETE /repos/{owner}/{repo}/actions/runs/{run_id}/logs"
+    ],
+    disableSelectedRepositoryGithubActionsOrganization: [
+      "DELETE /orgs/{org}/actions/permissions/repositories/{repository_id}"
+    ],
+    disableWorkflow: [
+      "PUT /repos/{owner}/{repo}/actions/workflows/{workflow_id}/disable"
+    ],
+    downloadArtifact: [
+      "GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id}/{archive_format}"
+    ],
+    downloadJobLogsForWorkflowRun: [
+      "GET /repos/{owner}/{repo}/actions/jobs/{job_id}/logs"
+    ],
+    downloadWorkflowRunAttemptLogs: [
+      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/attempts/{attempt_number}/logs"
+    ],
+    downloadWorkflowRunLogs: [
+      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/logs"
+    ],
+    enableSelectedRepositoryGithubActionsOrganization: [
+      "PUT /orgs/{org}/actions/permissions/repositories/{repository_id}"
+    ],
+    enableWorkflow: [
+      "PUT /repos/{owner}/{repo}/actions/workflows/{workflow_id}/enable"
+    ],
+    forceCancelWorkflowRun: [
+      "POST /repos/{owner}/{repo}/actions/runs/{run_id}/force-cancel"
+    ],
+    generateRunnerJitconfigForOrg: [
+      "POST /orgs/{org}/actions/runners/generate-jitconfig"
+    ],
+    generateRunnerJitconfigForRepo: [
+      "POST /repos/{owner}/{repo}/actions/runners/generate-jitconfig"
+    ],
+    getActionsCacheList: ["GET /repos/{owner}/{repo}/actions/caches"],
+    getActionsCacheUsage: ["GET /repos/{owner}/{repo}/actions/cache/usage"],
+    getActionsCacheUsageByRepoForOrg: [
+      "GET /orgs/{org}/actions/cache/usage-by-repository"
+    ],
+    getActionsCacheUsageForOrg: ["GET /orgs/{org}/actions/cache/usage"],
+    getAllowedActionsOrganization: [
+      "GET /orgs/{org}/actions/permissions/selected-actions"
+    ],
+    getAllowedActionsRepository: [
+      "GET /repos/{owner}/{repo}/actions/permissions/selected-actions"
+    ],
+    getArtifact: ["GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id}"],
+    getCustomImageForOrg: [
+      "GET /orgs/{org}/actions/hosted-runners/images/custom/{image_definition_id}"
+    ],
+    getCustomImageVersionForOrg: [
+      "GET /orgs/{org}/actions/hosted-runners/images/custom/{image_definition_id}/versions/{version}"
+    ],
+    getCustomOidcSubClaimForRepo: [
+      "GET /repos/{owner}/{repo}/actions/oidc/customization/sub"
+    ],
+    getEnvironmentPublicKey: [
+      "GET /repos/{owner}/{repo}/environments/{environment_name}/secrets/public-key"
+    ],
+    getEnvironmentSecret: [
+      "GET /repos/{owner}/{repo}/environments/{environment_name}/secrets/{secret_name}"
+    ],
+    getEnvironmentVariable: [
+      "GET /repos/{owner}/{repo}/environments/{environment_name}/variables/{name}"
+    ],
+    getGithubActionsDefaultWorkflowPermissionsOrganization: [
+      "GET /orgs/{org}/actions/permissions/workflow"
+    ],
+    getGithubActionsDefaultWorkflowPermissionsRepository: [
+      "GET /repos/{owner}/{repo}/actions/permissions/workflow"
+    ],
+    getGithubActionsPermissionsOrganization: [
+      "GET /orgs/{org}/actions/permissions"
+    ],
+    getGithubActionsPermissionsRepository: [
+      "GET /repos/{owner}/{repo}/actions/permissions"
+    ],
+    getHostedRunnerForOrg: [
+      "GET /orgs/{org}/actions/hosted-runners/{hosted_runner_id}"
+    ],
+    getHostedRunnersGithubOwnedImagesForOrg: [
+      "GET /orgs/{org}/actions/hosted-runners/images/github-owned"
+    ],
+    getHostedRunnersLimitsForOrg: [
+      "GET /orgs/{org}/actions/hosted-runners/limits"
+    ],
+    getHostedRunnersMachineSpecsForOrg: [
+      "GET /orgs/{org}/actions/hosted-runners/machine-sizes"
+    ],
+    getHostedRunnersPartnerImagesForOrg: [
+      "GET /orgs/{org}/actions/hosted-runners/images/partner"
+    ],
+    getHostedRunnersPlatformsForOrg: [
+      "GET /orgs/{org}/actions/hosted-runners/platforms"
+    ],
+    getJobForWorkflowRun: ["GET /repos/{owner}/{repo}/actions/jobs/{job_id}"],
+    getOrgPublicKey: ["GET /orgs/{org}/actions/secrets/public-key"],
+    getOrgSecret: ["GET /orgs/{org}/actions/secrets/{secret_name}"],
+    getOrgVariable: ["GET /orgs/{org}/actions/variables/{name}"],
+    getPendingDeploymentsForRun: [
+      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/pending_deployments"
+    ],
+    getRepoPermissions: [
+      "GET /repos/{owner}/{repo}/actions/permissions",
+      {},
+      { renamed: ["actions", "getGithubActionsPermissionsRepository"] }
+    ],
+    getRepoPublicKey: ["GET /repos/{owner}/{repo}/actions/secrets/public-key"],
+    getRepoSecret: ["GET /repos/{owner}/{repo}/actions/secrets/{secret_name}"],
+    getRepoVariable: ["GET /repos/{owner}/{repo}/actions/variables/{name}"],
+    getReviewsForRun: [
+      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/approvals"
+    ],
+    getSelfHostedRunnerForOrg: ["GET /orgs/{org}/actions/runners/{runner_id}"],
+    getSelfHostedRunnerForRepo: [
+      "GET /repos/{owner}/{repo}/actions/runners/{runner_id}"
+    ],
+    getWorkflow: ["GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}"],
+    getWorkflowAccessToRepository: [
+      "GET /repos/{owner}/{repo}/actions/permissions/access"
+    ],
+    getWorkflowRun: ["GET /repos/{owner}/{repo}/actions/runs/{run_id}"],
+    getWorkflowRunAttempt: [
+      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/attempts/{attempt_number}"
+    ],
+    getWorkflowRunUsage: [
+      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/timing"
+    ],
+    getWorkflowUsage: [
+      "GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/timing"
+    ],
+    listArtifactsForRepo: ["GET /repos/{owner}/{repo}/actions/artifacts"],
+    listCustomImageVersionsForOrg: [
+      "GET /orgs/{org}/actions/hosted-runners/images/custom/{image_definition_id}/versions"
+    ],
+    listCustomImagesForOrg: [
+      "GET /orgs/{org}/actions/hosted-runners/images/custom"
+    ],
+    listEnvironmentSecrets: [
+      "GET /repos/{owner}/{repo}/environments/{environment_name}/secrets"
+    ],
+    listEnvironmentVariables: [
+      "GET /repos/{owner}/{repo}/environments/{environment_name}/variables"
+    ],
+    listGithubHostedRunnersInGroupForOrg: [
+      "GET /orgs/{org}/actions/runner-groups/{runner_group_id}/hosted-runners"
+    ],
+    listHostedRunnersForOrg: ["GET /orgs/{org}/actions/hosted-runners"],
+    listJobsForWorkflowRun: [
+      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/jobs"
+    ],
+    listJobsForWorkflowRunAttempt: [
+      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/attempts/{attempt_number}/jobs"
+    ],
+    listLabelsForSelfHostedRunnerForOrg: [
+      "GET /orgs/{org}/actions/runners/{runner_id}/labels"
+    ],
+    listLabelsForSelfHostedRunnerForRepo: [
+      "GET /repos/{owner}/{repo}/actions/runners/{runner_id}/labels"
+    ],
+    listOrgSecrets: ["GET /orgs/{org}/actions/secrets"],
+    listOrgVariables: ["GET /orgs/{org}/actions/variables"],
+    listRepoOrganizationSecrets: [
+      "GET /repos/{owner}/{repo}/actions/organization-secrets"
+    ],
+    listRepoOrganizationVariables: [
+      "GET /repos/{owner}/{repo}/actions/organization-variables"
+    ],
+    listRepoSecrets: ["GET /repos/{owner}/{repo}/actions/secrets"],
+    listRepoVariables: ["GET /repos/{owner}/{repo}/actions/variables"],
+    listRepoWorkflows: ["GET /repos/{owner}/{repo}/actions/workflows"],
+    listRunnerApplicationsForOrg: ["GET /orgs/{org}/actions/runners/downloads"],
+    listRunnerApplicationsForRepo: [
+      "GET /repos/{owner}/{repo}/actions/runners/downloads"
+    ],
+    listSelectedReposForOrgSecret: [
+      "GET /orgs/{org}/actions/secrets/{secret_name}/repositories"
+    ],
+    listSelectedReposForOrgVariable: [
+      "GET /orgs/{org}/actions/variables/{name}/repositories"
+    ],
+    listSelectedRepositoriesEnabledGithubActionsOrganization: [
+      "GET /orgs/{org}/actions/permissions/repositories"
+    ],
+    listSelfHostedRunnersForOrg: ["GET /orgs/{org}/actions/runners"],
+    listSelfHostedRunnersForRepo: ["GET /repos/{owner}/{repo}/actions/runners"],
+    listWorkflowRunArtifacts: [
+      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts"
+    ],
+    listWorkflowRuns: [
+      "GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs"
+    ],
+    listWorkflowRunsForRepo: ["GET /repos/{owner}/{repo}/actions/runs"],
+    reRunJobForWorkflowRun: [
+      "POST /repos/{owner}/{repo}/actions/jobs/{job_id}/rerun"
+    ],
+    reRunWorkflow: ["POST /repos/{owner}/{repo}/actions/runs/{run_id}/rerun"],
+    reRunWorkflowFailedJobs: [
+      "POST /repos/{owner}/{repo}/actions/runs/{run_id}/rerun-failed-jobs"
+    ],
+    removeAllCustomLabelsFromSelfHostedRunnerForOrg: [
+      "DELETE /orgs/{org}/actions/runners/{runner_id}/labels"
+    ],
+    removeAllCustomLabelsFromSelfHostedRunnerForRepo: [
+      "DELETE /repos/{owner}/{repo}/actions/runners/{runner_id}/labels"
+    ],
+    removeCustomLabelFromSelfHostedRunnerForOrg: [
+      "DELETE /orgs/{org}/actions/runners/{runner_id}/labels/{name}"
+    ],
+    removeCustomLabelFromSelfHostedRunnerForRepo: [
+      "DELETE /repos/{owner}/{repo}/actions/runners/{runner_id}/labels/{name}"
+    ],
+    removeSelectedRepoFromOrgSecret: [
+      "DELETE /orgs/{org}/actions/secrets/{secret_name}/repositories/{repository_id}"
+    ],
+    removeSelectedRepoFromOrgVariable: [
+      "DELETE /orgs/{org}/actions/variables/{name}/repositories/{repository_id}"
+    ],
+    reviewCustomGatesForRun: [
+      "POST /repos/{owner}/{repo}/actions/runs/{run_id}/deployment_protection_rule"
+    ],
+    reviewPendingDeploymentsForRun: [
+      "POST /repos/{owner}/{repo}/actions/runs/{run_id}/pending_deployments"
+    ],
+    setAllowedActionsOrganization: [
+      "PUT /orgs/{org}/actions/permissions/selected-actions"
+    ],
+    setAllowedActionsRepository: [
+      "PUT /repos/{owner}/{repo}/actions/permissions/selected-actions"
+    ],
+    setCustomLabelsForSelfHostedRunnerForOrg: [
+      "PUT /orgs/{org}/actions/runners/{runner_id}/labels"
+    ],
+    setCustomLabelsForSelfHostedRunnerForRepo: [
+      "PUT /repos/{owner}/{repo}/actions/runners/{runner_id}/labels"
+    ],
+    setCustomOidcSubClaimForRepo: [
+      "PUT /repos/{owner}/{repo}/actions/oidc/customization/sub"
+    ],
+    setGithubActionsDefaultWorkflowPermissionsOrganization: [
+      "PUT /orgs/{org}/actions/permissions/workflow"
+    ],
+    setGithubActionsDefaultWorkflowPermissionsRepository: [
+      "PUT /repos/{owner}/{repo}/actions/permissions/workflow"
+    ],
+    setGithubActionsPermissionsOrganization: [
+      "PUT /orgs/{org}/actions/permissions"
+    ],
+    setGithubActionsPermissionsRepository: [
+      "PUT /repos/{owner}/{repo}/actions/permissions"
+    ],
+    setSelectedReposForOrgSecret: [
+      "PUT /orgs/{org}/actions/secrets/{secret_name}/repositories"
+    ],
+    setSelectedReposForOrgVariable: [
+      "PUT /orgs/{org}/actions/variables/{name}/repositories"
+    ],
+    setSelectedRepositoriesEnabledGithubActionsOrganization: [
+      "PUT /orgs/{org}/actions/permissions/repositories"
+    ],
+    setWorkflowAccessToRepository: [
+      "PUT /repos/{owner}/{repo}/actions/permissions/access"
+    ],
+    updateEnvironmentVariable: [
+      "PATCH /repos/{owner}/{repo}/environments/{environment_name}/variables/{name}"
+    ],
+    updateHostedRunnerForOrg: [
+      "PATCH /orgs/{org}/actions/hosted-runners/{hosted_runner_id}"
+    ],
+    updateOrgVariable: ["PATCH /orgs/{org}/actions/variables/{name}"],
+    updateRepoVariable: [
+      "PATCH /repos/{owner}/{repo}/actions/variables/{name}"
+    ]
+  },
+  activity: {
+    checkRepoIsStarredByAuthenticatedUser: ["GET /user/starred/{owner}/{repo}"],
+    deleteRepoSubscription: ["DELETE /repos/{owner}/{repo}/subscription"],
+    deleteThreadSubscription: [
+      "DELETE /notifications/threads/{thread_id}/subscription"
+    ],
+    getFeeds: ["GET /feeds"],
+    getRepoSubscription: ["GET /repos/{owner}/{repo}/subscription"],
+    getThread: ["GET /notifications/threads/{thread_id}"],
+    getThreadSubscriptionForAuthenticatedUser: [
+      "GET /notifications/threads/{thread_id}/subscription"
+    ],
+    listEventsForAuthenticatedUser: ["GET /users/{username}/events"],
+    listNotificationsForAuthenticatedUser: ["GET /notifications"],
+    listOrgEventsForAuthenticatedUser: [
+      "GET /users/{username}/events/orgs/{org}"
+    ],
+    listPublicEvents: ["GET /events"],
+    listPublicEventsForRepoNetwork: ["GET /networks/{owner}/{repo}/events"],
+    listPublicEventsForUser: ["GET /users/{username}/events/public"],
+    listPublicOrgEvents: ["GET /orgs/{org}/events"],
+    listReceivedEventsForUser: ["GET /users/{username}/received_events"],
+    listReceivedPublicEventsForUser: [
+      "GET /users/{username}/received_events/public"
+    ],
+    listRepoEvents: ["GET /repos/{owner}/{repo}/events"],
+    listRepoNotificationsForAuthenticatedUser: [
+      "GET /repos/{owner}/{repo}/notifications"
+    ],
+    listReposStarredByAuthenticatedUser: ["GET /user/starred"],
+    listReposStarredByUser: ["GET /users/{username}/starred"],
+    listReposWatchedByUser: ["GET /users/{username}/subscriptions"],
+    listStargazersForRepo: ["GET /repos/{owner}/{repo}/stargazers"],
+    listWatchedReposForAuthenticatedUser: ["GET /user/subscriptions"],
+    listWatchersForRepo: ["GET /repos/{owner}/{repo}/subscribers"],
+    markNotificationsAsRead: ["PUT /notifications"],
+    markRepoNotificationsAsRead: ["PUT /repos/{owner}/{repo}/notifications"],
+    markThreadAsDone: ["DELETE /notifications/threads/{thread_id}"],
+    markThreadAsRead: ["PATCH /notifications/threads/{thread_id}"],
+    setRepoSubscription: ["PUT /repos/{owner}/{repo}/subscription"],
+    setThreadSubscription: [
+      "PUT /notifications/threads/{thread_id}/subscription"
+    ],
+    starRepoForAuthenticatedUser: ["PUT /user/starred/{owner}/{repo}"],
+    unstarRepoForAuthenticatedUser: ["DELETE /user/starred/{owner}/{repo}"]
+  },
+  apps: {
+    addRepoToInstallation: [
+      "PUT /user/installations/{installation_id}/repositories/{repository_id}",
+      {},
+      { renamed: ["apps", "addRepoToInstallationForAuthenticatedUser"] }
+    ],
+    addRepoToInstallationForAuthenticatedUser: [
+      "PUT /user/installations/{installation_id}/repositories/{repository_id}"
+    ],
+    checkToken: ["POST /applications/{client_id}/token"],
+    createFromManifest: ["POST /app-manifests/{code}/conversions"],
+    createInstallationAccessToken: [
+      "POST /app/installations/{installation_id}/access_tokens"
+    ],
+    deleteAuthorization: ["DELETE /applications/{client_id}/grant"],
+    deleteInstallation: ["DELETE /app/installations/{installation_id}"],
+    deleteToken: ["DELETE /applications/{client_id}/token"],
+    getAuthenticated: ["GET /app"],
+    getBySlug: ["GET /apps/{app_slug}"],
+    getInstallation: ["GET /app/installations/{installation_id}"],
+    getOrgInstallation: ["GET /orgs/{org}/installation"],
+    getRepoInstallation: ["GET /repos/{owner}/{repo}/installation"],
+    getSubscriptionPlanForAccount: [
+      "GET /marketplace_listing/accounts/{account_id}"
+    ],
+    getSubscriptionPlanForAccountStubbed: [
+      "GET /marketplace_listing/stubbed/accounts/{account_id}"
+    ],
+    getUserInstallation: ["GET /users/{username}/installation"],
+    getWebhookConfigForApp: ["GET /app/hook/config"],
+    getWebhookDelivery: ["GET /app/hook/deliveries/{delivery_id}"],
+    listAccountsForPlan: ["GET /marketplace_listing/plans/{plan_id}/accounts"],
+    listAccountsForPlanStubbed: [
+      "GET /marketplace_listing/stubbed/plans/{plan_id}/accounts"
+    ],
+    listInstallationReposForAuthenticatedUser: [
+      "GET /user/installations/{installation_id}/repositories"
+    ],
+    listInstallationRequestsForAuthenticatedApp: [
+      "GET /app/installation-requests"
+    ],
+    listInstallations: ["GET /app/installations"],
+    listInstallationsForAuthenticatedUser: ["GET /user/installations"],
+    listPlans: ["GET /marketplace_listing/plans"],
+    listPlansStubbed: ["GET /marketplace_listing/stubbed/plans"],
+    listReposAccessibleToInstallation: ["GET /installation/repositories"],
+    listSubscriptionsForAuthenticatedUser: ["GET /user/marketplace_purchases"],
+    listSubscriptionsForAuthenticatedUserStubbed: [
+      "GET /user/marketplace_purchases/stubbed"
+    ],
+    listWebhookDeliveries: ["GET /app/hook/deliveries"],
+    redeliverWebhookDelivery: [
+      "POST /app/hook/deliveries/{delivery_id}/attempts"
+    ],
+    removeRepoFromInstallation: [
+      "DELETE /user/installations/{installation_id}/repositories/{repository_id}",
+      {},
+      { renamed: ["apps", "removeRepoFromInstallationForAuthenticatedUser"] }
+    ],
+    removeRepoFromInstallationForAuthenticatedUser: [
+      "DELETE /user/installations/{installation_id}/repositories/{repository_id}"
+    ],
+    resetToken: ["PATCH /applications/{client_id}/token"],
+    revokeInstallationAccessToken: ["DELETE /installation/token"],
+    scopeToken: ["POST /applications/{client_id}/token/scoped"],
+    suspendInstallation: ["PUT /app/installations/{installation_id}/suspended"],
+    unsuspendInstallation: [
+      "DELETE /app/installations/{installation_id}/suspended"
+    ],
+    updateWebhookConfigForApp: ["PATCH /app/hook/config"]
+  },
+  billing: {
+    getGithubActionsBillingOrg: ["GET /orgs/{org}/settings/billing/actions"],
+    getGithubActionsBillingUser: [
+      "GET /users/{username}/settings/billing/actions"
+    ],
+    getGithubBillingPremiumRequestUsageReportOrg: [
+      "GET /organizations/{org}/settings/billing/premium_request/usage"
+    ],
+    getGithubBillingPremiumRequestUsageReportUser: [
+      "GET /users/{username}/settings/billing/premium_request/usage"
+    ],
+    getGithubBillingUsageReportOrg: [
+      "GET /organizations/{org}/settings/billing/usage"
+    ],
+    getGithubBillingUsageReportUser: [
+      "GET /users/{username}/settings/billing/usage"
+    ],
+    getGithubPackagesBillingOrg: ["GET /orgs/{org}/settings/billing/packages"],
+    getGithubPackagesBillingUser: [
+      "GET /users/{username}/settings/billing/packages"
+    ],
+    getSharedStorageBillingOrg: [
+      "GET /orgs/{org}/settings/billing/shared-storage"
+    ],
+    getSharedStorageBillingUser: [
+      "GET /users/{username}/settings/billing/shared-storage"
+    ]
+  },
+  campaigns: {
+    createCampaign: ["POST /orgs/{org}/campaigns"],
+    deleteCampaign: ["DELETE /orgs/{org}/campaigns/{campaign_number}"],
+    getCampaignSummary: ["GET /orgs/{org}/campaigns/{campaign_number}"],
+    listOrgCampaigns: ["GET /orgs/{org}/campaigns"],
+    updateCampaign: ["PATCH /orgs/{org}/campaigns/{campaign_number}"]
+  },
+  checks: {
+    create: ["POST /repos/{owner}/{repo}/check-runs"],
+    createSuite: ["POST /repos/{owner}/{repo}/check-suites"],
+    get: ["GET /repos/{owner}/{repo}/check-runs/{check_run_id}"],
+    getSuite: ["GET /repos/{owner}/{repo}/check-suites/{check_suite_id}"],
+    listAnnotations: [
+      "GET /repos/{owner}/{repo}/check-runs/{check_run_id}/annotations"
+    ],
+    listForRef: ["GET /repos/{owner}/{repo}/commits/{ref}/check-runs"],
+    listForSuite: [
+      "GET /repos/{owner}/{repo}/check-suites/{check_suite_id}/check-runs"
+    ],
+    listSuitesForRef: ["GET /repos/{owner}/{repo}/commits/{ref}/check-suites"],
+    rerequestRun: [
+      "POST /repos/{owner}/{repo}/check-runs/{check_run_id}/rerequest"
+    ],
+    rerequestSuite: [
+      "POST /repos/{owner}/{repo}/check-suites/{check_suite_id}/rerequest"
+    ],
+    setSuitesPreferences: [
+      "PATCH /repos/{owner}/{repo}/check-suites/preferences"
+    ],
+    update: ["PATCH /repos/{owner}/{repo}/check-runs/{check_run_id}"]
+  },
+  codeScanning: {
+    commitAutofix: [
+      "POST /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}/autofix/commits"
+    ],
+    createAutofix: [
+      "POST /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}/autofix"
+    ],
+    createVariantAnalysis: [
+      "POST /repos/{owner}/{repo}/code-scanning/codeql/variant-analyses"
+    ],
+    deleteAnalysis: [
+      "DELETE /repos/{owner}/{repo}/code-scanning/analyses/{analysis_id}{?confirm_delete}"
+    ],
+    deleteCodeqlDatabase: [
+      "DELETE /repos/{owner}/{repo}/code-scanning/codeql/databases/{language}"
+    ],
+    getAlert: [
+      "GET /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}",
+      {},
+      { renamedParameters: { alert_id: "alert_number" } }
+    ],
+    getAnalysis: [
+      "GET /repos/{owner}/{repo}/code-scanning/analyses/{analysis_id}"
+    ],
+    getAutofix: [
+      "GET /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}/autofix"
+    ],
+    getCodeqlDatabase: [
+      "GET /repos/{owner}/{repo}/code-scanning/codeql/databases/{language}"
+    ],
+    getDefaultSetup: ["GET /repos/{owner}/{repo}/code-scanning/default-setup"],
+    getSarif: ["GET /repos/{owner}/{repo}/code-scanning/sarifs/{sarif_id}"],
+    getVariantAnalysis: [
+      "GET /repos/{owner}/{repo}/code-scanning/codeql/variant-analyses/{codeql_variant_analysis_id}"
+    ],
+    getVariantAnalysisRepoTask: [
+      "GET /repos/{owner}/{repo}/code-scanning/codeql/variant-analyses/{codeql_variant_analysis_id}/repos/{repo_owner}/{repo_name}"
+    ],
+    listAlertInstances: [
+      "GET /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}/instances"
+    ],
+    listAlertsForOrg: ["GET /orgs/{org}/code-scanning/alerts"],
+    listAlertsForRepo: ["GET /repos/{owner}/{repo}/code-scanning/alerts"],
+    listAlertsInstances: [
+      "GET /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}/instances",
+      {},
+      { renamed: ["codeScanning", "listAlertInstances"] }
+    ],
+    listCodeqlDatabases: [
+      "GET /repos/{owner}/{repo}/code-scanning/codeql/databases"
+    ],
+    listRecentAnalyses: ["GET /repos/{owner}/{repo}/code-scanning/analyses"],
+    updateAlert: [
+      "PATCH /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}"
+    ],
+    updateDefaultSetup: [
+      "PATCH /repos/{owner}/{repo}/code-scanning/default-setup"
+    ],
+    uploadSarif: ["POST /repos/{owner}/{repo}/code-scanning/sarifs"]
+  },
+  codeSecurity: {
+    attachConfiguration: [
+      "POST /orgs/{org}/code-security/configurations/{configuration_id}/attach"
+    ],
+    attachEnterpriseConfiguration: [
+      "POST /enterprises/{enterprise}/code-security/configurations/{configuration_id}/attach"
+    ],
+    createConfiguration: ["POST /orgs/{org}/code-security/configurations"],
+    createConfigurationForEnterprise: [
+      "POST /enterprises/{enterprise}/code-security/configurations"
+    ],
+    deleteConfiguration: [
+      "DELETE /orgs/{org}/code-security/configurations/{configuration_id}"
+    ],
+    deleteConfigurationForEnterprise: [
+      "DELETE /enterprises/{enterprise}/code-security/configurations/{configuration_id}"
+    ],
+    detachConfiguration: [
+      "DELETE /orgs/{org}/code-security/configurations/detach"
+    ],
+    getConfiguration: [
+      "GET /orgs/{org}/code-security/configurations/{configuration_id}"
+    ],
+    getConfigurationForRepository: [
+      "GET /repos/{owner}/{repo}/code-security-configuration"
+    ],
+    getConfigurationsForEnterprise: [
+      "GET /enterprises/{enterprise}/code-security/configurations"
+    ],
+    getConfigurationsForOrg: ["GET /orgs/{org}/code-security/configurations"],
+    getDefaultConfigurations: [
+      "GET /orgs/{org}/code-security/configurations/defaults"
+    ],
+    getDefaultConfigurationsForEnterprise: [
+      "GET /enterprises/{enterprise}/code-security/configurations/defaults"
+    ],
+    getRepositoriesForConfiguration: [
+      "GET /orgs/{org}/code-security/configurations/{configuration_id}/repositories"
+    ],
+    getRepositoriesForEnterpriseConfiguration: [
+      "GET /enterprises/{enterprise}/code-security/configurations/{configuration_id}/repositories"
+    ],
+    getSingleConfigurationForEnterprise: [
+      "GET /enterprises/{enterprise}/code-security/configurations/{configuration_id}"
+    ],
+    setConfigurationAsDefault: [
+      "PUT /orgs/{org}/code-security/configurations/{configuration_id}/defaults"
+    ],
+    setConfigurationAsDefaultForEnterprise: [
+      "PUT /enterprises/{enterprise}/code-security/configurations/{configuration_id}/defaults"
+    ],
+    updateConfiguration: [
+      "PATCH /orgs/{org}/code-security/configurations/{configuration_id}"
+    ],
+    updateEnterpriseConfiguration: [
+      "PATCH /enterprises/{enterprise}/code-security/configurations/{configuration_id}"
+    ]
+  },
+  codesOfConduct: {
+    getAllCodesOfConduct: ["GET /codes_of_conduct"],
+    getConductCode: ["GET /codes_of_conduct/{key}"]
+  },
+  codespaces: {
+    addRepositoryForSecretForAuthenticatedUser: [
+      "PUT /user/codespaces/secrets/{secret_name}/repositories/{repository_id}"
+    ],
+    addSelectedRepoToOrgSecret: [
+      "PUT /orgs/{org}/codespaces/secrets/{secret_name}/repositories/{repository_id}"
+    ],
+    checkPermissionsForDevcontainer: [
+      "GET /repos/{owner}/{repo}/codespaces/permissions_check"
+    ],
+    codespaceMachinesForAuthenticatedUser: [
+      "GET /user/codespaces/{codespace_name}/machines"
+    ],
+    createForAuthenticatedUser: ["POST /user/codespaces"],
+    createOrUpdateOrgSecret: [
+      "PUT /orgs/{org}/codespaces/secrets/{secret_name}"
+    ],
+    createOrUpdateRepoSecret: [
+      "PUT /repos/{owner}/{repo}/codespaces/secrets/{secret_name}"
+    ],
+    createOrUpdateSecretForAuthenticatedUser: [
+      "PUT /user/codespaces/secrets/{secret_name}"
+    ],
+    createWithPrForAuthenticatedUser: [
+      "POST /repos/{owner}/{repo}/pulls/{pull_number}/codespaces"
+    ],
+    createWithRepoForAuthenticatedUser: [
+      "POST /repos/{owner}/{repo}/codespaces"
+    ],
+    deleteForAuthenticatedUser: ["DELETE /user/codespaces/{codespace_name}"],
+    deleteFromOrganization: [
+      "DELETE /orgs/{org}/members/{username}/codespaces/{codespace_name}"
+    ],
+    deleteOrgSecret: ["DELETE /orgs/{org}/codespaces/secrets/{secret_name}"],
+    deleteRepoSecret: [
+      "DELETE /repos/{owner}/{repo}/codespaces/secrets/{secret_name}"
+    ],
+    deleteSecretForAuthenticatedUser: [
+      "DELETE /user/codespaces/secrets/{secret_name}"
+    ],
+    exportForAuthenticatedUser: [
+      "POST /user/codespaces/{codespace_name}/exports"
+    ],
+    getCodespacesForUserInOrg: [
+      "GET /orgs/{org}/members/{username}/codespaces"
+    ],
+    getExportDetailsForAuthenticatedUser: [
+      "GET /user/codespaces/{codespace_name}/exports/{export_id}"
+    ],
+    getForAuthenticatedUser: ["GET /user/codespaces/{codespace_name}"],
+    getOrgPublicKey: ["GET /orgs/{org}/codespaces/secrets/public-key"],
+    getOrgSecret: ["GET /orgs/{org}/codespaces/secrets/{secret_name}"],
+    getPublicKeyForAuthenticatedUser: [
+      "GET /user/codespaces/secrets/public-key"
+    ],
+    getRepoPublicKey: [
+      "GET /repos/{owner}/{repo}/codespaces/secrets/public-key"
+    ],
+    getRepoSecret: [
+      "GET /repos/{owner}/{repo}/codespaces/secrets/{secret_name}"
+    ],
+    getSecretForAuthenticatedUser: [
+      "GET /user/codespaces/secrets/{secret_name}"
+    ],
+    listDevcontainersInRepositoryForAuthenticatedUser: [
+      "GET /repos/{owner}/{repo}/codespaces/devcontainers"
+    ],
+    listForAuthenticatedUser: ["GET /user/codespaces"],
+    listInOrganization: [
+      "GET /orgs/{org}/codespaces",
+      {},
+      { renamedParameters: { org_id: "org" } }
+    ],
+    listInRepositoryForAuthenticatedUser: [
+      "GET /repos/{owner}/{repo}/codespaces"
+    ],
+    listOrgSecrets: ["GET /orgs/{org}/codespaces/secrets"],
+    listRepoSecrets: ["GET /repos/{owner}/{repo}/codespaces/secrets"],
+    listRepositoriesForSecretForAuthenticatedUser: [
+      "GET /user/codespaces/secrets/{secret_name}/repositories"
+    ],
+    listSecretsForAuthenticatedUser: ["GET /user/codespaces/secrets"],
+    listSelectedReposForOrgSecret: [
+      "GET /orgs/{org}/codespaces/secrets/{secret_name}/repositories"
+    ],
+    preFlightWithRepoForAuthenticatedUser: [
+      "GET /repos/{owner}/{repo}/codespaces/new"
+    ],
+    publishForAuthenticatedUser: [
+      "POST /user/codespaces/{codespace_name}/publish"
+    ],
+    removeRepositoryForSecretForAuthenticatedUser: [
+      "DELETE /user/codespaces/secrets/{secret_name}/repositories/{repository_id}"
+    ],
+    removeSelectedRepoFromOrgSecret: [
+      "DELETE /orgs/{org}/codespaces/secrets/{secret_name}/repositories/{repository_id}"
+    ],
+    repoMachinesForAuthenticatedUser: [
+      "GET /repos/{owner}/{repo}/codespaces/machines"
+    ],
+    setRepositoriesForSecretForAuthenticatedUser: [
+      "PUT /user/codespaces/secrets/{secret_name}/repositories"
+    ],
+    setSelectedReposForOrgSecret: [
+      "PUT /orgs/{org}/codespaces/secrets/{secret_name}/repositories"
+    ],
+    startForAuthenticatedUser: ["POST /user/codespaces/{codespace_name}/start"],
+    stopForAuthenticatedUser: ["POST /user/codespaces/{codespace_name}/stop"],
+    stopInOrganization: [
+      "POST /orgs/{org}/members/{username}/codespaces/{codespace_name}/stop"
+    ],
+    updateForAuthenticatedUser: ["PATCH /user/codespaces/{codespace_name}"]
+  },
+  copilot: {
+    addCopilotSeatsForTeams: [
+      "POST /orgs/{org}/copilot/billing/selected_teams"
+    ],
+    addCopilotSeatsForUsers: [
+      "POST /orgs/{org}/copilot/billing/selected_users"
+    ],
+    cancelCopilotSeatAssignmentForTeams: [
+      "DELETE /orgs/{org}/copilot/billing/selected_teams"
+    ],
+    cancelCopilotSeatAssignmentForUsers: [
+      "DELETE /orgs/{org}/copilot/billing/selected_users"
+    ],
+    copilotMetricsForOrganization: ["GET /orgs/{org}/copilot/metrics"],
+    copilotMetricsForTeam: ["GET /orgs/{org}/team/{team_slug}/copilot/metrics"],
+    getCopilotOrganizationDetails: ["GET /orgs/{org}/copilot/billing"],
+    getCopilotSeatDetailsForUser: [
+      "GET /orgs/{org}/members/{username}/copilot"
+    ],
+    listCopilotSeats: ["GET /orgs/{org}/copilot/billing/seats"]
+  },
+  credentials: { revoke: ["POST /credentials/revoke"] },
+  dependabot: {
+    addSelectedRepoToOrgSecret: [
+      "PUT /orgs/{org}/dependabot/secrets/{secret_name}/repositories/{repository_id}"
+    ],
+    createOrUpdateOrgSecret: [
+      "PUT /orgs/{org}/dependabot/secrets/{secret_name}"
+    ],
+    createOrUpdateRepoSecret: [
+      "PUT /repos/{owner}/{repo}/dependabot/secrets/{secret_name}"
+    ],
+    deleteOrgSecret: ["DELETE /orgs/{org}/dependabot/secrets/{secret_name}"],
+    deleteRepoSecret: [
+      "DELETE /repos/{owner}/{repo}/dependabot/secrets/{secret_name}"
+    ],
+    getAlert: ["GET /repos/{owner}/{repo}/dependabot/alerts/{alert_number}"],
+    getOrgPublicKey: ["GET /orgs/{org}/dependabot/secrets/public-key"],
+    getOrgSecret: ["GET /orgs/{org}/dependabot/secrets/{secret_name}"],
+    getRepoPublicKey: [
+      "GET /repos/{owner}/{repo}/dependabot/secrets/public-key"
+    ],
+    getRepoSecret: [
+      "GET /repos/{owner}/{repo}/dependabot/secrets/{secret_name}"
+    ],
+    listAlertsForEnterprise: [
+      "GET /enterprises/{enterprise}/dependabot/alerts"
+    ],
+    listAlertsForOrg: ["GET /orgs/{org}/dependabot/alerts"],
+    listAlertsForRepo: ["GET /repos/{owner}/{repo}/dependabot/alerts"],
+    listOrgSecrets: ["GET /orgs/{org}/dependabot/secrets"],
+    listRepoSecrets: ["GET /repos/{owner}/{repo}/dependabot/secrets"],
+    listSelectedReposForOrgSecret: [
+      "GET /orgs/{org}/dependabot/secrets/{secret_name}/repositories"
+    ],
+    removeSelectedRepoFromOrgSecret: [
+      "DELETE /orgs/{org}/dependabot/secrets/{secret_name}/repositories/{repository_id}"
+    ],
+    repositoryAccessForOrg: [
+      "GET /organizations/{org}/dependabot/repository-access"
+    ],
+    setRepositoryAccessDefaultLevel: [
+      "PUT /organizations/{org}/dependabot/repository-access/default-level"
+    ],
+    setSelectedReposForOrgSecret: [
+      "PUT /orgs/{org}/dependabot/secrets/{secret_name}/repositories"
+    ],
+    updateAlert: [
+      "PATCH /repos/{owner}/{repo}/dependabot/alerts/{alert_number}"
+    ],
+    updateRepositoryAccessForOrg: [
+      "PATCH /organizations/{org}/dependabot/repository-access"
+    ]
+  },
+  dependencyGraph: {
+    createRepositorySnapshot: [
+      "POST /repos/{owner}/{repo}/dependency-graph/snapshots"
+    ],
+    diffRange: [
+      "GET /repos/{owner}/{repo}/dependency-graph/compare/{basehead}"
+    ],
+    exportSbom: ["GET /repos/{owner}/{repo}/dependency-graph/sbom"]
+  },
+  emojis: { get: ["GET /emojis"] },
+  enterpriseTeamMemberships: {
+    add: [
+      "PUT /enterprises/{enterprise}/teams/{enterprise-team}/memberships/{username}"
+    ],
+    bulkAdd: [
+      "POST /enterprises/{enterprise}/teams/{enterprise-team}/memberships/add"
+    ],
+    bulkRemove: [
+      "POST /enterprises/{enterprise}/teams/{enterprise-team}/memberships/remove"
+    ],
+    get: [
+      "GET /enterprises/{enterprise}/teams/{enterprise-team}/memberships/{username}"
+    ],
+    list: ["GET /enterprises/{enterprise}/teams/{enterprise-team}/memberships"],
+    remove: [
+      "DELETE /enterprises/{enterprise}/teams/{enterprise-team}/memberships/{username}"
+    ]
+  },
+  enterpriseTeamOrganizations: {
+    add: [
+      "PUT /enterprises/{enterprise}/teams/{enterprise-team}/organizations/{org}"
+    ],
+    bulkAdd: [
+      "POST /enterprises/{enterprise}/teams/{enterprise-team}/organizations/add"
+    ],
+    bulkRemove: [
+      "POST /enterprises/{enterprise}/teams/{enterprise-team}/organizations/remove"
+    ],
+    delete: [
+      "DELETE /enterprises/{enterprise}/teams/{enterprise-team}/organizations/{org}"
+    ],
+    getAssignment: [
+      "GET /enterprises/{enterprise}/teams/{enterprise-team}/organizations/{org}"
+    ],
+    getAssignments: [
+      "GET /enterprises/{enterprise}/teams/{enterprise-team}/organizations"
+    ]
+  },
+  enterpriseTeams: {
+    create: ["POST /enterprises/{enterprise}/teams"],
+    delete: ["DELETE /enterprises/{enterprise}/teams/{team_slug}"],
+    get: ["GET /enterprises/{enterprise}/teams/{team_slug}"],
+    list: ["GET /enterprises/{enterprise}/teams"],
+    update: ["PATCH /enterprises/{enterprise}/teams/{team_slug}"]
+  },
+  gists: {
+    checkIsStarred: ["GET /gists/{gist_id}/star"],
+    create: ["POST /gists"],
+    createComment: ["POST /gists/{gist_id}/comments"],
+    delete: ["DELETE /gists/{gist_id}"],
+    deleteComment: ["DELETE /gists/{gist_id}/comments/{comment_id}"],
+    fork: ["POST /gists/{gist_id}/forks"],
+    get: ["GET /gists/{gist_id}"],
+    getComment: ["GET /gists/{gist_id}/comments/{comment_id}"],
+    getRevision: ["GET /gists/{gist_id}/{sha}"],
+    list: ["GET /gists"],
+    listComments: ["GET /gists/{gist_id}/comments"],
+    listCommits: ["GET /gists/{gist_id}/commits"],
+    listForUser: ["GET /users/{username}/gists"],
+    listForks: ["GET /gists/{gist_id}/forks"],
+    listPublic: ["GET /gists/public"],
+    listStarred: ["GET /gists/starred"],
+    star: ["PUT /gists/{gist_id}/star"],
+    unstar: ["DELETE /gists/{gist_id}/star"],
+    update: ["PATCH /gists/{gist_id}"],
+    updateComment: ["PATCH /gists/{gist_id}/comments/{comment_id}"]
+  },
+  git: {
+    createBlob: ["POST /repos/{owner}/{repo}/git/blobs"],
+    createCommit: ["POST /repos/{owner}/{repo}/git/commits"],
+    createRef: ["POST /repos/{owner}/{repo}/git/refs"],
+    createTag: ["POST /repos/{owner}/{repo}/git/tags"],
+    createTree: ["POST /repos/{owner}/{repo}/git/trees"],
+    deleteRef: ["DELETE /repos/{owner}/{repo}/git/refs/{ref}"],
+    getBlob: ["GET /repos/{owner}/{repo}/git/blobs/{file_sha}"],
+    getCommit: ["GET /repos/{owner}/{repo}/git/commits/{commit_sha}"],
+    getRef: ["GET /repos/{owner}/{repo}/git/ref/{ref}"],
+    getTag: ["GET /repos/{owner}/{repo}/git/tags/{tag_sha}"],
+    getTree: ["GET /repos/{owner}/{repo}/git/trees/{tree_sha}"],
+    listMatchingRefs: ["GET /repos/{owner}/{repo}/git/matching-refs/{ref}"],
+    updateRef: ["PATCH /repos/{owner}/{repo}/git/refs/{ref}"]
+  },
+  gitignore: {
+    getAllTemplates: ["GET /gitignore/templates"],
+    getTemplate: ["GET /gitignore/templates/{name}"]
+  },
+  hostedCompute: {
+    createNetworkConfigurationForOrg: [
+      "POST /orgs/{org}/settings/network-configurations"
+    ],
+    deleteNetworkConfigurationFromOrg: [
+      "DELETE /orgs/{org}/settings/network-configurations/{network_configuration_id}"
+    ],
+    getNetworkConfigurationForOrg: [
+      "GET /orgs/{org}/settings/network-configurations/{network_configuration_id}"
+    ],
+    getNetworkSettingsForOrg: [
+      "GET /orgs/{org}/settings/network-settings/{network_settings_id}"
+    ],
+    listNetworkConfigurationsForOrg: [
+      "GET /orgs/{org}/settings/network-configurations"
+    ],
+    updateNetworkConfigurationForOrg: [
+      "PATCH /orgs/{org}/settings/network-configurations/{network_configuration_id}"
+    ]
+  },
+  interactions: {
+    getRestrictionsForAuthenticatedUser: ["GET /user/interaction-limits"],
+    getRestrictionsForOrg: ["GET /orgs/{org}/interaction-limits"],
+    getRestrictionsForRepo: ["GET /repos/{owner}/{repo}/interaction-limits"],
+    getRestrictionsForYourPublicRepos: [
+      "GET /user/interaction-limits",
+      {},
+      { renamed: ["interactions", "getRestrictionsForAuthenticatedUser"] }
+    ],
+    removeRestrictionsForAuthenticatedUser: ["DELETE /user/interaction-limits"],
+    removeRestrictionsForOrg: ["DELETE /orgs/{org}/interaction-limits"],
+    removeRestrictionsForRepo: [
+      "DELETE /repos/{owner}/{repo}/interaction-limits"
+    ],
+    removeRestrictionsForYourPublicRepos: [
+      "DELETE /user/interaction-limits",
+      {},
+      { renamed: ["interactions", "removeRestrictionsForAuthenticatedUser"] }
+    ],
+    setRestrictionsForAuthenticatedUser: ["PUT /user/interaction-limits"],
+    setRestrictionsForOrg: ["PUT /orgs/{org}/interaction-limits"],
+    setRestrictionsForRepo: ["PUT /repos/{owner}/{repo}/interaction-limits"],
+    setRestrictionsForYourPublicRepos: [
+      "PUT /user/interaction-limits",
+      {},
+      { renamed: ["interactions", "setRestrictionsForAuthenticatedUser"] }
+    ]
+  },
+  issues: {
+    addAssignees: [
+      "POST /repos/{owner}/{repo}/issues/{issue_number}/assignees"
+    ],
+    addBlockedByDependency: [
+      "POST /repos/{owner}/{repo}/issues/{issue_number}/dependencies/blocked_by"
+    ],
+    addLabels: ["POST /repos/{owner}/{repo}/issues/{issue_number}/labels"],
+    addSubIssue: [
+      "POST /repos/{owner}/{repo}/issues/{issue_number}/sub_issues"
+    ],
+    checkUserCanBeAssigned: ["GET /repos/{owner}/{repo}/assignees/{assignee}"],
+    checkUserCanBeAssignedToIssue: [
+      "GET /repos/{owner}/{repo}/issues/{issue_number}/assignees/{assignee}"
+    ],
+    create: ["POST /repos/{owner}/{repo}/issues"],
+    createComment: [
+      "POST /repos/{owner}/{repo}/issues/{issue_number}/comments"
+    ],
+    createLabel: ["POST /repos/{owner}/{repo}/labels"],
+    createMilestone: ["POST /repos/{owner}/{repo}/milestones"],
+    deleteComment: [
+      "DELETE /repos/{owner}/{repo}/issues/comments/{comment_id}"
+    ],
+    deleteLabel: ["DELETE /repos/{owner}/{repo}/labels/{name}"],
+    deleteMilestone: [
+      "DELETE /repos/{owner}/{repo}/milestones/{milestone_number}"
+    ],
+    get: ["GET /repos/{owner}/{repo}/issues/{issue_number}"],
+    getComment: ["GET /repos/{owner}/{repo}/issues/comments/{comment_id}"],
+    getEvent: ["GET /repos/{owner}/{repo}/issues/events/{event_id}"],
+    getLabel: ["GET /repos/{owner}/{repo}/labels/{name}"],
+    getMilestone: ["GET /repos/{owner}/{repo}/milestones/{milestone_number}"],
+    getParent: ["GET /repos/{owner}/{repo}/issues/{issue_number}/parent"],
+    list: ["GET /issues"],
+    listAssignees: ["GET /repos/{owner}/{repo}/assignees"],
+    listComments: ["GET /repos/{owner}/{repo}/issues/{issue_number}/comments"],
+    listCommentsForRepo: ["GET /repos/{owner}/{repo}/issues/comments"],
+    listDependenciesBlockedBy: [
+      "GET /repos/{owner}/{repo}/issues/{issue_number}/dependencies/blocked_by"
+    ],
+    listDependenciesBlocking: [
+      "GET /repos/{owner}/{repo}/issues/{issue_number}/dependencies/blocking"
+    ],
+    listEvents: ["GET /repos/{owner}/{repo}/issues/{issue_number}/events"],
+    listEventsForRepo: ["GET /repos/{owner}/{repo}/issues/events"],
+    listEventsForTimeline: [
+      "GET /repos/{owner}/{repo}/issues/{issue_number}/timeline"
+    ],
+    listForAuthenticatedUser: ["GET /user/issues"],
+    listForOrg: ["GET /orgs/{org}/issues"],
+    listForRepo: ["GET /repos/{owner}/{repo}/issues"],
+    listLabelsForMilestone: [
+      "GET /repos/{owner}/{repo}/milestones/{milestone_number}/labels"
+    ],
+    listLabelsForRepo: ["GET /repos/{owner}/{repo}/labels"],
+    listLabelsOnIssue: [
+      "GET /repos/{owner}/{repo}/issues/{issue_number}/labels"
+    ],
+    listMilestones: ["GET /repos/{owner}/{repo}/milestones"],
+    listSubIssues: [
+      "GET /repos/{owner}/{repo}/issues/{issue_number}/sub_issues"
+    ],
+    lock: ["PUT /repos/{owner}/{repo}/issues/{issue_number}/lock"],
+    removeAllLabels: [
+      "DELETE /repos/{owner}/{repo}/issues/{issue_number}/labels"
+    ],
+    removeAssignees: [
+      "DELETE /repos/{owner}/{repo}/issues/{issue_number}/assignees"
+    ],
+    removeDependencyBlockedBy: [
+      "DELETE /repos/{owner}/{repo}/issues/{issue_number}/dependencies/blocked_by/{issue_id}"
+    ],
+    removeLabel: [
+      "DELETE /repos/{owner}/{repo}/issues/{issue_number}/labels/{name}"
+    ],
+    removeSubIssue: [
+      "DELETE /repos/{owner}/{repo}/issues/{issue_number}/sub_issue"
+    ],
+    reprioritizeSubIssue: [
+      "PATCH /repos/{owner}/{repo}/issues/{issue_number}/sub_issues/priority"
+    ],
+    setLabels: ["PUT /repos/{owner}/{repo}/issues/{issue_number}/labels"],
+    unlock: ["DELETE /repos/{owner}/{repo}/issues/{issue_number}/lock"],
+    update: ["PATCH /repos/{owner}/{repo}/issues/{issue_number}"],
+    updateComment: ["PATCH /repos/{owner}/{repo}/issues/comments/{comment_id}"],
+    updateLabel: ["PATCH /repos/{owner}/{repo}/labels/{name}"],
+    updateMilestone: [
+      "PATCH /repos/{owner}/{repo}/milestones/{milestone_number}"
+    ]
+  },
+  licenses: {
+    get: ["GET /licenses/{license}"],
+    getAllCommonlyUsed: ["GET /licenses"],
+    getForRepo: ["GET /repos/{owner}/{repo}/license"]
+  },
+  markdown: {
+    render: ["POST /markdown"],
+    renderRaw: [
+      "POST /markdown/raw",
+      { headers: { "content-type": "text/plain; charset=utf-8" } }
+    ]
+  },
+  meta: {
+    get: ["GET /meta"],
+    getAllVersions: ["GET /versions"],
+    getOctocat: ["GET /octocat"],
+    getZen: ["GET /zen"],
+    root: ["GET /"]
+  },
+  migrations: {
+    deleteArchiveForAuthenticatedUser: [
+      "DELETE /user/migrations/{migration_id}/archive"
+    ],
+    deleteArchiveForOrg: [
+      "DELETE /orgs/{org}/migrations/{migration_id}/archive"
+    ],
+    downloadArchiveForOrg: [
+      "GET /orgs/{org}/migrations/{migration_id}/archive"
+    ],
+    getArchiveForAuthenticatedUser: [
+      "GET /user/migrations/{migration_id}/archive"
+    ],
+    getStatusForAuthenticatedUser: ["GET /user/migrations/{migration_id}"],
+    getStatusForOrg: ["GET /orgs/{org}/migrations/{migration_id}"],
+    listForAuthenticatedUser: ["GET /user/migrations"],
+    listForOrg: ["GET /orgs/{org}/migrations"],
+    listReposForAuthenticatedUser: [
+      "GET /user/migrations/{migration_id}/repositories"
+    ],
+    listReposForOrg: ["GET /orgs/{org}/migrations/{migration_id}/repositories"],
+    listReposForUser: [
+      "GET /user/migrations/{migration_id}/repositories",
+      {},
+      { renamed: ["migrations", "listReposForAuthenticatedUser"] }
+    ],
+    startForAuthenticatedUser: ["POST /user/migrations"],
+    startForOrg: ["POST /orgs/{org}/migrations"],
+    unlockRepoForAuthenticatedUser: [
+      "DELETE /user/migrations/{migration_id}/repos/{repo_name}/lock"
+    ],
+    unlockRepoForOrg: [
+      "DELETE /orgs/{org}/migrations/{migration_id}/repos/{repo_name}/lock"
+    ]
+  },
+  oidc: {
+    getOidcCustomSubTemplateForOrg: [
+      "GET /orgs/{org}/actions/oidc/customization/sub"
+    ],
+    updateOidcCustomSubTemplateForOrg: [
+      "PUT /orgs/{org}/actions/oidc/customization/sub"
+    ]
+  },
+  orgs: {
+    addSecurityManagerTeam: [
+      "PUT /orgs/{org}/security-managers/teams/{team_slug}",
+      {},
+      {
+        deprecated: "octokit.rest.orgs.addSecurityManagerTeam() is deprecated, see https://docs.github.com/rest/orgs/security-managers#add-a-security-manager-team"
+      }
+    ],
+    assignTeamToOrgRole: [
+      "PUT /orgs/{org}/organization-roles/teams/{team_slug}/{role_id}"
+    ],
+    assignUserToOrgRole: [
+      "PUT /orgs/{org}/organization-roles/users/{username}/{role_id}"
+    ],
+    blockUser: ["PUT /orgs/{org}/blocks/{username}"],
+    cancelInvitation: ["DELETE /orgs/{org}/invitations/{invitation_id}"],
+    checkBlockedUser: ["GET /orgs/{org}/blocks/{username}"],
+    checkMembershipForUser: ["GET /orgs/{org}/members/{username}"],
+    checkPublicMembershipForUser: ["GET /orgs/{org}/public_members/{username}"],
+    convertMemberToOutsideCollaborator: [
+      "PUT /orgs/{org}/outside_collaborators/{username}"
+    ],
+    createArtifactStorageRecord: [
+      "POST /orgs/{org}/artifacts/metadata/storage-record"
+    ],
+    createInvitation: ["POST /orgs/{org}/invitations"],
+    createIssueType: ["POST /orgs/{org}/issue-types"],
+    createWebhook: ["POST /orgs/{org}/hooks"],
+    customPropertiesForOrgsCreateOrUpdateOrganizationValues: [
+      "PATCH /organizations/{org}/org-properties/values"
+    ],
+    customPropertiesForOrgsGetOrganizationValues: [
+      "GET /organizations/{org}/org-properties/values"
+    ],
+    customPropertiesForReposCreateOrUpdateOrganizationDefinition: [
+      "PUT /orgs/{org}/properties/schema/{custom_property_name}"
+    ],
+    customPropertiesForReposCreateOrUpdateOrganizationDefinitions: [
+      "PATCH /orgs/{org}/properties/schema"
+    ],
+    customPropertiesForReposCreateOrUpdateOrganizationValues: [
+      "PATCH /orgs/{org}/properties/values"
+    ],
+    customPropertiesForReposDeleteOrganizationDefinition: [
+      "DELETE /orgs/{org}/properties/schema/{custom_property_name}"
+    ],
+    customPropertiesForReposGetOrganizationDefinition: [
+      "GET /orgs/{org}/properties/schema/{custom_property_name}"
+    ],
+    customPropertiesForReposGetOrganizationDefinitions: [
+      "GET /orgs/{org}/properties/schema"
+    ],
+    customPropertiesForReposGetOrganizationValues: [
+      "GET /orgs/{org}/properties/values"
+    ],
+    delete: ["DELETE /orgs/{org}"],
+    deleteAttestationsBulk: ["POST /orgs/{org}/attestations/delete-request"],
+    deleteAttestationsById: [
+      "DELETE /orgs/{org}/attestations/{attestation_id}"
+    ],
+    deleteAttestationsBySubjectDigest: [
+      "DELETE /orgs/{org}/attestations/digest/{subject_digest}"
+    ],
+    deleteIssueType: ["DELETE /orgs/{org}/issue-types/{issue_type_id}"],
+    deleteWebhook: ["DELETE /orgs/{org}/hooks/{hook_id}"],
+    disableSelectedRepositoryImmutableReleasesOrganization: [
+      "DELETE /orgs/{org}/settings/immutable-releases/repositories/{repository_id}"
+    ],
+    enableSelectedRepositoryImmutableReleasesOrganization: [
+      "PUT /orgs/{org}/settings/immutable-releases/repositories/{repository_id}"
+    ],
+    get: ["GET /orgs/{org}"],
+    getImmutableReleasesSettings: [
+      "GET /orgs/{org}/settings/immutable-releases"
+    ],
+    getImmutableReleasesSettingsRepositories: [
+      "GET /orgs/{org}/settings/immutable-releases/repositories"
+    ],
+    getMembershipForAuthenticatedUser: ["GET /user/memberships/orgs/{org}"],
+    getMembershipForUser: ["GET /orgs/{org}/memberships/{username}"],
+    getOrgRole: ["GET /orgs/{org}/organization-roles/{role_id}"],
+    getOrgRulesetHistory: ["GET /orgs/{org}/rulesets/{ruleset_id}/history"],
+    getOrgRulesetVersion: [
+      "GET /orgs/{org}/rulesets/{ruleset_id}/history/{version_id}"
+    ],
+    getWebhook: ["GET /orgs/{org}/hooks/{hook_id}"],
+    getWebhookConfigForOrg: ["GET /orgs/{org}/hooks/{hook_id}/config"],
+    getWebhookDelivery: [
+      "GET /orgs/{org}/hooks/{hook_id}/deliveries/{delivery_id}"
+    ],
+    list: ["GET /organizations"],
+    listAppInstallations: ["GET /orgs/{org}/installations"],
+    listArtifactStorageRecords: [
+      "GET /orgs/{org}/artifacts/{subject_digest}/metadata/storage-records"
+    ],
+    listAttestationRepositories: ["GET /orgs/{org}/attestations/repositories"],
+    listAttestations: ["GET /orgs/{org}/attestations/{subject_digest}"],
+    listAttestationsBulk: [
+      "POST /orgs/{org}/attestations/bulk-list{?per_page,before,after}"
+    ],
+    listBlockedUsers: ["GET /orgs/{org}/blocks"],
+    listFailedInvitations: ["GET /orgs/{org}/failed_invitations"],
+    listForAuthenticatedUser: ["GET /user/orgs"],
+    listForUser: ["GET /users/{username}/orgs"],
+    listInvitationTeams: ["GET /orgs/{org}/invitations/{invitation_id}/teams"],
+    listIssueTypes: ["GET /orgs/{org}/issue-types"],
+    listMembers: ["GET /orgs/{org}/members"],
+    listMembershipsForAuthenticatedUser: ["GET /user/memberships/orgs"],
+    listOrgRoleTeams: ["GET /orgs/{org}/organization-roles/{role_id}/teams"],
+    listOrgRoleUsers: ["GET /orgs/{org}/organization-roles/{role_id}/users"],
+    listOrgRoles: ["GET /orgs/{org}/organization-roles"],
+    listOrganizationFineGrainedPermissions: [
+      "GET /orgs/{org}/organization-fine-grained-permissions"
+    ],
+    listOutsideCollaborators: ["GET /orgs/{org}/outside_collaborators"],
+    listPatGrantRepositories: [
+      "GET /orgs/{org}/personal-access-tokens/{pat_id}/repositories"
+    ],
+    listPatGrantRequestRepositories: [
+      "GET /orgs/{org}/personal-access-token-requests/{pat_request_id}/repositories"
+    ],
+    listPatGrantRequests: ["GET /orgs/{org}/personal-access-token-requests"],
+    listPatGrants: ["GET /orgs/{org}/personal-access-tokens"],
+    listPendingInvitations: ["GET /orgs/{org}/invitations"],
+    listPublicMembers: ["GET /orgs/{org}/public_members"],
+    listSecurityManagerTeams: [
+      "GET /orgs/{org}/security-managers",
+      {},
+      {
+        deprecated: "octokit.rest.orgs.listSecurityManagerTeams() is deprecated, see https://docs.github.com/rest/orgs/security-managers#list-security-manager-teams"
+      }
+    ],
+    listWebhookDeliveries: ["GET /orgs/{org}/hooks/{hook_id}/deliveries"],
+    listWebhooks: ["GET /orgs/{org}/hooks"],
+    pingWebhook: ["POST /orgs/{org}/hooks/{hook_id}/pings"],
+    redeliverWebhookDelivery: [
+      "POST /orgs/{org}/hooks/{hook_id}/deliveries/{delivery_id}/attempts"
+    ],
+    removeMember: ["DELETE /orgs/{org}/members/{username}"],
+    removeMembershipForUser: ["DELETE /orgs/{org}/memberships/{username}"],
+    removeOutsideCollaborator: [
+      "DELETE /orgs/{org}/outside_collaborators/{username}"
+    ],
+    removePublicMembershipForAuthenticatedUser: [
+      "DELETE /orgs/{org}/public_members/{username}"
+    ],
+    removeSecurityManagerTeam: [
+      "DELETE /orgs/{org}/security-managers/teams/{team_slug}",
+      {},
+      {
+        deprecated: "octokit.rest.orgs.removeSecurityManagerTeam() is deprecated, see https://docs.github.com/rest/orgs/security-managers#remove-a-security-manager-team"
+      }
+    ],
+    reviewPatGrantRequest: [
+      "POST /orgs/{org}/personal-access-token-requests/{pat_request_id}"
+    ],
+    reviewPatGrantRequestsInBulk: [
+      "POST /orgs/{org}/personal-access-token-requests"
+    ],
+    revokeAllOrgRolesTeam: [
+      "DELETE /orgs/{org}/organization-roles/teams/{team_slug}"
+    ],
+    revokeAllOrgRolesUser: [
+      "DELETE /orgs/{org}/organization-roles/users/{username}"
+    ],
+    revokeOrgRoleTeam: [
+      "DELETE /orgs/{org}/organization-roles/teams/{team_slug}/{role_id}"
+    ],
+    revokeOrgRoleUser: [
+      "DELETE /orgs/{org}/organization-roles/users/{username}/{role_id}"
+    ],
+    setImmutableReleasesSettings: [
+      "PUT /orgs/{org}/settings/immutable-releases"
+    ],
+    setImmutableReleasesSettingsRepositories: [
+      "PUT /orgs/{org}/settings/immutable-releases/repositories"
+    ],
+    setMembershipForUser: ["PUT /orgs/{org}/memberships/{username}"],
+    setPublicMembershipForAuthenticatedUser: [
+      "PUT /orgs/{org}/public_members/{username}"
+    ],
+    unblockUser: ["DELETE /orgs/{org}/blocks/{username}"],
+    update: ["PATCH /orgs/{org}"],
+    updateIssueType: ["PUT /orgs/{org}/issue-types/{issue_type_id}"],
+    updateMembershipForAuthenticatedUser: [
+      "PATCH /user/memberships/orgs/{org}"
+    ],
+    updatePatAccess: ["POST /orgs/{org}/personal-access-tokens/{pat_id}"],
+    updatePatAccesses: ["POST /orgs/{org}/personal-access-tokens"],
+    updateWebhook: ["PATCH /orgs/{org}/hooks/{hook_id}"],
+    updateWebhookConfigForOrg: ["PATCH /orgs/{org}/hooks/{hook_id}/config"]
+  },
+  packages: {
+    deletePackageForAuthenticatedUser: [
+      "DELETE /user/packages/{package_type}/{package_name}"
+    ],
+    deletePackageForOrg: [
+      "DELETE /orgs/{org}/packages/{package_type}/{package_name}"
+    ],
+    deletePackageForUser: [
+      "DELETE /users/{username}/packages/{package_type}/{package_name}"
+    ],
+    deletePackageVersionForAuthenticatedUser: [
+      "DELETE /user/packages/{package_type}/{package_name}/versions/{package_version_id}"
+    ],
+    deletePackageVersionForOrg: [
+      "DELETE /orgs/{org}/packages/{package_type}/{package_name}/versions/{package_version_id}"
+    ],
+    deletePackageVersionForUser: [
+      "DELETE /users/{username}/packages/{package_type}/{package_name}/versions/{package_version_id}"
+    ],
+    getAllPackageVersionsForAPackageOwnedByAnOrg: [
+      "GET /orgs/{org}/packages/{package_type}/{package_name}/versions",
+      {},
+      { renamed: ["packages", "getAllPackageVersionsForPackageOwnedByOrg"] }
+    ],
+    getAllPackageVersionsForAPackageOwnedByTheAuthenticatedUser: [
+      "GET /user/packages/{package_type}/{package_name}/versions",
+      {},
+      {
+        renamed: [
+          "packages",
+          "getAllPackageVersionsForPackageOwnedByAuthenticatedUser"
+        ]
+      }
+    ],
+    getAllPackageVersionsForPackageOwnedByAuthenticatedUser: [
+      "GET /user/packages/{package_type}/{package_name}/versions"
+    ],
+    getAllPackageVersionsForPackageOwnedByOrg: [
+      "GET /orgs/{org}/packages/{package_type}/{package_name}/versions"
+    ],
+    getAllPackageVersionsForPackageOwnedByUser: [
+      "GET /users/{username}/packages/{package_type}/{package_name}/versions"
+    ],
+    getPackageForAuthenticatedUser: [
+      "GET /user/packages/{package_type}/{package_name}"
+    ],
+    getPackageForOrganization: [
+      "GET /orgs/{org}/packages/{package_type}/{package_name}"
+    ],
+    getPackageForUser: [
+      "GET /users/{username}/packages/{package_type}/{package_name}"
+    ],
+    getPackageVersionForAuthenticatedUser: [
+      "GET /user/packages/{package_type}/{package_name}/versions/{package_version_id}"
+    ],
+    getPackageVersionForOrganization: [
+      "GET /orgs/{org}/packages/{package_type}/{package_name}/versions/{package_version_id}"
+    ],
+    getPackageVersionForUser: [
+      "GET /users/{username}/packages/{package_type}/{package_name}/versions/{package_version_id}"
+    ],
+    listDockerMigrationConflictingPackagesForAuthenticatedUser: [
+      "GET /user/docker/conflicts"
+    ],
+    listDockerMigrationConflictingPackagesForOrganization: [
+      "GET /orgs/{org}/docker/conflicts"
+    ],
+    listDockerMigrationConflictingPackagesForUser: [
+      "GET /users/{username}/docker/conflicts"
+    ],
+    listPackagesForAuthenticatedUser: ["GET /user/packages"],
+    listPackagesForOrganization: ["GET /orgs/{org}/packages"],
+    listPackagesForUser: ["GET /users/{username}/packages"],
+    restorePackageForAuthenticatedUser: [
+      "POST /user/packages/{package_type}/{package_name}/restore{?token}"
+    ],
+    restorePackageForOrg: [
+      "POST /orgs/{org}/packages/{package_type}/{package_name}/restore{?token}"
+    ],
+    restorePackageForUser: [
+      "POST /users/{username}/packages/{package_type}/{package_name}/restore{?token}"
+    ],
+    restorePackageVersionForAuthenticatedUser: [
+      "POST /user/packages/{package_type}/{package_name}/versions/{package_version_id}/restore"
+    ],
+    restorePackageVersionForOrg: [
+      "POST /orgs/{org}/packages/{package_type}/{package_name}/versions/{package_version_id}/restore"
+    ],
+    restorePackageVersionForUser: [
+      "POST /users/{username}/packages/{package_type}/{package_name}/versions/{package_version_id}/restore"
+    ]
+  },
+  privateRegistries: {
+    createOrgPrivateRegistry: ["POST /orgs/{org}/private-registries"],
+    deleteOrgPrivateRegistry: [
+      "DELETE /orgs/{org}/private-registries/{secret_name}"
+    ],
+    getOrgPrivateRegistry: ["GET /orgs/{org}/private-registries/{secret_name}"],
+    getOrgPublicKey: ["GET /orgs/{org}/private-registries/public-key"],
+    listOrgPrivateRegistries: ["GET /orgs/{org}/private-registries"],
+    updateOrgPrivateRegistry: [
+      "PATCH /orgs/{org}/private-registries/{secret_name}"
+    ]
+  },
+  projects: {
+    addItemForOrg: ["POST /orgs/{org}/projectsV2/{project_number}/items"],
+    addItemForUser: [
+      "POST /users/{username}/projectsV2/{project_number}/items"
+    ],
+    deleteItemForOrg: [
+      "DELETE /orgs/{org}/projectsV2/{project_number}/items/{item_id}"
+    ],
+    deleteItemForUser: [
+      "DELETE /users/{username}/projectsV2/{project_number}/items/{item_id}"
+    ],
+    getFieldForOrg: [
+      "GET /orgs/{org}/projectsV2/{project_number}/fields/{field_id}"
+    ],
+    getFieldForUser: [
+      "GET /users/{username}/projectsV2/{project_number}/fields/{field_id}"
+    ],
+    getForOrg: ["GET /orgs/{org}/projectsV2/{project_number}"],
+    getForUser: ["GET /users/{username}/projectsV2/{project_number}"],
+    getOrgItem: ["GET /orgs/{org}/projectsV2/{project_number}/items/{item_id}"],
+    getUserItem: [
+      "GET /users/{username}/projectsV2/{project_number}/items/{item_id}"
+    ],
+    listFieldsForOrg: ["GET /orgs/{org}/projectsV2/{project_number}/fields"],
+    listFieldsForUser: [
+      "GET /users/{username}/projectsV2/{project_number}/fields"
+    ],
+    listForOrg: ["GET /orgs/{org}/projectsV2"],
+    listForUser: ["GET /users/{username}/projectsV2"],
+    listItemsForOrg: ["GET /orgs/{org}/projectsV2/{project_number}/items"],
+    listItemsForUser: [
+      "GET /users/{username}/projectsV2/{project_number}/items"
+    ],
+    updateItemForOrg: [
+      "PATCH /orgs/{org}/projectsV2/{project_number}/items/{item_id}"
+    ],
+    updateItemForUser: [
+      "PATCH /users/{username}/projectsV2/{project_number}/items/{item_id}"
+    ]
+  },
+  pulls: {
+    checkIfMerged: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/merge"],
+    create: ["POST /repos/{owner}/{repo}/pulls"],
+    createReplyForReviewComment: [
+      "POST /repos/{owner}/{repo}/pulls/{pull_number}/comments/{comment_id}/replies"
+    ],
+    createReview: ["POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews"],
+    createReviewComment: [
+      "POST /repos/{owner}/{repo}/pulls/{pull_number}/comments"
+    ],
+    deletePendingReview: [
+      "DELETE /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}"
+    ],
+    deleteReviewComment: [
+      "DELETE /repos/{owner}/{repo}/pulls/comments/{comment_id}"
+    ],
+    dismissReview: [
+      "PUT /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}/dismissals"
+    ],
+    get: ["GET /repos/{owner}/{repo}/pulls/{pull_number}"],
+    getReview: [
+      "GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}"
+    ],
+    getReviewComment: ["GET /repos/{owner}/{repo}/pulls/comments/{comment_id}"],
+    list: ["GET /repos/{owner}/{repo}/pulls"],
+    listCommentsForReview: [
+      "GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}/comments"
+    ],
+    listCommits: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/commits"],
+    listFiles: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/files"],
+    listRequestedReviewers: [
+      "GET /repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers"
+    ],
+    listReviewComments: [
+      "GET /repos/{owner}/{repo}/pulls/{pull_number}/comments"
+    ],
+    listReviewCommentsForRepo: ["GET /repos/{owner}/{repo}/pulls/comments"],
+    listReviews: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews"],
+    merge: ["PUT /repos/{owner}/{repo}/pulls/{pull_number}/merge"],
+    removeRequestedReviewers: [
+      "DELETE /repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers"
+    ],
+    requestReviewers: [
+      "POST /repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers"
+    ],
+    submitReview: [
+      "POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}/events"
+    ],
+    update: ["PATCH /repos/{owner}/{repo}/pulls/{pull_number}"],
+    updateBranch: [
+      "PUT /repos/{owner}/{repo}/pulls/{pull_number}/update-branch"
+    ],
+    updateReview: [
+      "PUT /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}"
+    ],
+    updateReviewComment: [
+      "PATCH /repos/{owner}/{repo}/pulls/comments/{comment_id}"
+    ]
+  },
+  rateLimit: { get: ["GET /rate_limit"] },
+  reactions: {
+    createForCommitComment: [
+      "POST /repos/{owner}/{repo}/comments/{comment_id}/reactions"
+    ],
+    createForIssue: [
+      "POST /repos/{owner}/{repo}/issues/{issue_number}/reactions"
+    ],
+    createForIssueComment: [
+      "POST /repos/{owner}/{repo}/issues/comments/{comment_id}/reactions"
+    ],
+    createForPullRequestReviewComment: [
+      "POST /repos/{owner}/{repo}/pulls/comments/{comment_id}/reactions"
+    ],
+    createForRelease: [
+      "POST /repos/{owner}/{repo}/releases/{release_id}/reactions"
+    ],
+    createForTeamDiscussionCommentInOrg: [
+      "POST /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}/reactions"
+    ],
+    createForTeamDiscussionInOrg: [
+      "POST /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/reactions"
+    ],
+    deleteForCommitComment: [
+      "DELETE /repos/{owner}/{repo}/comments/{comment_id}/reactions/{reaction_id}"
+    ],
+    deleteForIssue: [
+      "DELETE /repos/{owner}/{repo}/issues/{issue_number}/reactions/{reaction_id}"
+    ],
+    deleteForIssueComment: [
+      "DELETE /repos/{owner}/{repo}/issues/comments/{comment_id}/reactions/{reaction_id}"
+    ],
+    deleteForPullRequestComment: [
+      "DELETE /repos/{owner}/{repo}/pulls/comments/{comment_id}/reactions/{reaction_id}"
+    ],
+    deleteForRelease: [
+      "DELETE /repos/{owner}/{repo}/releases/{release_id}/reactions/{reaction_id}"
+    ],
+    deleteForTeamDiscussion: [
+      "DELETE /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/reactions/{reaction_id}"
+    ],
+    deleteForTeamDiscussionComment: [
+      "DELETE /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}/reactions/{reaction_id}"
+    ],
+    listForCommitComment: [
+      "GET /repos/{owner}/{repo}/comments/{comment_id}/reactions"
+    ],
+    listForIssue: ["GET /repos/{owner}/{repo}/issues/{issue_number}/reactions"],
+    listForIssueComment: [
+      "GET /repos/{owner}/{repo}/issues/comments/{comment_id}/reactions"
+    ],
+    listForPullRequestReviewComment: [
+      "GET /repos/{owner}/{repo}/pulls/comments/{comment_id}/reactions"
+    ],
+    listForRelease: [
+      "GET /repos/{owner}/{repo}/releases/{release_id}/reactions"
+    ],
+    listForTeamDiscussionCommentInOrg: [
+      "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}/reactions"
+    ],
+    listForTeamDiscussionInOrg: [
+      "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/reactions"
+    ]
+  },
+  repos: {
+    acceptInvitation: [
+      "PATCH /user/repository_invitations/{invitation_id}",
+      {},
+      { renamed: ["repos", "acceptInvitationForAuthenticatedUser"] }
+    ],
+    acceptInvitationForAuthenticatedUser: [
+      "PATCH /user/repository_invitations/{invitation_id}"
+    ],
+    addAppAccessRestrictions: [
+      "POST /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/apps",
+      {},
+      { mapToData: "apps" }
+    ],
+    addCollaborator: ["PUT /repos/{owner}/{repo}/collaborators/{username}"],
+    addStatusCheckContexts: [
+      "POST /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks/contexts",
+      {},
+      { mapToData: "contexts" }
+    ],
+    addTeamAccessRestrictions: [
+      "POST /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/teams",
+      {},
+      { mapToData: "teams" }
+    ],
+    addUserAccessRestrictions: [
+      "POST /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/users",
+      {},
+      { mapToData: "users" }
+    ],
+    cancelPagesDeployment: [
+      "POST /repos/{owner}/{repo}/pages/deployments/{pages_deployment_id}/cancel"
+    ],
+    checkAutomatedSecurityFixes: [
+      "GET /repos/{owner}/{repo}/automated-security-fixes"
+    ],
+    checkCollaborator: ["GET /repos/{owner}/{repo}/collaborators/{username}"],
+    checkImmutableReleases: ["GET /repos/{owner}/{repo}/immutable-releases"],
+    checkPrivateVulnerabilityReporting: [
+      "GET /repos/{owner}/{repo}/private-vulnerability-reporting"
+    ],
+    checkVulnerabilityAlerts: [
+      "GET /repos/{owner}/{repo}/vulnerability-alerts"
+    ],
+    codeownersErrors: ["GET /repos/{owner}/{repo}/codeowners/errors"],
+    compareCommits: ["GET /repos/{owner}/{repo}/compare/{base}...{head}"],
+    compareCommitsWithBasehead: [
+      "GET /repos/{owner}/{repo}/compare/{basehead}"
+    ],
+    createAttestation: ["POST /repos/{owner}/{repo}/attestations"],
+    createAutolink: ["POST /repos/{owner}/{repo}/autolinks"],
+    createCommitComment: [
+      "POST /repos/{owner}/{repo}/commits/{commit_sha}/comments"
+    ],
+    createCommitSignatureProtection: [
+      "POST /repos/{owner}/{repo}/branches/{branch}/protection/required_signatures"
+    ],
+    createCommitStatus: ["POST /repos/{owner}/{repo}/statuses/{sha}"],
+    createDeployKey: ["POST /repos/{owner}/{repo}/keys"],
+    createDeployment: ["POST /repos/{owner}/{repo}/deployments"],
+    createDeploymentBranchPolicy: [
+      "POST /repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies"
+    ],
+    createDeploymentProtectionRule: [
+      "POST /repos/{owner}/{repo}/environments/{environment_name}/deployment_protection_rules"
+    ],
+    createDeploymentStatus: [
+      "POST /repos/{owner}/{repo}/deployments/{deployment_id}/statuses"
+    ],
+    createDispatchEvent: ["POST /repos/{owner}/{repo}/dispatches"],
+    createForAuthenticatedUser: ["POST /user/repos"],
+    createFork: ["POST /repos/{owner}/{repo}/forks"],
+    createInOrg: ["POST /orgs/{org}/repos"],
+    createOrUpdateEnvironment: [
+      "PUT /repos/{owner}/{repo}/environments/{environment_name}"
+    ],
+    createOrUpdateFileContents: ["PUT /repos/{owner}/{repo}/contents/{path}"],
+    createOrgRuleset: ["POST /orgs/{org}/rulesets"],
+    createPagesDeployment: ["POST /repos/{owner}/{repo}/pages/deployments"],
+    createPagesSite: ["POST /repos/{owner}/{repo}/pages"],
+    createRelease: ["POST /repos/{owner}/{repo}/releases"],
+    createRepoRuleset: ["POST /repos/{owner}/{repo}/rulesets"],
+    createUsingTemplate: [
+      "POST /repos/{template_owner}/{template_repo}/generate"
+    ],
+    createWebhook: ["POST /repos/{owner}/{repo}/hooks"],
+    customPropertiesForReposCreateOrUpdateRepositoryValues: [
+      "PATCH /repos/{owner}/{repo}/properties/values"
+    ],
+    customPropertiesForReposGetRepositoryValues: [
+      "GET /repos/{owner}/{repo}/properties/values"
+    ],
+    declineInvitation: [
+      "DELETE /user/repository_invitations/{invitation_id}",
+      {},
+      { renamed: ["repos", "declineInvitationForAuthenticatedUser"] }
+    ],
+    declineInvitationForAuthenticatedUser: [
+      "DELETE /user/repository_invitations/{invitation_id}"
+    ],
+    delete: ["DELETE /repos/{owner}/{repo}"],
+    deleteAccessRestrictions: [
+      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/restrictions"
+    ],
+    deleteAdminBranchProtection: [
+      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/enforce_admins"
+    ],
+    deleteAnEnvironment: [
+      "DELETE /repos/{owner}/{repo}/environments/{environment_name}"
+    ],
+    deleteAutolink: ["DELETE /repos/{owner}/{repo}/autolinks/{autolink_id}"],
+    deleteBranchProtection: [
+      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection"
+    ],
+    deleteCommitComment: ["DELETE /repos/{owner}/{repo}/comments/{comment_id}"],
+    deleteCommitSignatureProtection: [
+      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/required_signatures"
+    ],
+    deleteDeployKey: ["DELETE /repos/{owner}/{repo}/keys/{key_id}"],
+    deleteDeployment: [
+      "DELETE /repos/{owner}/{repo}/deployments/{deployment_id}"
+    ],
+    deleteDeploymentBranchPolicy: [
+      "DELETE /repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies/{branch_policy_id}"
+    ],
+    deleteFile: ["DELETE /repos/{owner}/{repo}/contents/{path}"],
+    deleteInvitation: [
+      "DELETE /repos/{owner}/{repo}/invitations/{invitation_id}"
+    ],
+    deleteOrgRuleset: ["DELETE /orgs/{org}/rulesets/{ruleset_id}"],
+    deletePagesSite: ["DELETE /repos/{owner}/{repo}/pages"],
+    deletePullRequestReviewProtection: [
+      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/required_pull_request_reviews"
+    ],
+    deleteRelease: ["DELETE /repos/{owner}/{repo}/releases/{release_id}"],
+    deleteReleaseAsset: [
+      "DELETE /repos/{owner}/{repo}/releases/assets/{asset_id}"
+    ],
+    deleteRepoRuleset: ["DELETE /repos/{owner}/{repo}/rulesets/{ruleset_id}"],
+    deleteWebhook: ["DELETE /repos/{owner}/{repo}/hooks/{hook_id}"],
+    disableAutomatedSecurityFixes: [
+      "DELETE /repos/{owner}/{repo}/automated-security-fixes"
+    ],
+    disableDeploymentProtectionRule: [
+      "DELETE /repos/{owner}/{repo}/environments/{environment_name}/deployment_protection_rules/{protection_rule_id}"
+    ],
+    disableImmutableReleases: [
+      "DELETE /repos/{owner}/{repo}/immutable-releases"
+    ],
+    disablePrivateVulnerabilityReporting: [
+      "DELETE /repos/{owner}/{repo}/private-vulnerability-reporting"
+    ],
+    disableVulnerabilityAlerts: [
+      "DELETE /repos/{owner}/{repo}/vulnerability-alerts"
+    ],
+    downloadArchive: [
+      "GET /repos/{owner}/{repo}/zipball/{ref}",
+      {},
+      { renamed: ["repos", "downloadZipballArchive"] }
+    ],
+    downloadTarballArchive: ["GET /repos/{owner}/{repo}/tarball/{ref}"],
+    downloadZipballArchive: ["GET /repos/{owner}/{repo}/zipball/{ref}"],
+    enableAutomatedSecurityFixes: [
+      "PUT /repos/{owner}/{repo}/automated-security-fixes"
+    ],
+    enableImmutableReleases: ["PUT /repos/{owner}/{repo}/immutable-releases"],
+    enablePrivateVulnerabilityReporting: [
+      "PUT /repos/{owner}/{repo}/private-vulnerability-reporting"
+    ],
+    enableVulnerabilityAlerts: [
+      "PUT /repos/{owner}/{repo}/vulnerability-alerts"
+    ],
+    generateReleaseNotes: [
+      "POST /repos/{owner}/{repo}/releases/generate-notes"
+    ],
+    get: ["GET /repos/{owner}/{repo}"],
+    getAccessRestrictions: [
+      "GET /repos/{owner}/{repo}/branches/{branch}/protection/restrictions"
+    ],
+    getAdminBranchProtection: [
+      "GET /repos/{owner}/{repo}/branches/{branch}/protection/enforce_admins"
+    ],
+    getAllDeploymentProtectionRules: [
+      "GET /repos/{owner}/{repo}/environments/{environment_name}/deployment_protection_rules"
+    ],
+    getAllEnvironments: ["GET /repos/{owner}/{repo}/environments"],
+    getAllStatusCheckContexts: [
+      "GET /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks/contexts"
+    ],
+    getAllTopics: ["GET /repos/{owner}/{repo}/topics"],
+    getAppsWithAccessToProtectedBranch: [
+      "GET /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/apps"
+    ],
+    getAutolink: ["GET /repos/{owner}/{repo}/autolinks/{autolink_id}"],
+    getBranch: ["GET /repos/{owner}/{repo}/branches/{branch}"],
+    getBranchProtection: [
+      "GET /repos/{owner}/{repo}/branches/{branch}/protection"
+    ],
+    getBranchRules: ["GET /repos/{owner}/{repo}/rules/branches/{branch}"],
+    getClones: ["GET /repos/{owner}/{repo}/traffic/clones"],
+    getCodeFrequencyStats: ["GET /repos/{owner}/{repo}/stats/code_frequency"],
+    getCollaboratorPermissionLevel: [
+      "GET /repos/{owner}/{repo}/collaborators/{username}/permission"
+    ],
+    getCombinedStatusForRef: ["GET /repos/{owner}/{repo}/commits/{ref}/status"],
+    getCommit: ["GET /repos/{owner}/{repo}/commits/{ref}"],
+    getCommitActivityStats: ["GET /repos/{owner}/{repo}/stats/commit_activity"],
+    getCommitComment: ["GET /repos/{owner}/{repo}/comments/{comment_id}"],
+    getCommitSignatureProtection: [
+      "GET /repos/{owner}/{repo}/branches/{branch}/protection/required_signatures"
+    ],
+    getCommunityProfileMetrics: ["GET /repos/{owner}/{repo}/community/profile"],
+    getContent: ["GET /repos/{owner}/{repo}/contents/{path}"],
+    getContributorsStats: ["GET /repos/{owner}/{repo}/stats/contributors"],
+    getCustomDeploymentProtectionRule: [
+      "GET /repos/{owner}/{repo}/environments/{environment_name}/deployment_protection_rules/{protection_rule_id}"
+    ],
+    getDeployKey: ["GET /repos/{owner}/{repo}/keys/{key_id}"],
+    getDeployment: ["GET /repos/{owner}/{repo}/deployments/{deployment_id}"],
+    getDeploymentBranchPolicy: [
+      "GET /repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies/{branch_policy_id}"
+    ],
+    getDeploymentStatus: [
+      "GET /repos/{owner}/{repo}/deployments/{deployment_id}/statuses/{status_id}"
+    ],
+    getEnvironment: [
+      "GET /repos/{owner}/{repo}/environments/{environment_name}"
+    ],
+    getLatestPagesBuild: ["GET /repos/{owner}/{repo}/pages/builds/latest"],
+    getLatestRelease: ["GET /repos/{owner}/{repo}/releases/latest"],
+    getOrgRuleSuite: ["GET /orgs/{org}/rulesets/rule-suites/{rule_suite_id}"],
+    getOrgRuleSuites: ["GET /orgs/{org}/rulesets/rule-suites"],
+    getOrgRuleset: ["GET /orgs/{org}/rulesets/{ruleset_id}"],
+    getOrgRulesets: ["GET /orgs/{org}/rulesets"],
+    getPages: ["GET /repos/{owner}/{repo}/pages"],
+    getPagesBuild: ["GET /repos/{owner}/{repo}/pages/builds/{build_id}"],
+    getPagesDeployment: [
+      "GET /repos/{owner}/{repo}/pages/deployments/{pages_deployment_id}"
+    ],
+    getPagesHealthCheck: ["GET /repos/{owner}/{repo}/pages/health"],
+    getParticipationStats: ["GET /repos/{owner}/{repo}/stats/participation"],
+    getPullRequestReviewProtection: [
+      "GET /repos/{owner}/{repo}/branches/{branch}/protection/required_pull_request_reviews"
+    ],
+    getPunchCardStats: ["GET /repos/{owner}/{repo}/stats/punch_card"],
+    getReadme: ["GET /repos/{owner}/{repo}/readme"],
+    getReadmeInDirectory: ["GET /repos/{owner}/{repo}/readme/{dir}"],
+    getRelease: ["GET /repos/{owner}/{repo}/releases/{release_id}"],
+    getReleaseAsset: ["GET /repos/{owner}/{repo}/releases/assets/{asset_id}"],
+    getReleaseByTag: ["GET /repos/{owner}/{repo}/releases/tags/{tag}"],
+    getRepoRuleSuite: [
+      "GET /repos/{owner}/{repo}/rulesets/rule-suites/{rule_suite_id}"
+    ],
+    getRepoRuleSuites: ["GET /repos/{owner}/{repo}/rulesets/rule-suites"],
+    getRepoRuleset: ["GET /repos/{owner}/{repo}/rulesets/{ruleset_id}"],
+    getRepoRulesetHistory: [
+      "GET /repos/{owner}/{repo}/rulesets/{ruleset_id}/history"
+    ],
+    getRepoRulesetVersion: [
+      "GET /repos/{owner}/{repo}/rulesets/{ruleset_id}/history/{version_id}"
+    ],
+    getRepoRulesets: ["GET /repos/{owner}/{repo}/rulesets"],
+    getStatusChecksProtection: [
+      "GET /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks"
+    ],
+    getTeamsWithAccessToProtectedBranch: [
+      "GET /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/teams"
+    ],
+    getTopPaths: ["GET /repos/{owner}/{repo}/traffic/popular/paths"],
+    getTopReferrers: ["GET /repos/{owner}/{repo}/traffic/popular/referrers"],
+    getUsersWithAccessToProtectedBranch: [
+      "GET /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/users"
+    ],
+    getViews: ["GET /repos/{owner}/{repo}/traffic/views"],
+    getWebhook: ["GET /repos/{owner}/{repo}/hooks/{hook_id}"],
+    getWebhookConfigForRepo: [
+      "GET /repos/{owner}/{repo}/hooks/{hook_id}/config"
+    ],
+    getWebhookDelivery: [
+      "GET /repos/{owner}/{repo}/hooks/{hook_id}/deliveries/{delivery_id}"
+    ],
+    listActivities: ["GET /repos/{owner}/{repo}/activity"],
+    listAttestations: [
+      "GET /repos/{owner}/{repo}/attestations/{subject_digest}"
+    ],
+    listAutolinks: ["GET /repos/{owner}/{repo}/autolinks"],
+    listBranches: ["GET /repos/{owner}/{repo}/branches"],
+    listBranchesForHeadCommit: [
+      "GET /repos/{owner}/{repo}/commits/{commit_sha}/branches-where-head"
+    ],
+    listCollaborators: ["GET /repos/{owner}/{repo}/collaborators"],
+    listCommentsForCommit: [
+      "GET /repos/{owner}/{repo}/commits/{commit_sha}/comments"
+    ],
+    listCommitCommentsForRepo: ["GET /repos/{owner}/{repo}/comments"],
+    listCommitStatusesForRef: [
+      "GET /repos/{owner}/{repo}/commits/{ref}/statuses"
+    ],
+    listCommits: ["GET /repos/{owner}/{repo}/commits"],
+    listContributors: ["GET /repos/{owner}/{repo}/contributors"],
+    listCustomDeploymentRuleIntegrations: [
+      "GET /repos/{owner}/{repo}/environments/{environment_name}/deployment_protection_rules/apps"
+    ],
+    listDeployKeys: ["GET /repos/{owner}/{repo}/keys"],
+    listDeploymentBranchPolicies: [
+      "GET /repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies"
+    ],
+    listDeploymentStatuses: [
+      "GET /repos/{owner}/{repo}/deployments/{deployment_id}/statuses"
+    ],
+    listDeployments: ["GET /repos/{owner}/{repo}/deployments"],
+    listForAuthenticatedUser: ["GET /user/repos"],
+    listForOrg: ["GET /orgs/{org}/repos"],
+    listForUser: ["GET /users/{username}/repos"],
+    listForks: ["GET /repos/{owner}/{repo}/forks"],
+    listInvitations: ["GET /repos/{owner}/{repo}/invitations"],
+    listInvitationsForAuthenticatedUser: ["GET /user/repository_invitations"],
+    listLanguages: ["GET /repos/{owner}/{repo}/languages"],
+    listPagesBuilds: ["GET /repos/{owner}/{repo}/pages/builds"],
+    listPublic: ["GET /repositories"],
+    listPullRequestsAssociatedWithCommit: [
+      "GET /repos/{owner}/{repo}/commits/{commit_sha}/pulls"
+    ],
+    listReleaseAssets: [
+      "GET /repos/{owner}/{repo}/releases/{release_id}/assets"
+    ],
+    listReleases: ["GET /repos/{owner}/{repo}/releases"],
+    listTags: ["GET /repos/{owner}/{repo}/tags"],
+    listTeams: ["GET /repos/{owner}/{repo}/teams"],
+    listWebhookDeliveries: [
+      "GET /repos/{owner}/{repo}/hooks/{hook_id}/deliveries"
+    ],
+    listWebhooks: ["GET /repos/{owner}/{repo}/hooks"],
+    merge: ["POST /repos/{owner}/{repo}/merges"],
+    mergeUpstream: ["POST /repos/{owner}/{repo}/merge-upstream"],
+    pingWebhook: ["POST /repos/{owner}/{repo}/hooks/{hook_id}/pings"],
+    redeliverWebhookDelivery: [
+      "POST /repos/{owner}/{repo}/hooks/{hook_id}/deliveries/{delivery_id}/attempts"
+    ],
+    removeAppAccessRestrictions: [
+      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/apps",
+      {},
+      { mapToData: "apps" }
+    ],
+    removeCollaborator: [
+      "DELETE /repos/{owner}/{repo}/collaborators/{username}"
+    ],
+    removeStatusCheckContexts: [
+      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks/contexts",
+      {},
+      { mapToData: "contexts" }
+    ],
+    removeStatusCheckProtection: [
+      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks"
+    ],
+    removeTeamAccessRestrictions: [
+      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/teams",
+      {},
+      { mapToData: "teams" }
+    ],
+    removeUserAccessRestrictions: [
+      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/users",
+      {},
+      { mapToData: "users" }
+    ],
+    renameBranch: ["POST /repos/{owner}/{repo}/branches/{branch}/rename"],
+    replaceAllTopics: ["PUT /repos/{owner}/{repo}/topics"],
+    requestPagesBuild: ["POST /repos/{owner}/{repo}/pages/builds"],
+    setAdminBranchProtection: [
+      "POST /repos/{owner}/{repo}/branches/{branch}/protection/enforce_admins"
+    ],
+    setAppAccessRestrictions: [
+      "PUT /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/apps",
+      {},
+      { mapToData: "apps" }
+    ],
+    setStatusCheckContexts: [
+      "PUT /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks/contexts",
+      {},
+      { mapToData: "contexts" }
+    ],
+    setTeamAccessRestrictions: [
+      "PUT /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/teams",
+      {},
+      { mapToData: "teams" }
+    ],
+    setUserAccessRestrictions: [
+      "PUT /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/users",
+      {},
+      { mapToData: "users" }
+    ],
+    testPushWebhook: ["POST /repos/{owner}/{repo}/hooks/{hook_id}/tests"],
+    transfer: ["POST /repos/{owner}/{repo}/transfer"],
+    update: ["PATCH /repos/{owner}/{repo}"],
+    updateBranchProtection: [
+      "PUT /repos/{owner}/{repo}/branches/{branch}/protection"
+    ],
+    updateCommitComment: ["PATCH /repos/{owner}/{repo}/comments/{comment_id}"],
+    updateDeploymentBranchPolicy: [
+      "PUT /repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies/{branch_policy_id}"
+    ],
+    updateInformationAboutPagesSite: ["PUT /repos/{owner}/{repo}/pages"],
+    updateInvitation: [
+      "PATCH /repos/{owner}/{repo}/invitations/{invitation_id}"
+    ],
+    updateOrgRuleset: ["PUT /orgs/{org}/rulesets/{ruleset_id}"],
+    updatePullRequestReviewProtection: [
+      "PATCH /repos/{owner}/{repo}/branches/{branch}/protection/required_pull_request_reviews"
+    ],
+    updateRelease: ["PATCH /repos/{owner}/{repo}/releases/{release_id}"],
+    updateReleaseAsset: [
+      "PATCH /repos/{owner}/{repo}/releases/assets/{asset_id}"
+    ],
+    updateRepoRuleset: ["PUT /repos/{owner}/{repo}/rulesets/{ruleset_id}"],
+    updateStatusCheckPotection: [
+      "PATCH /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks",
+      {},
+      { renamed: ["repos", "updateStatusCheckProtection"] }
+    ],
+    updateStatusCheckProtection: [
+      "PATCH /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks"
+    ],
+    updateWebhook: ["PATCH /repos/{owner}/{repo}/hooks/{hook_id}"],
+    updateWebhookConfigForRepo: [
+      "PATCH /repos/{owner}/{repo}/hooks/{hook_id}/config"
+    ],
+    uploadReleaseAsset: [
+      "POST /repos/{owner}/{repo}/releases/{release_id}/assets{?name,label}",
+      { baseUrl: "https://uploads.github.com" }
+    ]
+  },
+  search: {
+    code: ["GET /search/code"],
+    commits: ["GET /search/commits"],
+    issuesAndPullRequests: ["GET /search/issues"],
+    labels: ["GET /search/labels"],
+    repos: ["GET /search/repositories"],
+    topics: ["GET /search/topics"],
+    users: ["GET /search/users"]
+  },
+  secretScanning: {
+    createPushProtectionBypass: [
+      "POST /repos/{owner}/{repo}/secret-scanning/push-protection-bypasses"
+    ],
+    getAlert: [
+      "GET /repos/{owner}/{repo}/secret-scanning/alerts/{alert_number}"
+    ],
+    getScanHistory: ["GET /repos/{owner}/{repo}/secret-scanning/scan-history"],
+    listAlertsForOrg: ["GET /orgs/{org}/secret-scanning/alerts"],
+    listAlertsForRepo: ["GET /repos/{owner}/{repo}/secret-scanning/alerts"],
+    listLocationsForAlert: [
+      "GET /repos/{owner}/{repo}/secret-scanning/alerts/{alert_number}/locations"
+    ],
+    listOrgPatternConfigs: [
+      "GET /orgs/{org}/secret-scanning/pattern-configurations"
+    ],
+    updateAlert: [
+      "PATCH /repos/{owner}/{repo}/secret-scanning/alerts/{alert_number}"
+    ],
+    updateOrgPatternConfigs: [
+      "PATCH /orgs/{org}/secret-scanning/pattern-configurations"
+    ]
+  },
+  securityAdvisories: {
+    createFork: [
+      "POST /repos/{owner}/{repo}/security-advisories/{ghsa_id}/forks"
+    ],
+    createPrivateVulnerabilityReport: [
+      "POST /repos/{owner}/{repo}/security-advisories/reports"
+    ],
+    createRepositoryAdvisory: [
+      "POST /repos/{owner}/{repo}/security-advisories"
+    ],
+    createRepositoryAdvisoryCveRequest: [
+      "POST /repos/{owner}/{repo}/security-advisories/{ghsa_id}/cve"
+    ],
+    getGlobalAdvisory: ["GET /advisories/{ghsa_id}"],
+    getRepositoryAdvisory: [
+      "GET /repos/{owner}/{repo}/security-advisories/{ghsa_id}"
+    ],
+    listGlobalAdvisories: ["GET /advisories"],
+    listOrgRepositoryAdvisories: ["GET /orgs/{org}/security-advisories"],
+    listRepositoryAdvisories: ["GET /repos/{owner}/{repo}/security-advisories"],
+    updateRepositoryAdvisory: [
+      "PATCH /repos/{owner}/{repo}/security-advisories/{ghsa_id}"
+    ]
+  },
+  teams: {
+    addOrUpdateMembershipForUserInOrg: [
+      "PUT /orgs/{org}/teams/{team_slug}/memberships/{username}"
+    ],
+    addOrUpdateRepoPermissionsInOrg: [
+      "PUT /orgs/{org}/teams/{team_slug}/repos/{owner}/{repo}"
+    ],
+    checkPermissionsForRepoInOrg: [
+      "GET /orgs/{org}/teams/{team_slug}/repos/{owner}/{repo}"
+    ],
+    create: ["POST /orgs/{org}/teams"],
+    createDiscussionCommentInOrg: [
+      "POST /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments"
+    ],
+    createDiscussionInOrg: ["POST /orgs/{org}/teams/{team_slug}/discussions"],
+    deleteDiscussionCommentInOrg: [
+      "DELETE /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}"
+    ],
+    deleteDiscussionInOrg: [
+      "DELETE /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}"
+    ],
+    deleteInOrg: ["DELETE /orgs/{org}/teams/{team_slug}"],
+    getByName: ["GET /orgs/{org}/teams/{team_slug}"],
+    getDiscussionCommentInOrg: [
+      "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}"
+    ],
+    getDiscussionInOrg: [
+      "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}"
+    ],
+    getMembershipForUserInOrg: [
+      "GET /orgs/{org}/teams/{team_slug}/memberships/{username}"
+    ],
+    list: ["GET /orgs/{org}/teams"],
+    listChildInOrg: ["GET /orgs/{org}/teams/{team_slug}/teams"],
+    listDiscussionCommentsInOrg: [
+      "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments"
+    ],
+    listDiscussionsInOrg: ["GET /orgs/{org}/teams/{team_slug}/discussions"],
+    listForAuthenticatedUser: ["GET /user/teams"],
+    listMembersInOrg: ["GET /orgs/{org}/teams/{team_slug}/members"],
+    listPendingInvitationsInOrg: [
+      "GET /orgs/{org}/teams/{team_slug}/invitations"
+    ],
+    listReposInOrg: ["GET /orgs/{org}/teams/{team_slug}/repos"],
+    removeMembershipForUserInOrg: [
+      "DELETE /orgs/{org}/teams/{team_slug}/memberships/{username}"
+    ],
+    removeRepoInOrg: [
+      "DELETE /orgs/{org}/teams/{team_slug}/repos/{owner}/{repo}"
+    ],
+    updateDiscussionCommentInOrg: [
+      "PATCH /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}"
+    ],
+    updateDiscussionInOrg: [
+      "PATCH /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}"
+    ],
+    updateInOrg: ["PATCH /orgs/{org}/teams/{team_slug}"]
+  },
+  users: {
+    addEmailForAuthenticated: [
+      "POST /user/emails",
+      {},
+      { renamed: ["users", "addEmailForAuthenticatedUser"] }
+    ],
+    addEmailForAuthenticatedUser: ["POST /user/emails"],
+    addSocialAccountForAuthenticatedUser: ["POST /user/social_accounts"],
+    block: ["PUT /user/blocks/{username}"],
+    checkBlocked: ["GET /user/blocks/{username}"],
+    checkFollowingForUser: ["GET /users/{username}/following/{target_user}"],
+    checkPersonIsFollowedByAuthenticated: ["GET /user/following/{username}"],
+    createGpgKeyForAuthenticated: [
+      "POST /user/gpg_keys",
+      {},
+      { renamed: ["users", "createGpgKeyForAuthenticatedUser"] }
+    ],
+    createGpgKeyForAuthenticatedUser: ["POST /user/gpg_keys"],
+    createPublicSshKeyForAuthenticated: [
+      "POST /user/keys",
+      {},
+      { renamed: ["users", "createPublicSshKeyForAuthenticatedUser"] }
+    ],
+    createPublicSshKeyForAuthenticatedUser: ["POST /user/keys"],
+    createSshSigningKeyForAuthenticatedUser: ["POST /user/ssh_signing_keys"],
+    deleteAttestationsBulk: [
+      "POST /users/{username}/attestations/delete-request"
+    ],
+    deleteAttestationsById: [
+      "DELETE /users/{username}/attestations/{attestation_id}"
+    ],
+    deleteAttestationsBySubjectDigest: [
+      "DELETE /users/{username}/attestations/digest/{subject_digest}"
+    ],
+    deleteEmailForAuthenticated: [
+      "DELETE /user/emails",
+      {},
+      { renamed: ["users", "deleteEmailForAuthenticatedUser"] }
+    ],
+    deleteEmailForAuthenticatedUser: ["DELETE /user/emails"],
+    deleteGpgKeyForAuthenticated: [
+      "DELETE /user/gpg_keys/{gpg_key_id}",
+      {},
+      { renamed: ["users", "deleteGpgKeyForAuthenticatedUser"] }
+    ],
+    deleteGpgKeyForAuthenticatedUser: ["DELETE /user/gpg_keys/{gpg_key_id}"],
+    deletePublicSshKeyForAuthenticated: [
+      "DELETE /user/keys/{key_id}",
+      {},
+      { renamed: ["users", "deletePublicSshKeyForAuthenticatedUser"] }
+    ],
+    deletePublicSshKeyForAuthenticatedUser: ["DELETE /user/keys/{key_id}"],
+    deleteSocialAccountForAuthenticatedUser: ["DELETE /user/social_accounts"],
+    deleteSshSigningKeyForAuthenticatedUser: [
+      "DELETE /user/ssh_signing_keys/{ssh_signing_key_id}"
+    ],
+    follow: ["PUT /user/following/{username}"],
+    getAuthenticated: ["GET /user"],
+    getById: ["GET /user/{account_id}"],
+    getByUsername: ["GET /users/{username}"],
+    getContextForUser: ["GET /users/{username}/hovercard"],
+    getGpgKeyForAuthenticated: [
+      "GET /user/gpg_keys/{gpg_key_id}",
+      {},
+      { renamed: ["users", "getGpgKeyForAuthenticatedUser"] }
+    ],
+    getGpgKeyForAuthenticatedUser: ["GET /user/gpg_keys/{gpg_key_id}"],
+    getPublicSshKeyForAuthenticated: [
+      "GET /user/keys/{key_id}",
+      {},
+      { renamed: ["users", "getPublicSshKeyForAuthenticatedUser"] }
+    ],
+    getPublicSshKeyForAuthenticatedUser: ["GET /user/keys/{key_id}"],
+    getSshSigningKeyForAuthenticatedUser: [
+      "GET /user/ssh_signing_keys/{ssh_signing_key_id}"
+    ],
+    list: ["GET /users"],
+    listAttestations: ["GET /users/{username}/attestations/{subject_digest}"],
+    listAttestationsBulk: [
+      "POST /users/{username}/attestations/bulk-list{?per_page,before,after}"
+    ],
+    listBlockedByAuthenticated: [
+      "GET /user/blocks",
+      {},
+      { renamed: ["users", "listBlockedByAuthenticatedUser"] }
+    ],
+    listBlockedByAuthenticatedUser: ["GET /user/blocks"],
+    listEmailsForAuthenticated: [
+      "GET /user/emails",
+      {},
+      { renamed: ["users", "listEmailsForAuthenticatedUser"] }
+    ],
+    listEmailsForAuthenticatedUser: ["GET /user/emails"],
+    listFollowedByAuthenticated: [
+      "GET /user/following",
+      {},
+      { renamed: ["users", "listFollowedByAuthenticatedUser"] }
+    ],
+    listFollowedByAuthenticatedUser: ["GET /user/following"],
+    listFollowersForAuthenticatedUser: ["GET /user/followers"],
+    listFollowersForUser: ["GET /users/{username}/followers"],
+    listFollowingForUser: ["GET /users/{username}/following"],
+    listGpgKeysForAuthenticated: [
+      "GET /user/gpg_keys",
+      {},
+      { renamed: ["users", "listGpgKeysForAuthenticatedUser"] }
+    ],
+    listGpgKeysForAuthenticatedUser: ["GET /user/gpg_keys"],
+    listGpgKeysForUser: ["GET /users/{username}/gpg_keys"],
+    listPublicEmailsForAuthenticated: [
+      "GET /user/public_emails",
+      {},
+      { renamed: ["users", "listPublicEmailsForAuthenticatedUser"] }
+    ],
+    listPublicEmailsForAuthenticatedUser: ["GET /user/public_emails"],
+    listPublicKeysForUser: ["GET /users/{username}/keys"],
+    listPublicSshKeysForAuthenticated: [
+      "GET /user/keys",
+      {},
+      { renamed: ["users", "listPublicSshKeysForAuthenticatedUser"] }
+    ],
+    listPublicSshKeysForAuthenticatedUser: ["GET /user/keys"],
+    listSocialAccountsForAuthenticatedUser: ["GET /user/social_accounts"],
+    listSocialAccountsForUser: ["GET /users/{username}/social_accounts"],
+    listSshSigningKeysForAuthenticatedUser: ["GET /user/ssh_signing_keys"],
+    listSshSigningKeysForUser: ["GET /users/{username}/ssh_signing_keys"],
+    setPrimaryEmailVisibilityForAuthenticated: [
+      "PATCH /user/email/visibility",
+      {},
+      { renamed: ["users", "setPrimaryEmailVisibilityForAuthenticatedUser"] }
+    ],
+    setPrimaryEmailVisibilityForAuthenticatedUser: [
+      "PATCH /user/email/visibility"
+    ],
+    unblock: ["DELETE /user/blocks/{username}"],
+    unfollow: ["DELETE /user/following/{username}"],
+    updateAuthenticated: ["PATCH /user"]
+  }
+};
+var endpoints_default = Endpoints;
+
+// node_modules/.pnpm/@octokit+plugin-rest-endpoint-methods@17.0.0_@octokit+core@7.0.8/node_modules/@octokit/plugin-rest-endpoint-methods/dist-src/endpoints-to-methods.js
+var endpointMethodsMap = /* @__PURE__ */ new Map();
+for (const [scope, endpoints] of Object.entries(endpoints_default)) {
+  for (const [methodName, endpoint2] of Object.entries(endpoints)) {
+    const [route, defaults2, decorations] = endpoint2;
+    const [method, url] = route.split(/ /);
+    const endpointDefaults = Object.assign(
+      {
+        method,
+        url
+      },
+      defaults2
+    );
+    if (!endpointMethodsMap.has(scope)) {
+      endpointMethodsMap.set(scope, /* @__PURE__ */ new Map());
+    }
+    endpointMethodsMap.get(scope).set(methodName, {
+      scope,
+      methodName,
+      endpointDefaults,
+      decorations
+    });
+  }
+}
+var handler = {
+  has({ scope }, methodName) {
+    return endpointMethodsMap.get(scope).has(methodName);
+  },
+  getOwnPropertyDescriptor(target, methodName) {
+    return {
+      value: this.get(target, methodName),
+      // ensures method is in the cache
+      configurable: true,
+      writable: true,
+      enumerable: true
+    };
+  },
+  defineProperty(target, methodName, descriptor) {
+    Object.defineProperty(target.cache, methodName, descriptor);
+    return true;
+  },
+  deleteProperty(target, methodName) {
+    delete target.cache[methodName];
+    return true;
+  },
+  ownKeys({ scope }) {
+    return [...endpointMethodsMap.get(scope).keys()];
+  },
+  set(target, methodName, value) {
+    return target.cache[methodName] = value;
+  },
+  get({ octokit, scope, cache }, methodName) {
+    if (cache[methodName]) {
+      return cache[methodName];
+    }
+    const method = endpointMethodsMap.get(scope).get(methodName);
+    if (!method) {
+      return void 0;
+    }
+    const { endpointDefaults, decorations } = method;
+    if (decorations) {
+      cache[methodName] = decorate(
+        octokit,
+        scope,
+        methodName,
+        endpointDefaults,
+        decorations
+      );
+    } else {
+      cache[methodName] = octokit.request.defaults(endpointDefaults);
+    }
+    return cache[methodName];
+  }
+};
+function endpointsToMethods(octokit) {
+  const newMethods = {};
+  for (const scope of endpointMethodsMap.keys()) {
+    newMethods[scope] = new Proxy({ octokit, scope, cache: {} }, handler);
+  }
+  return newMethods;
+}
+function decorate(octokit, scope, methodName, defaults2, decorations) {
+  const requestWithDefaults = octokit.request.defaults(defaults2);
+  function withDecorations(...args) {
+    let options = requestWithDefaults.endpoint.merge(...args);
+    if (decorations.mapToData) {
+      options = Object.assign({}, options, {
+        data: options[decorations.mapToData],
+        [decorations.mapToData]: void 0
+      });
+      return requestWithDefaults(options);
+    }
+    if (decorations.renamed) {
+      const [newScope, newMethodName] = decorations.renamed;
+      octokit.log.warn(
+        `octokit.${scope}.${methodName}() has been renamed to octokit.${newScope}.${newMethodName}()`
+      );
+    }
+    if (decorations.deprecated) {
+      octokit.log.warn(decorations.deprecated);
+    }
+    if (decorations.renamedParameters) {
+      const options2 = requestWithDefaults.endpoint.merge(...args);
+      for (const [name, alias] of Object.entries(
+        decorations.renamedParameters
+      )) {
+        if (name in options2) {
+          octokit.log.warn(
+            `"${name}" parameter is deprecated for "octokit.${scope}.${methodName}()". Use "${alias}" instead`
+          );
+          if (!(alias in options2)) {
+            options2[alias] = options2[name];
+          }
+          delete options2[name];
+        }
+      }
+      return requestWithDefaults(options2);
+    }
+    return requestWithDefaults(...args);
+  }
+  return Object.assign(withDecorations, requestWithDefaults);
+}
+
+// node_modules/.pnpm/@octokit+plugin-rest-endpoint-methods@17.0.0_@octokit+core@7.0.8/node_modules/@octokit/plugin-rest-endpoint-methods/dist-src/index.js
+function restEndpointMethods(octokit) {
+  const api = endpointsToMethods(octokit);
+  return {
+    rest: api
+  };
+}
+restEndpointMethods.VERSION = VERSION5;
+function legacyRestEndpointMethods(octokit) {
+  const api = endpointsToMethods(octokit);
+  return {
+    ...api,
+    rest: api
+  };
+}
+legacyRestEndpointMethods.VERSION = VERSION5;
+
+// node_modules/.pnpm/@octokit+plugin-paginate-rest@14.0.0_@octokit+core@7.0.8/node_modules/@octokit/plugin-paginate-rest/dist-bundle/index.js
+var VERSION6 = "0.0.0-development";
+function normalizePaginatedListResponse(response) {
+  if (!response.data) {
+    return {
+      ...response,
+      data: []
+    };
+  }
+  const responseNeedsNormalization = ("total_count" in response.data || "total_commits" in response.data) && !("url" in response.data);
+  if (!responseNeedsNormalization) return response;
+  const incompleteResults = response.data.incomplete_results;
+  const repositorySelection = response.data.repository_selection;
+  const totalCount = response.data.total_count;
+  const totalCommits = response.data.total_commits;
+  delete response.data.incomplete_results;
+  delete response.data.repository_selection;
+  delete response.data.total_count;
+  delete response.data.total_commits;
+  const namespaceKey = Object.keys(response.data)[0];
+  const data = response.data[namespaceKey];
+  response.data = data;
+  if (typeof incompleteResults !== "undefined") {
+    response.data.incomplete_results = incompleteResults;
+  }
+  if (typeof repositorySelection !== "undefined") {
+    response.data.repository_selection = repositorySelection;
+  }
+  response.data.total_count = totalCount;
+  response.data.total_commits = totalCommits;
+  return response;
+}
+function iterator(octokit, route, parameters) {
+  const options = typeof route === "function" ? route.endpoint(parameters) : octokit.request.endpoint(route, parameters);
+  const requestMethod = typeof route === "function" ? route : octokit.request;
+  const method = options.method;
+  const headers = options.headers;
+  let url = options.url;
+  return {
+    [Symbol.asyncIterator]: () => ({
+      async next() {
+        if (!url) return { done: true };
+        try {
+          const response = await requestMethod({ method, url, headers });
+          const normalizedResponse = normalizePaginatedListResponse(response);
+          url = ((normalizedResponse.headers.link || "").match(
+            /<([^<>]+)>;\s*rel="next"/
+          ) || [])[1];
+          if (!url && "total_commits" in normalizedResponse.data) {
+            const parsedUrl = new URL(normalizedResponse.url);
+            const params = parsedUrl.searchParams;
+            const page = parseInt(params.get("page") || "1", 10);
+            const per_page = parseInt(params.get("per_page") || "250", 10);
+            if (page * per_page < normalizedResponse.data.total_commits) {
+              params.set("page", String(page + 1));
+              url = parsedUrl.toString();
+            }
+          }
+          return { value: normalizedResponse };
+        } catch (error2) {
+          if (error2.status !== 409) throw error2;
+          url = "";
+          return {
+            value: {
+              status: 200,
+              headers: {},
+              data: []
+            }
+          };
+        }
+      }
+    })
+  };
+}
+function paginate(octokit, route, parameters, mapFn) {
+  if (typeof parameters === "function") {
+    mapFn = parameters;
+    parameters = void 0;
+  }
+  return gather(
+    octokit,
+    [],
+    iterator(octokit, route, parameters)[Symbol.asyncIterator](),
+    mapFn
+  );
+}
+function gather(octokit, results, iterator2, mapFn) {
+  return iterator2.next().then((result) => {
+    if (result.done) {
+      return results;
+    }
+    let earlyExit = false;
+    function done() {
+      earlyExit = true;
+    }
+    results = results.concat(
+      mapFn ? mapFn(result.value, done) : result.value.data
+    );
+    if (earlyExit) {
+      return results;
+    }
+    return gather(octokit, results, iterator2, mapFn);
+  });
+}
+var composePaginateRest = Object.assign(paginate, {
+  iterator
+});
+function paginateRest(octokit) {
+  return {
+    paginate: Object.assign(paginate.bind(null, octokit), {
+      iterator: iterator.bind(null, octokit)
+    })
+  };
+}
+paginateRest.VERSION = VERSION6;
+
+// node_modules/.pnpm/@actions+github@9.1.1/node_modules/@actions/github/lib/utils.js
+var context = new Context();
+var baseUrl = getApiBaseUrl();
+var defaults = {
+  baseUrl,
+  request: {
+    agent: getProxyAgent(baseUrl),
+    fetch: getProxyFetch(baseUrl)
+  }
+};
+var GitHub = Octokit.plugin(restEndpointMethods, paginateRest).defaults(defaults);
+function getOctokitOptions(token, options) {
+  const opts = Object.assign({}, options || {});
+  const auth2 = getAuthString(token, opts);
+  if (auth2) {
+    opts.auth = auth2;
+  }
+  const userAgent2 = getUserAgentWithOrchestrationId(opts.userAgent);
+  if (userAgent2) {
+    opts.userAgent = userAgent2;
+  }
+  return opts;
+}
+
+// node_modules/.pnpm/@actions+github@9.1.1/node_modules/@actions/github/lib/github.js
+var context2 = new Context();
+function getOctokit(token, options, ...additionalPlugins) {
+  const GitHubWithPlugins = GitHub.plugin(...additionalPlugins);
+  return new GitHubWithPlugins(getOctokitOptions(token, options));
+}
 
 // packages/runtime/github-actions/src/speaker-sync-action.ts
 var SpeakerSyncAction = class {
-  static async run(messages = new ActionMessages()) {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  async run(messages = this.collaborators.createActionMessages()) {
     const client = getOctokit(
       getInput("github-token", { required: true })
     );
@@ -46545,19 +53931,21 @@ var SpeakerSyncAction = class {
         diagnostics: [],
         failure: messages.t("report.speaker-sync.private")
       };
-    const input = ConferenceHallInput.read();
+    const input = this.collaborators.conferenceHallInput.read();
     try {
-      const result = await new SynchronizeSourceSpeakers(
-        new ConferenceHallProposalSource(
+      const result = await this.collaborators.createSynchronizeSourceSpeakers(
+        this.collaborators.createConferenceHallProposalSource(
           input.conferenceHallEvent,
           input.conferenceHallApiKey
         ),
-        new CsvSpeakerCatalogStore(process.cwd()),
-        new YamlIssueFormProjection({
+        this.collaborators.createCsvSpeakerCatalogStore(process.cwd()),
+        this.collaborators.createYamlIssueFormProjection({
           workspaceRoot: process.cwd(),
           locale: messages.locale
         }),
-        AutomationConfigFactory.createAutomationConfig(context2.repo.owner).event
+        this.collaborators.automationConfigFactory.createAutomationConfig(
+          context2.repo.owner
+        ).event
       ).execute();
       setOutput("pr-title", messages.t("report.speaker-sync.pr-title"));
       setOutput("pr-body", messages.t("report.speaker-sync.pr-body"));
@@ -46570,20 +53958,41 @@ var SpeakerSyncAction = class {
         diagnostics: []
       };
     } catch (error2) {
-      const { report, prBody } = SpeakerSyncFailureReport.create(
-        error2,
-        messages
-      );
+      const { report, prBody } = this.collaborators.speakerSyncFailureReport.create(error2, messages);
       setOutput("pr-body", prBody);
       return report;
     }
   }
 };
 
+// packages/runtime/github-actions/src/speaker-action-composition.ts
+var SpeakerActionComposition = class {
+  speakerSyncAction() {
+    return new SpeakerSyncAction({
+      conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),
+      automationConfigFactory: new JourneyPolicyComposition().automationConfigFactory(),
+      speakerSyncFailureReport: new GithubActionsComposition().speakerSyncFailureReport(),
+      createActionMessages: (...args) => new GithubActionsComposition().actionMessages(...args),
+      createSynchronizeSourceSpeakers: (...args) => new JourneyComposition().synchronizeSourceSpeakers(...args),
+      createConferenceHallProposalSource: (...args) => new ConferenceHallProposalSourceComposition().conferenceHallProposalSource(
+        ...args
+      ),
+      createCsvSpeakerCatalogStore: (...args) => new CsvReferentialRepositoryComposition().csvSpeakerCatalogStore(
+        ...args
+      ),
+      createYamlIssueFormProjection: (...args) => new YamlIssueFormProjectionComposition().yamlIssueFormProjection(
+        ...args
+      )
+    });
+  }
+};
+
 // packages/runtime/github-actions/src/entrypoints/referential-sync-speakers.ts
-await ActionRunner.run(
+var runner = new GithubActionsComposition().actionRunner();
+var action = new SpeakerActionComposition().speakerSyncAction();
+await runner.run(
   "action.referential.sync-speakers",
-  SpeakerSyncAction.run,
+  action.run.bind(action),
   false
 );
 /*! Bundled license information:

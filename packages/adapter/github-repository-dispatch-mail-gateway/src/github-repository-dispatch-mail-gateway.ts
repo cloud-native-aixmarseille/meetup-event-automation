@@ -35,14 +35,14 @@ export class GithubRepositoryDispatchMailGateway implements MailGateway {
 				},
 			});
 		} catch (error) {
-			return GithubRepositoryDispatchMailGateway.classifyFailure(error);
+			return this.classifyFailure(error);
 		}
 		return { outcome: "accepted" };
 	}
 
-	private static classifyFailure(error: unknown): GatewayDispatchResult {
-		const status = GithubRepositoryDispatchMailGateway.responseStatus(error);
-		if (GithubRepositoryDispatchMailGateway.isRateLimited(error, status)) {
+	private classifyFailure(error: unknown): GatewayDispatchResult {
+		const status = this.responseStatus(error);
+		if (this.isRateLimited(error, status)) {
 			return { outcome: "deferred", diagnosticCode: "rate-limited" };
 		}
 		switch (status) {
@@ -66,12 +66,11 @@ export class GithubRepositoryDispatchMailGateway implements MailGateway {
 		}
 	}
 
-	private static responseStatus(error: unknown): number | undefined {
-		if (!GithubRepositoryDispatchMailGateway.isRecord(error)) return undefined;
+	private responseStatus(error: unknown): number | undefined {
+		if (!this.isRecord(error)) return undefined;
 		const direct = Number(error.status);
 		if (Number.isInteger(direct)) return direct;
-		if (!GithubRepositoryDispatchMailGateway.isRecord(error.response))
-			return undefined;
+		if (!this.isRecord(error.response)) return undefined;
 		const nested = Number(error.response.status);
 		return Number.isInteger(nested) ? nested : undefined;
 	}
@@ -81,44 +80,24 @@ export class GithubRepositoryDispatchMailGateway implements MailGateway {
 	 * documented response headers are inspected: exception messages and response
 	 * bodies may contain request or recipient data and must not cross this adapter.
 	 */
-	private static isRateLimited(
-		error: unknown,
-		status: number | undefined,
-	): boolean {
+	private isRateLimited(error: unknown, status: number | undefined): boolean {
 		if (status === 429) return true;
 		if (status !== 403) return false;
 
-		const retryAfter = GithubRepositoryDispatchMailGateway.responseHeader(
-			error,
-			"retry-after",
-		);
+		const retryAfter = this.responseHeader(error, "retry-after");
 		if (retryAfter !== undefined && /^\d+$/.test(retryAfter.trim())) {
 			return true;
 		}
 
-		return (
-			GithubRepositoryDispatchMailGateway.responseHeader(
-				error,
-				"x-ratelimit-remaining",
-			)?.trim() === "0"
-		);
+		return this.responseHeader(error, "x-ratelimit-remaining")?.trim() === "0";
 	}
 
-	private static responseHeader(
-		error: unknown,
-		name: string,
-	): string | undefined {
-		if (!GithubRepositoryDispatchMailGateway.isRecord(error)) return undefined;
-		const response = GithubRepositoryDispatchMailGateway.isRecord(
-			error.response,
-		)
-			? error.response
-			: undefined;
-		const headers = GithubRepositoryDispatchMailGateway.isRecord(
-			response?.headers,
-		)
+	private responseHeader(error: unknown, name: string): string | undefined {
+		if (!this.isRecord(error)) return undefined;
+		const response = this.isRecord(error.response) ? error.response : undefined;
+		const headers = this.isRecord(response?.headers)
 			? response.headers
-			: GithubRepositoryDispatchMailGateway.isRecord(error.headers)
+			: this.isRecord(error.headers)
 				? error.headers
 				: undefined;
 		if (!headers) return undefined;
@@ -132,7 +111,9 @@ export class GithubRepositoryDispatchMailGateway implements MailGateway {
 			: undefined;
 	}
 
-	private static isRecord(value: unknown): value is Record<string, unknown> {
+	private isRecord(value: unknown): value is Record<string, unknown> {
 		return typeof value === "object" && value !== null;
 	}
 }
+export type GithubRepositoryDispatchMailGatewayArguments =
+	ConstructorParameters<typeof GithubRepositoryDispatchMailGateway>;

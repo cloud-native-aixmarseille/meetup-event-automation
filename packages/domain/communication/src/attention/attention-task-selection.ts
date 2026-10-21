@@ -6,9 +6,9 @@ import type {
 import type { AttentionEpisode, AttentionView } from "./model.js";
 /** Chooses concrete organizer work independently of either output channel. */
 export class AttentionTaskSelection {
-	static select(view: AttentionView, checklist: AttentionChecklist) {
+	select(view: AttentionView, checklist: AttentionChecklist) {
 		const conditions = view.conditions.filter(
-			(episode) => !AttentionTaskSelection.covered(episode, checklist.entries),
+			(episode) => !this.covered(episode, checklist.entries),
 		);
 		const tasks = view.state.stopped
 			? []
@@ -17,19 +17,17 @@ export class AttentionTaskSelection {
 						!conditions.some(
 							(episode) =>
 								entry.action !== undefined &&
-								entry.action === AttentionTaskSelection.action(episode),
+								entry.action === this.action(episode),
 						),
 				);
-		const urgent = conditions.filter(AttentionTaskSelection.urgent);
+		const urgent = conditions.filter(this.urgent.bind(this));
 		return {
 			urgent,
 			checklist: [...tasks].sort(
 				(left, right) =>
 					Number(right.field === "agenda") - Number(left.field === "agenda"),
 			),
-			remaining: conditions.filter(
-				(episode) => !AttentionTaskSelection.urgent(episode),
-			),
+			remaining: conditions.filter((episode) => !this.urgent(episode)),
 			details: conditions.filter(
 				(episode) =>
 					!(
@@ -41,20 +39,20 @@ export class AttentionTaskSelection {
 						checklist.entries.some(
 							(entry) =>
 								entry.action !== undefined &&
-								entry.action === AttentionTaskSelection.action(episode),
+								entry.action === this.action(episode),
 						)
 					),
 			),
 		};
 	}
-	private static urgent(episode: AttentionEpisode): boolean {
+	private urgent(episode: AttentionEpisode): boolean {
 		return [
 			"delivery-recovery",
 			"approval-pending",
 			"integration-failure",
 		].includes(episode.condition.code);
 	}
-	private static action(
+	private action(
 		episode: AttentionEpisode,
 	): AttentionChecklistAction | undefined {
 		if (episode.condition.code === "delivery-recovery")
@@ -64,7 +62,7 @@ export class AttentionTaskSelection {
 			? "meetup-approval"
 			: "email-approval";
 	}
-	private static covered(
+	private covered(
 		episode: AttentionEpisode,
 		entries: readonly AttentionChecklistEntry[],
 	): boolean {

@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CsvSpeakerCatalogStore } from "./csv-speaker-catalog-store.js";
+import { CsvReferentialRepositoryComposition } from "./dependency-composition.js";
 
 const directories: string[] = [];
 const noHistory = { read: async () => [] };
@@ -56,7 +57,24 @@ describe("CsvSpeakerCatalogStore", () => {
 			);
 			config.vcs.enabled = false;
 			await writeFile(join(root, "biome.json"), JSON.stringify(config));
-			const store = new CsvSpeakerCatalogStore(root, noHistory);
+			const store = new CsvSpeakerCatalogStore(
+				{
+					speakerCatalogCsv:
+						new CsvReferentialRepositoryComposition().speakerCatalogCsv(),
+					speakerAllocationStateCodec:
+						new CsvReferentialRepositoryComposition().speakerAllocationStateCodec(),
+					createSpeakerAllocationHistory: (...args) =>
+						new CsvReferentialRepositoryComposition().speakerAllocationHistory(
+							...args,
+						),
+					createCsvReferentialRepository: (...args) =>
+						new CsvReferentialRepositoryComposition().csvReferentialRepository(
+							...args,
+						),
+				},
+				root,
+				noHistory,
+			);
 			const original = await store.read();
 			const state = reservedIds;
 			const formatter = fileURLToPath(
@@ -85,16 +103,46 @@ describe("CsvSpeakerCatalogStore", () => {
 	it("round-trips unknown columns and local field whitespace and avoids repeated writes", async () => {
 		// Arrange
 		const root = await workspace();
-		const store = new CsvSpeakerCatalogStore(root, noHistory);
+		const store = new CsvSpeakerCatalogStore(
+			{
+				speakerCatalogCsv:
+					new CsvReferentialRepositoryComposition().speakerCatalogCsv(),
+				speakerAllocationStateCodec:
+					new CsvReferentialRepositoryComposition().speakerAllocationStateCodec(),
+				createSpeakerAllocationHistory: (...args) =>
+					new CsvReferentialRepositoryComposition().speakerAllocationHistory(
+						...args,
+					),
+				createCsvReferentialRepository: (...args) =>
+					new CsvReferentialRepositoryComposition().csvReferentialRepository(
+						...args,
+					),
+			},
+			root,
+			noHistory,
+		);
 		const original = await store.read();
 		const state = ["speaker-0001"];
 
 		// Act
-		const changed = await new CsvSpeakerCatalogStore(root, noHistory).save(
-			original,
-			original.entries,
-			state,
-		);
+		const changed = await new CsvSpeakerCatalogStore(
+			{
+				speakerCatalogCsv:
+					new CsvReferentialRepositoryComposition().speakerCatalogCsv(),
+				speakerAllocationStateCodec:
+					new CsvReferentialRepositoryComposition().speakerAllocationStateCodec(),
+				createSpeakerAllocationHistory: (...args) =>
+					new CsvReferentialRepositoryComposition().speakerAllocationHistory(
+						...args,
+					),
+				createCsvReferentialRepository: (...args) =>
+					new CsvReferentialRepositoryComposition().csvReferentialRepository(
+						...args,
+					),
+			},
+			root,
+			noHistory,
+		).save(original, original.entries, state);
 		const current = await store.read();
 		const unchanged = await store.save(current, current.entries, state);
 		const currentCsv = await readFile(
@@ -114,7 +162,24 @@ describe("CsvSpeakerCatalogStore", () => {
 	it("rejects concurrent catalog edits before writing", async () => {
 		// Arrange
 		const root = await workspace();
-		const store = new CsvSpeakerCatalogStore(root, noHistory);
+		const store = new CsvSpeakerCatalogStore(
+			{
+				speakerCatalogCsv:
+					new CsvReferentialRepositoryComposition().speakerCatalogCsv(),
+				speakerAllocationStateCodec:
+					new CsvReferentialRepositoryComposition().speakerAllocationStateCodec(),
+				createSpeakerAllocationHistory: (...args) =>
+					new CsvReferentialRepositoryComposition().speakerAllocationHistory(
+						...args,
+					),
+				createCsvReferentialRepository: (...args) =>
+					new CsvReferentialRepositoryComposition().csvReferentialRepository(
+						...args,
+					),
+			},
+			root,
+			noHistory,
+		);
 		const original = await store.read();
 		const modified =
 			"speaker_id,display_name,mail\nspeaker-0009,Edited,edited@example.test\n";
@@ -137,7 +202,24 @@ describe("CsvSpeakerCatalogStore", () => {
 		// Arrange
 		const root = await workspace();
 		const history = { read: vi.fn().mockResolvedValue(["speaker-0008"]) };
-		const store = new CsvSpeakerCatalogStore(root, history);
+		const store = new CsvSpeakerCatalogStore(
+			{
+				speakerCatalogCsv:
+					new CsvReferentialRepositoryComposition().speakerCatalogCsv(),
+				speakerAllocationStateCodec:
+					new CsvReferentialRepositoryComposition().speakerAllocationStateCodec(),
+				createSpeakerAllocationHistory: (...args) =>
+					new CsvReferentialRepositoryComposition().speakerAllocationHistory(
+						...args,
+					),
+				createCsvReferentialRepository: (...args) =>
+					new CsvReferentialRepositoryComposition().csvReferentialRepository(
+						...args,
+					),
+			},
+			root,
+			history,
+		);
 
 		// Act
 		const original = await store.read();
@@ -159,7 +241,24 @@ describe("CsvSpeakerCatalogStore", () => {
 				.mockResolvedValueOnce(["speaker-0008"])
 				.mockResolvedValueOnce(["speaker-0009"]),
 		};
-		const store = new CsvSpeakerCatalogStore(root, history);
+		const store = new CsvSpeakerCatalogStore(
+			{
+				speakerCatalogCsv:
+					new CsvReferentialRepositoryComposition().speakerCatalogCsv(),
+				speakerAllocationStateCodec:
+					new CsvReferentialRepositoryComposition().speakerAllocationStateCodec(),
+				createSpeakerAllocationHistory: (...args) =>
+					new CsvReferentialRepositoryComposition().speakerAllocationHistory(
+						...args,
+					),
+				createCsvReferentialRepository: (...args) =>
+					new CsvReferentialRepositoryComposition().csvReferentialRepository(
+						...args,
+					),
+			},
+			root,
+			history,
+		);
 		const original = await store.read();
 		const originalCsv = await readFile(
 			join(root, "referentials/speakers.csv"),
@@ -190,7 +289,24 @@ describe("CsvSpeakerCatalogStore", () => {
 				state,
 			);
 			const history = { read: vi.fn() };
-			const store = new CsvSpeakerCatalogStore(root, history);
+			const store = new CsvSpeakerCatalogStore(
+				{
+					speakerCatalogCsv:
+						new CsvReferentialRepositoryComposition().speakerCatalogCsv(),
+					speakerAllocationStateCodec:
+						new CsvReferentialRepositoryComposition().speakerAllocationStateCodec(),
+					createSpeakerAllocationHistory: (...args) =>
+						new CsvReferentialRepositoryComposition().speakerAllocationHistory(
+							...args,
+						),
+					createCsvReferentialRepository: (...args) =>
+						new CsvReferentialRepositoryComposition().csvReferentialRepository(
+							...args,
+						),
+				},
+				root,
+				history,
+			);
 
 			// Act
 			const result = store.read();

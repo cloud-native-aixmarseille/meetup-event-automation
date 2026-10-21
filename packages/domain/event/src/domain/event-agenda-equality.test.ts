@@ -37,7 +37,7 @@ describe("EventAgendaEquality", () => {
 		};
 
 		// Act
-		const equal = EventAgendaEquality.equals([original], [reordered]);
+		const equal = new EventAgendaEquality().equals([original], [reordered]);
 
 		// Assert
 		expect(equal).toBe(true);
@@ -59,7 +59,7 @@ describe("EventAgendaEquality", () => {
 		const original = [entry];
 
 		// Act
-		const equal = EventAgendaEquality.equals(original, [changed]);
+		const equal = new EventAgendaEquality().equals(original, [changed]);
 
 		// Assert
 		expect(equal).toBe(false);
@@ -70,7 +70,10 @@ describe("EventAgendaEquality", () => {
 		const second = { ...entry, description: "Networking" };
 
 		// Act
-		const equal = EventAgendaEquality.equals([entry, second], [second, entry]);
+		const equal = new EventAgendaEquality().equals(
+			[entry, second],
+			[second, entry],
+		);
 
 		// Assert
 		expect(equal).toBe(false);

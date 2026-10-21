@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { facts } from "../../testing/attention.fixtures.js";
-import {
-	type AttentionFacts,
-	EvaluateAttention,
-} from "./evaluate-attention.js";
+import { CommunicationDomainComposition } from "../dependency-composition.js";
+import type { AttentionFacts } from "./evaluate-attention.js";
+import { EvaluateAttention } from "./evaluate-attention.js";
 
 describe("actionable attention conditions", () => {
 	it.each([
@@ -30,10 +29,10 @@ describe("actionable attention conditions", () => {
 			});
 
 			// Act
-			const result = EvaluateAttention.execute(
-				input,
-				new Date("2099-06-01T10:00:00Z"),
-			);
+			const result = new EvaluateAttention({
+				attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+				postEventPolicy: new CommunicationDomainComposition().postEventPolicy(),
+			}).execute(input, new Date("2099-06-01T10:00:00Z"));
 
 			// Assert
 			expect(result.stopped).toBe(true);
@@ -51,10 +50,10 @@ describe("actionable attention conditions", () => {
 			const input = facts({ occurrence, followUpPending: ["thank-host"] });
 
 			// Act
-			const result = EvaluateAttention.execute(
-				input,
-				new Date("2099-06-10T10:00:00Z"),
-			);
+			const result = new EvaluateAttention({
+				attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+				postEventPolicy: new CommunicationDomainComposition().postEventPolicy(),
+			}).execute(input, new Date("2099-06-10T10:00:00Z"));
 
 			// Assert
 			expect(result.conditions.map((item) => item.code)).toEqual(["follow-up"]);
@@ -72,10 +71,10 @@ describe("actionable attention conditions", () => {
 			});
 
 			// Act
-			const result = EvaluateAttention.execute(
-				input,
-				new Date("2099-06-01T10:00:00Z"),
-			);
+			const result = new EvaluateAttention({
+				attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+				postEventPolicy: new CommunicationDomainComposition().postEventPolicy(),
+			}).execute(input, new Date("2099-06-01T10:00:00Z"));
 
 			// Assert
 			expect(result.stopped).toBe(true);
@@ -102,10 +101,10 @@ describe("actionable attention conditions", () => {
 			});
 
 			// Act
-			const result = EvaluateAttention.execute(
-				input,
-				new Date("2099-06-02T10:00:00Z"),
-			);
+			const result = new EvaluateAttention({
+				attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+				postEventPolicy: new CommunicationDomainComposition().postEventPolicy(),
+			}).execute(input, new Date("2099-06-02T10:00:00Z"));
 
 			// Assert
 			expect(result.conditions.map((item) => item.code)).toEqual(
@@ -118,10 +117,10 @@ describe("actionable attention conditions", () => {
 		const input = facts({ eventDate: "" });
 
 		// Act
-		const result = EvaluateAttention.execute(
-			input,
-			new Date("2099-06-01T10:00:00Z"),
-		);
+		const result = new EvaluateAttention({
+			attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+			postEventPolicy: new CommunicationDomainComposition().postEventPolicy(),
+		}).execute(input, new Date("2099-06-01T10:00:00Z"));
 
 		// Assert
 		expect(result.conditions).toMatchObject([
@@ -139,10 +138,10 @@ describe("actionable attention conditions", () => {
 		});
 
 		// Act
-		const result = EvaluateAttention.execute(
-			input,
-			new Date("2099-06-01T10:00:00Z"),
-		);
+		const result = new EvaluateAttention({
+			attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+			postEventPolicy: new CommunicationDomainComposition().postEventPolicy(),
+		}).execute(input, new Date("2099-06-01T10:00:00Z"));
 
 		// Assert
 		expect(result.evaluated).toContain("assets");
@@ -174,10 +173,10 @@ describe("actionable attention conditions", () => {
 		});
 
 		// Act
-		const result = EvaluateAttention.execute(
-			input,
-			new Date("2099-06-01T10:00:00Z"),
-		);
+		const result = new EvaluateAttention({
+			attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+			postEventPolicy: new CommunicationDomainComposition().postEventPolicy(),
+		}).execute(input, new Date("2099-06-01T10:00:00Z"));
 
 		// Assert
 		expect(result.conditions).toMatchObject([

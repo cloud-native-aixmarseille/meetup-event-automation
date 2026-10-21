@@ -1,3 +1,4 @@
+import { PublicationDomainComposition } from "@meetup-automation/publication";
 import { vi } from "vitest";
 import type {
 	AssetContentRepository,
@@ -14,8 +15,6 @@ import type {
 	PublicAssetModel,
 	TextField,
 } from "../src/domain/asset-content.js";
-import { ContentFingerprint } from "../src/domain/content-fingerprint.js";
-import { ContentTextKey } from "../src/domain/content-text-key.js";
 
 export const mimeType = "application/vnd.google-apps.presentation";
 export const contract: ContentContract = {
@@ -34,7 +33,9 @@ export function contentDependencies(
 	textField: TextField = { type: "text", token: "event.title", required: true },
 	imageToken: ImageField["token"] = "speaker.picture",
 ) {
-	const textKey = ContentTextKey.of(textField);
+	const textKey = new PublicationDomainComposition()
+		.contentTextKey()
+		.of(textField);
 	const imageSlot = imageToken === "host.logo" ? "host-logo" : "portrait";
 	const imageField = {
 		type: "image",
@@ -77,9 +78,9 @@ export function contentDependencies(
 		content: new Map(
 			bindings.map((binding) => [
 				binding.id,
-				ContentFingerprint.of(
-					binding.type === "text" ? `{{${textKey}}}` : "original image",
-				),
+				new PublicationDomainComposition()
+					.contentFingerprint()
+					.of(binding.type === "text" ? `{{${textKey}}}` : "original image"),
 			]),
 		),
 		sourceVersion: "source-v1",
@@ -93,7 +94,9 @@ export function contentDependencies(
 	const images: AssetImageRepository = {
 		validate: vi.fn(async (source) => ({
 			source,
-			fingerprint: ContentFingerprint.of(state.sourceVersion),
+			fingerprint: new PublicationDomainComposition()
+				.contentFingerprint()
+				.of(state.sourceVersion),
 		})),
 		observe: vi.fn(async () => "observed"),
 	};
@@ -115,7 +118,9 @@ export function contentDependencies(
 					change.location.id,
 					change.value.type === "text"
 						? change.value.fingerprint
-						: ContentFingerprint.of(`embedded:${change.value.fingerprint}`),
+						: new PublicationDomainComposition()
+								.contentFingerprint()
+								.of(`embedded:${change.value.fingerprint}`),
 				);
 			}
 			state.revision++;
@@ -144,6 +149,21 @@ export function contentFixture(
 	return {
 		...dependencies,
 		service: new ReconcileAssetContent(
+			{
+				contentContractPolicy:
+					new PublicationDomainComposition().contentContractPolicy(),
+				contentRenderPlan:
+					new PublicationDomainComposition().contentRenderPlan(),
+				contentTextKey: new PublicationDomainComposition().contentTextKey(),
+				contentManifestPolicy:
+					new PublicationDomainComposition().contentManifestPolicy(),
+				contentRecoveryFingerprint:
+					new PublicationDomainComposition().contentRecoveryFingerprint(),
+				contentRecoveryPlan:
+					new PublicationDomainComposition().contentRecoveryPlan(),
+				createResolveContentValues: (...args) =>
+					new PublicationDomainComposition().resolveContentValues(...args),
+			},
 			dependencies.manifests,
 			{ [mimeType]: dependencies.renderer },
 			dependencies.images,

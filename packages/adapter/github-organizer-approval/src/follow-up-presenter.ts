@@ -29,3 +29,6 @@ export class FollowUpPresenter {
 		return lines;
 	}
 }
+export type FollowUpPresenterArguments = ConstructorParameters<
+	typeof FollowUpPresenter
+>;

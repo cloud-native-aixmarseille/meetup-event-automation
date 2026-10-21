@@ -1,19 +1,24 @@
+import * as core from "@actions/core";
+import { ConferenceHallProposalSourceComposition } from "@meetup-automation/conference-hall-proposal-source";
+import { CsvReferentialRepositoryComposition } from "@meetup-automation/csv-referential-repository";
+import {
+	JourneyPolicyComposition,
+	SpeakerSynchronizationError,
+} from "@meetup-automation/journey";
+import { LocalizationComposition } from "@meetup-automation/localization";
 import {
 	ProposalSourceError,
 	SpeakerCatalogHistoryError,
 } from "@meetup-automation/referential";
-import {
-	AutomationConfigFactory,
-	SpeakerSynchronizationError,
-} from "@meetup-automation/journey";
-import * as core from "@actions/core";
+import { YamlIssueFormProjectionComposition } from "@meetup-automation/yaml-issue-form-projection";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ActionRunner } from "./action-runner.js";
-import { SpeakerSyncAction } from "./speaker-sync-action.js";
+import { GithubActionsComposition } from "./dependency-composition.js";
 import { ActionMessages } from "./i18n/action-messages.js";
+import { SpeakerSyncAction } from "./speaker-sync-action.js";
 
 const boundary = vi.hoisted(() => ({
 	get: vi.fn(),
+	config: vi.fn(),
 	synchronize: vi.fn(),
 	createSynchronizer: vi.fn(),
 	setOutput: vi.fn(),
@@ -38,19 +43,15 @@ vi.mock("@actions/github", () => ({
 	context: { repo: { owner: "example", repo: "meetups" } },
 	getOctokit: () => ({ rest: { repos: { get: boundary.get } } }),
 }));
-vi.mock("../../../application/journey/src/index.js", async (original) => ({
-	...(await original<object>()),
-	SynchronizeSourceSpeakers: class {
-		constructor(...dependencies: unknown[]) {
-			boundary.createSynchronizer(...dependencies);
-		}
-		execute = boundary.synchronize;
-	},
-}));
 
 describe("SpeakerSyncAction", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		boundary.config.mockImplementation((owner: string) =>
+			new JourneyPolicyComposition()
+				.automationConfigFactory()
+				.createAutomationConfig(owner),
+		);
 		boundary.get.mockResolvedValue({ data: { private: true } });
 	});
 	it("rejects a public destination before reading the source or writing contacts", async () => {
@@ -58,7 +59,7 @@ describe("SpeakerSyncAction", () => {
 		boundary.get.mockResolvedValue({ data: { private: false } });
 
 		// Act
-		const report = await SpeakerSyncAction.run();
+		const report = await subject().run();
 
 		// Assert
 		expect(report.failure).toBe(
@@ -69,20 +70,19 @@ describe("SpeakerSyncAction", () => {
 	});
 	it("passes the shared event configuration to speaker synchronization", async () => {
 		// Arrange
-		const config = AutomationConfigFactory.createAutomationConfig("example");
+		const config = new JourneyPolicyComposition()
+			.automationConfigFactory()
+			.createAutomationConfig("example");
 		const event = {
 			...config.event,
 			"issue-form": ".github/ISSUE_TEMPLATE/community-event.yml",
 			"occurrence-status-field": "occurrence",
 		};
-		vi.spyOn(
-			AutomationConfigFactory,
-			"createAutomationConfig",
-		).mockReturnValueOnce({ ...config, event });
+		boundary.config.mockReturnValueOnce({ ...config, event });
 		boundary.synchronize.mockResolvedValue({ changed: false, speakerCount: 0 });
 
 		// Act
-		await SpeakerSyncAction.run();
+		await subject().run();
 
 		// Assert
 		expect(boundary.createSynchronizer.mock.calls[0][3]).toBe(event);
@@ -97,7 +97,12 @@ describe("SpeakerSyncAction", () => {
 			});
 
 			// Act
-			const report = await SpeakerSyncAction.run(new ActionMessages(locale));
+			const report = await subject().run(
+				new ActionMessages(
+					{ localeResolver: new LocalizationComposition().localeResolver() },
+					locale,
+				),
+			);
 
 			// Assert
 			expect(report.failure).toBeUndefined();
@@ -116,7 +121,7 @@ describe("SpeakerSyncAction", () => {
 		);
 
 		// Act
-		const report = await SpeakerSyncAction.run();
+		const report = await subject().run();
 
 		// Assert
 		expect(report.failure).toBeUndefined();
@@ -143,7 +148,7 @@ describe("SpeakerSyncAction", () => {
 		);
 
 		// Act
-		const report = await SpeakerSyncAction.run();
+		const report = await subject().run();
 
 		// Assert
 		expect(report.failure).toBeUndefined();
@@ -171,11 +176,13 @@ describe("SpeakerSyncAction", () => {
 		);
 
 		// Act
-		await ActionRunner.run(
-			"action.referential.sync-speakers",
-			SpeakerSyncAction.run,
-			false,
-		);
+		await new GithubActionsComposition()
+			.actionRunner()
+			.run(
+				"action.referential.sync-speakers",
+				subject().run.bind(subject()),
+				false,
+			);
 
 		// Assert
 		expect(core.setFailed).toHaveBeenCalledOnce();
@@ -206,11 +213,13 @@ describe("SpeakerSyncAction", () => {
 			);
 
 			// Act
-			await ActionRunner.run(
-				"action.referential.sync-speakers",
-				SpeakerSyncAction.run,
-				false,
-			);
+			await new GithubActionsComposition()
+				.actionRunner()
+				.run(
+					"action.referential.sync-speakers",
+					subject().run.bind(subject()),
+					false,
+				);
 
 			// Assert
 			expect(core.setFailed).toHaveBeenCalledTimes(fails ? 1 : 0);
@@ -224,3 +233,26 @@ describe("SpeakerSyncAction", () => {
 		},
 	);
 });
+
+function subject() {
+	return new SpeakerSyncAction({
+		conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),
+		automationConfigFactory: { createAutomationConfig: boundary.config },
+		speakerSyncFailureReport:
+			new GithubActionsComposition().speakerSyncFailureReport(),
+		createActionMessages: (...args) =>
+			new GithubActionsComposition().actionMessages(...args),
+		createSynchronizeSourceSpeakers: (...args) => {
+			boundary.createSynchronizer(...args);
+			return { execute: boundary.synchronize };
+		},
+		createConferenceHallProposalSource: (...args) =>
+			new ConferenceHallProposalSourceComposition().conferenceHallProposalSource(
+				...args,
+			),
+		createCsvSpeakerCatalogStore: (...args) =>
+			new CsvReferentialRepositoryComposition().csvSpeakerCatalogStore(...args),
+		createYamlIssueFormProjection: (...args) =>
+			new YamlIssueFormProjectionComposition().yamlIssueFormProjection(...args),
+	});
+}

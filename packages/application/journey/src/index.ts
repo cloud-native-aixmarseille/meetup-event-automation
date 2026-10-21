@@ -6,8 +6,11 @@ export type {
 	ManageMeetupCommunicationsInput,
 	ManageMeetupCommunicationsResult,
 } from "./communication/contracts.js";
+export { JourneyCommunicationComposition } from "./communication-composition.js";
 export type { AutomationConfig } from "./config/automation-config.js";
 export { AutomationConfigFactory } from "./config/automation-config.js";
+export { JourneyComposition } from "./dependency-composition.js";
+export { JourneyPolicyComposition } from "./policy-composition.js";
 export type {
 	IssueFormProjection,
 	IssueFormProjectionMode,
@@ -50,6 +53,7 @@ export { DiagnosticPolicy } from "./result/diagnostic-policy.js";
 export { OrganizerDiagnosticPolicy } from "./result/organizer-diagnostic-policy.js";
 export type { PublicDiagnostic } from "./result/result-envelope.js";
 export { AssetRenderProjection } from "./use-cases/asset-render-projection.js";
+export { CommunicationJourneyResults } from "./use-cases/communication-journey-results.js";
 export { FindNextAssetEvent } from "./use-cases/find-next-asset-event.js";
 export { ManageMeetupAssets } from "./use-cases/manage-meetup-assets.js";
 export { ManageMeetupAttention } from "./use-cases/manage-meetup-attention.js";
@@ -65,14 +69,20 @@ export {
 	type MeetupPublicationResult,
 } from "./use-cases/manage-meetup-publication.js";
 export type { MeetupPublicationSettings } from "./use-cases/meetup-publication-projection.js";
-export { ReconcileOrganizerFeedback } from "./use-cases/reconcile-organizer-feedback.js";
+export {
+	ReconcileOrganizerFeedback,
+	type ReconcileOrganizerFeedbackArguments,
+} from "./use-cases/reconcile-organizer-feedback.js";
 export { SpeakerSynchronizationError } from "./use-cases/speaker-synchronization-error.js";
 export type {
 	SynchronizeMeetupIssueFormDependencies,
 	SynchronizeMeetupIssueFormResult,
 } from "./use-cases/synchronize-meetup-issue-form.js";
 export { SynchronizeMeetupIssueForm } from "./use-cases/synchronize-meetup-issue-form.js";
-export { SynchronizeSourceSpeakers } from "./use-cases/synchronize-source-speakers.js";
+export {
+	SynchronizeSourceSpeakers,
+	type SynchronizeSourceSpeakersArguments,
+} from "./use-cases/synchronize-source-speakers.js";
 export type {
 	ValidateMeetupReferentialsDependencies,
 	ValidateMeetupReferentialsResult,

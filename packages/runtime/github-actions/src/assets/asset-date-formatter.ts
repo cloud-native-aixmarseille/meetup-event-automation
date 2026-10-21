@@ -26,3 +26,6 @@ export class AssetDateFormatter {
 		}
 	}
 }
+export type AssetDateFormatterArguments = ConstructorParameters<
+	typeof AssetDateFormatter
+>;

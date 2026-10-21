@@ -13,9 +13,23 @@ import {
 	type StoredEntry,
 	type StoredLedger,
 } from "./github-delivery-ledger-contracts.js";
-import { LedgerCommentCodec } from "./ledger-comment-codec.js";
-import { LedgerCommentPresenter } from "./ledger-comment-presenter.js";
-import { LedgerEntryMapping } from "./ledger-entry-mapping.js";
+import type { LedgerCommentCodec } from "./ledger-comment-codec.js";
+import type {
+	LedgerCommentPresenter,
+	LedgerCommentPresenterArguments,
+} from "./ledger-comment-presenter.js";
+import type { LedgerEntryMapping } from "./ledger-entry-mapping.js";
+
+export interface GithubDeliveryLedgerCollaborators {
+	readonly ledgerEntryMapping: Pick<
+		LedgerEntryMapping,
+		"protectIdentifier" | "publicEntry" | "safeCode"
+	>;
+	readonly ledgerCommentCodec: Pick<LedgerCommentCodec, "decode">;
+	readonly createLedgerCommentPresenter: (
+		...args: LedgerCommentPresenterArguments
+	) => LedgerCommentPresenter;
+}
 
 export class GithubDeliveryLedger
 	implements DeliveryLedger, AttentionRecoverySource
@@ -23,9 +37,10 @@ export class GithubDeliveryLedger
 	readonly #authorLogin: string;
 
 	constructor(
+		private readonly collaborators: GithubDeliveryLedgerCollaborators,
 		private readonly comments: GithubLedgerCommentClient,
 		private readonly options: GithubDeliveryLedgerOptions,
-		private readonly presenter = new LedgerCommentPresenter(),
+		private readonly presenter = collaborators.createLedgerCommentPresenter(),
 	) {
 		this.#authorLogin = options.authorLogin.trim().toLowerCase();
 		if (!this.#authorLogin) {
@@ -44,11 +59,14 @@ export class GithubDeliveryLedger
 	}
 	async find(idempotencyKey: string): Promise<DeliveryLedgerEntry | undefined> {
 		const { ledger } = await this.#load();
-		const protectedKey = LedgerEntryMapping.protectIdentifier(idempotencyKey);
+		const protectedKey =
+			this.collaborators.ledgerEntryMapping.protectIdentifier(idempotencyKey);
 		const entry = ledger.entries.find(
 			(candidate) => candidate.idempotencyKey === protectedKey,
 		);
-		return entry ? LedgerEntryMapping.publicEntry(entry) : undefined;
+		return entry
+			? this.collaborators.ledgerEntryMapping.publicEntry(entry)
+			: undefined;
 	}
 
 	async reservePending(
@@ -56,28 +74,33 @@ export class GithubDeliveryLedger
 	): Promise<DeliveryReservationResult> {
 		this.#assertDispatchAuthorized();
 		const state = await this.#load();
-		const protectedKey = LedgerEntryMapping.protectIdentifier(
-			reservation.idempotencyKey,
-		);
+		const protectedKey =
+			this.collaborators.ledgerEntryMapping.protectIdentifier(
+				reservation.idempotencyKey,
+			);
 		const existing = state.ledger.entries.find(
 			(entry) => entry.idempotencyKey === protectedKey,
 		);
 		if (existing) {
 			return {
 				reserved: false,
-				entry: LedgerEntryMapping.publicEntry(existing),
+				entry: this.collaborators.ledgerEntryMapping.publicEntry(existing),
 			};
 		}
 
 		const entry: StoredEntry = {
 			idempotencyKey: protectedKey,
-			intentId: LedgerEntryMapping.protectIdentifier(reservation.intentId),
-			repositoryId: LedgerEntryMapping.protectIdentifier(
+			intentId: this.collaborators.ledgerEntryMapping.protectIdentifier(
+				reservation.intentId,
+			),
+			repositoryId: this.collaborators.ledgerEntryMapping.protectIdentifier(
 				reservation.repositoryId,
 			),
-			eventId: LedgerEntryMapping.protectIdentifier(reservation.eventId),
+			eventId: this.collaborators.ledgerEntryMapping.protectIdentifier(
+				reservation.eventId,
+			),
 			kind: reservation.kind,
-			recipientId: LedgerEntryMapping.protectIdentifier(
+			recipientId: this.collaborators.ledgerEntryMapping.protectIdentifier(
 				reservation.recipientId,
 			),
 			policyVersion: reservation.policyVersion,
@@ -88,7 +111,10 @@ export class GithubDeliveryLedger
 		await this.#save(state.commentId, state.ledger);
 		return {
 			reserved: true,
-			entry: { ...LedgerEntryMapping.publicEntry(entry), status: "pending" },
+			entry: {
+				...this.collaborators.ledgerEntryMapping.publicEntry(entry),
+				status: "pending",
+			},
 		};
 	}
 
@@ -128,7 +154,8 @@ export class GithubDeliveryLedger
 	async releasePending(idempotencyKey: string): Promise<void> {
 		this.#assertDispatchAuthorized();
 		const state = await this.#load();
-		const protectedKey = LedgerEntryMapping.protectIdentifier(idempotencyKey);
+		const protectedKey =
+			this.collaborators.ledgerEntryMapping.protectIdentifier(idempotencyKey);
 		const index = state.ledger.entries.findIndex(
 			(entry) => entry.idempotencyKey === protectedKey,
 		);
@@ -147,7 +174,8 @@ export class GithubDeliveryLedger
 	): Promise<void> {
 		this.#assertDispatchAuthorized();
 		const state = await this.#load();
-		const protectedKey = LedgerEntryMapping.protectIdentifier(idempotencyKey);
+		const protectedKey =
+			this.collaborators.ledgerEntryMapping.protectIdentifier(idempotencyKey);
 		const index = state.ledger.entries.findIndex(
 			(entry) => entry.idempotencyKey === protectedKey,
 		);
@@ -163,7 +191,10 @@ export class GithubDeliveryLedger
 			status,
 			updatedAt,
 			...(diagnosticCode
-				? { diagnosticCode: LedgerEntryMapping.safeCode(diagnosticCode) }
+				? {
+						diagnosticCode:
+							this.collaborators.ledgerEntryMapping.safeCode(diagnosticCode),
+					}
 				: {}),
 		};
 		await this.#save(state.commentId, state.ledger);
@@ -184,7 +215,7 @@ export class GithubDeliveryLedger
 		}
 		return {
 			commentId: comment.id,
-			ledger: LedgerCommentCodec.decode(comment.body),
+			ledger: this.collaborators.ledgerCommentCodec.decode(comment.body),
 		};
 	}
 
@@ -211,3 +242,10 @@ export class GithubDeliveryLedger
 		}
 	}
 }
+export type GithubDeliveryLedgerArguments =
+	ConstructorParameters<typeof GithubDeliveryLedger> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

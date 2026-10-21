@@ -1,8 +1,11 @@
-import { ActionRunner } from "../action-runner.js";
-import { CommunicationAction } from "../communication-action.js";
+import { CommunicationActionComposition } from "../communication-action-composition.js";
+import { GithubActionsComposition } from "../dependency-composition.js";
 
-await ActionRunner.run(
+const runner = new GithubActionsComposition().actionRunner();
+const action = new CommunicationActionComposition().communicationAction();
+
+await runner.run(
 	"action.communication.reconcile",
-	CommunicationAction.runCommunicationReconcileAction,
+	action.runCommunicationReconcileAction.bind(action),
 	true,
 );

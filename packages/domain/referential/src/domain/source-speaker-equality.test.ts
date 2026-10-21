@@ -19,7 +19,7 @@ describe("SourceSpeakerEquality", () => {
 		};
 
 		// Act
-		const equal = SourceSpeakerEquality.equal(speaker, reordered);
+		const equal = new SourceSpeakerEquality().equal(speaker, reordered);
 
 		// Assert
 		expect(equal).toBe(true);
@@ -38,7 +38,7 @@ describe("SourceSpeakerEquality", () => {
 		const changed = { ...speaker, ...change };
 
 		// Act
-		const equal = SourceSpeakerEquality.equal(speaker, changed);
+		const equal = new SourceSpeakerEquality().equal(speaker, changed);
 
 		// Assert
 		expect(equal).toBe(false);

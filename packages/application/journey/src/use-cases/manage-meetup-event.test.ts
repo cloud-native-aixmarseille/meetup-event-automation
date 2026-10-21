@@ -1,3 +1,5 @@
+import { EventDomainComposition } from "@meetup-automation/event";
+import { ReferentialDomainComposition } from "@meetup-automation/referential";
 import { describe, expect, it, vi } from "vitest";
 import {
 	catalog,
@@ -6,6 +8,8 @@ import {
 	event,
 	identity,
 } from "../../testing/meetup-journey.fixtures.js";
+import { JourneyComposition } from "../dependency-composition.js";
+import { JourneyPolicyComposition } from "../policy-composition.js";
 import { ManageMeetupEvent } from "./manage-meetup-event.js";
 
 describe("ManageMeetupEvent manual publication tasks", () => {
@@ -25,12 +29,39 @@ describe("ManageMeetupEvent manual publication tasks", () => {
 				},
 				diagnostics: [],
 			});
-			const useCase = new ManageMeetupEvent({
-				proposalSource: { load: vi.fn() },
-				config,
-				referentialRepository: { load: async () => catalog },
-				eventDependencies,
-			});
+			const useCase = new ManageMeetupEvent(
+				{
+					eventPublicationEvaluation:
+						new JourneyPolicyComposition().eventPublicationEvaluation(),
+					eventReadinessPolicy:
+						new EventDomainComposition().eventReadinessPolicy(),
+					eventLifecycle: new EventDomainComposition().eventLifecycle(),
+					eventDiagnosticProjection:
+						new JourneyPolicyComposition().eventDiagnosticProjection(),
+					eventParticipantResolution:
+						new JourneyPolicyComposition().eventParticipantResolution(),
+					eventRepositoryPatches:
+						new EventDomainComposition().eventRepositoryPatches(),
+					eventDocumentConcurrency:
+						new EventDomainComposition().eventDocumentConcurrency(),
+					createReconcileEvent: (...args) =>
+						new EventDomainComposition().reconcileEvent(...args),
+					createValidateReferentialCatalog: (...args) =>
+						new ReferentialDomainComposition().validateReferentialCatalog(
+							...args,
+						),
+					createRefreshSelectedProposals: (...args) =>
+						new JourneyComposition().refreshSelectedProposals(...args),
+					createResolveEventReferences: (...args) =>
+						new ReferentialDomainComposition().resolveEventReferences(...args),
+				},
+				{
+					proposalSource: { load: vi.fn() },
+					config,
+					referentialRepository: { load: async () => catalog },
+					eventDependencies,
+				},
+			);
 
 			// Act
 			const result = await useCase.execute({ identity, mode: "check" });
@@ -66,15 +97,42 @@ describe("ManageMeetupEvent manual publication tasks", () => {
 				},
 			],
 		});
-		const useCase = new ManageMeetupEvent({
-			proposalSource: { load: vi.fn() },
-			config,
-			referentialRepository: { load: async () => catalog },
-			eventDependencies: {
-				...createEventDependencies(),
-				rules: [{ id: "custom-policy", dependencies: [], evaluate }],
+		const useCase = new ManageMeetupEvent(
+			{
+				eventPublicationEvaluation:
+					new JourneyPolicyComposition().eventPublicationEvaluation(),
+				eventReadinessPolicy:
+					new EventDomainComposition().eventReadinessPolicy(),
+				eventLifecycle: new EventDomainComposition().eventLifecycle(),
+				eventDiagnosticProjection:
+					new JourneyPolicyComposition().eventDiagnosticProjection(),
+				eventParticipantResolution:
+					new JourneyPolicyComposition().eventParticipantResolution(),
+				eventRepositoryPatches:
+					new EventDomainComposition().eventRepositoryPatches(),
+				eventDocumentConcurrency:
+					new EventDomainComposition().eventDocumentConcurrency(),
+				createReconcileEvent: (...args) =>
+					new EventDomainComposition().reconcileEvent(...args),
+				createValidateReferentialCatalog: (...args) =>
+					new ReferentialDomainComposition().validateReferentialCatalog(
+						...args,
+					),
+				createRefreshSelectedProposals: (...args) =>
+					new JourneyComposition().refreshSelectedProposals(...args),
+				createResolveEventReferences: (...args) =>
+					new ReferentialDomainComposition().resolveEventReferences(...args),
 			},
-		});
+			{
+				proposalSource: { load: vi.fn() },
+				config,
+				referentialRepository: { load: async () => catalog },
+				eventDependencies: {
+					...createEventDependencies(),
+					rules: [{ id: "custom-policy", dependencies: [], evaluate }],
+				},
+			},
+		);
 
 		// Act
 		const result = await useCase.execute({ identity, mode: "check" });
@@ -93,14 +151,41 @@ describe("ManageMeetupEvent manual publication tasks", () => {
 	it("returns composed task status and diagnoses only pending manual work", async () => {
 		// Arrange
 		const eventDependencies = createEventDependencies();
-		const useCase = new ManageMeetupEvent({
-			proposalSource: { load: vi.fn() },
-			config,
-			referentialRepository: {
-				load: vi.fn().mockResolvedValue(catalog),
+		const useCase = new ManageMeetupEvent(
+			{
+				eventPublicationEvaluation:
+					new JourneyPolicyComposition().eventPublicationEvaluation(),
+				eventReadinessPolicy:
+					new EventDomainComposition().eventReadinessPolicy(),
+				eventLifecycle: new EventDomainComposition().eventLifecycle(),
+				eventDiagnosticProjection:
+					new JourneyPolicyComposition().eventDiagnosticProjection(),
+				eventParticipantResolution:
+					new JourneyPolicyComposition().eventParticipantResolution(),
+				eventRepositoryPatches:
+					new EventDomainComposition().eventRepositoryPatches(),
+				eventDocumentConcurrency:
+					new EventDomainComposition().eventDocumentConcurrency(),
+				createReconcileEvent: (...args) =>
+					new EventDomainComposition().reconcileEvent(...args),
+				createValidateReferentialCatalog: (...args) =>
+					new ReferentialDomainComposition().validateReferentialCatalog(
+						...args,
+					),
+				createRefreshSelectedProposals: (...args) =>
+					new JourneyComposition().refreshSelectedProposals(...args),
+				createResolveEventReferences: (...args) =>
+					new ReferentialDomainComposition().resolveEventReferences(...args),
 			},
-			eventDependencies: eventDependencies,
-		});
+			{
+				proposalSource: { load: vi.fn() },
+				config,
+				referentialRepository: {
+					load: vi.fn().mockResolvedValue(catalog),
+				},
+				eventDependencies: eventDependencies,
+			},
+		);
 
 		// Act
 		const result = await useCase.execute({

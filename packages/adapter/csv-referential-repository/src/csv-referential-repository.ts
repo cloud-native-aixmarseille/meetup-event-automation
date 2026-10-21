@@ -4,23 +4,30 @@ import type {
 	RawReferentialCatalog,
 	ReferentialRepository,
 } from "@meetup-automation/referential";
-import { CsvReferentialCodec } from "./csv-referential-codec.js";
+import type { CsvReferentialCodec } from "./csv-referential-codec.js";
 import type { CsvReferentialRepositoryOptions } from "./csv-referential-repository-contracts.js";
 
+export interface CsvReferentialRepositoryCollaborators {
+	readonly csvReferentialCodec: Pick<CsvReferentialCodec, "decode">;
+}
+
 export class CsvReferentialRepository implements ReferentialRepository {
-	constructor(private readonly options: CsvReferentialRepositoryOptions) {}
+	constructor(
+		private readonly collaborators: CsvReferentialRepositoryCollaborators,
+		private readonly options: CsvReferentialRepositoryOptions,
+	) {}
 
 	async load(): Promise<RawReferentialCatalog> {
 		const [hostsSource, speakersSource] = await Promise.all([
 			readFile(
-				await CsvReferentialRepository.localPath(
+				await this.localPath(
 					this.options.workspaceRoot,
 					this.options.hostsPath,
 				),
 				"utf8",
 			),
 			readFile(
-				await CsvReferentialRepository.localPath(
+				await this.localPath(
 					this.options.workspaceRoot,
 					this.options.speakersPath,
 				),
@@ -28,7 +35,7 @@ export class CsvReferentialRepository implements ReferentialRepository {
 			),
 		]);
 
-		return CsvReferentialCodec.decode(
+		return this.collaborators.csvReferentialCodec.decode(
 			hostsSource,
 			speakersSource,
 			this.options.hostsPath,
@@ -36,22 +43,29 @@ export class CsvReferentialRepository implements ReferentialRepository {
 		);
 	}
 
-	private static async localPath(
+	private async localPath(
 		rootInput: string,
 		relativeInput: string,
 	): Promise<string> {
 		const root = await realpath(resolve(rootInput));
 		const absolute = resolve(root, relativeInput);
-		CsvReferentialRepository.assertInside(root, absolute);
+		this.assertInside(root, absolute);
 		const resolved = await realpath(absolute);
-		CsvReferentialRepository.assertInside(root, resolved);
+		this.assertInside(root, resolved);
 		return resolved;
 	}
 
-	private static assertInside(root: string, candidate: string): void {
+	private assertInside(root: string, candidate: string): void {
 		const child = relative(root, candidate);
 		if (isAbsolute(child) || child === ".." || child.startsWith(`..${sep}`)) {
 			throw new Error("Referential path must stay inside the checkout");
 		}
 	}
 }
+export type CsvReferentialRepositoryArguments =
+	ConstructorParameters<typeof CsvReferentialRepository> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

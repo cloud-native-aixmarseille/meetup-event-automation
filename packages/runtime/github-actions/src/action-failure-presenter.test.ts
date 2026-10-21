@@ -7,7 +7,7 @@ describe("public action failure presentation", () => {
 		const error = new Error("email@example.test");
 
 		// Act
-		const message = ActionFailurePresenter.publicErrorMessage(error);
+		const message = new ActionFailurePresenter().publicErrorMessage(error);
 
 		// Assert
 		expect(message).not.toContain(error.message);
@@ -18,8 +18,8 @@ describe("public action failure presentation", () => {
 		known.name = "EventNotFoundError";
 
 		// Act
-		const actual = ActionFailurePresenter.publicErrorMessage(known);
-		const actual1 = ActionFailurePresenter.publicErrorMessage({
+		const actual = new ActionFailurePresenter().publicErrorMessage(known);
+		const actual1 = new ActionFailurePresenter().publicErrorMessage({
 			message: "contact@example.test",
 		});
 

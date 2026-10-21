@@ -1,10 +1,11 @@
-import {
-	type EventDocument,
-	type EventDocumentCodec,
-	type EventRepository,
+import type {
+	EventDocument,
+	EventDocumentCodec,
+	EventRepository,
 	EventRuleEngine,
+	EventRuleEngineArguments,
 	EventRuleFactory,
-	type MeetupEvent,
+	MeetupEvent,
 	MeetupPublicationChecklist,
 } from "@meetup-automation/event";
 import type {
@@ -13,10 +14,26 @@ import type {
 } from "@meetup-automation/publication";
 import type { ReferentialCatalog } from "@meetup-automation/referential";
 import type { AutomationConfig } from "../config/automation-config.js";
-import { ConfiguredPublicationPolicies } from "../config/configured-publication-policies.js";
+import type { ConfiguredPublicationPolicies } from "../config/configured-publication-policies.js";
+
+export interface FindNextAssetEventCollaborators {
+	readonly eventRuleFactory: Pick<EventRuleFactory, "createDefaultEventRules">;
+	readonly configuredPublicationPolicies: Pick<
+		ConfiguredPublicationPolicies,
+		"create"
+	>;
+	readonly meetupPublicationChecklist: Pick<
+		MeetupPublicationChecklist,
+		"isPublished"
+	>;
+	readonly createEventRuleEngine: (
+		...args: EventRuleEngineArguments
+	) => EventRuleEngine;
+}
 
 export class FindNextAssetEvent {
 	constructor(
+		private readonly collaborators: FindNextAssetEventCollaborators,
 		private readonly repository: Pick<EventRepository, "listPage">,
 		private readonly codec: EventDocumentCodec,
 		private readonly eventLabel: string,
@@ -100,9 +117,11 @@ export class FindNextAssetEvent {
 		)
 			return undefined;
 		const decoded = this.codec.decode(document);
-		const evaluated = new EventRuleEngine(
-			EventRuleFactory.createDefaultEventRules(),
-		).evaluate(decoded.event);
+		const evaluated = this.collaborators
+			.createEventRuleEngine(
+				this.collaborators.eventRuleFactory.createDefaultEventRules(),
+			)
+			.evaluate(decoded.event);
 		const event = evaluated.event;
 		const invalid = [...decoded.diagnostics, ...evaluated.diagnostics].some(
 			(item) =>
@@ -117,14 +136,15 @@ export class FindNextAssetEvent {
 			!event.confirmations.host
 		)
 			return undefined;
-		const published = ConfiguredPublicationPolicies.create(this.publication)
+		const published = this.collaborators.configuredPublicationPolicies
+			.create(this.publication)
 			.filter((policy) => policy.id !== "asset-folder-url")
 			.some((policy) => {
 				const field = policy.id === "meetup-event-url" ? "meetup" : "community";
 				return (
 					Boolean(event.publicationLinks[field]) &&
 					(field !== "meetup" ||
-						MeetupPublicationChecklist.isPublished(event)) &&
+						this.collaborators.meetupPublicationChecklist.isPublished(event)) &&
 					!policy
 						.evaluate({ [field]: event.publicationLinks[field] })
 						.diagnostics.some((item) => item.severity === "error")
@@ -133,3 +153,10 @@ export class FindNextAssetEvent {
 		return published ? event : undefined;
 	}
 }
+export type FindNextAssetEventArguments =
+	ConstructorParameters<typeof FindNextAssetEvent> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

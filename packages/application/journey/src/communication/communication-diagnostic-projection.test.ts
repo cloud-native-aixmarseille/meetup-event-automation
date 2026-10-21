@@ -11,8 +11,9 @@ describe("canonical communication diagnostic projection", () => {
 		};
 
 		// Act
-		const result =
-			CommunicationDiagnosticProjection.domainDiagnostic(diagnostic);
+		const result = new CommunicationDiagnosticProjection().domainDiagnostic(
+			diagnostic,
+		);
 
 		// Assert
 		expect(result).toEqual({
@@ -30,8 +31,9 @@ describe("canonical communication diagnostic projection", () => {
 		};
 
 		// Act
-		const result =
-			CommunicationDiagnosticProjection.runtimeDiagnostic(diagnostic);
+		const result = new CommunicationDiagnosticProjection().runtimeDiagnostic(
+			diagnostic,
+		);
 
 		// Assert
 		expect(result).toEqual({

@@ -3,6 +3,7 @@ import {
 	rawCatalog,
 	speakerRecord,
 } from "../../../testing/referential.fixtures.js";
+import { ReferentialDomainComposition } from "../../dependency-composition.js";
 import type { ReferentialRepository } from "../ports/referential-repository.js";
 import { ValidateReferentialCatalog } from "./validate-referential-catalog.js";
 
@@ -12,7 +13,18 @@ describe("ValidateReferentialCatalog", () => {
 		// Use the shared fixtures.
 
 		// Act
-		const result = await new ValidateReferentialCatalog().execute(
+		const result = await new ValidateReferentialCatalog({
+			referentialDiagnostics:
+				new ReferentialDomainComposition().referentialDiagnostics(),
+			hostCatalogValidator:
+				new ReferentialDomainComposition().hostCatalogValidator(),
+			speakerCatalogValidator:
+				new ReferentialDomainComposition().speakerCatalogValidator(),
+			speakerSourceFields:
+				new ReferentialDomainComposition().speakerSourceFields(),
+			referentialCatalogOperations:
+				new ReferentialDomainComposition().referentialCatalogOperations(),
+		}).execute(
 			rawCatalog({
 				hosts: [
 					hostRecord({
@@ -64,7 +76,18 @@ describe("ValidateReferentialCatalog", () => {
 				speakerRecord({ source: { path: "catalog/presenters.csv", line: 4 } }),
 			],
 		});
-		const validator = new ValidateReferentialCatalog();
+		const validator = new ValidateReferentialCatalog({
+			referentialDiagnostics:
+				new ReferentialDomainComposition().referentialDiagnostics(),
+			hostCatalogValidator:
+				new ReferentialDomainComposition().hostCatalogValidator(),
+			speakerCatalogValidator:
+				new ReferentialDomainComposition().speakerCatalogValidator(),
+			speakerSourceFields:
+				new ReferentialDomainComposition().speakerSourceFields(),
+			referentialCatalogOperations:
+				new ReferentialDomainComposition().referentialCatalogOperations(),
+		});
 
 		// Act
 		const result = await validator.execute(input);
@@ -86,7 +109,21 @@ describe("ValidateReferentialCatalog", () => {
 		};
 
 		// Act
-		const result = await new ValidateReferentialCatalog(repository).execute();
+		const result = await new ValidateReferentialCatalog(
+			{
+				referentialDiagnostics:
+					new ReferentialDomainComposition().referentialDiagnostics(),
+				hostCatalogValidator:
+					new ReferentialDomainComposition().hostCatalogValidator(),
+				speakerCatalogValidator:
+					new ReferentialDomainComposition().speakerCatalogValidator(),
+				speakerSourceFields:
+					new ReferentialDomainComposition().speakerSourceFields(),
+				referentialCatalogOperations:
+					new ReferentialDomainComposition().referentialCatalogOperations(),
+			},
+			repository,
+		).execute();
 
 		// Assert
 		expect(repository.load).toHaveBeenCalledOnce();
@@ -98,7 +135,18 @@ describe("ValidateReferentialCatalog", () => {
 		// No additional setup is needed.
 
 		// Act
-		const result = await new ValidateReferentialCatalog().execute(
+		const result = await new ValidateReferentialCatalog({
+			referentialDiagnostics:
+				new ReferentialDomainComposition().referentialDiagnostics(),
+			hostCatalogValidator:
+				new ReferentialDomainComposition().hostCatalogValidator(),
+			speakerCatalogValidator:
+				new ReferentialDomainComposition().speakerCatalogValidator(),
+			speakerSourceFields:
+				new ReferentialDomainComposition().speakerSourceFields(),
+			referentialCatalogOperations:
+				new ReferentialDomainComposition().referentialCatalogOperations(),
+		}).execute(
 			rawCatalog({
 				hosts: [
 					hostRecord(),
@@ -159,7 +207,18 @@ describe("ValidateReferentialCatalog", () => {
 		// No additional setup is needed.
 
 		// Act
-		const result = await new ValidateReferentialCatalog().execute(input);
+		const result = await new ValidateReferentialCatalog({
+			referentialDiagnostics:
+				new ReferentialDomainComposition().referentialDiagnostics(),
+			hostCatalogValidator:
+				new ReferentialDomainComposition().hostCatalogValidator(),
+			speakerCatalogValidator:
+				new ReferentialDomainComposition().speakerCatalogValidator(),
+			speakerSourceFields:
+				new ReferentialDomainComposition().speakerSourceFields(),
+			referentialCatalogOperations:
+				new ReferentialDomainComposition().referentialCatalogOperations(),
+		}).execute(input);
 		const actual = result.diagnostics.map((item) => item.code);
 
 		// Assert
@@ -172,7 +231,18 @@ describe("ValidateReferentialCatalog", () => {
 		// No additional setup is needed.
 
 		// Act
-		const result = await new ValidateReferentialCatalog().execute(
+		const result = await new ValidateReferentialCatalog({
+			referentialDiagnostics:
+				new ReferentialDomainComposition().referentialDiagnostics(),
+			hostCatalogValidator:
+				new ReferentialDomainComposition().hostCatalogValidator(),
+			speakerCatalogValidator:
+				new ReferentialDomainComposition().speakerCatalogValidator(),
+			speakerSourceFields:
+				new ReferentialDomainComposition().speakerSourceFields(),
+			referentialCatalogOperations:
+				new ReferentialDomainComposition().referentialCatalogOperations(),
+		}).execute(
 			rawCatalog({
 				hosts: [hostRecord(), hostRecord({ hostId: "host-0002" })],
 				speakers: [speakerRecord(), speakerRecord()],
@@ -200,7 +270,18 @@ describe("ValidateReferentialCatalog", () => {
 		];
 
 		// Act
-		const result = await new ValidateReferentialCatalog().execute(
+		const result = await new ValidateReferentialCatalog({
+			referentialDiagnostics:
+				new ReferentialDomainComposition().referentialDiagnostics(),
+			hostCatalogValidator:
+				new ReferentialDomainComposition().hostCatalogValidator(),
+			speakerCatalogValidator:
+				new ReferentialDomainComposition().speakerCatalogValidator(),
+			speakerSourceFields:
+				new ReferentialDomainComposition().speakerSourceFields(),
+			referentialCatalogOperations:
+				new ReferentialDomainComposition().referentialCatalogOperations(),
+		}).execute(
 			rawCatalog({
 				hosts: [
 					hostRecord({

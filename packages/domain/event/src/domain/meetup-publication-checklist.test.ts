@@ -31,7 +31,7 @@ describe("Meetup publication checklist", () => {
 			};
 
 			// Act
-			const actual = MeetupPublicationChecklist.isPublished(event);
+			const actual = new MeetupPublicationChecklist().isPublished(event);
 
 			// Assert
 			expect(actual).toBe(published);
@@ -53,7 +53,7 @@ describe("Meetup publication checklist", () => {
 			};
 
 			// Act
-			const updated = MeetupPublicationChecklist.withStatus(event, false);
+			const updated = new MeetupPublicationChecklist().withStatus(event, false);
 
 			// Assert
 			expect(updated.operationalChecklists.communication).toEqual([

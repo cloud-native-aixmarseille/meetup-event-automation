@@ -1,6 +1,6 @@
 import {
 	APPROVAL_MARKER,
-	ApprovalCommentCodec,
+	type ApprovalCommentCodec,
 } from "./approval-comment-codec.js";
 import type { StoredApproval } from "./approval-state.js";
 import type { GithubApprovalClient } from "./github-approval-client.js";
@@ -10,8 +10,13 @@ import type {
 } from "./github-approval-contracts.js";
 
 /** Request metadata and final decisions must come from a verified bot revision. */
+export interface TrustedApprovalStateCollaborators {
+	readonly approvalCommentCodec: Pick<ApprovalCommentCodec, "read">;
+}
+
 export class TrustedApprovalState {
 	constructor(
+		private readonly collaborators: TrustedApprovalStateCollaborators,
 		private readonly client: GithubApprovalClient,
 		private readonly authorLogin: string,
 	) {}
@@ -34,7 +39,7 @@ export class TrustedApprovalState {
 	}
 	private record(body: string | null): StoredApproval | undefined {
 		if (!body?.startsWith(APPROVAL_MARKER)) return undefined;
-		return ApprovalCommentCodec.read(body);
+		return this.collaborators.approvalCommentCodec.read(body);
 	}
 	private isAuthor(editor: ApprovalCommentEdit["editor"]): boolean {
 		return (
@@ -44,3 +49,10 @@ export class TrustedApprovalState {
 		);
 	}
 }
+export type TrustedApprovalStateArguments =
+	ConstructorParameters<typeof TrustedApprovalState> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

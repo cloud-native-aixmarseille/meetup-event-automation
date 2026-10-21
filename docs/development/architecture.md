@@ -78,8 +78,10 @@ resolving dependent use cases.
 
 Inversify imports, container identifiers, and lookups stay in runtime
 composition roots. Use explicit constructor dependencies elsewhere; do not add
-decorators or automatic constructor discovery. Static methods are allowed for
-stateless operations and composition.
+decorators or automatic constructor discovery. Package-local composition classes
+assemble internal collaborators without a container; runtime roots assemble
+packages and own all container lookups. Action handlers receive the operations
+they need through typed constructor contracts.
 
 The common composition root supplies event and referential dependencies.
 Communication, publication, and feedback roots add their required capabilities.
@@ -108,10 +110,47 @@ calling the journey. Its delivery factory receives the final dispatch
 authorization, and the ledger independently checks that authorization before
 writing.
 
+## Constructor injection
+
+Dependencies are required constructor inputs. Stateless behavior still has an
+owner and a contract: inject it as an instance, using a port or a narrow `Pick`
+of the methods the consumer needs. Private implementation details stay instance
+methods of their owner. Do not replace static calls with inline `new`, hidden
+module instances, service locators, or defaults that construct missing collaborators.
+
+Construction belongs in named `*-composition.ts` modules. These modules only
+assemble dependencies; they do not own business decisions or execute effects.
+They respect the same package dependency directions as other production code.
+Runtime bootstrap entrypoints may construct composition classes and obtain the
+shared runner and action handler. They await the runner with the handler's bound
+operation. Bind container replacements before resolving a use case.
+
+Inject an instance for a reusable collaborator. Inject a typed factory when an
+object needs operation-specific data or lifetime, such as a browser page or an
+authorized delivery. The factory is provided by composition; consumers never
+supply missing dependencies themselves. Configuration and external records remain
+ordinary method or constructor inputs.
+
+Static service methods, static getters, function-valued static fields, and static
+initialization blocks are prohibited. Exceptions are limited to composition entry
+methods and immutable value factories: a value has a private constructor with
+readonly data parameters, exposes only getters, and its factory returns that value
+or `undefined`. Readonly static data constants are allowed. These exceptions do
+not permit service access through a value object or composition calls inside
+business policies.
+
+`pnpm check:structure` rejects static service behavior and direct construction of
+imported workspace collaborators outside composition. Error values may be created
+where a failure occurs. Unit tests must demonstrate replacement through injected
+contracts; avoid mocking static methods or module constructors to replace a policy.
+Architecture review still checks contract size, ownership, and meaningful factory
+lifetimes; a syntactic check cannot prove those properties.
+
 ## Production code structure
 
 All behavior in `packages/**/src/**/*.ts` belongs to a focused class. Use
-constructor injection for stateful or I/O collaborators. Module-level functions,
+required constructor injection for every collaborator, including stateless
+policies, parsers, codecs, and presenters. Module-level functions,
 function-valued variables, callbacks, and object method implementations are
 prohibited. Callbacks and helpers inside classes are allowed. Data, constants,
 interfaces, type aliases, and port function types may remain at module scope.

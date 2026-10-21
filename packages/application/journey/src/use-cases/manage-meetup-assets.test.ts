@@ -1,7 +1,10 @@
+import { EventDomainComposition } from "@meetup-automation/event";
 import {
 	type AssetRepository,
+	PublicationDomainComposition,
 	ReconcileEventAssets,
 } from "@meetup-automation/publication";
+import { ReferentialDomainComposition } from "@meetup-automation/referential";
 import { describe, expect, it, vi } from "vitest";
 import {
 	catalog,
@@ -11,6 +14,8 @@ import {
 	identity,
 	sourceDocument,
 } from "../../testing/meetup-journey.fixtures.js";
+import { JourneyComposition } from "../dependency-composition.js";
+import { JourneyPolicyComposition } from "../policy-composition.js";
 import { ManageMeetupAssets } from "./manage-meetup-assets.js";
 import { ManageMeetupEvent } from "./manage-meetup-event.js";
 
@@ -240,16 +245,57 @@ function assetJourney() {
 		}),
 		updateFile: vi.fn<AssetRepository["updateFile"]>(),
 	};
-	const useCase = new ManageMeetupAssets({
-		eventRepository: eventDependencies.repository,
-		documentCodec: eventDependencies.documentCodec,
-		manageEvent: new ManageMeetupEvent({
-			proposalSource: { load: vi.fn() },
-			config,
-			eventDependencies,
-			referentialRepository: { load: async () => catalog },
-		}),
-		reconcileAssets: new ReconcileEventAssets(assetRepository),
-	});
+	const useCase = new ManageMeetupAssets(
+		{
+			eventDocumentConcurrency:
+				new EventDomainComposition().eventDocumentConcurrency(),
+			eventRepositoryPatches:
+				new EventDomainComposition().eventRepositoryPatches(),
+		},
+		{
+			eventRepository: eventDependencies.repository,
+			documentCodec: eventDependencies.documentCodec,
+			manageEvent: new ManageMeetupEvent(
+				{
+					eventPublicationEvaluation:
+						new JourneyPolicyComposition().eventPublicationEvaluation(),
+					eventReadinessPolicy:
+						new EventDomainComposition().eventReadinessPolicy(),
+					eventLifecycle: new EventDomainComposition().eventLifecycle(),
+					eventDiagnosticProjection:
+						new JourneyPolicyComposition().eventDiagnosticProjection(),
+					eventParticipantResolution:
+						new JourneyPolicyComposition().eventParticipantResolution(),
+					eventRepositoryPatches:
+						new EventDomainComposition().eventRepositoryPatches(),
+					eventDocumentConcurrency:
+						new EventDomainComposition().eventDocumentConcurrency(),
+					createReconcileEvent: (...args) =>
+						new EventDomainComposition().reconcileEvent(...args),
+					createValidateReferentialCatalog: (...args) =>
+						new ReferentialDomainComposition().validateReferentialCatalog(
+							...args,
+						),
+					createRefreshSelectedProposals: (...args) =>
+						new JourneyComposition().refreshSelectedProposals(...args),
+					createResolveEventReferences: (...args) =>
+						new ReferentialDomainComposition().resolveEventReferences(...args),
+				},
+				{
+					proposalSource: { load: vi.fn() },
+					config,
+					eventDependencies,
+					referentialRepository: { load: async () => catalog },
+				},
+			),
+			reconcileAssets: new ReconcileEventAssets(
+				{
+					createReconcileAssetFile: (...args) =>
+						new PublicationDomainComposition().reconcileAssetFile(...args),
+				},
+				assetRepository,
+			),
+		},
+	);
 	return { eventDependencies, assetRepository, useCase };
 }

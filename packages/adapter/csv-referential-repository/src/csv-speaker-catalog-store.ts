@@ -8,38 +8,61 @@ import {
 	type SpeakerCatalogEntry,
 	type SpeakerCatalogStore,
 } from "@meetup-automation/referential";
-import { CsvReferentialRepository } from "./csv-referential-repository.js";
-import { SpeakerAllocationHistory } from "./speaker-allocation-history.js";
-import { SpeakerAllocationStateCodec } from "./speaker-allocation-state-codec.js";
-import { SpeakerCatalogCsv } from "./speaker-catalog-csv.js";
+import type {
+	CsvReferentialRepository,
+	CsvReferentialRepositoryArguments,
+} from "./csv-referential-repository.js";
+import type {
+	SpeakerAllocationHistory,
+	SpeakerAllocationHistoryArguments,
+} from "./speaker-allocation-history.js";
+import type { SpeakerAllocationStateCodec } from "./speaker-allocation-state-codec.js";
+import type { SpeakerCatalogCsv } from "./speaker-catalog-csv.js";
+
+export interface CsvSpeakerCatalogStoreCollaborators {
+	readonly speakerCatalogCsv: Pick<SpeakerCatalogCsv, "decode" | "encode">;
+	readonly speakerAllocationStateCodec: Pick<
+		SpeakerAllocationStateCodec,
+		"decode" | "encode"
+	>;
+	readonly createSpeakerAllocationHistory: (
+		...args: SpeakerAllocationHistoryArguments
+	) => SpeakerAllocationHistory;
+	readonly createCsvReferentialRepository: (
+		...args: CsvReferentialRepositoryArguments
+	) => CsvReferentialRepository;
+}
 
 export class CsvSpeakerCatalogStore implements SpeakerCatalogStore {
 	constructor(
+		private readonly collaborators: CsvSpeakerCatalogStoreCollaborators,
 		private readonly root: string,
 		private readonly history: Pick<
 			SpeakerAllocationHistory,
 			"read"
-		> = new SpeakerAllocationHistory(root),
+		> = collaborators.createSpeakerAllocationHistory(root),
 	) {}
 
 	async read(): Promise<SpeakerCatalogDocument> {
 		const { csv, state, historicalIds } = await this.sources();
 		return {
-			entries: SpeakerCatalogCsv.decode(csv),
+			entries: this.collaborators.speakerCatalogCsv.decode(csv),
 			reservedIds:
 				state === undefined
 					? historicalIds
-					: SpeakerAllocationStateCodec.decode(state),
+					: this.collaborators.speakerAllocationStateCodec.decode(state),
 			revision: this.revision(csv, state, historicalIds),
 		};
 	}
 
 	async candidate(entries: readonly SpeakerCatalogEntry[]) {
-		const existing = await new CsvReferentialRepository({
-			workspaceRoot: this.root,
-			hostsPath: "referentials/hosting.csv",
-			speakersPath: "referentials/speakers.csv",
-		}).load();
+		const existing = await this.collaborators
+			.createCsvReferentialRepository({
+				workspaceRoot: this.root,
+				hostsPath: "referentials/hosting.csv",
+				speakersPath: "referentials/speakers.csv",
+			})
+			.load();
 		return {
 			hosts: existing.hosts,
 			speakers: entries.map(
@@ -72,8 +95,12 @@ export class CsvSpeakerCatalogStore implements SpeakerCatalogStore {
 		)
 			throw new ProposalSourceError("conflict");
 		// Reload the exact revision rather than relying on per-instance cached CSV state.
-		const csv = SpeakerCatalogCsv.encode(current.csv, entries);
-		const stateText = SpeakerAllocationStateCodec.encode(reservedIds);
+		const csv = this.collaborators.speakerCatalogCsv.encode(
+			current.csv,
+			entries,
+		);
+		const stateText =
+			this.collaborators.speakerAllocationStateCodec.encode(reservedIds);
 		if (csv === current.csv && stateText === current.state) return false;
 		await writeFile(join(this.root, "referentials/speakers.csv"), csv, {
 			mode: 0o600,
@@ -120,3 +147,10 @@ export class CsvSpeakerCatalogStore implements SpeakerCatalogStore {
 			.digest("hex");
 	}
 }
+export type CsvSpeakerCatalogStoreArguments =
+	ConstructorParameters<typeof CsvSpeakerCatalogStore> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

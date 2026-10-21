@@ -1,12 +1,22 @@
 import { describe, expect, it } from "vitest";
 import { fixture } from "../testing/approval.fixtures.js";
+import { GithubOrganizerApprovalComposition } from "./dependency-composition.js";
 import { GithubApprovalClient } from "./github-approval-client.js";
 
 describe("scoped GitHub approval client", () => {
 	it("reads decision comments beyond the first page", async () => {
 		// Arrange
 		const f = fixture();
-		const client = new GithubApprovalClient(f.api, "example", "meetups", 42);
+		const client = new GithubApprovalClient(
+			{
+				githubApprovalResponse:
+					new GithubOrganizerApprovalComposition().githubApprovalResponse(),
+			},
+			f.api,
+			"example",
+			"meetups",
+			42,
+		);
 		f.list
 			.mockResolvedValueOnce({
 				data: [{ id: 1, body: "first page" }],
@@ -36,7 +46,16 @@ describe("verified approval history", () => {
 	it("loads all history pages against the same comment snapshot", async () => {
 		// Arrange
 		const f = fixture();
-		const client = new GithubApprovalClient(f.api, "example", "meetups", 42);
+		const client = new GithubApprovalClient(
+			{
+				githubApprovalResponse:
+					new GithubOrganizerApprovalComposition().githubApprovalResponse(),
+			},
+			f.api,
+			"example",
+			"meetups",
+			42,
+		);
 		const comment = { id: 100, node_id: "comment-100", body: "current choice" };
 		const recent = {
 			diff: "current choice",
@@ -88,7 +107,16 @@ describe("verified approval history", () => {
 	])("fails closed on %s during history pagination", async (variant) => {
 		// Arrange
 		const f = fixture();
-		const client = new GithubApprovalClient(f.api, "example", "meetups", 42);
+		const client = new GithubApprovalClient(
+			{
+				githubApprovalResponse:
+					new GithubOrganizerApprovalComposition().githubApprovalResponse(),
+			},
+			f.api,
+			"example",
+			"meetups",
+			42,
+		);
 		const comment = { id: 100, node_id: "comment-100", body: "current choice" };
 		const history = {
 			nodes: [],

@@ -1,14 +1,10 @@
-import { ReferentialIdentifiers } from "../../domain/identifiers.js";
-import {
-	type Host,
-	type ReferentialCatalog,
-	ReferentialCatalogOperations,
-	type Speaker,
+import type {
+	Host,
+	ReferentialCatalog,
+	Speaker,
 } from "../../domain/referential-catalog.js";
-import {
-	type ReferentialDiagnostic,
-	ReferentialDiagnostics,
-} from "../../domain/referential-diagnostic.js";
+import type { ReferentialDiagnostic } from "../../domain/referential-diagnostic.js";
+import type { ResolveEventReferencesCollaborators } from "./resolve-event-references-contracts.js";
 
 export interface ResolveEventReferencesCommand {
 	readonly hostReference: string;
@@ -35,6 +31,10 @@ interface ParsedReference {
 const EXPLICIT_REFERENCE_PATTERN = /^(.*?)\s+\[([^\]]+)]\s*$/;
 
 export class ResolveEventReferences {
+	constructor(
+		private readonly collaborators: ResolveEventReferencesCollaborators,
+	) {}
+
 	execute(
 		catalog: ReferentialCatalog,
 		command: ResolveEventReferencesCommand,
@@ -52,7 +52,7 @@ export class ResolveEventReferences {
 			.filter((speaker): speaker is Speaker => speaker !== undefined);
 
 		const frozenDiagnostics =
-			ReferentialDiagnostics.freezeDiagnostics(diagnostics);
+			this.collaborators.referentialDiagnostics.freezeDiagnostics(diagnostics);
 		if (!host || diagnostics.some(({ severity }) => severity === "error")) {
 			return Object.freeze({
 				resolved: false as const,
@@ -79,7 +79,7 @@ export class ResolveEventReferences {
 		const parsed = this.parseReference(reference);
 		if (!parsed) {
 			diagnostics.push(
-				ReferentialDiagnostics.diagnostic(
+				this.collaborators.referentialDiagnostics.diagnostic(
 					"referential.reference.host.invalid",
 					"error",
 					"hostReference",
@@ -90,10 +90,12 @@ export class ResolveEventReferences {
 		}
 
 		if (parsed.stableId !== undefined) {
-			const id = ReferentialIdentifiers.asHostId(parsed.stableId);
+			const id = this.collaborators.referentialIdentifiers.asHostId(
+				parsed.stableId,
+			);
 			if (!id) {
 				diagnostics.push(
-					ReferentialDiagnostics.diagnostic(
+					this.collaborators.referentialDiagnostics.diagnostic(
 						"referential.reference.host.invalid",
 						"error",
 						"hostReference",
@@ -106,7 +108,7 @@ export class ResolveEventReferences {
 			const host = hosts.find((candidate) => candidate.id === id);
 			if (!host) {
 				diagnostics.push(
-					ReferentialDiagnostics.diagnostic(
+					this.collaborators.referentialDiagnostics.diagnostic(
 						"referential.reference.host.unknown",
 						"error",
 						"hostReference",
@@ -117,11 +119,15 @@ export class ResolveEventReferences {
 			}
 
 			if (
-				ReferentialCatalogOperations.displayNameKey(host.displayName) !==
-				ReferentialCatalogOperations.displayNameKey(parsed.displayName)
+				this.collaborators.referentialCatalogOperations.displayNameKey(
+					host.displayName,
+				) !==
+				this.collaborators.referentialCatalogOperations.displayNameKey(
+					parsed.displayName,
+				)
 			) {
 				diagnostics.push(
-					ReferentialDiagnostics.diagnostic(
+					this.collaborators.referentialDiagnostics.diagnostic(
 						"referential.reference.host.display-name-mismatch",
 						"warning",
 						"hostReference",
@@ -145,7 +151,7 @@ export class ResolveEventReferences {
 		const parsed = this.parseReference(reference);
 		if (!parsed) {
 			diagnostics.push(
-				ReferentialDiagnostics.diagnostic(
+				this.collaborators.referentialDiagnostics.diagnostic(
 					"referential.reference.speaker.invalid",
 					"error",
 					path,
@@ -156,10 +162,12 @@ export class ResolveEventReferences {
 		}
 
 		if (parsed.stableId !== undefined) {
-			const id = ReferentialIdentifiers.asSpeakerId(parsed.stableId);
+			const id = this.collaborators.referentialIdentifiers.asSpeakerId(
+				parsed.stableId,
+			);
 			if (!id) {
 				diagnostics.push(
-					ReferentialDiagnostics.diagnostic(
+					this.collaborators.referentialDiagnostics.diagnostic(
 						"referential.reference.speaker.invalid",
 						"error",
 						path,
@@ -172,7 +180,7 @@ export class ResolveEventReferences {
 			const speaker = speakers.find((candidate) => candidate.id === id);
 			if (!speaker) {
 				diagnostics.push(
-					ReferentialDiagnostics.diagnostic(
+					this.collaborators.referentialDiagnostics.diagnostic(
 						"referential.reference.speaker.unknown",
 						"error",
 						path,
@@ -183,11 +191,15 @@ export class ResolveEventReferences {
 			}
 
 			if (
-				ReferentialCatalogOperations.displayNameKey(speaker.displayName) !==
-				ReferentialCatalogOperations.displayNameKey(parsed.displayName)
+				this.collaborators.referentialCatalogOperations.displayNameKey(
+					speaker.displayName,
+				) !==
+				this.collaborators.referentialCatalogOperations.displayNameKey(
+					parsed.displayName,
+				)
 			) {
 				diagnostics.push(
-					ReferentialDiagnostics.diagnostic(
+					this.collaborators.referentialDiagnostics.diagnostic(
 						"referential.reference.speaker.display-name-mismatch",
 						"warning",
 						path,
@@ -207,7 +219,9 @@ export class ResolveEventReferences {
 		}
 
 		const normalized =
-			ReferentialCatalogOperations.normalizeDisplayName(reference);
+			this.collaborators.referentialCatalogOperations.normalizeDisplayName(
+				reference,
+			);
 		if (!normalized) {
 			return undefined;
 		}
@@ -217,9 +231,10 @@ export class ResolveEventReferences {
 			return { displayName: normalized };
 		}
 
-		const displayName = ReferentialCatalogOperations.normalizeDisplayName(
-			explicit[1],
-		);
+		const displayName =
+			this.collaborators.referentialCatalogOperations.normalizeDisplayName(
+				explicit[1],
+			);
 		const stableId = explicit[2].trim();
 		if (!displayName || !stableId) {
 			return undefined;
@@ -235,15 +250,19 @@ export class ResolveEventReferences {
 	) {
 		const matches = hosts.filter(
 			(host) =>
-				ReferentialCatalogOperations.displayNameKey(host.displayName) ===
-				ReferentialCatalogOperations.displayNameKey(parsed.displayName),
+				this.collaborators.referentialCatalogOperations.displayNameKey(
+					host.displayName,
+				) ===
+				this.collaborators.referentialCatalogOperations.displayNameKey(
+					parsed.displayName,
+				),
 		);
 		if (matches.length === 1) {
 			return matches[0];
 		}
 
 		diagnostics.push(
-			ReferentialDiagnostics.diagnostic(
+			this.collaborators.referentialDiagnostics.diagnostic(
 				matches.length === 0
 					? "referential.reference.host.unknown"
 					: "referential.reference.host.ambiguous",
@@ -265,15 +284,19 @@ export class ResolveEventReferences {
 	) {
 		const matches = speakers.filter(
 			(speaker) =>
-				ReferentialCatalogOperations.displayNameKey(speaker.displayName) ===
-				ReferentialCatalogOperations.displayNameKey(parsed.displayName),
+				this.collaborators.referentialCatalogOperations.displayNameKey(
+					speaker.displayName,
+				) ===
+				this.collaborators.referentialCatalogOperations.displayNameKey(
+					parsed.displayName,
+				),
 		);
 		if (matches.length === 1) {
 			return matches[0];
 		}
 
 		diagnostics.push(
-			ReferentialDiagnostics.diagnostic(
+			this.collaborators.referentialDiagnostics.diagnostic(
 				matches.length === 0
 					? "referential.reference.speaker.unknown"
 					: "referential.reference.speaker.ambiguous",

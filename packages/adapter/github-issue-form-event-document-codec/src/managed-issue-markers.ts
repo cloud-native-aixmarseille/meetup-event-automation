@@ -1,5 +1,5 @@
-import {
-	type EventDiagnostic,
+import type {
+	EventDiagnostic,
 	EventDiagnostics,
 } from "@meetup-automation/event";
 import {
@@ -9,27 +9,30 @@ import {
 	SCHEMA_MARKER_NAME,
 	type StableReferenceMetadata,
 } from "./github-issue-form-event-document-codec-contracts.js";
-import { MarkdownLines } from "./markdown-lines.js";
+import type { MarkdownLines } from "./markdown-lines.js";
+
+export interface ManagedIssueMarkersCollaborators {
+	readonly markdownLines: Pick<MarkdownLines, "isWhitespaceCharacter">;
+	readonly eventDiagnostics: Pick<EventDiagnostics, "diagnostic">;
+}
 
 export class ManagedIssueMarkers {
-	static readManagedMarkerValues(
-		body: string,
-		markerName: string,
-	): readonly string[] {
-		return ManagedIssueMarkers.findManagedMarkerMatches(body, markerName).map(
+	constructor(
+		private readonly collaborators: ManagedIssueMarkersCollaborators,
+	) {}
+
+	readManagedMarkerValues(body: string, markerName: string): readonly string[] {
+		return this.findManagedMarkerMatches(body, markerName).map(
 			({ value }) => value,
 		);
 	}
 
-	static replaceManagedMarker(
+	replaceManagedMarker(
 		body: string,
 		markerName: string,
 		replacement: string,
 	): Readonly<{ body: string; found: boolean }> {
-		const matches = ManagedIssueMarkers.findManagedMarkerMatches(
-			body,
-			markerName,
-		);
+		const matches = this.findManagedMarkerMatches(body, markerName);
 		if (matches.length === 0) {
 			return { body, found: false };
 		}
@@ -48,7 +51,7 @@ export class ManagedIssueMarkers {
 		return { body: result, found: true };
 	}
 
-	static findManagedMarkerMatches(
+	findManagedMarkerMatches(
 		body: string,
 		markerName: string,
 	): readonly ManagedMarkerMatch[] {
@@ -65,7 +68,7 @@ export class ManagedIssueMarkers {
 				break;
 			}
 
-			const value = ManagedIssueMarkers.parseManagedMarkerComment(
+			const value = this.parseManagedMarkerComment(
 				body.slice(commentStart + 4, commentEnd),
 				markerName,
 			);
@@ -83,7 +86,7 @@ export class ManagedIssueMarkers {
 		return matches;
 	}
 
-	static parseManagedMarkerComment(
+	parseManagedMarkerComment(
 		commentBody: string,
 		markerName: string,
 	): string | undefined {
@@ -95,7 +98,7 @@ export class ManagedIssueMarkers {
 		let cursor = markerName.length;
 		while (
 			cursor < trimmed.length &&
-			MarkdownLines.isWhitespaceCharacter(trimmed[cursor])
+			this.collaborators.markdownLines.isWhitespaceCharacter(trimmed[cursor])
 		) {
 			cursor += 1;
 		}
@@ -106,17 +109,17 @@ export class ManagedIssueMarkers {
 		return trimmed.slice(cursor + 1).trim();
 	}
 
-	static upsertManagedMarkers(
+	upsertManagedMarkers(
 		body: string,
 		metadata: StableReferenceMetadata,
 	): string {
 		const referenceMarker = `<!-- meetup-event-references:${JSON.stringify(metadata).replaceAll("<", "\\u003c").replaceAll(">", "\\u003e")} -->`;
-		const schemaReplacement = ManagedIssueMarkers.replaceManagedMarker(
+		const schemaReplacement = this.replaceManagedMarker(
 			body,
 			SCHEMA_MARKER_NAME,
 			CURRENT_SCHEMA_MARKER,
 		);
-		const referenceReplacement = ManagedIssueMarkers.replaceManagedMarker(
+		const referenceReplacement = this.replaceManagedMarker(
 			schemaReplacement.body,
 			REFERENCE_MARKER_NAME,
 			referenceMarker,
@@ -135,17 +138,14 @@ export class ManagedIssueMarkers {
 		return result;
 	}
 
-	static readSchema(body: string, diagnostics: EventDiagnostic[]): 0 | 1 {
-		const markers = ManagedIssueMarkers.readManagedMarkerValues(
-			body,
-			SCHEMA_MARKER_NAME,
-		);
+	readSchema(body: string, diagnostics: EventDiagnostic[]): 0 | 1 {
+		const markers = this.readManagedMarkerValues(body, SCHEMA_MARKER_NAME);
 		if (markers.length === 0) {
 			return 0;
 		}
 		if (markers.length > 1) {
 			diagnostics.push(
-				EventDiagnostics.diagnostic({
+				this.collaborators.eventDiagnostics.diagnostic({
 					code: "event.document.schema-marker.duplicate",
 					severity: "error",
 					category: "invalid",
@@ -156,7 +156,7 @@ export class ManagedIssueMarkers {
 		}
 		if (markers[0] !== "1") {
 			diagnostics.push(
-				EventDiagnostics.diagnostic({
+				this.collaborators.eventDiagnostics.diagnostic({
 					code: "event.document.schema-version.unsupported",
 					severity: "error",
 					category: "migration",

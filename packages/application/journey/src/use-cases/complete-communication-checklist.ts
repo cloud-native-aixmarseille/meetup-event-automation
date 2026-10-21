@@ -1,18 +1,28 @@
 import type { MailCommunicationKind } from "@meetup-automation/communication";
 import {
-	EventChecklists,
+	type EventChecklists,
 	EventConcurrentModificationError,
 	type EventDocument,
 	type EventDocumentCodec,
+	type EventDocumentConcurrency,
 	type EventRepository,
-	ReconcileEvent,
 } from "@meetup-automation/event";
 import type { CommunicationJourneyDiagnostic } from "../communication/contracts.js";
-import { CommunicationChecklist } from "./communication-checklist.js";
+import type { CommunicationChecklist } from "./communication-checklist.js";
 
 /** Persist accepted deliveries without overwriting an organizer's concurrent edit. */
+export interface CompleteCommunicationChecklistCollaborators {
+	readonly communicationChecklist: Pick<CommunicationChecklist, "complete">;
+	readonly eventChecklists: Pick<EventChecklists, "equal">;
+	readonly eventDocumentConcurrency: Pick<
+		EventDocumentConcurrency,
+		"eventDocumentsEqual"
+	>;
+}
+
 export class CompleteCommunicationChecklist {
 	constructor(
+		private readonly collaborators: CompleteCommunicationChecklistCollaborators,
 		private readonly repository: EventRepository,
 		private readonly codec: EventDocumentCodec,
 	) {}
@@ -25,12 +35,10 @@ export class CompleteCommunicationChecklist {
 		if (accepted.length === 0) return;
 		try {
 			const { event } = this.codec.decode(source);
-			const operationalChecklists = CommunicationChecklist.complete(
-				event,
-				accepted,
-			);
+			const operationalChecklists =
+				this.collaborators.communicationChecklist.complete(event, accepted);
 			if (
-				EventChecklists.equal(
+				this.collaborators.eventChecklists.equal(
 					operationalChecklists,
 					event.operationalChecklists,
 				)
@@ -44,12 +52,23 @@ export class CompleteCommunicationChecklist {
 				throw new Error("Checklist completion could not be rendered");
 			const rendered = this.codec.decode({ ...source, body: patch.body }).event
 				.operationalChecklists;
-			if (!EventChecklists.equal(rendered, operationalChecklists))
+			if (
+				!this.collaborators.eventChecklists.equal(
+					rendered,
+					operationalChecklists,
+				)
+			)
 				throw new Error(
 					"Checklist completion was not preserved by the document codec",
 				);
 			const current = await this.repository.find(source.identity);
-			if (!current || !ReconcileEvent.eventDocumentsEqual(current, source))
+			if (
+				!current ||
+				!this.collaborators.eventDocumentConcurrency.eventDocumentsEqual(
+					current,
+					source,
+				)
+			)
 				throw new EventConcurrentModificationError(source.identity);
 			await this.repository.applyPatch(source.identity, { body: patch.body });
 		} catch (error) {
@@ -63,3 +82,10 @@ export class CompleteCommunicationChecklist {
 		}
 	}
 }
+export type CompleteCommunicationChecklistArguments =
+	ConstructorParameters<typeof CompleteCommunicationChecklist> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

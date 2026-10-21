@@ -1,19 +1,45 @@
 import {
-	FeedbackPolicy,
+	type FeedbackPolicy,
 	FeedbackResolutionError,
 	type FeedbackTalkResult,
 	type FeedbackTalkResultsGateway,
 } from "@meetup-automation/publication";
-import { OpenFeedbackAgendaPlan } from "./openfeedback-agenda-plan.js";
-import { OpenFeedbackAgendaSnapshot } from "./openfeedback-agenda-snapshot.js";
-import { OpenFeedbackClient } from "./openfeedback-client.js";
-import { OpenFeedbackRecordEquality } from "./openfeedback-record-equality.js";
-import { OpenFeedbackRecordsGateway } from "./openfeedback-records-gateway.js";
+import type { OpenFeedbackAgendaPlan } from "./openfeedback-agenda-plan.js";
+import type { OpenFeedbackAgendaSnapshot } from "./openfeedback-agenda-snapshot.js";
+import type {
+	OpenFeedbackClient,
+	OpenFeedbackClientArguments,
+} from "./openfeedback-client.js";
+import type { OpenFeedbackRecordEquality } from "./openfeedback-record-equality.js";
+import type {
+	OpenFeedbackRecordsGateway,
+	OpenFeedbackRecordsGatewayArguments,
+} from "./openfeedback-records-gateway.js";
+
+export interface OpenFeedbackTalkResultsGatewayCollaborators {
+	readonly openFeedbackAgendaSnapshot: Pick<
+		OpenFeedbackAgendaSnapshot,
+		"parse"
+	>;
+	readonly openFeedbackAgendaPlan: Pick<OpenFeedbackAgendaPlan, "create">;
+	readonly openFeedbackRecordEquality: Pick<
+		OpenFeedbackRecordEquality,
+		"sameSpeakers"
+	>;
+	readonly feedbackPolicy: Pick<FeedbackPolicy, "pollUrl">;
+	readonly createOpenFeedbackRecordsGateway: (
+		...args: OpenFeedbackRecordsGatewayArguments
+	) => OpenFeedbackRecordsGateway;
+	readonly createOpenFeedbackClient: (
+		...args: OpenFeedbackClientArguments
+	) => OpenFeedbackClient;
+}
 
 export class OpenFeedbackTalkResultsGateway
 	implements FeedbackTalkResultsGateway
 {
 	constructor(
+		private readonly collaborators: OpenFeedbackTalkResultsGatewayCollaborators,
 		private readonly apiKey: string,
 		private readonly fetcher: typeof fetch = fetch,
 	) {}
@@ -21,14 +47,17 @@ export class OpenFeedbackTalkResultsGateway
 	async resolve(
 		input: Parameters<FeedbackTalkResultsGateway["resolve"]>[0],
 	): Promise<readonly FeedbackTalkResult[]> {
-		const eventId = OpenFeedbackTalkResultsGateway.eventId(input.url);
-		const records = new OpenFeedbackRecordsGateway(
-			new OpenFeedbackClient(this.apiKey, this.fetcher),
+		const eventId = this.eventId(input.url);
+		const records = this.collaborators.createOpenFeedbackRecordsGateway(
+			this.collaborators.createOpenFeedbackClient(this.apiKey, this.fetcher),
 		);
 		const speakers = await records.list(eventId, "speakers");
 		const talks = await records.list(eventId, "talks");
-		const current = OpenFeedbackAgendaSnapshot.parse({ speakers, talks });
-		const matched = OpenFeedbackAgendaPlan.create(
+		const current = this.collaborators.openFeedbackAgendaSnapshot.parse({
+			speakers,
+			talks,
+		});
+		const matched = this.collaborators.openFeedbackAgendaPlan.create(
 			input.key,
 			input.agenda,
 			current,
@@ -39,7 +68,10 @@ export class OpenFeedbackTalkResultsGateway
 			if (
 				!talk ||
 				!stored ||
-				!OpenFeedbackRecordEquality.sameSpeakers(stored, talk)
+				!this.collaborators.openFeedbackRecordEquality.sameSpeakers(
+					stored,
+					talk,
+				)
 			)
 				throw new FeedbackResolutionError("unavailable");
 			return {
@@ -50,9 +82,11 @@ export class OpenFeedbackTalkResultsGateway
 		});
 	}
 
-	private static eventId(url: string): string {
+	private eventId(url: string): string {
 		try {
-			const id = new URL(FeedbackPolicy.pollUrl(url)).pathname.split("/")[1];
+			const id = new URL(
+				this.collaborators.feedbackPolicy.pollUrl(url),
+			).pathname.split("/")[1];
 			if (id) return id;
 		} catch {
 			// Invalid organizer input does not indicate a failed provider request.
@@ -60,3 +94,10 @@ export class OpenFeedbackTalkResultsGateway
 		throw new FeedbackResolutionError("unavailable");
 	}
 }
+export type OpenFeedbackTalkResultsGatewayArguments =
+	ConstructorParameters<typeof OpenFeedbackTalkResultsGateway> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

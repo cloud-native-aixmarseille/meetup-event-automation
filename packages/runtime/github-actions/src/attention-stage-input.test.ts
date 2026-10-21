@@ -19,7 +19,7 @@ describe("workflow attention input decoding", () => {
 		const encoded = JSON.stringify(value);
 
 		// Act
-		const parse = () => AttentionStageInput.parse(encoded);
+		const parse = () => new AttentionStageInput().parse(encoded);
 
 		// Assert
 		expect(parse).toThrow();
@@ -42,7 +42,7 @@ describe("workflow attention input decoding", () => {
 		});
 
 		// Act
-		const result = AttentionStageInput.parse(encoded);
+		const result = new AttentionStageInput().parse(encoded);
 
 		// Assert
 		expect(result.event).toEqual({

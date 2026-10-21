@@ -11,7 +11,7 @@ describe("presentation file URLs", () => {
 		const input = `  ${url}  `;
 
 		// Act
-		const result = PresentationFileUrl.normalize(input);
+		const result = new PresentationFileUrl().normalize(input);
 
 		// Assert
 		expect(result).toBe(url);
@@ -33,7 +33,7 @@ describe("presentation file URLs", () => {
 		// Use the parameterized candidate.
 
 		// Act
-		const result = PresentationFileUrl.normalize(input);
+		const result = new PresentationFileUrl().normalize(input);
 
 		// Assert
 		expect(result).toBeUndefined();

@@ -1,6 +1,8 @@
+import { CommunicationDomainComposition } from "@meetup-automation/communication";
 import { describe, expect, it } from "vitest";
 import { state } from "../testing/attention.fixtures.js";
 import { ATTENTION_MARKER, AttentionRecord } from "./attention-record.js";
+import { GithubOrganizerAttentionComposition } from "./dependency-composition.js";
 
 describe("attention record validation", () => {
 	it.each([
@@ -14,7 +16,13 @@ describe("attention record validation", () => {
 		const body = `${ATTENTION_MARKER}${JSON.stringify({ version: 1, ...state(), ...overrides })} -->`;
 
 		// Act
-		const read = () => AttentionRecord.read(body);
+		const read = () =>
+			new AttentionRecord({
+				attentionRecordFields:
+					new GithubOrganizerAttentionComposition().attentionRecordFields(),
+				attentionStateRules:
+					new CommunicationDomainComposition().attentionStateRules(),
+			}).read(body);
 
 		// Assert
 		expect(read).toThrow();
@@ -46,7 +54,13 @@ describe("unknown attention metadata", () => {
 		const body = `${ATTENTION_MARKER}${JSON.stringify(value)} -->`;
 
 		// Act
-		const read = () => AttentionRecord.read(body);
+		const read = () =>
+			new AttentionRecord({
+				attentionRecordFields:
+					new GithubOrganizerAttentionComposition().attentionRecordFields(),
+				attentionStateRules:
+					new CommunicationDomainComposition().attentionStateRules(),
+			}).read(body);
 
 		// Assert
 		expect(read).toThrow();
@@ -69,8 +83,18 @@ describe("unknown attention metadata", () => {
 		};
 
 		// Act
-		const encoded = AttentionRecord.marker(value);
-		const decoded = AttentionRecord.read(encoded);
+		const encoded = new AttentionRecord({
+			attentionRecordFields:
+				new GithubOrganizerAttentionComposition().attentionRecordFields(),
+			attentionStateRules:
+				new CommunicationDomainComposition().attentionStateRules(),
+		}).marker(value);
+		const decoded = new AttentionRecord({
+			attentionRecordFields:
+				new GithubOrganizerAttentionComposition().attentionRecordFields(),
+			attentionStateRules:
+				new CommunicationDomainComposition().attentionStateRules(),
+		}).read(encoded);
 
 		// Assert
 		expect(decoded.post?.message).toEqual(value.post.message);

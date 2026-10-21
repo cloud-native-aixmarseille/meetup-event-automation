@@ -3,14 +3,17 @@ import type {
 	ContentStatus,
 	PublicAssetModel,
 } from "../domain/asset-content.js";
-import type { ReconcileAssetContent } from "./reconcile-asset-content.js";
-import { ReconcileAssetFile } from "./reconcile-asset-file.js";
 import type { PublicationDiagnostic } from "../domain/model.js";
 import type {
 	AssetContainer,
 	AssetRepository,
 	AssetTemplate,
 } from "./ports.js";
+import type { ReconcileAssetContent } from "./reconcile-asset-content.js";
+import type {
+	ReconcileAssetFile,
+	ReconcileAssetFileArguments,
+} from "./reconcile-asset-file.js";
 
 export type ReconcileEventAssetsResult = Readonly<{
 	container?: AssetContainer;
@@ -21,8 +24,15 @@ export type ReconcileEventAssetsResult = Readonly<{
 
 export type ReconcileEventAssetsMode = "check" | "fix";
 
+export interface ReconcileEventAssetsCollaborators {
+	readonly createReconcileAssetFile: (
+		...args: ReconcileAssetFileArguments
+	) => ReconcileAssetFile;
+}
+
 export class ReconcileEventAssets {
 	constructor(
+		private readonly collaborators: ReconcileEventAssetsCollaborators,
 		private readonly repository: AssetRepository,
 		private readonly content?: ReconcileAssetContent,
 	) {}
@@ -38,11 +48,11 @@ export class ReconcileEventAssets {
 	}): Promise<ReconcileEventAssetsResult> {
 		const date = input.date.trim();
 		const host = input.hostName.trim();
-		if (!ReconcileEventAssets.validDate(date) || !host) {
+		if (!this.validDate(date) || !host) {
 			return {
 				files: {},
 				diagnostics: [
-					ReconcileEventAssets.diagnostic(
+					this.diagnostic(
 						"prerequisites",
 						"A valid event date and resolved host are required to reconcile assets",
 						false,
@@ -52,7 +62,7 @@ export class ReconcileEventAssets {
 		}
 		// Validate the complete template catalog before performing any mutation.
 		const templates = await this.repository.listTemplates();
-		ReconcileEventAssets.validateTemplates(templates);
+		this.validateTemplates(templates);
 		const month = new Intl.DateTimeFormat("en-US", {
 			month: "long",
 			timeZone: "UTC",
@@ -66,7 +76,7 @@ export class ReconcileEventAssets {
 		let container = await this.repository.findContainer(request);
 		if (!container || container.name !== request.title) {
 			diagnostics.push(
-				ReconcileEventAssets.diagnostic(
+				this.diagnostic(
 					"container.drift",
 					"The event asset folder must be created or renamed",
 					input.mode === "fix",
@@ -78,7 +88,7 @@ export class ReconcileEventAssets {
 		if (!container) return { files: {}, diagnostics };
 		if (container.url !== input.existingUrl) {
 			diagnostics.push(
-				ReconcileEventAssets.diagnostic(
+				this.diagnostic(
 					"link.drift",
 					"The event asset link must reference the managed folder",
 					input.mode === "fix",
@@ -102,7 +112,10 @@ export class ReconcileEventAssets {
 		const currentFiles = await this.repository.listFiles(container.id);
 		const files: Record<string, string> = {};
 		const content: Record<string, ContentStatus> = {};
-		const reconcile = new ReconcileAssetFile(this.repository, this.content);
+		const reconcile = this.collaborators.createReconcileAssetFile(
+			this.repository,
+			this.content,
+		);
 		for (const template of templates) {
 			const result = await reconcile.execute({
 				...input,
@@ -117,7 +130,7 @@ export class ReconcileEventAssets {
 		return { container, files, content, diagnostics };
 	}
 
-	private static diagnostic(
+	private diagnostic(
 		code: string,
 		message: string,
 		fixApplied: boolean,
@@ -132,7 +145,7 @@ export class ReconcileEventAssets {
 		};
 	}
 
-	private static validDate(date: string): boolean {
+	private validDate(date: string): boolean {
 		if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
 		const instant = new Date(`${date}T00:00:00Z`);
 		return (
@@ -141,7 +154,7 @@ export class ReconcileEventAssets {
 		);
 	}
 
-	private static validateTemplates(templates: readonly AssetTemplate[]): void {
+	private validateTemplates(templates: readonly AssetTemplate[]): void {
 		if (
 			!templates.length ||
 			templates.some(
@@ -157,3 +170,10 @@ export class ReconcileEventAssets {
 		}
 	}
 }
+export type ReconcileEventAssetsArguments =
+	ConstructorParameters<typeof ReconcileEventAssets> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

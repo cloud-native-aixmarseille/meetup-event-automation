@@ -62,3 +62,6 @@ export class GithubOrganizerFollowUp implements OrganizerFollowUp {
 		await this.repository.save(state.record, state);
 	}
 }
+export type GithubOrganizerFollowUpArguments = ConstructorParameters<
+	typeof GithubOrganizerFollowUp
+>;

@@ -27,7 +27,7 @@ describe("attention authority invariants", () => {
 		const value = { ...state, post };
 
 		// Act
-		const validate = () => AttentionStateRules.validate(value);
+		const validate = () => new AttentionStateRules().validate(value);
 
 		// Assert
 		expect(validate).toThrow();
@@ -44,7 +44,7 @@ describe("attention authority invariants", () => {
 		};
 
 		// Act
-		const validate = () => AttentionStateRules.validate(value);
+		const validate = () => new AttentionStateRules().validate(value);
 
 		// Assert
 		expect(validate).not.toThrow();

@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import {
-	ReferentialIdentifiers,
+	type ReferentialIdentifiers,
 	SpeakerCatalogHistoryError,
 } from "@meetup-automation/referential";
 
@@ -17,8 +17,13 @@ type GitCommand = (
 ) => Promise<{ stdout: string }>;
 
 /** Recover deleted IDs before the catalog has a persisted allocation history. */
+export interface SpeakerAllocationHistoryCollaborators {
+	readonly referentialIdentifiers: Pick<ReferentialIdentifiers, "asSpeakerId">;
+}
+
 export class SpeakerAllocationHistory {
 	constructor(
+		private readonly collaborators: SpeakerAllocationHistoryCollaborators,
 		private readonly root: string,
 		private readonly command: GitCommand = promisify(execFile),
 	) {}
@@ -45,7 +50,13 @@ export class SpeakerAllocationHistory {
 			);
 			const words = history.stdout.match(/\b[\w-]+\b/g) ?? [];
 			return [
-				...new Set(words.filter(ReferentialIdentifiers.asSpeakerId)),
+				...new Set(
+					words.filter(
+						this.collaborators.referentialIdentifiers.asSpeakerId.bind(
+							this.collaborators.referentialIdentifiers,
+						),
+					),
+				),
 			].sort();
 		} catch {
 			// Git errors may contain private file contents; never expose them to reports.
@@ -53,3 +64,10 @@ export class SpeakerAllocationHistory {
 		}
 	}
 }
+export type SpeakerAllocationHistoryArguments =
+	ConstructorParameters<typeof SpeakerAllocationHistory> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

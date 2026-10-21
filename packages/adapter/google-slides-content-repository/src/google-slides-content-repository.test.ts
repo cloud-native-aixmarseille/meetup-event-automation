@@ -1,6 +1,7 @@
-import { ContentFingerprint } from "@meetup-automation/publication";
+import { PublicationDomainComposition } from "@meetup-automation/publication";
 import { describe, expect, it } from "vitest";
 import { slidesFixture } from "../testing/slides.fixtures.js";
+import { GoogleSlidesContentRepositoryComposition } from "./dependency-composition.js";
 
 import { GoogleSlidesContentRepository } from "./google-slides-content-repository.js";
 
@@ -8,7 +9,20 @@ describe("Slides content repository", () => {
 	it("propagates an unexpected provider write failure for technical reporting", async () => {
 		// Arrange
 		const f = slidesFixture();
-		const repository = new GoogleSlidesContentRepository(f.api, f.images);
+		const repository = new GoogleSlidesContentRepository(
+			{
+				slideTemplateBindings:
+					new GoogleSlidesContentRepositoryComposition().slideTemplateBindings(),
+				slideContentRequests:
+					new GoogleSlidesContentRepositoryComposition().slideContentRequests(),
+				createSlideContentLocations: (...args) =>
+					new GoogleSlidesContentRepositoryComposition().slideContentLocations(
+						...args,
+					),
+			},
+			f.api,
+			f.images,
+		);
 		const error = new Error("Synthetic authentication failure");
 		const snapshot = await repository.read("file", f.contract);
 		f.client.presentations.batchUpdate.mockRejectedValueOnce(error);
@@ -21,7 +35,9 @@ describe("Slides content repository", () => {
 					type: "text",
 					key: "event.title",
 					text: "Public meetup",
-					fingerprint: ContentFingerprint.of("Public meetup"),
+					fingerprint: new PublicationDomainComposition()
+						.contentFingerprint()
+						.of("Public meetup"),
 				},
 			},
 		]);
@@ -34,7 +50,20 @@ describe("Slides content repository", () => {
 	it("renders a slotted talk title and follows its shape after the placeholder disappears", async () => {
 		// Arrange
 		const f = slidesFixture();
-		const repository = new GoogleSlidesContentRepository(f.api, f.images);
+		const repository = new GoogleSlidesContentRepository(
+			{
+				slideTemplateBindings:
+					new GoogleSlidesContentRepositoryComposition().slideTemplateBindings(),
+				slideContentRequests:
+					new GoogleSlidesContentRepositoryComposition().slideContentRequests(),
+				createSlideContentLocations: (...args) =>
+					new GoogleSlidesContentRepositoryComposition().slideContentLocations(
+						...args,
+					),
+			},
+			f.api,
+			f.images,
+		);
 		const contract = {
 			...f.contract,
 			fields: [
@@ -62,7 +91,9 @@ describe("Slides content repository", () => {
 					type: "text",
 					key: location.key,
 					text: "Public talk",
-					fingerprint: ContentFingerprint.of("Public talk"),
+					fingerprint: new PublicationDomainComposition()
+						.contentFingerprint()
+						.of("Public talk"),
 				},
 			},
 		]);
@@ -77,7 +108,9 @@ describe("Slides content repository", () => {
 		expect(updated.locations.find((item) => item.id === "title")).toMatchObject(
 			{
 				key: "talk.title:opening",
-				fingerprint: ContentFingerprint.of("Public talk"),
+				fingerprint: new PublicationDomainComposition()
+					.contentFingerprint()
+					.of("Public talk"),
 			},
 		);
 		expect(f.client.presentations.batchUpdate).toHaveBeenCalledWith(
@@ -101,7 +134,20 @@ describe("Slides content repository", () => {
 	it("binds repeated whole-shape tokens and preserves manual shapes and text style", async () => {
 		// Arrange
 		const f = slidesFixture();
-		const repository = new GoogleSlidesContentRepository(f.api, f.images);
+		const repository = new GoogleSlidesContentRepository(
+			{
+				slideTemplateBindings:
+					new GoogleSlidesContentRepositoryComposition().slideTemplateBindings(),
+				slideContentRequests:
+					new GoogleSlidesContentRepositoryComposition().slideContentRequests(),
+				createSlideContentLocations: (...args) =>
+					new GoogleSlidesContentRepositoryComposition().slideContentLocations(
+						...args,
+					),
+			},
+			f.api,
+			f.images,
+		);
 		const snapshot = await repository.read("file", f.contract);
 
 		// Act
@@ -114,7 +160,9 @@ describe("Slides content repository", () => {
 					type: "text",
 					key: "event.title",
 					text: "Literal {{agenda}}",
-					fingerprint: ContentFingerprint.of("Literal {{agenda}}"),
+					fingerprint: new PublicationDomainComposition()
+						.contentFingerprint()
+						.of("Literal {{agenda}}"),
 				},
 			})),
 		);
@@ -139,7 +187,20 @@ describe("Slides content repository", () => {
 	it("rejects mixed prose before any batch", async () => {
 		// Arrange
 		const f = slidesFixture();
-		const repository = new GoogleSlidesContentRepository(f.api, f.images);
+		const repository = new GoogleSlidesContentRepository(
+			{
+				slideTemplateBindings:
+					new GoogleSlidesContentRepositoryComposition().slideTemplateBindings(),
+				slideContentRequests:
+					new GoogleSlidesContentRepositoryComposition().slideContentRequests(),
+				createSlideContentLocations: (...args) =>
+					new GoogleSlidesContentRepositoryComposition().slideContentLocations(
+						...args,
+					),
+			},
+			f.api,
+			f.images,
+		);
 		f.firstRun.content = "Welcome {{event.title}}\n";
 
 		// Act
@@ -153,7 +214,20 @@ describe("Slides content repository", () => {
 	it("rejects tokens in speaker notes", async () => {
 		// Arrange
 		const f = slidesFixture();
-		const repository = new GoogleSlidesContentRepository(f.api, f.images);
+		const repository = new GoogleSlidesContentRepository(
+			{
+				slideTemplateBindings:
+					new GoogleSlidesContentRepositoryComposition().slideTemplateBindings(),
+				slideContentRequests:
+					new GoogleSlidesContentRepositoryComposition().slideContentRequests(),
+				createSlideContentLocations: (...args) =>
+					new GoogleSlidesContentRepositoryComposition().slideContentLocations(
+						...args,
+					),
+			},
+			f.api,
+			f.images,
+		);
 		f.page.slideProperties = {
 			notesPage: { pageElements: [f.firstShape] },
 		};
@@ -170,7 +244,20 @@ describe("Slides content repository", () => {
 		async (token) => {
 			// Arrange
 			const f = slidesFixture();
-			const repository = new GoogleSlidesContentRepository(f.api, f.images);
+			const repository = new GoogleSlidesContentRepository(
+				{
+					slideTemplateBindings:
+						new GoogleSlidesContentRepositoryComposition().slideTemplateBindings(),
+					slideContentRequests:
+						new GoogleSlidesContentRepositoryComposition().slideContentRequests(),
+					createSlideContentLocations: (...args) =>
+						new GoogleSlidesContentRepositoryComposition().slideContentLocations(
+							...args,
+						),
+				},
+				f.api,
+				f.images,
+			);
 			const field = {
 				type: "image",
 				token,

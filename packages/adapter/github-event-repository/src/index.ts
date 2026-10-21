@@ -1,3 +1,4 @@
+export { GithubEventRepositoryComposition } from "./dependency-composition.js";
 export { GitHubEventRepository } from "./github-event-repository.js";
 export { GitHubEventRepositoryConfigurationError } from "./github-event-repository-configuration-error.js";
 export type {

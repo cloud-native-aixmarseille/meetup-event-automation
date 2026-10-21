@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
 import { FeedbackResolutionError } from "@meetup-automation/publication";
+import { describe, expect, it } from "vitest";
 import { agenda, snapshot } from "../testing/feedback-agenda.fixtures.js";
+import { OpenfeedbackEventGatewayComposition } from "./dependency-composition.js";
 import { OpenFeedbackAgendaPlan } from "./openfeedback-agenda-plan.js";
 
 describe("feedback agenda identities", () => {
@@ -17,7 +18,10 @@ describe("feedback agenda identities", () => {
 				},
 			],
 		};
-		const created = OpenFeedbackAgendaPlan.create(key, selected, {
+		const created = new OpenFeedbackAgendaPlan({
+			openFeedbackRecordEquality:
+				new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+		}).create(key, selected, {
 			speakers: [],
 			talks: [],
 		});
@@ -29,7 +33,10 @@ describe("feedback agenda identities", () => {
 		};
 
 		// Act
-		const result = OpenFeedbackAgendaPlan.create(key, changed, created);
+		const result = new OpenFeedbackAgendaPlan({
+			openFeedbackRecordEquality:
+				new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+		}).create(key, changed, created);
 
 		// Assert
 		expect(result.talks.map((talk) => talk.id)).toEqual(
@@ -46,7 +53,10 @@ describe("feedback agenda identities", () => {
 		const key = "example/meetups#12";
 
 		// Act
-		const result = OpenFeedbackAgendaPlan.create(key, agenda, snapshot);
+		const result = new OpenFeedbackAgendaPlan({
+			openFeedbackRecordEquality:
+				new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+		}).create(key, agenda, snapshot);
 
 		// Assert
 		expect(result).toEqual(snapshot);
@@ -59,11 +69,10 @@ describe("feedback agenda identities", () => {
 		};
 
 		// Act
-		const result = OpenFeedbackAgendaPlan.create(
-			"example/meetups#12",
-			changed,
-			snapshot,
-		);
+		const result = new OpenFeedbackAgendaPlan({
+			openFeedbackRecordEquality:
+				new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+		}).create("example/meetups#12", changed, snapshot);
 
 		// Assert
 		expect(result.talks).toEqual([
@@ -84,21 +93,18 @@ describe("feedback agenda identities", () => {
 		};
 
 		// Act
-		const created = OpenFeedbackAgendaPlan.create(
-			"example/meetups#12",
-			agenda,
-			empty,
-		);
-		const retried = OpenFeedbackAgendaPlan.create(
-			"example/meetups#12",
-			agenda,
-			empty,
-		);
-		const updated = OpenFeedbackAgendaPlan.create(
-			"example/meetups#12",
-			renamed,
-			created,
-		);
+		const created = new OpenFeedbackAgendaPlan({
+			openFeedbackRecordEquality:
+				new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+		}).create("example/meetups#12", agenda, empty);
+		const retried = new OpenFeedbackAgendaPlan({
+			openFeedbackRecordEquality:
+				new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+		}).create("example/meetups#12", agenda, empty);
+		const updated = new OpenFeedbackAgendaPlan({
+			openFeedbackRecordEquality:
+				new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+		}).create("example/meetups#12", renamed, created);
 
 		// Assert
 		expect(retried).toEqual(created);
@@ -120,11 +126,10 @@ describe("feedback agenda identities", () => {
 		};
 
 		// Act
-		const result = OpenFeedbackAgendaPlan.create(
-			"example/meetups#12",
-			changed,
-			snapshot,
-		);
+		const result = new OpenFeedbackAgendaPlan({
+			openFeedbackRecordEquality:
+				new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+		}).create("example/meetups#12", changed, snapshot);
 
 		// Assert
 		expect(result.talks).toEqual([
@@ -150,7 +155,10 @@ describe("feedback agenda identities", () => {
 
 		// Act
 		const plan = () =>
-			OpenFeedbackAgendaPlan.create("example/meetups#12", changed, current);
+			new OpenFeedbackAgendaPlan({
+				openFeedbackRecordEquality:
+					new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+			}).create("example/meetups#12", changed, current);
 
 		// Assert
 		expect(plan).toThrow(new FeedbackResolutionError("conflict"));
@@ -172,7 +180,10 @@ describe("feedback agenda identities", () => {
 
 		// Act
 		const plan = () =>
-			OpenFeedbackAgendaPlan.create("example/meetups#12", changed, snapshot);
+			new OpenFeedbackAgendaPlan({
+				openFeedbackRecordEquality:
+					new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+			}).create("example/meetups#12", changed, snapshot);
 
 		// Assert
 		expect(plan).toThrow(new FeedbackResolutionError("conflict"));
@@ -186,12 +197,14 @@ describe("feedback agenda identities", () => {
 		const empty = { ...snapshot, talks: [], speakers: [] };
 
 		// Act
-		const created = OpenFeedbackAgendaPlan.create(
-			"example/meetups#12",
-			original,
-			empty,
-		);
-		const reordered = OpenFeedbackAgendaPlan.create(
+		const created = new OpenFeedbackAgendaPlan({
+			openFeedbackRecordEquality:
+				new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+		}).create("example/meetups#12", original, empty);
+		const reordered = new OpenFeedbackAgendaPlan({
+			openFeedbackRecordEquality:
+				new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+		}).create(
 			"example/meetups#12",
 			{ talks: [...original.talks].reverse() },
 			created,
@@ -220,7 +233,10 @@ describe("feedback agenda identities", () => {
 
 		// Act
 		const plan = () =>
-			OpenFeedbackAgendaPlan.create("example/meetups#12", changed, current);
+			new OpenFeedbackAgendaPlan({
+				openFeedbackRecordEquality:
+					new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+			}).create("example/meetups#12", changed, current);
 
 		// Assert
 		expect(plan).toThrow(new FeedbackResolutionError("conflict"));
@@ -238,7 +254,10 @@ describe("feedback agenda identities", () => {
 
 		// Act
 		const plan = () =>
-			OpenFeedbackAgendaPlan.create("example/meetups#12", agenda, current);
+			new OpenFeedbackAgendaPlan({
+				openFeedbackRecordEquality:
+					new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+			}).create("example/meetups#12", agenda, current);
 
 		// Assert
 		expect(plan).toThrow(new FeedbackResolutionError("conflict"));
@@ -255,11 +274,10 @@ describe("feedback agenda identities", () => {
 		};
 
 		// Act
-		const result = OpenFeedbackAgendaPlan.create(
-			"example/meetups#12",
-			agenda,
-			current,
-		);
+		const result = new OpenFeedbackAgendaPlan({
+			openFeedbackRecordEquality:
+				new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+		}).create("example/meetups#12", agenda, current);
 
 		// Assert
 		expect(result).toEqual(snapshot);
@@ -271,7 +289,10 @@ describe("feedback agenda identities", () => {
 
 		// Act
 		const plan = () =>
-			OpenFeedbackAgendaPlan.create("example/meetups#12", duplicated, snapshot);
+			new OpenFeedbackAgendaPlan({
+				openFeedbackRecordEquality:
+					new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+			}).create("example/meetups#12", duplicated, snapshot);
 
 		// Assert
 		expect(plan).toThrow(new FeedbackResolutionError("conflict"));
@@ -282,17 +303,19 @@ describe("feedback agenda identities", () => {
 		const empty = { ...snapshot, talks: [], speakers: [] };
 
 		// Act
-		const created = OpenFeedbackAgendaPlan.create(
-			"example/meetups#12",
-			agenda,
-			empty,
-		);
+		const created = new OpenFeedbackAgendaPlan({
+			openFeedbackRecordEquality:
+				new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+		}).create("example/meetups#12", agenda, empty);
 		const remote = {
 			...created,
 			talks: [{ ...created.talks[0], title: "Separate topic", speakers: [] }],
 		};
 		const plan = () =>
-			OpenFeedbackAgendaPlan.create("example/meetups#12", agenda, remote);
+			new OpenFeedbackAgendaPlan({
+				openFeedbackRecordEquality:
+					new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+			}).create("example/meetups#12", agenda, remote);
 
 		// Assert
 		expect(plan).toThrow(new FeedbackResolutionError("conflict"));

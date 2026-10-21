@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { contract, mimeType } from "../../testing/content.fixtures.js";
+import { PublicationDomainComposition } from "../dependency-composition.js";
 import { ContentContractPolicy } from "./content-contract-policy.js";
 
 describe("template contracts", () => {
@@ -28,7 +29,9 @@ describe("template contracts", () => {
 		};
 
 		// Act
-		const actual = ContentContractPolicy.parse(input, "slides", mime);
+		const actual = new ContentContractPolicy({
+			contentTextKey: new PublicationDomainComposition().contentTextKey(),
+		}).parse(input, "slides", mime);
 
 		// Assert
 		expect(actual).toEqual(input);
@@ -58,7 +61,9 @@ describe("template contracts", () => {
 		};
 
 		// Act
-		const actual = ContentContractPolicy.parse(input, "slides", mimeType);
+		const actual = new ContentContractPolicy({
+			contentTextKey: new PublicationDomainComposition().contentTextKey(),
+		}).parse(input, "slides", mimeType);
 
 		// Assert
 		expect(actual).toEqual(input);
@@ -81,7 +86,9 @@ describe("template contracts", () => {
 
 		// Act
 		try {
-			ContentContractPolicy.parse(input, "slides", mimeType);
+			new ContentContractPolicy({
+				contentTextKey: new PublicationDomainComposition().contentTextKey(),
+			}).parse(input, "slides", mimeType);
 		} catch (caught) {
 			error = caught;
 		}
@@ -102,11 +109,9 @@ describe("template contracts", () => {
 
 		// Act
 		try {
-			ContentContractPolicy.parse(
-				{ ...contract, fields: [field, field] },
-				"slides",
-				mimeType,
-			);
+			new ContentContractPolicy({
+				contentTextKey: new PublicationDomainComposition().contentTextKey(),
+			}).parse({ ...contract, fields: [field, field] }, "slides", mimeType);
 		} catch (caught) {
 			error = caught;
 		}
@@ -135,7 +140,9 @@ describe("template contracts", () => {
 
 		// Act
 		try {
-			ContentContractPolicy.parse(input, "slides", mimeType);
+			new ContentContractPolicy({
+				contentTextKey: new PublicationDomainComposition().contentTextKey(),
+			}).parse(input, "slides", mimeType);
 		} catch (caught) {
 			error = caught;
 		}
@@ -166,11 +173,9 @@ describe("template contracts", () => {
 
 			// Act
 			try {
-				ContentContractPolicy.parse(
-					input,
-					"slides",
-					"application/vnd.google-apps.document",
-				);
+				new ContentContractPolicy({
+					contentTextKey: new PublicationDomainComposition().contentTextKey(),
+				}).parse(input, "slides", "application/vnd.google-apps.document");
 			} catch (caught) {
 				error = caught;
 			}
@@ -198,7 +203,10 @@ describe("content contract input boundary", () => {
 		const kind = "slides";
 
 		// Act
-		const parse = () => ContentContractPolicy.parse(input, kind, mimeType);
+		const parse = () =>
+			new ContentContractPolicy({
+				contentTextKey: new PublicationDomainComposition().contentTextKey(),
+			}).parse(input, kind, mimeType);
 
 		// Assert
 		expect(parse).toThrowError(expect.objectContaining({ code: "contract" }));

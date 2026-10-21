@@ -1,10 +1,22 @@
 import type { ApprovalNotificationRequest } from "@meetup-automation/journey";
-import { SlackApprovalMessages } from "./i18n/slack-approval-messages.js";
+import type {
+	SlackApprovalMessages,
+	SlackApprovalMessagesArguments,
+} from "./i18n/slack-approval-messages.js";
+
+export interface SlackApprovalPresenterCollaborators {
+	readonly createSlackApprovalMessages: (
+		...args: SlackApprovalMessagesArguments
+	) => SlackApprovalMessages;
+}
 
 export class SlackApprovalPresenter {
 	private readonly messages: SlackApprovalMessages;
-	constructor(locale: string | undefined) {
-		this.messages = new SlackApprovalMessages(locale);
+	constructor(
+		private readonly collaborators: SlackApprovalPresenterCollaborators,
+		locale: string | undefined,
+	) {
+		this.messages = this.collaborators.createSlackApprovalMessages(locale);
 	}
 	render(request: ApprovalNotificationRequest): string {
 		const details = {
@@ -19,3 +31,10 @@ export class SlackApprovalPresenter {
 				});
 	}
 }
+export type SlackApprovalPresenterArguments =
+	ConstructorParameters<typeof SlackApprovalPresenter> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

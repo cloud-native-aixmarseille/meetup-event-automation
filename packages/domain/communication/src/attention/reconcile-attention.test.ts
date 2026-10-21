@@ -5,7 +5,7 @@ import {
 	observation,
 	reconciliationFixture,
 } from "../../testing/attention.fixtures.js";
-import { EvaluateAttention } from "./evaluate-attention.js";
+import { CommunicationDomainComposition } from "../dependency-composition.js";
 import { ReconcileAttention } from "./reconcile-attention.js";
 
 describe("durable attention reconciliation", () => {
@@ -13,14 +13,15 @@ describe("durable attention reconciliation", () => {
 		// Arrange
 		const fixture = reconciliationFixture();
 		const input = facts({ recovery: [{ key: "uncertain", uncertain: true }] });
-		const initial = EvaluateAttention.execute(
-			input,
-			new Date("2099-06-01T10:00:00Z"),
-		);
-		const closed = EvaluateAttention.execute(
-			{ ...input, closed: true, recovery: undefined },
-			new Date("2099-06-02T10:00:00Z"),
-		);
+		const initial = new CommunicationDomainComposition()
+			.evaluateAttention()
+			.execute(input, new Date("2099-06-01T10:00:00Z"));
+		const closed = new CommunicationDomainComposition()
+			.evaluateAttention()
+			.execute(
+				{ ...input, closed: true, recovery: undefined },
+				new Date("2099-06-02T10:00:00Z"),
+			);
 
 		// Act
 		await fixture.useCase.execute(initial);
@@ -38,14 +39,12 @@ describe("durable attention reconciliation", () => {
 		const input = facts({
 			stages: [{ owner: "communications", outcome: "failure", blocked: false }],
 		});
-		const initial = EvaluateAttention.execute(
-			input,
-			new Date("2099-06-01T10:00:00Z"),
-		);
-		const closed = EvaluateAttention.execute(
-			{ ...input, closed: true },
-			new Date("2099-06-02T10:00:00Z"),
-		);
+		const initial = new CommunicationDomainComposition()
+			.evaluateAttention()
+			.execute(input, new Date("2099-06-01T10:00:00Z"));
+		const closed = new CommunicationDomainComposition()
+			.evaluateAttention()
+			.execute({ ...input, closed: true }, new Date("2099-06-02T10:00:00Z"));
 
 		// Act
 		await fixture.useCase.execute(initial);
@@ -65,10 +64,9 @@ describe("durable attention reconciliation", () => {
 			closed: true,
 			stages: [{ owner: "communications", outcome: "failure", blocked: false }],
 		});
-		const closed = EvaluateAttention.execute(
-			input,
-			new Date("2099-06-01T10:00:00Z"),
-		);
+		const closed = new CommunicationDomainComposition()
+			.evaluateAttention()
+			.execute(input, new Date("2099-06-01T10:00:00Z"));
 
 		// Act
 		const result = await fixture.useCase.execute(closed);
@@ -129,9 +127,18 @@ describe("durable attention reconciliation", () => {
 			...fixture.notification,
 			post: async () => ({ outcome: "uncertain" as const }),
 		};
-		const initial = new ReconcileAttention(fixture.repository, notification, {
-			now: () => new Date("2099-06-01T10:00:00Z"),
-		});
+		const initial = new ReconcileAttention(
+			{
+				attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+				attentionEpisodes:
+					new CommunicationDomainComposition().attentionEpisodes(),
+			},
+			fixture.repository,
+			notification,
+			{
+				now: () => new Date("2099-06-01T10:00:00Z"),
+			},
+		);
 
 		// Act
 		await initial.execute(observation());
@@ -182,6 +189,11 @@ describe("durable attention reconciliation", () => {
 		// Arrange
 		const fixture = reconciliationFixture();
 		const initial = new ReconcileAttention(
+			{
+				attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+				attentionEpisodes:
+					new CommunicationDomainComposition().attentionEpisodes(),
+			},
 			fixture.repository,
 			{
 				...fixture.notification,

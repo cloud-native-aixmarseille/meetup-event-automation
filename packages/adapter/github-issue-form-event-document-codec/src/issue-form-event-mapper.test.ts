@@ -1,4 +1,6 @@
+import { EventDomainComposition } from "@meetup-automation/event";
 import { describe, expect, it } from "vitest";
+import { GithubIssueFormEventDocumentCodecComposition } from "./dependency-composition.js";
 import { IssueFormEventMapper } from "./issue-form-event-mapper.js";
 
 describe("issue form event mapping", () => {
@@ -7,7 +9,13 @@ describe("issue form event mapping", () => {
 		// No additional setup is needed.
 
 		// Act
-		const result = IssueFormEventMapper.map({
+		const result = new IssueFormEventMapper({
+			eventDiagnostics: new EventDomainComposition().eventDiagnostics(),
+			issueFormFields:
+				new GithubIssueFormEventDocumentCodecComposition().issueFormFields(),
+			eventOccurrenceParser:
+				new EventDomainComposition().eventOccurrenceParser(),
+		}).map({
 			repository: "example/meetups",
 			issueNumber: 12,
 			issueTitle: "Example title",
@@ -56,7 +64,13 @@ describe("issue form event mapping", () => {
 		// No additional setup is needed.
 
 		// Act
-		const result = IssueFormEventMapper.map({
+		const result = new IssueFormEventMapper({
+			eventDiagnostics: new EventDomainComposition().eventDiagnostics(),
+			issueFormFields:
+				new GithubIssueFormEventDocumentCodecComposition().issueFormFields(),
+			eventOccurrenceParser:
+				new EventDomainComposition().eventOccurrenceParser(),
+		}).map({
 			repository: "example/meetups",
 			issueNumber: 13,
 			issueTitle: "Example title",
@@ -89,7 +103,13 @@ describe("issue form event mapping", () => {
 			};
 
 			// Act
-			const result = IssueFormEventMapper.map(source);
+			const result = new IssueFormEventMapper({
+				eventDiagnostics: new EventDomainComposition().eventDiagnostics(),
+				issueFormFields:
+					new GithubIssueFormEventDocumentCodecComposition().issueFormFields(),
+				eventOccurrenceParser:
+					new EventDomainComposition().eventOccurrenceParser(),
+			}).map(source);
 
 			// Assert
 			expect(result.event.occurrenceStatus).toBe(status);
@@ -101,7 +121,13 @@ describe("issue form event mapping", () => {
 		// No additional setup is needed.
 
 		// Act
-		const result = IssueFormEventMapper.map({
+		const result = new IssueFormEventMapper({
+			eventDiagnostics: new EventDomainComposition().eventDiagnostics(),
+			issueFormFields:
+				new GithubIssueFormEventDocumentCodecComposition().issueFormFields(),
+			eventOccurrenceParser:
+				new EventDomainComposition().eventOccurrenceParser(),
+		}).map({
 			repository: "example/meetups",
 			issueNumber: 17,
 			issueTitle: "Example title",
@@ -119,7 +145,13 @@ describe("issue form event mapping", () => {
 		// No additional setup is needed.
 
 		// Act
-		const result = IssueFormEventMapper.map({
+		const result = new IssueFormEventMapper({
+			eventDiagnostics: new EventDomainComposition().eventDiagnostics(),
+			issueFormFields:
+				new GithubIssueFormEventDocumentCodecComposition().issueFormFields(),
+			eventOccurrenceParser:
+				new EventDomainComposition().eventOccurrenceParser(),
+		}).map({
 			repository: "example/meetups",
 			issueNumber: 14,
 			issueTitle: "Example title",

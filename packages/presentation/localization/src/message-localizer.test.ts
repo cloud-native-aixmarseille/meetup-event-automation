@@ -1,3 +1,4 @@
+import { LocaleResolver } from "@meetup-automation/localization";
 import { afterEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 import { MessageLocalizer } from "./message-localizer.js";
 
@@ -36,7 +37,11 @@ describe("MessageLocalizer", () => {
 		["not a locale", "en"],
 	])("resolves %s to %s", (requested, expected) => {
 		// Arrange
-		const messages = new MessageLocalizer(catalogs, requested);
+		const messages = new MessageLocalizer(
+			{ localeResolver: new LocaleResolver() },
+			catalogs,
+			requested,
+		);
 
 		// Act
 		const locale = messages.locale;
@@ -51,6 +56,7 @@ describe("MessageLocalizer", () => {
 	])("uses ICU plural rules for %i", (count, expected) => {
 		// Arrange
 		const messages = new MessageLocalizer<Id, ExampleParameters>(
+			{ localeResolver: new LocaleResolver() },
 			catalogs,
 			"fr",
 		);
@@ -63,9 +69,17 @@ describe("MessageLocalizer", () => {
 	});
 	it("isolates locale and catalogs even when owners reuse the same key", () => {
 		// Arrange
-		const french = new MessageLocalizer<Id, ExampleParameters>(catalogs, "fr");
-		const english = new MessageLocalizer<Id, ExampleParameters>(catalogs);
+		const french = new MessageLocalizer<Id, ExampleParameters>(
+			{ localeResolver: new LocaleResolver() },
+			catalogs,
+			"fr",
+		);
+		const english = new MessageLocalizer<Id, ExampleParameters>(
+			{ localeResolver: new LocaleResolver() },
+			catalogs,
+		);
 		const other = new MessageLocalizer<Id, ExampleParameters>(
+			{ localeResolver: new LocaleResolver() },
 			{
 				...catalogs,
 				fr: { ...catalogs.fr, "example.count": "Autre : {count, number}" },
@@ -92,6 +106,7 @@ describe("MessageLocalizer", () => {
 			const translated =
 				translation === undefined ? {} : { "example.count": translation };
 			const messages = new MessageLocalizer<Id, ExampleParameters>(
+				{ localeResolver: new LocaleResolver() },
 				{ ...catalogs, fr: translated },
 				"fr",
 			);
@@ -110,6 +125,7 @@ describe("MessageLocalizer", () => {
 	it("does not expose private interpolation values when both templates fail", () => {
 		// Arrange
 		const messages = new MessageLocalizer<Id, ExampleParameters>(
+			{ localeResolver: new LocaleResolver() },
 			{
 				...catalogs,
 				en: { ...catalogs.en, "example.literal": "{value} {missing}" },
@@ -133,6 +149,7 @@ describe("MessageLocalizer", () => {
 	it("treats catalog HTML and interpolated ICU syntax as literal text for the caller to escape", () => {
 		// Arrange
 		const messages = new MessageLocalizer<Id, ExampleParameters>(
+			{ localeResolver: new LocaleResolver() },
 			{
 				...catalogs,
 				fr: { ...catalogs.fr, "example.literal": "<b>{value}</b>" },
@@ -149,7 +166,10 @@ describe("MessageLocalizer", () => {
 	});
 	it("exposes only the owner's keys and requires their declared parameters", () => {
 		// Arrange
-		const messages = new MessageLocalizer<Id, ExampleParameters>(catalogs);
+		const messages = new MessageLocalizer<Id, ExampleParameters>(
+			{ localeResolver: new LocaleResolver() },
+			catalogs,
+		);
 
 		// Act
 		const count = messages.t<"example.count">;

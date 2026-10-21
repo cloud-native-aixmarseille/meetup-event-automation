@@ -9,10 +9,11 @@ import type {
 	EventRepository,
 } from "@meetup-automation/event";
 import {
-	AutomationConfigFactory,
+	JourneyPolicyComposition,
 	ManageMeetupEvent,
 } from "@meetup-automation/journey";
 import {
+	ReferentialDomainComposition,
 	type ReferentialRepository,
 	ValidateReferentialCatalog,
 } from "@meetup-automation/referential";
@@ -70,7 +71,9 @@ async function fixture(selected = true) {
 			slackToken: "",
 			slackOrganizerChannelId: "synthetic-channel",
 			config: {
-				...AutomationConfigFactory.createAutomationConfig("example"),
+				...new JourneyPolicyComposition()
+					.automationConfigFactory()
+					.createAutomationConfig("example"),
 				referentials: { hosts: "hosts.csv", speakers: "speakers.csv" },
 			},
 		});
@@ -129,6 +132,18 @@ describe("Conference Hall source precedence in runtime composition", () => {
 			.get(ManageMeetupEvent)
 			.execute({ identity: current.identity, mode: "fix" });
 		const catalog = await new ValidateReferentialCatalog(
+			{
+				referentialDiagnostics:
+					new ReferentialDomainComposition().referentialDiagnostics(),
+				hostCatalogValidator:
+					new ReferentialDomainComposition().hostCatalogValidator(),
+				speakerCatalogValidator:
+					new ReferentialDomainComposition().speakerCatalogValidator(),
+				speakerSourceFields:
+					new ReferentialDomainComposition().speakerSourceFields(),
+				referentialCatalogOperations:
+					new ReferentialDomainComposition().referentialCatalogOperations(),
+			},
 			first.get<ReferentialRepository>(SERVICES.referentialRepository),
 		).execute();
 		const second = current.create();
@@ -136,6 +151,18 @@ describe("Conference Hall source precedence in runtime composition", () => {
 			.get(ManageMeetupEvent)
 			.execute({ identity: current.identity, mode: "fix" });
 		const changedCatalog = await new ValidateReferentialCatalog(
+			{
+				referentialDiagnostics:
+					new ReferentialDomainComposition().referentialDiagnostics(),
+				hostCatalogValidator:
+					new ReferentialDomainComposition().hostCatalogValidator(),
+				speakerCatalogValidator:
+					new ReferentialDomainComposition().speakerCatalogValidator(),
+				speakerSourceFields:
+					new ReferentialDomainComposition().speakerSourceFields(),
+				referentialCatalogOperations:
+					new ReferentialDomainComposition().referentialCatalogOperations(),
+			},
 			second.get<ReferentialRepository>(SERVICES.referentialRepository),
 		).execute();
 		const preservedCsv = await readFile(
@@ -208,6 +235,18 @@ describe("Conference Hall source precedence in runtime composition", () => {
 			.get(ManageMeetupEvent)
 			.execute({ identity: current.identity, mode: "fix" });
 		const catalog = await new ValidateReferentialCatalog(
+			{
+				referentialDiagnostics:
+					new ReferentialDomainComposition().referentialDiagnostics(),
+				hostCatalogValidator:
+					new ReferentialDomainComposition().hostCatalogValidator(),
+				speakerCatalogValidator:
+					new ReferentialDomainComposition().speakerCatalogValidator(),
+				speakerSourceFields:
+					new ReferentialDomainComposition().speakerSourceFields(),
+				referentialCatalogOperations:
+					new ReferentialDomainComposition().referentialCatalogOperations(),
+			},
 			container.get<ReferentialRepository>(SERVICES.referentialRepository),
 		).execute();
 

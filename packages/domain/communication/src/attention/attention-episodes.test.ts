@@ -1,25 +1,26 @@
 import { describe, expect, it } from "vitest";
 import { condition, observation } from "../../testing/attention.fixtures.js";
+import { CommunicationDomainComposition } from "../dependency-composition.js";
 import { AttentionEpisodes } from "./attention-episodes.js";
 
 describe("attention episodes", () => {
 	it("retains unknown conditions and resolves only successfully evaluated owners", () => {
 		// Arrange
 		const now = new Date("2099-06-01T10:00:00Z");
-		const first = AttentionEpisodes.reconcile(undefined, observation(), now);
+		const first = new AttentionEpisodes({
+			attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+		}).reconcile(undefined, observation(), now);
 
 		// Act
-		const unknown = AttentionEpisodes.reconcile(
-			first,
-			observation({ conditions: [], evaluated: [] }),
-			now,
-		);
-		const resolved = AttentionEpisodes.reconcile(
-			unknown,
-			observation({ conditions: [] }),
-			now,
-		);
-		const reopened = AttentionEpisodes.reconcile(resolved, observation(), now);
+		const unknown = new AttentionEpisodes({
+			attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+		}).reconcile(first, observation({ conditions: [], evaluated: [] }), now);
+		const resolved = new AttentionEpisodes({
+			attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+		}).reconcile(unknown, observation({ conditions: [] }), now);
+		const reopened = new AttentionEpisodes({
+			attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+		}).reconcile(resolved, observation(), now);
 
 		// Assert
 		expect(unknown.episodes[0]?.status).toBe("unknown");
@@ -29,20 +30,23 @@ describe("attention episodes", () => {
 	it("recomputes date changes without replaying elapsed milestones", () => {
 		// Arrange
 		const now = new Date("2099-06-01T10:00:00Z");
-		const first = AttentionEpisodes.reconcile(undefined, observation(), now);
-		AttentionEpisodes.acknowledge(first, now);
+		const first = new AttentionEpisodes({
+			attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+		}).reconcile(undefined, observation(), now);
+		new AttentionEpisodes({
+			attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+		}).acknowledge(first, now);
 
 		// Act
-		const moved = AttentionEpisodes.reconcile(
-			first,
-			observation({ eventDate: "2099-06-02" }),
-			now,
-		);
-		const dueNow = AttentionEpisodes.due(moved, now);
-		const dueTomorrow = AttentionEpisodes.due(
-			moved,
-			new Date("2099-06-02T10:00:00Z"),
-		);
+		const moved = new AttentionEpisodes({
+			attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+		}).reconcile(first, observation({ eventDate: "2099-06-02" }), now);
+		const dueNow = new AttentionEpisodes({
+			attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+		}).due(moved, now);
+		const dueTomorrow = new AttentionEpisodes({
+			attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+		}).due(moved, new Date("2099-06-02T10:00:00Z"));
 
 		// Assert
 		expect(dueNow).toEqual([]);
@@ -60,14 +64,18 @@ describe("attention episodes", () => {
 			recovery: true,
 			policy: "daily",
 		});
-		const initial = AttentionEpisodes.reconcile(
+		const initial = new AttentionEpisodes({
+			attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+		}).reconcile(
 			undefined,
 			observation({ conditions: [condition(), recovery] }),
 			now,
 		);
 
 		// Act
-		const stopped = AttentionEpisodes.reconcile(
+		const stopped = new AttentionEpisodes({
+			attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+		}).reconcile(
 			initial,
 			observation({ stopped: true, conditions: [], evaluated: [] }),
 			now,
@@ -90,19 +98,21 @@ describe("attention episodes", () => {
 			recovery: true,
 			policy: "daily",
 		});
-		const initial = AttentionEpisodes.reconcile(
-			undefined,
-			observation({ conditions: [recovery] }),
-			now,
-		);
+		const initial = new AttentionEpisodes({
+			attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+		}).reconcile(undefined, observation({ conditions: [recovery] }), now);
 
 		// Act
-		const missing = AttentionEpisodes.reconcile(
+		const missing = new AttentionEpisodes({
+			attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+		}).reconcile(
 			initial,
 			observation({ conditions: [], evaluated: ["delivery"] }),
 			now,
 		);
-		const verified = AttentionEpisodes.reconcile(
+		const verified = new AttentionEpisodes({
+			attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+		}).reconcile(
 			missing,
 			observation({
 				conditions: [],
@@ -111,11 +121,9 @@ describe("attention episodes", () => {
 			}),
 			now,
 		);
-		const later = AttentionEpisodes.reconcile(
-			verified,
-			observation({ conditions: [], evaluated: [] }),
-			now,
-		);
+		const later = new AttentionEpisodes({
+			attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+		}).reconcile(verified, observation({ conditions: [], evaluated: [] }), now);
 
 		// Assert
 		expect(missing.episodes[0]?.status).toBe("unknown");

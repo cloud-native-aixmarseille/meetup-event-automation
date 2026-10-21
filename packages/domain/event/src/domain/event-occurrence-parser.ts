@@ -1,12 +1,20 @@
-import { type EventDiagnostic, EventDiagnostics } from "./diagnostic.js";
+import type { EventDiagnostic, EventDiagnostics } from "./diagnostic.js";
 import type { OccurrenceStatus } from "./model.js";
 import {
 	OCCURRENCE_STATUS_LABELS,
 	OCCURRENCE_STATUSES,
 } from "./occurrence-status.js";
 
+export interface EventOccurrenceParserCollaborators {
+	readonly eventDiagnostics: Pick<EventDiagnostics, "diagnostic">;
+}
+
 export class EventOccurrenceParser {
-	static readOccurrenceStatus(
+	constructor(
+		private readonly collaborators: EventOccurrenceParserCollaborators,
+	) {}
+
+	readOccurrenceStatus(
 		labels: readonly string[],
 		issueState: "open" | "closed",
 		fieldStatus: OccurrenceStatus | undefined,
@@ -19,7 +27,7 @@ export class EventOccurrenceParser {
 
 		if (explicitStatuses.length > 1) {
 			diagnostics.push(
-				EventDiagnostics.diagnostic({
+				this.collaborators.eventDiagnostics.diagnostic({
 					code: "event.occurrence-status.label-conflict",
 					severity: "error",
 					category: "invalid",

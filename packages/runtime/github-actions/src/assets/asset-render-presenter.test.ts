@@ -1,11 +1,24 @@
+import { LocalizationComposition } from "@meetup-automation/localization";
 import { describe, expect, it } from "vitest";
+import { GithubActionsComposition } from "../dependency-composition.js";
 import { AssetMessages } from "./asset-messages.js";
 import { AssetRenderPresenterImpl } from "./asset-render-presenter.js";
 
 describe("asset public presentation", () => {
 	it("formats venue, participant, and next-event fields from their public projections", () => {
 		// Arrange
-		const presenter = new AssetRenderPresenterImpl(new AssetMessages("fr"));
+		const presenter = new AssetRenderPresenterImpl(
+			{
+				createAssetMessages: (...args) =>
+					new GithubActionsComposition().assetMessages(...args),
+				createAssetDateFormatter: (...args) =>
+					new GithubActionsComposition().assetDateFormatter(...args),
+			},
+			new AssetMessages(
+				{ localeResolver: new LocalizationComposition().localeResolver() },
+				"fr",
+			),
+		);
 		const hostLogo = {
 			hostId: "host-0001",
 			url: "https://images.example.org/logo.png",
@@ -60,7 +73,18 @@ describe("asset public presentation", () => {
 		["fr", "15 octobre 2026", "Example et Other"],
 	])("formats dates and co-speakers for %s", (locale, date, speakers) => {
 		// Arrange
-		const presenter = new AssetRenderPresenterImpl(new AssetMessages(locale));
+		const presenter = new AssetRenderPresenterImpl(
+			{
+				createAssetMessages: (...args) =>
+					new GithubActionsComposition().assetMessages(...args),
+				createAssetDateFormatter: (...args) =>
+					new GithubActionsComposition().assetDateFormatter(...args),
+			},
+			new AssetMessages(
+				{ localeResolver: new LocalizationComposition().localeResolver() },
+				locale,
+			),
+		);
 
 		// Act
 		const result = presenter.format({

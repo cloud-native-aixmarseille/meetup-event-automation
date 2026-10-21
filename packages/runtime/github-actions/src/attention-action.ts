@@ -1,19 +1,40 @@
 import * as core from "@actions/core";
 import { context, getOctokit } from "@actions/github";
-import { ManageMeetupAttention } from "@meetup-automation/journey";
+import type { ManageMeetupAttention } from "@meetup-automation/journey";
 import type { ActionReportData } from "./action-report.js";
-import { AttentionComposition } from "./attention-composition.js";
-import { AttentionStages } from "./attention-stages.js";
-import { ActionMessages } from "./i18n/action-messages.js";
-import { RuntimeInput } from "./runtime-input.js";
-import { OrganizerFeedback } from "./organizer-feedback.js";
+import type { AttentionComposition } from "./attention-composition.js";
+import type { AttentionStages } from "./attention-stages.js";
+import type {
+	ActionMessages,
+	ActionMessagesArguments,
+} from "./i18n/action-messages.js";
+import type { OrganizerFeedback } from "./organizer-feedback.js";
+import type { RuntimeInput } from "./runtime-input.js";
+export interface AttentionActionCollaborators {
+	readonly createAttention: (
+		input: Parameters<typeof AttentionComposition.create>[0],
+	) => {
+		feedback: Pick<OrganizerFeedback, "execute">;
+		attention: Pick<ManageMeetupAttention, "execute">;
+	};
+	readonly runtimeInput: Pick<RuntimeInput, "positiveIntegerInput">;
+	readonly attentionStages: Pick<AttentionStages, "parse">;
+	readonly createActionMessages: (
+		...args: ActionMessagesArguments
+	) => ActionMessages;
+}
+
 export class AttentionAction {
-	static async run(messages = new ActionMessages()): Promise<ActionReportData> {
-		const issueNumber = RuntimeInput.positiveIntegerInput(
+	constructor(private readonly collaborators: AttentionActionCollaborators) {}
+
+	async run(
+		messages = this.collaborators.createActionMessages(),
+	): Promise<ActionReportData> {
+		const issueNumber = this.collaborators.runtimeInput.positiveIntegerInput(
 			"issue-number",
 			core.getInput("issue-number", { required: true }),
 		);
-		const container = AttentionComposition.create({
+		const journey = this.collaborators.createAttention({
 			...context.repo,
 			issueNumber,
 			locale: messages.locale,
@@ -31,14 +52,12 @@ export class AttentionAction {
 			issueNumber,
 		};
 		const stageResults = core.getInput("stage-results", { required: true });
-		await container.get(OrganizerFeedback).execute(identity, stageResults);
-		const result = await container
-			.get(ManageMeetupAttention)
-			.execute(
-				identity,
-				AttentionStages.parse(stageResults),
-				String(context.runId),
-			);
+		await journey.feedback.execute(identity, stageResults);
+		const result = await journey.attention.execute(
+			identity,
+			this.collaborators.attentionStages.parse(stageResults),
+			String(context.runId),
+		);
 
 		return {
 			details: [

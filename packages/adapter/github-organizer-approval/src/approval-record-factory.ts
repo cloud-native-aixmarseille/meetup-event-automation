@@ -1,19 +1,28 @@
-import {
+import type {
 	ApprovalRequestPolicy,
-	type OrganizerApprovalRequest,
-	type OrganizerFollowUpInput,
+	OrganizerApprovalRequest,
+	OrganizerFollowUpInput,
 } from "@meetup-automation/journey";
-import { ApprovalRequestSchema } from "./approval-request-schema.js";
+import type { ApprovalRequestSchema } from "./approval-request-schema.js";
 import type { StoredApproval } from "./approval-state.js";
-import { StoredApprovalSchema } from "./stored-approval-schema.js";
+import type { StoredApprovalSchema } from "./stored-approval-schema.js";
 
 /** Allocate a new storage identity; reads and encoding never generate one. */
+export interface ApprovalRecordFactoryCollaborators {
+	readonly approvalRequestSchema: Pick<ApprovalRequestSchema, "validate">;
+	readonly approvalRequestPolicy: Pick<ApprovalRequestPolicy, "validate">;
+	readonly storedApprovalSchema: Pick<StoredApprovalSchema, "validate">;
+}
+
 export class ApprovalRecordFactory {
-	constructor(private readonly nextIdentity: () => string) {}
+	constructor(
+		private readonly collaborators: ApprovalRecordFactoryCollaborators,
+		private readonly nextIdentity: () => string,
+	) {}
 
 	create(request: OrganizerApprovalRequest): StoredApproval {
-		ApprovalRequestSchema.validate(request);
-		ApprovalRequestPolicy.validate(request);
+		this.collaborators.approvalRequestSchema.validate(request);
+		this.collaborators.approvalRequestPolicy.validate(request);
 		return this.allocate(request);
 	}
 
@@ -39,7 +48,14 @@ export class ApprovalRecordFactory {
 			requestId: `approval-${this.nextIdentity()}`,
 			notification: "new" as const,
 		};
-		StoredApprovalSchema.validate(record);
+		this.collaborators.storedApprovalSchema.validate(record);
 		return record;
 	}
 }
+export type ApprovalRecordFactoryArguments =
+	ConstructorParameters<typeof ApprovalRecordFactory> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

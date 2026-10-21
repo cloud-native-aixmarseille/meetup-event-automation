@@ -1,6 +1,6 @@
 /** Only Slack interprets the opaque message references returned by its port. */
 export class SlackMessageReference {
-	static valid(message: {
+	valid(message: {
 		readonly destination: string;
 		readonly messageId: string;
 	}): boolean {
@@ -9,13 +9,13 @@ export class SlackMessageReference {
 			/^\d+\.\d+$/.test(message.messageId)
 		);
 	}
-	static read(
+	read(
 		payload: Readonly<Record<string, unknown>> | undefined,
 		destination: string,
 	): { destination: string; messageId: string } | undefined {
 		if (payload?.channel !== destination || typeof payload.ts !== "string")
 			return undefined;
 		const message = { destination, messageId: payload.ts };
-		return SlackMessageReference.valid(message) ? message : undefined;
+		return this.valid(message) ? message : undefined;
 	}
 }

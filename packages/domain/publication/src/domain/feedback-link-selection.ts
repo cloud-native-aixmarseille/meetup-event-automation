@@ -1,4 +1,4 @@
-import { FeedbackPolicy } from "./feedback-policy.js";
+import type { FeedbackPolicy } from "./feedback-policy.js";
 
 export type FeedbackLinkConflict = "ambiguous-date" | "current-event";
 interface FeedbackEventFacts {
@@ -14,8 +14,16 @@ interface FeedbackEventFacts {
 }
 
 /** Keep the shared feedback destination on the active event until its day ends. */
+export interface FeedbackLinkSelectionCollaborators {
+	readonly feedbackPolicy: Pick<FeedbackPolicy, "isLinkUpdateDue">;
+}
+
 export class FeedbackLinkSelection {
-	static conflict(
+	constructor(
+		private readonly collaborators: FeedbackLinkSelectionCollaborators,
+	) {}
+
+	conflict(
 		candidate: FeedbackEventFacts,
 		targetDate: string,
 		now: string,
@@ -30,7 +38,11 @@ export class FeedbackLinkSelection {
 		if (candidate.date === targetDate) return "ambiguous-date";
 		if (
 			candidate.date < targetDate &&
-			FeedbackPolicy.isLinkUpdateDue(candidate.date, now, timeZone)
+			this.collaborators.feedbackPolicy.isLinkUpdateDue(
+				candidate.date,
+				now,
+				timeZone,
+			)
 		)
 			return "current-event";
 		return undefined;

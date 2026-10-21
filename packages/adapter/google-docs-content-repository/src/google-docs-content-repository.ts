@@ -1,4 +1,4 @@
-import { docs, type docs_v1 } from "@googleapis/docs";
+import type { docs_v1 } from "@googleapis/docs";
 import {
 	type AssetContentRepository,
 	type AssetImageRepository,
@@ -8,27 +8,30 @@ import {
 	ContentError,
 	type ContentSnapshot,
 } from "@meetup-automation/publication";
-import { DocumentContentLocations } from "./document-content-locations.js";
-import { DocumentContentRequests } from "./document-content-requests.js";
-import { DocumentTabs } from "./document-tabs.js";
-import { DocumentTemplateBindings } from "./document-template-bindings.js";
+import type {
+	DocumentContentLocations,
+	DocumentContentLocationsArguments,
+} from "./document-content-locations.js";
+import type { DocumentContentRequests } from "./document-content-requests.js";
+import type { DocumentTabs } from "./document-tabs.js";
+import type { DocumentTemplateBindings } from "./document-template-bindings.js";
+
+export interface GoogleDocsContentRepositoryCollaborators {
+	readonly documentTabs: Pick<DocumentTabs, "all">;
+	readonly documentTemplateBindings: Pick<DocumentTemplateBindings, "discover">;
+	readonly documentContentRequests: Pick<DocumentContentRequests, "build">;
+	readonly createDocumentContentLocations: (
+		...args: DocumentContentLocationsArguments
+	) => DocumentContentLocations;
+}
 
 export class GoogleDocsContentRepository implements AssetContentRepository {
 	private current?: docs_v1.Schema$Document;
 	constructor(
+		private readonly collaborators: GoogleDocsContentRepositoryCollaborators,
 		private readonly client: Pick<docs_v1.Docs, "documents">,
 		private readonly images: AssetImageRepository,
 	) {}
-
-	static create(
-		authentication: docs_v1.Options["auth"],
-		images: AssetImageRepository,
-	): GoogleDocsContentRepository {
-		return new GoogleDocsContentRepository(
-			docs({ version: "v1", auth: authentication }),
-			images,
-		);
-	}
 
 	async read(
 		fileId: string,
@@ -46,10 +49,13 @@ export class GoogleDocsContentRepository implements AssetContentRepository {
 		);
 		if (!data.revisionId || data.documentId !== fileId)
 			throw new ContentError("location");
-		const tabs = DocumentTabs.all(data);
+		const tabs = this.collaborators.documentTabs.all(data);
 		const bindings =
-			registered ?? DocumentTemplateBindings.discover(tabs, contract);
-		const reader = new DocumentContentLocations(this.images);
+			registered ??
+			this.collaborators.documentTemplateBindings.discover(tabs, contract);
+		const reader = this.collaborators.createDocumentContentLocations(
+			this.images,
+		);
 		const locations = [];
 		for (const binding of bindings)
 			locations.push(
@@ -74,8 +80,8 @@ export class GoogleDocsContentRepository implements AssetContentRepository {
 			this.current.revisionId !== snapshot.revision
 		)
 			throw new ContentError("revision");
-		const requests = DocumentContentRequests.build(
-			DocumentTabs.all(this.current),
+		const requests = this.collaborators.documentContentRequests.build(
+			this.collaborators.documentTabs.all(this.current),
 			changes,
 		);
 		try {
@@ -97,3 +103,10 @@ export class GoogleDocsContentRepository implements AssetContentRepository {
 		}
 	}
 }
+export type GoogleDocsContentRepositoryArguments =
+	ConstructorParameters<typeof GoogleDocsContentRepository> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

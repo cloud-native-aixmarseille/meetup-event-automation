@@ -1,12 +1,17 @@
 import type { ApprovalPresenter } from "./approval-presenter.js";
 import type { ApprovalState, StoredApproval } from "./approval-state.js";
 import type { GithubApprovalClient } from "./github-approval-client.js";
-import { StoredApprovalSchema } from "./stored-approval-schema.js";
+import type { StoredApprovalSchema } from "./stored-approval-schema.js";
 import type { TrustedApprovalState } from "./trusted-approval-state.js";
 
 /** Persist one trusted request per kind with snapshot-checked comment writes. */
+export interface GithubApprovalRepositoryCollaborators {
+	readonly storedApprovalSchema: Pick<StoredApprovalSchema, "validate">;
+}
+
 export class GithubApprovalRepository {
 	constructor(
+		private readonly collaborators: GithubApprovalRepositoryCollaborators,
 		private readonly client: GithubApprovalClient,
 		private readonly trusted: TrustedApprovalState,
 		private readonly authorLogin: string,
@@ -29,7 +34,7 @@ export class GithubApprovalRepository {
 		record: StoredApproval,
 		existing?: ApprovalState,
 	): Promise<ApprovalState> {
-		StoredApprovalSchema.validate(record);
+		this.collaborators.storedApprovalSchema.validate(record);
 		const body = this.presenter.issue(
 			record,
 			record.decision ?? { status: "pending" },
@@ -47,3 +52,10 @@ export class GithubApprovalRepository {
 		return { record, comment: existing.comment };
 	}
 }
+export type GithubApprovalRepositoryArguments =
+	ConstructorParameters<typeof GithubApprovalRepository> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

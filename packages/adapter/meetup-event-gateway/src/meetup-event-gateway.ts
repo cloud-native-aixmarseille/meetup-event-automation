@@ -4,37 +4,41 @@ import {
 	ScheduledEventError,
 	type ScheduledEventGateway,
 } from "@meetup-automation/publication";
-import { type BrowserType, type Page, chromium } from "playwright-core";
-import {
-	HcaptchaChallenge,
-	type LoginChallenge,
-} from "./hcaptcha-challenge.js";
-import { MeetupEventPublisher } from "./meetup-event-publisher.js";
-import { MeetupEventEditor } from "./meetup-event-editor.js";
-import { MeetupLoginPage } from "./meetup-login-page.js";
+import type { BrowserType, Page } from "playwright-core";
+import type { LoginChallenge } from "./hcaptcha-challenge.js";
+import type {
+	MeetupEventEditor,
+	MeetupEventEditorArguments,
+} from "./meetup-event-editor.js";
+import type {
+	MeetupEventPublisher,
+	MeetupEventPublisherArguments,
+} from "./meetup-event-publisher.js";
+import type {
+	MeetupLoginPage,
+	MeetupLoginPageArguments,
+} from "./meetup-login-page.js";
+
+export interface MeetupEventGatewayCollaborators {
+	readonly createMeetupEventEditor: (
+		...args: MeetupEventEditorArguments
+	) => MeetupEventEditor;
+	readonly createMeetupEventPublisher: (
+		...args: MeetupEventPublisherArguments
+	) => MeetupEventPublisher;
+	readonly createMeetupLoginPage: (
+		...args: MeetupLoginPageArguments
+	) => MeetupLoginPage;
+}
 
 export class MeetupEventGateway implements ScheduledEventGateway {
 	constructor(
+		private readonly collaborators: MeetupEventGatewayCollaborators,
 		private readonly browserType: Pick<BrowserType, "launch">,
 		private readonly credentials: { email: string; password: string },
 		private readonly challenge: LoginChallenge,
 		private readonly groupUrl: string,
 	) {}
-
-	static create(
-		credentials: { email: string; password: string },
-		solverDirectory: string,
-		geminiApiKey: string,
-		geminiModel: string,
-		groupUrl: string,
-	): ScheduledEventGateway {
-		return new MeetupEventGateway(
-			chromium,
-			credentials,
-			HcaptchaChallenge.create(solverDirectory, geminiApiKey, geminiModel),
-			groupUrl,
-		);
-	}
 
 	async save(
 		event: ScheduledEvent,
@@ -43,12 +47,9 @@ export class MeetupEventGateway implements ScheduledEventGateway {
 		onSaved: (url: string) => Promise<void>,
 	): Promise<SavedScheduledEvent> {
 		return this.withSession(event, (page) =>
-			new MeetupEventEditor(page, this.groupUrl).save(
-				event,
-				url,
-				beforeSubmit,
-				onSaved,
-			),
+			this.collaborators
+				.createMeetupEventEditor(page, this.groupUrl)
+				.save(event, url, beforeSubmit, onSaved),
 		);
 	}
 
@@ -58,11 +59,9 @@ export class MeetupEventGateway implements ScheduledEventGateway {
 		beforePublish: () => Promise<void>,
 	): Promise<SavedScheduledEvent> {
 		return this.withSession(event, (page) =>
-			new MeetupEventPublisher(page, this.groupUrl).publish(
-				event,
-				url,
-				beforePublish,
-			),
+			this.collaborators
+				.createMeetupEventPublisher(page, this.groupUrl)
+				.publish(event, url, beforePublish),
 		);
 	}
 
@@ -91,7 +90,8 @@ export class MeetupEventGateway implements ScheduledEventGateway {
 				viewport: { width: 1440, height: 1000 },
 			});
 			const page = await context.newPage();
-			const status = await new MeetupLoginPage(page, this.challenge)
+			const status = await this.collaborators
+				.createMeetupLoginPage(page, this.challenge)
 				.login(this.credentials.email, this.credentials.password)
 				.catch(() => "unavailable");
 			if (status !== "verified")
@@ -107,3 +107,10 @@ export class MeetupEventGateway implements ScheduledEventGateway {
 		}
 	}
 }
+export type MeetupEventGatewayArguments =
+	ConstructorParameters<typeof MeetupEventGateway> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

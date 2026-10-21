@@ -1,3 +1,4 @@
+import { PublicationDomainComposition } from "@meetup-automation/publication";
 import { describe, expect, it } from "vitest";
 import { SlideTemplateBindings } from "./slide-template-bindings.js";
 
@@ -24,7 +25,9 @@ describe("SlideTemplateBindings", () => {
 		};
 
 		// Act
-		const style = SlideTemplateBindings.style(element);
+		const style = new SlideTemplateBindings({
+			contentTextKey: new PublicationDomainComposition().contentTextKey(),
+		}).style(element);
 
 		// Assert
 		expect(style).toEqual(first);
@@ -44,7 +47,10 @@ describe("SlideTemplateBindings", () => {
 		};
 
 		// Act
-		const read = () => SlideTemplateBindings.style(element);
+		const read = () =>
+			new SlideTemplateBindings({
+				contentTextKey: new PublicationDomainComposition().contentTextKey(),
+			}).style(element);
 
 		// Assert
 		expect(read).toThrow();

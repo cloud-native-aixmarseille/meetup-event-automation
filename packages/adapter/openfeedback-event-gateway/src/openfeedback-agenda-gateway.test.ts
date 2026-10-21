@@ -5,8 +5,8 @@ import {
 	speakerPage,
 	talkPage,
 } from "../testing/feedback-agenda.fixtures.js";
+import { OpenfeedbackEventGatewayComposition } from "./dependency-composition.js";
 import { OpenFeedbackAgendaGateway } from "./openfeedback-agenda-gateway.js";
-import { OpenFeedbackAgendaPlan } from "./openfeedback-agenda-plan.js";
 import { OpenFeedbackClient } from "./openfeedback-client.js";
 import { OpenFeedbackRecordsGateway } from "./openfeedback-records-gateway.js";
 
@@ -37,7 +37,21 @@ describe("feedback agenda synchronization", () => {
 			)
 			.mockResolvedValueOnce(Response.json({ id: talkId }));
 		const gateway = new OpenFeedbackAgendaGateway(
+			{
+				openFeedbackAgendaSnapshot:
+					new OpenfeedbackEventGatewayComposition().openFeedbackAgendaSnapshot(),
+				openFeedbackAgendaPlan:
+					new OpenfeedbackEventGatewayComposition().openFeedbackAgendaPlan(),
+			},
 			new OpenFeedbackRecordsGateway(
+				{
+					openFeedbackResponse:
+						new OpenfeedbackEventGatewayComposition().openFeedbackResponse(),
+					openFeedbackRecordEquality:
+						new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+					openFeedbackResourceId:
+						new OpenfeedbackEventGatewayComposition().openFeedbackResourceId(),
+				},
 				new OpenFeedbackClient("oforg_synthetic", fetcher),
 			),
 		);
@@ -68,7 +82,21 @@ describe("feedback agenda synchronization", () => {
 			.mockResolvedValueOnce(Response.json(speakerPage))
 			.mockResolvedValueOnce(Response.json(talkPage));
 		const gateway = new OpenFeedbackAgendaGateway(
+			{
+				openFeedbackAgendaSnapshot:
+					new OpenfeedbackEventGatewayComposition().openFeedbackAgendaSnapshot(),
+				openFeedbackAgendaPlan:
+					new OpenfeedbackEventGatewayComposition().openFeedbackAgendaPlan(),
+			},
 			new OpenFeedbackRecordsGateway(
+				{
+					openFeedbackResponse:
+						new OpenfeedbackEventGatewayComposition().openFeedbackResponse(),
+					openFeedbackRecordEquality:
+						new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+					openFeedbackResourceId:
+						new OpenfeedbackEventGatewayComposition().openFeedbackResourceId(),
+				},
 				new OpenFeedbackClient("oforg_synthetic", fetcher),
 			),
 		);
@@ -93,7 +121,21 @@ describe("feedback agenda synchronization", () => {
 			.mockResolvedValueOnce(Response.json(talkPage))
 			.mockResolvedValueOnce(Response.json({ id: "manual-talk" }));
 		const gateway = new OpenFeedbackAgendaGateway(
+			{
+				openFeedbackAgendaSnapshot:
+					new OpenfeedbackEventGatewayComposition().openFeedbackAgendaSnapshot(),
+				openFeedbackAgendaPlan:
+					new OpenfeedbackEventGatewayComposition().openFeedbackAgendaPlan(),
+			},
 			new OpenFeedbackRecordsGateway(
+				{
+					openFeedbackResponse:
+						new OpenfeedbackEventGatewayComposition().openFeedbackResponse(),
+					openFeedbackRecordEquality:
+						new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+					openFeedbackResourceId:
+						new OpenfeedbackEventGatewayComposition().openFeedbackResourceId(),
+				},
 				new OpenFeedbackClient("oforg_synthetic", fetcher),
 			),
 		);
@@ -118,10 +160,12 @@ describe("feedback agenda synchronization", () => {
 	it("recovers after speaker creation succeeds and talk creation fails", async () => {
 		// Arrange
 		const key = "example/meetups#12";
-		const planned = OpenFeedbackAgendaPlan.create(key, agenda, {
-			speakers: [],
-			talks: [],
-		});
+		const planned = new OpenfeedbackEventGatewayComposition()
+			.openFeedbackAgendaPlan()
+			.create(key, agenda, {
+				speakers: [],
+				talks: [],
+			});
 		const speaker = planned.speakers[0];
 		const talk = planned.talks[0];
 		const fetcher = vi
@@ -136,7 +180,21 @@ describe("feedback agenda synchronization", () => {
 			.mockResolvedValueOnce(Response.json({ ...talkPage, talks: [] }))
 			.mockResolvedValueOnce(Response.json({ id: talk.id }, { status: 201 }));
 		const gateway = new OpenFeedbackAgendaGateway(
+			{
+				openFeedbackAgendaSnapshot:
+					new OpenfeedbackEventGatewayComposition().openFeedbackAgendaSnapshot(),
+				openFeedbackAgendaPlan:
+					new OpenfeedbackEventGatewayComposition().openFeedbackAgendaPlan(),
+			},
 			new OpenFeedbackRecordsGateway(
+				{
+					openFeedbackResponse:
+						new OpenfeedbackEventGatewayComposition().openFeedbackResponse(),
+					openFeedbackRecordEquality:
+						new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+					openFeedbackResourceId:
+						new OpenfeedbackEventGatewayComposition().openFeedbackResourceId(),
+				},
 				new OpenFeedbackClient("oforg_synthetic", fetcher),
 			),
 		);
@@ -180,7 +238,21 @@ describe("feedback agenda synchronization", () => {
 			.mockResolvedValueOnce(Response.json(duplicated))
 			.mockResolvedValueOnce(Response.json(talkPage));
 		const gateway = new OpenFeedbackAgendaGateway(
+			{
+				openFeedbackAgendaSnapshot:
+					new OpenfeedbackEventGatewayComposition().openFeedbackAgendaSnapshot(),
+				openFeedbackAgendaPlan:
+					new OpenfeedbackEventGatewayComposition().openFeedbackAgendaPlan(),
+			},
 			new OpenFeedbackRecordsGateway(
+				{
+					openFeedbackResponse:
+						new OpenfeedbackEventGatewayComposition().openFeedbackResponse(),
+					openFeedbackRecordEquality:
+						new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+					openFeedbackResourceId:
+						new OpenfeedbackEventGatewayComposition().openFeedbackResourceId(),
+				},
 				new OpenFeedbackClient("oforg_synthetic", fetcher),
 			),
 		);

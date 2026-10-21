@@ -1,5 +1,7 @@
+import { JourneyPolicyComposition } from "@meetup-automation/journey";
 import { describe, expect, it } from "vitest";
 import { AttentionStages } from "./attention-stages.js";
+import { GithubActionsComposition } from "./dependency-composition.js";
 
 describe("typed attention stage boundary", () => {
 	it.each(["skipped", "cancelled", "", undefined])(
@@ -9,7 +11,12 @@ describe("typed attention stage boundary", () => {
 			const input = JSON.stringify({ assets: { outcome } });
 
 			// Act
-			const result = AttentionStages.parse(input);
+			const result = new AttentionStages({
+				attentionStageEvaluation:
+					new JourneyPolicyComposition().attentionStageEvaluation(),
+				attentionStageInput:
+					new GithubActionsComposition().attentionStageInput(),
+			}).parse(input);
 
 			// Assert
 			expect(result.find((stage) => stage.owner === "assets")?.outcome).toBe(
@@ -33,7 +40,11 @@ describe("typed attention stage boundary", () => {
 		});
 
 		// Act
-		const result = AttentionStages.parse(input);
+		const result = new AttentionStages({
+			attentionStageEvaluation:
+				new JourneyPolicyComposition().attentionStageEvaluation(),
+			attentionStageInput: new GithubActionsComposition().attentionStageInput(),
+		}).parse(input);
 
 		// Assert
 		expect(
@@ -55,7 +66,11 @@ describe("typed attention stage boundary", () => {
 		});
 
 		// Act
-		const result = AttentionStages.parse(input);
+		const result = new AttentionStages({
+			attentionStageEvaluation:
+				new JourneyPolicyComposition().attentionStageEvaluation(),
+			attentionStageInput: new GithubActionsComposition().attentionStageInput(),
+		}).parse(input);
 
 		// Assert
 		expect(
@@ -80,7 +95,11 @@ describe("typed attention stage boundary", () => {
 		});
 
 		// Act
-		const result = AttentionStages.parse(input);
+		const result = new AttentionStages({
+			attentionStageEvaluation:
+				new JourneyPolicyComposition().attentionStageEvaluation(),
+			attentionStageInput: new GithubActionsComposition().attentionStageInput(),
+		}).parse(input);
 
 		// Assert
 		expect(result.find((stage) => stage.owner === "event")).toMatchObject({
@@ -120,7 +139,11 @@ describe("typed attention stage boundary", () => {
 		});
 
 		// Act
-		const result = AttentionStages.parse(input);
+		const result = new AttentionStages({
+			attentionStageEvaluation:
+				new JourneyPolicyComposition().attentionStageEvaluation(),
+			attentionStageInput: new GithubActionsComposition().attentionStageInput(),
+		}).parse(input);
 
 		// Assert
 		expect(
@@ -145,7 +168,11 @@ describe("typed attention stage boundary", () => {
 		});
 
 		// Act
-		const result = AttentionStages.parse(input);
+		const result = new AttentionStages({
+			attentionStageEvaluation:
+				new JourneyPolicyComposition().attentionStageEvaluation(),
+			attentionStageInput: new GithubActionsComposition().attentionStageInput(),
+		}).parse(input);
 
 		// Assert
 		expect(result.find((stage) => stage.owner === "feedback")).toMatchObject({
@@ -172,7 +199,11 @@ describe("typed attention stage boundary", () => {
 		});
 
 		// Act
-		const result = AttentionStages.parse(input);
+		const result = new AttentionStages({
+			attentionStageEvaluation:
+				new JourneyPolicyComposition().attentionStageEvaluation(),
+			attentionStageInput: new GithubActionsComposition().attentionStageInput(),
+		}).parse(input);
 
 		// Assert
 		expect(
@@ -198,7 +229,11 @@ describe("typed attention stage boundary", () => {
 		});
 
 		// Act
-		const result = AttentionStages.parse(input);
+		const result = new AttentionStages({
+			attentionStageEvaluation:
+				new JourneyPolicyComposition().attentionStageEvaluation(),
+			attentionStageInput: new GithubActionsComposition().attentionStageInput(),
+		}).parse(input);
 
 		// Assert
 		expect(
@@ -231,7 +266,11 @@ describe("typed attention stage boundary", () => {
 		});
 
 		// Act
-		const result = AttentionStages.diagnostics(input);
+		const result = new AttentionStages({
+			attentionStageEvaluation:
+				new JourneyPolicyComposition().attentionStageEvaluation(),
+			attentionStageInput: new GithubActionsComposition().attentionStageInput(),
+		}).diagnostics(input);
 
 		// Assert
 		expect(result).toEqual([
@@ -260,7 +299,11 @@ describe("typed attention stage boundary", () => {
 		});
 
 		// Act
-		const result = AttentionStages.diagnostics(input);
+		const result = new AttentionStages({
+			attentionStageEvaluation:
+				new JourneyPolicyComposition().attentionStageEvaluation(),
+			attentionStageInput: new GithubActionsComposition().attentionStageInput(),
+		}).diagnostics(input);
 
 		// Assert
 		expect(result).toEqual([
@@ -289,7 +332,12 @@ describe("typed attention stage boundary", () => {
 
 			// Act
 			try {
-				AttentionStages.hasCompleteReports(input);
+				new AttentionStages({
+					attentionStageEvaluation:
+						new JourneyPolicyComposition().attentionStageEvaluation(),
+					attentionStageInput:
+						new GithubActionsComposition().attentionStageInput(),
+				}).hasCompleteReports(input);
 			} catch (error) {
 				failure = error;
 			}
@@ -321,7 +369,11 @@ describe("typed attention stage boundary", () => {
 		});
 
 		// Act
-		const result = AttentionStages.diagnostics(input);
+		const result = new AttentionStages({
+			attentionStageEvaluation:
+				new JourneyPolicyComposition().attentionStageEvaluation(),
+			attentionStageInput: new GithubActionsComposition().attentionStageInput(),
+		}).diagnostics(input);
 
 		// Assert
 		expect(result[0].field).toBe(field);
@@ -337,8 +389,16 @@ describe("typed attention stage boundary", () => {
 		});
 
 		// Act
-		const diagnostics = AttentionStages.diagnostics(input);
-		const stages = AttentionStages.parse(input);
+		const diagnostics = new AttentionStages({
+			attentionStageEvaluation:
+				new JourneyPolicyComposition().attentionStageEvaluation(),
+			attentionStageInput: new GithubActionsComposition().attentionStageInput(),
+		}).diagnostics(input);
+		const stages = new AttentionStages({
+			attentionStageEvaluation:
+				new JourneyPolicyComposition().attentionStageEvaluation(),
+			attentionStageInput: new GithubActionsComposition().attentionStageInput(),
+		}).parse(input);
 
 		// Assert
 		expect(diagnostics).toEqual([]);
@@ -359,7 +419,12 @@ describe("typed attention stage boundary", () => {
 
 		// Act
 		try {
-			AttentionStages.diagnostics(input);
+			new AttentionStages({
+				attentionStageEvaluation:
+					new JourneyPolicyComposition().attentionStageEvaluation(),
+				attentionStageInput:
+					new GithubActionsComposition().attentionStageInput(),
+			}).diagnostics(input);
 		} catch (caught) {
 			error = caught;
 		}
@@ -412,7 +477,12 @@ describe("typed attention stage boundary", () => {
 			});
 
 			// Act
-			const result = AttentionStages.hasCompleteReports(input);
+			const result = new AttentionStages({
+				attentionStageEvaluation:
+					new JourneyPolicyComposition().attentionStageEvaluation(),
+				attentionStageInput:
+					new GithubActionsComposition().attentionStageInput(),
+			}).hasCompleteReports(input);
 
 			// Assert
 			expect(result).toBe(reported);
@@ -459,7 +529,12 @@ describe("typed attention stage boundary", () => {
 			});
 
 			// Act
-			const result = AttentionStages.diagnostics(input);
+			const result = new AttentionStages({
+				attentionStageEvaluation:
+					new JourneyPolicyComposition().attentionStageEvaluation(),
+				attentionStageInput:
+					new GithubActionsComposition().attentionStageInput(),
+			}).diagnostics(input);
 
 			// Assert
 			expect(result.map((item) => item.code)).toEqual([
@@ -492,7 +567,11 @@ describe("typed attention stage boundary", () => {
 		});
 
 		// Act
-		const result = AttentionStages.diagnostics(input);
+		const result = new AttentionStages({
+			attentionStageEvaluation:
+				new JourneyPolicyComposition().attentionStageEvaluation(),
+			attentionStageInput: new GithubActionsComposition().attentionStageInput(),
+		}).diagnostics(input);
 
 		// Assert
 		expect(result.map((item) => item.code)).toContain(

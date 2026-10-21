@@ -1,29 +1,78 @@
 import {
 	type EventDiagnostic,
 	type EventDocument,
+	type EventDocumentConcurrency,
 	type EventIdentity,
-	EventLifecycle,
+	type EventLifecycle,
 	EventNotFoundError,
-	EventReadinessPolicy,
-	EventRepositoryPatches,
+	type EventReadinessPolicy,
+	type EventRepositoryPatches,
 	type MeetupEvent,
-	ReconcileEvent,
+	type ReconcileEvent,
+	type ReconcileEventArguments,
 } from "@meetup-automation/event";
-import {
+import type {
 	ResolveEventReferences,
 	ValidateReferentialCatalog,
+	ValidateReferentialCatalogArguments,
 } from "@meetup-automation/referential";
-import { RefreshSelectedProposals } from "./refresh-selected-proposals.js";
-import { EventDiagnosticProjection } from "./event-diagnostic-projection.js";
-import { EventParticipantResolution } from "./event-participant-resolution.js";
-import { EventPublicationEvaluation } from "./event-publication-evaluation.js";
+import type { EventDiagnosticProjection } from "./event-diagnostic-projection.js";
+import type { EventParticipantResolution } from "./event-participant-resolution.js";
+import type { EventPublicationEvaluation } from "./event-publication-evaluation.js";
 import type {
 	ManageMeetupEventDependencies,
 	ManageMeetupEventResult,
 } from "./manage-meetup-event-contracts.js";
+import type {
+	RefreshSelectedProposals,
+	RefreshSelectedProposalsArguments,
+} from "./refresh-selected-proposals.js";
+
+export interface ManageMeetupEventCollaborators {
+	readonly eventPublicationEvaluation: Pick<
+		EventPublicationEvaluation,
+		| "evaluatePublication"
+		| "planEventManualPublicationTasks"
+		| "pendingManualTaskDiagnostics"
+	>;
+	readonly eventReadinessPolicy: Pick<
+		EventReadinessPolicy,
+		"evaluateEventReadiness"
+	>;
+	readonly eventLifecycle: Pick<EventLifecycle, "evaluateEventLifecycle">;
+	readonly eventDiagnosticProjection: Pick<
+		EventDiagnosticProjection,
+		"toPublicDiagnostic" | "toEventDiagnostic"
+	>;
+	readonly eventParticipantResolution: Pick<
+		EventParticipantResolution,
+		"renderReference" | "enrichStableReferences"
+	>;
+	readonly eventRepositoryPatches: Pick<
+		EventRepositoryPatches,
+		"eventRepositoryPatchIsEmpty"
+	>;
+	readonly eventDocumentConcurrency: Pick<
+		EventDocumentConcurrency,
+		"ensureEventDocumentIsCurrent"
+	>;
+	readonly createReconcileEvent: (
+		...args: ReconcileEventArguments
+	) => ReconcileEvent;
+	readonly createValidateReferentialCatalog: (
+		...args: ValidateReferentialCatalogArguments
+	) => ValidateReferentialCatalog;
+	readonly createRefreshSelectedProposals: (
+		...args: RefreshSelectedProposalsArguments
+	) => RefreshSelectedProposals;
+	readonly createResolveEventReferences: () => ResolveEventReferences;
+}
 
 export class ManageMeetupEvent {
-	constructor(private readonly dependencies: ManageMeetupEventDependencies) {}
+	constructor(
+		private readonly collaborators: ManageMeetupEventCollaborators,
+		private readonly dependencies: ManageMeetupEventDependencies,
+	) {}
 
 	async execute(input: {
 		identity: EventIdentity;
@@ -43,11 +92,13 @@ export class ManageMeetupEvent {
 			return { skipped: true, diagnostics: [] };
 		}
 
-		const eventResult = await new ReconcileEvent(eventDependencies).execute({
-			identity: input.identity,
-			mode: "check",
-			sourceDocument,
-		});
+		const eventResult = await this.collaborators
+			.createReconcileEvent(eventDependencies)
+			.execute({
+				identity: input.identity,
+				mode: "check",
+				sourceDocument,
+			});
 
 		const eventDiagnostics: EventDiagnostic[] = [...eventResult.diagnostics];
 		let event = await this.resolveParticipants(
@@ -55,20 +106,24 @@ export class ManageMeetupEvent {
 			eventDiagnostics,
 		);
 
-		const publication = EventPublicationEvaluation.evaluatePublication(
-			event,
-			config,
-		);
+		const publication =
+			this.collaborators.eventPublicationEvaluation.evaluatePublication(
+				event,
+				config,
+			);
 		event = publication.event;
 		eventDiagnostics.push(...publication.diagnostics);
 		const manualPublicationTasks =
-			EventPublicationEvaluation.planEventManualPublicationTasks(event);
+			this.collaborators.eventPublicationEvaluation.planEventManualPublicationTasks(
+				event,
+			);
 
-		const readiness = EventReadinessPolicy.evaluateEventReadiness(
-			event,
-			eventDiagnostics,
-		);
-		const lifecycle = EventLifecycle.evaluateEventLifecycle({
+		const readiness =
+			this.collaborators.eventReadinessPolicy.evaluateEventReadiness(
+				event,
+				eventDiagnostics,
+			);
+		const lifecycle = this.collaborators.eventLifecycle.evaluateEventLifecycle({
 			event,
 			readiness,
 			now: eventDependencies.clock.now(),
@@ -84,9 +139,11 @@ export class ManageMeetupEvent {
 			persisted,
 			diagnostics: [
 				...readiness.diagnostics.map(
-					EventDiagnosticProjection.toPublicDiagnostic,
+					this.collaborators.eventDiagnosticProjection.toPublicDiagnostic.bind(
+						this.collaborators.eventDiagnosticProjection,
+					),
 				),
-				...EventPublicationEvaluation.pendingManualTaskDiagnostics(
+				...this.collaborators.eventPublicationEvaluation.pendingManualTaskDiagnostics(
 					manualPublicationTasks,
 				),
 			],
@@ -97,29 +154,34 @@ export class ManageMeetupEvent {
 		event: MeetupEvent,
 		eventDiagnostics: EventDiagnostic[],
 	) {
-		const catalogValidation = await new ValidateReferentialCatalog(
-			this.dependencies.referentialRepository,
-		).execute();
+		const catalogValidation = await this.collaborators
+			.createValidateReferentialCatalog(this.dependencies.referentialRepository)
+			.execute();
 
 		if (catalogValidation.isValid) {
-			event = await new RefreshSelectedProposals(
-				this.dependencies.proposalSource,
-			).execute(event, catalogValidation.catalog, eventDiagnostics);
+			event = await this.collaborators
+				.createRefreshSelectedProposals(this.dependencies.proposalSource)
+				.execute(event, catalogValidation.catalog, eventDiagnostics);
 			const speakerReferences = event.agenda.flatMap((entry) =>
-				entry.speakers.map(EventParticipantResolution.renderReference),
+				entry.speakers.map(
+					this.collaborators.eventParticipantResolution.renderReference.bind(
+						this.collaborators.eventParticipantResolution,
+					),
+				),
 			);
-			const resolution = new ResolveEventReferences().execute(
-				catalogValidation.catalog,
-				{
+			const resolution = this.collaborators
+				.createResolveEventReferences()
+				.execute(catalogValidation.catalog, {
 					hostReference: event.host
-						? EventParticipantResolution.renderReference(event.host)
+						? this.collaborators.eventParticipantResolution.renderReference(
+								event.host,
+							)
 						: "",
 					speakerReferences,
-				},
-			);
+				});
 			eventDiagnostics.push(
 				...resolution.diagnostics.map((item) =>
-					EventDiagnosticProjection.toEventDiagnostic(
+					this.collaborators.eventDiagnosticProjection.toEventDiagnostic(
 						item.code,
 						item.severity,
 						item.path,
@@ -128,18 +190,19 @@ export class ManageMeetupEvent {
 				),
 			);
 			if (resolution.resolved) {
-				event = EventParticipantResolution.enrichStableReferences(
-					event,
-					resolution.host,
-					resolution.speakers,
-				);
+				event =
+					this.collaborators.eventParticipantResolution.enrichStableReferences(
+						event,
+						resolution.host,
+						resolution.speakers,
+					);
 			}
 		} else {
 			if (event.proposalReferences?.length)
 				event = { ...event, proposalStatus: "stale" };
 			eventDiagnostics.push(
 				...catalogValidation.diagnostics.map((item) =>
-					EventDiagnosticProjection.toEventDiagnostic(
+					this.collaborators.eventDiagnosticProjection.toEventDiagnostic(
 						item.code,
 						item.severity,
 						item.path,
@@ -164,10 +227,12 @@ export class ManageMeetupEvent {
 		);
 		if (
 			mode === "check" ||
-			EventRepositoryPatches.eventRepositoryPatchIsEmpty(repositoryPatch)
+			this.collaborators.eventRepositoryPatches.eventRepositoryPatchIsEmpty(
+				repositoryPatch,
+			)
 		)
 			return false;
-		await ReconcileEvent.ensureEventDocumentIsCurrent(
+		await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
 			eventDependencies.repository,
 			sourceDocument.identity,
 			sourceDocument,
@@ -179,3 +244,10 @@ export class ManageMeetupEvent {
 		return true;
 	}
 }
+export type ManageMeetupEventArguments =
+	ConstructorParameters<typeof ManageMeetupEvent> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

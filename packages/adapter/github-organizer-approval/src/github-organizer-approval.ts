@@ -1,21 +1,31 @@
 import {
-	ApprovalRequestPolicy,
+	type ApprovalRequestPolicy,
 	FOLLOW_UP_TASKS,
 	type OrganizerApproval,
 	type OrganizerApprovalRequest,
 	type OrganizerApprovalResult,
 } from "@meetup-automation/journey";
-import { ApprovalDetailsPreview } from "./approval-details-preview.js";
+import type { ApprovalDetailsPreview } from "./approval-details-preview.js";
 import type { ApprovalNotifications } from "./approval-notifications.js";
 import type { ApprovalRecordFactory } from "./approval-record-factory.js";
-import { ApprovalRequestSchema } from "./approval-request-schema.js";
+import type { ApprovalRequestSchema } from "./approval-request-schema.js";
 import type { FinalizeApprovalDecision } from "./finalize-approval-decision.js";
 import type { GithubApprovalClient } from "./github-approval-client.js";
 import type { GithubApprovalRepository } from "./github-approval-repository.js";
 
 /** Reuse reviewed requests and recheck authorization before returning approval. */
+export interface GithubOrganizerApprovalCollaborators {
+	readonly approvalRequestSchema: Pick<ApprovalRequestSchema, "validate">;
+	readonly approvalRequestPolicy: Pick<
+		ApprovalRequestPolicy,
+		"validate" | "matches"
+	>;
+	readonly approvalDetailsPreview: Pick<ApprovalDetailsPreview, "create">;
+}
+
 export class GithubOrganizerApproval implements OrganizerApproval {
 	constructor(
+		private readonly collaborators: GithubOrganizerApprovalCollaborators,
 		private readonly repository: GithubApprovalRepository,
 		private readonly records: ApprovalRecordFactory,
 		private readonly finalizer: FinalizeApprovalDecision,
@@ -25,15 +35,15 @@ export class GithubOrganizerApproval implements OrganizerApproval {
 	async request(
 		input: OrganizerApprovalRequest,
 	): Promise<OrganizerApprovalResult> {
-		input = GithubOrganizerApproval.reviewedRequest(input);
-		ApprovalRequestSchema.validate(input);
-		ApprovalRequestPolicy.validate(input);
+		input = this.reviewedRequest(input);
+		this.collaborators.approvalRequestSchema.validate(input);
+		this.collaborators.approvalRequestPolicy.validate(input);
 		const existing = (await this.repository.states()).find(
 			({ record }) => record.kind === input.kind,
 		);
 		if (
 			existing &&
-			ApprovalRequestPolicy.matches(
+			this.collaborators.approvalRequestPolicy.matches(
 				existing.record,
 				input,
 				existing.record.decision?.status ?? "pending",
@@ -82,10 +92,20 @@ export class GithubOrganizerApproval implements OrganizerApproval {
 		return { notificationFailed };
 	}
 
-	private static reviewedRequest(
+	private reviewedRequest(
 		input: OrganizerApprovalRequest,
 	): OrganizerApprovalRequest {
 		if (input.kind === "meetup-publication" || !input.details) return input;
-		return { ...input, details: ApprovalDetailsPreview.create(input.details) };
+		return {
+			...input,
+			details: this.collaborators.approvalDetailsPreview.create(input.details),
+		};
 	}
 }
+export type GithubOrganizerApprovalArguments =
+	ConstructorParameters<typeof GithubOrganizerApproval> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

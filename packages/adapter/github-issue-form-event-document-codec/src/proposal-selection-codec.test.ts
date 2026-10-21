@@ -1,5 +1,6 @@
 import type { EventDiagnostic } from "@meetup-automation/event";
 import { describe, expect, it } from "vitest";
+import { GithubIssueFormEventDocumentCodecComposition } from "./dependency-composition.js";
 import { ProposalSelectionCodec } from "./proposal-selection-codec.js";
 
 describe("ProposalSelectionCodec", () => {
@@ -14,7 +15,12 @@ describe("ProposalSelectionCodec", () => {
 			const body = `${marker}\n### Conference Hall proposals\n\n17\n`;
 
 			// Act
-			const result = ProposalSelectionCodec.read(body, diagnostics);
+			const result = new ProposalSelectionCodec({
+				issueFormSections:
+					new GithubIssueFormEventDocumentCodecComposition().issueFormSections(),
+				managedIssueMarkers:
+					new GithubIssueFormEventDocumentCodecComposition().managedIssueMarkers(),
+			}).read(body, diagnostics);
 
 			// Assert
 			expect(result.proposalStatus).toBe("stale");
@@ -33,7 +39,12 @@ describe("ProposalSelectionCodec", () => {
 		const diagnostics: EventDiagnostic[] = [];
 
 		// Act
-		const result = ProposalSelectionCodec.read(body, diagnostics);
+		const result = new ProposalSelectionCodec({
+			issueFormSections:
+				new GithubIssueFormEventDocumentCodecComposition().issueFormSections(),
+			managedIssueMarkers:
+				new GithubIssueFormEventDocumentCodecComposition().managedIssueMarkers(),
+		}).read(body, diagnostics);
 
 		// Assert
 		expect(result).toEqual({
@@ -47,10 +58,12 @@ describe("ProposalSelectionCodec", () => {
 		const diagnostics: EventDiagnostic[] = [];
 
 		// Act
-		const result = ProposalSelectionCodec.read(
-			"### Agenda\n\n- Alex: Talk",
-			diagnostics,
-		);
+		const result = new ProposalSelectionCodec({
+			issueFormSections:
+				new GithubIssueFormEventDocumentCodecComposition().issueFormSections(),
+			managedIssueMarkers:
+				new GithubIssueFormEventDocumentCodecComposition().managedIssueMarkers(),
+		}).read("### Agenda\n\n- Alex: Talk", diagnostics);
 
 		// Assert
 		expect(result).toEqual({});
@@ -65,7 +78,12 @@ describe("ProposalSelectionCodec", () => {
 		};
 
 		// Act
-		const result = ProposalSelectionCodec.write(body, event);
+		const result = new ProposalSelectionCodec({
+			issueFormSections:
+				new GithubIssueFormEventDocumentCodecComposition().issueFormSections(),
+			managedIssueMarkers:
+				new GithubIssueFormEventDocumentCodecComposition().managedIssueMarkers(),
+		}).write(body, event);
 
 		// Assert
 		expect(result).toBe(body.replace("1:current", "1:stale"));
@@ -76,7 +94,12 @@ describe("ProposalSelectionCodec", () => {
 			"<script>\n### Agenda\n[link](javascript:alert(1)) <!-- injected -->";
 
 		// Act
-		const result = ProposalSelectionCodec.escape(text);
+		const result = new ProposalSelectionCodec({
+			issueFormSections:
+				new GithubIssueFormEventDocumentCodecComposition().issueFormSections(),
+			managedIssueMarkers:
+				new GithubIssueFormEventDocumentCodecComposition().managedIssueMarkers(),
+		}).escape(text);
 
 		// Assert
 		expect(result).not.toMatch(/<|\n|\[|###/g);

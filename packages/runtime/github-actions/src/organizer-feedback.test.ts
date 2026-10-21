@@ -1,4 +1,6 @@
+import { JourneyComposition } from "@meetup-automation/journey";
 import { describe, expect, it, vi } from "vitest";
+import { GithubActionsComposition } from "./dependency-composition.js";
 import { OrganizerFeedback } from "./organizer-feedback.js";
 
 const identity = { repository: "example/meetups", issueNumber: 42 };
@@ -14,7 +16,17 @@ function fixture(labels = ["meetup"]) {
 	return {
 		events,
 		comments,
-		feedback: new OrganizerFeedback(events, comments, "meetup"),
+		feedback: new OrganizerFeedback(
+			{
+				attentionStageInput:
+					new GithubActionsComposition().attentionStageInput(),
+				createReconcileOrganizerFeedback: (...args) =>
+					new JourneyComposition().reconcileOrganizerFeedback(...args),
+			},
+			events,
+			comments,
+			"meetup",
+		),
 	};
 }
 function reports(overrides: Record<string, unknown> = {}) {

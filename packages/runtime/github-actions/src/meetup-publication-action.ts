@@ -1,26 +1,42 @@
 import * as core from "@actions/core";
 import { context, getOctokit } from "@actions/github";
-import { ManageMeetupPublication } from "@meetup-automation/journey";
+import type { ManageMeetupPublication } from "@meetup-automation/journey";
 import type { ActionReportData } from "./action-report.js";
-import { ConferenceHallInput } from "./conference-hall-input.js";
+import type { ConferenceHallInput } from "./conference-hall-input.js";
 import type { ActionMessages } from "./i18n/action-messages.js";
-import { MeetupPublicationComposition } from "./meetup-publication-composition.js";
-import { MeetupPublicationConfiguration } from "./meetup-publication-configuration.js";
-import { RuntimeInput } from "./runtime-input.js";
+import type { MeetupPublicationComposition } from "./meetup-publication-composition.js";
+import type { MeetupPublicationConfiguration } from "./meetup-publication-configuration.js";
+import type { RuntimeInput } from "./runtime-input.js";
+
+export interface MeetupPublicationActionCollaborators {
+	readonly createJourney: (
+		input: Parameters<typeof MeetupPublicationComposition.create>[0],
+	) => Pick<ManageMeetupPublication, "execute">;
+	readonly runtimeInput: Pick<RuntimeInput, "positiveIntegerInput">;
+	readonly conferenceHallInput: Pick<ConferenceHallInput, "read">;
+	readonly meetupPublicationConfiguration: Pick<
+		MeetupPublicationConfiguration,
+		"load"
+	>;
+}
 
 export class MeetupPublicationAction {
-	static async run(messages: ActionMessages): Promise<ActionReportData> {
-		const issueNumber = RuntimeInput.positiveIntegerInput(
+	constructor(
+		private readonly collaborators: MeetupPublicationActionCollaborators,
+	) {}
+
+	async run(messages: ActionMessages): Promise<ActionReportData> {
+		const issueNumber = this.collaborators.runtimeInput.positiveIntegerInput(
 			"issue-number",
 			core.getInput("issue-number", { required: true }),
 		);
-		const email = MeetupPublicationAction.secret("meetup-email");
-		const password = MeetupPublicationAction.secret("meetup-password");
-		const geminiApiKey = MeetupPublicationAction.secret("gemini-api-key");
-		const githubToken = MeetupPublicationAction.secret("github-token");
+		const email = this.secret("meetup-email");
+		const password = this.secret("meetup-password");
+		const geminiApiKey = this.secret("gemini-api-key");
+		const githubToken = this.secret("github-token");
 		const { owner, repo } = context.repo;
-		const container = MeetupPublicationComposition.create({
-			...ConferenceHallInput.read(),
+		const journey = this.collaborators.createJourney({
+			...this.collaborators.conferenceHallInput.read(),
 			owner,
 			repo,
 			issueNumber,
@@ -29,7 +45,7 @@ export class MeetupPublicationAction {
 			email,
 			password,
 			geminiApiKey,
-			slackToken: MeetupPublicationAction.secret("slack-token"),
+			slackToken: this.secret("slack-token"),
 			slackOrganizerChannelId: core.getInput("slack-organizer-channel-id", {
 				required: true,
 			}),
@@ -37,9 +53,11 @@ export class MeetupPublicationAction {
 			commentAuthorLogin: core.getInput("managed-comment-author", {
 				required: true,
 			}),
-			settings: await MeetupPublicationConfiguration.load(process.cwd()),
+			settings: await this.collaborators.meetupPublicationConfiguration.load(
+				process.cwd(),
+			),
 		});
-		const result = await container.get(ManageMeetupPublication).execute({
+		const result = await journey.execute({
 			repository: `${owner}/${repo}`,
 			issueNumber,
 		});
@@ -55,7 +73,7 @@ export class MeetupPublicationAction {
 		};
 	}
 
-	private static secret(name: string): string {
+	private secret(name: string): string {
 		const value = core.getInput(name, {
 			required: true,
 			trimWhitespace: name !== "meetup-password",

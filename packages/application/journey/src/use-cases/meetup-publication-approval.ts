@@ -3,14 +3,19 @@ import {
 	type ScheduledEvent,
 	ScheduledEventError,
 } from "@meetup-automation/publication";
-import { MeetupPublicationRevision } from "../approval/meetup-publication-revision.js";
+import type { MeetupPublicationRevision } from "../approval/meetup-publication-revision.js";
 import type {
 	OrganizerApproval,
 	OrganizerApprovalResult,
 } from "../ports/organizer-approval.js";
 
+export interface MeetupPublicationApprovalCollaborators {
+	readonly meetupPublicationRevision: Pick<MeetupPublicationRevision, "of">;
+}
+
 export class MeetupPublicationApproval {
 	constructor(
+		private readonly collaborators: MeetupPublicationApprovalCollaborators,
 		private readonly approvals: OrganizerApproval,
 		private readonly clock: EventClock,
 	) {}
@@ -21,7 +26,7 @@ export class MeetupPublicationApproval {
 		try {
 			return await this.approvals.request({
 				kind: "meetup-publication",
-				revision: MeetupPublicationRevision.of(event, url),
+				revision: this.collaborators.meetupPublicationRevision.of(event, url),
 				eventDate: event.date,
 				requestedAt: this.clock.now(),
 				publication: {
@@ -45,3 +50,10 @@ export class MeetupPublicationApproval {
 			);
 	}
 }
+export type MeetupPublicationApprovalArguments =
+	ConstructorParameters<typeof MeetupPublicationApproval> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

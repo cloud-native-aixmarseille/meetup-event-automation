@@ -1,4 +1,6 @@
+import { PublicationDomainComposition } from "@meetup-automation/publication";
 import { describe, expect, it } from "vitest";
+import { GithubActionsComposition } from "../dependency-composition.js";
 import { AssetRenderConfiguration } from "./asset-render-configuration.js";
 
 describe("public render configuration", () => {
@@ -12,7 +14,11 @@ describe("public render configuration", () => {
 		};
 
 		// Act
-		const actual = AssetRenderConfiguration.parse({}, {}, logos);
+		const actual = new AssetRenderConfiguration({
+			contentContractPolicy:
+				new PublicationDomainComposition().contentContractPolicy(),
+			runtimeInput: new GithubActionsComposition().runtimeInput(),
+		}).parse({}, {}, logos);
 
 		// Assert
 		expect(actual.hostLogos).toEqual(logos);
@@ -41,7 +47,12 @@ describe("public render configuration", () => {
 			const input = logos;
 
 			// Act
-			const parse = () => AssetRenderConfiguration.parse({}, {}, input);
+			const parse = () =>
+				new AssetRenderConfiguration({
+					contentContractPolicy:
+						new PublicationDomainComposition().contentContractPolicy(),
+					runtimeInput: new GithubActionsComposition().runtimeInput(),
+				}).parse({}, {}, input);
 
 			// Assert
 			expect(parse).toThrow();
@@ -69,7 +80,11 @@ describe("public render configuration", () => {
 		};
 
 		// Act
-		const actual = AssetRenderConfiguration.parse(event, venues);
+		const actual = new AssetRenderConfiguration({
+			contentContractPolicy:
+				new PublicationDomainComposition().contentContractPolicy(),
+			runtimeInput: new GithubActionsComposition().runtimeInput(),
+		}).parse(event, venues);
 
 		// Assert
 		expect(actual).toEqual({ ...event, venues, hostLogos: {} });
@@ -118,7 +133,12 @@ describe("public render configuration", () => {
 		[{}, []],
 	])("rejects invalid or unreviewed fields", (event, venues) => {
 		// Arrange
-		const parse = () => AssetRenderConfiguration.parse(event, venues);
+		const parse = () =>
+			new AssetRenderConfiguration({
+				contentContractPolicy:
+					new PublicationDomainComposition().contentContractPolicy(),
+				runtimeInput: new GithubActionsComposition().runtimeInput(),
+			}).parse(event, venues);
 
 		// Act
 		const operation = parse;

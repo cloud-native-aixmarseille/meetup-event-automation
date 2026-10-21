@@ -1,38 +1,30 @@
 import { getOctokit } from "@actions/github";
 import {
+	CommunicationDomainComposition,
 	type DeliveryLedger,
 	type MailGateway,
 	PlanCommunications,
-	ReconcileCommunications,
 } from "@meetup-automation/communication";
 import type {
 	EventDocumentCodec,
 	EventRepository,
 } from "@meetup-automation/event";
-import {
-	GithubDeliveryLedger,
-	LedgerCommentPresenter,
-	LedgerMessages,
-	ScopedGithubLedgerCommentClient,
-} from "@meetup-automation/github-delivery-ledger";
-import {
-	ApprovalMessages,
-	ApprovalPresenter,
-	GithubApprovalClient,
-} from "@meetup-automation/github-organizer-approval";
-import { GithubRepositoryDispatchMailGateway } from "@meetup-automation/github-repository-dispatch-mail-gateway";
+import { GithubDeliveryLedgerComposition } from "@meetup-automation/github-delivery-ledger";
+import { GithubOrganizerApprovalComposition } from "@meetup-automation/github-organizer-approval";
+import { GithubRepositoryDispatchMailGatewayComposition } from "@meetup-automation/github-repository-dispatch-mail-gateway";
 import {
 	type AutomationConfig,
+	JourneyCommunicationComposition,
 	ManageMeetupCommunications,
 	ManageMeetupEvent,
 } from "@meetup-automation/journey";
-import { OpenFeedbackTalkResultsGateway } from "@meetup-automation/openfeedback-event-gateway";
+import { OpenfeedbackEventGatewayComposition } from "@meetup-automation/openfeedback-event-gateway";
 import type { ReferentialRepository } from "@meetup-automation/referential";
+import { SlackNotificationGatewayComposition } from "@meetup-automation/slack-notification-gateway";
 import {
-	SlackApprovalNotification,
-	SlackApprovalPresenter,
-} from "@meetup-automation/slack-notification-gateway";
-import { SystemCommunicationClock } from "@meetup-automation/system-clock";
+	SystemClockComposition,
+	SystemCommunicationClock,
+} from "@meetup-automation/system-clock";
 import type { Container } from "inversify";
 import {
 	EventComposition,
@@ -66,23 +58,31 @@ export class CommunicationComposition {
 			.bind<DeliveryLedgerFactory>(COMMUNICATION_SERVICES.ledgerFactory)
 			.toDynamicValue(
 				() => (dispatchAuthorized) =>
-					new GithubDeliveryLedger(
-						new ScopedGithubLedgerCommentClient(
+					new GithubDeliveryLedgerComposition().githubDeliveryLedger(
+						new GithubDeliveryLedgerComposition().scopedGithubLedgerCommentClient(
 							input.client,
 							input.owner,
 							input.repo,
 							input.issueNumber,
 						),
 						{ dispatchAuthorized, authorLogin: input.commentAuthorLogin },
-						new LedgerCommentPresenter(new LedgerMessages(input.locale)),
+						new GithubDeliveryLedgerComposition().ledgerCommentPresenter(
+							new GithubDeliveryLedgerComposition().ledgerMessages(
+								input.locale,
+							),
+						),
 					),
 			);
 		container
 			.bind(PlanCommunications)
-			.toDynamicValue(() => new PlanCommunications());
+			.toDynamicValue(() =>
+				new CommunicationDomainComposition().planCommunications(),
+			);
 		container
 			.bind(SystemCommunicationClock)
-			.toDynamicValue(() => new SystemCommunicationClock());
+			.toDynamicValue(() =>
+				new SystemClockComposition().systemCommunicationClock(),
+			);
 		CommunicationComposition.bindJourney(container, input);
 		return container;
 	}
@@ -111,7 +111,7 @@ export class CommunicationComposition {
 			.bind<MailGateway>(COMMUNICATION_SERVICES.mailGateway)
 			.toDynamicValue((context) => {
 				const client = getOctokit(input.mailingsToken);
-				return new GithubRepositoryDispatchMailGateway(
+				return new GithubRepositoryDispatchMailGatewayComposition().githubRepositoryDispatchMailGateway(
 					{
 						createDispatchEvent: (parameters) =>
 							client.rest.repos.createDispatchEvent(parameters),
@@ -136,23 +136,30 @@ export class CommunicationComposition {
 			const mailGateway = context.get<MailGateway>(
 				COMMUNICATION_SERVICES.mailGateway,
 			);
-			return new ManageMeetupCommunications({
-				feedbackResults: new OpenFeedbackTalkResultsGateway(
-					input.openFeedbackApiKey ?? "",
-				),
+			return new JourneyCommunicationComposition().manageMeetupCommunications({
+				feedbackResults:
+					new OpenfeedbackEventGatewayComposition().openFeedbackTalkResultsGateway(
+						input.openFeedbackApiKey ?? "",
+					),
 				clock,
 				organizerApproval: OrganizerApprovalComposition.create(
-					new GithubApprovalClient(
+					new GithubOrganizerApprovalComposition().githubApprovalClient(
 						input.client,
 						input.owner,
 						input.repo,
 						input.issueNumber,
 					),
 					input.commentAuthorLogin,
-					new ApprovalPresenter(new ApprovalMessages(input.locale)),
-					new SlackApprovalNotification(
+					new GithubOrganizerApprovalComposition().approvalPresenter(
+						new GithubOrganizerApprovalComposition().approvalMessages(
+							input.locale,
+						),
+					),
+					new SlackNotificationGatewayComposition().slackApprovalNotification(
 						input.slackToken,
-						new SlackApprovalPresenter(input.locale),
+						new SlackNotificationGatewayComposition().slackApprovalPresenter(
+							input.locale,
+						),
 					),
 					input.slackOrganizerChannelId,
 				).approval,
@@ -166,7 +173,7 @@ export class CommunicationComposition {
 					SERVICES.eventDocumentCodec,
 				),
 				reconcileCommunications: (dispatchAuthorized) =>
-					new ReconcileCommunications({
+					new CommunicationDomainComposition().reconcileCommunications({
 						planner,
 						clock,
 						mailGateway,

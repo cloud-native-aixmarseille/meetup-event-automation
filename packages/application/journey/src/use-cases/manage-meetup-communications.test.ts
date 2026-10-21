@@ -1,3 +1,4 @@
+import { EventDomainComposition } from "@meetup-automation/event";
 import { describe, expect, it, vi } from "vitest";
 import {
 	catalog,
@@ -6,6 +7,8 @@ import {
 	sourceDocument,
 } from "../../testing/meetup-journey.fixtures.js";
 import type { ManageMeetupCommunicationsResult } from "../communication/contracts.js";
+import { JourneyCommunicationComposition } from "../communication-composition.js";
+import { JourneyPolicyComposition } from "../policy-composition.js";
 import { ManageMeetupCommunications } from "./manage-meetup-communications.js";
 import type { ManageMeetupCommunicationsDependencies } from "./manage-meetup-communications-contracts.js";
 
@@ -47,7 +50,33 @@ describe("communication source consistency", () => {
 				clock: { now: () => new Date("2026-10-01T10:00:00Z") },
 				reconcileCommunications: vi.fn(),
 			};
-			const journey = new ManageMeetupCommunications(dependencies);
+			const journey = new ManageMeetupCommunications(
+				{
+					communicationDispatchPolicy:
+						new JourneyPolicyComposition().communicationDispatchPolicy(),
+					communicationJourneyResults:
+						new JourneyPolicyComposition().communicationJourneyResults(),
+					eventDocumentConcurrency:
+						new EventDomainComposition().eventDocumentConcurrency(),
+					communicationChecklist:
+						new JourneyPolicyComposition().communicationChecklist(),
+					communicationPlaceholders:
+						new JourneyPolicyComposition().communicationPlaceholders(),
+					createCommunicationDeliveryPreparation: (...args) =>
+						new JourneyCommunicationComposition().communicationDeliveryPreparation(
+							...args,
+						),
+					createApproveCommunicationBatch: (...args) =>
+						new JourneyCommunicationComposition().approveCommunicationBatch(
+							...args,
+						),
+					createCompleteCommunicationChecklist: (...args) =>
+						new JourneyCommunicationComposition().completeCommunicationChecklist(
+							...args,
+						),
+				},
+				dependencies,
+			);
 			let result: ManageMeetupCommunicationsResult | undefined;
 			let error: unknown;
 

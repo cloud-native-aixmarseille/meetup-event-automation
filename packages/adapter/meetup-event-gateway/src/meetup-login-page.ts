@@ -1,14 +1,22 @@
-import type { PublicationAuthenticationStatus } from "./meetup-session-status.js";
 import type { Page } from "playwright-core";
 import type { LoginChallenge } from "./hcaptcha-challenge.js";
 import { MeetupBrowserRoutes } from "./meetup-browser-routes.js";
+import type { PublicationAuthenticationStatus } from "./meetup-session-status.js";
 
 const CHALLENGE =
 	'iframe[src*="hcaptcha.com"], iframe[src*="/recaptcha/"], input[autocomplete="one-time-code"]';
 
 /** All reads are bounded; provider text and account details never leave this class. */
+export interface MeetupLoginPageCollaborators {
+	readonly meetupBrowserRoutes: Pick<
+		MeetupBrowserRoutes,
+		"isMeetupLocation" | "isPath"
+	>;
+}
+
 export class MeetupLoginPage {
 	constructor(
+		private readonly collaborators: MeetupLoginPageCollaborators,
 		private readonly page: Page,
 		private readonly challenge: LoginChallenge,
 	) {
@@ -42,7 +50,7 @@ export class MeetupLoginPage {
 		try {
 			await this.page.waitForURL(
 				(url) =>
-					MeetupBrowserRoutes.isMeetupLocation(url) &&
+					this.collaborators.meetupBrowserRoutes.isMeetupLocation(url) &&
 					!url.pathname.startsWith("/login"),
 				{ timeout: 15_000, waitUntil: "domcontentloaded" },
 			);
@@ -73,7 +81,7 @@ export class MeetupLoginPage {
 
 	private isMeetupPath(path: string): boolean {
 		const url = new URL(this.page.url());
-		return MeetupBrowserRoutes.isPath(url, path);
+		return this.collaborators.meetupBrowserRoutes.isPath(url, path);
 	}
 
 	private async hasChallenge(): Promise<boolean> {
@@ -142,3 +150,7 @@ export class MeetupLoginPage {
 		await decline.click();
 	}
 }
+export type MeetupLoginPageArguments =
+	ConstructorParameters<typeof MeetupLoginPage> extends [unknown, ...infer Args]
+		? Args
+		: never;

@@ -1,8 +1,9 @@
-import { describe, expect, it } from "vitest";
 import {
+	ReferentialDomainComposition,
 	type SpeakerId,
 	ValidateReferentialCatalog,
 } from "@meetup-automation/referential";
+import { describe, expect, it } from "vitest";
 import { CommunicationRecipients } from "./communication-recipients.js";
 
 describe("CommunicationRecipients", () => {
@@ -24,11 +25,10 @@ describe("CommunicationRecipients", () => {
 		};
 
 		// Act
-		const recipient = CommunicationRecipients.speakerRecipient(
-			speaker,
-			"Host",
-			"Location",
-		);
+		const recipient = new CommunicationRecipients({
+			createResolveEventReferences: () =>
+				new ReferentialDomainComposition().resolveEventReferences(),
+		}).speakerRecipient(speaker, "Host", "Location");
 
 		// Assert
 		expect(recipient).toMatchObject({
@@ -39,7 +39,18 @@ describe("CommunicationRecipients", () => {
 	});
 	it("greets an imported speaker by display name without fabricating structured names or changing the recipient ID", async () => {
 		// Arrange
-		const validation = await new ValidateReferentialCatalog().execute({
+		const validation = await new ValidateReferentialCatalog({
+			referentialDiagnostics:
+				new ReferentialDomainComposition().referentialDiagnostics(),
+			hostCatalogValidator:
+				new ReferentialDomainComposition().hostCatalogValidator(),
+			speakerCatalogValidator:
+				new ReferentialDomainComposition().speakerCatalogValidator(),
+			speakerSourceFields:
+				new ReferentialDomainComposition().speakerSourceFields(),
+			referentialCatalogOperations:
+				new ReferentialDomainComposition().referentialCatalogOperations(),
+		}).execute({
 			hosts: [],
 			speakers: [
 				{
@@ -55,11 +66,10 @@ describe("CommunicationRecipients", () => {
 		if (!validation.isValid) throw new Error("Invalid synthetic fixture");
 
 		// Act
-		const recipient = CommunicationRecipients.speakerRecipient(
-			validation.catalog.speakers[0],
-			"Host",
-			"Location",
-		);
+		const recipient = new CommunicationRecipients({
+			createResolveEventReferences: () =>
+				new ReferentialDomainComposition().resolveEventReferences(),
+		}).speakerRecipient(validation.catalog.speakers[0], "Host", "Location");
 
 		// Assert
 		expect(recipient.recipientId).toBe("speaker-0001");

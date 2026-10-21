@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createTestEvent } from "../../testing/event.fixtures.js";
+import { EventDomainComposition } from "../dependency-composition.js";
 import { EventReadinessPolicy } from "./readiness.js";
 
 describe("EventReadinessPolicy", () => {
@@ -10,10 +11,9 @@ describe("EventReadinessPolicy", () => {
 		});
 
 		// Act
-		const status = EventReadinessPolicy.evaluateEventReadiness(
-			incomplete,
-			[],
-		).status;
+		const status = new EventReadinessPolicy({
+			eventDiagnostics: new EventDomainComposition().eventDiagnostics(),
+		}).evaluateEventReadiness(incomplete, []).status;
 
 		// Assert
 		expect(status).toBe("incomplete");
@@ -23,17 +23,16 @@ describe("EventReadinessPolicy", () => {
 		// Use the shared fixtures.
 
 		// Act
-		const invalid = EventReadinessPolicy.evaluateEventReadiness(
-			createTestEvent(),
-			[
-				{
-					code: "event.date.invalid",
-					severity: "error",
-					category: "invalid",
-					message: "Invalid date",
-				},
-			],
-		);
+		const invalid = new EventReadinessPolicy({
+			eventDiagnostics: new EventDomainComposition().eventDiagnostics(),
+		}).evaluateEventReadiness(createTestEvent(), [
+			{
+				code: "event.date.invalid",
+				severity: "error",
+				category: "invalid",
+				message: "Invalid date",
+			},
+		]);
 
 		// Assert
 		expect(invalid.status).toBe("invalid");
@@ -45,10 +44,9 @@ describe("EventReadinessPolicy", () => {
 			// No additional setup is needed.
 
 			// Act
-			const readiness = EventReadinessPolicy.evaluateEventReadiness(
-				createTestEvent({ occurrenceStatus }),
-				[],
-			);
+			const readiness = new EventReadinessPolicy({
+				eventDiagnostics: new EventDomainComposition().eventDiagnostics(),
+			}).evaluateEventReadiness(createTestEvent({ occurrenceStatus }), []);
 
 			// Assert
 			expect(readiness).toMatchObject({ status: "incomplete", isReady: false });

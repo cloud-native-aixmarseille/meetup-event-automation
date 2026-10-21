@@ -20,12 +20,12 @@ export type ManualPublicationTask = Readonly<{
 
 export class ManualPublicationPolicy {
 	/** Tracks organizer approvals and manual work required for publication. */
-	static planManualPublicationTasks(
+	planManualPublicationTasks(
 		event: PublicationEvent,
 	): readonly ManualPublicationTask[] {
 		if (event.occurrenceStatus === "cancelled") {
 			return Object.freeze(
-				ManualPublicationPolicy.allTaskKinds().map((kind) => ({
+				this.allTaskKinds().map((kind) => ({
 					kind,
 					status: "not-applicable" as const,
 					reason: "The event is cancelled",
@@ -35,45 +35,45 @@ export class ManualPublicationPolicy {
 
 		const occurrenceConfirmed = event.occurrenceStatus === "held";
 		return Object.freeze([
-			ManualPublicationPolicy.task(
+			this.task(
 				"publish-meetup-event",
 				Boolean(event.references.meetup) && event.meetupPublished,
 				"Approve publishing the event to Meetup",
 			),
-			ManualPublicationPolicy.task(
+			this.task(
 				"publish-community-event",
 				Boolean(event.references.community),
 				"Publish the event to the CNCF community platform",
 			),
-			ManualPublicationPolicy.task(
+			this.task(
 				"create-asset-folder",
 				Boolean(event.references.assets),
 				"Create the event asset folder",
 			),
 			occurrenceConfirmed
-				? ManualPublicationPolicy.task(
+				? this.task(
 						"publish-slides",
 						event.slidesPublished,
 						"Publish post-event slides",
 					)
-				: ManualPublicationPolicy.notApplicable(
+				: this.notApplicable(
 						"publish-slides",
 						"Slides are published only after occurrence is explicitly confirmed",
 					),
 			occurrenceConfirmed
-				? ManualPublicationPolicy.task(
+				? this.task(
 						"import-attendance",
 						event.attendanceImported,
 						"Import post-event attendance",
 					)
-				: ManualPublicationPolicy.notApplicable(
+				: this.notApplicable(
 						"import-attendance",
 						"Attendance is imported only after occurrence is explicitly confirmed",
 					),
 		]);
 	}
 
-	static task(
+	task(
 		kind: ManualPublicationTaskKind,
 		completed: boolean,
 		reason: string,
@@ -85,14 +85,14 @@ export class ManualPublicationPolicy {
 		};
 	}
 
-	static notApplicable(
+	notApplicable(
 		kind: ManualPublicationTaskKind,
 		reason: string,
 	): ManualPublicationTask {
 		return { kind, status: "not-applicable", reason };
 	}
 
-	static allTaskKinds(): readonly ManualPublicationTaskKind[] {
+	allTaskKinds(): readonly ManualPublicationTaskKind[] {
 		return [
 			"publish-meetup-event",
 			"publish-community-event",

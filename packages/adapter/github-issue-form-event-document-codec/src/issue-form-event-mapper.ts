@@ -1,8 +1,8 @@
 import {
 	EVENT_SCHEMA_VERSION,
 	type EventDiagnostic,
-	EventDiagnostics,
-	EventOccurrenceParser,
+	type EventDiagnostics,
+	type EventOccurrenceParser,
 	type MeetupEvent,
 	OCCURRENCE_STATUS_LABELS,
 	OCCURRENCE_STATUSES,
@@ -12,15 +12,31 @@ import type {
 	IssueFormEventInput,
 	IssueFormEventResult,
 } from "./issue-form-event-input.js";
-import { IssueFormFields } from "./issue-form-fields.js";
+import type { IssueFormFields } from "./issue-form-fields.js";
+
+export interface IssueFormEventMapperCollaborators {
+	readonly eventDiagnostics: Pick<EventDiagnostics, "diagnostic">;
+	readonly issueFormFields: Pick<
+		IssueFormFields,
+		"readOptionalString" | "readString" | "readHost" | "readAgenda"
+	>;
+	readonly eventOccurrenceParser: Pick<
+		EventOccurrenceParser,
+		"readOccurrenceStatus"
+	>;
+}
 
 export class IssueFormEventMapper {
-	static map(dto: IssueFormEventInput): IssueFormEventResult {
+	constructor(
+		private readonly collaborators: IssueFormEventMapperCollaborators,
+	) {}
+
+	map(dto: IssueFormEventInput): IssueFormEventResult {
 		const diagnostics: EventDiagnostic[] = [];
 		const body = dto.parsedBody;
 
 		const { eventTitle, date, description, host, agenda, occurrenceStatus } =
-			IssueFormEventMapper.fields(dto, diagnostics);
+			this.fields(dto, diagnostics);
 
 		const event: MeetupEvent = {
 			schemaVersion: EVENT_SCHEMA_VERSION,
@@ -36,10 +52,7 @@ export class IssueFormEventMapper {
 			description,
 			host,
 			agenda,
-			publicationLinks: IssueFormEventMapper.publicationLinks(
-				body,
-				diagnostics,
-			),
+			publicationLinks: this.publicationLinks(body, diagnostics),
 			occurrenceStatus,
 			timeZone: dto.timeZone ?? "Europe/Paris",
 			confirmations: {
@@ -60,7 +73,7 @@ export class IssueFormEventMapper {
 		};
 
 		diagnostics.unshift(
-			EventDiagnostics.diagnostic({
+			this.collaborators.eventDiagnostics.diagnostic({
 				code: "event.document.legacy-schema",
 				severity: "info",
 				category: "migration",
@@ -72,65 +85,69 @@ export class IssueFormEventMapper {
 		return { event, diagnostics };
 	}
 
-	private static publicationLinks(
+	private publicationLinks(
 		body: IssueFormEventInput["parsedBody"],
 		diagnostics: EventDiagnostic[],
 	) {
 		return {
-			meetup: IssueFormFields.readOptionalString(
+			meetup: this.collaborators.issueFormFields.readOptionalString(
 				body.meetup_link,
 				"meetup_link",
 				diagnostics,
 			),
-			community: IssueFormFields.readOptionalString(
+			community: this.collaborators.issueFormFields.readOptionalString(
 				body.cncf_link,
 				"cncf_link",
 				diagnostics,
 			),
-			feedback: IssueFormFields.readOptionalString(
+			feedback: this.collaborators.issueFormFields.readOptionalString(
 				body.openfeedback_link,
 				"openfeedback_link",
 				diagnostics,
 			),
-			assets: IssueFormFields.readOptionalString(
+			assets: this.collaborators.issueFormFields.readOptionalString(
 				body.drive_link,
 				"drive_link",
 				diagnostics,
 			),
 		};
 	}
-	private static fields(
-		dto: IssueFormEventInput,
-		diagnostics: EventDiagnostic[],
-	) {
+	private fields(dto: IssueFormEventInput, diagnostics: EventDiagnostic[]) {
 		const body = dto.parsedBody;
-		const eventTitle = IssueFormFields.readString(
+		const eventTitle = this.collaborators.issueFormFields.readString(
 			body.event_title,
 			"event_title",
 			diagnostics,
 		);
-		const date = IssueFormFields.readString(
+		const date = this.collaborators.issueFormFields.readString(
 			body.event_date,
 			"event_date",
 			diagnostics,
 		);
-		const description = IssueFormFields.readString(
+		const description = this.collaborators.issueFormFields.readString(
 			body.event_description,
 			"event_description",
 			diagnostics,
 		);
-		const host = IssueFormFields.readHost(body.hoster, diagnostics);
-		const agenda = IssueFormFields.readAgenda(body.agenda, diagnostics);
-		const occurrenceStatus = EventOccurrenceParser.readOccurrenceStatus(
-			dto.labels ?? [],
-			dto.issueState ?? "open",
-			IssueFormEventMapper.occurrenceField(dto, diagnostics),
+		const host = this.collaborators.issueFormFields.readHost(
+			body.hoster,
 			diagnostics,
 		);
+		const agenda = this.collaborators.issueFormFields.readAgenda(
+			body.agenda,
+			diagnostics,
+		);
+		const occurrenceStatus =
+			this.collaborators.eventOccurrenceParser.readOccurrenceStatus(
+				dto.labels ?? [],
+				dto.issueState ?? "open",
+				this.occurrenceField(dto, diagnostics),
+				diagnostics,
+			);
 		return { eventTitle, date, description, host, agenda, occurrenceStatus };
 	}
 
-	private static occurrenceField(
+	private occurrenceField(
 		dto: IssueFormEventInput,
 		diagnostics: EventDiagnostic[],
 	): OccurrenceStatus | undefined {
@@ -147,7 +164,7 @@ export class IssueFormEventMapper {
 		const status = OCCURRENCE_STATUSES.find((candidate) => candidate === value);
 		if (status) return status;
 		diagnostics.push(
-			EventDiagnostics.diagnostic({
+			this.collaborators.eventDiagnostics.diagnostic({
 				code: "event.occurrence-status.invalid",
 				severity: "error",
 				category: "invalid",

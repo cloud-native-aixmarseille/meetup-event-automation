@@ -1,13 +1,13 @@
-import {
-	type EventClock,
-	type EventDocument,
-	type EventDocumentCodec,
-	type EventIdentity,
-	type EventPublicationLinks,
-	type EventRepository,
+import type {
+	EventClock,
+	EventDocument,
+	EventDocumentCodec,
+	EventDocumentConcurrency,
+	EventIdentity,
+	EventPublicationLinks,
+	EventRepository,
 	EventRepositoryPatches,
 	MeetupPublicationChecklist,
-	ReconcileEvent,
 } from "@meetup-automation/event";
 import {
 	MeetupEventUrl,
@@ -17,16 +17,19 @@ import {
 	type ScheduledEvent,
 	ScheduledEventError,
 	type ScheduledEventGateway,
-	ScheduledEventPolicy,
+	type ScheduledEventPolicy,
 } from "@meetup-automation/publication";
 import type { OrganizerApproval } from "../ports/organizer-approval.js";
-import { MeetupPublicationApproval } from "./meetup-publication-approval.js";
-import { DiagnosticPolicy } from "../result/diagnostic-policy.js";
+import type { DiagnosticPolicy } from "../result/diagnostic-policy.js";
 import type { PublicDiagnostic } from "../result/result-envelope.js";
 import type { ManageMeetupEvent } from "./manage-meetup-event.js";
-import {
+import type {
+	MeetupPublicationApproval,
+	MeetupPublicationApprovalArguments,
+} from "./meetup-publication-approval.js";
+import type {
 	MeetupPublicationProjection,
-	type MeetupPublicationSettings,
+	MeetupPublicationSettings,
 } from "./meetup-publication-projection.js";
 
 export type MeetupPublicationResult = Readonly<{
@@ -45,8 +48,33 @@ const PUBLICATION_LINK_FIELDS: readonly string[] = [
 	"publicationLinks.feedback",
 ] satisfies `publicationLinks.${keyof EventPublicationLinks}`[];
 
+export interface ManageMeetupPublicationCollaborators {
+	readonly diagnosticPolicy: Pick<DiagnosticPolicy, "isTechnicalFailure">;
+	readonly meetupPublicationProjection: Pick<
+		MeetupPublicationProjection,
+		"create"
+	>;
+	readonly scheduledEventPolicy: Pick<ScheduledEventPolicy, "valid">;
+	readonly meetupPublicationChecklist: Pick<
+		MeetupPublicationChecklist,
+		"withStatus"
+	>;
+	readonly eventRepositoryPatches: Pick<
+		EventRepositoryPatches,
+		"eventRepositoryPatchIsEmpty"
+	>;
+	readonly eventDocumentConcurrency: Pick<
+		EventDocumentConcurrency,
+		"ensureEventDocumentIsCurrent"
+	>;
+	readonly createMeetupPublicationApproval: (
+		...args: MeetupPublicationApprovalArguments
+	) => MeetupPublicationApproval;
+}
+
 export class ManageMeetupPublication {
 	constructor(
+		private readonly collaborators: ManageMeetupPublicationCollaborators,
 		private readonly dependencies: {
 			repository: EventRepository;
 			codec: EventDocumentCodec;
@@ -69,7 +97,13 @@ export class ManageMeetupPublication {
 			sourceDocument: source,
 		});
 		if (evaluation.skipped) return this.result("skipped", "inactive");
-		if (evaluation.diagnostics.some(DiagnosticPolicy.isTechnicalFailure))
+		if (
+			evaluation.diagnostics.some(
+				this.collaborators.diagnosticPolicy.isTechnicalFailure.bind(
+					this.collaborators.diagnosticPolicy,
+				),
+			)
+		)
 			return this.result("blocked", "source");
 		const event = evaluation.event;
 		if (
@@ -77,7 +111,7 @@ export class ManageMeetupPublication {
 			["cancelled", "postponed", "held"].includes(event.occurrenceStatus ?? "")
 		)
 			return this.result("skipped", "inactive");
-		const draft = MeetupPublicationProjection.create(
+		const draft = this.collaborators.meetupPublicationProjection.create(
 			event,
 			this.dependencies.settings,
 		);
@@ -88,7 +122,10 @@ export class ManageMeetupPublication {
 					item.field === "Communication",
 			) ||
 			!draft ||
-			!ScheduledEventPolicy.valid(draft, this.dependencies.clock.now()) ||
+			!this.collaborators.scheduledEventPolicy.valid(
+				draft,
+				this.dependencies.clock.now(),
+			) ||
 			evaluation.diagnostics.some(
 				(item) =>
 					item.severity === "error" &&
@@ -150,7 +187,7 @@ export class ManageMeetupPublication {
 	): Promise<EventDocument> {
 		await this.ensureCurrent(source);
 		const event = this.dependencies.codec.decode(source).event;
-		const updated = MeetupPublicationChecklist.withStatus(
+		const updated = this.collaborators.meetupPublicationChecklist.withStatus(
 			event,
 			saved.status === "published",
 		);
@@ -158,7 +195,11 @@ export class ManageMeetupPublication {
 			...updated,
 			publicationLinks: { ...event.publicationLinks, meetup: saved.url },
 		});
-		if (!EventRepositoryPatches.eventRepositoryPatchIsEmpty(patch)) {
+		if (
+			!this.collaborators.eventRepositoryPatches.eventRepositoryPatchIsEmpty(
+				patch,
+			)
+		) {
 			await this.ensureCurrent(source);
 			await this.dependencies.repository.applyPatch(source.identity, patch);
 		}
@@ -174,7 +215,7 @@ export class ManageMeetupPublication {
 		if (saved.status === "published")
 			return { status: "updated", diagnostics: [] };
 		await this.ensureCurrent(current);
-		const approval = new MeetupPublicationApproval(
+		const approval = this.collaborators.createMeetupPublicationApproval(
 			this.dependencies.approval,
 			this.dependencies.clock,
 		);
@@ -196,7 +237,12 @@ export class ManageMeetupPublication {
 			saved.url,
 			async () => {
 				await this.ensureCurrent(current);
-				if (!ScheduledEventPolicy.valid(event, this.dependencies.clock.now()))
+				if (
+					!this.collaborators.scheduledEventPolicy.valid(
+						event,
+						this.dependencies.clock.now(),
+					)
+				)
 					throw new ScheduledEventError("verification");
 				await approval.requireApproved(event, saved.url);
 				await this.ensureCurrent(current);
@@ -209,7 +255,7 @@ export class ManageMeetupPublication {
 	}
 
 	private ensureCurrent(source: EventDocument): Promise<void> {
-		return ReconcileEvent.ensureEventDocumentIsCurrent(
+		return this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
 			this.dependencies.repository,
 			source.identity,
 			source,
@@ -244,3 +290,10 @@ export class ManageMeetupPublication {
 		};
 	}
 }
+export type ManageMeetupPublicationArguments =
+	ConstructorParameters<typeof ManageMeetupPublication> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

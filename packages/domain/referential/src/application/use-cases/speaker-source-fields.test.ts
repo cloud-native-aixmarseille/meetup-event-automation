@@ -1,17 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { speakerRecord } from "../../../testing/referential.fixtures.js";
+import { ReferentialDomainComposition } from "../../dependency-composition.js";
 import type { ReferentialDiagnostic } from "../../domain/referential-diagnostic.js";
-import { SpeakerCatalogValidator } from "./speaker-catalog-validator.js";
 import { SpeakerSourceFields } from "./speaker-source-fields.js";
 
 describe("SpeakerSourceFields", () => {
 	it("recognizes duplicate source identities independently of property order", () => {
 		// Arrange
 		const diagnostics: ReferentialDiagnostic[] = [];
-		const [speaker] = SpeakerCatalogValidator.validateSpeakers(
-			[speakerRecord()],
-			[],
-		);
+		const [speaker] = new ReferentialDomainComposition()
+			.speakerCatalogValidator()
+			.validateSpeakers([speakerRecord()], []);
 		const first = {
 			...speaker,
 			sourceIdentity: {
@@ -30,7 +29,7 @@ describe("SpeakerSourceFields", () => {
 		};
 
 		// Act
-		SpeakerSourceFields.validateMappings([first, second], diagnostics);
+		new SpeakerSourceFields().validateMappings([first, second], diagnostics);
 
 		// Assert
 		expect(diagnostics).toEqual([
@@ -45,7 +44,7 @@ describe("SpeakerSourceFields", () => {
 		const diagnostics: ReferentialDiagnostic[] = [];
 
 		// Act
-		const result = SpeakerSourceFields.read(
+		const result = new SpeakerSourceFields().read(
 			speakerRecord({
 				sourceProvider: "conference-hall",
 				sourceSpeakerId: "private-id",
@@ -69,7 +68,7 @@ describe("SpeakerSourceFields", () => {
 		const diagnostics: ReferentialDiagnostic[] = [];
 
 		// Act
-		const result = SpeakerSourceFields.read(
+		const result = new SpeakerSourceFields().read(
 			speakerRecord({ pictureUrl }),
 			0,
 			diagnostics,

@@ -1,6 +1,9 @@
 import type { EventDiagnostic } from "@meetup-automation/event";
 import { FIELD_ORDER, GUIDANCE } from "./diagnostic-guidance.js";
-import { EventCommentMessages } from "./i18n/event-comment-messages.js";
+import type {
+	EventCommentMessages,
+	EventCommentMessagesArguments,
+} from "./i18n/event-comment-messages.js";
 
 export type DiagnosticPresentation = Readonly<{
 	field: string;
@@ -8,8 +11,18 @@ export type DiagnosticPresentation = Readonly<{
 	order: number;
 }>;
 
+export interface DiagnosticPresenterCollaborators {
+	readonly createEventCommentMessages: (
+		...args: EventCommentMessagesArguments
+	) => EventCommentMessages;
+}
+
 export class DiagnosticPresenter {
-	private static readonly FIELD_ALIASES = new Map([
+	constructor(
+		private readonly collaborators: DiagnosticPresenterCollaborators,
+	) {}
+
+	private readonly FIELD_ALIASES = new Map([
 		...FIELD_ORDER.map((field): [string, string] => [field, field]),
 		["eventTitle", "Event Title"],
 		["event_title", "Event Title"],
@@ -35,9 +48,9 @@ export class DiagnosticPresenter {
 		["event_status", "Event Status"],
 	]);
 
-	static presentDiagnostic(
+	presentDiagnostic(
 		item: EventDiagnostic,
-		messages = new EventCommentMessages(),
+		messages = this.collaborators.createEventCommentMessages(),
 	): DiagnosticPresentation {
 		const guidance = GUIDANCE.get(item.code);
 		const referential = /^referential\.(host|contact|speaker)\./.test(
@@ -45,11 +58,7 @@ export class DiagnosticPresenter {
 		);
 		const fallback =
 			guidance?.[0] ?? (referential ? "Referentials" : "Meetup issue");
-		const [field, section] = DiagnosticPresenter.publicField(
-			item.field,
-			fallback,
-			messages,
-		);
+		const [field, section] = this.publicField(item.field, fallback, messages);
 		const message = guidance
 			? messages.t(guidance[1])
 			: messages.t(referential ? "comment.referential" : "comment.unknown");
@@ -58,12 +67,12 @@ export class DiagnosticPresenter {
 	}
 
 	/** Only known issue headings and numeric agenda positions can reach Markdown. */
-	static publicField(
+	publicField(
 		field: string | undefined,
 		fallback: string,
-		messages = new EventCommentMessages(),
+		messages = this.collaborators.createEventCommentMessages(),
 	): readonly [string, string] {
-		const known = DiagnosticPresenter.FIELD_ALIASES.get(field ?? "");
+		const known = this.FIELD_ALIASES.get(field ?? "");
 		if (known) return [known, known];
 		const agenda = field?.match(
 			/^agenda\.(\d{1,6})(?:\.(speakers|description)(?:\.(\d{1,6}))?)?$/,

@@ -1,3 +1,4 @@
+export { SlackNotificationGatewayComposition } from "./dependency-composition.js";
 export { SlackApprovalNotification } from "./slack-approval-notification.js";
 export { SlackApprovalPresenter } from "./slack-approval-presenter.js";
 export { SlackAttentionNotification } from "./slack-attention-notification.js";

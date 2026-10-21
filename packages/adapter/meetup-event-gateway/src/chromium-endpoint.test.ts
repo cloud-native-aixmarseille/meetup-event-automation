@@ -37,7 +37,7 @@ describe("Chromium endpoint discovery", () => {
 		);
 
 		// Act
-		const endpoint = await ChromiumEndpoint.read(browser);
+		const endpoint = await new ChromiumEndpoint().read(browser);
 
 		// Assert
 		expect(endpoint).toBe("ws://127.0.0.1:43210/devtools/browser/abc-123");
@@ -53,7 +53,7 @@ describe("Chromium endpoint discovery", () => {
 			);
 
 			// Act
-			const result = ChromiumEndpoint.read(browser);
+			const result = new ChromiumEndpoint().read(browser);
 
 			// Assert
 			await expect(result).rejects.toThrow("Browser endpoint unavailable.");
@@ -67,7 +67,7 @@ describe("Chromium endpoint discovery", () => {
 		session.send.mockResolvedValue({ arguments: [] });
 
 		// Act
-		const result = ChromiumEndpoint.read(browser);
+		const result = new ChromiumEndpoint().read(browser);
 
 		// Assert
 		await expect(result).rejects.toThrow("Browser profile unavailable.");

@@ -1,4 +1,6 @@
+import { PublicationDomainComposition } from "@meetup-automation/publication";
 import { describe, expect, it, vi } from "vitest";
+import { KuttFeedbackLinkGatewayComposition } from "./dependency-composition.js";
 import { KuttFeedbackLinkGateway } from "./kutt-feedback-link-gateway.js";
 
 const baseUrl = "https://short.example.test";
@@ -23,7 +25,17 @@ describe("Kutt feedback link updates", () => {
 
 		// Act
 		const createGateway = () =>
-			new KuttFeedbackLinkGateway(key, id, baseUrl, fetcher);
+			new KuttFeedbackLinkGateway(
+				{
+					feedbackPolicy: new PublicationDomainComposition().feedbackPolicy(),
+					kuttLinkResponse:
+						new KuttFeedbackLinkGatewayComposition().kuttLinkResponse(),
+				},
+				key,
+				id,
+				baseUrl,
+				fetcher,
+			);
 
 		// Assert
 		expect(createGateway).toThrow(
@@ -49,7 +61,17 @@ describe("Kutt feedback link updates", () => {
 
 		// Act
 		const createGateway = () =>
-			new KuttFeedbackLinkGateway("synthetic-key", link.id, value, fetcher);
+			new KuttFeedbackLinkGateway(
+				{
+					feedbackPolicy: new PublicationDomainComposition().feedbackPolicy(),
+					kuttLinkResponse:
+						new KuttFeedbackLinkGatewayComposition().kuttLinkResponse(),
+				},
+				"synthetic-key",
+				link.id,
+				value,
+				fetcher,
+			);
 
 		// Assert
 		expect(createGateway).toThrow(
@@ -72,6 +94,11 @@ describe("Kutt feedback link updates", () => {
 				.mockResolvedValueOnce(Response.json({ total: 1, data: [link] }))
 				.mockResolvedValueOnce(Response.json({ ...link, target }));
 			const gateway = new KuttFeedbackLinkGateway(
+				{
+					feedbackPolicy: new PublicationDomainComposition().feedbackPolicy(),
+					kuttLinkResponse:
+						new KuttFeedbackLinkGatewayComposition().kuttLinkResponse(),
+				},
 				"synthetic-key",
 				link.id,
 				value,
@@ -108,6 +135,11 @@ describe("Kutt feedback link updates", () => {
 			.mockResolvedValueOnce(Response.json({ total: 101, data: [link] }))
 			.mockResolvedValueOnce(Response.json({ ...link, target }));
 		const gateway = new KuttFeedbackLinkGateway(
+			{
+				feedbackPolicy: new PublicationDomainComposition().feedbackPolicy(),
+				kuttLinkResponse:
+					new KuttFeedbackLinkGatewayComposition().kuttLinkResponse(),
+			},
 			"synthetic-key",
 			link.id,
 			baseUrl,
@@ -145,6 +177,11 @@ describe("Kutt feedback link updates", () => {
 				Response.json({ total: 1, data: [{ ...link, target }] }),
 			);
 		const gateway = new KuttFeedbackLinkGateway(
+			{
+				feedbackPolicy: new PublicationDomainComposition().feedbackPolicy(),
+				kuttLinkResponse:
+					new KuttFeedbackLinkGatewayComposition().kuttLinkResponse(),
+			},
 			"synthetic-key",
 			link.id,
 			baseUrl,
@@ -165,6 +202,11 @@ describe("Kutt feedback link updates", () => {
 			.fn<typeof fetch>()
 			.mockResolvedValue(Response.json({ total: 0, data: [] }));
 		const gateway = new KuttFeedbackLinkGateway(
+			{
+				feedbackPolicy: new PublicationDomainComposition().feedbackPolicy(),
+				kuttLinkResponse:
+					new KuttFeedbackLinkGatewayComposition().kuttLinkResponse(),
+			},
 			"synthetic-key",
 			link.id,
 			baseUrl,
@@ -187,6 +229,11 @@ describe("Kutt feedback link updates", () => {
 				new Response("private-response synthetic-key", { status }),
 			);
 		const gateway = new KuttFeedbackLinkGateway(
+			{
+				feedbackPolicy: new PublicationDomainComposition().feedbackPolicy(),
+				kuttLinkResponse:
+					new KuttFeedbackLinkGatewayComposition().kuttLinkResponse(),
+			},
 			"synthetic-key",
 			link.id,
 			baseUrl,
@@ -208,6 +255,11 @@ describe("Kutt feedback link updates", () => {
 			.fn<typeof fetch>()
 			.mockRejectedValue(new Error("synthetic-key"));
 		const gateway = new KuttFeedbackLinkGateway(
+			{
+				feedbackPolicy: new PublicationDomainComposition().feedbackPolicy(),
+				kuttLinkResponse:
+					new KuttFeedbackLinkGatewayComposition().kuttLinkResponse(),
+			},
 			"synthetic-key",
 			link.id,
 			baseUrl,

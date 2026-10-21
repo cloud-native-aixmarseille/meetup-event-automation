@@ -2,15 +2,13 @@ import type { OrganizerApprovalDetails } from "@meetup-automation/journey";
 
 /** Fit public email facts into GitHub's comment and escaped metadata budget. */
 export class ApprovalDetailsPreview {
-	static create(details: OrganizerApprovalDetails): OrganizerApprovalDetails {
+	create(details: OrganizerApprovalDetails): OrganizerApprovalDetails {
 		const emails = details.emails.slice(0, 20).map((email) => ({
 			...email,
-			recipientName: ApprovalDetailsPreview.text(email.recipientName),
+			recipientName: this.text(email.recipientName),
 			links: email.links.slice(0, 8).map((link) => ({
 				...link,
-				...(link.title === undefined
-					? {}
-					: { title: ApprovalDetailsPreview.text(link.title) }),
+				...(link.title === undefined ? {} : { title: this.text(link.title) }),
 			})),
 			omittedLinks: email.omittedLinks + Math.max(email.links.length - 8, 0),
 		}));
@@ -33,7 +31,7 @@ export class ApprovalDetailsPreview {
 		};
 	}
 
-	private static text(value: string): string {
+	private text(value: string): string {
 		const normalized = value.trim().replace(/\s+/g, " ");
 		return normalized.length <= 200
 			? normalized

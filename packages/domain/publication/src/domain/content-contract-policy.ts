@@ -7,55 +7,52 @@ import {
 	type TextField,
 } from "./asset-content.js";
 import { ContentError } from "./content-error.js";
-import { ContentTextKey } from "./content-text-key.js";
+import type { ContentTextKey } from "./content-text-key.js";
 
 /** Constructs a valid owned content contract; no transport decoding or effects. */
+export interface ContentContractPolicyCollaborators {
+	readonly contentTextKey: Pick<ContentTextKey, "of">;
+}
+
 export class ContentContractPolicy {
-	static parse(
-		value: unknown,
-		kind: string,
-		mimeType: string,
-	): ContentContract {
+	constructor(
+		private readonly collaborators: ContentContractPolicyCollaborators,
+	) {}
+
+	parse(value: unknown, kind: string, mimeType: string): ContentContract {
 		if (
-			!ContentContractPolicy.record(value) ||
+			!this.record(value) ||
 			value.version !== 1 ||
 			typeof value.kind !== "string" ||
 			value.kind !== kind ||
-			!ContentContractPolicy.name(value.revision) ||
+			!this.name(value.revision) ||
 			!Array.isArray(value.fields) ||
 			!value.fields.length ||
 			value.fields.length > 100 ||
-			!ContentContractPolicy.keys(value, [
-				"version",
-				"revision",
-				"kind",
-				"fields",
-			]) ||
-			!ContentContractPolicy.supported(mimeType)
+			!this.keys(value, ["version", "revision", "kind", "fields"]) ||
+			!this.supported(mimeType)
 		)
 			throw new ContentError("contract");
 		const fields = value.fields.map((field: unknown) =>
-			ContentContractPolicy.field(field, mimeType),
+			this.field(field, mimeType),
 		);
 		const keys = fields.map((field) =>
-			field.type === "text" ? ContentTextKey.of(field) : field.slot,
+			field.type === "text"
+				? this.collaborators.contentTextKey.of(field)
+				: field.slot,
 		);
 		if (new Set(keys).size !== keys.length) throw new ContentError("contract");
 		return { version: 1, kind: value.kind, revision: value.revision, fields };
 	}
 
-	private static field(
-		value: unknown,
-		mimeType: string,
-	): TextField | ImageField {
-		if (!ContentContractPolicy.record(value))
-			throw new ContentError("contract");
+	private field(value: unknown, mimeType: string): TextField | ImageField {
+		if (!this.record(value)) throw new ContentError("contract");
 		return value.type === "text"
-			? ContentContractPolicy.textField(value)
-			: ContentContractPolicy.image(value, mimeType);
+			? this.textField(value)
+			: this.image(value, mimeType);
 	}
 
-	private static textField(field: Record<string, unknown>): TextField {
+	private textField(field: Record<string, unknown>): TextField {
 		const token = [...TEXT_TOKENS, ...SLOTTED_TEXT_TOKENS].find(
 			(item) => item === field.token,
 		);
@@ -63,18 +60,10 @@ export class ContentContractPolicy {
 		if (
 			!token ||
 			typeof field.required !== "boolean" ||
-			(slotted
-				? !ContentContractPolicy.name(field.slot)
-				: field.slot !== undefined) ||
-			!ContentContractPolicy.keys(field, [
-				"type",
-				"token",
-				"slot",
-				"required",
-				"fallback",
-			]) ||
+			(slotted ? !this.name(field.slot) : field.slot !== undefined) ||
+			!this.keys(field, ["type", "token", "slot", "required", "fallback"]) ||
 			((!field.required || field.fallback !== undefined) &&
-				!ContentContractPolicy.text(field.fallback))
+				!this.text(field.fallback))
 		)
 			throw new ContentError("contract");
 		const result: TextField = {
@@ -86,22 +75,19 @@ export class ContentContractPolicy {
 				? { fallback: field.fallback }
 				: {}),
 		};
-		if (!ContentContractPolicy.name(ContentTextKey.of(result)))
+		if (!this.name(this.collaborators.contentTextKey.of(result)))
 			throw new ContentError("contract");
 		return result;
 	}
 
-	private static image(
-		field: Record<string, unknown>,
-		mimeType: string,
-	): ImageField {
+	private image(field: Record<string, unknown>, mimeType: string): ImageField {
 		if (
 			field.type !== "image" ||
 			(field.token !== "speaker.picture" && field.token !== "host.logo") ||
 			typeof field.required !== "boolean" ||
-			!ContentContractPolicy.name(field.slot) ||
-			!ContentContractPolicy.name(field.objectId) ||
-			!ContentContractPolicy.keys(field, [
+			!this.name(field.slot) ||
+			!this.name(field.objectId) ||
+			!this.keys(field, [
 				"type",
 				"token",
 				"slot",
@@ -117,17 +103,13 @@ export class ContentContractPolicy {
 		const slides = mimeType === "application/vnd.google-apps.presentation";
 		if (
 			!(slides
-				? ContentContractPolicy.name(field.pageId) && field.tabId === undefined
-				: ContentContractPolicy.name(field.tabId) &&
-					field.pageId === undefined) ||
+				? this.name(field.pageId) && field.tabId === undefined
+				: this.name(field.tabId) && field.pageId === undefined) ||
 			(field.fit !== "CENTER_CROP" &&
 				!(slides && field.fit === "CENTER_INSIDE"))
 		)
 			throw new ContentError("contract");
-		const fallback = ContentContractPolicy.fallback(
-			field.fallback,
-			field.required,
-		);
+		const fallback = this.fallback(field.fallback, field.required);
 		return {
 			type: "image",
 			token: field.token,
@@ -141,29 +123,26 @@ export class ContentContractPolicy {
 		};
 	}
 
-	private static fallback(
-		value: unknown,
-		required: boolean,
-	): ImageSource | undefined {
+	private fallback(value: unknown, required: boolean): ImageSource | undefined {
 		if (value === undefined && required) return undefined;
 		if (
-			!ContentContractPolicy.record(value) ||
-			!ContentContractPolicy.text(value.url) ||
-			!ContentContractPolicy.text(value.description) ||
-			!ContentContractPolicy.keys(value, ["url", "description"])
+			!this.record(value) ||
+			!this.text(value.url) ||
+			!this.text(value.description) ||
+			!this.keys(value, ["url", "description"])
 		)
 			throw new ContentError("contract");
 		return { url: value.url, description: value.description };
 	}
 
-	static supported(mimeType: string): boolean {
+	supported(mimeType: string): boolean {
 		return [
 			"application/vnd.google-apps.presentation",
 			"application/vnd.google-apps.document",
 		].includes(mimeType);
 	}
 
-	static text(value: unknown): value is string {
+	text(value: unknown): value is string {
 		return (
 			typeof value === "string" &&
 			value.trim().length > 0 &&
@@ -178,15 +157,15 @@ export class ContentContractPolicy {
 		);
 	}
 
-	static name(value: unknown): value is string {
+	name(value: unknown): value is string {
 		return typeof value === "string" && /^[\w.:-]{1,100}$/.test(value);
 	}
 
-	static keys(value: object, keys: readonly string[]): boolean {
+	keys(value: object, keys: readonly string[]): boolean {
 		return Object.keys(value).every((key) => keys.includes(key));
 	}
 
-	static record(value: unknown): value is Record<string, unknown> {
+	record(value: unknown): value is Record<string, unknown> {
 		return value !== null && typeof value === "object" && !Array.isArray(value);
 	}
 }

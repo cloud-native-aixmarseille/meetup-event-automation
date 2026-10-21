@@ -1,4 +1,6 @@
+import { PublicationDomainComposition } from "@meetup-automation/publication";
 import { describe, expect, it } from "vitest";
+import { GithubActionsComposition } from "./dependency-composition.js";
 import { MeetupPublicationConfiguration } from "./meetup-publication-configuration.js";
 
 const config = {
@@ -22,7 +24,11 @@ describe("Meetup publication configuration", () => {
 		};
 
 		// Act
-		const result = MeetupPublicationConfiguration.parse(input);
+		const result = new MeetupPublicationConfiguration({
+			runtimeInput: new GithubActionsComposition().runtimeInput(),
+			scheduledEventPolicy:
+				new PublicationDomainComposition().scheduledEventPolicy(),
+		}).parse(input);
 
 		// Assert
 		expect(result).toEqual({
@@ -47,7 +53,12 @@ describe("Meetup publication configuration", () => {
 		{ ...config, venues: { host: { name: "Venue", city: "" } } },
 	])("rejects incomplete or invalid configuration %j", (input) => {
 		// Arrange
-		const parse = () => MeetupPublicationConfiguration.parse(input);
+		const parse = () =>
+			new MeetupPublicationConfiguration({
+				runtimeInput: new GithubActionsComposition().runtimeInput(),
+				scheduledEventPolicy:
+					new PublicationDomainComposition().scheduledEventPolicy(),
+			}).parse(input);
 
 		// Act
 		let error: unknown;

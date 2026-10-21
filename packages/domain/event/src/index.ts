@@ -16,6 +16,7 @@ export {
 	EventRepositoryPatches,
 } from "./application/ports/event-repository.js";
 export { EventConcurrentModificationError } from "./application/use-cases/event-concurrent-modification-error.js";
+export { EventDocumentConcurrency } from "./application/use-cases/event-document-concurrency.js";
 export { EventNotFoundError } from "./application/use-cases/event-not-found-error.js";
 export { EventPaginationError } from "./application/use-cases/event-pagination-error.js";
 export { ListActiveEvents } from "./application/use-cases/list-active-events.js";
@@ -25,13 +26,17 @@ export type {
 	ListActiveEventsInput,
 	ListActiveEventsResult,
 } from "./application/use-cases/list-active-events-contracts.js";
-export { ReconcileEvent } from "./application/use-cases/reconcile-event.js";
+export {
+	ReconcileEvent,
+	type ReconcileEventArguments,
+} from "./application/use-cases/reconcile-event.js";
 export type {
 	ReconcileEventDependencies,
 	ReconcileEventInput,
 	ReconcileEventMode,
 	ReconcileEventResult,
 } from "./application/use-cases/reconcile-event-contracts.js";
+export { EventDomainComposition } from "./dependency-composition.js";
 export {
 	type DiagnosticCategory,
 	type DiagnosticSeverity,
@@ -46,7 +51,10 @@ export { EventHostRule } from "./domain/event-host-rule.js";
 export { EventLinksRule } from "./domain/event-links-rule.js";
 export { EventOccurrenceParser } from "./domain/event-occurrence-parser.js";
 export { EventRuleConfigurationError } from "./domain/event-rule-configuration-error.js";
-export { EventRuleEngine } from "./domain/event-rule-engine.js";
+export {
+	EventRuleEngine,
+	type EventRuleEngineArguments,
+} from "./domain/event-rule-engine.js";
 export { EventRuleFactory } from "./domain/event-rule-factory.js";
 export { EventTitleRule } from "./domain/event-title-rule.js";
 export { IssueTitleRule } from "./domain/issue-title-rule.js";

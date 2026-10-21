@@ -2,11 +2,19 @@ import type {
 	StoredEntry,
 	StoredLedger,
 } from "./github-delivery-ledger-contracts.js";
-import { LedgerEntryMapping } from "./ledger-entry-mapping.js";
+import type { LedgerEntryMapping } from "./ledger-entry-mapping.js";
 
 /** Own the supported ledger schema and its hidden Markdown representation. */
+export interface LedgerCommentCodecCollaborators {
+	readonly ledgerEntryMapping: Pick<LedgerEntryMapping, "protect">;
+}
+
 export class LedgerCommentCodec {
-	static decode(body: string): StoredLedger {
+	constructor(
+		private readonly collaborators: LedgerCommentCodecCollaborators,
+	) {}
+
+	decode(body: string): StoredLedger {
 		const openingFence = "```json";
 		const start = body.indexOf(openingFence);
 		const end = body.indexOf("```", start + openingFence.length);
@@ -19,15 +27,15 @@ export class LedgerCommentCodec {
 			throw new Error("Managed delivery ledger comment is corrupted");
 		}
 		if (
-			!LedgerCommentCodec.object(value) ||
+			!this.object(value) ||
 			(value.schemaVersion !== 1 && value.schemaVersion !== 2) ||
 			!Array.isArray(value.entries)
 		)
 			throw new Error("Managed delivery ledger schema is unsupported");
 		const entries = value.entries.map((entry: unknown) => {
-			if (!LedgerCommentCodec.isEntry(entry))
+			if (!this.isEntry(entry))
 				throw new Error("Managed delivery ledger entry is corrupted");
-			return LedgerEntryMapping.protect(entry);
+			return this.collaborators.ledgerEntryMapping.protect(entry);
 		});
 		if (
 			new Set(entries.map((entry) => entry.idempotencyKey)).size !==
@@ -37,7 +45,7 @@ export class LedgerCommentCodec {
 		return { schemaVersion: 2, entries };
 	}
 
-	static encode(ledger: StoredLedger): string {
+	encode(ledger: StoredLedger): string {
 		// The JSON fence remains readable by supported stored-state readers.
 		const json = JSON.stringify(ledger, null, 2).replace(
 			/[<>&`-]/g,
@@ -47,8 +55,8 @@ export class LedgerCommentCodec {
 		return `<!--\n\`\`\`json\n${json}\n\`\`\`\n-->`;
 	}
 
-	private static isEntry(value: unknown): value is StoredEntry {
-		if (!LedgerCommentCodec.object(value)) return false;
+	private isEntry(value: unknown): value is StoredEntry {
+		if (!this.object(value)) return false;
 		return (
 			typeof value.idempotencyKey === "string" &&
 			typeof value.intentId === "string" &&
@@ -59,7 +67,7 @@ export class LedgerCommentCodec {
 			typeof value.updatedAt === "string" &&
 			typeof value.repositoryId === "string" &&
 			typeof value.eventId === "string" &&
-			LedgerCommentCodec.isKind(value.kind) &&
+			this.isKind(value.kind) &&
 			typeof value.recipientId === "string" &&
 			typeof value.policyVersion === "string" &&
 			(value.diagnosticCode === undefined ||
@@ -67,7 +75,7 @@ export class LedgerCommentCodec {
 		);
 	}
 
-	private static isKind(value: unknown): value is StoredEntry["kind"] {
+	private isKind(value: unknown): value is StoredEntry["kind"] {
 		return (
 			value === "host-introduction" ||
 			value === "speaker-introduction" ||
@@ -77,7 +85,7 @@ export class LedgerCommentCodec {
 		);
 	}
 
-	private static object(value: unknown): value is Record<string, unknown> {
+	private object(value: unknown): value is Record<string, unknown> {
 		return value !== null && typeof value === "object" && !Array.isArray(value);
 	}
 }

@@ -1,9 +1,16 @@
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { GithubOrganizerApproval } from "@meetup-automation/github-organizer-approval";
+import {
+	JourneyPolicyComposition,
+	ManageMeetupCommunications,
+} from "@meetup-automation/journey";
+import { LocalizationComposition } from "@meetup-automation/localization";
 import { OpenFeedbackTalkResultsGateway } from "@meetup-automation/openfeedback-event-gateway";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CommunicationRuntime } from "./communication.js";
+import { CommunicationComposition } from "./communication-composition.js";
+import { GithubActionsComposition } from "./dependency-composition.js";
 
 const { getOctokitMock } = vi.hoisted(() => ({ getOctokitMock: vi.fn() }));
 vi.mock("@actions/github", () => ({ getOctokit: getOctokitMock }));
@@ -67,9 +74,16 @@ describe("automatic communication completion after approval", () => {
 			const originalBody = f.issue.body;
 
 			// Act
-			const result = await CommunicationRuntime.runCommunicationReconcile(
-				f.input,
-			);
+			const result = await new CommunicationRuntime({
+				createJourney: (input) =>
+					CommunicationComposition.createCommunicationContainer(input).get(
+						ManageMeetupCommunications,
+					),
+				communicationInput: new GithubActionsComposition().communicationInput(),
+				automationConfigFactory:
+					new JourneyPolicyComposition().automationConfigFactory(),
+				localeResolver: new LocalizationComposition().localeResolver(),
+			}).runCommunicationReconcile(f.input);
 			const placeholders = f.createDispatchEvent.mock.calls.map(
 				([request]) => request.client_payload.placeholders,
 			);
@@ -95,7 +109,16 @@ describe("automatic communication completion after approval", () => {
 		const f = await setup();
 
 		// Act
-		const result = await CommunicationRuntime.runCommunicationReconcile({
+		const result = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile({
 			...f.input,
 			slidesReady: false,
 		});
@@ -115,7 +138,16 @@ describe("automatic communication completion after approval", () => {
 			const f = await setup();
 
 			// Act
-			const result = await CommunicationRuntime.runCommunicationReconcile({
+			const result = await new CommunicationRuntime({
+				createJourney: (input) =>
+					CommunicationComposition.createCommunicationContainer(input).get(
+						ManageMeetupCommunications,
+					),
+				communicationInput: new GithubActionsComposition().communicationInput(),
+				automationConfigFactory:
+					new JourneyPolicyComposition().automationConfigFactory(),
+				localeResolver: new LocalizationComposition().localeResolver(),
+			}).runCommunicationReconcile({
 				...f.input,
 				slidesUrl,
 			});
@@ -141,7 +173,16 @@ describe("automatic communication completion after approval", () => {
 		});
 
 		// Act
-		const result = await CommunicationRuntime.runCommunicationReconcile({
+		const result = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile({
 			...f.input,
 			slidesUrl: undefined,
 		});
@@ -157,12 +198,30 @@ describe("automatic communication completion after approval", () => {
 		const f = await setup();
 
 		// Act
-		await CommunicationRuntime.runCommunicationReconcile(f.input);
+		await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 		f.issue.body = f.issue.body.replace(
 			"- [x] Mail introduction",
 			"- [ ] Mail introduction",
 		);
-		const result = await CommunicationRuntime.runCommunicationReconcile({
+		const result = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile({
 			...f.input,
 			slidesUrl:
 				"https://docs.google.com/presentation/d/replacement-slides/edit",
@@ -181,7 +240,16 @@ describe("automatic communication completion after approval", () => {
 			const f = await setup();
 
 			// Act
-			const result = await CommunicationRuntime.runCommunicationReconcile({
+			const result = await new CommunicationRuntime({
+				createJourney: (input) =>
+					CommunicationComposition.createCommunicationContainer(input).get(
+						ManageMeetupCommunications,
+					),
+				communicationInput: new GithubActionsComposition().communicationInput(),
+				automationConfigFactory:
+					new JourneyPolicyComposition().automationConfigFactory(),
+				localeResolver: new LocalizationComposition().localeResolver(),
+			}).runCommunicationReconcile({
 				...f.input,
 				owner,
 			});
@@ -213,9 +281,16 @@ describe("automatic communication completion after approval", () => {
 			const f = await setup({ body });
 
 			// Act
-			const result = await CommunicationRuntime.runCommunicationReconcile(
-				f.input,
-			);
+			const result = await new CommunicationRuntime({
+				createJourney: (input) =>
+					CommunicationComposition.createCommunicationContainer(input).get(
+						ManageMeetupCommunications,
+					),
+				communicationInput: new GithubActionsComposition().communicationInput(),
+				automationConfigFactory:
+					new JourneyPolicyComposition().automationConfigFactory(),
+				localeResolver: new LocalizationComposition().localeResolver(),
+			}).runCommunicationReconcile(f.input);
 
 			// Assert
 			expect(result.counts.planned).toBe(0);
@@ -241,9 +316,16 @@ describe("automatic communication completion after approval", () => {
 		});
 
 		// Act
-		const result = await CommunicationRuntime.runCommunicationReconcile(
-			f.input,
-		);
+		const result = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 
 		// Assert
 		expect(result.counts.accepted).toBe(1);
@@ -281,9 +363,16 @@ describe("automatic communication completion after approval", () => {
 		).mockRejectedValue(new Error("private provider response"));
 
 		// Act
-		const result = await CommunicationRuntime.runCommunicationReconcile(
-			f.input,
-		);
+		const result = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 
 		// Assert
 		expect(result.runtimeDiagnostics).toContainEqual({
@@ -334,9 +423,16 @@ describe("automatic communication completion after approval", () => {
 		vi.stubGlobal("fetch", fetcher);
 
 		// Act
-		const result = await CommunicationRuntime.runCommunicationReconcile(
-			f.input,
-		);
+		const result = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 		const speakerMail = f.createDispatchEvent.mock.calls.find(
 			([request]) =>
 				request.client_payload["template-name"] === "meetup-thanks-speakers",
@@ -369,9 +465,16 @@ describe("automatic communication completion after approval", () => {
 				.mockRejectedValueOnce({ status });
 
 			// Act
-			const result = await CommunicationRuntime.runCommunicationReconcile(
-				f.input,
-			);
+			const result = await new CommunicationRuntime({
+				createJourney: (input) =>
+					CommunicationComposition.createCommunicationContainer(input).get(
+						ManageMeetupCommunications,
+					),
+				communicationInput: new GithubActionsComposition().communicationInput(),
+				automationConfigFactory:
+					new JourneyPolicyComposition().automationConfigFactory(),
+				localeResolver: new LocalizationComposition().localeResolver(),
+			}).runCommunicationReconcile(f.input);
 
 			// Assert
 			expect(result.counts.accepted).toBe(1);
@@ -388,11 +491,36 @@ describe("automatic communication completion after approval", () => {
 			.mockRejectedValueOnce({ status: 429 });
 
 		// Act
-		const first = await CommunicationRuntime.runCommunicationReconcile(f.input);
-		const second = await CommunicationRuntime.runCommunicationReconcile(
-			f.input,
-		);
-		const third = await CommunicationRuntime.runCommunicationReconcile({
+		const first = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
+		const second = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
+		const third = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile({
 			...f.input,
 			locale: "fr",
 		});
@@ -416,9 +544,16 @@ describe("automatic communication completion after approval", () => {
 		});
 
 		// Act
-		const result = await CommunicationRuntime.runCommunicationReconcile(
-			f.input,
-		);
+		const result = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 
 		// Assert
 		expect(result.counts.accepted).toBe(2);
@@ -437,10 +572,26 @@ describe("automatic communication completion after approval", () => {
 		f.updateIssue.mockRejectedValueOnce(new Error("private provider response"));
 
 		// Act
-		const first = await CommunicationRuntime.runCommunicationReconcile(f.input);
-		const second = await CommunicationRuntime.runCommunicationReconcile(
-			f.input,
-		);
+		const first = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
+		const second = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 
 		// Assert
 		expect(first.runtimeDiagnostics).toContainEqual({
@@ -459,14 +610,30 @@ describe("automatic communication completion after approval", () => {
 		const f = await setup();
 
 		// Act
-		await CommunicationRuntime.runCommunicationReconcile(f.input);
+		await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 		f.issue.body = f.issue.body.replace(
 			"- [x] Mail introduction",
 			"- [ ] Mail introduction",
 		);
-		const result = await CommunicationRuntime.runCommunicationReconcile(
-			f.input,
-		);
+		const result = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 
 		// Assert
 		expect(result.counts.alreadyRecorded).toBe(2);
@@ -482,9 +649,16 @@ describe("automatic communication completion after approval", () => {
 			.mockResolvedValue(githubIssueResponse("2099-06-09"));
 
 		// Act
-		const result = await CommunicationRuntime.runCommunicationReconcile(
-			f.input,
-		);
+		const result = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 
 		// Assert
 		expect(result.mode).toBe("check");
@@ -507,10 +681,26 @@ describe("automatic communication completion after approval", () => {
 		});
 
 		// Act
-		const first = await CommunicationRuntime.runCommunicationReconcile(f.input);
-		const second = await CommunicationRuntime.runCommunicationReconcile(
-			f.input,
-		);
+		const first = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
+		const second = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 
 		// Assert
 		expect(first.runtimeDiagnostics).toContainEqual({
@@ -541,11 +731,27 @@ describe("automatic communication completion after approval", () => {
 			.mockRejectedValueOnce({ status: 429 });
 
 		// Act
-		const first = await CommunicationRuntime.runCommunicationReconcile(f.input);
+		const first = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 		const incompleteBody = f.issue.body;
-		const second = await CommunicationRuntime.runCommunicationReconcile(
-			f.input,
-		);
+		const second = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 
 		// Assert
 		expect(first.counts.accepted).toBe(1);
@@ -564,9 +770,16 @@ describe("automatic communication completion after approval", () => {
 			});
 
 			// Act
-			const result = await CommunicationRuntime.runCommunicationReconcile(
-				f.input,
-			);
+			const result = await new CommunicationRuntime({
+				createJourney: (input) =>
+					CommunicationComposition.createCommunicationContainer(input).get(
+						ManageMeetupCommunications,
+					),
+				communicationInput: new GithubActionsComposition().communicationInput(),
+				automationConfigFactory:
+					new JourneyPolicyComposition().automationConfigFactory(),
+				localeResolver: new LocalizationComposition().localeResolver(),
+			}).runCommunicationReconcile(f.input);
 
 			// Assert
 			expect(result.counts.dispatched).toBe(0);
@@ -585,12 +798,30 @@ describe("automatic communication completion after approval", () => {
 			vi.stubGlobal("fetch", fetcher);
 
 			// Act
-			const first = await CommunicationRuntime.runCommunicationReconcile({
+			const first = await new CommunicationRuntime({
+				createJourney: (input) =>
+					CommunicationComposition.createCommunicationContainer(input).get(
+						ManageMeetupCommunications,
+					),
+				communicationInput: new GithubActionsComposition().communicationInput(),
+				automationConfigFactory:
+					new JourneyPolicyComposition().automationConfigFactory(),
+				localeResolver: new LocalizationComposition().localeResolver(),
+			}).runCommunicationReconcile({
 				...f.input,
 				locale,
 				slidesUrl: undefined,
 			});
-			const second = await CommunicationRuntime.runCommunicationReconcile({
+			const second = await new CommunicationRuntime({
+				createJourney: (input) =>
+					CommunicationComposition.createCommunicationContainer(input).get(
+						ManageMeetupCommunications,
+					),
+				communicationInput: new GithubActionsComposition().communicationInput(),
+				automationConfigFactory:
+					new JourneyPolicyComposition().automationConfigFactory(),
+				localeResolver: new LocalizationComposition().localeResolver(),
+			}).runCommunicationReconcile({
 				...f.input,
 				locale: "fr",
 				slidesUrl: undefined,
@@ -614,9 +845,16 @@ describe("automatic communication completion after approval", () => {
 		);
 
 		// Act
-		const result = await CommunicationRuntime.runCommunicationReconcile(
-			f.input,
-		);
+		const result = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 
 		// Assert
 		expect(result.mode).toBe("check");
@@ -633,7 +871,16 @@ describe("organizer approval for email batches", () => {
 	it("retries a failed Slack reaction after email completion without resending emails", async () => {
 		// Arrange
 		const f = await setup();
-		await CommunicationRuntime.runCommunicationReconcile(f.input);
+		await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 		approveBatch(f);
 		vi.mocked(fetch).mockResolvedValue({
 			ok: true,
@@ -641,17 +888,42 @@ describe("organizer approval for email batches", () => {
 		} as Response);
 
 		// Act
-		const sent = await CommunicationRuntime.runCommunicationReconcile(f.input);
+		const sent = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 		const completedBody = f.issue.body;
 		const callsBeforeRetry = vi.mocked(fetch).mock.calls.length;
 		vi.mocked(fetch).mockResolvedValue({
 			ok: true,
 			json: async () => ({ ok: false, error: "already_reacted" }),
 		} as Response);
-		const retried = await CommunicationRuntime.runCommunicationReconcile(
-			f.input,
-		);
-		await CommunicationRuntime.runCommunicationReconcile(f.input);
+		const retried = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
+		await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 
 		// Assert
 		expect(sent.counts.accepted).toBe(2);
@@ -672,14 +944,39 @@ describe("organizer approval for email batches", () => {
 	it("finalizes rejection and reacts on Slack without sending email", async () => {
 		// Arrange
 		const f = await setup();
-		await CommunicationRuntime.runCommunicationReconcile(f.input);
+		await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 		approveBatch(f, "Reject");
 
 		// Act
-		const result = await CommunicationRuntime.runCommunicationReconcile(
-			f.input,
-		);
-		await CommunicationRuntime.runCommunicationReconcile(f.input);
+		const result = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
+		await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 
 		// Assert
 		expect(result.runtimeDiagnostics).toContainEqual({
@@ -713,12 +1010,30 @@ describe("organizer approval for email batches", () => {
 	it("requires a new approval when the presentation file changes before dispatch", async () => {
 		// Arrange
 		const f = await setup();
-		await CommunicationRuntime.runCommunicationReconcile(f.input);
+		await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 		approveBatch(f);
 		const originalRequest = f.comments[0]?.body;
 
 		// Act
-		const result = await CommunicationRuntime.runCommunicationReconcile({
+		const result = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile({
 			...f.input,
 			slidesUrl:
 				"https://docs.google.com/presentation/d/replacement-slides/edit",
@@ -747,9 +1062,16 @@ describe("organizer approval for email batches", () => {
 			});
 
 			// Act
-			const result = await CommunicationRuntime.runCommunicationReconcile(
-				f.input,
-			);
+			const result = await new CommunicationRuntime({
+				createJourney: (input) =>
+					CommunicationComposition.createCommunicationContainer(input).get(
+						ManageMeetupCommunications,
+					),
+				communicationInput: new GithubActionsComposition().communicationInput(),
+				automationConfigFactory:
+					new JourneyPolicyComposition().automationConfigFactory(),
+				localeResolver: new LocalizationComposition().localeResolver(),
+			}).runCommunicationReconcile(f.input);
 			const body = f.comments[0]?.body ?? "";
 
 			// Assert
@@ -780,7 +1102,16 @@ describe("organizer approval for email batches", () => {
 				"speakers:confirmed",
 			],
 		});
-		await CommunicationRuntime.runCommunicationReconcile(f.input);
+		await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 		approveBatch(f);
 		vi.mocked(
 			OpenFeedbackTalkResultsGateway.prototype.resolve,
@@ -793,9 +1124,16 @@ describe("organizer approval for email batches", () => {
 		]);
 
 		// Act
-		const result = await CommunicationRuntime.runCommunicationReconcile(
-			f.input,
-		);
+		const result = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 
 		// Assert
 		expect(result.runtimeDiagnostics).toContainEqual({
@@ -816,16 +1154,50 @@ describe("organizer approval for email batches", () => {
 				"speakers:confirmed",
 			],
 		});
-		await CommunicationRuntime.runCommunicationReconcile(f.input);
+		await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 		approveBatch(f);
 		f.createDispatchEvent.mockRejectedValueOnce({ status: 429 });
 
 		// Act
-		const first = await CommunicationRuntime.runCommunicationReconcile(f.input);
-		const second = await CommunicationRuntime.runCommunicationReconcile(
-			f.input,
-		);
-		const third = await CommunicationRuntime.runCommunicationReconcile(f.input);
+		const first = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
+		const second = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
+		const third = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 
 		// Assert
 		expect(first.counts.accepted).toBe(1);
@@ -844,17 +1216,49 @@ describe("organizer approval for email batches", () => {
 		const f = await setup();
 
 		// Act
-		const pending = await CommunicationRuntime.runCommunicationReconcile(
-			f.input,
-		);
+		const pending = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 		const pendingBody = f.issue.body;
 		const callsBeforeApproval = f.createDispatchEvent.mock.calls.length;
-		await CommunicationRuntime.runCommunicationReconcile(f.input);
+		await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 		approveBatch(f);
-		const approved = await CommunicationRuntime.runCommunicationReconcile(
-			f.input,
-		);
-		await CommunicationRuntime.runCommunicationReconcile(f.input);
+		const approved = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
+		await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 
 		// Assert
 		expect(pending.runtimeDiagnostics).toContainEqual({
@@ -897,7 +1301,16 @@ describe("organizer approval for email batches", () => {
 	it("requires a new confirmation after a private recipient address changes", async () => {
 		// Arrange
 		const f = await setup();
-		await CommunicationRuntime.runCommunicationReconcile(f.input);
+		await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 		approveBatch(f);
 		const before = f.comments[0]?.body;
 		await writeFile(
@@ -906,9 +1319,16 @@ describe("organizer approval for email batches", () => {
 		);
 
 		// Act
-		const result = await CommunicationRuntime.runCommunicationReconcile(
-			f.input,
-		);
+		const result = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 
 		// Assert
 		expect(result.counts.dispatched).toBe(0);
@@ -927,18 +1347,43 @@ describe("organizer approval for email batches", () => {
 				"- [ ] Mail introduction hoster\n- [ ] Mail introduction speakers",
 			),
 		});
-		await CommunicationRuntime.runCommunicationReconcile(f.input);
+		await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 		approveBatch(f);
 		f.createDispatchEvent
 			.mockResolvedValueOnce({ status: 204 })
 			.mockRejectedValueOnce({ status: 429 });
 
 		// Act
-		const first = await CommunicationRuntime.runCommunicationReconcile(f.input);
+		const first = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 		const partial = f.issue.body;
-		const second = await CommunicationRuntime.runCommunicationReconcile(
-			f.input,
-		);
+		const second = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 
 		// Assert
 		expect(first.counts.deferred).toBe(1);
@@ -952,15 +1397,40 @@ describe("organizer approval for email batches", () => {
 	it("requires a separate approval for thank-you emails", async () => {
 		// Arrange
 		const f = await setup();
-		await CommunicationRuntime.runCommunicationReconcile(f.input);
+		await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 		approveBatch(f);
-		await CommunicationRuntime.runCommunicationReconcile(f.input);
+		await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 		f.issue.labels = [...f.issue.labels, "event:held"];
 
 		// Act
-		const result = await CommunicationRuntime.runCommunicationReconcile(
-			f.input,
-		);
+		const result = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 
 		// Assert
 		expect(result.counts.dispatched).toBe(0);
@@ -979,9 +1449,16 @@ describe("organizer approval for email batches", () => {
 		);
 
 		// Act
-		const result = await CommunicationRuntime.runCommunicationReconcile(
-			f.input,
-		);
+		const result = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 
 		// Assert
 		expect(result.counts.dispatched).toBe(0);
@@ -995,14 +1472,30 @@ describe("organizer approval for email batches", () => {
 	it("fails closed when the permission check fails", async () => {
 		// Arrange
 		const f = await setup();
-		await CommunicationRuntime.runCommunicationReconcile(f.input);
+		await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 		approveBatch(f);
 		f.permission.mockRejectedValue(new Error("private provider error"));
 
 		// Act
-		const result = await CommunicationRuntime.runCommunicationReconcile(
-			f.input,
-		);
+		const result = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 
 		// Assert
 		expect(result.counts.dispatched).toBe(0);
@@ -1015,14 +1508,30 @@ describe("organizer approval for email batches", () => {
 	it("holds mail when GitHub cannot identify the approval checkbox editor", async () => {
 		// Arrange
 		const f = await setup();
-		await CommunicationRuntime.runCommunicationReconcile(f.input);
+		await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 		approveBatch(f);
 		f.graphql.mockRejectedValue(new Error("private GraphQL error"));
 
 		// Act
-		const result = await CommunicationRuntime.runCommunicationReconcile(
-			f.input,
-		);
+		const result = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 
 		// Assert
 		expect(result.runtimeDiagnostics).toContainEqual({
@@ -1043,7 +1552,16 @@ describe("required runtime configuration", () => {
 			const input = { ...runtimeInput("/synthetic/workspace"), [field]: "  " };
 
 			// Act
-			const result = CommunicationRuntime.runCommunicationReconcile(input);
+			const result = new CommunicationRuntime({
+				createJourney: (input) =>
+					CommunicationComposition.createCommunicationContainer(input).get(
+						ManageMeetupCommunications,
+					),
+				communicationInput: new GithubActionsComposition().communicationInput(),
+				automationConfigFactory:
+					new JourneyPolicyComposition().automationConfigFactory(),
+				localeResolver: new LocalizationComposition().localeResolver(),
+			}).runCommunicationReconcile(input);
 
 			// Assert
 			await expect(result).rejects.toThrow(
@@ -1063,7 +1581,16 @@ describe("organizer notification routing", () => {
 		};
 
 		// Act
-		const result = CommunicationRuntime.runCommunicationReconcile(input);
+		const result = new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(input);
 
 		// Assert
 		await expect(result).rejects.toThrow(
@@ -1080,9 +1607,16 @@ describe("scheduled post-event thanks", () => {
 		vi.setSystemTime(new Date("2099-06-09T10:00:00Z"));
 		const f = await setup();
 		// Act: prepare the shared request; no delivery before approval.
-		const pending = await CommunicationRuntime.runCommunicationReconcile(
-			f.input,
-		);
+		const pending = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 
 		// Assert
 		expect(pending.counts.accepted).toBe(0);
@@ -1096,9 +1630,16 @@ describe("scheduled post-event thanks", () => {
 		approveBatch(f);
 
 		// Act
-		const approved = await CommunicationRuntime.runCommunicationReconcile(
-			f.input,
-		);
+		const approved = await new CommunicationRuntime({
+			createJourney: (input) =>
+				CommunicationComposition.createCommunicationContainer(input).get(
+					ManageMeetupCommunications,
+				),
+			communicationInput: new GithubActionsComposition().communicationInput(),
+			automationConfigFactory:
+				new JourneyPolicyComposition().automationConfigFactory(),
+			localeResolver: new LocalizationComposition().localeResolver(),
+		}).runCommunicationReconcile(f.input);
 
 		// Assert
 		expect(approved.counts.accepted).toBe(2);

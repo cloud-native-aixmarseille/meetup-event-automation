@@ -3,7 +3,7 @@ import type { PublicationRecord } from "@meetup-automation/publication";
 export class PublicationCommentCodec {
 	static readonly marker = "<!-- meetup-publication:v1\n";
 
-	static decode(body: string): PublicationRecord {
+	decode(body: string): PublicationRecord {
 		if (
 			!body.startsWith(PublicationCommentCodec.marker) ||
 			!body.endsWith("\n-->")
@@ -15,7 +15,7 @@ export class PublicationCommentCodec {
 		} catch {
 			throw new Error("Publication journal is corrupted");
 		}
-		if (!PublicationCommentCodec.object(value))
+		if (!this.object(value))
 			throw new Error("Publication journal is corrupted");
 		if (value.state === "pending" && value.url === undefined) return {};
 		if (
@@ -26,7 +26,7 @@ export class PublicationCommentCodec {
 		throw new Error("Publication journal is corrupted");
 	}
 
-	static encode(record: PublicationRecord): string {
+	encode(record: PublicationRecord): string {
 		const state =
 			record.url === undefined
 				? { state: "pending" }
@@ -37,7 +37,7 @@ export class PublicationCommentCodec {
 		return `${PublicationCommentCodec.marker}${json}\n-->`;
 	}
 
-	private static object(value: unknown): value is Record<string, unknown> {
+	private object(value: unknown): value is Record<string, unknown> {
 		return value !== null && typeof value === "object" && !Array.isArray(value);
 	}
 }

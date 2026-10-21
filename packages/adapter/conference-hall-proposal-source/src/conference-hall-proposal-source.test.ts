@@ -1,6 +1,8 @@
+import { ReferentialDomainComposition } from "@meetup-automation/referential";
 import { describe, expect, it, vi } from "vitest";
 import { proposal, sourceExport, speaker } from "../testing/export.fixtures.js";
 import { ConferenceHallProposalSource } from "./conference-hall-proposal-source.js";
+import { ConferenceHallProposalSourceComposition } from "./dependency-composition.js";
 
 describe("ConferenceHallProposalSource", () => {
 	it("uses the injected clock to interpret a provider retry date", async () => {
@@ -12,6 +14,12 @@ describe("ConferenceHallProposalSource", () => {
 			}),
 		);
 		const source = new ConferenceHallProposalSource(
+			{
+				sourceSpeakerEquality:
+					new ReferentialDomainComposition().sourceSpeakerEquality(),
+				proposalExportParser:
+					new ConferenceHallProposalSourceComposition().proposalExportParser(),
+			},
 			"example-cfp",
 			"secret",
 			request,
@@ -30,6 +38,12 @@ describe("ConferenceHallProposalSource", () => {
 			.fn<typeof fetch>()
 			.mockImplementation(async () => Response.json(sourceExport));
 		const source = new ConferenceHallProposalSource(
+			{
+				sourceSpeakerEquality:
+					new ReferentialDomainComposition().sourceSpeakerEquality(),
+				proposalExportParser:
+					new ConferenceHallProposalSourceComposition().proposalExportParser(),
+			},
 			"example-cfp",
 			"secret",
 			request,
@@ -77,6 +91,12 @@ describe("ConferenceHallProposalSource", () => {
 
 		// Act
 		const result = await new ConferenceHallProposalSource(
+			{
+				sourceSpeakerEquality:
+					new ReferentialDomainComposition().sourceSpeakerEquality(),
+				proposalExportParser:
+					new ConferenceHallProposalSourceComposition().proposalExportParser(),
+			},
 			"example-cfp",
 			"secret",
 			request,
@@ -110,6 +130,12 @@ describe("ConferenceHallProposalSource", () => {
 
 		// Act
 		const result = new ConferenceHallProposalSource(
+			{
+				sourceSpeakerEquality:
+					new ReferentialDomainComposition().sourceSpeakerEquality(),
+				proposalExportParser:
+					new ConferenceHallProposalSourceComposition().proposalExportParser(),
+			},
 			"example-cfp",
 			"secret",
 			request,
@@ -132,6 +158,12 @@ describe("ConferenceHallProposalSource", () => {
 
 		// Act
 		const result = new ConferenceHallProposalSource(
+			{
+				sourceSpeakerEquality:
+					new ReferentialDomainComposition().sourceSpeakerEquality(),
+				proposalExportParser:
+					new ConferenceHallProposalSourceComposition().proposalExportParser(),
+			},
 			"example-cfp",
 			"secret",
 			request,
@@ -155,6 +187,12 @@ describe("ConferenceHallProposalSource", () => {
 
 		// Act
 		const result = new ConferenceHallProposalSource(
+			{
+				sourceSpeakerEquality:
+					new ReferentialDomainComposition().sourceSpeakerEquality(),
+				proposalExportParser:
+					new ConferenceHallProposalSourceComposition().proposalExportParser(),
+			},
 			"example-cfp",
 			"secret",
 			request,
@@ -175,6 +213,12 @@ describe("ConferenceHallProposalSource", () => {
 			}),
 		);
 		const source = new ConferenceHallProposalSource(
+			{
+				sourceSpeakerEquality:
+					new ReferentialDomainComposition().sourceSpeakerEquality(),
+				proposalExportParser:
+					new ConferenceHallProposalSourceComposition().proposalExportParser(),
+			},
 			"example-cfp",
 			"secret",
 			request,
@@ -201,6 +245,12 @@ describe("ConferenceHallProposalSource", () => {
 
 			// Act
 			const result = new ConferenceHallProposalSource(
+				{
+					sourceSpeakerEquality:
+						new ReferentialDomainComposition().sourceSpeakerEquality(),
+					proposalExportParser:
+						new ConferenceHallProposalSourceComposition().proposalExportParser(),
+				},
 				"example-cfp",
 				"secret",
 				request,
@@ -221,6 +271,12 @@ describe("ConferenceHallProposalSource", () => {
 
 		// Act
 		const result = new ConferenceHallProposalSource(
+			{
+				sourceSpeakerEquality:
+					new ReferentialDomainComposition().sourceSpeakerEquality(),
+				proposalExportParser:
+					new ConferenceHallProposalSourceComposition().proposalExportParser(),
+			},
 			"example-cfp",
 			"secret",
 			request,
@@ -243,6 +299,12 @@ describe("ConferenceHallProposalSource", () => {
 
 			// Act
 			const result = new ConferenceHallProposalSource(
+				{
+					sourceSpeakerEquality:
+						new ReferentialDomainComposition().sourceSpeakerEquality(),
+					proposalExportParser:
+						new ConferenceHallProposalSourceComposition().proposalExportParser(),
+				},
 				"example-cfp",
 				"secret",
 				request,
@@ -266,6 +328,12 @@ describe("ConferenceHallProposalSource", () => {
 
 		// Act
 		const result = new ConferenceHallProposalSource(
+			{
+				sourceSpeakerEquality:
+					new ReferentialDomainComposition().sourceSpeakerEquality(),
+				proposalExportParser:
+					new ConferenceHallProposalSourceComposition().proposalExportParser(),
+			},
 			"example-cfp",
 			"secret",
 			request,
@@ -280,6 +348,12 @@ describe("ConferenceHallProposalSource", () => {
 
 		// Act
 		const result = new ConferenceHallProposalSource(
+			{
+				sourceSpeakerEquality:
+					new ReferentialDomainComposition().sourceSpeakerEquality(),
+				proposalExportParser:
+					new ConferenceHallProposalSourceComposition().proposalExportParser(),
+			},
 			"https://evil.test",
 			"secret",
 			request,

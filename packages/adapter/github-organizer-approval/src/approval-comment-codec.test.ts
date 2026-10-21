@@ -9,6 +9,7 @@ import {
 	APPROVAL_MARKER,
 	ApprovalCommentCodec,
 } from "./approval-comment-codec.js";
+import { GithubOrganizerApprovalComposition } from "./dependency-composition.js";
 
 describe("versioned approval comment metadata", () => {
 	it.each([request, detailedRequest, publicationRequest])(
@@ -16,11 +17,20 @@ describe("versioned approval comment metadata", () => {
 		(input) => {
 			// Arrange
 			const record = createStoredApproval(input);
-			const body = ApprovalCommentCodec.marker(record);
+			const body = new ApprovalCommentCodec({
+				storedApprovalSchema:
+					new GithubOrganizerApprovalComposition().storedApprovalSchema(),
+			}).marker(record);
 
 			// Act
-			const restored = ApprovalCommentCodec.read(body);
-			const encoded = ApprovalCommentCodec.marker(restored);
+			const restored = new ApprovalCommentCodec({
+				storedApprovalSchema:
+					new GithubOrganizerApprovalComposition().storedApprovalSchema(),
+			}).read(body);
+			const encoded = new ApprovalCommentCodec({
+				storedApprovalSchema:
+					new GithubOrganizerApprovalComposition().storedApprovalSchema(),
+			}).marker(restored);
 
 			// Assert
 			expect(restored).toEqual(record);
@@ -31,11 +41,20 @@ describe("versioned approval comment metadata", () => {
 	it("retains stored property order for exact checkbox verification", () => {
 		// Arrange
 		const { revision, ...rest } = createStoredApproval(detailedRequest);
-		const body = ApprovalCommentCodec.marker({ ...rest, revision });
+		const body = new ApprovalCommentCodec({
+			storedApprovalSchema:
+				new GithubOrganizerApprovalComposition().storedApprovalSchema(),
+		}).marker({ ...rest, revision });
 
 		// Act
-		const restored = ApprovalCommentCodec.read(body);
-		const encoded = ApprovalCommentCodec.marker(restored);
+		const restored = new ApprovalCommentCodec({
+			storedApprovalSchema:
+				new GithubOrganizerApprovalComposition().storedApprovalSchema(),
+		}).read(body);
+		const encoded = new ApprovalCommentCodec({
+			storedApprovalSchema:
+				new GithubOrganizerApprovalComposition().storedApprovalSchema(),
+		}).marker(restored);
 
 		// Assert
 		expect(encoded).toBe(body);
@@ -58,7 +77,11 @@ describe("versioned approval comment metadata", () => {
 			const body = `${APPROVAL_MARKER}${JSON.stringify(value)} -->`;
 
 			// Act
-			const read = () => ApprovalCommentCodec.read(body);
+			const read = () =>
+				new ApprovalCommentCodec({
+					storedApprovalSchema:
+						new GithubOrganizerApprovalComposition().storedApprovalSchema(),
+				}).read(body);
 
 			// Assert
 			expect(read).toThrow();
@@ -88,7 +111,11 @@ describe("versioned approval comment metadata", () => {
 		const body = `${APPROVAL_MARKER}${JSON.stringify(value)} -->`;
 
 		// Act
-		const read = () => ApprovalCommentCodec.read(body);
+		const read = () =>
+			new ApprovalCommentCodec({
+				storedApprovalSchema:
+					new GithubOrganizerApprovalComposition().storedApprovalSchema(),
+			}).read(body);
 
 		// Assert
 		expect(read).toThrow();

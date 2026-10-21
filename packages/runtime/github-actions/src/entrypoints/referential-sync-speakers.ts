@@ -1,8 +1,11 @@
-import { ActionRunner } from "../action-runner.js";
-import { SpeakerSyncAction } from "../speaker-sync-action.js";
+import { GithubActionsComposition } from "../dependency-composition.js";
+import { SpeakerActionComposition } from "../speaker-action-composition.js";
 
-await ActionRunner.run(
+const runner = new GithubActionsComposition().actionRunner();
+const action = new SpeakerActionComposition().speakerSyncAction();
+
+await runner.run(
 	"action.referential.sync-speakers",
-	SpeakerSyncAction.run,
+	action.run.bind(action),
 	false,
 );

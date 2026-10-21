@@ -4,10 +4,21 @@ import {
 	type StableReferenceBinding,
 	type StableReferenceMetadata,
 } from "./github-issue-form-event-document-codec-contracts.js";
-import { ReferenceBindings } from "./reference-bindings.js";
+import type { ReferenceBindings } from "./reference-bindings.js";
+
+export interface ReferenceMetadataShapeCollaborators {
+	readonly referenceBindings: Pick<
+		ReferenceBindings,
+		"normalizeVisibleDisplayName"
+	>;
+}
 
 export class ReferenceMetadataShape {
-	static isReferenceMetadata(value: unknown): value is StableReferenceMetadata {
+	constructor(
+		private readonly collaborators: ReferenceMetadataShapeCollaborators,
+	) {}
+
+	isReferenceMetadata(value: unknown): value is StableReferenceMetadata {
 		if (typeof value !== "object" || value === null || Array.isArray(value)) {
 			return false;
 		}
@@ -15,21 +26,16 @@ export class ReferenceMetadataShape {
 		if (candidate.schemaVersion !== 2) {
 			return false;
 		}
-		if (
-			candidate.host !== null &&
-			!ReferenceMetadataShape.isReferenceBinding(candidate.host)
-		) {
+		if (candidate.host !== null && !this.isReferenceBinding(candidate.host)) {
 			return false;
 		}
 		return (
 			Array.isArray(candidate.speakers) &&
-			candidate.speakers.every(ReferenceMetadataShape.isReferenceBinding)
+			candidate.speakers.every(this.isReferenceBinding.bind(this))
 		);
 	}
 
-	static isLegacyReferenceMetadata(
-		value: unknown,
-	): value is LegacyReferenceMetadata {
+	isLegacyReferenceMetadata(value: unknown): value is LegacyReferenceMetadata {
 		if (typeof value !== "object" || value === null || Array.isArray(value)) {
 			return false;
 		}
@@ -55,7 +61,7 @@ export class ReferenceMetadataShape {
 		);
 	}
 
-	static isReferenceBinding(value: unknown): value is StableReferenceBinding {
+	isReferenceBinding(value: unknown): value is StableReferenceBinding {
 		if (typeof value !== "object" || value === null || Array.isArray(value)) {
 			return false;
 		}
@@ -66,7 +72,9 @@ export class ReferenceMetadataShape {
 			typeof candidate.displayName === "string" &&
 			candidate.displayName.length > 0 &&
 			candidate.displayName ===
-				ReferenceBindings.normalizeVisibleDisplayName(candidate.displayName)
+				this.collaborators.referenceBindings.normalizeVisibleDisplayName(
+					candidate.displayName,
+				)
 		);
 	}
 }

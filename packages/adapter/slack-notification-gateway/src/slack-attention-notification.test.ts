@@ -1,5 +1,6 @@
 import type { AttentionView } from "@meetup-automation/communication";
 import { describe, expect, it, vi } from "vitest";
+import { SlackNotificationGatewayComposition } from "./dependency-composition.js";
 import { SlackAttentionNotification } from "./slack-attention-notification.js";
 
 const view: AttentionView = {
@@ -18,6 +19,12 @@ describe("Slack attention transport", () => {
 					),
 			);
 		const notification = new SlackAttentionNotification(
+			{
+				slackMessageReference:
+					new SlackNotificationGatewayComposition().slackMessageReference(),
+				createSlackApiClient: (...args) =>
+					new SlackNotificationGatewayComposition().slackApiClient(...args),
+			},
 			"private-token",
 			"C123",
 			{
@@ -76,6 +83,12 @@ describe("Slack attention transport", () => {
 			.fn()
 			.mockResolvedValue(new Response(JSON.stringify(payload)));
 		const notification = new SlackAttentionNotification(
+			{
+				slackMessageReference:
+					new SlackNotificationGatewayComposition().slackMessageReference(),
+				createSlackApiClient: (...args) =>
+					new SlackNotificationGatewayComposition().slackApiClient(...args),
+			},
 			"token",
 			"C123",
 			{ render: () => "Status" },
@@ -97,6 +110,12 @@ describe("Slack attention transport", () => {
 			}),
 		);
 		const notification = new SlackAttentionNotification(
+			{
+				slackMessageReference:
+					new SlackNotificationGatewayComposition().slackMessageReference(),
+				createSlackApiClient: (...args) =>
+					new SlackNotificationGatewayComposition().slackApiClient(...args),
+			},
 			"token",
 			"C123",
 			{ render: () => "Status" },
@@ -115,6 +134,12 @@ describe("Slack attention transport", () => {
 			.fn()
 			.mockRejectedValue(new Error("private provider error"));
 		const notification = new SlackAttentionNotification(
+			{
+				slackMessageReference:
+					new SlackNotificationGatewayComposition().slackMessageReference(),
+				createSlackApiClient: (...args) =>
+					new SlackNotificationGatewayComposition().slackApiClient(...args),
+			},
 			"token",
 			"C123",
 			{ render: () => "Status" },

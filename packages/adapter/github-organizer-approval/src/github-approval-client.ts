@@ -4,11 +4,19 @@ import type {
 	ApprovalContentEdit,
 	GithubApprovalApi,
 } from "./github-approval-contracts.js";
-import { GithubApprovalResponse } from "./github-approval-response.js";
+import type { GithubApprovalResponse } from "./github-approval-response.js";
 
 /** Scoped issue and permission access. No issue text is executable input. */
+export interface GithubApprovalClientCollaborators {
+	readonly githubApprovalResponse: Pick<
+		GithubApprovalResponse,
+		"comments" | "identity" | "permission" | "edit" | "history"
+	>;
+}
+
 export class GithubApprovalClient {
 	constructor(
+		private readonly collaborators: GithubApprovalClientCollaborators,
 		private readonly api: GithubApprovalApi,
 		private readonly owner: string,
 		private readonly repo: string,
@@ -25,7 +33,7 @@ export class GithubApprovalClient {
 				page,
 				per_page: 100,
 			});
-			const response = GithubApprovalResponse.comments(raw);
+			const response = this.collaborators.githubApprovalResponse.comments(raw);
 			comments.push(...response.data);
 			const next = response.headers.link
 				? /<[^>]+>;\s*rel="next"/.test(response.headers.link)
@@ -42,7 +50,7 @@ export class GithubApprovalClient {
 			issue_number: this.issue,
 			body,
 		});
-		return GithubApprovalResponse.identity(response);
+		return this.collaborators.githubApprovalResponse.identity(response);
 	}
 	async update(commentId: number, body: string): Promise<void> {
 		if (body.length > 60000) throw new Error("Approval comment limit exceeded");
@@ -60,7 +68,8 @@ export class GithubApprovalClient {
 				repo: this.repo,
 				username,
 			});
-		const permission = GithubApprovalResponse.permission(response);
+		const permission =
+			this.collaborators.githubApprovalResponse.permission(response);
 		return ["write", "maintain", "admin"].includes(permission);
 	}
 	async replace(
@@ -89,7 +98,7 @@ export class GithubApprovalClient {
 			}`,
 			{ id: comment.node_id },
 		);
-		return GithubApprovalResponse.edit(result, comment);
+		return this.collaborators.githubApprovalResponse.edit(result, comment);
 	}
 	url(commentId: number): string {
 		return `https://github.com/${this.owner}/${this.repo}/issues/${this.issue}#issuecomment-${commentId}`;
@@ -113,7 +122,10 @@ export class GithubApprovalClient {
 			}`,
 				{ id: comment.node_id, ...(after ? { after } : {}) },
 			);
-			const history = GithubApprovalResponse.history(response, comment);
+			const history = this.collaborators.githubApprovalResponse.history(
+				response,
+				comment,
+			);
 			edits.push(...history.nodes);
 			if (!history.pageInfo.hasNextPage) return edits;
 			const next = history.pageInfo.endCursor;
@@ -124,3 +136,10 @@ export class GithubApprovalClient {
 		return edits;
 	}
 }
+export type GithubApprovalClientArguments =
+	ConstructorParameters<typeof GithubApprovalClient> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

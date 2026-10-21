@@ -1,6 +1,6 @@
 import type { Page } from "playwright-core";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ChromiumEndpoint } from "./chromium-endpoint.js";
+import { MeetupEventGatewayComposition } from "./dependency-composition.js";
 import { HcaptchaChallenge } from "./hcaptcha-challenge.js";
 
 function fixture() {
@@ -9,10 +9,13 @@ function fixture() {
 		context: () => ({ browser: () => browser }),
 	} as unknown as Page;
 	const run = vi.fn().mockResolvedValue("solved");
-	vi.spyOn(ChromiumEndpoint, "read").mockResolvedValue(
-		"ws://127.0.0.1:1234/devtools/browser/abc",
-	);
+	const endpoint = {
+		read: vi.fn().mockResolvedValue("ws://127.0.0.1:1234/devtools/browser/abc"),
+	};
 	const challenge = new HcaptchaChallenge(
+		{
+			chromiumEndpoint: endpoint,
+		},
 		{ run },
 		"synthetic-key",
 		"synthetic-model",
@@ -73,7 +76,16 @@ describe("hCaptcha challenge", () => {
 		const run = vi.fn();
 
 		// Act
-		const construct = () => new HcaptchaChallenge({ run }, key, model);
+		const construct = () =>
+			new HcaptchaChallenge(
+				{
+					chromiumEndpoint:
+						new MeetupEventGatewayComposition().chromiumEndpoint(),
+				},
+				{ run },
+				key,
+				model,
+			);
 
 		// Assert
 		expect(construct).toThrow("Gemini credentials and model are required.");

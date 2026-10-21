@@ -7,7 +7,10 @@ describe("GitHub Action input parsing", () => {
 		const input = "42";
 
 		// Act
-		const result = RuntimeInput.positiveIntegerInput("issue-number", input);
+		const result = new RuntimeInput().positiveIntegerInput(
+			"issue-number",
+			input,
+		);
 
 		// Assert
 		expect(result).toBe(42);
@@ -20,7 +23,7 @@ describe("GitHub Action input parsing", () => {
 			const name = "issue-number";
 
 			// Act
-			const parse = () => RuntimeInput.positiveIntegerInput(name, input);
+			const parse = () => new RuntimeInput().positiveIntegerInput(name, input);
 
 			// Assert
 			expect(parse).toThrow("issue-number must be a positive integer");
@@ -32,7 +35,7 @@ describe("GitHub Action input parsing", () => {
 		const allowed = ["check", "fix"];
 
 		// Act
-		const result = RuntimeInput.enumInput("mode", input, allowed);
+		const result = new RuntimeInput().enumInput("mode", input, allowed);
 
 		// Assert
 		expect(result).toBe(input);
@@ -44,7 +47,7 @@ describe("GitHub Action input parsing", () => {
 		const allowed = ["check", "fix"];
 
 		// Act
-		const parse = () => RuntimeInput.enumInput("mode", input, allowed);
+		const parse = () => new RuntimeInput().enumInput("mode", input, allowed);
 
 		// Assert
 		expect(parse).toThrow("mode must be one of: check, fix");
@@ -58,7 +61,7 @@ describe("GitHub Action input parsing", () => {
 		const name = "authorized";
 
 		// Act
-		const result = RuntimeInput.booleanInput(name, input);
+		const result = new RuntimeInput().booleanInput(name, input);
 
 		// Assert
 		expect(result).toBe(expected);
@@ -69,7 +72,7 @@ describe("GitHub Action input parsing", () => {
 		const input = "1";
 
 		// Act
-		const parse = () => RuntimeInput.booleanInput("authorized", input);
+		const parse = () => new RuntimeInput().booleanInput("authorized", input);
 
 		// Assert
 		expect(parse).toThrow("authorized must be true or false");
@@ -82,9 +85,12 @@ describe("GitHub Action input boundaries", () => {
 		// No additional setup is needed.
 
 		// Act
-		const actual = RuntimeInput.booleanInput("slides-ready", "true");
+		const actual = new RuntimeInput().booleanInput("slides-ready", "true");
 		const act = () =>
-			RuntimeInput.positiveIntegerInput("issue-number", "9007199254740992");
+			new RuntimeInput().positiveIntegerInput(
+				"issue-number",
+				"9007199254740992",
+			);
 
 		// Assert
 		expect(actual).toBe(true);

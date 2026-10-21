@@ -1,35 +1,50 @@
-import { CommunicationCalendar } from "../communication-calendar.js";
+import type { CommunicationCalendar } from "../communication-calendar.js";
 import type { AttentionEpisode } from "./model.js";
+export interface AttentionPolicyCollaborators {
+	readonly communicationCalendar: Pick<
+		CommunicationCalendar,
+		"getLocalDate" | "toEpochDay" | "parseIsoLocalDate"
+	>;
+}
+
 export class AttentionPolicy {
-	static day(now: Date): number {
-		const local = CommunicationCalendar.getLocalDate(now, "Europe/Paris");
+	constructor(private readonly collaborators: AttentionPolicyCollaborators) {}
+
+	day(now: Date): number {
+		const local = this.collaborators.communicationCalendar.getLocalDate(
+			now,
+			"Europe/Paris",
+		);
 		if (!local) throw new Error("Invalid attention clock");
-		return CommunicationCalendar.toEpochDay(local);
+		return this.collaborators.communicationCalendar.toEpochDay(local);
 	}
-	static eventDay(date: string): number | undefined {
-		const local = CommunicationCalendar.parseIsoLocalDate(date);
-		return local ? CommunicationCalendar.toEpochDay(local) : undefined;
+	eventDay(date: string): number | undefined {
+		const local =
+			this.collaborators.communicationCalendar.parseIsoLocalDate(date);
+		return local
+			? this.collaborators.communicationCalendar.toEpochDay(local)
+			: undefined;
 	}
-	static window(
+	window(
 		episode: AttentionEpisode,
 		date: string,
 		now: Date,
 	): string | undefined {
-		const day = AttentionPolicy.day(now);
+		const day = this.day(now);
 		const policy = episode.condition.policy;
 		if (policy === "daily") return `day:${day}`;
 		if (policy === "weekly")
-			return `week:${Math.floor((day - AttentionPolicy.day(new Date(episode.openedAt))) / 7)}`;
+			return `week:${Math.floor((day - this.day(new Date(episode.openedAt))) / 7)}`;
 		if (policy === "approval") {
 			const age =
 				now.getTime() - Date.parse(episode.condition.since ?? episode.openedAt);
 			return age >= 86_400_000 ? `day:${day}` : undefined;
 		}
-		const eventDay = AttentionPolicy.eventDay(date);
+		const eventDay = this.eventDay(date);
 		if (eventDay === undefined) return undefined;
-		return AttentionPolicy.milestone(policy, day - eventDay);
+		return this.milestone(policy, day - eventDay);
 	}
-	private static milestone(
+	private milestone(
 		policy: AttentionEpisode["condition"]["policy"],
 		elapsed: number,
 	): string | undefined {
@@ -42,18 +57,15 @@ export class AttentionPolicy {
 			return `${policy}:${elapsed >= 7 ? 7 : 1}`;
 		return undefined;
 	}
-	static view(state: import("./model.js").AttentionState) {
+	view(state: import("./model.js").AttentionState) {
 		return {
 			state,
 			conditions: state.episodes
 				.filter((item) => item.status === "active" || item.status === "unknown")
-				.sort(AttentionPolicy.compare),
+				.sort(this.compare.bind(this)),
 		};
 	}
-	private static compare(
-		left: AttentionEpisode,
-		right: AttentionEpisode,
-	): number {
+	private compare(left: AttentionEpisode, right: AttentionEpisode): number {
 		const severity =
 			Number(right.condition.severity === "error") -
 			Number(left.condition.severity === "error");

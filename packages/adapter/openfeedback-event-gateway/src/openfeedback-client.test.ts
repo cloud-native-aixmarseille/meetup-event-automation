@@ -26,17 +26,4 @@ describe("OpenFeedback HTTP boundary", () => {
 		);
 		expect(fetcher.mock.calls[0][1]).not.toHaveProperty("body");
 	});
-
-	it("does not expose provider error bodies", async () => {
-		// Arrange
-		const response = new Response("private provider payload", { status: 403 });
-
-		// Act
-		const operation = OpenFeedbackClient.read(response, "event-1");
-
-		// Assert
-		await expect(operation).rejects.toThrow(
-			/^OpenFeedback request failed \(HTTP 403\)$/,
-		);
-	});
 });

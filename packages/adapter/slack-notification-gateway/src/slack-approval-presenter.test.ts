@@ -1,5 +1,6 @@
 import type { ApprovalNotificationRequest } from "@meetup-automation/journey";
 import { describe, expect, it } from "vitest";
+import { SlackNotificationGatewayComposition } from "./dependency-composition.js";
 import { SlackApprovalPresenter } from "./slack-approval-presenter.js";
 
 const facts = {
@@ -16,7 +17,15 @@ describe("Slack approval presentation", () => {
 		"renders public approval facts in %s",
 		(locale, emailHeading, meetupHeading) => {
 			// Arrange
-			const presenter = new SlackApprovalPresenter(locale);
+			const presenter = new SlackApprovalPresenter(
+				{
+					createSlackApprovalMessages: (...args) =>
+						new SlackNotificationGatewayComposition().slackApprovalMessages(
+							...args,
+						),
+				},
+				locale,
+			);
 			const requests: readonly ApprovalNotificationRequest[] = [
 				{ ...facts, kind: "email-introduction", recipientCount: 2 },
 				{ ...facts, kind: "meetup-publication" },

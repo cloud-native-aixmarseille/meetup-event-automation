@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { contentFixture, contract } from "../../testing/content.fixtures.js";
+import { PublicationDomainComposition } from "../dependency-composition.js";
 import { ResolveContentValues } from "./resolve-content-values.js";
 
 describe("slotted content values", () => {
@@ -13,7 +14,16 @@ describe("slotted content values", () => {
 				url: "https://images.example.org/logo.png",
 				description: "Public host",
 			};
-			const resolver = new ResolveContentValues(f.images);
+			const resolver = new ResolveContentValues(
+				{
+					contentTextKey: new PublicationDomainComposition().contentTextKey(),
+					contentContractPolicy:
+						new PublicationDomainComposition().contentContractPolicy(),
+					contentFingerprint:
+						new PublicationDomainComposition().contentFingerprint(),
+				},
+				f.images,
+			);
 			if (reason === "invalid")
 				vi.mocked(f.images.validate).mockImplementation(async (image) => {
 					if (image.url === source.url) throw new Error("invalid media");
@@ -45,7 +55,16 @@ describe("slotted content values", () => {
 	it("blocks a required missing host logo before any write", async () => {
 		// Arrange
 		const f = contentFixture(true, undefined, "host.logo");
-		const resolver = new ResolveContentValues(f.images);
+		const resolver = new ResolveContentValues(
+			{
+				contentTextKey: new PublicationDomainComposition().contentTextKey(),
+				contentContractPolicy:
+					new PublicationDomainComposition().contentContractPolicy(),
+				contentFingerprint:
+					new PublicationDomainComposition().contentFingerprint(),
+			},
+			f.images,
+		);
 		const contract = {
 			...f.input.contract,
 			fields: f.input.contract.fields.map((field) => ({
@@ -63,7 +82,16 @@ describe("slotted content values", () => {
 
 	it("resolves explicit slots literally and falls back after a participant is removed", async () => {
 		// Arrange
-		const resolver = new ResolveContentValues(contentFixture().images);
+		const resolver = new ResolveContentValues(
+			{
+				contentTextKey: new PublicationDomainComposition().contentTextKey(),
+				contentContractPolicy:
+					new PublicationDomainComposition().contentContractPolicy(),
+				contentFingerprint:
+					new PublicationDomainComposition().contentFingerprint(),
+			},
+			contentFixture().images,
+		);
 		const fields = [
 			{ type: "text", token: "talk.title", slot: "opening", required: true },
 			{
@@ -93,7 +121,16 @@ describe("slotted content values", () => {
 
 	it("blocks required missing slots instead of substituting another talk", async () => {
 		// Arrange
-		const resolver = new ResolveContentValues(contentFixture().images);
+		const resolver = new ResolveContentValues(
+			{
+				contentTextKey: new PublicationDomainComposition().contentTextKey(),
+				contentContractPolicy:
+					new PublicationDomainComposition().contentContractPolicy(),
+				contentFingerprint:
+					new PublicationDomainComposition().contentFingerprint(),
+			},
+			contentFixture().images,
+		);
 		const fields = [
 			{ type: "text", token: "talk.title", slot: "opening", required: true },
 		] as const;

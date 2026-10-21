@@ -3,18 +3,18 @@ import type { OrganizerApprovalDetails } from "../ports/organizer-approval-detai
 
 /** An approval authorizes a revision and its reviewed public facts. */
 export class ApprovalRequestPolicy {
-	static validate(request: OrganizerApprovalRequest): void {
-		ApprovalRequestPolicy.validateIdentity(request);
+	validate(request: OrganizerApprovalRequest): void {
+		this.validateIdentity(request);
 		if (request.kind === "meetup-publication") return;
 		if (
 			!Number.isSafeInteger(request.recipientCount) ||
 			request.recipientCount <= 0
 		)
 			throw new Error("Invalid approval recipient count");
-		ApprovalRequestPolicy.validateEmailCount(request);
+		this.validateEmailCount(request);
 	}
 
-	static validateIdentity(
+	validateIdentity(
 		request: Pick<
 			OrganizerApprovalRequest,
 			"revision" | "eventDate" | "requestedAt"
@@ -31,7 +31,7 @@ export class ApprovalRequestPolicy {
 			throw new Error("Invalid approval request");
 	}
 
-	static validateEmailCount(
+	validateEmailCount(
 		request: Exclude<OrganizerApprovalRequest, { kind: "meetup-publication" }>,
 	): void {
 		if (
@@ -42,7 +42,7 @@ export class ApprovalRequestPolicy {
 			throw new Error("Invalid approval details");
 	}
 
-	static matches(
+	matches(
 		previous: OrganizerApprovalRequest,
 		request: OrganizerApprovalRequest,
 		status: "pending" | "approved" | "rejected",
@@ -69,11 +69,11 @@ export class ApprovalRequestPolicy {
 		return (
 			previous.recipientCount === request.recipientCount &&
 			(status !== "pending" ||
-				ApprovalRequestPolicy.sameDetails(previous.details, request.details))
+				this.sameDetails(previous.details, request.details))
 		);
 	}
 
-	private static sameDetails(
+	private sameDetails(
 		left: OrganizerApprovalDetails | undefined,
 		right: OrganizerApprovalDetails | undefined,
 	): boolean {

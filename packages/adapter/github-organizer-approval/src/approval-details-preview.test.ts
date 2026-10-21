@@ -20,7 +20,7 @@ describe("GitHub approval preview budget", () => {
 		};
 
 		// Act
-		const preview = ApprovalDetailsPreview.create(details);
+		const preview = new ApprovalDetailsPreview().create(details);
 
 		// Assert
 		expect(preview.emails.length + preview.omittedEmails).toBe(32);
@@ -53,7 +53,7 @@ describe("GitHub approval preview budget", () => {
 		};
 
 		// Act
-		const preview = ApprovalDetailsPreview.create(details);
+		const preview = new ApprovalDetailsPreview().create(details);
 
 		// Assert
 		expect(preview.emails[0]?.recipientName).toHaveLength(200);

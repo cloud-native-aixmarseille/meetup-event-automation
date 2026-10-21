@@ -6,11 +6,24 @@ import type {
 	AttentionChecklistSource,
 } from "@meetup-automation/communication";
 import { ATTENTION_MARKER } from "./attention-record.js";
-import { AttentionMessages } from "./i18n/attention-messages.js";
+import type {
+	AttentionMessages,
+	AttentionMessagesArguments,
+} from "./i18n/attention-messages.js";
 export const DIAGNOSTIC_MARKER =
 	"<!-- meetup-automation:event-diagnostics:v1 -->";
 /** Decodes the diagnostic writer's public Markdown; it does not select tasks. */
+export interface AttentionDiagnosticChecklistCollaborators {
+	readonly createAttentionMessages: (
+		...args: AttentionMessagesArguments
+	) => AttentionMessages;
+}
+
 export class AttentionDiagnosticChecklist implements AttentionChecklistSource {
+	constructor(
+		private readonly collaborators: AttentionDiagnosticChecklistCollaborators,
+	) {}
+
 	private body = "";
 	private commentId?: number;
 	set(commentId: number, body: string): void {
@@ -44,7 +57,7 @@ export class AttentionDiagnosticChecklist implements AttentionChecklistSource {
 	}
 	private action(description: string): AttentionChecklistAction | undefined {
 		for (const locale of ["en", "fr"]) {
-			const messages = new AttentionMessages(locale);
+			const messages = this.collaborators.createAttentionMessages(locale);
 			if (description === messages.t("action.approval-pending"))
 				return "email-approval";
 			if (description === messages.t("action.meetup-approval-pending"))

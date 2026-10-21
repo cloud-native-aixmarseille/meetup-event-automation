@@ -1,4 +1,3 @@
-import { vi } from "vitest";
 import type {
 	EventDocument,
 	EventDocumentCodec,
@@ -8,9 +7,10 @@ import type {
 import type {
 	ContactId,
 	HostId,
-	SpeakerId,
 	ReferentialCatalog,
+	SpeakerId,
 } from "@meetup-automation/referential";
+import { vi } from "vitest";
 import { event } from "./meetup-journey.fixtures.js";
 
 export const publicCatalog: ReferentialCatalog = {

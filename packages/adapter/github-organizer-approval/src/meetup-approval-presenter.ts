@@ -1,22 +1,29 @@
-import { ApprovalCommentCodec } from "./approval-comment-codec.js";
+import type { ApprovalCommentCodec } from "./approval-comment-codec.js";
 import type { ApprovalDecision, StoredApproval } from "./approval-state.js";
 import type { ApprovalMessages } from "./i18n/approval-messages.js";
 
+export interface MeetupApprovalPresenterCollaborators {
+	readonly approvalCommentCodec: Pick<ApprovalCommentCodec, "marker">;
+}
+
 export class MeetupApprovalPresenter {
-	constructor(private readonly messages: ApprovalMessages) {}
+	constructor(
+		private readonly collaborators: MeetupApprovalPresenterCollaborators,
+		private readonly messages: ApprovalMessages,
+	) {}
 	issue(
 		record: Extract<StoredApproval, { kind: "meetup-publication" }>,
 		decision: ApprovalDecision,
 	): string {
 		const details = record.publication;
 		const content = this.messages.t("approval.meetup.details", {
-			title: MeetupApprovalPresenter.escape(details.title),
+			title: this.escape(details.title),
 			date: record.eventDate,
 			startTime: details.startTime,
 			endTime: details.endTime,
-			timeZone: MeetupApprovalPresenter.escape(details.timeZone),
-			venue: MeetupApprovalPresenter.escape(details.venue.name),
-			city: MeetupApprovalPresenter.escape(details.venue.city),
+			timeZone: this.escape(details.timeZone),
+			venue: this.escape(details.venue.name),
+			city: this.escape(details.venue.city),
 			url: details.url,
 		});
 		const controls = record.decision
@@ -29,11 +36,13 @@ export class MeetupApprovalPresenter {
 					approveMark: decision.status === "approved" ? "x" : " ",
 					rejectMark: decision.status === "rejected" ? "x" : " ",
 				});
-		return [ApprovalCommentCodec.marker(record), content, controls].join(
-			"\n\n",
-		);
+		return [
+			this.collaborators.approvalCommentCodec.marker(record),
+			content,
+			controls,
+		].join("\n\n");
 	}
-	private static escape(value: string): string {
+	private escape(value: string): string {
 		return value
 			.replaceAll("&", "&amp;")
 			.replaceAll("<", "&lt;")
@@ -42,3 +51,10 @@ export class MeetupApprovalPresenter {
 			.replace(/[\\`*_{}[\]()#+.!|~-]/g, "\\$&");
 	}
 }
+export type MeetupApprovalPresenterArguments =
+	ConstructorParameters<typeof MeetupApprovalPresenter> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

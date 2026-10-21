@@ -1,8 +1,11 @@
-import { ActionRunner } from "../action-runner.js";
-import { ReferentialActions } from "../referential-actions.js";
+import { GithubActionsComposition } from "../dependency-composition.js";
+import { ReferentialActionComposition } from "../referential-action-composition.js";
 
-await ActionRunner.run(
+const runner = new GithubActionsComposition().actionRunner();
+const action = new ReferentialActionComposition().referentialActions();
+
+await runner.run(
 	"action.referential.sync-issue-form",
-	ReferentialActions.runReferentialSyncIssueFormAction,
+	action.runReferentialSyncIssueFormAction.bind(action),
 	false,
 );

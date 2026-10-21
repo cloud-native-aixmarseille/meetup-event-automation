@@ -2,6 +2,8 @@ import type {
 	AttentionEpisode,
 	AttentionState,
 } from "@meetup-automation/communication";
+import { CommunicationDomainComposition } from "@meetup-automation/communication";
+import { GithubOrganizerAttentionComposition } from "@meetup-automation/github-organizer-attention";
 import { vi } from "vitest";
 import { AttentionDiagnosticChecklist } from "../src/attention-diagnostic-checklist.js";
 import { AttentionPresenter } from "../src/attention-presenter.js";
@@ -29,8 +31,22 @@ export function fixture() {
 	const comments: AttentionComment[] = [];
 	const edits = new Map<string, AttentionCommentEdit>();
 	const histories = new Map<string, AttentionContentEdit[]>();
-	const checklist = new AttentionDiagnosticChecklist();
-	const presenter = new AttentionPresenter("example/meetups", 42, checklist);
+	const checklist = new AttentionDiagnosticChecklist({
+		createAttentionMessages: (...args) =>
+			new GithubOrganizerAttentionComposition().attentionMessages(...args),
+	});
+	const presenter = new AttentionPresenter(
+		{
+			attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+			attentionTaskSelection:
+				new CommunicationDomainComposition().attentionTaskSelection(),
+			createAttentionMessages: (...args) =>
+				new GithubOrganizerAttentionComposition().attentionMessages(...args),
+		},
+		"example/meetups",
+		42,
+		checklist,
+	);
 	const graphql = vi
 		.fn()
 		.mockImplementation(async (_query: string, variables: { id: string }) => ({
@@ -87,7 +103,16 @@ export function fixture() {
 			},
 		},
 	};
-	const client = new GithubAttentionClient(api, "example", "meetups", 42);
+	const client = new GithubAttentionClient(
+		{
+			githubAttentionResponse:
+				new GithubOrganizerAttentionComposition().githubAttentionResponse(),
+		},
+		api,
+		"example",
+		"meetups",
+		42,
+	);
 	return {
 		api,
 		comments,
@@ -101,6 +126,16 @@ export function fixture() {
 		create,
 		update,
 		repository: new GithubAttentionRepository(
+			{
+				attentionRecord:
+					new GithubOrganizerAttentionComposition().attentionRecord(),
+				attentionStateEquality:
+					new CommunicationDomainComposition().attentionStateEquality(),
+				createTrustedAttentionState: (...args) =>
+					new GithubOrganizerAttentionComposition().trustedAttentionState(
+						...args,
+					),
+			},
 			client,
 			"automation[bot]",
 			presenter,

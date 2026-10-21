@@ -5,9 +5,9 @@ import { describe, expect, it } from "vitest";
 import * as ActionInterfaceUsage from "../../scripts/action-interface-usage.js";
 import {
 	type ActionManifest,
-	type Workflow,
 	readYaml,
 	root,
+	type Workflow,
 } from "./support.js";
 
 describe("minimal explicit action interfaces", () => {

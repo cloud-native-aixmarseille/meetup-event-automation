@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { GithubPublicationJournalComposition } from "./dependency-composition.js";
 import { GithubPublicationJournal } from "./github-publication-journal.js";
 
 function fixture(
@@ -22,6 +23,10 @@ function fixture(
 		}),
 	};
 	const journal = new GithubPublicationJournal(
+		{
+			publicationCommentCodec:
+				new GithubPublicationJournalComposition().publicationCommentCodec(),
+		},
 		{ rest: { issues } },
 		{
 			owner: "example",

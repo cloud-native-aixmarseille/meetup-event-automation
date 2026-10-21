@@ -9,8 +9,8 @@ describe("PublicationCommentCodec", () => {
 			const record = { url: `https://example.test/${terminator}<script>` };
 
 			// Act
-			const encoded = PublicationCommentCodec.encode(record);
-			const decoded = PublicationCommentCodec.decode(encoded);
+			const encoded = new PublicationCommentCodec().encode(record);
+			const decoded = new PublicationCommentCodec().decode(encoded);
 
 			// Assert
 			expect(decoded).toEqual(record);
@@ -24,7 +24,7 @@ describe("PublicationCommentCodec", () => {
 		const body = `${PublicationCommentCodec.marker}{"state":"pending","url":"https://example.test/event"}\n-->`;
 
 		// Act
-		const decode = () => PublicationCommentCodec.decode(body);
+		const decode = () => new PublicationCommentCodec().decode(body);
 
 		// Assert
 		expect(decode).toThrow("Publication journal is corrupted");

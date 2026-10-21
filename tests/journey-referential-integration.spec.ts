@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import {
 	type AutomationConfig,
+	JourneyComposition,
+	JourneyPolicyComposition,
 	ManageMeetupEvent,
 	SynchronizeMeetupIssueForm,
 	ValidateMeetupReferentials,
@@ -9,7 +11,9 @@ import type {
 	EventDocument,
 	ReconcileEventDependencies,
 } from "../packages/domain/event/src/index.js";
+import { EventDomainComposition } from "../packages/domain/event/src/index.js";
 import type { RawReferentialCatalog } from "../packages/domain/referential/src/index.js";
+import { ReferentialDomainComposition } from "../packages/domain/referential/src/index.js";
 
 const config: AutomationConfig = {
 	timezone: "Europe/Paris",
@@ -78,6 +82,12 @@ describe("referential journey orchestration", () => {
 
 		// Act
 		const result = await new ValidateMeetupReferentials(
+			{
+				createValidateReferentialCatalog: (...args) =>
+					new ReferentialDomainComposition().validateReferentialCatalog(
+						...args,
+					),
+			},
 			fixture.dependencies,
 		).execute();
 
@@ -102,6 +112,12 @@ describe("referential journey orchestration", () => {
 		// Act
 		const result = await new SynchronizeMeetupIssueForm({
 			validateReferentials: new ValidateMeetupReferentials(
+				{
+					createValidateReferentialCatalog: (...args) =>
+						new ReferentialDomainComposition().validateReferentialCatalog(
+							...args,
+						),
+				},
 				fixture.dependencies,
 			),
 			issueFormProjection: { synchronize },
@@ -137,6 +153,12 @@ describe("referential journey orchestration", () => {
 		// Act
 		const result = await new SynchronizeMeetupIssueForm({
 			validateReferentials: new ValidateMeetupReferentials(
+				{
+					createValidateReferentialCatalog: (...args) =>
+						new ReferentialDomainComposition().validateReferentialCatalog(
+							...args,
+						),
+				},
 				fixture.dependencies,
 			),
 			issueFormProjection: { synchronize },
@@ -189,14 +211,41 @@ describe("event journey selection", () => {
 
 	it("fails explicitly when the requested issue no longer exists", async () => {
 		// Arrange
-		const useCase = new ManageMeetupEvent({
-			proposalSource: { load: vi.fn() },
-			config,
-			referentialRepository: {
-				load: vi.fn().mockResolvedValue(catalog),
+		const useCase = new ManageMeetupEvent(
+			{
+				eventPublicationEvaluation:
+					new JourneyPolicyComposition().eventPublicationEvaluation(),
+				eventReadinessPolicy:
+					new EventDomainComposition().eventReadinessPolicy(),
+				eventLifecycle: new EventDomainComposition().eventLifecycle(),
+				eventDiagnosticProjection:
+					new JourneyPolicyComposition().eventDiagnosticProjection(),
+				eventParticipantResolution:
+					new JourneyPolicyComposition().eventParticipantResolution(),
+				eventRepositoryPatches:
+					new EventDomainComposition().eventRepositoryPatches(),
+				eventDocumentConcurrency:
+					new EventDomainComposition().eventDocumentConcurrency(),
+				createReconcileEvent: (...args) =>
+					new EventDomainComposition().reconcileEvent(...args),
+				createValidateReferentialCatalog: (...args) =>
+					new ReferentialDomainComposition().validateReferentialCatalog(
+						...args,
+					),
+				createRefreshSelectedProposals: (...args) =>
+					new JourneyComposition().refreshSelectedProposals(...args),
+				createResolveEventReferences: (...args) =>
+					new ReferentialDomainComposition().resolveEventReferences(...args),
 			},
-			eventDependencies: eventDependencies(undefined),
-		});
+			{
+				proposalSource: { load: vi.fn() },
+				config,
+				referentialRepository: {
+					load: vi.fn().mockResolvedValue(catalog),
+				},
+				eventDependencies: eventDependencies(undefined),
+			},
+		);
 
 		// Act
 		const operation = useCase.execute({
@@ -219,14 +268,41 @@ describe("event journey selection", () => {
 			labels: ["question"],
 			body: "This is intentionally not a meetup.",
 		};
-		const useCase = new ManageMeetupEvent({
-			proposalSource: { load: vi.fn() },
-			config,
-			referentialRepository: {
-				load: vi.fn().mockResolvedValue(catalog),
+		const useCase = new ManageMeetupEvent(
+			{
+				eventPublicationEvaluation:
+					new JourneyPolicyComposition().eventPublicationEvaluation(),
+				eventReadinessPolicy:
+					new EventDomainComposition().eventReadinessPolicy(),
+				eventLifecycle: new EventDomainComposition().eventLifecycle(),
+				eventDiagnosticProjection:
+					new JourneyPolicyComposition().eventDiagnosticProjection(),
+				eventParticipantResolution:
+					new JourneyPolicyComposition().eventParticipantResolution(),
+				eventRepositoryPatches:
+					new EventDomainComposition().eventRepositoryPatches(),
+				eventDocumentConcurrency:
+					new EventDomainComposition().eventDocumentConcurrency(),
+				createReconcileEvent: (...args) =>
+					new EventDomainComposition().reconcileEvent(...args),
+				createValidateReferentialCatalog: (...args) =>
+					new ReferentialDomainComposition().validateReferentialCatalog(
+						...args,
+					),
+				createRefreshSelectedProposals: (...args) =>
+					new JourneyComposition().refreshSelectedProposals(...args),
+				createResolveEventReferences: (...args) =>
+					new ReferentialDomainComposition().resolveEventReferences(...args),
 			},
-			eventDependencies: eventDependencies(document),
-		});
+			{
+				proposalSource: { load: vi.fn() },
+				config,
+				referentialRepository: {
+					load: vi.fn().mockResolvedValue(catalog),
+				},
+				eventDependencies: eventDependencies(document),
+			},
+		);
 
 		// Act
 		const actual = await useCase.execute({

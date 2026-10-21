@@ -37,3 +37,6 @@ export class GithubFollowUpAttentionRepository implements AttentionRepository {
 		await this.previous.retire(this.sharedCommentId);
 	}
 }
+export type GithubFollowUpAttentionRepositoryArguments = ConstructorParameters<
+	typeof GithubFollowUpAttentionRepository
+>;

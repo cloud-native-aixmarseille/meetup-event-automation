@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { PublicationDomainComposition } from "../dependency-composition.js";
 import type { ContentRecovery } from "./asset-content.js";
-import { ContentFingerprint } from "./content-fingerprint.js";
 import { ContentRecoveryFingerprint } from "./content-recovery-fingerprint.js";
 
 describe("ContentRecoveryFingerprint", () => {
@@ -21,8 +21,14 @@ describe("ContentRecoveryFingerprint", () => {
 
 			// Act
 			const equal =
-				ContentRecoveryFingerprint.create(left) ===
-				ContentRecoveryFingerprint.create(right);
+				new ContentRecoveryFingerprint({
+					contentFingerprint:
+						new PublicationDomainComposition().contentFingerprint(),
+				}).create(left) ===
+				new ContentRecoveryFingerprint({
+					contentFingerprint:
+						new PublicationDomainComposition().contentFingerprint(),
+				}).create(right);
 
 			// Assert
 			expect(equal).toBe(true);
@@ -40,7 +46,9 @@ describe("ContentRecoveryFingerprint", () => {
 		"recognizes persisted recovery without repeating it",
 		(stored) => {
 			// Arrange
-			const fingerprint = ContentFingerprint.of(JSON.stringify(stored));
+			const fingerprint = new PublicationDomainComposition()
+				.contentFingerprint()
+				.of(JSON.stringify(stored));
 			const request: ContentRecovery = {
 				operation: "restore",
 				revision: "2",
@@ -48,11 +56,14 @@ describe("ContentRecoveryFingerprint", () => {
 			};
 
 			// Act
-			const matches = ContentRecoveryFingerprint.matches(request, fingerprint);
-			const changed = ContentRecoveryFingerprint.matches(
-				{ ...request, revision: "3" },
-				fingerprint,
-			);
+			const matches = new ContentRecoveryFingerprint({
+				contentFingerprint:
+					new PublicationDomainComposition().contentFingerprint(),
+			}).matches(request, fingerprint);
+			const changed = new ContentRecoveryFingerprint({
+				contentFingerprint:
+					new PublicationDomainComposition().contentFingerprint(),
+			}).matches({ ...request, revision: "3" }, fingerprint);
 
 			// Assert
 			expect(matches).toBe(true);
@@ -63,18 +74,24 @@ describe("ContentRecoveryFingerprint", () => {
 	it("treats absent binding as absent and rejects different operations", () => {
 		// Arrange
 		const request: ContentRecovery = { operation: "enroll", revision: "1" };
-		const fingerprint = ContentRecoveryFingerprint.create(request);
+		const fingerprint = new ContentRecoveryFingerprint({
+			contentFingerprint:
+				new PublicationDomainComposition().contentFingerprint(),
+		}).create(request);
 
 		// Act
-		const matches = ContentRecoveryFingerprint.matches(
-			{ ...request, bindingId: undefined },
-			fingerprint,
-		);
-		const changed = ContentRecoveryFingerprint.matches(
-			{ ...request, operation: "remove" },
-			fingerprint,
-		);
-		const absent = ContentRecoveryFingerprint.matches(request);
+		const matches = new ContentRecoveryFingerprint({
+			contentFingerprint:
+				new PublicationDomainComposition().contentFingerprint(),
+		}).matches({ ...request, bindingId: undefined }, fingerprint);
+		const changed = new ContentRecoveryFingerprint({
+			contentFingerprint:
+				new PublicationDomainComposition().contentFingerprint(),
+		}).matches({ ...request, operation: "remove" }, fingerprint);
+		const absent = new ContentRecoveryFingerprint({
+			contentFingerprint:
+				new PublicationDomainComposition().contentFingerprint(),
+		}).matches(request);
 
 		// Assert
 		expect(matches).toBe(true);

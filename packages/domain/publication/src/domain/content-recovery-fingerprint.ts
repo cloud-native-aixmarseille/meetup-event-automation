@@ -1,10 +1,18 @@
 import type { ContentRecovery } from "./asset-content.js";
-import { ContentFingerprint } from "./content-fingerprint.js";
+import type { ContentFingerprint } from "./content-fingerprint.js";
 
 /** Persisted recovery identity uses only the operation, revision and optional binding. */
+export interface ContentRecoveryFingerprintCollaborators {
+	readonly contentFingerprint: Pick<ContentFingerprint, "of">;
+}
+
 export class ContentRecoveryFingerprint {
-	static create(recovery: ContentRecovery): string {
-		return ContentFingerprint.of(
+	constructor(
+		private readonly collaborators: ContentRecoveryFingerprintCollaborators,
+	) {}
+
+	create(recovery: ContentRecovery): string {
+		return this.collaborators.contentFingerprint.of(
 			JSON.stringify({
 				operation: recovery.operation,
 				revision: recovery.revision,
@@ -13,7 +21,7 @@ export class ContentRecoveryFingerprint {
 		);
 	}
 
-	static matches(recovery: ContentRecovery, fingerprint?: string): boolean {
+	matches(recovery: ContentRecovery, fingerprint?: string): boolean {
 		if (!fingerprint) return false;
 		// Existing manifests can contain any JSON property order. Recognize those
 		// exact identities so formatting cannot reapply a completed recovery.
@@ -27,7 +35,7 @@ export class ContentRecoveryFingerprint {
 		] as const;
 		return orders.some(
 			(keys) =>
-				ContentFingerprint.of(
+				this.collaborators.contentFingerprint.of(
 					JSON.stringify(
 						Object.fromEntries(keys.map((key) => [key, recovery[key]])),
 					),

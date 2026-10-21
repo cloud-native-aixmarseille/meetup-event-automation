@@ -28,8 +28,16 @@ interface JournalClient {
 	};
 }
 
+export interface GithubPublicationJournalCollaborators {
+	readonly publicationCommentCodec: Pick<
+		PublicationCommentCodec,
+		"decode" | "encode"
+	>;
+}
+
 export class GithubPublicationJournal implements PublicationJournal {
 	constructor(
+		private readonly collaborators: GithubPublicationJournalCollaborators,
 		private readonly client: JournalClient,
 		private readonly scope: Scope,
 		private readonly author: string,
@@ -41,7 +49,9 @@ export class GithubPublicationJournal implements PublicationJournal {
 	async load(): Promise<PublicationRecord | undefined> {
 		const comment = await this.find();
 		if (!comment) return undefined;
-		return PublicationCommentCodec.decode(comment.body ?? "");
+		return this.collaborators.publicationCommentCodec.decode(
+			comment.body ?? "",
+		);
 	}
 
 	async reserve(): Promise<void> {
@@ -49,7 +59,7 @@ export class GithubPublicationJournal implements PublicationJournal {
 			throw new Error("Publication creation was already reserved");
 		await this.client.rest.issues.createComment({
 			...this.scope,
-			body: PublicationCommentCodec.encode({}),
+			body: this.collaborators.publicationCommentCodec.encode({}),
 		});
 		if (!(await this.load()))
 			throw new Error("Publication reservation was not persisted");
@@ -61,7 +71,7 @@ export class GithubPublicationJournal implements PublicationJournal {
 			throw new Error("Publication journal identity conflict");
 		if (existing?.url === url) return;
 		const comment = await this.find();
-		const body = PublicationCommentCodec.encode({ url });
+		const body = this.collaborators.publicationCommentCodec.encode({ url });
 		if (comment) {
 			await this.client.rest.issues.updateComment({
 				owner: this.scope.owner,
@@ -97,3 +107,10 @@ export class GithubPublicationJournal implements PublicationJournal {
 		throw new Error("Publication journal pagination exceeded its bound");
 	}
 }
+export type GithubPublicationJournalArguments =
+	ConstructorParameters<typeof GithubPublicationJournal> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

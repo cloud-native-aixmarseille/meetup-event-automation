@@ -11,11 +11,11 @@ export type CommunicationIdempotencyComponents = {
 };
 
 export class CommunicationIdempotency {
-	static isSafeCommunicationIdentifier(value: string): boolean {
+	isSafeCommunicationIdentifier(value: string): boolean {
 		return SAFE_IDENTIFIER_PATTERN.test(value);
 	}
 
-	static createCommunicationIdempotencyKey(
+	createCommunicationIdempotencyKey(
 		components: CommunicationIdempotencyComponents,
 	): string {
 		const values = [
@@ -25,7 +25,7 @@ export class CommunicationIdempotency {
 			components.policyVersion,
 		];
 
-		if (!values.every(CommunicationIdempotency.isSafeCommunicationIdentifier)) {
+		if (!values.every(this.isSafeCommunicationIdentifier.bind(this))) {
 			throw new Error(
 				"Communication identifiers must be stable, opaque, and PII-free",
 			);

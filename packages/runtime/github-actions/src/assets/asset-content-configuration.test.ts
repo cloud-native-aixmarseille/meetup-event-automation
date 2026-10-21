@@ -1,4 +1,6 @@
+import { PublicationDomainComposition } from "@meetup-automation/publication";
 import { describe, expect, it } from "vitest";
+import { GithubActionsComposition } from "../dependency-composition.js";
 import { AssetContentConfiguration } from "./asset-content-configuration.js";
 
 describe("committed content configuration", () => {
@@ -33,8 +35,20 @@ describe("committed content configuration", () => {
 		};
 
 		// Act
-		const actual = AssetContentConfiguration.parse(input, "example/meetups#42");
-		const absent = AssetContentConfiguration.parse(input, "example/meetups#44");
+		const actual = new AssetContentConfiguration({
+			runtimeInput: new GithubActionsComposition().runtimeInput(),
+			contentContractPolicy:
+				new PublicationDomainComposition().contentContractPolicy(),
+			assetRenderConfiguration:
+				new GithubActionsComposition().assetRenderConfiguration(),
+		}).parse(input, "example/meetups#42");
+		const absent = new AssetContentConfiguration({
+			runtimeInput: new GithubActionsComposition().runtimeInput(),
+			contentContractPolicy:
+				new PublicationDomainComposition().contentContractPolicy(),
+			assetRenderConfiguration:
+				new GithubActionsComposition().assetRenderConfiguration(),
+		}).parse(input, "example/meetups#44");
 
 		// Assert
 		expect(actual.talks).toEqual({ opening });
@@ -58,7 +72,13 @@ describe("committed content configuration", () => {
 			const input = contracts;
 
 			// Act
-			const actual = AssetContentConfiguration.usesNextEvent(input);
+			const actual = new AssetContentConfiguration({
+				runtimeInput: new GithubActionsComposition().runtimeInput(),
+				contentContractPolicy:
+					new PublicationDomainComposition().contentContractPolicy(),
+				assetRenderConfiguration:
+					new GithubActionsComposition().assetRenderConfiguration(),
+			}).usesNextEvent(input);
 
 			// Assert
 			expect(actual).toBe(expected);
@@ -77,7 +97,13 @@ describe("committed content configuration", () => {
 		};
 
 		// Act
-		const result = AssetContentConfiguration.parse(input, "example/meetups#42");
+		const result = new AssetContentConfiguration({
+			runtimeInput: new GithubActionsComposition().runtimeInput(),
+			contentContractPolicy:
+				new PublicationDomainComposition().contentContractPolicy(),
+			assetRenderConfiguration:
+				new GithubActionsComposition().assetRenderConfiguration(),
+		}).parse(input, "example/meetups#42");
 
 		// Assert
 		expect(result.speakers).toEqual({ portrait: "speaker-one" });
@@ -90,7 +116,13 @@ describe("committed content configuration", () => {
 
 		// Act
 		try {
-			AssetContentConfiguration.parse(
+			new AssetContentConfiguration({
+				runtimeInput: new GithubActionsComposition().runtimeInput(),
+				contentContractPolicy:
+					new PublicationDomainComposition().contentContractPolicy(),
+				assetRenderConfiguration:
+					new GithubActionsComposition().assetRenderConfiguration(),
+			}).parse(
 				{
 					version: 1,
 					contracts: {},
@@ -149,7 +181,14 @@ describe("asset configuration boundary", () => {
 		const eventId = "event";
 
 		// Act
-		const parse = () => AssetContentConfiguration.parse(input, eventId);
+		const parse = () =>
+			new AssetContentConfiguration({
+				runtimeInput: new GithubActionsComposition().runtimeInput(),
+				contentContractPolicy:
+					new PublicationDomainComposition().contentContractPolicy(),
+				assetRenderConfiguration:
+					new GithubActionsComposition().assetRenderConfiguration(),
+			}).parse(input, eventId);
 
 		// Assert
 		expect(parse).toThrow(/Invalid/);

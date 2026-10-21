@@ -3,13 +3,25 @@ import {
 	rawCatalog,
 	speakerRecord,
 } from "../../../testing/referential.fixtures.js";
+import { ReferentialDomainComposition } from "../../dependency-composition.js";
 import { ProjectReferentialChoices } from "./project-referential-choices.js";
 import { ValidateReferentialCatalog } from "./validate-referential-catalog.js";
 
 describe("ProjectReferentialChoices", () => {
 	it("emits plain public names from a valid catalog", async () => {
 		// Arrange
-		const validation = await new ValidateReferentialCatalog().execute(
+		const validation = await new ValidateReferentialCatalog({
+			referentialDiagnostics:
+				new ReferentialDomainComposition().referentialDiagnostics(),
+			hostCatalogValidator:
+				new ReferentialDomainComposition().hostCatalogValidator(),
+			speakerCatalogValidator:
+				new ReferentialDomainComposition().speakerCatalogValidator(),
+			speakerSourceFields:
+				new ReferentialDomainComposition().speakerSourceFields(),
+			referentialCatalogOperations:
+				new ReferentialDomainComposition().referentialCatalogOperations(),
+		}).execute(
 			rawCatalog({
 				hosts: [
 					hostRecord(),

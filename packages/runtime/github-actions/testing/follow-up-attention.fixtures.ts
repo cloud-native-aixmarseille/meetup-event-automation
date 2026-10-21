@@ -1,5 +1,5 @@
-import type { AttentionStage } from "@meetup-automation/communication";
 import { getOctokit } from "@actions/github";
+import type { AttentionStage } from "@meetup-automation/communication";
 import type {
 	EventDocumentCodec,
 	EventRepository,

@@ -1,15 +1,16 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { CommunicationDiagnostic } from "@meetup-automation/communication";
-import type { CommunicationJourneyDiagnostic } from "@meetup-automation/journey";
-import type { ReferentialDiagnostic } from "@meetup-automation/referential";
 import { describe, expect, expectTypeOf, it } from "vitest";
 import { GUIDANCE } from "../../packages/adapter/github-event-comment-repository/src/diagnostic-guidance.js";
-import { DiagnosticPresenter } from "../../packages/adapter/github-event-comment-repository/src/diagnostic-presentation.js";
 import { EventCommentMessages } from "../../packages/adapter/github-event-comment-repository/src/i18n/event-comment-messages.js";
+import { GithubEventCommentRepositoryComposition } from "../../packages/adapter/github-event-comment-repository/src/index.js";
 import type { STAGE_GUIDANCE } from "../../packages/adapter/github-event-comment-repository/src/stage-diagnostic-guidance.js";
 import type { IssueFormMessages } from "../../packages/adapter/yaml-issue-form-projection/src/i18n/issue-form-messages.js";
-import { DiagnosticPolicy } from "../../packages/application/journey/src/result/diagnostic-policy.js";
+import type { CommunicationJourneyDiagnostic } from "../../packages/application/journey/src/index.js";
+import { JourneyPolicyComposition } from "../../packages/application/journey/src/index.js";
+import type { CommunicationDiagnostic } from "../../packages/domain/communication/src/index.js";
+import type { ReferentialDiagnostic } from "../../packages/domain/referential/src/index.js";
+import { LocalizationComposition } from "../../packages/presentation/localization/src/index.js";
 import { ActionMessages } from "../../packages/runtime/github-actions/src/i18n/action-messages.js";
 import type { MessageId } from "../../packages/runtime/github-actions/src/i18n/catalog.js";
 import { DIAGNOSTICS_REFERENTIAL_EN } from "../../packages/runtime/github-actions/src/i18n/diagnostics-referential.en.js";
@@ -81,31 +82,41 @@ describe("localization contract", () => {
 	});
 	it("localizes registered organizer guidance in its owning presenter", () => {
 		// Arrange
-		const english = new EventCommentMessages("en");
-		const french = new EventCommentMessages("fr");
+		const english = new EventCommentMessages(
+			{ localeResolver: new LocalizationComposition().localeResolver() },
+			"en",
+		);
+		const french = new EventCommentMessages(
+			{ localeResolver: new LocalizationComposition().localeResolver() },
+			"fr",
+		);
 		const privateMessage = "private@example.test";
 
 		// Act
 		const guidance = [...GUIDANCE].map(([code, [, key]]) => ({
 			key,
-			english: DiagnosticPresenter.presentDiagnostic(
-				{
-					code,
-					severity: "error",
-					category: "invalid",
-					message: privateMessage,
-				},
-				english,
-			),
-			french: DiagnosticPresenter.presentDiagnostic(
-				{
-					code,
-					severity: "error",
-					category: "invalid",
-					message: privateMessage,
-				},
-				french,
-			),
+			english: new GithubEventCommentRepositoryComposition()
+				.diagnosticPresenter()
+				.presentDiagnostic(
+					{
+						code,
+						severity: "error",
+						category: "invalid",
+						message: privateMessage,
+					},
+					english,
+				),
+			french: new GithubEventCommentRepositoryComposition()
+				.diagnosticPresenter()
+				.presentDiagnostic(
+					{
+						code,
+						severity: "error",
+						category: "invalid",
+						message: privateMessage,
+					},
+					french,
+				),
 		}));
 
 		// Assert
@@ -134,7 +145,9 @@ describe("localization contract", () => {
 
 		// Act
 		const classifications = informational.map((code) =>
-			DiagnosticPolicy.classify({ code, severity: "warning" }),
+			new JourneyPolicyComposition()
+				.diagnosticPolicy()
+				.classify({ code, severity: "warning" }),
 		);
 
 		// Assert
@@ -148,7 +161,10 @@ describe("localization contract", () => {
 		"uses safe localized guidance for extensible diagnostic %s",
 		(code, key) => {
 			// Arrange
-			const messages = new EventCommentMessages("fr");
+			const messages = new EventCommentMessages(
+				{ localeResolver: new LocalizationComposition().localeResolver() },
+				"fr",
+			);
 			const diagnostic = {
 				code,
 				severity: "error" as const,
@@ -158,10 +174,9 @@ describe("localization contract", () => {
 			};
 
 			// Act
-			const presented = DiagnosticPresenter.presentDiagnostic(
-				diagnostic,
-				messages,
-			);
+			const presented = new GithubEventCommentRepositoryComposition()
+				.diagnosticPresenter()
+				.presentDiagnostic(diagnostic, messages);
 
 			// Assert
 			expect(presented.message).toBe(messages.t(key));
@@ -170,7 +185,10 @@ describe("localization contract", () => {
 	);
 	it("localizes referential diagnostics used in speaker review pull requests", () => {
 		// Arrange
-		const messages = new ActionMessages("fr");
+		const messages = new ActionMessages(
+			{ localeResolver: new LocalizationComposition().localeResolver() },
+			"fr",
+		);
 		const codes = Object.keys(DIAGNOSTICS_REFERENTIAL_EN).map((key) =>
 			key.replace(/^diagnostic\./, ""),
 		);

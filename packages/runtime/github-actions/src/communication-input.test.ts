@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { runtimeInput } from "../testing/communication.fixtures.js";
 import { CommunicationInput } from "./communication-input.js";
+import { GithubActionsComposition } from "./dependency-composition.js";
 
 describe("communication invocation input", () => {
 	it.each([
@@ -14,7 +15,11 @@ describe("communication invocation input", () => {
 		const input = { ...runtimeInput("/synthetic/workspace"), [field]: "  " };
 
 		// Act
-		const validate = () => CommunicationInput.validate(input);
+		const validate = () =>
+			new CommunicationInput({
+				conferenceHallInput:
+					new GithubActionsComposition().conferenceHallInput(),
+			}).validate(input);
 
 		// Assert
 		expect(validate).toThrow(`Input required and not supplied: ${field}`);
@@ -26,7 +31,11 @@ describe("communication invocation input", () => {
 			const input = runtimeInput("/synthetic/workspace", { slidesReady });
 
 			// Act
-			const validate = () => CommunicationInput.validate(input);
+			const validate = () =>
+				new CommunicationInput({
+					conferenceHallInput:
+						new GithubActionsComposition().conferenceHallInput(),
+				}).validate(input);
 
 			// Assert
 			expect(validate).not.toThrow();

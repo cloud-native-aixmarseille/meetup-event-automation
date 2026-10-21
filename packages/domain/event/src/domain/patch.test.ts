@@ -1,9 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createTestEvent } from "../../testing/event.fixtures.js";
-import {
-	EXPECTED_POST_EVENT_TASK_NAMES,
-	MeetupEventOperations,
-} from "./model.js";
+import { EventDomainComposition } from "../dependency-composition.js";
+import { EXPECTED_POST_EVENT_TASK_NAMES } from "./model.js";
 import { EventPatches } from "./patch.js";
 
 describe("immutable event patches", () => {
@@ -12,28 +10,70 @@ describe("immutable event patches", () => {
 		const source = createTestEvent();
 
 		// Act
-		const patch = EventPatches.createEventPatch([
-			EventPatches.replaceEventField("issueTitle", "Projected title", "test"),
-			EventPatches.replaceEventField("labels", ["meetup"], "test"),
-			EventPatches.replaceEventField("eventTitle", "New event title", "test"),
-			EventPatches.replaceEventField("date", "2026-10-01", "test"),
-			EventPatches.replaceEventField("description", "New description", "test"),
-			EventPatches.replaceEventField("host", undefined, "test"),
-			EventPatches.replaceEventField("agenda", [], "test"),
-			EventPatches.replaceEventField("publicationLinks", {}, "test"),
-			EventPatches.replaceEventField("occurrenceStatus", "postponed", "test"),
-			EventPatches.replaceEventField("timeZone", "UTC", "test"),
-			EventPatches.replaceEventField(
+		const patch = new EventPatches({
+			meetupEventOperations:
+				new EventDomainComposition().meetupEventOperations(),
+		}).createEventPatch([
+			new EventPatches({
+				meetupEventOperations:
+					new EventDomainComposition().meetupEventOperations(),
+			}).replaceEventField("issueTitle", "Projected title", "test"),
+			new EventPatches({
+				meetupEventOperations:
+					new EventDomainComposition().meetupEventOperations(),
+			}).replaceEventField("labels", ["meetup"], "test"),
+			new EventPatches({
+				meetupEventOperations:
+					new EventDomainComposition().meetupEventOperations(),
+			}).replaceEventField("eventTitle", "New event title", "test"),
+			new EventPatches({
+				meetupEventOperations:
+					new EventDomainComposition().meetupEventOperations(),
+			}).replaceEventField("date", "2026-10-01", "test"),
+			new EventPatches({
+				meetupEventOperations:
+					new EventDomainComposition().meetupEventOperations(),
+			}).replaceEventField("description", "New description", "test"),
+			new EventPatches({
+				meetupEventOperations:
+					new EventDomainComposition().meetupEventOperations(),
+			}).replaceEventField("host", undefined, "test"),
+			new EventPatches({
+				meetupEventOperations:
+					new EventDomainComposition().meetupEventOperations(),
+			}).replaceEventField("agenda", [], "test"),
+			new EventPatches({
+				meetupEventOperations:
+					new EventDomainComposition().meetupEventOperations(),
+			}).replaceEventField("publicationLinks", {}, "test"),
+			new EventPatches({
+				meetupEventOperations:
+					new EventDomainComposition().meetupEventOperations(),
+			}).replaceEventField("occurrenceStatus", "postponed", "test"),
+			new EventPatches({
+				meetupEventOperations:
+					new EventDomainComposition().meetupEventOperations(),
+			}).replaceEventField("timeZone", "UTC", "test"),
+			new EventPatches({
+				meetupEventOperations:
+					new EventDomainComposition().meetupEventOperations(),
+			}).replaceEventField(
 				"confirmations",
 				{ host: false, speakers: false },
 				"test",
 			),
-			EventPatches.replaceEventField(
+			new EventPatches({
+				meetupEventOperations:
+					new EventDomainComposition().meetupEventOperations(),
+			}).replaceEventField(
 				"logistics",
 				{ aperitif: "not-planned", postEventVenue: "planned" },
 				"test",
 			),
-			EventPatches.replaceEventField(
+			new EventPatches({
+				meetupEventOperations:
+					new EventDomainComposition().meetupEventOperations(),
+			}).replaceEventField(
 				"operationalChecklists",
 				{
 					slidesAndContent: [{ name: "Basic Slides", completed: true }],
@@ -45,9 +85,15 @@ describe("immutable event patches", () => {
 				},
 				"test",
 			),
-			EventPatches.replaceEventField("followUpComplete", true, "test"),
+			new EventPatches({
+				meetupEventOperations:
+					new EventDomainComposition().meetupEventOperations(),
+			}).replaceEventField("followUpComplete", true, "test"),
 		]);
-		const result = EventPatches.applyEventPatch(source, patch);
+		const result = new EventPatches({
+			meetupEventOperations:
+				new EventDomainComposition().meetupEventOperations(),
+		}).applyEventPatch(source, patch);
 
 		// Assert
 		expect(result).toMatchObject({
@@ -88,16 +134,27 @@ describe("immutable event patches", () => {
 		});
 
 		// Act
-		const patchedCompletion = EventPatches.applyEventPatch(
+		const patchedCompletion = new EventPatches({
+			meetupEventOperations:
+				new EventDomainComposition().meetupEventOperations(),
+		}).applyEventPatch(
 			source,
-			EventPatches.createEventPatch([
-				EventPatches.replaceEventField("followUpComplete", true, "test"),
+			new EventPatches({
+				meetupEventOperations:
+					new EventDomainComposition().meetupEventOperations(),
+			}).createEventPatch([
+				new EventPatches({
+					meetupEventOperations:
+						new EventDomainComposition().meetupEventOperations(),
+				}).replaceEventField("followUpComplete", true, "test"),
 			]),
 		).followUpComplete;
-		const clonedCompletion = MeetupEventOperations.cloneMeetupEvent({
-			...source,
-			followUpComplete: true,
-		}).followUpComplete;
+		const clonedCompletion = new EventDomainComposition()
+			.meetupEventOperations()
+			.cloneMeetupEvent({
+				...source,
+				followUpComplete: true,
+			}).followUpComplete;
 
 		// Assert
 		expect(patchedCompletion).toBe(false);
@@ -119,10 +176,19 @@ describe("immutable event patches", () => {
 		});
 
 		// Act
-		const result = EventPatches.applyEventPatch(
+		const result = new EventPatches({
+			meetupEventOperations:
+				new EventDomainComposition().meetupEventOperations(),
+		}).applyEventPatch(
 			source,
-			EventPatches.createEventPatch([
-				EventPatches.replaceEventField(
+			new EventPatches({
+				meetupEventOperations:
+					new EventDomainComposition().meetupEventOperations(),
+			}).createEventPatch([
+				new EventPatches({
+					meetupEventOperations:
+						new EventDomainComposition().meetupEventOperations(),
+				}).replaceEventField(
 					"operationalChecklists",
 					{
 						...source.operationalChecklists,
@@ -142,16 +208,36 @@ describe("immutable event patches", () => {
 		const source = createTestEvent();
 
 		// Act
-		const clone = MeetupEventOperations.cloneMeetupEvent(source);
-		const merged = EventPatches.mergeEventPatches(
-			EventPatches.createEventPatch([
-				EventPatches.replaceEventField("eventTitle", "First", "first patch"),
+		const clone = new EventDomainComposition()
+			.meetupEventOperations()
+			.cloneMeetupEvent(source);
+		const merged = new EventPatches({
+			meetupEventOperations:
+				new EventDomainComposition().meetupEventOperations(),
+		}).mergeEventPatches(
+			new EventPatches({
+				meetupEventOperations:
+					new EventDomainComposition().meetupEventOperations(),
+			}).createEventPatch([
+				new EventPatches({
+					meetupEventOperations:
+						new EventDomainComposition().meetupEventOperations(),
+				}).replaceEventField("eventTitle", "First", "first patch"),
 			]),
-			EventPatches.createEventPatch([
-				EventPatches.replaceEventField("description", "Second", "second patch"),
+			new EventPatches({
+				meetupEventOperations:
+					new EventDomainComposition().meetupEventOperations(),
+			}).createEventPatch([
+				new EventPatches({
+					meetupEventOperations:
+						new EventDomainComposition().meetupEventOperations(),
+				}).replaceEventField("description", "Second", "second patch"),
 			]),
 		);
-		const actual = EventPatches.applyEventPatch(source, merged);
+		const actual = new EventPatches({
+			meetupEventOperations:
+				new EventDomainComposition().meetupEventOperations(),
+		}).applyEventPatch(source, merged);
 
 		// Assert
 		expect(clone).toEqual(source);

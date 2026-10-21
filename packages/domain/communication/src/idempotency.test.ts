@@ -21,11 +21,17 @@ describe("createCommunicationIdempotencyKey", () => {
 
 		// Act
 		const key =
-			CommunicationIdempotency.createCommunicationIdempotencyKey(components);
+			new CommunicationIdempotency().createCommunicationIdempotencyKey(
+				components,
+			);
 		const repeatedKey =
-			CommunicationIdempotency.createCommunicationIdempotencyKey(components);
+			new CommunicationIdempotency().createCommunicationIdempotencyKey(
+				components,
+			);
 		const changedKeys = variants.map(
-			CommunicationIdempotency.createCommunicationIdempotencyKey,
+			new CommunicationIdempotency().createCommunicationIdempotencyKey.bind(
+				new CommunicationIdempotency(),
+			),
 		);
 
 		// Assert
@@ -46,7 +52,7 @@ describe("createCommunicationIdempotencyKey", () => {
 
 		// Act
 		const act = () =>
-			CommunicationIdempotency.createCommunicationIdempotencyKey({
+			new CommunicationIdempotency().createCommunicationIdempotencyKey({
 				repositoryId: "cloud-native-aixmarseille/meetups",
 				eventId: "issue:123",
 				kind: "host-introduction",

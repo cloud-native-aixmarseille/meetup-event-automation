@@ -6,10 +6,7 @@ export class SpeakerReferencesPresenter {
 
 	render(speakers: readonly string[]): string {
 		const references = speakers
-			.map(
-				(speaker) =>
-					`- <code>${SpeakerReferencesPresenter.escapeHtml(speaker)}</code>`,
-			)
+			.map((speaker) => `- <code>${this.escapeHtml(speaker)}</code>`)
 			.join("\n");
 
 		return [
@@ -26,10 +23,13 @@ export class SpeakerReferencesPresenter {
 		].join("\n");
 	}
 
-	private static escapeHtml(value: string): string {
+	private escapeHtml(value: string): string {
 		return value
 			.replaceAll("&", "&amp;")
 			.replaceAll("<", "&lt;")
 			.replaceAll(">", "&gt;");
 	}
 }
+export type SpeakerReferencesPresenterArguments = ConstructorParameters<
+	typeof SpeakerReferencesPresenter
+>;

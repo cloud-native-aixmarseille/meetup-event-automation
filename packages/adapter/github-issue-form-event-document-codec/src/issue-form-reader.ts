@@ -1,32 +1,65 @@
-import {
-	type EventDiagnostic,
+import type {
+	EventDiagnostic,
 	EventDiagnostics,
-	type EventDocument,
-	type EventDocumentDecodeResult,
-	type MeetupEvent,
+	EventDocument,
+	EventDocumentDecodeResult,
+	MeetupEvent,
 	MeetupEventOperations,
 } from "@meetup-automation/event";
-import { EventReferenceMetadata } from "./event-reference-metadata.js";
+import type { EventReferenceMetadata } from "./event-reference-metadata.js";
 import {
 	type GitHubIssueFormEventDocumentCodecOptions,
 	HEADINGS,
 	type Section,
 } from "./github-issue-form-event-document-codec-contracts.js";
-import { IssueFormChecklists } from "./issue-form-checklists.js";
+import type { IssueFormChecklists } from "./issue-form-checklists.js";
 import type { IssueFormBody } from "./issue-form-event-input.js";
-import { IssueFormEventMapper } from "./issue-form-event-mapper.js";
-import { IssueFormSections } from "./issue-form-sections.js";
-import { ManagedIssueMarkers } from "./managed-issue-markers.js";
-import { ParticipantLinks } from "./participant-links.js";
-import { ProposalSelectionCodec } from "./proposal-selection-codec.js";
+import type { IssueFormEventMapper } from "./issue-form-event-mapper.js";
+import type { IssueFormSections } from "./issue-form-sections.js";
+import type { ManagedIssueMarkers } from "./managed-issue-markers.js";
+import type { ParticipantLinks } from "./participant-links.js";
+import type { ProposalSelectionCodec } from "./proposal-selection-codec.js";
 
 type Sections = ReadonlyMap<string, readonly Section[]>;
+
+export interface IssueFormReaderCollaborators {
+	readonly issueFormSections: Pick<
+		IssueFormSections,
+		"parseSections" | "readSection"
+	>;
+	readonly managedIssueMarkers: Pick<ManagedIssueMarkers, "readSchema">;
+	readonly issueFormEventMapper: Pick<IssueFormEventMapper, "map">;
+	readonly proposalSelectionCodec: Pick<
+		ProposalSelectionCodec,
+		"read" | "restore"
+	>;
+	readonly issueFormChecklists: Pick<
+		IssueFormChecklists,
+		"toOperationalChecklist" | "readCheckboxes" | "readLogisticsIntent"
+	>;
+	readonly meetupEventOperations: Pick<
+		MeetupEventOperations,
+		"postEventChecklistIsComplete"
+	>;
+	readonly eventReferenceMetadata: Pick<
+		EventReferenceMetadata,
+		"readReferenceMetadata" | "applyReferenceMetadata"
+	>;
+	readonly eventDiagnostics: Pick<EventDiagnostics, "diagnostic">;
+	readonly participantLinks: Pick<
+		ParticipantLinks,
+		"readSourceLinks" | "restoreSourceLocation"
+	>;
+}
 
 export class IssueFormReader {
 	private readonly timeZone: string;
 	private readonly hostConfirmationLabel: string;
 	private readonly speakersConfirmationLabel: string;
-	constructor(options: GitHubIssueFormEventDocumentCodecOptions = {}) {
+	constructor(
+		private readonly collaborators: IssueFormReaderCollaborators,
+		options: GitHubIssueFormEventDocumentCodecOptions = {},
+	) {
 		this.timeZone = options.timeZone ?? "Europe/Paris";
 		this.hostConfirmationLabel =
 			options.hostConfirmationLabel ?? "hoster:confirmed";
@@ -35,11 +68,16 @@ export class IssueFormReader {
 	}
 	decode(document: EventDocument): EventDocumentDecodeResult {
 		const diagnostics: EventDiagnostic[] = [];
-		const sections = IssueFormSections.parseSections(document.body);
-		const schema = ManagedIssueMarkers.readSchema(document.body, diagnostics);
+		const sections = this.collaborators.issueFormSections.parseSections(
+			document.body,
+		);
+		const schema = this.collaborators.managedIssueMarkers.readSchema(
+			document.body,
+			diagnostics,
+		);
 		const parsedBody = this.readBody(sections, diagnostics);
 		const operations = this.readOperations(sections, diagnostics);
-		const migrated = IssueFormEventMapper.map({
+		const migrated = this.collaborators.issueFormEventMapper.map({
 			repository: document.identity.repository,
 			issueNumber: document.identity.issueNumber,
 			issueState: document.issueState,
@@ -56,14 +94,17 @@ export class IssueFormReader {
 		const event: MeetupEvent = {
 			...migrated.event,
 			...operations,
-			...ProposalSelectionCodec.read(document.body, diagnostics),
+			...this.collaborators.proposalSelectionCodec.read(
+				document.body,
+				diagnostics,
+			),
 			confirmations: {
 				host: document.labels.includes(this.hostConfirmationLabel),
 				speakers: document.labels.includes(this.speakersConfirmationLabel),
 			},
 		};
 		const referenced = this.restoreReferences(
-			ProposalSelectionCodec.restore(event),
+			this.collaborators.proposalSelectionCodec.restore(event),
 			document.body,
 			schema,
 			diagnostics,
@@ -82,7 +123,12 @@ export class IssueFormReader {
 		diagnostics: EventDiagnostic[],
 	): IssueFormBody {
 		const read = (heading: string, required = false) =>
-			IssueFormSections.readSection(sections, heading, required, diagnostics);
+			this.collaborators.issueFormSections.readSection(
+				sections,
+				heading,
+				required,
+				diagnostics,
+			);
 		return {
 			event_title: read(HEADINGS.eventTitle, true),
 			event_date: read(HEADINGS.date, true),
@@ -104,8 +150,12 @@ export class IssueFormReader {
 		"logistics" | "operationalChecklists" | "followUpComplete"
 	> {
 		const read = (heading: string) =>
-			IssueFormChecklists.toOperationalChecklist(
-				IssueFormChecklists.readCheckboxes(sections, heading, diagnostics),
+			this.collaborators.issueFormChecklists.toOperationalChecklist(
+				this.collaborators.issueFormChecklists.readCheckboxes(
+					sections,
+					heading,
+					diagnostics,
+				),
 			);
 		const slidesAndContent = read(HEADINGS.slides);
 		const communication = read(HEADINGS.communication);
@@ -113,21 +163,24 @@ export class IssueFormReader {
 		const postEvent = read(HEADINGS.postEvent);
 		const followUpComplete =
 			diagnostics.length === diagnosticOffset &&
-			MeetupEventOperations.postEventChecklistIsComplete(postEvent);
+			this.collaborators.meetupEventOperations.postEventChecklistIsComplete(
+				postEvent,
+			);
 		return {
 			operationalChecklists: { slidesAndContent, communication, postEvent },
 			followUpComplete,
 			logistics: {
-				aperitif: IssueFormChecklists.readLogisticsIntent(
+				aperitif: this.collaborators.issueFormChecklists.readLogisticsIntent(
 					sections,
 					HEADINGS.aperitif,
 					diagnostics,
 				),
-				postEventVenue: IssueFormChecklists.readLogisticsIntent(
-					sections,
-					HEADINGS.restaurant,
-					diagnostics,
-				),
+				postEventVenue:
+					this.collaborators.issueFormChecklists.readLogisticsIntent(
+						sections,
+						HEADINGS.restaurant,
+						diagnostics,
+					),
 			},
 		};
 	}
@@ -137,19 +190,20 @@ export class IssueFormReader {
 		schema: 0 | 1,
 		diagnostics: EventDiagnostic[],
 	): MeetupEvent {
-		const metadata = EventReferenceMetadata.readReferenceMetadata(
-			body,
-			diagnostics,
-		);
+		const metadata =
+			this.collaborators.eventReferenceMetadata.readReferenceMetadata(
+				body,
+				diagnostics,
+			);
 		if (metadata)
-			return EventReferenceMetadata.applyReferenceMetadata(
+			return this.collaborators.eventReferenceMetadata.applyReferenceMetadata(
 				event,
 				metadata,
 				diagnostics,
 			);
 		if (schema === 1)
 			diagnostics.push(
-				EventDiagnostics.diagnostic({
+				this.collaborators.eventDiagnostics.diagnostic({
 					code: "event.document.reference-metadata.missing",
 					severity: "warning",
 					category: "migration",
@@ -165,25 +219,35 @@ export class IssueFormReader {
 		repository: string,
 	): MeetupEvent {
 		// Locations are presentation data. Identity comes from name-bound metadata.
-		const hostSources = ParticipantLinks.readSourceLinks(
+		const hostSources = this.collaborators.participantLinks.readSourceLinks(
 			sections.get(HEADINGS.host)?.[0]?.value ?? "",
 			repository,
 		);
-		const speakerSources = ParticipantLinks.readSourceLinks(
+		const speakerSources = this.collaborators.participantLinks.readSourceLinks(
 			sections.get(HEADINGS.agenda)?.[0]?.value ?? "",
 			repository,
 		);
 		return {
 			...event,
 			host: event.host
-				? ParticipantLinks.restoreSourceLocation(event.host, hostSources)
+				? this.collaborators.participantLinks.restoreSourceLocation(
+						event.host,
+						hostSources,
+					)
 				: undefined,
 			agenda: event.agenda.map((entry) => ({
 				...entry,
 				speakers: entry.speakers.map((speaker) =>
-					ParticipantLinks.restoreSourceLocation(speaker, speakerSources),
+					this.collaborators.participantLinks.restoreSourceLocation(
+						speaker,
+						speakerSources,
+					),
 				),
 			})),
 		};
 	}
 }
+export type IssueFormReaderArguments =
+	ConstructorParameters<typeof IssueFormReader> extends [unknown, ...infer Args]
+		? Args
+		: never;

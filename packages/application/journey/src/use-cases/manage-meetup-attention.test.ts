@@ -1,7 +1,11 @@
-import { EventConcurrentModificationError } from "@meetup-automation/event";
+import { CommunicationDomainComposition } from "@meetup-automation/communication";
+import {
+	EventConcurrentModificationError,
+	EventDomainComposition,
+} from "@meetup-automation/event";
 import { describe, expect, it, vi } from "vitest";
 import { createTestEvent } from "../../../../domain/event/testing/event.fixtures.js";
-import { AutomationConfigFactory } from "../config/automation-config.js";
+import { JourneyPolicyComposition } from "../policy-composition.js";
 import {
 	ManageMeetupAttention,
 	type ManageMeetupAttentionDependencies,
@@ -21,7 +25,9 @@ function fixture() {
 		.mockResolvedValue({ active: 1, posted: false, notificationFailed: false });
 	const find = vi.fn().mockResolvedValue(document);
 	const dependencies: ManageMeetupAttentionDependencies = {
-		config: AutomationConfigFactory.createAutomationConfig(),
+		config: new JourneyPolicyComposition()
+			.automationConfigFactory()
+			.createAutomationConfig(),
 		repository: { find, applyPatch: vi.fn(), listPage: vi.fn() },
 		codec: { decode: () => ({ event, diagnostics: [] }), createPatch: vi.fn() },
 		followUp: { synchronizeFollowUp: vi.fn().mockResolvedValue(undefined) },
@@ -35,7 +41,18 @@ function fixture() {
 		find,
 		execute,
 		document,
-		useCase: new ManageMeetupAttention(dependencies),
+		useCase: new ManageMeetupAttention(
+			{
+				attentionEventFacts:
+					new JourneyPolicyComposition().attentionEventFacts(),
+				evaluateAttention:
+					new CommunicationDomainComposition().evaluateAttention(),
+				eventDocumentConcurrency:
+					new EventDomainComposition().eventDocumentConcurrency(),
+				postEventPolicy: new CommunicationDomainComposition().postEventPolicy(),
+			},
+			dependencies,
+		),
 	};
 }
 describe("meetup attention journey", () => {

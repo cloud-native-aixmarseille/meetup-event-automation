@@ -25,8 +25,8 @@ const IMPORT_COLUMNS = [
 
 /** Own CSV columns, escaping, and preservation of fields the source does not manage. */
 export class SpeakerCatalogCsv {
-	static decode(source: string): readonly SpeakerCatalogEntry[] {
-		return SpeakerCatalogCsv.document(source).rows.map((row) => ({
+	decode(source: string): readonly SpeakerCatalogEntry[] {
+		return this.document(source).rows.map((row) => ({
 			id: row.speaker_id ?? "",
 			firstName: row.firstname ?? "",
 			lastName: row.lastname ?? "",
@@ -49,11 +49,8 @@ export class SpeakerCatalogCsv {
 		}));
 	}
 
-	static encode(
-		source: string,
-		entries: readonly SpeakerCatalogEntry[],
-	): string {
-		const original = SpeakerCatalogCsv.document(source);
+	encode(source: string, entries: readonly SpeakerCatalogEntry[]): string {
+		const original = this.document(source);
 		const columns = [...new Set([...original.columns, ...IMPORT_COLUMNS])];
 		const records = new Map(original.rows.map((row) => [row.speaker_id, row]));
 		if (
@@ -81,10 +78,10 @@ export class SpeakerCatalogCsv {
 				columns.map((column) => row[column] ?? ""),
 			),
 		];
-		return `${lines.map((row) => row.map(SpeakerCatalogCsv.escape).join(",")).join("\n")}\n`;
+		return `${lines.map((row) => row.map(this.escape.bind(this)).join(",")).join("\n")}\n`;
 	}
 
-	private static document(source: string): CsvDocument {
+	private document(source: string): CsvDocument {
 		const parsed: unknown = parse(source, {
 			bom: true,
 			skip_empty_lines: true,
@@ -114,7 +111,7 @@ export class SpeakerCatalogCsv {
 		};
 	}
 
-	private static escape(value: string): string {
+	private escape(value: string): string {
 		return /[",\r\n]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value;
 	}
 }

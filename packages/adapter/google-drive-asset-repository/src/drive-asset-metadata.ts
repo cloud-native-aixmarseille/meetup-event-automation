@@ -8,11 +8,11 @@ import { GoogleDriveAssetRepositoryError } from "./google-drive-asset-repository
 
 /** Map provider file metadata to the asset port's allowlisted public facts. */
 export class DriveAssetMetadata {
-	static templateProperties(template: AssetTemplate): Record<string, string> {
+	templateProperties(template: AssetTemplate): Record<string, string> {
 		return { template_file_id: template.id, template_kind: template.kind };
 	}
 
-	static container(file: DriveFile, eventId: string): AssetContainer {
+	container(file: DriveFile, eventId: string): AssetContainer {
 		if (
 			typeof file.id !== "string" ||
 			!file.id ||
@@ -30,7 +30,7 @@ export class DriveAssetMetadata {
 		};
 	}
 
-	static assetFile(file: DriveFile): AssetFile {
+	assetFile(file: DriveFile): AssetFile {
 		if (
 			typeof file.id !== "string" ||
 			!file.id ||

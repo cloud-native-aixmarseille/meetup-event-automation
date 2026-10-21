@@ -4,22 +4,37 @@ import type {
 	ContentSnapshot,
 } from "./asset-content.js";
 import { ContentError } from "./content-error.js";
-import { ContentRecoveryFingerprint } from "./content-recovery-fingerprint.js";
-import { ContentRenderPlan } from "./content-render-plan.js";
+import type { ContentRecoveryFingerprint } from "./content-recovery-fingerprint.js";
+import type { ContentRenderPlan } from "./content-render-plan.js";
 
 /** Recovery changes ownership only at the organizer's observed revision. */
+export interface ContentRecoveryPlanCollaborators {
+	readonly contentRecoveryFingerprint: Pick<
+		ContentRecoveryFingerprint,
+		"matches" | "create"
+	>;
+	readonly contentRenderPlan: Pick<ContentRenderPlan, "settle" | "fingerprint">;
+}
+
 export class ContentRecoveryPlan {
-	static active(
+	constructor(
+		private readonly collaborators: ContentRecoveryPlanCollaborators,
+	) {}
+
+	active(
 		manifest: ContentManifest,
 		recovery?: ContentRecovery,
 	): ContentRecovery | undefined {
 		return recovery &&
-			!ContentRecoveryFingerprint.matches(recovery, manifest.recoveryId)
+			!this.collaborators.contentRecoveryFingerprint.matches(
+				recovery,
+				manifest.recoveryId,
+			)
 			? recovery
 			: undefined;
 	}
 
-	static beforeRead(
+	beforeRead(
 		manifest: ContentManifest,
 		recovery?: ContentRecovery,
 	): ContentManifest {
@@ -33,7 +48,7 @@ export class ContentRecoveryPlan {
 		};
 	}
 
-	static settle(
+	settle(
 		original: ContentManifest,
 		snapshot: ContentSnapshot,
 		recovery?: ContentRecovery,
@@ -42,16 +57,24 @@ export class ContentRecoveryPlan {
 			throw new ContentError("revision");
 		let manifest =
 			recovery?.operation === "restore"
-				? ContentRecoveryPlan.restore(original, snapshot, recovery.bindingId)
+				? this.restore(original, snapshot, recovery.bindingId)
 				: original;
 		if (manifest.pending)
-			manifest = ContentRenderPlan.settle(manifest, snapshot, false);
+			manifest = this.collaborators.contentRenderPlan.settle(
+				manifest,
+				snapshot,
+				false,
+			);
 		return recovery
-			? { ...manifest, recoveryId: ContentRecoveryFingerprint.create(recovery) }
+			? {
+					...manifest,
+					recoveryId:
+						this.collaborators.contentRecoveryFingerprint.create(recovery),
+				}
 			: manifest;
 	}
 
-	private static restore(
+	private restore(
 		manifest: ContentManifest,
 		snapshot: ContentSnapshot,
 		bindingId?: string,
@@ -65,7 +88,10 @@ export class ContentRecoveryPlan {
 				binding.id === bindingId
 					? {
 							...binding,
-							applied: ContentRenderPlan.fingerprint(snapshot, binding.id),
+							applied: this.collaborators.contentRenderPlan.fingerprint(
+								snapshot,
+								binding.id,
+							),
 							desired: undefined,
 						}
 					: binding,
