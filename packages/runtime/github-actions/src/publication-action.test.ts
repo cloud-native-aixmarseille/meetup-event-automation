@@ -44,6 +44,7 @@ beforeEach(() => {
 	mocks.execute.mockResolvedValue({
 		skipped: false,
 		persisted: false,
+		slidesReady: true,
 		assetUrl: "https://drive.google.com/drive/folders/folder",
 		files: { "slides-link": "https://docs.google.com/presentation/d/slides" },
 		diagnostics: [],
@@ -61,11 +62,14 @@ describe("publication action boundary", () => {
 			persisted: false,
 			files: { "slides-link": url },
 			content: { slides: "conflict" },
+			slidesReady: false,
 			diagnostics: [],
 		});
 
 		// Act
-		await subject().runPublicationReconcileAssetsAction();
+		await subject().runPublicationReconcileAssetsAction(
+			new GithubActionsComposition().actionMessages("en"),
+		);
 
 		// Assert
 		expect(JSON.parse(mocks.outputs["drive-files"])).toEqual({
@@ -88,7 +92,9 @@ describe("publication action boundary", () => {
 		vi.stubEnv(`INPUT_${input.toUpperCase()}`, "");
 
 		// Act
-		const operation = subject().runPublicationReconcileAssetsAction();
+		const operation = subject().runPublicationReconcileAssetsAction(
+			new GithubActionsComposition().actionMessages("en"),
+		);
 
 		// Assert
 		await expect(operation).rejects.toThrow(
@@ -104,7 +110,9 @@ describe("publication action boundary", () => {
 		vi.stubEnv("INPUT_MODE", "");
 
 		// Act
-		const report = await subject().runPublicationReconcileAssetsAction();
+		const report = await subject().runPublicationReconcileAssetsAction(
+			new GithubActionsComposition().actionMessages("en"),
+		);
 		const actual = JSON.parse(mocks.outputs["drive-files"]);
 		const actual1 = JSON.stringify(mocks.outputs);
 
@@ -133,12 +141,15 @@ describe("publication action boundary", () => {
 		mocks.execute.mockResolvedValue({
 			skipped: true,
 			persisted: false,
+			slidesReady: false,
 			files: {},
 			diagnostics: [],
 		});
 
 		// Act
-		const report = await subject().runPublicationReconcileAssetsAction();
+		const report = await subject().runPublicationReconcileAssetsAction(
+			new GithubActionsComposition().actionMessages("en"),
+		);
 
 		// Assert
 		expect(mocks.createAssets).toHaveBeenCalledWith(
@@ -161,6 +172,5 @@ function subject() {
 		assetContentConfiguration: composition.assetContentConfiguration(),
 		conferenceHallInput: composition.conferenceHallInput(),
 		actionOutput: composition.actionOutput(),
-		createActionMessages: (...args) => composition.actionMessages(...args),
 	});
 }

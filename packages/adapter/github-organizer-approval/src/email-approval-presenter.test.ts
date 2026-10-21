@@ -1,3 +1,4 @@
+import { ApprovalRequestPolicy } from "@meetup-automation/journey";
 import { LocalizationComposition } from "@meetup-automation/localization";
 import { describe, expect, it } from "vitest";
 import {
@@ -16,13 +17,26 @@ describe("approval request details", () => {
 			// Arrange
 			const presenter = new EmailApprovalPresenter(
 				{
-					approvalCommentCodec:
-						new GithubOrganizerApprovalComposition().approvalCommentCodec(),
-					createFollowUpPresenter: (...args) =>
-						new GithubOrganizerApprovalComposition().followUpPresenter(...args),
-					createApprovalDetailsPresenter: (...args) =>
+					approvalRequestPolicy: new ApprovalRequestPolicy(),
+					followUpPresenter:
+						new GithubOrganizerApprovalComposition().followUpPresenter(
+							new ApprovalMessages(
+								{
+									localeResolver:
+										new LocalizationComposition().localeResolver(),
+								},
+								locale,
+							),
+						),
+					approvalDetailsPresenter:
 						new GithubOrganizerApprovalComposition().approvalDetailsPresenter(
-							...args,
+							new ApprovalMessages(
+								{
+									localeResolver:
+										new LocalizationComposition().localeResolver(),
+								},
+								locale,
+							),
 						),
 				},
 				new ApprovalMessages(
@@ -76,13 +90,18 @@ describe("approval request details", () => {
 				throw new Error("Expected email request");
 			const presenter = new EmailApprovalPresenter(
 				{
-					approvalCommentCodec:
-						new GithubOrganizerApprovalComposition().approvalCommentCodec(),
-					createFollowUpPresenter: (...args) =>
-						new GithubOrganizerApprovalComposition().followUpPresenter(...args),
-					createApprovalDetailsPresenter: (...args) =>
+					approvalRequestPolicy: new ApprovalRequestPolicy(),
+					followUpPresenter:
+						new GithubOrganizerApprovalComposition().followUpPresenter(
+							new ApprovalMessages({
+								localeResolver: new LocalizationComposition().localeResolver(),
+							}),
+						),
+					approvalDetailsPresenter:
 						new GithubOrganizerApprovalComposition().approvalDetailsPresenter(
-							...args,
+							new ApprovalMessages({
+								localeResolver: new LocalizationComposition().localeResolver(),
+							}),
 						),
 				},
 				new ApprovalMessages({
@@ -92,15 +111,11 @@ describe("approval request details", () => {
 
 			// Act
 			const body = presenter.issue(record, { status: "pending" });
-			const restored = new GithubOrganizerApprovalComposition()
-				.approvalCommentCodec()
-				.read(body);
 
 			// Assert
 			expect(body).not.toContain("<img");
-			expect(body.match(/--!?>/g)).toHaveLength(1);
+			expect(body.match(/--!?>/g)).toBeNull();
 			expect(body).toContain("&lt;img src=x&gt; &#64;person");
-			expect(restored.details).toEqual(record.details);
 		},
 	);
 
@@ -118,13 +133,18 @@ describe("approval request details", () => {
 			throw new Error("Expected email request");
 		const presenter = new EmailApprovalPresenter(
 			{
-				approvalCommentCodec:
-					new GithubOrganizerApprovalComposition().approvalCommentCodec(),
-				createFollowUpPresenter: (...args) =>
-					new GithubOrganizerApprovalComposition().followUpPresenter(...args),
-				createApprovalDetailsPresenter: (...args) =>
+				approvalRequestPolicy: new ApprovalRequestPolicy(),
+				followUpPresenter:
+					new GithubOrganizerApprovalComposition().followUpPresenter(
+						new ApprovalMessages({
+							localeResolver: new LocalizationComposition().localeResolver(),
+						}),
+					),
+				approvalDetailsPresenter:
 					new GithubOrganizerApprovalComposition().approvalDetailsPresenter(
-						...args,
+						new ApprovalMessages({
+							localeResolver: new LocalizationComposition().localeResolver(),
+						}),
 					),
 			},
 			new ApprovalMessages({

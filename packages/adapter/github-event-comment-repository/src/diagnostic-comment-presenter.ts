@@ -5,19 +5,13 @@ import type {
 	DiagnosticPresenter,
 } from "./diagnostic-presentation.js";
 import { EVENT_DIAGNOSTIC_COMMENT_MARKER } from "./github-event-comment-repository-contracts.js";
-import type {
-	EventCommentMessages,
-	EventCommentMessagesArguments,
-} from "./i18n/event-comment-messages.js";
+import type { EventCommentMessages } from "./i18n/event-comment-messages.js";
 export interface DiagnosticCommentPresenterCollaborators {
 	readonly organizerDiagnosticPolicy: Pick<
 		OrganizerDiagnosticPolicy,
 		"suppressed"
 	>;
 	readonly diagnosticPresenter: Pick<DiagnosticPresenter, "presentDiagnostic">;
-	readonly createEventCommentMessages: (
-		...args: EventCommentMessagesArguments
-	) => EventCommentMessages;
 }
 
 export class DiagnosticCommentPresenter {
@@ -27,7 +21,7 @@ export class DiagnosticCommentPresenter {
 
 	render(
 		diagnostics: readonly EventDiagnostic[],
-		messages = this.collaborators.createEventCommentMessages(),
+		messages: EventCommentMessages,
 	): string {
 		const actionable = new Map<string, DiagnosticPresentation>();
 		for (const item of diagnostics) {

@@ -21,6 +21,45 @@ const request = {
 	},
 } satisfies OrganizerApprovalRequest;
 
+describe("approval review eligibility", () => {
+	it.each([
+		[{ recipientCount: 0, decided: false }, "inactive"],
+		[{ recipientCount: 1, followUpActive: false, decided: false }, "inactive"],
+		[{ recipientCount: 1, decided: true }, "final"],
+		[{ recipientCount: 1, decided: false }, "pending"],
+		[{ decided: false }, "pending"],
+	] as const)("classifies review facts %j", (facts, expected) => {
+		// Arrange
+		const policy = new ApprovalRequestPolicy();
+
+		// Act
+		const phase = policy.reviewPhase(facts);
+
+		// Assert
+		expect(phase).toBe(expected);
+	});
+	it("rejects a recorded decision on an empty follow-up placeholder", () => {
+		// Arrange
+		const policy = new ApprovalRequestPolicy();
+		const placeholder = {
+			...request,
+			kind: "email-thanks" as const,
+			recipientCount: 0,
+			details: undefined,
+		};
+
+		// Act
+		const validate = () =>
+			policy.validateSnapshot(placeholder, {
+				hasFollowUp: true,
+				decided: true,
+			});
+
+		// Assert
+		expect(validate).toThrow("Invalid final approval decision");
+	});
+});
+
 describe("approval request identity", () => {
 	it("compares reviewed facts independently of object property order and request time", () => {
 		// Arrange

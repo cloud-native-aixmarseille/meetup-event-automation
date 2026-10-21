@@ -35,10 +35,7 @@ export class OpenFeedbackEventGatewayFactory {
 		private readonly collaborators: OpenFeedbackEventGatewayFactoryCollaborators,
 	) {}
 
-	create(
-		apiKey: string,
-		fetcher: typeof fetch = fetch,
-	): OpenFeedbackEventGateway {
+	create(apiKey: string, fetcher: typeof fetch): OpenFeedbackEventGateway {
 		const client = this.collaborators.createOpenFeedbackClient(apiKey, fetcher);
 		return this.collaborators.createOpenFeedbackEventGateway(
 			client,

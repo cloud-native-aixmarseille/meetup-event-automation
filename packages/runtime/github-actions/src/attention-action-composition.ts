@@ -15,8 +15,6 @@ export class AttentionActionComposition {
 			},
 			runtimeInput: new GithubActionsComposition().runtimeInput(),
 			attentionStages: new GithubActionsComposition().attentionStages(),
-			createActionMessages: (...args) =>
-				new GithubActionsComposition().actionMessages(...args),
 		});
 	}
 }

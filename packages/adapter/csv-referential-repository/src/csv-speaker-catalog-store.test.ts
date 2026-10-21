@@ -63,10 +63,7 @@ describe("CsvSpeakerCatalogStore", () => {
 						new CsvReferentialRepositoryComposition().speakerCatalogCsv(),
 					speakerAllocationStateCodec:
 						new CsvReferentialRepositoryComposition().speakerAllocationStateCodec(),
-					createSpeakerAllocationHistory: (...args) =>
-						new CsvReferentialRepositoryComposition().speakerAllocationHistory(
-							...args,
-						),
+
 					createCsvReferentialRepository: (...args) =>
 						new CsvReferentialRepositoryComposition().csvReferentialRepository(
 							...args,
@@ -109,10 +106,7 @@ describe("CsvSpeakerCatalogStore", () => {
 					new CsvReferentialRepositoryComposition().speakerCatalogCsv(),
 				speakerAllocationStateCodec:
 					new CsvReferentialRepositoryComposition().speakerAllocationStateCodec(),
-				createSpeakerAllocationHistory: (...args) =>
-					new CsvReferentialRepositoryComposition().speakerAllocationHistory(
-						...args,
-					),
+
 				createCsvReferentialRepository: (...args) =>
 					new CsvReferentialRepositoryComposition().csvReferentialRepository(
 						...args,
@@ -131,10 +125,7 @@ describe("CsvSpeakerCatalogStore", () => {
 					new CsvReferentialRepositoryComposition().speakerCatalogCsv(),
 				speakerAllocationStateCodec:
 					new CsvReferentialRepositoryComposition().speakerAllocationStateCodec(),
-				createSpeakerAllocationHistory: (...args) =>
-					new CsvReferentialRepositoryComposition().speakerAllocationHistory(
-						...args,
-					),
+
 				createCsvReferentialRepository: (...args) =>
 					new CsvReferentialRepositoryComposition().csvReferentialRepository(
 						...args,
@@ -168,10 +159,7 @@ describe("CsvSpeakerCatalogStore", () => {
 					new CsvReferentialRepositoryComposition().speakerCatalogCsv(),
 				speakerAllocationStateCodec:
 					new CsvReferentialRepositoryComposition().speakerAllocationStateCodec(),
-				createSpeakerAllocationHistory: (...args) =>
-					new CsvReferentialRepositoryComposition().speakerAllocationHistory(
-						...args,
-					),
+
 				createCsvReferentialRepository: (...args) =>
 					new CsvReferentialRepositoryComposition().csvReferentialRepository(
 						...args,
@@ -208,10 +196,7 @@ describe("CsvSpeakerCatalogStore", () => {
 					new CsvReferentialRepositoryComposition().speakerCatalogCsv(),
 				speakerAllocationStateCodec:
 					new CsvReferentialRepositoryComposition().speakerAllocationStateCodec(),
-				createSpeakerAllocationHistory: (...args) =>
-					new CsvReferentialRepositoryComposition().speakerAllocationHistory(
-						...args,
-					),
+
 				createCsvReferentialRepository: (...args) =>
 					new CsvReferentialRepositoryComposition().csvReferentialRepository(
 						...args,
@@ -247,10 +232,7 @@ describe("CsvSpeakerCatalogStore", () => {
 					new CsvReferentialRepositoryComposition().speakerCatalogCsv(),
 				speakerAllocationStateCodec:
 					new CsvReferentialRepositoryComposition().speakerAllocationStateCodec(),
-				createSpeakerAllocationHistory: (...args) =>
-					new CsvReferentialRepositoryComposition().speakerAllocationHistory(
-						...args,
-					),
+
 				createCsvReferentialRepository: (...args) =>
 					new CsvReferentialRepositoryComposition().csvReferentialRepository(
 						...args,
@@ -295,10 +277,7 @@ describe("CsvSpeakerCatalogStore", () => {
 						new CsvReferentialRepositoryComposition().speakerCatalogCsv(),
 					speakerAllocationStateCodec:
 						new CsvReferentialRepositoryComposition().speakerAllocationStateCodec(),
-					createSpeakerAllocationHistory: (...args) =>
-						new CsvReferentialRepositoryComposition().speakerAllocationHistory(
-							...args,
-						),
+
 					createCsvReferentialRepository: (...args) =>
 						new CsvReferentialRepositoryComposition().csvReferentialRepository(
 							...args,

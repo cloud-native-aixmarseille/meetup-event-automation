@@ -1,7 +1,4 @@
-import type {
-	ApprovalPresenter,
-	ApprovalPresenterArguments,
-} from "./approval-presenter.js";
+import type { ApprovalPresenter } from "./approval-presenter.js";
 import type {
 	ApprovalMessages,
 	ApprovalMessagesArguments,
@@ -10,7 +7,7 @@ import { CATALOGS } from "./i18n/catalog.js";
 
 export interface ApprovalPresenterFactoryCollaborators {
 	readonly createApprovalPresenter: (
-		...args: ApprovalPresenterArguments
+		messages: ApprovalMessages,
 	) => ApprovalPresenter;
 	readonly createApprovalMessages: (
 		...args: ApprovalMessagesArguments

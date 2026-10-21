@@ -27918,6 +27918,21 @@ var ApprovalNotificationPolicy = class {
 
 // packages/application/journey/src/approval/approval-request-policy.ts
 var ApprovalRequestPolicy = class {
+  reviewPhase(facts) {
+    if (facts.recipientCount === 0 || facts.followUpActive === false)
+      return "inactive";
+    return facts.decided ? "final" : "pending";
+  }
+  validateSnapshot(request2, facts) {
+    if (facts.hasFollowUp && request2.kind !== "email-thanks")
+      throw new Error("Invalid post-event approval kind");
+    if (request2.recipientCount === 0 && facts.hasFollowUp) {
+      this.validateIdentity(request2);
+      this.validateEmailCount(request2);
+    } else this.validate(request2);
+    if (facts.decided && request2.recipientCount === 0)
+      throw new Error("Invalid final approval decision");
+  }
   validate(request2) {
     this.validateIdentity(request2);
     if (request2.kind === "meetup-publication") return;
@@ -27950,6 +27965,41 @@ var ApprovalRequestPolicy = class {
         return otherLink !== void 0 && link.kind === otherLink.kind && link.url === otherLink.url && link.title === otherLink.title;
       });
     });
+  }
+};
+
+// packages/application/journey/src/ports/organizer-follow-up.ts
+var FOLLOW_UP_TASKS = [
+  "thank-host",
+  "thank-speakers",
+  "share-slides",
+  "import-attendance",
+  "share-social"
+];
+
+// packages/application/journey/src/approval/follow-up-approval-policy.ts
+var FollowUpApprovalPolicy = class {
+  initialFor(request2, previous) {
+    return request2.kind === "email-thanks" ? previous ?? { active: true, pendingTasks: FOLLOW_UP_TASKS } : void 0;
+  }
+  placeholder(input) {
+    return {
+      kind: "email-thanks",
+      revision: "0".repeat(64),
+      eventDate: input.eventDate,
+      recipientCount: 0,
+      requestedAt: input.requestedAt
+    };
+  }
+  retainRequest(input, eventDate) {
+    return !input.active || eventDate === input.eventDate;
+  }
+  progressState(progress, recipientCount) {
+    if (!progress.active) return "stopped";
+    if (recipientCount > 0) return "review";
+    return progress.pendingTasks.some(
+      (task) => task === "thank-host" || task === "thank-speakers"
+    ) ? "waiting" : "emails-complete";
   }
 };
 
@@ -28109,7 +28159,7 @@ var AttentionTaskSelection = class _AttentionTaskSelection {
     );
     const tasks = view.state.stopped ? [] : checklist.entries.filter(
       (entry) => !conditions.some(
-        (episode) => entry.action !== void 0 && entry.action === this.action(episode)
+        (episode) => entry.action !== void 0 && entry.action === this.actionFor(episode)
       )
     );
     const urgent = conditions.filter(this.urgent.bind(this));
@@ -28121,7 +28171,7 @@ var AttentionTaskSelection = class _AttentionTaskSelection {
       remaining: conditions.filter((episode) => !this.urgent(episode)),
       details: conditions.filter(
         (episode) => !(view.state.commentId && ["follow-up", "approval-pending"].includes(episode.condition.code)) && !(episode.status !== "unknown" && checklist.entries.some(
-          (entry) => entry.action !== void 0 && entry.action === this.action(episode)
+          (entry) => entry.action !== void 0 && entry.action === this.actionFor(episode)
         ))
       )
     };
@@ -28133,7 +28183,7 @@ var AttentionTaskSelection = class _AttentionTaskSelection {
       "integration-failure"
     ].includes(episode.condition.code);
   }
-  action(episode) {
+  actionFor(episode) {
     if (episode.condition.code === "delivery-recovery")
       return "delivery-recovery";
     if (episode.condition.code !== "approval-pending") return void 0;
@@ -29293,13 +29343,9 @@ var ListActiveEvents = class {
   constructor(collaborators, dependencies) {
     this.collaborators = collaborators;
     this.dependencies = dependencies;
-    this.ruleEngine = this.collaborators.createEventRuleEngine(
-      dependencies.rules ?? this.collaborators.eventRuleFactory.createDefaultEventRules()
-    );
   }
   collaborators;
   dependencies;
-  ruleEngine;
   async execute(input) {
     const activeEvents = [];
     const allDiagnostics = [];
@@ -29323,7 +29369,7 @@ var ListActiveEvents = class {
         seenEvents.add(identityKey);
         this.checkLimit(seenEvents.size);
         const decoded = this.dependencies.documentCodec.decode(document);
-        const evaluated = this.ruleEngine.evaluate(decoded.event);
+        const evaluated = this.collaborators.ruleEngine.evaluate(decoded.event);
         const eventDiagnostics = [
           ...decoded.diagnostics,
           ...evaluated.diagnostics
@@ -29368,13 +29414,9 @@ var ReconcileEvent = class {
   constructor(collaborators, dependencies) {
     this.collaborators = collaborators;
     this.dependencies = dependencies;
-    this.ruleEngine = this.collaborators.createEventRuleEngine(
-      dependencies.rules ?? this.collaborators.eventRuleFactory.createDefaultEventRules()
-    );
   }
   collaborators;
   dependencies;
-  ruleEngine;
   async execute(input) {
     const document = input.sourceDocument ?? await this.dependencies.repository.find(input.identity);
     if (!document) {
@@ -29387,7 +29429,7 @@ var ReconcileEvent = class {
       throw new EventNotFoundError(input.identity);
     }
     const decoded = this.dependencies.documentCodec.decode(document);
-    const evaluated = this.ruleEngine.evaluate(decoded.event);
+    const evaluated = this.collaborators.ruleEngine.evaluate(decoded.event);
     const diagnostics = [
       ...decoded.diagnostics,
       ...evaluated.diagnostics
@@ -29980,13 +30022,7 @@ var EventRuleFactory = class {
   collaborators;
   createDefaultEventRules(labelConfiguration = DEFAULT_MANAGED_LABEL_CONFIGURATION) {
     return [
-      this.collaborators.createEventDateRule(),
-      this.collaborators.createEventTitleRule(),
-      this.collaborators.createEventDescriptionRule(),
-      this.collaborators.createEventHostRule(),
-      this.collaborators.createEventAgendaRule(),
-      this.collaborators.createEventLinksRule(),
-      this.collaborators.createIssueTitleRule(),
+      ...this.collaborators.rules,
       this.collaborators.createManagedLabelsRule(labelConfiguration)
     ];
   }
@@ -30515,13 +30551,15 @@ var EventDomainComposition = class {
   }
   eventRuleFactory() {
     return new EventRuleFactory({
-      createEventDateRule: () => this.eventDateRule(),
-      createEventTitleRule: () => this.eventTitleRule(),
-      createEventDescriptionRule: () => this.eventDescriptionRule(),
-      createEventHostRule: () => this.eventHostRule(),
-      createEventAgendaRule: () => this.eventAgendaRule(),
-      createEventLinksRule: () => this.eventLinksRule(),
-      createIssueTitleRule: () => this.issueTitleRule(),
+      rules: [
+        this.eventDateRule(),
+        this.eventTitleRule(),
+        this.eventDescriptionRule(),
+        this.eventHostRule(),
+        this.eventAgendaRule(),
+        this.eventLinksRule(),
+        this.issueTitleRule()
+      ],
       createManagedLabelsRule: (...args) => this.managedLabelsRule(...args)
     });
   }
@@ -30547,10 +30585,11 @@ var EventDomainComposition = class {
   listActiveEvents(...args) {
     return new ListActiveEvents(
       {
-        eventRuleFactory: this.eventRuleFactory(),
+        ruleEngine: this.eventRuleEngine(
+          args[0].rules ?? this.eventRuleFactory().createDefaultEventRules()
+        ),
         eventReadinessPolicy: this.eventReadinessPolicy(),
-        eventLifecycle: this.eventLifecycle(),
-        createEventRuleEngine: (...args2) => this.eventRuleEngine(...args2)
+        eventLifecycle: this.eventLifecycle()
       },
       ...args
     );
@@ -30573,12 +30612,13 @@ var EventDomainComposition = class {
   reconcileEvent(...args) {
     return new ReconcileEvent(
       {
-        eventRuleFactory: this.eventRuleFactory(),
+        ruleEngine: this.eventRuleEngine(
+          args[0].rules ?? this.eventRuleFactory().createDefaultEventRules()
+        ),
         eventDocumentConcurrency: this.eventDocumentConcurrency(),
         eventReadinessPolicy: this.eventReadinessPolicy(),
         eventLifecycle: this.eventLifecycle(),
-        eventRepositoryPatches: this.eventRepositoryPatches(),
-        createEventRuleEngine: (...args2) => this.eventRuleEngine(...args2)
+        eventRepositoryPatches: this.eventRepositoryPatches()
       },
       ...args
     );
@@ -33659,15 +33699,6 @@ var AssetParticipantProjection = class {
   }
 };
 
-// packages/application/journey/src/ports/organizer-follow-up.ts
-var FOLLOW_UP_TASKS = [
-  "thank-host",
-  "thank-speakers",
-  "share-slides",
-  "import-attendance",
-  "share-social"
-];
-
 // packages/application/journey/src/use-cases/attention-event-facts.ts
 var AttentionEventFacts = class {
   constructor(collaborators) {
@@ -33926,12 +33957,15 @@ var CommunicationRecipients = class {
   }
   collaborators;
   resolveMailRecipients(event, catalog, diagnostics) {
-    const resolution = this.collaborators.createResolveEventReferences().execute(catalog, {
-      hostReference: event.host ? this.renderReference(event.host) : "",
-      speakerReferences: event.agenda.flatMap(
-        (entry) => entry.speakers.map(this.renderReference.bind(this))
-      )
-    });
+    const resolution = this.collaborators.resolveEventReferences.execute(
+      catalog,
+      {
+        hostReference: event.host ? this.renderReference(event.host) : "",
+        speakerReferences: event.agenda.flatMap(
+          (entry) => entry.speakers.map(this.renderReference.bind(this))
+        )
+      }
+    );
     if (!resolution.resolved) {
       diagnostics.push({
         code: "communication.event-references-unresolved",
@@ -34261,7 +34295,7 @@ var JourneyPolicyComposition = class {
   }
   communicationRecipients() {
     return new CommunicationRecipients({
-      createResolveEventReferences: () => new ReferentialDomainComposition().resolveEventReferences()
+      resolveEventReferences: new ReferentialDomainComposition().resolveEventReferences()
     });
   }
   configuredPublicationPolicies() {
@@ -34467,23 +34501,18 @@ var ManageMeetupAssets = class {
       sourceDocument: source
     });
     if (evaluation.skipped || evaluation.event.occurrenceStatus === "cancelled")
-      return { skipped: true, persisted: false, files: {}, diagnostics: [] };
+      return this.skipped([]);
     if (!evaluation.event.host?.id || evaluation.diagnostics.some(
       (item) => item.severity === "error" && (item.code.startsWith("referential.") || /host|date/i.test(item.field ?? ""))
     )) {
-      return {
-        skipped: true,
-        persisted: false,
-        files: {},
-        diagnostics: [
-          {
-            code: "publication.assets.prerequisites",
-            severity: "warning",
-            field: "publicationLinks.assets",
-            message: "Resolve the event host and date before reconciling assets"
-          }
-        ]
-      };
+      return this.skipped([
+        {
+          code: "publication.assets.prerequisites",
+          severity: "warning",
+          field: "publicationLinks.assets",
+          message: "Resolve the event host and date before reconciling assets"
+        }
+      ]);
     }
     await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
       this.dependencies.eventRepository,
@@ -34506,6 +34535,7 @@ var ManageMeetupAssets = class {
     return {
       skipped: false,
       persisted,
+      slidesReady: Boolean(assets.files["slides-link"]) && ["copy-only", "ready"].includes(assets.content?.slides ?? "copy-only"),
       assetUrl: assets.container?.url,
       files: assets.files,
       content: assets.content,
@@ -34513,6 +34543,15 @@ var ManageMeetupAssets = class {
         ...item,
         field: "publicationLinks.assets"
       }))
+    };
+  }
+  skipped(diagnostics) {
+    return {
+      skipped: true,
+      persisted: false,
+      slidesReady: false,
+      files: {},
+      diagnostics
     };
   }
   async persistAsset(source, assetUrl) {
@@ -34692,12 +34731,15 @@ var ManageMeetupEvent = class {
           )
         )
       );
-      const resolution = this.collaborators.createResolveEventReferences().execute(catalogValidation.catalog, {
-        hostReference: event.host ? this.collaborators.eventParticipantResolution.renderReference(
-          event.host
-        ) : "",
-        speakerReferences
-      });
+      const resolution = this.collaborators.resolveEventReferences.execute(
+        catalogValidation.catalog,
+        {
+          hostReference: event.host ? this.collaborators.eventParticipantResolution.renderReference(
+            event.host
+          ) : "",
+          speakerReferences
+        }
+      );
       eventDiagnostics.push(
         ...resolution.diagnostics.map(
           (item) => this.collaborators.eventDiagnosticProjection.toEventDiagnostic(
@@ -35355,7 +35397,11 @@ var SynchronizeSourceSpeakers = class {
     );
     const merged = await this.collaborators.speakerSynchronizationStageRunner.at(
       "merge-speakers",
-      () => this.collaborators.createMergeSourceSpeakers().execute(original.entries, snapshot, original.reservedIds)
+      () => this.collaborators.mergeSourceSpeakers.execute(
+        original.entries,
+        snapshot,
+        original.reservedIds
+      )
     );
     const catalog = await this.collaborators.speakerSynchronizationStageRunner.at(
       "validate-catalog",
@@ -35490,7 +35536,7 @@ var JourneyComposition = class {
           ...args2
         ),
         createRefreshSelectedProposals: (...args2) => this.refreshSelectedProposals(...args2),
-        createResolveEventReferences: (...args2) => new ReferentialDomainComposition().resolveEventReferences(...args2)
+        resolveEventReferences: new ReferentialDomainComposition().resolveEventReferences()
       },
       ...args
     );
@@ -35547,7 +35593,7 @@ var JourneyComposition = class {
     return new SynchronizeSourceSpeakers(
       {
         speakerSynchronizationStageRunner: new JourneyPolicyComposition().speakerSynchronizationStageRunner(),
-        createMergeSourceSpeakers: (...args2) => new ReferentialDomainComposition().mergeSourceSpeakers(...args2),
+        mergeSourceSpeakers: new ReferentialDomainComposition().mergeSourceSpeakers(),
         createValidateReferentialCatalog: (...args2) => new ReferentialDomainComposition().validateReferentialCatalog(
           ...args2
         )
@@ -39473,11 +39519,7 @@ var ActionOutput = class {
 
 // packages/runtime/github-actions/src/action-report.ts
 var ActionReport = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  async write(title, report, messages5 = this.collaborators.createActionMessages()) {
+  async write(title, report, messages5) {
     const lines = new Set(report.details);
     for (const item of report.diagnostics) {
       lines.add(this.diagnosticMessage(item));
@@ -39795,16 +39837,14 @@ var AssetRenderConfiguration = class {
 
 // packages/runtime/github-actions/src/assets/asset-render-presenter.ts
 var AssetRenderPresenterImpl = class {
-  constructor(collaborators, messages5 = collaborators.createAssetMessages()) {
+  constructor(collaborators, messages5) {
     this.collaborators = collaborators;
     this.messages = messages5;
   }
   collaborators;
   messages;
   format(input) {
-    const date = this.collaborators.createAssetDateFormatter(
-      this.messages.locale
-    );
+    const { date } = this.collaborators;
     return {
       text: {
         "event.title": input.title,
@@ -40388,11 +40428,7 @@ var OrganizerFeedback = class {
 
 // packages/runtime/github-actions/src/referential-action-report.ts
 var ReferentialActionReport = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  validation(result, diagnostics, messages5 = this.collaborators.createActionMessages()) {
+  validation(result, diagnostics, messages5) {
     const details = [
       messages5.t(
         result.isValid ? "report.referential.valid" : "report.referential.invalid"
@@ -40407,7 +40443,7 @@ var ReferentialActionReport = class {
       diagnostics
     };
   }
-  issueForm(mode, result, messages5 = this.collaborators.createActionMessages()) {
+  issueForm(mode, result, messages5) {
     const details = [];
     if (result.diagnostics.some((item) => item.severity === "error")) {
       details.push(messages5.t("report.issue-form.blocked"));
@@ -40519,9 +40555,7 @@ var GithubActionsComposition = class {
     return new ActionOutput();
   }
   actionReport() {
-    return new ActionReport({
-      createActionMessages: (...args) => this.actionMessages(...args)
-    });
+    return new ActionReport();
   }
   actionRunner() {
     return new ActionRunner({
@@ -40557,8 +40591,7 @@ var GithubActionsComposition = class {
   assetRenderPresenterImpl(...args) {
     return new AssetRenderPresenterImpl(
       {
-        createAssetMessages: (...args2) => this.assetMessages(...args2),
-        createAssetDateFormatter: (...args2) => this.assetDateFormatter(...args2)
+        date: this.assetDateFormatter(args[0].locale)
       },
       ...args
     );
@@ -40596,9 +40629,7 @@ var GithubActionsComposition = class {
     );
   }
   referentialActionReport() {
-    return new ReferentialActionReport({
-      createActionMessages: (...args) => this.actionMessages(...args)
-    });
+    return new ReferentialActionReport();
   }
   runtimeInput() {
     return new RuntimeInput();
@@ -44841,12 +44872,18 @@ import { fileURLToPath } from "node:url";
 
 // packages/adapter/github-organizer-approval/src/approval-decision-parser.ts
 var ApprovalDecisionParser = class {
-  constructor(comments) {
+  constructor(policy, comments) {
+    this.policy = policy;
     this.comments = comments;
   }
+  policy;
   comments;
   parse(record, body) {
-    if (record.decision || record.recipientCount === 0 || record.followUp?.active === false)
+    if (this.policy.reviewPhase({
+      recipientCount: record.recipientCount,
+      followUpActive: record.followUp?.active,
+      decided: record.decision !== void 0
+    }) !== "pending")
       return { status: "pending" };
     const normalized = body.replace(/\r\n/g, "\n").replace(/- \[X\]/g, "- [x]");
     for (const comment of this.comments) {
@@ -44925,16 +44962,17 @@ var ApprovalNotifications = class {
 
 // packages/adapter/github-organizer-approval/src/approval-presenter.ts
 var ApprovalPresenter = class {
-  constructor(collaborators, messages5) {
-    this.collaborators = collaborators;
-    this.email = this.collaborators.createEmailApprovalPresenter(messages5);
-    this.meetup = this.collaborators.createMeetupApprovalPresenter(messages5);
+  constructor(codec, renderers) {
+    this.codec = codec;
+    this.renderers = renderers;
   }
-  collaborators;
-  email;
-  meetup;
+  codec;
+  renderers;
   issue(record, decision) {
-    return record.kind === "meetup-publication" ? this.meetup.issue(record, decision) : this.email.issue(record, decision);
+    return [
+      this.codec.marker(record),
+      this.renderers[record.kind].issue(record, decision)
+    ].filter(Boolean).join("\n\n");
   }
 };
 
@@ -45015,11 +45053,7 @@ var ApprovalRecordFactory = class {
   }
   placeholder(input) {
     return this.allocate({
-      kind: "email-thanks",
-      revision: "0".repeat(64),
-      eventDate: input.eventDate,
-      recipientCount: 0,
-      requestedAt: input.requestedAt,
+      ...this.collaborators.followUpApprovalPolicy.placeholder(input),
       followUp: {
         active: input.active,
         pendingTasks: input.pendingTasks
@@ -45222,15 +45256,15 @@ var EmailApprovalPresenter = class {
   collaborators;
   messages;
   issue(record, decision) {
-    const heading = [
-      this.collaborators.approvalCommentCodec.marker(record),
-      ...this.collaborators.createFollowUpPresenter(this.messages).render(record)
-    ];
-    if (record.recipientCount === 0 || record.followUp?.active === false)
+    const heading = [...this.collaborators.followUpPresenter.render(record)];
+    const phase = this.collaborators.approvalRequestPolicy.reviewPhase({
+      recipientCount: record.recipientCount,
+      followUpActive: record.followUp?.active,
+      decided: record.decision !== void 0
+    });
+    if (phase === "inactive")
       return [...heading, record.followUp?.attentionDetails ?? ""].join("\n\n").trimEnd();
-    const details = record.details ? [
-      this.collaborators.createApprovalDetailsPresenter(this.messages).render(record.details)
-    ] : [];
+    const details = record.details ? [this.collaborators.approvalDetailsPresenter.render(record.details)] : [];
     if (record.followUp?.attentionDetails)
       details.push(record.followUp.attentionDetails);
     if (record.decision)
@@ -45292,9 +45326,11 @@ var FinalizeApprovalDecision = class {
 
 // packages/adapter/github-organizer-approval/src/follow-up-presenter.ts
 var FollowUpPresenter = class {
-  constructor(messages5) {
+  constructor(policy, messages5) {
+    this.policy = policy;
     this.messages = messages5;
   }
+  policy;
   messages;
   render(record) {
     if (!record.followUp) return [];
@@ -45308,15 +45344,12 @@ var FollowUpPresenter = class {
         `${pending ? "\u23F3" : "\u2705"} ${this.messages.t("follow-up.task", { task: task.replaceAll("-", "_") })}`
       );
     }
-    if (!record.followUp.active)
-      lines.push(this.messages.t("follow-up.stopped", {}));
-    else if (!record.recipientCount)
-      lines.push(
-        this.messages.t(
-          record.followUp.pendingTasks.some((task) => task.startsWith("thank-")) ? "follow-up.waiting" : "follow-up.emails-complete",
-          {}
-        )
-      );
+    const progress = this.policy.progressState(
+      record.followUp,
+      record.recipientCount ?? 0
+    );
+    if (progress !== "review")
+      lines.push(this.messages.t(`follow-up.${progress}`, {}));
     return lines;
   }
 };
@@ -45664,11 +45697,12 @@ var GithubOrganizerApproval = class {
       };
     }
     const record = this.records.create(input);
-    if (input.kind === "email-thanks")
-      record.followUp = existing?.record.followUp ?? {
-        active: true,
-        pendingTasks: FOLLOW_UP_TASKS
-      };
+    const followUp = this.collaborators.followUpApprovalPolicy.initialFor(
+      input,
+      existing?.record.followUp
+    );
+    if (followUp)
+      record.followUp = { ...existing?.record.followUp, ...followUp };
     const state = await this.repository.save(record, existing);
     return {
       status: "pending",
@@ -45697,11 +45731,13 @@ var GithubOrganizerApproval = class {
 
 // packages/adapter/github-organizer-approval/src/github-organizer-follow-up.ts
 var GithubOrganizerFollowUp = class {
-  constructor(repository, records, finalizer) {
+  constructor(policy, repository, records, finalizer) {
+    this.policy = policy;
     this.repository = repository;
     this.records = records;
     this.finalizer = finalizer;
   }
+  policy;
   repository;
   records;
   finalizer;
@@ -45713,7 +45749,7 @@ var GithubOrganizerFollowUp = class {
     if (existing) await this.finalizer.execute(existing);
     const attention = existing?.record.followUp?.attention;
     const attentionDetails = existing?.record.followUp?.attentionDetails;
-    const record = existing && (!input.active || existing.record.eventDate === input.eventDate) ? existing.record : this.records.placeholder(input);
+    const record = existing && this.policy.retainRequest(input, existing.record.eventDate) ? existing.record : this.records.placeholder(input);
     record.followUp = {
       active: input.active,
       pendingTasks: input.pendingTasks,
@@ -45769,11 +45805,9 @@ var MeetupApprovalDetailsSchema = class {
 
 // packages/adapter/github-organizer-approval/src/meetup-approval-presenter.ts
 var MeetupApprovalPresenter = class {
-  constructor(collaborators, messages5) {
-    this.collaborators = collaborators;
+  constructor(messages5) {
     this.messages = messages5;
   }
-  collaborators;
   messages;
   issue(record, decision) {
     const details = record.publication;
@@ -45795,11 +45829,7 @@ var MeetupApprovalPresenter = class {
       approveMark: decision.status === "approved" ? "x" : " ",
       rejectMark: decision.status === "rejected" ? "x" : " "
     });
-    return [
-      this.collaborators.approvalCommentCodec.marker(record),
-      content,
-      controls
-    ].join("\n\n");
+    return [content, controls].join("\n\n");
   }
   escape(value) {
     return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("@", "&#64;").replace(/[\\`*_{}[\]()#+.!|~-]/g, "\\$&");
@@ -45842,22 +45872,16 @@ var StoredApprovalSchema = class {
     const state = value;
     this.collaborators.approvalRequestSchema.validate(value);
     this.collaborators.followUpSchema.validate(state.followUp);
-    if (state.followUp && value.kind !== "email-thanks")
-      throw new Error("Invalid post-event approval kind");
-    if (value.recipientCount === 0 && state.followUp) {
-      this.collaborators.approvalRequestPolicy.validateIdentity(value);
-      this.collaborators.approvalRequestPolicy.validateEmailCount(value);
-    } else {
-      this.collaborators.approvalRequestPolicy.validate(value);
-    }
+    this.collaborators.approvalRequestPolicy.validateSnapshot(value, {
+      hasFollowUp: state.followUp !== void 0,
+      decided: state.decision !== void 0
+    });
     if (typeof state.requestId !== "string" || !/^approval-[a-f0-9-]{36}$/.test(state.requestId) || !["new", "reserved", "sent", "retry"].some(
       (status) => status === state.notification
     ))
       throw new Error("Invalid approval state");
     if (state.decision !== void 0) {
       this.decision(state.decision);
-      if (value.recipientCount === 0)
-        throw new Error("Invalid final approval decision");
     }
     if (state.notificationMessage !== void 0)
       this.notificationMessage(state.notificationMessage);
@@ -45915,7 +45939,10 @@ var GithubOrganizerApprovalComposition = class {
     });
   }
   approvalDecisionParser(...args) {
-    return new ApprovalDecisionParser(...args);
+    return new ApprovalDecisionParser(
+      new JourneyPolicyComposition().approvalRequestPolicy(),
+      ...args
+    );
   }
   approvalDetailsPresenter(...args) {
     return new ApprovalDetailsPresenter(...args);
@@ -45932,14 +45959,13 @@ var GithubOrganizerApprovalComposition = class {
   approvalNotifications(...args) {
     return new ApprovalNotifications(...args);
   }
-  approvalPresenter(...args) {
-    return new ApprovalPresenter(
-      {
-        createEmailApprovalPresenter: (...args2) => this.emailApprovalPresenter(...args2),
-        createMeetupApprovalPresenter: (...args2) => this.meetupApprovalPresenter(...args2)
-      },
-      ...args
-    );
+  approvalPresenter(messages5) {
+    const email = this.emailApprovalPresenter(messages5);
+    return new ApprovalPresenter(this.approvalCommentCodec(), {
+      "email-introduction": email,
+      "email-thanks": email,
+      "meetup-publication": this.meetupApprovalPresenter(messages5)
+    });
   }
   approvalPresenterFactory() {
     return new ApprovalPresenterFactory({
@@ -45952,7 +45978,8 @@ var GithubOrganizerApprovalComposition = class {
       {
         approvalRequestSchema: this.approvalRequestSchema(),
         approvalRequestPolicy: new JourneyPolicyComposition().approvalRequestPolicy(),
-        storedApprovalSchema: this.storedApprovalSchema()
+        storedApprovalSchema: this.storedApprovalSchema(),
+        followUpApprovalPolicy: new FollowUpApprovalPolicy()
       },
       ...args
     );
@@ -45975,9 +46002,9 @@ var GithubOrganizerApprovalComposition = class {
   emailApprovalPresenter(...args) {
     return new EmailApprovalPresenter(
       {
-        approvalCommentCodec: this.approvalCommentCodec(),
-        createFollowUpPresenter: (...args2) => this.followUpPresenter(...args2),
-        createApprovalDetailsPresenter: (...args2) => this.approvalDetailsPresenter(...args2)
+        followUpPresenter: this.followUpPresenter(args[0]),
+        approvalDetailsPresenter: this.approvalDetailsPresenter(args[0]),
+        approvalRequestPolicy: new JourneyPolicyComposition().approvalRequestPolicy()
       },
       ...args
     );
@@ -45986,7 +46013,7 @@ var GithubOrganizerApprovalComposition = class {
     return new FinalizeApprovalDecision(...args);
   }
   followUpPresenter(...args) {
-    return new FollowUpPresenter(...args);
+    return new FollowUpPresenter(new FollowUpApprovalPolicy(), ...args);
   }
   followUpSchema() {
     return new FollowUpSchema({ approvalSchema: this.approvalSchema() });
@@ -46019,13 +46046,14 @@ var GithubOrganizerApprovalComposition = class {
       {
         approvalRequestSchema: this.approvalRequestSchema(),
         approvalRequestPolicy: new JourneyPolicyComposition().approvalRequestPolicy(),
-        approvalDetailsPreview: this.approvalDetailsPreview()
+        approvalDetailsPreview: this.approvalDetailsPreview(),
+        followUpApprovalPolicy: new FollowUpApprovalPolicy()
       },
       ...args
     );
   }
   githubOrganizerFollowUp(...args) {
-    return new GithubOrganizerFollowUp(...args);
+    return new GithubOrganizerFollowUp(new FollowUpApprovalPolicy(), ...args);
   }
   meetupApprovalDetailsSchema() {
     return new MeetupApprovalDetailsSchema({
@@ -46034,10 +46062,7 @@ var GithubOrganizerApprovalComposition = class {
     });
   }
   meetupApprovalPresenter(...args) {
-    return new MeetupApprovalPresenter(
-      { approvalCommentCodec: this.approvalCommentCodec() },
-      ...args
-    );
+    return new MeetupApprovalPresenter(...args);
   }
   resolveApprovalDecision(...args) {
     return new ResolveApprovalDecision(...args);
@@ -47024,7 +47049,7 @@ var SlackApprovalMessages = class extends MessageLocalizer {
 
 // packages/adapter/slack-notification-gateway/src/slack-api-client.ts
 var SlackApiClient = class {
-  constructor(token, fetcher = fetch) {
+  constructor(token, fetcher) {
     this.token = token;
     this.fetcher = fetcher;
   }
@@ -47134,14 +47159,14 @@ var SlackApiClient = class {
 
 // packages/adapter/slack-notification-gateway/src/slack-approval-notification.ts
 var SlackApprovalNotification = class {
-  constructor(collaborators, token, presenter, fetcher = fetch) {
+  constructor(collaborators, client, presenter) {
     this.collaborators = collaborators;
+    this.client = client;
     this.presenter = presenter;
-    this.client = this.collaborators.createSlackApiClient(token, fetcher);
   }
   collaborators;
-  presenter;
   client;
+  presenter;
   async send(input) {
     const { result, payload } = await this.client.post("chat.postMessage", {
       channel: input.destination,
@@ -47167,39 +47192,30 @@ var SlackApprovalNotification = class {
 
 // packages/adapter/slack-notification-gateway/src/slack-approval-presenter.ts
 var SlackApprovalPresenter = class {
-  constructor(collaborators, locale) {
-    this.collaborators = collaborators;
-    this.messages = this.collaborators.createSlackApprovalMessages(locale);
+  constructor(renderers) {
+    this.renderers = renderers;
   }
-  collaborators;
-  messages;
+  renderers;
   render(request2) {
-    const details = {
-      date: request2.eventDate,
-      url: request2.approvalUrl
-    };
-    return request2.kind === "meetup-publication" ? this.messages.t("request.publication", details) : this.messages.t("request.introduction", {
-      ...details,
-      count: request2.recipientCount
-    });
+    return this.renderers[request2.kind].render(request2);
   }
 };
 
 // packages/adapter/slack-notification-gateway/src/slack-attention-notification.ts
 import { createHash as createHash3 } from "node:crypto";
 var SlackAttentionNotification = class {
-  constructor(collaborators, token, channel, presenter, fetcher = fetch) {
+  constructor(collaborators, client, channel, presenter) {
     this.collaborators = collaborators;
+    this.client = client;
     this.channel = channel;
     this.presenter = presenter;
     if (!/^[CG][A-Z0-9]+$/.test(channel))
       throw new Error("Invalid organizer channel");
-    this.client = this.collaborators.createSlackApiClient(token, fetcher);
   }
   collaborators;
+  client;
   channel;
   presenter;
-  client;
   fingerprint(view) {
     return createHash3("sha256").update(this.presenter.render(view)).digest("hex");
   }
@@ -47244,22 +47260,22 @@ var SlackAttentionNotification = class {
 
 // packages/adapter/slack-notification-gateway/src/slack-attention-presenter.ts
 var SlackAttentionPresenter = class {
-  constructor(collaborators, repository, issueNumber, locale, checklist) {
+  constructor(collaborators, repository, issueNumber, messages5, checklist) {
     this.collaborators = collaborators;
     this.repository = repository;
     this.issueNumber = issueNumber;
+    this.messages = messages5;
     this.checklist = checklist;
     if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository) || !Number.isSafeInteger(issueNumber) || issueNumber < 1)
       throw new Error("Invalid attention issue identity");
     this.issueUrl = `https://github.com/${repository}/issues/${issueNumber}`;
-    this.messages = this.collaborators.createSlackAttentionMessages(locale);
   }
   collaborators;
   repository;
   issueNumber;
+  messages;
   checklist;
   issueUrl;
-  messages;
   render(view) {
     const title = this.messages.t("slack.title", {
       issue: String(this.issueNumber)
@@ -47329,7 +47345,7 @@ var SlackAttentionPresenter = class {
     return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
   }
   action(episode) {
-    if (episode.condition.code === "approval-pending" && episode.condition.resource.startsWith("meetup-publication:"))
+    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "meetup-approval")
       return this.messages.t("action.meetup-approval-pending");
     return episode.condition.code === "integration-failure" ? this.messages.failure(episode.condition.resource) : this.messages.t(`action.${episode.condition.code}`, {
       task: this.messages.task(episode.condition.resource)
@@ -47350,6 +47366,35 @@ var SlackAttentionPresenter = class {
   }
 };
 
+// packages/adapter/slack-notification-gateway/src/slack-email-approval-presenter.ts
+var SlackEmailApprovalPresenter = class {
+  constructor(messages5) {
+    this.messages = messages5;
+  }
+  messages;
+  render(request2) {
+    return this.messages.t("request.introduction", {
+      date: request2.eventDate,
+      url: request2.approvalUrl,
+      count: request2.recipientCount
+    });
+  }
+};
+
+// packages/adapter/slack-notification-gateway/src/slack-meetup-approval-presenter.ts
+var SlackMeetupApprovalPresenter = class {
+  constructor(messages5) {
+    this.messages = messages5;
+  }
+  messages;
+  render(request2) {
+    return this.messages.t("request.publication", {
+      date: request2.eventDate,
+      url: request2.approvalUrl
+    });
+  }
+};
+
 // packages/adapter/slack-notification-gateway/src/slack-message-reference.ts
 var SlackMessageReference = class {
   valid(message) {
@@ -47365,8 +47410,8 @@ var SlackMessageReference = class {
 
 // packages/adapter/slack-notification-gateway/src/dependency-composition.ts
 var SlackNotificationGatewayComposition = class {
-  slackApiClient(...args) {
-    return new SlackApiClient(...args);
+  slackApiClient(token, fetcher = fetch) {
+    return new SlackApiClient(token, fetcher);
   }
   slackApprovalMessages(...args) {
     return new SlackApprovalMessages(
@@ -47374,22 +47419,21 @@ var SlackNotificationGatewayComposition = class {
       ...args
     );
   }
-  slackApprovalNotification(...args) {
+  slackApprovalNotification(token, presenter, fetcher = fetch) {
     return new SlackApprovalNotification(
       {
-        slackMessageReference: this.slackMessageReference(),
-        createSlackApiClient: (...args2) => this.slackApiClient(...args2)
+        slackMessageReference: this.slackMessageReference()
       },
-      ...args
+      this.slackApiClient(token, fetcher),
+      presenter
     );
   }
-  slackApprovalPresenter(...args) {
-    return new SlackApprovalPresenter(
-      {
-        createSlackApprovalMessages: (...args2) => this.slackApprovalMessages(...args2)
-      },
-      ...args
-    );
+  slackApprovalPresenter(locale) {
+    const messages5 = this.slackApprovalMessages(locale);
+    return new SlackApprovalPresenter({
+      "email-introduction": new SlackEmailApprovalPresenter(messages5),
+      "meetup-publication": new SlackMeetupApprovalPresenter(messages5)
+    });
   }
   slackAttentionMessages(...args) {
     return new SlackAttentionMessages(
@@ -47397,23 +47441,26 @@ var SlackNotificationGatewayComposition = class {
       ...args
     );
   }
-  slackAttentionNotification(...args) {
+  slackAttentionNotification(token, channel, presenter, fetcher = fetch) {
     return new SlackAttentionNotification(
       {
-        slackMessageReference: this.slackMessageReference(),
-        createSlackApiClient: (...args2) => this.slackApiClient(...args2)
+        slackMessageReference: this.slackMessageReference()
       },
-      ...args
+      this.slackApiClient(token, fetcher),
+      channel,
+      presenter
     );
   }
-  slackAttentionPresenter(...args) {
+  slackAttentionPresenter(repository, issueNumber, locale, checklist) {
     return new SlackAttentionPresenter(
       {
         attentionTaskSelection: new CommunicationDomainComposition().attentionTaskSelection(),
-        attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
-        createSlackAttentionMessages: (...args2) => this.slackAttentionMessages(...args2)
+        attentionPolicy: new CommunicationDomainComposition().attentionPolicy()
       },
-      ...args
+      repository,
+      issueNumber,
+      this.slackAttentionMessages(locale),
+      checklist
     );
   }
   slackMessageReference() {
@@ -47423,7 +47470,7 @@ var SlackNotificationGatewayComposition = class {
 
 // packages/adapter/conference-hall-proposal-source/src/conference-hall-proposal-source.ts
 var ConferenceHallProposalSource = class {
-  constructor(collaborators, event, apiKey, request2 = fetch, now2 = Date.now) {
+  constructor(collaborators, event, apiKey, request2, now2) {
     this.collaborators = collaborators;
     this.event = event;
     this.apiKey = apiKey;
@@ -47649,13 +47696,16 @@ var ProposalExportParser = class {
 
 // packages/adapter/conference-hall-proposal-source/src/dependency-composition.ts
 var ConferenceHallProposalSourceComposition = class {
-  conferenceHallProposalSource(...args) {
+  conferenceHallProposalSource(event, apiKey, request2 = fetch, now2 = Date.now) {
     return new ConferenceHallProposalSource(
       {
         sourceSpeakerEquality: new ReferentialDomainComposition().sourceSpeakerEquality(),
         proposalExportParser: this.proposalExportParser()
       },
-      ...args
+      event,
+      apiKey,
+      request2,
+      now2
     );
   }
   proposalExportParser() {
@@ -47720,7 +47770,7 @@ import { createHash as createHash4 } from "node:crypto";
 import { readFile as readFile5, writeFile as writeFile2 } from "node:fs/promises";
 import { join as join5 } from "node:path";
 var CsvSpeakerCatalogStore = class {
-  constructor(collaborators, root, history = collaborators.createSpeakerAllocationHistory(root)) {
+  constructor(collaborators, root, history) {
     this.collaborators = collaborators;
     this.root = root;
     this.history = history;
@@ -47803,6 +47853,10 @@ var CsvSpeakerCatalogStore = class {
     return createHash4("sha256").update(JSON.stringify([csv, state, historicalIds])).digest("hex");
   }
 };
+
+// packages/adapter/csv-referential-repository/src/dependency-composition.ts
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 
 // node_modules/.pnpm/csv-parse@7.0.3/node_modules/csv-parse/lib/api/CsvError.js
 var CsvError = class _CsvError extends Error {
@@ -49569,10 +49623,8 @@ var CsvReferentialCodec = class {
 };
 
 // packages/adapter/csv-referential-repository/src/speaker-allocation-history.ts
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 var SpeakerAllocationHistory = class {
-  constructor(collaborators, root, command = promisify(execFile)) {
+  constructor(collaborators, root, command) {
     this.collaborators = collaborators;
     this.root = root;
     this.command = command;
@@ -49762,23 +49814,24 @@ var CsvReferentialRepositoryComposition = class {
       ...args
     );
   }
-  csvSpeakerCatalogStore(...args) {
+  csvSpeakerCatalogStore(root) {
     return new CsvSpeakerCatalogStore(
       {
         speakerCatalogCsv: this.speakerCatalogCsv(),
         speakerAllocationStateCodec: this.speakerAllocationStateCodec(),
-        createSpeakerAllocationHistory: (...args2) => this.speakerAllocationHistory(...args2),
-        createCsvReferentialRepository: (...args2) => this.csvReferentialRepository(...args2)
+        createCsvReferentialRepository: (...args) => this.csvReferentialRepository(...args)
       },
-      ...args
+      root,
+      this.speakerAllocationHistory(root)
     );
   }
-  speakerAllocationHistory(...args) {
+  speakerAllocationHistory(root) {
     return new SpeakerAllocationHistory(
       {
         referentialIdentifiers: new ReferentialDomainComposition().referentialIdentifiers()
       },
-      ...args
+      root,
+      promisify(execFile)
     );
   }
   speakerAllocationStateCodec() {
@@ -49802,7 +49855,7 @@ var DiagnosticCommentPresenter = class {
     this.collaborators = collaborators;
   }
   collaborators;
-  render(diagnostics, messages5 = this.collaborators.createEventCommentMessages()) {
+  render(diagnostics, messages5) {
     const actionable = /* @__PURE__ */ new Map();
     for (const item of diagnostics) {
       if (this.collaborators.organizerDiagnosticPolicy.suppressed(
@@ -50288,10 +50341,6 @@ var GUIDANCE = new Map([
 
 // packages/adapter/github-event-comment-repository/src/diagnostic-presentation.ts
 var DiagnosticPresenter = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
   FIELD_ALIASES = new Map([
     ...FIELD_ORDER.map((field) => [field, field]),
     ["eventTitle", "Event Title"],
@@ -50317,7 +50366,7 @@ var DiagnosticPresenter = class {
     ["occurrenceStatus", "Event Status"],
     ["event_status", "Event Status"]
   ]);
-  presentDiagnostic(item, messages5 = this.collaborators.createEventCommentMessages()) {
+  presentDiagnostic(item, messages5) {
     const guidance = GUIDANCE.get(item.code);
     const referential = /^referential\.(host|contact|speaker)\./.test(
       item.code
@@ -50329,7 +50378,7 @@ var DiagnosticPresenter = class {
     return { field, message, order: order < 0 ? FIELD_ORDER.length : order };
   }
   /** Only known issue headings and numeric agenda positions can reach Markdown. */
-  publicField(field, fallback, messages5 = this.collaborators.createEventCommentMessages()) {
+  publicField(field, fallback, messages5) {
     const known = this.FIELD_ALIASES.get(field ?? "");
     if (known) return [known, known];
     const agenda = field?.match(
@@ -50814,14 +50863,11 @@ var GithubEventCommentRepositoryComposition = class {
   diagnosticCommentPresenter() {
     return new DiagnosticCommentPresenter({
       organizerDiagnosticPolicy: new JourneyPolicyComposition().organizerDiagnosticPolicy(),
-      diagnosticPresenter: this.diagnosticPresenter(),
-      createEventCommentMessages: (...args) => this.eventCommentMessages(...args)
+      diagnosticPresenter: this.diagnosticPresenter()
     });
   }
   diagnosticPresenter() {
-    return new DiagnosticPresenter({
-      createEventCommentMessages: (...args) => this.eventCommentMessages(...args)
-    });
+    return new DiagnosticPresenter();
   }
   eventCommentMessages(...args) {
     return new EventCommentMessages(
@@ -52931,7 +52977,7 @@ var AttentionDiagnosticChecklist = class _AttentionDiagnosticChecklist {
 
 // packages/adapter/github-organizer-attention/src/attention-presenter.ts
 var AttentionPresenter = class {
-  constructor(collaborators, repository, issueNumber, diagnostics, messages5 = collaborators.createAttentionMessages()) {
+  constructor(collaborators, repository, issueNumber, diagnostics, messages5) {
     this.collaborators = collaborators;
     this.repository = repository;
     this.diagnostics = diagnostics;
@@ -52979,7 +53025,7 @@ var AttentionPresenter = class {
     return episode.status === "unknown" ? `${text} (${this.messages.t("attention.unknown")})` : text;
   }
   action(episode) {
-    if (episode.condition.code === "approval-pending" && episode.condition.resource.startsWith("meetup-publication:"))
+    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "meetup-approval")
       return this.messages.t("action.meetup-approval-pending");
     return episode.condition.code === "integration-failure" ? this.messages.failure(episode.condition.resource) : this.messages.t(`action.${episode.condition.code}`, {
       task: this.messages.task(episode.condition.resource)
@@ -53508,8 +53554,7 @@ var GithubOrganizerAttentionComposition = class {
     return new AttentionPresenter(
       {
         attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
-        attentionTaskSelection: new CommunicationDomainComposition().attentionTaskSelection(),
-        createAttentionMessages: (...args2) => this.attentionMessages(...args2)
+        attentionTaskSelection: new CommunicationDomainComposition().attentionTaskSelection()
       },
       ...args
     );
@@ -53546,7 +53591,7 @@ var GithubOrganizerAttentionComposition = class {
 
 // packages/adapter/system-clock/src/system-communication-clock.ts
 var SystemCommunicationClock = class {
-  constructor(dateFactory = () => /* @__PURE__ */ new Date()) {
+  constructor(dateFactory) {
     this.dateFactory = dateFactory;
   }
   dateFactory;
@@ -53557,7 +53602,7 @@ var SystemCommunicationClock = class {
 
 // packages/adapter/system-clock/src/system-event-clock.ts
 var SystemEventClock = class {
-  constructor(dateFactory = () => /* @__PURE__ */ new Date()) {
+  constructor(dateFactory) {
     this.dateFactory = dateFactory;
   }
   dateFactory;
@@ -53568,11 +53613,11 @@ var SystemEventClock = class {
 
 // packages/adapter/system-clock/src/dependency-composition.ts
 var SystemClockComposition = class {
-  systemCommunicationClock(...args) {
-    return new SystemCommunicationClock(...args);
+  systemCommunicationClock() {
+    return new SystemCommunicationClock(() => /* @__PURE__ */ new Date());
   }
-  systemEventClock(...args) {
-    return new SystemEventClock(...args);
+  systemEventClock() {
+    return new SystemEventClock(() => /* @__PURE__ */ new Date());
   }
 };
 
@@ -61003,7 +61048,7 @@ var YamlIssueFormProjection = class {
   constructor(collaborators, options) {
     this.collaborators = collaborators;
     this.options = options;
-    this.choices = this.collaborators.createProjectReferentialChoices();
+    this.choices = this.collaborators.choices;
     this.presenter = this.collaborators.createSpeakerReferencesPresenter(
       this.collaborators.createIssueFormMessages(options.locale)
     );
@@ -61098,7 +61143,7 @@ var YamlIssueFormProjectionComposition = class {
     return new YamlIssueFormProjection(
       {
         yamlIssueFormDocument: this.yamlIssueFormDocument(),
-        createProjectReferentialChoices: (...args2) => new ReferentialDomainComposition().projectReferentialChoices(...args2),
+        choices: new ReferentialDomainComposition().projectReferentialChoices(),
         createSpeakerReferencesPresenter: (...args2) => this.speakerReferencesPresenter(...args2),
         createIssueFormMessages: (...args2) => this.issueFormMessages(...args2)
       },

@@ -1,4 +1,5 @@
 import type {
+	FollowUpApprovalPolicy,
 	OrganizerFollowUp,
 	OrganizerFollowUpInput,
 } from "@meetup-automation/journey";
@@ -9,6 +10,7 @@ import type { GithubApprovalRepository } from "./github-approval-repository.js";
 /** Maintain the shared post-event comment without replacing a human choice. */
 export class GithubOrganizerFollowUp implements OrganizerFollowUp {
 	constructor(
+		private readonly policy: Pick<FollowUpApprovalPolicy, "retainRequest">,
 		private readonly repository: GithubApprovalRepository,
 		private readonly records: ApprovalRecordFactory,
 		private readonly finalizer: FinalizeApprovalDecision,
@@ -24,8 +26,7 @@ export class GithubOrganizerFollowUp implements OrganizerFollowUp {
 		const attention = existing?.record.followUp?.attention;
 		const attentionDetails = existing?.record.followUp?.attentionDetails;
 		const record =
-			existing &&
-			(!input.active || existing.record.eventDate === input.eventDate)
+			existing && this.policy.retainRequest(input, existing.record.eventDate)
 				? existing.record
 				: this.records.placeholder(input);
 		record.followUp = {
@@ -62,6 +63,10 @@ export class GithubOrganizerFollowUp implements OrganizerFollowUp {
 		await this.repository.save(state.record, state);
 	}
 }
-export type GithubOrganizerFollowUpArguments = ConstructorParameters<
-	typeof GithubOrganizerFollowUp
->;
+export type GithubOrganizerFollowUpArguments =
+	ConstructorParameters<typeof GithubOrganizerFollowUp> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

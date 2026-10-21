@@ -4,33 +4,22 @@ import type {
 	ApprovalNotificationResult,
 	OrganizerApprovalNotification,
 } from "@meetup-automation/journey";
-import type {
-	SlackApiClient,
-	SlackApiClientArguments,
-} from "./slack-api-client.js";
+import type { SlackApiClient } from "./slack-api-client.js";
 import type { SlackApprovalPresenter } from "./slack-approval-presenter.js";
 import type { SlackMessageReference } from "./slack-message-reference.js";
-import type { SlackFetch } from "./slack-notification-gateway-contracts.js";
 
 export interface SlackApprovalNotificationCollaborators {
 	readonly slackMessageReference: Pick<SlackMessageReference, "read" | "valid">;
-	readonly createSlackApiClient: (
-		...args: SlackApiClientArguments
-	) => SlackApiClient;
 }
 
 export class SlackApprovalNotification
 	implements OrganizerApprovalNotification
 {
-	private readonly client: SlackApiClient;
 	constructor(
 		private readonly collaborators: SlackApprovalNotificationCollaborators,
-		token: string,
-		private readonly presenter: SlackApprovalPresenter,
-		fetcher: SlackFetch = fetch,
-	) {
-		this.client = this.collaborators.createSlackApiClient(token, fetcher);
-	}
+		private readonly client: Pick<SlackApiClient, "post">,
+		private readonly presenter: Pick<SlackApprovalPresenter, "render">,
+	) {}
 	async send(
 		input: ApprovalNotificationRequest,
 	): Promise<ApprovalNotificationResult> {
@@ -62,10 +51,3 @@ export class SlackApprovalNotification
 		);
 	}
 }
-export type SlackApprovalNotificationArguments =
-	ConstructorParameters<typeof SlackApprovalNotification> extends [
-		unknown,
-		...infer Args,
-	]
-		? Args
-		: never;

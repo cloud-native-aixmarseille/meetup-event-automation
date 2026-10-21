@@ -23,8 +23,6 @@ export class EventActionComposition {
 			runtimeInput: new GithubActionsComposition().runtimeInput(),
 			conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),
 			actionOutput: new GithubActionsComposition().actionOutput(),
-			createActionMessages: (...args) =>
-				new GithubActionsComposition().actionMessages(...args),
 		});
 	}
 }

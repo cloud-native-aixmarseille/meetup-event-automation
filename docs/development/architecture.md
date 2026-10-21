@@ -118,6 +118,13 @@ of the methods the consumer needs. Private implementation details stay instance
 methods of their owner. Do not replace static calls with inline `new`, hidden
 module instances, service locators, or defaults that construct missing collaborators.
 
+Parameter defaults must not construct services or define factory callbacks. Bind
+provider functions, clocks and transport clients in composition and pass them
+explicitly. Pass stateless policies as narrow instances; a factory must have an
+identified lifetime or input that is specific to the operation. The structure
+check rejects calls, construction and callbacks in parameter defaults outside
+composition. Data defaults remain subject to the action interface rules.
+
 Construction belongs in named `*-composition.ts` modules. These modules only
 assemble dependencies; they do not own business decisions or execute effects.
 They respect the same package dependency directions as other production code.
@@ -333,13 +340,20 @@ announcement tasks are manual and do not share this routing.
 
 The journey's `OrganizerApproval` port gates email batches and Meetup publication.
 Journey policies own request eligibility, matching and revision fingerprints.
+They also own whether a request can be reviewed, the non-authorizing follow-up
+placeholder and post-event progress. Rendering and checkbox parsing consult the
+same review policy; neither independently interprets recipient counts or stopped
+follow-up state as authorization.
 The GitHub comment codec owns the versioned representation; a separate factory
 receives its identity source explicitly. Persistence, decision finalization and
 notification delivery are separate collaborators. Follow-up persistence and
 attention synchronization expose their own capabilities.
 The GitHub adapter owns trusted request comments, GitHub GraphQL editor/history
 verification, and current write-permission checks. Its comment presenter delegates
-to separate email and Meetup presenters. A decision parser compares checkbox edits
+to explicitly injected email and Meetup renderers through a complete kind map.
+The outer presenter encodes metadata once; the kind-specific renderers format
+their content. Slack uses its own injected renderer map and catalogs.
+A decision parser compares checkbox edits
 against exact localized requests rendered from trusted metadata; decision resolution
 verifies the editor's identity and permission separately. It durably records the
 verified human identity and final decision in the original bot comment before
@@ -400,7 +414,8 @@ Runtime composition injects the clock and ports. A pending post blocks further
 posts across days and requires operator investigation. Existing mail records and
 approval decisions remain independent. Once follow-up begins, the approval adapter
 stores the attention record inside the single thank-you approval and task comment.
-The communication domain owns attention invariants, equality and task selection.
+The communication domain owns attention invariants, equality, task selection and
+the action represented by an approval resource. Presenters consume those decisions.
 GitHub decodes the verified diagnostic checklist into typed tasks. GitHub and
 Slack presenters render that shared selection with their own catalogs. Runtime
 composition supplies these capabilities without adapter-to-adapter dependencies. A placeholder
@@ -433,7 +448,9 @@ Content batches use provider revision controls and a persisted pending intent.
 Recovery transitions and anchor equality belong to publication policies.
 Recovery fingerprints use explicit ordered fields and recognize the persisted
 identities of completed operations, so JSON property order cannot repeat a recovery.
-Text can recover by matching pending fingerprints; uncertain images require
+The asset journey determines whether slides are ready for communication from
+their URL and reconciled content status. The action emits that decision without
+reinterpreting content states. Text can recover by matching pending fingerprints; uncertain images require
 explicit recovery when embedded observations cannot prove success. File URLs and
 content readiness remain separate; communication holds pending managed slides.
 See [managed asset content](../integrations/assets.md#author-managed-content).

@@ -61,8 +61,6 @@ describe("attention action reporting", () => {
 				},
 				runtimeInput: new GithubActionsComposition().runtimeInput(),
 				attentionStages: new GithubActionsComposition().attentionStages(),
-				createActionMessages: (...args) =>
-					new GithubActionsComposition().actionMessages(...args),
 			}).run(
 				new ActionMessages(
 					{ localeResolver: new LocalizationComposition().localeResolver() },
@@ -101,9 +99,7 @@ describe("attention action reporting", () => {
 			},
 			runtimeInput: new GithubActionsComposition().runtimeInput(),
 			attentionStages: new GithubActionsComposition().attentionStages(),
-			createActionMessages: (...args) =>
-				new GithubActionsComposition().actionMessages(...args),
-		}).run();
+		}).run(new GithubActionsComposition().actionMessages("en"));
 
 		// Assert
 		expect(report.details.join(" ")).toContain("skipped");

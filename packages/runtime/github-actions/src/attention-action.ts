@@ -4,10 +4,7 @@ import type { ManageMeetupAttention } from "@meetup-automation/journey";
 import type { ActionReportData } from "./action-report.js";
 import type { AttentionComposition } from "./attention-composition.js";
 import type { AttentionStages } from "./attention-stages.js";
-import type {
-	ActionMessages,
-	ActionMessagesArguments,
-} from "./i18n/action-messages.js";
+import type { ActionMessages } from "./i18n/action-messages.js";
 import type { OrganizerFeedback } from "./organizer-feedback.js";
 import type { RuntimeInput } from "./runtime-input.js";
 export interface AttentionActionCollaborators {
@@ -19,17 +16,12 @@ export interface AttentionActionCollaborators {
 	};
 	readonly runtimeInput: Pick<RuntimeInput, "positiveIntegerInput">;
 	readonly attentionStages: Pick<AttentionStages, "parse">;
-	readonly createActionMessages: (
-		...args: ActionMessagesArguments
-	) => ActionMessages;
 }
 
 export class AttentionAction {
 	constructor(private readonly collaborators: AttentionActionCollaborators) {}
 
-	async run(
-		messages = this.collaborators.createActionMessages(),
-	): Promise<ActionReportData> {
+	async run(messages: ActionMessages): Promise<ActionReportData> {
 		const issueNumber = this.collaborators.runtimeInput.positiveIntegerInput(
 			"issue-number",
 			core.getInput("issue-number", { required: true }),

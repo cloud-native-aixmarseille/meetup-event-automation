@@ -1,4 +1,7 @@
-import { CommunicationDomainComposition } from "@meetup-automation/communication";
+import {
+	type AttentionChecklistSource,
+	CommunicationDomainComposition,
+} from "@meetup-automation/communication";
 import { LocalizationComposition } from "@meetup-automation/localization";
 import {
 	SlackAttentionMessages,
@@ -8,31 +11,19 @@ import {
 	SlackApprovalMessages,
 	type SlackApprovalMessagesArguments,
 } from "./i18n/slack-approval-messages.js";
-import {
-	SlackApiClient,
-	type SlackApiClientArguments,
-} from "./slack-api-client.js";
-import {
-	SlackApprovalNotification,
-	type SlackApprovalNotificationArguments,
-} from "./slack-approval-notification.js";
-import {
-	SlackApprovalPresenter,
-	type SlackApprovalPresenterArguments,
-} from "./slack-approval-presenter.js";
-import {
-	SlackAttentionNotification,
-	type SlackAttentionNotificationArguments,
-} from "./slack-attention-notification.js";
-import {
-	SlackAttentionPresenter,
-	type SlackAttentionPresenterArguments,
-} from "./slack-attention-presenter.js";
+import { SlackApiClient } from "./slack-api-client.js";
+import { SlackApprovalNotification } from "./slack-approval-notification.js";
+import { SlackApprovalPresenter } from "./slack-approval-presenter.js";
+import { SlackAttentionNotification } from "./slack-attention-notification.js";
+import { SlackAttentionPresenter } from "./slack-attention-presenter.js";
+import { SlackEmailApprovalPresenter } from "./slack-email-approval-presenter.js";
+import { SlackMeetupApprovalPresenter } from "./slack-meetup-approval-presenter.js";
 import { SlackMessageReference } from "./slack-message-reference.js";
+import type { SlackFetch } from "./slack-notification-gateway-contracts.js";
 /** Assembles this package's collaborators; no business decisions or I/O. */
 export class SlackNotificationGatewayComposition {
-	slackApiClient(...args: SlackApiClientArguments): SlackApiClient {
-		return new SlackApiClient(...args);
+	slackApiClient(token: string, fetcher: SlackFetch = fetch): SlackApiClient {
+		return new SlackApiClient(token, fetcher);
 	}
 	slackApprovalMessages(
 		...args: SlackApprovalMessagesArguments
@@ -43,26 +34,24 @@ export class SlackNotificationGatewayComposition {
 		);
 	}
 	slackApprovalNotification(
-		...args: SlackApprovalNotificationArguments
+		token: string,
+		presenter: Pick<SlackApprovalPresenter, "render">,
+		fetcher: SlackFetch = fetch,
 	): SlackApprovalNotification {
 		return new SlackApprovalNotification(
 			{
 				slackMessageReference: this.slackMessageReference(),
-				createSlackApiClient: (...args) => this.slackApiClient(...args),
 			},
-			...args,
+			this.slackApiClient(token, fetcher),
+			presenter,
 		);
 	}
-	slackApprovalPresenter(
-		...args: SlackApprovalPresenterArguments
-	): SlackApprovalPresenter {
-		return new SlackApprovalPresenter(
-			{
-				createSlackApprovalMessages: (...args) =>
-					this.slackApprovalMessages(...args),
-			},
-			...args,
-		);
+	slackApprovalPresenter(locale: string | undefined): SlackApprovalPresenter {
+		const messages = this.slackApprovalMessages(locale);
+		return new SlackApprovalPresenter({
+			"email-introduction": new SlackEmailApprovalPresenter(messages),
+			"meetup-publication": new SlackMeetupApprovalPresenter(messages),
+		});
 	}
 	slackAttentionMessages(
 		...args: SlackAttentionMessagesArguments
@@ -73,28 +62,36 @@ export class SlackNotificationGatewayComposition {
 		);
 	}
 	slackAttentionNotification(
-		...args: SlackAttentionNotificationArguments
+		token: string,
+		channel: string,
+		presenter: Pick<SlackAttentionPresenter, "render">,
+		fetcher: SlackFetch = fetch,
 	): SlackAttentionNotification {
 		return new SlackAttentionNotification(
 			{
 				slackMessageReference: this.slackMessageReference(),
-				createSlackApiClient: (...args) => this.slackApiClient(...args),
 			},
-			...args,
+			this.slackApiClient(token, fetcher),
+			channel,
+			presenter,
 		);
 	}
 	slackAttentionPresenter(
-		...args: SlackAttentionPresenterArguments
+		repository: string,
+		issueNumber: number,
+		locale: string | undefined,
+		checklist: AttentionChecklistSource,
 	): SlackAttentionPresenter {
 		return new SlackAttentionPresenter(
 			{
 				attentionTaskSelection:
 					new CommunicationDomainComposition().attentionTaskSelection(),
 				attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
-				createSlackAttentionMessages: (...args) =>
-					this.slackAttentionMessages(...args),
 			},
-			...args,
+			repository,
+			issueNumber,
+			this.slackAttentionMessages(locale),
+			checklist,
 		);
 	}
 	slackMessageReference(): SlackMessageReference {

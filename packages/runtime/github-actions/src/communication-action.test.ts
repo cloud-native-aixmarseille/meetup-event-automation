@@ -73,7 +73,9 @@ describe("communication action report facts", () => {
 		vi.stubEnv(`INPUT_${input.toUpperCase()}`, "");
 
 		// Act
-		const operation = subject().runCommunicationReconcileAction();
+		const operation = subject().runCommunicationReconcileAction(
+			new GithubActionsComposition().actionMessages("en"),
+		);
 
 		// Assert
 		await expect(operation).rejects.toThrow(
@@ -89,7 +91,9 @@ describe("communication action report facts", () => {
 		vi.stubEnv("INPUT_SLACK-CHANNEL-ID", "public-channel-id");
 
 		// Act
-		const operation = subject().runCommunicationReconcileAction();
+		const operation = subject().runCommunicationReconcileAction(
+			new GithubActionsComposition().actionMessages("en"),
+		);
 
 		// Assert
 		await expect(operation).rejects.toThrow(
@@ -134,7 +138,9 @@ describe("communication action report facts", () => {
 			});
 
 			// Act
-			const report = await subject().runCommunicationReconcileAction();
+			const report = await subject().runCommunicationReconcileAction(
+				new GithubActionsComposition().actionMessages("en"),
+			);
 
 			// Assert
 			expect(report.details).toContain("communication_mode=check");
@@ -183,7 +189,9 @@ describe("communication action report facts", () => {
 		});
 
 		// Act
-		const report = await subject().runCommunicationReconcileAction();
+		const report = await subject().runCommunicationReconcileAction(
+			new GithubActionsComposition().actionMessages("en"),
+		);
 
 		// Assert
 		expect(boundary.execute).toHaveBeenCalledWith(
@@ -281,7 +289,9 @@ describe("communication action report facts", () => {
 		);
 
 		// Act
-		await subject().runCommunicationReconcileAction();
+		await subject().runCommunicationReconcileAction(
+			new GithubActionsComposition().actionMessages("en"),
+		);
 
 		// Assert
 		expect(boundary.execute).toHaveBeenCalledWith(
@@ -302,7 +312,9 @@ describe("communication action report facts", () => {
 		);
 
 		// Act
-		const report = await subject().runCommunicationReconcileAction();
+		const report = await subject().runCommunicationReconcileAction(
+			new GithubActionsComposition().actionMessages("en"),
+		);
 
 		// Assert
 		expect(boundary.execute).toHaveBeenCalledWith(
@@ -323,7 +335,9 @@ describe("communication action report facts", () => {
 			vi.stubEnv(`INPUT_${input.toUpperCase()}`, "invalid");
 
 			// Act
-			const result = subject().runCommunicationReconcileAction();
+			const result = subject().runCommunicationReconcileAction(
+				new GithubActionsComposition().actionMessages("en"),
+			);
 
 			// Assert
 			await expect(result).rejects.toThrow(`${input} must be true or false`);
@@ -339,7 +353,5 @@ function subject() {
 		conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),
 		communicationDiagnosticProjection:
 			new JourneyPolicyComposition().communicationDiagnosticProjection(),
-		createActionMessages: (...args) =>
-			new GithubActionsComposition().actionMessages(...args),
 	});
 }

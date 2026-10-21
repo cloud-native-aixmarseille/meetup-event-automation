@@ -1,7 +1,16 @@
 import { describe, expect, it, vi } from "vitest";
 import { SlackNotificationGatewayComposition } from "./dependency-composition.js";
 import { SlackApprovalNotification } from "./slack-approval-notification.js";
-import { SlackApprovalPresenter } from "./slack-approval-presenter.js";
+import type { SlackFetch } from "./slack-notification-gateway-contracts.js";
+
+function notification(fetcher: SlackFetch, token = "token") {
+	const composition = new SlackNotificationGatewayComposition();
+	return new SlackApprovalNotification(
+		{ slackMessageReference: composition.slackMessageReference() },
+		composition.slackApiClient(token, fetcher),
+		composition.slackApprovalPresenter("en"),
+	);
+}
 
 describe("Slack approval notification", () => {
 	it("retains the acknowledged channel and message timestamp", async () => {
@@ -15,25 +24,7 @@ describe("Slack approval notification", () => {
 				private: "provider-data",
 			}),
 		});
-		const gateway = new SlackApprovalNotification(
-			{
-				slackMessageReference:
-					new SlackNotificationGatewayComposition().slackMessageReference(),
-				createSlackApiClient: (...args) =>
-					new SlackNotificationGatewayComposition().slackApiClient(...args),
-			},
-			"private-token",
-			new SlackApprovalPresenter(
-				{
-					createSlackApprovalMessages: (...args) =>
-						new SlackNotificationGatewayComposition().slackApprovalMessages(
-							...args,
-						),
-				},
-				"en",
-			),
-			fetcher,
-		);
+		const gateway = notification(fetcher, "private-token");
 
 		// Act
 		const result = await gateway.send({
@@ -68,23 +59,7 @@ describe("Slack approval notification", () => {
 		"does not acknowledge a post without a usable reference: %j",
 		async (payload) => {
 			// Arrange
-			const gateway = new SlackApprovalNotification(
-				{
-					slackMessageReference:
-						new SlackNotificationGatewayComposition().slackMessageReference(),
-					createSlackApiClient: (...args) =>
-						new SlackNotificationGatewayComposition().slackApiClient(...args),
-				},
-				"token",
-				new SlackApprovalPresenter(
-					{
-						createSlackApprovalMessages: (...args) =>
-							new SlackNotificationGatewayComposition().slackApprovalMessages(
-								...args,
-							),
-					},
-					"en",
-				),
+			const gateway = notification(
 				vi.fn().mockResolvedValue({ ok: true, json: async () => payload }),
 			);
 
@@ -114,25 +89,7 @@ describe("Slack approval notification", () => {
 			const fetcher = vi
 				.fn()
 				.mockResolvedValue({ ok: true, json: async () => ({ ok: true }) });
-			const gateway = new SlackApprovalNotification(
-				{
-					slackMessageReference:
-						new SlackNotificationGatewayComposition().slackMessageReference(),
-					createSlackApiClient: (...args) =>
-						new SlackNotificationGatewayComposition().slackApiClient(...args),
-				},
-				"token",
-				new SlackApprovalPresenter(
-					{
-						createSlackApprovalMessages: (...args) =>
-							new SlackNotificationGatewayComposition().slackApprovalMessages(
-								...args,
-							),
-					},
-					"en",
-				),
-				fetcher,
-			);
+			const gateway = notification(fetcher);
 
 			// Act
 			const accepted = await gateway.react(
@@ -161,23 +118,7 @@ describe("Slack approval notification", () => {
 		["message_not_found", false],
 	] as const)("handles the reaction response %s", async (error, expected) => {
 		// Arrange
-		const gateway = new SlackApprovalNotification(
-			{
-				slackMessageReference:
-					new SlackNotificationGatewayComposition().slackMessageReference(),
-				createSlackApiClient: (...args) =>
-					new SlackNotificationGatewayComposition().slackApiClient(...args),
-			},
-			"token",
-			new SlackApprovalPresenter(
-				{
-					createSlackApprovalMessages: (...args) =>
-						new SlackNotificationGatewayComposition().slackApprovalMessages(
-							...args,
-						),
-				},
-				"en",
-			),
+		const gateway = notification(
 			vi.fn().mockResolvedValue({
 				ok: true,
 				json: async () => ({ ok: false, error }),
@@ -195,23 +136,7 @@ describe("Slack approval notification", () => {
 	});
 	it("allows a later reaction retry after an uncertain transport outcome", async () => {
 		// Arrange
-		const gateway = new SlackApprovalNotification(
-			{
-				slackMessageReference:
-					new SlackNotificationGatewayComposition().slackMessageReference(),
-				createSlackApiClient: (...args) =>
-					new SlackNotificationGatewayComposition().slackApiClient(...args),
-			},
-			"token",
-			new SlackApprovalPresenter(
-				{
-					createSlackApprovalMessages: (...args) =>
-						new SlackNotificationGatewayComposition().slackApprovalMessages(
-							...args,
-						),
-				},
-				"en",
-			),
+		const gateway = notification(
 			vi.fn().mockRejectedValue(new Error("private provider failure")),
 		);
 

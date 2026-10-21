@@ -21,6 +21,12 @@ export class DependencyInjection {
 
 	inspect(node, owner) {
 		if (this.composition) return [];
+		if (node.type === "AssignmentPattern" && this.defaultBehavior(node.right))
+			return this.violation(
+				node,
+				"required-collaborator",
+				"Supply collaborators explicitly; bind factories, provider functions, and constructed defaults in composition.",
+			);
 		if (this.staticBehavior(node) && !this.valueFactory(owner, node))
 			return this.violation(
 				node,
@@ -40,6 +46,24 @@ export class DependencyInjection {
 				"Construct workspace collaborators in composition; inject an instance or a typed factory for operation-scoped objects.",
 			);
 		return [];
+	}
+
+	defaultBehavior(value) {
+		if (!value || typeof value !== "object") return false;
+		if (
+			[
+				"ArrowFunctionExpression",
+				"FunctionExpression",
+				"CallExpression",
+				"NewExpression",
+			].includes(value.type)
+		)
+			return true;
+		return Object.values(value).some((child) =>
+			Array.isArray(child)
+				? child.some((item) => this.defaultBehavior(item))
+				: this.defaultBehavior(child),
+		);
 	}
 
 	staticBehavior(node) {

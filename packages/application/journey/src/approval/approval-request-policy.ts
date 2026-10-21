@@ -3,6 +3,30 @@ import type { OrganizerApprovalDetails } from "../ports/organizer-approval-detai
 
 /** An approval authorizes a revision and its reviewed public facts. */
 export class ApprovalRequestPolicy {
+	reviewPhase(facts: {
+		readonly recipientCount?: number;
+		readonly followUpActive?: boolean;
+		readonly decided: boolean;
+	}): "inactive" | "final" | "pending" {
+		if (facts.recipientCount === 0 || facts.followUpActive === false)
+			return "inactive";
+		return facts.decided ? "final" : "pending";
+	}
+
+	validateSnapshot(
+		request: OrganizerApprovalRequest,
+		facts: { readonly hasFollowUp: boolean; readonly decided: boolean },
+	): void {
+		if (facts.hasFollowUp && request.kind !== "email-thanks")
+			throw new Error("Invalid post-event approval kind");
+		if (request.recipientCount === 0 && facts.hasFollowUp) {
+			this.validateIdentity(request);
+			this.validateEmailCount(request);
+		} else this.validate(request);
+		if (facts.decided && request.recipientCount === 0)
+			throw new Error("Invalid final approval decision");
+	}
+
 	validate(request: OrganizerApprovalRequest): void {
 		this.validateIdentity(request);
 		if (request.kind === "meetup-publication") return;

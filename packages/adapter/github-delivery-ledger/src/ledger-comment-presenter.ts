@@ -2,23 +2,17 @@ import {
 	DELIVERY_LEDGER_MARKER,
 	type StoredLedger,
 } from "./github-delivery-ledger-contracts.js";
-import type {
-	LedgerMessages,
-	LedgerMessagesArguments,
-} from "./i18n/ledger-messages.js";
+import type { LedgerMessages } from "./i18n/ledger-messages.js";
 import type { LedgerCommentCodec } from "./ledger-comment-codec.js";
 
 export interface LedgerCommentPresenterCollaborators {
 	readonly ledgerCommentCodec: Pick<LedgerCommentCodec, "encode">;
-	readonly createLedgerMessages: (
-		...args: LedgerMessagesArguments
-	) => LedgerMessages;
 }
 
 export class LedgerCommentPresenter {
 	constructor(
 		private readonly collaborators: LedgerCommentPresenterCollaborators,
-		private readonly messages = collaborators.createLedgerMessages(),
+		private readonly messages: Pick<LedgerMessages, "t">,
 	) {}
 
 	render(ledger: StoredLedger): string {

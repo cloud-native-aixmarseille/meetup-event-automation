@@ -1,3 +1,4 @@
+import { ApprovalRequestPolicy } from "@meetup-automation/journey";
 import { LocalizationComposition } from "@meetup-automation/localization";
 import { describe, expect, it } from "vitest";
 import {
@@ -26,26 +27,43 @@ describe("approval decision parsing", () => {
 		// Arrange
 		const record = createStoredApproval(input);
 		const presenter = new ApprovalPresenter(
+			new GithubOrganizerApprovalComposition().approvalCommentCodec(),
 			{
-				createEmailApprovalPresenter: (...args) =>
+				"email-introduction":
 					new GithubOrganizerApprovalComposition().emailApprovalPresenter(
-						...args,
+						new ApprovalMessages(
+							{
+								localeResolver: new LocalizationComposition().localeResolver(),
+							},
+							locale,
+						),
 					),
-				createMeetupApprovalPresenter: (...args) =>
+				"email-thanks":
+					new GithubOrganizerApprovalComposition().emailApprovalPresenter(
+						new ApprovalMessages(
+							{
+								localeResolver: new LocalizationComposition().localeResolver(),
+							},
+							locale,
+						),
+					),
+				"meetup-publication":
 					new GithubOrganizerApprovalComposition().meetupApprovalPresenter(
-						...args,
+						new ApprovalMessages(
+							{
+								localeResolver: new LocalizationComposition().localeResolver(),
+							},
+							locale,
+						),
 					),
 			},
-			new ApprovalMessages(
-				{ localeResolver: new LocalizationComposition().localeResolver() },
-				locale,
-			),
 		);
 		const body = presenter
 			.issue(record, { status })
 			.replace(/- \[x\]/g, "- [X]")
 			.replace(/\n/g, "\r\n");
 		const parser = new ApprovalDecisionParser(
+			new ApprovalRequestPolicy(),
 			new GithubOrganizerApprovalComposition()
 				.approvalPresenterFactory()
 				.supportedLocales(),
@@ -62,20 +80,36 @@ describe("approval decision parsing", () => {
 		// Arrange
 		const record = createStoredApproval(detailedRequest);
 		const presenter = new ApprovalPresenter(
+			new GithubOrganizerApprovalComposition().approvalCommentCodec(),
 			{
-				createEmailApprovalPresenter: (...args) =>
+				"email-introduction":
 					new GithubOrganizerApprovalComposition().emailApprovalPresenter(
-						...args,
+						new ApprovalMessages(
+							{
+								localeResolver: new LocalizationComposition().localeResolver(),
+							},
+							"en",
+						),
 					),
-				createMeetupApprovalPresenter: (...args) =>
+				"email-thanks":
+					new GithubOrganizerApprovalComposition().emailApprovalPresenter(
+						new ApprovalMessages(
+							{
+								localeResolver: new LocalizationComposition().localeResolver(),
+							},
+							"en",
+						),
+					),
+				"meetup-publication":
 					new GithubOrganizerApprovalComposition().meetupApprovalPresenter(
-						...args,
+						new ApprovalMessages(
+							{
+								localeResolver: new LocalizationComposition().localeResolver(),
+							},
+							"en",
+						),
 					),
 			},
-			new ApprovalMessages(
-				{ localeResolver: new LocalizationComposition().localeResolver() },
-				"en",
-			),
 		);
 		const body = presenter
 			.issue(record, { status: "approved" })
@@ -84,6 +118,7 @@ describe("approval decision parsing", () => {
 				'href="https://example.invalid/different"',
 			);
 		const parser = new ApprovalDecisionParser(
+			new ApprovalRequestPolicy(),
 			new GithubOrganizerApprovalComposition()
 				.approvalPresenterFactory()
 				.supportedLocales(),
@@ -102,20 +137,39 @@ describe("approval decision parsing", () => {
 			// Arrange
 			const record = createStoredApproval(request);
 			const presenter = new ApprovalPresenter(
+				new GithubOrganizerApprovalComposition().approvalCommentCodec(),
 				{
-					createEmailApprovalPresenter: (...args) =>
+					"email-introduction":
 						new GithubOrganizerApprovalComposition().emailApprovalPresenter(
-							...args,
+							new ApprovalMessages(
+								{
+									localeResolver:
+										new LocalizationComposition().localeResolver(),
+								},
+								"en",
+							),
 						),
-					createMeetupApprovalPresenter: (...args) =>
+					"email-thanks":
+						new GithubOrganizerApprovalComposition().emailApprovalPresenter(
+							new ApprovalMessages(
+								{
+									localeResolver:
+										new LocalizationComposition().localeResolver(),
+								},
+								"en",
+							),
+						),
+					"meetup-publication":
 						new GithubOrganizerApprovalComposition().meetupApprovalPresenter(
-							...args,
+							new ApprovalMessages(
+								{
+									localeResolver:
+										new LocalizationComposition().localeResolver(),
+								},
+								"en",
+							),
 						),
 				},
-				new ApprovalMessages(
-					{ localeResolver: new LocalizationComposition().localeResolver() },
-					"en",
-				),
 			);
 			const approved = presenter.issue(record, { status: "approved" });
 			const bodies = {
@@ -124,6 +178,7 @@ describe("approval decision parsing", () => {
 				"changed metadata": approved.replace(record.revision, "b".repeat(64)),
 			};
 			const parser = new ApprovalDecisionParser(
+				new ApprovalRequestPolicy(),
 				new GithubOrganizerApprovalComposition()
 					.approvalPresenterFactory()
 					.supportedLocales(),

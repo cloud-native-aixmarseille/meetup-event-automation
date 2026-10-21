@@ -5,6 +5,25 @@ const sourcePath = "packages/domain/example/src/policy.ts";
 
 describe("constructor injection", () => {
 	it.each([
+		"class Service { constructor(private makeDate = () => new Date()) {} }",
+		"class Service { constructor(dependencies: Dependencies, private policy = dependencies.createPolicy()) {} }",
+		"class Service { render(messages = this.dependencies.createMessages()) {} }",
+		"class Service { constructor(private client = buildClient()) {} }",
+		"class Service { constructor(private client = supplied ?? buildClient()) {} }",
+		"class Service { constructor(private dependencies = { clock: () => new Date() }) {} }",
+	])("rejects behavior hidden in parameter defaults: %s", (source) => {
+		// Arrange
+		const rule = new CodeStructure(sourcePath);
+
+		// Act
+		const result = rule.inspect(source);
+
+		// Assert
+		expect(result).toContainEqual(
+			expect.objectContaining({ rule: "required-collaborator" }),
+		);
+	});
+	it.each([
 		"class Policy { static evaluate() { return true; } }",
 		"class Policy { private static evaluate() { return true; } }",
 		"class Policy { static get value() { return true; } }",
@@ -45,6 +64,7 @@ describe("constructor injection", () => {
 		"class Service { constructor(private policy: Policy) {} execute() { return this.policy.evaluate(); } }",
 		"class Service { constructor(private createSession: () => Session) {} execute() { return this.createSession().run(); } }",
 		"class Policy { static readonly version = 1; evaluate() { return true; } }",
+		"class Service { constructor(private count = 1, private options = {}) {} }",
 		"class Value { private constructor(readonly value: string) {} static parse(value: string): Value | undefined { return value ? new Value(value) : undefined; } get text() { return this.value; } }",
 	])("accepts explicit collaborators and immutable data: %s", (source) => {
 		// Arrange

@@ -148,8 +148,7 @@ describe("YamlIssueFormProjection", () => {
 			{
 				yamlIssueFormDocument:
 					new YamlIssueFormProjectionComposition().yamlIssueFormDocument(),
-				createProjectReferentialChoices: (...args) =>
-					new ReferentialDomainComposition().projectReferentialChoices(...args),
+				choices: new ReferentialDomainComposition().projectReferentialChoices(),
 				createSpeakerReferencesPresenter: (...args) =>
 					new YamlIssueFormProjectionComposition().speakerReferencesPresenter(
 						...args,
@@ -201,8 +200,7 @@ describe("YamlIssueFormProjection", () => {
 			{
 				yamlIssueFormDocument:
 					new YamlIssueFormProjectionComposition().yamlIssueFormDocument(),
-				createProjectReferentialChoices: (...args) =>
-					new ReferentialDomainComposition().projectReferentialChoices(...args),
+				choices: new ReferentialDomainComposition().projectReferentialChoices(),
 				createSpeakerReferencesPresenter: (...args) =>
 					new YamlIssueFormProjectionComposition().speakerReferencesPresenter(
 						...args,
@@ -255,8 +253,7 @@ describe("YamlIssueFormProjection", () => {
 			{
 				yamlIssueFormDocument:
 					new YamlIssueFormProjectionComposition().yamlIssueFormDocument(),
-				createProjectReferentialChoices: (...args) =>
-					new ReferentialDomainComposition().projectReferentialChoices(...args),
+				choices: new ReferentialDomainComposition().projectReferentialChoices(),
 				createSpeakerReferencesPresenter: (...args) =>
 					new YamlIssueFormProjectionComposition().speakerReferencesPresenter(
 						...args,
@@ -295,8 +292,7 @@ describe("YamlIssueFormProjection", () => {
 			{
 				yamlIssueFormDocument:
 					new YamlIssueFormProjectionComposition().yamlIssueFormDocument(),
-				createProjectReferentialChoices: (...args) =>
-					new ReferentialDomainComposition().projectReferentialChoices(...args),
+				choices: new ReferentialDomainComposition().projectReferentialChoices(),
 				createSpeakerReferencesPresenter: (...args) =>
 					new YamlIssueFormProjectionComposition().speakerReferencesPresenter(
 						...args,
@@ -324,8 +320,7 @@ describe("YamlIssueFormProjection", () => {
 			{
 				yamlIssueFormDocument:
 					new YamlIssueFormProjectionComposition().yamlIssueFormDocument(),
-				createProjectReferentialChoices: (...args) =>
-					new ReferentialDomainComposition().projectReferentialChoices(...args),
+				choices: new ReferentialDomainComposition().projectReferentialChoices(),
 				createSpeakerReferencesPresenter: (...args) =>
 					new YamlIssueFormProjectionComposition().speakerReferencesPresenter(
 						...args,
@@ -358,8 +353,7 @@ describe("YamlIssueFormProjection", () => {
 			{
 				yamlIssueFormDocument:
 					new YamlIssueFormProjectionComposition().yamlIssueFormDocument(),
-				createProjectReferentialChoices: (...args) =>
-					new ReferentialDomainComposition().projectReferentialChoices(...args),
+				choices: new ReferentialDomainComposition().projectReferentialChoices(),
 				createSpeakerReferencesPresenter: (...args) =>
 					new YamlIssueFormProjectionComposition().speakerReferencesPresenter(
 						...args,
@@ -454,8 +448,7 @@ describe("YamlIssueFormProjection", () => {
 			{
 				yamlIssueFormDocument:
 					new YamlIssueFormProjectionComposition().yamlIssueFormDocument(),
-				createProjectReferentialChoices: (...args) =>
-					new ReferentialDomainComposition().projectReferentialChoices(...args),
+				choices: new ReferentialDomainComposition().projectReferentialChoices(),
 				createSpeakerReferencesPresenter: (...args) =>
 					new YamlIssueFormProjectionComposition().speakerReferencesPresenter(
 						...args,
@@ -494,8 +487,7 @@ describe("YamlIssueFormProjection", () => {
 			{
 				yamlIssueFormDocument:
 					new YamlIssueFormProjectionComposition().yamlIssueFormDocument(),
-				createProjectReferentialChoices: (...args) =>
-					new ReferentialDomainComposition().projectReferentialChoices(...args),
+				choices: new ReferentialDomainComposition().projectReferentialChoices(),
 				createSpeakerReferencesPresenter: (...args) =>
 					new YamlIssueFormProjectionComposition().speakerReferencesPresenter(
 						...args,
@@ -554,10 +546,8 @@ describe("YamlIssueFormProjection", () => {
 				{
 					yamlIssueFormDocument:
 						new YamlIssueFormProjectionComposition().yamlIssueFormDocument(),
-					createProjectReferentialChoices: (...args) =>
-						new ReferentialDomainComposition().projectReferentialChoices(
-							...args,
-						),
+					choices:
+						new ReferentialDomainComposition().projectReferentialChoices(),
 					createSpeakerReferencesPresenter: (...args) =>
 						new YamlIssueFormProjectionComposition().speakerReferencesPresenter(
 							...args,
@@ -597,8 +587,7 @@ describe("YamlIssueFormProjection", () => {
 			{
 				yamlIssueFormDocument:
 					new YamlIssueFormProjectionComposition().yamlIssueFormDocument(),
-				createProjectReferentialChoices: (...args) =>
-					new ReferentialDomainComposition().projectReferentialChoices(...args),
+				choices: new ReferentialDomainComposition().projectReferentialChoices(),
 				createSpeakerReferencesPresenter: (...args) =>
 					new YamlIssueFormProjectionComposition().speakerReferencesPresenter(
 						...args,
@@ -637,8 +626,7 @@ describe("YamlIssueFormProjection", () => {
 			{
 				yamlIssueFormDocument:
 					new YamlIssueFormProjectionComposition().yamlIssueFormDocument(),
-				createProjectReferentialChoices: (...args) =>
-					new ReferentialDomainComposition().projectReferentialChoices(...args),
+				choices: new ReferentialDomainComposition().projectReferentialChoices(),
 				createSpeakerReferencesPresenter: (...args) =>
 					new YamlIssueFormProjectionComposition().speakerReferencesPresenter(
 						...args,
@@ -669,8 +657,7 @@ describe("YamlIssueFormProjection", () => {
 			{
 				yamlIssueFormDocument:
 					new YamlIssueFormProjectionComposition().yamlIssueFormDocument(),
-				createProjectReferentialChoices: (...args) =>
-					new ReferentialDomainComposition().projectReferentialChoices(...args),
+				choices: new ReferentialDomainComposition().projectReferentialChoices(),
 				createSpeakerReferencesPresenter: (...args) =>
 					new YamlIssueFormProjectionComposition().speakerReferencesPresenter(
 						...args,

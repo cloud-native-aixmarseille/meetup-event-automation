@@ -137,8 +137,8 @@ export class JourneyComposition {
 					),
 				createRefreshSelectedProposals: (...args) =>
 					this.refreshSelectedProposals(...args),
-				createResolveEventReferences: (...args) =>
-					new ReferentialDomainComposition().resolveEventReferences(...args),
+				resolveEventReferences:
+					new ReferentialDomainComposition().resolveEventReferences(),
 			},
 			...args,
 		);
@@ -222,8 +222,8 @@ export class JourneyComposition {
 			{
 				speakerSynchronizationStageRunner:
 					new JourneyPolicyComposition().speakerSynchronizationStageRunner(),
-				createMergeSourceSpeakers: (...args) =>
-					new ReferentialDomainComposition().mergeSourceSpeakers(...args),
+				mergeSourceSpeakers:
+					new ReferentialDomainComposition().mergeSourceSpeakers(),
 				createValidateReferentialCatalog: (...args) =>
 					new ReferentialDomainComposition().validateReferentialCatalog(
 						...args,

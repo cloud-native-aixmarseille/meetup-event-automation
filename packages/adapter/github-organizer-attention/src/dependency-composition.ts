@@ -64,7 +64,6 @@ export class GithubOrganizerAttentionComposition {
 				attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
 				attentionTaskSelection:
 					new CommunicationDomainComposition().attentionTaskSelection(),
-				createAttentionMessages: (...args) => this.attentionMessages(...args),
 			},
 			...args,
 		);

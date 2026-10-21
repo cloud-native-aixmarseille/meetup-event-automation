@@ -32,8 +32,7 @@ export class JourneyCommunicationComposition {
 					new CommunicationDomainComposition().mailBatchFingerprint(),
 				communicationApprovalDetails:
 					new JourneyPolicyComposition().communicationApprovalDetails(),
-				createPlanCommunications: (...args) =>
-					new CommunicationDomainComposition().planCommunications(...args),
+				planner: new CommunicationDomainComposition().planCommunications(),
 			},
 			...args,
 		);

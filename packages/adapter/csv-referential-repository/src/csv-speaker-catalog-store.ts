@@ -12,10 +12,7 @@ import type {
 	CsvReferentialRepository,
 	CsvReferentialRepositoryArguments,
 } from "./csv-referential-repository.js";
-import type {
-	SpeakerAllocationHistory,
-	SpeakerAllocationHistoryArguments,
-} from "./speaker-allocation-history.js";
+import type { SpeakerAllocationHistory } from "./speaker-allocation-history.js";
 import type { SpeakerAllocationStateCodec } from "./speaker-allocation-state-codec.js";
 import type { SpeakerCatalogCsv } from "./speaker-catalog-csv.js";
 
@@ -25,9 +22,6 @@ export interface CsvSpeakerCatalogStoreCollaborators {
 		SpeakerAllocationStateCodec,
 		"decode" | "encode"
 	>;
-	readonly createSpeakerAllocationHistory: (
-		...args: SpeakerAllocationHistoryArguments
-	) => SpeakerAllocationHistory;
 	readonly createCsvReferentialRepository: (
 		...args: CsvReferentialRepositoryArguments
 	) => CsvReferentialRepository;
@@ -37,10 +31,7 @@ export class CsvSpeakerCatalogStore implements SpeakerCatalogStore {
 	constructor(
 		private readonly collaborators: CsvSpeakerCatalogStoreCollaborators,
 		private readonly root: string,
-		private readonly history: Pick<
-			SpeakerAllocationHistory,
-			"read"
-		> = collaborators.createSpeakerAllocationHistory(root),
+		private readonly history: Pick<SpeakerAllocationHistory, "read">,
 	) {}
 
 	async read(): Promise<SpeakerCatalogDocument> {
@@ -147,10 +138,3 @@ export class CsvSpeakerCatalogStore implements SpeakerCatalogStore {
 			.digest("hex");
 	}
 }
-export type CsvSpeakerCatalogStoreArguments =
-	ConstructorParameters<typeof CsvSpeakerCatalogStore> extends [
-		unknown,
-		...infer Args,
-	]
-		? Args
-		: never;

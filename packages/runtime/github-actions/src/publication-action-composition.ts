@@ -14,8 +14,6 @@ export class PublicationActionComposition {
 				new GithubActionsComposition().assetContentConfiguration(),
 			conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),
 			actionOutput: new GithubActionsComposition().actionOutput(),
-			createActionMessages: (...args) =>
-				new GithubActionsComposition().actionMessages(...args),
 		});
 	}
 }

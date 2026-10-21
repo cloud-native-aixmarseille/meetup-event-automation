@@ -234,8 +234,8 @@ describe("event journey selection", () => {
 					),
 				createRefreshSelectedProposals: (...args) =>
 					new JourneyComposition().refreshSelectedProposals(...args),
-				createResolveEventReferences: (...args) =>
-					new ReferentialDomainComposition().resolveEventReferences(...args),
+				resolveEventReferences:
+					new ReferentialDomainComposition().resolveEventReferences(),
 			},
 			{
 				proposalSource: { load: vi.fn() },
@@ -291,8 +291,8 @@ describe("event journey selection", () => {
 					),
 				createRefreshSelectedProposals: (...args) =>
 					new JourneyComposition().refreshSelectedProposals(...args),
-				createResolveEventReferences: (...args) =>
-					new ReferentialDomainComposition().resolveEventReferences(...args),
+				resolveEventReferences:
+					new ReferentialDomainComposition().resolveEventReferences(),
 			},
 			{
 				proposalSource: { load: vi.fn() },

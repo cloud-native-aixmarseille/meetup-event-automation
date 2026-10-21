@@ -19,8 +19,6 @@ export class ReferentialActionComposition {
 			referentialActionReport:
 				new GithubActionsComposition().referentialActionReport(),
 			runtimeInput: new GithubActionsComposition().runtimeInput(),
-			createActionMessages: (...args) =>
-				new GithubActionsComposition().actionMessages(...args),
 		});
 	}
 }

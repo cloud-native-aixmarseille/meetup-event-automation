@@ -23,10 +23,11 @@ describe("referential action report facts", () => {
 			];
 
 			// Act
-			const report = new ReferentialActionReport({
-				createActionMessages: (...args) =>
-					new GithubActionsComposition().actionMessages(...args),
-			}).validation(counts, diagnostics);
+			const report = new ReferentialActionReport().validation(
+				counts,
+				diagnostics,
+				new GithubActionsComposition().actionMessages("en"),
+			);
 
 			// Assert
 			expect(report.details).toEqual([
@@ -50,10 +51,11 @@ describe("referential action report facts", () => {
 		};
 
 		// Act
-		const report = new ReferentialActionReport({
-			createActionMessages: (...args) =>
-				new GithubActionsComposition().actionMessages(...args),
-		}).issueForm(mode, result);
+		const report = new ReferentialActionReport().issueForm(
+			mode,
+			result,
+			new GithubActionsComposition().actionMessages("en"),
+		);
 
 		// Assert
 		expect(report.details).toEqual([
@@ -72,10 +74,7 @@ describe("referential action report facts", () => {
 		};
 
 		// Act
-		const report = new ReferentialActionReport({
-			createActionMessages: (...args) =>
-				new GithubActionsComposition().actionMessages(...args),
-		}).issueForm(
+		const report = new ReferentialActionReport().issueForm(
 			"check",
 			result,
 			new ActionMessages(
@@ -99,10 +98,11 @@ describe("referential action report facts", () => {
 			const result = { changed: false, changedFiles: [], diagnostics: [] };
 
 			// Act
-			const report = new ReferentialActionReport({
-				createActionMessages: (...args) =>
-					new GithubActionsComposition().actionMessages(...args),
-			}).issueForm(mode, result);
+			const report = new ReferentialActionReport().issueForm(
+				mode,
+				result,
+				new GithubActionsComposition().actionMessages("en"),
+			);
 
 			// Assert
 			expect(report.details).toEqual(["issue_form=current"]);
@@ -128,10 +128,11 @@ describe("referential action report facts", () => {
 			};
 
 			// Act
-			const report = new ReferentialActionReport({
-				createActionMessages: (...args) =>
-					new GithubActionsComposition().actionMessages(...args),
-			}).issueForm(mode, result);
+			const report = new ReferentialActionReport().issueForm(
+				mode,
+				result,
+				new GithubActionsComposition().actionMessages("en"),
+			);
 
 			// Assert
 			expect(report.details).toEqual([

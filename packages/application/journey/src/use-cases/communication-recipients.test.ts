@@ -26,7 +26,7 @@ describe("CommunicationRecipients", () => {
 
 		// Act
 		const recipient = new CommunicationRecipients({
-			createResolveEventReferences: () =>
+			resolveEventReferences:
 				new ReferentialDomainComposition().resolveEventReferences(),
 		}).speakerRecipient(speaker, "Host", "Location");
 
@@ -67,7 +67,7 @@ describe("CommunicationRecipients", () => {
 
 		// Act
 		const recipient = new CommunicationRecipients({
-			createResolveEventReferences: () =>
+			resolveEventReferences:
 				new ReferentialDomainComposition().resolveEventReferences(),
 		}).speakerRecipient(validation.catalog.speakers[0], "Host", "Location");
 

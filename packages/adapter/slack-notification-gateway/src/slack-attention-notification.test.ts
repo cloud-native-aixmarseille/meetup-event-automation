@@ -22,16 +22,16 @@ describe("Slack attention transport", () => {
 			{
 				slackMessageReference:
 					new SlackNotificationGatewayComposition().slackMessageReference(),
-				createSlackApiClient: (...args) =>
-					new SlackNotificationGatewayComposition().slackApiClient(...args),
 			},
-			"private-token",
+			new SlackNotificationGatewayComposition().slackApiClient(
+				"private-token",
+				fetcher,
+			),
 			"C123",
 			{
 				render: () =>
 					"*Meetup*\n• <https://github.com/example/meetups/issues/42|Review issue>",
 			},
-			fetcher,
 		);
 
 		// Act
@@ -86,13 +86,13 @@ describe("Slack attention transport", () => {
 			{
 				slackMessageReference:
 					new SlackNotificationGatewayComposition().slackMessageReference(),
-				createSlackApiClient: (...args) =>
-					new SlackNotificationGatewayComposition().slackApiClient(...args),
 			},
-			"token",
+			new SlackNotificationGatewayComposition().slackApiClient(
+				"token",
+				fetcher,
+			),
 			"C123",
 			{ render: () => "Status" },
-			fetcher,
 		);
 
 		// Act
@@ -113,13 +113,13 @@ describe("Slack attention transport", () => {
 			{
 				slackMessageReference:
 					new SlackNotificationGatewayComposition().slackMessageReference(),
-				createSlackApiClient: (...args) =>
-					new SlackNotificationGatewayComposition().slackApiClient(...args),
 			},
-			"token",
+			new SlackNotificationGatewayComposition().slackApiClient(
+				"token",
+				fetcher,
+			),
 			"C123",
 			{ render: () => "Status" },
-			fetcher,
 		);
 
 		// Act
@@ -137,13 +137,13 @@ describe("Slack attention transport", () => {
 			{
 				slackMessageReference:
 					new SlackNotificationGatewayComposition().slackMessageReference(),
-				createSlackApiClient: (...args) =>
-					new SlackNotificationGatewayComposition().slackApiClient(...args),
 			},
-			"token",
+			new SlackNotificationGatewayComposition().slackApiClient(
+				"token",
+				fetcher,
+			),
 			"C123",
 			{ render: () => "Status" },
-			fetcher,
 		);
 
 		// Act

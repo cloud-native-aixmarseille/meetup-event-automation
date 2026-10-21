@@ -33,13 +33,14 @@ describe("shared action reporting", () => {
 			];
 
 			// Act
-			await new ActionReport({
-				createActionMessages: (...args) =>
-					new GithubActionsComposition().actionMessages(...args),
-			}).write("Example action", {
-				details: ["validation=completed"],
-				diagnostics,
-			});
+			await new ActionReport().write(
+				"Example action",
+				{
+					details: ["validation=completed"],
+					diagnostics,
+				},
+				new GithubActionsComposition().actionMessages("en"),
+			);
 
 			// Assert
 			expect(core.info).toHaveBeenCalledWith(
@@ -61,10 +62,11 @@ describe("shared action reporting", () => {
 		const report = { details: ["active_events=0"], diagnostics: [] };
 
 		// Act
-		await new ActionReport({
-			createActionMessages: (...args) =>
-				new GithubActionsComposition().actionMessages(...args),
-		}).write("Example action", report);
+		await new ActionReport().write(
+			"Example action",
+			report,
+			new GithubActionsComposition().actionMessages("en"),
+		);
 
 		// Assert
 		expect(core.info).toHaveBeenCalledExactlyOnceWith("active_events=0");
@@ -88,10 +90,11 @@ describe("shared action reporting", () => {
 			];
 
 			// Act
-			await new ActionReport({
-				createActionMessages: (...args) =>
-					new GithubActionsComposition().actionMessages(...args),
-			}).write("Example action", { details: [], diagnostics });
+			await new ActionReport().write(
+				"Example action",
+				{ details: [], diagnostics },
+				new GithubActionsComposition().actionMessages("en"),
+			);
 
 			// Assert
 			expect(core.info).toHaveBeenCalledExactlyOnceWith(
@@ -113,17 +116,18 @@ describe("shared action reporting", () => {
 		};
 
 		// Act
-		await new ActionReport({
-			createActionMessages: (...args) =>
-				new GithubActionsComposition().actionMessages(...args),
-		}).write("Example action", {
-			details: ["validation=completed", "validation=completed"],
-			diagnostics: [
-				diagnostic,
-				diagnostic,
-				{ ...diagnostic, field: "records[3].id" },
-			],
-		});
+		await new ActionReport().write(
+			"Example action",
+			{
+				details: ["validation=completed", "validation=completed"],
+				diagnostics: [
+					diagnostic,
+					diagnostic,
+					{ ...diagnostic, field: "records[3].id" },
+				],
+			},
+			new GithubActionsComposition().actionMessages("en"),
+		);
 
 		// Assert
 		expect(core.info).toHaveBeenCalledTimes(3);
@@ -147,10 +151,11 @@ describe("shared action reporting", () => {
 		};
 
 		// Act
-		await new ActionReport({
-			createActionMessages: (...args) =>
-				new GithubActionsComposition().actionMessages(...args),
-		}).write("Example action", report);
+		await new ActionReport().write(
+			"Example action",
+			report,
+			new GithubActionsComposition().actionMessages("en"),
+		);
 
 		// Assert
 		expect(core.info).toHaveBeenCalledWith(
@@ -183,10 +188,11 @@ describe("shared action reporting", () => {
 		};
 
 		// Act
-		await new ActionReport({
-			createActionMessages: (...args) =>
-				new GithubActionsComposition().actionMessages(...args),
-		}).write("Example action", report);
+		await new ActionReport().write(
+			"Example action",
+			report,
+			new GithubActionsComposition().actionMessages("en"),
+		);
 
 		// Assert
 		expect(
@@ -214,10 +220,11 @@ describe("shared action reporting", () => {
 		};
 
 		// Act
-		await new ActionReport({
-			createActionMessages: (...args) =>
-				new GithubActionsComposition().actionMessages(...args),
-		}).write("Example action", report);
+		await new ActionReport().write(
+			"Example action",
+			report,
+			new GithubActionsComposition().actionMessages("en"),
+		);
 
 		// Assert
 		expect(core.info).toHaveBeenCalledWith("error example.invalid");

@@ -1,13 +1,7 @@
 import * as core from "@actions/core";
 import { context, getOctokit } from "@actions/github";
-import type {
-	ConferenceHallProposalSource,
-	ConferenceHallProposalSourceArguments,
-} from "@meetup-automation/conference-hall-proposal-source";
-import type {
-	CsvSpeakerCatalogStore,
-	CsvSpeakerCatalogStoreArguments,
-} from "@meetup-automation/csv-referential-repository";
+import type { ConferenceHallProposalSource } from "@meetup-automation/conference-hall-proposal-source";
+import type { CsvSpeakerCatalogStore } from "@meetup-automation/csv-referential-repository";
 import type {
 	AutomationConfigFactory,
 	SynchronizeSourceSpeakers,
@@ -19,10 +13,7 @@ import type {
 } from "@meetup-automation/yaml-issue-form-projection";
 import type { ActionReportData } from "./action-report.js";
 import type { ConferenceHallInput } from "./conference-hall-input.js";
-import type {
-	ActionMessages,
-	ActionMessagesArguments,
-} from "./i18n/action-messages.js";
+import type { ActionMessages } from "./i18n/action-messages.js";
 import type { SpeakerSyncFailureReport } from "./speaker-sync-failure-report.js";
 
 export interface SpeakerSyncActionCollaborators {
@@ -32,17 +23,16 @@ export interface SpeakerSyncActionCollaborators {
 		"createAutomationConfig"
 	>;
 	readonly speakerSyncFailureReport: Pick<SpeakerSyncFailureReport, "create">;
-	readonly createActionMessages: (
-		...args: ActionMessagesArguments
-	) => ActionMessages;
+
 	readonly createSynchronizeSourceSpeakers: (
 		...args: SynchronizeSourceSpeakersArguments
 	) => Pick<SynchronizeSourceSpeakers, "execute">;
 	readonly createConferenceHallProposalSource: (
-		...args: ConferenceHallProposalSourceArguments
+		event: string,
+		apiKey: string,
 	) => ConferenceHallProposalSource;
 	readonly createCsvSpeakerCatalogStore: (
-		...args: CsvSpeakerCatalogStoreArguments
+		root: string,
 	) => CsvSpeakerCatalogStore;
 	readonly createYamlIssueFormProjection: (
 		...args: YamlIssueFormProjectionArguments
@@ -52,9 +42,7 @@ export interface SpeakerSyncActionCollaborators {
 export class SpeakerSyncAction {
 	constructor(private readonly collaborators: SpeakerSyncActionCollaborators) {}
 
-	async run(
-		messages = this.collaborators.createActionMessages(),
-	): Promise<ActionReportData> {
+	async run(messages: ActionMessages): Promise<ActionReportData> {
 		const client = getOctokit(
 			core.getInput("github-token", { required: true }),
 		);

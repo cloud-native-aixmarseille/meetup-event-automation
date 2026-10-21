@@ -93,8 +93,8 @@ function fixture(sourceDocument = document) {
 				new ReferentialDomainComposition().validateReferentialCatalog(...args),
 			createRefreshSelectedProposals: (...args) =>
 				new JourneyComposition().refreshSelectedProposals(...args),
-			createResolveEventReferences: (...args) =>
-				new ReferentialDomainComposition().resolveEventReferences(...args),
+			resolveEventReferences:
+				new ReferentialDomainComposition().resolveEventReferences(),
 		},
 		{
 			config,

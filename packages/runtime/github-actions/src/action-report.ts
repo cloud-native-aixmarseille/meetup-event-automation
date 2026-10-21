@@ -1,9 +1,6 @@
 import * as core from "@actions/core";
 import type { PublicDiagnostic } from "@meetup-automation/journey";
-import type {
-	ActionMessages,
-	ActionMessagesArguments,
-} from "./i18n/action-messages.js";
+import type { ActionMessages } from "./i18n/action-messages.js";
 
 /** Only explicitly selected public facts and redacted diagnostics belong here. */
 export interface ActionReportData {
@@ -13,19 +10,11 @@ export interface ActionReportData {
 	readonly failure?: string;
 }
 
-export interface ActionReportCollaborators {
-	readonly createActionMessages: (
-		...args: ActionMessagesArguments
-	) => ActionMessages;
-}
-
 export class ActionReport {
-	constructor(private readonly collaborators: ActionReportCollaborators) {}
-
 	async write(
 		title: string,
 		report: ActionReportData,
-		messages = this.collaborators.createActionMessages(),
+		messages: ActionMessages,
 	): Promise<void> {
 		const lines = new Set(report.details);
 		for (const item of report.diagnostics) {

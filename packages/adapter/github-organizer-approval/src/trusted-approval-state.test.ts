@@ -1,4 +1,7 @@
-import { JourneyPolicyComposition } from "@meetup-automation/journey";
+import {
+	FollowUpApprovalPolicy,
+	JourneyPolicyComposition,
+} from "@meetup-automation/journey";
 import { describe, expect, it } from "vitest";
 import { decision, fixture, request } from "../testing/approval.fixtures.js";
 import { GithubOrganizerApprovalComposition } from "./dependency-composition.js";
@@ -11,6 +14,7 @@ describe("trusted approval state", () => {
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
 			{
+				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 				approvalRequestSchema:
 					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 				approvalRequestPolicy:
@@ -62,6 +66,7 @@ describe("trusted approval state", () => {
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
 			{
+				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 				approvalRequestSchema:
 					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 				approvalRequestPolicy:
@@ -99,6 +104,7 @@ describe("trusted approval state", () => {
 			const f = fixture();
 			const approvals = new GithubOrganizerApproval(
 				{
+					followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 					approvalRequestSchema:
 						new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 					approvalRequestPolicy:

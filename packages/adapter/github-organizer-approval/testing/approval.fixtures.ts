@@ -1,6 +1,8 @@
 import { GithubOrganizerApprovalComposition } from "@meetup-automation/github-organizer-approval";
 import {
 	ApprovalNotificationPolicy,
+	ApprovalRequestPolicy,
+	FollowUpApprovalPolicy,
 	JourneyPolicyComposition,
 	type OrganizerApprovalNotification,
 	type OrganizerApprovalRequest,
@@ -35,20 +37,30 @@ export function fixture(locale = "en") {
 	const edits = new Map<string, ApprovalCommentEdit>();
 	const history = new Map<string, ApprovalContentEdit[]>();
 	const presenter = new ApprovalPresenter(
+		new GithubOrganizerApprovalComposition().approvalCommentCodec(),
 		{
-			createEmailApprovalPresenter: (...args) =>
+			"email-introduction":
 				new GithubOrganizerApprovalComposition().emailApprovalPresenter(
-					...args,
+					new ApprovalMessages(
+						{ localeResolver: new LocalizationComposition().localeResolver() },
+						locale,
+					),
 				),
-			createMeetupApprovalPresenter: (...args) =>
+			"email-thanks":
+				new GithubOrganizerApprovalComposition().emailApprovalPresenter(
+					new ApprovalMessages(
+						{ localeResolver: new LocalizationComposition().localeResolver() },
+						locale,
+					),
+				),
+			"meetup-publication":
 				new GithubOrganizerApprovalComposition().meetupApprovalPresenter(
-					...args,
+					new ApprovalMessages(
+						{ localeResolver: new LocalizationComposition().localeResolver() },
+						locale,
+					),
 				),
 		},
-		new ApprovalMessages(
-			{ localeResolver: new LocalizationComposition().localeResolver() },
-			locale,
-		),
 	);
 	const graphql = vi.fn().mockImplementation(async (_query, variables) => ({
 		node: edits.has(variables.id)
@@ -230,6 +242,7 @@ export const detailedRequest = {
 export function createStoredApproval(input: OrganizerApprovalRequest) {
 	return new ApprovalRecordFactory(
 		{
+			followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 			approvalRequestSchema:
 				new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 			approvalRequestPolicy:
@@ -248,6 +261,7 @@ export function approvalDependencies(
 	let sequence = 0;
 	const records = new ApprovalRecordFactory(
 		{
+			followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 			approvalRequestSchema:
 				new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 			approvalRequestPolicy:
@@ -285,6 +299,7 @@ export function approvalDependencies(
 		new ResolveApprovalDecision(
 			client,
 			new ApprovalDecisionParser(
+				new ApprovalRequestPolicy(),
 				new GithubOrganizerApprovalComposition()
 					.approvalPresenterFactory()
 					.supportedLocales(),

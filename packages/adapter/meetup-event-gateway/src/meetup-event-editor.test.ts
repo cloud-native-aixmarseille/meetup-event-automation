@@ -226,14 +226,17 @@ describe("Meetup browser event editor", () => {
 			page,
 			groupUrl,
 		);
-		page.setDefaultTimeout(200);
+		const beforeSubmit = vi.fn(async () => {
+			page.setDefaultTimeout(200);
+		});
 		const after = vi.fn();
 
 		// Act
-		const result = editor.save(desiredEvent, undefined, vi.fn(), after);
+		const result = editor.save(desiredEvent, undefined, beforeSubmit, after);
 
 		// Assert
 		await expect(result).rejects.toMatchObject({ kind: "uncertain" });
+		expect(beforeSubmit).toHaveBeenCalledOnce();
 		expect(state.writes).toBe(0);
 		expect(state.publishClicks).toBe(0);
 		expect(after).not.toHaveBeenCalled();

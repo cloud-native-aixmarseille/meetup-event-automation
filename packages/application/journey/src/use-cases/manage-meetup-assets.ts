@@ -36,20 +36,25 @@ export interface ManageMeetupAssetsCollaborators {
 	>;
 }
 
+interface ManageMeetupAssetsResult {
+	readonly skipped: boolean;
+	readonly persisted: boolean;
+	readonly slidesReady: boolean;
+	readonly assetUrl?: string;
+	readonly files: Readonly<Record<string, string>>;
+	readonly content?: Readonly<Record<string, ContentStatus>>;
+	readonly diagnostics: readonly PublicDiagnostic[];
+}
+
 export class ManageMeetupAssets {
 	constructor(
 		private readonly collaborators: ManageMeetupAssetsCollaborators,
 		private readonly dependencies: ManageMeetupAssetsDependencies,
 	) {}
 
-	async execute(input: { identity: EventIdentity }): Promise<{
-		skipped: boolean;
-		persisted: boolean;
-		assetUrl?: string;
-		files: Readonly<Record<string, string>>;
-		content?: Readonly<Record<string, ContentStatus>>;
-		diagnostics: readonly PublicDiagnostic[];
-	}> {
+	async execute(input: {
+		identity: EventIdentity;
+	}): Promise<ManageMeetupAssetsResult> {
 		const source = await this.dependencies.eventRepository.find(input.identity);
 		if (!source) throw new EventNotFoundError(input.identity);
 		const evaluation = await this.dependencies.manageEvent.execute({
@@ -58,7 +63,7 @@ export class ManageMeetupAssets {
 			sourceDocument: source,
 		});
 		if (evaluation.skipped || evaluation.event.occurrenceStatus === "cancelled")
-			return { skipped: true, persisted: false, files: {}, diagnostics: [] };
+			return this.skipped([]);
 		if (
 			!evaluation.event.host?.id ||
 			evaluation.diagnostics.some(
@@ -68,20 +73,14 @@ export class ManageMeetupAssets {
 						/host|date/i.test(item.field ?? "")),
 			)
 		) {
-			return {
-				skipped: true,
-				persisted: false,
-				files: {},
-				diagnostics: [
-					{
-						code: "publication.assets.prerequisites",
-						severity: "warning",
-						field: "publicationLinks.assets",
-						message:
-							"Resolve the event host and date before reconciling assets",
-					},
-				],
-			};
+			return this.skipped([
+				{
+					code: "publication.assets.prerequisites",
+					severity: "warning",
+					field: "publicationLinks.assets",
+					message: "Resolve the event host and date before reconciling assets",
+				},
+			]);
 		}
 		await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
 			this.dependencies.eventRepository,
@@ -104,6 +103,9 @@ export class ManageMeetupAssets {
 		return {
 			skipped: false,
 			persisted,
+			slidesReady:
+				Boolean(assets.files["slides-link"]) &&
+				["copy-only", "ready"].includes(assets.content?.slides ?? "copy-only"),
 			assetUrl: assets.container?.url,
 			files: assets.files,
 			content: assets.content,
@@ -111,6 +113,18 @@ export class ManageMeetupAssets {
 				...item,
 				field: "publicationLinks.assets",
 			})),
+		};
+	}
+
+	private skipped(
+		diagnostics: readonly PublicDiagnostic[],
+	): ManageMeetupAssetsResult {
+		return {
+			skipped: true,
+			persisted: false,
+			slidesReady: false,
+			files: {},
+			diagnostics,
 		};
 	}
 

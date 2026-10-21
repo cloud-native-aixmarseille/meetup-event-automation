@@ -20,6 +20,33 @@ import { ManageMeetupAssets } from "./manage-meetup-assets.js";
 import { ManageMeetupEvent } from "./manage-meetup-event.js";
 
 describe("ManageMeetupAssets", () => {
+	it.each([
+		["copy-only", true, true],
+		["ready", true, true],
+		["pending", true, false],
+		["conflict", true, false],
+		["recovery-required", true, false],
+		["ready", false, false],
+	] as const)(
+		"reports %s content with a slides URL=%s as ready=%s",
+		async (status, hasUrl, expected) => {
+			// Arrange
+			const reconcileAssets = {
+				execute: vi.fn().mockResolvedValue({
+					files: hasUrl ? { "slides-link": "https://example.test/slides" } : {},
+					content: { slides: status },
+					diagnostics: [],
+				}),
+			};
+			const { useCase } = assetJourney(reconcileAssets);
+
+			// Act
+			const result = await useCase.execute({ identity });
+
+			// Assert
+			expect(result.slidesReady).toBe(expected);
+		},
+	);
 	it("projects the managed asset link through the codec and exposes template links", async () => {
 		// Arrange
 		const { eventDependencies, assetRepository, useCase } = assetJourney();
@@ -216,7 +243,7 @@ describe("ManageMeetupAssets", () => {
 	});
 });
 
-function assetJourney() {
+function assetJourney(reconciliation?: Pick<ReconcileEventAssets, "execute">) {
 	const eventDependencies = createEventDependencies();
 	const assetRepository = {
 		findContainer: vi
@@ -278,8 +305,8 @@ function assetJourney() {
 						),
 					createRefreshSelectedProposals: (...args) =>
 						new JourneyComposition().refreshSelectedProposals(...args),
-					createResolveEventReferences: (...args) =>
-						new ReferentialDomainComposition().resolveEventReferences(...args),
+					resolveEventReferences:
+						new ReferentialDomainComposition().resolveEventReferences(),
 				},
 				{
 					proposalSource: { load: vi.fn() },
@@ -288,13 +315,15 @@ function assetJourney() {
 					referentialRepository: { load: async () => catalog },
 				},
 			),
-			reconcileAssets: new ReconcileEventAssets(
-				{
-					createReconcileAssetFile: (...args) =>
-						new PublicationDomainComposition().reconcileAssetFile(...args),
-				},
-				assetRepository,
-			),
+			reconcileAssets:
+				reconciliation ??
+				new ReconcileEventAssets(
+					{
+						createReconcileAssetFile: (...args) =>
+							new PublicationDomainComposition().reconcileAssetFile(...args),
+					},
+					assetRepository,
+				),
 		},
 	);
 	return { eventDependencies, assetRepository, useCase };

@@ -1,8 +1,14 @@
-import { FOLLOW_UP_TASKS } from "@meetup-automation/journey";
+import {
+	FOLLOW_UP_TASKS,
+	type FollowUpApprovalPolicy,
+} from "@meetup-automation/journey";
 import type { StoredApproval } from "./approval-state.js";
 import type { ApprovalMessages } from "./i18n/approval-messages.js";
 export class FollowUpPresenter {
-	constructor(private readonly messages: ApprovalMessages) {}
+	constructor(
+		private readonly policy: Pick<FollowUpApprovalPolicy, "progressState">,
+		private readonly messages: ApprovalMessages,
+	) {}
 	render(record: StoredApproval): string[] {
 		if (!record.followUp) return [];
 		const lines = [
@@ -15,20 +21,20 @@ export class FollowUpPresenter {
 				`${pending ? "⏳" : "✅"} ${this.messages.t("follow-up.task", { task: task.replaceAll("-", "_") })}`,
 			);
 		}
-		if (!record.followUp.active)
-			lines.push(this.messages.t("follow-up.stopped", {}));
-		else if (!record.recipientCount)
-			lines.push(
-				this.messages.t(
-					record.followUp.pendingTasks.some((task) => task.startsWith("thank-"))
-						? "follow-up.waiting"
-						: "follow-up.emails-complete",
-					{},
-				),
-			);
+		const progress = this.policy.progressState(
+			record.followUp,
+			record.recipientCount ?? 0,
+		);
+		if (progress !== "review")
+			lines.push(this.messages.t(`follow-up.${progress}`, {}));
+
 		return lines;
 	}
 }
-export type FollowUpPresenterArguments = ConstructorParameters<
-	typeof FollowUpPresenter
->;
+export type FollowUpPresenterArguments =
+	ConstructorParameters<typeof FollowUpPresenter> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

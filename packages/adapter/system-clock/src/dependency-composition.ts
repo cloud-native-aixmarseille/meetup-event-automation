@@ -1,19 +1,11 @@
-import {
-	SystemCommunicationClock,
-	type SystemCommunicationClockArguments,
-} from "./system-communication-clock.js";
-import {
-	SystemEventClock,
-	type SystemEventClockArguments,
-} from "./system-event-clock.js";
+import { SystemCommunicationClock } from "./system-communication-clock.js";
+import { SystemEventClock } from "./system-event-clock.js";
 /** Assembles this package's collaborators; no business decisions or I/O. */
 export class SystemClockComposition {
-	systemCommunicationClock(
-		...args: SystemCommunicationClockArguments
-	): SystemCommunicationClock {
-		return new SystemCommunicationClock(...args);
+	systemCommunicationClock(): SystemCommunicationClock {
+		return new SystemCommunicationClock(() => new Date());
 	}
-	systemEventClock(...args: SystemEventClockArguments): SystemEventClock {
-		return new SystemEventClock(...args);
+	systemEventClock(): SystemEventClock {
+		return new SystemEventClock(() => new Date());
 	}
 }

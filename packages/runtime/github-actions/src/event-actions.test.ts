@@ -84,9 +84,9 @@ describe("event action report facts", () => {
 				conferenceHallInput:
 					new GithubActionsComposition().conferenceHallInput(),
 				actionOutput: new GithubActionsComposition().actionOutput(),
-				createActionMessages: (...args) =>
-					new GithubActionsComposition().actionMessages(...args),
-			}).runEventReconcileAction();
+			}).runEventReconcileAction(
+				new GithubActionsComposition().actionMessages("en"),
+			);
 
 			// Assert
 			expect(boundary.execute).toHaveBeenCalledWith({
@@ -125,9 +125,9 @@ describe("event action report facts", () => {
 			runtimeInput: new GithubActionsComposition().runtimeInput(),
 			conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),
 			actionOutput: new GithubActionsComposition().actionOutput(),
-			createActionMessages: (...args) =>
-				new GithubActionsComposition().actionMessages(...args),
-		}).runEventReconcileAction();
+		}).runEventReconcileAction(
+			new GithubActionsComposition().actionMessages("en"),
+		);
 
 		// Assert
 		expect(report.details).toContain("event=skipped reason=unrelated-issue");
@@ -171,9 +171,9 @@ describe("event action report facts", () => {
 				conferenceHallInput:
 					new GithubActionsComposition().conferenceHallInput(),
 				actionOutput: new GithubActionsComposition().actionOutput(),
-				createActionMessages: (...args) =>
-					new GithubActionsComposition().actionMessages(...args),
-			}).runEventListActiveAction();
+			}).runEventListActiveAction(
+				new GithubActionsComposition().actionMessages("en"),
+			);
 
 			// Assert
 			expect(report.details.join("\n")).toContain(

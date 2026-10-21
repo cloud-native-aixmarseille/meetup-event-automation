@@ -17,7 +17,7 @@ export class AttentionTaskSelection {
 						!conditions.some(
 							(episode) =>
 								entry.action !== undefined &&
-								entry.action === this.action(episode),
+								entry.action === this.actionFor(episode),
 						),
 				);
 		const urgent = conditions.filter(this.urgent.bind(this));
@@ -39,7 +39,7 @@ export class AttentionTaskSelection {
 						checklist.entries.some(
 							(entry) =>
 								entry.action !== undefined &&
-								entry.action === this.action(episode),
+								entry.action === this.actionFor(episode),
 						)
 					),
 			),
@@ -52,9 +52,7 @@ export class AttentionTaskSelection {
 			"integration-failure",
 		].includes(episode.condition.code);
 	}
-	private action(
-		episode: AttentionEpisode,
-	): AttentionChecklistAction | undefined {
+	actionFor(episode: AttentionEpisode): AttentionChecklistAction | undefined {
 		if (episode.condition.code === "delivery-recovery")
 			return "delivery-recovery";
 		if (episode.condition.code !== "approval-pending") return undefined;

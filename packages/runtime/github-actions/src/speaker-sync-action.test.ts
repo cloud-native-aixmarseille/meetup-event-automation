@@ -59,7 +59,9 @@ describe("SpeakerSyncAction", () => {
 		boundary.get.mockResolvedValue({ data: { private: false } });
 
 		// Act
-		const report = await subject().run();
+		const report = await subject().run(
+			new GithubActionsComposition().actionMessages("en"),
+		);
 
 		// Assert
 		expect(report.failure).toBe(
@@ -82,7 +84,7 @@ describe("SpeakerSyncAction", () => {
 		boundary.synchronize.mockResolvedValue({ changed: false, speakerCount: 0 });
 
 		// Act
-		await subject().run();
+		await subject().run(new GithubActionsComposition().actionMessages("en"));
 
 		// Assert
 		expect(boundary.createSynchronizer.mock.calls[0][3]).toBe(event);
@@ -121,7 +123,9 @@ describe("SpeakerSyncAction", () => {
 		);
 
 		// Act
-		const report = await subject().run();
+		const report = await subject().run(
+			new GithubActionsComposition().actionMessages("en"),
+		);
 
 		// Assert
 		expect(report.failure).toBeUndefined();
@@ -148,7 +152,9 @@ describe("SpeakerSyncAction", () => {
 		);
 
 		// Act
-		const report = await subject().run();
+		const report = await subject().run(
+			new GithubActionsComposition().actionMessages("en"),
+		);
 
 		// Assert
 		expect(report.failure).toBeUndefined();
@@ -240,8 +246,7 @@ function subject() {
 		automationConfigFactory: { createAutomationConfig: boundary.config },
 		speakerSyncFailureReport:
 			new GithubActionsComposition().speakerSyncFailureReport(),
-		createActionMessages: (...args) =>
-			new GithubActionsComposition().actionMessages(...args),
+
 		createSynchronizeSourceSpeakers: (...args) => {
 			boundary.createSynchronizer(...args);
 			return { execute: boundary.synchronize };

@@ -32,7 +32,11 @@ describe("ReconcileEvent", () => {
 		};
 		const useCase = new ReconcileEvent(
 			{
-				eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
+				ruleEngine: new EventDomainComposition().eventRuleEngine(
+					new EventDomainComposition()
+						.eventRuleFactory()
+						.createDefaultEventRules(),
+				),
 				eventDocumentConcurrency:
 					new EventDomainComposition().eventDocumentConcurrency(),
 				eventReadinessPolicy:
@@ -40,8 +44,6 @@ describe("ReconcileEvent", () => {
 				eventLifecycle: new EventDomainComposition().eventLifecycle(),
 				eventRepositoryPatches:
 					new EventDomainComposition().eventRepositoryPatches(),
-				createEventRuleEngine: (...args) =>
-					new EventDomainComposition().eventRuleEngine(...args),
 			},
 			{
 				repository,
@@ -77,7 +79,11 @@ describe("ReconcileEvent", () => {
 		};
 		const useCase = new ReconcileEvent(
 			{
-				eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
+				ruleEngine: new EventDomainComposition().eventRuleEngine(
+					new EventDomainComposition()
+						.eventRuleFactory()
+						.createDefaultEventRules(),
+				),
 				eventDocumentConcurrency:
 					new EventDomainComposition().eventDocumentConcurrency(),
 				eventReadinessPolicy:
@@ -85,8 +91,6 @@ describe("ReconcileEvent", () => {
 				eventLifecycle: new EventDomainComposition().eventLifecycle(),
 				eventRepositoryPatches:
 					new EventDomainComposition().eventRepositoryPatches(),
-				createEventRuleEngine: (...args) =>
-					new EventDomainComposition().eventRuleEngine(...args),
 			},
 			{
 				repository,
@@ -124,7 +128,11 @@ describe("ReconcileEvent", () => {
 		};
 		const useCase = new ReconcileEvent(
 			{
-				eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
+				ruleEngine: new EventDomainComposition().eventRuleEngine(
+					new EventDomainComposition()
+						.eventRuleFactory()
+						.createDefaultEventRules(),
+				),
 				eventDocumentConcurrency:
 					new EventDomainComposition().eventDocumentConcurrency(),
 				eventReadinessPolicy:
@@ -132,8 +140,6 @@ describe("ReconcileEvent", () => {
 				eventLifecycle: new EventDomainComposition().eventLifecycle(),
 				eventRepositoryPatches:
 					new EventDomainComposition().eventRepositoryPatches(),
-				createEventRuleEngine: (...args) =>
-					new EventDomainComposition().eventRuleEngine(...args),
 			},
 			{
 				repository,
@@ -167,7 +173,11 @@ describe("ReconcileEvent", () => {
 		};
 		const useCase = new ReconcileEvent(
 			{
-				eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
+				ruleEngine: new EventDomainComposition().eventRuleEngine(
+					new EventDomainComposition()
+						.eventRuleFactory()
+						.createDefaultEventRules(),
+				),
 				eventDocumentConcurrency:
 					new EventDomainComposition().eventDocumentConcurrency(),
 				eventReadinessPolicy:
@@ -175,8 +185,6 @@ describe("ReconcileEvent", () => {
 				eventLifecycle: new EventDomainComposition().eventLifecycle(),
 				eventRepositoryPatches:
 					new EventDomainComposition().eventRepositoryPatches(),
-				createEventRuleEngine: (...args) =>
-					new EventDomainComposition().eventRuleEngine(...args),
 			},
 			{
 				repository,
@@ -204,7 +212,11 @@ describe("ReconcileEvent", () => {
 		};
 		const useCase = new ReconcileEvent(
 			{
-				eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
+				ruleEngine: new EventDomainComposition().eventRuleEngine(
+					new EventDomainComposition()
+						.eventRuleFactory()
+						.createDefaultEventRules(),
+				),
 				eventDocumentConcurrency:
 					new EventDomainComposition().eventDocumentConcurrency(),
 				eventReadinessPolicy:
@@ -212,8 +224,6 @@ describe("ReconcileEvent", () => {
 				eventLifecycle: new EventDomainComposition().eventLifecycle(),
 				eventRepositoryPatches:
 					new EventDomainComposition().eventRepositoryPatches(),
-				createEventRuleEngine: (...args) =>
-					new EventDomainComposition().eventRuleEngine(...args),
 			},
 			{
 				repository,

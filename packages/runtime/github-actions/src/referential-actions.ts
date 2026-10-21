@@ -5,10 +5,7 @@ import type {
 } from "@meetup-automation/journey";
 import type { Locale } from "@meetup-automation/localization";
 import type { ActionReportData } from "./action-report.js";
-import type {
-	ActionMessages,
-	ActionMessagesArguments,
-} from "./i18n/action-messages.js";
+import type { ActionMessages } from "./i18n/action-messages.js";
 import type { ReferentialActionReport } from "./referential-action-report.js";
 import type { RuntimeInput } from "./runtime-input.js";
 
@@ -24,9 +21,6 @@ export interface ReferentialActionsCollaborators {
 		"validation" | "issueForm"
 	>;
 	readonly runtimeInput: Pick<RuntimeInput, "enumInput">;
-	readonly createActionMessages: (
-		...args: ActionMessagesArguments
-	) => ActionMessages;
 }
 
 export class ReferentialActions {
@@ -35,7 +29,7 @@ export class ReferentialActions {
 	) {}
 
 	async runReferentialValidateAction(
-		messages = this.collaborators.createActionMessages(),
+		messages: ActionMessages,
 	): Promise<ActionReportData> {
 		const outcome = await this.collaborators
 			.validateReferentials(messages.locale)
@@ -56,7 +50,7 @@ export class ReferentialActions {
 	}
 
 	async runReferentialSyncIssueFormAction(
-		messages = this.collaborators.createActionMessages(),
+		messages: ActionMessages,
 	): Promise<ActionReportData> {
 		const mode = this.collaborators.runtimeInput.enumInput(
 			"mode",

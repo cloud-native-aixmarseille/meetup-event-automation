@@ -1,9 +1,5 @@
 import type { EventDiagnostic } from "../../domain/diagnostic.js";
-import type {
-	EventRuleEngine,
-	EventRuleEngineArguments,
-} from "../../domain/event-rule-engine.js";
-import type { EventRuleFactory } from "../../domain/event-rule-factory.js";
+import type { EventRuleEngine } from "../../domain/event-rule-engine.js";
 import type { EventLifecycle } from "../../domain/lifecycle.js";
 import type { EventReadinessPolicy } from "../../domain/readiness.js";
 import type { EventRepositoryPatches } from "../ports/event-repository.js";
@@ -16,7 +12,7 @@ import type {
 } from "./reconcile-event-contracts.js";
 
 export interface ReconcileEventCollaborators {
-	readonly eventRuleFactory: Pick<EventRuleFactory, "createDefaultEventRules">;
+	readonly ruleEngine: Pick<EventRuleEngine, "evaluate">;
 	readonly eventDocumentConcurrency: Pick<
 		EventDocumentConcurrency,
 		"sameIdentity" | "ensureEventDocumentIsCurrent"
@@ -30,23 +26,13 @@ export interface ReconcileEventCollaborators {
 		EventRepositoryPatches,
 		"eventRepositoryPatchIsEmpty"
 	>;
-	readonly createEventRuleEngine: (
-		...args: EventRuleEngineArguments
-	) => EventRuleEngine;
 }
 
 export class ReconcileEvent {
-	private readonly ruleEngine: EventRuleEngine;
-
 	constructor(
 		private readonly collaborators: ReconcileEventCollaborators,
-		private readonly dependencies: ReconcileEventDependencies,
-	) {
-		this.ruleEngine = this.collaborators.createEventRuleEngine(
-			dependencies.rules ??
-				this.collaborators.eventRuleFactory.createDefaultEventRules(),
-		);
-	}
+		private readonly dependencies: Omit<ReconcileEventDependencies, "rules">,
+	) {}
 
 	async execute(input: ReconcileEventInput): Promise<ReconcileEventResult> {
 		const document =
@@ -65,7 +51,7 @@ export class ReconcileEvent {
 		}
 
 		const decoded = this.dependencies.documentCodec.decode(document);
-		const evaluated = this.ruleEngine.evaluate(decoded.event);
+		const evaluated = this.collaborators.ruleEngine.evaluate(decoded.event);
 		const diagnostics: EventDiagnostic[] = [
 			...decoded.diagnostics,
 			...evaluated.diagnostics,
@@ -114,7 +100,4 @@ export class ReconcileEvent {
 		};
 	}
 }
-export type ReconcileEventArguments =
-	ConstructorParameters<typeof ReconcileEvent> extends [unknown, ...infer Args]
-		? Args
-		: never;
+export type ReconcileEventArguments = [options: ReconcileEventDependencies];

@@ -1,13 +1,13 @@
 import { ReferentialDomainComposition } from "@meetup-automation/referential";
-import {
-	ConferenceHallProposalSource,
-	type ConferenceHallProposalSourceArguments,
-} from "./conference-hall-proposal-source.js";
+import { ConferenceHallProposalSource } from "./conference-hall-proposal-source.js";
 import { ProposalExportParser } from "./proposal-export-parser.js";
 /** Assembles this package's collaborators; no business decisions or I/O. */
 export class ConferenceHallProposalSourceComposition {
 	conferenceHallProposalSource(
-		...args: ConferenceHallProposalSourceArguments
+		event: string,
+		apiKey: string,
+		request: typeof fetch = fetch,
+		now: () => number = Date.now,
 	): ConferenceHallProposalSource {
 		return new ConferenceHallProposalSource(
 			{
@@ -15,7 +15,10 @@ export class ConferenceHallProposalSourceComposition {
 					new ReferentialDomainComposition().sourceSpeakerEquality(),
 				proposalExportParser: this.proposalExportParser(),
 			},
-			...args,
+			event,
+			apiKey,
+			request,
+			now,
 		);
 	}
 	proposalExportParser(): ProposalExportParser {

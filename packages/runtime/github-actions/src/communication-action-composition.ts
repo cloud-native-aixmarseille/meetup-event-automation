@@ -15,8 +15,6 @@ export class CommunicationActionComposition {
 			conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),
 			communicationDiagnosticProjection:
 				new JourneyPolicyComposition().communicationDiagnosticProjection(),
-			createActionMessages: (...args) =>
-				new GithubActionsComposition().actionMessages(...args),
 		});
 	}
 	communicationRuntime(): CommunicationRuntime {

@@ -11,6 +11,19 @@ import {
 import { OpenfeedbackEventGatewayComposition } from "./dependency-composition.js";
 import { OpenFeedbackTalkResultsGateway } from "./openfeedback-talk-results-gateway.js";
 
+function gatewayWith(fetcher: typeof fetch) {
+	const composition = new OpenfeedbackEventGatewayComposition();
+	return new OpenFeedbackTalkResultsGateway({
+		openFeedbackAgendaSnapshot: composition.openFeedbackAgendaSnapshot(),
+		openFeedbackAgendaPlan: composition.openFeedbackAgendaPlan(),
+		openFeedbackRecordEquality: composition.openFeedbackRecordEquality(),
+		feedbackPolicy: new PublicationDomainComposition().feedbackPolicy(),
+		records: composition.openFeedbackRecordsGateway(
+			composition.openFeedbackClient("oforg_synthetic", fetcher),
+		),
+	});
+}
+
 const input = {
 	key: "example/meetups#12",
 	url: "https://openfeedback.io/event-1",
@@ -26,27 +39,7 @@ describe("OpenFeedback talk results", () => {
 				.fn<typeof fetch>()
 				.mockResolvedValueOnce(Response.json(speakerPage))
 				.mockResolvedValueOnce(Response.json(talkPage));
-			const gateway = new OpenFeedbackTalkResultsGateway(
-				{
-					openFeedbackAgendaSnapshot:
-						new OpenfeedbackEventGatewayComposition().openFeedbackAgendaSnapshot(),
-					openFeedbackAgendaPlan:
-						new OpenfeedbackEventGatewayComposition().openFeedbackAgendaPlan(),
-					openFeedbackRecordEquality:
-						new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
-					feedbackPolicy: new PublicationDomainComposition().feedbackPolicy(),
-					createOpenFeedbackRecordsGateway: (...args) =>
-						new OpenfeedbackEventGatewayComposition().openFeedbackRecordsGateway(
-							...args,
-						),
-					createOpenFeedbackClient: (...args) =>
-						new OpenfeedbackEventGatewayComposition().openFeedbackClient(
-							...args,
-						),
-				},
-				"oforg_synthetic",
-				fetcher,
-			);
+			const gateway = gatewayWith(fetcher);
 
 			// Act
 			const results = await gateway.resolve({
@@ -90,25 +83,7 @@ describe("OpenFeedback talk results", () => {
 					})),
 				}),
 			);
-		const gateway = new OpenFeedbackTalkResultsGateway(
-			{
-				openFeedbackAgendaSnapshot:
-					new OpenfeedbackEventGatewayComposition().openFeedbackAgendaSnapshot(),
-				openFeedbackAgendaPlan:
-					new OpenfeedbackEventGatewayComposition().openFeedbackAgendaPlan(),
-				openFeedbackRecordEquality:
-					new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
-				feedbackPolicy: new PublicationDomainComposition().feedbackPolicy(),
-				createOpenFeedbackRecordsGateway: (...args) =>
-					new OpenfeedbackEventGatewayComposition().openFeedbackRecordsGateway(
-						...args,
-					),
-				createOpenFeedbackClient: (...args) =>
-					new OpenfeedbackEventGatewayComposition().openFeedbackClient(...args),
-			},
-			"oforg_synthetic",
-			fetcher,
-		);
+		const gateway = gatewayWith(fetcher);
 
 		// Act
 		const results = await gateway.resolve(input);
@@ -134,27 +109,7 @@ describe("OpenFeedback talk results", () => {
 				.fn<typeof fetch>()
 				.mockResolvedValueOnce(Response.json(speakerPage))
 				.mockResolvedValueOnce(Response.json({ ...talkPage, talks }));
-			const gateway = new OpenFeedbackTalkResultsGateway(
-				{
-					openFeedbackAgendaSnapshot:
-						new OpenfeedbackEventGatewayComposition().openFeedbackAgendaSnapshot(),
-					openFeedbackAgendaPlan:
-						new OpenfeedbackEventGatewayComposition().openFeedbackAgendaPlan(),
-					openFeedbackRecordEquality:
-						new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
-					feedbackPolicy: new PublicationDomainComposition().feedbackPolicy(),
-					createOpenFeedbackRecordsGateway: (...args) =>
-						new OpenfeedbackEventGatewayComposition().openFeedbackRecordsGateway(
-							...args,
-						),
-					createOpenFeedbackClient: (...args) =>
-						new OpenfeedbackEventGatewayComposition().openFeedbackClient(
-							...args,
-						),
-				},
-				"oforg_synthetic",
-				fetcher,
-			);
+			const gateway = gatewayWith(fetcher);
 
 			// Act
 			const operation = gateway.resolve(input);
@@ -181,27 +136,7 @@ describe("OpenFeedback talk results", () => {
 		async (url) => {
 			// Arrange
 			const fetcher = vi.fn<typeof fetch>();
-			const gateway = new OpenFeedbackTalkResultsGateway(
-				{
-					openFeedbackAgendaSnapshot:
-						new OpenfeedbackEventGatewayComposition().openFeedbackAgendaSnapshot(),
-					openFeedbackAgendaPlan:
-						new OpenfeedbackEventGatewayComposition().openFeedbackAgendaPlan(),
-					openFeedbackRecordEquality:
-						new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
-					feedbackPolicy: new PublicationDomainComposition().feedbackPolicy(),
-					createOpenFeedbackRecordsGateway: (...args) =>
-						new OpenfeedbackEventGatewayComposition().openFeedbackRecordsGateway(
-							...args,
-						),
-					createOpenFeedbackClient: (...args) =>
-						new OpenfeedbackEventGatewayComposition().openFeedbackClient(
-							...args,
-						),
-				},
-				"oforg_synthetic",
-				fetcher,
-			);
+			const gateway = gatewayWith(fetcher);
 
 			// Act
 			const operation = gateway.resolve({ ...input, url });
@@ -218,25 +153,7 @@ describe("OpenFeedback talk results", () => {
 		const fetcher = vi
 			.fn<typeof fetch>()
 			.mockRejectedValue(new Error("private transport details"));
-		const gateway = new OpenFeedbackTalkResultsGateway(
-			{
-				openFeedbackAgendaSnapshot:
-					new OpenfeedbackEventGatewayComposition().openFeedbackAgendaSnapshot(),
-				openFeedbackAgendaPlan:
-					new OpenfeedbackEventGatewayComposition().openFeedbackAgendaPlan(),
-				openFeedbackRecordEquality:
-					new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
-				feedbackPolicy: new PublicationDomainComposition().feedbackPolicy(),
-				createOpenFeedbackRecordsGateway: (...args) =>
-					new OpenfeedbackEventGatewayComposition().openFeedbackRecordsGateway(
-						...args,
-					),
-				createOpenFeedbackClient: (...args) =>
-					new OpenfeedbackEventGatewayComposition().openFeedbackClient(...args),
-			},
-			"oforg_synthetic",
-			fetcher,
-		);
+		const gateway = gatewayWith(fetcher);
 
 		// Act
 		const operation = gateway.resolve(input);

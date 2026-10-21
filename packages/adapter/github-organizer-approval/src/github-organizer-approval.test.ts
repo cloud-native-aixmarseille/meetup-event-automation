@@ -1,4 +1,7 @@
-import { JourneyPolicyComposition } from "@meetup-automation/journey";
+import {
+	FollowUpApprovalPolicy,
+	JourneyPolicyComposition,
+} from "@meetup-automation/journey";
 import { LocalizationComposition } from "@meetup-automation/localization";
 import { describe, expect, it } from "vitest";
 import {
@@ -19,6 +22,7 @@ describe("organizer approval requests", () => {
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
 			{
+				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 				approvalRequestSchema:
 					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 				approvalRequestPolicy:
@@ -54,6 +58,7 @@ describe("organizer approval requests", () => {
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
 			{
+				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 				approvalRequestSchema:
 					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 				approvalRequestPolicy:
@@ -95,6 +100,7 @@ describe("organizer approval requests", () => {
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
 			{
+				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 				approvalRequestSchema:
 					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 				approvalRequestPolicy:
@@ -133,6 +139,7 @@ describe("organizer approval requests", () => {
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
 			{
+				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 				approvalRequestSchema:
 					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 				approvalRequestPolicy:
@@ -186,6 +193,7 @@ describe("organizer approval requests", () => {
 			const f = fixture();
 			const approvals = new GithubOrganizerApproval(
 				{
+					followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 					approvalRequestSchema:
 						new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 					approvalRequestPolicy:
@@ -231,6 +239,7 @@ describe("organizer approval requests", () => {
 			const f = fixture();
 			const approvals = new GithubOrganizerApproval(
 				{
+					followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 					approvalRequestSchema:
 						new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 					approvalRequestPolicy:
@@ -269,6 +278,7 @@ describe("organizer approval requests", () => {
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
 			{
+				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 				approvalRequestSchema:
 					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 				approvalRequestPolicy:
@@ -301,6 +311,7 @@ describe("organizer approval requests", () => {
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
 			{
+				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 				approvalRequestSchema:
 					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 				approvalRequestPolicy:
@@ -336,6 +347,7 @@ describe("organizer approval requests", () => {
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
 			{
+				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 				approvalRequestSchema:
 					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 				approvalRequestPolicy:
@@ -367,6 +379,7 @@ describe("organizer approval requests", () => {
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
 			{
+				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 				approvalRequestSchema:
 					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 				approvalRequestPolicy:
@@ -397,6 +410,7 @@ describe("organizer approval requests", () => {
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
 			{
+				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 				approvalRequestSchema:
 					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 				approvalRequestPolicy:
@@ -429,6 +443,7 @@ describe("organizer approval requests", () => {
 			const f = fixture();
 			const approvals = new GithubOrganizerApproval(
 				{
+					followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 					approvalRequestSchema:
 						new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 					approvalRequestPolicy:
@@ -471,6 +486,7 @@ describe("organizer approval requests", () => {
 			const f = fixture(locale);
 			const approvals = new GithubOrganizerApproval(
 				{
+					followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 					approvalRequestSchema:
 						new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 					approvalRequestPolicy:
@@ -489,25 +505,45 @@ describe("organizer approval requests", () => {
 			const translatedDependencies = approvalDependencies(
 				f.client,
 				new ApprovalPresenter(
+					new GithubOrganizerApprovalComposition().approvalCommentCodec(),
 					{
-						createEmailApprovalPresenter: (...args) =>
+						"email-introduction":
 							new GithubOrganizerApprovalComposition().emailApprovalPresenter(
-								...args,
+								new ApprovalMessages(
+									{
+										localeResolver:
+											new LocalizationComposition().localeResolver(),
+									},
+									locale === "en" ? "fr" : "en",
+								),
 							),
-						createMeetupApprovalPresenter: (...args) =>
+						"email-thanks":
+							new GithubOrganizerApprovalComposition().emailApprovalPresenter(
+								new ApprovalMessages(
+									{
+										localeResolver:
+											new LocalizationComposition().localeResolver(),
+									},
+									locale === "en" ? "fr" : "en",
+								),
+							),
+						"meetup-publication":
 							new GithubOrganizerApprovalComposition().meetupApprovalPresenter(
-								...args,
+								new ApprovalMessages(
+									{
+										localeResolver:
+											new LocalizationComposition().localeResolver(),
+									},
+									locale === "en" ? "fr" : "en",
+								),
 							),
 					},
-					new ApprovalMessages(
-						{ localeResolver: new LocalizationComposition().localeResolver() },
-						locale === "en" ? "fr" : "en",
-					),
 				),
 				{ send: f.dispatch, react: f.react },
 			);
 			const translated = new GithubOrganizerApproval(
 				{
+					followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 					approvalRequestSchema:
 						new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 					approvalRequestPolicy:
@@ -543,6 +579,7 @@ describe("organizer approval requests", () => {
 			const f = fixture();
 			const approvals = new GithubOrganizerApproval(
 				{
+					followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 					approvalRequestSchema:
 						new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 					approvalRequestPolicy:
@@ -582,6 +619,7 @@ describe("organizer approval requests", () => {
 			const f = fixture();
 			const approvals = new GithubOrganizerApproval(
 				{
+					followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 					approvalRequestSchema:
 						new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 					approvalRequestPolicy:
@@ -616,6 +654,7 @@ describe("organizer approval requests", () => {
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
 			{
+				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 				approvalRequestSchema:
 					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 				approvalRequestPolicy:
@@ -649,6 +688,7 @@ describe("organizer approval requests", () => {
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
 			{
+				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 				approvalRequestSchema:
 					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 				approvalRequestPolicy:
@@ -683,6 +723,7 @@ describe("organizer approval requests", () => {
 			const f = fixture(locale);
 			const approvals = new GithubOrganizerApproval(
 				{
+					followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 					approvalRequestSchema:
 						new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 					approvalRequestPolicy:
@@ -721,6 +762,7 @@ describe("organizer approval requests", () => {
 			const f = fixture();
 			const approvals = new GithubOrganizerApproval(
 				{
+					followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 					approvalRequestSchema:
 						new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 					approvalRequestPolicy:
@@ -754,6 +796,7 @@ describe("organizer approval requests", () => {
 			const f = fixture();
 			const approvals = new GithubOrganizerApproval(
 				{
+					followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 					approvalRequestSchema:
 						new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 					approvalRequestPolicy:
@@ -790,6 +833,7 @@ describe("organizer approval requests", () => {
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
 			{
+				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 				approvalRequestSchema:
 					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 				approvalRequestPolicy:
@@ -819,6 +863,7 @@ describe("organizer approval requests", () => {
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
 			{
+				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 				approvalRequestSchema:
 					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 				approvalRequestPolicy:
@@ -850,6 +895,7 @@ describe("organizer approval requests", () => {
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
 			{
+				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 				approvalRequestSchema:
 					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 				approvalRequestPolicy:
@@ -884,6 +930,7 @@ describe("organizer approval requests", () => {
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
 			{
+				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 				approvalRequestSchema:
 					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 				approvalRequestPolicy:
@@ -915,6 +962,7 @@ describe("organizer approval requests", () => {
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
 			{
+				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 				approvalRequestSchema:
 					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 				approvalRequestPolicy:
@@ -946,6 +994,7 @@ describe("organizer approval requests", () => {
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
 			{
+				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 				approvalRequestSchema:
 					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 				approvalRequestPolicy:
@@ -975,6 +1024,7 @@ describe("organizer approval requests", () => {
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
 			{
+				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 				approvalRequestSchema:
 					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 				approvalRequestPolicy:
@@ -1006,6 +1056,7 @@ describe("organizer approval requests", () => {
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
 			{
+				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 				approvalRequestSchema:
 					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 				approvalRequestPolicy:
@@ -1038,6 +1089,7 @@ describe("Meetup publication approvals", () => {
 			const f = fixture();
 			const approvals = new GithubOrganizerApproval(
 				{
+					followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 					approvalRequestSchema:
 						new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 					approvalRequestPolicy:
@@ -1081,6 +1133,7 @@ describe("Meetup publication approvals", () => {
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
 			{
+				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 				approvalRequestSchema:
 					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 				approvalRequestPolicy:
@@ -1121,6 +1174,7 @@ describe("Meetup publication approvals", () => {
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
 			{
+				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 				approvalRequestSchema:
 					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 				approvalRequestPolicy:
@@ -1149,6 +1203,7 @@ describe("Meetup publication approvals", () => {
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
 			{
+				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 				approvalRequestSchema:
 					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 				approvalRequestPolicy:

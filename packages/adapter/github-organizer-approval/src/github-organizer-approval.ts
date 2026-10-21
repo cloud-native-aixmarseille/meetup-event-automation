@@ -1,9 +1,9 @@
-import {
-	type ApprovalRequestPolicy,
-	FOLLOW_UP_TASKS,
-	type OrganizerApproval,
-	type OrganizerApprovalRequest,
-	type OrganizerApprovalResult,
+import type {
+	ApprovalRequestPolicy,
+	FollowUpApprovalPolicy,
+	OrganizerApproval,
+	OrganizerApprovalRequest,
+	OrganizerApprovalResult,
 } from "@meetup-automation/journey";
 import type { ApprovalDetailsPreview } from "./approval-details-preview.js";
 import type { ApprovalNotifications } from "./approval-notifications.js";
@@ -15,6 +15,7 @@ import type { GithubApprovalRepository } from "./github-approval-repository.js";
 
 /** Reuse reviewed requests and recheck authorization before returning approval. */
 export interface GithubOrganizerApprovalCollaborators {
+	readonly followUpApprovalPolicy: Pick<FollowUpApprovalPolicy, "initialFor">;
 	readonly approvalRequestSchema: Pick<ApprovalRequestSchema, "validate">;
 	readonly approvalRequestPolicy: Pick<
 		ApprovalRequestPolicy,
@@ -69,11 +70,13 @@ export class GithubOrganizerApproval implements OrganizerApproval {
 			};
 		}
 		const record = this.records.create(input);
-		if (input.kind === "email-thanks")
-			record.followUp = existing?.record.followUp ?? {
-				active: true,
-				pendingTasks: FOLLOW_UP_TASKS,
-			};
+		const followUp = this.collaborators.followUpApprovalPolicy.initialFor(
+			input,
+			existing?.record.followUp,
+		);
+		if (followUp)
+			record.followUp = { ...existing?.record.followUp, ...followUp };
+
 		const state = await this.repository.save(record, existing);
 		return {
 			status: "pending",

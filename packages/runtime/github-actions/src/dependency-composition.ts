@@ -52,9 +52,7 @@ export class GithubActionsComposition {
 		return new ActionOutput();
 	}
 	actionReport(): ActionReport {
-		return new ActionReport({
-			createActionMessages: (...args) => this.actionMessages(...args),
-		});
+		return new ActionReport();
 	}
 	actionRunner(): ActionRunner {
 		return new ActionRunner({
@@ -94,8 +92,7 @@ export class GithubActionsComposition {
 	): AssetRenderPresenterImpl {
 		return new AssetRenderPresenterImpl(
 			{
-				createAssetMessages: (...args) => this.assetMessages(...args),
-				createAssetDateFormatter: (...args) => this.assetDateFormatter(...args),
+				date: this.assetDateFormatter(args[0].locale),
 			},
 			...args,
 		);
@@ -136,9 +133,7 @@ export class GithubActionsComposition {
 		);
 	}
 	referentialActionReport(): ReferentialActionReport {
-		return new ReferentialActionReport({
-			createActionMessages: (...args) => this.actionMessages(...args),
-		});
+		return new ReferentialActionReport();
 	}
 	runtimeInput(): RuntimeInput {
 		return new RuntimeInput();

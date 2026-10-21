@@ -1,5 +1,3 @@
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import {
 	type ReferentialIdentifiers,
 	SpeakerCatalogHistoryError,
@@ -25,7 +23,7 @@ export class SpeakerAllocationHistory {
 	constructor(
 		private readonly collaborators: SpeakerAllocationHistoryCollaborators,
 		private readonly root: string,
-		private readonly command: GitCommand = promisify(execFile),
+		private readonly command: GitCommand,
 	) {}
 
 	async read(): Promise<readonly string[]> {
@@ -64,10 +62,3 @@ export class SpeakerAllocationHistory {
 		}
 	}
 }
-export type SpeakerAllocationHistoryArguments =
-	ConstructorParameters<typeof SpeakerAllocationHistory> extends [
-		unknown,
-		...infer Args,
-	]
-		? Args
-		: never;

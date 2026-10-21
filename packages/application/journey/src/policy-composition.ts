@@ -77,7 +77,7 @@ export class JourneyPolicyComposition {
 	}
 	communicationRecipients(): CommunicationRecipients {
 		return new CommunicationRecipients({
-			createResolveEventReferences: () =>
+			resolveEventReferences:
 				new ReferentialDomainComposition().resolveEventReferences(),
 		});
 	}

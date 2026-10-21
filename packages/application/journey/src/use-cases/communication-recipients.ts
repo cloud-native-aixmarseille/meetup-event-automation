@@ -11,7 +11,7 @@ import {
 } from "./manage-meetup-communications-contracts.js";
 
 export interface CommunicationRecipientsCollaborators {
-	readonly createResolveEventReferences: () => ResolveEventReferences;
+	readonly resolveEventReferences: Pick<ResolveEventReferences, "execute">;
 }
 
 export class CommunicationRecipients {
@@ -32,14 +32,15 @@ export class CommunicationRecipients {
 		catalog: ReferentialCatalog,
 		diagnostics: CommunicationJourneyDiagnostic[],
 	): MailRecipientResolution {
-		const resolution = this.collaborators
-			.createResolveEventReferences()
-			.execute(catalog, {
+		const resolution = this.collaborators.resolveEventReferences.execute(
+			catalog,
+			{
 				hostReference: event.host ? this.renderReference(event.host) : "",
 				speakerReferences: event.agenda.flatMap((entry) =>
 					entry.speakers.map(this.renderReference.bind(this)),
 				),
-			});
+			},
+		);
 		if (!resolution.resolved) {
 			diagnostics.push({
 				code: "communication.event-references-unresolved",

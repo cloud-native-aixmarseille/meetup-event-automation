@@ -1,5 +1,6 @@
 export { ApprovalNotificationPolicy } from "./approval/approval-notification-policy.js";
 export { ApprovalRequestPolicy } from "./approval/approval-request-policy.js";
+export { FollowUpApprovalPolicy } from "./approval/follow-up-approval-policy.js";
 export { CommunicationDiagnosticProjection } from "./communication/communication-diagnostic-projection.js";
 export type {
 	CommunicationJourneyDiagnostic,
