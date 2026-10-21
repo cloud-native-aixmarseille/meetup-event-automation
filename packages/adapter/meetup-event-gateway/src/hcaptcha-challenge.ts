@@ -29,7 +29,12 @@ export class HcaptchaChallenge implements LoginChallenge {
 		const browser = page.context().browser();
 		if (!browser) throw new Error("Browser unavailable.");
 		const endpoint = await this.collaborators.chromiumEndpoint.read(browser);
-		const result = await this.process.run(endpoint, this.apiKey, this.model);
+		const result = await this.process.run({
+			endpoint,
+			apiKey: this.apiKey,
+			model: this.model,
+			targetUrl: page.url(),
+		});
 		if (result === "unavailable")
 			throw new Error("Challenge solver unavailable.");
 		return result === "solved";

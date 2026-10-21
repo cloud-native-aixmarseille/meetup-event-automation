@@ -52,7 +52,12 @@ describe("hCaptcha process isolation", () => {
 		});
 
 		// Act
-		const result = await solver.run("ws://127.0.0.1:1234", "key", "model");
+		const result = await solver.run({
+			endpoint: "ws://127.0.0.1:1234",
+			targetUrl: "https://events.example.test/sign-in",
+			apiKey: "key",
+			model: "model",
+		});
 
 		// Assert
 		expect(result).toBe("unavailable");
@@ -67,11 +72,12 @@ describe("hCaptcha process isolation", () => {
 		});
 
 		// Act
-		const result = await solver.run(
-			"ws://127.0.0.1:1234",
-			"synthetic-key",
-			"model",
-		);
+		const result = await solver.run({
+			endpoint: "ws://127.0.0.1:1234",
+			targetUrl: "https://events.example.test/sign-in",
+			apiKey: "synthetic-key",
+			model: "model",
+		});
 		const options = launch.mock.calls[0][2];
 		const directoryExists = await access(String(options?.cwd)).then(
 			() => true,
@@ -82,6 +88,7 @@ describe("hCaptcha process isolation", () => {
 		expect(result).toBe("solved");
 		expect(JSON.parse(request)).toEqual({
 			endpoint: "ws://127.0.0.1:1234",
+			targetUrl: "https://events.example.test/sign-in",
 			apiKey: "synthetic-key",
 			model: "model",
 		});
@@ -111,7 +118,12 @@ describe("hCaptcha process isolation", () => {
 			const { solver } = fixture(output, code);
 
 			// Act
-			const result = await solver.run("ws://127.0.0.1:1234", "key", "model");
+			const result = await solver.run({
+				endpoint: "ws://127.0.0.1:1234",
+				targetUrl: "https://events.example.test/sign-in",
+				apiKey: "key",
+				model: "model",
+			});
 
 			// Assert
 			expect(result).toBe(expected);
@@ -136,7 +148,12 @@ describe("hCaptcha process isolation", () => {
 		});
 
 		// Act
-		const pending = solver.run("ws://127.0.0.1:1234", "key", "model");
+		const pending = solver.run({
+			endpoint: "ws://127.0.0.1:1234",
+			targetUrl: "https://events.example.test/sign-in",
+			apiKey: "key",
+			model: "model",
+		});
 		await ready;
 		await vi.advanceTimersByTimeAsync(120_000);
 		const result = await pending;
@@ -154,7 +171,12 @@ describe("hCaptcha process isolation", () => {
 		});
 
 		// Act
-		const result = await solver.run("ws://127.0.0.1:1234", "key", "model");
+		const result = await solver.run({
+			endpoint: "ws://127.0.0.1:1234",
+			targetUrl: "https://events.example.test/sign-in",
+			apiKey: "key",
+			model: "model",
+		});
 		const exists = await access(String(launch.mock.calls[0][2]?.cwd)).then(
 			() => true,
 			() => false,

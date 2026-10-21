@@ -43,16 +43,19 @@ class MeetupChallenge:
             MAX_CRUMB_COUNT=2,
         )
 
-    async def solve(self, browser, config):
+    async def solve(self, browser, config, target_url):
         """Attempt one challenge only while the sole login page has empty fields."""
         pages = [page for context in browser.contexts for page in context.pages]
         if len(pages) != 1:
             return "unavailable"
         page = pages[0]
-        location = urlparse(page.url)
+        location = urlparse(target_url)
         if (
             location.scheme != "https"
-            or location.netloc != "www.meetup.com"
+            or not location.hostname
+            or location.username
+            or location.password
+            or page.url != target_url
             or location.path not in ("/login", "/login/")
         ):
             return "unavailable"
@@ -75,7 +78,9 @@ class MeetupChallenge:
                 request["endpoint"], timeout=15_000
             )
             try:
-                return await asyncio.wait_for(self.solve(browser, config), timeout=100)
+                return await asyncio.wait_for(
+                    self.solve(browser, config, request["targetUrl"]), timeout=100
+                )
             finally:
                 # Disconnect this client; the TypeScript parent owns Chromium.
                 await browser.close()

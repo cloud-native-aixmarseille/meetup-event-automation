@@ -5,9 +5,12 @@ import { GithubOrganizerApprovalComposition } from "./dependency-composition.js"
 import { MeetupApprovalDetailsSchema } from "./meetup-approval-details-schema.js";
 
 describe("publication approval facts", () => {
-	it("accepts the public draft summary", () => {
+	it.each([
+		publicationRequest.publication.url,
+		"https://events.example.test:8443/example-group/events/12345/",
+	])("accepts canonical draft summaries on the supplied origin: %s", (url) => {
 		// Arrange
-		const value = publicationRequest.publication;
+		const value = { ...publicationRequest.publication, url };
 
 		// Act
 		const result = new MeetupApprovalDetailsSchema({

@@ -31,7 +31,7 @@ describe("Meetup publication link evaluation", () => {
 
 	it("rejects a link when its configured prefix is not a Meetup group", () => {
 		// Arrange
-		const prefix = "https://untrusted.example/example-group/events/";
+		const prefix = "https://events.example.test/events/";
 		const policy = new MeetupEventUrlPolicy(
 			{
 				publicationLinkEvaluation:
@@ -45,5 +45,26 @@ describe("Meetup publication link evaluation", () => {
 
 		// Assert
 		expect(result.diagnostics[0]?.code).toBe("publication.meetup-url.invalid");
+	});
+
+	it.each([
+		["https://events.example.test:8443/example-group/events/123/", true],
+		["https://www.meetup.com/example-group/events/123/", false],
+		["https://events.example.test/example-group/events/123/", false],
+	])("evaluates links against the configured origin: %s", (url, accepted) => {
+		// Arrange
+		const policy = new PublicationDomainComposition().meetupEventUrlPolicy(
+			"https://events.example.test:8443/example-group/events/",
+		);
+
+		// Act
+		const result = policy.evaluate({ meetup: url });
+
+		// Assert
+		expect(
+			result.diagnostics.some(
+				(diagnostic) => diagnostic.code === "publication.meetup-url.invalid",
+			),
+		).toBe(!accepted);
 	});
 });

@@ -406,13 +406,15 @@ rechecking the issue snapshot and trusted approval. Publication is verified befo
 the issue checkbox is checked. Draft creation and publication are separate gateway
 operations; a saved URL and approval are independently durable for retries.
 
-The publication domain owns Meetup group and event URL identities, their HTTPS
-origin, group membership, and canonical event form. The journey, URL policy, and
+The caller's `meetup-event-url-prefix` supplies the HTTPS origin and group.
+The publication domain validates canonical group and event URL identities and
+enforces membership in that configured group. The journey, URL policy, and
 approval adapter use these types instead of maintaining provider URL patterns.
 The browser adapter owns login, account, scheduling, and editor routes; it removes
 query and fragment data only from browser redirects before resolving an event
 identity. Stored and organizer-supplied identities reject that data. The isolated
-Python solver retains its own fixed login-origin check at its process boundary.
+Python solver verifies the caller-selected HTTPS login page and empty credential
+fields at its process boundary.
 
 Organizer attention has separate domain-owned conditions, episodes, reminder windows,
 and notification reservations. The journey gathers typed stage outcomes and

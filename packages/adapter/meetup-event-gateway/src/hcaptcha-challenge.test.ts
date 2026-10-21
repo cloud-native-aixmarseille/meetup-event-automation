@@ -6,6 +6,7 @@ import { HcaptchaChallenge } from "./hcaptcha-challenge.js";
 function fixture() {
 	const browser = {};
 	const page = {
+		url: () => "https://events.example.test:8443/login/",
 		context: () => ({ browser: () => browser }),
 	} as unknown as Page;
 	const run = vi.fn().mockResolvedValue("solved");
@@ -37,11 +38,12 @@ describe("hCaptcha challenge", () => {
 		// Assert
 		expect(first).toBe(true);
 		expect(second).toBe(false);
-		expect(run).toHaveBeenCalledExactlyOnceWith(
-			"ws://127.0.0.1:1234/devtools/browser/abc",
-			"synthetic-key",
-			"synthetic-model",
-		);
+		expect(run).toHaveBeenCalledExactlyOnceWith({
+			endpoint: "ws://127.0.0.1:1234/devtools/browser/abc",
+			apiKey: "synthetic-key",
+			model: "synthetic-model",
+			targetUrl: "https://events.example.test:8443/login/",
+		});
 	});
 
 	it("returns a blocked challenge when the attempt cannot solve it", async () => {

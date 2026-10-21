@@ -5,11 +5,14 @@ import { MeetupEventGatewayComposition } from "./dependency-composition.js";
 import { MeetupEventEditor } from "./meetup-event-editor.js";
 import { MeetupEventGateway } from "./meetup-event-gateway.js";
 import { MeetupEventPublisher } from "./meetup-event-publisher.js";
-import { MeetupLoginPage } from "./meetup-login-page.js";
+import {
+	MeetupLoginPage,
+	type MeetupLoginPageArguments,
+} from "./meetup-login-page.js";
 
 afterEach(() => vi.restoreAllMocks());
 
-function fixture() {
+function fixture(configuredGroup = groupUrl) {
 	const page = {
 		setDefaultTimeout: vi.fn(),
 		setDefaultNavigationTimeout: vi.fn(),
@@ -27,54 +30,86 @@ function fixture() {
 	const save = vi
 		.spyOn(MeetupEventEditor.prototype, "save")
 		.mockResolvedValue({ url: eventUrl, status: "draft" });
+	const createLogin = vi.fn((...args: MeetupLoginPageArguments) =>
+		new MeetupEventGatewayComposition().meetupLoginPage(...args),
+	);
+	const challenge = { solve: vi.fn() };
 	const gateway = new MeetupEventGateway(
 		{
 			createMeetupEventEditor: (...args) =>
 				new MeetupEventGatewayComposition().meetupEventEditor(...args),
 			createMeetupEventPublisher: (...args) =>
 				new MeetupEventGatewayComposition().meetupEventPublisher(...args),
-			createMeetupLoginPage: (...args) =>
-				new MeetupEventGatewayComposition().meetupLoginPage(...args),
+			createMeetupLoginPage: createLogin,
 		},
 		{ launch } as unknown as BrowserType,
 		{ email: "organizer@example.test", password: " synthetic-password " },
-		{ solve: vi.fn() },
-		groupUrl,
+		challenge,
+		configuredGroup,
 	);
-	return { gateway, browser, launch, login, save };
+	return {
+		gateway,
+		browser,
+		launch,
+		login,
+		save,
+		createLogin,
+		page,
+		challenge,
+	};
 }
 
 describe("Meetup event browser session", () => {
-	it("uses the authenticated page to save a draft and disposes the browser", async () => {
-		// Arrange
-		const { gateway, browser, launch, login, save } = fixture();
-		const before = vi.fn();
-		const after = vi.fn();
+	it.each([groupUrl, "https://events.example.test:8443/example-group/"])(
+		"uses the configured origin for authentication and disposes the browser: %s",
+		async (configuredGroup) => {
+			// Arrange
+			const {
+				gateway,
+				browser,
+				launch,
+				login,
+				save,
+				createLogin,
+				page,
+				challenge,
+			} = fixture(configuredGroup);
+			const before = vi.fn();
+			const after = vi.fn();
 
-		// Act
-		const result = await gateway.save(desiredEvent, undefined, before, after);
+			// Act
+			const result = await gateway.save(desiredEvent, undefined, before, after);
 
-		// Assert
-		expect(result).toEqual({ url: eventUrl, status: "draft" });
-		expect(launch).toHaveBeenCalledWith(
-			expect.objectContaining({
-				args: [
-					"--enable-automation",
-					"--remote-debugging-address=127.0.0.1",
-					"--remote-debugging-port=0",
-				],
-			}),
-		);
-		expect(browser.newContext).toHaveBeenCalledWith(
-			expect.objectContaining({ locale: "en-US", timezoneId: "Europe/Paris" }),
-		);
-		expect(login).toHaveBeenCalledWith(
-			"organizer@example.test",
-			" synthetic-password ",
-		);
-		expect(save).toHaveBeenCalledWith(desiredEvent, undefined, before, after);
-		expect(browser.close).toHaveBeenCalledOnce();
-	});
+			// Assert
+			expect(result).toEqual({ url: eventUrl, status: "draft" });
+			expect(launch).toHaveBeenCalledWith(
+				expect.objectContaining({
+					args: [
+						"--enable-automation",
+						"--remote-debugging-address=127.0.0.1",
+						"--remote-debugging-port=0",
+					],
+				}),
+			);
+			expect(browser.newContext).toHaveBeenCalledWith(
+				expect.objectContaining({
+					locale: "en-US",
+					timezoneId: "Europe/Paris",
+				}),
+			);
+			expect(login).toHaveBeenCalledWith(
+				"organizer@example.test",
+				" synthetic-password ",
+			);
+			expect(save).toHaveBeenCalledWith(desiredEvent, undefined, before, after);
+			expect(browser.close).toHaveBeenCalledOnce();
+			expect(createLogin).toHaveBeenCalledExactlyOnceWith(
+				page,
+				challenge,
+				new URL(configuredGroup).origin,
+			);
+		},
+	);
 
 	it.each([
 		"challenge-required",
