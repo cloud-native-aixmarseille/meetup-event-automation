@@ -12,8 +12,8 @@ import { createTestEvent } from "../../../domain/event/testing/event.fixtures.js
 import { AttentionComposition } from "../src/attention-composition.js";
 import { SERVICES } from "../src/composition.js";
 import {
+	eventPublicationSettings,
 	publicationLinks,
-	publicationUrls,
 } from "./publication-urls.fixtures.js";
 export function followUpFixture() {
 	const f = fixture();
@@ -50,7 +50,7 @@ export function followUpFixture() {
 		stageResults: readonly AttentionStage[] = stages,
 	) {
 		const container = AttentionComposition.create({
-			publicationUrls,
+			...eventPublicationSettings,
 			client,
 			owner: "example",
 			repo: "meetups",

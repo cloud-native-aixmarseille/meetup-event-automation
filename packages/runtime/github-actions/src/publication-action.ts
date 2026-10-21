@@ -11,7 +11,12 @@ import type { PublicationUrlInput } from "./publication-url-input.js";
 import type { RuntimeInput } from "./runtime-input.js";
 
 export interface PublicationActionCollaborators {
-	readonly publicationUrlInput: Pick<PublicationUrlInput, "read">;
+	readonly publicationUrlInput: Pick<
+		PublicationUrlInput,
+		| "readMeetupEventUrlPrefix"
+		| "readCommunityEventUrlPrefixes"
+		| "readAssetFolderUrlPrefix"
+	>;
 	readonly createJourney: (
 		input: Parameters<
 			typeof PublicationComposition.createPublicationContainer
@@ -40,7 +45,12 @@ export class PublicationAction {
 		);
 		const { owner, repo } = context.repo;
 		const journey = this.collaborators.createJourney({
-			publicationUrls: this.collaborators.publicationUrlInput.read(),
+			meetupEventUrlPrefix:
+				this.collaborators.publicationUrlInput.readMeetupEventUrlPrefix(),
+			communityEventUrlPrefixes:
+				this.collaborators.publicationUrlInput.readCommunityEventUrlPrefixes(),
+			assetFolderUrlPrefix:
+				this.collaborators.publicationUrlInput.readAssetFolderUrlPrefix(),
 			contentConfiguration:
 				await this.collaborators.assetContentConfiguration.load(
 					process.cwd(),

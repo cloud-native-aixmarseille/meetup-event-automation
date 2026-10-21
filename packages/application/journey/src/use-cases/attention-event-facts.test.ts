@@ -3,7 +3,7 @@ import { EventDomainComposition } from "@meetup-automation/event";
 import { describe, expect, it } from "vitest";
 import { createTestEvent } from "../../../../domain/event/testing/event.fixtures.js";
 import {
-	publicationUrls,
+	createPublicationUrlPolicyEngine,
 	event as publishedEvent,
 } from "../../testing/meetup-journey.fixtures.js";
 import { JourneyPolicyComposition } from "../policy-composition.js";
@@ -18,24 +18,23 @@ describe("public attention event facts", () => {
 				...publishedEvent,
 				occurrenceStatus: "scheduled" as const,
 			};
-			const configuredUrls = {
-				...publicationUrls,
-				meetupEventUrlPrefix: allowed
-					? publicationUrls.meetupEventUrlPrefix
-					: "https://www.meetup.com/another-group/events/",
-			};
+			const meetupEventUrlPrefix = allowed
+				? "https://www.meetup.com/example-meetups/events/"
+				: "https://www.meetup.com/another-group/events/";
 
 			// Act
 			const result = new AttentionEventFacts({
 				eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
 				eventPublicationEvaluation:
-					new JourneyPolicyComposition().eventPublicationEvaluation(),
+					new JourneyPolicyComposition().eventPublicationEvaluation(
+						createPublicationUrlPolicyEngine(meetupEventUrlPrefix),
+					),
 				attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
 				communicationChecklist:
 					new JourneyPolicyComposition().communicationChecklist(),
 				createEventRuleEngine: (...args) =>
 					new EventDomainComposition().eventRuleEngine(...args),
-			}).create({ event, diagnostics: [] }, configuredUrls);
+			}).create({ event, diagnostics: [] });
 
 			// Assert
 			expect(result.requiredDataMissing).toBe(!allowed);
@@ -63,13 +62,15 @@ describe("public attention event facts", () => {
 		const result = new AttentionEventFacts({
 			eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
 			eventPublicationEvaluation:
-				new JourneyPolicyComposition().eventPublicationEvaluation(),
+				new JourneyPolicyComposition().eventPublicationEvaluation(
+					createPublicationUrlPolicyEngine(),
+				),
 			attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
 			communicationChecklist:
 				new JourneyPolicyComposition().communicationChecklist(),
 			createEventRuleEngine: (...args) =>
 				new EventDomainComposition().eventRuleEngine(...args),
-		}).create({ event, diagnostics: [] }, publicationUrls);
+		}).create({ event, diagnostics: [] });
 
 		// Assert
 		expect(result.followUpPending).toEqual([
@@ -96,13 +97,15 @@ describe("public attention event facts", () => {
 		const result = new AttentionEventFacts({
 			eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
 			eventPublicationEvaluation:
-				new JourneyPolicyComposition().eventPublicationEvaluation(),
+				new JourneyPolicyComposition().eventPublicationEvaluation(
+					createPublicationUrlPolicyEngine(),
+				),
 			attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
 			communicationChecklist:
 				new JourneyPolicyComposition().communicationChecklist(),
 			createEventRuleEngine: (...args) =>
 				new EventDomainComposition().eventRuleEngine(...args),
-		}).create({ event, diagnostics: [] }, publicationUrls);
+		}).create({ event, diagnostics: [] });
 
 		// Assert
 		expect(result.publicationPending).toContain("public-slack-community");
@@ -120,13 +123,15 @@ describe("public attention event facts", () => {
 		const result = new AttentionEventFacts({
 			eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
 			eventPublicationEvaluation:
-				new JourneyPolicyComposition().eventPublicationEvaluation(),
+				new JourneyPolicyComposition().eventPublicationEvaluation(
+					createPublicationUrlPolicyEngine(),
+				),
 			attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
 			communicationChecklist:
 				new JourneyPolicyComposition().communicationChecklist(),
 			createEventRuleEngine: (...args) =>
 				new EventDomainComposition().eventRuleEngine(...args),
-		}).create({ event, diagnostics: [] }, publicationUrls);
+		}).create({ event, diagnostics: [] });
 
 		// Assert
 		expect(result.eventDate).toBe("");

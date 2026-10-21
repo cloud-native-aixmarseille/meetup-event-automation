@@ -5,9 +5,9 @@ import {
 	catalog,
 	config,
 	createEventDependencies,
+	createPublicationUrlPolicyEngine,
 	event,
 	identity,
-	publicationUrls,
 } from "../../testing/meetup-journey.fixtures.js";
 import { JourneyComposition } from "../dependency-composition.js";
 import { JourneyPolicyComposition } from "../policy-composition.js";
@@ -36,7 +36,16 @@ describe("ManageMeetupEvent manual publication tasks", () => {
 			const useCase = new ManageMeetupEvent(
 				{
 					eventPublicationEvaluation:
-						new JourneyPolicyComposition().eventPublicationEvaluation(),
+						new JourneyPolicyComposition().eventPublicationEvaluation(
+							createPublicationUrlPolicyEngine(
+								"https://www.meetup.com/regional-group/events/",
+								[
+									"https://regional.example.test/events/",
+									"https://community.example.test/meetups/",
+								],
+								"https://assets.example.test/folders/",
+							),
+						),
 					eventReadinessPolicy:
 						new EventDomainComposition().eventReadinessPolicy(),
 					eventLifecycle: new EventDomainComposition().eventLifecycle(),
@@ -56,21 +65,13 @@ describe("ManageMeetupEvent manual publication tasks", () => {
 						),
 					createRefreshSelectedProposals: (...args) =>
 						new JourneyComposition().refreshSelectedProposals(...args),
-					createResolveEventReferences: (...args) =>
-						new ReferentialDomainComposition().resolveEventReferences(...args),
+					resolveEventReferences:
+						new ReferentialDomainComposition().resolveEventReferences(),
 				},
 				{
 					proposalSource: { load: vi.fn() },
 					config,
-					publicationUrls: {
-						meetupEventUrlPrefix:
-							"https://www.meetup.com/regional-group/events/",
-						communityEventUrlPrefixes: [
-							"https://regional.example.test/events/",
-							"https://community.example.test/meetups/",
-						],
-						assetFolderUrlPrefix: "https://assets.example.test/folders/",
-					},
+
 					referentialRepository: { load: async () => catalog },
 					eventDependencies,
 				},
@@ -106,7 +107,9 @@ describe("ManageMeetupEvent manual publication tasks", () => {
 			const useCase = new ManageMeetupEvent(
 				{
 					eventPublicationEvaluation:
-						new JourneyPolicyComposition().eventPublicationEvaluation(),
+						new JourneyPolicyComposition().eventPublicationEvaluation(
+							createPublicationUrlPolicyEngine(),
+						),
 					eventReadinessPolicy:
 						new EventDomainComposition().eventReadinessPolicy(),
 					eventLifecycle: new EventDomainComposition().eventLifecycle(),
@@ -132,7 +135,6 @@ describe("ManageMeetupEvent manual publication tasks", () => {
 				{
 					proposalSource: { load: vi.fn() },
 					config,
-					publicationUrls,
 					referentialRepository: { load: async () => catalog },
 					eventDependencies,
 				},
@@ -175,7 +177,9 @@ describe("ManageMeetupEvent manual publication tasks", () => {
 		const useCase = new ManageMeetupEvent(
 			{
 				eventPublicationEvaluation:
-					new JourneyPolicyComposition().eventPublicationEvaluation(),
+					new JourneyPolicyComposition().eventPublicationEvaluation(
+						createPublicationUrlPolicyEngine(),
+					),
 				eventReadinessPolicy:
 					new EventDomainComposition().eventReadinessPolicy(),
 				eventLifecycle: new EventDomainComposition().eventLifecycle(),
@@ -201,7 +205,6 @@ describe("ManageMeetupEvent manual publication tasks", () => {
 			{
 				proposalSource: { load: vi.fn() },
 				config,
-				publicationUrls,
 				referentialRepository: { load: async () => catalog },
 				eventDependencies: {
 					...createEventDependencies(),
@@ -230,7 +233,9 @@ describe("ManageMeetupEvent manual publication tasks", () => {
 		const useCase = new ManageMeetupEvent(
 			{
 				eventPublicationEvaluation:
-					new JourneyPolicyComposition().eventPublicationEvaluation(),
+					new JourneyPolicyComposition().eventPublicationEvaluation(
+						createPublicationUrlPolicyEngine(),
+					),
 				eventReadinessPolicy:
 					new EventDomainComposition().eventReadinessPolicy(),
 				eventLifecycle: new EventDomainComposition().eventLifecycle(),
@@ -256,7 +261,6 @@ describe("ManageMeetupEvent manual publication tasks", () => {
 			{
 				proposalSource: { load: vi.fn() },
 				config,
-				publicationUrls,
 				referentialRepository: {
 					load: vi.fn().mockResolvedValue(catalog),
 				},

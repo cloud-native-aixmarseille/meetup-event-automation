@@ -14,7 +14,6 @@ import {
 	type EventIdentity,
 	type EventRepository,
 } from "@meetup-automation/event";
-import type { PublicationUrlConfiguration } from "@meetup-automation/publication";
 import type { AutomationConfig } from "../config/automation-config.js";
 import {
 	FOLLOW_UP_TASKS,
@@ -23,7 +22,6 @@ import {
 import type { AttentionEventFacts } from "./attention-event-facts.js";
 export interface ManageMeetupAttentionDependencies {
 	readonly config: AutomationConfig;
-	readonly publicationUrls: PublicationUrlConfiguration;
 	readonly repository: EventRepository;
 	readonly codec: EventDocumentCodec;
 	readonly approvals: AttentionApprovalSource;
@@ -64,7 +62,6 @@ export class ManageMeetupAttention {
 			};
 		const facts = this.collaborators.attentionEventFacts.create(
 			codec.decode(source),
-			this.dependencies.publicationUrls,
 		);
 		const evidence = await this.synchronizeEvidence();
 		const now = clock.now();

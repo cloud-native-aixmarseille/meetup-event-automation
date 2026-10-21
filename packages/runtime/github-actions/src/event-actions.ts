@@ -17,7 +17,12 @@ import type { PublicationUrlInput } from "./publication-url-input.js";
 import type { RuntimeInput } from "./runtime-input.js";
 
 export interface EventActionsCollaborators {
-	readonly publicationUrlInput: Pick<PublicationUrlInput, "read">;
+	readonly publicationUrlInput: Pick<
+		PublicationUrlInput,
+		| "readMeetupEventUrlPrefix"
+		| "readCommunityEventUrlPrefixes"
+		| "readAssetFolderUrlPrefix"
+	>;
 	readonly createEventJourney: (
 		input: Parameters<typeof EventComposition.createEventContainer>[0],
 	) => Pick<ManageMeetupEvent, "execute">;
@@ -43,7 +48,12 @@ export class EventActions {
 		const { owner, repo } = context.repo;
 		const repository = `${owner}/${repo}`;
 		const journey = this.collaborators.createEventJourney({
-			publicationUrls: this.collaborators.publicationUrlInput.read(),
+			meetupEventUrlPrefix:
+				this.collaborators.publicationUrlInput.readMeetupEventUrlPrefix(),
+			communityEventUrlPrefixes:
+				this.collaborators.publicationUrlInput.readCommunityEventUrlPrefixes(),
+			assetFolderUrlPrefix:
+				this.collaborators.publicationUrlInput.readAssetFolderUrlPrefix(),
 			locale: messages.locale,
 			...this.collaborators.conferenceHallInput.read(),
 			client: getOctokit(token),

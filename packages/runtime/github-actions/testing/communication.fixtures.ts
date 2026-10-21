@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { vi } from "vitest";
 import type { CommunicationRuntime } from "../src/communication.js";
-import { publicationUrls } from "./publication-urls.fixtures.js";
+import { eventPublicationSettings } from "./publication-urls.fixtures.js";
 
 const temporaryRoots: string[] = [];
 export async function cleanupCommunicationFixtures() {
@@ -42,7 +42,7 @@ export function runtimeInput(
 	> = {},
 ): Parameters<CommunicationRuntime["runCommunicationReconcile"]>[0] {
 	return {
-		publicationUrls,
+		...eventPublicationSettings,
 		locale: "en",
 		slidesReady: true,
 		conferenceHallEvent: "example-cfp",

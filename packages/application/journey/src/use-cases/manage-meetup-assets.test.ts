@@ -10,9 +10,9 @@ import {
 	catalog,
 	config,
 	createEventDependencies,
+	createPublicationUrlPolicyEngine,
 	event,
 	identity,
-	publicationUrls,
 	sourceDocument,
 } from "../../testing/meetup-journey.fixtures.js";
 import { JourneyComposition } from "../dependency-composition.js";
@@ -286,7 +286,9 @@ function assetJourney(reconciliation?: Pick<ReconcileEventAssets, "execute">) {
 			manageEvent: new ManageMeetupEvent(
 				{
 					eventPublicationEvaluation:
-						new JourneyPolicyComposition().eventPublicationEvaluation(),
+						new JourneyPolicyComposition().eventPublicationEvaluation(
+							createPublicationUrlPolicyEngine(),
+						),
 					eventReadinessPolicy:
 						new EventDomainComposition().eventReadinessPolicy(),
 					eventLifecycle: new EventDomainComposition().eventLifecycle(),
@@ -312,7 +314,6 @@ function assetJourney(reconciliation?: Pick<ReconcileEventAssets, "execute">) {
 				{
 					proposalSource: { load: vi.fn() },
 					config,
-					publicationUrls,
 					eventDependencies,
 					referentialRepository: { load: async () => catalog },
 				},

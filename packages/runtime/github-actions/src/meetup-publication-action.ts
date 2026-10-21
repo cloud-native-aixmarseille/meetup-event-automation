@@ -10,7 +10,12 @@ import type { PublicationUrlInput } from "./publication-url-input.js";
 import type { RuntimeInput } from "./runtime-input.js";
 
 export interface MeetupPublicationActionCollaborators {
-	readonly publicationUrlInput: Pick<PublicationUrlInput, "read">;
+	readonly publicationUrlInput: Pick<
+		PublicationUrlInput,
+		| "readMeetupEventUrlPrefix"
+		| "readCommunityEventUrlPrefixes"
+		| "readAssetFolderUrlPrefix"
+	>;
 	readonly createJourney: (
 		input: Parameters<typeof MeetupPublicationComposition.create>[0],
 	) => Pick<ManageMeetupPublication, "execute">;
@@ -38,7 +43,12 @@ export class MeetupPublicationAction {
 		const githubToken = this.secret("github-token");
 		const { owner, repo } = context.repo;
 		const journey = this.collaborators.createJourney({
-			publicationUrls: this.collaborators.publicationUrlInput.read(),
+			meetupEventUrlPrefix:
+				this.collaborators.publicationUrlInput.readMeetupEventUrlPrefix(),
+			communityEventUrlPrefixes:
+				this.collaborators.publicationUrlInput.readCommunityEventUrlPrefixes(),
+			assetFolderUrlPrefix:
+				this.collaborators.publicationUrlInput.readAssetFolderUrlPrefix(),
 			...this.collaborators.conferenceHallInput.read(),
 			owner,
 			repo,

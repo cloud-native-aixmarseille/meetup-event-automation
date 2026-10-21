@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { publicationUrls } from "../../testing/publication-urls.fixtures.js";
+import { createPublicationUrlPolicies } from "../../testing/publication-urls.fixtures.js";
 import { PublicationDomainComposition } from "../dependency-composition.js";
 import { PublicationUrlPolicyEngine } from "./publication-url-policy-engine.js";
 
@@ -11,9 +11,7 @@ describe("publication URL policies", () => {
 				publicationDiagnostics:
 					new PublicationDomainComposition().publicationDiagnostics(),
 			},
-			new PublicationDomainComposition()
-				.publicationUrlPolicies()
-				.create(publicationUrls),
+			createPublicationUrlPolicies(),
 		);
 
 		// Act
@@ -39,9 +37,7 @@ describe("publication URL policies", () => {
 				publicationDiagnostics:
 					new PublicationDomainComposition().publicationDiagnostics(),
 			},
-			new PublicationDomainComposition()
-				.publicationUrlPolicies()
-				.create(publicationUrls),
+			createPublicationUrlPolicies(),
 		).evaluate({
 			community: "https://community.example.test/events/platform-engineering",
 		});
@@ -62,9 +58,7 @@ describe("publication URL policies", () => {
 				publicationDiagnostics:
 					new PublicationDomainComposition().publicationDiagnostics(),
 			},
-			new PublicationDomainComposition()
-				.publicationUrlPolicies()
-				.create(publicationUrls),
+			createPublicationUrlPolicies(),
 		).evaluate(source);
 
 		// Assert
@@ -103,10 +97,7 @@ describe("publication URL policies", () => {
 					publicationDiagnostics:
 						new PublicationDomainComposition().publicationDiagnostics(),
 				},
-				new PublicationDomainComposition().publicationUrlPolicies().create({
-					...publicationUrls,
-					communityEventUrlPrefixes: prefixes,
-				}),
+				[new PublicationDomainComposition().communityEventUrlPolicy(prefixes)],
 			);
 
 			// Act
@@ -165,9 +156,7 @@ describe("publication URL policies", () => {
 				publicationDiagnostics:
 					new PublicationDomainComposition().publicationDiagnostics(),
 			},
-			new PublicationDomainComposition()
-				.publicationUrlPolicies()
-				.create(publicationUrls),
+			createPublicationUrlPolicies(),
 		).evaluate({ [field]: value });
 
 		// Assert

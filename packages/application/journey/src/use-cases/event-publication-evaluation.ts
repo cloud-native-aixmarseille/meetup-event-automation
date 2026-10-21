@@ -7,10 +7,7 @@ import {
 import type {
 	ManualPublicationPolicy,
 	ManualPublicationTask,
-	PublicationUrlConfiguration,
-	PublicationUrlPolicies,
 	PublicationUrlPolicyEngine,
-	PublicationUrlPolicyEngineArguments,
 } from "@meetup-automation/publication";
 import type { PublicDiagnostic } from "../result/result-envelope.js";
 
@@ -19,14 +16,14 @@ export interface EventPublicationEvaluationCollaborators {
 		MeetupPublicationChecklist,
 		"isPublished"
 	>;
-	readonly publicationUrlPolicies: Pick<PublicationUrlPolicies, "create">;
+	readonly publicationUrlPolicyEngine: Pick<
+		PublicationUrlPolicyEngine,
+		"evaluate"
+	>;
 	readonly manualPublicationPolicy: Pick<
 		ManualPublicationPolicy,
 		"planManualPublicationTasks"
 	>;
-	readonly createPublicationUrlPolicyEngine: (
-		...args: PublicationUrlPolicyEngineArguments
-	) => PublicationUrlPolicyEngine;
 }
 
 export class EventPublicationEvaluation {
@@ -34,10 +31,10 @@ export class EventPublicationEvaluation {
 		private readonly collaborators: EventPublicationEvaluationCollaborators,
 	) {}
 
-	evaluatePublication(
-		event: MeetupEvent,
-		publicationUrls: PublicationUrlConfiguration,
-	): { event: MeetupEvent; diagnostics: EventDiagnostic[] } {
+	evaluatePublication(event: MeetupEvent): {
+		event: MeetupEvent;
+		diagnostics: EventDiagnostic[];
+	} {
 		const diagnostics: EventDiagnostic[] = [];
 		for (const field of ["meetup", "community", "assets"] as const) {
 			const value = event.publicationLinks[field];
@@ -64,10 +61,9 @@ export class EventPublicationEvaluation {
 					"Meetup publication must be confirmed in the Communication checklist before the event is ready",
 			});
 		}
-		const engine = this.collaborators.createPublicationUrlPolicyEngine(
-			this.collaborators.publicationUrlPolicies.create(publicationUrls),
+		const evaluation = this.collaborators.publicationUrlPolicyEngine.evaluate(
+			event.publicationLinks,
 		);
-		const evaluation = engine.evaluate(event.publicationLinks);
 		diagnostics.push(
 			...evaluation.diagnostics.map((item) => ({
 				code: item.code,

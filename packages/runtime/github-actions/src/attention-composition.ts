@@ -17,7 +17,6 @@ import {
 	JourneyComposition,
 	ManageMeetupAttention,
 } from "@meetup-automation/journey";
-import type { PublicationUrlConfiguration } from "@meetup-automation/publication";
 import { SlackNotificationGatewayComposition } from "@meetup-automation/slack-notification-gateway";
 import {
 	SystemClockComposition,
@@ -32,6 +31,7 @@ import {
 import { GithubActionsComposition } from "./dependency-composition.js";
 import { OrganizerApprovalComposition } from "./organizer-approval-composition.js";
 import { OrganizerFeedback } from "./organizer-feedback.js";
+import { PublicationPolicyComposition } from "./publication-policy-composition.js";
 
 type ApprovalCapabilities = ReturnType<
 	typeof OrganizerApprovalComposition.create
@@ -42,7 +42,9 @@ const ATTENTION_SERVICES = {
 	notification: Symbol("AttentionNotification"),
 };
 type AttentionCompositionInput = EventDocumentCompositionInput & {
-	publicationUrls: PublicationUrlConfiguration;
+	readonly meetupEventUrlPrefix: string;
+	readonly communityEventUrlPrefixes: readonly string[];
+	readonly assetFolderUrlPrefix: string;
 	commentAuthorLogin: string;
 	issueNumber: number;
 	slackToken: string;
@@ -50,9 +52,12 @@ type AttentionCompositionInput = EventDocumentCompositionInput & {
 };
 export class AttentionComposition {
 	static create(input: AttentionCompositionInput) {
-		new GithubActionsComposition()
-			.publicationUrlInput()
-			.validate(input.publicationUrls);
+		const publicationUrlPolicyEngine =
+			new PublicationPolicyComposition().eventPublicationUrlPolicyEngine(
+				input.meetupEventUrlPrefix,
+				input.communityEventUrlPrefixes,
+				input.assetFolderUrlPrefix,
+			);
 		const container = EventComposition.createDocumentContainer({
 			...input,
 			retireCommunicationReports: true,
@@ -100,7 +105,11 @@ export class AttentionComposition {
 				),
 			);
 		AttentionComposition.bindNotification(container, input, checklist);
-		AttentionComposition.bindJourney(container, input);
+		AttentionComposition.bindJourney(
+			container,
+			input,
+			publicationUrlPolicyEngine,
+		);
 		return container;
 	}
 	private static bindNotification(
@@ -161,39 +170,52 @@ export class AttentionComposition {
 	private static bindJourney(
 		container: Container,
 		input: AttentionCompositionInput,
+		publicationUrlPolicyEngine: ReturnType<
+			PublicationPolicyComposition["eventPublicationUrlPolicyEngine"]
+		>,
 	): void {
 		container.bind(ManageMeetupAttention).toDynamicValue((context) => {
 			const clock = context.get(SystemCommunicationClock);
-			return new JourneyComposition().manageMeetupAttention({
-				publicationUrls: input.publicationUrls,
-				config: context.get<AutomationConfig>(SERVICES.config),
-				repository: context.get<EventRepository>(SERVICES.eventRepository),
-				codec: context.get<EventDocumentCodec>(SERVICES.eventDocumentCodec),
-				clock,
-				approvals: context.get<ApprovalCapabilities>(
-					ATTENTION_SERVICES.approvals,
-				).attention,
-				followUp: context.get<ApprovalCapabilities>(
-					ATTENTION_SERVICES.approvals,
-				).followUp,
-				recovery: new GithubDeliveryLedgerComposition().githubDeliveryLedger(
-					new GithubDeliveryLedgerComposition().scopedGithubLedgerCommentClient(
-						input.client,
-						input.owner,
-						input.repo,
-						input.issueNumber,
-					),
-					{ dispatchAuthorized: false, authorLogin: input.commentAuthorLogin },
-					new GithubDeliveryLedgerComposition().ledgerCommentPresenter(
-						new GithubDeliveryLedgerComposition().ledgerMessages(input.locale),
-					),
-				),
-				reconciliation: new CommunicationDomainComposition().reconcileAttention(
-					context.get<AttentionRepository>(ATTENTION_SERVICES.repository),
-					context.get<AttentionNotification>(ATTENTION_SERVICES.notification),
+			return new JourneyComposition().manageMeetupAttention(
+				publicationUrlPolicyEngine,
+				{
+					config: context.get<AutomationConfig>(SERVICES.config),
+					repository: context.get<EventRepository>(SERVICES.eventRepository),
+					codec: context.get<EventDocumentCodec>(SERVICES.eventDocumentCodec),
 					clock,
-				),
-			});
+					approvals: context.get<ApprovalCapabilities>(
+						ATTENTION_SERVICES.approvals,
+					).attention,
+					followUp: context.get<ApprovalCapabilities>(
+						ATTENTION_SERVICES.approvals,
+					).followUp,
+					recovery: new GithubDeliveryLedgerComposition().githubDeliveryLedger(
+						new GithubDeliveryLedgerComposition().scopedGithubLedgerCommentClient(
+							input.client,
+							input.owner,
+							input.repo,
+							input.issueNumber,
+						),
+						{
+							dispatchAuthorized: false,
+							authorLogin: input.commentAuthorLogin,
+						},
+						new GithubDeliveryLedgerComposition().ledgerCommentPresenter(
+							new GithubDeliveryLedgerComposition().ledgerMessages(
+								input.locale,
+							),
+						),
+					),
+					reconciliation:
+						new CommunicationDomainComposition().reconcileAttention(
+							context.get<AttentionRepository>(ATTENTION_SERVICES.repository),
+							context.get<AttentionNotification>(
+								ATTENTION_SERVICES.notification,
+							),
+							clock,
+						),
+				},
+			);
 		});
 	}
 }

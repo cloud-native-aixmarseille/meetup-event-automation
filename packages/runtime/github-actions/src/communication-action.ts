@@ -9,7 +9,12 @@ import type { PublicationUrlInput } from "./publication-url-input.js";
 import type { RuntimeInput } from "./runtime-input.js";
 
 export interface CommunicationActionCollaborators {
-	readonly publicationUrlInput: Pick<PublicationUrlInput, "read">;
+	readonly publicationUrlInput: Pick<
+		PublicationUrlInput,
+		| "readMeetupEventUrlPrefix"
+		| "readCommunityEventUrlPrefixes"
+		| "readAssetFolderUrlPrefix"
+	>;
 	readonly runtimeInput: Pick<
 		RuntimeInput,
 		"positiveIntegerInput" | "booleanInput"
@@ -44,7 +49,12 @@ export class CommunicationAction {
 		const { owner, repo } = context.repo;
 		const outcome =
 			await this.collaborators.communicationRuntime.runCommunicationReconcile({
-				publicationUrls: this.collaborators.publicationUrlInput.read(),
+				meetupEventUrlPrefix:
+					this.collaborators.publicationUrlInput.readMeetupEventUrlPrefix(),
+				communityEventUrlPrefixes:
+					this.collaborators.publicationUrlInput.readCommunityEventUrlPrefixes(),
+				assetFolderUrlPrefix:
+					this.collaborators.publicationUrlInput.readAssetFolderUrlPrefix(),
 				locale: messages.locale,
 				...this.collaborators.conferenceHallInput.read(),
 				issueNumber,

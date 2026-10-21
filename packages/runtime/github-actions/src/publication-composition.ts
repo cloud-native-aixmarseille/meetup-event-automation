@@ -26,6 +26,7 @@ import {
 	SERVICES,
 } from "./composition.js";
 import { GithubActionsComposition } from "./dependency-composition.js";
+import { PublicationPolicyComposition } from "./publication-policy-composition.js";
 
 export const ASSET_REPOSITORY = Symbol("AssetRepository");
 
@@ -81,12 +82,17 @@ export class PublicationComposition {
 						.assetContentConfiguration()
 						.usesNextEvent(input.contentConfiguration?.contracts ?? {})
 						? new JourneyComposition().findNextAssetEvent(
+								new PublicationPolicyComposition().meetupEventUrlPolicy(
+									input.meetupEventUrlPrefix,
+								),
+								new PublicationPolicyComposition().communityEventUrlPolicy(
+									input.communityEventUrlPrefixes,
+								),
 								context.get<EventRepository>(SERVICES.eventRepository),
 								context.get<EventDocumentCodec>(SERVICES.eventDocumentCodec),
 								context.get<AutomationConfig>(SERVICES.config).event[
 									"issue-label"
 								],
-								input.publicationUrls,
 								input.contentConfiguration?.venues,
 							)
 						: undefined,

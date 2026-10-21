@@ -7,7 +7,7 @@ import {
 	SynchronizeMeetupIssueForm,
 	ValidateMeetupReferentials,
 } from "../packages/application/journey/src/index.js";
-import { publicationUrls } from "../packages/application/journey/testing/meetup-journey.fixtures.js";
+import { createPublicationUrlPolicyEngine } from "../packages/application/journey/testing/meetup-journey.fixtures.js";
 import type {
 	EventDocument,
 	ReconcileEventDependencies,
@@ -64,7 +64,6 @@ const dependenciesFor = (rawCatalog: RawReferentialCatalog) => {
 	return {
 		dependencies: {
 			config,
-			publicationUrls,
 			referentialRepository,
 		},
 		loadCatalog,
@@ -210,7 +209,9 @@ describe("event journey selection", () => {
 		const useCase = new ManageMeetupEvent(
 			{
 				eventPublicationEvaluation:
-					new JourneyPolicyComposition().eventPublicationEvaluation(),
+					new JourneyPolicyComposition().eventPublicationEvaluation(
+						createPublicationUrlPolicyEngine(),
+					),
 				eventReadinessPolicy:
 					new EventDomainComposition().eventReadinessPolicy(),
 				eventLifecycle: new EventDomainComposition().eventLifecycle(),
@@ -236,7 +237,6 @@ describe("event journey selection", () => {
 			{
 				proposalSource: { load: vi.fn() },
 				config,
-				publicationUrls,
 				referentialRepository: {
 					load: vi.fn().mockResolvedValue(catalog),
 				},
@@ -268,7 +268,9 @@ describe("event journey selection", () => {
 		const useCase = new ManageMeetupEvent(
 			{
 				eventPublicationEvaluation:
-					new JourneyPolicyComposition().eventPublicationEvaluation(),
+					new JourneyPolicyComposition().eventPublicationEvaluation(
+						createPublicationUrlPolicyEngine(),
+					),
 				eventReadinessPolicy:
 					new EventDomainComposition().eventReadinessPolicy(),
 				eventLifecycle: new EventDomainComposition().eventLifecycle(),
@@ -294,7 +296,6 @@ describe("event journey selection", () => {
 			{
 				proposalSource: { load: vi.fn() },
 				config,
-				publicationUrls,
 				referentialRepository: {
 					load: vi.fn().mockResolvedValue(catalog),
 				},

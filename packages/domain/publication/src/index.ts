@@ -66,14 +66,10 @@ export {
 } from "./domain/model.js";
 export { PresentationFileUrl } from "./domain/presentation-file-url.js";
 export { PublicAssetUrl } from "./domain/public-asset-url.js";
-export { PublicationUrlPolicies } from "./domain/publication-url-policies.js";
 export {
 	PublicationUrlPolicyEngine,
 	type PublicationUrlPolicyEngineArguments,
 } from "./domain/publication-url-policy-engine.js";
 export { ScheduledEventError } from "./domain/scheduled-event-error.js";
 export { ScheduledEventPolicy } from "./domain/scheduled-event-policy.js";
-export type {
-	PublicationUrlConfiguration,
-	PublicationUrlPolicy,
-} from "./domain/url-policy-contracts.js";
+export type { PublicationUrlPolicy } from "./domain/url-policy-contracts.js";

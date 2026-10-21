@@ -12,8 +12,6 @@ export interface MeetupEventUrlPolicyCollaborators {
 }
 
 export class MeetupEventUrlPolicy implements PublicationUrlPolicy {
-	readonly id = "meetup-event-url";
-
 	constructor(
 		private readonly collaborators: MeetupEventUrlPolicyCollaborators,
 		private readonly prefix: string,

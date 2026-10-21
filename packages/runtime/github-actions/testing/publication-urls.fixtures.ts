@@ -1,6 +1,4 @@
-import type { PublicationUrlConfiguration } from "@meetup-automation/publication";
-
-export const publicationUrls: PublicationUrlConfiguration = {
+export const eventPublicationSettings = {
 	meetupEventUrlPrefix: "https://www.meetup.com/example-meetups/events/",
 	communityEventUrlPrefixes: [
 		"https://ocgroups.dev/cncf/group/example-meetups/event/",
@@ -9,16 +7,16 @@ export const publicationUrls: PublicationUrlConfiguration = {
 };
 
 export const publicationUrlInputs = {
-	"meetup-event-url-prefix": publicationUrls.meetupEventUrlPrefix,
+	"meetup-event-url-prefix": eventPublicationSettings.meetupEventUrlPrefix,
 	"community-event-url-prefixes": JSON.stringify(
-		publicationUrls.communityEventUrlPrefixes,
+		eventPublicationSettings.communityEventUrlPrefixes,
 	),
-	"asset-folder-url-prefix": publicationUrls.assetFolderUrlPrefix,
+	"asset-folder-url-prefix": eventPublicationSettings.assetFolderUrlPrefix,
 };
 
 export const publicationLinks = {
-	meetup: `${publicationUrls.meetupEventUrlPrefix}123/`,
-	community: `${publicationUrls.communityEventUrlPrefixes[0]}platform-evening`,
-	assets: `${publicationUrls.assetFolderUrlPrefix}public-assets`,
+	meetup: `${eventPublicationSettings.meetupEventUrlPrefix}123/`,
+	community: `${eventPublicationSettings.communityEventUrlPrefixes[0]}platform-evening`,
+	assets: `${eventPublicationSettings.assetFolderUrlPrefix}public-assets`,
 	feedback: "https://openfeedback.io/public-event",
 };

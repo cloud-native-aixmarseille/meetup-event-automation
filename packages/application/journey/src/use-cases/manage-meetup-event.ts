@@ -107,10 +107,7 @@ export class ManageMeetupEvent {
 		);
 
 		const publication =
-			this.collaborators.eventPublicationEvaluation.evaluatePublication(
-				event,
-				this.dependencies.publicationUrls,
-			);
+			this.collaborators.eventPublicationEvaluation.evaluatePublication(event);
 		event = publication.event;
 		eventDiagnostics.push(...publication.diagnostics);
 		const manualPublicationTasks =

@@ -25,8 +25,8 @@ import { fixture } from "../../../adapter/github-organizer-attention/testing/att
 import { createTestEvent } from "../../../domain/event/testing/event.fixtures.js";
 import { followUpFixture } from "../testing/follow-up-attention.fixtures.js";
 import {
+	eventPublicationSettings,
 	publicationLinks,
-	publicationUrls,
 } from "../testing/publication-urls.fixtures.js";
 import { AttentionComposition } from "./attention-composition.js";
 import { SERVICES } from "./composition.js";
@@ -75,7 +75,7 @@ describe("attention runtime composition", () => {
 		}));
 		const runs = (["en", "fr"] as const).map((locale) => {
 			const container = AttentionComposition.create({
-				publicationUrls,
+				...eventPublicationSettings,
 				client,
 				owner: "example",
 				repo: "meetups",

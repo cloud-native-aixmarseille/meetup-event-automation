@@ -7,7 +7,7 @@ import {
 import { OpenFeedbackEventGateway } from "@meetup-automation/openfeedback-event-gateway";
 import type { FeedbackLinkGateway } from "@meetup-automation/publication";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { publicationUrls } from "../testing/publication-urls.fixtures.js";
+import { eventPublicationSettings } from "../testing/publication-urls.fixtures.js";
 import { SERVICES } from "./composition.js";
 import {
 	FEEDBACK_EVENTS,
@@ -16,7 +16,7 @@ import {
 } from "./feedback-composition.js";
 
 const input = {
-	publicationUrls,
+	...eventPublicationSettings,
 	conferenceHallEvent: "example-cfp",
 	conferenceHallApiKey: "synthetic-source-key",
 	client: getOctokit("synthetic-token"),

@@ -2,8 +2,8 @@ import * as core from "@actions/core";
 import { JourneyPolicyComposition } from "@meetup-automation/journey";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+	eventPublicationSettings,
 	publicationUrlInputs,
-	publicationUrls,
 } from "../testing/publication-urls.fixtures.js";
 import { CommunicationAction } from "./communication-action.js";
 import { GithubActionsComposition } from "./dependency-composition.js";
@@ -204,7 +204,7 @@ describe("communication action report facts", () => {
 		// Assert
 		expect(boundary.execute).toHaveBeenCalledWith(
 			expect.objectContaining({
-				publicationUrls,
+				...eventPublicationSettings,
 				slidesUrl: "https://docs.google.com/presentation/d/event-slides/edit",
 				mailingsToken: "private-mailings-token",
 				slackToken: "private-slack-token",

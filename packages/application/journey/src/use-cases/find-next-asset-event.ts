@@ -10,15 +10,15 @@ import type {
 } from "@meetup-automation/event";
 import type {
 	PublicAssetVenue,
-	PublicationUrlConfiguration,
-	PublicationUrlPolicies,
+	PublicationUrlPolicy,
 	PublicNextAssetEvent,
 } from "@meetup-automation/publication";
 import type { ReferentialCatalog } from "@meetup-automation/referential";
 
 export interface FindNextAssetEventCollaborators {
 	readonly eventRuleFactory: Pick<EventRuleFactory, "createDefaultEventRules">;
-	readonly publicationUrlPolicies: Pick<PublicationUrlPolicies, "create">;
+	readonly meetupEventUrlPolicy: Pick<PublicationUrlPolicy, "evaluate">;
+	readonly communityEventUrlPolicy: Pick<PublicationUrlPolicy, "evaluate">;
 	readonly meetupPublicationChecklist: Pick<
 		MeetupPublicationChecklist,
 		"isPublished"
@@ -34,7 +34,6 @@ export class FindNextAssetEvent {
 		private readonly repository: Pick<EventRepository, "listPage">,
 		private readonly codec: EventDocumentCodec,
 		private readonly eventLabel: string,
-		private readonly publicationUrls: PublicationUrlConfiguration,
 		private readonly venues: Readonly<Record<string, PublicAssetVenue>> = {},
 	) {}
 
@@ -133,21 +132,33 @@ export class FindNextAssetEvent {
 			!event.confirmations.host
 		)
 			return undefined;
-		const published = this.collaborators.publicationUrlPolicies
-			.create(this.publicationUrls)
-			.filter((policy) => policy.id !== "asset-folder-url")
-			.some((policy) => {
-				const field = policy.id === "meetup-event-url" ? "meetup" : "community";
-				return (
-					Boolean(event.publicationLinks[field]) &&
-					(field !== "meetup" ||
-						this.collaborators.meetupPublicationChecklist.isPublished(event)) &&
-					!policy
-						.evaluate({ [field]: event.publicationLinks[field] })
-						.diagnostics.some((item) => item.severity === "error")
-				);
-			});
+		const published =
+			(this.collaborators.meetupPublicationChecklist.isPublished(event) &&
+				this.validLink(
+					event,
+					"meetup",
+					this.collaborators.meetupEventUrlPolicy,
+				)) ||
+			this.validLink(
+				event,
+				"community",
+				this.collaborators.communityEventUrlPolicy,
+			);
 		return published ? event : undefined;
+	}
+
+	private validLink(
+		event: MeetupEvent,
+		field: "meetup" | "community",
+		policy: Pick<PublicationUrlPolicy, "evaluate">,
+	): boolean {
+		const value = event.publicationLinks[field];
+		return (
+			Boolean(value) &&
+			!policy
+				.evaluate({ [field]: value })
+				.diagnostics.some((item) => item.severity === "error")
+		);
 	}
 }
 export type FindNextAssetEventArguments =
