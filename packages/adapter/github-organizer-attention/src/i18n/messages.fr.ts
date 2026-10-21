@@ -17,6 +17,8 @@ export const messages = {
 	"action.speaker-confirmation":
 		"Confirmez les intervenants (`speakers:confirmed`).",
 	"action.manual-publication": "{task}.",
+	"action.meetup-approval-pending":
+		"Approuvez ou refusez la publication Meetup.",
 	"action.approval-pending": "Approuvez ou refusez le lot de courriels.",
 	"action.integration-failure": "Automatisation en échec : {task}.",
 	"action.delivery-recovery": "Vérifiez l'envoi avant toute reprise.",
@@ -34,7 +36,7 @@ export const messages = {
 	"attention.clear": "Aucune tâche en attente.",
 	"attention.pending":
 		"Vérifiez le message Slack avant de réessayer : envoi non confirmé.",
-	"task.publish-meetup-event": "Publiez sur Meetup",
+	"task.publish-meetup-event": "Approuver la publication Meetup",
 	"task.publish-community-event": "Publiez sur la plateforme CNCF",
 	"task.create-asset-folder": "Préparez le dossier des ressources",
 	"task.thank-host": "Envoyez les remerciements au lieu hôte",

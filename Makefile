@@ -33,6 +33,7 @@ lint-fix: ## Execute linting and fix
 		-e FIX_SHELL_SHFMT=true \
 		-e FIX_YAML_PRETTIER=true \
 		-e FIX_MARKDOWN_PRETTIER=true \
+		-e FIX_PYTHON_RUFF=true \
 	)
 
 audit: ## Execute security audit

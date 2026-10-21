@@ -13,6 +13,7 @@ export type PublicationEvent = Readonly<{
 	timeZone: string;
 	occurrenceStatus?: "scheduled" | "postponed" | "held" | "cancelled";
 	references: PublicationReferences;
+	meetupPublished: boolean;
 	slidesPublished: boolean;
 	attendanceImported: boolean;
 }>;

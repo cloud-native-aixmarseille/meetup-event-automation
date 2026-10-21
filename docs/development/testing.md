@@ -109,3 +109,28 @@ failure paths or data privacy.
 
 Use [the development checklist](README.md#choose-checks-for-the-change) to
 select checks and rebuild bundles after production changes.
+
+## Meetup solver
+
+The browser adapter's Python boundary has adjacent `solve_test.py` tests using
+synthetic pages and agents. No Gemini key or live Meetup account is needed.
+With Python 3.14, run from
+`packages/adapter/meetup-event-gateway/python`:
+
+```sh
+python -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -m unittest discover -p '*_test.py'
+```
+
+Shared CI runs these checks separately from the TypeScript suite. TypeScript
+adapter tests cover solver deadlines, subprocess isolation, cleanup, and login
+ordering. A live organizer publication run is separate from these synthetic tests.
+
+## Meetup browser editor
+
+Install Chromium with `pnpm exec playwright-core install chromium` before running
+the TypeScript test suite. CI uses `playwright-core install --with-deps chromium`
+to install browser system dependencies as well. The editor tests run real
+Chromium against intercepted synthetic pages; every request is fulfilled locally.
+No organizer credentials, Gemini requests, or live Meetup writes are used.

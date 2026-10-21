@@ -41,11 +41,16 @@ After confirming participation, add `hoster:confirmed` and `speakers:confirmed`.
 Selecting a host removes `hoster:needed`; it does not confirm participation.
 Speaker `needed` labels follow their confirmation state. A ready event has
 valid required fields, resolved host and speaker references, both confirmations,
-Meetup/CNCF/Drive links, and no blocking diagnostics. The **OpenFeedback Link**
+Meetup/CNCF/Drive links, a checked **Meetup event published** task in
+**Communication**, and no blocking diagnostics. The **OpenFeedback Link**
 field may stay empty until the automation creates the feedback event.
 
-Publish the event on Meetup and the CNCF community platform, then fill in
-**Meetup Link** and **CNCF Link**. These publishing steps are manual.
+Use [Meetup synchronization](../integrations/meetup-publication.md) to create a
+draft and fill **Meetup Link**. Once the required information is complete,
+review the draft through the approval comment or its Slack link, then check
+**Approve publishing this Meetup event**. Automation publishes it and checks
+**Meetup event published** under **Communication** after verification.
+Rejecting the request leaves it in draft. Publish on the CNCF community platform and fill **CNCF Link** manually.
 
 ## Prepare assets and feedback
 

@@ -11,6 +11,7 @@ function event(overrides: Partial<PublicationEvent> = {}): PublicationEvent {
 		timeZone: "Europe/Paris",
 		occurrenceStatus: "scheduled",
 		references: {},
+		meetupPublished: false,
 		slidesPublished: false,
 		attendanceImported: false,
 		...overrides,
@@ -18,7 +19,7 @@ function event(overrides: Partial<PublicationEvent> = {}): PublicationEvent {
 }
 
 describe("manual publication tasks", () => {
-	it("keeps publication tasks explicit while adapters do not exist", () => {
+	it("keeps outstanding organizer publication tasks explicit", () => {
 		// Arrange
 		// No additional setup is needed.
 
@@ -59,6 +60,7 @@ describe("manual publication tasks", () => {
 						"https://ocgroups.dev/cncf/group/cloud-native-aix-marseille/event/event",
 					assets: "https://drive.google.com/drive/folders/folder",
 				},
+				meetupPublished: false,
 				slidesPublished: false,
 				attendanceImported: true,
 			}),
@@ -90,4 +92,31 @@ describe("manual publication tasks", () => {
 		expect(tasks).toHaveLength(5);
 		expect(actual).toBe(true);
 	});
+	it.each([
+		{
+			meetupPublished: false,
+			references: { meetup: "https://www.meetup.com/example/events/123/" },
+			status: "pending",
+		},
+		{ meetupPublished: true, references: {}, status: "pending" },
+		{
+			meetupPublished: true,
+			references: { meetup: "https://www.meetup.com/example/events/123/" },
+			status: "completed",
+		},
+	])(
+		"requires publication and a URL for the Meetup task: %j",
+		({ status, ...overrides }) => {
+			// Arrange
+			const source = event(overrides);
+
+			// Act
+			const tasks = ManualPublicationPolicy.planManualPublicationTasks(source);
+
+			// Assert
+			expect(tasks).toContainEqual(
+				expect.objectContaining({ kind: "publish-meetup-event", status }),
+			);
+		},
+	);
 });

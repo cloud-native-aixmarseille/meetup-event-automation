@@ -1,4 +1,40 @@
 export const EN_MESSAGES = {
+	"diagnostic.publication.meetup.approval-pending":
+		"Approve or reject publication in the organizer approval comment. The event remains a draft until approved.",
+	"diagnostic.publication.meetup.approval-rejected":
+		"Publication was rejected. The event remains a draft; changed event content requires a new approval.",
+	"diagnostic.publication.meetup.approval-unavailable":
+		"Publication approval could not be verified. Check the approval comment and GitHub App permissions before retrying.",
+	"diagnostic.publication.meetup.approval-notification-failed":
+		"The organizer approval notification could not be confirmed. Review the approval comment in the issue.",
+
+	"diagnostic.publication.meetup.source":
+		"Event source evaluation failed. Resolve the technical source diagnostics before synchronizing.",
+	"diagnostic.publication.meetup.unavailable":
+		"Browser login or startup failed. Check runtime installation, connectivity, solver configuration, and the login page selectors.",
+	"action.publication.reconcile-meetup": "Create or update Meetup event",
+	"report.meetup.draft": "meetup_event=draft approval=required",
+	"report.meetup.review":
+		"Review the draft: {url}. Approve publication in the organizer approval comment; automation publishes it and checks Meetup event published after verification.",
+	"report.meetup.updated": "meetup_event=synchronized",
+	"report.meetup.skipped": "meetup_event=skipped",
+	"report.meetup.blocked": "meetup_event=blocked",
+	"diagnostic.publication.meetup.inactive":
+		"Meetup publication is inactive for this issue.",
+	"diagnostic.publication.meetup.prerequisites":
+		"Complete the future event date, title, description, confirmed host and speakers, resolved agenda, and public venue mapping, and fix malformed Communication checklist items before synchronizing.",
+	"diagnostic.publication.meetup.link":
+		"Set a valid event URL belonging to the configured Meetup group.",
+	"diagnostic.publication.meetup.conflict":
+		"The issue link and recorded Meetup event differ. Restore the recorded event link before running again.",
+	"diagnostic.publication.meetup.uncertain":
+		"Synchronization was interrupted. Check Meetup and enter the verified draft or published event URL in Meetup Link before running again. Leave Meetup event published unchecked until publication is confirmed. Delete the journal only if an organizer has verified that no event was created.",
+	"diagnostic.publication.meetup.authentication":
+		"Organizer login could not be verified. Check the account, credentials, and Gemini configuration; complete any unsupported challenge interactively.",
+	"diagnostic.publication.meetup.editor":
+		"The Meetup editor could not be prepared. Check organizer permissions, the configured venue, and browser selectors.",
+	"diagnostic.publication.meetup.verification":
+		"Meetup did not return the expected saved event fields. Its identity is recorded; inspect the event and rerun to update it.",
 	"diagnostic.issue-form.out-of-date": "Synchronize the issue form.",
 	"diagnostic.issue-form.updated": "Issue form synchronized.",
 	"report.speaker-sync.pr-title":

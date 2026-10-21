@@ -1,4 +1,13 @@
 export const EN_MESSAGES = {
+	"approval.meetup.details":
+		"### Organizer confirmation: publish Meetup event\n\n**{title}**\n\n{date} · {startTime}–{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the Meetup draft]({url}) before approving publication.",
+	"approval.meetup.request":
+		"Repository writers: select one choice. After approval, automation publishes the reviewed draft. Event changes require a new approval.\n\n- [{approveMark}] Approve publishing this Meetup event\n- [{rejectMark}] Reject publishing this Meetup event",
+	"approval.meetup.final":
+		"{status, select, approved {✅ **Publication approved**} rejected {❌ **Publication rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Automation may publish this draft after rechecking its content. The issue checkbox records verified publication.} rejected {Automation will keep this event in draft.} other {}} Event changes require a new approval.",
+	"approval.meetup.slack":
+		"Meetup publication · {date}\nReview the draft and approve or reject publication: {url}",
+
 	"follow-up.title": "## Post-event follow-up · {date}",
 	"follow-up.instructions":
 		"Update manual tasks in the issue's Post event checklist.",

@@ -55,6 +55,20 @@ updates:
         patterns:
           - "*"
 
+  - package-ecosystem: pip
+    directory: "/packages/adapter/meetup-event-gateway/python"
+    open-pull-requests-limit: 20
+    cooldown:
+      default-days: 7
+    schedule:
+      interval: weekly
+      day: friday
+      time: "04:00"
+    groups:
+      pip-meetup-solver-dependencies:
+        patterns:
+          - "*"
+
   - package-ecosystem: "devcontainers"
     open-pull-requests-limit: 20
     cooldown:

@@ -94,6 +94,7 @@ jobs:
 
             ### Communication
 
+            - [x] Meetup event published
             - [x] Mail introduction
             `;
             const labels = [...new Set([

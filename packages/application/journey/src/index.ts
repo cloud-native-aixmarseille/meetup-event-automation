@@ -13,6 +13,7 @@ export type {
 export type {
 	OrganizerApproval,
 	OrganizerApprovalKind,
+	MeetupPublicationApprovalDetails,
 	OrganizerApprovalRequest,
 	OrganizerApprovalResult,
 } from "./ports/organizer-approval.js";
@@ -59,3 +60,9 @@ export type {
 	ValidateMeetupReferentialsResult,
 } from "./use-cases/validate-meetup-referentials.js";
 export { ValidateMeetupReferentials } from "./use-cases/validate-meetup-referentials.js";
+
+export {
+	ManageMeetupPublication,
+	type MeetupPublicationResult,
+} from "./use-cases/manage-meetup-publication.js";
+export type { MeetupPublicationSettings } from "./use-cases/meetup-publication-projection.js";

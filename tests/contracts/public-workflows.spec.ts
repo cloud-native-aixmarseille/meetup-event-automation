@@ -193,6 +193,7 @@ describe("public reusable workflow contracts", () => {
 		// Assert
 		expect(tokenWorkflows.map(({ file }) => file).sort()).toEqual([
 			"check-active-meetup-issues.yml",
+			"reconcile-meetup-event.yml",
 			"synchronize-conference-hall-speakers.yml",
 			"update-meetup-issue-form.yml",
 			"update-meetup-issue.yml",

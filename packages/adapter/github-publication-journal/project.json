@@ -1,0 +1,24 @@
+{
+	"name": "github-publication-journal",
+	"projectType": "library",
+	"sourceRoot": "packages/adapter/github-publication-journal/src",
+	"targets": {
+		"typecheck": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "tsc --noEmit -p packages/adapter/github-publication-journal/tsconfig.lib.json"
+			}
+		},
+		"test": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "vitest run packages/adapter/github-publication-journal"
+			}
+		}
+	},
+	"tags": [
+		"type:adapter",
+		"technology:github",
+		"responsibility:publication-journal"
+	]
+}

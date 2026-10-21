@@ -134,4 +134,25 @@ describe("next public meetup for assets", () => {
 			expect(error).toBeInstanceOf(Error);
 		},
 	);
+	it.each([false, true])(
+		"requires publication before promoting a Meetup-only event: %s",
+		async (completed) => {
+			// Arrange
+			const candidate = nextCandidate(43, {
+				publicationLinks: { meetup: event.publicationLinks.meetup },
+				operationalChecklists: {
+					...event.operationalChecklists,
+					communication: [{ name: "Meetup event published", completed }],
+				},
+			});
+			const f = nextEventFixture([candidate]);
+			const finder = new FindNextAssetEvent(f.repository, f.codec);
+
+			// Act
+			const result = await finder.find(event, publicCatalog);
+
+			// Assert
+			expect(Boolean(result)).toBe(completed);
+		},
+	);
 });

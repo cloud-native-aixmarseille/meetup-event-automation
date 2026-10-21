@@ -4,6 +4,11 @@ type Diagnostic = Pick<PublicDiagnostic, "code" | "severity" | "fixApplied">;
 type DiagnosticCategory = "technical" | "organizer" | "informational";
 
 const ORGANIZER_CODES = new Set([
+	"publication.meetup.authentication",
+	"publication.meetup.prerequisites",
+	"publication.meetup.link",
+	"publication.meetup.conflict",
+	"publication.meetup.uncertain",
 	"event.agenda.description.missing",
 	"event.agenda.legacy-line-invalid",
 	"event.agenda.missing",
@@ -111,6 +116,9 @@ const ORGANIZER_CODES = new Set([
 	"publication.feedback.prerequisites",
 	"publication.meetup-url.invalid",
 	"publication.meetup.missing",
+	"publication.meetup.unpublished",
+	"publication.meetup.approval-pending",
+	"publication.meetup.approval-rejected",
 	"issue-form.out-of-date",
 	"speaker-sync.invalid",
 	"speaker-sync.mapping-required",

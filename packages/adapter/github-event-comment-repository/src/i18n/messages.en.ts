@@ -47,6 +47,8 @@ export const EN_MESSAGES = {
 		"Enter a speaker name from the speaker list.",
 	"comment.guidance.event.agenda.description.missing":
 		"Add a talk description after the speaker name and colon.",
+	"comment.guidance.publication.meetup.unpublished":
+		"Approve or reject Meetup publication.",
 	"comment.guidance.publication.meetup.missing":
 		"Add the link to the Meetup event page.",
 	"comment.guidance.publication.community.missing":

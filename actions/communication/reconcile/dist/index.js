@@ -29426,6 +29426,38 @@ var ReconcileEvent = class _ReconcileEvent {
   }
 };
 
+// packages/domain/event/src/domain/meetup-publication-checklist.ts
+var MeetupPublicationChecklist = class _MeetupPublicationChecklist {
+  static taskName = "Meetup event published";
+  static isPublished(event) {
+    const matches = event.operationalChecklists.communication.filter(
+      (item) => item.name === _MeetupPublicationChecklist.taskName
+    );
+    return Boolean(event.publicationLinks.meetup) && matches.length === 1 && matches[0]?.completed === true;
+  }
+  static withStatus(event, published) {
+    const communication = [];
+    let found = false;
+    for (const item of event.operationalChecklists.communication) {
+      if (item.name !== _MeetupPublicationChecklist.taskName) {
+        communication.push(item);
+        continue;
+      }
+      if (!found) communication.push({ name: item.name, completed: published });
+      found = true;
+    }
+    if (!found)
+      communication.push({
+        name: _MeetupPublicationChecklist.taskName,
+        completed: published
+      });
+    return {
+      ...event,
+      operationalChecklists: { ...event.operationalChecklists, communication }
+    };
+  }
+};
+
 // packages/domain/event/src/domain/dto-contracts.ts
 var STABLE_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._:-]*$/;
 var OCCURRENCE_STATUSES = [
@@ -29964,7 +29996,7 @@ var CommunityEventUrlPolicy = class {
 
 // packages/domain/publication/src/domain/manual-task-policy.ts
 var ManualPublicationPolicy = class _ManualPublicationPolicy {
-  /** Models human work explicitly until a corresponding outbound adapter exists. */
+  /** Tracks organizer approvals and manual work required for publication. */
   static planManualPublicationTasks(event) {
     if (event.occurrenceStatus === "cancelled") {
       return Object.freeze(
@@ -29979,8 +30011,8 @@ var ManualPublicationPolicy = class _ManualPublicationPolicy {
     return Object.freeze([
       _ManualPublicationPolicy.task(
         "publish-meetup-event",
-        Boolean(event.references.meetup),
-        "Publish the event to Meetup"
+        Boolean(event.references.meetup) && event.meetupPublished,
+        "Approve publishing the event to Meetup"
       ),
       _ManualPublicationPolicy.task(
         "publish-community-event",
@@ -30211,6 +30243,11 @@ var FOLLOW_UP_TASKS = [
 
 // packages/application/journey/src/result/diagnostic-policy.ts
 var ORGANIZER_CODES = /* @__PURE__ */ new Set([
+  "publication.meetup.authentication",
+  "publication.meetup.prerequisites",
+  "publication.meetup.link",
+  "publication.meetup.conflict",
+  "publication.meetup.uncertain",
   "event.agenda.description.missing",
   "event.agenda.legacy-line-invalid",
   "event.agenda.missing",
@@ -30318,6 +30355,9 @@ var ORGANIZER_CODES = /* @__PURE__ */ new Set([
   "publication.feedback.prerequisites",
   "publication.meetup-url.invalid",
   "publication.meetup.missing",
+  "publication.meetup.unpublished",
+  "publication.meetup.approval-pending",
+  "publication.meetup.approval-rejected",
   "issue-form.out-of-date",
   "speaker-sync.invalid",
   "speaker-sync.mapping-required",
@@ -31860,6 +31900,15 @@ var EventPublicationEvaluation = class _EventPublicationEvaluation {
         });
       }
     }
+    if (event.publicationLinks.meetup && !MeetupPublicationChecklist.isPublished(event)) {
+      diagnostics.push({
+        code: "publication.meetup.unpublished",
+        severity: "warning",
+        category: "incomplete",
+        field: "publicationLinks.meetup",
+        message: "Meetup publication must be confirmed in the Communication checklist before the event is ready"
+      });
+    }
     const engine = new PublicationUrlPolicyEngine(
       PublicationUrlPolicies.createDefaultPublicationUrlPolicies({
         ...DEFAULT_PUBLICATION_URL_CONFIGURATION,
@@ -31897,6 +31946,7 @@ var EventPublicationEvaluation = class _EventPublicationEvaluation {
       timeZone: event.timeZone,
       occurrenceStatus: event.occurrenceStatus,
       references: event.publicationLinks,
+      meetupPublished: MeetupPublicationChecklist.isPublished(event),
       slidesPublished: _EventPublicationEvaluation.checklistTaskIsCompleted(
         event.operationalChecklists.postEvent,
         POST_EVENT_TASK_NAMES.shareSlides
@@ -32336,7 +32386,7 @@ var CommunicationPlaceholders = class {
     const presentationUrl = PresentationFileUrl.normalize(slidesUrl);
     return {
       eventDate: event.date,
-      ...event.publicationLinks.meetup ? { eventMeetupUrl: event.publicationLinks.meetup } : {},
+      ...MeetupPublicationChecklist.isPublished(event) && event.publicationLinks.meetup ? { eventMeetupUrl: event.publicationLinks.meetup } : {},
       ...event.publicationLinks.community ? { eventCncfUrl: event.publicationLinks.community } : {},
       ...presentationUrl ? { eventSlidesUrl: presentationUrl } : {}
     };
@@ -36383,6 +36433,26 @@ var DIAGNOSTICS_REFERENTIAL_FR = {
 
 // packages/runtime/github-actions/src/i18n/messages.en.ts
 var EN_MESSAGES = {
+  "diagnostic.publication.meetup.approval-pending": "Approve or reject publication in the organizer approval comment. The event remains a draft until approved.",
+  "diagnostic.publication.meetup.approval-rejected": "Publication was rejected. The event remains a draft; changed event content requires a new approval.",
+  "diagnostic.publication.meetup.approval-unavailable": "Publication approval could not be verified. Check the approval comment and GitHub App permissions before retrying.",
+  "diagnostic.publication.meetup.approval-notification-failed": "The organizer approval notification could not be confirmed. Review the approval comment in the issue.",
+  "diagnostic.publication.meetup.source": "Event source evaluation failed. Resolve the technical source diagnostics before synchronizing.",
+  "diagnostic.publication.meetup.unavailable": "Browser login or startup failed. Check runtime installation, connectivity, solver configuration, and the login page selectors.",
+  "action.publication.reconcile-meetup": "Create or update Meetup event",
+  "report.meetup.draft": "meetup_event=draft approval=required",
+  "report.meetup.review": "Review the draft: {url}. Approve publication in the organizer approval comment; automation publishes it and checks Meetup event published after verification.",
+  "report.meetup.updated": "meetup_event=synchronized",
+  "report.meetup.skipped": "meetup_event=skipped",
+  "report.meetup.blocked": "meetup_event=blocked",
+  "diagnostic.publication.meetup.inactive": "Meetup publication is inactive for this issue.",
+  "diagnostic.publication.meetup.prerequisites": "Complete the future event date, title, description, confirmed host and speakers, resolved agenda, and public venue mapping, and fix malformed Communication checklist items before synchronizing.",
+  "diagnostic.publication.meetup.link": "Set a valid event URL belonging to the configured Meetup group.",
+  "diagnostic.publication.meetup.conflict": "The issue link and recorded Meetup event differ. Restore the recorded event link before running again.",
+  "diagnostic.publication.meetup.uncertain": "Synchronization was interrupted. Check Meetup and enter the verified draft or published event URL in Meetup Link before running again. Leave Meetup event published unchecked until publication is confirmed. Delete the journal only if an organizer has verified that no event was created.",
+  "diagnostic.publication.meetup.authentication": "Organizer login could not be verified. Check the account, credentials, and Gemini configuration; complete any unsupported challenge interactively.",
+  "diagnostic.publication.meetup.editor": "The Meetup editor could not be prepared. Check organizer permissions, the configured venue, and browser selectors.",
+  "diagnostic.publication.meetup.verification": "Meetup did not return the expected saved event fields. Its identity is recorded; inspect the event and rerun to update it.",
   "diagnostic.issue-form.out-of-date": "Synchronize the issue form.",
   "diagnostic.issue-form.updated": "Issue form synchronized.",
   "report.speaker-sync.pr-title": "feat(referential): synchronize Conference Hall speakers",
@@ -36467,6 +36537,26 @@ var EN_MESSAGES = {
 
 // packages/runtime/github-actions/src/i18n/messages.fr.ts
 var FR_MESSAGES = {
+  "diagnostic.publication.meetup.approval-pending": "Approuvez ou refusez la publication dans le commentaire d'approbation. L'\xE9v\xE9nement reste en brouillon avant approbation.",
+  "diagnostic.publication.meetup.approval-rejected": "La publication a \xE9t\xE9 refus\xE9e. L'\xE9v\xE9nement reste en brouillon ; toute modification n\xE9cessite une nouvelle approbation.",
+  "diagnostic.publication.meetup.approval-unavailable": "Impossible de v\xE9rifier l'approbation de publication. V\xE9rifiez le commentaire et les permissions de la GitHub App avant de relancer.",
+  "diagnostic.publication.meetup.approval-notification-failed": "La notification d'approbation n'a pas pu \xEAtre confirm\xE9e. Consultez le commentaire d'approbation dans l'issue.",
+  "diagnostic.publication.meetup.source": "La lecture des sources a \xE9chou\xE9. R\xE9solvez les diagnostics techniques des sources avant de synchroniser.",
+  "diagnostic.publication.meetup.unavailable": "Le d\xE9marrage du navigateur ou la connexion a \xE9chou\xE9. V\xE9rifiez les d\xE9pendances, le r\xE9seau, le solveur et les s\xE9lecteurs de connexion.",
+  "action.publication.reconcile-meetup": "Cr\xE9er ou mettre \xE0 jour un \xE9v\xE9nement Meetup",
+  "report.meetup.draft": "evenement_meetup=brouillon approbation=requise",
+  "report.meetup.review": "V\xE9rifiez le brouillon : {url}. Approuvez sa publication dans le commentaire ; l'automatisation le publie et coche Meetup event published apr\xE8s v\xE9rification.",
+  "report.meetup.updated": "evenement_meetup=synchronise",
+  "report.meetup.skipped": "evenement_meetup=ignore",
+  "report.meetup.blocked": "evenement_meetup=bloque",
+  "diagnostic.publication.meetup.inactive": "La publication Meetup est inactive pour cette issue.",
+  "diagnostic.publication.meetup.prerequisites": "Compl\xE9tez la date future, le titre, la description, les confirmations, le programme r\xE9solu et le lieu public, puis corrigez les cases mal form\xE9es dans Communication avant de synchroniser.",
+  "diagnostic.publication.meetup.link": "Renseignez une URL d'\xE9v\xE9nement valide du groupe Meetup configur\xE9.",
+  "diagnostic.publication.meetup.conflict": "Le lien de l'issue diff\xE8re de l'\xE9v\xE9nement enregistr\xE9. R\xE9tablissez le lien enregistr\xE9 avant de relancer.",
+  "diagnostic.publication.meetup.uncertain": "Synchronisation interrompue. V\xE9rifiez Meetup et inscrivez le lien v\xE9rifi\xE9 du brouillon ou de l'\xE9v\xE9nement publi\xE9 dans Meetup Link avant de relancer. Laissez Meetup event published d\xE9coch\xE9 tant que la publication n'est pas confirm\xE9e. Ne supprimez le journal qu'apr\xE8s avoir v\xE9rifi\xE9 qu'aucun \xE9v\xE9nement n'a \xE9t\xE9 cr\xE9\xE9.",
+  "diagnostic.publication.meetup.authentication": "Connexion organisateur non v\xE9rifi\xE9e. V\xE9rifiez le compte, les identifiants et Gemini ; terminez manuellement toute v\xE9rification non prise en charge.",
+  "diagnostic.publication.meetup.editor": "Impossible de pr\xE9parer l'\xE9diteur Meetup. V\xE9rifiez les droits organisateur, le lieu configur\xE9 et les s\xE9lecteurs du navigateur.",
+  "diagnostic.publication.meetup.verification": "Les champs enregistr\xE9s sur Meetup ne correspondent pas. L'identit\xE9 est conserv\xE9e ; v\xE9rifiez l'\xE9v\xE9nement puis relancez sa mise \xE0 jour.",
   "diagnostic.issue-form.out-of-date": "Synchronisez le formulaire d'issue.",
   "diagnostic.issue-form.updated": "Formulaire d'issue synchronis\xE9.",
   "report.speaker-sync.pr-title": "feat(referential): synchroniser les intervenants Conference Hall",
@@ -41231,6 +41321,19 @@ var ScopedGithubLedgerCommentClient = class _ScopedGithubLedgerCommentClient {
 // packages/adapter/github-organizer-approval/src/approval-record.ts
 import { randomUUID as randomUUID2 } from "node:crypto";
 
+// packages/adapter/github-organizer-approval/src/meetup-approval-details.ts
+var MeetupApprovalDetails = class _MeetupApprovalDetails {
+  static validate(value) {
+    if (!value || !_MeetupApprovalDetails.text(value.url, 2048) || !/^https:\/\/www\.meetup\.com\/[a-z0-9-]+\/events\/[1-9]\d*\/$/.test(
+      value.url
+    ) || !_MeetupApprovalDetails.text(value.title, 80) || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value.startTime) || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value.endTime) || !_MeetupApprovalDetails.text(value.timeZone, 100) || !_MeetupApprovalDetails.text(value.venue?.name, 500) || !_MeetupApprovalDetails.text(value.venue?.city, 500))
+      throw new Error("Invalid Meetup approval details");
+  }
+  static text(value, maximum) {
+    return typeof value === "string" && value.trim().length > 0 && value.length <= maximum && !/[\r\n]/.test(value);
+  }
+};
+
 // packages/adapter/github-organizer-approval/src/approval-details.ts
 var ApprovalDetails = class _ApprovalDetails {
   static validate(details, recipientCount) {
@@ -41281,13 +41384,23 @@ var FollowUpRecord = class {
 var APPROVAL_MARKER = "<!-- meetup-organizer-approval:v1 ";
 var ApprovalRecord = class _ApprovalRecord {
   static matches(record, input) {
-    return record.kind === input.kind && record.revision === input.revision && record.eventDate === input.eventDate && record.recipientCount === input.recipientCount && (Boolean(record.decision) || JSON.stringify(record.details) === JSON.stringify(input.details));
+    return record.kind === input.kind && record.revision === input.revision && record.eventDate === input.eventDate && record.recipientCount === input.recipientCount && JSON.stringify(record.publication) === JSON.stringify(input.publication) && (Boolean(record.decision) || JSON.stringify(record.details) === JSON.stringify(input.details));
   }
   static validate(input) {
     FollowUpRecord.validate(input.followUp);
     if (input.followUp && input.kind !== "email-thanks")
       throw new Error("Invalid post-event approval kind");
-    if (!/^[a-f0-9]{64}$/.test(input.revision) || !["email-introduction", "email-thanks"].includes(input.kind) || !/^\d{4}-\d{2}-\d{2}$/.test(input.eventDate) || !Number.isSafeInteger(input.recipientCount) || input.recipientCount <= 0 && !(input.recipientCount === 0 && input.kind === "email-thanks" && input.followUp) || !Number.isFinite(Date.parse(input.requestedAt)))
+    if (!/^[a-f0-9]{64}$/.test(input.revision) || !["email-introduction", "email-thanks", "meetup-publication"].includes(
+      input.kind
+    ) || !/^\d{4}-\d{2}-\d{2}$/.test(input.eventDate) || !Number.isFinite(Date.parse(input.requestedAt)))
+      throw new Error("Invalid approval request");
+    if (input.kind === "meetup-publication") {
+      if (input.recipientCount !== void 0 || input.details !== void 0)
+        throw new Error("Invalid publication approval fields");
+      MeetupApprovalDetails.validate(input.publication);
+      return;
+    }
+    if (input.publication !== void 0 || !Number.isSafeInteger(input.recipientCount) || input.recipientCount <= 0 && !(input.recipientCount === 0 && input.kind === "email-thanks" && input.followUp))
       throw new Error("Invalid approval request");
     ApprovalDetails.validate(input.details, input.recipientCount);
   }
@@ -41325,6 +41438,10 @@ var ApprovalRecord = class _ApprovalRecord {
 
 // packages/adapter/github-organizer-approval/src/i18n/messages.en.ts
 var EN_MESSAGES3 = {
+  "approval.meetup.details": "### Organizer confirmation: publish Meetup event\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the Meetup draft]({url}) before approving publication.",
+  "approval.meetup.request": "Repository writers: select one choice. After approval, automation publishes the reviewed draft. Event changes require a new approval.\n\n- [{approveMark}] Approve publishing this Meetup event\n- [{rejectMark}] Reject publishing this Meetup event",
+  "approval.meetup.final": "{status, select, approved {\u2705 **Publication approved**} rejected {\u274C **Publication rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Automation may publish this draft after rechecking its content. The issue checkbox records verified publication.} rejected {Automation will keep this event in draft.} other {}} Event changes require a new approval.",
+  "approval.meetup.slack": "Meetup publication \xB7 {date}\nReview the draft and approve or reject publication: {url}",
   "follow-up.title": "## Post-event follow-up \xB7 {date}",
   "follow-up.instructions": "Update manual tasks in the issue's Post event checklist.",
   "follow-up.task": "{task, select, thank_host {Thank the host} thank_speakers {Thank the speakers} share_slides {Share slides on Meetup} import_attendance {Import attendance into CNCF} share_social {Share on social networks} other {Post-event task}}",
@@ -41345,6 +41462,10 @@ var EN_MESSAGES3 = {
 
 // packages/adapter/github-organizer-approval/src/i18n/messages.fr.ts
 var FR_MESSAGES3 = {
+  "approval.meetup.details": "### Confirmation des organisateurs : publier le meetup\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[V\xE9rifiez le brouillon Meetup]({url}) avant d'approuver sa publication.",
+  "approval.meetup.request": "Organisateurs avec acc\xE8s en \xE9criture : cochez un seul choix. Apr\xE8s approbation, l'automatisation publie le brouillon v\xE9rifi\xE9. Toute modification de l'\xE9v\xE9nement n\xE9cessite une nouvelle approbation.\n\n- [{approveMark}] Approuver la publication de ce meetup\n- [{rejectMark}] Refuser la publication de ce meetup",
+  "approval.meetup.final": "{status, select, approved {\u2705 **Publication approuv\xE9e**} rejected {\u274C **Publication refus\xE9e**} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\n{status, select, approved {L'automatisation peut publier ce brouillon apr\xE8s avoir v\xE9rifi\xE9 son contenu. La case de l'issue indique la publication v\xE9rifi\xE9e.} rejected {L'automatisation conserve cet \xE9v\xE9nement en brouillon.} other {}} Toute modification de l'\xE9v\xE9nement n\xE9cessite une nouvelle approbation.",
+  "approval.meetup.slack": "Publication Meetup \xB7 {date}\nV\xE9rifiez le brouillon et approuvez ou refusez sa publication : {url}",
   "follow-up.title": "## Suivi apr\xE8s le meetup \xB7 {date}",
   "follow-up.instructions": "Cochez les t\xE2ches manuelles dans la liste Post event du ticket.",
   "follow-up.task": "{task, select, thank_host {Remercier l'h\xF4te} thank_speakers {Remercier les intervenants} share_slides {Partager la pr\xE9sentation sur Meetup} import_attendance {Importer la participation dans CNCF} share_social {Partager sur les r\xE9seaux sociaux} other {T\xE2che apr\xE8s le meetup}}",
@@ -41455,6 +41576,39 @@ var FollowUpPresenter = class {
   }
 };
 
+// packages/adapter/github-organizer-approval/src/meetup-approval-presenter.ts
+var MeetupApprovalPresenter = class _MeetupApprovalPresenter {
+  constructor(messages3) {
+    this.messages = messages3;
+  }
+  messages;
+  issue(record, decision) {
+    const details = record.publication;
+    const content = this.messages.t("approval.meetup.details", {
+      title: _MeetupApprovalPresenter.escape(details.title),
+      date: record.eventDate,
+      startTime: details.startTime,
+      endTime: details.endTime,
+      timeZone: _MeetupApprovalPresenter.escape(details.timeZone),
+      venue: _MeetupApprovalPresenter.escape(details.venue.name),
+      city: _MeetupApprovalPresenter.escape(details.venue.city),
+      url: details.url
+    });
+    const controls = record.decision ? this.messages.t("approval.meetup.final", {
+      status: record.decision.status,
+      actor: record.decision.actor,
+      decidedAt: record.decision.decidedAt
+    }) : this.messages.t("approval.meetup.request", {
+      approveMark: decision.status === "approved" ? "x" : " ",
+      rejectMark: decision.status === "rejected" ? "x" : " "
+    });
+    return [ApprovalRecord.marker(record), content, controls].join("\n\n");
+  }
+  static escape(value) {
+    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("@", "&#64;").replace(/[\\`*_{}[\]()#+.!|~-]/g, "\\$&");
+  }
+};
+
 // packages/adapter/github-organizer-approval/src/approval-presenter.ts
 var ApprovalPresenter = class _ApprovalPresenter {
   constructor(messages3) {
@@ -41462,6 +41616,8 @@ var ApprovalPresenter = class _ApprovalPresenter {
   }
   messages;
   issue(record, decision) {
+    if (record.kind === "meetup-publication")
+      return new MeetupApprovalPresenter(this.messages).issue(record, decision);
     const heading = [
       ApprovalRecord.marker(record),
       ...new FollowUpPresenter(this.messages).render(record)
@@ -41510,6 +41666,11 @@ var ApprovalPresenter = class _ApprovalPresenter {
     return { status: "pending" };
   }
   slack(record, url) {
+    if (record.kind === "meetup-publication")
+      return this.messages.t("approval.meetup.slack", {
+        date: record.eventDate,
+        url
+      });
     return this.messages.t("approval.slack", {
       kind: record.kind.replace("email-", ""),
       date: record.eventDate,
@@ -44849,6 +45010,10 @@ var GUIDANCE = new Map([
     ["Agenda", "comment.guidance.event.agenda.description.missing"]
   ],
   [
+    "publication.meetup.unpublished",
+    ["Meetup Link", "comment.guidance.publication.meetup.unpublished"]
+  ],
+  [
     "publication.meetup.missing",
     ["Meetup Link", "comment.guidance.publication.meetup.missing"]
   ],
@@ -45055,6 +45220,7 @@ var EN_MESSAGES4 = {
   "comment.guidance.event.agenda.speaker.missing": "Add at least one speaker for this talk.",
   "comment.guidance.event.agenda.speaker.invalid": "Enter a speaker name from the speaker list.",
   "comment.guidance.event.agenda.description.missing": "Add a talk description after the speaker name and colon.",
+  "comment.guidance.publication.meetup.unpublished": "Approve or reject Meetup publication.",
   "comment.guidance.publication.meetup.missing": "Add the link to the Meetup event page.",
   "comment.guidance.publication.community.missing": "Add the link to the CNCF / OCGroups event page.",
   "comment.guidance.publication.assets.missing": "Add the link to the event's Google Drive folder.",
@@ -45123,6 +45289,7 @@ var FR_MESSAGES4 = {
   "comment.guidance.event.agenda.speaker.missing": "Ajoutez au moins un intervenant pour cette conf\xE9rence.",
   "comment.guidance.event.agenda.speaker.invalid": "Saisissez un nom de la liste des intervenants.",
   "comment.guidance.event.agenda.description.missing": "Ajoutez une description apr\xE8s le nom de l'intervenant et les deux-points.",
+  "comment.guidance.publication.meetup.unpublished": "Approuvez ou refusez la publication Meetup.",
   "comment.guidance.publication.meetup.missing": "Ajoutez le lien vers la page Meetup de l'\xE9v\xE9nement.",
   "comment.guidance.publication.community.missing": "Ajoutez le lien vers la page CNCF / OCGroups de l'\xE9v\xE9nement.",
   "comment.guidance.publication.assets.missing": "Ajoutez le lien vers le dossier Google Drive de l'\xE9v\xE9nement.",

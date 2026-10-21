@@ -1,5 +1,8 @@
 # Set up a meetup repository
 
+For browser-based creation and updates on Meetup, see
+[Meetup event publication](../integrations/meetup-publication.md).
+
 This guide configures a consumer repository to run the published automation. You
 need repository administration access, a GitHub App installation, Google Drive
 service-account access, a Slack bot, an OpenFeedback organization API key, and an

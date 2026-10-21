@@ -1,3 +1,4 @@
+import { publicationRequest } from "../testing/approval.fixtures.js";
 import { describe, expect, it } from "vitest";
 import { decision, fixture, request } from "../testing/approval.fixtures.js";
 import { ApprovalPresenter } from "./approval-presenter.js";
@@ -223,6 +224,8 @@ describe("organizer approval requests", () => {
 			const f = fixture();
 			await f.approvals.request(request);
 			const record = ApprovalRecord.read(f.comments[0]?.body ?? "");
+			if (record.kind === "meetup-publication")
+				throw new Error("Expected an email request");
 			decision(f, {
 				body: f.presenter.issue(
 					{ ...record, ...changed },
@@ -624,5 +627,96 @@ describe("shared post-event follow-up", () => {
 		const approvals = await f.approvals.readAttention();
 		// Assert
 		expect(approvals).toEqual([]);
+	});
+	it.each(["approved", "rejected"] as const)(
+		"records organizer %s for Meetup publication",
+		async (status) => {
+			// Arrange
+			const f = fixture();
+			await f.approvals.request(publicationRequest);
+			decision(f, {}, status);
+
+			// Act
+			const result = await f.approvals.request(publicationRequest);
+			const attention = await f.approvals.readAttention();
+
+			// Assert
+			expect(result.status).toBe(status);
+			expect(attention[0]).toMatchObject({
+				kind: "meetup-publication",
+				status,
+			});
+			expect(f.comments[0]?.body).not.toContain("- [");
+			expect(f.dispatch.mock.calls[0]?.[0].content).toContain(
+				"Meetup publication",
+			);
+			expect(f.react).toHaveBeenCalledWith(expect.anything(), status);
+		},
+	);
+
+	it("requires a new decision when the reviewed publication changes", async () => {
+		// Arrange
+		const f = fixture();
+		await f.approvals.request(publicationRequest);
+		decision(f);
+		await f.approvals.request(publicationRequest);
+
+		// Act
+		const result = await f.approvals.request({
+			...publicationRequest,
+			revision: "c".repeat(64),
+			publication: {
+				...publicationRequest.publication,
+				title: "Changed content",
+			},
+		});
+
+		// Assert
+		expect(result.status).toBe("pending");
+		expect(f.create).toHaveBeenCalledOnce();
+		expect(f.comments[0]?.body).toContain(
+			"- [ ] Approve publishing this Meetup event",
+		);
+	});
+
+	it("rejects publication approval from a user without repository write permission", async () => {
+		// Arrange
+		const f = fixture();
+		await f.approvals.request(publicationRequest);
+		decision(f);
+		f.permission.mockResolvedValue({ data: { permission: "read" } });
+
+		// Act
+		const result = await f.approvals.request(publicationRequest);
+
+		// Assert
+		expect(result.status).toBe("pending");
+	});
+	it("does not accept modified publication facts as organizer approval", async () => {
+		// Arrange
+		const f = fixture();
+		await f.approvals.request(publicationRequest);
+		const record = ApprovalRecord.read(f.comments[0]?.body ?? "");
+		if (record.kind !== "meetup-publication")
+			throw new Error("Expected publication request");
+		decision(f, {
+			body: f.presenter.issue(
+				{
+					...record,
+					publication: {
+						...record.publication,
+						url: "https://www.meetup.com/example/events/67890/",
+					},
+				},
+				{ status: "approved" },
+			),
+		});
+
+		// Act
+		const result = await f.approvals.request(publicationRequest);
+
+		// Assert
+		expect(result.status).toBe("pending");
+		expect(f.permission).not.toHaveBeenCalled();
 	});
 });

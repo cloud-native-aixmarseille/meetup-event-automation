@@ -19,7 +19,7 @@ export type ManualPublicationTask = Readonly<{
 }>;
 
 export class ManualPublicationPolicy {
-	/** Models human work explicitly until a corresponding outbound adapter exists. */
+	/** Tracks organizer approvals and manual work required for publication. */
 	static planManualPublicationTasks(
 		event: PublicationEvent,
 	): readonly ManualPublicationTask[] {
@@ -37,8 +37,8 @@ export class ManualPublicationPolicy {
 		return Object.freeze([
 			ManualPublicationPolicy.task(
 				"publish-meetup-event",
-				Boolean(event.references.meetup),
-				"Publish the event to Meetup",
+				Boolean(event.references.meetup) && event.meetupPublished,
+				"Approve publishing the event to Meetup",
 			),
 			ManualPublicationPolicy.task(
 				"publish-community-event",

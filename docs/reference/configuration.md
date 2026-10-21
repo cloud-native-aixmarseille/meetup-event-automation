@@ -37,6 +37,15 @@ referential/form validation workflow requires no credentials.
 Pass inputs and secrets explicitly in each caller. Defining a repository secret
 does not forward it to a reusable workflow.
 
+## Meetup publication
+
+The dedicated [Meetup publication workflow](../../.github/workflows/reconcile-meetup-event.md)
+uses `MEETUP_EMAIL`, `MEETUP_PASSWORD`, and `GEMINI_API_KEY` secrets,
+`GEMINI_MODEL`, and the existing App and Conference Hall settings. Its explicit
+schedule and public venue mappings belong in `.github/meetup-publication.json`.
+See [Meetup publication](../integrations/meetup-publication.md) for the schema,
+caller, prerequisites, and interrupted-run recovery.
+
 ## Language
 
 The required `locale` workflow input accepts English (`en`) or French (`fr`)

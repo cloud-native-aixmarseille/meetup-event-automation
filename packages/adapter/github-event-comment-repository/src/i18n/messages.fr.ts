@@ -50,6 +50,8 @@ export const FR_MESSAGES = {
 		"Saisissez un nom de la liste des intervenants.",
 	"comment.guidance.event.agenda.description.missing":
 		"Ajoutez une description après le nom de l'intervenant et les deux-points.",
+	"comment.guidance.publication.meetup.unpublished":
+		"Approuvez ou refusez la publication Meetup.",
 	"comment.guidance.publication.meetup.missing":
 		"Ajoutez le lien vers la page Meetup de l'événement.",
 	"comment.guidance.publication.community.missing":

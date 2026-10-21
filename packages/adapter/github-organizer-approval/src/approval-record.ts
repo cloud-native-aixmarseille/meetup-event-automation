@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { MeetupApprovalDetails } from "./meetup-approval-details.js";
 import { ApprovalDetails } from "./approval-details.js";
 import { FollowUpRecord, type StoredFollowUp } from "./follow-up-record.js";
 import type {
@@ -8,14 +9,14 @@ import type {
 } from "@meetup-automation/journey";
 
 export const APPROVAL_MARKER = "<!-- meetup-organizer-approval:v1 ";
-export interface StoredApproval extends OrganizerApprovalRequest {
+export type StoredApproval = OrganizerApprovalRequest & {
 	readonly requestId: string;
 	notification: "new" | "reserved" | "sent" | "retry";
 	notificationMessage?: ApprovalNotificationMessage;
 	decision?: FinalApprovalDecision;
 	reactionSent?: boolean;
 	followUp?: StoredFollowUp;
-}
+};
 interface FinalApprovalDecision {
 	readonly status: "approved" | "rejected";
 	readonly actor: string;
@@ -36,6 +37,8 @@ export class ApprovalRecord {
 			record.revision === input.revision &&
 			record.eventDate === input.eventDate &&
 			record.recipientCount === input.recipientCount &&
+			JSON.stringify(record.publication) ===
+				JSON.stringify(input.publication) &&
 			(Boolean(record.decision) ||
 				JSON.stringify(record.details) === JSON.stringify(input.details))
 		);
@@ -48,20 +51,33 @@ export class ApprovalRecord {
 			throw new Error("Invalid post-event approval kind");
 		if (
 			!/^[a-f0-9]{64}$/.test(input.revision) ||
-			!["email-introduction", "email-thanks"].includes(input.kind) ||
+			!["email-introduction", "email-thanks", "meetup-publication"].includes(
+				input.kind,
+			) ||
 			!/^\d{4}-\d{2}-\d{2}$/.test(input.eventDate) ||
+			!Number.isFinite(Date.parse(input.requestedAt))
+		)
+			throw new Error("Invalid approval request");
+		if (input.kind === "meetup-publication") {
+			if (input.recipientCount !== undefined || input.details !== undefined)
+				throw new Error("Invalid publication approval fields");
+			MeetupApprovalDetails.validate(input.publication);
+			return;
+		}
+		if (
+			input.publication !== undefined ||
 			!Number.isSafeInteger(input.recipientCount) ||
 			(input.recipientCount <= 0 &&
 				!(
 					input.recipientCount === 0 &&
 					input.kind === "email-thanks" &&
 					input.followUp
-				)) ||
-			!Number.isFinite(Date.parse(input.requestedAt))
+				))
 		)
 			throw new Error("Invalid approval request");
 		ApprovalDetails.validate(input.details, input.recipientCount);
 	}
+
 	static create(
 		input: OrganizerApprovalRequest & { followUp?: StoredFollowUp },
 	): StoredApproval {

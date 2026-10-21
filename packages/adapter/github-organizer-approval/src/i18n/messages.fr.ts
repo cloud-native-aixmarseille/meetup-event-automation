@@ -1,4 +1,13 @@
 export const FR_MESSAGES = {
+	"approval.meetup.details":
+		"### Confirmation des organisateurs : publier le meetup\n\n**{title}**\n\n{date} · {startTime}–{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Vérifiez le brouillon Meetup]({url}) avant d'approuver sa publication.",
+	"approval.meetup.request":
+		"Organisateurs avec accès en écriture : cochez un seul choix. Après approbation, l'automatisation publie le brouillon vérifié. Toute modification de l'événement nécessite une nouvelle approbation.\n\n- [{approveMark}] Approuver la publication de ce meetup\n- [{rejectMark}] Refuser la publication de ce meetup",
+	"approval.meetup.final":
+		"{status, select, approved {✅ **Publication approuvée**} rejected {❌ **Publication refusée**} other {Décision enregistrée}} par @{actor} le {decidedAt}.\n\n{status, select, approved {L'automatisation peut publier ce brouillon après avoir vérifié son contenu. La case de l'issue indique la publication vérifiée.} rejected {L'automatisation conserve cet événement en brouillon.} other {}} Toute modification de l'événement nécessite une nouvelle approbation.",
+	"approval.meetup.slack":
+		"Publication Meetup · {date}\nVérifiez le brouillon et approuvez ou refusez sa publication : {url}",
+
 	"follow-up.title": "## Suivi après le meetup · {date}",
 	"follow-up.instructions":
 		"Cochez les tâches manuelles dans la liste Post event du ticket.",

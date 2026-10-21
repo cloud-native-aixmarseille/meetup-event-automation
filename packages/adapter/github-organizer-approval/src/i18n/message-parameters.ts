@@ -1,4 +1,17 @@
 export interface MessageParameters {
+	"approval.meetup.details": {
+		title: string;
+		date: string;
+		startTime: string;
+		endTime: string;
+		timeZone: string;
+		venue: string;
+		city: string;
+		url: string;
+	};
+	"approval.meetup.request": { approveMark: string; rejectMark: string };
+	"approval.meetup.final": { status: string; actor: string; decidedAt: string };
+	"approval.meetup.slack": { date: string; url: string };
 	"follow-up.title": { date: string };
 	"follow-up.instructions": Record<string, never>;
 	"follow-up.task": { task: string };

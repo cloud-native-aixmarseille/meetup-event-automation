@@ -1,4 +1,8 @@
-import type { EventDocument, MeetupEvent } from "@meetup-automation/event";
+import {
+	type EventDocument,
+	type MeetupEvent,
+	MeetupPublicationChecklist,
+} from "@meetup-automation/event";
 import { GitHubIssueFormEventDocumentCodec } from "./github-issue-form-event-document-codec.js";
 
 const LEGACY_BODY = `Introductory text that is not managed.
@@ -733,3 +737,31 @@ it("round-trips imported punctuation and prevents names from breaking managed co
 		"event.document.reference-metadata.stale",
 	);
 });
+
+it.each([false, true])(
+	"roundtrips the Meetup URL and publication checkbox: %s",
+	(published) => {
+		// Arrange
+		const codec = new GitHubIssueFormEventDocumentCodec();
+		const source = document();
+		const event = MeetupPublicationChecklist.withStatus(
+			codec.decode(source).event,
+			published,
+		);
+
+		// Act
+		const patch = codec.createPatch(source, event);
+		const updated = { ...source, ...patch };
+		const decoded = codec.decode(updated).event;
+		const repeat = codec.createPatch(updated, decoded);
+
+		// Assert
+		expect(decoded.publicationLinks.meetup).toBe(event.publicationLinks.meetup);
+		expect(decoded.operationalChecklists.communication).toEqual([
+			{ name: "Announcement", completed: true },
+			{ name: "Meetup event published", completed: published },
+		]);
+		expect(updated.body).toContain("This exact content must survive.");
+		expect(repeat).toEqual({});
+	},
+);

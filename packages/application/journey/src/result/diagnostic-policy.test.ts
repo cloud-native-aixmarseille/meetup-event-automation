@@ -18,6 +18,7 @@ describe("diagnostic policy", () => {
 		"communication.slides-unavailable",
 		"communication.approval-pending",
 		"communication.approval-rejected",
+		"publication.meetup.unpublished",
 		"publication.assets.content.conflict",
 		"publication.assets.content.recovery",
 		"publication.feedback.agenda",
