@@ -27710,7 +27710,7 @@ var DEFAULT_MANAGED_LABEL_CONFIGURATION = Object.freeze({
   occurrenceCancelled: "event:cancelled"
 });
 
-// packages/domain/event/src/domain/dto-contracts.ts
+// packages/domain/event/src/domain/occurrence-status.ts
 var OCCURRENCE_STATUS_LABELS = Object.freeze({
   scheduled: null,
   postponed: "event:postponed",
@@ -28626,6 +28626,28 @@ var SynchronizeSourceSpeakers = class {
         result.diagnostics
       );
     return result;
+  }
+};
+
+// packages/runtime/github-actions/src/action-failure-presenter.ts
+var SAFE_ERROR_NAMES = /* @__PURE__ */ new Set([
+  "GoogleDriveAssetRepositoryError",
+  "EventNotFoundError",
+  "EventConcurrentModificationError",
+  "GitHubEventRepositoryConfigurationError",
+  "GitHubEventRepositoryScopeError",
+  "GitHubEventRepositoryResponseError",
+  "GitHubEventCommentRepositoryConfigurationError",
+  "GitHubEventCommentRepositoryScopeError",
+  "GitHubEventCommentRepositoryResponseError"
+]);
+var ActionFailurePresenter = class {
+  /** Never expose provider responses, input values, or contact data in failures. */
+  static publicErrorMessage(error2) {
+    if (error2 instanceof Error && SAFE_ERROR_NAMES.has(error2.name)) {
+      return `${error2.name}: ${error2.message}`;
+    }
+    return "Unexpected technical failure.";
   }
 };
 
@@ -32083,7 +32105,7 @@ var EN_MESSAGES = {
   "diagnostic.publication.meetup.unavailable": "Browser login or startup failed. Check runtime installation, connectivity, solver configuration, and the login page selectors.",
   "action.publication.reconcile-meetup": "Create or update Meetup event",
   "report.meetup.draft": "meetup_event=draft approval=required",
-  "report.meetup.review": "Review the draft: {url}. Approve publication in the organizer approval comment; automation publishes it and checks Meetup event published after verification.",
+  "report.meetup.review": "meetup_url={url}",
   "report.meetup.updated": "meetup_event=synchronized",
   "report.meetup.skipped": "meetup_event=skipped",
   "report.meetup.blocked": "meetup_event=blocked",
@@ -32120,6 +32142,7 @@ var EN_MESSAGES = {
   "diagnostic.speaker-sync.schema": "Correct the indicated required field in the CFP Web API export.",
   "diagnostic.speaker-sync.response-size": "The CFP Web API response must contain 1 byte to 5 MiB.",
   "diagnostic.speaker-sync.unavailable": "Check the CFP slug, API key and runner network access.",
+  "diagnostic.speaker-sync.history-unavailable": "Speaker ID history is unavailable. Fetch the complete repository history (fetch-depth: 0) and verify Git can read it before retrying.",
   "diagnostic.speaker-sync.invalid": "Check the speaker CSV, allocation state and issue form.",
   "diagnostic.speaker-sync.mapping-required": "Link the existing speaker using source_provider, source_event and source_speaker_id in referentials/speakers.csv; preserve speaker_id.",
   "diagnostic.speaker-sync.conflict": "Resolve duplicate source mappings or concurrent catalog edits.",
@@ -32187,7 +32210,7 @@ var FR_MESSAGES = {
   "diagnostic.publication.meetup.unavailable": "Le d\xE9marrage du navigateur ou la connexion a \xE9chou\xE9. V\xE9rifiez les d\xE9pendances, le r\xE9seau, le solveur et les s\xE9lecteurs de connexion.",
   "action.publication.reconcile-meetup": "Cr\xE9er ou mettre \xE0 jour un \xE9v\xE9nement Meetup",
   "report.meetup.draft": "evenement_meetup=brouillon approbation=requise",
-  "report.meetup.review": "V\xE9rifiez le brouillon : {url}. Approuvez sa publication dans le commentaire ; l'automatisation le publie et coche Meetup event published apr\xE8s v\xE9rification.",
+  "report.meetup.review": "meetup_url={url}",
   "report.meetup.updated": "evenement_meetup=synchronise",
   "report.meetup.skipped": "evenement_meetup=ignore",
   "report.meetup.blocked": "evenement_meetup=bloque",
@@ -32223,6 +32246,7 @@ var FR_MESSAGES = {
   "diagnostic.speaker-sync.json": "La Web API du CFP a renvoy\xE9 un JSON invalide.",
   "diagnostic.speaker-sync.schema": "Corrigez le champ obligatoire indiqu\xE9 dans l'export Web API du CFP.",
   "diagnostic.speaker-sync.response-size": "La r\xE9ponse Web API du CFP doit contenir entre 1 octet et 5 Mio.",
+  "diagnostic.speaker-sync.history-unavailable": "L'historique des identifiants d'intervenants est indisponible. R\xE9cup\xE9rez tout l'historique du d\xE9p\xF4t (fetch-depth: 0) et v\xE9rifiez que Git peut le lire avant de r\xE9essayer.",
   "diagnostic.speaker-sync.unavailable": "V\xE9rifiez le slug du CFP, sa cl\xE9 API et l'acc\xE8s r\xE9seau de l'ex\xE9cuteur.",
   "diagnostic.speaker-sync.invalid": "V\xE9rifiez le CSV des intervenants, les identifiants r\xE9serv\xE9s et le formulaire d'issue.",
   "diagnostic.speaker-sync.mapping-required": "Renseignez source_provider, source_event et source_speaker_id pour l'intervenant existant dans referentials/speakers.csv ; conservez speaker_id.",
@@ -32338,49 +32362,6 @@ var ActionReport = class _ActionReport {
   }
 };
 
-// packages/runtime/github-actions/src/runtime-input.ts
-var SAFE_ERROR_NAMES = /* @__PURE__ */ new Set([
-  "GoogleDriveAssetRepositoryError",
-  "EventNotFoundError",
-  "EventConcurrentModificationError",
-  "GitHubEventRepositoryConfigurationError",
-  "GitHubEventRepositoryScopeError",
-  "GitHubEventRepositoryResponseError",
-  "GitHubEventCommentRepositoryConfigurationError",
-  "GitHubEventCommentRepositoryScopeError",
-  "GitHubEventCommentRepositoryResponseError"
-]);
-var RuntimeInput = class {
-  static positiveIntegerInput(name, value) {
-    if (!/^\d+$/.test(value)) {
-      throw new Error(`${name} must be a positive integer`);
-    }
-    const parsed = Number(value);
-    if (!Number.isSafeInteger(parsed) || parsed <= 0) {
-      throw new Error(`${name} must be a positive integer`);
-    }
-    return parsed;
-  }
-  static enumInput(name, value, allowed) {
-    if (!allowed.includes(value)) {
-      throw new Error(`${name} must be one of: ${allowed.join(", ")}`);
-    }
-    return value;
-  }
-  static booleanInput(name, value) {
-    if (value === "true") return true;
-    if (value === "false") return false;
-    throw new Error(`${name} must be true or false`);
-  }
-  /** Never expose provider responses, input values, or contact data in failures. */
-  static publicErrorMessage(error2) {
-    if (error2 instanceof Error && SAFE_ERROR_NAMES.has(error2.name)) {
-      return `${error2.name}: ${error2.message}`;
-    }
-    return "Unexpected technical failure.";
-  }
-};
-
 // packages/runtime/github-actions/src/action-runner.ts
 var ActionRunner = class {
   static async run(title, operation, diagnosticsOutput) {
@@ -32413,7 +32394,7 @@ var ActionRunner = class {
           ]
         };
       } else {
-        const message = RuntimeInput.publicErrorMessage(error2);
+        const message = ActionFailurePresenter.publicErrorMessage(error2);
         report = {
           details: [],
           diagnostics: [

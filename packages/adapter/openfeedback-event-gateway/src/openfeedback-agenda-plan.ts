@@ -8,6 +8,7 @@ import type {
 	OpenFeedbackSpeaker,
 	OpenFeedbackTalk,
 } from "./openfeedback-agenda-snapshot.js";
+import { OpenFeedbackRecordEquality } from "./openfeedback-record-equality.js";
 
 export class OpenFeedbackAgendaPlan {
 	static create(
@@ -195,10 +196,7 @@ export class OpenFeedbackAgendaPlan {
 		left: OpenFeedbackTalk,
 		right: OpenFeedbackTalk,
 	): boolean {
-		return (
-			JSON.stringify([...left.speakers].sort()) ===
-			JSON.stringify([...right.speakers].sort())
-		);
+		return OpenFeedbackRecordEquality.sameSpeakers(left, right);
 	}
 
 	private static id(kind: string, key: string): string {

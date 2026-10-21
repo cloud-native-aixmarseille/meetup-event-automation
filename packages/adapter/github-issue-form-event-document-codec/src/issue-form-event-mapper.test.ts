@@ -1,35 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { createTestEvent } from "../../testing/event.fixtures.js";
-import { MeetupEventMigration } from "./meetup-event-migration.js";
+import { IssueFormEventMapper } from "./issue-form-event-mapper.js";
 
-describe("event DTO migration", () => {
-	it("clones a current DTO without migration diagnostics", () => {
-		// Arrange
-		const current = createTestEvent();
-
-		// Act
-		const result = MeetupEventMigration.migrateMeetupEventDto(current);
-
-		// Assert
-		expect(result.event).toEqual(current);
-		expect(result.event).not.toBe(current);
-		expect(result.diagnostics).toEqual([]);
-	});
-
-	it("migrates the historical parser payload without retaining presentation URLs", () => {
+describe("issue form event mapping", () => {
+	it("maps participant fields without retaining presentation URLs", () => {
 		// Arrange
 		// No additional setup is needed.
 
 		// Act
-		const result = MeetupEventMigration.migrateMeetupEventDto({
-			repository: "cloud-native-aixmarseille/meetups",
+		const result = IssueFormEventMapper.map({
+			repository: "example/meetups",
 			issueNumber: 12,
-			issueTitle: "Legacy title",
+			issueTitle: "Example title",
 			labels: ["meetup", "hoster:confirmed"],
-			followUpComplete: true,
 			parsedBody: {
 				event_date: "2026-11-05",
-				event_title: "Legacy event",
+				event_title: "Example event",
 				hoster: ["[Aix Tech Hub](https://example.com/host)"],
 				event_description: "Description",
 				agenda:
@@ -66,15 +51,15 @@ describe("event DTO migration", () => {
 		expect(result.diagnostics[0]?.code).toBe("event.document.legacy-schema");
 	});
 
-	it("reports invalid legacy field types instead of throwing", () => {
+	it("reports invalid field types instead of throwing", () => {
 		// Arrange
 		// No additional setup is needed.
 
 		// Act
-		const result = MeetupEventMigration.migrateMeetupEventDto({
-			repository: "cloud-native-aixmarseille/meetups",
+		const result = IssueFormEventMapper.map({
+			repository: "example/meetups",
 			issueNumber: 13,
-			issueTitle: "Legacy title",
+			issueTitle: "Example title",
 			parsedBody: {
 				event_date: 123,
 				hoster: "not-an-array",
@@ -104,7 +89,7 @@ describe("event DTO migration", () => {
 			};
 
 			// Act
-			const result = MeetupEventMigration.migrateMeetupEventDto(source);
+			const result = IssueFormEventMapper.map(source);
 
 			// Assert
 			expect(result.event.occurrenceStatus).toBe(status);
@@ -116,10 +101,10 @@ describe("event DTO migration", () => {
 		// No additional setup is needed.
 
 		// Act
-		const result = MeetupEventMigration.migrateMeetupEventDto({
-			repository: "cloud-native-aixmarseille/meetups",
+		const result = IssueFormEventMapper.map({
+			repository: "example/meetups",
 			issueNumber: 17,
-			issueTitle: "Legacy title",
+			issueTitle: "Example title",
 			issueState: "closed",
 			labels: ["meetup"],
 			parsedBody: {},
@@ -129,15 +114,15 @@ describe("event DTO migration", () => {
 		expect(result.event.occurrenceStatus).toBe("held");
 	});
 
-	it("reports ambiguous and malformed legacy structures", () => {
+	it("reports ambiguous and malformed form structures", () => {
 		// Arrange
 		// No additional setup is needed.
 
 		// Act
-		const result = MeetupEventMigration.migrateMeetupEventDto({
-			repository: "cloud-native-aixmarseille/meetups",
+		const result = IssueFormEventMapper.map({
+			repository: "example/meetups",
 			issueNumber: 14,
-			issueTitle: "Legacy title",
+			issueTitle: "Example title",
 			parsedBody: {
 				hoster: ["First host", "Second host"],
 				agenda: "not a valid agenda line",
@@ -158,25 +143,5 @@ describe("event DTO migration", () => {
 				}),
 			]),
 		);
-	});
-
-	it("parses markdown and stable ID participant references", () => {
-		// Arrange
-		// No additional setup is needed.
-
-		// Act
-		const actual = MeetupEventMigration.parseParticipantReference(
-			"[Ada Lovelace](https://example.com/speakers/ada)",
-		);
-		const actual1 = MeetupEventMigration.parseParticipantReference(
-			"Grace Hopper\t[speaker-0002]",
-		);
-
-		// Assert
-		expect(actual).toEqual({ displayName: "Ada Lovelace" });
-		expect(actual1).toEqual({
-			displayName: "Grace Hopper",
-			id: "speaker-0002",
-		});
 	});
 });

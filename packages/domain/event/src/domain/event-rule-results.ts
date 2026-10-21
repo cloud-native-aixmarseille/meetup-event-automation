@@ -1,9 +1,37 @@
 import { EventDiagnostics } from "./diagnostic.js";
-import { EventRuleFactory } from "./event-rule-factory.js";
-import { EMPTY_EVENT_PATCH, EventPatches } from "./patch.js";
+import {
+	EMPTY_EVENT_PATCH,
+	EventPatches,
+	type EventPatchOperation,
+} from "./patch.js";
 import type { EventRuleResult } from "./rule-contracts.js";
 
 export class EventRuleResults {
+	static emptyResult(): EventRuleResult {
+		return { diagnostics: [], patch: EMPTY_EVENT_PATCH };
+	}
+
+	static normalizedResult(
+		operation: EventPatchOperation,
+		code: string,
+		field: string,
+		message: string,
+	): EventRuleResult {
+		return {
+			diagnostics: [
+				EventDiagnostics.diagnostic({
+					code,
+					severity: "info",
+					category: "normalization",
+					field,
+					message,
+					fixAvailable: true,
+				}),
+			],
+			patch: EventPatches.createEventPatch([operation]),
+		};
+	}
+
 	static missing(
 		code: string,
 		field: string,
@@ -49,9 +77,9 @@ export class EventRuleResults {
 		reason: string,
 	): EventRuleResult {
 		if (current === normalized) {
-			return EventRuleFactory.emptyResult();
+			return EventRuleResults.emptyResult();
 		}
-		return EventRuleFactory.normalizedResult(
+		return EventRuleResults.normalizedResult(
 			EventPatches.replaceEventField(path, normalized, reason),
 			`event.${path}.normalized`,
 			path,

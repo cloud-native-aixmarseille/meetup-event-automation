@@ -7,6 +7,7 @@ import {
 import { OpenFeedbackAgendaPlan } from "./openfeedback-agenda-plan.js";
 import { OpenFeedbackAgendaSnapshot } from "./openfeedback-agenda-snapshot.js";
 import { OpenFeedbackClient } from "./openfeedback-client.js";
+import { OpenFeedbackRecordEquality } from "./openfeedback-record-equality.js";
 import { OpenFeedbackRecordsGateway } from "./openfeedback-records-gateway.js";
 
 export class OpenFeedbackTalkResultsGateway
@@ -38,8 +39,7 @@ export class OpenFeedbackTalkResultsGateway
 			if (
 				!talk ||
 				!stored ||
-				JSON.stringify([...stored.speakers].sort()) !==
-					JSON.stringify([...talk.speakers].sort())
+				!OpenFeedbackRecordEquality.sameSpeakers(stored, talk)
 			)
 				throw new FeedbackResolutionError("unavailable");
 			return {

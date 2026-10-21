@@ -14,8 +14,7 @@ export const EN_MESSAGES = {
 		"Browser login or startup failed. Check runtime installation, connectivity, solver configuration, and the login page selectors.",
 	"action.publication.reconcile-meetup": "Create or update Meetup event",
 	"report.meetup.draft": "meetup_event=draft approval=required",
-	"report.meetup.review":
-		"Review the draft: {url}. Approve publication in the organizer approval comment; automation publishes it and checks Meetup event published after verification.",
+	"report.meetup.review": "meetup_url={url}",
 	"report.meetup.updated": "meetup_event=synchronized",
 	"report.meetup.skipped": "meetup_event=skipped",
 	"report.meetup.blocked": "meetup_event=blocked",
@@ -70,6 +69,8 @@ export const EN_MESSAGES = {
 		"The CFP Web API response must contain 1 byte to 5 MiB.",
 	"diagnostic.speaker-sync.unavailable":
 		"Check the CFP slug, API key and runner network access.",
+	"diagnostic.speaker-sync.history-unavailable":
+		"Speaker ID history is unavailable. Fetch the complete repository history (fetch-depth: 0) and verify Git can read it before retrying.",
 	"diagnostic.speaker-sync.invalid":
 		"Check the speaker CSV, allocation state and issue form.",
 	"diagnostic.speaker-sync.mapping-required":

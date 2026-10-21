@@ -1,5 +1,8 @@
 import type { docs_v1 } from "@googleapis/docs";
-import type { ContentChange } from "@meetup-automation/publication";
+import {
+	type ContentChange,
+	ContentError,
+} from "@meetup-automation/publication";
 import type { DocumentTab } from "./document-tabs.js";
 
 export class DocumentContentRequests {
@@ -20,6 +23,7 @@ export class DocumentContentRequests {
 		change: ContentChange,
 	): docs_v1.Schema$Request[] {
 		const { anchor } = change.location;
+		if (!anchor.tabId) throw new ContentError("conflict");
 		if (change.value.type === "image")
 			return [
 				{
@@ -53,7 +57,7 @@ export class DocumentContentRequests {
 						{
 							deleteNamedRange: {
 								namedRangeId: named.namedRangeId,
-								tabsCriteria: { tabIds: [anchor.tabId as string] },
+								tabsCriteria: { tabIds: [anchor.tabId] },
 							},
 						},
 					]

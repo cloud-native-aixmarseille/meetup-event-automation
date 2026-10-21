@@ -1,8 +1,12 @@
-import { type EventDiagnostic, EventDiagnostics } from "./diagnostic.js";
-import type { AgendaEntry, ParticipantReference } from "./model.js";
+import {
+	type AgendaEntry,
+	type EventDiagnostic,
+	EventDiagnostics,
+	type ParticipantReference,
+} from "@meetup-automation/event";
 import { ParticipantReferenceParser } from "./participant-reference-parser.js";
 
-export class LegacyEventFields {
+export class IssueFormFields {
 	static readString(
 		value: unknown,
 		field: string,
@@ -36,10 +40,10 @@ export class LegacyEventFields {
 		if (value === undefined || value === null || value === "") {
 			return undefined;
 		}
-		return LegacyEventFields.readString(value, field, diagnostics);
+		return IssueFormFields.readString(value, field, diagnostics);
 	}
 
-	static readLegacyHost(
+	static readHost(
 		value: unknown,
 		diagnostics: EventDiagnostic[],
 	): ParticipantReference | undefined {
@@ -54,7 +58,7 @@ export class LegacyEventFields {
 					severity: "error",
 					category: "invalid",
 					field: "hoster",
-					message: "The legacy hoster field must be an array",
+					message: "The hoster field must be an array",
 				}),
 			);
 			return undefined;
@@ -83,7 +87,7 @@ export class LegacyEventFields {
 					severity: "error",
 					category: "invalid",
 					field: "hoster",
-					message: "The legacy hoster entry must be a string",
+					message: "The hoster entry must be a string",
 				}),
 			);
 			return undefined;
@@ -92,7 +96,7 @@ export class LegacyEventFields {
 		return ParticipantReferenceParser.parseParticipantReference(first);
 	}
 
-	static readLegacyAgenda(
+	static readAgenda(
 		value: unknown,
 		diagnostics: EventDiagnostic[],
 	): readonly AgendaEntry[] {
@@ -106,7 +110,7 @@ export class LegacyEventFields {
 					severity: "error",
 					category: "invalid",
 					field: "agenda",
-					message: "The legacy agenda field must be a string",
+					message: "The agenda field must be a string",
 				}),
 			);
 			return [];
@@ -117,7 +121,7 @@ export class LegacyEventFields {
 			if (line.trim() === "") {
 				continue;
 			}
-			const agendaLine = ParticipantReferenceParser.parseLegacyAgendaLine(line);
+			const agendaLine = ParticipantReferenceParser.parseAgendaLine(line);
 			if (!agendaLine) {
 				diagnostics.push(
 					EventDiagnostics.diagnostic({

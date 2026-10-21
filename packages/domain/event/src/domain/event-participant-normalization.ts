@@ -32,21 +32,4 @@ export class EventParticipantNormalization {
 			description: entry.description.trim(),
 		};
 	}
-
-	static agendaEqual(
-		left: readonly AgendaEntry[],
-		right: readonly AgendaEntry[],
-	): boolean {
-		return JSON.stringify(left) === JSON.stringify(right);
-	}
-
-	static arraysEqual(
-		left: readonly string[],
-		right: readonly string[],
-	): boolean {
-		return (
-			left.length === right.length &&
-			left.every((value, index) => value === right[index])
-		);
-	}
 }

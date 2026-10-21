@@ -1,4 +1,4 @@
-import { EventRuleFactory } from "./event-rule-factory.js";
+import { EventRuleResults } from "./event-rule-results.js";
 import type { MeetupEvent } from "./model.js";
 import { EventPatches } from "./patch.js";
 import type {
@@ -38,11 +38,11 @@ export class ManagedLabelsRule implements EventRule {
 			...occurrenceLabels,
 		];
 
-		if (EventRuleFactory.labelsMatch(event.labels, expected)) {
-			return EventRuleFactory.emptyResult();
+		if (this.labelsMatch(event.labels, expected)) {
+			return EventRuleResults.emptyResult();
 		}
 
-		return EventRuleFactory.normalizedResult(
+		return EventRuleResults.normalizedResult(
 			EventPatches.replaceEventField(
 				"labels",
 				expected,
@@ -51,6 +51,16 @@ export class ManagedLabelsRule implements EventRule {
 			"event.labels.normalized",
 			"labels",
 			"Managed meetup labels can be reconciled safely",
+		);
+	}
+	private labelsMatch(
+		actual: readonly string[],
+		expected: readonly string[],
+	): boolean {
+		const sorted = [...expected].sort();
+		return (
+			actual.length === expected.length &&
+			[...actual].sort().every((label, index) => label === sorted[index])
 		);
 	}
 }

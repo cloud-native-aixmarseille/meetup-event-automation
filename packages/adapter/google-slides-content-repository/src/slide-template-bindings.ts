@@ -1,9 +1,10 @@
-import { ContentTextKey } from "@meetup-automation/publication";
+import { isDeepStrictEqual } from "node:util";
 import type { slides_v1 } from "@googleapis/slides";
 import {
-	ContentError,
-	type ContentContract,
 	type ContentBinding,
+	type ContentContract,
+	ContentError,
+	ContentTextKey,
 } from "@meetup-automation/publication";
 
 export class SlideTemplateBindings {
@@ -91,12 +92,12 @@ export class SlideTemplateBindings {
 		const runs = (element.shape?.text?.textElements ?? []).filter((item) =>
 			item.textRun?.content?.trim(),
 		);
+		const style = runs[0]?.textRun?.style ?? {};
 		if (
-			new Set(runs.map((item) => JSON.stringify(item.textRun?.style ?? {})))
-				.size > 1
+			runs.some((item) => !isDeepStrictEqual(item.textRun?.style ?? {}, style))
 		)
 			throw new ContentError("location");
-		return runs[0]?.textRun?.style ?? {};
+		return style;
 	}
 
 	private static rejectTokens(value: unknown): void {

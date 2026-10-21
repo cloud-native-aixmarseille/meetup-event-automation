@@ -1,12 +1,12 @@
+import type { docs_v1 } from "@googleapis/docs";
 import {
 	type AssetImageRepository,
 	type ContentBinding,
-	type ObservedLocation,
 	ContentError,
 	ContentFingerprint,
+	type ObservedLocation,
 } from "@meetup-automation/publication";
-import type { docs_v1 } from "@googleapis/docs";
-import { DocumentTabs, type DocumentTab } from "./document-tabs.js";
+import { type DocumentTab, DocumentTabs } from "./document-tabs.js";
 
 export class DocumentContentLocations {
 	constructor(private readonly images: AssetImageRepository) {}
@@ -20,11 +20,7 @@ export class DocumentContentLocations {
 		if (!tab || binding.anchor.segmentId) throw new ContentError("conflict");
 		if (binding.type === "image") return this.image(tab, binding);
 		const range = DocumentContentLocations.range(tabs, binding, initial);
-		const text = DocumentTabs.text(
-			tab,
-			range.startIndex as number,
-			range.endIndex as number,
-		);
+		const text = DocumentTabs.text(tab, range.startIndex, range.endIndex);
 		return {
 			id: binding.id,
 			key: binding.key,
@@ -32,8 +28,8 @@ export class DocumentContentLocations {
 			fingerprint: ContentFingerprint.of(text),
 			anchor: {
 				...binding.anchor,
-				start: range.startIndex as number,
-				end: range.endIndex as number,
+				start: range.startIndex,
+				end: range.endIndex,
 			},
 		};
 	}
@@ -42,7 +38,7 @@ export class DocumentContentLocations {
 		tabs: readonly DocumentTab[],
 		binding: ContentBinding,
 		initial: boolean,
-	): docs_v1.Schema$Range {
+	): docs_v1.Schema$Range & { startIndex: number; endIndex: number } {
 		const matches = tabs.flatMap((tab) =>
 			(
 				tab.content.namedRanges?.[binding.anchor.rangeName ?? ""]
@@ -70,12 +66,15 @@ export class DocumentContentLocations {
 		if (
 			range.segmentId ||
 			(range.tabId && range.tabId !== binding.anchor.tabId) ||
-			!range.startIndex ||
-			!range.endIndex ||
+			typeof range.startIndex !== "number" ||
+			typeof range.endIndex !== "number" ||
+			!Number.isSafeInteger(range.startIndex) ||
+			!Number.isSafeInteger(range.endIndex) ||
+			range.startIndex <= 0 ||
 			range.endIndex <= range.startIndex
 		)
 			throw new ContentError("conflict");
-		return range;
+		return { ...range, startIndex: range.startIndex, endIndex: range.endIndex };
 	}
 
 	private async image(
@@ -112,6 +111,9 @@ export class DocumentContentLocations {
 			key: binding.key,
 			anchor: binding.anchor,
 			fingerprint: ContentFingerprint.of(
+				// Persisted observation bytes preserve provider property order.
+				// Do not canonicalize this representation without also handling
+				// existing binding fingerprints and uncertain image recovery.
 				JSON.stringify([bytes, properties, object.title, object.description]),
 			),
 		};

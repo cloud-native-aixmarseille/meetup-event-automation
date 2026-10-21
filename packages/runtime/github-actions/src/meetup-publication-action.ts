@@ -4,7 +4,6 @@ import { ManageMeetupPublication } from "@meetup-automation/journey";
 import type { ActionReportData } from "./action-report.js";
 import { ConferenceHallInput } from "./conference-hall-input.js";
 import type { ActionMessages } from "./i18n/action-messages.js";
-import type { MessageId } from "./i18n/catalog.js";
 import { MeetupPublicationComposition } from "./meetup-publication-composition.js";
 import { MeetupPublicationConfiguration } from "./meetup-publication-configuration.js";
 import { RuntimeInput } from "./runtime-input.js";
@@ -51,9 +50,6 @@ export class MeetupPublicationAction {
 				...(result.reviewUrl
 					? [messages.t("report.meetup.review", { url: result.reviewUrl })]
 					: []),
-				...result.diagnostics.map((item) =>
-					messages.t(`diagnostic.${item.code}` as MessageId),
-				),
 			],
 			diagnostics: result.diagnostics,
 		};

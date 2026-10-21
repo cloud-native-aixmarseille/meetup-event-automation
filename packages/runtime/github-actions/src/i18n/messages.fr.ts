@@ -16,8 +16,7 @@ export const FR_MESSAGES = {
 	"action.publication.reconcile-meetup":
 		"Créer ou mettre à jour un événement Meetup",
 	"report.meetup.draft": "evenement_meetup=brouillon approbation=requise",
-	"report.meetup.review":
-		"Vérifiez le brouillon : {url}. Approuvez sa publication dans le commentaire ; l'automatisation le publie et coche Meetup event published après vérification.",
+	"report.meetup.review": "meetup_url={url}",
 	"report.meetup.updated": "evenement_meetup=synchronise",
 	"report.meetup.skipped": "evenement_meetup=ignore",
 	"report.meetup.blocked": "evenement_meetup=bloque",
@@ -73,6 +72,8 @@ export const FR_MESSAGES = {
 		"Corrigez le champ obligatoire indiqué dans l'export Web API du CFP.",
 	"diagnostic.speaker-sync.response-size":
 		"La réponse Web API du CFP doit contenir entre 1 octet et 5 Mio.",
+	"diagnostic.speaker-sync.history-unavailable":
+		"L'historique des identifiants d'intervenants est indisponible. Récupérez tout l'historique du dépôt (fetch-depth: 0) et vérifiez que Git peut le lire avant de réessayer.",
 	"diagnostic.speaker-sync.unavailable":
 		"Vérifiez le slug du CFP, sa clé API et l'accès réseau de l'exécuteur.",
 	"diagnostic.speaker-sync.invalid":

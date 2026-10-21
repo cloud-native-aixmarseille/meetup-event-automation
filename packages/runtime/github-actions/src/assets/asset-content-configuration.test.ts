@@ -75,8 +75,10 @@ describe("committed content configuration", () => {
 				"example/meetups#43": { speakers: { portrait: "speaker-two" } },
 			},
 		};
+
 		// Act
 		const result = AssetContentConfiguration.parse(input, "example/meetups#42");
+
 		// Assert
 		expect(result.speakers).toEqual({ portrait: "speaker-one" });
 		expect(result.recovery).toEqual({});
@@ -85,6 +87,7 @@ describe("committed content configuration", () => {
 	it("rejects recovery without a read revision", () => {
 		// Arrange
 		let error: unknown;
+
 		// Act
 		try {
 			AssetContentConfiguration.parse(
@@ -102,7 +105,53 @@ describe("committed content configuration", () => {
 		} catch (caught) {
 			error = caught;
 		}
+
 		// Assert
 		expect(error).toBeInstanceOf(Error);
+	});
+});
+
+describe("asset configuration boundary", () => {
+	it.each([
+		null,
+		[],
+		false,
+		{ version: 1, contracts: {}, venues: null },
+		{ version: 1, contracts: {}, events: { event: null } },
+		{ version: 1, contracts: {}, events: { event: { recovery: null } } },
+		{ version: 1, contracts: [] },
+		{ version: 1, contracts: {}, events: [] },
+		{ version: 1, contracts: {}, events: { event: false } },
+		{
+			version: 1,
+			contracts: {},
+			events: { event: { recovery: { file: true } } },
+		},
+		{
+			version: 1,
+			contracts: {},
+			events: {
+				event: {
+					recovery: {
+						file: { operation: "enroll", revision: "2", bindingId: false },
+					},
+				},
+			},
+		},
+		{ version: 1, contracts: {}, venues: { "host-one": false } },
+		{
+			version: 1,
+			contracts: {},
+			events: { event: { talks: { opening: [] } } },
+		},
+	])("rejects malformed external data", (input) => {
+		// Arrange
+		const eventId = "event";
+
+		// Act
+		const parse = () => AssetContentConfiguration.parse(input, eventId);
+
+		// Assert
+		expect(parse).toThrow(/Invalid/);
 	});
 });

@@ -1,5 +1,5 @@
-import { STABLE_ID_PATTERN } from "./dto-contracts.js";
-import type { ParticipantReference } from "./model.js";
+import type { ParticipantReference } from "@meetup-automation/event";
+import { STABLE_ID_PATTERN } from "./github-issue-form-event-document-codec-contracts.js";
 
 export class ParticipantReferenceParser {
 	static parseParticipantReference(value: string): ParticipantReference {
@@ -19,7 +19,7 @@ export class ParticipantReferenceParser {
 		return { displayName: trimmed };
 	}
 
-	static parseLegacyAgendaLine(
+	static parseAgendaLine(
 		line: string,
 	): Readonly<{ speakers: string; description: string }> | undefined {
 		let cursor = 0;

@@ -48,8 +48,7 @@ export class ScopedGithubLedgerCommentClient
 
 	async listComments(): Promise<readonly GithubLedgerComment[]> {
 		const comments: GithubLedgerComment[] = [];
-		let page = 1;
-		while (true) {
+		for (let page = 1; page <= 100; page++) {
 			const response = await this.client.rest.issues.listComments({
 				owner: this.owner,
 				repo: this.repo,
@@ -70,8 +69,8 @@ export class ScopedGithubLedgerCommentClient
 			if (!hasNext) {
 				return comments;
 			}
-			page += 1;
 		}
+		throw new Error("GitHub delivery ledger pagination exceeded its bound");
 	}
 
 	async createComment(body: string): Promise<void> {
@@ -93,19 +92,39 @@ export class ScopedGithubLedgerCommentClient
 	}
 
 	private static appendComments(
-		values: Awaited<
-			ReturnType<ScopedGithubLedgerApi["rest"]["issues"]["listComments"]>
-		>["data"],
+		values: readonly unknown[],
 		comments: GithubLedgerComment[],
 	) {
 		for (const value of values) {
-			if (Number.isSafeInteger(value.id) && typeof value.body === "string") {
+			if (
+				!ScopedGithubLedgerCommentClient.object(value) ||
+				typeof value.id !== "number" ||
+				!Number.isSafeInteger(value.id) ||
+				value.id <= 0 ||
+				(value.body != null && typeof value.body !== "string")
+			)
+				throw new Error("GitHub delivery ledger comment response is invalid");
+			const author = value.user;
+			if (
+				author != null &&
+				(!ScopedGithubLedgerCommentClient.object(author) ||
+					typeof author.login !== "string")
+			)
+				throw new Error("GitHub delivery ledger comment author is invalid");
+			if (typeof value.body === "string") {
 				comments.push({
 					id: value.id,
 					body: value.body,
-					...(value.user?.login ? { authorLogin: value.user.login } : {}),
+					...(ScopedGithubLedgerCommentClient.object(author) &&
+					typeof author.login === "string"
+						? { authorLogin: author.login }
+						: {}),
 				});
 			}
 		}
+	}
+
+	private static object(value: unknown): value is Record<string, unknown> {
+		return value !== null && typeof value === "object" && !Array.isArray(value);
 	}
 }

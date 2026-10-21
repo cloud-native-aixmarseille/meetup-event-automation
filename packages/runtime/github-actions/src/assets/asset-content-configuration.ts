@@ -1,10 +1,11 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import {
+	type AssetRenderAssignments,
 	ContentContractPolicy,
 	type ContentRecovery,
-	type AssetRenderAssignments,
 } from "@meetup-automation/publication";
+import { RuntimeInput } from "../runtime-input.js";
 import { AssetRenderConfiguration } from "./asset-render-configuration.js";
 
 export type AssetContentConfigurationData = AssetRenderAssignments &
@@ -17,12 +18,15 @@ export type AssetContentConfigurationData = AssetRenderAssignments &
 export class AssetContentConfiguration {
 	static usesNextEvent(contracts: Readonly<Record<string, unknown>>): boolean {
 		return Object.values(contracts).some((contract) => {
-			const fields = (contract as { fields?: unknown } | null)?.fields;
+			const fields = RuntimeInput.isObject(contract)
+				? contract.fields
+				: undefined;
 			return (
 				Array.isArray(fields) &&
 				fields.some(
-					(field) =>
-						typeof field?.token === "string" &&
+					(field: unknown) =>
+						RuntimeInput.isObject(field) &&
+						typeof field.token === "string" &&
 						field.token.startsWith("next_event."),
 				)
 			);
@@ -40,7 +44,7 @@ export class AssetContentConfiguration {
 				"utf8",
 			);
 		} catch (error) {
-			if ((error as NodeJS.ErrnoException).code === "ENOENT")
+			if (RuntimeInput.isObject(error) && error.code === "ENOENT")
 				return {
 					contracts: {},
 					speakers: {},
@@ -56,24 +60,11 @@ export class AssetContentConfiguration {
 		return AssetContentConfiguration.parse(JSON.parse(text), eventId);
 	}
 
-	static parse(input: unknown, eventId: string): AssetContentConfigurationData {
-		const root = input as {
-			version: number;
-			contracts: Record<string, unknown>;
-			venues?: unknown;
-			hostLogos?: unknown;
-			events?: Record<
-				string,
-				{
-					speakers?: Record<string, string>;
-					talks?: unknown;
-					recovery?: Record<string, ContentRecovery>;
-				}
-			>;
-		};
+	static parse(root: unknown, eventId: string): AssetContentConfigurationData {
 		if (
-			root?.version !== 1 ||
-			!AssetContentConfiguration.record(root.contracts) ||
+			!RuntimeInput.isObject(root) ||
+			root.version !== 1 ||
+			!RuntimeInput.isObject(root.contracts) ||
 			!ContentContractPolicy.keys(root, [
 				"version",
 				"contracts",
@@ -81,13 +72,15 @@ export class AssetContentConfiguration {
 				"venues",
 				"hostLogos",
 			]) ||
-			(root.events !== undefined &&
-				!AssetContentConfiguration.record(root.events))
+			(root.events !== undefined && !RuntimeInput.isObject(root.events))
 		)
 			throw new Error("Invalid asset content configuration");
-		const event = root.events?.[eventId] ?? {};
+		const selected = RuntimeInput.isObject(root.events)
+			? root.events[eventId]
+			: undefined;
+		const event = selected === undefined ? {} : selected;
 		if (
-			!AssetContentConfiguration.record(event) ||
+			!RuntimeInput.isObject(event) ||
 			!ContentContractPolicy.keys(event, ["speakers", "talks", "recovery"])
 		)
 			throw new Error("Invalid asset event configuration");
@@ -96,16 +89,28 @@ export class AssetContentConfiguration {
 			root.venues,
 			root.hostLogos,
 		);
-		const recovery = event.recovery ?? {};
-		if (!AssetContentConfiguration.record(recovery))
-			throw new Error("Invalid asset speaker assignments");
-		for (const [id, operation] of Object.entries(recovery)) {
+		const recovery = AssetContentConfiguration.recovery(event.recovery);
+		return { contracts: root.contracts, ...assignments, recovery };
+	}
+
+	private static recovery(
+		input: unknown,
+	): Readonly<Record<string, ContentRecovery>> {
+		const value = input === undefined ? {} : input;
+		if (!RuntimeInput.isObject(value))
+			throw new Error("Invalid asset recovery operations");
+		const result: Record<string, ContentRecovery> = {};
+		for (const [id, operation] of Object.entries(value)) {
 			if (
 				!ContentContractPolicy.name(id) ||
-				!operation ||
-				!["enroll", "restore", "remove"].includes(operation.operation) ||
+				!RuntimeInput.isObject(operation) ||
+				(operation.operation !== "enroll" &&
+					operation.operation !== "restore" &&
+					operation.operation !== "remove") ||
 				!ContentContractPolicy.text(operation.revision) ||
 				(operation.operation !== "enroll" &&
+					!ContentContractPolicy.name(operation.bindingId)) ||
+				(operation.bindingId !== undefined &&
 					!ContentContractPolicy.name(operation.bindingId)) ||
 				!ContentContractPolicy.keys(operation, [
 					"operation",
@@ -114,11 +119,14 @@ export class AssetContentConfiguration {
 				])
 			)
 				throw new Error("Invalid asset recovery operation");
+			result[id] = {
+				operation: operation.operation,
+				revision: operation.revision,
+				...(typeof operation.bindingId === "string"
+					? { bindingId: operation.bindingId }
+					: {}),
+			};
 		}
-		return { contracts: root.contracts, ...assignments, recovery };
-	}
-
-	private static record(value: unknown): value is Record<string, unknown> {
-		return value !== null && typeof value === "object" && !Array.isArray(value);
+		return result;
 	}
 }

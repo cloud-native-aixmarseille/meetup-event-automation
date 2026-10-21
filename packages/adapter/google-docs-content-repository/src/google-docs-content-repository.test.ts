@@ -2,16 +2,19 @@ import { ContentFingerprint } from "@meetup-automation/publication";
 import { describe, expect, it } from "vitest";
 import { docsFixture, paragraph } from "../testing/docs.fixtures.js";
 
+import { GoogleDocsContentRepository } from "./google-docs-content-repository.js";
+
 describe("Docs content repository", () => {
 	it("propagates an unexpected provider write failure for technical reporting", async () => {
 		// Arrange
 		const f = docsFixture();
+		const repository = new GoogleDocsContentRepository(f.api, f.images);
 		const error = new Error("Synthetic authentication failure");
-		const snapshot = await f.repository.read("file", f.contract);
+		const snapshot = await repository.read("file", f.contract);
 		f.client.documents.batchUpdate.mockRejectedValueOnce(error);
 
 		// Act
-		const result = f.repository.apply("file", snapshot, [
+		const result = repository.apply("file", snapshot, [
 			{
 				location: snapshot.locations[0],
 				value: {
@@ -31,6 +34,7 @@ describe("Docs content repository", () => {
 	it("binds and renders slotted speaker names in body prose", async () => {
 		// Arrange
 		const f = docsFixture();
+		const repository = new GoogleDocsContentRepository(f.api, f.images);
 		const contract = {
 			...f.contract,
 			fields: [
@@ -48,12 +52,12 @@ describe("Docs content repository", () => {
 		};
 
 		// Act
-		const snapshot = await f.repository.read("file", contract);
+		const snapshot = await repository.read("file", contract);
 		const location = snapshot.locations.find(
 			(item) => item.key === "speaker.name:portrait",
 		);
 		if (!location) throw new Error("Missing speaker fixture binding");
-		await f.repository.apply("file", snapshot, [
+		await repository.apply("file", snapshot, [
 			{
 				location,
 				value: {
@@ -102,9 +106,11 @@ describe("Docs content repository", () => {
 	it("registers repeated body tokens across nested tabs with UTF-16 indices and one revision-controlled batch", async () => {
 		// Arrange
 		const f = docsFixture();
-		const snapshot = await f.repository.read("file", f.contract);
+		const repository = new GoogleDocsContentRepository(f.api, f.images);
+		const snapshot = await repository.read("file", f.contract);
+
 		// Act
-		await f.repository.apply(
+		await repository.apply(
 			"file",
 			snapshot,
 			snapshot.locations.map((location) => ({
@@ -117,6 +123,7 @@ describe("Docs content repository", () => {
 				},
 			})),
 		);
+
 		// Assert
 		expect(snapshot.locations.map((location) => location.anchor.tabId)).toEqual(
 			["tab-one", "tab-one", "tab-two"],
@@ -155,6 +162,7 @@ describe("Docs content repository", () => {
 	it("follows a named range after surrounding content moves", async () => {
 		// Arrange
 		const f = docsFixture();
+		const repository = new GoogleDocsContentRepository(f.api, f.images);
 		f.root.documentTab = {
 			body: { content: [paragraph("Manual prefix Public title\n")] },
 			namedRanges: {
@@ -168,8 +176,9 @@ describe("Docs content repository", () => {
 				},
 			},
 		};
+
 		// Act
-		const snapshot = await f.repository.read("file", f.contract, [
+		const snapshot = await repository.read("file", f.contract, [
 			{
 				id: "managed",
 				type: "text",
@@ -184,6 +193,7 @@ describe("Docs content repository", () => {
 				},
 			},
 		]);
+
 		// Assert
 		expect(snapshot.locations[0].anchor.start).toBe(15);
 		expect(snapshot.locations[0].fingerprint).toBe(
@@ -194,8 +204,10 @@ describe("Docs content repository", () => {
 	it("requires recovery when a registered range is absent instead of searching its old text", async () => {
 		// Arrange
 		const f = docsFixture();
+		const repository = new GoogleDocsContentRepository(f.api, f.images);
+
 		// Act
-		const result = f.repository.read("file", f.contract, [
+		const result = repository.read("file", f.contract, [
 			{
 				id: "managed",
 				type: "text",
@@ -210,6 +222,7 @@ describe("Docs content repository", () => {
 				},
 			},
 		]);
+
 		// Assert
 		await expect(result).rejects.toMatchObject({ code: "conflict" });
 		expect(f.client.documents.batchUpdate).not.toHaveBeenCalled();
@@ -218,6 +231,7 @@ describe("Docs content repository", () => {
 	it("rejects table tokens before partially rendering supported paragraphs", async () => {
 		// Arrange
 		const f = docsFixture();
+		const repository = new GoogleDocsContentRepository(f.api, f.images);
 		f.rootContent.body?.content?.push({
 			table: {
 				tableRows: [
@@ -225,8 +239,10 @@ describe("Docs content repository", () => {
 				],
 			},
 		});
+
 		// Act
-		const result = f.repository.read("file", f.contract);
+		const result = repository.read("file", f.contract);
+
 		// Assert
 		await expect(result).rejects.toMatchObject({ code: "location" });
 		expect(f.client.documents.batchUpdate).not.toHaveBeenCalled();
@@ -237,6 +253,7 @@ describe("Docs content repository", () => {
 		async (token) => {
 			// Arrange
 			const f = docsFixture();
+			const repository = new GoogleDocsContentRepository(f.api, f.images);
 			const tab = f.childContent;
 			tab.body = {
 				content: [
@@ -283,9 +300,10 @@ describe("Docs content repository", () => {
 			f.rootContent.body = {
 				content: [paragraph("Manual prose\n")],
 			};
-			const snapshot = await f.repository.read("file", contract);
+			const snapshot = await repository.read("file", contract);
+
 			// Act
-			await f.repository.apply("file", snapshot, [
+			await repository.apply("file", snapshot, [
 				{
 					location: snapshot.locations[0],
 					value: {
@@ -300,6 +318,7 @@ describe("Docs content repository", () => {
 					},
 				},
 			]);
+
 			// Assert
 			expect(snapshot.locations[0].id.length).toBeLessThanOrEqual(100);
 			expect(f.client.documents.batchUpdate).toHaveBeenCalledWith(

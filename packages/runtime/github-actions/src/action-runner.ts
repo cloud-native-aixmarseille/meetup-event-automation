@@ -1,11 +1,11 @@
 import * as core from "@actions/core";
 import { EventConcurrentModificationError } from "@meetup-automation/event";
 import { DiagnosticPolicy } from "@meetup-automation/journey";
+import { ActionFailurePresenter } from "./action-failure-presenter.js";
 import { ActionOutput } from "./action-output.js";
 import { ActionReport, type ActionReportData } from "./action-report.js";
 import { ActionMessages } from "./i18n/action-messages.js";
 import type { MessageId } from "./i18n/catalog.js";
-import { RuntimeInput } from "./runtime-input.js";
 
 export class ActionRunner {
 	static async run(
@@ -44,7 +44,7 @@ export class ActionRunner {
 					],
 				};
 			} else {
-				const message = RuntimeInput.publicErrorMessage(error);
+				const message = ActionFailurePresenter.publicErrorMessage(error);
 				report = {
 					details: [],
 					diagnostics: [

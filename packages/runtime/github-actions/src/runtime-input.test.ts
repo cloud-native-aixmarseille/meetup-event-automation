@@ -74,20 +74,9 @@ describe("GitHub Action input parsing", () => {
 		// Assert
 		expect(parse).toThrow("authorized must be true or false");
 	});
-
-	it("redacts unexpected exception messages", () => {
-		// Arrange
-		const error = new Error("email@example.test");
-
-		// Act
-		const message = RuntimeInput.publicErrorMessage(error);
-
-		// Assert
-		expect(message).not.toContain(error.message);
-	});
 });
 
-describe("GitHub Action input and error boundary", () => {
+describe("GitHub Action input boundaries", () => {
 	it("accepts an explicit true and rejects unsafe numeric overflow", () => {
 		// Arrange
 		// No additional setup is needed.
@@ -100,21 +89,5 @@ describe("GitHub Action input and error boundary", () => {
 		// Assert
 		expect(actual).toBe(true);
 		expect(act).toThrow("issue-number must be a positive integer");
-	});
-
-	it("passes through only allow-listed error classes", () => {
-		// Arrange
-		const known = new Error("configuration is invalid");
-		known.name = "EventNotFoundError";
-
-		// Act
-		const actual = RuntimeInput.publicErrorMessage(known);
-		const actual1 = RuntimeInput.publicErrorMessage({
-			message: "contact@example.test",
-		});
-
-		// Assert
-		expect(actual).toBe("EventNotFoundError: configuration is invalid");
-		expect(actual1).toBe("Unexpected technical failure.");
 	});
 });

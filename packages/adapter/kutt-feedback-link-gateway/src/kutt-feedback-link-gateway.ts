@@ -3,7 +3,7 @@ import {
 	FeedbackPolicy,
 } from "@meetup-automation/publication";
 
-type KuttLink = { id: string; address: string; target: string; link: string };
+import { type KuttLink, KuttLinkResponse } from "./kutt-link-response.js";
 
 export class KuttFeedbackLinkGateway implements FeedbackLinkGateway {
 	private readonly baseUrl: string;
@@ -43,13 +43,12 @@ export class KuttFeedbackLinkGateway implements FeedbackLinkGateway {
 		const target = FeedbackPolicy.pollUrl(value);
 		const link = await this.findLink();
 		if (link.target === target) return false;
-		const response = (await this.request(
-			`/links/${encodeURIComponent(this.linkId)}`,
-			{
+		const response = KuttLinkResponse.link(
+			await this.request(`/links/${encodeURIComponent(this.linkId)}`, {
 				method: "PATCH",
 				body: JSON.stringify({ target, address: link.address }),
-			},
-		)) as KuttLink;
+			}),
+		);
 		if (
 			response.id !== link.id ||
 			response.address !== link.address ||
@@ -63,22 +62,11 @@ export class KuttFeedbackLinkGateway implements FeedbackLinkGateway {
 	private async findLink(): Promise<KuttLink> {
 		// Kutt v2 has no GET /links/{id}. Walk the owner's paginated list.
 		for (let skip = 0; skip < 100_000; skip += 100) {
-			const page = (await this.request(
-				`/links?limit=100&skip=${skip}`,
-				{},
-			)) as { total: number; data: KuttLink[] };
-			if (
-				!Array.isArray(page.data) ||
-				!Number.isSafeInteger(page.total) ||
-				page.total < 0
-			)
-				throw new Error("Invalid Kutt link listing");
+			const page = KuttLinkResponse.page(
+				await this.request(`/links?limit=100&skip=${skip}`, {}),
+			);
 			const link = page.data.find((item) => item.id === this.linkId);
-			if (link) {
-				if (!link.address || !link.target || !link.link)
-					throw new Error("Invalid Kutt link response");
-				return link;
-			}
+			if (link) return link;
 			if (skip + page.data.length >= page.total) break;
 			if (page.data.length !== 100)
 				throw new Error("Incomplete Kutt link listing");

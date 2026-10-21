@@ -78,16 +78,14 @@ describe("Meetup publication action", () => {
 			trimWhitespace: false,
 		});
 		expect(result.details).toContain("meetup_event=draft approval=required");
-		expect(result.details.join("\n")).toContain(
-			"Approve publication in the organizer approval comment",
-		);
+		expect(result.details.join("\n")).toContain("meetup_url=");
 		expect(result.details.join("\n")).toContain(
 			"https://www.meetup.com/example/events/12345/",
 		);
 		expect(JSON.stringify(result)).not.toContain("synthetic");
 	});
 
-	it("explains interrupted creation in French without exposing provider content", async () => {
+	it("reports blocked state and leaves diagnostic rendering to the shared reporter", async () => {
 		// Arrange
 		mocks.execute.mockResolvedValue({
 			status: "blocked",
@@ -105,7 +103,12 @@ describe("Meetup publication action", () => {
 
 		// Assert
 		expect(result.details).toContain("evenement_meetup=bloque");
-		expect(result.details.join("\n")).toContain("Synchronisation interrompue");
+		expect(result.details.join("\n")).not.toContain(
+			"Synchronisation interrompue",
+		);
+		expect(result.diagnostics).toContainEqual(
+			expect.objectContaining({ code: "publication.meetup.uncertain" }),
+		);
 	});
 
 	it.each([

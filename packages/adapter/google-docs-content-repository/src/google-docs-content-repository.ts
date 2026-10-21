@@ -91,7 +91,7 @@ export class GoogleDocsContentRepository implements AssetContentRepository {
 			);
 			return data.writeControl?.requiredRevisionId ?? "";
 		} catch (error) {
-			if (/revision/i.test(String((error as Error)?.message)))
+			if (error instanceof Error && /revision/i.test(error.message))
 				throw new ContentError("revision");
 			throw error;
 		}

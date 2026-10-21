@@ -40,6 +40,9 @@ describe("Meetup publication configuration", () => {
 		{ ...config, startTime: "" },
 		{ ...config, endTime: "18:45" },
 		{ ...config, venues: [] },
+		{ ...config, venues: { "host-001": null } },
+		{ ...config, venues: { "host-001": false } },
+		{ ...config, venues: { constructor: { name: "Venue", city: "City" } } },
 		{ ...config, venues: { host: { name: "<script>", city: "City" } } },
 		{ ...config, venues: { host: { name: "Venue", city: "" } } },
 	])("rejects incomplete or invalid configuration %j", (input) => {

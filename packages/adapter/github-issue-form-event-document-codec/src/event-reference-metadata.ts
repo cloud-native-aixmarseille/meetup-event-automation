@@ -6,6 +6,7 @@ import {
 import {
 	type ParsedReferenceMetadata,
 	REFERENCE_MARKER_NAME,
+	type StableReferenceBinding,
 	type StableReferenceMetadata,
 } from "./github-issue-form-event-document-codec-contracts.js";
 import { ManagedIssueMarkers } from "./managed-issue-markers.js";
@@ -119,7 +120,22 @@ export class EventReferenceMetadata {
 		left: StableReferenceMetadata,
 		right: StableReferenceMetadata,
 	): boolean {
-		return JSON.stringify(left) === JSON.stringify(right);
+		return (
+			EventReferenceMetadata.sameBinding(left.host, right.host) &&
+			left.speakers.length === right.speakers.length &&
+			left.speakers.every((speaker, index) =>
+				EventReferenceMetadata.sameBinding(speaker, right.speakers[index]),
+			)
+		);
+	}
+
+	private static sameBinding(
+		left: StableReferenceBinding | null,
+		right: StableReferenceBinding | null,
+	): boolean {
+		return left === null || right === null
+			? left === right
+			: left.id === right.id && left.displayName === right.displayName;
 	}
 
 	static legacyMetadataDiagnostic(): EventDiagnostic {

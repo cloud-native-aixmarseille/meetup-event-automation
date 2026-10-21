@@ -2,16 +2,19 @@ import { ContentFingerprint } from "@meetup-automation/publication";
 import { describe, expect, it } from "vitest";
 import { slidesFixture } from "../testing/slides.fixtures.js";
 
+import { GoogleSlidesContentRepository } from "./google-slides-content-repository.js";
+
 describe("Slides content repository", () => {
 	it("propagates an unexpected provider write failure for technical reporting", async () => {
 		// Arrange
 		const f = slidesFixture();
+		const repository = new GoogleSlidesContentRepository(f.api, f.images);
 		const error = new Error("Synthetic authentication failure");
-		const snapshot = await f.repository.read("file", f.contract);
+		const snapshot = await repository.read("file", f.contract);
 		f.client.presentations.batchUpdate.mockRejectedValueOnce(error);
 
 		// Act
-		const result = f.repository.apply("file", snapshot, [
+		const result = repository.apply("file", snapshot, [
 			{
 				location: snapshot.locations[0],
 				value: {
@@ -31,6 +34,7 @@ describe("Slides content repository", () => {
 	it("renders a slotted talk title and follows its shape after the placeholder disappears", async () => {
 		// Arrange
 		const f = slidesFixture();
+		const repository = new GoogleSlidesContentRepository(f.api, f.images);
 		const contract = {
 			...f.contract,
 			fields: [
@@ -46,12 +50,12 @@ describe("Slides content repository", () => {
 		f.firstRun.content = "{{talk.title:opening}}\n";
 
 		// Act
-		const initial = await f.repository.read("file", contract);
+		const initial = await repository.read("file", contract);
 		const location = initial.locations.find(
 			(item) => item.key === "talk.title:opening",
 		);
 		if (!location) throw new Error("Missing talk fixture binding");
-		await f.repository.apply("file", initial, [
+		await repository.apply("file", initial, [
 			{
 				location,
 				value: {
@@ -63,7 +67,7 @@ describe("Slides content repository", () => {
 			},
 		]);
 		f.firstRun.content = "Public talk\n";
-		const updated = await f.repository.read(
+		const updated = await repository.read(
 			"file",
 			contract,
 			initial.locations.map((item) => ({ ...item, applied: item.fingerprint })),
@@ -97,9 +101,11 @@ describe("Slides content repository", () => {
 	it("binds repeated whole-shape tokens and preserves manual shapes and text style", async () => {
 		// Arrange
 		const f = slidesFixture();
-		const snapshot = await f.repository.read("file", f.contract);
+		const repository = new GoogleSlidesContentRepository(f.api, f.images);
+		const snapshot = await repository.read("file", f.contract);
+
 		// Act
-		const revision = await f.repository.apply(
+		const revision = await repository.apply(
 			"file",
 			snapshot,
 			snapshot.locations.map((location) => ({
@@ -112,14 +118,14 @@ describe("Slides content repository", () => {
 				},
 			})),
 		);
+		const request = f.client.presentations.batchUpdate.mock.calls[0];
+
 		// Assert
 		expect(snapshot.locations.map((location) => location.id)).toEqual([
 			"title",
 			"repeat",
 		]);
 		expect(revision).toBe("rev2");
-		const request = f.client.presentations.batchUpdate.mock
-			.calls[0] as unknown[];
 		expect(request[0]).toMatchObject({
 			presentationId: "file",
 			requestBody: { writeControl: { requiredRevisionId: "rev1" } },
@@ -133,9 +139,12 @@ describe("Slides content repository", () => {
 	it("rejects mixed prose before any batch", async () => {
 		// Arrange
 		const f = slidesFixture();
+		const repository = new GoogleSlidesContentRepository(f.api, f.images);
 		f.firstRun.content = "Welcome {{event.title}}\n";
+
 		// Act
-		const result = f.repository.read("file", f.contract);
+		const result = repository.read("file", f.contract);
+
 		// Assert
 		await expect(result).rejects.toMatchObject({ code: "location" });
 		expect(f.client.presentations.batchUpdate).not.toHaveBeenCalled();
@@ -144,11 +153,14 @@ describe("Slides content repository", () => {
 	it("rejects tokens in speaker notes", async () => {
 		// Arrange
 		const f = slidesFixture();
+		const repository = new GoogleSlidesContentRepository(f.api, f.images);
 		f.page.slideProperties = {
 			notesPage: { pageElements: [f.firstShape] },
 		};
+
 		// Act
-		const result = f.repository.read("file", f.contract);
+		const result = repository.read("file", f.contract);
+
 		// Assert
 		await expect(result).rejects.toMatchObject({ code: "location" });
 	});
@@ -158,6 +170,7 @@ describe("Slides content repository", () => {
 		async (token) => {
 			// Arrange
 			const f = slidesFixture();
+			const repository = new GoogleSlidesContentRepository(f.api, f.images);
 			const field = {
 				type: "image",
 				token,
@@ -182,13 +195,14 @@ describe("Slides content repository", () => {
 					},
 				},
 			];
-			const snapshot = await f.repository.read("file", contract);
+			const snapshot = await repository.read("file", contract);
 			const portrait = f.page.pageElements?.[0].image;
 			if (!portrait) throw new Error("Missing image fixture");
 			portrait.contentUrl =
 				"https://images.googleusercontent.com/temporary-two";
+
 			// Act
-			const second = await f.repository.read(
+			const second = await repository.read(
 				"file",
 				contract,
 				snapshot.locations.map((location) => ({
@@ -196,7 +210,7 @@ describe("Slides content repository", () => {
 					applied: location.fingerprint,
 				})),
 			);
-			await f.repository.apply("file", second, [
+			await repository.apply("file", second, [
 				{
 					location: second.locations[0],
 					value: {
@@ -211,6 +225,7 @@ describe("Slides content repository", () => {
 					},
 				},
 			]);
+
 			// Assert
 			expect(second.locations[0].fingerprint).toBe(
 				snapshot.locations[0].fingerprint,

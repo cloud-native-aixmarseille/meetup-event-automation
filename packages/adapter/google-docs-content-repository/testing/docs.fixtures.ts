@@ -4,7 +4,6 @@ import type {
 	AssetImageRepository,
 	ContentContract,
 } from "@meetup-automation/publication";
-import { GoogleDocsContentRepository } from "../src/google-docs-content-repository.js";
 
 export function paragraph(
 	text: string,
@@ -66,16 +65,12 @@ export function docsFixture() {
 		validate: vi.fn(),
 		observe: vi.fn(async () => "embedded-bytes"),
 	};
-	const repository = new GoogleDocsContentRepository(
-		client as unknown as Pick<docs_v1.Docs, "documents">,
-		images,
-	);
 	return {
 		contract,
 		document,
 		client,
 		images,
-		repository,
+		api: client as unknown as Pick<docs_v1.Docs, "documents">,
 		root: document.tabs?.[0] as docs_v1.Schema$Tab,
 		rootContent: document.tabs?.[0].documentTab as docs_v1.Schema$DocumentTab,
 		childContent: document.tabs?.[0].childTabs?.[0]
