@@ -1,11 +1,9 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { CodeStructure } from "./code-structure.mjs";
+import { CodeStructure } from "./rules/code-structure.js";
 
 export class ProductionCodeStructure {
-	constructor(directory = "packages") {
-		this.directory = directory;
-	}
+	constructor(private readonly directory = "packages") {}
 
 	async inspect() {
 		const files = (await this.sourceFiles(this.directory)).filter((path) => {
@@ -26,7 +24,7 @@ export class ProductionCodeStructure {
 		return { files: files.length, violations };
 	}
 
-	async sourceFiles(directory) {
+	async sourceFiles(directory: string): Promise<string[]> {
 		const entries = await readdir(directory, { withFileTypes: true });
 		const paths = await Promise.all(
 			entries

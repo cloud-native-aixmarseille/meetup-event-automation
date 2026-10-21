@@ -2,8 +2,11 @@
 	"$schema": "https://unpkg.com/knip@6/schema.json",
 	"workspaces": {
 		".": {
-			"entry": ["scripts/*.mjs", "tests/**/*.spec.ts", "scripts/**/*.test.ts"],
-			"project": ["scripts/*.mjs", "tests/**/*.ts", "scripts/**/*.test.ts"]
+			"entry": [
+				"tests/**/*.{spec,test}.ts",
+				"tests/integration/github-actions/wait-for-synthetic-issue.mjs"
+			],
+			"project": ["tests/**/*.ts", "tests/**/*.mjs"]
 		},
 		"packages/domain/communication": {
 			"entry": ["src/**/*.test.ts"],
@@ -26,8 +29,8 @@
 			"project": ["src/**/*.ts"]
 		},
 		"packages/runtime/github-actions": {
-			"entry": ["src/entrypoints/*.ts", "src/**/*.test.ts"],
-			"project": ["src/**/*.ts"]
+			"entry": ["src/entrypoints/*.ts", "**/*.test.ts"],
+			"project": ["src/**/*.ts", "packaging/**/*.{mjs,ts}"]
 		},
 		"packages/domain/event": {
 			"entry": ["src/**/*.test.ts"],

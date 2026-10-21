@@ -124,7 +124,7 @@ jobs:
             const { resolve } = require('node:path');
             const { pathToFileURL } = require('node:url');
             const { waitForSyntheticIssue } = await import(
-              pathToFileURL(resolve('scripts/wait-for-synthetic-issue.mjs')).href
+              pathToFileURL(resolve('tests/integration/github-actions/wait-for-synthetic-issue.mjs')).href
             );
             await waitForSyntheticIssue({
               github,

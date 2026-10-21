@@ -1,25 +1,38 @@
+import type {
+	ClassDeclaration,
+	ClassExpression,
+	Node,
+	Program,
+} from "@babel/types";
+import type { StructureViolation } from "./structure-violation.js";
+
 /** Constructor injection applies to stateless policies as well as I/O services. */
 export class DependencyInjection {
-	constructor(filename, program) {
+	private readonly composition: boolean;
+	private readonly entrypoint: boolean;
+	private readonly imports = new Set<string>();
+
+	constructor(filename: string, program: Program) {
 		this.composition = /(?:^|\/)src\/(?:[\w-]+-)?composition\.ts$/.test(
 			filename,
 		);
 		this.entrypoint =
 			filename.includes("/runtime/") && filename.includes("/src/entrypoints/");
-		this.imports = new Set(
-			program.body
-				.filter(
-					(node) =>
-						node.type === "ImportDeclaration" &&
-						/^(?:\.|@meetup-automation\/)/.test(node.source.value),
-				)
-				.flatMap((node) =>
-					node.specifiers.map((specifier) => specifier.local.name),
-				),
-		);
+		for (const node of program.body) {
+			if (
+				node.type !== "ImportDeclaration" ||
+				!/^(?:\.|@meetup-automation\/)/.test(node.source.value)
+			)
+				continue;
+			for (const specifier of node.specifiers)
+				this.imports.add(specifier.local.name);
+		}
 	}
 
-	inspect(node, owner) {
+	inspect(
+		node: Node,
+		owner?: ClassDeclaration | ClassExpression,
+	): StructureViolation[] {
 		if (this.composition) return [];
 		if (node.type === "AssignmentPattern" && this.defaultBehavior(node.right))
 			return this.violation(
@@ -48,15 +61,16 @@ export class DependencyInjection {
 		return [];
 	}
 
-	defaultBehavior(value) {
+	private defaultBehavior(value: unknown): boolean {
 		if (!value || typeof value !== "object") return false;
 		if (
+			"type" in value &&
 			[
 				"ArrowFunctionExpression",
 				"FunctionExpression",
 				"CallExpression",
 				"NewExpression",
-			].includes(value.type)
+			].includes(String(value.type))
 		)
 			return true;
 		return Object.values(value).some((child) =>
@@ -66,25 +80,26 @@ export class DependencyInjection {
 		);
 	}
 
-	staticBehavior(node) {
+	private staticBehavior(node: Node): boolean {
 		if (node.type === "StaticBlock") return true;
-		if (!node.static) return false;
+		if (!("static" in node) || !node.static) return false;
 		return (
 			node.type === "ClassMethod" ||
 			node.type === "ClassPrivateMethod" ||
-			!node.readonly ||
-			this.containsBehavior(node.value)
+			!("readonly" in node && node.readonly) ||
+			("value" in node && this.containsBehavior(node.value))
 		);
 	}
 
-	containsBehavior(value) {
+	private containsBehavior(value: unknown): boolean {
 		if (!value || typeof value !== "object") return false;
 		if (
+			"type" in value &&
 			[
 				"ArrowFunctionExpression",
 				"FunctionExpression",
 				"ObjectMethod",
-			].includes(value.type)
+			].includes(String(value.type))
 		)
 			return true;
 		return Object.values(value).some((child) =>
@@ -94,13 +109,19 @@ export class DependencyInjection {
 		);
 	}
 
-	valueFactory(owner, method) {
-		if (!owner || method.type !== "ClassMethod") return false;
+	private valueFactory(
+		owner: ClassDeclaration | ClassExpression | undefined,
+		method: Node,
+	): boolean {
+		if (!owner?.id || method.type !== "ClassMethod") return false;
+		const name = owner.id.name;
 		const initializer = owner.body.body.find(
-			(member) => member.kind === "constructor",
+			(member) =>
+				member.type === "ClassMethod" && member.kind === "constructor",
 		);
 		if (
-			initializer?.accessibility !== "private" ||
+			initializer?.type !== "ClassMethod" ||
+			initializer.accessibility !== "private" ||
 			!initializer.params.every(
 				(parameter) =>
 					parameter.type === "TSParameterProperty" && parameter.readonly,
@@ -110,9 +131,11 @@ export class DependencyInjection {
 		if (
 			owner.body.body.some(
 				(member) =>
-					!member.static &&
-					member.kind !== "constructor" &&
-					member.kind !== "get",
+					!("static" in member && member.static) &&
+					!(
+						"kind" in member &&
+						(member.kind === "constructor" || member.kind === "get")
+					),
 			)
 		)
 			return false;
@@ -123,18 +146,24 @@ export class DependencyInjection {
 			alternatives.some(
 				(type) =>
 					type?.type === "TSTypeReference" &&
-					type.typeName.name === owner.id.name,
+					type.typeName.type === "Identifier" &&
+					type.typeName.name === name,
 			) &&
 			alternatives.every(
 				(type) =>
 					type?.type === "TSUndefinedKeyword" ||
 					(type?.type === "TSTypeReference" &&
-						type.typeName.name === owner.id.name),
+						type.typeName.type === "Identifier" &&
+						type.typeName.name === name),
 			)
 		);
 	}
 
-	violation(node, rule, message) {
-		return [{ rule, line: node.loc.start.line, message }];
+	private violation(
+		node: Node,
+		rule: string,
+		message: string,
+	): StructureViolation[] {
+		return [{ rule, line: node.loc?.start.line ?? 1, message }];
 	}
 }

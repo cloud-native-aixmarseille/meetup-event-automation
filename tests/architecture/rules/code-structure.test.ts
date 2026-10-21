@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CodeStructure } from "./code-structure.mjs";
+import { CodeStructure } from "./code-structure.js";
 
 const sourcePath = "packages/domain/example/src/example.ts";
 
