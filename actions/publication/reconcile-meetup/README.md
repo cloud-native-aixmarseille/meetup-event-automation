@@ -40,6 +40,7 @@ Password whitespace is preserved. The selected model must support image input
 and structured output.
 
 Every input is required and has no default.
+AI settings follow the shared [AI configuration contract](../../../docs/reference/configuration.md#ai-configuration).
 Replace `<FULL_COMMIT_SHA>` in the usage template with a published revision that
 includes this action, and supply your repository's input values.
 
@@ -102,13 +103,17 @@ includes this action, and supply your repository's input values.
     # This input is required.
     meetup-password: ""
 
-    # Gemini API key used for pre-login hCaptcha challenges.
+    # AI provider identifier (gemini).
     # This input is required.
-    gemini-api-key: ""
+    ai-provider: ""
 
-    # Gemini vision model available to the supplied API key.
+    # Model identifier for the selected AI provider.
     # This input is required.
-    gemini-model: ""
+    ai-model: ""
+
+    # API key for the selected AI provider.
+    # This input is required.
+    ai-api-key: ""
 ```
 
 <!-- usage:end -->
@@ -131,8 +136,9 @@ includes this action, and supply your repository's input values.
 | **`locale`**                       | Language for the publication report (en or fr).                              | **true**     | -           |
 | **`meetup-email`**                 | Email of the authorized Meetup organizer account.                            | **true**     | -           |
 | **`meetup-password`**              | Password of the authorized Meetup organizer account.                         | **true**     | -           |
-| **`gemini-api-key`**               | Gemini API key used for pre-login hCaptcha challenges.                       | **true**     | -           |
-| **`gemini-model`**                 | Gemini vision model available to the supplied API key.                       | **true**     | -           |
+| **`ai-provider`**                  | AI provider identifier (gemini).                                             | **true**     | -           |
+| **`ai-model`**                     | Model identifier for the selected AI provider.                               | **true**     | -           |
+| **`ai-api-key`**                   | API key for the selected AI provider.                                        | **true**     | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->

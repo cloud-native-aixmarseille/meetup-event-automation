@@ -35,8 +35,12 @@ on:
         description: Language for the publication report (en or fr).
         required: true
         type: string
-      gemini-model:
-        description: Gemini vision model used for pre-login hCaptcha challenges.
+      ai-provider:
+        description: AI provider identifier (gemini).
+        required: true
+        type: string
+      ai-model:
+        description: Model identifier for the selected AI provider.
         required: true
         type: string
     secrets:
@@ -55,8 +59,8 @@ on:
       meetup-password:
         description: Password of the authorized Meetup organizer account.
         required: true
-      gemini-api-key:
-        description: Gemini API key used by hCaptcha Challenger.
+      ai-api-key:
+        description: API key for the selected AI provider.
         required: true
 
 permissions: {}
@@ -137,7 +141,8 @@ jobs:
           locale: ${{ inputs.locale }}
           meetup-email: ${{ secrets.meetup-email }} # zizmor: ignore[secrets-outside-env] required reusable workflow secret is forwarded explicitly
           meetup-password: ${{ secrets.meetup-password }} # zizmor: ignore[secrets-outside-env] required reusable workflow secret is forwarded explicitly
-          gemini-api-key: ${{ secrets.gemini-api-key }} # zizmor: ignore[secrets-outside-env] required reusable workflow secret is forwarded explicitly
-          gemini-model: ${{ inputs.gemini-model }}
+          ai-provider: ${{ inputs.ai-provider }}
+          ai-model: ${{ inputs.ai-model }}
+          ai-api-key: ${{ secrets.ai-api-key }} # zizmor: ignore[secrets-outside-env] required reusable workflow secret is forwarded explicitly
           slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
           slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] explicit reusable workflow secret

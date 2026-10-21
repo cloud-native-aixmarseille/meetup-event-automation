@@ -40,7 +40,7 @@ describe("Meetup publication workflow", () => {
 		);
 		expect(
 			steps.filter((step) =>
-				/secrets\.(meetup-|gemini-)/.test(JSON.stringify(step)),
+				/secrets\.(meetup-|ai-api-key)/.test(JSON.stringify(step)),
 			),
 		).toEqual([steps.at(-1)]);
 		expect(JSON.stringify(steps)).not.toMatch(/upload-artifact|save-cache/);

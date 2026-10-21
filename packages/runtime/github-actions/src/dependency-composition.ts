@@ -8,6 +8,7 @@ import { ActionFailurePresenter } from "./action-failure-presenter.js";
 import { ActionOutput } from "./action-output.js";
 import { ActionReport } from "./action-report.js";
 import { ActionRunner } from "./action-runner.js";
+import { AiInput } from "./ai-input.js";
 import { AssetContentConfiguration } from "./assets/asset-content-configuration.js";
 import {
 	AssetDateFormatter,
@@ -40,6 +41,9 @@ import { ReferentialActionReport } from "./referential-action-report.js";
 import { RuntimeInput } from "./runtime-input.js";
 import { SpeakerSyncFailureReport } from "./speaker-sync-failure-report.js";
 export class GithubActionsComposition {
+	aiInput(): AiInput {
+		return new AiInput(this.runtimeInput());
+	}
 	publicationUrlInput(): PublicationUrlInput {
 		return new PublicationUrlInput();
 	}

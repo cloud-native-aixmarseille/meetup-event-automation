@@ -92,7 +92,6 @@ export class MeetupEventGatewayComposition {
 	}
 	meetupEventGatewayFactory(): MeetupEventGatewayFactory {
 		return new MeetupEventGatewayFactory({
-			hcaptchaChallengeFactory: this.hcaptchaChallengeFactory(),
 			createMeetupEventGateway: (...args) => this.meetupEventGateway(...args),
 		});
 	}
