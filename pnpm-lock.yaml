@@ -171,6 +171,15 @@ importers:
         specifier: workspace:*
         version: link:../../domain/publication
 
+  packages/adapter/hcaptcha-captcha-resolver:
+    dependencies:
+      '@meetup-automation/browser-authentication':
+        specifier: workspace:*
+        version: link:../../application/browser-authentication
+      playwright-core:
+        specifier: 1.64.1
+        version: 1.64.1
+
   packages/adapter/https-asset-image-repository:
     dependencies:
       '@meetup-automation/publication':
@@ -191,6 +200,9 @@ importers:
 
   packages/adapter/meetup-event-gateway:
     dependencies:
+      '@meetup-automation/browser-authentication':
+        specifier: workspace:*
+        version: link:../../application/browser-authentication
       '@meetup-automation/publication':
         specifier: workspace:*
         version: link:../../domain/publication
@@ -242,6 +254,8 @@ importers:
       yaml:
         specifier: ^2.9.1
         version: 2.9.1
+
+  packages/application/browser-authentication: {}
 
   packages/application/journey:
     dependencies:
@@ -329,6 +343,9 @@ importers:
       '@meetup-automation/google-slides-content-repository':
         specifier: workspace:*
         version: link:../../adapter/google-slides-content-repository
+      '@meetup-automation/hcaptcha-captcha-resolver':
+        specifier: workspace:*
+        version: link:../../adapter/hcaptcha-captcha-resolver
       '@meetup-automation/https-asset-image-repository':
         specifier: workspace:*
         version: link:../../adapter/https-asset-image-repository

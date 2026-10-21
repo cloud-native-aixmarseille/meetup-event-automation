@@ -2,15 +2,11 @@ import type { Page } from "playwright-core";
 import type { ChromiumEndpoint } from "./chromium-endpoint.js";
 import type { HcaptchaProcess } from "./hcaptcha-process.js";
 
-export interface LoginChallenge {
-	solve(page: Page): Promise<boolean>;
-}
-
 export interface HcaptchaChallengeCollaborators {
 	readonly chromiumEndpoint: Pick<ChromiumEndpoint, "read">;
 }
 
-export class HcaptchaChallenge implements LoginChallenge {
+export class HcaptchaChallenge {
 	private attempted = false;
 
 	constructor(
@@ -26,14 +22,15 @@ export class HcaptchaChallenge implements LoginChallenge {
 	async solve(page: Page): Promise<boolean> {
 		if (this.attempted) return false;
 		this.attempted = true;
+		const targetUrl = page.url();
 		const browser = page.context().browser();
 		if (!browser) throw new Error("Browser unavailable.");
 		const endpoint = await this.collaborators.chromiumEndpoint.read(browser);
 		const result = await this.process.run({
 			endpoint,
+			targetUrl,
 			apiKey: this.apiKey,
 			model: this.model,
-			targetUrl: page.url(),
 		});
 		if (result === "unavailable")
 			throw new Error("Challenge solver unavailable.");

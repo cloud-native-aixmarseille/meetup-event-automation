@@ -1,10 +1,7 @@
+import type { CaptchaResolver } from "@meetup-automation/browser-authentication";
 import type { Page } from "playwright-core";
-import type { LoginChallenge } from "./hcaptcha-challenge.js";
 import type { MeetupBrowserRoutes } from "./meetup-browser-routes.js";
 import type { PublicationAuthenticationStatus } from "./meetup-session-status.js";
-
-const CHALLENGE =
-	'iframe[src*="hcaptcha.com"], iframe[src*="/recaptcha/"], input[autocomplete="one-time-code"]';
 
 /** All reads are bounded; provider text and account details never leave this class. */
 export interface MeetupLoginPageCollaborators {
@@ -18,7 +15,7 @@ export class MeetupLoginPage {
 	constructor(
 		private readonly collaborators: MeetupLoginPageCollaborators,
 		private readonly page: Page,
-		private readonly challenge: LoginChallenge,
+		private readonly captcha: CaptchaResolver,
 		private readonly origin: string,
 	) {
 		page.setDefaultTimeout(15_000);
@@ -98,49 +95,30 @@ export class MeetupLoginPage {
 	}
 
 	private async hasChallenge(): Promise<boolean> {
-		if (await this.hcaptchaPassed()) return this.hasOtherChallenge();
-		const challenges = this.page.locator(CHALLENGE);
-		for (const challenge of await challenges.all())
-			if (await challenge.isVisible()) return true;
-		return false;
-	}
-
-	private async canSolveHcaptcha(): Promise<boolean> {
-		if (await this.hasOtherChallenge()) return false;
-		for (const frame of await this.page
-			.locator('iframe[src*="hcaptcha.com"]')
-			.all())
-			if (await frame.isVisible()) return true;
-		return false;
+		return (
+			(await this.hasOneTimeCode()) ||
+			(await this.captcha.inspect()) === "required"
+		);
 	}
 
 	private async prepareChallenge(): Promise<PublicationAuthenticationStatus | null> {
 		if (!(await this.hasChallenge())) return null;
 		if (
-			!(await this.canSolveHcaptcha()) ||
-			!(await this.challenge.solve(this.page))
+			(await this.hasOneTimeCode()) ||
+			(await this.captcha.resolve()) !== "clear"
 		)
 			return "challenge-required";
 		if (!this.isMeetupPath("/login")) return "unexpected-page";
-		if (!(await this.hcaptchaPassed()) || (await this.hasOtherChallenge()))
-			return "challenge-required";
+		if (await this.hasChallenge()) return "challenge-required";
 		return null;
 	}
 
-	private async hasOtherChallenge(): Promise<boolean> {
-		const challenges = this.page.locator(
-			'iframe[src*="/recaptcha/"], input[autocomplete="one-time-code"]',
-		);
-		for (const challenge of await challenges.all())
-			if (await challenge.isVisible()) return true;
+	private async hasOneTimeCode(): Promise<boolean> {
+		for (const input of await this.page
+			.locator('input[autocomplete="one-time-code"]')
+			.all())
+			if (await input.isVisible()) return true;
 		return false;
-	}
-
-	private async hcaptchaPassed(): Promise<boolean> {
-		const response = this.page.locator('[name="h-captcha-response"]').first();
-		return (
-			(await response.count()) > 0 && (await response.inputValue()).length > 0
-		);
 	}
 
 	private async hasRejectedCredentials(): Promise<boolean> {

@@ -30,16 +30,17 @@ none. Domain policies contain no community-specific URL defaults.
 
 ## Package ownership
 
-| Package area                         | Responsibility                                                                                                                             |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `packages/domain/event`              | Event model, field rules, readiness, lifecycle, reconciliation, event/document/comment ports, clock                                        |
-| `packages/domain/referential`        | Catalog validation, stable participant IDs, reference resolution, issue-form choices, catalog port                                         |
-| `packages/domain/communication`      | Due-message planning, attention conditions/episodes/reminders, delivery state and ports                                                    |
-| `packages/domain/publication`        | Publication URL rules, manual checklist evaluation, asset reconciliation, text/image contracts and ownership, content/asset/feedback ports |
-| `packages/application/journey`       | Cross-domain orchestration, configuration defaults, public diagnostics, issue-form projection port                                         |
-| `packages/adapter/*`                 | Concrete implementations of owned ports: GitHub, CSV, YAML, Drive, OpenFeedback, Kutt, Slack, system time                                  |
-| `packages/presentation/localization` | Generic locale normalization, ICU formatting, and catalog contracts                                                                        |
-| `packages/runtime/github-actions`    | Input parsing, credentials, dependency composition, action execution, output serialization                                                 |
+| Package area                                  | Responsibility                                                                                                                             |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `packages/domain/event`                       | Event model, field rules, readiness, lifecycle, reconciliation, event/document/comment ports, clock                                        |
+| `packages/domain/referential`                 | Catalog validation, stable participant IDs, reference resolution, issue-form choices, catalog port                                         |
+| `packages/domain/communication`               | Due-message planning, attention conditions/episodes/reminders, delivery state and ports                                                    |
+| `packages/domain/publication`                 | Publication URL rules, manual checklist evaluation, asset reconciliation, text/image contracts and ownership, content/asset/feedback ports |
+| `packages/application/journey`                | Cross-domain orchestration, configuration defaults, public diagnostics, issue-form projection port                                         |
+| `packages/application/browser-authentication` | Provider-neutral CAPTCHA inspection and resolution port                                                                                    |
+| `packages/adapter/*`                          | Concrete implementations of owned ports: GitHub, CSV, YAML, Drive, OpenFeedback, Kutt, Slack, system time                                  |
+| `packages/presentation/localization`          | Generic locale normalization, ICU formatting, and catalog contracts                                                                        |
+| `packages/runtime/github-actions`             | Input parsing, credentials, dependency composition, action execution, output serialization                                                 |
 
 A domain package owns its model, use cases, and ports. Journey code coordinates
 those APIs without redefining their rules. Each port has one owner. Adapters
@@ -138,6 +139,16 @@ They respect the same package dependency directions as other production code.
 Runtime bootstrap entrypoints may construct composition classes and obtain the
 shared runner and action handler. They await the runner with the handler's bound
 operation. Bind container replacements before resolving a use case.
+
+`CaptchaResolver` is an application-owned, session-bound capability with
+`inspect()` and `resolve()` operations. Its contract contains no Playwright
+types, provider names, or credentials. The Meetup adapter receives an injected
+factory that binds a resolver to each browser page; login owns account and
+one-time-code checks. `hcaptcha-captcha-resolver` implements CAPTCHA detection,
+response verification, and the bounded Python solver. Runtime composition alone
+selects that adapter and supplies AI configuration. Resolver inspection never
+starts a solver attempt; unresolved verification remains `required`, and
+technical failures reject. A cleared CAPTCHA does not establish authentication.
 
 Inject an instance for a reusable collaborator. Inject a typed factory when an
 object needs operation-specific data or lifetime, such as a browser page or an
@@ -413,8 +424,8 @@ approval adapter use these types instead of maintaining provider URL patterns.
 The browser adapter owns login, account, scheduling, and editor routes; it removes
 query and fragment data only from browser redirects before resolving an event
 identity. Stored and organizer-supplied identities reject that data. The isolated
-Python solver verifies the caller-selected HTTPS login page and empty credential
-fields at its process boundary.
+Python solver verifies the caller-selected HTTPS page and empty credential fields
+at its process boundary.
 
 Organizer attention has separate domain-owned conditions, episodes, reminder windows,
 and notification reservations. The journey gathers typed stage outcomes and

@@ -13,6 +13,10 @@
 			"entry": ["src/**/*.test.ts"],
 			"project": ["src/**/*.ts"]
 		},
+		"packages/application/browser-authentication": {
+			"entry": [],
+			"project": ["src/**/*.ts"]
+		},
 		"packages/application/*": {
 			"entry": ["src/**/*.test.ts"],
 			"project": ["src/**/*.ts", "testing/**/*.ts"]
