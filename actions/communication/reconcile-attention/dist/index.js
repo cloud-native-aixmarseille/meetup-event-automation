@@ -29511,6 +29511,24 @@ var MeetupPublicationChecklist = class _MeetupPublicationChecklist {
   }
 };
 
+// packages/application/journey/src/approval/approval-notification-policy.ts
+var ApprovalNotificationPolicy = class {
+  notificationFor(request2) {
+    switch (request2.kind) {
+      case "email-thanks":
+        return void 0;
+      case "email-introduction":
+        return {
+          kind: request2.kind,
+          eventDate: request2.eventDate,
+          recipientCount: request2.recipientCount
+        };
+      case "meetup-publication":
+        return { kind: request2.kind, eventDate: request2.eventDate };
+    }
+  }
+};
+
 // packages/application/journey/src/approval/approval-request-policy.ts
 var ApprovalRequestPolicy = class _ApprovalRequestPolicy {
   static validate(request2) {
@@ -40607,18 +40625,21 @@ var ApprovalDecisionParser = class {
 
 // packages/adapter/github-organizer-approval/src/approval-notifications.ts
 var ApprovalNotifications = class {
-  constructor(client, presenter, notifications, channelId) {
+  constructor(policy, client, presenter, notifications, channelId) {
+    this.policy = policy;
     this.client = client;
     this.presenter = presenter;
     this.notifications = notifications;
     this.channelId = channelId;
   }
+  policy;
   client;
   presenter;
   notifications;
   channelId;
   async send(record, commentId) {
-    if (record.kind === "email-thanks") return false;
+    const facts = this.policy.notificationFor(record);
+    if (!facts) return false;
     if (record.notification !== "new" && record.notification !== "retry")
       return record.notification === "reserved";
     const before = this.presenter.issue(record, { status: "pending" });
@@ -40627,10 +40648,9 @@ var ApprovalNotifications = class {
     await this.client.replace(commentId, before, reserved);
     try {
       const result = await this.notifications.send({
+        ...facts,
         destination: this.channelId,
-        eventDate: record.eventDate,
-        approvalUrl: this.client.url(commentId),
-        ...record.kind === "meetup-publication" ? { kind: record.kind } : { kind: record.kind, recipientCount: record.recipientCount }
+        approvalUrl: this.client.url(commentId)
       });
       record.notification = result.outcome === "accepted" ? "sent" : result.outcome === "uncertain" ? "reserved" : "retry";
       if (result.outcome === "accepted" && result.message)
@@ -40645,7 +40665,7 @@ var ApprovalNotifications = class {
     return record.notification !== "sent";
   }
   async react(record, commentId) {
-    if (record.kind === "email-thanks") return false;
+    if (!this.policy.notificationFor(record)) return false;
     if (!record.decision || record.reactionSent) return false;
     if (!record.notificationMessage) return record.notification !== "sent";
     const before = this.presenter.issue(record, record.decision);
@@ -60669,6 +60689,7 @@ var OrganizerApprovalComposition = class {
   static create(client, authorLogin, presenter, notificationPort, organizerChannelId) {
     const records = new ApprovalRecordFactory(randomUUID2);
     const notifications = new ApprovalNotifications(
+      new ApprovalNotificationPolicy(),
       client,
       presenter,
       notificationPort,

@@ -1,4 +1,7 @@
-import type { OrganizerApprovalNotification } from "@meetup-automation/journey";
+import type {
+	ApprovalNotificationPolicy,
+	OrganizerApprovalNotification,
+} from "@meetup-automation/journey";
 import type { ApprovalPresenter } from "./approval-presenter.js";
 import type { StoredApproval } from "./approval-state.js";
 import type { GithubApprovalClient } from "./github-approval-client.js";
@@ -6,13 +9,18 @@ import type { GithubApprovalClient } from "./github-approval-client.js";
 /** Reserve new posts, retain their destination, and safely retry decision reactions. */
 export class ApprovalNotifications {
 	constructor(
-		private readonly client: GithubApprovalClient,
-		private readonly presenter: ApprovalPresenter,
+		private readonly policy: Pick<
+			ApprovalNotificationPolicy,
+			"notificationFor"
+		>,
+		private readonly client: Pick<GithubApprovalClient, "replace" | "url">,
+		private readonly presenter: Pick<ApprovalPresenter, "issue">,
 		private readonly notifications: OrganizerApprovalNotification,
 		private readonly channelId: string,
 	) {}
 	async send(record: StoredApproval, commentId: number): Promise<boolean> {
-		if (record.kind === "email-thanks") return false;
+		const facts = this.policy.notificationFor(record);
+		if (!facts) return false;
 		if (record.notification !== "new" && record.notification !== "retry")
 			return record.notification === "reserved";
 		const before = this.presenter.issue(record, { status: "pending" });
@@ -21,12 +29,9 @@ export class ApprovalNotifications {
 		await this.client.replace(commentId, before, reserved);
 		try {
 			const result = await this.notifications.send({
+				...facts,
 				destination: this.channelId,
-				eventDate: record.eventDate,
 				approvalUrl: this.client.url(commentId),
-				...(record.kind === "meetup-publication"
-					? { kind: record.kind }
-					: { kind: record.kind, recipientCount: record.recipientCount }),
 			});
 			record.notification =
 				result.outcome === "accepted"
@@ -47,7 +52,7 @@ export class ApprovalNotifications {
 		return record.notification !== "sent";
 	}
 	async react(record: StoredApproval, commentId: number): Promise<boolean> {
-		if (record.kind === "email-thanks") return false;
+		if (!this.policy.notificationFor(record)) return false;
 		if (!record.decision || record.reactionSent) return false;
 		if (!record.notificationMessage) return record.notification !== "sent";
 		const before = this.presenter.issue(record, record.decision);

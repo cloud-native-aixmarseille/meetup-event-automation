@@ -10,14 +10,17 @@ export type ApprovalNotificationResult = GatewayDispatchResult & {
 };
 
 /** Public approval facts; the notification adapter owns channel-specific wording. */
-export type ApprovalNotificationRequest = {
-	readonly destination: string;
+export type ApprovalNotificationFacts = {
 	readonly eventDate: string;
-	readonly approvalUrl: string;
 } & (
 	| { readonly kind: "email-introduction"; readonly recipientCount: number }
 	| { readonly kind: "meetup-publication" }
 );
+
+export type ApprovalNotificationRequest = ApprovalNotificationFacts & {
+	readonly destination: string;
+	readonly approvalUrl: string;
+};
 
 export interface OrganizerApprovalNotification {
 	send(input: ApprovalNotificationRequest): Promise<ApprovalNotificationResult>;

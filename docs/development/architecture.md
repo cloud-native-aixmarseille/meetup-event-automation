@@ -196,7 +196,12 @@ Only a content fingerprint and public facts cross this boundary. Requests are in
 of delivery records: approval never clears a delivery reservation. Partial
 completion does not invalidate the full batch fingerprint. Slack notification
 reservations prevent automatic retries after ambiguous acknowledgements. The
-journey's `OrganizerApprovalNotification` port accepts public approval facts and
+journey's `ApprovalNotificationPolicy` selects standalone approval notifications
+and projects their public facts. Thank-you approvals use follow-up attention, so
+the policy excludes their separate posts and decision reactions. The GitHub
+notification coordinator consumes this injected policy and owns durable
+reservations, acknowledgements, and retries without branching on approval kinds.
+The journey's `OrganizerApprovalNotification` port accepts public approval facts and
 the approval comment URL, and returns an opaque message reference for accepted
 requests. The Slack adapter owns notification formatting and its English/French
 catalogs. It uses the message reference for idempotent decision reactions on the

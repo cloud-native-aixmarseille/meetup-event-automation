@@ -1,6 +1,7 @@
-import type {
-	OrganizerApprovalNotification,
-	OrganizerApprovalRequest,
+import {
+	ApprovalNotificationPolicy,
+	type OrganizerApprovalNotification,
+	type OrganizerApprovalRequest,
 } from "@meetup-automation/journey";
 import { vi } from "vitest";
 import { ApprovalCommentCodec } from "../src/approval-comment-codec.js";
@@ -213,6 +214,7 @@ export function approvalDependencies(
 		() => `00000000-0000-4000-8000-${String(++sequence).padStart(12, "0")}`,
 	);
 	const notifications = new ApprovalNotifications(
+		new ApprovalNotificationPolicy(),
 		client,
 		presenter,
 		notificationPort,

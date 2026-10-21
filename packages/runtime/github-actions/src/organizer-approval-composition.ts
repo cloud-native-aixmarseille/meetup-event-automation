@@ -13,7 +13,10 @@ import {
 	ResolveApprovalDecision,
 	TrustedApprovalState,
 } from "@meetup-automation/github-organizer-approval";
-import type { OrganizerApprovalNotification } from "@meetup-automation/journey";
+import {
+	ApprovalNotificationPolicy,
+	type OrganizerApprovalNotification,
+} from "@meetup-automation/journey";
 
 /** Wire independent approval, follow-up, and attention capabilities per invocation. */
 export class OrganizerApprovalComposition {
@@ -26,6 +29,7 @@ export class OrganizerApprovalComposition {
 	) {
 		const records = new ApprovalRecordFactory(randomUUID);
 		const notifications = new ApprovalNotifications(
+			new ApprovalNotificationPolicy(),
 			client,
 			presenter,
 			notificationPort,
