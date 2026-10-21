@@ -5,6 +5,7 @@ import {
 	ManageMeetupEvent,
 } from "@meetup-automation/journey";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { publicationUrlInputs } from "../testing/publication-urls.fixtures.js";
 import { EventComposition, SERVICES } from "./composition.js";
 import { GithubActionsComposition } from "./dependency-composition.js";
 import { EventActions } from "./event-actions.js";
@@ -13,6 +14,7 @@ const boundary = vi.hoisted(() => ({ execute: vi.fn() }));
 vi.mock("@actions/core", () => ({
 	getInput: (name: string) =>
 		({
+			...publicationUrlInputs,
 			"conference-hall-event": "example-cfp",
 			"conference-hall-api-key": "synthetic-source-key",
 			"issue-number": "42",
@@ -69,6 +71,8 @@ describe("event action report facts", () => {
 
 			// Act
 			const report = await new EventActions({
+				publicationUrlInput:
+					new GithubActionsComposition().publicationUrlInput(),
 				createEventJourney: (input) =>
 					EventComposition.createEventContainer(input).get(ManageMeetupEvent),
 				createEventListing: (input) => {
@@ -111,6 +115,7 @@ describe("event action report facts", () => {
 
 		// Act
 		const report = await new EventActions({
+			publicationUrlInput: new GithubActionsComposition().publicationUrlInput(),
 			createEventJourney: (input) =>
 				EventComposition.createEventContainer(input).get(ManageMeetupEvent),
 			createEventListing: (input) => {
@@ -156,6 +161,8 @@ describe("event action report facts", () => {
 
 			// Act
 			const report = await new EventActions({
+				publicationUrlInput:
+					new GithubActionsComposition().publicationUrlInput(),
 				createEventJourney: (input) =>
 					EventComposition.createEventContainer(input).get(ManageMeetupEvent),
 				createEventListing: (input) => {

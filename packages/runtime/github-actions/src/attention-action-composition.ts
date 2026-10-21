@@ -6,6 +6,7 @@ import { OrganizerFeedback } from "./organizer-feedback.js";
 export class AttentionActionComposition {
 	attentionAction(): AttentionAction {
 		return new AttentionAction({
+			publicationUrlInput: new GithubActionsComposition().publicationUrlInput(),
 			createAttention: (input) => {
 				const container = AttentionComposition.create(input);
 				return {

@@ -5,9 +5,11 @@ import type { ActionReportData } from "./action-report.js";
 import type { ConferenceHallInput } from "./conference-hall-input.js";
 import type { FeedbackComposition } from "./feedback-composition.js";
 import type { ActionMessages } from "./i18n/action-messages.js";
+import type { PublicationUrlInput } from "./publication-url-input.js";
 import type { RuntimeInput } from "./runtime-input.js";
 
 export interface FeedbackActionCollaborators {
+	readonly publicationUrlInput: Pick<PublicationUrlInput, "read">;
 	readonly createJourney: (
 		input: Parameters<typeof FeedbackComposition.createFeedbackContainer>[0],
 	) => Pick<ManageMeetupFeedback, "execute">;
@@ -31,6 +33,7 @@ export class FeedbackAction {
 		core.setSecret(openFeedbackApiKey);
 		const { owner, repo } = context.repo;
 		const journey = this.collaborators.createJourney({
+			publicationUrls: this.collaborators.publicationUrlInput.read(),
 			locale: messages.locale,
 			...this.collaborators.conferenceHallInput.read(),
 			client: getOctokit(core.getInput("github-token", { required: true })),

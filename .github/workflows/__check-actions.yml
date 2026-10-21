@@ -82,11 +82,11 @@ jobs:
 
             ### Meetup Link
 
-            https://www.meetup.com/cloud-native-aix-marseille/events/123
+            https://www.meetup.com/example-group/events/123
 
             ### CNCF Link
 
-            https://ocgroups.dev/cncf/group/cloud-native-aix-marseille/event/platform-night
+            https://community.example.test/events/platform-night
 
             ### Drive Link
 
@@ -320,6 +320,9 @@ jobs:
         id: reconcile-event
         uses: ./actions/event/reconcile
         with:
+          meetup-event-url-prefix: https://www.meetup.com/example-group/events/
+          community-event-url-prefixes: '["https://community.example.test/events/"]'
+          asset-folder-url-prefix: https://drive.google.com/drive/folders/
           locale: en
           conference-hall-event: synthetic-cfp
           conference-hall-api-key: synthetic-key
@@ -369,6 +372,9 @@ jobs:
         id: reconcile-communications
         uses: ./actions/communication/reconcile
         with:
+          meetup-event-url-prefix: https://www.meetup.com/example-group/events/
+          community-event-url-prefixes: '["https://community.example.test/events/"]'
+          asset-folder-url-prefix: https://drive.google.com/drive/folders/
           locale: en
           conference-hall-event: synthetic-cfp
           conference-hall-api-key: synthetic-key
@@ -405,6 +411,9 @@ jobs:
         continue-on-error: true
         uses: ./actions/publication/reconcile-assets
         with:
+          meetup-event-url-prefix: https://www.meetup.com/example-group/events/
+          community-event-url-prefixes: '["https://community.example.test/events/"]'
+          asset-folder-url-prefix: https://drive.google.com/drive/folders/
           locale: en
           conference-hall-event: synthetic-cfp
           conference-hall-api-key: synthetic-key
@@ -439,6 +448,9 @@ jobs:
         continue-on-error: true
         uses: ./actions/publication/reconcile-feedback
         with:
+          meetup-event-url-prefix: https://www.meetup.com/example-group/events/
+          community-event-url-prefixes: '["https://community.example.test/events/"]'
+          asset-folder-url-prefix: https://drive.google.com/drive/folders/
           locale: en
           conference-hall-event: synthetic-cfp
           conference-hall-api-key: synthetic-key
@@ -454,6 +466,9 @@ jobs:
         continue-on-error: true
         uses: ./actions/publication/reconcile-feedback
         with:
+          meetup-event-url-prefix: https://www.meetup.com/example-group/events/
+          community-event-url-prefixes: '["https://community.example.test/events/"]'
+          asset-folder-url-prefix: https://drive.google.com/drive/folders/
           locale: en
           conference-hall-event: synthetic-cfp
           conference-hall-api-key: synthetic-key
@@ -469,6 +484,9 @@ jobs:
         continue-on-error: true
         uses: ./actions/publication/reconcile-feedback
         with:
+          meetup-event-url-prefix: https://www.meetup.com/example-group/events/
+          community-event-url-prefixes: '["https://community.example.test/events/"]'
+          asset-folder-url-prefix: https://drive.google.com/drive/folders/
           locale: en
           conference-hall-event: synthetic-cfp
           conference-hall-api-key: synthetic-key
@@ -484,6 +502,9 @@ jobs:
         continue-on-error: true
         uses: ./actions/publication/reconcile-feedback
         with:
+          meetup-event-url-prefix: https://www.meetup.com/example-group/events/
+          community-event-url-prefixes: '["https://community.example.test/events/"]'
+          asset-folder-url-prefix: https://drive.google.com/drive/folders/
           locale: en
           conference-hall-event: synthetic-cfp
           conference-hall-api-key: synthetic-key

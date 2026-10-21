@@ -13,9 +13,11 @@ import type { ActionReportData } from "./action-report.js";
 import type { EventComposition } from "./composition.js";
 import type { ConferenceHallInput } from "./conference-hall-input.js";
 import type { ActionMessages } from "./i18n/action-messages.js";
+import type { PublicationUrlInput } from "./publication-url-input.js";
 import type { RuntimeInput } from "./runtime-input.js";
 
 export interface EventActionsCollaborators {
+	readonly publicationUrlInput: Pick<PublicationUrlInput, "read">;
 	readonly createEventJourney: (
 		input: Parameters<typeof EventComposition.createEventContainer>[0],
 	) => Pick<ManageMeetupEvent, "execute">;
@@ -41,6 +43,7 @@ export class EventActions {
 		const { owner, repo } = context.repo;
 		const repository = `${owner}/${repo}`;
 		const journey = this.collaborators.createEventJourney({
+			publicationUrls: this.collaborators.publicationUrlInput.read(),
 			locale: messages.locale,
 			...this.collaborators.conferenceHallInput.read(),
 			client: getOctokit(token),

@@ -1,6 +1,10 @@
 import { ManageMeetupFeedback } from "@meetup-automation/journey";
 import { LocalizationComposition } from "@meetup-automation/localization";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	publicationUrlInputs,
+	publicationUrls,
+} from "../testing/publication-urls.fixtures.js";
 import { GithubActionsComposition } from "./dependency-composition.js";
 import { FeedbackAction } from "./feedback-action.js";
 import { FeedbackComposition } from "./feedback-composition.js";
@@ -37,6 +41,7 @@ vi.mock("./feedback-composition.js", () => ({
 beforeEach(() => {
 	vi.clearAllMocks();
 	mocks.inputs = {
+		...publicationUrlInputs,
 		"conference-hall-event": "example-cfp",
 		"conference-hall-api-key": "synthetic-source-key",
 		"issue-number": "12",
@@ -59,6 +64,9 @@ beforeEach(() => {
 
 describe("feedback action boundary", () => {
 	it.each([
+		["meetup-event-url-prefix", ""],
+		["community-event-url-prefixes", ""],
+		["asset-folder-url-prefix", ""],
 		["conference-hall-event", ""],
 		["conference-hall-event", "   "],
 		["conference-hall-api-key", ""],
@@ -77,6 +85,8 @@ describe("feedback action boundary", () => {
 
 			// Act
 			const operation = new FeedbackAction({
+				publicationUrlInput:
+					new GithubActionsComposition().publicationUrlInput(),
 				createJourney: (input) =>
 					FeedbackComposition.createFeedbackContainer(input).get(
 						ManageMeetupFeedback,
@@ -105,6 +115,7 @@ describe("feedback action boundary", () => {
 
 		// Act
 		const report = await new FeedbackAction({
+			publicationUrlInput: new GithubActionsComposition().publicationUrlInput(),
 			createJourney: (input) =>
 				FeedbackComposition.createFeedbackContainer(input).get(
 					ManageMeetupFeedback,
@@ -134,6 +145,7 @@ describe("feedback action boundary", () => {
 
 		// Act
 		await new FeedbackAction({
+			publicationUrlInput: new GithubActionsComposition().publicationUrlInput(),
 			createJourney: (input) =>
 				FeedbackComposition.createFeedbackContainer(input).get(
 					ManageMeetupFeedback,
@@ -145,6 +157,7 @@ describe("feedback action boundary", () => {
 		// Assert
 		expect(mocks.compose).toHaveBeenCalledWith(
 			expect.objectContaining({
+				publicationUrls,
 				kuttApiKey: "synthetic-key",
 				kuttBaseUrl: "https://short.example.test",
 				kuttLinkId: "link-1",
@@ -169,6 +182,7 @@ describe("feedback action boundary", () => {
 
 		// Act
 		const report = await new FeedbackAction({
+			publicationUrlInput: new GithubActionsComposition().publicationUrlInput(),
 			createJourney: (input) =>
 				FeedbackComposition.createFeedbackContainer(input).get(
 					ManageMeetupFeedback,
@@ -194,6 +208,7 @@ describe("feedback action boundary", () => {
 
 		// Act
 		const report = await new FeedbackAction({
+			publicationUrlInput: new GithubActionsComposition().publicationUrlInput(),
 			createJourney: (input) =>
 				FeedbackComposition.createFeedbackContainer(input).get(
 					ManageMeetupFeedback,
@@ -220,6 +235,7 @@ describe("feedback action boundary", () => {
 
 		// Act
 		await new FeedbackAction({
+			publicationUrlInput: new GithubActionsComposition().publicationUrlInput(),
 			createJourney: (input) =>
 				FeedbackComposition.createFeedbackContainer(input).get(
 					ManageMeetupFeedback,
@@ -247,6 +263,8 @@ describe("feedback action boundary", () => {
 
 			// Act
 			const operation = new FeedbackAction({
+				publicationUrlInput:
+					new GithubActionsComposition().publicationUrlInput(),
 				createJourney: (input) =>
 					FeedbackComposition.createFeedbackContainer(input).get(
 						ManageMeetupFeedback,

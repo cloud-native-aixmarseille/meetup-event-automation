@@ -109,7 +109,7 @@ export class ManageMeetupEvent {
 		const publication =
 			this.collaborators.eventPublicationEvaluation.evaluatePublication(
 				event,
-				config,
+				this.dependencies.publicationUrls,
 			);
 		event = publication.event;
 		eventDiagnostics.push(...publication.diagnostics);

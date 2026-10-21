@@ -80,6 +80,18 @@ jobs:
       # This input is required.
       conference-hall-api-key: ""
     with:
+      # HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
+      # This input is required.
+      meetup-event-url-prefix: ${{ vars.MEETUP_EVENT_URL_PREFIX }}
+
+      # JSON array of nonempty HTTPS prefixes accepted for community event URLs.
+      # This input is required.
+      community-event-url-prefixes: ${{ vars.COMMUNITY_EVENT_URL_PREFIXES }}
+
+      # HTTPS prefix accepted for event asset folder URLs.
+      # This input is required.
+      asset-folder-url-prefix: ${{ vars.ASSET_FOLDER_URL_PREFIX }}
+
       # Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
       # This input is required.
       locale: ""
@@ -130,6 +142,9 @@ jobs:
 | **`kutt-base-url`**                          | HTTPS base URL of the Kutt instance, without /api/v2. No default.                                                                            | **true**     | **string** | -           |
 | **`kutt-link-id`**                           | Existing Kutt feedback link API ID.                                                                                                          | **true**     | **string** | -           |
 | **`conference-hall-event`**                  | Conference Hall CFP slug for live linked profiles and selected proposals.                                                                    | **true**     | **string** | -           |
+| **`meetup-event-url-prefix`**                | HTTPS event URL prefix for the authorized Meetup group, ending in /events/.                                                                  | **true**     | **string** | -           |
+| **`community-event-url-prefixes`**           | JSON array of nonempty HTTPS prefixes accepted for community event URLs.                                                                     | **true**     | **string** | -           |
+| **`asset-folder-url-prefix`**                | HTTPS prefix accepted for event asset folder URLs.                                                                                           | **true**     | **string** | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->

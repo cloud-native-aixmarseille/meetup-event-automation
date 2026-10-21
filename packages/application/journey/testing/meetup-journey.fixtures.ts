@@ -3,6 +3,7 @@ import type {
 	MeetupEvent,
 	ReconcileEventDependencies,
 } from "@meetup-automation/event";
+import type { PublicationUrlConfiguration } from "@meetup-automation/publication";
 import type { RawReferentialCatalog } from "@meetup-automation/referential";
 import { vi } from "vitest";
 import type { AutomationConfig } from "../src/config/automation-config.js";
@@ -29,12 +30,14 @@ export const config: AutomationConfig = {
 		"dispatch-enabled": false,
 		"policy-version": 1,
 	},
-	publication: {
-		"meetup-event-url-prefix":
-			"https://www.meetup.com/cloud-native-aix-marseille/events/",
-		"cncf-event-url-prefix":
-			"https://ocgroups.dev/cncf/group/cloud-native-aix-marseille/event/",
-	},
+};
+
+export const publicationUrls: PublicationUrlConfiguration = {
+	meetupEventUrlPrefix: "https://www.meetup.com/example-meetups/events/",
+	communityEventUrlPrefixes: [
+		"https://ocgroups.dev/cncf/group/example-meetups/event/",
+	],
+	assetFolderUrlPrefix: "https://drive.google.com/drive/folders/",
 };
 
 export const sourceDocument: EventDocument = {
@@ -62,10 +65,9 @@ export const event: MeetupEvent = {
 		},
 	],
 	publicationLinks: {
-		meetup:
-			"https://www.meetup.com/cloud-native-aix-marseille/events/123456789",
+		meetup: "https://www.meetup.com/example-meetups/events/123456789",
 		community:
-			"https://ocgroups.dev/cncf/group/cloud-native-aix-marseille/event/cloud-native-evening",
+			"https://ocgroups.dev/cncf/group/example-meetups/event/cloud-native-evening",
 		assets: "https://drive.google.com/drive/folders/folder-1",
 	},
 	occurrenceStatus: "held",

@@ -33037,23 +33037,13 @@ var PublicationLinkEvaluation = class {
   }
   matchesPrefix(value, prefixes, identifierPattern) {
     const normalized = value.replace(/\/$/, "");
-    const prefix = prefixes.find(
-      (candidate) => normalized.startsWith(candidate)
-    );
-    const identifier = prefix ? normalized.slice(prefix.length) : void 0;
-    return this.isHttpsUrl(normalized) && !!identifier && identifierPattern.test(identifier);
+    return this.isHttpsUrl(normalized) && prefixes.some((prefix) => {
+      if (!normalized.startsWith(prefix)) return false;
+      const identifier = normalized.slice(prefix.length);
+      return Boolean(identifier) && identifierPattern.test(identifier);
+    });
   }
 };
-
-// packages/domain/publication/src/domain/url-policy-contracts.ts
-var DEFAULT_PUBLICATION_URL_CONFIGURATION = Object.freeze({
-  meetupEventUrlPrefix: `${MEETUP_ORIGIN}/cloud-native-aix-marseille/events/`,
-  communityEventUrlPrefixes: Object.freeze([
-    "https://ocgroups.dev/cncf/group/cloud-native-aix-marseille/event/",
-    "https://community.cncf.io/events/details/cncf-cloud-native-aix-marseille-presents-"
-  ]),
-  assetFolderUrlPrefix: "https://drive.google.com/drive/folders/"
-});
 
 // packages/domain/publication/src/domain/publication-url-policies.ts
 var PublicationUrlPolicies = class {
@@ -33061,7 +33051,7 @@ var PublicationUrlPolicies = class {
     this.collaborators = collaborators;
   }
   collaborators;
-  createDefaultPublicationUrlPolicies(configuration = DEFAULT_PUBLICATION_URL_CONFIGURATION) {
+  create(configuration) {
     return Object.freeze([
       this.collaborators.createMeetupEventUrlPolicy(
         configuration.meetupEventUrlPrefix
@@ -33330,11 +33320,7 @@ var MeetupPublicationRevision = class {
 
 // packages/application/journey/src/config/automation-config.ts
 var AutomationConfigFactory = class {
-  /**
-   * Automation behavior is owned and versioned by this repository. Consumer
-   * repositories do not provide a runtime configuration file anymore. Without
-   * a repository owner, workspace-only operations leave communication disabled.
-   */
+  /** Fixed workflow conventions; caller-owned publication URLs are injected separately. */
   createAutomationConfig(repositoryOwner) {
     return {
       timezone: "Europe/Paris",
@@ -33355,34 +33341,8 @@ var AutomationConfigFactory = class {
         "mailings-repository": repositoryOwner ? `${repositoryOwner}/mailings` : "",
         "dispatch-enabled": Boolean(repositoryOwner),
         "policy-version": 1
-      },
-      publication: {
-        "meetup-event-url-prefix": DEFAULT_PUBLICATION_URL_CONFIGURATION.meetupEventUrlPrefix,
-        "cncf-event-url-prefix": DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes[0]
       }
     };
-  }
-};
-
-// packages/application/journey/src/config/configured-publication-policies.ts
-var ConfiguredPublicationPolicies = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  create(publication) {
-    return this.collaborators.publicationUrlPolicies.createDefaultPublicationUrlPolicies(
-      {
-        ...DEFAULT_PUBLICATION_URL_CONFIGURATION,
-        meetupEventUrlPrefix: publication["meetup-event-url-prefix"],
-        communityEventUrlPrefixes: [
-          publication["cncf-event-url-prefix"],
-          ...DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes.slice(
-            1
-          )
-        ]
-      }
-    );
   }
 };
 
@@ -33705,13 +33665,13 @@ var AttentionEventFacts = class {
     this.collaborators = collaborators;
   }
   collaborators;
-  create(decoded, config) {
+  create(decoded, publicationUrls) {
     const evaluated = this.collaborators.createEventRuleEngine(
       this.collaborators.eventRuleFactory.createDefaultEventRules()
     ).evaluate(decoded.event);
     const publication = this.collaborators.eventPublicationEvaluation.evaluatePublication(
       evaluated.event,
-      config
+      publicationUrls
     );
     const event = publication.event;
     const diagnostics = [
@@ -34074,7 +34034,7 @@ var EventPublicationEvaluation = class {
     this.collaborators = collaborators;
   }
   collaborators;
-  evaluatePublication(event, config) {
+  evaluatePublication(event, publicationUrls) {
     const diagnostics = [];
     for (const field of ["meetup", "community", "assets"]) {
       const value = event.publicationLinks[field];
@@ -34098,9 +34058,7 @@ var EventPublicationEvaluation = class {
       });
     }
     const engine = this.collaborators.createPublicationUrlPolicyEngine(
-      this.collaborators.configuredPublicationPolicies.create(
-        config.publication
-      )
+      this.collaborators.publicationUrlPolicies.create(publicationUrls)
     );
     const evaluation = engine.evaluate(event.publicationLinks);
     diagnostics.push(
@@ -34298,11 +34256,6 @@ var JourneyPolicyComposition = class {
       resolveEventReferences: new ReferentialDomainComposition().resolveEventReferences()
     });
   }
-  configuredPublicationPolicies() {
-    return new ConfiguredPublicationPolicies({
-      publicationUrlPolicies: new PublicationDomainComposition().publicationUrlPolicies()
-    });
-  }
   diagnosticPolicy() {
     return new DiagnosticPolicy();
   }
@@ -34315,7 +34268,7 @@ var JourneyPolicyComposition = class {
   eventPublicationEvaluation() {
     return new EventPublicationEvaluation({
       meetupPublicationChecklist: new EventDomainComposition().meetupPublicationChecklist(),
-      configuredPublicationPolicies: this.configuredPublicationPolicies(),
+      publicationUrlPolicies: new PublicationDomainComposition().publicationUrlPolicies(),
       manualPublicationPolicy: new PublicationDomainComposition().manualPublicationPolicy(),
       createPublicationUrlPolicyEngine: (...args) => new PublicationDomainComposition().publicationUrlPolicyEngine(...args)
     });
@@ -34398,19 +34351,19 @@ var AssetRenderProjection = class {
 
 // packages/application/journey/src/use-cases/find-next-asset-event.ts
 var FindNextAssetEvent = class {
-  constructor(collaborators, repository, codec, eventLabel, publication, venues = {}) {
+  constructor(collaborators, repository, codec, eventLabel, publicationUrls, venues = {}) {
     this.collaborators = collaborators;
     this.repository = repository;
     this.codec = codec;
     this.eventLabel = eventLabel;
-    this.publication = publication;
+    this.publicationUrls = publicationUrls;
     this.venues = venues;
   }
   collaborators;
   repository;
   codec;
   eventLabel;
-  publication;
+  publicationUrls;
   venues;
   async find(current, catalog) {
     const candidates = await this.candidates(current);
@@ -34476,7 +34429,7 @@ var FindNextAssetEvent = class {
     );
     if (invalid || event.date <= current.date || event.occurrenceStatus !== "scheduled" || !event.confirmations.host)
       return void 0;
-    const published = this.collaborators.configuredPublicationPolicies.create(this.publication).filter((policy) => policy.id !== "asset-folder-url").some((policy) => {
+    const published = this.collaborators.publicationUrlPolicies.create(this.publicationUrls).filter((policy) => policy.id !== "asset-folder-url").some((policy) => {
       const field = policy.id === "meetup-event-url" ? "meetup" : "community";
       return Boolean(event.publicationLinks[field]) && (field !== "meetup" || this.collaborators.meetupPublicationChecklist.isPublished(event)) && !policy.evaluate({ [field]: event.publicationLinks[field] }).diagnostics.some((item) => item.severity === "error");
     });
@@ -34605,7 +34558,7 @@ var ManageMeetupAttention = class {
       };
     const facts = this.collaborators.attentionEventFacts.create(
       codec.decode(source),
-      config
+      this.dependencies.publicationUrls
     );
     const evidence = await this.synchronizeEvidence();
     const now2 = clock.now();
@@ -34684,7 +34637,7 @@ var ManageMeetupEvent = class {
     );
     const publication = this.collaborators.eventPublicationEvaluation.evaluatePublication(
       event,
-      config
+      this.dependencies.publicationUrls
     );
     event = publication.event;
     eventDiagnostics.push(...publication.diagnostics);
@@ -35494,7 +35447,7 @@ var JourneyComposition = class {
     return new FindNextAssetEvent(
       {
         eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
-        configuredPublicationPolicies: new JourneyPolicyComposition().configuredPublicationPolicies(),
+        publicationUrlPolicies: new PublicationDomainComposition().publicationUrlPolicies(),
         meetupPublicationChecklist: new EventDomainComposition().meetupPublicationChecklist(),
         createEventRuleEngine: (...args2) => new EventDomainComposition().eventRuleEngine(...args2)
       },
@@ -40001,6 +39954,7 @@ var CommunicationInput = class {
   }
   collaborators;
   validate(input) {
+    this.collaborators.publicationUrlInput.validate(input.publicationUrls);
     this.collaborators.conferenceHallInput.validate(input);
     for (const field of [
       "locale",
@@ -40426,6 +40380,76 @@ var OrganizerFeedback = class {
   }
 };
 
+// packages/runtime/github-actions/src/publication-url-input.ts
+var PublicationUrlInput = class {
+  constructor(runtimeInput) {
+    this.runtimeInput = runtimeInput;
+  }
+  runtimeInput;
+  read() {
+    const meetupEventUrlPrefix = getInput("meetup-event-url-prefix", {
+      required: true,
+      trimWhitespace: false
+    });
+    const community = getInput("community-event-url-prefixes", {
+      required: true,
+      trimWhitespace: false
+    });
+    const assetFolderUrlPrefix = getInput("asset-folder-url-prefix", {
+      required: true,
+      trimWhitespace: false
+    });
+    let communityEventUrlPrefixes;
+    try {
+      communityEventUrlPrefixes = JSON.parse(community);
+    } catch {
+      throw new Error("Invalid input: community-event-url-prefixes");
+    }
+    return this.validate({
+      meetupEventUrlPrefix,
+      communityEventUrlPrefixes,
+      assetFolderUrlPrefix
+    });
+  }
+  validate(configuration) {
+    if (!this.runtimeInput.isObject(configuration))
+      throw new Error("Invalid publication URL configuration");
+    const meetupEventUrlPrefix = this.prefix(
+      configuration.meetupEventUrlPrefix,
+      "meetup-event-url-prefix"
+    );
+    if (!MeetupGroupUrl.fromEventUrlPrefix(meetupEventUrlPrefix))
+      throw new Error("Invalid input: meetup-event-url-prefix");
+    const community = configuration.communityEventUrlPrefixes;
+    if (!Array.isArray(community) || community.length === 0)
+      throw new Error("Invalid input: community-event-url-prefixes");
+    const communityEventUrlPrefixes = community.map(
+      (prefix) => this.prefix(prefix, "community-event-url-prefixes")
+    );
+    return {
+      meetupEventUrlPrefix,
+      communityEventUrlPrefixes,
+      assetFolderUrlPrefix: this.prefix(
+        configuration.assetFolderUrlPrefix,
+        "asset-folder-url-prefix"
+      )
+    };
+  }
+  prefix(value, name) {
+    if (typeof value !== "string" || !/^https:\/\/[^/?#@]+\/[^?#]*$/.test(value) || /[\s\\\p{Cc}]/u.test(value))
+      throw new Error(`Invalid input: ${name}`);
+    let url;
+    try {
+      url = new URL(value);
+    } catch {
+      throw new Error(`Invalid input: ${name}`);
+    }
+    if (url.protocol !== "https:" || !url.hostname || url.username || url.password || url.search || url.hash)
+      throw new Error(`Invalid input: ${name}`);
+    return value;
+  }
+};
+
 // packages/runtime/github-actions/src/referential-action-report.ts
 var ReferentialActionReport = class {
   validation(result, diagnostics, messages5) {
@@ -40542,6 +40566,9 @@ var SpeakerSyncFailureReport = class {
 
 // packages/runtime/github-actions/src/dependency-composition.ts
 var GithubActionsComposition = class {
+  publicationUrlInput() {
+    return new PublicationUrlInput(this.runtimeInput());
+  }
   actionFailurePresenter() {
     return new ActionFailurePresenter();
   }
@@ -40607,6 +40634,7 @@ var GithubActionsComposition = class {
   }
   communicationInput() {
     return new CommunicationInput({
+      publicationUrlInput: this.publicationUrlInput(),
       conferenceHallInput: this.conferenceHallInput()
     });
   }
@@ -44823,6 +44851,7 @@ var MeetupPublicationAction = class {
     const githubToken = this.secret("github-token");
     const { owner, repo } = context2.repo;
     const journey = this.collaborators.createJourney({
+      publicationUrls: this.collaborators.publicationUrlInput.read(),
       ...this.collaborators.conferenceHallInput.read(),
       owner,
       repo,
@@ -66738,10 +66767,12 @@ var EventComposition = class _EventComposition {
   }
   static createEventContainer(input) {
     const sourceSettings = new GithubActionsComposition().conferenceHallInput().validate(input);
+    const publicationUrls = new GithubActionsComposition().publicationUrlInput().validate(input.publicationUrls);
     const container = _EventComposition.createDocumentContainer(input);
     _EventComposition.bindProposalSource(container, sourceSettings);
     container.bind(ManageMeetupEvent).toDynamicValue(
       (context3) => new JourneyComposition().manageMeetupEvent({
+        publicationUrls,
         proposalSource: context3.get(SERVICES.proposalSource),
         config: context3.get(SERVICES.config),
         referentialRepository: context3.get(
@@ -66875,7 +66906,7 @@ var MeetupPublicationComposition = class _MeetupPublicationComposition {
   static create(input) {
     const container = EventComposition.createEventContainer(input);
     container.bind(ManageMeetupPublication).toDynamicValue((context3) => {
-      const prefix = context3.get(SERVICES.config).publication["meetup-event-url-prefix"];
+      const prefix = input.publicationUrls.meetupEventUrlPrefix;
       const group = MeetupGroupUrl.fromEventUrlPrefix(prefix);
       if (!group) throw new Error("Invalid Meetup event URL prefix");
       return new JourneyComposition().manageMeetupPublication({
@@ -66938,6 +66969,7 @@ var MeetupPublicationComposition = class _MeetupPublicationComposition {
 var MeetupActionComposition = class {
   meetupPublicationAction() {
     return new MeetupPublicationAction({
+      publicationUrlInput: new GithubActionsComposition().publicationUrlInput(),
       createJourney: (input) => MeetupPublicationComposition.create(input).get(ManageMeetupPublication),
       runtimeInput: new GithubActionsComposition().runtimeInput(),
       conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),

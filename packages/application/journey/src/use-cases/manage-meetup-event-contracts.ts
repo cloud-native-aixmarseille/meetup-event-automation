@@ -2,7 +2,10 @@ import type {
 	MeetupEvent,
 	ReconcileEventDependencies,
 } from "@meetup-automation/event";
-import type { ManualPublicationTask } from "@meetup-automation/publication";
+import type {
+	ManualPublicationTask,
+	PublicationUrlConfiguration,
+} from "@meetup-automation/publication";
 import type {
 	ProposalSource,
 	ReferentialRepository,
@@ -12,6 +15,7 @@ import type { PublicDiagnostic } from "../result/result-envelope.js";
 
 export interface ManageMeetupEventDependencies {
 	readonly config: AutomationConfig;
+	readonly publicationUrls: PublicationUrlConfiguration;
 	readonly proposalSource: ProposalSource;
 	readonly referentialRepository: ReferentialRepository;
 	readonly eventDependencies: ReconcileEventDependencies;

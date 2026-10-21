@@ -17,6 +17,7 @@ import {
 	JourneyComposition,
 	ManageMeetupAttention,
 } from "@meetup-automation/journey";
+import type { PublicationUrlConfiguration } from "@meetup-automation/publication";
 import { SlackNotificationGatewayComposition } from "@meetup-automation/slack-notification-gateway";
 import {
 	SystemClockComposition,
@@ -41,6 +42,7 @@ const ATTENTION_SERVICES = {
 	notification: Symbol("AttentionNotification"),
 };
 type AttentionCompositionInput = EventDocumentCompositionInput & {
+	publicationUrls: PublicationUrlConfiguration;
 	commentAuthorLogin: string;
 	issueNumber: number;
 	slackToken: string;
@@ -48,6 +50,9 @@ type AttentionCompositionInput = EventDocumentCompositionInput & {
 };
 export class AttentionComposition {
 	static create(input: AttentionCompositionInput) {
+		new GithubActionsComposition()
+			.publicationUrlInput()
+			.validate(input.publicationUrls);
 		const container = EventComposition.createDocumentContainer({
 			...input,
 			retireCommunicationReports: true,
@@ -160,6 +165,7 @@ export class AttentionComposition {
 		container.bind(ManageMeetupAttention).toDynamicValue((context) => {
 			const clock = context.get(SystemCommunicationClock);
 			return new JourneyComposition().manageMeetupAttention({
+				publicationUrls: input.publicationUrls,
 				config: context.get<AutomationConfig>(SERVICES.config),
 				repository: context.get<EventRepository>(SERVICES.eventRepository),
 				codec: context.get<EventDocumentCodec>(SERVICES.eventDocumentCodec),

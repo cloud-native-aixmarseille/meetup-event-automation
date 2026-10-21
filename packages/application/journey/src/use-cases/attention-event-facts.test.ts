@@ -2,16 +2,53 @@ import { CommunicationDomainComposition } from "@meetup-automation/communication
 import { EventDomainComposition } from "@meetup-automation/event";
 import { describe, expect, it } from "vitest";
 import { createTestEvent } from "../../../../domain/event/testing/event.fixtures.js";
+import {
+	publicationUrls,
+	event as publishedEvent,
+} from "../../testing/meetup-journey.fixtures.js";
 import { JourneyPolicyComposition } from "../policy-composition.js";
 import { AttentionEventFacts } from "./attention-event-facts.js";
 
 describe("public attention event facts", () => {
+	it.each([true, false])(
+		"uses supplied publication URL rules for missing-data attention: %s",
+		(allowed) => {
+			// Arrange
+			const event = {
+				...publishedEvent,
+				occurrenceStatus: "scheduled" as const,
+			};
+			const configuredUrls = {
+				...publicationUrls,
+				meetupEventUrlPrefix: allowed
+					? publicationUrls.meetupEventUrlPrefix
+					: "https://www.meetup.com/another-group/events/",
+			};
+
+			// Act
+			const result = new AttentionEventFacts({
+				eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
+				eventPublicationEvaluation:
+					new JourneyPolicyComposition().eventPublicationEvaluation(),
+				attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+				communicationChecklist:
+					new JourneyPolicyComposition().communicationChecklist(),
+				createEventRuleEngine: (...args) =>
+					new EventDomainComposition().eventRuleEngine(...args),
+			}).create({ event, diagnostics: [] }, configuredUrls);
+
+			// Assert
+			expect(result.requiredDataMissing).toBe(!allowed);
+		},
+	);
+
 	it.each([
 		"Thanks speakers",
 		"Thanks speakers and share openfeedback reports",
 	])("recognizes completed legacy email tasks: %s", (speakerTask) => {
 		// Arrange
 		const event = createTestEvent({
+			publicationLinks: publishedEvent.publicationLinks,
 			operationalChecklists: {
 				communication: [],
 				slidesAndContent: [],
@@ -32,12 +69,7 @@ describe("public attention event facts", () => {
 				new JourneyPolicyComposition().communicationChecklist(),
 			createEventRuleEngine: (...args) =>
 				new EventDomainComposition().eventRuleEngine(...args),
-		}).create(
-			{ event, diagnostics: [] },
-			new JourneyPolicyComposition()
-				.automationConfigFactory()
-				.createAutomationConfig(),
-		);
+		}).create({ event, diagnostics: [] }, publicationUrls);
 
 		// Assert
 		expect(result.followUpPending).toEqual([
@@ -49,6 +81,7 @@ describe("public attention event facts", () => {
 	it("maps unfinished manual tasks to safe identifiers without arbitrary checklist text", () => {
 		// Arrange
 		const event = createTestEvent({
+			publicationLinks: publishedEvent.publicationLinks,
 			operationalChecklists: {
 				slidesAndContent: [],
 				communication: [
@@ -69,12 +102,7 @@ describe("public attention event facts", () => {
 				new JourneyPolicyComposition().communicationChecklist(),
 			createEventRuleEngine: (...args) =>
 				new EventDomainComposition().eventRuleEngine(...args),
-		}).create(
-			{ event, diagnostics: [] },
-			new JourneyPolicyComposition()
-				.automationConfigFactory()
-				.createAutomationConfig(),
-		);
+		}).create({ event, diagnostics: [] }, publicationUrls);
 
 		// Assert
 		expect(result.publicationPending).toContain("public-slack-community");
@@ -83,7 +111,10 @@ describe("public attention event facts", () => {
 	});
 	it("projects invalid imported dates as missing data without publishing their text", () => {
 		// Arrange
-		const event = createTestEvent({ date: "private@example.test" });
+		const event = createTestEvent({
+			publicationLinks: publishedEvent.publicationLinks,
+			date: "private@example.test",
+		});
 
 		// Act
 		const result = new AttentionEventFacts({
@@ -95,12 +126,7 @@ describe("public attention event facts", () => {
 				new JourneyPolicyComposition().communicationChecklist(),
 			createEventRuleEngine: (...args) =>
 				new EventDomainComposition().eventRuleEngine(...args),
-		}).create(
-			{ event, diagnostics: [] },
-			new JourneyPolicyComposition()
-				.automationConfigFactory()
-				.createAutomationConfig(),
-		);
+		}).create({ event, diagnostics: [] }, publicationUrls);
 
 		// Assert
 		expect(result.eventDate).toBe("");

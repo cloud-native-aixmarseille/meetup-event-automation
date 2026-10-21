@@ -1,8 +1,11 @@
+import type { PublicationUrlConfiguration } from "@meetup-automation/publication";
 import type {
 	ConferenceHallInput,
 	ConferenceHallSettings,
 } from "./conference-hall-input.js";
+import type { PublicationUrlInput } from "./publication-url-input.js";
 export interface RunCommunicationReconcileInput extends ConferenceHallSettings {
+	readonly publicationUrls: PublicationUrlConfiguration;
 	readonly locale: string;
 	readonly issueNumber: number;
 
@@ -22,6 +25,7 @@ export interface RunCommunicationReconcileInput extends ConferenceHallSettings {
 
 /** Validates invocation data before credentials are used by composition. */
 export interface CommunicationInputCollaborators {
+	readonly publicationUrlInput: Pick<PublicationUrlInput, "validate">;
 	readonly conferenceHallInput: Pick<ConferenceHallInput, "validate">;
 }
 
@@ -31,6 +35,7 @@ export class CommunicationInput {
 	) {}
 
 	validate(input: RunCommunicationReconcileInput): void {
+		this.collaborators.publicationUrlInput.validate(input.publicationUrls);
 		this.collaborators.conferenceHallInput.validate(input);
 		for (const field of [
 			"locale",

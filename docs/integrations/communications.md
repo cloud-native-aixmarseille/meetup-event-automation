@@ -54,6 +54,11 @@ Source edits affect unfinished batches on the next run and require fresh approva
 when their fingerprint changes. Local IDs and accepted delivery records remain
 stable; source failure blocks delivery instead of using cached addresses.
 
+Communications and organizer attention both require the three
+[publication URL inputs](../reference/configuration.md#publication-url-inputs).
+They re-evaluate event publication links using the same values as the event and
+publication actions before sending mail or selecting organizer tasks.
+
 ## Presentation link
 
 Emails use the managed presentation file URL for `eventSlidesUrl`. Both event

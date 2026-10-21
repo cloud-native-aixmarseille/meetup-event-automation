@@ -6,7 +6,6 @@ import { ApprovalRequestPolicy } from "./approval/approval-request-policy.js";
 import { MeetupPublicationRevision } from "./approval/meetup-publication-revision.js";
 import { CommunicationDiagnosticProjection } from "./communication/communication-diagnostic-projection.js";
 import { AutomationConfigFactory } from "./config/automation-config.js";
-import { ConfiguredPublicationPolicies } from "./config/configured-publication-policies.js";
 import { AttentionStageEvaluation } from "./result/attention-stage-evaluation.js";
 import { DiagnosticPolicy } from "./result/diagnostic-policy.js";
 import { OrganizerDiagnosticPolicy } from "./result/organizer-diagnostic-policy.js";
@@ -81,12 +80,7 @@ export class JourneyPolicyComposition {
 				new ReferentialDomainComposition().resolveEventReferences(),
 		});
 	}
-	configuredPublicationPolicies(): ConfiguredPublicationPolicies {
-		return new ConfiguredPublicationPolicies({
-			publicationUrlPolicies:
-				new PublicationDomainComposition().publicationUrlPolicies(),
-		});
-	}
+
 	diagnosticPolicy(): DiagnosticPolicy {
 		return new DiagnosticPolicy();
 	}
@@ -100,7 +94,8 @@ export class JourneyPolicyComposition {
 		return new EventPublicationEvaluation({
 			meetupPublicationChecklist:
 				new EventDomainComposition().meetupPublicationChecklist(),
-			configuredPublicationPolicies: this.configuredPublicationPolicies(),
+			publicationUrlPolicies:
+				new PublicationDomainComposition().publicationUrlPolicies(),
 			manualPublicationPolicy:
 				new PublicationDomainComposition().manualPublicationPolicy(),
 			createPublicationUrlPolicyEngine: (...args) =>

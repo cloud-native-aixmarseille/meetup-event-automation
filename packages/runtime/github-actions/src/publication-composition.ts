@@ -86,7 +86,7 @@ export class PublicationComposition {
 								context.get<AutomationConfig>(SERVICES.config).event[
 									"issue-label"
 								],
-								context.get<AutomationConfig>(SERVICES.config).publication,
+								input.publicationUrls,
 								input.contentConfiguration?.venues,
 							)
 						: undefined,

@@ -42,6 +42,9 @@ A valid existing **OpenFeedback Link** is reused. Supported URLs are
 Query strings and fragments are rejected. The URL field can remain empty until
 the automation fills it; the API key is always required.
 
+Feedback reconciliation also requires the three [publication URL inputs](../reference/configuration.md#publication-url-inputs)
+used by event evaluation. Forward the same values as issue updates and audits.
+
 ## Prepare the event
 
 When the field is empty, the workflow creates an event

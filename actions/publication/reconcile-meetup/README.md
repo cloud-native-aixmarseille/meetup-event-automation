@@ -50,6 +50,18 @@ includes this action, and supply your repository's input values.
 ```yaml
 - uses: cloud-native-aixmarseille/meetup-event-automation/actions/publication/reconcile-meetup@5a80cd5013781ff071bea0dfda49044bc4071c5f # 2.3.2
   with:
+    # HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
+    # This input is required.
+    meetup-event-url-prefix: ""
+
+    # JSON array of nonempty HTTPS prefixes accepted for community event URLs.
+    # This input is required.
+    community-event-url-prefixes: ""
+
+    # HTTPS prefix accepted for event asset folder URLs.
+    # This input is required.
+    asset-folder-url-prefix: ""
+
     # Slack bot token for organizer approval notifications and decision reactions.
     # This input is required.
     slack-token: ""
@@ -104,20 +116,23 @@ includes this action, and supply your repository's input values.
 
 ## Inputs
 
-| **Input**                        | **Description**                                                              | **Required** | **Default** |
-| -------------------------------- | ---------------------------------------------------------------------------- | ------------ | ----------- |
-| **`slack-token`**                | Slack bot token for organizer approval notifications and decision reactions. | **true**     | -           |
-| **`slack-organizer-channel-id`** | Organizer Slack channel receiving publication approval requests.             | **true**     | -           |
-| **`issue-number`**               | Meetup source issue number.                                                  | **true**     | -           |
-| **`github-token`**               | Consumer repository token with contents read and issues write.               | **true**     | -           |
-| **`managed-comment-author`**     | Login of the GitHub App bot that owns the publication journal.               | **true**     | -           |
-| **`conference-hall-event`**      | Conference Hall CFP slug used to resolve the current event agenda.           | **true**     | -           |
-| **`conference-hall-api-key`**    | Read-only Conference Hall event API key.                                     | **true**     | -           |
-| **`locale`**                     | Language for the publication report (en or fr).                              | **true**     | -           |
-| **`meetup-email`**               | Email of the authorized Meetup organizer account.                            | **true**     | -           |
-| **`meetup-password`**            | Password of the authorized Meetup organizer account.                         | **true**     | -           |
-| **`gemini-api-key`**             | Gemini API key used for pre-login hCaptcha challenges.                       | **true**     | -           |
-| **`gemini-model`**               | Gemini vision model available to the supplied API key.                       | **true**     | -           |
+| **Input**                          | **Description**                                                              | **Required** | **Default** |
+| ---------------------------------- | ---------------------------------------------------------------------------- | ------------ | ----------- |
+| **`meetup-event-url-prefix`**      | HTTPS event URL prefix for the authorized Meetup group, ending in /events/.  | **true**     | -           |
+| **`community-event-url-prefixes`** | JSON array of nonempty HTTPS prefixes accepted for community event URLs.     | **true**     | -           |
+| **`asset-folder-url-prefix`**      | HTTPS prefix accepted for event asset folder URLs.                           | **true**     | -           |
+| **`slack-token`**                  | Slack bot token for organizer approval notifications and decision reactions. | **true**     | -           |
+| **`slack-organizer-channel-id`**   | Organizer Slack channel receiving publication approval requests.             | **true**     | -           |
+| **`issue-number`**                 | Meetup source issue number.                                                  | **true**     | -           |
+| **`github-token`**                 | Consumer repository token with contents read and issues write.               | **true**     | -           |
+| **`managed-comment-author`**       | Login of the GitHub App bot that owns the publication journal.               | **true**     | -           |
+| **`conference-hall-event`**        | Conference Hall CFP slug used to resolve the current event agenda.           | **true**     | -           |
+| **`conference-hall-api-key`**      | Read-only Conference Hall event API key.                                     | **true**     | -           |
+| **`locale`**                       | Language for the publication report (en or fr).                              | **true**     | -           |
+| **`meetup-email`**                 | Email of the authorized Meetup organizer account.                            | **true**     | -           |
+| **`meetup-password`**              | Password of the authorized Meetup organizer account.                         | **true**     | -           |
+| **`gemini-api-key`**               | Gemini API key used for pre-login hCaptcha challenges.                       | **true**     | -           |
+| **`gemini-model`**                 | Gemini vision model available to the supplied API key.                       | **true**     | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->

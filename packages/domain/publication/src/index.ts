@@ -73,8 +73,7 @@ export {
 } from "./domain/publication-url-policy-engine.js";
 export { ScheduledEventError } from "./domain/scheduled-event-error.js";
 export { ScheduledEventPolicy } from "./domain/scheduled-event-policy.js";
-export {
-	DEFAULT_PUBLICATION_URL_CONFIGURATION,
-	type PublicationUrlConfiguration,
-	type PublicationUrlPolicy,
+export type {
+	PublicationUrlConfiguration,
+	PublicationUrlPolicy,
 } from "./domain/url-policy-contracts.js";

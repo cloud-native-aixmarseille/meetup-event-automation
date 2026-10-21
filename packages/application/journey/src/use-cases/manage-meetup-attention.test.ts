@@ -5,6 +5,10 @@ import {
 } from "@meetup-automation/event";
 import { describe, expect, it, vi } from "vitest";
 import { createTestEvent } from "../../../../domain/event/testing/event.fixtures.js";
+import {
+	publicationUrls,
+	event as publishedEvent,
+} from "../../testing/meetup-journey.fixtures.js";
 import { JourneyPolicyComposition } from "../policy-composition.js";
 import {
 	ManageMeetupAttention,
@@ -12,7 +16,10 @@ import {
 } from "./manage-meetup-attention.js";
 
 function fixture() {
-	const event = createTestEvent({ date: "2099-06-08" });
+	const event = createTestEvent({
+		date: "2099-06-08",
+		publicationLinks: publishedEvent.publicationLinks,
+	});
 	const document = {
 		identity: event.identity,
 		issueState: "open" as const,
@@ -28,6 +35,7 @@ function fixture() {
 		config: new JourneyPolicyComposition()
 			.automationConfigFactory()
 			.createAutomationConfig(),
+		publicationUrls,
 		repository: { find, applyPatch: vi.fn(), listPage: vi.fn() },
 		codec: { decode: () => ({ event, diagnostics: [] }), createPatch: vi.fn() },
 		followUp: { synchronizeFollowUp: vi.fn().mockResolvedValue(undefined) },

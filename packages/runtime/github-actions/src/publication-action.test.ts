@@ -1,5 +1,6 @@
 import type { ManageMeetupAssets } from "@meetup-automation/journey";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { publicationUrlInputs } from "../testing/publication-urls.fixtures.js";
 import { GithubActionsComposition } from "./dependency-composition.js";
 import { PublicationAction } from "./publication-action.js";
 
@@ -29,6 +30,7 @@ vi.mock("@actions/github", () => ({
 beforeEach(() => {
 	vi.clearAllMocks();
 	for (const [name, value] of Object.entries({
+		...publicationUrlInputs,
 		"conference-hall-event": "example-cfp",
 		"conference-hall-api-key": "synthetic-source-key",
 		"issue-number": "42",
@@ -82,6 +84,9 @@ describe("publication action boundary", () => {
 		expect(mocks.outputs["slides-ready"]).toBe(false);
 	});
 	it.each([
+		"meetup-event-url-prefix",
+		"community-event-url-prefixes",
+		"asset-folder-url-prefix",
 		"conference-hall-event",
 		"conference-hall-api-key",
 		"google-credentials",
@@ -167,6 +172,7 @@ describe("publication action boundary", () => {
 function subject() {
 	const composition = new GithubActionsComposition();
 	return new PublicationAction({
+		publicationUrlInput: new GithubActionsComposition().publicationUrlInput(),
 		createJourney: mocks.createAssets,
 		runtimeInput: composition.runtimeInput(),
 		assetContentConfiguration: composition.assetContentConfiguration(),

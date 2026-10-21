@@ -6,8 +6,10 @@ import type { AttentionComposition } from "./attention-composition.js";
 import type { AttentionStages } from "./attention-stages.js";
 import type { ActionMessages } from "./i18n/action-messages.js";
 import type { OrganizerFeedback } from "./organizer-feedback.js";
+import type { PublicationUrlInput } from "./publication-url-input.js";
 import type { RuntimeInput } from "./runtime-input.js";
 export interface AttentionActionCollaborators {
+	readonly publicationUrlInput: Pick<PublicationUrlInput, "read">;
 	readonly createAttention: (
 		input: Parameters<typeof AttentionComposition.create>[0],
 	) => {
@@ -27,6 +29,7 @@ export class AttentionAction {
 			core.getInput("issue-number", { required: true }),
 		);
 		const journey = this.collaborators.createAttention({
+			publicationUrls: this.collaborators.publicationUrlInput.read(),
 			...context.repo,
 			issueNumber,
 			locale: messages.locale,

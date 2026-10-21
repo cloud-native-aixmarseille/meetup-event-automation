@@ -5,6 +5,7 @@ import { MeetupPublicationComposition } from "./meetup-publication-composition.j
 export class MeetupActionComposition {
 	meetupPublicationAction(): MeetupPublicationAction {
 		return new MeetupPublicationAction({
+			publicationUrlInput: new GithubActionsComposition().publicationUrlInput(),
 			createJourney: (input) =>
 				MeetupPublicationComposition.create(input).get(ManageMeetupPublication),
 			runtimeInput: new GithubActionsComposition().runtimeInput(),

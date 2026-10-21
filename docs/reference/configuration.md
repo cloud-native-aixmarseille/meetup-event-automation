@@ -8,19 +8,22 @@ parameter names are the public contract.
 
 ## Required settings
 
-| Consumer setting                                  | Workflow parameter                             | Used by                                   |
-| ------------------------------------------------- | ---------------------------------------------- | ----------------------------------------- |
-| Variable `CI_BOT_APP_CLIENT_ID`                   | Input `github-app-client-id`                   | Event workflows and form synchronization. |
-| Secret `CI_BOT_APP_PRIVATE_KEY`                   | Secret `github-app-private-key`                | Event workflows and form synchronization. |
-| Variable `KUTT_BASE_URL`                          | Input `kutt-base-url`                          | Both event workflows.                     |
-| Variable `KUTT_FEEDBACK_LINK_ID`                  | Input `kutt-link-id`                           | Both event workflows.                     |
-| Secret `OPENFEEDBACK_API_KEY`                     | Secret `openfeedback-api-key`                  | Both event workflows.                     |
-| Secret `KUTT_API_KEY`                             | Secret `kutt-api-key`                          | Both event workflows.                     |
-| Secret `GOOGLE_SERVICE_ACCOUNT_CREDENTIALS`       | Secret `google-credentials`                    | Both event workflows.                     |
-| Variable `GOOGLE_DRIVE_MEETUP_FOLDER_ID`          | Input `google-drive-meetup-folder-id`          | Both event workflows.                     |
-| Variable `GOOGLE_DRIVE_MEETUP_TEMPLATE_FOLDER_ID` | Input `google-drive-meetup-template-folder-id` | Both event workflows.                     |
-| Secret `SLACK_BOT_TOKEN`                          | Secret `slack-token`                           | Both event workflows.                     |
-| Variable `SLACK_ORGANIZER_CHANNEL_ID`             | Input `slack-organizer-channel-id`             | Both event workflows.                     |
+| Consumer setting                                  | Workflow parameter                             | Used by                                                          |
+| ------------------------------------------------- | ---------------------------------------------- | ---------------------------------------------------------------- |
+| Variable `MEETUP_EVENT_URL_PREFIX`                | Input `meetup-event-url-prefix`                | Event, publication, communication, and attention reconciliation. |
+| Variable `COMMUNITY_EVENT_URL_PREFIXES`           | Input `community-event-url-prefixes`           | Event, publication, communication, and attention reconciliation. |
+| Variable `ASSET_FOLDER_URL_PREFIX`                | Input `asset-folder-url-prefix`                | Event, publication, communication, and attention reconciliation. |
+| Variable `CI_BOT_APP_CLIENT_ID`                   | Input `github-app-client-id`                   | Event workflows and form synchronization.                        |
+| Secret `CI_BOT_APP_PRIVATE_KEY`                   | Secret `github-app-private-key`                | Event workflows and form synchronization.                        |
+| Variable `KUTT_BASE_URL`                          | Input `kutt-base-url`                          | Both event workflows.                                            |
+| Variable `KUTT_FEEDBACK_LINK_ID`                  | Input `kutt-link-id`                           | Both event workflows.                                            |
+| Secret `OPENFEEDBACK_API_KEY`                     | Secret `openfeedback-api-key`                  | Both event workflows.                                            |
+| Secret `KUTT_API_KEY`                             | Secret `kutt-api-key`                          | Both event workflows.                                            |
+| Secret `GOOGLE_SERVICE_ACCOUNT_CREDENTIALS`       | Secret `google-credentials`                    | Both event workflows.                                            |
+| Variable `GOOGLE_DRIVE_MEETUP_FOLDER_ID`          | Input `google-drive-meetup-folder-id`          | Both event workflows.                                            |
+| Variable `GOOGLE_DRIVE_MEETUP_TEMPLATE_FOLDER_ID` | Input `google-drive-meetup-template-folder-id` | Both event workflows.                                            |
+| Secret `SLACK_BOT_TOKEN`                          | Secret `slack-token`                           | Both event workflows.                                            |
+| Variable `SLACK_ORGANIZER_CHANNEL_ID`             | Input `slack-organizer-channel-id`             | Both event workflows.                                            |
 
 Use the GitHub App's client ID. Install the App on the consumer repository and
 `mailings` under the same owner. Both event workflows generate a separate,
@@ -55,29 +58,55 @@ requires issue-form synchronization. See
 [localization](../development/localization.md) for covered messages and stable
 identifiers.
 
-## Fixed conventions
+## Publication URL inputs
 
-These values are part of the automation release, not caller options:
+Pass `meetup-event-url-prefix`, `community-event-url-prefixes`, and
+`asset-folder-url-prefix` to every event, publication, communication, and
+organizer-attention reconciliation action. The three reusable event workflows
+require and forward them. Event listing and referential actions do not use them.
+These inputs have no defaults. Keep their values identical across the consumer's
+issue-update, audit, and Meetup-publication callers.
 
-| Setting                     | Value                                                               |
-| --------------------------- | ------------------------------------------------------------------- |
-| Event timezone              | `Europe/Paris`                                                      |
-| Issue form                  | `.github/ISSUE_TEMPLATE/meetup.yml`                                 |
-| Host catalog                | `referentials/hosting.csv`                                          |
-| Speaker catalog             | `referentials/speakers.csv`                                         |
-| Near-event readiness window | 7 days                                                              |
-| Email dispatch repository   | `<consumer-repository-owner>/mailings`                              |
-| Meetup event URL prefix     | `https://www.meetup.com/cloud-native-aix-marseille/events/`         |
-| CNCF event URL prefix       | `https://ocgroups.dev/cncf/group/cloud-native-aix-marseille/event/` |
+`meetup-event-url-prefix` identifies the authorized Meetup group and ends in
+`/events/`. `community-event-url-prefixes` is a JSON string containing a nonempty
+array of nonempty HTTPS URL prefixes. `asset-folder-url-prefix` is the HTTPS
+prefix accepted for event asset folders; it must match the folder URLs emitted
+by the configured asset provider. Prefixes cannot contain credentials, query
+strings, or fragments. Missing or malformed configuration fails before event
+reconciliation or external writes.
 
-The CNCF URL policy also accepts
-`https://community.cncf.io/events/details/cncf-cloud-native-aix-marseille-presents-…`.
-Use Drive folder URLs for assets and OpenFeedback event URLs for feedback.
+Store these values in the repository variables `MEETUP_EVENT_URL_PREFIX`,
+`COMMUNITY_EVENT_URL_PREFIXES`, and `ASSET_FOLDER_URL_PREFIX`, then forward them
+as shown in [setup](../usage/setup.md#3-add-workflow-callers). For a direct caller,
+this synthetic `with` block shows the required string and JSON formats:
+
+```yaml
+with:
+  meetup-event-url-prefix: https://www.meetup.com/example-group/events/
+  community-event-url-prefixes: '["https://community.example.test/events/", "https://events.example.test/community/"]'
+  asset-folder-url-prefix: https://drive.google.com/drive/folders/
+```
 
 Meetup event links must use the configured group and a positive decimal event ID
 without leading zeros. Query parameters and fragments are not part of an event
 identity. A final slash is optional in issue links; automation stores canonical
 links with a final slash in its publication journal and approval requests.
+
+Use OpenFeedback event URLs for feedback; its provider identity is validated
+separately from these caller-owned prefixes.
+
+## Fixed conventions
+
+These values are part of the automation release, not caller options:
+
+| Setting                     | Value                                  |
+| --------------------------- | -------------------------------------- |
+| Event timezone              | `Europe/Paris`                         |
+| Issue form                  | `.github/ISSUE_TEMPLATE/meetup.yml`    |
+| Host catalog                | `referentials/hosting.csv`             |
+| Speaker catalog             | `referentials/speakers.csv`            |
+| Near-event readiness window | 7 days                                 |
+| Email dispatch repository   | `<consumer-repository-owner>/mailings` |
 
 ## Labels
 

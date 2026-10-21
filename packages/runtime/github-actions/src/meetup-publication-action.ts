@@ -6,9 +6,11 @@ import type { ConferenceHallInput } from "./conference-hall-input.js";
 import type { ActionMessages } from "./i18n/action-messages.js";
 import type { MeetupPublicationComposition } from "./meetup-publication-composition.js";
 import type { MeetupPublicationConfiguration } from "./meetup-publication-configuration.js";
+import type { PublicationUrlInput } from "./publication-url-input.js";
 import type { RuntimeInput } from "./runtime-input.js";
 
 export interface MeetupPublicationActionCollaborators {
+	readonly publicationUrlInput: Pick<PublicationUrlInput, "read">;
 	readonly createJourney: (
 		input: Parameters<typeof MeetupPublicationComposition.create>[0],
 	) => Pick<ManageMeetupPublication, "execute">;
@@ -36,6 +38,7 @@ export class MeetupPublicationAction {
 		const githubToken = this.secret("github-token");
 		const { owner, repo } = context.repo;
 		const journey = this.collaborators.createJourney({
+			publicationUrls: this.collaborators.publicationUrlInput.read(),
 			...this.collaborators.conferenceHallInput.read(),
 			owner,
 			repo,

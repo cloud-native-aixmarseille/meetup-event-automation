@@ -48,6 +48,7 @@ export class CommunicationRuntime {
 		const slackToken = input.slackToken.trim();
 		const slackOrganizerChannelId = input.slackOrganizerChannelId.trim();
 		const journey = this.collaborators.createJourney({
+			publicationUrls: input.publicationUrls,
 			locale: this.collaborators.localeResolver.resolveLocale(input.locale),
 			conferenceHallEvent: input.conferenceHallEvent,
 			conferenceHallApiKey: input.conferenceHallApiKey,

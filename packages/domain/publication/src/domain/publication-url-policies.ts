@@ -10,10 +10,9 @@ import type {
 	MeetupEventUrlPolicy,
 	MeetupEventUrlPolicyArguments,
 } from "./meetup-event-url-policy.js";
-import {
-	DEFAULT_PUBLICATION_URL_CONFIGURATION,
-	type PublicationUrlConfiguration,
-	type PublicationUrlPolicy,
+import type {
+	PublicationUrlConfiguration,
+	PublicationUrlPolicy,
 } from "./url-policy-contracts.js";
 
 export interface PublicationUrlPoliciesCollaborators {
@@ -33,8 +32,8 @@ export class PublicationUrlPolicies {
 		private readonly collaborators: PublicationUrlPoliciesCollaborators,
 	) {}
 
-	createDefaultPublicationUrlPolicies(
-		configuration: PublicationUrlConfiguration = DEFAULT_PUBLICATION_URL_CONFIGURATION,
+	create(
+		configuration: PublicationUrlConfiguration,
 	): readonly PublicationUrlPolicy[] {
 		return Object.freeze([
 			this.collaborators.createMeetupEventUrlPolicy(

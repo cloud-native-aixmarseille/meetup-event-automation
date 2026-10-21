@@ -17,6 +17,8 @@ describe("communication invocation input", () => {
 		// Act
 		const validate = () =>
 			new CommunicationInput({
+				publicationUrlInput:
+					new GithubActionsComposition().publicationUrlInput(),
 				conferenceHallInput:
 					new GithubActionsComposition().conferenceHallInput(),
 			}).validate(input);
@@ -33,6 +35,8 @@ describe("communication invocation input", () => {
 			// Act
 			const validate = () =>
 				new CommunicationInput({
+					publicationUrlInput:
+						new GithubActionsComposition().publicationUrlInput(),
 					conferenceHallInput:
 						new GithubActionsComposition().conferenceHallInput(),
 				}).validate(input);

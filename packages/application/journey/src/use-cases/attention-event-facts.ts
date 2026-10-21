@@ -10,7 +10,7 @@ import {
 	EXPECTED_POST_EVENT_TASK_NAMES,
 	type MeetupEvent,
 } from "@meetup-automation/event";
-import type { AutomationConfig } from "../config/automation-config.js";
+import type { PublicationUrlConfiguration } from "@meetup-automation/publication";
 import { FOLLOW_UP_TASKS } from "../ports/organizer-follow-up.js";
 import type { CommunicationChecklist } from "./communication-checklist.js";
 import type { EventPublicationEvaluation } from "./event-publication-evaluation.js";
@@ -36,7 +36,7 @@ export class AttentionEventFacts {
 
 	create(
 		decoded: EventDocumentDecodeResult,
-		config: AutomationConfig,
+		publicationUrls: PublicationUrlConfiguration,
 	): Omit<AttentionFacts, "stages"> {
 		const evaluated = this.collaborators
 			.createEventRuleEngine(
@@ -46,7 +46,7 @@ export class AttentionEventFacts {
 		const publication =
 			this.collaborators.eventPublicationEvaluation.evaluatePublication(
 				evaluated.event,
-				config,
+				publicationUrls,
 			);
 		const event = publication.event;
 		const diagnostics = [
