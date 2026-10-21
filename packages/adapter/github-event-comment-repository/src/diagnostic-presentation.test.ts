@@ -54,32 +54,4 @@ describe("organizer diagnostic presentation", () => {
 			expect(result.message).not.toContain(item.message);
 		},
 	);
-
-	it.each([
-		["publication.assets.prerequisites", "event.date.missing"],
-		["publication.feedback.agenda", "event.proposals.not-found"],
-		["communication.feedback-unavailable", "publication.feedback.agenda"],
-		["communication.slides-unavailable", "publication.assets.content.conflict"],
-	])("hides derivative %s when %s explains its cause", (code, cause) => {
-		// Arrange
-		const item = { ...diagnostic, code };
-		const diagnostics = [item, { ...diagnostic, code: cause }];
-
-		// Act
-		const suppressed = DiagnosticPresenter.suppressed(item, diagnostics);
-
-		// Assert
-		expect(suppressed).toBe(true);
-	});
-
-	it("keeps prerequisite guidance when its cause was not reported", () => {
-		// Arrange
-		const item = { ...diagnostic, code: "publication.assets.prerequisites" };
-
-		// Act
-		const suppressed = DiagnosticPresenter.suppressed(item, [item]);
-
-		// Assert
-		expect(suppressed).toBe(false);
-	});
 });

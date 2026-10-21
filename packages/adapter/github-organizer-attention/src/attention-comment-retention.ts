@@ -1,8 +1,6 @@
 import { ATTENTION_MARKER, AttentionRecord } from "./attention-record.js";
-import {
-	type GithubAttentionApi,
-	GithubAttentionClient,
-} from "./github-attention-client.js";
+import { GithubAttentionClient } from "./github-attention-client.js";
+import type { GithubAttentionApi } from "./github-attention-contracts.js";
 import { TrustedAttentionState } from "./trusted-attention-state.js";
 
 /** Preserve notification authority only from a verified bot revision. */

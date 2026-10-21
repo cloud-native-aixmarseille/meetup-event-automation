@@ -57,7 +57,9 @@ Mailing token creation and communications skip when completed asset outputs are 
 ## Organizer feedback
 
 The final attention action is the sole diagnostic checklist writer. It merges
-event, asset, feedback and communication reports through `OrganizerFeedback`.
+event, asset, feedback and communication reports through the journey's
+`ReconcileOrganizerFeedback`. `OrganizerFeedback` decodes runtime inputs and
+invokes that use case.
 It removes duplicates,
 fixed items and derivative prerequisite messages. The comment presenter owns
 concise localized guidance; raw diagnostic messages never become organizer text.

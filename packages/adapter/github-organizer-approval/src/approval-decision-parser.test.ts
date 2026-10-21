@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+	createStoredApproval,
 	detailedRequest,
 	publicationRequest,
 	request,
 } from "../testing/approval.fixtures.js";
 import { ApprovalDecisionParser } from "./approval-decision-parser.js";
 import { ApprovalPresenter } from "./approval-presenter.js";
-import { ApprovalRecord } from "./approval-record.js";
 import { ApprovalMessages } from "./i18n/approval-messages.js";
 
 describe("approval decision parsing", () => {
@@ -22,7 +22,7 @@ describe("approval decision parsing", () => {
 		),
 	)("reads $input.kind $status in $locale", ({ locale, input, status }) => {
 		// Arrange
-		const record = ApprovalRecord.create(input);
+		const record = createStoredApproval(input);
 		const presenter = new ApprovalPresenter(new ApprovalMessages(locale));
 		const body = presenter
 			.issue(record, { status })
@@ -41,7 +41,7 @@ describe("approval decision parsing", () => {
 
 	it("rejects a changed displayed feedback destination", () => {
 		// Arrange
-		const record = ApprovalRecord.create(detailedRequest);
+		const record = createStoredApproval(detailedRequest);
 		const presenter = new ApprovalPresenter(new ApprovalMessages("en"));
 		const body = presenter
 			.issue(record, { status: "approved" })
@@ -64,7 +64,7 @@ describe("approval decision parsing", () => {
 		"keeps the request pending for %s",
 		(variant) => {
 			// Arrange
-			const record = ApprovalRecord.create(request);
+			const record = createStoredApproval(request);
 			const presenter = new ApprovalPresenter(new ApprovalMessages("en"));
 			const approved = presenter.issue(record, { status: "approved" });
 			const bodies = {

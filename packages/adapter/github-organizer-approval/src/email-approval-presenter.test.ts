@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { request, detailedRequest } from "../testing/approval.fixtures.js";
+import {
+	createStoredApproval,
+	detailedRequest,
+	request,
+} from "../testing/approval.fixtures.js";
+import { ApprovalCommentCodec } from "./approval-comment-codec.js";
 import { EmailApprovalPresenter } from "./email-approval-presenter.js";
-import { ApprovalRecord } from "./approval-record.js";
 import { ApprovalMessages } from "./i18n/approval-messages.js";
 
 describe("approval request details", () => {
@@ -12,7 +16,7 @@ describe("approval request details", () => {
 			const presenter = new EmailApprovalPresenter(
 				new ApprovalMessages(locale),
 			);
-			const record = ApprovalRecord.create(detailedRequest);
+			const record = createStoredApproval(detailedRequest);
 			if (record.kind === "meetup-publication")
 				throw new Error("Expected email request");
 
@@ -42,7 +46,7 @@ describe("approval request details", () => {
 		"escapes the %s comment terminator in public text",
 		(terminator) => {
 			// Arrange
-			const record = ApprovalRecord.create({
+			const record = createStoredApproval({
 				...detailedRequest,
 				details: {
 					...detailedRequest.details,
@@ -60,7 +64,7 @@ describe("approval request details", () => {
 
 			// Act
 			const body = presenter.issue(record, { status: "pending" });
-			const restored = ApprovalRecord.read(body);
+			const restored = ApprovalCommentCodec.read(body);
 
 			// Assert
 			expect(body).not.toContain("<img");
@@ -73,7 +77,7 @@ describe("approval request details", () => {
 	it("retains the reviewed details after the decision is recorded", () => {
 		// Arrange
 		const record = {
-			...ApprovalRecord.create(detailedRequest),
+			...createStoredApproval(detailedRequest),
 			decision: {
 				status: "approved" as const,
 				actor: "organizer",

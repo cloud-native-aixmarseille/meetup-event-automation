@@ -1,5 +1,5 @@
-import type { ApprovalDecision, StoredApproval } from "./approval-record.js";
-import { ApprovalRecord } from "./approval-record.js";
+import { ApprovalCommentCodec } from "./approval-comment-codec.js";
+import type { ApprovalDecision, StoredApproval } from "./approval-state.js";
 import type { ApprovalMessages } from "./i18n/approval-messages.js";
 
 export class MeetupApprovalPresenter {
@@ -29,7 +29,9 @@ export class MeetupApprovalPresenter {
 					approveMark: decision.status === "approved" ? "x" : " ",
 					rejectMark: decision.status === "rejected" ? "x" : " ",
 				});
-		return [ApprovalRecord.marker(record), content, controls].join("\n\n");
+		return [ApprovalCommentCodec.marker(record), content, controls].join(
+			"\n\n",
+		);
 	}
 	private static escape(value: string): string {
 		return value

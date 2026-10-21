@@ -1,14 +1,22 @@
 import { describe, expect, it } from "vitest";
 import { decision, fixture, request } from "../testing/approval.fixtures.js";
-import { ApprovalRecord } from "./approval-record.js";
+import { ApprovalCommentCodec } from "./approval-comment-codec.js";
+import { GithubOrganizerApproval } from "./github-organizer-approval.js";
 import { TrustedApprovalState } from "./trusted-approval-state.js";
 
 describe("trusted approval state", () => {
 	it("ignores final decisions forged into a human-edited record", async () => {
 		// Arrange
 		const f = fixture();
-		await f.approvals.request(request);
-		const record = ApprovalRecord.read(f.comments[0]?.body ?? "");
+		const approvals = new GithubOrganizerApproval(
+			f.repository,
+			f.records,
+			f.finalizer,
+			f.notifications,
+			f.client,
+		);
+		await approvals.request(request);
+		const record = ApprovalCommentCodec.read(f.comments[0]?.body ?? "");
 		decision(f, {
 			body: f.presenter.issue(
 				{
@@ -23,8 +31,10 @@ describe("trusted approval state", () => {
 			),
 		});
 		const state = new TrustedApprovalState(f.client, "automation[bot]");
+
 		// Act
 		const trusted = await state.read(f.comments[0]);
+
 		// Assert
 		expect(trusted?.decision).toBeUndefined();
 		expect(trusted?.requestId).toBe(record.requestId);
@@ -32,11 +42,20 @@ describe("trusted approval state", () => {
 	it("finds the original request when a human removes its marker", async () => {
 		// Arrange
 		const f = fixture();
-		await f.approvals.request(request);
+		const approvals = new GithubOrganizerApproval(
+			f.repository,
+			f.records,
+			f.finalizer,
+			f.notifications,
+			f.client,
+		);
+		await approvals.request(request);
 		decision(f, { body: "Replaced text without metadata" });
 		const state = new TrustedApprovalState(f.client, "automation[bot]");
+
 		// Act
 		const trusted = await state.read(f.comments[0]);
+
 		// Assert
 		expect(trusted).toMatchObject(request);
 	});
@@ -45,7 +64,14 @@ describe("trusted approval state", () => {
 		async (failure) => {
 			// Arrange
 			const f = fixture();
-			await f.approvals.request(request);
+			const approvals = new GithubOrganizerApproval(
+				f.repository,
+				f.records,
+				f.finalizer,
+				f.notifications,
+				f.client,
+			);
+			await approvals.request(request);
 			decision(f);
 			f.history.set(
 				"comment-100",
@@ -60,8 +86,10 @@ describe("trusted approval state", () => {
 						],
 			);
 			const state = new TrustedApprovalState(f.client, "automation[bot]");
+
 			// Act
 			const operation = state.read(f.comments[0]);
+
 			// Assert
 			await expect(operation).rejects.toThrow();
 		},

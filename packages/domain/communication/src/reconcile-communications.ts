@@ -1,3 +1,4 @@
+import { CommunicationCalendar } from "./communication-calendar.js";
 import { CommunicationDispatcher } from "./communication-dispatcher.js";
 import {
 	CommunicationResults,
@@ -15,7 +16,6 @@ import type {
 	CommunicationClock,
 	DeliveryLedger,
 	MailGateway,
-	NotificationGateway,
 } from "./ports.js";
 
 export type ReconcileCommunicationsDependencies = {
@@ -23,7 +23,6 @@ export type ReconcileCommunicationsDependencies = {
 	readonly clock: CommunicationClock;
 	readonly ledger: DeliveryLedger;
 	readonly mailGateway: MailGateway;
-	readonly notificationGateway: NotificationGateway;
 };
 
 export class ReconcileCommunications {
@@ -39,7 +38,6 @@ export class ReconcileCommunications {
 		this.#dispatcher = new CommunicationDispatcher(
 			dependencies.ledger,
 			dependencies.mailGateway,
-			dependencies.notificationGateway,
 		);
 	}
 
@@ -55,18 +53,14 @@ export class ReconcileCommunications {
 				severity: "error",
 			});
 		}
-		if (!CommunicationResults.isValidInstant(now)) {
+		if (!CommunicationCalendar.isValidInstant(now)) {
 			return CommunicationResults.emptyResult(input.mode, {
 				code: "invalid-clock",
 				severity: "error",
 			});
 		}
 
-		const {
-			mode,
-			dispatchCapabilities = DEFAULT_DISPATCH_CAPABILITIES,
-			...planningInput
-		} = input;
+		const { mode, dispatchAuthorized, ...planningInput } = input;
 		const plan = this.#planner.execute({ ...planningInput, now });
 		const diagnostics = [...plan.diagnostics];
 		const counts: MutableCounts = {
@@ -89,7 +83,7 @@ export class ReconcileCommunications {
 				intent,
 				timestamp,
 				mode,
-				dispatchCapabilities,
+				dispatchAuthorized,
 				counts,
 				diagnostics,
 			);
@@ -151,9 +145,7 @@ export class ReconcileCommunications {
 		intent: CommunicationIntent,
 		timestamp: string,
 		mode: ReconcileCommunicationsInput["mode"],
-		dispatchCapabilities: NonNullable<
-			ReconcileCommunicationsInput["dispatchCapabilities"]
-		>,
+		dispatchAuthorized: boolean,
 		counts: MutableCounts,
 		diagnostics: CommunicationDiagnostic[],
 	) {
@@ -176,7 +168,7 @@ export class ReconcileCommunications {
 		if (mode === "check") {
 			return;
 		}
-		if (!dispatchCapabilities[intent.channel]) {
+		if (!dispatchAuthorized) {
 			return;
 		}
 
@@ -200,8 +192,3 @@ export class ReconcileCommunications {
 		return this.#dispatcher.execute(intent, timestamp, counts, diagnostics);
 	}
 }
-
-const DEFAULT_DISPATCH_CAPABILITIES = Object.freeze({
-	mail: true,
-	notification: true,
-});

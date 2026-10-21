@@ -108,7 +108,7 @@ describe("public email approval details", () => {
 		});
 	});
 
-	it("keeps large summaries bounded and reports omitted emails and links", () => {
+	it("projects the complete public batch independently of a notification channel budget", () => {
 		// Arrange
 		const mails: MailMessageIntent[] = Array.from(
 			{ length: 30 },
@@ -131,8 +131,9 @@ describe("public email approval details", () => {
 
 		// Assert
 		expect(details.emails.length + details.omittedEmails).toBe(30);
-		expect(details.omittedEmails).toBeGreaterThan(0);
-		expect(JSON.stringify(details.emails).length).toBeLessThanOrEqual(10_000);
+		expect(details.omittedEmails).toBe(0);
+		expect(details.emails).toHaveLength(30);
+
 		for (const email of details.emails)
 			expect(email.links.length + email.omittedLinks).toBe(12);
 	});

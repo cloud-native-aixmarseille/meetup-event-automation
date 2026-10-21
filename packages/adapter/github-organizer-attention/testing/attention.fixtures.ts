@@ -1,19 +1,19 @@
-import { vi } from "vitest";
 import type {
 	AttentionEpisode,
 	AttentionState,
 } from "@meetup-automation/communication";
+import { vi } from "vitest";
+import { AttentionDiagnosticChecklist } from "../src/attention-diagnostic-checklist.js";
 import { AttentionPresenter } from "../src/attention-presenter.js";
-import {
-	GithubAttentionClient,
-	type AttentionComment,
-	type AttentionCommentEdit,
-	type AttentionContentEdit,
-} from "../src/github-attention-client.js";
+import { GithubAttentionClient } from "../src/github-attention-client.js";
+import type {
+	AttentionComment,
+	AttentionCommentEdit,
+	AttentionContentEdit,
+} from "../src/github-attention-contracts.js";
 import { GithubAttentionRepository } from "../src/github-attention-repository.js";
 export function state(): AttentionState {
 	return {
-		version: 1,
 		eventDate: "2099-06-08",
 		stopped: false,
 		episodes: [],
@@ -29,7 +29,8 @@ export function fixture() {
 	const comments: AttentionComment[] = [];
 	const edits = new Map<string, AttentionCommentEdit>();
 	const histories = new Map<string, AttentionContentEdit[]>();
-	const presenter = new AttentionPresenter("example/meetups", 42);
+	const checklist = new AttentionDiagnosticChecklist();
+	const presenter = new AttentionPresenter("example/meetups", 42, checklist);
 	const graphql = vi
 		.fn()
 		.mockImplementation(async (_query: string, variables: { id: string }) => ({
@@ -93,6 +94,7 @@ export function fixture() {
 		edits,
 		histories,
 		presenter,
+		checklist,
 		client,
 		graphql,
 		list,
@@ -102,6 +104,7 @@ export function fixture() {
 			client,
 			"automation[bot]",
 			presenter,
+			checklist,
 		),
 	};
 }

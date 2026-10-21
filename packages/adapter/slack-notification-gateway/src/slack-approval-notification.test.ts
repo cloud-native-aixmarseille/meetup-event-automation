@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { SlackApprovalPresenter } from "./slack-approval-presenter.js";
 import { SlackApprovalNotification } from "./slack-approval-notification.js";
+import { SlackApprovalPresenter } from "./slack-approval-presenter.js";
 
 describe("Slack approval notification", () => {
 	it("retains the acknowledged channel and message timestamp", async () => {
@@ -19,6 +19,7 @@ describe("Slack approval notification", () => {
 			new SlackApprovalPresenter("en"),
 			fetcher,
 		);
+
 		// Act
 		const result = await gateway.send({
 			destination: "C12345",
@@ -27,6 +28,7 @@ describe("Slack approval notification", () => {
 			approvalUrl:
 				"https://github.com/example/meetups/issues/42#issuecomment-100",
 		});
+
 		// Assert
 		expect(result).toEqual({
 			outcome: "accepted",
@@ -56,6 +58,7 @@ describe("Slack approval notification", () => {
 				new SlackApprovalPresenter("en"),
 				vi.fn().mockResolvedValue({ ok: true, json: async () => payload }),
 			);
+
 			// Act
 			const result = await gateway.send({
 				destination: "C12345",
@@ -64,6 +67,7 @@ describe("Slack approval notification", () => {
 				approvalUrl:
 					"https://github.com/example/meetups/issues/42#issuecomment-100",
 			});
+
 			// Assert
 			expect(result).toEqual({
 				outcome: "uncertain",
@@ -86,11 +90,13 @@ describe("Slack approval notification", () => {
 				new SlackApprovalPresenter("en"),
 				fetcher,
 			);
+
 			// Act
 			const accepted = await gateway.react(
 				{ destination: "G12345", messageId: "100.001" },
 				decision,
 			);
+
 			// Assert
 			expect(accepted).toBe(true);
 			expect(fetcher).toHaveBeenCalledWith(
@@ -120,11 +126,13 @@ describe("Slack approval notification", () => {
 				json: async () => ({ ok: false, error }),
 			}),
 		);
+
 		// Act
 		const accepted = await gateway.react(
 			{ destination: "C12345", messageId: "100.001" },
 			"approved",
 		);
+
 		// Assert
 		expect(accepted).toBe(expected);
 	});
@@ -135,11 +143,13 @@ describe("Slack approval notification", () => {
 			new SlackApprovalPresenter("en"),
 			vi.fn().mockRejectedValue(new Error("private provider failure")),
 		);
+
 		// Act
 		const accepted = await gateway.react(
 			{ destination: "C12345", messageId: "100.001" },
 			"rejected",
 		);
+
 		// Assert
 		expect(accepted).toBe(false);
 	});

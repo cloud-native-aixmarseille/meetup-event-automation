@@ -29912,9 +29912,7 @@ var AutomationConfigFactory = class {
         speakers: "referentials/speakers.csv"
       },
       communication: {
-        "readiness-window-days": 7,
         "mailings-repository": repositoryOwner ? `${repositoryOwner}/mailings` : "",
-        "slack-enabled": true,
         "dispatch-enabled": Boolean(repositoryOwner),
         "policy-version": 1
       },
@@ -30067,6 +30065,55 @@ var DiagnosticPolicy = class _DiagnosticPolicy {
   }
   static isTechnicalFailure(diagnostic) {
     return _DiagnosticPolicy.classify(diagnostic) === "technical";
+  }
+};
+
+// packages/application/journey/src/result/organizer-diagnostic-policy.ts
+var OrganizerDiagnosticPolicy = class _OrganizerDiagnosticPolicy {
+  static suppressed(item, diagnostics) {
+    if (item.severity === "info" || item.fixApplied === true) return true;
+    const causes = _OrganizerDiagnosticPolicy.PREREQUISITES.get(item.code);
+    return causes?.some(
+      (prefix) => diagnostics.some(
+        (cause) => cause !== item && cause.severity !== "info" && cause.fixApplied !== true && cause.code.startsWith(prefix)
+      )
+    ) ?? false;
+  }
+  static PREREQUISITES = /* @__PURE__ */ new Map([
+    ["event.agenda.missing", ["event.proposals."]],
+    ["publication.assets.prerequisites", ["event.", "referential.reference."]],
+    [
+      "publication.feedback.prerequisites",
+      ["event.", "referential.reference."]
+    ],
+    [
+      "publication.feedback.agenda",
+      ["event.agenda.", "event.proposals.", "referential.reference.speaker."]
+    ],
+    ["communication.event-references-unresolved", ["referential.reference."]],
+    [
+      "communication.referential-catalog-invalid",
+      ["referential.host.", "referential.speaker.", "referential.contact."]
+    ],
+    ["communication.slides-unavailable", ["publication.assets."]],
+    [
+      "communication.feedback-unavailable",
+      ["publication.feedback.", "event.proposals.", "event.agenda."]
+    ]
+  ]);
+  static derivative(item, diagnostics) {
+    const roots = {
+      "communication.event-references-unresolved": /^(event\.(proposals\.|agenda\.|hoster\.|document\.reference-metadata\.)|referential\.)/,
+      "communication.referential-catalog-invalid": /^referential\./,
+      "communication.slides-unavailable": /^publication\.assets\.content\./,
+      "communication.feedback-unavailable": /^(publication\.feedback\.(agenda|prerequisites|conflict)|event\.link\.feedback\.invalid)$/,
+      "publication.feedback.agenda": /^event\.(agenda\.|proposals\.)/,
+      "publication.assets.prerequisites": /^event\.(date\.|hoster\.)/
+    };
+    const root = roots[item.code];
+    return root !== void 0 && diagnostics.some(
+      (candidate) => root.test(candidate.code) && DiagnosticPolicy.classify(candidate) !== "informational"
+    );
   }
 };
 
@@ -30884,6 +30931,42 @@ var ConfiguredPublicationPolicies = class {
   }
 };
 
+// packages/domain/communication/src/attention/attention-state-rules.ts
+var AttentionStateRules = class {
+  static validate(state) {
+    if (new Set(state.episodes.map((item) => item.condition.key)).size !== state.episodes.length)
+      throw new Error("Duplicate attention condition");
+    for (const episode of state.episodes)
+      if (episode.condition.key !== `${episode.condition.code}:${episode.condition.resource}`)
+        throw new Error("Invalid attention resource");
+    const post = state.post;
+    if (!post) return;
+    if (post.status === "accepted" && !post.message)
+      throw new Error("Missing accepted attention reference");
+    if (post.status !== "accepted" && (post.message !== void 0 || post.fingerprint !== void 0))
+      throw new Error(
+        "Unconfirmed attention reservation has delivery authority"
+      );
+    if (post.status !== "retry" && post.retryAt !== void 0)
+      throw new Error("Unexpected attention retry");
+  }
+};
+
+// packages/domain/communication/src/attention/model.ts
+var ATTENTION_CODES = [
+  "missing-date",
+  "required-data",
+  "host-confirmation",
+  "speaker-confirmation",
+  "manual-publication",
+  "approval-pending",
+  "integration-failure",
+  "delivery-recovery",
+  "occurrence-decision",
+  "follow-up",
+  "stage-unknown"
+];
+
 // packages/domain/communication/src/model.ts
 var MAIL_TEMPLATE_NAMES = {
   hostIntroduction: "meetup-intro-hosting",
@@ -30915,27 +30998,6 @@ var MAIL_POLICIES = {
     }
   }
 };
-
-// packages/domain/communication/src/reconcile-communications.ts
-var DEFAULT_DISPATCH_CAPABILITIES = Object.freeze({
-  mail: true,
-  notification: true
-});
-
-// packages/domain/communication/src/attention/model.ts
-var ATTENTION_CODES = [
-  "missing-date",
-  "required-data",
-  "host-confirmation",
-  "speaker-confirmation",
-  "manual-publication",
-  "approval-pending",
-  "integration-failure",
-  "delivery-recovery",
-  "occurrence-decision",
-  "follow-up",
-  "stage-unknown"
-];
 
 // packages/application/journey/src/use-cases/event-publication-evaluation.ts
 var EventPublicationEvaluation = class _EventPublicationEvaluation {
@@ -42167,15 +42229,7 @@ var STAGE_GUIDANCE = [
     ["Communication", "comment.guidance.communication.configuration"]
   ],
   [
-    "communication.invalid-readiness-window",
-    ["Communication", "comment.guidance.communication.configuration"]
-  ],
-  [
     "communication.invalid-time-zone",
-    ["Communication", "comment.guidance.communication.configuration"]
-  ],
-  [
-    "communication.github-credential-missing",
     ["Communication", "comment.guidance.communication.configuration"]
   ],
   [
@@ -42189,10 +42243,6 @@ var STAGE_GUIDANCE = [
   [
     "communication.missing-mail-destination",
     ["Communication", "comment.guidance.communication.destination"]
-  ],
-  [
-    "communication.missing-notification-content",
-    ["Communication", "comment.guidance.communication.content"]
   ],
   [
     "communication.checklist-update-failed",
@@ -42789,37 +42839,6 @@ var EventCommentMessages = class extends MessageLocalizer {
 
 // packages/adapter/github-event-comment-repository/src/diagnostic-presentation.ts
 var DiagnosticPresenter = class _DiagnosticPresenter {
-  static suppressed(item, diagnostics) {
-    if (item.severity === "info") return true;
-    const causes = _DiagnosticPresenter.PREREQUISITES.get(item.code);
-    return causes?.some(
-      (prefix) => diagnostics.some(
-        (cause) => cause !== item && cause.severity !== "info" && cause.code.startsWith(prefix)
-      )
-    ) ?? false;
-  }
-  static PREREQUISITES = /* @__PURE__ */ new Map([
-    ["event.agenda.missing", ["event.proposals."]],
-    ["publication.assets.prerequisites", ["event.", "referential.reference."]],
-    [
-      "publication.feedback.prerequisites",
-      ["event.", "referential.reference."]
-    ],
-    [
-      "publication.feedback.agenda",
-      ["event.agenda.", "event.proposals.", "referential.reference.speaker."]
-    ],
-    ["communication.event-references-unresolved", ["referential.reference."]],
-    [
-      "communication.referential-catalog-invalid",
-      ["referential.host.", "referential.speaker.", "referential.contact."]
-    ],
-    ["communication.slides-unavailable", ["publication.assets."]],
-    [
-      "communication.feedback-unavailable",
-      ["publication.feedback.", "event.proposals.", "event.agenda."]
-    ]
-  ]);
   static FIELD_ALIASES = new Map([
     ...FIELD_ORDER.map((field) => [field, field]),
     ["eventTitle", "Event Title"],
@@ -42889,6 +42908,42 @@ var DiagnosticPresenter = class _DiagnosticPresenter {
   }
 };
 
+// packages/adapter/github-event-comment-repository/src/github-event-comment-repository-contracts.ts
+var EVENT_DIAGNOSTIC_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics:v1 -->";
+var DUPLICATE_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics-duplicate:v1 -->";
+var COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER = "<!-- meetup-automation:communication-diagnostics:v1 -->";
+
+// packages/adapter/github-event-comment-repository/src/diagnostic-comment-presenter.ts
+var DiagnosticCommentPresenter = class {
+  static render(diagnostics, messages3 = new EventCommentMessages()) {
+    const actionable = /* @__PURE__ */ new Map();
+    for (const item of diagnostics) {
+      if (OrganizerDiagnosticPolicy.suppressed(item, diagnostics)) {
+        continue;
+      }
+      const presentation = DiagnosticPresenter.presentDiagnostic(
+        item,
+        messages3
+      );
+      actionable.set(
+        `${presentation.field}:${presentation.message}`,
+        presentation
+      );
+    }
+    if (actionable.size === 0) {
+      return `${EVENT_DIAGNOSTIC_COMMENT_MARKER}
+
+${messages3.t("comment.resolved")}`;
+    }
+    const lines = [...actionable.values()].sort(
+      (left, right) => left.order - right.order || left.field.localeCompare(right.field, messages3.locale, {
+        numeric: true
+      }) || left.message.localeCompare(right.message, messages3.locale)
+    ).map(({ field, message }) => `- [ ] **${field}**: ${message}`);
+    return [EVENT_DIAGNOSTIC_COMMENT_MARKER, "", ...lines].join("\n");
+  }
+};
+
 // packages/adapter/github-event-comment-repository/src/github-event-comment-repository-configuration-error.ts
 var GitHubEventCommentRepositoryConfigurationError = class extends Error {
   constructor(message) {
@@ -42896,11 +42951,6 @@ var GitHubEventCommentRepositoryConfigurationError = class extends Error {
     this.name = "GitHubEventCommentRepositoryConfigurationError";
   }
 };
-
-// packages/adapter/github-event-comment-repository/src/github-event-comment-repository-contracts.ts
-var EVENT_DIAGNOSTIC_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics:v1 -->";
-var DUPLICATE_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics-duplicate:v1 -->";
-var COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER = "<!-- meetup-automation:communication-diagnostics:v1 -->";
 
 // packages/adapter/github-event-comment-repository/src/github-event-comment-repository-response-error.ts
 var GitHubEventCommentRepositoryResponseError = class extends Error {
@@ -42935,7 +42985,11 @@ var GitHubEventCommentRepository = class _GitHubEventCommentRepository {
       "repo"
     );
     this.repositoryName = `${this.owner}/${this.repo}`;
-    this.authorLogin = options.authorLogin?.trim() || void 0;
+    this.authorLogin = options.authorLogin.trim();
+    if (!this.authorLogin)
+      throw new GitHubEventCommentRepositoryConfigurationError(
+        "Managed comment author is required"
+      );
   }
   client;
   options;
@@ -42956,10 +43010,7 @@ var GitHubEventCommentRepository = class _GitHubEventCommentRepository {
       (comment) => !retired.includes(comment)
     );
     let changed = await this.retireComments(identity.issueNumber, duplicates);
-    let body = _GitHubEventCommentRepository.renderDiagnosticComment(
-      diagnostics,
-      this.messages
-    );
+    let body = DiagnosticCommentPresenter.render(diagnostics, this.messages);
     if (canonical && this.options.retainedContent) {
       const retained = await this.options.retainedContent.load(
         identity.issueNumber,
@@ -43030,7 +43081,7 @@ ${retained}`;
     if (!comment.body.startsWith(EVENT_DIAGNOSTIC_COMMENT_MARKER) && !(this.options.retireCommunicationReports && this.authorLogin && comment.body.startsWith(COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER))) {
       return false;
     }
-    return this.authorLogin === void 0 || comment.authorLogin?.toLowerCase() === this.authorLogin.toLowerCase();
+    return comment.authorType === "Bot" && comment.authorLogin?.toLowerCase() === this.authorLogin.toLowerCase();
   }
   async retireComments(issueNumber, duplicates, deleteReports = false) {
     for (const duplicate of duplicates) {
@@ -43079,33 +43130,6 @@ ${this.messages.t("comment.duplicate")}`
       );
     }
   }
-  static renderDiagnosticComment(diagnostics, messages3 = new EventCommentMessages()) {
-    const actionable = /* @__PURE__ */ new Map();
-    for (const item of diagnostics) {
-      if (DiagnosticPresenter.suppressed(item, diagnostics)) {
-        continue;
-      }
-      const presentation = DiagnosticPresenter.presentDiagnostic(
-        item,
-        messages3
-      );
-      actionable.set(
-        `${presentation.field}:${presentation.message}`,
-        presentation
-      );
-    }
-    if (actionable.size === 0) {
-      return `${EVENT_DIAGNOSTIC_COMMENT_MARKER}
-
-${messages3.t("comment.resolved")}`;
-    }
-    const lines = [...actionable.values()].sort(
-      (left, right) => left.order - right.order || left.field.localeCompare(right.field, messages3.locale, {
-        numeric: true
-      }) || left.message.localeCompare(right.message, messages3.locale)
-    ).map(({ field, message }) => `- [ ] **${field}**: ${message}`);
-    return [EVENT_DIAGNOSTIC_COMMENT_MARKER, "", ...lines].join("\n");
-  }
   static mapComment(data) {
     if (!_GitHubEventCommentRepository.isRecord(data)) {
       throw new GitHubEventCommentRepositoryResponseError(
@@ -43129,7 +43153,8 @@ ${messages3.t("comment.resolved")}`;
     return {
       id: Number(data.id),
       body: data.body,
-      authorLogin: typeof user?.login === "string" ? user.login : void 0
+      authorLogin: typeof user?.login === "string" ? user.login : void 0,
+      authorType: typeof user?.type === "string" ? user.type : void 0
     };
   }
   static requireRepositoryPart(value, name) {
@@ -43146,7 +43171,7 @@ ${messages3.t("comment.resolved")}`;
     return typeof value === "string" ? value : void 0;
   }
   static isRecord(value) {
-    return typeof value === "object" && value !== null;
+    return typeof value === "object" && value !== null && !Array.isArray(value);
   }
 };
 
@@ -43398,122 +43423,207 @@ var GitHubEventRepository = class _GitHubEventRepository {
   }
 };
 
+// packages/adapter/github-organizer-attention/src/attention-record-fields.ts
+var AttentionRecordFields = class _AttentionRecordFields {
+  static record(value) {
+    if (typeof value !== "object" || value === null || Array.isArray(value))
+      throw new Error("Invalid attention record object");
+    return value;
+  }
+  static text(value, pattern) {
+    if (typeof value !== "string" || !pattern.test(value))
+      throw new Error("Invalid attention record text");
+    return value;
+  }
+  static integer(value, positive = false) {
+    if (typeof value !== "number" || !Number.isSafeInteger(value) || positive && value <= 0)
+      throw new Error("Invalid attention record integer");
+    return value;
+  }
+  static choice(value, values) {
+    const found = values.find((candidate) => candidate === value);
+    if (found === void 0)
+      throw new Error("Invalid attention record variant");
+    return found;
+  }
+  static instant(value) {
+    const text = _AttentionRecordFields.text(value, /^\d{4}-\d{2}-\d{2}T/);
+    if (!Number.isFinite(Date.parse(text)))
+      throw new Error("Invalid attention record timestamp");
+    return text;
+  }
+};
+
 // packages/adapter/github-organizer-attention/src/attention-record.ts
 var ATTENTION_MARKER = "<!-- meetup-organizer-attention:v1 ";
 var AttentionRecord = class _AttentionRecord {
   static read(body) {
     const lines = body.split("\n").filter((line2) => line2.startsWith(ATTENTION_MARKER));
-    if (lines.length !== 1) throw new Error("Invalid attention record");
     const line = lines[0];
-    if (!line?.startsWith(ATTENTION_MARKER) || !line.endsWith(" -->"))
+    if (lines.length !== 1 || !line?.endsWith(" -->"))
       throw new Error("Invalid attention record");
-    const state = JSON.parse(
-      line.slice(ATTENTION_MARKER.length, -4)
-    );
-    if (state.version !== 1 || typeof state.eventDate !== "string" || !/^(?:\d{4}-\d{2}-\d{2})?$/.test(state.eventDate) || typeof state.stopped !== "boolean" || !Array.isArray(state.episodes) || state.episodes.length > 300)
-      throw new Error("Invalid attention state");
-    const episodes = state.episodes.map(_AttentionRecord.episode);
-    if (new Set(episodes.map((item) => item.condition.key)).size !== episodes.length)
-      throw new Error("Duplicate attention condition");
-    if (state.runId !== void 0 && !/^\d+$/.test(state.runId))
-      throw new Error("Invalid attention run");
-    if (state.commentId !== void 0 && (!Number.isSafeInteger(state.commentId) || state.commentId <= 0))
-      throw new Error("Invalid attention comment");
-    return {
-      version: 1,
-      eventDate: state.eventDate,
-      stopped: state.stopped,
-      episodes,
-      post: _AttentionRecord.post(state.post),
-      runId: state.runId,
-      commentId: state.commentId
-    };
+    const input = JSON.parse(line.slice(ATTENTION_MARKER.length, -4));
+    return _AttentionRecord.decode(input);
   }
   static marker(state) {
-    const body = `${ATTENTION_MARKER}${JSON.stringify(state)} -->`;
-    const safe = _AttentionRecord.read(body);
-    return `${ATTENTION_MARKER}${JSON.stringify(safe)} -->`;
+    const safe = _AttentionRecord.decode({ ...state, version: 1 });
+    return `${ATTENTION_MARKER}${JSON.stringify({ version: 1, ...safe })} -->`;
   }
-  static episode(episode) {
-    if (!Number.isSafeInteger(episode.episode) || episode.episode < 1 || !_AttentionRecord.instant(episode.openedAt) || !["active", "unknown", "resolved", "stopped"].includes(episode.status))
-      throw new Error("Invalid attention episode");
-    if (episode.lastWindow !== void 0 && !/^(?:day|week|preparation|occurrence|follow-up):-?\d+$/.test(
-      episode.lastWindow
-    ))
-      throw new Error("Invalid attention window");
+  static decode(input) {
+    const data = AttentionRecordFields.record(input);
+    if (!Array.isArray(data.episodes) || data.episodes.length > 300)
+      throw new Error("Invalid attention episodes");
+    AttentionRecordFields.choice(data.version, [1]);
+    const state = {
+      eventDate: AttentionRecordFields.text(data.eventDate, /^(?:\d{4}-\d{2}-\d{2})?$/),
+      stopped: AttentionRecordFields.choice(data.stopped, [true, false]),
+      episodes: data.episodes.map(_AttentionRecord.episode),
+      post: data.post === void 0 ? void 0 : _AttentionRecord.post(data.post),
+      runId: data.runId === void 0 ? void 0 : AttentionRecordFields.text(data.runId, /^\d+$/),
+      commentId: data.commentId === void 0 ? void 0 : AttentionRecordFields.integer(data.commentId, true)
+    };
+    AttentionStateRules.validate(state);
+    return state;
+  }
+  static episode(input) {
+    const data = AttentionRecordFields.record(input);
     return {
-      condition: _AttentionRecord.condition(episode.condition),
-      episode: episode.episode,
-      openedAt: episode.openedAt,
-      status: episode.status,
-      lastWindow: episode.lastWindow
+      condition: _AttentionRecord.condition(data.condition),
+      episode: AttentionRecordFields.integer(data.episode, true),
+      openedAt: AttentionRecordFields.instant(data.openedAt),
+      status: AttentionRecordFields.choice(data.status, [
+        "active",
+        "unknown",
+        "resolved",
+        "stopped"
+      ]),
+      lastWindow: data.lastWindow === void 0 ? void 0 : AttentionRecordFields.text(
+        data.lastWindow,
+        /^(?:day|week|preparation|occurrence|follow-up):-?\d+$/
+      )
     };
   }
-  static condition(condition) {
-    if (!ATTENTION_CODES.includes(condition.code) || ![
-      "event",
-      "assets",
-      "feedback",
-      "communications",
-      "approvals",
-      "delivery"
-    ].includes(condition.owner) || !["warning", "error"].includes(condition.severity) || ![
-      "preparation",
-      "daily",
-      "weekly",
-      "approval",
-      "occurrence",
-      "follow-up",
-      "none"
-    ].includes(condition.policy))
-      throw new Error("Invalid attention condition");
-    if (typeof condition.resource !== "string" || !/^[a-z0-9:-]{1,128}$/.test(condition.resource) || condition.key !== `${condition.code}:${condition.resource}`)
-      throw new Error("Invalid attention resource");
-    if (condition.since !== void 0 && !_AttentionRecord.instant(condition.since))
-      throw new Error("Invalid attention timestamp");
-    if (condition.commentId !== void 0 && (!Number.isSafeInteger(condition.commentId) || condition.commentId <= 0))
-      throw new Error("Invalid attention source");
-    if (condition.recovery !== void 0 && condition.recovery !== true)
-      throw new Error("Invalid recovery flag");
+  static condition(input) {
+    const data = AttentionRecordFields.record(input);
     return {
-      key: condition.key,
-      code: condition.code,
-      owner: condition.owner,
-      resource: condition.resource,
-      severity: condition.severity,
-      policy: condition.policy,
-      since: condition.since,
-      commentId: condition.commentId,
-      recovery: condition.recovery
+      key: AttentionRecordFields.text(data.key, /^[a-z0-9:-]{1,180}$/),
+      code: AttentionRecordFields.choice(data.code, ATTENTION_CODES),
+      owner: AttentionRecordFields.choice(data.owner, [
+        "event",
+        "assets",
+        "feedback",
+        "communications",
+        "approvals",
+        "delivery"
+      ]),
+      resource: AttentionRecordFields.text(data.resource, /^[a-z0-9:-]{1,128}$/),
+      severity: AttentionRecordFields.choice(data.severity, ["warning", "error"]),
+      policy: AttentionRecordFields.choice(data.policy, [
+        "preparation",
+        "daily",
+        "weekly",
+        "approval",
+        "occurrence",
+        "follow-up",
+        "none"
+      ]),
+      since: data.since === void 0 ? void 0 : AttentionRecordFields.instant(data.since),
+      commentId: data.commentId === void 0 ? void 0 : AttentionRecordFields.integer(data.commentId, true),
+      recovery: data.recovery === void 0 ? void 0 : AttentionRecordFields.choice(data.recovery, [true])
     };
   }
-  static post(post) {
-    if (!post) return void 0;
-    if (!/^attention:\d+:\d+$/.test(post.reservationId) || !Number.isSafeInteger(post.day) || !_AttentionRecord.instant(post.reservedAt) || !["pending", "accepted", "retry"].includes(post.status))
-      throw new Error("Invalid attention reservation");
-    if (post.retryAt !== void 0 && !_AttentionRecord.instant(post.retryAt))
-      throw new Error("Invalid attention retry");
-    if (post.fingerprint !== void 0 && !/^[a-f0-9]{64}$/.test(post.fingerprint))
-      throw new Error("Invalid attention fingerprint");
-    if (post.status === "accepted" && !post.message)
-      throw new Error("Missing accepted attention reference");
-    if (post.message && (!/^[CGD][A-Z0-9]+$/.test(post.message.destination) || !/^\d+\.\d+$/.test(post.message.messageId)))
-      throw new Error("Invalid attention message");
+  static post(input) {
+    const data = AttentionRecordFields.record(input);
     return {
-      reservationId: post.reservationId,
-      day: post.day,
-      reservedAt: post.reservedAt,
-      status: post.status,
-      retryAt: post.retryAt,
-      fingerprint: post.fingerprint,
-      message: post.message ? {
-        destination: post.message.destination,
-        messageId: post.message.messageId
-      } : void 0
+      reservationId: AttentionRecordFields.text(data.reservationId, /^attention:\d+:\d+$/),
+      day: AttentionRecordFields.integer(data.day),
+      reservedAt: AttentionRecordFields.instant(data.reservedAt),
+      status: AttentionRecordFields.choice(data.status, ["pending", "accepted", "retry"]),
+      retryAt: data.retryAt === void 0 ? void 0 : AttentionRecordFields.instant(data.retryAt),
+      fingerprint: data.fingerprint === void 0 ? void 0 : AttentionRecordFields.text(data.fingerprint, /^[a-f0-9]{64}$/),
+      message: data.message === void 0 ? void 0 : _AttentionRecord.message(data.message)
     };
   }
-  static instant(value) {
-    return typeof value === "string" && /^\d{4}-\d{2}-\d{2}T/.test(value) && Number.isFinite(Date.parse(value));
+  static message(input) {
+    const data = AttentionRecordFields.record(input);
+    return {
+      destination: AttentionRecordFields.text(data.destination, /^[a-zA-Z0-9._:-]{1,128}$/),
+      messageId: AttentionRecordFields.text(data.messageId, /^[a-zA-Z0-9._:-]{1,128}$/)
+    };
+  }
+};
+
+// packages/adapter/github-organizer-attention/src/github-attention-response.ts
+var GithubAttentionResponse = class _GithubAttentionResponse {
+  static record(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value))
+      throw new Error("Invalid attention API object");
+    return value;
+  }
+  static comment(value) {
+    const data = _GithubAttentionResponse.record(value);
+    if (typeof data.id !== "number" || !Number.isSafeInteger(data.id) || data.id <= 0)
+      throw new Error("Invalid attention comment identity");
+    if (data.body !== void 0 && data.body !== null && typeof data.body !== "string")
+      throw new Error("Invalid attention comment body");
+    if (data.node_id !== void 0 && typeof data.node_id !== "string")
+      throw new Error("Invalid attention comment node");
+    let user;
+    if (data.user !== null && data.user !== void 0) {
+      const actor = _GithubAttentionResponse.record(data.user);
+      if (typeof actor.login !== "string" || actor.type !== void 0 && typeof actor.type !== "string")
+        throw new Error("Invalid attention comment author");
+      user = { login: actor.login, type: actor.type };
+    }
+    return { id: data.id, body: data.body, node_id: data.node_id, user };
+  }
+  static current(value, comment) {
+    const node = _GithubAttentionResponse.node(value, comment);
+    return {
+      id: node.id,
+      body: node.body,
+      lastEditedAt: _GithubAttentionResponse.nullableText(node.lastEditedAt),
+      editor: _GithubAttentionResponse.editor(node.editor)
+    };
+  }
+  static history(value, comment) {
+    const node = _GithubAttentionResponse.node(value, comment);
+    const edits = _GithubAttentionResponse.record(node.userContentEdits);
+    const page = _GithubAttentionResponse.record(edits.pageInfo);
+    if (!Array.isArray(edits.nodes) || typeof page.hasNextPage !== "boolean")
+      throw new Error("Attention history is unavailable");
+    return {
+      nodes: edits.nodes.map(_GithubAttentionResponse.edit),
+      hasNextPage: page.hasNextPage,
+      endCursor: _GithubAttentionResponse.nullableText(page.endCursor)
+    };
+  }
+  static node(value, comment) {
+    const result = _GithubAttentionResponse.record(value);
+    const node = _GithubAttentionResponse.record(result.node);
+    if (typeof node.id !== "string" || typeof node.body !== "string" || node.id !== comment.node_id || node.body !== comment.body)
+      throw new Error("Attention comment changed during verification");
+    return { ...node, id: node.id, body: node.body };
+  }
+  static edit(value) {
+    const data = _GithubAttentionResponse.record(value);
+    return {
+      diff: _GithubAttentionResponse.nullableText(data.diff),
+      deletedAt: _GithubAttentionResponse.nullableText(data.deletedAt),
+      editor: _GithubAttentionResponse.editor(data.editor)
+    };
+  }
+  static nullableText(value) {
+    if (value !== null && typeof value !== "string")
+      throw new Error("Invalid attention API text");
+    return value;
+  }
+  static editor(value) {
+    if (value === null) return null;
+    const actor = _GithubAttentionResponse.record(value);
+    if (typeof actor.login !== "string" || typeof actor.__typename !== "string")
+      throw new Error("Invalid attention editor");
+    return { login: actor.login, __typename: actor.__typename };
   }
 };
 
@@ -43542,7 +43652,7 @@ var GithubAttentionClient = class _GithubAttentionClient {
       });
       if (!Array.isArray(response.data))
         throw new Error("Invalid attention comment response");
-      comments.push(...response.data);
+      comments.push(...response.data.map(GithubAttentionResponse.comment));
       const next = response.headers.link ? /<[^>]+>;\s*rel="next"/.test(response.headers.link) : response.data.length === 100;
       if (!next) return comments;
       page += 1;
@@ -43601,9 +43711,7 @@ var GithubAttentionClient = class _GithubAttentionClient {
 			}`,
       { id: comment.node_id }
     );
-    if (result.node?.id !== comment.node_id || result.node.body !== comment.body)
-      throw new Error("Attention comment changed during verification");
-    return result.node;
+    return GithubAttentionResponse.current(result, comment);
   }
   static checkHistoryLimit(count) {
     if (count > 2e3) throw new Error("Attention history limit exceeded");
@@ -43625,17 +43733,11 @@ var GithubAttentionClient = class _GithubAttentionClient {
 			}`,
         { id: comment.node_id, ...after ? { after } : {} }
       );
-      if (response.node?.id !== comment.node_id || response.node.body !== comment.body)
-        throw new Error(
-          "Attention comment changed during history verification"
-        );
-      const history = response.node.userContentEdits;
-      if (!Array.isArray(history?.nodes) || !history.pageInfo)
-        throw new Error("Attention history is unavailable");
+      const history = GithubAttentionResponse.history(response, comment);
       edits.push(...history.nodes);
       _GithubAttentionClient.checkHistoryLimit(edits.length);
-      if (!history.pageInfo.hasNextPage) return edits;
-      const next = history.pageInfo.endCursor;
+      if (!history.hasNextPage) return edits;
+      const next = history.endCursor;
       if (!next || next === after)
         throw new Error("Invalid attention history cursor");
       after = next;

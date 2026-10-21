@@ -27755,9 +27755,7 @@ var AutomationConfigFactory = class {
         speakers: "referentials/speakers.csv"
       },
       communication: {
-        "readiness-window-days": 7,
         "mailings-repository": repositoryOwner ? `${repositoryOwner}/mailings` : "",
-        "slack-enabled": true,
         "dispatch-enabled": Boolean(repositoryOwner),
         "policy-version": 1
       },
@@ -28577,12 +28575,6 @@ var MAIL_POLICIES = {
     }
   }
 };
-
-// packages/domain/communication/src/reconcile-communications.ts
-var DEFAULT_DISPATCH_CAPABILITIES = Object.freeze({
-  mail: true,
-  notification: true
-});
 
 // packages/application/journey/src/use-cases/manage-meetup-communications-contracts.ts
 var UNRESOLVED_MAIL_RECIPIENTS = Object.freeze({

@@ -177,6 +177,11 @@ explicit destination through `slack-organizer-channel-id`. Public Slack
 announcement tasks are manual and do not share this routing.
 
 The journey's `OrganizerApproval` port gates email batches and Meetup publication.
+Journey policies own request eligibility, matching and revision fingerprints.
+The GitHub comment codec owns the versioned representation; a separate factory
+receives its identity source explicitly. Persistence, decision finalization and
+notification delivery are separate collaborators. Follow-up persistence and
+attention synchronization expose their own capabilities.
 The GitHub adapter owns trusted request comments, GitHub GraphQL editor/history
 verification, and current write-permission checks. Its comment presenter delegates
 to separate email and Meetup presenters. A decision parser compares checkbox edits
@@ -235,8 +240,10 @@ Runtime composition injects the clock and ports. A pending post blocks further
 posts across days and requires operator investigation. Existing mail records and
 approval decisions remain independent. Once follow-up begins, the approval adapter
 stores the attention record inside the single thank-you approval and task comment.
-The attention adapter still owns validation and presentation; runtime composition
-supplies these capabilities without adapter-to-adapter dependencies. A placeholder
+The communication domain owns attention invariants, equality and task selection.
+GitHub decodes the verified diagnostic checklist into typed tasks. GitHub and
+Slack presenters render that shared selection with their own catalogs. Runtime
+composition supplies these capabilities without adapter-to-adapter dependencies. A placeholder
 with zero recipients shows task progress while a safe email batch is unavailable;
 it cannot authorize mail. Progress writes first verify and finalize any human
 choice. Migration persists notification reservations before retiring the earlier

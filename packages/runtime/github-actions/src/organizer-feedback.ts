@@ -3,30 +3,26 @@ import type {
 	EventIdentity,
 	EventRepository,
 } from "@meetup-automation/event";
-import { AttentionStages } from "./attention-stages.js";
-
-/** Publish one checklist after all independently executed stages have reported. */
+import { ReconcileOrganizerFeedback } from "@meetup-automation/journey";
+import { AttentionStageInput } from "./attention-stage-input.js";
+/** Runtime input adapter for the merged organizer feedback use case. */
 export class OrganizerFeedback {
+	private readonly reconciliation: ReconcileOrganizerFeedback;
 	constructor(
-		private readonly events: EventRepository,
-		private readonly comments: EventCommentRepository,
-		private readonly meetupLabel: string,
-	) {}
-
+		events: EventRepository,
+		comments: EventCommentRepository,
+		meetupLabel: string,
+	) {
+		this.reconciliation = new ReconcileOrganizerFeedback(
+			events,
+			comments,
+			meetupLabel,
+		);
+	}
 	async execute(identity: EventIdentity, stageResults: string): Promise<void> {
-		const diagnostics = AttentionStages.diagnostics(stageResults);
-		if (!AttentionStages.hasCompleteReports(stageResults)) return;
-		const source = await this.events.find(identity);
-		if (!source) throw new Error("Organizer feedback issue is unavailable");
-		if (!source.labels.includes(this.meetupLabel)) return;
-		await this.comments.reconcileDiagnostics(
+		await this.reconciliation.execute(
 			identity,
-			diagnostics
-				.filter((item) => item.severity !== "info" && item.fixApplied !== true)
-				.map((item) => ({
-					...item,
-					category: item.severity === "error" ? "invalid" : "incomplete",
-				})),
+			AttentionStageInput.parse(stageResults),
 		);
 	}
 }

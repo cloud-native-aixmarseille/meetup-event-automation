@@ -1,6 +1,6 @@
 import type { OrganizerApprovalDetails } from "@meetup-automation/journey";
 import { describe, expect, it } from "vitest";
-import { ApprovalDetails } from "./approval-details.js";
+import { EmailApprovalDetailsSchema } from "./email-approval-details-schema.js";
 
 const details: OrganizerApprovalDetails = {
 	emails: [
@@ -35,18 +35,7 @@ describe("approval detail validation", () => {
 		} as OrganizerApprovalDetails;
 
 		// Act
-		const validate = () => ApprovalDetails.validate(input, 1);
-
-		// Assert
-		expect(validate).toThrow("Invalid approval details");
-	});
-
-	it("rejects a summary that accounts for fewer emails than the batch", () => {
-		// Arrange
-		const recipientCount = 2;
-
-		// Act
-		const validate = () => ApprovalDetails.validate(details, recipientCount);
+		const validate = () => EmailApprovalDetailsSchema.validate(input);
 
 		// Assert
 		expect(validate).toThrow("Invalid approval details");
@@ -57,7 +46,7 @@ describe("approval detail validation", () => {
 		const input = { ...details, omittedEmails: 4 };
 
 		// Act
-		const validate = () => ApprovalDetails.validate(input, 5);
+		const validate = () => EmailApprovalDetailsSchema.validate(input);
 
 		// Assert
 		expect(validate).not.toThrow();

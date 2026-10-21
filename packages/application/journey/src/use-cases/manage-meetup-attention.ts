@@ -50,22 +50,23 @@ export class ManageMeetupAttention {
 				notificationFailed: false,
 			};
 		const facts = AttentionEventFacts.create(codec.decode(source), config);
-		const evidence = await this.evidence();
+		const evidence = await this.synchronizeEvidence();
+		const now = clock.now();
 		const observation = EvaluateAttention.execute(
 			{ ...facts, ...evidence, stages, runId },
-			clock.now(),
+			now,
 		);
 		const current = await repository.find(identity);
 		if (!current || !ReconcileEvent.eventDocumentsEqual(source, current))
 			throw new EventConcurrentModificationError(identity);
 		const commentId = await this.dependencies.followUp.synchronizeFollowUp({
 			eventDate: facts.eventDate,
-			requestedAt: clock.now().toISOString(),
+			requestedAt: now.toISOString(),
 			active: PostEventPolicy.isDue({
 				eventDate: facts.eventDate,
 				occurrenceStatus: facts.occurrence,
 				timeZone: "Europe/Paris",
-				now: clock.now(),
+				now: now,
 			}),
 			pendingTasks: FOLLOW_UP_TASKS.filter((task) =>
 				facts.followUpPending.includes(task),
@@ -84,10 +85,10 @@ export class ManageMeetupAttention {
 				evidence.recovery === undefined,
 		};
 	}
-	private async evidence() {
+	private async synchronizeEvidence() {
 		// Each evidence source is independent; unavailable evidence must not resolve old work.
 		const [approvals, recovery] = await Promise.allSettled([
-			this.dependencies.approvals.readAttention(),
+			this.dependencies.approvals.synchronizeApprovals(),
 			this.dependencies.recovery.readAttention(),
 		]);
 		return {

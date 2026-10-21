@@ -1,15 +1,25 @@
-import type { OrganizerApprovalRequest } from "@meetup-automation/journey";
+import type {
+	OrganizerApprovalNotification,
+	OrganizerApprovalRequest,
+} from "@meetup-automation/journey";
 import { vi } from "vitest";
+import { ApprovalCommentCodec } from "../src/approval-comment-codec.js";
+import { ApprovalDecisionParser } from "../src/approval-decision-parser.js";
+import { ApprovalNotifications } from "../src/approval-notifications.js";
 import { ApprovalPresenter } from "../src/approval-presenter.js";
-import { ApprovalRecord } from "../src/approval-record.js";
-import {
-	type ApprovalComment,
-	type ApprovalCommentEdit,
-	type ApprovalContentEdit,
-	GithubApprovalClient,
-} from "../src/github-approval-client.js";
-import { GithubOrganizerApproval } from "../src/github-organizer-approval.js";
+import { ApprovalRecordFactory } from "../src/approval-record-factory.js";
+import { FinalizeApprovalDecision } from "../src/finalize-approval-decision.js";
+import { GithubApprovalAttentionSource } from "../src/github-approval-attention-source.js";
+import { GithubApprovalClient } from "../src/github-approval-client.js";
+import type {
+	ApprovalComment,
+	ApprovalCommentEdit,
+	ApprovalContentEdit,
+} from "../src/github-approval-contracts.js";
+import { GithubApprovalRepository } from "../src/github-approval-repository.js";
 import { ApprovalMessages } from "../src/i18n/approval-messages.js";
+import { ResolveApprovalDecision } from "../src/resolve-approval-decision.js";
+import { TrustedApprovalState } from "../src/trusted-approval-state.js";
 export const request = {
 	kind: "email-introduction",
 	revision: "a".repeat(64),
@@ -103,13 +113,10 @@ export function fixture(locale = "en") {
 		message: { destination: "C12345", messageId: "100.001" },
 	});
 	const react = vi.fn().mockResolvedValue(true);
-	const approvals = new GithubOrganizerApproval(
-		client,
-		"automation[bot]",
-		presenter,
-		{ send: dispatch, react },
-		"organizer-channel",
-	);
+	const dependencies = approvalDependencies(client, presenter, {
+		send: dispatch,
+		react,
+	});
 	return {
 		api,
 		presenter,
@@ -124,7 +131,11 @@ export function fixture(locale = "en") {
 		list,
 		client,
 		dispatch,
-		approvals,
+		...dependencies,
+		attention: new GithubApprovalAttentionSource(
+			dependencies.repository,
+			dependencies.finalizer,
+		),
 	};
 }
 export function decision(
@@ -134,7 +145,7 @@ export function decision(
 ) {
 	const comment = f.comments[0];
 	if (!comment?.node_id) throw new Error("Missing synthetic approval");
-	const record = ApprovalRecord.read(comment.body ?? "");
+	const record = ApprovalCommentCodec.read(comment.body ?? "");
 	const edit: ApprovalCommentEdit = {
 		id: comment.node_id,
 		body: f.presenter.issue(record, { status }),
@@ -186,3 +197,45 @@ export const detailedRequest = {
 		omittedEmails: 0,
 	},
 };
+
+export function createStoredApproval(input: OrganizerApprovalRequest) {
+	return new ApprovalRecordFactory(
+		() => "00000000-0000-4000-8000-000000000001",
+	).create(input);
+}
+export function approvalDependencies(
+	client: GithubApprovalClient,
+	presenter: ApprovalPresenter,
+	notificationPort: OrganizerApprovalNotification,
+) {
+	let sequence = 0;
+	const records = new ApprovalRecordFactory(
+		() => `00000000-0000-4000-8000-${String(++sequence).padStart(12, "0")}`,
+	);
+	const notifications = new ApprovalNotifications(
+		client,
+		presenter,
+		notificationPort,
+		"organizer-channel",
+	);
+	const repository = new GithubApprovalRepository(
+		client,
+		new TrustedApprovalState(client, "automation[bot]"),
+		"automation[bot]",
+		presenter,
+	);
+	const finalizer = new FinalizeApprovalDecision(
+		new ResolveApprovalDecision(
+			client,
+			new ApprovalDecisionParser(ApprovalPresenter.supportedLocales()),
+		),
+		repository,
+		notifications,
+	);
+	return {
+		repository,
+		records,
+		finalizer,
+		notifications,
+	};
+}

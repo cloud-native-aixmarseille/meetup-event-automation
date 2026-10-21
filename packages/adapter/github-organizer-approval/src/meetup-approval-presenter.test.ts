@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { publicationRequest } from "../testing/approval.fixtures.js";
-import { ApprovalRecord } from "./approval-record.js";
+import {
+	createStoredApproval,
+	publicationRequest,
+} from "../testing/approval.fixtures.js";
 import { ApprovalMessages } from "./i18n/approval-messages.js";
 import { MeetupApprovalPresenter } from "./meetup-approval-presenter.js";
 
@@ -12,7 +14,7 @@ describe("Meetup publication approval presentation", () => {
 			const presenter = new MeetupApprovalPresenter(
 				new ApprovalMessages(locale),
 			);
-			const record = ApprovalRecord.create(publicationRequest);
+			const record = createStoredApproval(publicationRequest);
 			if (record.kind !== "meetup-publication")
 				throw new Error("Expected publication request");
 
@@ -33,7 +35,7 @@ describe("Meetup publication approval presentation", () => {
 	it("escapes markup and mentions in displayed facts", () => {
 		// Arrange
 		const presenter = new MeetupApprovalPresenter(new ApprovalMessages("en"));
-		const record = ApprovalRecord.create({
+		const record = createStoredApproval({
 			...publicationRequest,
 			publication: {
 				...publicationRequest.publication,

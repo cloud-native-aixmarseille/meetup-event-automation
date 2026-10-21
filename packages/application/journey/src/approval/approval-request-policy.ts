@@ -1,0 +1,105 @@
+import type { OrganizerApprovalRequest } from "../ports/organizer-approval.js";
+import type { OrganizerApprovalDetails } from "../ports/organizer-approval-details.js";
+
+/** An approval authorizes a revision and its reviewed public facts. */
+export class ApprovalRequestPolicy {
+	static validate(request: OrganizerApprovalRequest): void {
+		ApprovalRequestPolicy.validateIdentity(request);
+		if (request.kind === "meetup-publication") return;
+		if (
+			!Number.isSafeInteger(request.recipientCount) ||
+			request.recipientCount <= 0
+		)
+			throw new Error("Invalid approval recipient count");
+		ApprovalRequestPolicy.validateEmailCount(request);
+	}
+
+	static validateIdentity(
+		request: Pick<
+			OrganizerApprovalRequest,
+			"revision" | "eventDate" | "requestedAt"
+		>,
+	): void {
+		const date = new Date(`${request.eventDate}T12:00:00Z`);
+		if (
+			!/^[a-f0-9]{64}$/.test(request.revision) ||
+			!/^\d{4}-\d{2}-\d{2}$/.test(request.eventDate) ||
+			!Number.isFinite(date.getTime()) ||
+			date.toISOString().slice(0, 10) !== request.eventDate ||
+			!Number.isFinite(Date.parse(request.requestedAt))
+		)
+			throw new Error("Invalid approval request");
+	}
+
+	static validateEmailCount(
+		request: Exclude<OrganizerApprovalRequest, { kind: "meetup-publication" }>,
+	): void {
+		if (
+			request.details &&
+			request.details.emails.length + request.details.omittedEmails !==
+				request.recipientCount
+		)
+			throw new Error("Invalid approval details");
+	}
+
+	static matches(
+		previous: OrganizerApprovalRequest,
+		request: OrganizerApprovalRequest,
+		status: "pending" | "approved" | "rejected",
+	): boolean {
+		if (
+			previous.kind !== request.kind ||
+			previous.revision !== request.revision ||
+			previous.eventDate !== request.eventDate
+		)
+			return false;
+		if (
+			previous.kind === "meetup-publication" &&
+			request.kind === "meetup-publication"
+		)
+			return (
+				previous.publication.url === request.publication.url &&
+				previous.publication.title === request.publication.title &&
+				previous.publication.startTime === request.publication.startTime &&
+				previous.publication.endTime === request.publication.endTime &&
+				previous.publication.timeZone === request.publication.timeZone &&
+				previous.publication.venue.name === request.publication.venue.name &&
+				previous.publication.venue.city === request.publication.venue.city
+			);
+		return (
+			previous.recipientCount === request.recipientCount &&
+			(status !== "pending" ||
+				ApprovalRequestPolicy.sameDetails(previous.details, request.details))
+		);
+	}
+
+	private static sameDetails(
+		left: OrganizerApprovalDetails | undefined,
+		right: OrganizerApprovalDetails | undefined,
+	): boolean {
+		if (!left || !right) return left === right;
+		return (
+			left.omittedEmails === right.omittedEmails &&
+			left.emails.length === right.emails.length &&
+			left.emails.every((email, index) => {
+				const other = right.emails[index];
+				return (
+					other !== undefined &&
+					email.kind === other.kind &&
+					email.recipientName === other.recipientName &&
+					email.omittedLinks === other.omittedLinks &&
+					email.links.length === other.links.length &&
+					email.links.every((link, linkIndex) => {
+						const otherLink = other.links[linkIndex];
+						return (
+							otherLink !== undefined &&
+							link.kind === otherLink.kind &&
+							link.url === otherLink.url &&
+							link.title === otherLink.title
+						);
+					})
+				);
+			})
+		);
+	}
+}

@@ -24,9 +24,7 @@ const config: AutomationConfig = {
 		speakers: "referentials/speakers.csv",
 	},
 	communication: {
-		"readiness-window-days": 7,
 		"mailings-repository": "cloud-native-aixmarseille/mailings",
-		"slack-enabled": true,
 		"dispatch-enabled": false,
 		"policy-version": 1,
 	},

@@ -2,7 +2,6 @@ import { getOctokit } from "@actions/github";
 import {
 	type DeliveryLedger,
 	type MailGateway,
-	type NotificationGateway,
 	PlanCommunications,
 	ReconcileCommunications,
 } from "@meetup-automation/communication";
@@ -20,7 +19,6 @@ import {
 	ApprovalMessages,
 	ApprovalPresenter,
 	GithubApprovalClient,
-	GithubOrganizerApproval,
 } from "@meetup-automation/github-organizer-approval";
 import { GithubRepositoryDispatchMailGateway } from "@meetup-automation/github-repository-dispatch-mail-gateway";
 import {
@@ -33,7 +31,6 @@ import type { ReferentialRepository } from "@meetup-automation/referential";
 import {
 	SlackApprovalNotification,
 	SlackApprovalPresenter,
-	SlackNotificationGateway,
 } from "@meetup-automation/slack-notification-gateway";
 import { SystemCommunicationClock } from "@meetup-automation/system-clock";
 import type { Container } from "inversify";
@@ -42,10 +39,10 @@ import {
 	type EventCompositionInput,
 	SERVICES,
 } from "./composition.js";
+import { OrganizerApprovalComposition } from "./organizer-approval-composition.js";
 
 const COMMUNICATION_SERVICES = {
 	mailGateway: Symbol("MailGateway"),
-	notificationGateway: Symbol("NotificationGateway"),
 	ledgerFactory: Symbol("DeliveryLedgerFactory"),
 };
 
@@ -124,9 +121,6 @@ export class CommunicationComposition {
 					],
 				);
 			});
-		container
-			.bind<NotificationGateway>(COMMUNICATION_SERVICES.notificationGateway)
-			.toDynamicValue(() => new SlackNotificationGateway(input.slackToken));
 	}
 
 	private static bindJourney(
@@ -142,15 +136,12 @@ export class CommunicationComposition {
 			const mailGateway = context.get<MailGateway>(
 				COMMUNICATION_SERVICES.mailGateway,
 			);
-			const notificationGateway = context.get<NotificationGateway>(
-				COMMUNICATION_SERVICES.notificationGateway,
-			);
 			return new ManageMeetupCommunications({
 				feedbackResults: new OpenFeedbackTalkResultsGateway(
 					input.openFeedbackApiKey ?? "",
 				),
 				clock,
-				organizerApproval: new GithubOrganizerApproval(
+				organizerApproval: OrganizerApprovalComposition.create(
 					new GithubApprovalClient(
 						input.client,
 						input.owner,
@@ -164,7 +155,7 @@ export class CommunicationComposition {
 						new SlackApprovalPresenter(input.locale),
 					),
 					input.slackOrganizerChannelId,
-				),
+				).approval,
 				config: context.get<AutomationConfig>(SERVICES.config),
 				eventRepository: context.get<EventRepository>(SERVICES.eventRepository),
 				referentialRepository: context.get<ReferentialRepository>(
@@ -179,7 +170,6 @@ export class CommunicationComposition {
 						planner,
 						clock,
 						mailGateway,
-						notificationGateway,
 						ledger: ledger(dispatchAuthorized),
 					}),
 			});

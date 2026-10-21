@@ -41,6 +41,8 @@ export function runtimeInput(
 	> = {},
 ): Parameters<typeof CommunicationRuntime.runCommunicationReconcile>[0] {
 	return {
+		locale: "en",
+		slidesReady: true,
 		conferenceHallEvent: "example-cfp",
 		conferenceHallApiKey: "synthetic-source-key",
 		issueNumber: 42,
@@ -48,7 +50,7 @@ export function runtimeInput(
 		mailingsToken: "mailings-token",
 		openFeedbackApiKey: "oforg_synthetic",
 		slackToken: "slack-token",
-		slackOrganizerChannelId: "organizer-channel-id",
+		slackOrganizerChannelId: "C12345",
 		owner: "organization",
 		repo: "meetups",
 		managedCommentAuthor: "automation[bot]",

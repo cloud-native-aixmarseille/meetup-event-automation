@@ -1,9 +1,7 @@
-import type { Container } from "inversify";
-import { SystemCommunicationClock } from "@meetup-automation/system-clock";
 import {
-	ReconcileAttention,
 	type AttentionNotification,
 	type AttentionRepository,
+	ReconcileAttention,
 } from "@meetup-automation/communication";
 import type {
 	EventCommentRepository,
@@ -18,32 +16,41 @@ import {
 	ApprovalMessages,
 	ApprovalPresenter,
 	GithubApprovalClient,
-	GithubOrganizerApproval,
 	GithubFollowUpAttentionRepository,
 } from "@meetup-automation/github-organizer-approval";
 import {
+	AttentionDiagnosticChecklist,
 	AttentionMessages,
-	AttentionRecord,
 	AttentionPresenter,
+	AttentionRecord,
 	GithubAttentionClient,
 	GithubAttentionRepository,
 } from "@meetup-automation/github-organizer-attention";
 import {
-	ManageMeetupAttention,
 	type AutomationConfig,
+	ManageMeetupAttention,
 } from "@meetup-automation/journey";
 import {
 	SlackApprovalNotification,
 	SlackApprovalPresenter,
 	SlackAttentionNotification,
+	SlackAttentionPresenter,
 } from "@meetup-automation/slack-notification-gateway";
+import { SystemCommunicationClock } from "@meetup-automation/system-clock";
+import type { Container } from "inversify";
 import {
 	EventComposition,
-	SERVICES,
 	type EventDocumentCompositionInput,
+	SERVICES,
 } from "./composition.js";
+import { OrganizerApprovalComposition } from "./organizer-approval-composition.js";
 import { OrganizerFeedback } from "./organizer-feedback.js";
+
+type ApprovalCapabilities = ReturnType<
+	typeof OrganizerApprovalComposition.create
+>;
 const ATTENTION_SERVICES = {
+	approvals: Symbol("OrganizerApprovalCapabilities"),
 	repository: Symbol("AttentionRepository"),
 	notification: Symbol("AttentionNotification"),
 };
@@ -59,28 +66,19 @@ export class AttentionComposition {
 			...input,
 			retireCommunicationReports: true,
 		});
-		container
-			.bind(OrganizerFeedback)
-			.toDynamicValue(
-				(context) =>
-					new OrganizerFeedback(
-						context.get<EventRepository>(SERVICES.eventRepository),
-						context.get<EventCommentRepository>(
-							SERVICES.eventCommentRepository,
-						),
-						context.get<AutomationConfig>(SERVICES.config).event["issue-label"],
-					),
-			);
+		AttentionComposition.bindFeedback(container);
 		container
 			.bind(SystemCommunicationClock)
 			.toDynamicValue(() => new SystemCommunicationClock());
 		container
-			.bind(GithubOrganizerApproval)
+			.bind<ApprovalCapabilities>(ATTENTION_SERVICES.approvals)
 			.toDynamicValue(() => AttentionComposition.approvals(input))
 			.inSingletonScope();
+		const checklist = new AttentionDiagnosticChecklist();
 		const presenter = new AttentionPresenter(
 			`${input.owner}/${input.repo}`,
 			input.issueNumber,
+			checklist,
 			new AttentionMessages(input.locale),
 		);
 		container
@@ -88,7 +86,8 @@ export class AttentionComposition {
 			.toDynamicValue(
 				(context) =>
 					new GithubFollowUpAttentionRepository(
-						context.get(GithubOrganizerApproval),
+						context.get<ApprovalCapabilities>(ATTENTION_SERVICES.approvals)
+							.followUp,
 						new GithubAttentionRepository(
 							new GithubAttentionClient(
 								input.client,
@@ -98,6 +97,7 @@ export class AttentionComposition {
 							),
 							input.commentAuthorLogin,
 							presenter,
+							checklist,
 						),
 						AttentionRecord,
 						presenter,
@@ -110,16 +110,35 @@ export class AttentionComposition {
 					new SlackAttentionNotification(
 						input.slackToken,
 						input.slackOrganizerChannelId,
-						presenter,
+						new SlackAttentionPresenter(
+							`${input.owner}/${input.repo}`,
+							input.issueNumber,
+							input.locale,
+							checklist,
+						),
 					),
 			);
 		AttentionComposition.bindJourney(container, input);
 		return container;
 	}
+	private static bindFeedback(container: Container): void {
+		container
+			.bind(OrganizerFeedback)
+			.toDynamicValue(
+				(context) =>
+					new OrganizerFeedback(
+						context.get<EventRepository>(SERVICES.eventRepository),
+						context.get<EventCommentRepository>(
+							SERVICES.eventCommentRepository,
+						),
+						context.get<AutomationConfig>(SERVICES.config).event["issue-label"],
+					),
+			);
+	}
 	private static approvals(
 		input: AttentionCompositionInput,
-	): GithubOrganizerApproval {
-		return new GithubOrganizerApproval(
+	): ApprovalCapabilities {
+		return OrganizerApprovalComposition.create(
 			new GithubApprovalClient(
 				input.client,
 				input.owner,
@@ -146,8 +165,12 @@ export class AttentionComposition {
 				repository: context.get<EventRepository>(SERVICES.eventRepository),
 				codec: context.get<EventDocumentCodec>(SERVICES.eventDocumentCodec),
 				clock,
-				approvals: context.get(GithubOrganizerApproval),
-				followUp: context.get(GithubOrganizerApproval),
+				approvals: context.get<ApprovalCapabilities>(
+					ATTENTION_SERVICES.approvals,
+				).attention,
+				followUp: context.get<ApprovalCapabilities>(
+					ATTENTION_SERVICES.approvals,
+				).followUp,
 				recovery: new GithubDeliveryLedger(
 					new ScopedGithubLedgerCommentClient(
 						input.client,

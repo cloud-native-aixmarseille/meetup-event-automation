@@ -21481,9 +21481,9 @@ var require_log = __commonJS({
   "node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/log.js"(exports) {
     "use strict";
     var node_process = __require("process");
-    function debug2(logLevel, ...messages3) {
+    function debug2(logLevel, ...messages5) {
       if (logLevel === "debug")
-        console.log(...messages3);
+        console.log(...messages5);
     }
     function warn(logLevel, warning2) {
       if (logLevel === "debug" || logLevel === "warn") {
@@ -29526,6 +29526,43 @@ var MeetupPublicationChecklist = class _MeetupPublicationChecklist {
   }
 };
 
+// packages/application/journey/src/approval/approval-request-policy.ts
+var ApprovalRequestPolicy = class _ApprovalRequestPolicy {
+  static validate(request2) {
+    _ApprovalRequestPolicy.validateIdentity(request2);
+    if (request2.kind === "meetup-publication") return;
+    if (!Number.isSafeInteger(request2.recipientCount) || request2.recipientCount <= 0)
+      throw new Error("Invalid approval recipient count");
+    _ApprovalRequestPolicy.validateEmailCount(request2);
+  }
+  static validateIdentity(request2) {
+    const date = /* @__PURE__ */ new Date(`${request2.eventDate}T12:00:00Z`);
+    if (!/^[a-f0-9]{64}$/.test(request2.revision) || !/^\d{4}-\d{2}-\d{2}$/.test(request2.eventDate) || !Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== request2.eventDate || !Number.isFinite(Date.parse(request2.requestedAt)))
+      throw new Error("Invalid approval request");
+  }
+  static validateEmailCount(request2) {
+    if (request2.details && request2.details.emails.length + request2.details.omittedEmails !== request2.recipientCount)
+      throw new Error("Invalid approval details");
+  }
+  static matches(previous, request2, status) {
+    if (previous.kind !== request2.kind || previous.revision !== request2.revision || previous.eventDate !== request2.eventDate)
+      return false;
+    if (previous.kind === "meetup-publication" && request2.kind === "meetup-publication")
+      return previous.publication.url === request2.publication.url && previous.publication.title === request2.publication.title && previous.publication.startTime === request2.publication.startTime && previous.publication.endTime === request2.publication.endTime && previous.publication.timeZone === request2.publication.timeZone && previous.publication.venue.name === request2.publication.venue.name && previous.publication.venue.city === request2.publication.venue.city;
+    return previous.recipientCount === request2.recipientCount && (status !== "pending" || _ApprovalRequestPolicy.sameDetails(previous.details, request2.details));
+  }
+  static sameDetails(left, right) {
+    if (!left || !right) return left === right;
+    return left.omittedEmails === right.omittedEmails && left.emails.length === right.emails.length && left.emails.every((email, index) => {
+      const other = right.emails[index];
+      return other !== void 0 && email.kind === other.kind && email.recipientName === other.recipientName && email.omittedLinks === other.omittedLinks && email.links.length === other.links.length && email.links.every((link, linkIndex) => {
+        const otherLink = other.links[linkIndex];
+        return otherLink !== void 0 && link.kind === otherLink.kind && link.url === otherLink.url && link.title === otherLink.title;
+      });
+    });
+  }
+};
+
 // packages/domain/publication/src/domain/publication-link-evaluation.ts
 var PublicationLinkEvaluation = class _PublicationLinkEvaluation {
   static evaluateLink({
@@ -29912,6 +29949,55 @@ var PublicationUrlPolicyEngine = class {
   }
 };
 
+// packages/domain/publication/src/domain/scheduled-event-policy.ts
+var ScheduledEventPolicy = class _ScheduledEventPolicy {
+  static valid(event, now2) {
+    if (!event.title.trim() || event.title.length > 80 || !event.description.trim() || event.description.length > 49e3 || !event.venue.name.trim() || !event.venue.city.trim() || !_ScheduledEventPolicy.validTime(event.startTime) || !_ScheduledEventPolicy.validTime(event.endTime) || event.endTime <= event.startTime || !/^\d{4}-\d{2}-\d{2}$/.test(event.date))
+      return false;
+    const date = /* @__PURE__ */ new Date(`${event.date}T12:00:00Z`);
+    if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== event.date)
+      return false;
+    try {
+      const format = new Intl.DateTimeFormat("sv-SE", {
+        timeZone: event.timeZone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23"
+      });
+      const start = _ScheduledEventPolicy.instant(
+        event.date,
+        event.startTime,
+        format
+      );
+      const end = _ScheduledEventPolicy.instant(
+        event.date,
+        event.endTime,
+        format
+      );
+      return start !== void 0 && end !== void 0 && start > Date.parse(now2) && end > start;
+    } catch {
+      return false;
+    }
+  }
+  static validTime(value) {
+    return /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
+  }
+  static instant(date, time, format) {
+    const reference = Date.parse(`${date}T${time}:00Z`);
+    let match;
+    for (let offset = -840; offset <= 840; offset += 15) {
+      const candidate = reference + offset * 6e4;
+      if (format.format(candidate) !== `${date} ${time}`) continue;
+      if (match !== void 0) return void 0;
+      match = candidate;
+    }
+    return match;
+  }
+};
+
 // packages/application/journey/src/config/automation-config.ts
 var AutomationConfigFactory = class {
   /**
@@ -29936,9 +30022,7 @@ var AutomationConfigFactory = class {
         speakers: "referentials/speakers.csv"
       },
       communication: {
-        "readiness-window-days": 7,
         "mailings-repository": repositoryOwner ? `${repositoryOwner}/mailings` : "",
-        "slack-enabled": true,
         "dispatch-enabled": Boolean(repositoryOwner),
         "policy-version": 1
       },
@@ -30100,6 +30184,55 @@ var DiagnosticPolicy = class _DiagnosticPolicy {
   }
   static isTechnicalFailure(diagnostic) {
     return _DiagnosticPolicy.classify(diagnostic) === "technical";
+  }
+};
+
+// packages/application/journey/src/result/organizer-diagnostic-policy.ts
+var OrganizerDiagnosticPolicy = class _OrganizerDiagnosticPolicy {
+  static suppressed(item, diagnostics) {
+    if (item.severity === "info" || item.fixApplied === true) return true;
+    const causes = _OrganizerDiagnosticPolicy.PREREQUISITES.get(item.code);
+    return causes?.some(
+      (prefix) => diagnostics.some(
+        (cause) => cause !== item && cause.severity !== "info" && cause.fixApplied !== true && cause.code.startsWith(prefix)
+      )
+    ) ?? false;
+  }
+  static PREREQUISITES = /* @__PURE__ */ new Map([
+    ["event.agenda.missing", ["event.proposals."]],
+    ["publication.assets.prerequisites", ["event.", "referential.reference."]],
+    [
+      "publication.feedback.prerequisites",
+      ["event.", "referential.reference."]
+    ],
+    [
+      "publication.feedback.agenda",
+      ["event.agenda.", "event.proposals.", "referential.reference.speaker."]
+    ],
+    ["communication.event-references-unresolved", ["referential.reference."]],
+    [
+      "communication.referential-catalog-invalid",
+      ["referential.host.", "referential.speaker.", "referential.contact."]
+    ],
+    ["communication.slides-unavailable", ["publication.assets."]],
+    [
+      "communication.feedback-unavailable",
+      ["publication.feedback.", "event.proposals.", "event.agenda."]
+    ]
+  ]);
+  static derivative(item, diagnostics) {
+    const roots = {
+      "communication.event-references-unresolved": /^(event\.(proposals\.|agenda\.|hoster\.|document\.reference-metadata\.)|referential\.)/,
+      "communication.referential-catalog-invalid": /^referential\./,
+      "communication.slides-unavailable": /^publication\.assets\.content\./,
+      "communication.feedback-unavailable": /^(publication\.feedback\.(agenda|prerequisites|conflict)|event\.link\.feedback\.invalid)$/,
+      "publication.feedback.agenda": /^event\.(agenda\.|proposals\.)/,
+      "publication.assets.prerequisites": /^event\.(date\.|hoster\.)/
+    };
+    const root = roots[item.code];
+    return root !== void 0 && diagnostics.some(
+      (candidate) => root.test(candidate.code) && DiagnosticPolicy.classify(candidate) !== "informational"
+    );
   }
 };
 
@@ -30917,43 +31050,6 @@ var ConfiguredPublicationPolicies = class {
   }
 };
 
-// packages/domain/communication/src/idempotency.ts
-var SAFE_IDENTIFIER_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$/;
-var CommunicationIdempotency = class _CommunicationIdempotency {
-  static isSafeCommunicationIdentifier(value) {
-    return SAFE_IDENTIFIER_PATTERN.test(value);
-  }
-  static createCommunicationIdempotencyKey(components) {
-    const values = [
-      components.repositoryId,
-      components.eventId,
-      components.recipientId,
-      components.policyVersion
-    ];
-    if (!values.every(_CommunicationIdempotency.isSafeCommunicationIdentifier)) {
-      throw new Error(
-        "Communication identifiers must be stable, opaque, and PII-free"
-      );
-    }
-    return [
-      "meetup-communication:v1",
-      `repository=${encodeURIComponent(components.repositoryId)}`,
-      `event=${encodeURIComponent(components.eventId)}`,
-      `kind=${components.kind}`,
-      `recipient=${encodeURIComponent(components.recipientId)}`,
-      `policy=${encodeURIComponent(components.policyVersion)}`
-    ].join("|");
-  }
-};
-
-// packages/domain/communication/src/model.ts
-var MAIL_TEMPLATE_NAMES = {
-  hostIntroduction: "meetup-intro-hosting",
-  speakerIntroduction: "meetup-intro-speakers",
-  hostThanks: "meetup-thanks-hosting",
-  speakerThanks: "meetup-thanks-speakers"
-};
-
 // packages/domain/communication/src/communication-calendar.ts
 var CommunicationCalendar = class {
   static parseIsoLocalDate(value) {
@@ -30998,6 +31094,108 @@ var CommunicationCalendar = class {
   static isValidInstant(value) {
     return value instanceof Date && Number.isFinite(value.getTime());
   }
+};
+
+// packages/domain/communication/src/attention/attention-state-rules.ts
+var AttentionStateRules = class {
+  static validate(state) {
+    if (new Set(state.episodes.map((item) => item.condition.key)).size !== state.episodes.length)
+      throw new Error("Duplicate attention condition");
+    for (const episode of state.episodes)
+      if (episode.condition.key !== `${episode.condition.code}:${episode.condition.resource}`)
+        throw new Error("Invalid attention resource");
+    const post = state.post;
+    if (!post) return;
+    if (post.status === "accepted" && !post.message)
+      throw new Error("Missing accepted attention reference");
+    if (post.status !== "accepted" && (post.message !== void 0 || post.fingerprint !== void 0))
+      throw new Error(
+        "Unconfirmed attention reservation has delivery authority"
+      );
+    if (post.status !== "retry" && post.retryAt !== void 0)
+      throw new Error("Unexpected attention retry");
+  }
+};
+
+// packages/domain/communication/src/post-event-policy.ts
+var PostEventPolicy = class {
+  static isDue(input) {
+    if (!["scheduled", "held"].includes(input.occurrenceStatus)) return false;
+    if (!CommunicationCalendar.isValidInstant(input.now)) return false;
+    const event = CommunicationCalendar.parseIsoLocalDate(input.eventDate);
+    const today = CommunicationCalendar.getLocalDate(input.now, input.timeZone);
+    if (!event || !today) return false;
+    return input.occurrenceStatus === "held" || CommunicationCalendar.toEpochDay(today) > CommunicationCalendar.toEpochDay(event);
+  }
+};
+
+// packages/domain/communication/src/attention/model.ts
+var ATTENTION_CODES = [
+  "missing-date",
+  "required-data",
+  "host-confirmation",
+  "speaker-confirmation",
+  "manual-publication",
+  "approval-pending",
+  "integration-failure",
+  "delivery-recovery",
+  "occurrence-decision",
+  "follow-up",
+  "stage-unknown"
+];
+
+// packages/domain/communication/src/idempotency.ts
+var SAFE_IDENTIFIER_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$/;
+var CommunicationIdempotency = class _CommunicationIdempotency {
+  static isSafeCommunicationIdentifier(value) {
+    return SAFE_IDENTIFIER_PATTERN.test(value);
+  }
+  static createCommunicationIdempotencyKey(components) {
+    const values = [
+      components.repositoryId,
+      components.eventId,
+      components.recipientId,
+      components.policyVersion
+    ];
+    if (!values.every(_CommunicationIdempotency.isSafeCommunicationIdentifier)) {
+      throw new Error(
+        "Communication identifiers must be stable, opaque, and PII-free"
+      );
+    }
+    return [
+      "meetup-communication:v1",
+      `repository=${encodeURIComponent(components.repositoryId)}`,
+      `event=${encodeURIComponent(components.eventId)}`,
+      `kind=${components.kind}`,
+      `recipient=${encodeURIComponent(components.recipientId)}`,
+      `policy=${encodeURIComponent(components.policyVersion)}`
+    ].join("|");
+  }
+};
+
+// packages/domain/communication/src/mail-batch-fingerprint.ts
+import { createHash } from "node:crypto";
+var MailBatchFingerprint = class {
+  static create(eventDate, timeZone, intents) {
+    const messages5 = intents.map((intent) => ({
+      id: intent.idempotencyKey,
+      destination: intent.recipient.email,
+      template: intent.templateName,
+      placeholders: Object.entries(intent.placeholders).sort(([a], [b2]) => a.localeCompare(b2)).map(([key, value]) => [
+        key,
+        typeof value === "string" ? value : value.map(({ title, url }) => ({ title, url }))
+      ])
+    })).sort((a, b2) => a.id.localeCompare(b2.id));
+    return createHash("sha256").update(JSON.stringify({ eventDate, timeZone, messages: messages5 })).digest("hex");
+  }
+};
+
+// packages/domain/communication/src/model.ts
+var MAIL_TEMPLATE_NAMES = {
+  hostIntroduction: "meetup-intro-hosting",
+  speakerIntroduction: "meetup-intro-speakers",
+  hostThanks: "meetup-thanks-hosting",
+  speakerThanks: "meetup-thanks-speakers"
 };
 
 // packages/domain/communication/src/plan-communications-contracts.ts
@@ -31064,39 +31262,6 @@ var CommunicationPlanner = class _CommunicationPlanner {
       intents.push(intent);
     }
   }
-  static planReadinessNotifications(input, intents, diagnostics) {
-    if (!input.notificationContent?.trim()) {
-      diagnostics.push(
-        _CommunicationPlanner.errorDiagnostic("missing-notification-content")
-      );
-      return;
-    }
-    for (const recipient of input.notificationRecipients) {
-      if (!recipient.receivesCommunications) {
-        continue;
-      }
-      if (!CommunicationIdempotency.isSafeCommunicationIdentifier(
-        recipient.recipientId
-      )) {
-        diagnostics.push(
-          _CommunicationPlanner.errorDiagnostic("invalid-identifier")
-        );
-        continue;
-      }
-      const base = _CommunicationPlanner.createIntentBase(
-        input,
-        "readiness-reminder",
-        recipient.recipientId
-      );
-      const intent = {
-        ...base,
-        channel: "notification",
-        recipient: { ...recipient },
-        content: input.notificationContent
-      };
-      intents.push(intent);
-    }
-  }
   static createIntentBase(input, kind, recipientId) {
     const idempotencyKey = CommunicationIdempotency.createCommunicationIdempotencyKey({
       repositoryId: input.repositoryId,
@@ -31151,18 +31316,6 @@ var CommunicationPlanner = class _CommunicationPlanner {
   }
 };
 
-// packages/domain/communication/src/post-event-policy.ts
-var PostEventPolicy = class {
-  static isDue(input) {
-    if (!["scheduled", "held"].includes(input.occurrenceStatus)) return false;
-    if (!CommunicationCalendar.isValidInstant(input.now)) return false;
-    const event = CommunicationCalendar.parseIsoLocalDate(input.eventDate);
-    const today = CommunicationCalendar.getLocalDate(input.now, input.timeZone);
-    if (!event || !today) return false;
-    return input.occurrenceStatus === "held" || CommunicationCalendar.toEpochDay(today) > CommunicationCalendar.toEpochDay(event);
-  }
-};
-
 // packages/domain/communication/src/plan-communications.ts
 var PlanCommunications = class {
   execute(input) {
@@ -31213,10 +31366,9 @@ var PlanCommunications = class {
         ]
       };
     }
-    const daysUntilEvent = CommunicationCalendar.toEpochDay(eventDate) - CommunicationCalendar.toEpochDay(currentDate);
-    return this.planDue(input, daysUntilEvent, diagnostics);
+    return this.planDue(input, diagnostics);
   }
-  planDue(input, daysUntilEvent, diagnostics) {
+  planDue(input, diagnostics) {
     const intents = [];
     if (PostEventPolicy.isDue(input)) {
       CommunicationPlanner.planMailMessages(
@@ -31236,23 +31388,7 @@ var PlanCommunications = class {
       );
       return CommunicationPlanner.deduplicateIntents(intents, diagnostics);
     }
-    if (!Number.isInteger(input.readinessWindowDays) || input.readinessWindowDays < 0) {
-      return {
-        intents: [],
-        diagnostics: [
-          CommunicationPlanner.errorDiagnostic("invalid-readiness-window")
-        ]
-      };
-    }
-    if (daysUntilEvent > input.readinessWindowDays) {
-      return { intents: [], diagnostics };
-    }
-    CommunicationPlanner.planReadinessNotifications(
-      input,
-      intents,
-      diagnostics
-    );
-    return CommunicationPlanner.deduplicateIntents(intents, diagnostics);
+    return { intents, diagnostics };
   }
 };
 
@@ -31309,9 +31445,6 @@ var CommunicationResults = class _CommunicationResults {
       diagnostics: [diagnostic]
     };
   }
-  static isValidInstant(value) {
-    return value instanceof Date && Number.isFinite(value.getTime());
-  }
   static safeDetailCode(value) {
     return [
       "ambiguous-response",
@@ -31326,16 +31459,14 @@ var CommunicationResults = class _CommunicationResults {
 var CommunicationDispatcher = class {
   #ledger;
   #mailGateway;
-  #notificationGateway;
-  constructor(ledger, mailGateway, notificationGateway) {
+  constructor(ledger, mailGateway) {
     this.#ledger = ledger;
     this.#mailGateway = mailGateway;
-    this.#notificationGateway = notificationGateway;
   }
   async execute(intent, timestamp, counts, diagnostics) {
     let dispatchResult;
     try {
-      dispatchResult = intent.channel === "mail" ? await this.#mailGateway.dispatch(intent) : await this.#notificationGateway.dispatch(intent);
+      dispatchResult = await this.#mailGateway.dispatch(intent);
     } catch {
       counts.uncertain += 1;
       diagnostics.push({
@@ -31461,8 +31592,7 @@ var ReconcileCommunications = class {
     this.#ledger = dependencies.ledger;
     this.#dispatcher = new CommunicationDispatcher(
       dependencies.ledger,
-      dependencies.mailGateway,
-      dependencies.notificationGateway
+      dependencies.mailGateway
     );
   }
   async execute(input) {
@@ -31475,17 +31605,13 @@ var ReconcileCommunications = class {
         severity: "error"
       });
     }
-    if (!CommunicationResults.isValidInstant(now2)) {
+    if (!CommunicationCalendar.isValidInstant(now2)) {
       return CommunicationResults.emptyResult(input.mode, {
         code: "invalid-clock",
         severity: "error"
       });
     }
-    const {
-      mode,
-      dispatchCapabilities = DEFAULT_DISPATCH_CAPABILITIES,
-      ...planningInput
-    } = input;
+    const { mode, dispatchAuthorized, ...planningInput } = input;
     const plan2 = this.#planner.execute({ ...planningInput, now: now2 });
     const diagnostics = [...plan2.diagnostics];
     const counts = {
@@ -31506,7 +31632,7 @@ var ReconcileCommunications = class {
         intent,
         timestamp,
         mode,
-        dispatchCapabilities,
+        dispatchAuthorized,
         counts,
         diagnostics
       );
@@ -31553,7 +31679,7 @@ var ReconcileCommunications = class {
       return "reservation-failed";
     }
   }
-  async processIntent(intent, timestamp, mode, dispatchCapabilities, counts, diagnostics) {
+  async processIntent(intent, timestamp, mode, dispatchAuthorized, counts, diagnostics) {
     const existing = await this.#findExisting(intent, diagnostics);
     if (existing === "read-failed") {
       return;
@@ -31571,7 +31697,7 @@ var ReconcileCommunications = class {
     if (mode === "check") {
       return;
     }
-    if (!dispatchCapabilities[intent.channel]) {
+    if (!dispatchAuthorized) {
       return;
     }
     const reservation = await this.#reserve(intent, timestamp, diagnostics);
@@ -31592,41 +31718,6 @@ var ReconcileCommunications = class {
     return this.#dispatcher.execute(intent, timestamp, counts, diagnostics);
   }
 };
-var DEFAULT_DISPATCH_CAPABILITIES = Object.freeze({
-  mail: true,
-  notification: true
-});
-
-// packages/domain/communication/src/mail-batch-fingerprint.ts
-import { createHash } from "node:crypto";
-var MailBatchFingerprint = class {
-  static create(eventDate, timeZone, intents) {
-    const messages3 = intents.map((intent) => ({
-      id: intent.idempotencyKey,
-      destination: intent.recipient.email,
-      template: intent.templateName,
-      placeholders: Object.entries(intent.placeholders).sort(
-        ([a], [b2]) => a.localeCompare(b2)
-      )
-    })).sort((a, b2) => a.id.localeCompare(b2.id));
-    return createHash("sha256").update(JSON.stringify({ eventDate, timeZone, messages: messages3 })).digest("hex");
-  }
-};
-
-// packages/domain/communication/src/attention/model.ts
-var ATTENTION_CODES = [
-  "missing-date",
-  "required-data",
-  "host-confirmation",
-  "speaker-confirmation",
-  "manual-publication",
-  "approval-pending",
-  "integration-failure",
-  "delivery-recovery",
-  "occurrence-decision",
-  "follow-up",
-  "stage-unknown"
-];
 
 // packages/application/journey/src/use-cases/event-publication-evaluation.ts
 var EventPublicationEvaluation = class _EventPublicationEvaluation {
@@ -31789,28 +31880,17 @@ var CommunicationApprovalDetails = class _CommunicationApprovalDetails {
     const ordered = [...mails].sort(
       (left, right) => left.idempotencyKey.localeCompare(right.idempotencyKey)
     );
-    const emails = ordered.slice(0, 20).map((mail) => {
+    const emails = ordered.map((mail) => {
       const links = _CommunicationApprovalDetails.links(mail);
       const name = mail.recipient.role === "hosting" ? event.host?.displayName : event.agenda.flatMap((talk) => talk.speakers).find((speaker) => speaker.id === mail.recipientId)?.displayName;
       return {
         kind: mail.kind,
-        recipientName: _CommunicationApprovalDetails.text(name ?? ""),
-        links: links.slice(0, 8),
-        omittedLinks: links.length - Math.min(links.length, 8)
+        recipientName: name ?? "",
+        links,
+        omittedLinks: 0
       };
     });
-    while (JSON.stringify(emails).length > 4e3) {
-      const largest = [...emails].sort(
-        (a, b2) => JSON.stringify(b2).length - JSON.stringify(a).length
-      )[0];
-      if (largest?.links.length) {
-        largest.links.pop();
-        largest.omittedLinks++;
-      } else {
-        emails.pop();
-      }
-    }
-    return { emails, omittedEmails: mails.length - emails.length };
+    return { emails, omittedEmails: 0 };
   }
   static links(mail) {
     if (mail.kind === "speaker-thanks") {
@@ -31818,7 +31898,7 @@ var CommunicationApprovalDetails = class _CommunicationApprovalDetails {
       if (!talks || typeof talks === "string") return [];
       return talks.map(({ title, url }) => ({
         kind: "feedback",
-        title: _CommunicationApprovalDetails.text(title),
+        title,
         url
       }));
     }
@@ -31833,10 +31913,6 @@ var CommunicationApprovalDetails = class _CommunicationApprovalDetails {
       if (typeof url === "string" && url) links.push({ kind, url });
     }
     return links;
-  }
-  static text(value) {
-    const normalized = value.trim().replace(/\s+/g, " ");
-    return normalized.length <= 200 ? normalized : `${normalized.slice(0, 197)}...`;
   }
 };
 
@@ -32249,10 +32325,7 @@ var ManageMeetupCommunications = class _ManageMeetupCommunications {
     }
     const reconciliation = await this.dependencies.reconcileCommunications(dispatchEnabled).execute({
       ...deliveryInput,
-      dispatchCapabilities: {
-        mail: mailApproved,
-        notification: false
-      }
+      dispatchAuthorized: mailApproved
     });
     if (dispatchEnabled) {
       await new CompleteCommunicationChecklist(
@@ -32356,10 +32429,7 @@ var ManageMeetupCommunications = class _ManageMeetupCommunications {
     const repositoryName = `${input.owner}/${input.repo}`;
     return {
       mode: dispatchEnabled ? "dispatch" : "check",
-      dispatchCapabilities: {
-        mail: true,
-        notification: false
-      },
+      dispatchAuthorized: false,
       repositoryId: input.repositoryId?.trim() || repositoryName,
       eventId: `issue-${input.issueNumber}`,
       eventDate: managed.event.date,
@@ -32367,13 +32437,11 @@ var ManageMeetupCommunications = class _ManageMeetupCommunications {
       readiness: managed.isReady ? "ready" : "not-ready",
       occurrenceStatus: managed.event.occurrenceStatus ?? "unknown",
       policyVersion: String(config.communication["policy-version"]),
-      readinessWindowDays: config.communication["readiness-window-days"],
       mailRecipients: CommunicationChecklist.pendingRecipients(
         managed.event,
         delivery.mailRecipientResolution.recipients,
         delivery.postEvent
       ),
-      notificationRecipients: [],
       mailPlaceholders: CommunicationPlaceholders.eventPlaceholders(
         managed.event,
         input.slidesReady === false ? void 0 : input.slidesUrl
@@ -32732,6 +32800,57 @@ var ValidateMeetupReferentials = class {
       message: item.message
     }));
     return validation.isValid ? { isValid: true, config, catalog: validation.catalog, diagnostics } : { isValid: false, config, diagnostics };
+  }
+};
+
+// packages/application/journey/src/communication/communication-diagnostic-projection.ts
+var COMMUNICATION_MESSAGES = {
+  "duplicate-intent": "A duplicate communication intent was ignored.",
+  "gateway-delivery-uncertain": "A gateway could not confirm delivery.",
+  "gateway-delivery-rejected": "A gateway definitively rejected the delivery request.",
+  "gateway-delivery-deferred": "A gateway deferred the request; a later retry remains safe.",
+  "gateway-threw-ambiguous-error": "A gateway failed without a definitive delivery outcome.",
+  "invalid-clock": "The communication clock is invalid.",
+  "invalid-event-date": "The event date is invalid.",
+  "invalid-identifier": "A stable communication identifier is invalid.",
+  "invalid-time-zone": "The configured time zone is invalid.",
+  "ledger-read-failed": "The delivery ledger could not be read.",
+  "ledger-reservation-failed": "The delivery could not be reserved safely.",
+  "ledger-status-write-failed": "The delivery status could not be recorded.",
+  "missing-mail-destination": "An opted-in mail recipient has no destination.",
+  "occurrence-status-unknown": "The event occurrence status must be explicit.",
+  "delivery-already-recorded": "The delivery ledger already contains this intent."
+};
+var RUNTIME_MESSAGES = {
+  "communication.feedback-fetch-failed": "Feedback results could not be fetched.",
+  "communication.feedback-unavailable": "Speaker thank-you emails require resolved feedback results for every talk.",
+  "communication.slides-unavailable": "Email dispatch requires a valid presentation file URL and ready managed content. Resolve asset diagnostics and run reconciliation again.",
+  "communication.approval-pending": "Email dispatch is waiting for approval on the meetup issue.",
+  "communication.approval-rejected": "The email batch was rejected. The recorded decision is final for this batch revision.",
+  "communication.approval-unavailable": "The organizer approval could not be verified or persisted; email dispatch is blocked.",
+  "communication.approval-notification-failed": "The Slack approval notification or decision reaction was not confirmed. Review the request on the meetup issue.",
+  "communication.dispatch-disabled-by-config": "Communication dispatch is disabled by repository configuration.",
+  "communication.checklist-update-failed": "Delivery results are recorded but checklist completion could not be persisted.",
+  "communication.checklist-concurrently-modified": "Delivery results are recorded; an organizer edit postponed checklist completion.",
+  "communication.event-skipped": "The issue is not a configured meetup event.",
+  "communication.event-concurrently-modified": "The meetup issue changed while communications were being reconciled; no delivery was attempted.",
+  "communication.event-references-unresolved": "Event participants could not be resolved to stable identifiers.",
+  "communication.referential-catalog-invalid": "Communications are disabled because the referential catalog is invalid."
+};
+var CommunicationDiagnosticProjection = class {
+  static domainDiagnostic(diagnostic) {
+    return {
+      code: `communication.${diagnostic.code}`,
+      severity: diagnostic.severity,
+      message: COMMUNICATION_MESSAGES[diagnostic.code]
+    };
+  }
+  static runtimeDiagnostic(diagnostic) {
+    return {
+      code: diagnostic.code,
+      severity: diagnostic.severity,
+      message: RUNTIME_MESSAGES[diagnostic.code]
+    };
   }
 };
 
@@ -35738,7 +35857,7 @@ Message Descriptor: ${JSON.stringify(messageDescriptor)}`;
     return "";
   }
 }
-var formatMessage = ({ locale, formats, messages: messages3, defaultLocale, defaultFormats, fallbackOnEmptyString, onError, timeZone, defaultRichTextElements }, state, messageDescriptor = { id: "" }, values, opts) => {
+var formatMessage = ({ locale, formats, messages: messages5, defaultLocale, defaultFormats, fallbackOnEmptyString, onError, timeZone, defaultRichTextElements }, state, messageDescriptor = { id: "" }, values, opts) => {
   const { id: msgId, defaultMessage } = messageDescriptor;
   if (!msgId) invariant(false, `[@formatjs/intl] An \`id\` must be provided to format a message. You can either:
 1. Configure your build toolchain with [babel-plugin-formatjs](https://formatjs.github.io/docs/tooling/babel-plugin)
@@ -35746,7 +35865,7 @@ or [@formatjs/ts-transformer](https://formatjs.github.io/docs/tooling/ts-transfo
 2. Configure your \`eslint\` config to include [eslint-plugin-formatjs](https://formatjs.github.io/docs/tooling/linter#enforce-id)
 to autofix this issue${getMessageDescriptorContext(messageDescriptor)}`);
   const id = String(msgId);
-  const message = messages3 && Object.prototype.hasOwnProperty.call(messages3, id) && messages3[id];
+  const message = messages5 && Object.prototype.hasOwnProperty.call(messages5, id) && messages5[id];
   if (Array.isArray(message) && message.length === 1 && message[0].type === TYPE.literal) return message[0].value;
   values = {
     ...defaultRichTextElements,
@@ -36044,8 +36163,8 @@ function formatNumberToParts(config, getNumberFormat, value, options = {}) {
   }
   return [];
 }
-function messagesContainString(messages3) {
-  return typeof (messages3 ? messages3[Object.keys(messages3)[0]] : void 0) === "string";
+function messagesContainString(messages5) {
+  return typeof (messages5 ? messages5[Object.keys(messages5)[0]] : void 0) === "string";
 }
 function verifyConfigMessages(config) {
   if (config.onWarn && config.defaultRichTextElements && messagesContainString(config.messages || {})) config.onWarn(`[@formatjs/intl] "defaultRichTextElements" was specified but "message" was not pre-compiled. 
@@ -36442,13 +36561,13 @@ var ActionMessages = class extends MessageLocalizer {
 
 // packages/runtime/github-actions/src/action-report.ts
 var ActionReport = class _ActionReport {
-  static async write(title, report, messages3 = new ActionMessages()) {
+  static async write(title, report, messages5 = new ActionMessages()) {
     const lines = new Set(report.details);
     for (const item of report.diagnostics) {
       lines.add(_ActionReport.diagnosticMessage(item));
     }
     if (report.failure)
-      lines.add(messages3.t("report.failed", { reason: report.failure }));
+      lines.add(messages5.t("report.failed", { reason: report.failure }));
     for (const line of lines) {
       info(line.replaceAll("\r", "\\r").replaceAll("\n", "\\n"));
     }
@@ -36458,7 +36577,7 @@ var ActionReport = class _ActionReport {
 `).write();
     } catch {
       summary.clear();
-      warning(messages3.t("report.summary-unavailable"));
+      warning(messages5.t("report.summary-unavailable"));
     }
   }
   static diagnosticMessage(item) {
@@ -36471,18 +36590,18 @@ var ActionReport = class _ActionReport {
 // packages/runtime/github-actions/src/action-runner.ts
 var ActionRunner = class {
   static async run(title, operation, diagnosticsOutput) {
-    let messages3 = new ActionMessages("en");
+    let messages5 = new ActionMessages("en");
     let report;
     try {
-      messages3 = new ActionMessages(
+      messages5 = new ActionMessages(
         getInput("locale", { required: true })
       );
-      report = await operation(messages3);
+      report = await operation(messages5);
       const failures = report.diagnostics.filter((item) => DiagnosticPolicy.isTechnicalFailure(item)).map((item) => item.code);
       if (!report.failure && failures.length > 0) {
         report = {
           ...report,
-          failure: messages3.t("report.technical-failure", {
+          failure: messages5.t("report.technical-failure", {
             codes: [...new Set(failures)].join(", ")
           })
         };
@@ -36506,14 +36625,14 @@ var ActionRunner = class {
           diagnostics: [
             { code: "action.execution.failed", severity: "error", message }
           ],
-          failure: messages3.error(
+          failure: messages5.error(
             error2 instanceof Error ? error2.name : "",
             message
           )
         };
       }
     }
-    await ActionReport.write(messages3.t(title), report, messages3);
+    await ActionReport.write(messages5.t(title), report, messages5);
     if (report.failure) setFailed(report.failure);
     if (diagnosticsOutput)
       ActionOutput.setDiagnosticsOutput(report.diagnostics);
@@ -40806,8 +40925,8 @@ var LedgerMessages = class extends MessageLocalizer {
 
 // packages/adapter/github-delivery-ledger/src/ledger-comment-presenter.ts
 var LedgerCommentPresenter = class {
-  constructor(messages3 = new LedgerMessages()) {
-    this.messages = messages3;
+  constructor(messages5 = new LedgerMessages()) {
+    this.messages = messages5;
   }
   messages;
   render(ledger) {
@@ -41069,471 +41188,22 @@ var ScopedGithubLedgerCommentClient = class _ScopedGithubLedgerCommentClient {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/i18n/messages.en.ts
-var EN_MESSAGES3 = {
-  "approval.meetup.details": "### Organizer confirmation: publish Meetup event\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the Meetup draft]({url}) before approving publication.",
-  "approval.meetup.request": "Repository writers: select one choice. After approval, automation publishes the reviewed draft. Event changes require a new approval.\n\n- [{approveMark}] Approve publishing this Meetup event\n- [{rejectMark}] Reject publishing this Meetup event",
-  "approval.meetup.final": "{status, select, approved {\u2705 **Publication approved**} rejected {\u274C **Publication rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Automation may publish this draft after rechecking its content. The issue checkbox records verified publication.} rejected {Automation will keep this event in draft.} other {}} Event changes require a new approval.",
-  "follow-up.title": "## Post-event follow-up \xB7 {date}",
-  "follow-up.instructions": "Update manual tasks in the issue's Post event checklist.",
-  "follow-up.task": "{task, select, thank_host {Thank the host} thank_speakers {Thank the speakers} share_slides {Share slides on Meetup} import_attendance {Import attendance into CNCF} share_social {Share on social networks} other {Post-event task}}",
-  "follow-up.stopped": "Follow-up paused.",
-  "follow-up.waiting": "Thank-you emails are not ready for approval.",
-  "follow-up.emails-complete": "No thank-you emails pending.",
-  "approval.details.summary": "Review email details",
-  "approval.details.email": "{kind, select, host_introduction {Introduction for the host contact} speaker_introduction {Introduction for the speaker} host_thanks {Thank-you email for the host contact} speaker_thanks {Thank-you email for the speaker} other {Email}}",
-  "approval.details.purpose": "{kind, select, host_introduction {Thanks the host for welcoming the meetup and shares event links, slides and logistical requirements.} speaker_introduction {Shares event links, arrival and venue information, and presentation guidance.} host_thanks {Thanks the host for organizing the meetup and invites future collaboration.} speaker_thanks {Thanks the speaker, shares feedback results for their talks and invites suggestions about the meetup.} other {Sends the planned email.}}",
-  "approval.details.link": "{kind, select, meetup {Meetup event} community {CNCF community event} slides {Meetup presentation} other {Event link}}",
-  "approval.details.feedback": "Feedback results: {title}",
-  "approval.details.omitted-emails": "{count, plural, one {# more email in this batch.} other {# more emails in this batch.}}",
-  "approval.details.omitted-links": "{count, plural, one {# more link.} other {# more links.}}",
-  "approval.final": "### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\n{date} \xB7 Up to {count, number} recipients.\n\n{status, select, approved {\u2705 **Approved**} rejected {\u274C **Rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Approved for dispatch; completed deliveries are skipped.} rejected {This batch will not be sent.} other {}} Batch changes require a new approval.",
-  "approval.request": "### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\n{date} \xB7 Up to {count, number} recipients. Completed deliveries are skipped.\n\nRepository writers: select one choice.\n\n- [{approveMark}] Approve sending this batch\n- [{rejectMark}] Reject sending this batch\n\nBatch changes require a new approval."
-};
-
-// packages/adapter/github-organizer-approval/src/i18n/messages.fr.ts
-var FR_MESSAGES3 = {
-  "approval.meetup.details": "### Confirmation des organisateurs : publier le meetup\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[V\xE9rifiez le brouillon Meetup]({url}) avant d'approuver sa publication.",
-  "approval.meetup.request": "Organisateurs avec acc\xE8s en \xE9criture : cochez un seul choix. Apr\xE8s approbation, l'automatisation publie le brouillon v\xE9rifi\xE9. Toute modification de l'\xE9v\xE9nement n\xE9cessite une nouvelle approbation.\n\n- [{approveMark}] Approuver la publication de ce meetup\n- [{rejectMark}] Refuser la publication de ce meetup",
-  "approval.meetup.final": "{status, select, approved {\u2705 **Publication approuv\xE9e**} rejected {\u274C **Publication refus\xE9e**} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\n{status, select, approved {L'automatisation peut publier ce brouillon apr\xE8s avoir v\xE9rifi\xE9 son contenu. La case de l'issue indique la publication v\xE9rifi\xE9e.} rejected {L'automatisation conserve cet \xE9v\xE9nement en brouillon.} other {}} Toute modification de l'\xE9v\xE9nement n\xE9cessite une nouvelle approbation.",
-  "follow-up.title": "## Suivi apr\xE8s le meetup \xB7 {date}",
-  "follow-up.instructions": "Cochez les t\xE2ches manuelles dans la liste Post event du ticket.",
-  "follow-up.task": "{task, select, thank_host {Remercier l'h\xF4te} thank_speakers {Remercier les intervenants} share_slides {Partager la pr\xE9sentation sur Meetup} import_attendance {Importer la participation dans CNCF} share_social {Partager sur les r\xE9seaux sociaux} other {T\xE2che apr\xE8s le meetup}}",
-  "follow-up.stopped": "Suivi suspendu.",
-  "follow-up.waiting": "Les remerciements ne sont pas pr\xEAts pour approbation.",
-  "follow-up.emails-complete": "Aucun courriel de remerciement en attente.",
-  "approval.details.summary": "Voir le d\xE9tail des e-mails",
-  "approval.details.email": "{kind, select, host_introduction {Introduction pour le contact de l'h\xF4te} speaker_introduction {Introduction pour l'intervenant} host_thanks {Remerciement pour le contact de l'h\xF4te} speaker_thanks {Remerciement pour l'intervenant} other {E-mail}}",
-  "approval.details.purpose": "{kind, select, host_introduction {Remercie l'h\xF4te pour son accueil et partage les liens du meetup, la pr\xE9sentation et les besoins logistiques.} speaker_introduction {Partage les liens du meetup, les informations d'arriv\xE9e et de lieu, ainsi que les consignes de pr\xE9sentation.} host_thanks {Remercie l'h\xF4te pour l'organisation du meetup et propose de renouveler la collaboration.} speaker_thanks {Remercie l'intervenant, partage les r\xE9sultats des retours sur ses pr\xE9sentations et sollicite ses suggestions pour le meetup.} other {Envoie l'e-mail pr\xE9vu.}}",
-  "approval.details.link": "{kind, select, meetup {\xC9v\xE9nement Meetup} community {\xC9v\xE9nement de la communaut\xE9 CNCF} slides {Pr\xE9sentation du meetup} other {Lien du meetup}}",
-  "approval.details.feedback": "R\xE9sultats des retours : {title}",
-  "approval.details.omitted-emails": "{count, plural, one {# autre courriel dans ce lot.} other {# autres courriels dans ce lot.}}",
-  "approval.details.omitted-links": "{count, plural, one {# autre lien.} other {# autres liens.}}",
-  "approval.final": "### Confirmation des organisateurs : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}}\n\n{date} \xB7 Au maximum {count, number} destinataires.\n\n{status, select, approved {\u2705 **Approuv\xE9**} rejected {\u274C **Refus\xE9**} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\n{status, select, approved {Envoi autoris\xE9 ; les envois d\xE9j\xE0 termin\xE9s sont ignor\xE9s.} rejected {Ce lot ne sera pas envoy\xE9.} other {}} Toute modification du lot n\xE9cessite une nouvelle approbation.",
-  "approval.request": "### Confirmation des organisateurs : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}}\n\n{date} \xB7 Au maximum {count, number} destinataires. Les envois d\xE9j\xE0 termin\xE9s sont ignor\xE9s.\n\nOrganisateurs avec acc\xE8s en \xE9criture : cochez un seul choix.\n\n- [{approveMark}] Approuver l'envoi de ce lot\n- [{rejectMark}] Refuser l'envoi de ce lot\n\nToute modification du lot n\xE9cessite une nouvelle approbation."
-};
-
-// packages/adapter/github-organizer-approval/src/i18n/catalog.ts
-var CATALOGS3 = { en: EN_MESSAGES3, fr: FR_MESSAGES3 };
-
-// packages/adapter/github-organizer-approval/src/i18n/approval-messages.ts
-var ApprovalMessages = class extends MessageLocalizer {
-  constructor(locale = "en") {
-    super(CATALOGS3, locale);
+// packages/adapter/github-organizer-approval/src/approval-decision-parser.ts
+var ApprovalDecisionParser = class {
+  constructor(comments) {
+    this.comments = comments;
   }
-};
-
-// packages/adapter/github-organizer-approval/src/approval-record.ts
-import { randomUUID as randomUUID2 } from "node:crypto";
-
-// packages/adapter/github-organizer-approval/src/meetup-approval-details.ts
-var MeetupApprovalDetails = class _MeetupApprovalDetails {
-  static validate(value) {
-    if (!value || !_MeetupApprovalDetails.text(value.url, 2048) || MeetupEventUrl.parse(value.url)?.value !== value.url || !_MeetupApprovalDetails.text(value.title, 80) || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value.startTime) || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value.endTime) || !_MeetupApprovalDetails.text(value.timeZone, 100) || !_MeetupApprovalDetails.text(value.venue?.name, 500) || !_MeetupApprovalDetails.text(value.venue?.city, 500))
-      throw new Error("Invalid Meetup approval details");
-  }
-  static text(value, maximum) {
-    return typeof value === "string" && value.trim().length > 0 && value.length <= maximum && !/[\r\n]/.test(value);
-  }
-};
-
-// packages/adapter/github-organizer-approval/src/approval-details.ts
-var ApprovalDetails = class _ApprovalDetails {
-  static validate(details, recipientCount) {
-    if (details === void 0) return;
-    if (!details || !Array.isArray(details.emails) || details.emails.length > 20 || !_ApprovalDetails.count(details.omittedEmails) || details.emails.length + details.omittedEmails !== recipientCount || JSON.stringify(details).length > 12e3 || !details.emails.every(_ApprovalDetails.email))
-      throw new Error("Invalid approval details");
-  }
-  static email(email) {
-    return Boolean(
-      email && [
-        "host-introduction",
-        "speaker-introduction",
-        "host-thanks",
-        "speaker-thanks"
-      ].includes(email.kind) && _ApprovalDetails.text(email.recipientName) && _ApprovalDetails.count(email.omittedLinks) && Array.isArray(email.links) && email.links.length <= 8 && email.links.every(
-        (link) => link && ["meetup", "community", "slides", "feedback"].includes(link.kind) && (link.title === void 0 || _ApprovalDetails.text(link.title)) && _ApprovalDetails.url(link.url)
-      )
-    );
-  }
-  static text(value) {
-    return typeof value === "string" && value.length <= 200 && !/[\r\n]/.test(value) && !value.includes("\0");
-  }
-  static count(value) {
-    return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
-  }
-  static url(value) {
-    if (typeof value !== "string" || value.length > 2048 || /\s/.test(value) || value.includes("\0"))
-      return false;
-    try {
-      const url = new URL(value);
-      return url.protocol === "https:" && !url.username && !url.password;
-    } catch {
-      return false;
+  comments;
+  parse(record, body) {
+    if (record.decision || record.recipientCount === 0 || record.followUp?.active === false)
+      return { status: "pending" };
+    const normalized = body.replace(/\r\n/g, "\n").replace(/- \[X\]/g, "- [x]");
+    for (const comment of this.comments) {
+      for (const status of ["approved", "rejected"]) {
+        if (normalized === comment.issue(record, { status })) return { status };
+      }
     }
-  }
-};
-
-// packages/adapter/github-organizer-approval/src/follow-up-record.ts
-var FollowUpRecord = class {
-  static validate(value) {
-    if (value === void 0) return;
-    if (!value || typeof value.active !== "boolean" || !Array.isArray(value.pendingTasks) || value.pendingTasks.length > FOLLOW_UP_TASKS.length || new Set(value.pendingTasks).size !== value.pendingTasks.length || value.pendingTasks.some((task) => !FOLLOW_UP_TASKS.includes(task)) || value.attention !== void 0 && (typeof value.attention !== "string" || value.attention.length > 5e4) || value.attentionDetails !== void 0 && (typeof value.attentionDetails !== "string" || value.attentionDetails.length > 2e4))
-      throw new Error("Invalid post-event follow-up state");
-  }
-};
-
-// packages/adapter/github-organizer-approval/src/approval-record.ts
-var APPROVAL_MARKER = "<!-- meetup-organizer-approval:v1 ";
-var ApprovalRecord = class _ApprovalRecord {
-  static matches(record, input) {
-    return record.kind === input.kind && record.revision === input.revision && record.eventDate === input.eventDate && record.recipientCount === input.recipientCount && JSON.stringify(record.publication) === JSON.stringify(input.publication) && (Boolean(record.decision) || JSON.stringify(record.details) === JSON.stringify(input.details));
-  }
-  static validate(input) {
-    FollowUpRecord.validate(input.followUp);
-    if (input.followUp && input.kind !== "email-thanks")
-      throw new Error("Invalid post-event approval kind");
-    if (!/^[a-f0-9]{64}$/.test(input.revision) || !["email-introduction", "email-thanks", "meetup-publication"].includes(
-      input.kind
-    ) || !/^\d{4}-\d{2}-\d{2}$/.test(input.eventDate) || !Number.isFinite(Date.parse(input.requestedAt)))
-      throw new Error("Invalid approval request");
-    if (input.kind === "meetup-publication") {
-      if (input.recipientCount !== void 0 || input.details !== void 0)
-        throw new Error("Invalid publication approval fields");
-      MeetupApprovalDetails.validate(input.publication);
-      return;
-    }
-    if (input.publication !== void 0 || !Number.isSafeInteger(input.recipientCount) || input.recipientCount <= 0 && !(input.recipientCount === 0 && input.kind === "email-thanks" && input.followUp))
-      throw new Error("Invalid approval request");
-    ApprovalDetails.validate(input.details, input.recipientCount);
-  }
-  static create(input) {
-    _ApprovalRecord.validate(input);
-    return {
-      ...input,
-      requestId: `approval-${randomUUID2()}`,
-      notification: "new"
-    };
-  }
-  static read(body) {
-    const line = body.split("\n", 1)[0];
-    if (!line?.startsWith(APPROVAL_MARKER) || !line.endsWith(" -->"))
-      throw new Error("Invalid approval record");
-    const record = JSON.parse(
-      line.slice(APPROVAL_MARKER.length, -4)
-    );
-    _ApprovalRecord.validate(record);
-    if (!/^approval-[a-f0-9-]{36}$/.test(record.requestId) || !["new", "reserved", "sent", "retry"].includes(record.notification))
-      throw new Error("Invalid approval state");
-    if (record.decision && (record.recipientCount === 0 || !["approved", "rejected"].includes(record.decision.status) || !/^[A-Za-z0-9-]{1,39}$/.test(record.decision.actor) || !Number.isFinite(Date.parse(record.decision.decidedAt))))
-      throw new Error("Invalid final approval decision");
-    if (record.notificationMessage && (typeof record.notificationMessage.destination !== "string" || !record.notificationMessage.destination.trim() || typeof record.notificationMessage.messageId !== "string" || !record.notificationMessage.messageId.trim()))
-      throw new Error("Invalid approval notification reference");
-    if (record.reactionSent !== void 0 && (typeof record.reactionSent !== "boolean" || !record.decision || !record.notificationMessage))
-      throw new Error("Invalid approval reaction state");
-    return record;
-  }
-  static marker(record) {
-    const json = JSON.stringify(record).replaceAll("<", "\\u003c").replaceAll(">", "\\u003e").replaceAll("&", "\\u0026");
-    return `${APPROVAL_MARKER}${json} -->`;
-  }
-};
-
-// packages/adapter/github-organizer-approval/src/approval-details-presenter.ts
-var ApprovalDetailsPresenter = class _ApprovalDetailsPresenter {
-  constructor(messages3) {
-    this.messages = messages3;
-  }
-  messages;
-  render(details) {
-    const lines = [
-      "<details>",
-      `<summary>${_ApprovalDetailsPresenter.escape(this.messages.t("approval.details.summary", {}))}</summary>`,
-      "",
-      ...details.emails.map((email) => this.email(email))
-    ];
-    if (details.omittedEmails > 0)
-      lines.push(
-        `<p>${_ApprovalDetailsPresenter.escape(this.messages.t("approval.details.omitted-emails", { count: details.omittedEmails }))}</p>`
-      );
-    return [...lines, "", "</details>"].join("\n");
-  }
-  email(email) {
-    const heading = this.messages.t("approval.details.email", {
-      kind: email.kind.replaceAll("-", "_")
-    });
-    const name = email.recipientName ? `: ${_ApprovalDetailsPresenter.escape(email.recipientName)}` : "";
-    const lines = [
-      `<p><strong>${_ApprovalDetailsPresenter.escape(heading)}${name}</strong></p>`,
-      `<p>${_ApprovalDetailsPresenter.escape(this.messages.t("approval.details.purpose", { kind: email.kind.replaceAll("-", "_") }))}</p>`
-    ];
-    if (email.links.length)
-      lines.push(
-        "<ul>",
-        ...email.links.map((link) => `<li>${this.link(link)}</li>`),
-        "</ul>"
-      );
-    if (email.omittedLinks > 0)
-      lines.push(
-        `<p>${_ApprovalDetailsPresenter.escape(this.messages.t("approval.details.omitted-links", { count: email.omittedLinks }))}</p>`
-      );
-    return lines.join("\n");
-  }
-  link(link) {
-    const label = link.kind === "feedback" ? this.messages.t("approval.details.feedback", {
-      title: link.title ?? ""
-    }) : this.messages.t("approval.details.link", { kind: link.kind });
-    return `<a href="${_ApprovalDetailsPresenter.escape(link.url)}">${_ApprovalDetailsPresenter.escape(label)}</a>`;
-  }
-  static escape(value) {
-    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;").replaceAll("@", "&#64;");
-  }
-};
-
-// packages/adapter/github-organizer-approval/src/follow-up-presenter.ts
-var FollowUpPresenter = class {
-  constructor(messages3) {
-    this.messages = messages3;
-  }
-  messages;
-  render(record) {
-    if (!record.followUp) return [];
-    const lines = [
-      this.messages.t("follow-up.title", { date: record.eventDate }),
-      this.messages.t("follow-up.instructions", {})
-    ];
-    for (const task of FOLLOW_UP_TASKS) {
-      const pending = record.followUp.pendingTasks.includes(task);
-      lines.push(
-        `${pending ? "\u23F3" : "\u2705"} ${this.messages.t("follow-up.task", { task: task.replaceAll("-", "_") })}`
-      );
-    }
-    if (!record.followUp.active)
-      lines.push(this.messages.t("follow-up.stopped", {}));
-    else if (!record.recipientCount)
-      lines.push(
-        this.messages.t(
-          record.followUp.pendingTasks.some((task) => task.startsWith("thank-")) ? "follow-up.waiting" : "follow-up.emails-complete",
-          {}
-        )
-      );
-    return lines;
-  }
-};
-
-// packages/adapter/github-organizer-approval/src/email-approval-presenter.ts
-var EmailApprovalPresenter = class {
-  constructor(messages3) {
-    this.messages = messages3;
-  }
-  messages;
-  issue(record, decision) {
-    const heading = [
-      ApprovalRecord.marker(record),
-      ...new FollowUpPresenter(this.messages).render(record)
-    ];
-    if (record.recipientCount === 0 || record.followUp?.active === false)
-      return [...heading, record.followUp?.attentionDetails ?? ""].join("\n\n").trimEnd();
-    const details = record.details ? [new ApprovalDetailsPresenter(this.messages).render(record.details)] : [];
-    if (record.followUp?.attentionDetails)
-      details.push(record.followUp.attentionDetails);
-    if (record.decision)
-      return [
-        ...heading,
-        this.messages.t("approval.final", {
-          kind: record.kind.replace("email-", ""),
-          date: record.eventDate,
-          count: record.recipientCount,
-          status: record.decision.status,
-          actor: record.decision.actor,
-          decidedAt: record.decision.decidedAt
-        }),
-        ...details
-      ].join("\n\n");
-    return [
-      ...heading,
-      this.messages.t("approval.request", {
-        kind: record.kind.replace("email-", ""),
-        date: record.eventDate,
-        count: record.recipientCount,
-        approveMark: decision.status === "approved" ? "x" : " ",
-        rejectMark: decision.status === "rejected" ? "x" : " "
-      }),
-      ...details
-    ].join("\n\n");
-  }
-};
-
-// packages/adapter/github-organizer-approval/src/meetup-approval-presenter.ts
-var MeetupApprovalPresenter = class _MeetupApprovalPresenter {
-  constructor(messages3) {
-    this.messages = messages3;
-  }
-  messages;
-  issue(record, decision) {
-    const details = record.publication;
-    const content = this.messages.t("approval.meetup.details", {
-      title: _MeetupApprovalPresenter.escape(details.title),
-      date: record.eventDate,
-      startTime: details.startTime,
-      endTime: details.endTime,
-      timeZone: _MeetupApprovalPresenter.escape(details.timeZone),
-      venue: _MeetupApprovalPresenter.escape(details.venue.name),
-      city: _MeetupApprovalPresenter.escape(details.venue.city),
-      url: details.url
-    });
-    const controls = record.decision ? this.messages.t("approval.meetup.final", {
-      status: record.decision.status,
-      actor: record.decision.actor,
-      decidedAt: record.decision.decidedAt
-    }) : this.messages.t("approval.meetup.request", {
-      approveMark: decision.status === "approved" ? "x" : " ",
-      rejectMark: decision.status === "rejected" ? "x" : " "
-    });
-    return [ApprovalRecord.marker(record), content, controls].join("\n\n");
-  }
-  static escape(value) {
-    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("@", "&#64;").replace(/[\\`*_{}[\]()#+.!|~-]/g, "\\$&");
-  }
-};
-
-// packages/adapter/github-organizer-approval/src/approval-presenter.ts
-var ApprovalPresenter = class _ApprovalPresenter {
-  email;
-  meetup;
-  constructor(messages3) {
-    this.email = new EmailApprovalPresenter(messages3);
-    this.meetup = new MeetupApprovalPresenter(messages3);
-  }
-  issue(record, decision) {
-    return record.kind === "meetup-publication" ? this.meetup.issue(record, decision) : this.email.issue(record, decision);
-  }
-  static supportedLocales() {
-    return Object.keys(CATALOGS3).map(
-      (locale) => new _ApprovalPresenter(new ApprovalMessages(locale))
-    );
-  }
-};
-
-// packages/adapter/github-organizer-approval/src/github-approval-client.ts
-var GithubApprovalClient = class {
-  constructor(api, owner, repo, issue2) {
-    this.api = api;
-    this.owner = owner;
-    this.repo = repo;
-    this.issue = issue2;
-  }
-  api;
-  owner;
-  repo;
-  issue;
-  async list() {
-    const comments = [];
-    let page = 1;
-    while (true) {
-      const response = await this.api.rest.issues.listComments({
-        owner: this.owner,
-        repo: this.repo,
-        issue_number: this.issue,
-        page,
-        per_page: 100
-      });
-      if (!Array.isArray(response.data))
-        throw new Error("Invalid approval comment response");
-      comments.push(...response.data);
-      const next = response.headers.link ? /<[^>]+>;\s*rel="next"/.test(response.headers.link) : response.data.length === 100;
-      if (!next) return comments;
-      page += 1;
-    }
-  }
-  async create(body) {
-    if (body.length > 6e4) throw new Error("Approval comment limit exceeded");
-    const response = await this.api.rest.issues.createComment({
-      owner: this.owner,
-      repo: this.repo,
-      issue_number: this.issue,
-      body
-    });
-    if (!Number.isSafeInteger(response.data.id) || response.data.id <= 0)
-      throw new Error("Invalid approval comment identity");
-    return response.data.id;
-  }
-  async update(commentId, body) {
-    if (body.length > 6e4) throw new Error("Approval comment limit exceeded");
-    await this.api.rest.issues.updateComment({
-      owner: this.owner,
-      repo: this.repo,
-      comment_id: commentId,
-      body
-    });
-  }
-  async canApprove(username) {
-    const response = await this.api.rest.repos.getCollaboratorPermissionLevel({
-      owner: this.owner,
-      repo: this.repo,
-      username
-    });
-    return response.data.permission === "write" || response.data.permission === "maintain" || response.data.permission === "admin";
-  }
-  async replace(commentId, before, after) {
-    if (before === after) return;
-    const current = (await this.list()).find(
-      (comment) => comment.id === commentId
-    );
-    if (current?.body !== before)
-      throw new Error("Approval comment changed before persistence");
-    await this.update(commentId, after);
-  }
-  async edit(comment) {
-    if (!comment.node_id)
-      throw new Error("Missing approval comment node identity");
-    const result = await this.api.graphql(
-      `query ApprovalCommentEditor($id: ID!) {
-				node(id: $id) {
-					... on IssueComment {
-						id body lastEditedAt editor { login __typename }
-					}
-				}
-			}`,
-      { id: comment.node_id }
-    );
-    if (result.node?.id !== comment.node_id || result.node.body !== comment.body)
-      throw new Error("Approval comment changed during verification");
-    return result.node;
-  }
-  url(commentId) {
-    return `https://github.com/${this.owner}/${this.repo}/issues/${this.issue}#issuecomment-${commentId}`;
-  }
-  async history(comment) {
-    if (!comment.node_id)
-      throw new Error("Missing approval comment node identity");
-    const edits = [];
-    let after;
-    do {
-      const response = await this.api.graphql(
-        `query ApprovalCommentHistory($id: ID!, $after: String) {
-				node(id: $id) { ... on IssueComment {
-					id body userContentEdits(first: 100, after: $after) {
-						nodes { diff deletedAt editor { login __typename } }
-						pageInfo { hasNextPage endCursor }
-					}
-				} }
-			}`,
-        { id: comment.node_id, ...after ? { after } : {} }
-      );
-      if (response.node?.id !== comment.node_id || response.node.body !== comment.body)
-        throw new Error("Approval comment changed during history verification");
-      const history = response.node.userContentEdits;
-      if (!Array.isArray(history?.nodes) || !history.pageInfo)
-        throw new Error("Approval history is unavailable");
-      edits.push(...history.nodes);
-      if (!history.pageInfo.hasNextPage) return edits;
-      const next = history.pageInfo.endCursor;
-      if (!next || next === after)
-        throw new Error("Invalid approval history cursor");
-      after = next;
-    } while (after);
-    return edits;
+    return { status: "pending" };
   }
 };
 
@@ -41600,22 +41270,837 @@ var ApprovalNotifications = class {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/approval-decision-parser.ts
-var ApprovalDecisionParser = class {
-  constructor(comments) {
-    this.comments = comments;
+// packages/adapter/github-organizer-approval/src/approval-schema.ts
+var ApprovalSchema = class {
+  static object(value) {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
   }
-  comments;
-  parse(record, body) {
-    if (record.decision || record.recipientCount === 0 || record.followUp?.active === false)
-      return { status: "pending" };
-    const normalized = body.replace(/\r\n/g, "\n").replace(/- \[X\]/g, "- [x]");
-    for (const comment of this.comments) {
-      for (const status of ["approved", "rejected"]) {
-        if (normalized === comment.issue(record, { status })) return { status };
+  static count(value) {
+    return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+  }
+  static text(value, maximum) {
+    return typeof value === "string" && value.length <= maximum && !/[\r\n\0]/.test(value);
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/email-approval-details-schema.ts
+var EmailApprovalDetailsSchema = class _EmailApprovalDetailsSchema {
+  static validate(details) {
+    if (details === void 0) return;
+    if (!ApprovalSchema.object(details) || !Array.isArray(details.emails) || details.emails.length > 20 || !ApprovalSchema.count(details.omittedEmails) || JSON.stringify(details).length > 12e3 || !details.emails.every(_EmailApprovalDetailsSchema.email))
+      throw new Error("Invalid approval details");
+  }
+  static email(email) {
+    return ApprovalSchema.object(email) && typeof email.kind === "string" && [
+      "host-introduction",
+      "speaker-introduction",
+      "host-thanks",
+      "speaker-thanks"
+    ].includes(email.kind) && ApprovalSchema.text(email.recipientName, 200) && ApprovalSchema.count(email.omittedLinks) && Array.isArray(email.links) && email.links.length <= 8 && email.links.every(_EmailApprovalDetailsSchema.link);
+  }
+  static link(link) {
+    return ApprovalSchema.object(link) && typeof link.kind === "string" && ["meetup", "community", "slides", "feedback"].includes(link.kind) && (link.title === void 0 || ApprovalSchema.text(link.title, 200)) && _EmailApprovalDetailsSchema.url(link.url);
+  }
+  static url(value) {
+    if (typeof value !== "string" || value.length > 2048 || /\s/.test(value) || value.includes("\0"))
+      return false;
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" && !url.username && !url.password;
+    } catch {
+      return false;
+    }
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/meetup-approval-details-schema.ts
+var MeetupApprovalDetailsSchema = class _MeetupApprovalDetailsSchema {
+  static validate(value) {
+    if (!ApprovalSchema.object(value) || !_MeetupApprovalDetailsSchema.text(value.url, 2048) || MeetupEventUrl.parse(value.url)?.value !== value.url || !_MeetupApprovalDetailsSchema.text(value.title, 80) || typeof value.startTime !== "string" || !ScheduledEventPolicy.validTime(value.startTime) || typeof value.endTime !== "string" || !ScheduledEventPolicy.validTime(value.endTime) || !_MeetupApprovalDetailsSchema.text(value.timeZone, 100) || !ApprovalSchema.object(value.venue) || !_MeetupApprovalDetailsSchema.text(value.venue.name, 500) || !_MeetupApprovalDetailsSchema.text(value.venue.city, 500))
+      throw new Error("Invalid Meetup approval details");
+  }
+  static text(value, maximum) {
+    return ApprovalSchema.text(value, maximum) && value.trim().length > 0;
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/approval-request-schema.ts
+var ApprovalRequestSchema = class {
+  static validate(value) {
+    if (!ApprovalSchema.object(value) || typeof value.revision !== "string" || typeof value.eventDate !== "string" || typeof value.requestedAt !== "string")
+      throw new Error("Invalid approval request");
+    if (value.kind === "meetup-publication") {
+      if (value.recipientCount !== void 0 || value.details !== void 0)
+        throw new Error("Invalid publication approval fields");
+      MeetupApprovalDetailsSchema.validate(value.publication);
+      return;
+    }
+    if (value.kind !== "email-introduction" && value.kind !== "email-thanks" || value.publication !== void 0 || !ApprovalSchema.count(value.recipientCount))
+      throw new Error("Invalid approval request");
+    EmailApprovalDetailsSchema.validate(value.details);
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/follow-up-schema.ts
+var FollowUpSchema = class {
+  static validate(value) {
+    if (value === void 0) return;
+    if (!ApprovalSchema.object(value) || typeof value.active !== "boolean" || !Array.isArray(value.pendingTasks) || value.pendingTasks.length > FOLLOW_UP_TASKS.length || new Set(value.pendingTasks).size !== value.pendingTasks.length || value.pendingTasks.some((task) => !FOLLOW_UP_TASKS.includes(task)) || value.attention !== void 0 && (typeof value.attention !== "string" || value.attention.length > 5e4) || value.attentionDetails !== void 0 && (typeof value.attentionDetails !== "string" || value.attentionDetails.length > 2e4))
+      throw new Error("Invalid post-event follow-up state");
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/stored-approval-schema.ts
+var StoredApprovalSchema = class _StoredApprovalSchema {
+  static validate(value) {
+    if (!ApprovalSchema.object(value))
+      throw new Error("Invalid approval state");
+    const state = value;
+    ApprovalRequestSchema.validate(value);
+    FollowUpSchema.validate(state.followUp);
+    if (state.followUp && value.kind !== "email-thanks")
+      throw new Error("Invalid post-event approval kind");
+    if (value.recipientCount === 0 && state.followUp) {
+      ApprovalRequestPolicy.validateIdentity(value);
+      ApprovalRequestPolicy.validateEmailCount(value);
+    } else {
+      ApprovalRequestPolicy.validate(value);
+    }
+    if (typeof state.requestId !== "string" || !/^approval-[a-f0-9-]{36}$/.test(state.requestId) || !["new", "reserved", "sent", "retry"].some(
+      (status) => status === state.notification
+    ))
+      throw new Error("Invalid approval state");
+    if (state.decision !== void 0) {
+      _StoredApprovalSchema.decision(state.decision);
+      if (value.recipientCount === 0)
+        throw new Error("Invalid final approval decision");
+    }
+    if (state.notificationMessage !== void 0)
+      _StoredApprovalSchema.notificationMessage(state.notificationMessage);
+    if (state.reactionSent !== void 0 && (typeof state.reactionSent !== "boolean" || !state.decision || !state.notificationMessage))
+      throw new Error("Invalid approval reaction state");
+  }
+  static decision(value) {
+    if (!ApprovalSchema.object(value) || value.status !== "approved" && value.status !== "rejected" || typeof value.actor !== "string" || !/^[A-Za-z0-9-]{1,39}$/.test(value.actor) || typeof value.decidedAt !== "string" || !Number.isFinite(Date.parse(value.decidedAt)))
+      throw new Error("Invalid final approval decision");
+  }
+  static notificationMessage(value) {
+    if (!ApprovalSchema.object(value) || typeof value.destination !== "string" || !value.destination.trim() || typeof value.messageId !== "string" || !value.messageId.trim())
+      throw new Error("Invalid approval notification reference");
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/approval-comment-codec.ts
+var APPROVAL_MARKER = "<!-- meetup-organizer-approval:v1 ";
+var ApprovalCommentCodec = class {
+  static read(body) {
+    const line = body.split("\n", 1)[0];
+    if (!line?.startsWith(APPROVAL_MARKER) || !line.endsWith(" -->"))
+      throw new Error("Invalid approval record");
+    const record = JSON.parse(line.slice(APPROVAL_MARKER.length, -4));
+    StoredApprovalSchema.validate(record);
+    return record;
+  }
+  static marker(record) {
+    const json = JSON.stringify(record).replaceAll("<", "\\u003c").replaceAll(">", "\\u003e").replaceAll("&", "\\u0026");
+    return `${APPROVAL_MARKER}${json} -->`;
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/approval-details-presenter.ts
+var ApprovalDetailsPresenter = class _ApprovalDetailsPresenter {
+  constructor(messages5) {
+    this.messages = messages5;
+  }
+  messages;
+  render(details) {
+    const lines = [
+      "<details>",
+      `<summary>${_ApprovalDetailsPresenter.escape(this.messages.t("approval.details.summary", {}))}</summary>`,
+      "",
+      ...details.emails.map((email) => this.email(email))
+    ];
+    if (details.omittedEmails > 0)
+      lines.push(
+        `<p>${_ApprovalDetailsPresenter.escape(this.messages.t("approval.details.omitted-emails", { count: details.omittedEmails }))}</p>`
+      );
+    return [...lines, "", "</details>"].join("\n");
+  }
+  email(email) {
+    const heading = this.messages.t("approval.details.email", {
+      kind: email.kind.replaceAll("-", "_")
+    });
+    const name = email.recipientName ? `: ${_ApprovalDetailsPresenter.escape(email.recipientName)}` : "";
+    const lines = [
+      `<p><strong>${_ApprovalDetailsPresenter.escape(heading)}${name}</strong></p>`,
+      `<p>${_ApprovalDetailsPresenter.escape(this.messages.t("approval.details.purpose", { kind: email.kind.replaceAll("-", "_") }))}</p>`
+    ];
+    if (email.links.length)
+      lines.push(
+        "<ul>",
+        ...email.links.map((link) => `<li>${this.link(link)}</li>`),
+        "</ul>"
+      );
+    if (email.omittedLinks > 0)
+      lines.push(
+        `<p>${_ApprovalDetailsPresenter.escape(this.messages.t("approval.details.omitted-links", { count: email.omittedLinks }))}</p>`
+      );
+    return lines.join("\n");
+  }
+  link(link) {
+    const label = link.kind === "feedback" ? this.messages.t("approval.details.feedback", {
+      title: link.title ?? ""
+    }) : this.messages.t("approval.details.link", { kind: link.kind });
+    return `<a href="${_ApprovalDetailsPresenter.escape(link.url)}">${_ApprovalDetailsPresenter.escape(label)}</a>`;
+  }
+  static escape(value) {
+    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;").replaceAll("@", "&#64;");
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/follow-up-presenter.ts
+var FollowUpPresenter = class {
+  constructor(messages5) {
+    this.messages = messages5;
+  }
+  messages;
+  render(record) {
+    if (!record.followUp) return [];
+    const lines = [
+      this.messages.t("follow-up.title", { date: record.eventDate }),
+      this.messages.t("follow-up.instructions", {})
+    ];
+    for (const task of FOLLOW_UP_TASKS) {
+      const pending = record.followUp.pendingTasks.includes(task);
+      lines.push(
+        `${pending ? "\u23F3" : "\u2705"} ${this.messages.t("follow-up.task", { task: task.replaceAll("-", "_") })}`
+      );
+    }
+    if (!record.followUp.active)
+      lines.push(this.messages.t("follow-up.stopped", {}));
+    else if (!record.recipientCount)
+      lines.push(
+        this.messages.t(
+          record.followUp.pendingTasks.some((task) => task.startsWith("thank-")) ? "follow-up.waiting" : "follow-up.emails-complete",
+          {}
+        )
+      );
+    return lines;
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/email-approval-presenter.ts
+var EmailApprovalPresenter = class {
+  constructor(messages5) {
+    this.messages = messages5;
+  }
+  messages;
+  issue(record, decision) {
+    const heading = [
+      ApprovalCommentCodec.marker(record),
+      ...new FollowUpPresenter(this.messages).render(record)
+    ];
+    if (record.recipientCount === 0 || record.followUp?.active === false)
+      return [...heading, record.followUp?.attentionDetails ?? ""].join("\n\n").trimEnd();
+    const details = record.details ? [new ApprovalDetailsPresenter(this.messages).render(record.details)] : [];
+    if (record.followUp?.attentionDetails)
+      details.push(record.followUp.attentionDetails);
+    if (record.decision)
+      return [
+        ...heading,
+        this.messages.t("approval.final", {
+          kind: record.kind.replace("email-", ""),
+          date: record.eventDate,
+          count: record.recipientCount,
+          status: record.decision.status,
+          actor: record.decision.actor,
+          decidedAt: record.decision.decidedAt
+        }),
+        ...details
+      ].join("\n\n");
+    return [
+      ...heading,
+      this.messages.t("approval.request", {
+        kind: record.kind.replace("email-", ""),
+        date: record.eventDate,
+        count: record.recipientCount,
+        approveMark: decision.status === "approved" ? "x" : " ",
+        rejectMark: decision.status === "rejected" ? "x" : " "
+      }),
+      ...details
+    ].join("\n\n");
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/i18n/messages.en.ts
+var EN_MESSAGES3 = {
+  "approval.meetup.details": "### Organizer confirmation: publish Meetup event\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the Meetup draft]({url}) before approving publication.",
+  "approval.meetup.request": "Repository writers: select one choice. After approval, automation publishes the reviewed draft. Event changes require a new approval.\n\n- [{approveMark}] Approve publishing this Meetup event\n- [{rejectMark}] Reject publishing this Meetup event",
+  "approval.meetup.final": "{status, select, approved {\u2705 **Publication approved**} rejected {\u274C **Publication rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Automation may publish this draft after rechecking its content. The issue checkbox records verified publication.} rejected {Automation will keep this event in draft.} other {}} Event changes require a new approval.",
+  "follow-up.title": "## Post-event follow-up \xB7 {date}",
+  "follow-up.instructions": "Update manual tasks in the issue's Post event checklist.",
+  "follow-up.task": "{task, select, thank_host {Thank the host} thank_speakers {Thank the speakers} share_slides {Share slides on Meetup} import_attendance {Import attendance into CNCF} share_social {Share on social networks} other {Post-event task}}",
+  "follow-up.stopped": "Follow-up paused.",
+  "follow-up.waiting": "Thank-you emails are not ready for approval.",
+  "follow-up.emails-complete": "No thank-you emails pending.",
+  "approval.details.summary": "Review email details",
+  "approval.details.email": "{kind, select, host_introduction {Introduction for the host contact} speaker_introduction {Introduction for the speaker} host_thanks {Thank-you email for the host contact} speaker_thanks {Thank-you email for the speaker} other {Email}}",
+  "approval.details.purpose": "{kind, select, host_introduction {Thanks the host for welcoming the meetup and shares event links, slides and logistical requirements.} speaker_introduction {Shares event links, arrival and venue information, and presentation guidance.} host_thanks {Thanks the host for organizing the meetup and invites future collaboration.} speaker_thanks {Thanks the speaker, shares feedback results for their talks and invites suggestions about the meetup.} other {Sends the planned email.}}",
+  "approval.details.link": "{kind, select, meetup {Meetup event} community {CNCF community event} slides {Meetup presentation} other {Event link}}",
+  "approval.details.feedback": "Feedback results: {title}",
+  "approval.details.omitted-emails": "{count, plural, one {# more email in this batch.} other {# more emails in this batch.}}",
+  "approval.details.omitted-links": "{count, plural, one {# more link.} other {# more links.}}",
+  "approval.final": "### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\n{date} \xB7 Up to {count, number} recipients.\n\n{status, select, approved {\u2705 **Approved**} rejected {\u274C **Rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Approved for dispatch; completed deliveries are skipped.} rejected {This batch will not be sent.} other {}} Batch changes require a new approval.",
+  "approval.request": "### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\n{date} \xB7 Up to {count, number} recipients. Completed deliveries are skipped.\n\nRepository writers: select one choice.\n\n- [{approveMark}] Approve sending this batch\n- [{rejectMark}] Reject sending this batch\n\nBatch changes require a new approval."
+};
+
+// packages/adapter/github-organizer-approval/src/i18n/messages.fr.ts
+var FR_MESSAGES3 = {
+  "approval.meetup.details": "### Confirmation des organisateurs : publier le meetup\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[V\xE9rifiez le brouillon Meetup]({url}) avant d'approuver sa publication.",
+  "approval.meetup.request": "Organisateurs avec acc\xE8s en \xE9criture : cochez un seul choix. Apr\xE8s approbation, l'automatisation publie le brouillon v\xE9rifi\xE9. Toute modification de l'\xE9v\xE9nement n\xE9cessite une nouvelle approbation.\n\n- [{approveMark}] Approuver la publication de ce meetup\n- [{rejectMark}] Refuser la publication de ce meetup",
+  "approval.meetup.final": "{status, select, approved {\u2705 **Publication approuv\xE9e**} rejected {\u274C **Publication refus\xE9e**} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\n{status, select, approved {L'automatisation peut publier ce brouillon apr\xE8s avoir v\xE9rifi\xE9 son contenu. La case de l'issue indique la publication v\xE9rifi\xE9e.} rejected {L'automatisation conserve cet \xE9v\xE9nement en brouillon.} other {}} Toute modification de l'\xE9v\xE9nement n\xE9cessite une nouvelle approbation.",
+  "follow-up.title": "## Suivi apr\xE8s le meetup \xB7 {date}",
+  "follow-up.instructions": "Cochez les t\xE2ches manuelles dans la liste Post event du ticket.",
+  "follow-up.task": "{task, select, thank_host {Remercier l'h\xF4te} thank_speakers {Remercier les intervenants} share_slides {Partager la pr\xE9sentation sur Meetup} import_attendance {Importer la participation dans CNCF} share_social {Partager sur les r\xE9seaux sociaux} other {T\xE2che apr\xE8s le meetup}}",
+  "follow-up.stopped": "Suivi suspendu.",
+  "follow-up.waiting": "Les remerciements ne sont pas pr\xEAts pour approbation.",
+  "follow-up.emails-complete": "Aucun courriel de remerciement en attente.",
+  "approval.details.summary": "Voir le d\xE9tail des e-mails",
+  "approval.details.email": "{kind, select, host_introduction {Introduction pour le contact de l'h\xF4te} speaker_introduction {Introduction pour l'intervenant} host_thanks {Remerciement pour le contact de l'h\xF4te} speaker_thanks {Remerciement pour l'intervenant} other {E-mail}}",
+  "approval.details.purpose": "{kind, select, host_introduction {Remercie l'h\xF4te pour son accueil et partage les liens du meetup, la pr\xE9sentation et les besoins logistiques.} speaker_introduction {Partage les liens du meetup, les informations d'arriv\xE9e et de lieu, ainsi que les consignes de pr\xE9sentation.} host_thanks {Remercie l'h\xF4te pour l'organisation du meetup et propose de renouveler la collaboration.} speaker_thanks {Remercie l'intervenant, partage les r\xE9sultats des retours sur ses pr\xE9sentations et sollicite ses suggestions pour le meetup.} other {Envoie l'e-mail pr\xE9vu.}}",
+  "approval.details.link": "{kind, select, meetup {\xC9v\xE9nement Meetup} community {\xC9v\xE9nement de la communaut\xE9 CNCF} slides {Pr\xE9sentation du meetup} other {Lien du meetup}}",
+  "approval.details.feedback": "R\xE9sultats des retours : {title}",
+  "approval.details.omitted-emails": "{count, plural, one {# autre courriel dans ce lot.} other {# autres courriels dans ce lot.}}",
+  "approval.details.omitted-links": "{count, plural, one {# autre lien.} other {# autres liens.}}",
+  "approval.final": "### Confirmation des organisateurs : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}}\n\n{date} \xB7 Au maximum {count, number} destinataires.\n\n{status, select, approved {\u2705 **Approuv\xE9**} rejected {\u274C **Refus\xE9**} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\n{status, select, approved {Envoi autoris\xE9 ; les envois d\xE9j\xE0 termin\xE9s sont ignor\xE9s.} rejected {Ce lot ne sera pas envoy\xE9.} other {}} Toute modification du lot n\xE9cessite une nouvelle approbation.",
+  "approval.request": "### Confirmation des organisateurs : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}}\n\n{date} \xB7 Au maximum {count, number} destinataires. Les envois d\xE9j\xE0 termin\xE9s sont ignor\xE9s.\n\nOrganisateurs avec acc\xE8s en \xE9criture : cochez un seul choix.\n\n- [{approveMark}] Approuver l'envoi de ce lot\n- [{rejectMark}] Refuser l'envoi de ce lot\n\nToute modification du lot n\xE9cessite une nouvelle approbation."
+};
+
+// packages/adapter/github-organizer-approval/src/i18n/catalog.ts
+var CATALOGS3 = { en: EN_MESSAGES3, fr: FR_MESSAGES3 };
+
+// packages/adapter/github-organizer-approval/src/i18n/approval-messages.ts
+var ApprovalMessages = class extends MessageLocalizer {
+  constructor(locale = "en") {
+    super(CATALOGS3, locale);
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/meetup-approval-presenter.ts
+var MeetupApprovalPresenter = class _MeetupApprovalPresenter {
+  constructor(messages5) {
+    this.messages = messages5;
+  }
+  messages;
+  issue(record, decision) {
+    const details = record.publication;
+    const content = this.messages.t("approval.meetup.details", {
+      title: _MeetupApprovalPresenter.escape(details.title),
+      date: record.eventDate,
+      startTime: details.startTime,
+      endTime: details.endTime,
+      timeZone: _MeetupApprovalPresenter.escape(details.timeZone),
+      venue: _MeetupApprovalPresenter.escape(details.venue.name),
+      city: _MeetupApprovalPresenter.escape(details.venue.city),
+      url: details.url
+    });
+    const controls = record.decision ? this.messages.t("approval.meetup.final", {
+      status: record.decision.status,
+      actor: record.decision.actor,
+      decidedAt: record.decision.decidedAt
+    }) : this.messages.t("approval.meetup.request", {
+      approveMark: decision.status === "approved" ? "x" : " ",
+      rejectMark: decision.status === "rejected" ? "x" : " "
+    });
+    return [ApprovalCommentCodec.marker(record), content, controls].join(
+      "\n\n"
+    );
+  }
+  static escape(value) {
+    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("@", "&#64;").replace(/[\\`*_{}[\]()#+.!|~-]/g, "\\$&");
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/approval-presenter.ts
+var ApprovalPresenter = class _ApprovalPresenter {
+  email;
+  meetup;
+  constructor(messages5) {
+    this.email = new EmailApprovalPresenter(messages5);
+    this.meetup = new MeetupApprovalPresenter(messages5);
+  }
+  issue(record, decision) {
+    return record.kind === "meetup-publication" ? this.meetup.issue(record, decision) : this.email.issue(record, decision);
+  }
+  static supportedLocales() {
+    return Object.keys(CATALOGS3).map(
+      (locale) => new _ApprovalPresenter(new ApprovalMessages(locale))
+    );
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/approval-record-factory.ts
+var ApprovalRecordFactory = class {
+  constructor(nextIdentity) {
+    this.nextIdentity = nextIdentity;
+  }
+  nextIdentity;
+  create(request2) {
+    ApprovalRequestSchema.validate(request2);
+    ApprovalRequestPolicy.validate(request2);
+    return this.allocate(request2);
+  }
+  placeholder(input) {
+    return this.allocate({
+      kind: "email-thanks",
+      revision: "0".repeat(64),
+      eventDate: input.eventDate,
+      recipientCount: 0,
+      requestedAt: input.requestedAt,
+      followUp: {
+        active: input.active,
+        pendingTasks: input.pendingTasks
+      }
+    });
+  }
+  allocate(request2) {
+    const record = {
+      ...request2,
+      requestId: `approval-${this.nextIdentity()}`,
+      notification: "new"
+    };
+    StoredApprovalSchema.validate(record);
+    return record;
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/finalize-approval-decision.ts
+var FinalizeApprovalDecision = class {
+  constructor(decisions, repository, notifications) {
+    this.decisions = decisions;
+    this.repository = repository;
+    this.notifications = notifications;
+  }
+  decisions;
+  repository;
+  notifications;
+  async execute(state) {
+    const { record, comment } = state;
+    const decision = await this.decisions.execute(record, comment);
+    if (decision.status !== "pending" && !record.decision) {
+      if (!decision.actor || !decision.decidedAt)
+        throw new Error("Missing verified approval identity");
+      record.decision = {
+        status: decision.status,
+        actor: decision.actor,
+        decidedAt: decision.decidedAt
+      };
+    }
+    await this.repository.save(record, state);
+    return {
+      status: decision.status,
+      notificationFailed: await this.notifications.react(record, comment.id)
+    };
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/github-approval-attention-source.ts
+var GithubApprovalAttentionSource = class {
+  constructor(repository, finalizer) {
+    this.repository = repository;
+    this.finalizer = finalizer;
+  }
+  repository;
+  finalizer;
+  async synchronizeApprovals() {
+    const result = [];
+    for (const state of await this.repository.states()) {
+      if (state.record.recipientCount === 0) continue;
+      const decision = await this.finalizer.execute(state);
+      result.push({
+        revision: state.record.revision,
+        requestedAt: state.record.requestedAt,
+        commentId: state.comment.id,
+        eventDate: state.record.eventDate,
+        kind: state.record.kind,
+        status: decision.status
+      });
+    }
+    return result;
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/github-approval-response.ts
+var GithubApprovalResponse = class _GithubApprovalResponse {
+  static comments(value) {
+    if (!ApprovalSchema.object(value) || !Array.isArray(value.data) || !value.data.every(_GithubApprovalResponse.comment) || !ApprovalSchema.object(value.headers) || value.headers.link !== void 0 && typeof value.headers.link !== "string")
+      throw new Error("Invalid approval comment response");
+    return { data: value.data, headers: { link: value.headers.link } };
+  }
+  static identity(value) {
+    if (!ApprovalSchema.object(value) || !ApprovalSchema.object(value.data) || !ApprovalSchema.count(value.data.id) || value.data.id === 0)
+      throw new Error("Invalid approval comment identity");
+    return value.data.id;
+  }
+  static permission(value) {
+    if (!ApprovalSchema.object(value) || !ApprovalSchema.object(value.data) || typeof value.data.permission !== "string")
+      throw new Error("Invalid approval permission response");
+    return value.data.permission;
+  }
+  static edit(value, comment) {
+    const node = _GithubApprovalResponse.snapshot(value, comment);
+    if (!_GithubApprovalResponse.nullableText(node.lastEditedAt) || !_GithubApprovalResponse.actor(node.editor))
+      throw new Error("Invalid approval editor response");
+    return {
+      id: node.id,
+      body: node.body,
+      lastEditedAt: node.lastEditedAt,
+      editor: node.editor
+    };
+  }
+  static history(value, comment) {
+    const node = _GithubApprovalResponse.snapshot(value, comment);
+    const history = node.userContentEdits;
+    if (!ApprovalSchema.object(history) || !Array.isArray(history.nodes) || !history.nodes.every(_GithubApprovalResponse.historyEdit) || !ApprovalSchema.object(history.pageInfo) || typeof history.pageInfo.hasNextPage !== "boolean" || !_GithubApprovalResponse.nullableText(history.pageInfo.endCursor))
+      throw new Error("Approval history is unavailable");
+    return {
+      nodes: history.nodes,
+      pageInfo: {
+        hasNextPage: history.pageInfo.hasNextPage,
+        endCursor: history.pageInfo.endCursor
+      }
+    };
+  }
+  static snapshot(value, comment) {
+    if (!ApprovalSchema.object(value) || !ApprovalSchema.object(value.node) || typeof value.node.id !== "string" || typeof value.node.body !== "string" || value.node.id !== comment.node_id || value.node.body !== comment.body)
+      throw new Error("Approval comment changed during verification");
+    return { ...value.node, id: value.node.id, body: value.node.body };
+  }
+  static comment(value) {
+    return ApprovalSchema.object(value) && ApprovalSchema.count(value.id) && value.id > 0 && (value.node_id === void 0 || typeof value.node_id === "string") && (value.body === void 0 || _GithubApprovalResponse.nullableText(value.body)) && (value.user === void 0 || value.user === null || ApprovalSchema.object(value.user) && typeof value.user.login === "string");
+  }
+  static historyEdit(value) {
+    return ApprovalSchema.object(value) && _GithubApprovalResponse.nullableText(value.diff) && _GithubApprovalResponse.nullableText(value.deletedAt) && _GithubApprovalResponse.actor(value.editor);
+  }
+  static actor(value) {
+    return value === null || ApprovalSchema.object(value) && typeof value.login === "string" && typeof value.__typename === "string";
+  }
+  static nullableText(value) {
+    return value === null || typeof value === "string";
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/github-approval-client.ts
+var GithubApprovalClient = class {
+  constructor(api, owner, repo, issue2) {
+    this.api = api;
+    this.owner = owner;
+    this.repo = repo;
+    this.issue = issue2;
+  }
+  api;
+  owner;
+  repo;
+  issue;
+  async list() {
+    const comments = [];
+    let page = 1;
+    while (true) {
+      const raw = await this.api.rest.issues.listComments({
+        owner: this.owner,
+        repo: this.repo,
+        issue_number: this.issue,
+        page,
+        per_page: 100
+      });
+      const response = GithubApprovalResponse.comments(raw);
+      comments.push(...response.data);
+      const next = response.headers.link ? /<[^>]+>;\s*rel="next"/.test(response.headers.link) : response.data.length === 100;
+      if (!next) return comments;
+      page += 1;
+    }
+  }
+  async create(body) {
+    if (body.length > 6e4) throw new Error("Approval comment limit exceeded");
+    const response = await this.api.rest.issues.createComment({
+      owner: this.owner,
+      repo: this.repo,
+      issue_number: this.issue,
+      body
+    });
+    return GithubApprovalResponse.identity(response);
+  }
+  async update(commentId, body) {
+    if (body.length > 6e4) throw new Error("Approval comment limit exceeded");
+    await this.api.rest.issues.updateComment({
+      owner: this.owner,
+      repo: this.repo,
+      comment_id: commentId,
+      body
+    });
+  }
+  async canApprove(username) {
+    const response = await this.api.rest.repos.getCollaboratorPermissionLevel({
+      owner: this.owner,
+      repo: this.repo,
+      username
+    });
+    const permission = GithubApprovalResponse.permission(response);
+    return ["write", "maintain", "admin"].includes(permission);
+  }
+  async replace(commentId, before, after) {
+    if (before === after) return;
+    const current = (await this.list()).find(
+      (comment) => comment.id === commentId
+    );
+    if (current?.body !== before)
+      throw new Error("Approval comment changed before persistence");
+    await this.update(commentId, after);
+  }
+  async edit(comment) {
+    if (!comment.node_id)
+      throw new Error("Missing approval comment node identity");
+    const result = await this.api.graphql(
+      `query ApprovalCommentEditor($id: ID!) {
+				node(id: $id) {
+					... on IssueComment {
+						id body lastEditedAt editor { login __typename }
+					}
+				}
+			}`,
+      { id: comment.node_id }
+    );
+    return GithubApprovalResponse.edit(result, comment);
+  }
+  url(commentId) {
+    return `https://github.com/${this.owner}/${this.repo}/issues/${this.issue}#issuecomment-${commentId}`;
+  }
+  async history(comment) {
+    if (!comment.node_id)
+      throw new Error("Missing approval comment node identity");
+    const edits = [];
+    let after;
+    do {
+      const response = await this.api.graphql(
+        `query ApprovalCommentHistory($id: ID!, $after: String) {
+				node(id: $id) { ... on IssueComment {
+					id body userContentEdits(first: 100, after: $after) {
+						nodes { diff deletedAt editor { login __typename } }
+						pageInfo { hasNextPage endCursor }
+					}
+				} }
+			}`,
+        { id: comment.node_id, ...after ? { after } : {} }
+      );
+      const history = GithubApprovalResponse.history(response, comment);
+      edits.push(...history.nodes);
+      if (!history.pageInfo.hasNextPage) return edits;
+      const next = history.pageInfo.endCursor;
+      if (!next || next === after)
+        throw new Error("Invalid approval history cursor");
+      after = next;
+    } while (after);
+    return edits;
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/github-approval-repository.ts
+var GithubApprovalRepository = class {
+  constructor(client, trusted, authorLogin, presenter) {
+    this.client = client;
+    this.trusted = trusted;
+    this.authorLogin = authorLogin;
+    this.presenter = presenter;
+  }
+  client;
+  trusted;
+  authorLogin;
+  presenter;
+  async states() {
+    const states = [];
+    for (const comment of await this.client.list()) {
+      if (comment.user?.login.toLowerCase() !== this.authorLogin.toLowerCase())
+        continue;
+      const record = await this.trusted.read(comment);
+      if (!record) continue;
+      if (states.some((state) => state.record.kind === record.kind))
+        throw new Error("Ambiguous approval state");
+      states.push({ record, comment });
+    }
+    return states;
+  }
+  async save(record, existing) {
+    StoredApprovalSchema.validate(record);
+    const body = this.presenter.issue(
+      record,
+      record.decision ?? { status: "pending" }
+    );
+    if (!existing) {
+      const id = await this.client.create(body);
+      return { record, comment: { id, body } };
+    }
+    await this.client.replace(
+      existing.comment.id,
+      existing.comment.body ?? "",
+      body
+    );
+    existing.comment = { ...existing.comment, body };
+    return { record, comment: existing.comment };
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/approval-details-preview.ts
+var ApprovalDetailsPreview = class _ApprovalDetailsPreview {
+  static create(details) {
+    const emails = details.emails.slice(0, 20).map((email) => ({
+      ...email,
+      recipientName: _ApprovalDetailsPreview.text(email.recipientName),
+      links: email.links.slice(0, 8).map((link) => ({
+        ...link,
+        ...link.title === void 0 ? {} : { title: _ApprovalDetailsPreview.text(link.title) }
+      })),
+      omittedLinks: email.omittedLinks + Math.max(email.links.length - 8, 0)
+    }));
+    while (JSON.stringify(emails).length > 4e3) {
+      const largest = [...emails].sort(
+        (a, b2) => JSON.stringify(b2).length - JSON.stringify(a).length
+      )[0];
+      if (largest?.links.length) {
+        largest.links.pop();
+        largest.omittedLinks++;
+      } else {
+        emails.pop();
       }
     }
-    return { status: "pending" };
+    return {
+      emails,
+      omittedEmails: details.omittedEmails + details.emails.length - emails.length
+    };
+  }
+  static text(value) {
+    const normalized = value.trim().replace(/\s+/g, " ");
+    return normalized.length <= 200 ? normalized : `${normalized.slice(0, 197)}...`;
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/github-organizer-approval.ts
+var GithubOrganizerApproval = class _GithubOrganizerApproval {
+  constructor(repository, records, finalizer, notifications, permissions) {
+    this.repository = repository;
+    this.records = records;
+    this.finalizer = finalizer;
+    this.notifications = notifications;
+    this.permissions = permissions;
+  }
+  repository;
+  records;
+  finalizer;
+  notifications;
+  permissions;
+  async request(input) {
+    input = _GithubOrganizerApproval.reviewedRequest(input);
+    ApprovalRequestSchema.validate(input);
+    ApprovalRequestPolicy.validate(input);
+    const existing = (await this.repository.states()).find(
+      ({ record: record2 }) => record2.kind === input.kind
+    );
+    if (existing && ApprovalRequestPolicy.matches(
+      existing.record,
+      input,
+      existing.record.decision?.status ?? "pending"
+    )) {
+      const result = await this.finalizer.execute(existing);
+      if (result.status === "approved" && !await this.permissions.canApprove(
+        existing.record.decision?.actor ?? ""
+      ))
+        throw new Error(
+          "The recorded organizer no longer has approval permission"
+        );
+      if (result.status !== "pending") return result;
+      return {
+        status: "pending",
+        notificationFailed: await this.notifications.send(
+          existing.record,
+          existing.comment.id
+        )
+      };
+    }
+    const record = this.records.create(input);
+    if (input.kind === "email-thanks")
+      record.followUp = existing?.record.followUp ?? {
+        active: true,
+        pendingTasks: FOLLOW_UP_TASKS
+      };
+    const state = await this.repository.save(record, existing);
+    return {
+      status: "pending",
+      notificationFailed: await this.notifications.send(
+        record,
+        state.comment.id
+      )
+    };
+  }
+  async synchronize() {
+    let notificationFailed = false;
+    for (const state of await this.repository.states()) {
+      const result = await this.finalizer.execute(state);
+      notificationFailed = result.notificationFailed || notificationFailed;
+    }
+    return { notificationFailed };
+  }
+  static reviewedRequest(input) {
+    if (input.kind === "meetup-publication" || !input.details) return input;
+    return { ...input, details: ApprovalDetailsPreview.create(input.details) };
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/github-organizer-follow-up.ts
+var GithubOrganizerFollowUp = class {
+  constructor(repository, records, finalizer) {
+    this.repository = repository;
+    this.records = records;
+    this.finalizer = finalizer;
+  }
+  repository;
+  records;
+  finalizer;
+  async synchronizeFollowUp(input) {
+    const existing = (await this.repository.states()).find(
+      ({ record: record2 }) => record2.kind === "email-thanks"
+    );
+    if (!existing && !input.active) return void 0;
+    if (existing) await this.finalizer.execute(existing);
+    const attention = existing?.record.followUp?.attention;
+    const attentionDetails = existing?.record.followUp?.attentionDetails;
+    const record = existing && (!input.active || existing.record.eventDate === input.eventDate) ? existing.record : this.records.placeholder(input);
+    record.followUp = {
+      active: input.active,
+      pendingTasks: input.pendingTasks,
+      attention,
+      attentionDetails
+    };
+    const state = await this.repository.save(record, existing);
+    return state.comment.id;
+  }
+  async followUpAttention() {
+    const state = (await this.repository.states()).find(
+      ({ record }) => record.followUp
+    );
+    return state ? { commentId: state.comment.id, body: state.record.followUp?.attention } : void 0;
+  }
+  async saveFollowUpAttention(body, details) {
+    const state = (await this.repository.states()).find(
+      ({ record }) => record.followUp
+    );
+    if (!state?.record.followUp)
+      throw new Error("Missing post-event follow-up comment");
+    await this.finalizer.execute(state);
+    state.record.followUp = {
+      ...state.record.followUp,
+      attention: body,
+      attentionDetails: details
+    };
+    await this.repository.save(state.record, state);
   }
 };
 
@@ -41667,192 +42152,10 @@ var TrustedApprovalState = class {
   }
   record(body) {
     if (!body?.startsWith(APPROVAL_MARKER)) return void 0;
-    return ApprovalRecord.read(body);
+    return ApprovalCommentCodec.read(body);
   }
   isAuthor(editor) {
     return editor?.__typename === "Bot" && editor.login.toLowerCase().replace(/\[bot\]$/, "") === this.authorLogin.toLowerCase().replace(/\[bot\]$/, "");
-  }
-};
-
-// packages/adapter/github-organizer-approval/src/github-organizer-approval.ts
-var GithubOrganizerApproval = class {
-  constructor(client, authorLogin, presenter, notifications, organizerChannelId) {
-    this.client = client;
-    this.authorLogin = authorLogin;
-    this.presenter = presenter;
-    this.notifications = new ApprovalNotifications(
-      client,
-      presenter,
-      notifications,
-      organizerChannelId
-    );
-  }
-  client;
-  authorLogin;
-  presenter;
-  notifications;
-  decisions = new ApprovalDecisionParser(
-    ApprovalPresenter.supportedLocales()
-  );
-  async request(input) {
-    ApprovalRecord.validate(input);
-    const existing = (await this.states()).find(
-      ({ record: record2 }) => record2.kind === input.kind
-    );
-    if (existing && ApprovalRecord.matches(existing.record, input)) {
-      const result = await this.finalize(existing);
-      if (result.status === "approved" && !await this.client.canApprove(existing.record.decision?.actor ?? ""))
-        throw new Error(
-          "The recorded organizer no longer has approval permission"
-        );
-      if (result.status !== "pending") return result;
-      return {
-        status: "pending",
-        notificationFailed: await this.notifications.send(
-          existing.record,
-          existing.comment.id
-        )
-      };
-    }
-    const record = ApprovalRecord.create(input);
-    if (input.kind === "email-thanks")
-      record.followUp = existing?.record.followUp ?? {
-        active: true,
-        pendingTasks: FOLLOW_UP_TASKS
-      };
-    const body = this.presenter.issue(record, { status: "pending" });
-    const commentId = existing ? existing.comment.id : await this.client.create(body);
-    if (existing)
-      await this.client.replace(commentId, existing.comment.body ?? "", body);
-    return {
-      status: "pending",
-      notificationFailed: await this.notifications.send(record, commentId)
-    };
-  }
-  async readAttention() {
-    const result = [];
-    for (const state of await this.states()) {
-      if (state.record.recipientCount === 0) continue;
-      const decision = await this.finalize(state);
-      result.push({
-        revision: state.record.revision,
-        requestedAt: state.record.requestedAt,
-        commentId: state.comment.id,
-        eventDate: state.record.eventDate,
-        kind: state.record.kind,
-        status: decision.status
-      });
-    }
-    return result;
-  }
-  async synchronize() {
-    let notificationFailed = false;
-    for (const state of await this.states()) {
-      const result = await this.finalize(state);
-      notificationFailed = result.notificationFailed || notificationFailed;
-    }
-    return { notificationFailed };
-  }
-  async synchronizeFollowUp(input) {
-    const existing = (await this.states()).find(
-      ({ record: record2 }) => record2.kind === "email-thanks"
-    );
-    if (!existing && !input.active) return void 0;
-    if (existing) await this.finalize(existing);
-    const attention = existing?.record.followUp?.attention;
-    const attentionDetails = existing?.record.followUp?.attentionDetails;
-    const record = existing && (!input.active || existing.record.eventDate === input.eventDate) ? existing.record : ApprovalRecord.create({
-      kind: "email-thanks",
-      revision: "0".repeat(64),
-      eventDate: input.eventDate,
-      recipientCount: 0,
-      requestedAt: input.requestedAt,
-      followUp: {
-        active: input.active,
-        pendingTasks: input.pendingTasks
-      }
-    });
-    record.followUp = {
-      active: input.active,
-      pendingTasks: input.pendingTasks,
-      attention,
-      attentionDetails
-    };
-    ApprovalRecord.validate(record);
-    const body = this.presenter.issue(
-      record,
-      record.decision ?? { status: "pending" }
-    );
-    if (!existing) return this.client.create(body);
-    await this.client.replace(
-      existing.comment.id,
-      existing.comment.body ?? "",
-      body
-    );
-    return existing.comment.id;
-  }
-  async followUpAttention() {
-    const state = (await this.states()).find(({ record }) => record.followUp);
-    return state ? { commentId: state.comment.id, body: state.record.followUp?.attention } : void 0;
-  }
-  async saveFollowUpAttention(body, details) {
-    const state = (await this.states()).find(({ record }) => record.followUp);
-    if (!state?.record.followUp)
-      throw new Error("Missing post-event follow-up comment");
-    await this.finalize(state);
-    state.record.followUp = {
-      ...state.record.followUp,
-      attention: body,
-      attentionDetails: details
-    };
-    ApprovalRecord.validate(state.record);
-    const updated = this.presenter.issue(
-      state.record,
-      state.record.decision ?? { status: "pending" }
-    );
-    await this.client.replace(
-      state.comment.id,
-      state.comment.body ?? "",
-      updated
-    );
-  }
-  async states() {
-    const states = [];
-    const trusted = new TrustedApprovalState(this.client, this.authorLogin);
-    for (const comment of await this.client.list()) {
-      if (comment.user?.login.toLowerCase() !== this.authorLogin.toLowerCase())
-        continue;
-      const record = await trusted.read(comment);
-      if (!record) continue;
-      if (states.some((state) => state.record.kind === record.kind))
-        throw new Error("Ambiguous approval state");
-      states.push({ record, comment });
-    }
-    return states;
-  }
-  async finalize(state) {
-    const { record, comment } = state;
-    const decision = await new ResolveApprovalDecision(
-      this.client,
-      this.decisions
-    ).execute(record, comment);
-    if (decision.status !== "pending" && !record.decision) {
-      if (!decision.actor || !decision.decidedAt)
-        throw new Error("Missing verified approval identity");
-      record.decision = {
-        status: decision.status,
-        actor: decision.actor,
-        decidedAt: decision.decidedAt
-      };
-    }
-    const body = this.presenter.issue(record, decision);
-    if (body !== comment.body)
-      await this.client.replace(comment.id, comment.body ?? "", body);
-    state.comment = { ...comment, body };
-    return {
-      status: decision.status,
-      notificationFailed: await this.notifications.react(record, comment.id)
-    };
   }
 };
 
@@ -42411,18 +42714,16 @@ var SlackApiClient = class _SlackApiClient {
   }
 };
 
-// packages/adapter/slack-notification-gateway/src/slack-notification-gateway.ts
-var SlackNotificationGateway = class {
-  client;
-  constructor(token, fetcher = fetch) {
-    this.client = new SlackApiClient(token, fetcher);
+// packages/adapter/slack-notification-gateway/src/slack-message-reference.ts
+var SlackMessageReference = class _SlackMessageReference {
+  static valid(message) {
+    return /^[CGD][A-Z0-9]+$/.test(message.destination) && /^\d+\.\d+$/.test(message.messageId);
   }
-  async dispatch(message) {
-    const response = await this.client.post("chat.postMessage", {
-      channel: message.recipient.destination,
-      text: message.content
-    });
-    return response.result;
+  static read(payload, destination) {
+    if (payload?.channel !== destination || typeof payload.ts !== "string")
+      return void 0;
+    const message = { destination, messageId: payload.ts };
+    return _SlackMessageReference.valid(message) ? message : void 0;
   }
 };
 
@@ -42440,14 +42741,11 @@ var SlackApprovalNotification = class {
       text: this.presenter.render(input)
     });
     if (result.outcome !== "accepted") return result;
-    if (typeof payload?.channel !== "string" || !/^[CGD][A-Z0-9]+$/.test(payload.channel) || typeof payload.ts !== "string" || !/^\d+\.\d+$/.test(payload.ts))
-      return { outcome: "uncertain", diagnosticCode: "ambiguous-response" };
-    return {
-      outcome: "accepted",
-      message: { destination: payload.channel, messageId: payload.ts }
-    };
+    const message = SlackMessageReference.read(payload, input.destination);
+    return message ? { outcome: "accepted", message } : { outcome: "uncertain", diagnosticCode: "ambiguous-response" };
   }
   async react(message, decision) {
+    if (!SlackMessageReference.valid(message)) return false;
     const { result, payload } = await this.client.post("reactions.add", {
       channel: message.destination,
       timestamp: message.messageId,
@@ -44640,15 +44938,7 @@ var STAGE_GUIDANCE = [
     ["Communication", "comment.guidance.communication.configuration"]
   ],
   [
-    "communication.invalid-readiness-window",
-    ["Communication", "comment.guidance.communication.configuration"]
-  ],
-  [
     "communication.invalid-time-zone",
-    ["Communication", "comment.guidance.communication.configuration"]
-  ],
-  [
-    "communication.github-credential-missing",
     ["Communication", "comment.guidance.communication.configuration"]
   ],
   [
@@ -44662,10 +44952,6 @@ var STAGE_GUIDANCE = [
   [
     "communication.missing-mail-destination",
     ["Communication", "comment.guidance.communication.destination"]
-  ],
-  [
-    "communication.missing-notification-content",
-    ["Communication", "comment.guidance.communication.content"]
   ],
   [
     "communication.checklist-update-failed",
@@ -45248,7 +45534,7 @@ var STAGE_MESSAGES_FR = {
 };
 
 // packages/adapter/github-event-comment-repository/src/i18n/catalog.ts
-var CATALOGS5 = {
+var CATALOGS6 = {
   en: { ...EN_MESSAGES5, ...STAGE_MESSAGES_EN },
   fr: { ...FR_MESSAGES5, ...STAGE_MESSAGES_FR }
 };
@@ -45256,43 +45542,12 @@ var CATALOGS5 = {
 // packages/adapter/github-event-comment-repository/src/i18n/event-comment-messages.ts
 var EventCommentMessages = class extends MessageLocalizer {
   constructor(locale = "en") {
-    super(CATALOGS5, locale);
+    super(CATALOGS6, locale);
   }
 };
 
 // packages/adapter/github-event-comment-repository/src/diagnostic-presentation.ts
 var DiagnosticPresenter = class _DiagnosticPresenter {
-  static suppressed(item, diagnostics) {
-    if (item.severity === "info") return true;
-    const causes = _DiagnosticPresenter.PREREQUISITES.get(item.code);
-    return causes?.some(
-      (prefix) => diagnostics.some(
-        (cause) => cause !== item && cause.severity !== "info" && cause.code.startsWith(prefix)
-      )
-    ) ?? false;
-  }
-  static PREREQUISITES = /* @__PURE__ */ new Map([
-    ["event.agenda.missing", ["event.proposals."]],
-    ["publication.assets.prerequisites", ["event.", "referential.reference."]],
-    [
-      "publication.feedback.prerequisites",
-      ["event.", "referential.reference."]
-    ],
-    [
-      "publication.feedback.agenda",
-      ["event.agenda.", "event.proposals.", "referential.reference.speaker."]
-    ],
-    ["communication.event-references-unresolved", ["referential.reference."]],
-    [
-      "communication.referential-catalog-invalid",
-      ["referential.host.", "referential.speaker.", "referential.contact."]
-    ],
-    ["communication.slides-unavailable", ["publication.assets."]],
-    [
-      "communication.feedback-unavailable",
-      ["publication.feedback.", "event.proposals.", "event.agenda."]
-    ]
-  ]);
   static FIELD_ALIASES = new Map([
     ...FIELD_ORDER.map((field) => [field, field]),
     ["eventTitle", "Event Title"],
@@ -45318,7 +45573,7 @@ var DiagnosticPresenter = class _DiagnosticPresenter {
     ["occurrenceStatus", "Event Status"],
     ["event_status", "Event Status"]
   ]);
-  static presentDiagnostic(item, messages3 = new EventCommentMessages()) {
+  static presentDiagnostic(item, messages5 = new EventCommentMessages()) {
     const guidance = GUIDANCE.get(item.code);
     const referential = /^referential\.(host|contact|speaker)\./.test(
       item.code
@@ -45327,14 +45582,14 @@ var DiagnosticPresenter = class _DiagnosticPresenter {
     const [field, section] = _DiagnosticPresenter.publicField(
       item.field,
       fallback,
-      messages3
+      messages5
     );
-    const message = guidance ? messages3.t(guidance[1]) : messages3.t(referential ? "comment.referential" : "comment.unknown");
+    const message = guidance ? messages5.t(guidance[1]) : messages5.t(referential ? "comment.referential" : "comment.unknown");
     const order = FIELD_ORDER.indexOf(section);
     return { field, message, order: order < 0 ? FIELD_ORDER.length : order };
   }
   /** Only known issue headings and numeric agenda positions can reach Markdown. */
-  static publicField(field, fallback, messages3 = new EventCommentMessages()) {
+  static publicField(field, fallback, messages5 = new EventCommentMessages()) {
     const known = _DiagnosticPresenter.FIELD_ALIASES.get(field ?? "");
     if (known) return [known, known];
     const agenda = field?.match(
@@ -45342,23 +45597,59 @@ var DiagnosticPresenter = class _DiagnosticPresenter {
     );
     if (agenda) {
       const entry = Number(agenda[1]) + 1;
-      const speaker2 = agenda[3] === void 0 ? "" : messages3.t("comment.agenda.speaker-suffix", {
+      const speaker2 = agenda[3] === void 0 ? "" : messages5.t("comment.agenda.speaker-suffix", {
         speaker: Number(agenda[3]) + 1
       });
       return [
-        messages3.t("comment.agenda.item", { item: entry, speaker: speaker2 }),
+        messages5.t("comment.agenda.item", { item: entry, speaker: speaker2 }),
         "Agenda"
       ];
     }
     const speaker = field?.match(/^speakerReferences\[(\d{1,6})\]$/);
     if (speaker)
       return [
-        messages3.t("comment.agenda.speaker", {
+        messages5.t("comment.agenda.speaker", {
           speaker: Number(speaker[1]) + 1
         }),
         "Agenda"
       ];
     return [fallback, fallback];
+  }
+};
+
+// packages/adapter/github-event-comment-repository/src/github-event-comment-repository-contracts.ts
+var EVENT_DIAGNOSTIC_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics:v1 -->";
+var DUPLICATE_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics-duplicate:v1 -->";
+var COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER = "<!-- meetup-automation:communication-diagnostics:v1 -->";
+
+// packages/adapter/github-event-comment-repository/src/diagnostic-comment-presenter.ts
+var DiagnosticCommentPresenter = class {
+  static render(diagnostics, messages5 = new EventCommentMessages()) {
+    const actionable = /* @__PURE__ */ new Map();
+    for (const item of diagnostics) {
+      if (OrganizerDiagnosticPolicy.suppressed(item, diagnostics)) {
+        continue;
+      }
+      const presentation = DiagnosticPresenter.presentDiagnostic(
+        item,
+        messages5
+      );
+      actionable.set(
+        `${presentation.field}:${presentation.message}`,
+        presentation
+      );
+    }
+    if (actionable.size === 0) {
+      return `${EVENT_DIAGNOSTIC_COMMENT_MARKER}
+
+${messages5.t("comment.resolved")}`;
+    }
+    const lines = [...actionable.values()].sort(
+      (left, right) => left.order - right.order || left.field.localeCompare(right.field, messages5.locale, {
+        numeric: true
+      }) || left.message.localeCompare(right.message, messages5.locale)
+    ).map(({ field, message }) => `- [ ] **${field}**: ${message}`);
+    return [EVENT_DIAGNOSTIC_COMMENT_MARKER, "", ...lines].join("\n");
   }
 };
 
@@ -45369,11 +45660,6 @@ var GitHubEventCommentRepositoryConfigurationError = class extends Error {
     this.name = "GitHubEventCommentRepositoryConfigurationError";
   }
 };
-
-// packages/adapter/github-event-comment-repository/src/github-event-comment-repository-contracts.ts
-var EVENT_DIAGNOSTIC_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics:v1 -->";
-var DUPLICATE_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics-duplicate:v1 -->";
-var COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER = "<!-- meetup-automation:communication-diagnostics:v1 -->";
 
 // packages/adapter/github-event-comment-repository/src/github-event-comment-repository-response-error.ts
 var GitHubEventCommentRepositoryResponseError = class extends Error {
@@ -45408,7 +45694,11 @@ var GitHubEventCommentRepository = class _GitHubEventCommentRepository {
       "repo"
     );
     this.repositoryName = `${this.owner}/${this.repo}`;
-    this.authorLogin = options.authorLogin?.trim() || void 0;
+    this.authorLogin = options.authorLogin.trim();
+    if (!this.authorLogin)
+      throw new GitHubEventCommentRepositoryConfigurationError(
+        "Managed comment author is required"
+      );
   }
   client;
   options;
@@ -45429,10 +45719,7 @@ var GitHubEventCommentRepository = class _GitHubEventCommentRepository {
       (comment) => !retired.includes(comment)
     );
     let changed = await this.retireComments(identity.issueNumber, duplicates);
-    let body = _GitHubEventCommentRepository.renderDiagnosticComment(
-      diagnostics,
-      this.messages
-    );
+    let body = DiagnosticCommentPresenter.render(diagnostics, this.messages);
     if (canonical && this.options.retainedContent) {
       const retained = await this.options.retainedContent.load(
         identity.issueNumber,
@@ -45503,7 +45790,7 @@ ${retained}`;
     if (!comment.body.startsWith(EVENT_DIAGNOSTIC_COMMENT_MARKER) && !(this.options.retireCommunicationReports && this.authorLogin && comment.body.startsWith(COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER))) {
       return false;
     }
-    return this.authorLogin === void 0 || comment.authorLogin?.toLowerCase() === this.authorLogin.toLowerCase();
+    return comment.authorType === "Bot" && comment.authorLogin?.toLowerCase() === this.authorLogin.toLowerCase();
   }
   async retireComments(issueNumber, duplicates, deleteReports = false) {
     for (const duplicate of duplicates) {
@@ -45552,33 +45839,6 @@ ${this.messages.t("comment.duplicate")}`
       );
     }
   }
-  static renderDiagnosticComment(diagnostics, messages3 = new EventCommentMessages()) {
-    const actionable = /* @__PURE__ */ new Map();
-    for (const item of diagnostics) {
-      if (DiagnosticPresenter.suppressed(item, diagnostics)) {
-        continue;
-      }
-      const presentation = DiagnosticPresenter.presentDiagnostic(
-        item,
-        messages3
-      );
-      actionable.set(
-        `${presentation.field}:${presentation.message}`,
-        presentation
-      );
-    }
-    if (actionable.size === 0) {
-      return `${EVENT_DIAGNOSTIC_COMMENT_MARKER}
-
-${messages3.t("comment.resolved")}`;
-    }
-    const lines = [...actionable.values()].sort(
-      (left, right) => left.order - right.order || left.field.localeCompare(right.field, messages3.locale, {
-        numeric: true
-      }) || left.message.localeCompare(right.message, messages3.locale)
-    ).map(({ field, message }) => `- [ ] **${field}**: ${message}`);
-    return [EVENT_DIAGNOSTIC_COMMENT_MARKER, "", ...lines].join("\n");
-  }
   static mapComment(data) {
     if (!_GitHubEventCommentRepository.isRecord(data)) {
       throw new GitHubEventCommentRepositoryResponseError(
@@ -45602,7 +45862,8 @@ ${messages3.t("comment.resolved")}`;
     return {
       id: Number(data.id),
       body: data.body,
-      authorLogin: typeof user?.login === "string" ? user.login : void 0
+      authorLogin: typeof user?.login === "string" ? user.login : void 0,
+      authorType: typeof user?.type === "string" ? user.type : void 0
     };
   }
   static requireRepositoryPart(value, name) {
@@ -45619,7 +45880,7 @@ ${messages3.t("comment.resolved")}`;
     return typeof value === "string" ? value : void 0;
   }
   static isRecord(value) {
-    return typeof value === "object" && value !== null;
+    return typeof value === "object" && value !== null && !Array.isArray(value);
   }
 };
 
@@ -45871,122 +46132,207 @@ var GitHubEventRepository = class _GitHubEventRepository {
   }
 };
 
+// packages/adapter/github-organizer-attention/src/attention-record-fields.ts
+var AttentionRecordFields = class _AttentionRecordFields {
+  static record(value) {
+    if (typeof value !== "object" || value === null || Array.isArray(value))
+      throw new Error("Invalid attention record object");
+    return value;
+  }
+  static text(value, pattern) {
+    if (typeof value !== "string" || !pattern.test(value))
+      throw new Error("Invalid attention record text");
+    return value;
+  }
+  static integer(value, positive = false) {
+    if (typeof value !== "number" || !Number.isSafeInteger(value) || positive && value <= 0)
+      throw new Error("Invalid attention record integer");
+    return value;
+  }
+  static choice(value, values) {
+    const found = values.find((candidate) => candidate === value);
+    if (found === void 0)
+      throw new Error("Invalid attention record variant");
+    return found;
+  }
+  static instant(value) {
+    const text = _AttentionRecordFields.text(value, /^\d{4}-\d{2}-\d{2}T/);
+    if (!Number.isFinite(Date.parse(text)))
+      throw new Error("Invalid attention record timestamp");
+    return text;
+  }
+};
+
 // packages/adapter/github-organizer-attention/src/attention-record.ts
 var ATTENTION_MARKER = "<!-- meetup-organizer-attention:v1 ";
 var AttentionRecord = class _AttentionRecord {
   static read(body) {
     const lines = body.split("\n").filter((line2) => line2.startsWith(ATTENTION_MARKER));
-    if (lines.length !== 1) throw new Error("Invalid attention record");
     const line = lines[0];
-    if (!line?.startsWith(ATTENTION_MARKER) || !line.endsWith(" -->"))
+    if (lines.length !== 1 || !line?.endsWith(" -->"))
       throw new Error("Invalid attention record");
-    const state = JSON.parse(
-      line.slice(ATTENTION_MARKER.length, -4)
-    );
-    if (state.version !== 1 || typeof state.eventDate !== "string" || !/^(?:\d{4}-\d{2}-\d{2})?$/.test(state.eventDate) || typeof state.stopped !== "boolean" || !Array.isArray(state.episodes) || state.episodes.length > 300)
-      throw new Error("Invalid attention state");
-    const episodes = state.episodes.map(_AttentionRecord.episode);
-    if (new Set(episodes.map((item) => item.condition.key)).size !== episodes.length)
-      throw new Error("Duplicate attention condition");
-    if (state.runId !== void 0 && !/^\d+$/.test(state.runId))
-      throw new Error("Invalid attention run");
-    if (state.commentId !== void 0 && (!Number.isSafeInteger(state.commentId) || state.commentId <= 0))
-      throw new Error("Invalid attention comment");
-    return {
-      version: 1,
-      eventDate: state.eventDate,
-      stopped: state.stopped,
-      episodes,
-      post: _AttentionRecord.post(state.post),
-      runId: state.runId,
-      commentId: state.commentId
-    };
+    const input = JSON.parse(line.slice(ATTENTION_MARKER.length, -4));
+    return _AttentionRecord.decode(input);
   }
   static marker(state) {
-    const body = `${ATTENTION_MARKER}${JSON.stringify(state)} -->`;
-    const safe = _AttentionRecord.read(body);
-    return `${ATTENTION_MARKER}${JSON.stringify(safe)} -->`;
+    const safe = _AttentionRecord.decode({ ...state, version: 1 });
+    return `${ATTENTION_MARKER}${JSON.stringify({ version: 1, ...safe })} -->`;
   }
-  static episode(episode) {
-    if (!Number.isSafeInteger(episode.episode) || episode.episode < 1 || !_AttentionRecord.instant(episode.openedAt) || !["active", "unknown", "resolved", "stopped"].includes(episode.status))
-      throw new Error("Invalid attention episode");
-    if (episode.lastWindow !== void 0 && !/^(?:day|week|preparation|occurrence|follow-up):-?\d+$/.test(
-      episode.lastWindow
-    ))
-      throw new Error("Invalid attention window");
+  static decode(input) {
+    const data = AttentionRecordFields.record(input);
+    if (!Array.isArray(data.episodes) || data.episodes.length > 300)
+      throw new Error("Invalid attention episodes");
+    AttentionRecordFields.choice(data.version, [1]);
+    const state = {
+      eventDate: AttentionRecordFields.text(data.eventDate, /^(?:\d{4}-\d{2}-\d{2})?$/),
+      stopped: AttentionRecordFields.choice(data.stopped, [true, false]),
+      episodes: data.episodes.map(_AttentionRecord.episode),
+      post: data.post === void 0 ? void 0 : _AttentionRecord.post(data.post),
+      runId: data.runId === void 0 ? void 0 : AttentionRecordFields.text(data.runId, /^\d+$/),
+      commentId: data.commentId === void 0 ? void 0 : AttentionRecordFields.integer(data.commentId, true)
+    };
+    AttentionStateRules.validate(state);
+    return state;
+  }
+  static episode(input) {
+    const data = AttentionRecordFields.record(input);
     return {
-      condition: _AttentionRecord.condition(episode.condition),
-      episode: episode.episode,
-      openedAt: episode.openedAt,
-      status: episode.status,
-      lastWindow: episode.lastWindow
+      condition: _AttentionRecord.condition(data.condition),
+      episode: AttentionRecordFields.integer(data.episode, true),
+      openedAt: AttentionRecordFields.instant(data.openedAt),
+      status: AttentionRecordFields.choice(data.status, [
+        "active",
+        "unknown",
+        "resolved",
+        "stopped"
+      ]),
+      lastWindow: data.lastWindow === void 0 ? void 0 : AttentionRecordFields.text(
+        data.lastWindow,
+        /^(?:day|week|preparation|occurrence|follow-up):-?\d+$/
+      )
     };
   }
-  static condition(condition) {
-    if (!ATTENTION_CODES.includes(condition.code) || ![
-      "event",
-      "assets",
-      "feedback",
-      "communications",
-      "approvals",
-      "delivery"
-    ].includes(condition.owner) || !["warning", "error"].includes(condition.severity) || ![
-      "preparation",
-      "daily",
-      "weekly",
-      "approval",
-      "occurrence",
-      "follow-up",
-      "none"
-    ].includes(condition.policy))
-      throw new Error("Invalid attention condition");
-    if (typeof condition.resource !== "string" || !/^[a-z0-9:-]{1,128}$/.test(condition.resource) || condition.key !== `${condition.code}:${condition.resource}`)
-      throw new Error("Invalid attention resource");
-    if (condition.since !== void 0 && !_AttentionRecord.instant(condition.since))
-      throw new Error("Invalid attention timestamp");
-    if (condition.commentId !== void 0 && (!Number.isSafeInteger(condition.commentId) || condition.commentId <= 0))
-      throw new Error("Invalid attention source");
-    if (condition.recovery !== void 0 && condition.recovery !== true)
-      throw new Error("Invalid recovery flag");
+  static condition(input) {
+    const data = AttentionRecordFields.record(input);
     return {
-      key: condition.key,
-      code: condition.code,
-      owner: condition.owner,
-      resource: condition.resource,
-      severity: condition.severity,
-      policy: condition.policy,
-      since: condition.since,
-      commentId: condition.commentId,
-      recovery: condition.recovery
+      key: AttentionRecordFields.text(data.key, /^[a-z0-9:-]{1,180}$/),
+      code: AttentionRecordFields.choice(data.code, ATTENTION_CODES),
+      owner: AttentionRecordFields.choice(data.owner, [
+        "event",
+        "assets",
+        "feedback",
+        "communications",
+        "approvals",
+        "delivery"
+      ]),
+      resource: AttentionRecordFields.text(data.resource, /^[a-z0-9:-]{1,128}$/),
+      severity: AttentionRecordFields.choice(data.severity, ["warning", "error"]),
+      policy: AttentionRecordFields.choice(data.policy, [
+        "preparation",
+        "daily",
+        "weekly",
+        "approval",
+        "occurrence",
+        "follow-up",
+        "none"
+      ]),
+      since: data.since === void 0 ? void 0 : AttentionRecordFields.instant(data.since),
+      commentId: data.commentId === void 0 ? void 0 : AttentionRecordFields.integer(data.commentId, true),
+      recovery: data.recovery === void 0 ? void 0 : AttentionRecordFields.choice(data.recovery, [true])
     };
   }
-  static post(post) {
-    if (!post) return void 0;
-    if (!/^attention:\d+:\d+$/.test(post.reservationId) || !Number.isSafeInteger(post.day) || !_AttentionRecord.instant(post.reservedAt) || !["pending", "accepted", "retry"].includes(post.status))
-      throw new Error("Invalid attention reservation");
-    if (post.retryAt !== void 0 && !_AttentionRecord.instant(post.retryAt))
-      throw new Error("Invalid attention retry");
-    if (post.fingerprint !== void 0 && !/^[a-f0-9]{64}$/.test(post.fingerprint))
-      throw new Error("Invalid attention fingerprint");
-    if (post.status === "accepted" && !post.message)
-      throw new Error("Missing accepted attention reference");
-    if (post.message && (!/^[CGD][A-Z0-9]+$/.test(post.message.destination) || !/^\d+\.\d+$/.test(post.message.messageId)))
-      throw new Error("Invalid attention message");
+  static post(input) {
+    const data = AttentionRecordFields.record(input);
     return {
-      reservationId: post.reservationId,
-      day: post.day,
-      reservedAt: post.reservedAt,
-      status: post.status,
-      retryAt: post.retryAt,
-      fingerprint: post.fingerprint,
-      message: post.message ? {
-        destination: post.message.destination,
-        messageId: post.message.messageId
-      } : void 0
+      reservationId: AttentionRecordFields.text(data.reservationId, /^attention:\d+:\d+$/),
+      day: AttentionRecordFields.integer(data.day),
+      reservedAt: AttentionRecordFields.instant(data.reservedAt),
+      status: AttentionRecordFields.choice(data.status, ["pending", "accepted", "retry"]),
+      retryAt: data.retryAt === void 0 ? void 0 : AttentionRecordFields.instant(data.retryAt),
+      fingerprint: data.fingerprint === void 0 ? void 0 : AttentionRecordFields.text(data.fingerprint, /^[a-f0-9]{64}$/),
+      message: data.message === void 0 ? void 0 : _AttentionRecord.message(data.message)
     };
   }
-  static instant(value) {
-    return typeof value === "string" && /^\d{4}-\d{2}-\d{2}T/.test(value) && Number.isFinite(Date.parse(value));
+  static message(input) {
+    const data = AttentionRecordFields.record(input);
+    return {
+      destination: AttentionRecordFields.text(data.destination, /^[a-zA-Z0-9._:-]{1,128}$/),
+      messageId: AttentionRecordFields.text(data.messageId, /^[a-zA-Z0-9._:-]{1,128}$/)
+    };
+  }
+};
+
+// packages/adapter/github-organizer-attention/src/github-attention-response.ts
+var GithubAttentionResponse = class _GithubAttentionResponse {
+  static record(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value))
+      throw new Error("Invalid attention API object");
+    return value;
+  }
+  static comment(value) {
+    const data = _GithubAttentionResponse.record(value);
+    if (typeof data.id !== "number" || !Number.isSafeInteger(data.id) || data.id <= 0)
+      throw new Error("Invalid attention comment identity");
+    if (data.body !== void 0 && data.body !== null && typeof data.body !== "string")
+      throw new Error("Invalid attention comment body");
+    if (data.node_id !== void 0 && typeof data.node_id !== "string")
+      throw new Error("Invalid attention comment node");
+    let user;
+    if (data.user !== null && data.user !== void 0) {
+      const actor = _GithubAttentionResponse.record(data.user);
+      if (typeof actor.login !== "string" || actor.type !== void 0 && typeof actor.type !== "string")
+        throw new Error("Invalid attention comment author");
+      user = { login: actor.login, type: actor.type };
+    }
+    return { id: data.id, body: data.body, node_id: data.node_id, user };
+  }
+  static current(value, comment) {
+    const node = _GithubAttentionResponse.node(value, comment);
+    return {
+      id: node.id,
+      body: node.body,
+      lastEditedAt: _GithubAttentionResponse.nullableText(node.lastEditedAt),
+      editor: _GithubAttentionResponse.editor(node.editor)
+    };
+  }
+  static history(value, comment) {
+    const node = _GithubAttentionResponse.node(value, comment);
+    const edits = _GithubAttentionResponse.record(node.userContentEdits);
+    const page = _GithubAttentionResponse.record(edits.pageInfo);
+    if (!Array.isArray(edits.nodes) || typeof page.hasNextPage !== "boolean")
+      throw new Error("Attention history is unavailable");
+    return {
+      nodes: edits.nodes.map(_GithubAttentionResponse.edit),
+      hasNextPage: page.hasNextPage,
+      endCursor: _GithubAttentionResponse.nullableText(page.endCursor)
+    };
+  }
+  static node(value, comment) {
+    const result = _GithubAttentionResponse.record(value);
+    const node = _GithubAttentionResponse.record(result.node);
+    if (typeof node.id !== "string" || typeof node.body !== "string" || node.id !== comment.node_id || node.body !== comment.body)
+      throw new Error("Attention comment changed during verification");
+    return { ...node, id: node.id, body: node.body };
+  }
+  static edit(value) {
+    const data = _GithubAttentionResponse.record(value);
+    return {
+      diff: _GithubAttentionResponse.nullableText(data.diff),
+      deletedAt: _GithubAttentionResponse.nullableText(data.deletedAt),
+      editor: _GithubAttentionResponse.editor(data.editor)
+    };
+  }
+  static nullableText(value) {
+    if (value !== null && typeof value !== "string")
+      throw new Error("Invalid attention API text");
+    return value;
+  }
+  static editor(value) {
+    if (value === null) return null;
+    const actor = _GithubAttentionResponse.record(value);
+    if (typeof actor.login !== "string" || typeof actor.__typename !== "string")
+      throw new Error("Invalid attention editor");
+    return { login: actor.login, __typename: actor.__typename };
   }
 };
 
@@ -46015,7 +46361,7 @@ var GithubAttentionClient = class _GithubAttentionClient {
       });
       if (!Array.isArray(response.data))
         throw new Error("Invalid attention comment response");
-      comments.push(...response.data);
+      comments.push(...response.data.map(GithubAttentionResponse.comment));
       const next = response.headers.link ? /<[^>]+>;\s*rel="next"/.test(response.headers.link) : response.data.length === 100;
       if (!next) return comments;
       page += 1;
@@ -46074,9 +46420,7 @@ var GithubAttentionClient = class _GithubAttentionClient {
 			}`,
       { id: comment.node_id }
     );
-    if (result.node?.id !== comment.node_id || result.node.body !== comment.body)
-      throw new Error("Attention comment changed during verification");
-    return result.node;
+    return GithubAttentionResponse.current(result, comment);
   }
   static checkHistoryLimit(count) {
     if (count > 2e3) throw new Error("Attention history limit exceeded");
@@ -46098,17 +46442,11 @@ var GithubAttentionClient = class _GithubAttentionClient {
 			}`,
         { id: comment.node_id, ...after ? { after } : {} }
       );
-      if (response.node?.id !== comment.node_id || response.node.body !== comment.body)
-        throw new Error(
-          "Attention comment changed during history verification"
-        );
-      const history = response.node.userContentEdits;
-      if (!Array.isArray(history?.nodes) || !history.pageInfo)
-        throw new Error("Attention history is unavailable");
+      const history = GithubAttentionResponse.history(response, comment);
       edits.push(...history.nodes);
       _GithubAttentionClient.checkHistoryLimit(edits.length);
-      if (!history.pageInfo.hasNextPage) return edits;
-      const next = history.pageInfo.endCursor;
+      if (!history.hasNextPage) return edits;
+      const next = history.endCursor;
       if (!next || next === after)
         throw new Error("Invalid attention history cursor");
       after = next;
@@ -54834,7 +55172,7 @@ var FR_MESSAGES6 = {
 };
 
 // packages/adapter/yaml-issue-form-projection/src/i18n/catalog.ts
-var CATALOGS7 = {
+var CATALOGS8 = {
   en: { ...EN_MESSAGES6 },
   fr: { ...FR_MESSAGES6 }
 };
@@ -54842,7 +55180,7 @@ var CATALOGS7 = {
 // packages/adapter/yaml-issue-form-projection/src/i18n/issue-form-messages.ts
 var IssueFormMessages = class extends MessageLocalizer {
   constructor(locale = "en") {
-    super(CATALOGS7, locale);
+    super(CATALOGS8, locale);
   }
 };
 
@@ -54852,8 +55190,8 @@ var AVAILABLE_SPEAKERS_MARKER = "<!-- Available speakers -->";
 
 // packages/adapter/yaml-issue-form-projection/src/speaker-references-presenter.ts
 var SpeakerReferencesPresenter = class _SpeakerReferencesPresenter {
-  constructor(messages3) {
-    this.messages = messages3;
+  constructor(messages5) {
+    this.messages = messages5;
   }
   messages;
   render(speakers) {
@@ -60751,10 +61089,48 @@ var EventComposition = class _EventComposition {
   }
 };
 
+// packages/runtime/github-actions/src/organizer-approval-composition.ts
+import { randomUUID as randomUUID2 } from "node:crypto";
+var OrganizerApprovalComposition = class {
+  static create(client, authorLogin, presenter, notificationPort, organizerChannelId) {
+    const records = new ApprovalRecordFactory(randomUUID2);
+    const notifications = new ApprovalNotifications(
+      client,
+      presenter,
+      notificationPort,
+      organizerChannelId
+    );
+    const repository = new GithubApprovalRepository(
+      client,
+      new TrustedApprovalState(client, authorLogin),
+      authorLogin,
+      presenter
+    );
+    const finalizer = new FinalizeApprovalDecision(
+      new ResolveApprovalDecision(
+        client,
+        new ApprovalDecisionParser(ApprovalPresenter.supportedLocales())
+      ),
+      repository,
+      notifications
+    );
+    return {
+      approval: new GithubOrganizerApproval(
+        repository,
+        records,
+        finalizer,
+        notifications,
+        client
+      ),
+      followUp: new GithubOrganizerFollowUp(repository, records, finalizer),
+      attention: new GithubApprovalAttentionSource(repository, finalizer)
+    };
+  }
+};
+
 // packages/runtime/github-actions/src/communication-composition.ts
 var COMMUNICATION_SERVICES = {
   mailGateway: /* @__PURE__ */ Symbol("MailGateway"),
-  notificationGateway: /* @__PURE__ */ Symbol("NotificationGateway"),
   ledgerFactory: /* @__PURE__ */ Symbol("DeliveryLedgerFactory")
 };
 var CommunicationComposition = class _CommunicationComposition {
@@ -60801,7 +61177,6 @@ var CommunicationComposition = class _CommunicationComposition {
         context3.get(SERVICES.config).communication["mailings-repository"]
       );
     });
-    container.bind(COMMUNICATION_SERVICES.notificationGateway).toDynamicValue(() => new SlackNotificationGateway(input.slackToken));
   }
   static bindJourney(container, input) {
     container.bind(ManageMeetupCommunications).toDynamicValue((context3) => {
@@ -60813,15 +61188,12 @@ var CommunicationComposition = class _CommunicationComposition {
       const mailGateway = context3.get(
         COMMUNICATION_SERVICES.mailGateway
       );
-      const notificationGateway = context3.get(
-        COMMUNICATION_SERVICES.notificationGateway
-      );
       return new ManageMeetupCommunications({
         feedbackResults: new OpenFeedbackTalkResultsGateway(
           input.openFeedbackApiKey ?? ""
         ),
         clock,
-        organizerApproval: new GithubOrganizerApproval(
+        organizerApproval: OrganizerApprovalComposition.create(
           new GithubApprovalClient(
             input.client,
             input.owner,
@@ -60835,7 +61207,7 @@ var CommunicationComposition = class _CommunicationComposition {
             new SlackApprovalPresenter(input.locale)
           ),
           input.slackOrganizerChannelId
-        ),
+        ).approval,
         config: context3.get(SERVICES.config),
         eventRepository: context3.get(SERVICES.eventRepository),
         referentialRepository: context3.get(
@@ -60849,7 +61221,6 @@ var CommunicationComposition = class _CommunicationComposition {
           planner,
           clock,
           mailGateway,
-          notificationGateway,
           ledger: ledger(dispatchAuthorized)
         })
       });
@@ -60857,30 +61228,53 @@ var CommunicationComposition = class _CommunicationComposition {
   }
 };
 
-// packages/runtime/github-actions/src/communication.ts
-var CommunicationRuntime = class _CommunicationRuntime {
-  /** Compose authenticated gateways before entering the application. */
-  static async runCommunicationReconcile(input) {
-    _CommunicationRuntime.assertInput(input);
-    const config = AutomationConfigFactory.createAutomationConfig(input.owner);
-    const runtimeDiagnostics = [];
-    const githubToken = input.githubToken.trim();
-    if (!githubToken) {
-      ManageMeetupCommunications.isDispatchEnabled(config, runtimeDiagnostics);
-      runtimeDiagnostics.push({
-        code: "communication.github-credential-missing",
-        severity: "error"
-      });
-      return ManageMeetupCommunications.emptyCommunicationResult(
-        "check",
-        runtimeDiagnostics
+// packages/runtime/github-actions/src/communication-input.ts
+var CommunicationInput = class _CommunicationInput {
+  static validate(input) {
+    ConferenceHallInput.validate(input);
+    for (const field of [
+      "locale",
+      "githubToken",
+      "mailingsToken",
+      "slackToken",
+      "openFeedbackApiKey"
+    ])
+      if (!input[field]?.trim())
+        throw new Error(`Input required and not supplied: ${field}`);
+    if (typeof input.slidesReady !== "boolean")
+      throw new Error("slidesReady must be an explicit boolean");
+    if (!Number.isSafeInteger(input.issueNumber) || input.issueNumber <= 0) {
+      throw new Error("issueNumber must be a positive integer");
+    }
+    if (!_CommunicationInput.isRepositoryPart(input.owner) || !_CommunicationInput.isRepositoryPart(input.repo)) {
+      throw new Error(
+        "owner and repo must be valid GitHub repository segments"
       );
     }
+    if (!input.slackOrganizerChannelId.trim()) {
+      throw new Error("slackOrganizerChannelId must not be empty");
+    }
+    if (!input.managedCommentAuthor.trim()) {
+      throw new Error("managedCommentAuthor must not be empty");
+    }
+  }
+  static isRepositoryPart(value) {
+    return /^[A-Za-z0-9_.-]+$/.test(value);
+  }
+};
+
+// packages/runtime/github-actions/src/communication.ts
+var CommunicationRuntime = class {
+  /** Compose authenticated gateways before entering the application. */
+  static async runCommunicationReconcile(input) {
+    CommunicationInput.validate(input);
+    const config = AutomationConfigFactory.createAutomationConfig(input.owner);
+    const githubToken = input.githubToken.trim();
     const mailingsToken = input.mailingsToken.trim();
     const slackToken = input.slackToken.trim();
     const slackOrganizerChannelId = input.slackOrganizerChannelId.trim();
     const container = CommunicationComposition.createCommunicationContainer({
-      locale: MessageLocalizer.resolveLocale(input.locale ?? "en"),
+      locale: MessageLocalizer.resolveLocale(input.locale),
       conferenceHallEvent: input.conferenceHallEvent,
       conferenceHallApiKey: input.conferenceHallApiKey,
       client: getOctokit(githubToken),
@@ -60904,26 +61298,6 @@ var CommunicationRuntime = class _CommunicationRuntime {
       slidesReady: input.slidesReady
     });
     return result;
-  }
-  static assertInput(input) {
-    ConferenceHallInput.validate(input);
-    if (!Number.isSafeInteger(input.issueNumber) || input.issueNumber <= 0) {
-      throw new Error("issueNumber must be a positive integer");
-    }
-    if (!_CommunicationRuntime.isRepositoryPart(input.owner) || !_CommunicationRuntime.isRepositoryPart(input.repo)) {
-      throw new Error(
-        "owner and repo must be valid GitHub repository segments"
-      );
-    }
-    if (!input.slackOrganizerChannelId.trim()) {
-      throw new Error("slackOrganizerChannelId must not be empty");
-    }
-    if (!input.managedCommentAuthor.trim()) {
-      throw new Error("managedCommentAuthor must not be empty");
-    }
-  }
-  static isRepositoryPart(value) {
-    return /^[A-Za-z0-9_.-]+$/.test(value);
   }
 };
 
@@ -60957,44 +61331,8 @@ var RuntimeInput = class {
 };
 
 // packages/runtime/github-actions/src/communication-action.ts
-var COMMUNICATION_MESSAGES = {
-  "duplicate-intent": "A duplicate communication intent was ignored.",
-  "gateway-delivery-uncertain": "A gateway could not confirm delivery.",
-  "gateway-delivery-rejected": "A gateway definitively rejected the delivery request.",
-  "gateway-delivery-deferred": "A gateway deferred the request; a later retry remains safe.",
-  "gateway-threw-ambiguous-error": "A gateway failed without a definitive delivery outcome.",
-  "invalid-clock": "The communication clock is invalid.",
-  "invalid-event-date": "The event date is invalid.",
-  "invalid-identifier": "A stable communication identifier is invalid.",
-  "invalid-readiness-window": "The readiness reminder window is invalid.",
-  "invalid-time-zone": "The configured time zone is invalid.",
-  "ledger-read-failed": "The delivery ledger could not be read.",
-  "ledger-reservation-failed": "The delivery could not be reserved safely.",
-  "ledger-status-write-failed": "The delivery status could not be recorded.",
-  "missing-mail-destination": "An opted-in mail recipient has no destination.",
-  "missing-notification-content": "Notification content is unavailable.",
-  "occurrence-status-unknown": "The event occurrence status must be explicit.",
-  "delivery-already-recorded": "The delivery ledger already contains this intent."
-};
-var RUNTIME_MESSAGES = {
-  "communication.feedback-fetch-failed": "Feedback results could not be fetched.",
-  "communication.feedback-unavailable": "Speaker thank-you emails require resolved feedback results for every talk.",
-  "communication.slides-unavailable": "Email dispatch requires a valid presentation file URL and ready managed content. Resolve asset diagnostics and run reconciliation again.",
-  "communication.approval-pending": "Email dispatch is waiting for approval on the meetup issue.",
-  "communication.approval-rejected": "The email batch was rejected. The recorded decision is final for this batch revision.",
-  "communication.approval-unavailable": "The organizer approval could not be verified or persisted; email dispatch is blocked.",
-  "communication.approval-notification-failed": "The Slack approval notification or decision reaction was not confirmed. Review the request on the meetup issue.",
-  "communication.dispatch-disabled-by-config": "Communication dispatch is disabled by repository configuration.",
-  "communication.checklist-update-failed": "Delivery results are recorded but checklist completion could not be persisted.",
-  "communication.checklist-concurrently-modified": "Delivery results are recorded; an organizer edit postponed checklist completion.",
-  "communication.event-skipped": "The issue is not a configured meetup event.",
-  "communication.event-concurrently-modified": "The meetup issue changed while communications were being reconciled; no delivery was attempted.",
-  "communication.event-references-unresolved": "Event participants could not be resolved to stable identifiers.",
-  "communication.github-credential-missing": "The GitHub credential is unavailable.",
-  "communication.referential-catalog-invalid": "Communications are disabled because the referential catalog is invalid."
-};
 var CommunicationAction = class _CommunicationAction {
-  static async runCommunicationReconcileAction(messages3 = new ActionMessages()) {
+  static async runCommunicationReconcileAction(messages5 = new ActionMessages()) {
     const issueNumber = RuntimeInput.positiveIntegerInput(
       "issue-number",
       getInput("issue-number", { required: true })
@@ -61005,7 +61343,7 @@ var CommunicationAction = class _CommunicationAction {
     );
     const { owner, repo } = context2.repo;
     const outcome = await CommunicationRuntime.runCommunicationReconcile({
-      locale: messages3.locale,
+      locale: messages5.locale,
       ...ConferenceHallInput.read(),
       issueNumber,
       slidesUrl: slidesReady ? getInput("slides-url", { required: true }) : void 0,
@@ -61026,36 +61364,26 @@ var CommunicationAction = class _CommunicationAction {
         required: true
       })
     });
-    return _CommunicationAction.report(outcome, messages3);
+    return _CommunicationAction.report(outcome, messages5);
   }
-  static domainDiagnostic(diagnostic) {
-    return {
-      code: `communication.${diagnostic.code}`,
-      severity: diagnostic.severity,
-      message: COMMUNICATION_MESSAGES[diagnostic.code]
-    };
-  }
-  static runtimeDiagnostic(diagnostic) {
-    return {
-      code: diagnostic.code,
-      severity: diagnostic.severity,
-      message: RUNTIME_MESSAGES[diagnostic.code]
-    };
-  }
-  static report(outcome, messages3) {
+  static report(outcome, messages5) {
     const diagnostics = [
-      ...outcome.diagnostics.map(_CommunicationAction.domainDiagnostic),
-      ...outcome.runtimeDiagnostics.map(_CommunicationAction.runtimeDiagnostic)
+      ...outcome.diagnostics.map(
+        CommunicationDiagnosticProjection.domainDiagnostic
+      ),
+      ...outcome.runtimeDiagnostics.map(
+        CommunicationDiagnosticProjection.runtimeDiagnostic
+      )
     ];
     return {
       details: [
-        messages3.t("report.communication.mode", { mode: outcome.mode }),
-        messages3.t("report.communication.planned", outcome.counts),
-        messages3.t("report.communication.accepted", {
+        messages5.t("report.communication.mode", { mode: outcome.mode }),
+        messages5.t("report.communication.planned", outcome.counts),
+        messages5.t("report.communication.accepted", {
           ...outcome.counts,
           recorded: outcome.counts.alreadyRecorded
         }),
-        messages3.t("report.communication.uncertain", outcome.counts)
+        messages5.t("report.communication.uncertain", outcome.counts)
       ],
       diagnostics
     };

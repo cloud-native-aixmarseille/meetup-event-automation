@@ -24,7 +24,6 @@ type CommunicationJourneyDiagnosticCode =
 	| "communication.event-skipped"
 	| "communication.event-concurrently-modified"
 	| "communication.event-references-unresolved"
-	| "communication.github-credential-missing"
 	| "communication.referential-catalog-invalid";
 
 export interface CommunicationJourneyDiagnostic {

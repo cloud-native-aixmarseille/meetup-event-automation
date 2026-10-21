@@ -1,15 +1,24 @@
-import type { AttentionEpisode } from "@meetup-automation/communication";
+import type {
+	AttentionChecklist,
+	AttentionChecklistAction,
+	AttentionChecklistEntry,
+	AttentionChecklistField,
+	AttentionChecklistSource,
+} from "@meetup-automation/communication";
 import { ATTENTION_MARKER } from "./attention-record.js";
-
+import { AttentionMessages } from "./i18n/attention-messages.js";
 export const DIAGNOSTIC_MARKER =
 	"<!-- meetup-automation:event-diagnostics:v1 -->";
-
-/** The diagnostic writer owns the checklist prefix; attention owns its suffix. */
-export class AttentionDiagnosticChecklist {
+/** Decodes the diagnostic writer's public Markdown; it does not select tasks. */
+export class AttentionDiagnosticChecklist implements AttentionChecklistSource {
 	private body = "";
-	commentId?: number;
+	private commentId?: number;
 	set(commentId: number, body: string): void {
-		if (!body.startsWith(DIAGNOSTIC_MARKER))
+		if (
+			!body.startsWith(DIAGNOSTIC_MARKER) ||
+			!Number.isSafeInteger(commentId) ||
+			commentId < 1
+		)
 			throw new Error("Invalid diagnostic checklist");
 		this.commentId = commentId;
 		this.body = body.split(ATTENTION_MARKER, 1)[0].trim();
@@ -17,40 +26,41 @@ export class AttentionDiagnosticChecklist {
 	prefix(): string {
 		return this.body;
 	}
-	lines(): string[] {
-		return [
-			...new Set(
-				this.body.split("\n").filter((line) => line.startsWith("- [ ] **")),
-			),
-		];
+	read(): AttentionChecklist {
+		const entries = [...new Set(this.body.split("\n"))].flatMap((line) => {
+			const match = /^- \[ \] \*\*(.+?)\*\*: (.+)$/.exec(line);
+			if (!match) return [];
+			const [, label, description] = match;
+			return [
+				{
+					label,
+					description,
+					field: AttentionDiagnosticChecklist.FIELDS.get(label) ?? "other",
+					action: this.action(description),
+				} satisfies AttentionChecklistEntry,
+			];
+		});
+		return { commentId: this.commentId, entries };
 	}
-	containsAction(action: string): boolean {
-		return this.lines().some((line) => line.endsWith(`**: ${action}`));
+	private action(description: string): AttentionChecklistAction | undefined {
+		for (const locale of ["en", "fr"]) {
+			const messages = new AttentionMessages(locale);
+			if (description === messages.t("action.approval-pending"))
+				return "email-approval";
+			if (description === messages.t("action.meetup-approval-pending"))
+				return "meetup-approval";
+			if (description === messages.t("action.delivery-recovery"))
+				return "delivery-recovery";
+		}
+		return undefined;
 	}
-	includes(episode: AttentionEpisode): boolean {
-		const lines = this.lines();
-		if (!lines.length) return false;
-		const { code, resource } = episode.condition;
-		if (code === "required-data") return true;
-		if (code === "integration-failure" && resource === "event-data")
-			return true;
-		const fields =
-			code === "manual-publication"
-				? AttentionDiagnosticChecklist.RESOURCE_FIELDS.get(resource)
-				: AttentionDiagnosticChecklist.CONDITION_FIELDS.get(code);
-		return (
-			fields?.some((field) =>
-				lines.some((line) => line.startsWith(`- [ ] **${field}**:`)),
-			) ?? false
-		);
-	}
-	private static readonly CONDITION_FIELDS = new Map([
-		["missing-date", ["Event Date"]],
-		["host-confirmation", ["Hoster", "Host confirmation"]],
-		["speaker-confirmation", ["Speaker confirmation"]],
-	]);
-	private static readonly RESOURCE_FIELDS = new Map([
-		["publish-meetup-event", ["Meetup Link"]],
-		["publish-community-event", ["CNCF Link"]],
+	private static readonly FIELDS = new Map<string, AttentionChecklistField>([
+		["Event Date", "date"],
+		["Hoster", "host"],
+		["Host confirmation", "host-confirmation"],
+		["Speaker confirmation", "speaker-confirmation"],
+		["Meetup Link", "meetup"],
+		["CNCF Link", "community"],
+		["Agenda", "agenda"],
 	]);
 }

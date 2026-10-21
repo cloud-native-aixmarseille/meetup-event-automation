@@ -1,5 +1,5 @@
 import type { ApprovalPresenter } from "./approval-presenter.js";
-import type { ApprovalDecision, StoredApproval } from "./approval-record.js";
+import type { ApprovalDecision, StoredApproval } from "./approval-state.js";
 
 /** Accept only a checkbox edit of an exact request rendered from trusted metadata. */
 export class ApprovalDecisionParser {

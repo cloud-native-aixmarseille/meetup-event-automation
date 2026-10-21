@@ -12,6 +12,7 @@
 	},
 	"dependencies": {
 		"@meetup-automation/event": "workspace:*",
+		"@meetup-automation/journey": "workspace:*",
 		"@meetup-automation/localization": "workspace:*"
 	}
 }

@@ -8,7 +8,6 @@ import type {
 	CommunicationClock,
 	DeliveryLedger,
 	MailGateway,
-	NotificationGateway,
 } from "./ports.js";
 import { ReconcileCommunications } from "./reconcile-communications.js";
 
@@ -19,8 +18,6 @@ let clock: CommunicationClock;
 let ledger: DeliveryLedger;
 
 let mailGateway: MailGateway;
-
-let notificationGateway: NotificationGateway;
 
 beforeEach(() => {
 	clock = { now: vi.fn(() => new Date(fixedInstant.getTime())) };
@@ -43,9 +40,6 @@ beforeEach(() => {
 	mailGateway = {
 		dispatch: vi.fn(async () => ({ outcome: "accepted" as const })),
 	};
-	notificationGateway = {
-		dispatch: vi.fn(async () => ({ outcome: "accepted" as const })),
-	};
 });
 
 describe("ReconcileCommunications", () => {
@@ -54,8 +48,10 @@ describe("ReconcileCommunications", () => {
 		async (status) => {
 			// Arrange
 			vi.mocked(ledger.find).mockResolvedValue(existingEntry(status));
+
 			// Act
 			const result = await reconciler().execute(input());
+
 			// Assert
 			expect(result.completedMailKinds).toEqual(
 				status === "accepted" ? ["host-introduction"] : [],
@@ -147,14 +143,14 @@ describe("ReconcileCommunications", () => {
 		expect(ledger.markAccepted).not.toHaveBeenCalled();
 	});
 
-	it("keeps unavailable gateways in the business plan without reserving", async () => {
+	it("keeps unapproved mail in the business plan without reserving", async () => {
 		// Arrange
 		// No additional setup is needed.
 
 		// Act
 		const result = await reconciler().execute(
 			input({
-				dispatchCapabilities: { mail: false, notification: true },
+				dispatchAuthorized: false,
 			}),
 		);
 
@@ -416,42 +412,6 @@ describe("ReconcileCommunications", () => {
 		);
 	});
 
-	it("dispatches reminders through the notification gateway", async () => {
-		// Arrange
-		// No additional setup is needed.
-
-		// Act
-		const result = await reconciler().execute(
-			input({
-				readiness: "not-ready",
-				mailRecipients: [],
-				notificationRecipients: [
-					{
-						channel: "notification",
-						recipientId: "organizers-slack",
-						role: "organizers",
-						destination: "private-slack-channel",
-						receivesCommunications: true,
-					},
-				],
-			}),
-		);
-		const actual = JSON.stringify(result);
-		const actual1 = JSON.stringify(result);
-
-		// Assert
-		expect(result.counts.accepted).toBe(1);
-		expect(notificationGateway.dispatch).toHaveBeenCalledWith(
-			expect.objectContaining({
-				channel: "notification",
-				kind: "readiness-reminder",
-			}),
-		);
-		expect(mailGateway.dispatch).not.toHaveBeenCalled();
-		expect(actual).not.toContain("private-slack-channel");
-		expect(actual1).not.toContain("Meetup private details");
-	});
-
 	it("does not dispatch when the ledger cannot be read", async () => {
 		// Arrange
 		vi.mocked(ledger.find).mockRejectedValueOnce(new Error("private data"));
@@ -581,7 +541,6 @@ function reconciler() {
 		clock,
 		ledger,
 		mailGateway,
-		notificationGateway,
 	});
 }
 
@@ -590,6 +549,7 @@ function input(
 ): ReconcileCommunicationsInput {
 	return {
 		mode: "dispatch",
+		dispatchAuthorized: true,
 		repositoryId: "cloud-native-aixmarseille/meetups",
 		eventId: "issue:123",
 		eventDate: "2026-06-08",
@@ -597,7 +557,6 @@ function input(
 		readiness: "ready",
 		occurrenceStatus: "scheduled",
 		policyVersion: "communication-v2",
-		readinessWindowDays: 7,
 		mailRecipients: [
 			{
 				channel: "mail",
@@ -607,9 +566,7 @@ function input(
 				receivesCommunications: true,
 			},
 		],
-		notificationRecipients: [],
 		mailPlaceholders: { eventTitle: "A meetup" },
-		notificationContent: "Meetup private details",
 		...override,
 	};
 }

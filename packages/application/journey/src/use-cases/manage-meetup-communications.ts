@@ -118,10 +118,7 @@ export class ManageMeetupCommunications {
 			.reconcileCommunications(dispatchEnabled)
 			.execute({
 				...deliveryInput,
-				dispatchCapabilities: {
-					mail: mailApproved,
-					notification: false,
-				},
+				dispatchAuthorized: mailApproved,
 			});
 
 		if (dispatchEnabled) {
@@ -254,10 +251,7 @@ export class ManageMeetupCommunications {
 		const repositoryName = `${input.owner}/${input.repo}`;
 		return {
 			mode: dispatchEnabled ? "dispatch" : "check",
-			dispatchCapabilities: {
-				mail: true,
-				notification: false,
-			},
+			dispatchAuthorized: false,
 			repositoryId: input.repositoryId?.trim() || repositoryName,
 			eventId: `issue-${input.issueNumber}`,
 			eventDate: managed.event.date,
@@ -265,13 +259,11 @@ export class ManageMeetupCommunications {
 			readiness: managed.isReady ? "ready" : "not-ready",
 			occurrenceStatus: managed.event.occurrenceStatus ?? "unknown",
 			policyVersion: String(config.communication["policy-version"]),
-			readinessWindowDays: config.communication["readiness-window-days"],
 			mailRecipients: CommunicationChecklist.pendingRecipients(
 				managed.event,
 				delivery.mailRecipientResolution.recipients,
 				delivery.postEvent,
 			),
-			notificationRecipients: [],
 			mailPlaceholders: CommunicationPlaceholders.eventPlaceholders(
 				managed.event,
 				input.slidesReady === false ? undefined : input.slidesUrl,

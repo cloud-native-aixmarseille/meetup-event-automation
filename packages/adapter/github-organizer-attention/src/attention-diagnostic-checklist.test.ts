@@ -1,63 +1,67 @@
 import { describe, expect, it } from "vitest";
-import { episode } from "../testing/attention.fixtures.js";
 import {
 	AttentionDiagnosticChecklist,
 	DIAGNOSTIC_MARKER,
 } from "./attention-diagnostic-checklist.js";
 
-describe("diagnostic checklist coverage", () => {
-	it("keeps unrelated confirmations actionable", () => {
+describe("diagnostic checklist decoding", () => {
+	it("decodes public headings and removes duplicate lines", () => {
 		// Arrange
 		const checklist = new AttentionDiagnosticChecklist();
-		checklist.set(
-			100,
-			`${DIAGNOSTIC_MARKER}\n\n- [ ] **Event Title**: Add a title.`,
-		);
+		const line = "- [ ] **Event Date**: Set the event date.";
 
 		// Act
-		const hostCovered = checklist.includes(episode("host-confirmation"));
-		const dateCovered = checklist.includes(episode("missing-date"));
-		const dataCovered = checklist.includes(episode("required-data"));
+		checklist.set(100, `${DIAGNOSTIC_MARKER}\n\n${line}\n${line}`);
+		const decoded = checklist.read();
 
 		// Assert
-		expect(hostCovered).toBe(false);
-		expect(dateCovered).toBe(false);
-		expect(dataCovered).toBe(true);
+		expect(decoded).toEqual({
+			commentId: 100,
+			entries: [
+				{
+					field: "date",
+					label: "Event Date",
+					description: "Set the event date.",
+					action: undefined,
+				},
+			],
+		});
 	});
-
 	it.each([
-		["Communication", "communications"],
-		["Slides & Content", "assets"],
-		["OpenFeedback Link", "feedback"],
+		["Approve or reject Meetup publication.", "meetup-approval"],
+		["Approuvez ou refusez le lot de courriels.", "email-approval"],
+		["Verify delivery before retrying.", "delivery-recovery"],
 	])(
-		"retains a technical failure alongside other %s guidance",
-		(field, resource) => {
+		"recognizes existing localized public action %s",
+		(description, action) => {
 			// Arrange
 			const checklist = new AttentionDiagnosticChecklist();
-			const line = `- [ ] **${field}**: Complete this task.`;
-			checklist.set(100, `${DIAGNOSTIC_MARKER}\n\n${line}\n${line}`);
 
 			// Act
-			const covered = checklist.includes(
-				episode("integration-failure", resource),
+			checklist.set(
+				100,
+				`${DIAGNOSTIC_MARKER}\n\n- [ ] **Communication**: ${description}`,
 			);
-			const lines = checklist.lines();
+			const decoded = checklist.read();
 
 			// Assert
-			expect(covered).toBe(false);
-			expect(lines).toEqual([line]);
+			expect(decoded.entries[0].action).toBe(action);
 		},
 	);
-
-	it("does not hide tasks behind a resolved diagnostic comment", () => {
+	it("excludes stored attention details from the diagnostic source", () => {
 		// Arrange
 		const checklist = new AttentionDiagnosticChecklist();
-		checklist.set(100, `${DIAGNOSTIC_MARKER}\n\nComplete.`);
 
 		// Act
-		const covered = checklist.includes(episode("required-data"));
+		checklist.set(
+			100,
+			`${DIAGNOSTIC_MARKER}\n\nComplete.\n\n<!-- meetup-organizer-attention:v1 {} -->\n- [ ] **Communication**: Private suffix`,
+		);
+		const decoded = checklist.read();
+		const prefix = checklist.prefix();
 
 		// Assert
-		expect(covered).toBe(false);
+		expect(decoded.entries).toEqual([]);
+		expect(prefix).toBe(`${DIAGNOSTIC_MARKER}\n\nComplete.`);
 	});
 });

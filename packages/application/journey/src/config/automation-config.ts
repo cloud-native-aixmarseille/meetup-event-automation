@@ -10,9 +10,7 @@ export interface AutomationConfig {
 	}>;
 	readonly referentials: Readonly<{ hosts: string; speakers: string }>;
 	readonly communication: Readonly<{
-		"readiness-window-days": number;
 		"mailings-repository": string;
-		"slack-enabled": boolean;
 		"dispatch-enabled": boolean;
 		"policy-version": number;
 	}>;
@@ -45,11 +43,9 @@ export class AutomationConfigFactory {
 				speakers: "referentials/speakers.csv",
 			},
 			communication: {
-				"readiness-window-days": 7,
 				"mailings-repository": repositoryOwner
 					? `${repositoryOwner}/mailings`
 					: "",
-				"slack-enabled": true,
 				"dispatch-enabled": Boolean(repositoryOwner),
 				"policy-version": 1,
 			},

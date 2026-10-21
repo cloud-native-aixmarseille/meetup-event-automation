@@ -4,7 +4,6 @@ import type {
 	DeliveryReservationResult,
 	GatewayDispatchResult,
 	MailMessageIntent,
-	NotificationMessageIntent,
 } from "./model.js";
 
 export interface CommunicationClock {
@@ -32,8 +31,4 @@ export interface DeliveryLedger {
 
 export interface MailGateway {
 	dispatch(message: MailMessageIntent): Promise<GatewayDispatchResult>;
-}
-
-export interface NotificationGateway {
-	dispatch(message: NotificationMessageIntent): Promise<GatewayDispatchResult>;
 }

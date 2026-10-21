@@ -1,13 +1,13 @@
 import {
 	APPROVAL_MARKER,
-	ApprovalRecord,
-	type StoredApproval,
-} from "./approval-record.js";
+	ApprovalCommentCodec,
+} from "./approval-comment-codec.js";
+import type { StoredApproval } from "./approval-state.js";
+import type { GithubApprovalClient } from "./github-approval-client.js";
 import type {
 	ApprovalComment,
 	ApprovalCommentEdit,
-	GithubApprovalClient,
-} from "./github-approval-client.js";
+} from "./github-approval-contracts.js";
 
 /** Request metadata and final decisions must come from a verified bot revision. */
 export class TrustedApprovalState {
@@ -34,7 +34,7 @@ export class TrustedApprovalState {
 	}
 	private record(body: string | null): StoredApproval | undefined {
 		if (!body?.startsWith(APPROVAL_MARKER)) return undefined;
-		return ApprovalRecord.read(body);
+		return ApprovalCommentCodec.read(body);
 	}
 	private isAuthor(editor: ApprovalCommentEdit["editor"]): boolean {
 		return (
