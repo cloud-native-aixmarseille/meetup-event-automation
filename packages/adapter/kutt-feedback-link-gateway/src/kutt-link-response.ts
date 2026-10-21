@@ -7,9 +7,9 @@ export interface KuttLink {
 
 /** Validate the provider representation before a link can be updated. */
 export class KuttLinkResponse {
-	static link(value: unknown): KuttLink {
+	link(value: unknown): KuttLink {
 		if (
-			!KuttLinkResponse.object(value) ||
+			!this.object(value) ||
 			typeof value.id !== "string" ||
 			!value.id ||
 			typeof value.address !== "string" ||
@@ -28,19 +28,19 @@ export class KuttLinkResponse {
 		};
 	}
 
-	static page(value: unknown): { total: number; data: readonly KuttLink[] } {
+	page(value: unknown): { total: number; data: readonly KuttLink[] } {
 		if (
-			!KuttLinkResponse.object(value) ||
+			!this.object(value) ||
 			!Array.isArray(value.data) ||
 			typeof value.total !== "number" ||
 			!Number.isSafeInteger(value.total) ||
 			value.total < 0
 		)
 			throw new Error("Invalid Kutt link listing");
-		return { total: value.total, data: value.data.map(KuttLinkResponse.link) };
+		return { total: value.total, data: value.data.map(this.link.bind(this)) };
 	}
 
-	private static object(value: unknown): value is Record<string, unknown> {
+	private object(value: unknown): value is Record<string, unknown> {
 		return value !== null && typeof value === "object" && !Array.isArray(value);
 	}
 }

@@ -1,29 +1,37 @@
 import type { ContentAnchor, ContentBinding } from "./asset-content.js";
-import { ContentContractPolicy } from "./content-contract-policy.js";
+import type { ContentContractPolicy } from "./content-contract-policy.js";
 import { ContentError } from "./content-error.js";
 
+export interface ContentBindingPolicyCollaborators {
+	readonly contentContractPolicy: Pick<
+		ContentContractPolicy,
+		"record" | "name" | "keys"
+	>;
+}
+
 export class ContentBindingPolicy {
-	static parseMany(value: unknown): readonly ContentBinding[] {
+	constructor(
+		private readonly collaborators: ContentBindingPolicyCollaborators,
+	) {}
+
+	parseMany(value: unknown): readonly ContentBinding[] {
 		if (!Array.isArray(value) || value.length > 500)
 			throw new ContentError("recovery");
-		const bindings = value.map((item: unknown) =>
-			ContentBindingPolicy.parse(item),
-		);
+		const bindings = value.map((item: unknown) => this.parse(item));
 		if (new Set(bindings.map((binding) => binding.id)).size !== bindings.length)
 			throw new ContentError("recovery");
 		return bindings;
 	}
 
-	private static parse(value: unknown): ContentBinding {
+	private parse(value: unknown): ContentBinding {
 		if (
-			!ContentContractPolicy.record(value) ||
-			!ContentContractPolicy.name(value.id) ||
-			!ContentContractPolicy.name(value.key) ||
+			!this.collaborators.contentContractPolicy.record(value) ||
+			!this.collaborators.contentContractPolicy.name(value.id) ||
+			!this.collaborators.contentContractPolicy.name(value.key) ||
 			(value.type !== "text" && value.type !== "image") ||
-			!ContentBindingPolicy.hash(value.applied) ||
-			(value.desired !== undefined &&
-				!ContentBindingPolicy.hash(value.desired)) ||
-			!ContentContractPolicy.keys(value, [
+			!this.hash(value.applied) ||
+			(value.desired !== undefined && !this.hash(value.desired)) ||
+			!this.collaborators.contentContractPolicy.keys(value, [
 				"id",
 				"type",
 				"key",
@@ -36,8 +44,8 @@ export class ContentBindingPolicy {
 			])
 		)
 			throw new ContentError("recovery");
-		const identities = ContentBindingPolicy.identities(value);
-		const anchor = ContentBindingPolicy.anchor(value.anchor);
+		const identities = this.identities(value);
+		const anchor = this.anchor(value.anchor);
 		if (
 			value.type === "image"
 				? !anchor.objectId
@@ -55,7 +63,7 @@ export class ContentBindingPolicy {
 		};
 	}
 
-	private static identities(
+	private identities(
 		value: Record<string, unknown>,
 	): Pick<ContentBinding, "speakerId" | "hostId" | "fallback"> {
 		if (
@@ -75,10 +83,10 @@ export class ContentBindingPolicy {
 		};
 	}
 
-	private static anchor(value: unknown): ContentAnchor {
+	private anchor(value: unknown): ContentAnchor {
 		if (
-			!ContentContractPolicy.record(value) ||
-			!ContentContractPolicy.keys(value, [
+			!this.collaborators.contentContractPolicy.record(value) ||
+			!this.collaborators.contentContractPolicy.keys(value, [
 				"objectId",
 				"pageId",
 				"tabId",
@@ -89,7 +97,7 @@ export class ContentBindingPolicy {
 			])
 		)
 			throw new ContentError("recovery");
-		ContentBindingPolicy.validateAnchorValues(value);
+		this.validateAnchorValues(value);
 		return {
 			...(typeof value.objectId === "string"
 				? { objectId: value.objectId }
@@ -107,7 +115,7 @@ export class ContentBindingPolicy {
 		};
 	}
 
-	private static validateAnchorValues(value: Record<string, unknown>): void {
+	private validateAnchorValues(value: Record<string, unknown>): void {
 		for (const [key, entry] of Object.entries(value)) {
 			if (key === "start" || key === "end") {
 				if (
@@ -116,12 +124,15 @@ export class ContentBindingPolicy {
 					entry < 1
 				)
 					throw new ContentError("recovery");
-			} else if (entry !== "" && !ContentContractPolicy.name(entry))
+			} else if (
+				entry !== "" &&
+				!this.collaborators.contentContractPolicy.name(entry)
+			)
 				throw new ContentError("recovery");
 		}
 	}
 
-	private static hash(value: unknown): value is string {
+	private hash(value: unknown): value is string {
 		return typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
 	}
 }

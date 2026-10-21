@@ -6,6 +6,7 @@ import {
 	eventUrl,
 	groupUrl,
 } from "../testing/editor-fixture.js";
+import { MeetupEventGatewayComposition } from "./dependency-composition.js";
 import { MeetupEventPublisher } from "./meetup-event-publisher.js";
 
 let browser: Browser;
@@ -27,6 +28,12 @@ describe("approved Meetup publication", () => {
 		// Arrange
 		const state = await editorFixture(context, desiredEvent);
 		const publisher = new MeetupEventPublisher(
+			{
+				meetupBrowserRoutes:
+					new MeetupEventGatewayComposition().meetupBrowserRoutes(),
+				createMeetupEventVerification: (...args) =>
+					new MeetupEventGatewayComposition().meetupEventVerification(...args),
+			},
 			await context.newPage(),
 			groupUrl,
 		);
@@ -48,6 +55,12 @@ describe("approved Meetup publication", () => {
 		// Arrange
 		const state = await editorFixture(context, desiredEvent);
 		const publisher = new MeetupEventPublisher(
+			{
+				meetupBrowserRoutes:
+					new MeetupEventGatewayComposition().meetupBrowserRoutes(),
+				createMeetupEventVerification: (...args) =>
+					new MeetupEventGatewayComposition().meetupEventVerification(...args),
+			},
 			await context.newPage(),
 			groupUrl,
 		);
@@ -67,6 +80,12 @@ describe("approved Meetup publication", () => {
 			title: "Remote edit",
 		});
 		const publisher = new MeetupEventPublisher(
+			{
+				meetupBrowserRoutes:
+					new MeetupEventGatewayComposition().meetupBrowserRoutes(),
+				createMeetupEventVerification: (...args) =>
+					new MeetupEventGatewayComposition().meetupEventVerification(...args),
+			},
 			await context.newPage(),
 			groupUrl,
 		);
@@ -85,6 +104,12 @@ describe("approved Meetup publication", () => {
 		const state = await editorFixture(context, desiredEvent);
 		state.corruptSaved = { title: "Unexpected saved title" };
 		const publisher = new MeetupEventPublisher(
+			{
+				meetupBrowserRoutes:
+					new MeetupEventGatewayComposition().meetupBrowserRoutes(),
+				createMeetupEventVerification: (...args) =>
+					new MeetupEventGatewayComposition().meetupEventVerification(...args),
+			},
 			await context.newPage(),
 			groupUrl,
 		);
@@ -105,7 +130,18 @@ describe("approved Meetup publication", () => {
 		async (url) => {
 			// Arrange
 			const page = await context.newPage();
-			const publisher = new MeetupEventPublisher(page, groupUrl);
+			const publisher = new MeetupEventPublisher(
+				{
+					meetupBrowserRoutes:
+						new MeetupEventGatewayComposition().meetupBrowserRoutes(),
+					createMeetupEventVerification: (...args) =>
+						new MeetupEventGatewayComposition().meetupEventVerification(
+							...args,
+						),
+				},
+				page,
+				groupUrl,
+			);
 
 			// Act
 			const result = publisher.publish(desiredEvent, url, vi.fn());

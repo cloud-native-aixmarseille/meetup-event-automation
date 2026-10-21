@@ -1,7 +1,9 @@
 import * as core from "@actions/core";
 import { EventConcurrentModificationError } from "@meetup-automation/event";
+import { JourneyPolicyComposition } from "@meetup-automation/journey";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ActionRunner } from "./action-runner.js";
+import { GithubActionsComposition } from "./dependency-composition.js";
 
 vi.mock("@actions/core", () => ({
 	getInput: vi.fn().mockReturnValue("en"),
@@ -30,7 +32,15 @@ describe("action runner reporting contract", () => {
 		);
 
 		// Act
-		await ActionRunner.run("action.event.reconcile", operation, true);
+		await new ActionRunner({
+			diagnosticPolicy: new JourneyPolicyComposition().diagnosticPolicy(),
+			actionFailurePresenter:
+				new GithubActionsComposition().actionFailurePresenter(),
+			actionReport: new GithubActionsComposition().actionReport(),
+			actionOutput: new GithubActionsComposition().actionOutput(),
+			createActionMessages: (...args) =>
+				new GithubActionsComposition().actionMessages(...args),
+		}).run("action.event.reconcile", operation, true);
 
 		// Assert
 		expect(core.setFailed).not.toHaveBeenCalled();
@@ -61,7 +71,15 @@ describe("action runner reporting contract", () => {
 			.mockRejectedValue(new Error("The event changed during reconciliation"));
 
 		// Act
-		await ActionRunner.run("action.event.reconcile", operation, true);
+		await new ActionRunner({
+			diagnosticPolicy: new JourneyPolicyComposition().diagnosticPolicy(),
+			actionFailurePresenter:
+				new GithubActionsComposition().actionFailurePresenter(),
+			actionReport: new GithubActionsComposition().actionReport(),
+			actionOutput: new GithubActionsComposition().actionOutput(),
+			createActionMessages: (...args) =>
+				new GithubActionsComposition().actionMessages(...args),
+		}).run("action.event.reconcile", operation, true);
 
 		// Assert
 		expect(core.setFailed).toHaveBeenCalledOnce();
@@ -79,7 +97,15 @@ describe("action runner reporting contract", () => {
 		});
 
 		// Act
-		await ActionRunner.run("action.event.reconcile", operation, true);
+		await new ActionRunner({
+			diagnosticPolicy: new JourneyPolicyComposition().diagnosticPolicy(),
+			actionFailurePresenter:
+				new GithubActionsComposition().actionFailurePresenter(),
+			actionReport: new GithubActionsComposition().actionReport(),
+			actionOutput: new GithubActionsComposition().actionOutput(),
+			createActionMessages: (...args) =>
+				new GithubActionsComposition().actionMessages(...args),
+		}).run("action.event.reconcile", operation, true);
 
 		// Assert
 		expect(core.getInput).toHaveBeenCalledWith("locale", { required: true });
@@ -103,7 +129,15 @@ describe("action runner reporting contract", () => {
 				operation.mockRejectedValue(new Error("private source response"));
 
 			// Act
-			await ActionRunner.run("action.referential.validate", operation, false);
+			await new ActionRunner({
+				diagnosticPolicy: new JourneyPolicyComposition().diagnosticPolicy(),
+				actionFailurePresenter:
+					new GithubActionsComposition().actionFailurePresenter(),
+				actionReport: new GithubActionsComposition().actionReport(),
+				actionOutput: new GithubActionsComposition().actionOutput(),
+				createActionMessages: (...args) =>
+					new GithubActionsComposition().actionMessages(...args),
+			}).run("action.referential.validate", operation, false);
 
 			// Assert
 			expect(core.setOutput).not.toHaveBeenCalled();
@@ -126,7 +160,15 @@ describe("action runner reporting contract", () => {
 				.mockResolvedValue({ details: [detail], diagnostics: [] });
 
 			// Act
-			await ActionRunner.run("action.event.reconcile", operation, true);
+			await new ActionRunner({
+				diagnosticPolicy: new JourneyPolicyComposition().diagnosticPolicy(),
+				actionFailurePresenter:
+					new GithubActionsComposition().actionFailurePresenter(),
+				actionReport: new GithubActionsComposition().actionReport(),
+				actionOutput: new GithubActionsComposition().actionOutput(),
+				createActionMessages: (...args) =>
+					new GithubActionsComposition().actionMessages(...args),
+			}).run("action.event.reconcile", operation, true);
 
 			// Assert
 			expect(operation).toHaveBeenCalledOnce();
@@ -154,7 +196,15 @@ describe("action runner reporting contract", () => {
 			.mockResolvedValue({ details: ["Invalid catalog."], diagnostics });
 
 		// Act
-		await ActionRunner.run("action.event.reconcile", operation, true);
+		await new ActionRunner({
+			diagnosticPolicy: new JourneyPolicyComposition().diagnosticPolicy(),
+			actionFailurePresenter:
+				new GithubActionsComposition().actionFailurePresenter(),
+			actionReport: new GithubActionsComposition().actionReport(),
+			actionOutput: new GithubActionsComposition().actionOutput(),
+			createActionMessages: (...args) =>
+				new GithubActionsComposition().actionMessages(...args),
+		}).run("action.event.reconcile", operation, true);
 
 		// Assert
 		expect(core.info).toHaveBeenCalledWith(
@@ -180,7 +230,15 @@ describe("action runner reporting contract", () => {
 		);
 
 		// Act
-		await ActionRunner.run("action.event.reconcile", operation, true);
+		await new ActionRunner({
+			diagnosticPolicy: new JourneyPolicyComposition().diagnosticPolicy(),
+			actionFailurePresenter:
+				new GithubActionsComposition().actionFailurePresenter(),
+			actionReport: new GithubActionsComposition().actionReport(),
+			actionOutput: new GithubActionsComposition().actionOutput(),
+			createActionMessages: (...args) =>
+				new GithubActionsComposition().actionMessages(...args),
+		}).run("action.event.reconcile", operation, true);
 
 		// Assert
 		expect(core.setFailed).toHaveBeenCalledWith("Reconciliation failed.");
@@ -205,7 +263,15 @@ describe("action runner reporting contract", () => {
 			});
 
 			// Act
-			await ActionRunner.run("action.communication.reconcile", operation, true);
+			await new ActionRunner({
+				diagnosticPolicy: new JourneyPolicyComposition().diagnosticPolicy(),
+				actionFailurePresenter:
+					new GithubActionsComposition().actionFailurePresenter(),
+				actionReport: new GithubActionsComposition().actionReport(),
+				actionOutput: new GithubActionsComposition().actionOutput(),
+				createActionMessages: (...args) =>
+					new GithubActionsComposition().actionMessages(...args),
+			}).run("action.communication.reconcile", operation, true);
 
 			// Assert
 			expect(core.setFailed).toHaveBeenCalledExactlyOnceWith(
@@ -235,7 +301,15 @@ describe("action runner reporting contract", () => {
 		});
 
 		// Act
-		await ActionRunner.run("action.communication.reconcile", operation, false);
+		await new ActionRunner({
+			diagnosticPolicy: new JourneyPolicyComposition().diagnosticPolicy(),
+			actionFailurePresenter:
+				new GithubActionsComposition().actionFailurePresenter(),
+			actionReport: new GithubActionsComposition().actionReport(),
+			actionOutput: new GithubActionsComposition().actionOutput(),
+			createActionMessages: (...args) =>
+				new GithubActionsComposition().actionMessages(...args),
+		}).run("action.communication.reconcile", operation, false);
 
 		// Assert
 		expect(core.setFailed).toHaveBeenCalledExactlyOnceWith(
@@ -250,7 +324,15 @@ describe("action runner reporting contract", () => {
 		const operation = vi.fn().mockRejectedValue(error);
 
 		// Act
-		await ActionRunner.run("action.event.reconcile", operation, true);
+		await new ActionRunner({
+			diagnosticPolicy: new JourneyPolicyComposition().diagnosticPolicy(),
+			actionFailurePresenter:
+				new GithubActionsComposition().actionFailurePresenter(),
+			actionReport: new GithubActionsComposition().actionReport(),
+			actionOutput: new GithubActionsComposition().actionOutput(),
+			createActionMessages: (...args) =>
+				new GithubActionsComposition().actionMessages(...args),
+		}).run("action.event.reconcile", operation, true);
 
 		// Assert
 		expect(core.info).toHaveBeenCalledWith("error action.execution.failed");
@@ -277,7 +359,15 @@ describe("action runner reporting contract", () => {
 			const operation = vi.fn().mockRejectedValue(error);
 
 			// Act
-			await ActionRunner.run("action.event.reconcile", operation, true);
+			await new ActionRunner({
+				diagnosticPolicy: new JourneyPolicyComposition().diagnosticPolicy(),
+				actionFailurePresenter:
+					new GithubActionsComposition().actionFailurePresenter(),
+				actionReport: new GithubActionsComposition().actionReport(),
+				actionOutput: new GithubActionsComposition().actionOutput(),
+				createActionMessages: (...args) =>
+					new GithubActionsComposition().actionMessages(...args),
+			}).run("action.event.reconcile", operation, true);
 
 			// Assert
 			expect(core.setFailed).toHaveBeenCalledOnce();
@@ -315,7 +405,15 @@ describe("action runner reporting contract", () => {
 		);
 
 		// Act
-		await ActionRunner.run("action.referential.validate", operation, false);
+		await new ActionRunner({
+			diagnosticPolicy: new JourneyPolicyComposition().diagnosticPolicy(),
+			actionFailurePresenter:
+				new GithubActionsComposition().actionFailurePresenter(),
+			actionReport: new GithubActionsComposition().actionReport(),
+			actionOutput: new GithubActionsComposition().actionOutput(),
+			createActionMessages: (...args) =>
+				new GithubActionsComposition().actionMessages(...args),
+		}).run("action.referential.validate", operation, false);
 
 		// Assert
 		expect(core.getInput).toHaveBeenCalledWith("locale", { required: true });
@@ -339,7 +437,15 @@ describe("action runner reporting contract", () => {
 			.mockRejectedValue(new Error("private@example.test"));
 
 		// Act
-		await ActionRunner.run("action.event.reconcile", operation, true);
+		await new ActionRunner({
+			diagnosticPolicy: new JourneyPolicyComposition().diagnosticPolicy(),
+			actionFailurePresenter:
+				new GithubActionsComposition().actionFailurePresenter(),
+			actionReport: new GithubActionsComposition().actionReport(),
+			actionOutput: new GithubActionsComposition().actionOutput(),
+			createActionMessages: (...args) =>
+				new GithubActionsComposition().actionMessages(...args),
+		}).run("action.event.reconcile", operation, true);
 
 		// Assert
 		expect(core.setFailed).toHaveBeenCalledWith("Erreur technique inattendue.");

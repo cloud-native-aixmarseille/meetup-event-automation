@@ -1,7 +1,7 @@
 import type { LocalDate } from "./plan-communications-contracts.js";
 
 export class CommunicationCalendar {
-	static parseIsoLocalDate(value: string): LocalDate | undefined {
+	parseIsoLocalDate(value: string): LocalDate | undefined {
 		const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
 		if (!match) {
 			return undefined;
@@ -22,7 +22,7 @@ export class CommunicationCalendar {
 		return { year, month, day };
 	}
 
-	static getLocalDate(instant: Date, timeZone: string): LocalDate | undefined {
+	getLocalDate(instant: Date, timeZone: string): LocalDate | undefined {
 		try {
 			const parts = new Intl.DateTimeFormat("en-US", {
 				timeZone,
@@ -45,13 +45,13 @@ export class CommunicationCalendar {
 		}
 	}
 
-	static toEpochDay(date: LocalDate): number {
+	toEpochDay(date: LocalDate): number {
 		return Math.floor(
 			Date.UTC(date.year, date.month - 1, date.day) / 86_400_000,
 		);
 	}
 
-	static isValidInstant(value: Date): boolean {
+	isValidInstant(value: Date): boolean {
 		return value instanceof Date && Number.isFinite(value.getTime());
 	}
 }

@@ -1,15 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { SpeakerSynchronizationError } from "./speaker-synchronization-error.js";
+import { SpeakerSynchronizationStageRunner } from "./speaker-synchronization-stage-runner.js";
 
-describe("SpeakerSynchronizationError", () => {
+describe("SpeakerSynchronizationStageRunner", () => {
 	it("retains a failed operation's stage and cause", async () => {
 		// Arrange
 		const cause = new Error("private details");
 
 		// Act
-		const result = SpeakerSynchronizationError.at("read-catalog", () => {
-			throw cause;
-		});
+		const result = new SpeakerSynchronizationStageRunner().at(
+			"read-catalog",
+			() => {
+				throw cause;
+			},
+		);
 
 		// Assert
 		await expect(result).rejects.toMatchObject({
@@ -33,9 +37,12 @@ describe("SpeakerSynchronizationError", () => {
 		);
 
 		// Act
-		const result = SpeakerSynchronizationError.at("validate-catalog", () => {
-			throw error;
-		});
+		const result = new SpeakerSynchronizationStageRunner().at(
+			"validate-catalog",
+			() => {
+				throw error;
+			},
+		);
 
 		// Assert
 		await expect(result).rejects.toBe(error);

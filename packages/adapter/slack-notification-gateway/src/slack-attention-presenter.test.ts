@@ -1,18 +1,34 @@
 import type { AttentionChecklist } from "@meetup-automation/communication";
+import { CommunicationDomainComposition } from "@meetup-automation/communication";
 import { describe, expect, it } from "vitest";
 import {
 	attentionEpisode as episode,
 	attentionState as state,
 } from "../testing/attention.fixtures.js";
+import { SlackNotificationGatewayComposition } from "./dependency-composition.js";
 import { SlackAttentionPresenter } from "./slack-attention-presenter.js";
 
 function attentionFixture(
 	locale = "en",
 	checklist: AttentionChecklist = { entries: [] },
 ) {
-	return new SlackAttentionPresenter("example/meetups", 42, locale, {
-		read: () => checklist,
-	});
+	return new SlackAttentionPresenter(
+		{
+			attentionTaskSelection:
+				new CommunicationDomainComposition().attentionTaskSelection(),
+			attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+			createSlackAttentionMessages: (...args) =>
+				new SlackNotificationGatewayComposition().slackAttentionMessages(
+					...args,
+				),
+		},
+		"example/meetups",
+		42,
+		locale,
+		{
+			read: () => checklist,
+		},
+	);
 }
 describe("Slack attention presentation", () => {
 	it.each([

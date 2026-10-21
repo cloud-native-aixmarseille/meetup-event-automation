@@ -1,6 +1,7 @@
 # ADR-0003: Keep production behavior in focused classes
 
-- Status: Accepted
+- Status: Partially superseded by [ADR-0022](0022-inject-stateless-collaborators.md)
+  for static behavior and dependency construction
 - Date: 2026-09-18
 - Builds on: [ADR-0002](0002-runtime-dependency-injection.md)
 

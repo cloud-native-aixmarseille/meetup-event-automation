@@ -1,7 +1,7 @@
 import type { ScheduledEvent } from "../application/scheduled-event-ports.js";
 
 export class ScheduledEventPolicy {
-	static valid(event: ScheduledEvent, now: string): boolean {
+	valid(event: ScheduledEvent, now: string): boolean {
 		if (
 			!event.title.trim() ||
 			event.title.length > 80 ||
@@ -9,8 +9,8 @@ export class ScheduledEventPolicy {
 			event.description.length > 49_000 ||
 			!event.venue.name.trim() ||
 			!event.venue.city.trim() ||
-			!ScheduledEventPolicy.validTime(event.startTime) ||
-			!ScheduledEventPolicy.validTime(event.endTime) ||
+			!this.validTime(event.startTime) ||
+			!this.validTime(event.endTime) ||
 			event.endTime <= event.startTime ||
 			!/^\d{4}-\d{2}-\d{2}$/.test(event.date)
 		)
@@ -31,16 +31,8 @@ export class ScheduledEventPolicy {
 				minute: "2-digit",
 				hourCycle: "h23",
 			});
-			const start = ScheduledEventPolicy.instant(
-				event.date,
-				event.startTime,
-				format,
-			);
-			const end = ScheduledEventPolicy.instant(
-				event.date,
-				event.endTime,
-				format,
-			);
+			const start = this.instant(event.date, event.startTime, format);
+			const end = this.instant(event.date, event.endTime, format);
 			return (
 				start !== undefined &&
 				end !== undefined &&
@@ -52,11 +44,11 @@ export class ScheduledEventPolicy {
 		}
 	}
 
-	static validTime(value: string): boolean {
+	validTime(value: string): boolean {
 		return /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
 	}
 
-	private static instant(
+	private instant(
 		date: string,
 		time: string,
 		format: Intl.DateTimeFormat,

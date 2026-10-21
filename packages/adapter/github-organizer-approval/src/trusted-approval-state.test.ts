@@ -1,6 +1,7 @@
+import { JourneyPolicyComposition } from "@meetup-automation/journey";
 import { describe, expect, it } from "vitest";
 import { decision, fixture, request } from "../testing/approval.fixtures.js";
-import { ApprovalCommentCodec } from "./approval-comment-codec.js";
+import { GithubOrganizerApprovalComposition } from "./dependency-composition.js";
 import { GithubOrganizerApproval } from "./github-organizer-approval.js";
 import { TrustedApprovalState } from "./trusted-approval-state.js";
 
@@ -9,6 +10,14 @@ describe("trusted approval state", () => {
 		// Arrange
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
+			{
+				approvalRequestSchema:
+					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+				approvalDetailsPreview:
+					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+			},
 			f.repository,
 			f.records,
 			f.finalizer,
@@ -16,7 +25,9 @@ describe("trusted approval state", () => {
 			f.client,
 		);
 		await approvals.request(request);
-		const record = ApprovalCommentCodec.read(f.comments[0]?.body ?? "");
+		const record = new GithubOrganizerApprovalComposition()
+			.approvalCommentCodec()
+			.read(f.comments[0]?.body ?? "");
 		decision(f, {
 			body: f.presenter.issue(
 				{
@@ -30,7 +41,14 @@ describe("trusted approval state", () => {
 				{ status: "approved" },
 			),
 		});
-		const state = new TrustedApprovalState(f.client, "automation[bot]");
+		const state = new TrustedApprovalState(
+			{
+				approvalCommentCodec:
+					new GithubOrganizerApprovalComposition().approvalCommentCodec(),
+			},
+			f.client,
+			"automation[bot]",
+		);
 
 		// Act
 		const trusted = await state.read(f.comments[0]);
@@ -43,6 +61,14 @@ describe("trusted approval state", () => {
 		// Arrange
 		const f = fixture();
 		const approvals = new GithubOrganizerApproval(
+			{
+				approvalRequestSchema:
+					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
+				approvalDetailsPreview:
+					new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+			},
 			f.repository,
 			f.records,
 			f.finalizer,
@@ -51,7 +77,14 @@ describe("trusted approval state", () => {
 		);
 		await approvals.request(request);
 		decision(f, { body: "Replaced text without metadata" });
-		const state = new TrustedApprovalState(f.client, "automation[bot]");
+		const state = new TrustedApprovalState(
+			{
+				approvalCommentCodec:
+					new GithubOrganizerApprovalComposition().approvalCommentCodec(),
+			},
+			f.client,
+			"automation[bot]",
+		);
 
 		// Act
 		const trusted = await state.read(f.comments[0]);
@@ -65,6 +98,14 @@ describe("trusted approval state", () => {
 			// Arrange
 			const f = fixture();
 			const approvals = new GithubOrganizerApproval(
+				{
+					approvalRequestSchema:
+						new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+					approvalRequestPolicy:
+						new JourneyPolicyComposition().approvalRequestPolicy(),
+					approvalDetailsPreview:
+						new GithubOrganizerApprovalComposition().approvalDetailsPreview(),
+				},
 				f.repository,
 				f.records,
 				f.finalizer,
@@ -85,7 +126,14 @@ describe("trusted approval state", () => {
 							},
 						],
 			);
-			const state = new TrustedApprovalState(f.client, "automation[bot]");
+			const state = new TrustedApprovalState(
+				{
+					approvalCommentCodec:
+						new GithubOrganizerApprovalComposition().approvalCommentCodec(),
+				},
+				f.client,
+				"automation[bot]",
+			);
 
 			// Act
 			const operation = state.read(f.comments[0]);

@@ -3,6 +3,7 @@ import { FeedbackResolutionError } from "@meetup-automation/publication";
 import { describe, expect, it, vi } from "vitest";
 import { event } from "../../testing/meetup-journey.fixtures.js";
 import type { CommunicationJourneyDiagnostic } from "../communication/contracts.js";
+import { JourneyPolicyComposition } from "../policy-composition.js";
 import { SpeakerFeedbackPreparation } from "./speaker-feedback-preparation.js";
 
 const held = {
@@ -64,11 +65,15 @@ describe("speaker feedback email preparation", () => {
 			const diagnostics: CommunicationJourneyDiagnostic[] = [];
 
 			// Act
-			const result = await new SpeakerFeedbackPreparation(gateway).execute(
-				held,
-				recipients,
-				diagnostics,
-			);
+			const result = await new SpeakerFeedbackPreparation(
+				{
+					communicationChecklist:
+						new JourneyPolicyComposition().communicationChecklist(),
+					feedbackAgendaProjection:
+						new JourneyPolicyComposition().feedbackAgendaProjection(),
+				},
+				gateway,
+			).execute(held, recipients, diagnostics);
 
 			// Assert
 			expect(result).toEqual(recipients);
@@ -84,7 +89,15 @@ describe("speaker feedback email preparation", () => {
 		// Arrange
 		const gateway = { resolve: vi.fn().mockResolvedValue(talks) };
 		const diagnostics: CommunicationJourneyDiagnostic[] = [];
-		const preparation = new SpeakerFeedbackPreparation(gateway);
+		const preparation = new SpeakerFeedbackPreparation(
+			{
+				communicationChecklist:
+					new JourneyPolicyComposition().communicationChecklist(),
+				feedbackAgendaProjection:
+					new JourneyPolicyComposition().feedbackAgendaProjection(),
+			},
+			gateway,
+		);
 
 		// Act
 		const result = await preparation.execute(held, recipients, diagnostics);
@@ -113,11 +126,15 @@ describe("speaker feedback email preparation", () => {
 					: event;
 
 			// Act
-			const result = await new SpeakerFeedbackPreparation(gateway).execute(
-				input,
-				recipients,
-				diagnostics,
-			);
+			const result = await new SpeakerFeedbackPreparation(
+				{
+					communicationChecklist:
+						new JourneyPolicyComposition().communicationChecklist(),
+					feedbackAgendaProjection:
+						new JourneyPolicyComposition().feedbackAgendaProjection(),
+				},
+				gateway,
+			).execute(input, recipients, diagnostics);
 
 			// Assert
 			expect(result).toEqual(recipients);
@@ -141,11 +158,15 @@ describe("speaker feedback email preparation", () => {
 				failure === "missing-link" ? { ...held, publicationLinks: {} } : held;
 
 			// Act
-			const result = await new SpeakerFeedbackPreparation(gateway).execute(
-				input,
-				recipients,
-				diagnostics,
-			);
+			const result = await new SpeakerFeedbackPreparation(
+				{
+					communicationChecklist:
+						new JourneyPolicyComposition().communicationChecklist(),
+					feedbackAgendaProjection:
+						new JourneyPolicyComposition().feedbackAgendaProjection(),
+				},
+				gateway,
+			).execute(input, recipients, diagnostics);
 
 			// Assert
 			expect(result).toEqual(recipients);

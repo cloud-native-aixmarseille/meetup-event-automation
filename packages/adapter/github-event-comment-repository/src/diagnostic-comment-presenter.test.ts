@@ -1,5 +1,8 @@
 import type { EventDiagnostic } from "@meetup-automation/event";
+import { JourneyPolicyComposition } from "@meetup-automation/journey";
+import { LocalizationComposition } from "@meetup-automation/localization";
 import { describe, expect, it } from "vitest";
+import { GithubEventCommentRepositoryComposition } from "./dependency-composition.js";
 import { DiagnosticCommentPresenter } from "./diagnostic-comment-presenter.js";
 import { EVENT_DIAGNOSTIC_COMMENT_MARKER } from "./github-event-comment-repository-contracts.js";
 import { EventCommentMessages } from "./i18n/event-comment-messages.js";
@@ -38,7 +41,10 @@ describe("renderDiagnosticComment", () => {
 		"explains proposal %s %s using visible numbers",
 		(locale, code, guidance) => {
 			// Arrange
-			const messages = new EventCommentMessages(locale);
+			const messages = new EventCommentMessages(
+				{ localeResolver: new LocalizationComposition().localeResolver() },
+				locale,
+			);
 			const diagnostics = [
 				{
 					...errorDiagnostic,
@@ -48,7 +54,16 @@ describe("renderDiagnosticComment", () => {
 			];
 
 			// Act
-			const body = DiagnosticCommentPresenter.render(diagnostics, messages);
+			const body = new DiagnosticCommentPresenter({
+				organizerDiagnosticPolicy:
+					new JourneyPolicyComposition().organizerDiagnosticPolicy(),
+				diagnosticPresenter:
+					new GithubEventCommentRepositoryComposition().diagnosticPresenter(),
+				createEventCommentMessages: (...args) =>
+					new GithubEventCommentRepositoryComposition().eventCommentMessages(
+						...args,
+					),
+			}).render(diagnostics, messages);
 
 			// Assert
 			expect(body).toContain(guidance);
@@ -66,7 +81,10 @@ describe("renderDiagnosticComment", () => {
 		"renders feedback URL guidance in %s without exposing its value",
 		(locale, guidance) => {
 			// Arrange
-			const messages = new EventCommentMessages(locale);
+			const messages = new EventCommentMessages(
+				{ localeResolver: new LocalizationComposition().localeResolver() },
+				locale,
+			);
 			const diagnostics = [
 				{
 					...errorDiagnostic,
@@ -76,7 +94,16 @@ describe("renderDiagnosticComment", () => {
 			];
 
 			// Act
-			const body = DiagnosticCommentPresenter.render(diagnostics, messages);
+			const body = new DiagnosticCommentPresenter({
+				organizerDiagnosticPolicy:
+					new JourneyPolicyComposition().organizerDiagnosticPolicy(),
+				diagnosticPresenter:
+					new GithubEventCommentRepositoryComposition().diagnosticPresenter(),
+				createEventCommentMessages: (...args) =>
+					new GithubEventCommentRepositoryComposition().eventCommentMessages(
+						...args,
+					),
+			}).render(diagnostics, messages);
 
 			// Assert
 			expect(body).toContain(`**OpenFeedback Link**: ${guidance}`);
@@ -86,7 +113,10 @@ describe("renderDiagnosticComment", () => {
 
 	it("localizes guidance while retaining markers, issue headings and privacy boundaries", () => {
 		// Arrange
-		const messages = new EventCommentMessages("fr");
+		const messages = new EventCommentMessages(
+			{ localeResolver: new LocalizationComposition().localeResolver() },
+			"fr",
+		);
 		const diagnostics = [
 			errorDiagnostic,
 			{
@@ -102,8 +132,26 @@ describe("renderDiagnosticComment", () => {
 		];
 
 		// Act
-		const body = DiagnosticCommentPresenter.render(diagnostics, messages);
-		const resolved = DiagnosticCommentPresenter.render([], messages);
+		const body = new DiagnosticCommentPresenter({
+			organizerDiagnosticPolicy:
+				new JourneyPolicyComposition().organizerDiagnosticPolicy(),
+			diagnosticPresenter:
+				new GithubEventCommentRepositoryComposition().diagnosticPresenter(),
+			createEventCommentMessages: (...args) =>
+				new GithubEventCommentRepositoryComposition().eventCommentMessages(
+					...args,
+				),
+		}).render(diagnostics, messages);
+		const resolved = new DiagnosticCommentPresenter({
+			organizerDiagnosticPolicy:
+				new JourneyPolicyComposition().organizerDiagnosticPolicy(),
+			diagnosticPresenter:
+				new GithubEventCommentRepositoryComposition().diagnosticPresenter(),
+			createEventCommentMessages: (...args) =>
+				new GithubEventCommentRepositoryComposition().eventCommentMessages(
+					...args,
+				),
+		}).render([], messages);
 
 		// Assert
 		expect(body).toContain(EVENT_DIAGNOSTIC_COMMENT_MARKER);
@@ -127,13 +175,22 @@ describe("renderDiagnosticComment", () => {
 				field: "publicationLinks.meetup",
 				message: "Internal message",
 			};
-			const messages = new EventCommentMessages(locale);
+			const messages = new EventCommentMessages(
+				{ localeResolver: new LocalizationComposition().localeResolver() },
+				locale,
+			);
 
 			// Act
-			const body = DiagnosticCommentPresenter.render(
-				[diagnostic, diagnostic],
-				messages,
-			);
+			const body = new DiagnosticCommentPresenter({
+				organizerDiagnosticPolicy:
+					new JourneyPolicyComposition().organizerDiagnosticPolicy(),
+				diagnosticPresenter:
+					new GithubEventCommentRepositoryComposition().diagnosticPresenter(),
+				createEventCommentMessages: (...args) =>
+					new GithubEventCommentRepositoryComposition().eventCommentMessages(
+						...args,
+					),
+			}).render([diagnostic, diagnostic], messages);
 
 			// Assert
 			expect(body).toContain("Meetup");
@@ -164,10 +221,26 @@ describe("renderDiagnosticComment", () => {
 		);
 
 		// Act
-		const body = DiagnosticCommentPresenter.render(diagnostics);
-		const actual = DiagnosticCommentPresenter.render(
-			[...diagnostics].reverse(),
-		);
+		const body = new DiagnosticCommentPresenter({
+			organizerDiagnosticPolicy:
+				new JourneyPolicyComposition().organizerDiagnosticPolicy(),
+			diagnosticPresenter:
+				new GithubEventCommentRepositoryComposition().diagnosticPresenter(),
+			createEventCommentMessages: (...args) =>
+				new GithubEventCommentRepositoryComposition().eventCommentMessages(
+					...args,
+				),
+		}).render(diagnostics);
+		const actual = new DiagnosticCommentPresenter({
+			organizerDiagnosticPolicy:
+				new JourneyPolicyComposition().organizerDiagnosticPolicy(),
+			diagnosticPresenter:
+				new GithubEventCommentRepositoryComposition().diagnosticPresenter(),
+			createEventCommentMessages: (...args) =>
+				new GithubEventCommentRepositoryComposition().eventCommentMessages(
+					...args,
+				),
+		}).render([...diagnostics].reverse());
 
 		// Assert
 		expect(body).toBe(`${EVENT_DIAGNOSTIC_COMMENT_MARKER}
@@ -200,7 +273,16 @@ describe("renderDiagnosticComment", () => {
 		];
 
 		// Act
-		const body = DiagnosticCommentPresenter.render(diagnostics);
+		const body = new DiagnosticCommentPresenter({
+			organizerDiagnosticPolicy:
+				new JourneyPolicyComposition().organizerDiagnosticPolicy(),
+			diagnosticPresenter:
+				new GithubEventCommentRepositoryComposition().diagnosticPresenter(),
+			createEventCommentMessages: (...args) =>
+				new GithubEventCommentRepositoryComposition().eventCommentMessages(
+					...args,
+				),
+		}).render(diagnostics);
 
 		// Assert
 		expect(body.match(/^- \[ \]/gm)).toHaveLength(4);
@@ -247,7 +329,16 @@ describe("renderDiagnosticComment", () => {
 		];
 
 		// Act
-		const body = DiagnosticCommentPresenter.render(diagnostics);
+		const body = new DiagnosticCommentPresenter({
+			organizerDiagnosticPolicy:
+				new JourneyPolicyComposition().organizerDiagnosticPolicy(),
+			diagnosticPresenter:
+				new GithubEventCommentRepositoryComposition().diagnosticPresenter(),
+			createEventCommentMessages: (...args) =>
+				new GithubEventCommentRepositoryComposition().eventCommentMessages(
+					...args,
+				),
+		}).render(diagnostics);
 
 		// Assert
 		expect(body).toContain("**Event Title**: Restore this section heading");
@@ -283,7 +374,16 @@ describe("renderDiagnosticComment", () => {
 		];
 
 		// Act
-		const body = DiagnosticCommentPresenter.render(diagnostics);
+		const body = new DiagnosticCommentPresenter({
+			organizerDiagnosticPolicy:
+				new JourneyPolicyComposition().organizerDiagnosticPolicy(),
+			diagnosticPresenter:
+				new GithubEventCommentRepositoryComposition().diagnosticPresenter(),
+			createEventCommentMessages: (...args) =>
+				new GithubEventCommentRepositoryComposition().eventCommentMessages(
+					...args,
+				),
+		}).render(diagnostics);
 
 		// Assert
 		expect(body).toContain(EVENT_DIAGNOSTIC_COMMENT_MARKER);
@@ -310,7 +410,16 @@ describe("renderDiagnosticComment", () => {
 		];
 
 		// Act
-		const body = DiagnosticCommentPresenter.render(diagnostics);
+		const body = new DiagnosticCommentPresenter({
+			organizerDiagnosticPolicy:
+				new JourneyPolicyComposition().organizerDiagnosticPolicy(),
+			diagnosticPresenter:
+				new GithubEventCommentRepositoryComposition().diagnosticPresenter(),
+			createEventCommentMessages: (...args) =>
+				new GithubEventCommentRepositoryComposition().eventCommentMessages(
+					...args,
+				),
+		}).render(diagnostics);
 
 		// Assert
 		expect(body).toContain("✅ Event details complete.");

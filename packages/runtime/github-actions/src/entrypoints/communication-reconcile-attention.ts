@@ -1,7 +1,11 @@
-import { ActionRunner } from "../action-runner.js";
-import { AttentionAction } from "../attention-action.js";
-await ActionRunner.run(
+import { AttentionActionComposition } from "../attention-action-composition.js";
+import { GithubActionsComposition } from "../dependency-composition.js";
+
+const runner = new GithubActionsComposition().actionRunner();
+const action = new AttentionActionComposition().attentionAction();
+
+await runner.run(
 	"action.communication.reconcile-attention",
-	AttentionAction.run,
+	action.run.bind(action),
 	false,
 );

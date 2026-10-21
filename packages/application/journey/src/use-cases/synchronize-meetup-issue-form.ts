@@ -50,3 +50,6 @@ export class SynchronizeMeetupIssueForm {
 		};
 	}
 }
+export type SynchronizeMeetupIssueFormArguments = ConstructorParameters<
+	typeof SynchronizeMeetupIssueForm
+>;

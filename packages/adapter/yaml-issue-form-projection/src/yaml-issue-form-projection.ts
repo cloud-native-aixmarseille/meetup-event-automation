@@ -4,12 +4,18 @@ import type {
 	IssueFormProjection,
 	IssueFormProjectionMode,
 } from "@meetup-automation/journey";
-import { ProjectReferentialChoices } from "@meetup-automation/referential";
+import type { ProjectReferentialChoices } from "@meetup-automation/referential";
 import * as yamlPlugin from "prettier/plugins/yaml";
 import { format } from "prettier/standalone";
-import { IssueFormMessages } from "./i18n/issue-form-messages.js";
-import { SpeakerReferencesPresenter } from "./speaker-references-presenter.js";
-import { YamlIssueFormDocument } from "./yaml-issue-form-document.js";
+import type {
+	IssueFormMessages,
+	IssueFormMessagesArguments,
+} from "./i18n/issue-form-messages.js";
+import type {
+	SpeakerReferencesPresenter,
+	SpeakerReferencesPresenterArguments,
+} from "./speaker-references-presenter.js";
+import type { YamlIssueFormDocument } from "./yaml-issue-form-document.js";
 import type {
 	IssueFormProjectionDiagnostic,
 	IssueFormProjectionResult,
@@ -18,13 +24,28 @@ import type {
 	YamlIssueFormProjectionOptions,
 } from "./yaml-issue-form-projection-contracts.js";
 
+export interface YamlIssueFormProjectionCollaborators {
+	readonly yamlIssueFormDocument: Pick<YamlIssueFormDocument, "project">;
+	readonly createProjectReferentialChoices: () => ProjectReferentialChoices;
+	readonly createSpeakerReferencesPresenter: (
+		...args: SpeakerReferencesPresenterArguments
+	) => SpeakerReferencesPresenter;
+	readonly createIssueFormMessages: (
+		...args: IssueFormMessagesArguments
+	) => IssueFormMessages;
+}
+
 export class YamlIssueFormProjection implements IssueFormProjection {
 	private readonly presenter: SpeakerReferencesPresenter;
-	private readonly choices = new ProjectReferentialChoices();
+	private readonly choices: ProjectReferentialChoices;
 
-	constructor(private readonly options: YamlIssueFormProjectionOptions) {
-		this.presenter = new SpeakerReferencesPresenter(
-			new IssueFormMessages(options.locale),
+	constructor(
+		private readonly collaborators: YamlIssueFormProjectionCollaborators,
+		private readonly options: YamlIssueFormProjectionOptions,
+	) {
+		this.choices = this.collaborators.createProjectReferentialChoices();
+		this.presenter = this.collaborators.createSpeakerReferencesPresenter(
+			this.collaborators.createIssueFormMessages(options.locale),
 		);
 	}
 
@@ -35,12 +56,13 @@ export class YamlIssueFormProjection implements IssueFormProjection {
 		const issueFormPath = await this.resolveIssueFormPath(input.issueFormPath);
 		const source = await readFile(issueFormPath.absolutePath, "utf8");
 		const projection = this.choices.execute(input.catalog);
-		const { changed, document } = YamlIssueFormDocument.project(
-			source,
-			projection.hostOptions,
-			this.presenter.render(projection.speakerReferences),
-			input.occurrenceStatusFieldId,
-		);
+		const { changed, document } =
+			this.collaborators.yamlIssueFormDocument.project(
+				source,
+				projection.hostOptions,
+				this.presenter.render(projection.speakerReferences),
+				input.occurrenceStatusFieldId,
+			);
 
 		if (changed && input.mode === "fix") {
 			const content = await format(document.toString(), {
@@ -121,3 +143,10 @@ export class YamlIssueFormProjection implements IssueFormProjection {
 		return Object.freeze({ changed, changedFiles, diagnostics });
 	}
 }
+export type YamlIssueFormProjectionArguments =
+	ConstructorParameters<typeof YamlIssueFormProjection> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

@@ -5,7 +5,7 @@ import {
 } from "@meetup-automation/publication";
 
 export class SlideContentElement {
-	static find(
+	find(
 		current: slides_v1.Schema$Presentation,
 		binding: Pick<ContentBinding, "anchor">,
 	): slides_v1.Schema$PageElement {

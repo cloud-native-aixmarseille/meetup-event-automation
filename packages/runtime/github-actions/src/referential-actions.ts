@@ -1,22 +1,44 @@
 import * as core from "@actions/core";
-import {
+import type {
 	SynchronizeMeetupIssueForm,
 	ValidateMeetupReferentials,
 } from "@meetup-automation/journey";
+import type { Locale } from "@meetup-automation/localization";
 import type { ActionReportData } from "./action-report.js";
-import { EventComposition } from "./composition.js";
-import { ActionMessages } from "./i18n/action-messages.js";
-import { ReferentialActionReport } from "./referential-action-report.js";
-import { RuntimeInput } from "./runtime-input.js";
+import type {
+	ActionMessages,
+	ActionMessagesArguments,
+} from "./i18n/action-messages.js";
+import type { ReferentialActionReport } from "./referential-action-report.js";
+import type { RuntimeInput } from "./runtime-input.js";
+
+export interface ReferentialActionsCollaborators {
+	readonly validateReferentials: (
+		locale: Locale,
+	) => Pick<ValidateMeetupReferentials, "execute">;
+	readonly synchronizeIssueForm: (
+		locale: Locale,
+	) => Pick<SynchronizeMeetupIssueForm, "execute">;
+	readonly referentialActionReport: Pick<
+		ReferentialActionReport,
+		"validation" | "issueForm"
+	>;
+	readonly runtimeInput: Pick<RuntimeInput, "enumInput">;
+	readonly createActionMessages: (
+		...args: ActionMessagesArguments
+	) => ActionMessages;
+}
 
 export class ReferentialActions {
-	static async runReferentialValidateAction(
-		messages = new ActionMessages(),
+	constructor(
+		private readonly collaborators: ReferentialActionsCollaborators,
+	) {}
+
+	async runReferentialValidateAction(
+		messages = this.collaborators.createActionMessages(),
 	): Promise<ActionReportData> {
-		const outcome = await EventComposition.createReferentialContainer({
-			locale: messages.locale,
-		})
-			.get(ValidateMeetupReferentials)
+		const outcome = await this.collaborators
+			.validateReferentials(messages.locale)
 			.execute();
 		const counts = outcome.isValid
 			? {
@@ -24,7 +46,7 @@ export class ReferentialActions {
 					speakerCount: outcome.catalog.speakers.length,
 				}
 			: { hostCount: 0, speakerCount: 0 };
-		const report = ReferentialActionReport.validation(
+		const report = this.collaborators.referentialActionReport.validation(
 			{ isValid: outcome.isValid, ...counts },
 			outcome.diagnostics,
 			messages,
@@ -33,20 +55,22 @@ export class ReferentialActions {
 		return report;
 	}
 
-	static async runReferentialSyncIssueFormAction(
-		messages = new ActionMessages(),
+	async runReferentialSyncIssueFormAction(
+		messages = this.collaborators.createActionMessages(),
 	): Promise<ActionReportData> {
-		const mode = RuntimeInput.enumInput(
+		const mode = this.collaborators.runtimeInput.enumInput(
 			"mode",
 			core.getInput("mode", { required: true }),
 			["check", "fix"] as const,
 		);
-		const outcome = await EventComposition.createReferentialContainer({
-			locale: messages.locale,
-		})
-			.get(SynchronizeMeetupIssueForm)
+		const outcome = await this.collaborators
+			.synchronizeIssueForm(messages.locale)
 			.execute({ mode });
-		const report = ReferentialActionReport.issueForm(mode, outcome, messages);
+		const report = this.collaborators.referentialActionReport.issueForm(
+			mode,
+			outcome,
+			messages,
+		);
 
 		core.setOutput("changed", String(outcome.changed));
 

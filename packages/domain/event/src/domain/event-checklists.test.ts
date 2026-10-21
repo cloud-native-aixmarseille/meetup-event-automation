@@ -17,7 +17,7 @@ describe("EventChecklists", () => {
 		};
 
 		// Act
-		const equal = EventChecklists.equal(left, right);
+		const equal = new EventChecklists().equal(left, right);
 
 		// Assert
 		expect(equal).toBe(true);
@@ -36,7 +36,7 @@ describe("EventChecklists", () => {
 			const right = { ...left, [kind]: [{ name: "Publish", completed: true }] };
 
 			// Act
-			const equal = EventChecklists.equal(left, right);
+			const equal = new EventChecklists().equal(left, right);
 
 			// Assert
 			expect(equal).toBe(false);

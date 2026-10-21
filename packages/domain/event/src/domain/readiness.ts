@@ -1,4 +1,4 @@
-import { type EventDiagnostic, EventDiagnostics } from "./diagnostic.js";
+import type { EventDiagnostic, EventDiagnostics } from "./diagnostic.js";
 import type { MeetupEvent } from "./model.js";
 
 export type EventReadinessStatus = "invalid" | "incomplete" | "ready";
@@ -9,8 +9,16 @@ export type EventReadiness = Readonly<{
 	diagnostics: readonly EventDiagnostic[];
 }>;
 
+export interface EventReadinessPolicyCollaborators {
+	readonly eventDiagnostics: Pick<EventDiagnostics, "diagnostic">;
+}
+
 export class EventReadinessPolicy {
-	static evaluateEventReadiness(
+	constructor(
+		private readonly collaborators: EventReadinessPolicyCollaborators,
+	) {}
+
+	evaluateEventReadiness(
 		event: MeetupEvent,
 		diagnostics: readonly EventDiagnostic[],
 	): EventReadiness {
@@ -42,7 +50,7 @@ export class EventReadinessPolicy {
 
 		if (!event.confirmations.host) {
 			readinessDiagnostics.push(
-				EventDiagnostics.diagnostic({
+				this.collaborators.eventDiagnostics.diagnostic({
 					code: "event.confirmation.host.missing",
 					severity: "warning",
 					category: "incomplete",
@@ -53,7 +61,7 @@ export class EventReadinessPolicy {
 		}
 		if (!event.confirmations.speakers) {
 			readinessDiagnostics.push(
-				EventDiagnostics.diagnostic({
+				this.collaborators.eventDiagnostics.diagnostic({
 					code: "event.confirmation.speakers.missing",
 					severity: "warning",
 					category: "incomplete",

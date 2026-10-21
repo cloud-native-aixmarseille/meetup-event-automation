@@ -55,9 +55,10 @@ AAA sections. The comments separate phases within each test case.
 it("rejects a non-positive issue identifier", () => {
   // Arrange
   const input = "0";
+  const parser = new RuntimeInput();
 
   // Act
-  const parse = () => RuntimeInput.positiveIntegerInput("issue-number", input);
+  const parse = () => parser.positiveIntegerInput("issue-number", input);
 
   // Assert
   expect(parse).toThrow("issue-number must be a positive integer");

@@ -1,8 +1,8 @@
 import type { MailRecipient } from "@meetup-automation/communication";
-import {
-	type ReferentialCatalog,
+import type {
+	ReferentialCatalog,
 	ResolveEventReferences,
-	type Speaker,
+	Speaker,
 } from "@meetup-automation/referential";
 import type { CommunicationJourneyDiagnostic } from "../communication/contracts.js";
 import {
@@ -10,8 +10,16 @@ import {
 	UNRESOLVED_MAIL_RECIPIENTS,
 } from "./manage-meetup-communications-contracts.js";
 
+export interface CommunicationRecipientsCollaborators {
+	readonly createResolveEventReferences: () => ResolveEventReferences;
+}
+
 export class CommunicationRecipients {
-	static resolveMailRecipients(
+	constructor(
+		private readonly collaborators: CommunicationRecipientsCollaborators,
+	) {}
+
+	resolveMailRecipients(
 		event: {
 			readonly host?: { readonly id?: string; readonly displayName: string };
 			readonly agenda: readonly {
@@ -24,14 +32,14 @@ export class CommunicationRecipients {
 		catalog: ReferentialCatalog,
 		diagnostics: CommunicationJourneyDiagnostic[],
 	): MailRecipientResolution {
-		const resolution = new ResolveEventReferences().execute(catalog, {
-			hostReference: event.host
-				? CommunicationRecipients.renderReference(event.host)
-				: "",
-			speakerReferences: event.agenda.flatMap((entry) =>
-				entry.speakers.map(CommunicationRecipients.renderReference),
-			),
-		});
+		const resolution = this.collaborators
+			.createResolveEventReferences()
+			.execute(catalog, {
+				hostReference: event.host ? this.renderReference(event.host) : "",
+				speakerReferences: event.agenda.flatMap((entry) =>
+					entry.speakers.map(this.renderReference.bind(this)),
+				),
+			});
 		if (!resolution.resolved) {
 			diagnostics.push({
 				code: "communication.event-references-unresolved",
@@ -58,18 +66,14 @@ export class CommunicationRecipients {
 
 		for (const speaker of resolution.speakers) {
 			recipients.push(
-				CommunicationRecipients.speakerRecipient(
-					speaker,
-					eventHost.displayName,
-					hostingAddress,
-				),
+				this.speakerRecipient(speaker, eventHost.displayName, hostingAddress),
 			);
 		}
 
 		return { resolved: true, recipients: Object.freeze(recipients) };
 	}
 
-	static speakerRecipient(
+	speakerRecipient(
 		speaker: Speaker,
 		hostingName: string,
 		hostingAddress: string,
@@ -90,7 +94,7 @@ export class CommunicationRecipients {
 		};
 	}
 
-	static renderReference(reference: {
+	renderReference(reference: {
 		readonly id?: string;
 		readonly displayName: string;
 	}): string {

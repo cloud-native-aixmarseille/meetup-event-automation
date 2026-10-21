@@ -1,11 +1,17 @@
-import { AttentionPolicy } from "./attention-policy.js";
+import type { AttentionPolicy } from "./attention-policy.js";
 import type {
 	AttentionEpisode,
 	AttentionObservation,
 	AttentionState,
 } from "./model.js";
+export interface AttentionEpisodesCollaborators {
+	readonly attentionPolicy: Pick<AttentionPolicy, "window" | "view">;
+}
+
 export class AttentionEpisodes {
-	static reconcile(
+	constructor(private readonly collaborators: AttentionEpisodesCollaborators) {}
+
+	reconcile(
 		previous: AttentionState | undefined,
 		observation: AttentionObservation,
 		now: Date,
@@ -37,13 +43,13 @@ export class AttentionEpisodes {
 					episode.lastWindow &&
 					["preparation", "occurrence", "follow-up"].includes(condition.policy)
 				)
-					episode.lastWindow = AttentionPolicy.window(
+					episode.lastWindow = this.collaborators.attentionPolicy.window(
 						episode,
 						observation.eventDate,
 						now,
 					);
 			} else {
-				episode.status = AttentionEpisodes.absentStatus(episode, observation);
+				episode.status = this.absentStatus(episode, observation);
 			}
 		}
 		for (const condition of conditions.values())
@@ -59,7 +65,7 @@ export class AttentionEpisodes {
 		state.commentId = observation.commentId;
 		return state;
 	}
-	private static absentStatus(
+	private absentStatus(
 		episode: AttentionEpisode,
 		observation: AttentionObservation,
 	): AttentionEpisode["status"] {
@@ -74,15 +80,26 @@ export class AttentionEpisodes {
 			return "resolved";
 		return episode.status === "active" ? "unknown" : episode.status;
 	}
-	static due(state: AttentionState, now: Date): AttentionEpisode[] {
-		return AttentionPolicy.view(state).conditions.filter((episode) => {
-			const window = AttentionPolicy.window(episode, state.eventDate, now);
-			return window !== undefined && window !== episode.lastWindow;
-		});
+	due(state: AttentionState, now: Date): AttentionEpisode[] {
+		return this.collaborators.attentionPolicy
+			.view(state)
+			.conditions.filter((episode) => {
+				const window = this.collaborators.attentionPolicy.window(
+					episode,
+					state.eventDate,
+					now,
+				);
+				return window !== undefined && window !== episode.lastWindow;
+			});
 	}
-	static acknowledge(state: AttentionState, now: Date): void {
-		for (const episode of AttentionPolicy.view(state).conditions) {
-			const window = AttentionPolicy.window(episode, state.eventDate, now);
+	acknowledge(state: AttentionState, now: Date): void {
+		for (const episode of this.collaborators.attentionPolicy.view(state)
+			.conditions) {
+			const window = this.collaborators.attentionPolicy.window(
+				episode,
+				state.eventDate,
+				now,
+			);
 			if (window) episode.lastWindow = window;
 		}
 	}

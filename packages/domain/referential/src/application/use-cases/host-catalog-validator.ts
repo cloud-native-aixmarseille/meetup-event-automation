@@ -1,20 +1,36 @@
-import {
-	type HostId,
+import type {
+	HostId,
 	ReferentialIdentifiers,
 } from "../../domain/identifiers.js";
 import type { Host, RawHostRecord } from "../../domain/referential-catalog.js";
-import {
-	type ReferentialDiagnostic,
+import type {
+	ReferentialDiagnostic,
 	ReferentialDiagnostics,
 } from "../../domain/referential-diagnostic.js";
-import { ReferentialRecordFields } from "./referential-record-fields.js";
+import type { ReferentialRecordFields } from "./referential-record-fields.js";
 import type {
 	HostBuilder,
 	ParsedHostRecord,
 } from "./validate-referential-catalog-contracts.js";
 
+export interface HostCatalogValidatorCollaborators {
+	readonly referentialDiagnostics: Pick<ReferentialDiagnostics, "diagnostic">;
+	readonly referentialRecordFields: Pick<
+		ReferentialRecordFields,
+		"requiredText" | "email" | "optionalText"
+	>;
+	readonly referentialIdentifiers: Pick<
+		ReferentialIdentifiers,
+		"asHostId" | "asContactId"
+	>;
+}
+
 export class HostCatalogValidator {
-	static validateHosts(
+	constructor(
+		private readonly collaborators: HostCatalogValidatorCollaborators,
+	) {}
+
+	validateHosts(
 		records: readonly RawHostRecord[],
 		diagnostics: ReferentialDiagnostic[],
 	): Host[] {
@@ -22,18 +38,14 @@ export class HostCatalogValidator {
 		const contactIds = new Set<string>();
 
 		for (const [index, record] of records.entries()) {
-			const parsed = HostCatalogValidator.parseHostRecord(
-				record,
-				index,
-				diagnostics,
-			);
+			const parsed = this.parseHostRecord(record, index, diagnostics);
 			if (!parsed) {
 				continue;
 			}
 
 			if (contactIds.has(parsed.contact.id)) {
 				diagnostics.push(
-					ReferentialDiagnostics.diagnostic(
+					this.collaborators.referentialDiagnostics.diagnostic(
 						"referential.contact.id.duplicate",
 						"error",
 						`hosts[${index}].contactId`,
@@ -59,7 +71,7 @@ export class HostCatalogValidator {
 
 			if (host.displayName !== parsed.displayName) {
 				diagnostics.push(
-					ReferentialDiagnostics.diagnostic(
+					this.collaborators.referentialDiagnostics.diagnostic(
 						"referential.host.id.conflict",
 						"error",
 						`hosts[${index}].hostId`,
@@ -80,46 +92,42 @@ export class HostCatalogValidator {
 		}));
 	}
 
-	static parseHostRecord(
+	parseHostRecord(
 		record: RawHostRecord,
 		index: number,
 		diagnostics: ReferentialDiagnostic[],
 	): ParsedHostRecord | undefined {
-		const hostId = HostCatalogValidator.hostId(record, index, diagnostics);
-		const displayName = ReferentialRecordFields.requiredText(
+		const hostId = this.hostId(record, index, diagnostics);
+		const displayName = this.collaborators.referentialRecordFields.requiredText(
 			record.displayName,
 			"referential.host.display-name.invalid",
 			`hosts[${index}].displayName`,
 			"Host display name must be a non-empty string.",
 			diagnostics,
 		);
-		const contactId = HostCatalogValidator.contactId(
-			record,
-			index,
-			diagnostics,
-		);
-		const contactName = ReferentialRecordFields.requiredText(
+		const contactId = this.contactId(record, index, diagnostics);
+		const contactName = this.collaborators.referentialRecordFields.requiredText(
 			record.contactName,
 			"referential.contact.name.invalid",
 			`hosts[${index}].contactName`,
 			"Contact name must be a non-empty string.",
 			diagnostics,
 		);
-		const email = ReferentialRecordFields.email(
+		const email = this.collaborators.referentialRecordFields.email(
 			record.email,
 			"referential.contact.email.invalid",
 			`hosts[${index}].email`,
 			"Host contact email address is invalid.",
 			diagnostics,
 		);
-		const phone = ReferentialRecordFields.optionalText(
+		const phone = this.collaborators.referentialRecordFields.optionalText(
 			record.phone,
 			"referential.contact.phone.invalid",
 			`hosts[${index}].phone`,
 			"Host contact phone must be a string when provided.",
 			diagnostics,
 		);
-		const address = ReferentialRecordFields.requiredText(
+		const address = this.collaborators.referentialRecordFields.requiredText(
 			record.address,
 			"referential.contact.address.invalid",
 			`hosts[${index}].address`,
@@ -152,12 +160,12 @@ export class HostCatalogValidator {
 		};
 	}
 
-	private static hostId(
+	private hostId(
 		record: RawHostRecord,
 		index: number,
 		diagnostics: ReferentialDiagnostic[],
 	) {
-		const hostIdValue = ReferentialRecordFields.requiredText(
+		const hostIdValue = this.collaborators.referentialRecordFields.requiredText(
 			record.hostId,
 			"referential.host.id.invalid",
 			`hosts[${index}].hostId`,
@@ -165,11 +173,11 @@ export class HostCatalogValidator {
 			diagnostics,
 		);
 		const hostId = hostIdValue
-			? ReferentialIdentifiers.asHostId(hostIdValue)
+			? this.collaborators.referentialIdentifiers.asHostId(hostIdValue)
 			: undefined;
 		if (hostIdValue && !hostId) {
 			diagnostics.push(
-				ReferentialDiagnostics.diagnostic(
+				this.collaborators.referentialDiagnostics.diagnostic(
 					"referential.host.id.invalid",
 					"error",
 					`hosts[${index}].hostId`,
@@ -181,24 +189,25 @@ export class HostCatalogValidator {
 		return hostId;
 	}
 
-	private static contactId(
+	private contactId(
 		record: RawHostRecord,
 		index: number,
 		diagnostics: ReferentialDiagnostic[],
 	) {
-		const contactIdValue = ReferentialRecordFields.requiredText(
-			record.contactId,
-			"referential.contact.id.invalid",
-			`hosts[${index}].contactId`,
-			"Contact stable identifier must be a non-empty string.",
-			diagnostics,
-		);
+		const contactIdValue =
+			this.collaborators.referentialRecordFields.requiredText(
+				record.contactId,
+				"referential.contact.id.invalid",
+				`hosts[${index}].contactId`,
+				"Contact stable identifier must be a non-empty string.",
+				diagnostics,
+			);
 		const contactId = contactIdValue
-			? ReferentialIdentifiers.asContactId(contactIdValue)
+			? this.collaborators.referentialIdentifiers.asContactId(contactIdValue)
 			: undefined;
 		if (contactIdValue && !contactId) {
 			diagnostics.push(
-				ReferentialDiagnostics.diagnostic(
+				this.collaborators.referentialDiagnostics.diagnostic(
 					"referential.contact.id.invalid",
 					"error",
 					`hosts[${index}].contactId`,

@@ -1,32 +1,46 @@
-import {
-	type AttentionRepository,
-	type AttentionState,
+import type {
+	AttentionRepository,
+	AttentionState,
 	AttentionStateEquality,
 } from "@meetup-automation/communication";
-
 import {
 	type AttentionDiagnosticChecklist,
 	DIAGNOSTIC_MARKER,
 } from "./attention-diagnostic-checklist.js";
 import type { AttentionPresenter } from "./attention-presenter.js";
-import { ATTENTION_MARKER, AttentionRecord } from "./attention-record.js";
+import { ATTENTION_MARKER, type AttentionRecord } from "./attention-record.js";
 import type { GithubAttentionClient } from "./github-attention-client.js";
-import { TrustedAttentionState } from "./trusted-attention-state.js";
+import type {
+	TrustedAttentionState,
+	TrustedAttentionStateArguments,
+} from "./trusted-attention-state.js";
 
 type Snapshot = { id: number; body: string };
+export interface GithubAttentionRepositoryCollaborators {
+	readonly attentionRecord: Pick<AttentionRecord, "read" | "marker">;
+	readonly attentionStateEquality: Pick<AttentionStateEquality, "equal">;
+	readonly createTrustedAttentionState: (
+		...args: TrustedAttentionStateArguments
+	) => TrustedAttentionState;
+}
+
 export class GithubAttentionRepository implements AttentionRepository {
 	private snapshot?: Snapshot;
 	private obsolete?: Snapshot;
 	private previous?: AttentionState;
 	private loaded = false;
 	constructor(
+		private readonly collaborators: GithubAttentionRepositoryCollaborators,
 		private readonly client: GithubAttentionClient,
 		private readonly author: string,
 		private readonly presenter: AttentionPresenter,
 		private readonly checklist: AttentionDiagnosticChecklist,
 	) {}
 	async load(): Promise<AttentionState | undefined> {
-		const trusted = new TrustedAttentionState(this.client, this.author);
+		const trusted = this.collaborators.createTrustedAttentionState(
+			this.client,
+			this.author,
+		);
 		const records: {
 			snapshot: Snapshot;
 			state: AttentionState;
@@ -48,7 +62,7 @@ export class GithubAttentionRepository implements AttentionRepository {
 			if (body.includes(ATTENTION_MARKER))
 				records.push({
 					snapshot,
-					state: AttentionRecord.read(body),
+					state: this.collaborators.attentionRecord.read(body),
 					diagnostic: body.startsWith(DIAGNOSTIC_MARKER),
 				});
 		}
@@ -71,7 +85,11 @@ export class GithubAttentionRepository implements AttentionRepository {
 				!canonical?.diagnostic ||
 				records.every((item) => item.diagnostic) ||
 				records.some(
-					(item) => !AttentionStateEquality.equal(item.state, canonical.state),
+					(item) =>
+						!this.collaborators.attentionStateEquality.equal(
+							item.state,
+							canonical.state,
+						),
 				))
 		)
 			throw new Error("Multiple attention records");
@@ -85,7 +103,10 @@ export class GithubAttentionRepository implements AttentionRepository {
 		if (!this.loaded)
 			throw new Error("Attention state must be loaded before writing");
 		await this.consolidate();
-		const body = this.presenter.issue(state, AttentionRecord.marker(state));
+		const body = this.presenter.issue(
+			state,
+			this.collaborators.attentionRecord.marker(state),
+		);
 		if (body.length > 60000) throw new Error("Attention record limit exceeded");
 		if (this.snapshot) {
 			if (this.snapshot.body === body) return;
@@ -111,7 +132,7 @@ export class GithubAttentionRepository implements AttentionRepository {
 		// recognize identical records after interruption between these writes.
 		const body = this.presenter.issue(
 			this.previous,
-			AttentionRecord.marker(this.previous),
+			this.collaborators.attentionRecord.marker(this.previous),
 		);
 		if (body.length > 60000) throw new Error("Attention record limit exceeded");
 		await this.client.replace(this.snapshot.id, this.snapshot.body, body);
@@ -132,3 +153,10 @@ export class GithubAttentionRepository implements AttentionRepository {
 		this.snapshot = undefined;
 	}
 }
+export type GithubAttentionRepositoryArguments =
+	ConstructorParameters<typeof GithubAttentionRepository> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

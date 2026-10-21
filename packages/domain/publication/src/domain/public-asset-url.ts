@@ -1,6 +1,6 @@
 /** Eligibility for URLs projected into public assets; retrieval validates network destinations separately. */
 export class PublicAssetUrl {
-	static valid(value?: string): value is string {
+	valid(value?: string): value is string {
 		if (!value) return false;
 		try {
 			const url = new URL(value);

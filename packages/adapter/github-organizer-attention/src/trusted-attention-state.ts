@@ -39,3 +39,6 @@ export class TrustedAttentionState {
 		);
 	}
 }
+export type TrustedAttentionStateArguments = ConstructorParameters<
+	typeof TrustedAttentionState
+>;

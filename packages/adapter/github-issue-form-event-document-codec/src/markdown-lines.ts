@@ -1,7 +1,7 @@
 import type { Checkbox } from "./github-issue-form-event-document-codec-contracts.js";
 
 export class MarkdownLines {
-	static findLineEnd(value: string, start: number): number {
+	findLineEnd(value: string, start: number): number {
 		let cursor = start;
 		while (
 			cursor < value.length &&
@@ -13,7 +13,7 @@ export class MarkdownLines {
 		return cursor;
 	}
 
-	static findNextLineStart(value: string, lineEnd: number): number {
+	findNextLineStart(value: string, lineEnd: number): number {
 		if (lineEnd >= value.length) {
 			return value.length;
 		}
@@ -23,30 +23,27 @@ export class MarkdownLines {
 		return lineEnd + 1;
 	}
 
-	static trimLeadingWhitespace(value: string): string {
+	trimLeadingWhitespace(value: string): string {
 		let start = 0;
-		while (
-			start < value.length &&
-			MarkdownLines.isWhitespaceCharacter(value[start])
-		) {
+		while (start < value.length && this.isWhitespaceCharacter(value[start])) {
 			start += 1;
 		}
 		return value.slice(start);
 	}
 
-	static trimTrailingWhitespace(value: string): string {
+	trimTrailingWhitespace(value: string): string {
 		let end = value.length;
-		while (end > 0 && MarkdownLines.isWhitespaceCharacter(value[end - 1])) {
+		while (end > 0 && this.isWhitespaceCharacter(value[end - 1])) {
 			end -= 1;
 		}
 		return value.slice(0, end);
 	}
 
-	static isHorizontalWhitespaceCharacter(value: string): boolean {
+	isHorizontalWhitespaceCharacter(value: string): boolean {
 		return value === " " || value === "\t";
 	}
 
-	static isWhitespaceCharacter(value: string): boolean {
+	isWhitespaceCharacter(value: string): boolean {
 		return (
 			value === " " ||
 			value === "\t" ||
@@ -57,7 +54,7 @@ export class MarkdownLines {
 		);
 	}
 
-	static parseHeadingLine(line: string): string | undefined {
+	parseHeadingLine(line: string): string | undefined {
 		if (!line.startsWith("### ")) {
 			return undefined;
 		}
@@ -70,25 +67,25 @@ export class MarkdownLines {
 		let end = rawHeading.length;
 		while (
 			end > 1 &&
-			MarkdownLines.isHorizontalWhitespaceCharacter(rawHeading[end - 1])
+			this.isHorizontalWhitespaceCharacter(rawHeading[end - 1])
 		) {
 			end -= 1;
 		}
 		return rawHeading.slice(0, end).trim();
 	}
 
-	static parseCheckboxLine(line: string): Checkbox | undefined {
+	parseCheckboxLine(line: string): Checkbox | undefined {
 		let cursor = 0;
-		cursor = MarkdownLines.skipHorizontalWhitespace(line, cursor);
+		cursor = this.skipHorizontalWhitespace(line, cursor);
 		if (line[cursor] !== "-") {
 			return undefined;
 		}
 
 		cursor += 1;
-		if (!MarkdownLines.isHorizontalWhitespaceCharacter(line[cursor] ?? "")) {
+		if (!this.isHorizontalWhitespaceCharacter(line[cursor] ?? "")) {
 			return undefined;
 		}
-		cursor = MarkdownLines.skipHorizontalWhitespace(line, cursor);
+		cursor = this.skipHorizontalWhitespace(line, cursor);
 		if (line[cursor] !== "[") {
 			return undefined;
 		}
@@ -104,10 +101,10 @@ export class MarkdownLines {
 		}
 
 		cursor += 3;
-		if (!MarkdownLines.isHorizontalWhitespaceCharacter(line[cursor] ?? "")) {
+		if (!this.isHorizontalWhitespaceCharacter(line[cursor] ?? "")) {
 			return undefined;
 		}
-		cursor = MarkdownLines.skipHorizontalWhitespace(line, cursor);
+		cursor = this.skipHorizontalWhitespace(line, cursor);
 
 		const label = line.slice(cursor).trim();
 		if (label === "") {
@@ -120,13 +117,10 @@ export class MarkdownLines {
 		};
 	}
 
-	private static skipHorizontalWhitespace(
-		line: string,
-		cursor: number,
-	): number {
+	private skipHorizontalWhitespace(line: string, cursor: number): number {
 		while (
 			cursor < line.length &&
-			MarkdownLines.isHorizontalWhitespaceCharacter(line[cursor])
+			this.isHorizontalWhitespaceCharacter(line[cursor])
 		) {
 			cursor += 1;
 		}

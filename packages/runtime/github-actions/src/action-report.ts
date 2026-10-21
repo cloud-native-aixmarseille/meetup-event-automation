@@ -1,6 +1,9 @@
 import * as core from "@actions/core";
 import type { PublicDiagnostic } from "@meetup-automation/journey";
-import { ActionMessages } from "./i18n/action-messages.js";
+import type {
+	ActionMessages,
+	ActionMessagesArguments,
+} from "./i18n/action-messages.js";
 
 /** Only explicitly selected public facts and redacted diagnostics belong here. */
 export interface ActionReportData {
@@ -10,15 +13,23 @@ export interface ActionReportData {
 	readonly failure?: string;
 }
 
+export interface ActionReportCollaborators {
+	readonly createActionMessages: (
+		...args: ActionMessagesArguments
+	) => ActionMessages;
+}
+
 export class ActionReport {
-	static async write(
+	constructor(private readonly collaborators: ActionReportCollaborators) {}
+
+	async write(
 		title: string,
 		report: ActionReportData,
-		messages = new ActionMessages(),
+		messages = this.collaborators.createActionMessages(),
 	): Promise<void> {
 		const lines = new Set(report.details);
 		for (const item of report.diagnostics) {
-			lines.add(ActionReport.diagnosticMessage(item));
+			lines.add(this.diagnosticMessage(item));
 		}
 		if (report.failure)
 			lines.add(messages.t("report.failed", { reason: report.failure }));
@@ -41,7 +52,7 @@ export class ActionReport {
 			core.warning(messages.t("report.summary-unavailable"));
 		}
 	}
-	private static diagnosticMessage(item: PublicDiagnostic): string {
+	private diagnosticMessage(item: PublicDiagnostic): string {
 		const field = item.field ? ` field=${item.field}` : "";
 		const fixed =
 			item.fixApplied === undefined ? "" : ` fix_applied=${item.fixApplied}`;

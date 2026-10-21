@@ -1,17 +1,27 @@
-import { EventDiagnostics } from "./diagnostic.js";
+import type { EventDiagnostics } from "./diagnostic.js";
 import {
 	EMPTY_EVENT_PATCH,
-	EventPatches,
+	type EventPatches,
 	type EventPatchOperation,
 } from "./patch.js";
 import type { EventRuleResult } from "./rule-contracts.js";
 
+export interface EventRuleResultsCollaborators {
+	readonly eventDiagnostics: Pick<EventDiagnostics, "diagnostic">;
+	readonly eventPatches: Pick<
+		EventPatches,
+		"createEventPatch" | "replaceEventField"
+	>;
+}
+
 export class EventRuleResults {
-	static emptyResult(): EventRuleResult {
+	constructor(private readonly collaborators: EventRuleResultsCollaborators) {}
+
+	emptyResult(): EventRuleResult {
 		return { diagnostics: [], patch: EMPTY_EVENT_PATCH };
 	}
 
-	static normalizedResult(
+	normalizedResult(
 		operation: EventPatchOperation,
 		code: string,
 		field: string,
@@ -19,7 +29,7 @@ export class EventRuleResults {
 	): EventRuleResult {
 		return {
 			diagnostics: [
-				EventDiagnostics.diagnostic({
+				this.collaborators.eventDiagnostics.diagnostic({
 					code,
 					severity: "info",
 					category: "normalization",
@@ -28,18 +38,14 @@ export class EventRuleResults {
 					fixAvailable: true,
 				}),
 			],
-			patch: EventPatches.createEventPatch([operation]),
+			patch: this.collaborators.eventPatches.createEventPatch([operation]),
 		};
 	}
 
-	static missing(
-		code: string,
-		field: string,
-		message: string,
-	): EventRuleResult {
+	missing(code: string, field: string, message: string): EventRuleResult {
 		return {
 			diagnostics: [
-				EventDiagnostics.diagnostic({
+				this.collaborators.eventDiagnostics.diagnostic({
 					code,
 					severity: "warning",
 					category: "incomplete",
@@ -51,14 +57,10 @@ export class EventRuleResults {
 		};
 	}
 
-	static invalid(
-		code: string,
-		field: string,
-		message: string,
-	): EventRuleResult {
+	invalid(code: string, field: string, message: string): EventRuleResult {
 		return {
 			diagnostics: [
-				EventDiagnostics.diagnostic({
+				this.collaborators.eventDiagnostics.diagnostic({
 					code,
 					severity: "error",
 					category: "invalid",
@@ -70,17 +72,21 @@ export class EventRuleResults {
 		};
 	}
 
-	static normalizeString<P extends "eventTitle" | "date" | "description">(
+	normalizeString<P extends "eventTitle" | "date" | "description">(
 		current: string,
 		normalized: string,
 		path: P,
 		reason: string,
 	): EventRuleResult {
 		if (current === normalized) {
-			return EventRuleResults.emptyResult();
+			return this.emptyResult();
 		}
-		return EventRuleResults.normalizedResult(
-			EventPatches.replaceEventField(path, normalized, reason),
+		return this.normalizedResult(
+			this.collaborators.eventPatches.replaceEventField(
+				path,
+				normalized,
+				reason,
+			),
 			`event.${path}.normalized`,
 			path,
 			`${path} can be normalized safely`,

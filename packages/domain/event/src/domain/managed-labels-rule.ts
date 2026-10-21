@@ -1,17 +1,28 @@
-import { EventRuleResults } from "./event-rule-results.js";
+import type { EventRuleResults } from "./event-rule-results.js";
 import type { MeetupEvent } from "./model.js";
-import { EventPatches } from "./patch.js";
+import type { EventPatches } from "./patch.js";
 import type {
 	EventRule,
 	EventRuleResult,
 	ManagedLabelConfiguration,
 } from "./rule-contracts.js";
 
+export interface ManagedLabelsRuleCollaborators {
+	readonly eventRuleResults: Pick<
+		EventRuleResults,
+		"emptyResult" | "normalizedResult"
+	>;
+	readonly eventPatches: Pick<EventPatches, "replaceEventField">;
+}
+
 export class ManagedLabelsRule implements EventRule {
 	readonly id = "managed-labels";
 	readonly dependencies = ["event-host", "event-agenda"];
 
-	constructor(private readonly configuration: ManagedLabelConfiguration) {}
+	constructor(
+		private readonly collaborators: ManagedLabelsRuleCollaborators,
+		private readonly configuration: ManagedLabelConfiguration,
+	) {}
 
 	evaluate(event: MeetupEvent): EventRuleResult {
 		const managed = Object.values(this.configuration);
@@ -39,11 +50,11 @@ export class ManagedLabelsRule implements EventRule {
 		];
 
 		if (this.labelsMatch(event.labels, expected)) {
-			return EventRuleResults.emptyResult();
+			return this.collaborators.eventRuleResults.emptyResult();
 		}
 
-		return EventRuleResults.normalizedResult(
-			EventPatches.replaceEventField(
+		return this.collaborators.eventRuleResults.normalizedResult(
+			this.collaborators.eventPatches.replaceEventField(
 				"labels",
 				expected,
 				"Project managed lifecycle labels",
@@ -64,3 +75,10 @@ export class ManagedLabelsRule implements EventRule {
 		);
 	}
 }
+export type ManagedLabelsRuleArguments =
+	ConstructorParameters<typeof ManagedLabelsRule> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

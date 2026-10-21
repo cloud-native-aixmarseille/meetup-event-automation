@@ -1,6 +1,7 @@
+import { PublicationDomainComposition } from "@meetup-automation/publication";
 import { describe, expect, it, vi } from "vitest";
-import { ContentFingerprint } from "@meetup-automation/publication";
 import { BoundedImageDownload } from "./bounded-image-download.js";
+import { HttpsAssetImageRepositoryComposition } from "./dependency-composition.js";
 import { HttpsAssetImageRepository } from "./https-asset-image-repository.js";
 
 const png = Buffer.from(
@@ -15,32 +16,63 @@ const source = {
 describe("image preflight", () => {
 	it("fingerprints downloaded bytes and returns the validated final URL", async () => {
 		// Arrange
-		const download = new BoundedImageDownload();
+		const download = new BoundedImageDownload({
+			publicImageUrl:
+				new HttpsAssetImageRepositoryComposition().publicImageUrl(),
+		});
 		vi.spyOn(download, "get").mockResolvedValue({
 			bytes: png,
 			mediaType: "image/png",
 			url: source.url,
 		});
-		const repository = new HttpsAssetImageRepository(download);
+		const repository = new HttpsAssetImageRepository(
+			{
+				contentFingerprint:
+					new PublicationDomainComposition().contentFingerprint(),
+				createBoundedImageDownload: (...args) =>
+					new HttpsAssetImageRepositoryComposition().boundedImageDownload(
+						...args,
+					),
+			},
+			download,
+		);
 
 		// Act
 		const result = await repository.validate(source);
 
 		// Assert
-		expect(result).toEqual({ fingerprint: ContentFingerprint.of(png), source });
+		expect(result).toEqual({
+			fingerprint: new PublicationDomainComposition()
+				.contentFingerprint()
+				.of(png),
+			source,
+		});
 	});
 
 	it.each(["image/jpeg", "image/svg+xml", "text/html"])(
 		"rejects a mismatched media type %s",
 		async (mediaType) => {
 			// Arrange
-			const download = new BoundedImageDownload();
+			const download = new BoundedImageDownload({
+				publicImageUrl:
+					new HttpsAssetImageRepositoryComposition().publicImageUrl(),
+			});
 			vi.spyOn(download, "get").mockResolvedValue({
 				bytes: png,
 				mediaType,
 				url: source.url,
 			});
-			const repository = new HttpsAssetImageRepository(download);
+			const repository = new HttpsAssetImageRepository(
+				{
+					contentFingerprint:
+						new PublicationDomainComposition().contentFingerprint(),
+					createBoundedImageDownload: (...args) =>
+						new HttpsAssetImageRepositoryComposition().boundedImageDownload(
+							...args,
+						),
+				},
+				download,
+			);
 
 			// Act
 			const result = repository.validate(source);
@@ -55,13 +87,26 @@ describe("image preflight", () => {
 		const bytes = Buffer.from(png);
 		bytes.writeUInt32BE(100_000, 16);
 		bytes.writeUInt32BE(100_000, 20);
-		const download = new BoundedImageDownload();
+		const download = new BoundedImageDownload({
+			publicImageUrl:
+				new HttpsAssetImageRepositoryComposition().publicImageUrl(),
+		});
 		vi.spyOn(download, "get").mockResolvedValue({
 			bytes,
 			mediaType: "image/png",
 			url: source.url,
 		});
-		const repository = new HttpsAssetImageRepository(download);
+		const repository = new HttpsAssetImageRepository(
+			{
+				contentFingerprint:
+					new PublicationDomainComposition().contentFingerprint(),
+				createBoundedImageDownload: (...args) =>
+					new HttpsAssetImageRepositoryComposition().boundedImageDownload(
+						...args,
+					),
+			},
+			download,
+		);
 
 		// Act
 		const result = repository.validate(source);

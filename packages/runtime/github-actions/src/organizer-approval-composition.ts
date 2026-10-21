@@ -1,17 +1,8 @@
 import { randomUUID } from "node:crypto";
 import {
-	ApprovalDecisionParser,
-	ApprovalNotifications,
-	ApprovalPresenter,
-	ApprovalRecordFactory,
-	FinalizeApprovalDecision,
-	GithubApprovalAttentionSource,
+	type ApprovalPresenter,
 	type GithubApprovalClient,
-	GithubApprovalRepository,
-	GithubOrganizerApproval,
-	GithubOrganizerFollowUp,
-	ResolveApprovalDecision,
-	TrustedApprovalState,
+	GithubOrganizerApprovalComposition,
 } from "@meetup-automation/github-organizer-approval";
 import {
 	ApprovalNotificationPolicy,
@@ -27,38 +18,61 @@ export class OrganizerApprovalComposition {
 		notificationPort: OrganizerApprovalNotification,
 		organizerChannelId: string,
 	) {
-		const records = new ApprovalRecordFactory(randomUUID);
-		const notifications = new ApprovalNotifications(
-			new ApprovalNotificationPolicy(),
-			client,
-			presenter,
-			notificationPort,
-			organizerChannelId,
-		);
-		const repository = new GithubApprovalRepository(
-			client,
-			new TrustedApprovalState(client, authorLogin),
-			authorLogin,
-			presenter,
-		);
-		const finalizer = new FinalizeApprovalDecision(
-			new ResolveApprovalDecision(
+		const records =
+			new GithubOrganizerApprovalComposition().approvalRecordFactory(
+				randomUUID,
+			);
+		const notifications =
+			new GithubOrganizerApprovalComposition().approvalNotifications(
+				new ApprovalNotificationPolicy(),
 				client,
-				new ApprovalDecisionParser(ApprovalPresenter.supportedLocales()),
-			),
-			repository,
-			notifications,
-		);
-		return {
-			approval: new GithubOrganizerApproval(
+				presenter,
+				notificationPort,
+				organizerChannelId,
+			);
+		const repository =
+			new GithubOrganizerApprovalComposition().githubApprovalRepository(
+				client,
+				new GithubOrganizerApprovalComposition().trustedApprovalState(
+					client,
+					authorLogin,
+				),
+				authorLogin,
+				presenter,
+			);
+		const finalizer =
+			new GithubOrganizerApprovalComposition().finalizeApprovalDecision(
+				new GithubOrganizerApprovalComposition().resolveApprovalDecision(
+					client,
+					new GithubOrganizerApprovalComposition().approvalDecisionParser(
+						new GithubOrganizerApprovalComposition()
+							.approvalPresenterFactory()
+							.supportedLocales(),
+					),
+				),
 				repository,
-				records,
-				finalizer,
 				notifications,
-				client,
-			),
-			followUp: new GithubOrganizerFollowUp(repository, records, finalizer),
-			attention: new GithubApprovalAttentionSource(repository, finalizer),
+			);
+		return {
+			approval:
+				new GithubOrganizerApprovalComposition().githubOrganizerApproval(
+					repository,
+					records,
+					finalizer,
+					notifications,
+					client,
+				),
+			followUp:
+				new GithubOrganizerApprovalComposition().githubOrganizerFollowUp(
+					repository,
+					records,
+					finalizer,
+				),
+			attention:
+				new GithubOrganizerApprovalComposition().githubApprovalAttentionSource(
+					repository,
+					finalizer,
+				),
 		};
 	}
 }

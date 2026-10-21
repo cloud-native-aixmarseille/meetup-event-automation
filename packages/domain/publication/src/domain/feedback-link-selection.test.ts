@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { PublicationDomainComposition } from "../dependency-composition.js";
 import { FeedbackLinkSelection } from "./feedback-link-selection.js";
 
 describe("shared feedback link selection", () => {
@@ -38,12 +39,9 @@ describe("shared feedback link selection", () => {
 			};
 
 			// Act
-			const conflict = FeedbackLinkSelection.conflict(
-				candidate,
-				target,
-				now,
-				"Europe/Paris",
-			);
+			const conflict = new FeedbackLinkSelection({
+				feedbackPolicy: new PublicationDomainComposition().feedbackPolicy(),
+			}).conflict(candidate, target, now, "Europe/Paris");
 
 			// Assert
 			expect(conflict).toBe(expected);
@@ -64,7 +62,9 @@ describe("shared feedback link selection", () => {
 		};
 
 		// Act
-		const conflict = FeedbackLinkSelection.conflict(
+		const conflict = new FeedbackLinkSelection({
+			feedbackPolicy: new PublicationDomainComposition().feedbackPolicy(),
+		}).conflict(
 			candidate,
 			"2026-09-30",
 			"2026-09-29T10:00:00Z",

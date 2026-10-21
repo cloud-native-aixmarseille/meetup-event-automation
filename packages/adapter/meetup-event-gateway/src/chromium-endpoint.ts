@@ -4,7 +4,7 @@ import type { Browser } from "playwright-core";
 
 /** Discover Chromium's ephemeral, loopback-only debugging endpoint. */
 export class ChromiumEndpoint {
-	static async read(browser: Browser): Promise<string> {
+	async read(browser: Browser): Promise<string> {
 		const session = await browser.newBrowserCDPSession();
 		try {
 			const command = await session.send("Browser.getBrowserCommandLine");

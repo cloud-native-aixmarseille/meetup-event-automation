@@ -1,5 +1,6 @@
 import type { OrganizerApprovalDetails } from "@meetup-automation/journey";
 import { describe, expect, it } from "vitest";
+import { GithubOrganizerApprovalComposition } from "./dependency-composition.js";
 import { EmailApprovalDetailsSchema } from "./email-approval-details-schema.js";
 
 const details: OrganizerApprovalDetails = {
@@ -35,7 +36,11 @@ describe("approval detail validation", () => {
 		} as OrganizerApprovalDetails;
 
 		// Act
-		const validate = () => EmailApprovalDetailsSchema.validate(input);
+		const validate = () =>
+			new EmailApprovalDetailsSchema({
+				approvalSchema:
+					new GithubOrganizerApprovalComposition().approvalSchema(),
+			}).validate(input);
 
 		// Assert
 		expect(validate).toThrow("Invalid approval details");
@@ -46,7 +51,11 @@ describe("approval detail validation", () => {
 		const input = { ...details, omittedEmails: 4 };
 
 		// Act
-		const validate = () => EmailApprovalDetailsSchema.validate(input);
+		const validate = () =>
+			new EmailApprovalDetailsSchema({
+				approvalSchema:
+					new GithubOrganizerApprovalComposition().approvalSchema(),
+			}).validate(input);
 
 		// Assert
 		expect(validate).not.toThrow();

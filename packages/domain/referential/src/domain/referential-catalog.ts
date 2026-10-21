@@ -75,17 +75,15 @@ export interface RawReferentialCatalog {
 }
 
 export class ReferentialCatalogOperations {
-	static normalizeDisplayName(value: string): string {
+	normalizeDisplayName(value: string): string {
 		return value.normalize("NFC").trim().replace(/\s+/g, " ");
 	}
 
-	static displayNameKey(value: string): string {
-		return ReferentialCatalogOperations.normalizeDisplayName(
-			value,
-		).toLowerCase();
+	displayNameKey(value: string): string {
+		return this.normalizeDisplayName(value).toLowerCase();
 	}
 
-	static freezeCatalog(
+	freezeCatalog(
 		hosts: readonly Host[],
 		speakers: readonly Speaker[],
 	): ReferentialCatalog {

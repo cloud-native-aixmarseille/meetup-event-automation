@@ -1,11 +1,17 @@
 import type { MeetupEvent } from "@meetup-automation/event";
-import { ScheduledEventError } from "@meetup-automation/publication";
+import { EventDomainComposition } from "@meetup-automation/event";
+import {
+	PublicationDomainComposition,
+	ScheduledEventError,
+} from "@meetup-automation/publication";
 import { describe, expect, it, vi } from "vitest";
 import { event, identity } from "../../testing/meetup-journey.fixtures.js";
 import {
 	publicationUrl,
 	publicationFixture as setupPublication,
 } from "../../testing/meetup-publication.fixtures.js";
+import { JourneyComposition } from "../dependency-composition.js";
+import { JourneyPolicyComposition } from "../policy-composition.js";
 
 import { ManageMeetupPublication } from "./manage-meetup-publication.js";
 
@@ -13,7 +19,24 @@ function publicationFixture(...args: Parameters<typeof setupPublication>) {
 	const fixture = setupPublication(...args);
 	return {
 		...fixture,
-		useCase: new ManageMeetupPublication(fixture.dependencies),
+		useCase: new ManageMeetupPublication(
+			{
+				diagnosticPolicy: new JourneyPolicyComposition().diagnosticPolicy(),
+				meetupPublicationProjection:
+					new JourneyPolicyComposition().meetupPublicationProjection(),
+				scheduledEventPolicy:
+					new PublicationDomainComposition().scheduledEventPolicy(),
+				meetupPublicationChecklist:
+					new EventDomainComposition().meetupPublicationChecklist(),
+				eventRepositoryPatches:
+					new EventDomainComposition().eventRepositoryPatches(),
+				eventDocumentConcurrency:
+					new EventDomainComposition().eventDocumentConcurrency(),
+				createMeetupPublicationApproval: (...args) =>
+					new JourneyComposition().meetupPublicationApproval(...args),
+			},
+			fixture.dependencies,
+		),
 	};
 }
 

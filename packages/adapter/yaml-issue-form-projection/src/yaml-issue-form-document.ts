@@ -7,7 +7,7 @@ import {
 
 /** Parse and minimally update the supported YAML issue form representation. */
 export class YamlIssueFormDocument {
-	static project(
+	project(
 		source: string,
 		hostOptions: readonly string[],
 		speakersMarkdown: string,
@@ -23,31 +23,25 @@ export class YamlIssueFormDocument {
 		}
 
 		const issueForm = document.toJS({ maxAliasCount: 100 }) as unknown;
-		if (
-			!YamlIssueFormDocument.isRecord(issueForm) ||
-			!Array.isArray(issueForm.body)
-		) {
+		if (!this.isRecord(issueForm) || !Array.isArray(issueForm.body)) {
 			throw new Error("Issue form must contain a body array.");
 		}
 
 		const body = issueForm.body;
-		const hostIndex = YamlIssueFormDocument.findSingleFieldIndex(
+		const hostIndex = this.findSingleFieldIndex(
 			body,
 			HOST_FIELD_ID,
 			"dropdown",
 		);
-		const speakersIndex = YamlIssueFormDocument.findSpeakersMarkdownIndex(body);
-		const statusIndex = YamlIssueFormDocument.findOptionalFieldIndex(
+		const speakersIndex = this.findSpeakersMarkdownIndex(body);
+		const statusIndex = this.findOptionalFieldIndex(
 			body,
 			occurrenceStatusFieldId,
 		);
 
 		let changed = false;
 		if (
-			!YamlIssueFormDocument.sameStringArray(
-				YamlIssueFormDocument.fieldOptions(body[hostIndex]),
-				hostOptions,
-			)
+			!this.sameStringArray(this.fieldOptions(body[hostIndex]), hostOptions)
 		) {
 			document.setIn(["body", hostIndex, "attributes", "options"], hostOptions);
 			changed = true;
@@ -55,7 +49,7 @@ export class YamlIssueFormDocument {
 
 		if (
 			speakersIndex !== undefined &&
-			YamlIssueFormDocument.fieldValue(body[speakersIndex]) !== speakersMarkdown
+			this.fieldValue(body[speakersIndex]) !== speakersMarkdown
 		) {
 			document.setIn(
 				["body", speakersIndex, "attributes", "value"],
@@ -71,15 +65,13 @@ export class YamlIssueFormDocument {
 
 		return { document, changed };
 	}
-	private static findSingleFieldIndex(
+	private findSingleFieldIndex(
 		body: readonly unknown[],
 		fieldId: string,
 		expectedType: string,
 	): number {
 		const indexes = body.flatMap((item, index) =>
-			YamlIssueFormDocument.isRecord(item) && item.id === fieldId
-				? [index]
-				: [],
+			this.isRecord(item) && item.id === fieldId ? [index] : [],
 		);
 		if (indexes.length !== 1) {
 			throw new Error(`Issue form must contain exactly one ${fieldId} field.`);
@@ -87,24 +79,22 @@ export class YamlIssueFormDocument {
 
 		const index = indexes[0];
 		const field = body[index];
-		if (!YamlIssueFormDocument.isRecord(field) || field.type !== expectedType) {
+		if (!this.isRecord(field) || field.type !== expectedType) {
 			throw new Error(`Issue-form field ${fieldId} must be a ${expectedType}.`);
 		}
-		if (!YamlIssueFormDocument.isRecord(field.attributes)) {
+		if (!this.isRecord(field.attributes)) {
 			throw new Error(`Issue-form field ${fieldId} must have attributes.`);
 		}
 
 		return index;
 	}
 
-	private static findOptionalFieldIndex(
+	private findOptionalFieldIndex(
 		body: readonly unknown[],
 		fieldId: string,
 	): number | undefined {
 		const indexes = body.flatMap((item, index) =>
-			YamlIssueFormDocument.isRecord(item) && item.id === fieldId
-				? [index]
-				: [],
+			this.isRecord(item) && item.id === fieldId ? [index] : [],
 		);
 		if (indexes.length > 1) {
 			throw new Error(`Issue form contains duplicate ${fieldId} fields.`);
@@ -112,28 +102,22 @@ export class YamlIssueFormDocument {
 		return indexes[0];
 	}
 
-	private static findSpeakersMarkdownIndex(
+	private findSpeakersMarkdownIndex(
 		body: readonly unknown[],
 	): number | undefined {
 		const indexes = body.flatMap((item, index) => {
-			if (!YamlIssueFormDocument.isRecord(item) || item.type !== "markdown") {
+			if (!this.isRecord(item) || item.type !== "markdown") {
 				return [];
 			}
-			const value = YamlIssueFormDocument.fieldValue(item);
+			const value = this.fieldValue(item);
 			return value?.includes(AVAILABLE_SPEAKERS_MARKER) ? [index] : [];
 		});
 		if (
 			indexes.length === 0 &&
-			YamlIssueFormDocument.findOptionalFieldIndex(
-				body,
-				"conference_hall_proposals",
-			) !== undefined
+			this.findOptionalFieldIndex(body, "conference_hall_proposals") !==
+				undefined
 		) {
-			YamlIssueFormDocument.findSingleFieldIndex(
-				body,
-				"conference_hall_proposals",
-				"textarea",
-			);
+			this.findSingleFieldIndex(body, "conference_hall_proposals", "textarea");
 			return undefined;
 		}
 		if (indexes.length !== 1) {
@@ -144,25 +128,19 @@ export class YamlIssueFormDocument {
 		return indexes[0];
 	}
 
-	private static isRecord(value: unknown): value is UnknownRecord {
+	private isRecord(value: unknown): value is UnknownRecord {
 		return typeof value === "object" && value !== null && !Array.isArray(value);
 	}
 
-	private static fieldOptions(field: unknown): unknown {
-		if (
-			!YamlIssueFormDocument.isRecord(field) ||
-			!YamlIssueFormDocument.isRecord(field.attributes)
-		) {
+	private fieldOptions(field: unknown): unknown {
+		if (!this.isRecord(field) || !this.isRecord(field.attributes)) {
 			return undefined;
 		}
 		return field.attributes.options;
 	}
 
-	private static fieldValue(field: unknown): string | undefined {
-		if (
-			!YamlIssueFormDocument.isRecord(field) ||
-			!YamlIssueFormDocument.isRecord(field.attributes)
-		) {
+	private fieldValue(field: unknown): string | undefined {
+		if (!this.isRecord(field) || !this.isRecord(field.attributes)) {
 			return undefined;
 		}
 		return typeof field.attributes.value === "string"
@@ -170,7 +148,7 @@ export class YamlIssueFormDocument {
 			: undefined;
 	}
 
-	private static sameStringArray(
+	private sameStringArray(
 		actual: unknown,
 		expected: readonly string[],
 	): boolean {

@@ -1,8 +1,11 @@
-import { ActionRunner } from "../action-runner.js";
-import { EventActions } from "../event-actions.js";
+import { GithubActionsComposition } from "../dependency-composition.js";
+import { EventActionComposition } from "../event-action-composition.js";
 
-await ActionRunner.run(
+const runner = new GithubActionsComposition().actionRunner();
+const action = new EventActionComposition().eventActions();
+
+await runner.run(
 	"action.event.reconcile",
-	EventActions.runEventReconcileAction,
+	action.runEventReconcileAction.bind(action),
 	true,
 );

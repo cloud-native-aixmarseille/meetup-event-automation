@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { condition } from "../../testing/attention.fixtures.js";
+import { CommunicationDomainComposition } from "../dependency-composition.js";
 import { AttentionPolicy } from "./attention-policy.js";
 import type { AttentionEpisode } from "./model.js";
 
@@ -23,11 +24,10 @@ describe("attention reminder policy", () => {
 			};
 
 			// Act
-			const window = AttentionPolicy.window(
-				episode,
-				"2099-06-08",
-				new Date(instant),
-			);
+			const window = new AttentionPolicy({
+				communicationCalendar:
+					new CommunicationDomainComposition().communicationCalendar(),
+			}).window(episode, "2099-06-08", new Date(instant));
 
 			// Assert
 			expect(window).toBe(expected);
@@ -43,7 +43,15 @@ describe("attention reminder policy", () => {
 		const after = new Date(second);
 
 		// Act
-		const equal = AttentionPolicy.day(before) === AttentionPolicy.day(after);
+		const equal =
+			new AttentionPolicy({
+				communicationCalendar:
+					new CommunicationDomainComposition().communicationCalendar(),
+			}).day(before) ===
+			new AttentionPolicy({
+				communicationCalendar:
+					new CommunicationDomainComposition().communicationCalendar(),
+			}).day(after);
 
 		// Assert
 		expect(equal).toBe(same);
@@ -61,7 +69,10 @@ describe("attention reminder policy", () => {
 			};
 
 			// Act
-			const window = AttentionPolicy.window(
+			const window = new AttentionPolicy({
+				communicationCalendar:
+					new CommunicationDomainComposition().communicationCalendar(),
+			}).window(
 				episode,
 				"2099-06-08",
 				new Date(Date.parse(openedAt) + hours * 3_600_000),
@@ -84,7 +95,10 @@ describe("attention reminder policy", () => {
 
 			// Act
 			const windows = [8, 9, 12, 15].map((day) =>
-				AttentionPolicy.window(
+				new AttentionPolicy({
+					communicationCalendar:
+						new CommunicationDomainComposition().communicationCalendar(),
+				}).window(
 					episode,
 					"2099-06-08",
 					new Date(`2099-06-${day.toString().padStart(2, "0")}T10:00:00Z`),

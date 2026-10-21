@@ -7,8 +7,9 @@ describe("opinionated automation configuration", () => {
 		const repositoryOwner = "example-community";
 
 		// Act
-		const result =
-			AutomationConfigFactory.createAutomationConfig(repositoryOwner);
+		const result = new AutomationConfigFactory().createAutomationConfig(
+			repositoryOwner,
+		);
 
 		// Assert
 		expect(result).toMatchObject({
@@ -44,7 +45,7 @@ describe("opinionated automation configuration", () => {
 		// No repository owner is available for a standalone workspace operation.
 
 		// Act
-		const result = AutomationConfigFactory.createAutomationConfig();
+		const result = new AutomationConfigFactory().createAutomationConfig();
 
 		// Assert
 		expect(result.communication).toMatchObject({

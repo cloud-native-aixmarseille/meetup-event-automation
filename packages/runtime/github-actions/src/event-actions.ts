@@ -1,72 +1,93 @@
-import { ConferenceHallInput } from "./conference-hall-input.js";
 import * as core from "@actions/core";
 import { context, getOctokit } from "@actions/github";
-import {
-	type EventDiagnostic,
+import type {
+	EventDiagnostic,
 	ListActiveEvents,
 } from "@meetup-automation/event";
-import {
-	type AutomationConfig,
+import type {
 	ManageMeetupEvent,
-	type PublicDiagnostic,
+	PublicDiagnostic,
 } from "@meetup-automation/journey";
-import { ActionOutput } from "./action-output.js";
+import type { ActionOutput } from "./action-output.js";
 import type { ActionReportData } from "./action-report.js";
-import { EventComposition, SERVICES } from "./composition.js";
-import { ActionMessages } from "./i18n/action-messages.js";
-import { RuntimeInput } from "./runtime-input.js";
+import type { EventComposition } from "./composition.js";
+import type { ConferenceHallInput } from "./conference-hall-input.js";
+import type {
+	ActionMessages,
+	ActionMessagesArguments,
+} from "./i18n/action-messages.js";
+import type { RuntimeInput } from "./runtime-input.js";
+
+export interface EventActionsCollaborators {
+	readonly createEventJourney: (
+		input: Parameters<typeof EventComposition.createEventContainer>[0],
+	) => Pick<ManageMeetupEvent, "execute">;
+	readonly createEventListing: (
+		input: Parameters<typeof EventComposition.createDocumentContainer>[0],
+	) => { events: Pick<ListActiveEvents, "execute">; label: string };
+	readonly runtimeInput: Pick<RuntimeInput, "positiveIntegerInput">;
+	readonly conferenceHallInput: Pick<ConferenceHallInput, "read">;
+	readonly actionOutput: Pick<ActionOutput, "setJsonOutput">;
+	readonly createActionMessages: (
+		...args: ActionMessagesArguments
+	) => ActionMessages;
+}
 
 export class EventActions {
-	static async runEventReconcileAction(
-		messages = new ActionMessages(),
+	constructor(private readonly collaborators: EventActionsCollaborators) {}
+
+	async runEventReconcileAction(
+		messages = this.collaborators.createActionMessages(),
 	): Promise<ActionReportData> {
-		const issueNumber = RuntimeInput.positiveIntegerInput(
+		const issueNumber = this.collaborators.runtimeInput.positiveIntegerInput(
 			"issue-number",
 			core.getInput("issue-number", { required: true }),
 		);
 		const token = core.getInput("github-token", { required: true });
 		const { owner, repo } = context.repo;
 		const repository = `${owner}/${repo}`;
-		const container = EventComposition.createEventContainer({
+		const journey = this.collaborators.createEventJourney({
 			locale: messages.locale,
-			...ConferenceHallInput.read(),
+			...this.collaborators.conferenceHallInput.read(),
 			client: getOctokit(token),
 			owner,
 			repo,
 		});
-		const outcome = await container.get(ManageMeetupEvent).execute({
+		const outcome = await journey.execute({
 			identity: { repository, issueNumber },
 			mode: "fix",
 		});
-		return EventActions.reconcileReport(issueNumber, outcome, messages);
+		return this.reconcileReport(issueNumber, outcome, messages);
 	}
 
-	static async runEventListActiveAction(
-		messages = new ActionMessages(),
+	async runEventListActiveAction(
+		messages = this.collaborators.createActionMessages(),
 	): Promise<ActionReportData> {
 		const token = core.getInput("github-token", { required: true });
 		const { owner, repo } = context.repo;
 		const repository = `${owner}/${repo}`;
-		const container = EventComposition.createDocumentContainer({
+		const listing = this.collaborators.createEventListing({
 			locale: messages.locale,
 			client: getOctokit(token),
 			owner,
 			repo,
 		});
-		const config = container.get<AutomationConfig>(SERVICES.config);
-		const outcome = await container.get(ListActiveEvents).execute({
+		const outcome = await listing.events.execute({
 			repository,
-			label: config.event["issue-label"],
+			label: listing.label,
 			pageSize: 100,
 		});
 		const issueNumbers = outcome.events.map(
 			(event) => event.identity.issueNumber,
 		);
 		const diagnostics = outcome.diagnostics.map(
-			EventActions.toPublicDiagnostic,
+			this.toPublicDiagnostic.bind(this),
 		);
 
-		ActionOutput.setJsonOutput("issue-numbers", issueNumbers);
+		this.collaborators.actionOutput.setJsonOutput(
+			"issue-numbers",
+			issueNumbers,
+		);
 		return {
 			details: [
 				messages.t("report.events.count", { count: issueNumbers.length }),
@@ -80,7 +101,7 @@ export class EventActions {
 		};
 	}
 
-	private static reconcileReport(
+	private reconcileReport(
 		issueNumber: number,
 		outcome: Awaited<ReturnType<ManageMeetupEvent["execute"]>>,
 		messages: ActionMessages,
@@ -104,7 +125,7 @@ export class EventActions {
 		return { details, diagnostics: outcome.diagnostics };
 	}
 
-	static toPublicDiagnostic(diagnostic: EventDiagnostic): PublicDiagnostic {
+	toPublicDiagnostic(diagnostic: EventDiagnostic): PublicDiagnostic {
 		return {
 			code: diagnostic.code,
 			severity: diagnostic.severity,

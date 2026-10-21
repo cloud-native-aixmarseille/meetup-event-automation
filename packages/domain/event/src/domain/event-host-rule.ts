@@ -1,27 +1,42 @@
-import { EventParticipantNormalization } from "./event-participant-normalization.js";
-import { EventRuleResults } from "./event-rule-results.js";
+import type { EventParticipantNormalization } from "./event-participant-normalization.js";
+import type { EventRuleResults } from "./event-rule-results.js";
 import type { MeetupEvent } from "./model.js";
-import { EventPatches } from "./patch.js";
+import type { EventPatches } from "./patch.js";
 import type { EventRule, EventRuleResult } from "./rule-contracts.js";
 
+export interface EventHostRuleCollaborators {
+	readonly eventRuleResults: Pick<
+		EventRuleResults,
+		"missing" | "invalid" | "emptyResult" | "normalizedResult"
+	>;
+	readonly eventParticipantNormalization: Pick<
+		EventParticipantNormalization,
+		"normalizeParticipant" | "participantsEqual"
+	>;
+	readonly eventPatches: Pick<EventPatches, "replaceEventField">;
+}
+
 export class EventHostRule implements EventRule {
+	constructor(private readonly collaborators: EventHostRuleCollaborators) {}
+
 	readonly id = "event-host";
 	readonly dependencies: readonly string[] = [];
 
 	evaluate(event: MeetupEvent): EventRuleResult {
 		if (!event.host) {
-			return EventRuleResults.missing(
+			return this.collaborators.eventRuleResults.missing(
 				"event.hoster.missing",
 				"host",
 				"A host must be selected",
 			);
 		}
 
-		const normalized = EventParticipantNormalization.normalizeParticipant(
-			event.host,
-		);
+		const normalized =
+			this.collaborators.eventParticipantNormalization.normalizeParticipant(
+				event.host,
+			);
 		if (normalized.displayName === "") {
-			return EventRuleResults.invalid(
+			return this.collaborators.eventRuleResults.invalid(
 				"event.hoster.invalid",
 				"host",
 				"Host display name must not be empty",
@@ -29,13 +44,16 @@ export class EventHostRule implements EventRule {
 		}
 
 		if (
-			EventParticipantNormalization.participantsEqual(event.host, normalized)
+			this.collaborators.eventParticipantNormalization.participantsEqual(
+				event.host,
+				normalized,
+			)
 		) {
-			return EventRuleResults.emptyResult();
+			return this.collaborators.eventRuleResults.emptyResult();
 		}
 
-		return EventRuleResults.normalizedResult(
-			EventPatches.replaceEventField(
+		return this.collaborators.eventRuleResults.normalizedResult(
+			this.collaborators.eventPatches.replaceEventField(
 				"host",
 				normalized,
 				"Normalize host reference",

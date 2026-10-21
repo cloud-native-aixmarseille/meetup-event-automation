@@ -43,7 +43,7 @@ export interface ReferentialDiagnostic {
 }
 
 export class ReferentialDiagnostics {
-	static diagnostic(
+	diagnostic(
 		code: ReferentialDiagnosticCode,
 		severity: ReferentialDiagnosticSeverity,
 		path: string,
@@ -52,7 +52,7 @@ export class ReferentialDiagnostics {
 		return Object.freeze({ code, severity, path, message });
 	}
 
-	static freezeDiagnostics(
+	freezeDiagnostics(
 		diagnostics: readonly ReferentialDiagnostic[],
 	): readonly ReferentialDiagnostic[] {
 		return Object.freeze([...diagnostics]);

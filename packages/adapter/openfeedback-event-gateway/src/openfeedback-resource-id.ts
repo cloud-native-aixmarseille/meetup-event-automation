@@ -1,5 +1,5 @@
 export class OpenFeedbackResourceId {
-	static isValid(value: unknown): value is string {
+	isValid(value: unknown): value is string {
 		return (
 			typeof value === "string" &&
 			Array.from(value).length <= 1500 &&

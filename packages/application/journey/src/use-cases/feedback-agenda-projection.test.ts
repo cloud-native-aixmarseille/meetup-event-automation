@@ -23,7 +23,7 @@ describe("public feedback agenda", () => {
 		};
 
 		// Act
-		const agenda = FeedbackAgendaProjection.create(source, []);
+		const agenda = new FeedbackAgendaProjection().create(source, []);
 
 		// Assert
 		expect(agenda).toEqual({
@@ -63,7 +63,7 @@ describe("public feedback agenda", () => {
 			const source = { ...event, agenda };
 
 			// Act
-			const result = FeedbackAgendaProjection.create(source, []);
+			const result = new FeedbackAgendaProjection().create(source, []);
 
 			// Assert
 			expect(result).toBeUndefined();
@@ -82,7 +82,7 @@ describe("public feedback agenda", () => {
 		];
 
 		// Act
-		const result = FeedbackAgendaProjection.create(event, diagnostics);
+		const result = new FeedbackAgendaProjection().create(event, diagnostics);
 
 		// Assert
 		expect(result).toBeUndefined();
@@ -103,7 +103,7 @@ describe("public feedback agenda", () => {
 		];
 
 		// Act
-		const result = FeedbackAgendaProjection.create(source, diagnostics);
+		const result = new FeedbackAgendaProjection().create(source, diagnostics);
 
 		// Assert
 		expect(result?.talks).toHaveLength(1);

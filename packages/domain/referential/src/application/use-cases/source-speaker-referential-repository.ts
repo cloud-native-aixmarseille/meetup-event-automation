@@ -78,3 +78,6 @@ export class SourceSpeakerReferentialRepository
 		}
 	}
 }
+export type SourceSpeakerReferentialRepositoryArguments = ConstructorParameters<
+	typeof SourceSpeakerReferentialRepository
+>;

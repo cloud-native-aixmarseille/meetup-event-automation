@@ -6,12 +6,12 @@ import {
 } from "@meetup-automation/journey";
 /** Decodes workflow JSON into safe machine facts; no delivery or organizer policy. */
 export class AttentionStageInput {
-	static parse(value: string): AttentionStageReports {
+	parse(value: string): AttentionStageReports {
 		const input: unknown = JSON.parse(value);
-		if (!AttentionStageInput.isRecord(input))
+		if (!this.isRecord(input))
 			throw new Error("Invalid attention stage results");
 		const reports = ATTENTION_STAGE_OWNERS.map(
-			(owner) => [owner, AttentionStageInput.stage(input[owner])] as const,
+			(owner) => [owner, this.stage(input[owner])] as const,
 		);
 		return {
 			event: reports[0][1],
@@ -20,8 +20,8 @@ export class AttentionStageInput {
 			communications: reports[3][1],
 		};
 	}
-	private static stage(value: unknown): AttentionStageReport {
-		if (value !== undefined && !AttentionStageInput.isRecord(value))
+	private stage(value: unknown): AttentionStageReport {
+		if (value !== undefined && !this.isRecord(value))
 			throw new Error("Invalid attention stage");
 		const stage = value ?? {};
 		return {
@@ -29,14 +29,14 @@ export class AttentionStageInput {
 				stage.outcome === "success" || stage.outcome === "failure"
 					? stage.outcome
 					: "unknown",
-			diagnostics: AttentionStageInput.readDiagnostics(stage.diagnostics),
+			diagnostics: this.readDiagnostics(stage.diagnostics),
 			reported: stage.diagnostics !== undefined && stage.diagnostics !== "",
 		};
 	}
-	private static isRecord(value: unknown): value is Record<string, unknown> {
+	private isRecord(value: unknown): value is Record<string, unknown> {
 		return typeof value === "object" && value !== null && !Array.isArray(value);
 	}
-	private static readDiagnostics(input: unknown): readonly PublicDiagnostic[] {
+	private readDiagnostics(input: unknown): readonly PublicDiagnostic[] {
 		let diagnostics = input;
 		if (typeof diagnostics === "string") {
 			if (!diagnostics) return [];
@@ -68,13 +68,13 @@ export class AttentionStageInput {
 				code,
 				severity,
 				message: code,
-				...(AttentionStageInput.safeField(field) ? { field } : {}),
+				...(this.safeField(field) ? { field } : {}),
 				...(typeof fixApplied === "boolean" ? { fixApplied } : {}),
 			};
 		});
 	}
 
-	private static safeField(field: unknown): field is string {
+	private safeField(field: unknown): field is string {
 		if (typeof field !== "string" || field.length > 160) return false;
 		return (
 			["Aperitif", "Restaurant / Bar"].includes(field) ||

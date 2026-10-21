@@ -1,13 +1,23 @@
-import {
-	type AgendaEntry,
-	type EventDiagnostic,
+import type {
+	AgendaEntry,
+	EventDiagnostic,
 	EventDiagnostics,
-	type ParticipantReference,
+	ParticipantReference,
 } from "@meetup-automation/event";
-import { ParticipantReferenceParser } from "./participant-reference-parser.js";
+import type { ParticipantReferenceParser } from "./participant-reference-parser.js";
+
+export interface IssueFormFieldsCollaborators {
+	readonly eventDiagnostics: Pick<EventDiagnostics, "diagnostic">;
+	readonly participantReferenceParser: Pick<
+		ParticipantReferenceParser,
+		"parseParticipantReference" | "parseAgendaLine"
+	>;
+}
 
 export class IssueFormFields {
-	static readString(
+	constructor(private readonly collaborators: IssueFormFieldsCollaborators) {}
+
+	readString(
 		value: unknown,
 		field: string,
 		diagnostics: EventDiagnostic[],
@@ -21,7 +31,7 @@ export class IssueFormFields {
 		}
 
 		diagnostics.push(
-			EventDiagnostics.diagnostic({
+			this.collaborators.eventDiagnostics.diagnostic({
 				code: "event.document.invalid-field-type",
 				severity: "error",
 				category: "invalid",
@@ -32,7 +42,7 @@ export class IssueFormFields {
 		return "";
 	}
 
-	static readOptionalString(
+	readOptionalString(
 		value: unknown,
 		field: string,
 		diagnostics: EventDiagnostic[],
@@ -40,10 +50,10 @@ export class IssueFormFields {
 		if (value === undefined || value === null || value === "") {
 			return undefined;
 		}
-		return IssueFormFields.readString(value, field, diagnostics);
+		return this.readString(value, field, diagnostics);
 	}
 
-	static readHost(
+	readHost(
 		value: unknown,
 		diagnostics: EventDiagnostic[],
 	): ParticipantReference | undefined {
@@ -53,7 +63,7 @@ export class IssueFormFields {
 
 		if (!Array.isArray(value)) {
 			diagnostics.push(
-				EventDiagnostics.diagnostic({
+				this.collaborators.eventDiagnostics.diagnostic({
 					code: "event.document.invalid-hoster-type",
 					severity: "error",
 					category: "invalid",
@@ -66,7 +76,7 @@ export class IssueFormFields {
 
 		if (value.length > 1) {
 			diagnostics.push(
-				EventDiagnostics.diagnostic({
+				this.collaborators.eventDiagnostics.diagnostic({
 					code: "event.hoster.multiple",
 					severity: "error",
 					category: "invalid",
@@ -82,7 +92,7 @@ export class IssueFormFields {
 		}
 		if (typeof first !== "string") {
 			diagnostics.push(
-				EventDiagnostics.diagnostic({
+				this.collaborators.eventDiagnostics.diagnostic({
 					code: "event.document.invalid-hoster-entry",
 					severity: "error",
 					category: "invalid",
@@ -93,10 +103,12 @@ export class IssueFormFields {
 			return undefined;
 		}
 
-		return ParticipantReferenceParser.parseParticipantReference(first);
+		return this.collaborators.participantReferenceParser.parseParticipantReference(
+			first,
+		);
 	}
 
-	static readAgenda(
+	readAgenda(
 		value: unknown,
 		diagnostics: EventDiagnostic[],
 	): readonly AgendaEntry[] {
@@ -105,7 +117,7 @@ export class IssueFormFields {
 		}
 		if (typeof value !== "string") {
 			diagnostics.push(
-				EventDiagnostics.diagnostic({
+				this.collaborators.eventDiagnostics.diagnostic({
 					code: "event.document.invalid-agenda-type",
 					severity: "error",
 					category: "invalid",
@@ -121,10 +133,11 @@ export class IssueFormFields {
 			if (line.trim() === "") {
 				continue;
 			}
-			const agendaLine = ParticipantReferenceParser.parseAgendaLine(line);
+			const agendaLine =
+				this.collaborators.participantReferenceParser.parseAgendaLine(line);
 			if (!agendaLine) {
 				diagnostics.push(
-					EventDiagnostics.diagnostic({
+					this.collaborators.eventDiagnostics.diagnostic({
 						code: "event.agenda.legacy-line-invalid",
 						severity: "error",
 						category: "invalid",
@@ -139,7 +152,9 @@ export class IssueFormFields {
 				speakers: agendaLine.speakers
 					.split(",")
 					.map((speaker) =>
-						ParticipantReferenceParser.parseParticipantReference(speaker),
+						this.collaborators.participantReferenceParser.parseParticipantReference(
+							speaker,
+						),
 					),
 				description: agendaLine.description,
 			});

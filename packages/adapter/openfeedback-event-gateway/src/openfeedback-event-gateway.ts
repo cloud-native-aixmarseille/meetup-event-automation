@@ -1,29 +1,24 @@
 import { createHash } from "node:crypto";
-import {
-	type FeedbackAgenda,
-	type FeedbackEventGateway,
+import type {
+	FeedbackAgenda,
+	FeedbackEventGateway,
 	FeedbackPolicy,
 } from "@meetup-automation/publication";
-import { OpenFeedbackClient } from "./openfeedback-client.js";
-import { OpenFeedbackAgendaGateway } from "./openfeedback-agenda-gateway.js";
-import { OpenFeedbackRecordsGateway } from "./openfeedback-records-gateway.js";
+import type { OpenFeedbackAgendaGateway } from "./openfeedback-agenda-gateway.js";
+import type { OpenFeedbackClient } from "./openfeedback-client.js";
+import type { OpenFeedbackResponse } from "./openfeedback-response.js";
+
+export interface OpenFeedbackEventGatewayCollaborators {
+	readonly feedbackPolicy: Pick<FeedbackPolicy, "pollUrl">;
+	readonly openFeedbackResponse: Pick<OpenFeedbackResponse, "read">;
+}
 
 export class OpenFeedbackEventGateway implements FeedbackEventGateway {
 	constructor(
+		private readonly collaborators: OpenFeedbackEventGatewayCollaborators,
 		private readonly client: OpenFeedbackClient,
 		private readonly agendas: OpenFeedbackAgendaGateway,
 	) {}
-
-	static create(
-		apiKey: string,
-		fetcher: typeof fetch = fetch,
-	): OpenFeedbackEventGateway {
-		const client = new OpenFeedbackClient(apiKey, fetcher);
-		return new OpenFeedbackEventGateway(
-			client,
-			new OpenFeedbackAgendaGateway(new OpenFeedbackRecordsGateway(client)),
-		);
-	}
 
 	async ensureEvent(input: {
 		readonly key: string;
@@ -32,9 +27,11 @@ export class OpenFeedbackEventGateway implements FeedbackEventGateway {
 		readonly url?: string;
 		readonly agenda?: FeedbackAgenda;
 	}): Promise<string> {
-		OpenFeedbackEventGateway.validateInput(input);
+		this.validateInput(input);
 		const url =
-			input.url === undefined ? undefined : FeedbackPolicy.pollUrl(input.url);
+			input.url === undefined
+				? undefined
+				: this.collaborators.feedbackPolicy.pollUrl(input.url);
 		const id = url
 			? new URL(url).pathname.split("/")[1]
 			: `meetup-${createHash("sha256").update(input.key).digest("hex")}`;
@@ -50,14 +47,14 @@ export class OpenFeedbackEventGateway implements FeedbackEventGateway {
 			// PATCH verifies organization access and preserves all omitted settings.
 			response = await this.client.request(`/events/${id}`, "PATCH", details);
 		}
-		await OpenFeedbackClient.read(response, id);
+		await this.collaborators.openFeedbackResponse.read(response, id);
 		if (input.agenda) {
 			await this.agendas.synchronize(id, input.key, input.agenda);
 		}
 		return url ?? `https://openfeedback.io/${id}`;
 	}
 
-	private static validateInput(input: {
+	private validateInput(input: {
 		readonly key: string;
 		readonly name: string;
 		readonly scheduleUrl: string;
@@ -78,3 +75,10 @@ export class OpenFeedbackEventGateway implements FeedbackEventGateway {
 			throw new Error("Invalid OpenFeedback event schedule URL");
 	}
 }
+export type OpenFeedbackEventGatewayArguments =
+	ConstructorParameters<typeof OpenFeedbackEventGateway> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

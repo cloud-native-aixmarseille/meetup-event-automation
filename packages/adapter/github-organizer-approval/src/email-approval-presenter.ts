@@ -1,25 +1,50 @@
-import { ApprovalCommentCodec } from "./approval-comment-codec.js";
-import { ApprovalDetailsPresenter } from "./approval-details-presenter.js";
+import type { ApprovalCommentCodec } from "./approval-comment-codec.js";
+import type {
+	ApprovalDetailsPresenter,
+	ApprovalDetailsPresenterArguments,
+} from "./approval-details-presenter.js";
 import type { ApprovalDecision, StoredApproval } from "./approval-state.js";
-import { FollowUpPresenter } from "./follow-up-presenter.js";
+import type {
+	FollowUpPresenter,
+	FollowUpPresenterArguments,
+} from "./follow-up-presenter.js";
 import type { ApprovalMessages } from "./i18n/approval-messages.js";
 
+export interface EmailApprovalPresenterCollaborators {
+	readonly approvalCommentCodec: Pick<ApprovalCommentCodec, "marker">;
+	readonly createFollowUpPresenter: (
+		...args: FollowUpPresenterArguments
+	) => FollowUpPresenter;
+	readonly createApprovalDetailsPresenter: (
+		...args: ApprovalDetailsPresenterArguments
+	) => ApprovalDetailsPresenter;
+}
+
 export class EmailApprovalPresenter {
-	constructor(private readonly messages: ApprovalMessages) {}
+	constructor(
+		private readonly collaborators: EmailApprovalPresenterCollaborators,
+		private readonly messages: ApprovalMessages,
+	) {}
 	issue(
 		record: Exclude<StoredApproval, { kind: "meetup-publication" }>,
 		decision: ApprovalDecision,
 	): string {
 		const heading = [
-			ApprovalCommentCodec.marker(record),
-			...new FollowUpPresenter(this.messages).render(record),
+			this.collaborators.approvalCommentCodec.marker(record),
+			...this.collaborators
+				.createFollowUpPresenter(this.messages)
+				.render(record),
 		];
 		if (record.recipientCount === 0 || record.followUp?.active === false)
 			return [...heading, record.followUp?.attentionDetails ?? ""]
 				.join("\n\n")
 				.trimEnd();
 		const details = record.details
-			? [new ApprovalDetailsPresenter(this.messages).render(record.details)]
+			? [
+					this.collaborators
+						.createApprovalDetailsPresenter(this.messages)
+						.render(record.details),
+				]
 			: [];
 		if (record.followUp?.attentionDetails)
 			details.push(record.followUp.attentionDetails);
@@ -49,3 +74,10 @@ export class EmailApprovalPresenter {
 		].join("\n\n");
 	}
 }
+export type EmailApprovalPresenterArguments =
+	ConstructorParameters<typeof EmailApprovalPresenter> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

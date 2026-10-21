@@ -1,9 +1,10 @@
 import type { Browser, BrowserType, Page } from "playwright-core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { desiredEvent, eventUrl, groupUrl } from "../testing/editor-fixture.js";
-import { MeetupEventPublisher } from "./meetup-event-publisher.js";
+import { MeetupEventGatewayComposition } from "./dependency-composition.js";
 import { MeetupEventEditor } from "./meetup-event-editor.js";
 import { MeetupEventGateway } from "./meetup-event-gateway.js";
+import { MeetupEventPublisher } from "./meetup-event-publisher.js";
 import { MeetupLoginPage } from "./meetup-login-page.js";
 
 afterEach(() => vi.restoreAllMocks());
@@ -27,6 +28,14 @@ function fixture() {
 		.spyOn(MeetupEventEditor.prototype, "save")
 		.mockResolvedValue({ url: eventUrl, status: "draft" });
 	const gateway = new MeetupEventGateway(
+		{
+			createMeetupEventEditor: (...args) =>
+				new MeetupEventGatewayComposition().meetupEventEditor(...args),
+			createMeetupEventPublisher: (...args) =>
+				new MeetupEventGatewayComposition().meetupEventPublisher(...args),
+			createMeetupLoginPage: (...args) =>
+				new MeetupEventGatewayComposition().meetupLoginPage(...args),
+		},
 		{ launch } as unknown as BrowserType,
 		{ email: "organizer@example.test", password: " synthetic-password " },
 		{ solve: vi.fn() },

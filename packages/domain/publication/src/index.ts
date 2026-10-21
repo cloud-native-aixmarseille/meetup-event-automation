@@ -30,6 +30,7 @@ export type {
 	ScheduledEvent,
 	ScheduledEventGateway,
 } from "./application/scheduled-event-ports.js";
+export { PublicationDomainComposition } from "./dependency-composition.js";
 export type * from "./domain/asset-content.js";
 export { AssetFolderUrlPolicy } from "./domain/asset-folder-url-policy.js";
 export type * from "./domain/asset-render-data.js";
@@ -66,7 +67,10 @@ export {
 export { PresentationFileUrl } from "./domain/presentation-file-url.js";
 export { PublicAssetUrl } from "./domain/public-asset-url.js";
 export { PublicationUrlPolicies } from "./domain/publication-url-policies.js";
-export { PublicationUrlPolicyEngine } from "./domain/publication-url-policy-engine.js";
+export {
+	PublicationUrlPolicyEngine,
+	type PublicationUrlPolicyEngineArguments,
+} from "./domain/publication-url-policy-engine.js";
 export { ScheduledEventError } from "./domain/scheduled-event-error.js";
 export { ScheduledEventPolicy } from "./domain/scheduled-event-policy.js";
 export {

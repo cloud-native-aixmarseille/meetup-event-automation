@@ -2,6 +2,7 @@ import type { EventDiagnostic } from "@meetup-automation/event";
 import {
 	type ProposalSnapshot,
 	ProposalSourceError,
+	ReferentialDomainComposition,
 	ValidateReferentialCatalog,
 } from "@meetup-automation/referential";
 import { describe, expect, it, vi } from "vitest";
@@ -37,7 +38,18 @@ const snapshot: ProposalSnapshot = {
 };
 
 async function catalog() {
-	const result = await new ValidateReferentialCatalog().execute({
+	const result = await new ValidateReferentialCatalog({
+		referentialDiagnostics:
+			new ReferentialDomainComposition().referentialDiagnostics(),
+		hostCatalogValidator:
+			new ReferentialDomainComposition().hostCatalogValidator(),
+		speakerCatalogValidator:
+			new ReferentialDomainComposition().speakerCatalogValidator(),
+		speakerSourceFields:
+			new ReferentialDomainComposition().speakerSourceFields(),
+		referentialCatalogOperations:
+			new ReferentialDomainComposition().referentialCatalogOperations(),
+	}).execute({
 		hosts: [],
 		speakers: ["source-one", "source-two"].map((sourceSpeakerId, index) => ({
 			speakerId: `speaker-000${index + 1}`,

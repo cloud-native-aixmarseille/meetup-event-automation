@@ -22,3 +22,6 @@ export class ApprovalDecisionParser {
 		return { status: "pending" };
 	}
 }
+export type ApprovalDecisionParserArguments = ConstructorParameters<
+	typeof ApprovalDecisionParser
+>;

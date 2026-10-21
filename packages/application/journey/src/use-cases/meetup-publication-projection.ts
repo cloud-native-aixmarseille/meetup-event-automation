@@ -8,7 +8,7 @@ export type MeetupPublicationSettings = Readonly<{
 }>;
 
 export class MeetupPublicationProjection {
-	static create(
+	create(
 		event: MeetupEvent,
 		settings: MeetupPublicationSettings,
 	): ScheduledEvent | undefined {

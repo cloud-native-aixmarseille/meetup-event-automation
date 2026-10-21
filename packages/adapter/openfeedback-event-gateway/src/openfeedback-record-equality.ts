@@ -5,7 +5,7 @@ import type {
 
 /** Compare the managed fields of OpenFeedback records, ignoring remote metadata. */
 export class OpenFeedbackRecordEquality {
-	static equal(
+	equal(
 		left: OpenFeedbackSpeaker | OpenFeedbackTalk,
 		right: OpenFeedbackSpeaker | OpenFeedbackTalk,
 	): boolean {
@@ -14,11 +14,11 @@ export class OpenFeedbackRecordEquality {
 		return (
 			"title" in right &&
 			left.title === right.title &&
-			OpenFeedbackRecordEquality.sameSpeakers(left, right)
+			this.sameSpeakers(left, right)
 		);
 	}
 
-	static sameSpeakers(
+	sameSpeakers(
 		left: Pick<OpenFeedbackTalk, "speakers">,
 		right: Pick<OpenFeedbackTalk, "speakers">,
 	): boolean {

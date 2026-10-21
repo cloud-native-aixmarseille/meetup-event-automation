@@ -24,7 +24,9 @@ describe("manual publication tasks", () => {
 		// No additional setup is needed.
 
 		// Act
-		const tasks = ManualPublicationPolicy.planManualPublicationTasks(event());
+		const tasks = new ManualPublicationPolicy().planManualPublicationTasks(
+			event(),
+		);
 
 		// Assert
 		expect(tasks).toEqual(
@@ -50,7 +52,7 @@ describe("manual publication tasks", () => {
 		// No additional setup is needed.
 
 		// Act
-		const tasks = ManualPublicationPolicy.planManualPublicationTasks(
+		const tasks = new ManualPublicationPolicy().planManualPublicationTasks(
 			event({
 				occurrenceStatus: "held",
 				references: {
@@ -83,7 +85,7 @@ describe("manual publication tasks", () => {
 		// No additional setup is needed.
 
 		// Act
-		const tasks = ManualPublicationPolicy.planManualPublicationTasks(
+		const tasks = new ManualPublicationPolicy().planManualPublicationTasks(
 			event({ occurrenceStatus: "cancelled" }),
 		);
 		const actual = tasks.every((task) => task.status === "not-applicable");
@@ -111,7 +113,9 @@ describe("manual publication tasks", () => {
 			const source = event(overrides);
 
 			// Act
-			const tasks = ManualPublicationPolicy.planManualPublicationTasks(source);
+			const tasks = new ManualPublicationPolicy().planManualPublicationTasks(
+				source,
+			);
 
 			// Assert
 			expect(tasks).toContainEqual(

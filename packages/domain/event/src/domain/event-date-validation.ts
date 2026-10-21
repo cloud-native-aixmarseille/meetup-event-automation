@@ -1,5 +1,5 @@
 export class EventDateValidation {
-	static isValidIsoDate(value: string): boolean {
+	isValidIsoDate(value: string): boolean {
 		const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
 		if (!match) {
 			return false;
@@ -12,7 +12,7 @@ export class EventDateValidation {
 		}
 		const monthLengths = [
 			31,
-			EventDateValidation.isLeapYear(year) ? 29 : 28,
+			this.isLeapYear(year) ? 29 : 28,
 			31,
 			30,
 			31,
@@ -27,7 +27,7 @@ export class EventDateValidation {
 		return day <= monthLengths[month - 1];
 	}
 
-	static isLeapYear(year: number): boolean {
+	isLeapYear(year: number): boolean {
 		return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
 	}
 }

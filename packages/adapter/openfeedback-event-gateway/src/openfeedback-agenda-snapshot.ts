@@ -1,4 +1,4 @@
-import { OpenFeedbackResourceId } from "./openfeedback-resource-id.js";
+import type { OpenFeedbackResourceId } from "./openfeedback-resource-id.js";
 
 export interface OpenFeedbackSpeaker {
 	readonly id: string;
@@ -23,18 +23,24 @@ export interface OpenFeedbackStoredAgenda extends OpenFeedbackAgendaData {
 	readonly talks: readonly (OpenFeedbackTalk & { readonly revision: string })[];
 }
 
+export interface OpenFeedbackAgendaSnapshotCollaborators {
+	readonly openFeedbackResourceId: Pick<OpenFeedbackResourceId, "isValid">;
+}
+
 export class OpenFeedbackAgendaSnapshot {
-	static parse(body: unknown): OpenFeedbackStoredAgenda {
-		if (!OpenFeedbackAgendaSnapshot.object(body))
+	constructor(
+		private readonly collaborators: OpenFeedbackAgendaSnapshotCollaborators,
+	) {}
+
+	parse(body: unknown): OpenFeedbackStoredAgenda {
+		if (!this.object(body))
 			throw new Error("Invalid OpenFeedback agenda response");
-		const speakers = OpenFeedbackAgendaSnapshot.records(body.speakers).map(
-			(speaker) => ({
-				id: speaker.id,
-				revision: speaker.revision,
-				name: OpenFeedbackAgendaSnapshot.text(speaker.name),
-			}),
-		);
-		const talks = OpenFeedbackAgendaSnapshot.records(body.talks).map((talk) => {
+		const speakers = this.records(body.speakers).map((speaker) => ({
+			id: speaker.id,
+			revision: speaker.revision,
+			name: this.text(speaker.name),
+		}));
+		const talks = this.records(body.talks).map((talk) => {
 			const ids: unknown = talk.speakers;
 			if (
 				!Array.isArray(ids) ||
@@ -44,14 +50,14 @@ export class OpenFeedbackAgendaSnapshot {
 			return {
 				id: talk.id,
 				revision: talk.revision,
-				title: OpenFeedbackAgendaSnapshot.text(talk.title),
+				title: this.text(talk.title),
 				speakers: [...ids],
 			};
 		});
 		return { speakers, talks };
 	}
 
-	private static records(
+	private records(
 		value: unknown,
 	): (Record<string, unknown> & { id: string; revision: string })[] {
 		if (!Array.isArray(value) || value.length > 200)
@@ -59,8 +65,8 @@ export class OpenFeedbackAgendaSnapshot {
 		const ids = new Set<string>();
 		return value.map((record: unknown) => {
 			if (
-				!OpenFeedbackAgendaSnapshot.object(record) ||
-				!OpenFeedbackResourceId.isValid(record.id) ||
+				!this.object(record) ||
+				!this.collaborators.openFeedbackResourceId.isValid(record.id) ||
 				typeof record.revision !== "string" ||
 				!/^[a-f0-9]{64}$/.test(record.revision) ||
 				ids.has(record.id)
@@ -71,14 +77,14 @@ export class OpenFeedbackAgendaSnapshot {
 		});
 	}
 
-	private static text(value: unknown): string {
+	private text(value: unknown): string {
 		if (value === undefined) return "";
 		if (typeof value !== "string")
 			throw new Error("Invalid OpenFeedback agenda response");
 		return value;
 	}
 
-	private static object(value: unknown): value is Record<string, unknown> {
+	private object(value: unknown): value is Record<string, unknown> {
 		return value !== null && typeof value === "object" && !Array.isArray(value);
 	}
 }

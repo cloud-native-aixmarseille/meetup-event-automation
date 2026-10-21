@@ -1,15 +1,13 @@
 import type { EventDiagnostic } from "../../domain/diagnostic.js";
-import { EventRuleEngine } from "../../domain/event-rule-engine.js";
-import { EventRuleFactory } from "../../domain/event-rule-factory.js";
-import { EventLifecycle } from "../../domain/lifecycle.js";
-import type { EventIdentity } from "../../domain/model.js";
-import { EventReadinessPolicy } from "../../domain/readiness.js";
-import {
-	type EventDocument,
-	type EventRepository,
-	EventRepositoryPatches,
-} from "../ports/event-repository.js";
-import { EventConcurrentModificationError } from "./event-concurrent-modification-error.js";
+import type {
+	EventRuleEngine,
+	EventRuleEngineArguments,
+} from "../../domain/event-rule-engine.js";
+import type { EventRuleFactory } from "../../domain/event-rule-factory.js";
+import type { EventLifecycle } from "../../domain/lifecycle.js";
+import type { EventReadinessPolicy } from "../../domain/readiness.js";
+import type { EventRepositoryPatches } from "../ports/event-repository.js";
+import type { EventDocumentConcurrency } from "./event-document-concurrency.js";
 import { EventNotFoundError } from "./event-not-found-error.js";
 import type {
 	ReconcileEventDependencies,
@@ -17,12 +15,36 @@ import type {
 	ReconcileEventResult,
 } from "./reconcile-event-contracts.js";
 
+export interface ReconcileEventCollaborators {
+	readonly eventRuleFactory: Pick<EventRuleFactory, "createDefaultEventRules">;
+	readonly eventDocumentConcurrency: Pick<
+		EventDocumentConcurrency,
+		"sameIdentity" | "ensureEventDocumentIsCurrent"
+	>;
+	readonly eventReadinessPolicy: Pick<
+		EventReadinessPolicy,
+		"evaluateEventReadiness"
+	>;
+	readonly eventLifecycle: Pick<EventLifecycle, "evaluateEventLifecycle">;
+	readonly eventRepositoryPatches: Pick<
+		EventRepositoryPatches,
+		"eventRepositoryPatchIsEmpty"
+	>;
+	readonly createEventRuleEngine: (
+		...args: EventRuleEngineArguments
+	) => EventRuleEngine;
+}
+
 export class ReconcileEvent {
 	private readonly ruleEngine: EventRuleEngine;
 
-	constructor(private readonly dependencies: ReconcileEventDependencies) {
-		this.ruleEngine = new EventRuleEngine(
-			dependencies.rules ?? EventRuleFactory.createDefaultEventRules(),
+	constructor(
+		private readonly collaborators: ReconcileEventCollaborators,
+		private readonly dependencies: ReconcileEventDependencies,
+	) {
+		this.ruleEngine = this.collaborators.createEventRuleEngine(
+			dependencies.rules ??
+				this.collaborators.eventRuleFactory.createDefaultEventRules(),
 		);
 	}
 
@@ -33,7 +55,12 @@ export class ReconcileEvent {
 		if (!document) {
 			throw new EventNotFoundError(input.identity);
 		}
-		if (!ReconcileEvent.sameIdentity(document.identity, input.identity)) {
+		if (
+			!this.collaborators.eventDocumentConcurrency.sameIdentity(
+				document.identity,
+				input.identity,
+			)
+		) {
 			throw new EventNotFoundError(input.identity);
 		}
 
@@ -44,11 +71,12 @@ export class ReconcileEvent {
 			...evaluated.diagnostics,
 		];
 
-		const readiness = EventReadinessPolicy.evaluateEventReadiness(
-			evaluated.event,
-			diagnostics,
-		);
-		const lifecycle = EventLifecycle.evaluateEventLifecycle({
+		const readiness =
+			this.collaborators.eventReadinessPolicy.evaluateEventReadiness(
+				evaluated.event,
+				diagnostics,
+			);
+		const lifecycle = this.collaborators.eventLifecycle.evaluateEventLifecycle({
 			event: evaluated.event,
 			readiness,
 			now: this.dependencies.clock.now(),
@@ -59,10 +87,12 @@ export class ReconcileEvent {
 		);
 		const shouldPersist =
 			input.mode === "fix" &&
-			!EventRepositoryPatches.eventRepositoryPatchIsEmpty(repositoryPatch);
+			!this.collaborators.eventRepositoryPatches.eventRepositoryPatchIsEmpty(
+				repositoryPatch,
+			);
 
 		if (shouldPersist) {
-			await ReconcileEvent.ensureEventDocumentIsCurrent(
+			await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
 				this.dependencies.repository,
 				input.identity,
 				document,
@@ -83,48 +113,8 @@ export class ReconcileEvent {
 			persisted: shouldPersist,
 		};
 	}
-
-	static async ensureEventDocumentIsCurrent(
-		repository: EventRepository,
-		identity: EventIdentity,
-		expected: EventDocument,
-	): Promise<void> {
-		const current = await repository.find(identity);
-		if (!current) {
-			throw new EventNotFoundError(identity);
-		}
-		if (!ReconcileEvent.eventDocumentsEqual(current, expected)) {
-			throw new EventConcurrentModificationError(identity);
-		}
-	}
-
-	static eventDocumentsEqual(
-		left: EventDocument,
-		right: EventDocument,
-	): boolean {
-		const leftLabels = [...left.labels].sort(ReconcileEvent.compareText);
-		const rightLabels = [...right.labels].sort(ReconcileEvent.compareText);
-		return (
-			ReconcileEvent.sameIdentity(left.identity, right.identity) &&
-			left.issueState === right.issueState &&
-			left.issueTitle === right.issueTitle &&
-			left.body === right.body &&
-			leftLabels.length === rightLabels.length &&
-			leftLabels.every((label, index) => label === rightLabels[index])
-		);
-	}
-
-	private static compareText(left: string, right: string): number {
-		return left < right ? -1 : left > right ? 1 : 0;
-	}
-
-	private static sameIdentity(
-		left: EventIdentity,
-		right: EventIdentity,
-	): boolean {
-		return (
-			left.issueNumber === right.issueNumber &&
-			left.repository.toLowerCase() === right.repository.toLowerCase()
-		);
-	}
 }
+export type ReconcileEventArguments =
+	ConstructorParameters<typeof ReconcileEvent> extends [unknown, ...infer Args]
+		? Args
+		: never;

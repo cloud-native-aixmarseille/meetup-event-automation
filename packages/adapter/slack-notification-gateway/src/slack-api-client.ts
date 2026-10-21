@@ -37,8 +37,8 @@ export class SlackApiClient {
 		}
 		if (!response.ok)
 			return {
-				retryAfterSeconds: SlackApiClient.retryAfter(response),
-				result: SlackApiClient.httpRejection(response.status) ?? {
+				retryAfterSeconds: this.retryAfter(response),
+				result: this.httpRejection(response.status) ?? {
 					outcome: "uncertain",
 					diagnosticCode: "ambiguous-response",
 				},
@@ -64,17 +64,15 @@ export class SlackApiClient {
 			result:
 				data.ok === true
 					? { outcome: "accepted" }
-					: SlackApiClient.slackApiRejection(data.error),
+					: this.slackApiRejection(data.error),
 			payload: data,
 		};
 	}
-	private static retryAfter(response: Response): number | undefined {
+	private retryAfter(response: Response): number | undefined {
 		const value = Number(response.headers.get("retry-after"));
 		return Number.isFinite(value) && value > 0 ? value : undefined;
 	}
-	private static httpRejection(
-		status: number,
-	): GatewayDispatchResult | undefined {
+	private httpRejection(status: number): GatewayDispatchResult | undefined {
 		switch (status) {
 			case 400:
 			case 422:
@@ -95,7 +93,7 @@ export class SlackApiClient {
 		}
 	}
 
-	private static slackApiRejection(error: unknown): GatewayDispatchResult {
+	private slackApiRejection(error: unknown): GatewayDispatchResult {
 		if (typeof error !== "string") {
 			return { outcome: "uncertain", diagnosticCode: "ambiguous-response" };
 		}
@@ -133,3 +131,6 @@ export class SlackApiClient {
 		return { outcome: "uncertain", diagnosticCode: "ambiguous-response" };
 	}
 }
+export type SlackApiClientArguments = ConstructorParameters<
+	typeof SlackApiClient
+>;

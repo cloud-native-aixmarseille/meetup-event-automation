@@ -1,10 +1,14 @@
+import {
+	FeedbackResolutionError,
+	PublicationDomainComposition,
+} from "@meetup-automation/publication";
 import { describe, expect, it, vi } from "vitest";
-import { FeedbackResolutionError } from "@meetup-automation/publication";
 import {
 	agenda,
 	speakerPage,
 	talkPage,
 } from "../testing/feedback-agenda.fixtures.js";
+import { OpenfeedbackEventGatewayComposition } from "./dependency-composition.js";
 import { OpenFeedbackTalkResultsGateway } from "./openfeedback-talk-results-gateway.js";
 
 const input = {
@@ -23,6 +27,23 @@ describe("OpenFeedback talk results", () => {
 				.mockResolvedValueOnce(Response.json(speakerPage))
 				.mockResolvedValueOnce(Response.json(talkPage));
 			const gateway = new OpenFeedbackTalkResultsGateway(
+				{
+					openFeedbackAgendaSnapshot:
+						new OpenfeedbackEventGatewayComposition().openFeedbackAgendaSnapshot(),
+					openFeedbackAgendaPlan:
+						new OpenfeedbackEventGatewayComposition().openFeedbackAgendaPlan(),
+					openFeedbackRecordEquality:
+						new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+					feedbackPolicy: new PublicationDomainComposition().feedbackPolicy(),
+					createOpenFeedbackRecordsGateway: (...args) =>
+						new OpenfeedbackEventGatewayComposition().openFeedbackRecordsGateway(
+							...args,
+						),
+					createOpenFeedbackClient: (...args) =>
+						new OpenfeedbackEventGatewayComposition().openFeedbackClient(
+							...args,
+						),
+				},
 				"oforg_synthetic",
 				fetcher,
 			);
@@ -70,6 +91,21 @@ describe("OpenFeedback talk results", () => {
 				}),
 			);
 		const gateway = new OpenFeedbackTalkResultsGateway(
+			{
+				openFeedbackAgendaSnapshot:
+					new OpenfeedbackEventGatewayComposition().openFeedbackAgendaSnapshot(),
+				openFeedbackAgendaPlan:
+					new OpenfeedbackEventGatewayComposition().openFeedbackAgendaPlan(),
+				openFeedbackRecordEquality:
+					new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+				feedbackPolicy: new PublicationDomainComposition().feedbackPolicy(),
+				createOpenFeedbackRecordsGateway: (...args) =>
+					new OpenfeedbackEventGatewayComposition().openFeedbackRecordsGateway(
+						...args,
+					),
+				createOpenFeedbackClient: (...args) =>
+					new OpenfeedbackEventGatewayComposition().openFeedbackClient(...args),
+			},
 			"oforg_synthetic",
 			fetcher,
 		);
@@ -99,6 +135,23 @@ describe("OpenFeedback talk results", () => {
 				.mockResolvedValueOnce(Response.json(speakerPage))
 				.mockResolvedValueOnce(Response.json({ ...talkPage, talks }));
 			const gateway = new OpenFeedbackTalkResultsGateway(
+				{
+					openFeedbackAgendaSnapshot:
+						new OpenfeedbackEventGatewayComposition().openFeedbackAgendaSnapshot(),
+					openFeedbackAgendaPlan:
+						new OpenfeedbackEventGatewayComposition().openFeedbackAgendaPlan(),
+					openFeedbackRecordEquality:
+						new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+					feedbackPolicy: new PublicationDomainComposition().feedbackPolicy(),
+					createOpenFeedbackRecordsGateway: (...args) =>
+						new OpenfeedbackEventGatewayComposition().openFeedbackRecordsGateway(
+							...args,
+						),
+					createOpenFeedbackClient: (...args) =>
+						new OpenfeedbackEventGatewayComposition().openFeedbackClient(
+							...args,
+						),
+				},
 				"oforg_synthetic",
 				fetcher,
 			);
@@ -129,6 +182,23 @@ describe("OpenFeedback talk results", () => {
 			// Arrange
 			const fetcher = vi.fn<typeof fetch>();
 			const gateway = new OpenFeedbackTalkResultsGateway(
+				{
+					openFeedbackAgendaSnapshot:
+						new OpenfeedbackEventGatewayComposition().openFeedbackAgendaSnapshot(),
+					openFeedbackAgendaPlan:
+						new OpenfeedbackEventGatewayComposition().openFeedbackAgendaPlan(),
+					openFeedbackRecordEquality:
+						new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+					feedbackPolicy: new PublicationDomainComposition().feedbackPolicy(),
+					createOpenFeedbackRecordsGateway: (...args) =>
+						new OpenfeedbackEventGatewayComposition().openFeedbackRecordsGateway(
+							...args,
+						),
+					createOpenFeedbackClient: (...args) =>
+						new OpenfeedbackEventGatewayComposition().openFeedbackClient(
+							...args,
+						),
+				},
 				"oforg_synthetic",
 				fetcher,
 			);
@@ -149,6 +219,21 @@ describe("OpenFeedback talk results", () => {
 			.fn<typeof fetch>()
 			.mockRejectedValue(new Error("private transport details"));
 		const gateway = new OpenFeedbackTalkResultsGateway(
+			{
+				openFeedbackAgendaSnapshot:
+					new OpenfeedbackEventGatewayComposition().openFeedbackAgendaSnapshot(),
+				openFeedbackAgendaPlan:
+					new OpenfeedbackEventGatewayComposition().openFeedbackAgendaPlan(),
+				openFeedbackRecordEquality:
+					new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+				feedbackPolicy: new PublicationDomainComposition().feedbackPolicy(),
+				createOpenFeedbackRecordsGateway: (...args) =>
+					new OpenfeedbackEventGatewayComposition().openFeedbackRecordsGateway(
+						...args,
+					),
+				createOpenFeedbackClient: (...args) =>
+					new OpenfeedbackEventGatewayComposition().openFeedbackClient(...args),
+			},
 			"oforg_synthetic",
 			fetcher,
 		);

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { contentDependencies } from "../../testing/content.fixtures.js";
+import { PublicationDomainComposition } from "../dependency-composition.js";
 import { ContentError } from "../domain/content-error.js";
-import { ContentFingerprint } from "../domain/content-fingerprint.js";
 import { ReconcileAssetContent } from "./reconcile-asset-content.js";
 
 describe("managed content reconciliation", () => {
@@ -9,6 +9,21 @@ describe("managed content reconciliation", () => {
 		// Arrange
 		const f = contentDependencies(true, undefined, "host.logo");
 		const service = new ReconcileAssetContent(
+			{
+				contentContractPolicy:
+					new PublicationDomainComposition().contentContractPolicy(),
+				contentRenderPlan:
+					new PublicationDomainComposition().contentRenderPlan(),
+				contentTextKey: new PublicationDomainComposition().contentTextKey(),
+				contentManifestPolicy:
+					new PublicationDomainComposition().contentManifestPolicy(),
+				contentRecoveryFingerprint:
+					new PublicationDomainComposition().contentRecoveryFingerprint(),
+				contentRecoveryPlan:
+					new PublicationDomainComposition().contentRecoveryPlan(),
+				createResolveContentValues: (...args) =>
+					new PublicationDomainComposition().resolveContentValues(...args),
+			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
@@ -58,12 +73,32 @@ describe("managed content reconciliation", () => {
 		// Arrange
 		const f = contentDependencies(true, undefined, "host.logo");
 		const service = new ReconcileAssetContent(
+			{
+				contentContractPolicy:
+					new PublicationDomainComposition().contentContractPolicy(),
+				contentRenderPlan:
+					new PublicationDomainComposition().contentRenderPlan(),
+				contentTextKey: new PublicationDomainComposition().contentTextKey(),
+				contentManifestPolicy:
+					new PublicationDomainComposition().contentManifestPolicy(),
+				contentRecoveryFingerprint:
+					new PublicationDomainComposition().contentRecoveryFingerprint(),
+				contentRecoveryPlan:
+					new PublicationDomainComposition().contentRecoveryPlan(),
+				createResolveContentValues: (...args) =>
+					new PublicationDomainComposition().resolveContentValues(...args),
+			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
 		);
 		await service.execute(f.input);
-		f.state.content.set("image", ContentFingerprint.of("manual host logo"));
+		f.state.content.set(
+			"image",
+			new PublicationDomainComposition()
+				.contentFingerprint()
+				.of("manual host logo"),
+		);
 
 		// Act
 		const result = service.execute({ ...f.input, fresh: false });
@@ -82,6 +117,21 @@ describe("managed content reconciliation", () => {
 			required: true,
 		});
 		const service = new ReconcileAssetContent(
+			{
+				contentContractPolicy:
+					new PublicationDomainComposition().contentContractPolicy(),
+				contentRenderPlan:
+					new PublicationDomainComposition().contentRenderPlan(),
+				contentTextKey: new PublicationDomainComposition().contentTextKey(),
+				contentManifestPolicy:
+					new PublicationDomainComposition().contentManifestPolicy(),
+				contentRecoveryFingerprint:
+					new PublicationDomainComposition().contentRecoveryFingerprint(),
+				contentRecoveryPlan:
+					new PublicationDomainComposition().contentRecoveryPlan(),
+				createResolveContentValues: (...args) =>
+					new PublicationDomainComposition().resolveContentValues(...args),
+			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
@@ -96,7 +146,12 @@ describe("managed content reconciliation", () => {
 		};
 		await service.execute(changed);
 		const unchanged = await service.execute(changed);
-		f.state.content.set("title", ContentFingerprint.of("Manual title"));
+		f.state.content.set(
+			"title",
+			new PublicationDomainComposition()
+				.contentFingerprint()
+				.of("Manual title"),
+		);
 		const conflict = service.execute(changed);
 
 		// Assert
@@ -114,6 +169,21 @@ describe("managed content reconciliation", () => {
 		// Arrange
 		const f = contentDependencies();
 		const service = new ReconcileAssetContent(
+			{
+				contentContractPolicy:
+					new PublicationDomainComposition().contentContractPolicy(),
+				contentRenderPlan:
+					new PublicationDomainComposition().contentRenderPlan(),
+				contentTextKey: new PublicationDomainComposition().contentTextKey(),
+				contentManifestPolicy:
+					new PublicationDomainComposition().contentManifestPolicy(),
+				contentRecoveryFingerprint:
+					new PublicationDomainComposition().contentRecoveryFingerprint(),
+				contentRecoveryPlan:
+					new PublicationDomainComposition().contentRecoveryPlan(),
+				createResolveContentValues: (...args) =>
+					new PublicationDomainComposition().resolveContentValues(...args),
+			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
@@ -134,6 +204,21 @@ describe("managed content reconciliation", () => {
 		// Arrange
 		const f = contentDependencies();
 		const service = new ReconcileAssetContent(
+			{
+				contentContractPolicy:
+					new PublicationDomainComposition().contentContractPolicy(),
+				contentRenderPlan:
+					new PublicationDomainComposition().contentRenderPlan(),
+				contentTextKey: new PublicationDomainComposition().contentTextKey(),
+				contentManifestPolicy:
+					new PublicationDomainComposition().contentManifestPolicy(),
+				contentRecoveryFingerprint:
+					new PublicationDomainComposition().contentRecoveryFingerprint(),
+				contentRecoveryPlan:
+					new PublicationDomainComposition().contentRecoveryPlan(),
+				createResolveContentValues: (...args) =>
+					new PublicationDomainComposition().resolveContentValues(...args),
+			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
@@ -163,6 +248,21 @@ describe("managed content reconciliation", () => {
 		// Arrange
 		const f = contentDependencies();
 		const service = new ReconcileAssetContent(
+			{
+				contentContractPolicy:
+					new PublicationDomainComposition().contentContractPolicy(),
+				contentRenderPlan:
+					new PublicationDomainComposition().contentRenderPlan(),
+				contentTextKey: new PublicationDomainComposition().contentTextKey(),
+				contentManifestPolicy:
+					new PublicationDomainComposition().contentManifestPolicy(),
+				contentRecoveryFingerprint:
+					new PublicationDomainComposition().contentRecoveryFingerprint(),
+				contentRecoveryPlan:
+					new PublicationDomainComposition().contentRecoveryPlan(),
+				createResolveContentValues: (...args) =>
+					new PublicationDomainComposition().resolveContentValues(...args),
+			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
@@ -180,13 +280,33 @@ describe("managed content reconciliation", () => {
 		// Arrange
 		const f = contentDependencies();
 		const service = new ReconcileAssetContent(
+			{
+				contentContractPolicy:
+					new PublicationDomainComposition().contentContractPolicy(),
+				contentRenderPlan:
+					new PublicationDomainComposition().contentRenderPlan(),
+				contentTextKey: new PublicationDomainComposition().contentTextKey(),
+				contentManifestPolicy:
+					new PublicationDomainComposition().contentManifestPolicy(),
+				contentRecoveryFingerprint:
+					new PublicationDomainComposition().contentRecoveryFingerprint(),
+				contentRecoveryPlan:
+					new PublicationDomainComposition().contentRecoveryPlan(),
+				createResolveContentValues: (...args) =>
+					new PublicationDomainComposition().resolveContentValues(...args),
+			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
 		);
 		vi.mocked(f.renderer.apply).mockImplementationOnce(async () => {
 			f.state.revision++;
-			f.state.content.set("title", ContentFingerprint.of("Collaborator text"));
+			f.state.content.set(
+				"title",
+				new PublicationDomainComposition()
+					.contentFingerprint()
+					.of("Collaborator text"),
+			);
 			throw new ContentError("revision");
 		});
 
@@ -202,12 +322,32 @@ describe("managed content reconciliation", () => {
 		// Arrange
 		const f = contentDependencies(true);
 		const service = new ReconcileAssetContent(
+			{
+				contentContractPolicy:
+					new PublicationDomainComposition().contentContractPolicy(),
+				contentRenderPlan:
+					new PublicationDomainComposition().contentRenderPlan(),
+				contentTextKey: new PublicationDomainComposition().contentTextKey(),
+				contentManifestPolicy:
+					new PublicationDomainComposition().contentManifestPolicy(),
+				contentRecoveryFingerprint:
+					new PublicationDomainComposition().contentRecoveryFingerprint(),
+				contentRecoveryPlan:
+					new PublicationDomainComposition().contentRecoveryPlan(),
+				createResolveContentValues: (...args) =>
+					new PublicationDomainComposition().resolveContentValues(...args),
+			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
 		);
 		await service.execute(f.input);
-		f.state.content.set("image", ContentFingerprint.of("manual replacement"));
+		f.state.content.set(
+			"image",
+			new PublicationDomainComposition()
+				.contentFingerprint()
+				.of("manual replacement"),
+		);
 
 		// Act
 		const result = service.execute({ ...f.input, fresh: false });
@@ -221,6 +361,21 @@ describe("managed content reconciliation", () => {
 		// Arrange
 		const f = contentDependencies(true);
 		const service = new ReconcileAssetContent(
+			{
+				contentContractPolicy:
+					new PublicationDomainComposition().contentContractPolicy(),
+				contentRenderPlan:
+					new PublicationDomainComposition().contentRenderPlan(),
+				contentTextKey: new PublicationDomainComposition().contentTextKey(),
+				contentManifestPolicy:
+					new PublicationDomainComposition().contentManifestPolicy(),
+				contentRecoveryFingerprint:
+					new PublicationDomainComposition().contentRecoveryFingerprint(),
+				contentRecoveryPlan:
+					new PublicationDomainComposition().contentRecoveryPlan(),
+				createResolveContentValues: (...args) =>
+					new PublicationDomainComposition().resolveContentValues(...args),
+			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
@@ -261,12 +416,30 @@ describe("managed content reconciliation", () => {
 		// Arrange
 		const f = contentDependencies();
 		const service = new ReconcileAssetContent(
+			{
+				contentContractPolicy:
+					new PublicationDomainComposition().contentContractPolicy(),
+				contentRenderPlan:
+					new PublicationDomainComposition().contentRenderPlan(),
+				contentTextKey: new PublicationDomainComposition().contentTextKey(),
+				contentManifestPolicy:
+					new PublicationDomainComposition().contentManifestPolicy(),
+				contentRecoveryFingerprint:
+					new PublicationDomainComposition().contentRecoveryFingerprint(),
+				contentRecoveryPlan:
+					new PublicationDomainComposition().contentRecoveryPlan(),
+				createResolveContentValues: (...args) =>
+					new PublicationDomainComposition().resolveContentValues(...args),
+			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
 		);
 		await service.execute(f.input);
-		f.state.content.set("title", ContentFingerprint.of("Manual text"));
+		f.state.content.set(
+			"title",
+			new PublicationDomainComposition().contentFingerprint().of("Manual text"),
+		);
 		const input = {
 			...f.input,
 			fresh: false,
@@ -275,7 +448,12 @@ describe("managed content reconciliation", () => {
 
 		// Act
 		const restored = await service.execute(input);
-		f.state.content.set("title", ContentFingerprint.of("Later manual text"));
+		f.state.content.set(
+			"title",
+			new PublicationDomainComposition()
+				.contentFingerprint()
+				.of("Later manual text"),
+		);
 		const repeated = service.execute(input);
 
 		// Assert
@@ -287,6 +465,21 @@ describe("managed content reconciliation", () => {
 		// Arrange
 		const f = contentDependencies();
 		const service = new ReconcileAssetContent(
+			{
+				contentContractPolicy:
+					new PublicationDomainComposition().contentContractPolicy(),
+				contentRenderPlan:
+					new PublicationDomainComposition().contentRenderPlan(),
+				contentTextKey: new PublicationDomainComposition().contentTextKey(),
+				contentManifestPolicy:
+					new PublicationDomainComposition().contentManifestPolicy(),
+				contentRecoveryFingerprint:
+					new PublicationDomainComposition().contentRecoveryFingerprint(),
+				contentRecoveryPlan:
+					new PublicationDomainComposition().contentRecoveryPlan(),
+				createResolveContentValues: (...args) =>
+					new PublicationDomainComposition().resolveContentValues(...args),
+			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
@@ -321,12 +514,30 @@ describe("managed content reconciliation", () => {
 		// Arrange
 		const f = contentDependencies();
 		const service = new ReconcileAssetContent(
+			{
+				contentContractPolicy:
+					new PublicationDomainComposition().contentContractPolicy(),
+				contentRenderPlan:
+					new PublicationDomainComposition().contentRenderPlan(),
+				contentTextKey: new PublicationDomainComposition().contentTextKey(),
+				contentManifestPolicy:
+					new PublicationDomainComposition().contentManifestPolicy(),
+				contentRecoveryFingerprint:
+					new PublicationDomainComposition().contentRecoveryFingerprint(),
+				contentRecoveryPlan:
+					new PublicationDomainComposition().contentRecoveryPlan(),
+				createResolveContentValues: (...args) =>
+					new PublicationDomainComposition().resolveContentValues(...args),
+			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
 		);
 		await service.execute(f.input);
-		f.state.content.set("title", ContentFingerprint.of("Manual work"));
+		f.state.content.set(
+			"title",
+			new PublicationDomainComposition().contentFingerprint().of("Manual work"),
+		);
 
 		// Act
 		const result = service.execute({ ...f.input, fresh: false });
@@ -335,7 +546,7 @@ describe("managed content reconciliation", () => {
 		await expect(result).rejects.toMatchObject({ code: "conflict" });
 		expect(f.renderer.apply).toHaveBeenCalledTimes(1);
 		expect(f.state.content.get("title")).toBe(
-			ContentFingerprint.of("Manual work"),
+			new PublicationDomainComposition().contentFingerprint().of("Manual work"),
 		);
 	});
 
@@ -343,6 +554,21 @@ describe("managed content reconciliation", () => {
 		// Arrange
 		const f = contentDependencies();
 		const service = new ReconcileAssetContent(
+			{
+				contentContractPolicy:
+					new PublicationDomainComposition().contentContractPolicy(),
+				contentRenderPlan:
+					new PublicationDomainComposition().contentRenderPlan(),
+				contentTextKey: new PublicationDomainComposition().contentTextKey(),
+				contentManifestPolicy:
+					new PublicationDomainComposition().contentManifestPolicy(),
+				contentRecoveryFingerprint:
+					new PublicationDomainComposition().contentRecoveryFingerprint(),
+				contentRecoveryPlan:
+					new PublicationDomainComposition().contentRecoveryPlan(),
+				createResolveContentValues: (...args) =>
+					new PublicationDomainComposition().resolveContentValues(...args),
+			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
@@ -362,6 +588,21 @@ describe("managed content reconciliation", () => {
 		// Arrange
 		const f = contentDependencies(true);
 		const service = new ReconcileAssetContent(
+			{
+				contentContractPolicy:
+					new PublicationDomainComposition().contentContractPolicy(),
+				contentRenderPlan:
+					new PublicationDomainComposition().contentRenderPlan(),
+				contentTextKey: new PublicationDomainComposition().contentTextKey(),
+				contentManifestPolicy:
+					new PublicationDomainComposition().contentManifestPolicy(),
+				contentRecoveryFingerprint:
+					new PublicationDomainComposition().contentRecoveryFingerprint(),
+				contentRecoveryPlan:
+					new PublicationDomainComposition().contentRecoveryPlan(),
+				createResolveContentValues: (...args) =>
+					new PublicationDomainComposition().resolveContentValues(...args),
+			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
@@ -381,6 +622,21 @@ describe("managed content reconciliation", () => {
 		// Arrange
 		const f = contentDependencies(true);
 		const service = new ReconcileAssetContent(
+			{
+				contentContractPolicy:
+					new PublicationDomainComposition().contentContractPolicy(),
+				contentRenderPlan:
+					new PublicationDomainComposition().contentRenderPlan(),
+				contentTextKey: new PublicationDomainComposition().contentTextKey(),
+				contentManifestPolicy:
+					new PublicationDomainComposition().contentManifestPolicy(),
+				contentRecoveryFingerprint:
+					new PublicationDomainComposition().contentRecoveryFingerprint(),
+				contentRecoveryPlan:
+					new PublicationDomainComposition().contentRecoveryPlan(),
+				createResolveContentValues: (...args) =>
+					new PublicationDomainComposition().resolveContentValues(...args),
+			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
@@ -401,6 +657,21 @@ describe("managed content reconciliation", () => {
 		// Arrange
 		const f = contentDependencies();
 		const service = new ReconcileAssetContent(
+			{
+				contentContractPolicy:
+					new PublicationDomainComposition().contentContractPolicy(),
+				contentRenderPlan:
+					new PublicationDomainComposition().contentRenderPlan(),
+				contentTextKey: new PublicationDomainComposition().contentTextKey(),
+				contentManifestPolicy:
+					new PublicationDomainComposition().contentManifestPolicy(),
+				contentRecoveryFingerprint:
+					new PublicationDomainComposition().contentRecoveryFingerprint(),
+				contentRecoveryPlan:
+					new PublicationDomainComposition().contentRecoveryPlan(),
+				createResolveContentValues: (...args) =>
+					new PublicationDomainComposition().resolveContentValues(...args),
+			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
@@ -416,7 +687,9 @@ describe("managed content reconciliation", () => {
 		expect(f.renderer.apply).toHaveBeenCalledTimes(2);
 		expect(f.state.manifest?.pending).toBeDefined();
 		expect(f.state.content.get("title")).toBe(
-			ContentFingerprint.of("{{event.title}}"),
+			new PublicationDomainComposition()
+				.contentFingerprint()
+				.of("{{event.title}}"),
 		);
 	});
 
@@ -424,13 +697,33 @@ describe("managed content reconciliation", () => {
 		// Arrange
 		const f = contentDependencies();
 		const service = new ReconcileAssetContent(
+			{
+				contentContractPolicy:
+					new PublicationDomainComposition().contentContractPolicy(),
+				contentRenderPlan:
+					new PublicationDomainComposition().contentRenderPlan(),
+				contentTextKey: new PublicationDomainComposition().contentTextKey(),
+				contentManifestPolicy:
+					new PublicationDomainComposition().contentManifestPolicy(),
+				contentRecoveryFingerprint:
+					new PublicationDomainComposition().contentRecoveryFingerprint(),
+				contentRecoveryPlan:
+					new PublicationDomainComposition().contentRecoveryPlan(),
+				createResolveContentValues: (...args) =>
+					new PublicationDomainComposition().resolveContentValues(...args),
+			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
 		);
 		const error = new Error("Synthetic transport failure");
 		vi.mocked(f.renderer.apply).mockImplementationOnce(async () => {
-			f.state.content.set("title", ContentFingerprint.of("Partial value"));
+			f.state.content.set(
+				"title",
+				new PublicationDomainComposition()
+					.contentFingerprint()
+					.of("Partial value"),
+			);
 			f.state.revision++;
 			throw error;
 		});
@@ -448,6 +741,21 @@ describe("managed content reconciliation", () => {
 		// Arrange
 		const f = contentDependencies(true);
 		const service = new ReconcileAssetContent(
+			{
+				contentContractPolicy:
+					new PublicationDomainComposition().contentContractPolicy(),
+				contentRenderPlan:
+					new PublicationDomainComposition().contentRenderPlan(),
+				contentTextKey: new PublicationDomainComposition().contentTextKey(),
+				contentManifestPolicy:
+					new PublicationDomainComposition().contentManifestPolicy(),
+				contentRecoveryFingerprint:
+					new PublicationDomainComposition().contentRecoveryFingerprint(),
+				contentRecoveryPlan:
+					new PublicationDomainComposition().contentRecoveryPlan(),
+				createResolveContentValues: (...args) =>
+					new PublicationDomainComposition().resolveContentValues(...args),
+			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
@@ -471,6 +779,21 @@ describe("managed content reconciliation", () => {
 		// Arrange
 		const f = contentDependencies();
 		const service = new ReconcileAssetContent(
+			{
+				contentContractPolicy:
+					new PublicationDomainComposition().contentContractPolicy(),
+				contentRenderPlan:
+					new PublicationDomainComposition().contentRenderPlan(),
+				contentTextKey: new PublicationDomainComposition().contentTextKey(),
+				contentManifestPolicy:
+					new PublicationDomainComposition().contentManifestPolicy(),
+				contentRecoveryFingerprint:
+					new PublicationDomainComposition().contentRecoveryFingerprint(),
+				contentRecoveryPlan:
+					new PublicationDomainComposition().contentRecoveryPlan(),
+				createResolveContentValues: (...args) =>
+					new PublicationDomainComposition().resolveContentValues(...args),
+			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
@@ -491,6 +814,21 @@ describe("managed content reconciliation", () => {
 		// Arrange
 		const f = contentDependencies();
 		const service = new ReconcileAssetContent(
+			{
+				contentContractPolicy:
+					new PublicationDomainComposition().contentContractPolicy(),
+				contentRenderPlan:
+					new PublicationDomainComposition().contentRenderPlan(),
+				contentTextKey: new PublicationDomainComposition().contentTextKey(),
+				contentManifestPolicy:
+					new PublicationDomainComposition().contentManifestPolicy(),
+				contentRecoveryFingerprint:
+					new PublicationDomainComposition().contentRecoveryFingerprint(),
+				contentRecoveryPlan:
+					new PublicationDomainComposition().contentRecoveryPlan(),
+				createResolveContentValues: (...args) =>
+					new PublicationDomainComposition().resolveContentValues(...args),
+			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
@@ -514,6 +852,21 @@ describe("managed content reconciliation", () => {
 		// Arrange
 		const f = contentDependencies();
 		const service = new ReconcileAssetContent(
+			{
+				contentContractPolicy:
+					new PublicationDomainComposition().contentContractPolicy(),
+				contentRenderPlan:
+					new PublicationDomainComposition().contentRenderPlan(),
+				contentTextKey: new PublicationDomainComposition().contentTextKey(),
+				contentManifestPolicy:
+					new PublicationDomainComposition().contentManifestPolicy(),
+				contentRecoveryFingerprint:
+					new PublicationDomainComposition().contentRecoveryFingerprint(),
+				contentRecoveryPlan:
+					new PublicationDomainComposition().contentRecoveryPlan(),
+				createResolveContentValues: (...args) =>
+					new PublicationDomainComposition().resolveContentValues(...args),
+			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,
@@ -536,6 +889,21 @@ describe("managed content reconciliation", () => {
 		// Arrange
 		const f = contentDependencies();
 		const service = new ReconcileAssetContent(
+			{
+				contentContractPolicy:
+					new PublicationDomainComposition().contentContractPolicy(),
+				contentRenderPlan:
+					new PublicationDomainComposition().contentRenderPlan(),
+				contentTextKey: new PublicationDomainComposition().contentTextKey(),
+				contentManifestPolicy:
+					new PublicationDomainComposition().contentManifestPolicy(),
+				contentRecoveryFingerprint:
+					new PublicationDomainComposition().contentRecoveryFingerprint(),
+				contentRecoveryPlan:
+					new PublicationDomainComposition().contentRecoveryPlan(),
+				createResolveContentValues: (...args) =>
+					new PublicationDomainComposition().resolveContentValues(...args),
+			},
 			f.manifests,
 			{ [f.input.mimeType]: f.renderer },
 			f.images,

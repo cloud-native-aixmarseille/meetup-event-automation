@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
+import { GoogleDriveAssetRepositoryComposition } from "./dependency-composition.js";
 import { GoogleDriveAssetRepository } from "./google-drive-asset-repository.js";
 import type { GoogleDriveClient } from "./google-drive-asset-repository-contracts.js";
 
@@ -43,6 +44,10 @@ function setup() {
 		copy: vi.fn().mockResolvedValue({ data: file }),
 	};
 	const repository = new GoogleDriveAssetRepository(
+		{
+			driveAssetMetadata:
+				new GoogleDriveAssetRepositoryComposition().driveAssetMetadata(),
+		},
 		{ files } as unknown as GoogleDriveClient,
 		options,
 	);
@@ -399,10 +404,9 @@ describe("Google Drive asset repository", () => {
 
 			// Act
 			const act = () =>
-				GoogleDriveAssetRepository.createGoogleDriveAssetRepository(
-					credentials,
-					options,
-				);
+				new GoogleDriveAssetRepositoryComposition()
+					.googleDriveAssetRepositoryFactory()
+					.createGoogleDriveAssetRepository(credentials, options);
 
 			// Assert
 			expect(act).toThrow("Invalid Google service-account credentials");
@@ -414,14 +418,16 @@ describe("Google Drive asset repository", () => {
 		// No additional setup is needed.
 
 		// Act
-		const actual = GoogleDriveAssetRepository.createGoogleDriveAssetRepository(
-			JSON.stringify({
-				type: "service_account",
-				client_email: "synthetic@example.test",
-				private_key: "synthetic-key",
-			}),
-			options,
-		);
+		const actual = new GoogleDriveAssetRepositoryComposition()
+			.googleDriveAssetRepositoryFactory()
+			.createGoogleDriveAssetRepository(
+				JSON.stringify({
+					type: "service_account",
+					client_email: "synthetic@example.test",
+					private_key: "synthetic-key",
+				}),
+				options,
+			);
 
 		// Assert
 		expect(actual).toBeInstanceOf(GoogleDriveAssetRepository);
@@ -436,7 +442,14 @@ describe("Google Drive asset repository", () => {
 
 		// Act
 		const act = () =>
-			new GoogleDriveAssetRepository({} as GoogleDriveClient, invalidOptions);
+			new GoogleDriveAssetRepository(
+				{
+					driveAssetMetadata:
+						new GoogleDriveAssetRepositoryComposition().driveAssetMetadata(),
+				},
+				{} as GoogleDriveClient,
+				invalidOptions,
+			);
 
 		// Assert
 		expect(act).toThrow("Distinct Google Drive");

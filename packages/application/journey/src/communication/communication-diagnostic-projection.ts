@@ -60,9 +60,7 @@ const RUNTIME_MESSAGES: Readonly<
 
 /** Canonical public machine diagnostics; channel wording belongs to presenters. */
 export class CommunicationDiagnosticProjection {
-	static domainDiagnostic(
-		diagnostic: CommunicationDiagnostic,
-	): PublicDiagnostic {
+	domainDiagnostic(diagnostic: CommunicationDiagnostic): PublicDiagnostic {
 		return {
 			code: `communication.${diagnostic.code}`,
 			severity: diagnostic.severity,
@@ -70,7 +68,7 @@ export class CommunicationDiagnosticProjection {
 		};
 	}
 
-	static runtimeDiagnostic(
+	runtimeDiagnostic(
 		diagnostic: CommunicationJourneyDiagnostic,
 	): PublicDiagnostic {
 		return {

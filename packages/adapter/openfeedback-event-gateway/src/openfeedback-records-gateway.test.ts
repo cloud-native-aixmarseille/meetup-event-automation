@@ -5,6 +5,7 @@ import {
 	speakerPage,
 	storedSnapshot,
 } from "../testing/feedback-agenda.fixtures.js";
+import { OpenfeedbackEventGatewayComposition } from "./dependency-composition.js";
 import { OpenFeedbackClient } from "./openfeedback-client.js";
 import { OpenFeedbackRecordsGateway } from "./openfeedback-records-gateway.js";
 
@@ -29,6 +30,14 @@ describe("OpenFeedback resource operations", () => {
 				Response.json({ ...speakerPage, speakers: [second] }),
 			);
 		const gateway = new OpenFeedbackRecordsGateway(
+			{
+				openFeedbackResponse:
+					new OpenfeedbackEventGatewayComposition().openFeedbackResponse(),
+				openFeedbackRecordEquality:
+					new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+				openFeedbackResourceId:
+					new OpenfeedbackEventGatewayComposition().openFeedbackResourceId(),
+			},
 			new OpenFeedbackClient("oforg_synthetic", fetcher),
 		);
 
@@ -55,6 +64,14 @@ describe("OpenFeedback resource operations", () => {
 			.fn<typeof fetch>()
 			.mockResolvedValue(Response.json({ ...speakerPage, ...changes }));
 		const gateway = new OpenFeedbackRecordsGateway(
+			{
+				openFeedbackResponse:
+					new OpenfeedbackEventGatewayComposition().openFeedbackResponse(),
+				openFeedbackRecordEquality:
+					new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+				openFeedbackResourceId:
+					new OpenfeedbackEventGatewayComposition().openFeedbackResourceId(),
+			},
 			new OpenFeedbackClient("oforg_synthetic", fetcher),
 		);
 
@@ -73,6 +90,14 @@ describe("OpenFeedback resource operations", () => {
 			.fn<typeof fetch>()
 			.mockImplementation(async () => Response.json(page));
 		const gateway = new OpenFeedbackRecordsGateway(
+			{
+				openFeedbackResponse:
+					new OpenfeedbackEventGatewayComposition().openFeedbackResponse(),
+				openFeedbackRecordEquality:
+					new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+				openFeedbackResourceId:
+					new OpenfeedbackEventGatewayComposition().openFeedbackResourceId(),
+			},
 			new OpenFeedbackClient("oforg_synthetic", fetcher),
 		);
 
@@ -115,6 +140,14 @@ describe("OpenFeedback resource operations", () => {
 				}),
 			);
 		const gateway = new OpenFeedbackRecordsGateway(
+			{
+				openFeedbackResponse:
+					new OpenfeedbackEventGatewayComposition().openFeedbackResponse(),
+				openFeedbackRecordEquality:
+					new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+				openFeedbackResourceId:
+					new OpenfeedbackEventGatewayComposition().openFeedbackResourceId(),
+			},
 			new OpenFeedbackClient("oforg_synthetic", fetcher),
 		);
 
@@ -133,6 +166,14 @@ describe("OpenFeedback resource operations", () => {
 			.fn<typeof fetch>()
 			.mockResolvedValue(Response.json({ id: record.id }, { status: 201 }));
 		const gateway = new OpenFeedbackRecordsGateway(
+			{
+				openFeedbackResponse:
+					new OpenfeedbackEventGatewayComposition().openFeedbackResponse(),
+				openFeedbackRecordEquality:
+					new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+				openFeedbackResourceId:
+					new OpenfeedbackEventGatewayComposition().openFeedbackResourceId(),
+			},
 			new OpenFeedbackClient("oforg_synthetic", fetcher),
 		);
 
@@ -156,6 +197,14 @@ describe("OpenFeedback resource operations", () => {
 			.fn<typeof fetch>()
 			.mockResolvedValue(Response.json({ id: record.id }));
 		const gateway = new OpenFeedbackRecordsGateway(
+			{
+				openFeedbackResponse:
+					new OpenfeedbackEventGatewayComposition().openFeedbackResponse(),
+				openFeedbackRecordEquality:
+					new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+				openFeedbackResourceId:
+					new OpenfeedbackEventGatewayComposition().openFeedbackResourceId(),
+			},
 			new OpenFeedbackClient("oforg_synthetic", fetcher),
 		);
 
@@ -179,6 +228,14 @@ describe("OpenFeedback resource operations", () => {
 		// Arrange
 		const fetcher = vi.fn<typeof fetch>();
 		const gateway = new OpenFeedbackRecordsGateway(
+			{
+				openFeedbackResponse:
+					new OpenfeedbackEventGatewayComposition().openFeedbackResponse(),
+				openFeedbackRecordEquality:
+					new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+				openFeedbackResourceId:
+					new OpenfeedbackEventGatewayComposition().openFeedbackResourceId(),
+			},
 			new OpenFeedbackClient("oforg_synthetic", fetcher),
 		);
 
@@ -204,6 +261,14 @@ describe("OpenFeedback resource operations", () => {
 					new Response("private provider details", { status }),
 				);
 			const gateway = new OpenFeedbackRecordsGateway(
+				{
+					openFeedbackResponse:
+						new OpenfeedbackEventGatewayComposition().openFeedbackResponse(),
+					openFeedbackRecordEquality:
+						new OpenfeedbackEventGatewayComposition().openFeedbackRecordEquality(),
+					openFeedbackResourceId:
+						new OpenfeedbackEventGatewayComposition().openFeedbackResourceId(),
+				},
 				new OpenFeedbackClient("oforg_synthetic", fetcher),
 			);
 			const record = { ...snapshot.speakers[0], name: "Edited" };

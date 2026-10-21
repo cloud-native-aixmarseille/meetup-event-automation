@@ -37,7 +37,7 @@ export interface EventRepository {
 }
 
 export class EventRepositoryPatches {
-	static eventRepositoryPatchIsEmpty(patch: EventRepositoryPatch): boolean {
+	eventRepositoryPatchIsEmpty(patch: EventRepositoryPatch): boolean {
 		return (
 			patch.issueTitle === undefined &&
 			patch.labels === undefined &&

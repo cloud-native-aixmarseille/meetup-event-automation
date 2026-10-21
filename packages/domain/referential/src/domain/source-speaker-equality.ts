@@ -2,7 +2,7 @@ import type { SourceSpeaker } from "../application/ports/proposal-source.js";
 
 /** Compare source profiles without conflating missing and explicitly cleared fields. */
 export class SourceSpeakerEquality {
-	static equal(left: SourceSpeaker, right: SourceSpeaker): boolean {
+	equal(left: SourceSpeaker, right: SourceSpeaker): boolean {
 		return (
 			left.id === right.id &&
 			left.displayName === right.displayName &&

@@ -7,19 +7,22 @@ import type {
 	ContentValue,
 	PublicAssetModel,
 } from "../domain/asset-content.js";
-import { ContentContractPolicy } from "../domain/content-contract-policy.js";
+import type { ContentContractPolicy } from "../domain/content-contract-policy.js";
 import { ContentError } from "../domain/content-error.js";
-import { ContentManifestPolicy } from "../domain/content-manifest-policy.js";
-import { ContentRecoveryFingerprint } from "../domain/content-recovery-fingerprint.js";
-import { ContentRecoveryPlan } from "../domain/content-recovery-plan.js";
-import { ContentRenderPlan } from "../domain/content-render-plan.js";
-import { ContentTextKey } from "../domain/content-text-key.js";
+import type { ContentManifestPolicy } from "../domain/content-manifest-policy.js";
+import type { ContentRecoveryFingerprint } from "../domain/content-recovery-fingerprint.js";
+import type { ContentRecoveryPlan } from "../domain/content-recovery-plan.js";
+import type { ContentRenderPlan } from "../domain/content-render-plan.js";
+import type { ContentTextKey } from "../domain/content-text-key.js";
 import type {
 	AssetContentRepository,
 	AssetImageRepository,
 	AssetManifestRepository,
 } from "./content-ports.js";
-import { ResolveContentValues } from "./resolve-content-values.js";
+import type {
+	ResolveContentValues,
+	ResolveContentValuesArguments,
+} from "./resolve-content-values.js";
 
 export type ReconcileContentInput = Readonly<{
 	folderId: string;
@@ -34,8 +37,30 @@ export type ReconcileContentInput = Readonly<{
 	managed?: boolean;
 }>;
 
+export interface ReconcileAssetContentCollaborators {
+	readonly contentContractPolicy: Pick<ContentContractPolicy, "parse">;
+	readonly contentRenderPlan: Pick<
+		ContentRenderPlan,
+		"initial" | "changes" | "pending" | "settle"
+	>;
+	readonly contentTextKey: Pick<ContentTextKey, "of">;
+	readonly contentManifestPolicy: Pick<ContentManifestPolicy, "parse">;
+	readonly contentRecoveryFingerprint: Pick<
+		ContentRecoveryFingerprint,
+		"create"
+	>;
+	readonly contentRecoveryPlan: Pick<
+		ContentRecoveryPlan,
+		"active" | "beforeRead" | "settle"
+	>;
+	readonly createResolveContentValues: (
+		...args: ResolveContentValuesArguments
+	) => ResolveContentValues;
+}
+
 export class ReconcileAssetContent {
 	constructor(
+		private readonly collaborators: ReconcileAssetContentCollaborators,
 		private readonly manifests: AssetManifestRepository,
 		private readonly renderers: Readonly<
 			Record<string, AssetContentRepository>
@@ -50,9 +75,15 @@ export class ReconcileAssetContent {
 		value: unknown,
 		model: PublicAssetModel,
 	): Promise<void> {
-		const contract = ContentContractPolicy.parse(value, kind, mimeType);
-		await new ResolveContentValues(this.images).execute(contract, model);
-		ContentRenderPlan.initial(
+		const contract = this.collaborators.contentContractPolicy.parse(
+			value,
+			kind,
+			mimeType,
+		);
+		await this.collaborators
+			.createResolveContentValues(this.images)
+			.execute(contract, model);
+		this.collaborators.contentRenderPlan.initial(
 			await this.renderer(mimeType).read(templateId, contract),
 		);
 	}
@@ -67,26 +98,38 @@ export class ReconcileAssetContent {
 			const recovered = await this.recover(input, manifest, renderer);
 			manifest = recovered.manifest;
 			const snapshot = recovered.snapshot;
-			const values = await new ResolveContentValues(this.images).execute(
-				{
-					...manifest.contract,
-					fields: manifest.contract.fields.filter((field) =>
-						recovered.manifest.bindings.some(
-							(binding) =>
-								binding.key ===
-								(field.type === "text" ? ContentTextKey.of(field) : field.slot),
+			const values = await this.collaborators
+				.createResolveContentValues(this.images)
+				.execute(
+					{
+						...manifest.contract,
+						fields: manifest.contract.fields.filter((field) =>
+							recovered.manifest.bindings.some(
+								(binding) =>
+									binding.key ===
+									(field.type === "text"
+										? this.collaborators.contentTextKey.of(field)
+										: field.slot),
+							),
 						),
-					),
-				},
-				input.model,
+					},
+					input.model,
+				);
+			const changes = this.collaborators.contentRenderPlan.changes(
+				manifest,
+				snapshot,
+				values,
 			);
-			const changes = ContentRenderPlan.changes(manifest, snapshot, values);
 			if (!changes.length)
 				return {
 					status: "ready",
 					fallback: values.some((value) => value.fallback),
 				};
-			manifest = ContentRenderPlan.pending(manifest, snapshot, changes);
+			manifest = this.collaborators.contentRenderPlan.pending(
+				manifest,
+				snapshot,
+				changes,
+			);
 			await this.manifests.save(input.folderId, manifest);
 			const written = await this.write(
 				input,
@@ -142,9 +185,16 @@ export class ReconcileAssetContent {
 			);
 		}
 		try {
-			const settled = ContentRenderPlan.settle(manifest, current, confirmed);
-			const complete = !ContentRenderPlan.changes(settled, current, values)
-				.length;
+			const settled = this.collaborators.contentRenderPlan.settle(
+				manifest,
+				current,
+				confirmed,
+			);
+			const complete = !this.collaborators.contentRenderPlan.changes(
+				settled,
+				current,
+				values,
+			).length;
 			if (failure && !complete) {
 				if (retry) return { manifest: settled, complete };
 				throw failure.error;
@@ -163,7 +213,7 @@ export class ReconcileAssetContent {
 	): Promise<ContentManifest | undefined> {
 		const stored = await this.manifests.load(input.folderId, input.fileId);
 		if (stored !== undefined)
-			return ContentManifestPolicy.parse(
+			return this.collaborators.contentManifestPolicy.parse(
 				stored,
 				input.fileId,
 				input.templateId,
@@ -173,7 +223,7 @@ export class ReconcileAssetContent {
 			if (input.managed) throw new ContentError("recovery");
 			return undefined;
 		}
-		const contract = ContentContractPolicy.parse(
+		const contract = this.collaborators.contentContractPolicy.parse(
 			input.contract,
 			input.kind,
 			input.mimeType,
@@ -181,7 +231,7 @@ export class ReconcileAssetContent {
 		const snapshot = await renderer.read(input.fileId, contract);
 		if (input.recovery && snapshot.revision !== input.recovery.revision)
 			throw new ContentError("revision");
-		const bindings = ContentRenderPlan.initial(snapshot);
+		const bindings = this.collaborators.contentRenderPlan.initial(snapshot);
 		return {
 			version: 1,
 			fileId: input.fileId,
@@ -191,7 +241,7 @@ export class ReconcileAssetContent {
 			bindings,
 			initialRevision: snapshot.revision,
 			recoveryId: input.recovery
-				? ContentRecoveryFingerprint.create(input.recovery)
+				? this.collaborators.contentRecoveryFingerprint.create(input.recovery)
 				: undefined,
 			pending: { revision: snapshot.revision, bindings },
 		};
@@ -202,15 +252,25 @@ export class ReconcileAssetContent {
 		original: ContentManifest,
 		renderer: AssetContentRepository,
 	) {
-		const recovery = ContentRecoveryPlan.active(original, input.recovery);
-		const prepared = ContentRecoveryPlan.beforeRead(original, recovery);
+		const recovery = this.collaborators.contentRecoveryPlan.active(
+			original,
+			input.recovery,
+		);
+		const prepared = this.collaborators.contentRecoveryPlan.beforeRead(
+			original,
+			recovery,
+		);
 		const snapshot = await renderer.read(
 			input.fileId,
 			prepared.contract,
 			prepared.bindings,
 			prepared.initialRevision,
 		);
-		const manifest = ContentRecoveryPlan.settle(prepared, snapshot, recovery);
+		const manifest = this.collaborators.contentRecoveryPlan.settle(
+			prepared,
+			snapshot,
+			recovery,
+		);
 		if (manifest !== original)
 			await this.manifests.save(input.folderId, manifest);
 		return { manifest, snapshot };
@@ -222,3 +282,10 @@ export class ReconcileAssetContent {
 		return renderer;
 	}
 }
+export type ReconcileAssetContentArguments =
+	ConstructorParameters<typeof ReconcileAssetContent> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

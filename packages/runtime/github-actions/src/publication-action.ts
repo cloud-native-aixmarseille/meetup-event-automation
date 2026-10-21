@@ -1,19 +1,39 @@
-import { ConferenceHallInput } from "./conference-hall-input.js";
 import * as core from "@actions/core";
 import { context, getOctokit } from "@actions/github";
-import { ManageMeetupAssets } from "@meetup-automation/journey";
-import { ActionOutput } from "./action-output.js";
+import type { ManageMeetupAssets } from "@meetup-automation/journey";
+import type { ActionOutput } from "./action-output.js";
 import type { ActionReportData } from "./action-report.js";
-import { ActionMessages } from "./i18n/action-messages.js";
-import { PublicationComposition } from "./publication-composition.js";
-import { RuntimeInput } from "./runtime-input.js";
-import { AssetContentConfiguration } from "./assets/asset-content-configuration.js";
+import type { AssetContentConfiguration } from "./assets/asset-content-configuration.js";
+import type { ConferenceHallInput } from "./conference-hall-input.js";
+import type {
+	ActionMessages,
+	ActionMessagesArguments,
+} from "./i18n/action-messages.js";
+import type { PublicationComposition } from "./publication-composition.js";
+import type { RuntimeInput } from "./runtime-input.js";
+
+export interface PublicationActionCollaborators {
+	readonly createJourney: (
+		input: Parameters<
+			typeof PublicationComposition.createPublicationContainer
+		>[0],
+	) => Pick<ManageMeetupAssets, "execute">;
+	readonly runtimeInput: Pick<RuntimeInput, "positiveIntegerInput">;
+	readonly assetContentConfiguration: Pick<AssetContentConfiguration, "load">;
+	readonly conferenceHallInput: Pick<ConferenceHallInput, "read">;
+	readonly actionOutput: Pick<ActionOutput, "setJsonOutput">;
+	readonly createActionMessages: (
+		...args: ActionMessagesArguments
+	) => ActionMessages;
+}
 
 export class PublicationAction {
-	static async runPublicationReconcileAssetsAction(
-		messages = new ActionMessages(),
+	constructor(private readonly collaborators: PublicationActionCollaborators) {}
+
+	async runPublicationReconcileAssetsAction(
+		messages = this.collaborators.createActionMessages(),
 	): Promise<ActionReportData> {
-		const issueNumber = RuntimeInput.positiveIntegerInput(
+		const issueNumber = this.collaborators.runtimeInput.positiveIntegerInput(
 			"issue-number",
 			core.getInput("issue-number", { required: true }),
 		);
@@ -23,13 +43,14 @@ export class PublicationAction {
 			core.getInput("github-token", { required: true }),
 		);
 		const { owner, repo } = context.repo;
-		const container = PublicationComposition.createPublicationContainer({
-			contentConfiguration: await AssetContentConfiguration.load(
-				process.cwd(),
-				`${owner}/${repo}#${issueNumber}`,
-			),
+		const journey = this.collaborators.createJourney({
+			contentConfiguration:
+				await this.collaborators.assetContentConfiguration.load(
+					process.cwd(),
+					`${owner}/${repo}#${issueNumber}`,
+				),
 			locale: messages.locale,
-			...ConferenceHallInput.read(),
+			...this.collaborators.conferenceHallInput.read(),
 			client,
 			owner,
 			repo,
@@ -44,18 +65,18 @@ export class PublicationAction {
 				},
 			),
 		});
-		const outcome = await container.get(ManageMeetupAssets).execute({
+		const outcome = await journey.execute({
 			identity: { repository: `${owner}/${repo}`, issueNumber },
 		});
-		return PublicationAction.report(issueNumber, outcome, messages);
+		return this.report(issueNumber, outcome, messages);
 	}
 
-	private static report(
+	private report(
 		issueNumber: number,
 		outcome: Awaited<ReturnType<ManageMeetupAssets["execute"]>>,
 		messages: ActionMessages,
 	): ActionReportData {
-		ActionOutput.setJsonOutput("drive-files", outcome.files);
+		this.collaborators.actionOutput.setJsonOutput("drive-files", outcome.files);
 		core.setOutput(
 			"slides-ready",
 			["copy-only", "ready"].includes(outcome.content?.slides ?? "copy-only") &&

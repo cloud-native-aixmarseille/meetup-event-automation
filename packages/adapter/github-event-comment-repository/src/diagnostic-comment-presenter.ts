@@ -1,25 +1,49 @@
 import type { EventDiagnostic } from "@meetup-automation/event";
-import { OrganizerDiagnosticPolicy } from "@meetup-automation/journey";
-import {
-	type DiagnosticPresentation,
+import type { OrganizerDiagnosticPolicy } from "@meetup-automation/journey";
+import type {
+	DiagnosticPresentation,
 	DiagnosticPresenter,
 } from "./diagnostic-presentation.js";
 import { EVENT_DIAGNOSTIC_COMMENT_MARKER } from "./github-event-comment-repository-contracts.js";
-import { EventCommentMessages } from "./i18n/event-comment-messages.js";
+import type {
+	EventCommentMessages,
+	EventCommentMessagesArguments,
+} from "./i18n/event-comment-messages.js";
+export interface DiagnosticCommentPresenterCollaborators {
+	readonly organizerDiagnosticPolicy: Pick<
+		OrganizerDiagnosticPolicy,
+		"suppressed"
+	>;
+	readonly diagnosticPresenter: Pick<DiagnosticPresenter, "presentDiagnostic">;
+	readonly createEventCommentMessages: (
+		...args: EventCommentMessagesArguments
+	) => EventCommentMessages;
+}
+
 export class DiagnosticCommentPresenter {
-	static render(
+	constructor(
+		private readonly collaborators: DiagnosticCommentPresenterCollaborators,
+	) {}
+
+	render(
 		diagnostics: readonly EventDiagnostic[],
-		messages = new EventCommentMessages(),
+		messages = this.collaborators.createEventCommentMessages(),
 	): string {
 		const actionable = new Map<string, DiagnosticPresentation>();
 		for (const item of diagnostics) {
-			if (OrganizerDiagnosticPolicy.suppressed(item, diagnostics)) {
+			if (
+				this.collaborators.organizerDiagnosticPolicy.suppressed(
+					item,
+					diagnostics,
+				)
+			) {
 				continue;
 			}
-			const presentation = DiagnosticPresenter.presentDiagnostic(
-				item,
-				messages,
-			);
+			const presentation =
+				this.collaborators.diagnosticPresenter.presentDiagnostic(
+					item,
+					messages,
+				);
 			actionable.set(
 				`${presentation.field}:${presentation.message}`,
 				presentation,

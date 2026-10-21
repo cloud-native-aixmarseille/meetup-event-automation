@@ -7,7 +7,7 @@ import type {
 
 /** Project only public event facts and the links used by each email template. */
 export class CommunicationApprovalDetails {
-	static create(
+	create(
 		event: MeetupEvent,
 		mails: readonly MailMessageIntent[],
 	): OrganizerApprovalDetails {
@@ -15,7 +15,7 @@ export class CommunicationApprovalDetails {
 			left.idempotencyKey.localeCompare(right.idempotencyKey),
 		);
 		const emails = ordered.map((mail) => {
-			const links = CommunicationApprovalDetails.links(mail);
+			const links = this.links(mail);
 			const name =
 				mail.recipient.role === "hosting"
 					? event.host?.displayName
@@ -32,7 +32,7 @@ export class CommunicationApprovalDetails {
 		return { emails, omittedEmails: 0 };
 	}
 
-	private static links(mail: MailMessageIntent): ApprovalEmailLink[] {
+	private links(mail: MailMessageIntent): ApprovalEmailLink[] {
 		if (mail.kind === "speaker-thanks") {
 			const talks = mail.placeholders.speakerFeedbackTalks;
 			if (!talks || typeof talks === "string") return [];

@@ -9,7 +9,7 @@ describe("stored OpenFeedback resource IDs", () => {
 			const candidate = id;
 
 			// Act
-			const valid = OpenFeedbackResourceId.isValid(candidate);
+			const valid = new OpenFeedbackResourceId().isValid(candidate);
 
 			// Assert
 			expect(valid).toBe(true);
@@ -31,7 +31,7 @@ describe("stored OpenFeedback resource IDs", () => {
 		const candidate = id;
 
 		// Act
-		const valid = OpenFeedbackResourceId.isValid(candidate);
+		const valid = new OpenFeedbackResourceId().isValid(candidate);
 
 		// Assert
 		expect(valid).toBe(false);

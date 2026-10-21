@@ -15,10 +15,10 @@ describe("post-event checklist completion", () => {
 		// No additional setup is needed.
 
 		// Act
-		const actual = MeetupEventOperations.postEventChecklistIsComplete(
+		const actual = new MeetupEventOperations().postEventChecklistIsComplete(
 			completedExpectedTasks,
 		);
-		const actual1 = MeetupEventOperations.postEventChecklistIsComplete(
+		const actual1 = new MeetupEventOperations().postEventChecklistIsComplete(
 			[...completedExpectedTasks].reverse(),
 		);
 
@@ -57,7 +57,9 @@ describe("post-event checklist completion", () => {
 		// No additional setup is needed.
 
 		// Act
-		const actual = MeetupEventOperations.postEventChecklistIsComplete(items);
+		const actual = new MeetupEventOperations().postEventChecklistIsComplete(
+			items,
+		);
 
 		// Assert
 		expect(actual).toBe(false);

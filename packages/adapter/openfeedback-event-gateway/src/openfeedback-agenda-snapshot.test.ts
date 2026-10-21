@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { storedSnapshot as snapshot } from "../testing/feedback-agenda.fixtures.js";
+import { OpenfeedbackEventGatewayComposition } from "./dependency-composition.js";
 import { OpenFeedbackAgendaSnapshot } from "./openfeedback-agenda-snapshot.js";
 
 describe("feedback agenda response validation", () => {
@@ -8,7 +9,10 @@ describe("feedback agenda response validation", () => {
 		const body = { id: "event-1", ...snapshot };
 
 		// Act
-		const parsed = OpenFeedbackAgendaSnapshot.parse(body);
+		const parsed = new OpenFeedbackAgendaSnapshot({
+			openFeedbackResourceId:
+				new OpenfeedbackEventGatewayComposition().openFeedbackResourceId(),
+		}).parse(body);
 
 		// Assert
 		expect(parsed).toEqual(snapshot);
@@ -28,7 +32,11 @@ describe("feedback agenda response validation", () => {
 		const body = { ...snapshot, ...changes };
 
 		// Act
-		const parse = () => OpenFeedbackAgendaSnapshot.parse(body);
+		const parse = () =>
+			new OpenFeedbackAgendaSnapshot({
+				openFeedbackResourceId:
+					new OpenfeedbackEventGatewayComposition().openFeedbackResourceId(),
+			}).parse(body);
 
 		// Assert
 		expect(parse).toThrow("Invalid OpenFeedback agenda response");
@@ -44,7 +52,10 @@ describe("feedback agenda response validation", () => {
 			};
 
 			// Act
-			const parsed = OpenFeedbackAgendaSnapshot.parse(body);
+			const parsed = new OpenFeedbackAgendaSnapshot({
+				openFeedbackResourceId:
+					new OpenfeedbackEventGatewayComposition().openFeedbackResourceId(),
+			}).parse(body);
 
 			// Assert
 			expect(parsed.speakers[0].name).toBe(text ?? "");
@@ -61,7 +72,10 @@ describe("feedback agenda response validation", () => {
 		};
 
 		// Act
-		const parsed = OpenFeedbackAgendaSnapshot.parse(body);
+		const parsed = new OpenFeedbackAgendaSnapshot({
+			openFeedbackResourceId:
+				new OpenfeedbackEventGatewayComposition().openFeedbackResourceId(),
+		}).parse(body);
 
 		// Assert
 		expect(parsed.talks[0].speakers).toEqual(speakers);

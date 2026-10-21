@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { GithubOrganizerApprovalComposition } from "./dependency-composition.js";
 import { GithubApprovalResponse } from "./github-approval-response.js";
 
 describe("GitHub approval response boundary", () => {
@@ -14,7 +15,11 @@ describe("GitHub approval response boundary", () => {
 		const response: unknown = value;
 
 		// Act
-		const read = () => GithubApprovalResponse.comments(response);
+		const read = () =>
+			new GithubApprovalResponse({
+				approvalSchema:
+					new GithubOrganizerApprovalComposition().approvalSchema(),
+			}).comments(response);
 
 		// Assert
 		expect(read).toThrow("Invalid approval comment response");
@@ -30,7 +35,11 @@ describe("GitHub approval response boundary", () => {
 			};
 
 			// Act
-			const read = () => GithubApprovalResponse.edit(response, comment);
+			const read = () =>
+				new GithubApprovalResponse({
+					approvalSchema:
+						new GithubOrganizerApprovalComposition().approvalSchema(),
+				}).edit(response, comment);
 
 			// Assert
 			expect(read).toThrow("Invalid approval editor response");
@@ -49,7 +58,11 @@ describe("GitHub approval response boundary", () => {
 		};
 
 		// Act
-		const read = () => GithubApprovalResponse.history(response, comment);
+		const read = () =>
+			new GithubApprovalResponse({
+				approvalSchema:
+					new GithubOrganizerApprovalComposition().approvalSchema(),
+			}).history(response, comment);
 
 		// Assert
 		expect(read).toThrow("Approval history is unavailable");

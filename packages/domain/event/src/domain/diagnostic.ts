@@ -16,7 +16,7 @@ export type EventDiagnostic = Readonly<{
 }>;
 
 export class EventDiagnostics {
-	static diagnostic(value: EventDiagnostic): Readonly<EventDiagnostic> {
+	diagnostic(value: EventDiagnostic): Readonly<EventDiagnostic> {
 		return Object.freeze({ ...value });
 	}
 }

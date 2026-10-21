@@ -1,18 +1,34 @@
-import { type EventDiagnostic, EventDiagnostics } from "./diagnostic.js";
-import { EventAgendaEquality } from "./event-agenda-equality.js";
-import { EventParticipantNormalization } from "./event-participant-normalization.js";
-import { EventRuleResults } from "./event-rule-results.js";
+import type { EventDiagnostic, EventDiagnostics } from "./diagnostic.js";
+import type { EventAgendaEquality } from "./event-agenda-equality.js";
+import type { EventParticipantNormalization } from "./event-participant-normalization.js";
+import type { EventRuleResults } from "./event-rule-results.js";
 import type { AgendaEntry, MeetupEvent } from "./model.js";
-import { EventPatches, type EventPatchOperation } from "./patch.js";
+import type { EventPatches, EventPatchOperation } from "./patch.js";
 import type { EventRule, EventRuleResult } from "./rule-contracts.js";
 
+export interface EventAgendaRuleCollaborators {
+	readonly eventRuleResults: Pick<EventRuleResults, "missing">;
+	readonly eventAgendaEquality: Pick<EventAgendaEquality, "equals">;
+	readonly eventPatches: Pick<
+		EventPatches,
+		"replaceEventField" | "createEventPatch"
+	>;
+	readonly eventDiagnostics: Pick<EventDiagnostics, "diagnostic">;
+	readonly eventParticipantNormalization: Pick<
+		EventParticipantNormalization,
+		"normalizeAgendaEntry"
+	>;
+}
+
 export class EventAgendaRule implements EventRule {
+	constructor(private readonly collaborators: EventAgendaRuleCollaborators) {}
+
 	readonly id = "event-agenda";
 	readonly dependencies: readonly string[] = [];
 
 	evaluate(event: MeetupEvent): EventRuleResult {
 		if (event.agenda.length === 0) {
-			return EventRuleResults.missing(
+			return this.collaborators.eventRuleResults.missing(
 				"event.agenda.missing",
 				"agenda",
 				"At least one agenda entry is required",
@@ -25,16 +41,21 @@ export class EventAgendaRule implements EventRule {
 		});
 
 		const operations: EventPatchOperation[] = [];
-		if (!EventAgendaEquality.equals(event.agenda, normalizedEntries)) {
+		if (
+			!this.collaborators.eventAgendaEquality.equals(
+				event.agenda,
+				normalizedEntries,
+			)
+		) {
 			operations.push(
-				EventPatches.replaceEventField(
+				this.collaborators.eventPatches.replaceEventField(
 					"agenda",
 					normalizedEntries,
 					"Normalize agenda",
 				),
 			);
 			diagnostics.push(
-				EventDiagnostics.diagnostic({
+				this.collaborators.eventDiagnostics.diagnostic({
 					code: "event.agenda.normalized",
 					severity: "info",
 					category: "normalization",
@@ -47,7 +68,7 @@ export class EventAgendaRule implements EventRule {
 
 		return {
 			diagnostics,
-			patch: EventPatches.createEventPatch(operations),
+			patch: this.collaborators.eventPatches.createEventPatch(operations),
 		};
 	}
 
@@ -57,10 +78,12 @@ export class EventAgendaRule implements EventRule {
 		diagnostics: EventDiagnostic[],
 	) {
 		const normalized =
-			EventParticipantNormalization.normalizeAgendaEntry(entry);
+			this.collaborators.eventParticipantNormalization.normalizeAgendaEntry(
+				entry,
+			);
 		if (normalized.speakers.length === 0) {
 			diagnostics.push(
-				EventDiagnostics.diagnostic({
+				this.collaborators.eventDiagnostics.diagnostic({
 					code: "event.agenda.speaker.missing",
 					severity: "error",
 					category: "invalid",
@@ -73,7 +96,7 @@ export class EventAgendaRule implements EventRule {
 		for (const [speakerIndex, speaker] of normalized.speakers.entries()) {
 			if (speaker.displayName === "") {
 				diagnostics.push(
-					EventDiagnostics.diagnostic({
+					this.collaborators.eventDiagnostics.diagnostic({
 						code: "event.agenda.speaker.invalid",
 						severity: "error",
 						category: "invalid",
@@ -86,7 +109,7 @@ export class EventAgendaRule implements EventRule {
 
 		if (normalized.description === "") {
 			diagnostics.push(
-				EventDiagnostics.diagnostic({
+				this.collaborators.eventDiagnostics.diagnostic({
 					code: "event.agenda.description.missing",
 					severity: "error",
 					category: "invalid",

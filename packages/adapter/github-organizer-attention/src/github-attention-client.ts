@@ -4,10 +4,18 @@ import type {
 	AttentionContentEdit,
 	GithubAttentionApi,
 } from "./github-attention-contracts.js";
-import { GithubAttentionResponse } from "./github-attention-response.js";
+import type { GithubAttentionResponse } from "./github-attention-response.js";
 /** Scoped issue and permission access. No issue text is executable input. */
+export interface GithubAttentionClientCollaborators {
+	readonly githubAttentionResponse: Pick<
+		GithubAttentionResponse,
+		"comment" | "current" | "history"
+	>;
+}
+
 export class GithubAttentionClient {
 	constructor(
+		private readonly collaborators: GithubAttentionClientCollaborators,
 		private readonly api: GithubAttentionApi,
 		private readonly owner: string,
 		private readonly repo: string,
@@ -26,7 +34,13 @@ export class GithubAttentionClient {
 			});
 			if (!Array.isArray(response.data))
 				throw new Error("Invalid attention comment response");
-			comments.push(...response.data.map(GithubAttentionResponse.comment));
+			comments.push(
+				...response.data.map(
+					this.collaborators.githubAttentionResponse.comment.bind(
+						this.collaborators.githubAttentionResponse,
+					),
+				),
+			);
 			const next = response.headers.link
 				? /<[^>]+>;\s*rel="next"/.test(response.headers.link)
 				: response.data.length === 100;
@@ -91,9 +105,9 @@ export class GithubAttentionClient {
 			}`,
 			{ id: comment.node_id },
 		);
-		return GithubAttentionResponse.current(result, comment);
+		return this.collaborators.githubAttentionResponse.current(result, comment);
 	}
-	private static checkHistoryLimit(count: number): void {
+	private checkHistoryLimit(count: number): void {
 		if (count > 2000) throw new Error("Attention history limit exceeded");
 	}
 	async history(
@@ -115,9 +129,12 @@ export class GithubAttentionClient {
 			}`,
 				{ id: comment.node_id, ...(after ? { after } : {}) },
 			);
-			const history = GithubAttentionResponse.history(response, comment);
+			const history = this.collaborators.githubAttentionResponse.history(
+				response,
+				comment,
+			);
 			edits.push(...history.nodes);
-			GithubAttentionClient.checkHistoryLimit(edits.length);
+			this.checkHistoryLimit(edits.length);
 			if (!history.hasNextPage) return edits;
 			const next = history.endCursor;
 			if (!next || next === after)
@@ -127,3 +144,10 @@ export class GithubAttentionClient {
 		return edits;
 	}
 }
+export type GithubAttentionClientArguments =
+	ConstructorParameters<typeof GithubAttentionClient> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

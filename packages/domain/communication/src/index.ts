@@ -38,6 +38,7 @@ export {
 	type AttentionResult,
 	ReconcileAttention,
 } from "./attention/reconcile-attention.js";
+export { CommunicationDomainComposition } from "./dependency-composition.js";
 export type { CommunicationIdempotencyComponents } from "./idempotency.js";
 export { CommunicationIdempotency } from "./idempotency.js";
 export { MailBatchFingerprint } from "./mail-batch-fingerprint.js";

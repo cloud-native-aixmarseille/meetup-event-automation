@@ -1,4 +1,5 @@
 import { parse } from "@formatjs/icu-messageformat-parser";
+import { LocaleResolver } from "@meetup-automation/localization";
 import type {
 	MessageCatalogs,
 	MessageValues,
@@ -11,6 +12,7 @@ export function inspectCatalog(
 	samples: Readonly<Record<string, MessageValues>>,
 ) {
 	const localizer = new MessageLocalizer<string, Record<string, MessageValues>>(
+		{ localeResolver: new LocaleResolver() },
 		catalogs,
 		locale,
 	);

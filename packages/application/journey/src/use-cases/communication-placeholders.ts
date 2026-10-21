@@ -1,21 +1,34 @@
-import {
-	type MeetupEvent,
+import type {
+	MeetupEvent,
 	MeetupPublicationChecklist,
 } from "@meetup-automation/event";
-import { PresentationFileUrl } from "@meetup-automation/publication";
+import type { PresentationFileUrl } from "@meetup-automation/publication";
+
+export interface CommunicationPlaceholdersCollaborators {
+	readonly presentationFileUrl: Pick<PresentationFileUrl, "normalize">;
+	readonly meetupPublicationChecklist: Pick<
+		MeetupPublicationChecklist,
+		"isPublished"
+	>;
+}
 
 export class CommunicationPlaceholders {
-	static eventPlaceholders(
+	constructor(
+		private readonly collaborators: CommunicationPlaceholdersCollaborators,
+	) {}
+
+	eventPlaceholders(
 		event: Pick<
 			MeetupEvent,
 			"date" | "publicationLinks" | "operationalChecklists"
 		>,
 		slidesUrl?: string,
 	): Readonly<Record<string, string>> {
-		const presentationUrl = PresentationFileUrl.normalize(slidesUrl);
+		const presentationUrl =
+			this.collaborators.presentationFileUrl.normalize(slidesUrl);
 		return {
 			eventDate: event.date,
-			...(MeetupPublicationChecklist.isPublished(event) &&
+			...(this.collaborators.meetupPublicationChecklist.isPublished(event) &&
 			event.publicationLinks.meetup
 				? { eventMeetupUrl: event.publicationLinks.meetup }
 				: {}),

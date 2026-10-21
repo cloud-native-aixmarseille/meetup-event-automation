@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { fixture, state } from "../testing/attention.fixtures.js";
 import { AttentionCommentRetention } from "./attention-comment-retention.js";
-import { AttentionRecord } from "./attention-record.js";
+import { GithubOrganizerAttentionComposition } from "./dependency-composition.js";
 
 describe("trusted attention metadata retention", () => {
 	it("recovers bot authority instead of endorsing human edits during diagnostic updates", async () => {
@@ -9,12 +9,16 @@ describe("trusted attention metadata retention", () => {
 		const f = fixture();
 		const original = f.presenter.issue(
 			state(),
-			AttentionRecord.marker(state()),
+			new GithubOrganizerAttentionComposition()
+				.attentionRecord()
+				.marker(state()),
 		);
 		await f.client.create(original);
 		const forged = f.presenter.issue(
 			{ ...state(), post: undefined },
-			AttentionRecord.marker({ ...state(), post: undefined }),
+			new GithubOrganizerAttentionComposition()
+				.attentionRecord()
+				.marker({ ...state(), post: undefined }),
 		);
 		f.comments[0] = { ...f.comments[0], body: forged };
 		f.edits.set("node-100", {
@@ -31,6 +35,18 @@ describe("trusted attention metadata retention", () => {
 			},
 		]);
 		const retention = new AttentionCommentRetention(
+			{
+				attentionRecord:
+					new GithubOrganizerAttentionComposition().attentionRecord(),
+				createGithubAttentionClient: (...args) =>
+					new GithubOrganizerAttentionComposition().githubAttentionClient(
+						...args,
+					),
+				createTrustedAttentionState: (...args) =>
+					new GithubOrganizerAttentionComposition().trustedAttentionState(
+						...args,
+					),
+			},
 			f.api,
 			"example",
 			"meetups",
@@ -39,7 +55,9 @@ describe("trusted attention metadata retention", () => {
 
 		// Act
 		const retained = await retention.load(42, 100, forged);
-		const retainedAttention = AttentionRecord.read(retained);
+		const retainedAttention = new GithubOrganizerAttentionComposition()
+			.attentionRecord()
+			.read(retained);
 
 		// Assert
 		expect(retainedAttention.post?.status).toBe("pending");
@@ -49,9 +67,26 @@ describe("trusted attention metadata retention", () => {
 		// Arrange
 		const f = fixture();
 		await f.client.create(
-			f.presenter.issue(state(), AttentionRecord.marker(state())),
+			f.presenter.issue(
+				state(),
+				new GithubOrganizerAttentionComposition()
+					.attentionRecord()
+					.marker(state()),
+			),
 		);
 		const retention = new AttentionCommentRetention(
+			{
+				attentionRecord:
+					new GithubOrganizerAttentionComposition().attentionRecord(),
+				createGithubAttentionClient: (...args) =>
+					new GithubOrganizerAttentionComposition().githubAttentionClient(
+						...args,
+					),
+				createTrustedAttentionState: (...args) =>
+					new GithubOrganizerAttentionComposition().trustedAttentionState(
+						...args,
+					),
+			},
 			f.api,
 			"example",
 			"meetups",

@@ -1,14 +1,20 @@
-import {
-	type FeedbackLinkGateway,
+import type {
+	FeedbackLinkGateway,
 	FeedbackPolicy,
 } from "@meetup-automation/publication";
 
-import { type KuttLink, KuttLinkResponse } from "./kutt-link-response.js";
+import type { KuttLink, KuttLinkResponse } from "./kutt-link-response.js";
+
+export interface KuttFeedbackLinkGatewayCollaborators {
+	readonly feedbackPolicy: Pick<FeedbackPolicy, "pollUrl">;
+	readonly kuttLinkResponse: Pick<KuttLinkResponse, "link" | "page">;
+}
 
 export class KuttFeedbackLinkGateway implements FeedbackLinkGateway {
 	private readonly baseUrl: string;
 
 	constructor(
+		private readonly collaborators: KuttFeedbackLinkGatewayCollaborators,
 		private readonly apiKey: string,
 		private readonly linkId: string,
 		baseUrl: string,
@@ -16,10 +22,10 @@ export class KuttFeedbackLinkGateway implements FeedbackLinkGateway {
 	) {
 		if (!apiKey.trim() || !/^[a-zA-Z0-9_-]+$/.test(linkId))
 			throw new Error("Kutt API key and existing link ID are required");
-		this.baseUrl = KuttFeedbackLinkGateway.normalizeBaseUrl(baseUrl);
+		this.baseUrl = this.normalizeBaseUrl(baseUrl);
 	}
 
-	private static normalizeBaseUrl(value: string): string {
+	private normalizeBaseUrl(value: string): string {
 		let url: URL;
 		const message =
 			"Kutt base URL must be an absolute HTTPS URL without credentials, query, or fragment";
@@ -40,10 +46,10 @@ export class KuttFeedbackLinkGateway implements FeedbackLinkGateway {
 	}
 
 	async updateTarget(value: string): Promise<boolean> {
-		const target = FeedbackPolicy.pollUrl(value);
+		const target = this.collaborators.feedbackPolicy.pollUrl(value);
 		const link = await this.findLink();
 		if (link.target === target) return false;
-		const response = KuttLinkResponse.link(
+		const response = this.collaborators.kuttLinkResponse.link(
 			await this.request(`/links/${encodeURIComponent(this.linkId)}`, {
 				method: "PATCH",
 				body: JSON.stringify({ target, address: link.address }),
@@ -62,7 +68,7 @@ export class KuttFeedbackLinkGateway implements FeedbackLinkGateway {
 	private async findLink(): Promise<KuttLink> {
 		// Kutt v2 has no GET /links/{id}. Walk the owner's paginated list.
 		for (let skip = 0; skip < 100_000; skip += 100) {
-			const page = KuttLinkResponse.page(
+			const page = this.collaborators.kuttLinkResponse.page(
 				await this.request(`/links?limit=100&skip=${skip}`, {}),
 			);
 			const link = page.data.find((item) => item.id === this.linkId);
@@ -98,3 +104,10 @@ export class KuttFeedbackLinkGateway implements FeedbackLinkGateway {
 		}
 	}
 }
+export type KuttFeedbackLinkGatewayArguments =
+	ConstructorParameters<typeof KuttFeedbackLinkGateway> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

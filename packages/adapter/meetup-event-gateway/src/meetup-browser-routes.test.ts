@@ -14,8 +14,8 @@ describe("Meetup browser routes", () => {
 		if (!event) throw new Error("Invalid fixture");
 
 		// Act
-		const schedule = MeetupBrowserRoutes.schedule(group);
-		const edit = MeetupBrowserRoutes.edit(event);
+		const schedule = new MeetupBrowserRoutes().schedule(group);
+		const edit = new MeetupBrowserRoutes().edit(event);
 
 		// Assert
 		expect(schedule).toBe("https://www.meetup.com/example-group/schedule/");
@@ -35,7 +35,7 @@ describe("Meetup browser routes", () => {
 		);
 
 		// Act
-		const event = MeetupBrowserRoutes.eventLocation(location, group);
+		const event = new MeetupBrowserRoutes().eventLocation(location, group);
 
 		// Assert
 		expect(event?.value).toBe(
@@ -54,7 +54,7 @@ describe("Meetup browser routes", () => {
 		const location = new URL(value);
 
 		// Act
-		const event = MeetupBrowserRoutes.eventLocation(location, group);
+		const event = new MeetupBrowserRoutes().eventLocation(location, group);
 
 		// Assert
 		expect(event).toBeUndefined();
@@ -71,7 +71,7 @@ describe("Meetup browser routes", () => {
 		const location = new URL(value);
 
 		// Act
-		const result = MeetupBrowserRoutes.isPath(location, "/login");
+		const result = new MeetupBrowserRoutes().isPath(location, "/login");
 
 		// Assert
 		expect(result).toBe(expected);
@@ -90,7 +90,7 @@ describe("Meetup browser routes", () => {
 			const editor = "https://www.meetup.com/example-group/events/12345/edit";
 
 			// Act
-			const result = MeetupBrowserRoutes.matchesEditor(
+			const result = new MeetupBrowserRoutes().matchesEditor(
 				`${editor}${suffix}`,
 				`${editor}/`,
 			);

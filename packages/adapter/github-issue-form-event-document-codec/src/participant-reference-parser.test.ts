@@ -17,8 +17,9 @@ describe("ParticipantReferenceParser", () => {
 		const reference = value;
 
 		// Act
-		const result =
-			ParticipantReferenceParser.parseParticipantReference(reference);
+		const result = new ParticipantReferenceParser().parseParticipantReference(
+			reference,
+		);
 
 		// Assert
 		expect(result).toEqual(expected);

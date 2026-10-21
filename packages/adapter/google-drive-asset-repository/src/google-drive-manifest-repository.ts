@@ -1,8 +1,8 @@
 import { Readable } from "node:stream";
 import {
 	type AssetManifestRepository,
-	type ContentManifest,
 	ContentError,
+	type ContentManifest,
 } from "@meetup-automation/publication";
 import {
 	type GoogleDriveClient,
@@ -98,3 +98,6 @@ export class GoogleDriveManifestRepository implements AssetManifestRepository {
 		return file?.id ?? undefined;
 	}
 }
+export type GoogleDriveManifestRepositoryArguments = ConstructorParameters<
+	typeof GoogleDriveManifestRepository
+>;

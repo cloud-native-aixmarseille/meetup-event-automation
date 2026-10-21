@@ -6,7 +6,7 @@ import type {
 import type { EvaluateLinkInput } from "./url-policy-contracts.js";
 
 export class PublicationLinkEvaluation {
-	static evaluateLink<P extends keyof PublicationReferences>({
+	evaluateLink<P extends keyof PublicationReferences>({
 		references,
 		path,
 		isValid,
@@ -15,7 +15,7 @@ export class PublicationLinkEvaluation {
 	}: EvaluateLinkInput<P>): PublicationEvaluation {
 		const raw = references[path];
 		if (raw === undefined || raw === "") {
-			return PublicationLinkEvaluation.emptyEvaluation(references);
+			return this.emptyEvaluation(references);
 		}
 
 		const normalized = raw.trim().replace(/\/$/, "");
@@ -35,7 +35,7 @@ export class PublicationLinkEvaluation {
 		}
 
 		if (raw === normalized) {
-			return PublicationLinkEvaluation.emptyEvaluation(references);
+			return this.emptyEvaluation(references);
 		}
 
 		const operation = Object.freeze({
@@ -60,9 +60,7 @@ export class PublicationLinkEvaluation {
 		};
 	}
 
-	static emptyEvaluation(
-		references: PublicationReferences,
-	): PublicationEvaluation {
+	emptyEvaluation(references: PublicationReferences): PublicationEvaluation {
 		return {
 			references,
 			diagnostics: [],
@@ -70,7 +68,7 @@ export class PublicationLinkEvaluation {
 		};
 	}
 
-	static isHttpsUrl(value: string): boolean {
+	isHttpsUrl(value: string): boolean {
 		try {
 			return new URL(value).protocol === "https:";
 		} catch {
@@ -78,7 +76,7 @@ export class PublicationLinkEvaluation {
 		}
 	}
 
-	static matchesPrefix(
+	matchesPrefix(
 		value: string,
 		prefixes: readonly string[],
 		identifierPattern: RegExp,
@@ -89,7 +87,7 @@ export class PublicationLinkEvaluation {
 		);
 		const identifier = prefix ? normalized.slice(prefix.length) : undefined;
 		return (
-			PublicationLinkEvaluation.isHttpsUrl(normalized) &&
+			this.isHttpsUrl(normalized) &&
 			!!identifier &&
 			identifierPattern.test(identifier)
 		);

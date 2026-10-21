@@ -1,5 +1,6 @@
 import type { ManageMeetupAssets } from "@meetup-automation/journey";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { GithubActionsComposition } from "./dependency-composition.js";
 import { PublicationAction } from "./publication-action.js";
 
 const mocks = vi.hoisted(() => ({
@@ -25,32 +26,6 @@ vi.mock("@actions/github", () => ({
 	getOctokit: () => ({}),
 }));
 
-vi.mock(
-	"@meetup-automation/google-drive-asset-repository",
-	async (importOriginal) => ({
-		...(await importOriginal<
-			typeof import("@meetup-automation/google-drive-asset-repository")
-		>()),
-		GoogleDriveAuthentication: { create: vi.fn(() => undefined) },
-		GoogleDriveAssetRepository: {
-			createGoogleDriveAssetRepository: mocks.createAssets,
-			client: vi.fn(() => ({ files: {} })),
-		},
-	}),
-);
-
-vi.mock("@meetup-automation/journey", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@meetup-automation/journey")>()),
-	ManageMeetupAssets: class {
-		constructor(
-			dependencies: ConstructorParameters<typeof ManageMeetupAssets>[0],
-		) {
-			mocks.dependencies = dependencies;
-		}
-		execute = mocks.execute;
-	},
-}));
-
 beforeEach(() => {
 	vi.clearAllMocks();
 	for (const [name, value] of Object.entries({
@@ -65,7 +40,7 @@ beforeEach(() => {
 		vi.stubEnv(`INPUT_${name.toUpperCase()}`, value);
 	}
 	mocks.outputs = {};
-	mocks.createAssets.mockReturnValue({});
+	mocks.createAssets.mockReturnValue({ execute: mocks.execute });
 	mocks.execute.mockResolvedValue({
 		skipped: false,
 		persisted: false,
@@ -90,7 +65,7 @@ describe("publication action boundary", () => {
 		});
 
 		// Act
-		await PublicationAction.runPublicationReconcileAssetsAction();
+		await subject().runPublicationReconcileAssetsAction();
 
 		// Assert
 		expect(JSON.parse(mocks.outputs["drive-files"])).toEqual({
@@ -113,7 +88,7 @@ describe("publication action boundary", () => {
 		vi.stubEnv(`INPUT_${input.toUpperCase()}`, "");
 
 		// Act
-		const operation = PublicationAction.runPublicationReconcileAssetsAction();
+		const operation = subject().runPublicationReconcileAssetsAction();
 
 		// Assert
 		await expect(operation).rejects.toThrow(
@@ -129,18 +104,19 @@ describe("publication action boundary", () => {
 		vi.stubEnv("INPUT_MODE", "");
 
 		// Act
-		const report =
-			await PublicationAction.runPublicationReconcileAssetsAction();
+		const report = await subject().runPublicationReconcileAssetsAction();
 		const actual = JSON.parse(mocks.outputs["drive-files"]);
 		const actual1 = JSON.stringify(mocks.outputs);
 
 		// Assert
 		expect(mocks.setSecret).toHaveBeenCalledWith("secret-json");
-		expect(mocks.createAssets).toHaveBeenCalledWith("secret-json", {
-			parentFolderId: "parent",
-			contentContracts: {},
-			templateFolderId: "templates",
-		});
+		expect(mocks.createAssets).toHaveBeenCalledWith(
+			expect.objectContaining({
+				credentials: "secret-json",
+				parentFolderId: "parent",
+				templateFolderId: "templates",
+			}),
+		);
 		expect(mocks.execute).toHaveBeenCalledWith(
 			expect.objectContaining({
 				identity: { repository: "community/meetups", issueNumber: 42 },
@@ -162,16 +138,29 @@ describe("publication action boundary", () => {
 		});
 
 		// Act
-		const report =
-			await PublicationAction.runPublicationReconcileAssetsAction();
+		const report = await subject().runPublicationReconcileAssetsAction();
 
 		// Assert
-		expect(mocks.createAssets).toHaveBeenCalledWith("secret-json", {
-			parentFolderId: "parent",
-			contentContracts: {},
-			templateFolderId: "templates",
-		});
+		expect(mocks.createAssets).toHaveBeenCalledWith(
+			expect.objectContaining({
+				credentials: "secret-json",
+				parentFolderId: "parent",
+				templateFolderId: "templates",
+			}),
+		);
 		expect(mocks.outputs["slides-ready"]).toBe(false);
 		expect(report.details.join("\n")).toContain("assets=skipped");
 	});
 });
+
+function subject() {
+	const composition = new GithubActionsComposition();
+	return new PublicationAction({
+		createJourney: mocks.createAssets,
+		runtimeInput: composition.runtimeInput(),
+		assetContentConfiguration: composition.assetContentConfiguration(),
+		conferenceHallInput: composition.conferenceHallInput(),
+		actionOutput: composition.actionOutput(),
+		createActionMessages: (...args) => composition.actionMessages(...args),
+	});
+}

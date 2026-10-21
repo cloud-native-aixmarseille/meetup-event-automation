@@ -5,7 +5,7 @@ import type {
 import type { ReferentialDiagnostic } from "../../domain/referential-diagnostic.js";
 
 export class SpeakerSourceFields {
-	static read(
+	read(
 		record: RawSpeakerRecord,
 		index: number,
 		diagnostics: ReferentialDiagnostic[],
@@ -25,7 +25,7 @@ export class SpeakerSourceFields {
 					typeof value === "string" && /^[a-zA-Z0-9_-]{1,200}$/.test(value),
 			)
 		) {
-			SpeakerSourceFields.invalid(index, diagnostics);
+			this.invalid(index, diagnostics);
 			return {};
 		}
 		return {
@@ -38,12 +38,12 @@ export class SpeakerSourceFields {
 						},
 					}
 				: {}),
-			...(SpeakerSourceFields.pictureUrl(record.pictureUrl)
+			...(this.pictureUrl(record.pictureUrl)
 				? { pictureUrl: String(record.pictureUrl) }
 				: {}),
 		};
 	}
-	static pictureUrl(value: unknown): string | undefined {
+	pictureUrl(value: unknown): string | undefined {
 		if (typeof value !== "string" || value.length > 2048) return undefined;
 		try {
 			const url = new URL(value);
@@ -54,7 +54,7 @@ export class SpeakerSourceFields {
 			return undefined;
 		}
 	}
-	static validateMappings(
+	validateMappings(
 		speakers: readonly Speaker[],
 		diagnostics: ReferentialDiagnostic[],
 	): void {
@@ -70,14 +70,11 @@ export class SpeakerSourceFields {
 						existing.speakerId === identity.speakerId,
 				)
 			)
-				SpeakerSourceFields.invalid(index, diagnostics);
+				this.invalid(index, diagnostics);
 			identities.push(identity);
 		}
 	}
-	private static invalid(
-		index: number,
-		diagnostics: ReferentialDiagnostic[],
-	): void {
+	private invalid(index: number, diagnostics: ReferentialDiagnostic[]): void {
 		diagnostics.push({
 			code: "referential.speaker.mapping.invalid",
 			severity: "error",

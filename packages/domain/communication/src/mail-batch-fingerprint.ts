@@ -3,7 +3,7 @@ import type { MailMessageIntent } from "./model.js";
 
 /** Only the digest leaves the mail context; private payloads are never approval records. */
 export class MailBatchFingerprint {
-	static create(
+	create(
 		eventDate: string,
 		timeZone: string,
 		intents: readonly MailMessageIntent[],

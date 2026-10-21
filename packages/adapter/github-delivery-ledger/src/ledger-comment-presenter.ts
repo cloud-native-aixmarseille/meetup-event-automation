@@ -2,11 +2,24 @@ import {
 	DELIVERY_LEDGER_MARKER,
 	type StoredLedger,
 } from "./github-delivery-ledger-contracts.js";
-import { LedgerMessages } from "./i18n/ledger-messages.js";
-import { LedgerCommentCodec } from "./ledger-comment-codec.js";
+import type {
+	LedgerMessages,
+	LedgerMessagesArguments,
+} from "./i18n/ledger-messages.js";
+import type { LedgerCommentCodec } from "./ledger-comment-codec.js";
+
+export interface LedgerCommentPresenterCollaborators {
+	readonly ledgerCommentCodec: Pick<LedgerCommentCodec, "encode">;
+	readonly createLedgerMessages: (
+		...args: LedgerMessagesArguments
+	) => LedgerMessages;
+}
 
 export class LedgerCommentPresenter {
-	constructor(private readonly messages = new LedgerMessages()) {}
+	constructor(
+		private readonly collaborators: LedgerCommentPresenterCollaborators,
+		private readonly messages = collaborators.createLedgerMessages(),
+	) {}
 
 	render(ledger: StoredLedger): string {
 		const groups = new Map<
@@ -42,7 +55,14 @@ export class LedgerCommentPresenter {
 		if (ledger.entries.some((entry) => entry.status !== "accepted")) {
 			lines.push(this.messages.t("ledger.attention"));
 		}
-		lines.push(LedgerCommentCodec.encode(ledger));
+		lines.push(this.collaborators.ledgerCommentCodec.encode(ledger));
 		return lines.join("\n\n");
 	}
 }
+export type LedgerCommentPresenterArguments =
+	ConstructorParameters<typeof LedgerCommentPresenter> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

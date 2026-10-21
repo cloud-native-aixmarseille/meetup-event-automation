@@ -1,14 +1,31 @@
+import { CommunicationDomainComposition } from "@meetup-automation/communication";
+import { LocalizationComposition } from "@meetup-automation/localization";
 import { describe, expect, it } from "vitest";
 import { episode, state } from "../testing/attention.fixtures.js";
 import { AttentionDiagnosticChecklist } from "./attention-diagnostic-checklist.js";
 import { AttentionPresenter } from "./attention-presenter.js";
+import { GithubOrganizerAttentionComposition } from "./dependency-composition.js";
 import { AttentionMessages } from "./i18n/attention-messages.js";
 
 describe("GitHub attention presentation", () => {
 	it("keeps supplied metadata separate from localized task formatting", () => {
 		// Arrange
-		const checklist = new AttentionDiagnosticChecklist();
-		const presenter = new AttentionPresenter("example/meetups", 42, checklist);
+		const checklist = new AttentionDiagnosticChecklist({
+			createAttentionMessages: (...args) =>
+				new GithubOrganizerAttentionComposition().attentionMessages(...args),
+		});
+		const presenter = new AttentionPresenter(
+			{
+				attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+				attentionTaskSelection:
+					new CommunicationDomainComposition().attentionTaskSelection(),
+				createAttentionMessages: (...args) =>
+					new GithubOrganizerAttentionComposition().attentionMessages(...args),
+			},
+			"example/meetups",
+			42,
+			checklist,
+		);
 		const value = {
 			...state(),
 			post: undefined,
@@ -30,8 +47,22 @@ describe("GitHub attention presentation", () => {
 		["delivery-recovery", "Verify delivery before retrying."],
 	] as const)("keeps one concrete %s task", (code, action) => {
 		// Arrange
-		const checklist = new AttentionDiagnosticChecklist();
-		const presenter = new AttentionPresenter("example/meetups", 42, checklist);
+		const checklist = new AttentionDiagnosticChecklist({
+			createAttentionMessages: (...args) =>
+				new GithubOrganizerAttentionComposition().attentionMessages(...args),
+		});
+		const presenter = new AttentionPresenter(
+			{
+				attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+				attentionTaskSelection:
+					new CommunicationDomainComposition().attentionTaskSelection(),
+				createAttentionMessages: (...args) =>
+					new GithubOrganizerAttentionComposition().attentionMessages(...args),
+			},
+			"example/meetups",
+			42,
+			checklist,
+		);
 		checklist.set(
 			100,
 			`<!-- meetup-automation:event-diagnostics:v1 -->\n\n- [ ] **Communication**: ${action}`,
@@ -46,12 +77,25 @@ describe("GitHub attention presentation", () => {
 	});
 	it("preserves existing concrete guidance and only adds distinct work", () => {
 		// Arrange
-		const checklist = new AttentionDiagnosticChecklist();
+		const checklist = new AttentionDiagnosticChecklist({
+			createAttentionMessages: (...args) =>
+				new GithubOrganizerAttentionComposition().attentionMessages(...args),
+		});
 		const presenter = new AttentionPresenter(
+			{
+				attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+				attentionTaskSelection:
+					new CommunicationDomainComposition().attentionTaskSelection(),
+				createAttentionMessages: (...args) =>
+					new GithubOrganizerAttentionComposition().attentionMessages(...args),
+			},
 			"example/meetups",
 			42,
 			checklist,
-			new AttentionMessages("fr"),
+			new AttentionMessages(
+				{ localeResolver: new LocalizationComposition().localeResolver() },
+				"fr",
+			),
 		);
 		const prefix =
 			"<!-- meetup-automation:event-diagnostics:v1 -->\n\n- [ ] **Event Title**: Ajoutez un titre.\n- [ ] **Host confirmation**: Confirmez l'hôte.";
@@ -76,8 +120,22 @@ describe("GitHub attention presentation", () => {
 	});
 	it("shows pending notification recovery without claiming the event is clear", () => {
 		// Arrange
-		const checklist = new AttentionDiagnosticChecklist();
-		const presenter = new AttentionPresenter("example/meetups", 42, checklist);
+		const checklist = new AttentionDiagnosticChecklist({
+			createAttentionMessages: (...args) =>
+				new GithubOrganizerAttentionComposition().attentionMessages(...args),
+		});
+		const presenter = new AttentionPresenter(
+			{
+				attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+				attentionTaskSelection:
+					new CommunicationDomainComposition().attentionTaskSelection(),
+				createAttentionMessages: (...args) =>
+					new GithubOrganizerAttentionComposition().attentionMessages(...args),
+			},
+			"example/meetups",
+			42,
+			checklist,
+		);
 
 		// Act
 		const body = presenter.details({ ...state(), stopped: true });
@@ -90,8 +148,22 @@ describe("GitHub attention presentation", () => {
 	});
 	it("keeps unknown tasks alongside a concrete action", () => {
 		// Arrange
-		const checklist = new AttentionDiagnosticChecklist();
-		const presenter = new AttentionPresenter("example/meetups", 42, checklist);
+		const checklist = new AttentionDiagnosticChecklist({
+			createAttentionMessages: (...args) =>
+				new GithubOrganizerAttentionComposition().attentionMessages(...args),
+		});
+		const presenter = new AttentionPresenter(
+			{
+				attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+				attentionTaskSelection:
+					new CommunicationDomainComposition().attentionTaskSelection(),
+				createAttentionMessages: (...args) =>
+					new GithubOrganizerAttentionComposition().attentionMessages(...args),
+			},
+			"example/meetups",
+			42,
+			checklist,
+		);
 		checklist.set(
 			100,
 			"<!-- meetup-automation:event-diagnostics:v1 -->\n\n- [ ] **Communication**: Verify delivery before retrying.",

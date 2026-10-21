@@ -2,16 +2,14 @@ import type { ParticipantReference } from "@meetup-automation/event";
 import { STABLE_ID_PATTERN } from "./github-issue-form-event-document-codec-contracts.js";
 
 export class ParticipantReferenceParser {
-	static parseParticipantReference(value: string): ParticipantReference {
+	parseParticipantReference(value: string): ParticipantReference {
 		const trimmed = value.trim();
-		const markdownLinkLabel =
-			ParticipantReferenceParser.parseMarkdownLinkLabel(trimmed);
+		const markdownLinkLabel = this.parseMarkdownLinkLabel(trimmed);
 		if (markdownLinkLabel !== undefined) {
 			return { displayName: markdownLinkLabel };
 		}
 
-		const stableReference =
-			ParticipantReferenceParser.parseStableIdReference(trimmed);
+		const stableReference = this.parseStableIdReference(trimmed);
 		if (stableReference) {
 			return stableReference;
 		}
@@ -19,35 +17,27 @@ export class ParticipantReferenceParser {
 		return { displayName: trimmed };
 	}
 
-	static parseAgendaLine(
+	parseAgendaLine(
 		line: string,
 	): Readonly<{ speakers: string; description: string }> | undefined {
 		let cursor = 0;
-		cursor = ParticipantReferenceParser.skipHorizontalWhitespace(line, cursor);
+		cursor = this.skipHorizontalWhitespace(line, cursor);
 		if (line[cursor] !== "-") {
 			return undefined;
 		}
 
 		cursor += 1;
-		if (
-			!ParticipantReferenceParser.isHorizontalWhitespaceCharacter(
-				line[cursor] ?? "",
-			)
-		) {
+		if (!this.isHorizontalWhitespaceCharacter(line[cursor] ?? "")) {
 			return undefined;
 		}
-		cursor = ParticipantReferenceParser.skipHorizontalWhitespace(line, cursor);
+		cursor = this.skipHorizontalWhitespace(line, cursor);
 
 		const content = line.slice(cursor);
 		for (let index = 0; index < content.length; index += 1) {
 			if (content[index] !== ":") {
 				continue;
 			}
-			if (
-				!ParticipantReferenceParser.isHorizontalWhitespaceCharacter(
-					content[index + 1] ?? "",
-				)
-			) {
+			if (!this.isHorizontalWhitespaceCharacter(content[index + 1] ?? "")) {
 				continue;
 			}
 
@@ -59,9 +49,7 @@ export class ParticipantReferenceParser {
 			let descriptionStart = index + 1;
 			while (
 				descriptionStart < content.length &&
-				ParticipantReferenceParser.isHorizontalWhitespaceCharacter(
-					content[descriptionStart],
-				)
+				this.isHorizontalWhitespaceCharacter(content[descriptionStart])
 			) {
 				descriptionStart += 1;
 			}
@@ -75,7 +63,7 @@ export class ParticipantReferenceParser {
 		return undefined;
 	}
 
-	static parseMarkdownLinkLabel(value: string): string | undefined {
+	parseMarkdownLinkLabel(value: string): string | undefined {
 		if (!value.startsWith("[") || !value.endsWith(")")) {
 			return undefined;
 		}
@@ -93,9 +81,7 @@ export class ParticipantReferenceParser {
 		return value.slice(1, closingBracket).trim();
 	}
 
-	static parseStableIdReference(
-		value: string,
-	): ParticipantReference | undefined {
+	parseStableIdReference(value: string): ParticipantReference | undefined {
 		if (!value.endsWith("]")) {
 			return undefined;
 		}
@@ -103,9 +89,7 @@ export class ParticipantReferenceParser {
 		const openingBracket = value.lastIndexOf("[");
 		if (
 			openingBracket <= 0 ||
-			!ParticipantReferenceParser.isWhitespaceCharacter(
-				value[openingBracket - 1] ?? "",
-			)
+			!this.isWhitespaceCharacter(value[openingBracket - 1] ?? "")
 		) {
 			return undefined;
 		}
@@ -126,25 +110,22 @@ export class ParticipantReferenceParser {
 		};
 	}
 
-	static isHorizontalWhitespaceCharacter(value: string): boolean {
+	isHorizontalWhitespaceCharacter(value: string): boolean {
 		return value === " " || value === "\t";
 	}
 
-	static isWhitespaceCharacter(value: string): boolean {
+	isWhitespaceCharacter(value: string): boolean {
 		return (
-			ParticipantReferenceParser.isHorizontalWhitespaceCharacter(value) ||
+			this.isHorizontalWhitespaceCharacter(value) ||
 			value === "\n" ||
 			value === "\r"
 		);
 	}
 
-	private static skipHorizontalWhitespace(
-		line: string,
-		cursor: number,
-	): number {
+	private skipHorizontalWhitespace(line: string, cursor: number): number {
 		while (
 			cursor < line.length &&
-			ParticipantReferenceParser.isHorizontalWhitespaceCharacter(line[cursor])
+			this.isHorizontalWhitespaceCharacter(line[cursor])
 		) {
 			cursor += 1;
 		}

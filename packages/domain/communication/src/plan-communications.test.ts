@@ -1,8 +1,15 @@
 import { describe, expect, it } from "vitest";
+import { CommunicationDomainComposition } from "./dependency-composition.js";
 import { MAIL_TEMPLATE_NAMES, type PlanCommunicationsInput } from "./model.js";
 import { PlanCommunications } from "./plan-communications.js";
 
-const planner = new PlanCommunications();
+const planner = new PlanCommunications({
+	communicationPlanner:
+		new CommunicationDomainComposition().communicationPlanner(),
+	communicationCalendar:
+		new CommunicationDomainComposition().communicationCalendar(),
+	postEventPolicy: new CommunicationDomainComposition().postEventPolicy(),
+});
 
 function baseInput(
 	override: Partial<PlanCommunicationsInput> = {},

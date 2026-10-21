@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { attentionReports } from "../../testing/attention-reports.fixtures.js";
+import { JourneyPolicyComposition } from "../policy-composition.js";
 import { ReconcileOrganizerFeedback } from "./reconcile-organizer-feedback.js";
 
 describe("merged organizer feedback reconciliation", () => {
@@ -7,7 +8,15 @@ describe("merged organizer feedback reconciliation", () => {
 		// Arrange
 		const events = { find: vi.fn(), applyPatch: vi.fn(), listPage: vi.fn() };
 		const comments = { reconcileDiagnostics: vi.fn() };
-		const useCase = new ReconcileOrganizerFeedback(events, comments, "meetup");
+		const useCase = new ReconcileOrganizerFeedback(
+			{
+				attentionStageEvaluation:
+					new JourneyPolicyComposition().attentionStageEvaluation(),
+			},
+			events,
+			comments,
+			"meetup",
+		);
 
 		// Act
 		await useCase.execute(

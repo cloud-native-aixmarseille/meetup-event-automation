@@ -1,18 +1,31 @@
-import {
-	type EventDiagnostic,
+import type {
+	EventDiagnostic,
 	EventDiagnostics,
-	type EventLogisticsIntent,
-	type OperationalChecklistItem,
+	EventLogisticsIntent,
+	OperationalChecklistItem,
 } from "@meetup-automation/event";
 import type {
 	Checkbox,
 	Section,
 } from "./github-issue-form-event-document-codec-contracts.js";
-import { IssueFormSections } from "./issue-form-sections.js";
-import { MarkdownLines } from "./markdown-lines.js";
+import type { IssueFormSections } from "./issue-form-sections.js";
+import type { MarkdownLines } from "./markdown-lines.js";
+
+export interface IssueFormChecklistsCollaborators {
+	readonly eventDiagnostics: Pick<EventDiagnostics, "diagnostic">;
+	readonly issueFormSections: Pick<
+		IssueFormSections,
+		"cleanResponse" | "parseSections" | "replaceOrAppendSection" | "readSection"
+	>;
+	readonly markdownLines: Pick<MarkdownLines, "parseCheckboxLine">;
+}
 
 export class IssueFormChecklists {
-	static readCheckboxes(
+	constructor(
+		private readonly collaborators: IssueFormChecklistsCollaborators,
+	) {}
+
+	readCheckboxes(
 		sections: ReadonlyMap<string, readonly Section[]>,
 		heading: string,
 		diagnostics: EventDiagnostic[],
@@ -20,7 +33,7 @@ export class IssueFormChecklists {
 		const matches = sections.get(heading) ?? [];
 		if (matches.length > 1) {
 			diagnostics.push(
-				EventDiagnostics.diagnostic({
+				this.collaborators.eventDiagnostics.diagnostic({
 					code: "event.document.heading.duplicate",
 					severity: "error",
 					category: "invalid",
@@ -29,7 +42,9 @@ export class IssueFormChecklists {
 				}),
 			);
 		}
-		const value = IssueFormSections.cleanResponse(matches[0]?.value ?? "");
+		const value = this.collaborators.issueFormSections.cleanResponse(
+			matches[0]?.value ?? "",
+		);
 		if (!value) {
 			return [];
 		}
@@ -39,10 +54,10 @@ export class IssueFormChecklists {
 			if (!line.trim()) {
 				continue;
 			}
-			const checkbox = MarkdownLines.parseCheckboxLine(line);
+			const checkbox = this.collaborators.markdownLines.parseCheckboxLine(line);
 			if (!checkbox) {
 				diagnostics.push(
-					EventDiagnostics.diagnostic({
+					this.collaborators.eventDiagnostics.diagnostic({
 						code: "event.document.checkbox.invalid",
 						severity: "warning",
 						category: "invalid",
@@ -57,7 +72,7 @@ export class IssueFormChecklists {
 		return checkboxes;
 	}
 
-	static toOperationalChecklist(
+	toOperationalChecklist(
 		checkboxes: readonly Checkbox[],
 	): readonly OperationalChecklistItem[] {
 		return checkboxes.map(({ checked, label }) => ({
@@ -66,36 +81,43 @@ export class IssueFormChecklists {
 		}));
 	}
 
-	static replaceOrAppendOperationalChecklist(
+	replaceOrAppendOperationalChecklist(
 		body: string,
 		heading: string,
 		value: string,
 	): string {
-		const sections = IssueFormSections.parseSections(body).get(heading) ?? [];
+		const sections =
+			this.collaborators.issueFormSections.parseSections(body).get(heading) ??
+			[];
 		if (
 			sections.length > 1 ||
-			(sections[0] &&
-				!IssueFormChecklists.operationalChecklistIsWellFormed(
-					sections[0].value,
-				))
+			(sections[0] && !this.operationalChecklistIsWellFormed(sections[0].value))
 		) {
 			return body;
 		}
-		return IssueFormSections.replaceOrAppendSection(body, heading, value);
+		return this.collaborators.issueFormSections.replaceOrAppendSection(
+			body,
+			heading,
+			value,
+		);
 	}
 
-	static operationalChecklistIsWellFormed(value: string): boolean {
-		const cleaned = IssueFormSections.cleanResponse(value);
+	operationalChecklistIsWellFormed(value: string): boolean {
+		const cleaned = this.collaborators.issueFormSections.cleanResponse(value);
 		return (
 			cleaned === "" ||
 			cleaned
 				.split(/\r?\n/)
 				.filter((line) => line.trim() !== "")
-				.every((line) => MarkdownLines.parseCheckboxLine(line) !== undefined)
+				.every(
+					(line) =>
+						this.collaborators.markdownLines.parseCheckboxLine(line) !==
+						undefined,
+				)
 		);
 	}
 
-	static renderOperationalChecklist(
+	renderOperationalChecklist(
 		items: readonly OperationalChecklistItem[],
 	): string {
 		return items
@@ -103,12 +125,12 @@ export class IssueFormChecklists {
 			.join("\n");
 	}
 
-	static readLogisticsIntent(
+	readLogisticsIntent(
 		sections: ReadonlyMap<string, readonly Section[]>,
 		heading: string,
 		diagnostics: EventDiagnostic[],
 	): EventLogisticsIntent {
-		const value = IssueFormSections.readSection(
+		const value = this.collaborators.issueFormSections.readSection(
 			sections,
 			heading,
 			false,
@@ -125,7 +147,7 @@ export class IssueFormChecklists {
 		}
 
 		diagnostics.push(
-			EventDiagnostics.diagnostic({
+			this.collaborators.eventDiagnostics.diagnostic({
 				code: "event.logistics.intent.invalid",
 				severity: "error",
 				category: "invalid",
@@ -136,22 +158,23 @@ export class IssueFormChecklists {
 		return "unspecified";
 	}
 
-	static replaceOrAppendLogisticsIntent(
+	replaceOrAppendLogisticsIntent(
 		body: string,
 		heading: string,
 		intent: EventLogisticsIntent,
 	): string {
 		return intent === "unspecified" ||
-			(IssueFormSections.parseSections(body).get(heading)?.length ?? 0) > 1
+			(this.collaborators.issueFormSections.parseSections(body).get(heading)
+				?.length ?? 0) > 1
 			? body
-			: IssueFormSections.replaceOrAppendSection(
+			: this.collaborators.issueFormSections.replaceOrAppendSection(
 					body,
 					heading,
-					IssueFormChecklists.renderLogisticsIntent(intent),
+					this.renderLogisticsIntent(intent),
 				);
 	}
 
-	static renderLogisticsIntent(intent: EventLogisticsIntent): string {
+	renderLogisticsIntent(intent: EventLogisticsIntent): string {
 		switch (intent) {
 			case "planned":
 				return "Yes";

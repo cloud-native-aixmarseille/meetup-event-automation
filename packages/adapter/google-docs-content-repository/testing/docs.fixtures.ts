@@ -1,9 +1,9 @@
 import type { docs_v1 } from "@googleapis/docs";
-import { vi } from "vitest";
 import type {
 	AssetImageRepository,
 	ContentContract,
 } from "@meetup-automation/publication";
+import { vi } from "vitest";
 
 export function paragraph(
 	text: string,

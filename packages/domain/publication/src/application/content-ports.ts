@@ -8,8 +8,8 @@ import type {
 	PublicAssetModel,
 } from "../domain/asset-content.js";
 import type {
-	PublicAssetVenue,
 	PublicAssetTalk,
+	PublicAssetVenue,
 	PublicNextAssetEvent,
 } from "../domain/asset-render-data.js";
 

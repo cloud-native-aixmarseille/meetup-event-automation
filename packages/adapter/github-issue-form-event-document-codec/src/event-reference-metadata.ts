@@ -1,7 +1,7 @@
-import {
-	type EventDiagnostic,
+import type {
+	EventDiagnostic,
 	EventDiagnostics,
-	type MeetupEvent,
+	MeetupEvent,
 } from "@meetup-automation/event";
 import {
 	type ParsedReferenceMetadata,
@@ -9,25 +9,46 @@ import {
 	type StableReferenceBinding,
 	type StableReferenceMetadata,
 } from "./github-issue-form-event-document-codec-contracts.js";
-import { ManagedIssueMarkers } from "./managed-issue-markers.js";
-import { ReferenceBindings } from "./reference-bindings.js";
-import { ReferenceMetadataShape } from "./reference-metadata-shape.js";
+import type { ManagedIssueMarkers } from "./managed-issue-markers.js";
+import type { ReferenceBindings } from "./reference-bindings.js";
+import type { ReferenceMetadataShape } from "./reference-metadata-shape.js";
+
+export interface EventReferenceMetadataCollaborators {
+	readonly managedIssueMarkers: Pick<
+		ManagedIssueMarkers,
+		"readManagedMarkerValues"
+	>;
+	readonly eventDiagnostics: Pick<EventDiagnostics, "diagnostic">;
+	readonly referenceMetadataShape: Pick<
+		ReferenceMetadataShape,
+		"isReferenceMetadata" | "isLegacyReferenceMetadata"
+	>;
+	readonly referenceBindings: Pick<
+		ReferenceBindings,
+		"restoreBoundReference" | "restoreBoundSpeaker" | "referenceBinding"
+	>;
+}
 
 export class EventReferenceMetadata {
-	static readReferenceMetadata(
+	constructor(
+		private readonly collaborators: EventReferenceMetadataCollaborators,
+	) {}
+
+	readReferenceMetadata(
 		body: string,
 		diagnostics: EventDiagnostic[],
 	): ParsedReferenceMetadata | undefined {
-		const markers = ManagedIssueMarkers.readManagedMarkerValues(
-			body,
-			REFERENCE_MARKER_NAME,
-		);
+		const markers =
+			this.collaborators.managedIssueMarkers.readManagedMarkerValues(
+				body,
+				REFERENCE_MARKER_NAME,
+			);
 		if (markers.length === 0) {
 			return undefined;
 		}
 		if (markers.length > 1) {
 			diagnostics.push(
-				EventDiagnostics.diagnostic({
+				this.collaborators.eventDiagnostics.diagnostic({
 					code: "event.document.reference-metadata.duplicate",
 					severity: "error",
 					category: "invalid",
@@ -39,16 +60,22 @@ export class EventReferenceMetadata {
 
 		try {
 			const parsed = JSON.parse(markers[0]) as unknown;
-			if (ReferenceMetadataShape.isReferenceMetadata(parsed)) {
+			if (
+				this.collaborators.referenceMetadataShape.isReferenceMetadata(parsed)
+			) {
 				return { kind: "bound", value: parsed };
 			}
-			if (ReferenceMetadataShape.isLegacyReferenceMetadata(parsed)) {
+			if (
+				this.collaborators.referenceMetadataShape.isLegacyReferenceMetadata(
+					parsed,
+				)
+			) {
 				return { kind: "legacy", value: parsed };
 			}
 			throw new Error("invalid metadata shape");
 		} catch {
 			diagnostics.push(
-				EventDiagnostics.diagnostic({
+				this.collaborators.eventDiagnostics.diagnostic({
 					code: "event.document.reference-metadata.invalid",
 					severity: "error",
 					category: "invalid",
@@ -60,27 +87,27 @@ export class EventReferenceMetadata {
 		}
 	}
 
-	static applyReferenceMetadata(
+	applyReferenceMetadata(
 		event: MeetupEvent,
 		metadata: ParsedReferenceMetadata,
 		diagnostics: EventDiagnostic[],
 	): MeetupEvent {
 		if (metadata.kind === "legacy") {
-			diagnostics.push(EventReferenceMetadata.legacyMetadataDiagnostic());
+			diagnostics.push(this.legacyMetadataDiagnostic());
 			return event;
 		}
 
 		const boundMetadata = metadata.value;
 		const restored: MeetupEvent = {
 			...event,
-			host: ReferenceBindings.restoreBoundReference(
+			host: this.collaborators.referenceBindings.restoreBoundReference(
 				event.host,
 				boundMetadata.host,
 			),
 			agenda: event.agenda.map((entry) => ({
 				...entry,
 				speakers: entry.speakers.map((speaker) =>
-					ReferenceBindings.restoreBoundSpeaker(
+					this.collaborators.referenceBindings.restoreBoundSpeaker(
 						speaker,
 						boundMetadata.speakers,
 					),
@@ -89,47 +116,55 @@ export class EventReferenceMetadata {
 		};
 
 		if (
-			!EventReferenceMetadata.referenceMetadataEqual(
+			!this.referenceMetadataEqual(
 				boundMetadata,
-				EventReferenceMetadata.referenceMetadata(restored),
+				this.referenceMetadata(restored),
 			)
 		) {
-			diagnostics.push(EventReferenceMetadata.staleMetadataDiagnostic());
+			diagnostics.push(this.staleMetadataDiagnostic());
 		}
 
 		return restored;
 	}
 
-	static referenceMetadata(event: MeetupEvent): StableReferenceMetadata {
+	referenceMetadata(event: MeetupEvent): StableReferenceMetadata {
 		return {
 			schemaVersion: 2,
 			host: event.host?.id
-				? ReferenceBindings.referenceBinding(event.host, event.host.id)
+				? this.collaborators.referenceBindings.referenceBinding(
+						event.host,
+						event.host.id,
+					)
 				: null,
 			speakers: event.agenda.flatMap((entry) =>
 				entry.speakers.flatMap((speaker) =>
 					speaker.id
-						? [ReferenceBindings.referenceBinding(speaker, speaker.id)]
+						? [
+								this.collaborators.referenceBindings.referenceBinding(
+									speaker,
+									speaker.id,
+								),
+							]
 						: [],
 				),
 			),
 		};
 	}
 
-	static referenceMetadataEqual(
+	referenceMetadataEqual(
 		left: StableReferenceMetadata,
 		right: StableReferenceMetadata,
 	): boolean {
 		return (
-			EventReferenceMetadata.sameBinding(left.host, right.host) &&
+			this.sameBinding(left.host, right.host) &&
 			left.speakers.length === right.speakers.length &&
 			left.speakers.every((speaker, index) =>
-				EventReferenceMetadata.sameBinding(speaker, right.speakers[index]),
+				this.sameBinding(speaker, right.speakers[index]),
 			)
 		);
 	}
 
-	private static sameBinding(
+	private sameBinding(
 		left: StableReferenceBinding | null,
 		right: StableReferenceBinding | null,
 	): boolean {
@@ -138,8 +173,8 @@ export class EventReferenceMetadata {
 			: left.id === right.id && left.displayName === right.displayName;
 	}
 
-	static legacyMetadataDiagnostic(): EventDiagnostic {
-		return EventDiagnostics.diagnostic({
+	legacyMetadataDiagnostic(): EventDiagnostic {
+		return this.collaborators.eventDiagnostics.diagnostic({
 			code: "event.document.reference-metadata.legacy",
 			severity: "warning",
 			category: "migration",
@@ -149,8 +184,8 @@ export class EventReferenceMetadata {
 		});
 	}
 
-	static staleMetadataDiagnostic(): EventDiagnostic {
-		return EventDiagnostics.diagnostic({
+	staleMetadataDiagnostic(): EventDiagnostic {
+		return this.collaborators.eventDiagnostics.diagnostic({
 			code: "event.document.reference-metadata.stale",
 			severity: "warning",
 			category: "migration",

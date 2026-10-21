@@ -1,6 +1,6 @@
 import {
 	ProposalSourceError,
-	ReferentialIdentifiers,
+	type ReferentialIdentifiers,
 } from "@meetup-automation/referential";
 
 // Match the repository JSON formatter's default line width and visual tab width.
@@ -12,19 +12,26 @@ interface StoredAllocation {
 	reservedIds: readonly string[];
 }
 
+export interface SpeakerAllocationStateCodecCollaborators {
+	readonly referentialIdentifiers: Pick<ReferentialIdentifiers, "asSpeakerId">;
+}
+
 export class SpeakerAllocationStateCodec {
-	static decode(source: string): readonly string[] {
+	constructor(
+		private readonly collaborators: SpeakerAllocationStateCodecCollaborators,
+	) {}
+
+	decode(source: string): readonly string[] {
 		let value: unknown;
 		try {
 			value = JSON.parse(source);
 		} catch {
 			throw new ProposalSourceError("invalid");
 		}
-		if (!SpeakerAllocationStateCodec.validState(value))
-			throw new ProposalSourceError("invalid");
+		if (!this.validState(value)) throw new ProposalSourceError("invalid");
 		return [...value.reservedIds];
 	}
-	static encode(reservedIds: readonly string[]): string {
+	encode(reservedIds: readonly string[]): string {
 		const state: StoredAllocation = { version: 1, reservedIds };
 		const text = `${JSON.stringify(state, null, "\t")}\n`;
 		const inline = `[${state.reservedIds.map((id) => JSON.stringify(id)).join(", ")}]`;
@@ -37,7 +44,7 @@ export class SpeakerAllocationStateCodec {
 		);
 		return text.replace(`\t${property}${expanded}`, `\t${property}${inline}`);
 	}
-	private static validState(value: unknown): value is StoredAllocation {
+	private validState(value: unknown): value is StoredAllocation {
 		if (!value || typeof value !== "object" || Array.isArray(value))
 			return false;
 		const state = value as Record<string, unknown>;
@@ -47,7 +54,8 @@ export class SpeakerAllocationStateCodec {
 			state.reservedIds.every(
 				(id) =>
 					typeof id === "string" &&
-					ReferentialIdentifiers.asSpeakerId(id) !== undefined,
+					this.collaborators.referentialIdentifiers.asSpeakerId(id) !==
+						undefined,
 			)
 		);
 	}

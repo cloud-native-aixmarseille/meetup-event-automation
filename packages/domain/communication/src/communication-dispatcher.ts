@@ -1,6 +1,6 @@
-import {
+import type {
 	CommunicationResults,
-	type MutableCounts,
+	MutableCounts,
 } from "./communication-results.js";
 import type {
 	CommunicationDiagnostic,
@@ -8,10 +8,18 @@ import type {
 	GatewayDispatchResult,
 } from "./model.js";
 import type { DeliveryLedger, MailGateway } from "./ports.js";
+export interface CommunicationDispatcherCollaborators {
+	readonly communicationResults: Pick<CommunicationResults, "safeDetailCode">;
+}
+
 export class CommunicationDispatcher {
 	readonly #ledger: DeliveryLedger;
 	readonly #mailGateway: MailGateway;
-	constructor(ledger: DeliveryLedger, mailGateway: MailGateway) {
+	constructor(
+		private readonly collaborators: CommunicationDispatcherCollaborators,
+		ledger: DeliveryLedger,
+		mailGateway: MailGateway,
+	) {
 		this.#ledger = ledger;
 		this.#mailGateway = mailGateway;
 	}
@@ -70,7 +78,7 @@ export class CommunicationDispatcher {
 		}
 
 		if (dispatchResult.outcome === "uncertain") {
-			const detailCode = CommunicationResults.safeDetailCode(
+			const detailCode = this.collaborators.communicationResults.safeDetailCode(
 				dispatchResult.diagnosticCode,
 			);
 			counts.uncertain += 1;
@@ -158,3 +166,10 @@ export class CommunicationDispatcher {
 		return false;
 	}
 }
+export type CommunicationDispatcherArguments =
+	ConstructorParameters<typeof CommunicationDispatcher> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

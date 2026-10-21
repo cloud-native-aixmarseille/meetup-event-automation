@@ -2,7 +2,7 @@ import { EventRuleConfigurationError } from "./event-rule-configuration-error.js
 import type { EventRule } from "./rule-contracts.js";
 
 export class EventRuleOrdering {
-	static sortRules(rules: readonly EventRule[]): readonly EventRule[] {
+	sortRules(rules: readonly EventRule[]): readonly EventRule[] {
 		const byId = new Map<string, EventRule>();
 		for (const rule of rules) {
 			if (byId.has(rule.id)) {

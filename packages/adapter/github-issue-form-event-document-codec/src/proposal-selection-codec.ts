@@ -1,15 +1,30 @@
 import type { EventDiagnostic, MeetupEvent } from "@meetup-automation/event";
 import { HEADINGS } from "./github-issue-form-event-document-codec-contracts.js";
-import { IssueFormSections } from "./issue-form-sections.js";
-import { ManagedIssueMarkers } from "./managed-issue-markers.js";
+import type { IssueFormSections } from "./issue-form-sections.js";
+import type { ManagedIssueMarkers } from "./managed-issue-markers.js";
+
+export interface ProposalSelectionCodecCollaborators {
+	readonly issueFormSections: Pick<
+		IssueFormSections,
+		"parseSections" | "readSection"
+	>;
+	readonly managedIssueMarkers: Pick<
+		ManagedIssueMarkers,
+		"readManagedMarkerValues" | "replaceManagedMarker"
+	>;
+}
 
 export class ProposalSelectionCodec {
-	static read(
+	constructor(
+		private readonly collaborators: ProposalSelectionCodecCollaborators,
+	) {}
+
+	read(
 		body: string,
 		diagnostics: EventDiagnostic[],
 	): Pick<MeetupEvent, "proposalReferences" | "proposalStatus"> {
-		const sections = IssueFormSections.parseSections(body);
-		const value = IssueFormSections.readSection(
+		const sections = this.collaborators.issueFormSections.parseSections(body);
+		const value = this.collaborators.issueFormSections.readSection(
 			sections,
 			HEADINGS.proposals,
 			false,
@@ -21,10 +36,11 @@ export class ProposalSelectionCodec {
 			.split(/\r?\n/)
 			.map((id) => id.trim().replace(/^[-*]\s+/, ""))
 			.filter(Boolean);
-		const markers = ManagedIssueMarkers.readManagedMarkerValues(
-			body,
-			"meetup-proposals",
-		);
+		const markers =
+			this.collaborators.managedIssueMarkers.readManagedMarkerValues(
+				body,
+				"meetup-proposals",
+			);
 		if (
 			markers.length > 1 ||
 			(markers[0] && !/^1:(current|stale)$/.test(markers[0]))
@@ -38,35 +54,36 @@ export class ProposalSelectionCodec {
 			});
 		return { proposalReferences, proposalStatus: "stale" };
 	}
-	static write(
+	write(
 		body: string,
 		event: Pick<MeetupEvent, "proposalReferences" | "proposalStatus">,
 	): string {
 		if (!event.proposalReferences?.length) return body;
 		const marker = `<!-- meetup-proposals:1:${event.proposalStatus ?? "stale"} -->`;
-		const replaced = ManagedIssueMarkers.replaceManagedMarker(
-			body,
-			"meetup-proposals",
-			marker,
-		);
+		const replaced =
+			this.collaborators.managedIssueMarkers.replaceManagedMarker(
+				body,
+				"meetup-proposals",
+				marker,
+			);
 		return replaced.found ? replaced.body : `${marker}\n${body}`;
 	}
-	static restore(event: MeetupEvent): MeetupEvent {
+	restore(event: MeetupEvent): MeetupEvent {
 		return {
 			...event,
 			agenda: event.agenda.map((entry) => ({
 				...entry,
 				description: event.proposalReferences?.length
-					? ProposalSelectionCodec.unescape(entry.description)
+					? this.unescape(entry.description)
 					: entry.description,
 				speakers: entry.speakers.map((speaker) => ({
 					...speaker,
-					displayName: ProposalSelectionCodec.unescape(speaker.displayName),
+					displayName: this.unescape(speaker.displayName),
 				})),
 			})),
 		};
 	}
-	static unescape(value: string): string {
+	unescape(value: string): string {
 		return value.replace(/&(amp|lt|gt|#\d+);/g, (match, code: string) => {
 			if (code === "amp") return "&";
 			if (code === "lt") return "<";
@@ -78,7 +95,7 @@ export class ProposalSelectionCodec {
 		});
 	}
 
-	static escape(value: string): string {
+	escape(value: string): string {
 		return value
 			.replace(/&/g, "&amp;")
 			.replace(/</g, "&lt;")

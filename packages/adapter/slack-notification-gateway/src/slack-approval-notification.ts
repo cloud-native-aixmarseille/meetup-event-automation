@@ -4,21 +4,32 @@ import type {
 	ApprovalNotificationResult,
 	OrganizerApprovalNotification,
 } from "@meetup-automation/journey";
-import { SlackApiClient } from "./slack-api-client.js";
+import type {
+	SlackApiClient,
+	SlackApiClientArguments,
+} from "./slack-api-client.js";
 import type { SlackApprovalPresenter } from "./slack-approval-presenter.js";
-import { SlackMessageReference } from "./slack-message-reference.js";
+import type { SlackMessageReference } from "./slack-message-reference.js";
 import type { SlackFetch } from "./slack-notification-gateway-contracts.js";
+
+export interface SlackApprovalNotificationCollaborators {
+	readonly slackMessageReference: Pick<SlackMessageReference, "read" | "valid">;
+	readonly createSlackApiClient: (
+		...args: SlackApiClientArguments
+	) => SlackApiClient;
+}
 
 export class SlackApprovalNotification
 	implements OrganizerApprovalNotification
 {
 	private readonly client: SlackApiClient;
 	constructor(
+		private readonly collaborators: SlackApprovalNotificationCollaborators,
 		token: string,
 		private readonly presenter: SlackApprovalPresenter,
 		fetcher: SlackFetch = fetch,
 	) {
-		this.client = new SlackApiClient(token, fetcher);
+		this.client = this.collaborators.createSlackApiClient(token, fetcher);
 	}
 	async send(
 		input: ApprovalNotificationRequest,
@@ -28,7 +39,10 @@ export class SlackApprovalNotification
 			text: this.presenter.render(input),
 		});
 		if (result.outcome !== "accepted") return result;
-		const message = SlackMessageReference.read(payload, input.destination);
+		const message = this.collaborators.slackMessageReference.read(
+			payload,
+			input.destination,
+		);
 		return message
 			? { outcome: "accepted", message }
 			: { outcome: "uncertain", diagnosticCode: "ambiguous-response" };
@@ -37,7 +51,7 @@ export class SlackApprovalNotification
 		message: ApprovalNotificationMessage,
 		decision: "approved" | "rejected",
 	): Promise<boolean> {
-		if (!SlackMessageReference.valid(message)) return false;
+		if (!this.collaborators.slackMessageReference.valid(message)) return false;
 		const { result, payload } = await this.client.post("reactions.add", {
 			channel: message.destination,
 			timestamp: message.messageId,
@@ -48,3 +62,10 @@ export class SlackApprovalNotification
 		);
 	}
 }
+export type SlackApprovalNotificationArguments =
+	ConstructorParameters<typeof SlackApprovalNotification> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

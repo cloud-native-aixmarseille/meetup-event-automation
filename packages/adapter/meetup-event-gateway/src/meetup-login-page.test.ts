@@ -1,5 +1,6 @@
 import type { Page } from "playwright-core";
 import { describe, expect, it, vi } from "vitest";
+import { MeetupEventGatewayComposition } from "./dependency-composition.js";
 import { MeetupLoginPage } from "./meetup-login-page.js";
 
 function fixture() {
@@ -58,7 +59,14 @@ function fixture() {
 		getByText: vi.fn().mockReturnValue({ first: () => rejected }),
 	} as unknown as Page;
 	return {
-		login: new MeetupLoginPage(page, solver),
+		login: new MeetupLoginPage(
+			{
+				meetupBrowserRoutes:
+					new MeetupEventGatewayComposition().meetupBrowserRoutes(),
+			},
+			page,
+			solver,
+		),
 		page,
 		email,
 		password,

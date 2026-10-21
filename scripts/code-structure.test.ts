@@ -30,7 +30,6 @@ describe("CodeStructure", () => {
 	});
 	it.each([
 		"export class Policy { evaluate() { return true; } }",
-		"export class Policy { static evaluate() { return [1].map(value => value + 1); } }",
 		"export class Policy { evaluate = () => true; }",
 		"const Policy = class { evaluate() { return true; } };",
 		"export class Policy { evaluate() { function local() { return true; } return local(); } }",

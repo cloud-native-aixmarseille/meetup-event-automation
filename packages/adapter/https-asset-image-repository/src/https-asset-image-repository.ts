@@ -1,14 +1,27 @@
-import { imageSize } from "image-size";
 import {
 	type AssetImageRepository,
 	ContentError,
-	ContentFingerprint,
+	type ContentFingerprint,
 	type ImageSource,
 } from "@meetup-automation/publication";
-import { BoundedImageDownload } from "./bounded-image-download.js";
+import { imageSize } from "image-size";
+import type {
+	BoundedImageDownload,
+	BoundedImageDownloadArguments,
+} from "./bounded-image-download.js";
+
+export interface HttpsAssetImageRepositoryCollaborators {
+	readonly contentFingerprint: Pick<ContentFingerprint, "of">;
+	readonly createBoundedImageDownload: (
+		...args: BoundedImageDownloadArguments
+	) => BoundedImageDownload;
+}
 
 export class HttpsAssetImageRepository implements AssetImageRepository {
-	constructor(private readonly download = new BoundedImageDownload()) {}
+	constructor(
+		private readonly collaborators: HttpsAssetImageRepositoryCollaborators,
+		private readonly download = collaborators.createBoundedImageDownload(),
+	) {}
 
 	async validate(
 		source: ImageSource,
@@ -31,7 +44,7 @@ export class HttpsAssetImageRepository implements AssetImageRepository {
 			)
 				throw new ContentError("image");
 			return {
-				fingerprint: ContentFingerprint.of(result.bytes),
+				fingerprint: this.collaborators.contentFingerprint.of(result.bytes),
 				source: { url: result.url, description: source.description },
 			};
 		} catch {
@@ -42,9 +55,16 @@ export class HttpsAssetImageRepository implements AssetImageRepository {
 	async observe(url: string): Promise<string> {
 		try {
 			const { bytes } = await this.download.get(url, true);
-			return ContentFingerprint.of(bytes);
+			return this.collaborators.contentFingerprint.of(bytes);
 		} catch {
 			throw new ContentError("image");
 		}
 	}
 }
+export type HttpsAssetImageRepositoryArguments =
+	ConstructorParameters<typeof HttpsAssetImageRepository> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

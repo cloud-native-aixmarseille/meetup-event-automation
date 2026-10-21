@@ -1,30 +1,53 @@
-import {
+import type {
+	AttentionFacts,
 	AttentionPolicy,
-	type AttentionFacts,
 } from "@meetup-automation/communication";
 import {
 	type EventDocumentDecodeResult,
-	type MeetupEvent,
-	EventRuleEngine,
-	EventRuleFactory,
+	type EventRuleEngine,
+	type EventRuleEngineArguments,
+	type EventRuleFactory,
 	EXPECTED_POST_EVENT_TASK_NAMES,
+	type MeetupEvent,
 } from "@meetup-automation/event";
 import type { AutomationConfig } from "../config/automation-config.js";
-import { EventPublicationEvaluation } from "./event-publication-evaluation.js";
-import { CommunicationChecklist } from "./communication-checklist.js";
 import { FOLLOW_UP_TASKS } from "../ports/organizer-follow-up.js";
+import type { CommunicationChecklist } from "./communication-checklist.js";
+import type { EventPublicationEvaluation } from "./event-publication-evaluation.js";
+export interface AttentionEventFactsCollaborators {
+	readonly eventRuleFactory: Pick<EventRuleFactory, "createDefaultEventRules">;
+	readonly eventPublicationEvaluation: Pick<
+		EventPublicationEvaluation,
+		| "evaluatePublication"
+		| "planEventManualPublicationTasks"
+		| "checklistTaskIsCompleted"
+	>;
+	readonly attentionPolicy: Pick<AttentionPolicy, "eventDay">;
+	readonly communicationChecklist: Pick<CommunicationChecklist, "status">;
+	readonly createEventRuleEngine: (
+		...args: EventRuleEngineArguments
+	) => EventRuleEngine;
+}
+
 export class AttentionEventFacts {
-	static create(
+	constructor(
+		private readonly collaborators: AttentionEventFactsCollaborators,
+	) {}
+
+	create(
 		decoded: EventDocumentDecodeResult,
 		config: AutomationConfig,
 	): Omit<AttentionFacts, "stages"> {
-		const evaluated = new EventRuleEngine(
-			EventRuleFactory.createDefaultEventRules(),
-		).evaluate(decoded.event);
-		const publication = EventPublicationEvaluation.evaluatePublication(
-			evaluated.event,
-			config,
-		);
+		const evaluated = this.collaborators
+			.createEventRuleEngine(
+				this.collaborators.eventRuleFactory.createDefaultEventRules(),
+			)
+			.evaluate(decoded.event);
+		const publication =
+			this.collaborators.eventPublicationEvaluation.evaluatePublication(
+				evaluated.event,
+				config,
+			);
 		const event = publication.event;
 		const diagnostics = [
 			...decoded.diagnostics,
@@ -32,10 +55,14 @@ export class AttentionEventFacts {
 			...publication.diagnostics,
 		];
 		const tasks =
-			EventPublicationEvaluation.planEventManualPublicationTasks(event);
+			this.collaborators.eventPublicationEvaluation.planEventManualPublicationTasks(
+				event,
+			);
 		return {
 			eventDate:
-				AttentionPolicy.eventDay(event.date) === undefined ? "" : event.date,
+				this.collaborators.attentionPolicy.eventDay(event.date) === undefined
+					? ""
+					: event.date,
 			closed: event.issueState === "closed",
 			occurrence: event.occurrenceStatus ?? "scheduled",
 			requiredDataMissing: diagnostics.some(
@@ -51,29 +78,27 @@ export class AttentionEventFacts {
 							!["publish-slides", "import-attendance"].includes(task.kind),
 					)
 					.map((task) => task.kind),
-				...AttentionEventFacts.announcements(
-					event.operationalChecklists.communication,
-				),
+				...this.announcements(event.operationalChecklists.communication),
 			],
-			followUpPending: AttentionEventFacts.followUp(event),
+			followUpPending: this.followUp(event),
 		};
 	}
-	private static followUp(event: MeetupEvent): string[] {
+	private followUp(event: MeetupEvent): string[] {
 		return EXPECTED_POST_EVENT_TASK_NAMES.flatMap((name, index) => {
 			const completed =
 				index < 2
-					? CommunicationChecklist.status(
+					? this.collaborators.communicationChecklist.status(
 							event,
 							index === 0 ? "host-thanks" : "speaker-thanks",
 						) === "completed"
-					: EventPublicationEvaluation.checklistTaskIsCompleted(
+					: this.collaborators.eventPublicationEvaluation.checklistTaskIsCompleted(
 							event.operationalChecklists.postEvent,
 							name,
 						);
 			return completed ? [] : [FOLLOW_UP_TASKS[index]];
 		});
 	}
-	private static announcements(
+	private announcements(
 		items: readonly { name: string; completed: boolean }[],
 	): string[] {
 		const tasks = [

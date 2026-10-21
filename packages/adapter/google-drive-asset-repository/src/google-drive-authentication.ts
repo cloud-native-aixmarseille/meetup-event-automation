@@ -1,7 +1,7 @@
 import { auth } from "@googleapis/drive";
 import { GoogleDriveAssetRepositoryError } from "./google-drive-asset-repository-error.js";
 export class GoogleDriveAuthentication {
-	static create(credentialsJson: string) {
+	create(credentialsJson: string) {
 		let credentials: unknown;
 		try {
 			credentials = JSON.parse(credentialsJson);

@@ -14,7 +14,7 @@ describe("Slack reference interpretation", () => {
 			const destination = "C123";
 
 			// Act
-			const reference = SlackMessageReference.read(payload, destination);
+			const reference = new SlackMessageReference().read(payload, destination);
 
 			// Assert
 			expect(reference).toBeUndefined();

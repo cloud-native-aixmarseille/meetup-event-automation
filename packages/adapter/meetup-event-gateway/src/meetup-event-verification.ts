@@ -4,12 +4,29 @@ import type {
 	ScheduledEvent,
 } from "@meetup-automation/publication";
 import type { Page } from "playwright-core";
-import { MeetupCalendar } from "./meetup-calendar.js";
-import { MeetupVenue } from "./meetup-venue.js";
-import { MeetupBrowserRoutes } from "./meetup-browser-routes.js";
+import type { MeetupBrowserRoutes } from "./meetup-browser-routes.js";
+import type {
+	MeetupCalendar,
+	MeetupCalendarArguments,
+} from "./meetup-calendar.js";
+import type { MeetupVenue, MeetupVenueArguments } from "./meetup-venue.js";
+
+export interface MeetupEventVerificationCollaborators {
+	readonly meetupBrowserRoutes: Pick<
+		MeetupBrowserRoutes,
+		"edit" | "matchesEditor"
+	>;
+	readonly createMeetupVenue: (...args: MeetupVenueArguments) => MeetupVenue;
+	readonly createMeetupCalendar: (
+		...args: MeetupCalendarArguments
+	) => MeetupCalendar;
+}
 
 export class MeetupEventVerification {
-	constructor(private readonly page: Page) {}
+	constructor(
+		private readonly collaborators: MeetupEventVerificationCollaborators,
+		private readonly page: Page,
+	) {}
 
 	async verify(
 		event: ScheduledEvent,
@@ -18,9 +35,14 @@ export class MeetupEventVerification {
 		matches: boolean;
 		status: SavedScheduledEvent["status"];
 	}> {
-		const editorUrl = MeetupBrowserRoutes.edit(url);
+		const editorUrl = this.collaborators.meetupBrowserRoutes.edit(url);
 		await this.page.goto(editorUrl, { waitUntil: "domcontentloaded" });
-		if (!MeetupBrowserRoutes.matchesEditor(this.page.url(), editorUrl))
+		if (
+			!this.collaborators.meetupBrowserRoutes.matchesEditor(
+				this.page.url(),
+				editorUrl,
+			)
+		)
 			throw new Error("The saved event editor is unavailable");
 		const status = await this.status();
 		const announcement = this.page.getByTestId("announcement-close-btn");
@@ -34,14 +56,13 @@ export class MeetupEventVerification {
 		// fields and distinguish drafts from organizer-published events.
 		const matches =
 			title === event.title &&
-			MeetupEventVerification.normalize(description) ===
-				MeetupEventVerification.normalize(event.description) &&
-			(await new MeetupVenue(this.page).matches(event.venue)) &&
-			(await new MeetupCalendar(this.page).matches(
-				event.date,
-				event.startTime,
-				event.endTime,
-			));
+			this.normalize(description) === this.normalize(event.description) &&
+			(await this.collaborators
+				.createMeetupVenue(this.page)
+				.matches(event.venue)) &&
+			(await this.collaborators
+				.createMeetupCalendar(this.page)
+				.matches(event.date, event.startTime, event.endTime));
 		return { matches, status };
 	}
 
@@ -60,7 +81,14 @@ export class MeetupEventVerification {
 		return isDraft ? "draft" : "published";
 	}
 
-	private static normalize(value: string): string {
+	private normalize(value: string): string {
 		return value.replace(/\s+/g, " ").trim();
 	}
 }
+export type MeetupEventVerificationArguments =
+	ConstructorParameters<typeof MeetupEventVerification> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

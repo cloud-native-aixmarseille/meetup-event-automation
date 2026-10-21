@@ -1,3 +1,4 @@
+import { LocalizationComposition } from "@meetup-automation/localization";
 import { describe, expect, expectTypeOf, it } from "vitest";
 import { ActionMessages } from "./action-messages.js";
 
@@ -12,7 +13,10 @@ describe("ActionMessages", () => {
 		["not a locale", "en"],
 	])("resolves %s to %s", (requested, expected) => {
 		// Arrange
-		const messages = new ActionMessages(requested);
+		const messages = new ActionMessages(
+			{ localeResolver: new LocalizationComposition().localeResolver() },
+			requested,
+		);
 
 		// Act
 		const locale = messages.locale;
@@ -26,7 +30,10 @@ describe("ActionMessages", () => {
 		[2, "active_events=2"],
 	])("formats the technical event count %i", (count, expected) => {
 		// Arrange
-		const messages = new ActionMessages("fr");
+		const messages = new ActionMessages(
+			{ localeResolver: new LocalizationComposition().localeResolver() },
+			"fr",
+		);
 
 		// Act
 		const text = messages.t("report.events.count", { count: Number(count) });
@@ -36,8 +43,13 @@ describe("ActionMessages", () => {
 	});
 	it("formats numbers without leaking locale between instances", () => {
 		// Arrange
-		const french = new ActionMessages("fr");
-		const english = new ActionMessages();
+		const french = new ActionMessages(
+			{ localeResolver: new LocalizationComposition().localeResolver() },
+			"fr",
+		);
+		const english = new ActionMessages({
+			localeResolver: new LocalizationComposition().localeResolver(),
+		});
 
 		// Act
 		const before = french.t("report.referential.counts", {
@@ -57,7 +69,10 @@ describe("ActionMessages", () => {
 	});
 	it("inserts values literally without treating them as ICU or HTML", () => {
 		// Arrange
-		const messages = new ActionMessages("fr");
+		const messages = new ActionMessages(
+			{ localeResolver: new LocalizationComposition().localeResolver() },
+			"fr",
+		);
 		const reason = "<script>{other, plural, one {x}}</script>";
 
 		// Act
@@ -68,8 +83,13 @@ describe("ActionMessages", () => {
 	});
 	it("translates known diagnostics and preserves already-redacted unknown diagnostics", () => {
 		// Arrange
-		const french = new ActionMessages("fr");
-		const english = new ActionMessages();
+		const french = new ActionMessages(
+			{ localeResolver: new LocalizationComposition().localeResolver() },
+			"fr",
+		);
+		const english = new ActionMessages({
+			localeResolver: new LocalizationComposition().localeResolver(),
+		});
 
 		// Act
 		const translated = french.diagnostic(
@@ -91,7 +111,9 @@ describe("ActionMessages", () => {
 	});
 	it("requires the correct interpolation parameters at compile time", () => {
 		// Arrange
-		const messages = new ActionMessages();
+		const messages = new ActionMessages({
+			localeResolver: new LocalizationComposition().localeResolver(),
+		});
 
 		// Act
 		const count = messages.t<"report.events.count">;
@@ -107,8 +129,13 @@ describe("ActionMessages", () => {
 	});
 	it("localizes classified failures and falls back safely for unknown exceptions", () => {
 		// Arrange
-		const french = new ActionMessages("fr");
-		const english = new ActionMessages();
+		const french = new ActionMessages(
+			{ localeResolver: new LocalizationComposition().localeResolver() },
+			"fr",
+		);
+		const english = new ActionMessages({
+			localeResolver: new LocalizationComposition().localeResolver(),
+		});
 
 		// Act
 		const known = french.error("EventNotFoundError", "Safe English detail.");
@@ -130,7 +157,10 @@ describe("ActionMessages", () => {
 		"referential.speaker.email.invalid",
 	])("translates speaker synchronization PR guidance for %s", (code) => {
 		// Arrange
-		const french = new ActionMessages("fr");
+		const french = new ActionMessages(
+			{ localeResolver: new LocalizationComposition().localeResolver() },
+			"fr",
+		);
 
 		// Act
 		const translated = french.diagnostic(code, "MISSING");

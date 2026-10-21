@@ -2,8 +2,9 @@ import { getOctokit } from "@actions/github";
 import type { EventRepository } from "@meetup-automation/event";
 import { ManageMeetupAssets } from "@meetup-automation/journey";
 import {
-	ReconcileAssetContent,
 	type AssetRepository,
+	PublicationDomainComposition,
+	ReconcileAssetContent,
 } from "@meetup-automation/publication";
 import { describe, expect, it, vi } from "vitest";
 import { SERVICES } from "./composition.js";
@@ -47,15 +48,28 @@ describe("publication-composition", () => {
 			parentFolderId: "parent",
 			templateFolderId: "templates",
 		});
-		container
-			.rebind(ReconcileAssetContent)
-			.toConstantValue(
-				new ReconcileAssetContent(
-					{ load: vi.fn(), save: vi.fn() },
-					{},
-					{ validate: vi.fn(), observe: vi.fn() },
-				),
-			);
+		container.rebind(ReconcileAssetContent).toConstantValue(
+			new ReconcileAssetContent(
+				{
+					contentContractPolicy:
+						new PublicationDomainComposition().contentContractPolicy(),
+					contentRenderPlan:
+						new PublicationDomainComposition().contentRenderPlan(),
+					contentTextKey: new PublicationDomainComposition().contentTextKey(),
+					contentManifestPolicy:
+						new PublicationDomainComposition().contentManifestPolicy(),
+					contentRecoveryFingerprint:
+						new PublicationDomainComposition().contentRecoveryFingerprint(),
+					contentRecoveryPlan:
+						new PublicationDomainComposition().contentRecoveryPlan(),
+					createResolveContentValues: (...args) =>
+						new PublicationDomainComposition().resolveContentValues(...args),
+				},
+				{ load: vi.fn(), save: vi.fn() },
+				{},
+				{ validate: vi.fn(), observe: vi.fn() },
+			),
+		);
 		const assets: AssetRepository = {
 			findContainer: vi.fn(),
 			ensureContainer: vi.fn(),

@@ -4,9 +4,9 @@ import { ContentError } from "@meetup-automation/publication";
 export type DocumentTab = { id: string; content: docs_v1.Schema$DocumentTab };
 
 export class DocumentTabs {
-	static all(document: docs_v1.Schema$Document): readonly DocumentTab[] {
+	all(document: docs_v1.Schema$Document): readonly DocumentTab[] {
 		const result: DocumentTab[] = [];
-		DocumentTabs.visit(document.tabs ?? [], result);
+		this.visit(document.tabs ?? [], result);
 		if (
 			!result.length ||
 			new Set(result.map((tab) => tab.id)).size !== result.length
@@ -15,7 +15,7 @@ export class DocumentTabs {
 		return result;
 	}
 
-	private static visit(
+	private visit(
 		tabs: readonly docs_v1.Schema$Tab[],
 		result: DocumentTab[],
 	): void {
@@ -23,11 +23,11 @@ export class DocumentTabs {
 			if (!tab.tabProperties?.tabId || !tab.documentTab)
 				throw new ContentError("location");
 			result.push({ id: tab.tabProperties.tabId, content: tab.documentTab });
-			DocumentTabs.visit(tab.childTabs ?? [], result);
+			this.visit(tab.childTabs ?? [], result);
 		}
 	}
 
-	static text(tab: DocumentTab, start: number, end: number): string {
+	text(tab: DocumentTab, start: number, end: number): string {
 		let text = "";
 		const elements = (tab.content.body?.content ?? []).flatMap(
 			(structure) => structure.paragraph?.elements ?? [],
@@ -35,7 +35,7 @@ export class DocumentTabs {
 		for (const element of elements) {
 			if ((element.startIndex ?? 0) >= end || (element.endIndex ?? 0) <= start)
 				continue;
-			DocumentTabs.rejectSuggestions(element);
+			this.rejectSuggestions(element);
 			if (!element.textRun?.content) throw new ContentError("location");
 			text += element.textRun.content.slice(
 				Math.max(0, start - (element.startIndex ?? 0)),
@@ -46,27 +46,26 @@ export class DocumentTabs {
 		return text;
 	}
 
-	static rejectSuggestions(value: unknown): void {
+	rejectSuggestions(value: unknown): void {
 		if (!value || typeof value !== "object") return;
 		for (const [key, item] of Object.entries(value)) {
 			if (key.startsWith("suggested") && item && Object.keys(item).length)
 				throw new ContentError("location");
-			DocumentTabs.rejectSuggestions(item);
+			this.rejectSuggestions(item);
 		}
 	}
 
-	static rejectTokens(value: unknown): void {
-		if (DocumentTabs.allText(value).includes("{{"))
-			throw new ContentError("location");
+	rejectTokens(value: unknown): void {
+		if (this.allText(value).includes("{{")) throw new ContentError("location");
 	}
 
-	private static allText(value: unknown): string {
+	private allText(value: unknown): string {
 		if (!value || typeof value !== "object") return "";
 		return Object.entries(value)
 			.map(([key, item]) =>
 				key === "content" && typeof item === "string"
 					? item
-					: DocumentTabs.allText(item),
+					: this.allText(item),
 			)
 			.join("");
 	}

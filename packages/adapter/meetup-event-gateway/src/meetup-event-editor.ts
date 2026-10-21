@@ -6,15 +6,36 @@ import {
 	ScheduledEventError,
 } from "@meetup-automation/publication";
 import type { Page } from "playwright-core";
-import { MeetupCalendar } from "./meetup-calendar.js";
-import { MeetupEventVerification } from "./meetup-event-verification.js";
-import { MeetupVenue } from "./meetup-venue.js";
-import { MeetupBrowserRoutes } from "./meetup-browser-routes.js";
+import type { MeetupBrowserRoutes } from "./meetup-browser-routes.js";
+import type {
+	MeetupCalendar,
+	MeetupCalendarArguments,
+} from "./meetup-calendar.js";
+import type {
+	MeetupEventVerification,
+	MeetupEventVerificationArguments,
+} from "./meetup-event-verification.js";
+import type { MeetupVenue, MeetupVenueArguments } from "./meetup-venue.js";
+
+export interface MeetupEventEditorCollaborators {
+	readonly meetupBrowserRoutes: Pick<
+		MeetupBrowserRoutes,
+		"eventLocation" | "edit" | "schedule" | "matchesEditor"
+	>;
+	readonly createMeetupEventVerification: (
+		...args: MeetupEventVerificationArguments
+	) => MeetupEventVerification;
+	readonly createMeetupCalendar: (
+		...args: MeetupCalendarArguments
+	) => MeetupCalendar;
+	readonly createMeetupVenue: (...args: MeetupVenueArguments) => MeetupVenue;
+}
 
 export class MeetupEventEditor {
 	private readonly group: MeetupGroupUrl;
 
 	constructor(
+		private readonly collaborators: MeetupEventEditorCollaborators,
 		private readonly page: Page,
 		groupUrl: string,
 	) {
@@ -33,7 +54,9 @@ export class MeetupEventEditor {
 	): Promise<SavedScheduledEvent> {
 		const identity = MeetupEventUrl.parse(url, this.group);
 		if (url && !identity) throw new ScheduledEventError("editor");
-		const verification = new MeetupEventVerification(this.page);
+		const verification = this.collaborators.createMeetupEventVerification(
+			this.page,
+		);
 		const existing = identity
 			? await verification.verify(event, identity).catch(() => {
 					throw new ScheduledEventError("editor");
@@ -76,10 +99,13 @@ export class MeetupEventEditor {
 			await submit.click();
 			await this.page.waitForURL(
 				(value) =>
-					MeetupBrowserRoutes.eventLocation(value, this.group) !== undefined,
+					this.collaborators.meetupBrowserRoutes.eventLocation(
+						value,
+						this.group,
+					) !== undefined,
 				{ waitUntil: "domcontentloaded" },
 			);
-			const saved = MeetupBrowserRoutes.eventLocation(
+			const saved = this.collaborators.meetupBrowserRoutes.eventLocation(
 				new URL(this.page.url()),
 				this.group,
 			);
@@ -97,25 +123,37 @@ export class MeetupEventEditor {
 		url: MeetupEventUrl | undefined,
 	): Promise<SavedScheduledEvent["status"]> {
 		const editorUrl = url
-			? MeetupBrowserRoutes.edit(url)
-			: MeetupBrowserRoutes.schedule(this.group);
+			? this.collaborators.meetupBrowserRoutes.edit(url)
+			: this.collaborators.meetupBrowserRoutes.schedule(this.group);
 		await this.page.goto(editorUrl, { waitUntil: "domcontentloaded" });
-		if (!MeetupBrowserRoutes.matchesEditor(this.page.url(), editorUrl))
+		if (
+			!this.collaborators.meetupBrowserRoutes.matchesEditor(
+				this.page.url(),
+				editorUrl,
+			)
+		)
 			throw new Error("The organizer editor is unavailable");
-		const status = await new MeetupEventVerification(this.page).status();
+		const status = await this.collaborators
+			.createMeetupEventVerification(this.page)
+			.status();
 		const announcement = this.page.getByTestId("announcement-close-btn");
 		if (await announcement.isVisible()) await announcement.click();
 		await this.page.getByTestId("event-name-input").fill(event.title);
-		await new MeetupCalendar(this.page).fill(
-			event.date,
-			event.startTime,
-			event.endTime,
-		);
+		await this.collaborators
+			.createMeetupCalendar(this.page)
+			.fill(event.date, event.startTime, event.endTime);
 		await this.page
 			.getByTestId("event-description-editor")
 			.locator('[contenteditable="true"]:visible')
 			.fill(event.description);
-		await new MeetupVenue(this.page).select(event.venue);
+		await this.collaborators.createMeetupVenue(this.page).select(event.venue);
 		return status;
 	}
 }
+export type MeetupEventEditorArguments =
+	ConstructorParameters<typeof MeetupEventEditor> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

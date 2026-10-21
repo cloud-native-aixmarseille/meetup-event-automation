@@ -36,7 +36,7 @@ describe("public email approval details", () => {
 		const mails = [mail];
 
 		// Act
-		const details = CommunicationApprovalDetails.create(event, mails);
+		const details = new CommunicationApprovalDetails().create(event, mails);
 
 		// Assert
 		expect(details).toEqual({
@@ -75,7 +75,7 @@ describe("public email approval details", () => {
 		};
 
 		// Act
-		const details = CommunicationApprovalDetails.create(event, [thanks]);
+		const details = new CommunicationApprovalDetails().create(event, [thanks]);
 
 		// Assert
 		expect(details.emails[0]?.links).toEqual([
@@ -97,7 +97,7 @@ describe("public email approval details", () => {
 		};
 
 		// Act
-		const details = CommunicationApprovalDetails.create(event, [hosting]);
+		const details = new CommunicationApprovalDetails().create(event, [hosting]);
 
 		// Assert
 		expect(details.emails[0]).toEqual({
@@ -127,7 +127,7 @@ describe("public email approval details", () => {
 		);
 
 		// Act
-		const details = CommunicationApprovalDetails.create(event, mails);
+		const details = new CommunicationApprovalDetails().create(event, mails);
 
 		// Assert
 		expect(details.emails.length + details.omittedEmails).toBe(30);

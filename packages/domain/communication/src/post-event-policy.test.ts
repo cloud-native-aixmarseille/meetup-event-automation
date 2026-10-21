@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { CommunicationDomainComposition } from "./dependency-composition.js";
 import { PostEventPolicy } from "./post-event-policy.js";
 
 describe("post-event eligibility", () => {
@@ -18,7 +19,10 @@ describe("post-event eligibility", () => {
 		};
 
 		// Act
-		const due = PostEventPolicy.isDue(input);
+		const due = new PostEventPolicy({
+			communicationCalendar:
+				new CommunicationDomainComposition().communicationCalendar(),
+		}).isDue(input);
 
 		// Assert
 		expect(due).toBe(false);
@@ -33,7 +37,10 @@ describe("post-event eligibility", () => {
 		};
 
 		// Act
-		const due = PostEventPolicy.isDue(input);
+		const due = new PostEventPolicy({
+			communicationCalendar:
+				new CommunicationDomainComposition().communicationCalendar(),
+		}).isDue(input);
 
 		// Assert
 		expect(due).toBe(true);
@@ -52,7 +59,10 @@ describe("post-event eligibility", () => {
 		};
 
 		// Act
-		const due = PostEventPolicy.isDue(input);
+		const due = new PostEventPolicy({
+			communicationCalendar:
+				new CommunicationDomainComposition().communicationCalendar(),
+		}).isDue(input);
 
 		// Assert
 		expect(due).toBe(expected);
@@ -70,10 +80,46 @@ describe("post-event eligibility", () => {
 			};
 
 			// Act
-			const due = PostEventPolicy.isDue(input);
+			const due = new PostEventPolicy({
+				communicationCalendar:
+					new CommunicationDomainComposition().communicationCalendar(),
+			}).isDue(input);
 
 			// Assert
 			expect(due).toBe(false);
 		},
+	);
+});
+
+it("uses the supplied calendar independently for each policy instance", () => {
+	// Arrange
+	const calendar = new CommunicationDomainComposition().communicationCalendar();
+	const unavailableDate = vi.fn().mockReturnValue(undefined);
+	const blocked = new PostEventPolicy({
+		communicationCalendar: {
+			isValidInstant: calendar.isValidInstant.bind(calendar),
+			parseIsoLocalDate: calendar.parseIsoLocalDate.bind(calendar),
+			getLocalDate: unavailableDate,
+			toEpochDay: calendar.toEpochDay.bind(calendar),
+		},
+	});
+	const available = new PostEventPolicy({ communicationCalendar: calendar });
+	const input = {
+		eventDate: "2099-06-08",
+		timeZone: "UTC",
+		occurrenceStatus: "held" as const,
+		now: new Date("2099-06-09T12:00:00Z"),
+	};
+
+	// Act
+	const blockedResult = blocked.isDue(input);
+	const availableResult = available.isDue(input);
+
+	// Assert
+	expect(blockedResult).toBe(false);
+	expect(availableResult).toBe(true);
+	expect(unavailableDate).toHaveBeenCalledExactlyOnceWith(
+		input.now,
+		input.timeZone,
 	);
 });

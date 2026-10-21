@@ -1,4 +1,6 @@
+import { LocalizationComposition } from "@meetup-automation/localization";
 import { describe, expect, it } from "vitest";
+import { GithubActionsComposition } from "./dependency-composition.js";
 import { ActionMessages } from "./i18n/action-messages.js";
 import { ReferentialActionReport } from "./referential-action-report.js";
 
@@ -21,7 +23,10 @@ describe("referential action report facts", () => {
 			];
 
 			// Act
-			const report = ReferentialActionReport.validation(counts, diagnostics);
+			const report = new ReferentialActionReport({
+				createActionMessages: (...args) =>
+					new GithubActionsComposition().actionMessages(...args),
+			}).validation(counts, diagnostics);
 
 			// Assert
 			expect(report.details).toEqual([
@@ -45,7 +50,10 @@ describe("referential action report facts", () => {
 		};
 
 		// Act
-		const report = ReferentialActionReport.issueForm(mode, result);
+		const report = new ReferentialActionReport({
+			createActionMessages: (...args) =>
+				new GithubActionsComposition().actionMessages(...args),
+		}).issueForm(mode, result);
 
 		// Assert
 		expect(report.details).toEqual([
@@ -64,10 +72,16 @@ describe("referential action report facts", () => {
 		};
 
 		// Act
-		const report = ReferentialActionReport.issueForm(
+		const report = new ReferentialActionReport({
+			createActionMessages: (...args) =>
+				new GithubActionsComposition().actionMessages(...args),
+		}).issueForm(
 			"check",
 			result,
-			new ActionMessages(locale),
+			new ActionMessages(
+				{ localeResolver: new LocalizationComposition().localeResolver() },
+				locale,
+			),
 		);
 
 		// Assert
@@ -85,7 +99,10 @@ describe("referential action report facts", () => {
 			const result = { changed: false, changedFiles: [], diagnostics: [] };
 
 			// Act
-			const report = ReferentialActionReport.issueForm(mode, result);
+			const report = new ReferentialActionReport({
+				createActionMessages: (...args) =>
+					new GithubActionsComposition().actionMessages(...args),
+			}).issueForm(mode, result);
 
 			// Assert
 			expect(report.details).toEqual(["issue_form=current"]);
@@ -111,7 +128,10 @@ describe("referential action report facts", () => {
 			};
 
 			// Act
-			const report = ReferentialActionReport.issueForm(mode, result);
+			const report = new ReferentialActionReport({
+				createActionMessages: (...args) =>
+					new GithubActionsComposition().actionMessages(...args),
+			}).issueForm(mode, result);
 
 			// Assert
 			expect(report.details).toEqual([

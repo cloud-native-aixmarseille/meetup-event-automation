@@ -3,13 +3,20 @@ import {
 	type AttentionCondition,
 	type AttentionEpisode,
 	type AttentionState,
-	AttentionStateRules,
+	type AttentionStateRules,
 } from "@meetup-automation/communication";
-import { AttentionRecordFields as Fields } from "./attention-record-fields.js";
+import type { AttentionRecordFields as Fields } from "./attention-record-fields.js";
 export const ATTENTION_MARKER = "<!-- meetup-organizer-attention:v1 ";
 /** Reads and writes one external metadata format; invariants remain domain-owned. */
+export interface AttentionRecordCollaborators {
+	readonly attentionRecordFields: Fields;
+	readonly attentionStateRules: Pick<AttentionStateRules, "validate">;
+}
+
 export class AttentionRecord {
-	static read(body: string): AttentionState {
+	constructor(private readonly collaborators: AttentionRecordCollaborators) {}
+
+	read(body: string): AttentionState {
 		const lines = body
 			.split("\n")
 			.filter((line) => line.startsWith(ATTENTION_MARKER));
@@ -17,40 +24,53 @@ export class AttentionRecord {
 		if (lines.length !== 1 || !line?.endsWith(" -->"))
 			throw new Error("Invalid attention record");
 		const input: unknown = JSON.parse(line.slice(ATTENTION_MARKER.length, -4));
-		return AttentionRecord.decode(input);
+		return this.decode(input);
 	}
-	static marker(state: AttentionState): string {
-		const safe = AttentionRecord.decode({ ...state, version: 1 });
+	marker(state: AttentionState): string {
+		const safe = this.decode({ ...state, version: 1 });
 		return `${ATTENTION_MARKER}${JSON.stringify({ version: 1, ...safe })} -->`;
 	}
-	private static decode(input: unknown): AttentionState {
-		const data = Fields.record(input);
+	private decode(input: unknown): AttentionState {
+		const data = this.collaborators.attentionRecordFields.record(input);
 		if (!Array.isArray(data.episodes) || data.episodes.length > 300)
 			throw new Error("Invalid attention episodes");
-		Fields.choice(data.version, [1]);
+		this.collaborators.attentionRecordFields.choice(data.version, [1]);
 		const state: AttentionState = {
-			eventDate: Fields.text(data.eventDate, /^(?:\d{4}-\d{2}-\d{2})?$/),
-			stopped: Fields.choice(data.stopped, [true, false]),
-			episodes: data.episodes.map(AttentionRecord.episode),
-			post:
-				data.post === undefined ? undefined : AttentionRecord.post(data.post),
+			eventDate: this.collaborators.attentionRecordFields.text(
+				data.eventDate,
+				/^(?:\d{4}-\d{2}-\d{2})?$/,
+			),
+			stopped: this.collaborators.attentionRecordFields.choice(data.stopped, [
+				true,
+				false,
+			]),
+			episodes: data.episodes.map(this.episode.bind(this)),
+			post: data.post === undefined ? undefined : this.post(data.post),
 			runId:
-				data.runId === undefined ? undefined : Fields.text(data.runId, /^\d+$/),
+				data.runId === undefined
+					? undefined
+					: this.collaborators.attentionRecordFields.text(data.runId, /^\d+$/),
 			commentId:
 				data.commentId === undefined
 					? undefined
-					: Fields.integer(data.commentId, true),
+					: this.collaborators.attentionRecordFields.integer(
+							data.commentId,
+							true,
+						),
 		};
-		AttentionStateRules.validate(state);
+		this.collaborators.attentionStateRules.validate(state);
 		return state;
 	}
-	private static episode(input: unknown): AttentionEpisode {
-		const data = Fields.record(input);
+	private episode(input: unknown): AttentionEpisode {
+		const data = this.collaborators.attentionRecordFields.record(input);
 		return {
-			condition: AttentionRecord.condition(data.condition),
-			episode: Fields.integer(data.episode, true),
-			openedAt: Fields.instant(data.openedAt),
-			status: Fields.choice(data.status, [
+			condition: this.condition(data.condition),
+			episode: this.collaborators.attentionRecordFields.integer(
+				data.episode,
+				true,
+			),
+			openedAt: this.collaborators.attentionRecordFields.instant(data.openedAt),
+			status: this.collaborators.attentionRecordFields.choice(data.status, [
 				"active",
 				"unknown",
 				"resolved",
@@ -59,18 +79,24 @@ export class AttentionRecord {
 			lastWindow:
 				data.lastWindow === undefined
 					? undefined
-					: Fields.text(
+					: this.collaborators.attentionRecordFields.text(
 							data.lastWindow,
 							/^(?:day|week|preparation|occurrence|follow-up):-?\d+$/,
 						),
 		};
 	}
-	private static condition(input: unknown): AttentionCondition {
-		const data = Fields.record(input);
+	private condition(input: unknown): AttentionCondition {
+		const data = this.collaborators.attentionRecordFields.record(input);
 		return {
-			key: Fields.text(data.key, /^[a-z0-9:-]{1,180}$/),
-			code: Fields.choice(data.code, ATTENTION_CODES),
-			owner: Fields.choice(data.owner, [
+			key: this.collaborators.attentionRecordFields.text(
+				data.key,
+				/^[a-z0-9:-]{1,180}$/,
+			),
+			code: this.collaborators.attentionRecordFields.choice(
+				data.code,
+				ATTENTION_CODES,
+			),
+			owner: this.collaborators.attentionRecordFields.choice(data.owner, [
 				"event",
 				"assets",
 				"feedback",
@@ -78,9 +104,15 @@ export class AttentionRecord {
 				"approvals",
 				"delivery",
 			]),
-			resource: Fields.text(data.resource, /^[a-z0-9:-]{1,128}$/),
-			severity: Fields.choice(data.severity, ["warning", "error"]),
-			policy: Fields.choice(data.policy, [
+			resource: this.collaborators.attentionRecordFields.text(
+				data.resource,
+				/^[a-z0-9:-]{1,128}$/,
+			),
+			severity: this.collaborators.attentionRecordFields.choice(data.severity, [
+				"warning",
+				"error",
+			]),
+			policy: this.collaborators.attentionRecordFields.choice(data.policy, [
 				"preparation",
 				"daily",
 				"weekly",
@@ -89,43 +121,69 @@ export class AttentionRecord {
 				"follow-up",
 				"none",
 			]),
-			since: data.since === undefined ? undefined : Fields.instant(data.since),
+			since:
+				data.since === undefined
+					? undefined
+					: this.collaborators.attentionRecordFields.instant(data.since),
 			commentId:
 				data.commentId === undefined
 					? undefined
-					: Fields.integer(data.commentId, true),
+					: this.collaborators.attentionRecordFields.integer(
+							data.commentId,
+							true,
+						),
 			recovery:
 				data.recovery === undefined
 					? undefined
-					: Fields.choice(data.recovery, [true]),
+					: this.collaborators.attentionRecordFields.choice(data.recovery, [
+							true,
+						]),
 		};
 	}
-	private static post(input: unknown): NonNullable<AttentionState["post"]> {
-		const data = Fields.record(input);
+	private post(input: unknown): NonNullable<AttentionState["post"]> {
+		const data = this.collaborators.attentionRecordFields.record(input);
 		return {
-			reservationId: Fields.text(data.reservationId, /^attention:\d+:\d+$/),
-			day: Fields.integer(data.day),
-			reservedAt: Fields.instant(data.reservedAt),
-			status: Fields.choice(data.status, ["pending", "accepted", "retry"]),
+			reservationId: this.collaborators.attentionRecordFields.text(
+				data.reservationId,
+				/^attention:\d+:\d+$/,
+			),
+			day: this.collaborators.attentionRecordFields.integer(data.day),
+			reservedAt: this.collaborators.attentionRecordFields.instant(
+				data.reservedAt,
+			),
+			status: this.collaborators.attentionRecordFields.choice(data.status, [
+				"pending",
+				"accepted",
+				"retry",
+			]),
 			retryAt:
-				data.retryAt === undefined ? undefined : Fields.instant(data.retryAt),
+				data.retryAt === undefined
+					? undefined
+					: this.collaborators.attentionRecordFields.instant(data.retryAt),
 			fingerprint:
 				data.fingerprint === undefined
 					? undefined
-					: Fields.text(data.fingerprint, /^[a-f0-9]{64}$/),
+					: this.collaborators.attentionRecordFields.text(
+							data.fingerprint,
+							/^[a-f0-9]{64}$/,
+						),
 			message:
-				data.message === undefined
-					? undefined
-					: AttentionRecord.message(data.message),
+				data.message === undefined ? undefined : this.message(data.message),
 		};
 	}
-	private static message(
+	private message(
 		input: unknown,
 	): NonNullable<NonNullable<AttentionState["post"]>["message"]> {
-		const data = Fields.record(input);
+		const data = this.collaborators.attentionRecordFields.record(input);
 		return {
-			destination: Fields.text(data.destination, /^[a-zA-Z0-9._:-]{1,128}$/),
-			messageId: Fields.text(data.messageId, /^[a-zA-Z0-9._:-]{1,128}$/),
+			destination: this.collaborators.attentionRecordFields.text(
+				data.destination,
+				/^[a-zA-Z0-9._:-]{1,128}$/,
+			),
+			messageId: this.collaborators.attentionRecordFields.text(
+				data.messageId,
+				/^[a-zA-Z0-9._:-]{1,128}$/,
+			),
 		};
 	}
 }

@@ -32,8 +32,8 @@ describe("diagnostic policy", () => {
 		const diagnostic = { code, severity: "error" as const };
 
 		// Act
-		const category = DiagnosticPolicy.classify(diagnostic);
-		const failed = DiagnosticPolicy.isTechnicalFailure(diagnostic);
+		const category = new DiagnosticPolicy().classify(diagnostic);
+		const failed = new DiagnosticPolicy().isTechnicalFailure(diagnostic);
 
 		// Assert
 		expect(category).toBe("organizer");
@@ -65,8 +65,8 @@ describe("diagnostic policy", () => {
 		const diagnostic = { code, severity: "error" as const };
 
 		// Act
-		const category = DiagnosticPolicy.classify(diagnostic);
-		const failed = DiagnosticPolicy.isTechnicalFailure(diagnostic);
+		const category = new DiagnosticPolicy().classify(diagnostic);
+		const failed = new DiagnosticPolicy().isTechnicalFailure(diagnostic);
 
 		// Assert
 		expect(category).toBe("technical");
@@ -84,7 +84,7 @@ describe("diagnostic policy", () => {
 		const diagnostic = { code, severity: "warning" as const };
 
 		// Act
-		const failed = DiagnosticPolicy.isTechnicalFailure(diagnostic);
+		const failed = new DiagnosticPolicy().isTechnicalFailure(diagnostic);
 
 		// Assert
 		expect(failed).toBe(true);
@@ -103,8 +103,8 @@ describe("diagnostic policy", () => {
 			const input = diagnostic;
 
 			// Act
-			const category = DiagnosticPolicy.classify(input);
-			const failed = DiagnosticPolicy.isTechnicalFailure(input);
+			const category = new DiagnosticPolicy().classify(input);
+			const failed = new DiagnosticPolicy().isTechnicalFailure(input);
 
 			// Assert
 			expect(category).toBe("informational");

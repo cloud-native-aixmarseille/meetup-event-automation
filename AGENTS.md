@@ -45,8 +45,12 @@ conventions in `docs/development/testing.md` for exceptions and stateful
 sequences.
 
 Production behavior must be owned by focused classes throughout
-`packages/**/src`. Use constructor injection for stateful or I/O collaborators;
-static methods are allowed for stateless operations and composition. Do not add
+`packages/**/src`. Use required constructor injection for every collaborator, including stateless
+policies, parsers, codecs, and presenters. Do not use static service methods,
+module singletons, fallback concrete collaborators, or inline construction to hide dependencies.
+Use narrow structural contracts and inject typed factories when creation requires
+operation-specific inputs. Follow the narrow value-factory and composition
+exceptions in [constructor injection](docs/development/architecture.md#constructor-injection). Do not add
 module-level functions or callbacks. Keep package `src/index.ts` files limited
 to imports and reexports. Respect the enforced limits: one class per file, 300
 nonblank lines per file, 60 nonblank lines per method/function, and cognitive
@@ -75,7 +79,7 @@ new script consumers need reviewed data-flow checks rather than a blanket bypass
 
 Every public GitHub Action must follow the Action reporting contract in
 [the action reporting guide](docs/development/reporting.md): use
-`await ActionRunner.run` with its action title message ID and the explicit
+`await runner.run` on the composed `ActionRunner` instance with its action title message ID and the explicit
 diagnostic-output flag matching its manifest, and return
 `ActionReportData` on every normal path, including skips. The shared
 runner/reporter owns diagnostic outputs, technical logs, escaped job summaries,

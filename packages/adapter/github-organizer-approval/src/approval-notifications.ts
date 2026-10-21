@@ -75,3 +75,6 @@ export class ApprovalNotifications {
 		}
 	}
 }
+export type ApprovalNotificationsArguments = ConstructorParameters<
+	typeof ApprovalNotifications
+>;

@@ -1,20 +1,33 @@
 import type { MeetupEvent } from "@meetup-automation/event";
-import {
-	type AssetRenderAssignments,
-	type AssetRenderPresenter,
-	type PublicAssetModel,
+import type {
+	AssetRenderAssignments,
+	AssetRenderPresenter,
+	PublicAssetModel,
 	PublicAssetUrl,
 } from "@meetup-automation/publication";
-import {
-	type ReferentialRepository,
+import type {
+	ReferentialRepository,
 	ValidateReferentialCatalog,
+	ValidateReferentialCatalogArguments,
 } from "@meetup-automation/referential";
 import type { PublicDiagnostic } from "../result/result-envelope.js";
-import { AssetParticipantProjection } from "./asset-participant-projection.js";
+import type { AssetParticipantProjection } from "./asset-participant-projection.js";
 import type { FindNextAssetEvent } from "./find-next-asset-event.js";
+
+export interface AssetRenderProjectionCollaborators {
+	readonly assetParticipantProjection: Pick<
+		AssetParticipantProjection,
+		"create"
+	>;
+	readonly publicAssetUrl: Pick<PublicAssetUrl, "valid">;
+	readonly createValidateReferentialCatalog: (
+		...args: ValidateReferentialCatalogArguments
+	) => ValidateReferentialCatalog;
+}
 
 export class AssetRenderProjection {
 	constructor(
+		private readonly collaborators: AssetRenderProjectionCollaborators,
 		private readonly presenter: AssetRenderPresenter,
 		private readonly repository: ReferentialRepository,
 		private readonly assignments: AssetRenderAssignments = {
@@ -29,9 +42,9 @@ export class AssetRenderProjection {
 		event: MeetupEvent,
 		diagnostics: readonly PublicDiagnostic[],
 	): Promise<PublicAssetModel> {
-		const catalog = await new ValidateReferentialCatalog(
-			this.repository,
-		).execute();
+		const catalog = await this.collaborators
+			.createValidateReferentialCatalog(this.repository)
+			.execute();
 		const agendaValid =
 			catalog.isValid &&
 			event.proposalStatus !== "stale" &&
@@ -41,7 +54,7 @@ export class AssetRenderProjection {
 					/agenda|referential|proposals/.test(`${item.code} ${item.field}`),
 			);
 		const participants = agendaValid
-			? AssetParticipantProjection.create(
+			? this.collaborators.assetParticipantProjection.create(
 					event,
 					catalog.catalog,
 					this.assignments,
@@ -67,7 +80,8 @@ export class AssetRenderProjection {
 			feedbackUrl:
 				!diagnostics.some(
 					(item) => item.severity === "error" && /feedback/.test(item.code),
-				) && PublicAssetUrl.valid(event.publicationLinks.feedback)
+				) &&
+				this.collaborators.publicAssetUrl.valid(event.publicationLinks.feedback)
 					? event.publicationLinks.feedback
 					: undefined,
 			agenda: agendaValid
@@ -86,8 +100,15 @@ export class AssetRenderProjection {
 	private hostLogo(hostId?: string): PublicAssetModel["hostLogo"] {
 		if (!hostId) return undefined;
 		const logo = this.assignments.hostLogos?.[hostId];
-		return logo && PublicAssetUrl.valid(logo.url)
+		return logo && this.collaborators.publicAssetUrl.valid(logo.url)
 			? { ...logo, hostId }
 			: undefined;
 	}
 }
+export type AssetRenderProjectionArguments =
+	ConstructorParameters<typeof AssetRenderProjection> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

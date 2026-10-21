@@ -1,6 +1,6 @@
-import {
+import type {
 	ConferenceHallInput,
-	type ConferenceHallSettings,
+	ConferenceHallSettings,
 } from "./conference-hall-input.js";
 export interface RunCommunicationReconcileInput extends ConferenceHallSettings {
 	readonly locale: string;
@@ -21,9 +21,17 @@ export interface RunCommunicationReconcileInput extends ConferenceHallSettings {
 }
 
 /** Validates invocation data before credentials are used by composition. */
+export interface CommunicationInputCollaborators {
+	readonly conferenceHallInput: Pick<ConferenceHallInput, "validate">;
+}
+
 export class CommunicationInput {
-	static validate(input: RunCommunicationReconcileInput): void {
-		ConferenceHallInput.validate(input);
+	constructor(
+		private readonly collaborators: CommunicationInputCollaborators,
+	) {}
+
+	validate(input: RunCommunicationReconcileInput): void {
+		this.collaborators.conferenceHallInput.validate(input);
 		for (const field of [
 			"locale",
 			"githubToken",
@@ -39,8 +47,8 @@ export class CommunicationInput {
 			throw new Error("issueNumber must be a positive integer");
 		}
 		if (
-			!CommunicationInput.isRepositoryPart(input.owner) ||
-			!CommunicationInput.isRepositoryPart(input.repo)
+			!this.isRepositoryPart(input.owner) ||
+			!this.isRepositoryPart(input.repo)
 		) {
 			throw new Error(
 				"owner and repo must be valid GitHub repository segments",
@@ -54,7 +62,7 @@ export class CommunicationInput {
 		}
 	}
 
-	static isRepositoryPart(value: string): boolean {
+	isRepositoryPart(value: string): boolean {
 		return /^[A-Za-z0-9_.-]+$/.test(value);
 	}
 }

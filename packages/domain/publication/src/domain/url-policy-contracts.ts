@@ -1,5 +1,5 @@
-import type { PublicationEvaluation, PublicationReferences } from "./model.js";
 import { MEETUP_ORIGIN } from "./meetup-url-contracts.js";
+import type { PublicationEvaluation, PublicationReferences } from "./model.js";
 
 export type PublicationUrlConfiguration = Readonly<{
 	meetupEventUrlPrefix: string;

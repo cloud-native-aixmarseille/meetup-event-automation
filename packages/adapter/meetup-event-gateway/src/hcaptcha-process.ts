@@ -1,8 +1,4 @@
-import {
-	type ChildProcess,
-	spawn,
-	type SpawnOptions,
-} from "node:child_process";
+import type { ChildProcess, SpawnOptions } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -20,10 +16,6 @@ export class HcaptchaProcess {
 			options: SpawnOptions,
 		) => ChildProcess,
 	) {}
-
-	static create(directory: string): HcaptchaProcess {
-		return new HcaptchaProcess(directory, spawn);
-	}
 
 	async run(
 		endpoint: string,
@@ -108,3 +100,6 @@ export class HcaptchaProcess {
 		}
 	}
 }
+export type HcaptchaProcessArguments = ConstructorParameters<
+	typeof HcaptchaProcess
+>;

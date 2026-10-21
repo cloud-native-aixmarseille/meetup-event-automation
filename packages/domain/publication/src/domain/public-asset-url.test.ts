@@ -18,7 +18,7 @@ describe("PublicAssetUrl", () => {
 			const value = input;
 
 			// Act
-			const valid = PublicAssetUrl.valid(value);
+			const valid = new PublicAssetUrl().valid(value);
 
 			// Assert
 			expect(valid).toBe(expected);

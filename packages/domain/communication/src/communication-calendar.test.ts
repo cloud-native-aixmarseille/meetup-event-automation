@@ -14,7 +14,10 @@ describe("communication civil dates", () => {
 			const now = new Date(timestamp);
 
 			// Act
-			const date = CommunicationCalendar.getLocalDate(now, "Europe/Paris");
+			const date = new CommunicationCalendar().getLocalDate(
+				now,
+				"Europe/Paris",
+			);
 
 			// Assert
 			expect(date).toEqual(expected);
@@ -28,7 +31,7 @@ describe("communication civil dates", () => {
 			const input = value;
 
 			// Act
-			const date = CommunicationCalendar.parseIsoLocalDate(input);
+			const date = new CommunicationCalendar().parseIsoLocalDate(input);
 
 			// Assert
 			expect(date).toBeUndefined();

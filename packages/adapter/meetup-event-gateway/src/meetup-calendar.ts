@@ -81,3 +81,6 @@ export class MeetupCalendar {
 		}
 	}
 }
+export type MeetupCalendarArguments = ConstructorParameters<
+	typeof MeetupCalendar
+>;

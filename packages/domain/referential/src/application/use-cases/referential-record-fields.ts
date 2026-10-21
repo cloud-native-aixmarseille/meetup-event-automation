@@ -1,29 +1,54 @@
-import { ReferentialCatalogOperations } from "../../domain/referential-catalog.js";
-import {
-	type ReferentialDiagnostic,
+import type { ReferentialCatalogOperations } from "../../domain/referential-catalog.js";
+import type {
+	ReferentialDiagnostic,
 	ReferentialDiagnostics,
 } from "../../domain/referential-diagnostic.js";
 import { EMAIL_PATTERN } from "./validate-referential-catalog-contracts.js";
 
+export interface ReferentialRecordFieldsCollaborators {
+	readonly referentialDiagnostics: Pick<ReferentialDiagnostics, "diagnostic">;
+	readonly referentialCatalogOperations: Pick<
+		ReferentialCatalogOperations,
+		"normalizeDisplayName"
+	>;
+}
+
 export class ReferentialRecordFields {
-	static requiredText(
+	constructor(
+		private readonly collaborators: ReferentialRecordFieldsCollaborators,
+	) {}
+
+	requiredText(
 		value: unknown,
-		code: Parameters<typeof ReferentialDiagnostics.diagnostic>[0],
+		code: Parameters<ReferentialDiagnostics["diagnostic"]>[0],
 		path: string,
 		message: string,
 		diagnostics: ReferentialDiagnostic[],
 	): string | undefined {
 		if (typeof value !== "string") {
 			diagnostics.push(
-				ReferentialDiagnostics.diagnostic(code, "error", path, message),
+				this.collaborators.referentialDiagnostics.diagnostic(
+					code,
+					"error",
+					path,
+					message,
+				),
 			);
 			return undefined;
 		}
 
-		const normalized = ReferentialCatalogOperations.normalizeDisplayName(value);
+		const normalized =
+			this.collaborators.referentialCatalogOperations.normalizeDisplayName(
+				value,
+			);
 		if (!normalized) {
 			diagnostics.push(
-				ReferentialDiagnostics.diagnostic(code, "error", path, message),
+				this.collaborators.referentialDiagnostics.diagnostic(
+					code,
+					"error",
+					path,
+					message,
+				),
 			);
 			return undefined;
 		}
@@ -31,9 +56,9 @@ export class ReferentialRecordFields {
 		return normalized;
 	}
 
-	static optionalText(
+	optionalText(
 		value: unknown,
-		code: Parameters<typeof ReferentialDiagnostics.diagnostic>[0],
+		code: Parameters<ReferentialDiagnostics["diagnostic"]>[0],
 		path: string,
 		message: string,
 		diagnostics: ReferentialDiagnostic[],
@@ -43,7 +68,12 @@ export class ReferentialRecordFields {
 		}
 		if (typeof value !== "string") {
 			diagnostics.push(
-				ReferentialDiagnostics.diagnostic(code, "error", path, message),
+				this.collaborators.referentialDiagnostics.diagnostic(
+					code,
+					"error",
+					path,
+					message,
+				),
 			);
 			return null;
 		}
@@ -51,16 +81,21 @@ export class ReferentialRecordFields {
 		return value.normalize("NFC").trim() || undefined;
 	}
 
-	static email(
+	email(
 		value: unknown,
-		code: Parameters<typeof ReferentialDiagnostics.diagnostic>[0],
+		code: Parameters<ReferentialDiagnostics["diagnostic"]>[0],
 		path: string,
 		message: string,
 		diagnostics: ReferentialDiagnostic[],
 	): string | undefined {
 		if (typeof value !== "string") {
 			diagnostics.push(
-				ReferentialDiagnostics.diagnostic(code, "error", path, message),
+				this.collaborators.referentialDiagnostics.diagnostic(
+					code,
+					"error",
+					path,
+					message,
+				),
 			);
 			return undefined;
 		}
@@ -68,7 +103,12 @@ export class ReferentialRecordFields {
 		const normalized = value.normalize("NFC").trim().toLowerCase();
 		if (!EMAIL_PATTERN.test(normalized)) {
 			diagnostics.push(
-				ReferentialDiagnostics.diagnostic(code, "error", path, message),
+				this.collaborators.referentialDiagnostics.diagnostic(
+					code,
+					"error",
+					path,
+					message,
+				),
 			);
 			return undefined;
 		}

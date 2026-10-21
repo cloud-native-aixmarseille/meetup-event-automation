@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { PublicationDomainComposition } from "../dependency-composition.js";
 import { MeetupEventUrlPolicy } from "./meetup-event-url-policy.js";
 
 describe("Meetup publication link evaluation", () => {
@@ -11,6 +12,10 @@ describe("Meetup publication link evaluation", () => {
 	])("reports invalid identities without proposing a patch: %s", (url) => {
 		// Arrange
 		const policy = new MeetupEventUrlPolicy(
+			{
+				publicationLinkEvaluation:
+					new PublicationDomainComposition().publicationLinkEvaluation(),
+			},
 			"https://www.meetup.com/example-group/events/",
 		);
 
@@ -27,7 +32,13 @@ describe("Meetup publication link evaluation", () => {
 	it("rejects a link when its configured prefix is not a Meetup group", () => {
 		// Arrange
 		const prefix = "https://untrusted.example/example-group/events/";
-		const policy = new MeetupEventUrlPolicy(prefix);
+		const policy = new MeetupEventUrlPolicy(
+			{
+				publicationLinkEvaluation:
+					new PublicationDomainComposition().publicationLinkEvaluation(),
+			},
+			prefix,
+		);
 
 		// Act
 		const result = policy.evaluate({ meetup: `${prefix}123/` });

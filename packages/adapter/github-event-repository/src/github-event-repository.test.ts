@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { GithubEventRepositoryComposition } from "./dependency-composition.js";
 import { GitHubEventRepository } from "./github-event-repository.js";
 import { GitHubEventRepositoryConfigurationError } from "./github-event-repository-configuration-error.js";
 import type { GitHubEventRepositoryClient } from "./github-event-repository-contracts.js";
@@ -35,10 +36,17 @@ function client() {
 }
 
 function adapter(github: GitHubEventRepositoryClient) {
-	return new GitHubEventRepository(github, {
-		owner: "cloud-native-aixmarseille",
-		repo: "meetups",
-	});
+	return new GitHubEventRepository(
+		{
+			gitHubIssueDocumentCodec:
+				new GithubEventRepositoryComposition().gitHubIssueDocumentCodec(),
+		},
+		github,
+		{
+			owner: "cloud-native-aixmarseille",
+			repo: "meetups",
+		},
+	);
 }
 
 describe("GitHubEventRepository.find", () => {
@@ -371,10 +379,17 @@ describe("GitHubEventRepository.listPage", () => {
 
 		// Act
 		const act = () =>
-			new GitHubEventRepository(github.value, {
-				owner: "cloud-native-aixmarseille/team",
-				repo: "meetups",
-			});
+			new GitHubEventRepository(
+				{
+					gitHubIssueDocumentCodec:
+						new GithubEventRepositoryComposition().gitHubIssueDocumentCodec(),
+				},
+				github.value,
+				{
+					owner: "cloud-native-aixmarseille/team",
+					repo: "meetups",
+				},
+			);
 
 		// Assert
 		expect(act).toThrow(GitHubEventRepositoryConfigurationError);

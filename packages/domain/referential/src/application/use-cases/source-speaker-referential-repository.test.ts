@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { ReferentialDomainComposition } from "../../dependency-composition.js";
 import { ProposalSourceError } from "../../domain/proposal-source-error.js";
 import type { RawReferentialCatalog } from "../../domain/referential-catalog.js";
 import type { ProposalSnapshot } from "../ports/proposal-source.js";
@@ -105,7 +106,21 @@ describe("source-first speaker referentials", () => {
 				source,
 				scope,
 			);
-			const validate = new ValidateReferentialCatalog(repository);
+			const validate = new ValidateReferentialCatalog(
+				{
+					referentialDiagnostics:
+						new ReferentialDomainComposition().referentialDiagnostics(),
+					hostCatalogValidator:
+						new ReferentialDomainComposition().hostCatalogValidator(),
+					speakerCatalogValidator:
+						new ReferentialDomainComposition().speakerCatalogValidator(),
+					speakerSourceFields:
+						new ReferentialDomainComposition().speakerSourceFields(),
+					referentialCatalogOperations:
+						new ReferentialDomainComposition().referentialCatalogOperations(),
+				},
+				repository,
+			);
 
 			// Act
 			const result = await validate.execute();
@@ -130,7 +145,21 @@ describe("source-first speaker referentials", () => {
 		);
 
 		// Act
-		const result = await new ValidateReferentialCatalog(repository).execute();
+		const result = await new ValidateReferentialCatalog(
+			{
+				referentialDiagnostics:
+					new ReferentialDomainComposition().referentialDiagnostics(),
+				hostCatalogValidator:
+					new ReferentialDomainComposition().hostCatalogValidator(),
+				speakerCatalogValidator:
+					new ReferentialDomainComposition().speakerCatalogValidator(),
+				speakerSourceFields:
+					new ReferentialDomainComposition().speakerSourceFields(),
+				referentialCatalogOperations:
+					new ReferentialDomainComposition().referentialCatalogOperations(),
+			},
+			repository,
+		).execute();
 
 		// Assert
 		expect(result).toMatchObject({
@@ -204,7 +233,21 @@ describe("source-first speaker referentials", () => {
 			);
 
 			// Act
-			const result = await new ValidateReferentialCatalog(repository).execute();
+			const result = await new ValidateReferentialCatalog(
+				{
+					referentialDiagnostics:
+						new ReferentialDomainComposition().referentialDiagnostics(),
+					hostCatalogValidator:
+						new ReferentialDomainComposition().hostCatalogValidator(),
+					speakerCatalogValidator:
+						new ReferentialDomainComposition().speakerCatalogValidator(),
+					speakerSourceFields:
+						new ReferentialDomainComposition().speakerSourceFields(),
+					referentialCatalogOperations:
+						new ReferentialDomainComposition().referentialCatalogOperations(),
+				},
+				repository,
+			).execute();
 
 			// Assert
 			expect(result.isValid).toBe(false);
@@ -223,7 +266,21 @@ describe("source-first speaker referentials", () => {
 		);
 
 		// Act
-		const result = await new ValidateReferentialCatalog(repository).execute();
+		const result = await new ValidateReferentialCatalog(
+			{
+				referentialDiagnostics:
+					new ReferentialDomainComposition().referentialDiagnostics(),
+				hostCatalogValidator:
+					new ReferentialDomainComposition().hostCatalogValidator(),
+				speakerCatalogValidator:
+					new ReferentialDomainComposition().speakerCatalogValidator(),
+				speakerSourceFields:
+					new ReferentialDomainComposition().speakerSourceFields(),
+				referentialCatalogOperations:
+					new ReferentialDomainComposition().referentialCatalogOperations(),
+			},
+			repository,
+		).execute();
 
 		// Assert
 		expect(result).toMatchObject({

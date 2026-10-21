@@ -35,3 +35,6 @@ export class ResolveApprovalDecision {
 			: { status: "pending" };
 	}
 }
+export type ResolveApprovalDecisionArguments = ConstructorParameters<
+	typeof ResolveApprovalDecision
+>;

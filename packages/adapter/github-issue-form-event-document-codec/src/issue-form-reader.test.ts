@@ -1,4 +1,6 @@
 import type { EventDocument } from "@meetup-automation/event";
+import { EventDomainComposition } from "@meetup-automation/event";
+import { GithubIssueFormEventDocumentCodecComposition } from "./dependency-composition.js";
 import { IssueFormReader } from "./issue-form-reader.js";
 
 const document: EventDocument = {
@@ -35,7 +37,25 @@ describe("IssueFormReader", () => {
 			};
 
 			// Act
-			const result = new IssueFormReader().decode(source);
+			const result = new IssueFormReader({
+				issueFormSections:
+					new GithubIssueFormEventDocumentCodecComposition().issueFormSections(),
+				managedIssueMarkers:
+					new GithubIssueFormEventDocumentCodecComposition().managedIssueMarkers(),
+				issueFormEventMapper:
+					new GithubIssueFormEventDocumentCodecComposition().issueFormEventMapper(),
+				proposalSelectionCodec:
+					new GithubIssueFormEventDocumentCodecComposition().proposalSelectionCodec(),
+				issueFormChecklists:
+					new GithubIssueFormEventDocumentCodecComposition().issueFormChecklists(),
+				meetupEventOperations:
+					new EventDomainComposition().meetupEventOperations(),
+				eventReferenceMetadata:
+					new GithubIssueFormEventDocumentCodecComposition().eventReferenceMetadata(),
+				eventDiagnostics: new EventDomainComposition().eventDiagnostics(),
+				participantLinks:
+					new GithubIssueFormEventDocumentCodecComposition().participantLinks(),
+			}).decode(source);
 
 			// Assert
 			expect(result.event.agenda).toEqual([]);
@@ -50,7 +70,25 @@ describe("IssueFormReader", () => {
 
 	it("requires an agenda heading when no proposal section exists", () => {
 		// Arrange
-		const reader = new IssueFormReader();
+		const reader = new IssueFormReader({
+			issueFormSections:
+				new GithubIssueFormEventDocumentCodecComposition().issueFormSections(),
+			managedIssueMarkers:
+				new GithubIssueFormEventDocumentCodecComposition().managedIssueMarkers(),
+			issueFormEventMapper:
+				new GithubIssueFormEventDocumentCodecComposition().issueFormEventMapper(),
+			proposalSelectionCodec:
+				new GithubIssueFormEventDocumentCodecComposition().proposalSelectionCodec(),
+			issueFormChecklists:
+				new GithubIssueFormEventDocumentCodecComposition().issueFormChecklists(),
+			meetupEventOperations:
+				new EventDomainComposition().meetupEventOperations(),
+			eventReferenceMetadata:
+				new GithubIssueFormEventDocumentCodecComposition().eventReferenceMetadata(),
+			eventDiagnostics: new EventDomainComposition().eventDiagnostics(),
+			participantLinks:
+				new GithubIssueFormEventDocumentCodecComposition().participantLinks(),
+		});
 
 		// Act
 		const result = reader.decode(document);
@@ -75,7 +113,25 @@ describe("IssueFormReader", () => {
 			};
 
 			// Act
-			const result = new IssueFormReader().decode(source);
+			const result = new IssueFormReader({
+				issueFormSections:
+					new GithubIssueFormEventDocumentCodecComposition().issueFormSections(),
+				managedIssueMarkers:
+					new GithubIssueFormEventDocumentCodecComposition().managedIssueMarkers(),
+				issueFormEventMapper:
+					new GithubIssueFormEventDocumentCodecComposition().issueFormEventMapper(),
+				proposalSelectionCodec:
+					new GithubIssueFormEventDocumentCodecComposition().proposalSelectionCodec(),
+				issueFormChecklists:
+					new GithubIssueFormEventDocumentCodecComposition().issueFormChecklists(),
+				meetupEventOperations:
+					new EventDomainComposition().meetupEventOperations(),
+				eventReferenceMetadata:
+					new GithubIssueFormEventDocumentCodecComposition().eventReferenceMetadata(),
+				eventDiagnostics: new EventDomainComposition().eventDiagnostics(),
+				participantLinks:
+					new GithubIssueFormEventDocumentCodecComposition().participantLinks(),
+			}).decode(source);
 
 			// Assert
 			expect(result.diagnostics).toContainEqual(

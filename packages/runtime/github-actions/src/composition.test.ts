@@ -8,7 +8,7 @@ import type {
 	EventRepository,
 } from "@meetup-automation/event";
 import {
-	AutomationConfigFactory,
+	JourneyPolicyComposition,
 	ManageMeetupEvent,
 	ValidateMeetupReferentials,
 } from "@meetup-automation/journey";
@@ -195,7 +195,9 @@ An evening about reliable platforms.
 			workspaceRoot,
 			repositoryRef: options.repositoryRef,
 			config: {
-				...AutomationConfigFactory.createAutomationConfig("example"),
+				...new JourneyPolicyComposition()
+					.automationConfigFactory()
+					.createAutomationConfig("example"),
 				referentials: { hosts: "venues.csv", speakers: "presenters.csv" },
 			},
 		});

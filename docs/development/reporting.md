@@ -20,8 +20,9 @@ These rules are mandatory for implementations, refactors, and reviews:
 
 ## Technical action reports
 
-Register each bootstrap with
-`await ActionRunner.run("action.<group>.<action>", operation, diagnosticsOutput)`.
+Compose the shared `ActionRunner` instance and the action handler at the
+bootstrap, then call
+`await runner.run("action.<group>.<action>", action.run.bind(action), diagnosticsOutput)`.
 The required boolean must match a consumed `diagnostics` output in the manifest.
 Return `ActionReportData` on every normal path, including skipped or blocked work.
 
@@ -43,7 +44,7 @@ Return `ActionReportData` on every normal path, including skipped or blocked wor
   Unknown warning/error codes fail closed. Fixed diagnostics and informational
   results do not fail. Keep explicit `report.failure` only for technical failures
   without a diagnostic, such as unavailable notification evidence.
-- Exceptions are redacted by `ActionFailurePresenter.publicErrorMessage`. Missing locale
+- Exceptions are redacted by the injected `ActionFailurePresenter`. Missing locale
   fails before execution and uses English. A summary-write failure emits a safe
   warning and preserves the original result.
 

@@ -1,5 +1,7 @@
+import { LocalizationComposition } from "@meetup-automation/localization";
 import { describe, expect, it } from "vitest";
 import { inspectLedgerComment } from "../testing/ledger-comment.js";
+import { GithubDeliveryLedgerComposition } from "./dependency-composition.js";
 import {
 	DELIVERY_LEDGER_MARKER,
 	type StoredEntry,
@@ -36,7 +38,18 @@ describe("LedgerCommentPresenter", () => {
 		"shows a readable delivery summary and hides machine state in %s",
 		(locale, title, row) => {
 			// Arrange
-			const presenter = new LedgerCommentPresenter(new LedgerMessages(locale));
+			const presenter = new LedgerCommentPresenter(
+				{
+					ledgerCommentCodec:
+						new GithubDeliveryLedgerComposition().ledgerCommentCodec(),
+					createLedgerMessages: (...args) =>
+						new GithubDeliveryLedgerComposition().ledgerMessages(...args),
+				},
+				new LedgerMessages(
+					{ localeResolver: new LocalizationComposition().localeResolver() },
+					locale,
+				),
+			);
 			const ledger: StoredLedger = { schemaVersion: 2, entries: [entry] };
 
 			// Act
@@ -58,7 +71,12 @@ describe("LedgerCommentPresenter", () => {
 		"explains how to handle %s deliveries",
 		(status) => {
 			// Arrange
-			const presenter = new LedgerCommentPresenter();
+			const presenter = new LedgerCommentPresenter({
+				ledgerCommentCodec:
+					new GithubDeliveryLedgerComposition().ledgerCommentCodec(),
+				createLedgerMessages: (...args) =>
+					new GithubDeliveryLedgerComposition().ledgerMessages(...args),
+			});
 
 			// Act
 			const body = presenter.render({
@@ -74,7 +92,12 @@ describe("LedgerCommentPresenter", () => {
 
 	it("groups email recipients without claiming successful email delivery", () => {
 		// Arrange
-		const presenter = new LedgerCommentPresenter();
+		const presenter = new LedgerCommentPresenter({
+			ledgerCommentCodec:
+				new GithubDeliveryLedgerComposition().ledgerCommentCodec(),
+			createLedgerMessages: (...args) =>
+				new GithubDeliveryLedgerComposition().ledgerMessages(...args),
+		});
 		const entries: StoredEntry[] = [
 			{ ...entry, kind: "speaker-introduction" },
 			{ ...entry, kind: "speaker-introduction", idempotencyKey: "second-key" },
@@ -95,7 +118,12 @@ describe("LedgerCommentPresenter", () => {
 		["adjacent comment boundaries", "<!--first--><!--second-->"],
 	])("keeps %s in stored values from exposing metadata", (_name, malicious) => {
 		// Arrange
-		const presenter = new LedgerCommentPresenter();
+		const presenter = new LedgerCommentPresenter({
+			ledgerCommentCodec:
+				new GithubDeliveryLedgerComposition().ledgerCommentCodec(),
+			createLedgerMessages: (...args) =>
+				new GithubDeliveryLedgerComposition().ledgerMessages(...args),
+		});
 		const ledger: StoredLedger = {
 			schemaVersion: 2,
 			entries: [{ ...entry, diagnosticCode: malicious }],

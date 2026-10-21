@@ -1,5 +1,9 @@
+import { ManageMeetupFeedback } from "@meetup-automation/journey";
+import { LocalizationComposition } from "@meetup-automation/localization";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { GithubActionsComposition } from "./dependency-composition.js";
 import { FeedbackAction } from "./feedback-action.js";
+import { FeedbackComposition } from "./feedback-composition.js";
 import { ActionMessages } from "./i18n/action-messages.js";
 
 const mocks = vi.hoisted(() => ({
@@ -72,7 +76,17 @@ describe("feedback action boundary", () => {
 			mocks.inputs[name] = value;
 
 			// Act
-			const operation = FeedbackAction.run();
+			const operation = new FeedbackAction({
+				createJourney: (input) =>
+					FeedbackComposition.createFeedbackContainer(input).get(
+						ManageMeetupFeedback,
+					),
+				runtimeInput: new GithubActionsComposition().runtimeInput(),
+				conferenceHallInput:
+					new GithubActionsComposition().conferenceHallInput(),
+				createActionMessages: (...args) =>
+					new GithubActionsComposition().actionMessages(...args),
+			}).run();
 
 			// Assert
 			await expect(operation).rejects.toThrow(
@@ -92,7 +106,16 @@ describe("feedback action boundary", () => {
 		});
 
 		// Act
-		const report = await FeedbackAction.run();
+		const report = await new FeedbackAction({
+			createJourney: (input) =>
+				FeedbackComposition.createFeedbackContainer(input).get(
+					ManageMeetupFeedback,
+				),
+			runtimeInput: new GithubActionsComposition().runtimeInput(),
+			conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),
+			createActionMessages: (...args) =>
+				new GithubActionsComposition().actionMessages(...args),
+		}).run();
 
 		// Assert
 		expect(report.details).toContain("feedback=completed");
@@ -114,7 +137,16 @@ describe("feedback action boundary", () => {
 		// Default inputs provide all required Kutt settings.
 
 		// Act
-		await FeedbackAction.run();
+		await new FeedbackAction({
+			createJourney: (input) =>
+				FeedbackComposition.createFeedbackContainer(input).get(
+					ManageMeetupFeedback,
+				),
+			runtimeInput: new GithubActionsComposition().runtimeInput(),
+			conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),
+			createActionMessages: (...args) =>
+				new GithubActionsComposition().actionMessages(...args),
+		}).run();
 
 		// Assert
 		expect(mocks.compose).toHaveBeenCalledWith(
@@ -142,7 +174,16 @@ describe("feedback action boundary", () => {
 		});
 
 		// Act
-		const report = await FeedbackAction.run();
+		const report = await new FeedbackAction({
+			createJourney: (input) =>
+				FeedbackComposition.createFeedbackContainer(input).get(
+					ManageMeetupFeedback,
+				),
+			runtimeInput: new GithubActionsComposition().runtimeInput(),
+			conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),
+			createActionMessages: (...args) =>
+				new GithubActionsComposition().actionMessages(...args),
+		}).run();
 
 		// Assert
 		expect(report.details).toContain("feedback=skipped");
@@ -154,10 +195,22 @@ describe("feedback action boundary", () => {
 
 	it("localizes reports and passes the resolved locale to composition", async () => {
 		// Arrange
-		const messages = new ActionMessages("fr-CA");
+		const messages = new ActionMessages(
+			{ localeResolver: new LocalizationComposition().localeResolver() },
+			"fr-CA",
+		);
 
 		// Act
-		const report = await FeedbackAction.run(messages);
+		const report = await new FeedbackAction({
+			createJourney: (input) =>
+				FeedbackComposition.createFeedbackContainer(input).get(
+					ManageMeetupFeedback,
+				),
+			runtimeInput: new GithubActionsComposition().runtimeInput(),
+			conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),
+			createActionMessages: (...args) =>
+				new GithubActionsComposition().actionMessages(...args),
+		}).run(messages);
 
 		// Assert
 		expect(mocks.compose).toHaveBeenCalledWith(
@@ -176,7 +229,16 @@ describe("feedback action boundary", () => {
 		mocks.inputs["openfeedback-api-key"] = "oforg_synthetic-secret";
 
 		// Act
-		await FeedbackAction.run();
+		await new FeedbackAction({
+			createJourney: (input) =>
+				FeedbackComposition.createFeedbackContainer(input).get(
+					ManageMeetupFeedback,
+				),
+			runtimeInput: new GithubActionsComposition().runtimeInput(),
+			conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),
+			createActionMessages: (...args) =>
+				new GithubActionsComposition().actionMessages(...args),
+		}).run();
 
 		// Assert
 		expect(mocks.setSecret).toHaveBeenCalledWith("oforg_synthetic-secret");
@@ -196,7 +258,17 @@ describe("feedback action boundary", () => {
 			else mocks.inputs["openfeedback-api-key"] = value;
 
 			// Act
-			const operation = FeedbackAction.run();
+			const operation = new FeedbackAction({
+				createJourney: (input) =>
+					FeedbackComposition.createFeedbackContainer(input).get(
+						ManageMeetupFeedback,
+					),
+				runtimeInput: new GithubActionsComposition().runtimeInput(),
+				conferenceHallInput:
+					new GithubActionsComposition().conferenceHallInput(),
+				createActionMessages: (...args) =>
+					new GithubActionsComposition().actionMessages(...args),
+			}).run();
 
 			// Assert
 			await expect(operation).rejects.toThrow(

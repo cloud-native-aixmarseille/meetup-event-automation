@@ -6,11 +6,22 @@ import {
 	ScheduledEventError,
 } from "@meetup-automation/publication";
 import type { Page } from "playwright-core";
-import { MeetupEventVerification } from "./meetup-event-verification.js";
-import { MeetupBrowserRoutes } from "./meetup-browser-routes.js";
+import type { MeetupBrowserRoutes } from "./meetup-browser-routes.js";
+import type {
+	MeetupEventVerification,
+	MeetupEventVerificationArguments,
+} from "./meetup-event-verification.js";
+
+export interface MeetupEventPublisherCollaborators {
+	readonly meetupBrowserRoutes: Pick<MeetupBrowserRoutes, "eventLocation">;
+	readonly createMeetupEventVerification: (
+		...args: MeetupEventVerificationArguments
+	) => MeetupEventVerification;
+}
 
 export class MeetupEventPublisher {
 	constructor(
+		private readonly collaborators: MeetupEventPublisherCollaborators,
 		private readonly page: Page,
 		private readonly groupUrl: string,
 	) {
@@ -26,7 +37,9 @@ export class MeetupEventPublisher {
 		const identity = group && MeetupEventUrl.parse(url, group);
 		if (!identity || identity.value !== url)
 			throw new ScheduledEventError("editor");
-		const verification = new MeetupEventVerification(this.page);
+		const verification = this.collaborators.createMeetupEventVerification(
+			this.page,
+		);
 		const current = await verification.verify(event, identity).catch(() => {
 			throw new ScheduledEventError("verification");
 		});
@@ -44,8 +57,10 @@ export class MeetupEventPublisher {
 			await publish.click();
 			await this.page.waitForURL(
 				(value) =>
-					MeetupBrowserRoutes.eventLocation(value, identity.group)?.value ===
-					url,
+					this.collaborators.meetupBrowserRoutes.eventLocation(
+						value,
+						identity.group,
+					)?.value === url,
 				{ waitUntil: "domcontentloaded" },
 			);
 		} catch {
@@ -59,3 +74,10 @@ export class MeetupEventPublisher {
 		return { url, status: "published" };
 	}
 }
+export type MeetupEventPublisherArguments =
+	ConstructorParameters<typeof MeetupEventPublisher> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

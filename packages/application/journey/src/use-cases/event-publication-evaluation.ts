@@ -1,20 +1,43 @@
 import {
 	type EventDiagnostic,
 	type MeetupEvent,
-	MeetupPublicationChecklist,
+	type MeetupPublicationChecklist,
 	POST_EVENT_TASK_NAMES,
 } from "@meetup-automation/event";
-import {
+import type {
 	ManualPublicationPolicy,
-	type ManualPublicationTask,
+	ManualPublicationTask,
 	PublicationUrlPolicyEngine,
+	PublicationUrlPolicyEngineArguments,
 } from "@meetup-automation/publication";
 import type { AutomationConfig } from "../config/automation-config.js";
-import { ConfiguredPublicationPolicies } from "../config/configured-publication-policies.js";
+import type { ConfiguredPublicationPolicies } from "../config/configured-publication-policies.js";
 import type { PublicDiagnostic } from "../result/result-envelope.js";
 
+export interface EventPublicationEvaluationCollaborators {
+	readonly meetupPublicationChecklist: Pick<
+		MeetupPublicationChecklist,
+		"isPublished"
+	>;
+	readonly configuredPublicationPolicies: Pick<
+		ConfiguredPublicationPolicies,
+		"create"
+	>;
+	readonly manualPublicationPolicy: Pick<
+		ManualPublicationPolicy,
+		"planManualPublicationTasks"
+	>;
+	readonly createPublicationUrlPolicyEngine: (
+		...args: PublicationUrlPolicyEngineArguments
+	) => PublicationUrlPolicyEngine;
+}
+
 export class EventPublicationEvaluation {
-	static evaluatePublication(
+	constructor(
+		private readonly collaborators: EventPublicationEvaluationCollaborators,
+	) {}
+
+	evaluatePublication(
 		event: MeetupEvent,
 		config: AutomationConfig,
 	): { event: MeetupEvent; diagnostics: EventDiagnostic[] } {
@@ -33,7 +56,7 @@ export class EventPublicationEvaluation {
 		}
 		if (
 			event.publicationLinks.meetup &&
-			!MeetupPublicationChecklist.isPublished(event)
+			!this.collaborators.meetupPublicationChecklist.isPublished(event)
 		) {
 			diagnostics.push({
 				code: "publication.meetup.unpublished",
@@ -44,8 +67,10 @@ export class EventPublicationEvaluation {
 					"Meetup publication must be confirmed in the Communication checklist before the event is ready",
 			});
 		}
-		const engine = new PublicationUrlPolicyEngine(
-			ConfiguredPublicationPolicies.create(config.publication),
+		const engine = this.collaborators.createPublicationUrlPolicyEngine(
+			this.collaborators.configuredPublicationPolicies.create(
+				config.publication,
+			),
 		);
 		const evaluation = engine.evaluate(event.publicationLinks);
 		diagnostics.push(
@@ -67,30 +92,33 @@ export class EventPublicationEvaluation {
 		};
 	}
 
-	static planEventManualPublicationTasks(
+	planEventManualPublicationTasks(
 		event: MeetupEvent,
 	): readonly ManualPublicationTask[] {
-		return ManualPublicationPolicy.planManualPublicationTasks({
-			eventId: `${event.identity.repository}#${event.identity.issueNumber}`,
-			title: event.eventTitle,
-			description: event.description,
-			date: event.date,
-			timeZone: event.timeZone,
-			occurrenceStatus: event.occurrenceStatus,
-			references: event.publicationLinks,
-			meetupPublished: MeetupPublicationChecklist.isPublished(event),
-			slidesPublished: EventPublicationEvaluation.checklistTaskIsCompleted(
-				event.operationalChecklists.postEvent,
-				POST_EVENT_TASK_NAMES.shareSlides,
-			),
-			attendanceImported: EventPublicationEvaluation.checklistTaskIsCompleted(
-				event.operationalChecklists.postEvent,
-				POST_EVENT_TASK_NAMES.importAttendance,
-			),
-		});
+		return this.collaborators.manualPublicationPolicy.planManualPublicationTasks(
+			{
+				eventId: `${event.identity.repository}#${event.identity.issueNumber}`,
+				title: event.eventTitle,
+				description: event.description,
+				date: event.date,
+				timeZone: event.timeZone,
+				occurrenceStatus: event.occurrenceStatus,
+				references: event.publicationLinks,
+				meetupPublished:
+					this.collaborators.meetupPublicationChecklist.isPublished(event),
+				slidesPublished: this.checklistTaskIsCompleted(
+					event.operationalChecklists.postEvent,
+					POST_EVENT_TASK_NAMES.shareSlides,
+				),
+				attendanceImported: this.checklistTaskIsCompleted(
+					event.operationalChecklists.postEvent,
+					POST_EVENT_TASK_NAMES.importAttendance,
+				),
+			},
+		);
 	}
 
-	static checklistTaskIsCompleted(
+	checklistTaskIsCompleted(
 		items: MeetupEvent["operationalChecklists"]["postEvent"],
 		name: string,
 	): boolean {
@@ -98,7 +126,7 @@ export class EventPublicationEvaluation {
 		return matches.length === 1 && matches[0]?.completed === true;
 	}
 
-	static pendingManualTaskDiagnostics(
+	pendingManualTaskDiagnostics(
 		tasks: readonly ManualPublicationTask[],
 	): readonly PublicDiagnostic[] {
 		return tasks

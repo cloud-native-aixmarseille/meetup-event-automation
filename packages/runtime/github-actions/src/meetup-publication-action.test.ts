@@ -1,5 +1,7 @@
 import * as core from "@actions/core";
+import { LocalizationComposition } from "@meetup-automation/localization";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { GithubActionsComposition } from "./dependency-composition.js";
 import { ActionMessages } from "./i18n/action-messages.js";
 import { MeetupPublicationAction } from "./meetup-publication-action.js";
 
@@ -24,9 +26,6 @@ vi.mock("@actions/github", () => ({
 }));
 vi.mock("./meetup-publication-composition.js", () => ({
 	MeetupPublicationComposition: { create: mocks.create },
-}));
-vi.mock("./meetup-publication-configuration.js", () => ({
-	MeetupPublicationConfiguration: { load: mocks.load },
 }));
 
 beforeEach(() => {
@@ -60,10 +59,13 @@ beforeEach(() => {
 describe("Meetup publication action", () => {
 	it("prepares the selected issue and masks all account credentials", async () => {
 		// Arrange
-		const messages = new ActionMessages("en");
+		const messages = new ActionMessages(
+			{ localeResolver: new LocalizationComposition().localeResolver() },
+			"en",
+		);
 
 		// Act
-		const result = await MeetupPublicationAction.run(messages);
+		const result = await subject().run(messages);
 
 		// Assert
 		expect(mocks.execute).toHaveBeenCalledWith({
@@ -99,7 +101,12 @@ describe("Meetup publication action", () => {
 		});
 
 		// Act
-		const result = await MeetupPublicationAction.run(new ActionMessages("fr"));
+		const result = await subject().run(
+			new ActionMessages(
+				{ localeResolver: new LocalizationComposition().localeResolver() },
+				"fr",
+			),
+		);
 
 		// Assert
 		expect(result.details).toContain("evenement_meetup=bloque");
@@ -125,10 +132,24 @@ describe("Meetup publication action", () => {
 		delete mocks.inputs[name];
 
 		// Act
-		const result = MeetupPublicationAction.run(new ActionMessages("en"));
+		const result = subject().run(
+			new ActionMessages(
+				{ localeResolver: new LocalizationComposition().localeResolver() },
+				"en",
+			),
+		);
 
 		// Assert
 		await expect(result).rejects.toThrow();
 		expect(mocks.execute).not.toHaveBeenCalled();
 	});
 });
+
+function subject() {
+	return new MeetupPublicationAction({
+		createJourney: (input) => mocks.create(input).get(),
+		runtimeInput: new GithubActionsComposition().runtimeInput(),
+		conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),
+		meetupPublicationConfiguration: { load: mocks.load },
+	});
+}

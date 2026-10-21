@@ -45,15 +45,21 @@ describe("mail batch fingerprints", () => {
 		};
 
 		// Act
-		const original = MailBatchFingerprint.create("2099-06-08", "Europe/Paris", [
-			ordered,
-		]);
-		const same = MailBatchFingerprint.create("2099-06-08", "Europe/Paris", [
-			reorderedProperties,
-		]);
-		const changed = MailBatchFingerprint.create("2099-06-08", "Europe/Paris", [
-			reorderedTalks,
-		]);
+		const original = new MailBatchFingerprint().create(
+			"2099-06-08",
+			"Europe/Paris",
+			[ordered],
+		);
+		const same = new MailBatchFingerprint().create(
+			"2099-06-08",
+			"Europe/Paris",
+			[reorderedProperties],
+		);
+		const changed = new MailBatchFingerprint().create(
+			"2099-06-08",
+			"Europe/Paris",
+			[reorderedTalks],
+		);
 
 		// Assert
 		expect(same).toBe(original);
@@ -66,19 +72,24 @@ describe("mail batch fingerprints", () => {
 			idempotencyKey: "intent-2",
 			recipientId: "speaker-2",
 		};
-		const expected = MailBatchFingerprint.create("2099-06-08", "Europe/Paris", [
-			message,
-			second,
-		]);
+		const expected = new MailBatchFingerprint().create(
+			"2099-06-08",
+			"Europe/Paris",
+			[message, second],
+		);
 
 		// Act
-		const actual = MailBatchFingerprint.create("2099-06-08", "Europe/Paris", [
-			second,
-			{
-				...message,
-				placeholders: { firstName: "Alex", eventDate: "2099-06-08" },
-			},
-		]);
+		const actual = new MailBatchFingerprint().create(
+			"2099-06-08",
+			"Europe/Paris",
+			[
+				second,
+				{
+					...message,
+					placeholders: { firstName: "Alex", eventDate: "2099-06-08" },
+				},
+			],
+		);
 
 		// Assert
 		expect(actual).toBe(expected);
@@ -94,28 +105,36 @@ describe("mail batch fingerprints", () => {
 		{ ...message, idempotencyKey: "policy-2-intent" },
 	])("changes when outgoing email facts change %j", (changed) => {
 		// Arrange
-		const original = MailBatchFingerprint.create("2099-06-08", "Europe/Paris", [
-			message,
-		]);
+		const original = new MailBatchFingerprint().create(
+			"2099-06-08",
+			"Europe/Paris",
+			[message],
+		);
 
 		// Act
-		const actual = MailBatchFingerprint.create("2099-06-08", "Europe/Paris", [
-			changed,
-		]);
+		const actual = new MailBatchFingerprint().create(
+			"2099-06-08",
+			"Europe/Paris",
+			[changed],
+		);
 
 		// Assert
 		expect(actual).not.toBe(original);
 	});
 	it("changes when the event date changes", () => {
 		// Arrange
-		const original = MailBatchFingerprint.create("2099-06-08", "Europe/Paris", [
-			message,
-		]);
+		const original = new MailBatchFingerprint().create(
+			"2099-06-08",
+			"Europe/Paris",
+			[message],
+		);
 
 		// Act
-		const actual = MailBatchFingerprint.create("2099-06-09", "Europe/Paris", [
-			message,
-		]);
+		const actual = new MailBatchFingerprint().create(
+			"2099-06-09",
+			"Europe/Paris",
+			[message],
+		);
 
 		// Assert
 		expect(actual).not.toBe(original);

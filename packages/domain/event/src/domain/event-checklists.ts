@@ -4,21 +4,18 @@ import type {
 } from "./model.js";
 
 export class EventChecklists {
-	static equal(
+	equal(
 		left: EventOperationalChecklists,
 		right: EventOperationalChecklists,
 	): boolean {
 		return (
-			EventChecklists.itemsEqual(
-				left.slidesAndContent,
-				right.slidesAndContent,
-			) &&
-			EventChecklists.itemsEqual(left.communication, right.communication) &&
-			EventChecklists.itemsEqual(left.postEvent, right.postEvent)
+			this.itemsEqual(left.slidesAndContent, right.slidesAndContent) &&
+			this.itemsEqual(left.communication, right.communication) &&
+			this.itemsEqual(left.postEvent, right.postEvent)
 		);
 	}
 
-	private static itemsEqual(
+	private itemsEqual(
 		left: readonly OperationalChecklistItem[],
 		right: readonly OperationalChecklistItem[],
 	): boolean {

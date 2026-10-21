@@ -10,8 +10,8 @@ describe("GitHub Action output boundary", () => {
 		// No additional setup is needed.
 
 		// Act
-		ActionOutput.setJsonOutput("result", { status: "ok", count: 2 });
-		ActionOutput.setDiagnosticsOutput([
+		new ActionOutput().setJsonOutput("result", { status: "ok", count: 2 });
+		new ActionOutput().setDiagnosticsOutput([
 			{ code: "safe.code", severity: "warning", message: "Safe message" },
 		]);
 

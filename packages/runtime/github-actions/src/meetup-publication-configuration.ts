@@ -1,39 +1,48 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { MeetupPublicationSettings } from "@meetup-automation/journey";
-import { ScheduledEventPolicy } from "@meetup-automation/publication";
-import { RuntimeInput } from "./runtime-input.js";
+import type { ScheduledEventPolicy } from "@meetup-automation/publication";
+import type { RuntimeInput } from "./runtime-input.js";
+
+export interface MeetupPublicationConfigurationCollaborators {
+	readonly runtimeInput: Pick<RuntimeInput, "isObject">;
+	readonly scheduledEventPolicy: Pick<ScheduledEventPolicy, "validTime">;
+}
 
 export class MeetupPublicationConfiguration {
-	static async load(root: string): Promise<MeetupPublicationSettings> {
+	constructor(
+		private readonly collaborators: MeetupPublicationConfigurationCollaborators,
+	) {}
+
+	async load(root: string): Promise<MeetupPublicationSettings> {
 		const text = await readFile(
 			join(root, ".github/meetup-publication.json"),
 			"utf8",
 		);
 		if (Buffer.byteLength(text) > 100_000)
 			throw new Error("Meetup publication configuration is too large");
-		return MeetupPublicationConfiguration.parse(JSON.parse(text));
+		return this.parse(JSON.parse(text));
 	}
 
-	static parse(input: unknown): MeetupPublicationSettings {
+	parse(input: unknown): MeetupPublicationSettings {
 		if (
-			!RuntimeInput.isObject(input) ||
+			!this.collaborators.runtimeInput.isObject(input) ||
 			input.version !== 1 ||
 			typeof input.startTime !== "string" ||
-			!ScheduledEventPolicy.validTime(input.startTime) ||
+			!this.collaborators.scheduledEventPolicy.validTime(input.startTime) ||
 			typeof input.endTime !== "string" ||
-			!ScheduledEventPolicy.validTime(input.endTime) ||
+			!this.collaborators.scheduledEventPolicy.validTime(input.endTime) ||
 			input.endTime <= input.startTime ||
-			!RuntimeInput.isObject(input.venues)
+			!this.collaborators.runtimeInput.isObject(input.venues)
 		)
 			throw new Error("Invalid Meetup publication configuration");
 		const venues: Record<string, { name: string; city: string }> = {};
 		for (const [id, venue] of Object.entries(input.venues)) {
 			if (
 				!/^host-[a-z0-9-]+$/.test(id) ||
-				!RuntimeInput.isObject(venue) ||
-				!MeetupPublicationConfiguration.text(venue.name) ||
-				!MeetupPublicationConfiguration.text(venue.city)
+				!this.collaborators.runtimeInput.isObject(venue) ||
+				!this.text(venue.name) ||
+				!this.text(venue.city)
 			)
 				throw new Error("Invalid public Meetup venue mapping");
 			venues[id] = { name: venue.name, city: venue.city };
@@ -41,7 +50,7 @@ export class MeetupPublicationConfiguration {
 		return { startTime: input.startTime, endTime: input.endTime, venues };
 	}
 
-	private static text(value: unknown): value is string {
+	private text(value: unknown): value is string {
 		return (
 			typeof value === "string" &&
 			value.trim() === value &&

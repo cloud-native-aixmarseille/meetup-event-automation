@@ -1,6 +1,6 @@
 import * as core from "@actions/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ActionRunner } from "./action-runner.js";
+import { GithubActionsComposition } from "./dependency-composition.js";
 import { ReferentialActions } from "./referential-actions.js";
 
 const boundary = vi.hoisted(() => ({
@@ -26,25 +26,6 @@ vi.mock("@actions/core", () => ({
 	},
 }));
 
-vi.mock(
-	"../../../application/journey/src/index.js",
-	async (importOriginal) => ({
-		...(await importOriginal<
-			typeof import("../../../application/journey/src/index.js")
-		>()),
-		ValidateMeetupReferentials: class {
-			execute = boundary.validate;
-		},
-		SynchronizeMeetupIssueForm: class {
-			execute = boundary.synchronize;
-		},
-	}),
-);
-
-vi.mock("../../../adapter/yaml-issue-form-projection/src/index.js", () => ({
-	YamlIssueFormProjection: class {},
-}));
-
 describe("referential GitHub Action boundary", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -65,7 +46,7 @@ describe("referential GitHub Action boundary", () => {
 		});
 
 		// Act
-		const report = await ReferentialActions.runReferentialValidateAction();
+		const report = await subject().runReferentialValidateAction();
 
 		// Assert
 
@@ -89,7 +70,7 @@ describe("referential GitHub Action boundary", () => {
 		});
 
 		// Act
-		const report = await ReferentialActions.runReferentialValidateAction();
+		const report = await subject().runReferentialValidateAction();
 
 		// Assert
 		expect(report.diagnostics).toEqual([
@@ -114,7 +95,7 @@ describe("referential GitHub Action boundary", () => {
 		});
 
 		// Act
-		const report = await ReferentialActions.runReferentialSyncIssueFormAction();
+		const report = await subject().runReferentialSyncIssueFormAction();
 
 		// Assert
 		expect(report.details).toContain("issue_form=updated");
@@ -154,11 +135,13 @@ describe("referential action failure reporting", () => {
 			});
 
 			// Act
-			await ActionRunner.run(
-				"action.referential.validate",
-				ReferentialActions.runReferentialValidateAction,
-				false,
-			);
+			await new GithubActionsComposition()
+				.actionRunner()
+				.run(
+					"action.referential.validate",
+					subject().runReferentialValidateAction.bind(subject()),
+					false,
+				);
 
 			// Assert
 			expect(core.setFailed).not.toHaveBeenCalled();
@@ -214,11 +197,13 @@ describe("referential action failure reporting", () => {
 			});
 
 			// Act
-			await ActionRunner.run(
-				"action.referential.sync-issue-form",
-				ReferentialActions.runReferentialSyncIssueFormAction,
-				false,
-			);
+			await new GithubActionsComposition()
+				.actionRunner()
+				.run(
+					"action.referential.sync-issue-form",
+					subject().runReferentialSyncIssueFormAction.bind(subject()),
+					false,
+				);
 
 			// Assert
 			expect(core.setFailed).toHaveBeenCalledTimes(fails ? 1 : 0);
@@ -240,11 +225,13 @@ describe("referential action failure reporting", () => {
 		);
 
 		// Act
-		await ActionRunner.run(
-			"action.referential.sync-issue-form",
-			ReferentialActions.runReferentialSyncIssueFormAction,
-			false,
-		);
+		await new GithubActionsComposition()
+			.actionRunner()
+			.run(
+				"action.referential.sync-issue-form",
+				subject().runReferentialSyncIssueFormAction.bind(subject()),
+				false,
+			);
 
 		// Assert
 		expect(core.setFailed).toHaveBeenCalledOnce();
@@ -252,3 +239,14 @@ describe("referential action failure reporting", () => {
 		expect(core.summary.write).toHaveBeenCalledOnce();
 	});
 });
+
+function subject() {
+	const composition = new GithubActionsComposition();
+	return new ReferentialActions({
+		validateReferentials: () => ({ execute: boundary.validate }),
+		synchronizeIssueForm: () => ({ execute: boundary.synchronize }),
+		referentialActionReport: composition.referentialActionReport(),
+		runtimeInput: composition.runtimeInput(),
+		createActionMessages: (...args) => composition.actionMessages(...args),
+	});
+}

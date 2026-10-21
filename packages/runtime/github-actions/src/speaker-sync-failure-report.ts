@@ -1,28 +1,38 @@
+import type { PublicDiagnostic } from "@meetup-automation/journey";
 import { SpeakerSynchronizationError } from "@meetup-automation/journey";
 import {
 	ProposalSourceError,
 	SpeakerCatalogHistoryError,
 } from "@meetup-automation/referential";
-import type { PublicDiagnostic } from "@meetup-automation/journey";
 import type { ActionReportData } from "./action-report.js";
-import { ActionMessages } from "./i18n/action-messages.js";
+import type {
+	ActionMessages,
+	ActionMessagesArguments,
+} from "./i18n/action-messages.js";
 
 interface SpeakerSyncBlockedReport {
 	readonly report: ActionReportData;
 	readonly prBody: string;
 }
 
+export interface SpeakerSyncFailureReportCollaborators {
+	readonly createActionMessages: (
+		...args: ActionMessagesArguments
+	) => ActionMessages;
+}
+
 export class SpeakerSyncFailureReport {
-	static create(
-		error: unknown,
-		messages: ActionMessages,
-	): SpeakerSyncBlockedReport {
+	constructor(
+		private readonly collaborators: SpeakerSyncFailureReportCollaborators,
+	) {}
+
+	create(error: unknown, messages: ActionMessages): SpeakerSyncBlockedReport {
 		const failure =
 			error instanceof SpeakerSynchronizationError ? error : undefined;
 		const cause = failure?.cause ?? error;
 		const diagnostics = failure?.diagnostics.length
 			? failure.diagnostics
-			: [SpeakerSyncFailureReport.diagnostic(cause)];
+			: [this.diagnostic(cause)];
 		const stage = messages.t(
 			`report.speaker-sync.stage.${failure?.stage ?? "unknown"}`,
 		);
@@ -40,14 +50,14 @@ export class SpeakerSyncFailureReport {
 			prBody: guidance,
 		};
 	}
-	private static diagnostic(error: unknown): PublicDiagnostic {
+	private diagnostic(error: unknown): PublicDiagnostic {
 		if (error instanceof SpeakerCatalogHistoryError)
 			return {
 				code: "speaker-sync.history-unavailable",
 				severity: "error",
-				message: new ActionMessages().t(
-					"diagnostic.speaker-sync.history-unavailable",
-				),
+				message: this.collaborators
+					.createActionMessages()
+					.t("diagnostic.speaker-sync.history-unavailable"),
 			};
 		const source = error instanceof ProposalSourceError ? error : undefined;
 		const context = source?.context;
@@ -71,7 +81,9 @@ export class SpeakerSyncFailureReport {
 		return {
 			code,
 			severity: "error",
-			message: new ActionMessages().t(`diagnostic.${code}`),
+			message: this.collaborators
+				.createActionMessages()
+				.t(`diagnostic.${code}`),
 			field:
 				Number.isInteger(status) &&
 				Number(status) >= 100 &&

@@ -48,7 +48,7 @@ describe("organizer attention task selection", () => {
 			const concrete = entry(field);
 
 			// Act
-			const result = AttentionTaskSelection.select(
+			const result = new AttentionTaskSelection().select(
 				{ state, conditions: [condition] },
 				{ entries: [concrete] },
 			);
@@ -67,7 +67,7 @@ describe("organizer attention task selection", () => {
 		];
 
 		// Act
-		const result = AttentionTaskSelection.select(
+		const result = new AttentionTaskSelection().select(
 			{ state, conditions },
 			{ entries: [entry("date")] },
 		);
@@ -89,7 +89,7 @@ describe("organizer attention task selection", () => {
 			condition.condition = { ...condition.condition, commentId: 200 };
 
 			// Act
-			const result = AttentionTaskSelection.select(
+			const result = new AttentionTaskSelection().select(
 				{ state, conditions: [condition] },
 				{ entries: [entry("other", action)] },
 			);
@@ -106,7 +106,7 @@ describe("organizer attention task selection", () => {
 		condition.status = "unknown";
 
 		// Act
-		const result = AttentionTaskSelection.select(
+		const result = new AttentionTaskSelection().select(
 			{ state: { ...state, stopped: true }, conditions: [condition] },
 			{ entries: [entry("other", "delivery-recovery")] },
 		);
@@ -121,7 +121,7 @@ describe("organizer attention task selection", () => {
 		const condition = episode("follow-up", "share-slides");
 
 		// Act
-		const result = AttentionTaskSelection.select(
+		const result = new AttentionTaskSelection().select(
 			{ state: { ...state, commentId: 200 }, conditions: [condition] },
 			{ entries: [] },
 		);

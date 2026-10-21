@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { attentionReports } from "../../testing/attention-reports.fixtures.js";
+import { JourneyPolicyComposition } from "../policy-composition.js";
 import { AttentionStageEvaluation } from "./attention-stage-evaluation.js";
 
 describe("attention stage evidence policy", () => {
@@ -30,7 +31,11 @@ describe("attention stage evidence policy", () => {
 		const reports = attentionReports({ communications: stage });
 
 		// Act
-		const complete = AttentionStageEvaluation.complete(reports);
+		const complete = new AttentionStageEvaluation({
+			diagnosticPolicy: new JourneyPolicyComposition().diagnosticPolicy(),
+			organizerDiagnosticPolicy:
+				new JourneyPolicyComposition().organizerDiagnosticPolicy(),
+		}).complete(reports);
 
 		// Assert
 		expect(complete).toBe(false);
@@ -60,7 +65,11 @@ describe("attention stage evidence policy", () => {
 		});
 
 		// Act
-		const stages = AttentionStageEvaluation.evaluate(reports);
+		const stages = new AttentionStageEvaluation({
+			diagnosticPolicy: new JourneyPolicyComposition().diagnosticPolicy(),
+			organizerDiagnosticPolicy:
+				new JourneyPolicyComposition().organizerDiagnosticPolicy(),
+		}).evaluate(reports);
 
 		// Assert
 		expect(stages.find((stage) => stage.owner === "assets")).toMatchObject({

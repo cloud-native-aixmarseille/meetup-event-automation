@@ -8,46 +8,46 @@ import type { CsvRow } from "./csv-referential-repository-contracts.js";
 
 /** Map CSV column names and physical line locations to raw catalog values. */
 export class CsvReferentialCodec {
-	static decode(
+	decode(
 		hostsSource: string,
 		speakersSource: string,
 		hostsPath: string,
 		speakersPath: string,
 	): RawReferentialCatalog {
-		const hosts: RawHostRecord[] = CsvReferentialCodec.parseRows(
-			hostsSource,
-		).map(({ row, line }) => ({
-			source: { path: hostsPath, line },
-			hostId: row.host_id,
-			displayName: row.name,
-			contactId: row.contact_id,
-			contactName: row.contact,
-			email: row.mail,
-			phone: row.phone || undefined,
-			address: row.address,
-		}));
+		const hosts: RawHostRecord[] = this.parseRows(hostsSource).map(
+			({ row, line }) => ({
+				source: { path: hostsPath, line },
+				hostId: row.host_id,
+				displayName: row.name,
+				contactId: row.contact_id,
+				contactName: row.contact,
+				email: row.mail,
+				phone: row.phone || undefined,
+				address: row.address,
+			}),
+		);
 
-		const speakers: RawSpeakerRecord[] = CsvReferentialCodec.parseRows(
-			speakersSource,
-		).map(({ row, line }) => ({
-			source: { path: speakersPath, line },
-			speakerId: row.speaker_id,
-			displayName: row.display_name,
-			pictureUrl: row.picture_url,
-			sourceProvider: row.source_provider,
-			sourceEvent: row.source_event,
-			sourceSpeakerId: row.source_speaker_id,
-			firstName: row.firstname,
-			lastName: row.lastname,
-			company: row.company,
-			email: row.mail,
-			phone: row.phone || undefined,
-		}));
+		const speakers: RawSpeakerRecord[] = this.parseRows(speakersSource).map(
+			({ row, line }) => ({
+				source: { path: speakersPath, line },
+				speakerId: row.speaker_id,
+				displayName: row.display_name,
+				pictureUrl: row.picture_url,
+				sourceProvider: row.source_provider,
+				sourceEvent: row.source_event,
+				sourceSpeakerId: row.source_speaker_id,
+				firstName: row.firstname,
+				lastName: row.lastname,
+				company: row.company,
+				email: row.mail,
+				phone: row.phone || undefined,
+			}),
+		);
 
 		return { hosts, speakers };
 	}
 
-	private static parseRows(source: string): { row: CsvRow; line: number }[] {
+	private parseRows(source: string): { row: CsvRow; line: number }[] {
 		// Normalize line endings so parser locations count physical lines consistently,
 		// including CRLF inside quoted fields. Blank lines do not represent records.
 		const records: unknown = parse(source.replace(/\r\n?/g, "\n"), {
@@ -60,8 +60,7 @@ export class CsvReferentialCodec {
 		});
 		if (!Array.isArray(records)) throw new Error("Invalid CSV catalog records");
 		return records.map((value: unknown) => {
-			if (!CsvReferentialCodec.record(value))
-				throw new Error("Invalid CSV catalog record");
+			if (!this.record(value)) throw new Error("Invalid CSV catalog record");
 			return {
 				row: value.record,
 				line:
@@ -71,14 +70,14 @@ export class CsvReferentialCodec {
 		});
 	}
 
-	private static record(
+	private record(
 		value: unknown,
 	): value is { record: CsvRow; info: { lines: number }; raw: string } {
-		if (!CsvReferentialCodec.object(value)) return false;
+		if (!this.object(value)) return false;
 		return (
-			CsvReferentialCodec.object(value.record) &&
+			this.object(value.record) &&
 			Object.values(value.record).every((item) => typeof item === "string") &&
-			CsvReferentialCodec.object(value.info) &&
+			this.object(value.info) &&
 			typeof value.info.lines === "number" &&
 			Number.isSafeInteger(value.info.lines) &&
 			value.info.lines > 0 &&
@@ -86,7 +85,7 @@ export class CsvReferentialCodec {
 		);
 	}
 
-	private static object(value: unknown): value is Record<string, unknown> {
+	private object(value: unknown): value is Record<string, unknown> {
 		return value !== null && typeof value === "object" && !Array.isArray(value);
 	}
 }

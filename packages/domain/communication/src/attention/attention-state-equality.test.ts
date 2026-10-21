@@ -41,7 +41,7 @@ describe("attention state equivalence", () => {
 		};
 
 		// Act
-		const same = AttentionStateEquality.equal(state, right);
+		const same = new AttentionStateEquality().equal(state, right);
 
 		// Assert
 		expect(same).toBe(true);
@@ -63,7 +63,7 @@ describe("attention state equivalence", () => {
 			if (field === "eventDate") right.eventDate = "2099-06-09";
 
 			// Act
-			const same = AttentionStateEquality.equal(state, right);
+			const same = new AttentionStateEquality().equal(state, right);
 
 			// Assert
 			expect(same).toBe(false);

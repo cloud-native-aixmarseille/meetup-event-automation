@@ -1,18 +1,28 @@
 import type { PublicationEvaluation, PublicationReferences } from "./model.js";
-import { PublicationLinkEvaluation } from "./publication-link-evaluation.js";
+import type { PublicationLinkEvaluation } from "./publication-link-evaluation.js";
 import type { PublicationUrlPolicy } from "./url-policy-contracts.js";
+
+export interface AssetFolderUrlPolicyCollaborators {
+	readonly publicationLinkEvaluation: Pick<
+		PublicationLinkEvaluation,
+		"evaluateLink" | "matchesPrefix"
+	>;
+}
 
 export class AssetFolderUrlPolicy implements PublicationUrlPolicy {
 	readonly id = "asset-folder-url";
 
-	constructor(private readonly prefix: string) {}
+	constructor(
+		private readonly collaborators: AssetFolderUrlPolicyCollaborators,
+		private readonly prefix: string,
+	) {}
 
 	evaluate(references: PublicationReferences): PublicationEvaluation {
-		return PublicationLinkEvaluation.evaluateLink({
+		return this.collaborators.publicationLinkEvaluation.evaluateLink({
 			references,
 			path: "assets",
 			isValid: (value) =>
-				PublicationLinkEvaluation.matchesPrefix(
+				this.collaborators.publicationLinkEvaluation.matchesPrefix(
 					value,
 					[this.prefix],
 					/^[a-zA-Z0-9_-]+$/,
@@ -22,3 +32,10 @@ export class AssetFolderUrlPolicy implements PublicationUrlPolicy {
 		});
 	}
 }
+export type AssetFolderUrlPolicyArguments =
+	ConstructorParameters<typeof AssetFolderUrlPolicy> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

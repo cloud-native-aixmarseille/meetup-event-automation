@@ -41,3 +41,4 @@ export class MeetupVenue {
 		);
 	}
 }
+export type MeetupVenueArguments = ConstructorParameters<typeof MeetupVenue>;

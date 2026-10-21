@@ -1,11 +1,12 @@
+import { CommunicationDomainComposition } from "@meetup-automation/communication";
 import { vi } from "vitest";
+import type { AttentionFacts } from "../src/attention/evaluate-attention.js";
 import type {
 	AttentionCondition,
 	AttentionObservation,
 	AttentionState,
 	AttentionView,
 } from "../src/attention/model.js";
-import type { AttentionFacts } from "../src/attention/evaluate-attention.js";
 import { ReconcileAttention } from "../src/attention/reconcile-attention.js";
 export function condition(
 	overrides: Partial<AttentionCondition> = {},
@@ -78,9 +79,18 @@ export function reconciliationFixture() {
 	return {
 		repository,
 		notification,
-		useCase: new ReconcileAttention(repository, notification, {
-			now: () => now,
-		}),
+		useCase: new ReconcileAttention(
+			{
+				attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+				attentionEpisodes:
+					new CommunicationDomainComposition().attentionEpisodes(),
+			},
+			repository,
+			notification,
+			{
+				now: () => now,
+			},
+		),
 		state: () => structuredClone(saved),
 		time: (value: string) => {
 			now = new Date(value);

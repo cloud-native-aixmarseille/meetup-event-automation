@@ -2,6 +2,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { basename, join } from "node:path";
 import { parse } from "@babel/parser";
 import { describe, expect, it } from "vitest";
+import { LocalizationComposition } from "../../packages/presentation/localization/src/index.js";
 import { ActionMessages } from "../../packages/runtime/github-actions/src/i18n/action-messages.js";
 import type { MessageId } from "../../packages/runtime/github-actions/src/i18n/catalog.js";
 import { type ActionManifest, readYaml, root } from "./support.js";
@@ -36,7 +37,9 @@ describe("public action reporting contract", () => {
 					entrypoint,
 					manifest,
 					statements: ast.program.body,
-					title: new ActionMessages().t(
+					title: new ActionMessages({
+						localeResolver: new LocalizationComposition().localeResolver(),
+					}).t(
 						`action.${directory.replaceAll("/", ".")}` as Extract<
 							MessageId,
 							`action.${string}`
@@ -60,50 +63,71 @@ describe("public action reporting contract", () => {
 			expect(buildSource, directory).toContain(
 				`actions/${directory}/dist/index.js`,
 			);
-			expect(statements, directory).toContainEqual(
-				expect.objectContaining({
-					type: "ImportDeclaration",
-					source: expect.objectContaining({ value: "../action-runner.js" }),
-					specifiers: [
-						expect.objectContaining({
-							type: "ImportSpecifier",
-							imported: expect.objectContaining({ name: "ActionRunner" }),
-							local: expect.objectContaining({ name: "ActionRunner" }),
-						}),
-					],
-				}),
+			const declarations = statements.filter(
+				(statement) => statement.type === "VariableDeclaration",
 			);
 			expect(
+				declarations.map((statement) => statement.declarations[0]),
+			).toMatchObject([
+				{
+					id: { name: "runner" },
+					init: {
+						type: "CallExpression",
+						callee: {
+							property: { name: "actionRunner" },
+							object: {
+								type: "NewExpression",
+								callee: { name: "GithubActionsComposition" },
+							},
+						},
+					},
+				},
+				{
+					id: { name: "action" },
+					init: {
+						type: "CallExpression",
+						callee: {
+							object: {
+								type: "NewExpression",
+								callee: { name: expect.stringMatching(/ActionComposition$/) },
+							},
+						},
+					},
+				},
+			]);
+			expect(
 				statements.filter(
-					(statement) => statement.type !== "ImportDeclaration",
+					(statement) => statement.type === "ExpressionStatement",
 				),
 				directory,
-			).toEqual([
-				expect.objectContaining({
-					type: "ExpressionStatement",
-					expression: expect.objectContaining({
+			).toMatchObject([
+				{
+					expression: {
 						type: "AwaitExpression",
-						argument: expect.objectContaining({
+						argument: {
 							type: "CallExpression",
-							callee: expect.objectContaining({
-								type: "MemberExpression",
-								object: expect.objectContaining({ name: "ActionRunner" }),
-								property: expect.objectContaining({ name: "run" }),
-							}),
+							callee: { object: { name: "runner" }, property: { name: "run" } },
 							arguments: [
-								expect.objectContaining({
+								{
 									type: "StringLiteral",
 									value: `action.${directory.replaceAll("/", ".")}`,
-								}),
-								expect.objectContaining({ type: "MemberExpression" }),
-								expect.objectContaining({
+								},
+								{
+									type: "CallExpression",
+									callee: {
+										property: { name: "bind" },
+										object: { object: { name: "action" } },
+									},
+									arguments: [{ name: "action" }],
+								},
+								{
 									type: "BooleanLiteral",
 									value: Boolean(manifest.outputs?.diagnostics),
-								}),
+								},
 							],
-						}),
-					}),
-				}),
+						},
+					},
+				},
 			]);
 		}
 	});

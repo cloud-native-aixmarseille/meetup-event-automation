@@ -1,4 +1,5 @@
 import { parse } from "@babel/parser";
+import { DependencyInjection } from "./dependency-injection.mjs";
 import { SerializationBoundaries } from "./serialization-boundaries.mjs";
 
 const behaviors = new Set([
@@ -40,9 +41,15 @@ export class CodeStructure {
 			}
 		}
 		const serialization = new SerializationBoundaries();
-		const visit = (node, inClass = false) => {
+		const injection = new DependencyInjection(this.filename, ast.program);
+		const visit = (node, inClass = false, owner) => {
 			if (!node || typeof node !== "object") return;
-			violations.push(...serialization.inspect(node));
+			if (node.type === "ClassDeclaration" || node.type === "ClassExpression")
+				owner = node;
+			violations.push(
+				...serialization.inspect(node),
+				...injection.inspect(node, owner),
+			);
 			const owned = inClass || node.type === "ClassBody";
 			if (!owned && behaviors.has(node.type)) {
 				violations.push({
@@ -58,10 +65,10 @@ export class CodeStructure {
 					continue;
 				if (Array.isArray(value))
 					value.forEach((child) => {
-						visit(child, owned);
+						visit(child, owned, owner);
 					});
 				else if (value && typeof value === "object" && "type" in value)
-					visit(value, owned);
+					visit(value, owned, owner);
 			}
 		};
 		visit(ast.program);

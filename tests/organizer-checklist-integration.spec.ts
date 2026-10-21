@@ -1,15 +1,21 @@
 import { describe, expect, it, vi } from "vitest";
-import { GitHubEventCommentRepository } from "../packages/adapter/github-event-comment-repository/src/index.js";
+import {
+	GitHubEventCommentRepository,
+	GithubEventCommentRepositoryComposition,
+} from "../packages/adapter/github-event-comment-repository/src/index.js";
 import {
 	AttentionCommentRetention,
-	AttentionRecord,
 	GithubAttentionRepository,
+	GithubOrganizerAttentionComposition,
 } from "../packages/adapter/github-organizer-attention/src/index.js";
 import {
 	fixture,
 	state,
 } from "../packages/adapter/github-organizer-attention/testing/attention.fixtures.js";
+import { JourneyComposition } from "../packages/application/journey/src/index.js";
+import { CommunicationDomainComposition } from "../packages/domain/communication/src/index.js";
 import type { EventDiagnostic } from "../packages/domain/event/src/index.js";
+import { GithubActionsComposition } from "../packages/runtime/github-actions/src/index.js";
 
 import { OrganizerFeedback } from "../packages/runtime/github-actions/src/organizer-feedback.js";
 
@@ -25,18 +31,41 @@ describe("single organizer checklist across event and attention runs", () => {
 	it("updates the original checklist without losing a reserved Slack delivery", async () => {
 		// Arrange
 		const f = fixture();
-		const comments = new GitHubEventCommentRepository(f.api, {
-			owner: "example",
-			repo: "meetups",
-			authorLogin: "automation[bot]",
-			locale: "fr",
-			retainedContent: new AttentionCommentRetention(
-				f.api,
-				"example",
-				"meetups",
-				"automation[bot]",
-			),
-		});
+		const comments = new GitHubEventCommentRepository(
+			{
+				diagnosticCommentPresenter:
+					new GithubEventCommentRepositoryComposition().diagnosticCommentPresenter(),
+				createEventCommentMessages: (...args) =>
+					new GithubEventCommentRepositoryComposition().eventCommentMessages(
+						...args,
+					),
+			},
+			f.api,
+			{
+				owner: "example",
+				repo: "meetups",
+				authorLogin: "automation[bot]",
+				locale: "fr",
+				retainedContent: new AttentionCommentRetention(
+					{
+						attentionRecord:
+							new GithubOrganizerAttentionComposition().attentionRecord(),
+						createGithubAttentionClient: (...args) =>
+							new GithubOrganizerAttentionComposition().githubAttentionClient(
+								...args,
+							),
+						createTrustedAttentionState: (...args) =>
+							new GithubOrganizerAttentionComposition().trustedAttentionState(
+								...args,
+							),
+					},
+					f.api,
+					"example",
+					"meetups",
+					"automation[bot]",
+				),
+			},
+		);
 		const attention = state();
 
 		// Act
@@ -44,6 +73,12 @@ describe("single organizer checklist across event and attention runs", () => {
 		await f.repository.load();
 		await f.repository.save(attention);
 		await new OrganizerFeedback(
+			{
+				attentionStageInput:
+					new GithubActionsComposition().attentionStageInput(),
+				createReconcileOrganizerFeedback: (...args) =>
+					new JourneyComposition().reconcileOrganizerFeedback(...args),
+			},
 			{
 				find: vi.fn().mockResolvedValue({ identity, labels: ["meetup"] }),
 				applyPatch: vi.fn(),
@@ -80,7 +115,9 @@ describe("single organizer checklist across event and attention runs", () => {
 		const loaded = await f.repository.load();
 		if (!loaded) throw new Error("Missing attention state");
 		await f.repository.save(loaded);
-		const retainedAttention = AttentionRecord.read(f.comments[0].body ?? "");
+		const retainedAttention = new GithubOrganizerAttentionComposition()
+			.attentionRecord()
+			.read(f.comments[0].body ?? "");
 
 		// Assert
 		expect(f.comments).toHaveLength(1);
@@ -97,14 +134,30 @@ describe("single organizer checklist across event and attention runs", () => {
 	it("recovers consolidation after removal fails without losing notification authority", async () => {
 		// Arrange
 		const f = fixture();
-		const comments = new GitHubEventCommentRepository(f.api, {
-			owner: "example",
-			repo: "meetups",
-			authorLogin: "automation[bot]",
-		});
+		const comments = new GitHubEventCommentRepository(
+			{
+				diagnosticCommentPresenter:
+					new GithubEventCommentRepositoryComposition().diagnosticCommentPresenter(),
+				createEventCommentMessages: (...args) =>
+					new GithubEventCommentRepositoryComposition().eventCommentMessages(
+						...args,
+					),
+			},
+			f.api,
+			{
+				owner: "example",
+				repo: "meetups",
+				authorLogin: "automation[bot]",
+			},
+		);
 		await comments.reconcileDiagnostics(identity, [diagnostic]);
 		await f.client.create(
-			f.presenter.issue(state(), AttentionRecord.marker(state())),
+			f.presenter.issue(
+				state(),
+				new GithubOrganizerAttentionComposition()
+					.attentionRecord()
+					.marker(state()),
+			),
 		);
 		await f.repository.load();
 		f.api.rest.issues.deleteComment.mockRejectedValueOnce(
@@ -117,6 +170,16 @@ describe("single organizer checklist across event and attention runs", () => {
 			(error: Error) => error.message,
 		);
 		const retry = new GithubAttentionRepository(
+			{
+				attentionRecord:
+					new GithubOrganizerAttentionComposition().attentionRecord(),
+				attentionStateEquality:
+					new CommunicationDomainComposition().attentionStateEquality(),
+				createTrustedAttentionState: (...args) =>
+					new GithubOrganizerAttentionComposition().trustedAttentionState(
+						...args,
+					),
+			},
 			f.client,
 			"automation[bot]",
 			f.presenter,

@@ -1,6 +1,7 @@
 import * as core from "@actions/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ActionReport } from "./action-report.js";
+import { GithubActionsComposition } from "./dependency-composition.js";
 
 vi.mock("@actions/core", () => ({
 	info: vi.fn(),
@@ -32,7 +33,10 @@ describe("shared action reporting", () => {
 			];
 
 			// Act
-			await ActionReport.write("Example action", {
+			await new ActionReport({
+				createActionMessages: (...args) =>
+					new GithubActionsComposition().actionMessages(...args),
+			}).write("Example action", {
 				details: ["validation=completed"],
 				diagnostics,
 			});
@@ -57,7 +61,10 @@ describe("shared action reporting", () => {
 		const report = { details: ["active_events=0"], diagnostics: [] };
 
 		// Act
-		await ActionReport.write("Example action", report);
+		await new ActionReport({
+			createActionMessages: (...args) =>
+				new GithubActionsComposition().actionMessages(...args),
+		}).write("Example action", report);
 
 		// Assert
 		expect(core.info).toHaveBeenCalledExactlyOnceWith("active_events=0");
@@ -81,7 +88,10 @@ describe("shared action reporting", () => {
 			];
 
 			// Act
-			await ActionReport.write("Example action", { details: [], diagnostics });
+			await new ActionReport({
+				createActionMessages: (...args) =>
+					new GithubActionsComposition().actionMessages(...args),
+			}).write("Example action", { details: [], diagnostics });
 
 			// Assert
 			expect(core.info).toHaveBeenCalledExactlyOnceWith(
@@ -103,7 +113,10 @@ describe("shared action reporting", () => {
 		};
 
 		// Act
-		await ActionReport.write("Example action", {
+		await new ActionReport({
+			createActionMessages: (...args) =>
+				new GithubActionsComposition().actionMessages(...args),
+		}).write("Example action", {
 			details: ["validation=completed", "validation=completed"],
 			diagnostics: [
 				diagnostic,
@@ -134,7 +147,10 @@ describe("shared action reporting", () => {
 		};
 
 		// Act
-		await ActionReport.write("Example action", report);
+		await new ActionReport({
+			createActionMessages: (...args) =>
+				new GithubActionsComposition().actionMessages(...args),
+		}).write("Example action", report);
 
 		// Assert
 		expect(core.info).toHaveBeenCalledWith(
@@ -167,7 +183,10 @@ describe("shared action reporting", () => {
 		};
 
 		// Act
-		await ActionReport.write("Example action", report);
+		await new ActionReport({
+			createActionMessages: (...args) =>
+				new GithubActionsComposition().actionMessages(...args),
+		}).write("Example action", report);
 
 		// Assert
 		expect(
@@ -195,7 +214,10 @@ describe("shared action reporting", () => {
 		};
 
 		// Act
-		await ActionReport.write("Example action", report);
+		await new ActionReport({
+			createActionMessages: (...args) =>
+				new GithubActionsComposition().actionMessages(...args),
+		}).write("Example action", report);
 
 		// Assert
 		expect(core.info).toHaveBeenCalledWith("error example.invalid");

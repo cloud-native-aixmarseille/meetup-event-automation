@@ -14,7 +14,7 @@ describe("GitHub attention response validation", () => {
 		const response: unknown = input;
 
 		// Act
-		const parse = () => GithubAttentionResponse.comment(response);
+		const parse = () => new GithubAttentionResponse().comment(response);
 
 		// Assert
 		expect(parse).toThrow();
@@ -33,7 +33,8 @@ describe("GitHub attention response validation", () => {
 		const response = { node };
 
 		// Act
-		const parse = () => GithubAttentionResponse.current(response, comment);
+		const parse = () =>
+			new GithubAttentionResponse().current(response, comment);
 
 		// Assert
 		expect(parse).toThrow();
@@ -54,7 +55,8 @@ describe("GitHub attention response validation", () => {
 		};
 
 		// Act
-		const parse = () => GithubAttentionResponse.history(response, comment);
+		const parse = () =>
+			new GithubAttentionResponse().history(response, comment);
 
 		// Assert
 		expect(parse).toThrow();

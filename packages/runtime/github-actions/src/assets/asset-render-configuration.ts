@@ -1,33 +1,45 @@
-import {
-	type AssetRenderAssignments,
-	type AssetTalkIdentity,
+import type {
+	AssetRenderAssignments,
+	AssetTalkIdentity,
 	ContentContractPolicy,
-	type ImageSource,
-	type PublicAssetVenue,
+	ImageSource,
+	PublicAssetVenue,
 } from "@meetup-automation/publication";
-import { RuntimeInput } from "../runtime-input.js";
+import type { RuntimeInput } from "../runtime-input.js";
+
+export interface AssetRenderConfigurationCollaborators {
+	readonly contentContractPolicy: Pick<
+		ContentContractPolicy,
+		"keys" | "text" | "name"
+	>;
+	readonly runtimeInput: Pick<RuntimeInput, "isObject">;
+}
 
 export class AssetRenderConfiguration {
-	static parse(
+	constructor(
+		private readonly collaborators: AssetRenderConfigurationCollaborators,
+	) {}
+
+	parse(
 		event: { speakers?: unknown; talks?: unknown },
 		venues: unknown,
 		hostLogos?: unknown,
 	): AssetRenderAssignments {
 		return {
-			speakers: AssetRenderConfiguration.speakers(event.speakers),
-			talks: AssetRenderConfiguration.talks(event.talks),
-			venues: AssetRenderConfiguration.venues(venues),
-			hostLogos: AssetRenderConfiguration.logos(hostLogos),
+			speakers: this.speakers(event.speakers),
+			talks: this.talks(event.talks),
+			venues: this.venues(venues),
+			hostLogos: this.logos(hostLogos),
 		};
 	}
 
-	private static speakers(input: unknown): Readonly<Record<string, string>> {
+	private speakers(input: unknown): Readonly<Record<string, string>> {
 		const result: Record<string, string> = {};
 		for (const [slot, id] of Object.entries(
-			AssetRenderConfiguration.record(input === undefined ? {} : input),
+			this.record(input === undefined ? {} : input),
 		)) {
 			if (
-				!AssetRenderConfiguration.slot(slot) ||
+				!this.slot(slot) ||
 				typeof id !== "string" ||
 				!/^speaker-[a-z0-9-]+$/.test(id)
 			)
@@ -37,20 +49,22 @@ export class AssetRenderConfiguration {
 		return result;
 	}
 
-	private static talks(
-		input: unknown,
-	): Readonly<Record<string, AssetTalkIdentity>> {
+	private talks(input: unknown): Readonly<Record<string, AssetTalkIdentity>> {
 		const result: Record<string, AssetTalkIdentity> = {};
 		for (const [slot, value] of Object.entries(
-			AssetRenderConfiguration.record(input === undefined ? {} : input),
+			this.record(input === undefined ? {} : input),
 		)) {
-			const identity = AssetRenderConfiguration.record(value);
+			const identity = this.record(value);
 			if (
-				!AssetRenderConfiguration.slot(slot) ||
-				!ContentContractPolicy.keys(identity, ["provider", "event", "id"]) ||
-				!AssetRenderConfiguration.identity(identity.provider) ||
-				!AssetRenderConfiguration.identity(identity.event) ||
-				!AssetRenderConfiguration.identity(identity.id)
+				!this.slot(slot) ||
+				!this.collaborators.contentContractPolicy.keys(identity, [
+					"provider",
+					"event",
+					"id",
+				]) ||
+				!this.identity(identity.provider) ||
+				!this.identity(identity.event) ||
+				!this.identity(identity.id)
 			)
 				throw new Error("Invalid asset talk assignment");
 			result[slot] = {
@@ -62,20 +76,22 @@ export class AssetRenderConfiguration {
 		return result;
 	}
 
-	private static venues(
-		input: unknown,
-	): Readonly<Record<string, PublicAssetVenue>> {
+	private venues(input: unknown): Readonly<Record<string, PublicAssetVenue>> {
 		const result: Record<string, PublicAssetVenue> = {};
 		for (const [id, value] of Object.entries(
-			AssetRenderConfiguration.record(input === undefined ? {} : input),
+			this.record(input === undefined ? {} : input),
 		)) {
-			const venue = AssetRenderConfiguration.record(value);
+			const venue = this.record(value);
 			if (
 				!/^host-[a-z0-9-]+$/.test(id) ||
-				!ContentContractPolicy.keys(venue, ["address", "postalCode", "city"]) ||
-				!ContentContractPolicy.text(venue.address) ||
-				!ContentContractPolicy.text(venue.postalCode) ||
-				!ContentContractPolicy.text(venue.city)
+				!this.collaborators.contentContractPolicy.keys(venue, [
+					"address",
+					"postalCode",
+					"city",
+				]) ||
+				!this.collaborators.contentContractPolicy.text(venue.address) ||
+				!this.collaborators.contentContractPolicy.text(venue.postalCode) ||
+				!this.collaborators.contentContractPolicy.text(venue.city)
 			)
 				throw new Error("Invalid public asset venue");
 			result[id] = {
@@ -87,17 +103,20 @@ export class AssetRenderConfiguration {
 		return result;
 	}
 
-	private static logos(input: unknown): Readonly<Record<string, ImageSource>> {
+	private logos(input: unknown): Readonly<Record<string, ImageSource>> {
 		const result: Record<string, ImageSource> = {};
 		for (const [hostId, value] of Object.entries(
-			AssetRenderConfiguration.record(input === undefined ? {} : input),
+			this.record(input === undefined ? {} : input),
 		)) {
-			const logo = AssetRenderConfiguration.record(value);
+			const logo = this.record(value);
 			if (
 				!/^host-[a-z0-9-]+$/.test(hostId) ||
-				!ContentContractPolicy.keys(logo, ["url", "description"]) ||
-				!ContentContractPolicy.text(logo.url) ||
-				!ContentContractPolicy.text(logo.description)
+				!this.collaborators.contentContractPolicy.keys(logo, [
+					"url",
+					"description",
+				]) ||
+				!this.collaborators.contentContractPolicy.text(logo.url) ||
+				!this.collaborators.contentContractPolicy.text(logo.description)
 			)
 				throw new Error("Invalid public host logo");
 			result[hostId] = { url: logo.url, description: logo.description };
@@ -105,19 +124,22 @@ export class AssetRenderConfiguration {
 		return result;
 	}
 
-	private static slot(value: string): boolean {
+	private slot(value: string): boolean {
 		return (
-			ContentContractPolicy.name(value) &&
+			this.collaborators.contentContractPolicy.name(value) &&
 			!["__proto__", "prototype", "constructor"].includes(value)
 		);
 	}
 
-	private static identity(value: unknown): value is string {
+	private identity(value: unknown): value is string {
 		return typeof value === "string" && /^[a-zA-Z0-9_-]{1,200}$/.test(value);
 	}
 
-	private static record(value: unknown): Record<string, unknown> {
-		if (!RuntimeInput.isObject(value) || Object.keys(value).length > 200)
+	private record(value: unknown): Record<string, unknown> {
+		if (
+			!this.collaborators.runtimeInput.isObject(value) ||
+			Object.keys(value).length > 200
+		)
 			throw new Error("Invalid asset render configuration");
 		return value;
 	}

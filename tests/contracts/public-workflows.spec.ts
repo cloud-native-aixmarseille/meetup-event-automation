@@ -1,7 +1,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { AutomationConfigFactory } from "../../packages/application/journey/src/config/automation-config.js";
+import { JourneyPolicyComposition } from "../../packages/application/journey/src/index.js";
 import {
 	type ActionManifest,
 	automationActionPrefix,
@@ -258,8 +258,9 @@ describe("public reusable workflow contracts", () => {
 		async (workflowName, jobName) => {
 			// Arrange
 			const repositoryOwner = "example-community";
-			const config =
-				AutomationConfigFactory.createAutomationConfig(repositoryOwner);
+			const config = new JourneyPolicyComposition()
+				.automationConfigFactory()
+				.createAutomationConfig(repositoryOwner);
 			const communicationAction = `${automationActionPrefix}communication/reconcile`;
 
 			// Act

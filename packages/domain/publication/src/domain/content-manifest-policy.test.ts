@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { contentFixture } from "../../testing/content.fixtures.js";
+import { PublicationDomainComposition } from "../dependency-composition.js";
 import { ContentManifestPolicy } from "./content-manifest-policy.js";
 
 describe("manifest image identities", () => {
@@ -27,12 +28,15 @@ describe("manifest image identities", () => {
 
 			// Act
 			try {
-				ContentManifestPolicy.parse(
-					input,
-					f.input.fileId,
-					f.input.templateId,
-					f.input.mimeType,
-				);
+				new ContentManifestPolicy({
+					contentAnchorIdentity:
+						new PublicationDomainComposition().contentAnchorIdentity(),
+					contentContractPolicy:
+						new PublicationDomainComposition().contentContractPolicy(),
+					contentBindingPolicy:
+						new PublicationDomainComposition().contentBindingPolicy(),
+					contentTextKey: new PublicationDomainComposition().contentTextKey(),
+				}).parse(input, f.input.fileId, f.input.templateId, f.input.mimeType);
 			} catch (caught) {
 				error = caught;
 			}
@@ -61,12 +65,15 @@ describe("manifest shape and anchor ownership", () => {
 
 		// Act
 		const parse = () =>
-			ContentManifestPolicy.parse(
-				input,
-				identity.file,
-				identity.template,
-				identity.mime,
-			);
+			new ContentManifestPolicy({
+				contentAnchorIdentity:
+					new PublicationDomainComposition().contentAnchorIdentity(),
+				contentContractPolicy:
+					new PublicationDomainComposition().contentContractPolicy(),
+				contentBindingPolicy:
+					new PublicationDomainComposition().contentBindingPolicy(),
+				contentTextKey: new PublicationDomainComposition().contentTextKey(),
+			}).parse(input, identity.file, identity.template, identity.mime);
 
 		// Assert
 		expect(parse).toThrowError(expect.objectContaining({ code: "recovery" }));
@@ -85,12 +92,15 @@ describe("manifest shape and anchor ownership", () => {
 		const input = { ...manifest, pending: { revision: "2", bindings } };
 
 		// Act
-		const parsed = ContentManifestPolicy.parse(
-			input,
-			f.input.fileId,
-			f.input.templateId,
-			f.input.mimeType,
-		);
+		const parsed = new ContentManifestPolicy({
+			contentAnchorIdentity:
+				new PublicationDomainComposition().contentAnchorIdentity(),
+			contentContractPolicy:
+				new PublicationDomainComposition().contentContractPolicy(),
+			contentBindingPolicy:
+				new PublicationDomainComposition().contentBindingPolicy(),
+			contentTextKey: new PublicationDomainComposition().contentTextKey(),
+		}).parse(input, f.input.fileId, f.input.templateId, f.input.mimeType);
 
 		// Assert
 		expect(parsed.pending?.bindings).toEqual(bindings);

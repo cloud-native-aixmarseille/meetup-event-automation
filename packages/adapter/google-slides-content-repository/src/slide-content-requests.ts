@@ -1,10 +1,19 @@
 import type { slides_v1 } from "@googleapis/slides";
 import type { ContentChange } from "@meetup-automation/publication";
-import { SlideContentElement } from "./slide-content-element.js";
-import { SlideTemplateBindings } from "./slide-template-bindings.js";
+import type { SlideContentElement } from "./slide-content-element.js";
+import type { SlideTemplateBindings } from "./slide-template-bindings.js";
+
+export interface SlideContentRequestsCollaborators {
+	readonly slideContentElement: Pick<SlideContentElement, "find">;
+	readonly slideTemplateBindings: Pick<SlideTemplateBindings, "style">;
+}
 
 export class SlideContentRequests {
-	static build(
+	constructor(
+		private readonly collaborators: SlideContentRequestsCollaborators,
+	) {}
+
+	build(
 		current: slides_v1.Schema$Presentation,
 		change: ContentChange,
 	): slides_v1.Schema$Request[] {
@@ -25,8 +34,11 @@ export class SlideContentRequests {
 					},
 				},
 			];
-		const element = SlideContentElement.find(current, change.location);
-		const style = SlideTemplateBindings.style(element);
+		const element = this.collaborators.slideContentElement.find(
+			current,
+			change.location,
+		);
+		const style = this.collaborators.slideTemplateBindings.style(element);
 		return [
 			{ deleteText: { objectId, textRange: { type: "ALL" } } },
 			{ insertText: { objectId, insertionIndex: 0, text: change.value.text } },

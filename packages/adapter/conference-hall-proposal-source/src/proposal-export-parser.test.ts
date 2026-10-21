@@ -1,3 +1,4 @@
+import { ReferentialDomainComposition } from "@meetup-automation/referential";
 import { describe, expect, it } from "vitest";
 import { proposal, sourceExport, speaker } from "../testing/export.fixtures.js";
 import { ProposalExportParser } from "./proposal-export-parser.js";
@@ -8,7 +9,11 @@ describe("ProposalExportParser", () => {
 		const input = { proposals: [proposal, proposal] };
 
 		// Act
-		const parse = () => ProposalExportParser.parse(input, "example-cfp");
+		const parse = () =>
+			new ProposalExportParser({
+				sourceSpeakerEquality:
+					new ReferentialDomainComposition().sourceSpeakerEquality(),
+			}).parse(input, "example-cfp");
 
 		// Assert
 		expect(parse).toThrow(
@@ -24,7 +29,10 @@ describe("ProposalExportParser", () => {
 			const input = { proposals: [{ ...proposal, confirmationStatus }] };
 
 			// Act
-			const result = ProposalExportParser.parse(input, "example-cfp");
+			const result = new ProposalExportParser({
+				sourceSpeakerEquality:
+					new ReferentialDomainComposition().sourceSpeakerEquality(),
+			}).parse(input, "example-cfp");
 
 			// Assert
 			expect(result.proposals[0].accepted).toBe(false);
@@ -37,7 +45,11 @@ describe("ProposalExportParser", () => {
 		};
 
 		// Act
-		const parse = () => ProposalExportParser.parse(input, "example-cfp");
+		const parse = () =>
+			new ProposalExportParser({
+				sourceSpeakerEquality:
+					new ReferentialDomainComposition().sourceSpeakerEquality(),
+			}).parse(input, "example-cfp");
 
 		// Assert
 		expect(parse).toThrow(
@@ -55,7 +67,10 @@ describe("ProposalExportParser", () => {
 		};
 
 		// Act
-		const result = ProposalExportParser.parse(input, "example-cfp");
+		const result = new ProposalExportParser({
+			sourceSpeakerEquality:
+				new ReferentialDomainComposition().sourceSpeakerEquality(),
+		}).parse(input, "example-cfp");
 
 		// Assert
 		expect(result.speakers).toHaveLength(1);
@@ -72,7 +87,10 @@ describe("ProposalExportParser", () => {
 			const input = { proposals: [{ ...proposal, deliberationStatus }] };
 
 			// Act
-			const result = ProposalExportParser.parse(input, "example-cfp");
+			const result = new ProposalExportParser({
+				sourceSpeakerEquality:
+					new ReferentialDomainComposition().sourceSpeakerEquality(),
+			}).parse(input, "example-cfp");
 
 			// Assert
 			expect(result.proposals[0].accepted).toBe(false);
@@ -93,7 +111,10 @@ describe("ProposalExportParser", () => {
 			};
 
 			// Act
-			const result = ProposalExportParser.parse(input, "example-cfp");
+			const result = new ProposalExportParser({
+				sourceSpeakerEquality:
+					new ReferentialDomainComposition().sourceSpeakerEquality(),
+			}).parse(input, "example-cfp");
 
 			// Assert
 			expect(result.speakers[0]).not.toHaveProperty("pictureUrl");
@@ -106,7 +127,10 @@ describe("ProposalExportParser", () => {
 		};
 
 		// Act
-		const result = ProposalExportParser.parse(input, "example-cfp");
+		const result = new ProposalExportParser({
+			sourceSpeakerEquality:
+				new ReferentialDomainComposition().sourceSpeakerEquality(),
+		}).parse(input, "example-cfp");
 
 		// Assert
 		expect(result.speakers[0].pictureUrl).toBeNull();
@@ -125,7 +149,11 @@ describe("ProposalExportParser", () => {
 		};
 
 		// Act
-		const parse = () => ProposalExportParser.parse(input, "example-cfp");
+		const parse = () =>
+			new ProposalExportParser({
+				sourceSpeakerEquality:
+					new ReferentialDomainComposition().sourceSpeakerEquality(),
+			}).parse(input, "example-cfp");
 
 		// Assert
 		expect(parse).toThrow("Proposal source invalid.");
@@ -135,7 +163,10 @@ describe("ProposalExportParser", () => {
 		const input = { proposals: [{ ...proposal, proposalNumber: 17 }] };
 
 		// Act
-		const result = ProposalExportParser.parse(input, "example-cfp");
+		const result = new ProposalExportParser({
+			sourceSpeakerEquality:
+				new ReferentialDomainComposition().sourceSpeakerEquality(),
+		}).parse(input, "example-cfp");
 
 		// Assert
 		expect(result.proposals[0]).toMatchObject({ id: proposal.id, number: 17 });
@@ -147,7 +178,10 @@ describe("ProposalExportParser", () => {
 			const input = { proposals: [{ ...proposal, proposalNumber }] };
 
 			// Act
-			const result = ProposalExportParser.parse(input, "example-cfp");
+			const result = new ProposalExportParser({
+				sourceSpeakerEquality:
+					new ReferentialDomainComposition().sourceSpeakerEquality(),
+			}).parse(input, "example-cfp");
 
 			// Assert
 			expect(result.proposals[0].number).toBeUndefined();
@@ -161,7 +195,11 @@ describe("ProposalExportParser", () => {
 			const input = { proposals: [{ ...proposal, proposalNumber }] };
 
 			// Act
-			const parse = () => ProposalExportParser.parse(input, "example-cfp");
+			const parse = () =>
+				new ProposalExportParser({
+					sourceSpeakerEquality:
+						new ReferentialDomainComposition().sourceSpeakerEquality(),
+				}).parse(input, "example-cfp");
 
 			// Assert
 			expect(parse).toThrow(

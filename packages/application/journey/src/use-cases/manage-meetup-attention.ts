@@ -1,25 +1,25 @@
-import {
-	type AttentionApprovalSource,
-	type AttentionRecoverySource,
-	type AttentionStage,
-	type CommunicationClock,
+import type {
+	AttentionApprovalSource,
+	AttentionRecoverySource,
+	AttentionStage,
+	CommunicationClock,
 	EvaluateAttention,
 	PostEventPolicy,
-	type ReconcileAttention,
+	ReconcileAttention,
 } from "@meetup-automation/communication";
 import {
 	EventConcurrentModificationError,
 	type EventDocumentCodec,
+	type EventDocumentConcurrency,
 	type EventIdentity,
 	type EventRepository,
-	ReconcileEvent,
 } from "@meetup-automation/event";
 import type { AutomationConfig } from "../config/automation-config.js";
 import {
 	FOLLOW_UP_TASKS,
 	type OrganizerFollowUp,
 } from "../ports/organizer-follow-up.js";
-import { AttentionEventFacts } from "./attention-event-facts.js";
+import type { AttentionEventFacts } from "./attention-event-facts.js";
 export interface ManageMeetupAttentionDependencies {
 	readonly config: AutomationConfig;
 	readonly repository: EventRepository;
@@ -30,8 +30,19 @@ export interface ManageMeetupAttentionDependencies {
 	readonly reconciliation: Pick<ReconcileAttention, "execute">;
 	readonly clock: CommunicationClock;
 }
+export interface ManageMeetupAttentionCollaborators {
+	readonly attentionEventFacts: Pick<AttentionEventFacts, "create">;
+	readonly evaluateAttention: Pick<EvaluateAttention, "execute">;
+	readonly eventDocumentConcurrency: Pick<
+		EventDocumentConcurrency,
+		"eventDocumentsEqual"
+	>;
+	readonly postEventPolicy: Pick<PostEventPolicy, "isDue">;
+}
+
 export class ManageMeetupAttention {
 	constructor(
+		private readonly collaborators: ManageMeetupAttentionCollaborators,
 		private readonly dependencies: ManageMeetupAttentionDependencies,
 	) {}
 	async execute(
@@ -49,20 +60,29 @@ export class ManageMeetupAttention {
 				posted: false,
 				notificationFailed: false,
 			};
-		const facts = AttentionEventFacts.create(codec.decode(source), config);
+		const facts = this.collaborators.attentionEventFacts.create(
+			codec.decode(source),
+			config,
+		);
 		const evidence = await this.synchronizeEvidence();
 		const now = clock.now();
-		const observation = EvaluateAttention.execute(
+		const observation = this.collaborators.evaluateAttention.execute(
 			{ ...facts, ...evidence, stages, runId },
 			now,
 		);
 		const current = await repository.find(identity);
-		if (!current || !ReconcileEvent.eventDocumentsEqual(source, current))
+		if (
+			!current ||
+			!this.collaborators.eventDocumentConcurrency.eventDocumentsEqual(
+				source,
+				current,
+			)
+		)
 			throw new EventConcurrentModificationError(identity);
 		const commentId = await this.dependencies.followUp.synchronizeFollowUp({
 			eventDate: facts.eventDate,
 			requestedAt: now.toISOString(),
-			active: PostEventPolicy.isDue({
+			active: this.collaborators.postEventPolicy.isDue({
 				eventDate: facts.eventDate,
 				occurrenceStatus: facts.occurrence,
 				timeZone: "Europe/Paris",
@@ -97,3 +117,10 @@ export class ManageMeetupAttention {
 		};
 	}
 }
+export type ManageMeetupAttentionArguments =
+	ConstructorParameters<typeof ManageMeetupAttention> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

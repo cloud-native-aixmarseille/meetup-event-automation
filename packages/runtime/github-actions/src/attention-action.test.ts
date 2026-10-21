@@ -1,7 +1,13 @@
 import * as core from "@actions/core";
+import { ManageMeetupAttention } from "@meetup-automation/journey";
+import { LocalizationComposition } from "@meetup-automation/localization";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AttentionAction } from "./attention-action.js";
+import { AttentionComposition } from "./attention-composition.js";
+import { GithubActionsComposition } from "./dependency-composition.js";
 import { ActionMessages } from "./i18n/action-messages.js";
+import { OrganizerFeedback } from "./organizer-feedback.js";
+
 const boundary = vi.hoisted(() => ({ execute: vi.fn(), feedback: vi.fn() }));
 vi.mock("@actions/core", () => ({
 	getInput: (name: string) =>
@@ -45,7 +51,24 @@ describe("attention action reporting", () => {
 			});
 
 			// Act
-			const report = await AttentionAction.run(new ActionMessages("fr"));
+			const report = await new AttentionAction({
+				createAttention: (input) => {
+					const container = AttentionComposition.create(input);
+					return {
+						feedback: container.get(OrganizerFeedback),
+						attention: container.get(ManageMeetupAttention),
+					};
+				},
+				runtimeInput: new GithubActionsComposition().runtimeInput(),
+				attentionStages: new GithubActionsComposition().attentionStages(),
+				createActionMessages: (...args) =>
+					new GithubActionsComposition().actionMessages(...args),
+			}).run(
+				new ActionMessages(
+					{ localeResolver: new LocalizationComposition().localeResolver() },
+					"fr",
+				),
+			);
 
 			// Assert
 			expect(Boolean(report.failure)).toBe(notificationFailed);
@@ -68,7 +91,19 @@ describe("attention action reporting", () => {
 		});
 
 		// Act
-		const report = await AttentionAction.run();
+		const report = await new AttentionAction({
+			createAttention: (input) => {
+				const container = AttentionComposition.create(input);
+				return {
+					feedback: container.get(OrganizerFeedback),
+					attention: container.get(ManageMeetupAttention),
+				};
+			},
+			runtimeInput: new GithubActionsComposition().runtimeInput(),
+			attentionStages: new GithubActionsComposition().attentionStages(),
+			createActionMessages: (...args) =>
+				new GithubActionsComposition().actionMessages(...args),
+		}).run();
 
 		// Assert
 		expect(report.details.join(" ")).toContain("skipped");

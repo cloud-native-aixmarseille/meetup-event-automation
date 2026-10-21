@@ -1,9 +1,11 @@
 import { SpeakerSynchronizationError } from "@meetup-automation/journey";
+import { LocalizationComposition } from "@meetup-automation/localization";
 import {
 	ProposalSourceError,
 	SpeakerCatalogHistoryError,
 } from "@meetup-automation/referential";
 import { describe, expect, it } from "vitest";
+import { GithubActionsComposition } from "./dependency-composition.js";
 import { ActionMessages } from "./i18n/action-messages.js";
 import { SpeakerSyncFailureReport } from "./speaker-sync-failure-report.js";
 
@@ -17,9 +19,15 @@ describe("SpeakerSyncFailureReport", () => {
 			const error = new SpeakerSynchronizationError("read-catalog", cause);
 
 			// Act
-			const { report, prBody } = SpeakerSyncFailureReport.create(
+			const { report, prBody } = new SpeakerSyncFailureReport({
+				createActionMessages: (...args) =>
+					new GithubActionsComposition().actionMessages(...args),
+			}).create(
 				error,
-				new ActionMessages(locale),
+				new ActionMessages(
+					{ localeResolver: new LocalizationComposition().localeResolver() },
+					locale,
+				),
 			);
 
 			// Assert
@@ -53,9 +61,14 @@ describe("SpeakerSyncFailureReport", () => {
 			const error = new SpeakerSynchronizationError("load-source", source);
 
 			// Act
-			const { report, prBody } = SpeakerSyncFailureReport.create(
+			const { report, prBody } = new SpeakerSyncFailureReport({
+				createActionMessages: (...args) =>
+					new GithubActionsComposition().actionMessages(...args),
+			}).create(
 				error,
-				new ActionMessages(),
+				new ActionMessages({
+					localeResolver: new LocalizationComposition().localeResolver(),
+				}),
 			);
 
 			// Assert
@@ -90,9 +103,15 @@ describe("SpeakerSyncFailureReport", () => {
 			);
 
 			// Act
-			const { report, prBody } = SpeakerSyncFailureReport.create(
+			const { report, prBody } = new SpeakerSyncFailureReport({
+				createActionMessages: (...args) =>
+					new GithubActionsComposition().actionMessages(...args),
+			}).create(
 				error,
-				new ActionMessages(locale),
+				new ActionMessages(
+					{ localeResolver: new LocalizationComposition().localeResolver() },
+					locale,
+				),
 			);
 
 			// Assert
@@ -115,9 +134,14 @@ describe("SpeakerSyncFailureReport", () => {
 		);
 
 		// Act
-		const { report, prBody } = SpeakerSyncFailureReport.create(
+		const { report, prBody } = new SpeakerSyncFailureReport({
+			createActionMessages: (...args) =>
+				new GithubActionsComposition().actionMessages(...args),
+		}).create(
 			error,
-			new ActionMessages(),
+			new ActionMessages({
+				localeResolver: new LocalizationComposition().localeResolver(),
+			}),
 		);
 
 		// Assert
@@ -136,9 +160,14 @@ describe("SpeakerSyncFailureReport", () => {
 		});
 
 		// Act
-		const { report, prBody } = SpeakerSyncFailureReport.create(
+		const { report, prBody } = new SpeakerSyncFailureReport({
+			createActionMessages: (...args) =>
+				new GithubActionsComposition().actionMessages(...args),
+		}).create(
 			error,
-			new ActionMessages(),
+			new ActionMessages({
+				localeResolver: new LocalizationComposition().localeResolver(),
+			}),
 		);
 
 		// Assert
@@ -156,9 +185,14 @@ describe("SpeakerSyncFailureReport", () => {
 		error.message = "PRIVATE invalid proposal value";
 
 		// Act
-		const { report, prBody } = SpeakerSyncFailureReport.create(
+		const { report, prBody } = new SpeakerSyncFailureReport({
+			createActionMessages: (...args) =>
+				new GithubActionsComposition().actionMessages(...args),
+		}).create(
 			error,
-			new ActionMessages(),
+			new ActionMessages({
+				localeResolver: new LocalizationComposition().localeResolver(),
+			}),
 		);
 
 		// Assert

@@ -1,12 +1,21 @@
 import { describe, expect, it, vi } from "vitest";
-import { GitHubIssueFormEventDocumentCodec } from "../packages/adapter/github-issue-form-event-document-codec/src/index.js";
-import { ManageMeetupEvent } from "../packages/application/journey/src/index.js";
+import {
+	GitHubIssueFormEventDocumentCodec,
+	GithubIssueFormEventDocumentCodecComposition,
+} from "../packages/adapter/github-issue-form-event-document-codec/src/index.js";
+import {
+	JourneyComposition,
+	JourneyPolicyComposition,
+	ManageMeetupEvent,
+} from "../packages/application/journey/src/index.js";
 import {
 	catalog,
 	config,
 } from "../packages/application/journey/testing/meetup-journey.fixtures.js";
 import type { EventDocument } from "../packages/domain/event/src/index.js";
+import { EventDomainComposition } from "../packages/domain/event/src/index.js";
 import type { ProposalSnapshot } from "../packages/domain/referential/src/index.js";
+import { ReferentialDomainComposition } from "../packages/domain/referential/src/index.js";
 
 const document: EventDocument = {
 	identity: { repository: "example/meetups", issueNumber: 42 },
@@ -64,28 +73,61 @@ function fixture(sourceDocument = document) {
 		listPage: vi.fn(),
 	};
 	const proposalSource = { load: vi.fn().mockResolvedValue(snapshot) };
-	const useCase = new ManageMeetupEvent({
-		config,
-		proposalSource,
-		referentialRepository: {
-			load: vi.fn().mockResolvedValue({
-				...catalog,
-				speakers: [
-					{
-						...catalog.speakers[0],
-						sourceProvider: "conference-hall",
-						sourceEvent: "example-cfp",
-						sourceSpeakerId: "source-one",
-					},
-				],
-			}),
+	const useCase = new ManageMeetupEvent(
+		{
+			eventPublicationEvaluation:
+				new JourneyPolicyComposition().eventPublicationEvaluation(),
+			eventReadinessPolicy: new EventDomainComposition().eventReadinessPolicy(),
+			eventLifecycle: new EventDomainComposition().eventLifecycle(),
+			eventDiagnosticProjection:
+				new JourneyPolicyComposition().eventDiagnosticProjection(),
+			eventParticipantResolution:
+				new JourneyPolicyComposition().eventParticipantResolution(),
+			eventRepositoryPatches:
+				new EventDomainComposition().eventRepositoryPatches(),
+			eventDocumentConcurrency:
+				new EventDomainComposition().eventDocumentConcurrency(),
+			createReconcileEvent: (...args) =>
+				new EventDomainComposition().reconcileEvent(...args),
+			createValidateReferentialCatalog: (...args) =>
+				new ReferentialDomainComposition().validateReferentialCatalog(...args),
+			createRefreshSelectedProposals: (...args) =>
+				new JourneyComposition().refreshSelectedProposals(...args),
+			createResolveEventReferences: (...args) =>
+				new ReferentialDomainComposition().resolveEventReferences(...args),
 		},
-		eventDependencies: {
-			repository,
-			documentCodec: new GitHubIssueFormEventDocumentCodec(),
-			clock: { now: () => "2026-10-01T12:00:00Z" },
+		{
+			config,
+			proposalSource,
+			referentialRepository: {
+				load: vi.fn().mockResolvedValue({
+					...catalog,
+					speakers: [
+						{
+							...catalog.speakers[0],
+							sourceProvider: "conference-hall",
+							sourceEvent: "example-cfp",
+							sourceSpeakerId: "source-one",
+						},
+					],
+				}),
+			},
+			eventDependencies: {
+				repository,
+				documentCodec: new GitHubIssueFormEventDocumentCodec({
+					createIssueFormReader: (...args) =>
+						new GithubIssueFormEventDocumentCodecComposition().issueFormReader(
+							...args,
+						),
+					createIssueFormWriter: (...args) =>
+						new GithubIssueFormEventDocumentCodecComposition().issueFormWriter(
+							...args,
+						),
+				}),
+				clock: { now: () => "2026-10-01T12:00:00Z" },
+			},
 		},
-	});
+	);
 	return { useCase, repository, proposalSource };
 }
 

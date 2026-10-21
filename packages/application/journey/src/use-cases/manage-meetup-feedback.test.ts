@@ -1,11 +1,14 @@
 import type { EventDocument, MeetupEvent } from "@meetup-automation/event";
+import { EventDomainComposition } from "@meetup-automation/event";
 import {
 	type FeedbackEventGateway,
 	type FeedbackLinkGateway,
 	FeedbackResolutionError,
+	PublicationDomainComposition,
 } from "@meetup-automation/publication";
 import {
 	ProposalSourceError,
+	ReferentialDomainComposition,
 	type ReferentialRepository,
 } from "@meetup-automation/referential";
 import { describe, expect, it, vi } from "vitest";
@@ -17,6 +20,8 @@ import {
 	identity,
 	sourceDocument,
 } from "../../testing/meetup-journey.fixtures.js";
+import { JourneyComposition } from "../dependency-composition.js";
+import { JourneyPolicyComposition } from "../policy-composition.js";
 import { ManageMeetupEvent } from "./manage-meetup-event.js";
 import { ManageMeetupFeedback } from "./manage-meetup-feedback.js";
 
@@ -67,20 +72,60 @@ function journey(
 			.fn<FeedbackLinkGateway["updateTarget"]>()
 			.mockResolvedValue(true),
 	};
-	const useCase = new ManageMeetupFeedback({
-		eventLabel: "meetup",
-		eventRepository: deps.repository,
-		documentCodec: deps.documentCodec,
-		clock: { now: () => now },
-		links,
-		events,
-		manageEvent: new ManageMeetupEvent({
-			proposalSource: { load: vi.fn() },
-			config,
-			eventDependencies: deps,
-			referentialRepository,
-		}),
-	});
+	const useCase = new ManageMeetupFeedback(
+		{
+			feedbackPolicy: new PublicationDomainComposition().feedbackPolicy(),
+			feedbackAgendaProjection:
+				new JourneyPolicyComposition().feedbackAgendaProjection(),
+			eventRepositoryPatches:
+				new EventDomainComposition().eventRepositoryPatches(),
+			feedbackLinkSelection:
+				new PublicationDomainComposition().feedbackLinkSelection(),
+			eventDocumentConcurrency:
+				new EventDomainComposition().eventDocumentConcurrency(),
+		},
+		{
+			eventLabel: "meetup",
+			eventRepository: deps.repository,
+			documentCodec: deps.documentCodec,
+			clock: { now: () => now },
+			links,
+			events,
+			manageEvent: new ManageMeetupEvent(
+				{
+					eventPublicationEvaluation:
+						new JourneyPolicyComposition().eventPublicationEvaluation(),
+					eventReadinessPolicy:
+						new EventDomainComposition().eventReadinessPolicy(),
+					eventLifecycle: new EventDomainComposition().eventLifecycle(),
+					eventDiagnosticProjection:
+						new JourneyPolicyComposition().eventDiagnosticProjection(),
+					eventParticipantResolution:
+						new JourneyPolicyComposition().eventParticipantResolution(),
+					eventRepositoryPatches:
+						new EventDomainComposition().eventRepositoryPatches(),
+					eventDocumentConcurrency:
+						new EventDomainComposition().eventDocumentConcurrency(),
+					createReconcileEvent: (...args) =>
+						new EventDomainComposition().reconcileEvent(...args),
+					createValidateReferentialCatalog: (...args) =>
+						new ReferentialDomainComposition().validateReferentialCatalog(
+							...args,
+						),
+					createRefreshSelectedProposals: (...args) =>
+						new JourneyComposition().refreshSelectedProposals(...args),
+					createResolveEventReferences: (...args) =>
+						new ReferentialDomainComposition().resolveEventReferences(...args),
+				},
+				{
+					proposalSource: { load: vi.fn() },
+					config,
+					eventDependencies: deps,
+					referentialRepository,
+				},
+			),
+		},
+	);
 	return { deps, events, links, useCase };
 }
 

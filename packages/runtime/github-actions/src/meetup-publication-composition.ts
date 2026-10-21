@@ -4,24 +4,18 @@ import type {
 	EventDocumentCodec,
 	EventRepository,
 } from "@meetup-automation/event";
-import {
-	ApprovalMessages,
-	ApprovalPresenter,
-	GithubApprovalClient,
-} from "@meetup-automation/github-organizer-approval";
-import { GithubPublicationJournal } from "@meetup-automation/github-publication-journal";
+import { GithubOrganizerApprovalComposition } from "@meetup-automation/github-organizer-approval";
+import { GithubPublicationJournalComposition } from "@meetup-automation/github-publication-journal";
 import {
 	type AutomationConfig,
+	JourneyComposition,
 	ManageMeetupEvent,
 	ManageMeetupPublication,
 	type MeetupPublicationSettings,
 } from "@meetup-automation/journey";
-import { MeetupEventGateway } from "@meetup-automation/meetup-event-gateway";
+import { MeetupEventGatewayComposition } from "@meetup-automation/meetup-event-gateway";
 import { MeetupGroupUrl } from "@meetup-automation/publication";
-import {
-	SlackApprovalNotification,
-	SlackApprovalPresenter,
-} from "@meetup-automation/slack-notification-gateway";
+import { SlackNotificationGatewayComposition } from "@meetup-automation/slack-notification-gateway";
 import {
 	EventComposition,
 	type EventCompositionInput,
@@ -50,7 +44,7 @@ export class MeetupPublicationComposition {
 			];
 			const group = MeetupGroupUrl.fromEventUrlPrefix(prefix);
 			if (!group) throw new Error("Invalid Meetup event URL prefix");
-			return new ManageMeetupPublication({
+			return new JourneyComposition().manageMeetupPublication({
 				repository: context.get<EventRepository>(SERVICES.eventRepository),
 				codec: context.get<EventDocumentCodec>(SERVICES.eventDocumentCodec),
 				clock: context.get<EventClock>(SERVICES.eventClock),
@@ -58,27 +52,30 @@ export class MeetupPublicationComposition {
 				settings: input.settings,
 				approval: MeetupPublicationComposition.approval(input),
 				meetupUrlPrefix: prefix,
-				journal: new GithubPublicationJournal(
-					input.client,
-					{
-						owner: input.owner,
-						repo: input.repo,
-						issue_number: input.issueNumber,
-					},
-					input.commentAuthorLogin,
-				),
-				gateway: MeetupEventGateway.create(
-					{ email: input.email, password: input.password },
-					fileURLToPath(
-						new URL(
-							"../../../../packages/adapter/meetup-event-gateway/python/",
-							import.meta.url,
-						),
+				journal:
+					new GithubPublicationJournalComposition().githubPublicationJournal(
+						input.client,
+						{
+							owner: input.owner,
+							repo: input.repo,
+							issue_number: input.issueNumber,
+						},
+						input.commentAuthorLogin,
 					),
-					input.geminiApiKey,
-					input.geminiModel,
-					group.value,
-				),
+				gateway: new MeetupEventGatewayComposition()
+					.meetupEventGatewayFactory()
+					.create(
+						{ email: input.email, password: input.password },
+						fileURLToPath(
+							new URL(
+								"../../../../packages/adapter/meetup-event-gateway/python/",
+								import.meta.url,
+							),
+						),
+						input.geminiApiKey,
+						input.geminiModel,
+						group.value,
+					),
 			});
 		});
 		return container;
@@ -92,17 +89,21 @@ export class MeetupPublicationComposition {
 		},
 	) {
 		return OrganizerApprovalComposition.create(
-			new GithubApprovalClient(
+			new GithubOrganizerApprovalComposition().githubApprovalClient(
 				input.client,
 				input.owner,
 				input.repo,
 				input.issueNumber,
 			),
 			input.commentAuthorLogin,
-			new ApprovalPresenter(new ApprovalMessages(input.locale)),
-			new SlackApprovalNotification(
+			new GithubOrganizerApprovalComposition().approvalPresenter(
+				new GithubOrganizerApprovalComposition().approvalMessages(input.locale),
+			),
+			new SlackNotificationGatewayComposition().slackApprovalNotification(
 				input.slackToken,
-				new SlackApprovalPresenter(input.locale),
+				new SlackNotificationGatewayComposition().slackApprovalPresenter(
+					input.locale,
+				),
 			),
 			input.slackOrganizerChannelId,
 		).approval;

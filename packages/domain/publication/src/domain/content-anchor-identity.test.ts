@@ -8,10 +8,10 @@ describe("ContentAnchorIdentity", () => {
 		const right = { pageId: "page", tabId: undefined, objectId: "shape" };
 
 		// Act
-		const equal = ContentAnchorIdentity.equal(left, right);
+		const equal = new ContentAnchorIdentity().equal(left, right);
 		const keys = [
-			ContentAnchorIdentity.locationKey(left),
-			ContentAnchorIdentity.locationKey(right),
+			new ContentAnchorIdentity().locationKey(left),
+			new ContentAnchorIdentity().locationKey(right),
 		];
 
 		// Assert
@@ -25,10 +25,10 @@ describe("ContentAnchorIdentity", () => {
 		const right = { ...left, start: 2, end: 11 };
 
 		// Act
-		const equal = ContentAnchorIdentity.equal(left, right);
+		const equal = new ContentAnchorIdentity().equal(left, right);
 		const keys = [
-			ContentAnchorIdentity.locationKey(left),
-			ContentAnchorIdentity.locationKey(right),
+			new ContentAnchorIdentity().locationKey(left),
+			new ContentAnchorIdentity().locationKey(right),
 		];
 
 		// Assert

@@ -1,5 +1,12 @@
 import * as core from "@actions/core";
+import { ListActiveEvents } from "@meetup-automation/event";
+import {
+	type AutomationConfig,
+	ManageMeetupEvent,
+} from "@meetup-automation/journey";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { EventComposition, SERVICES } from "./composition.js";
+import { GithubActionsComposition } from "./dependency-composition.js";
 import { EventActions } from "./event-actions.js";
 
 const boundary = vi.hoisted(() => ({ execute: vi.fn() }));
@@ -61,7 +68,25 @@ describe("event action report facts", () => {
 			});
 
 			// Act
-			const report = await EventActions.runEventReconcileAction();
+			const report = await new EventActions({
+				createEventJourney: (input) =>
+					EventComposition.createEventContainer(input).get(ManageMeetupEvent),
+				createEventListing: (input) => {
+					const container = EventComposition.createDocumentContainer(input);
+					return {
+						events: container.get(ListActiveEvents),
+						label: container.get<AutomationConfig>(SERVICES.config).event[
+							"issue-label"
+						],
+					};
+				},
+				runtimeInput: new GithubActionsComposition().runtimeInput(),
+				conferenceHallInput:
+					new GithubActionsComposition().conferenceHallInput(),
+				actionOutput: new GithubActionsComposition().actionOutput(),
+				createActionMessages: (...args) =>
+					new GithubActionsComposition().actionMessages(...args),
+			}).runEventReconcileAction();
 
 			// Assert
 			expect(boundary.execute).toHaveBeenCalledWith({
@@ -85,7 +110,24 @@ describe("event action report facts", () => {
 		boundary.execute.mockResolvedValue({ skipped: true, diagnostics: [] });
 
 		// Act
-		const report = await EventActions.runEventReconcileAction();
+		const report = await new EventActions({
+			createEventJourney: (input) =>
+				EventComposition.createEventContainer(input).get(ManageMeetupEvent),
+			createEventListing: (input) => {
+				const container = EventComposition.createDocumentContainer(input);
+				return {
+					events: container.get(ListActiveEvents),
+					label: container.get<AutomationConfig>(SERVICES.config).event[
+						"issue-label"
+					],
+				};
+			},
+			runtimeInput: new GithubActionsComposition().runtimeInput(),
+			conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),
+			actionOutput: new GithubActionsComposition().actionOutput(),
+			createActionMessages: (...args) =>
+				new GithubActionsComposition().actionMessages(...args),
+		}).runEventReconcileAction();
 
 		// Assert
 		expect(report.details).toContain("event=skipped reason=unrelated-issue");
@@ -113,7 +155,25 @@ describe("event action report facts", () => {
 			});
 
 			// Act
-			const report = await EventActions.runEventListActiveAction();
+			const report = await new EventActions({
+				createEventJourney: (input) =>
+					EventComposition.createEventContainer(input).get(ManageMeetupEvent),
+				createEventListing: (input) => {
+					const container = EventComposition.createDocumentContainer(input);
+					return {
+						events: container.get(ListActiveEvents),
+						label: container.get<AutomationConfig>(SERVICES.config).event[
+							"issue-label"
+						],
+					};
+				},
+				runtimeInput: new GithubActionsComposition().runtimeInput(),
+				conferenceHallInput:
+					new GithubActionsComposition().conferenceHallInput(),
+				actionOutput: new GithubActionsComposition().actionOutput(),
+				createActionMessages: (...args) =>
+					new GithubActionsComposition().actionMessages(...args),
+			}).runEventListActiveAction();
 
 			// Assert
 			expect(report.details.join("\n")).toContain(

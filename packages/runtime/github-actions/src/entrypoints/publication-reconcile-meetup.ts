@@ -1,8 +1,11 @@
-import { ActionRunner } from "../action-runner.js";
-import { MeetupPublicationAction } from "../meetup-publication-action.js";
+import { GithubActionsComposition } from "../dependency-composition.js";
+import { MeetupActionComposition } from "../meetup-action-composition.js";
 
-await ActionRunner.run(
+const runner = new GithubActionsComposition().actionRunner();
+const action = new MeetupActionComposition().meetupPublicationAction();
+
+await runner.run(
 	"action.publication.reconcile-meetup",
-	MeetupPublicationAction.run,
+	action.run.bind(action),
 	false,
 );

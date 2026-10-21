@@ -3,22 +3,21 @@ import type { FeedbackAgenda } from "@meetup-automation/publication";
 import type { PublicDiagnostic } from "../result/result-envelope.js";
 
 export class FeedbackAgendaProjection {
-	static create(
+	create(
 		event: MeetupEvent,
 		diagnostics: readonly PublicDiagnostic[],
 	): FeedbackAgenda | undefined {
-		if (!event.agenda.length || FeedbackAgendaProjection.blocked(diagnostics))
-			return undefined;
+		if (!event.agenda.length || this.blocked(diagnostics)) return undefined;
 		const talks: FeedbackAgenda["talks"][number][] = [];
 		for (const entry of event.agenda) {
-			const talk = FeedbackAgendaProjection.talk(entry);
+			const talk = this.talk(entry);
 			if (!talk) return undefined;
 			talks.push(talk);
 		}
 		return { talks };
 	}
 
-	private static blocked(diagnostics: readonly PublicDiagnostic[]): boolean {
+	private blocked(diagnostics: readonly PublicDiagnostic[]): boolean {
 		return diagnostics.some(
 			(item) =>
 				item.severity === "error" &&
@@ -28,7 +27,7 @@ export class FeedbackAgendaProjection {
 		);
 	}
 
-	private static talk(
+	private talk(
 		entry: AgendaEntry,
 	): FeedbackAgenda["talks"][number] | undefined {
 		if (!entry.description.trim() || !entry.speakers.length) return undefined;

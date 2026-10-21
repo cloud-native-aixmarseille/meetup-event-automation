@@ -1,6 +1,6 @@
 /** Accept direct Google presentation or Drive file links, never asset folders. */
 export class PresentationFileUrl {
-	static normalize(value?: string): string | undefined {
+	normalize(value?: string): string | undefined {
 		if (!value?.trim()) return undefined;
 		try {
 			const url = new URL(value.trim());

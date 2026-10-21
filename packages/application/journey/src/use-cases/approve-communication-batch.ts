@@ -1,19 +1,29 @@
-import {
+import type {
+	CommunicationClock,
 	MailBatchFingerprint,
+	MailRecipient,
 	PlanCommunications,
-	type CommunicationClock,
-	type MailRecipient,
-	type ReconcileCommunications,
-	type ReconcileCommunicationsInput,
+	ReconcileCommunications,
+	ReconcileCommunicationsInput,
 } from "@meetup-automation/communication";
-import type { OrganizerApproval } from "../ports/organizer-approval.js";
-import type { CommunicationJourneyDiagnostic } from "../communication/contracts.js";
 import type { MeetupEvent } from "@meetup-automation/event";
-import { CommunicationApprovalDetails } from "./communication-approval-details.js";
+import type { CommunicationJourneyDiagnostic } from "../communication/contracts.js";
+import type { OrganizerApproval } from "../ports/organizer-approval.js";
+import type { CommunicationApprovalDetails } from "./communication-approval-details.js";
 
 /** Approve the whole event batch so partial delivery resumes under the same decision. */
+export interface ApproveCommunicationBatchCollaborators {
+	readonly mailBatchFingerprint: Pick<MailBatchFingerprint, "create">;
+	readonly communicationApprovalDetails: Pick<
+		CommunicationApprovalDetails,
+		"create"
+	>;
+	readonly createPlanCommunications: () => PlanCommunications;
+}
+
 export class ApproveCommunicationBatch {
 	constructor(
+		private readonly collaborators: ApproveCommunicationBatchCollaborators,
 		private readonly approvals: OrganizerApproval,
 		private readonly clock: CommunicationClock,
 		private readonly preview: Pick<ReconcileCommunications, "execute">,
@@ -26,7 +36,7 @@ export class ApproveCommunicationBatch {
 	): Promise<boolean> {
 		try {
 			const now = this.clock.now();
-			const planner = new PlanCommunications();
+			const planner = this.collaborators.createPlanCommunications();
 			const pending = planner.execute({ ...input, now });
 			if (!pending.intents.some(({ channel }) => channel === "mail"))
 				return false;
@@ -53,14 +63,17 @@ export class ApproveCommunicationBatch {
 				kind: mails.some((mail) => mail.kind.endsWith("-thanks"))
 					? "email-thanks"
 					: "email-introduction",
-				revision: MailBatchFingerprint.create(
+				revision: this.collaborators.mailBatchFingerprint.create(
 					input.eventDate,
 					input.timeZone,
 					mails,
 				),
 				eventDate: input.eventDate,
 				recipientCount: mails.length,
-				details: CommunicationApprovalDetails.create(event, mails),
+				details: this.collaborators.communicationApprovalDetails.create(
+					event,
+					mails,
+				),
 				requestedAt: now.toISOString(),
 			});
 			if (result.notificationFailed)
@@ -86,3 +99,10 @@ export class ApproveCommunicationBatch {
 		}
 	}
 }
+export type ApproveCommunicationBatchArguments =
+	ConstructorParameters<typeof ApproveCommunicationBatch> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

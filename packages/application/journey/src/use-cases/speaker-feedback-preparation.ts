@@ -5,11 +5,22 @@ import {
 	type FeedbackTalkResultsGateway,
 } from "@meetup-automation/publication";
 import type { CommunicationJourneyDiagnostic } from "../communication/contracts.js";
-import { CommunicationChecklist } from "./communication-checklist.js";
-import { FeedbackAgendaProjection } from "./feedback-agenda-projection.js";
+import type { CommunicationChecklist } from "./communication-checklist.js";
+import type { FeedbackAgendaProjection } from "./feedback-agenda-projection.js";
+
+export interface SpeakerFeedbackPreparationCollaborators {
+	readonly communicationChecklist: Pick<
+		CommunicationChecklist,
+		"pendingRecipients"
+	>;
+	readonly feedbackAgendaProjection: Pick<FeedbackAgendaProjection, "create">;
+}
 
 export class SpeakerFeedbackPreparation {
-	constructor(private readonly feedback: FeedbackTalkResultsGateway) {}
+	constructor(
+		private readonly collaborators: SpeakerFeedbackPreparationCollaborators,
+		private readonly feedback: FeedbackTalkResultsGateway,
+	) {}
 
 	async execute(
 		event: MeetupEvent,
@@ -19,12 +30,18 @@ export class SpeakerFeedbackPreparation {
 	): Promise<readonly MailRecipient[]> {
 		if (
 			!postEvent ||
-			CommunicationChecklist.pendingRecipients(event, recipients, postEvent)
-				.length === 0 ||
+			this.collaborators.communicationChecklist.pendingRecipients(
+				event,
+				recipients,
+				postEvent,
+			).length === 0 ||
 			!recipients.some((recipient) => recipient.role === "speaker")
 		)
 			return recipients;
-		const agenda = FeedbackAgendaProjection.create(event, []);
+		const agenda = this.collaborators.feedbackAgendaProjection.create(
+			event,
+			[],
+		);
 		if (!agenda || !event.publicationLinks.feedback) {
 			diagnostics.push({
 				code: "communication.feedback-unavailable",
@@ -78,3 +95,10 @@ export class SpeakerFeedbackPreparation {
 		}
 	}
 }
+export type SpeakerFeedbackPreparationArguments =
+	ConstructorParameters<typeof SpeakerFeedbackPreparation> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

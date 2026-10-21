@@ -13,7 +13,11 @@ import type {
 } from "./github-event-repository-contracts.js";
 import { GitHubEventRepositoryResponseError } from "./github-event-repository-response-error.js";
 import { GitHubEventRepositoryScopeError } from "./github-event-repository-scope-error.js";
-import { GitHubIssueDocumentCodec } from "./github-issue-document-codec.js";
+import type { GitHubIssueDocumentCodec } from "./github-issue-document-codec.js";
+
+export interface GitHubEventRepositoryCollaborators {
+	readonly gitHubIssueDocumentCodec: Pick<GitHubIssueDocumentCodec, "decode">;
+}
 
 export class GitHubEventRepository implements EventRepository {
 	private readonly owner: string;
@@ -21,17 +25,12 @@ export class GitHubEventRepository implements EventRepository {
 	private readonly repositoryName: string;
 
 	constructor(
+		private readonly collaborators: GitHubEventRepositoryCollaborators,
 		private readonly client: GitHubEventRepositoryClient,
 		options: GitHubEventRepositoryOptions,
 	) {
-		this.owner = GitHubEventRepository.requireRepositoryPart(
-			options.owner,
-			"owner",
-		);
-		this.repo = GitHubEventRepository.requireRepositoryPart(
-			options.repo,
-			"repo",
-		);
+		this.owner = this.requireRepositoryPart(options.owner, "owner");
+		this.repo = this.requireRepositoryPart(options.repo, "repo");
 		this.repositoryName = `${this.owner}/${this.repo}`;
 	}
 
@@ -44,7 +43,7 @@ export class GitHubEventRepository implements EventRepository {
 				repo: this.repo,
 				issue_number: identity.issueNumber,
 			});
-			const document = GitHubIssueDocumentCodec.decode(
+			const document = this.collaborators.gitHubIssueDocumentCodec.decode(
 				response.data,
 				this.repositoryName,
 			);
@@ -55,7 +54,7 @@ export class GitHubEventRepository implements EventRepository {
 			}
 			return document;
 		} catch (error) {
-			if (GitHubEventRepository.isNotFoundError(error)) {
+			if (this.isNotFoundError(error)) {
 				return null;
 			}
 			throw error;
@@ -96,8 +95,8 @@ export class GitHubEventRepository implements EventRepository {
 
 	async listPage(query: EventListPageQuery): Promise<EventDocumentPage> {
 		this.assertScope(query.repository);
-		const page = GitHubEventRepository.parseCursor(query.cursor);
-		const pageSize = GitHubEventRepository.parsePageSize(query.pageSize);
+		const page = this.parseCursor(query.cursor);
+		const pageSize = this.parsePageSize(query.pageSize);
 		const parameters: {
 			owner: string;
 			repo: string;
@@ -125,13 +124,13 @@ export class GitHubEventRepository implements EventRepository {
 
 		const items = response.data
 			.map((issue) =>
-				GitHubIssueDocumentCodec.decode(issue, this.repositoryName),
+				this.collaborators.gitHubIssueDocumentCodec.decode(
+					issue,
+					this.repositoryName,
+				),
 			)
 			.filter((issue): issue is EventDocument => issue !== null);
-		const linkHeader = GitHubEventRepository.readHeader(
-			response.headers,
-			"link",
-		);
+		const linkHeader = this.readHeader(response.headers, "link");
 		const hasNextPage =
 			linkHeader === undefined
 				? response.data.length === pageSize
@@ -152,10 +151,7 @@ export class GitHubEventRepository implements EventRepository {
 		}
 	}
 
-	private static requireRepositoryPart(
-		value: string,
-		name: "owner" | "repo",
-	): string {
+	private requireRepositoryPart(value: string, name: "owner" | "repo"): string {
 		const normalized = value.trim();
 		if (normalized === "" || normalized.includes("/")) {
 			throw new GitHubEventRepositoryConfigurationError(
@@ -165,7 +161,7 @@ export class GitHubEventRepository implements EventRepository {
 		return normalized;
 	}
 
-	private static parseCursor(cursor: string | undefined): number {
+	private parseCursor(cursor: string | undefined): number {
 		if (cursor === undefined) {
 			return 1;
 		}
@@ -177,7 +173,7 @@ export class GitHubEventRepository implements EventRepository {
 		return Number(cursor);
 	}
 
-	private static parsePageSize(pageSize: number | undefined): number {
+	private parsePageSize(pageSize: number | undefined): number {
 		if (pageSize === undefined) {
 			return 100;
 		}
@@ -189,20 +185,17 @@ export class GitHubEventRepository implements EventRepository {
 		return pageSize;
 	}
 
-	private static isNotFoundError(error: unknown): boolean {
-		if (!GitHubEventRepository.isRecord(error)) {
+	private isNotFoundError(error: unknown): boolean {
+		if (!this.isRecord(error)) {
 			return false;
 		}
 		if (error.status === 404) {
 			return true;
 		}
-		return (
-			GitHubEventRepository.isRecord(error.response) &&
-			error.response.status === 404
-		);
+		return this.isRecord(error.response) && error.response.status === 404;
 	}
 
-	private static readHeader(
+	private readHeader(
 		headers: Readonly<Record<string, unknown>> | undefined,
 		name: string,
 	): string | undefined {
@@ -210,7 +203,14 @@ export class GitHubEventRepository implements EventRepository {
 		return typeof value === "string" ? value : undefined;
 	}
 
-	private static isRecord(value: unknown): value is Record<string, unknown> {
+	private isRecord(value: unknown): value is Record<string, unknown> {
 		return typeof value === "object" && value !== null;
 	}
 }
+export type GitHubEventRepositoryArguments =
+	ConstructorParameters<typeof GitHubEventRepository> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

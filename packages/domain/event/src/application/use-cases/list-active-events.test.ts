@@ -6,6 +6,7 @@ import {
 	document,
 	identity,
 } from "../../../testing/event-repository.fixtures.js";
+import { EventDomainComposition } from "../../dependency-composition.js";
 import {
 	EXPECTED_POST_EVENT_TASK_NAMES,
 	type MeetupEvent,
@@ -69,11 +70,21 @@ describe("ListActiveEvents", () => {
 				}),
 			],
 		]);
-		const useCase = new ListActiveEvents({
-			repository,
-			documentCodec: createCodec(events),
-			clock: createClock(),
-		});
+		const useCase = new ListActiveEvents(
+			{
+				eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
+				eventReadinessPolicy:
+					new EventDomainComposition().eventReadinessPolicy(),
+				eventLifecycle: new EventDomainComposition().eventLifecycle(),
+				createEventRuleEngine: (...args) =>
+					new EventDomainComposition().eventRuleEngine(...args),
+			},
+			{
+				repository,
+				documentCodec: createCodec(events),
+				clock: createClock(),
+			},
+		);
 
 		// Act
 		const result = await useCase.execute({
@@ -104,11 +115,21 @@ describe("ListActiveEvents", () => {
 		};
 		const codec = createCodec(new Map());
 		const decode = vi.spyOn(codec, "decode");
-		const useCase = new ListActiveEvents({
-			repository,
-			documentCodec: codec,
-			clock: createClock(),
-		});
+		const useCase = new ListActiveEvents(
+			{
+				eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
+				eventReadinessPolicy:
+					new EventDomainComposition().eventReadinessPolicy(),
+				eventLifecycle: new EventDomainComposition().eventLifecycle(),
+				createEventRuleEngine: (...args) =>
+					new EventDomainComposition().eventRuleEngine(...args),
+			},
+			{
+				repository,
+				documentCodec: codec,
+				clock: createClock(),
+			},
+		);
 
 		// Act
 		const result = await useCase.execute({ repository: identity.repository });
@@ -130,11 +151,21 @@ describe("ListActiveEvents", () => {
 				.fn()
 				.mockResolvedValue({ items: [], nextCursor: "same-page" }),
 		};
-		const useCase = new ListActiveEvents({
-			repository,
-			documentCodec: createCodec(new Map()),
-			clock: createClock(),
-		});
+		const useCase = new ListActiveEvents(
+			{
+				eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
+				eventReadinessPolicy:
+					new EventDomainComposition().eventReadinessPolicy(),
+				eventLifecycle: new EventDomainComposition().eventLifecycle(),
+				createEventRuleEngine: (...args) =>
+					new EventDomainComposition().eventRuleEngine(...args),
+			},
+			{
+				repository,
+				documentCodec: createCodec(new Map()),
+				clock: createClock(),
+			},
+		);
 
 		// Act
 		const operation = useCase.execute({ repository: identity.repository });
@@ -161,11 +192,21 @@ describe("ListActiveEvents", () => {
 			applyPatch: vi.fn(),
 			listPage: vi.fn().mockResolvedValue({ items }),
 		};
-		const useCase = new ListActiveEvents({
-			repository,
-			documentCodec: createCodec(events),
-			clock: createClock(),
-		});
+		const useCase = new ListActiveEvents(
+			{
+				eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
+				eventReadinessPolicy:
+					new EventDomainComposition().eventReadinessPolicy(),
+				eventLifecycle: new EventDomainComposition().eventLifecycle(),
+				createEventRuleEngine: (...args) =>
+					new EventDomainComposition().eventRuleEngine(...args),
+			},
+			{
+				repository,
+				documentCodec: createCodec(events),
+				clock: createClock(),
+			},
+		);
 
 		// Act
 		const operation = useCase.execute({ repository: identity.repository });

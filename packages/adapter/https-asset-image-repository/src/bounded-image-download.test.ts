@@ -1,10 +1,11 @@
-import { Readable } from "node:stream";
+import type { lookup } from "node:dns/promises";
 import { EventEmitter } from "node:events";
 import type { IncomingMessage } from "node:http";
 import type { request } from "node:https";
-import type { lookup } from "node:dns/promises";
+import { Readable } from "node:stream";
 import { describe, expect, it, vi } from "vitest";
 import { BoundedImageDownload } from "./bounded-image-download.js";
+import { HttpsAssetImageRepositoryComposition } from "./dependency-composition.js";
 
 function response(
 	statusCode: number,
@@ -28,6 +29,10 @@ describe("bounded image retrieval", () => {
 			return req;
 		});
 		const download = new BoundedImageDownload(
+			{
+				publicImageUrl:
+					new HttpsAssetImageRepositoryComposition().publicImageUrl(),
+			},
 			resolve as unknown as typeof lookup,
 			send as unknown as typeof request,
 		);
@@ -62,6 +67,10 @@ describe("bounded image retrieval", () => {
 			}),
 		);
 		const download = new BoundedImageDownload(
+			{
+				publicImageUrl:
+					new HttpsAssetImageRepositoryComposition().publicImageUrl(),
+			},
 			resolve as unknown as typeof lookup,
 			send as unknown as typeof request,
 		);
@@ -90,6 +99,10 @@ describe("bounded image retrieval", () => {
 			}),
 		);
 		const download = new BoundedImageDownload(
+			{
+				publicImageUrl:
+					new HttpsAssetImageRepositoryComposition().publicImageUrl(),
+			},
 			resolve as unknown as typeof lookup,
 			send as unknown as typeof request,
 		);

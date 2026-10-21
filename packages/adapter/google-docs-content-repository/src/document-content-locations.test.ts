@@ -1,5 +1,7 @@
 import type { ContentBinding } from "@meetup-automation/publication";
+import { PublicationDomainComposition } from "@meetup-automation/publication";
 import { describe, expect, it, vi } from "vitest";
+import { GoogleDocsContentRepositoryComposition } from "./dependency-composition.js";
 import { DocumentContentLocations } from "./document-content-locations.js";
 
 describe("DocumentContentLocations", () => {
@@ -17,10 +19,18 @@ describe("DocumentContentLocations", () => {
 		"preserves stored observation bytes for provider property variant %#",
 		async (properties, expected) => {
 			// Arrange
-			const reader = new DocumentContentLocations({
-				validate: vi.fn(),
-				observe: vi.fn(async () => "embedded-bytes"),
-			});
+			const reader = new DocumentContentLocations(
+				{
+					documentTabs:
+						new GoogleDocsContentRepositoryComposition().documentTabs(),
+					contentFingerprint:
+						new PublicationDomainComposition().contentFingerprint(),
+				},
+				{
+					validate: vi.fn(),
+					observe: vi.fn(async () => "embedded-bytes"),
+				},
+			);
 			const tabs = [
 				{
 					id: "tab",

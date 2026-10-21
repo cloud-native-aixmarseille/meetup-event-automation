@@ -1,8 +1,16 @@
-import { DiagnosticPolicy } from "./diagnostic-policy.js";
+import type { DiagnosticPolicy } from "./diagnostic-policy.js";
 import type { PublicDiagnostic } from "./result-envelope.js";
 /** Selects actionable root causes shared by every organizer channel. */
+export interface OrganizerDiagnosticPolicyCollaborators {
+	readonly diagnosticPolicy: Pick<DiagnosticPolicy, "classify">;
+}
+
 export class OrganizerDiagnosticPolicy {
-	static suppressed(
+	constructor(
+		private readonly collaborators: OrganizerDiagnosticPolicyCollaborators,
+	) {}
+
+	suppressed(
 		item: PublicDiagnostic,
 		diagnostics: readonly PublicDiagnostic[],
 	): boolean {
@@ -42,7 +50,7 @@ export class OrganizerDiagnosticPolicy {
 			["publication.feedback.", "event.proposals.", "event.agenda."],
 		],
 	]);
-	static derivative(
+	derivative(
 		item: PublicDiagnostic,
 		diagnostics: readonly PublicDiagnostic[],
 	): boolean {
@@ -62,7 +70,8 @@ export class OrganizerDiagnosticPolicy {
 			diagnostics.some(
 				(candidate) =>
 					root.test(candidate.code) &&
-					DiagnosticPolicy.classify(candidate) !== "informational",
+					this.collaborators.diagnosticPolicy.classify(candidate) !==
+						"informational",
 			)
 		);
 	}

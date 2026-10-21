@@ -2,38 +2,30 @@ import type {
 	EventDocumentCodec,
 	EventRepository,
 } from "@meetup-automation/event";
-import { GoogleDocsContentRepository } from "@meetup-automation/google-docs-content-repository";
+import { GoogleDocsContentRepositoryComposition } from "@meetup-automation/google-docs-content-repository";
+import { GoogleDriveAssetRepositoryComposition } from "@meetup-automation/google-drive-asset-repository";
+import { GoogleSlidesContentRepositoryComposition } from "@meetup-automation/google-slides-content-repository";
+import { HttpsAssetImageRepositoryComposition } from "@meetup-automation/https-asset-image-repository";
 import {
-	GoogleDriveAssetRepository,
-	GoogleDriveAuthentication,
-	GoogleDriveManifestRepository,
-} from "@meetup-automation/google-drive-asset-repository";
-import { GoogleSlidesContentRepository } from "@meetup-automation/google-slides-content-repository";
-import { HttpsAssetImageRepository } from "@meetup-automation/https-asset-image-repository";
-import {
-	AssetRenderProjection,
 	type AutomationConfig,
-	FindNextAssetEvent,
+	JourneyComposition,
 	ManageMeetupAssets,
 	ManageMeetupEvent,
 } from "@meetup-automation/journey";
 import {
 	type AssetRepository,
+	PublicationDomainComposition,
 	ReconcileAssetContent,
 	ReconcileEventAssets,
 } from "@meetup-automation/publication";
 import type { ReferentialRepository } from "@meetup-automation/referential";
-import {
-	AssetContentConfiguration,
-	type AssetContentConfigurationData,
-} from "./assets/asset-content-configuration.js";
-import { AssetMessages } from "./assets/asset-messages.js";
-import { AssetRenderPresenterImpl } from "./assets/asset-render-presenter.js";
+import type { AssetContentConfigurationData } from "./assets/asset-content-configuration.js";
 import {
 	EventComposition,
 	type EventCompositionInput,
 	SERVICES,
 } from "./composition.js";
+import { GithubActionsComposition } from "./dependency-composition.js";
 
 export const ASSET_REPOSITORY = Symbol("AssetRepository");
 
@@ -48,24 +40,22 @@ export class PublicationComposition {
 	static createPublicationContainer(input: PublicationInput) {
 		const container = EventComposition.createEventContainer(input);
 		container.bind<AssetRepository>(ASSET_REPOSITORY).toDynamicValue(() =>
-			GoogleDriveAssetRepository.createGoogleDriveAssetRepository(
-				input.credentials,
-				{
+			new GoogleDriveAssetRepositoryComposition()
+				.googleDriveAssetRepositoryFactory()
+				.createGoogleDriveAssetRepository(input.credentials, {
 					parentFolderId: input.parentFolderId,
 					templateFolderId: input.templateFolderId,
 					contentContracts: input.contentConfiguration?.contracts,
-				},
-			),
+				}),
 		);
 		PublicationComposition.bindContent(container, input.credentials);
 		container
 			.bind(ReconcileEventAssets)
-			.toDynamicValue(
-				(context) =>
-					new ReconcileEventAssets(
-						context.get<AssetRepository>(ASSET_REPOSITORY),
-						context.get(ReconcileAssetContent),
-					),
+			.toDynamicValue((context) =>
+				new PublicationDomainComposition().reconcileEventAssets(
+					context.get<AssetRepository>(ASSET_REPOSITORY),
+					context.get(ReconcileAssetContent),
+				),
 			);
 		PublicationComposition.bindManageAssets(container, input);
 		return container;
@@ -75,41 +65,40 @@ export class PublicationComposition {
 		container: ReturnType<typeof EventComposition.createEventContainer>,
 		input: PublicationInput,
 	): void {
-		container.bind(ManageMeetupAssets).toDynamicValue(
-			(context) =>
-				new ManageMeetupAssets({
-					renderProjection: new AssetRenderProjection(
-						new AssetRenderPresenterImpl(new AssetMessages(input.locale)),
-						context.get<ReferentialRepository>(SERVICES.referentialRepository),
-						input.contentConfiguration ?? {
-							speakers: {},
-							talks: {},
-							venues: {},
-						},
-						AssetContentConfiguration.usesNextEvent(
-							input.contentConfiguration?.contracts ?? {},
-						)
-							? new FindNextAssetEvent(
-									context.get<EventRepository>(SERVICES.eventRepository),
-									context.get<EventDocumentCodec>(SERVICES.eventDocumentCodec),
-									context.get<AutomationConfig>(SERVICES.config).event[
-										"issue-label"
-									],
-									context.get<AutomationConfig>(SERVICES.config).publication,
-									input.contentConfiguration?.venues,
-								)
-							: undefined,
+		container.bind(ManageMeetupAssets).toDynamicValue((context) =>
+			new JourneyComposition().manageMeetupAssets({
+				renderProjection: new JourneyComposition().assetRenderProjection(
+					new GithubActionsComposition().assetRenderPresenterImpl(
+						new GithubActionsComposition().assetMessages(input.locale),
 					),
-					recovery: input.contentConfiguration?.recovery,
-					eventRepository: context.get<EventRepository>(
-						SERVICES.eventRepository,
-					),
-					documentCodec: context.get<EventDocumentCodec>(
-						SERVICES.eventDocumentCodec,
-					),
-					manageEvent: context.get(ManageMeetupEvent),
-					reconcileAssets: context.get(ReconcileEventAssets),
-				}),
+					context.get<ReferentialRepository>(SERVICES.referentialRepository),
+					input.contentConfiguration ?? {
+						speakers: {},
+						talks: {},
+						venues: {},
+					},
+					new GithubActionsComposition()
+						.assetContentConfiguration()
+						.usesNextEvent(input.contentConfiguration?.contracts ?? {})
+						? new JourneyComposition().findNextAssetEvent(
+								context.get<EventRepository>(SERVICES.eventRepository),
+								context.get<EventDocumentCodec>(SERVICES.eventDocumentCodec),
+								context.get<AutomationConfig>(SERVICES.config).event[
+									"issue-label"
+								],
+								context.get<AutomationConfig>(SERVICES.config).publication,
+								input.contentConfiguration?.venues,
+							)
+						: undefined,
+				),
+				recovery: input.contentConfiguration?.recovery,
+				eventRepository: context.get<EventRepository>(SERVICES.eventRepository),
+				documentCodec: context.get<EventDocumentCodec>(
+					SERVICES.eventDocumentCodec,
+				),
+				manageEvent: context.get(ManageMeetupEvent),
+				reconcileAssets: context.get(ReconcileEventAssets),
+			}),
 		);
 	}
 	private static bindContent(
@@ -117,17 +106,26 @@ export class PublicationComposition {
 		credentials: string,
 	) {
 		container.bind(ReconcileAssetContent).toDynamicValue(() => {
-			const authentication = GoogleDriveAuthentication.create(credentials);
-			const images = new HttpsAssetImageRepository();
-			return new ReconcileAssetContent(
-				new GoogleDriveManifestRepository(
-					GoogleDriveAssetRepository.client(credentials),
+			const authentication = new GoogleDriveAssetRepositoryComposition()
+				.googleDriveAuthentication()
+				.create(credentials);
+			const images =
+				new HttpsAssetImageRepositoryComposition().httpsAssetImageRepository();
+			return new PublicationDomainComposition().reconcileAssetContent(
+				new GoogleDriveAssetRepositoryComposition().googleDriveManifestRepository(
+					new GoogleDriveAssetRepositoryComposition()
+						.googleDriveAssetRepositoryFactory()
+						.client(credentials),
 				),
 				{
 					"application/vnd.google-apps.presentation":
-						GoogleSlidesContentRepository.create(authentication, images),
+						new GoogleSlidesContentRepositoryComposition()
+							.googleSlidesContentRepositoryFactory()
+							.create(authentication, images),
 					"application/vnd.google-apps.document":
-						GoogleDocsContentRepository.create(authentication, images),
+						new GoogleDocsContentRepositoryComposition()
+							.googleDocsContentRepositoryFactory()
+							.create(authentication, images),
 				},
 				images,
 			);

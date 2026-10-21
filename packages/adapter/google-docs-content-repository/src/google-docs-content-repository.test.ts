@@ -1,6 +1,7 @@
-import { ContentFingerprint } from "@meetup-automation/publication";
+import { PublicationDomainComposition } from "@meetup-automation/publication";
 import { describe, expect, it } from "vitest";
 import { docsFixture, paragraph } from "../testing/docs.fixtures.js";
+import { GoogleDocsContentRepositoryComposition } from "./dependency-composition.js";
 
 import { GoogleDocsContentRepository } from "./google-docs-content-repository.js";
 
@@ -8,7 +9,22 @@ describe("Docs content repository", () => {
 	it("propagates an unexpected provider write failure for technical reporting", async () => {
 		// Arrange
 		const f = docsFixture();
-		const repository = new GoogleDocsContentRepository(f.api, f.images);
+		const repository = new GoogleDocsContentRepository(
+			{
+				documentTabs:
+					new GoogleDocsContentRepositoryComposition().documentTabs(),
+				documentTemplateBindings:
+					new GoogleDocsContentRepositoryComposition().documentTemplateBindings(),
+				documentContentRequests:
+					new GoogleDocsContentRepositoryComposition().documentContentRequests(),
+				createDocumentContentLocations: (...args) =>
+					new GoogleDocsContentRepositoryComposition().documentContentLocations(
+						...args,
+					),
+			},
+			f.api,
+			f.images,
+		);
 		const error = new Error("Synthetic authentication failure");
 		const snapshot = await repository.read("file", f.contract);
 		f.client.documents.batchUpdate.mockRejectedValueOnce(error);
@@ -21,7 +37,9 @@ describe("Docs content repository", () => {
 					type: "text",
 					key: "event.title",
 					text: "Public meetup",
-					fingerprint: ContentFingerprint.of("Public meetup"),
+					fingerprint: new PublicationDomainComposition()
+						.contentFingerprint()
+						.of("Public meetup"),
 				},
 			},
 		]);
@@ -34,7 +52,22 @@ describe("Docs content repository", () => {
 	it("binds and renders slotted speaker names in body prose", async () => {
 		// Arrange
 		const f = docsFixture();
-		const repository = new GoogleDocsContentRepository(f.api, f.images);
+		const repository = new GoogleDocsContentRepository(
+			{
+				documentTabs:
+					new GoogleDocsContentRepositoryComposition().documentTabs(),
+				documentTemplateBindings:
+					new GoogleDocsContentRepositoryComposition().documentTemplateBindings(),
+				documentContentRequests:
+					new GoogleDocsContentRepositoryComposition().documentContentRequests(),
+				createDocumentContentLocations: (...args) =>
+					new GoogleDocsContentRepositoryComposition().documentContentLocations(
+						...args,
+					),
+			},
+			f.api,
+			f.images,
+		);
 		const contract = {
 			...f.contract,
 			fields: [
@@ -64,7 +97,9 @@ describe("Docs content repository", () => {
 					type: "text",
 					key: location.key,
 					text: "Public Speaker",
-					fingerprint: ContentFingerprint.of("Public Speaker"),
+					fingerprint: new PublicationDomainComposition()
+						.contentFingerprint()
+						.of("Public Speaker"),
 				},
 			},
 		]);
@@ -106,7 +141,22 @@ describe("Docs content repository", () => {
 	it("registers repeated body tokens across nested tabs with UTF-16 indices and one revision-controlled batch", async () => {
 		// Arrange
 		const f = docsFixture();
-		const repository = new GoogleDocsContentRepository(f.api, f.images);
+		const repository = new GoogleDocsContentRepository(
+			{
+				documentTabs:
+					new GoogleDocsContentRepositoryComposition().documentTabs(),
+				documentTemplateBindings:
+					new GoogleDocsContentRepositoryComposition().documentTemplateBindings(),
+				documentContentRequests:
+					new GoogleDocsContentRepositoryComposition().documentContentRequests(),
+				createDocumentContentLocations: (...args) =>
+					new GoogleDocsContentRepositoryComposition().documentContentLocations(
+						...args,
+					),
+			},
+			f.api,
+			f.images,
+		);
 		const snapshot = await repository.read("file", f.contract);
 
 		// Act
@@ -119,7 +169,9 @@ describe("Docs content repository", () => {
 					type: "text",
 					key: "event.title",
 					text: "Meetup 🚀",
-					fingerprint: ContentFingerprint.of("Meetup 🚀"),
+					fingerprint: new PublicationDomainComposition()
+						.contentFingerprint()
+						.of("Meetup 🚀"),
 				},
 			})),
 		);
@@ -162,7 +214,22 @@ describe("Docs content repository", () => {
 	it("follows a named range after surrounding content moves", async () => {
 		// Arrange
 		const f = docsFixture();
-		const repository = new GoogleDocsContentRepository(f.api, f.images);
+		const repository = new GoogleDocsContentRepository(
+			{
+				documentTabs:
+					new GoogleDocsContentRepositoryComposition().documentTabs(),
+				documentTemplateBindings:
+					new GoogleDocsContentRepositoryComposition().documentTemplateBindings(),
+				documentContentRequests:
+					new GoogleDocsContentRepositoryComposition().documentContentRequests(),
+				createDocumentContentLocations: (...args) =>
+					new GoogleDocsContentRepositoryComposition().documentContentLocations(
+						...args,
+					),
+			},
+			f.api,
+			f.images,
+		);
 		f.root.documentTab = {
 			body: { content: [paragraph("Manual prefix Public title\n")] },
 			namedRanges: {
@@ -197,14 +264,31 @@ describe("Docs content repository", () => {
 		// Assert
 		expect(snapshot.locations[0].anchor.start).toBe(15);
 		expect(snapshot.locations[0].fingerprint).toBe(
-			ContentFingerprint.of("Public title"),
+			new PublicationDomainComposition()
+				.contentFingerprint()
+				.of("Public title"),
 		);
 	});
 
 	it("requires recovery when a registered range is absent instead of searching its old text", async () => {
 		// Arrange
 		const f = docsFixture();
-		const repository = new GoogleDocsContentRepository(f.api, f.images);
+		const repository = new GoogleDocsContentRepository(
+			{
+				documentTabs:
+					new GoogleDocsContentRepositoryComposition().documentTabs(),
+				documentTemplateBindings:
+					new GoogleDocsContentRepositoryComposition().documentTemplateBindings(),
+				documentContentRequests:
+					new GoogleDocsContentRepositoryComposition().documentContentRequests(),
+				createDocumentContentLocations: (...args) =>
+					new GoogleDocsContentRepositoryComposition().documentContentLocations(
+						...args,
+					),
+			},
+			f.api,
+			f.images,
+		);
 
 		// Act
 		const result = repository.read("file", f.contract, [
@@ -231,7 +315,22 @@ describe("Docs content repository", () => {
 	it("rejects table tokens before partially rendering supported paragraphs", async () => {
 		// Arrange
 		const f = docsFixture();
-		const repository = new GoogleDocsContentRepository(f.api, f.images);
+		const repository = new GoogleDocsContentRepository(
+			{
+				documentTabs:
+					new GoogleDocsContentRepositoryComposition().documentTabs(),
+				documentTemplateBindings:
+					new GoogleDocsContentRepositoryComposition().documentTemplateBindings(),
+				documentContentRequests:
+					new GoogleDocsContentRepositoryComposition().documentContentRequests(),
+				createDocumentContentLocations: (...args) =>
+					new GoogleDocsContentRepositoryComposition().documentContentLocations(
+						...args,
+					),
+			},
+			f.api,
+			f.images,
+		);
 		f.rootContent.body?.content?.push({
 			table: {
 				tableRows: [
@@ -253,7 +352,22 @@ describe("Docs content repository", () => {
 		async (token) => {
 			// Arrange
 			const f = docsFixture();
-			const repository = new GoogleDocsContentRepository(f.api, f.images);
+			const repository = new GoogleDocsContentRepository(
+				{
+					documentTabs:
+						new GoogleDocsContentRepositoryComposition().documentTabs(),
+					documentTemplateBindings:
+						new GoogleDocsContentRepositoryComposition().documentTemplateBindings(),
+					documentContentRequests:
+						new GoogleDocsContentRepositoryComposition().documentContentRequests(),
+					createDocumentContentLocations: (...args) =>
+						new GoogleDocsContentRepositoryComposition().documentContentLocations(
+							...args,
+						),
+				},
+				f.api,
+				f.images,
+			);
 			const tab = f.childContent;
 			tab.body = {
 				content: [

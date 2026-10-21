@@ -1,4 +1,6 @@
+import { EventDomainComposition } from "@meetup-automation/event";
 import { describe, expect, it } from "vitest";
+import { GithubIssueFormEventDocumentCodecComposition } from "./dependency-composition.js";
 import { EventReferenceMetadata } from "./event-reference-metadata.js";
 import type { StableReferenceMetadata } from "./github-issue-form-event-document-codec-contracts.js";
 
@@ -17,7 +19,15 @@ describe("EventReferenceMetadata", () => {
 		};
 
 		// Act
-		const equal = EventReferenceMetadata.referenceMetadataEqual(left, right);
+		const equal = new EventReferenceMetadata({
+			managedIssueMarkers:
+				new GithubIssueFormEventDocumentCodecComposition().managedIssueMarkers(),
+			eventDiagnostics: new EventDomainComposition().eventDiagnostics(),
+			referenceMetadataShape:
+				new GithubIssueFormEventDocumentCodecComposition().referenceMetadataShape(),
+			referenceBindings:
+				new GithubIssueFormEventDocumentCodecComposition().referenceBindings(),
+		}).referenceMetadataEqual(left, right);
 
 		// Assert
 		expect(equal).toBe(true);
@@ -36,7 +46,15 @@ describe("EventReferenceMetadata", () => {
 		};
 
 		// Act
-		const equal = EventReferenceMetadata.referenceMetadataEqual(left, right);
+		const equal = new EventReferenceMetadata({
+			managedIssueMarkers:
+				new GithubIssueFormEventDocumentCodecComposition().managedIssueMarkers(),
+			eventDiagnostics: new EventDomainComposition().eventDiagnostics(),
+			referenceMetadataShape:
+				new GithubIssueFormEventDocumentCodecComposition().referenceMetadataShape(),
+			referenceBindings:
+				new GithubIssueFormEventDocumentCodecComposition().referenceBindings(),
+		}).referenceMetadataEqual(left, right);
 
 		// Assert
 		expect(equal).toBe(false);

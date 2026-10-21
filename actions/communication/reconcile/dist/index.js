@@ -39,6 +39,87 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 
+// node_modules/.pnpm/@actions+http-client@3.0.2/node_modules/@actions/http-client/lib/proxy.js
+var require_proxy = __commonJS({
+  "node_modules/.pnpm/@actions+http-client@3.0.2/node_modules/@actions/http-client/lib/proxy.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.getProxyUrl = getProxyUrl2;
+    exports.checkBypass = checkBypass;
+    function getProxyUrl2(reqUrl) {
+      const usingSsl = reqUrl.protocol === "https:";
+      if (checkBypass(reqUrl)) {
+        return void 0;
+      }
+      const proxyVar = (() => {
+        if (usingSsl) {
+          return process.env["https_proxy"] || process.env["HTTPS_PROXY"];
+        } else {
+          return process.env["http_proxy"] || process.env["HTTP_PROXY"];
+        }
+      })();
+      if (proxyVar) {
+        try {
+          return new DecodedURL(proxyVar);
+        } catch (_a2) {
+          if (!proxyVar.startsWith("http://") && !proxyVar.startsWith("https://"))
+            return new DecodedURL(`http://${proxyVar}`);
+        }
+      } else {
+        return void 0;
+      }
+    }
+    function checkBypass(reqUrl) {
+      if (!reqUrl.hostname) {
+        return false;
+      }
+      const reqHost = reqUrl.hostname;
+      if (isLoopbackAddress(reqHost)) {
+        return true;
+      }
+      const noProxy = process.env["no_proxy"] || process.env["NO_PROXY"] || "";
+      if (!noProxy) {
+        return false;
+      }
+      let reqPort;
+      if (reqUrl.port) {
+        reqPort = Number(reqUrl.port);
+      } else if (reqUrl.protocol === "http:") {
+        reqPort = 80;
+      } else if (reqUrl.protocol === "https:") {
+        reqPort = 443;
+      }
+      const upperReqHosts = [reqUrl.hostname.toUpperCase()];
+      if (typeof reqPort === "number") {
+        upperReqHosts.push(`${upperReqHosts[0]}:${reqPort}`);
+      }
+      for (const upperNoProxyItem of noProxy.split(",").map((x3) => x3.trim().toUpperCase()).filter((x3) => x3)) {
+        if (upperNoProxyItem === "*" || upperReqHosts.some((x3) => x3 === upperNoProxyItem || x3.endsWith(`.${upperNoProxyItem}`) || upperNoProxyItem.startsWith(".") && x3.endsWith(`${upperNoProxyItem}`))) {
+          return true;
+        }
+      }
+      return false;
+    }
+    function isLoopbackAddress(host) {
+      const hostLower = host.toLowerCase();
+      return hostLower === "localhost" || hostLower.startsWith("127.") || hostLower.startsWith("[::1]") || hostLower.startsWith("[0:0:0:0:0:0:0:1]");
+    }
+    var DecodedURL = class extends URL {
+      constructor(url, base) {
+        super(url, base);
+        this._decodedUsername = decodeURIComponent(super.username);
+        this._decodedPassword = decodeURIComponent(super.password);
+      }
+      get username() {
+        return this._decodedUsername;
+      }
+      get password() {
+        return this._decodedPassword;
+      }
+    };
+  }
+});
+
 // node_modules/.pnpm/tunnel@0.0.6/node_modules/tunnel/lib/tunnel.js
 var require_tunnel = __commonJS({
   "node_modules/.pnpm/tunnel@0.0.6/node_modules/tunnel/lib/tunnel.js"(exports) {
@@ -5478,7 +5559,7 @@ var require_body = __commonJS({
         });
       }
       assert(isReadableStreamLike(stream));
-      let action = null;
+      let action2 = null;
       let source = null;
       let length = null;
       let type = null;
@@ -5531,7 +5612,7 @@ Content-Type: ${value.type || "application/octet-stream"}\r
           length = null;
         }
         source = object;
-        action = async function* () {
+        action2 = async function* () {
           for (const part of blobParts) {
             if (part.stream) {
               yield* part.stream();
@@ -5561,11 +5642,11 @@ Content-Type: ${value.type || "application/octet-stream"}\r
       if (typeof source === "string" || util.isBuffer(source)) {
         length = Buffer.byteLength(source);
       }
-      if (action != null) {
+      if (action2 != null) {
         let iterator2;
         stream = new ReadableStream({
           async start() {
-            iterator2 = action(object)[Symbol.asyncIterator]();
+            iterator2 = action2(object)[Symbol.asyncIterator]();
           },
           async pull(controller) {
             const { value, done } = await iterator2.next();
@@ -11108,7 +11189,7 @@ var require_mock_interceptor = __commonJS({
 var require_mock_client = __commonJS({
   "node_modules/.pnpm/undici@6.29.0/node_modules/undici/lib/mock/mock-client.js"(exports, module) {
     "use strict";
-    var { promisify } = __require("node:util");
+    var { promisify: promisify2 } = __require("node:util");
     var Client = require_client();
     var { buildMockDispatch } = require_mock_utils();
     var {
@@ -11148,7 +11229,7 @@ var require_mock_client = __commonJS({
         return new MockInterceptor(opts, this[kDispatches]);
       }
       async [kClose]() {
-        await promisify(this[kOriginalClose])();
+        await promisify2(this[kOriginalClose])();
         this[kConnected] = 0;
         this[kMockAgent][Symbols.kClients].delete(this[kOrigin]);
       }
@@ -11161,7 +11242,7 @@ var require_mock_client = __commonJS({
 var require_mock_pool = __commonJS({
   "node_modules/.pnpm/undici@6.29.0/node_modules/undici/lib/mock/mock-pool.js"(exports, module) {
     "use strict";
-    var { promisify } = __require("node:util");
+    var { promisify: promisify2 } = __require("node:util");
     var Pool = require_pool();
     var { buildMockDispatch } = require_mock_utils();
     var {
@@ -11201,7 +11282,7 @@ var require_mock_pool = __commonJS({
         return new MockInterceptor(opts, this[kDispatches]);
       }
       async [kClose]() {
-        await promisify(this[kOriginalClose])();
+        await promisify2(this[kOriginalClose])();
         this[kConnected] = 0;
         this[kMockAgent][Symbols.kClients].delete(this[kOrigin]);
       }
@@ -19065,87 +19146,6 @@ var require_undici = __commonJS({
     module.exports.mockErrors = mockErrors;
     var { EventSource } = require_eventsource();
     module.exports.EventSource = EventSource;
-  }
-});
-
-// node_modules/.pnpm/@actions+http-client@3.0.2/node_modules/@actions/http-client/lib/proxy.js
-var require_proxy = __commonJS({
-  "node_modules/.pnpm/@actions+http-client@3.0.2/node_modules/@actions/http-client/lib/proxy.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.getProxyUrl = getProxyUrl2;
-    exports.checkBypass = checkBypass;
-    function getProxyUrl2(reqUrl) {
-      const usingSsl = reqUrl.protocol === "https:";
-      if (checkBypass(reqUrl)) {
-        return void 0;
-      }
-      const proxyVar = (() => {
-        if (usingSsl) {
-          return process.env["https_proxy"] || process.env["HTTPS_PROXY"];
-        } else {
-          return process.env["http_proxy"] || process.env["HTTP_PROXY"];
-        }
-      })();
-      if (proxyVar) {
-        try {
-          return new DecodedURL(proxyVar);
-        } catch (_a2) {
-          if (!proxyVar.startsWith("http://") && !proxyVar.startsWith("https://"))
-            return new DecodedURL(`http://${proxyVar}`);
-        }
-      } else {
-        return void 0;
-      }
-    }
-    function checkBypass(reqUrl) {
-      if (!reqUrl.hostname) {
-        return false;
-      }
-      const reqHost = reqUrl.hostname;
-      if (isLoopbackAddress(reqHost)) {
-        return true;
-      }
-      const noProxy = process.env["no_proxy"] || process.env["NO_PROXY"] || "";
-      if (!noProxy) {
-        return false;
-      }
-      let reqPort;
-      if (reqUrl.port) {
-        reqPort = Number(reqUrl.port);
-      } else if (reqUrl.protocol === "http:") {
-        reqPort = 80;
-      } else if (reqUrl.protocol === "https:") {
-        reqPort = 443;
-      }
-      const upperReqHosts = [reqUrl.hostname.toUpperCase()];
-      if (typeof reqPort === "number") {
-        upperReqHosts.push(`${upperReqHosts[0]}:${reqPort}`);
-      }
-      for (const upperNoProxyItem of noProxy.split(",").map((x3) => x3.trim().toUpperCase()).filter((x3) => x3)) {
-        if (upperNoProxyItem === "*" || upperReqHosts.some((x3) => x3 === upperNoProxyItem || x3.endsWith(`.${upperNoProxyItem}`) || upperNoProxyItem.startsWith(".") && x3.endsWith(`${upperNoProxyItem}`))) {
-          return true;
-        }
-      }
-      return false;
-    }
-    function isLoopbackAddress(host) {
-      const hostLower = host.toLowerCase();
-      return hostLower === "localhost" || hostLower.startsWith("127.") || hostLower.startsWith("[::1]") || hostLower.startsWith("[0:0:0:0:0:0:0:1]");
-    }
-    var DecodedURL = class extends URL {
-      constructor(url, base) {
-        super(url, base);
-        this._decodedUsername = decodeURIComponent(super.username);
-        this._decodedPassword = decodeURIComponent(super.password);
-      }
-      get username() {
-        return this._decodedUsername;
-      }
-      get password() {
-        return this._decodedPassword;
-      }
-    };
   }
 });
 
@@ -27898,508 +27898,1340 @@ var require_ReflectLite = __commonJS({
   }
 });
 
-// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/command.js
-import * as os from "os";
-
-// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/utils.js
-function toCommandValue(input) {
-  if (input === null || input === void 0) {
-    return "";
-  } else if (typeof input === "string" || input instanceof String) {
-    return input;
-  }
-  return JSON.stringify(input);
-}
-function toCommandProperties(annotationProperties) {
-  if (!Object.keys(annotationProperties).length) {
-    return {};
-  }
-  return {
-    title: annotationProperties.title,
-    file: annotationProperties.file,
-    line: annotationProperties.startLine,
-    endLine: annotationProperties.endLine,
-    col: annotationProperties.startColumn,
-    endColumn: annotationProperties.endColumn
-  };
-}
-
-// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/command.js
-function issueCommand(command, properties, message) {
-  const cmd = new Command(command, properties, message);
-  process.stdout.write(cmd.toString() + os.EOL);
-}
-var CMD_STRING = "::";
-var Command = class {
-  constructor(command, properties, message) {
-    if (!command) {
-      command = "missing.command";
+// packages/application/journey/src/approval/approval-notification-policy.ts
+var ApprovalNotificationPolicy = class {
+  notificationFor(request2) {
+    switch (request2.kind) {
+      case "email-thanks":
+        return void 0;
+      case "email-introduction":
+        return {
+          kind: request2.kind,
+          eventDate: request2.eventDate,
+          recipientCount: request2.recipientCount
+        };
+      case "meetup-publication":
+        return { kind: request2.kind, eventDate: request2.eventDate };
     }
-    this.command = command;
-    this.properties = properties;
-    this.message = message;
-  }
-  toString() {
-    let cmdStr = CMD_STRING + this.command;
-    if (this.properties && Object.keys(this.properties).length > 0) {
-      cmdStr += " ";
-      let first = true;
-      for (const key in this.properties) {
-        if (this.properties.hasOwnProperty(key)) {
-          const val = this.properties[key];
-          if (val) {
-            if (first) {
-              first = false;
-            } else {
-              cmdStr += ",";
-            }
-            cmdStr += `${key}=${escapeProperty(val)}`;
-          }
-        }
-      }
-    }
-    cmdStr += `${CMD_STRING}${escapeData(this.message)}`;
-    return cmdStr;
   }
 };
-function escapeData(s) {
-  return toCommandValue(s).replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
-}
-function escapeProperty(s) {
-  return toCommandValue(s).replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A").replace(/:/g, "%3A").replace(/,/g, "%2C");
-}
 
-// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/file-command.js
-import * as crypto from "crypto";
-import * as fs from "fs";
-import * as os2 from "os";
-function issueFileCommand(command, message) {
-  const filePath = process.env[`GITHUB_${command}`];
-  if (!filePath) {
-    throw new Error(`Unable to find environment variable for file command ${command}`);
+// packages/application/journey/src/approval/approval-request-policy.ts
+var ApprovalRequestPolicy = class {
+  validate(request2) {
+    this.validateIdentity(request2);
+    if (request2.kind === "meetup-publication") return;
+    if (!Number.isSafeInteger(request2.recipientCount) || request2.recipientCount <= 0)
+      throw new Error("Invalid approval recipient count");
+    this.validateEmailCount(request2);
   }
-  if (!fs.existsSync(filePath)) {
-    throw new Error(`Missing file at path: ${filePath}`);
+  validateIdentity(request2) {
+    const date = /* @__PURE__ */ new Date(`${request2.eventDate}T12:00:00Z`);
+    if (!/^[a-f0-9]{64}$/.test(request2.revision) || !/^\d{4}-\d{2}-\d{2}$/.test(request2.eventDate) || !Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== request2.eventDate || !Number.isFinite(Date.parse(request2.requestedAt)))
+      throw new Error("Invalid approval request");
   }
-  fs.appendFileSync(filePath, `${toCommandValue(message)}${os2.EOL}`, {
-    encoding: "utf8"
-  });
-}
-function prepareKeyValueMessage(key, value) {
-  const delimiter = `ghadelimiter_${crypto.randomUUID()}`;
-  const convertedValue = toCommandValue(value);
-  if (key.includes(delimiter)) {
-    throw new Error(`Unexpected input: name should not contain the delimiter "${delimiter}"`);
+  validateEmailCount(request2) {
+    if (request2.details && request2.details.emails.length + request2.details.omittedEmails !== request2.recipientCount)
+      throw new Error("Invalid approval details");
   }
-  if (convertedValue.includes(delimiter)) {
-    throw new Error(`Unexpected input: value should not contain the delimiter "${delimiter}"`);
+  matches(previous, request2, status) {
+    if (previous.kind !== request2.kind || previous.revision !== request2.revision || previous.eventDate !== request2.eventDate)
+      return false;
+    if (previous.kind === "meetup-publication" && request2.kind === "meetup-publication")
+      return previous.publication.url === request2.publication.url && previous.publication.title === request2.publication.title && previous.publication.startTime === request2.publication.startTime && previous.publication.endTime === request2.publication.endTime && previous.publication.timeZone === request2.publication.timeZone && previous.publication.venue.name === request2.publication.venue.name && previous.publication.venue.city === request2.publication.venue.city;
+    return previous.recipientCount === request2.recipientCount && (status !== "pending" || this.sameDetails(previous.details, request2.details));
   }
-  return `${key}<<${delimiter}${os2.EOL}${convertedValue}${os2.EOL}${delimiter}`;
-}
+  sameDetails(left, right) {
+    if (!left || !right) return left === right;
+    return left.omittedEmails === right.omittedEmails && left.emails.length === right.emails.length && left.emails.every((email, index) => {
+      const other = right.emails[index];
+      return other !== void 0 && email.kind === other.kind && email.recipientName === other.recipientName && email.omittedLinks === other.omittedLinks && email.links.length === other.links.length && email.links.every((link, linkIndex) => {
+        const otherLink = other.links[linkIndex];
+        return otherLink !== void 0 && link.kind === otherLink.kind && link.url === otherLink.url && link.title === otherLink.title;
+      });
+    });
+  }
+};
 
-// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/core.js
-import * as os4 from "os";
+// packages/application/journey/src/communication/communication-diagnostic-projection.ts
+var COMMUNICATION_MESSAGES = {
+  "duplicate-intent": "A duplicate communication intent was ignored.",
+  "gateway-delivery-uncertain": "A gateway could not confirm delivery.",
+  "gateway-delivery-rejected": "A gateway definitively rejected the delivery request.",
+  "gateway-delivery-deferred": "A gateway deferred the request; a later retry remains safe.",
+  "gateway-threw-ambiguous-error": "A gateway failed without a definitive delivery outcome.",
+  "invalid-clock": "The communication clock is invalid.",
+  "invalid-event-date": "The event date is invalid.",
+  "invalid-identifier": "A stable communication identifier is invalid.",
+  "invalid-time-zone": "The configured time zone is invalid.",
+  "ledger-read-failed": "The delivery ledger could not be read.",
+  "ledger-reservation-failed": "The delivery could not be reserved safely.",
+  "ledger-status-write-failed": "The delivery status could not be recorded.",
+  "missing-mail-destination": "An opted-in mail recipient has no destination.",
+  "occurrence-status-unknown": "The event occurrence status must be explicit.",
+  "delivery-already-recorded": "The delivery ledger already contains this intent."
+};
+var RUNTIME_MESSAGES = {
+  "communication.feedback-fetch-failed": "Feedback results could not be fetched.",
+  "communication.feedback-unavailable": "Speaker thank-you emails require resolved feedback results for every talk.",
+  "communication.slides-unavailable": "Email dispatch requires a valid presentation file URL and ready managed content. Resolve asset diagnostics and run reconciliation again.",
+  "communication.approval-pending": "Email dispatch is waiting for approval on the meetup issue.",
+  "communication.approval-rejected": "The email batch was rejected. The recorded decision is final for this batch revision.",
+  "communication.approval-unavailable": "The organizer approval could not be verified or persisted; email dispatch is blocked.",
+  "communication.approval-notification-failed": "The Slack approval notification or decision reaction was not confirmed. Review the request on the meetup issue.",
+  "communication.dispatch-disabled-by-config": "Communication dispatch is disabled by repository configuration.",
+  "communication.checklist-update-failed": "Delivery results are recorded but checklist completion could not be persisted.",
+  "communication.checklist-concurrently-modified": "Delivery results are recorded; an organizer edit postponed checklist completion.",
+  "communication.event-skipped": "The issue is not a configured meetup event.",
+  "communication.event-concurrently-modified": "The meetup issue changed while communications were being reconciled; no delivery was attempted.",
+  "communication.event-references-unresolved": "Event participants could not be resolved to stable identifiers.",
+  "communication.referential-catalog-invalid": "Communications are disabled because the referential catalog is invalid."
+};
+var CommunicationDiagnosticProjection = class {
+  domainDiagnostic(diagnostic) {
+    return {
+      code: `communication.${diagnostic.code}`,
+      severity: diagnostic.severity,
+      message: COMMUNICATION_MESSAGES[diagnostic.code]
+    };
+  }
+  runtimeDiagnostic(diagnostic) {
+    return {
+      code: diagnostic.code,
+      severity: diagnostic.severity,
+      message: RUNTIME_MESSAGES[diagnostic.code]
+    };
+  }
+};
 
-// node_modules/.pnpm/@actions+http-client@4.0.1/node_modules/@actions/http-client/lib/index.js
-var tunnel = __toESM(require_tunnel2(), 1);
-var import_undici = __toESM(require_undici(), 1);
-var HttpCodes;
-(function(HttpCodes2) {
-  HttpCodes2[HttpCodes2["OK"] = 200] = "OK";
-  HttpCodes2[HttpCodes2["MultipleChoices"] = 300] = "MultipleChoices";
-  HttpCodes2[HttpCodes2["MovedPermanently"] = 301] = "MovedPermanently";
-  HttpCodes2[HttpCodes2["ResourceMoved"] = 302] = "ResourceMoved";
-  HttpCodes2[HttpCodes2["SeeOther"] = 303] = "SeeOther";
-  HttpCodes2[HttpCodes2["NotModified"] = 304] = "NotModified";
-  HttpCodes2[HttpCodes2["UseProxy"] = 305] = "UseProxy";
-  HttpCodes2[HttpCodes2["SwitchProxy"] = 306] = "SwitchProxy";
-  HttpCodes2[HttpCodes2["TemporaryRedirect"] = 307] = "TemporaryRedirect";
-  HttpCodes2[HttpCodes2["PermanentRedirect"] = 308] = "PermanentRedirect";
-  HttpCodes2[HttpCodes2["BadRequest"] = 400] = "BadRequest";
-  HttpCodes2[HttpCodes2["Unauthorized"] = 401] = "Unauthorized";
-  HttpCodes2[HttpCodes2["PaymentRequired"] = 402] = "PaymentRequired";
-  HttpCodes2[HttpCodes2["Forbidden"] = 403] = "Forbidden";
-  HttpCodes2[HttpCodes2["NotFound"] = 404] = "NotFound";
-  HttpCodes2[HttpCodes2["MethodNotAllowed"] = 405] = "MethodNotAllowed";
-  HttpCodes2[HttpCodes2["NotAcceptable"] = 406] = "NotAcceptable";
-  HttpCodes2[HttpCodes2["ProxyAuthenticationRequired"] = 407] = "ProxyAuthenticationRequired";
-  HttpCodes2[HttpCodes2["RequestTimeout"] = 408] = "RequestTimeout";
-  HttpCodes2[HttpCodes2["Conflict"] = 409] = "Conflict";
-  HttpCodes2[HttpCodes2["Gone"] = 410] = "Gone";
-  HttpCodes2[HttpCodes2["TooManyRequests"] = 429] = "TooManyRequests";
-  HttpCodes2[HttpCodes2["InternalServerError"] = 500] = "InternalServerError";
-  HttpCodes2[HttpCodes2["NotImplemented"] = 501] = "NotImplemented";
-  HttpCodes2[HttpCodes2["BadGateway"] = 502] = "BadGateway";
-  HttpCodes2[HttpCodes2["ServiceUnavailable"] = 503] = "ServiceUnavailable";
-  HttpCodes2[HttpCodes2["GatewayTimeout"] = 504] = "GatewayTimeout";
-})(HttpCodes || (HttpCodes = {}));
-var Headers;
-(function(Headers2) {
-  Headers2["Accept"] = "accept";
-  Headers2["ContentType"] = "content-type";
-})(Headers || (Headers = {}));
-var MediaTypes;
-(function(MediaTypes2) {
-  MediaTypes2["ApplicationJson"] = "application/json";
-})(MediaTypes || (MediaTypes = {}));
-var HttpRedirectCodes = [
-  HttpCodes.MovedPermanently,
-  HttpCodes.ResourceMoved,
-  HttpCodes.SeeOther,
-  HttpCodes.TemporaryRedirect,
-  HttpCodes.PermanentRedirect
+// packages/domain/communication/src/attention/attention-policy.ts
+var AttentionPolicy = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  day(now2) {
+    const local = this.collaborators.communicationCalendar.getLocalDate(
+      now2,
+      "Europe/Paris"
+    );
+    if (!local) throw new Error("Invalid attention clock");
+    return this.collaborators.communicationCalendar.toEpochDay(local);
+  }
+  eventDay(date) {
+    const local = this.collaborators.communicationCalendar.parseIsoLocalDate(date);
+    return local ? this.collaborators.communicationCalendar.toEpochDay(local) : void 0;
+  }
+  window(episode, date, now2) {
+    const day = this.day(now2);
+    const policy = episode.condition.policy;
+    if (policy === "daily") return `day:${day}`;
+    if (policy === "weekly")
+      return `week:${Math.floor((day - this.day(new Date(episode.openedAt))) / 7)}`;
+    if (policy === "approval") {
+      const age = now2.getTime() - Date.parse(episode.condition.since ?? episode.openedAt);
+      return age >= 864e5 ? `day:${day}` : void 0;
+    }
+    const eventDay = this.eventDay(date);
+    if (eventDay === void 0) return void 0;
+    return this.milestone(policy, day - eventDay);
+  }
+  milestone(policy, elapsed) {
+    if (policy === "preparation") {
+      if (elapsed < -7 || elapsed > 0) return void 0;
+      const milestone = [0, 1, 3, 7].find((days) => elapsed >= -days);
+      return `preparation:${milestone}`;
+    }
+    if ((policy === "occurrence" || policy === "follow-up") && elapsed >= 1)
+      return `${policy}:${elapsed >= 7 ? 7 : 1}`;
+    return void 0;
+  }
+  view(state) {
+    return {
+      state,
+      conditions: state.episodes.filter((item) => item.status === "active" || item.status === "unknown").sort(this.compare.bind(this))
+    };
+  }
+  compare(left, right) {
+    const severity = Number(right.condition.severity === "error") - Number(left.condition.severity === "error");
+    return severity || left.openedAt.localeCompare(right.openedAt) || left.condition.key.localeCompare(right.condition.key);
+  }
+};
+
+// packages/domain/communication/src/attention/attention-state-equality.ts
+var AttentionStateEquality = class {
+  equal(left, right) {
+    return left.eventDate === right.eventDate && left.stopped === right.stopped && left.runId === right.runId && left.commentId === right.commentId && this.post(left.post, right.post) && left.episodes.length === right.episodes.length && left.episodes.every((episode) => {
+      const counterpart = right.episodes.find(
+        (item) => item.condition.key === episode.condition.key
+      );
+      return counterpart !== void 0 && this.episode(episode, counterpart);
+    });
+  }
+  episode(left, right) {
+    return left.episode === right.episode && left.openedAt === right.openedAt && left.status === right.status && left.lastWindow === right.lastWindow && this.condition(left.condition, right.condition);
+  }
+  condition(left, right) {
+    return left.key === right.key && left.code === right.code && left.owner === right.owner && left.resource === right.resource && left.severity === right.severity && left.policy === right.policy && left.since === right.since && left.commentId === right.commentId && left.recovery === right.recovery;
+  }
+  post(left, right) {
+    if (!left || !right) return left === right;
+    return left.reservationId === right.reservationId && left.day === right.day && left.reservedAt === right.reservedAt && left.status === right.status && left.retryAt === right.retryAt && left.fingerprint === right.fingerprint && left.message?.destination === right.message?.destination && left.message?.messageId === right.message?.messageId;
+  }
+};
+
+// packages/domain/communication/src/attention/attention-state-rules.ts
+var AttentionStateRules = class {
+  validate(state) {
+    if (new Set(state.episodes.map((item) => item.condition.key)).size !== state.episodes.length)
+      throw new Error("Duplicate attention condition");
+    for (const episode of state.episodes)
+      if (episode.condition.key !== `${episode.condition.code}:${episode.condition.resource}`)
+        throw new Error("Invalid attention resource");
+    const post = state.post;
+    if (!post) return;
+    if (post.status === "accepted" && !post.message)
+      throw new Error("Missing accepted attention reference");
+    if (post.status !== "accepted" && (post.message !== void 0 || post.fingerprint !== void 0))
+      throw new Error(
+        "Unconfirmed attention reservation has delivery authority"
+      );
+    if (post.status !== "retry" && post.retryAt !== void 0)
+      throw new Error("Unexpected attention retry");
+  }
+};
+
+// packages/domain/communication/src/attention/attention-task-selection.ts
+var AttentionTaskSelection = class _AttentionTaskSelection {
+  select(view, checklist) {
+    const conditions = view.conditions.filter(
+      (episode) => !this.covered(episode, checklist.entries)
+    );
+    const tasks = view.state.stopped ? [] : checklist.entries.filter(
+      (entry) => !conditions.some(
+        (episode) => entry.action !== void 0 && entry.action === this.action(episode)
+      )
+    );
+    const urgent = conditions.filter(this.urgent.bind(this));
+    return {
+      urgent,
+      checklist: [...tasks].sort(
+        (left, right) => Number(right.field === "agenda") - Number(left.field === "agenda")
+      ),
+      remaining: conditions.filter((episode) => !this.urgent(episode)),
+      details: conditions.filter(
+        (episode) => !(view.state.commentId && ["follow-up", "approval-pending"].includes(episode.condition.code)) && !(episode.status !== "unknown" && checklist.entries.some(
+          (entry) => entry.action !== void 0 && entry.action === this.action(episode)
+        ))
+      )
+    };
+  }
+  urgent(episode) {
+    return [
+      "delivery-recovery",
+      "approval-pending",
+      "integration-failure"
+    ].includes(episode.condition.code);
+  }
+  action(episode) {
+    if (episode.condition.code === "delivery-recovery")
+      return "delivery-recovery";
+    if (episode.condition.code !== "approval-pending") return void 0;
+    return episode.condition.resource.startsWith("meetup-publication:") ? "meetup-approval" : "email-approval";
+  }
+  covered(episode, entries) {
+    if (!entries.length) return false;
+    const { code, resource } = episode.condition;
+    if (code === "required-data" || code === "integration-failure" && resource === "event-data")
+      return true;
+    const fields = code === "manual-publication" ? _AttentionTaskSelection.RESOURCE_FIELDS.get(resource) : _AttentionTaskSelection.CONDITION_FIELDS.get(code);
+    return fields?.some((field) => entries.some((entry) => entry.field === field)) ?? false;
+  }
+  static CONDITION_FIELDS = /* @__PURE__ */ new Map([
+    ["missing-date", ["date"]],
+    ["host-confirmation", ["host", "host-confirmation"]],
+    ["speaker-confirmation", ["speaker-confirmation"]]
+  ]);
+  static RESOURCE_FIELDS = /* @__PURE__ */ new Map([
+    ["publish-meetup-event", ["meetup"]],
+    ["publish-community-event", ["community"]]
+  ]);
+};
+
+// packages/domain/communication/src/attention/evaluate-attention.ts
+var EvaluateAttention = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  execute(facts, now2) {
+    const stopped = facts.closed || facts.occurrence === "cancelled" || facts.occurrence === "postponed";
+    const conditions = [];
+    if (!stopped) this.tasks(facts, now2, conditions);
+    const evaluated = [];
+    if (!stopped) this.stages(facts, evaluated, conditions);
+    if (facts.approvals) evaluated.push("approvals");
+    if (facts.recovery) evaluated.push("delivery");
+    for (const item of (facts.recovery ?? []).filter(
+      (item2) => !item2.resolved && (!stopped || item2.uncertain !== false)
+    ))
+      conditions.push({
+        ...this.condition("delivery-recovery", "delivery", item.key, "daily"),
+        recovery: item.uncertain === false ? void 0 : true,
+        commentId: item.commentId
+      });
+    return {
+      conditions,
+      evaluated,
+      verifiedRecovery: (facts.recovery ?? []).filter((item) => item.uncertain === false).map((item) => `delivery-recovery:${item.key}`),
+      stopped,
+      eventDate: facts.eventDate,
+      runId: facts.runId
+    };
+  }
+  stages(facts, evaluated, conditions) {
+    for (const stage of facts.stages) this.stage(stage, evaluated, conditions);
+    for (const owner of ["approvals", "delivery"]) {
+      const available = owner === "approvals" ? facts.approvals : facts.recovery;
+      if (!available)
+        conditions.push(this.condition("stage-unknown", owner, owner, "none"));
+    }
+  }
+  stage(stage, evaluated, conditions) {
+    if (stage.prerequisiteBlocked) return;
+    if (stage.outcome !== "unknown") evaluated.push(stage.owner);
+    if (stage.outcome === "success" && !stage.blocked) return;
+    const unknown = stage.outcome === "unknown";
+    conditions.push(
+      this.condition(
+        unknown ? "stage-unknown" : "integration-failure",
+        stage.owner,
+        this.stageResource(stage),
+        unknown ? "none" : "daily"
+      )
+    );
+  }
+  stageResource(stage) {
+    return stage.owner === "event" && stage.outcome === "success" ? "event-data" : stage.owner;
+  }
+  tasks(facts, now2, conditions) {
+    const eventDay = this.collaborators.attentionPolicy.eventDay(
+      facts.eventDate
+    );
+    const day = this.collaborators.attentionPolicy.day(now2);
+    const postEvent = this.collaborators.postEventPolicy.isDue({
+      eventDate: facts.eventDate,
+      timeZone: "Europe/Paris",
+      occurrenceStatus: facts.occurrence,
+      now: now2
+    });
+    if (eventDay === void 0)
+      conditions.push(
+        this.condition("missing-date", "event", "date", "weekly")
+      );
+    this.preparation(facts, eventDay, day, conditions);
+    if (postEvent)
+      for (const task of facts.followUpPending)
+        conditions.push(
+          this.condition("follow-up", "event", task, "follow-up")
+        );
+    this.approvals(facts, conditions, postEvent);
+  }
+  approvals(facts, conditions, postEvent) {
+    for (const approval of facts.approvals ?? []) {
+      const relevant = approval.kind === (postEvent ? "email-thanks" : "email-introduction") || !postEvent && approval.kind === "meetup-publication";
+      if (approval.status === "pending" && approval.eventDate === facts.eventDate && relevant)
+        conditions.push({
+          ...this.condition(
+            "approval-pending",
+            "approvals",
+            approval.kind === "meetup-publication" ? `${approval.kind}:${approval.revision}` : approval.revision,
+            "approval"
+          ),
+          since: approval.requestedAt,
+          commentId: approval.commentId
+        });
+    }
+  }
+  preparation(facts, eventDay, day, conditions) {
+    if (facts.occurrence === "scheduled" && (eventDay === void 0 || day <= eventDay)) {
+      if (!facts.hostConfirmed)
+        conditions.push(
+          this.condition("host-confirmation", "event", "host", "preparation")
+        );
+      if (!facts.speakersConfirmed)
+        conditions.push(
+          this.condition(
+            "speaker-confirmation",
+            "event",
+            "speakers",
+            "preparation"
+          )
+        );
+      if (facts.requiredDataMissing)
+        conditions.push(
+          this.condition("required-data", "event", "event", "preparation")
+        );
+      for (const task of facts.publicationPending)
+        conditions.push(
+          this.condition("manual-publication", "event", task, "preparation")
+        );
+    }
+  }
+  condition(code, owner, resource, policy) {
+    return {
+      key: `${code}:${resource}`,
+      code,
+      owner,
+      resource,
+      policy,
+      severity: ["integration-failure", "delivery-recovery"].includes(code) ? "error" : "warning"
+    };
+  }
+};
+
+// packages/domain/communication/src/attention/model.ts
+var ATTENTION_CODES = [
+  "missing-date",
+  "required-data",
+  "host-confirmation",
+  "speaker-confirmation",
+  "manual-publication",
+  "approval-pending",
+  "integration-failure",
+  "delivery-recovery",
+  "occurrence-decision",
+  "follow-up",
+  "stage-unknown"
 ];
-var HttpResponseRetryCodes = [
-  HttpCodes.BadGateway,
-  HttpCodes.ServiceUnavailable,
-  HttpCodes.GatewayTimeout
-];
 
-// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/summary.js
-import { EOL as EOL3 } from "os";
-import { constants, promises } from "fs";
-var __awaiter = function(thisArg, _arguments, P2, generator) {
-  function adopt(value) {
-    return value instanceof P2 ? value : new P2(function(resolve4) {
-      resolve4(value);
-    });
+// packages/domain/communication/src/attention/reconcile-attention.ts
+var ReconcileAttention = class {
+  constructor(collaborators, repository, notification, clock) {
+    this.collaborators = collaborators;
+    this.repository = repository;
+    this.notification = notification;
+    this.clock = clock;
   }
-  return new (P2 || (P2 = Promise))(function(resolve4, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
+  collaborators;
+  repository;
+  notification;
+  clock;
+  async execute(observation) {
+    const now2 = this.clock.now();
+    const day = this.collaborators.attentionPolicy.day(now2);
+    const previous = await this.repository.load();
+    const state = this.collaborators.attentionEpisodes.reconcile(
+      previous,
+      observation,
+      now2
+    );
+    await this.repository.save(state);
+    const view = this.collaborators.attentionPolicy.view(state);
+    const base = {
+      active: view.conditions.length,
+      posted: false,
+      notificationFailed: false
+    };
+    if (state.post?.status === "pending")
+      return { ...base, notificationFailed: true };
+    const due = this.collaborators.attentionEpisodes.due(state, now2);
+    if (state.post?.status === "retry" && Date.parse(state.post.retryAt ?? "") > now2.getTime())
+      return { ...base, notificationFailed: true };
+    if (due.length && state.post?.day !== day || due.length && state.post?.status === "retry")
+      return this.post(state, now2);
+    return this.update(state, now2);
+  }
+  async update(state, now2) {
+    const view = this.collaborators.attentionPolicy.view(state);
+    const base = {
+      active: view.conditions.length,
+      posted: false,
+      notificationFailed: false
+    };
+    if (!state.post?.message) return base;
+    const fingerprint = this.notification.fingerprint(view);
+    if (fingerprint !== state.post.fingerprint) {
+      if (!await this.notification.update(state.post.message, view))
+        return { ...base, notificationFailed: true };
+      state.post.fingerprint = fingerprint;
     }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
+    if (state.post.day === this.collaborators.attentionPolicy.day(now2))
+      this.collaborators.attentionEpisodes.acknowledge(state, now2);
+    await this.repository.save(state);
+    return base;
+  }
+  async post(state, now2) {
+    const day = this.collaborators.attentionPolicy.day(now2);
+    state.post = {
+      reservationId: `attention:${day}:${now2.getTime()}`,
+      day,
+      reservedAt: now2.toISOString(),
+      status: "pending"
+    };
+    await this.repository.save(state);
+    const view = this.collaborators.attentionPolicy.view(state);
+    let result;
+    try {
+      result = await this.notification.post(view);
+    } catch {
+      result = { outcome: "uncertain" };
     }
-    function step(result) {
-      result.done ? resolve4(result.value) : adopt(result.value).then(fulfilled, rejected);
+    if (result.outcome === "accepted") {
+      state.post.status = "accepted";
+      state.post.message = result.message;
+      state.post.fingerprint = this.notification.fingerprint(view);
+      this.collaborators.attentionEpisodes.acknowledge(state, now2);
+    } else if (result.outcome === "retry") {
+      state.post.status = "retry";
+      const delay = Math.max(300, result.retryAfterSeconds ?? 300);
+      state.post.retryAt = new Date(now2.getTime() + delay * 1e3).toISOString();
     }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
+    await this.repository.save(state);
+    return {
+      active: view.conditions.length,
+      posted: result.outcome === "accepted",
+      notificationFailed: result.outcome !== "accepted"
+    };
+  }
 };
-var { access, appendFile, writeFile } = promises;
-var SUMMARY_ENV_VAR = "GITHUB_STEP_SUMMARY";
-var Summary = class {
-  constructor() {
-    this._buffer = "";
+
+// packages/domain/communication/src/attention/attention-episodes.ts
+var AttentionEpisodes = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
   }
-  /**
-   * Finds the summary file path from the environment, rejects if env var is not found or file does not exist
-   * Also checks r/w permissions.
-   *
-   * @returns step summary file path
-   */
-  filePath() {
-    return __awaiter(this, void 0, void 0, function* () {
-      if (this._filePath) {
-        return this._filePath;
-      }
-      const pathFromEnv = process.env[SUMMARY_ENV_VAR];
-      if (!pathFromEnv) {
-        throw new Error(`Unable to find environment variable for $${SUMMARY_ENV_VAR}. Check if your runtime environment supports job summaries.`);
-      }
-      try {
-        yield access(pathFromEnv, constants.R_OK | constants.W_OK);
-      } catch (_a2) {
-        throw new Error(`Unable to access summary file: '${pathFromEnv}'. Check if the file has correct read/write permissions.`);
-      }
-      this._filePath = pathFromEnv;
-      return this._filePath;
-    });
-  }
-  /**
-   * Wraps content in an HTML tag, adding any HTML attributes
-   *
-   * @param {string} tag HTML tag to wrap
-   * @param {string | null} content content within the tag
-   * @param {[attribute: string]: string} attrs key-value list of HTML attributes to add
-   *
-   * @returns {string} content wrapped in HTML element
-   */
-  wrap(tag, content, attrs = {}) {
-    const htmlAttrs = Object.entries(attrs).map(([key, value]) => ` ${key}="${value}"`).join("");
-    if (!content) {
-      return `<${tag}${htmlAttrs}>`;
-    }
-    return `<${tag}${htmlAttrs}>${content}</${tag}>`;
-  }
-  /**
-   * Writes text in the buffer to the summary buffer file and empties buffer. Will append by default.
-   *
-   * @param {SummaryWriteOptions} [options] (optional) options for write operation
-   *
-   * @returns {Promise<Summary>} summary instance
-   */
-  write(options) {
-    return __awaiter(this, void 0, void 0, function* () {
-      const overwrite = !!(options === null || options === void 0 ? void 0 : options.overwrite);
-      const filePath = yield this.filePath();
-      const writeFunc = overwrite ? writeFile : appendFile;
-      yield writeFunc(filePath, this._buffer, { encoding: "utf8" });
-      return this.emptyBuffer();
-    });
-  }
-  /**
-   * Clears the summary buffer and wipes the summary file
-   *
-   * @returns {Summary} summary instance
-   */
-  clear() {
-    return __awaiter(this, void 0, void 0, function* () {
-      return this.emptyBuffer().write({ overwrite: true });
-    });
-  }
-  /**
-   * Returns the current summary buffer as a string
-   *
-   * @returns {string} string of summary buffer
-   */
-  stringify() {
-    return this._buffer;
-  }
-  /**
-   * If the summary buffer is empty
-   *
-   * @returns {boolen} true if the buffer is empty
-   */
-  isEmptyBuffer() {
-    return this._buffer.length === 0;
-  }
-  /**
-   * Resets the summary buffer without writing to summary file
-   *
-   * @returns {Summary} summary instance
-   */
-  emptyBuffer() {
-    this._buffer = "";
-    return this;
-  }
-  /**
-   * Adds raw text to the summary buffer
-   *
-   * @param {string} text content to add
-   * @param {boolean} [addEOL=false] (optional) append an EOL to the raw text (default: false)
-   *
-   * @returns {Summary} summary instance
-   */
-  addRaw(text, addEOL = false) {
-    this._buffer += text;
-    return addEOL ? this.addEOL() : this;
-  }
-  /**
-   * Adds the operating system-specific end-of-line marker to the buffer
-   *
-   * @returns {Summary} summary instance
-   */
-  addEOL() {
-    return this.addRaw(EOL3);
-  }
-  /**
-   * Adds an HTML codeblock to the summary buffer
-   *
-   * @param {string} code content to render within fenced code block
-   * @param {string} lang (optional) language to syntax highlight code
-   *
-   * @returns {Summary} summary instance
-   */
-  addCodeBlock(code, lang) {
-    const attrs = Object.assign({}, lang && { lang });
-    const element = this.wrap("pre", this.wrap("code", code), attrs);
-    return this.addRaw(element).addEOL();
-  }
-  /**
-   * Adds an HTML list to the summary buffer
-   *
-   * @param {string[]} items list of items to render
-   * @param {boolean} [ordered=false] (optional) if the rendered list should be ordered or not (default: false)
-   *
-   * @returns {Summary} summary instance
-   */
-  addList(items, ordered = false) {
-    const tag = ordered ? "ol" : "ul";
-    const listItems = items.map((item) => this.wrap("li", item)).join("");
-    const element = this.wrap(tag, listItems);
-    return this.addRaw(element).addEOL();
-  }
-  /**
-   * Adds an HTML table to the summary buffer
-   *
-   * @param {SummaryTableCell[]} rows table rows
-   *
-   * @returns {Summary} summary instance
-   */
-  addTable(rows) {
-    const tableBody = rows.map((row) => {
-      const cells = row.map((cell) => {
-        if (typeof cell === "string") {
-          return this.wrap("td", cell);
+  collaborators;
+  reconcile(previous, observation, now2) {
+    const state = previous ? structuredClone(previous) : {
+      eventDate: observation.eventDate,
+      stopped: observation.stopped,
+      episodes: []
+    };
+    const changedDate = state.eventDate !== observation.eventDate;
+    const conditions = new Map(
+      observation.conditions.map((condition) => [condition.key, condition])
+    );
+    for (const episode of state.episodes) {
+      const condition = conditions.get(episode.condition.key);
+      if (condition) {
+        conditions.delete(condition.key);
+        if (episode.status === "resolved" || episode.status === "stopped") {
+          episode.episode += 1;
+          episode.openedAt = now2.toISOString();
+          episode.lastWindow = void 0;
         }
-        const { header, data, colspan, rowspan } = cell;
-        const tag = header ? "th" : "td";
-        const attrs = Object.assign(Object.assign({}, colspan && { colspan }), rowspan && { rowspan });
-        return this.wrap(tag, data, attrs);
-      }).join("");
-      return this.wrap("tr", cells);
-    }).join("");
-    const element = this.wrap("table", tableBody);
-    return this.addRaw(element).addEOL();
+        episode.condition = condition;
+        episode.status = "active";
+        if (changedDate && episode.lastWindow && ["preparation", "occurrence", "follow-up"].includes(condition.policy))
+          episode.lastWindow = this.collaborators.attentionPolicy.window(
+            episode,
+            observation.eventDate,
+            now2
+          );
+      } else {
+        episode.status = this.absentStatus(episode, observation);
+      }
+    }
+    for (const condition of conditions.values())
+      state.episodes.push({
+        condition,
+        episode: 1,
+        openedAt: now2.toISOString(),
+        status: "active"
+      });
+    state.eventDate = observation.eventDate;
+    state.stopped = observation.stopped;
+    state.runId = observation.runId;
+    state.commentId = observation.commentId;
+    return state;
   }
-  /**
-   * Adds a collapsable HTML details element to the summary buffer
-   *
-   * @param {string} label text for the closed state
-   * @param {string} content collapsable content
-   *
-   * @returns {Summary} summary instance
-   */
-  addDetails(label, content) {
-    const element = this.wrap("details", this.wrap("summary", label) + content);
-    return this.addRaw(element).addEOL();
+  absentStatus(episode, observation) {
+    if (episode.condition.recovery && (episode.status === "active" || episode.status === "unknown") && !observation.verifiedRecovery?.includes(episode.condition.key))
+      return "unknown";
+    if (observation.stopped && !episode.condition.recovery) return "stopped";
+    if (observation.evaluated.includes(episode.condition.owner))
+      return "resolved";
+    return episode.status === "active" ? "unknown" : episode.status;
   }
-  /**
-   * Adds an HTML image tag to the summary buffer
-   *
-   * @param {string} src path to the image you to embed
-   * @param {string} alt text description of the image
-   * @param {SummaryImageOptions} options (optional) addition image attributes
-   *
-   * @returns {Summary} summary instance
-   */
-  addImage(src, alt, options) {
-    const { width, height } = options || {};
-    const attrs = Object.assign(Object.assign({}, width && { width }), height && { height });
-    const element = this.wrap("img", null, Object.assign({ src, alt }, attrs));
-    return this.addRaw(element).addEOL();
+  due(state, now2) {
+    return this.collaborators.attentionPolicy.view(state).conditions.filter((episode) => {
+      const window = this.collaborators.attentionPolicy.window(
+        episode,
+        state.eventDate,
+        now2
+      );
+      return window !== void 0 && window !== episode.lastWindow;
+    });
   }
-  /**
-   * Adds an HTML section heading element
-   *
-   * @param {string} text heading text
-   * @param {number | string} [level=1] (optional) the heading level, default: 1
-   *
-   * @returns {Summary} summary instance
-   */
-  addHeading(text, level) {
-    const tag = `h${level}`;
-    const allowedTag = ["h1", "h2", "h3", "h4", "h5", "h6"].includes(tag) ? tag : "h1";
-    const element = this.wrap(allowedTag, text);
-    return this.addRaw(element).addEOL();
-  }
-  /**
-   * Adds an HTML thematic break (<hr>) to the summary buffer
-   *
-   * @returns {Summary} summary instance
-   */
-  addSeparator() {
-    const element = this.wrap("hr", null);
-    return this.addRaw(element).addEOL();
-  }
-  /**
-   * Adds an HTML line break (<br>) to the summary buffer
-   *
-   * @returns {Summary} summary instance
-   */
-  addBreak() {
-    const element = this.wrap("br", null);
-    return this.addRaw(element).addEOL();
-  }
-  /**
-   * Adds an HTML blockquote to the summary buffer
-   *
-   * @param {string} text quote text
-   * @param {string} cite (optional) citation url
-   *
-   * @returns {Summary} summary instance
-   */
-  addQuote(text, cite) {
-    const attrs = Object.assign({}, cite && { cite });
-    const element = this.wrap("blockquote", text, attrs);
-    return this.addRaw(element).addEOL();
-  }
-  /**
-   * Adds an HTML anchor tag to the summary buffer
-   *
-   * @param {string} text link text/content
-   * @param {string} href hyperlink
-   *
-   * @returns {Summary} summary instance
-   */
-  addLink(text, href) {
-    const element = this.wrap("a", text, { href });
-    return this.addRaw(element).addEOL();
+  acknowledge(state, now2) {
+    for (const episode of this.collaborators.attentionPolicy.view(state).conditions) {
+      const window = this.collaborators.attentionPolicy.window(
+        episode,
+        state.eventDate,
+        now2
+      );
+      if (window) episode.lastWindow = window;
+    }
   }
 };
-var _summary = new Summary();
-var summary = _summary;
 
-// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/platform.js
-import os3 from "os";
-
-// node_modules/.pnpm/@actions+io@3.0.2/node_modules/@actions/io/lib/io-util.js
-import * as fs2 from "fs";
-var { chmod, copyFile, lstat, mkdir, open, readdir, rename, rm, rmdir, stat, symlink, unlink } = fs2.promises;
-var IS_WINDOWS = process.platform === "win32";
-var READONLY = fs2.constants.O_RDONLY;
-
-// node_modules/.pnpm/@actions+exec@3.0.0/node_modules/@actions/exec/lib/toolrunner.js
-var IS_WINDOWS2 = process.platform === "win32";
-
-// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/platform.js
-var platform = os3.platform();
-var arch = os3.arch();
-
-// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/core.js
-var ExitCode;
-(function(ExitCode2) {
-  ExitCode2[ExitCode2["Success"] = 0] = "Success";
-  ExitCode2[ExitCode2["Failure"] = 1] = "Failure";
-})(ExitCode || (ExitCode = {}));
-function setSecret(secret) {
-  issueCommand("add-mask", {}, secret);
-}
-function getInput(name, options) {
-  const val = process.env[`INPUT_${name.replace(/ /g, "_").toUpperCase()}`] || "";
-  if (options && options.required && !val) {
-    throw new Error(`Input required and not supplied: ${name}`);
+// packages/domain/communication/src/communication-calendar.ts
+var CommunicationCalendar = class {
+  parseIsoLocalDate(value) {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    if (!match) {
+      return void 0;
+    }
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    const candidate = new Date(Date.UTC(year, month - 1, day));
+    if (candidate.getUTCFullYear() !== year || candidate.getUTCMonth() !== month - 1 || candidate.getUTCDate() !== day) {
+      return void 0;
+    }
+    return { year, month, day };
   }
-  if (options && options.trimWhitespace === false) {
-    return val;
+  getLocalDate(instant, timeZone) {
+    try {
+      const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }).formatToParts(instant);
+      const values = new Map(parts.map((part) => [part.type, part.value]));
+      const year = Number(values.get("year"));
+      const month = Number(values.get("month"));
+      const day = Number(values.get("day"));
+      if (![year, month, day].every(Number.isInteger)) {
+        return void 0;
+      }
+      return { year, month, day };
+    } catch {
+      return void 0;
+    }
   }
-  return val.trim();
-}
-function setOutput(name, value) {
-  const filePath = process.env["GITHUB_OUTPUT"] || "";
-  if (filePath) {
-    return issueFileCommand("OUTPUT", prepareKeyValueMessage(name, value));
+  toEpochDay(date) {
+    return Math.floor(
+      Date.UTC(date.year, date.month - 1, date.day) / 864e5
+    );
   }
-  process.stdout.write(os4.EOL);
-  issueCommand("set-output", { name }, toCommandValue(value));
-}
-function setFailed(message) {
-  process.exitCode = ExitCode.Failure;
-  error(message);
-}
-function error(message, properties = {}) {
-  issueCommand("error", toCommandProperties(properties), message instanceof Error ? message.toString() : message);
-}
-function warning(message, properties = {}) {
-  issueCommand("warning", toCommandProperties(properties), message instanceof Error ? message.toString() : message);
-}
-function info(message) {
-  process.stdout.write(message + os4.EOL);
-}
+  isValidInstant(value) {
+    return value instanceof Date && Number.isFinite(value.getTime());
+  }
+};
+
+// packages/domain/communication/src/communication-dispatcher.ts
+var CommunicationDispatcher = class {
+  constructor(collaborators, ledger, mailGateway) {
+    this.collaborators = collaborators;
+    this.#ledger = ledger;
+    this.#mailGateway = mailGateway;
+  }
+  collaborators;
+  #ledger;
+  #mailGateway;
+  async execute(intent, timestamp, counts, diagnostics) {
+    let dispatchResult;
+    try {
+      dispatchResult = await this.#mailGateway.dispatch(intent);
+    } catch {
+      counts.uncertain += 1;
+      diagnostics.push({
+        code: "gateway-threw-ambiguous-error",
+        severity: "error",
+        intentId: intent.intentId
+      });
+      await this.#markUncertain(
+        intent,
+        timestamp,
+        "gateway-threw-ambiguous-error",
+        diagnostics
+      );
+      return false;
+    }
+    if (dispatchResult.outcome === "deferred") {
+      await this.defer(intent, dispatchResult, counts, diagnostics);
+      return false;
+    }
+    if (dispatchResult.outcome === "rejected") {
+      counts.rejected += 1;
+      diagnostics.push({
+        code: "gateway-delivery-rejected",
+        severity: "error",
+        intentId: intent.intentId,
+        detailCode: dispatchResult.diagnosticCode
+      });
+      try {
+        await this.#ledger.markRejected(
+          intent.idempotencyKey,
+          timestamp,
+          dispatchResult.diagnosticCode
+        );
+      } catch {
+        diagnostics.push({
+          code: "ledger-status-write-failed",
+          severity: "error",
+          intentId: intent.intentId
+        });
+      }
+      return false;
+    }
+    if (dispatchResult.outcome === "uncertain") {
+      const detailCode = this.collaborators.communicationResults.safeDetailCode(
+        dispatchResult.diagnosticCode
+      );
+      counts.uncertain += 1;
+      diagnostics.push({
+        code: "gateway-delivery-uncertain",
+        severity: "error",
+        intentId: intent.intentId,
+        ...detailCode ? { detailCode } : {}
+      });
+      await this.#markUncertain(
+        intent,
+        timestamp,
+        detailCode ?? "gateway-delivery-uncertain",
+        diagnostics
+      );
+      return false;
+    }
+    return this.accept(intent, timestamp, counts, diagnostics);
+  }
+  async #markUncertain(intent, timestamp, diagnosticCode, diagnostics) {
+    try {
+      await this.#ledger.markUncertain(
+        intent.idempotencyKey,
+        timestamp,
+        diagnosticCode
+      );
+    } catch {
+      diagnostics.push({
+        code: "ledger-status-write-failed",
+        severity: "error",
+        intentId: intent.intentId
+      });
+    }
+  }
+  async defer(intent, dispatchResult, counts, diagnostics) {
+    counts.deferred += 1;
+    diagnostics.push({
+      code: "gateway-delivery-deferred",
+      severity: "warning",
+      intentId: intent.intentId,
+      detailCode: dispatchResult.diagnosticCode
+    });
+    try {
+      await this.#ledger.releasePending(intent.idempotencyKey);
+    } catch {
+      diagnostics.push({
+        code: "ledger-status-write-failed",
+        severity: "error",
+        intentId: intent.intentId
+      });
+    }
+    return;
+  }
+  async accept(intent, timestamp, counts, diagnostics) {
+    counts.accepted += 1;
+    try {
+      await this.#ledger.markAccepted(intent.idempotencyKey, timestamp);
+      return true;
+    } catch {
+      diagnostics.push({
+        code: "ledger-status-write-failed",
+        severity: "error",
+        intentId: intent.intentId
+      });
+    }
+    return false;
+  }
+};
+
+// packages/domain/communication/src/model.ts
+var MAIL_TEMPLATE_NAMES = {
+  hostIntroduction: "meetup-intro-hosting",
+  speakerIntroduction: "meetup-intro-speakers",
+  hostThanks: "meetup-thanks-hosting",
+  speakerThanks: "meetup-thanks-speakers"
+};
+
+// packages/domain/communication/src/plan-communications-contracts.ts
+var MAIL_POLICIES = {
+  introduction: {
+    hosting: {
+      kind: "host-introduction",
+      templateName: MAIL_TEMPLATE_NAMES.hostIntroduction
+    },
+    speaker: {
+      kind: "speaker-introduction",
+      templateName: MAIL_TEMPLATE_NAMES.speakerIntroduction
+    }
+  },
+  thanks: {
+    hosting: {
+      kind: "host-thanks",
+      templateName: MAIL_TEMPLATE_NAMES.hostThanks
+    },
+    speaker: {
+      kind: "speaker-thanks",
+      templateName: MAIL_TEMPLATE_NAMES.speakerThanks
+    }
+  }
+};
+
+// packages/domain/communication/src/communication-planner.ts
+var CommunicationPlanner = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  planMailMessages(input, policyName, intents, diagnostics) {
+    for (const recipient of input.mailRecipients) {
+      if (!recipient.receivesCommunications) {
+        continue;
+      }
+      if (!this.collaborators.communicationIdempotency.isSafeCommunicationIdentifier(
+        recipient.recipientId
+      )) {
+        diagnostics.push(this.errorDiagnostic("invalid-identifier"));
+        continue;
+      }
+      if (recipient.email.trim().length === 0) {
+        diagnostics.push(this.errorDiagnostic("missing-mail-destination"));
+        continue;
+      }
+      const policy = MAIL_POLICIES[policyName][recipient.role];
+      const base = this.createIntentBase(
+        input,
+        policy.kind,
+        recipient.recipientId
+      );
+      const intent = {
+        ...base,
+        channel: "mail",
+        recipient: this.cloneMailRecipient(recipient),
+        templateName: policy.templateName,
+        placeholders: {
+          ...input.mailPlaceholders ?? {},
+          ...recipient.placeholders ?? {}
+        }
+      };
+      intents.push(intent);
+    }
+  }
+  createIntentBase(input, kind, recipientId) {
+    const idempotencyKey = this.collaborators.communicationIdempotency.createCommunicationIdempotencyKey(
+      {
+        repositoryId: input.repositoryId,
+        eventId: input.eventId,
+        kind,
+        recipientId,
+        policyVersion: input.policyVersion
+      }
+    );
+    return {
+      intentId: idempotencyKey,
+      idempotencyKey,
+      repositoryId: input.repositoryId,
+      eventId: input.eventId,
+      policyVersion: input.policyVersion,
+      kind,
+      recipientId
+    };
+  }
+  cloneMailRecipient(recipient) {
+    return {
+      ...recipient,
+      ...recipient.placeholders ? { placeholders: { ...recipient.placeholders } } : {}
+    };
+  }
+  deduplicateIntents(intents, diagnostics) {
+    const uniqueIntents = /* @__PURE__ */ new Map();
+    for (const intent of intents) {
+      if (uniqueIntents.has(intent.idempotencyKey)) {
+        diagnostics.push({
+          ...this.warningDiagnostic("duplicate-intent"),
+          intentId: intent.intentId
+        });
+        continue;
+      }
+      uniqueIntents.set(intent.idempotencyKey, intent);
+    }
+    return {
+      intents: [...uniqueIntents.values()],
+      diagnostics
+    };
+  }
+  hasValidBaseIdentifiers(input) {
+    return [input.repositoryId, input.eventId, input.policyVersion].every(
+      this.collaborators.communicationIdempotency.isSafeCommunicationIdentifier.bind(
+        this.collaborators.communicationIdempotency
+      )
+    );
+  }
+  errorDiagnostic(code) {
+    return { code, severity: "error" };
+  }
+  warningDiagnostic(code) {
+    return { code, severity: "warning" };
+  }
+};
+
+// packages/domain/communication/src/communication-results.ts
+var CommunicationResults = class {
+  recordExisting(intentId, entry, counts, diagnostics) {
+    counts.alreadyRecorded += 1;
+    diagnostics.push({
+      code: "delivery-already-recorded",
+      severity: "info",
+      intentId,
+      deliveryStatus: entry.status
+    });
+  }
+  result(mode, intents, counts, diagnostics, acceptedIds) {
+    return {
+      mode,
+      intentIds: intents.map((intent) => intent.intentId),
+      completedMailKinds: this.completedMailKinds(intents, acceptedIds),
+      counts: { ...counts },
+      diagnostics: [...diagnostics]
+    };
+  }
+  completedMailKinds(intents, acceptedIds) {
+    const groups = /* @__PURE__ */ new Map();
+    for (const intent of intents) {
+      if (intent.channel !== "mail") continue;
+      groups.set(
+        intent.kind,
+        (groups.get(intent.kind) ?? true) && acceptedIds.has(intent.intentId)
+      );
+    }
+    return [...groups].filter(([, accepted]) => accepted).map(([kind]) => kind);
+  }
+  emptyResult(mode, diagnostic) {
+    return {
+      mode,
+      intentIds: [],
+      completedMailKinds: [],
+      counts: {
+        planned: 0,
+        due: 0,
+        alreadyRecorded: 0,
+        reserved: 0,
+        dispatched: 0,
+        accepted: 0,
+        uncertain: 0,
+        rejected: 0,
+        deferred: 0
+      },
+      diagnostics: [diagnostic]
+    };
+  }
+  safeDetailCode(value) {
+    return [
+      "ambiguous-response",
+      "connection-reset",
+      "provider-timeout",
+      "unknown-provider-state"
+    ].includes(value ?? "") ? value : void 0;
+  }
+};
+
+// packages/domain/communication/src/idempotency.ts
+var SAFE_IDENTIFIER_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$/;
+var CommunicationIdempotency = class {
+  isSafeCommunicationIdentifier(value) {
+    return SAFE_IDENTIFIER_PATTERN.test(value);
+  }
+  createCommunicationIdempotencyKey(components) {
+    const values = [
+      components.repositoryId,
+      components.eventId,
+      components.recipientId,
+      components.policyVersion
+    ];
+    if (!values.every(this.isSafeCommunicationIdentifier.bind(this))) {
+      throw new Error(
+        "Communication identifiers must be stable, opaque, and PII-free"
+      );
+    }
+    return [
+      "meetup-communication:v1",
+      `repository=${encodeURIComponent(components.repositoryId)}`,
+      `event=${encodeURIComponent(components.eventId)}`,
+      `kind=${components.kind}`,
+      `recipient=${encodeURIComponent(components.recipientId)}`,
+      `policy=${encodeURIComponent(components.policyVersion)}`
+    ].join("|");
+  }
+};
+
+// packages/domain/communication/src/mail-batch-fingerprint.ts
+import { createHash } from "node:crypto";
+var MailBatchFingerprint = class {
+  create(eventDate, timeZone, intents) {
+    const messages5 = intents.map((intent) => ({
+      id: intent.idempotencyKey,
+      destination: intent.recipient.email,
+      template: intent.templateName,
+      placeholders: Object.entries(intent.placeholders).sort(([a], [b2]) => a.localeCompare(b2)).map(([key, value]) => [
+        key,
+        typeof value === "string" ? value : value.map(({ title, url }) => ({ title, url }))
+      ])
+    })).sort((a, b2) => a.id.localeCompare(b2.id));
+    return createHash("sha256").update(JSON.stringify({ eventDate, timeZone, messages: messages5 })).digest("hex");
+  }
+};
+
+// packages/domain/communication/src/plan-communications.ts
+var PlanCommunications = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  execute(input) {
+    const diagnostics = [];
+    if (!this.collaborators.communicationPlanner.hasValidBaseIdentifiers(input)) {
+      return {
+        intents: [],
+        diagnostics: [
+          this.collaborators.communicationPlanner.errorDiagnostic(
+            "invalid-identifier"
+          )
+        ]
+      };
+    }
+    if (!this.collaborators.communicationCalendar.isValidInstant(input.now)) {
+      return {
+        intents: [],
+        diagnostics: [
+          this.collaborators.communicationPlanner.errorDiagnostic(
+            "invalid-clock"
+          )
+        ]
+      };
+    }
+    if (input.occurrenceStatus === "cancelled" || input.occurrenceStatus === "postponed") {
+      return { intents: [], diagnostics };
+    }
+    if (input.occurrenceStatus === "unknown") {
+      return {
+        intents: [],
+        diagnostics: [
+          this.collaborators.communicationPlanner.warningDiagnostic(
+            "occurrence-status-unknown"
+          )
+        ]
+      };
+    }
+    const eventDate = this.collaborators.communicationCalendar.parseIsoLocalDate(
+      input.eventDate
+    );
+    if (!eventDate) {
+      return {
+        intents: [],
+        diagnostics: [
+          this.collaborators.communicationPlanner.errorDiagnostic(
+            "invalid-event-date"
+          )
+        ]
+      };
+    }
+    const currentDate = this.collaborators.communicationCalendar.getLocalDate(
+      input.now,
+      input.timeZone
+    );
+    if (!currentDate) {
+      return {
+        intents: [],
+        diagnostics: [
+          this.collaborators.communicationPlanner.errorDiagnostic(
+            "invalid-time-zone"
+          )
+        ]
+      };
+    }
+    return this.planDue(input, diagnostics);
+  }
+  planDue(input, diagnostics) {
+    const intents = [];
+    if (this.collaborators.postEventPolicy.isDue(input)) {
+      this.collaborators.communicationPlanner.planMailMessages(
+        input,
+        "thanks",
+        intents,
+        diagnostics
+      );
+      return this.collaborators.communicationPlanner.deduplicateIntents(
+        intents,
+        diagnostics
+      );
+    }
+    if (input.readiness === "ready") {
+      this.collaborators.communicationPlanner.planMailMessages(
+        input,
+        "introduction",
+        intents,
+        diagnostics
+      );
+      return this.collaborators.communicationPlanner.deduplicateIntents(
+        intents,
+        diagnostics
+      );
+    }
+    return { intents, diagnostics };
+  }
+};
+
+// packages/domain/communication/src/post-event-policy.ts
+var PostEventPolicy = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  isDue(input) {
+    if (!["scheduled", "held"].includes(input.occurrenceStatus)) return false;
+    if (!this.collaborators.communicationCalendar.isValidInstant(input.now))
+      return false;
+    const event = this.collaborators.communicationCalendar.parseIsoLocalDate(
+      input.eventDate
+    );
+    const today = this.collaborators.communicationCalendar.getLocalDate(
+      input.now,
+      input.timeZone
+    );
+    if (!event || !today) return false;
+    return input.occurrenceStatus === "held" || this.collaborators.communicationCalendar.toEpochDay(today) > this.collaborators.communicationCalendar.toEpochDay(event);
+  }
+};
+
+// packages/domain/communication/src/reconcile-communications.ts
+var ReconcileCommunications = class {
+  constructor(collaborators, dependencies) {
+    this.collaborators = collaborators;
+    this.#planner = dependencies.planner;
+    this.#clock = dependencies.clock;
+    this.#ledger = dependencies.ledger;
+    this.#dispatcher = this.collaborators.createCommunicationDispatcher(
+      dependencies.ledger,
+      dependencies.mailGateway
+    );
+  }
+  collaborators;
+  #planner;
+  #clock;
+  #ledger;
+  #dispatcher;
+  async execute(input) {
+    let now2;
+    try {
+      now2 = this.#clock.now();
+    } catch {
+      return this.collaborators.communicationResults.emptyResult(input.mode, {
+        code: "invalid-clock",
+        severity: "error"
+      });
+    }
+    if (!this.collaborators.communicationCalendar.isValidInstant(now2)) {
+      return this.collaborators.communicationResults.emptyResult(input.mode, {
+        code: "invalid-clock",
+        severity: "error"
+      });
+    }
+    const { mode, dispatchAuthorized, ...planningInput } = input;
+    const plan2 = this.#planner.execute({ ...planningInput, now: now2 });
+    const diagnostics = [...plan2.diagnostics];
+    const counts = {
+      planned: plan2.intents.length,
+      due: 0,
+      alreadyRecorded: 0,
+      reserved: 0,
+      dispatched: 0,
+      accepted: 0,
+      uncertain: 0,
+      rejected: 0,
+      deferred: 0
+    };
+    const timestamp = now2.toISOString();
+    const acceptedIds = /* @__PURE__ */ new Set();
+    for (const intent of plan2.intents) {
+      const accepted = await this.processIntent(
+        intent,
+        timestamp,
+        mode,
+        dispatchAuthorized,
+        counts,
+        diagnostics
+      );
+      if (accepted) acceptedIds.add(intent.intentId);
+    }
+    return this.collaborators.communicationResults.result(
+      mode,
+      plan2.intents,
+      counts,
+      diagnostics,
+      acceptedIds
+    );
+  }
+  async #findExisting(intent, diagnostics) {
+    try {
+      return await this.#ledger.find(intent.idempotencyKey);
+    } catch {
+      diagnostics.push({
+        code: "ledger-read-failed",
+        severity: "error",
+        intentId: intent.intentId
+      });
+      return "read-failed";
+    }
+  }
+  async #reserve(intent, timestamp, diagnostics) {
+    try {
+      return await this.#ledger.reservePending({
+        idempotencyKey: intent.idempotencyKey,
+        intentId: intent.intentId,
+        repositoryId: intent.repositoryId,
+        eventId: intent.eventId,
+        kind: intent.kind,
+        recipientId: intent.recipientId,
+        policyVersion: intent.policyVersion,
+        reservedAt: timestamp
+      });
+    } catch {
+      diagnostics.push({
+        code: "ledger-reservation-failed",
+        severity: "error",
+        intentId: intent.intentId
+      });
+      return "reservation-failed";
+    }
+  }
+  async processIntent(intent, timestamp, mode, dispatchAuthorized, counts, diagnostics) {
+    const existing = await this.#findExisting(intent, diagnostics);
+    if (existing === "read-failed") {
+      return;
+    }
+    if (existing) {
+      this.collaborators.communicationResults.recordExisting(
+        intent.intentId,
+        existing,
+        counts,
+        diagnostics
+      );
+      return existing.status === "accepted";
+    }
+    counts.due += 1;
+    if (mode === "check") {
+      return;
+    }
+    if (!dispatchAuthorized) {
+      return;
+    }
+    const reservation = await this.#reserve(intent, timestamp, diagnostics);
+    if (reservation === "reservation-failed") {
+      return;
+    }
+    if (!reservation.reserved) {
+      this.collaborators.communicationResults.recordExisting(
+        intent.intentId,
+        reservation.entry,
+        counts,
+        diagnostics
+      );
+      return reservation.entry.status === "accepted";
+    }
+    counts.reserved += 1;
+    counts.dispatched += 1;
+    return this.#dispatcher.execute(intent, timestamp, counts, diagnostics);
+  }
+};
+
+// packages/domain/communication/src/dependency-composition.ts
+var CommunicationDomainComposition = class {
+  attentionEpisodes() {
+    return new AttentionEpisodes({ attentionPolicy: this.attentionPolicy() });
+  }
+  attentionPolicy() {
+    return new AttentionPolicy({
+      communicationCalendar: this.communicationCalendar()
+    });
+  }
+  attentionStateEquality() {
+    return new AttentionStateEquality();
+  }
+  attentionStateRules() {
+    return new AttentionStateRules();
+  }
+  attentionTaskSelection() {
+    return new AttentionTaskSelection();
+  }
+  communicationCalendar() {
+    return new CommunicationCalendar();
+  }
+  communicationDispatcher(...args) {
+    return new CommunicationDispatcher(
+      { communicationResults: this.communicationResults() },
+      ...args
+    );
+  }
+  communicationIdempotency() {
+    return new CommunicationIdempotency();
+  }
+  communicationPlanner() {
+    return new CommunicationPlanner({
+      communicationIdempotency: this.communicationIdempotency()
+    });
+  }
+  communicationResults() {
+    return new CommunicationResults();
+  }
+  evaluateAttention() {
+    return new EvaluateAttention({
+      attentionPolicy: this.attentionPolicy(),
+      postEventPolicy: this.postEventPolicy()
+    });
+  }
+  mailBatchFingerprint() {
+    return new MailBatchFingerprint();
+  }
+  planCommunications() {
+    return new PlanCommunications({
+      communicationPlanner: this.communicationPlanner(),
+      communicationCalendar: this.communicationCalendar(),
+      postEventPolicy: this.postEventPolicy()
+    });
+  }
+  postEventPolicy() {
+    return new PostEventPolicy({
+      communicationCalendar: this.communicationCalendar()
+    });
+  }
+  reconcileAttention(...args) {
+    return new ReconcileAttention(
+      {
+        attentionPolicy: this.attentionPolicy(),
+        attentionEpisodes: this.attentionEpisodes()
+      },
+      ...args
+    );
+  }
+  reconcileCommunications(...args) {
+    return new ReconcileCommunications(
+      {
+        communicationResults: this.communicationResults(),
+        communicationCalendar: this.communicationCalendar(),
+        createCommunicationDispatcher: (...args2) => this.communicationDispatcher(...args2)
+      },
+      ...args
+    );
+  }
+};
 
 // packages/domain/event/src/application/ports/event-repository.ts
 var EventRepositoryPatches = class {
-  static eventRepositoryPatchIsEmpty(patch) {
+  eventRepositoryPatchIsEmpty(patch) {
     return patch.issueTitle === void 0 && patch.labels === void 0 && patch.body === void 0;
   }
 };
@@ -28424,11 +29256,739 @@ var EventNotFoundError = class extends Error {
   }
 };
 
+// packages/domain/event/src/application/use-cases/event-document-concurrency.ts
+var EventDocumentConcurrency = class {
+  async ensureEventDocumentIsCurrent(repository, identity, expected) {
+    const current = await repository.find(identity);
+    if (!current) {
+      throw new EventNotFoundError(identity);
+    }
+    if (!this.eventDocumentsEqual(current, expected)) {
+      throw new EventConcurrentModificationError(identity);
+    }
+  }
+  eventDocumentsEqual(left, right) {
+    const leftLabels = [...left.labels].sort(this.compareText.bind(this));
+    const rightLabels = [...right.labels].sort(this.compareText.bind(this));
+    return this.sameIdentity(left.identity, right.identity) && left.issueState === right.issueState && left.issueTitle === right.issueTitle && left.body === right.body && leftLabels.length === rightLabels.length && leftLabels.every((label, index) => label === rightLabels[index]);
+  }
+  compareText(left, right) {
+    return left < right ? -1 : left > right ? 1 : 0;
+  }
+  sameIdentity(left, right) {
+    return left.issueNumber === right.issueNumber && left.repository.toLowerCase() === right.repository.toLowerCase();
+  }
+};
+
 // packages/domain/event/src/application/use-cases/event-pagination-error.ts
 var EventPaginationError = class extends Error {
   constructor(cursor) {
     super(`Event repository repeated pagination cursor "${cursor}"`);
     this.name = "EventPaginationError";
+  }
+};
+
+// packages/domain/event/src/application/use-cases/list-active-events.ts
+var ListActiveEvents = class {
+  constructor(collaborators, dependencies) {
+    this.collaborators = collaborators;
+    this.dependencies = dependencies;
+    this.ruleEngine = this.collaborators.createEventRuleEngine(
+      dependencies.rules ?? this.collaborators.eventRuleFactory.createDefaultEventRules()
+    );
+  }
+  collaborators;
+  dependencies;
+  ruleEngine;
+  async execute(input) {
+    const activeEvents = [];
+    const allDiagnostics = [];
+    const seenCursors = /* @__PURE__ */ new Set();
+    const seenEvents = /* @__PURE__ */ new Set();
+    const now2 = this.dependencies.clock.now();
+    let pages = 0;
+    let cursor;
+    do {
+      if (++pages > 20) throw new EventPaginationError("audit-page-limit");
+      const page = await this.dependencies.repository.listPage({
+        ...input,
+        includeClosed: false,
+        cursor
+      });
+      for (const document of page.items) {
+        const identityKey = `${document.identity.repository}#${document.identity.issueNumber}`;
+        if (document.issueState === "closed" || seenEvents.has(identityKey)) {
+          continue;
+        }
+        seenEvents.add(identityKey);
+        this.checkLimit(seenEvents.size);
+        const decoded = this.dependencies.documentCodec.decode(document);
+        const evaluated = this.ruleEngine.evaluate(decoded.event);
+        const eventDiagnostics = [
+          ...decoded.diagnostics,
+          ...evaluated.diagnostics
+        ];
+        const readiness = this.collaborators.eventReadinessPolicy.evaluateEventReadiness(
+          evaluated.event,
+          eventDiagnostics
+        );
+        const lifecycle = this.collaborators.eventLifecycle.evaluateEventLifecycle({
+          event: evaluated.event,
+          readiness,
+          now: now2
+        });
+        allDiagnostics.push(...readiness.diagnostics);
+        activeEvents.push({
+          identity: { ...document.identity },
+          event: evaluated.event,
+          readiness,
+          lifecycle
+        });
+      }
+      cursor = page.nextCursor;
+      if (cursor) {
+        if (seenCursors.has(cursor)) {
+          throw new EventPaginationError(cursor);
+        }
+        seenCursors.add(cursor);
+      }
+    } while (cursor);
+    return {
+      events: Object.freeze(activeEvents),
+      diagnostics: Object.freeze(allDiagnostics)
+    };
+  }
+  checkLimit(count) {
+    if (count > 200) throw new EventPaginationError("audit-issue-limit");
+  }
+};
+
+// packages/domain/event/src/application/use-cases/reconcile-event.ts
+var ReconcileEvent = class {
+  constructor(collaborators, dependencies) {
+    this.collaborators = collaborators;
+    this.dependencies = dependencies;
+    this.ruleEngine = this.collaborators.createEventRuleEngine(
+      dependencies.rules ?? this.collaborators.eventRuleFactory.createDefaultEventRules()
+    );
+  }
+  collaborators;
+  dependencies;
+  ruleEngine;
+  async execute(input) {
+    const document = input.sourceDocument ?? await this.dependencies.repository.find(input.identity);
+    if (!document) {
+      throw new EventNotFoundError(input.identity);
+    }
+    if (!this.collaborators.eventDocumentConcurrency.sameIdentity(
+      document.identity,
+      input.identity
+    )) {
+      throw new EventNotFoundError(input.identity);
+    }
+    const decoded = this.dependencies.documentCodec.decode(document);
+    const evaluated = this.ruleEngine.evaluate(decoded.event);
+    const diagnostics = [
+      ...decoded.diagnostics,
+      ...evaluated.diagnostics
+    ];
+    const readiness = this.collaborators.eventReadinessPolicy.evaluateEventReadiness(
+      evaluated.event,
+      diagnostics
+    );
+    const lifecycle = this.collaborators.eventLifecycle.evaluateEventLifecycle({
+      event: evaluated.event,
+      readiness,
+      now: this.dependencies.clock.now()
+    });
+    const repositoryPatch = this.dependencies.documentCodec.createPatch(
+      document,
+      evaluated.event
+    );
+    const shouldPersist = input.mode === "fix" && !this.collaborators.eventRepositoryPatches.eventRepositoryPatchIsEmpty(
+      repositoryPatch
+    );
+    if (shouldPersist) {
+      await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
+        this.dependencies.repository,
+        input.identity,
+        document
+      );
+      await this.dependencies.repository.applyPatch(
+        input.identity,
+        repositoryPatch
+      );
+    }
+    return {
+      event: evaluated.event,
+      diagnostics: readiness.diagnostics,
+      normalizationPatch: evaluated.patch,
+      repositoryPatch,
+      readiness,
+      lifecycle,
+      persisted: shouldPersist
+    };
+  }
+};
+
+// packages/domain/event/src/domain/diagnostic.ts
+var EventDiagnostics = class {
+  diagnostic(value) {
+    return Object.freeze({ ...value });
+  }
+};
+
+// packages/domain/event/src/domain/event-agenda-equality.ts
+var EventAgendaEquality = class {
+  equals(left, right) {
+    return left.length === right.length && left.every((entry, index) => this.entry(entry, right[index]));
+  }
+  entry(left, right) {
+    return left.description === right.description && left.speakers.length === right.speakers.length && left.speakers.every(
+      (speaker, index) => this.speaker(speaker, right.speakers[index])
+    ) && this.proposal(left.proposal, right.proposal);
+  }
+  speaker(left, right) {
+    return left.id === right.id && left.displayName === right.displayName && left.pictureUrl === right.pictureUrl && left.source?.path === right.source?.path && left.source?.line === right.source?.line;
+  }
+  proposal(left, right) {
+    if (!left || !right) return left === right;
+    return left.provider === right.provider && left.event === right.event && left.id === right.id && left.title === right.title && left.abstract === right.abstract && this.sequence(left.languages, right.languages) && this.sequence(left.formats, right.formats);
+  }
+  sequence(left, right) {
+    return left.length === right.length && left.every((value, index) => value === right[index]);
+  }
+};
+
+// packages/domain/event/src/domain/event-agenda-rule.ts
+var EventAgendaRule = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  id = "event-agenda";
+  dependencies = [];
+  evaluate(event) {
+    if (event.agenda.length === 0) {
+      return this.collaborators.eventRuleResults.missing(
+        "event.agenda.missing",
+        "agenda",
+        "At least one agenda entry is required"
+      );
+    }
+    const diagnostics = [];
+    const normalizedEntries = event.agenda.map((entry, entryIndex) => {
+      return this.normalizeEntry(entry, entryIndex, diagnostics);
+    });
+    const operations = [];
+    if (!this.collaborators.eventAgendaEquality.equals(
+      event.agenda,
+      normalizedEntries
+    )) {
+      operations.push(
+        this.collaborators.eventPatches.replaceEventField(
+          "agenda",
+          normalizedEntries,
+          "Normalize agenda"
+        )
+      );
+      diagnostics.push(
+        this.collaborators.eventDiagnostics.diagnostic({
+          code: "event.agenda.normalized",
+          severity: "info",
+          category: "normalization",
+          field: "agenda",
+          message: "The agenda can be normalized safely",
+          fixAvailable: true
+        })
+      );
+    }
+    return {
+      diagnostics,
+      patch: this.collaborators.eventPatches.createEventPatch(operations)
+    };
+  }
+  normalizeEntry(entry, entryIndex, diagnostics) {
+    const normalized = this.collaborators.eventParticipantNormalization.normalizeAgendaEntry(
+      entry
+    );
+    if (normalized.speakers.length === 0) {
+      diagnostics.push(
+        this.collaborators.eventDiagnostics.diagnostic({
+          code: "event.agenda.speaker.missing",
+          severity: "error",
+          category: "invalid",
+          field: `agenda.${entryIndex}.speakers`,
+          message: "Each agenda entry must have at least one speaker"
+        })
+      );
+    }
+    for (const [speakerIndex, speaker] of normalized.speakers.entries()) {
+      if (speaker.displayName === "") {
+        diagnostics.push(
+          this.collaborators.eventDiagnostics.diagnostic({
+            code: "event.agenda.speaker.invalid",
+            severity: "error",
+            category: "invalid",
+            field: `agenda.${entryIndex}.speakers.${speakerIndex}`,
+            message: "Speaker display name must not be empty"
+          })
+        );
+      }
+    }
+    if (normalized.description === "") {
+      diagnostics.push(
+        this.collaborators.eventDiagnostics.diagnostic({
+          code: "event.agenda.description.missing",
+          severity: "error",
+          category: "invalid",
+          field: `agenda.${entryIndex}.description`,
+          message: "Agenda entry description must not be empty"
+        })
+      );
+    }
+    return normalized;
+  }
+};
+
+// packages/domain/event/src/domain/event-checklists.ts
+var EventChecklists = class {
+  equal(left, right) {
+    return this.itemsEqual(left.slidesAndContent, right.slidesAndContent) && this.itemsEqual(left.communication, right.communication) && this.itemsEqual(left.postEvent, right.postEvent);
+  }
+  itemsEqual(left, right) {
+    return left.length === right.length && left.every(
+      (item, index) => item.name === right[index].name && item.completed === right[index].completed
+    );
+  }
+};
+
+// packages/domain/event/src/domain/event-date-rule.ts
+var EventDateRule = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  id = "event-date";
+  dependencies = [];
+  evaluate(event) {
+    const value = event.date.trim();
+    if (value === "") {
+      return this.collaborators.eventRuleResults.missing(
+        "event.date.missing",
+        "date",
+        "An event date is required"
+      );
+    }
+    if (!this.collaborators.eventDateValidation.isValidIsoDate(value)) {
+      return this.collaborators.eventRuleResults.invalid(
+        "event.date.invalid",
+        "date",
+        "Event date must be a real calendar date formatted as YYYY-MM-DD"
+      );
+    }
+    return this.collaborators.eventRuleResults.normalizeString(
+      event.date,
+      value,
+      "date",
+      "Normalize event date"
+    );
+  }
+};
+
+// packages/domain/event/src/domain/event-date-validation.ts
+var EventDateValidation = class {
+  isValidIsoDate(value) {
+    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) {
+      return false;
+    }
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    if (month < 1 || month > 12 || day < 1) {
+      return false;
+    }
+    const monthLengths = [
+      31,
+      this.isLeapYear(year) ? 29 : 28,
+      31,
+      30,
+      31,
+      30,
+      31,
+      31,
+      30,
+      31,
+      30,
+      31
+    ];
+    return day <= monthLengths[month - 1];
+  }
+  isLeapYear(year) {
+    return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  }
+};
+
+// packages/domain/event/src/domain/event-description-rule.ts
+var EventDescriptionRule = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  id = "event-description";
+  dependencies = [];
+  evaluate(event) {
+    const value = event.description.trim();
+    if (value === "") {
+      return this.collaborators.eventRuleResults.missing(
+        "event.description.missing",
+        "description",
+        "An event description is required"
+      );
+    }
+    return this.collaborators.eventRuleResults.normalizeString(
+      event.description,
+      value,
+      "description",
+      "Trim event description"
+    );
+  }
+};
+
+// packages/domain/event/src/domain/event-host-rule.ts
+var EventHostRule = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  id = "event-host";
+  dependencies = [];
+  evaluate(event) {
+    if (!event.host) {
+      return this.collaborators.eventRuleResults.missing(
+        "event.hoster.missing",
+        "host",
+        "A host must be selected"
+      );
+    }
+    const normalized = this.collaborators.eventParticipantNormalization.normalizeParticipant(
+      event.host
+    );
+    if (normalized.displayName === "") {
+      return this.collaborators.eventRuleResults.invalid(
+        "event.hoster.invalid",
+        "host",
+        "Host display name must not be empty"
+      );
+    }
+    if (this.collaborators.eventParticipantNormalization.participantsEqual(
+      event.host,
+      normalized
+    )) {
+      return this.collaborators.eventRuleResults.emptyResult();
+    }
+    return this.collaborators.eventRuleResults.normalizedResult(
+      this.collaborators.eventPatches.replaceEventField(
+        "host",
+        normalized,
+        "Normalize host reference"
+      ),
+      "event.hoster.normalized",
+      "host",
+      "The host reference can be normalized safely"
+    );
+  }
+};
+
+// packages/domain/event/src/domain/patch.ts
+var EMPTY_EVENT_PATCH = Object.freeze({ operations: [] });
+var EventPatches = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  replaceEventField(path, value, reason) {
+    return Object.freeze({
+      op: "replace",
+      path,
+      value,
+      reason
+    });
+  }
+  createEventPatch(operations) {
+    return Object.freeze({ operations: Object.freeze([...operations]) });
+  }
+  mergeEventPatches(...patches) {
+    return this.createEventPatch(patches.flatMap((patch) => patch.operations));
+  }
+  applyEventPatch(event, patch) {
+    return patch.operations.reduce(
+      (current, operation) => this.applyOperation(current, operation),
+      event
+    );
+  }
+  applyOperation(event, operation) {
+    switch (operation.path) {
+      case "issueTitle":
+        return { ...event, issueTitle: operation.value };
+      case "labels":
+        return { ...event, labels: [...operation.value] };
+      case "eventTitle":
+        return { ...event, eventTitle: operation.value };
+      case "date":
+        return { ...event, date: operation.value };
+      case "description":
+        return { ...event, description: operation.value };
+      case "host":
+        return {
+          ...event,
+          host: operation.value ? { ...operation.value } : void 0
+        };
+      case "agenda":
+        return {
+          ...event,
+          agenda: operation.value.map((entry) => ({
+            ...entry,
+            speakers: entry.speakers.map((speaker) => ({ ...speaker }))
+          }))
+        };
+      case "publicationLinks":
+        return { ...event, publicationLinks: { ...operation.value } };
+      case "occurrenceStatus":
+        return { ...event, occurrenceStatus: operation.value };
+      case "timeZone":
+        return { ...event, timeZone: operation.value };
+      case "confirmations":
+        return { ...event, confirmations: { ...operation.value } };
+      case "logistics":
+        return { ...event, logistics: { ...operation.value } };
+      case "operationalChecklists": {
+        const operationalChecklists = {
+          slidesAndContent: operation.value.slidesAndContent.map((item) => ({
+            ...item
+          })),
+          communication: operation.value.communication.map((item) => ({
+            ...item
+          })),
+          postEvent: operation.value.postEvent.map((item) => ({ ...item }))
+        };
+        return {
+          ...event,
+          operationalChecklists,
+          followUpComplete: event.followUpComplete && this.collaborators.meetupEventOperations.postEventChecklistIsComplete(
+            operationalChecklists.postEvent
+          )
+        };
+      }
+      case "followUpComplete":
+        return {
+          ...event,
+          followUpComplete: operation.value && this.collaborators.meetupEventOperations.postEventChecklistIsComplete(
+            event.operationalChecklists.postEvent
+          )
+        };
+    }
+  }
+};
+
+// packages/domain/event/src/domain/event-links-rule.ts
+var EventLinksRule = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  id = "event-links";
+  dependencies = [];
+  evaluate(event) {
+    const diagnostics = [];
+    const normalized = { ...event.publicationLinks };
+    let changed = false;
+    for (const key of ["meetup", "community", "assets", "feedback"]) {
+      const link = event.publicationLinks[key];
+      if (link === void 0 || link.trim() === "") {
+        continue;
+      }
+      const value = link.trim().replace(/\/$/, "");
+      if (!this.isHttpsUrl(value)) {
+        diagnostics.push(
+          this.collaborators.eventDiagnostics.diagnostic({
+            code: `event.link.${key}.invalid`,
+            severity: "error",
+            category: "invalid",
+            field: `publicationLinks.${key}`,
+            message: `${key} link must be a valid HTTPS URL`
+          })
+        );
+        continue;
+      }
+      if (value !== link) {
+        normalized[key] = value;
+        changed = true;
+      }
+    }
+    if (!changed) {
+      return { diagnostics, patch: EMPTY_EVENT_PATCH };
+    }
+    diagnostics.push(
+      this.collaborators.eventDiagnostics.diagnostic({
+        code: "event.links.normalized",
+        severity: "info",
+        category: "normalization",
+        field: "publicationLinks",
+        message: "Publication links can be normalized safely",
+        fixAvailable: true
+      })
+    );
+    return {
+      diagnostics,
+      patch: this.collaborators.eventPatches.createEventPatch([
+        this.collaborators.eventPatches.replaceEventField(
+          "publicationLinks",
+          normalized,
+          "Trim publication links and remove trailing slashes"
+        )
+      ])
+    };
+  }
+  isHttpsUrl(value) {
+    try {
+      return new URL(value).protocol === "https:";
+    } catch {
+      return false;
+    }
+  }
+};
+
+// packages/domain/event/src/domain/occurrence-status.ts
+var OCCURRENCE_STATUSES = [
+  "scheduled",
+  "postponed",
+  "held",
+  "cancelled"
+];
+var OCCURRENCE_STATUS_LABELS = Object.freeze({
+  scheduled: null,
+  postponed: "event:postponed",
+  held: "event:held",
+  cancelled: "event:cancelled"
+});
+
+// packages/domain/event/src/domain/event-occurrence-parser.ts
+var EventOccurrenceParser = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  readOccurrenceStatus(labels, issueState, fieldStatus, diagnostics) {
+    const explicitStatuses = OCCURRENCE_STATUSES.filter((status) => {
+      const label = OCCURRENCE_STATUS_LABELS[status];
+      return label !== null && labels.includes(label);
+    });
+    if (explicitStatuses.length > 1) {
+      diagnostics.push(
+        this.collaborators.eventDiagnostics.diagnostic({
+          code: "event.occurrence-status.label-conflict",
+          severity: "error",
+          category: "invalid",
+          field: "labels",
+          message: "Occurrence status labels are mutually exclusive; keep only one of event:postponed, event:held, or event:cancelled"
+        })
+      );
+      return explicitStatuses[0] ?? (issueState === "closed" ? "held" : "scheduled");
+    }
+    if (explicitStatuses.length === 1) {
+      return explicitStatuses[0];
+    }
+    return fieldStatus ?? (issueState === "closed" ? "held" : "scheduled");
+  }
+};
+
+// packages/domain/event/src/domain/event-participant-normalization.ts
+var EventParticipantNormalization = class {
+  normalizeParticipant(participant) {
+    const displayName = participant.displayName.trim();
+    const id = participant.id?.trim();
+    return id ? {
+      ...participant,
+      displayName,
+      id,
+      ...participant.source ? { source: participant.source } : {}
+    } : { displayName };
+  }
+  participantsEqual(left, right) {
+    return left.displayName === right.displayName && left.id === right.id;
+  }
+  normalizeAgendaEntry(entry) {
+    return {
+      ...entry,
+      speakers: entry.speakers.map(this.normalizeParticipant.bind(this)),
+      description: entry.description.trim()
+    };
+  }
+};
+
+// packages/domain/event/src/domain/event-rule-engine.ts
+var EventRuleEngine = class {
+  constructor(collaborators, rules) {
+    this.collaborators = collaborators;
+    this.orderedRules = this.collaborators.eventRuleOrdering.sortRules(rules);
+  }
+  collaborators;
+  orderedRules;
+  evaluate(event) {
+    let normalizedEvent = event;
+    const diagnostics = [];
+    const operations = [];
+    for (const rule of this.orderedRules) {
+      const result = rule.evaluate(normalizedEvent);
+      diagnostics.push(...result.diagnostics);
+      operations.push(...result.patch.operations);
+      normalizedEvent = this.collaborators.eventPatches.applyEventPatch(
+        normalizedEvent,
+        result.patch
+      );
+    }
+    return {
+      event: normalizedEvent,
+      diagnostics: Object.freeze(diagnostics),
+      patch: this.collaborators.eventPatches.createEventPatch(operations)
+    };
+  }
+  get ruleIds() {
+    return this.orderedRules.map((rule) => rule.id);
+  }
+};
+
+// packages/domain/event/src/domain/rule-contracts.ts
+var DEFAULT_MANAGED_LABEL_CONFIGURATION = Object.freeze({
+  meetup: "meetup",
+  hostNeeded: "hoster:needed",
+  hostConfirmed: "hoster:confirmed",
+  speakersNeeded: "speakers:needed",
+  speakersConfirmed: "speakers:confirmed",
+  occurrencePostponed: "event:postponed",
+  occurrenceHeld: "event:held",
+  occurrenceCancelled: "event:cancelled"
+});
+
+// packages/domain/event/src/domain/event-rule-factory.ts
+var EventRuleFactory = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  createDefaultEventRules(labelConfiguration = DEFAULT_MANAGED_LABEL_CONFIGURATION) {
+    return [
+      this.collaborators.createEventDateRule(),
+      this.collaborators.createEventTitleRule(),
+      this.collaborators.createEventDescriptionRule(),
+      this.collaborators.createEventHostRule(),
+      this.collaborators.createEventAgendaRule(),
+      this.collaborators.createEventLinksRule(),
+      this.collaborators.createIssueTitleRule(),
+      this.collaborators.createManagedLabelsRule(labelConfiguration)
+    ];
   }
 };
 
@@ -28442,7 +30002,7 @@ var EventRuleConfigurationError = class extends Error {
 
 // packages/domain/event/src/domain/event-rule-ordering.ts
 var EventRuleOrdering = class {
-  static sortRules(rules) {
+  sortRules(rules) {
     const byId = /* @__PURE__ */ new Map();
     for (const rule of rules) {
       if (byId.has(rule.id)) {
@@ -28494,6 +30054,252 @@ var EventRuleOrdering = class {
   }
 };
 
+// packages/domain/event/src/domain/event-rule-results.ts
+var EventRuleResults = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  emptyResult() {
+    return { diagnostics: [], patch: EMPTY_EVENT_PATCH };
+  }
+  normalizedResult(operation, code, field, message) {
+    return {
+      diagnostics: [
+        this.collaborators.eventDiagnostics.diagnostic({
+          code,
+          severity: "info",
+          category: "normalization",
+          field,
+          message,
+          fixAvailable: true
+        })
+      ],
+      patch: this.collaborators.eventPatches.createEventPatch([operation])
+    };
+  }
+  missing(code, field, message) {
+    return {
+      diagnostics: [
+        this.collaborators.eventDiagnostics.diagnostic({
+          code,
+          severity: "warning",
+          category: "incomplete",
+          field,
+          message
+        })
+      ],
+      patch: EMPTY_EVENT_PATCH
+    };
+  }
+  invalid(code, field, message) {
+    return {
+      diagnostics: [
+        this.collaborators.eventDiagnostics.diagnostic({
+          code,
+          severity: "error",
+          category: "invalid",
+          field,
+          message
+        })
+      ],
+      patch: EMPTY_EVENT_PATCH
+    };
+  }
+  normalizeString(current, normalized, path, reason) {
+    if (current === normalized) {
+      return this.emptyResult();
+    }
+    return this.normalizedResult(
+      this.collaborators.eventPatches.replaceEventField(
+        path,
+        normalized,
+        reason
+      ),
+      `event.${path}.normalized`,
+      path,
+      `${path} can be normalized safely`
+    );
+  }
+};
+
+// packages/domain/event/src/domain/event-title-rule.ts
+var EventTitleRule = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  id = "event-title";
+  dependencies = [];
+  evaluate(event) {
+    const value = event.eventTitle.trim();
+    if (value === "") {
+      return this.collaborators.eventRuleResults.missing(
+        "event.title.missing",
+        "eventTitle",
+        "An event title is required"
+      );
+    }
+    return this.collaborators.eventRuleResults.normalizeString(
+      event.eventTitle,
+      value,
+      "eventTitle",
+      "Trim event title"
+    );
+  }
+};
+
+// packages/domain/event/src/domain/issue-title-rule.ts
+var IssueTitleRule = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  id = "issue-title";
+  dependencies = ["event-date", "event-title"];
+  evaluate(event) {
+    if (!this.collaborators.eventDateValidation.isValidIsoDate(event.date) || event.eventTitle === "") {
+      return this.collaborators.eventRuleResults.emptyResult();
+    }
+    const expected = `[Meetup] - ${event.date} - ${event.eventTitle}`;
+    if (event.issueTitle === expected) {
+      return this.collaborators.eventRuleResults.emptyResult();
+    }
+    return this.collaborators.eventRuleResults.normalizedResult(
+      this.collaborators.eventPatches.replaceEventField(
+        "issueTitle",
+        expected,
+        "Project canonical issue title"
+      ),
+      "event.issue-title.normalized",
+      "issueTitle",
+      `Issue title should be "${expected}"`
+    );
+  }
+};
+
+// packages/domain/event/src/domain/lifecycle.ts
+var EventLifecycle = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  /**
+   * Derives lifecycle exclusively from event facts and an explicitly supplied
+   * instant. In particular, a past date never implies that an event was held.
+   */
+  evaluateEventLifecycle({
+    event,
+    readiness,
+    now: now2
+  }) {
+    let state;
+    switch (event.occurrenceStatus) {
+      case "cancelled":
+        state = "cancelled";
+        break;
+      case "postponed":
+        state = "postponed";
+        break;
+      case "held":
+        state = event.followUpComplete && this.collaborators.meetupEventOperations.postEventChecklistIsComplete(
+          event.operationalChecklists.postEvent
+        ) ? "follow-up-complete" : "held";
+        break;
+      case "scheduled":
+      case void 0:
+        if (!this.hasMinimumPlanningFacts(event)) {
+          state = "draft";
+        } else {
+          state = readiness.isReady ? "ready" : "planned";
+        }
+        break;
+    }
+    return {
+      state,
+      evaluatedAt: now2,
+      timeZone: event.timeZone,
+      diagnostics: readiness.diagnostics
+    };
+  }
+  hasMinimumPlanningFacts(event) {
+    return event.date.trim() !== "" && event.eventTitle.trim() !== "";
+  }
+};
+
+// packages/domain/event/src/domain/managed-labels-rule.ts
+var ManagedLabelsRule = class {
+  constructor(collaborators, configuration) {
+    this.collaborators = collaborators;
+    this.configuration = configuration;
+  }
+  collaborators;
+  configuration;
+  id = "managed-labels";
+  dependencies = ["event-host", "event-agenda"];
+  evaluate(event) {
+    const managed = Object.values(this.configuration);
+    const unmanaged2 = event.labels.filter((label) => !managed.includes(label));
+    const occurrenceLabels = event.occurrenceStatus === "postponed" ? [this.configuration.occurrencePostponed] : event.occurrenceStatus === "held" ? [this.configuration.occurrenceHeld] : event.occurrenceStatus === "cancelled" ? [this.configuration.occurrenceCancelled] : [];
+    const expected = [
+      ...unmanaged2,
+      this.configuration.meetup,
+      ...event.confirmations.host ? [this.configuration.hostConfirmed] : event.host?.displayName.trim() ? [] : [this.configuration.hostNeeded],
+      event.confirmations.speakers ? this.configuration.speakersConfirmed : this.configuration.speakersNeeded,
+      ...occurrenceLabels
+    ];
+    if (this.labelsMatch(event.labels, expected)) {
+      return this.collaborators.eventRuleResults.emptyResult();
+    }
+    return this.collaborators.eventRuleResults.normalizedResult(
+      this.collaborators.eventPatches.replaceEventField(
+        "labels",
+        expected,
+        "Project managed lifecycle labels"
+      ),
+      "event.labels.normalized",
+      "labels",
+      "Managed meetup labels can be reconciled safely"
+    );
+  }
+  labelsMatch(actual, expected) {
+    const sorted = [...expected].sort();
+    return actual.length === expected.length && [...actual].sort().every((label, index) => label === sorted[index]);
+  }
+};
+
+// packages/domain/event/src/domain/meetup-publication-checklist.ts
+var MeetupPublicationChecklist = class _MeetupPublicationChecklist {
+  static taskName = "Meetup event published";
+  isPublished(event) {
+    const matches = event.operationalChecklists.communication.filter(
+      (item) => item.name === _MeetupPublicationChecklist.taskName
+    );
+    return Boolean(event.publicationLinks.meetup) && matches.length === 1 && matches[0]?.completed === true;
+  }
+  withStatus(event, published) {
+    const communication = [];
+    let found = false;
+    for (const item of event.operationalChecklists.communication) {
+      if (item.name !== _MeetupPublicationChecklist.taskName) {
+        communication.push(item);
+        continue;
+      }
+      if (!found) communication.push({ name: item.name, completed: published });
+      found = true;
+    }
+    if (!found)
+      communication.push({
+        name: _MeetupPublicationChecklist.taskName,
+        completed: published
+      });
+    return {
+      ...event,
+      operationalChecklists: { ...event.operationalChecklists, communication }
+    };
+  }
+};
+
 // packages/domain/event/src/domain/model.ts
 var EVENT_SCHEMA_VERSION = 1;
 var POST_EVENT_TASK_NAMES = Object.freeze({
@@ -28510,12 +30316,12 @@ var EXPECTED_POST_EVENT_TASK_NAMES = Object.freeze([
   POST_EVENT_TASK_NAMES.importAttendance,
   POST_EVENT_TASK_NAMES.shareOnSocialNetworks
 ]);
-var MeetupEventOperations = class _MeetupEventOperations {
+var MeetupEventOperations = class {
   /**
    * A post-event checklist is complete only when it contains each expected task
    * exactly once, contains no additional task, and every task is completed.
    */
-  static postEventChecklistIsComplete(items) {
+  postEventChecklistIsComplete(items) {
     if (items.length !== EXPECTED_POST_EVENT_TASK_NAMES.length) {
       return false;
     }
@@ -28530,7 +30336,7 @@ var MeetupEventOperations = class _MeetupEventOperations {
       (name) => itemByName.get(name)?.completed === true
     );
   }
-  static cloneMeetupEvent(event) {
+  cloneMeetupEvent(event) {
     const operationalChecklists = {
       slidesAndContent: event.operationalChecklists.slidesAndContent.map(
         (item) => ({ ...item })
@@ -28555,681 +30361,18 @@ var MeetupEventOperations = class _MeetupEventOperations {
       confirmations: { ...event.confirmations },
       logistics: { ...event.logistics },
       operationalChecklists,
-      followUpComplete: event.followUpComplete && _MeetupEventOperations.postEventChecklistIsComplete(
-        operationalChecklists.postEvent
-      )
+      followUpComplete: event.followUpComplete && this.postEventChecklistIsComplete(operationalChecklists.postEvent)
     };
-  }
-};
-
-// packages/domain/event/src/domain/patch.ts
-var EMPTY_EVENT_PATCH = Object.freeze({ operations: [] });
-var EventPatches = class _EventPatches {
-  static replaceEventField(path, value, reason) {
-    return Object.freeze({
-      op: "replace",
-      path,
-      value,
-      reason
-    });
-  }
-  static createEventPatch(operations) {
-    return Object.freeze({ operations: Object.freeze([...operations]) });
-  }
-  static mergeEventPatches(...patches) {
-    return _EventPatches.createEventPatch(
-      patches.flatMap((patch) => patch.operations)
-    );
-  }
-  static applyEventPatch(event, patch) {
-    return patch.operations.reduce(
-      (current, operation) => _EventPatches.applyOperation(current, operation),
-      event
-    );
-  }
-  static applyOperation(event, operation) {
-    switch (operation.path) {
-      case "issueTitle":
-        return { ...event, issueTitle: operation.value };
-      case "labels":
-        return { ...event, labels: [...operation.value] };
-      case "eventTitle":
-        return { ...event, eventTitle: operation.value };
-      case "date":
-        return { ...event, date: operation.value };
-      case "description":
-        return { ...event, description: operation.value };
-      case "host":
-        return {
-          ...event,
-          host: operation.value ? { ...operation.value } : void 0
-        };
-      case "agenda":
-        return {
-          ...event,
-          agenda: operation.value.map((entry) => ({
-            ...entry,
-            speakers: entry.speakers.map((speaker) => ({ ...speaker }))
-          }))
-        };
-      case "publicationLinks":
-        return { ...event, publicationLinks: { ...operation.value } };
-      case "occurrenceStatus":
-        return { ...event, occurrenceStatus: operation.value };
-      case "timeZone":
-        return { ...event, timeZone: operation.value };
-      case "confirmations":
-        return { ...event, confirmations: { ...operation.value } };
-      case "logistics":
-        return { ...event, logistics: { ...operation.value } };
-      case "operationalChecklists": {
-        const operationalChecklists = {
-          slidesAndContent: operation.value.slidesAndContent.map((item) => ({
-            ...item
-          })),
-          communication: operation.value.communication.map((item) => ({
-            ...item
-          })),
-          postEvent: operation.value.postEvent.map((item) => ({ ...item }))
-        };
-        return {
-          ...event,
-          operationalChecklists,
-          followUpComplete: event.followUpComplete && MeetupEventOperations.postEventChecklistIsComplete(
-            operationalChecklists.postEvent
-          )
-        };
-      }
-      case "followUpComplete":
-        return {
-          ...event,
-          followUpComplete: operation.value && MeetupEventOperations.postEventChecklistIsComplete(
-            event.operationalChecklists.postEvent
-          )
-        };
-    }
-  }
-};
-
-// packages/domain/event/src/domain/event-rule-engine.ts
-var EventRuleEngine = class {
-  orderedRules;
-  constructor(rules) {
-    this.orderedRules = EventRuleOrdering.sortRules(rules);
-  }
-  evaluate(event) {
-    let normalizedEvent = event;
-    const diagnostics = [];
-    const operations = [];
-    for (const rule of this.orderedRules) {
-      const result = rule.evaluate(normalizedEvent);
-      diagnostics.push(...result.diagnostics);
-      operations.push(...result.patch.operations);
-      normalizedEvent = EventPatches.applyEventPatch(
-        normalizedEvent,
-        result.patch
-      );
-    }
-    return {
-      event: normalizedEvent,
-      diagnostics: Object.freeze(diagnostics),
-      patch: EventPatches.createEventPatch(operations)
-    };
-  }
-  get ruleIds() {
-    return this.orderedRules.map((rule) => rule.id);
-  }
-};
-
-// packages/domain/event/src/domain/diagnostic.ts
-var EventDiagnostics = class {
-  static diagnostic(value) {
-    return Object.freeze({ ...value });
-  }
-};
-
-// packages/domain/event/src/domain/event-agenda-equality.ts
-var EventAgendaEquality = class _EventAgendaEquality {
-  static equals(left, right) {
-    return left.length === right.length && left.every(
-      (entry, index) => _EventAgendaEquality.entry(entry, right[index])
-    );
-  }
-  static entry(left, right) {
-    return left.description === right.description && left.speakers.length === right.speakers.length && left.speakers.every(
-      (speaker, index) => _EventAgendaEquality.speaker(speaker, right.speakers[index])
-    ) && _EventAgendaEquality.proposal(left.proposal, right.proposal);
-  }
-  static speaker(left, right) {
-    return left.id === right.id && left.displayName === right.displayName && left.pictureUrl === right.pictureUrl && left.source?.path === right.source?.path && left.source?.line === right.source?.line;
-  }
-  static proposal(left, right) {
-    if (!left || !right) return left === right;
-    return left.provider === right.provider && left.event === right.event && left.id === right.id && left.title === right.title && left.abstract === right.abstract && _EventAgendaEquality.sequence(left.languages, right.languages) && _EventAgendaEquality.sequence(left.formats, right.formats);
-  }
-  static sequence(left, right) {
-    return left.length === right.length && left.every((value, index) => value === right[index]);
-  }
-};
-
-// packages/domain/event/src/domain/event-participant-normalization.ts
-var EventParticipantNormalization = class _EventParticipantNormalization {
-  static normalizeParticipant(participant) {
-    const displayName = participant.displayName.trim();
-    const id = participant.id?.trim();
-    return id ? {
-      ...participant,
-      displayName,
-      id,
-      ...participant.source ? { source: participant.source } : {}
-    } : { displayName };
-  }
-  static participantsEqual(left, right) {
-    return left.displayName === right.displayName && left.id === right.id;
-  }
-  static normalizeAgendaEntry(entry) {
-    return {
-      ...entry,
-      speakers: entry.speakers.map(
-        _EventParticipantNormalization.normalizeParticipant
-      ),
-      description: entry.description.trim()
-    };
-  }
-};
-
-// packages/domain/event/src/domain/event-rule-results.ts
-var EventRuleResults = class _EventRuleResults {
-  static emptyResult() {
-    return { diagnostics: [], patch: EMPTY_EVENT_PATCH };
-  }
-  static normalizedResult(operation, code, field, message) {
-    return {
-      diagnostics: [
-        EventDiagnostics.diagnostic({
-          code,
-          severity: "info",
-          category: "normalization",
-          field,
-          message,
-          fixAvailable: true
-        })
-      ],
-      patch: EventPatches.createEventPatch([operation])
-    };
-  }
-  static missing(code, field, message) {
-    return {
-      diagnostics: [
-        EventDiagnostics.diagnostic({
-          code,
-          severity: "warning",
-          category: "incomplete",
-          field,
-          message
-        })
-      ],
-      patch: EMPTY_EVENT_PATCH
-    };
-  }
-  static invalid(code, field, message) {
-    return {
-      diagnostics: [
-        EventDiagnostics.diagnostic({
-          code,
-          severity: "error",
-          category: "invalid",
-          field,
-          message
-        })
-      ],
-      patch: EMPTY_EVENT_PATCH
-    };
-  }
-  static normalizeString(current, normalized, path, reason) {
-    if (current === normalized) {
-      return _EventRuleResults.emptyResult();
-    }
-    return _EventRuleResults.normalizedResult(
-      EventPatches.replaceEventField(path, normalized, reason),
-      `event.${path}.normalized`,
-      path,
-      `${path} can be normalized safely`
-    );
-  }
-};
-
-// packages/domain/event/src/domain/event-agenda-rule.ts
-var EventAgendaRule = class {
-  id = "event-agenda";
-  dependencies = [];
-  evaluate(event) {
-    if (event.agenda.length === 0) {
-      return EventRuleResults.missing(
-        "event.agenda.missing",
-        "agenda",
-        "At least one agenda entry is required"
-      );
-    }
-    const diagnostics = [];
-    const normalizedEntries = event.agenda.map((entry, entryIndex) => {
-      return this.normalizeEntry(entry, entryIndex, diagnostics);
-    });
-    const operations = [];
-    if (!EventAgendaEquality.equals(event.agenda, normalizedEntries)) {
-      operations.push(
-        EventPatches.replaceEventField(
-          "agenda",
-          normalizedEntries,
-          "Normalize agenda"
-        )
-      );
-      diagnostics.push(
-        EventDiagnostics.diagnostic({
-          code: "event.agenda.normalized",
-          severity: "info",
-          category: "normalization",
-          field: "agenda",
-          message: "The agenda can be normalized safely",
-          fixAvailable: true
-        })
-      );
-    }
-    return {
-      diagnostics,
-      patch: EventPatches.createEventPatch(operations)
-    };
-  }
-  normalizeEntry(entry, entryIndex, diagnostics) {
-    const normalized = EventParticipantNormalization.normalizeAgendaEntry(entry);
-    if (normalized.speakers.length === 0) {
-      diagnostics.push(
-        EventDiagnostics.diagnostic({
-          code: "event.agenda.speaker.missing",
-          severity: "error",
-          category: "invalid",
-          field: `agenda.${entryIndex}.speakers`,
-          message: "Each agenda entry must have at least one speaker"
-        })
-      );
-    }
-    for (const [speakerIndex, speaker] of normalized.speakers.entries()) {
-      if (speaker.displayName === "") {
-        diagnostics.push(
-          EventDiagnostics.diagnostic({
-            code: "event.agenda.speaker.invalid",
-            severity: "error",
-            category: "invalid",
-            field: `agenda.${entryIndex}.speakers.${speakerIndex}`,
-            message: "Speaker display name must not be empty"
-          })
-        );
-      }
-    }
-    if (normalized.description === "") {
-      diagnostics.push(
-        EventDiagnostics.diagnostic({
-          code: "event.agenda.description.missing",
-          severity: "error",
-          category: "invalid",
-          field: `agenda.${entryIndex}.description`,
-          message: "Agenda entry description must not be empty"
-        })
-      );
-    }
-    return normalized;
-  }
-};
-
-// packages/domain/event/src/domain/event-date-validation.ts
-var EventDateValidation = class _EventDateValidation {
-  static isValidIsoDate(value) {
-    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (!match) {
-      return false;
-    }
-    const year = Number(match[1]);
-    const month = Number(match[2]);
-    const day = Number(match[3]);
-    if (month < 1 || month > 12 || day < 1) {
-      return false;
-    }
-    const monthLengths = [
-      31,
-      _EventDateValidation.isLeapYear(year) ? 29 : 28,
-      31,
-      30,
-      31,
-      30,
-      31,
-      31,
-      30,
-      31,
-      30,
-      31
-    ];
-    return day <= monthLengths[month - 1];
-  }
-  static isLeapYear(year) {
-    return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
-  }
-};
-
-// packages/domain/event/src/domain/event-date-rule.ts
-var EventDateRule = class {
-  id = "event-date";
-  dependencies = [];
-  evaluate(event) {
-    const value = event.date.trim();
-    if (value === "") {
-      return EventRuleResults.missing(
-        "event.date.missing",
-        "date",
-        "An event date is required"
-      );
-    }
-    if (!EventDateValidation.isValidIsoDate(value)) {
-      return EventRuleResults.invalid(
-        "event.date.invalid",
-        "date",
-        "Event date must be a real calendar date formatted as YYYY-MM-DD"
-      );
-    }
-    return EventRuleResults.normalizeString(
-      event.date,
-      value,
-      "date",
-      "Normalize event date"
-    );
-  }
-};
-
-// packages/domain/event/src/domain/event-description-rule.ts
-var EventDescriptionRule = class {
-  id = "event-description";
-  dependencies = [];
-  evaluate(event) {
-    const value = event.description.trim();
-    if (value === "") {
-      return EventRuleResults.missing(
-        "event.description.missing",
-        "description",
-        "An event description is required"
-      );
-    }
-    return EventRuleResults.normalizeString(
-      event.description,
-      value,
-      "description",
-      "Trim event description"
-    );
-  }
-};
-
-// packages/domain/event/src/domain/event-host-rule.ts
-var EventHostRule = class {
-  id = "event-host";
-  dependencies = [];
-  evaluate(event) {
-    if (!event.host) {
-      return EventRuleResults.missing(
-        "event.hoster.missing",
-        "host",
-        "A host must be selected"
-      );
-    }
-    const normalized = EventParticipantNormalization.normalizeParticipant(
-      event.host
-    );
-    if (normalized.displayName === "") {
-      return EventRuleResults.invalid(
-        "event.hoster.invalid",
-        "host",
-        "Host display name must not be empty"
-      );
-    }
-    if (EventParticipantNormalization.participantsEqual(event.host, normalized)) {
-      return EventRuleResults.emptyResult();
-    }
-    return EventRuleResults.normalizedResult(
-      EventPatches.replaceEventField(
-        "host",
-        normalized,
-        "Normalize host reference"
-      ),
-      "event.hoster.normalized",
-      "host",
-      "The host reference can be normalized safely"
-    );
-  }
-};
-
-// packages/domain/event/src/domain/event-links-rule.ts
-var EventLinksRule = class {
-  id = "event-links";
-  dependencies = [];
-  evaluate(event) {
-    const diagnostics = [];
-    const normalized = { ...event.publicationLinks };
-    let changed = false;
-    for (const key of ["meetup", "community", "assets", "feedback"]) {
-      const link = event.publicationLinks[key];
-      if (link === void 0 || link.trim() === "") {
-        continue;
-      }
-      const value = link.trim().replace(/\/$/, "");
-      if (!this.isHttpsUrl(value)) {
-        diagnostics.push(
-          EventDiagnostics.diagnostic({
-            code: `event.link.${key}.invalid`,
-            severity: "error",
-            category: "invalid",
-            field: `publicationLinks.${key}`,
-            message: `${key} link must be a valid HTTPS URL`
-          })
-        );
-        continue;
-      }
-      if (value !== link) {
-        normalized[key] = value;
-        changed = true;
-      }
-    }
-    if (!changed) {
-      return { diagnostics, patch: EMPTY_EVENT_PATCH };
-    }
-    diagnostics.push(
-      EventDiagnostics.diagnostic({
-        code: "event.links.normalized",
-        severity: "info",
-        category: "normalization",
-        field: "publicationLinks",
-        message: "Publication links can be normalized safely",
-        fixAvailable: true
-      })
-    );
-    return {
-      diagnostics,
-      patch: EventPatches.createEventPatch([
-        EventPatches.replaceEventField(
-          "publicationLinks",
-          normalized,
-          "Trim publication links and remove trailing slashes"
-        )
-      ])
-    };
-  }
-  isHttpsUrl(value) {
-    try {
-      return new URL(value).protocol === "https:";
-    } catch {
-      return false;
-    }
-  }
-};
-
-// packages/domain/event/src/domain/event-title-rule.ts
-var EventTitleRule = class {
-  id = "event-title";
-  dependencies = [];
-  evaluate(event) {
-    const value = event.eventTitle.trim();
-    if (value === "") {
-      return EventRuleResults.missing(
-        "event.title.missing",
-        "eventTitle",
-        "An event title is required"
-      );
-    }
-    return EventRuleResults.normalizeString(
-      event.eventTitle,
-      value,
-      "eventTitle",
-      "Trim event title"
-    );
-  }
-};
-
-// packages/domain/event/src/domain/issue-title-rule.ts
-var IssueTitleRule = class {
-  id = "issue-title";
-  dependencies = ["event-date", "event-title"];
-  evaluate(event) {
-    if (!EventDateValidation.isValidIsoDate(event.date) || event.eventTitle === "") {
-      return EventRuleResults.emptyResult();
-    }
-    const expected = `[Meetup] - ${event.date} - ${event.eventTitle}`;
-    if (event.issueTitle === expected) {
-      return EventRuleResults.emptyResult();
-    }
-    return EventRuleResults.normalizedResult(
-      EventPatches.replaceEventField(
-        "issueTitle",
-        expected,
-        "Project canonical issue title"
-      ),
-      "event.issue-title.normalized",
-      "issueTitle",
-      `Issue title should be "${expected}"`
-    );
-  }
-};
-
-// packages/domain/event/src/domain/managed-labels-rule.ts
-var ManagedLabelsRule = class {
-  constructor(configuration) {
-    this.configuration = configuration;
-  }
-  configuration;
-  id = "managed-labels";
-  dependencies = ["event-host", "event-agenda"];
-  evaluate(event) {
-    const managed = Object.values(this.configuration);
-    const unmanaged2 = event.labels.filter((label) => !managed.includes(label));
-    const occurrenceLabels = event.occurrenceStatus === "postponed" ? [this.configuration.occurrencePostponed] : event.occurrenceStatus === "held" ? [this.configuration.occurrenceHeld] : event.occurrenceStatus === "cancelled" ? [this.configuration.occurrenceCancelled] : [];
-    const expected = [
-      ...unmanaged2,
-      this.configuration.meetup,
-      ...event.confirmations.host ? [this.configuration.hostConfirmed] : event.host?.displayName.trim() ? [] : [this.configuration.hostNeeded],
-      event.confirmations.speakers ? this.configuration.speakersConfirmed : this.configuration.speakersNeeded,
-      ...occurrenceLabels
-    ];
-    if (this.labelsMatch(event.labels, expected)) {
-      return EventRuleResults.emptyResult();
-    }
-    return EventRuleResults.normalizedResult(
-      EventPatches.replaceEventField(
-        "labels",
-        expected,
-        "Project managed lifecycle labels"
-      ),
-      "event.labels.normalized",
-      "labels",
-      "Managed meetup labels can be reconciled safely"
-    );
-  }
-  labelsMatch(actual, expected) {
-    const sorted = [...expected].sort();
-    return actual.length === expected.length && [...actual].sort().every((label, index) => label === sorted[index]);
-  }
-};
-
-// packages/domain/event/src/domain/rule-contracts.ts
-var DEFAULT_MANAGED_LABEL_CONFIGURATION = Object.freeze({
-  meetup: "meetup",
-  hostNeeded: "hoster:needed",
-  hostConfirmed: "hoster:confirmed",
-  speakersNeeded: "speakers:needed",
-  speakersConfirmed: "speakers:confirmed",
-  occurrencePostponed: "event:postponed",
-  occurrenceHeld: "event:held",
-  occurrenceCancelled: "event:cancelled"
-});
-
-// packages/domain/event/src/domain/event-rule-factory.ts
-var EventRuleFactory = class {
-  static createDefaultEventRules(labelConfiguration = DEFAULT_MANAGED_LABEL_CONFIGURATION) {
-    return [
-      new EventDateRule(),
-      new EventTitleRule(),
-      new EventDescriptionRule(),
-      new EventHostRule(),
-      new EventAgendaRule(),
-      new EventLinksRule(),
-      new IssueTitleRule(),
-      new ManagedLabelsRule(labelConfiguration)
-    ];
-  }
-};
-
-// packages/domain/event/src/domain/lifecycle.ts
-var EventLifecycle = class _EventLifecycle {
-  /**
-   * Derives lifecycle exclusively from event facts and an explicitly supplied
-   * instant. In particular, a past date never implies that an event was held.
-   */
-  static evaluateEventLifecycle({
-    event,
-    readiness,
-    now: now2
-  }) {
-    let state;
-    switch (event.occurrenceStatus) {
-      case "cancelled":
-        state = "cancelled";
-        break;
-      case "postponed":
-        state = "postponed";
-        break;
-      case "held":
-        state = event.followUpComplete && MeetupEventOperations.postEventChecklistIsComplete(
-          event.operationalChecklists.postEvent
-        ) ? "follow-up-complete" : "held";
-        break;
-      case "scheduled":
-      case void 0:
-        if (!_EventLifecycle.hasMinimumPlanningFacts(event)) {
-          state = "draft";
-        } else {
-          state = readiness.isReady ? "ready" : "planned";
-        }
-        break;
-    }
-    return {
-      state,
-      evaluatedAt: now2,
-      timeZone: event.timeZone,
-      diagnostics: readiness.diagnostics
-    };
-  }
-  static hasMinimumPlanningFacts(event) {
-    return event.date.trim() !== "" && event.eventTitle.trim() !== "";
   }
 };
 
 // packages/domain/event/src/domain/readiness.ts
 var EventReadinessPolicy = class {
-  static evaluateEventReadiness(event, diagnostics) {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  evaluateEventReadiness(event, diagnostics) {
     const readinessDiagnostics = [...diagnostics];
     if (event.occurrenceStatus === "cancelled") {
       return {
@@ -29254,7 +30397,7 @@ var EventReadinessPolicy = class {
     }
     if (!event.confirmations.host) {
       readinessDiagnostics.push(
-        EventDiagnostics.diagnostic({
+        this.collaborators.eventDiagnostics.diagnostic({
           code: "event.confirmation.host.missing",
           severity: "warning",
           category: "incomplete",
@@ -29265,7 +30408,7 @@ var EventReadinessPolicy = class {
     }
     if (!event.confirmations.speakers) {
       readinessDiagnostics.push(
-        EventDiagnostics.diagnostic({
+        this.collaborators.eventDiagnostics.diagnostic({
           code: "event.confirmation.speakers.missing",
           severity: "warning",
           category: "incomplete",
@@ -29285,440 +30428,1686 @@ var EventReadinessPolicy = class {
   }
 };
 
-// packages/domain/event/src/application/use-cases/list-active-events.ts
-var ListActiveEvents = class _ListActiveEvents {
-  constructor(dependencies) {
-    this.dependencies = dependencies;
-    this.ruleEngine = new EventRuleEngine(
-      dependencies.rules ?? EventRuleFactory.createDefaultEventRules()
+// packages/domain/event/src/dependency-composition.ts
+var EventDomainComposition = class {
+  eventAgendaEquality() {
+    return new EventAgendaEquality();
+  }
+  eventAgendaRule() {
+    return new EventAgendaRule({
+      eventRuleResults: this.eventRuleResults(),
+      eventAgendaEquality: this.eventAgendaEquality(),
+      eventPatches: this.eventPatches(),
+      eventDiagnostics: this.eventDiagnostics(),
+      eventParticipantNormalization: this.eventParticipantNormalization()
+    });
+  }
+  eventChecklists() {
+    return new EventChecklists();
+  }
+  eventDateRule() {
+    return new EventDateRule({
+      eventRuleResults: this.eventRuleResults(),
+      eventDateValidation: this.eventDateValidation()
+    });
+  }
+  eventDateValidation() {
+    return new EventDateValidation();
+  }
+  eventDescriptionRule() {
+    return new EventDescriptionRule({
+      eventRuleResults: this.eventRuleResults()
+    });
+  }
+  eventDiagnostics() {
+    return new EventDiagnostics();
+  }
+  eventDocumentConcurrency() {
+    return new EventDocumentConcurrency();
+  }
+  eventHostRule() {
+    return new EventHostRule({
+      eventRuleResults: this.eventRuleResults(),
+      eventParticipantNormalization: this.eventParticipantNormalization(),
+      eventPatches: this.eventPatches()
+    });
+  }
+  eventLifecycle() {
+    return new EventLifecycle({
+      meetupEventOperations: this.meetupEventOperations()
+    });
+  }
+  eventLinksRule() {
+    return new EventLinksRule({
+      eventDiagnostics: this.eventDiagnostics(),
+      eventPatches: this.eventPatches()
+    });
+  }
+  eventOccurrenceParser() {
+    return new EventOccurrenceParser({
+      eventDiagnostics: this.eventDiagnostics()
+    });
+  }
+  eventParticipantNormalization() {
+    return new EventParticipantNormalization();
+  }
+  eventPatches() {
+    return new EventPatches({
+      meetupEventOperations: this.meetupEventOperations()
+    });
+  }
+  eventReadinessPolicy() {
+    return new EventReadinessPolicy({
+      eventDiagnostics: this.eventDiagnostics()
+    });
+  }
+  eventRepositoryPatches() {
+    return new EventRepositoryPatches();
+  }
+  eventRuleEngine(...args) {
+    return new EventRuleEngine(
+      {
+        eventRuleOrdering: this.eventRuleOrdering(),
+        eventPatches: this.eventPatches()
+      },
+      ...args
     );
   }
-  dependencies;
-  ruleEngine;
-  async execute(input) {
-    const activeEvents = [];
-    const allDiagnostics = [];
-    const seenCursors = /* @__PURE__ */ new Set();
-    const seenEvents = /* @__PURE__ */ new Set();
-    const now2 = this.dependencies.clock.now();
-    let pages = 0;
-    let cursor;
-    do {
-      if (++pages > 20) throw new EventPaginationError("audit-page-limit");
-      const page = await this.dependencies.repository.listPage({
-        ...input,
-        includeClosed: false,
-        cursor
-      });
-      for (const document of page.items) {
-        const identityKey = `${document.identity.repository}#${document.identity.issueNumber}`;
-        if (document.issueState === "closed" || seenEvents.has(identityKey)) {
-          continue;
-        }
-        seenEvents.add(identityKey);
-        _ListActiveEvents.checkLimit(seenEvents.size);
-        const decoded = this.dependencies.documentCodec.decode(document);
-        const evaluated = this.ruleEngine.evaluate(decoded.event);
-        const eventDiagnostics = [
-          ...decoded.diagnostics,
-          ...evaluated.diagnostics
-        ];
-        const readiness = EventReadinessPolicy.evaluateEventReadiness(
-          evaluated.event,
-          eventDiagnostics
-        );
-        const lifecycle = EventLifecycle.evaluateEventLifecycle({
-          event: evaluated.event,
-          readiness,
-          now: now2
-        });
-        allDiagnostics.push(...readiness.diagnostics);
-        activeEvents.push({
-          identity: { ...document.identity },
-          event: evaluated.event,
-          readiness,
-          lifecycle
-        });
-      }
-      cursor = page.nextCursor;
-      if (cursor) {
-        if (seenCursors.has(cursor)) {
-          throw new EventPaginationError(cursor);
-        }
-        seenCursors.add(cursor);
-      }
-    } while (cursor);
-    return {
-      events: Object.freeze(activeEvents),
-      diagnostics: Object.freeze(allDiagnostics)
-    };
+  eventRuleFactory() {
+    return new EventRuleFactory({
+      createEventDateRule: () => this.eventDateRule(),
+      createEventTitleRule: () => this.eventTitleRule(),
+      createEventDescriptionRule: () => this.eventDescriptionRule(),
+      createEventHostRule: () => this.eventHostRule(),
+      createEventAgendaRule: () => this.eventAgendaRule(),
+      createEventLinksRule: () => this.eventLinksRule(),
+      createIssueTitleRule: () => this.issueTitleRule(),
+      createManagedLabelsRule: (...args) => this.managedLabelsRule(...args)
+    });
   }
-  static checkLimit(count) {
-    if (count > 200) throw new EventPaginationError("audit-issue-limit");
+  eventRuleOrdering() {
+    return new EventRuleOrdering();
+  }
+  eventRuleResults() {
+    return new EventRuleResults({
+      eventDiagnostics: this.eventDiagnostics(),
+      eventPatches: this.eventPatches()
+    });
+  }
+  eventTitleRule() {
+    return new EventTitleRule({ eventRuleResults: this.eventRuleResults() });
+  }
+  issueTitleRule() {
+    return new IssueTitleRule({
+      eventDateValidation: this.eventDateValidation(),
+      eventRuleResults: this.eventRuleResults(),
+      eventPatches: this.eventPatches()
+    });
+  }
+  listActiveEvents(...args) {
+    return new ListActiveEvents(
+      {
+        eventRuleFactory: this.eventRuleFactory(),
+        eventReadinessPolicy: this.eventReadinessPolicy(),
+        eventLifecycle: this.eventLifecycle(),
+        createEventRuleEngine: (...args2) => this.eventRuleEngine(...args2)
+      },
+      ...args
+    );
+  }
+  managedLabelsRule(...args) {
+    return new ManagedLabelsRule(
+      {
+        eventRuleResults: this.eventRuleResults(),
+        eventPatches: this.eventPatches()
+      },
+      ...args
+    );
+  }
+  meetupEventOperations() {
+    return new MeetupEventOperations();
+  }
+  meetupPublicationChecklist() {
+    return new MeetupPublicationChecklist();
+  }
+  reconcileEvent(...args) {
+    return new ReconcileEvent(
+      {
+        eventRuleFactory: this.eventRuleFactory(),
+        eventDocumentConcurrency: this.eventDocumentConcurrency(),
+        eventReadinessPolicy: this.eventReadinessPolicy(),
+        eventLifecycle: this.eventLifecycle(),
+        eventRepositoryPatches: this.eventRepositoryPatches(),
+        createEventRuleEngine: (...args2) => this.eventRuleEngine(...args2)
+      },
+      ...args
+    );
   }
 };
 
-// packages/domain/event/src/application/use-cases/reconcile-event.ts
-var ReconcileEvent = class _ReconcileEvent {
-  constructor(dependencies) {
-    this.dependencies = dependencies;
-    this.ruleEngine = new EventRuleEngine(
-      dependencies.rules ?? EventRuleFactory.createDefaultEventRules()
-    );
+// packages/domain/referential/src/domain/proposal-source-error.ts
+var ProposalSourceError = class extends Error {
+  constructor(code, retryAfterSeconds, context3) {
+    super(`Proposal source ${code}.`);
+    this.code = code;
+    this.retryAfterSeconds = retryAfterSeconds;
+    this.context = context3;
+    this.name = "ProposalSourceError";
   }
-  dependencies;
-  ruleEngine;
-  async execute(input) {
-    const document = input.sourceDocument ?? await this.dependencies.repository.find(input.identity);
-    if (!document) {
-      throw new EventNotFoundError(input.identity);
+  code;
+  retryAfterSeconds;
+  context;
+};
+
+// packages/domain/referential/src/application/use-cases/merge-source-speakers.ts
+var MergeSourceSpeakers = class {
+  execute(entries, snapshot, reservedIds) {
+    const reserved = /* @__PURE__ */ new Set([...reservedIds, ...entries.map((row) => row.id)]);
+    const mappings = this.mappings(entries, snapshot);
+    const merged = entries.map((row) => ({ ...row }));
+    for (const speaker of [...snapshot.speakers].sort(
+      (a, b2) => a.id.localeCompare(b2.id, "en")
+    )) {
+      let index = mappings.get(speaker.id);
+      if (index === void 0) {
+        const possibleMatch = entries.findIndex(
+          (row2) => !row2.sourceIdentity?.speakerId && (row2.email?.trim().toLowerCase() === speaker.email.toLowerCase() || (row2.displayName || `${row2.firstName} ${row2.lastName}`).trim().toLowerCase() === speaker.displayName.toLowerCase())
+        );
+        if (possibleMatch !== -1)
+          throw new ProposalSourceError("mapping-required", void 0, {
+            field: `speakers[${possibleMatch}]`
+          });
+        const id = this.allocate(reserved);
+        index = merged.length;
+        merged.push({
+          id,
+          firstName: "",
+          lastName: "",
+          phone: "",
+          displayName: "",
+          email: "",
+          company: "",
+          pictureUrl: "",
+          sourceIdentity: {
+            provider: snapshot.provider,
+            event: snapshot.event,
+            speakerId: speaker.id
+          }
+        });
+        mappings.set(speaker.id, index);
+      }
+      const row = merged[index];
+      row.displayName = speaker.displayName;
+      row.email = speaker.email;
+      row.company = speaker.company ?? "";
+      row.pictureUrl = speaker.pictureUrl ?? "";
     }
-    if (!_ReconcileEvent.sameIdentity(document.identity, input.identity)) {
-      throw new EventNotFoundError(input.identity);
+    return {
+      entries: merged,
+      reservedIds: [...reserved].sort()
+    };
+  }
+  mappings(entries, snapshot) {
+    const mappings = /* @__PURE__ */ new Map();
+    for (const [index, row] of entries.entries()) {
+      if (row.sourceIdentity?.provider !== snapshot.provider || row.sourceIdentity?.event !== snapshot.event)
+        continue;
+      if (!row.sourceIdentity?.speakerId || mappings.has(row.sourceIdentity?.speakerId))
+        throw new ProposalSourceError("conflict");
+      mappings.set(row.sourceIdentity?.speakerId, index);
     }
-    const decoded = this.dependencies.documentCodec.decode(document);
-    const evaluated = this.ruleEngine.evaluate(decoded.event);
-    const diagnostics = [
-      ...decoded.diagnostics,
-      ...evaluated.diagnostics
-    ];
-    const readiness = EventReadinessPolicy.evaluateEventReadiness(
-      evaluated.event,
+    return mappings;
+  }
+  allocate(reserved) {
+    const maximum = Math.max(
+      0,
+      ...[...reserved].map((id2) => Number(id2.replace(/^speaker-/, "")))
+    );
+    if (!Number.isInteger(maximum) || maximum >= 9999)
+      throw new ProposalSourceError("conflict");
+    const id = `speaker-${String(maximum + 1).padStart(4, "0")}`;
+    reserved.add(id);
+    return id;
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/project-referential-choices.ts
+var ProjectReferentialChoices = class {
+  execute(catalog) {
+    return Object.freeze({
+      hostOptions: Object.freeze(catalog.hosts.map((host) => host.displayName)),
+      speakerReferences: Object.freeze(
+        catalog.speakers.map(
+          (speaker) => catalog.speakers.filter(
+            (other) => other.displayName.toLowerCase() === speaker.displayName.toLowerCase()
+          ).length > 1 ? `${speaker.displayName} [${speaker.id}]` : speaker.displayName
+        )
+      )
+    });
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/resolve-event-references.ts
+var EXPLICIT_REFERENCE_PATTERN = /^(.*?)\s+\[([^\]]+)]\s*$/;
+var ResolveEventReferences = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  execute(catalog, command) {
+    const diagnostics = [];
+    const host = this.resolveHost(
+      catalog.hosts,
+      command.hostReference,
       diagnostics
     );
-    const lifecycle = EventLifecycle.evaluateEventLifecycle({
-      event: evaluated.event,
-      readiness,
-      now: this.dependencies.clock.now()
+    const speakers = command.speakerReferences.map(
+      (reference, index) => this.resolveSpeaker(catalog.speakers, reference, index, diagnostics)
+    ).filter((speaker) => speaker !== void 0);
+    const frozenDiagnostics = this.collaborators.referentialDiagnostics.freezeDiagnostics(diagnostics);
+    if (!host || diagnostics.some(({ severity }) => severity === "error")) {
+      return Object.freeze({
+        resolved: false,
+        diagnostics: frozenDiagnostics
+      });
+    }
+    const uniqueSpeakers = [
+      ...new Map(speakers.map((speaker) => [speaker.id, speaker])).values()
+    ];
+    return Object.freeze({
+      resolved: true,
+      host,
+      speakers: Object.freeze(uniqueSpeakers),
+      diagnostics: frozenDiagnostics
     });
-    const repositoryPatch = this.dependencies.documentCodec.createPatch(
-      document,
-      evaluated.event
-    );
-    const shouldPersist = input.mode === "fix" && !EventRepositoryPatches.eventRepositoryPatchIsEmpty(repositoryPatch);
-    if (shouldPersist) {
-      await _ReconcileEvent.ensureEventDocumentIsCurrent(
-        this.dependencies.repository,
-        input.identity,
-        document
-      );
-      await this.dependencies.repository.applyPatch(
-        input.identity,
-        repositoryPatch
-      );
-    }
-    return {
-      event: evaluated.event,
-      diagnostics: readiness.diagnostics,
-      normalizationPatch: evaluated.patch,
-      repositoryPatch,
-      readiness,
-      lifecycle,
-      persisted: shouldPersist
-    };
   }
-  static async ensureEventDocumentIsCurrent(repository, identity, expected) {
-    const current = await repository.find(identity);
-    if (!current) {
-      throw new EventNotFoundError(identity);
-    }
-    if (!_ReconcileEvent.eventDocumentsEqual(current, expected)) {
-      throw new EventConcurrentModificationError(identity);
-    }
-  }
-  static eventDocumentsEqual(left, right) {
-    const leftLabels = [...left.labels].sort(_ReconcileEvent.compareText);
-    const rightLabels = [...right.labels].sort(_ReconcileEvent.compareText);
-    return _ReconcileEvent.sameIdentity(left.identity, right.identity) && left.issueState === right.issueState && left.issueTitle === right.issueTitle && left.body === right.body && leftLabels.length === rightLabels.length && leftLabels.every((label, index) => label === rightLabels[index]);
-  }
-  static compareText(left, right) {
-    return left < right ? -1 : left > right ? 1 : 0;
-  }
-  static sameIdentity(left, right) {
-    return left.issueNumber === right.issueNumber && left.repository.toLowerCase() === right.repository.toLowerCase();
-  }
-};
-
-// packages/domain/event/src/domain/event-checklists.ts
-var EventChecklists = class _EventChecklists {
-  static equal(left, right) {
-    return _EventChecklists.itemsEqual(
-      left.slidesAndContent,
-      right.slidesAndContent
-    ) && _EventChecklists.itemsEqual(left.communication, right.communication) && _EventChecklists.itemsEqual(left.postEvent, right.postEvent);
-  }
-  static itemsEqual(left, right) {
-    return left.length === right.length && left.every(
-      (item, index) => item.name === right[index].name && item.completed === right[index].completed
-    );
-  }
-};
-
-// packages/domain/event/src/domain/occurrence-status.ts
-var OCCURRENCE_STATUSES = [
-  "scheduled",
-  "postponed",
-  "held",
-  "cancelled"
-];
-var OCCURRENCE_STATUS_LABELS = Object.freeze({
-  scheduled: null,
-  postponed: "event:postponed",
-  held: "event:held",
-  cancelled: "event:cancelled"
-});
-
-// packages/domain/event/src/domain/event-occurrence-parser.ts
-var EventOccurrenceParser = class {
-  static readOccurrenceStatus(labels, issueState, fieldStatus, diagnostics) {
-    const explicitStatuses = OCCURRENCE_STATUSES.filter((status) => {
-      const label = OCCURRENCE_STATUS_LABELS[status];
-      return label !== null && labels.includes(label);
-    });
-    if (explicitStatuses.length > 1) {
+  resolveHost(hosts, reference, diagnostics) {
+    const parsed = this.parseReference(reference);
+    if (!parsed) {
       diagnostics.push(
-        EventDiagnostics.diagnostic({
-          code: "event.occurrence-status.label-conflict",
-          severity: "error",
-          category: "invalid",
-          field: "labels",
-          message: "Occurrence status labels are mutually exclusive; keep only one of event:postponed, event:held, or event:cancelled"
-        })
+        this.collaborators.referentialDiagnostics.diagnostic(
+          "referential.reference.host.invalid",
+          "error",
+          "hostReference",
+          "Host reference must be a display name or use Display name [host-0001] syntax."
+        )
       );
-      return explicitStatuses[0] ?? (issueState === "closed" ? "held" : "scheduled");
+      return void 0;
     }
-    if (explicitStatuses.length === 1) {
-      return explicitStatuses[0];
+    if (parsed.stableId !== void 0) {
+      const id = this.collaborators.referentialIdentifiers.asHostId(
+        parsed.stableId
+      );
+      if (!id) {
+        diagnostics.push(
+          this.collaborators.referentialDiagnostics.diagnostic(
+            "referential.reference.host.invalid",
+            "error",
+            "hostReference",
+            "Explicit host reference contains an invalid stable identifier."
+          )
+        );
+        return void 0;
+      }
+      const host = hosts.find((candidate) => candidate.id === id);
+      if (!host) {
+        diagnostics.push(
+          this.collaborators.referentialDiagnostics.diagnostic(
+            "referential.reference.host.unknown",
+            "error",
+            "hostReference",
+            "Explicit host stable identifier is not present in the catalog."
+          )
+        );
+        return void 0;
+      }
+      if (this.collaborators.referentialCatalogOperations.displayNameKey(
+        host.displayName
+      ) !== this.collaborators.referentialCatalogOperations.displayNameKey(
+        parsed.displayName
+      )) {
+        diagnostics.push(
+          this.collaborators.referentialDiagnostics.diagnostic(
+            "referential.reference.host.display-name-mismatch",
+            "warning",
+            "hostReference",
+            "Host display name is stale; the stable identifier remains authoritative."
+          )
+        );
+      }
+      return host;
     }
-    return fieldStatus ?? (issueState === "closed" ? "held" : "scheduled");
+    return this.hostByName(hosts, parsed, diagnostics);
+  }
+  resolveSpeaker(speakers, reference, index, diagnostics) {
+    const path = `speakerReferences[${index}]`;
+    const parsed = this.parseReference(reference);
+    if (!parsed) {
+      diagnostics.push(
+        this.collaborators.referentialDiagnostics.diagnostic(
+          "referential.reference.speaker.invalid",
+          "error",
+          path,
+          "Speaker reference must be a display name or use Display name [speaker-0001] syntax."
+        )
+      );
+      return void 0;
+    }
+    if (parsed.stableId !== void 0) {
+      const id = this.collaborators.referentialIdentifiers.asSpeakerId(
+        parsed.stableId
+      );
+      if (!id) {
+        diagnostics.push(
+          this.collaborators.referentialDiagnostics.diagnostic(
+            "referential.reference.speaker.invalid",
+            "error",
+            path,
+            "Explicit speaker reference contains an invalid stable identifier."
+          )
+        );
+        return void 0;
+      }
+      const speaker = speakers.find((candidate) => candidate.id === id);
+      if (!speaker) {
+        diagnostics.push(
+          this.collaborators.referentialDiagnostics.diagnostic(
+            "referential.reference.speaker.unknown",
+            "error",
+            path,
+            "Explicit speaker stable identifier is not present in the catalog."
+          )
+        );
+        return void 0;
+      }
+      if (this.collaborators.referentialCatalogOperations.displayNameKey(
+        speaker.displayName
+      ) !== this.collaborators.referentialCatalogOperations.displayNameKey(
+        parsed.displayName
+      )) {
+        diagnostics.push(
+          this.collaborators.referentialDiagnostics.diagnostic(
+            "referential.reference.speaker.display-name-mismatch",
+            "warning",
+            path,
+            "Speaker display name is stale; the stable identifier remains authoritative."
+          )
+        );
+      }
+      return speaker;
+    }
+    return this.speakerByName(speakers, parsed, path, diagnostics);
+  }
+  parseReference(reference) {
+    if (typeof reference !== "string") {
+      return void 0;
+    }
+    const normalized = this.collaborators.referentialCatalogOperations.normalizeDisplayName(
+      reference
+    );
+    if (!normalized) {
+      return void 0;
+    }
+    const explicit = normalized.match(EXPLICIT_REFERENCE_PATTERN);
+    if (!explicit) {
+      return { displayName: normalized };
+    }
+    const displayName = this.collaborators.referentialCatalogOperations.normalizeDisplayName(
+      explicit[1]
+    );
+    const stableId = explicit[2].trim();
+    if (!displayName || !stableId) {
+      return void 0;
+    }
+    return { displayName, stableId };
+  }
+  hostByName(hosts, parsed, diagnostics) {
+    const matches = hosts.filter(
+      (host) => this.collaborators.referentialCatalogOperations.displayNameKey(
+        host.displayName
+      ) === this.collaborators.referentialCatalogOperations.displayNameKey(
+        parsed.displayName
+      )
+    );
+    if (matches.length === 1) {
+      return matches[0];
+    }
+    diagnostics.push(
+      this.collaborators.referentialDiagnostics.diagnostic(
+        matches.length === 0 ? "referential.reference.host.unknown" : "referential.reference.host.ambiguous",
+        "error",
+        "hostReference",
+        matches.length === 0 ? "Legacy host display name is not present in the catalog." : "Legacy host display name is ambiguous; include the stable identifier."
+      )
+    );
+    return void 0;
+  }
+  speakerByName(speakers, parsed, path, diagnostics) {
+    const matches = speakers.filter(
+      (speaker) => this.collaborators.referentialCatalogOperations.displayNameKey(
+        speaker.displayName
+      ) === this.collaborators.referentialCatalogOperations.displayNameKey(
+        parsed.displayName
+      )
+    );
+    if (matches.length === 1) {
+      return matches[0];
+    }
+    diagnostics.push(
+      this.collaborators.referentialDiagnostics.diagnostic(
+        matches.length === 0 ? "referential.reference.speaker.unknown" : "referential.reference.speaker.ambiguous",
+        "error",
+        path,
+        matches.length === 0 ? "Legacy speaker display name is not present in the catalog." : "Legacy speaker display name is ambiguous; include the stable identifier."
+      )
+    );
+    return void 0;
   }
 };
 
-// packages/domain/event/src/domain/meetup-publication-checklist.ts
-var MeetupPublicationChecklist = class _MeetupPublicationChecklist {
-  static taskName = "Meetup event published";
-  static isPublished(event) {
-    const matches = event.operationalChecklists.communication.filter(
-      (item) => item.name === _MeetupPublicationChecklist.taskName
-    );
-    return Boolean(event.publicationLinks.meetup) && matches.length === 1 && matches[0]?.completed === true;
+// packages/domain/referential/src/application/use-cases/source-speaker-referential-repository.ts
+var SourceSpeakerReferentialRepository = class {
+  constructor(local, source, scope) {
+    this.local = local;
+    this.source = source;
+    this.scope = scope;
   }
-  static withStatus(event, published) {
-    const communication = [];
-    let found = false;
-    for (const item of event.operationalChecklists.communication) {
-      if (item.name !== _MeetupPublicationChecklist.taskName) {
-        communication.push(item);
+  local;
+  source;
+  scope;
+  snapshot;
+  load() {
+    this.snapshot ??= this.refresh();
+    return this.snapshot;
+  }
+  async refresh() {
+    const catalog = await this.local.load();
+    if (!catalog.speakers.some((row) => this.isLinked(row))) return catalog;
+    const snapshot = await this.loadSource();
+    const profiles = new Map(
+      snapshot.speakers.map((speaker) => [speaker.id, speaker])
+    );
+    if (profiles.size !== snapshot.speakers.length)
+      throw new ProposalSourceError("conflict");
+    const speakers = catalog.speakers.map((row) => {
+      if (!this.isLinked(row)) return row;
+      const speaker = typeof row.sourceSpeakerId === "string" ? profiles.get(row.sourceSpeakerId.trim()) : void 0;
+      if (!speaker) throw new ProposalSourceError("mapping-required");
+      return {
+        ...row,
+        displayName: speaker.displayName,
+        email: speaker.email,
+        company: speaker.company ?? "",
+        pictureUrl: speaker.pictureUrl ?? ""
+      };
+    });
+    return { ...catalog, speakers };
+  }
+  isLinked(row) {
+    return typeof row.sourceProvider === "string" && row.sourceProvider.trim() === this.scope.provider && typeof row.sourceEvent === "string" && row.sourceEvent.trim() === this.scope.event;
+  }
+  async loadSource() {
+    try {
+      const snapshot = await this.source.load();
+      if (snapshot.provider !== this.scope.provider || snapshot.event !== this.scope.event)
+        throw new ProposalSourceError("invalid");
+      return snapshot;
+    } catch (error2) {
+      throw error2 instanceof ProposalSourceError ? error2 : new ProposalSourceError("unavailable");
+    }
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/validate-referential-catalog.ts
+var ValidateReferentialCatalog = class {
+  constructor(collaborators, repository) {
+    this.collaborators = collaborators;
+    this.repository = repository;
+  }
+  collaborators;
+  repository;
+  async execute(rawCatalog) {
+    try {
+      return this.validate(rawCatalog ?? await this.loadCatalog());
+    } catch (error2) {
+      if (!(error2 instanceof ProposalSourceError)) throw error2;
+      return Object.freeze({
+        isValid: false,
+        diagnostics: this.collaborators.referentialDiagnostics.freezeDiagnostics([
+          this.collaborators.referentialDiagnostics.diagnostic(
+            `referential.source.${error2.code}`,
+            "error",
+            "speakers",
+            "Source-owned speaker profiles could not be refreshed. Check source access and identity mappings before retrying."
+          )
+        ])
+      });
+    }
+  }
+  validate(input) {
+    const diagnostics = [];
+    const hosts = this.collaborators.hostCatalogValidator.validateHosts(
+      input.hosts,
+      diagnostics
+    );
+    const speakers = this.collaborators.speakerCatalogValidator.validateSpeakers(
+      input.speakers,
+      diagnostics
+    );
+    this.reportDuplicateDisplayNames(
+      hosts,
+      "referential.host.display-name.duplicate",
+      "hosts",
+      "Duplicate normalized host display names are not allowed; keep one stable host per public name.",
+      diagnostics
+    );
+    this.collaborators.speakerSourceFields.validateMappings(
+      speakers,
+      diagnostics
+    );
+    const frozenDiagnostics = this.collaborators.referentialDiagnostics.freezeDiagnostics(diagnostics);
+    if (diagnostics.some(({ severity }) => severity === "error")) {
+      return Object.freeze({
+        isValid: false,
+        diagnostics: frozenDiagnostics
+      });
+    }
+    return Object.freeze({
+      isValid: true,
+      catalog: this.collaborators.referentialCatalogOperations.freezeCatalog(
+        hosts,
+        speakers
+      ),
+      diagnostics: frozenDiagnostics
+    });
+  }
+  async loadCatalog() {
+    if (!this.repository) {
+      throw new Error(
+        "A referential repository or an explicit raw catalog is required."
+      );
+    }
+    return this.repository.load();
+  }
+  reportDuplicateDisplayNames(entities, code, path, message, diagnostics) {
+    const counts = /* @__PURE__ */ new Map();
+    for (const entity of entities) {
+      const key = this.collaborators.referentialCatalogOperations.displayNameKey(
+        entity.displayName
+      );
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    let ambiguityIndex = 0;
+    for (const count of counts.values()) {
+      if (count < 2) {
         continue;
       }
-      if (!found) communication.push({ name: item.name, completed: published });
-      found = true;
+      diagnostics.push(
+        this.collaborators.referentialDiagnostics.diagnostic(
+          code,
+          "error",
+          `${path}.ambiguities[${ambiguityIndex}]`,
+          message
+        )
+      );
+      ambiguityIndex += 1;
     }
-    if (!found)
-      communication.push({
-        name: _MeetupPublicationChecklist.taskName,
-        completed: published
-      });
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/host-catalog-validator.ts
+var HostCatalogValidator = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  validateHosts(records, diagnostics) {
+    const hostsById = /* @__PURE__ */ new Map();
+    const contactIds = /* @__PURE__ */ new Set();
+    for (const [index, record] of records.entries()) {
+      const parsed = this.parseHostRecord(record, index, diagnostics);
+      if (!parsed) {
+        continue;
+      }
+      if (contactIds.has(parsed.contact.id)) {
+        diagnostics.push(
+          this.collaborators.referentialDiagnostics.diagnostic(
+            "referential.contact.id.duplicate",
+            "error",
+            `hosts[${index}].contactId`,
+            "Contact stable identifiers must be unique."
+          )
+        );
+        continue;
+      }
+      contactIds.add(parsed.contact.id);
+      const host = hostsById.get(parsed.hostId);
+      if (!host) {
+        hostsById.set(parsed.hostId, {
+          ...record.source ? { source: Object.freeze({ ...record.source }) } : {},
+          id: parsed.hostId,
+          displayName: parsed.displayName,
+          contacts: [parsed.contact]
+        });
+        continue;
+      }
+      if (host.displayName !== parsed.displayName) {
+        diagnostics.push(
+          this.collaborators.referentialDiagnostics.diagnostic(
+            "referential.host.id.conflict",
+            "error",
+            `hosts[${index}].hostId`,
+            "A host stable identifier cannot describe different host names."
+          )
+        );
+        continue;
+      }
+      host.contacts.push(parsed.contact);
+    }
+    return [...hostsById.values()].map((host) => ({
+      ...host.source ? { source: host.source } : {},
+      id: host.id,
+      displayName: host.displayName,
+      contacts: host.contacts
+    }));
+  }
+  parseHostRecord(record, index, diagnostics) {
+    const hostId = this.hostId(record, index, diagnostics);
+    const displayName = this.collaborators.referentialRecordFields.requiredText(
+      record.displayName,
+      "referential.host.display-name.invalid",
+      `hosts[${index}].displayName`,
+      "Host display name must be a non-empty string.",
+      diagnostics
+    );
+    const contactId = this.contactId(record, index, diagnostics);
+    const contactName = this.collaborators.referentialRecordFields.requiredText(
+      record.contactName,
+      "referential.contact.name.invalid",
+      `hosts[${index}].contactName`,
+      "Contact name must be a non-empty string.",
+      diagnostics
+    );
+    const email = this.collaborators.referentialRecordFields.email(
+      record.email,
+      "referential.contact.email.invalid",
+      `hosts[${index}].email`,
+      "Host contact email address is invalid.",
+      diagnostics
+    );
+    const phone = this.collaborators.referentialRecordFields.optionalText(
+      record.phone,
+      "referential.contact.phone.invalid",
+      `hosts[${index}].phone`,
+      "Host contact phone must be a string when provided.",
+      diagnostics
+    );
+    const address = this.collaborators.referentialRecordFields.requiredText(
+      record.address,
+      "referential.contact.address.invalid",
+      `hosts[${index}].address`,
+      "Host contact address must be a non-empty string.",
+      diagnostics
+    );
+    if (!hostId || !displayName || !contactId || !contactName || !email || address === void 0 || phone === null) {
+      return void 0;
+    }
     return {
-      ...event,
-      operationalChecklists: { ...event.operationalChecklists, communication }
+      hostId,
+      displayName,
+      contact: {
+        id: contactId,
+        name: contactName,
+        email,
+        ...phone ? { phone } : {},
+        address
+      }
     };
   }
+  hostId(record, index, diagnostics) {
+    const hostIdValue = this.collaborators.referentialRecordFields.requiredText(
+      record.hostId,
+      "referential.host.id.invalid",
+      `hosts[${index}].hostId`,
+      "Host stable identifier must be a non-empty string.",
+      diagnostics
+    );
+    const hostId = hostIdValue ? this.collaborators.referentialIdentifiers.asHostId(hostIdValue) : void 0;
+    if (hostIdValue && !hostId) {
+      diagnostics.push(
+        this.collaborators.referentialDiagnostics.diagnostic(
+          "referential.host.id.invalid",
+          "error",
+          `hosts[${index}].hostId`,
+          "Host stable identifier must use the opaque host-0001 format."
+        )
+      );
+    }
+    return hostId;
+  }
+  contactId(record, index, diagnostics) {
+    const contactIdValue = this.collaborators.referentialRecordFields.requiredText(
+      record.contactId,
+      "referential.contact.id.invalid",
+      `hosts[${index}].contactId`,
+      "Contact stable identifier must be a non-empty string.",
+      diagnostics
+    );
+    const contactId = contactIdValue ? this.collaborators.referentialIdentifiers.asContactId(contactIdValue) : void 0;
+    if (contactIdValue && !contactId) {
+      diagnostics.push(
+        this.collaborators.referentialDiagnostics.diagnostic(
+          "referential.contact.id.invalid",
+          "error",
+          `hosts[${index}].contactId`,
+          "Contact stable identifier must use the opaque contact-0001 format."
+        )
+      );
+    }
+    return contactId;
+  }
 };
 
-// packages/application/journey/src/approval/approval-notification-policy.ts
-var ApprovalNotificationPolicy = class {
-  notificationFor(request2) {
-    switch (request2.kind) {
-      case "email-thanks":
-        return void 0;
-      case "email-introduction":
-        return {
-          kind: request2.kind,
-          eventDate: request2.eventDate,
-          recipientCount: request2.recipientCount
-        };
-      case "meetup-publication":
-        return { kind: request2.kind, eventDate: request2.eventDate };
+// packages/domain/referential/src/application/use-cases/validate-referential-catalog-contracts.ts
+var EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// packages/domain/referential/src/application/use-cases/referential-record-fields.ts
+var ReferentialRecordFields = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  requiredText(value, code, path, message, diagnostics) {
+    if (typeof value !== "string") {
+      diagnostics.push(
+        this.collaborators.referentialDiagnostics.diagnostic(
+          code,
+          "error",
+          path,
+          message
+        )
+      );
+      return void 0;
+    }
+    const normalized = this.collaborators.referentialCatalogOperations.normalizeDisplayName(
+      value
+    );
+    if (!normalized) {
+      diagnostics.push(
+        this.collaborators.referentialDiagnostics.diagnostic(
+          code,
+          "error",
+          path,
+          message
+        )
+      );
+      return void 0;
+    }
+    return normalized;
+  }
+  optionalText(value, code, path, message, diagnostics) {
+    if (value === void 0 || value === null || value === "") {
+      return void 0;
+    }
+    if (typeof value !== "string") {
+      diagnostics.push(
+        this.collaborators.referentialDiagnostics.diagnostic(
+          code,
+          "error",
+          path,
+          message
+        )
+      );
+      return null;
+    }
+    return value.normalize("NFC").trim() || void 0;
+  }
+  email(value, code, path, message, diagnostics) {
+    if (typeof value !== "string") {
+      diagnostics.push(
+        this.collaborators.referentialDiagnostics.diagnostic(
+          code,
+          "error",
+          path,
+          message
+        )
+      );
+      return void 0;
+    }
+    const normalized = value.normalize("NFC").trim().toLowerCase();
+    if (!EMAIL_PATTERN.test(normalized)) {
+      diagnostics.push(
+        this.collaborators.referentialDiagnostics.diagnostic(
+          code,
+          "error",
+          path,
+          message
+        )
+      );
+      return void 0;
+    }
+    return normalized;
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/speaker-catalog-validator.ts
+var SpeakerCatalogValidator = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  validateSpeakers(records, diagnostics) {
+    const speakers = [];
+    const speakerIds = /* @__PURE__ */ new Set();
+    for (const [index, record] of records.entries()) {
+      const speakerId = this.speakerId(record, index, diagnostics);
+      const { firstName, lastName, company, email, phone, displayName } = this.contactFields(record, index, diagnostics);
+      if (!speakerId || !displayName || firstName === null || lastName === null || company === null || !email || phone === null) {
+        continue;
+      }
+      if (speakerIds.has(speakerId)) {
+        diagnostics.push(
+          this.collaborators.referentialDiagnostics.diagnostic(
+            "referential.speaker.id.duplicate",
+            "error",
+            `speakers[${index}].speakerId`,
+            "Speaker stable identifiers must be unique."
+          )
+        );
+        continue;
+      }
+      speakerIds.add(speakerId);
+      speakers.push({
+        ...record.source ? { source: Object.freeze({ ...record.source }) } : {},
+        id: speakerId,
+        firstName: firstName ?? "",
+        lastName: lastName ?? "",
+        displayName,
+        company: company ?? "",
+        ...this.collaborators.speakerSourceFields.read(
+          record,
+          index,
+          diagnostics
+        ),
+        email,
+        ...phone ? { phone } : {}
+      });
+    }
+    return speakers;
+  }
+  speakerId(record, index, diagnostics) {
+    const speakerIdValue = this.collaborators.referentialRecordFields.requiredText(
+      record.speakerId,
+      "referential.speaker.id.invalid",
+      `speakers[${index}].speakerId`,
+      "Speaker stable identifier must be a non-empty string.",
+      diagnostics
+    );
+    const speakerId = speakerIdValue ? this.collaborators.referentialIdentifiers.asSpeakerId(speakerIdValue) : void 0;
+    if (speakerIdValue && !speakerId) {
+      diagnostics.push(
+        this.collaborators.referentialDiagnostics.diagnostic(
+          "referential.speaker.id.invalid",
+          "error",
+          `speakers[${index}].speakerId`,
+          "Speaker stable identifier must use the speaker-* slug format."
+        )
+      );
+    }
+    return speakerId;
+  }
+  contactFields(record, index, diagnostics) {
+    const firstName = this.collaborators.referentialRecordFields.optionalText(
+      record.firstName,
+      "referential.speaker.first-name.invalid",
+      `speakers[${index}].firstName`,
+      "Speaker first name must be a non-empty string.",
+      diagnostics
+    );
+    const lastName = this.collaborators.referentialRecordFields.optionalText(
+      record.lastName,
+      "referential.speaker.last-name.invalid",
+      `speakers[${index}].lastName`,
+      "Speaker last name must be a non-empty string.",
+      diagnostics
+    );
+    const company = this.collaborators.referentialRecordFields.optionalText(
+      record.company,
+      "referential.speaker.company.invalid",
+      `speakers[${index}].company`,
+      "Speaker company must be a non-empty string.",
+      diagnostics
+    );
+    const email = this.collaborators.referentialRecordFields.email(
+      record.email,
+      "referential.speaker.email.invalid",
+      `speakers[${index}].email`,
+      "Speaker email address is invalid.",
+      diagnostics
+    );
+    const phone = this.collaborators.referentialRecordFields.optionalText(
+      record.phone,
+      "referential.speaker.phone.invalid",
+      `speakers[${index}].phone`,
+      "Speaker phone must be a string when provided.",
+      diagnostics
+    );
+    const displayName = this.collaborators.referentialRecordFields.requiredText(
+      record.displayName || (firstName && lastName ? `${firstName} ${lastName}` : ""),
+      "referential.speaker.display-name.invalid",
+      `speakers[${index}].displayName`,
+      "A display name or both structured names are required.",
+      diagnostics
+    );
+    return { firstName, lastName, company, email, phone, displayName };
+  }
+};
+
+// packages/domain/referential/src/application/use-cases/speaker-source-fields.ts
+var SpeakerSourceFields = class {
+  read(record, index, diagnostics) {
+    const values = [
+      record.sourceProvider,
+      record.sourceEvent,
+      record.sourceSpeakerId
+    ];
+    const hasMapping = values.some(
+      (value) => value !== void 0 && value !== ""
+    );
+    if (hasMapping && !values.every(
+      (value) => typeof value === "string" && /^[a-zA-Z0-9_-]{1,200}$/.test(value)
+    )) {
+      this.invalid(index, diagnostics);
+      return {};
+    }
+    return {
+      ...hasMapping ? {
+        sourceIdentity: {
+          provider: String(record.sourceProvider),
+          event: String(record.sourceEvent),
+          speakerId: String(record.sourceSpeakerId)
+        }
+      } : {},
+      ...this.pictureUrl(record.pictureUrl) ? { pictureUrl: String(record.pictureUrl) } : {}
+    };
+  }
+  pictureUrl(value) {
+    if (typeof value !== "string" || value.length > 2048) return void 0;
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" && !url.username && !url.password ? url.href : void 0;
+    } catch {
+      return void 0;
     }
   }
-};
-
-// packages/application/journey/src/approval/approval-request-policy.ts
-var ApprovalRequestPolicy = class _ApprovalRequestPolicy {
-  static validate(request2) {
-    _ApprovalRequestPolicy.validateIdentity(request2);
-    if (request2.kind === "meetup-publication") return;
-    if (!Number.isSafeInteger(request2.recipientCount) || request2.recipientCount <= 0)
-      throw new Error("Invalid approval recipient count");
-    _ApprovalRequestPolicy.validateEmailCount(request2);
+  validateMappings(speakers, diagnostics) {
+    const identities = [];
+    for (const [index, speaker] of speakers.entries()) {
+      const identity = speaker.sourceIdentity;
+      if (!identity) continue;
+      if (identities.some(
+        (existing) => existing.provider === identity.provider && existing.event === identity.event && existing.speakerId === identity.speakerId
+      ))
+        this.invalid(index, diagnostics);
+      identities.push(identity);
+    }
   }
-  static validateIdentity(request2) {
-    const date = /* @__PURE__ */ new Date(`${request2.eventDate}T12:00:00Z`);
-    if (!/^[a-f0-9]{64}$/.test(request2.revision) || !/^\d{4}-\d{2}-\d{2}$/.test(request2.eventDate) || !Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== request2.eventDate || !Number.isFinite(Date.parse(request2.requestedAt)))
-      throw new Error("Invalid approval request");
-  }
-  static validateEmailCount(request2) {
-    if (request2.details && request2.details.emails.length + request2.details.omittedEmails !== request2.recipientCount)
-      throw new Error("Invalid approval details");
-  }
-  static matches(previous, request2, status) {
-    if (previous.kind !== request2.kind || previous.revision !== request2.revision || previous.eventDate !== request2.eventDate)
-      return false;
-    if (previous.kind === "meetup-publication" && request2.kind === "meetup-publication")
-      return previous.publication.url === request2.publication.url && previous.publication.title === request2.publication.title && previous.publication.startTime === request2.publication.startTime && previous.publication.endTime === request2.publication.endTime && previous.publication.timeZone === request2.publication.timeZone && previous.publication.venue.name === request2.publication.venue.name && previous.publication.venue.city === request2.publication.venue.city;
-    return previous.recipientCount === request2.recipientCount && (status !== "pending" || _ApprovalRequestPolicy.sameDetails(previous.details, request2.details));
-  }
-  static sameDetails(left, right) {
-    if (!left || !right) return left === right;
-    return left.omittedEmails === right.omittedEmails && left.emails.length === right.emails.length && left.emails.every((email, index) => {
-      const other = right.emails[index];
-      return other !== void 0 && email.kind === other.kind && email.recipientName === other.recipientName && email.omittedLinks === other.omittedLinks && email.links.length === other.links.length && email.links.every((link, linkIndex) => {
-        const otherLink = other.links[linkIndex];
-        return otherLink !== void 0 && link.kind === otherLink.kind && link.url === otherLink.url && link.title === otherLink.title;
-      });
+  invalid(index, diagnostics) {
+    diagnostics.push({
+      code: "referential.speaker.mapping.invalid",
+      severity: "error",
+      path: `speakers[${index}].sourceIdentity`,
+      message: "Source mappings must be complete, scoped and unique."
     });
   }
 };
 
-// packages/application/journey/src/communication/communication-diagnostic-projection.ts
-var COMMUNICATION_MESSAGES = {
-  "duplicate-intent": "A duplicate communication intent was ignored.",
-  "gateway-delivery-uncertain": "A gateway could not confirm delivery.",
-  "gateway-delivery-rejected": "A gateway definitively rejected the delivery request.",
-  "gateway-delivery-deferred": "A gateway deferred the request; a later retry remains safe.",
-  "gateway-threw-ambiguous-error": "A gateway failed without a definitive delivery outcome.",
-  "invalid-clock": "The communication clock is invalid.",
-  "invalid-event-date": "The event date is invalid.",
-  "invalid-identifier": "A stable communication identifier is invalid.",
-  "invalid-time-zone": "The configured time zone is invalid.",
-  "ledger-read-failed": "The delivery ledger could not be read.",
-  "ledger-reservation-failed": "The delivery could not be reserved safely.",
-  "ledger-status-write-failed": "The delivery status could not be recorded.",
-  "missing-mail-destination": "An opted-in mail recipient has no destination.",
-  "occurrence-status-unknown": "The event occurrence status must be explicit.",
-  "delivery-already-recorded": "The delivery ledger already contains this intent."
-};
-var RUNTIME_MESSAGES = {
-  "communication.feedback-fetch-failed": "Feedback results could not be fetched.",
-  "communication.feedback-unavailable": "Speaker thank-you emails require resolved feedback results for every talk.",
-  "communication.slides-unavailable": "Email dispatch requires a valid presentation file URL and ready managed content. Resolve asset diagnostics and run reconciliation again.",
-  "communication.approval-pending": "Email dispatch is waiting for approval on the meetup issue.",
-  "communication.approval-rejected": "The email batch was rejected. The recorded decision is final for this batch revision.",
-  "communication.approval-unavailable": "The organizer approval could not be verified or persisted; email dispatch is blocked.",
-  "communication.approval-notification-failed": "The Slack approval notification or decision reaction was not confirmed. Review the request on the meetup issue.",
-  "communication.dispatch-disabled-by-config": "Communication dispatch is disabled by repository configuration.",
-  "communication.checklist-update-failed": "Delivery results are recorded but checklist completion could not be persisted.",
-  "communication.checklist-concurrently-modified": "Delivery results are recorded; an organizer edit postponed checklist completion.",
-  "communication.event-skipped": "The issue is not a configured meetup event.",
-  "communication.event-concurrently-modified": "The meetup issue changed while communications were being reconciled; no delivery was attempted.",
-  "communication.event-references-unresolved": "Event participants could not be resolved to stable identifiers.",
-  "communication.referential-catalog-invalid": "Communications are disabled because the referential catalog is invalid."
-};
-var CommunicationDiagnosticProjection = class {
-  static domainDiagnostic(diagnostic) {
-    return {
-      code: `communication.${diagnostic.code}`,
-      severity: diagnostic.severity,
-      message: COMMUNICATION_MESSAGES[diagnostic.code]
-    };
+// packages/domain/referential/src/domain/identifiers.ts
+var HOST_ID_PATTERN = /^host-[0-9]{4}$/;
+var CONTACT_ID_PATTERN = /^contact-[0-9]{4}$/;
+var SPEAKER_ID_PATTERN = /^speaker-[0-9]{4}$/;
+var ReferentialIdentifiers = class {
+  asHostId(value) {
+    return HOST_ID_PATTERN.test(value) ? value : void 0;
   }
-  static runtimeDiagnostic(diagnostic) {
-    return {
-      code: diagnostic.code,
-      severity: diagnostic.severity,
-      message: RUNTIME_MESSAGES[diagnostic.code]
-    };
+  asContactId(value) {
+    return CONTACT_ID_PATTERN.test(value) ? value : void 0;
+  }
+  asSpeakerId(value) {
+    return SPEAKER_ID_PATTERN.test(value) ? value : void 0;
   }
 };
 
-// packages/domain/publication/src/domain/publication-link-evaluation.ts
-var PublicationLinkEvaluation = class _PublicationLinkEvaluation {
-  static evaluateLink({
-    references,
-    path,
-    isValid,
-    code,
-    message
-  }) {
-    const raw = references[path];
-    if (raw === void 0 || raw === "") {
-      return _PublicationLinkEvaluation.emptyEvaluation(references);
+// packages/domain/referential/src/domain/referential-catalog.ts
+var ReferentialCatalogOperations = class {
+  normalizeDisplayName(value) {
+    return value.normalize("NFC").trim().replace(/\s+/g, " ");
+  }
+  displayNameKey(value) {
+    return this.normalizeDisplayName(value).toLowerCase();
+  }
+  freezeCatalog(hosts, speakers) {
+    for (const host of hosts) {
+      for (const contact of host.contacts) {
+        Object.freeze(contact);
+      }
+      Object.freeze(host.contacts);
+      Object.freeze(host);
     }
-    const normalized = raw.trim().replace(/\/$/, "");
-    if (!isValid(raw.trim())) {
+    for (const speaker of speakers) {
+      Object.freeze(speaker);
+    }
+    return Object.freeze({
+      hosts: Object.freeze([...hosts]),
+      speakers: Object.freeze([...speakers])
+    });
+  }
+};
+
+// packages/domain/referential/src/domain/referential-diagnostic.ts
+var ReferentialDiagnostics = class {
+  diagnostic(code, severity, path, message) {
+    return Object.freeze({ code, severity, path, message });
+  }
+  freezeDiagnostics(diagnostics) {
+    return Object.freeze([...diagnostics]);
+  }
+};
+
+// packages/domain/referential/src/domain/source-speaker-equality.ts
+var SourceSpeakerEquality = class {
+  equal(left, right) {
+    return left.id === right.id && left.displayName === right.displayName && left.email === right.email && left.company === right.company && left.pictureUrl === right.pictureUrl;
+  }
+};
+
+// packages/domain/referential/src/dependency-composition.ts
+var ReferentialDomainComposition = class {
+  hostCatalogValidator() {
+    return new HostCatalogValidator({
+      referentialDiagnostics: this.referentialDiagnostics(),
+      referentialRecordFields: this.referentialRecordFields(),
+      referentialIdentifiers: this.referentialIdentifiers()
+    });
+  }
+  mergeSourceSpeakers() {
+    return new MergeSourceSpeakers();
+  }
+  projectReferentialChoices() {
+    return new ProjectReferentialChoices();
+  }
+  referentialCatalogOperations() {
+    return new ReferentialCatalogOperations();
+  }
+  referentialDiagnostics() {
+    return new ReferentialDiagnostics();
+  }
+  referentialIdentifiers() {
+    return new ReferentialIdentifiers();
+  }
+  referentialRecordFields() {
+    return new ReferentialRecordFields({
+      referentialDiagnostics: this.referentialDiagnostics(),
+      referentialCatalogOperations: this.referentialCatalogOperations()
+    });
+  }
+  resolveEventReferences() {
+    return new ResolveEventReferences({
+      referentialDiagnostics: this.referentialDiagnostics(),
+      referentialIdentifiers: this.referentialIdentifiers(),
+      referentialCatalogOperations: this.referentialCatalogOperations()
+    });
+  }
+  sourceSpeakerEquality() {
+    return new SourceSpeakerEquality();
+  }
+  sourceSpeakerReferentialRepository(...args) {
+    return new SourceSpeakerReferentialRepository(...args);
+  }
+  speakerCatalogValidator() {
+    return new SpeakerCatalogValidator({
+      referentialDiagnostics: this.referentialDiagnostics(),
+      speakerSourceFields: this.speakerSourceFields(),
+      referentialRecordFields: this.referentialRecordFields(),
+      referentialIdentifiers: this.referentialIdentifiers()
+    });
+  }
+  speakerSourceFields() {
+    return new SpeakerSourceFields();
+  }
+  validateReferentialCatalog(...args) {
+    return new ValidateReferentialCatalog(
+      {
+        referentialDiagnostics: this.referentialDiagnostics(),
+        hostCatalogValidator: this.hostCatalogValidator(),
+        speakerCatalogValidator: this.speakerCatalogValidator(),
+        speakerSourceFields: this.speakerSourceFields(),
+        referentialCatalogOperations: this.referentialCatalogOperations()
+      },
+      ...args
+    );
+  }
+};
+
+// packages/domain/referential/src/domain/speaker-catalog-history-error.ts
+var SpeakerCatalogHistoryError = class extends Error {
+  constructor() {
+    super("Speaker catalog allocation history is unavailable.");
+    this.name = "SpeakerCatalogHistoryError";
+  }
+};
+
+// packages/domain/publication/src/domain/content-error.ts
+var ContentError = class extends Error {
+  constructor(code) {
+    super(
+      `Asset content ${code}; review the template contract and managed bindings`
+    );
+    this.code = code;
+    this.name = "ContentError";
+  }
+  code;
+};
+
+// packages/domain/publication/src/application/reconcile-asset-content.ts
+var ReconcileAssetContent = class {
+  constructor(collaborators, manifests, renderers, images) {
+    this.collaborators = collaborators;
+    this.manifests = manifests;
+    this.renderers = renderers;
+    this.images = images;
+  }
+  collaborators;
+  manifests;
+  renderers;
+  images;
+  async preflight(templateId, kind, mimeType, value, model) {
+    const contract = this.collaborators.contentContractPolicy.parse(
+      value,
+      kind,
+      mimeType
+    );
+    await this.collaborators.createResolveContentValues(this.images).execute(contract, model);
+    this.collaborators.contentRenderPlan.initial(
+      await this.renderer(mimeType).read(templateId, contract)
+    );
+  }
+  async execute(input) {
+    const renderer = this.renderer(input.mimeType);
+    let manifest = await this.load(input, renderer);
+    if (!manifest) return { status: "copy-only", fallback: false };
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const recovered = await this.recover(input, manifest, renderer);
+      manifest = recovered.manifest;
+      const snapshot = recovered.snapshot;
+      const values = await this.collaborators.createResolveContentValues(this.images).execute(
+        {
+          ...manifest.contract,
+          fields: manifest.contract.fields.filter(
+            (field) => recovered.manifest.bindings.some(
+              (binding) => binding.key === (field.type === "text" ? this.collaborators.contentTextKey.of(field) : field.slot)
+            )
+          )
+        },
+        input.model
+      );
+      const changes = this.collaborators.contentRenderPlan.changes(
+        manifest,
+        snapshot,
+        values
+      );
+      if (!changes.length)
+        return {
+          status: "ready",
+          fallback: values.some((value) => value.fallback)
+        };
+      manifest = this.collaborators.contentRenderPlan.pending(
+        manifest,
+        snapshot,
+        changes
+      );
+      await this.manifests.save(input.folderId, manifest);
+      const written = await this.write(
+        input,
+        renderer,
+        manifest,
+        snapshot,
+        changes,
+        values,
+        attempt === 0
+      );
+      manifest = written.manifest;
+      if (written.complete)
+        return {
+          status: "ready",
+          fallback: values.some((value) => value.fallback)
+        };
+    }
+    return { status: "pending", fallback: false };
+  }
+  async write(input, renderer, manifest, snapshot, changes, values, retry) {
+    let confirmed = false;
+    let failure;
+    let current;
+    try {
+      const revision = await renderer.apply(input.fileId, snapshot, changes);
+      current = await renderer.read(
+        input.fileId,
+        manifest.contract,
+        manifest.bindings
+      );
+      confirmed = current.revision === revision;
+    } catch (error2) {
+      if (error2 instanceof ContentError && error2.code === "revision") {
+        const retriable = { ...manifest, pending: void 0 };
+        await this.manifests.save(input.folderId, retriable);
+        return { manifest: retriable, complete: false };
+      }
+      failure = { error: error2 };
+      current = await renderer.read(
+        input.fileId,
+        manifest.contract,
+        manifest.bindings,
+        manifest.pending?.revision
+      );
+    }
+    try {
+      const settled = this.collaborators.contentRenderPlan.settle(
+        manifest,
+        current,
+        confirmed
+      );
+      const complete = !this.collaborators.contentRenderPlan.changes(
+        settled,
+        current,
+        values
+      ).length;
+      if (failure && !complete) {
+        if (retry) return { manifest: settled, complete };
+        throw failure.error;
+      }
+      await this.manifests.save(input.folderId, settled);
+      return { manifest: settled, complete };
+    } catch (error2) {
+      throw failure ? failure.error : error2;
+    }
+  }
+  async load(input, renderer) {
+    const stored = await this.manifests.load(input.folderId, input.fileId);
+    if (stored !== void 0)
+      return this.collaborators.contentManifestPolicy.parse(
+        stored,
+        input.fileId,
+        input.templateId,
+        input.mimeType
+      );
+    if (!input.fresh && input.recovery?.operation !== "enroll") {
+      if (input.managed) throw new ContentError("recovery");
+      return void 0;
+    }
+    const contract = this.collaborators.contentContractPolicy.parse(
+      input.contract,
+      input.kind,
+      input.mimeType
+    );
+    const snapshot = await renderer.read(input.fileId, contract);
+    if (input.recovery && snapshot.revision !== input.recovery.revision)
+      throw new ContentError("revision");
+    const bindings = this.collaborators.contentRenderPlan.initial(snapshot);
+    return {
+      version: 1,
+      fileId: input.fileId,
+      templateId: input.templateId,
+      mimeType: input.mimeType,
+      contract,
+      bindings,
+      initialRevision: snapshot.revision,
+      recoveryId: input.recovery ? this.collaborators.contentRecoveryFingerprint.create(input.recovery) : void 0,
+      pending: { revision: snapshot.revision, bindings }
+    };
+  }
+  async recover(input, original, renderer) {
+    const recovery = this.collaborators.contentRecoveryPlan.active(
+      original,
+      input.recovery
+    );
+    const prepared = this.collaborators.contentRecoveryPlan.beforeRead(
+      original,
+      recovery
+    );
+    const snapshot = await renderer.read(
+      input.fileId,
+      prepared.contract,
+      prepared.bindings,
+      prepared.initialRevision
+    );
+    const manifest = this.collaborators.contentRecoveryPlan.settle(
+      prepared,
+      snapshot,
+      recovery
+    );
+    if (manifest !== original)
+      await this.manifests.save(input.folderId, manifest);
+    return { manifest, snapshot };
+  }
+  renderer(mimeType) {
+    const renderer = this.renderers[mimeType];
+    if (!renderer) throw new ContentError("contract");
+    return renderer;
+  }
+};
+
+// packages/domain/publication/src/application/reconcile-event-assets.ts
+var ReconcileEventAssets = class {
+  constructor(collaborators, repository, content) {
+    this.collaborators = collaborators;
+    this.repository = repository;
+    this.content = content;
+  }
+  collaborators;
+  repository;
+  content;
+  async execute(input) {
+    const date = input.date.trim();
+    const host = input.hostName.trim();
+    if (!this.validDate(date) || !host) {
       return {
-        references,
+        files: {},
         diagnostics: [
-          Object.freeze({
-            code,
-            severity: "error",
-            field: path,
-            message
-          })
-        ],
-        patch: Object.freeze({ operations: [] })
+          this.diagnostic(
+            "prerequisites",
+            "A valid event date and resolved host are required to reconcile assets",
+            false
+          )
+        ]
       };
     }
-    if (raw === normalized) {
-      return _PublicationLinkEvaluation.emptyEvaluation(references);
-    }
-    const operation = Object.freeze({
-      op: "replace",
-      path,
-      value: normalized,
-      reason: "Trim URL and remove its trailing slash"
-    });
-    return {
-      references: { ...references, [path]: normalized },
-      diagnostics: [
-        Object.freeze({
-          code: `publication.${path}.normalized`,
-          severity: "info",
-          field: path,
-          message: `${path} URL can be normalized safely`,
-          fixAvailable: true
-        })
-      ],
-      patch: Object.freeze({ operations: Object.freeze([operation]) })
+    const templates = await this.repository.listTemplates();
+    this.validateTemplates(templates);
+    const month = new Intl.DateTimeFormat("en-US", {
+      month: "long",
+      timeZone: "UTC"
+    }).format(/* @__PURE__ */ new Date(`${date}T00:00:00Z`));
+    const request2 = {
+      eventId: input.eventId,
+      idempotencyKey: `${input.eventId}:assets:v1`,
+      title: `${date} - ${month} - ${host}`
     };
-  }
-  static emptyEvaluation(references) {
-    return {
-      references,
-      diagnostics: [],
-      patch: Object.freeze({ operations: [] })
-    };
-  }
-  static isHttpsUrl(value) {
-    try {
-      return new URL(value).protocol === "https:";
-    } catch {
-      return false;
+    const diagnostics = [];
+    let container = await this.repository.findContainer(request2);
+    if (!container || container.name !== request2.title) {
+      diagnostics.push(
+        this.diagnostic(
+          "container.drift",
+          "The event asset folder must be created or renamed",
+          input.mode === "fix"
+        )
+      );
+      if (input.mode === "fix")
+        container = await this.repository.ensureContainer(request2);
     }
+    if (!container) return { files: {}, diagnostics };
+    if (container.url !== input.existingUrl) {
+      diagnostics.push(
+        this.diagnostic(
+          "link.drift",
+          "The event asset link must reference the managed folder",
+          input.mode === "fix"
+        )
+      );
+    }
+    return this.reconcileFiles(container, templates, input, diagnostics);
   }
-  static matchesPrefix(value, prefixes, identifierPattern) {
-    const normalized = value.replace(/\/$/, "");
-    const prefix = prefixes.find(
-      (candidate) => normalized.startsWith(candidate)
+  async reconcileFiles(container, templates, input, diagnostics) {
+    const currentFiles = await this.repository.listFiles(container.id);
+    const files = {};
+    const content = {};
+    const reconcile = this.collaborators.createReconcileAssetFile(
+      this.repository,
+      this.content
     );
-    const identifier = prefix ? normalized.slice(prefix.length) : void 0;
-    return _PublicationLinkEvaluation.isHttpsUrl(normalized) && !!identifier && identifierPattern.test(identifier);
+    for (const template of templates) {
+      const result = await reconcile.execute({
+        ...input,
+        template,
+        container,
+        currentFiles,
+        diagnostics
+      });
+      if (result.file?.url) files[`${template.kind}-link`] = result.file.url;
+      content[template.kind] = result.status;
+    }
+    return { container, files, content, diagnostics };
+  }
+  diagnostic(code, message, fixApplied) {
+    return {
+      code: `publication.assets.${code}`,
+      field: "assets",
+      severity: "warning",
+      message,
+      fixAvailable: code !== "prerequisites",
+      fixApplied
+    };
+  }
+  validDate(date) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
+    const instant = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
+    return !Number.isNaN(instant.valueOf()) && instant.toISOString().slice(0, 10) === date;
+  }
+  validateTemplates(templates) {
+    if (!templates.length || templates.some(
+      (template) => !template.id || !template.name.trim() || !template.kind.trim()
+    ) || new Set(templates.map(({ id }) => id)).size !== templates.length || new Set(templates.map(({ kind }) => kind)).size !== templates.length) {
+      throw new Error(
+        "Asset templates must have unique IDs, unique kinds, and non-empty names"
+      );
+    }
+  }
+};
+
+// packages/domain/publication/src/application/reconcile-asset-file.ts
+var ReconcileAssetFile = class {
+  constructor(repository, content) {
+    this.repository = repository;
+    this.content = content;
+  }
+  repository;
+  content;
+  async execute(input) {
+    const matches = input.currentFiles.filter(
+      (file2) => file2.templateId === input.template.id
+    );
+    if (matches.length > 1)
+      throw new Error(
+        "Ambiguous event asset copies require manual reconciliation"
+      );
+    let file = matches[0];
+    const fresh = !file;
+    try {
+      await this.preflight(input, file);
+      if (!file) file = await this.copyOrRename(input);
+      if (!file)
+        return {
+          status: input.template.contentContract ? "pending" : "copy-only"
+        };
+      file = await this.enroll(input, file);
+      const status = await this.render(input, file, fresh);
+      if (!fresh && (status === "ready" || status === "copy-only"))
+        file = await this.copyOrRename(input, file);
+      return { file, status };
+    } catch (error2) {
+      if (!(error2 instanceof ContentError)) throw error2;
+      return this.failed(file, error2, input.diagnostics);
+    }
+  }
+  failed(file, error2, diagnostics) {
+    diagnostics.push(this.diagnostic(error2.code));
+    return {
+      file,
+      status: error2.code === "conflict" ? "conflict" : error2.code === "recovery" ? "recovery-required" : "pending"
+    };
+  }
+  async enroll(input, file) {
+    if (input.mode === "fix" && input.recovery?.[file.id]?.operation === "enroll" && !file.contentManaged) {
+      file = await this.repository.updateFile(
+        { ...file, contentManaged: true },
+        input.template,
+        file.name
+      );
+    }
+    return file;
+  }
+  async preflight(input, file) {
+    if (file && (file.contentManaged || input.recovery?.[file.id]?.operation !== "enroll"))
+      return;
+    if (!input.template.contentContract) return;
+    if (!this.content || !input.model) throw new ContentError("missing");
+    await this.content.preflight(
+      file?.id ?? input.template.id,
+      input.template.kind,
+      input.template.mimeType ?? "",
+      input.template.contentContract,
+      input.model
+    );
+  }
+  async render(input, file, fresh) {
+    const { template } = input;
+    const recovery = input.recovery?.[file.id];
+    if (!file.contentManaged && !recovery && (!fresh || !template.contentContract))
+      return "copy-only";
+    if (input.mode === "check" || !this.content || !input.model)
+      return "pending";
+    const outcome = await this.content.execute({
+      folderId: input.container.id,
+      fileId: file.id,
+      templateId: template.id,
+      kind: template.kind,
+      mimeType: file.mimeType ?? template.mimeType ?? "",
+      contract: template.contentContract,
+      fresh,
+      managed: file.contentManaged,
+      model: input.model,
+      recovery
+    });
+    if (outcome.fallback) input.diagnostics.push(this.diagnostic("fallback"));
+    if (outcome.status === "pending")
+      input.diagnostics.push(this.diagnostic("revision"));
+    return outcome.status;
+  }
+  async copyOrRename(input, file) {
+    const { template } = input;
+    const name = template.name.replaceAll(
+      "[EVENT_DATE:YYYY-MM-DD]",
+      input.date
+    );
+    if (file?.name === name && file.kind === template.kind) return file;
+    input.diagnostics.push({
+      code: "publication.assets.file.drift",
+      field: "assets",
+      severity: "warning",
+      message: "An event template copy is missing or its name or template metadata has changed",
+      fixAvailable: true,
+      fixApplied: input.mode === "fix"
+    });
+    if (input.mode !== "fix") return file;
+    return file ? this.repository.updateFile(file, template, name) : this.repository.copyTemplate(input.container.id, template, name);
+  }
+  diagnostic(code) {
+    return {
+      code: `publication.assets.content.${code}`,
+      field: "assets",
+      severity: "warning",
+      message: "Review the asset content status, template contract, public inputs and recovery instructions before using this file",
+      fixAvailable: false
+    };
+  }
+};
+
+// packages/domain/publication/src/application/resolve-content-values.ts
+var ResolveContentValues = class {
+  constructor(collaborators, images) {
+    this.collaborators = collaborators;
+    this.images = images;
+  }
+  collaborators;
+  images;
+  async execute(contract, model) {
+    const values = [];
+    for (const field of contract.fields) {
+      if (field.type === "image") {
+        values.push(await this.image(field, model));
+        continue;
+      }
+      const key = this.collaborators.contentTextKey.of(field);
+      const text = model.text[key] || (!field.required ? field.fallback : void 0);
+      if (!this.collaborators.contentContractPolicy.text(text))
+        throw new ContentError("missing");
+      values.push({
+        type: "text",
+        key,
+        text,
+        fingerprint: this.collaborators.contentFingerprint.of(text)
+      });
+    }
+    return values;
+  }
+  async image(field, model) {
+    const host = field.token === "host.logo";
+    const picture = host ? model.hostLogo : model.pictures[field.slot];
+    const hostId = host ? model.hostLogo?.hostId : void 0;
+    const speakerId = host ? void 0 : model.pictures[field.slot]?.speakerId;
+    const identity = hostId ?? speakerId;
+    const fallback = field.fallback ? await this.images.validate(field.fallback) : void 0;
+    try {
+      if (!picture || !(host ? /^host-[a-z0-9-]+$/ : /^speaker-[a-z0-9-]+$/).test(
+        identity ?? ""
+      ))
+        throw new ContentError("image");
+      const validated = await this.images.validate(picture);
+      return {
+        type: "image",
+        key: field.slot,
+        image: validated.source,
+        fingerprint: this.collaborators.contentFingerprint.of(
+          `${validated.fingerprint}:${identity}:${picture.description}:${field.fit}`
+        ),
+        speakerId,
+        hostId,
+        fallback: false,
+        fit: field.fit
+      };
+    } catch {
+      if (field.required || !field.fallback || !fallback)
+        throw new ContentError("image");
+      const validated = fallback;
+      return {
+        type: "image",
+        key: field.slot,
+        image: validated.source,
+        fingerprint: this.collaborators.contentFingerprint.of(
+          `${validated.fingerprint}:fallback:${field.fallback.description}:${field.fit}`
+        ),
+        fallback: true,
+        fit: field.fit
+      };
+    }
   }
 };
 
 // packages/domain/publication/src/domain/asset-folder-url-policy.ts
 var AssetFolderUrlPolicy = class {
-  constructor(prefix) {
+  constructor(collaborators, prefix) {
+    this.collaborators = collaborators;
     this.prefix = prefix;
   }
+  collaborators;
   prefix;
   id = "asset-folder-url";
   evaluate(references) {
-    return PublicationLinkEvaluation.evaluateLink({
+    return this.collaborators.publicationLinkEvaluation.evaluateLink({
       references,
       path: "assets",
-      isValid: (value) => PublicationLinkEvaluation.matchesPrefix(
+      isValid: (value) => this.collaborators.publicationLinkEvaluation.matchesPrefix(
         value,
         [this.prefix],
         /^[a-zA-Z0-9_-]+$/
@@ -29731,16 +32120,18 @@ var AssetFolderUrlPolicy = class {
 
 // packages/domain/publication/src/domain/community-event-url-policy.ts
 var CommunityEventUrlPolicy = class {
-  constructor(prefixes) {
+  constructor(collaborators, prefixes) {
+    this.collaborators = collaborators;
     this.prefixes = prefixes;
   }
+  collaborators;
   prefixes;
   id = "community-event-url";
   evaluate(references) {
-    return PublicationLinkEvaluation.evaluateLink({
+    return this.collaborators.publicationLinkEvaluation.evaluateLink({
       references,
       path: "community",
-      isValid: (value) => PublicationLinkEvaluation.matchesPrefix(
+      isValid: (value) => this.collaborators.publicationLinkEvaluation.matchesPrefix(
         value,
         this.prefixes,
         /^[0-9a-z-]+$/
@@ -29751,13 +32142,577 @@ var CommunityEventUrlPolicy = class {
   }
 };
 
+// packages/domain/publication/src/domain/content-anchor-identity.ts
+var ContentAnchorIdentity = class {
+  equal(left, right) {
+    return left.objectId === right.objectId && left.pageId === right.pageId && left.tabId === right.tabId && left.segmentId === right.segmentId && left.rangeName === right.rangeName && left.start === right.start && left.end === right.end;
+  }
+  locationKey(anchor) {
+    return JSON.stringify([
+      anchor.pageId,
+      anchor.tabId,
+      anchor.segmentId,
+      anchor.objectId,
+      anchor.rangeName
+    ]);
+  }
+};
+
+// packages/domain/publication/src/domain/content-binding-policy.ts
+var ContentBindingPolicy = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  parseMany(value) {
+    if (!Array.isArray(value) || value.length > 500)
+      throw new ContentError("recovery");
+    const bindings = value.map((item) => this.parse(item));
+    if (new Set(bindings.map((binding) => binding.id)).size !== bindings.length)
+      throw new ContentError("recovery");
+    return bindings;
+  }
+  parse(value) {
+    if (!this.collaborators.contentContractPolicy.record(value) || !this.collaborators.contentContractPolicy.name(value.id) || !this.collaborators.contentContractPolicy.name(value.key) || value.type !== "text" && value.type !== "image" || !this.hash(value.applied) || value.desired !== void 0 && !this.hash(value.desired) || !this.collaborators.contentContractPolicy.keys(value, [
+      "id",
+      "type",
+      "key",
+      "anchor",
+      "applied",
+      "desired",
+      "speakerId",
+      "hostId",
+      "fallback"
+    ]))
+      throw new ContentError("recovery");
+    const identities = this.identities(value);
+    const anchor = this.anchor(value.anchor);
+    if (value.type === "image" ? !anchor.objectId : !anchor.objectId && !anchor.rangeName)
+      throw new ContentError("recovery");
+    return {
+      id: value.id,
+      key: value.key,
+      type: value.type,
+      applied: value.applied,
+      anchor,
+      ...typeof value.desired === "string" ? { desired: value.desired } : {},
+      ...identities
+    };
+  }
+  identities(value) {
+    if (value.speakerId !== void 0 && typeof value.speakerId !== "string" || value.hostId !== void 0 && typeof value.hostId !== "string" || value.fallback !== void 0 && typeof value.fallback !== "boolean")
+      throw new ContentError("recovery");
+    return {
+      ...typeof value.speakerId === "string" ? { speakerId: value.speakerId } : {},
+      ...typeof value.hostId === "string" ? { hostId: value.hostId } : {},
+      ...typeof value.fallback === "boolean" ? { fallback: value.fallback } : {}
+    };
+  }
+  anchor(value) {
+    if (!this.collaborators.contentContractPolicy.record(value) || !this.collaborators.contentContractPolicy.keys(value, [
+      "objectId",
+      "pageId",
+      "tabId",
+      "segmentId",
+      "rangeName",
+      "start",
+      "end"
+    ]))
+      throw new ContentError("recovery");
+    this.validateAnchorValues(value);
+    return {
+      ...typeof value.objectId === "string" ? { objectId: value.objectId } : {},
+      ...typeof value.pageId === "string" ? { pageId: value.pageId } : {},
+      ...typeof value.tabId === "string" ? { tabId: value.tabId } : {},
+      ...typeof value.segmentId === "string" ? { segmentId: value.segmentId } : {},
+      ...typeof value.rangeName === "string" ? { rangeName: value.rangeName } : {},
+      ...typeof value.start === "number" ? { start: value.start } : {},
+      ...typeof value.end === "number" ? { end: value.end } : {}
+    };
+  }
+  validateAnchorValues(value) {
+    for (const [key, entry] of Object.entries(value)) {
+      if (key === "start" || key === "end") {
+        if (typeof entry !== "number" || !Number.isSafeInteger(entry) || entry < 1)
+          throw new ContentError("recovery");
+      } else if (entry !== "" && !this.collaborators.contentContractPolicy.name(entry))
+        throw new ContentError("recovery");
+    }
+  }
+  hash(value) {
+    return typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
+  }
+};
+
+// packages/domain/publication/src/domain/asset-content.ts
+var TEXT_TOKENS = [
+  "event.title",
+  "event.date",
+  "event.date.month",
+  "event.date.numeric",
+  "event.date.weekday",
+  "host.name",
+  "host.address",
+  "host.postal_code",
+  "host.city",
+  "agenda",
+  "event.feedback_url",
+  "next_event.date",
+  "next_event.date.numeric",
+  "next_event.host.name",
+  "next_event.host.city"
+];
+var SLOTTED_TEXT_TOKENS = [
+  "talk.title",
+  "talk.abstract",
+  "talk.speakers",
+  "speaker.name"
+];
+
+// packages/domain/publication/src/domain/content-contract-policy.ts
+var ContentContractPolicy = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  parse(value, kind, mimeType) {
+    if (!this.record(value) || value.version !== 1 || typeof value.kind !== "string" || value.kind !== kind || !this.name(value.revision) || !Array.isArray(value.fields) || !value.fields.length || value.fields.length > 100 || !this.keys(value, ["version", "revision", "kind", "fields"]) || !this.supported(mimeType))
+      throw new ContentError("contract");
+    const fields = value.fields.map(
+      (field) => this.field(field, mimeType)
+    );
+    const keys = fields.map(
+      (field) => field.type === "text" ? this.collaborators.contentTextKey.of(field) : field.slot
+    );
+    if (new Set(keys).size !== keys.length) throw new ContentError("contract");
+    return { version: 1, kind: value.kind, revision: value.revision, fields };
+  }
+  field(value, mimeType) {
+    if (!this.record(value)) throw new ContentError("contract");
+    return value.type === "text" ? this.textField(value) : this.image(value, mimeType);
+  }
+  textField(field) {
+    const token = [...TEXT_TOKENS, ...SLOTTED_TEXT_TOKENS].find(
+      (item) => item === field.token
+    );
+    const slotted = SLOTTED_TEXT_TOKENS.some((item) => item === token);
+    if (!token || typeof field.required !== "boolean" || (slotted ? !this.name(field.slot) : field.slot !== void 0) || !this.keys(field, ["type", "token", "slot", "required", "fallback"]) || (!field.required || field.fallback !== void 0) && !this.text(field.fallback))
+      throw new ContentError("contract");
+    const result = {
+      type: "text",
+      token,
+      required: field.required,
+      ...typeof field.slot === "string" ? { slot: field.slot } : {},
+      ...typeof field.fallback === "string" ? { fallback: field.fallback } : {}
+    };
+    if (!this.name(this.collaborators.contentTextKey.of(result)))
+      throw new ContentError("contract");
+    return result;
+  }
+  image(field, mimeType) {
+    if (field.type !== "image" || field.token !== "speaker.picture" && field.token !== "host.logo" || typeof field.required !== "boolean" || !this.name(field.slot) || !this.name(field.objectId) || !this.keys(field, [
+      "type",
+      "token",
+      "slot",
+      "objectId",
+      "pageId",
+      "tabId",
+      "required",
+      "fallback",
+      "fit"
+    ]))
+      throw new ContentError("contract");
+    const slides = mimeType === "application/vnd.google-apps.presentation";
+    if (!(slides ? this.name(field.pageId) && field.tabId === void 0 : this.name(field.tabId) && field.pageId === void 0) || field.fit !== "CENTER_CROP" && !(slides && field.fit === "CENTER_INSIDE"))
+      throw new ContentError("contract");
+    const fallback = this.fallback(field.fallback, field.required);
+    return {
+      type: "image",
+      token: field.token,
+      required: field.required,
+      slot: field.slot,
+      objectId: field.objectId,
+      fit: field.fit,
+      ...typeof field.pageId === "string" ? { pageId: field.pageId } : {},
+      ...typeof field.tabId === "string" ? { tabId: field.tabId } : {},
+      ...fallback ? { fallback } : {}
+    };
+  }
+  fallback(value, required) {
+    if (value === void 0 && required) return void 0;
+    if (!this.record(value) || !this.text(value.url) || !this.text(value.description) || !this.keys(value, ["url", "description"]))
+      throw new ContentError("contract");
+    return { url: value.url, description: value.description };
+  }
+  supported(mimeType) {
+    return [
+      "application/vnd.google-apps.presentation",
+      "application/vnd.google-apps.document"
+    ].includes(mimeType);
+  }
+  text(value) {
+    return typeof value === "string" && value.trim().length > 0 && value.length <= 2e4 && [...value].every((character) => {
+      const code = character.charCodeAt(0);
+      return (code >= 32 || code === 9 || code === 10) && (code < 57344 || code > 63743);
+    });
+  }
+  name(value) {
+    return typeof value === "string" && /^[\w.:-]{1,100}$/.test(value);
+  }
+  keys(value, keys) {
+    return Object.keys(value).every((key) => keys.includes(key));
+  }
+  record(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
+  }
+};
+
+// packages/domain/publication/src/domain/content-fingerprint.ts
+import { createHash as createHash2 } from "node:crypto";
+var ContentFingerprint = class {
+  of(value) {
+    return createHash2("sha256").update(value).digest("hex");
+  }
+};
+
+// packages/domain/publication/src/domain/content-manifest-policy.ts
+var ContentManifestPolicy = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  parse(value, fileId, templateId, mimeType) {
+    const manifest = this.state(value, fileId, templateId, mimeType);
+    this.associations(manifest);
+    if (!manifest.pending) return manifest;
+    this.associations({
+      ...manifest,
+      bindings: manifest.pending.bindings
+    });
+    if (manifest.pending.bindings.length !== manifest.bindings.length || manifest.pending.bindings.some((binding, index) => {
+      const prior = manifest.bindings[index];
+      return prior.id !== binding.id || prior.key !== binding.key || prior.type !== binding.type || !this.collaborators.contentAnchorIdentity.equal(
+        prior.anchor,
+        binding.anchor
+      );
+    }))
+      throw new ContentError("recovery");
+    return manifest;
+  }
+  state(value, fileId, templateId, mimeType) {
+    if (!this.collaborators.contentContractPolicy.record(value) || value.version !== 1 || value.fileId !== fileId || value.templateId !== templateId || value.mimeType !== mimeType || !this.collaborators.contentContractPolicy.keys(value, [
+      "version",
+      "fileId",
+      "templateId",
+      "mimeType",
+      "contract",
+      "bindings",
+      "pending",
+      "initialRevision",
+      "recoveryId"
+    ]) || !this.collaborators.contentContractPolicy.record(value.contract) || typeof value.contract.kind !== "string")
+      throw new ContentError("recovery");
+    if (value.initialRevision !== void 0 && !this.collaborators.contentContractPolicy.text(
+      value.initialRevision
+    ) || value.recoveryId !== void 0 && (typeof value.recoveryId !== "string" || !/^[a-f0-9]{64}$/.test(value.recoveryId)))
+      throw new ContentError("recovery");
+    const pending = this.pending(value.pending);
+    return {
+      version: 1,
+      fileId,
+      templateId,
+      mimeType,
+      contract: this.collaborators.contentContractPolicy.parse(
+        value.contract,
+        value.contract.kind,
+        mimeType
+      ),
+      bindings: this.collaborators.contentBindingPolicy.parseMany(
+        value.bindings
+      ),
+      ...pending ? { pending } : {},
+      ...typeof value.initialRevision === "string" ? { initialRevision: value.initialRevision } : {},
+      ...typeof value.recoveryId === "string" ? { recoveryId: value.recoveryId } : {}
+    };
+  }
+  pending(value) {
+    if (value === void 0) return void 0;
+    if (!this.collaborators.contentContractPolicy.record(value) || !this.collaborators.contentContractPolicy.text(value.revision) || !this.collaborators.contentContractPolicy.keys(value, [
+      "revision",
+      "bindings"
+    ]))
+      throw new ContentError("recovery");
+    return {
+      revision: value.revision,
+      bindings: this.collaborators.contentBindingPolicy.parseMany(
+        value.bindings
+      )
+    };
+  }
+  associations(manifest) {
+    const anchors = /* @__PURE__ */ new Set();
+    for (const binding of manifest.bindings) {
+      const field = manifest.contract.fields.find(
+        (field2) => field2.type === binding.type && (field2.type === "text" ? this.collaborators.contentTextKey.of(field2) : field2.slot) === binding.key
+      );
+      const anchor = binding.anchor;
+      const key = this.collaborators.contentAnchorIdentity.locationKey(anchor);
+      if (!field || anchors.has(key) || binding.fallback !== void 0 && typeof binding.fallback !== "boolean")
+        throw new ContentError("recovery");
+      anchors.add(key);
+      this.identity(binding, field);
+      this.rendererAnchor(manifest.mimeType, binding);
+    }
+  }
+  identity(binding, field) {
+    if (binding.speakerId !== void 0 && (!/^speaker-[a-z0-9-]+$/.test(binding.speakerId) || field.type !== "image" || field.token !== "speaker.picture"))
+      throw new ContentError("recovery");
+    if (binding.hostId !== void 0 && (!/^host-[a-z0-9-]+$/.test(binding.hostId) || field.type !== "image" || field.token !== "host.logo"))
+      throw new ContentError("recovery");
+  }
+  rendererAnchor(mimeType, binding) {
+    const anchor = binding.anchor;
+    if (mimeType.endsWith("presentation")) {
+      if (!anchor.objectId || !anchor.pageId || anchor.tabId || anchor.rangeName)
+        throw new ContentError("recovery");
+    } else if (!anchor.tabId || anchor.segmentId || binding.type === "text" && !anchor.rangeName)
+      throw new ContentError("recovery");
+  }
+};
+
+// packages/domain/publication/src/domain/content-recovery-fingerprint.ts
+var ContentRecoveryFingerprint = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  create(recovery) {
+    return this.collaborators.contentFingerprint.of(
+      JSON.stringify({
+        operation: recovery.operation,
+        revision: recovery.revision,
+        bindingId: recovery.bindingId
+      })
+    );
+  }
+  matches(recovery, fingerprint) {
+    if (!fingerprint) return false;
+    const orders = [
+      ["operation", "revision", "bindingId"],
+      ["operation", "bindingId", "revision"],
+      ["revision", "operation", "bindingId"],
+      ["revision", "bindingId", "operation"],
+      ["bindingId", "operation", "revision"],
+      ["bindingId", "revision", "operation"]
+    ];
+    return orders.some(
+      (keys) => this.collaborators.contentFingerprint.of(
+        JSON.stringify(
+          Object.fromEntries(keys.map((key) => [key, recovery[key]]))
+        )
+      ) === fingerprint
+    );
+  }
+};
+
+// packages/domain/publication/src/domain/content-recovery-plan.ts
+var ContentRecoveryPlan = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  active(manifest, recovery) {
+    return recovery && !this.collaborators.contentRecoveryFingerprint.matches(
+      recovery,
+      manifest.recoveryId
+    ) ? recovery : void 0;
+  }
+  beforeRead(manifest, recovery) {
+    if (recovery?.operation !== "remove") return manifest;
+    return {
+      ...manifest,
+      pending: void 0,
+      bindings: manifest.bindings.filter(
+        (binding) => binding.id !== recovery.bindingId
+      )
+    };
+  }
+  settle(original, snapshot, recovery) {
+    if (recovery && snapshot.revision !== recovery.revision)
+      throw new ContentError("revision");
+    let manifest = recovery?.operation === "restore" ? this.restore(original, snapshot, recovery.bindingId) : original;
+    if (manifest.pending)
+      manifest = this.collaborators.contentRenderPlan.settle(
+        manifest,
+        snapshot,
+        false
+      );
+    return recovery ? {
+      ...manifest,
+      recoveryId: this.collaborators.contentRecoveryFingerprint.create(recovery)
+    } : manifest;
+  }
+  restore(manifest, snapshot, bindingId) {
+    if (!manifest.bindings.some((binding) => binding.id === bindingId))
+      throw new ContentError("recovery");
+    return {
+      ...manifest,
+      pending: void 0,
+      bindings: manifest.bindings.map(
+        (binding) => binding.id === bindingId ? {
+          ...binding,
+          applied: this.collaborators.contentRenderPlan.fingerprint(
+            snapshot,
+            binding.id
+          ),
+          desired: void 0
+        } : binding
+      )
+    };
+  }
+};
+
+// packages/domain/publication/src/domain/content-render-plan.ts
+var ContentRenderPlan = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  changes(manifest, snapshot, values) {
+    const changes = [];
+    for (const binding of manifest.bindings) {
+      const matches = snapshot.locations.filter(
+        (location2) => location2.id === binding.id
+      );
+      const location = matches[0];
+      if (matches.length !== 1 || location.fingerprint !== binding.applied)
+        throw new ContentError("conflict");
+      const value = values.find(
+        (item) => item.key === binding.key && item.type === binding.type
+      );
+      if (!value) throw new ContentError("contract");
+      if (binding.desired !== value.fingerprint || binding.type === "text" && location.fingerprint !== value.fingerprint)
+        changes.push({ location, value });
+    }
+    return changes;
+  }
+  pending(manifest, snapshot, changes) {
+    return {
+      ...manifest,
+      pending: {
+        revision: snapshot.revision,
+        bindings: manifest.bindings.map((binding) => {
+          const value = changes.find(
+            (change) => change.location.id === binding.id
+          )?.value;
+          return value ? {
+            ...binding,
+            desired: value.fingerprint,
+            applied: value.type === "text" ? value.fingerprint : binding.applied,
+            speakerId: value.speakerId,
+            hostId: value.hostId,
+            fallback: value.fallback
+          } : binding;
+        })
+      }
+    };
+  }
+  settle(manifest, snapshot, confirmed) {
+    if (!manifest.pending) return manifest;
+    const next = manifest.pending.bindings;
+    const applied = next.every((binding) => {
+      const location = snapshot.locations.find(
+        (item) => item.id === binding.id
+      );
+      if (!location) throw new ContentError("conflict");
+      const prior2 = manifest.bindings.find((item) => item.id === binding.id);
+      return binding.type === "image" && binding.desired !== prior2?.desired ? confirmed : binding.applied === location.fingerprint;
+    });
+    if (applied)
+      return {
+        ...manifest,
+        pending: void 0,
+        initialRevision: next.every((binding) => binding.desired) ? void 0 : manifest.initialRevision,
+        bindings: next.map((binding) => ({
+          ...binding,
+          applied: this.fingerprint(snapshot, binding.id)
+        }))
+      };
+    const prior = manifest.bindings.every(
+      (binding) => snapshot.locations.find((item) => item.id === binding.id)?.fingerprint === binding.applied
+    );
+    const uncertainImage = next.some(
+      (binding, index) => binding.type === "image" && binding.desired !== manifest.bindings[index]?.desired
+    );
+    if (!prior)
+      throw new ContentError(uncertainImage ? "recovery" : "conflict");
+    if (uncertainImage && snapshot.revision !== manifest.pending.revision)
+      throw new ContentError("recovery");
+    return { ...manifest, pending: void 0 };
+  }
+  initial(snapshot) {
+    if (!snapshot.locations.length || snapshot.locations.length > 500 || snapshot.locations.some(
+      (location) => !this.collaborators.contentContractPolicy.name(location.id) || !this.collaborators.contentContractPolicy.name(location.key)
+    ) || new Set(snapshot.locations.map((location) => location.id)).size !== snapshot.locations.length || snapshot.locations.some(
+      (location, index) => snapshot.locations.slice(0, index).some(
+        (prior) => this.collaborators.contentAnchorIdentity.equal(
+          prior.anchor,
+          location.anchor
+        )
+      )
+    ))
+      throw new ContentError("location");
+    return snapshot.locations.map((location) => ({
+      id: location.id,
+      type: location.type,
+      key: location.key,
+      anchor: location.anchor,
+      applied: location.fingerprint
+    }));
+  }
+  fingerprint(snapshot, bindingId) {
+    const matches = snapshot.locations.filter(
+      (location) => location.id === bindingId
+    );
+    if (matches.length !== 1) throw new ContentError("conflict");
+    return matches[0].fingerprint;
+  }
+};
+
+// packages/domain/publication/src/domain/content-text-key.ts
+var ContentTextKey = class {
+  of(field) {
+    return field.slot ? `${field.token}:${field.slot}` : field.token;
+  }
+};
+
+// packages/domain/publication/src/domain/feedback-link-selection.ts
+var FeedbackLinkSelection = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  conflict(candidate, targetDate, now2, timeZone) {
+    if (!candidate.isOpen || candidate.occurrenceStatus === "cancelled" || candidate.occurrenceStatus === "postponed")
+      return void 0;
+    if (candidate.date === targetDate) return "ambiguous-date";
+    if (candidate.date < targetDate && this.collaborators.feedbackPolicy.isLinkUpdateDue(
+      candidate.date,
+      now2,
+      timeZone
+    ))
+      return "current-event";
+    return void 0;
+  }
+};
+
 // packages/domain/publication/src/domain/feedback-policy.ts
-var FeedbackPolicy = class _FeedbackPolicy {
-  static validDate(value) {
+var FeedbackPolicy = class {
+  validDate(value) {
     const date = /* @__PURE__ */ new Date(`${value}T00:00:00Z`);
     return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(date.valueOf()) && date.toISOString().slice(0, 10) === value;
   }
-  static pollUrl(value) {
+  pollUrl(value) {
     const url = new URL(value);
     if (url.origin !== "https://openfeedback.io" || url.username || url.password || !/^\/[a-zA-Z0-9_-]+(?:\/(?:\d{4}-\d{2}-\d{2}|0))?\/?$/.test(
       url.pathname
@@ -29765,8 +32720,8 @@ var FeedbackPolicy = class _FeedbackPolicy {
       throw new Error("Feedback link must be an OpenFeedback event URL");
     return url.href.replace(/\/$/, "");
   }
-  static isLinkUpdateDue(date, now2, timeZone) {
-    if (!_FeedbackPolicy.validDate(date)) return false;
+  isLinkUpdateDue(date, now2, timeZone) {
+    if (!this.validDate(date)) return false;
     const updateDate = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
     updateDate.setUTCDate(updateDate.getUTCDate() - 1);
     const today = new Intl.DateTimeFormat("en-CA", {
@@ -29779,25 +32734,13 @@ var FeedbackPolicy = class _FeedbackPolicy {
   }
 };
 
-// packages/domain/publication/src/domain/feedback-resolution-error.ts
-var FeedbackResolutionError = class extends Error {
-  constructor(kind) {
-    super(
-      kind === "conflict" ? "The feedback agenda contains ambiguous talk or speaker identities" : "Feedback talk results are unavailable"
-    );
-    this.kind = kind;
-    this.name = "FeedbackResolutionError";
-  }
-  kind;
-};
-
 // packages/domain/publication/src/domain/manual-task-policy.ts
-var ManualPublicationPolicy = class _ManualPublicationPolicy {
+var ManualPublicationPolicy = class {
   /** Tracks organizer approvals and manual work required for publication. */
-  static planManualPublicationTasks(event) {
+  planManualPublicationTasks(event) {
     if (event.occurrenceStatus === "cancelled") {
       return Object.freeze(
-        _ManualPublicationPolicy.allTaskKinds().map((kind) => ({
+        this.allTaskKinds().map((kind) => ({
           kind,
           status: "not-applicable",
           reason: "The event is cancelled"
@@ -29806,50 +32749,50 @@ var ManualPublicationPolicy = class _ManualPublicationPolicy {
     }
     const occurrenceConfirmed = event.occurrenceStatus === "held";
     return Object.freeze([
-      _ManualPublicationPolicy.task(
+      this.task(
         "publish-meetup-event",
         Boolean(event.references.meetup) && event.meetupPublished,
         "Approve publishing the event to Meetup"
       ),
-      _ManualPublicationPolicy.task(
+      this.task(
         "publish-community-event",
         Boolean(event.references.community),
         "Publish the event to the CNCF community platform"
       ),
-      _ManualPublicationPolicy.task(
+      this.task(
         "create-asset-folder",
         Boolean(event.references.assets),
         "Create the event asset folder"
       ),
-      occurrenceConfirmed ? _ManualPublicationPolicy.task(
+      occurrenceConfirmed ? this.task(
         "publish-slides",
         event.slidesPublished,
         "Publish post-event slides"
-      ) : _ManualPublicationPolicy.notApplicable(
+      ) : this.notApplicable(
         "publish-slides",
         "Slides are published only after occurrence is explicitly confirmed"
       ),
-      occurrenceConfirmed ? _ManualPublicationPolicy.task(
+      occurrenceConfirmed ? this.task(
         "import-attendance",
         event.attendanceImported,
         "Import post-event attendance"
-      ) : _ManualPublicationPolicy.notApplicable(
+      ) : this.notApplicable(
         "import-attendance",
         "Attendance is imported only after occurrence is explicitly confirmed"
       )
     ]);
   }
-  static task(kind, completed, reason) {
+  task(kind, completed, reason) {
     return {
       kind,
       status: completed ? "completed" : "pending",
       reason
     };
   }
-  static notApplicable(kind, reason) {
+  notApplicable(kind, reason) {
     return { kind, status: "not-applicable", reason };
   }
-  static allTaskKinds() {
+  allTaskKinds() {
     return [
       "publish-meetup-event",
       "publish-community-event",
@@ -29908,14 +32851,16 @@ var MeetupEventUrl = class _MeetupEventUrl {
 
 // packages/domain/publication/src/domain/meetup-event-url-policy.ts
 var MeetupEventUrlPolicy = class {
-  constructor(prefix) {
+  constructor(collaborators, prefix) {
+    this.collaborators = collaborators;
     this.prefix = prefix;
   }
+  collaborators;
   prefix;
   id = "meetup-event-url";
   evaluate(references) {
     const group = MeetupGroupUrl.fromEventUrlPrefix(this.prefix);
-    return PublicationLinkEvaluation.evaluateLink({
+    return this.collaborators.publicationLinkEvaluation.evaluateLink({
       references,
       path: "meetup",
       isValid: (value) => !!group && !!MeetupEventUrl.parse(value, group),
@@ -29927,7 +32872,7 @@ var MeetupEventUrlPolicy = class {
 
 // packages/domain/publication/src/domain/model.ts
 var PublicationDiagnostics = class {
-  static applyPublicationPatch(references, patch) {
+  applyPublicationPatch(references, patch) {
     const result = { ...references };
     for (const operation of patch.operations) {
       switch (operation.path) {
@@ -29951,7 +32896,7 @@ var PublicationDiagnostics = class {
 
 // packages/domain/publication/src/domain/presentation-file-url.ts
 var PresentationFileUrl = class {
-  static normalize(value) {
+  normalize(value) {
     if (!value?.trim()) return void 0;
     try {
       const url = new URL(value.trim());
@@ -29970,6 +32915,96 @@ var PresentationFileUrl = class {
   }
 };
 
+// packages/domain/publication/src/domain/public-asset-url.ts
+var PublicAssetUrl = class {
+  valid(value) {
+    if (!value) return false;
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" && !url.username && !url.password && ![...url.searchParams.keys()].some(
+        (key) => /token|signature|credential|secret|key|auth/i.test(key)
+      );
+    } catch {
+      return false;
+    }
+  }
+};
+
+// packages/domain/publication/src/domain/publication-link-evaluation.ts
+var PublicationLinkEvaluation = class {
+  evaluateLink({
+    references,
+    path,
+    isValid,
+    code,
+    message
+  }) {
+    const raw = references[path];
+    if (raw === void 0 || raw === "") {
+      return this.emptyEvaluation(references);
+    }
+    const normalized = raw.trim().replace(/\/$/, "");
+    if (!isValid(raw.trim())) {
+      return {
+        references,
+        diagnostics: [
+          Object.freeze({
+            code,
+            severity: "error",
+            field: path,
+            message
+          })
+        ],
+        patch: Object.freeze({ operations: [] })
+      };
+    }
+    if (raw === normalized) {
+      return this.emptyEvaluation(references);
+    }
+    const operation = Object.freeze({
+      op: "replace",
+      path,
+      value: normalized,
+      reason: "Trim URL and remove its trailing slash"
+    });
+    return {
+      references: { ...references, [path]: normalized },
+      diagnostics: [
+        Object.freeze({
+          code: `publication.${path}.normalized`,
+          severity: "info",
+          field: path,
+          message: `${path} URL can be normalized safely`,
+          fixAvailable: true
+        })
+      ],
+      patch: Object.freeze({ operations: Object.freeze([operation]) })
+    };
+  }
+  emptyEvaluation(references) {
+    return {
+      references,
+      diagnostics: [],
+      patch: Object.freeze({ operations: [] })
+    };
+  }
+  isHttpsUrl(value) {
+    try {
+      return new URL(value).protocol === "https:";
+    } catch {
+      return false;
+    }
+  }
+  matchesPrefix(value, prefixes, identifierPattern) {
+    const normalized = value.replace(/\/$/, "");
+    const prefix = prefixes.find(
+      (candidate) => normalized.startsWith(candidate)
+    );
+    const identifier = prefix ? normalized.slice(prefix.length) : void 0;
+    return this.isHttpsUrl(normalized) && !!identifier && identifierPattern.test(identifier);
+  }
+};
+
 // packages/domain/publication/src/domain/url-policy-contracts.ts
 var DEFAULT_PUBLICATION_URL_CONFIGURATION = Object.freeze({
   meetupEventUrlPrefix: `${MEETUP_ORIGIN}/cloud-native-aix-marseille/events/`,
@@ -29982,20 +33017,32 @@ var DEFAULT_PUBLICATION_URL_CONFIGURATION = Object.freeze({
 
 // packages/domain/publication/src/domain/publication-url-policies.ts
 var PublicationUrlPolicies = class {
-  static createDefaultPublicationUrlPolicies(configuration = DEFAULT_PUBLICATION_URL_CONFIGURATION) {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  createDefaultPublicationUrlPolicies(configuration = DEFAULT_PUBLICATION_URL_CONFIGURATION) {
     return Object.freeze([
-      new MeetupEventUrlPolicy(configuration.meetupEventUrlPrefix),
-      new CommunityEventUrlPolicy(configuration.communityEventUrlPrefixes),
-      new AssetFolderUrlPolicy(configuration.assetFolderUrlPrefix)
+      this.collaborators.createMeetupEventUrlPolicy(
+        configuration.meetupEventUrlPrefix
+      ),
+      this.collaborators.createCommunityEventUrlPolicy(
+        configuration.communityEventUrlPrefixes
+      ),
+      this.collaborators.createAssetFolderUrlPolicy(
+        configuration.assetFolderUrlPrefix
+      )
     ]);
   }
 };
 
 // packages/domain/publication/src/domain/publication-url-policy-engine.ts
 var PublicationUrlPolicyEngine = class {
-  constructor(policies) {
+  constructor(collaborators, policies) {
+    this.collaborators = collaborators;
     this.policies = policies;
   }
+  collaborators;
   policies;
   evaluate(references) {
     let normalized = references;
@@ -30005,7 +33052,7 @@ var PublicationUrlPolicyEngine = class {
       const result = policy.evaluate(normalized);
       diagnostics.push(...result.diagnostics);
       operations.push(...result.patch.operations);
-      normalized = PublicationDiagnostics.applyPublicationPatch(
+      normalized = this.collaborators.publicationDiagnostics.applyPublicationPatch(
         normalized,
         result.patch
       );
@@ -30019,9 +33066,9 @@ var PublicationUrlPolicyEngine = class {
 };
 
 // packages/domain/publication/src/domain/scheduled-event-policy.ts
-var ScheduledEventPolicy = class _ScheduledEventPolicy {
-  static valid(event, now2) {
-    if (!event.title.trim() || event.title.length > 80 || !event.description.trim() || event.description.length > 49e3 || !event.venue.name.trim() || !event.venue.city.trim() || !_ScheduledEventPolicy.validTime(event.startTime) || !_ScheduledEventPolicy.validTime(event.endTime) || event.endTime <= event.startTime || !/^\d{4}-\d{2}-\d{2}$/.test(event.date))
+var ScheduledEventPolicy = class {
+  valid(event, now2) {
+    if (!event.title.trim() || event.title.length > 80 || !event.description.trim() || event.description.length > 49e3 || !event.venue.name.trim() || !event.venue.city.trim() || !this.validTime(event.startTime) || !this.validTime(event.endTime) || event.endTime <= event.startTime || !/^\d{4}-\d{2}-\d{2}$/.test(event.date))
       return false;
     const date = /* @__PURE__ */ new Date(`${event.date}T12:00:00Z`);
     if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== event.date)
@@ -30036,25 +33083,17 @@ var ScheduledEventPolicy = class _ScheduledEventPolicy {
         minute: "2-digit",
         hourCycle: "h23"
       });
-      const start = _ScheduledEventPolicy.instant(
-        event.date,
-        event.startTime,
-        format
-      );
-      const end = _ScheduledEventPolicy.instant(
-        event.date,
-        event.endTime,
-        format
-      );
+      const start = this.instant(event.date, event.startTime, format);
+      const end = this.instant(event.date, event.endTime, format);
       return start !== void 0 && end !== void 0 && start > Date.parse(now2) && end > start;
     } catch {
       return false;
     }
   }
-  static validTime(value) {
+  validTime(value) {
     return /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
   }
-  static instant(date, time, format) {
+  instant(date, time, format) {
     const reference = Date.parse(`${date}T${time}:00Z`);
     let match;
     for (let offset = -840; offset <= 840; offset += 15) {
@@ -30067,6 +33106,188 @@ var ScheduledEventPolicy = class _ScheduledEventPolicy {
   }
 };
 
+// packages/domain/publication/src/dependency-composition.ts
+var PublicationDomainComposition = class {
+  assetFolderUrlPolicy(...args) {
+    return new AssetFolderUrlPolicy(
+      { publicationLinkEvaluation: this.publicationLinkEvaluation() },
+      ...args
+    );
+  }
+  communityEventUrlPolicy(...args) {
+    return new CommunityEventUrlPolicy(
+      { publicationLinkEvaluation: this.publicationLinkEvaluation() },
+      ...args
+    );
+  }
+  contentAnchorIdentity() {
+    return new ContentAnchorIdentity();
+  }
+  contentBindingPolicy() {
+    return new ContentBindingPolicy({
+      contentContractPolicy: this.contentContractPolicy()
+    });
+  }
+  contentContractPolicy() {
+    return new ContentContractPolicy({ contentTextKey: this.contentTextKey() });
+  }
+  contentFingerprint() {
+    return new ContentFingerprint();
+  }
+  contentManifestPolicy() {
+    return new ContentManifestPolicy({
+      contentAnchorIdentity: this.contentAnchorIdentity(),
+      contentContractPolicy: this.contentContractPolicy(),
+      contentBindingPolicy: this.contentBindingPolicy(),
+      contentTextKey: this.contentTextKey()
+    });
+  }
+  contentRecoveryFingerprint() {
+    return new ContentRecoveryFingerprint({
+      contentFingerprint: this.contentFingerprint()
+    });
+  }
+  contentRecoveryPlan() {
+    return new ContentRecoveryPlan({
+      contentRecoveryFingerprint: this.contentRecoveryFingerprint(),
+      contentRenderPlan: this.contentRenderPlan()
+    });
+  }
+  contentRenderPlan() {
+    return new ContentRenderPlan({
+      contentContractPolicy: this.contentContractPolicy(),
+      contentAnchorIdentity: this.contentAnchorIdentity()
+    });
+  }
+  contentTextKey() {
+    return new ContentTextKey();
+  }
+  feedbackLinkSelection() {
+    return new FeedbackLinkSelection({ feedbackPolicy: this.feedbackPolicy() });
+  }
+  feedbackPolicy() {
+    return new FeedbackPolicy();
+  }
+  manualPublicationPolicy() {
+    return new ManualPublicationPolicy();
+  }
+  meetupEventUrlPolicy(...args) {
+    return new MeetupEventUrlPolicy(
+      { publicationLinkEvaluation: this.publicationLinkEvaluation() },
+      ...args
+    );
+  }
+  presentationFileUrl() {
+    return new PresentationFileUrl();
+  }
+  publicAssetUrl() {
+    return new PublicAssetUrl();
+  }
+  publicationDiagnostics() {
+    return new PublicationDiagnostics();
+  }
+  publicationLinkEvaluation() {
+    return new PublicationLinkEvaluation();
+  }
+  publicationUrlPolicies() {
+    return new PublicationUrlPolicies({
+      createMeetupEventUrlPolicy: (...args) => this.meetupEventUrlPolicy(...args),
+      createCommunityEventUrlPolicy: (...args) => this.communityEventUrlPolicy(...args),
+      createAssetFolderUrlPolicy: (...args) => this.assetFolderUrlPolicy(...args)
+    });
+  }
+  publicationUrlPolicyEngine(...args) {
+    return new PublicationUrlPolicyEngine(
+      { publicationDiagnostics: this.publicationDiagnostics() },
+      ...args
+    );
+  }
+  reconcileAssetContent(...args) {
+    return new ReconcileAssetContent(
+      {
+        contentContractPolicy: this.contentContractPolicy(),
+        contentRenderPlan: this.contentRenderPlan(),
+        contentTextKey: this.contentTextKey(),
+        contentManifestPolicy: this.contentManifestPolicy(),
+        contentRecoveryFingerprint: this.contentRecoveryFingerprint(),
+        contentRecoveryPlan: this.contentRecoveryPlan(),
+        createResolveContentValues: (...args2) => this.resolveContentValues(...args2)
+      },
+      ...args
+    );
+  }
+  reconcileAssetFile(...args) {
+    return new ReconcileAssetFile(...args);
+  }
+  reconcileEventAssets(...args) {
+    return new ReconcileEventAssets(
+      {
+        createReconcileAssetFile: (...args2) => this.reconcileAssetFile(...args2)
+      },
+      ...args
+    );
+  }
+  resolveContentValues(...args) {
+    return new ResolveContentValues(
+      {
+        contentTextKey: this.contentTextKey(),
+        contentContractPolicy: this.contentContractPolicy(),
+        contentFingerprint: this.contentFingerprint()
+      },
+      ...args
+    );
+  }
+  scheduledEventPolicy() {
+    return new ScheduledEventPolicy();
+  }
+};
+
+// packages/domain/publication/src/domain/feedback-resolution-error.ts
+var FeedbackResolutionError = class extends Error {
+  constructor(kind) {
+    super(
+      kind === "conflict" ? "The feedback agenda contains ambiguous talk or speaker identities" : "Feedback talk results are unavailable"
+    );
+    this.kind = kind;
+    this.name = "FeedbackResolutionError";
+  }
+  kind;
+};
+
+// packages/domain/publication/src/domain/scheduled-event-error.ts
+var ScheduledEventError = class extends Error {
+  constructor(kind) {
+    super(`Event publication failed: ${kind}`);
+    this.kind = kind;
+    this.name = "ScheduledEventError";
+  }
+  kind;
+};
+
+// packages/application/journey/src/approval/meetup-publication-revision.ts
+var MeetupPublicationRevision = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  of(event, url) {
+    return this.collaborators.contentFingerprint.of(
+      JSON.stringify({
+        url,
+        event: {
+          title: event.title,
+          description: event.description,
+          date: event.date,
+          startTime: event.startTime,
+          endTime: event.endTime,
+          timeZone: event.timeZone,
+          venue: { name: event.venue.name, city: event.venue.city }
+        }
+      })
+    );
+  }
+};
+
 // packages/application/journey/src/config/automation-config.ts
 var AutomationConfigFactory = class {
   /**
@@ -30074,7 +33295,7 @@ var AutomationConfigFactory = class {
    * repositories do not provide a runtime configuration file anymore. Without
    * a repository owner, workspace-only operations leave communication disabled.
    */
-  static createAutomationConfig(repositoryOwner) {
+  createAutomationConfig(repositoryOwner) {
     return {
       timezone: "Europe/Paris",
       event: {
@@ -30103,14 +33324,99 @@ var AutomationConfigFactory = class {
   }
 };
 
-// packages/application/journey/src/ports/organizer-follow-up.ts
-var FOLLOW_UP_TASKS = [
-  "thank-host",
-  "thank-speakers",
-  "share-slides",
-  "import-attendance",
-  "share-social"
+// packages/application/journey/src/config/configured-publication-policies.ts
+var ConfiguredPublicationPolicies = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  create(publication) {
+    return this.collaborators.publicationUrlPolicies.createDefaultPublicationUrlPolicies(
+      {
+        ...DEFAULT_PUBLICATION_URL_CONFIGURATION,
+        meetupEventUrlPrefix: publication["meetup-event-url-prefix"],
+        communityEventUrlPrefixes: [
+          publication["cncf-event-url-prefix"],
+          ...DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes.slice(
+            1
+          )
+        ]
+      }
+    );
+  }
+};
+
+// packages/application/journey/src/result/attention-stage-reports.ts
+var ATTENTION_STAGE_OWNERS = [
+  "event",
+  "assets",
+  "feedback",
+  "communications"
 ];
+
+// packages/application/journey/src/result/attention-stage-evaluation.ts
+var AttentionStageEvaluation = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  evaluate(input) {
+    const eventDiagnostics = input.event.diagnostics;
+    return ATTENTION_STAGE_OWNERS.map((owner) => {
+      const { outcome, diagnostics } = input[owner];
+      const blocked = diagnostics.some(
+        (item) => this.collaborators.diagnosticPolicy.isTechnicalFailure(item) && !this.eventPrerequisite(item.code, owner, eventDiagnostics)
+      );
+      const prerequisiteBlocked = outcome !== "unknown" && !blocked && diagnostics.some(
+        (item) => this.organizerPrerequisite(item) || this.eventPrerequisite(item.code, owner, eventDiagnostics)
+      );
+      return {
+        owner,
+        outcome,
+        blocked,
+        ...prerequisiteBlocked ? { prerequisiteBlocked: true } : {}
+      };
+    });
+  }
+  diagnostics(input) {
+    const diagnostics = /* @__PURE__ */ new Map();
+    for (const owner of ATTENTION_STAGE_OWNERS)
+      for (const item of input[owner].diagnostics)
+        diagnostics.set(
+          `${item.code}:${item.field ?? ""}:${item.severity}`,
+          item
+        );
+    const merged = [...diagnostics.values()];
+    return merged.filter(
+      (item) => !["action.execution.failed", "event.concurrently-modified"].includes(
+        item.code
+      ) && !this.collaborators.organizerDiagnosticPolicy.derivative(item, merged)
+    );
+  }
+  complete(input) {
+    return ATTENTION_STAGE_OWNERS.every((owner) => {
+      const stage = input[owner];
+      return stage.outcome === "success" && stage.reported && !stage.diagnostics.some(
+        (item) => this.collaborators.diagnosticPolicy.isTechnicalFailure(item) || item.code === "event.concurrently-modified"
+      );
+    });
+  }
+  organizerPrerequisite(item) {
+    if (item.code === "event.concurrently-modified") return true;
+    return this.collaborators.diagnosticPolicy.classify(item) === "organizer" && ![
+      "communication.approval-pending",
+      "communication.approval-rejected"
+    ].includes(item.code);
+  }
+  eventPrerequisite(code, owner, eventDiagnostics) {
+    if (owner === "event") return false;
+    return eventDiagnostics.some((item) => {
+      if (this.collaborators.diagnosticPolicy.classify(item) === "informational" || !/^(event|referential)\./.test(item.code))
+        return false;
+      return item.code === code || code === "communication.event-references-unresolved" || code === "communication.referential-catalog-invalid" && item.code.startsWith("referential.");
+    });
+  }
+};
 
 // packages/application/journey/src/result/diagnostic-policy.ts
 var ORGANIZER_CODES = /* @__PURE__ */ new Set([
@@ -30245,20 +33551,24 @@ var INFORMATIONAL_CODES = /* @__PURE__ */ new Set([
   "publication.feedback.unrelated",
   "issue-form.updated"
 ]);
-var DiagnosticPolicy = class _DiagnosticPolicy {
-  static classify(diagnostic) {
+var DiagnosticPolicy = class {
+  classify(diagnostic) {
     if (diagnostic.fixApplied === true || diagnostic.severity === "info" || INFORMATIONAL_CODES.has(diagnostic.code))
       return "informational";
     return ORGANIZER_CODES.has(diagnostic.code) ? "organizer" : "technical";
   }
-  static isTechnicalFailure(diagnostic) {
-    return _DiagnosticPolicy.classify(diagnostic) === "technical";
+  isTechnicalFailure(diagnostic) {
+    return this.classify(diagnostic) === "technical";
   }
 };
 
 // packages/application/journey/src/result/organizer-diagnostic-policy.ts
 var OrganizerDiagnosticPolicy = class _OrganizerDiagnosticPolicy {
-  static suppressed(item, diagnostics) {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  suppressed(item, diagnostics) {
     if (item.severity === "info" || item.fixApplied === true) return true;
     const causes = _OrganizerDiagnosticPolicy.PREREQUISITES.get(item.code);
     return causes?.some(
@@ -30289,7 +33599,7 @@ var OrganizerDiagnosticPolicy = class _OrganizerDiagnosticPolicy {
       ["publication.feedback.", "event.proposals.", "event.agenda."]
     ]
   ]);
-  static derivative(item, diagnostics) {
+  derivative(item, diagnostics) {
     const roots = {
       "communication.event-references-unresolved": /^(event\.(proposals\.|agenda\.|hoster\.|document\.reference-metadata\.)|referential\.)/,
       "communication.referential-catalog-invalid": /^referential\./,
@@ -30300,1569 +33610,168 @@ var OrganizerDiagnosticPolicy = class _OrganizerDiagnosticPolicy {
     };
     const root = roots[item.code];
     return root !== void 0 && diagnostics.some(
-      (candidate) => root.test(candidate.code) && DiagnosticPolicy.classify(candidate) !== "informational"
+      (candidate) => root.test(candidate.code) && this.collaborators.diagnosticPolicy.classify(candidate) !== "informational"
     );
   }
 };
 
-// packages/domain/referential/src/domain/proposal-source-error.ts
-var ProposalSourceError = class extends Error {
-  constructor(code, retryAfterSeconds, context3) {
-    super(`Proposal source ${code}.`);
-    this.code = code;
-    this.retryAfterSeconds = retryAfterSeconds;
-    this.context = context3;
-    this.name = "ProposalSourceError";
+// packages/application/journey/src/use-cases/asset-participant-projection.ts
+var AssetParticipantProjection = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
   }
-  code;
-  retryAfterSeconds;
-  context;
-};
-
-// packages/domain/referential/src/application/use-cases/project-referential-choices.ts
-var ProjectReferentialChoices = class {
-  execute(catalog) {
-    return Object.freeze({
-      hostOptions: Object.freeze(catalog.hosts.map((host) => host.displayName)),
-      speakerReferences: Object.freeze(
-        catalog.speakers.map(
-          (speaker) => catalog.speakers.filter(
-            (other) => other.displayName.toLowerCase() === speaker.displayName.toLowerCase()
-          ).length > 1 ? `${speaker.displayName} [${speaker.id}]` : speaker.displayName
-        )
+  collaborators;
+  create(event, catalog, assignments) {
+    const agendaIds = new Set(
+      event.agenda.flatMap(
+        (talk) => talk.speakers.map((speaker) => speaker.id)
       )
-    });
-  }
-};
-
-// packages/domain/referential/src/domain/identifiers.ts
-var HOST_ID_PATTERN = /^host-[0-9]{4}$/;
-var CONTACT_ID_PATTERN = /^contact-[0-9]{4}$/;
-var SPEAKER_ID_PATTERN = /^speaker-[0-9]{4}$/;
-var ReferentialIdentifiers = class {
-  static asHostId(value) {
-    return HOST_ID_PATTERN.test(value) ? value : void 0;
-  }
-  static asContactId(value) {
-    return CONTACT_ID_PATTERN.test(value) ? value : void 0;
-  }
-  static asSpeakerId(value) {
-    return SPEAKER_ID_PATTERN.test(value) ? value : void 0;
-  }
-};
-
-// packages/domain/referential/src/domain/referential-catalog.ts
-var ReferentialCatalogOperations = class _ReferentialCatalogOperations {
-  static normalizeDisplayName(value) {
-    return value.normalize("NFC").trim().replace(/\s+/g, " ");
-  }
-  static displayNameKey(value) {
-    return _ReferentialCatalogOperations.normalizeDisplayName(
-      value
-    ).toLowerCase();
-  }
-  static freezeCatalog(hosts, speakers) {
-    for (const host of hosts) {
-      for (const contact of host.contacts) {
-        Object.freeze(contact);
-      }
-      Object.freeze(host.contacts);
-      Object.freeze(host);
-    }
-    for (const speaker of speakers) {
-      Object.freeze(speaker);
-    }
-    return Object.freeze({
-      hosts: Object.freeze([...hosts]),
-      speakers: Object.freeze([...speakers])
-    });
-  }
-};
-
-// packages/domain/referential/src/domain/referential-diagnostic.ts
-var ReferentialDiagnostics = class {
-  static diagnostic(code, severity, path, message) {
-    return Object.freeze({ code, severity, path, message });
-  }
-  static freezeDiagnostics(diagnostics) {
-    return Object.freeze([...diagnostics]);
-  }
-};
-
-// packages/domain/referential/src/application/use-cases/resolve-event-references.ts
-var EXPLICIT_REFERENCE_PATTERN = /^(.*?)\s+\[([^\]]+)]\s*$/;
-var ResolveEventReferences = class {
-  execute(catalog, command) {
-    const diagnostics = [];
-    const host = this.resolveHost(
-      catalog.hosts,
-      command.hostReference,
-      diagnostics
     );
-    const speakers = command.speakerReferences.map(
-      (reference, index) => this.resolveSpeaker(catalog.speakers, reference, index, diagnostics)
-    ).filter((speaker) => speaker !== void 0);
-    const frozenDiagnostics = ReferentialDiagnostics.freezeDiagnostics(diagnostics);
-    if (!host || diagnostics.some(({ severity }) => severity === "error")) {
-      return Object.freeze({
-        resolved: false,
-        diagnostics: frozenDiagnostics
-      });
+    const speakers = {};
+    const pictures = {};
+    for (const [slot, id] of Object.entries(assignments.speakers)) {
+      const speaker = catalog.speakers.find((item) => item.id === id);
+      if (!speaker || !agendaIds.has(id)) continue;
+      speakers[slot] = speaker.displayName;
+      if (this.collaborators.publicAssetUrl.valid(speaker.pictureUrl)) {
+        pictures[slot] = {
+          speakerId: id,
+          url: speaker.pictureUrl,
+          description: speaker.displayName
+        };
+      }
     }
-    const uniqueSpeakers = [
-      ...new Map(speakers.map((speaker) => [speaker.id, speaker])).values()
-    ];
-    return Object.freeze({
-      resolved: true,
-      host,
-      speakers: Object.freeze(uniqueSpeakers),
-      diagnostics: frozenDiagnostics
-    });
-  }
-  resolveHost(hosts, reference, diagnostics) {
-    const parsed = this.parseReference(reference);
-    if (!parsed) {
-      diagnostics.push(
-        ReferentialDiagnostics.diagnostic(
-          "referential.reference.host.invalid",
-          "error",
-          "hostReference",
-          "Host reference must be a display name or use Display name [host-0001] syntax."
-        )
+    const talks = {};
+    for (const [slot, identity] of Object.entries(assignments.talks)) {
+      const matches = event.agenda.filter(
+        (talk2) => talk2.proposal?.id === identity.id && talk2.proposal.provider === identity.provider && talk2.proposal.event === identity.event
       );
-      return void 0;
-    }
-    if (parsed.stableId !== void 0) {
-      const id = ReferentialIdentifiers.asHostId(parsed.stableId);
-      if (!id) {
-        diagnostics.push(
-          ReferentialDiagnostics.diagnostic(
-            "referential.reference.host.invalid",
-            "error",
-            "hostReference",
-            "Explicit host reference contains an invalid stable identifier."
-          )
-        );
-        return void 0;
-      }
-      const host = hosts.find((candidate) => candidate.id === id);
-      if (!host) {
-        diagnostics.push(
-          ReferentialDiagnostics.diagnostic(
-            "referential.reference.host.unknown",
-            "error",
-            "hostReference",
-            "Explicit host stable identifier is not present in the catalog."
-          )
-        );
-        return void 0;
-      }
-      if (ReferentialCatalogOperations.displayNameKey(host.displayName) !== ReferentialCatalogOperations.displayNameKey(parsed.displayName)) {
-        diagnostics.push(
-          ReferentialDiagnostics.diagnostic(
-            "referential.reference.host.display-name-mismatch",
-            "warning",
-            "hostReference",
-            "Host display name is stale; the stable identifier remains authoritative."
-          )
-        );
-      }
-      return host;
-    }
-    return this.hostByName(hosts, parsed, diagnostics);
-  }
-  resolveSpeaker(speakers, reference, index, diagnostics) {
-    const path = `speakerReferences[${index}]`;
-    const parsed = this.parseReference(reference);
-    if (!parsed) {
-      diagnostics.push(
-        ReferentialDiagnostics.diagnostic(
-          "referential.reference.speaker.invalid",
-          "error",
-          path,
-          "Speaker reference must be a display name or use Display name [speaker-0001] syntax."
-        )
-      );
-      return void 0;
-    }
-    if (parsed.stableId !== void 0) {
-      const id = ReferentialIdentifiers.asSpeakerId(parsed.stableId);
-      if (!id) {
-        diagnostics.push(
-          ReferentialDiagnostics.diagnostic(
-            "referential.reference.speaker.invalid",
-            "error",
-            path,
-            "Explicit speaker reference contains an invalid stable identifier."
-          )
-        );
-        return void 0;
-      }
-      const speaker = speakers.find((candidate) => candidate.id === id);
-      if (!speaker) {
-        diagnostics.push(
-          ReferentialDiagnostics.diagnostic(
-            "referential.reference.speaker.unknown",
-            "error",
-            path,
-            "Explicit speaker stable identifier is not present in the catalog."
-          )
-        );
-        return void 0;
-      }
-      if (ReferentialCatalogOperations.displayNameKey(speaker.displayName) !== ReferentialCatalogOperations.displayNameKey(parsed.displayName)) {
-        diagnostics.push(
-          ReferentialDiagnostics.diagnostic(
-            "referential.reference.speaker.display-name-mismatch",
-            "warning",
-            path,
-            "Speaker display name is stale; the stable identifier remains authoritative."
-          )
-        );
-      }
-      return speaker;
-    }
-    return this.speakerByName(speakers, parsed, path, diagnostics);
-  }
-  parseReference(reference) {
-    if (typeof reference !== "string") {
-      return void 0;
-    }
-    const normalized = ReferentialCatalogOperations.normalizeDisplayName(reference);
-    if (!normalized) {
-      return void 0;
-    }
-    const explicit = normalized.match(EXPLICIT_REFERENCE_PATTERN);
-    if (!explicit) {
-      return { displayName: normalized };
-    }
-    const displayName = ReferentialCatalogOperations.normalizeDisplayName(
-      explicit[1]
-    );
-    const stableId = explicit[2].trim();
-    if (!displayName || !stableId) {
-      return void 0;
-    }
-    return { displayName, stableId };
-  }
-  hostByName(hosts, parsed, diagnostics) {
-    const matches = hosts.filter(
-      (host) => ReferentialCatalogOperations.displayNameKey(host.displayName) === ReferentialCatalogOperations.displayNameKey(parsed.displayName)
-    );
-    if (matches.length === 1) {
-      return matches[0];
-    }
-    diagnostics.push(
-      ReferentialDiagnostics.diagnostic(
-        matches.length === 0 ? "referential.reference.host.unknown" : "referential.reference.host.ambiguous",
-        "error",
-        "hostReference",
-        matches.length === 0 ? "Legacy host display name is not present in the catalog." : "Legacy host display name is ambiguous; include the stable identifier."
-      )
-    );
-    return void 0;
-  }
-  speakerByName(speakers, parsed, path, diagnostics) {
-    const matches = speakers.filter(
-      (speaker) => ReferentialCatalogOperations.displayNameKey(speaker.displayName) === ReferentialCatalogOperations.displayNameKey(parsed.displayName)
-    );
-    if (matches.length === 1) {
-      return matches[0];
-    }
-    diagnostics.push(
-      ReferentialDiagnostics.diagnostic(
-        matches.length === 0 ? "referential.reference.speaker.unknown" : "referential.reference.speaker.ambiguous",
-        "error",
-        path,
-        matches.length === 0 ? "Legacy speaker display name is not present in the catalog." : "Legacy speaker display name is ambiguous; include the stable identifier."
-      )
-    );
-    return void 0;
-  }
-};
-
-// packages/domain/referential/src/application/use-cases/source-speaker-referential-repository.ts
-var SourceSpeakerReferentialRepository = class {
-  constructor(local, source, scope) {
-    this.local = local;
-    this.source = source;
-    this.scope = scope;
-  }
-  local;
-  source;
-  scope;
-  snapshot;
-  load() {
-    this.snapshot ??= this.refresh();
-    return this.snapshot;
-  }
-  async refresh() {
-    const catalog = await this.local.load();
-    if (!catalog.speakers.some((row) => this.isLinked(row))) return catalog;
-    const snapshot = await this.loadSource();
-    const profiles = new Map(
-      snapshot.speakers.map((speaker) => [speaker.id, speaker])
-    );
-    if (profiles.size !== snapshot.speakers.length)
-      throw new ProposalSourceError("conflict");
-    const speakers = catalog.speakers.map((row) => {
-      if (!this.isLinked(row)) return row;
-      const speaker = typeof row.sourceSpeakerId === "string" ? profiles.get(row.sourceSpeakerId.trim()) : void 0;
-      if (!speaker) throw new ProposalSourceError("mapping-required");
-      return {
-        ...row,
-        displayName: speaker.displayName,
-        email: speaker.email,
-        company: speaker.company ?? "",
-        pictureUrl: speaker.pictureUrl ?? ""
+      if (matches.length !== 1) continue;
+      const talk = matches[0];
+      if (!talk.proposal) continue;
+      talks[slot] = {
+        title: talk.proposal.title,
+        abstract: talk.proposal?.abstract,
+        speakers: talk.speakers.map((speaker) => speaker.displayName)
       };
-    });
-    return { ...catalog, speakers };
-  }
-  isLinked(row) {
-    return typeof row.sourceProvider === "string" && row.sourceProvider.trim() === this.scope.provider && typeof row.sourceEvent === "string" && row.sourceEvent.trim() === this.scope.event;
-  }
-  async loadSource() {
-    try {
-      const snapshot = await this.source.load();
-      if (snapshot.provider !== this.scope.provider || snapshot.event !== this.scope.event)
-        throw new ProposalSourceError("invalid");
-      return snapshot;
-    } catch (error2) {
-      throw error2 instanceof ProposalSourceError ? error2 : new ProposalSourceError("unavailable");
     }
+    return { speakers, pictures, talks };
   }
 };
 
-// packages/domain/referential/src/application/use-cases/validate-referential-catalog-contracts.ts
-var EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-// packages/domain/referential/src/application/use-cases/referential-record-fields.ts
-var ReferentialRecordFields = class {
-  static requiredText(value, code, path, message, diagnostics) {
-    if (typeof value !== "string") {
-      diagnostics.push(
-        ReferentialDiagnostics.diagnostic(code, "error", path, message)
-      );
-      return void 0;
-    }
-    const normalized = ReferentialCatalogOperations.normalizeDisplayName(value);
-    if (!normalized) {
-      diagnostics.push(
-        ReferentialDiagnostics.diagnostic(code, "error", path, message)
-      );
-      return void 0;
-    }
-    return normalized;
-  }
-  static optionalText(value, code, path, message, diagnostics) {
-    if (value === void 0 || value === null || value === "") {
-      return void 0;
-    }
-    if (typeof value !== "string") {
-      diagnostics.push(
-        ReferentialDiagnostics.diagnostic(code, "error", path, message)
-      );
-      return null;
-    }
-    return value.normalize("NFC").trim() || void 0;
-  }
-  static email(value, code, path, message, diagnostics) {
-    if (typeof value !== "string") {
-      diagnostics.push(
-        ReferentialDiagnostics.diagnostic(code, "error", path, message)
-      );
-      return void 0;
-    }
-    const normalized = value.normalize("NFC").trim().toLowerCase();
-    if (!EMAIL_PATTERN.test(normalized)) {
-      diagnostics.push(
-        ReferentialDiagnostics.diagnostic(code, "error", path, message)
-      );
-      return void 0;
-    }
-    return normalized;
-  }
-};
-
-// packages/domain/referential/src/application/use-cases/host-catalog-validator.ts
-var HostCatalogValidator = class _HostCatalogValidator {
-  static validateHosts(records, diagnostics) {
-    const hostsById = /* @__PURE__ */ new Map();
-    const contactIds = /* @__PURE__ */ new Set();
-    for (const [index, record] of records.entries()) {
-      const parsed = _HostCatalogValidator.parseHostRecord(
-        record,
-        index,
-        diagnostics
-      );
-      if (!parsed) {
-        continue;
-      }
-      if (contactIds.has(parsed.contact.id)) {
-        diagnostics.push(
-          ReferentialDiagnostics.diagnostic(
-            "referential.contact.id.duplicate",
-            "error",
-            `hosts[${index}].contactId`,
-            "Contact stable identifiers must be unique."
-          )
-        );
-        continue;
-      }
-      contactIds.add(parsed.contact.id);
-      const host = hostsById.get(parsed.hostId);
-      if (!host) {
-        hostsById.set(parsed.hostId, {
-          ...record.source ? { source: Object.freeze({ ...record.source }) } : {},
-          id: parsed.hostId,
-          displayName: parsed.displayName,
-          contacts: [parsed.contact]
-        });
-        continue;
-      }
-      if (host.displayName !== parsed.displayName) {
-        diagnostics.push(
-          ReferentialDiagnostics.diagnostic(
-            "referential.host.id.conflict",
-            "error",
-            `hosts[${index}].hostId`,
-            "A host stable identifier cannot describe different host names."
-          )
-        );
-        continue;
-      }
-      host.contacts.push(parsed.contact);
-    }
-    return [...hostsById.values()].map((host) => ({
-      ...host.source ? { source: host.source } : {},
-      id: host.id,
-      displayName: host.displayName,
-      contacts: host.contacts
-    }));
-  }
-  static parseHostRecord(record, index, diagnostics) {
-    const hostId = _HostCatalogValidator.hostId(record, index, diagnostics);
-    const displayName = ReferentialRecordFields.requiredText(
-      record.displayName,
-      "referential.host.display-name.invalid",
-      `hosts[${index}].displayName`,
-      "Host display name must be a non-empty string.",
-      diagnostics
-    );
-    const contactId = _HostCatalogValidator.contactId(
-      record,
-      index,
-      diagnostics
-    );
-    const contactName = ReferentialRecordFields.requiredText(
-      record.contactName,
-      "referential.contact.name.invalid",
-      `hosts[${index}].contactName`,
-      "Contact name must be a non-empty string.",
-      diagnostics
-    );
-    const email = ReferentialRecordFields.email(
-      record.email,
-      "referential.contact.email.invalid",
-      `hosts[${index}].email`,
-      "Host contact email address is invalid.",
-      diagnostics
-    );
-    const phone = ReferentialRecordFields.optionalText(
-      record.phone,
-      "referential.contact.phone.invalid",
-      `hosts[${index}].phone`,
-      "Host contact phone must be a string when provided.",
-      diagnostics
-    );
-    const address = ReferentialRecordFields.requiredText(
-      record.address,
-      "referential.contact.address.invalid",
-      `hosts[${index}].address`,
-      "Host contact address must be a non-empty string.",
-      diagnostics
-    );
-    if (!hostId || !displayName || !contactId || !contactName || !email || address === void 0 || phone === null) {
-      return void 0;
-    }
-    return {
-      hostId,
-      displayName,
-      contact: {
-        id: contactId,
-        name: contactName,
-        email,
-        ...phone ? { phone } : {},
-        address
-      }
-    };
-  }
-  static hostId(record, index, diagnostics) {
-    const hostIdValue = ReferentialRecordFields.requiredText(
-      record.hostId,
-      "referential.host.id.invalid",
-      `hosts[${index}].hostId`,
-      "Host stable identifier must be a non-empty string.",
-      diagnostics
-    );
-    const hostId = hostIdValue ? ReferentialIdentifiers.asHostId(hostIdValue) : void 0;
-    if (hostIdValue && !hostId) {
-      diagnostics.push(
-        ReferentialDiagnostics.diagnostic(
-          "referential.host.id.invalid",
-          "error",
-          `hosts[${index}].hostId`,
-          "Host stable identifier must use the opaque host-0001 format."
-        )
-      );
-    }
-    return hostId;
-  }
-  static contactId(record, index, diagnostics) {
-    const contactIdValue = ReferentialRecordFields.requiredText(
-      record.contactId,
-      "referential.contact.id.invalid",
-      `hosts[${index}].contactId`,
-      "Contact stable identifier must be a non-empty string.",
-      diagnostics
-    );
-    const contactId = contactIdValue ? ReferentialIdentifiers.asContactId(contactIdValue) : void 0;
-    if (contactIdValue && !contactId) {
-      diagnostics.push(
-        ReferentialDiagnostics.diagnostic(
-          "referential.contact.id.invalid",
-          "error",
-          `hosts[${index}].contactId`,
-          "Contact stable identifier must use the opaque contact-0001 format."
-        )
-      );
-    }
-    return contactId;
-  }
-};
-
-// packages/domain/referential/src/application/use-cases/speaker-source-fields.ts
-var SpeakerSourceFields = class _SpeakerSourceFields {
-  static read(record, index, diagnostics) {
-    const values = [
-      record.sourceProvider,
-      record.sourceEvent,
-      record.sourceSpeakerId
-    ];
-    const hasMapping = values.some(
-      (value) => value !== void 0 && value !== ""
-    );
-    if (hasMapping && !values.every(
-      (value) => typeof value === "string" && /^[a-zA-Z0-9_-]{1,200}$/.test(value)
-    )) {
-      _SpeakerSourceFields.invalid(index, diagnostics);
-      return {};
-    }
-    return {
-      ...hasMapping ? {
-        sourceIdentity: {
-          provider: String(record.sourceProvider),
-          event: String(record.sourceEvent),
-          speakerId: String(record.sourceSpeakerId)
-        }
-      } : {},
-      ..._SpeakerSourceFields.pictureUrl(record.pictureUrl) ? { pictureUrl: String(record.pictureUrl) } : {}
-    };
-  }
-  static pictureUrl(value) {
-    if (typeof value !== "string" || value.length > 2048) return void 0;
-    try {
-      const url = new URL(value);
-      return url.protocol === "https:" && !url.username && !url.password ? url.href : void 0;
-    } catch {
-      return void 0;
-    }
-  }
-  static validateMappings(speakers, diagnostics) {
-    const identities = [];
-    for (const [index, speaker] of speakers.entries()) {
-      const identity = speaker.sourceIdentity;
-      if (!identity) continue;
-      if (identities.some(
-        (existing) => existing.provider === identity.provider && existing.event === identity.event && existing.speakerId === identity.speakerId
-      ))
-        _SpeakerSourceFields.invalid(index, diagnostics);
-      identities.push(identity);
-    }
-  }
-  static invalid(index, diagnostics) {
-    diagnostics.push({
-      code: "referential.speaker.mapping.invalid",
-      severity: "error",
-      path: `speakers[${index}].sourceIdentity`,
-      message: "Source mappings must be complete, scoped and unique."
-    });
-  }
-};
-
-// packages/domain/referential/src/application/use-cases/speaker-catalog-validator.ts
-var SpeakerCatalogValidator = class _SpeakerCatalogValidator {
-  static validateSpeakers(records, diagnostics) {
-    const speakers = [];
-    const speakerIds = /* @__PURE__ */ new Set();
-    for (const [index, record] of records.entries()) {
-      const speakerId = _SpeakerCatalogValidator.speakerId(
-        record,
-        index,
-        diagnostics
-      );
-      const { firstName, lastName, company, email, phone, displayName } = _SpeakerCatalogValidator.contactFields(record, index, diagnostics);
-      if (!speakerId || !displayName || firstName === null || lastName === null || company === null || !email || phone === null) {
-        continue;
-      }
-      if (speakerIds.has(speakerId)) {
-        diagnostics.push(
-          ReferentialDiagnostics.diagnostic(
-            "referential.speaker.id.duplicate",
-            "error",
-            `speakers[${index}].speakerId`,
-            "Speaker stable identifiers must be unique."
-          )
-        );
-        continue;
-      }
-      speakerIds.add(speakerId);
-      speakers.push({
-        ...record.source ? { source: Object.freeze({ ...record.source }) } : {},
-        id: speakerId,
-        firstName: firstName ?? "",
-        lastName: lastName ?? "",
-        displayName,
-        company: company ?? "",
-        ...SpeakerSourceFields.read(record, index, diagnostics),
-        email,
-        ...phone ? { phone } : {}
-      });
-    }
-    return speakers;
-  }
-  static speakerId(record, index, diagnostics) {
-    const speakerIdValue = ReferentialRecordFields.requiredText(
-      record.speakerId,
-      "referential.speaker.id.invalid",
-      `speakers[${index}].speakerId`,
-      "Speaker stable identifier must be a non-empty string.",
-      diagnostics
-    );
-    const speakerId = speakerIdValue ? ReferentialIdentifiers.asSpeakerId(speakerIdValue) : void 0;
-    if (speakerIdValue && !speakerId) {
-      diagnostics.push(
-        ReferentialDiagnostics.diagnostic(
-          "referential.speaker.id.invalid",
-          "error",
-          `speakers[${index}].speakerId`,
-          "Speaker stable identifier must use the speaker-* slug format."
-        )
-      );
-    }
-    return speakerId;
-  }
-  static contactFields(record, index, diagnostics) {
-    const firstName = ReferentialRecordFields.optionalText(
-      record.firstName,
-      "referential.speaker.first-name.invalid",
-      `speakers[${index}].firstName`,
-      "Speaker first name must be a non-empty string.",
-      diagnostics
-    );
-    const lastName = ReferentialRecordFields.optionalText(
-      record.lastName,
-      "referential.speaker.last-name.invalid",
-      `speakers[${index}].lastName`,
-      "Speaker last name must be a non-empty string.",
-      diagnostics
-    );
-    const company = ReferentialRecordFields.optionalText(
-      record.company,
-      "referential.speaker.company.invalid",
-      `speakers[${index}].company`,
-      "Speaker company must be a non-empty string.",
-      diagnostics
-    );
-    const email = ReferentialRecordFields.email(
-      record.email,
-      "referential.speaker.email.invalid",
-      `speakers[${index}].email`,
-      "Speaker email address is invalid.",
-      diagnostics
-    );
-    const phone = ReferentialRecordFields.optionalText(
-      record.phone,
-      "referential.speaker.phone.invalid",
-      `speakers[${index}].phone`,
-      "Speaker phone must be a string when provided.",
-      diagnostics
-    );
-    const displayName = ReferentialRecordFields.requiredText(
-      record.displayName || (firstName && lastName ? `${firstName} ${lastName}` : ""),
-      "referential.speaker.display-name.invalid",
-      `speakers[${index}].displayName`,
-      "A display name or both structured names are required.",
-      diagnostics
-    );
-    return { firstName, lastName, company, email, phone, displayName };
-  }
-};
-
-// packages/domain/referential/src/application/use-cases/validate-referential-catalog.ts
-var ValidateReferentialCatalog = class {
-  constructor(repository) {
-    this.repository = repository;
-  }
-  repository;
-  async execute(rawCatalog) {
-    try {
-      return this.validate(rawCatalog ?? await this.loadCatalog());
-    } catch (error2) {
-      if (!(error2 instanceof ProposalSourceError)) throw error2;
-      return Object.freeze({
-        isValid: false,
-        diagnostics: ReferentialDiagnostics.freezeDiagnostics([
-          ReferentialDiagnostics.diagnostic(
-            `referential.source.${error2.code}`,
-            "error",
-            "speakers",
-            "Source-owned speaker profiles could not be refreshed. Check source access and identity mappings before retrying."
-          )
-        ])
-      });
-    }
-  }
-  validate(input) {
-    const diagnostics = [];
-    const hosts = HostCatalogValidator.validateHosts(input.hosts, diagnostics);
-    const speakers = SpeakerCatalogValidator.validateSpeakers(
-      input.speakers,
-      diagnostics
-    );
-    this.reportDuplicateDisplayNames(
-      hosts,
-      "referential.host.display-name.duplicate",
-      "hosts",
-      "Duplicate normalized host display names are not allowed; keep one stable host per public name.",
-      diagnostics
-    );
-    SpeakerSourceFields.validateMappings(speakers, diagnostics);
-    const frozenDiagnostics = ReferentialDiagnostics.freezeDiagnostics(diagnostics);
-    if (diagnostics.some(({ severity }) => severity === "error")) {
-      return Object.freeze({
-        isValid: false,
-        diagnostics: frozenDiagnostics
-      });
-    }
-    return Object.freeze({
-      isValid: true,
-      catalog: ReferentialCatalogOperations.freezeCatalog(hosts, speakers),
-      diagnostics: frozenDiagnostics
-    });
-  }
-  async loadCatalog() {
-    if (!this.repository) {
-      throw new Error(
-        "A referential repository or an explicit raw catalog is required."
-      );
-    }
-    return this.repository.load();
-  }
-  reportDuplicateDisplayNames(entities, code, path, message, diagnostics) {
-    const counts = /* @__PURE__ */ new Map();
-    for (const entity of entities) {
-      const key = ReferentialCatalogOperations.displayNameKey(
-        entity.displayName
-      );
-      counts.set(key, (counts.get(key) ?? 0) + 1);
-    }
-    let ambiguityIndex = 0;
-    for (const count of counts.values()) {
-      if (count < 2) {
-        continue;
-      }
-      diagnostics.push(
-        ReferentialDiagnostics.diagnostic(
-          code,
-          "error",
-          `${path}.ambiguities[${ambiguityIndex}]`,
-          message
-        )
-      );
-      ambiguityIndex += 1;
-    }
-  }
-};
-
-// packages/domain/referential/src/domain/source-speaker-equality.ts
-var SourceSpeakerEquality = class {
-  static equal(left, right) {
-    return left.id === right.id && left.displayName === right.displayName && left.email === right.email && left.company === right.company && left.pictureUrl === right.pictureUrl;
-  }
-};
-
-// packages/application/journey/src/config/configured-publication-policies.ts
-var ConfiguredPublicationPolicies = class {
-  static create(publication) {
-    return PublicationUrlPolicies.createDefaultPublicationUrlPolicies({
-      ...DEFAULT_PUBLICATION_URL_CONFIGURATION,
-      meetupEventUrlPrefix: publication["meetup-event-url-prefix"],
-      communityEventUrlPrefixes: [
-        publication["cncf-event-url-prefix"],
-        ...DEFAULT_PUBLICATION_URL_CONFIGURATION.communityEventUrlPrefixes.slice(
-          1
-        )
-      ]
-    });
-  }
-};
-
-// packages/domain/communication/src/communication-calendar.ts
-var CommunicationCalendar = class {
-  static parseIsoLocalDate(value) {
-    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-    if (!match) {
-      return void 0;
-    }
-    const year = Number(match[1]);
-    const month = Number(match[2]);
-    const day = Number(match[3]);
-    const candidate = new Date(Date.UTC(year, month - 1, day));
-    if (candidate.getUTCFullYear() !== year || candidate.getUTCMonth() !== month - 1 || candidate.getUTCDate() !== day) {
-      return void 0;
-    }
-    return { year, month, day };
-  }
-  static getLocalDate(instant, timeZone) {
-    try {
-      const parts = new Intl.DateTimeFormat("en-US", {
-        timeZone,
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit"
-      }).formatToParts(instant);
-      const values = new Map(parts.map((part) => [part.type, part.value]));
-      const year = Number(values.get("year"));
-      const month = Number(values.get("month"));
-      const day = Number(values.get("day"));
-      if (![year, month, day].every(Number.isInteger)) {
-        return void 0;
-      }
-      return { year, month, day };
-    } catch {
-      return void 0;
-    }
-  }
-  static toEpochDay(date) {
-    return Math.floor(
-      Date.UTC(date.year, date.month - 1, date.day) / 864e5
-    );
-  }
-  static isValidInstant(value) {
-    return value instanceof Date && Number.isFinite(value.getTime());
-  }
-};
-
-// packages/domain/communication/src/attention/attention-state-rules.ts
-var AttentionStateRules = class {
-  static validate(state) {
-    if (new Set(state.episodes.map((item) => item.condition.key)).size !== state.episodes.length)
-      throw new Error("Duplicate attention condition");
-    for (const episode of state.episodes)
-      if (episode.condition.key !== `${episode.condition.code}:${episode.condition.resource}`)
-        throw new Error("Invalid attention resource");
-    const post = state.post;
-    if (!post) return;
-    if (post.status === "accepted" && !post.message)
-      throw new Error("Missing accepted attention reference");
-    if (post.status !== "accepted" && (post.message !== void 0 || post.fingerprint !== void 0))
-      throw new Error(
-        "Unconfirmed attention reservation has delivery authority"
-      );
-    if (post.status !== "retry" && post.retryAt !== void 0)
-      throw new Error("Unexpected attention retry");
-  }
-};
-
-// packages/domain/communication/src/post-event-policy.ts
-var PostEventPolicy = class {
-  static isDue(input) {
-    if (!["scheduled", "held"].includes(input.occurrenceStatus)) return false;
-    if (!CommunicationCalendar.isValidInstant(input.now)) return false;
-    const event = CommunicationCalendar.parseIsoLocalDate(input.eventDate);
-    const today = CommunicationCalendar.getLocalDate(input.now, input.timeZone);
-    if (!event || !today) return false;
-    return input.occurrenceStatus === "held" || CommunicationCalendar.toEpochDay(today) > CommunicationCalendar.toEpochDay(event);
-  }
-};
-
-// packages/domain/communication/src/attention/model.ts
-var ATTENTION_CODES = [
-  "missing-date",
-  "required-data",
-  "host-confirmation",
-  "speaker-confirmation",
-  "manual-publication",
-  "approval-pending",
-  "integration-failure",
-  "delivery-recovery",
-  "occurrence-decision",
-  "follow-up",
-  "stage-unknown"
+// packages/application/journey/src/ports/organizer-follow-up.ts
+var FOLLOW_UP_TASKS = [
+  "thank-host",
+  "thank-speakers",
+  "share-slides",
+  "import-attendance",
+  "share-social"
 ];
 
-// packages/domain/communication/src/idempotency.ts
-var SAFE_IDENTIFIER_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$/;
-var CommunicationIdempotency = class _CommunicationIdempotency {
-  static isSafeCommunicationIdentifier(value) {
-    return SAFE_IDENTIFIER_PATTERN.test(value);
+// packages/application/journey/src/use-cases/attention-event-facts.ts
+var AttentionEventFacts = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
   }
-  static createCommunicationIdempotencyKey(components) {
-    const values = [
-      components.repositoryId,
-      components.eventId,
-      components.recipientId,
-      components.policyVersion
+  collaborators;
+  create(decoded, config) {
+    const evaluated = this.collaborators.createEventRuleEngine(
+      this.collaborators.eventRuleFactory.createDefaultEventRules()
+    ).evaluate(decoded.event);
+    const publication = this.collaborators.eventPublicationEvaluation.evaluatePublication(
+      evaluated.event,
+      config
+    );
+    const event = publication.event;
+    const diagnostics = [
+      ...decoded.diagnostics,
+      ...evaluated.diagnostics,
+      ...publication.diagnostics
     ];
-    if (!values.every(_CommunicationIdempotency.isSafeCommunicationIdentifier)) {
-      throw new Error(
-        "Communication identifiers must be stable, opaque, and PII-free"
-      );
-    }
-    return [
-      "meetup-communication:v1",
-      `repository=${encodeURIComponent(components.repositoryId)}`,
-      `event=${encodeURIComponent(components.eventId)}`,
-      `kind=${components.kind}`,
-      `recipient=${encodeURIComponent(components.recipientId)}`,
-      `policy=${encodeURIComponent(components.policyVersion)}`
-    ].join("|");
-  }
-};
-
-// packages/domain/communication/src/mail-batch-fingerprint.ts
-import { createHash } from "node:crypto";
-var MailBatchFingerprint = class {
-  static create(eventDate, timeZone, intents) {
-    const messages5 = intents.map((intent) => ({
-      id: intent.idempotencyKey,
-      destination: intent.recipient.email,
-      template: intent.templateName,
-      placeholders: Object.entries(intent.placeholders).sort(([a], [b2]) => a.localeCompare(b2)).map(([key, value]) => [
-        key,
-        typeof value === "string" ? value : value.map(({ title, url }) => ({ title, url }))
-      ])
-    })).sort((a, b2) => a.id.localeCompare(b2.id));
-    return createHash("sha256").update(JSON.stringify({ eventDate, timeZone, messages: messages5 })).digest("hex");
-  }
-};
-
-// packages/domain/communication/src/model.ts
-var MAIL_TEMPLATE_NAMES = {
-  hostIntroduction: "meetup-intro-hosting",
-  speakerIntroduction: "meetup-intro-speakers",
-  hostThanks: "meetup-thanks-hosting",
-  speakerThanks: "meetup-thanks-speakers"
-};
-
-// packages/domain/communication/src/plan-communications-contracts.ts
-var MAIL_POLICIES = {
-  introduction: {
-    hosting: {
-      kind: "host-introduction",
-      templateName: MAIL_TEMPLATE_NAMES.hostIntroduction
-    },
-    speaker: {
-      kind: "speaker-introduction",
-      templateName: MAIL_TEMPLATE_NAMES.speakerIntroduction
-    }
-  },
-  thanks: {
-    hosting: {
-      kind: "host-thanks",
-      templateName: MAIL_TEMPLATE_NAMES.hostThanks
-    },
-    speaker: {
-      kind: "speaker-thanks",
-      templateName: MAIL_TEMPLATE_NAMES.speakerThanks
-    }
-  }
-};
-
-// packages/domain/communication/src/communication-planner.ts
-var CommunicationPlanner = class _CommunicationPlanner {
-  static planMailMessages(input, policyName, intents, diagnostics) {
-    for (const recipient of input.mailRecipients) {
-      if (!recipient.receivesCommunications) {
-        continue;
-      }
-      if (!CommunicationIdempotency.isSafeCommunicationIdentifier(
-        recipient.recipientId
-      )) {
-        diagnostics.push(
-          _CommunicationPlanner.errorDiagnostic("invalid-identifier")
-        );
-        continue;
-      }
-      if (recipient.email.trim().length === 0) {
-        diagnostics.push(
-          _CommunicationPlanner.errorDiagnostic("missing-mail-destination")
-        );
-        continue;
-      }
-      const policy = MAIL_POLICIES[policyName][recipient.role];
-      const base = _CommunicationPlanner.createIntentBase(
-        input,
-        policy.kind,
-        recipient.recipientId
-      );
-      const intent = {
-        ...base,
-        channel: "mail",
-        recipient: _CommunicationPlanner.cloneMailRecipient(recipient),
-        templateName: policy.templateName,
-        placeholders: {
-          ...input.mailPlaceholders ?? {},
-          ...recipient.placeholders ?? {}
-        }
-      };
-      intents.push(intent);
-    }
-  }
-  static createIntentBase(input, kind, recipientId) {
-    const idempotencyKey = CommunicationIdempotency.createCommunicationIdempotencyKey({
-      repositoryId: input.repositoryId,
-      eventId: input.eventId,
-      kind,
-      recipientId,
-      policyVersion: input.policyVersion
-    });
-    return {
-      intentId: idempotencyKey,
-      idempotencyKey,
-      repositoryId: input.repositoryId,
-      eventId: input.eventId,
-      policyVersion: input.policyVersion,
-      kind,
-      recipientId
-    };
-  }
-  static cloneMailRecipient(recipient) {
-    return {
-      ...recipient,
-      ...recipient.placeholders ? { placeholders: { ...recipient.placeholders } } : {}
-    };
-  }
-  static deduplicateIntents(intents, diagnostics) {
-    const uniqueIntents = /* @__PURE__ */ new Map();
-    for (const intent of intents) {
-      if (uniqueIntents.has(intent.idempotencyKey)) {
-        diagnostics.push({
-          ..._CommunicationPlanner.warningDiagnostic("duplicate-intent"),
-          intentId: intent.intentId
-        });
-        continue;
-      }
-      uniqueIntents.set(intent.idempotencyKey, intent);
-    }
-    return {
-      intents: [...uniqueIntents.values()],
-      diagnostics
-    };
-  }
-  static hasValidBaseIdentifiers(input) {
-    return [input.repositoryId, input.eventId, input.policyVersion].every(
-      CommunicationIdempotency.isSafeCommunicationIdentifier
+    const tasks = this.collaborators.eventPublicationEvaluation.planEventManualPublicationTasks(
+      event
     );
-  }
-  static errorDiagnostic(code) {
-    return { code, severity: "error" };
-  }
-  static warningDiagnostic(code) {
-    return { code, severity: "warning" };
-  }
-};
-
-// packages/domain/communication/src/plan-communications.ts
-var PlanCommunications = class {
-  execute(input) {
-    const diagnostics = [];
-    if (!CommunicationPlanner.hasValidBaseIdentifiers(input)) {
-      return {
-        intents: [],
-        diagnostics: [
-          CommunicationPlanner.errorDiagnostic("invalid-identifier")
-        ]
-      };
-    }
-    if (!CommunicationCalendar.isValidInstant(input.now)) {
-      return {
-        intents: [],
-        diagnostics: [CommunicationPlanner.errorDiagnostic("invalid-clock")]
-      };
-    }
-    if (input.occurrenceStatus === "cancelled" || input.occurrenceStatus === "postponed") {
-      return { intents: [], diagnostics };
-    }
-    if (input.occurrenceStatus === "unknown") {
-      return {
-        intents: [],
-        diagnostics: [
-          CommunicationPlanner.warningDiagnostic("occurrence-status-unknown")
-        ]
-      };
-    }
-    const eventDate = CommunicationCalendar.parseIsoLocalDate(input.eventDate);
-    if (!eventDate) {
-      return {
-        intents: [],
-        diagnostics: [
-          CommunicationPlanner.errorDiagnostic("invalid-event-date")
-        ]
-      };
-    }
-    const currentDate = CommunicationCalendar.getLocalDate(
-      input.now,
-      input.timeZone
-    );
-    if (!currentDate) {
-      return {
-        intents: [],
-        diagnostics: [
-          CommunicationPlanner.errorDiagnostic("invalid-time-zone")
-        ]
-      };
-    }
-    return this.planDue(input, diagnostics);
-  }
-  planDue(input, diagnostics) {
-    const intents = [];
-    if (PostEventPolicy.isDue(input)) {
-      CommunicationPlanner.planMailMessages(
-        input,
-        "thanks",
-        intents,
-        diagnostics
-      );
-      return CommunicationPlanner.deduplicateIntents(intents, diagnostics);
-    }
-    if (input.readiness === "ready") {
-      CommunicationPlanner.planMailMessages(
-        input,
-        "introduction",
-        intents,
-        diagnostics
-      );
-      return CommunicationPlanner.deduplicateIntents(intents, diagnostics);
-    }
-    return { intents, diagnostics };
-  }
-};
-
-// packages/domain/communication/src/communication-results.ts
-var CommunicationResults = class _CommunicationResults {
-  static recordExisting(intentId, entry, counts, diagnostics) {
-    counts.alreadyRecorded += 1;
-    diagnostics.push({
-      code: "delivery-already-recorded",
-      severity: "info",
-      intentId,
-      deliveryStatus: entry.status
-    });
-  }
-  static result(mode, intents, counts, diagnostics, acceptedIds) {
     return {
-      mode,
-      intentIds: intents.map((intent) => intent.intentId),
-      completedMailKinds: _CommunicationResults.completedMailKinds(
-        intents,
-        acceptedIds
+      eventDate: this.collaborators.attentionPolicy.eventDay(event.date) === void 0 ? "" : event.date,
+      closed: event.issueState === "closed",
+      occurrence: event.occurrenceStatus ?? "scheduled",
+      requiredDataMissing: diagnostics.some(
+        (item) => item.category === "invalid" || item.category === "incomplete"
       ),
-      counts: { ...counts },
-      diagnostics: [...diagnostics]
+      hostConfirmed: event.confirmations.host,
+      speakersConfirmed: event.confirmations.speakers,
+      publicationPending: [
+        ...tasks.filter(
+          (task) => task.status === "pending" && !["publish-slides", "import-attendance"].includes(task.kind)
+        ).map((task) => task.kind),
+        ...this.announcements(event.operationalChecklists.communication)
+      ],
+      followUpPending: this.followUp(event)
     };
   }
-  static completedMailKinds(intents, acceptedIds) {
-    const groups = /* @__PURE__ */ new Map();
-    for (const intent of intents) {
-      if (intent.channel !== "mail") continue;
-      groups.set(
-        intent.kind,
-        (groups.get(intent.kind) ?? true) && acceptedIds.has(intent.intentId)
-      );
-    }
-    return [...groups].filter(([, accepted]) => accepted).map(([kind]) => kind);
-  }
-  static emptyResult(mode, diagnostic) {
-    return {
-      mode,
-      intentIds: [],
-      completedMailKinds: [],
-      counts: {
-        planned: 0,
-        due: 0,
-        alreadyRecorded: 0,
-        reserved: 0,
-        dispatched: 0,
-        accepted: 0,
-        uncertain: 0,
-        rejected: 0,
-        deferred: 0
-      },
-      diagnostics: [diagnostic]
-    };
-  }
-  static safeDetailCode(value) {
-    return [
-      "ambiguous-response",
-      "connection-reset",
-      "provider-timeout",
-      "unknown-provider-state"
-    ].includes(value ?? "") ? value : void 0;
-  }
-};
-
-// packages/domain/communication/src/communication-dispatcher.ts
-var CommunicationDispatcher = class {
-  #ledger;
-  #mailGateway;
-  constructor(ledger, mailGateway) {
-    this.#ledger = ledger;
-    this.#mailGateway = mailGateway;
-  }
-  async execute(intent, timestamp, counts, diagnostics) {
-    let dispatchResult;
-    try {
-      dispatchResult = await this.#mailGateway.dispatch(intent);
-    } catch {
-      counts.uncertain += 1;
-      diagnostics.push({
-        code: "gateway-threw-ambiguous-error",
-        severity: "error",
-        intentId: intent.intentId
-      });
-      await this.#markUncertain(
-        intent,
-        timestamp,
-        "gateway-threw-ambiguous-error",
-        diagnostics
-      );
-      return false;
-    }
-    if (dispatchResult.outcome === "deferred") {
-      await this.defer(intent, dispatchResult, counts, diagnostics);
-      return false;
-    }
-    if (dispatchResult.outcome === "rejected") {
-      counts.rejected += 1;
-      diagnostics.push({
-        code: "gateway-delivery-rejected",
-        severity: "error",
-        intentId: intent.intentId,
-        detailCode: dispatchResult.diagnosticCode
-      });
-      try {
-        await this.#ledger.markRejected(
-          intent.idempotencyKey,
-          timestamp,
-          dispatchResult.diagnosticCode
-        );
-      } catch {
-        diagnostics.push({
-          code: "ledger-status-write-failed",
-          severity: "error",
-          intentId: intent.intentId
-        });
-      }
-      return false;
-    }
-    if (dispatchResult.outcome === "uncertain") {
-      const detailCode = CommunicationResults.safeDetailCode(
-        dispatchResult.diagnosticCode
-      );
-      counts.uncertain += 1;
-      diagnostics.push({
-        code: "gateway-delivery-uncertain",
-        severity: "error",
-        intentId: intent.intentId,
-        ...detailCode ? { detailCode } : {}
-      });
-      await this.#markUncertain(
-        intent,
-        timestamp,
-        detailCode ?? "gateway-delivery-uncertain",
-        diagnostics
-      );
-      return false;
-    }
-    return this.accept(intent, timestamp, counts, diagnostics);
-  }
-  async #markUncertain(intent, timestamp, diagnosticCode, diagnostics) {
-    try {
-      await this.#ledger.markUncertain(
-        intent.idempotencyKey,
-        timestamp,
-        diagnosticCode
-      );
-    } catch {
-      diagnostics.push({
-        code: "ledger-status-write-failed",
-        severity: "error",
-        intentId: intent.intentId
-      });
-    }
-  }
-  async defer(intent, dispatchResult, counts, diagnostics) {
-    counts.deferred += 1;
-    diagnostics.push({
-      code: "gateway-delivery-deferred",
-      severity: "warning",
-      intentId: intent.intentId,
-      detailCode: dispatchResult.diagnosticCode
-    });
-    try {
-      await this.#ledger.releasePending(intent.idempotencyKey);
-    } catch {
-      diagnostics.push({
-        code: "ledger-status-write-failed",
-        severity: "error",
-        intentId: intent.intentId
-      });
-    }
-    return;
-  }
-  async accept(intent, timestamp, counts, diagnostics) {
-    counts.accepted += 1;
-    try {
-      await this.#ledger.markAccepted(intent.idempotencyKey, timestamp);
-      return true;
-    } catch {
-      diagnostics.push({
-        code: "ledger-status-write-failed",
-        severity: "error",
-        intentId: intent.intentId
-      });
-    }
-    return false;
-  }
-};
-
-// packages/domain/communication/src/reconcile-communications.ts
-var ReconcileCommunications = class {
-  #planner;
-  #clock;
-  #ledger;
-  #dispatcher;
-  constructor(dependencies) {
-    this.#planner = dependencies.planner;
-    this.#clock = dependencies.clock;
-    this.#ledger = dependencies.ledger;
-    this.#dispatcher = new CommunicationDispatcher(
-      dependencies.ledger,
-      dependencies.mailGateway
-    );
-  }
-  async execute(input) {
-    let now2;
-    try {
-      now2 = this.#clock.now();
-    } catch {
-      return CommunicationResults.emptyResult(input.mode, {
-        code: "invalid-clock",
-        severity: "error"
-      });
-    }
-    if (!CommunicationCalendar.isValidInstant(now2)) {
-      return CommunicationResults.emptyResult(input.mode, {
-        code: "invalid-clock",
-        severity: "error"
-      });
-    }
-    const { mode, dispatchAuthorized, ...planningInput } = input;
-    const plan2 = this.#planner.execute({ ...planningInput, now: now2 });
-    const diagnostics = [...plan2.diagnostics];
-    const counts = {
-      planned: plan2.intents.length,
-      due: 0,
-      alreadyRecorded: 0,
-      reserved: 0,
-      dispatched: 0,
-      accepted: 0,
-      uncertain: 0,
-      rejected: 0,
-      deferred: 0
-    };
-    const timestamp = now2.toISOString();
-    const acceptedIds = /* @__PURE__ */ new Set();
-    for (const intent of plan2.intents) {
-      const accepted = await this.processIntent(
-        intent,
-        timestamp,
-        mode,
-        dispatchAuthorized,
-        counts,
-        diagnostics
-      );
-      if (accepted) acceptedIds.add(intent.intentId);
-    }
-    return CommunicationResults.result(
-      mode,
-      plan2.intents,
-      counts,
-      diagnostics,
-      acceptedIds
-    );
-  }
-  async #findExisting(intent, diagnostics) {
-    try {
-      return await this.#ledger.find(intent.idempotencyKey);
-    } catch {
-      diagnostics.push({
-        code: "ledger-read-failed",
-        severity: "error",
-        intentId: intent.intentId
-      });
-      return "read-failed";
-    }
-  }
-  async #reserve(intent, timestamp, diagnostics) {
-    try {
-      return await this.#ledger.reservePending({
-        idempotencyKey: intent.idempotencyKey,
-        intentId: intent.intentId,
-        repositoryId: intent.repositoryId,
-        eventId: intent.eventId,
-        kind: intent.kind,
-        recipientId: intent.recipientId,
-        policyVersion: intent.policyVersion,
-        reservedAt: timestamp
-      });
-    } catch {
-      diagnostics.push({
-        code: "ledger-reservation-failed",
-        severity: "error",
-        intentId: intent.intentId
-      });
-      return "reservation-failed";
-    }
-  }
-  async processIntent(intent, timestamp, mode, dispatchAuthorized, counts, diagnostics) {
-    const existing = await this.#findExisting(intent, diagnostics);
-    if (existing === "read-failed") {
-      return;
-    }
-    if (existing) {
-      CommunicationResults.recordExisting(
-        intent.intentId,
-        existing,
-        counts,
-        diagnostics
-      );
-      return existing.status === "accepted";
-    }
-    counts.due += 1;
-    if (mode === "check") {
-      return;
-    }
-    if (!dispatchAuthorized) {
-      return;
-    }
-    const reservation = await this.#reserve(intent, timestamp, diagnostics);
-    if (reservation === "reservation-failed") {
-      return;
-    }
-    if (!reservation.reserved) {
-      CommunicationResults.recordExisting(
-        intent.intentId,
-        reservation.entry,
-        counts,
-        diagnostics
-      );
-      return reservation.entry.status === "accepted";
-    }
-    counts.reserved += 1;
-    counts.dispatched += 1;
-    return this.#dispatcher.execute(intent, timestamp, counts, diagnostics);
-  }
-};
-
-// packages/application/journey/src/use-cases/event-publication-evaluation.ts
-var EventPublicationEvaluation = class _EventPublicationEvaluation {
-  static evaluatePublication(event, config) {
-    const diagnostics = [];
-    for (const field of ["meetup", "community", "assets"]) {
-      const value = event.publicationLinks[field];
-      if (!value) {
-        diagnostics.push({
-          code: `publication.${field}.missing`,
-          severity: "warning",
-          category: "incomplete",
-          field: `publicationLinks.${field}`,
-          message: `${field} publication link is required before the event is ready`
-        });
-      }
-    }
-    if (event.publicationLinks.meetup && !MeetupPublicationChecklist.isPublished(event)) {
-      diagnostics.push({
-        code: "publication.meetup.unpublished",
-        severity: "warning",
-        category: "incomplete",
-        field: "publicationLinks.meetup",
-        message: "Meetup publication must be confirmed in the Communication checklist before the event is ready"
-      });
-    }
-    const engine = new PublicationUrlPolicyEngine(
-      ConfiguredPublicationPolicies.create(config.publication)
-    );
-    const evaluation = engine.evaluate(event.publicationLinks);
-    diagnostics.push(
-      ...evaluation.diagnostics.map((item) => ({
-        code: item.code,
-        severity: item.severity,
-        category: item.severity === "error" ? "invalid" : "normalization",
-        field: `publicationLinks.${item.field}`,
-        message: item.message,
-        fixAvailable: item.fixAvailable
-      }))
-    );
-    return {
-      event: { ...event, publicationLinks: evaluation.references },
-      diagnostics
-    };
-  }
-  static planEventManualPublicationTasks(event) {
-    return ManualPublicationPolicy.planManualPublicationTasks({
-      eventId: `${event.identity.repository}#${event.identity.issueNumber}`,
-      title: event.eventTitle,
-      description: event.description,
-      date: event.date,
-      timeZone: event.timeZone,
-      occurrenceStatus: event.occurrenceStatus,
-      references: event.publicationLinks,
-      meetupPublished: MeetupPublicationChecklist.isPublished(event),
-      slidesPublished: _EventPublicationEvaluation.checklistTaskIsCompleted(
+  followUp(event) {
+    return EXPECTED_POST_EVENT_TASK_NAMES.flatMap((name, index) => {
+      const completed = index < 2 ? this.collaborators.communicationChecklist.status(
+        event,
+        index === 0 ? "host-thanks" : "speaker-thanks"
+      ) === "completed" : this.collaborators.eventPublicationEvaluation.checklistTaskIsCompleted(
         event.operationalChecklists.postEvent,
-        POST_EVENT_TASK_NAMES.shareSlides
-      ),
-      attendanceImported: _EventPublicationEvaluation.checklistTaskIsCompleted(
-        event.operationalChecklists.postEvent,
-        POST_EVENT_TASK_NAMES.importAttendance
-      )
+        name
+      );
+      return completed ? [] : [FOLLOW_UP_TASKS[index]];
     });
   }
-  static checklistTaskIsCompleted(items, name) {
-    const matches = items.filter((item) => item.name === name);
-    return matches.length === 1 && matches[0]?.completed === true;
+  announcements(items) {
+    const tasks = [
+      ["Slack - AixMarseille.Tech", "public-slack-local"],
+      ["Slack - OpenBaR", "public-slack-community"],
+      ["Social networks", "public-social"]
+    ];
+    return tasks.filter(
+      ([name]) => items.some((item) => item.name === name && !item.completed)
+    ).map(([, resource]) => resource);
   }
-  static pendingManualTaskDiagnostics(tasks) {
-    return tasks.filter((task) => task.status === "pending").map((task) => ({
-      code: `publication.manual-task.${task.kind}.pending`,
-      severity: "info",
-      field: `manualPublicationTasks.${task.kind}`,
-      message: `Manual task pending: ${task.reason}`
-    }));
+};
+
+// packages/application/journey/src/use-cases/communication-approval-details.ts
+var CommunicationApprovalDetails = class {
+  create(event, mails) {
+    const ordered = [...mails].sort(
+      (left, right) => left.idempotencyKey.localeCompare(right.idempotencyKey)
+    );
+    const emails = ordered.map((mail) => {
+      const links = this.links(mail);
+      const name = mail.recipient.role === "hosting" ? event.host?.displayName : event.agenda.flatMap((talk) => talk.speakers).find((speaker) => speaker.id === mail.recipientId)?.displayName;
+      return {
+        kind: mail.kind,
+        recipientName: name ?? "",
+        links,
+        omittedLinks: 0
+      };
+    });
+    return { emails, omittedEmails: 0 };
+  }
+  links(mail) {
+    if (mail.kind === "speaker-thanks") {
+      const talks = mail.placeholders.speakerFeedbackTalks;
+      if (!talks || typeof talks === "string") return [];
+      return talks.map(({ title, url }) => ({
+        kind: "feedback",
+        title,
+        url
+      }));
+    }
+    if (mail.kind === "host-thanks") return [];
+    const links = [];
+    for (const [kind, placeholder] of [
+      ["meetup", "eventMeetupUrl"],
+      ["community", "eventCncfUrl"],
+      ["slides", "eventSlidesUrl"]
+    ]) {
+      const url = mail.placeholders[placeholder];
+      if (typeof url === "string" && url) links.push({ kind, url });
+    }
+    return links;
   }
 };
 
@@ -31887,170 +33796,120 @@ var TASKS = {
     names: ["Mail thanks speakers", "Thanks speakers", LEGACY_SPEAKER_THANKS]
   }
 };
-var CommunicationChecklist = class _CommunicationChecklist {
-  static pendingRecipients(event, recipients, thanks = event.occurrenceStatus === "held") {
+var CommunicationChecklist = class {
+  pendingRecipients(event, recipients, thanks = event.occurrenceStatus === "held") {
     return recipients.filter((recipient) => {
       const kind = recipient.role === "hosting" ? thanks ? "host-thanks" : "host-introduction" : thanks ? "speaker-thanks" : "speaker-introduction";
-      return _CommunicationChecklist.status(event, kind) === "pending";
+      return this.status(event, kind) === "pending";
     });
   }
-  static status(event, kind) {
+  status(event, kind) {
     const task = TASKS[kind];
     const matches = event.operationalChecklists[task.section].filter(
-      (item) => _CommunicationChecklist.matches(item, task.names)
+      (item) => this.matches(item, task.names)
     );
     return matches.some((item) => item.completed) ? "completed" : matches.length ? "pending" : "missing";
   }
-  static complete(event, accepted) {
+  complete(event, accepted) {
     const completed = new Set(accepted);
     const checklists = event.operationalChecklists;
     const communication = checklists.communication.map((item) => ({
       ...item,
-      completed: item.completed || _CommunicationChecklist.accepted(
-        item,
-        "communication",
-        completed,
-        checklists
-      )
+      completed: item.completed || this.accepted(item, "communication", completed, checklists)
     }));
     const postEvent = checklists.postEvent.map((item) => ({
       ...item,
-      completed: item.completed || _CommunicationChecklist.accepted(
-        item,
-        "postEvent",
-        completed,
-        checklists
-      )
+      completed: item.completed || this.accepted(item, "postEvent", completed, checklists)
     }));
     if (completed.has("speaker-thanks") && postEvent.some((item) => item.name === LEGACY_SPEAKER_THANKS) && !postEvent.some((item) => item.name === "Mail thanks speakers")) {
       postEvent.push({ name: "Mail thanks speakers", completed: true });
     }
     return { ...checklists, communication, postEvent };
   }
-  static accepted(item, section, accepted, checklists) {
+  accepted(item, section, accepted, checklists) {
     if (item.name === LEGACY_SPEAKER_THANKS) return false;
     const kinds = Object.keys(TASKS).filter(
-      (kind) => TASKS[kind].section === section && _CommunicationChecklist.matches(item, TASKS[kind].names)
+      (kind) => TASKS[kind].section === section && this.matches(item, TASKS[kind].names)
     );
     return kinds.length > 0 && kinds.every(
       (kind) => accepted.has(kind) || checklists[section].some(
-        (other) => other.completed && _CommunicationChecklist.matches(other, TASKS[kind].names)
+        (other) => other.completed && this.matches(other, TASKS[kind].names)
       )
     );
   }
-  static matches(item, names) {
+  matches(item, names) {
     return names.includes(item.name);
   }
 };
 
-// packages/application/journey/src/use-cases/communication-approval-details.ts
-var CommunicationApprovalDetails = class _CommunicationApprovalDetails {
-  static create(event, mails) {
-    const ordered = [...mails].sort(
-      (left, right) => left.idempotencyKey.localeCompare(right.idempotencyKey)
-    );
-    const emails = ordered.map((mail) => {
-      const links = _CommunicationApprovalDetails.links(mail);
-      const name = mail.recipient.role === "hosting" ? event.host?.displayName : event.agenda.flatMap((talk) => talk.speakers).find((speaker) => speaker.id === mail.recipientId)?.displayName;
-      return {
-        kind: mail.kind,
-        recipientName: name ?? "",
-        links,
-        omittedLinks: 0
-      };
-    });
-    return { emails, omittedEmails: 0 };
-  }
-  static links(mail) {
-    if (mail.kind === "speaker-thanks") {
-      const talks = mail.placeholders.speakerFeedbackTalks;
-      if (!talks || typeof talks === "string") return [];
-      return talks.map(({ title, url }) => ({
-        kind: "feedback",
-        title,
-        url
-      }));
+// packages/application/journey/src/use-cases/communication-dispatch-policy.ts
+var CommunicationDispatchPolicy = class {
+  isDispatchEnabled(config, diagnostics) {
+    const enabledByConfig = config.communication["dispatch-enabled"];
+    if (!enabledByConfig) {
+      diagnostics.push({
+        code: "communication.dispatch-disabled-by-config",
+        severity: "warning"
+      });
     }
-    if (mail.kind === "host-thanks") return [];
-    const links = [];
-    for (const [kind, placeholder] of [
-      ["meetup", "eventMeetupUrl"],
-      ["community", "eventCncfUrl"],
-      ["slides", "eventSlidesUrl"]
-    ]) {
-      const url = mail.placeholders[placeholder];
-      if (typeof url === "string" && url) links.push({ kind, url });
-    }
-    return links;
+    return enabledByConfig;
   }
 };
 
-// packages/application/journey/src/use-cases/approve-communication-batch.ts
-var ApproveCommunicationBatch = class {
-  constructor(approvals, clock, preview) {
-    this.approvals = approvals;
-    this.clock = clock;
-    this.preview = preview;
+// packages/application/journey/src/use-cases/communication-journey-results.ts
+var CommunicationJourneyResults = class {
+  withRuntimeDiagnostics(result, runtimeDiagnostics) {
+    return {
+      ...result,
+      runtimeDiagnostics: Object.freeze([...runtimeDiagnostics])
+    };
   }
-  approvals;
-  clock;
-  preview;
-  async execute(input, recipients, event, diagnostics) {
-    try {
-      const now2 = this.clock.now();
-      const planner = new PlanCommunications();
-      const pending = planner.execute({ ...input, now: now2 });
-      if (!pending.intents.some(({ channel }) => channel === "mail"))
-        return false;
-      const preview = await this.preview.execute({ ...input, mode: "check" });
-      if (preview.diagnostics.some(({ severity }) => severity === "error"))
-        throw new Error("Communication approval preflight failed");
-      if (preview.counts.due === 0) return false;
-      if (!input.mailPlaceholders?.eventSlidesUrl) {
-        diagnostics.push({
-          code: "communication.slides-unavailable",
-          severity: "error"
-        });
-        return false;
-      }
-      const batch = planner.execute({
-        ...input,
-        now: now2,
-        mailRecipients: recipients
-      });
-      if (batch.diagnostics.some(({ severity }) => severity === "error"))
-        throw new Error("Communication approval batch is invalid");
-      const mails = batch.intents.filter((intent) => intent.channel === "mail");
-      const result = await this.approvals.request({
-        kind: mails.some((mail) => mail.kind.endsWith("-thanks")) ? "email-thanks" : "email-introduction",
-        revision: MailBatchFingerprint.create(
-          input.eventDate,
-          input.timeZone,
-          mails
-        ),
-        eventDate: input.eventDate,
-        recipientCount: mails.length,
-        details: CommunicationApprovalDetails.create(event, mails),
-        requestedAt: now2.toISOString()
-      });
-      if (result.notificationFailed)
-        diagnostics.push({
-          code: "communication.approval-notification-failed",
-          severity: "warning"
-        });
-      if (result.status !== "approved")
-        diagnostics.push({
-          code: result.status === "rejected" ? "communication.approval-rejected" : "communication.approval-pending",
-          severity: "warning"
-        });
-      return result.status === "approved";
-    } catch {
-      diagnostics.push({
-        code: "communication.approval-unavailable",
-        severity: "error"
-      });
-      return false;
-    }
+  emptyCommunicationResult(mode, runtimeDiagnostics) {
+    return {
+      mode,
+      intentIds: [],
+      completedMailKinds: [],
+      counts: {
+        planned: 0,
+        due: 0,
+        alreadyRecorded: 0,
+        reserved: 0,
+        dispatched: 0,
+        accepted: 0,
+        uncertain: 0,
+        rejected: 0,
+        deferred: 0
+      },
+      diagnostics: [],
+      runtimeDiagnostics: Object.freeze([...runtimeDiagnostics])
+    };
+  }
+  skippedResult(dispatchPermitted, runtimeDiagnostics) {
+    runtimeDiagnostics.push({
+      code: "communication.event-skipped",
+      severity: "info"
+    });
+    return this.emptyCommunicationResult(
+      dispatchPermitted ? "dispatch" : "check",
+      runtimeDiagnostics
+    );
+  }
+};
+
+// packages/application/journey/src/use-cases/communication-placeholders.ts
+var CommunicationPlaceholders = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  eventPlaceholders(event, slidesUrl) {
+    const presentationUrl = this.collaborators.presentationFileUrl.normalize(slidesUrl);
+    return {
+      eventDate: event.date,
+      ...this.collaborators.meetupPublicationChecklist.isPublished(event) && event.publicationLinks.meetup ? { eventMeetupUrl: event.publicationLinks.meetup } : {},
+      ...event.publicationLinks.community ? { eventCncfUrl: event.publicationLinks.community } : {},
+      ...presentationUrl ? { eventSlidesUrl: presentationUrl } : {}
+    };
   }
 };
 
@@ -32061,12 +33920,16 @@ var UNRESOLVED_MAIL_RECIPIENTS = Object.freeze({
 });
 
 // packages/application/journey/src/use-cases/communication-recipients.ts
-var CommunicationRecipients = class _CommunicationRecipients {
-  static resolveMailRecipients(event, catalog, diagnostics) {
-    const resolution = new ResolveEventReferences().execute(catalog, {
-      hostReference: event.host ? _CommunicationRecipients.renderReference(event.host) : "",
+var CommunicationRecipients = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  resolveMailRecipients(event, catalog, diagnostics) {
+    const resolution = this.collaborators.createResolveEventReferences().execute(catalog, {
+      hostReference: event.host ? this.renderReference(event.host) : "",
       speakerReferences: event.agenda.flatMap(
-        (entry) => entry.speakers.map(_CommunicationRecipients.renderReference)
+        (entry) => entry.speakers.map(this.renderReference.bind(this))
       )
     });
     if (!resolution.resolved) {
@@ -32091,16 +33954,12 @@ var CommunicationRecipients = class _CommunicationRecipients {
     ] : [];
     for (const speaker of resolution.speakers) {
       recipients.push(
-        _CommunicationRecipients.speakerRecipient(
-          speaker,
-          eventHost.displayName,
-          hostingAddress
-        )
+        this.speakerRecipient(speaker, eventHost.displayName, hostingAddress)
       );
     }
     return { resolved: true, recipients: Object.freeze(recipients) };
   }
-  static speakerRecipient(speaker, hostingName, hostingAddress) {
+  speakerRecipient(speaker, hostingName, hostingAddress) {
     return {
       channel: "mail",
       role: "speaker",
@@ -32114,30 +33973,171 @@ var CommunicationRecipients = class _CommunicationRecipients {
       }
     };
   }
-  static renderReference(reference) {
+  renderReference(reference) {
     return reference.id ? `${reference.displayName} [${reference.id}]` : reference.displayName;
   }
 };
 
+// packages/application/journey/src/use-cases/event-diagnostic-projection.ts
+var EventDiagnosticProjection = class {
+  toEventDiagnostic(code, severity, field, message) {
+    return {
+      code,
+      severity,
+      category: severity === "error" ? "invalid" : "migration",
+      field,
+      message
+    };
+  }
+  toPublicDiagnostic(item) {
+    return {
+      code: item.code,
+      severity: item.severity,
+      field: item.field,
+      message: item.message,
+      fixApplied: false
+    };
+  }
+};
+
+// packages/application/journey/src/use-cases/event-participant-resolution.ts
+var EventParticipantResolution = class {
+  renderReference(reference) {
+    return reference.id ? `${reference.displayName} [${reference.id}]` : reference.displayName;
+  }
+  enrichStableReferences(event, host, speakers) {
+    return {
+      ...event,
+      host: this.resolvedParticipant(host),
+      agenda: event.agenda.map((entry) => ({
+        ...entry,
+        speakers: entry.speakers.map((reference) => {
+          const matches = speakers.filter(
+            (speaker2) => reference.id ? speaker2.id === reference.id : this.canonical(speaker2.displayName) === this.canonical(reference.displayName)
+          );
+          const speaker = matches.length === 1 ? matches[0] : void 0;
+          return speaker ? this.resolvedParticipant(speaker) : reference;
+        })
+      }))
+    };
+  }
+  resolvedParticipant(reference) {
+    return {
+      id: reference.id,
+      displayName: reference.displayName,
+      ...reference.pictureUrl ? { pictureUrl: reference.pictureUrl } : {},
+      ...reference.source ? { source: reference.source } : {}
+    };
+  }
+  canonical(value) {
+    return value.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US");
+  }
+};
+
+// packages/application/journey/src/use-cases/event-publication-evaluation.ts
+var EventPublicationEvaluation = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  evaluatePublication(event, config) {
+    const diagnostics = [];
+    for (const field of ["meetup", "community", "assets"]) {
+      const value = event.publicationLinks[field];
+      if (!value) {
+        diagnostics.push({
+          code: `publication.${field}.missing`,
+          severity: "warning",
+          category: "incomplete",
+          field: `publicationLinks.${field}`,
+          message: `${field} publication link is required before the event is ready`
+        });
+      }
+    }
+    if (event.publicationLinks.meetup && !this.collaborators.meetupPublicationChecklist.isPublished(event)) {
+      diagnostics.push({
+        code: "publication.meetup.unpublished",
+        severity: "warning",
+        category: "incomplete",
+        field: "publicationLinks.meetup",
+        message: "Meetup publication must be confirmed in the Communication checklist before the event is ready"
+      });
+    }
+    const engine = this.collaborators.createPublicationUrlPolicyEngine(
+      this.collaborators.configuredPublicationPolicies.create(
+        config.publication
+      )
+    );
+    const evaluation = engine.evaluate(event.publicationLinks);
+    diagnostics.push(
+      ...evaluation.diagnostics.map((item) => ({
+        code: item.code,
+        severity: item.severity,
+        category: item.severity === "error" ? "invalid" : "normalization",
+        field: `publicationLinks.${item.field}`,
+        message: item.message,
+        fixAvailable: item.fixAvailable
+      }))
+    );
+    return {
+      event: { ...event, publicationLinks: evaluation.references },
+      diagnostics
+    };
+  }
+  planEventManualPublicationTasks(event) {
+    return this.collaborators.manualPublicationPolicy.planManualPublicationTasks(
+      {
+        eventId: `${event.identity.repository}#${event.identity.issueNumber}`,
+        title: event.eventTitle,
+        description: event.description,
+        date: event.date,
+        timeZone: event.timeZone,
+        occurrenceStatus: event.occurrenceStatus,
+        references: event.publicationLinks,
+        meetupPublished: this.collaborators.meetupPublicationChecklist.isPublished(event),
+        slidesPublished: this.checklistTaskIsCompleted(
+          event.operationalChecklists.postEvent,
+          POST_EVENT_TASK_NAMES.shareSlides
+        ),
+        attendanceImported: this.checklistTaskIsCompleted(
+          event.operationalChecklists.postEvent,
+          POST_EVENT_TASK_NAMES.importAttendance
+        )
+      }
+    );
+  }
+  checklistTaskIsCompleted(items, name) {
+    const matches = items.filter((item) => item.name === name);
+    return matches.length === 1 && matches[0]?.completed === true;
+  }
+  pendingManualTaskDiagnostics(tasks) {
+    return tasks.filter((task) => task.status === "pending").map((task) => ({
+      code: `publication.manual-task.${task.kind}.pending`,
+      severity: "info",
+      field: `manualPublicationTasks.${task.kind}`,
+      message: `Manual task pending: ${task.reason}`
+    }));
+  }
+};
+
 // packages/application/journey/src/use-cases/feedback-agenda-projection.ts
-var FeedbackAgendaProjection = class _FeedbackAgendaProjection {
-  static create(event, diagnostics) {
-    if (!event.agenda.length || _FeedbackAgendaProjection.blocked(diagnostics))
-      return void 0;
+var FeedbackAgendaProjection = class {
+  create(event, diagnostics) {
+    if (!event.agenda.length || this.blocked(diagnostics)) return void 0;
     const talks = [];
     for (const entry of event.agenda) {
-      const talk = _FeedbackAgendaProjection.talk(entry);
+      const talk = this.talk(entry);
       if (!talk) return void 0;
       talks.push(talk);
     }
     return { talks };
   }
-  static blocked(diagnostics) {
+  blocked(diagnostics) {
     return diagnostics.some(
       (item) => item.severity === "error" && (item.code.startsWith("referential.") && !item.code.startsWith("referential.reference.host.") || item.code.startsWith("event.agenda."))
     );
   }
-  static talk(entry) {
+  talk(entry) {
     if (!entry.description.trim() || !entry.speakers.length) return void 0;
     const speakers = [];
     for (const speaker of entry.speakers) {
@@ -32159,16 +34159,516 @@ var FeedbackAgendaProjection = class _FeedbackAgendaProjection {
   }
 };
 
+// packages/application/journey/src/use-cases/meetup-publication-projection.ts
+var MeetupPublicationProjection = class {
+  create(event, settings) {
+    const venue = event.host?.id ? settings.venues[event.host.id] : void 0;
+    if (!venue || !event.description.trim() || !event.confirmations.host || !event.confirmations.speakers || event.proposalStatus === "stale" || !event.agenda.length || event.agenda.some(
+      (talk) => !talk.description.trim() || !talk.speakers.length || talk.speakers.some((speaker) => !speaker.id)
+    ))
+      return void 0;
+    const talks = event.agenda.map(
+      (talk) => [
+        talk.description,
+        talk.speakers.map((speaker) => speaker.displayName).join(", "),
+        talk.proposal?.abstract
+      ].filter(Boolean).join("\n")
+    );
+    return {
+      title: event.eventTitle.trim(),
+      description: [event.description.trim(), ...talks].join("\n\n"),
+      date: event.date,
+      startTime: settings.startTime,
+      endTime: settings.endTime,
+      timeZone: event.timeZone,
+      venue
+    };
+  }
+};
+
+// packages/application/journey/src/use-cases/speaker-synchronization-error.ts
+var SpeakerSynchronizationError = class extends Error {
+  constructor(stage, cause, diagnostics = []) {
+    super(`Speaker synchronization failed during ${stage}.`, { cause });
+    this.stage = stage;
+    this.diagnostics = diagnostics;
+    this.name = "SpeakerSynchronizationError";
+  }
+  stage;
+  diagnostics;
+};
+
+// packages/application/journey/src/use-cases/speaker-synchronization-stage-runner.ts
+var SpeakerSynchronizationStageRunner = class {
+  async at(stage, operation) {
+    try {
+      return await operation();
+    } catch (error2) {
+      if (error2 instanceof SpeakerSynchronizationError) throw error2;
+      throw new SpeakerSynchronizationError(stage, error2);
+    }
+  }
+};
+
+// packages/application/journey/src/policy-composition.ts
+var JourneyPolicyComposition = class {
+  approvalRequestPolicy() {
+    return new ApprovalRequestPolicy();
+  }
+  assetParticipantProjection() {
+    return new AssetParticipantProjection({
+      publicAssetUrl: new PublicationDomainComposition().publicAssetUrl()
+    });
+  }
+  attentionEventFacts() {
+    return new AttentionEventFacts({
+      eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
+      eventPublicationEvaluation: this.eventPublicationEvaluation(),
+      attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+      communicationChecklist: this.communicationChecklist(),
+      createEventRuleEngine: (...args) => new EventDomainComposition().eventRuleEngine(...args)
+    });
+  }
+  attentionStageEvaluation() {
+    return new AttentionStageEvaluation({
+      diagnosticPolicy: this.diagnosticPolicy(),
+      organizerDiagnosticPolicy: this.organizerDiagnosticPolicy()
+    });
+  }
+  automationConfigFactory() {
+    return new AutomationConfigFactory();
+  }
+  communicationApprovalDetails() {
+    return new CommunicationApprovalDetails();
+  }
+  communicationChecklist() {
+    return new CommunicationChecklist();
+  }
+  communicationDiagnosticProjection() {
+    return new CommunicationDiagnosticProjection();
+  }
+  communicationDispatchPolicy() {
+    return new CommunicationDispatchPolicy();
+  }
+  communicationJourneyResults() {
+    return new CommunicationJourneyResults();
+  }
+  communicationPlaceholders() {
+    return new CommunicationPlaceholders({
+      presentationFileUrl: new PublicationDomainComposition().presentationFileUrl(),
+      meetupPublicationChecklist: new EventDomainComposition().meetupPublicationChecklist()
+    });
+  }
+  communicationRecipients() {
+    return new CommunicationRecipients({
+      createResolveEventReferences: () => new ReferentialDomainComposition().resolveEventReferences()
+    });
+  }
+  configuredPublicationPolicies() {
+    return new ConfiguredPublicationPolicies({
+      publicationUrlPolicies: new PublicationDomainComposition().publicationUrlPolicies()
+    });
+  }
+  diagnosticPolicy() {
+    return new DiagnosticPolicy();
+  }
+  eventDiagnosticProjection() {
+    return new EventDiagnosticProjection();
+  }
+  eventParticipantResolution() {
+    return new EventParticipantResolution();
+  }
+  eventPublicationEvaluation() {
+    return new EventPublicationEvaluation({
+      meetupPublicationChecklist: new EventDomainComposition().meetupPublicationChecklist(),
+      configuredPublicationPolicies: this.configuredPublicationPolicies(),
+      manualPublicationPolicy: new PublicationDomainComposition().manualPublicationPolicy(),
+      createPublicationUrlPolicyEngine: (...args) => new PublicationDomainComposition().publicationUrlPolicyEngine(...args)
+    });
+  }
+  feedbackAgendaProjection() {
+    return new FeedbackAgendaProjection();
+  }
+  meetupPublicationProjection() {
+    return new MeetupPublicationProjection();
+  }
+  meetupPublicationRevision() {
+    return new MeetupPublicationRevision({
+      contentFingerprint: new PublicationDomainComposition().contentFingerprint()
+    });
+  }
+  organizerDiagnosticPolicy() {
+    return new OrganizerDiagnosticPolicy({
+      diagnosticPolicy: this.diagnosticPolicy()
+    });
+  }
+  speakerSynchronizationStageRunner() {
+    return new SpeakerSynchronizationStageRunner();
+  }
+};
+
+// packages/application/journey/src/use-cases/approve-communication-batch.ts
+var ApproveCommunicationBatch = class {
+  constructor(collaborators, approvals, clock, preview) {
+    this.collaborators = collaborators;
+    this.approvals = approvals;
+    this.clock = clock;
+    this.preview = preview;
+  }
+  collaborators;
+  approvals;
+  clock;
+  preview;
+  async execute(input, recipients, event, diagnostics) {
+    try {
+      const now2 = this.clock.now();
+      const planner = this.collaborators.createPlanCommunications();
+      const pending = planner.execute({ ...input, now: now2 });
+      if (!pending.intents.some(({ channel }) => channel === "mail"))
+        return false;
+      const preview = await this.preview.execute({ ...input, mode: "check" });
+      if (preview.diagnostics.some(({ severity }) => severity === "error"))
+        throw new Error("Communication approval preflight failed");
+      if (preview.counts.due === 0) return false;
+      if (!input.mailPlaceholders?.eventSlidesUrl) {
+        diagnostics.push({
+          code: "communication.slides-unavailable",
+          severity: "error"
+        });
+        return false;
+      }
+      const batch = planner.execute({
+        ...input,
+        now: now2,
+        mailRecipients: recipients
+      });
+      if (batch.diagnostics.some(({ severity }) => severity === "error"))
+        throw new Error("Communication approval batch is invalid");
+      const mails = batch.intents.filter((intent) => intent.channel === "mail");
+      const result = await this.approvals.request({
+        kind: mails.some((mail) => mail.kind.endsWith("-thanks")) ? "email-thanks" : "email-introduction",
+        revision: this.collaborators.mailBatchFingerprint.create(
+          input.eventDate,
+          input.timeZone,
+          mails
+        ),
+        eventDate: input.eventDate,
+        recipientCount: mails.length,
+        details: this.collaborators.communicationApprovalDetails.create(
+          event,
+          mails
+        ),
+        requestedAt: now2.toISOString()
+      });
+      if (result.notificationFailed)
+        diagnostics.push({
+          code: "communication.approval-notification-failed",
+          severity: "warning"
+        });
+      if (result.status !== "approved")
+        diagnostics.push({
+          code: result.status === "rejected" ? "communication.approval-rejected" : "communication.approval-pending",
+          severity: "warning"
+        });
+      return result.status === "approved";
+    } catch {
+      diagnostics.push({
+        code: "communication.approval-unavailable",
+        severity: "error"
+      });
+      return false;
+    }
+  }
+};
+
+// packages/application/journey/src/use-cases/communication-delivery-preparation.ts
+var CommunicationDeliveryPreparation = class {
+  constructor(collaborators, dependencies) {
+    this.collaborators = collaborators;
+    this.dependencies = dependencies;
+  }
+  collaborators;
+  dependencies;
+  async execute(event, runtimeDiagnostics) {
+    const postEvent = this.collaborators.postEventPolicy.isDue({
+      eventDate: event.date,
+      timeZone: event.timeZone,
+      occurrenceStatus: event.occurrenceStatus ?? "unknown",
+      now: this.dependencies.clock.now()
+    });
+    const catalog = await this.catalog(runtimeDiagnostics);
+    if (event.proposalStatus === "stale")
+      runtimeDiagnostics.push({
+        code: "communication.event-references-unresolved",
+        severity: "error"
+      });
+    const mailRecipientResolution = catalog && event.proposalStatus !== "stale" ? this.collaborators.communicationRecipients.resolveMailRecipients(
+      event,
+      catalog,
+      runtimeDiagnostics
+    ) : UNRESOLVED_MAIL_RECIPIENTS;
+    const referencesResolved = catalog !== void 0 && mailRecipientResolution.resolved;
+    const recipients = referencesResolved ? await this.collaborators.createSpeakerFeedbackPreparation(this.dependencies.feedbackResults).execute(
+      event,
+      mailRecipientResolution.recipients,
+      runtimeDiagnostics,
+      postEvent
+    ) : mailRecipientResolution.recipients;
+    return {
+      postEvent,
+      mailRecipientResolution: { ...mailRecipientResolution, recipients },
+      referencesResolved
+    };
+  }
+  async catalog(runtimeDiagnostics) {
+    const validation = await this.collaborators.createValidateReferentialCatalog(this.dependencies.referentialRepository).execute();
+    let catalog;
+    if (validation.isValid) {
+      catalog = validation.catalog;
+    } else {
+      runtimeDiagnostics.push({
+        code: "communication.referential-catalog-invalid",
+        severity: "error"
+      });
+    }
+    return catalog;
+  }
+};
+
+// packages/application/journey/src/use-cases/complete-communication-checklist.ts
+var CompleteCommunicationChecklist = class {
+  constructor(collaborators, repository, codec) {
+    this.collaborators = collaborators;
+    this.repository = repository;
+    this.codec = codec;
+  }
+  collaborators;
+  repository;
+  codec;
+  async execute(source, accepted, diagnostics) {
+    if (accepted.length === 0) return;
+    try {
+      const { event } = this.codec.decode(source);
+      const operationalChecklists = this.collaborators.communicationChecklist.complete(event, accepted);
+      if (this.collaborators.eventChecklists.equal(
+        operationalChecklists,
+        event.operationalChecklists
+      ))
+        return;
+      const patch = this.codec.createPatch(source, {
+        ...event,
+        operationalChecklists
+      });
+      if (!patch.body)
+        throw new Error("Checklist completion could not be rendered");
+      const rendered = this.codec.decode({ ...source, body: patch.body }).event.operationalChecklists;
+      if (!this.collaborators.eventChecklists.equal(
+        rendered,
+        operationalChecklists
+      ))
+        throw new Error(
+          "Checklist completion was not preserved by the document codec"
+        );
+      const current = await this.repository.find(source.identity);
+      if (!current || !this.collaborators.eventDocumentConcurrency.eventDocumentsEqual(
+        current,
+        source
+      ))
+        throw new EventConcurrentModificationError(source.identity);
+      await this.repository.applyPatch(source.identity, { body: patch.body });
+    } catch (error2) {
+      const concurrent = error2 instanceof EventConcurrentModificationError;
+      diagnostics.push({
+        code: concurrent ? "communication.checklist-concurrently-modified" : "communication.checklist-update-failed",
+        severity: concurrent ? "warning" : "error"
+      });
+    }
+  }
+};
+
+// packages/application/journey/src/use-cases/manage-meetup-communications.ts
+var ManageMeetupCommunications = class {
+  constructor(collaborators, dependencies) {
+    this.collaborators = collaborators;
+    this.dependencies = dependencies;
+  }
+  collaborators;
+  dependencies;
+  async execute(input) {
+    const runtimeDiagnostics = [];
+    const config = this.dependencies.config;
+    const dispatchPermitted = this.collaborators.communicationDispatchPolicy.isDispatchEnabled(
+      config,
+      runtimeDiagnostics
+    );
+    const { sourceDocument, managed } = await this.loadEvent(input);
+    if (managed.skipped) {
+      return this.collaborators.communicationJourneyResults.skippedResult(
+        dispatchPermitted,
+        runtimeDiagnostics
+      );
+    }
+    const delivery = await this.collaborators.createCommunicationDeliveryPreparation(this.dependencies).execute(managed.event, runtimeDiagnostics);
+    const { referencesResolved } = delivery;
+    if (dispatchPermitted && referencesResolved && !await this.sourceIsCurrent(sourceDocument, runtimeDiagnostics)) {
+      return this.collaborators.communicationJourneyResults.emptyCommunicationResult(
+        "check",
+        runtimeDiagnostics
+      );
+    }
+    const dispatchEnabled = dispatchPermitted && referencesResolved && !runtimeDiagnostics.some(({ severity }) => severity === "error");
+    return this.deliver(
+      input,
+      sourceDocument,
+      managed,
+      delivery,
+      dispatchEnabled,
+      runtimeDiagnostics
+    );
+  }
+  async deliver(input, sourceDocument, managed, delivery, dispatchEnabled, runtimeDiagnostics) {
+    const deliveryInput = this.deliveryInput(
+      input,
+      managed,
+      delivery,
+      dispatchEnabled
+    );
+    const mailApproved = dispatchEnabled && await this.synchronizeApprovals(runtimeDiagnostics) && await this.collaborators.createApproveCommunicationBatch(
+      this.dependencies.organizerApproval,
+      this.dependencies.clock,
+      this.dependencies.reconcileCommunications(false)
+    ).execute(
+      deliveryInput,
+      delivery.mailRecipientResolution.recipients,
+      managed.event,
+      runtimeDiagnostics
+    );
+    if (dispatchEnabled && !await this.sourceIsCurrent(sourceDocument, runtimeDiagnostics)) {
+      return this.collaborators.communicationJourneyResults.emptyCommunicationResult(
+        "check",
+        runtimeDiagnostics
+      );
+    }
+    const reconciliation = await this.dependencies.reconcileCommunications(dispatchEnabled).execute({
+      ...deliveryInput,
+      dispatchAuthorized: mailApproved
+    });
+    if (dispatchEnabled) {
+      await this.collaborators.createCompleteCommunicationChecklist(
+        this.dependencies.eventRepository,
+        this.dependencies.eventDocumentCodec
+      ).execute(
+        sourceDocument,
+        reconciliation.completedMailKinds,
+        runtimeDiagnostics
+      );
+    }
+    return this.collaborators.communicationJourneyResults.withRuntimeDiagnostics(
+      reconciliation,
+      runtimeDiagnostics
+    );
+  }
+  async synchronizeApprovals(diagnostics) {
+    try {
+      const result = await this.dependencies.organizerApproval.synchronize();
+      if (result.notificationFailed)
+        diagnostics.push({
+          code: "communication.approval-notification-failed",
+          severity: "warning"
+        });
+      return true;
+    } catch {
+      diagnostics.push({
+        code: "communication.approval-unavailable",
+        severity: "error"
+      });
+      return false;
+    }
+  }
+  async eventSourceIsCurrent(repository, expected, diagnostics) {
+    const current = await repository.find(expected.identity);
+    if (current && this.collaborators.eventDocumentConcurrency.eventDocumentsEqual(
+      current,
+      expected
+    ))
+      return true;
+    diagnostics.push({
+      code: "communication.event-concurrently-modified",
+      severity: "error"
+    });
+    return false;
+  }
+  async loadEvent(input) {
+    const repositoryName = `${input.owner}/${input.repo}`;
+    const identity = {
+      repository: repositoryName,
+      issueNumber: input.issueNumber
+    };
+    const sourceDocument = await this.dependencies.eventRepository.find(identity);
+    if (!sourceDocument) {
+      throw new Error(
+        `Meetup event ${repositoryName}#${input.issueNumber} was not found`
+      );
+    }
+    const managed = await this.dependencies.manageEvent.execute({
+      identity,
+      mode: "check",
+      sourceDocument
+    });
+    return { identity, sourceDocument, managed };
+  }
+  deliveryInput(input, managed, delivery, dispatchEnabled) {
+    const config = this.dependencies.config;
+    const repositoryName = `${input.owner}/${input.repo}`;
+    return {
+      mode: dispatchEnabled ? "dispatch" : "check",
+      dispatchAuthorized: false,
+      repositoryId: input.repositoryId?.trim() || repositoryName,
+      eventId: `issue-${input.issueNumber}`,
+      eventDate: managed.event.date,
+      timeZone: config.timezone,
+      readiness: managed.isReady ? "ready" : "not-ready",
+      occurrenceStatus: managed.event.occurrenceStatus ?? "unknown",
+      policyVersion: String(config.communication["policy-version"]),
+      mailRecipients: this.collaborators.communicationChecklist.pendingRecipients(
+        managed.event,
+        delivery.mailRecipientResolution.recipients,
+        delivery.postEvent
+      ),
+      mailPlaceholders: this.collaborators.communicationPlaceholders.eventPlaceholders(
+        managed.event,
+        input.slidesReady === false ? void 0 : input.slidesUrl
+      )
+    };
+  }
+  sourceIsCurrent(source, diagnostics) {
+    return this.eventSourceIsCurrent(
+      this.dependencies.eventRepository,
+      source,
+      diagnostics
+    );
+  }
+};
+
 // packages/application/journey/src/use-cases/speaker-feedback-preparation.ts
 var SpeakerFeedbackPreparation = class {
-  constructor(feedback) {
+  constructor(collaborators, feedback) {
+    this.collaborators = collaborators;
     this.feedback = feedback;
   }
+  collaborators;
   feedback;
   async execute(event, recipients, diagnostics, postEvent = event.occurrenceStatus === "held") {
-    if (!postEvent || CommunicationChecklist.pendingRecipients(event, recipients, postEvent).length === 0 || !recipients.some((recipient) => recipient.role === "speaker"))
+    if (!postEvent || this.collaborators.communicationChecklist.pendingRecipients(
+      event,
+      recipients,
+      postEvent
+    ).length === 0 || !recipients.some((recipient) => recipient.role === "speaker"))
       return recipients;
-    const agenda = FeedbackAgendaProjection.create(event, []);
+    const agenda = this.collaborators.feedbackAgendaProjection.create(
+      event,
+      []
+    );
     if (!agenda || !event.publicationLinks.feedback) {
       diagnostics.push({
         code: "communication.feedback-unavailable",
@@ -32214,324 +34714,960 @@ var SpeakerFeedbackPreparation = class {
   }
 };
 
-// packages/application/journey/src/use-cases/communication-delivery-preparation.ts
-var CommunicationDeliveryPreparation = class {
-  constructor(dependencies) {
-    this.dependencies = dependencies;
+// packages/application/journey/src/communication-composition.ts
+var JourneyCommunicationComposition = class {
+  approveCommunicationBatch(...args) {
+    return new ApproveCommunicationBatch(
+      {
+        mailBatchFingerprint: new CommunicationDomainComposition().mailBatchFingerprint(),
+        communicationApprovalDetails: new JourneyPolicyComposition().communicationApprovalDetails(),
+        createPlanCommunications: (...args2) => new CommunicationDomainComposition().planCommunications(...args2)
+      },
+      ...args
+    );
   }
-  dependencies;
-  async execute(event, runtimeDiagnostics) {
-    const postEvent = PostEventPolicy.isDue({
-      eventDate: event.date,
+  communicationDeliveryPreparation(...args) {
+    return new CommunicationDeliveryPreparation(
+      {
+        postEventPolicy: new CommunicationDomainComposition().postEventPolicy(),
+        communicationRecipients: new JourneyPolicyComposition().communicationRecipients(),
+        createSpeakerFeedbackPreparation: (...args2) => this.speakerFeedbackPreparation(...args2),
+        createValidateReferentialCatalog: (...args2) => new ReferentialDomainComposition().validateReferentialCatalog(
+          ...args2
+        )
+      },
+      ...args
+    );
+  }
+  completeCommunicationChecklist(...args) {
+    return new CompleteCommunicationChecklist(
+      {
+        communicationChecklist: new JourneyPolicyComposition().communicationChecklist(),
+        eventChecklists: new EventDomainComposition().eventChecklists(),
+        eventDocumentConcurrency: new EventDomainComposition().eventDocumentConcurrency()
+      },
+      ...args
+    );
+  }
+  manageMeetupCommunications(...args) {
+    return new ManageMeetupCommunications(
+      {
+        communicationDispatchPolicy: new JourneyPolicyComposition().communicationDispatchPolicy(),
+        communicationJourneyResults: new JourneyPolicyComposition().communicationJourneyResults(),
+        eventDocumentConcurrency: new EventDomainComposition().eventDocumentConcurrency(),
+        communicationChecklist: new JourneyPolicyComposition().communicationChecklist(),
+        communicationPlaceholders: new JourneyPolicyComposition().communicationPlaceholders(),
+        createCommunicationDeliveryPreparation: (...args2) => this.communicationDeliveryPreparation(...args2),
+        createApproveCommunicationBatch: (...args2) => this.approveCommunicationBatch(...args2),
+        createCompleteCommunicationChecklist: (...args2) => this.completeCommunicationChecklist(...args2)
+      },
+      ...args
+    );
+  }
+  speakerFeedbackPreparation(...args) {
+    return new SpeakerFeedbackPreparation(
+      {
+        communicationChecklist: new JourneyPolicyComposition().communicationChecklist(),
+        feedbackAgendaProjection: new JourneyPolicyComposition().feedbackAgendaProjection()
+      },
+      ...args
+    );
+  }
+};
+
+// packages/application/journey/src/use-cases/asset-render-projection.ts
+var AssetRenderProjection = class {
+  constructor(collaborators, presenter, repository, assignments = {
+    speakers: {},
+    talks: {},
+    venues: {}
+  }, nextEvent) {
+    this.collaborators = collaborators;
+    this.presenter = presenter;
+    this.repository = repository;
+    this.assignments = assignments;
+    this.nextEvent = nextEvent;
+  }
+  collaborators;
+  presenter;
+  repository;
+  assignments;
+  nextEvent;
+  async create(event, diagnostics) {
+    const catalog = await this.collaborators.createValidateReferentialCatalog(this.repository).execute();
+    const agendaValid = catalog.isValid && event.proposalStatus !== "stale" && !diagnostics.some(
+      (item) => item.severity === "error" && /agenda|referential|proposals/.test(`${item.code} ${item.field}`)
+    );
+    const participants = agendaValid ? this.collaborators.assetParticipantProjection.create(
+      event,
+      catalog.catalog,
+      this.assignments
+    ) : { speakers: {}, talks: {}, pictures: {} };
+    return this.presenter.format({
+      title: diagnostics.some(
+        (item) => item.severity === "error" && /title/.test(item.code)
+      ) ? void 0 : event.eventTitle,
+      date: event.date,
       timeZone: event.timeZone,
-      occurrenceStatus: event.occurrenceStatus ?? "unknown",
-      now: this.dependencies.clock.now()
+      hostName: event.host?.displayName,
+      hostLogo: catalog.isValid && catalog.catalog.hosts.some((host) => host.id === event.host?.id) ? this.hostLogo(event.host?.id) : void 0,
+      venue: event.host?.id ? this.assignments.venues[event.host.id] : void 0,
+      feedbackUrl: !diagnostics.some(
+        (item) => item.severity === "error" && /feedback/.test(item.code)
+      ) && this.collaborators.publicAssetUrl.valid(event.publicationLinks.feedback) ? event.publicationLinks.feedback : void 0,
+      agenda: agendaValid ? event.agenda.map((talk) => ({
+        title: talk.proposal?.title ?? talk.description,
+        speakers: talk.speakers.map((speaker) => speaker.displayName)
+      })) : [],
+      ...participants,
+      nextEvent: catalog.isValid ? await this.nextEvent?.find(event, catalog.catalog) : void 0
     });
-    const catalog = await this.catalog(runtimeDiagnostics);
-    if (event.proposalStatus === "stale")
-      runtimeDiagnostics.push({
-        code: "communication.event-references-unresolved",
-        severity: "error"
-      });
-    const mailRecipientResolution = catalog && event.proposalStatus !== "stale" ? CommunicationRecipients.resolveMailRecipients(
-      event,
-      catalog,
-      runtimeDiagnostics
-    ) : UNRESOLVED_MAIL_RECIPIENTS;
-    const referencesResolved = catalog !== void 0 && mailRecipientResolution.resolved;
-    const recipients = referencesResolved ? await new SpeakerFeedbackPreparation(
-      this.dependencies.feedbackResults
-    ).execute(
-      event,
-      mailRecipientResolution.recipients,
-      runtimeDiagnostics,
-      postEvent
-    ) : mailRecipientResolution.recipients;
-    return {
-      postEvent,
-      mailRecipientResolution: { ...mailRecipientResolution, recipients },
-      referencesResolved
-    };
   }
-  async catalog(runtimeDiagnostics) {
-    const validation = await new ValidateReferentialCatalog(
-      this.dependencies.referentialRepository
-    ).execute();
-    let catalog;
-    if (validation.isValid) {
-      catalog = validation.catalog;
-    } else {
-      runtimeDiagnostics.push({
-        code: "communication.referential-catalog-invalid",
-        severity: "error"
-      });
-    }
-    return catalog;
+  hostLogo(hostId) {
+    if (!hostId) return void 0;
+    const logo = this.assignments.hostLogos?.[hostId];
+    return logo && this.collaborators.publicAssetUrl.valid(logo.url) ? { ...logo, hostId } : void 0;
   }
 };
 
-// packages/application/journey/src/use-cases/communication-placeholders.ts
-var CommunicationPlaceholders = class {
-  static eventPlaceholders(event, slidesUrl) {
-    const presentationUrl = PresentationFileUrl.normalize(slidesUrl);
-    return {
-      eventDate: event.date,
-      ...MeetupPublicationChecklist.isPublished(event) && event.publicationLinks.meetup ? { eventMeetupUrl: event.publicationLinks.meetup } : {},
-      ...event.publicationLinks.community ? { eventCncfUrl: event.publicationLinks.community } : {},
-      ...presentationUrl ? { eventSlidesUrl: presentationUrl } : {}
-    };
-  }
-};
-
-// packages/application/journey/src/use-cases/complete-communication-checklist.ts
-var CompleteCommunicationChecklist = class {
-  constructor(repository, codec) {
+// packages/application/journey/src/use-cases/find-next-asset-event.ts
+var FindNextAssetEvent = class {
+  constructor(collaborators, repository, codec, eventLabel, publication, venues = {}) {
+    this.collaborators = collaborators;
     this.repository = repository;
     this.codec = codec;
+    this.eventLabel = eventLabel;
+    this.publication = publication;
+    this.venues = venues;
   }
+  collaborators;
   repository;
   codec;
-  async execute(source, accepted, diagnostics) {
-    if (accepted.length === 0) return;
-    try {
-      const { event } = this.codec.decode(source);
-      const operationalChecklists = CommunicationChecklist.complete(
-        event,
-        accepted
-      );
-      if (EventChecklists.equal(
-        operationalChecklists,
-        event.operationalChecklists
-      ))
-        return;
-      const patch = this.codec.createPatch(source, {
-        ...event,
-        operationalChecklists
-      });
-      if (!patch.body)
-        throw new Error("Checklist completion could not be rendered");
-      const rendered = this.codec.decode({ ...source, body: patch.body }).event.operationalChecklists;
-      if (!EventChecklists.equal(rendered, operationalChecklists))
-        throw new Error(
-          "Checklist completion was not preserved by the document codec"
-        );
-      const current = await this.repository.find(source.identity);
-      if (!current || !ReconcileEvent.eventDocumentsEqual(current, source))
-        throw new EventConcurrentModificationError(source.identity);
-      await this.repository.applyPatch(source.identity, { body: patch.body });
-    } catch (error2) {
-      const concurrent = error2 instanceof EventConcurrentModificationError;
-      diagnostics.push({
-        code: concurrent ? "communication.checklist-concurrently-modified" : "communication.checklist-update-failed",
-        severity: concurrent ? "warning" : "error"
-      });
+  eventLabel;
+  publication;
+  venues;
+  async find(current, catalog) {
+    const candidates = await this.candidates(current);
+    candidates.sort(
+      (a, b2) => a.date.localeCompare(b2.date) || a.identity.issueNumber - b2.identity.issueNumber
+    );
+    for (const candidate of candidates) {
+      const host = catalog.hosts.find((item) => item.id === candidate.host?.id);
+      if (host)
+        return {
+          date: candidate.date,
+          hostName: host.displayName,
+          city: this.venues[host.id]?.city
+        };
     }
+    return void 0;
+  }
+  async candidates(current) {
+    const events = [];
+    const seen = /* @__PURE__ */ new Set();
+    const cursors = /* @__PURE__ */ new Set();
+    let cursor;
+    for (let pages = 0; pages < 20; pages++) {
+      const page = await this.repository.listPage({
+        repository: current.identity.repository,
+        label: this.eventLabel,
+        includeClosed: false,
+        pageSize: 100,
+        cursor
+      });
+      events.push(...this.pageCandidates(page.items, current, seen));
+      cursor = page.nextCursor;
+      if (!cursor) return events;
+      if (cursors.has(cursor))
+        throw new Error("Asset event listing repeated a cursor");
+      cursors.add(cursor);
+    }
+    throw new Error("Asset event page limit exceeded");
+  }
+  pageCandidates(documents, current, seen) {
+    const events = [];
+    for (const document of documents) {
+      if (document.identity.repository !== current.identity.repository || seen.has(document.identity.issueNumber))
+        continue;
+      seen.add(document.identity.issueNumber);
+      if (seen.size > 200)
+        throw new Error("Asset event selection limit exceeded");
+      const event = this.candidate(document, current);
+      if (event) events.push(event);
+    }
+    return events;
+  }
+  candidate(document, current) {
+    if (document.issueState !== "open" || !document.labels.includes(this.eventLabel))
+      return void 0;
+    const decoded = this.codec.decode(document);
+    const evaluated = this.collaborators.createEventRuleEngine(
+      this.collaborators.eventRuleFactory.createDefaultEventRules()
+    ).evaluate(decoded.event);
+    const event = evaluated.event;
+    const invalid = [...decoded.diagnostics, ...evaluated.diagnostics].some(
+      (item) => item.severity === "error" && (/date|host/.test(item.field ?? "") || item.code.startsWith("event.document."))
+    );
+    if (invalid || event.date <= current.date || event.occurrenceStatus !== "scheduled" || !event.confirmations.host)
+      return void 0;
+    const published = this.collaborators.configuredPublicationPolicies.create(this.publication).filter((policy) => policy.id !== "asset-folder-url").some((policy) => {
+      const field = policy.id === "meetup-event-url" ? "meetup" : "community";
+      return Boolean(event.publicationLinks[field]) && (field !== "meetup" || this.collaborators.meetupPublicationChecklist.isPublished(event)) && !policy.evaluate({ [field]: event.publicationLinks[field] }).diagnostics.some((item) => item.severity === "error");
+    });
+    return published ? event : void 0;
   }
 };
 
-// packages/application/journey/src/use-cases/manage-meetup-communications.ts
-var ManageMeetupCommunications = class _ManageMeetupCommunications {
-  constructor(dependencies) {
+// packages/application/journey/src/use-cases/manage-meetup-assets.ts
+var ManageMeetupAssets = class {
+  constructor(collaborators, dependencies) {
+    this.collaborators = collaborators;
     this.dependencies = dependencies;
   }
+  collaborators;
   dependencies;
   async execute(input) {
-    const runtimeDiagnostics = [];
-    const config = this.dependencies.config;
-    const dispatchPermitted = _ManageMeetupCommunications.isDispatchEnabled(
-      config,
-      runtimeDiagnostics
-    );
-    const { sourceDocument, managed } = await this.loadEvent(input);
-    if (managed.skipped) {
-      return _ManageMeetupCommunications.skippedResult(
-        dispatchPermitted,
-        runtimeDiagnostics
-      );
-    }
-    const delivery = await new CommunicationDeliveryPreparation(
-      this.dependencies
-    ).execute(managed.event, runtimeDiagnostics);
-    const { referencesResolved } = delivery;
-    if (dispatchPermitted && referencesResolved && !await this.sourceIsCurrent(sourceDocument, runtimeDiagnostics)) {
-      return _ManageMeetupCommunications.emptyCommunicationResult(
-        "check",
-        runtimeDiagnostics
-      );
-    }
-    const dispatchEnabled = dispatchPermitted && referencesResolved && !runtimeDiagnostics.some(({ severity }) => severity === "error");
-    return this.deliver(
-      input,
-      sourceDocument,
-      managed,
-      delivery,
-      dispatchEnabled,
-      runtimeDiagnostics
-    );
-  }
-  async deliver(input, sourceDocument, managed, delivery, dispatchEnabled, runtimeDiagnostics) {
-    const deliveryInput = this.deliveryInput(
-      input,
-      managed,
-      delivery,
-      dispatchEnabled
-    );
-    const mailApproved = dispatchEnabled && await this.synchronizeApprovals(runtimeDiagnostics) && await new ApproveCommunicationBatch(
-      this.dependencies.organizerApproval,
-      this.dependencies.clock,
-      this.dependencies.reconcileCommunications(false)
-    ).execute(
-      deliveryInput,
-      delivery.mailRecipientResolution.recipients,
-      managed.event,
-      runtimeDiagnostics
-    );
-    if (dispatchEnabled && !await this.sourceIsCurrent(sourceDocument, runtimeDiagnostics)) {
-      return _ManageMeetupCommunications.emptyCommunicationResult(
-        "check",
-        runtimeDiagnostics
-      );
-    }
-    const reconciliation = await this.dependencies.reconcileCommunications(dispatchEnabled).execute({
-      ...deliveryInput,
-      dispatchAuthorized: mailApproved
+    const source = await this.dependencies.eventRepository.find(input.identity);
+    if (!source) throw new EventNotFoundError(input.identity);
+    const evaluation = await this.dependencies.manageEvent.execute({
+      ...input,
+      mode: "check",
+      sourceDocument: source
     });
-    if (dispatchEnabled) {
-      await new CompleteCommunicationChecklist(
-        this.dependencies.eventRepository,
-        this.dependencies.eventDocumentCodec
-      ).execute(
-        sourceDocument,
-        reconciliation.completedMailKinds,
-        runtimeDiagnostics
-      );
+    if (evaluation.skipped || evaluation.event.occurrenceStatus === "cancelled")
+      return { skipped: true, persisted: false, files: {}, diagnostics: [] };
+    if (!evaluation.event.host?.id || evaluation.diagnostics.some(
+      (item) => item.severity === "error" && (item.code.startsWith("referential.") || /host|date/i.test(item.field ?? ""))
+    )) {
+      return {
+        skipped: true,
+        persisted: false,
+        files: {},
+        diagnostics: [
+          {
+            code: "publication.assets.prerequisites",
+            severity: "warning",
+            field: "publicationLinks.assets",
+            message: "Resolve the event host and date before reconciling assets"
+          }
+        ]
+      };
     }
-    return _ManageMeetupCommunications.withRuntimeDiagnostics(
-      reconciliation,
-      runtimeDiagnostics
+    await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
+      this.dependencies.eventRepository,
+      input.identity,
+      source
     );
-  }
-  static isDispatchEnabled(config, diagnostics) {
-    const enabledByConfig = config.communication["dispatch-enabled"];
-    if (!enabledByConfig) {
-      diagnostics.push({
-        code: "communication.dispatch-disabled-by-config",
-        severity: "warning"
-      });
-    }
-    return enabledByConfig;
-  }
-  async synchronizeApprovals(diagnostics) {
-    try {
-      const result = await this.dependencies.organizerApproval.synchronize();
-      if (result.notificationFailed)
-        diagnostics.push({
-          code: "communication.approval-notification-failed",
-          severity: "warning"
-        });
-      return true;
-    } catch {
-      diagnostics.push({
-        code: "communication.approval-unavailable",
-        severity: "error"
-      });
-      return false;
-    }
-  }
-  static async eventSourceIsCurrent(repository, expected, diagnostics) {
-    const current = await repository.find(expected.identity);
-    if (current && ReconcileEvent.eventDocumentsEqual(current, expected))
-      return true;
-    diagnostics.push({
-      code: "communication.event-concurrently-modified",
-      severity: "error"
+    const assets = await this.dependencies.reconcileAssets.execute({
+      eventId: `${input.identity.repository}#${input.identity.issueNumber}`,
+      date: evaluation.event.date,
+      hostName: evaluation.event.host.displayName,
+      existingUrl: evaluation.event.publicationLinks.assets,
+      mode: "fix",
+      model: await this.dependencies.renderProjection?.create(
+        evaluation.event,
+        evaluation.diagnostics
+      ),
+      recovery: this.dependencies.recovery
     });
-    return false;
+    const persisted = await this.persistAsset(source, assets.container?.url);
+    return {
+      skipped: false,
+      persisted,
+      assetUrl: assets.container?.url,
+      files: assets.files,
+      content: assets.content,
+      diagnostics: assets.diagnostics.map((item) => ({
+        ...item,
+        field: "publicationLinks.assets"
+      }))
+    };
   }
-  static withRuntimeDiagnostics(result, runtimeDiagnostics) {
+  async persistAsset(source, assetUrl) {
+    let persisted = false;
+    if (assetUrl) {
+      const original = this.dependencies.documentCodec.decode(source).event;
+      const patch = this.dependencies.documentCodec.createPatch(source, {
+        ...original,
+        publicationLinks: {
+          ...original.publicationLinks,
+          assets: assetUrl
+        }
+      });
+      if (!this.collaborators.eventRepositoryPatches.eventRepositoryPatchIsEmpty(
+        patch
+      )) {
+        await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
+          this.dependencies.eventRepository,
+          source.identity,
+          source
+        );
+        await this.dependencies.eventRepository.applyPatch(
+          source.identity,
+          patch
+        );
+        persisted = true;
+      }
+    }
+    return persisted;
+  }
+};
+
+// packages/application/journey/src/use-cases/manage-meetup-attention.ts
+var ManageMeetupAttention = class {
+  constructor(collaborators, dependencies) {
+    this.collaborators = collaborators;
+    this.dependencies = dependencies;
+  }
+  collaborators;
+  dependencies;
+  async execute(identity, stages, runId) {
+    const { repository, codec, config, clock } = this.dependencies;
+    const source = await repository.find(identity);
+    if (!source) throw new Error("Attention issue is unavailable");
+    if (!source.labels.includes(config.event["issue-label"]))
+      return {
+        skipped: true,
+        active: 0,
+        posted: false,
+        notificationFailed: false
+      };
+    const facts = this.collaborators.attentionEventFacts.create(
+      codec.decode(source),
+      config
+    );
+    const evidence = await this.synchronizeEvidence();
+    const now2 = clock.now();
+    const observation = this.collaborators.evaluateAttention.execute(
+      { ...facts, ...evidence, stages, runId },
+      now2
+    );
+    const current = await repository.find(identity);
+    if (!current || !this.collaborators.eventDocumentConcurrency.eventDocumentsEqual(
+      source,
+      current
+    ))
+      throw new EventConcurrentModificationError(identity);
+    const commentId = await this.dependencies.followUp.synchronizeFollowUp({
+      eventDate: facts.eventDate,
+      requestedAt: now2.toISOString(),
+      active: this.collaborators.postEventPolicy.isDue({
+        eventDate: facts.eventDate,
+        occurrenceStatus: facts.occurrence,
+        timeZone: "Europe/Paris",
+        now: now2
+      }),
+      pendingTasks: FOLLOW_UP_TASKS.filter(
+        (task) => facts.followUpPending.includes(task)
+      )
+    });
+    const result = await this.dependencies.reconciliation.execute({
+      ...observation,
+      commentId
+    });
     return {
       ...result,
-      runtimeDiagnostics: Object.freeze([...runtimeDiagnostics])
+      skipped: false,
+      notificationFailed: result.notificationFailed || evidence.approvals === void 0 || evidence.recovery === void 0
     };
   }
-  static emptyCommunicationResult(mode, runtimeDiagnostics) {
+  async synchronizeEvidence() {
+    const [approvals, recovery] = await Promise.allSettled([
+      this.dependencies.approvals.synchronizeApprovals(),
+      this.dependencies.recovery.readAttention()
+    ]);
     return {
-      mode,
-      intentIds: [],
-      completedMailKinds: [],
-      counts: {
-        planned: 0,
-        due: 0,
-        alreadyRecorded: 0,
-        reserved: 0,
-        dispatched: 0,
-        accepted: 0,
-        uncertain: 0,
-        rejected: 0,
-        deferred: 0
-      },
-      diagnostics: [],
-      runtimeDiagnostics: Object.freeze([...runtimeDiagnostics])
+      approvals: approvals.status === "fulfilled" ? approvals.value : void 0,
+      recovery: recovery.status === "fulfilled" ? recovery.value : void 0
     };
   }
-  async loadEvent(input) {
-    const repositoryName = `${input.owner}/${input.repo}`;
-    const identity = {
-      repository: repositoryName,
-      issueNumber: input.issueNumber
-    };
-    const sourceDocument = await this.dependencies.eventRepository.find(identity);
+};
+
+// packages/application/journey/src/use-cases/manage-meetup-event.ts
+var ManageMeetupEvent = class {
+  constructor(collaborators, dependencies) {
+    this.collaborators = collaborators;
+    this.dependencies = dependencies;
+  }
+  collaborators;
+  dependencies;
+  async execute(input) {
+    const config = this.dependencies.config;
+    const eventDependencies = this.dependencies.eventDependencies;
+    const sourceDocument = input.sourceDocument ?? await eventDependencies.repository.find(input.identity);
     if (!sourceDocument) {
-      throw new Error(
-        `Meetup event ${repositoryName}#${input.issueNumber} was not found`
-      );
+      throw new EventNotFoundError(input.identity);
     }
-    const managed = await this.dependencies.manageEvent.execute({
-      identity,
+    if (!sourceDocument.labels.includes(config.event["issue-label"])) {
+      return { skipped: true, diagnostics: [] };
+    }
+    const eventResult = await this.collaborators.createReconcileEvent(eventDependencies).execute({
+      identity: input.identity,
       mode: "check",
       sourceDocument
     });
-    return { identity, sourceDocument, managed };
-  }
-  deliveryInput(input, managed, delivery, dispatchEnabled) {
-    const config = this.dependencies.config;
-    const repositoryName = `${input.owner}/${input.repo}`;
+    const eventDiagnostics = [...eventResult.diagnostics];
+    let event = await this.resolveParticipants(
+      eventResult.event,
+      eventDiagnostics
+    );
+    const publication = this.collaborators.eventPublicationEvaluation.evaluatePublication(
+      event,
+      config
+    );
+    event = publication.event;
+    eventDiagnostics.push(...publication.diagnostics);
+    const manualPublicationTasks = this.collaborators.eventPublicationEvaluation.planEventManualPublicationTasks(
+      event
+    );
+    const readiness = this.collaborators.eventReadinessPolicy.evaluateEventReadiness(
+      event,
+      eventDiagnostics
+    );
+    const lifecycle = this.collaborators.eventLifecycle.evaluateEventLifecycle({
+      event,
+      readiness,
+      now: eventDependencies.clock.now()
+    });
+    const persisted = await this.persist(sourceDocument, event, input.mode);
     return {
-      mode: dispatchEnabled ? "dispatch" : "check",
-      dispatchAuthorized: false,
-      repositoryId: input.repositoryId?.trim() || repositoryName,
-      eventId: `issue-${input.issueNumber}`,
-      eventDate: managed.event.date,
-      timeZone: config.timezone,
-      readiness: managed.isReady ? "ready" : "not-ready",
-      occurrenceStatus: managed.event.occurrenceStatus ?? "unknown",
-      policyVersion: String(config.communication["policy-version"]),
-      mailRecipients: CommunicationChecklist.pendingRecipients(
-        managed.event,
-        delivery.mailRecipientResolution.recipients,
-        delivery.postEvent
-      ),
-      mailPlaceholders: CommunicationPlaceholders.eventPlaceholders(
-        managed.event,
-        input.slidesReady === false ? void 0 : input.slidesUrl
-      )
+      skipped: false,
+      event,
+      state: lifecycle.state,
+      isReady: readiness.isReady,
+      manualPublicationTasks,
+      persisted,
+      diagnostics: [
+        ...readiness.diagnostics.map(
+          this.collaborators.eventDiagnosticProjection.toPublicDiagnostic.bind(
+            this.collaborators.eventDiagnosticProjection
+          )
+        ),
+        ...this.collaborators.eventPublicationEvaluation.pendingManualTaskDiagnostics(
+          manualPublicationTasks
+        )
+      ]
     };
   }
-  sourceIsCurrent(source, diagnostics) {
-    return _ManageMeetupCommunications.eventSourceIsCurrent(
-      this.dependencies.eventRepository,
-      source,
-      diagnostics
+  async resolveParticipants(event, eventDiagnostics) {
+    const catalogValidation = await this.collaborators.createValidateReferentialCatalog(this.dependencies.referentialRepository).execute();
+    if (catalogValidation.isValid) {
+      event = await this.collaborators.createRefreshSelectedProposals(this.dependencies.proposalSource).execute(event, catalogValidation.catalog, eventDiagnostics);
+      const speakerReferences = event.agenda.flatMap(
+        (entry) => entry.speakers.map(
+          this.collaborators.eventParticipantResolution.renderReference.bind(
+            this.collaborators.eventParticipantResolution
+          )
+        )
+      );
+      const resolution = this.collaborators.createResolveEventReferences().execute(catalogValidation.catalog, {
+        hostReference: event.host ? this.collaborators.eventParticipantResolution.renderReference(
+          event.host
+        ) : "",
+        speakerReferences
+      });
+      eventDiagnostics.push(
+        ...resolution.diagnostics.map(
+          (item) => this.collaborators.eventDiagnosticProjection.toEventDiagnostic(
+            item.code,
+            item.severity,
+            item.path,
+            item.message
+          )
+        )
+      );
+      if (resolution.resolved) {
+        event = this.collaborators.eventParticipantResolution.enrichStableReferences(
+          event,
+          resolution.host,
+          resolution.speakers
+        );
+      }
+    } else {
+      if (event.proposalReferences?.length)
+        event = { ...event, proposalStatus: "stale" };
+      eventDiagnostics.push(
+        ...catalogValidation.diagnostics.map(
+          (item) => this.collaborators.eventDiagnosticProjection.toEventDiagnostic(
+            item.code,
+            item.severity,
+            item.path,
+            item.message
+          )
+        )
+      );
+    }
+    return event;
+  }
+  async persist(sourceDocument, event, mode) {
+    const eventDependencies = this.dependencies.eventDependencies;
+    const repositoryPatch = eventDependencies.documentCodec.createPatch(
+      sourceDocument,
+      event
+    );
+    if (mode === "check" || this.collaborators.eventRepositoryPatches.eventRepositoryPatchIsEmpty(
+      repositoryPatch
+    ))
+      return false;
+    await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
+      eventDependencies.repository,
+      sourceDocument.identity,
+      sourceDocument
+    );
+    await eventDependencies.repository.applyPatch(
+      sourceDocument.identity,
+      repositoryPatch
+    );
+    return true;
+  }
+};
+
+// packages/application/journey/src/use-cases/manage-meetup-feedback.ts
+var ManageMeetupFeedback = class {
+  constructor(collaborators, dependencies) {
+    this.collaborators = collaborators;
+    this.dependencies = dependencies;
+  }
+  collaborators;
+  dependencies;
+  async execute(input) {
+    const source = await this.dependencies.eventRepository.find(input.identity);
+    if (!source) throw new EventNotFoundError(input.identity);
+    const evaluation = await this.dependencies.manageEvent.execute({
+      ...input,
+      mode: "check",
+      sourceDocument: source
+    });
+    if (evaluation.skipped)
+      return this.skipped("unrelated", "This issue is not a meetup");
+    const event = evaluation.event;
+    if (event.proposalStatus === "stale" || evaluation.diagnostics.some(
+      (item) => item.code.startsWith("referential.source.")
+    ))
+      return {
+        skipped: true,
+        persisted: false,
+        linkUpdated: false,
+        diagnostics: evaluation.diagnostics
+      };
+    if (event.issueState === "closed" || event.occurrenceStatus === "cancelled" || event.occurrenceStatus === "postponed")
+      return this.skipped(
+        "inactive",
+        "Feedback automation is inactive for this event"
+      );
+    if (!this.collaborators.feedbackPolicy.validDate(event.date) || this.invalid(evaluation.diagnostics))
+      return this.skipped(
+        "prerequisites",
+        "Resolve the event date and feedback link before updating feedback"
+      );
+    const agenda = this.collaborators.feedbackAgendaProjection.create(
+      event,
+      evaluation.diagnostics
+    );
+    if (!agenda && !event.publicationLinks.feedback)
+      return this.skipped(
+        "agenda",
+        "Complete talk subjects and resolve speaker references before creating feedback"
+      );
+    return this.synchronizeFeedback(source, event, agenda).catch(
+      (error2) => {
+        if (!(error2 instanceof FeedbackResolutionError) || error2.kind !== "conflict")
+          throw error2;
+        return this.skipped(
+          "conflict",
+          "Resolve ambiguous feedback talk or speaker identities before synchronizing",
+          "warning"
+        );
+      }
     );
   }
-  static skippedResult(dispatchPermitted, runtimeDiagnostics) {
-    runtimeDiagnostics.push({
-      code: "communication.event-skipped",
-      severity: "info"
+  async synchronizeFeedback(source, event, agenda) {
+    const name = event.eventTitle.trim().slice(0, 100);
+    if (!name)
+      return this.skipped(
+        "prerequisites",
+        "Set an event title before updating feedback"
+      );
+    await this.ensureCurrent(source);
+    const { repository, issueNumber } = source.identity;
+    const url = await this.dependencies.events.ensureEvent({
+      key: `${repository.toLowerCase()}#${issueNumber}`,
+      name,
+      scheduleUrl: `https://github.com/${repository}/issues/${issueNumber}`,
+      ...agenda ? { agenda } : {},
+      ...event.publicationLinks.feedback ? {
+        url: this.collaborators.feedbackPolicy.pollUrl(
+          event.publicationLinks.feedback
+        )
+      } : {}
     });
-    return _ManageMeetupCommunications.emptyCommunicationResult(
-      dispatchPermitted ? "dispatch" : "check",
-      runtimeDiagnostics
+    const result = await this.reconcile(
+      source,
+      event,
+      this.collaborators.feedbackPolicy.pollUrl(url)
+    );
+    if (agenda) return result;
+    return {
+      ...result,
+      diagnostics: [
+        ...result.diagnostics,
+        {
+          code: "publication.feedback.agenda",
+          severity: "warning",
+          field: "publicationLinks.feedback",
+          message: "Complete talk subjects and resolve speaker references before synchronizing the feedback agenda"
+        }
+      ]
+    };
+  }
+  async reconcile(source, event, url) {
+    await this.ensureCurrent(source);
+    const { persisted, current } = await this.persist(source, url);
+    const diagnostics = [];
+    let linkUpdated = false;
+    const now2 = this.dependencies.clock.now();
+    if (this.collaborators.feedbackPolicy.isLinkUpdateDue(
+      event.date,
+      now2,
+      event.timeZone
+    )) {
+      const conflict = await this.linkConflict(source, event, now2);
+      if (conflict) diagnostics.push(conflict);
+      else {
+        await this.ensureCurrent(current);
+        linkUpdated = await this.dependencies.links.updateTarget(url);
+      }
+    }
+    return {
+      skipped: false,
+      persisted,
+      feedbackUrl: url,
+      linkUpdated,
+      diagnostics
+    };
+  }
+  invalid(diagnostics) {
+    const fields = /date|feedback/i;
+    return diagnostics.some(
+      (item) => item.severity === "error" && (item.code.startsWith("event.document.") || fields.test(item.field ?? ""))
+    );
+  }
+  async persist(source, feedbackUrl) {
+    const original = this.dependencies.documentCodec.decode(source).event;
+    if (original.publicationLinks.feedback === feedbackUrl)
+      return { persisted: false, current: source };
+    const patch = this.dependencies.documentCodec.createPatch(source, {
+      ...original,
+      publicationLinks: { ...original.publicationLinks, feedback: feedbackUrl }
+    });
+    if (this.collaborators.eventRepositoryPatches.eventRepositoryPatchIsEmpty(
+      patch
+    ))
+      return { persisted: false, current: source };
+    await this.ensureCurrent(source);
+    await this.dependencies.eventRepository.applyPatch(source.identity, patch);
+    return { persisted: true, current: { ...source, ...patch } };
+  }
+  async linkConflict(source, target, now2) {
+    let cursor;
+    const visited = /* @__PURE__ */ new Set();
+    for (let pages = 0; pages < 20; pages++) {
+      const page = await this.dependencies.eventRepository.listPage({
+        repository: source.identity.repository,
+        label: this.dependencies.eventLabel,
+        cursor
+      });
+      for (const document of page.items) {
+        if (document.identity.issueNumber === source.identity.issueNumber)
+          continue;
+        const { event } = this.dependencies.documentCodec.decode(document);
+        const conflict = this.collaborators.feedbackLinkSelection.conflict(
+          {
+            date: event.date,
+            isOpen: event.issueState === "open",
+            occurrenceStatus: event.occurrenceStatus
+          },
+          target.date,
+          now2,
+          target.timeZone
+        );
+        if (conflict) return this.conflictDiagnostic(conflict);
+      }
+      cursor = page.nextCursor;
+      if (!cursor) return void 0;
+      if (visited.has(cursor)) throw new EventPaginationError(cursor);
+      visited.add(cursor);
+    }
+    throw new EventPaginationError("feedback-page-limit");
+  }
+  conflictDiagnostic(conflict) {
+    return {
+      code: `publication.feedback.${conflict}`,
+      severity: conflict === "ambiguous-date" ? "warning" : "info",
+      message: conflict === "ambiguous-date" ? "Several active meetups share this date; update the shared feedback link manually" : "An active meetup takes place today; keep its shared feedback link until the event day ends"
+    };
+  }
+  ensureCurrent(source) {
+    return this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
+      this.dependencies.eventRepository,
+      source.identity,
+      source
+    );
+  }
+  skipped(code, message, severity = "info") {
+    return {
+      skipped: true,
+      persisted: false,
+      linkUpdated: false,
+      diagnostics: [
+        {
+          code: `publication.feedback.${code}`,
+          severity,
+          field: "publicationLinks.feedback",
+          message
+        }
+      ]
+    };
+  }
+};
+
+// packages/application/journey/src/use-cases/manage-meetup-publication.ts
+var PUBLICATION_LINK_FIELDS = [
+  "publicationLinks.meetup",
+  "publicationLinks.community",
+  "publicationLinks.assets",
+  "publicationLinks.feedback"
+];
+var ManageMeetupPublication = class {
+  constructor(collaborators, dependencies) {
+    this.collaborators = collaborators;
+    this.dependencies = dependencies;
+  }
+  collaborators;
+  dependencies;
+  async execute(identity) {
+    const source = await this.dependencies.repository.find(identity);
+    if (!source) throw new Error("Meetup source issue was not found");
+    const evaluation = await this.dependencies.manageEvent.execute({
+      identity,
+      mode: "check",
+      sourceDocument: source
+    });
+    if (evaluation.skipped) return this.result("skipped", "inactive");
+    if (evaluation.diagnostics.some(
+      this.collaborators.diagnosticPolicy.isTechnicalFailure.bind(
+        this.collaborators.diagnosticPolicy
+      )
+    ))
+      return this.result("blocked", "source");
+    const event = evaluation.event;
+    if (event.issueState !== "open" || ["cancelled", "postponed", "held"].includes(event.occurrenceStatus ?? ""))
+      return this.result("skipped", "inactive");
+    const draft = this.collaborators.meetupPublicationProjection.create(
+      event,
+      this.dependencies.settings
+    );
+    if (evaluation.diagnostics.some(
+      (item) => item.code === "event.document.checkbox.invalid" && item.field === "Communication"
+    ) || !draft || !this.collaborators.scheduledEventPolicy.valid(
+      draft,
+      this.dependencies.clock.now()
+    ) || evaluation.diagnostics.some(
+      (item) => item.severity === "error" && !PUBLICATION_LINK_FIELDS.includes(item.field ?? "")
+    ))
+      return this.result("blocked", "prerequisites");
+    return this.synchronize(source, draft, event.publicationLinks.meetup);
+  }
+  async synchronize(source, draft, supplied) {
+    const record = await this.dependencies.journal.load();
+    const suppliedUrl = this.eventUrl(supplied);
+    const recordedUrl = this.eventUrl(record?.url);
+    if (supplied && !suppliedUrl || record?.url && !recordedUrl)
+      return this.result("blocked", "link");
+    if (suppliedUrl && recordedUrl && suppliedUrl.value !== recordedUrl.value)
+      return this.result("blocked", "conflict");
+    const url = (suppliedUrl ?? recordedUrl)?.value;
+    if (!url && record) return this.result("blocked", "uncertain");
+    try {
+      const saved = await this.dependencies.gateway.save(
+        draft,
+        url,
+        async () => {
+          await this.ensureCurrent(source);
+          if (!url) await this.dependencies.journal.reserve();
+          await this.ensureCurrent(source);
+        },
+        async (savedUrl) => {
+          if (!this.eventUrl(savedUrl))
+            throw new ScheduledEventError("verification");
+          await this.dependencies.journal.record(savedUrl);
+        }
+      );
+      if (!this.eventUrl(saved.url) || !url && saved.status !== "draft")
+        throw new ScheduledEventError("verification");
+      return await this.complete(source, draft, saved);
+    } catch (error2) {
+      if (!(error2 instanceof ScheduledEventError)) throw error2;
+      return this.result("blocked", error2.kind);
+    }
+  }
+  eventUrl(value) {
+    const group = MeetupGroupUrl.fromEventUrlPrefix(
+      this.dependencies.meetupUrlPrefix
+    );
+    return group ? MeetupEventUrl.parse(value, group) : void 0;
+  }
+  async persist(source, saved) {
+    await this.ensureCurrent(source);
+    const event = this.dependencies.codec.decode(source).event;
+    const updated = this.collaborators.meetupPublicationChecklist.withStatus(
+      event,
+      saved.status === "published"
+    );
+    const patch = this.dependencies.codec.createPatch(source, {
+      ...updated,
+      publicationLinks: { ...event.publicationLinks, meetup: saved.url }
+    });
+    if (!this.collaborators.eventRepositoryPatches.eventRepositoryPatchIsEmpty(
+      patch
+    )) {
+      await this.ensureCurrent(source);
+      await this.dependencies.repository.applyPatch(source.identity, patch);
+    }
+    return { ...source, ...patch };
+  }
+  async complete(source, event, saved) {
+    const current = await this.persist(source, saved);
+    if (saved.status === "published")
+      return { status: "updated", diagnostics: [] };
+    await this.ensureCurrent(current);
+    const approval = this.collaborators.createMeetupPublicationApproval(
+      this.dependencies.approval,
+      this.dependencies.clock
+    );
+    const decision = await approval.request(event, saved.url);
+    const diagnostics = decision.notificationFailed ? this.result("blocked", "approval-notification-failed").diagnostics : [];
+    if (decision.status !== "approved")
+      return {
+        status: "draft",
+        reviewUrl: saved.url,
+        diagnostics: [
+          ...diagnostics,
+          ...this.result("blocked", `approval-${decision.status}`).diagnostics
+        ]
+      };
+    const published = await this.dependencies.gateway.publish(
+      event,
+      saved.url,
+      async () => {
+        await this.ensureCurrent(current);
+        if (!this.collaborators.scheduledEventPolicy.valid(
+          event,
+          this.dependencies.clock.now()
+        ))
+          throw new ScheduledEventError("verification");
+        await approval.requireApproved(event, saved.url);
+        await this.ensureCurrent(current);
+      }
+    );
+    if (published.status !== "published" || published.url !== saved.url)
+      throw new ScheduledEventError("verification");
+    await this.persist(current, published);
+    return { status: "updated", diagnostics };
+  }
+  ensureCurrent(source) {
+    return this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
+      this.dependencies.repository,
+      source.identity,
+      source
+    );
+  }
+  result(status, code) {
+    return {
+      status,
+      diagnostics: [
+        {
+          code: `publication.meetup.${code}`,
+          severity: [
+            "editor",
+            "verification",
+            "source",
+            "unavailable",
+            "approval-unavailable",
+            "approval-notification-failed"
+          ].includes(code) ? "error" : status === "blocked" ? "warning" : "info",
+          field: "publicationLinks.meetup",
+          message: `Meetup publication: ${code}`
+        }
+      ]
+    };
+  }
+};
+
+// packages/application/journey/src/use-cases/meetup-publication-approval.ts
+var MeetupPublicationApproval = class {
+  constructor(collaborators, approvals, clock) {
+    this.collaborators = collaborators;
+    this.approvals = approvals;
+    this.clock = clock;
+  }
+  collaborators;
+  approvals;
+  clock;
+  async request(event, url) {
+    try {
+      return await this.approvals.request({
+        kind: "meetup-publication",
+        revision: this.collaborators.meetupPublicationRevision.of(event, url),
+        eventDate: event.date,
+        requestedAt: this.clock.now(),
+        publication: {
+          url,
+          title: event.title,
+          startTime: event.startTime,
+          endTime: event.endTime,
+          timeZone: event.timeZone,
+          venue: event.venue
+        }
+      });
+    } catch {
+      throw new ScheduledEventError("approval-unavailable");
+    }
+  }
+  async requireApproved(event, url) {
+    const result = await this.request(event, url);
+    if (result.status !== "approved")
+      throw new ScheduledEventError(
+        result.status === "pending" ? "approval-pending" : "approval-rejected"
+      );
+  }
+};
+
+// packages/application/journey/src/use-cases/reconcile-organizer-feedback.ts
+var ReconcileOrganizerFeedback = class {
+  constructor(collaborators, events, comments, meetupLabel) {
+    this.collaborators = collaborators;
+    this.events = events;
+    this.comments = comments;
+    this.meetupLabel = meetupLabel;
+  }
+  collaborators;
+  events;
+  comments;
+  meetupLabel;
+  async execute(identity, stageResults) {
+    const diagnostics = this.collaborators.attentionStageEvaluation.diagnostics(stageResults);
+    if (!this.collaborators.attentionStageEvaluation.complete(stageResults))
+      return;
+    const source = await this.events.find(identity);
+    if (!source) throw new Error("Organizer feedback issue is unavailable");
+    if (!source.labels.includes(this.meetupLabel)) return;
+    await this.comments.reconcileDiagnostics(
+      identity,
+      diagnostics.filter((item) => item.severity !== "info" && item.fixApplied !== true).map((item) => ({
+        ...item,
+        category: item.severity === "error" ? "invalid" : "incomplete"
+      }))
     );
   }
 };
@@ -32630,194 +35766,6 @@ var RefreshSelectedProposals = class {
   }
 };
 
-// packages/application/journey/src/use-cases/event-diagnostic-projection.ts
-var EventDiagnosticProjection = class {
-  static toEventDiagnostic(code, severity, field, message) {
-    return {
-      code,
-      severity,
-      category: severity === "error" ? "invalid" : "migration",
-      field,
-      message
-    };
-  }
-  static toPublicDiagnostic(item) {
-    return {
-      code: item.code,
-      severity: item.severity,
-      field: item.field,
-      message: item.message,
-      fixApplied: false
-    };
-  }
-};
-
-// packages/application/journey/src/use-cases/event-participant-resolution.ts
-var EventParticipantResolution = class _EventParticipantResolution {
-  static renderReference(reference) {
-    return reference.id ? `${reference.displayName} [${reference.id}]` : reference.displayName;
-  }
-  static enrichStableReferences(event, host, speakers) {
-    return {
-      ...event,
-      host: _EventParticipantResolution.resolvedParticipant(host),
-      agenda: event.agenda.map((entry) => ({
-        ...entry,
-        speakers: entry.speakers.map((reference) => {
-          const matches = speakers.filter(
-            (speaker2) => reference.id ? speaker2.id === reference.id : _EventParticipantResolution.canonical(speaker2.displayName) === _EventParticipantResolution.canonical(reference.displayName)
-          );
-          const speaker = matches.length === 1 ? matches[0] : void 0;
-          return speaker ? _EventParticipantResolution.resolvedParticipant(speaker) : reference;
-        })
-      }))
-    };
-  }
-  static resolvedParticipant(reference) {
-    return {
-      id: reference.id,
-      displayName: reference.displayName,
-      ...reference.pictureUrl ? { pictureUrl: reference.pictureUrl } : {},
-      ...reference.source ? { source: reference.source } : {}
-    };
-  }
-  static canonical(value) {
-    return value.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US");
-  }
-};
-
-// packages/application/journey/src/use-cases/manage-meetup-event.ts
-var ManageMeetupEvent = class {
-  constructor(dependencies) {
-    this.dependencies = dependencies;
-  }
-  dependencies;
-  async execute(input) {
-    const config = this.dependencies.config;
-    const eventDependencies = this.dependencies.eventDependencies;
-    const sourceDocument = input.sourceDocument ?? await eventDependencies.repository.find(input.identity);
-    if (!sourceDocument) {
-      throw new EventNotFoundError(input.identity);
-    }
-    if (!sourceDocument.labels.includes(config.event["issue-label"])) {
-      return { skipped: true, diagnostics: [] };
-    }
-    const eventResult = await new ReconcileEvent(eventDependencies).execute({
-      identity: input.identity,
-      mode: "check",
-      sourceDocument
-    });
-    const eventDiagnostics = [...eventResult.diagnostics];
-    let event = await this.resolveParticipants(
-      eventResult.event,
-      eventDiagnostics
-    );
-    const publication = EventPublicationEvaluation.evaluatePublication(
-      event,
-      config
-    );
-    event = publication.event;
-    eventDiagnostics.push(...publication.diagnostics);
-    const manualPublicationTasks = EventPublicationEvaluation.planEventManualPublicationTasks(event);
-    const readiness = EventReadinessPolicy.evaluateEventReadiness(
-      event,
-      eventDiagnostics
-    );
-    const lifecycle = EventLifecycle.evaluateEventLifecycle({
-      event,
-      readiness,
-      now: eventDependencies.clock.now()
-    });
-    const persisted = await this.persist(sourceDocument, event, input.mode);
-    return {
-      skipped: false,
-      event,
-      state: lifecycle.state,
-      isReady: readiness.isReady,
-      manualPublicationTasks,
-      persisted,
-      diagnostics: [
-        ...readiness.diagnostics.map(
-          EventDiagnosticProjection.toPublicDiagnostic
-        ),
-        ...EventPublicationEvaluation.pendingManualTaskDiagnostics(
-          manualPublicationTasks
-        )
-      ]
-    };
-  }
-  async resolveParticipants(event, eventDiagnostics) {
-    const catalogValidation = await new ValidateReferentialCatalog(
-      this.dependencies.referentialRepository
-    ).execute();
-    if (catalogValidation.isValid) {
-      event = await new RefreshSelectedProposals(
-        this.dependencies.proposalSource
-      ).execute(event, catalogValidation.catalog, eventDiagnostics);
-      const speakerReferences = event.agenda.flatMap(
-        (entry) => entry.speakers.map(EventParticipantResolution.renderReference)
-      );
-      const resolution = new ResolveEventReferences().execute(
-        catalogValidation.catalog,
-        {
-          hostReference: event.host ? EventParticipantResolution.renderReference(event.host) : "",
-          speakerReferences
-        }
-      );
-      eventDiagnostics.push(
-        ...resolution.diagnostics.map(
-          (item) => EventDiagnosticProjection.toEventDiagnostic(
-            item.code,
-            item.severity,
-            item.path,
-            item.message
-          )
-        )
-      );
-      if (resolution.resolved) {
-        event = EventParticipantResolution.enrichStableReferences(
-          event,
-          resolution.host,
-          resolution.speakers
-        );
-      }
-    } else {
-      if (event.proposalReferences?.length)
-        event = { ...event, proposalStatus: "stale" };
-      eventDiagnostics.push(
-        ...catalogValidation.diagnostics.map(
-          (item) => EventDiagnosticProjection.toEventDiagnostic(
-            item.code,
-            item.severity,
-            item.path,
-            item.message
-          )
-        )
-      );
-    }
-    return event;
-  }
-  async persist(sourceDocument, event, mode) {
-    const eventDependencies = this.dependencies.eventDependencies;
-    const repositoryPatch = eventDependencies.documentCodec.createPatch(
-      sourceDocument,
-      event
-    );
-    if (mode === "check" || EventRepositoryPatches.eventRepositoryPatchIsEmpty(repositoryPatch))
-      return false;
-    await ReconcileEvent.ensureEventDocumentIsCurrent(
-      eventDependencies.repository,
-      sourceDocument.identity,
-      sourceDocument
-    );
-    await eventDependencies.repository.applyPatch(
-      sourceDocument.identity,
-      repositoryPatch
-    );
-    return true;
-  }
-};
-
 // packages/application/journey/src/use-cases/synchronize-meetup-issue-form.ts
 var SynchronizeMeetupIssueForm = class {
   constructor(dependencies) {
@@ -32850,18 +35798,96 @@ var SynchronizeMeetupIssueForm = class {
   }
 };
 
+// packages/application/journey/src/use-cases/synchronize-source-speakers.ts
+var SynchronizeSourceSpeakers = class {
+  constructor(collaborators, source, store, form, config) {
+    this.collaborators = collaborators;
+    this.source = source;
+    this.store = store;
+    this.form = form;
+    this.config = config;
+  }
+  collaborators;
+  source;
+  store;
+  form;
+  config;
+  async execute() {
+    const original = await this.collaborators.speakerSynchronizationStageRunner.at(
+      "read-catalog",
+      () => this.store.read()
+    );
+    const snapshot = await this.collaborators.speakerSynchronizationStageRunner.at(
+      "load-source",
+      () => this.source.load()
+    );
+    const merged = await this.collaborators.speakerSynchronizationStageRunner.at(
+      "merge-speakers",
+      () => this.collaborators.createMergeSourceSpeakers().execute(original.entries, snapshot, original.reservedIds)
+    );
+    const catalog = await this.collaborators.speakerSynchronizationStageRunner.at(
+      "validate-catalog",
+      async () => this.validate(await this.store.candidate(merged.entries))
+    );
+    await this.collaborators.speakerSynchronizationStageRunner.at(
+      "check-form",
+      () => this.project(catalog, "check")
+    );
+    const changed = await this.collaborators.speakerSynchronizationStageRunner.at(
+      "save-catalog",
+      () => this.store.save(original, merged.entries, merged.reservedIds)
+    );
+    const form = await this.collaborators.speakerSynchronizationStageRunner.at(
+      "update-form",
+      () => this.project(catalog, "fix")
+    );
+    return {
+      changed: changed || form.changed,
+      speakerCount: catalog.speakers.length
+    };
+  }
+  async validate(input) {
+    const validation = await this.collaborators.createValidateReferentialCatalog().execute(input);
+    if (!validation.isValid)
+      throw new SpeakerSynchronizationError(
+        "validate-catalog",
+        void 0,
+        validation.diagnostics.map(({ path, ...item }) => ({
+          ...item,
+          field: path
+        }))
+      );
+    return validation.catalog;
+  }
+  async project(catalog, mode) {
+    const result = await this.form.synchronize({
+      issueFormPath: this.config["issue-form"],
+      occurrenceStatusFieldId: this.config["occurrence-status-field"],
+      catalog,
+      mode
+    });
+    if (result.diagnostics.some((item) => item.severity === "error"))
+      throw new SpeakerSynchronizationError(
+        mode === "check" ? "check-form" : "update-form",
+        void 0,
+        result.diagnostics
+      );
+    return result;
+  }
+};
+
 // packages/application/journey/src/use-cases/validate-meetup-referentials.ts
 var ValidateMeetupReferentials = class {
-  constructor(dependencies) {
+  constructor(collaborators, dependencies) {
+    this.collaborators = collaborators;
     this.dependencies = dependencies;
   }
+  collaborators;
   dependencies;
   async execute() {
     const config = this.dependencies.config;
     const repository = this.dependencies.referentialRepository;
-    const validation = await new ValidateReferentialCatalog(
-      repository
-    ).execute();
+    const validation = await this.collaborators.createValidateReferentialCatalog(repository).execute();
     const diagnostics = validation.diagnostics.map((item) => ({
       code: item.code,
       severity: item.severity,
@@ -32872,35 +35898,161 @@ var ValidateMeetupReferentials = class {
   }
 };
 
-// packages/runtime/github-actions/src/action-failure-presenter.ts
-var SAFE_ERROR_NAMES = /* @__PURE__ */ new Set([
-  "GoogleDriveAssetRepositoryError",
-  "EventNotFoundError",
-  "EventConcurrentModificationError",
-  "GitHubEventRepositoryConfigurationError",
-  "GitHubEventRepositoryScopeError",
-  "GitHubEventRepositoryResponseError",
-  "GitHubEventCommentRepositoryConfigurationError",
-  "GitHubEventCommentRepositoryScopeError",
-  "GitHubEventCommentRepositoryResponseError"
-]);
-var ActionFailurePresenter = class {
-  /** Never expose provider responses, input values, or contact data in failures. */
-  static publicErrorMessage(error2) {
-    if (error2 instanceof Error && SAFE_ERROR_NAMES.has(error2.name)) {
-      return `${error2.name}: ${error2.message}`;
-    }
-    return "Unexpected technical failure.";
+// packages/application/journey/src/dependency-composition.ts
+var JourneyComposition = class {
+  assetRenderProjection(...args) {
+    return new AssetRenderProjection(
+      {
+        assetParticipantProjection: new JourneyPolicyComposition().assetParticipantProjection(),
+        publicAssetUrl: new PublicationDomainComposition().publicAssetUrl(),
+        createValidateReferentialCatalog: (...args2) => new ReferentialDomainComposition().validateReferentialCatalog(
+          ...args2
+        )
+      },
+      ...args
+    );
+  }
+  findNextAssetEvent(...args) {
+    return new FindNextAssetEvent(
+      {
+        eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
+        configuredPublicationPolicies: new JourneyPolicyComposition().configuredPublicationPolicies(),
+        meetupPublicationChecklist: new EventDomainComposition().meetupPublicationChecklist(),
+        createEventRuleEngine: (...args2) => new EventDomainComposition().eventRuleEngine(...args2)
+      },
+      ...args
+    );
+  }
+  manageMeetupAssets(...args) {
+    return new ManageMeetupAssets(
+      {
+        eventDocumentConcurrency: new EventDomainComposition().eventDocumentConcurrency(),
+        eventRepositoryPatches: new EventDomainComposition().eventRepositoryPatches()
+      },
+      ...args
+    );
+  }
+  manageMeetupAttention(...args) {
+    return new ManageMeetupAttention(
+      {
+        attentionEventFacts: new JourneyPolicyComposition().attentionEventFacts(),
+        evaluateAttention: new CommunicationDomainComposition().evaluateAttention(),
+        eventDocumentConcurrency: new EventDomainComposition().eventDocumentConcurrency(),
+        postEventPolicy: new CommunicationDomainComposition().postEventPolicy()
+      },
+      ...args
+    );
+  }
+  manageMeetupEvent(...args) {
+    return new ManageMeetupEvent(
+      {
+        eventPublicationEvaluation: new JourneyPolicyComposition().eventPublicationEvaluation(),
+        eventReadinessPolicy: new EventDomainComposition().eventReadinessPolicy(),
+        eventLifecycle: new EventDomainComposition().eventLifecycle(),
+        eventDiagnosticProjection: new JourneyPolicyComposition().eventDiagnosticProjection(),
+        eventParticipantResolution: new JourneyPolicyComposition().eventParticipantResolution(),
+        eventRepositoryPatches: new EventDomainComposition().eventRepositoryPatches(),
+        eventDocumentConcurrency: new EventDomainComposition().eventDocumentConcurrency(),
+        createReconcileEvent: (...args2) => new EventDomainComposition().reconcileEvent(...args2),
+        createValidateReferentialCatalog: (...args2) => new ReferentialDomainComposition().validateReferentialCatalog(
+          ...args2
+        ),
+        createRefreshSelectedProposals: (...args2) => this.refreshSelectedProposals(...args2),
+        createResolveEventReferences: (...args2) => new ReferentialDomainComposition().resolveEventReferences(...args2)
+      },
+      ...args
+    );
+  }
+  manageMeetupFeedback(...args) {
+    return new ManageMeetupFeedback(
+      {
+        feedbackPolicy: new PublicationDomainComposition().feedbackPolicy(),
+        feedbackAgendaProjection: new JourneyPolicyComposition().feedbackAgendaProjection(),
+        eventRepositoryPatches: new EventDomainComposition().eventRepositoryPatches(),
+        feedbackLinkSelection: new PublicationDomainComposition().feedbackLinkSelection(),
+        eventDocumentConcurrency: new EventDomainComposition().eventDocumentConcurrency()
+      },
+      ...args
+    );
+  }
+  manageMeetupPublication(...args) {
+    return new ManageMeetupPublication(
+      {
+        diagnosticPolicy: new JourneyPolicyComposition().diagnosticPolicy(),
+        meetupPublicationProjection: new JourneyPolicyComposition().meetupPublicationProjection(),
+        scheduledEventPolicy: new PublicationDomainComposition().scheduledEventPolicy(),
+        meetupPublicationChecklist: new EventDomainComposition().meetupPublicationChecklist(),
+        eventRepositoryPatches: new EventDomainComposition().eventRepositoryPatches(),
+        eventDocumentConcurrency: new EventDomainComposition().eventDocumentConcurrency(),
+        createMeetupPublicationApproval: (...args2) => this.meetupPublicationApproval(...args2)
+      },
+      ...args
+    );
+  }
+  meetupPublicationApproval(...args) {
+    return new MeetupPublicationApproval(
+      {
+        meetupPublicationRevision: new JourneyPolicyComposition().meetupPublicationRevision()
+      },
+      ...args
+    );
+  }
+  reconcileOrganizerFeedback(...args) {
+    return new ReconcileOrganizerFeedback(
+      {
+        attentionStageEvaluation: new JourneyPolicyComposition().attentionStageEvaluation()
+      },
+      ...args
+    );
+  }
+  refreshSelectedProposals(...args) {
+    return new RefreshSelectedProposals(...args);
+  }
+  synchronizeMeetupIssueForm(...args) {
+    return new SynchronizeMeetupIssueForm(...args);
+  }
+  synchronizeSourceSpeakers(...args) {
+    return new SynchronizeSourceSpeakers(
+      {
+        speakerSynchronizationStageRunner: new JourneyPolicyComposition().speakerSynchronizationStageRunner(),
+        createMergeSourceSpeakers: (...args2) => new ReferentialDomainComposition().mergeSourceSpeakers(...args2),
+        createValidateReferentialCatalog: (...args2) => new ReferentialDomainComposition().validateReferentialCatalog(
+          ...args2
+        )
+      },
+      ...args
+    );
+  }
+  validateMeetupReferentials(...args) {
+    return new ValidateMeetupReferentials(
+      {
+        createValidateReferentialCatalog: (...args2) => new ReferentialDomainComposition().validateReferentialCatalog(
+          ...args2
+        )
+      },
+      ...args
+    );
   }
 };
 
-// packages/runtime/github-actions/src/action-output.ts
-var ActionOutput = class _ActionOutput {
-  static setJsonOutput(name, value) {
-    setOutput(name, JSON.stringify(value));
+// packages/presentation/localization/src/locale-resolver.ts
+var LocaleResolver = class {
+  resolveLocale(requested) {
+    try {
+      const language = new Intl.Locale(
+        requested.trim().replaceAll("_", "-") || "en"
+      ).language;
+      return language === "fr" ? "fr" : "en";
+    } catch {
+      return "en";
+    }
   }
-  static setDiagnosticsOutput(diagnostics) {
-    _ActionOutput.setJsonOutput("diagnostics", diagnostics);
+};
+
+// packages/presentation/localization/src/dependency-composition.ts
+var LocalizationComposition = class {
+  localeResolver() {
+    return new LocaleResolver();
   }
 };
 
@@ -36225,34 +39377,26 @@ function createIntl(config, cache) {
 }
 
 // packages/presentation/localization/src/message-localizer.ts
-var MessageLocalizer = class _MessageLocalizer {
-  constructor(catalogs, locale = "en") {
+var MessageLocalizer = class {
+  constructor(collaborators, catalogs, locale = "en") {
+    this.collaborators = collaborators;
     this.catalogs = catalogs;
-    this.locale = _MessageLocalizer.resolveLocale(locale);
+    this.locale = this.collaborators.localeResolver.resolveLocale(locale);
     this.intl = createIntl(
       {
         locale: this.locale,
         defaultLocale: "en",
         messages: catalogs[this.locale],
-        onError: _MessageLocalizer.keepFormattingErrorsPrivate,
-        onWarn: _MessageLocalizer.keepFormattingErrorsPrivate
+        onError: this.keepFormattingErrorsPrivate.bind(this),
+        onWarn: this.keepFormattingErrorsPrivate.bind(this)
       },
       createIntlCache()
     );
   }
+  collaborators;
   catalogs;
   locale;
   intl;
-  static resolveLocale(requested) {
-    try {
-      const language = new Intl.Locale(
-        requested.trim().replaceAll("_", "-") || "en"
-      ).language;
-      return language === "fr" ? "fr" : "en";
-    } catch {
-      return "en";
-    }
-  }
   t(key, ...args) {
     return this.intl.formatMessage(
       { id: key, defaultMessage: this.catalogs.en[key] },
@@ -36260,406 +39404,13 @@ var MessageLocalizer = class _MessageLocalizer {
       { ignoreTag: true }
     );
   }
-  static keepFormattingErrorsPrivate() {
-  }
-};
-
-// packages/runtime/github-actions/src/i18n/diagnostics-referential.en.ts
-var DIAGNOSTICS_REFERENTIAL_EN = {
-  "diagnostic.referential.source.unavailable": "Conference Hall speaker profiles are unavailable. Check CFP access and retry; cached contacts are not used.",
-  "diagnostic.referential.source.invalid": "Conference Hall speaker profiles are invalid or belong to another CFP. Check source configuration before retrying.",
-  "diagnostic.referential.source.rate-limited": "Conference Hall has rate-limited profile refresh. Wait for the source retry window; cached contacts are not used.",
-  "diagnostic.referential.source.mapping-required": "A linked speaker is missing from the configured CFP export. Review the source identity mapping before retrying.",
-  "diagnostic.referential.source.conflict": "Conference Hall speaker identities conflict. Review scoped mappings before retrying.",
-  "diagnostic.referential.speaker.display-name.invalid": "A display name or both structured names are required.",
-  "diagnostic.referential.speaker.mapping.invalid": "Source mappings must be complete, scoped and unique.",
-  "diagnostic.referential.contact.id.duplicate": "Contact stable identifiers must be unique.",
-  "diagnostic.referential.host.id.conflict": "A host stable identifier cannot describe different host names.",
-  "diagnostic.referential.host.display-name.invalid": "Host display name must be a non-empty string.",
-  "diagnostic.referential.contact.name.invalid": "Contact name must be a non-empty string.",
-  "diagnostic.referential.contact.email.invalid": "Host contact email address is invalid.",
-  "diagnostic.referential.contact.phone.invalid": "Host contact phone must be a string when provided.",
-  "diagnostic.referential.contact.address.invalid": "Host contact address must be a non-empty string.",
-  "diagnostic.referential.host.id.invalid": "Host stable identifier must use the opaque host-0001 format.",
-  "diagnostic.referential.contact.id.invalid": "Contact stable identifier must use the opaque contact-0001 format.",
-  "diagnostic.referential.reference.host.invalid": "Explicit host reference contains an invalid stable identifier.",
-  "diagnostic.referential.reference.host.unknown": "Explicit host stable identifier is not present in the catalog.",
-  "diagnostic.referential.reference.host.display-name-mismatch": "Host display name is stale; the stable identifier remains authoritative.",
-  "diagnostic.referential.reference.speaker.invalid": "Explicit speaker reference contains an invalid stable identifier.",
-  "diagnostic.referential.reference.speaker.unknown": "Explicit speaker stable identifier is not present in the catalog.",
-  "diagnostic.referential.reference.speaker.display-name-mismatch": "Speaker display name is stale; the stable identifier remains authoritative.",
-  "diagnostic.referential.speaker.id.duplicate": "Speaker stable identifiers must be unique.",
-  "diagnostic.referential.speaker.id.invalid": "Speaker stable identifier must use the speaker-* slug format.",
-  "diagnostic.referential.speaker.first-name.invalid": "Speaker first name must be a non-empty string.",
-  "diagnostic.referential.speaker.last-name.invalid": "Speaker last name must be a non-empty string.",
-  "diagnostic.referential.speaker.company.invalid": "Speaker company must be a non-empty string.",
-  "diagnostic.referential.speaker.email.invalid": "Speaker email address is invalid.",
-  "diagnostic.referential.speaker.phone.invalid": "Speaker phone must be a string when provided.",
-  "diagnostic.referential.host.display-name.duplicate": "Duplicate normalized host display names are not allowed; keep one stable host per public name.",
-  "diagnostic.referential.speaker.display-name.duplicate": "Duplicate normalized speaker display names are not allowed; keep one stable speaker per public name.",
-  "diagnostic.referential.reference.host.ambiguous": "Several hosts share this name; include the correct stable host ID.",
-  "diagnostic.referential.reference.speaker.ambiguous": "Several speakers share this name; include the correct stable speaker ID."
-};
-
-// packages/runtime/github-actions/src/i18n/diagnostics-referential.fr.ts
-var DIAGNOSTICS_REFERENTIAL_FR = {
-  "diagnostic.referential.source.unavailable": "Les profils Conference Hall sont indisponibles. V\xE9rifiez les acc\xE8s au CFP puis r\xE9essayez ; les anciens contacts ne sont pas utilis\xE9s.",
-  "diagnostic.referential.source.invalid": "Les profils Conference Hall sont invalides ou proviennent d'un autre CFP. V\xE9rifiez la configuration avant de r\xE9essayer.",
-  "diagnostic.referential.source.rate-limited": "Conference Hall limite les requ\xEAtes de profils. Attendez le d\xE9lai de reprise ; les anciens contacts ne sont pas utilis\xE9s.",
-  "diagnostic.referential.source.mapping-required": "Un intervenant li\xE9 est absent de l'export du CFP configur\xE9. V\xE9rifiez son identit\xE9 source avant de r\xE9essayer.",
-  "diagnostic.referential.source.conflict": "Les identit\xE9s des intervenants Conference Hall sont en conflit. V\xE9rifiez les correspondances dans le CFP avant de r\xE9essayer.",
-  "diagnostic.referential.speaker.display-name.invalid": "Un nom public ou un pr\xE9nom et un nom sont n\xE9cessaires.",
-  "diagnostic.referential.speaker.mapping.invalid": "Les identit\xE9s source doivent \xEAtre compl\xE8tes, uniques et li\xE9es au CFP.",
-  "diagnostic.referential.contact.id.duplicate": "Les identifiants stables des contacts doivent \xEAtre uniques.",
-  "diagnostic.referential.host.id.conflict": "Un identifiant stable d'h\xF4te ne peut pas d\xE9signer plusieurs noms d'h\xF4te.",
-  "diagnostic.referential.host.display-name.invalid": "Le nom de l'h\xF4te doit \xEAtre une cha\xEEne de caract\xE8res non vide.",
-  "diagnostic.referential.contact.name.invalid": "Le nom du contact doit \xEAtre une cha\xEEne de caract\xE8res non vide.",
-  "diagnostic.referential.contact.email.invalid": "L'adresse e-mail du contact de l'h\xF4te est invalide.",
-  "diagnostic.referential.contact.phone.invalid": "Le t\xE9l\xE9phone du contact doit \xEAtre une cha\xEEne de caract\xE8res lorsqu'il est renseign\xE9.",
-  "diagnostic.referential.contact.address.invalid": "L'adresse du contact doit \xEAtre une cha\xEEne de caract\xE8res non vide.",
-  "diagnostic.referential.host.id.invalid": "L'identifiant stable de l'h\xF4te doit respecter le format opaque host-0001.",
-  "diagnostic.referential.contact.id.invalid": "L'identifiant stable du contact doit respecter le format opaque contact-0001.",
-  "diagnostic.referential.reference.host.invalid": "La r\xE9f\xE9rence de l'h\xF4te ou son identifiant stable est invalide.",
-  "diagnostic.referential.reference.host.unknown": "L'h\xF4te r\xE9f\xE9renc\xE9 est absent du catalogue.",
-  "diagnostic.referential.reference.host.display-name-mismatch": "Le nom de l'h\xF4te est obsol\xE8te ; son identifiant stable reste la r\xE9f\xE9rence.",
-  "diagnostic.referential.reference.speaker.invalid": "La r\xE9f\xE9rence de l'intervenant ou son identifiant stable est invalide.",
-  "diagnostic.referential.reference.speaker.unknown": "L'intervenant r\xE9f\xE9renc\xE9 est absent du catalogue.",
-  "diagnostic.referential.reference.speaker.display-name-mismatch": "Le nom de l'intervenant est obsol\xE8te ; son identifiant stable reste la r\xE9f\xE9rence.",
-  "diagnostic.referential.speaker.id.duplicate": "Les identifiants stables des intervenants doivent \xEAtre uniques.",
-  "diagnostic.referential.speaker.id.invalid": "L'identifiant stable de l'intervenant doit respecter le format speaker-*.",
-  "diagnostic.referential.speaker.first-name.invalid": "Le pr\xE9nom de l'intervenant doit \xEAtre une cha\xEEne de caract\xE8res non vide.",
-  "diagnostic.referential.speaker.last-name.invalid": "Le nom de l'intervenant doit \xEAtre une cha\xEEne de caract\xE8res non vide.",
-  "diagnostic.referential.speaker.company.invalid": "L'entreprise de l'intervenant doit \xEAtre une cha\xEEne de caract\xE8res non vide.",
-  "diagnostic.referential.speaker.email.invalid": "L'adresse e-mail de l'intervenant est invalide.",
-  "diagnostic.referential.speaker.phone.invalid": "Le t\xE9l\xE9phone de l'intervenant doit \xEAtre une cha\xEEne de caract\xE8res lorsqu'il est renseign\xE9.",
-  "diagnostic.referential.host.display-name.duplicate": "Les noms d'h\xF4te normalis\xE9s doivent \xEAtre uniques ; conservez un seul identifiant stable par nom public.",
-  "diagnostic.referential.speaker.display-name.duplicate": "Les noms d'intervenant normalis\xE9s doivent \xEAtre uniques ; conservez un seul identifiant stable par nom public.",
-  "diagnostic.referential.reference.host.ambiguous": "Plusieurs h\xF4tes portent ce nom ; ajoutez le bon identifiant stable.",
-  "diagnostic.referential.reference.speaker.ambiguous": "Plusieurs intervenants portent ce nom ; ajoutez le bon identifiant stable."
-};
-
-// packages/runtime/github-actions/src/i18n/messages.en.ts
-var EN_MESSAGES = {
-  "diagnostic.publication.meetup.approval-pending": "Approve or reject publication in the organizer approval comment. The event remains a draft until approved.",
-  "diagnostic.publication.meetup.approval-rejected": "Publication was rejected. The event remains a draft; changed event content requires a new approval.",
-  "diagnostic.publication.meetup.approval-unavailable": "Publication approval could not be verified. Check the approval comment and GitHub App permissions before retrying.",
-  "diagnostic.publication.meetup.approval-notification-failed": "The organizer approval notification could not be confirmed. Review the approval comment in the issue.",
-  "diagnostic.publication.meetup.source": "Event source evaluation failed. Resolve the technical source diagnostics before synchronizing.",
-  "diagnostic.publication.meetup.unavailable": "Browser login or startup failed. Check runtime installation, connectivity, solver configuration, and the login page selectors.",
-  "action.publication.reconcile-meetup": "Create or update Meetup event",
-  "report.meetup.draft": "meetup_event=draft approval=required",
-  "report.meetup.review": "meetup_url={url}",
-  "report.meetup.updated": "meetup_event=synchronized",
-  "report.meetup.skipped": "meetup_event=skipped",
-  "report.meetup.blocked": "meetup_event=blocked",
-  "diagnostic.publication.meetup.inactive": "Meetup publication is inactive for this issue.",
-  "diagnostic.publication.meetup.prerequisites": "Complete the future event date, title, description, confirmed host and speakers, resolved agenda, and public venue mapping, and fix malformed Communication checklist items before synchronizing.",
-  "diagnostic.publication.meetup.link": "Set a valid event URL belonging to the configured Meetup group.",
-  "diagnostic.publication.meetup.conflict": "The issue link and recorded Meetup event differ. Restore the recorded event link before running again.",
-  "diagnostic.publication.meetup.uncertain": "Synchronization was interrupted. Check Meetup and enter the verified draft or published event URL in Meetup Link before running again. Leave Meetup event published unchecked until publication is confirmed. Delete the journal only if an organizer has verified that no event was created.",
-  "diagnostic.publication.meetup.authentication": "Organizer login could not be verified. Check the account, credentials, and Gemini configuration; complete any unsupported challenge interactively.",
-  "diagnostic.publication.meetup.editor": "The Meetup editor could not be prepared. Check organizer permissions, the configured venue, and browser selectors.",
-  "diagnostic.publication.meetup.verification": "Meetup did not return the expected saved event fields. Its identity is recorded; inspect the event and rerun to update it.",
-  "diagnostic.issue-form.out-of-date": "Synchronize the issue form.",
-  "diagnostic.issue-form.updated": "Issue form synchronized.",
-  "report.speaker-sync.pr-title": "feat(referential): synchronize Conference Hall speakers",
-  "report.speaker-sync.pr-body": "Review speaker identity mappings and preserved local CSV fields before merging.",
-  "action.referential.sync-speakers": "Synchronize Conference Hall speakers",
-  "report.speaker-sync.completed": "speaker_sync=completed speakers={count}",
-  "report.speaker-sync.failed": "speaker_sync=blocked stage={stage}",
-  "report.speaker-sync.stage.read-catalog": "read-catalog",
-  "report.speaker-sync.stage.load-source": "load-source",
-  "report.speaker-sync.stage.merge-speakers": "merge-speakers",
-  "report.speaker-sync.stage.validate-catalog": "validate-catalog",
-  "report.speaker-sync.stage.check-form": "check-form",
-  "report.speaker-sync.stage.save-catalog": "save-catalog",
-  "report.speaker-sync.stage.update-form": "update-form",
-  "report.speaker-sync.stage.unknown": "unknown",
-  "diagnostic.speaker-sync.configuration": "Set the CFP slug and Web API key.",
-  "diagnostic.speaker-sync.http": "Conference Hall returned an HTTP error; retry when the service is available.",
-  "diagnostic.speaker-sync.authentication": "Check the API key in the CFP's Settings > Web API.",
-  "diagnostic.speaker-sync.event-not-found": "Check the CFP slug in CONFERENCE_HALL_EVENT.",
-  "diagnostic.speaker-sync.network": "Check runner network access to conference-hall.io.",
-  "diagnostic.speaker-sync.timeout": "Conference Hall exceeded the 15-second timeout; retry.",
-  "diagnostic.speaker-sync.json": "The CFP Web API returned invalid JSON.",
-  "diagnostic.speaker-sync.schema": "Correct the indicated required field in the CFP Web API export.",
-  "diagnostic.speaker-sync.response-size": "The CFP Web API response must contain 1 byte to 5 MiB.",
-  "diagnostic.speaker-sync.unavailable": "Check the CFP slug, API key and runner network access.",
-  "diagnostic.speaker-sync.history-unavailable": "Speaker ID history is unavailable. Fetch the complete repository history (fetch-depth: 0) and verify Git can read it before retrying.",
-  "diagnostic.speaker-sync.invalid": "Check the speaker CSV, allocation state and issue form.",
-  "diagnostic.speaker-sync.mapping-required": "Link the existing speaker using source_provider, source_event and source_speaker_id in referentials/speakers.csv; preserve speaker_id.",
-  "diagnostic.speaker-sync.conflict": "Resolve duplicate source mappings or concurrent catalog edits.",
-  "diagnostic.speaker-sync.rate-limited": "Conference Hall rate limit reached; retry after the API cooldown.",
-  "diagnostic.speaker-sync.unexpected": "Unexpected technical failure during speaker synchronization.",
-  "report.speaker-sync.private": "speaker_sync=blocked reason=private-repository-required",
-  "action.communication.reconcile-attention": "Reconcile organizer attention",
-  "report.attention.updated": "attention=persisted",
-  "report.attention.skipped": "attention=skipped reason=unrelated-issue",
-  "report.attention.failed": "attention=synchronization-failed",
-  "action.publication.reconcile-feedback": "Reconcile meetup feedback",
-  "report.feedback.skipped": "feedback=skipped",
-  "report.feedback.completed": "feedback=completed",
-  "report.feedback.changes": "issue_persisted={persisted} feedback_link_updated={linkUpdated}",
-  "error.EventNotFoundError": "The event could not be found.",
-  "error.EventConcurrentModificationError": "The event changed during reconciliation.",
-  "error.GoogleDriveAssetRepositoryError": "Google Drive asset reconciliation failed.",
-  "error.GitHubEventRepositoryConfigurationError": "The event repository configuration is invalid.",
-  "error.GitHubEventRepositoryScopeError": "The event is outside the configured repository scope.",
-  "error.GitHubEventRepositoryResponseError": "GitHub returned an invalid event response.",
-  "error.GitHubEventCommentRepositoryConfigurationError": "The comment repository configuration is invalid.",
-  "error.GitHubEventCommentRepositoryScopeError": "The comment is outside the configured repository scope.",
-  "error.GitHubEventCommentRepositoryResponseError": "GitHub returned an invalid comment response.",
-  "action.referential.validate": "Validate meetup referentials",
-  "action.referential.sync-issue-form": "Synchronize meetup issue form",
-  "action.event.reconcile": "Reconcile meetup event",
-  "action.event.list-active": "List active meetup events",
-  "action.communication.reconcile": "Reconcile meetup communications",
-  "action.publication.reconcile-assets": "Reconcile meetup assets",
-  "report.failed": "failure={reason}",
-  "report.technical-failure": "technical_failure={codes}",
-  "report.summary-unavailable": "summary=unavailable",
-  "report.error.unexpected": "Unexpected technical failure.",
-  "report.referential.valid": "referentials=valid",
-  "report.referential.invalid": "referentials=invalid",
-  "report.referential.counts": "hosts={hosts, number} speakers={speakers, number}",
-  "report.issue-form.blocked": "issue_form=blocked reason=invalid-referentials",
-  "report.issue-form.stale": "issue_form=stale",
-  "report.issue-form.updated": "issue_form=updated",
-  "report.issue-form.current": "issue_form=current",
-  "report.issue-form.files": "files={files}",
-  "report.event.context": "issue={issue} mode={mode}",
-  "report.event.skipped": "event=skipped reason=unrelated-issue",
-  "report.event.state": "state={state} ready={ready}",
-  "report.event.persisted": "issue_persisted={persisted}",
-  "report.events.count": "active_events={count, number}",
-  "report.events.issues": "issues={issues}",
-  "report.events.empty": "active_events=0",
-  "report.assets.skipped": "assets=skipped",
-  "report.assets.completed": "assets=completed",
-  "report.assets.counts": "issue_persisted={persisted} asset_files={count, number}",
-  "report.communication.mode": "communication_mode={mode}",
-  "report.communication.planned": "planned={planned, number} due={due, number} dispatched={dispatched, number}",
-  "report.communication.accepted": "accepted={accepted, number} recorded={recorded, number} deferred={deferred, number}",
-  "report.communication.uncertain": "uncertain={uncertain, number} rejected={rejected, number}"
-};
-
-// packages/runtime/github-actions/src/i18n/messages.fr.ts
-var FR_MESSAGES = {
-  "diagnostic.publication.meetup.approval-pending": "Approuvez ou refusez la publication dans le commentaire d'approbation. L'\xE9v\xE9nement reste en brouillon avant approbation.",
-  "diagnostic.publication.meetup.approval-rejected": "La publication a \xE9t\xE9 refus\xE9e. L'\xE9v\xE9nement reste en brouillon ; toute modification n\xE9cessite une nouvelle approbation.",
-  "diagnostic.publication.meetup.approval-unavailable": "Impossible de v\xE9rifier l'approbation de publication. V\xE9rifiez le commentaire et les permissions de la GitHub App avant de relancer.",
-  "diagnostic.publication.meetup.approval-notification-failed": "La notification d'approbation n'a pas pu \xEAtre confirm\xE9e. Consultez le commentaire d'approbation dans l'issue.",
-  "diagnostic.publication.meetup.source": "La lecture des sources a \xE9chou\xE9. R\xE9solvez les diagnostics techniques des sources avant de synchroniser.",
-  "diagnostic.publication.meetup.unavailable": "Le d\xE9marrage du navigateur ou la connexion a \xE9chou\xE9. V\xE9rifiez les d\xE9pendances, le r\xE9seau, le solveur et les s\xE9lecteurs de connexion.",
-  "action.publication.reconcile-meetup": "Cr\xE9er ou mettre \xE0 jour un \xE9v\xE9nement Meetup",
-  "report.meetup.draft": "evenement_meetup=brouillon approbation=requise",
-  "report.meetup.review": "meetup_url={url}",
-  "report.meetup.updated": "evenement_meetup=synchronise",
-  "report.meetup.skipped": "evenement_meetup=ignore",
-  "report.meetup.blocked": "evenement_meetup=bloque",
-  "diagnostic.publication.meetup.inactive": "La publication Meetup est inactive pour cette issue.",
-  "diagnostic.publication.meetup.prerequisites": "Compl\xE9tez la date future, le titre, la description, les confirmations, le programme r\xE9solu et le lieu public, puis corrigez les cases mal form\xE9es dans Communication avant de synchroniser.",
-  "diagnostic.publication.meetup.link": "Renseignez une URL d'\xE9v\xE9nement valide du groupe Meetup configur\xE9.",
-  "diagnostic.publication.meetup.conflict": "Le lien de l'issue diff\xE8re de l'\xE9v\xE9nement enregistr\xE9. R\xE9tablissez le lien enregistr\xE9 avant de relancer.",
-  "diagnostic.publication.meetup.uncertain": "Synchronisation interrompue. V\xE9rifiez Meetup et inscrivez le lien v\xE9rifi\xE9 du brouillon ou de l'\xE9v\xE9nement publi\xE9 dans Meetup Link avant de relancer. Laissez Meetup event published d\xE9coch\xE9 tant que la publication n'est pas confirm\xE9e. Ne supprimez le journal qu'apr\xE8s avoir v\xE9rifi\xE9 qu'aucun \xE9v\xE9nement n'a \xE9t\xE9 cr\xE9\xE9.",
-  "diagnostic.publication.meetup.authentication": "Connexion organisateur non v\xE9rifi\xE9e. V\xE9rifiez le compte, les identifiants et Gemini ; terminez manuellement toute v\xE9rification non prise en charge.",
-  "diagnostic.publication.meetup.editor": "Impossible de pr\xE9parer l'\xE9diteur Meetup. V\xE9rifiez les droits organisateur, le lieu configur\xE9 et les s\xE9lecteurs du navigateur.",
-  "diagnostic.publication.meetup.verification": "Les champs enregistr\xE9s sur Meetup ne correspondent pas. L'identit\xE9 est conserv\xE9e ; v\xE9rifiez l'\xE9v\xE9nement puis relancez sa mise \xE0 jour.",
-  "diagnostic.issue-form.out-of-date": "Synchronisez le formulaire d'issue.",
-  "diagnostic.issue-form.updated": "Formulaire d'issue synchronis\xE9.",
-  "report.speaker-sync.pr-title": "feat(referential): synchroniser les intervenants Conference Hall",
-  "report.speaker-sync.pr-body": "V\xE9rifiez les identit\xE9s des intervenants et les champs locaux du CSV avant fusion.",
-  "action.referential.sync-speakers": "Synchroniser les intervenants Conference Hall",
-  "report.speaker-sync.completed": "speaker_sync=completed speakers={count}",
-  "report.speaker-sync.failed": "speaker_sync=blocked stage={stage}",
-  "report.speaker-sync.stage.read-catalog": "read-catalog",
-  "report.speaker-sync.stage.load-source": "load-source",
-  "report.speaker-sync.stage.merge-speakers": "merge-speakers",
-  "report.speaker-sync.stage.validate-catalog": "validate-catalog",
-  "report.speaker-sync.stage.check-form": "check-form",
-  "report.speaker-sync.stage.save-catalog": "save-catalog",
-  "report.speaker-sync.stage.update-form": "update-form",
-  "report.speaker-sync.stage.unknown": "unknown",
-  "diagnostic.speaker-sync.configuration": "Configurez le slug du CFP et sa cl\xE9 Web API.",
-  "diagnostic.speaker-sync.http": "Conference Hall renvoie une erreur HTTP ; r\xE9essayez quand le service est disponible.",
-  "diagnostic.speaker-sync.authentication": "V\xE9rifiez la cl\xE9 API dans Settings > Web API du CFP.",
-  "diagnostic.speaker-sync.event-not-found": "V\xE9rifiez le slug du CFP dans CONFERENCE_HALL_EVENT.",
-  "diagnostic.speaker-sync.network": "V\xE9rifiez l'acc\xE8s r\xE9seau de l'ex\xE9cuteur \xE0 conference-hall.io.",
-  "diagnostic.speaker-sync.timeout": "Conference Hall a d\xE9pass\xE9 le d\xE9lai de 15 secondes ; r\xE9essayez.",
-  "diagnostic.speaker-sync.json": "La Web API du CFP a renvoy\xE9 un JSON invalide.",
-  "diagnostic.speaker-sync.schema": "Corrigez le champ obligatoire indiqu\xE9 dans l'export Web API du CFP.",
-  "diagnostic.speaker-sync.response-size": "La r\xE9ponse Web API du CFP doit contenir entre 1 octet et 5 Mio.",
-  "diagnostic.speaker-sync.history-unavailable": "L'historique des identifiants d'intervenants est indisponible. R\xE9cup\xE9rez tout l'historique du d\xE9p\xF4t (fetch-depth: 0) et v\xE9rifiez que Git peut le lire avant de r\xE9essayer.",
-  "diagnostic.speaker-sync.unavailable": "V\xE9rifiez le slug du CFP, sa cl\xE9 API et l'acc\xE8s r\xE9seau de l'ex\xE9cuteur.",
-  "diagnostic.speaker-sync.invalid": "V\xE9rifiez le CSV des intervenants, les identifiants r\xE9serv\xE9s et le formulaire d'issue.",
-  "diagnostic.speaker-sync.mapping-required": "Renseignez source_provider, source_event et source_speaker_id pour l'intervenant existant dans referentials/speakers.csv ; conservez speaker_id.",
-  "diagnostic.speaker-sync.conflict": "Corrigez les correspondances en double ou les modifications concurrentes du catalogue.",
-  "diagnostic.speaker-sync.rate-limited": "Limite API Conference Hall atteinte ; r\xE9essayez apr\xE8s le d\xE9lai impos\xE9.",
-  "diagnostic.speaker-sync.unexpected": "Erreur technique inattendue pendant la synchronisation des intervenants.",
-  "report.speaker-sync.private": "speaker_sync=blocked reason=private-repository-required",
-  "action.communication.reconcile-attention": "Synchroniser les points \xE0 traiter par les organisateurs",
-  "report.attention.updated": "attention=persisted",
-  "report.attention.skipped": "attention=skipped reason=unrelated-issue",
-  "report.attention.failed": "attention=synchronization-failed",
-  "action.publication.reconcile-feedback": "V\xE9rifier et mettre \xE0 jour les retours du meetup",
-  "report.feedback.skipped": "feedback=skipped",
-  "report.feedback.completed": "feedback=completed",
-  "report.feedback.changes": "issue_persisted={persisted} feedback_link_updated={linkUpdated}",
-  "error.EventNotFoundError": "L'\xE9v\xE9nement est introuvable.",
-  "error.EventConcurrentModificationError": "L'\xE9v\xE9nement a chang\xE9 pendant la synchronisation.",
-  "error.GoogleDriveAssetRepositoryError": "La synchronisation des fichiers Google Drive a \xE9chou\xE9.",
-  "error.GitHubEventRepositoryConfigurationError": "La configuration du d\xE9p\xF4t d'\xE9v\xE9nements est invalide.",
-  "error.GitHubEventRepositoryScopeError": "L'\xE9v\xE9nement est hors du p\xE9rim\xE8tre du d\xE9p\xF4t configur\xE9.",
-  "error.GitHubEventRepositoryResponseError": "La r\xE9ponse GitHub pour l'\xE9v\xE9nement est invalide.",
-  "error.GitHubEventCommentRepositoryConfigurationError": "La configuration du d\xE9p\xF4t de commentaires est invalide.",
-  "error.GitHubEventCommentRepositoryScopeError": "Le commentaire est hors du p\xE9rim\xE8tre du d\xE9p\xF4t configur\xE9.",
-  "error.GitHubEventCommentRepositoryResponseError": "La r\xE9ponse GitHub pour les commentaires est invalide.",
-  "action.referential.validate": "Valider les r\xE9f\xE9rentiels du meetup",
-  "action.referential.sync-issue-form": "Synchroniser le formulaire du meetup",
-  "action.event.reconcile": "V\xE9rifier et mettre \xE0 jour le meetup",
-  "action.event.list-active": "Lister les meetups actifs",
-  "action.communication.reconcile": "V\xE9rifier et envoyer les communications du meetup",
-  "action.publication.reconcile-assets": "V\xE9rifier et mettre \xE0 jour les ressources du meetup",
-  "report.failed": "failure={reason}",
-  "report.technical-failure": "technical_failure={codes}",
-  "report.summary-unavailable": "summary=unavailable",
-  "report.error.unexpected": "Erreur technique inattendue.",
-  "report.referential.valid": "referentials=valid",
-  "report.referential.invalid": "referentials=invalid",
-  "report.referential.counts": "hosts={hosts, number} speakers={speakers, number}",
-  "report.issue-form.blocked": "issue_form=blocked reason=invalid-referentials",
-  "report.issue-form.stale": "issue_form=stale",
-  "report.issue-form.updated": "issue_form=updated",
-  "report.issue-form.current": "issue_form=current",
-  "report.issue-form.files": "files={files}",
-  "report.event.context": "issue={issue} mode={mode}",
-  "report.event.skipped": "event=skipped reason=unrelated-issue",
-  "report.event.state": "state={state} ready={ready}",
-  "report.event.persisted": "issue_persisted={persisted}",
-  "report.events.count": "active_events={count, number}",
-  "report.events.issues": "issues={issues}",
-  "report.events.empty": "active_events=0",
-  "report.assets.skipped": "assets=skipped",
-  "report.assets.completed": "assets=completed",
-  "report.assets.counts": "issue_persisted={persisted} asset_files={count, number}",
-  "report.communication.mode": "communication_mode={mode}",
-  "report.communication.planned": "planned={planned, number} due={due, number} dispatched={dispatched, number}",
-  "report.communication.accepted": "accepted={accepted, number} recorded={recorded, number} deferred={deferred, number}",
-  "report.communication.uncertain": "uncertain={uncertain, number} rejected={rejected, number}"
-};
-
-// packages/runtime/github-actions/src/i18n/catalog.ts
-var CATALOGS = {
-  en: {
-    ...EN_MESSAGES,
-    ...DIAGNOSTICS_REFERENTIAL_EN
-  },
-  fr: {
-    ...FR_MESSAGES,
-    ...DIAGNOSTICS_REFERENTIAL_FR
-  }
-};
-
-// packages/runtime/github-actions/src/i18n/action-messages.ts
-var ActionMessages = class extends MessageLocalizer {
-  constructor(locale = "en") {
-    super(CATALOGS, locale);
-  }
-  /** Private speaker-sync PR guidance; the fallback must already be redacted. */
-  diagnostic(code, fallback) {
-    const key = `diagnostic.${code}`;
-    return this.locale === "en" || !Object.hasOwn(CATALOGS.en, key) ? fallback : this.t(key);
-  }
-  error(name, publicFallback) {
-    const key = `error.${name}`;
-    if (this.locale === "en") return publicFallback;
-    return Object.hasOwn(CATALOGS.en, key) ? this.t(key) : this.t("report.error.unexpected");
-  }
-};
-
-// packages/runtime/github-actions/src/action-report.ts
-var ActionReport = class _ActionReport {
-  static async write(title, report, messages5 = new ActionMessages()) {
-    const lines = new Set(report.details);
-    for (const item of report.diagnostics) {
-      lines.add(_ActionReport.diagnosticMessage(item));
-    }
-    if (report.failure)
-      lines.add(messages5.t("report.failed", { reason: report.failure }));
-    for (const line of lines) {
-      info(line.replaceAll("\r", "\\r").replaceAll("\n", "\\n"));
-    }
-    const content = [...lines].join("\n").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-    try {
-      await summary.addHeading(title, 2).addRaw(`<pre>${content}</pre>
-`).write();
-    } catch {
-      summary.clear();
-      warning(messages5.t("report.summary-unavailable"));
-    }
-  }
-  static diagnosticMessage(item) {
-    const field = item.field ? ` field=${item.field}` : "";
-    const fixed = item.fixApplied === void 0 ? "" : ` fix_applied=${item.fixApplied}`;
-    return `${item.severity} ${item.code}${field}${fixed}`;
-  }
-};
-
-// packages/runtime/github-actions/src/action-runner.ts
-var ActionRunner = class {
-  static async run(title, operation, diagnosticsOutput) {
-    let messages5 = new ActionMessages("en");
-    let report;
-    try {
-      messages5 = new ActionMessages(
-        getInput("locale", { required: true })
-      );
-      report = await operation(messages5);
-      const failures = report.diagnostics.filter((item) => DiagnosticPolicy.isTechnicalFailure(item)).map((item) => item.code);
-      if (!report.failure && failures.length > 0) {
-        report = {
-          ...report,
-          failure: messages5.t("report.technical-failure", {
-            codes: [...new Set(failures)].join(", ")
-          })
-        };
-      }
-    } catch (error2) {
-      if (error2 instanceof EventConcurrentModificationError) {
-        report = {
-          details: [],
-          diagnostics: [
-            {
-              code: "event.concurrently-modified",
-              severity: "info",
-              message: "event.concurrently-modified"
-            }
-          ]
-        };
-      } else {
-        const message = ActionFailurePresenter.publicErrorMessage(error2);
-        report = {
-          details: [],
-          diagnostics: [
-            { code: "action.execution.failed", severity: "error", message }
-          ],
-          failure: messages5.error(
-            error2 instanceof Error ? error2.name : "",
-            message
-          )
-        };
-      }
-    }
-    await ActionReport.write(messages5.t(title), report, messages5);
-    if (report.failure) setFailed(report.failure);
-    if (diagnosticsOutput)
-      ActionOutput.setDiagnosticsOutput(report.diagnostics);
+  keepFormattingErrorsPrivate() {
   }
 };
 
 // node_modules/.pnpm/@actions+github@9.1.1/node_modules/@actions/github/lib/context.js
-import { readFileSync, existsSync as existsSync2 } from "fs";
-import { EOL as EOL5 } from "os";
+import { readFileSync, existsSync } from "fs";
+import { EOL } from "os";
 var Context = class {
   /**
    * Hydrate the context from the environment
@@ -36668,11 +39419,11 @@ var Context = class {
     var _a2, _b, _c;
     this.payload = {};
     if (process.env.GITHUB_EVENT_PATH) {
-      if (existsSync2(process.env.GITHUB_EVENT_PATH)) {
+      if (existsSync(process.env.GITHUB_EVENT_PATH)) {
         this.payload = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, { encoding: "utf8" }));
       } else {
         const path = process.env.GITHUB_EVENT_PATH;
-        process.stdout.write(`GITHUB_EVENT_PATH ${path} does not exist${EOL5}`);
+        process.stdout.write(`GITHUB_EVENT_PATH ${path} does not exist${EOL}`);
       }
     }
     this.eventName = process.env.GITHUB_EVENT_NAME;
@@ -36710,8 +39461,8 @@ var Context = class {
 
 // node_modules/.pnpm/@actions+github@9.1.1/node_modules/@actions/github/lib/internal/utils.js
 var httpClient = __toESM(require_lib(), 1);
-var import_undici2 = __toESM(require_undici(), 1);
-var __awaiter2 = function(thisArg, _arguments, P2, generator) {
+var import_undici = __toESM(require_undici(), 1);
+var __awaiter = function(thisArg, _arguments, P2, generator) {
   function adopt(value) {
     return value instanceof P2 ? value : new P2(function(resolve4) {
       resolve4(value);
@@ -36756,8 +39507,8 @@ function getProxyAgentDispatcher(destinationUrl) {
 }
 function getProxyFetch(destinationUrl) {
   const httpDispatcher = getProxyAgentDispatcher(destinationUrl);
-  const proxyFetch = (url, opts) => __awaiter2(this, void 0, void 0, function* () {
-    return (0, import_undici2.fetch)(url, Object.assign(Object.assign({}, opts), { dispatcher: httpDispatcher }));
+  const proxyFetch = (url, opts) => __awaiter(this, void 0, void 0, function* () {
+    return (0, import_undici.fetch)(url, Object.assign(Object.assign({}, opts), { dispatcher: httpDispatcher }));
   });
   return proxyFetch;
 }
@@ -40822,48 +43573,829 @@ function getOctokit(token, options, ...additionalPlugins) {
   return new GitHubWithPlugins(getOctokitOptions(token, options));
 }
 
+// packages/runtime/github-actions/src/communication.ts
+var CommunicationRuntime = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  /** Compose authenticated gateways before entering the application. */
+  async runCommunicationReconcile(input) {
+    this.collaborators.communicationInput.validate(input);
+    const config = this.collaborators.automationConfigFactory.createAutomationConfig(
+      input.owner
+    );
+    const githubToken = input.githubToken.trim();
+    const mailingsToken = input.mailingsToken.trim();
+    const slackToken = input.slackToken.trim();
+    const slackOrganizerChannelId = input.slackOrganizerChannelId.trim();
+    const journey = this.collaborators.createJourney({
+      locale: this.collaborators.localeResolver.resolveLocale(input.locale),
+      conferenceHallEvent: input.conferenceHallEvent,
+      conferenceHallApiKey: input.conferenceHallApiKey,
+      client: getOctokit(githubToken),
+      owner: input.owner,
+      repo: input.repo,
+      issueNumber: input.issueNumber,
+      commentAuthorLogin: input.managedCommentAuthor,
+      config,
+      workspaceRoot: input.workspaceRoot,
+      mailingsToken,
+      openFeedbackApiKey: input.openFeedbackApiKey,
+      slackToken,
+      slackOrganizerChannelId
+    });
+    const result = await journey.execute({
+      issueNumber: input.issueNumber,
+      owner: input.owner,
+      repo: input.repo,
+      repositoryId: input.repositoryId,
+      slidesUrl: input.slidesUrl,
+      slidesReady: input.slidesReady
+    });
+    return result;
+  }
+};
+
+// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/command.js
+import * as os from "os";
+
+// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/utils.js
+function toCommandValue(input) {
+  if (input === null || input === void 0) {
+    return "";
+  } else if (typeof input === "string" || input instanceof String) {
+    return input;
+  }
+  return JSON.stringify(input);
+}
+function toCommandProperties(annotationProperties) {
+  if (!Object.keys(annotationProperties).length) {
+    return {};
+  }
+  return {
+    title: annotationProperties.title,
+    file: annotationProperties.file,
+    line: annotationProperties.startLine,
+    endLine: annotationProperties.endLine,
+    col: annotationProperties.startColumn,
+    endColumn: annotationProperties.endColumn
+  };
+}
+
+// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/command.js
+function issueCommand(command, properties, message) {
+  const cmd = new Command(command, properties, message);
+  process.stdout.write(cmd.toString() + os.EOL);
+}
+var CMD_STRING = "::";
+var Command = class {
+  constructor(command, properties, message) {
+    if (!command) {
+      command = "missing.command";
+    }
+    this.command = command;
+    this.properties = properties;
+    this.message = message;
+  }
+  toString() {
+    let cmdStr = CMD_STRING + this.command;
+    if (this.properties && Object.keys(this.properties).length > 0) {
+      cmdStr += " ";
+      let first = true;
+      for (const key in this.properties) {
+        if (this.properties.hasOwnProperty(key)) {
+          const val = this.properties[key];
+          if (val) {
+            if (first) {
+              first = false;
+            } else {
+              cmdStr += ",";
+            }
+            cmdStr += `${key}=${escapeProperty(val)}`;
+          }
+        }
+      }
+    }
+    cmdStr += `${CMD_STRING}${escapeData(this.message)}`;
+    return cmdStr;
+  }
+};
+function escapeData(s) {
+  return toCommandValue(s).replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
+}
+function escapeProperty(s) {
+  return toCommandValue(s).replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A").replace(/:/g, "%3A").replace(/,/g, "%2C");
+}
+
+// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/file-command.js
+import * as crypto from "crypto";
+import * as fs from "fs";
+import * as os2 from "os";
+function issueFileCommand(command, message) {
+  const filePath = process.env[`GITHUB_${command}`];
+  if (!filePath) {
+    throw new Error(`Unable to find environment variable for file command ${command}`);
+  }
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`Missing file at path: ${filePath}`);
+  }
+  fs.appendFileSync(filePath, `${toCommandValue(message)}${os2.EOL}`, {
+    encoding: "utf8"
+  });
+}
+function prepareKeyValueMessage(key, value) {
+  const delimiter = `ghadelimiter_${crypto.randomUUID()}`;
+  const convertedValue = toCommandValue(value);
+  if (key.includes(delimiter)) {
+    throw new Error(`Unexpected input: name should not contain the delimiter "${delimiter}"`);
+  }
+  if (convertedValue.includes(delimiter)) {
+    throw new Error(`Unexpected input: value should not contain the delimiter "${delimiter}"`);
+  }
+  return `${key}<<${delimiter}${os2.EOL}${convertedValue}${os2.EOL}${delimiter}`;
+}
+
+// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/core.js
+import * as os4 from "os";
+
+// node_modules/.pnpm/@actions+http-client@4.0.1/node_modules/@actions/http-client/lib/index.js
+var tunnel = __toESM(require_tunnel2(), 1);
+var import_undici2 = __toESM(require_undici(), 1);
+var HttpCodes;
+(function(HttpCodes2) {
+  HttpCodes2[HttpCodes2["OK"] = 200] = "OK";
+  HttpCodes2[HttpCodes2["MultipleChoices"] = 300] = "MultipleChoices";
+  HttpCodes2[HttpCodes2["MovedPermanently"] = 301] = "MovedPermanently";
+  HttpCodes2[HttpCodes2["ResourceMoved"] = 302] = "ResourceMoved";
+  HttpCodes2[HttpCodes2["SeeOther"] = 303] = "SeeOther";
+  HttpCodes2[HttpCodes2["NotModified"] = 304] = "NotModified";
+  HttpCodes2[HttpCodes2["UseProxy"] = 305] = "UseProxy";
+  HttpCodes2[HttpCodes2["SwitchProxy"] = 306] = "SwitchProxy";
+  HttpCodes2[HttpCodes2["TemporaryRedirect"] = 307] = "TemporaryRedirect";
+  HttpCodes2[HttpCodes2["PermanentRedirect"] = 308] = "PermanentRedirect";
+  HttpCodes2[HttpCodes2["BadRequest"] = 400] = "BadRequest";
+  HttpCodes2[HttpCodes2["Unauthorized"] = 401] = "Unauthorized";
+  HttpCodes2[HttpCodes2["PaymentRequired"] = 402] = "PaymentRequired";
+  HttpCodes2[HttpCodes2["Forbidden"] = 403] = "Forbidden";
+  HttpCodes2[HttpCodes2["NotFound"] = 404] = "NotFound";
+  HttpCodes2[HttpCodes2["MethodNotAllowed"] = 405] = "MethodNotAllowed";
+  HttpCodes2[HttpCodes2["NotAcceptable"] = 406] = "NotAcceptable";
+  HttpCodes2[HttpCodes2["ProxyAuthenticationRequired"] = 407] = "ProxyAuthenticationRequired";
+  HttpCodes2[HttpCodes2["RequestTimeout"] = 408] = "RequestTimeout";
+  HttpCodes2[HttpCodes2["Conflict"] = 409] = "Conflict";
+  HttpCodes2[HttpCodes2["Gone"] = 410] = "Gone";
+  HttpCodes2[HttpCodes2["TooManyRequests"] = 429] = "TooManyRequests";
+  HttpCodes2[HttpCodes2["InternalServerError"] = 500] = "InternalServerError";
+  HttpCodes2[HttpCodes2["NotImplemented"] = 501] = "NotImplemented";
+  HttpCodes2[HttpCodes2["BadGateway"] = 502] = "BadGateway";
+  HttpCodes2[HttpCodes2["ServiceUnavailable"] = 503] = "ServiceUnavailable";
+  HttpCodes2[HttpCodes2["GatewayTimeout"] = 504] = "GatewayTimeout";
+})(HttpCodes || (HttpCodes = {}));
+var Headers;
+(function(Headers2) {
+  Headers2["Accept"] = "accept";
+  Headers2["ContentType"] = "content-type";
+})(Headers || (Headers = {}));
+var MediaTypes;
+(function(MediaTypes2) {
+  MediaTypes2["ApplicationJson"] = "application/json";
+})(MediaTypes || (MediaTypes = {}));
+var HttpRedirectCodes = [
+  HttpCodes.MovedPermanently,
+  HttpCodes.ResourceMoved,
+  HttpCodes.SeeOther,
+  HttpCodes.TemporaryRedirect,
+  HttpCodes.PermanentRedirect
+];
+var HttpResponseRetryCodes = [
+  HttpCodes.BadGateway,
+  HttpCodes.ServiceUnavailable,
+  HttpCodes.GatewayTimeout
+];
+
+// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/summary.js
+import { EOL as EOL4 } from "os";
+import { constants, promises } from "fs";
+var __awaiter2 = function(thisArg, _arguments, P2, generator) {
+  function adopt(value) {
+    return value instanceof P2 ? value : new P2(function(resolve4) {
+      resolve4(value);
+    });
+  }
+  return new (P2 || (P2 = Promise))(function(resolve4, reject) {
+    function fulfilled(value) {
+      try {
+        step(generator.next(value));
+      } catch (e) {
+        reject(e);
+      }
+    }
+    function rejected(value) {
+      try {
+        step(generator["throw"](value));
+      } catch (e) {
+        reject(e);
+      }
+    }
+    function step(result) {
+      result.done ? resolve4(result.value) : adopt(result.value).then(fulfilled, rejected);
+    }
+    step((generator = generator.apply(thisArg, _arguments || [])).next());
+  });
+};
+var { access, appendFile, writeFile } = promises;
+var SUMMARY_ENV_VAR = "GITHUB_STEP_SUMMARY";
+var Summary = class {
+  constructor() {
+    this._buffer = "";
+  }
+  /**
+   * Finds the summary file path from the environment, rejects if env var is not found or file does not exist
+   * Also checks r/w permissions.
+   *
+   * @returns step summary file path
+   */
+  filePath() {
+    return __awaiter2(this, void 0, void 0, function* () {
+      if (this._filePath) {
+        return this._filePath;
+      }
+      const pathFromEnv = process.env[SUMMARY_ENV_VAR];
+      if (!pathFromEnv) {
+        throw new Error(`Unable to find environment variable for $${SUMMARY_ENV_VAR}. Check if your runtime environment supports job summaries.`);
+      }
+      try {
+        yield access(pathFromEnv, constants.R_OK | constants.W_OK);
+      } catch (_a2) {
+        throw new Error(`Unable to access summary file: '${pathFromEnv}'. Check if the file has correct read/write permissions.`);
+      }
+      this._filePath = pathFromEnv;
+      return this._filePath;
+    });
+  }
+  /**
+   * Wraps content in an HTML tag, adding any HTML attributes
+   *
+   * @param {string} tag HTML tag to wrap
+   * @param {string | null} content content within the tag
+   * @param {[attribute: string]: string} attrs key-value list of HTML attributes to add
+   *
+   * @returns {string} content wrapped in HTML element
+   */
+  wrap(tag, content, attrs = {}) {
+    const htmlAttrs = Object.entries(attrs).map(([key, value]) => ` ${key}="${value}"`).join("");
+    if (!content) {
+      return `<${tag}${htmlAttrs}>`;
+    }
+    return `<${tag}${htmlAttrs}>${content}</${tag}>`;
+  }
+  /**
+   * Writes text in the buffer to the summary buffer file and empties buffer. Will append by default.
+   *
+   * @param {SummaryWriteOptions} [options] (optional) options for write operation
+   *
+   * @returns {Promise<Summary>} summary instance
+   */
+  write(options) {
+    return __awaiter2(this, void 0, void 0, function* () {
+      const overwrite = !!(options === null || options === void 0 ? void 0 : options.overwrite);
+      const filePath = yield this.filePath();
+      const writeFunc = overwrite ? writeFile : appendFile;
+      yield writeFunc(filePath, this._buffer, { encoding: "utf8" });
+      return this.emptyBuffer();
+    });
+  }
+  /**
+   * Clears the summary buffer and wipes the summary file
+   *
+   * @returns {Summary} summary instance
+   */
+  clear() {
+    return __awaiter2(this, void 0, void 0, function* () {
+      return this.emptyBuffer().write({ overwrite: true });
+    });
+  }
+  /**
+   * Returns the current summary buffer as a string
+   *
+   * @returns {string} string of summary buffer
+   */
+  stringify() {
+    return this._buffer;
+  }
+  /**
+   * If the summary buffer is empty
+   *
+   * @returns {boolen} true if the buffer is empty
+   */
+  isEmptyBuffer() {
+    return this._buffer.length === 0;
+  }
+  /**
+   * Resets the summary buffer without writing to summary file
+   *
+   * @returns {Summary} summary instance
+   */
+  emptyBuffer() {
+    this._buffer = "";
+    return this;
+  }
+  /**
+   * Adds raw text to the summary buffer
+   *
+   * @param {string} text content to add
+   * @param {boolean} [addEOL=false] (optional) append an EOL to the raw text (default: false)
+   *
+   * @returns {Summary} summary instance
+   */
+  addRaw(text, addEOL = false) {
+    this._buffer += text;
+    return addEOL ? this.addEOL() : this;
+  }
+  /**
+   * Adds the operating system-specific end-of-line marker to the buffer
+   *
+   * @returns {Summary} summary instance
+   */
+  addEOL() {
+    return this.addRaw(EOL4);
+  }
+  /**
+   * Adds an HTML codeblock to the summary buffer
+   *
+   * @param {string} code content to render within fenced code block
+   * @param {string} lang (optional) language to syntax highlight code
+   *
+   * @returns {Summary} summary instance
+   */
+  addCodeBlock(code, lang) {
+    const attrs = Object.assign({}, lang && { lang });
+    const element = this.wrap("pre", this.wrap("code", code), attrs);
+    return this.addRaw(element).addEOL();
+  }
+  /**
+   * Adds an HTML list to the summary buffer
+   *
+   * @param {string[]} items list of items to render
+   * @param {boolean} [ordered=false] (optional) if the rendered list should be ordered or not (default: false)
+   *
+   * @returns {Summary} summary instance
+   */
+  addList(items, ordered = false) {
+    const tag = ordered ? "ol" : "ul";
+    const listItems = items.map((item) => this.wrap("li", item)).join("");
+    const element = this.wrap(tag, listItems);
+    return this.addRaw(element).addEOL();
+  }
+  /**
+   * Adds an HTML table to the summary buffer
+   *
+   * @param {SummaryTableCell[]} rows table rows
+   *
+   * @returns {Summary} summary instance
+   */
+  addTable(rows) {
+    const tableBody = rows.map((row) => {
+      const cells = row.map((cell) => {
+        if (typeof cell === "string") {
+          return this.wrap("td", cell);
+        }
+        const { header, data, colspan, rowspan } = cell;
+        const tag = header ? "th" : "td";
+        const attrs = Object.assign(Object.assign({}, colspan && { colspan }), rowspan && { rowspan });
+        return this.wrap(tag, data, attrs);
+      }).join("");
+      return this.wrap("tr", cells);
+    }).join("");
+    const element = this.wrap("table", tableBody);
+    return this.addRaw(element).addEOL();
+  }
+  /**
+   * Adds a collapsable HTML details element to the summary buffer
+   *
+   * @param {string} label text for the closed state
+   * @param {string} content collapsable content
+   *
+   * @returns {Summary} summary instance
+   */
+  addDetails(label, content) {
+    const element = this.wrap("details", this.wrap("summary", label) + content);
+    return this.addRaw(element).addEOL();
+  }
+  /**
+   * Adds an HTML image tag to the summary buffer
+   *
+   * @param {string} src path to the image you to embed
+   * @param {string} alt text description of the image
+   * @param {SummaryImageOptions} options (optional) addition image attributes
+   *
+   * @returns {Summary} summary instance
+   */
+  addImage(src, alt, options) {
+    const { width, height } = options || {};
+    const attrs = Object.assign(Object.assign({}, width && { width }), height && { height });
+    const element = this.wrap("img", null, Object.assign({ src, alt }, attrs));
+    return this.addRaw(element).addEOL();
+  }
+  /**
+   * Adds an HTML section heading element
+   *
+   * @param {string} text heading text
+   * @param {number | string} [level=1] (optional) the heading level, default: 1
+   *
+   * @returns {Summary} summary instance
+   */
+  addHeading(text, level) {
+    const tag = `h${level}`;
+    const allowedTag = ["h1", "h2", "h3", "h4", "h5", "h6"].includes(tag) ? tag : "h1";
+    const element = this.wrap(allowedTag, text);
+    return this.addRaw(element).addEOL();
+  }
+  /**
+   * Adds an HTML thematic break (<hr>) to the summary buffer
+   *
+   * @returns {Summary} summary instance
+   */
+  addSeparator() {
+    const element = this.wrap("hr", null);
+    return this.addRaw(element).addEOL();
+  }
+  /**
+   * Adds an HTML line break (<br>) to the summary buffer
+   *
+   * @returns {Summary} summary instance
+   */
+  addBreak() {
+    const element = this.wrap("br", null);
+    return this.addRaw(element).addEOL();
+  }
+  /**
+   * Adds an HTML blockquote to the summary buffer
+   *
+   * @param {string} text quote text
+   * @param {string} cite (optional) citation url
+   *
+   * @returns {Summary} summary instance
+   */
+  addQuote(text, cite) {
+    const attrs = Object.assign({}, cite && { cite });
+    const element = this.wrap("blockquote", text, attrs);
+    return this.addRaw(element).addEOL();
+  }
+  /**
+   * Adds an HTML anchor tag to the summary buffer
+   *
+   * @param {string} text link text/content
+   * @param {string} href hyperlink
+   *
+   * @returns {Summary} summary instance
+   */
+  addLink(text, href) {
+    const element = this.wrap("a", text, { href });
+    return this.addRaw(element).addEOL();
+  }
+};
+var _summary = new Summary();
+var summary = _summary;
+
+// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/platform.js
+import os3 from "os";
+
+// node_modules/.pnpm/@actions+io@3.0.2/node_modules/@actions/io/lib/io-util.js
+import * as fs2 from "fs";
+var { chmod, copyFile, lstat, mkdir, open, readdir, rename, rm, rmdir, stat, symlink, unlink } = fs2.promises;
+var IS_WINDOWS = process.platform === "win32";
+var READONLY = fs2.constants.O_RDONLY;
+
+// node_modules/.pnpm/@actions+exec@3.0.0/node_modules/@actions/exec/lib/toolrunner.js
+var IS_WINDOWS2 = process.platform === "win32";
+
+// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/platform.js
+var platform = os3.platform();
+var arch = os3.arch();
+
+// node_modules/.pnpm/@actions+core@3.0.1/node_modules/@actions/core/lib/core.js
+var ExitCode;
+(function(ExitCode2) {
+  ExitCode2[ExitCode2["Success"] = 0] = "Success";
+  ExitCode2[ExitCode2["Failure"] = 1] = "Failure";
+})(ExitCode || (ExitCode = {}));
+function setSecret(secret) {
+  issueCommand("add-mask", {}, secret);
+}
+function getInput(name, options) {
+  const val = process.env[`INPUT_${name.replace(/ /g, "_").toUpperCase()}`] || "";
+  if (options && options.required && !val) {
+    throw new Error(`Input required and not supplied: ${name}`);
+  }
+  if (options && options.trimWhitespace === false) {
+    return val;
+  }
+  return val.trim();
+}
+function setOutput(name, value) {
+  const filePath = process.env["GITHUB_OUTPUT"] || "";
+  if (filePath) {
+    return issueFileCommand("OUTPUT", prepareKeyValueMessage(name, value));
+  }
+  process.stdout.write(os4.EOL);
+  issueCommand("set-output", { name }, toCommandValue(value));
+}
+function setFailed(message) {
+  process.exitCode = ExitCode.Failure;
+  error(message);
+}
+function error(message, properties = {}) {
+  issueCommand("error", toCommandProperties(properties), message instanceof Error ? message.toString() : message);
+}
+function warning(message, properties = {}) {
+  issueCommand("warning", toCommandProperties(properties), message instanceof Error ? message.toString() : message);
+}
+function info(message) {
+  process.stdout.write(message + os4.EOL);
+}
+
+// packages/runtime/github-actions/src/communication-action.ts
+var CommunicationAction = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  async runCommunicationReconcileAction(messages5 = this.collaborators.createActionMessages()) {
+    const issueNumber = this.collaborators.runtimeInput.positiveIntegerInput(
+      "issue-number",
+      getInput("issue-number", { required: true })
+    );
+    const slidesReady = this.collaborators.runtimeInput.booleanInput(
+      "slides-ready",
+      getInput("slides-ready", { required: true })
+    );
+    const { owner, repo } = context2.repo;
+    const outcome = await this.collaborators.communicationRuntime.runCommunicationReconcile({
+      locale: messages5.locale,
+      ...this.collaborators.conferenceHallInput.read(),
+      issueNumber,
+      slidesUrl: slidesReady ? getInput("slides-url", { required: true }) : void 0,
+      slidesReady,
+      openFeedbackApiKey: getInput("openfeedback-api-key", {
+        required: true
+      }),
+      githubToken: getInput("github-token", { required: true }),
+      mailingsToken: getInput("mailings-token", { required: true }),
+      slackToken: getInput("slack-token", { required: true }),
+      slackOrganizerChannelId: getInput("slack-organizer-channel-id", {
+        required: true
+      }),
+      owner,
+      repo,
+      repositoryId: process.env.GITHUB_REPOSITORY_ID,
+      managedCommentAuthor: getInput("managed-comment-author", {
+        required: true
+      })
+    });
+    return this.report(outcome, messages5);
+  }
+  report(outcome, messages5) {
+    const diagnostics = [
+      ...outcome.diagnostics.map(
+        this.collaborators.communicationDiagnosticProjection.domainDiagnostic.bind(
+          this.collaborators.communicationDiagnosticProjection
+        )
+      ),
+      ...outcome.runtimeDiagnostics.map(
+        this.collaborators.communicationDiagnosticProjection.runtimeDiagnostic.bind(
+          this.collaborators.communicationDiagnosticProjection
+        )
+      )
+    ];
+    return {
+      details: [
+        messages5.t("report.communication.mode", { mode: outcome.mode }),
+        messages5.t("report.communication.planned", outcome.counts),
+        messages5.t("report.communication.accepted", {
+          ...outcome.counts,
+          recorded: outcome.counts.alreadyRecorded
+        }),
+        messages5.t("report.communication.uncertain", outcome.counts)
+      ],
+      diagnostics
+    };
+  }
+};
+
 // packages/adapter/github-delivery-ledger/src/github-delivery-ledger-contracts.ts
 var DELIVERY_LEDGER_MARKER = "<!-- meetup-automation-delivery-ledger:v1 -->";
 
-// packages/adapter/github-delivery-ledger/src/ledger-entry-mapping.ts
-import { createHash as createHash2 } from "node:crypto";
-var LedgerEntryMapping = class _LedgerEntryMapping {
-  static publicEntry(entry) {
-    return {
-      idempotencyKey: entry.idempotencyKey,
-      intentId: entry.intentId,
-      status: entry.status,
-      updatedAt: entry.updatedAt
-    };
+// packages/adapter/github-delivery-ledger/src/github-delivery-ledger.ts
+var GithubDeliveryLedger = class {
+  constructor(collaborators, comments, options, presenter = collaborators.createLedgerCommentPresenter()) {
+    this.collaborators = collaborators;
+    this.comments = comments;
+    this.options = options;
+    this.presenter = presenter;
+    this.#authorLogin = options.authorLogin.trim().toLowerCase();
+    if (!this.#authorLogin) {
+      throw new Error("Delivery ledger author login is required");
+    }
   }
-  static protect(entry) {
-    return {
-      idempotencyKey: _LedgerEntryMapping.protectIdentifier(
-        entry.idempotencyKey
+  collaborators;
+  comments;
+  options;
+  presenter;
+  #authorLogin;
+  async readAttention() {
+    const { ledger, commentId } = await this.#load();
+    return ledger.entries.map((entry) => ({
+      key: entry.idempotencyKey,
+      uncertain: entry.status === "pending" || entry.status === "uncertain",
+      resolved: entry.status === "accepted",
+      commentId
+    }));
+  }
+  async find(idempotencyKey) {
+    const { ledger } = await this.#load();
+    const protectedKey = this.collaborators.ledgerEntryMapping.protectIdentifier(idempotencyKey);
+    const entry = ledger.entries.find(
+      (candidate) => candidate.idempotencyKey === protectedKey
+    );
+    return entry ? this.collaborators.ledgerEntryMapping.publicEntry(entry) : void 0;
+  }
+  async reservePending(reservation) {
+    this.#assertDispatchAuthorized();
+    const state = await this.#load();
+    const protectedKey = this.collaborators.ledgerEntryMapping.protectIdentifier(
+      reservation.idempotencyKey
+    );
+    const existing = state.ledger.entries.find(
+      (entry2) => entry2.idempotencyKey === protectedKey
+    );
+    if (existing) {
+      return {
+        reserved: false,
+        entry: this.collaborators.ledgerEntryMapping.publicEntry(existing)
+      };
+    }
+    const entry = {
+      idempotencyKey: protectedKey,
+      intentId: this.collaborators.ledgerEntryMapping.protectIdentifier(
+        reservation.intentId
       ),
-      intentId: _LedgerEntryMapping.protectIdentifier(entry.intentId),
-      repositoryId: _LedgerEntryMapping.protectIdentifier(entry.repositoryId),
-      eventId: _LedgerEntryMapping.protectIdentifier(entry.eventId),
-      recipientId: _LedgerEntryMapping.protectIdentifier(entry.recipientId),
-      kind: entry.kind,
-      status: entry.status,
-      updatedAt: entry.updatedAt,
-      policyVersion: entry.policyVersion,
-      ...entry.diagnosticCode ? { diagnosticCode: _LedgerEntryMapping.safeCode(entry.diagnosticCode) } : {}
+      repositoryId: this.collaborators.ledgerEntryMapping.protectIdentifier(
+        reservation.repositoryId
+      ),
+      eventId: this.collaborators.ledgerEntryMapping.protectIdentifier(
+        reservation.eventId
+      ),
+      kind: reservation.kind,
+      recipientId: this.collaborators.ledgerEntryMapping.protectIdentifier(
+        reservation.recipientId
+      ),
+      policyVersion: reservation.policyVersion,
+      status: "pending",
+      updatedAt: reservation.reservedAt
+    };
+    state.ledger.entries.push(entry);
+    await this.#save(state.commentId, state.ledger);
+    return {
+      reserved: true,
+      entry: {
+        ...this.collaborators.ledgerEntryMapping.publicEntry(entry),
+        status: "pending"
+      }
     };
   }
-  static safeCode(code) {
-    return /^[a-z0-9][a-z0-9._-]{0,63}$/.test(code) ? code : "unsafe-diagnostic-code-redacted";
+  async markAccepted(idempotencyKey, acceptedAt) {
+    await this.#transition(idempotencyKey, "accepted", acceptedAt);
   }
-  static protectIdentifier(value) {
-    if (/^sha256:[0-9a-f]{64}$/.test(value)) return value;
-    return `sha256:${createHash2("sha256").update(value).digest("hex")}`;
+  async markUncertain(idempotencyKey, uncertainAt, diagnosticCode) {
+    await this.#transition(
+      idempotencyKey,
+      "uncertain",
+      uncertainAt,
+      diagnosticCode
+    );
+  }
+  async markRejected(idempotencyKey, rejectedAt, diagnosticCode) {
+    await this.#transition(
+      idempotencyKey,
+      "rejected",
+      rejectedAt,
+      diagnosticCode
+    );
+  }
+  async releasePending(idempotencyKey) {
+    this.#assertDispatchAuthorized();
+    const state = await this.#load();
+    const protectedKey = this.collaborators.ledgerEntryMapping.protectIdentifier(idempotencyKey);
+    const index = state.ledger.entries.findIndex(
+      (entry) => entry.idempotencyKey === protectedKey
+    );
+    if (index < 0 || state.ledger.entries[index]?.status !== "pending") {
+      throw new Error("Cannot release a delivery that is not pending");
+    }
+    state.ledger.entries.splice(index, 1);
+    await this.#save(state.commentId, state.ledger);
+  }
+  async #transition(idempotencyKey, status, updatedAt, diagnosticCode) {
+    this.#assertDispatchAuthorized();
+    const state = await this.#load();
+    const protectedKey = this.collaborators.ledgerEntryMapping.protectIdentifier(idempotencyKey);
+    const index = state.ledger.entries.findIndex(
+      (entry) => entry.idempotencyKey === protectedKey
+    );
+    if (index < 0) {
+      throw new Error("Cannot transition a delivery that was not reserved");
+    }
+    const current = state.ledger.entries[index];
+    if (!current) {
+      throw new Error("Delivery ledger index is invalid");
+    }
+    state.ledger.entries[index] = {
+      ...current,
+      status,
+      updatedAt,
+      ...diagnosticCode ? {
+        diagnosticCode: this.collaborators.ledgerEntryMapping.safeCode(diagnosticCode)
+      } : {}
+    };
+    await this.#save(state.commentId, state.ledger);
+  }
+  async #load() {
+    const matching = (await this.comments.listComments()).filter(
+      (comment2) => comment2.body.startsWith(DELIVERY_LEDGER_MARKER) && comment2.authorLogin?.trim().toLowerCase() === this.#authorLogin
+    );
+    if (matching.length > 1) {
+      throw new Error("Multiple managed delivery ledger comments found");
+    }
+    const comment = matching[0];
+    if (!comment) {
+      return { ledger: { schemaVersion: 2, entries: [] } };
+    }
+    return {
+      commentId: comment.id,
+      ledger: this.collaborators.ledgerCommentCodec.decode(comment.body)
+    };
+  }
+  async #save(commentId, ledger) {
+    ledger.entries.sort(
+      (left, right) => left.idempotencyKey.localeCompare(right.idempotencyKey)
+    );
+    const body = this.presenter.render(ledger);
+    if (commentId === void 0) {
+      await this.comments.createComment(body);
+      return;
+    }
+    await this.comments.updateComment(commentId, body);
+  }
+  #assertDispatchAuthorized() {
+    if (!this.options.dispatchAuthorized) {
+      throw new Error(
+        "Delivery ledger writes require the reusable workflow concurrency lock"
+      );
+    }
+  }
+};
+
+// packages/adapter/github-delivery-ledger/src/i18n/messages.en.ts
+var EN_MESSAGES = {
+  "ledger.title": "### Communication status",
+  "ledger.empty": "No deliveries recorded.",
+  "ledger.row": "- {kind}: {status} ({count, number})",
+  "ledger.kind": "{kind, select, host_introduction {Host introduction email} speaker_introduction {Speaker introduction email} host_thanks {Host thank-you email} speaker_thanks {Speaker thank-you email} readiness_reminder {Organizer Slack reminder} other {Message}}",
+  "ledger.status": "{status, select, accepted {Request accepted} pending {Delivery in progress or awaiting verification} rejected {Request rejected} uncertain {Delivery needs verification} other {Unknown status}}",
+  "ledger.explanation": "Accepted by the mail service; inbox delivery is unverified.",
+  "ledger.attention": "Check the provider before retrying unverified or rejected deliveries."
+};
+
+// packages/adapter/github-delivery-ledger/src/i18n/messages.fr.ts
+var FR_MESSAGES = {
+  "ledger.title": "### \xC9tat des communications",
+  "ledger.empty": "Aucun envoi enregistr\xE9.",
+  "ledger.row": "- {kind} : {status} ({count, number})",
+  "ledger.kind": "{kind, select, host_introduction {Courriel de pr\xE9sentation au lieu d'accueil} speaker_introduction {Courriel de pr\xE9sentation aux intervenants} host_thanks {Courriel de remerciement au lieu d'accueil} speaker_thanks {Courriel de remerciement aux intervenants} readiness_reminder {Rappel Slack aux organisateurs} other {Message}}",
+  "ledger.status": "{status, select, accepted {Demande accept\xE9e} pending {Envoi en cours ou \xE0 v\xE9rifier} rejected {Demande refus\xE9e} uncertain {Envoi \xE0 v\xE9rifier} other {\xC9tat inconnu}}",
+  "ledger.explanation": "Accept\xE9 par le service d'envoi ; r\xE9ception non v\xE9rifi\xE9e.",
+  "ledger.attention": "V\xE9rifiez les envois refus\xE9s ou incertains aupr\xE8s du fournisseur avant de r\xE9essayer."
+};
+
+// packages/adapter/github-delivery-ledger/src/i18n/catalog.ts
+var CATALOGS = { en: EN_MESSAGES, fr: FR_MESSAGES };
+
+// packages/adapter/github-delivery-ledger/src/i18n/ledger-messages.ts
+var LedgerMessages = class extends MessageLocalizer {
+  constructor(collaborators, locale = "en") {
+    super(collaborators, CATALOGS, locale);
   }
 };
 
 // packages/adapter/github-delivery-ledger/src/ledger-comment-codec.ts
-var LedgerCommentCodec = class _LedgerCommentCodec {
-  static decode(body) {
+var LedgerCommentCodec = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  decode(body) {
     const openingFence = "```json";
     const start = body.indexOf(openingFence);
     const end = body.indexOf("```", start + openingFence.length);
@@ -40875,18 +44407,18 @@ var LedgerCommentCodec = class _LedgerCommentCodec {
     } catch {
       throw new Error("Managed delivery ledger comment is corrupted");
     }
-    if (!_LedgerCommentCodec.object(value) || value.schemaVersion !== 1 && value.schemaVersion !== 2 || !Array.isArray(value.entries))
+    if (!this.object(value) || value.schemaVersion !== 1 && value.schemaVersion !== 2 || !Array.isArray(value.entries))
       throw new Error("Managed delivery ledger schema is unsupported");
     const entries = value.entries.map((entry) => {
-      if (!_LedgerCommentCodec.isEntry(entry))
+      if (!this.isEntry(entry))
         throw new Error("Managed delivery ledger entry is corrupted");
-      return LedgerEntryMapping.protect(entry);
+      return this.collaborators.ledgerEntryMapping.protect(entry);
     });
     if (new Set(entries.map((entry) => entry.idempotencyKey)).size !== entries.length)
       throw new Error("Managed delivery ledger contains duplicate identities");
     return { schemaVersion: 2, entries };
   }
-  static encode(ledger) {
+  encode(ledger) {
     const json = JSON.stringify(ledger, null, 2).replace(
       /[<>&`-]/g,
       (character) => `\\u${character.charCodeAt(0).toString(16).padStart(4, "0")}`
@@ -40897,55 +44429,25 @@ ${json}
 \`\`\`
 -->`;
   }
-  static isEntry(value) {
-    if (!_LedgerCommentCodec.object(value)) return false;
-    return typeof value.idempotencyKey === "string" && typeof value.intentId === "string" && (value.status === "pending" || value.status === "accepted" || value.status === "uncertain" || value.status === "rejected") && typeof value.updatedAt === "string" && typeof value.repositoryId === "string" && typeof value.eventId === "string" && _LedgerCommentCodec.isKind(value.kind) && typeof value.recipientId === "string" && typeof value.policyVersion === "string" && (value.diagnosticCode === void 0 || typeof value.diagnosticCode === "string");
+  isEntry(value) {
+    if (!this.object(value)) return false;
+    return typeof value.idempotencyKey === "string" && typeof value.intentId === "string" && (value.status === "pending" || value.status === "accepted" || value.status === "uncertain" || value.status === "rejected") && typeof value.updatedAt === "string" && typeof value.repositoryId === "string" && typeof value.eventId === "string" && this.isKind(value.kind) && typeof value.recipientId === "string" && typeof value.policyVersion === "string" && (value.diagnosticCode === void 0 || typeof value.diagnosticCode === "string");
   }
-  static isKind(value) {
+  isKind(value) {
     return value === "host-introduction" || value === "speaker-introduction" || value === "host-thanks" || value === "speaker-thanks" || value === "readiness-reminder";
   }
-  static object(value) {
+  object(value) {
     return value !== null && typeof value === "object" && !Array.isArray(value);
-  }
-};
-
-// packages/adapter/github-delivery-ledger/src/i18n/messages.en.ts
-var EN_MESSAGES2 = {
-  "ledger.title": "### Communication status",
-  "ledger.empty": "No deliveries recorded.",
-  "ledger.row": "- {kind}: {status} ({count, number})",
-  "ledger.kind": "{kind, select, host_introduction {Host introduction email} speaker_introduction {Speaker introduction email} host_thanks {Host thank-you email} speaker_thanks {Speaker thank-you email} readiness_reminder {Organizer Slack reminder} other {Message}}",
-  "ledger.status": "{status, select, accepted {Request accepted} pending {Delivery in progress or awaiting verification} rejected {Request rejected} uncertain {Delivery needs verification} other {Unknown status}}",
-  "ledger.explanation": "Accepted by the mail service; inbox delivery is unverified.",
-  "ledger.attention": "Check the provider before retrying unverified or rejected deliveries."
-};
-
-// packages/adapter/github-delivery-ledger/src/i18n/messages.fr.ts
-var FR_MESSAGES2 = {
-  "ledger.title": "### \xC9tat des communications",
-  "ledger.empty": "Aucun envoi enregistr\xE9.",
-  "ledger.row": "- {kind} : {status} ({count, number})",
-  "ledger.kind": "{kind, select, host_introduction {Courriel de pr\xE9sentation au lieu d'accueil} speaker_introduction {Courriel de pr\xE9sentation aux intervenants} host_thanks {Courriel de remerciement au lieu d'accueil} speaker_thanks {Courriel de remerciement aux intervenants} readiness_reminder {Rappel Slack aux organisateurs} other {Message}}",
-  "ledger.status": "{status, select, accepted {Demande accept\xE9e} pending {Envoi en cours ou \xE0 v\xE9rifier} rejected {Demande refus\xE9e} uncertain {Envoi \xE0 v\xE9rifier} other {\xC9tat inconnu}}",
-  "ledger.explanation": "Accept\xE9 par le service d'envoi ; r\xE9ception non v\xE9rifi\xE9e.",
-  "ledger.attention": "V\xE9rifiez les envois refus\xE9s ou incertains aupr\xE8s du fournisseur avant de r\xE9essayer."
-};
-
-// packages/adapter/github-delivery-ledger/src/i18n/catalog.ts
-var CATALOGS2 = { en: EN_MESSAGES2, fr: FR_MESSAGES2 };
-
-// packages/adapter/github-delivery-ledger/src/i18n/ledger-messages.ts
-var LedgerMessages = class extends MessageLocalizer {
-  constructor(locale = "en") {
-    super(CATALOGS2, locale);
   }
 };
 
 // packages/adapter/github-delivery-ledger/src/ledger-comment-presenter.ts
 var LedgerCommentPresenter = class {
-  constructor(messages5 = new LedgerMessages()) {
+  constructor(collaborators, messages5 = collaborators.createLedgerMessages()) {
+    this.collaborators = collaborators;
     this.messages = messages5;
   }
+  collaborators;
   messages;
   render(ledger) {
     const groups = /* @__PURE__ */ new Map();
@@ -40971,172 +44473,47 @@ var LedgerCommentPresenter = class {
     if (ledger.entries.some((entry) => entry.status !== "accepted")) {
       lines.push(this.messages.t("ledger.attention"));
     }
-    lines.push(LedgerCommentCodec.encode(ledger));
+    lines.push(this.collaborators.ledgerCommentCodec.encode(ledger));
     return lines.join("\n\n");
   }
 };
 
-// packages/adapter/github-delivery-ledger/src/github-delivery-ledger.ts
-var GithubDeliveryLedger = class {
-  constructor(comments, options, presenter = new LedgerCommentPresenter()) {
-    this.comments = comments;
-    this.options = options;
-    this.presenter = presenter;
-    this.#authorLogin = options.authorLogin.trim().toLowerCase();
-    if (!this.#authorLogin) {
-      throw new Error("Delivery ledger author login is required");
-    }
-  }
-  comments;
-  options;
-  presenter;
-  #authorLogin;
-  async readAttention() {
-    const { ledger, commentId } = await this.#load();
-    return ledger.entries.map((entry) => ({
-      key: entry.idempotencyKey,
-      uncertain: entry.status === "pending" || entry.status === "uncertain",
-      resolved: entry.status === "accepted",
-      commentId
-    }));
-  }
-  async find(idempotencyKey) {
-    const { ledger } = await this.#load();
-    const protectedKey = LedgerEntryMapping.protectIdentifier(idempotencyKey);
-    const entry = ledger.entries.find(
-      (candidate) => candidate.idempotencyKey === protectedKey
-    );
-    return entry ? LedgerEntryMapping.publicEntry(entry) : void 0;
-  }
-  async reservePending(reservation) {
-    this.#assertDispatchAuthorized();
-    const state = await this.#load();
-    const protectedKey = LedgerEntryMapping.protectIdentifier(
-      reservation.idempotencyKey
-    );
-    const existing = state.ledger.entries.find(
-      (entry2) => entry2.idempotencyKey === protectedKey
-    );
-    if (existing) {
-      return {
-        reserved: false,
-        entry: LedgerEntryMapping.publicEntry(existing)
-      };
-    }
-    const entry = {
-      idempotencyKey: protectedKey,
-      intentId: LedgerEntryMapping.protectIdentifier(reservation.intentId),
-      repositoryId: LedgerEntryMapping.protectIdentifier(
-        reservation.repositoryId
-      ),
-      eventId: LedgerEntryMapping.protectIdentifier(reservation.eventId),
-      kind: reservation.kind,
-      recipientId: LedgerEntryMapping.protectIdentifier(
-        reservation.recipientId
-      ),
-      policyVersion: reservation.policyVersion,
-      status: "pending",
-      updatedAt: reservation.reservedAt
-    };
-    state.ledger.entries.push(entry);
-    await this.#save(state.commentId, state.ledger);
+// packages/adapter/github-delivery-ledger/src/ledger-entry-mapping.ts
+import { createHash as createHash3 } from "node:crypto";
+var LedgerEntryMapping = class {
+  publicEntry(entry) {
     return {
-      reserved: true,
-      entry: { ...LedgerEntryMapping.publicEntry(entry), status: "pending" }
+      idempotencyKey: entry.idempotencyKey,
+      intentId: entry.intentId,
+      status: entry.status,
+      updatedAt: entry.updatedAt
     };
   }
-  async markAccepted(idempotencyKey, acceptedAt) {
-    await this.#transition(idempotencyKey, "accepted", acceptedAt);
-  }
-  async markUncertain(idempotencyKey, uncertainAt, diagnosticCode) {
-    await this.#transition(
-      idempotencyKey,
-      "uncertain",
-      uncertainAt,
-      diagnosticCode
-    );
-  }
-  async markRejected(idempotencyKey, rejectedAt, diagnosticCode) {
-    await this.#transition(
-      idempotencyKey,
-      "rejected",
-      rejectedAt,
-      diagnosticCode
-    );
-  }
-  async releasePending(idempotencyKey) {
-    this.#assertDispatchAuthorized();
-    const state = await this.#load();
-    const protectedKey = LedgerEntryMapping.protectIdentifier(idempotencyKey);
-    const index = state.ledger.entries.findIndex(
-      (entry) => entry.idempotencyKey === protectedKey
-    );
-    if (index < 0 || state.ledger.entries[index]?.status !== "pending") {
-      throw new Error("Cannot release a delivery that is not pending");
-    }
-    state.ledger.entries.splice(index, 1);
-    await this.#save(state.commentId, state.ledger);
-  }
-  async #transition(idempotencyKey, status, updatedAt, diagnosticCode) {
-    this.#assertDispatchAuthorized();
-    const state = await this.#load();
-    const protectedKey = LedgerEntryMapping.protectIdentifier(idempotencyKey);
-    const index = state.ledger.entries.findIndex(
-      (entry) => entry.idempotencyKey === protectedKey
-    );
-    if (index < 0) {
-      throw new Error("Cannot transition a delivery that was not reserved");
-    }
-    const current = state.ledger.entries[index];
-    if (!current) {
-      throw new Error("Delivery ledger index is invalid");
-    }
-    state.ledger.entries[index] = {
-      ...current,
-      status,
-      updatedAt,
-      ...diagnosticCode ? { diagnosticCode: LedgerEntryMapping.safeCode(diagnosticCode) } : {}
-    };
-    await this.#save(state.commentId, state.ledger);
-  }
-  async #load() {
-    const matching = (await this.comments.listComments()).filter(
-      (comment2) => comment2.body.startsWith(DELIVERY_LEDGER_MARKER) && comment2.authorLogin?.trim().toLowerCase() === this.#authorLogin
-    );
-    if (matching.length > 1) {
-      throw new Error("Multiple managed delivery ledger comments found");
-    }
-    const comment = matching[0];
-    if (!comment) {
-      return { ledger: { schemaVersion: 2, entries: [] } };
-    }
+  protect(entry) {
     return {
-      commentId: comment.id,
-      ledger: LedgerCommentCodec.decode(comment.body)
+      idempotencyKey: this.protectIdentifier(entry.idempotencyKey),
+      intentId: this.protectIdentifier(entry.intentId),
+      repositoryId: this.protectIdentifier(entry.repositoryId),
+      eventId: this.protectIdentifier(entry.eventId),
+      recipientId: this.protectIdentifier(entry.recipientId),
+      kind: entry.kind,
+      status: entry.status,
+      updatedAt: entry.updatedAt,
+      policyVersion: entry.policyVersion,
+      ...entry.diagnosticCode ? { diagnosticCode: this.safeCode(entry.diagnosticCode) } : {}
     };
   }
-  async #save(commentId, ledger) {
-    ledger.entries.sort(
-      (left, right) => left.idempotencyKey.localeCompare(right.idempotencyKey)
-    );
-    const body = this.presenter.render(ledger);
-    if (commentId === void 0) {
-      await this.comments.createComment(body);
-      return;
-    }
-    await this.comments.updateComment(commentId, body);
+  safeCode(code) {
+    return /^[a-z0-9][a-z0-9._-]{0,63}$/.test(code) ? code : "unsafe-diagnostic-code-redacted";
   }
-  #assertDispatchAuthorized() {
-    if (!this.options.dispatchAuthorized) {
-      throw new Error(
-        "Delivery ledger writes require the reusable workflow concurrency lock"
-      );
-    }
+  protectIdentifier(value) {
+    if (/^sha256:[0-9a-f]{64}$/.test(value)) return value;
+    return `sha256:${createHash3("sha256").update(value).digest("hex")}`;
   }
 };
 
 // packages/adapter/github-delivery-ledger/src/scoped-github-ledger-comment-client.ts
-var ScopedGithubLedgerCommentClient = class _ScopedGithubLedgerCommentClient {
+var ScopedGithubLedgerCommentClient = class {
   constructor(client, owner, repo, issueNumber) {
     this.client = client;
     this.owner = owner;
@@ -41160,7 +44537,7 @@ var ScopedGithubLedgerCommentClient = class _ScopedGithubLedgerCommentClient {
       if (!Array.isArray(response.data)) {
         throw new Error("GitHub delivery ledger comment response is invalid");
       }
-      _ScopedGithubLedgerCommentClient.appendComments(response.data, comments);
+      this.appendComments(response.data, comments);
       const link = response.headers.link;
       const hasNext = typeof link === "string" ? /<[^>]+>;\s*rel="next"/.test(link) : response.data.length === 100;
       if (!hasNext) {
@@ -41185,24 +44562,64 @@ var ScopedGithubLedgerCommentClient = class _ScopedGithubLedgerCommentClient {
       body
     });
   }
-  static appendComments(values, comments) {
+  appendComments(values, comments) {
     for (const value of values) {
-      if (!_ScopedGithubLedgerCommentClient.object(value) || typeof value.id !== "number" || !Number.isSafeInteger(value.id) || value.id <= 0 || value.body != null && typeof value.body !== "string")
+      if (!this.object(value) || typeof value.id !== "number" || !Number.isSafeInteger(value.id) || value.id <= 0 || value.body != null && typeof value.body !== "string")
         throw new Error("GitHub delivery ledger comment response is invalid");
       const author = value.user;
-      if (author != null && (!_ScopedGithubLedgerCommentClient.object(author) || typeof author.login !== "string"))
+      if (author != null && (!this.object(author) || typeof author.login !== "string"))
         throw new Error("GitHub delivery ledger comment author is invalid");
       if (typeof value.body === "string") {
         comments.push({
           id: value.id,
           body: value.body,
-          ..._ScopedGithubLedgerCommentClient.object(author) && typeof author.login === "string" ? { authorLogin: author.login } : {}
+          ...this.object(author) && typeof author.login === "string" ? { authorLogin: author.login } : {}
         });
       }
     }
   }
-  static object(value) {
+  object(value) {
     return value !== null && typeof value === "object" && !Array.isArray(value);
+  }
+};
+
+// packages/adapter/github-delivery-ledger/src/dependency-composition.ts
+var GithubDeliveryLedgerComposition = class {
+  githubDeliveryLedger(...args) {
+    return new GithubDeliveryLedger(
+      {
+        ledgerEntryMapping: this.ledgerEntryMapping(),
+        ledgerCommentCodec: this.ledgerCommentCodec(),
+        createLedgerCommentPresenter: (...args2) => this.ledgerCommentPresenter(...args2)
+      },
+      ...args
+    );
+  }
+  ledgerCommentCodec() {
+    return new LedgerCommentCodec({
+      ledgerEntryMapping: this.ledgerEntryMapping()
+    });
+  }
+  ledgerCommentPresenter(...args) {
+    return new LedgerCommentPresenter(
+      {
+        ledgerCommentCodec: this.ledgerCommentCodec(),
+        createLedgerMessages: (...args2) => this.ledgerMessages(...args2)
+      },
+      ...args
+    );
+  }
+  ledgerEntryMapping() {
+    return new LedgerEntryMapping();
+  }
+  ledgerMessages(...args) {
+    return new LedgerMessages(
+      { localeResolver: new LocalizationComposition().localeResolver() },
+      ...args
+    );
+  }
+  scopedGithubLedgerCommentClient(...args) {
+    return new ScopedGithubLedgerCommentClient(...args);
   }
 };
 
@@ -41290,38 +44707,285 @@ var ApprovalNotifications = class {
   }
 };
 
+// packages/adapter/github-organizer-approval/src/approval-presenter.ts
+var ApprovalPresenter = class {
+  constructor(collaborators, messages5) {
+    this.collaborators = collaborators;
+    this.email = this.collaborators.createEmailApprovalPresenter(messages5);
+    this.meetup = this.collaborators.createMeetupApprovalPresenter(messages5);
+  }
+  collaborators;
+  email;
+  meetup;
+  issue(record, decision) {
+    return record.kind === "meetup-publication" ? this.meetup.issue(record, decision) : this.email.issue(record, decision);
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/i18n/messages.en.ts
+var EN_MESSAGES2 = {
+  "approval.meetup.details": "### Organizer confirmation: publish Meetup event\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the Meetup draft]({url}) before approving publication.",
+  "approval.meetup.request": "Repository writers: select one choice. After approval, automation publishes the reviewed draft. Event changes require a new approval.\n\n- [{approveMark}] Approve publishing this Meetup event\n- [{rejectMark}] Reject publishing this Meetup event",
+  "approval.meetup.final": "{status, select, approved {\u2705 **Publication approved**} rejected {\u274C **Publication rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Automation may publish this draft after rechecking its content. The issue checkbox records verified publication.} rejected {Automation will keep this event in draft.} other {}} Event changes require a new approval.",
+  "follow-up.title": "## Post-event follow-up \xB7 {date}",
+  "follow-up.instructions": "Update manual tasks in the issue's Post event checklist.",
+  "follow-up.task": "{task, select, thank_host {Thank the host} thank_speakers {Thank the speakers} share_slides {Share slides on Meetup} import_attendance {Import attendance into CNCF} share_social {Share on social networks} other {Post-event task}}",
+  "follow-up.stopped": "Follow-up paused.",
+  "follow-up.waiting": "Thank-you emails are not ready for approval.",
+  "follow-up.emails-complete": "No thank-you emails pending.",
+  "approval.details.summary": "Review email details",
+  "approval.details.email": "{kind, select, host_introduction {Introduction for the host contact} speaker_introduction {Introduction for the speaker} host_thanks {Thank-you email for the host contact} speaker_thanks {Thank-you email for the speaker} other {Email}}",
+  "approval.details.purpose": "{kind, select, host_introduction {Thanks the host for welcoming the meetup and shares event links, slides and logistical requirements.} speaker_introduction {Shares event links, arrival and venue information, and presentation guidance.} host_thanks {Thanks the host for organizing the meetup and invites future collaboration.} speaker_thanks {Thanks the speaker, shares feedback results for their talks and invites suggestions about the meetup.} other {Sends the planned email.}}",
+  "approval.details.link": "{kind, select, meetup {Meetup event} community {CNCF community event} slides {Meetup presentation} other {Event link}}",
+  "approval.details.feedback": "Feedback results: {title}",
+  "approval.details.omitted-emails": "{count, plural, one {# more email in this batch.} other {# more emails in this batch.}}",
+  "approval.details.omitted-links": "{count, plural, one {# more link.} other {# more links.}}",
+  "approval.final": "### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\n{date} \xB7 Up to {count, number} recipients.\n\n{status, select, approved {\u2705 **Approved**} rejected {\u274C **Rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Approved for dispatch; completed deliveries are skipped.} rejected {This batch will not be sent.} other {}} Batch changes require a new approval.",
+  "approval.request": "### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\n{date} \xB7 Up to {count, number} recipients. Completed deliveries are skipped.\n\nRepository writers: select one choice.\n\n- [{approveMark}] Approve sending this batch\n- [{rejectMark}] Reject sending this batch\n\nBatch changes require a new approval."
+};
+
+// packages/adapter/github-organizer-approval/src/i18n/messages.fr.ts
+var FR_MESSAGES2 = {
+  "approval.meetup.details": "### Confirmation des organisateurs : publier le meetup\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[V\xE9rifiez le brouillon Meetup]({url}) avant d'approuver sa publication.",
+  "approval.meetup.request": "Organisateurs avec acc\xE8s en \xE9criture : cochez un seul choix. Apr\xE8s approbation, l'automatisation publie le brouillon v\xE9rifi\xE9. Toute modification de l'\xE9v\xE9nement n\xE9cessite une nouvelle approbation.\n\n- [{approveMark}] Approuver la publication de ce meetup\n- [{rejectMark}] Refuser la publication de ce meetup",
+  "approval.meetup.final": "{status, select, approved {\u2705 **Publication approuv\xE9e**} rejected {\u274C **Publication refus\xE9e**} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\n{status, select, approved {L'automatisation peut publier ce brouillon apr\xE8s avoir v\xE9rifi\xE9 son contenu. La case de l'issue indique la publication v\xE9rifi\xE9e.} rejected {L'automatisation conserve cet \xE9v\xE9nement en brouillon.} other {}} Toute modification de l'\xE9v\xE9nement n\xE9cessite une nouvelle approbation.",
+  "follow-up.title": "## Suivi apr\xE8s le meetup \xB7 {date}",
+  "follow-up.instructions": "Cochez les t\xE2ches manuelles dans la liste Post event du ticket.",
+  "follow-up.task": "{task, select, thank_host {Remercier l'h\xF4te} thank_speakers {Remercier les intervenants} share_slides {Partager la pr\xE9sentation sur Meetup} import_attendance {Importer la participation dans CNCF} share_social {Partager sur les r\xE9seaux sociaux} other {T\xE2che apr\xE8s le meetup}}",
+  "follow-up.stopped": "Suivi suspendu.",
+  "follow-up.waiting": "Les remerciements ne sont pas pr\xEAts pour approbation.",
+  "follow-up.emails-complete": "Aucun courriel de remerciement en attente.",
+  "approval.details.summary": "Voir le d\xE9tail des e-mails",
+  "approval.details.email": "{kind, select, host_introduction {Introduction pour le contact de l'h\xF4te} speaker_introduction {Introduction pour l'intervenant} host_thanks {Remerciement pour le contact de l'h\xF4te} speaker_thanks {Remerciement pour l'intervenant} other {E-mail}}",
+  "approval.details.purpose": "{kind, select, host_introduction {Remercie l'h\xF4te pour son accueil et partage les liens du meetup, la pr\xE9sentation et les besoins logistiques.} speaker_introduction {Partage les liens du meetup, les informations d'arriv\xE9e et de lieu, ainsi que les consignes de pr\xE9sentation.} host_thanks {Remercie l'h\xF4te pour l'organisation du meetup et propose de renouveler la collaboration.} speaker_thanks {Remercie l'intervenant, partage les r\xE9sultats des retours sur ses pr\xE9sentations et sollicite ses suggestions pour le meetup.} other {Envoie l'e-mail pr\xE9vu.}}",
+  "approval.details.link": "{kind, select, meetup {\xC9v\xE9nement Meetup} community {\xC9v\xE9nement de la communaut\xE9 CNCF} slides {Pr\xE9sentation du meetup} other {Lien du meetup}}",
+  "approval.details.feedback": "R\xE9sultats des retours : {title}",
+  "approval.details.omitted-emails": "{count, plural, one {# autre courriel dans ce lot.} other {# autres courriels dans ce lot.}}",
+  "approval.details.omitted-links": "{count, plural, one {# autre lien.} other {# autres liens.}}",
+  "approval.final": "### Confirmation des organisateurs : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}}\n\n{date} \xB7 Au maximum {count, number} destinataires.\n\n{status, select, approved {\u2705 **Approuv\xE9**} rejected {\u274C **Refus\xE9**} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\n{status, select, approved {Envoi autoris\xE9 ; les envois d\xE9j\xE0 termin\xE9s sont ignor\xE9s.} rejected {Ce lot ne sera pas envoy\xE9.} other {}} Toute modification du lot n\xE9cessite une nouvelle approbation.",
+  "approval.request": "### Confirmation des organisateurs : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}}\n\n{date} \xB7 Au maximum {count, number} destinataires. Les envois d\xE9j\xE0 termin\xE9s sont ignor\xE9s.\n\nOrganisateurs avec acc\xE8s en \xE9criture : cochez un seul choix.\n\n- [{approveMark}] Approuver l'envoi de ce lot\n- [{rejectMark}] Refuser l'envoi de ce lot\n\nToute modification du lot n\xE9cessite une nouvelle approbation."
+};
+
+// packages/adapter/github-organizer-approval/src/i18n/catalog.ts
+var CATALOGS2 = { en: EN_MESSAGES2, fr: FR_MESSAGES2 };
+
+// packages/adapter/github-organizer-approval/src/approval-presenter-factory.ts
+var ApprovalPresenterFactory = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  supportedLocales() {
+    return Object.keys(CATALOGS2).map(
+      (locale) => this.collaborators.createApprovalPresenter(
+        this.collaborators.createApprovalMessages(locale)
+      )
+    );
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/approval-record-factory.ts
+var ApprovalRecordFactory = class {
+  constructor(collaborators, nextIdentity) {
+    this.collaborators = collaborators;
+    this.nextIdentity = nextIdentity;
+  }
+  collaborators;
+  nextIdentity;
+  create(request2) {
+    this.collaborators.approvalRequestSchema.validate(request2);
+    this.collaborators.approvalRequestPolicy.validate(request2);
+    return this.allocate(request2);
+  }
+  placeholder(input) {
+    return this.allocate({
+      kind: "email-thanks",
+      revision: "0".repeat(64),
+      eventDate: input.eventDate,
+      recipientCount: 0,
+      requestedAt: input.requestedAt,
+      followUp: {
+        active: input.active,
+        pendingTasks: input.pendingTasks
+      }
+    });
+  }
+  allocate(request2) {
+    const record = {
+      ...request2,
+      requestId: `approval-${this.nextIdentity()}`,
+      notification: "new"
+    };
+    this.collaborators.storedApprovalSchema.validate(record);
+    return record;
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/approval-comment-codec.ts
+var APPROVAL_MARKER = "<!-- meetup-organizer-approval:v1 ";
+var ApprovalCommentCodec = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  read(body) {
+    const line = body.split("\n", 1)[0];
+    if (!line?.startsWith(APPROVAL_MARKER) || !line.endsWith(" -->"))
+      throw new Error("Invalid approval record");
+    const record = JSON.parse(line.slice(APPROVAL_MARKER.length, -4));
+    this.collaborators.storedApprovalSchema.validate(record);
+    return record;
+  }
+  marker(record) {
+    const json = JSON.stringify(record).replaceAll("<", "\\u003c").replaceAll(">", "\\u003e").replaceAll("&", "\\u0026");
+    return `${APPROVAL_MARKER}${json} -->`;
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/approval-details-presenter.ts
+var ApprovalDetailsPresenter = class {
+  constructor(messages5) {
+    this.messages = messages5;
+  }
+  messages;
+  render(details) {
+    const lines = [
+      "<details>",
+      `<summary>${this.escape(this.messages.t("approval.details.summary", {}))}</summary>`,
+      "",
+      ...details.emails.map((email) => this.email(email))
+    ];
+    if (details.omittedEmails > 0)
+      lines.push(
+        `<p>${this.escape(this.messages.t("approval.details.omitted-emails", { count: details.omittedEmails }))}</p>`
+      );
+    return [...lines, "", "</details>"].join("\n");
+  }
+  email(email) {
+    const heading = this.messages.t("approval.details.email", {
+      kind: email.kind.replaceAll("-", "_")
+    });
+    const name = email.recipientName ? `: ${this.escape(email.recipientName)}` : "";
+    const lines = [
+      `<p><strong>${this.escape(heading)}${name}</strong></p>`,
+      `<p>${this.escape(this.messages.t("approval.details.purpose", { kind: email.kind.replaceAll("-", "_") }))}</p>`
+    ];
+    if (email.links.length)
+      lines.push(
+        "<ul>",
+        ...email.links.map((link) => `<li>${this.link(link)}</li>`),
+        "</ul>"
+      );
+    if (email.omittedLinks > 0)
+      lines.push(
+        `<p>${this.escape(this.messages.t("approval.details.omitted-links", { count: email.omittedLinks }))}</p>`
+      );
+    return lines.join("\n");
+  }
+  link(link) {
+    const label = link.kind === "feedback" ? this.messages.t("approval.details.feedback", {
+      title: link.title ?? ""
+    }) : this.messages.t("approval.details.link", { kind: link.kind });
+    return `<a href="${this.escape(link.url)}">${this.escape(label)}</a>`;
+  }
+  escape(value) {
+    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;").replaceAll("@", "&#64;");
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/approval-details-preview.ts
+var ApprovalDetailsPreview = class {
+  create(details) {
+    const emails = details.emails.slice(0, 20).map((email) => ({
+      ...email,
+      recipientName: this.text(email.recipientName),
+      links: email.links.slice(0, 8).map((link) => ({
+        ...link,
+        ...link.title === void 0 ? {} : { title: this.text(link.title) }
+      })),
+      omittedLinks: email.omittedLinks + Math.max(email.links.length - 8, 0)
+    }));
+    while (JSON.stringify(emails).length > 4e3) {
+      const largest = [...emails].sort(
+        (a, b2) => JSON.stringify(b2).length - JSON.stringify(a).length
+      )[0];
+      if (largest?.links.length) {
+        largest.links.pop();
+        largest.omittedLinks++;
+      } else {
+        emails.pop();
+      }
+    }
+    return {
+      emails,
+      omittedEmails: details.omittedEmails + details.emails.length - emails.length
+    };
+  }
+  text(value) {
+    const normalized = value.trim().replace(/\s+/g, " ");
+    return normalized.length <= 200 ? normalized : `${normalized.slice(0, 197)}...`;
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/approval-request-schema.ts
+var ApprovalRequestSchema = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  validate(value) {
+    if (!this.collaborators.approvalSchema.object(value) || typeof value.revision !== "string" || typeof value.eventDate !== "string" || typeof value.requestedAt !== "string")
+      throw new Error("Invalid approval request");
+    if (value.kind === "meetup-publication") {
+      if (value.recipientCount !== void 0 || value.details !== void 0)
+        throw new Error("Invalid publication approval fields");
+      this.collaborators.meetupApprovalDetailsSchema.validate(
+        value.publication
+      );
+      return;
+    }
+    if (value.kind !== "email-introduction" && value.kind !== "email-thanks" || value.publication !== void 0 || !this.collaborators.approvalSchema.count(value.recipientCount))
+      throw new Error("Invalid approval request");
+    this.collaborators.emailApprovalDetailsSchema.validate(value.details);
+  }
+};
+
 // packages/adapter/github-organizer-approval/src/approval-schema.ts
 var ApprovalSchema = class {
-  static object(value) {
+  object(value) {
     return typeof value === "object" && value !== null && !Array.isArray(value);
   }
-  static count(value) {
+  count(value) {
     return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
   }
-  static text(value, maximum) {
+  text(value, maximum) {
     return typeof value === "string" && value.length <= maximum && !/[\r\n\0]/.test(value);
   }
 };
 
 // packages/adapter/github-organizer-approval/src/email-approval-details-schema.ts
-var EmailApprovalDetailsSchema = class _EmailApprovalDetailsSchema {
-  static validate(details) {
+var EmailApprovalDetailsSchema = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  validate(details) {
     if (details === void 0) return;
-    if (!ApprovalSchema.object(details) || !Array.isArray(details.emails) || details.emails.length > 20 || !ApprovalSchema.count(details.omittedEmails) || JSON.stringify(details).length > 12e3 || !details.emails.every(_EmailApprovalDetailsSchema.email))
+    if (!this.collaborators.approvalSchema.object(details) || !Array.isArray(details.emails) || details.emails.length > 20 || !this.collaborators.approvalSchema.count(details.omittedEmails) || JSON.stringify(details).length > 12e3 || !details.emails.every(this.email.bind(this)))
       throw new Error("Invalid approval details");
   }
-  static email(email) {
-    return ApprovalSchema.object(email) && typeof email.kind === "string" && [
+  email(email) {
+    return this.collaborators.approvalSchema.object(email) && typeof email.kind === "string" && [
       "host-introduction",
       "speaker-introduction",
       "host-thanks",
       "speaker-thanks"
-    ].includes(email.kind) && ApprovalSchema.text(email.recipientName, 200) && ApprovalSchema.count(email.omittedLinks) && Array.isArray(email.links) && email.links.length <= 8 && email.links.every(_EmailApprovalDetailsSchema.link);
+    ].includes(email.kind) && this.collaborators.approvalSchema.text(email.recipientName, 200) && this.collaborators.approvalSchema.count(email.omittedLinks) && Array.isArray(email.links) && email.links.length <= 8 && email.links.every(this.link.bind(this));
   }
-  static link(link) {
-    return ApprovalSchema.object(link) && typeof link.kind === "string" && ["meetup", "community", "slides", "feedback"].includes(link.kind) && (link.title === void 0 || ApprovalSchema.text(link.title, 200)) && _EmailApprovalDetailsSchema.url(link.url);
+  link(link) {
+    return this.collaborators.approvalSchema.object(link) && typeof link.kind === "string" && ["meetup", "community", "slides", "feedback"].includes(link.kind) && (link.title === void 0 || this.collaborators.approvalSchema.text(link.title, 200)) && this.url(link.url);
   }
-  static url(value) {
+  url(value) {
     if (typeof value !== "string" || value.length > 2048 || /\s/.test(value) || value.includes("\0"))
       return false;
     try {
@@ -41333,148 +44997,80 @@ var EmailApprovalDetailsSchema = class _EmailApprovalDetailsSchema {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/meetup-approval-details-schema.ts
-var MeetupApprovalDetailsSchema = class _MeetupApprovalDetailsSchema {
-  static validate(value) {
-    if (!ApprovalSchema.object(value) || !_MeetupApprovalDetailsSchema.text(value.url, 2048) || MeetupEventUrl.parse(value.url)?.value !== value.url || !_MeetupApprovalDetailsSchema.text(value.title, 80) || typeof value.startTime !== "string" || !ScheduledEventPolicy.validTime(value.startTime) || typeof value.endTime !== "string" || !ScheduledEventPolicy.validTime(value.endTime) || !_MeetupApprovalDetailsSchema.text(value.timeZone, 100) || !ApprovalSchema.object(value.venue) || !_MeetupApprovalDetailsSchema.text(value.venue.name, 500) || !_MeetupApprovalDetailsSchema.text(value.venue.city, 500))
-      throw new Error("Invalid Meetup approval details");
-  }
-  static text(value, maximum) {
-    return ApprovalSchema.text(value, maximum) && value.trim().length > 0;
-  }
-};
-
-// packages/adapter/github-organizer-approval/src/approval-request-schema.ts
-var ApprovalRequestSchema = class {
-  static validate(value) {
-    if (!ApprovalSchema.object(value) || typeof value.revision !== "string" || typeof value.eventDate !== "string" || typeof value.requestedAt !== "string")
-      throw new Error("Invalid approval request");
-    if (value.kind === "meetup-publication") {
-      if (value.recipientCount !== void 0 || value.details !== void 0)
-        throw new Error("Invalid publication approval fields");
-      MeetupApprovalDetailsSchema.validate(value.publication);
-      return;
-    }
-    if (value.kind !== "email-introduction" && value.kind !== "email-thanks" || value.publication !== void 0 || !ApprovalSchema.count(value.recipientCount))
-      throw new Error("Invalid approval request");
-    EmailApprovalDetailsSchema.validate(value.details);
-  }
-};
-
-// packages/adapter/github-organizer-approval/src/follow-up-schema.ts
-var FollowUpSchema = class {
-  static validate(value) {
-    if (value === void 0) return;
-    if (!ApprovalSchema.object(value) || typeof value.active !== "boolean" || !Array.isArray(value.pendingTasks) || value.pendingTasks.length > FOLLOW_UP_TASKS.length || new Set(value.pendingTasks).size !== value.pendingTasks.length || value.pendingTasks.some((task) => !FOLLOW_UP_TASKS.includes(task)) || value.attention !== void 0 && (typeof value.attention !== "string" || value.attention.length > 5e4) || value.attentionDetails !== void 0 && (typeof value.attentionDetails !== "string" || value.attentionDetails.length > 2e4))
-      throw new Error("Invalid post-event follow-up state");
-  }
-};
-
-// packages/adapter/github-organizer-approval/src/stored-approval-schema.ts
-var StoredApprovalSchema = class _StoredApprovalSchema {
-  static validate(value) {
-    if (!ApprovalSchema.object(value))
-      throw new Error("Invalid approval state");
-    const state = value;
-    ApprovalRequestSchema.validate(value);
-    FollowUpSchema.validate(state.followUp);
-    if (state.followUp && value.kind !== "email-thanks")
-      throw new Error("Invalid post-event approval kind");
-    if (value.recipientCount === 0 && state.followUp) {
-      ApprovalRequestPolicy.validateIdentity(value);
-      ApprovalRequestPolicy.validateEmailCount(value);
-    } else {
-      ApprovalRequestPolicy.validate(value);
-    }
-    if (typeof state.requestId !== "string" || !/^approval-[a-f0-9-]{36}$/.test(state.requestId) || !["new", "reserved", "sent", "retry"].some(
-      (status) => status === state.notification
-    ))
-      throw new Error("Invalid approval state");
-    if (state.decision !== void 0) {
-      _StoredApprovalSchema.decision(state.decision);
-      if (value.recipientCount === 0)
-        throw new Error("Invalid final approval decision");
-    }
-    if (state.notificationMessage !== void 0)
-      _StoredApprovalSchema.notificationMessage(state.notificationMessage);
-    if (state.reactionSent !== void 0 && (typeof state.reactionSent !== "boolean" || !state.decision || !state.notificationMessage))
-      throw new Error("Invalid approval reaction state");
-  }
-  static decision(value) {
-    if (!ApprovalSchema.object(value) || value.status !== "approved" && value.status !== "rejected" || typeof value.actor !== "string" || !/^[A-Za-z0-9-]{1,39}$/.test(value.actor) || typeof value.decidedAt !== "string" || !Number.isFinite(Date.parse(value.decidedAt)))
-      throw new Error("Invalid final approval decision");
-  }
-  static notificationMessage(value) {
-    if (!ApprovalSchema.object(value) || typeof value.destination !== "string" || !value.destination.trim() || typeof value.messageId !== "string" || !value.messageId.trim())
-      throw new Error("Invalid approval notification reference");
-  }
-};
-
-// packages/adapter/github-organizer-approval/src/approval-comment-codec.ts
-var APPROVAL_MARKER = "<!-- meetup-organizer-approval:v1 ";
-var ApprovalCommentCodec = class {
-  static read(body) {
-    const line = body.split("\n", 1)[0];
-    if (!line?.startsWith(APPROVAL_MARKER) || !line.endsWith(" -->"))
-      throw new Error("Invalid approval record");
-    const record = JSON.parse(line.slice(APPROVAL_MARKER.length, -4));
-    StoredApprovalSchema.validate(record);
-    return record;
-  }
-  static marker(record) {
-    const json = JSON.stringify(record).replaceAll("<", "\\u003c").replaceAll(">", "\\u003e").replaceAll("&", "\\u0026");
-    return `${APPROVAL_MARKER}${json} -->`;
-  }
-};
-
-// packages/adapter/github-organizer-approval/src/approval-details-presenter.ts
-var ApprovalDetailsPresenter = class _ApprovalDetailsPresenter {
-  constructor(messages5) {
+// packages/adapter/github-organizer-approval/src/email-approval-presenter.ts
+var EmailApprovalPresenter = class {
+  constructor(collaborators, messages5) {
+    this.collaborators = collaborators;
     this.messages = messages5;
   }
+  collaborators;
   messages;
-  render(details) {
-    const lines = [
-      "<details>",
-      `<summary>${_ApprovalDetailsPresenter.escape(this.messages.t("approval.details.summary", {}))}</summary>`,
-      "",
-      ...details.emails.map((email) => this.email(email))
+  issue(record, decision) {
+    const heading = [
+      this.collaborators.approvalCommentCodec.marker(record),
+      ...this.collaborators.createFollowUpPresenter(this.messages).render(record)
     ];
-    if (details.omittedEmails > 0)
-      lines.push(
-        `<p>${_ApprovalDetailsPresenter.escape(this.messages.t("approval.details.omitted-emails", { count: details.omittedEmails }))}</p>`
-      );
-    return [...lines, "", "</details>"].join("\n");
+    if (record.recipientCount === 0 || record.followUp?.active === false)
+      return [...heading, record.followUp?.attentionDetails ?? ""].join("\n\n").trimEnd();
+    const details = record.details ? [
+      this.collaborators.createApprovalDetailsPresenter(this.messages).render(record.details)
+    ] : [];
+    if (record.followUp?.attentionDetails)
+      details.push(record.followUp.attentionDetails);
+    if (record.decision)
+      return [
+        ...heading,
+        this.messages.t("approval.final", {
+          kind: record.kind.replace("email-", ""),
+          date: record.eventDate,
+          count: record.recipientCount,
+          status: record.decision.status,
+          actor: record.decision.actor,
+          decidedAt: record.decision.decidedAt
+        }),
+        ...details
+      ].join("\n\n");
+    return [
+      ...heading,
+      this.messages.t("approval.request", {
+        kind: record.kind.replace("email-", ""),
+        date: record.eventDate,
+        count: record.recipientCount,
+        approveMark: decision.status === "approved" ? "x" : " ",
+        rejectMark: decision.status === "rejected" ? "x" : " "
+      }),
+      ...details
+    ].join("\n\n");
   }
-  email(email) {
-    const heading = this.messages.t("approval.details.email", {
-      kind: email.kind.replaceAll("-", "_")
-    });
-    const name = email.recipientName ? `: ${_ApprovalDetailsPresenter.escape(email.recipientName)}` : "";
-    const lines = [
-      `<p><strong>${_ApprovalDetailsPresenter.escape(heading)}${name}</strong></p>`,
-      `<p>${_ApprovalDetailsPresenter.escape(this.messages.t("approval.details.purpose", { kind: email.kind.replaceAll("-", "_") }))}</p>`
-    ];
-    if (email.links.length)
-      lines.push(
-        "<ul>",
-        ...email.links.map((link) => `<li>${this.link(link)}</li>`),
-        "</ul>"
-      );
-    if (email.omittedLinks > 0)
-      lines.push(
-        `<p>${_ApprovalDetailsPresenter.escape(this.messages.t("approval.details.omitted-links", { count: email.omittedLinks }))}</p>`
-      );
-    return lines.join("\n");
+};
+
+// packages/adapter/github-organizer-approval/src/finalize-approval-decision.ts
+var FinalizeApprovalDecision = class {
+  constructor(decisions, repository, notifications) {
+    this.decisions = decisions;
+    this.repository = repository;
+    this.notifications = notifications;
   }
-  link(link) {
-    const label = link.kind === "feedback" ? this.messages.t("approval.details.feedback", {
-      title: link.title ?? ""
-    }) : this.messages.t("approval.details.link", { kind: link.kind });
-    return `<a href="${_ApprovalDetailsPresenter.escape(link.url)}">${_ApprovalDetailsPresenter.escape(label)}</a>`;
-  }
-  static escape(value) {
-    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;").replaceAll("@", "&#64;");
+  decisions;
+  repository;
+  notifications;
+  async execute(state) {
+    const { record, comment } = state;
+    const decision = await this.decisions.execute(record, comment);
+    if (decision.status !== "pending" && !record.decision) {
+      if (!decision.actor || !decision.decidedAt)
+        throw new Error("Missing verified approval identity");
+      record.decision = {
+        status: decision.status,
+        actor: decision.actor,
+        decidedAt: decision.decidedAt
+      };
+    }
+    await this.repository.save(record, state);
+    return {
+      status: decision.status,
+      notificationFailed: await this.notifications.react(record, comment.id)
+    };
   }
 };
 
@@ -41509,218 +45105,16 @@ var FollowUpPresenter = class {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/email-approval-presenter.ts
-var EmailApprovalPresenter = class {
-  constructor(messages5) {
-    this.messages = messages5;
+// packages/adapter/github-organizer-approval/src/follow-up-schema.ts
+var FollowUpSchema = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
   }
-  messages;
-  issue(record, decision) {
-    const heading = [
-      ApprovalCommentCodec.marker(record),
-      ...new FollowUpPresenter(this.messages).render(record)
-    ];
-    if (record.recipientCount === 0 || record.followUp?.active === false)
-      return [...heading, record.followUp?.attentionDetails ?? ""].join("\n\n").trimEnd();
-    const details = record.details ? [new ApprovalDetailsPresenter(this.messages).render(record.details)] : [];
-    if (record.followUp?.attentionDetails)
-      details.push(record.followUp.attentionDetails);
-    if (record.decision)
-      return [
-        ...heading,
-        this.messages.t("approval.final", {
-          kind: record.kind.replace("email-", ""),
-          date: record.eventDate,
-          count: record.recipientCount,
-          status: record.decision.status,
-          actor: record.decision.actor,
-          decidedAt: record.decision.decidedAt
-        }),
-        ...details
-      ].join("\n\n");
-    return [
-      ...heading,
-      this.messages.t("approval.request", {
-        kind: record.kind.replace("email-", ""),
-        date: record.eventDate,
-        count: record.recipientCount,
-        approveMark: decision.status === "approved" ? "x" : " ",
-        rejectMark: decision.status === "rejected" ? "x" : " "
-      }),
-      ...details
-    ].join("\n\n");
-  }
-};
-
-// packages/adapter/github-organizer-approval/src/i18n/messages.en.ts
-var EN_MESSAGES3 = {
-  "approval.meetup.details": "### Organizer confirmation: publish Meetup event\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the Meetup draft]({url}) before approving publication.",
-  "approval.meetup.request": "Repository writers: select one choice. After approval, automation publishes the reviewed draft. Event changes require a new approval.\n\n- [{approveMark}] Approve publishing this Meetup event\n- [{rejectMark}] Reject publishing this Meetup event",
-  "approval.meetup.final": "{status, select, approved {\u2705 **Publication approved**} rejected {\u274C **Publication rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Automation may publish this draft after rechecking its content. The issue checkbox records verified publication.} rejected {Automation will keep this event in draft.} other {}} Event changes require a new approval.",
-  "follow-up.title": "## Post-event follow-up \xB7 {date}",
-  "follow-up.instructions": "Update manual tasks in the issue's Post event checklist.",
-  "follow-up.task": "{task, select, thank_host {Thank the host} thank_speakers {Thank the speakers} share_slides {Share slides on Meetup} import_attendance {Import attendance into CNCF} share_social {Share on social networks} other {Post-event task}}",
-  "follow-up.stopped": "Follow-up paused.",
-  "follow-up.waiting": "Thank-you emails are not ready for approval.",
-  "follow-up.emails-complete": "No thank-you emails pending.",
-  "approval.details.summary": "Review email details",
-  "approval.details.email": "{kind, select, host_introduction {Introduction for the host contact} speaker_introduction {Introduction for the speaker} host_thanks {Thank-you email for the host contact} speaker_thanks {Thank-you email for the speaker} other {Email}}",
-  "approval.details.purpose": "{kind, select, host_introduction {Thanks the host for welcoming the meetup and shares event links, slides and logistical requirements.} speaker_introduction {Shares event links, arrival and venue information, and presentation guidance.} host_thanks {Thanks the host for organizing the meetup and invites future collaboration.} speaker_thanks {Thanks the speaker, shares feedback results for their talks and invites suggestions about the meetup.} other {Sends the planned email.}}",
-  "approval.details.link": "{kind, select, meetup {Meetup event} community {CNCF community event} slides {Meetup presentation} other {Event link}}",
-  "approval.details.feedback": "Feedback results: {title}",
-  "approval.details.omitted-emails": "{count, plural, one {# more email in this batch.} other {# more emails in this batch.}}",
-  "approval.details.omitted-links": "{count, plural, one {# more link.} other {# more links.}}",
-  "approval.final": "### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\n{date} \xB7 Up to {count, number} recipients.\n\n{status, select, approved {\u2705 **Approved**} rejected {\u274C **Rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Approved for dispatch; completed deliveries are skipped.} rejected {This batch will not be sent.} other {}} Batch changes require a new approval.",
-  "approval.request": "### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\n{date} \xB7 Up to {count, number} recipients. Completed deliveries are skipped.\n\nRepository writers: select one choice.\n\n- [{approveMark}] Approve sending this batch\n- [{rejectMark}] Reject sending this batch\n\nBatch changes require a new approval."
-};
-
-// packages/adapter/github-organizer-approval/src/i18n/messages.fr.ts
-var FR_MESSAGES3 = {
-  "approval.meetup.details": "### Confirmation des organisateurs : publier le meetup\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[V\xE9rifiez le brouillon Meetup]({url}) avant d'approuver sa publication.",
-  "approval.meetup.request": "Organisateurs avec acc\xE8s en \xE9criture : cochez un seul choix. Apr\xE8s approbation, l'automatisation publie le brouillon v\xE9rifi\xE9. Toute modification de l'\xE9v\xE9nement n\xE9cessite une nouvelle approbation.\n\n- [{approveMark}] Approuver la publication de ce meetup\n- [{rejectMark}] Refuser la publication de ce meetup",
-  "approval.meetup.final": "{status, select, approved {\u2705 **Publication approuv\xE9e**} rejected {\u274C **Publication refus\xE9e**} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\n{status, select, approved {L'automatisation peut publier ce brouillon apr\xE8s avoir v\xE9rifi\xE9 son contenu. La case de l'issue indique la publication v\xE9rifi\xE9e.} rejected {L'automatisation conserve cet \xE9v\xE9nement en brouillon.} other {}} Toute modification de l'\xE9v\xE9nement n\xE9cessite une nouvelle approbation.",
-  "follow-up.title": "## Suivi apr\xE8s le meetup \xB7 {date}",
-  "follow-up.instructions": "Cochez les t\xE2ches manuelles dans la liste Post event du ticket.",
-  "follow-up.task": "{task, select, thank_host {Remercier l'h\xF4te} thank_speakers {Remercier les intervenants} share_slides {Partager la pr\xE9sentation sur Meetup} import_attendance {Importer la participation dans CNCF} share_social {Partager sur les r\xE9seaux sociaux} other {T\xE2che apr\xE8s le meetup}}",
-  "follow-up.stopped": "Suivi suspendu.",
-  "follow-up.waiting": "Les remerciements ne sont pas pr\xEAts pour approbation.",
-  "follow-up.emails-complete": "Aucun courriel de remerciement en attente.",
-  "approval.details.summary": "Voir le d\xE9tail des e-mails",
-  "approval.details.email": "{kind, select, host_introduction {Introduction pour le contact de l'h\xF4te} speaker_introduction {Introduction pour l'intervenant} host_thanks {Remerciement pour le contact de l'h\xF4te} speaker_thanks {Remerciement pour l'intervenant} other {E-mail}}",
-  "approval.details.purpose": "{kind, select, host_introduction {Remercie l'h\xF4te pour son accueil et partage les liens du meetup, la pr\xE9sentation et les besoins logistiques.} speaker_introduction {Partage les liens du meetup, les informations d'arriv\xE9e et de lieu, ainsi que les consignes de pr\xE9sentation.} host_thanks {Remercie l'h\xF4te pour l'organisation du meetup et propose de renouveler la collaboration.} speaker_thanks {Remercie l'intervenant, partage les r\xE9sultats des retours sur ses pr\xE9sentations et sollicite ses suggestions pour le meetup.} other {Envoie l'e-mail pr\xE9vu.}}",
-  "approval.details.link": "{kind, select, meetup {\xC9v\xE9nement Meetup} community {\xC9v\xE9nement de la communaut\xE9 CNCF} slides {Pr\xE9sentation du meetup} other {Lien du meetup}}",
-  "approval.details.feedback": "R\xE9sultats des retours : {title}",
-  "approval.details.omitted-emails": "{count, plural, one {# autre courriel dans ce lot.} other {# autres courriels dans ce lot.}}",
-  "approval.details.omitted-links": "{count, plural, one {# autre lien.} other {# autres liens.}}",
-  "approval.final": "### Confirmation des organisateurs : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}}\n\n{date} \xB7 Au maximum {count, number} destinataires.\n\n{status, select, approved {\u2705 **Approuv\xE9**} rejected {\u274C **Refus\xE9**} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\n{status, select, approved {Envoi autoris\xE9 ; les envois d\xE9j\xE0 termin\xE9s sont ignor\xE9s.} rejected {Ce lot ne sera pas envoy\xE9.} other {}} Toute modification du lot n\xE9cessite une nouvelle approbation.",
-  "approval.request": "### Confirmation des organisateurs : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}}\n\n{date} \xB7 Au maximum {count, number} destinataires. Les envois d\xE9j\xE0 termin\xE9s sont ignor\xE9s.\n\nOrganisateurs avec acc\xE8s en \xE9criture : cochez un seul choix.\n\n- [{approveMark}] Approuver l'envoi de ce lot\n- [{rejectMark}] Refuser l'envoi de ce lot\n\nToute modification du lot n\xE9cessite une nouvelle approbation."
-};
-
-// packages/adapter/github-organizer-approval/src/i18n/catalog.ts
-var CATALOGS3 = { en: EN_MESSAGES3, fr: FR_MESSAGES3 };
-
-// packages/adapter/github-organizer-approval/src/i18n/approval-messages.ts
-var ApprovalMessages = class extends MessageLocalizer {
-  constructor(locale = "en") {
-    super(CATALOGS3, locale);
-  }
-};
-
-// packages/adapter/github-organizer-approval/src/meetup-approval-presenter.ts
-var MeetupApprovalPresenter = class _MeetupApprovalPresenter {
-  constructor(messages5) {
-    this.messages = messages5;
-  }
-  messages;
-  issue(record, decision) {
-    const details = record.publication;
-    const content = this.messages.t("approval.meetup.details", {
-      title: _MeetupApprovalPresenter.escape(details.title),
-      date: record.eventDate,
-      startTime: details.startTime,
-      endTime: details.endTime,
-      timeZone: _MeetupApprovalPresenter.escape(details.timeZone),
-      venue: _MeetupApprovalPresenter.escape(details.venue.name),
-      city: _MeetupApprovalPresenter.escape(details.venue.city),
-      url: details.url
-    });
-    const controls = record.decision ? this.messages.t("approval.meetup.final", {
-      status: record.decision.status,
-      actor: record.decision.actor,
-      decidedAt: record.decision.decidedAt
-    }) : this.messages.t("approval.meetup.request", {
-      approveMark: decision.status === "approved" ? "x" : " ",
-      rejectMark: decision.status === "rejected" ? "x" : " "
-    });
-    return [ApprovalCommentCodec.marker(record), content, controls].join(
-      "\n\n"
-    );
-  }
-  static escape(value) {
-    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("@", "&#64;").replace(/[\\`*_{}[\]()#+.!|~-]/g, "\\$&");
-  }
-};
-
-// packages/adapter/github-organizer-approval/src/approval-presenter.ts
-var ApprovalPresenter = class _ApprovalPresenter {
-  email;
-  meetup;
-  constructor(messages5) {
-    this.email = new EmailApprovalPresenter(messages5);
-    this.meetup = new MeetupApprovalPresenter(messages5);
-  }
-  issue(record, decision) {
-    return record.kind === "meetup-publication" ? this.meetup.issue(record, decision) : this.email.issue(record, decision);
-  }
-  static supportedLocales() {
-    return Object.keys(CATALOGS3).map(
-      (locale) => new _ApprovalPresenter(new ApprovalMessages(locale))
-    );
-  }
-};
-
-// packages/adapter/github-organizer-approval/src/approval-record-factory.ts
-var ApprovalRecordFactory = class {
-  constructor(nextIdentity) {
-    this.nextIdentity = nextIdentity;
-  }
-  nextIdentity;
-  create(request2) {
-    ApprovalRequestSchema.validate(request2);
-    ApprovalRequestPolicy.validate(request2);
-    return this.allocate(request2);
-  }
-  placeholder(input) {
-    return this.allocate({
-      kind: "email-thanks",
-      revision: "0".repeat(64),
-      eventDate: input.eventDate,
-      recipientCount: 0,
-      requestedAt: input.requestedAt,
-      followUp: {
-        active: input.active,
-        pendingTasks: input.pendingTasks
-      }
-    });
-  }
-  allocate(request2) {
-    const record = {
-      ...request2,
-      requestId: `approval-${this.nextIdentity()}`,
-      notification: "new"
-    };
-    StoredApprovalSchema.validate(record);
-    return record;
-  }
-};
-
-// packages/adapter/github-organizer-approval/src/finalize-approval-decision.ts
-var FinalizeApprovalDecision = class {
-  constructor(decisions, repository, notifications) {
-    this.decisions = decisions;
-    this.repository = repository;
-    this.notifications = notifications;
-  }
-  decisions;
-  repository;
-  notifications;
-  async execute(state) {
-    const { record, comment } = state;
-    const decision = await this.decisions.execute(record, comment);
-    if (decision.status !== "pending" && !record.decision) {
-      if (!decision.actor || !decision.decidedAt)
-        throw new Error("Missing verified approval identity");
-      record.decision = {
-        status: decision.status,
-        actor: decision.actor,
-        decidedAt: decision.decidedAt
-      };
-    }
-    await this.repository.save(record, state);
-    return {
-      status: decision.status,
-      notificationFailed: await this.notifications.react(record, comment.id)
-    };
+  collaborators;
+  validate(value) {
+    if (value === void 0) return;
+    if (!this.collaborators.approvalSchema.object(value) || typeof value.active !== "boolean" || !Array.isArray(value.pendingTasks) || value.pendingTasks.length > FOLLOW_UP_TASKS.length || new Set(value.pendingTasks).size !== value.pendingTasks.length || value.pendingTasks.some((task) => !FOLLOW_UP_TASKS.includes(task)) || value.attention !== void 0 && (typeof value.attention !== "string" || value.attention.length > 5e4) || value.attentionDetails !== void 0 && (typeof value.attentionDetails !== "string" || value.attentionDetails.length > 2e4))
+      throw new Error("Invalid post-event follow-up state");
   }
 };
 
@@ -41750,74 +45144,16 @@ var GithubApprovalAttentionSource = class {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/github-approval-response.ts
-var GithubApprovalResponse = class _GithubApprovalResponse {
-  static comments(value) {
-    if (!ApprovalSchema.object(value) || !Array.isArray(value.data) || !value.data.every(_GithubApprovalResponse.comment) || !ApprovalSchema.object(value.headers) || value.headers.link !== void 0 && typeof value.headers.link !== "string")
-      throw new Error("Invalid approval comment response");
-    return { data: value.data, headers: { link: value.headers.link } };
-  }
-  static identity(value) {
-    if (!ApprovalSchema.object(value) || !ApprovalSchema.object(value.data) || !ApprovalSchema.count(value.data.id) || value.data.id === 0)
-      throw new Error("Invalid approval comment identity");
-    return value.data.id;
-  }
-  static permission(value) {
-    if (!ApprovalSchema.object(value) || !ApprovalSchema.object(value.data) || typeof value.data.permission !== "string")
-      throw new Error("Invalid approval permission response");
-    return value.data.permission;
-  }
-  static edit(value, comment) {
-    const node = _GithubApprovalResponse.snapshot(value, comment);
-    if (!_GithubApprovalResponse.nullableText(node.lastEditedAt) || !_GithubApprovalResponse.actor(node.editor))
-      throw new Error("Invalid approval editor response");
-    return {
-      id: node.id,
-      body: node.body,
-      lastEditedAt: node.lastEditedAt,
-      editor: node.editor
-    };
-  }
-  static history(value, comment) {
-    const node = _GithubApprovalResponse.snapshot(value, comment);
-    const history = node.userContentEdits;
-    if (!ApprovalSchema.object(history) || !Array.isArray(history.nodes) || !history.nodes.every(_GithubApprovalResponse.historyEdit) || !ApprovalSchema.object(history.pageInfo) || typeof history.pageInfo.hasNextPage !== "boolean" || !_GithubApprovalResponse.nullableText(history.pageInfo.endCursor))
-      throw new Error("Approval history is unavailable");
-    return {
-      nodes: history.nodes,
-      pageInfo: {
-        hasNextPage: history.pageInfo.hasNextPage,
-        endCursor: history.pageInfo.endCursor
-      }
-    };
-  }
-  static snapshot(value, comment) {
-    if (!ApprovalSchema.object(value) || !ApprovalSchema.object(value.node) || typeof value.node.id !== "string" || typeof value.node.body !== "string" || value.node.id !== comment.node_id || value.node.body !== comment.body)
-      throw new Error("Approval comment changed during verification");
-    return { ...value.node, id: value.node.id, body: value.node.body };
-  }
-  static comment(value) {
-    return ApprovalSchema.object(value) && ApprovalSchema.count(value.id) && value.id > 0 && (value.node_id === void 0 || typeof value.node_id === "string") && (value.body === void 0 || _GithubApprovalResponse.nullableText(value.body)) && (value.user === void 0 || value.user === null || ApprovalSchema.object(value.user) && typeof value.user.login === "string");
-  }
-  static historyEdit(value) {
-    return ApprovalSchema.object(value) && _GithubApprovalResponse.nullableText(value.diff) && _GithubApprovalResponse.nullableText(value.deletedAt) && _GithubApprovalResponse.actor(value.editor);
-  }
-  static actor(value) {
-    return value === null || ApprovalSchema.object(value) && typeof value.login === "string" && typeof value.__typename === "string";
-  }
-  static nullableText(value) {
-    return value === null || typeof value === "string";
-  }
-};
-
 // packages/adapter/github-organizer-approval/src/github-approval-client.ts
 var GithubApprovalClient = class {
-  constructor(api, owner, repo, issue2) {
+  constructor(collaborators, api, owner, repo, issue2) {
+    this.collaborators = collaborators;
     this.api = api;
     this.owner = owner;
     this.repo = repo;
     this.issue = issue2;
   }
+  collaborators;
   api;
   owner;
   repo;
@@ -41833,7 +45169,7 @@ var GithubApprovalClient = class {
         page,
         per_page: 100
       });
-      const response = GithubApprovalResponse.comments(raw);
+      const response = this.collaborators.githubApprovalResponse.comments(raw);
       comments.push(...response.data);
       const next = response.headers.link ? /<[^>]+>;\s*rel="next"/.test(response.headers.link) : response.data.length === 100;
       if (!next) return comments;
@@ -41848,7 +45184,7 @@ var GithubApprovalClient = class {
       issue_number: this.issue,
       body
     });
-    return GithubApprovalResponse.identity(response);
+    return this.collaborators.githubApprovalResponse.identity(response);
   }
   async update(commentId, body) {
     if (body.length > 6e4) throw new Error("Approval comment limit exceeded");
@@ -41865,7 +45201,7 @@ var GithubApprovalClient = class {
       repo: this.repo,
       username
     });
-    const permission = GithubApprovalResponse.permission(response);
+    const permission = this.collaborators.githubApprovalResponse.permission(response);
     return ["write", "maintain", "admin"].includes(permission);
   }
   async replace(commentId, before, after) {
@@ -41890,7 +45226,7 @@ var GithubApprovalClient = class {
 			}`,
       { id: comment.node_id }
     );
-    return GithubApprovalResponse.edit(result, comment);
+    return this.collaborators.githubApprovalResponse.edit(result, comment);
   }
   url(commentId) {
     return `https://github.com/${this.owner}/${this.repo}/issues/${this.issue}#issuecomment-${commentId}`;
@@ -41912,7 +45248,10 @@ var GithubApprovalClient = class {
 			}`,
         { id: comment.node_id, ...after ? { after } : {} }
       );
-      const history = GithubApprovalResponse.history(response, comment);
+      const history = this.collaborators.githubApprovalResponse.history(
+        response,
+        comment
+      );
       edits.push(...history.nodes);
       if (!history.pageInfo.hasNextPage) return edits;
       const next = history.pageInfo.endCursor;
@@ -41926,12 +45265,14 @@ var GithubApprovalClient = class {
 
 // packages/adapter/github-organizer-approval/src/github-approval-repository.ts
 var GithubApprovalRepository = class {
-  constructor(client, trusted, authorLogin, presenter) {
+  constructor(collaborators, client, trusted, authorLogin, presenter) {
+    this.collaborators = collaborators;
     this.client = client;
     this.trusted = trusted;
     this.authorLogin = authorLogin;
     this.presenter = presenter;
   }
+  collaborators;
   client;
   trusted;
   authorLogin;
@@ -41950,7 +45291,7 @@ var GithubApprovalRepository = class {
     return states;
   }
   async save(record, existing) {
-    StoredApprovalSchema.validate(record);
+    this.collaborators.storedApprovalSchema.validate(record);
     const body = this.presenter.issue(
       record,
       record.decision ?? { status: "pending" }
@@ -41969,62 +45310,123 @@ var GithubApprovalRepository = class {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/approval-details-preview.ts
-var ApprovalDetailsPreview = class _ApprovalDetailsPreview {
-  static create(details) {
-    const emails = details.emails.slice(0, 20).map((email) => ({
-      ...email,
-      recipientName: _ApprovalDetailsPreview.text(email.recipientName),
-      links: email.links.slice(0, 8).map((link) => ({
-        ...link,
-        ...link.title === void 0 ? {} : { title: _ApprovalDetailsPreview.text(link.title) }
-      })),
-      omittedLinks: email.omittedLinks + Math.max(email.links.length - 8, 0)
-    }));
-    while (JSON.stringify(emails).length > 4e3) {
-      const largest = [...emails].sort(
-        (a, b2) => JSON.stringify(b2).length - JSON.stringify(a).length
-      )[0];
-      if (largest?.links.length) {
-        largest.links.pop();
-        largest.omittedLinks++;
-      } else {
-        emails.pop();
-      }
-    }
+// packages/adapter/github-organizer-approval/src/github-approval-response.ts
+var GithubApprovalResponse = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  comments(value) {
+    if (!this.collaborators.approvalSchema.object(value) || !Array.isArray(value.data) || !value.data.every(this.comment.bind(this)) || !this.collaborators.approvalSchema.object(value.headers) || value.headers.link !== void 0 && typeof value.headers.link !== "string")
+      throw new Error("Invalid approval comment response");
+    return { data: value.data, headers: { link: value.headers.link } };
+  }
+  identity(value) {
+    if (!this.collaborators.approvalSchema.object(value) || !this.collaborators.approvalSchema.object(value.data) || !this.collaborators.approvalSchema.count(value.data.id) || value.data.id === 0)
+      throw new Error("Invalid approval comment identity");
+    return value.data.id;
+  }
+  permission(value) {
+    if (!this.collaborators.approvalSchema.object(value) || !this.collaborators.approvalSchema.object(value.data) || typeof value.data.permission !== "string")
+      throw new Error("Invalid approval permission response");
+    return value.data.permission;
+  }
+  edit(value, comment) {
+    const node = this.snapshot(value, comment);
+    if (!this.nullableText(node.lastEditedAt) || !this.actor(node.editor))
+      throw new Error("Invalid approval editor response");
     return {
-      emails,
-      omittedEmails: details.omittedEmails + details.emails.length - emails.length
+      id: node.id,
+      body: node.body,
+      lastEditedAt: node.lastEditedAt,
+      editor: node.editor
     };
   }
-  static text(value) {
-    const normalized = value.trim().replace(/\s+/g, " ");
-    return normalized.length <= 200 ? normalized : `${normalized.slice(0, 197)}...`;
+  history(value, comment) {
+    const node = this.snapshot(value, comment);
+    const history = node.userContentEdits;
+    if (!this.collaborators.approvalSchema.object(history) || !Array.isArray(history.nodes) || !history.nodes.every(this.historyEdit.bind(this)) || !this.collaborators.approvalSchema.object(history.pageInfo) || typeof history.pageInfo.hasNextPage !== "boolean" || !this.nullableText(history.pageInfo.endCursor))
+      throw new Error("Approval history is unavailable");
+    return {
+      nodes: history.nodes,
+      pageInfo: {
+        hasNextPage: history.pageInfo.hasNextPage,
+        endCursor: history.pageInfo.endCursor
+      }
+    };
+  }
+  snapshot(value, comment) {
+    if (!this.collaborators.approvalSchema.object(value) || !this.collaborators.approvalSchema.object(value.node) || typeof value.node.id !== "string" || typeof value.node.body !== "string" || value.node.id !== comment.node_id || value.node.body !== comment.body)
+      throw new Error("Approval comment changed during verification");
+    return { ...value.node, id: value.node.id, body: value.node.body };
+  }
+  comment(value) {
+    return this.collaborators.approvalSchema.object(value) && this.collaborators.approvalSchema.count(value.id) && value.id > 0 && (value.node_id === void 0 || typeof value.node_id === "string") && (value.body === void 0 || this.nullableText(value.body)) && (value.user === void 0 || value.user === null || this.collaborators.approvalSchema.object(value.user) && typeof value.user.login === "string");
+  }
+  historyEdit(value) {
+    return this.collaborators.approvalSchema.object(value) && this.nullableText(value.diff) && this.nullableText(value.deletedAt) && this.actor(value.editor);
+  }
+  actor(value) {
+    return value === null || this.collaborators.approvalSchema.object(value) && typeof value.login === "string" && typeof value.__typename === "string";
+  }
+  nullableText(value) {
+    return value === null || typeof value === "string";
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/github-follow-up-attention-repository.ts
+var GithubFollowUpAttentionRepository = class {
+  constructor(approvals, previous, codec, presentation) {
+    this.approvals = approvals;
+    this.previous = previous;
+    this.codec = codec;
+    this.presentation = presentation;
+  }
+  approvals;
+  previous;
+  codec;
+  presentation;
+  sharedCommentId;
+  async load() {
+    const shared = await this.approvals.followUpAttention();
+    this.sharedCommentId = shared?.commentId;
+    const previous = await this.previous.load();
+    return shared?.body ? this.codec.read(shared.body) : previous;
+  }
+  async save(state) {
+    if (!this.sharedCommentId) return this.previous.save(state);
+    await this.approvals.saveFollowUpAttention(
+      this.codec.marker(state),
+      this.presentation.details(state)
+    );
+    await this.previous.retire(this.sharedCommentId);
   }
 };
 
 // packages/adapter/github-organizer-approval/src/github-organizer-approval.ts
-var GithubOrganizerApproval = class _GithubOrganizerApproval {
-  constructor(repository, records, finalizer, notifications, permissions) {
+var GithubOrganizerApproval = class {
+  constructor(collaborators, repository, records, finalizer, notifications, permissions) {
+    this.collaborators = collaborators;
     this.repository = repository;
     this.records = records;
     this.finalizer = finalizer;
     this.notifications = notifications;
     this.permissions = permissions;
   }
+  collaborators;
   repository;
   records;
   finalizer;
   notifications;
   permissions;
   async request(input) {
-    input = _GithubOrganizerApproval.reviewedRequest(input);
-    ApprovalRequestSchema.validate(input);
-    ApprovalRequestPolicy.validate(input);
+    input = this.reviewedRequest(input);
+    this.collaborators.approvalRequestSchema.validate(input);
+    this.collaborators.approvalRequestPolicy.validate(input);
     const existing = (await this.repository.states()).find(
       ({ record: record2 }) => record2.kind === input.kind
     );
-    if (existing && ApprovalRequestPolicy.matches(
+    if (existing && this.collaborators.approvalRequestPolicy.matches(
       existing.record,
       input,
       existing.record.decision?.status ?? "pending"
@@ -42068,9 +45470,12 @@ var GithubOrganizerApproval = class _GithubOrganizerApproval {
     }
     return { notificationFailed };
   }
-  static reviewedRequest(input) {
+  reviewedRequest(input) {
     if (input.kind === "meetup-publication" || !input.details) return input;
-    return { ...input, details: ApprovalDetailsPreview.create(input.details) };
+    return {
+      ...input,
+      details: this.collaborators.approvalDetailsPreview.create(input.details)
+    };
   }
 };
 
@@ -42124,6 +45529,67 @@ var GithubOrganizerFollowUp = class {
   }
 };
 
+// packages/adapter/github-organizer-approval/src/i18n/approval-messages.ts
+var ApprovalMessages = class extends MessageLocalizer {
+  constructor(collaborators, locale = "en") {
+    super(collaborators, CATALOGS2, locale);
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/meetup-approval-details-schema.ts
+var MeetupApprovalDetailsSchema = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  validate(value) {
+    if (!this.collaborators.approvalSchema.object(value) || !this.text(value.url, 2048) || MeetupEventUrl.parse(value.url)?.value !== value.url || !this.text(value.title, 80) || typeof value.startTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(value.startTime) || typeof value.endTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(value.endTime) || !this.text(value.timeZone, 100) || !this.collaborators.approvalSchema.object(value.venue) || !this.text(value.venue.name, 500) || !this.text(value.venue.city, 500))
+      throw new Error("Invalid Meetup approval details");
+  }
+  text(value, maximum) {
+    return this.collaborators.approvalSchema.text(value, maximum) && value.trim().length > 0;
+  }
+};
+
+// packages/adapter/github-organizer-approval/src/meetup-approval-presenter.ts
+var MeetupApprovalPresenter = class {
+  constructor(collaborators, messages5) {
+    this.collaborators = collaborators;
+    this.messages = messages5;
+  }
+  collaborators;
+  messages;
+  issue(record, decision) {
+    const details = record.publication;
+    const content = this.messages.t("approval.meetup.details", {
+      title: this.escape(details.title),
+      date: record.eventDate,
+      startTime: details.startTime,
+      endTime: details.endTime,
+      timeZone: this.escape(details.timeZone),
+      venue: this.escape(details.venue.name),
+      city: this.escape(details.venue.city),
+      url: details.url
+    });
+    const controls = record.decision ? this.messages.t("approval.meetup.final", {
+      status: record.decision.status,
+      actor: record.decision.actor,
+      decidedAt: record.decision.decidedAt
+    }) : this.messages.t("approval.meetup.request", {
+      approveMark: decision.status === "approved" ? "x" : " ",
+      rejectMark: decision.status === "rejected" ? "x" : " "
+    });
+    return [
+      this.collaborators.approvalCommentCodec.marker(record),
+      content,
+      controls
+    ].join("\n\n");
+  }
+  escape(value) {
+    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("@", "&#64;").replace(/[\\`*_{}[\]()#+.!|~-]/g, "\\$&");
+  }
+};
+
 // packages/adapter/github-organizer-approval/src/resolve-approval-decision.ts
 var ResolveApprovalDecision = class {
   constructor(client, parser) {
@@ -42148,12 +45614,58 @@ var ResolveApprovalDecision = class {
   }
 };
 
+// packages/adapter/github-organizer-approval/src/stored-approval-schema.ts
+var StoredApprovalSchema = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  validate(value) {
+    if (!this.collaborators.approvalSchema.object(value))
+      throw new Error("Invalid approval state");
+    const state = value;
+    this.collaborators.approvalRequestSchema.validate(value);
+    this.collaborators.followUpSchema.validate(state.followUp);
+    if (state.followUp && value.kind !== "email-thanks")
+      throw new Error("Invalid post-event approval kind");
+    if (value.recipientCount === 0 && state.followUp) {
+      this.collaborators.approvalRequestPolicy.validateIdentity(value);
+      this.collaborators.approvalRequestPolicy.validateEmailCount(value);
+    } else {
+      this.collaborators.approvalRequestPolicy.validate(value);
+    }
+    if (typeof state.requestId !== "string" || !/^approval-[a-f0-9-]{36}$/.test(state.requestId) || !["new", "reserved", "sent", "retry"].some(
+      (status) => status === state.notification
+    ))
+      throw new Error("Invalid approval state");
+    if (state.decision !== void 0) {
+      this.decision(state.decision);
+      if (value.recipientCount === 0)
+        throw new Error("Invalid final approval decision");
+    }
+    if (state.notificationMessage !== void 0)
+      this.notificationMessage(state.notificationMessage);
+    if (state.reactionSent !== void 0 && (typeof state.reactionSent !== "boolean" || !state.decision || !state.notificationMessage))
+      throw new Error("Invalid approval reaction state");
+  }
+  decision(value) {
+    if (!this.collaborators.approvalSchema.object(value) || value.status !== "approved" && value.status !== "rejected" || typeof value.actor !== "string" || !/^[A-Za-z0-9-]{1,39}$/.test(value.actor) || typeof value.decidedAt !== "string" || !Number.isFinite(Date.parse(value.decidedAt)))
+      throw new Error("Invalid final approval decision");
+  }
+  notificationMessage(value) {
+    if (!this.collaborators.approvalSchema.object(value) || typeof value.destination !== "string" || !value.destination.trim() || typeof value.messageId !== "string" || !value.messageId.trim())
+      throw new Error("Invalid approval notification reference");
+  }
+};
+
 // packages/adapter/github-organizer-approval/src/trusted-approval-state.ts
 var TrustedApprovalState = class {
-  constructor(client, authorLogin) {
+  constructor(collaborators, client, authorLogin) {
+    this.collaborators = collaborators;
     this.client = client;
     this.authorLogin = authorLogin;
   }
+  collaborators;
   client;
   authorLogin;
   async read(comment) {
@@ -42172,15 +45684,166 @@ var TrustedApprovalState = class {
   }
   record(body) {
     if (!body?.startsWith(APPROVAL_MARKER)) return void 0;
-    return ApprovalCommentCodec.read(body);
+    return this.collaborators.approvalCommentCodec.read(body);
   }
   isAuthor(editor) {
     return editor?.__typename === "Bot" && editor.login.toLowerCase().replace(/\[bot\]$/, "") === this.authorLogin.toLowerCase().replace(/\[bot\]$/, "");
   }
 };
 
+// packages/adapter/github-organizer-approval/src/dependency-composition.ts
+var GithubOrganizerApprovalComposition = class {
+  approvalCommentCodec() {
+    return new ApprovalCommentCodec({
+      storedApprovalSchema: this.storedApprovalSchema()
+    });
+  }
+  approvalDecisionParser(...args) {
+    return new ApprovalDecisionParser(...args);
+  }
+  approvalDetailsPresenter(...args) {
+    return new ApprovalDetailsPresenter(...args);
+  }
+  approvalDetailsPreview() {
+    return new ApprovalDetailsPreview();
+  }
+  approvalMessages(...args) {
+    return new ApprovalMessages(
+      { localeResolver: new LocalizationComposition().localeResolver() },
+      ...args
+    );
+  }
+  approvalNotifications(...args) {
+    return new ApprovalNotifications(...args);
+  }
+  approvalPresenter(...args) {
+    return new ApprovalPresenter(
+      {
+        createEmailApprovalPresenter: (...args2) => this.emailApprovalPresenter(...args2),
+        createMeetupApprovalPresenter: (...args2) => this.meetupApprovalPresenter(...args2)
+      },
+      ...args
+    );
+  }
+  approvalPresenterFactory() {
+    return new ApprovalPresenterFactory({
+      createApprovalPresenter: (...args) => this.approvalPresenter(...args),
+      createApprovalMessages: (...args) => this.approvalMessages(...args)
+    });
+  }
+  approvalRecordFactory(...args) {
+    return new ApprovalRecordFactory(
+      {
+        approvalRequestSchema: this.approvalRequestSchema(),
+        approvalRequestPolicy: new JourneyPolicyComposition().approvalRequestPolicy(),
+        storedApprovalSchema: this.storedApprovalSchema()
+      },
+      ...args
+    );
+  }
+  approvalRequestSchema() {
+    return new ApprovalRequestSchema({
+      approvalSchema: this.approvalSchema(),
+      meetupApprovalDetailsSchema: this.meetupApprovalDetailsSchema(),
+      emailApprovalDetailsSchema: this.emailApprovalDetailsSchema()
+    });
+  }
+  approvalSchema() {
+    return new ApprovalSchema();
+  }
+  emailApprovalDetailsSchema() {
+    return new EmailApprovalDetailsSchema({
+      approvalSchema: this.approvalSchema()
+    });
+  }
+  emailApprovalPresenter(...args) {
+    return new EmailApprovalPresenter(
+      {
+        approvalCommentCodec: this.approvalCommentCodec(),
+        createFollowUpPresenter: (...args2) => this.followUpPresenter(...args2),
+        createApprovalDetailsPresenter: (...args2) => this.approvalDetailsPresenter(...args2)
+      },
+      ...args
+    );
+  }
+  finalizeApprovalDecision(...args) {
+    return new FinalizeApprovalDecision(...args);
+  }
+  followUpPresenter(...args) {
+    return new FollowUpPresenter(...args);
+  }
+  followUpSchema() {
+    return new FollowUpSchema({ approvalSchema: this.approvalSchema() });
+  }
+  githubApprovalAttentionSource(...args) {
+    return new GithubApprovalAttentionSource(...args);
+  }
+  githubApprovalClient(...args) {
+    return new GithubApprovalClient(
+      { githubApprovalResponse: this.githubApprovalResponse() },
+      ...args
+    );
+  }
+  githubApprovalRepository(...args) {
+    return new GithubApprovalRepository(
+      { storedApprovalSchema: this.storedApprovalSchema() },
+      ...args
+    );
+  }
+  githubApprovalResponse() {
+    return new GithubApprovalResponse({
+      approvalSchema: this.approvalSchema()
+    });
+  }
+  githubFollowUpAttentionRepository(...args) {
+    return new GithubFollowUpAttentionRepository(...args);
+  }
+  githubOrganizerApproval(...args) {
+    return new GithubOrganizerApproval(
+      {
+        approvalRequestSchema: this.approvalRequestSchema(),
+        approvalRequestPolicy: new JourneyPolicyComposition().approvalRequestPolicy(),
+        approvalDetailsPreview: this.approvalDetailsPreview()
+      },
+      ...args
+    );
+  }
+  githubOrganizerFollowUp(...args) {
+    return new GithubOrganizerFollowUp(...args);
+  }
+  meetupApprovalDetailsSchema() {
+    return new MeetupApprovalDetailsSchema({
+      approvalSchema: this.approvalSchema(),
+      scheduledEventPolicy: new PublicationDomainComposition().scheduledEventPolicy()
+    });
+  }
+  meetupApprovalPresenter(...args) {
+    return new MeetupApprovalPresenter(
+      { approvalCommentCodec: this.approvalCommentCodec() },
+      ...args
+    );
+  }
+  resolveApprovalDecision(...args) {
+    return new ResolveApprovalDecision(...args);
+  }
+  storedApprovalSchema() {
+    return new StoredApprovalSchema({
+      approvalSchema: this.approvalSchema(),
+      approvalRequestSchema: this.approvalRequestSchema(),
+      followUpSchema: this.followUpSchema(),
+      approvalRequestPolicy: new JourneyPolicyComposition().approvalRequestPolicy()
+    });
+  }
+  trustedApprovalState(...args) {
+    return new TrustedApprovalState(
+      { approvalCommentCodec: this.approvalCommentCodec() },
+      ...args
+    );
+  }
+};
+
 // packages/adapter/github-repository-dispatch-mail-gateway/src/github-repository-dispatch-mail-gateway.ts
-var GithubRepositoryDispatchMailGateway = class _GithubRepositoryDispatchMailGateway {
+var GithubRepositoryDispatchMailGateway = class {
   constructor(client, repository) {
     this.client = client;
     const [owner, name, ...extra] = repository.split("/");
@@ -42207,13 +45870,13 @@ var GithubRepositoryDispatchMailGateway = class _GithubRepositoryDispatchMailGat
         }
       });
     } catch (error2) {
-      return _GithubRepositoryDispatchMailGateway.classifyFailure(error2);
+      return this.classifyFailure(error2);
     }
     return { outcome: "accepted" };
   }
-  static classifyFailure(error2) {
-    const status = _GithubRepositoryDispatchMailGateway.responseStatus(error2);
-    if (_GithubRepositoryDispatchMailGateway.isRateLimited(error2, status)) {
+  classifyFailure(error2) {
+    const status = this.responseStatus(error2);
+    if (this.isRateLimited(error2, status)) {
       return { outcome: "deferred", diagnosticCode: "rate-limited" };
     }
     switch (status) {
@@ -42236,12 +45899,11 @@ var GithubRepositoryDispatchMailGateway = class _GithubRepositoryDispatchMailGat
         };
     }
   }
-  static responseStatus(error2) {
-    if (!_GithubRepositoryDispatchMailGateway.isRecord(error2)) return void 0;
+  responseStatus(error2) {
+    if (!this.isRecord(error2)) return void 0;
     const direct = Number(error2.status);
     if (Number.isInteger(direct)) return direct;
-    if (!_GithubRepositoryDispatchMailGateway.isRecord(error2.response))
-      return void 0;
+    if (!this.isRecord(error2.response)) return void 0;
     const nested = Number(error2.response.status);
     return Number.isInteger(nested) ? nested : void 0;
   }
@@ -42250,29 +45912,19 @@ var GithubRepositoryDispatchMailGateway = class _GithubRepositoryDispatchMailGat
    * documented response headers are inspected: exception messages and response
    * bodies may contain request or recipient data and must not cross this adapter.
    */
-  static isRateLimited(error2, status) {
+  isRateLimited(error2, status) {
     if (status === 429) return true;
     if (status !== 403) return false;
-    const retryAfter = _GithubRepositoryDispatchMailGateway.responseHeader(
-      error2,
-      "retry-after"
-    );
+    const retryAfter = this.responseHeader(error2, "retry-after");
     if (retryAfter !== void 0 && /^\d+$/.test(retryAfter.trim())) {
       return true;
     }
-    return _GithubRepositoryDispatchMailGateway.responseHeader(
-      error2,
-      "x-ratelimit-remaining"
-    )?.trim() === "0";
+    return this.responseHeader(error2, "x-ratelimit-remaining")?.trim() === "0";
   }
-  static responseHeader(error2, name) {
-    if (!_GithubRepositoryDispatchMailGateway.isRecord(error2)) return void 0;
-    const response = _GithubRepositoryDispatchMailGateway.isRecord(
-      error2.response
-    ) ? error2.response : void 0;
-    const headers = _GithubRepositoryDispatchMailGateway.isRecord(
-      response?.headers
-    ) ? response.headers : _GithubRepositoryDispatchMailGateway.isRecord(error2.headers) ? error2.headers : void 0;
+  responseHeader(error2, name) {
+    if (!this.isRecord(error2)) return void 0;
+    const response = this.isRecord(error2.response) ? error2.response : void 0;
+    const headers = this.isRecord(response?.headers) ? response.headers : this.isRecord(error2.headers) ? error2.headers : void 0;
     if (!headers) return void 0;
     const matchingKey = Object.keys(headers).find(
       (key) => key.toLowerCase() === name
@@ -42280,8 +45932,236 @@ var GithubRepositoryDispatchMailGateway = class _GithubRepositoryDispatchMailGat
     const value = matchingKey ? headers[matchingKey] : void 0;
     return typeof value === "string" || typeof value === "number" ? String(value) : void 0;
   }
-  static isRecord(value) {
+  isRecord(value) {
     return typeof value === "object" && value !== null;
+  }
+};
+
+// packages/adapter/github-repository-dispatch-mail-gateway/src/dependency-composition.ts
+var GithubRepositoryDispatchMailGatewayComposition = class {
+  githubRepositoryDispatchMailGateway(...args) {
+    return new GithubRepositoryDispatchMailGateway(...args);
+  }
+};
+
+// packages/adapter/openfeedback-event-gateway/src/openfeedback-agenda-gateway.ts
+var OpenFeedbackAgendaGateway = class {
+  constructor(collaborators, records) {
+    this.collaborators = collaborators;
+    this.records = records;
+  }
+  collaborators;
+  records;
+  async synchronize(id, key, agenda) {
+    const speakers = await this.records.list(id, "speakers");
+    const talks = await this.records.list(id, "talks");
+    const current = this.collaborators.openFeedbackAgendaSnapshot.parse({
+      speakers,
+      talks
+    });
+    const changes = this.collaborators.openFeedbackAgendaPlan.create(
+      key,
+      agenda,
+      current
+    );
+    for (const speaker of changes.speakers)
+      await this.records.synchronize(
+        id,
+        "speakers",
+        speaker,
+        current.speakers.find((item) => item.id === speaker.id)
+      );
+    for (const talk of changes.talks)
+      await this.records.synchronize(
+        id,
+        "talks",
+        talk,
+        current.talks.find((item) => item.id === talk.id)
+      );
+  }
+};
+
+// packages/adapter/openfeedback-event-gateway/src/openfeedback-agenda-plan.ts
+import { createHash as createHash4 } from "node:crypto";
+var OpenFeedbackAgendaPlan = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  create(key, agenda, current) {
+    const speakers = this.matchSpeakers(key, agenda, current);
+    const candidates = agenda.talks.map((talk) => {
+      const ids = [
+        ...new Set(
+          talk.speakers.map(
+            (speaker) => speakers.get(speaker.id).id
+          )
+        )
+      ].sort();
+      return {
+        id: this.id(
+          "talk",
+          talk.sourceIdentity ? JSON.stringify([key, talk.sourceIdentity]) : JSON.stringify([key, talk.title, ids])
+        ),
+        title: talk.title,
+        speakers: ids
+      };
+    });
+    const stableIds = new Set(
+      candidates.filter((_2, index) => agenda.talks[index].sourceIdentity).map((talk) => talk.id)
+    );
+    const talks = this.matchTalks(candidates, current.talks, stableIds);
+    if (talks.length > 100 || speakers.size > 100 || talks.some((talk) => talk.title.length > 2e3) || [...speakers.values()].some((speaker) => speaker.name.length > 200))
+      throw new Error("Feedback agenda exceeds the synchronization limits");
+    return {
+      speakers: [...speakers.values()],
+      talks
+    };
+  }
+  matchSpeakers(key, agenda, current) {
+    const speakers = /* @__PURE__ */ new Map();
+    for (const talk of agenda.talks) {
+      for (const speaker of talk.speakers) {
+        if (speakers.has(speaker.id)) continue;
+        const stableId = this.id("speaker", `${key}:${speaker.id}`);
+        const found = current.speakers.find((item) => item.id === stableId);
+        const matches = found ? [found] : current.speakers.filter(
+          (item) => this.normalize(item.name) === this.normalize(speaker.name)
+        );
+        if (matches.length > 1) throw new FeedbackResolutionError("conflict");
+        speakers.set(speaker.id, {
+          id: matches[0]?.id ?? stableId,
+          name: speaker.name
+        });
+      }
+    }
+    if (new Set([...speakers.values()].map((speaker) => speaker.id)).size !== speakers.size)
+      throw new FeedbackResolutionError("conflict");
+    return speakers;
+  }
+  matchTalks(incoming, current, stableIds) {
+    if (new Set(incoming.map((talk) => talk.id)).size !== incoming.length)
+      throw new FeedbackResolutionError("conflict");
+    const used = /* @__PURE__ */ new Set();
+    const resolved = /* @__PURE__ */ new Map();
+    for (const talk of incoming) {
+      if (stableIds.has(talk.id) && current.some((item) => item.id === talk.id)) {
+        resolved.set(talk, talk);
+        used.add(talk.id);
+      }
+    }
+    this.matchExactTalks(
+      incoming.filter((talk) => !resolved.has(talk)),
+      current,
+      resolved,
+      used
+    );
+    this.matchTitles(incoming, current, resolved, used);
+    for (const talk of incoming.filter((item) => !resolved.has(item))) {
+      const matches = current.filter(
+        (item) => !used.has(item.id) && this.sameSpeakers(item, talk)
+      );
+      const pending = incoming.filter(
+        (item) => !resolved.has(item) && this.sameSpeakers(item, talk)
+      );
+      if (matches.length > 1 || matches.length === 1 && pending.length > 1)
+        throw new FeedbackResolutionError("conflict");
+      const id = matches[0]?.id ?? talk.id;
+      if (used.has(id) || !matches[0] && current.some((item) => item.id === id))
+        throw new FeedbackResolutionError("conflict");
+      resolved.set(talk, { ...talk, id });
+      used.add(id);
+    }
+    return incoming.map((talk) => resolved.get(talk));
+  }
+  matchExactTalks(incoming, current, resolved, used) {
+    for (const talk of incoming) {
+      const matches = current.filter(
+        (item) => !used.has(item.id) && this.normalize(item.title) === this.normalize(talk.title) && this.sameSpeakers(item, talk)
+      );
+      if (matches.length > 1) throw new FeedbackResolutionError("conflict");
+      if (matches[0]) {
+        resolved.set(talk, { ...talk, id: matches[0].id });
+        used.add(matches[0].id);
+      }
+    }
+  }
+  matchTitles(incoming, current, resolved, used) {
+    for (const talk of incoming.filter((item) => !resolved.has(item))) {
+      const title = this.normalize(talk.title);
+      const matches = current.filter(
+        (item) => !used.has(item.id) && this.normalize(item.title) === title
+      );
+      if (matches.length === 0) continue;
+      const pending = incoming.filter(
+        (item) => !resolved.has(item) && this.normalize(item.title) === title
+      );
+      if (matches.length > 1 || pending.length > 1)
+        throw new FeedbackResolutionError("conflict");
+      resolved.set(talk, { ...talk, id: matches[0].id });
+      used.add(matches[0].id);
+    }
+  }
+  sameSpeakers(left, right) {
+    return this.collaborators.openFeedbackRecordEquality.sameSpeakers(
+      left,
+      right
+    );
+  }
+  id(kind, key) {
+    return `meetup-${kind}-${createHash4("sha256").update(key).digest("hex")}`;
+  }
+  normalize(value) {
+    return value.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US");
+  }
+};
+
+// packages/adapter/openfeedback-event-gateway/src/openfeedback-agenda-snapshot.ts
+var OpenFeedbackAgendaSnapshot = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  parse(body) {
+    if (!this.object(body))
+      throw new Error("Invalid OpenFeedback agenda response");
+    const speakers = this.records(body.speakers).map((speaker) => ({
+      id: speaker.id,
+      revision: speaker.revision,
+      name: this.text(speaker.name)
+    }));
+    const talks = this.records(body.talks).map((talk) => {
+      const ids = talk.speakers;
+      if (!Array.isArray(ids) || !ids.every((id) => typeof id === "string"))
+        throw new Error("Invalid OpenFeedback agenda response");
+      return {
+        id: talk.id,
+        revision: talk.revision,
+        title: this.text(talk.title),
+        speakers: [...ids]
+      };
+    });
+    return { speakers, talks };
+  }
+  records(value) {
+    if (!Array.isArray(value) || value.length > 200)
+      throw new Error("Invalid OpenFeedback agenda response");
+    const ids = /* @__PURE__ */ new Set();
+    return value.map((record) => {
+      if (!this.object(record) || !this.collaborators.openFeedbackResourceId.isValid(record.id) || typeof record.revision !== "string" || !/^[a-f0-9]{64}$/.test(record.revision) || ids.has(record.id))
+        throw new Error("Invalid OpenFeedback agenda response");
+      ids.add(record.id);
+      return { ...record, id: record.id, revision: record.revision };
+    });
+  }
+  text(value) {
+    if (value === void 0) return "";
+    if (typeof value !== "string")
+      throw new Error("Invalid OpenFeedback agenda response");
+    return value;
+  }
+  object(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
   }
 };
 
@@ -42311,7 +46191,146 @@ var OpenFeedbackClient = class {
       throw new Error("OpenFeedback request failed");
     }
   }
-  static async read(response, id) {
+};
+
+// packages/adapter/openfeedback-event-gateway/src/openfeedback-event-gateway.ts
+import { createHash as createHash5 } from "node:crypto";
+var OpenFeedbackEventGateway = class {
+  constructor(collaborators, client, agendas) {
+    this.collaborators = collaborators;
+    this.client = client;
+    this.agendas = agendas;
+  }
+  collaborators;
+  client;
+  agendas;
+  async ensureEvent(input) {
+    this.validateInput(input);
+    const url = input.url === void 0 ? void 0 : this.collaborators.feedbackPolicy.pollUrl(input.url);
+    const id = url ? new URL(url).pathname.split("/")[1] : `meetup-${createHash5("sha256").update(input.key).digest("hex")}`;
+    const details = { name: input.name, scheduleLink: input.scheduleUrl };
+    let response = url ? await this.client.request(`/events/${id}`, "PATCH", details) : await this.client.request("/events/", "POST", {
+      id,
+      ...details,
+      setupType: "openfeedbackv1"
+    });
+    if (!url && response.status === 409) {
+      response = await this.client.request(`/events/${id}`, "PATCH", details);
+    }
+    await this.collaborators.openFeedbackResponse.read(response, id);
+    if (input.agenda) {
+      await this.agendas.synchronize(id, input.key, input.agenda);
+    }
+    return url ?? `https://openfeedback.io/${id}`;
+  }
+  validateInput(input) {
+    if (!input.key.trim() || !input.name.trim() || input.name.length > 100)
+      throw new Error("Invalid OpenFeedback event identity or name");
+    let scheduleUrl;
+    try {
+      scheduleUrl = new URL(input.scheduleUrl);
+    } catch {
+      throw new Error("Invalid OpenFeedback event schedule URL");
+    }
+    if (scheduleUrl.protocol !== "https:" || scheduleUrl.username || scheduleUrl.password)
+      throw new Error("Invalid OpenFeedback event schedule URL");
+  }
+};
+
+// packages/adapter/openfeedback-event-gateway/src/openfeedback-event-gateway-factory.ts
+var OpenFeedbackEventGatewayFactory = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  create(apiKey, fetcher = fetch) {
+    const client = this.collaborators.createOpenFeedbackClient(apiKey, fetcher);
+    return this.collaborators.createOpenFeedbackEventGateway(
+      client,
+      this.collaborators.createOpenFeedbackAgendaGateway(
+        this.collaborators.createOpenFeedbackRecordsGateway(client)
+      )
+    );
+  }
+};
+
+// packages/adapter/openfeedback-event-gateway/src/openfeedback-record-equality.ts
+var OpenFeedbackRecordEquality = class {
+  equal(left, right) {
+    if (left.id !== right.id) return false;
+    if ("name" in left) return "name" in right && left.name === right.name;
+    return "title" in right && left.title === right.title && this.sameSpeakers(left, right);
+  }
+  sameSpeakers(left, right) {
+    const first = [...left.speakers].sort();
+    const second = [...right.speakers].sort();
+    return first.length === second.length && first.every((speaker, index) => speaker === second[index]);
+  }
+};
+
+// packages/adapter/openfeedback-event-gateway/src/openfeedback-records-gateway.ts
+var OpenFeedbackRecordsGateway = class {
+  constructor(collaborators, client) {
+    this.collaborators = collaborators;
+    this.client = client;
+  }
+  collaborators;
+  client;
+  async list(eventId, kind) {
+    const records = [];
+    const cursors = /* @__PURE__ */ new Set();
+    let cursor = null;
+    for (; ; ) {
+      const query = cursor ? `&after=${encodeURIComponent(cursor)}` : "";
+      const path = `/events/${eventId}/${kind}?limit=100${query}`;
+      const body = await this.collaborators.openFeedbackResponse.read(
+        await this.client.request(path, "GET"),
+        eventId
+      );
+      const page = body[kind];
+      const next = body.nextCursor;
+      if (!Array.isArray(page) || page.length > 100 || !this.validCursor(next))
+        throw new Error("Invalid OpenFeedback list response");
+      records.push(...page);
+      if (records.length > 200 || records.length === 200 && next !== null)
+        throw new Error("Feedback records exceed the synchronization limits");
+      if (next === null) return records;
+      if (cursors.has(next) || page.at(-1)?.id !== next)
+        throw new Error("Invalid OpenFeedback pagination cursor");
+      cursors.add(next);
+      cursor = next;
+    }
+  }
+  async synchronize(eventId, kind, record, previous) {
+    const { id, ...fields } = record;
+    if (previous && this.collaborators.openFeedbackRecordEquality.equal(record, previous))
+      return;
+    const base = `/events/${eventId}/${kind}`;
+    const response = previous ? await this.client.request(
+      `${base}/${encodeURIComponent(id)}`,
+      "PATCH",
+      {
+        ...fields,
+        revision: previous.revision
+      }
+    ) : await this.client.request(base, "POST", record);
+    await this.collaborators.openFeedbackResponse.read(response, id);
+  }
+  validCursor(value) {
+    return value === null || this.collaborators.openFeedbackResourceId.isValid(value);
+  }
+};
+
+// packages/adapter/openfeedback-event-gateway/src/openfeedback-resource-id.ts
+var OpenFeedbackResourceId = class {
+  isValid(value) {
+    return typeof value === "string" && Array.from(value).length <= 1500 && /^(?!\.\.?$)(?!__.*__$)[^/]+$/u.test(value);
+  }
+};
+
+// packages/adapter/openfeedback-event-gateway/src/openfeedback-response.ts
+var OpenFeedbackResponse = class {
+  async read(response, id) {
     if (!response.ok)
       throw new Error(`OpenFeedback request failed (HTTP ${response.status})`);
     let body;
@@ -42326,278 +46345,28 @@ var OpenFeedbackClient = class {
   }
 };
 
-// packages/adapter/openfeedback-event-gateway/src/openfeedback-agenda-plan.ts
-import { createHash as createHash3 } from "node:crypto";
-
-// packages/adapter/openfeedback-event-gateway/src/openfeedback-record-equality.ts
-var OpenFeedbackRecordEquality = class _OpenFeedbackRecordEquality {
-  static equal(left, right) {
-    if (left.id !== right.id) return false;
-    if ("name" in left) return "name" in right && left.name === right.name;
-    return "title" in right && left.title === right.title && _OpenFeedbackRecordEquality.sameSpeakers(left, right);
-  }
-  static sameSpeakers(left, right) {
-    const first = [...left.speakers].sort();
-    const second = [...right.speakers].sort();
-    return first.length === second.length && first.every((speaker, index) => speaker === second[index]);
-  }
-};
-
-// packages/adapter/openfeedback-event-gateway/src/openfeedback-agenda-plan.ts
-var OpenFeedbackAgendaPlan = class _OpenFeedbackAgendaPlan {
-  static create(key, agenda, current) {
-    const speakers = _OpenFeedbackAgendaPlan.matchSpeakers(key, agenda, current);
-    const candidates = agenda.talks.map((talk) => {
-      const ids = [
-        ...new Set(
-          talk.speakers.map(
-            (speaker) => speakers.get(speaker.id).id
-          )
-        )
-      ].sort();
-      return {
-        id: _OpenFeedbackAgendaPlan.id(
-          "talk",
-          talk.sourceIdentity ? JSON.stringify([key, talk.sourceIdentity]) : JSON.stringify([key, talk.title, ids])
-        ),
-        title: talk.title,
-        speakers: ids
-      };
-    });
-    const stableIds = new Set(
-      candidates.filter((_2, index) => agenda.talks[index].sourceIdentity).map((talk) => talk.id)
-    );
-    const talks = _OpenFeedbackAgendaPlan.matchTalks(
-      candidates,
-      current.talks,
-      stableIds
-    );
-    if (talks.length > 100 || speakers.size > 100 || talks.some((talk) => talk.title.length > 2e3) || [...speakers.values()].some((speaker) => speaker.name.length > 200))
-      throw new Error("Feedback agenda exceeds the synchronization limits");
-    return {
-      speakers: [...speakers.values()],
-      talks
-    };
-  }
-  static matchSpeakers(key, agenda, current) {
-    const speakers = /* @__PURE__ */ new Map();
-    for (const talk of agenda.talks) {
-      for (const speaker of talk.speakers) {
-        if (speakers.has(speaker.id)) continue;
-        const stableId = _OpenFeedbackAgendaPlan.id(
-          "speaker",
-          `${key}:${speaker.id}`
-        );
-        const found = current.speakers.find((item) => item.id === stableId);
-        const matches = found ? [found] : current.speakers.filter(
-          (item) => _OpenFeedbackAgendaPlan.normalize(item.name) === _OpenFeedbackAgendaPlan.normalize(speaker.name)
-        );
-        if (matches.length > 1) throw new FeedbackResolutionError("conflict");
-        speakers.set(speaker.id, {
-          id: matches[0]?.id ?? stableId,
-          name: speaker.name
-        });
-      }
-    }
-    if (new Set([...speakers.values()].map((speaker) => speaker.id)).size !== speakers.size)
-      throw new FeedbackResolutionError("conflict");
-    return speakers;
-  }
-  static matchTalks(incoming, current, stableIds) {
-    if (new Set(incoming.map((talk) => talk.id)).size !== incoming.length)
-      throw new FeedbackResolutionError("conflict");
-    const used = /* @__PURE__ */ new Set();
-    const resolved = /* @__PURE__ */ new Map();
-    for (const talk of incoming) {
-      if (stableIds.has(talk.id) && current.some((item) => item.id === talk.id)) {
-        resolved.set(talk, talk);
-        used.add(talk.id);
-      }
-    }
-    _OpenFeedbackAgendaPlan.matchExactTalks(
-      incoming.filter((talk) => !resolved.has(talk)),
-      current,
-      resolved,
-      used
-    );
-    _OpenFeedbackAgendaPlan.matchTitles(incoming, current, resolved, used);
-    for (const talk of incoming.filter((item) => !resolved.has(item))) {
-      const matches = current.filter(
-        (item) => !used.has(item.id) && _OpenFeedbackAgendaPlan.sameSpeakers(item, talk)
-      );
-      const pending = incoming.filter(
-        (item) => !resolved.has(item) && _OpenFeedbackAgendaPlan.sameSpeakers(item, talk)
-      );
-      if (matches.length > 1 || matches.length === 1 && pending.length > 1)
-        throw new FeedbackResolutionError("conflict");
-      const id = matches[0]?.id ?? talk.id;
-      if (used.has(id) || !matches[0] && current.some((item) => item.id === id))
-        throw new FeedbackResolutionError("conflict");
-      resolved.set(talk, { ...talk, id });
-      used.add(id);
-    }
-    return incoming.map((talk) => resolved.get(talk));
-  }
-  static matchExactTalks(incoming, current, resolved, used) {
-    for (const talk of incoming) {
-      const matches = current.filter(
-        (item) => !used.has(item.id) && _OpenFeedbackAgendaPlan.normalize(item.title) === _OpenFeedbackAgendaPlan.normalize(talk.title) && _OpenFeedbackAgendaPlan.sameSpeakers(item, talk)
-      );
-      if (matches.length > 1) throw new FeedbackResolutionError("conflict");
-      if (matches[0]) {
-        resolved.set(talk, { ...talk, id: matches[0].id });
-        used.add(matches[0].id);
-      }
-    }
-  }
-  static matchTitles(incoming, current, resolved, used) {
-    for (const talk of incoming.filter((item) => !resolved.has(item))) {
-      const title = _OpenFeedbackAgendaPlan.normalize(talk.title);
-      const matches = current.filter(
-        (item) => !used.has(item.id) && _OpenFeedbackAgendaPlan.normalize(item.title) === title
-      );
-      if (matches.length === 0) continue;
-      const pending = incoming.filter(
-        (item) => !resolved.has(item) && _OpenFeedbackAgendaPlan.normalize(item.title) === title
-      );
-      if (matches.length > 1 || pending.length > 1)
-        throw new FeedbackResolutionError("conflict");
-      resolved.set(talk, { ...talk, id: matches[0].id });
-      used.add(matches[0].id);
-    }
-  }
-  static sameSpeakers(left, right) {
-    return OpenFeedbackRecordEquality.sameSpeakers(left, right);
-  }
-  static id(kind, key) {
-    return `meetup-${kind}-${createHash3("sha256").update(key).digest("hex")}`;
-  }
-  static normalize(value) {
-    return value.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US");
-  }
-};
-
-// packages/adapter/openfeedback-event-gateway/src/openfeedback-resource-id.ts
-var OpenFeedbackResourceId = class {
-  static isValid(value) {
-    return typeof value === "string" && Array.from(value).length <= 1500 && /^(?!\.\.?$)(?!__.*__$)[^/]+$/u.test(value);
-  }
-};
-
-// packages/adapter/openfeedback-event-gateway/src/openfeedback-agenda-snapshot.ts
-var OpenFeedbackAgendaSnapshot = class _OpenFeedbackAgendaSnapshot {
-  static parse(body) {
-    if (!_OpenFeedbackAgendaSnapshot.object(body))
-      throw new Error("Invalid OpenFeedback agenda response");
-    const speakers = _OpenFeedbackAgendaSnapshot.records(body.speakers).map(
-      (speaker) => ({
-        id: speaker.id,
-        revision: speaker.revision,
-        name: _OpenFeedbackAgendaSnapshot.text(speaker.name)
-      })
-    );
-    const talks = _OpenFeedbackAgendaSnapshot.records(body.talks).map((talk) => {
-      const ids = talk.speakers;
-      if (!Array.isArray(ids) || !ids.every((id) => typeof id === "string"))
-        throw new Error("Invalid OpenFeedback agenda response");
-      return {
-        id: talk.id,
-        revision: talk.revision,
-        title: _OpenFeedbackAgendaSnapshot.text(talk.title),
-        speakers: [...ids]
-      };
-    });
-    return { speakers, talks };
-  }
-  static records(value) {
-    if (!Array.isArray(value) || value.length > 200)
-      throw new Error("Invalid OpenFeedback agenda response");
-    const ids = /* @__PURE__ */ new Set();
-    return value.map((record) => {
-      if (!_OpenFeedbackAgendaSnapshot.object(record) || !OpenFeedbackResourceId.isValid(record.id) || typeof record.revision !== "string" || !/^[a-f0-9]{64}$/.test(record.revision) || ids.has(record.id))
-        throw new Error("Invalid OpenFeedback agenda response");
-      ids.add(record.id);
-      return { ...record, id: record.id, revision: record.revision };
-    });
-  }
-  static text(value) {
-    if (value === void 0) return "";
-    if (typeof value !== "string")
-      throw new Error("Invalid OpenFeedback agenda response");
-    return value;
-  }
-  static object(value) {
-    return value !== null && typeof value === "object" && !Array.isArray(value);
-  }
-};
-
-// packages/adapter/openfeedback-event-gateway/src/openfeedback-records-gateway.ts
-var OpenFeedbackRecordsGateway = class _OpenFeedbackRecordsGateway {
-  constructor(client) {
-    this.client = client;
-  }
-  client;
-  async list(eventId, kind) {
-    const records = [];
-    const cursors = /* @__PURE__ */ new Set();
-    let cursor = null;
-    for (; ; ) {
-      const query = cursor ? `&after=${encodeURIComponent(cursor)}` : "";
-      const path = `/events/${eventId}/${kind}?limit=100${query}`;
-      const body = await OpenFeedbackClient.read(
-        await this.client.request(path, "GET"),
-        eventId
-      );
-      const page = body[kind];
-      const next = body.nextCursor;
-      if (!Array.isArray(page) || page.length > 100 || !_OpenFeedbackRecordsGateway.validCursor(next))
-        throw new Error("Invalid OpenFeedback list response");
-      records.push(...page);
-      if (records.length > 200 || records.length === 200 && next !== null)
-        throw new Error("Feedback records exceed the synchronization limits");
-      if (next === null) return records;
-      if (cursors.has(next) || page.at(-1)?.id !== next)
-        throw new Error("Invalid OpenFeedback pagination cursor");
-      cursors.add(next);
-      cursor = next;
-    }
-  }
-  async synchronize(eventId, kind, record, previous) {
-    const { id, ...fields } = record;
-    if (previous && OpenFeedbackRecordEquality.equal(record, previous)) return;
-    const base = `/events/${eventId}/${kind}`;
-    const response = previous ? await this.client.request(
-      `${base}/${encodeURIComponent(id)}`,
-      "PATCH",
-      {
-        ...fields,
-        revision: previous.revision
-      }
-    ) : await this.client.request(base, "POST", record);
-    await OpenFeedbackClient.read(response, id);
-  }
-  static validCursor(value) {
-    return value === null || OpenFeedbackResourceId.isValid(value);
-  }
-};
-
 // packages/adapter/openfeedback-event-gateway/src/openfeedback-talk-results-gateway.ts
-var OpenFeedbackTalkResultsGateway = class _OpenFeedbackTalkResultsGateway {
-  constructor(apiKey, fetcher = fetch) {
+var OpenFeedbackTalkResultsGateway = class {
+  constructor(collaborators, apiKey, fetcher = fetch) {
+    this.collaborators = collaborators;
     this.apiKey = apiKey;
     this.fetcher = fetcher;
   }
+  collaborators;
   apiKey;
   fetcher;
   async resolve(input) {
-    const eventId = _OpenFeedbackTalkResultsGateway.eventId(input.url);
-    const records = new OpenFeedbackRecordsGateway(
-      new OpenFeedbackClient(this.apiKey, this.fetcher)
+    const eventId = this.eventId(input.url);
+    const records = this.collaborators.createOpenFeedbackRecordsGateway(
+      this.collaborators.createOpenFeedbackClient(this.apiKey, this.fetcher)
     );
     const speakers = await records.list(eventId, "speakers");
     const talks = await records.list(eventId, "talks");
-    const current = OpenFeedbackAgendaSnapshot.parse({ speakers, talks });
-    const matched = OpenFeedbackAgendaPlan.create(
+    const current = this.collaborators.openFeedbackAgendaSnapshot.parse({
+      speakers,
+      talks
+    });
+    const matched = this.collaborators.openFeedbackAgendaPlan.create(
       input.key,
       input.agenda,
       current
@@ -42605,7 +46374,10 @@ var OpenFeedbackTalkResultsGateway = class _OpenFeedbackTalkResultsGateway {
     return input.agenda.talks.map((source, index) => {
       const talk = matched.talks[index];
       const stored = current.talks.find((item) => item.id === talk?.id);
-      if (!talk || !stored || !OpenFeedbackRecordEquality.sameSpeakers(stored, talk))
+      if (!talk || !stored || !this.collaborators.openFeedbackRecordEquality.sameSpeakers(
+        stored,
+        talk
+      ))
         throw new FeedbackResolutionError("unavailable");
       return {
         title: talk.title,
@@ -42614,9 +46386,11 @@ var OpenFeedbackTalkResultsGateway = class _OpenFeedbackTalkResultsGateway {
       };
     });
   }
-  static eventId(url) {
+  eventId(url) {
     try {
-      const id = new URL(FeedbackPolicy.pollUrl(url)).pathname.split("/")[1];
+      const id = new URL(
+        this.collaborators.feedbackPolicy.pollUrl(url)
+      ).pathname.split("/")[1];
       if (id) return id;
     } catch {
     }
@@ -42624,8 +46398,213 @@ var OpenFeedbackTalkResultsGateway = class _OpenFeedbackTalkResultsGateway {
   }
 };
 
+// packages/adapter/openfeedback-event-gateway/src/dependency-composition.ts
+var OpenfeedbackEventGatewayComposition = class {
+  openFeedbackAgendaGateway(...args) {
+    return new OpenFeedbackAgendaGateway(
+      {
+        openFeedbackAgendaSnapshot: this.openFeedbackAgendaSnapshot(),
+        openFeedbackAgendaPlan: this.openFeedbackAgendaPlan()
+      },
+      ...args
+    );
+  }
+  openFeedbackAgendaPlan() {
+    return new OpenFeedbackAgendaPlan({
+      openFeedbackRecordEquality: this.openFeedbackRecordEquality()
+    });
+  }
+  openFeedbackAgendaSnapshot() {
+    return new OpenFeedbackAgendaSnapshot({
+      openFeedbackResourceId: this.openFeedbackResourceId()
+    });
+  }
+  openFeedbackClient(...args) {
+    return new OpenFeedbackClient(...args);
+  }
+  openFeedbackEventGateway(...args) {
+    return new OpenFeedbackEventGateway(
+      {
+        feedbackPolicy: new PublicationDomainComposition().feedbackPolicy(),
+        openFeedbackResponse: this.openFeedbackResponse()
+      },
+      ...args
+    );
+  }
+  openFeedbackEventGatewayFactory() {
+    return new OpenFeedbackEventGatewayFactory({
+      createOpenFeedbackClient: (...args) => this.openFeedbackClient(...args),
+      createOpenFeedbackEventGateway: (...args) => this.openFeedbackEventGateway(...args),
+      createOpenFeedbackAgendaGateway: (...args) => this.openFeedbackAgendaGateway(...args),
+      createOpenFeedbackRecordsGateway: (...args) => this.openFeedbackRecordsGateway(...args)
+    });
+  }
+  openFeedbackRecordEquality() {
+    return new OpenFeedbackRecordEquality();
+  }
+  openFeedbackRecordsGateway(...args) {
+    return new OpenFeedbackRecordsGateway(
+      {
+        openFeedbackResponse: this.openFeedbackResponse(),
+        openFeedbackRecordEquality: this.openFeedbackRecordEquality(),
+        openFeedbackResourceId: this.openFeedbackResourceId()
+      },
+      ...args
+    );
+  }
+  openFeedbackResourceId() {
+    return new OpenFeedbackResourceId();
+  }
+  openFeedbackResponse() {
+    return new OpenFeedbackResponse();
+  }
+  openFeedbackTalkResultsGateway(...args) {
+    return new OpenFeedbackTalkResultsGateway(
+      {
+        openFeedbackAgendaSnapshot: this.openFeedbackAgendaSnapshot(),
+        openFeedbackAgendaPlan: this.openFeedbackAgendaPlan(),
+        openFeedbackRecordEquality: this.openFeedbackRecordEquality(),
+        feedbackPolicy: new PublicationDomainComposition().feedbackPolicy(),
+        createOpenFeedbackRecordsGateway: (...args2) => this.openFeedbackRecordsGateway(...args2),
+        createOpenFeedbackClient: (...args2) => this.openFeedbackClient(...args2)
+      },
+      ...args
+    );
+  }
+};
+
+// packages/adapter/slack-notification-gateway/src/attention-i18n/messages.en.ts
+var messages = {
+  "failure.communications": "Email preparation or delivery failed.",
+  "failure.feedback": "OpenFeedback synchronization failed.",
+  "failure.assets": "Drive file preparation failed.",
+  "failure.event": "Meetup issue update failed.",
+  "task.event-data": "meetup details",
+  "slack.title": "Meetup #{issue}",
+  "slack.more": "+{count, plural, one {# more task} other {# more tasks}} \u2192 View all",
+  "slack.run": "Review run",
+  "slack.review": "Review details",
+  "slack.unknown": "status unverified",
+  "action.missing-date": "Set the event date.",
+  "action.required-data": "Complete the event details.",
+  "action.host-confirmation": "Confirm the host (`hoster:confirmed`).",
+  "action.speaker-confirmation": "Confirm the speakers (`speakers:confirmed`).",
+  "action.manual-publication": "{task}.",
+  "action.meetup-approval-pending": "Approve or reject Meetup publication.",
+  "action.approval-pending": "Approve or reject the email batch.",
+  "action.integration-failure": "Automation failed: {task}.",
+  "action.delivery-recovery": "Verify delivery before retrying.",
+  "action.occurrence-decision": "Date passed: mark held, postponed, or cancelled.",
+  "action.follow-up": "{task}.",
+  "action.stage-unknown": "Check the incomplete stage: {task}.",
+  "task.approvals": "email approvals",
+  "task.delivery": "delivery recovery",
+  "task.public-slack-local": "Post the local community Slack announcement",
+  "task.public-slack-community": "Post the community Slack announcement",
+  "task.public-social": "Publish on social networks",
+  "attention.clear": "No pending tasks.",
+  "task.publish-meetup-event": "Approve Meetup publication",
+  "task.publish-community-event": "Publish on the CNCF platform",
+  "task.create-asset-folder": "Prepare the asset folder",
+  "task.thank-host": "Send host thanks",
+  "task.thank-speakers": "Send speaker thanks",
+  "task.share-slides": "Share slides",
+  "task.import-attendance": "Import attendance",
+  "task.share-social": "Share on social networks",
+  "task.event": "event validation",
+  "task.assets": "assets",
+  "task.feedback": "feedback",
+  "task.communications": "communications",
+  "task.unknown": "review the issue"
+};
+
+// packages/adapter/slack-notification-gateway/src/attention-i18n/messages.fr.ts
+var messages2 = {
+  "failure.communications": "La pr\xE9paration ou l'envoi des courriels a \xE9chou\xE9.",
+  "failure.feedback": "La synchronisation OpenFeedback a \xE9chou\xE9.",
+  "failure.assets": "La pr\xE9paration des fichiers Drive a \xE9chou\xE9.",
+  "failure.event": "La mise \xE0 jour du ticket a \xE9chou\xE9.",
+  "task.event-data": "informations du meetup",
+  "slack.title": "Meetup #{issue}",
+  "slack.more": "+{count, plural, one {# autre t\xE2che} other {# autres t\xE2ches}} \u2192 Tout voir",
+  "slack.run": "Voir l'ex\xE9cution",
+  "slack.review": "Voir les d\xE9tails",
+  "slack.unknown": "statut non v\xE9rifi\xE9",
+  "action.missing-date": "Renseignez la date du meetup.",
+  "action.required-data": "Compl\xE9tez les informations du meetup.",
+  "action.host-confirmation": "Confirmez l'h\xF4te (`hoster:confirmed`).",
+  "action.speaker-confirmation": "Confirmez les intervenants (`speakers:confirmed`).",
+  "action.manual-publication": "{task}.",
+  "action.meetup-approval-pending": "Approuvez ou refusez la publication Meetup.",
+  "action.approval-pending": "Approuvez ou refusez le lot de courriels.",
+  "action.integration-failure": "Automatisation en \xE9chec : {task}.",
+  "action.delivery-recovery": "V\xE9rifiez l'envoi avant toute reprise.",
+  "action.occurrence-decision": "Date pass\xE9e : indiquez tenu, report\xE9 ou annul\xE9.",
+  "action.follow-up": "{task}.",
+  "action.stage-unknown": "V\xE9rifiez l'\xE9tape inachev\xE9e : {task}.",
+  "task.approvals": "approbation des courriels",
+  "task.delivery": "reprise des envois",
+  "task.public-slack-local": "Publiez l'annonce sur le Slack local",
+  "task.public-slack-community": "Publiez l'annonce sur le Slack communautaire",
+  "task.public-social": "Publiez sur les r\xE9seaux sociaux",
+  "attention.clear": "Aucune t\xE2che en attente.",
+  "task.publish-meetup-event": "Approuver la publication Meetup",
+  "task.publish-community-event": "Publiez sur la plateforme CNCF",
+  "task.create-asset-folder": "Pr\xE9parez le dossier des ressources",
+  "task.thank-host": "Envoyez les remerciements au lieu h\xF4te",
+  "task.thank-speakers": "Envoyez les remerciements aux intervenants",
+  "task.share-slides": "Partagez les pr\xE9sentations",
+  "task.import-attendance": "Importez les pr\xE9sences",
+  "task.share-social": "Partagez sur les r\xE9seaux sociaux",
+  "task.event": "validation du meetup",
+  "task.assets": "ressources",
+  "task.feedback": "\xE9valuations",
+  "task.communications": "communications",
+  "task.unknown": "consulter le ticket"
+};
+
+// packages/adapter/slack-notification-gateway/src/attention-i18n/catalog.ts
+var CATALOGS3 = { en: messages, fr: messages2 };
+
+// packages/adapter/slack-notification-gateway/src/attention-i18n/slack-attention-messages.ts
+var SlackAttentionMessages = class extends MessageLocalizer {
+  constructor(collaborators, locale = "en") {
+    super(collaborators, CATALOGS3, locale);
+  }
+  failure(resource) {
+    const key = `failure.${resource}`;
+    return Object.hasOwn(CATALOGS3.en, key) ? this.t(key) : this.t("action.integration-failure", { task: this.task(resource) });
+  }
+  task(resource) {
+    const key = `task.${resource}`;
+    return this.t(Object.hasOwn(CATALOGS3.en, key) ? key : "task.unknown");
+  }
+};
+
+// packages/adapter/slack-notification-gateway/src/i18n/messages.en.ts
+var EN_MESSAGES3 = {
+  "request.introduction": "Introduction emails \xB7 {date} \xB7 Up to {count, number} recipients\nApprove or reject: {url}",
+  "request.publication": "Meetup publication \xB7 {date}\nReview the draft and approve or reject publication: {url}"
+};
+
+// packages/adapter/slack-notification-gateway/src/i18n/messages.fr.ts
+var FR_MESSAGES3 = {
+  "request.introduction": "E-mails d'introduction \xB7 {date} \xB7 Au maximum {count, number} destinataires\nApprouver ou refuser : {url}",
+  "request.publication": "Publication Meetup \xB7 {date}\nV\xE9rifiez le brouillon et approuvez ou refusez sa publication : {url}"
+};
+
+// packages/adapter/slack-notification-gateway/src/i18n/catalog.ts
+var CATALOGS4 = { en: EN_MESSAGES3, fr: FR_MESSAGES3 };
+
+// packages/adapter/slack-notification-gateway/src/i18n/slack-approval-messages.ts
+var SlackApprovalMessages = class extends MessageLocalizer {
+  constructor(collaborators, locale) {
+    super(collaborators, CATALOGS4, locale);
+  }
+};
+
 // packages/adapter/slack-notification-gateway/src/slack-api-client.ts
-var SlackApiClient = class _SlackApiClient {
+var SlackApiClient = class {
   constructor(token, fetcher = fetch) {
     this.token = token;
     this.fetcher = fetcher;
@@ -42653,8 +46632,8 @@ var SlackApiClient = class _SlackApiClient {
     }
     if (!response.ok)
       return {
-        retryAfterSeconds: _SlackApiClient.retryAfter(response),
-        result: _SlackApiClient.httpRejection(response.status) ?? {
+        retryAfterSeconds: this.retryAfter(response),
+        result: this.httpRejection(response.status) ?? {
           outcome: "uncertain",
           diagnosticCode: "ambiguous-response"
         }
@@ -42673,15 +46652,15 @@ var SlackApiClient = class _SlackApiClient {
       };
     const data = payload;
     return {
-      result: data.ok === true ? { outcome: "accepted" } : _SlackApiClient.slackApiRejection(data.error),
+      result: data.ok === true ? { outcome: "accepted" } : this.slackApiRejection(data.error),
       payload: data
     };
   }
-  static retryAfter(response) {
+  retryAfter(response) {
     const value = Number(response.headers.get("retry-after"));
     return Number.isFinite(value) && value > 0 ? value : void 0;
   }
-  static httpRejection(status) {
+  httpRejection(status) {
     switch (status) {
       case 400:
       case 422:
@@ -42701,7 +46680,7 @@ var SlackApiClient = class _SlackApiClient {
         return void 0;
     }
   }
-  static slackApiRejection(error2) {
+  slackApiRejection(error2) {
     if (typeof error2 !== "string") {
       return { outcome: "uncertain", diagnosticCode: "ambiguous-response" };
     }
@@ -42734,25 +46713,14 @@ var SlackApiClient = class _SlackApiClient {
   }
 };
 
-// packages/adapter/slack-notification-gateway/src/slack-message-reference.ts
-var SlackMessageReference = class _SlackMessageReference {
-  static valid(message) {
-    return /^[CGD][A-Z0-9]+$/.test(message.destination) && /^\d+\.\d+$/.test(message.messageId);
-  }
-  static read(payload, destination) {
-    if (payload?.channel !== destination || typeof payload.ts !== "string")
-      return void 0;
-    const message = { destination, messageId: payload.ts };
-    return _SlackMessageReference.valid(message) ? message : void 0;
-  }
-};
-
 // packages/adapter/slack-notification-gateway/src/slack-approval-notification.ts
 var SlackApprovalNotification = class {
-  constructor(token, presenter, fetcher = fetch) {
+  constructor(collaborators, token, presenter, fetcher = fetch) {
+    this.collaborators = collaborators;
     this.presenter = presenter;
-    this.client = new SlackApiClient(token, fetcher);
+    this.client = this.collaborators.createSlackApiClient(token, fetcher);
   }
+  collaborators;
   presenter;
   client;
   async send(input) {
@@ -42761,11 +46729,14 @@ var SlackApprovalNotification = class {
       text: this.presenter.render(input)
     });
     if (result.outcome !== "accepted") return result;
-    const message = SlackMessageReference.read(payload, input.destination);
+    const message = this.collaborators.slackMessageReference.read(
+      payload,
+      input.destination
+    );
     return message ? { outcome: "accepted", message } : { outcome: "uncertain", diagnosticCode: "ambiguous-response" };
   }
   async react(message, decision) {
-    if (!SlackMessageReference.valid(message)) return false;
+    if (!this.collaborators.slackMessageReference.valid(message)) return false;
     const { result, payload } = await this.client.post("reactions.add", {
       channel: message.destination,
       timestamp: message.messageId,
@@ -42775,34 +46746,14 @@ var SlackApprovalNotification = class {
   }
 };
 
-// packages/adapter/slack-notification-gateway/src/i18n/messages.en.ts
-var EN_MESSAGES4 = {
-  "request.introduction": "Introduction emails \xB7 {date} \xB7 Up to {count, number} recipients\nApprove or reject: {url}",
-  "request.publication": "Meetup publication \xB7 {date}\nReview the draft and approve or reject publication: {url}"
-};
-
-// packages/adapter/slack-notification-gateway/src/i18n/messages.fr.ts
-var FR_MESSAGES4 = {
-  "request.introduction": "E-mails d'introduction \xB7 {date} \xB7 Au maximum {count, number} destinataires\nApprouver ou refuser : {url}",
-  "request.publication": "Publication Meetup \xB7 {date}\nV\xE9rifiez le brouillon et approuvez ou refusez sa publication : {url}"
-};
-
-// packages/adapter/slack-notification-gateway/src/i18n/catalog.ts
-var CATALOGS4 = { en: EN_MESSAGES4, fr: FR_MESSAGES4 };
-
-// packages/adapter/slack-notification-gateway/src/i18n/slack-approval-messages.ts
-var SlackApprovalMessages = class extends MessageLocalizer {
-  constructor(locale) {
-    super(CATALOGS4, locale);
-  }
-};
-
 // packages/adapter/slack-notification-gateway/src/slack-approval-presenter.ts
 var SlackApprovalPresenter = class {
-  messages;
-  constructor(locale) {
-    this.messages = new SlackApprovalMessages(locale);
+  constructor(collaborators, locale) {
+    this.collaborators = collaborators;
+    this.messages = this.collaborators.createSlackApprovalMessages(locale);
   }
+  collaborators;
+  messages;
   render(request2) {
     const details = {
       date: request2.eventDate,
@@ -42812,6 +46763,242 @@ var SlackApprovalPresenter = class {
       ...details,
       count: request2.recipientCount
     });
+  }
+};
+
+// packages/adapter/slack-notification-gateway/src/slack-attention-notification.ts
+import { createHash as createHash6 } from "node:crypto";
+var SlackAttentionNotification = class {
+  constructor(collaborators, token, channel, presenter, fetcher = fetch) {
+    this.collaborators = collaborators;
+    this.channel = channel;
+    this.presenter = presenter;
+    if (!/^[CG][A-Z0-9]+$/.test(channel))
+      throw new Error("Invalid organizer channel");
+    this.client = this.collaborators.createSlackApiClient(token, fetcher);
+  }
+  collaborators;
+  channel;
+  presenter;
+  client;
+  fingerprint(view) {
+    return createHash6("sha256").update(this.presenter.render(view)).digest("hex");
+  }
+  async post(view) {
+    const response = await this.client.post(
+      "chat.postMessage",
+      this.body(this.channel, view)
+    );
+    const { result, payload } = response;
+    if (result.outcome === "uncertain") return { outcome: "uncertain" };
+    if (result.outcome !== "accepted")
+      return {
+        outcome: "retry",
+        retryAfterSeconds: response.retryAfterSeconds
+      };
+    const message = this.collaborators.slackMessageReference.read(
+      payload,
+      this.channel
+    );
+    return message ? { outcome: "accepted", message } : { outcome: "uncertain" };
+  }
+  async update(message, view) {
+    if (!this.collaborators.slackMessageReference.valid(message)) return false;
+    const { result } = await this.client.post("chat.update", {
+      ...this.body(message.destination, view),
+      ts: message.messageId
+    });
+    return result.outcome === "accepted";
+  }
+  body(channel, view) {
+    return {
+      channel,
+      text: this.presenter.render(view),
+      parse: "none",
+      link_names: false,
+      mrkdwn: true,
+      unfurl_links: false,
+      unfurl_media: false
+    };
+  }
+};
+
+// packages/adapter/slack-notification-gateway/src/slack-attention-presenter.ts
+var SlackAttentionPresenter = class {
+  constructor(collaborators, repository, issueNumber, locale, checklist) {
+    this.collaborators = collaborators;
+    this.repository = repository;
+    this.issueNumber = issueNumber;
+    this.checklist = checklist;
+    if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository) || !Number.isSafeInteger(issueNumber) || issueNumber < 1)
+      throw new Error("Invalid attention issue identity");
+    this.issueUrl = `https://github.com/${repository}/issues/${issueNumber}`;
+    this.messages = this.collaborators.createSlackAttentionMessages(locale);
+  }
+  collaborators;
+  repository;
+  issueNumber;
+  checklist;
+  issueUrl;
+  messages;
+  render(view) {
+    const title = this.messages.t("slack.title", {
+      issue: String(this.issueNumber)
+    });
+    const actions = this.slackActions(view);
+    const icon = actions.length ? "\u26A0\uFE0F" : "\u2705";
+    const date = this.slackDate(view.state.eventDate);
+    const lines = [
+      `${icon} *${this.link(this.overviewUrl(view.state), title)}*${date ? ` \xB7 ${date}` : ""}`,
+      ""
+    ];
+    lines.push(...actions.slice(0, 6));
+    if (!actions.length)
+      lines.push(this.escape(this.messages.t("attention.clear")));
+    if (actions.length > 6)
+      lines.push(
+        this.link(
+          this.overviewUrl(view.state),
+          this.messages.t("slack.more", { count: actions.length - 6 })
+        )
+      );
+    return lines.join("\n");
+  }
+  slackActions(view) {
+    const selection = this.collaborators.attentionTaskSelection.select(
+      view,
+      this.checklist.read()
+    );
+    return [
+      .../* @__PURE__ */ new Set([
+        ...selection.urgent.map(
+          (episode) => this.slackCondition(episode, view.state)
+        ),
+        ...selection.checklist.map(
+          (entry) => `\u2022 ${this.escape(`${entry.label}: ${entry.description}`)}`
+        ),
+        ...selection.remaining.map(
+          (episode) => this.slackCondition(episode, view.state)
+        )
+      ])
+    ];
+  }
+  slackDate(date) {
+    if (this.collaborators.attentionPolicy.eventDay(date) === void 0)
+      return "";
+    return new Intl.DateTimeFormat(this.messages.locale, {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      timeZone: "UTC"
+    }).format(/* @__PURE__ */ new Date(`${date}T00:00:00Z`));
+  }
+  slackCondition(episode, state) {
+    const text = this.action(episode);
+    const url = this.url(episode, state);
+    const label = this.messages.t(
+      episode.condition.commentId || state.commentId && episode.condition.code === "follow-up" ? "slack.review" : "slack.run"
+    );
+    const link = url === this.overviewUrl(state) ? "" : ` \xB7 ${this.link(url, label)}`;
+    const unknown = episode.status === "unknown" ? ` _(${this.escape(this.messages.t("slack.unknown"))})_` : "";
+    return `\u2022 ${this.escape(text)}${unknown}${link}`;
+  }
+  link(url, label) {
+    return `<${this.escape(url)}|${this.escape(label)}>`;
+  }
+  escape(value) {
+    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+  }
+  action(episode) {
+    if (episode.condition.code === "approval-pending" && episode.condition.resource.startsWith("meetup-publication:"))
+      return this.messages.t("action.meetup-approval-pending");
+    return episode.condition.code === "integration-failure" ? this.messages.failure(episode.condition.resource) : this.messages.t(`action.${episode.condition.code}`, {
+      task: this.messages.task(episode.condition.resource)
+    });
+  }
+  url(episode, state) {
+    if (Number.isSafeInteger(episode.condition.commentId) && (episode.condition.commentId ?? 0) > 0)
+      return `${this.issueUrl}#issuecomment-${episode.condition.commentId}`;
+    if (["integration-failure", "stage-unknown"].includes(
+      episode.condition.code
+    ) && state.runId && /^\d+$/.test(state.runId))
+      return `https://github.com/${this.repository}/actions/runs/${state.runId}`;
+    return this.overviewUrl(state);
+  }
+  overviewUrl(state) {
+    const commentId = state.commentId ?? this.checklist.read().commentId;
+    return commentId ? `${this.issueUrl}#issuecomment-${commentId}` : this.issueUrl;
+  }
+};
+
+// packages/adapter/slack-notification-gateway/src/slack-message-reference.ts
+var SlackMessageReference = class {
+  valid(message) {
+    return /^[CGD][A-Z0-9]+$/.test(message.destination) && /^\d+\.\d+$/.test(message.messageId);
+  }
+  read(payload, destination) {
+    if (payload?.channel !== destination || typeof payload.ts !== "string")
+      return void 0;
+    const message = { destination, messageId: payload.ts };
+    return this.valid(message) ? message : void 0;
+  }
+};
+
+// packages/adapter/slack-notification-gateway/src/dependency-composition.ts
+var SlackNotificationGatewayComposition = class {
+  slackApiClient(...args) {
+    return new SlackApiClient(...args);
+  }
+  slackApprovalMessages(...args) {
+    return new SlackApprovalMessages(
+      { localeResolver: new LocalizationComposition().localeResolver() },
+      ...args
+    );
+  }
+  slackApprovalNotification(...args) {
+    return new SlackApprovalNotification(
+      {
+        slackMessageReference: this.slackMessageReference(),
+        createSlackApiClient: (...args2) => this.slackApiClient(...args2)
+      },
+      ...args
+    );
+  }
+  slackApprovalPresenter(...args) {
+    return new SlackApprovalPresenter(
+      {
+        createSlackApprovalMessages: (...args2) => this.slackApprovalMessages(...args2)
+      },
+      ...args
+    );
+  }
+  slackAttentionMessages(...args) {
+    return new SlackAttentionMessages(
+      { localeResolver: new LocalizationComposition().localeResolver() },
+      ...args
+    );
+  }
+  slackAttentionNotification(...args) {
+    return new SlackAttentionNotification(
+      {
+        slackMessageReference: this.slackMessageReference(),
+        createSlackApiClient: (...args2) => this.slackApiClient(...args2)
+      },
+      ...args
+    );
+  }
+  slackAttentionPresenter(...args) {
+    return new SlackAttentionPresenter(
+      {
+        attentionTaskSelection: new CommunicationDomainComposition().attentionTaskSelection(),
+        attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+        createSlackAttentionMessages: (...args2) => this.slackAttentionMessages(...args2)
+      },
+      ...args
+    );
+  }
+  slackMessageReference() {
+    return new SlackMessageReference();
   }
 };
 
@@ -42837,141 +47024,26 @@ var SystemEventClock = class {
   }
 };
 
-// packages/adapter/conference-hall-proposal-source/src/proposal-export-parser.ts
-var ProposalExportParser = class _ProposalExportParser {
-  static parse(value, event) {
-    const root = _ProposalExportParser.object(value, "export");
-    if (!Array.isArray(root.proposals) || root.proposals.length > 1e4)
-      throw _ProposalExportParser.invalid("proposals");
-    const speakers = /* @__PURE__ */ new Map();
-    const ids = /* @__PURE__ */ new Set();
-    const proposals = root.proposals.map((raw, index) => {
-      const path = `proposals[${index}]`;
-      const proposal = _ProposalExportParser.object(raw, path);
-      const id = _ProposalExportParser.id(proposal.id, `${path}.id`);
-      if (ids.has(id)) throw _ProposalExportParser.invalid(`${path}.id`);
-      if (!Array.isArray(proposal.speakers) || proposal.speakers.length === 0)
-        throw _ProposalExportParser.invalid(`${path}.speakers`);
-      ids.add(id);
-      const speakerIds = proposal.speakers.map((item, speakerIndex) => {
-        const speakerPath = `${path}.speakers[${speakerIndex}]`;
-        const speaker = _ProposalExportParser.speaker(item, speakerPath);
-        const existing = speakers.get(speaker.id);
-        if (existing && !SourceSpeakerEquality.equal(existing, speaker))
-          throw _ProposalExportParser.invalid(speakerPath);
-        speakers.set(speaker.id, speaker);
-        return speaker.id;
-      });
-      return {
-        id,
-        number: _ProposalExportParser.number(
-          proposal.proposalNumber,
-          `${path}.proposalNumber`
-        ),
-        title: _ProposalExportParser.text(proposal.title, `${path}.title`),
-        abstract: _ProposalExportParser.text(
-          proposal.abstract,
-          `${path}.abstract`
-        ),
-        accepted: proposal.deliberationStatus === "ACCEPTED" && (proposal.confirmationStatus == null || proposal.confirmationStatus === "PENDING" || proposal.confirmationStatus === "CONFIRMED"),
-        languages: _ProposalExportParser.strings(
-          proposal.languages,
-          `${path}.languages`
-        ),
-        formats: _ProposalExportParser.strings(
-          proposal.formats,
-          `${path}.formats`
-        ),
-        speakerIds: [...new Set(speakerIds)]
-      };
-    });
-    return {
-      provider: "conference-hall",
-      event,
-      speakers: [...speakers.values()],
-      proposals
-    };
+// packages/adapter/system-clock/src/dependency-composition.ts
+var SystemClockComposition = class {
+  systemCommunicationClock(...args) {
+    return new SystemCommunicationClock(...args);
   }
-  static speaker(value, path) {
-    const speaker = _ProposalExportParser.object(value, path);
-    const email = _ProposalExportParser.text(speaker.email, `${path}.email`);
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-      throw _ProposalExportParser.invalid(`${path}.email`);
-    return {
-      id: _ProposalExportParser.id(speaker.id, `${path}.id`),
-      displayName: _ProposalExportParser.text(speaker.name, `${path}.name`),
-      email,
-      ..."company" in speaker ? {
-        company: _ProposalExportParser.optionalText(
-          speaker.company,
-          `${path}.company`
-        )
-      } : {},
-      ..._ProposalExportParser.picture(speaker)
-    };
-  }
-  static number(value, path) {
-    if (value === void 0 || value === null) return void 0;
-    if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 1)
-      throw _ProposalExportParser.invalid(path);
-    return value;
-  }
-  static picture(speaker) {
-    if (!("picture" in speaker)) return {};
-    if (speaker.picture === null || speaker.picture === "")
-      return { pictureUrl: null };
-    if (typeof speaker.picture !== "string" || speaker.picture.length > 2048)
-      return {};
-    try {
-      const url = new URL(speaker.picture);
-      return url.protocol === "https:" && !url.username && !url.password ? { pictureUrl: url.href } : {};
-    } catch {
-      return {};
-    }
-  }
-  static optionalText(value, path) {
-    if (value === null || value === "") return null;
-    return _ProposalExportParser.text(value, path);
-  }
-  static strings(value, path) {
-    if (!Array.isArray(value) || value.length > 100)
-      throw _ProposalExportParser.invalid(path);
-    return value.map(
-      (item, index) => _ProposalExportParser.text(item, `${path}[${index}]`)
-    );
-  }
-  static text(value, path) {
-    if (typeof value !== "string" || !value.trim() || value.length > 3e4)
-      throw _ProposalExportParser.invalid(path);
-    return value.trim();
-  }
-  static id(value, path) {
-    const id = _ProposalExportParser.text(value, path);
-    if (!/^[a-zA-Z0-9_-]{1,200}$/.test(id))
-      throw _ProposalExportParser.invalid(path);
-    return id;
-  }
-  static invalid(field) {
-    return new ProposalSourceError("invalid", void 0, {
-      reason: "schema",
-      field
-    });
-  }
-  static object(value, path) {
-    if (!value || typeof value !== "object" || Array.isArray(value))
-      throw _ProposalExportParser.invalid(path);
-    return value;
+  systemEventClock(...args) {
+    return new SystemEventClock(...args);
   }
 };
 
 // packages/adapter/conference-hall-proposal-source/src/conference-hall-proposal-source.ts
 var ConferenceHallProposalSource = class {
-  constructor(event, apiKey, request2 = fetch, now2 = Date.now) {
+  constructor(collaborators, event, apiKey, request2 = fetch, now2 = Date.now) {
+    this.collaborators = collaborators;
     this.event = event;
     this.apiKey = apiKey;
     this.request = request2;
     this.now = now2;
   }
+  collaborators;
   event;
   apiKey;
   request;
@@ -42991,7 +47063,7 @@ var ConferenceHallProposalSource = class {
     const speakers = /* @__PURE__ */ new Map();
     for (const speaker of [...active.speakers, ...archived.speakers]) {
       const existing = speakers.get(speaker.id);
-      if (existing && !SourceSpeakerEquality.equal(existing, speaker))
+      if (existing && !this.collaborators.sourceSpeakerEquality.equal(existing, speaker))
         throw new ProposalSourceError("conflict");
       speakers.set(speaker.id, speaker);
     }
@@ -43021,7 +47093,7 @@ var ConferenceHallProposalSource = class {
           status: response.status
         });
       }
-      return ProposalExportParser.parse(
+      return this.collaborators.proposalExportParser.parse(
         await this.readJson(response),
         this.event
       );
@@ -43076,9 +47148,274 @@ var ConferenceHallProposalSource = class {
   }
 };
 
+// packages/adapter/conference-hall-proposal-source/src/proposal-export-parser.ts
+var ProposalExportParser = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  parse(value, event) {
+    const root = this.object(value, "export");
+    if (!Array.isArray(root.proposals) || root.proposals.length > 1e4)
+      throw this.invalid("proposals");
+    const speakers = /* @__PURE__ */ new Map();
+    const ids = /* @__PURE__ */ new Set();
+    const proposals = root.proposals.map((raw, index) => {
+      const path = `proposals[${index}]`;
+      const proposal = this.object(raw, path);
+      const id = this.id(proposal.id, `${path}.id`);
+      if (ids.has(id)) throw this.invalid(`${path}.id`);
+      if (!Array.isArray(proposal.speakers) || proposal.speakers.length === 0)
+        throw this.invalid(`${path}.speakers`);
+      ids.add(id);
+      const speakerIds = proposal.speakers.map((item, speakerIndex) => {
+        const speakerPath = `${path}.speakers[${speakerIndex}]`;
+        const speaker = this.speaker(item, speakerPath);
+        const existing = speakers.get(speaker.id);
+        if (existing && !this.collaborators.sourceSpeakerEquality.equal(existing, speaker))
+          throw this.invalid(speakerPath);
+        speakers.set(speaker.id, speaker);
+        return speaker.id;
+      });
+      return {
+        id,
+        number: this.number(proposal.proposalNumber, `${path}.proposalNumber`),
+        title: this.text(proposal.title, `${path}.title`),
+        abstract: this.text(proposal.abstract, `${path}.abstract`),
+        accepted: proposal.deliberationStatus === "ACCEPTED" && (proposal.confirmationStatus == null || proposal.confirmationStatus === "PENDING" || proposal.confirmationStatus === "CONFIRMED"),
+        languages: this.strings(proposal.languages, `${path}.languages`),
+        formats: this.strings(proposal.formats, `${path}.formats`),
+        speakerIds: [...new Set(speakerIds)]
+      };
+    });
+    return {
+      provider: "conference-hall",
+      event,
+      speakers: [...speakers.values()],
+      proposals
+    };
+  }
+  speaker(value, path) {
+    const speaker = this.object(value, path);
+    const email = this.text(speaker.email, `${path}.email`);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      throw this.invalid(`${path}.email`);
+    return {
+      id: this.id(speaker.id, `${path}.id`),
+      displayName: this.text(speaker.name, `${path}.name`),
+      email,
+      ..."company" in speaker ? {
+        company: this.optionalText(speaker.company, `${path}.company`)
+      } : {},
+      ...this.picture(speaker)
+    };
+  }
+  number(value, path) {
+    if (value === void 0 || value === null) return void 0;
+    if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 1)
+      throw this.invalid(path);
+    return value;
+  }
+  picture(speaker) {
+    if (!("picture" in speaker)) return {};
+    if (speaker.picture === null || speaker.picture === "")
+      return { pictureUrl: null };
+    if (typeof speaker.picture !== "string" || speaker.picture.length > 2048)
+      return {};
+    try {
+      const url = new URL(speaker.picture);
+      return url.protocol === "https:" && !url.username && !url.password ? { pictureUrl: url.href } : {};
+    } catch {
+      return {};
+    }
+  }
+  optionalText(value, path) {
+    if (value === null || value === "") return null;
+    return this.text(value, path);
+  }
+  strings(value, path) {
+    if (!Array.isArray(value) || value.length > 100) throw this.invalid(path);
+    return value.map((item, index) => this.text(item, `${path}[${index}]`));
+  }
+  text(value, path) {
+    if (typeof value !== "string" || !value.trim() || value.length > 3e4)
+      throw this.invalid(path);
+    return value.trim();
+  }
+  id(value, path) {
+    const id = this.text(value, path);
+    if (!/^[a-zA-Z0-9_-]{1,200}$/.test(id)) throw this.invalid(path);
+    return id;
+  }
+  invalid(field) {
+    return new ProposalSourceError("invalid", void 0, {
+      reason: "schema",
+      field
+    });
+  }
+  object(value, path) {
+    if (!value || typeof value !== "object" || Array.isArray(value))
+      throw this.invalid(path);
+    return value;
+  }
+};
+
+// packages/adapter/conference-hall-proposal-source/src/dependency-composition.ts
+var ConferenceHallProposalSourceComposition = class {
+  conferenceHallProposalSource(...args) {
+    return new ConferenceHallProposalSource(
+      {
+        sourceSpeakerEquality: new ReferentialDomainComposition().sourceSpeakerEquality(),
+        proposalExportParser: this.proposalExportParser()
+      },
+      ...args
+    );
+  }
+  proposalExportParser() {
+    return new ProposalExportParser({
+      sourceSpeakerEquality: new ReferentialDomainComposition().sourceSpeakerEquality()
+    });
+  }
+};
+
 // packages/adapter/csv-referential-repository/src/csv-referential-repository.ts
 import { readFile, realpath } from "node:fs/promises";
 import { isAbsolute, relative, resolve, sep as sep2 } from "node:path";
+var CsvReferentialRepository = class {
+  constructor(collaborators, options) {
+    this.collaborators = collaborators;
+    this.options = options;
+  }
+  collaborators;
+  options;
+  async load() {
+    const [hostsSource, speakersSource] = await Promise.all([
+      readFile(
+        await this.localPath(
+          this.options.workspaceRoot,
+          this.options.hostsPath
+        ),
+        "utf8"
+      ),
+      readFile(
+        await this.localPath(
+          this.options.workspaceRoot,
+          this.options.speakersPath
+        ),
+        "utf8"
+      )
+    ]);
+    return this.collaborators.csvReferentialCodec.decode(
+      hostsSource,
+      speakersSource,
+      this.options.hostsPath,
+      this.options.speakersPath
+    );
+  }
+  async localPath(rootInput, relativeInput) {
+    const root = await realpath(resolve(rootInput));
+    const absolute = resolve(root, relativeInput);
+    this.assertInside(root, absolute);
+    const resolved = await realpath(absolute);
+    this.assertInside(root, resolved);
+    return resolved;
+  }
+  assertInside(root, candidate) {
+    const child = relative(root, candidate);
+    if (isAbsolute(child) || child === ".." || child.startsWith(`..${sep2}`)) {
+      throw new Error("Referential path must stay inside the checkout");
+    }
+  }
+};
+
+// packages/adapter/csv-referential-repository/src/csv-speaker-catalog-store.ts
+import { createHash as createHash7 } from "node:crypto";
+import { readFile as readFile2, writeFile as writeFile2 } from "node:fs/promises";
+import { join } from "node:path";
+var CsvSpeakerCatalogStore = class {
+  constructor(collaborators, root, history = collaborators.createSpeakerAllocationHistory(root)) {
+    this.collaborators = collaborators;
+    this.root = root;
+    this.history = history;
+  }
+  collaborators;
+  root;
+  history;
+  async read() {
+    const { csv, state, historicalIds } = await this.sources();
+    return {
+      entries: this.collaborators.speakerCatalogCsv.decode(csv),
+      reservedIds: state === void 0 ? historicalIds : this.collaborators.speakerAllocationStateCodec.decode(state),
+      revision: this.revision(csv, state, historicalIds)
+    };
+  }
+  async candidate(entries) {
+    const existing = await this.collaborators.createCsvReferentialRepository({
+      workspaceRoot: this.root,
+      hostsPath: "referentials/hosting.csv",
+      speakersPath: "referentials/speakers.csv"
+    }).load();
+    return {
+      hosts: existing.hosts,
+      speakers: entries.map(
+        (entry) => ({
+          speakerId: entry.id,
+          displayName: entry.displayName,
+          firstName: entry.firstName,
+          lastName: entry.lastName,
+          company: entry.company,
+          email: entry.email,
+          phone: entry.phone,
+          pictureUrl: entry.pictureUrl,
+          sourceProvider: entry.sourceIdentity?.provider,
+          sourceEvent: entry.sourceIdentity?.event,
+          sourceSpeakerId: entry.sourceIdentity?.speakerId
+        })
+      )
+    };
+  }
+  async save(original, entries, reservedIds) {
+    const current = await this.sources();
+    if (this.revision(current.csv, current.state, current.historicalIds) !== original.revision)
+      throw new ProposalSourceError("conflict");
+    const csv = this.collaborators.speakerCatalogCsv.encode(
+      current.csv,
+      entries
+    );
+    const stateText = this.collaborators.speakerAllocationStateCodec.encode(reservedIds);
+    if (csv === current.csv && stateText === current.state) return false;
+    await writeFile2(join(this.root, "referentials/speakers.csv"), csv, {
+      mode: 384
+    });
+    await writeFile2(
+      join(this.root, "referentials/speaker-sync-state.json"),
+      stateText,
+      { mode: 384 }
+    );
+    return true;
+  }
+  async sources() {
+    const csv = await readFile2(
+      join(this.root, "referentials/speakers.csv"),
+      "utf8"
+    );
+    let state;
+    try {
+      state = await readFile2(
+        join(this.root, "referentials/speaker-sync-state.json"),
+        "utf8"
+      );
+    } catch (error2) {
+      if (!(error2 instanceof Error) || !("code" in error2) || error2.code !== "ENOENT")
+        throw error2;
+    }
+    const historicalIds = state === void 0 ? await this.history.read() : [];
+    return { csv, state, historicalIds };
+  }
+  revision(csv, state, historicalIds) {
+    return createHash7("sha256").update(JSON.stringify([csv, state, historicalIds])).digest("hex");
+  }
+};
 
 // node_modules/.pnpm/csv-parse@7.0.3/node_modules/csv-parse/lib/api/CsvError.js
 var CsvError = class _CsvError extends Error {
@@ -44785,39 +49122,39 @@ var parse4 = function(data, opts = {}) {
 };
 
 // packages/adapter/csv-referential-repository/src/csv-referential-codec.ts
-var CsvReferentialCodec = class _CsvReferentialCodec {
-  static decode(hostsSource, speakersSource, hostsPath, speakersPath) {
-    const hosts = _CsvReferentialCodec.parseRows(
-      hostsSource
-    ).map(({ row, line }) => ({
-      source: { path: hostsPath, line },
-      hostId: row.host_id,
-      displayName: row.name,
-      contactId: row.contact_id,
-      contactName: row.contact,
-      email: row.mail,
-      phone: row.phone || void 0,
-      address: row.address
-    }));
-    const speakers = _CsvReferentialCodec.parseRows(
-      speakersSource
-    ).map(({ row, line }) => ({
-      source: { path: speakersPath, line },
-      speakerId: row.speaker_id,
-      displayName: row.display_name,
-      pictureUrl: row.picture_url,
-      sourceProvider: row.source_provider,
-      sourceEvent: row.source_event,
-      sourceSpeakerId: row.source_speaker_id,
-      firstName: row.firstname,
-      lastName: row.lastname,
-      company: row.company,
-      email: row.mail,
-      phone: row.phone || void 0
-    }));
+var CsvReferentialCodec = class {
+  decode(hostsSource, speakersSource, hostsPath, speakersPath) {
+    const hosts = this.parseRows(hostsSource).map(
+      ({ row, line }) => ({
+        source: { path: hostsPath, line },
+        hostId: row.host_id,
+        displayName: row.name,
+        contactId: row.contact_id,
+        contactName: row.contact,
+        email: row.mail,
+        phone: row.phone || void 0,
+        address: row.address
+      })
+    );
+    const speakers = this.parseRows(speakersSource).map(
+      ({ row, line }) => ({
+        source: { path: speakersPath, line },
+        speakerId: row.speaker_id,
+        displayName: row.display_name,
+        pictureUrl: row.picture_url,
+        sourceProvider: row.source_provider,
+        sourceEvent: row.source_event,
+        sourceSpeakerId: row.source_speaker_id,
+        firstName: row.firstname,
+        lastName: row.lastname,
+        company: row.company,
+        email: row.mail,
+        phone: row.phone || void 0
+      })
+    );
     return { hosts, speakers };
   }
-  static parseRows(source) {
+  parseRows(source) {
     const records = parse4(source.replace(/\r\n?/g, "\n"), {
       bom: true,
       columns: true,
@@ -44828,66 +49165,285 @@ var CsvReferentialCodec = class _CsvReferentialCodec {
     });
     if (!Array.isArray(records)) throw new Error("Invalid CSV catalog records");
     return records.map((value) => {
-      if (!_CsvReferentialCodec.record(value))
-        throw new Error("Invalid CSV catalog record");
+      if (!this.record(value)) throw new Error("Invalid CSV catalog record");
       return {
         row: value.record,
         line: value.info.lines - (value.raw.trimStart().replace(/\n$/, "").match(/\n/g)?.length ?? 0)
       };
     });
   }
-  static record(value) {
-    if (!_CsvReferentialCodec.object(value)) return false;
-    return _CsvReferentialCodec.object(value.record) && Object.values(value.record).every((item) => typeof item === "string") && _CsvReferentialCodec.object(value.info) && typeof value.info.lines === "number" && Number.isSafeInteger(value.info.lines) && value.info.lines > 0 && typeof value.raw === "string";
+  record(value) {
+    if (!this.object(value)) return false;
+    return this.object(value.record) && Object.values(value.record).every((item) => typeof item === "string") && this.object(value.info) && typeof value.info.lines === "number" && Number.isSafeInteger(value.info.lines) && value.info.lines > 0 && typeof value.raw === "string";
   }
-  static object(value) {
+  object(value) {
     return value !== null && typeof value === "object" && !Array.isArray(value);
   }
 };
 
-// packages/adapter/csv-referential-repository/src/csv-referential-repository.ts
-var CsvReferentialRepository = class _CsvReferentialRepository {
-  constructor(options) {
-    this.options = options;
+// packages/adapter/csv-referential-repository/src/speaker-allocation-history.ts
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+var SpeakerAllocationHistory = class {
+  constructor(collaborators, root, command = promisify(execFile)) {
+    this.collaborators = collaborators;
+    this.root = root;
+    this.command = command;
   }
-  options;
-  async load() {
-    const [hostsSource, speakersSource] = await Promise.all([
-      readFile(
-        await _CsvReferentialRepository.localPath(
-          this.options.workspaceRoot,
-          this.options.hostsPath
-        ),
-        "utf8"
-      ),
-      readFile(
-        await _CsvReferentialRepository.localPath(
-          this.options.workspaceRoot,
-          this.options.speakersPath
-        ),
-        "utf8"
-      )
-    ]);
-    return CsvReferentialCodec.decode(
-      hostsSource,
-      speakersSource,
-      this.options.hostsPath,
-      this.options.speakersPath
+  collaborators;
+  root;
+  command;
+  async read() {
+    const options = {
+      cwd: this.root,
+      encoding: "utf8",
+      timeout: 3e4,
+      maxBuffer: 16 * 1024 * 1024
+    };
+    try {
+      const shallow = await this.command(
+        "git",
+        ["rev-parse", "--is-shallow-repository"],
+        options
+      );
+      if (shallow.stdout.trim() !== "false")
+        throw new SpeakerCatalogHistoryError();
+      const history = await this.command(
+        "git",
+        ["log", "--all", "--format=", "-p", "--", "referentials/speakers.csv"],
+        options
+      );
+      const words = history.stdout.match(/\b[\w-]+\b/g) ?? [];
+      return [
+        ...new Set(
+          words.filter(
+            this.collaborators.referentialIdentifiers.asSpeakerId.bind(
+              this.collaborators.referentialIdentifiers
+            )
+          )
+        )
+      ].sort();
+    } catch {
+      throw new SpeakerCatalogHistoryError();
+    }
+  }
+};
+
+// packages/adapter/csv-referential-repository/src/speaker-allocation-state-codec.ts
+var STATE_LINE_WIDTH = 80;
+var STATE_INDENT_WIDTH = 2;
+var SpeakerAllocationStateCodec = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  decode(source) {
+    let value;
+    try {
+      value = JSON.parse(source);
+    } catch {
+      throw new ProposalSourceError("invalid");
+    }
+    if (!this.validState(value)) throw new ProposalSourceError("invalid");
+    return [...value.reservedIds];
+  }
+  encode(reservedIds) {
+    const state = { version: 1, reservedIds };
+    const text = `${JSON.stringify(state, null, "	")}
+`;
+    const inline = `[${state.reservedIds.map((id) => JSON.stringify(id)).join(", ")}]`;
+    const property = '"reservedIds": ';
+    if (STATE_INDENT_WIDTH + property.length + inline.length > STATE_LINE_WIDTH)
+      return text;
+    const expanded = JSON.stringify(state.reservedIds, null, "	").replaceAll(
+      "\n",
+      "\n	"
+    );
+    return text.replace(`	${property}${expanded}`, `	${property}${inline}`);
+  }
+  validState(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value))
+      return false;
+    const state = value;
+    return state.version === 1 && Array.isArray(state.reservedIds) && state.reservedIds.every(
+      (id) => typeof id === "string" && this.collaborators.referentialIdentifiers.asSpeakerId(id) !== void 0
     );
   }
-  static async localPath(rootInput, relativeInput) {
-    const root = await realpath(resolve(rootInput));
-    const absolute = resolve(root, relativeInput);
-    _CsvReferentialRepository.assertInside(root, absolute);
-    const resolved = await realpath(absolute);
-    _CsvReferentialRepository.assertInside(root, resolved);
-    return resolved;
+};
+
+// packages/adapter/csv-referential-repository/src/speaker-catalog-csv.ts
+var IMPORT_COLUMNS = [
+  "speaker_id",
+  "firstname",
+  "lastname",
+  "company",
+  "mail",
+  "phone",
+  "display_name",
+  "picture_url",
+  "source_provider",
+  "source_event",
+  "source_speaker_id"
+];
+var SpeakerCatalogCsv = class {
+  decode(source) {
+    return this.document(source).rows.map((row) => ({
+      id: row.speaker_id ?? "",
+      firstName: row.firstname ?? "",
+      lastName: row.lastname ?? "",
+      phone: row.phone ?? "",
+      displayName: row.display_name ?? "",
+      email: row.mail ?? "",
+      company: row.company ?? "",
+      pictureUrl: row.picture_url ?? "",
+      ...[row.source_provider, row.source_event, row.source_speaker_id].some(
+        Boolean
+      ) ? {
+        sourceIdentity: {
+          provider: row.source_provider ?? "",
+          event: row.source_event ?? "",
+          speakerId: row.source_speaker_id ?? ""
+        }
+      } : {}
+    }));
   }
-  static assertInside(root, candidate) {
-    const child = relative(root, candidate);
-    if (isAbsolute(child) || child === ".." || child.startsWith(`..${sep2}`)) {
-      throw new Error("Referential path must stay inside the checkout");
+  encode(source, entries) {
+    const original = this.document(source);
+    const columns = [.../* @__PURE__ */ new Set([...original.columns, ...IMPORT_COLUMNS])];
+    const records = new Map(original.rows.map((row) => [row.speaker_id, row]));
+    if (records.size !== original.rows.length || new Set(entries.map((entry) => entry.id)).size !== entries.length)
+      throw new ProposalSourceError("conflict");
+    const rows = entries.map((entry) => ({
+      ...records.get(entry.id),
+      speaker_id: entry.id,
+      firstname: entry.firstName,
+      lastname: entry.lastName,
+      phone: entry.phone,
+      display_name: entry.displayName,
+      mail: entry.email,
+      company: entry.company,
+      picture_url: entry.pictureUrl,
+      source_provider: entry.sourceIdentity?.provider ?? "",
+      source_event: entry.sourceIdentity?.event ?? "",
+      source_speaker_id: entry.sourceIdentity?.speakerId ?? ""
+    }));
+    const lines = [
+      columns,
+      ...rows.map(
+        (row) => columns.map((column) => row[column] ?? "")
+      )
+    ];
+    return `${lines.map((row) => row.map(this.escape.bind(this)).join(",")).join("\n")}
+`;
+  }
+  document(source) {
+    const parsed = parse4(source, {
+      bom: true,
+      skip_empty_lines: true
+    });
+    if (!Array.isArray(parsed)) throw new ProposalSourceError("invalid");
+    const records = parsed.map((row) => {
+      if (!Array.isArray(row) || !row.every((value) => typeof value === "string"))
+        throw new ProposalSourceError("invalid");
+      return row;
+    });
+    const columns = records.shift() ?? [];
+    if (!columns.includes("speaker_id") || new Set(columns).size !== columns.length)
+      throw new ProposalSourceError("invalid");
+    return {
+      columns,
+      rows: records.map(
+        (values) => Object.fromEntries(
+          columns.map((column, index) => [column, values[index]])
+        )
+      )
+    };
+  }
+  escape(value) {
+    return /[",\r\n]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value;
+  }
+};
+
+// packages/adapter/csv-referential-repository/src/dependency-composition.ts
+var CsvReferentialRepositoryComposition = class {
+  csvReferentialCodec() {
+    return new CsvReferentialCodec();
+  }
+  csvReferentialRepository(...args) {
+    return new CsvReferentialRepository(
+      { csvReferentialCodec: this.csvReferentialCodec() },
+      ...args
+    );
+  }
+  csvSpeakerCatalogStore(...args) {
+    return new CsvSpeakerCatalogStore(
+      {
+        speakerCatalogCsv: this.speakerCatalogCsv(),
+        speakerAllocationStateCodec: this.speakerAllocationStateCodec(),
+        createSpeakerAllocationHistory: (...args2) => this.speakerAllocationHistory(...args2),
+        createCsvReferentialRepository: (...args2) => this.csvReferentialRepository(...args2)
+      },
+      ...args
+    );
+  }
+  speakerAllocationHistory(...args) {
+    return new SpeakerAllocationHistory(
+      {
+        referentialIdentifiers: new ReferentialDomainComposition().referentialIdentifiers()
+      },
+      ...args
+    );
+  }
+  speakerAllocationStateCodec() {
+    return new SpeakerAllocationStateCodec({
+      referentialIdentifiers: new ReferentialDomainComposition().referentialIdentifiers()
+    });
+  }
+  speakerCatalogCsv() {
+    return new SpeakerCatalogCsv();
+  }
+};
+
+// packages/adapter/github-event-comment-repository/src/github-event-comment-repository-contracts.ts
+var EVENT_DIAGNOSTIC_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics:v1 -->";
+var DUPLICATE_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics-duplicate:v1 -->";
+var COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER = "<!-- meetup-automation:communication-diagnostics:v1 -->";
+
+// packages/adapter/github-event-comment-repository/src/diagnostic-comment-presenter.ts
+var DiagnosticCommentPresenter = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  render(diagnostics, messages5 = this.collaborators.createEventCommentMessages()) {
+    const actionable = /* @__PURE__ */ new Map();
+    for (const item of diagnostics) {
+      if (this.collaborators.organizerDiagnosticPolicy.suppressed(
+        item,
+        diagnostics
+      )) {
+        continue;
+      }
+      const presentation = this.collaborators.diagnosticPresenter.presentDiagnostic(
+        item,
+        messages5
+      );
+      actionable.set(
+        `${presentation.field}:${presentation.message}`,
+        presentation
+      );
     }
+    if (actionable.size === 0) {
+      return `${EVENT_DIAGNOSTIC_COMMENT_MARKER}
+
+${messages5.t("comment.resolved")}`;
+    }
+    const lines = [...actionable.values()].sort(
+      (left, right) => left.order - right.order || left.field.localeCompare(right.field, messages5.locale, {
+        numeric: true
+      }) || left.message.localeCompare(right.message, messages5.locale)
+    ).map(({ field, message }) => `- [ ] **${field}**: ${message}`);
+    return [EVENT_DIAGNOSTIC_COMMENT_MARKER, "", ...lines].join("\n");
   }
 };
 
@@ -45343,8 +49899,308 @@ var GUIDANCE = new Map([
   ]
 ]);
 
+// packages/adapter/github-event-comment-repository/src/diagnostic-presentation.ts
+var DiagnosticPresenter = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  FIELD_ALIASES = new Map([
+    ...FIELD_ORDER.map((field) => [field, field]),
+    ["eventTitle", "Event Title"],
+    ["event_title", "Event Title"],
+    ["date", "Event Date"],
+    ["event_date", "Event Date"],
+    ["host", "Hoster"],
+    ["hoster", "Hoster"],
+    ["hostReference", "Hoster"],
+    ["description", "Event Description"],
+    ["event_description", "Event Description"],
+    ["agenda", "Agenda"],
+    ["publicationLinks.meetup", "Meetup Link"],
+    ["meetup_link", "Meetup Link"],
+    ["publicationLinks.community", "CNCF Link"],
+    ["cncf_link", "CNCF Link"],
+    ["publicationLinks.assets", "Drive Link"],
+    ["drive_link", "Drive Link"],
+    ["publicationLinks.feedback", "OpenFeedback Link"],
+    ["openfeedback_link", "OpenFeedback Link"],
+    ["confirmations.host", "Host confirmation"],
+    ["confirmations.speakers", "Speaker confirmation"],
+    ["occurrenceStatus", "Event Status"],
+    ["event_status", "Event Status"]
+  ]);
+  presentDiagnostic(item, messages5 = this.collaborators.createEventCommentMessages()) {
+    const guidance = GUIDANCE.get(item.code);
+    const referential = /^referential\.(host|contact|speaker)\./.test(
+      item.code
+    );
+    const fallback = guidance?.[0] ?? (referential ? "Referentials" : "Meetup issue");
+    const [field, section] = this.publicField(item.field, fallback, messages5);
+    const message = guidance ? messages5.t(guidance[1]) : messages5.t(referential ? "comment.referential" : "comment.unknown");
+    const order = FIELD_ORDER.indexOf(section);
+    return { field, message, order: order < 0 ? FIELD_ORDER.length : order };
+  }
+  /** Only known issue headings and numeric agenda positions can reach Markdown. */
+  publicField(field, fallback, messages5 = this.collaborators.createEventCommentMessages()) {
+    const known = this.FIELD_ALIASES.get(field ?? "");
+    if (known) return [known, known];
+    const agenda = field?.match(
+      /^agenda\.(\d{1,6})(?:\.(speakers|description)(?:\.(\d{1,6}))?)?$/
+    );
+    if (agenda) {
+      const entry = Number(agenda[1]) + 1;
+      const speaker2 = agenda[3] === void 0 ? "" : messages5.t("comment.agenda.speaker-suffix", {
+        speaker: Number(agenda[3]) + 1
+      });
+      return [
+        messages5.t("comment.agenda.item", { item: entry, speaker: speaker2 }),
+        "Agenda"
+      ];
+    }
+    const speaker = field?.match(/^speakerReferences\[(\d{1,6})\]$/);
+    if (speaker)
+      return [
+        messages5.t("comment.agenda.speaker", {
+          speaker: Number(speaker[1]) + 1
+        }),
+        "Agenda"
+      ];
+    return [fallback, fallback];
+  }
+};
+
+// packages/adapter/github-event-comment-repository/src/github-event-comment-repository-configuration-error.ts
+var GitHubEventCommentRepositoryConfigurationError = class extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "GitHubEventCommentRepositoryConfigurationError";
+  }
+};
+
+// packages/adapter/github-event-comment-repository/src/github-event-comment-repository-response-error.ts
+var GitHubEventCommentRepositoryResponseError = class extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "GitHubEventCommentRepositoryResponseError";
+  }
+};
+
+// packages/adapter/github-event-comment-repository/src/github-event-comment-repository-scope-error.ts
+var GitHubEventCommentRepositoryScopeError = class extends Error {
+  constructor(expected, received) {
+    super(
+      `GitHub event comment repository is scoped to ${expected}, not ${received}`
+    );
+    this.name = "GitHubEventCommentRepositoryScopeError";
+  }
+};
+
+// packages/adapter/github-event-comment-repository/src/github-event-comment-repository.ts
+var GitHubEventCommentRepository = class {
+  constructor(collaborators, client, options) {
+    this.collaborators = collaborators;
+    this.client = client;
+    this.options = options;
+    this.messages = this.collaborators.createEventCommentMessages(
+      options.locale
+    );
+    this.owner = this.requireRepositoryPart(options.owner, "owner");
+    this.repo = this.requireRepositoryPart(options.repo, "repo");
+    this.repositoryName = `${this.owner}/${this.repo}`;
+    this.authorLogin = options.authorLogin.trim();
+    if (!this.authorLogin)
+      throw new GitHubEventCommentRepositoryConfigurationError(
+        "Managed comment author is required"
+      );
+  }
+  collaborators;
+  client;
+  options;
+  messages;
+  owner;
+  repo;
+  repositoryName;
+  authorLogin;
+  async reconcileDiagnostics(identity, diagnostics) {
+    this.assertScope(identity.repository);
+    const managedComments = await this.listManagedComments(
+      identity.issueNumber
+    );
+    const retired = managedComments.filter(
+      (comment) => comment.body.startsWith(COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER)
+    );
+    const [canonical, ...duplicates] = managedComments.filter(
+      (comment) => !retired.includes(comment)
+    );
+    let changed = await this.retireComments(identity.issueNumber, duplicates);
+    let body = this.collaborators.diagnosticCommentPresenter.render(
+      diagnostics,
+      this.messages
+    );
+    if (canonical && this.options.retainedContent) {
+      const retained = await this.options.retainedContent.load(
+        identity.issueNumber,
+        canonical.id,
+        canonical.body
+      );
+      if (retained) body += `
+
+${retained}`;
+    }
+    if (!canonical) {
+      if (!retired.length && !diagnostics.some((item) => item.severity !== "info")) {
+        return { changed };
+      }
+      await this.client.rest.issues.createComment({
+        owner: this.owner,
+        repo: this.repo,
+        issue_number: identity.issueNumber,
+        body
+      });
+      await this.retireComments(identity.issueNumber, retired, true);
+      return { changed: true };
+    }
+    if (canonical.body !== body) {
+      await this.updateComment(canonical.id, body);
+      changed = true;
+    }
+    const retiredChanged = await this.retireComments(
+      identity.issueNumber,
+      retired,
+      true
+    );
+    return { changed: changed || retiredChanged };
+  }
+  async listManagedComments(issueNumber) {
+    const comments = [];
+    let page = 1;
+    let hasNextPage = true;
+    while (hasNextPage) {
+      const response = await this.client.rest.issues.listComments({
+        owner: this.owner,
+        repo: this.repo,
+        issue_number: issueNumber,
+        page,
+        per_page: 100
+      });
+      if (!Array.isArray(response.data)) {
+        throw new GitHubEventCommentRepositoryResponseError(
+          "GitHub comment list response must contain an array"
+        );
+      }
+      for (const rawComment of response.data) {
+        const comment = this.mapComment(rawComment);
+        if (comment && this.isManagedComment(comment)) {
+          comments.push(comment);
+        }
+      }
+      const linkHeader = this.readHeader(response.headers, "link");
+      hasNextPage = linkHeader === void 0 ? response.data.length === 100 : /<[^>]+>;\s*rel="next"/.test(linkHeader);
+      page += 1;
+    }
+    return comments.sort((left, right) => left.id - right.id);
+  }
+  isManagedComment(comment) {
+    if (!comment.body.startsWith(EVENT_DIAGNOSTIC_COMMENT_MARKER) && !(this.options.retireCommunicationReports && this.authorLogin && comment.body.startsWith(COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER))) {
+      return false;
+    }
+    return comment.authorType === "Bot" && comment.authorLogin?.toLowerCase() === this.authorLogin.toLowerCase();
+  }
+  async retireComments(issueNumber, duplicates, deleteReports = false) {
+    for (const duplicate of duplicates) {
+      if (this.options.retainedContent && await this.options.retainedContent.load(
+        issueNumber,
+        duplicate.id,
+        duplicate.body
+      ))
+        throw new Error("Duplicate diagnostic comment contains managed state");
+      if (deleteReports && this.client.rest.issues.deleteComment) {
+        await this.client.rest.issues.deleteComment({
+          owner: this.owner,
+          repo: this.repo,
+          comment_id: duplicate.id
+        });
+        continue;
+      }
+      await this.updateComment(
+        duplicate.id,
+        `${DUPLICATE_COMMENT_MARKER}
+
+${this.messages.t("comment.duplicate")}`
+      );
+      if (this.client.minimizeComment) {
+        await this.client.minimizeComment({
+          commentId: duplicate.id,
+          classifier: "OUTDATED"
+        });
+      }
+    }
+    return duplicates.length > 0;
+  }
+  async updateComment(commentId, body) {
+    await this.client.rest.issues.updateComment({
+      owner: this.owner,
+      repo: this.repo,
+      comment_id: commentId,
+      body
+    });
+  }
+  assertScope(repository) {
+    if (repository.toLowerCase() !== this.repositoryName.toLowerCase()) {
+      throw new GitHubEventCommentRepositoryScopeError(
+        this.repositoryName,
+        repository
+      );
+    }
+  }
+  mapComment(data) {
+    if (!this.isRecord(data)) {
+      throw new GitHubEventCommentRepositoryResponseError(
+        "GitHub comment must be an object"
+      );
+    }
+    if (!Number.isInteger(data.id) || Number(data.id) <= 0) {
+      throw new GitHubEventCommentRepositoryResponseError(
+        "GitHub comment identifier must be a positive integer"
+      );
+    }
+    if (data.body === null) {
+      return null;
+    }
+    if (typeof data.body !== "string") {
+      throw new GitHubEventCommentRepositoryResponseError(
+        "GitHub comment body must be a string or null"
+      );
+    }
+    const user = this.isRecord(data.user) ? data.user : void 0;
+    return {
+      id: Number(data.id),
+      body: data.body,
+      authorLogin: typeof user?.login === "string" ? user.login : void 0,
+      authorType: typeof user?.type === "string" ? user.type : void 0
+    };
+  }
+  requireRepositoryPart(value, name) {
+    const normalized = value.trim();
+    if (normalized === "" || normalized.includes("/")) {
+      throw new GitHubEventCommentRepositoryConfigurationError(
+        `GitHub ${name} must be a non-empty repository name segment`
+      );
+    }
+    return normalized;
+  }
+  readHeader(headers, name) {
+    const value = headers?.[name];
+    return typeof value === "string" ? value : void 0;
+  }
+  isRecord(value) {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+  }
+};
+
 // packages/adapter/github-event-comment-repository/src/i18n/messages.en.ts
-var EN_MESSAGES5 = {
+var EN_MESSAGES4 = {
   "comment.guidance.proposals.invalid-selection": "Enter distinct proposal numbers, one per line, from their Conference Hall URLs.",
   "comment.guidance.proposals.invalid": "Check the Conference Hall proposal selection and export format.",
   "comment.guidance.proposals.unavailable": "Conference Hall is unavailable. Check the CFP slug and API key, then retry.",
@@ -45413,7 +50269,7 @@ var EN_MESSAGES5 = {
 };
 
 // packages/adapter/github-event-comment-repository/src/i18n/messages.fr.ts
-var FR_MESSAGES5 = {
+var FR_MESSAGES4 = {
   "comment.guidance.proposals.invalid-selection": "Saisissez les num\xE9ros des URL Conference Hall, un par ligne, sans doublons.",
   "comment.guidance.proposals.invalid": "V\xE9rifiez la s\xE9lection des propositions et le format de l'export Conference Hall.",
   "comment.guidance.proposals.unavailable": "Conference Hall est indisponible. V\xE9rifiez le slug du CFP et la cl\xE9 API, puis r\xE9essayez.",
@@ -45554,353 +50410,46 @@ var STAGE_MESSAGES_FR = {
 };
 
 // packages/adapter/github-event-comment-repository/src/i18n/catalog.ts
-var CATALOGS6 = {
-  en: { ...EN_MESSAGES5, ...STAGE_MESSAGES_EN },
-  fr: { ...FR_MESSAGES5, ...STAGE_MESSAGES_FR }
+var CATALOGS5 = {
+  en: { ...EN_MESSAGES4, ...STAGE_MESSAGES_EN },
+  fr: { ...FR_MESSAGES4, ...STAGE_MESSAGES_FR }
 };
 
 // packages/adapter/github-event-comment-repository/src/i18n/event-comment-messages.ts
 var EventCommentMessages = class extends MessageLocalizer {
-  constructor(locale = "en") {
-    super(CATALOGS6, locale);
+  constructor(collaborators, locale = "en") {
+    super(collaborators, CATALOGS5, locale);
   }
 };
 
-// packages/adapter/github-event-comment-repository/src/diagnostic-presentation.ts
-var DiagnosticPresenter = class _DiagnosticPresenter {
-  static FIELD_ALIASES = new Map([
-    ...FIELD_ORDER.map((field) => [field, field]),
-    ["eventTitle", "Event Title"],
-    ["event_title", "Event Title"],
-    ["date", "Event Date"],
-    ["event_date", "Event Date"],
-    ["host", "Hoster"],
-    ["hoster", "Hoster"],
-    ["hostReference", "Hoster"],
-    ["description", "Event Description"],
-    ["event_description", "Event Description"],
-    ["agenda", "Agenda"],
-    ["publicationLinks.meetup", "Meetup Link"],
-    ["meetup_link", "Meetup Link"],
-    ["publicationLinks.community", "CNCF Link"],
-    ["cncf_link", "CNCF Link"],
-    ["publicationLinks.assets", "Drive Link"],
-    ["drive_link", "Drive Link"],
-    ["publicationLinks.feedback", "OpenFeedback Link"],
-    ["openfeedback_link", "OpenFeedback Link"],
-    ["confirmations.host", "Host confirmation"],
-    ["confirmations.speakers", "Speaker confirmation"],
-    ["occurrenceStatus", "Event Status"],
-    ["event_status", "Event Status"]
-  ]);
-  static presentDiagnostic(item, messages5 = new EventCommentMessages()) {
-    const guidance = GUIDANCE.get(item.code);
-    const referential = /^referential\.(host|contact|speaker)\./.test(
-      item.code
-    );
-    const fallback = guidance?.[0] ?? (referential ? "Referentials" : "Meetup issue");
-    const [field, section] = _DiagnosticPresenter.publicField(
-      item.field,
-      fallback,
-      messages5
-    );
-    const message = guidance ? messages5.t(guidance[1]) : messages5.t(referential ? "comment.referential" : "comment.unknown");
-    const order = FIELD_ORDER.indexOf(section);
-    return { field, message, order: order < 0 ? FIELD_ORDER.length : order };
-  }
-  /** Only known issue headings and numeric agenda positions can reach Markdown. */
-  static publicField(field, fallback, messages5 = new EventCommentMessages()) {
-    const known = _DiagnosticPresenter.FIELD_ALIASES.get(field ?? "");
-    if (known) return [known, known];
-    const agenda = field?.match(
-      /^agenda\.(\d{1,6})(?:\.(speakers|description)(?:\.(\d{1,6}))?)?$/
-    );
-    if (agenda) {
-      const entry = Number(agenda[1]) + 1;
-      const speaker2 = agenda[3] === void 0 ? "" : messages5.t("comment.agenda.speaker-suffix", {
-        speaker: Number(agenda[3]) + 1
-      });
-      return [
-        messages5.t("comment.agenda.item", { item: entry, speaker: speaker2 }),
-        "Agenda"
-      ];
-    }
-    const speaker = field?.match(/^speakerReferences\[(\d{1,6})\]$/);
-    if (speaker)
-      return [
-        messages5.t("comment.agenda.speaker", {
-          speaker: Number(speaker[1]) + 1
-        }),
-        "Agenda"
-      ];
-    return [fallback, fallback];
-  }
-};
-
-// packages/adapter/github-event-comment-repository/src/github-event-comment-repository-contracts.ts
-var EVENT_DIAGNOSTIC_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics:v1 -->";
-var DUPLICATE_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics-duplicate:v1 -->";
-var COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER = "<!-- meetup-automation:communication-diagnostics:v1 -->";
-
-// packages/adapter/github-event-comment-repository/src/diagnostic-comment-presenter.ts
-var DiagnosticCommentPresenter = class {
-  static render(diagnostics, messages5 = new EventCommentMessages()) {
-    const actionable = /* @__PURE__ */ new Map();
-    for (const item of diagnostics) {
-      if (OrganizerDiagnosticPolicy.suppressed(item, diagnostics)) {
-        continue;
-      }
-      const presentation = DiagnosticPresenter.presentDiagnostic(
-        item,
-        messages5
-      );
-      actionable.set(
-        `${presentation.field}:${presentation.message}`,
-        presentation
-      );
-    }
-    if (actionable.size === 0) {
-      return `${EVENT_DIAGNOSTIC_COMMENT_MARKER}
-
-${messages5.t("comment.resolved")}`;
-    }
-    const lines = [...actionable.values()].sort(
-      (left, right) => left.order - right.order || left.field.localeCompare(right.field, messages5.locale, {
-        numeric: true
-      }) || left.message.localeCompare(right.message, messages5.locale)
-    ).map(({ field, message }) => `- [ ] **${field}**: ${message}`);
-    return [EVENT_DIAGNOSTIC_COMMENT_MARKER, "", ...lines].join("\n");
-  }
-};
-
-// packages/adapter/github-event-comment-repository/src/github-event-comment-repository-configuration-error.ts
-var GitHubEventCommentRepositoryConfigurationError = class extends Error {
-  constructor(message) {
-    super(message);
-    this.name = "GitHubEventCommentRepositoryConfigurationError";
-  }
-};
-
-// packages/adapter/github-event-comment-repository/src/github-event-comment-repository-response-error.ts
-var GitHubEventCommentRepositoryResponseError = class extends Error {
-  constructor(message) {
-    super(message);
-    this.name = "GitHubEventCommentRepositoryResponseError";
-  }
-};
-
-// packages/adapter/github-event-comment-repository/src/github-event-comment-repository-scope-error.ts
-var GitHubEventCommentRepositoryScopeError = class extends Error {
-  constructor(expected, received) {
-    super(
-      `GitHub event comment repository is scoped to ${expected}, not ${received}`
-    );
-    this.name = "GitHubEventCommentRepositoryScopeError";
-  }
-};
-
-// packages/adapter/github-event-comment-repository/src/github-event-comment-repository.ts
-var GitHubEventCommentRepository = class _GitHubEventCommentRepository {
-  constructor(client, options) {
-    this.client = client;
-    this.options = options;
-    this.messages = new EventCommentMessages(options.locale);
-    this.owner = _GitHubEventCommentRepository.requireRepositoryPart(
-      options.owner,
-      "owner"
-    );
-    this.repo = _GitHubEventCommentRepository.requireRepositoryPart(
-      options.repo,
-      "repo"
-    );
-    this.repositoryName = `${this.owner}/${this.repo}`;
-    this.authorLogin = options.authorLogin.trim();
-    if (!this.authorLogin)
-      throw new GitHubEventCommentRepositoryConfigurationError(
-        "Managed comment author is required"
-      );
-  }
-  client;
-  options;
-  messages;
-  owner;
-  repo;
-  repositoryName;
-  authorLogin;
-  async reconcileDiagnostics(identity, diagnostics) {
-    this.assertScope(identity.repository);
-    const managedComments = await this.listManagedComments(
-      identity.issueNumber
-    );
-    const retired = managedComments.filter(
-      (comment) => comment.body.startsWith(COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER)
-    );
-    const [canonical, ...duplicates] = managedComments.filter(
-      (comment) => !retired.includes(comment)
-    );
-    let changed = await this.retireComments(identity.issueNumber, duplicates);
-    let body = DiagnosticCommentPresenter.render(diagnostics, this.messages);
-    if (canonical && this.options.retainedContent) {
-      const retained = await this.options.retainedContent.load(
-        identity.issueNumber,
-        canonical.id,
-        canonical.body
-      );
-      if (retained) body += `
-
-${retained}`;
-    }
-    if (!canonical) {
-      if (!retired.length && !diagnostics.some((item) => item.severity !== "info")) {
-        return { changed };
-      }
-      await this.client.rest.issues.createComment({
-        owner: this.owner,
-        repo: this.repo,
-        issue_number: identity.issueNumber,
-        body
-      });
-      await this.retireComments(identity.issueNumber, retired, true);
-      return { changed: true };
-    }
-    if (canonical.body !== body) {
-      await this.updateComment(canonical.id, body);
-      changed = true;
-    }
-    const retiredChanged = await this.retireComments(
-      identity.issueNumber,
-      retired,
-      true
-    );
-    return { changed: changed || retiredChanged };
-  }
-  async listManagedComments(issueNumber) {
-    const comments = [];
-    let page = 1;
-    let hasNextPage = true;
-    while (hasNextPage) {
-      const response = await this.client.rest.issues.listComments({
-        owner: this.owner,
-        repo: this.repo,
-        issue_number: issueNumber,
-        page,
-        per_page: 100
-      });
-      if (!Array.isArray(response.data)) {
-        throw new GitHubEventCommentRepositoryResponseError(
-          "GitHub comment list response must contain an array"
-        );
-      }
-      for (const rawComment of response.data) {
-        const comment = _GitHubEventCommentRepository.mapComment(rawComment);
-        if (comment && this.isManagedComment(comment)) {
-          comments.push(comment);
-        }
-      }
-      const linkHeader = _GitHubEventCommentRepository.readHeader(
-        response.headers,
-        "link"
-      );
-      hasNextPage = linkHeader === void 0 ? response.data.length === 100 : /<[^>]+>;\s*rel="next"/.test(linkHeader);
-      page += 1;
-    }
-    return comments.sort((left, right) => left.id - right.id);
-  }
-  isManagedComment(comment) {
-    if (!comment.body.startsWith(EVENT_DIAGNOSTIC_COMMENT_MARKER) && !(this.options.retireCommunicationReports && this.authorLogin && comment.body.startsWith(COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER))) {
-      return false;
-    }
-    return comment.authorType === "Bot" && comment.authorLogin?.toLowerCase() === this.authorLogin.toLowerCase();
-  }
-  async retireComments(issueNumber, duplicates, deleteReports = false) {
-    for (const duplicate of duplicates) {
-      if (this.options.retainedContent && await this.options.retainedContent.load(
-        issueNumber,
-        duplicate.id,
-        duplicate.body
-      ))
-        throw new Error("Duplicate diagnostic comment contains managed state");
-      if (deleteReports && this.client.rest.issues.deleteComment) {
-        await this.client.rest.issues.deleteComment({
-          owner: this.owner,
-          repo: this.repo,
-          comment_id: duplicate.id
-        });
-        continue;
-      }
-      await this.updateComment(
-        duplicate.id,
-        `${DUPLICATE_COMMENT_MARKER}
-
-${this.messages.t("comment.duplicate")}`
-      );
-      if (this.client.minimizeComment) {
-        await this.client.minimizeComment({
-          commentId: duplicate.id,
-          classifier: "OUTDATED"
-        });
-      }
-    }
-    return duplicates.length > 0;
-  }
-  async updateComment(commentId, body) {
-    await this.client.rest.issues.updateComment({
-      owner: this.owner,
-      repo: this.repo,
-      comment_id: commentId,
-      body
+// packages/adapter/github-event-comment-repository/src/dependency-composition.ts
+var GithubEventCommentRepositoryComposition = class {
+  diagnosticCommentPresenter() {
+    return new DiagnosticCommentPresenter({
+      organizerDiagnosticPolicy: new JourneyPolicyComposition().organizerDiagnosticPolicy(),
+      diagnosticPresenter: this.diagnosticPresenter(),
+      createEventCommentMessages: (...args) => this.eventCommentMessages(...args)
     });
   }
-  assertScope(repository) {
-    if (repository.toLowerCase() !== this.repositoryName.toLowerCase()) {
-      throw new GitHubEventCommentRepositoryScopeError(
-        this.repositoryName,
-        repository
-      );
-    }
+  diagnosticPresenter() {
+    return new DiagnosticPresenter({
+      createEventCommentMessages: (...args) => this.eventCommentMessages(...args)
+    });
   }
-  static mapComment(data) {
-    if (!_GitHubEventCommentRepository.isRecord(data)) {
-      throw new GitHubEventCommentRepositoryResponseError(
-        "GitHub comment must be an object"
-      );
-    }
-    if (!Number.isInteger(data.id) || Number(data.id) <= 0) {
-      throw new GitHubEventCommentRepositoryResponseError(
-        "GitHub comment identifier must be a positive integer"
-      );
-    }
-    if (data.body === null) {
-      return null;
-    }
-    if (typeof data.body !== "string") {
-      throw new GitHubEventCommentRepositoryResponseError(
-        "GitHub comment body must be a string or null"
-      );
-    }
-    const user = _GitHubEventCommentRepository.isRecord(data.user) ? data.user : void 0;
-    return {
-      id: Number(data.id),
-      body: data.body,
-      authorLogin: typeof user?.login === "string" ? user.login : void 0,
-      authorType: typeof user?.type === "string" ? user.type : void 0
-    };
+  eventCommentMessages(...args) {
+    return new EventCommentMessages(
+      { localeResolver: new LocalizationComposition().localeResolver() },
+      ...args
+    );
   }
-  static requireRepositoryPart(value, name) {
-    const normalized = value.trim();
-    if (normalized === "" || normalized.includes("/")) {
-      throw new GitHubEventCommentRepositoryConfigurationError(
-        `GitHub ${name} must be a non-empty repository name segment`
-      );
-    }
-    return normalized;
-  }
-  static readHeader(headers, name) {
-    const value = headers?.[name];
-    return typeof value === "string" ? value : void 0;
-  }
-  static isRecord(value) {
-    return typeof value === "object" && value !== null && !Array.isArray(value);
+  gitHubEventCommentRepository(...args) {
+    return new GitHubEventCommentRepository(
+      {
+        diagnosticCommentPresenter: this.diagnosticCommentPresenter(),
+        createEventCommentMessages: (...args2) => this.eventCommentMessages(...args2)
+      },
+      ...args
+    );
   }
 };
 
@@ -45928,11 +50477,162 @@ var GitHubEventRepositoryScopeError = class extends Error {
   }
 };
 
+// packages/adapter/github-event-repository/src/github-event-repository.ts
+var GitHubEventRepository = class {
+  constructor(collaborators, client, options) {
+    this.collaborators = collaborators;
+    this.client = client;
+    this.owner = this.requireRepositoryPart(options.owner, "owner");
+    this.repo = this.requireRepositoryPart(options.repo, "repo");
+    this.repositoryName = `${this.owner}/${this.repo}`;
+  }
+  collaborators;
+  client;
+  owner;
+  repo;
+  repositoryName;
+  async find(identity) {
+    this.assertScope(identity.repository);
+    try {
+      const response = await this.client.rest.issues.get({
+        owner: this.owner,
+        repo: this.repo,
+        issue_number: identity.issueNumber
+      });
+      const document = this.collaborators.gitHubIssueDocumentCodec.decode(
+        response.data,
+        this.repositoryName
+      );
+      if (document && document.identity.issueNumber !== identity.issueNumber) {
+        throw new GitHubEventRepositoryResponseError(
+          `GitHub returned issue ${document.identity.issueNumber} while ${identity.issueNumber} was requested`
+        );
+      }
+      return document;
+    } catch (error2) {
+      if (this.isNotFoundError(error2)) {
+        return null;
+      }
+      throw error2;
+    }
+  }
+  async applyPatch(identity, patch) {
+    this.assertScope(identity.repository);
+    const changes = {};
+    if (patch.issueTitle !== void 0) {
+      changes.title = patch.issueTitle;
+    }
+    if (patch.body !== void 0) {
+      changes.body = patch.body;
+    }
+    if (patch.labels !== void 0) {
+      changes.labels = [...patch.labels];
+    }
+    if (Object.keys(changes).length === 0) {
+      return;
+    }
+    await this.client.rest.issues.update({
+      owner: this.owner,
+      repo: this.repo,
+      issue_number: identity.issueNumber,
+      ...changes
+    });
+  }
+  async listPage(query) {
+    this.assertScope(query.repository);
+    const page = this.parseCursor(query.cursor);
+    const pageSize = this.parsePageSize(query.pageSize);
+    const parameters = {
+      owner: this.owner,
+      repo: this.repo,
+      state: query.includeClosed ? "all" : "open",
+      page,
+      per_page: pageSize
+    };
+    if (query.label !== void 0 && query.label.trim() !== "") {
+      parameters.labels = query.label.trim();
+    }
+    const response = await this.client.rest.issues.listForRepo(parameters);
+    if (!Array.isArray(response.data)) {
+      throw new GitHubEventRepositoryResponseError(
+        "GitHub issue list response must contain an array"
+      );
+    }
+    const items = response.data.map(
+      (issue2) => this.collaborators.gitHubIssueDocumentCodec.decode(
+        issue2,
+        this.repositoryName
+      )
+    ).filter((issue2) => issue2 !== null);
+    const linkHeader = this.readHeader(response.headers, "link");
+    const hasNextPage = linkHeader === void 0 ? response.data.length === pageSize : /<[^>]+>;\s*rel="next"/.test(linkHeader);
+    return {
+      items: Object.freeze(items),
+      ...hasNextPage ? { nextCursor: String(page + 1) } : {}
+    };
+  }
+  assertScope(repository) {
+    if (repository.toLowerCase() !== this.repositoryName.toLowerCase()) {
+      throw new GitHubEventRepositoryScopeError(
+        this.repositoryName,
+        repository
+      );
+    }
+  }
+  requireRepositoryPart(value, name) {
+    const normalized = value.trim();
+    if (normalized === "" || normalized.includes("/")) {
+      throw new GitHubEventRepositoryConfigurationError(
+        `GitHub ${name} must be a non-empty repository name segment`
+      );
+    }
+    return normalized;
+  }
+  parseCursor(cursor) {
+    if (cursor === void 0) {
+      return 1;
+    }
+    if (!/^[1-9]\d*$/.test(cursor)) {
+      throw new GitHubEventRepositoryConfigurationError(
+        `Invalid GitHub pagination cursor "${cursor}"`
+      );
+    }
+    return Number(cursor);
+  }
+  parsePageSize(pageSize) {
+    if (pageSize === void 0) {
+      return 100;
+    }
+    if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) {
+      throw new GitHubEventRepositoryConfigurationError(
+        "GitHub page size must be an integer between 1 and 100"
+      );
+    }
+    return pageSize;
+  }
+  isNotFoundError(error2) {
+    if (!this.isRecord(error2)) {
+      return false;
+    }
+    if (error2.status === 404) {
+      return true;
+    }
+    return this.isRecord(error2.response) && error2.response.status === 404;
+  }
+  readHeader(headers, name) {
+    const value = headers?.[name];
+    return typeof value === "string" ? value : void 0;
+  }
+  isRecord(value) {
+    return typeof value === "object" && value !== null;
+  }
+};
+
 // packages/adapter/github-event-repository/src/github-issue-document-codec.ts
-var GitHubIssueDocumentCodec = class _GitHubIssueDocumentCodec {
+var GitHubIssueDocumentCodec = class {
   /** Map one GitHub issue response or webhook snapshot into the domain document. */
-  static decode(data, repository) {
-    const issue2 = _GitHubIssueDocumentCodec.asRecord(data, "GitHub issue");
+  decode(data, repository) {
+    const issue2 = this.asRecord(data, "GitHub issue");
     if (issue2.pull_request !== void 0 && issue2.pull_request !== null) {
       return null;
     }
@@ -45965,17 +50665,17 @@ var GitHubIssueDocumentCodec = class _GitHubIssueDocumentCodec {
       identity: { repository, issueNumber: Number(issue2.number) },
       issueState: issue2.state,
       issueTitle: issue2.title,
-      labels: _GitHubIssueDocumentCodec.mapLabels(issue2.labels),
+      labels: this.mapLabels(issue2.labels),
       body: issue2.body ?? ""
     };
   }
-  static mapLabels(labels) {
+  mapLabels(labels) {
     const result = [];
     for (const label of labels) {
       let name;
       if (typeof label === "string") {
         name = label;
-      } else if (_GitHubIssueDocumentCodec.isRecord(label) && typeof label.name === "string") {
+      } else if (this.isRecord(label) && typeof label.name === "string") {
         name = label.name;
       }
       if (name && !result.includes(name)) {
@@ -45984,260 +50684,1702 @@ var GitHubIssueDocumentCodec = class _GitHubIssueDocumentCodec {
     }
     return Object.freeze(result);
   }
-  static asRecord(value, label) {
-    if (!_GitHubIssueDocumentCodec.isRecord(value)) {
+  asRecord(value, label) {
+    if (!this.isRecord(value)) {
       throw new GitHubEventRepositoryResponseError(
         `${label} must be an object`
       );
     }
     return value;
   }
-  static isRecord(value) {
+  isRecord(value) {
     return typeof value === "object" && value !== null && !Array.isArray(value);
   }
 };
 
-// packages/adapter/github-event-repository/src/github-event-repository.ts
-var GitHubEventRepository = class _GitHubEventRepository {
-  constructor(client, options) {
-    this.client = client;
-    this.owner = _GitHubEventRepository.requireRepositoryPart(
-      options.owner,
-      "owner"
+// packages/adapter/github-event-repository/src/dependency-composition.ts
+var GithubEventRepositoryComposition = class {
+  gitHubEventRepository(...args) {
+    return new GitHubEventRepository(
+      { gitHubIssueDocumentCodec: this.gitHubIssueDocumentCodec() },
+      ...args
     );
-    this.repo = _GitHubEventRepository.requireRepositoryPart(
-      options.repo,
-      "repo"
-    );
-    this.repositoryName = `${this.owner}/${this.repo}`;
   }
-  client;
-  owner;
-  repo;
-  repositoryName;
-  async find(identity) {
-    this.assertScope(identity.repository);
-    try {
-      const response = await this.client.rest.issues.get({
-        owner: this.owner,
-        repo: this.repo,
-        issue_number: identity.issueNumber
-      });
-      const document = GitHubIssueDocumentCodec.decode(
-        response.data,
-        this.repositoryName
-      );
-      if (document && document.identity.issueNumber !== identity.issueNumber) {
-        throw new GitHubEventRepositoryResponseError(
-          `GitHub returned issue ${document.identity.issueNumber} while ${identity.issueNumber} was requested`
-        );
-      }
-      return document;
-    } catch (error2) {
-      if (_GitHubEventRepository.isNotFoundError(error2)) {
-        return null;
-      }
-      throw error2;
-    }
-  }
-  async applyPatch(identity, patch) {
-    this.assertScope(identity.repository);
-    const changes = {};
-    if (patch.issueTitle !== void 0) {
-      changes.title = patch.issueTitle;
-    }
-    if (patch.body !== void 0) {
-      changes.body = patch.body;
-    }
-    if (patch.labels !== void 0) {
-      changes.labels = [...patch.labels];
-    }
-    if (Object.keys(changes).length === 0) {
-      return;
-    }
-    await this.client.rest.issues.update({
-      owner: this.owner,
-      repo: this.repo,
-      issue_number: identity.issueNumber,
-      ...changes
-    });
-  }
-  async listPage(query) {
-    this.assertScope(query.repository);
-    const page = _GitHubEventRepository.parseCursor(query.cursor);
-    const pageSize = _GitHubEventRepository.parsePageSize(query.pageSize);
-    const parameters = {
-      owner: this.owner,
-      repo: this.repo,
-      state: query.includeClosed ? "all" : "open",
-      page,
-      per_page: pageSize
-    };
-    if (query.label !== void 0 && query.label.trim() !== "") {
-      parameters.labels = query.label.trim();
-    }
-    const response = await this.client.rest.issues.listForRepo(parameters);
-    if (!Array.isArray(response.data)) {
-      throw new GitHubEventRepositoryResponseError(
-        "GitHub issue list response must contain an array"
-      );
-    }
-    const items = response.data.map(
-      (issue2) => GitHubIssueDocumentCodec.decode(issue2, this.repositoryName)
-    ).filter((issue2) => issue2 !== null);
-    const linkHeader = _GitHubEventRepository.readHeader(
-      response.headers,
-      "link"
-    );
-    const hasNextPage = linkHeader === void 0 ? response.data.length === pageSize : /<[^>]+>;\s*rel="next"/.test(linkHeader);
-    return {
-      items: Object.freeze(items),
-      ...hasNextPage ? { nextCursor: String(page + 1) } : {}
-    };
-  }
-  assertScope(repository) {
-    if (repository.toLowerCase() !== this.repositoryName.toLowerCase()) {
-      throw new GitHubEventRepositoryScopeError(
-        this.repositoryName,
-        repository
-      );
-    }
-  }
-  static requireRepositoryPart(value, name) {
-    const normalized = value.trim();
-    if (normalized === "" || normalized.includes("/")) {
-      throw new GitHubEventRepositoryConfigurationError(
-        `GitHub ${name} must be a non-empty repository name segment`
-      );
-    }
-    return normalized;
-  }
-  static parseCursor(cursor) {
-    if (cursor === void 0) {
-      return 1;
-    }
-    if (!/^[1-9]\d*$/.test(cursor)) {
-      throw new GitHubEventRepositoryConfigurationError(
-        `Invalid GitHub pagination cursor "${cursor}"`
-      );
-    }
-    return Number(cursor);
-  }
-  static parsePageSize(pageSize) {
-    if (pageSize === void 0) {
-      return 100;
-    }
-    if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) {
-      throw new GitHubEventRepositoryConfigurationError(
-        "GitHub page size must be an integer between 1 and 100"
-      );
-    }
-    return pageSize;
-  }
-  static isNotFoundError(error2) {
-    if (!_GitHubEventRepository.isRecord(error2)) {
-      return false;
-    }
-    if (error2.status === 404) {
-      return true;
-    }
-    return _GitHubEventRepository.isRecord(error2.response) && error2.response.status === 404;
-  }
-  static readHeader(headers, name) {
-    const value = headers?.[name];
-    return typeof value === "string" ? value : void 0;
-  }
-  static isRecord(value) {
-    return typeof value === "object" && value !== null;
+  gitHubIssueDocumentCodec() {
+    return new GitHubIssueDocumentCodec();
   }
 };
 
-// packages/adapter/github-organizer-attention/src/attention-record-fields.ts
-var AttentionRecordFields = class _AttentionRecordFields {
-  static record(value) {
-    if (typeof value !== "object" || value === null || Array.isArray(value))
-      throw new Error("Invalid attention record object");
-    return value;
+// packages/adapter/github-issue-form-event-document-codec/src/github-issue-form-event-document-codec-contracts.ts
+var CURRENT_SCHEMA_MARKER = "<!-- meetup-event-schema:1 -->";
+var SCHEMA_MARKER_NAME = "meetup-event-schema";
+var REFERENCE_MARKER_NAME = "meetup-event-references";
+var STABLE_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._:-]*$/;
+var HEADINGS = Object.freeze({
+  eventTitle: "Event Title",
+  date: "Event Date",
+  host: "Hoster",
+  description: "Event Description",
+  agenda: "Agenda",
+  proposals: "Conference Hall proposals",
+  meetupLink: "Meetup Link",
+  communityLink: "CNCF Link",
+  assetsLink: "Drive Link",
+  feedbackLink: "OpenFeedback Link",
+  slides: "Slides & Content",
+  communication: "Communication",
+  aperitif: "Aperitif",
+  restaurant: "Restaurant / Bar",
+  postEvent: "Post event",
+  occurrenceStatus: "Event Status"
+});
+
+// packages/adapter/github-issue-form-event-document-codec/src/event-reference-metadata.ts
+var EventReferenceMetadata = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
   }
-  static text(value, pattern) {
-    if (typeof value !== "string" || !pattern.test(value))
-      throw new Error("Invalid attention record text");
-    return value;
+  collaborators;
+  readReferenceMetadata(body, diagnostics) {
+    const markers = this.collaborators.managedIssueMarkers.readManagedMarkerValues(
+      body,
+      REFERENCE_MARKER_NAME
+    );
+    if (markers.length === 0) {
+      return void 0;
+    }
+    if (markers.length > 1) {
+      diagnostics.push(
+        this.collaborators.eventDiagnostics.diagnostic({
+          code: "event.document.reference-metadata.duplicate",
+          severity: "error",
+          category: "invalid",
+          message: "The event document contains duplicate reference metadata",
+          fixAvailable: true
+        })
+      );
+    }
+    try {
+      const parsed = JSON.parse(markers[0]);
+      if (this.collaborators.referenceMetadataShape.isReferenceMetadata(parsed)) {
+        return { kind: "bound", value: parsed };
+      }
+      if (this.collaborators.referenceMetadataShape.isLegacyReferenceMetadata(
+        parsed
+      )) {
+        return { kind: "legacy", value: parsed };
+      }
+      throw new Error("invalid metadata shape");
+    } catch {
+      diagnostics.push(
+        this.collaborators.eventDiagnostics.diagnostic({
+          code: "event.document.reference-metadata.invalid",
+          severity: "error",
+          category: "invalid",
+          message: "Stable reference metadata is malformed",
+          fixAvailable: true
+        })
+      );
+      return void 0;
+    }
   }
-  static integer(value, positive = false) {
-    if (typeof value !== "number" || !Number.isSafeInteger(value) || positive && value <= 0)
-      throw new Error("Invalid attention record integer");
-    return value;
+  applyReferenceMetadata(event, metadata, diagnostics) {
+    if (metadata.kind === "legacy") {
+      diagnostics.push(this.legacyMetadataDiagnostic());
+      return event;
+    }
+    const boundMetadata = metadata.value;
+    const restored = {
+      ...event,
+      host: this.collaborators.referenceBindings.restoreBoundReference(
+        event.host,
+        boundMetadata.host
+      ),
+      agenda: event.agenda.map((entry) => ({
+        ...entry,
+        speakers: entry.speakers.map(
+          (speaker) => this.collaborators.referenceBindings.restoreBoundSpeaker(
+            speaker,
+            boundMetadata.speakers
+          )
+        )
+      }))
+    };
+    if (!this.referenceMetadataEqual(
+      boundMetadata,
+      this.referenceMetadata(restored)
+    )) {
+      diagnostics.push(this.staleMetadataDiagnostic());
+    }
+    return restored;
   }
-  static choice(value, values) {
-    const found = values.find((candidate) => candidate === value);
-    if (found === void 0)
-      throw new Error("Invalid attention record variant");
-    return found;
+  referenceMetadata(event) {
+    return {
+      schemaVersion: 2,
+      host: event.host?.id ? this.collaborators.referenceBindings.referenceBinding(
+        event.host,
+        event.host.id
+      ) : null,
+      speakers: event.agenda.flatMap(
+        (entry) => entry.speakers.flatMap(
+          (speaker) => speaker.id ? [
+            this.collaborators.referenceBindings.referenceBinding(
+              speaker,
+              speaker.id
+            )
+          ] : []
+        )
+      )
+    };
   }
-  static instant(value) {
-    const text = _AttentionRecordFields.text(value, /^\d{4}-\d{2}-\d{2}T/);
-    if (!Number.isFinite(Date.parse(text)))
-      throw new Error("Invalid attention record timestamp");
-    return text;
+  referenceMetadataEqual(left, right) {
+    return this.sameBinding(left.host, right.host) && left.speakers.length === right.speakers.length && left.speakers.every(
+      (speaker, index) => this.sameBinding(speaker, right.speakers[index])
+    );
+  }
+  sameBinding(left, right) {
+    return left === null || right === null ? left === right : left.id === right.id && left.displayName === right.displayName;
+  }
+  legacyMetadataDiagnostic() {
+    return this.collaborators.eventDiagnostics.diagnostic({
+      code: "event.document.reference-metadata.legacy",
+      severity: "warning",
+      category: "migration",
+      message: "Unbound stable reference metadata cannot safely restore participant IDs",
+      fixAvailable: true
+    });
+  }
+  staleMetadataDiagnostic() {
+    return this.collaborators.eventDiagnostics.diagnostic({
+      code: "event.document.reference-metadata.stale",
+      severity: "warning",
+      category: "migration",
+      message: "Stable reference metadata does not match visible participants",
+      fixAvailable: true
+    });
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/github-issue-form-event-document-codec.ts
+var GitHubIssueFormEventDocumentCodec = class {
+  constructor(collaborators, options = {}) {
+    this.collaborators = collaborators;
+    this.reader = this.collaborators.createIssueFormReader(options);
+    this.writer = this.collaborators.createIssueFormWriter(options);
+  }
+  collaborators;
+  reader;
+  writer;
+  decode(document) {
+    return this.reader.decode(document);
+  }
+  createPatch(document, event) {
+    return this.writer.createPatch(document, event);
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/issue-form-checklists.ts
+var IssueFormChecklists = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  readCheckboxes(sections, heading, diagnostics) {
+    const matches = sections.get(heading) ?? [];
+    if (matches.length > 1) {
+      diagnostics.push(
+        this.collaborators.eventDiagnostics.diagnostic({
+          code: "event.document.heading.duplicate",
+          severity: "error",
+          category: "invalid",
+          field: heading,
+          message: `The ${heading} heading occurs more than once`
+        })
+      );
+    }
+    const value = this.collaborators.issueFormSections.cleanResponse(
+      matches[0]?.value ?? ""
+    );
+    if (!value) {
+      return [];
+    }
+    const checkboxes = [];
+    for (const [index, line] of value.split(/\r?\n/).entries()) {
+      if (!line.trim()) {
+        continue;
+      }
+      const checkbox = this.collaborators.markdownLines.parseCheckboxLine(line);
+      if (!checkbox) {
+        diagnostics.push(
+          this.collaborators.eventDiagnostics.diagnostic({
+            code: "event.document.checkbox.invalid",
+            severity: "warning",
+            category: "invalid",
+            field: heading,
+            message: `${heading} checklist line ${index + 1} is malformed`
+          })
+        );
+        continue;
+      }
+      checkboxes.push(checkbox);
+    }
+    return checkboxes;
+  }
+  toOperationalChecklist(checkboxes) {
+    return checkboxes.map(({ checked, label }) => ({
+      name: label,
+      completed: checked
+    }));
+  }
+  replaceOrAppendOperationalChecklist(body, heading, value) {
+    const sections = this.collaborators.issueFormSections.parseSections(body).get(heading) ?? [];
+    if (sections.length > 1 || sections[0] && !this.operationalChecklistIsWellFormed(sections[0].value)) {
+      return body;
+    }
+    return this.collaborators.issueFormSections.replaceOrAppendSection(
+      body,
+      heading,
+      value
+    );
+  }
+  operationalChecklistIsWellFormed(value) {
+    const cleaned = this.collaborators.issueFormSections.cleanResponse(value);
+    return cleaned === "" || cleaned.split(/\r?\n/).filter((line) => line.trim() !== "").every(
+      (line) => this.collaborators.markdownLines.parseCheckboxLine(line) !== void 0
+    );
+  }
+  renderOperationalChecklist(items) {
+    return items.map(({ name, completed }) => `- [${completed ? "x" : " "}] ${name}`).join("\n");
+  }
+  readLogisticsIntent(sections, heading, diagnostics) {
+    const value = this.collaborators.issueFormSections.readSection(
+      sections,
+      heading,
+      false,
+      diagnostics
+    );
+    if (!value) {
+      return "unspecified";
+    }
+    if (value.toLocaleLowerCase("en-US") === "yes") {
+      return "planned";
+    }
+    if (value.toLocaleLowerCase("en-US") === "no") {
+      return "not-planned";
+    }
+    diagnostics.push(
+      this.collaborators.eventDiagnostics.diagnostic({
+        code: "event.logistics.intent.invalid",
+        severity: "error",
+        category: "invalid",
+        field: heading,
+        message: `${heading} must be Yes or No when specified`
+      })
+    );
+    return "unspecified";
+  }
+  replaceOrAppendLogisticsIntent(body, heading, intent) {
+    return intent === "unspecified" || (this.collaborators.issueFormSections.parseSections(body).get(heading)?.length ?? 0) > 1 ? body : this.collaborators.issueFormSections.replaceOrAppendSection(
+      body,
+      heading,
+      this.renderLogisticsIntent(intent)
+    );
+  }
+  renderLogisticsIntent(intent) {
+    switch (intent) {
+      case "planned":
+        return "Yes";
+      case "not-planned":
+        return "No";
+      case "unspecified":
+        return "";
+    }
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/issue-form-event-mapper.ts
+var IssueFormEventMapper = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  map(dto) {
+    const diagnostics = [];
+    const body = dto.parsedBody;
+    const { eventTitle, date, description, host, agenda, occurrenceStatus } = this.fields(dto, diagnostics);
+    const event = {
+      schemaVersion: EVENT_SCHEMA_VERSION,
+      identity: {
+        repository: dto.repository,
+        issueNumber: dto.issueNumber
+      },
+      issueState: dto.issueState ?? "open",
+      issueTitle: dto.issueTitle,
+      labels: [...dto.labels ?? []],
+      eventTitle,
+      date,
+      description,
+      host,
+      agenda,
+      publicationLinks: this.publicationLinks(body, diagnostics),
+      occurrenceStatus,
+      timeZone: dto.timeZone ?? "Europe/Paris",
+      confirmations: {
+        host: dto.labels?.includes("hoster:confirmed") ?? false,
+        speakers: dto.labels?.includes("speakers:confirmed") ?? false
+      },
+      logistics: {
+        aperitif: "unspecified",
+        postEventVenue: "unspecified"
+      },
+      operationalChecklists: {
+        slidesAndContent: [],
+        communication: [],
+        postEvent: []
+      },
+      // Only named checklist evidence can prove follow-up completion.
+      followUpComplete: false
+    };
+    diagnostics.unshift(
+      this.collaborators.eventDiagnostics.diagnostic({
+        code: "event.document.legacy-schema",
+        severity: "info",
+        category: "migration",
+        message: "The legacy event document was migrated to schema version 1",
+        fixAvailable: true
+      })
+    );
+    return { event, diagnostics };
+  }
+  publicationLinks(body, diagnostics) {
+    return {
+      meetup: this.collaborators.issueFormFields.readOptionalString(
+        body.meetup_link,
+        "meetup_link",
+        diagnostics
+      ),
+      community: this.collaborators.issueFormFields.readOptionalString(
+        body.cncf_link,
+        "cncf_link",
+        diagnostics
+      ),
+      feedback: this.collaborators.issueFormFields.readOptionalString(
+        body.openfeedback_link,
+        "openfeedback_link",
+        diagnostics
+      ),
+      assets: this.collaborators.issueFormFields.readOptionalString(
+        body.drive_link,
+        "drive_link",
+        diagnostics
+      )
+    };
+  }
+  fields(dto, diagnostics) {
+    const body = dto.parsedBody;
+    const eventTitle = this.collaborators.issueFormFields.readString(
+      body.event_title,
+      "event_title",
+      diagnostics
+    );
+    const date = this.collaborators.issueFormFields.readString(
+      body.event_date,
+      "event_date",
+      diagnostics
+    );
+    const description = this.collaborators.issueFormFields.readString(
+      body.event_description,
+      "event_description",
+      diagnostics
+    );
+    const host = this.collaborators.issueFormFields.readHost(
+      body.hoster,
+      diagnostics
+    );
+    const agenda = this.collaborators.issueFormFields.readAgenda(
+      body.agenda,
+      diagnostics
+    );
+    const occurrenceStatus = this.collaborators.eventOccurrenceParser.readOccurrenceStatus(
+      dto.labels ?? [],
+      dto.issueState ?? "open",
+      this.occurrenceField(dto, diagnostics),
+      diagnostics
+    );
+    return { eventTitle, date, description, host, agenda, occurrenceStatus };
+  }
+  occurrenceField(dto, diagnostics) {
+    if (OCCURRENCE_STATUSES.some((status2) => {
+      const label = OCCURRENCE_STATUS_LABELS[status2];
+      return label !== null && dto.labels?.includes(label);
+    }))
+      return void 0;
+    const value = dto.parsedBody.event_status;
+    if (value === void 0 || value === null || value === "") return void 0;
+    const status = OCCURRENCE_STATUSES.find((candidate) => candidate === value);
+    if (status) return status;
+    diagnostics.push(
+      this.collaborators.eventDiagnostics.diagnostic({
+        code: "event.occurrence-status.invalid",
+        severity: "error",
+        category: "invalid",
+        field: "event_status",
+        message: "Occurrence status must be scheduled, postponed, held, or cancelled"
+      })
+    );
+    return void 0;
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/issue-form-fields.ts
+var IssueFormFields = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  readString(value, field, diagnostics) {
+    if (value === void 0 || value === null) {
+      return "";
+    }
+    if (typeof value === "string") {
+      return value;
+    }
+    diagnostics.push(
+      this.collaborators.eventDiagnostics.diagnostic({
+        code: "event.document.invalid-field-type",
+        severity: "error",
+        category: "invalid",
+        field,
+        message: `The ${field} field must be a string`
+      })
+    );
+    return "";
+  }
+  readOptionalString(value, field, diagnostics) {
+    if (value === void 0 || value === null || value === "") {
+      return void 0;
+    }
+    return this.readString(value, field, diagnostics);
+  }
+  readHost(value, diagnostics) {
+    if (value === void 0 || value === null) {
+      return void 0;
+    }
+    if (!Array.isArray(value)) {
+      diagnostics.push(
+        this.collaborators.eventDiagnostics.diagnostic({
+          code: "event.document.invalid-hoster-type",
+          severity: "error",
+          category: "invalid",
+          field: "hoster",
+          message: "The hoster field must be an array"
+        })
+      );
+      return void 0;
+    }
+    if (value.length > 1) {
+      diagnostics.push(
+        this.collaborators.eventDiagnostics.diagnostic({
+          code: "event.hoster.multiple",
+          severity: "error",
+          category: "invalid",
+          field: "hoster",
+          message: "A meetup event must have exactly one host"
+        })
+      );
+    }
+    const first = value[0];
+    if (first === void 0) {
+      return void 0;
+    }
+    if (typeof first !== "string") {
+      diagnostics.push(
+        this.collaborators.eventDiagnostics.diagnostic({
+          code: "event.document.invalid-hoster-entry",
+          severity: "error",
+          category: "invalid",
+          field: "hoster",
+          message: "The hoster entry must be a string"
+        })
+      );
+      return void 0;
+    }
+    return this.collaborators.participantReferenceParser.parseParticipantReference(
+      first
+    );
+  }
+  readAgenda(value, diagnostics) {
+    if (value === void 0 || value === null || value === "") {
+      return [];
+    }
+    if (typeof value !== "string") {
+      diagnostics.push(
+        this.collaborators.eventDiagnostics.diagnostic({
+          code: "event.document.invalid-agenda-type",
+          severity: "error",
+          category: "invalid",
+          field: "agenda",
+          message: "The agenda field must be a string"
+        })
+      );
+      return [];
+    }
+    const entries = [];
+    for (const [index, line] of value.split("\n").entries()) {
+      if (line.trim() === "") {
+        continue;
+      }
+      const agendaLine = this.collaborators.participantReferenceParser.parseAgendaLine(line);
+      if (!agendaLine) {
+        diagnostics.push(
+          this.collaborators.eventDiagnostics.diagnostic({
+            code: "event.agenda.legacy-line-invalid",
+            severity: "error",
+            category: "invalid",
+            field: `agenda.${index}`,
+            message: `Agenda line ${index + 1} does not match "- <speaker(s)>: <description>"`
+          })
+        );
+        continue;
+      }
+      entries.push({
+        speakers: agendaLine.speakers.split(",").map(
+          (speaker) => this.collaborators.participantReferenceParser.parseParticipantReference(
+            speaker
+          )
+        ),
+        description: agendaLine.description
+      });
+    }
+    return entries;
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/issue-form-reader.ts
+var IssueFormReader = class {
+  constructor(collaborators, options = {}) {
+    this.collaborators = collaborators;
+    this.timeZone = options.timeZone ?? "Europe/Paris";
+    this.hostConfirmationLabel = options.hostConfirmationLabel ?? "hoster:confirmed";
+    this.speakersConfirmationLabel = options.speakersConfirmationLabel ?? "speakers:confirmed";
+  }
+  collaborators;
+  timeZone;
+  hostConfirmationLabel;
+  speakersConfirmationLabel;
+  decode(document) {
+    const diagnostics = [];
+    const sections = this.collaborators.issueFormSections.parseSections(
+      document.body
+    );
+    const schema = this.collaborators.managedIssueMarkers.readSchema(
+      document.body,
+      diagnostics
+    );
+    const parsedBody = this.readBody(sections, diagnostics);
+    const operations = this.readOperations(sections, diagnostics);
+    const migrated = this.collaborators.issueFormEventMapper.map({
+      repository: document.identity.repository,
+      issueNumber: document.identity.issueNumber,
+      issueState: document.issueState,
+      issueTitle: document.issueTitle,
+      labels: document.labels,
+      parsedBody,
+      timeZone: this.timeZone
+    });
+    diagnostics.push(
+      ...migrated.diagnostics.filter(
+        (item) => schema === 0 || item.code !== "event.document.legacy-schema"
+      )
+    );
+    const event = {
+      ...migrated.event,
+      ...operations,
+      ...this.collaborators.proposalSelectionCodec.read(
+        document.body,
+        diagnostics
+      ),
+      confirmations: {
+        host: document.labels.includes(this.hostConfirmationLabel),
+        speakers: document.labels.includes(this.speakersConfirmationLabel)
+      }
+    };
+    const referenced = this.restoreReferences(
+      this.collaborators.proposalSelectionCodec.restore(event),
+      document.body,
+      schema,
+      diagnostics
+    );
+    return {
+      event: this.restoreLinks(
+        referenced,
+        sections,
+        document.identity.repository
+      ),
+      diagnostics: Object.freeze(diagnostics)
+    };
+  }
+  readBody(sections, diagnostics) {
+    const read = (heading, required = false) => this.collaborators.issueFormSections.readSection(
+      sections,
+      heading,
+      required,
+      diagnostics
+    );
+    return {
+      event_title: read(HEADINGS.eventTitle, true),
+      event_date: read(HEADINGS.date, true),
+      hoster: [read(HEADINGS.host, true)].filter(Boolean),
+      event_description: read(HEADINGS.description, true),
+      agenda: read(HEADINGS.agenda, !sections.has(HEADINGS.proposals)),
+      meetup_link: read(HEADINGS.meetupLink),
+      cncf_link: read(HEADINGS.communityLink),
+      drive_link: read(HEADINGS.assetsLink),
+      openfeedback_link: read(HEADINGS.feedbackLink),
+      event_status: read(HEADINGS.occurrenceStatus)
+    };
+  }
+  readOperations(sections, diagnostics) {
+    const read = (heading) => this.collaborators.issueFormChecklists.toOperationalChecklist(
+      this.collaborators.issueFormChecklists.readCheckboxes(
+        sections,
+        heading,
+        diagnostics
+      )
+    );
+    const slidesAndContent = read(HEADINGS.slides);
+    const communication = read(HEADINGS.communication);
+    const diagnosticOffset = diagnostics.length;
+    const postEvent = read(HEADINGS.postEvent);
+    const followUpComplete = diagnostics.length === diagnosticOffset && this.collaborators.meetupEventOperations.postEventChecklistIsComplete(
+      postEvent
+    );
+    return {
+      operationalChecklists: { slidesAndContent, communication, postEvent },
+      followUpComplete,
+      logistics: {
+        aperitif: this.collaborators.issueFormChecklists.readLogisticsIntent(
+          sections,
+          HEADINGS.aperitif,
+          diagnostics
+        ),
+        postEventVenue: this.collaborators.issueFormChecklists.readLogisticsIntent(
+          sections,
+          HEADINGS.restaurant,
+          diagnostics
+        )
+      }
+    };
+  }
+  restoreReferences(event, body, schema, diagnostics) {
+    const metadata = this.collaborators.eventReferenceMetadata.readReferenceMetadata(
+      body,
+      diagnostics
+    );
+    if (metadata)
+      return this.collaborators.eventReferenceMetadata.applyReferenceMetadata(
+        event,
+        metadata,
+        diagnostics
+      );
+    if (schema === 1)
+      diagnostics.push(
+        this.collaborators.eventDiagnostics.diagnostic({
+          code: "event.document.reference-metadata.missing",
+          severity: "warning",
+          category: "migration",
+          message: "Stable reference metadata is missing",
+          fixAvailable: true
+        })
+      );
+    return event;
+  }
+  restoreLinks(event, sections, repository) {
+    const hostSources = this.collaborators.participantLinks.readSourceLinks(
+      sections.get(HEADINGS.host)?.[0]?.value ?? "",
+      repository
+    );
+    const speakerSources = this.collaborators.participantLinks.readSourceLinks(
+      sections.get(HEADINGS.agenda)?.[0]?.value ?? "",
+      repository
+    );
+    return {
+      ...event,
+      host: event.host ? this.collaborators.participantLinks.restoreSourceLocation(
+        event.host,
+        hostSources
+      ) : void 0,
+      agenda: event.agenda.map((entry) => ({
+        ...entry,
+        speakers: entry.speakers.map(
+          (speaker) => this.collaborators.participantLinks.restoreSourceLocation(
+            speaker,
+            speakerSources
+          )
+        )
+      }))
+    };
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/issue-form-sections.ts
+var IssueFormSections = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  parseSections(body) {
+    const sections = /* @__PURE__ */ new Map();
+    let pending;
+    for (let cursor = 0; cursor < body.length; ) {
+      const lineEnd = this.collaborators.markdownLines.findLineEnd(
+        body,
+        cursor
+      );
+      const nextLineStart = this.collaborators.markdownLines.findNextLineStart(
+        body,
+        lineEnd
+      );
+      const heading = this.collaborators.markdownLines.parseHeadingLine(
+        body.slice(cursor, lineEnd)
+      );
+      if (heading !== void 0) {
+        if (pending) {
+          this.appendSection(sections, {
+            heading: pending.heading,
+            headingStart: pending.headingStart,
+            contentStart: pending.contentStart,
+            contentEnd: cursor,
+            value: body.slice(pending.contentStart, cursor)
+          });
+        }
+        pending = {
+          heading,
+          headingStart: cursor,
+          contentStart: nextLineStart
+        };
+      }
+      cursor = nextLineStart;
+    }
+    if (pending) {
+      this.appendSection(sections, {
+        heading: pending.heading,
+        headingStart: pending.headingStart,
+        contentStart: pending.contentStart,
+        contentEnd: body.length,
+        value: body.slice(pending.contentStart)
+      });
+    }
+    return sections;
+  }
+  appendSection(sections, section) {
+    const existing = sections.get(section.heading) ?? [];
+    sections.set(section.heading, [...existing, section]);
+  }
+  cleanResponse(value) {
+    const trimmed = value.trim();
+    return trimmed === "_No response_" ? "" : trimmed;
+  }
+  replaceOrAppendSection(body, heading, value) {
+    const section = this.parseSections(body).get(heading)?.[0];
+    const normalizedValue = value.trim();
+    if (!section) {
+      if (!normalizedValue) {
+        return body;
+      }
+      const separator = body.length === 0 || body.endsWith("\n\n") ? "" : "\n\n";
+      return `${body}${separator}### ${heading}
+
+${normalizedValue}
+`;
+    }
+    if (this.cleanResponse(section.value) === normalizedValue) {
+      return body;
+    }
+    return `${body.slice(0, section.contentStart)}
+${normalizedValue}
+
+${body.slice(section.contentEnd)}`;
+  }
+  removeSection(body, heading) {
+    const section = this.parseSections(body).get(heading)?.[0];
+    if (!section) {
+      return body;
+    }
+    const before = this.collaborators.markdownLines.trimTrailingWhitespace(
+      body.slice(0, section.headingStart)
+    );
+    const after = this.collaborators.markdownLines.trimLeadingWhitespace(
+      body.slice(section.contentEnd)
+    );
+    if (before === "") {
+      return after;
+    }
+    if (after === "") {
+      return `${before}
+`;
+    }
+    return `${before}
+
+${after}`;
+  }
+  readSection(sections, heading, required, diagnostics) {
+    const matches = sections.get(heading) ?? [];
+    if (matches.length === 0) {
+      if (required) {
+        diagnostics.push(
+          this.collaborators.eventDiagnostics.diagnostic({
+            code: "event.document.heading.missing",
+            severity: "error",
+            category: "invalid",
+            field: heading,
+            message: `The ${heading} heading is missing`,
+            fixAvailable: true
+          })
+        );
+      }
+      return "";
+    }
+    if (matches.length > 1) {
+      diagnostics.push(
+        this.collaborators.eventDiagnostics.diagnostic({
+          code: "event.document.heading.duplicate",
+          severity: "error",
+          category: "invalid",
+          field: heading,
+          message: `The ${heading} heading occurs more than once`
+        })
+      );
+    }
+    return this.cleanResponse(matches[0].value);
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/issue-form-writer.ts
+var IssueFormWriter = class {
+  constructor(collaborators, options = {}) {
+    this.collaborators = collaborators;
+    this.repositoryRef = options.repositoryRef ?? "main";
+  }
+  collaborators;
+  repositoryRef;
+  createPatch(document, event) {
+    const patch = {};
+    if (document.issueTitle !== event.issueTitle)
+      patch.issueTitle = event.issueTitle;
+    if (!this.arraysEqual(document.labels, event.labels))
+      patch.labels = Object.freeze([...event.labels]);
+    const fields = this.renderFields(document, event);
+    const checklists = this.renderOperations(fields, event);
+    const body = this.collaborators.proposalSelectionCodec.write(
+      this.collaborators.managedIssueMarkers.upsertManagedMarkers(
+        checklists,
+        this.collaborators.eventReferenceMetadata.referenceMetadata(event)
+      ),
+      event
+    );
+    if (body !== document.body) patch.body = body;
+    return Object.freeze(patch);
+  }
+  renderFields(document, event) {
+    const render = (participant) => this.renderParticipant(participant, document.identity.repository);
+    const renderSpeaker = (participant) => event.proposalReferences?.length && participant.id ? `${this.collaborators.proposalSelectionCodec.escape(participant.displayName)} [${participant.id}]` : render({
+      ...participant,
+      displayName: this.collaborators.proposalSelectionCodec.escape(
+        participant.displayName
+      )
+    });
+    const fields = [
+      [HEADINGS.eventTitle, event.eventTitle],
+      [HEADINGS.date, event.date],
+      [HEADINGS.host, event.host ? render(event.host) : ""],
+      [HEADINGS.description, event.description],
+      [
+        HEADINGS.agenda,
+        this.collaborators.participantLinks.renderAgenda(event, renderSpeaker)
+      ],
+      [HEADINGS.meetupLink, event.publicationLinks.meetup ?? ""],
+      [HEADINGS.communityLink, event.publicationLinks.community ?? ""],
+      [HEADINGS.assetsLink, event.publicationLinks.assets ?? ""]
+    ];
+    let body = document.body;
+    for (const [heading, value] of fields) {
+      if (heading === HEADINGS.agenda && event.proposalStatus === "stale")
+        continue;
+      body = this.collaborators.issueFormSections.replaceOrAppendSection(
+        body,
+        heading,
+        value
+      );
+    }
+    if (event.publicationLinks.feedback)
+      body = this.collaborators.issueFormSections.replaceOrAppendSection(
+        body,
+        HEADINGS.feedbackLink,
+        event.publicationLinks.feedback
+      );
+    return this.collaborators.issueFormSections.removeSection(
+      body,
+      HEADINGS.occurrenceStatus
+    );
+  }
+  renderOperations(source, event) {
+    let body = source;
+    for (const [heading, items] of [
+      [HEADINGS.slides, event.operationalChecklists.slidesAndContent],
+      [HEADINGS.communication, event.operationalChecklists.communication]
+    ])
+      body = this.collaborators.issueFormChecklists.replaceOrAppendOperationalChecklist(
+        body,
+        heading,
+        this.collaborators.issueFormChecklists.renderOperationalChecklist(
+          items
+        )
+      );
+    body = this.collaborators.issueFormChecklists.replaceOrAppendLogisticsIntent(
+      body,
+      HEADINGS.aperitif,
+      event.logistics.aperitif
+    );
+    body = this.collaborators.issueFormChecklists.replaceOrAppendLogisticsIntent(
+      body,
+      HEADINGS.restaurant,
+      event.logistics.postEventVenue
+    );
+    return this.collaborators.issueFormChecklists.replaceOrAppendOperationalChecklist(
+      body,
+      HEADINGS.postEvent,
+      this.collaborators.issueFormChecklists.renderOperationalChecklist(
+        event.operationalChecklists.postEvent
+      )
+    );
+  }
+  renderParticipant(participant, repository) {
+    if (!participant.id || !participant.source) return participant.displayName;
+    const path = participant.source.path.split("/").map(
+      this.collaborators.participantLinks.encodeUrlSegment.bind(
+        this.collaborators.participantLinks
+      )
+    ).join("/");
+    const ref = this.collaborators.participantLinks.encodeUrlSegment(
+      this.repositoryRef
+    );
+    const url = `https://github.com/${repository}/blob/${ref}/${path}#L${participant.source.line}`;
+    return `[${participant.displayName}](${url})`;
+  }
+  arraysEqual(left, right) {
+    return left.length === right.length && left.every((value, index) => value === right[index]);
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/managed-issue-markers.ts
+var ManagedIssueMarkers = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  readManagedMarkerValues(body, markerName) {
+    return this.findManagedMarkerMatches(body, markerName).map(
+      ({ value }) => value
+    );
+  }
+  replaceManagedMarker(body, markerName, replacement) {
+    const matches = this.findManagedMarkerMatches(body, markerName);
+    if (matches.length === 0) {
+      return { body, found: false };
+    }
+    let result = "";
+    let lastIndex = 0;
+    for (const [index, match] of matches.entries()) {
+      result += body.slice(lastIndex, match.start);
+      if (index === 0) {
+        result += replacement;
+      }
+      lastIndex = match.end;
+    }
+    result += body.slice(lastIndex);
+    return { body: result, found: true };
+  }
+  findManagedMarkerMatches(body, markerName) {
+    const matches = [];
+    for (let cursor = 0; cursor < body.length; ) {
+      const commentStart = body.indexOf("<!--", cursor);
+      if (commentStart === -1) {
+        break;
+      }
+      const commentEnd = body.indexOf("-->", commentStart + 4);
+      if (commentEnd === -1) {
+        break;
+      }
+      const value = this.parseManagedMarkerComment(
+        body.slice(commentStart + 4, commentEnd),
+        markerName
+      );
+      if (value !== void 0) {
+        matches.push({
+          start: commentStart,
+          end: commentEnd + 3,
+          value
+        });
+      }
+      cursor = commentEnd + 3;
+    }
+    return matches;
+  }
+  parseManagedMarkerComment(commentBody, markerName) {
+    const trimmed = commentBody.trim();
+    if (!trimmed.startsWith(markerName)) {
+      return void 0;
+    }
+    let cursor = markerName.length;
+    while (cursor < trimmed.length && this.collaborators.markdownLines.isWhitespaceCharacter(trimmed[cursor])) {
+      cursor += 1;
+    }
+    if (trimmed[cursor] !== ":") {
+      return void 0;
+    }
+    return trimmed.slice(cursor + 1).trim();
+  }
+  upsertManagedMarkers(body, metadata) {
+    const referenceMarker = `<!-- meetup-event-references:${JSON.stringify(metadata).replaceAll("<", "\\u003c").replaceAll(">", "\\u003e")} -->`;
+    const schemaReplacement = this.replaceManagedMarker(
+      body,
+      SCHEMA_MARKER_NAME,
+      CURRENT_SCHEMA_MARKER
+    );
+    const referenceReplacement = this.replaceManagedMarker(
+      schemaReplacement.body,
+      REFERENCE_MARKER_NAME,
+      referenceMarker
+    );
+    let result = referenceReplacement.body;
+    if (!schemaReplacement.found) {
+      result = `${CURRENT_SCHEMA_MARKER}
+${result}`;
+    }
+    if (!referenceReplacement.found) {
+      result = result.replace(
+        CURRENT_SCHEMA_MARKER,
+        `${CURRENT_SCHEMA_MARKER}
+${referenceMarker}`
+      );
+    }
+    return result;
+  }
+  readSchema(body, diagnostics) {
+    const markers = this.readManagedMarkerValues(body, SCHEMA_MARKER_NAME);
+    if (markers.length === 0) {
+      return 0;
+    }
+    if (markers.length > 1) {
+      diagnostics.push(
+        this.collaborators.eventDiagnostics.diagnostic({
+          code: "event.document.schema-marker.duplicate",
+          severity: "error",
+          category: "invalid",
+          message: "The event document contains duplicate schema markers",
+          fixAvailable: true
+        })
+      );
+    }
+    if (markers[0] !== "1") {
+      diagnostics.push(
+        this.collaborators.eventDiagnostics.diagnostic({
+          code: "event.document.schema-version.unsupported",
+          severity: "error",
+          category: "migration",
+          message: "The event document schema version is unsupported"
+        })
+      );
+      return 0;
+    }
+    return 1;
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/markdown-lines.ts
+var MarkdownLines = class {
+  findLineEnd(value, start) {
+    let cursor = start;
+    while (cursor < value.length && value[cursor] !== "\n" && value[cursor] !== "\r") {
+      cursor += 1;
+    }
+    return cursor;
+  }
+  findNextLineStart(value, lineEnd) {
+    if (lineEnd >= value.length) {
+      return value.length;
+    }
+    if (value[lineEnd] === "\r" && value[lineEnd + 1] === "\n") {
+      return lineEnd + 2;
+    }
+    return lineEnd + 1;
+  }
+  trimLeadingWhitespace(value) {
+    let start = 0;
+    while (start < value.length && this.isWhitespaceCharacter(value[start])) {
+      start += 1;
+    }
+    return value.slice(start);
+  }
+  trimTrailingWhitespace(value) {
+    let end = value.length;
+    while (end > 0 && this.isWhitespaceCharacter(value[end - 1])) {
+      end -= 1;
+    }
+    return value.slice(0, end);
+  }
+  isHorizontalWhitespaceCharacter(value) {
+    return value === " " || value === "	";
+  }
+  isWhitespaceCharacter(value) {
+    return value === " " || value === "	" || value === "\n" || value === "\r" || value === "\f" || value === "\v";
+  }
+  parseHeadingLine(line) {
+    if (!line.startsWith("### ")) {
+      return void 0;
+    }
+    const rawHeading = line.slice(4);
+    if (rawHeading.length === 0) {
+      return void 0;
+    }
+    let end = rawHeading.length;
+    while (end > 1 && this.isHorizontalWhitespaceCharacter(rawHeading[end - 1])) {
+      end -= 1;
+    }
+    return rawHeading.slice(0, end).trim();
+  }
+  parseCheckboxLine(line) {
+    let cursor = 0;
+    cursor = this.skipHorizontalWhitespace(line, cursor);
+    if (line[cursor] !== "-") {
+      return void 0;
+    }
+    cursor += 1;
+    if (!this.isHorizontalWhitespaceCharacter(line[cursor] ?? "")) {
+      return void 0;
+    }
+    cursor = this.skipHorizontalWhitespace(line, cursor);
+    if (line[cursor] !== "[") {
+      return void 0;
+    }
+    const checkedMarker = line[cursor + 1];
+    if (checkedMarker !== " " && checkedMarker !== "x" && checkedMarker !== "X" || line[cursor + 2] !== "]") {
+      return void 0;
+    }
+    cursor += 3;
+    if (!this.isHorizontalWhitespaceCharacter(line[cursor] ?? "")) {
+      return void 0;
+    }
+    cursor = this.skipHorizontalWhitespace(line, cursor);
+    const label = line.slice(cursor).trim();
+    if (label === "") {
+      return void 0;
+    }
+    return {
+      checked: checkedMarker.toLowerCase() === "x",
+      label
+    };
+  }
+  skipHorizontalWhitespace(line, cursor) {
+    while (cursor < line.length && this.isHorizontalWhitespaceCharacter(line[cursor])) {
+      cursor += 1;
+    }
+    return cursor;
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/participant-links.ts
+var ParticipantLinks = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  readSourceLinks(value, repository) {
+    const sources = /* @__PURE__ */ new Map();
+    const prefix = `https://github.com/${repository}/blob/`;
+    for (const match of value.matchAll(
+      /\[([^\]]+)\]\((https:\/\/github\.com\/[^)\s]+)\)/g
+    )) {
+      const target = match[2];
+      if (!target.startsWith(prefix)) continue;
+      const location = target.slice(prefix.length).match(/^[^/]+\/(.+)#L([1-9]\d*)$/);
+      if (!location) continue;
+      try {
+        const source = {
+          path: decodeURIComponent(location[1]),
+          line: Number(location[2])
+        };
+        const name = this.collaborators.referenceBindings.normalizeVisibleDisplayName(
+          this.collaborators.proposalSelectionCodec.unescape(match[1])
+        );
+        const previous = sources.get(name);
+        sources.set(
+          name,
+          sources.has(name) && (previous?.path !== source.path || previous?.line !== source.line) ? void 0 : source
+        );
+      } catch {
+      }
+    }
+    return sources;
+  }
+  restoreSourceLocation(participant, sources) {
+    const source = participant.id ? sources.get(
+      this.collaborators.referenceBindings.normalizeVisibleDisplayName(
+        participant.displayName
+      )
+    ) : void 0;
+    return source ? { ...participant, source } : participant;
+  }
+  encodeUrlSegment(value) {
+    return encodeURIComponent(value).replace(
+      /[!'()*]/g,
+      (character) => `%${character.charCodeAt(0).toString(16).toUpperCase()}`
+    );
+  }
+  renderAgenda(event, renderParticipant) {
+    return event.agenda.map(
+      (entry) => `- ${entry.speakers.map(renderParticipant).join(", ")}: ${event.proposalStatus === "current" ? this.collaborators.proposalSelectionCodec.escape(entry.description) : entry.description}`
+    ).join("\n");
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/participant-reference-parser.ts
+var ParticipantReferenceParser = class {
+  parseParticipantReference(value) {
+    const trimmed = value.trim();
+    const markdownLinkLabel = this.parseMarkdownLinkLabel(trimmed);
+    if (markdownLinkLabel !== void 0) {
+      return { displayName: markdownLinkLabel };
+    }
+    const stableReference = this.parseStableIdReference(trimmed);
+    if (stableReference) {
+      return stableReference;
+    }
+    return { displayName: trimmed };
+  }
+  parseAgendaLine(line) {
+    let cursor = 0;
+    cursor = this.skipHorizontalWhitespace(line, cursor);
+    if (line[cursor] !== "-") {
+      return void 0;
+    }
+    cursor += 1;
+    if (!this.isHorizontalWhitespaceCharacter(line[cursor] ?? "")) {
+      return void 0;
+    }
+    cursor = this.skipHorizontalWhitespace(line, cursor);
+    const content = line.slice(cursor);
+    for (let index = 0; index < content.length; index += 1) {
+      if (content[index] !== ":") {
+        continue;
+      }
+      if (!this.isHorizontalWhitespaceCharacter(content[index + 1] ?? "")) {
+        continue;
+      }
+      const speakers = content.slice(0, index).trimEnd();
+      if (speakers === "") {
+        return void 0;
+      }
+      let descriptionStart = index + 1;
+      while (descriptionStart < content.length && this.isHorizontalWhitespaceCharacter(content[descriptionStart])) {
+        descriptionStart += 1;
+      }
+      return {
+        speakers,
+        description: content.slice(descriptionStart)
+      };
+    }
+    return void 0;
+  }
+  parseMarkdownLinkLabel(value) {
+    if (!value.startsWith("[") || !value.endsWith(")")) {
+      return void 0;
+    }
+    const closingBracket = value.indexOf("]");
+    if (closingBracket <= 1 || value[closingBracket + 1] !== "(") {
+      return void 0;
+    }
+    const target = value.slice(closingBracket + 2, -1);
+    if (target === "" || target.includes(")")) {
+      return void 0;
+    }
+    return value.slice(1, closingBracket).trim();
+  }
+  parseStableIdReference(value) {
+    if (!value.endsWith("]")) {
+      return void 0;
+    }
+    const openingBracket = value.lastIndexOf("[");
+    if (openingBracket <= 0 || !this.isWhitespaceCharacter(value[openingBracket - 1] ?? "")) {
+      return void 0;
+    }
+    const id = value.slice(openingBracket + 1, -1);
+    if (!STABLE_ID_PATTERN.test(id)) {
+      return void 0;
+    }
+    const displayName = value.slice(0, openingBracket).trim();
+    if (displayName === "") {
+      return void 0;
+    }
+    return {
+      displayName,
+      id
+    };
+  }
+  isHorizontalWhitespaceCharacter(value) {
+    return value === " " || value === "	";
+  }
+  isWhitespaceCharacter(value) {
+    return this.isHorizontalWhitespaceCharacter(value) || value === "\n" || value === "\r";
+  }
+  skipHorizontalWhitespace(line, cursor) {
+    while (cursor < line.length && this.isHorizontalWhitespaceCharacter(line[cursor])) {
+      cursor += 1;
+    }
+    return cursor;
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/proposal-selection-codec.ts
+var ProposalSelectionCodec = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  read(body, diagnostics) {
+    const sections = this.collaborators.issueFormSections.parseSections(body);
+    const value = this.collaborators.issueFormSections.readSection(
+      sections,
+      HEADINGS.proposals,
+      false,
+      diagnostics
+    );
+    const hasMarker = body.includes("<!-- meetup-proposals:");
+    if ((!value || value === "_No response_") && !hasMarker) return {};
+    const proposalReferences = (value || "!missing-selection").split(/\r?\n/).map((id) => id.trim().replace(/^[-*]\s+/, "")).filter(Boolean);
+    const markers = this.collaborators.managedIssueMarkers.readManagedMarkerValues(
+      body,
+      "meetup-proposals"
+    );
+    if (markers.length > 1 || markers[0] && !/^1:(current|stale)$/.test(markers[0]))
+      diagnostics.push({
+        code: "event.proposals.invalid-selection",
+        severity: "error",
+        category: "invalid",
+        field: "agenda",
+        message: "Proposal selection metadata is invalid."
+      });
+    return { proposalReferences, proposalStatus: "stale" };
+  }
+  write(body, event) {
+    if (!event.proposalReferences?.length) return body;
+    const marker = `<!-- meetup-proposals:1:${event.proposalStatus ?? "stale"} -->`;
+    const replaced = this.collaborators.managedIssueMarkers.replaceManagedMarker(
+      body,
+      "meetup-proposals",
+      marker
+    );
+    return replaced.found ? replaced.body : `${marker}
+${body}`;
+  }
+  restore(event) {
+    return {
+      ...event,
+      agenda: event.agenda.map((entry) => ({
+        ...entry,
+        description: event.proposalReferences?.length ? this.unescape(entry.description) : entry.description,
+        speakers: entry.speakers.map((speaker) => ({
+          ...speaker,
+          displayName: this.unescape(speaker.displayName)
+        }))
+      }))
+    };
+  }
+  unescape(value) {
+    return value.replace(/&(amp|lt|gt|#\d+);/g, (match, code) => {
+      if (code === "amp") return "&";
+      if (code === "lt") return "<";
+      if (code === "gt") return ">";
+      const number = Number(code.slice(1));
+      return number >= 32 && number <= 126 ? String.fromCharCode(number) : match;
+    });
+  }
+  escape(value) {
+    return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(
+      /[\\`*_[\]{}()#!|~,:]/g,
+      (character) => `&#${character.charCodeAt(0)};`
+    ).replace(/[\r\n]+/g, " ");
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/reference-bindings.ts
+var ReferenceBindings = class {
+  referenceBinding(participant, id) {
+    return {
+      id,
+      displayName: this.normalizeVisibleDisplayName(participant.displayName)
+    };
+  }
+  normalizeVisibleDisplayName(displayName) {
+    return displayName.trim().replace(/\s+/g, " ");
+  }
+  restoreBoundReference(participant, binding) {
+    if (!participant || participant.id || !binding) {
+      return participant;
+    }
+    return this.normalizeVisibleDisplayName(participant.displayName) === binding.displayName ? { ...participant, id: binding.id } : participant;
+  }
+  restoreBoundSpeaker(participant, bindings) {
+    if (participant.id) {
+      return participant;
+    }
+    const visibleName = this.normalizeVisibleDisplayName(
+      participant.displayName
+    );
+    const matchingIds = new Set(
+      bindings.filter(({ displayName }) => displayName === visibleName).map(({ id: id2 }) => id2)
+    );
+    if (matchingIds.size !== 1) {
+      return participant;
+    }
+    const id = matchingIds.values().next().value;
+    return id ? { ...participant, id } : participant;
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/reference-metadata-shape.ts
+var ReferenceMetadataShape = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  isReferenceMetadata(value) {
+    if (typeof value !== "object" || value === null || Array.isArray(value)) {
+      return false;
+    }
+    const candidate = value;
+    if (candidate.schemaVersion !== 2) {
+      return false;
+    }
+    if (candidate.host !== null && !this.isReferenceBinding(candidate.host)) {
+      return false;
+    }
+    return Array.isArray(candidate.speakers) && candidate.speakers.every(this.isReferenceBinding.bind(this));
+  }
+  isLegacyReferenceMetadata(value) {
+    if (typeof value !== "object" || value === null || Array.isArray(value)) {
+      return false;
+    }
+    const candidate = value;
+    if (candidate.hostId !== null && (typeof candidate.hostId !== "string" || !STABLE_ID_PATTERN.test(candidate.hostId))) {
+      return false;
+    }
+    if (!Array.isArray(candidate.agendaSpeakerIds)) {
+      return false;
+    }
+    return candidate.agendaSpeakerIds.every(
+      (entry) => Array.isArray(entry) && entry.every(
+        (id) => id === null || typeof id === "string" && STABLE_ID_PATTERN.test(id)
+      )
+    );
+  }
+  isReferenceBinding(value) {
+    if (typeof value !== "object" || value === null || Array.isArray(value)) {
+      return false;
+    }
+    const candidate = value;
+    return typeof candidate.id === "string" && STABLE_ID_PATTERN.test(candidate.id) && typeof candidate.displayName === "string" && candidate.displayName.length > 0 && candidate.displayName === this.collaborators.referenceBindings.normalizeVisibleDisplayName(
+      candidate.displayName
+    );
+  }
+};
+
+// packages/adapter/github-issue-form-event-document-codec/src/dependency-composition.ts
+var GithubIssueFormEventDocumentCodecComposition = class {
+  eventReferenceMetadata() {
+    return new EventReferenceMetadata({
+      managedIssueMarkers: this.managedIssueMarkers(),
+      eventDiagnostics: new EventDomainComposition().eventDiagnostics(),
+      referenceMetadataShape: this.referenceMetadataShape(),
+      referenceBindings: this.referenceBindings()
+    });
+  }
+  gitHubIssueFormEventDocumentCodec(...args) {
+    return new GitHubIssueFormEventDocumentCodec(
+      {
+        createIssueFormReader: (...args2) => this.issueFormReader(...args2),
+        createIssueFormWriter: (...args2) => this.issueFormWriter(...args2)
+      },
+      ...args
+    );
+  }
+  issueFormChecklists() {
+    return new IssueFormChecklists({
+      eventDiagnostics: new EventDomainComposition().eventDiagnostics(),
+      issueFormSections: this.issueFormSections(),
+      markdownLines: this.markdownLines()
+    });
+  }
+  issueFormEventMapper() {
+    return new IssueFormEventMapper({
+      eventDiagnostics: new EventDomainComposition().eventDiagnostics(),
+      issueFormFields: this.issueFormFields(),
+      eventOccurrenceParser: new EventDomainComposition().eventOccurrenceParser()
+    });
+  }
+  issueFormFields() {
+    return new IssueFormFields({
+      eventDiagnostics: new EventDomainComposition().eventDiagnostics(),
+      participantReferenceParser: this.participantReferenceParser()
+    });
+  }
+  issueFormReader(...args) {
+    return new IssueFormReader(
+      {
+        issueFormSections: this.issueFormSections(),
+        managedIssueMarkers: this.managedIssueMarkers(),
+        issueFormEventMapper: this.issueFormEventMapper(),
+        proposalSelectionCodec: this.proposalSelectionCodec(),
+        issueFormChecklists: this.issueFormChecklists(),
+        meetupEventOperations: new EventDomainComposition().meetupEventOperations(),
+        eventReferenceMetadata: this.eventReferenceMetadata(),
+        eventDiagnostics: new EventDomainComposition().eventDiagnostics(),
+        participantLinks: this.participantLinks()
+      },
+      ...args
+    );
+  }
+  issueFormSections() {
+    return new IssueFormSections({
+      markdownLines: this.markdownLines(),
+      eventDiagnostics: new EventDomainComposition().eventDiagnostics()
+    });
+  }
+  issueFormWriter(...args) {
+    return new IssueFormWriter(
+      {
+        proposalSelectionCodec: this.proposalSelectionCodec(),
+        managedIssueMarkers: this.managedIssueMarkers(),
+        eventReferenceMetadata: this.eventReferenceMetadata(),
+        participantLinks: this.participantLinks(),
+        issueFormSections: this.issueFormSections(),
+        issueFormChecklists: this.issueFormChecklists()
+      },
+      ...args
+    );
+  }
+  managedIssueMarkers() {
+    return new ManagedIssueMarkers({
+      markdownLines: this.markdownLines(),
+      eventDiagnostics: new EventDomainComposition().eventDiagnostics()
+    });
+  }
+  markdownLines() {
+    return new MarkdownLines();
+  }
+  participantLinks() {
+    return new ParticipantLinks({
+      referenceBindings: this.referenceBindings(),
+      proposalSelectionCodec: this.proposalSelectionCodec()
+    });
+  }
+  participantReferenceParser() {
+    return new ParticipantReferenceParser();
+  }
+  proposalSelectionCodec() {
+    return new ProposalSelectionCodec({
+      issueFormSections: this.issueFormSections(),
+      managedIssueMarkers: this.managedIssueMarkers()
+    });
+  }
+  referenceBindings() {
+    return new ReferenceBindings();
+  }
+  referenceMetadataShape() {
+    return new ReferenceMetadataShape({
+      referenceBindings: this.referenceBindings()
+    });
   }
 };
 
 // packages/adapter/github-organizer-attention/src/attention-record.ts
 var ATTENTION_MARKER = "<!-- meetup-organizer-attention:v1 ";
-var AttentionRecord = class _AttentionRecord {
-  static read(body) {
+var AttentionRecord = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  read(body) {
     const lines = body.split("\n").filter((line2) => line2.startsWith(ATTENTION_MARKER));
     const line = lines[0];
     if (lines.length !== 1 || !line?.endsWith(" -->"))
       throw new Error("Invalid attention record");
     const input = JSON.parse(line.slice(ATTENTION_MARKER.length, -4));
-    return _AttentionRecord.decode(input);
+    return this.decode(input);
   }
-  static marker(state) {
-    const safe = _AttentionRecord.decode({ ...state, version: 1 });
+  marker(state) {
+    const safe = this.decode({ ...state, version: 1 });
     return `${ATTENTION_MARKER}${JSON.stringify({ version: 1, ...safe })} -->`;
   }
-  static decode(input) {
-    const data = AttentionRecordFields.record(input);
+  decode(input) {
+    const data = this.collaborators.attentionRecordFields.record(input);
     if (!Array.isArray(data.episodes) || data.episodes.length > 300)
       throw new Error("Invalid attention episodes");
-    AttentionRecordFields.choice(data.version, [1]);
+    this.collaborators.attentionRecordFields.choice(data.version, [1]);
     const state = {
-      eventDate: AttentionRecordFields.text(data.eventDate, /^(?:\d{4}-\d{2}-\d{2})?$/),
-      stopped: AttentionRecordFields.choice(data.stopped, [true, false]),
-      episodes: data.episodes.map(_AttentionRecord.episode),
-      post: data.post === void 0 ? void 0 : _AttentionRecord.post(data.post),
-      runId: data.runId === void 0 ? void 0 : AttentionRecordFields.text(data.runId, /^\d+$/),
-      commentId: data.commentId === void 0 ? void 0 : AttentionRecordFields.integer(data.commentId, true)
+      eventDate: this.collaborators.attentionRecordFields.text(
+        data.eventDate,
+        /^(?:\d{4}-\d{2}-\d{2})?$/
+      ),
+      stopped: this.collaborators.attentionRecordFields.choice(data.stopped, [
+        true,
+        false
+      ]),
+      episodes: data.episodes.map(this.episode.bind(this)),
+      post: data.post === void 0 ? void 0 : this.post(data.post),
+      runId: data.runId === void 0 ? void 0 : this.collaborators.attentionRecordFields.text(data.runId, /^\d+$/),
+      commentId: data.commentId === void 0 ? void 0 : this.collaborators.attentionRecordFields.integer(
+        data.commentId,
+        true
+      )
     };
-    AttentionStateRules.validate(state);
+    this.collaborators.attentionStateRules.validate(state);
     return state;
   }
-  static episode(input) {
-    const data = AttentionRecordFields.record(input);
+  episode(input) {
+    const data = this.collaborators.attentionRecordFields.record(input);
     return {
-      condition: _AttentionRecord.condition(data.condition),
-      episode: AttentionRecordFields.integer(data.episode, true),
-      openedAt: AttentionRecordFields.instant(data.openedAt),
-      status: AttentionRecordFields.choice(data.status, [
+      condition: this.condition(data.condition),
+      episode: this.collaborators.attentionRecordFields.integer(
+        data.episode,
+        true
+      ),
+      openedAt: this.collaborators.attentionRecordFields.instant(data.openedAt),
+      status: this.collaborators.attentionRecordFields.choice(data.status, [
         "active",
         "unknown",
         "resolved",
         "stopped"
       ]),
-      lastWindow: data.lastWindow === void 0 ? void 0 : AttentionRecordFields.text(
+      lastWindow: data.lastWindow === void 0 ? void 0 : this.collaborators.attentionRecordFields.text(
         data.lastWindow,
         /^(?:day|week|preparation|occurrence|follow-up):-?\d+$/
       )
     };
   }
-  static condition(input) {
-    const data = AttentionRecordFields.record(input);
+  condition(input) {
+    const data = this.collaborators.attentionRecordFields.record(input);
     return {
-      key: AttentionRecordFields.text(data.key, /^[a-z0-9:-]{1,180}$/),
-      code: AttentionRecordFields.choice(data.code, ATTENTION_CODES),
-      owner: AttentionRecordFields.choice(data.owner, [
+      key: this.collaborators.attentionRecordFields.text(
+        data.key,
+        /^[a-z0-9:-]{1,180}$/
+      ),
+      code: this.collaborators.attentionRecordFields.choice(
+        data.code,
+        ATTENTION_CODES
+      ),
+      owner: this.collaborators.attentionRecordFields.choice(data.owner, [
         "event",
         "assets",
         "feedback",
@@ -46245,9 +52387,15 @@ var AttentionRecord = class _AttentionRecord {
         "approvals",
         "delivery"
       ]),
-      resource: AttentionRecordFields.text(data.resource, /^[a-z0-9:-]{1,128}$/),
-      severity: AttentionRecordFields.choice(data.severity, ["warning", "error"]),
-      policy: AttentionRecordFields.choice(data.policy, [
+      resource: this.collaborators.attentionRecordFields.text(
+        data.resource,
+        /^[a-z0-9:-]{1,128}$/
+      ),
+      severity: this.collaborators.attentionRecordFields.choice(data.severity, [
+        "warning",
+        "error"
+      ]),
+      policy: this.collaborators.attentionRecordFields.choice(data.policy, [
         "preparation",
         "daily",
         "weekly",
@@ -46256,114 +52404,256 @@ var AttentionRecord = class _AttentionRecord {
         "follow-up",
         "none"
       ]),
-      since: data.since === void 0 ? void 0 : AttentionRecordFields.instant(data.since),
-      commentId: data.commentId === void 0 ? void 0 : AttentionRecordFields.integer(data.commentId, true),
-      recovery: data.recovery === void 0 ? void 0 : AttentionRecordFields.choice(data.recovery, [true])
+      since: data.since === void 0 ? void 0 : this.collaborators.attentionRecordFields.instant(data.since),
+      commentId: data.commentId === void 0 ? void 0 : this.collaborators.attentionRecordFields.integer(
+        data.commentId,
+        true
+      ),
+      recovery: data.recovery === void 0 ? void 0 : this.collaborators.attentionRecordFields.choice(data.recovery, [
+        true
+      ])
     };
   }
-  static post(input) {
-    const data = AttentionRecordFields.record(input);
+  post(input) {
+    const data = this.collaborators.attentionRecordFields.record(input);
     return {
-      reservationId: AttentionRecordFields.text(data.reservationId, /^attention:\d+:\d+$/),
-      day: AttentionRecordFields.integer(data.day),
-      reservedAt: AttentionRecordFields.instant(data.reservedAt),
-      status: AttentionRecordFields.choice(data.status, ["pending", "accepted", "retry"]),
-      retryAt: data.retryAt === void 0 ? void 0 : AttentionRecordFields.instant(data.retryAt),
-      fingerprint: data.fingerprint === void 0 ? void 0 : AttentionRecordFields.text(data.fingerprint, /^[a-f0-9]{64}$/),
-      message: data.message === void 0 ? void 0 : _AttentionRecord.message(data.message)
+      reservationId: this.collaborators.attentionRecordFields.text(
+        data.reservationId,
+        /^attention:\d+:\d+$/
+      ),
+      day: this.collaborators.attentionRecordFields.integer(data.day),
+      reservedAt: this.collaborators.attentionRecordFields.instant(
+        data.reservedAt
+      ),
+      status: this.collaborators.attentionRecordFields.choice(data.status, [
+        "pending",
+        "accepted",
+        "retry"
+      ]),
+      retryAt: data.retryAt === void 0 ? void 0 : this.collaborators.attentionRecordFields.instant(data.retryAt),
+      fingerprint: data.fingerprint === void 0 ? void 0 : this.collaborators.attentionRecordFields.text(
+        data.fingerprint,
+        /^[a-f0-9]{64}$/
+      ),
+      message: data.message === void 0 ? void 0 : this.message(data.message)
     };
   }
-  static message(input) {
-    const data = AttentionRecordFields.record(input);
+  message(input) {
+    const data = this.collaborators.attentionRecordFields.record(input);
     return {
-      destination: AttentionRecordFields.text(data.destination, /^[a-zA-Z0-9._:-]{1,128}$/),
-      messageId: AttentionRecordFields.text(data.messageId, /^[a-zA-Z0-9._:-]{1,128}$/)
+      destination: this.collaborators.attentionRecordFields.text(
+        data.destination,
+        /^[a-zA-Z0-9._:-]{1,128}$/
+      ),
+      messageId: this.collaborators.attentionRecordFields.text(
+        data.messageId,
+        /^[a-zA-Z0-9._:-]{1,128}$/
+      )
     };
   }
 };
 
-// packages/adapter/github-organizer-attention/src/github-attention-response.ts
-var GithubAttentionResponse = class _GithubAttentionResponse {
-  static record(value) {
-    if (!value || typeof value !== "object" || Array.isArray(value))
-      throw new Error("Invalid attention API object");
-    return value;
+// packages/adapter/github-organizer-attention/src/attention-comment-retention.ts
+var AttentionCommentRetention = class {
+  constructor(collaborators, api, owner, repo, author) {
+    this.collaborators = collaborators;
+    this.api = api;
+    this.owner = owner;
+    this.repo = repo;
+    this.author = author;
   }
-  static comment(value) {
-    const data = _GithubAttentionResponse.record(value);
-    if (typeof data.id !== "number" || !Number.isSafeInteger(data.id) || data.id <= 0)
-      throw new Error("Invalid attention comment identity");
-    if (data.body !== void 0 && data.body !== null && typeof data.body !== "string")
-      throw new Error("Invalid attention comment body");
-    if (data.node_id !== void 0 && typeof data.node_id !== "string")
-      throw new Error("Invalid attention comment node");
-    let user;
-    if (data.user !== null && data.user !== void 0) {
-      const actor = _GithubAttentionResponse.record(data.user);
-      if (typeof actor.login !== "string" || actor.type !== void 0 && typeof actor.type !== "string")
-        throw new Error("Invalid attention comment author");
-      user = { login: actor.login, type: actor.type };
+  collaborators;
+  api;
+  owner;
+  repo;
+  author;
+  async load(issueNumber, commentId, before) {
+    const client = this.collaborators.createGithubAttentionClient(
+      this.api,
+      this.owner,
+      this.repo,
+      issueNumber
+    );
+    const comment = (await client.list()).find((item) => item.id === commentId);
+    if (!comment || comment.body !== before)
+      throw new Error("Diagnostic comment changed before persistence");
+    const body = await this.collaborators.createTrustedAttentionState(client, this.author).body(comment);
+    const offset = body.indexOf(ATTENTION_MARKER);
+    if (offset < 0) return "";
+    this.collaborators.attentionRecord.read(body);
+    return body.slice(offset);
+  }
+};
+
+// packages/adapter/github-organizer-attention/src/attention-diagnostic-checklist.ts
+var DIAGNOSTIC_MARKER = "<!-- meetup-automation:event-diagnostics:v1 -->";
+var AttentionDiagnosticChecklist = class _AttentionDiagnosticChecklist {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  body = "";
+  commentId;
+  set(commentId, body) {
+    if (!body.startsWith(DIAGNOSTIC_MARKER) || !Number.isSafeInteger(commentId) || commentId < 1)
+      throw new Error("Invalid diagnostic checklist");
+    this.commentId = commentId;
+    this.body = body.split(ATTENTION_MARKER, 1)[0].trim();
+  }
+  prefix() {
+    return this.body;
+  }
+  read() {
+    const entries = [...new Set(this.body.split("\n"))].flatMap((line) => {
+      const match = /^- \[ \] \*\*(.+?)\*\*: (.+)$/.exec(line);
+      if (!match) return [];
+      const [, label, description] = match;
+      return [
+        {
+          label,
+          description,
+          field: _AttentionDiagnosticChecklist.FIELDS.get(label) ?? "other",
+          action: this.action(description)
+        }
+      ];
+    });
+    return { commentId: this.commentId, entries };
+  }
+  action(description) {
+    for (const locale of ["en", "fr"]) {
+      const messages5 = this.collaborators.createAttentionMessages(locale);
+      if (description === messages5.t("action.approval-pending"))
+        return "email-approval";
+      if (description === messages5.t("action.meetup-approval-pending"))
+        return "meetup-approval";
+      if (description === messages5.t("action.delivery-recovery"))
+        return "delivery-recovery";
     }
-    return { id: data.id, body: data.body, node_id: data.node_id, user };
+    return void 0;
   }
-  static current(value, comment) {
-    const node = _GithubAttentionResponse.node(value, comment);
-    return {
-      id: node.id,
-      body: node.body,
-      lastEditedAt: _GithubAttentionResponse.nullableText(node.lastEditedAt),
-      editor: _GithubAttentionResponse.editor(node.editor)
-    };
+  static FIELDS = /* @__PURE__ */ new Map([
+    ["Event Date", "date"],
+    ["Hoster", "host"],
+    ["Host confirmation", "host-confirmation"],
+    ["Speaker confirmation", "speaker-confirmation"],
+    ["Meetup Link", "meetup"],
+    ["CNCF Link", "community"],
+    ["Agenda", "agenda"]
+  ]);
+};
+
+// packages/adapter/github-organizer-attention/src/attention-presenter.ts
+var AttentionPresenter = class {
+  constructor(collaborators, repository, issueNumber, diagnostics, messages5 = collaborators.createAttentionMessages()) {
+    this.collaborators = collaborators;
+    this.repository = repository;
+    this.diagnostics = diagnostics;
+    this.messages = messages5;
+    if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository) || !Number.isSafeInteger(issueNumber) || issueNumber < 1)
+      throw new Error("Invalid attention issue identity");
+    this.issueUrl = `https://github.com/${repository}/issues/${issueNumber}`;
   }
-  static history(value, comment) {
-    const node = _GithubAttentionResponse.node(value, comment);
-    const edits = _GithubAttentionResponse.record(node.userContentEdits);
-    const page = _GithubAttentionResponse.record(edits.pageInfo);
-    if (!Array.isArray(edits.nodes) || typeof page.hasNextPage !== "boolean")
-      throw new Error("Attention history is unavailable");
-    return {
-      nodes: edits.nodes.map(_GithubAttentionResponse.edit),
-      hasNextPage: page.hasNextPage,
-      endCursor: _GithubAttentionResponse.nullableText(page.endCursor)
-    };
+  collaborators;
+  repository;
+  diagnostics;
+  messages;
+  issueUrl;
+  retired(commentId) {
+    return [this.diagnostics.prefix(), this.redirect(commentId)].filter(Boolean).join("\n\n");
   }
-  static node(value, comment) {
-    const result = _GithubAttentionResponse.record(value);
-    const node = _GithubAttentionResponse.record(result.node);
-    if (typeof node.id !== "string" || typeof node.body !== "string" || node.id !== comment.node_id || node.body !== comment.body)
-      throw new Error("Attention comment changed during verification");
-    return { ...node, id: node.id, body: node.body };
+  redirect(commentId) {
+    return this.messages.t("attention.redirect", {
+      url: `${this.issueUrl}#issuecomment-${commentId}`
+    });
   }
-  static edit(value) {
-    const data = _GithubAttentionResponse.record(value);
-    return {
-      diff: _GithubAttentionResponse.nullableText(data.diff),
-      deletedAt: _GithubAttentionResponse.nullableText(data.deletedAt),
-      editor: _GithubAttentionResponse.editor(data.editor)
-    };
+  issue(state, metadata) {
+    return [this.diagnostics.prefix(), metadata, this.details(state)].filter(Boolean).join("\n\n");
   }
-  static nullableText(value) {
-    if (value !== null && typeof value !== "string")
-      throw new Error("Invalid attention API text");
+  details(state) {
+    const view = this.collaborators.attentionPolicy.view(state);
+    const lines = this.status(state);
+    for (const episode of this.collaborators.attentionTaskSelection.select(
+      view,
+      this.diagnostics.read()
+    ).details) {
+      const url = this.url(episode, state);
+      const link = url === this.overviewUrl(state) ? "" : ` ([${this.messages.t("attention.review")}](${url}))`;
+      lines.push(`- [ ] ${this.text(episode)}${link}`);
+    }
+    if (!view.conditions.length && !this.diagnostics.prefix() && !lines.length)
+      lines.push(this.messages.t("attention.clear"));
+    return [...new Set(lines)].join("\n");
+  }
+  status(state) {
+    return state.post?.status === "pending" ? [`- [ ] ${this.messages.t("attention.pending")}`] : [];
+  }
+  text(episode) {
+    const text = this.action(episode);
+    return episode.status === "unknown" ? `${text} (${this.messages.t("attention.unknown")})` : text;
+  }
+  action(episode) {
+    if (episode.condition.code === "approval-pending" && episode.condition.resource.startsWith("meetup-publication:"))
+      return this.messages.t("action.meetup-approval-pending");
+    return episode.condition.code === "integration-failure" ? this.messages.failure(episode.condition.resource) : this.messages.t(`action.${episode.condition.code}`, {
+      task: this.messages.task(episode.condition.resource)
+    });
+  }
+  url(episode, state) {
+    if (Number.isSafeInteger(episode.condition.commentId) && (episode.condition.commentId ?? 0) > 0)
+      return `${this.issueUrl}#issuecomment-${episode.condition.commentId}`;
+    if (["integration-failure", "stage-unknown"].includes(
+      episode.condition.code
+    ) && state.runId && /^\d+$/.test(state.runId))
+      return `https://github.com/${this.repository}/actions/runs/${state.runId}`;
+    return this.overviewUrl(state);
+  }
+  overviewUrl(state) {
+    const commentId = state.commentId ?? this.diagnostics.read().commentId;
+    return commentId ? `${this.issueUrl}#issuecomment-${commentId}` : this.issueUrl;
+  }
+};
+
+// packages/adapter/github-organizer-attention/src/attention-record-fields.ts
+var AttentionRecordFields = class {
+  record(value) {
+    if (typeof value !== "object" || value === null || Array.isArray(value))
+      throw new Error("Invalid attention record object");
     return value;
   }
-  static editor(value) {
-    if (value === null) return null;
-    const actor = _GithubAttentionResponse.record(value);
-    if (typeof actor.login !== "string" || typeof actor.__typename !== "string")
-      throw new Error("Invalid attention editor");
-    return { login: actor.login, __typename: actor.__typename };
+  text(value, pattern) {
+    if (typeof value !== "string" || !pattern.test(value))
+      throw new Error("Invalid attention record text");
+    return value;
+  }
+  integer(value, positive = false) {
+    if (typeof value !== "number" || !Number.isSafeInteger(value) || positive && value <= 0)
+      throw new Error("Invalid attention record integer");
+    return value;
+  }
+  choice(value, values) {
+    const found = values.find((candidate) => candidate === value);
+    if (found === void 0)
+      throw new Error("Invalid attention record variant");
+    return found;
+  }
+  instant(value) {
+    const text = this.text(value, /^\d{4}-\d{2}-\d{2}T/);
+    if (!Number.isFinite(Date.parse(text)))
+      throw new Error("Invalid attention record timestamp");
+    return text;
   }
 };
 
 // packages/adapter/github-organizer-attention/src/github-attention-client.ts
-var GithubAttentionClient = class _GithubAttentionClient {
-  constructor(api, owner, repo, issue2) {
+var GithubAttentionClient = class {
+  constructor(collaborators, api, owner, repo, issue2) {
+    this.collaborators = collaborators;
     this.api = api;
     this.owner = owner;
     this.repo = repo;
     this.issue = issue2;
   }
+  collaborators;
   api;
   owner;
   repo;
@@ -46381,7 +52671,13 @@ var GithubAttentionClient = class _GithubAttentionClient {
       });
       if (!Array.isArray(response.data))
         throw new Error("Invalid attention comment response");
-      comments.push(...response.data.map(GithubAttentionResponse.comment));
+      comments.push(
+        ...response.data.map(
+          this.collaborators.githubAttentionResponse.comment.bind(
+            this.collaborators.githubAttentionResponse
+          )
+        )
+      );
       const next = response.headers.link ? /<[^>]+>;\s*rel="next"/.test(response.headers.link) : response.data.length === 100;
       if (!next) return comments;
       page += 1;
@@ -46440,9 +52736,9 @@ var GithubAttentionClient = class _GithubAttentionClient {
 			}`,
       { id: comment.node_id }
     );
-    return GithubAttentionResponse.current(result, comment);
+    return this.collaborators.githubAttentionResponse.current(result, comment);
   }
-  static checkHistoryLimit(count) {
+  checkHistoryLimit(count) {
     if (count > 2e3) throw new Error("Attention history limit exceeded");
   }
   async history(comment) {
@@ -46462,9 +52758,12 @@ var GithubAttentionClient = class _GithubAttentionClient {
 			}`,
         { id: comment.node_id, ...after ? { after } : {} }
       );
-      const history = GithubAttentionResponse.history(response, comment);
+      const history = this.collaborators.githubAttentionResponse.history(
+        response,
+        comment
+      );
       edits.push(...history.nodes);
-      _GithubAttentionClient.checkHistoryLimit(edits.length);
+      this.checkHistoryLimit(edits.length);
       if (!history.hasNextPage) return edits;
       const next = history.endCursor;
       if (!next || next === after)
@@ -46472,6 +52771,294 @@ var GithubAttentionClient = class _GithubAttentionClient {
       after = next;
     } while (after);
     return edits;
+  }
+};
+
+// packages/adapter/github-organizer-attention/src/github-attention-repository.ts
+var GithubAttentionRepository = class {
+  constructor(collaborators, client, author, presenter, checklist) {
+    this.collaborators = collaborators;
+    this.client = client;
+    this.author = author;
+    this.presenter = presenter;
+    this.checklist = checklist;
+  }
+  collaborators;
+  client;
+  author;
+  presenter;
+  checklist;
+  snapshot;
+  obsolete;
+  previous;
+  loaded = false;
+  async load() {
+    const trusted = this.collaborators.createTrustedAttentionState(
+      this.client,
+      this.author
+    );
+    const records = [];
+    let diagnostic;
+    for (const comment of await this.client.list()) {
+      if (comment.user?.type !== "Bot" || comment.user.login.toLowerCase() !== this.author.toLowerCase())
+        continue;
+      const body = await trusted.body(comment);
+      const snapshot = { id: comment.id, body: comment.body ?? "" };
+      if (body.startsWith(DIAGNOSTIC_MARKER) && !diagnostic) {
+        diagnostic = snapshot;
+        this.checklist.set(comment.id, body);
+      }
+      if (body.includes(ATTENTION_MARKER))
+        records.push({
+          snapshot,
+          state: this.collaborators.attentionRecord.read(body),
+          diagnostic: body.startsWith(DIAGNOSTIC_MARKER)
+        });
+    }
+    this.select(records, diagnostic);
+    this.loaded = true;
+    return this.previous;
+  }
+  select(records, diagnostic) {
+    const canonical = records.find((item) => item.diagnostic) ?? records[0];
+    if (records.length > 1 && (records.length !== 2 || !canonical?.diagnostic || records.every((item) => item.diagnostic) || records.some(
+      (item) => !this.collaborators.attentionStateEquality.equal(
+        item.state,
+        canonical.state
+      )
+    )))
+      throw new Error("Multiple attention records");
+    this.snapshot = diagnostic ?? canonical?.snapshot;
+    this.previous = canonical?.state;
+    this.obsolete = records.find(
+      (item) => item.snapshot.id !== this.snapshot?.id
+    )?.snapshot;
+  }
+  async save(state) {
+    if (!this.loaded)
+      throw new Error("Attention state must be loaded before writing");
+    await this.consolidate();
+    const body = this.presenter.issue(
+      state,
+      this.collaborators.attentionRecord.marker(state)
+    );
+    if (body.length > 6e4) throw new Error("Attention record limit exceeded");
+    if (this.snapshot) {
+      if (this.snapshot.body === body) return;
+      await this.client.replace(this.snapshot.id, this.snapshot.body, body);
+    } else {
+      if ((await this.client.list()).some(
+        (comment) => comment.user?.login.toLowerCase() === this.author.toLowerCase() && (comment.body?.includes(ATTENTION_MARKER) || comment.body?.startsWith(DIAGNOSTIC_MARKER))
+      ))
+        throw new Error("Attention state changed before creation");
+      const id = await this.client.create(body);
+      this.snapshot = { id, body };
+    }
+    this.snapshot.body = body;
+  }
+  async consolidate() {
+    if (!this.obsolete || !this.snapshot || !this.previous) return;
+    const body = this.presenter.issue(
+      this.previous,
+      this.collaborators.attentionRecord.marker(this.previous)
+    );
+    if (body.length > 6e4) throw new Error("Attention record limit exceeded");
+    await this.client.replace(this.snapshot.id, this.snapshot.body, body);
+    this.snapshot.body = body;
+    await this.client.remove(this.obsolete.id, this.obsolete.body);
+    this.obsolete = void 0;
+  }
+  async retire(commentId) {
+    if (!this.loaded)
+      throw new Error("Attention state must be loaded before retiring");
+    if (!this.snapshot) return;
+    await this.consolidate();
+    await this.client.replace(
+      this.snapshot.id,
+      this.snapshot.body,
+      this.presenter.retired(commentId)
+    );
+    this.snapshot = void 0;
+  }
+};
+
+// packages/adapter/github-organizer-attention/src/github-attention-response.ts
+var GithubAttentionResponse = class {
+  record(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value))
+      throw new Error("Invalid attention API object");
+    return value;
+  }
+  comment(value) {
+    const data = this.record(value);
+    if (typeof data.id !== "number" || !Number.isSafeInteger(data.id) || data.id <= 0)
+      throw new Error("Invalid attention comment identity");
+    if (data.body !== void 0 && data.body !== null && typeof data.body !== "string")
+      throw new Error("Invalid attention comment body");
+    if (data.node_id !== void 0 && typeof data.node_id !== "string")
+      throw new Error("Invalid attention comment node");
+    let user;
+    if (data.user !== null && data.user !== void 0) {
+      const actor = this.record(data.user);
+      if (typeof actor.login !== "string" || actor.type !== void 0 && typeof actor.type !== "string")
+        throw new Error("Invalid attention comment author");
+      user = { login: actor.login, type: actor.type };
+    }
+    return { id: data.id, body: data.body, node_id: data.node_id, user };
+  }
+  current(value, comment) {
+    const node = this.node(value, comment);
+    return {
+      id: node.id,
+      body: node.body,
+      lastEditedAt: this.nullableText(node.lastEditedAt),
+      editor: this.editor(node.editor)
+    };
+  }
+  history(value, comment) {
+    const node = this.node(value, comment);
+    const edits = this.record(node.userContentEdits);
+    const page = this.record(edits.pageInfo);
+    if (!Array.isArray(edits.nodes) || typeof page.hasNextPage !== "boolean")
+      throw new Error("Attention history is unavailable");
+    return {
+      nodes: edits.nodes.map(this.edit.bind(this)),
+      hasNextPage: page.hasNextPage,
+      endCursor: this.nullableText(page.endCursor)
+    };
+  }
+  node(value, comment) {
+    const result = this.record(value);
+    const node = this.record(result.node);
+    if (typeof node.id !== "string" || typeof node.body !== "string" || node.id !== comment.node_id || node.body !== comment.body)
+      throw new Error("Attention comment changed during verification");
+    return { ...node, id: node.id, body: node.body };
+  }
+  edit(value) {
+    const data = this.record(value);
+    return {
+      diff: this.nullableText(data.diff),
+      deletedAt: this.nullableText(data.deletedAt),
+      editor: this.editor(data.editor)
+    };
+  }
+  nullableText(value) {
+    if (value !== null && typeof value !== "string")
+      throw new Error("Invalid attention API text");
+    return value;
+  }
+  editor(value) {
+    if (value === null) return null;
+    const actor = this.record(value);
+    if (typeof actor.login !== "string" || typeof actor.__typename !== "string")
+      throw new Error("Invalid attention editor");
+    return { login: actor.login, __typename: actor.__typename };
+  }
+};
+
+// packages/adapter/github-organizer-attention/src/i18n/messages.en.ts
+var messages3 = {
+  "failure.communications": "Email preparation or delivery failed.",
+  "failure.feedback": "OpenFeedback synchronization failed.",
+  "failure.assets": "Drive file preparation failed.",
+  "failure.event": "Meetup issue update failed.",
+  "task.event-data": "meetup details",
+  "attention.redirect": "[Post-event tasks and approvals]({url})",
+  "attention.review": "Review details",
+  "attention.unknown": "status unverified",
+  "action.missing-date": "Set the event date.",
+  "action.required-data": "Complete the event details.",
+  "action.host-confirmation": "Confirm the host (`hoster:confirmed`).",
+  "action.speaker-confirmation": "Confirm the speakers (`speakers:confirmed`).",
+  "action.manual-publication": "{task}.",
+  "action.meetup-approval-pending": "Approve or reject Meetup publication.",
+  "action.approval-pending": "Approve or reject the email batch.",
+  "action.integration-failure": "Automation failed: {task}.",
+  "action.delivery-recovery": "Verify delivery before retrying.",
+  "action.occurrence-decision": "Date passed: mark held, postponed, or cancelled.",
+  "action.follow-up": "{task}.",
+  "action.stage-unknown": "Check the incomplete stage: {task}.",
+  "task.approvals": "email approvals",
+  "task.delivery": "delivery recovery",
+  "task.public-slack-local": "Post the local community Slack announcement",
+  "task.public-slack-community": "Post the community Slack announcement",
+  "task.public-social": "Publish on social networks",
+  "attention.clear": "No pending tasks.",
+  "attention.pending": "Verify the Slack post before retrying: delivery is unconfirmed.",
+  "task.publish-meetup-event": "Approve Meetup publication",
+  "task.publish-community-event": "Publish on the CNCF platform",
+  "task.create-asset-folder": "Prepare the asset folder",
+  "task.thank-host": "Send host thanks",
+  "task.thank-speakers": "Send speaker thanks",
+  "task.share-slides": "Share slides",
+  "task.import-attendance": "Import attendance",
+  "task.share-social": "Share on social networks",
+  "task.event": "event validation",
+  "task.assets": "assets",
+  "task.feedback": "feedback",
+  "task.communications": "communications",
+  "task.unknown": "review the issue"
+};
+
+// packages/adapter/github-organizer-attention/src/i18n/messages.fr.ts
+var messages4 = {
+  "failure.communications": "La pr\xE9paration ou l'envoi des courriels a \xE9chou\xE9.",
+  "failure.feedback": "La synchronisation OpenFeedback a \xE9chou\xE9.",
+  "failure.assets": "La pr\xE9paration des fichiers Drive a \xE9chou\xE9.",
+  "failure.event": "La mise \xE0 jour du ticket a \xE9chou\xE9.",
+  "task.event-data": "informations du meetup",
+  "attention.redirect": "[T\xE2ches et approbations apr\xE8s le meetup]({url})",
+  "attention.review": "Voir les d\xE9tails",
+  "attention.unknown": "statut non v\xE9rifi\xE9",
+  "action.missing-date": "Renseignez la date du meetup.",
+  "action.required-data": "Compl\xE9tez les informations du meetup.",
+  "action.host-confirmation": "Confirmez l'h\xF4te (`hoster:confirmed`).",
+  "action.speaker-confirmation": "Confirmez les intervenants (`speakers:confirmed`).",
+  "action.manual-publication": "{task}.",
+  "action.meetup-approval-pending": "Approuvez ou refusez la publication Meetup.",
+  "action.approval-pending": "Approuvez ou refusez le lot de courriels.",
+  "action.integration-failure": "Automatisation en \xE9chec : {task}.",
+  "action.delivery-recovery": "V\xE9rifiez l'envoi avant toute reprise.",
+  "action.occurrence-decision": "Date pass\xE9e : indiquez tenu, report\xE9 ou annul\xE9.",
+  "action.follow-up": "{task}.",
+  "action.stage-unknown": "V\xE9rifiez l'\xE9tape inachev\xE9e : {task}.",
+  "task.approvals": "approbation des courriels",
+  "task.delivery": "reprise des envois",
+  "task.public-slack-local": "Publiez l'annonce sur le Slack local",
+  "task.public-slack-community": "Publiez l'annonce sur le Slack communautaire",
+  "task.public-social": "Publiez sur les r\xE9seaux sociaux",
+  "attention.clear": "Aucune t\xE2che en attente.",
+  "attention.pending": "V\xE9rifiez le message Slack avant de r\xE9essayer : envoi non confirm\xE9.",
+  "task.publish-meetup-event": "Approuver la publication Meetup",
+  "task.publish-community-event": "Publiez sur la plateforme CNCF",
+  "task.create-asset-folder": "Pr\xE9parez le dossier des ressources",
+  "task.thank-host": "Envoyez les remerciements au lieu h\xF4te",
+  "task.thank-speakers": "Envoyez les remerciements aux intervenants",
+  "task.share-slides": "Partagez les pr\xE9sentations",
+  "task.import-attendance": "Importez les pr\xE9sences",
+  "task.share-social": "Partagez sur les r\xE9seaux sociaux",
+  "task.event": "validation du meetup",
+  "task.assets": "ressources",
+  "task.feedback": "\xE9valuations",
+  "task.communications": "communications",
+  "task.unknown": "consulter le ticket"
+};
+
+// packages/adapter/github-organizer-attention/src/i18n/catalog.ts
+var CATALOGS6 = { en: messages3, fr: messages4 };
+
+// packages/adapter/github-organizer-attention/src/i18n/attention-messages.ts
+var AttentionMessages = class extends MessageLocalizer {
+  constructor(collaborators, locale = "en") {
+    super(collaborators, CATALOGS6, locale);
+  }
+  failure(resource) {
+    const key = `failure.${resource}`;
+    return Object.hasOwn(CATALOGS6.en, key) ? this.t(key) : this.t("action.integration-failure", { task: this.task(resource) });
+  }
+  task(resource) {
+    const key = `task.${resource}`;
+    return this.t(Object.hasOwn(CATALOGS6.en, key) ? key : "task.unknown");
   }
 };
 
@@ -46504,1425 +53091,238 @@ var TrustedAttentionState = class {
   }
 };
 
-// packages/adapter/github-organizer-attention/src/attention-comment-retention.ts
-var AttentionCommentRetention = class {
-  constructor(api, owner, repo, author) {
-    this.api = api;
-    this.owner = owner;
-    this.repo = repo;
-    this.author = author;
+// packages/adapter/github-organizer-attention/src/dependency-composition.ts
+var GithubOrganizerAttentionComposition = class {
+  attentionRecordFields() {
+    return new AttentionRecordFields();
   }
-  api;
-  owner;
-  repo;
-  author;
-  async load(issueNumber, commentId, before) {
-    const client = new GithubAttentionClient(
-      this.api,
-      this.owner,
-      this.repo,
-      issueNumber
-    );
-    const comment = (await client.list()).find((item) => item.id === commentId);
-    if (!comment || comment.body !== before)
-      throw new Error("Diagnostic comment changed before persistence");
-    const body = await new TrustedAttentionState(client, this.author).body(
-      comment
-    );
-    const offset = body.indexOf(ATTENTION_MARKER);
-    if (offset < 0) return "";
-    AttentionRecord.read(body);
-    return body.slice(offset);
-  }
-};
-
-// packages/adapter/github-issue-form-event-document-codec/src/github-issue-form-event-document-codec-contracts.ts
-var CURRENT_SCHEMA_MARKER = "<!-- meetup-event-schema:1 -->";
-var SCHEMA_MARKER_NAME = "meetup-event-schema";
-var REFERENCE_MARKER_NAME = "meetup-event-references";
-var STABLE_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._:-]*$/;
-var HEADINGS = Object.freeze({
-  eventTitle: "Event Title",
-  date: "Event Date",
-  host: "Hoster",
-  description: "Event Description",
-  agenda: "Agenda",
-  proposals: "Conference Hall proposals",
-  meetupLink: "Meetup Link",
-  communityLink: "CNCF Link",
-  assetsLink: "Drive Link",
-  feedbackLink: "OpenFeedback Link",
-  slides: "Slides & Content",
-  communication: "Communication",
-  aperitif: "Aperitif",
-  restaurant: "Restaurant / Bar",
-  postEvent: "Post event",
-  occurrenceStatus: "Event Status"
-});
-
-// packages/adapter/github-issue-form-event-document-codec/src/markdown-lines.ts
-var MarkdownLines = class _MarkdownLines {
-  static findLineEnd(value, start) {
-    let cursor = start;
-    while (cursor < value.length && value[cursor] !== "\n" && value[cursor] !== "\r") {
-      cursor += 1;
-    }
-    return cursor;
-  }
-  static findNextLineStart(value, lineEnd) {
-    if (lineEnd >= value.length) {
-      return value.length;
-    }
-    if (value[lineEnd] === "\r" && value[lineEnd + 1] === "\n") {
-      return lineEnd + 2;
-    }
-    return lineEnd + 1;
-  }
-  static trimLeadingWhitespace(value) {
-    let start = 0;
-    while (start < value.length && _MarkdownLines.isWhitespaceCharacter(value[start])) {
-      start += 1;
-    }
-    return value.slice(start);
-  }
-  static trimTrailingWhitespace(value) {
-    let end = value.length;
-    while (end > 0 && _MarkdownLines.isWhitespaceCharacter(value[end - 1])) {
-      end -= 1;
-    }
-    return value.slice(0, end);
-  }
-  static isHorizontalWhitespaceCharacter(value) {
-    return value === " " || value === "	";
-  }
-  static isWhitespaceCharacter(value) {
-    return value === " " || value === "	" || value === "\n" || value === "\r" || value === "\f" || value === "\v";
-  }
-  static parseHeadingLine(line) {
-    if (!line.startsWith("### ")) {
-      return void 0;
-    }
-    const rawHeading = line.slice(4);
-    if (rawHeading.length === 0) {
-      return void 0;
-    }
-    let end = rawHeading.length;
-    while (end > 1 && _MarkdownLines.isHorizontalWhitespaceCharacter(rawHeading[end - 1])) {
-      end -= 1;
-    }
-    return rawHeading.slice(0, end).trim();
-  }
-  static parseCheckboxLine(line) {
-    let cursor = 0;
-    cursor = _MarkdownLines.skipHorizontalWhitespace(line, cursor);
-    if (line[cursor] !== "-") {
-      return void 0;
-    }
-    cursor += 1;
-    if (!_MarkdownLines.isHorizontalWhitespaceCharacter(line[cursor] ?? "")) {
-      return void 0;
-    }
-    cursor = _MarkdownLines.skipHorizontalWhitespace(line, cursor);
-    if (line[cursor] !== "[") {
-      return void 0;
-    }
-    const checkedMarker = line[cursor + 1];
-    if (checkedMarker !== " " && checkedMarker !== "x" && checkedMarker !== "X" || line[cursor + 2] !== "]") {
-      return void 0;
-    }
-    cursor += 3;
-    if (!_MarkdownLines.isHorizontalWhitespaceCharacter(line[cursor] ?? "")) {
-      return void 0;
-    }
-    cursor = _MarkdownLines.skipHorizontalWhitespace(line, cursor);
-    const label = line.slice(cursor).trim();
-    if (label === "") {
-      return void 0;
-    }
-    return {
-      checked: checkedMarker.toLowerCase() === "x",
-      label
-    };
-  }
-  static skipHorizontalWhitespace(line, cursor) {
-    while (cursor < line.length && _MarkdownLines.isHorizontalWhitespaceCharacter(line[cursor])) {
-      cursor += 1;
-    }
-    return cursor;
-  }
-};
-
-// packages/adapter/github-issue-form-event-document-codec/src/managed-issue-markers.ts
-var ManagedIssueMarkers = class _ManagedIssueMarkers {
-  static readManagedMarkerValues(body, markerName) {
-    return _ManagedIssueMarkers.findManagedMarkerMatches(body, markerName).map(
-      ({ value }) => value
-    );
-  }
-  static replaceManagedMarker(body, markerName, replacement) {
-    const matches = _ManagedIssueMarkers.findManagedMarkerMatches(
-      body,
-      markerName
-    );
-    if (matches.length === 0) {
-      return { body, found: false };
-    }
-    let result = "";
-    let lastIndex = 0;
-    for (const [index, match] of matches.entries()) {
-      result += body.slice(lastIndex, match.start);
-      if (index === 0) {
-        result += replacement;
-      }
-      lastIndex = match.end;
-    }
-    result += body.slice(lastIndex);
-    return { body: result, found: true };
-  }
-  static findManagedMarkerMatches(body, markerName) {
-    const matches = [];
-    for (let cursor = 0; cursor < body.length; ) {
-      const commentStart = body.indexOf("<!--", cursor);
-      if (commentStart === -1) {
-        break;
-      }
-      const commentEnd = body.indexOf("-->", commentStart + 4);
-      if (commentEnd === -1) {
-        break;
-      }
-      const value = _ManagedIssueMarkers.parseManagedMarkerComment(
-        body.slice(commentStart + 4, commentEnd),
-        markerName
-      );
-      if (value !== void 0) {
-        matches.push({
-          start: commentStart,
-          end: commentEnd + 3,
-          value
-        });
-      }
-      cursor = commentEnd + 3;
-    }
-    return matches;
-  }
-  static parseManagedMarkerComment(commentBody, markerName) {
-    const trimmed = commentBody.trim();
-    if (!trimmed.startsWith(markerName)) {
-      return void 0;
-    }
-    let cursor = markerName.length;
-    while (cursor < trimmed.length && MarkdownLines.isWhitespaceCharacter(trimmed[cursor])) {
-      cursor += 1;
-    }
-    if (trimmed[cursor] !== ":") {
-      return void 0;
-    }
-    return trimmed.slice(cursor + 1).trim();
-  }
-  static upsertManagedMarkers(body, metadata) {
-    const referenceMarker = `<!-- meetup-event-references:${JSON.stringify(metadata).replaceAll("<", "\\u003c").replaceAll(">", "\\u003e")} -->`;
-    const schemaReplacement = _ManagedIssueMarkers.replaceManagedMarker(
-      body,
-      SCHEMA_MARKER_NAME,
-      CURRENT_SCHEMA_MARKER
-    );
-    const referenceReplacement = _ManagedIssueMarkers.replaceManagedMarker(
-      schemaReplacement.body,
-      REFERENCE_MARKER_NAME,
-      referenceMarker
-    );
-    let result = referenceReplacement.body;
-    if (!schemaReplacement.found) {
-      result = `${CURRENT_SCHEMA_MARKER}
-${result}`;
-    }
-    if (!referenceReplacement.found) {
-      result = result.replace(
-        CURRENT_SCHEMA_MARKER,
-        `${CURRENT_SCHEMA_MARKER}
-${referenceMarker}`
-      );
-    }
-    return result;
-  }
-  static readSchema(body, diagnostics) {
-    const markers = _ManagedIssueMarkers.readManagedMarkerValues(
-      body,
-      SCHEMA_MARKER_NAME
-    );
-    if (markers.length === 0) {
-      return 0;
-    }
-    if (markers.length > 1) {
-      diagnostics.push(
-        EventDiagnostics.diagnostic({
-          code: "event.document.schema-marker.duplicate",
-          severity: "error",
-          category: "invalid",
-          message: "The event document contains duplicate schema markers",
-          fixAvailable: true
-        })
-      );
-    }
-    if (markers[0] !== "1") {
-      diagnostics.push(
-        EventDiagnostics.diagnostic({
-          code: "event.document.schema-version.unsupported",
-          severity: "error",
-          category: "migration",
-          message: "The event document schema version is unsupported"
-        })
-      );
-      return 0;
-    }
-    return 1;
-  }
-};
-
-// packages/adapter/github-issue-form-event-document-codec/src/reference-bindings.ts
-var ReferenceBindings = class _ReferenceBindings {
-  static referenceBinding(participant, id) {
-    return {
-      id,
-      displayName: _ReferenceBindings.normalizeVisibleDisplayName(
-        participant.displayName
-      )
-    };
-  }
-  static normalizeVisibleDisplayName(displayName) {
-    return displayName.trim().replace(/\s+/g, " ");
-  }
-  static restoreBoundReference(participant, binding) {
-    if (!participant || participant.id || !binding) {
-      return participant;
-    }
-    return _ReferenceBindings.normalizeVisibleDisplayName(
-      participant.displayName
-    ) === binding.displayName ? { ...participant, id: binding.id } : participant;
-  }
-  static restoreBoundSpeaker(participant, bindings) {
-    if (participant.id) {
-      return participant;
-    }
-    const visibleName = _ReferenceBindings.normalizeVisibleDisplayName(
-      participant.displayName
-    );
-    const matchingIds = new Set(
-      bindings.filter(({ displayName }) => displayName === visibleName).map(({ id: id2 }) => id2)
-    );
-    if (matchingIds.size !== 1) {
-      return participant;
-    }
-    const id = matchingIds.values().next().value;
-    return id ? { ...participant, id } : participant;
-  }
-};
-
-// packages/adapter/github-issue-form-event-document-codec/src/reference-metadata-shape.ts
-var ReferenceMetadataShape = class _ReferenceMetadataShape {
-  static isReferenceMetadata(value) {
-    if (typeof value !== "object" || value === null || Array.isArray(value)) {
-      return false;
-    }
-    const candidate = value;
-    if (candidate.schemaVersion !== 2) {
-      return false;
-    }
-    if (candidate.host !== null && !_ReferenceMetadataShape.isReferenceBinding(candidate.host)) {
-      return false;
-    }
-    return Array.isArray(candidate.speakers) && candidate.speakers.every(_ReferenceMetadataShape.isReferenceBinding);
-  }
-  static isLegacyReferenceMetadata(value) {
-    if (typeof value !== "object" || value === null || Array.isArray(value)) {
-      return false;
-    }
-    const candidate = value;
-    if (candidate.hostId !== null && (typeof candidate.hostId !== "string" || !STABLE_ID_PATTERN.test(candidate.hostId))) {
-      return false;
-    }
-    if (!Array.isArray(candidate.agendaSpeakerIds)) {
-      return false;
-    }
-    return candidate.agendaSpeakerIds.every(
-      (entry) => Array.isArray(entry) && entry.every(
-        (id) => id === null || typeof id === "string" && STABLE_ID_PATTERN.test(id)
-      )
-    );
-  }
-  static isReferenceBinding(value) {
-    if (typeof value !== "object" || value === null || Array.isArray(value)) {
-      return false;
-    }
-    const candidate = value;
-    return typeof candidate.id === "string" && STABLE_ID_PATTERN.test(candidate.id) && typeof candidate.displayName === "string" && candidate.displayName.length > 0 && candidate.displayName === ReferenceBindings.normalizeVisibleDisplayName(candidate.displayName);
-  }
-};
-
-// packages/adapter/github-issue-form-event-document-codec/src/event-reference-metadata.ts
-var EventReferenceMetadata = class _EventReferenceMetadata {
-  static readReferenceMetadata(body, diagnostics) {
-    const markers = ManagedIssueMarkers.readManagedMarkerValues(
-      body,
-      REFERENCE_MARKER_NAME
-    );
-    if (markers.length === 0) {
-      return void 0;
-    }
-    if (markers.length > 1) {
-      diagnostics.push(
-        EventDiagnostics.diagnostic({
-          code: "event.document.reference-metadata.duplicate",
-          severity: "error",
-          category: "invalid",
-          message: "The event document contains duplicate reference metadata",
-          fixAvailable: true
-        })
-      );
-    }
-    try {
-      const parsed = JSON.parse(markers[0]);
-      if (ReferenceMetadataShape.isReferenceMetadata(parsed)) {
-        return { kind: "bound", value: parsed };
-      }
-      if (ReferenceMetadataShape.isLegacyReferenceMetadata(parsed)) {
-        return { kind: "legacy", value: parsed };
-      }
-      throw new Error("invalid metadata shape");
-    } catch {
-      diagnostics.push(
-        EventDiagnostics.diagnostic({
-          code: "event.document.reference-metadata.invalid",
-          severity: "error",
-          category: "invalid",
-          message: "Stable reference metadata is malformed",
-          fixAvailable: true
-        })
-      );
-      return void 0;
-    }
-  }
-  static applyReferenceMetadata(event, metadata, diagnostics) {
-    if (metadata.kind === "legacy") {
-      diagnostics.push(_EventReferenceMetadata.legacyMetadataDiagnostic());
-      return event;
-    }
-    const boundMetadata = metadata.value;
-    const restored = {
-      ...event,
-      host: ReferenceBindings.restoreBoundReference(
-        event.host,
-        boundMetadata.host
-      ),
-      agenda: event.agenda.map((entry) => ({
-        ...entry,
-        speakers: entry.speakers.map(
-          (speaker) => ReferenceBindings.restoreBoundSpeaker(
-            speaker,
-            boundMetadata.speakers
-          )
-        )
-      }))
-    };
-    if (!_EventReferenceMetadata.referenceMetadataEqual(
-      boundMetadata,
-      _EventReferenceMetadata.referenceMetadata(restored)
-    )) {
-      diagnostics.push(_EventReferenceMetadata.staleMetadataDiagnostic());
-    }
-    return restored;
-  }
-  static referenceMetadata(event) {
-    return {
-      schemaVersion: 2,
-      host: event.host?.id ? ReferenceBindings.referenceBinding(event.host, event.host.id) : null,
-      speakers: event.agenda.flatMap(
-        (entry) => entry.speakers.flatMap(
-          (speaker) => speaker.id ? [ReferenceBindings.referenceBinding(speaker, speaker.id)] : []
-        )
-      )
-    };
-  }
-  static referenceMetadataEqual(left, right) {
-    return _EventReferenceMetadata.sameBinding(left.host, right.host) && left.speakers.length === right.speakers.length && left.speakers.every(
-      (speaker, index) => _EventReferenceMetadata.sameBinding(speaker, right.speakers[index])
-    );
-  }
-  static sameBinding(left, right) {
-    return left === null || right === null ? left === right : left.id === right.id && left.displayName === right.displayName;
-  }
-  static legacyMetadataDiagnostic() {
-    return EventDiagnostics.diagnostic({
-      code: "event.document.reference-metadata.legacy",
-      severity: "warning",
-      category: "migration",
-      message: "Unbound stable reference metadata cannot safely restore participant IDs",
-      fixAvailable: true
-    });
-  }
-  static staleMetadataDiagnostic() {
-    return EventDiagnostics.diagnostic({
-      code: "event.document.reference-metadata.stale",
-      severity: "warning",
-      category: "migration",
-      message: "Stable reference metadata does not match visible participants",
-      fixAvailable: true
-    });
-  }
-};
-
-// packages/adapter/github-issue-form-event-document-codec/src/issue-form-sections.ts
-var IssueFormSections = class _IssueFormSections {
-  static parseSections(body) {
-    const sections = /* @__PURE__ */ new Map();
-    let pending;
-    for (let cursor = 0; cursor < body.length; ) {
-      const lineEnd = MarkdownLines.findLineEnd(body, cursor);
-      const nextLineStart = MarkdownLines.findNextLineStart(body, lineEnd);
-      const heading = MarkdownLines.parseHeadingLine(
-        body.slice(cursor, lineEnd)
-      );
-      if (heading !== void 0) {
-        if (pending) {
-          _IssueFormSections.appendSection(sections, {
-            heading: pending.heading,
-            headingStart: pending.headingStart,
-            contentStart: pending.contentStart,
-            contentEnd: cursor,
-            value: body.slice(pending.contentStart, cursor)
-          });
-        }
-        pending = {
-          heading,
-          headingStart: cursor,
-          contentStart: nextLineStart
-        };
-      }
-      cursor = nextLineStart;
-    }
-    if (pending) {
-      _IssueFormSections.appendSection(sections, {
-        heading: pending.heading,
-        headingStart: pending.headingStart,
-        contentStart: pending.contentStart,
-        contentEnd: body.length,
-        value: body.slice(pending.contentStart)
-      });
-    }
-    return sections;
-  }
-  static appendSection(sections, section) {
-    const existing = sections.get(section.heading) ?? [];
-    sections.set(section.heading, [...existing, section]);
-  }
-  static cleanResponse(value) {
-    const trimmed = value.trim();
-    return trimmed === "_No response_" ? "" : trimmed;
-  }
-  static replaceOrAppendSection(body, heading, value) {
-    const section = _IssueFormSections.parseSections(body).get(heading)?.[0];
-    const normalizedValue = value.trim();
-    if (!section) {
-      if (!normalizedValue) {
-        return body;
-      }
-      const separator = body.length === 0 || body.endsWith("\n\n") ? "" : "\n\n";
-      return `${body}${separator}### ${heading}
-
-${normalizedValue}
-`;
-    }
-    if (_IssueFormSections.cleanResponse(section.value) === normalizedValue) {
-      return body;
-    }
-    return `${body.slice(0, section.contentStart)}
-${normalizedValue}
-
-${body.slice(section.contentEnd)}`;
-  }
-  static removeSection(body, heading) {
-    const section = _IssueFormSections.parseSections(body).get(heading)?.[0];
-    if (!section) {
-      return body;
-    }
-    const before = MarkdownLines.trimTrailingWhitespace(
-      body.slice(0, section.headingStart)
-    );
-    const after = MarkdownLines.trimLeadingWhitespace(
-      body.slice(section.contentEnd)
-    );
-    if (before === "") {
-      return after;
-    }
-    if (after === "") {
-      return `${before}
-`;
-    }
-    return `${before}
-
-${after}`;
-  }
-  static readSection(sections, heading, required, diagnostics) {
-    const matches = sections.get(heading) ?? [];
-    if (matches.length === 0) {
-      if (required) {
-        diagnostics.push(
-          EventDiagnostics.diagnostic({
-            code: "event.document.heading.missing",
-            severity: "error",
-            category: "invalid",
-            field: heading,
-            message: `The ${heading} heading is missing`,
-            fixAvailable: true
-          })
-        );
-      }
-      return "";
-    }
-    if (matches.length > 1) {
-      diagnostics.push(
-        EventDiagnostics.diagnostic({
-          code: "event.document.heading.duplicate",
-          severity: "error",
-          category: "invalid",
-          field: heading,
-          message: `The ${heading} heading occurs more than once`
-        })
-      );
-    }
-    return _IssueFormSections.cleanResponse(matches[0].value);
-  }
-};
-
-// packages/adapter/github-issue-form-event-document-codec/src/issue-form-checklists.ts
-var IssueFormChecklists = class _IssueFormChecklists {
-  static readCheckboxes(sections, heading, diagnostics) {
-    const matches = sections.get(heading) ?? [];
-    if (matches.length > 1) {
-      diagnostics.push(
-        EventDiagnostics.diagnostic({
-          code: "event.document.heading.duplicate",
-          severity: "error",
-          category: "invalid",
-          field: heading,
-          message: `The ${heading} heading occurs more than once`
-        })
-      );
-    }
-    const value = IssueFormSections.cleanResponse(matches[0]?.value ?? "");
-    if (!value) {
-      return [];
-    }
-    const checkboxes = [];
-    for (const [index, line] of value.split(/\r?\n/).entries()) {
-      if (!line.trim()) {
-        continue;
-      }
-      const checkbox = MarkdownLines.parseCheckboxLine(line);
-      if (!checkbox) {
-        diagnostics.push(
-          EventDiagnostics.diagnostic({
-            code: "event.document.checkbox.invalid",
-            severity: "warning",
-            category: "invalid",
-            field: heading,
-            message: `${heading} checklist line ${index + 1} is malformed`
-          })
-        );
-        continue;
-      }
-      checkboxes.push(checkbox);
-    }
-    return checkboxes;
-  }
-  static toOperationalChecklist(checkboxes) {
-    return checkboxes.map(({ checked, label }) => ({
-      name: label,
-      completed: checked
-    }));
-  }
-  static replaceOrAppendOperationalChecklist(body, heading, value) {
-    const sections = IssueFormSections.parseSections(body).get(heading) ?? [];
-    if (sections.length > 1 || sections[0] && !_IssueFormChecklists.operationalChecklistIsWellFormed(
-      sections[0].value
-    )) {
-      return body;
-    }
-    return IssueFormSections.replaceOrAppendSection(body, heading, value);
-  }
-  static operationalChecklistIsWellFormed(value) {
-    const cleaned = IssueFormSections.cleanResponse(value);
-    return cleaned === "" || cleaned.split(/\r?\n/).filter((line) => line.trim() !== "").every((line) => MarkdownLines.parseCheckboxLine(line) !== void 0);
-  }
-  static renderOperationalChecklist(items) {
-    return items.map(({ name, completed }) => `- [${completed ? "x" : " "}] ${name}`).join("\n");
-  }
-  static readLogisticsIntent(sections, heading, diagnostics) {
-    const value = IssueFormSections.readSection(
-      sections,
-      heading,
-      false,
-      diagnostics
-    );
-    if (!value) {
-      return "unspecified";
-    }
-    if (value.toLocaleLowerCase("en-US") === "yes") {
-      return "planned";
-    }
-    if (value.toLocaleLowerCase("en-US") === "no") {
-      return "not-planned";
-    }
-    diagnostics.push(
-      EventDiagnostics.diagnostic({
-        code: "event.logistics.intent.invalid",
-        severity: "error",
-        category: "invalid",
-        field: heading,
-        message: `${heading} must be Yes or No when specified`
-      })
-    );
-    return "unspecified";
-  }
-  static replaceOrAppendLogisticsIntent(body, heading, intent) {
-    return intent === "unspecified" || (IssueFormSections.parseSections(body).get(heading)?.length ?? 0) > 1 ? body : IssueFormSections.replaceOrAppendSection(
-      body,
-      heading,
-      _IssueFormChecklists.renderLogisticsIntent(intent)
-    );
-  }
-  static renderLogisticsIntent(intent) {
-    switch (intent) {
-      case "planned":
-        return "Yes";
-      case "not-planned":
-        return "No";
-      case "unspecified":
-        return "";
-    }
-  }
-};
-
-// packages/adapter/github-issue-form-event-document-codec/src/participant-reference-parser.ts
-var ParticipantReferenceParser = class _ParticipantReferenceParser {
-  static parseParticipantReference(value) {
-    const trimmed = value.trim();
-    const markdownLinkLabel = _ParticipantReferenceParser.parseMarkdownLinkLabel(trimmed);
-    if (markdownLinkLabel !== void 0) {
-      return { displayName: markdownLinkLabel };
-    }
-    const stableReference = _ParticipantReferenceParser.parseStableIdReference(trimmed);
-    if (stableReference) {
-      return stableReference;
-    }
-    return { displayName: trimmed };
-  }
-  static parseAgendaLine(line) {
-    let cursor = 0;
-    cursor = _ParticipantReferenceParser.skipHorizontalWhitespace(line, cursor);
-    if (line[cursor] !== "-") {
-      return void 0;
-    }
-    cursor += 1;
-    if (!_ParticipantReferenceParser.isHorizontalWhitespaceCharacter(
-      line[cursor] ?? ""
-    )) {
-      return void 0;
-    }
-    cursor = _ParticipantReferenceParser.skipHorizontalWhitespace(line, cursor);
-    const content = line.slice(cursor);
-    for (let index = 0; index < content.length; index += 1) {
-      if (content[index] !== ":") {
-        continue;
-      }
-      if (!_ParticipantReferenceParser.isHorizontalWhitespaceCharacter(
-        content[index + 1] ?? ""
-      )) {
-        continue;
-      }
-      const speakers = content.slice(0, index).trimEnd();
-      if (speakers === "") {
-        return void 0;
-      }
-      let descriptionStart = index + 1;
-      while (descriptionStart < content.length && _ParticipantReferenceParser.isHorizontalWhitespaceCharacter(
-        content[descriptionStart]
-      )) {
-        descriptionStart += 1;
-      }
-      return {
-        speakers,
-        description: content.slice(descriptionStart)
-      };
-    }
-    return void 0;
-  }
-  static parseMarkdownLinkLabel(value) {
-    if (!value.startsWith("[") || !value.endsWith(")")) {
-      return void 0;
-    }
-    const closingBracket = value.indexOf("]");
-    if (closingBracket <= 1 || value[closingBracket + 1] !== "(") {
-      return void 0;
-    }
-    const target = value.slice(closingBracket + 2, -1);
-    if (target === "" || target.includes(")")) {
-      return void 0;
-    }
-    return value.slice(1, closingBracket).trim();
-  }
-  static parseStableIdReference(value) {
-    if (!value.endsWith("]")) {
-      return void 0;
-    }
-    const openingBracket = value.lastIndexOf("[");
-    if (openingBracket <= 0 || !_ParticipantReferenceParser.isWhitespaceCharacter(
-      value[openingBracket - 1] ?? ""
-    )) {
-      return void 0;
-    }
-    const id = value.slice(openingBracket + 1, -1);
-    if (!STABLE_ID_PATTERN.test(id)) {
-      return void 0;
-    }
-    const displayName = value.slice(0, openingBracket).trim();
-    if (displayName === "") {
-      return void 0;
-    }
-    return {
-      displayName,
-      id
-    };
-  }
-  static isHorizontalWhitespaceCharacter(value) {
-    return value === " " || value === "	";
-  }
-  static isWhitespaceCharacter(value) {
-    return _ParticipantReferenceParser.isHorizontalWhitespaceCharacter(value) || value === "\n" || value === "\r";
-  }
-  static skipHorizontalWhitespace(line, cursor) {
-    while (cursor < line.length && _ParticipantReferenceParser.isHorizontalWhitespaceCharacter(line[cursor])) {
-      cursor += 1;
-    }
-    return cursor;
-  }
-};
-
-// packages/adapter/github-issue-form-event-document-codec/src/issue-form-fields.ts
-var IssueFormFields = class _IssueFormFields {
-  static readString(value, field, diagnostics) {
-    if (value === void 0 || value === null) {
-      return "";
-    }
-    if (typeof value === "string") {
-      return value;
-    }
-    diagnostics.push(
-      EventDiagnostics.diagnostic({
-        code: "event.document.invalid-field-type",
-        severity: "error",
-        category: "invalid",
-        field,
-        message: `The ${field} field must be a string`
-      })
-    );
-    return "";
-  }
-  static readOptionalString(value, field, diagnostics) {
-    if (value === void 0 || value === null || value === "") {
-      return void 0;
-    }
-    return _IssueFormFields.readString(value, field, diagnostics);
-  }
-  static readHost(value, diagnostics) {
-    if (value === void 0 || value === null) {
-      return void 0;
-    }
-    if (!Array.isArray(value)) {
-      diagnostics.push(
-        EventDiagnostics.diagnostic({
-          code: "event.document.invalid-hoster-type",
-          severity: "error",
-          category: "invalid",
-          field: "hoster",
-          message: "The hoster field must be an array"
-        })
-      );
-      return void 0;
-    }
-    if (value.length > 1) {
-      diagnostics.push(
-        EventDiagnostics.diagnostic({
-          code: "event.hoster.multiple",
-          severity: "error",
-          category: "invalid",
-          field: "hoster",
-          message: "A meetup event must have exactly one host"
-        })
-      );
-    }
-    const first = value[0];
-    if (first === void 0) {
-      return void 0;
-    }
-    if (typeof first !== "string") {
-      diagnostics.push(
-        EventDiagnostics.diagnostic({
-          code: "event.document.invalid-hoster-entry",
-          severity: "error",
-          category: "invalid",
-          field: "hoster",
-          message: "The hoster entry must be a string"
-        })
-      );
-      return void 0;
-    }
-    return ParticipantReferenceParser.parseParticipantReference(first);
-  }
-  static readAgenda(value, diagnostics) {
-    if (value === void 0 || value === null || value === "") {
-      return [];
-    }
-    if (typeof value !== "string") {
-      diagnostics.push(
-        EventDiagnostics.diagnostic({
-          code: "event.document.invalid-agenda-type",
-          severity: "error",
-          category: "invalid",
-          field: "agenda",
-          message: "The agenda field must be a string"
-        })
-      );
-      return [];
-    }
-    const entries = [];
-    for (const [index, line] of value.split("\n").entries()) {
-      if (line.trim() === "") {
-        continue;
-      }
-      const agendaLine = ParticipantReferenceParser.parseAgendaLine(line);
-      if (!agendaLine) {
-        diagnostics.push(
-          EventDiagnostics.diagnostic({
-            code: "event.agenda.legacy-line-invalid",
-            severity: "error",
-            category: "invalid",
-            field: `agenda.${index}`,
-            message: `Agenda line ${index + 1} does not match "- <speaker(s)>: <description>"`
-          })
-        );
-        continue;
-      }
-      entries.push({
-        speakers: agendaLine.speakers.split(",").map(
-          (speaker) => ParticipantReferenceParser.parseParticipantReference(speaker)
-        ),
-        description: agendaLine.description
-      });
-    }
-    return entries;
-  }
-};
-
-// packages/adapter/github-issue-form-event-document-codec/src/issue-form-event-mapper.ts
-var IssueFormEventMapper = class _IssueFormEventMapper {
-  static map(dto) {
-    const diagnostics = [];
-    const body = dto.parsedBody;
-    const { eventTitle, date, description, host, agenda, occurrenceStatus } = _IssueFormEventMapper.fields(dto, diagnostics);
-    const event = {
-      schemaVersion: EVENT_SCHEMA_VERSION,
-      identity: {
-        repository: dto.repository,
-        issueNumber: dto.issueNumber
+  attentionCommentRetention(...args) {
+    return new AttentionCommentRetention(
+      {
+        attentionRecord: this.attentionRecord(),
+        createGithubAttentionClient: (...args2) => this.githubAttentionClient(...args2),
+        createTrustedAttentionState: (...args2) => this.trustedAttentionState(...args2)
       },
-      issueState: dto.issueState ?? "open",
-      issueTitle: dto.issueTitle,
-      labels: [...dto.labels ?? []],
-      eventTitle,
-      date,
-      description,
-      host,
-      agenda,
-      publicationLinks: _IssueFormEventMapper.publicationLinks(
-        body,
-        diagnostics
-      ),
-      occurrenceStatus,
-      timeZone: dto.timeZone ?? "Europe/Paris",
-      confirmations: {
-        host: dto.labels?.includes("hoster:confirmed") ?? false,
-        speakers: dto.labels?.includes("speakers:confirmed") ?? false
-      },
-      logistics: {
-        aperitif: "unspecified",
-        postEventVenue: "unspecified"
-      },
-      operationalChecklists: {
-        slidesAndContent: [],
-        communication: [],
-        postEvent: []
-      },
-      // Only named checklist evidence can prove follow-up completion.
-      followUpComplete: false
-    };
-    diagnostics.unshift(
-      EventDiagnostics.diagnostic({
-        code: "event.document.legacy-schema",
-        severity: "info",
-        category: "migration",
-        message: "The legacy event document was migrated to schema version 1",
-        fixAvailable: true
-      })
+      ...args
     );
-    return { event, diagnostics };
   }
-  static publicationLinks(body, diagnostics) {
-    return {
-      meetup: IssueFormFields.readOptionalString(
-        body.meetup_link,
-        "meetup_link",
-        diagnostics
-      ),
-      community: IssueFormFields.readOptionalString(
-        body.cncf_link,
-        "cncf_link",
-        diagnostics
-      ),
-      feedback: IssueFormFields.readOptionalString(
-        body.openfeedback_link,
-        "openfeedback_link",
-        diagnostics
-      ),
-      assets: IssueFormFields.readOptionalString(
-        body.drive_link,
-        "drive_link",
-        diagnostics
-      )
-    };
+  attentionDiagnosticChecklist() {
+    return new AttentionDiagnosticChecklist({
+      createAttentionMessages: (...args) => this.attentionMessages(...args)
+    });
   }
-  static fields(dto, diagnostics) {
-    const body = dto.parsedBody;
-    const eventTitle = IssueFormFields.readString(
-      body.event_title,
-      "event_title",
-      diagnostics
+  attentionMessages(...args) {
+    return new AttentionMessages(
+      { localeResolver: new LocalizationComposition().localeResolver() },
+      ...args
     );
-    const date = IssueFormFields.readString(
-      body.event_date,
-      "event_date",
-      diagnostics
-    );
-    const description = IssueFormFields.readString(
-      body.event_description,
-      "event_description",
-      diagnostics
-    );
-    const host = IssueFormFields.readHost(body.hoster, diagnostics);
-    const agenda = IssueFormFields.readAgenda(body.agenda, diagnostics);
-    const occurrenceStatus = EventOccurrenceParser.readOccurrenceStatus(
-      dto.labels ?? [],
-      dto.issueState ?? "open",
-      _IssueFormEventMapper.occurrenceField(dto, diagnostics),
-      diagnostics
-    );
-    return { eventTitle, date, description, host, agenda, occurrenceStatus };
   }
-  static occurrenceField(dto, diagnostics) {
-    if (OCCURRENCE_STATUSES.some((status2) => {
-      const label = OCCURRENCE_STATUS_LABELS[status2];
-      return label !== null && dto.labels?.includes(label);
-    }))
+  attentionPresenter(...args) {
+    return new AttentionPresenter(
+      {
+        attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
+        attentionTaskSelection: new CommunicationDomainComposition().attentionTaskSelection(),
+        createAttentionMessages: (...args2) => this.attentionMessages(...args2)
+      },
+      ...args
+    );
+  }
+  attentionRecord() {
+    return new AttentionRecord({
+      attentionRecordFields: this.attentionRecordFields(),
+      attentionStateRules: new CommunicationDomainComposition().attentionStateRules()
+    });
+  }
+  githubAttentionClient(...args) {
+    return new GithubAttentionClient(
+      { githubAttentionResponse: this.githubAttentionResponse() },
+      ...args
+    );
+  }
+  githubAttentionRepository(...args) {
+    return new GithubAttentionRepository(
+      {
+        attentionRecord: this.attentionRecord(),
+        attentionStateEquality: new CommunicationDomainComposition().attentionStateEquality(),
+        createTrustedAttentionState: (...args2) => this.trustedAttentionState(...args2)
+      },
+      ...args
+    );
+  }
+  githubAttentionResponse() {
+    return new GithubAttentionResponse();
+  }
+  trustedAttentionState(...args) {
+    return new TrustedAttentionState(...args);
+  }
+};
+
+// packages/adapter/yaml-issue-form-projection/src/i18n/messages.en.ts
+var EN_MESSAGES5 = {
+  "form.speakers.guidance": "Select speakers by copying one or more references into the agenda.",
+  "form.speakers.show": "Show available speaker references"
+};
+
+// packages/adapter/yaml-issue-form-projection/src/i18n/messages.fr.ts
+var FR_MESSAGES5 = {
+  "form.speakers.guidance": "S\xE9lectionnez les intervenants en copiant une ou plusieurs r\xE9f\xE9rences dans le programme.",
+  "form.speakers.show": "Afficher les r\xE9f\xE9rences des intervenants disponibles"
+};
+
+// packages/adapter/yaml-issue-form-projection/src/i18n/catalog.ts
+var CATALOGS7 = {
+  en: { ...EN_MESSAGES5 },
+  fr: { ...FR_MESSAGES5 }
+};
+
+// packages/adapter/yaml-issue-form-projection/src/i18n/issue-form-messages.ts
+var IssueFormMessages = class extends MessageLocalizer {
+  constructor(collaborators, locale = "en") {
+    super(collaborators, CATALOGS7, locale);
+  }
+};
+
+// packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-projection-contracts.ts
+var HOST_FIELD_ID = "hoster";
+var AVAILABLE_SPEAKERS_MARKER = "<!-- Available speakers -->";
+
+// packages/adapter/yaml-issue-form-projection/src/speaker-references-presenter.ts
+var SpeakerReferencesPresenter = class {
+  constructor(messages5) {
+    this.messages = messages5;
+  }
+  messages;
+  render(speakers) {
+    const references = speakers.map((speaker) => `- <code>${this.escapeHtml(speaker)}</code>`).join("\n");
+    return [
+      AVAILABLE_SPEAKERS_MARKER,
+      "",
+      this.messages.t("form.speakers.guidance"),
+      "",
+      "<details>",
+      `<summary>${this.messages.t("form.speakers.show")}</summary>`,
+      "",
+      references,
+      "",
+      "</details>"
+    ].join("\n");
+  }
+  escapeHtml(value) {
+    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+  }
+};
+
+// packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-document.ts
+var import_yaml = __toESM(require_dist(), 1);
+var YamlIssueFormDocument = class {
+  project(source, hostOptions, speakersMarkdown, occurrenceStatusFieldId) {
+    const document = (0, import_yaml.parseDocument)(source, {
+      strict: true,
+      uniqueKeys: true
+    });
+    if (document.errors.length > 0) {
+      throw new Error("Issue form is not valid YAML.");
+    }
+    const issueForm = document.toJS({ maxAliasCount: 100 });
+    if (!this.isRecord(issueForm) || !Array.isArray(issueForm.body)) {
+      throw new Error("Issue form must contain a body array.");
+    }
+    const body = issueForm.body;
+    const hostIndex = this.findSingleFieldIndex(
+      body,
+      HOST_FIELD_ID,
+      "dropdown"
+    );
+    const speakersIndex = this.findSpeakersMarkdownIndex(body);
+    const statusIndex = this.findOptionalFieldIndex(
+      body,
+      occurrenceStatusFieldId
+    );
+    let changed = false;
+    if (!this.sameStringArray(this.fieldOptions(body[hostIndex]), hostOptions)) {
+      document.setIn(["body", hostIndex, "attributes", "options"], hostOptions);
+      changed = true;
+    }
+    if (speakersIndex !== void 0 && this.fieldValue(body[speakersIndex]) !== speakersMarkdown) {
+      document.setIn(
+        ["body", speakersIndex, "attributes", "value"],
+        speakersMarkdown
+      );
+      changed = true;
+    }
+    if (statusIndex !== void 0) {
+      document.deleteIn(["body", statusIndex]);
+      changed = true;
+    }
+    return { document, changed };
+  }
+  findSingleFieldIndex(body, fieldId, expectedType) {
+    const indexes = body.flatMap(
+      (item, index2) => this.isRecord(item) && item.id === fieldId ? [index2] : []
+    );
+    if (indexes.length !== 1) {
+      throw new Error(`Issue form must contain exactly one ${fieldId} field.`);
+    }
+    const index = indexes[0];
+    const field = body[index];
+    if (!this.isRecord(field) || field.type !== expectedType) {
+      throw new Error(`Issue-form field ${fieldId} must be a ${expectedType}.`);
+    }
+    if (!this.isRecord(field.attributes)) {
+      throw new Error(`Issue-form field ${fieldId} must have attributes.`);
+    }
+    return index;
+  }
+  findOptionalFieldIndex(body, fieldId) {
+    const indexes = body.flatMap(
+      (item, index) => this.isRecord(item) && item.id === fieldId ? [index] : []
+    );
+    if (indexes.length > 1) {
+      throw new Error(`Issue form contains duplicate ${fieldId} fields.`);
+    }
+    return indexes[0];
+  }
+  findSpeakersMarkdownIndex(body) {
+    const indexes = body.flatMap((item, index) => {
+      if (!this.isRecord(item) || item.type !== "markdown") {
+        return [];
+      }
+      const value = this.fieldValue(item);
+      return value?.includes(AVAILABLE_SPEAKERS_MARKER) ? [index] : [];
+    });
+    if (indexes.length === 0 && this.findOptionalFieldIndex(body, "conference_hall_proposals") !== void 0) {
+      this.findSingleFieldIndex(body, "conference_hall_proposals", "textarea");
       return void 0;
-    const value = dto.parsedBody.event_status;
-    if (value === void 0 || value === null || value === "") return void 0;
-    const status = OCCURRENCE_STATUSES.find((candidate) => candidate === value);
-    if (status) return status;
-    diagnostics.push(
-      EventDiagnostics.diagnostic({
-        code: "event.occurrence-status.invalid",
-        severity: "error",
-        category: "invalid",
-        field: "event_status",
-        message: "Occurrence status must be scheduled, postponed, held, or cancelled"
-      })
-    );
-    return void 0;
-  }
-};
-
-// packages/adapter/github-issue-form-event-document-codec/src/proposal-selection-codec.ts
-var ProposalSelectionCodec = class _ProposalSelectionCodec {
-  static read(body, diagnostics) {
-    const sections = IssueFormSections.parseSections(body);
-    const value = IssueFormSections.readSection(
-      sections,
-      HEADINGS.proposals,
-      false,
-      diagnostics
-    );
-    const hasMarker = body.includes("<!-- meetup-proposals:");
-    if ((!value || value === "_No response_") && !hasMarker) return {};
-    const proposalReferences = (value || "!missing-selection").split(/\r?\n/).map((id) => id.trim().replace(/^[-*]\s+/, "")).filter(Boolean);
-    const markers = ManagedIssueMarkers.readManagedMarkerValues(
-      body,
-      "meetup-proposals"
-    );
-    if (markers.length > 1 || markers[0] && !/^1:(current|stale)$/.test(markers[0]))
-      diagnostics.push({
-        code: "event.proposals.invalid-selection",
-        severity: "error",
-        category: "invalid",
-        field: "agenda",
-        message: "Proposal selection metadata is invalid."
-      });
-    return { proposalReferences, proposalStatus: "stale" };
-  }
-  static write(body, event) {
-    if (!event.proposalReferences?.length) return body;
-    const marker = `<!-- meetup-proposals:1:${event.proposalStatus ?? "stale"} -->`;
-    const replaced = ManagedIssueMarkers.replaceManagedMarker(
-      body,
-      "meetup-proposals",
-      marker
-    );
-    return replaced.found ? replaced.body : `${marker}
-${body}`;
-  }
-  static restore(event) {
-    return {
-      ...event,
-      agenda: event.agenda.map((entry) => ({
-        ...entry,
-        description: event.proposalReferences?.length ? _ProposalSelectionCodec.unescape(entry.description) : entry.description,
-        speakers: entry.speakers.map((speaker) => ({
-          ...speaker,
-          displayName: _ProposalSelectionCodec.unescape(speaker.displayName)
-        }))
-      }))
-    };
-  }
-  static unescape(value) {
-    return value.replace(/&(amp|lt|gt|#\d+);/g, (match, code) => {
-      if (code === "amp") return "&";
-      if (code === "lt") return "<";
-      if (code === "gt") return ">";
-      const number = Number(code.slice(1));
-      return number >= 32 && number <= 126 ? String.fromCharCode(number) : match;
-    });
-  }
-  static escape(value) {
-    return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(
-      /[\\`*_[\]{}()#!|~,:]/g,
-      (character) => `&#${character.charCodeAt(0)};`
-    ).replace(/[\r\n]+/g, " ");
-  }
-};
-
-// packages/adapter/github-issue-form-event-document-codec/src/participant-links.ts
-var ParticipantLinks = class {
-  static readSourceLinks(value, repository) {
-    const sources = /* @__PURE__ */ new Map();
-    const prefix = `https://github.com/${repository}/blob/`;
-    for (const match of value.matchAll(
-      /\[([^\]]+)\]\((https:\/\/github\.com\/[^)\s]+)\)/g
-    )) {
-      const target = match[2];
-      if (!target.startsWith(prefix)) continue;
-      const location = target.slice(prefix.length).match(/^[^/]+\/(.+)#L([1-9]\d*)$/);
-      if (!location) continue;
-      try {
-        const source = {
-          path: decodeURIComponent(location[1]),
-          line: Number(location[2])
-        };
-        const name = ReferenceBindings.normalizeVisibleDisplayName(
-          ProposalSelectionCodec.unescape(match[1])
-        );
-        const previous = sources.get(name);
-        sources.set(
-          name,
-          sources.has(name) && (previous?.path !== source.path || previous?.line !== source.line) ? void 0 : source
-        );
-      } catch {
-      }
     }
-    return sources;
-  }
-  static restoreSourceLocation(participant, sources) {
-    const source = participant.id ? sources.get(
-      ReferenceBindings.normalizeVisibleDisplayName(
-        participant.displayName
-      )
-    ) : void 0;
-    return source ? { ...participant, source } : participant;
-  }
-  static encodeUrlSegment(value) {
-    return encodeURIComponent(value).replace(
-      /[!'()*]/g,
-      (character) => `%${character.charCodeAt(0).toString(16).toUpperCase()}`
-    );
-  }
-  static renderAgenda(event, renderParticipant) {
-    return event.agenda.map(
-      (entry) => `- ${entry.speakers.map(renderParticipant).join(", ")}: ${event.proposalStatus === "current" ? ProposalSelectionCodec.escape(entry.description) : entry.description}`
-    ).join("\n");
-  }
-};
-
-// packages/adapter/github-issue-form-event-document-codec/src/issue-form-reader.ts
-var IssueFormReader = class {
-  timeZone;
-  hostConfirmationLabel;
-  speakersConfirmationLabel;
-  constructor(options = {}) {
-    this.timeZone = options.timeZone ?? "Europe/Paris";
-    this.hostConfirmationLabel = options.hostConfirmationLabel ?? "hoster:confirmed";
-    this.speakersConfirmationLabel = options.speakersConfirmationLabel ?? "speakers:confirmed";
-  }
-  decode(document) {
-    const diagnostics = [];
-    const sections = IssueFormSections.parseSections(document.body);
-    const schema = ManagedIssueMarkers.readSchema(document.body, diagnostics);
-    const parsedBody = this.readBody(sections, diagnostics);
-    const operations = this.readOperations(sections, diagnostics);
-    const migrated = IssueFormEventMapper.map({
-      repository: document.identity.repository,
-      issueNumber: document.identity.issueNumber,
-      issueState: document.issueState,
-      issueTitle: document.issueTitle,
-      labels: document.labels,
-      parsedBody,
-      timeZone: this.timeZone
-    });
-    diagnostics.push(
-      ...migrated.diagnostics.filter(
-        (item) => schema === 0 || item.code !== "event.document.legacy-schema"
-      )
-    );
-    const event = {
-      ...migrated.event,
-      ...operations,
-      ...ProposalSelectionCodec.read(document.body, diagnostics),
-      confirmations: {
-        host: document.labels.includes(this.hostConfirmationLabel),
-        speakers: document.labels.includes(this.speakersConfirmationLabel)
-      }
-    };
-    const referenced = this.restoreReferences(
-      ProposalSelectionCodec.restore(event),
-      document.body,
-      schema,
-      diagnostics
-    );
-    return {
-      event: this.restoreLinks(
-        referenced,
-        sections,
-        document.identity.repository
-      ),
-      diagnostics: Object.freeze(diagnostics)
-    };
-  }
-  readBody(sections, diagnostics) {
-    const read = (heading, required = false) => IssueFormSections.readSection(sections, heading, required, diagnostics);
-    return {
-      event_title: read(HEADINGS.eventTitle, true),
-      event_date: read(HEADINGS.date, true),
-      hoster: [read(HEADINGS.host, true)].filter(Boolean),
-      event_description: read(HEADINGS.description, true),
-      agenda: read(HEADINGS.agenda, !sections.has(HEADINGS.proposals)),
-      meetup_link: read(HEADINGS.meetupLink),
-      cncf_link: read(HEADINGS.communityLink),
-      drive_link: read(HEADINGS.assetsLink),
-      openfeedback_link: read(HEADINGS.feedbackLink),
-      event_status: read(HEADINGS.occurrenceStatus)
-    };
-  }
-  readOperations(sections, diagnostics) {
-    const read = (heading) => IssueFormChecklists.toOperationalChecklist(
-      IssueFormChecklists.readCheckboxes(sections, heading, diagnostics)
-    );
-    const slidesAndContent = read(HEADINGS.slides);
-    const communication = read(HEADINGS.communication);
-    const diagnosticOffset = diagnostics.length;
-    const postEvent = read(HEADINGS.postEvent);
-    const followUpComplete = diagnostics.length === diagnosticOffset && MeetupEventOperations.postEventChecklistIsComplete(postEvent);
-    return {
-      operationalChecklists: { slidesAndContent, communication, postEvent },
-      followUpComplete,
-      logistics: {
-        aperitif: IssueFormChecklists.readLogisticsIntent(
-          sections,
-          HEADINGS.aperitif,
-          diagnostics
-        ),
-        postEventVenue: IssueFormChecklists.readLogisticsIntent(
-          sections,
-          HEADINGS.restaurant,
-          diagnostics
-        )
-      }
-    };
-  }
-  restoreReferences(event, body, schema, diagnostics) {
-    const metadata = EventReferenceMetadata.readReferenceMetadata(
-      body,
-      diagnostics
-    );
-    if (metadata)
-      return EventReferenceMetadata.applyReferenceMetadata(
-        event,
-        metadata,
-        diagnostics
+    if (indexes.length !== 1) {
+      throw new Error(
+        "Issue form must contain exactly one Available speakers markdown block."
       );
-    if (schema === 1)
-      diagnostics.push(
-        EventDiagnostics.diagnostic({
-          code: "event.document.reference-metadata.missing",
-          severity: "warning",
-          category: "migration",
-          message: "Stable reference metadata is missing",
-          fixAvailable: true
-        })
-      );
-    return event;
-  }
-  restoreLinks(event, sections, repository) {
-    const hostSources = ParticipantLinks.readSourceLinks(
-      sections.get(HEADINGS.host)?.[0]?.value ?? "",
-      repository
-    );
-    const speakerSources = ParticipantLinks.readSourceLinks(
-      sections.get(HEADINGS.agenda)?.[0]?.value ?? "",
-      repository
-    );
-    return {
-      ...event,
-      host: event.host ? ParticipantLinks.restoreSourceLocation(event.host, hostSources) : void 0,
-      agenda: event.agenda.map((entry) => ({
-        ...entry,
-        speakers: entry.speakers.map(
-          (speaker) => ParticipantLinks.restoreSourceLocation(speaker, speakerSources)
-        )
-      }))
-    };
-  }
-};
-
-// packages/adapter/github-issue-form-event-document-codec/src/issue-form-writer.ts
-var IssueFormWriter = class _IssueFormWriter {
-  repositoryRef;
-  constructor(options = {}) {
-    this.repositoryRef = options.repositoryRef ?? "main";
-  }
-  createPatch(document, event) {
-    const patch = {};
-    if (document.issueTitle !== event.issueTitle)
-      patch.issueTitle = event.issueTitle;
-    if (!_IssueFormWriter.arraysEqual(document.labels, event.labels))
-      patch.labels = Object.freeze([...event.labels]);
-    const fields = this.renderFields(document, event);
-    const checklists = this.renderOperations(fields, event);
-    const body = ProposalSelectionCodec.write(
-      ManagedIssueMarkers.upsertManagedMarkers(
-        checklists,
-        EventReferenceMetadata.referenceMetadata(event)
-      ),
-      event
-    );
-    if (body !== document.body) patch.body = body;
-    return Object.freeze(patch);
-  }
-  renderFields(document, event) {
-    const render = (participant) => this.renderParticipant(participant, document.identity.repository);
-    const renderSpeaker = (participant) => event.proposalReferences?.length && participant.id ? `${ProposalSelectionCodec.escape(participant.displayName)} [${participant.id}]` : render({
-      ...participant,
-      displayName: ProposalSelectionCodec.escape(participant.displayName)
-    });
-    const fields = [
-      [HEADINGS.eventTitle, event.eventTitle],
-      [HEADINGS.date, event.date],
-      [HEADINGS.host, event.host ? render(event.host) : ""],
-      [HEADINGS.description, event.description],
-      [HEADINGS.agenda, ParticipantLinks.renderAgenda(event, renderSpeaker)],
-      [HEADINGS.meetupLink, event.publicationLinks.meetup ?? ""],
-      [HEADINGS.communityLink, event.publicationLinks.community ?? ""],
-      [HEADINGS.assetsLink, event.publicationLinks.assets ?? ""]
-    ];
-    let body = document.body;
-    for (const [heading, value] of fields) {
-      if (heading === HEADINGS.agenda && event.proposalStatus === "stale")
-        continue;
-      body = IssueFormSections.replaceOrAppendSection(body, heading, value);
     }
-    if (event.publicationLinks.feedback)
-      body = IssueFormSections.replaceOrAppendSection(
-        body,
-        HEADINGS.feedbackLink,
-        event.publicationLinks.feedback
-      );
-    return IssueFormSections.removeSection(body, HEADINGS.occurrenceStatus);
+    return indexes[0];
   }
-  renderOperations(source, event) {
-    let body = source;
-    for (const [heading, items] of [
-      [HEADINGS.slides, event.operationalChecklists.slidesAndContent],
-      [HEADINGS.communication, event.operationalChecklists.communication]
-    ])
-      body = IssueFormChecklists.replaceOrAppendOperationalChecklist(
-        body,
-        heading,
-        IssueFormChecklists.renderOperationalChecklist(items)
-      );
-    body = IssueFormChecklists.replaceOrAppendLogisticsIntent(
-      body,
-      HEADINGS.aperitif,
-      event.logistics.aperitif
-    );
-    body = IssueFormChecklists.replaceOrAppendLogisticsIntent(
-      body,
-      HEADINGS.restaurant,
-      event.logistics.postEventVenue
-    );
-    return IssueFormChecklists.replaceOrAppendOperationalChecklist(
-      body,
-      HEADINGS.postEvent,
-      IssueFormChecklists.renderOperationalChecklist(
-        event.operationalChecklists.postEvent
-      )
-    );
+  isRecord(value) {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
   }
-  renderParticipant(participant, repository) {
-    if (!participant.id || !participant.source) return participant.displayName;
-    const path = participant.source.path.split("/").map(ParticipantLinks.encodeUrlSegment).join("/");
-    const ref = ParticipantLinks.encodeUrlSegment(this.repositoryRef);
-    const url = `https://github.com/${repository}/blob/${ref}/${path}#L${participant.source.line}`;
-    return `[${participant.displayName}](${url})`;
+  fieldOptions(field) {
+    if (!this.isRecord(field) || !this.isRecord(field.attributes)) {
+      return void 0;
+    }
+    return field.attributes.options;
   }
-  static arraysEqual(left, right) {
-    return left.length === right.length && left.every((value, index) => value === right[index]);
+  fieldValue(field) {
+    if (!this.isRecord(field) || !this.isRecord(field.attributes)) {
+      return void 0;
+    }
+    return typeof field.attributes.value === "string" ? field.attributes.value : void 0;
   }
-};
-
-// packages/adapter/github-issue-form-event-document-codec/src/github-issue-form-event-document-codec.ts
-var GitHubIssueFormEventDocumentCodec = class {
-  reader;
-  writer;
-  constructor(options = {}) {
-    this.reader = new IssueFormReader(options);
-    this.writer = new IssueFormWriter(options);
-  }
-  decode(document) {
-    return this.reader.decode(document);
-  }
-  createPatch(document, event) {
-    return this.writer.createPatch(document, event);
+  sameStringArray(actual, expected) {
+    return Array.isArray(actual) && actual.length === expected.length && actual.every((value, index) => value === expected[index]);
   }
 };
 
 // packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-projection.ts
-import { readFile as readFile2, realpath as realpath2, stat as stat2, writeFile as writeFile2 } from "node:fs/promises";
+import { readFile as readFile3, realpath as realpath2, stat as stat2, writeFile as writeFile3 } from "node:fs/promises";
 import { isAbsolute as isAbsolute2, relative as relative2, resolve as resolve2, sep as sep3 } from "node:path";
 
 // node_modules/.pnpm/prettier@3.9.9/node_modules/prettier/plugins/yaml.mjs
@@ -55179,199 +60579,26 @@ async function Vi2(t7, e) {
 var Wi2 = de2(it2, 0);
 var $i2 = { parse: de2(du), formatAST: de2(Fu), formatDoc: de2(Eu), printToDoc: de2(Cu), printDocToString: de2(hu) };
 
-// packages/adapter/yaml-issue-form-projection/src/i18n/messages.en.ts
-var EN_MESSAGES6 = {
-  "form.speakers.guidance": "Select speakers by copying one or more references into the agenda.",
-  "form.speakers.show": "Show available speaker references"
-};
-
-// packages/adapter/yaml-issue-form-projection/src/i18n/messages.fr.ts
-var FR_MESSAGES6 = {
-  "form.speakers.guidance": "S\xE9lectionnez les intervenants en copiant une ou plusieurs r\xE9f\xE9rences dans le programme.",
-  "form.speakers.show": "Afficher les r\xE9f\xE9rences des intervenants disponibles"
-};
-
-// packages/adapter/yaml-issue-form-projection/src/i18n/catalog.ts
-var CATALOGS8 = {
-  en: { ...EN_MESSAGES6 },
-  fr: { ...FR_MESSAGES6 }
-};
-
-// packages/adapter/yaml-issue-form-projection/src/i18n/issue-form-messages.ts
-var IssueFormMessages = class extends MessageLocalizer {
-  constructor(locale = "en") {
-    super(CATALOGS8, locale);
-  }
-};
-
-// packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-projection-contracts.ts
-var HOST_FIELD_ID = "hoster";
-var AVAILABLE_SPEAKERS_MARKER = "<!-- Available speakers -->";
-
-// packages/adapter/yaml-issue-form-projection/src/speaker-references-presenter.ts
-var SpeakerReferencesPresenter = class _SpeakerReferencesPresenter {
-  constructor(messages5) {
-    this.messages = messages5;
-  }
-  messages;
-  render(speakers) {
-    const references = speakers.map(
-      (speaker) => `- <code>${_SpeakerReferencesPresenter.escapeHtml(speaker)}</code>`
-    ).join("\n");
-    return [
-      AVAILABLE_SPEAKERS_MARKER,
-      "",
-      this.messages.t("form.speakers.guidance"),
-      "",
-      "<details>",
-      `<summary>${this.messages.t("form.speakers.show")}</summary>`,
-      "",
-      references,
-      "",
-      "</details>"
-    ].join("\n");
-  }
-  static escapeHtml(value) {
-    return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-  }
-};
-
-// packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-document.ts
-var import_yaml = __toESM(require_dist(), 1);
-var YamlIssueFormDocument = class _YamlIssueFormDocument {
-  static project(source, hostOptions, speakersMarkdown, occurrenceStatusFieldId) {
-    const document = (0, import_yaml.parseDocument)(source, {
-      strict: true,
-      uniqueKeys: true
-    });
-    if (document.errors.length > 0) {
-      throw new Error("Issue form is not valid YAML.");
-    }
-    const issueForm = document.toJS({ maxAliasCount: 100 });
-    if (!_YamlIssueFormDocument.isRecord(issueForm) || !Array.isArray(issueForm.body)) {
-      throw new Error("Issue form must contain a body array.");
-    }
-    const body = issueForm.body;
-    const hostIndex = _YamlIssueFormDocument.findSingleFieldIndex(
-      body,
-      HOST_FIELD_ID,
-      "dropdown"
-    );
-    const speakersIndex = _YamlIssueFormDocument.findSpeakersMarkdownIndex(body);
-    const statusIndex = _YamlIssueFormDocument.findOptionalFieldIndex(
-      body,
-      occurrenceStatusFieldId
-    );
-    let changed = false;
-    if (!_YamlIssueFormDocument.sameStringArray(
-      _YamlIssueFormDocument.fieldOptions(body[hostIndex]),
-      hostOptions
-    )) {
-      document.setIn(["body", hostIndex, "attributes", "options"], hostOptions);
-      changed = true;
-    }
-    if (speakersIndex !== void 0 && _YamlIssueFormDocument.fieldValue(body[speakersIndex]) !== speakersMarkdown) {
-      document.setIn(
-        ["body", speakersIndex, "attributes", "value"],
-        speakersMarkdown
-      );
-      changed = true;
-    }
-    if (statusIndex !== void 0) {
-      document.deleteIn(["body", statusIndex]);
-      changed = true;
-    }
-    return { document, changed };
-  }
-  static findSingleFieldIndex(body, fieldId, expectedType) {
-    const indexes = body.flatMap(
-      (item, index2) => _YamlIssueFormDocument.isRecord(item) && item.id === fieldId ? [index2] : []
-    );
-    if (indexes.length !== 1) {
-      throw new Error(`Issue form must contain exactly one ${fieldId} field.`);
-    }
-    const index = indexes[0];
-    const field = body[index];
-    if (!_YamlIssueFormDocument.isRecord(field) || field.type !== expectedType) {
-      throw new Error(`Issue-form field ${fieldId} must be a ${expectedType}.`);
-    }
-    if (!_YamlIssueFormDocument.isRecord(field.attributes)) {
-      throw new Error(`Issue-form field ${fieldId} must have attributes.`);
-    }
-    return index;
-  }
-  static findOptionalFieldIndex(body, fieldId) {
-    const indexes = body.flatMap(
-      (item, index) => _YamlIssueFormDocument.isRecord(item) && item.id === fieldId ? [index] : []
-    );
-    if (indexes.length > 1) {
-      throw new Error(`Issue form contains duplicate ${fieldId} fields.`);
-    }
-    return indexes[0];
-  }
-  static findSpeakersMarkdownIndex(body) {
-    const indexes = body.flatMap((item, index) => {
-      if (!_YamlIssueFormDocument.isRecord(item) || item.type !== "markdown") {
-        return [];
-      }
-      const value = _YamlIssueFormDocument.fieldValue(item);
-      return value?.includes(AVAILABLE_SPEAKERS_MARKER) ? [index] : [];
-    });
-    if (indexes.length === 0 && _YamlIssueFormDocument.findOptionalFieldIndex(
-      body,
-      "conference_hall_proposals"
-    ) !== void 0) {
-      _YamlIssueFormDocument.findSingleFieldIndex(
-        body,
-        "conference_hall_proposals",
-        "textarea"
-      );
-      return void 0;
-    }
-    if (indexes.length !== 1) {
-      throw new Error(
-        "Issue form must contain exactly one Available speakers markdown block."
-      );
-    }
-    return indexes[0];
-  }
-  static isRecord(value) {
-    return typeof value === "object" && value !== null && !Array.isArray(value);
-  }
-  static fieldOptions(field) {
-    if (!_YamlIssueFormDocument.isRecord(field) || !_YamlIssueFormDocument.isRecord(field.attributes)) {
-      return void 0;
-    }
-    return field.attributes.options;
-  }
-  static fieldValue(field) {
-    if (!_YamlIssueFormDocument.isRecord(field) || !_YamlIssueFormDocument.isRecord(field.attributes)) {
-      return void 0;
-    }
-    return typeof field.attributes.value === "string" ? field.attributes.value : void 0;
-  }
-  static sameStringArray(actual, expected) {
-    return Array.isArray(actual) && actual.length === expected.length && actual.every((value, index) => value === expected[index]);
-  }
-};
-
 // packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-projection.ts
 var YamlIssueFormProjection = class {
-  constructor(options) {
+  constructor(collaborators, options) {
+    this.collaborators = collaborators;
     this.options = options;
-    this.presenter = new SpeakerReferencesPresenter(
-      new IssueFormMessages(options.locale)
+    this.choices = this.collaborators.createProjectReferentialChoices();
+    this.presenter = this.collaborators.createSpeakerReferencesPresenter(
+      this.collaborators.createIssueFormMessages(options.locale)
     );
   }
+  collaborators;
   options;
   presenter;
-  choices = new ProjectReferentialChoices();
+  choices;
   async synchronize(input) {
     this.assertInput(input);
     const issueFormPath = await this.resolveIssueFormPath(input.issueFormPath);
-    const source = await readFile2(issueFormPath.absolutePath, "utf8");
+    const source = await readFile3(issueFormPath.absolutePath, "utf8");
     const projection = this.choices.execute(input.catalog);
-    const { changed, document } = YamlIssueFormDocument.project(
+    const { changed, document } = this.collaborators.yamlIssueFormDocument.project(
       source,
       projection.hostOptions,
       this.presenter.render(projection.speakerReferences),
@@ -55382,7 +60609,7 @@ var YamlIssueFormProjection = class {
         parser: "yaml",
         plugins: [yaml_exports]
       });
-      await writeFile2(issueFormPath.absolutePath, content, "utf8");
+      await writeFile3(issueFormPath.absolutePath, content, "utf8");
     }
     return this.result(changed, issueFormPath.relativePath, input.mode);
   }
@@ -55431,6 +60658,33 @@ var YamlIssueFormProjection = class {
       )
     ]) : Object.freeze([]);
     return Object.freeze({ changed, changedFiles, diagnostics });
+  }
+};
+
+// packages/adapter/yaml-issue-form-projection/src/dependency-composition.ts
+var YamlIssueFormProjectionComposition = class {
+  issueFormMessages(...args) {
+    return new IssueFormMessages(
+      { localeResolver: new LocalizationComposition().localeResolver() },
+      ...args
+    );
+  }
+  speakerReferencesPresenter(...args) {
+    return new SpeakerReferencesPresenter(...args);
+  }
+  yamlIssueFormDocument() {
+    return new YamlIssueFormDocument();
+  }
+  yamlIssueFormProjection(...args) {
+    return new YamlIssueFormProjection(
+      {
+        yamlIssueFormDocument: this.yamlIssueFormDocument(),
+        createProjectReferentialChoices: (...args2) => new ReferentialDomainComposition().projectReferentialChoices(...args2),
+        createSpeakerReferencesPresenter: (...args2) => this.speakerReferencesPresenter(...args2),
+        createIssueFormMessages: (...args2) => this.issueFormMessages(...args2)
+      },
+      ...args
+    );
   }
 };
 
@@ -60927,21 +66181,575 @@ var Container = class {
   }
 };
 
+// packages/runtime/github-actions/src/action-failure-presenter.ts
+var SAFE_ERROR_NAMES = /* @__PURE__ */ new Set([
+  "GoogleDriveAssetRepositoryError",
+  "EventNotFoundError",
+  "EventConcurrentModificationError",
+  "GitHubEventRepositoryConfigurationError",
+  "GitHubEventRepositoryScopeError",
+  "GitHubEventRepositoryResponseError",
+  "GitHubEventCommentRepositoryConfigurationError",
+  "GitHubEventCommentRepositoryScopeError",
+  "GitHubEventCommentRepositoryResponseError"
+]);
+var ActionFailurePresenter = class {
+  /** Never expose provider responses, input values, or contact data in failures. */
+  publicErrorMessage(error2) {
+    if (error2 instanceof Error && SAFE_ERROR_NAMES.has(error2.name)) {
+      return `${error2.name}: ${error2.message}`;
+    }
+    return "Unexpected technical failure.";
+  }
+};
+
+// packages/runtime/github-actions/src/action-output.ts
+var ActionOutput = class {
+  setJsonOutput(name, value) {
+    setOutput(name, JSON.stringify(value));
+  }
+  setDiagnosticsOutput(diagnostics) {
+    this.setJsonOutput("diagnostics", diagnostics);
+  }
+};
+
+// packages/runtime/github-actions/src/action-report.ts
+var ActionReport = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  async write(title, report, messages5 = this.collaborators.createActionMessages()) {
+    const lines = new Set(report.details);
+    for (const item of report.diagnostics) {
+      lines.add(this.diagnosticMessage(item));
+    }
+    if (report.failure)
+      lines.add(messages5.t("report.failed", { reason: report.failure }));
+    for (const line of lines) {
+      info(line.replaceAll("\r", "\\r").replaceAll("\n", "\\n"));
+    }
+    const content = [...lines].join("\n").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+    try {
+      await summary.addHeading(title, 2).addRaw(`<pre>${content}</pre>
+`).write();
+    } catch {
+      summary.clear();
+      warning(messages5.t("report.summary-unavailable"));
+    }
+  }
+  diagnosticMessage(item) {
+    const field = item.field ? ` field=${item.field}` : "";
+    const fixed = item.fixApplied === void 0 ? "" : ` fix_applied=${item.fixApplied}`;
+    return `${item.severity} ${item.code}${field}${fixed}`;
+  }
+};
+
+// packages/runtime/github-actions/src/action-runner.ts
+var ActionRunner = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  async run(title, operation, diagnosticsOutput) {
+    let messages5 = this.collaborators.createActionMessages("en");
+    let report;
+    try {
+      messages5 = this.collaborators.createActionMessages(
+        getInput("locale", { required: true })
+      );
+      report = await operation(messages5);
+      const failures = report.diagnostics.filter(
+        (item) => this.collaborators.diagnosticPolicy.isTechnicalFailure(item)
+      ).map((item) => item.code);
+      if (!report.failure && failures.length > 0) {
+        report = {
+          ...report,
+          failure: messages5.t("report.technical-failure", {
+            codes: [...new Set(failures)].join(", ")
+          })
+        };
+      }
+    } catch (error2) {
+      if (error2 instanceof EventConcurrentModificationError) {
+        report = {
+          details: [],
+          diagnostics: [
+            {
+              code: "event.concurrently-modified",
+              severity: "info",
+              message: "event.concurrently-modified"
+            }
+          ]
+        };
+      } else {
+        const message = this.collaborators.actionFailurePresenter.publicErrorMessage(error2);
+        report = {
+          details: [],
+          diagnostics: [
+            { code: "action.execution.failed", severity: "error", message }
+          ],
+          failure: messages5.error(
+            error2 instanceof Error ? error2.name : "",
+            message
+          )
+        };
+      }
+    }
+    await this.collaborators.actionReport.write(
+      messages5.t(title),
+      report,
+      messages5
+    );
+    if (report.failure) setFailed(report.failure);
+    if (diagnosticsOutput)
+      this.collaborators.actionOutput.setDiagnosticsOutput(report.diagnostics);
+  }
+};
+
+// packages/runtime/github-actions/src/assets/asset-content-configuration.ts
+import { readFile as readFile4 } from "node:fs/promises";
+import { join as join2 } from "node:path";
+var AssetContentConfiguration = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  usesNextEvent(contracts) {
+    return Object.values(contracts).some((contract) => {
+      const fields = this.collaborators.runtimeInput.isObject(contract) ? contract.fields : void 0;
+      return Array.isArray(fields) && fields.some(
+        (field) => this.collaborators.runtimeInput.isObject(field) && typeof field.token === "string" && field.token.startsWith("next_event.")
+      );
+    });
+  }
+  async load(root, eventId) {
+    let text;
+    try {
+      text = await readFile4(
+        join2(root, ".github/meetup-asset-content.json"),
+        "utf8"
+      );
+    } catch (error2) {
+      if (this.collaborators.runtimeInput.isObject(error2) && error2.code === "ENOENT")
+        return {
+          contracts: {},
+          speakers: {},
+          talks: {},
+          venues: {},
+          hostLogos: {},
+          recovery: {}
+        };
+      throw error2;
+    }
+    if (Buffer.byteLength(text) > 1e6)
+      throw new Error("Asset content configuration is too large");
+    return this.parse(JSON.parse(text), eventId);
+  }
+  parse(root, eventId) {
+    if (!this.collaborators.runtimeInput.isObject(root) || root.version !== 1 || !this.collaborators.runtimeInput.isObject(root.contracts) || !this.collaborators.contentContractPolicy.keys(root, [
+      "version",
+      "contracts",
+      "events",
+      "venues",
+      "hostLogos"
+    ]) || root.events !== void 0 && !this.collaborators.runtimeInput.isObject(root.events))
+      throw new Error("Invalid asset content configuration");
+    const selected = this.collaborators.runtimeInput.isObject(root.events) ? root.events[eventId] : void 0;
+    const event = selected === void 0 ? {} : selected;
+    if (!this.collaborators.runtimeInput.isObject(event) || !this.collaborators.contentContractPolicy.keys(event, [
+      "speakers",
+      "talks",
+      "recovery"
+    ]))
+      throw new Error("Invalid asset event configuration");
+    const assignments = this.collaborators.assetRenderConfiguration.parse(
+      event,
+      root.venues,
+      root.hostLogos
+    );
+    const recovery = this.recovery(event.recovery);
+    return { contracts: root.contracts, ...assignments, recovery };
+  }
+  recovery(input) {
+    const value = input === void 0 ? {} : input;
+    if (!this.collaborators.runtimeInput.isObject(value))
+      throw new Error("Invalid asset recovery operations");
+    const result = {};
+    for (const [id, operation] of Object.entries(value)) {
+      if (!this.collaborators.contentContractPolicy.name(id) || !this.collaborators.runtimeInput.isObject(operation) || operation.operation !== "enroll" && operation.operation !== "restore" && operation.operation !== "remove" || !this.collaborators.contentContractPolicy.text(operation.revision) || operation.operation !== "enroll" && !this.collaborators.contentContractPolicy.name(
+        operation.bindingId
+      ) || operation.bindingId !== void 0 && !this.collaborators.contentContractPolicy.name(
+        operation.bindingId
+      ) || !this.collaborators.contentContractPolicy.keys(operation, [
+        "operation",
+        "revision",
+        "bindingId"
+      ]))
+        throw new Error("Invalid asset recovery operation");
+      result[id] = {
+        operation: operation.operation,
+        revision: operation.revision,
+        ...typeof operation.bindingId === "string" ? { bindingId: operation.bindingId } : {}
+      };
+    }
+    return result;
+  }
+};
+
+// packages/runtime/github-actions/src/assets/asset-date-formatter.ts
+var AssetDateFormatter = class {
+  constructor(locale) {
+    this.locale = locale;
+  }
+  locale;
+  format(date, timeZone, format = "long") {
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return void 0;
+    try {
+      new Intl.DateTimeFormat(this.locale, { timeZone });
+      const instant = /* @__PURE__ */ new Date(`${date}T00:00:00Z`);
+      if (instant.toISOString().slice(0, 10) !== date) return void 0;
+      if (format === "numeric")
+        return `${date.slice(8, 10)}/${date.slice(5, 7)}/${date.slice(0, 4)}`;
+      const options = format === "month" ? { month: "long" } : { dateStyle: format === "weekday" ? "full" : "long" };
+      return new Intl.DateTimeFormat(this.locale, {
+        ...options,
+        timeZone: "UTC"
+      }).format(instant);
+    } catch {
+      return void 0;
+    }
+  }
+};
+
+// packages/runtime/github-actions/src/assets/messages.en.ts
+var EN_MESSAGES6 = {
+  "asset.agenda.talk": "{title} - {speakers}"
+};
+
+// packages/runtime/github-actions/src/assets/messages.fr.ts
+var FR_MESSAGES6 = {
+  "asset.agenda.talk": "{title} - {speakers}"
+};
+
+// packages/runtime/github-actions/src/assets/catalog.ts
+var CATALOGS8 = { en: EN_MESSAGES6, fr: FR_MESSAGES6 };
+
+// packages/runtime/github-actions/src/assets/asset-messages.ts
+var AssetMessages = class extends MessageLocalizer {
+  constructor(collaborators, locale = "en") {
+    super(collaborators, CATALOGS8, locale);
+  }
+};
+
+// packages/runtime/github-actions/src/assets/asset-render-configuration.ts
+var AssetRenderConfiguration = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  parse(event, venues, hostLogos) {
+    return {
+      speakers: this.speakers(event.speakers),
+      talks: this.talks(event.talks),
+      venues: this.venues(venues),
+      hostLogos: this.logos(hostLogos)
+    };
+  }
+  speakers(input) {
+    const result = {};
+    for (const [slot, id] of Object.entries(
+      this.record(input === void 0 ? {} : input)
+    )) {
+      if (!this.slot(slot) || typeof id !== "string" || !/^speaker-[a-z0-9-]+$/.test(id))
+        throw new Error("Invalid asset speaker assignment");
+      result[slot] = id;
+    }
+    return result;
+  }
+  talks(input) {
+    const result = {};
+    for (const [slot, value] of Object.entries(
+      this.record(input === void 0 ? {} : input)
+    )) {
+      const identity = this.record(value);
+      if (!this.slot(slot) || !this.collaborators.contentContractPolicy.keys(identity, [
+        "provider",
+        "event",
+        "id"
+      ]) || !this.identity(identity.provider) || !this.identity(identity.event) || !this.identity(identity.id))
+        throw new Error("Invalid asset talk assignment");
+      result[slot] = {
+        provider: identity.provider,
+        event: identity.event,
+        id: identity.id
+      };
+    }
+    return result;
+  }
+  venues(input) {
+    const result = {};
+    for (const [id, value] of Object.entries(
+      this.record(input === void 0 ? {} : input)
+    )) {
+      const venue = this.record(value);
+      if (!/^host-[a-z0-9-]+$/.test(id) || !this.collaborators.contentContractPolicy.keys(venue, [
+        "address",
+        "postalCode",
+        "city"
+      ]) || !this.collaborators.contentContractPolicy.text(venue.address) || !this.collaborators.contentContractPolicy.text(venue.postalCode) || !this.collaborators.contentContractPolicy.text(venue.city))
+        throw new Error("Invalid public asset venue");
+      result[id] = {
+        address: venue.address,
+        postalCode: venue.postalCode,
+        city: venue.city
+      };
+    }
+    return result;
+  }
+  logos(input) {
+    const result = {};
+    for (const [hostId, value] of Object.entries(
+      this.record(input === void 0 ? {} : input)
+    )) {
+      const logo = this.record(value);
+      if (!/^host-[a-z0-9-]+$/.test(hostId) || !this.collaborators.contentContractPolicy.keys(logo, [
+        "url",
+        "description"
+      ]) || !this.collaborators.contentContractPolicy.text(logo.url) || !this.collaborators.contentContractPolicy.text(logo.description))
+        throw new Error("Invalid public host logo");
+      result[hostId] = { url: logo.url, description: logo.description };
+    }
+    return result;
+  }
+  slot(value) {
+    return this.collaborators.contentContractPolicy.name(value) && !["__proto__", "prototype", "constructor"].includes(value);
+  }
+  identity(value) {
+    return typeof value === "string" && /^[a-zA-Z0-9_-]{1,200}$/.test(value);
+  }
+  record(value) {
+    if (!this.collaborators.runtimeInput.isObject(value) || Object.keys(value).length > 200)
+      throw new Error("Invalid asset render configuration");
+    return value;
+  }
+};
+
+// packages/runtime/github-actions/src/assets/asset-render-presenter.ts
+var AssetRenderPresenterImpl = class {
+  constructor(collaborators, messages5 = collaborators.createAssetMessages()) {
+    this.collaborators = collaborators;
+    this.messages = messages5;
+  }
+  collaborators;
+  messages;
+  format(input) {
+    const date = this.collaborators.createAssetDateFormatter(
+      this.messages.locale
+    );
+    return {
+      text: {
+        "event.title": input.title,
+        "event.date": date.format(input.date, input.timeZone),
+        "event.date.month": date.format(input.date, input.timeZone, "month"),
+        "event.date.numeric": date.format(
+          input.date,
+          input.timeZone,
+          "numeric"
+        ),
+        "event.date.weekday": date.format(
+          input.date,
+          input.timeZone,
+          "weekday"
+        ),
+        "host.name": input.hostName,
+        "host.address": input.venue?.address,
+        "host.postal_code": input.venue?.postalCode,
+        "host.city": input.venue?.city,
+        "event.feedback_url": input.feedbackUrl,
+        "next_event.date": date.format(input.nextEvent?.date, input.timeZone),
+        "next_event.date.numeric": date.format(
+          input.nextEvent?.date,
+          input.timeZone,
+          "numeric"
+        ),
+        "next_event.host.name": input.nextEvent?.hostName,
+        "next_event.host.city": input.nextEvent?.city,
+        agenda: input.agenda.map(
+          (talk) => this.messages.t("asset.agenda.talk", {
+            title: talk.title,
+            speakers: this.names(talk.speakers)
+          })
+        ).join("\n"),
+        ...this.slots(input)
+      },
+      pictures: input.pictures,
+      hostLogo: input.hostLogo
+    };
+  }
+  slots(input) {
+    const text = {};
+    for (const [slot, talk] of Object.entries(input.talks ?? {})) {
+      text[`talk.title:${slot}`] = talk.title;
+      text[`talk.abstract:${slot}`] = talk.abstract;
+      text[`talk.speakers:${slot}`] = this.names(talk.speakers);
+    }
+    for (const [slot, name] of Object.entries(input.speakers ?? {}))
+      text[`speaker.name:${slot}`] = name;
+    return text;
+  }
+  names(speakers) {
+    return new Intl.ListFormat(this.messages.locale, {
+      style: "long",
+      type: "conjunction"
+    }).format(speakers);
+  }
+};
+
+// packages/runtime/github-actions/src/attention-stage-input.ts
+var AttentionStageInput = class {
+  parse(value) {
+    const input = JSON.parse(value);
+    if (!this.isRecord(input))
+      throw new Error("Invalid attention stage results");
+    const reports = ATTENTION_STAGE_OWNERS.map(
+      (owner) => [owner, this.stage(input[owner])]
+    );
+    return {
+      event: reports[0][1],
+      assets: reports[1][1],
+      feedback: reports[2][1],
+      communications: reports[3][1]
+    };
+  }
+  stage(value) {
+    if (value !== void 0 && !this.isRecord(value))
+      throw new Error("Invalid attention stage");
+    const stage = value ?? {};
+    return {
+      outcome: stage.outcome === "success" || stage.outcome === "failure" ? stage.outcome : "unknown",
+      diagnostics: this.readDiagnostics(stage.diagnostics),
+      reported: stage.diagnostics !== void 0 && stage.diagnostics !== ""
+    };
+  }
+  isRecord(value) {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+  }
+  readDiagnostics(input) {
+    let diagnostics = input;
+    if (typeof diagnostics === "string") {
+      if (!diagnostics) return [];
+      try {
+        diagnostics = JSON.parse(diagnostics);
+      } catch {
+        throw new Error("Invalid attention stage diagnostics");
+      }
+    }
+    if (diagnostics === void 0) return [];
+    if (!Array.isArray(diagnostics))
+      throw new Error("Invalid attention stage diagnostics");
+    return diagnostics.map((item) => {
+      if (!item || typeof item !== "object" || Array.isArray(item))
+        throw new Error("Invalid attention stage diagnostic");
+      const { code, severity, field, fixApplied } = item;
+      if (typeof code !== "string" || !/^(event|publication|communication|referential|action)\.[a-z.-]{1,120}$/.test(
+        code
+      ) || severity !== "error" && severity !== "warning" && severity !== "info")
+        throw new Error("Invalid attention stage diagnostic");
+      return {
+        code,
+        severity,
+        message: code,
+        ...this.safeField(field) ? { field } : {},
+        ...typeof fixApplied === "boolean" ? { fixApplied } : {}
+      };
+    });
+  }
+  safeField(field) {
+    if (typeof field !== "string" || field.length > 160) return false;
+    return ["Aperitif", "Restaurant / Bar"].includes(field) || /^(agenda|assets|date|description|host|hoster|hosts|speakers|title|name|labels|confirmations|event_status|occurrenceStatus|publicationLinks)(?:\[\d{1,6}\]|\.(?:[a-zA-Z][a-zA-Z-]{0,40}|\d{1,6}))*$/.test(
+      field
+    );
+  }
+};
+
+// packages/runtime/github-actions/src/attention-stages.ts
+var AttentionStages = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  parse(value) {
+    return this.collaborators.attentionStageEvaluation.evaluate(
+      this.collaborators.attentionStageInput.parse(value)
+    );
+  }
+  diagnostics(value) {
+    return this.collaborators.attentionStageEvaluation.diagnostics(
+      this.collaborators.attentionStageInput.parse(value)
+    );
+  }
+  hasCompleteReports(value) {
+    return this.collaborators.attentionStageEvaluation.complete(
+      this.collaborators.attentionStageInput.parse(value)
+    );
+  }
+};
+
+// packages/runtime/github-actions/src/communication-input.ts
+var CommunicationInput = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  validate(input) {
+    this.collaborators.conferenceHallInput.validate(input);
+    for (const field of [
+      "locale",
+      "githubToken",
+      "mailingsToken",
+      "slackToken",
+      "openFeedbackApiKey"
+    ])
+      if (!input[field]?.trim())
+        throw new Error(`Input required and not supplied: ${field}`);
+    if (typeof input.slidesReady !== "boolean")
+      throw new Error("slidesReady must be an explicit boolean");
+    if (!Number.isSafeInteger(input.issueNumber) || input.issueNumber <= 0) {
+      throw new Error("issueNumber must be a positive integer");
+    }
+    if (!this.isRepositoryPart(input.owner) || !this.isRepositoryPart(input.repo)) {
+      throw new Error(
+        "owner and repo must be valid GitHub repository segments"
+      );
+    }
+    if (!input.slackOrganizerChannelId.trim()) {
+      throw new Error("slackOrganizerChannelId must not be empty");
+    }
+    if (!input.managedCommentAuthor.trim()) {
+      throw new Error("managedCommentAuthor must not be empty");
+    }
+  }
+  isRepositoryPart(value) {
+    return /^[A-Za-z0-9_.-]+$/.test(value);
+  }
+};
+
 // packages/runtime/github-actions/src/conference-hall-input.ts
-var ConferenceHallInput = class _ConferenceHallInput {
-  static read() {
+var ConferenceHallInput = class {
+  read() {
     const conferenceHallApiKey = getInput("conference-hall-api-key", {
       required: true
     });
     setSecret(conferenceHallApiKey);
-    return _ConferenceHallInput.validate({
+    return this.validate({
       conferenceHallEvent: getInput("conference-hall-event", {
         required: true
       }),
       conferenceHallApiKey
     });
   }
-  static validate(input) {
+  validate(input) {
     const conferenceHallEvent = input.conferenceHallEvent?.trim();
     const conferenceHallApiKey = input.conferenceHallApiKey?.trim();
     if (!conferenceHallEvent)
@@ -60951,6 +66759,596 @@ var ConferenceHallInput = class _ConferenceHallInput {
         "Input required and not supplied: conference-hall-api-key"
       );
     return { conferenceHallEvent, conferenceHallApiKey };
+  }
+};
+
+// packages/runtime/github-actions/src/i18n/diagnostics-referential.en.ts
+var DIAGNOSTICS_REFERENTIAL_EN = {
+  "diagnostic.referential.source.unavailable": "Conference Hall speaker profiles are unavailable. Check CFP access and retry; cached contacts are not used.",
+  "diagnostic.referential.source.invalid": "Conference Hall speaker profiles are invalid or belong to another CFP. Check source configuration before retrying.",
+  "diagnostic.referential.source.rate-limited": "Conference Hall has rate-limited profile refresh. Wait for the source retry window; cached contacts are not used.",
+  "diagnostic.referential.source.mapping-required": "A linked speaker is missing from the configured CFP export. Review the source identity mapping before retrying.",
+  "diagnostic.referential.source.conflict": "Conference Hall speaker identities conflict. Review scoped mappings before retrying.",
+  "diagnostic.referential.speaker.display-name.invalid": "A display name or both structured names are required.",
+  "diagnostic.referential.speaker.mapping.invalid": "Source mappings must be complete, scoped and unique.",
+  "diagnostic.referential.contact.id.duplicate": "Contact stable identifiers must be unique.",
+  "diagnostic.referential.host.id.conflict": "A host stable identifier cannot describe different host names.",
+  "diagnostic.referential.host.display-name.invalid": "Host display name must be a non-empty string.",
+  "diagnostic.referential.contact.name.invalid": "Contact name must be a non-empty string.",
+  "diagnostic.referential.contact.email.invalid": "Host contact email address is invalid.",
+  "diagnostic.referential.contact.phone.invalid": "Host contact phone must be a string when provided.",
+  "diagnostic.referential.contact.address.invalid": "Host contact address must be a non-empty string.",
+  "diagnostic.referential.host.id.invalid": "Host stable identifier must use the opaque host-0001 format.",
+  "diagnostic.referential.contact.id.invalid": "Contact stable identifier must use the opaque contact-0001 format.",
+  "diagnostic.referential.reference.host.invalid": "Explicit host reference contains an invalid stable identifier.",
+  "diagnostic.referential.reference.host.unknown": "Explicit host stable identifier is not present in the catalog.",
+  "diagnostic.referential.reference.host.display-name-mismatch": "Host display name is stale; the stable identifier remains authoritative.",
+  "diagnostic.referential.reference.speaker.invalid": "Explicit speaker reference contains an invalid stable identifier.",
+  "diagnostic.referential.reference.speaker.unknown": "Explicit speaker stable identifier is not present in the catalog.",
+  "diagnostic.referential.reference.speaker.display-name-mismatch": "Speaker display name is stale; the stable identifier remains authoritative.",
+  "diagnostic.referential.speaker.id.duplicate": "Speaker stable identifiers must be unique.",
+  "diagnostic.referential.speaker.id.invalid": "Speaker stable identifier must use the speaker-* slug format.",
+  "diagnostic.referential.speaker.first-name.invalid": "Speaker first name must be a non-empty string.",
+  "diagnostic.referential.speaker.last-name.invalid": "Speaker last name must be a non-empty string.",
+  "diagnostic.referential.speaker.company.invalid": "Speaker company must be a non-empty string.",
+  "diagnostic.referential.speaker.email.invalid": "Speaker email address is invalid.",
+  "diagnostic.referential.speaker.phone.invalid": "Speaker phone must be a string when provided.",
+  "diagnostic.referential.host.display-name.duplicate": "Duplicate normalized host display names are not allowed; keep one stable host per public name.",
+  "diagnostic.referential.speaker.display-name.duplicate": "Duplicate normalized speaker display names are not allowed; keep one stable speaker per public name.",
+  "diagnostic.referential.reference.host.ambiguous": "Several hosts share this name; include the correct stable host ID.",
+  "diagnostic.referential.reference.speaker.ambiguous": "Several speakers share this name; include the correct stable speaker ID."
+};
+
+// packages/runtime/github-actions/src/i18n/diagnostics-referential.fr.ts
+var DIAGNOSTICS_REFERENTIAL_FR = {
+  "diagnostic.referential.source.unavailable": "Les profils Conference Hall sont indisponibles. V\xE9rifiez les acc\xE8s au CFP puis r\xE9essayez ; les anciens contacts ne sont pas utilis\xE9s.",
+  "diagnostic.referential.source.invalid": "Les profils Conference Hall sont invalides ou proviennent d'un autre CFP. V\xE9rifiez la configuration avant de r\xE9essayer.",
+  "diagnostic.referential.source.rate-limited": "Conference Hall limite les requ\xEAtes de profils. Attendez le d\xE9lai de reprise ; les anciens contacts ne sont pas utilis\xE9s.",
+  "diagnostic.referential.source.mapping-required": "Un intervenant li\xE9 est absent de l'export du CFP configur\xE9. V\xE9rifiez son identit\xE9 source avant de r\xE9essayer.",
+  "diagnostic.referential.source.conflict": "Les identit\xE9s des intervenants Conference Hall sont en conflit. V\xE9rifiez les correspondances dans le CFP avant de r\xE9essayer.",
+  "diagnostic.referential.speaker.display-name.invalid": "Un nom public ou un pr\xE9nom et un nom sont n\xE9cessaires.",
+  "diagnostic.referential.speaker.mapping.invalid": "Les identit\xE9s source doivent \xEAtre compl\xE8tes, uniques et li\xE9es au CFP.",
+  "diagnostic.referential.contact.id.duplicate": "Les identifiants stables des contacts doivent \xEAtre uniques.",
+  "diagnostic.referential.host.id.conflict": "Un identifiant stable d'h\xF4te ne peut pas d\xE9signer plusieurs noms d'h\xF4te.",
+  "diagnostic.referential.host.display-name.invalid": "Le nom de l'h\xF4te doit \xEAtre une cha\xEEne de caract\xE8res non vide.",
+  "diagnostic.referential.contact.name.invalid": "Le nom du contact doit \xEAtre une cha\xEEne de caract\xE8res non vide.",
+  "diagnostic.referential.contact.email.invalid": "L'adresse e-mail du contact de l'h\xF4te est invalide.",
+  "diagnostic.referential.contact.phone.invalid": "Le t\xE9l\xE9phone du contact doit \xEAtre une cha\xEEne de caract\xE8res lorsqu'il est renseign\xE9.",
+  "diagnostic.referential.contact.address.invalid": "L'adresse du contact doit \xEAtre une cha\xEEne de caract\xE8res non vide.",
+  "diagnostic.referential.host.id.invalid": "L'identifiant stable de l'h\xF4te doit respecter le format opaque host-0001.",
+  "diagnostic.referential.contact.id.invalid": "L'identifiant stable du contact doit respecter le format opaque contact-0001.",
+  "diagnostic.referential.reference.host.invalid": "La r\xE9f\xE9rence de l'h\xF4te ou son identifiant stable est invalide.",
+  "diagnostic.referential.reference.host.unknown": "L'h\xF4te r\xE9f\xE9renc\xE9 est absent du catalogue.",
+  "diagnostic.referential.reference.host.display-name-mismatch": "Le nom de l'h\xF4te est obsol\xE8te ; son identifiant stable reste la r\xE9f\xE9rence.",
+  "diagnostic.referential.reference.speaker.invalid": "La r\xE9f\xE9rence de l'intervenant ou son identifiant stable est invalide.",
+  "diagnostic.referential.reference.speaker.unknown": "L'intervenant r\xE9f\xE9renc\xE9 est absent du catalogue.",
+  "diagnostic.referential.reference.speaker.display-name-mismatch": "Le nom de l'intervenant est obsol\xE8te ; son identifiant stable reste la r\xE9f\xE9rence.",
+  "diagnostic.referential.speaker.id.duplicate": "Les identifiants stables des intervenants doivent \xEAtre uniques.",
+  "diagnostic.referential.speaker.id.invalid": "L'identifiant stable de l'intervenant doit respecter le format speaker-*.",
+  "diagnostic.referential.speaker.first-name.invalid": "Le pr\xE9nom de l'intervenant doit \xEAtre une cha\xEEne de caract\xE8res non vide.",
+  "diagnostic.referential.speaker.last-name.invalid": "Le nom de l'intervenant doit \xEAtre une cha\xEEne de caract\xE8res non vide.",
+  "diagnostic.referential.speaker.company.invalid": "L'entreprise de l'intervenant doit \xEAtre une cha\xEEne de caract\xE8res non vide.",
+  "diagnostic.referential.speaker.email.invalid": "L'adresse e-mail de l'intervenant est invalide.",
+  "diagnostic.referential.speaker.phone.invalid": "Le t\xE9l\xE9phone de l'intervenant doit \xEAtre une cha\xEEne de caract\xE8res lorsqu'il est renseign\xE9.",
+  "diagnostic.referential.host.display-name.duplicate": "Les noms d'h\xF4te normalis\xE9s doivent \xEAtre uniques ; conservez un seul identifiant stable par nom public.",
+  "diagnostic.referential.speaker.display-name.duplicate": "Les noms d'intervenant normalis\xE9s doivent \xEAtre uniques ; conservez un seul identifiant stable par nom public.",
+  "diagnostic.referential.reference.host.ambiguous": "Plusieurs h\xF4tes portent ce nom ; ajoutez le bon identifiant stable.",
+  "diagnostic.referential.reference.speaker.ambiguous": "Plusieurs intervenants portent ce nom ; ajoutez le bon identifiant stable."
+};
+
+// packages/runtime/github-actions/src/i18n/messages.en.ts
+var EN_MESSAGES7 = {
+  "diagnostic.publication.meetup.approval-pending": "Approve or reject publication in the organizer approval comment. The event remains a draft until approved.",
+  "diagnostic.publication.meetup.approval-rejected": "Publication was rejected. The event remains a draft; changed event content requires a new approval.",
+  "diagnostic.publication.meetup.approval-unavailable": "Publication approval could not be verified. Check the approval comment and GitHub App permissions before retrying.",
+  "diagnostic.publication.meetup.approval-notification-failed": "The organizer approval notification could not be confirmed. Review the approval comment in the issue.",
+  "diagnostic.publication.meetup.source": "Event source evaluation failed. Resolve the technical source diagnostics before synchronizing.",
+  "diagnostic.publication.meetup.unavailable": "Browser login or startup failed. Check runtime installation, connectivity, solver configuration, and the login page selectors.",
+  "action.publication.reconcile-meetup": "Create or update Meetup event",
+  "report.meetup.draft": "meetup_event=draft approval=required",
+  "report.meetup.review": "meetup_url={url}",
+  "report.meetup.updated": "meetup_event=synchronized",
+  "report.meetup.skipped": "meetup_event=skipped",
+  "report.meetup.blocked": "meetup_event=blocked",
+  "diagnostic.publication.meetup.inactive": "Meetup publication is inactive for this issue.",
+  "diagnostic.publication.meetup.prerequisites": "Complete the future event date, title, description, confirmed host and speakers, resolved agenda, and public venue mapping, and fix malformed Communication checklist items before synchronizing.",
+  "diagnostic.publication.meetup.link": "Set a valid event URL belonging to the configured Meetup group.",
+  "diagnostic.publication.meetup.conflict": "The issue link and recorded Meetup event differ. Restore the recorded event link before running again.",
+  "diagnostic.publication.meetup.uncertain": "Synchronization was interrupted. Check Meetup and enter the verified draft or published event URL in Meetup Link before running again. Leave Meetup event published unchecked until publication is confirmed. Delete the journal only if an organizer has verified that no event was created.",
+  "diagnostic.publication.meetup.authentication": "Organizer login could not be verified. Check the account, credentials, and Gemini configuration; complete any unsupported challenge interactively.",
+  "diagnostic.publication.meetup.editor": "The Meetup editor could not be prepared. Check organizer permissions, the configured venue, and browser selectors.",
+  "diagnostic.publication.meetup.verification": "Meetup did not return the expected saved event fields. Its identity is recorded; inspect the event and rerun to update it.",
+  "diagnostic.issue-form.out-of-date": "Synchronize the issue form.",
+  "diagnostic.issue-form.updated": "Issue form synchronized.",
+  "report.speaker-sync.pr-title": "feat(referential): synchronize Conference Hall speakers",
+  "report.speaker-sync.pr-body": "Review speaker identity mappings and preserved local CSV fields before merging.",
+  "action.referential.sync-speakers": "Synchronize Conference Hall speakers",
+  "report.speaker-sync.completed": "speaker_sync=completed speakers={count}",
+  "report.speaker-sync.failed": "speaker_sync=blocked stage={stage}",
+  "report.speaker-sync.stage.read-catalog": "read-catalog",
+  "report.speaker-sync.stage.load-source": "load-source",
+  "report.speaker-sync.stage.merge-speakers": "merge-speakers",
+  "report.speaker-sync.stage.validate-catalog": "validate-catalog",
+  "report.speaker-sync.stage.check-form": "check-form",
+  "report.speaker-sync.stage.save-catalog": "save-catalog",
+  "report.speaker-sync.stage.update-form": "update-form",
+  "report.speaker-sync.stage.unknown": "unknown",
+  "diagnostic.speaker-sync.configuration": "Set the CFP slug and Web API key.",
+  "diagnostic.speaker-sync.http": "Conference Hall returned an HTTP error; retry when the service is available.",
+  "diagnostic.speaker-sync.authentication": "Check the API key in the CFP's Settings > Web API.",
+  "diagnostic.speaker-sync.event-not-found": "Check the CFP slug in CONFERENCE_HALL_EVENT.",
+  "diagnostic.speaker-sync.network": "Check runner network access to conference-hall.io.",
+  "diagnostic.speaker-sync.timeout": "Conference Hall exceeded the 15-second timeout; retry.",
+  "diagnostic.speaker-sync.json": "The CFP Web API returned invalid JSON.",
+  "diagnostic.speaker-sync.schema": "Correct the indicated required field in the CFP Web API export.",
+  "diagnostic.speaker-sync.response-size": "The CFP Web API response must contain 1 byte to 5 MiB.",
+  "diagnostic.speaker-sync.unavailable": "Check the CFP slug, API key and runner network access.",
+  "diagnostic.speaker-sync.history-unavailable": "Speaker ID history is unavailable. Fetch the complete repository history (fetch-depth: 0) and verify Git can read it before retrying.",
+  "diagnostic.speaker-sync.invalid": "Check the speaker CSV, allocation state and issue form.",
+  "diagnostic.speaker-sync.mapping-required": "Link the existing speaker using source_provider, source_event and source_speaker_id in referentials/speakers.csv; preserve speaker_id.",
+  "diagnostic.speaker-sync.conflict": "Resolve duplicate source mappings or concurrent catalog edits.",
+  "diagnostic.speaker-sync.rate-limited": "Conference Hall rate limit reached; retry after the API cooldown.",
+  "diagnostic.speaker-sync.unexpected": "Unexpected technical failure during speaker synchronization.",
+  "report.speaker-sync.private": "speaker_sync=blocked reason=private-repository-required",
+  "action.communication.reconcile-attention": "Reconcile organizer attention",
+  "report.attention.updated": "attention=persisted",
+  "report.attention.skipped": "attention=skipped reason=unrelated-issue",
+  "report.attention.failed": "attention=synchronization-failed",
+  "action.publication.reconcile-feedback": "Reconcile meetup feedback",
+  "report.feedback.skipped": "feedback=skipped",
+  "report.feedback.completed": "feedback=completed",
+  "report.feedback.changes": "issue_persisted={persisted} feedback_link_updated={linkUpdated}",
+  "error.EventNotFoundError": "The event could not be found.",
+  "error.EventConcurrentModificationError": "The event changed during reconciliation.",
+  "error.GoogleDriveAssetRepositoryError": "Google Drive asset reconciliation failed.",
+  "error.GitHubEventRepositoryConfigurationError": "The event repository configuration is invalid.",
+  "error.GitHubEventRepositoryScopeError": "The event is outside the configured repository scope.",
+  "error.GitHubEventRepositoryResponseError": "GitHub returned an invalid event response.",
+  "error.GitHubEventCommentRepositoryConfigurationError": "The comment repository configuration is invalid.",
+  "error.GitHubEventCommentRepositoryScopeError": "The comment is outside the configured repository scope.",
+  "error.GitHubEventCommentRepositoryResponseError": "GitHub returned an invalid comment response.",
+  "action.referential.validate": "Validate meetup referentials",
+  "action.referential.sync-issue-form": "Synchronize meetup issue form",
+  "action.event.reconcile": "Reconcile meetup event",
+  "action.event.list-active": "List active meetup events",
+  "action.communication.reconcile": "Reconcile meetup communications",
+  "action.publication.reconcile-assets": "Reconcile meetup assets",
+  "report.failed": "failure={reason}",
+  "report.technical-failure": "technical_failure={codes}",
+  "report.summary-unavailable": "summary=unavailable",
+  "report.error.unexpected": "Unexpected technical failure.",
+  "report.referential.valid": "referentials=valid",
+  "report.referential.invalid": "referentials=invalid",
+  "report.referential.counts": "hosts={hosts, number} speakers={speakers, number}",
+  "report.issue-form.blocked": "issue_form=blocked reason=invalid-referentials",
+  "report.issue-form.stale": "issue_form=stale",
+  "report.issue-form.updated": "issue_form=updated",
+  "report.issue-form.current": "issue_form=current",
+  "report.issue-form.files": "files={files}",
+  "report.event.context": "issue={issue} mode={mode}",
+  "report.event.skipped": "event=skipped reason=unrelated-issue",
+  "report.event.state": "state={state} ready={ready}",
+  "report.event.persisted": "issue_persisted={persisted}",
+  "report.events.count": "active_events={count, number}",
+  "report.events.issues": "issues={issues}",
+  "report.events.empty": "active_events=0",
+  "report.assets.skipped": "assets=skipped",
+  "report.assets.completed": "assets=completed",
+  "report.assets.counts": "issue_persisted={persisted} asset_files={count, number}",
+  "report.communication.mode": "communication_mode={mode}",
+  "report.communication.planned": "planned={planned, number} due={due, number} dispatched={dispatched, number}",
+  "report.communication.accepted": "accepted={accepted, number} recorded={recorded, number} deferred={deferred, number}",
+  "report.communication.uncertain": "uncertain={uncertain, number} rejected={rejected, number}"
+};
+
+// packages/runtime/github-actions/src/i18n/messages.fr.ts
+var FR_MESSAGES7 = {
+  "diagnostic.publication.meetup.approval-pending": "Approuvez ou refusez la publication dans le commentaire d'approbation. L'\xE9v\xE9nement reste en brouillon avant approbation.",
+  "diagnostic.publication.meetup.approval-rejected": "La publication a \xE9t\xE9 refus\xE9e. L'\xE9v\xE9nement reste en brouillon ; toute modification n\xE9cessite une nouvelle approbation.",
+  "diagnostic.publication.meetup.approval-unavailable": "Impossible de v\xE9rifier l'approbation de publication. V\xE9rifiez le commentaire et les permissions de la GitHub App avant de relancer.",
+  "diagnostic.publication.meetup.approval-notification-failed": "La notification d'approbation n'a pas pu \xEAtre confirm\xE9e. Consultez le commentaire d'approbation dans l'issue.",
+  "diagnostic.publication.meetup.source": "La lecture des sources a \xE9chou\xE9. R\xE9solvez les diagnostics techniques des sources avant de synchroniser.",
+  "diagnostic.publication.meetup.unavailable": "Le d\xE9marrage du navigateur ou la connexion a \xE9chou\xE9. V\xE9rifiez les d\xE9pendances, le r\xE9seau, le solveur et les s\xE9lecteurs de connexion.",
+  "action.publication.reconcile-meetup": "Cr\xE9er ou mettre \xE0 jour un \xE9v\xE9nement Meetup",
+  "report.meetup.draft": "evenement_meetup=brouillon approbation=requise",
+  "report.meetup.review": "meetup_url={url}",
+  "report.meetup.updated": "evenement_meetup=synchronise",
+  "report.meetup.skipped": "evenement_meetup=ignore",
+  "report.meetup.blocked": "evenement_meetup=bloque",
+  "diagnostic.publication.meetup.inactive": "La publication Meetup est inactive pour cette issue.",
+  "diagnostic.publication.meetup.prerequisites": "Compl\xE9tez la date future, le titre, la description, les confirmations, le programme r\xE9solu et le lieu public, puis corrigez les cases mal form\xE9es dans Communication avant de synchroniser.",
+  "diagnostic.publication.meetup.link": "Renseignez une URL d'\xE9v\xE9nement valide du groupe Meetup configur\xE9.",
+  "diagnostic.publication.meetup.conflict": "Le lien de l'issue diff\xE8re de l'\xE9v\xE9nement enregistr\xE9. R\xE9tablissez le lien enregistr\xE9 avant de relancer.",
+  "diagnostic.publication.meetup.uncertain": "Synchronisation interrompue. V\xE9rifiez Meetup et inscrivez le lien v\xE9rifi\xE9 du brouillon ou de l'\xE9v\xE9nement publi\xE9 dans Meetup Link avant de relancer. Laissez Meetup event published d\xE9coch\xE9 tant que la publication n'est pas confirm\xE9e. Ne supprimez le journal qu'apr\xE8s avoir v\xE9rifi\xE9 qu'aucun \xE9v\xE9nement n'a \xE9t\xE9 cr\xE9\xE9.",
+  "diagnostic.publication.meetup.authentication": "Connexion organisateur non v\xE9rifi\xE9e. V\xE9rifiez le compte, les identifiants et Gemini ; terminez manuellement toute v\xE9rification non prise en charge.",
+  "diagnostic.publication.meetup.editor": "Impossible de pr\xE9parer l'\xE9diteur Meetup. V\xE9rifiez les droits organisateur, le lieu configur\xE9 et les s\xE9lecteurs du navigateur.",
+  "diagnostic.publication.meetup.verification": "Les champs enregistr\xE9s sur Meetup ne correspondent pas. L'identit\xE9 est conserv\xE9e ; v\xE9rifiez l'\xE9v\xE9nement puis relancez sa mise \xE0 jour.",
+  "diagnostic.issue-form.out-of-date": "Synchronisez le formulaire d'issue.",
+  "diagnostic.issue-form.updated": "Formulaire d'issue synchronis\xE9.",
+  "report.speaker-sync.pr-title": "feat(referential): synchroniser les intervenants Conference Hall",
+  "report.speaker-sync.pr-body": "V\xE9rifiez les identit\xE9s des intervenants et les champs locaux du CSV avant fusion.",
+  "action.referential.sync-speakers": "Synchroniser les intervenants Conference Hall",
+  "report.speaker-sync.completed": "speaker_sync=completed speakers={count}",
+  "report.speaker-sync.failed": "speaker_sync=blocked stage={stage}",
+  "report.speaker-sync.stage.read-catalog": "read-catalog",
+  "report.speaker-sync.stage.load-source": "load-source",
+  "report.speaker-sync.stage.merge-speakers": "merge-speakers",
+  "report.speaker-sync.stage.validate-catalog": "validate-catalog",
+  "report.speaker-sync.stage.check-form": "check-form",
+  "report.speaker-sync.stage.save-catalog": "save-catalog",
+  "report.speaker-sync.stage.update-form": "update-form",
+  "report.speaker-sync.stage.unknown": "unknown",
+  "diagnostic.speaker-sync.configuration": "Configurez le slug du CFP et sa cl\xE9 Web API.",
+  "diagnostic.speaker-sync.http": "Conference Hall renvoie une erreur HTTP ; r\xE9essayez quand le service est disponible.",
+  "diagnostic.speaker-sync.authentication": "V\xE9rifiez la cl\xE9 API dans Settings > Web API du CFP.",
+  "diagnostic.speaker-sync.event-not-found": "V\xE9rifiez le slug du CFP dans CONFERENCE_HALL_EVENT.",
+  "diagnostic.speaker-sync.network": "V\xE9rifiez l'acc\xE8s r\xE9seau de l'ex\xE9cuteur \xE0 conference-hall.io.",
+  "diagnostic.speaker-sync.timeout": "Conference Hall a d\xE9pass\xE9 le d\xE9lai de 15 secondes ; r\xE9essayez.",
+  "diagnostic.speaker-sync.json": "La Web API du CFP a renvoy\xE9 un JSON invalide.",
+  "diagnostic.speaker-sync.schema": "Corrigez le champ obligatoire indiqu\xE9 dans l'export Web API du CFP.",
+  "diagnostic.speaker-sync.response-size": "La r\xE9ponse Web API du CFP doit contenir entre 1 octet et 5 Mio.",
+  "diagnostic.speaker-sync.history-unavailable": "L'historique des identifiants d'intervenants est indisponible. R\xE9cup\xE9rez tout l'historique du d\xE9p\xF4t (fetch-depth: 0) et v\xE9rifiez que Git peut le lire avant de r\xE9essayer.",
+  "diagnostic.speaker-sync.unavailable": "V\xE9rifiez le slug du CFP, sa cl\xE9 API et l'acc\xE8s r\xE9seau de l'ex\xE9cuteur.",
+  "diagnostic.speaker-sync.invalid": "V\xE9rifiez le CSV des intervenants, les identifiants r\xE9serv\xE9s et le formulaire d'issue.",
+  "diagnostic.speaker-sync.mapping-required": "Renseignez source_provider, source_event et source_speaker_id pour l'intervenant existant dans referentials/speakers.csv ; conservez speaker_id.",
+  "diagnostic.speaker-sync.conflict": "Corrigez les correspondances en double ou les modifications concurrentes du catalogue.",
+  "diagnostic.speaker-sync.rate-limited": "Limite API Conference Hall atteinte ; r\xE9essayez apr\xE8s le d\xE9lai impos\xE9.",
+  "diagnostic.speaker-sync.unexpected": "Erreur technique inattendue pendant la synchronisation des intervenants.",
+  "report.speaker-sync.private": "speaker_sync=blocked reason=private-repository-required",
+  "action.communication.reconcile-attention": "Synchroniser les points \xE0 traiter par les organisateurs",
+  "report.attention.updated": "attention=persisted",
+  "report.attention.skipped": "attention=skipped reason=unrelated-issue",
+  "report.attention.failed": "attention=synchronization-failed",
+  "action.publication.reconcile-feedback": "V\xE9rifier et mettre \xE0 jour les retours du meetup",
+  "report.feedback.skipped": "feedback=skipped",
+  "report.feedback.completed": "feedback=completed",
+  "report.feedback.changes": "issue_persisted={persisted} feedback_link_updated={linkUpdated}",
+  "error.EventNotFoundError": "L'\xE9v\xE9nement est introuvable.",
+  "error.EventConcurrentModificationError": "L'\xE9v\xE9nement a chang\xE9 pendant la synchronisation.",
+  "error.GoogleDriveAssetRepositoryError": "La synchronisation des fichiers Google Drive a \xE9chou\xE9.",
+  "error.GitHubEventRepositoryConfigurationError": "La configuration du d\xE9p\xF4t d'\xE9v\xE9nements est invalide.",
+  "error.GitHubEventRepositoryScopeError": "L'\xE9v\xE9nement est hors du p\xE9rim\xE8tre du d\xE9p\xF4t configur\xE9.",
+  "error.GitHubEventRepositoryResponseError": "La r\xE9ponse GitHub pour l'\xE9v\xE9nement est invalide.",
+  "error.GitHubEventCommentRepositoryConfigurationError": "La configuration du d\xE9p\xF4t de commentaires est invalide.",
+  "error.GitHubEventCommentRepositoryScopeError": "Le commentaire est hors du p\xE9rim\xE8tre du d\xE9p\xF4t configur\xE9.",
+  "error.GitHubEventCommentRepositoryResponseError": "La r\xE9ponse GitHub pour les commentaires est invalide.",
+  "action.referential.validate": "Valider les r\xE9f\xE9rentiels du meetup",
+  "action.referential.sync-issue-form": "Synchroniser le formulaire du meetup",
+  "action.event.reconcile": "V\xE9rifier et mettre \xE0 jour le meetup",
+  "action.event.list-active": "Lister les meetups actifs",
+  "action.communication.reconcile": "V\xE9rifier et envoyer les communications du meetup",
+  "action.publication.reconcile-assets": "V\xE9rifier et mettre \xE0 jour les ressources du meetup",
+  "report.failed": "failure={reason}",
+  "report.technical-failure": "technical_failure={codes}",
+  "report.summary-unavailable": "summary=unavailable",
+  "report.error.unexpected": "Erreur technique inattendue.",
+  "report.referential.valid": "referentials=valid",
+  "report.referential.invalid": "referentials=invalid",
+  "report.referential.counts": "hosts={hosts, number} speakers={speakers, number}",
+  "report.issue-form.blocked": "issue_form=blocked reason=invalid-referentials",
+  "report.issue-form.stale": "issue_form=stale",
+  "report.issue-form.updated": "issue_form=updated",
+  "report.issue-form.current": "issue_form=current",
+  "report.issue-form.files": "files={files}",
+  "report.event.context": "issue={issue} mode={mode}",
+  "report.event.skipped": "event=skipped reason=unrelated-issue",
+  "report.event.state": "state={state} ready={ready}",
+  "report.event.persisted": "issue_persisted={persisted}",
+  "report.events.count": "active_events={count, number}",
+  "report.events.issues": "issues={issues}",
+  "report.events.empty": "active_events=0",
+  "report.assets.skipped": "assets=skipped",
+  "report.assets.completed": "assets=completed",
+  "report.assets.counts": "issue_persisted={persisted} asset_files={count, number}",
+  "report.communication.mode": "communication_mode={mode}",
+  "report.communication.planned": "planned={planned, number} due={due, number} dispatched={dispatched, number}",
+  "report.communication.accepted": "accepted={accepted, number} recorded={recorded, number} deferred={deferred, number}",
+  "report.communication.uncertain": "uncertain={uncertain, number} rejected={rejected, number}"
+};
+
+// packages/runtime/github-actions/src/i18n/catalog.ts
+var CATALOGS9 = {
+  en: {
+    ...EN_MESSAGES7,
+    ...DIAGNOSTICS_REFERENTIAL_EN
+  },
+  fr: {
+    ...FR_MESSAGES7,
+    ...DIAGNOSTICS_REFERENTIAL_FR
+  }
+};
+
+// packages/runtime/github-actions/src/i18n/action-messages.ts
+var ActionMessages = class extends MessageLocalizer {
+  constructor(collaborators, locale = "en") {
+    super(collaborators, CATALOGS9, locale);
+  }
+  /** Private speaker-sync PR guidance; the fallback must already be redacted. */
+  diagnostic(code, fallback) {
+    const key = `diagnostic.${code}`;
+    return this.locale === "en" || !Object.hasOwn(CATALOGS9.en, key) ? fallback : this.t(key);
+  }
+  error(name, publicFallback) {
+    const key = `error.${name}`;
+    if (this.locale === "en") return publicFallback;
+    return Object.hasOwn(CATALOGS9.en, key) ? this.t(key) : this.t("report.error.unexpected");
+  }
+};
+
+// packages/runtime/github-actions/src/meetup-publication-configuration.ts
+import { readFile as readFile5 } from "node:fs/promises";
+import { join as join3 } from "node:path";
+var MeetupPublicationConfiguration = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  async load(root) {
+    const text = await readFile5(
+      join3(root, ".github/meetup-publication.json"),
+      "utf8"
+    );
+    if (Buffer.byteLength(text) > 1e5)
+      throw new Error("Meetup publication configuration is too large");
+    return this.parse(JSON.parse(text));
+  }
+  parse(input) {
+    if (!this.collaborators.runtimeInput.isObject(input) || input.version !== 1 || typeof input.startTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(input.startTime) || typeof input.endTime !== "string" || !this.collaborators.scheduledEventPolicy.validTime(input.endTime) || input.endTime <= input.startTime || !this.collaborators.runtimeInput.isObject(input.venues))
+      throw new Error("Invalid Meetup publication configuration");
+    const venues = {};
+    for (const [id, venue] of Object.entries(input.venues)) {
+      if (!/^host-[a-z0-9-]+$/.test(id) || !this.collaborators.runtimeInput.isObject(venue) || !this.text(venue.name) || !this.text(venue.city))
+        throw new Error("Invalid public Meetup venue mapping");
+      venues[id] = { name: venue.name, city: venue.city };
+    }
+    return { startTime: input.startTime, endTime: input.endTime, venues };
+  }
+  text(value) {
+    return typeof value === "string" && value.trim() === value && value.length > 0 && value.length <= 200 && !/[\r\n<>]/.test(value);
+  }
+};
+
+// packages/runtime/github-actions/src/organizer-feedback.ts
+var OrganizerFeedback = class {
+  constructor(collaborators, events, comments, meetupLabel) {
+    this.collaborators = collaborators;
+    this.reconciliation = this.collaborators.createReconcileOrganizerFeedback(
+      events,
+      comments,
+      meetupLabel
+    );
+  }
+  collaborators;
+  reconciliation;
+  async execute(identity, stageResults) {
+    await this.reconciliation.execute(
+      identity,
+      this.collaborators.attentionStageInput.parse(stageResults)
+    );
+  }
+};
+
+// packages/runtime/github-actions/src/referential-action-report.ts
+var ReferentialActionReport = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  validation(result, diagnostics, messages5 = this.collaborators.createActionMessages()) {
+    const details = [
+      messages5.t(
+        result.isValid ? "report.referential.valid" : "report.referential.invalid"
+      ),
+      messages5.t("report.referential.counts", {
+        hosts: result.hostCount,
+        speakers: result.speakerCount
+      })
+    ];
+    return {
+      details,
+      diagnostics
+    };
+  }
+  issueForm(mode, result, messages5 = this.collaborators.createActionMessages()) {
+    const details = [];
+    if (result.diagnostics.some((item) => item.severity === "error")) {
+      details.push(messages5.t("report.issue-form.blocked"));
+    } else if (result.changed) {
+      details.push(
+        mode === "check" ? messages5.t("report.issue-form.stale") : messages5.t("report.issue-form.updated"),
+        messages5.t("report.issue-form.files", {
+          files: result.changedFiles.join(", ")
+        })
+      );
+    } else {
+      details.push(messages5.t("report.issue-form.current"));
+    }
+    return { details, diagnostics: result.diagnostics };
+  }
+};
+
+// packages/runtime/github-actions/src/runtime-input.ts
+var RuntimeInput = class {
+  positiveIntegerInput(name, value) {
+    if (!/^\d+$/.test(value)) {
+      throw new Error(`${name} must be a positive integer`);
+    }
+    const parsed = Number(value);
+    if (!Number.isSafeInteger(parsed) || parsed <= 0) {
+      throw new Error(`${name} must be a positive integer`);
+    }
+    return parsed;
+  }
+  enumInput(name, value, allowed) {
+    const parsed = allowed.find((candidate) => candidate === value);
+    if (parsed === void 0) {
+      throw new Error(`${name} must be one of: ${allowed.join(", ")}`);
+    }
+    return parsed;
+  }
+  isObject(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
+  }
+  booleanInput(name, value) {
+    if (value === "true") return true;
+    if (value === "false") return false;
+    throw new Error(`${name} must be true or false`);
+  }
+};
+
+// packages/runtime/github-actions/src/speaker-sync-failure-report.ts
+var SpeakerSyncFailureReport = class {
+  constructor(collaborators) {
+    this.collaborators = collaborators;
+  }
+  collaborators;
+  create(error2, messages5) {
+    const failure = error2 instanceof SpeakerSynchronizationError ? error2 : void 0;
+    const cause = failure?.cause ?? error2;
+    const diagnostics = failure?.diagnostics.length ? failure.diagnostics : [this.diagnostic(cause)];
+    const stage = messages5.t(
+      `report.speaker-sync.stage.${failure?.stage ?? "unknown"}`
+    );
+    const guidance = diagnostics.map(
+      (item) => `- ${item.field ? `${item.field}: ` : ""}${messages5.diagnostic(item.code, item.message)}`
+    ).join("\n");
+    return {
+      report: {
+        details: [messages5.t("report.speaker-sync.failed", { stage })],
+        diagnostics
+      },
+      prBody: guidance
+    };
+  }
+  diagnostic(error2) {
+    if (error2 instanceof SpeakerCatalogHistoryError)
+      return {
+        code: "speaker-sync.history-unavailable",
+        severity: "error",
+        message: this.collaborators.createActionMessages().t("diagnostic.speaker-sync.history-unavailable")
+      };
+    const source = error2 instanceof ProposalSourceError ? error2 : void 0;
+    const context3 = source?.context;
+    const reason = context3?.reason ?? source?.code ?? "unexpected";
+    const status = context3?.status;
+    const kind = reason === "http" && (status === 401 || status === 403) ? "authentication" : reason === "http" && status === 404 ? "event-not-found" : reason;
+    const code = `speaker-sync.${kind}`;
+    const field = context3?.field;
+    const safeField = field && /^(?:export|proposals(?:\[\d+\])?(?:\.(?:id|proposalNumber|title|abstract|speakers|email|name|company|languages|formats)(?:\[\d+\])?)*|speakers\[\d+\])$/.test(
+      field
+    ) ? field : void 0;
+    return {
+      code,
+      severity: "error",
+      message: this.collaborators.createActionMessages().t(`diagnostic.${code}`),
+      field: Number.isInteger(status) && Number(status) >= 100 && Number(status) <= 599 ? `HTTP ${status}` : safeField
+    };
+  }
+};
+
+// packages/runtime/github-actions/src/dependency-composition.ts
+var GithubActionsComposition = class {
+  actionFailurePresenter() {
+    return new ActionFailurePresenter();
+  }
+  actionMessages(...args) {
+    return new ActionMessages(
+      { localeResolver: new LocalizationComposition().localeResolver() },
+      ...args
+    );
+  }
+  actionOutput() {
+    return new ActionOutput();
+  }
+  actionReport() {
+    return new ActionReport({
+      createActionMessages: (...args) => this.actionMessages(...args)
+    });
+  }
+  actionRunner() {
+    return new ActionRunner({
+      diagnosticPolicy: new JourneyPolicyComposition().diagnosticPolicy(),
+      actionFailurePresenter: this.actionFailurePresenter(),
+      actionReport: this.actionReport(),
+      actionOutput: this.actionOutput(),
+      createActionMessages: (...args) => this.actionMessages(...args)
+    });
+  }
+  assetContentConfiguration() {
+    return new AssetContentConfiguration({
+      runtimeInput: this.runtimeInput(),
+      contentContractPolicy: new PublicationDomainComposition().contentContractPolicy(),
+      assetRenderConfiguration: this.assetRenderConfiguration()
+    });
+  }
+  assetDateFormatter(...args) {
+    return new AssetDateFormatter(...args);
+  }
+  assetMessages(...args) {
+    return new AssetMessages(
+      { localeResolver: new LocalizationComposition().localeResolver() },
+      ...args
+    );
+  }
+  assetRenderConfiguration() {
+    return new AssetRenderConfiguration({
+      contentContractPolicy: new PublicationDomainComposition().contentContractPolicy(),
+      runtimeInput: this.runtimeInput()
+    });
+  }
+  assetRenderPresenterImpl(...args) {
+    return new AssetRenderPresenterImpl(
+      {
+        createAssetMessages: (...args2) => this.assetMessages(...args2),
+        createAssetDateFormatter: (...args2) => this.assetDateFormatter(...args2)
+      },
+      ...args
+    );
+  }
+  attentionStageInput() {
+    return new AttentionStageInput();
+  }
+  attentionStages() {
+    return new AttentionStages({
+      attentionStageEvaluation: new JourneyPolicyComposition().attentionStageEvaluation(),
+      attentionStageInput: this.attentionStageInput()
+    });
+  }
+  communicationInput() {
+    return new CommunicationInput({
+      conferenceHallInput: this.conferenceHallInput()
+    });
+  }
+  conferenceHallInput() {
+    return new ConferenceHallInput();
+  }
+  meetupPublicationConfiguration() {
+    return new MeetupPublicationConfiguration({
+      runtimeInput: this.runtimeInput(),
+      scheduledEventPolicy: new PublicationDomainComposition().scheduledEventPolicy()
+    });
+  }
+  organizerFeedback(...args) {
+    return new OrganizerFeedback(
+      {
+        attentionStageInput: this.attentionStageInput(),
+        createReconcileOrganizerFeedback: (...args2) => new JourneyComposition().reconcileOrganizerFeedback(...args2)
+      },
+      ...args
+    );
+  }
+  referentialActionReport() {
+    return new ReferentialActionReport({
+      createActionMessages: (...args) => this.actionMessages(...args)
+    });
+  }
+  runtimeInput() {
+    return new RuntimeInput();
+  }
+  speakerSyncFailureReport() {
+    return new SpeakerSyncFailureReport({
+      createActionMessages: (...args) => this.actionMessages(...args)
+    });
   }
 };
 
@@ -60972,24 +67370,26 @@ var EventComposition = class _EventComposition {
     const container = new Container({ defaultScope: "Singleton" });
     const workspaceRoot = input.workspaceRoot ?? process.cwd();
     container.bind(SERVICES.config).toConstantValue(
-      input.config ?? AutomationConfigFactory.createAutomationConfig(input.owner)
+      input.config ?? new JourneyPolicyComposition().automationConfigFactory().createAutomationConfig(input.owner)
     );
     container.bind(SERVICES.referentialRepository).toDynamicValue((context3) => {
       const config = context3.get(SERVICES.config);
-      return new CsvReferentialRepository({
-        workspaceRoot,
-        hostsPath: config.referentials.hosts,
-        speakersPath: config.referentials.speakers
-      });
+      return new CsvReferentialRepositoryComposition().csvReferentialRepository(
+        {
+          workspaceRoot,
+          hostsPath: config.referentials.hosts,
+          speakersPath: config.referentials.speakers
+        }
+      );
     });
     container.bind(SERVICES.issueFormProjection).toDynamicValue(
-      () => new YamlIssueFormProjection({
+      () => new YamlIssueFormProjectionComposition().yamlIssueFormProjection({
         workspaceRoot,
         locale: input.locale
       })
     );
     container.bind(ValidateMeetupReferentials).toDynamicValue(
-      (context3) => new ValidateMeetupReferentials({
+      (context3) => new JourneyComposition().validateMeetupReferentials({
         config: context3.get(SERVICES.config),
         referentialRepository: context3.get(
           SERVICES.referentialRepository
@@ -60997,7 +67397,7 @@ var EventComposition = class _EventComposition {
       })
     );
     container.bind(SynchronizeMeetupIssueForm).toDynamicValue(
-      (context3) => new SynchronizeMeetupIssueForm({
+      (context3) => new JourneyComposition().synchronizeMeetupIssueForm({
         validateReferentials: context3.get(ValidateMeetupReferentials),
         issueFormProjection: context3.get(
           SERVICES.issueFormProjection
@@ -61017,7 +67417,7 @@ var EventComposition = class _EventComposition {
           SERVICES.eventDocumentCodec
         ),
         clock: context3.get(SERVICES.eventClock),
-        rules: EventRuleFactory.createDefaultEventRules({
+        rules: new EventDomainComposition().eventRuleFactory().createDefaultEventRules({
           meetup: config.event["issue-label"],
           hostNeeded: "hoster:needed",
           hostConfirmed: config.event["required-confirmation-labels"][0],
@@ -61030,7 +67430,7 @@ var EventComposition = class _EventComposition {
       };
     });
     container.bind(ListActiveEvents).toDynamicValue(
-      (context3) => new ListActiveEvents({
+      (context3) => new EventDomainComposition().listActiveEvents({
         repository: context3.get(SERVICES.eventRepository),
         documentCodec: context3.get(
           SERVICES.eventDocumentCodec
@@ -61044,11 +67444,11 @@ var EventComposition = class _EventComposition {
     return container;
   }
   static createEventContainer(input) {
-    const sourceSettings = ConferenceHallInput.validate(input);
+    const sourceSettings = new GithubActionsComposition().conferenceHallInput().validate(input);
     const container = _EventComposition.createDocumentContainer(input);
     _EventComposition.bindProposalSource(container, sourceSettings);
     container.bind(ManageMeetupEvent).toDynamicValue(
-      (context3) => new ManageMeetupEvent({
+      (context3) => new JourneyComposition().manageMeetupEvent({
         proposalSource: context3.get(SERVICES.proposalSource),
         config: context3.get(SERVICES.config),
         referentialRepository: context3.get(
@@ -61062,7 +67462,7 @@ var EventComposition = class _EventComposition {
     return container;
   }
   static bindProposalSource(container, input) {
-    const source = new ConferenceHallProposalSource(
+    const source = new ConferenceHallProposalSourceComposition().conferenceHallProposalSource(
       input.conferenceHallEvent,
       input.conferenceHallApiKey
     );
@@ -61071,41 +67471,55 @@ var EventComposition = class _EventComposition {
       SERVICES.referentialRepository
     );
     container.rebind(SERVICES.referentialRepository).toConstantValue(
-      new SourceSpeakerReferentialRepository(local, source, {
-        provider: "conference-hall",
-        event: input.conferenceHallEvent
-      })
+      new ReferentialDomainComposition().sourceSpeakerReferentialRepository(
+        local,
+        source,
+        {
+          provider: "conference-hall",
+          event: input.conferenceHallEvent
+        }
+      )
     );
   }
   static bindEventAdapters(container, input) {
-    container.bind(SERVICES.eventRepository).toDynamicValue(() => new GitHubEventRepository(input.client, input));
+    container.bind(SERVICES.eventRepository).toDynamicValue(
+      () => new GithubEventRepositoryComposition().gitHubEventRepository(
+        input.client,
+        input
+      )
+    );
     container.bind(SERVICES.eventDocumentCodec).toDynamicValue((context3) => {
       const config = context3.get(SERVICES.config);
-      return new GitHubIssueFormEventDocumentCodec({
-        repositoryRef: input.repositoryRef ?? (process.env.GITHUB_SHA || "main"),
-        timeZone: config.timezone,
-        hostConfirmationLabel: config.event["required-confirmation-labels"][0],
-        speakersConfirmationLabel: config.event["required-confirmation-labels"][1]
-      });
+      return new GithubIssueFormEventDocumentCodecComposition().gitHubIssueFormEventDocumentCodec(
+        {
+          repositoryRef: input.repositoryRef ?? (process.env.GITHUB_SHA || "main"),
+          timeZone: config.timezone,
+          hostConfirmationLabel: config.event["required-confirmation-labels"][0],
+          speakersConfirmationLabel: config.event["required-confirmation-labels"][1]
+        }
+      );
     });
     const commentAuthorLogin = input.commentAuthorLogin;
     if (commentAuthorLogin)
       container.bind(SERVICES.eventCommentRepository).toDynamicValue(
-        () => new GitHubEventCommentRepository(input.client, {
-          owner: input.owner,
-          repo: input.repo,
-          authorLogin: commentAuthorLogin,
-          locale: input.locale,
-          retireCommunicationReports: input.retireCommunicationReports,
-          retainedContent: new AttentionCommentRetention(
-            input.client,
-            input.owner,
-            input.repo,
-            commentAuthorLogin
-          )
-        })
+        () => new GithubEventCommentRepositoryComposition().gitHubEventCommentRepository(
+          input.client,
+          {
+            owner: input.owner,
+            repo: input.repo,
+            authorLogin: commentAuthorLogin,
+            locale: input.locale,
+            retireCommunicationReports: input.retireCommunicationReports,
+            retainedContent: new GithubOrganizerAttentionComposition().attentionCommentRetention(
+              input.client,
+              input.owner,
+              input.repo,
+              commentAuthorLogin
+            )
+          }
+        )
       );
-    container.bind(SERVICES.eventClock).toDynamicValue(() => new SystemEventClock());
+    container.bind(SERVICES.eventClock).toDynamicValue(() => new SystemClockComposition().systemEventClock());
   }
 };
 
@@ -61113,38 +67527,52 @@ var EventComposition = class _EventComposition {
 import { randomUUID as randomUUID2 } from "node:crypto";
 var OrganizerApprovalComposition = class {
   static create(client, authorLogin, presenter, notificationPort, organizerChannelId) {
-    const records = new ApprovalRecordFactory(randomUUID2);
-    const notifications = new ApprovalNotifications(
+    const records = new GithubOrganizerApprovalComposition().approvalRecordFactory(
+      randomUUID2
+    );
+    const notifications = new GithubOrganizerApprovalComposition().approvalNotifications(
       new ApprovalNotificationPolicy(),
       client,
       presenter,
       notificationPort,
       organizerChannelId
     );
-    const repository = new GithubApprovalRepository(
+    const repository = new GithubOrganizerApprovalComposition().githubApprovalRepository(
       client,
-      new TrustedApprovalState(client, authorLogin),
+      new GithubOrganizerApprovalComposition().trustedApprovalState(
+        client,
+        authorLogin
+      ),
       authorLogin,
       presenter
     );
-    const finalizer = new FinalizeApprovalDecision(
-      new ResolveApprovalDecision(
+    const finalizer = new GithubOrganizerApprovalComposition().finalizeApprovalDecision(
+      new GithubOrganizerApprovalComposition().resolveApprovalDecision(
         client,
-        new ApprovalDecisionParser(ApprovalPresenter.supportedLocales())
+        new GithubOrganizerApprovalComposition().approvalDecisionParser(
+          new GithubOrganizerApprovalComposition().approvalPresenterFactory().supportedLocales()
+        )
       ),
       repository,
       notifications
     );
     return {
-      approval: new GithubOrganizerApproval(
+      approval: new GithubOrganizerApprovalComposition().githubOrganizerApproval(
         repository,
         records,
         finalizer,
         notifications,
         client
       ),
-      followUp: new GithubOrganizerFollowUp(repository, records, finalizer),
-      attention: new GithubApprovalAttentionSource(repository, finalizer)
+      followUp: new GithubOrganizerApprovalComposition().githubOrganizerFollowUp(
+        repository,
+        records,
+        finalizer
+      ),
+      attention: new GithubOrganizerApprovalComposition().githubApprovalAttentionSource(
+        repository,
+        finalizer
+      )
     };
   }
 };
@@ -61160,19 +67588,27 @@ var CommunicationComposition = class _CommunicationComposition {
     _CommunicationComposition.bindRepositories(container);
     _CommunicationComposition.bindGateways(container, input);
     container.bind(COMMUNICATION_SERVICES.ledgerFactory).toDynamicValue(
-      () => (dispatchAuthorized) => new GithubDeliveryLedger(
-        new ScopedGithubLedgerCommentClient(
+      () => (dispatchAuthorized) => new GithubDeliveryLedgerComposition().githubDeliveryLedger(
+        new GithubDeliveryLedgerComposition().scopedGithubLedgerCommentClient(
           input.client,
           input.owner,
           input.repo,
           input.issueNumber
         ),
         { dispatchAuthorized, authorLogin: input.commentAuthorLogin },
-        new LedgerCommentPresenter(new LedgerMessages(input.locale))
+        new GithubDeliveryLedgerComposition().ledgerCommentPresenter(
+          new GithubDeliveryLedgerComposition().ledgerMessages(
+            input.locale
+          )
+        )
       )
     );
-    container.bind(PlanCommunications).toDynamicValue(() => new PlanCommunications());
-    container.bind(SystemCommunicationClock).toDynamicValue(() => new SystemCommunicationClock());
+    container.bind(PlanCommunications).toDynamicValue(
+      () => new CommunicationDomainComposition().planCommunications()
+    );
+    container.bind(SystemCommunicationClock).toDynamicValue(
+      () => new SystemClockComposition().systemCommunicationClock()
+    );
     _CommunicationComposition.bindJourney(container, input);
     return container;
   }
@@ -61191,7 +67627,7 @@ var CommunicationComposition = class _CommunicationComposition {
   static bindGateways(container, input) {
     container.bind(COMMUNICATION_SERVICES.mailGateway).toDynamicValue((context3) => {
       const client = getOctokit(input.mailingsToken);
-      return new GithubRepositoryDispatchMailGateway(
+      return new GithubRepositoryDispatchMailGatewayComposition().githubRepositoryDispatchMailGateway(
         {
           createDispatchEvent: (parameters) => client.rest.repos.createDispatchEvent(parameters)
         },
@@ -61209,23 +67645,29 @@ var CommunicationComposition = class _CommunicationComposition {
       const mailGateway = context3.get(
         COMMUNICATION_SERVICES.mailGateway
       );
-      return new ManageMeetupCommunications({
-        feedbackResults: new OpenFeedbackTalkResultsGateway(
+      return new JourneyCommunicationComposition().manageMeetupCommunications({
+        feedbackResults: new OpenfeedbackEventGatewayComposition().openFeedbackTalkResultsGateway(
           input.openFeedbackApiKey ?? ""
         ),
         clock,
         organizerApproval: OrganizerApprovalComposition.create(
-          new GithubApprovalClient(
+          new GithubOrganizerApprovalComposition().githubApprovalClient(
             input.client,
             input.owner,
             input.repo,
             input.issueNumber
           ),
           input.commentAuthorLogin,
-          new ApprovalPresenter(new ApprovalMessages(input.locale)),
-          new SlackApprovalNotification(
+          new GithubOrganizerApprovalComposition().approvalPresenter(
+            new GithubOrganizerApprovalComposition().approvalMessages(
+              input.locale
+            )
+          ),
+          new SlackNotificationGatewayComposition().slackApprovalNotification(
             input.slackToken,
-            new SlackApprovalPresenter(input.locale)
+            new SlackNotificationGatewayComposition().slackApprovalPresenter(
+              input.locale
+            )
           ),
           input.slackOrganizerChannelId
         ).approval,
@@ -61238,7 +67680,7 @@ var CommunicationComposition = class _CommunicationComposition {
         eventDocumentCodec: context3.get(
           SERVICES.eventDocumentCodec
         ),
-        reconcileCommunications: (dispatchAuthorized) => new ReconcileCommunications({
+        reconcileCommunications: (dispatchAuthorized) => new CommunicationDomainComposition().reconcileCommunications({
           planner,
           clock,
           mailGateway,
@@ -61249,172 +67691,35 @@ var CommunicationComposition = class _CommunicationComposition {
   }
 };
 
-// packages/runtime/github-actions/src/communication-input.ts
-var CommunicationInput = class _CommunicationInput {
-  static validate(input) {
-    ConferenceHallInput.validate(input);
-    for (const field of [
-      "locale",
-      "githubToken",
-      "mailingsToken",
-      "slackToken",
-      "openFeedbackApiKey"
-    ])
-      if (!input[field]?.trim())
-        throw new Error(`Input required and not supplied: ${field}`);
-    if (typeof input.slidesReady !== "boolean")
-      throw new Error("slidesReady must be an explicit boolean");
-    if (!Number.isSafeInteger(input.issueNumber) || input.issueNumber <= 0) {
-      throw new Error("issueNumber must be a positive integer");
-    }
-    if (!_CommunicationInput.isRepositoryPart(input.owner) || !_CommunicationInput.isRepositoryPart(input.repo)) {
-      throw new Error(
-        "owner and repo must be valid GitHub repository segments"
-      );
-    }
-    if (!input.slackOrganizerChannelId.trim()) {
-      throw new Error("slackOrganizerChannelId must not be empty");
-    }
-    if (!input.managedCommentAuthor.trim()) {
-      throw new Error("managedCommentAuthor must not be empty");
-    }
-  }
-  static isRepositoryPart(value) {
-    return /^[A-Za-z0-9_.-]+$/.test(value);
-  }
-};
-
-// packages/runtime/github-actions/src/communication.ts
-var CommunicationRuntime = class {
-  /** Compose authenticated gateways before entering the application. */
-  static async runCommunicationReconcile(input) {
-    CommunicationInput.validate(input);
-    const config = AutomationConfigFactory.createAutomationConfig(input.owner);
-    const githubToken = input.githubToken.trim();
-    const mailingsToken = input.mailingsToken.trim();
-    const slackToken = input.slackToken.trim();
-    const slackOrganizerChannelId = input.slackOrganizerChannelId.trim();
-    const container = CommunicationComposition.createCommunicationContainer({
-      locale: MessageLocalizer.resolveLocale(input.locale),
-      conferenceHallEvent: input.conferenceHallEvent,
-      conferenceHallApiKey: input.conferenceHallApiKey,
-      client: getOctokit(githubToken),
-      owner: input.owner,
-      repo: input.repo,
-      issueNumber: input.issueNumber,
-      commentAuthorLogin: input.managedCommentAuthor,
-      config,
-      workspaceRoot: input.workspaceRoot,
-      mailingsToken,
-      openFeedbackApiKey: input.openFeedbackApiKey,
-      slackToken,
-      slackOrganizerChannelId
+// packages/runtime/github-actions/src/communication-action-composition.ts
+var CommunicationActionComposition = class {
+  communicationAction() {
+    return new CommunicationAction({
+      runtimeInput: new GithubActionsComposition().runtimeInput(),
+      communicationRuntime: this.communicationRuntime(),
+      conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),
+      communicationDiagnosticProjection: new JourneyPolicyComposition().communicationDiagnosticProjection(),
+      createActionMessages: (...args) => new GithubActionsComposition().actionMessages(...args)
     });
-    const result = await container.get(ManageMeetupCommunications).execute({
-      issueNumber: input.issueNumber,
-      owner: input.owner,
-      repo: input.repo,
-      repositoryId: input.repositoryId,
-      slidesUrl: input.slidesUrl,
-      slidesReady: input.slidesReady
-    });
-    return result;
   }
-};
-
-// packages/runtime/github-actions/src/runtime-input.ts
-var RuntimeInput = class {
-  static positiveIntegerInput(name, value) {
-    if (!/^\d+$/.test(value)) {
-      throw new Error(`${name} must be a positive integer`);
-    }
-    const parsed = Number(value);
-    if (!Number.isSafeInteger(parsed) || parsed <= 0) {
-      throw new Error(`${name} must be a positive integer`);
-    }
-    return parsed;
-  }
-  static enumInput(name, value, allowed) {
-    const parsed = allowed.find((candidate) => candidate === value);
-    if (parsed === void 0) {
-      throw new Error(`${name} must be one of: ${allowed.join(", ")}`);
-    }
-    return parsed;
-  }
-  static isObject(value) {
-    return value !== null && typeof value === "object" && !Array.isArray(value);
-  }
-  static booleanInput(name, value) {
-    if (value === "true") return true;
-    if (value === "false") return false;
-    throw new Error(`${name} must be true or false`);
-  }
-};
-
-// packages/runtime/github-actions/src/communication-action.ts
-var CommunicationAction = class _CommunicationAction {
-  static async runCommunicationReconcileAction(messages5 = new ActionMessages()) {
-    const issueNumber = RuntimeInput.positiveIntegerInput(
-      "issue-number",
-      getInput("issue-number", { required: true })
-    );
-    const slidesReady = RuntimeInput.booleanInput(
-      "slides-ready",
-      getInput("slides-ready", { required: true })
-    );
-    const { owner, repo } = context2.repo;
-    const outcome = await CommunicationRuntime.runCommunicationReconcile({
-      locale: messages5.locale,
-      ...ConferenceHallInput.read(),
-      issueNumber,
-      slidesUrl: slidesReady ? getInput("slides-url", { required: true }) : void 0,
-      slidesReady,
-      openFeedbackApiKey: getInput("openfeedback-api-key", {
-        required: true
-      }),
-      githubToken: getInput("github-token", { required: true }),
-      mailingsToken: getInput("mailings-token", { required: true }),
-      slackToken: getInput("slack-token", { required: true }),
-      slackOrganizerChannelId: getInput("slack-organizer-channel-id", {
-        required: true
-      }),
-      owner,
-      repo,
-      repositoryId: process.env.GITHUB_REPOSITORY_ID,
-      managedCommentAuthor: getInput("managed-comment-author", {
-        required: true
-      })
-    });
-    return _CommunicationAction.report(outcome, messages5);
-  }
-  static report(outcome, messages5) {
-    const diagnostics = [
-      ...outcome.diagnostics.map(
-        CommunicationDiagnosticProjection.domainDiagnostic
+  communicationRuntime() {
+    return new CommunicationRuntime({
+      createJourney: (input) => CommunicationComposition.createCommunicationContainer(input).get(
+        ManageMeetupCommunications
       ),
-      ...outcome.runtimeDiagnostics.map(
-        CommunicationDiagnosticProjection.runtimeDiagnostic
-      )
-    ];
-    return {
-      details: [
-        messages5.t("report.communication.mode", { mode: outcome.mode }),
-        messages5.t("report.communication.planned", outcome.counts),
-        messages5.t("report.communication.accepted", {
-          ...outcome.counts,
-          recorded: outcome.counts.alreadyRecorded
-        }),
-        messages5.t("report.communication.uncertain", outcome.counts)
-      ],
-      diagnostics
-    };
+      communicationInput: new GithubActionsComposition().communicationInput(),
+      automationConfigFactory: new JourneyPolicyComposition().automationConfigFactory(),
+      localeResolver: new LocalizationComposition().localeResolver()
+    });
   }
 };
 
 // packages/runtime/github-actions/src/entrypoints/communication-reconcile.ts
-await ActionRunner.run(
+var runner = new GithubActionsComposition().actionRunner();
+var action = new CommunicationActionComposition().communicationAction();
+await runner.run(
   "action.communication.reconcile",
-  CommunicationAction.runCommunicationReconcileAction,
+  action.runCommunicationReconcileAction.bind(action),
   true
 );
 /*! Bundled license information:

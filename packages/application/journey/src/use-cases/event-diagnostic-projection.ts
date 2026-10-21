@@ -2,7 +2,7 @@ import type { EventDiagnostic } from "@meetup-automation/event";
 import type { PublicDiagnostic } from "../result/result-envelope.js";
 
 export class EventDiagnosticProjection {
-	static toEventDiagnostic(
+	toEventDiagnostic(
 		code: string,
 		severity: "error" | "warning",
 		field: string,
@@ -17,7 +17,7 @@ export class EventDiagnosticProjection {
 		};
 	}
 
-	static toPublicDiagnostic(item: EventDiagnostic): PublicDiagnostic {
+	toPublicDiagnostic(item: EventDiagnostic): PublicDiagnostic {
 		return {
 			code: item.code,
 			severity: item.severity,

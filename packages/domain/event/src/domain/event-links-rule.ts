@@ -1,10 +1,20 @@
-import { type EventDiagnostic, EventDiagnostics } from "./diagnostic.js";
+import type { EventDiagnostic, EventDiagnostics } from "./diagnostic.js";
 import type { MeetupEvent } from "./model.js";
-import { EMPTY_EVENT_PATCH, EventPatches } from "./patch.js";
+import { EMPTY_EVENT_PATCH, type EventPatches } from "./patch.js";
 import type { EventRule, EventRuleResult } from "./rule-contracts.js";
 
 /** Generic URL safety belongs here; provider-specific URL policy is Publication. */
+export interface EventLinksRuleCollaborators {
+	readonly eventDiagnostics: Pick<EventDiagnostics, "diagnostic">;
+	readonly eventPatches: Pick<
+		EventPatches,
+		"createEventPatch" | "replaceEventField"
+	>;
+}
+
 export class EventLinksRule implements EventRule {
+	constructor(private readonly collaborators: EventLinksRuleCollaborators) {}
+
 	readonly id = "event-links";
 	readonly dependencies: readonly string[] = [];
 
@@ -27,7 +37,7 @@ export class EventLinksRule implements EventRule {
 			const value = link.trim().replace(/\/$/, "");
 			if (!this.isHttpsUrl(value)) {
 				diagnostics.push(
-					EventDiagnostics.diagnostic({
+					this.collaborators.eventDiagnostics.diagnostic({
 						code: `event.link.${key}.invalid`,
 						severity: "error",
 						category: "invalid",
@@ -48,7 +58,7 @@ export class EventLinksRule implements EventRule {
 		}
 
 		diagnostics.push(
-			EventDiagnostics.diagnostic({
+			this.collaborators.eventDiagnostics.diagnostic({
 				code: "event.links.normalized",
 				severity: "info",
 				category: "normalization",
@@ -60,8 +70,8 @@ export class EventLinksRule implements EventRule {
 
 		return {
 			diagnostics,
-			patch: EventPatches.createEventPatch([
-				EventPatches.replaceEventField(
+			patch: this.collaborators.eventPatches.createEventPatch([
+				this.collaborators.eventPatches.replaceEventField(
 					"publicationLinks",
 					normalized,
 					"Trim publication links and remove trailing slashes",

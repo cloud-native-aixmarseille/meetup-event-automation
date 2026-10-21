@@ -28,9 +28,7 @@ export interface HostBuilder {
 }
 
 export interface ParsedHostRecord {
-	readonly hostId: NonNullable<
-		ReturnType<typeof ReferentialIdentifiers.asHostId>
-	>;
+	readonly hostId: NonNullable<ReturnType<ReferentialIdentifiers["asHostId"]>>;
 	readonly displayName: string;
 	readonly contact: HostContact;
 }

@@ -5,13 +5,24 @@ import type {
 	AttentionPostResult,
 	AttentionView,
 } from "@meetup-automation/communication";
-import { SlackApiClient } from "./slack-api-client.js";
+import type {
+	SlackApiClient,
+	SlackApiClientArguments,
+} from "./slack-api-client.js";
 import type { SlackAttentionPresenter } from "./slack-attention-presenter.js";
-import { SlackMessageReference } from "./slack-message-reference.js";
+import type { SlackMessageReference } from "./slack-message-reference.js";
 import type { SlackFetch } from "./slack-notification-gateway-contracts.js";
+export interface SlackAttentionNotificationCollaborators {
+	readonly slackMessageReference: Pick<SlackMessageReference, "read" | "valid">;
+	readonly createSlackApiClient: (
+		...args: SlackApiClientArguments
+	) => SlackApiClient;
+}
+
 export class SlackAttentionNotification implements AttentionNotification {
 	private readonly client: SlackApiClient;
 	constructor(
+		private readonly collaborators: SlackAttentionNotificationCollaborators,
 		token: string,
 		private readonly channel: string,
 		private readonly presenter: Pick<SlackAttentionPresenter, "render">,
@@ -19,7 +30,7 @@ export class SlackAttentionNotification implements AttentionNotification {
 	) {
 		if (!/^[CG][A-Z0-9]+$/.test(channel))
 			throw new Error("Invalid organizer channel");
-		this.client = new SlackApiClient(token, fetcher);
+		this.client = this.collaborators.createSlackApiClient(token, fetcher);
 	}
 	fingerprint(view: AttentionView): string {
 		return createHash("sha256")
@@ -38,7 +49,10 @@ export class SlackAttentionNotification implements AttentionNotification {
 				outcome: "retry",
 				retryAfterSeconds: response.retryAfterSeconds,
 			};
-		const message = SlackMessageReference.read(payload, this.channel);
+		const message = this.collaborators.slackMessageReference.read(
+			payload,
+			this.channel,
+		);
 		return message
 			? { outcome: "accepted", message }
 			: { outcome: "uncertain" };
@@ -47,7 +61,7 @@ export class SlackAttentionNotification implements AttentionNotification {
 		message: AttentionMessageReference,
 		view: AttentionView,
 	): Promise<boolean> {
-		if (!SlackMessageReference.valid(message)) return false;
+		if (!this.collaborators.slackMessageReference.valid(message)) return false;
 		const { result } = await this.client.post("chat.update", {
 			...this.body(message.destination, view),
 			ts: message.messageId,
@@ -66,3 +80,10 @@ export class SlackAttentionNotification implements AttentionNotification {
 		};
 	}
 }
+export type SlackAttentionNotificationArguments =
+	ConstructorParameters<typeof SlackAttentionNotification> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

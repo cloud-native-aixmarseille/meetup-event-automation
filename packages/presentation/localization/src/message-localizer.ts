@@ -1,4 +1,5 @@
 import { createIntl, createIntlCache, type IntlShape } from "@formatjs/intl";
+import type { LocaleResolver } from "./locale-resolver.js";
 import type {
 	Locale,
 	MessageCatalogs,
@@ -10,6 +11,10 @@ type MessageArguments<Key, Parameters> = Key extends keyof Parameters
 	: [];
 
 /** Formats an owner's catalog; no application messages or global language state. */
+export interface MessageLocalizerCollaborators {
+	readonly localeResolver: Pick<LocaleResolver, "resolveLocale">;
+}
+
 export class MessageLocalizer<
 	Id extends string,
 	Parameters extends Partial<Record<Id, MessageValues>> = Record<never, never>,
@@ -18,31 +23,21 @@ export class MessageLocalizer<
 	private readonly intl: IntlShape;
 
 	constructor(
+		private readonly collaborators: MessageLocalizerCollaborators,
 		private readonly catalogs: MessageCatalogs<Id>,
 		locale = "en",
 	) {
-		this.locale = MessageLocalizer.resolveLocale(locale);
+		this.locale = this.collaborators.localeResolver.resolveLocale(locale);
 		this.intl = createIntl(
 			{
 				locale: this.locale,
 				defaultLocale: "en",
 				messages: catalogs[this.locale] as Readonly<Record<string, string>>,
-				onError: MessageLocalizer.keepFormattingErrorsPrivate,
-				onWarn: MessageLocalizer.keepFormattingErrorsPrivate,
+				onError: this.keepFormattingErrorsPrivate.bind(this),
+				onWarn: this.keepFormattingErrorsPrivate.bind(this),
 			},
 			createIntlCache(),
 		);
-	}
-
-	static resolveLocale(requested: string): Locale {
-		try {
-			const language = new Intl.Locale(
-				requested.trim().replaceAll("_", "-") || "en",
-			).language;
-			return language === "fr" ? "fr" : "en";
-		} catch {
-			return "en";
-		}
 	}
 
 	t<Key extends Id>(
@@ -56,7 +51,7 @@ export class MessageLocalizer<
 		);
 	}
 
-	private static keepFormattingErrorsPrivate(): void {
+	private keepFormattingErrorsPrivate(): void {
 		// FormatJS still performs its normal fallback. Its default console handlers
 		// may include interpolation values; public reporting belongs to the caller.
 	}

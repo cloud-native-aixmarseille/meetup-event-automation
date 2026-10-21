@@ -1,8 +1,11 @@
 import type { EventDiagnostic } from "../../domain/diagnostic.js";
-import { EventRuleEngine } from "../../domain/event-rule-engine.js";
-import { EventRuleFactory } from "../../domain/event-rule-factory.js";
-import { EventLifecycle } from "../../domain/lifecycle.js";
-import { EventReadinessPolicy } from "../../domain/readiness.js";
+import type {
+	EventRuleEngine,
+	EventRuleEngineArguments,
+} from "../../domain/event-rule-engine.js";
+import type { EventRuleFactory } from "../../domain/event-rule-factory.js";
+import type { EventLifecycle } from "../../domain/lifecycle.js";
+import type { EventReadinessPolicy } from "../../domain/readiness.js";
 import { EventPaginationError } from "./event-pagination-error.js";
 import type {
 	ActiveEvent,
@@ -11,12 +14,28 @@ import type {
 	ListActiveEventsResult,
 } from "./list-active-events-contracts.js";
 
+export interface ListActiveEventsCollaborators {
+	readonly eventRuleFactory: Pick<EventRuleFactory, "createDefaultEventRules">;
+	readonly eventReadinessPolicy: Pick<
+		EventReadinessPolicy,
+		"evaluateEventReadiness"
+	>;
+	readonly eventLifecycle: Pick<EventLifecycle, "evaluateEventLifecycle">;
+	readonly createEventRuleEngine: (
+		...args: EventRuleEngineArguments
+	) => EventRuleEngine;
+}
+
 export class ListActiveEvents {
 	private readonly ruleEngine: EventRuleEngine;
 
-	constructor(private readonly dependencies: ListActiveEventsDependencies) {
-		this.ruleEngine = new EventRuleEngine(
-			dependencies.rules ?? EventRuleFactory.createDefaultEventRules(),
+	constructor(
+		private readonly collaborators: ListActiveEventsCollaborators,
+		private readonly dependencies: ListActiveEventsDependencies,
+	) {
+		this.ruleEngine = this.collaborators.createEventRuleEngine(
+			dependencies.rules ??
+				this.collaborators.eventRuleFactory.createDefaultEventRules(),
 		);
 	}
 
@@ -43,7 +62,7 @@ export class ListActiveEvents {
 					continue;
 				}
 				seenEvents.add(identityKey);
-				ListActiveEvents.checkLimit(seenEvents.size);
+				this.checkLimit(seenEvents.size);
 
 				const decoded = this.dependencies.documentCodec.decode(document);
 				const evaluated = this.ruleEngine.evaluate(decoded.event);
@@ -51,15 +70,17 @@ export class ListActiveEvents {
 					...decoded.diagnostics,
 					...evaluated.diagnostics,
 				];
-				const readiness = EventReadinessPolicy.evaluateEventReadiness(
-					evaluated.event,
-					eventDiagnostics,
-				);
-				const lifecycle = EventLifecycle.evaluateEventLifecycle({
-					event: evaluated.event,
-					readiness,
-					now,
-				});
+				const readiness =
+					this.collaborators.eventReadinessPolicy.evaluateEventReadiness(
+						evaluated.event,
+						eventDiagnostics,
+					);
+				const lifecycle =
+					this.collaborators.eventLifecycle.evaluateEventLifecycle({
+						event: evaluated.event,
+						readiness,
+						now,
+					});
 				allDiagnostics.push(...readiness.diagnostics);
 
 				activeEvents.push({
@@ -84,7 +105,14 @@ export class ListActiveEvents {
 			diagnostics: Object.freeze(allDiagnostics),
 		};
 	}
-	private static checkLimit(count: number): void {
+	private checkLimit(count: number): void {
 		if (count > 200) throw new EventPaginationError("audit-issue-limit");
 	}
 }
+export type ListActiveEventsArguments =
+	ConstructorParameters<typeof ListActiveEvents> extends [
+		unknown,
+		...infer Args,
+	]
+		? Args
+		: never;

@@ -1,10 +1,12 @@
+import { GithubOrganizerApprovalComposition } from "@meetup-automation/github-organizer-approval";
 import {
 	ApprovalNotificationPolicy,
+	JourneyPolicyComposition,
 	type OrganizerApprovalNotification,
 	type OrganizerApprovalRequest,
 } from "@meetup-automation/journey";
+import { LocalizationComposition } from "@meetup-automation/localization";
 import { vi } from "vitest";
-import { ApprovalCommentCodec } from "../src/approval-comment-codec.js";
 import { ApprovalDecisionParser } from "../src/approval-decision-parser.js";
 import { ApprovalNotifications } from "../src/approval-notifications.js";
 import { ApprovalPresenter } from "../src/approval-presenter.js";
@@ -32,7 +34,22 @@ export function fixture(locale = "en") {
 	const comments: ApprovalComment[] = [];
 	const edits = new Map<string, ApprovalCommentEdit>();
 	const history = new Map<string, ApprovalContentEdit[]>();
-	const presenter = new ApprovalPresenter(new ApprovalMessages(locale));
+	const presenter = new ApprovalPresenter(
+		{
+			createEmailApprovalPresenter: (...args) =>
+				new GithubOrganizerApprovalComposition().emailApprovalPresenter(
+					...args,
+				),
+			createMeetupApprovalPresenter: (...args) =>
+				new GithubOrganizerApprovalComposition().meetupApprovalPresenter(
+					...args,
+				),
+		},
+		new ApprovalMessages(
+			{ localeResolver: new LocalizationComposition().localeResolver() },
+			locale,
+		),
+	);
 	const graphql = vi.fn().mockImplementation(async (_query, variables) => ({
 		node: edits.has(variables.id)
 			? {
@@ -108,7 +125,16 @@ export function fixture(locale = "en") {
 			repos: { getCollaboratorPermissionLevel: permission },
 		},
 	};
-	const client = new GithubApprovalClient(api, "example", "meetups", 42);
+	const client = new GithubApprovalClient(
+		{
+			githubApprovalResponse:
+				new GithubOrganizerApprovalComposition().githubApprovalResponse(),
+		},
+		api,
+		"example",
+		"meetups",
+		42,
+	);
 	const dispatch = vi.fn().mockResolvedValue({
 		outcome: "accepted",
 		message: { destination: "C12345", messageId: "100.001" },
@@ -146,7 +172,9 @@ export function decision(
 ) {
 	const comment = f.comments[0];
 	if (!comment?.node_id) throw new Error("Missing synthetic approval");
-	const record = ApprovalCommentCodec.read(comment.body ?? "");
+	const record = new GithubOrganizerApprovalComposition()
+		.approvalCommentCodec()
+		.read(comment.body ?? "");
 	const edit: ApprovalCommentEdit = {
 		id: comment.node_id,
 		body: f.presenter.issue(record, { status }),
@@ -201,6 +229,14 @@ export const detailedRequest = {
 
 export function createStoredApproval(input: OrganizerApprovalRequest) {
 	return new ApprovalRecordFactory(
+		{
+			approvalRequestSchema:
+				new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+			approvalRequestPolicy:
+				new JourneyPolicyComposition().approvalRequestPolicy(),
+			storedApprovalSchema:
+				new GithubOrganizerApprovalComposition().storedApprovalSchema(),
+		},
 		() => "00000000-0000-4000-8000-000000000001",
 	).create(input);
 }
@@ -211,6 +247,14 @@ export function approvalDependencies(
 ) {
 	let sequence = 0;
 	const records = new ApprovalRecordFactory(
+		{
+			approvalRequestSchema:
+				new GithubOrganizerApprovalComposition().approvalRequestSchema(),
+			approvalRequestPolicy:
+				new JourneyPolicyComposition().approvalRequestPolicy(),
+			storedApprovalSchema:
+				new GithubOrganizerApprovalComposition().storedApprovalSchema(),
+		},
 		() => `00000000-0000-4000-8000-${String(++sequence).padStart(12, "0")}`,
 	);
 	const notifications = new ApprovalNotifications(
@@ -221,15 +265,30 @@ export function approvalDependencies(
 		"organizer-channel",
 	);
 	const repository = new GithubApprovalRepository(
+		{
+			storedApprovalSchema:
+				new GithubOrganizerApprovalComposition().storedApprovalSchema(),
+		},
 		client,
-		new TrustedApprovalState(client, "automation[bot]"),
+		new TrustedApprovalState(
+			{
+				approvalCommentCodec:
+					new GithubOrganizerApprovalComposition().approvalCommentCodec(),
+			},
+			client,
+			"automation[bot]",
+		),
 		"automation[bot]",
 		presenter,
 	);
 	const finalizer = new FinalizeApprovalDecision(
 		new ResolveApprovalDecision(
 			client,
-			new ApprovalDecisionParser(ApprovalPresenter.supportedLocales()),
+			new ApprovalDecisionParser(
+				new GithubOrganizerApprovalComposition()
+					.approvalPresenterFactory()
+					.supportedLocales(),
+			),
 		),
 		repository,
 		notifications,

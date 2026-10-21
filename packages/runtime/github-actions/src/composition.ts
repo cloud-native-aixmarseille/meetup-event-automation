@@ -1,23 +1,24 @@
-import { ConferenceHallProposalSource } from "@meetup-automation/conference-hall-proposal-source";
 import type { getOctokit } from "@actions/github";
-import { CsvReferentialRepository } from "@meetup-automation/csv-referential-repository";
+import { ConferenceHallProposalSourceComposition } from "@meetup-automation/conference-hall-proposal-source";
+import { CsvReferentialRepositoryComposition } from "@meetup-automation/csv-referential-repository";
 import {
 	type EventClock,
 	type EventCommentRepository,
 	type EventDocumentCodec,
+	EventDomainComposition,
 	type EventRepository,
-	EventRuleFactory,
 	ListActiveEvents,
 	type ReconcileEventDependencies,
 } from "@meetup-automation/event";
-import { GitHubEventCommentRepository } from "@meetup-automation/github-event-comment-repository";
-import { GitHubEventRepository } from "@meetup-automation/github-event-repository";
-import { AttentionCommentRetention } from "@meetup-automation/github-organizer-attention";
-import { GitHubIssueFormEventDocumentCodec } from "@meetup-automation/github-issue-form-event-document-codec";
+import { GithubEventCommentRepositoryComposition } from "@meetup-automation/github-event-comment-repository";
+import { GithubEventRepositoryComposition } from "@meetup-automation/github-event-repository";
+import { GithubIssueFormEventDocumentCodecComposition } from "@meetup-automation/github-issue-form-event-document-codec";
+import { GithubOrganizerAttentionComposition } from "@meetup-automation/github-organizer-attention";
 import {
 	type AutomationConfig,
-	AutomationConfigFactory,
 	type IssueFormProjection,
+	JourneyComposition,
+	JourneyPolicyComposition,
 	ManageMeetupEvent,
 	SynchronizeMeetupIssueForm,
 	ValidateMeetupReferentials,
@@ -25,16 +26,14 @@ import {
 import type { Locale } from "@meetup-automation/localization";
 import {
 	type ProposalSource,
+	ReferentialDomainComposition,
 	type ReferentialRepository,
-	SourceSpeakerReferentialRepository,
 } from "@meetup-automation/referential";
-import { SystemEventClock } from "@meetup-automation/system-clock";
-import { YamlIssueFormProjection } from "@meetup-automation/yaml-issue-form-projection";
+import { SystemClockComposition } from "@meetup-automation/system-clock";
+import { YamlIssueFormProjectionComposition } from "@meetup-automation/yaml-issue-form-projection";
 import { Container } from "inversify";
-import {
-	ConferenceHallInput,
-	type ConferenceHallSettings,
-} from "./conference-hall-input.js";
+import type { ConferenceHallSettings } from "./conference-hall-input.js";
+import { GithubActionsComposition } from "./dependency-composition.js";
 
 type GitHubClient = ReturnType<typeof getOctokit>;
 
@@ -82,44 +81,45 @@ export class EventComposition {
 			.bind<AutomationConfig>(SERVICES.config)
 			.toConstantValue(
 				input.config ??
-					AutomationConfigFactory.createAutomationConfig(input.owner),
+					new JourneyPolicyComposition()
+						.automationConfigFactory()
+						.createAutomationConfig(input.owner),
 			);
 		container
 			.bind<ReferentialRepository>(SERVICES.referentialRepository)
 			.toDynamicValue((context) => {
 				const config = context.get<AutomationConfig>(SERVICES.config);
-				return new CsvReferentialRepository({
-					workspaceRoot,
-					hostsPath: config.referentials.hosts,
-					speakersPath: config.referentials.speakers,
-				});
+				return new CsvReferentialRepositoryComposition().csvReferentialRepository(
+					{
+						workspaceRoot,
+						hostsPath: config.referentials.hosts,
+						speakersPath: config.referentials.speakers,
+					},
+				);
 			});
 		container
 			.bind<IssueFormProjection>(SERVICES.issueFormProjection)
-			.toDynamicValue(
-				() =>
-					new YamlIssueFormProjection({
-						workspaceRoot,
-						locale: input.locale,
-					}),
+			.toDynamicValue(() =>
+				new YamlIssueFormProjectionComposition().yamlIssueFormProjection({
+					workspaceRoot,
+					locale: input.locale,
+				}),
 			);
-		container.bind(ValidateMeetupReferentials).toDynamicValue(
-			(context) =>
-				new ValidateMeetupReferentials({
-					config: context.get<AutomationConfig>(SERVICES.config),
-					referentialRepository: context.get<ReferentialRepository>(
-						SERVICES.referentialRepository,
-					),
-				}),
+		container.bind(ValidateMeetupReferentials).toDynamicValue((context) =>
+			new JourneyComposition().validateMeetupReferentials({
+				config: context.get<AutomationConfig>(SERVICES.config),
+				referentialRepository: context.get<ReferentialRepository>(
+					SERVICES.referentialRepository,
+				),
+			}),
 		);
-		container.bind(SynchronizeMeetupIssueForm).toDynamicValue(
-			(context) =>
-				new SynchronizeMeetupIssueForm({
-					validateReferentials: context.get(ValidateMeetupReferentials),
-					issueFormProjection: context.get<IssueFormProjection>(
-						SERVICES.issueFormProjection,
-					),
-				}),
+		container.bind(SynchronizeMeetupIssueForm).toDynamicValue((context) =>
+			new JourneyComposition().synchronizeMeetupIssueForm({
+				validateReferentials: context.get(ValidateMeetupReferentials),
+				issueFormProjection: context.get<IssueFormProjection>(
+					SERVICES.issueFormProjection,
+				),
+			}),
 		);
 		return container;
 	}
@@ -139,50 +139,53 @@ export class EventComposition {
 						SERVICES.eventDocumentCodec,
 					),
 					clock: context.get<EventClock>(SERVICES.eventClock),
-					rules: EventRuleFactory.createDefaultEventRules({
-						meetup: config.event["issue-label"],
-						hostNeeded: "hoster:needed",
-						hostConfirmed: config.event["required-confirmation-labels"][0],
-						speakersNeeded: "speakers:needed",
-						speakersConfirmed: config.event["required-confirmation-labels"][1],
-						occurrencePostponed: "event:postponed",
-						occurrenceHeld: "event:held",
-						occurrenceCancelled: "event:cancelled",
-					}),
+					rules: new EventDomainComposition()
+						.eventRuleFactory()
+						.createDefaultEventRules({
+							meetup: config.event["issue-label"],
+							hostNeeded: "hoster:needed",
+							hostConfirmed: config.event["required-confirmation-labels"][0],
+							speakersNeeded: "speakers:needed",
+							speakersConfirmed:
+								config.event["required-confirmation-labels"][1],
+							occurrencePostponed: "event:postponed",
+							occurrenceHeld: "event:held",
+							occurrenceCancelled: "event:cancelled",
+						}),
 				};
 			});
-		container.bind(ListActiveEvents).toDynamicValue(
-			(context) =>
-				new ListActiveEvents({
-					repository: context.get<EventRepository>(SERVICES.eventRepository),
-					documentCodec: context.get<EventDocumentCodec>(
-						SERVICES.eventDocumentCodec,
-					),
-					clock: context.get<EventClock>(SERVICES.eventClock),
-					rules: context.get<ReconcileEventDependencies>(
-						SERVICES.eventDependencies,
-					).rules,
-				}),
+		container.bind(ListActiveEvents).toDynamicValue((context) =>
+			new EventDomainComposition().listActiveEvents({
+				repository: context.get<EventRepository>(SERVICES.eventRepository),
+				documentCodec: context.get<EventDocumentCodec>(
+					SERVICES.eventDocumentCodec,
+				),
+				clock: context.get<EventClock>(SERVICES.eventClock),
+				rules: context.get<ReconcileEventDependencies>(
+					SERVICES.eventDependencies,
+				).rules,
+			}),
 		);
 		return container;
 	}
 
 	static createEventContainer(input: EventCompositionInput): Container {
-		const sourceSettings = ConferenceHallInput.validate(input);
+		const sourceSettings = new GithubActionsComposition()
+			.conferenceHallInput()
+			.validate(input);
 		const container = EventComposition.createDocumentContainer(input);
 		EventComposition.bindProposalSource(container, sourceSettings);
-		container.bind(ManageMeetupEvent).toDynamicValue(
-			(context) =>
-				new ManageMeetupEvent({
-					proposalSource: context.get<ProposalSource>(SERVICES.proposalSource),
-					config: context.get<AutomationConfig>(SERVICES.config),
-					referentialRepository: context.get<ReferentialRepository>(
-						SERVICES.referentialRepository,
-					),
-					eventDependencies: context.get<ReconcileEventDependencies>(
-						SERVICES.eventDependencies,
-					),
-				}),
+		container.bind(ManageMeetupEvent).toDynamicValue((context) =>
+			new JourneyComposition().manageMeetupEvent({
+				proposalSource: context.get<ProposalSource>(SERVICES.proposalSource),
+				config: context.get<AutomationConfig>(SERVICES.config),
+				referentialRepository: context.get<ReferentialRepository>(
+					SERVICES.referentialRepository,
+				),
+				eventDependencies: context.get<ReconcileEventDependencies>(
+					SERVICES.eventDependencies,
+				),
+			}),
 		);
 		return container;
 	}
@@ -191,10 +194,11 @@ export class EventComposition {
 		container: Container,
 		input: ConferenceHallSettings,
 	) {
-		const source = new ConferenceHallProposalSource(
-			input.conferenceHallEvent,
-			input.conferenceHallApiKey,
-		);
+		const source =
+			new ConferenceHallProposalSourceComposition().conferenceHallProposalSource(
+				input.conferenceHallEvent,
+				input.conferenceHallApiKey,
+			);
 		container
 			.bind<ProposalSource>(SERVICES.proposalSource)
 			.toConstantValue(source);
@@ -204,10 +208,14 @@ export class EventComposition {
 		container
 			.rebind<ReferentialRepository>(SERVICES.referentialRepository)
 			.toConstantValue(
-				new SourceSpeakerReferentialRepository(local, source, {
-					provider: "conference-hall",
-					event: input.conferenceHallEvent,
-				}),
+				new ReferentialDomainComposition().sourceSpeakerReferentialRepository(
+					local,
+					source,
+					{
+						provider: "conference-hall",
+						event: input.conferenceHallEvent,
+					},
+				),
 			);
 	}
 
@@ -217,43 +225,53 @@ export class EventComposition {
 	) {
 		container
 			.bind<EventRepository>(SERVICES.eventRepository)
-			.toDynamicValue(() => new GitHubEventRepository(input.client, input));
+			.toDynamicValue(() =>
+				new GithubEventRepositoryComposition().gitHubEventRepository(
+					input.client,
+					input,
+				),
+			);
 		container
 			.bind<EventDocumentCodec>(SERVICES.eventDocumentCodec)
 			.toDynamicValue((context) => {
 				const config = context.get<AutomationConfig>(SERVICES.config);
-				return new GitHubIssueFormEventDocumentCodec({
-					repositoryRef:
-						input.repositoryRef ?? (process.env.GITHUB_SHA || "main"),
-					timeZone: config.timezone,
-					hostConfirmationLabel:
-						config.event["required-confirmation-labels"][0],
-					speakersConfirmationLabel:
-						config.event["required-confirmation-labels"][1],
-				});
+				return new GithubIssueFormEventDocumentCodecComposition().gitHubIssueFormEventDocumentCodec(
+					{
+						repositoryRef:
+							input.repositoryRef ?? (process.env.GITHUB_SHA || "main"),
+						timeZone: config.timezone,
+						hostConfirmationLabel:
+							config.event["required-confirmation-labels"][0],
+						speakersConfirmationLabel:
+							config.event["required-confirmation-labels"][1],
+					},
+				);
 			});
 		const commentAuthorLogin = input.commentAuthorLogin;
 		if (commentAuthorLogin)
 			container
 				.bind<EventCommentRepository>(SERVICES.eventCommentRepository)
-				.toDynamicValue(
-					() =>
-						new GitHubEventCommentRepository(input.client, {
+				.toDynamicValue(() =>
+					new GithubEventCommentRepositoryComposition().gitHubEventCommentRepository(
+						input.client,
+						{
 							owner: input.owner,
 							repo: input.repo,
 							authorLogin: commentAuthorLogin,
 							locale: input.locale,
 							retireCommunicationReports: input.retireCommunicationReports,
-							retainedContent: new AttentionCommentRetention(
-								input.client,
-								input.owner,
-								input.repo,
-								commentAuthorLogin,
-							),
-						}),
+							retainedContent:
+								new GithubOrganizerAttentionComposition().attentionCommentRetention(
+									input.client,
+									input.owner,
+									input.repo,
+									commentAuthorLogin,
+								),
+						},
+					),
 				);
 		container
 			.bind<EventClock>(SERVICES.eventClock)
-			.toDynamicValue(() => new SystemEventClock());
+			.toDynamicValue(() => new SystemClockComposition().systemEventClock());
 	}
 }

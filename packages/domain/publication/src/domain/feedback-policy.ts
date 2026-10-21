@@ -1,5 +1,5 @@
 export class FeedbackPolicy {
-	static validDate(value: string): boolean {
+	validDate(value: string): boolean {
 		const date = new Date(`${value}T00:00:00Z`);
 		return (
 			/^\d{4}-\d{2}-\d{2}$/.test(value) &&
@@ -8,7 +8,7 @@ export class FeedbackPolicy {
 		);
 	}
 
-	static pollUrl(value: string): string {
+	pollUrl(value: string): string {
 		const url = new URL(value);
 		if (
 			url.origin !== "https://openfeedback.io" ||
@@ -24,8 +24,8 @@ export class FeedbackPolicy {
 		return url.href.replace(/\/$/, "");
 	}
 
-	static isLinkUpdateDue(date: string, now: string, timeZone: string): boolean {
-		if (!FeedbackPolicy.validDate(date)) return false;
+	isLinkUpdateDue(date: string, now: string, timeZone: string): boolean {
+		if (!this.validDate(date)) return false;
 		const updateDate = new Date(`${date}T00:00:00Z`);
 		updateDate.setUTCDate(updateDate.getUTCDate() - 1);
 		const today = new Intl.DateTimeFormat("en-CA", {

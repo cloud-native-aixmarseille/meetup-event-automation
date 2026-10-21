@@ -6,12 +6,12 @@ export interface ConferenceHallSettings {
 }
 
 export class ConferenceHallInput {
-	static read(): ConferenceHallSettings {
+	read(): ConferenceHallSettings {
 		const conferenceHallApiKey = core.getInput("conference-hall-api-key", {
 			required: true,
 		});
 		core.setSecret(conferenceHallApiKey);
-		return ConferenceHallInput.validate({
+		return this.validate({
 			conferenceHallEvent: core.getInput("conference-hall-event", {
 				required: true,
 			}),
@@ -19,7 +19,7 @@ export class ConferenceHallInput {
 		});
 	}
 
-	static validate(input: ConferenceHallSettings): ConferenceHallSettings {
+	validate(input: ConferenceHallSettings): ConferenceHallSettings {
 		const conferenceHallEvent = input.conferenceHallEvent?.trim();
 		const conferenceHallApiKey = input.conferenceHallApiKey?.trim();
 		if (!conferenceHallEvent)

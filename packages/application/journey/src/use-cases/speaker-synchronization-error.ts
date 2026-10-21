@@ -18,16 +18,4 @@ export class SpeakerSynchronizationError extends Error {
 		super(`Speaker synchronization failed during ${stage}.`, { cause });
 		this.name = "SpeakerSynchronizationError";
 	}
-
-	static async at<T>(
-		stage: SpeakerSynchronizationStage,
-		operation: () => T | Promise<T>,
-	): Promise<T> {
-		try {
-			return await operation();
-		} catch (error) {
-			if (error instanceof SpeakerSynchronizationError) throw error;
-			throw new SpeakerSynchronizationError(stage, error);
-		}
-	}
 }

@@ -1,30 +1,58 @@
-import { CommunicationCalendar } from "./communication-calendar.js";
-import { CommunicationPlanner } from "./communication-planner.js";
+import type { CommunicationCalendar } from "./communication-calendar.js";
+import type { CommunicationPlanner } from "./communication-planner.js";
 import type {
 	CommunicationDiagnostic,
 	CommunicationIntent,
 	PlanCommunicationsInput,
 	PlanCommunicationsResult,
 } from "./model.js";
-import { PostEventPolicy } from "./post-event-policy.js";
+import type { PostEventPolicy } from "./post-event-policy.js";
+
+export interface PlanCommunicationsCollaborators {
+	readonly communicationPlanner: Pick<
+		CommunicationPlanner,
+		| "hasValidBaseIdentifiers"
+		| "errorDiagnostic"
+		| "warningDiagnostic"
+		| "planMailMessages"
+		| "deduplicateIntents"
+	>;
+	readonly communicationCalendar: Pick<
+		CommunicationCalendar,
+		"isValidInstant" | "parseIsoLocalDate" | "getLocalDate"
+	>;
+	readonly postEventPolicy: Pick<PostEventPolicy, "isDue">;
+}
 
 export class PlanCommunications {
+	constructor(
+		private readonly collaborators: PlanCommunicationsCollaborators,
+	) {}
+
 	execute(input: PlanCommunicationsInput): PlanCommunicationsResult {
 		const diagnostics: CommunicationDiagnostic[] = [];
 
-		if (!CommunicationPlanner.hasValidBaseIdentifiers(input)) {
+		if (
+			!this.collaborators.communicationPlanner.hasValidBaseIdentifiers(input)
+		) {
 			return {
 				intents: [],
 				diagnostics: [
-					CommunicationPlanner.errorDiagnostic("invalid-identifier"),
+					this.collaborators.communicationPlanner.errorDiagnostic(
+						"invalid-identifier",
+					),
 				],
 			};
 		}
 
-		if (!CommunicationCalendar.isValidInstant(input.now)) {
+		if (!this.collaborators.communicationCalendar.isValidInstant(input.now)) {
 			return {
 				intents: [],
-				diagnostics: [CommunicationPlanner.errorDiagnostic("invalid-clock")],
+				diagnostics: [
+					this.collaborators.communicationPlanner.errorDiagnostic(
+						"invalid-clock",
+					),
+				],
 			};
 		}
 
@@ -39,22 +67,29 @@ export class PlanCommunications {
 			return {
 				intents: [],
 				diagnostics: [
-					CommunicationPlanner.warningDiagnostic("occurrence-status-unknown"),
+					this.collaborators.communicationPlanner.warningDiagnostic(
+						"occurrence-status-unknown",
+					),
 				],
 			};
 		}
 
-		const eventDate = CommunicationCalendar.parseIsoLocalDate(input.eventDate);
+		const eventDate =
+			this.collaborators.communicationCalendar.parseIsoLocalDate(
+				input.eventDate,
+			);
 		if (!eventDate) {
 			return {
 				intents: [],
 				diagnostics: [
-					CommunicationPlanner.errorDiagnostic("invalid-event-date"),
+					this.collaborators.communicationPlanner.errorDiagnostic(
+						"invalid-event-date",
+					),
 				],
 			};
 		}
 
-		const currentDate = CommunicationCalendar.getLocalDate(
+		const currentDate = this.collaborators.communicationCalendar.getLocalDate(
 			input.now,
 			input.timeZone,
 		);
@@ -62,7 +97,9 @@ export class PlanCommunications {
 			return {
 				intents: [],
 				diagnostics: [
-					CommunicationPlanner.errorDiagnostic("invalid-time-zone"),
+					this.collaborators.communicationPlanner.errorDiagnostic(
+						"invalid-time-zone",
+					),
 				],
 			};
 		}
@@ -75,24 +112,30 @@ export class PlanCommunications {
 		diagnostics: CommunicationDiagnostic[],
 	) {
 		const intents: CommunicationIntent[] = [];
-		if (PostEventPolicy.isDue(input)) {
-			CommunicationPlanner.planMailMessages(
+		if (this.collaborators.postEventPolicy.isDue(input)) {
+			this.collaborators.communicationPlanner.planMailMessages(
 				input,
 				"thanks",
 				intents,
 				diagnostics,
 			);
-			return CommunicationPlanner.deduplicateIntents(intents, diagnostics);
+			return this.collaborators.communicationPlanner.deduplicateIntents(
+				intents,
+				diagnostics,
+			);
 		}
 
 		if (input.readiness === "ready") {
-			CommunicationPlanner.planMailMessages(
+			this.collaborators.communicationPlanner.planMailMessages(
 				input,
 				"introduction",
 				intents,
 				diagnostics,
 			);
-			return CommunicationPlanner.deduplicateIntents(intents, diagnostics);
+			return this.collaborators.communicationPlanner.deduplicateIntents(
+				intents,
+				diagnostics,
+			);
 		}
 
 		return { intents, diagnostics };

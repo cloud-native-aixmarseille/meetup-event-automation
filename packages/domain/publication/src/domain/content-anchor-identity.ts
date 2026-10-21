@@ -2,7 +2,7 @@ import type { ContentAnchor } from "./asset-content.js";
 
 /** Anchor identity does not depend on provider JSON property order. */
 export class ContentAnchorIdentity {
-	static equal(left: ContentAnchor, right: ContentAnchor): boolean {
+	equal(left: ContentAnchor, right: ContentAnchor): boolean {
 		return (
 			left.objectId === right.objectId &&
 			left.pageId === right.pageId &&
@@ -14,7 +14,7 @@ export class ContentAnchorIdentity {
 		);
 	}
 
-	static locationKey(anchor: ContentAnchor): string {
+	locationKey(anchor: ContentAnchor): string {
 		// Fixed tuple order is intentional; absent identifiers serialize as null.
 		return JSON.stringify([
 			anchor.pageId,
