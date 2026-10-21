@@ -17,15 +17,10 @@ export class GithubEventCommentRepositoryComposition {
 			organizerDiagnosticPolicy:
 				new JourneyPolicyComposition().organizerDiagnosticPolicy(),
 			diagnosticPresenter: this.diagnosticPresenter(),
-			createEventCommentMessages: (...args) =>
-				this.eventCommentMessages(...args),
 		});
 	}
 	diagnosticPresenter(): DiagnosticPresenter {
-		return new DiagnosticPresenter({
-			createEventCommentMessages: (...args) =>
-				this.eventCommentMessages(...args),
-		});
+		return new DiagnosticPresenter();
 	}
 	eventCommentMessages(
 		...args: EventCommentMessagesArguments

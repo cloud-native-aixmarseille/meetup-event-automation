@@ -18,8 +18,8 @@ export class ConferenceHallProposalSource implements ProposalSource {
 		private readonly collaborators: ConferenceHallProposalSourceCollaborators,
 		private readonly event: string,
 		private readonly apiKey: string,
-		private readonly request: typeof fetch = fetch,
-		private readonly now: () => number = Date.now,
+		private readonly request: typeof fetch,
+		private readonly now: () => number,
 	) {}
 	load(): Promise<ProposalSnapshot> {
 		this.snapshot ??= this.fetchSnapshot();
@@ -133,10 +133,3 @@ export class ConferenceHallProposalSource implements ProposalSource {
 			: 3600;
 	}
 }
-export type ConferenceHallProposalSourceArguments =
-	ConstructorParameters<typeof ConferenceHallProposalSource> extends [
-		unknown,
-		...infer Args,
-	]
-		? Args
-		: never;

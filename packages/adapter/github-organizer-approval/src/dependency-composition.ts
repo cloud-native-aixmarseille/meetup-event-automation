@@ -1,4 +1,7 @@
-import { JourneyPolicyComposition } from "@meetup-automation/journey";
+import {
+	FollowUpApprovalPolicy,
+	JourneyPolicyComposition,
+} from "@meetup-automation/journey";
 import { LocalizationComposition } from "@meetup-automation/localization";
 import { PublicationDomainComposition } from "@meetup-automation/publication";
 import { ApprovalCommentCodec } from "./approval-comment-codec.js";
@@ -15,10 +18,7 @@ import {
 	ApprovalNotifications,
 	type ApprovalNotificationsArguments,
 } from "./approval-notifications.js";
-import {
-	ApprovalPresenter,
-	type ApprovalPresenterArguments,
-} from "./approval-presenter.js";
+import { ApprovalPresenter } from "./approval-presenter.js";
 import { ApprovalPresenterFactory } from "./approval-presenter-factory.js";
 import {
 	ApprovalRecordFactory,
@@ -93,7 +93,10 @@ export class GithubOrganizerApprovalComposition {
 	approvalDecisionParser(
 		...args: ApprovalDecisionParserArguments
 	): ApprovalDecisionParser {
-		return new ApprovalDecisionParser(...args);
+		return new ApprovalDecisionParser(
+			new JourneyPolicyComposition().approvalRequestPolicy(),
+			...args,
+		);
 	}
 	approvalDetailsPresenter(
 		...args: ApprovalDetailsPresenterArguments
@@ -114,17 +117,15 @@ export class GithubOrganizerApprovalComposition {
 	): ApprovalNotifications {
 		return new ApprovalNotifications(...args);
 	}
-	approvalPresenter(...args: ApprovalPresenterArguments): ApprovalPresenter {
-		return new ApprovalPresenter(
-			{
-				createEmailApprovalPresenter: (...args) =>
-					this.emailApprovalPresenter(...args),
-				createMeetupApprovalPresenter: (...args) =>
-					this.meetupApprovalPresenter(...args),
-			},
-			...args,
-		);
+	approvalPresenter(messages: ApprovalMessages): ApprovalPresenter {
+		const email = this.emailApprovalPresenter(messages);
+		return new ApprovalPresenter(this.approvalCommentCodec(), {
+			"email-introduction": email,
+			"email-thanks": email,
+			"meetup-publication": this.meetupApprovalPresenter(messages),
+		});
 	}
+
 	approvalPresenterFactory(): ApprovalPresenterFactory {
 		return new ApprovalPresenterFactory({
 			createApprovalPresenter: (...args) => this.approvalPresenter(...args),
@@ -140,6 +141,7 @@ export class GithubOrganizerApprovalComposition {
 				approvalRequestPolicy:
 					new JourneyPolicyComposition().approvalRequestPolicy(),
 				storedApprovalSchema: this.storedApprovalSchema(),
+				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 			},
 			...args,
 		);
@@ -164,10 +166,10 @@ export class GithubOrganizerApprovalComposition {
 	): EmailApprovalPresenter {
 		return new EmailApprovalPresenter(
 			{
-				approvalCommentCodec: this.approvalCommentCodec(),
-				createFollowUpPresenter: (...args) => this.followUpPresenter(...args),
-				createApprovalDetailsPresenter: (...args) =>
-					this.approvalDetailsPresenter(...args),
+				followUpPresenter: this.followUpPresenter(args[0]),
+				approvalDetailsPresenter: this.approvalDetailsPresenter(args[0]),
+				approvalRequestPolicy:
+					new JourneyPolicyComposition().approvalRequestPolicy(),
 			},
 			...args,
 		);
@@ -178,7 +180,7 @@ export class GithubOrganizerApprovalComposition {
 		return new FinalizeApprovalDecision(...args);
 	}
 	followUpPresenter(...args: FollowUpPresenterArguments): FollowUpPresenter {
-		return new FollowUpPresenter(...args);
+		return new FollowUpPresenter(new FollowUpApprovalPolicy(), ...args);
 	}
 	followUpSchema(): FollowUpSchema {
 		return new FollowUpSchema({ approvalSchema: this.approvalSchema() });
@@ -223,6 +225,7 @@ export class GithubOrganizerApprovalComposition {
 				approvalRequestPolicy:
 					new JourneyPolicyComposition().approvalRequestPolicy(),
 				approvalDetailsPreview: this.approvalDetailsPreview(),
+				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 			},
 			...args,
 		);
@@ -230,7 +233,7 @@ export class GithubOrganizerApprovalComposition {
 	githubOrganizerFollowUp(
 		...args: GithubOrganizerFollowUpArguments
 	): GithubOrganizerFollowUp {
-		return new GithubOrganizerFollowUp(...args);
+		return new GithubOrganizerFollowUp(new FollowUpApprovalPolicy(), ...args);
 	}
 	meetupApprovalDetailsSchema(): MeetupApprovalDetailsSchema {
 		return new MeetupApprovalDetailsSchema({
@@ -242,10 +245,7 @@ export class GithubOrganizerApprovalComposition {
 	meetupApprovalPresenter(
 		...args: MeetupApprovalPresenterArguments
 	): MeetupApprovalPresenter {
-		return new MeetupApprovalPresenter(
-			{ approvalCommentCodec: this.approvalCommentCodec() },
-			...args,
-		);
+		return new MeetupApprovalPresenter(...args);
 	}
 	resolveApprovalDecision(
 		...args: ResolveApprovalDecisionArguments

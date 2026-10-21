@@ -14,10 +14,7 @@ import {
 	type StoredLedger,
 } from "./github-delivery-ledger-contracts.js";
 import type { LedgerCommentCodec } from "./ledger-comment-codec.js";
-import type {
-	LedgerCommentPresenter,
-	LedgerCommentPresenterArguments,
-} from "./ledger-comment-presenter.js";
+import type { LedgerCommentPresenter } from "./ledger-comment-presenter.js";
 import type { LedgerEntryMapping } from "./ledger-entry-mapping.js";
 
 export interface GithubDeliveryLedgerCollaborators {
@@ -26,9 +23,6 @@ export interface GithubDeliveryLedgerCollaborators {
 		"protectIdentifier" | "publicEntry" | "safeCode"
 	>;
 	readonly ledgerCommentCodec: Pick<LedgerCommentCodec, "decode">;
-	readonly createLedgerCommentPresenter: (
-		...args: LedgerCommentPresenterArguments
-	) => LedgerCommentPresenter;
 }
 
 export class GithubDeliveryLedger
@@ -40,7 +34,7 @@ export class GithubDeliveryLedger
 		private readonly collaborators: GithubDeliveryLedgerCollaborators,
 		private readonly comments: GithubLedgerCommentClient,
 		private readonly options: GithubDeliveryLedgerOptions,
-		private readonly presenter = collaborators.createLedgerCommentPresenter(),
+		private readonly presenter: Pick<LedgerCommentPresenter, "render">,
 	) {
 		this.#authorLogin = options.authorLogin.trim().toLowerCase();
 		if (!this.#authorLogin) {

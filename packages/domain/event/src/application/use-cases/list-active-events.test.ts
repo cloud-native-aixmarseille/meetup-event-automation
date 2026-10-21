@@ -72,12 +72,14 @@ describe("ListActiveEvents", () => {
 		]);
 		const useCase = new ListActiveEvents(
 			{
-				eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
+				ruleEngine: new EventDomainComposition().eventRuleEngine(
+					new EventDomainComposition()
+						.eventRuleFactory()
+						.createDefaultEventRules(),
+				),
 				eventReadinessPolicy:
 					new EventDomainComposition().eventReadinessPolicy(),
 				eventLifecycle: new EventDomainComposition().eventLifecycle(),
-				createEventRuleEngine: (...args) =>
-					new EventDomainComposition().eventRuleEngine(...args),
 			},
 			{
 				repository,
@@ -117,12 +119,14 @@ describe("ListActiveEvents", () => {
 		const decode = vi.spyOn(codec, "decode");
 		const useCase = new ListActiveEvents(
 			{
-				eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
+				ruleEngine: new EventDomainComposition().eventRuleEngine(
+					new EventDomainComposition()
+						.eventRuleFactory()
+						.createDefaultEventRules(),
+				),
 				eventReadinessPolicy:
 					new EventDomainComposition().eventReadinessPolicy(),
 				eventLifecycle: new EventDomainComposition().eventLifecycle(),
-				createEventRuleEngine: (...args) =>
-					new EventDomainComposition().eventRuleEngine(...args),
 			},
 			{
 				repository,
@@ -153,12 +157,14 @@ describe("ListActiveEvents", () => {
 		};
 		const useCase = new ListActiveEvents(
 			{
-				eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
+				ruleEngine: new EventDomainComposition().eventRuleEngine(
+					new EventDomainComposition()
+						.eventRuleFactory()
+						.createDefaultEventRules(),
+				),
 				eventReadinessPolicy:
 					new EventDomainComposition().eventReadinessPolicy(),
 				eventLifecycle: new EventDomainComposition().eventLifecycle(),
-				createEventRuleEngine: (...args) =>
-					new EventDomainComposition().eventRuleEngine(...args),
 			},
 			{
 				repository,
@@ -194,12 +200,14 @@ describe("ListActiveEvents", () => {
 		};
 		const useCase = new ListActiveEvents(
 			{
-				eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
+				ruleEngine: new EventDomainComposition().eventRuleEngine(
+					new EventDomainComposition()
+						.eventRuleFactory()
+						.createDefaultEventRules(),
+				),
 				eventReadinessPolicy:
 					new EventDomainComposition().eventReadinessPolicy(),
 				eventLifecycle: new EventDomainComposition().eventLifecycle(),
-				createEventRuleEngine: (...args) =>
-					new EventDomainComposition().eventRuleEngine(...args),
 			},
 			{
 				repository,

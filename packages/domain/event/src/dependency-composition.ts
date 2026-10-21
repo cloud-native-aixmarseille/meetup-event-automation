@@ -124,13 +124,15 @@ export class EventDomainComposition {
 	}
 	eventRuleFactory(): EventRuleFactory {
 		return new EventRuleFactory({
-			createEventDateRule: () => this.eventDateRule(),
-			createEventTitleRule: () => this.eventTitleRule(),
-			createEventDescriptionRule: () => this.eventDescriptionRule(),
-			createEventHostRule: () => this.eventHostRule(),
-			createEventAgendaRule: () => this.eventAgendaRule(),
-			createEventLinksRule: () => this.eventLinksRule(),
-			createIssueTitleRule: () => this.issueTitleRule(),
+			rules: [
+				this.eventDateRule(),
+				this.eventTitleRule(),
+				this.eventDescriptionRule(),
+				this.eventHostRule(),
+				this.eventAgendaRule(),
+				this.eventLinksRule(),
+				this.issueTitleRule(),
+			],
 			createManagedLabelsRule: (...args) => this.managedLabelsRule(...args),
 		});
 	}
@@ -156,10 +158,11 @@ export class EventDomainComposition {
 	listActiveEvents(...args: ListActiveEventsArguments): ListActiveEvents {
 		return new ListActiveEvents(
 			{
-				eventRuleFactory: this.eventRuleFactory(),
+				ruleEngine: this.eventRuleEngine(
+					args[0].rules ?? this.eventRuleFactory().createDefaultEventRules(),
+				),
 				eventReadinessPolicy: this.eventReadinessPolicy(),
 				eventLifecycle: this.eventLifecycle(),
-				createEventRuleEngine: (...args) => this.eventRuleEngine(...args),
 			},
 			...args,
 		);
@@ -182,12 +185,13 @@ export class EventDomainComposition {
 	reconcileEvent(...args: ReconcileEventArguments): ReconcileEvent {
 		return new ReconcileEvent(
 			{
-				eventRuleFactory: this.eventRuleFactory(),
+				ruleEngine: this.eventRuleEngine(
+					args[0].rules ?? this.eventRuleFactory().createDefaultEventRules(),
+				),
 				eventDocumentConcurrency: this.eventDocumentConcurrency(),
 				eventReadinessPolicy: this.eventReadinessPolicy(),
 				eventLifecycle: this.eventLifecycle(),
 				eventRepositoryPatches: this.eventRepositoryPatches(),
-				createEventRuleEngine: (...args) => this.eventRuleEngine(...args),
 			},
 			...args,
 		);

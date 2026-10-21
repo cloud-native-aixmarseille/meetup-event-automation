@@ -1,16 +1,8 @@
-import type { ApprovalCommentCodec } from "./approval-comment-codec.js";
 import type { ApprovalDecision, StoredApproval } from "./approval-state.js";
 import type { ApprovalMessages } from "./i18n/approval-messages.js";
 
-export interface MeetupApprovalPresenterCollaborators {
-	readonly approvalCommentCodec: Pick<ApprovalCommentCodec, "marker">;
-}
-
 export class MeetupApprovalPresenter {
-	constructor(
-		private readonly collaborators: MeetupApprovalPresenterCollaborators,
-		private readonly messages: ApprovalMessages,
-	) {}
+	constructor(private readonly messages: ApprovalMessages) {}
 	issue(
 		record: Extract<StoredApproval, { kind: "meetup-publication" }>,
 		decision: ApprovalDecision,
@@ -36,11 +28,7 @@ export class MeetupApprovalPresenter {
 					approveMark: decision.status === "approved" ? "x" : " ",
 					rejectMark: decision.status === "rejected" ? "x" : " ",
 				});
-		return [
-			this.collaborators.approvalCommentCodec.marker(record),
-			content,
-			controls,
-		].join("\n\n");
+		return [content, controls].join("\n\n");
 	}
 	private escape(value: string): string {
 		return value
@@ -51,10 +39,6 @@ export class MeetupApprovalPresenter {
 			.replace(/[\\`*_{}[\]()#+.!|~-]/g, "\\$&");
 	}
 }
-export type MeetupApprovalPresenterArguments =
-	ConstructorParameters<typeof MeetupApprovalPresenter> extends [
-		unknown,
-		...infer Args,
-	]
-		? Args
-		: never;
+export type MeetupApprovalPresenterArguments = ConstructorParameters<
+	typeof MeetupApprovalPresenter
+>;

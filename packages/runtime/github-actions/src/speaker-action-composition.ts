@@ -15,8 +15,6 @@ export class SpeakerActionComposition {
 				new JourneyPolicyComposition().automationConfigFactory(),
 			speakerSyncFailureReport:
 				new GithubActionsComposition().speakerSyncFailureReport(),
-			createActionMessages: (...args) =>
-				new GithubActionsComposition().actionMessages(...args),
 			createSynchronizeSourceSpeakers: (...args) =>
 				new JourneyComposition().synchronizeSourceSpeakers(...args),
 			createConferenceHallProposalSource: (...args) =>

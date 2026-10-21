@@ -5,22 +5,16 @@ import {
 	type ImageSource,
 } from "@meetup-automation/publication";
 import { imageSize } from "image-size";
-import type {
-	BoundedImageDownload,
-	BoundedImageDownloadArguments,
-} from "./bounded-image-download.js";
+import type { BoundedImageDownload } from "./bounded-image-download.js";
 
 export interface HttpsAssetImageRepositoryCollaborators {
 	readonly contentFingerprint: Pick<ContentFingerprint, "of">;
-	readonly createBoundedImageDownload: (
-		...args: BoundedImageDownloadArguments
-	) => BoundedImageDownload;
 }
 
 export class HttpsAssetImageRepository implements AssetImageRepository {
 	constructor(
 		private readonly collaborators: HttpsAssetImageRepositoryCollaborators,
-		private readonly download = collaborators.createBoundedImageDownload(),
+		private readonly download: Pick<BoundedImageDownload, "get">,
 	) {}
 
 	async validate(
@@ -61,10 +55,3 @@ export class HttpsAssetImageRepository implements AssetImageRepository {
 		}
 	}
 }
-export type HttpsAssetImageRepositoryArguments =
-	ConstructorParameters<typeof HttpsAssetImageRepository> extends [
-		unknown,
-		...infer Args,
-	]
-		? Args
-		: never;

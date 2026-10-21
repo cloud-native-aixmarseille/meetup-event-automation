@@ -18,7 +18,7 @@ export interface ApproveCommunicationBatchCollaborators {
 		CommunicationApprovalDetails,
 		"create"
 	>;
-	readonly createPlanCommunications: () => PlanCommunications;
+	readonly planner: Pick<PlanCommunications, "execute">;
 }
 
 export class ApproveCommunicationBatch {
@@ -36,7 +36,7 @@ export class ApproveCommunicationBatch {
 	): Promise<boolean> {
 		try {
 			const now = this.clock.now();
-			const planner = this.collaborators.createPlanCommunications();
+			const { planner } = this.collaborators;
 			const pending = planner.execute({ ...input, now });
 			if (!pending.intents.some(({ channel }) => channel === "mail"))
 				return false;

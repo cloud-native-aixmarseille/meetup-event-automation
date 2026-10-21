@@ -26,7 +26,7 @@ import type {
 
 export interface YamlIssueFormProjectionCollaborators {
 	readonly yamlIssueFormDocument: Pick<YamlIssueFormDocument, "project">;
-	readonly createProjectReferentialChoices: () => ProjectReferentialChoices;
+	readonly choices: Pick<ProjectReferentialChoices, "execute">;
 	readonly createSpeakerReferencesPresenter: (
 		...args: SpeakerReferencesPresenterArguments
 	) => SpeakerReferencesPresenter;
@@ -37,13 +37,13 @@ export interface YamlIssueFormProjectionCollaborators {
 
 export class YamlIssueFormProjection implements IssueFormProjection {
 	private readonly presenter: SpeakerReferencesPresenter;
-	private readonly choices: ProjectReferentialChoices;
+	private readonly choices: Pick<ProjectReferentialChoices, "execute">;
 
 	constructor(
 		private readonly collaborators: YamlIssueFormProjectionCollaborators,
 		private readonly options: YamlIssueFormProjectionOptions,
 	) {
-		this.choices = this.collaborators.createProjectReferentialChoices();
+		this.choices = this.collaborators.choices;
 		this.presenter = this.collaborators.createSpeakerReferencesPresenter(
 			this.collaborators.createIssueFormMessages(options.locale),
 		);

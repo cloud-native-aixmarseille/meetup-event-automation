@@ -327,7 +327,12 @@ describe("GitHubEventCommentRepository", () => {
 		const github = client();
 		const body = new GithubEventCommentRepositoryComposition()
 			.diagnosticCommentPresenter()
-			.render([errorDiagnostic]);
+			.render(
+				[errorDiagnostic],
+				new GithubEventCommentRepositoryComposition().eventCommentMessages(
+					"en",
+				),
+			);
 		github.listComments.mockResolvedValue({ data: [comment(5, body)] });
 
 		// Act
@@ -379,7 +384,12 @@ describe("GitHubEventCommentRepository", () => {
 					5,
 					new GithubEventCommentRepositoryComposition()
 						.diagnosticCommentPresenter()
-						.render([errorDiagnostic]),
+						.render(
+							[errorDiagnostic],
+							new GithubEventCommentRepositoryComposition().eventCommentMessages(
+								"en",
+							),
+						),
 				),
 			],
 		});
@@ -401,7 +411,12 @@ describe("GitHubEventCommentRepository", () => {
 		const github = client();
 		const body = new GithubEventCommentRepositoryComposition()
 			.diagnosticCommentPresenter()
-			.render([errorDiagnostic]);
+			.render(
+				[errorDiagnostic],
+				new GithubEventCommentRepositoryComposition().eventCommentMessages(
+					"en",
+				),
+			);
 		github.listComments
 			.mockResolvedValueOnce({
 				data: [comment(9, body), comment(3, body)],

@@ -11,7 +11,7 @@ export interface StoredApprovalSchemaCollaborators {
 	readonly followUpSchema: Pick<FollowUpSchema, "validate">;
 	readonly approvalRequestPolicy: Pick<
 		ApprovalRequestPolicy,
-		"validateIdentity" | "validateEmailCount" | "validate"
+		"validateSnapshot"
 	>;
 }
 
@@ -26,14 +26,11 @@ export class StoredApprovalSchema {
 		const state = value;
 		this.collaborators.approvalRequestSchema.validate(value);
 		this.collaborators.followUpSchema.validate(state.followUp);
-		if (state.followUp && value.kind !== "email-thanks")
-			throw new Error("Invalid post-event approval kind");
-		if (value.recipientCount === 0 && state.followUp) {
-			this.collaborators.approvalRequestPolicy.validateIdentity(value);
-			this.collaborators.approvalRequestPolicy.validateEmailCount(value);
-		} else {
-			this.collaborators.approvalRequestPolicy.validate(value);
-		}
+		this.collaborators.approvalRequestPolicy.validateSnapshot(value, {
+			hasFollowUp: state.followUp !== undefined,
+			decided: state.decision !== undefined,
+		});
+
 		if (
 			typeof state.requestId !== "string" ||
 			!/^approval-[a-f0-9-]{36}$/.test(state.requestId) ||
@@ -44,8 +41,6 @@ export class StoredApprovalSchema {
 			throw new Error("Invalid approval state");
 		if (state.decision !== undefined) {
 			this.decision(state.decision);
-			if (value.recipientCount === 0)
-				throw new Error("Invalid final approval decision");
 		}
 		if (state.notificationMessage !== undefined)
 			this.notificationMessage(state.notificationMessage);

@@ -35,8 +35,7 @@ export class YamlIssueFormProjectionComposition {
 		return new YamlIssueFormProjection(
 			{
 				yamlIssueFormDocument: this.yamlIssueFormDocument(),
-				createProjectReferentialChoices: (...args) =>
-					new ReferentialDomainComposition().projectReferentialChoices(...args),
+				choices: new ReferentialDomainComposition().projectReferentialChoices(),
 				createSpeakerReferencesPresenter: (...args) =>
 					this.speakerReferencesPresenter(...args),
 				createIssueFormMessages: (...args) => this.issueFormMessages(...args),

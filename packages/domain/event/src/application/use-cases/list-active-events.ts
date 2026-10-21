@@ -1,9 +1,5 @@
 import type { EventDiagnostic } from "../../domain/diagnostic.js";
-import type {
-	EventRuleEngine,
-	EventRuleEngineArguments,
-} from "../../domain/event-rule-engine.js";
-import type { EventRuleFactory } from "../../domain/event-rule-factory.js";
+import type { EventRuleEngine } from "../../domain/event-rule-engine.js";
 import type { EventLifecycle } from "../../domain/lifecycle.js";
 import type { EventReadinessPolicy } from "../../domain/readiness.js";
 import { EventPaginationError } from "./event-pagination-error.js";
@@ -15,29 +11,19 @@ import type {
 } from "./list-active-events-contracts.js";
 
 export interface ListActiveEventsCollaborators {
-	readonly eventRuleFactory: Pick<EventRuleFactory, "createDefaultEventRules">;
+	readonly ruleEngine: Pick<EventRuleEngine, "evaluate">;
 	readonly eventReadinessPolicy: Pick<
 		EventReadinessPolicy,
 		"evaluateEventReadiness"
 	>;
 	readonly eventLifecycle: Pick<EventLifecycle, "evaluateEventLifecycle">;
-	readonly createEventRuleEngine: (
-		...args: EventRuleEngineArguments
-	) => EventRuleEngine;
 }
 
 export class ListActiveEvents {
-	private readonly ruleEngine: EventRuleEngine;
-
 	constructor(
 		private readonly collaborators: ListActiveEventsCollaborators,
-		private readonly dependencies: ListActiveEventsDependencies,
-	) {
-		this.ruleEngine = this.collaborators.createEventRuleEngine(
-			dependencies.rules ??
-				this.collaborators.eventRuleFactory.createDefaultEventRules(),
-		);
-	}
+		private readonly dependencies: Omit<ListActiveEventsDependencies, "rules">,
+	) {}
 
 	async execute(input: ListActiveEventsInput): Promise<ListActiveEventsResult> {
 		const activeEvents: ActiveEvent[] = [];
@@ -65,7 +51,7 @@ export class ListActiveEvents {
 				this.checkLimit(seenEvents.size);
 
 				const decoded = this.dependencies.documentCodec.decode(document);
-				const evaluated = this.ruleEngine.evaluate(decoded.event);
+				const evaluated = this.collaborators.ruleEngine.evaluate(decoded.event);
 				const eventDiagnostics: EventDiagnostic[] = [
 					...decoded.diagnostics,
 					...evaluated.diagnostics,
@@ -109,10 +95,4 @@ export class ListActiveEvents {
 		if (count > 200) throw new EventPaginationError("audit-issue-limit");
 	}
 }
-export type ListActiveEventsArguments =
-	ConstructorParameters<typeof ListActiveEvents> extends [
-		unknown,
-		...infer Args,
-	]
-		? Args
-		: never;
+export type ListActiveEventsArguments = [options: ListActiveEventsDependencies];

@@ -18,7 +18,7 @@ export class KuttFeedbackLinkGateway implements FeedbackLinkGateway {
 		private readonly apiKey: string,
 		private readonly linkId: string,
 		baseUrl: string,
-		private readonly fetcher: typeof fetch = fetch,
+		private readonly fetcher: typeof fetch,
 	) {
 		if (!apiKey.trim() || !/^[a-zA-Z0-9_-]+$/.test(linkId))
 			throw new Error("Kutt API key and existing link ID are required");
@@ -104,10 +104,3 @@ export class KuttFeedbackLinkGateway implements FeedbackLinkGateway {
 		}
 	}
 }
-export type KuttFeedbackLinkGatewayArguments =
-	ConstructorParameters<typeof KuttFeedbackLinkGateway> extends [
-		unknown,
-		...infer Args,
-	]
-		? Args
-		: never;

@@ -21,10 +21,7 @@ import {
 } from "./openfeedback-records-gateway.js";
 import { OpenFeedbackResourceId } from "./openfeedback-resource-id.js";
 import { OpenFeedbackResponse } from "./openfeedback-response.js";
-import {
-	OpenFeedbackTalkResultsGateway,
-	type OpenFeedbackTalkResultsGatewayArguments,
-} from "./openfeedback-talk-results-gateway.js";
+import { OpenFeedbackTalkResultsGateway } from "./openfeedback-talk-results-gateway.js";
 /** Assembles this package's collaborators; no business decisions or I/O. */
 export class OpenfeedbackEventGatewayComposition {
 	openFeedbackAgendaGateway(
@@ -95,19 +92,17 @@ export class OpenfeedbackEventGatewayComposition {
 		return new OpenFeedbackResponse();
 	}
 	openFeedbackTalkResultsGateway(
-		...args: OpenFeedbackTalkResultsGatewayArguments
+		apiKey: string,
+		fetcher: typeof fetch = fetch,
 	): OpenFeedbackTalkResultsGateway {
-		return new OpenFeedbackTalkResultsGateway(
-			{
-				openFeedbackAgendaSnapshot: this.openFeedbackAgendaSnapshot(),
-				openFeedbackAgendaPlan: this.openFeedbackAgendaPlan(),
-				openFeedbackRecordEquality: this.openFeedbackRecordEquality(),
-				feedbackPolicy: new PublicationDomainComposition().feedbackPolicy(),
-				createOpenFeedbackRecordsGateway: (...args) =>
-					this.openFeedbackRecordsGateway(...args),
-				createOpenFeedbackClient: (...args) => this.openFeedbackClient(...args),
-			},
-			...args,
-		);
+		return new OpenFeedbackTalkResultsGateway({
+			openFeedbackAgendaSnapshot: this.openFeedbackAgendaSnapshot(),
+			openFeedbackAgendaPlan: this.openFeedbackAgendaPlan(),
+			openFeedbackRecordEquality: this.openFeedbackRecordEquality(),
+			feedbackPolicy: new PublicationDomainComposition().feedbackPolicy(),
+			records: this.openFeedbackRecordsGateway(
+				this.openFeedbackClient(apiKey, fetcher),
+			),
+		});
 	}
 }

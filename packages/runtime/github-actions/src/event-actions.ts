@@ -12,10 +12,7 @@ import type { ActionOutput } from "./action-output.js";
 import type { ActionReportData } from "./action-report.js";
 import type { EventComposition } from "./composition.js";
 import type { ConferenceHallInput } from "./conference-hall-input.js";
-import type {
-	ActionMessages,
-	ActionMessagesArguments,
-} from "./i18n/action-messages.js";
+import type { ActionMessages } from "./i18n/action-messages.js";
 import type { RuntimeInput } from "./runtime-input.js";
 
 export interface EventActionsCollaborators {
@@ -28,16 +25,13 @@ export interface EventActionsCollaborators {
 	readonly runtimeInput: Pick<RuntimeInput, "positiveIntegerInput">;
 	readonly conferenceHallInput: Pick<ConferenceHallInput, "read">;
 	readonly actionOutput: Pick<ActionOutput, "setJsonOutput">;
-	readonly createActionMessages: (
-		...args: ActionMessagesArguments
-	) => ActionMessages;
 }
 
 export class EventActions {
 	constructor(private readonly collaborators: EventActionsCollaborators) {}
 
 	async runEventReconcileAction(
-		messages = this.collaborators.createActionMessages(),
+		messages: ActionMessages,
 	): Promise<ActionReportData> {
 		const issueNumber = this.collaborators.runtimeInput.positiveIntegerInput(
 			"issue-number",
@@ -61,7 +55,7 @@ export class EventActions {
 	}
 
 	async runEventListActiveAction(
-		messages = this.collaborators.createActionMessages(),
+		messages: ActionMessages,
 	): Promise<ActionReportData> {
 		const token = core.getInput("github-token", { required: true });
 		const { owner, repo } = context.repo;

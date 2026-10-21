@@ -65,7 +65,7 @@ export interface ManageMeetupEventCollaborators {
 	readonly createRefreshSelectedProposals: (
 		...args: RefreshSelectedProposalsArguments
 	) => RefreshSelectedProposals;
-	readonly createResolveEventReferences: () => ResolveEventReferences;
+	readonly resolveEventReferences: Pick<ResolveEventReferences, "execute">;
 }
 
 export class ManageMeetupEvent {
@@ -169,16 +169,17 @@ export class ManageMeetupEvent {
 					),
 				),
 			);
-			const resolution = this.collaborators
-				.createResolveEventReferences()
-				.execute(catalogValidation.catalog, {
+			const resolution = this.collaborators.resolveEventReferences.execute(
+				catalogValidation.catalog,
+				{
 					hostReference: event.host
 						? this.collaborators.eventParticipantResolution.renderReference(
 								event.host,
 							)
 						: "",
 					speakerReferences,
-				});
+				},
+			);
 			eventDiagnostics.push(
 				...resolution.diagnostics.map((item) =>
 					this.collaborators.eventDiagnosticProjection.toEventDiagnostic(

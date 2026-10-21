@@ -60,8 +60,8 @@ describe("SynchronizeSourceSpeakers", () => {
 			{
 				speakerSynchronizationStageRunner:
 					new JourneyPolicyComposition().speakerSynchronizationStageRunner(),
-				createMergeSourceSpeakers: (...args) =>
-					new ReferentialDomainComposition().mergeSourceSpeakers(...args),
+				mergeSourceSpeakers:
+					new ReferentialDomainComposition().mergeSourceSpeakers(),
 				createValidateReferentialCatalog: (...args) =>
 					new ReferentialDomainComposition().validateReferentialCatalog(
 						...args,
@@ -111,8 +111,8 @@ describe("SynchronizeSourceSpeakers", () => {
 			{
 				speakerSynchronizationStageRunner:
 					new JourneyPolicyComposition().speakerSynchronizationStageRunner(),
-				createMergeSourceSpeakers: (...args) =>
-					new ReferentialDomainComposition().mergeSourceSpeakers(...args),
+				mergeSourceSpeakers:
+					new ReferentialDomainComposition().mergeSourceSpeakers(),
 				createValidateReferentialCatalog: (...args) =>
 					new ReferentialDomainComposition().validateReferentialCatalog(
 						...args,

@@ -84,9 +84,7 @@ describe("feedback action boundary", () => {
 				runtimeInput: new GithubActionsComposition().runtimeInput(),
 				conferenceHallInput:
 					new GithubActionsComposition().conferenceHallInput(),
-				createActionMessages: (...args) =>
-					new GithubActionsComposition().actionMessages(...args),
-			}).run();
+			}).run(new GithubActionsComposition().actionMessages("en"));
 
 			// Assert
 			await expect(operation).rejects.toThrow(
@@ -113,9 +111,7 @@ describe("feedback action boundary", () => {
 				),
 			runtimeInput: new GithubActionsComposition().runtimeInput(),
 			conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),
-			createActionMessages: (...args) =>
-				new GithubActionsComposition().actionMessages(...args),
-		}).run();
+		}).run(new GithubActionsComposition().actionMessages("en"));
 
 		// Assert
 		expect(report.details).toContain("feedback=completed");
@@ -144,9 +140,7 @@ describe("feedback action boundary", () => {
 				),
 			runtimeInput: new GithubActionsComposition().runtimeInput(),
 			conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),
-			createActionMessages: (...args) =>
-				new GithubActionsComposition().actionMessages(...args),
-		}).run();
+		}).run(new GithubActionsComposition().actionMessages("en"));
 
 		// Assert
 		expect(mocks.compose).toHaveBeenCalledWith(
@@ -181,9 +175,7 @@ describe("feedback action boundary", () => {
 				),
 			runtimeInput: new GithubActionsComposition().runtimeInput(),
 			conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),
-			createActionMessages: (...args) =>
-				new GithubActionsComposition().actionMessages(...args),
-		}).run();
+		}).run(new GithubActionsComposition().actionMessages("en"));
 
 		// Assert
 		expect(report.details).toContain("feedback=skipped");
@@ -208,8 +200,6 @@ describe("feedback action boundary", () => {
 				),
 			runtimeInput: new GithubActionsComposition().runtimeInput(),
 			conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),
-			createActionMessages: (...args) =>
-				new GithubActionsComposition().actionMessages(...args),
 		}).run(messages);
 
 		// Assert
@@ -236,9 +226,7 @@ describe("feedback action boundary", () => {
 				),
 			runtimeInput: new GithubActionsComposition().runtimeInput(),
 			conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),
-			createActionMessages: (...args) =>
-				new GithubActionsComposition().actionMessages(...args),
-		}).run();
+		}).run(new GithubActionsComposition().actionMessages("en"));
 
 		// Assert
 		expect(mocks.setSecret).toHaveBeenCalledWith("oforg_synthetic-secret");
@@ -266,9 +254,7 @@ describe("feedback action boundary", () => {
 				runtimeInput: new GithubActionsComposition().runtimeInput(),
 				conferenceHallInput:
 					new GithubActionsComposition().conferenceHallInput(),
-				createActionMessages: (...args) =>
-					new GithubActionsComposition().actionMessages(...args),
-			}).run();
+			}).run(new GithubActionsComposition().actionMessages("en"));
 
 			// Assert
 			await expect(operation).rejects.toThrow(

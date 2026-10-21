@@ -26,8 +26,6 @@ export class GithubDeliveryLedgerComposition {
 			{
 				ledgerEntryMapping: this.ledgerEntryMapping(),
 				ledgerCommentCodec: this.ledgerCommentCodec(),
-				createLedgerCommentPresenter: (...args) =>
-					this.ledgerCommentPresenter(...args),
 			},
 			...args,
 		);
@@ -43,7 +41,6 @@ export class GithubDeliveryLedgerComposition {
 		return new LedgerCommentPresenter(
 			{
 				ledgerCommentCodec: this.ledgerCommentCodec(),
-				createLedgerMessages: (...args) => this.ledgerMessages(...args),
 			},
 			...args,
 		);

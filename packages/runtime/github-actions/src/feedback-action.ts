@@ -4,10 +4,7 @@ import type { ManageMeetupFeedback } from "@meetup-automation/journey";
 import type { ActionReportData } from "./action-report.js";
 import type { ConferenceHallInput } from "./conference-hall-input.js";
 import type { FeedbackComposition } from "./feedback-composition.js";
-import type {
-	ActionMessages,
-	ActionMessagesArguments,
-} from "./i18n/action-messages.js";
+import type { ActionMessages } from "./i18n/action-messages.js";
 import type { RuntimeInput } from "./runtime-input.js";
 
 export interface FeedbackActionCollaborators {
@@ -16,17 +13,12 @@ export interface FeedbackActionCollaborators {
 	) => Pick<ManageMeetupFeedback, "execute">;
 	readonly runtimeInput: Pick<RuntimeInput, "positiveIntegerInput">;
 	readonly conferenceHallInput: Pick<ConferenceHallInput, "read">;
-	readonly createActionMessages: (
-		...args: ActionMessagesArguments
-	) => ActionMessages;
 }
 
 export class FeedbackAction {
 	constructor(private readonly collaborators: FeedbackActionCollaborators) {}
 
-	async run(
-		messages = this.collaborators.createActionMessages(),
-	): Promise<ActionReportData> {
+	async run(messages: ActionMessages): Promise<ActionReportData> {
 		const issueNumber = this.collaborators.runtimeInput.positiveIntegerInput(
 			"issue-number",
 			core.getInput("issue-number", { required: true }),

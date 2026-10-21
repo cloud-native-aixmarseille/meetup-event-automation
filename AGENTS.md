@@ -48,6 +48,9 @@ Production behavior must be owned by focused classes throughout
 `packages/**/src`. Use required constructor injection for every collaborator, including stateless
 policies, parsers, codecs, and presenters. Do not use static service methods,
 module singletons, fallback concrete collaborators, or inline construction to hide dependencies.
+Do not allocate collaborators or define factory callbacks in parameter defaults.
+Bind clocks and provider functions in composition, and supply reusable policies
+as narrow instances. Review each factory's operation-specific input or lifetime.
 Use narrow structural contracts and inject typed factories when creation requires
 operation-specific inputs. Follow the narrow value-factory and composition
 exceptions in [constructor injection](docs/development/architecture.md#constructor-injection). Do not add

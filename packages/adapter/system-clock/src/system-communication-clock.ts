@@ -2,11 +2,8 @@ import type { CommunicationClock } from "@meetup-automation/communication";
 import type { DateFactory } from "./system-clock-contracts.js";
 
 export class SystemCommunicationClock implements CommunicationClock {
-	constructor(private readonly dateFactory: DateFactory = () => new Date()) {}
+	constructor(private readonly dateFactory: DateFactory) {}
 	now(): Date {
 		return this.dateFactory();
 	}
 }
-export type SystemCommunicationClockArguments = ConstructorParameters<
-	typeof SystemCommunicationClock
->;

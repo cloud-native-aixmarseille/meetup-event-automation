@@ -11,7 +11,7 @@ export interface SlackApiResponse {
 export class SlackApiClient {
 	constructor(
 		private readonly token: string,
-		private readonly fetcher: SlackFetch = fetch,
+		private readonly fetcher: SlackFetch,
 	) {}
 	async post(
 		method: "chat.postMessage" | "chat.update" | "reactions.add",
@@ -131,6 +131,3 @@ export class SlackApiClient {
 		return { outcome: "uncertain", diagnosticCode: "ambiguous-response" };
 	}
 }
-export type SlackApiClientArguments = ConstructorParameters<
-	typeof SlackApiClient
->;

@@ -5,16 +5,13 @@ import type {
 	AttentionTaskSelection,
 } from "@meetup-automation/communication";
 import type { AttentionDiagnosticChecklist } from "./attention-diagnostic-checklist.js";
-import type {
-	AttentionMessages,
-	AttentionMessagesArguments,
-} from "./i18n/attention-messages.js";
+import type { AttentionMessages } from "./i18n/attention-messages.js";
 export interface AttentionPresenterCollaborators {
 	readonly attentionPolicy: Pick<AttentionPolicy, "view">;
-	readonly attentionTaskSelection: Pick<AttentionTaskSelection, "select">;
-	readonly createAttentionMessages: (
-		...args: AttentionMessagesArguments
-	) => AttentionMessages;
+	readonly attentionTaskSelection: Pick<
+		AttentionTaskSelection,
+		"select" | "actionFor"
+	>;
 }
 
 export class AttentionPresenter {
@@ -27,7 +24,10 @@ export class AttentionPresenter {
 			AttentionDiagnosticChecklist,
 			"read" | "prefix"
 		>,
-		private readonly messages = collaborators.createAttentionMessages(),
+		private readonly messages: Pick<
+			AttentionMessages,
+			"t" | "failure" | "task"
+		>,
 	) {
 		if (
 			!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository) ||
@@ -83,8 +83,8 @@ export class AttentionPresenter {
 	}
 	private action(episode: AttentionEpisode): string {
 		if (
-			episode.condition.code === "approval-pending" &&
-			episode.condition.resource.startsWith("meetup-publication:")
+			this.collaborators.attentionTaskSelection.actionFor(episode) ===
+			"meetup-approval"
 		)
 			return this.messages.t("action.meetup-approval-pending");
 		return episode.condition.code === "integration-failure"

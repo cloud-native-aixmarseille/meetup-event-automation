@@ -1,5 +1,6 @@
 import type {
 	ApprovalRequestPolicy,
+	FollowUpApprovalPolicy,
 	OrganizerApprovalRequest,
 	OrganizerFollowUpInput,
 } from "@meetup-automation/journey";
@@ -9,6 +10,7 @@ import type { StoredApprovalSchema } from "./stored-approval-schema.js";
 
 /** Allocate a new storage identity; reads and encoding never generate one. */
 export interface ApprovalRecordFactoryCollaborators {
+	readonly followUpApprovalPolicy: Pick<FollowUpApprovalPolicy, "placeholder">;
 	readonly approvalRequestSchema: Pick<ApprovalRequestSchema, "validate">;
 	readonly approvalRequestPolicy: Pick<ApprovalRequestPolicy, "validate">;
 	readonly storedApprovalSchema: Pick<StoredApprovalSchema, "validate">;
@@ -28,11 +30,7 @@ export class ApprovalRecordFactory {
 
 	placeholder(input: OrganizerFollowUpInput): StoredApproval {
 		return this.allocate({
-			kind: "email-thanks",
-			revision: "0".repeat(64),
-			eventDate: input.eventDate,
-			recipientCount: 0,
-			requestedAt: input.requestedAt,
+			...this.collaborators.followUpApprovalPolicy.placeholder(input),
 			followUp: {
 				active: input.active,
 				pendingTasks: input.pendingTasks,

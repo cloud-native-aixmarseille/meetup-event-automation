@@ -11,6 +11,7 @@ import {
 } from "@meetup-automation/github-organizer-approval";
 import { GithubOrganizerAttentionComposition } from "@meetup-automation/github-organizer-attention";
 import {
+	FollowUpApprovalPolicy,
 	JourneyPolicyComposition,
 	ManageMeetupAttention,
 } from "@meetup-automation/journey";
@@ -146,6 +147,7 @@ describe("post-event attention composition", () => {
 		const f = followUpFixture();
 		const approvals = new GithubOrganizerApproval(
 			{
+				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 				approvalRequestSchema:
 					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 				approvalRequestPolicy:
@@ -160,6 +162,7 @@ describe("post-event attention composition", () => {
 			f.client,
 		);
 		const followUp = new GithubOrganizerFollowUp(
+			new FollowUpApprovalPolicy(),
 			f.repository,
 			f.records,
 			f.finalizer,
@@ -202,6 +205,7 @@ describe("post-event attention composition", () => {
 		const f = followUpFixture();
 		const approvals = new GithubOrganizerApproval(
 			{
+				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 				approvalRequestSchema:
 					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 				approvalRequestPolicy:
@@ -257,6 +261,7 @@ describe("post-event attention composition", () => {
 		// Arrange
 		const f = followUpFixture();
 		const followUp = new GithubOrganizerFollowUp(
+			new FollowUpApprovalPolicy(),
 			f.repository,
 			f.records,
 			f.finalizer,

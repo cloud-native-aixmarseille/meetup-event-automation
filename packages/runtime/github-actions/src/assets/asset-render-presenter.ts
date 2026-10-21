@@ -3,36 +3,23 @@ import type {
 	PublicAssetModel,
 	TextKey,
 } from "@meetup-automation/publication";
-import type {
-	AssetDateFormatter,
-	AssetDateFormatterArguments,
-} from "./asset-date-formatter.js";
-import type {
-	AssetMessages,
-	AssetMessagesArguments,
-} from "./asset-messages.js";
+import type { AssetDateFormatter } from "./asset-date-formatter.js";
+import type { AssetMessages } from "./asset-messages.js";
 
 type RenderInput = Parameters<AssetRenderPresenter["format"]>[0];
 
 export interface AssetRenderPresenterImplCollaborators {
-	readonly createAssetMessages: (
-		...args: AssetMessagesArguments
-	) => AssetMessages;
-	readonly createAssetDateFormatter: (
-		...args: AssetDateFormatterArguments
-	) => AssetDateFormatter;
+	readonly date: Pick<AssetDateFormatter, "format">;
 }
 
 export class AssetRenderPresenterImpl implements AssetRenderPresenter {
 	constructor(
 		private readonly collaborators: AssetRenderPresenterImplCollaborators,
-		private readonly messages = collaborators.createAssetMessages(),
+		private readonly messages: Pick<AssetMessages, "t" | "locale">,
 	) {}
 
 	format(input: RenderInput): PublicAssetModel {
-		const date = this.collaborators.createAssetDateFormatter(
-			this.messages.locale,
-		);
+		const { date } = this.collaborators;
 		return {
 			text: {
 				"event.title": input.title,

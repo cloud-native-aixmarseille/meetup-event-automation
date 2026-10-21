@@ -1,7 +1,7 @@
 import type { LookupAddress } from "node:dns";
-import { lookup } from "node:dns/promises";
+import type { lookup } from "node:dns/promises";
 import type { IncomingMessage } from "node:http";
-import { request } from "node:https";
+import type { request } from "node:https";
 import { ContentError } from "@meetup-automation/publication";
 import type { PublicImageUrl } from "./public-image-url.js";
 
@@ -12,8 +12,8 @@ export interface BoundedImageDownloadCollaborators {
 export class BoundedImageDownload {
 	constructor(
 		private readonly collaborators: BoundedImageDownloadCollaborators,
-		private readonly resolve = lookup,
-		private readonly send = request,
+		private readonly resolve: typeof lookup,
+		private readonly send: typeof request,
 	) {}
 
 	async get(
@@ -106,10 +106,3 @@ export class BoundedImageDownload {
 		}
 	}
 }
-export type BoundedImageDownloadArguments =
-	ConstructorParameters<typeof BoundedImageDownload> extends [
-		unknown,
-		...infer Args,
-	]
-		? Args
-		: never;

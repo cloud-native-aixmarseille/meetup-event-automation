@@ -6,27 +6,26 @@ import type {
 	AttentionTaskSelection,
 	AttentionView,
 } from "@meetup-automation/communication";
-import type {
-	SlackAttentionMessages,
-	SlackAttentionMessagesArguments,
-} from "./attention-i18n/slack-attention-messages.js";
+import type { SlackAttentionMessages } from "./attention-i18n/slack-attention-messages.js";
 /** Formats the selected public task facts for Slack, without storage or task policy. */
 export interface SlackAttentionPresenterCollaborators {
-	readonly attentionTaskSelection: Pick<AttentionTaskSelection, "select">;
+	readonly attentionTaskSelection: Pick<
+		AttentionTaskSelection,
+		"select" | "actionFor"
+	>;
 	readonly attentionPolicy: Pick<AttentionPolicy, "eventDay">;
-	readonly createSlackAttentionMessages: (
-		...args: SlackAttentionMessagesArguments
-	) => SlackAttentionMessages;
 }
 
 export class SlackAttentionPresenter {
 	private readonly issueUrl: string;
-	private readonly messages: SlackAttentionMessages;
 	constructor(
 		private readonly collaborators: SlackAttentionPresenterCollaborators,
 		private readonly repository: string,
 		private readonly issueNumber: number,
-		locale: string | undefined,
+		private readonly messages: Pick<
+			SlackAttentionMessages,
+			"t" | "locale" | "failure" | "task"
+		>,
 		private readonly checklist: AttentionChecklistSource,
 	) {
 		if (
@@ -36,7 +35,6 @@ export class SlackAttentionPresenter {
 		)
 			throw new Error("Invalid attention issue identity");
 		this.issueUrl = `https://github.com/${repository}/issues/${issueNumber}`;
-		this.messages = this.collaborators.createSlackAttentionMessages(locale);
 	}
 	render(view: AttentionView): string {
 		const title = this.messages.t("slack.title", {
@@ -121,8 +119,8 @@ export class SlackAttentionPresenter {
 	}
 	private action(episode: AttentionEpisode): string {
 		if (
-			episode.condition.code === "approval-pending" &&
-			episode.condition.resource.startsWith("meetup-publication:")
+			this.collaborators.attentionTaskSelection.actionFor(episode) ===
+			"meetup-approval"
 		)
 			return this.messages.t("action.meetup-approval-pending");
 		return episode.condition.code === "integration-failure"
@@ -154,10 +152,3 @@ export class SlackAttentionPresenter {
 			: this.issueUrl;
 	}
 }
-export type SlackAttentionPresenterArguments =
-	ConstructorParameters<typeof SlackAttentionPresenter> extends [
-		unknown,
-		...infer Args,
-	]
-		? Args
-		: never;

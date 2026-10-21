@@ -55922,6 +55922,21 @@ var require_ReflectLite = __commonJS({
 
 // packages/application/journey/src/approval/approval-request-policy.ts
 var ApprovalRequestPolicy = class {
+  reviewPhase(facts) {
+    if (facts.recipientCount === 0 || facts.followUpActive === false)
+      return "inactive";
+    return facts.decided ? "final" : "pending";
+  }
+  validateSnapshot(request3, facts) {
+    if (facts.hasFollowUp && request3.kind !== "email-thanks")
+      throw new Error("Invalid post-event approval kind");
+    if (request3.recipientCount === 0 && facts.hasFollowUp) {
+      this.validateIdentity(request3);
+      this.validateEmailCount(request3);
+    } else this.validate(request3);
+    if (facts.decided && request3.recipientCount === 0)
+      throw new Error("Invalid final approval decision");
+  }
   validate(request3) {
     this.validateIdentity(request3);
     if (request3.kind === "meetup-publication") return;
@@ -55956,6 +55971,15 @@ var ApprovalRequestPolicy = class {
     });
   }
 };
+
+// packages/application/journey/src/ports/organizer-follow-up.ts
+var FOLLOW_UP_TASKS = [
+  "thank-host",
+  "thank-speakers",
+  "share-slides",
+  "import-attendance",
+  "share-social"
+];
 
 // packages/application/journey/src/communication/communication-diagnostic-projection.ts
 var COMMUNICATION_MESSAGES = {
@@ -56113,7 +56137,7 @@ var AttentionTaskSelection = class _AttentionTaskSelection {
     );
     const tasks = view.state.stopped ? [] : checklist.entries.filter(
       (entry) => !conditions.some(
-        (episode) => entry.action !== void 0 && entry.action === this.action(episode)
+        (episode) => entry.action !== void 0 && entry.action === this.actionFor(episode)
       )
     );
     const urgent = conditions.filter(this.urgent.bind(this));
@@ -56125,7 +56149,7 @@ var AttentionTaskSelection = class _AttentionTaskSelection {
       remaining: conditions.filter((episode) => !this.urgent(episode)),
       details: conditions.filter(
         (episode) => !(view.state.commentId && ["follow-up", "approval-pending"].includes(episode.condition.code)) && !(episode.status !== "unknown" && checklist.entries.some(
-          (entry) => entry.action !== void 0 && entry.action === this.action(episode)
+          (entry) => entry.action !== void 0 && entry.action === this.actionFor(episode)
         ))
       )
     };
@@ -56137,7 +56161,7 @@ var AttentionTaskSelection = class _AttentionTaskSelection {
       "integration-failure"
     ].includes(episode.condition.code);
   }
-  action(episode) {
+  actionFor(episode) {
     if (episode.condition.code === "delivery-recovery")
       return "delivery-recovery";
     if (episode.condition.code !== "approval-pending") return void 0;
@@ -57297,13 +57321,9 @@ var ListActiveEvents = class {
   constructor(collaborators, dependencies) {
     this.collaborators = collaborators;
     this.dependencies = dependencies;
-    this.ruleEngine = this.collaborators.createEventRuleEngine(
-      dependencies.rules ?? this.collaborators.eventRuleFactory.createDefaultEventRules()
-    );
   }
   collaborators;
   dependencies;
-  ruleEngine;
   async execute(input) {
     const activeEvents = [];
     const allDiagnostics = [];
@@ -57327,7 +57347,7 @@ var ListActiveEvents = class {
         seenEvents.add(identityKey);
         this.checkLimit(seenEvents.size);
         const decoded = this.dependencies.documentCodec.decode(document2);
-        const evaluated = this.ruleEngine.evaluate(decoded.event);
+        const evaluated = this.collaborators.ruleEngine.evaluate(decoded.event);
         const eventDiagnostics = [
           ...decoded.diagnostics,
           ...evaluated.diagnostics
@@ -57372,13 +57392,9 @@ var ReconcileEvent = class {
   constructor(collaborators, dependencies) {
     this.collaborators = collaborators;
     this.dependencies = dependencies;
-    this.ruleEngine = this.collaborators.createEventRuleEngine(
-      dependencies.rules ?? this.collaborators.eventRuleFactory.createDefaultEventRules()
-    );
   }
   collaborators;
   dependencies;
-  ruleEngine;
   async execute(input) {
     const document2 = input.sourceDocument ?? await this.dependencies.repository.find(input.identity);
     if (!document2) {
@@ -57391,7 +57407,7 @@ var ReconcileEvent = class {
       throw new EventNotFoundError(input.identity);
     }
     const decoded = this.dependencies.documentCodec.decode(document2);
-    const evaluated = this.ruleEngine.evaluate(decoded.event);
+    const evaluated = this.collaborators.ruleEngine.evaluate(decoded.event);
     const diagnostics = [
       ...decoded.diagnostics,
       ...evaluated.diagnostics
@@ -57984,13 +58000,7 @@ var EventRuleFactory = class {
   collaborators;
   createDefaultEventRules(labelConfiguration = DEFAULT_MANAGED_LABEL_CONFIGURATION) {
     return [
-      this.collaborators.createEventDateRule(),
-      this.collaborators.createEventTitleRule(),
-      this.collaborators.createEventDescriptionRule(),
-      this.collaborators.createEventHostRule(),
-      this.collaborators.createEventAgendaRule(),
-      this.collaborators.createEventLinksRule(),
-      this.collaborators.createIssueTitleRule(),
+      ...this.collaborators.rules,
       this.collaborators.createManagedLabelsRule(labelConfiguration)
     ];
   }
@@ -58519,13 +58529,15 @@ var EventDomainComposition = class {
   }
   eventRuleFactory() {
     return new EventRuleFactory({
-      createEventDateRule: () => this.eventDateRule(),
-      createEventTitleRule: () => this.eventTitleRule(),
-      createEventDescriptionRule: () => this.eventDescriptionRule(),
-      createEventHostRule: () => this.eventHostRule(),
-      createEventAgendaRule: () => this.eventAgendaRule(),
-      createEventLinksRule: () => this.eventLinksRule(),
-      createIssueTitleRule: () => this.issueTitleRule(),
+      rules: [
+        this.eventDateRule(),
+        this.eventTitleRule(),
+        this.eventDescriptionRule(),
+        this.eventHostRule(),
+        this.eventAgendaRule(),
+        this.eventLinksRule(),
+        this.issueTitleRule()
+      ],
       createManagedLabelsRule: (...args) => this.managedLabelsRule(...args)
     });
   }
@@ -58551,10 +58563,11 @@ var EventDomainComposition = class {
   listActiveEvents(...args) {
     return new ListActiveEvents(
       {
-        eventRuleFactory: this.eventRuleFactory(),
+        ruleEngine: this.eventRuleEngine(
+          args[0].rules ?? this.eventRuleFactory().createDefaultEventRules()
+        ),
         eventReadinessPolicy: this.eventReadinessPolicy(),
-        eventLifecycle: this.eventLifecycle(),
-        createEventRuleEngine: (...args2) => this.eventRuleEngine(...args2)
+        eventLifecycle: this.eventLifecycle()
       },
       ...args
     );
@@ -58577,12 +58590,13 @@ var EventDomainComposition = class {
   reconcileEvent(...args) {
     return new ReconcileEvent(
       {
-        eventRuleFactory: this.eventRuleFactory(),
+        ruleEngine: this.eventRuleEngine(
+          args[0].rules ?? this.eventRuleFactory().createDefaultEventRules()
+        ),
         eventDocumentConcurrency: this.eventDocumentConcurrency(),
         eventReadinessPolicy: this.eventReadinessPolicy(),
         eventLifecycle: this.eventLifecycle(),
-        eventRepositoryPatches: this.eventRepositoryPatches(),
-        createEventRuleEngine: (...args2) => this.eventRuleEngine(...args2)
+        eventRepositoryPatches: this.eventRepositoryPatches()
       },
       ...args
     );
@@ -61663,15 +61677,6 @@ var AssetParticipantProjection = class {
   }
 };
 
-// packages/application/journey/src/ports/organizer-follow-up.ts
-var FOLLOW_UP_TASKS = [
-  "thank-host",
-  "thank-speakers",
-  "share-slides",
-  "import-attendance",
-  "share-social"
-];
-
 // packages/application/journey/src/use-cases/attention-event-facts.ts
 var AttentionEventFacts = class {
   constructor(collaborators) {
@@ -61930,12 +61935,15 @@ var CommunicationRecipients = class {
   }
   collaborators;
   resolveMailRecipients(event, catalog, diagnostics) {
-    const resolution = this.collaborators.createResolveEventReferences().execute(catalog, {
-      hostReference: event.host ? this.renderReference(event.host) : "",
-      speakerReferences: event.agenda.flatMap(
-        (entry) => entry.speakers.map(this.renderReference.bind(this))
-      )
-    });
+    const resolution = this.collaborators.resolveEventReferences.execute(
+      catalog,
+      {
+        hostReference: event.host ? this.renderReference(event.host) : "",
+        speakerReferences: event.agenda.flatMap(
+          (entry) => entry.speakers.map(this.renderReference.bind(this))
+        )
+      }
+    );
     if (!resolution.resolved) {
       diagnostics.push({
         code: "communication.event-references-unresolved",
@@ -62265,7 +62273,7 @@ var JourneyPolicyComposition = class {
   }
   communicationRecipients() {
     return new CommunicationRecipients({
-      createResolveEventReferences: () => new ReferentialDomainComposition().resolveEventReferences()
+      resolveEventReferences: new ReferentialDomainComposition().resolveEventReferences()
     });
   }
   configuredPublicationPolicies() {
@@ -62471,23 +62479,18 @@ var ManageMeetupAssets = class {
       sourceDocument: source
     });
     if (evaluation.skipped || evaluation.event.occurrenceStatus === "cancelled")
-      return { skipped: true, persisted: false, files: {}, diagnostics: [] };
+      return this.skipped([]);
     if (!evaluation.event.host?.id || evaluation.diagnostics.some(
       (item) => item.severity === "error" && (item.code.startsWith("referential.") || /host|date/i.test(item.field ?? ""))
     )) {
-      return {
-        skipped: true,
-        persisted: false,
-        files: {},
-        diagnostics: [
-          {
-            code: "publication.assets.prerequisites",
-            severity: "warning",
-            field: "publicationLinks.assets",
-            message: "Resolve the event host and date before reconciling assets"
-          }
-        ]
-      };
+      return this.skipped([
+        {
+          code: "publication.assets.prerequisites",
+          severity: "warning",
+          field: "publicationLinks.assets",
+          message: "Resolve the event host and date before reconciling assets"
+        }
+      ]);
     }
     await this.collaborators.eventDocumentConcurrency.ensureEventDocumentIsCurrent(
       this.dependencies.eventRepository,
@@ -62510,6 +62513,7 @@ var ManageMeetupAssets = class {
     return {
       skipped: false,
       persisted,
+      slidesReady: Boolean(assets.files["slides-link"]) && ["copy-only", "ready"].includes(assets.content?.slides ?? "copy-only"),
       assetUrl: assets.container?.url,
       files: assets.files,
       content: assets.content,
@@ -62517,6 +62521,15 @@ var ManageMeetupAssets = class {
         ...item,
         field: "publicationLinks.assets"
       }))
+    };
+  }
+  skipped(diagnostics) {
+    return {
+      skipped: true,
+      persisted: false,
+      slidesReady: false,
+      files: {},
+      diagnostics
     };
   }
   async persistAsset(source, assetUrl) {
@@ -62696,12 +62709,15 @@ var ManageMeetupEvent = class {
           )
         )
       );
-      const resolution = this.collaborators.createResolveEventReferences().execute(catalogValidation.catalog, {
-        hostReference: event.host ? this.collaborators.eventParticipantResolution.renderReference(
-          event.host
-        ) : "",
-        speakerReferences
-      });
+      const resolution = this.collaborators.resolveEventReferences.execute(
+        catalogValidation.catalog,
+        {
+          hostReference: event.host ? this.collaborators.eventParticipantResolution.renderReference(
+            event.host
+          ) : "",
+          speakerReferences
+        }
+      );
       eventDiagnostics.push(
         ...resolution.diagnostics.map(
           (item) => this.collaborators.eventDiagnosticProjection.toEventDiagnostic(
@@ -63359,7 +63375,11 @@ var SynchronizeSourceSpeakers = class {
     );
     const merged = await this.collaborators.speakerSynchronizationStageRunner.at(
       "merge-speakers",
-      () => this.collaborators.createMergeSourceSpeakers().execute(original.entries, snapshot, original.reservedIds)
+      () => this.collaborators.mergeSourceSpeakers.execute(
+        original.entries,
+        snapshot,
+        original.reservedIds
+      )
     );
     const catalog = await this.collaborators.speakerSynchronizationStageRunner.at(
       "validate-catalog",
@@ -63494,7 +63514,7 @@ var JourneyComposition = class {
           ...args2
         ),
         createRefreshSelectedProposals: (...args2) => this.refreshSelectedProposals(...args2),
-        createResolveEventReferences: (...args2) => new ReferentialDomainComposition().resolveEventReferences(...args2)
+        resolveEventReferences: new ReferentialDomainComposition().resolveEventReferences()
       },
       ...args
     );
@@ -63551,7 +63571,7 @@ var JourneyComposition = class {
     return new SynchronizeSourceSpeakers(
       {
         speakerSynchronizationStageRunner: new JourneyPolicyComposition().speakerSynchronizationStageRunner(),
-        createMergeSourceSpeakers: (...args2) => new ReferentialDomainComposition().mergeSourceSpeakers(...args2),
+        mergeSourceSpeakers: new ReferentialDomainComposition().mergeSourceSpeakers(),
         createValidateReferentialCatalog: (...args2) => new ReferentialDomainComposition().validateReferentialCatalog(
           ...args2
         )
@@ -67477,11 +67497,7 @@ var ActionOutput = class {
 
 // packages/runtime/github-actions/src/action-report.ts
 var ActionReport = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  async write(title, report, messages3 = this.collaborators.createActionMessages()) {
+  async write(title, report, messages3) {
     const lines = new Set(report.details);
     for (const item of report.diagnostics) {
       lines.add(this.diagnosticMessage(item));
@@ -67799,16 +67815,14 @@ var AssetRenderConfiguration = class {
 
 // packages/runtime/github-actions/src/assets/asset-render-presenter.ts
 var AssetRenderPresenterImpl = class {
-  constructor(collaborators, messages3 = collaborators.createAssetMessages()) {
+  constructor(collaborators, messages3) {
     this.collaborators = collaborators;
     this.messages = messages3;
   }
   collaborators;
   messages;
   format(input) {
-    const date = this.collaborators.createAssetDateFormatter(
-      this.messages.locale
-    );
+    const { date } = this.collaborators;
     return {
       text: {
         "event.title": input.title,
@@ -68392,11 +68406,7 @@ var OrganizerFeedback = class {
 
 // packages/runtime/github-actions/src/referential-action-report.ts
 var ReferentialActionReport = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  validation(result, diagnostics, messages3 = this.collaborators.createActionMessages()) {
+  validation(result, diagnostics, messages3) {
     const details = [
       messages3.t(
         result.isValid ? "report.referential.valid" : "report.referential.invalid"
@@ -68411,7 +68421,7 @@ var ReferentialActionReport = class {
       diagnostics
     };
   }
-  issueForm(mode, result, messages3 = this.collaborators.createActionMessages()) {
+  issueForm(mode, result, messages3) {
     const details = [];
     if (result.diagnostics.some((item) => item.severity === "error")) {
       details.push(messages3.t("report.issue-form.blocked"));
@@ -68523,9 +68533,7 @@ var GithubActionsComposition = class {
     return new ActionOutput();
   }
   actionReport() {
-    return new ActionReport({
-      createActionMessages: (...args) => this.actionMessages(...args)
-    });
+    return new ActionReport();
   }
   actionRunner() {
     return new ActionRunner({
@@ -68561,8 +68569,7 @@ var GithubActionsComposition = class {
   assetRenderPresenterImpl(...args) {
     return new AssetRenderPresenterImpl(
       {
-        createAssetMessages: (...args2) => this.assetMessages(...args2),
-        createAssetDateFormatter: (...args2) => this.assetDateFormatter(...args2)
+        date: this.assetDateFormatter(args[0].locale)
       },
       ...args
     );
@@ -68600,9 +68607,7 @@ var GithubActionsComposition = class {
     );
   }
   referentialActionReport() {
-    return new ReferentialActionReport({
-      createActionMessages: (...args) => this.actionMessages(...args)
-    });
+    return new ReferentialActionReport();
   }
   runtimeInput() {
     return new RuntimeInput();
@@ -72785,7 +72790,7 @@ var PublicationAction = class {
     this.collaborators = collaborators;
   }
   collaborators;
-  async runPublicationReconcileAssetsAction(messages3 = this.collaborators.createActionMessages()) {
+  async runPublicationReconcileAssetsAction(messages3) {
     const issueNumber = this.collaborators.runtimeInput.positiveIntegerInput(
       "issue-number",
       getInput("issue-number", { required: true })
@@ -72824,10 +72829,7 @@ var PublicationAction = class {
   }
   report(issueNumber, outcome, messages3) {
     this.collaborators.actionOutput.setJsonOutput("drive-files", outcome.files);
-    setOutput(
-      "slides-ready",
-      ["copy-only", "ready"].includes(outcome.content?.slides ?? "copy-only") && Boolean(outcome.files["slides-link"])
-    );
+    setOutput("slides-ready", outcome.slidesReady);
     return {
       details: [
         messages3.t("report.event.context", { issue: issueNumber, mode: "fix" }),
@@ -73931,11 +73933,13 @@ var GoogleSlidesContentRepositoryComposition = class {
   }
 };
 
-// packages/adapter/https-asset-image-repository/src/bounded-image-download.ts
+// packages/adapter/https-asset-image-repository/src/dependency-composition.ts
 import { lookup } from "node:dns/promises";
 import { request as request2 } from "node:https";
+
+// packages/adapter/https-asset-image-repository/src/bounded-image-download.ts
 var BoundedImageDownload = class {
-  constructor(collaborators, resolve4 = lookup, send = request2) {
+  constructor(collaborators, resolve4, send) {
     this.collaborators = collaborators;
     this.resolve = resolve4;
     this.send = send;
@@ -75023,7 +75027,7 @@ function imageSize(input) {
 
 // packages/adapter/https-asset-image-repository/src/https-asset-image-repository.ts
 var HttpsAssetImageRepository = class {
-  constructor(collaborators, download = collaborators.createBoundedImageDownload()) {
+  constructor(collaborators, download) {
     this.collaborators = collaborators;
     this.download = download;
   }
@@ -75089,19 +75093,19 @@ var PublicImageUrl = class {
 
 // packages/adapter/https-asset-image-repository/src/dependency-composition.ts
 var HttpsAssetImageRepositoryComposition = class {
-  boundedImageDownload(...args) {
+  boundedImageDownload(resolve4 = lookup, send = request2) {
     return new BoundedImageDownload(
       { publicImageUrl: this.publicImageUrl() },
-      ...args
+      resolve4,
+      send
     );
   }
-  httpsAssetImageRepository(...args) {
+  httpsAssetImageRepository() {
     return new HttpsAssetImageRepository(
       {
-        contentFingerprint: new PublicationDomainComposition().contentFingerprint(),
-        createBoundedImageDownload: (...args2) => this.boundedImageDownload(...args2)
+        contentFingerprint: new PublicationDomainComposition().contentFingerprint()
       },
-      ...args
+      this.boundedImageDownload()
     );
   }
   publicImageUrl() {
@@ -75111,7 +75115,7 @@ var HttpsAssetImageRepositoryComposition = class {
 
 // packages/adapter/conference-hall-proposal-source/src/conference-hall-proposal-source.ts
 var ConferenceHallProposalSource = class {
-  constructor(collaborators, event, apiKey, request3 = fetch, now2 = Date.now) {
+  constructor(collaborators, event, apiKey, request3, now2) {
     this.collaborators = collaborators;
     this.event = event;
     this.apiKey = apiKey;
@@ -75337,13 +75341,16 @@ var ProposalExportParser = class {
 
 // packages/adapter/conference-hall-proposal-source/src/dependency-composition.ts
 var ConferenceHallProposalSourceComposition = class {
-  conferenceHallProposalSource(...args) {
+  conferenceHallProposalSource(event, apiKey, request3 = fetch, now2 = Date.now) {
     return new ConferenceHallProposalSource(
       {
         sourceSpeakerEquality: new ReferentialDomainComposition().sourceSpeakerEquality(),
         proposalExportParser: this.proposalExportParser()
       },
-      ...args
+      event,
+      apiKey,
+      request3,
+      now2
     );
   }
   proposalExportParser() {
@@ -75408,7 +75415,7 @@ import { createHash as createHash4 } from "node:crypto";
 import { readFile as readFile4, writeFile as writeFile2 } from "node:fs/promises";
 import { join as join3 } from "node:path";
 var CsvSpeakerCatalogStore = class {
-  constructor(collaborators, root, history = collaborators.createSpeakerAllocationHistory(root)) {
+  constructor(collaborators, root, history) {
     this.collaborators = collaborators;
     this.root = root;
     this.history = history;
@@ -75491,6 +75498,10 @@ var CsvSpeakerCatalogStore = class {
     return createHash4("sha256").update(JSON.stringify([csv, state, historicalIds])).digest("hex");
   }
 };
+
+// packages/adapter/csv-referential-repository/src/dependency-composition.ts
+import { execFile } from "node:child_process";
+import { promisify as promisify2 } from "node:util";
 
 // node_modules/.pnpm/csv-parse@7.0.3/node_modules/csv-parse/lib/api/CsvError.js
 var CsvError = class _CsvError extends Error {
@@ -77257,10 +77268,8 @@ var CsvReferentialCodec = class {
 };
 
 // packages/adapter/csv-referential-repository/src/speaker-allocation-history.ts
-import { execFile } from "node:child_process";
-import { promisify as promisify2 } from "node:util";
 var SpeakerAllocationHistory = class {
-  constructor(collaborators, root, command = promisify2(execFile)) {
+  constructor(collaborators, root, command) {
     this.collaborators = collaborators;
     this.root = root;
     this.command = command;
@@ -77450,23 +77459,24 @@ var CsvReferentialRepositoryComposition = class {
       ...args
     );
   }
-  csvSpeakerCatalogStore(...args) {
+  csvSpeakerCatalogStore(root) {
     return new CsvSpeakerCatalogStore(
       {
         speakerCatalogCsv: this.speakerCatalogCsv(),
         speakerAllocationStateCodec: this.speakerAllocationStateCodec(),
-        createSpeakerAllocationHistory: (...args2) => this.speakerAllocationHistory(...args2),
-        createCsvReferentialRepository: (...args2) => this.csvReferentialRepository(...args2)
+        createCsvReferentialRepository: (...args) => this.csvReferentialRepository(...args)
       },
-      ...args
+      root,
+      this.speakerAllocationHistory(root)
     );
   }
-  speakerAllocationHistory(...args) {
+  speakerAllocationHistory(root) {
     return new SpeakerAllocationHistory(
       {
         referentialIdentifiers: new ReferentialDomainComposition().referentialIdentifiers()
       },
-      ...args
+      root,
+      promisify2(execFile)
     );
   }
   speakerAllocationStateCodec() {
@@ -77490,7 +77500,7 @@ var DiagnosticCommentPresenter = class {
     this.collaborators = collaborators;
   }
   collaborators;
-  render(diagnostics, messages3 = this.collaborators.createEventCommentMessages()) {
+  render(diagnostics, messages3) {
     const actionable = /* @__PURE__ */ new Map();
     for (const item of diagnostics) {
       if (this.collaborators.organizerDiagnosticPolicy.suppressed(
@@ -77976,10 +77986,6 @@ var GUIDANCE = new Map([
 
 // packages/adapter/github-event-comment-repository/src/diagnostic-presentation.ts
 var DiagnosticPresenter = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
   FIELD_ALIASES = new Map([
     ...FIELD_ORDER.map((field) => [field, field]),
     ["eventTitle", "Event Title"],
@@ -78005,7 +78011,7 @@ var DiagnosticPresenter = class {
     ["occurrenceStatus", "Event Status"],
     ["event_status", "Event Status"]
   ]);
-  presentDiagnostic(item, messages3 = this.collaborators.createEventCommentMessages()) {
+  presentDiagnostic(item, messages3) {
     const guidance = GUIDANCE.get(item.code);
     const referential = /^referential\.(host|contact|speaker)\./.test(
       item.code
@@ -78017,7 +78023,7 @@ var DiagnosticPresenter = class {
     return { field, message, order: order < 0 ? FIELD_ORDER.length : order };
   }
   /** Only known issue headings and numeric agenda positions can reach Markdown. */
-  publicField(field, fallback, messages3 = this.collaborators.createEventCommentMessages()) {
+  publicField(field, fallback, messages3) {
     const known = this.FIELD_ALIASES.get(field ?? "");
     if (known) return [known, known];
     const agenda = field?.match(
@@ -78502,14 +78508,11 @@ var GithubEventCommentRepositoryComposition = class {
   diagnosticCommentPresenter() {
     return new DiagnosticCommentPresenter({
       organizerDiagnosticPolicy: new JourneyPolicyComposition().organizerDiagnosticPolicy(),
-      diagnosticPresenter: this.diagnosticPresenter(),
-      createEventCommentMessages: (...args) => this.eventCommentMessages(...args)
+      diagnosticPresenter: this.diagnosticPresenter()
     });
   }
   diagnosticPresenter() {
-    return new DiagnosticPresenter({
-      createEventCommentMessages: (...args) => this.eventCommentMessages(...args)
-    });
+    return new DiagnosticPresenter();
   }
   eventCommentMessages(...args) {
     return new EventCommentMessages(
@@ -80619,7 +80622,7 @@ var AttentionDiagnosticChecklist = class _AttentionDiagnosticChecklist {
 
 // packages/adapter/github-organizer-attention/src/attention-presenter.ts
 var AttentionPresenter = class {
-  constructor(collaborators, repository, issueNumber, diagnostics, messages3 = collaborators.createAttentionMessages()) {
+  constructor(collaborators, repository, issueNumber, diagnostics, messages3) {
     this.collaborators = collaborators;
     this.repository = repository;
     this.diagnostics = diagnostics;
@@ -80667,7 +80670,7 @@ var AttentionPresenter = class {
     return episode.status === "unknown" ? `${text} (${this.messages.t("attention.unknown")})` : text;
   }
   action(episode) {
-    if (episode.condition.code === "approval-pending" && episode.condition.resource.startsWith("meetup-publication:"))
+    if (this.collaborators.attentionTaskSelection.actionFor(episode) === "meetup-approval")
       return this.messages.t("action.meetup-approval-pending");
     return episode.condition.code === "integration-failure" ? this.messages.failure(episode.condition.resource) : this.messages.t(`action.${episode.condition.code}`, {
       task: this.messages.task(episode.condition.resource)
@@ -81196,8 +81199,7 @@ var GithubOrganizerAttentionComposition = class {
     return new AttentionPresenter(
       {
         attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
-        attentionTaskSelection: new CommunicationDomainComposition().attentionTaskSelection(),
-        createAttentionMessages: (...args2) => this.attentionMessages(...args2)
+        attentionTaskSelection: new CommunicationDomainComposition().attentionTaskSelection()
       },
       ...args
     );
@@ -81234,7 +81236,7 @@ var GithubOrganizerAttentionComposition = class {
 
 // packages/adapter/system-clock/src/system-communication-clock.ts
 var SystemCommunicationClock = class {
-  constructor(dateFactory = () => /* @__PURE__ */ new Date()) {
+  constructor(dateFactory) {
     this.dateFactory = dateFactory;
   }
   dateFactory;
@@ -81245,7 +81247,7 @@ var SystemCommunicationClock = class {
 
 // packages/adapter/system-clock/src/system-event-clock.ts
 var SystemEventClock = class {
-  constructor(dateFactory = () => /* @__PURE__ */ new Date()) {
+  constructor(dateFactory) {
     this.dateFactory = dateFactory;
   }
   dateFactory;
@@ -81256,11 +81258,11 @@ var SystemEventClock = class {
 
 // packages/adapter/system-clock/src/dependency-composition.ts
 var SystemClockComposition = class {
-  systemCommunicationClock(...args) {
-    return new SystemCommunicationClock(...args);
+  systemCommunicationClock() {
+    return new SystemCommunicationClock(() => /* @__PURE__ */ new Date());
   }
-  systemEventClock(...args) {
-    return new SystemEventClock(...args);
+  systemEventClock() {
+    return new SystemEventClock(() => /* @__PURE__ */ new Date());
   }
 };
 
@@ -88691,7 +88693,7 @@ var YamlIssueFormProjection = class {
   constructor(collaborators, options) {
     this.collaborators = collaborators;
     this.options = options;
-    this.choices = this.collaborators.createProjectReferentialChoices();
+    this.choices = this.collaborators.choices;
     this.presenter = this.collaborators.createSpeakerReferencesPresenter(
       this.collaborators.createIssueFormMessages(options.locale)
     );
@@ -88786,7 +88788,7 @@ var YamlIssueFormProjectionComposition = class {
     return new YamlIssueFormProjection(
       {
         yamlIssueFormDocument: this.yamlIssueFormDocument(),
-        createProjectReferentialChoices: (...args2) => new ReferentialDomainComposition().projectReferentialChoices(...args2),
+        choices: new ReferentialDomainComposition().projectReferentialChoices(),
         createSpeakerReferencesPresenter: (...args2) => this.speakerReferencesPresenter(...args2),
         createIssueFormMessages: (...args2) => this.issueFormMessages(...args2)
       },
@@ -94540,8 +94542,7 @@ var PublicationActionComposition = class {
       runtimeInput: new GithubActionsComposition().runtimeInput(),
       assetContentConfiguration: new GithubActionsComposition().assetContentConfiguration(),
       conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),
-      actionOutput: new GithubActionsComposition().actionOutput(),
-      createActionMessages: (...args) => new GithubActionsComposition().actionMessages(...args)
+      actionOutput: new GithubActionsComposition().actionOutput()
     });
   }
 };

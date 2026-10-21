@@ -178,6 +178,9 @@ export class AttentionComposition {
 						input.issueNumber,
 					),
 					{ dispatchAuthorized: false, authorLogin: input.commentAuthorLogin },
+					new GithubDeliveryLedgerComposition().ledgerCommentPresenter(
+						new GithubDeliveryLedgerComposition().ledgerMessages(input.locale),
+					),
 				),
 				reconciliation: new CommunicationDomainComposition().reconcileAttention(
 					context.get<AttentionRepository>(ATTENTION_SERVICES.repository),

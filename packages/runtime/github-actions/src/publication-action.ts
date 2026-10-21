@@ -5,10 +5,7 @@ import type { ActionOutput } from "./action-output.js";
 import type { ActionReportData } from "./action-report.js";
 import type { AssetContentConfiguration } from "./assets/asset-content-configuration.js";
 import type { ConferenceHallInput } from "./conference-hall-input.js";
-import type {
-	ActionMessages,
-	ActionMessagesArguments,
-} from "./i18n/action-messages.js";
+import type { ActionMessages } from "./i18n/action-messages.js";
 import type { PublicationComposition } from "./publication-composition.js";
 import type { RuntimeInput } from "./runtime-input.js";
 
@@ -22,16 +19,13 @@ export interface PublicationActionCollaborators {
 	readonly assetContentConfiguration: Pick<AssetContentConfiguration, "load">;
 	readonly conferenceHallInput: Pick<ConferenceHallInput, "read">;
 	readonly actionOutput: Pick<ActionOutput, "setJsonOutput">;
-	readonly createActionMessages: (
-		...args: ActionMessagesArguments
-	) => ActionMessages;
 }
 
 export class PublicationAction {
 	constructor(private readonly collaborators: PublicationActionCollaborators) {}
 
 	async runPublicationReconcileAssetsAction(
-		messages = this.collaborators.createActionMessages(),
+		messages: ActionMessages,
 	): Promise<ActionReportData> {
 		const issueNumber = this.collaborators.runtimeInput.positiveIntegerInput(
 			"issue-number",
@@ -77,11 +71,7 @@ export class PublicationAction {
 		messages: ActionMessages,
 	): ActionReportData {
 		this.collaborators.actionOutput.setJsonOutput("drive-files", outcome.files);
-		core.setOutput(
-			"slides-ready",
-			["copy-only", "ready"].includes(outcome.content?.slides ?? "copy-only") &&
-				Boolean(outcome.files["slides-link"]),
-		);
+		core.setOutput("slides-ready", outcome.slidesReady);
 
 		return {
 			details: [

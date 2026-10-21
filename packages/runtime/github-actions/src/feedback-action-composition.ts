@@ -11,8 +11,6 @@ export class FeedbackActionComposition {
 				),
 			runtimeInput: new GithubActionsComposition().runtimeInput(),
 			conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),
-			createActionMessages: (...args) =>
-				new GithubActionsComposition().actionMessages(...args),
 		});
 	}
 }

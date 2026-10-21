@@ -47,6 +47,7 @@ describe("ConferenceHallProposalSource", () => {
 			"example-cfp",
 			"secret",
 			request,
+			() => Date.parse("2099-01-01T00:00:00Z"),
 		);
 
 		// Act
@@ -100,6 +101,7 @@ describe("ConferenceHallProposalSource", () => {
 			"example-cfp",
 			"secret",
 			request,
+			() => Date.parse("2099-01-01T00:00:00Z"),
 		).load();
 
 		// Assert
@@ -139,6 +141,7 @@ describe("ConferenceHallProposalSource", () => {
 			"example-cfp",
 			"secret",
 			request,
+			() => Date.parse("2099-01-01T00:00:00Z"),
 		).load();
 
 		// Assert
@@ -167,6 +170,7 @@ describe("ConferenceHallProposalSource", () => {
 			"example-cfp",
 			"secret",
 			request,
+			() => Date.parse("2099-01-01T00:00:00Z"),
 		).load();
 
 		// Assert
@@ -196,6 +200,7 @@ describe("ConferenceHallProposalSource", () => {
 			"example-cfp",
 			"secret",
 			request,
+			() => Date.parse("2099-01-01T00:00:00Z"),
 		).load();
 
 		// Assert
@@ -222,6 +227,7 @@ describe("ConferenceHallProposalSource", () => {
 			"example-cfp",
 			"secret",
 			request,
+			() => Date.parse("2099-01-01T00:00:00Z"),
 		);
 
 		// Act
@@ -254,6 +260,7 @@ describe("ConferenceHallProposalSource", () => {
 				"example-cfp",
 				"secret",
 				request,
+				() => Date.parse("2099-01-01T00:00:00Z"),
 			).load();
 
 			// Assert
@@ -280,6 +287,7 @@ describe("ConferenceHallProposalSource", () => {
 			"example-cfp",
 			"secret",
 			request,
+			() => Date.parse("2099-01-01T00:00:00Z"),
 		).load();
 
 		// Assert
@@ -308,6 +316,7 @@ describe("ConferenceHallProposalSource", () => {
 				"example-cfp",
 				"secret",
 				request,
+				() => Date.parse("2099-01-01T00:00:00Z"),
 			).load();
 
 			// Assert
@@ -337,6 +346,7 @@ describe("ConferenceHallProposalSource", () => {
 			"example-cfp",
 			"secret",
 			request,
+			() => Date.parse("2099-01-01T00:00:00Z"),
 		).load();
 
 		// Assert
@@ -357,6 +367,7 @@ describe("ConferenceHallProposalSource", () => {
 			"https://evil.test",
 			"secret",
 			request,
+			() => Date.parse("2099-01-01T00:00:00Z"),
 		).load();
 
 		// Assert

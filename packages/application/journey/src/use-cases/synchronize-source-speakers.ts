@@ -19,7 +19,7 @@ export interface SynchronizeSourceSpeakersCollaborators {
 		SpeakerSynchronizationStageRunner,
 		"at"
 	>;
-	readonly createMergeSourceSpeakers: () => MergeSourceSpeakers;
+	readonly mergeSourceSpeakers: Pick<MergeSourceSpeakers, "execute">;
 	readonly createValidateReferentialCatalog: (
 		...args: ValidateReferentialCatalogArguments
 	) => ValidateReferentialCatalog;
@@ -51,9 +51,11 @@ export class SynchronizeSourceSpeakers {
 			await this.collaborators.speakerSynchronizationStageRunner.at(
 				"merge-speakers",
 				() =>
-					this.collaborators
-						.createMergeSourceSpeakers()
-						.execute(original.entries, snapshot, original.reservedIds),
+					this.collaborators.mergeSourceSpeakers.execute(
+						original.entries,
+						snapshot,
+						original.reservedIds,
+					),
 			);
 		const catalog =
 			await this.collaborators.speakerSynchronizationStageRunner.at(

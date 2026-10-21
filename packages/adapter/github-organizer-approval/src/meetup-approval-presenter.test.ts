@@ -4,7 +4,6 @@ import {
 	createStoredApproval,
 	publicationRequest,
 } from "../testing/approval.fixtures.js";
-import { GithubOrganizerApprovalComposition } from "./dependency-composition.js";
 import { ApprovalMessages } from "./i18n/approval-messages.js";
 import { MeetupApprovalPresenter } from "./meetup-approval-presenter.js";
 
@@ -14,10 +13,6 @@ describe("Meetup publication approval presentation", () => {
 		(locale) => {
 			// Arrange
 			const presenter = new MeetupApprovalPresenter(
-				{
-					approvalCommentCodec:
-						new GithubOrganizerApprovalComposition().approvalCommentCodec(),
-				},
 				new ApprovalMessages(
 					{ localeResolver: new LocalizationComposition().localeResolver() },
 					locale,
@@ -44,10 +39,6 @@ describe("Meetup publication approval presentation", () => {
 	it("escapes markup and mentions in displayed facts", () => {
 		// Arrange
 		const presenter = new MeetupApprovalPresenter(
-			{
-				approvalCommentCodec:
-					new GithubOrganizerApprovalComposition().approvalCommentCodec(),
-			},
 			new ApprovalMessages(
 				{ localeResolver: new LocalizationComposition().localeResolver() },
 				"en",

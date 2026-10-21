@@ -19,12 +19,11 @@ describe("GitHub attention presentation", () => {
 				attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
 				attentionTaskSelection:
 					new CommunicationDomainComposition().attentionTaskSelection(),
-				createAttentionMessages: (...args) =>
-					new GithubOrganizerAttentionComposition().attentionMessages(...args),
 			},
 			"example/meetups",
 			42,
 			checklist,
+			new GithubOrganizerAttentionComposition().attentionMessages("en"),
 		);
 		const value = {
 			...state(),
@@ -56,12 +55,11 @@ describe("GitHub attention presentation", () => {
 				attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
 				attentionTaskSelection:
 					new CommunicationDomainComposition().attentionTaskSelection(),
-				createAttentionMessages: (...args) =>
-					new GithubOrganizerAttentionComposition().attentionMessages(...args),
 			},
 			"example/meetups",
 			42,
 			checklist,
+			new GithubOrganizerAttentionComposition().attentionMessages("en"),
 		);
 		checklist.set(
 			100,
@@ -86,8 +84,6 @@ describe("GitHub attention presentation", () => {
 				attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
 				attentionTaskSelection:
 					new CommunicationDomainComposition().attentionTaskSelection(),
-				createAttentionMessages: (...args) =>
-					new GithubOrganizerAttentionComposition().attentionMessages(...args),
 			},
 			"example/meetups",
 			42,
@@ -129,12 +125,11 @@ describe("GitHub attention presentation", () => {
 				attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
 				attentionTaskSelection:
 					new CommunicationDomainComposition().attentionTaskSelection(),
-				createAttentionMessages: (...args) =>
-					new GithubOrganizerAttentionComposition().attentionMessages(...args),
 			},
 			"example/meetups",
 			42,
 			checklist,
+			new GithubOrganizerAttentionComposition().attentionMessages("en"),
 		);
 
 		// Act
@@ -157,12 +152,11 @@ describe("GitHub attention presentation", () => {
 				attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
 				attentionTaskSelection:
 					new CommunicationDomainComposition().attentionTaskSelection(),
-				createAttentionMessages: (...args) =>
-					new GithubOrganizerAttentionComposition().attentionMessages(...args),
 			},
 			"example/meetups",
 			42,
 			checklist,
+			new GithubOrganizerAttentionComposition().attentionMessages("en"),
 		);
 		checklist.set(
 			100,

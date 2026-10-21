@@ -40,12 +40,11 @@ export function fixture() {
 			attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
 			attentionTaskSelection:
 				new CommunicationDomainComposition().attentionTaskSelection(),
-			createAttentionMessages: (...args) =>
-				new GithubOrganizerAttentionComposition().attentionMessages(...args),
 		},
 		"example/meetups",
 		42,
 		checklist,
+		new GithubOrganizerAttentionComposition().attentionMessages("en"),
 	);
 	const graphql = vi
 		.fn()

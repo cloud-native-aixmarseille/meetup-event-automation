@@ -1,9 +1,6 @@
 import type { EventDiagnostic } from "@meetup-automation/event";
 import { FIELD_ORDER, GUIDANCE } from "./diagnostic-guidance.js";
-import type {
-	EventCommentMessages,
-	EventCommentMessagesArguments,
-} from "./i18n/event-comment-messages.js";
+import type { EventCommentMessages } from "./i18n/event-comment-messages.js";
 
 export type DiagnosticPresentation = Readonly<{
 	field: string;
@@ -11,17 +8,7 @@ export type DiagnosticPresentation = Readonly<{
 	order: number;
 }>;
 
-export interface DiagnosticPresenterCollaborators {
-	readonly createEventCommentMessages: (
-		...args: EventCommentMessagesArguments
-	) => EventCommentMessages;
-}
-
 export class DiagnosticPresenter {
-	constructor(
-		private readonly collaborators: DiagnosticPresenterCollaborators,
-	) {}
-
 	private readonly FIELD_ALIASES = new Map([
 		...FIELD_ORDER.map((field): [string, string] => [field, field]),
 		["eventTitle", "Event Title"],
@@ -50,7 +37,7 @@ export class DiagnosticPresenter {
 
 	presentDiagnostic(
 		item: EventDiagnostic,
-		messages = this.collaborators.createEventCommentMessages(),
+		messages: EventCommentMessages,
 	): DiagnosticPresentation {
 		const guidance = GUIDANCE.get(item.code);
 		const referential = /^referential\.(host|contact|speaker)\./.test(
@@ -70,7 +57,7 @@ export class DiagnosticPresenter {
 	publicField(
 		field: string | undefined,
 		fallback: string,
-		messages = this.collaborators.createEventCommentMessages(),
+		messages: EventCommentMessages,
 	): readonly [string, string] {
 		const known = this.FIELD_ALIASES.get(field ?? "");
 		if (known) return [known, known];

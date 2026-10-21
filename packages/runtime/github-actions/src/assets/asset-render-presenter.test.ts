@@ -9,10 +9,7 @@ describe("asset public presentation", () => {
 		// Arrange
 		const presenter = new AssetRenderPresenterImpl(
 			{
-				createAssetMessages: (...args) =>
-					new GithubActionsComposition().assetMessages(...args),
-				createAssetDateFormatter: (...args) =>
-					new GithubActionsComposition().assetDateFormatter(...args),
+				date: new GithubActionsComposition().assetDateFormatter("fr"),
 			},
 			new AssetMessages(
 				{ localeResolver: new LocalizationComposition().localeResolver() },
@@ -75,10 +72,7 @@ describe("asset public presentation", () => {
 		// Arrange
 		const presenter = new AssetRenderPresenterImpl(
 			{
-				createAssetMessages: (...args) =>
-					new GithubActionsComposition().assetMessages(...args),
-				createAssetDateFormatter: (...args) =>
-					new GithubActionsComposition().assetDateFormatter(...args),
+				date: new GithubActionsComposition().assetDateFormatter(locale),
 			},
 			new AssetMessages(
 				{ localeResolver: new LocalizationComposition().localeResolver() },

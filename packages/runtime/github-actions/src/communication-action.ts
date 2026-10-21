@@ -4,10 +4,7 @@ import type { CommunicationDiagnosticProjection } from "@meetup-automation/journ
 import type { ActionReportData } from "./action-report.js";
 import type { CommunicationRuntime } from "./communication.js";
 import type { ConferenceHallInput } from "./conference-hall-input.js";
-import type {
-	ActionMessages,
-	ActionMessagesArguments,
-} from "./i18n/action-messages.js";
+import type { ActionMessages } from "./i18n/action-messages.js";
 import type { RuntimeInput } from "./runtime-input.js";
 
 export interface CommunicationActionCollaborators {
@@ -24,9 +21,6 @@ export interface CommunicationActionCollaborators {
 		CommunicationDiagnosticProjection,
 		"domainDiagnostic" | "runtimeDiagnostic"
 	>;
-	readonly createActionMessages: (
-		...args: ActionMessagesArguments
-	) => ActionMessages;
 }
 
 export class CommunicationAction {
@@ -35,7 +29,7 @@ export class CommunicationAction {
 	) {}
 
 	async runCommunicationReconcileAction(
-		messages = this.collaborators.createActionMessages(),
+		messages: ActionMessages,
 	): Promise<ActionReportData> {
 		const issueNumber = this.collaborators.runtimeInput.positiveIntegerInput(
 			"issue-number",

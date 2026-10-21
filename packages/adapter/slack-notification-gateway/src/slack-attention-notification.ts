@@ -5,32 +5,22 @@ import type {
 	AttentionPostResult,
 	AttentionView,
 } from "@meetup-automation/communication";
-import type {
-	SlackApiClient,
-	SlackApiClientArguments,
-} from "./slack-api-client.js";
+import type { SlackApiClient } from "./slack-api-client.js";
 import type { SlackAttentionPresenter } from "./slack-attention-presenter.js";
 import type { SlackMessageReference } from "./slack-message-reference.js";
-import type { SlackFetch } from "./slack-notification-gateway-contracts.js";
 export interface SlackAttentionNotificationCollaborators {
 	readonly slackMessageReference: Pick<SlackMessageReference, "read" | "valid">;
-	readonly createSlackApiClient: (
-		...args: SlackApiClientArguments
-	) => SlackApiClient;
 }
 
 export class SlackAttentionNotification implements AttentionNotification {
-	private readonly client: SlackApiClient;
 	constructor(
 		private readonly collaborators: SlackAttentionNotificationCollaborators,
-		token: string,
+		private readonly client: Pick<SlackApiClient, "post">,
 		private readonly channel: string,
 		private readonly presenter: Pick<SlackAttentionPresenter, "render">,
-		fetcher: SlackFetch = fetch,
 	) {
 		if (!/^[CG][A-Z0-9]+$/.test(channel))
 			throw new Error("Invalid organizer channel");
-		this.client = this.collaborators.createSlackApiClient(token, fetcher);
 	}
 	fingerprint(view: AttentionView): string {
 		return createHash("sha256")
@@ -80,10 +70,3 @@ export class SlackAttentionNotification implements AttentionNotification {
 		};
 	}
 }
-export type SlackAttentionNotificationArguments =
-	ConstructorParameters<typeof SlackAttentionNotification> extends [
-		unknown,
-		...infer Args,
-	]
-		? Args
-		: never;

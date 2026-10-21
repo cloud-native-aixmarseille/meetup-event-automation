@@ -1,23 +1,13 @@
-import type { ApprovalCommentCodec } from "./approval-comment-codec.js";
-import type {
-	ApprovalDetailsPresenter,
-	ApprovalDetailsPresenterArguments,
-} from "./approval-details-presenter.js";
+import type { ApprovalRequestPolicy } from "@meetup-automation/journey";
+import type { ApprovalDetailsPresenter } from "./approval-details-presenter.js";
 import type { ApprovalDecision, StoredApproval } from "./approval-state.js";
-import type {
-	FollowUpPresenter,
-	FollowUpPresenterArguments,
-} from "./follow-up-presenter.js";
+import type { FollowUpPresenter } from "./follow-up-presenter.js";
 import type { ApprovalMessages } from "./i18n/approval-messages.js";
 
 export interface EmailApprovalPresenterCollaborators {
-	readonly approvalCommentCodec: Pick<ApprovalCommentCodec, "marker">;
-	readonly createFollowUpPresenter: (
-		...args: FollowUpPresenterArguments
-	) => FollowUpPresenter;
-	readonly createApprovalDetailsPresenter: (
-		...args: ApprovalDetailsPresenterArguments
-	) => ApprovalDetailsPresenter;
+	readonly approvalRequestPolicy: Pick<ApprovalRequestPolicy, "reviewPhase">;
+	readonly followUpPresenter: Pick<FollowUpPresenter, "render">;
+	readonly approvalDetailsPresenter: Pick<ApprovalDetailsPresenter, "render">;
 }
 
 export class EmailApprovalPresenter {
@@ -29,22 +19,18 @@ export class EmailApprovalPresenter {
 		record: Exclude<StoredApproval, { kind: "meetup-publication" }>,
 		decision: ApprovalDecision,
 	): string {
-		const heading = [
-			this.collaborators.approvalCommentCodec.marker(record),
-			...this.collaborators
-				.createFollowUpPresenter(this.messages)
-				.render(record),
-		];
-		if (record.recipientCount === 0 || record.followUp?.active === false)
+		const heading = [...this.collaborators.followUpPresenter.render(record)];
+		const phase = this.collaborators.approvalRequestPolicy.reviewPhase({
+			recipientCount: record.recipientCount,
+			followUpActive: record.followUp?.active,
+			decided: record.decision !== undefined,
+		});
+		if (phase === "inactive")
 			return [...heading, record.followUp?.attentionDetails ?? ""]
 				.join("\n\n")
 				.trimEnd();
 		const details = record.details
-			? [
-					this.collaborators
-						.createApprovalDetailsPresenter(this.messages)
-						.render(record.details),
-				]
+			? [this.collaborators.approvalDetailsPresenter.render(record.details)]
 			: [];
 		if (record.followUp?.attentionDetails)
 			details.push(record.followUp.attentionDetails);

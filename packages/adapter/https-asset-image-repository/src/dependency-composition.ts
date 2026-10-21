@@ -1,34 +1,28 @@
+import { lookup } from "node:dns/promises";
+import { request } from "node:https";
 import { PublicationDomainComposition } from "@meetup-automation/publication";
-import {
-	BoundedImageDownload,
-	type BoundedImageDownloadArguments,
-} from "./bounded-image-download.js";
-import {
-	HttpsAssetImageRepository,
-	type HttpsAssetImageRepositoryArguments,
-} from "./https-asset-image-repository.js";
+import { BoundedImageDownload } from "./bounded-image-download.js";
+import { HttpsAssetImageRepository } from "./https-asset-image-repository.js";
 import { PublicImageUrl } from "./public-image-url.js";
 /** Assembles this package's collaborators; no business decisions or I/O. */
 export class HttpsAssetImageRepositoryComposition {
 	boundedImageDownload(
-		...args: BoundedImageDownloadArguments
+		resolve: typeof lookup = lookup,
+		send: typeof request = request,
 	): BoundedImageDownload {
 		return new BoundedImageDownload(
 			{ publicImageUrl: this.publicImageUrl() },
-			...args,
+			resolve,
+			send,
 		);
 	}
-	httpsAssetImageRepository(
-		...args: HttpsAssetImageRepositoryArguments
-	): HttpsAssetImageRepository {
+	httpsAssetImageRepository(): HttpsAssetImageRepository {
 		return new HttpsAssetImageRepository(
 			{
 				contentFingerprint:
 					new PublicationDomainComposition().contentFingerprint(),
-				createBoundedImageDownload: (...args) =>
-					this.boundedImageDownload(...args),
 			},
-			...args,
+			this.boundedImageDownload(),
 		);
 	}
 	publicImageUrl(): PublicImageUrl {

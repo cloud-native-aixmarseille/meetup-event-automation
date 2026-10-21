@@ -52,8 +52,8 @@ describe("ManageMeetupEvent manual publication tasks", () => {
 						),
 					createRefreshSelectedProposals: (...args) =>
 						new JourneyComposition().refreshSelectedProposals(...args),
-					createResolveEventReferences: (...args) =>
-						new ReferentialDomainComposition().resolveEventReferences(...args),
+					resolveEventReferences:
+						new ReferentialDomainComposition().resolveEventReferences(),
 				},
 				{
 					proposalSource: { load: vi.fn() },
@@ -120,8 +120,8 @@ describe("ManageMeetupEvent manual publication tasks", () => {
 					),
 				createRefreshSelectedProposals: (...args) =>
 					new JourneyComposition().refreshSelectedProposals(...args),
-				createResolveEventReferences: (...args) =>
-					new ReferentialDomainComposition().resolveEventReferences(...args),
+				resolveEventReferences:
+					new ReferentialDomainComposition().resolveEventReferences(),
 			},
 			{
 				proposalSource: { load: vi.fn() },
@@ -174,8 +174,8 @@ describe("ManageMeetupEvent manual publication tasks", () => {
 					),
 				createRefreshSelectedProposals: (...args) =>
 					new JourneyComposition().refreshSelectedProposals(...args),
-				createResolveEventReferences: (...args) =>
-					new ReferentialDomainComposition().resolveEventReferences(...args),
+				resolveEventReferences:
+					new ReferentialDomainComposition().resolveEventReferences(),
 			},
 			{
 				proposalSource: { load: vi.fn() },

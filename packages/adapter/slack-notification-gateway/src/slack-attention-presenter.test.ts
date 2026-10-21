@@ -17,14 +17,10 @@ function attentionFixture(
 			attentionTaskSelection:
 				new CommunicationDomainComposition().attentionTaskSelection(),
 			attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
-			createSlackAttentionMessages: (...args) =>
-				new SlackNotificationGatewayComposition().slackAttentionMessages(
-					...args,
-				),
 		},
 		"example/meetups",
 		42,
-		locale,
+		new SlackNotificationGatewayComposition().slackAttentionMessages(locale),
 		{
 			read: () => checklist,
 		},

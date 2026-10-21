@@ -6,15 +6,8 @@ import {
 } from "@meetup-automation/publication";
 import type { OpenFeedbackAgendaPlan } from "./openfeedback-agenda-plan.js";
 import type { OpenFeedbackAgendaSnapshot } from "./openfeedback-agenda-snapshot.js";
-import type {
-	OpenFeedbackClient,
-	OpenFeedbackClientArguments,
-} from "./openfeedback-client.js";
 import type { OpenFeedbackRecordEquality } from "./openfeedback-record-equality.js";
-import type {
-	OpenFeedbackRecordsGateway,
-	OpenFeedbackRecordsGatewayArguments,
-} from "./openfeedback-records-gateway.js";
+import type { OpenFeedbackRecordsGateway } from "./openfeedback-records-gateway.js";
 
 export interface OpenFeedbackTalkResultsGatewayCollaborators {
 	readonly openFeedbackAgendaSnapshot: Pick<
@@ -27,12 +20,7 @@ export interface OpenFeedbackTalkResultsGatewayCollaborators {
 		"sameSpeakers"
 	>;
 	readonly feedbackPolicy: Pick<FeedbackPolicy, "pollUrl">;
-	readonly createOpenFeedbackRecordsGateway: (
-		...args: OpenFeedbackRecordsGatewayArguments
-	) => OpenFeedbackRecordsGateway;
-	readonly createOpenFeedbackClient: (
-		...args: OpenFeedbackClientArguments
-	) => OpenFeedbackClient;
+	readonly records: Pick<OpenFeedbackRecordsGateway, "list">;
 }
 
 export class OpenFeedbackTalkResultsGateway
@@ -40,17 +28,13 @@ export class OpenFeedbackTalkResultsGateway
 {
 	constructor(
 		private readonly collaborators: OpenFeedbackTalkResultsGatewayCollaborators,
-		private readonly apiKey: string,
-		private readonly fetcher: typeof fetch = fetch,
 	) {}
 
 	async resolve(
 		input: Parameters<FeedbackTalkResultsGateway["resolve"]>[0],
 	): Promise<readonly FeedbackTalkResult[]> {
 		const eventId = this.eventId(input.url);
-		const records = this.collaborators.createOpenFeedbackRecordsGateway(
-			this.collaborators.createOpenFeedbackClient(this.apiKey, this.fetcher),
-		);
+		const { records } = this.collaborators;
 		const speakers = await records.list(eventId, "speakers");
 		const talks = await records.list(eventId, "talks");
 		const current = this.collaborators.openFeedbackAgendaSnapshot.parse({
@@ -94,10 +78,3 @@ export class OpenFeedbackTalkResultsGateway
 		throw new FeedbackResolutionError("unavailable");
 	}
 }
-export type OpenFeedbackTalkResultsGatewayArguments =
-	ConstructorParameters<typeof OpenFeedbackTalkResultsGateway> extends [
-		unknown,
-		...infer Args,
-	]
-		? Args
-		: never;

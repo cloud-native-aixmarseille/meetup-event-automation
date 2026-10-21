@@ -44,14 +44,15 @@ describe("GithubDeliveryLedger", () => {
 					new GithubDeliveryLedgerComposition().ledgerEntryMapping(),
 				ledgerCommentCodec:
 					new GithubDeliveryLedgerComposition().ledgerCommentCodec(),
-				createLedgerCommentPresenter: (...args) =>
-					new GithubDeliveryLedgerComposition().ledgerCommentPresenter(...args),
 			},
 			comments,
 			{
 				dispatchAuthorized: true,
 				authorLogin: "automation[bot]",
 			},
+			new GithubDeliveryLedgerComposition().ledgerCommentPresenter(
+				new GithubDeliveryLedgerComposition().ledgerMessages("en"),
+			),
 		);
 
 		// Act
@@ -87,14 +88,15 @@ describe("GithubDeliveryLedger", () => {
 					new GithubDeliveryLedgerComposition().ledgerEntryMapping(),
 				ledgerCommentCodec:
 					new GithubDeliveryLedgerComposition().ledgerCommentCodec(),
-				createLedgerCommentPresenter: (...args) =>
-					new GithubDeliveryLedgerComposition().ledgerCommentPresenter(...args),
 			},
 			comments,
 			{
 				dispatchAuthorized: true,
 				authorLogin: "automation[bot]",
 			},
+			new GithubDeliveryLedgerComposition().ledgerCommentPresenter(
+				new GithubDeliveryLedgerComposition().ledgerMessages("en"),
+			),
 		);
 
 		// Act
@@ -135,14 +137,15 @@ describe("GithubDeliveryLedger", () => {
 					new GithubDeliveryLedgerComposition().ledgerEntryMapping(),
 				ledgerCommentCodec:
 					new GithubDeliveryLedgerComposition().ledgerCommentCodec(),
-				createLedgerCommentPresenter: (...args) =>
-					new GithubDeliveryLedgerComposition().ledgerCommentPresenter(...args),
 			},
 			new MemoryComments(),
 			{
 				dispatchAuthorized: false,
 				authorLogin: "automation[bot]",
 			},
+			new GithubDeliveryLedgerComposition().ledgerCommentPresenter(
+				new GithubDeliveryLedgerComposition().ledgerMessages("en"),
+			),
 		);
 
 		// Act
@@ -160,14 +163,15 @@ describe("GithubDeliveryLedger", () => {
 					new GithubDeliveryLedgerComposition().ledgerEntryMapping(),
 				ledgerCommentCodec:
 					new GithubDeliveryLedgerComposition().ledgerCommentCodec(),
-				createLedgerCommentPresenter: (...args) =>
-					new GithubDeliveryLedgerComposition().ledgerCommentPresenter(...args),
 			},
 			new MemoryComments(),
 			{
 				dispatchAuthorized: true,
 				authorLogin: "automation[bot]",
 			},
+			new GithubDeliveryLedgerComposition().ledgerCommentPresenter(
+				new GithubDeliveryLedgerComposition().ledgerMessages("en"),
+			),
 		);
 
 		// Act
@@ -193,14 +197,15 @@ describe("GithubDeliveryLedger", () => {
 					new GithubDeliveryLedgerComposition().ledgerEntryMapping(),
 				ledgerCommentCodec:
 					new GithubDeliveryLedgerComposition().ledgerCommentCodec(),
-				createLedgerCommentPresenter: (...args) =>
-					new GithubDeliveryLedgerComposition().ledgerCommentPresenter(...args),
 			},
 			new MemoryComments(),
 			{
 				dispatchAuthorized: true,
 				authorLogin: "automation[bot]",
 			},
+			new GithubDeliveryLedgerComposition().ledgerCommentPresenter(
+				new GithubDeliveryLedgerComposition().ledgerMessages("en"),
+			),
 		);
 
 		// Act
@@ -229,14 +234,15 @@ describe("GithubDeliveryLedger", () => {
 					new GithubDeliveryLedgerComposition().ledgerEntryMapping(),
 				ledgerCommentCodec:
 					new GithubDeliveryLedgerComposition().ledgerCommentCodec(),
-				createLedgerCommentPresenter: (...args) =>
-					new GithubDeliveryLedgerComposition().ledgerCommentPresenter(...args),
 			},
 			comments,
 			{
 				dispatchAuthorized: true,
 				authorLogin: "automation[bot]",
 			},
+			new GithubDeliveryLedgerComposition().ledgerCommentPresenter(
+				new GithubDeliveryLedgerComposition().ledgerMessages("en"),
+			),
 		);
 
 		// Act
@@ -276,16 +282,15 @@ describe("GithubDeliveryLedger", () => {
 						new GithubDeliveryLedgerComposition().ledgerEntryMapping(),
 					ledgerCommentCodec:
 						new GithubDeliveryLedgerComposition().ledgerCommentCodec(),
-					createLedgerCommentPresenter: (...args) =>
-						new GithubDeliveryLedgerComposition().ledgerCommentPresenter(
-							...args,
-						),
 				},
 				comments,
 				{
 					dispatchAuthorized: true,
 					authorLogin: "automation[bot]",
 				},
+				new GithubDeliveryLedgerComposition().ledgerCommentPresenter(
+					new GithubDeliveryLedgerComposition().ledgerMessages("en"),
+				),
 			);
 
 			// Act
@@ -333,14 +338,15 @@ describe("GithubDeliveryLedger", () => {
 					new GithubDeliveryLedgerComposition().ledgerEntryMapping(),
 				ledgerCommentCodec:
 					new GithubDeliveryLedgerComposition().ledgerCommentCodec(),
-				createLedgerCommentPresenter: (...args) =>
-					new GithubDeliveryLedgerComposition().ledgerCommentPresenter(...args),
 			},
 			comments,
 			{
 				dispatchAuthorized: true,
 				authorLogin: "automation[bot]",
 			},
+			new GithubDeliveryLedgerComposition().ledgerCommentPresenter(
+				new GithubDeliveryLedgerComposition().ledgerMessages("en"),
+			),
 		);
 
 		// Act
@@ -379,16 +385,15 @@ describe("GithubDeliveryLedger", () => {
 						new GithubDeliveryLedgerComposition().ledgerEntryMapping(),
 					ledgerCommentCodec:
 						new GithubDeliveryLedgerComposition().ledgerCommentCodec(),
-					createLedgerCommentPresenter: (...args) =>
-						new GithubDeliveryLedgerComposition().ledgerCommentPresenter(
-							...args,
-						),
 				},
 				comments,
 				{
 					dispatchAuthorized: false,
 					authorLogin: "automation[bot]",
 				},
+				new GithubDeliveryLedgerComposition().ledgerCommentPresenter(
+					new GithubDeliveryLedgerComposition().ledgerMessages("en"),
+				),
 			);
 
 			// Act

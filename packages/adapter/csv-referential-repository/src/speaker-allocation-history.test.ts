@@ -60,6 +60,7 @@ describe("SpeakerAllocationHistory", () => {
 					new ReferentialDomainComposition().referentialIdentifiers(),
 			},
 			root,
+			run,
 		);
 
 		// Act
@@ -87,6 +88,7 @@ describe("SpeakerAllocationHistory", () => {
 					new ReferentialDomainComposition().referentialIdentifiers(),
 			},
 			shallow,
+			run,
 		);
 
 		// Act

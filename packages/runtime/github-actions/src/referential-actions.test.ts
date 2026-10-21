@@ -46,7 +46,9 @@ describe("referential GitHub Action boundary", () => {
 		});
 
 		// Act
-		const report = await subject().runReferentialValidateAction();
+		const report = await subject().runReferentialValidateAction(
+			new GithubActionsComposition().actionMessages("en"),
+		);
 
 		// Assert
 
@@ -70,7 +72,9 @@ describe("referential GitHub Action boundary", () => {
 		});
 
 		// Act
-		const report = await subject().runReferentialValidateAction();
+		const report = await subject().runReferentialValidateAction(
+			new GithubActionsComposition().actionMessages("en"),
+		);
 
 		// Assert
 		expect(report.diagnostics).toEqual([
@@ -95,7 +99,9 @@ describe("referential GitHub Action boundary", () => {
 		});
 
 		// Act
-		const report = await subject().runReferentialSyncIssueFormAction();
+		const report = await subject().runReferentialSyncIssueFormAction(
+			new GithubActionsComposition().actionMessages("en"),
+		);
 
 		// Assert
 		expect(report.details).toContain("issue_form=updated");
@@ -247,6 +253,5 @@ function subject() {
 		synchronizeIssueForm: () => ({ execute: boundary.synchronize }),
 		referentialActionReport: composition.referentialActionReport(),
 		runtimeInput: composition.runtimeInput(),
-		createActionMessages: (...args) => composition.actionMessages(...args),
 	});
 }

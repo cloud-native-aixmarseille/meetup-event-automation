@@ -39,7 +39,7 @@ export class FeedbackComposition {
 			.toDynamicValue(() =>
 				new OpenfeedbackEventGatewayComposition()
 					.openFeedbackEventGatewayFactory()
-					.create(input.openFeedbackApiKey),
+					.create(input.openFeedbackApiKey, fetch),
 			);
 		container
 			.bind<FeedbackLinkGateway>(FEEDBACK_LINKS)

@@ -1,4 +1,7 @@
-import { JourneyPolicyComposition } from "@meetup-automation/journey";
+import {
+	FollowUpApprovalPolicy,
+	JourneyPolicyComposition,
+} from "@meetup-automation/journey";
 import { describe, expect, it, vi } from "vitest";
 import { request } from "../testing/approval.fixtures.js";
 import { ApprovalRecordFactory } from "./approval-record-factory.js";
@@ -12,6 +15,7 @@ describe("approval storage identity allocation", () => {
 			.mockReturnValue("00000000-0000-4000-8000-000000000001");
 		const factory = new ApprovalRecordFactory(
 			{
+				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 				approvalRequestSchema:
 					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 				approvalRequestPolicy:
@@ -45,6 +49,7 @@ describe("approval storage identity allocation", () => {
 		const identity = vi.fn();
 		const factory = new ApprovalRecordFactory(
 			{
+				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 				approvalRequestSchema:
 					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 				approvalRequestPolicy:
@@ -67,6 +72,7 @@ describe("approval storage identity allocation", () => {
 		// Arrange
 		const factory = new ApprovalRecordFactory(
 			{
+				followUpApprovalPolicy: new FollowUpApprovalPolicy(),
 				approvalRequestSchema:
 					new GithubOrganizerApprovalComposition().approvalRequestSchema(),
 				approvalRequestPolicy:

@@ -1,40 +1,24 @@
 import type { ApprovalNotificationRequest } from "@meetup-automation/journey";
-import type {
-	SlackApprovalMessages,
-	SlackApprovalMessagesArguments,
-} from "./i18n/slack-approval-messages.js";
 
-export interface SlackApprovalPresenterCollaborators {
-	readonly createSlackApprovalMessages: (
-		...args: SlackApprovalMessagesArguments
-	) => SlackApprovalMessages;
-}
+type ApprovalKind = ApprovalNotificationRequest["kind"];
+export type SlackApprovalRequests = {
+	readonly [Kind in ApprovalKind]: Extract<
+		ApprovalNotificationRequest,
+		{ kind: Kind }
+	>;
+};
+export type SlackApprovalRenderers = {
+	readonly [Kind in ApprovalKind]: {
+		render(request: SlackApprovalRequests[Kind]): string;
+	};
+};
 
+/** Dispatches to the explicitly composed renderer for each supported kind. */
 export class SlackApprovalPresenter {
-	private readonly messages: SlackApprovalMessages;
-	constructor(
-		private readonly collaborators: SlackApprovalPresenterCollaborators,
-		locale: string | undefined,
-	) {
-		this.messages = this.collaborators.createSlackApprovalMessages(locale);
-	}
-	render(request: ApprovalNotificationRequest): string {
-		const details = {
-			date: request.eventDate,
-			url: request.approvalUrl,
-		};
-		return request.kind === "meetup-publication"
-			? this.messages.t("request.publication", details)
-			: this.messages.t("request.introduction", {
-					...details,
-					count: request.recipientCount,
-				});
+	constructor(private readonly renderers: SlackApprovalRenderers) {}
+	render<Kind extends ApprovalKind>(
+		request: SlackApprovalRequests[Kind],
+	): string {
+		return this.renderers[request.kind].render(request);
 	}
 }
-export type SlackApprovalPresenterArguments =
-	ConstructorParameters<typeof SlackApprovalPresenter> extends [
-		unknown,
-		...infer Args,
-	]
-		? Args
-		: never;
