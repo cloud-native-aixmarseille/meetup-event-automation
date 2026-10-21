@@ -42,6 +42,7 @@ export interface Workflow {
 	jobs?: Record<string, Job>;
 	name?: string;
 	on?: {
+		pull_request?: { branches?: string[] };
 		workflow_dispatch?: { inputs?: Inputs };
 		workflow_call?: {
 			inputs?: Inputs;

@@ -3,7 +3,7 @@ name: Pull request - Continuous Integration
 on:
   merge_group:
   pull_request:
-    branches: [main]
+    branches: [main, "stack/**"]
 
 permissions: {}
 
