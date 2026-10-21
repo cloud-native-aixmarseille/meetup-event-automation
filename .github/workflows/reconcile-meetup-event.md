@@ -2,11 +2,19 @@
 
 # GitHub Reusable Workflow: Create or update Meetup event
 
+<div align="center">
+  <img src="../logo.svg" width="60px" align="center" alt="Create or update Meetup event" />
+</div>
+
+---
+
 <!-- header:end -->
 <!-- badges:start -->
 
 [![Release](https://img.shields.io/github/v/release/cloud-native-aixmarseille/meetup-event-automation)](https://github.com/cloud-native-aixmarseille/meetup-event-automation/releases)
+[![License](https://img.shields.io/github/license/cloud-native-aixmarseille/meetup-event-automation)](http://choosealicense.com/licenses/mit/)
 [![Stars](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)](https://img.shields.io/github/stars/cloud-native-aixmarseille/meetup-event-automation?style=social)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/main/CONTRIBUTING.md)
 
 <!-- badges:end -->
 <!-- overview:start -->
@@ -46,7 +54,7 @@ on:
 permissions: {}
 jobs:
   reconcile-meetup-event:
-    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/reconcile-meetup-event.yml@<FULL_COMMIT_SHA>
+    uses: cloud-native-aixmarseille/meetup-event-automation/.github/workflows/reconcile-meetup-event.yml@5a80cd5013781ff071bea0dfda49044bc4071c5f # 2.3.2
     permissions:
       contents: read
     secrets:
@@ -151,10 +159,26 @@ approval comments; the approval adapter verifies the author and exact content.
 <!-- examples:start -->
 <!-- examples:end -->
 <!-- contributing:start -->
+
+## Contributing
+
+Contributions are welcome! Please see the [contributing guidelines](https://github.com/cloud-native-aixmarseille/meetup-event-automation/blob/main/CONTRIBUTING.md) for more details.
+
 <!-- contributing:end -->
 <!-- security:start -->
 <!-- security:end -->
 <!-- license:start -->
+
+## License
+
+This project is licensed under the MIT License.
+
+SPDX-License-Identifier: MIT
+
+Copyright © 2026 cloud-native-aixmarseille
+
+For more details, see the [license](http://choosealicense.com/licenses/mit/).
+
 <!-- license:end -->
 <!-- generated:start -->
 
