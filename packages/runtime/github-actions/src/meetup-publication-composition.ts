@@ -6,6 +6,7 @@ import type {
 } from "@meetup-automation/event";
 import { GithubOrganizerApprovalComposition } from "@meetup-automation/github-organizer-approval";
 import { GithubPublicationJournalComposition } from "@meetup-automation/github-publication-journal";
+import { HcaptchaCaptchaResolverComposition } from "@meetup-automation/hcaptcha-captcha-resolver";
 import {
 	JourneyComposition,
 	ManageMeetupEvent,
@@ -65,26 +66,24 @@ export class MeetupPublicationComposition {
 					.meetupEventGatewayFactory()
 					.create(
 						{ email: input.email, password: input.password },
-						MeetupPublicationComposition.challenge(ai),
+						MeetupPublicationComposition.captchaResolverFactory(ai),
 						group.value,
 					),
 			});
 		});
 		return container;
 	}
-	private static challenge(ai: AiConfiguration) {
-		return new MeetupEventGatewayComposition()
-			.hcaptchaChallengeFactory()
-			.create(
-				fileURLToPath(
-					new URL(
-						"../../../../packages/adapter/meetup-event-gateway/python/",
-						import.meta.url,
-					),
+	private static captchaResolverFactory(ai: AiConfiguration) {
+		return new HcaptchaCaptchaResolverComposition().captchaResolverFactory(
+			fileURLToPath(
+				new URL(
+					"../../../../packages/adapter/hcaptcha-captcha-resolver/python/",
+					import.meta.url,
 				),
-				ai.apiKey,
-				ai.model,
-			);
+			),
+			ai.apiKey,
+			ai.model,
+		);
 	}
 	private static approval(
 		input: EventCompositionInput & {

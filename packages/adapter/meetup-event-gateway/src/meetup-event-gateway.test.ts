@@ -1,3 +1,4 @@
+import type { CaptchaResolver } from "@meetup-automation/browser-authentication";
 import type { Browser, BrowserType, Page } from "playwright-core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { desiredEvent, eventUrl, groupUrl } from "../testing/editor-fixture.js";
@@ -33,7 +34,8 @@ function fixture(configuredGroup = groupUrl) {
 	const createLogin = vi.fn((...args: MeetupLoginPageArguments) =>
 		new MeetupEventGatewayComposition().meetupLoginPage(...args),
 	);
-	const challenge = { solve: vi.fn() };
+	const captcha: CaptchaResolver = { inspect: vi.fn(), resolve: vi.fn() };
+	const createCaptchaResolver = vi.fn().mockReturnValue(captcha);
 	const gateway = new MeetupEventGateway(
 		{
 			createMeetupEventEditor: (...args) =>
@@ -44,7 +46,7 @@ function fixture(configuredGroup = groupUrl) {
 		},
 		{ launch } as unknown as BrowserType,
 		{ email: "organizer@example.test", password: " synthetic-password " },
-		challenge,
+		createCaptchaResolver,
 		configuredGroup,
 	);
 	return {
@@ -55,7 +57,8 @@ function fixture(configuredGroup = groupUrl) {
 		save,
 		createLogin,
 		page,
-		challenge,
+		captcha,
+		createCaptchaResolver,
 	};
 }
 
@@ -72,7 +75,8 @@ describe("Meetup event browser session", () => {
 				save,
 				createLogin,
 				page,
-				challenge,
+				captcha,
+				createCaptchaResolver,
 			} = fixture(configuredGroup);
 			const before = vi.fn();
 			const after = vi.fn();
@@ -103,9 +107,10 @@ describe("Meetup event browser session", () => {
 			);
 			expect(save).toHaveBeenCalledWith(desiredEvent, undefined, before, after);
 			expect(browser.close).toHaveBeenCalledOnce();
+			expect(createCaptchaResolver).toHaveBeenCalledExactlyOnceWith(page);
 			expect(createLogin).toHaveBeenCalledExactlyOnceWith(
 				page,
-				challenge,
+				captcha,
 				new URL(configuredGroup).origin,
 			);
 		},

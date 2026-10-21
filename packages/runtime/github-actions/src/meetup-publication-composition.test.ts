@@ -1,8 +1,7 @@
 import { getOctokit } from "@actions/github";
+import { HcaptchaCaptchaResolverComposition } from "@meetup-automation/hcaptcha-captcha-resolver";
 import { ManageMeetupPublication } from "@meetup-automation/journey";
-import { MeetupEventGatewayComposition } from "@meetup-automation/meetup-event-gateway";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { HcaptchaChallengeFactory } from "../../../adapter/meetup-event-gateway/src/hcaptcha-challenge-factory.js";
 import { MeetupEventGatewayFactory } from "../../../adapter/meetup-event-gateway/src/meetup-event-gateway-factory.js";
 import { eventPublicationSettings } from "../testing/publication-urls.fixtures.js";
 import { EventComposition } from "./composition.js";
@@ -30,15 +29,19 @@ afterEach(() => vi.restoreAllMocks());
 describe("Meetup publication composition", () => {
 	it("maps the shared AI configuration to the injected challenge capability", () => {
 		// Arrange
-		const groupUrl = new URL("../", eventPublicationSettings.meetupEventUrlPrefix).href;
-		const challenge = new MeetupEventGatewayComposition().hcaptchaChallenge(
-			{ run: vi.fn() },
-			"synthetic-key",
-			"synthetic-model",
-		);
+		const groupUrl = new URL(
+			"../",
+			eventPublicationSettings.meetupEventUrlPrefix,
+		).href;
+		const factory = vi
+			.fn()
+			.mockReturnValue({ inspect: vi.fn(), resolve: vi.fn() });
 		const createChallenge = vi
-			.spyOn(HcaptchaChallengeFactory.prototype, "create")
-			.mockReturnValue(challenge);
+			.spyOn(
+				HcaptchaCaptchaResolverComposition.prototype,
+				"captchaResolverFactory",
+			)
+			.mockReturnValue(factory);
 		const createGateway = vi
 			.spyOn(MeetupEventGatewayFactory.prototype, "create")
 			.mockReturnValue({ save: vi.fn(), publish: vi.fn() });
@@ -51,14 +54,14 @@ describe("Meetup publication composition", () => {
 		expect(publication).toBeInstanceOf(ManageMeetupPublication);
 		expect(createChallenge).toHaveBeenCalledExactlyOnceWith(
 			expect.stringMatching(
-				/\/packages\/adapter\/meetup-event-gateway\/python\/$/,
+				/\/packages\/adapter\/hcaptcha-captcha-resolver\/python\/$/,
 			),
 			input.ai.apiKey,
 			input.ai.model,
 		);
 		expect(createGateway).toHaveBeenCalledExactlyOnceWith(
 			{ email: input.email, password: input.password },
-			challenge,
+			factory,
 			groupUrl,
 		);
 	});

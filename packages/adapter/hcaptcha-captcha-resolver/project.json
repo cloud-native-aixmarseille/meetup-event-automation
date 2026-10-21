@@ -1,0 +1,24 @@
+{
+	"name": "hcaptcha-captcha-resolver",
+	"projectType": "library",
+	"sourceRoot": "packages/adapter/hcaptcha-captcha-resolver/src",
+	"targets": {
+		"typecheck": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "tsc --noEmit -p packages/adapter/hcaptcha-captcha-resolver/tsconfig.lib.json"
+			}
+		},
+		"test": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "vitest run packages/adapter/hcaptcha-captcha-resolver"
+			}
+		}
+	},
+	"tags": [
+		"type:adapter",
+		"technology:hcaptcha",
+		"responsibility:captcha-resolver"
+	]
+}

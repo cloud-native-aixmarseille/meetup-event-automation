@@ -72,7 +72,7 @@ describe("clean architecture boundaries", () => {
 			if (!path.includes("/src/") || !path.endsWith(".ts")) continue;
 			const source = await readFile(path, "utf8");
 			if (
-				/["'](?:@actions\/|@octokit\/|node:|csv-parse["']|yaml["'])/.test(
+				/["'](?:@actions\/|@octokit\/|node:|playwright(?:-core)?["']|csv-parse["']|yaml["'])/.test(
 					source,
 				)
 			) {

@@ -48,8 +48,8 @@ jobs:
       contents: read
       issues: write
 
-  check-meetup-solver:
-    name: Test Meetup challenge solver
+  check-hcaptcha-solver:
+    name: Test hCaptcha resolver
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -62,7 +62,7 @@ jobs:
         with:
           python-version: "3.14"
       - name: Install solver dependencies and test
-        working-directory: packages/adapter/meetup-event-gateway/python
+        working-directory: packages/adapter/hcaptcha-captcha-resolver/python
         run: |
           python -m venv .venv
           .venv/bin/python -m pip install --disable-pip-version-check -r requirements.txt

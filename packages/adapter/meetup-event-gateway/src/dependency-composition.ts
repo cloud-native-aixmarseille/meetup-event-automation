@@ -1,14 +1,3 @@
-import { ChromiumEndpoint } from "./chromium-endpoint.js";
-import {
-	HcaptchaChallenge,
-	type HcaptchaChallengeArguments,
-} from "./hcaptcha-challenge.js";
-import { HcaptchaChallengeFactory } from "./hcaptcha-challenge-factory.js";
-import {
-	HcaptchaProcess,
-	type HcaptchaProcessArguments,
-} from "./hcaptcha-process.js";
-import { HcaptchaProcessFactory } from "./hcaptcha-process-factory.js";
 import { MeetupBrowserRoutes } from "./meetup-browser-routes.js";
 import {
 	MeetupCalendar,
@@ -38,29 +27,6 @@ import {
 import { MeetupVenue, type MeetupVenueArguments } from "./meetup-venue.js";
 /** Assembles this package's collaborators; no business decisions or I/O. */
 export class MeetupEventGatewayComposition {
-	chromiumEndpoint(): ChromiumEndpoint {
-		return new ChromiumEndpoint();
-	}
-	hcaptchaChallenge(...args: HcaptchaChallengeArguments): HcaptchaChallenge {
-		return new HcaptchaChallenge(
-			{ chromiumEndpoint: this.chromiumEndpoint() },
-			...args,
-		);
-	}
-	hcaptchaChallengeFactory(): HcaptchaChallengeFactory {
-		return new HcaptchaChallengeFactory({
-			hcaptchaProcessFactory: this.hcaptchaProcessFactory(),
-			createHcaptchaChallenge: (...args) => this.hcaptchaChallenge(...args),
-		});
-	}
-	hcaptchaProcess(...args: HcaptchaProcessArguments): HcaptchaProcess {
-		return new HcaptchaProcess(...args);
-	}
-	hcaptchaProcessFactory(): HcaptchaProcessFactory {
-		return new HcaptchaProcessFactory({
-			createHcaptchaProcess: (...args) => this.hcaptchaProcess(...args),
-		});
-	}
 	meetupBrowserRoutes(): MeetupBrowserRoutes {
 		return new MeetupBrowserRoutes();
 	}

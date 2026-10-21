@@ -1,3 +1,4 @@
+import type { CaptchaResolver } from "@meetup-automation/browser-authentication";
 import {
 	MeetupGroupUrl,
 	type SavedScheduledEvent,
@@ -6,7 +7,6 @@ import {
 	type ScheduledEventGateway,
 } from "@meetup-automation/publication";
 import type { BrowserType, Page } from "playwright-core";
-import type { LoginChallenge } from "./hcaptcha-challenge.js";
 import type {
 	MeetupEventEditor,
 	MeetupEventEditorArguments,
@@ -39,7 +39,7 @@ export class MeetupEventGateway implements ScheduledEventGateway {
 		private readonly collaborators: MeetupEventGatewayCollaborators,
 		private readonly browserType: Pick<BrowserType, "launch">,
 		private readonly credentials: { email: string; password: string },
-		private readonly challenge: LoginChallenge,
+		private readonly createCaptchaResolver: (page: Page) => CaptchaResolver,
 		groupUrl: string,
 	) {
 		const group = MeetupGroupUrl.parse(groupUrl);
@@ -98,7 +98,11 @@ export class MeetupEventGateway implements ScheduledEventGateway {
 			});
 			const page = await context.newPage();
 			const status = await this.collaborators
-				.createMeetupLoginPage(page, this.challenge, this.group.origin)
+				.createMeetupLoginPage(
+					page,
+					this.createCaptchaResolver(page),
+					this.group.origin,
+				)
 				.login(this.credentials.email, this.credentials.password)
 				.catch(() => "unavailable");
 			if (status !== "verified")

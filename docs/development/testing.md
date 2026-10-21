@@ -113,12 +113,12 @@ failure paths or data privacy.
 Use [the development checklist](README.md#choose-checks-for-the-change) to
 select checks and rebuild bundles after production changes.
 
-## Meetup solver
+## hCaptcha adapter
 
-The browser adapter's Python boundary has adjacent `solve_test.py` tests using
+The hCaptcha adapter's Python boundary has adjacent `solve_test.py` tests using
 synthetic pages and agents. No Gemini key or live Meetup account is needed.
 With Python 3.14, run from
-`packages/adapter/meetup-event-gateway/python`:
+`packages/adapter/hcaptcha-captcha-resolver/python`:
 
 ```sh
 python -m venv .venv
@@ -126,9 +126,11 @@ python -m venv .venv
 .venv/bin/python -m unittest discover -p '*_test.py'
 ```
 
-Shared CI runs these checks separately from the TypeScript suite. TypeScript
-adapter tests cover solver deadlines, subprocess isolation, cleanup, and login
-ordering. A live organizer publication run is separate from these synthetic tests.
+Shared CI runs these checks separately from the TypeScript suite. Adapter tests
+cover CAPTCHA inspection, verified responses, the shared attempt limit, solver
+deadlines, subprocess isolation, and cleanup. Meetup login tests inject the
+provider-neutral resolver to verify credential ordering and unresolved challenges.
+A live organizer publication run is separate from these synthetic tests.
 
 ## Meetup browser editor
 

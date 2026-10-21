@@ -1,6 +1,6 @@
+import type { CaptchaResolver } from "@meetup-automation/browser-authentication";
 import type { ScheduledEventGateway } from "@meetup-automation/publication";
-import { chromium } from "playwright-core";
-import type { LoginChallenge } from "./hcaptcha-challenge.js";
+import { chromium, type Page } from "playwright-core";
 import type {
 	MeetupEventGateway,
 	MeetupEventGatewayArguments,
@@ -19,13 +19,13 @@ export class MeetupEventGatewayFactory {
 
 	create(
 		credentials: { email: string; password: string },
-		challenge: LoginChallenge,
+		createCaptchaResolver: (page: Page) => CaptchaResolver,
 		groupUrl: string,
 	): ScheduledEventGateway {
 		return this.collaborators.createMeetupEventGateway(
 			chromium,
 			credentials,
-			challenge,
+			createCaptchaResolver,
 			groupUrl,
 		);
 	}

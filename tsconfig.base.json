@@ -94,6 +94,12 @@
 			],
 			"@meetup-automation/github-publication-journal": [
 				"./packages/adapter/github-publication-journal/src/index.ts"
+			],
+			"@meetup-automation/browser-authentication": [
+				"./packages/application/browser-authentication/src/index.ts"
+			],
+			"@meetup-automation/hcaptcha-captcha-resolver": [
+				"./packages/adapter/hcaptcha-captcha-resolver/src/index.ts"
 			]
 		}
 	}

@@ -1,4 +1,4 @@
-"""Synthetic challenge boundary checks; no Gemini or Meetup requests."""
+"""Synthetic challenge boundary checks; no external provider requests."""
 
 import tempfile
 import unittest
@@ -7,28 +7,29 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock
 
 from hcaptcha_challenger.models import ChallengeSignal
-from solve import MeetupChallenge
+from solve import HcaptchaChallenge
 
 
-class MeetupChallengeTest(unittest.IsolatedAsyncioTestCase):
+class HcaptchaChallengeTest(unittest.IsolatedAsyncioTestCase):
     """Exercise the provider boundary with deterministic browser and agent fakes."""
 
-    def fixture(self, email="", password="", url="https://events.example.test:8443/login/"):
+    def fixture(self, email="", password="", url="https://events.example.test/sign-in"):
         """Construct one isolated login page and a successful challenge agent."""
-        fields = {
-            'input[name="email"]': SimpleNamespace(input_value=AsyncMock(return_value=email)),
-            'input[name="current-password"]': SimpleNamespace(
-                input_value=AsyncMock(return_value=password)
-            ),
-        }
-        page = SimpleNamespace(url=url, locator=fields.__getitem__)
+        fields = [
+            SimpleNamespace(input_value=AsyncMock(return_value=email)),
+            SimpleNamespace(input_value=AsyncMock(return_value=password)),
+        ]
+        page = SimpleNamespace(
+            url=url,
+            locator=Mock(return_value=SimpleNamespace(all=AsyncMock(return_value=fields))),
+        )
         browser = SimpleNamespace(contexts=[SimpleNamespace(pages=[page])])
         agent = SimpleNamespace(
             robotic_arm=SimpleNamespace(click_checkbox=AsyncMock()),
             wait_for_challenge=AsyncMock(return_value=ChallengeSignal.SUCCESS),
         )
         factory = Mock(return_value=agent)
-        return MeetupChallenge(factory), browser, factory, agent
+        return HcaptchaChallenge(factory), browser, factory, agent
 
     async def test_solves_only_an_empty_login_page(self):
         """The configured agent receives only the empty login page."""
@@ -36,7 +37,7 @@ class MeetupChallengeTest(unittest.IsolatedAsyncioTestCase):
         solver, browser, factory, agent = self.fixture()
         config = object()
         # Act
-        result = await solver.solve(browser, config, "https://events.example.test:8443/login/")
+        result = await solver.solve(browser, config, "https://events.example.test/sign-in")
         # Assert
         self.assertEqual(result, "solved")
         factory.assert_called_once_with(page=browser.contexts[0].pages[0], agent_config=config)
@@ -51,25 +52,25 @@ class MeetupChallengeTest(unittest.IsolatedAsyncioTestCase):
                 solver, browser, factory, _ = self.fixture(**fields)
                 # Act
                 result = await solver.solve(
-                    browser, object(), "https://events.example.test:8443/login/"
+                    browser, object(), "https://events.example.test/sign-in"
                 )
                 # Assert
                 self.assertEqual(result, "unavailable")
                 factory.assert_not_called()
 
     async def test_rejects_unexpected_pages(self):
-        """Only the caller-selected HTTPS login location is accepted."""
+        """Only the caller-selected HTTPS page is accepted."""
         for url in (
-            "https://www.meetup.com/account/",
+            "https://events.example.test/account/",
             "https://unexpected.example.test/login/",
-            "http://www.meetup.com/login/",
+            "http://events.example.test/sign-in",
         ):
             with self.subTest(url=url):
                 # Arrange
                 solver, browser, factory, _ = self.fixture(url=url)
                 # Act
                 result = await solver.solve(
-                    browser, object(), "https://events.example.test:8443/login/"
+                    browser, object(), "https://events.example.test/sign-in"
                 )
                 # Assert
                 self.assertEqual(result, "unavailable")
@@ -81,10 +82,42 @@ class MeetupChallengeTest(unittest.IsolatedAsyncioTestCase):
         solver, browser, factory, _ = self.fixture()
         browser.contexts[0].pages *= 2
         # Act
-        result = await solver.solve(browser, object(), "https://events.example.test:8443/login/")
+        result = await solver.solve(browser, object(), "https://events.example.test/sign-in")
         # Assert
         self.assertEqual(result, "unavailable")
         factory.assert_not_called()
+
+    async def test_accepts_the_caller_selected_https_page(self):
+        """Page ownership comes from the caller, independent of the event provider."""
+        for url in (
+            "https://portal.example.test/sign-in",
+            "https://login.example.test/auth?lang=fr",
+        ):
+            with self.subTest(url=url):
+                # Arrange
+                solver, browser, factory, _ = self.fixture(url=url)
+                # Act
+                result = await solver.solve(browser, object(), url)
+                # Assert
+                self.assertEqual(result, "solved")
+                factory.assert_called_once()
+
+    async def test_rejects_insecure_or_credential_bearing_targets(self):
+        """An exact page match does not permit an insecure or credential-bearing URL."""
+        for url in (
+            "http://events.example.test/sign-in",
+            "https://user:secret@events.example.test/sign-in",
+            "https:///sign-in",
+            "file:///sign-in",
+        ):
+            with self.subTest(url=url):
+                # Arrange
+                solver, browser, factory, _ = self.fixture(url=url)
+                # Act
+                result = await solver.solve(browser, object(), url)
+                # Assert
+                self.assertEqual(result, "unavailable")
+                factory.assert_not_called()
 
     async def test_reports_unsolved_challenge_without_retrying(self):
         """An unsuccessful result makes no additional attempt."""
@@ -92,7 +125,7 @@ class MeetupChallengeTest(unittest.IsolatedAsyncioTestCase):
         solver, browser, _, agent = self.fixture()
         agent.wait_for_challenge.return_value = None
         # Act
-        result = await solver.solve(browser, object(), "https://events.example.test:8443/login/")
+        result = await solver.solve(browser, object(), "https://events.example.test/sign-in")
         # Assert
         self.assertEqual(result, "blocked")
         agent.robotic_arm.click_checkbox.assert_awaited_once()
@@ -100,7 +133,7 @@ class MeetupChallengeTest(unittest.IsolatedAsyncioTestCase):
     async def test_rejects_remote_debugging_endpoints(self):
         """Remote browser addresses cannot reach connection setup."""
         # Arrange
-        solver = MeetupChallenge()
+        solver = HcaptchaChallenge(Mock())
         # Act
         result = await solver.run({"endpoint": "ws://remote.example.test:1234"})
         # Assert
@@ -112,7 +145,7 @@ class MeetupChallengeTest(unittest.IsolatedAsyncioTestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory)
             # Act
-            config = MeetupChallenge.config("synthetic-key", "synthetic-model", path)
+            config = HcaptchaChallenge(Mock()).config("synthetic-key", "synthetic-model", path)
             # Assert
             self.assertEqual(config.GEMINI_API_KEY.get_secret_value(), "synthetic-key")
             self.assertEqual(config.CHALLENGE_CLASSIFIER_MODEL, "synthetic-model")

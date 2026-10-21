@@ -1,13 +1,13 @@
 import type { Page } from "playwright-core";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { MeetupEventGatewayComposition } from "./dependency-composition.js";
+import { HcaptchaCaptchaResolverComposition } from "./dependency-composition.js";
 import { HcaptchaChallenge } from "./hcaptcha-challenge.js";
 
 function fixture() {
 	const browser = {};
 	const page = {
-		url: () => "https://events.example.test:8443/login/",
 		context: () => ({ browser: () => browser }),
+		url: () => "https://events.example.test/sign-in",
 	} as unknown as Page;
 	const run = vi.fn().mockResolvedValue("solved");
 	const endpoint = {
@@ -40,9 +40,9 @@ describe("hCaptcha challenge", () => {
 		expect(second).toBe(false);
 		expect(run).toHaveBeenCalledExactlyOnceWith({
 			endpoint: "ws://127.0.0.1:1234/devtools/browser/abc",
+			targetUrl: "https://events.example.test/sign-in",
 			apiKey: "synthetic-key",
 			model: "synthetic-model",
-			targetUrl: "https://events.example.test:8443/login/",
 		});
 	});
 
@@ -82,7 +82,7 @@ describe("hCaptcha challenge", () => {
 			new HcaptchaChallenge(
 				{
 					chromiumEndpoint:
-						new MeetupEventGatewayComposition().chromiumEndpoint(),
+						new HcaptchaCaptchaResolverComposition().chromiumEndpoint(),
 				},
 				{ run },
 				key,

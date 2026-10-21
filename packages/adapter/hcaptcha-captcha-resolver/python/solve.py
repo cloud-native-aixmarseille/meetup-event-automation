@@ -14,14 +14,13 @@ from loguru import logger
 from playwright.async_api import async_playwright
 
 
-class MeetupChallenge:
+class HcaptchaChallenge:
     """The parent owns the browser, temporary directory and hard process deadline."""
 
-    def __init__(self, agent_factory=AgentV):
+    def __init__(self, agent_factory):
         self.agent_factory = agent_factory
 
-    @staticmethod
-    def config(api_key, model, directory):
+    def config(self, api_key, model, directory):
         """Constrain the library's model selection, retries, logging and storage."""
         if not api_key.strip() or not model.strip():
             raise ValueError("Gemini configuration is required.")
@@ -44,7 +43,7 @@ class MeetupChallenge:
         )
 
     async def solve(self, browser, config, target_url):
-        """Attempt one challenge only while the sole login page has empty fields."""
+        """Attempt one challenge on the specified HTTPS page before credentials are filled."""
         pages = [page for context in browser.contexts for page in context.pages]
         if len(pages) != 1:
             return "unavailable"
@@ -53,14 +52,19 @@ class MeetupChallenge:
         if (
             location.scheme != "https"
             or not location.hostname
-            or location.username
-            or location.password
+            or location.username is not None
+            or location.password is not None
         ):
             return "unavailable"
-        if page.url != target_url or location.path not in ("/login", "/login/"):
+        if page.url != target_url:
             return "unavailable"
-        for selector in ('input[name="email"]', 'input[name="current-password"]'):
-            if await page.locator(selector).input_value():
+        credentials = page.locator(
+            'input[type="email"], input[type="password"], '
+            'input[autocomplete="username"], input[autocomplete="current-password"], '
+            'input[name="email"], input[name="current-password"]'
+        )
+        for field in await credentials.all():
+            if await field.input_value():
                 return "unavailable"
         agent = self.agent_factory(page=page, agent_config=config)
         await agent.robotic_arm.click_checkbox()
@@ -92,7 +96,7 @@ class MeetupChallenge:
         logging.disable(logging.CRITICAL)
         try:
             request = json.load(sys.stdin)
-            result = asyncio.run(cls().run(request))
+            result = asyncio.run(cls(AgentV).run(request))
         except TimeoutError:
             result = "blocked"
         except Exception:  # pylint: disable=broad-exception-caught
@@ -102,4 +106,4 @@ class MeetupChallenge:
 
 
 if __name__ == "__main__":
-    MeetupChallenge.main()
+    HcaptchaChallenge.main()

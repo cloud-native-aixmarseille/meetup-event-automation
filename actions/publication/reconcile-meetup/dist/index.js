@@ -46256,7 +46256,7 @@ var GithubPublicationJournalComposition = class {
   }
 };
 
-// packages/adapter/meetup-event-gateway/src/chromium-endpoint.ts
+// packages/adapter/hcaptcha-captcha-resolver/src/chromium-endpoint.ts
 import { readFile as readFile3 } from "node:fs/promises";
 import { join as join3 } from "node:path";
 var ChromiumEndpoint = class {
@@ -46276,7 +46276,42 @@ var ChromiumEndpoint = class {
   }
 };
 
-// packages/adapter/meetup-event-gateway/src/hcaptcha-challenge.ts
+// packages/adapter/hcaptcha-captcha-resolver/src/hcaptcha-captcha-resolver.ts
+var HcaptchaCaptchaResolver = class {
+  constructor(challenge, page) {
+    this.challenge = challenge;
+    this.page = page;
+  }
+  challenge;
+  page;
+  async inspect() {
+    return await this.state() === "clear" ? "clear" : "required";
+  }
+  async resolve() {
+    const state = await this.state();
+    if (state === "clear") return "clear";
+    if (state === "unsupported" || !await this.challenge.solve(this.page))
+      return "required";
+    if (!await this.hasResponse()) return "required";
+    return this.inspect();
+  }
+  async state() {
+    if (await this.visible('iframe[src*="/recaptcha/"]')) return "unsupported";
+    if (await this.hasResponse()) return "clear";
+    return await this.visible('iframe[src*="hcaptcha.com"]') ? "supported" : "clear";
+  }
+  async hasResponse() {
+    const response = this.page.locator('[name="h-captcha-response"]').first();
+    return await response.count() > 0 && (await response.inputValue()).length > 0;
+  }
+  async visible(selector) {
+    for (const element of await this.page.locator(selector).all())
+      if (await element.isVisible()) return true;
+    return false;
+  }
+};
+
+// packages/adapter/hcaptcha-captcha-resolver/src/hcaptcha-challenge.ts
 var HcaptchaChallenge = class {
   constructor(collaborators, process2, apiKey, model) {
     this.collaborators = collaborators;
@@ -46294,14 +46329,15 @@ var HcaptchaChallenge = class {
   async solve(page) {
     if (this.attempted) return false;
     this.attempted = true;
+    const targetUrl = page.url();
     const browser = page.context().browser();
     if (!browser) throw new Error("Browser unavailable.");
     const endpoint2 = await this.collaborators.chromiumEndpoint.read(browser);
     const result = await this.process.run({
       endpoint: endpoint2,
+      targetUrl,
       apiKey: this.apiKey,
-      model: this.model,
-      targetUrl: page.url()
+      model: this.model
     });
     if (result === "unavailable")
       throw new Error("Challenge solver unavailable.");
@@ -46309,7 +46345,7 @@ var HcaptchaChallenge = class {
   }
 };
 
-// packages/adapter/meetup-event-gateway/src/hcaptcha-challenge-factory.ts
+// packages/adapter/hcaptcha-captcha-resolver/src/hcaptcha-challenge-factory.ts
 var HcaptchaChallengeFactory = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -46324,7 +46360,7 @@ var HcaptchaChallengeFactory = class {
   }
 };
 
-// packages/adapter/meetup-event-gateway/src/hcaptcha-process.ts
+// packages/adapter/hcaptcha-captcha-resolver/src/hcaptcha-process.ts
 import { mkdtemp, rm as rm2 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join as join4 } from "node:path";
@@ -46403,7 +46439,7 @@ var HcaptchaProcess = class {
   }
 };
 
-// packages/adapter/meetup-event-gateway/src/hcaptcha-process-factory.ts
+// packages/adapter/hcaptcha-captcha-resolver/src/hcaptcha-process-factory.ts
 import { spawn } from "node:child_process";
 var HcaptchaProcessFactory = class {
   constructor(collaborators) {
@@ -46412,6 +46448,41 @@ var HcaptchaProcessFactory = class {
   collaborators;
   create(directory) {
     return this.collaborators.createHcaptchaProcess(directory, spawn);
+  }
+};
+
+// packages/adapter/hcaptcha-captcha-resolver/src/dependency-composition.ts
+var HcaptchaCaptchaResolverComposition = class {
+  captchaResolverFactory(directory, apiKey, model) {
+    const challenge = this.hcaptchaChallengeFactory().create(
+      directory,
+      apiKey,
+      model
+    );
+    return (page) => new HcaptchaCaptchaResolver(challenge, page);
+  }
+  chromiumEndpoint() {
+    return new ChromiumEndpoint();
+  }
+  hcaptchaChallenge(...args) {
+    return new HcaptchaChallenge(
+      { chromiumEndpoint: this.chromiumEndpoint() },
+      ...args
+    );
+  }
+  hcaptchaChallengeFactory() {
+    return new HcaptchaChallengeFactory({
+      hcaptchaProcessFactory: this.hcaptchaProcessFactory(),
+      createHcaptchaChallenge: (...args) => this.hcaptchaChallenge(...args)
+    });
+  }
+  hcaptchaProcess(...args) {
+    return new HcaptchaProcess(...args);
+  }
+  hcaptchaProcessFactory() {
+    return new HcaptchaProcessFactory({
+      createHcaptchaProcess: (...args) => this.hcaptchaProcess(...args)
+    });
   }
 };
 
@@ -46589,11 +46660,11 @@ var MeetupEventEditor = class {
 
 // packages/adapter/meetup-event-gateway/src/meetup-event-gateway.ts
 var MeetupEventGateway = class {
-  constructor(collaborators, browserType, credentials, challenge, groupUrl) {
+  constructor(collaborators, browserType, credentials, createCaptchaResolver, groupUrl) {
     this.collaborators = collaborators;
     this.browserType = browserType;
     this.credentials = credentials;
-    this.challenge = challenge;
+    this.createCaptchaResolver = createCaptchaResolver;
     const group = MeetupGroupUrl.parse(groupUrl);
     if (!group) throw new ScheduledEventError("editor");
     this.group = group;
@@ -46601,7 +46672,7 @@ var MeetupEventGateway = class {
   collaborators;
   browserType;
   credentials;
-  challenge;
+  createCaptchaResolver;
   group;
   async save(event, url, beforeSubmit, onSaved) {
     return this.withSession(
@@ -46635,7 +46706,11 @@ var MeetupEventGateway = class {
         viewport: { width: 1440, height: 1e3 }
       });
       const page = await context3.newPage();
-      const status = await this.collaborators.createMeetupLoginPage(page, this.challenge, this.group.origin).login(this.credentials.email, this.credentials.password).catch(() => "unavailable");
+      const status = await this.collaborators.createMeetupLoginPage(
+        page,
+        this.createCaptchaResolver(page),
+        this.group.origin
+      ).login(this.credentials.email, this.credentials.password).catch(() => "unavailable");
       if (status !== "verified")
         throw new ScheduledEventError(
           ["unavailable", "unexpected-page"].includes(status) ? "unavailable" : "authentication"
@@ -46654,11 +46729,11 @@ var MeetupEventGatewayFactory = class {
     this.collaborators = collaborators;
   }
   collaborators;
-  create(credentials, challenge, groupUrl) {
+  create(credentials, createCaptchaResolver, groupUrl) {
     return this.collaborators.createMeetupEventGateway(
       chromium,
       credentials,
-      challenge,
+      createCaptchaResolver,
       groupUrl
     );
   }
@@ -46753,19 +46828,18 @@ var MeetupEventVerification = class {
 };
 
 // packages/adapter/meetup-event-gateway/src/meetup-login-page.ts
-var CHALLENGE = 'iframe[src*="hcaptcha.com"], iframe[src*="/recaptcha/"], input[autocomplete="one-time-code"]';
 var MeetupLoginPage = class {
-  constructor(collaborators, page, challenge, origin) {
+  constructor(collaborators, page, captcha, origin) {
     this.collaborators = collaborators;
     this.page = page;
-    this.challenge = challenge;
+    this.captcha = captcha;
     this.origin = origin;
     page.setDefaultTimeout(15e3);
     page.setDefaultNavigationTimeout(3e4);
   }
   collaborators;
   page;
-  challenge;
+  captcha;
   origin;
   async login(email, password) {
     await this.page.goto(
@@ -46826,38 +46900,20 @@ var MeetupLoginPage = class {
     );
   }
   async hasChallenge() {
-    if (await this.hcaptchaPassed()) return this.hasOtherChallenge();
-    const challenges = this.page.locator(CHALLENGE);
-    for (const challenge of await challenges.all())
-      if (await challenge.isVisible()) return true;
-    return false;
-  }
-  async canSolveHcaptcha() {
-    if (await this.hasOtherChallenge()) return false;
-    for (const frame of await this.page.locator('iframe[src*="hcaptcha.com"]').all())
-      if (await frame.isVisible()) return true;
-    return false;
+    return await this.hasOneTimeCode() || await this.captcha.inspect() === "required";
   }
   async prepareChallenge() {
     if (!await this.hasChallenge()) return null;
-    if (!await this.canSolveHcaptcha() || !await this.challenge.solve(this.page))
+    if (await this.hasOneTimeCode() || await this.captcha.resolve() !== "clear")
       return "challenge-required";
     if (!this.isMeetupPath("/login")) return "unexpected-page";
-    if (!await this.hcaptchaPassed() || await this.hasOtherChallenge())
-      return "challenge-required";
+    if (await this.hasChallenge()) return "challenge-required";
     return null;
   }
-  async hasOtherChallenge() {
-    const challenges = this.page.locator(
-      'iframe[src*="/recaptcha/"], input[autocomplete="one-time-code"]'
-    );
-    for (const challenge of await challenges.all())
-      if (await challenge.isVisible()) return true;
+  async hasOneTimeCode() {
+    for (const input of await this.page.locator('input[autocomplete="one-time-code"]').all())
+      if (await input.isVisible()) return true;
     return false;
-  }
-  async hcaptchaPassed() {
-    const response = this.page.locator('[name="h-captcha-response"]').first();
-    return await response.count() > 0 && (await response.inputValue()).length > 0;
   }
   async hasRejectedCredentials() {
     return this.page.getByText(/incorrect (email|password)|invalid (email|password)/i).first().isVisible();
@@ -46915,29 +46971,6 @@ var MeetupVenue = class {
 
 // packages/adapter/meetup-event-gateway/src/dependency-composition.ts
 var MeetupEventGatewayComposition = class {
-  chromiumEndpoint() {
-    return new ChromiumEndpoint();
-  }
-  hcaptchaChallenge(...args) {
-    return new HcaptchaChallenge(
-      { chromiumEndpoint: this.chromiumEndpoint() },
-      ...args
-    );
-  }
-  hcaptchaChallengeFactory() {
-    return new HcaptchaChallengeFactory({
-      hcaptchaProcessFactory: this.hcaptchaProcessFactory(),
-      createHcaptchaChallenge: (...args) => this.hcaptchaChallenge(...args)
-    });
-  }
-  hcaptchaProcess(...args) {
-    return new HcaptchaProcess(...args);
-  }
-  hcaptchaProcessFactory() {
-    return new HcaptchaProcessFactory({
-      createHcaptchaProcess: (...args) => this.hcaptchaProcess(...args)
-    });
-  }
   meetupBrowserRoutes() {
     return new MeetupBrowserRoutes();
   }
@@ -67012,18 +67045,18 @@ var MeetupPublicationComposition = class _MeetupPublicationComposition {
         ),
         gateway: new MeetupEventGatewayComposition().meetupEventGatewayFactory().create(
           { email: input.email, password: input.password },
-          _MeetupPublicationComposition.challenge(ai3),
+          _MeetupPublicationComposition.captchaResolverFactory(ai3),
           group.value
         )
       });
     });
     return container;
   }
-  static challenge(ai3) {
-    return new MeetupEventGatewayComposition().hcaptchaChallengeFactory().create(
+  static captchaResolverFactory(ai3) {
+    return new HcaptchaCaptchaResolverComposition().captchaResolverFactory(
       fileURLToPath(
         new URL(
-          "../../../../packages/adapter/meetup-event-gateway/python/",
+          "../../../../packages/adapter/hcaptcha-captcha-resolver/python/",
           import.meta.url
         )
       ),

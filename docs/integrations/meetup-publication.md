@@ -224,7 +224,10 @@ to artifacts or persistent caches. Credentials are masked before use.
 Before entering credentials, the browser can attempt one hCaptcha challenge with
 [the open-source hcaptcha-challenger](https://github.com/QIN2DIM/hcaptcha-challenger)
 and Gemini. The solver is installed separately under its GPL-3.0-or-later license
-using [locked Python dependencies](../../packages/adapter/meetup-event-gateway/python/requirements.txt).
+using [locked Python dependencies](../../packages/adapter/hcaptcha-captcha-resolver/python/requirements.txt).
+The adapter checks the caller-selected HTTPS page and refuses pages containing
+credentials before starting the solver. A successful solver result must be
+confirmed by the page's CAPTCHA response.
 It receives challenge images and instructions, not account credentials or event
 content. Its Gemini key is sent through stdin, logs are discarded, and private
 temporary files are removed after it exits. The process deadline is two minutes;

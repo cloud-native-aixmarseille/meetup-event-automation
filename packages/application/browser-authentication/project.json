@@ -1,0 +1,14 @@
+{
+	"name": "browser-authentication",
+	"projectType": "library",
+	"sourceRoot": "packages/application/browser-authentication/src",
+	"targets": {
+		"typecheck": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "tsc --noEmit -p packages/application/browser-authentication/tsconfig.lib.json"
+			}
+		}
+	},
+	"tags": ["type:application", "scope:browser-authentication"]
+}
