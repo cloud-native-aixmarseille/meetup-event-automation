@@ -24,8 +24,3 @@ export interface ProposalSnapshot {
 export interface ProposalSource {
 	load(): Promise<ProposalSnapshot>;
 }
-export type SpeakerCsvRow = Readonly<Record<string, string>>;
-export interface SpeakerSyncState {
-	readonly version: 1;
-	readonly reservedIds: readonly string[];
-}

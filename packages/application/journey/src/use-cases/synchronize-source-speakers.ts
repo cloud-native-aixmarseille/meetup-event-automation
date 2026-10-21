@@ -1,10 +1,11 @@
 import {
 	MergeSourceSpeakers,
-	type ReferentialCatalog,
 	type ProposalSource,
+	type ReferentialCatalog,
 	type SpeakerCatalogStore,
 	ValidateReferentialCatalog,
 } from "@meetup-automation/referential";
+import type { AutomationConfig } from "../config/automation-config.js";
 import type {
 	IssueFormProjection,
 	IssueFormProjectionMode,
@@ -16,6 +17,10 @@ export class SynchronizeSourceSpeakers {
 		private readonly source: ProposalSource,
 		private readonly store: SpeakerCatalogStore,
 		private readonly form: IssueFormProjection,
+		private readonly config: Pick<
+			AutomationConfig["event"],
+			"issue-form" | "occurrence-status-field"
+		>,
 	) {}
 	async execute() {
 		const original = await SpeakerSynchronizationError.at("read-catalog", () =>
@@ -26,20 +31,20 @@ export class SynchronizeSourceSpeakers {
 		);
 		const merged = await SpeakerSynchronizationError.at("merge-speakers", () =>
 			new MergeSourceSpeakers().execute(
-				original.rows,
+				original.entries,
 				snapshot,
-				original.state,
+				original.reservedIds,
 			),
 		);
 		const catalog = await SpeakerSynchronizationError.at(
 			"validate-catalog",
-			async () => this.validate(await this.store.candidate(merged.rows)),
+			async () => this.validate(await this.store.candidate(merged.entries)),
 		);
 		await SpeakerSynchronizationError.at("check-form", () =>
 			this.project(catalog, "check"),
 		);
 		const changed = await SpeakerSynchronizationError.at("save-catalog", () =>
-			this.store.save(original, merged.rows, merged.state),
+			this.store.save(original, merged.entries, merged.reservedIds),
 		);
 		const form = await SpeakerSynchronizationError.at("update-form", () =>
 			this.project(catalog, "fix"),
@@ -69,8 +74,8 @@ export class SynchronizeSourceSpeakers {
 		mode: IssueFormProjectionMode,
 	) {
 		const result = await this.form.synchronize({
-			issueFormPath: ".github/ISSUE_TEMPLATE/meetup.yml",
-			occurrenceStatusFieldId: "event_status",
+			issueFormPath: this.config["issue-form"],
+			occurrenceStatusFieldId: this.config["occurrence-status-field"],
 			catalog,
 			mode,
 		});

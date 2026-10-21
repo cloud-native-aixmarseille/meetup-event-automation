@@ -92,8 +92,10 @@ The workflow maintains `chore/synchronize-conference-hall-speakers`. It merges
 the current default branch before importing, validates the complete candidate,
 and updates the CSV, allocation state, and form together. Local phone numbers,
 structured names, extra columns and absent source records survive import. New
-IDs are retained in the open branch. The first run reserves historical IDs from
-the fetched Git history; subsequent allocations are recorded in
+IDs are retained in the open branch. When allocation state is absent, the CSV
+adapter reserves IDs from the full fetched Git history. A shallow or unreadable
+history blocks allocation; the workflow checks out full history. Subsequent
+allocations are recorded in
 `referentials/speaker-sync-state.json`; preserve this file so removed IDs cannot
 be reused. Absent, empty or null source-owned affiliation and picture fields
 clear their projected values; invalid image references fall back to text and

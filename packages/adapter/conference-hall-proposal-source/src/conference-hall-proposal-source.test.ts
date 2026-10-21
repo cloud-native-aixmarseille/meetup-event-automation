@@ -3,6 +3,27 @@ import { proposal, sourceExport, speaker } from "../testing/export.fixtures.js";
 import { ConferenceHallProposalSource } from "./conference-hall-proposal-source.js";
 
 describe("ConferenceHallProposalSource", () => {
+	it("uses the injected clock to interpret a provider retry date", async () => {
+		// Arrange
+		const request = vi.fn<typeof fetch>().mockResolvedValue(
+			new Response("", {
+				status: 429,
+				headers: { "retry-after": "Thu, 01 Jan 2099 00:02:00 GMT" },
+			}),
+		);
+		const source = new ConferenceHallProposalSource(
+			"example-cfp",
+			"secret",
+			request,
+			() => Date.parse("2099-01-01T00:00:00Z"),
+		);
+
+		// Act
+		const operation = source.load();
+
+		// Assert
+		await expect(operation).rejects.toMatchObject({ retryAfterSeconds: 120 });
+	});
 	it("shares active and archived requests in one bounded snapshot on the fixed origin", async () => {
 		// Arrange
 		const request = vi
@@ -13,8 +34,10 @@ describe("ConferenceHallProposalSource", () => {
 			"secret",
 			request,
 		);
+
 		// Act
 		const [first, second] = await Promise.all([source.load(), source.load()]);
+
 		// Assert
 		expect(second).toBe(first);
 		expect(request).toHaveBeenCalledTimes(2);
@@ -156,8 +179,10 @@ describe("ConferenceHallProposalSource", () => {
 			"secret",
 			request,
 		);
+
 		// Act
 		const result = source.load();
+
 		// Assert
 		await expect(result).rejects.toMatchObject({
 			code: "rate-limited",
@@ -173,12 +198,14 @@ describe("ConferenceHallProposalSource", () => {
 			const request = vi
 				.fn<typeof fetch>()
 				.mockResolvedValue(new Response("PRIVATE", { status }));
+
 			// Act
 			const result = new ConferenceHallProposalSource(
 				"example-cfp",
 				"secret",
 				request,
 			).load();
+
 			// Assert
 			await expect(result).rejects.toMatchObject({
 				code: "unavailable",
@@ -236,24 +263,28 @@ describe("ConferenceHallProposalSource", () => {
 			.mockResolvedValue(
 				new Response("{}", { headers: { "content-length": "6000000" } }),
 			);
+
 		// Act
 		const result = new ConferenceHallProposalSource(
 			"example-cfp",
 			"secret",
 			request,
 		).load();
+
 		// Assert
 		await expect(result).rejects.toMatchObject({ code: "invalid" });
 	});
 	it("rejects a credential-target override", async () => {
 		// Arrange
 		const request = vi.fn<typeof fetch>();
+
 		// Act
 		const result = new ConferenceHallProposalSource(
 			"https://evil.test",
 			"secret",
 			request,
 		).load();
+
 		// Assert
 		await expect(result).rejects.toMatchObject({ code: "unavailable" });
 		expect(request).not.toHaveBeenCalled();

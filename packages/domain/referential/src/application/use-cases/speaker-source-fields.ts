@@ -58,12 +58,20 @@ export class SpeakerSourceFields {
 		speakers: readonly Speaker[],
 		diagnostics: ReferentialDiagnostic[],
 	): void {
-		const identities = new Set<string>();
+		const identities: NonNullable<Speaker["sourceIdentity"]>[] = [];
 		for (const [index, speaker] of speakers.entries()) {
-			if (!speaker.sourceIdentity) continue;
-			const key = JSON.stringify(speaker.sourceIdentity);
-			if (identities.has(key)) SpeakerSourceFields.invalid(index, diagnostics);
-			identities.add(key);
+			const identity = speaker.sourceIdentity;
+			if (!identity) continue;
+			if (
+				identities.some(
+					(existing) =>
+						existing.provider === identity.provider &&
+						existing.event === identity.event &&
+						existing.speakerId === identity.speakerId,
+				)
+			)
+				SpeakerSourceFields.invalid(index, diagnostics);
+			identities.push(identity);
 		}
 	}
 	private static invalid(

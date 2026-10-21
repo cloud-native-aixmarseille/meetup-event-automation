@@ -75,23 +75,6 @@ jobs:
           else
             git checkout --quiet -B "$branch" "$base"
           fi
-      - name: Preserve historical speaker ID reservations
-        run: |
-          python3 - <<'PYTHON'
-          import json
-          import pathlib
-          import re
-          import subprocess
-
-          path = pathlib.Path("referentials/speaker-sync-state.json")
-          if not path.exists():
-              history = subprocess.run(
-                  ["git", "log", "--all", "--format=", "-p", "--", "referentials/speakers.csv"],
-                  check=True, capture_output=True, text=True,
-              ).stdout
-              reserved = sorted(set(re.findall(r"\bspeaker-\d{4}\b", history)))
-              path.write_text(json.dumps({"version": 1, "reservedIds": reserved}, indent=2) + "\n")
-          PYTHON
       - name: Prepare validated catalog and form
         id: synchronize
         uses: ./../self-workflow/actions/referential/sync-speakers

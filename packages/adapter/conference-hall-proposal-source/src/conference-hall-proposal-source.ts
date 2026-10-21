@@ -1,8 +1,9 @@
 import {
-	ProposalSourceError,
 	type ProposalSnapshot,
 	type ProposalSource,
+	ProposalSourceError,
 	type SourceSpeaker,
+	SourceSpeakerEquality,
 } from "@meetup-automation/referential";
 import { ProposalExportParser } from "./proposal-export-parser.js";
 
@@ -12,6 +13,7 @@ export class ConferenceHallProposalSource implements ProposalSource {
 		private readonly event: string,
 		private readonly apiKey: string,
 		private readonly request: typeof fetch = fetch,
+		private readonly now: () => number = Date.now,
 	) {}
 	load(): Promise<ProposalSnapshot> {
 		this.snapshot ??= this.fetchSnapshot();
@@ -27,7 +29,7 @@ export class ConferenceHallProposalSource implements ProposalSource {
 		const speakers = new Map<string, SourceSpeaker>();
 		for (const speaker of [...active.speakers, ...archived.speakers]) {
 			const existing = speakers.get(speaker.id);
-			if (existing && JSON.stringify(existing) !== JSON.stringify(speaker))
+			if (existing && !SourceSpeakerEquality.equal(existing, speaker))
 				throw new ProposalSourceError("conflict");
 			speakers.set(speaker.id, speaker);
 		}
@@ -118,7 +120,7 @@ export class ConferenceHallProposalSource implements ProposalSource {
 		if (value && /^\d+$/.test(value)) return Math.max(1, Number(value));
 		const date = value ? Date.parse(value) : Number.NaN;
 		return Number.isFinite(date)
-			? Math.max(1, Math.ceil((date - Date.now()) / 1000))
+			? Math.max(1, Math.ceil((date - this.now()) / 1000))
 			: 3600;
 	}
 }
