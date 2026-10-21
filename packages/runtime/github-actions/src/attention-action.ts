@@ -9,7 +9,12 @@ import type { OrganizerFeedback } from "./organizer-feedback.js";
 import type { PublicationUrlInput } from "./publication-url-input.js";
 import type { RuntimeInput } from "./runtime-input.js";
 export interface AttentionActionCollaborators {
-	readonly publicationUrlInput: Pick<PublicationUrlInput, "read">;
+	readonly publicationUrlInput: Pick<
+		PublicationUrlInput,
+		| "readMeetupEventUrlPrefix"
+		| "readCommunityEventUrlPrefixes"
+		| "readAssetFolderUrlPrefix"
+	>;
 	readonly createAttention: (
 		input: Parameters<typeof AttentionComposition.create>[0],
 	) => {
@@ -29,7 +34,12 @@ export class AttentionAction {
 			core.getInput("issue-number", { required: true }),
 		);
 		const journey = this.collaborators.createAttention({
-			publicationUrls: this.collaborators.publicationUrlInput.read(),
+			meetupEventUrlPrefix:
+				this.collaborators.publicationUrlInput.readMeetupEventUrlPrefix(),
+			communityEventUrlPrefixes:
+				this.collaborators.publicationUrlInput.readCommunityEventUrlPrefixes(),
+			assetFolderUrlPrefix:
+				this.collaborators.publicationUrlInput.readAssetFolderUrlPrefix(),
 			...context.repo,
 			issueNumber,
 			locale: messages.locale,

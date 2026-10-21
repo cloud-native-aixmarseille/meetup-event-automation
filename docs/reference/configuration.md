@@ -60,12 +60,13 @@ identifiers.
 
 ## Publication URL inputs
 
-Pass `meetup-event-url-prefix`, `community-event-url-prefixes`, and
-`asset-folder-url-prefix` to every event, publication, communication, and
-organizer-attention reconciliation action. The three reusable event workflows
-require and forward them. Event listing and referential actions do not use them.
-These inputs have no defaults. Keep their values identical across the consumer's
-issue-update, audit, and Meetup-publication callers.
+`meetup-event-url-prefix`, `community-event-url-prefixes`, and
+`asset-folder-url-prefix` are separate settings, each validated independently
+without a default. Event, publication, communication, and organizer-attention
+reconciliation actions check full event readiness and therefore require all three.
+The three reusable event workflows forward these inputs explicitly. Event listing
+and referential actions do not use them. Keep each setting consistent across the
+consumer's issue-update, audit, and Meetup-publication callers.
 
 `meetup-event-url-prefix` identifies the authorized Meetup group and ends in
 `/events/`. `community-event-url-prefixes` is a JSON string containing a nonempty

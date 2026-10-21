@@ -1,6 +1,9 @@
 import { CommunicationDomainComposition } from "@meetup-automation/communication";
 import { EventDomainComposition } from "@meetup-automation/event";
-import { PublicationDomainComposition } from "@meetup-automation/publication";
+import {
+	PublicationDomainComposition,
+	type PublicationUrlPolicyEngine,
+} from "@meetup-automation/publication";
 import { ReferentialDomainComposition } from "@meetup-automation/referential";
 import { ApprovalRequestPolicy } from "./approval/approval-request-policy.js";
 import { MeetupPublicationRevision } from "./approval/meetup-publication-revision.js";
@@ -32,10 +35,14 @@ export class JourneyPolicyComposition {
 			publicAssetUrl: new PublicationDomainComposition().publicAssetUrl(),
 		});
 	}
-	attentionEventFacts(): AttentionEventFacts {
+	attentionEventFacts(
+		publicationUrlPolicyEngine: Pick<PublicationUrlPolicyEngine, "evaluate">,
+	): AttentionEventFacts {
 		return new AttentionEventFacts({
 			eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
-			eventPublicationEvaluation: this.eventPublicationEvaluation(),
+			eventPublicationEvaluation: this.eventPublicationEvaluation(
+				publicationUrlPolicyEngine,
+			),
 			attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
 			communicationChecklist: this.communicationChecklist(),
 			createEventRuleEngine: (...args) =>
@@ -90,16 +97,15 @@ export class JourneyPolicyComposition {
 	eventParticipantResolution(): EventParticipantResolution {
 		return new EventParticipantResolution();
 	}
-	eventPublicationEvaluation(): EventPublicationEvaluation {
+	eventPublicationEvaluation(
+		publicationUrlPolicyEngine: Pick<PublicationUrlPolicyEngine, "evaluate">,
+	): EventPublicationEvaluation {
 		return new EventPublicationEvaluation({
 			meetupPublicationChecklist:
 				new EventDomainComposition().meetupPublicationChecklist(),
-			publicationUrlPolicies:
-				new PublicationDomainComposition().publicationUrlPolicies(),
+			publicationUrlPolicyEngine,
 			manualPublicationPolicy:
 				new PublicationDomainComposition().manualPublicationPolicy(),
-			createPublicationUrlPolicyEngine: (...args) =>
-				new PublicationDomainComposition().publicationUrlPolicyEngine(...args),
 		});
 	}
 	feedbackAgendaProjection(): FeedbackAgendaProjection {

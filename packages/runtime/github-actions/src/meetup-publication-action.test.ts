@@ -2,8 +2,8 @@ import * as core from "@actions/core";
 import { LocalizationComposition } from "@meetup-automation/localization";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+	eventPublicationSettings,
 	publicationUrlInputs,
-	publicationUrls,
 } from "../testing/publication-urls.fixtures.js";
 import { GithubActionsComposition } from "./dependency-composition.js";
 import { ActionMessages } from "./i18n/action-messages.js";
@@ -74,7 +74,7 @@ describe("Meetup publication action", () => {
 
 		// Assert
 		expect(mocks.create).toHaveBeenCalledWith(
-			expect.objectContaining({ publicationUrls }),
+			expect.objectContaining(eventPublicationSettings),
 		);
 		expect(mocks.execute).toHaveBeenCalledWith({
 			repository: "example/events",

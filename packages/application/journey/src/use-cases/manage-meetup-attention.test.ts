@@ -6,7 +6,7 @@ import {
 import { describe, expect, it, vi } from "vitest";
 import { createTestEvent } from "../../../../domain/event/testing/event.fixtures.js";
 import {
-	publicationUrls,
+	createPublicationUrlPolicyEngine,
 	event as publishedEvent,
 } from "../../testing/meetup-journey.fixtures.js";
 import { JourneyPolicyComposition } from "../policy-composition.js";
@@ -35,7 +35,6 @@ function fixture() {
 		config: new JourneyPolicyComposition()
 			.automationConfigFactory()
 			.createAutomationConfig(),
-		publicationUrls,
 		repository: { find, applyPatch: vi.fn(), listPage: vi.fn() },
 		codec: { decode: () => ({ event, diagnostics: [] }), createPatch: vi.fn() },
 		followUp: { synchronizeFollowUp: vi.fn().mockResolvedValue(undefined) },
@@ -51,8 +50,9 @@ function fixture() {
 		document,
 		useCase: new ManageMeetupAttention(
 			{
-				attentionEventFacts:
-					new JourneyPolicyComposition().attentionEventFacts(),
+				attentionEventFacts: new JourneyPolicyComposition().attentionEventFacts(
+					createPublicationUrlPolicyEngine(),
+				),
 				evaluateAttention:
 					new CommunicationDomainComposition().evaluateAttention(),
 				eventDocumentConcurrency:

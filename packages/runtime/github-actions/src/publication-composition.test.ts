@@ -7,7 +7,7 @@ import {
 	ReconcileAssetContent,
 } from "@meetup-automation/publication";
 import { describe, expect, it, vi } from "vitest";
-import { publicationUrls } from "../testing/publication-urls.fixtures.js";
+import { eventPublicationSettings } from "../testing/publication-urls.fixtures.js";
 import { SERVICES } from "./composition.js";
 import {
 	ASSET_REPOSITORY,
@@ -15,7 +15,7 @@ import {
 } from "./publication-composition.js";
 
 const input = {
-	publicationUrls,
+	...eventPublicationSettings,
 	conferenceHallEvent: "example-cfp",
 	conferenceHallApiKey: "synthetic-source-key",
 	client: getOctokit("synthetic-test-token"),

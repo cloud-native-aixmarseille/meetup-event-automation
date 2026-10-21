@@ -41,7 +41,7 @@ import { RuntimeInput } from "./runtime-input.js";
 import { SpeakerSyncFailureReport } from "./speaker-sync-failure-report.js";
 export class GithubActionsComposition {
 	publicationUrlInput(): PublicationUrlInput {
-		return new PublicationUrlInput(this.runtimeInput());
+		return new PublicationUrlInput();
 	}
 	actionFailurePresenter(): ActionFailurePresenter {
 		return new ActionFailurePresenter();

@@ -48,7 +48,9 @@ export class CommunicationRuntime {
 		const slackToken = input.slackToken.trim();
 		const slackOrganizerChannelId = input.slackOrganizerChannelId.trim();
 		const journey = this.collaborators.createJourney({
-			publicationUrls: input.publicationUrls,
+			meetupEventUrlPrefix: input.meetupEventUrlPrefix,
+			communityEventUrlPrefixes: input.communityEventUrlPrefixes,
+			assetFolderUrlPrefix: input.assetFolderUrlPrefix,
 			locale: this.collaborators.localeResolver.resolveLocale(input.locale),
 			conferenceHallEvent: input.conferenceHallEvent,
 			conferenceHallApiKey: input.conferenceHallApiKey,

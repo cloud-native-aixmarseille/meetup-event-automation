@@ -11,7 +11,7 @@ import {
 import {
 	catalog,
 	config,
-	publicationUrls,
+	createPublicationUrlPolicyEngine,
 } from "../packages/application/journey/testing/meetup-journey.fixtures.js";
 import type { EventDocument } from "../packages/domain/event/src/index.js";
 import { EventDomainComposition } from "../packages/domain/event/src/index.js";
@@ -77,7 +77,9 @@ function fixture(sourceDocument = document) {
 	const useCase = new ManageMeetupEvent(
 		{
 			eventPublicationEvaluation:
-				new JourneyPolicyComposition().eventPublicationEvaluation(),
+				new JourneyPolicyComposition().eventPublicationEvaluation(
+					createPublicationUrlPolicyEngine(),
+				),
 			eventReadinessPolicy: new EventDomainComposition().eventReadinessPolicy(),
 			eventLifecycle: new EventDomainComposition().eventLifecycle(),
 			eventDiagnosticProjection:
@@ -99,7 +101,6 @@ function fixture(sourceDocument = document) {
 		},
 		{
 			config,
-			publicationUrls,
 			proposalSource,
 			referentialRepository: {
 				load: vi.fn().mockResolvedValue({

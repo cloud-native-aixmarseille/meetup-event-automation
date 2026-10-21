@@ -31354,7 +31354,6 @@ var AssetFolderUrlPolicy = class {
   }
   collaborators;
   prefix;
-  id = "asset-folder-url";
   evaluate(references) {
     return this.collaborators.publicationLinkEvaluation.evaluateLink({
       references,
@@ -31378,7 +31377,6 @@ var CommunityEventUrlPolicy = class {
   }
   collaborators;
   prefixes;
-  id = "community-event-url";
   evaluate(references) {
     return this.collaborators.publicationLinkEvaluation.evaluateLink({
       references,
@@ -32109,7 +32107,6 @@ var MeetupEventUrlPolicy = class {
   }
   collaborators;
   prefix;
-  id = "meetup-event-url";
   evaluate(references) {
     const group = MeetupGroupUrl.fromEventUrlPrefix(this.prefix);
     return this.collaborators.publicationLinkEvaluation.evaluateLink({
@@ -32254,27 +32251,6 @@ var PublicationLinkEvaluation = class {
       const identifier = normalized.slice(prefix.length);
       return Boolean(identifier) && identifierPattern.test(identifier);
     });
-  }
-};
-
-// packages/domain/publication/src/domain/publication-url-policies.ts
-var PublicationUrlPolicies = class {
-  constructor(collaborators) {
-    this.collaborators = collaborators;
-  }
-  collaborators;
-  create(configuration) {
-    return Object.freeze([
-      this.collaborators.createMeetupEventUrlPolicy(
-        configuration.meetupEventUrlPrefix
-      ),
-      this.collaborators.createCommunityEventUrlPolicy(
-        configuration.communityEventUrlPrefixes
-      ),
-      this.collaborators.createAssetFolderUrlPolicy(
-        configuration.assetFolderUrlPrefix
-      )
-    ]);
   }
 };
 
@@ -32430,13 +32406,6 @@ var PublicationDomainComposition = class {
   }
   publicationLinkEvaluation() {
     return new PublicationLinkEvaluation();
-  }
-  publicationUrlPolicies() {
-    return new PublicationUrlPolicies({
-      createMeetupEventUrlPolicy: (...args) => this.meetupEventUrlPolicy(...args),
-      createCommunityEventUrlPolicy: (...args) => this.communityEventUrlPolicy(...args),
-      createAssetFolderUrlPolicy: (...args) => this.assetFolderUrlPolicy(...args)
-    });
   }
   publicationUrlPolicyEngine(...args) {
     return new PublicationUrlPolicyEngine(
@@ -32877,13 +32846,12 @@ var AttentionEventFacts = class {
     this.collaborators = collaborators;
   }
   collaborators;
-  create(decoded, publicationUrls) {
+  create(decoded) {
     const evaluated = this.collaborators.createEventRuleEngine(
       this.collaborators.eventRuleFactory.createDefaultEventRules()
     ).evaluate(decoded.event);
     const publication = this.collaborators.eventPublicationEvaluation.evaluatePublication(
-      evaluated.event,
-      publicationUrls
+      evaluated.event
     );
     const event = publication.event;
     const diagnostics = [
@@ -33246,7 +33214,7 @@ var EventPublicationEvaluation = class {
     this.collaborators = collaborators;
   }
   collaborators;
-  evaluatePublication(event, publicationUrls) {
+  evaluatePublication(event) {
     const diagnostics = [];
     for (const field of ["meetup", "community", "assets"]) {
       const value = event.publicationLinks[field];
@@ -33269,10 +33237,9 @@ var EventPublicationEvaluation = class {
         message: "Meetup publication must be confirmed in the Communication checklist before the event is ready"
       });
     }
-    const engine = this.collaborators.createPublicationUrlPolicyEngine(
-      this.collaborators.publicationUrlPolicies.create(publicationUrls)
+    const evaluation = this.collaborators.publicationUrlPolicyEngine.evaluate(
+      event.publicationLinks
     );
-    const evaluation = engine.evaluate(event.publicationLinks);
     diagnostics.push(
       ...evaluation.diagnostics.map((item) => ({
         code: item.code,
@@ -33424,10 +33391,12 @@ var JourneyPolicyComposition = class {
       publicAssetUrl: new PublicationDomainComposition().publicAssetUrl()
     });
   }
-  attentionEventFacts() {
+  attentionEventFacts(publicationUrlPolicyEngine) {
     return new AttentionEventFacts({
       eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
-      eventPublicationEvaluation: this.eventPublicationEvaluation(),
+      eventPublicationEvaluation: this.eventPublicationEvaluation(
+        publicationUrlPolicyEngine
+      ),
       attentionPolicy: new CommunicationDomainComposition().attentionPolicy(),
       communicationChecklist: this.communicationChecklist(),
       createEventRuleEngine: (...args) => new EventDomainComposition().eventRuleEngine(...args)
@@ -33477,12 +33446,11 @@ var JourneyPolicyComposition = class {
   eventParticipantResolution() {
     return new EventParticipantResolution();
   }
-  eventPublicationEvaluation() {
+  eventPublicationEvaluation(publicationUrlPolicyEngine) {
     return new EventPublicationEvaluation({
       meetupPublicationChecklist: new EventDomainComposition().meetupPublicationChecklist(),
-      publicationUrlPolicies: new PublicationDomainComposition().publicationUrlPolicies(),
-      manualPublicationPolicy: new PublicationDomainComposition().manualPublicationPolicy(),
-      createPublicationUrlPolicyEngine: (...args) => new PublicationDomainComposition().publicationUrlPolicyEngine(...args)
+      publicationUrlPolicyEngine,
+      manualPublicationPolicy: new PublicationDomainComposition().manualPublicationPolicy()
     });
   }
   feedbackAgendaProjection() {
@@ -33563,19 +33531,17 @@ var AssetRenderProjection = class {
 
 // packages/application/journey/src/use-cases/find-next-asset-event.ts
 var FindNextAssetEvent = class {
-  constructor(collaborators, repository, codec, eventLabel, publicationUrls, venues = {}) {
+  constructor(collaborators, repository, codec, eventLabel, venues = {}) {
     this.collaborators = collaborators;
     this.repository = repository;
     this.codec = codec;
     this.eventLabel = eventLabel;
-    this.publicationUrls = publicationUrls;
     this.venues = venues;
   }
   collaborators;
   repository;
   codec;
   eventLabel;
-  publicationUrls;
   venues;
   async find(current, catalog) {
     const candidates = await this.candidates(current);
@@ -33641,11 +33607,20 @@ var FindNextAssetEvent = class {
     );
     if (invalid || event.date <= current.date || event.occurrenceStatus !== "scheduled" || !event.confirmations.host)
       return void 0;
-    const published = this.collaborators.publicationUrlPolicies.create(this.publicationUrls).filter((policy) => policy.id !== "asset-folder-url").some((policy) => {
-      const field = policy.id === "meetup-event-url" ? "meetup" : "community";
-      return Boolean(event.publicationLinks[field]) && (field !== "meetup" || this.collaborators.meetupPublicationChecklist.isPublished(event)) && !policy.evaluate({ [field]: event.publicationLinks[field] }).diagnostics.some((item) => item.severity === "error");
-    });
+    const published = this.collaborators.meetupPublicationChecklist.isPublished(event) && this.validLink(
+      event,
+      "meetup",
+      this.collaborators.meetupEventUrlPolicy
+    ) || this.validLink(
+      event,
+      "community",
+      this.collaborators.communityEventUrlPolicy
+    );
     return published ? event : void 0;
+  }
+  validLink(event, field, policy) {
+    const value = event.publicationLinks[field];
+    return Boolean(value) && !policy.evaluate({ [field]: value }).diagnostics.some((item) => item.severity === "error");
   }
 };
 
@@ -33769,8 +33744,7 @@ var ManageMeetupAttention = class {
         notificationFailed: false
       };
     const facts = this.collaborators.attentionEventFacts.create(
-      codec.decode(source),
-      this.dependencies.publicationUrls
+      codec.decode(source)
     );
     const evidence = await this.synchronizeEvidence();
     const now2 = clock.now();
@@ -33847,10 +33821,7 @@ var ManageMeetupEvent = class {
       eventResult.event,
       eventDiagnostics
     );
-    const publication = this.collaborators.eventPublicationEvaluation.evaluatePublication(
-      event,
-      this.dependencies.publicationUrls
-    );
+    const publication = this.collaborators.eventPublicationEvaluation.evaluatePublication(event);
     event = publication.event;
     eventDiagnostics.push(...publication.diagnostics);
     const manualPublicationTasks = this.collaborators.eventPublicationEvaluation.planEventManualPublicationTasks(
@@ -34655,11 +34626,12 @@ var JourneyComposition = class {
       ...args
     );
   }
-  findNextAssetEvent(...args) {
+  findNextAssetEvent(meetupEventUrlPolicy, communityEventUrlPolicy, ...args) {
     return new FindNextAssetEvent(
       {
         eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
-        publicationUrlPolicies: new PublicationDomainComposition().publicationUrlPolicies(),
+        meetupEventUrlPolicy,
+        communityEventUrlPolicy,
         meetupPublicationChecklist: new EventDomainComposition().meetupPublicationChecklist(),
         createEventRuleEngine: (...args2) => new EventDomainComposition().eventRuleEngine(...args2)
       },
@@ -34675,10 +34647,12 @@ var JourneyComposition = class {
       ...args
     );
   }
-  manageMeetupAttention(...args) {
+  manageMeetupAttention(publicationUrlPolicyEngine, ...args) {
     return new ManageMeetupAttention(
       {
-        attentionEventFacts: new JourneyPolicyComposition().attentionEventFacts(),
+        attentionEventFacts: new JourneyPolicyComposition().attentionEventFacts(
+          publicationUrlPolicyEngine
+        ),
         evaluateAttention: new CommunicationDomainComposition().evaluateAttention(),
         eventDocumentConcurrency: new EventDomainComposition().eventDocumentConcurrency(),
         postEventPolicy: new CommunicationDomainComposition().postEventPolicy()
@@ -34686,10 +34660,12 @@ var JourneyComposition = class {
       ...args
     );
   }
-  manageMeetupEvent(...args) {
+  manageMeetupEvent(publicationUrlPolicyEngine, ...args) {
     return new ManageMeetupEvent(
       {
-        eventPublicationEvaluation: new JourneyPolicyComposition().eventPublicationEvaluation(),
+        eventPublicationEvaluation: new JourneyPolicyComposition().eventPublicationEvaluation(
+          publicationUrlPolicyEngine
+        ),
         eventReadinessPolicy: new EventDomainComposition().eventReadinessPolicy(),
         eventLifecycle: new EventDomainComposition().eventLifecycle(),
         eventDiagnosticProjection: new JourneyPolicyComposition().eventDiagnosticProjection(),
@@ -39166,7 +39142,15 @@ var CommunicationInput = class {
   }
   collaborators;
   validate(input) {
-    this.collaborators.publicationUrlInput.validate(input.publicationUrls);
+    this.collaborators.publicationUrlInput.validateMeetupEventUrlPrefix(
+      input.meetupEventUrlPrefix
+    );
+    this.collaborators.publicationUrlInput.validateCommunityEventUrlPrefixes(
+      input.communityEventUrlPrefixes
+    );
+    this.collaborators.publicationUrlInput.validateAssetFolderUrlPrefix(
+      input.assetFolderUrlPrefix
+    );
     this.collaborators.conferenceHallInput.validate(input);
     for (const field of [
       "locale",
@@ -39594,20 +39578,16 @@ var OrganizerFeedback = class {
 
 // packages/runtime/github-actions/src/publication-url-input.ts
 var PublicationUrlInput = class {
-  constructor(runtimeInput) {
-    this.runtimeInput = runtimeInput;
+  readMeetupEventUrlPrefix() {
+    return this.validateMeetupEventUrlPrefix(
+      getInput("meetup-event-url-prefix", {
+        required: true,
+        trimWhitespace: false
+      })
+    );
   }
-  runtimeInput;
-  read() {
-    const meetupEventUrlPrefix = getInput("meetup-event-url-prefix", {
-      required: true,
-      trimWhitespace: false
-    });
+  readCommunityEventUrlPrefixes() {
     const community = getInput("community-event-url-prefixes", {
-      required: true,
-      trimWhitespace: false
-    });
-    const assetFolderUrlPrefix = getInput("asset-folder-url-prefix", {
       required: true,
       trimWhitespace: false
     });
@@ -39617,35 +39597,31 @@ var PublicationUrlInput = class {
     } catch {
       throw new Error("Invalid input: community-event-url-prefixes");
     }
-    return this.validate({
-      meetupEventUrlPrefix,
-      communityEventUrlPrefixes,
-      assetFolderUrlPrefix
-    });
+    return this.validateCommunityEventUrlPrefixes(communityEventUrlPrefixes);
   }
-  validate(configuration) {
-    if (!this.runtimeInput.isObject(configuration))
-      throw new Error("Invalid publication URL configuration");
-    const meetupEventUrlPrefix = this.prefix(
-      configuration.meetupEventUrlPrefix,
-      "meetup-event-url-prefix"
+  readAssetFolderUrlPrefix() {
+    return this.validateAssetFolderUrlPrefix(
+      getInput("asset-folder-url-prefix", {
+        required: true,
+        trimWhitespace: false
+      })
     );
+  }
+  validateMeetupEventUrlPrefix(value) {
+    const meetupEventUrlPrefix = this.prefix(value, "meetup-event-url-prefix");
     if (!MeetupGroupUrl.fromEventUrlPrefix(meetupEventUrlPrefix))
       throw new Error("Invalid input: meetup-event-url-prefix");
-    const community = configuration.communityEventUrlPrefixes;
+    return meetupEventUrlPrefix;
+  }
+  validateCommunityEventUrlPrefixes(community) {
     if (!Array.isArray(community) || community.length === 0)
       throw new Error("Invalid input: community-event-url-prefixes");
-    const communityEventUrlPrefixes = community.map(
+    return community.map(
       (prefix) => this.prefix(prefix, "community-event-url-prefixes")
     );
-    return {
-      meetupEventUrlPrefix,
-      communityEventUrlPrefixes,
-      assetFolderUrlPrefix: this.prefix(
-        configuration.assetFolderUrlPrefix,
-        "asset-folder-url-prefix"
-      )
-    };
+  }
+  validateAssetFolderUrlPrefix(value) {
+    return this.prefix(value, "asset-folder-url-prefix");
   }
   prefix(value, name) {
     if (typeof value !== "string" || !/^https:\/\/[^/?#@]+\/[^?#]*$/.test(value) || /[\s\\\p{Cc}]/u.test(value))
@@ -39779,7 +39755,7 @@ var SpeakerSyncFailureReport = class {
 // packages/runtime/github-actions/src/dependency-composition.ts
 var GithubActionsComposition = class {
   publicationUrlInput() {
-    return new PublicationUrlInput(this.runtimeInput());
+    return new PublicationUrlInput();
   }
   actionFailurePresenter() {
     return new ActionFailurePresenter();

@@ -2,8 +2,8 @@ import { ManageMeetupFeedback } from "@meetup-automation/journey";
 import { LocalizationComposition } from "@meetup-automation/localization";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+	eventPublicationSettings,
 	publicationUrlInputs,
-	publicationUrls,
 } from "../testing/publication-urls.fixtures.js";
 import { GithubActionsComposition } from "./dependency-composition.js";
 import { FeedbackAction } from "./feedback-action.js";
@@ -157,7 +157,7 @@ describe("feedback action boundary", () => {
 		// Assert
 		expect(mocks.compose).toHaveBeenCalledWith(
 			expect.objectContaining({
-				publicationUrls,
+				...eventPublicationSettings,
 				kuttApiKey: "synthetic-key",
 				kuttBaseUrl: "https://short.example.test",
 				kuttLinkId: "link-1",

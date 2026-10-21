@@ -10,8 +10,6 @@ export interface AssetFolderUrlPolicyCollaborators {
 }
 
 export class AssetFolderUrlPolicy implements PublicationUrlPolicy {
-	readonly id = "asset-folder-url";
-
 	constructor(
 		private readonly collaborators: AssetFolderUrlPolicyCollaborators,
 		private readonly prefix: string,

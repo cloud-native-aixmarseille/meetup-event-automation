@@ -1,89 +1,107 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PublicationUrlInput } from "./publication-url-input.js";
-import { RuntimeInput } from "./runtime-input.js";
 
-const configuration = {
-	meetupEventUrlPrefix: "https://www.meetup.com/example-group/events/",
-	communityEventUrlPrefixes: [
-		"https://ocgroups.dev/cncf/group/example/event/",
-		"https://community.cncf.io/events/details/cncf-example-presents-",
-	],
-	assetFolderUrlPrefix: "https://drive.google.com/drive/folders/",
-};
+const settings = [
+	{
+		name: "meetup-event-url-prefix",
+		read: "readMeetupEventUrlPrefix",
+		validate: "validateMeetupEventUrlPrefix",
+		value: "https://www.meetup.com/example-group/events/",
+	},
+	{
+		name: "community-event-url-prefixes",
+		read: "readCommunityEventUrlPrefixes",
+		validate: "validateCommunityEventUrlPrefixes",
+		value: [
+			"https://events.example.test:8443/community/event-",
+			"https://meetings.example.test/",
+		],
+	},
+	{
+		name: "asset-folder-url-prefix",
+		read: "readAssetFolderUrlPrefix",
+		validate: "validateAssetFolderUrlPrefix",
+		value: "https://assets.example.test/community/folders/",
+	},
+] as const;
 
 beforeEach(() => {
-	vi.stubEnv(
-		"INPUT_MEETUP-EVENT-URL-PREFIX",
-		configuration.meetupEventUrlPrefix,
-	);
-	vi.stubEnv(
-		"INPUT_COMMUNITY-EVENT-URL-PREFIXES",
-		JSON.stringify(configuration.communityEventUrlPrefixes),
-	);
-	vi.stubEnv(
-		"INPUT_ASSET-FOLDER-URL-PREFIX",
-		configuration.assetFolderUrlPrefix,
-	);
+	for (const { name } of settings)
+		vi.stubEnv(`INPUT_${name.toUpperCase()}`, undefined);
 });
 afterEach(() => vi.unstubAllEnvs());
 
 describe("PublicationUrlInput", () => {
-	it("reads all explicit prefixes and preserves both supported community path forms", () => {
+	it.each(settings)(
+		"reads $name without requiring any other URL setting",
+		({ name, read, value }) => {
+			// Arrange
+			vi.stubEnv(
+				`INPUT_${name.toUpperCase()}`,
+				typeof value === "string" ? value : JSON.stringify(value),
+			);
+			const parser = new PublicationUrlInput();
+
+			// Act
+			const result = parser[read]();
+
+			// Assert
+			expect(result).toEqual(value);
+		},
+	);
+
+	it.each(settings)(
+		"requires $name when that setting is requested",
+		({ name, read }) => {
+			// Arrange
+			const parser = new PublicationUrlInput();
+
+			// Act
+			const readSetting = () => parser[read]();
+
+			// Assert
+			expect(readSetting).toThrow(`Input required and not supplied: ${name}`);
+		},
+	);
+
+	it.each(settings)(
+		"validates $name without other programmatic settings",
+		({ validate, value }) => {
+			// Arrange
+			const parser = new PublicationUrlInput();
+
+			// Act
+			const result = parser[validate](value);
+
+			// Assert
+			expect(result).toEqual(value);
+		},
+	);
+
+	it.each(
+		settings.flatMap((setting) =>
+			[undefined, null, {}, true, 42].map((value) => ({ ...setting, value })),
+		),
+	)("rejects invalid $name values: $value", ({ name, validate, value }) => {
 		// Arrange
-		const expected = configuration;
+		const parser = new PublicationUrlInput();
 
 		// Act
-		const result = new PublicationUrlInput(new RuntimeInput()).read();
+		const validateSetting = () => parser[validate](value);
 
 		// Assert
-		expect(result).toEqual(expected);
+		expect(validateSetting).toThrow(`Invalid input: ${name}`);
 	});
 
-	it("accepts explicitly configured community and asset HTTPS origins without provider defaults", () => {
-		// Arrange
-		const community = [
-			"https://events.example.test:8443/community/event-",
-			"https://meetings.example.test/",
-		];
-		const assets = "https://assets.example.test/community/folders/";
-		vi.stubEnv("INPUT_COMMUNITY-EVENT-URL-PREFIXES", JSON.stringify(community));
-		vi.stubEnv("INPUT_ASSET-FOLDER-URL-PREFIX", assets);
-
-		// Act
-		const result = new PublicationUrlInput(new RuntimeInput()).read();
-
-		// Assert
-		expect(result).toEqual({
-			...configuration,
-			communityEventUrlPrefixes: community,
-			assetFolderUrlPrefix: assets,
-		});
-	});
-
-	it.each([
-		"meetup-event-url-prefix",
-		"community-event-url-prefixes",
-		"asset-folder-url-prefix",
-	])("requires %s without substituting a default", (name) => {
-		// Arrange
-		vi.stubEnv(`INPUT_${name.toUpperCase()}`, undefined);
-
-		// Act
-		const read = () => new PublicationUrlInput(new RuntimeInput()).read();
-
-		// Assert
-		expect(read).toThrow(`Input required and not supplied: ${name}`);
-	});
-
-	it("rejects whitespace rather than silently trimming a supplied prefix", () => {
+	it("rejects whitespace instead of trimming a supplied prefix", () => {
 		// Arrange
 		vi.stubEnv(
 			"INPUT_ASSET-FOLDER-URL-PREFIX",
-			` ${configuration.assetFolderUrlPrefix} `,
+			" https://assets.example.test/folders/ ",
 		);
 
 		// Act
-		const read = () => new PublicationUrlInput(new RuntimeInput()).read();
+		const read = () => new PublicationUrlInput().readAssetFolderUrlPrefix();
 
 		// Assert
 		expect(read).toThrow("Invalid input: asset-folder-url-prefix");
@@ -99,19 +117,17 @@ describe("PublicationUrlInput", () => {
 		'[""]',
 		"[5]",
 		'["https://events.example.test/", null]',
-	])(
-		"rejects malformed or non-string community prefix arrays: %s",
-		(source) => {
-			// Arrange
-			vi.stubEnv("INPUT_COMMUNITY-EVENT-URL-PREFIXES", source);
+	])("rejects malformed community prefix arrays: %s", (source) => {
+		// Arrange
+		vi.stubEnv("INPUT_COMMUNITY-EVENT-URL-PREFIXES", source);
 
-			// Act
-			const read = () => new PublicationUrlInput(new RuntimeInput()).read();
+		// Act
+		const read = () =>
+			new PublicationUrlInput().readCommunityEventUrlPrefixes();
 
-			// Assert
-			expect(read).toThrow("Invalid input: community-event-url-prefixes");
-		},
-	);
+		// Assert
+		expect(read).toThrow("Invalid input: community-event-url-prefixes");
+	});
 
 	it.each([
 		"http://events.example.test/",
@@ -135,17 +151,13 @@ describe("PublicationUrlInput", () => {
 		"rejects unsafe or malformed programmatic HTTPS prefixes: %s",
 		(prefix) => {
 			// Arrange
-			const community = {
-				...configuration,
-				communityEventUrlPrefixes: [prefix],
-			};
-			const assets = { ...configuration, assetFolderUrlPrefix: prefix };
+			// Each setting is validated independently.
 
 			// Act
 			const validateCommunity = () =>
-				new PublicationUrlInput(new RuntimeInput()).validate(community);
+				new PublicationUrlInput().validateCommunityEventUrlPrefixes([prefix]);
 			const validateAssets = () =>
-				new PublicationUrlInput(new RuntimeInput()).validate(assets);
+				new PublicationUrlInput().validateAssetFolderUrlPrefix(prefix);
 
 			// Assert
 			expect(validateCommunity).toThrow(
@@ -160,69 +172,29 @@ describe("PublicationUrlInput", () => {
 		"https://www.meetup.com/example-group/events",
 		"https://www.meetup.com/example-group/events/123/",
 		"https://different.example.test/example-group/events/",
-	])("requires the Meetup group event prefix: %s", (meetupEventUrlPrefix) => {
+	])("requires the Meetup group event prefix: %s", (prefix) => {
 		// Arrange
-		const input = { ...configuration, meetupEventUrlPrefix };
+		const parser = new PublicationUrlInput();
 
 		// Act
-		const validate = () =>
-			new PublicationUrlInput(new RuntimeInput()).validate(input);
+		const validate = () => parser.validateMeetupEventUrlPrefix(prefix);
 
 		// Assert
 		expect(validate).toThrow("Invalid input: meetup-event-url-prefix");
 	});
 
-	it.each([null, [], undefined, true])(
-		"rejects invalid programmatic configuration before composition: %s",
-		(input) => {
-			// Arrange
-			const configuration = input;
-
-			// Act
-			const validate = () =>
-				new PublicationUrlInput(new RuntimeInput()).validate(configuration);
-
-			// Assert
-			expect(validate).toThrow("Invalid publication URL configuration");
-		},
-	);
-
-	it.each([
-		[{}, "meetup-event-url-prefix"],
-		[{ ...configuration, meetupEventUrlPrefix: 42 }, "meetup-event-url-prefix"],
-		[
-			{ ...configuration, communityEventUrlPrefixes: undefined },
-			"community-event-url-prefixes",
-		],
-		[
-			{ ...configuration, assetFolderUrlPrefix: undefined },
-			"asset-folder-url-prefix",
-		],
-	] as const)("rejects incomplete programmatic settings: %j", (input, name) => {
+	it("copies the validated community prefixes", () => {
 		// Arrange
-		const settings = input;
+		const prefixes = ["https://events.example.test/"];
 
 		// Act
-		const validate = () =>
-			new PublicationUrlInput(new RuntimeInput()).validate(settings);
-
-		// Assert
-		expect(validate).toThrow(`Invalid input: ${name}`);
-	});
-
-	it("returns only the validated configuration fields", () => {
-		// Arrange
-		const input = { ...configuration, secret: "PRIVATE-secret" };
-
-		// Act
-		const result = new PublicationUrlInput(new RuntimeInput()).validate(input);
-
-		// Assert
-		expect(result).toEqual(configuration);
-		expect(result).not.toHaveProperty("secret");
-		expect(result.communityEventUrlPrefixes).not.toBe(
-			configuration.communityEventUrlPrefixes,
+		const result = new PublicationUrlInput().validateCommunityEventUrlPrefixes(
+			prefixes,
 		);
+
+		// Assert
+		expect(result).toEqual(prefixes);
+		expect(result).not.toBe(prefixes);
 	});
 
 	it.each([
@@ -235,7 +207,7 @@ describe("PublicationUrlInput", () => {
 		// Act
 		let failure: unknown;
 		try {
-			new PublicationUrlInput(new RuntimeInput()).read();
+			new PublicationUrlInput().readCommunityEventUrlPrefixes();
 		} catch (error) {
 			failure = error;
 		}

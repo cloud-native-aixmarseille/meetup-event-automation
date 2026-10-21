@@ -1,6 +1,10 @@
 import { CommunicationDomainComposition } from "@meetup-automation/communication";
 import { EventDomainComposition } from "@meetup-automation/event";
-import { PublicationDomainComposition } from "@meetup-automation/publication";
+import {
+	PublicationDomainComposition,
+	type PublicationUrlPolicy,
+	type PublicationUrlPolicyEngine,
+} from "@meetup-automation/publication";
 import { ReferentialDomainComposition } from "@meetup-automation/referential";
 import { JourneyPolicyComposition } from "./policy-composition.js";
 import {
@@ -72,12 +76,16 @@ export class JourneyComposition {
 			...args,
 		);
 	}
-	findNextAssetEvent(...args: FindNextAssetEventArguments): FindNextAssetEvent {
+	findNextAssetEvent(
+		meetupEventUrlPolicy: Pick<PublicationUrlPolicy, "evaluate">,
+		communityEventUrlPolicy: Pick<PublicationUrlPolicy, "evaluate">,
+		...args: FindNextAssetEventArguments
+	): FindNextAssetEvent {
 		return new FindNextAssetEvent(
 			{
 				eventRuleFactory: new EventDomainComposition().eventRuleFactory(),
-				publicationUrlPolicies:
-					new PublicationDomainComposition().publicationUrlPolicies(),
+				meetupEventUrlPolicy,
+				communityEventUrlPolicy,
 				meetupPublicationChecklist:
 					new EventDomainComposition().meetupPublicationChecklist(),
 				createEventRuleEngine: (...args) =>
@@ -98,12 +106,14 @@ export class JourneyComposition {
 		);
 	}
 	manageMeetupAttention(
+		publicationUrlPolicyEngine: Pick<PublicationUrlPolicyEngine, "evaluate">,
 		...args: ManageMeetupAttentionArguments
 	): ManageMeetupAttention {
 		return new ManageMeetupAttention(
 			{
-				attentionEventFacts:
-					new JourneyPolicyComposition().attentionEventFacts(),
+				attentionEventFacts: new JourneyPolicyComposition().attentionEventFacts(
+					publicationUrlPolicyEngine,
+				),
 				evaluateAttention:
 					new CommunicationDomainComposition().evaluateAttention(),
 				eventDocumentConcurrency:
@@ -113,11 +123,16 @@ export class JourneyComposition {
 			...args,
 		);
 	}
-	manageMeetupEvent(...args: ManageMeetupEventArguments): ManageMeetupEvent {
+	manageMeetupEvent(
+		publicationUrlPolicyEngine: Pick<PublicationUrlPolicyEngine, "evaluate">,
+		...args: ManageMeetupEventArguments
+	): ManageMeetupEvent {
 		return new ManageMeetupEvent(
 			{
 				eventPublicationEvaluation:
-					new JourneyPolicyComposition().eventPublicationEvaluation(),
+					new JourneyPolicyComposition().eventPublicationEvaluation(
+						publicationUrlPolicyEngine,
+					),
 				eventReadinessPolicy:
 					new EventDomainComposition().eventReadinessPolicy(),
 				eventLifecycle: new EventDomainComposition().eventLifecycle(),

@@ -42,7 +42,6 @@ import { PublicationDiagnostics } from "./domain/model.js";
 import { PresentationFileUrl } from "./domain/presentation-file-url.js";
 import { PublicAssetUrl } from "./domain/public-asset-url.js";
 import { PublicationLinkEvaluation } from "./domain/publication-link-evaluation.js";
-import { PublicationUrlPolicies } from "./domain/publication-url-policies.js";
 import {
 	PublicationUrlPolicyEngine,
 	type PublicationUrlPolicyEngineArguments,
@@ -136,16 +135,6 @@ export class PublicationDomainComposition {
 	}
 	publicationLinkEvaluation(): PublicationLinkEvaluation {
 		return new PublicationLinkEvaluation();
-	}
-	publicationUrlPolicies(): PublicationUrlPolicies {
-		return new PublicationUrlPolicies({
-			createMeetupEventUrlPolicy: (...args) =>
-				this.meetupEventUrlPolicy(...args),
-			createCommunityEventUrlPolicy: (...args) =>
-				this.communityEventUrlPolicy(...args),
-			createAssetFolderUrlPolicy: (...args) =>
-				this.assetFolderUrlPolicy(...args),
-		});
 	}
 	publicationUrlPolicyEngine(
 		...args: PublicationUrlPolicyEngineArguments

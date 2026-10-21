@@ -10,8 +10,6 @@ export interface CommunityEventUrlPolicyCollaborators {
 }
 
 export class CommunityEventUrlPolicy implements PublicationUrlPolicy {
-	readonly id = "community-event-url";
-
 	constructor(
 		private readonly collaborators: CommunityEventUrlPolicyCollaborators,
 		private readonly prefixes: readonly string[],

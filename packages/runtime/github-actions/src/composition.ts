@@ -24,7 +24,6 @@ import {
 	ValidateMeetupReferentials,
 } from "@meetup-automation/journey";
 import type { Locale } from "@meetup-automation/localization";
-import type { PublicationUrlConfiguration } from "@meetup-automation/publication";
 import {
 	type ProposalSource,
 	ReferentialDomainComposition,
@@ -35,6 +34,7 @@ import { YamlIssueFormProjectionComposition } from "@meetup-automation/yaml-issu
 import { Container } from "inversify";
 import type { ConferenceHallSettings } from "./conference-hall-input.js";
 import { GithubActionsComposition } from "./dependency-composition.js";
+import { PublicationPolicyComposition } from "./publication-policy-composition.js";
 
 type GitHubClient = ReturnType<typeof getOctokit>;
 
@@ -70,7 +70,9 @@ export interface EventDocumentCompositionInput
 export interface EventCompositionInput
 	extends EventDocumentCompositionInput,
 		ConferenceHallSettings {
-	readonly publicationUrls: PublicationUrlConfiguration;
+	readonly meetupEventUrlPrefix: string;
+	readonly communityEventUrlPrefixes: readonly string[];
+	readonly assetFolderUrlPrefix: string;
 }
 
 export class EventComposition {
@@ -176,14 +178,16 @@ export class EventComposition {
 		const sourceSettings = new GithubActionsComposition()
 			.conferenceHallInput()
 			.validate(input);
-		const publicationUrls = new GithubActionsComposition()
-			.publicationUrlInput()
-			.validate(input.publicationUrls);
+		const publicationUrlPolicyEngine =
+			new PublicationPolicyComposition().eventPublicationUrlPolicyEngine(
+				input.meetupEventUrlPrefix,
+				input.communityEventUrlPrefixes,
+				input.assetFolderUrlPrefix,
+			);
 		const container = EventComposition.createDocumentContainer(input);
 		EventComposition.bindProposalSource(container, sourceSettings);
 		container.bind(ManageMeetupEvent).toDynamicValue((context) =>
-			new JourneyComposition().manageMeetupEvent({
-				publicationUrls,
+			new JourneyComposition().manageMeetupEvent(publicationUrlPolicyEngine, {
 				proposalSource: context.get<ProposalSource>(SERVICES.proposalSource),
 				config: context.get<AutomationConfig>(SERVICES.config),
 				referentialRepository: context.get<ReferentialRepository>(

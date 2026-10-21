@@ -14,11 +14,11 @@ import {
 } from "@meetup-automation/journey";
 import type { ReferentialRepository } from "@meetup-automation/referential";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { publicationUrls } from "../testing/publication-urls.fixtures.js";
+import { eventPublicationSettings } from "../testing/publication-urls.fixtures.js";
 import { EventComposition, SERVICES } from "./composition.js";
 
 const input = {
-	publicationUrls,
+	...eventPublicationSettings,
 	conferenceHallEvent: "example-cfp",
 	conferenceHallApiKey: "synthetic-source-key",
 	client: getOctokit("synthetic-test-token"),
@@ -189,7 +189,7 @@ An evening about reliable platforms.
 			}),
 		};
 		const container = EventComposition.createEventContainer({
-			publicationUrls,
+			...eventPublicationSettings,
 			conferenceHallEvent: "example-cfp",
 			conferenceHallApiKey: "synthetic-source-key",
 			client: getOctokit("synthetic-test-token"),

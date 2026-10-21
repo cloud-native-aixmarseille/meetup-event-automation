@@ -3,7 +3,7 @@ import type {
 	MeetupEvent,
 	ReconcileEventDependencies,
 } from "@meetup-automation/event";
-import type { PublicationUrlConfiguration } from "@meetup-automation/publication";
+import { PublicationDomainComposition } from "@meetup-automation/publication";
 import type { RawReferentialCatalog } from "@meetup-automation/referential";
 import { vi } from "vitest";
 import type { AutomationConfig } from "../src/config/automation-config.js";
@@ -32,13 +32,35 @@ export const config: AutomationConfig = {
 	},
 };
 
-export const publicationUrls: PublicationUrlConfiguration = {
-	meetupEventUrlPrefix: "https://www.meetup.com/example-meetups/events/",
-	communityEventUrlPrefixes: [
+export function createMeetupEventUrlPolicy(
+	prefix = "https://www.meetup.com/example-meetups/events/",
+) {
+	return new PublicationDomainComposition().meetupEventUrlPolicy(prefix);
+}
+
+export function createCommunityEventUrlPolicy(
+	prefixes: readonly string[] = [
 		"https://ocgroups.dev/cncf/group/example-meetups/event/",
 	],
-	assetFolderUrlPrefix: "https://drive.google.com/drive/folders/",
-};
+) {
+	return new PublicationDomainComposition().communityEventUrlPolicy(prefixes);
+}
+
+export function createPublicationUrlPolicyEngine(
+	meetupEventUrlPrefix = "https://www.meetup.com/example-meetups/events/",
+	communityEventUrlPrefixes: readonly string[] = [
+		"https://ocgroups.dev/cncf/group/example-meetups/event/",
+	],
+	assetFolderUrlPrefix = "https://drive.google.com/drive/folders/",
+) {
+	return new PublicationDomainComposition().publicationUrlPolicyEngine([
+		createMeetupEventUrlPolicy(meetupEventUrlPrefix),
+		createCommunityEventUrlPolicy(communityEventUrlPrefixes),
+		new PublicationDomainComposition().assetFolderUrlPolicy(
+			assetFolderUrlPrefix,
+		),
+	]);
+}
 
 export const sourceDocument: EventDocument = {
 	identity,

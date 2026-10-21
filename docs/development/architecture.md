@@ -21,10 +21,12 @@ at the GitHub Actions boundary. See the
 [configuration reference](../reference/configuration.md) for the supported
 consumer settings.
 
-Publication URL prefixes are required caller inputs. Runtime validates their
-shape and injects the typed configuration into event evaluation, publication,
-communication and attention. Domain policies contain no community-specific URL
-defaults. Listing and referential operations do not require publication settings.
+Publication URL prefixes are independent caller inputs. Runtime reads and
+validates each setting separately, then binds it to its domain policy. Application
+services receive configured policy capabilities, not deployment configuration.
+Full event readiness evaluation uses all three policies; next-event selection
+uses only Meetup and community policies. Listing and referential operations need
+none. Domain policies contain no community-specific URL defaults.
 
 ## Package ownership
 
@@ -142,6 +144,12 @@ object needs operation-specific data or lifetime, such as a browser page or an
 authorized delivery. The factory is provided by composition; consumers never
 supply missing dependencies themselves. Configuration and external records remain
 ordinary method or constructor inputs.
+
+Keep independent settings independent. A consumer receives only the values or
+configured capabilities it uses; do not pass a broad configuration object through
+unrelated services. Combine policies at the composition root for an operation
+that actually uses them together. Do not construct unused policies and filter
+them by identifiers later.
 
 Static service methods, static getters, function-valued static fields, and static
 initialization blocks are prohibited. Exceptions are limited to composition entry

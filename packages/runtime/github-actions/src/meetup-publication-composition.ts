@@ -38,7 +38,7 @@ export class MeetupPublicationComposition {
 	) {
 		const container = EventComposition.createEventContainer(input);
 		container.bind(ManageMeetupPublication).toDynamicValue((context) => {
-			const prefix = input.publicationUrls.meetupEventUrlPrefix;
+			const prefix = input.meetupEventUrlPrefix;
 			const group = MeetupGroupUrl.fromEventUrlPrefix(prefix);
 			if (!group) throw new Error("Invalid Meetup event URL prefix");
 			return new JourneyComposition().manageMeetupPublication({

@@ -1,23 +1,19 @@
 import * as core from "@actions/core";
-import {
-	MeetupGroupUrl,
-	type PublicationUrlConfiguration,
-} from "@meetup-automation/publication";
-import type { RuntimeInput } from "./runtime-input.js";
+import { MeetupGroupUrl } from "@meetup-automation/publication";
 
 /** Validate explicit deployment URL prefixes before constructing provider adapters. */
 export class PublicationUrlInput {
-	constructor(private readonly runtimeInput: Pick<RuntimeInput, "isObject">) {}
-	read(): PublicationUrlConfiguration {
-		const meetupEventUrlPrefix = core.getInput("meetup-event-url-prefix", {
-			required: true,
-			trimWhitespace: false,
-		});
+	readMeetupEventUrlPrefix(): string {
+		return this.validateMeetupEventUrlPrefix(
+			core.getInput("meetup-event-url-prefix", {
+				required: true,
+				trimWhitespace: false,
+			}),
+		);
+	}
+
+	readCommunityEventUrlPrefixes(): readonly string[] {
 		const community = core.getInput("community-event-url-prefixes", {
-			required: true,
-			trimWhitespace: false,
-		});
-		const assetFolderUrlPrefix = core.getInput("asset-folder-url-prefix", {
 			required: true,
 			trimWhitespace: false,
 		});
@@ -27,36 +23,35 @@ export class PublicationUrlInput {
 		} catch {
 			throw new Error("Invalid input: community-event-url-prefixes");
 		}
-		return this.validate({
-			meetupEventUrlPrefix,
-			communityEventUrlPrefixes,
-			assetFolderUrlPrefix,
-		});
+		return this.validateCommunityEventUrlPrefixes(communityEventUrlPrefixes);
 	}
 
-	validate(configuration: unknown): PublicationUrlConfiguration {
-		if (!this.runtimeInput.isObject(configuration))
-			throw new Error("Invalid publication URL configuration");
-		const meetupEventUrlPrefix = this.prefix(
-			configuration.meetupEventUrlPrefix,
-			"meetup-event-url-prefix",
+	readAssetFolderUrlPrefix(): string {
+		return this.validateAssetFolderUrlPrefix(
+			core.getInput("asset-folder-url-prefix", {
+				required: true,
+				trimWhitespace: false,
+			}),
 		);
+	}
+
+	validateMeetupEventUrlPrefix(value: unknown): string {
+		const meetupEventUrlPrefix = this.prefix(value, "meetup-event-url-prefix");
 		if (!MeetupGroupUrl.fromEventUrlPrefix(meetupEventUrlPrefix))
 			throw new Error("Invalid input: meetup-event-url-prefix");
-		const community = configuration.communityEventUrlPrefixes;
+		return meetupEventUrlPrefix;
+	}
+
+	validateCommunityEventUrlPrefixes(community: unknown): readonly string[] {
 		if (!Array.isArray(community) || community.length === 0)
 			throw new Error("Invalid input: community-event-url-prefixes");
-		const communityEventUrlPrefixes = community.map((prefix: unknown) =>
+		return community.map((prefix: unknown) =>
 			this.prefix(prefix, "community-event-url-prefixes"),
 		);
-		return {
-			meetupEventUrlPrefix,
-			communityEventUrlPrefixes,
-			assetFolderUrlPrefix: this.prefix(
-				configuration.assetFolderUrlPrefix,
-				"asset-folder-url-prefix",
-			),
-		};
+	}
+
+	validateAssetFolderUrlPrefix(value: unknown): string {
+		return this.prefix(value, "asset-folder-url-prefix");
 	}
 
 	private prefix(value: unknown, name: string): string {
