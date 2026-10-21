@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { condition } from "../../testing/attention.fixtures.js";
 import { AttentionPolicy } from "./attention-policy.js";
 import type { AttentionEpisode } from "./model.js";
+
 describe("attention reminder policy", () => {
 	it.each([
 		["2099-05-31T10:00:00Z", undefined],
@@ -20,12 +21,14 @@ describe("attention reminder policy", () => {
 				openedAt: "2099-05-01T10:00:00Z",
 				status: "active",
 			};
+
 			// Act
 			const window = AttentionPolicy.window(
 				episode,
 				"2099-06-08",
 				new Date(instant),
 			);
+
 			// Assert
 			expect(window).toBe(expected);
 		},
@@ -38,8 +41,10 @@ describe("attention reminder policy", () => {
 		// Arrange
 		const before = new Date(first);
 		const after = new Date(second);
+
 		// Act
 		const equal = AttentionPolicy.day(before) === AttentionPolicy.day(after);
+
 		// Assert
 		expect(equal).toBe(same);
 	});
@@ -54,12 +59,14 @@ describe("attention reminder policy", () => {
 				openedAt,
 				status: "active",
 			};
+
 			// Act
 			const window = AttentionPolicy.window(
 				episode,
 				"2099-06-08",
 				new Date(Date.parse(openedAt) + hours * 3_600_000),
 			);
+
 			// Assert
 			expect(window !== undefined).toBe(hours >= 24);
 		},
@@ -74,6 +81,7 @@ describe("attention reminder policy", () => {
 				openedAt: "2099-06-01T10:00:00Z",
 				status: "active",
 			};
+
 			// Act
 			const windows = [8, 9, 12, 15].map((day) =>
 				AttentionPolicy.window(
@@ -82,6 +90,7 @@ describe("attention reminder policy", () => {
 					new Date(`2099-06-${day.toString().padStart(2, "0")}T10:00:00Z`),
 				),
 			);
+
 			// Assert
 			expect(windows).toEqual([
 				undefined,

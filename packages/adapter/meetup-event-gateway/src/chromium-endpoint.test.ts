@@ -35,8 +35,10 @@ describe("Chromium endpoint discovery", () => {
 		const { browser, session } = await fixture(
 			"43210\n/devtools/browser/abc-123\n",
 		);
+
 		// Act
 		const endpoint = await ChromiumEndpoint.read(browser);
+
 		// Assert
 		expect(endpoint).toBe("ws://127.0.0.1:43210/devtools/browser/abc-123");
 		expect(session.detach).toHaveBeenCalledOnce();
@@ -49,8 +51,10 @@ describe("Chromium endpoint discovery", () => {
 			const { browser, session } = await fixture(
 				`${port}\n/devtools/browser/abc-123\n`,
 			);
+
 			// Act
 			const result = ChromiumEndpoint.read(browser);
+
 			// Assert
 			await expect(result).rejects.toThrow("Browser endpoint unavailable.");
 			expect(session.detach).toHaveBeenCalledOnce();
@@ -61,8 +65,10 @@ describe("Chromium endpoint discovery", () => {
 		// Arrange
 		const { browser, session } = await fixture("");
 		session.send.mockResolvedValue({ arguments: [] });
+
 		// Act
 		const result = ChromiumEndpoint.read(browser);
+
 		// Assert
 		await expect(result).rejects.toThrow("Browser profile unavailable.");
 		expect(session.detach).toHaveBeenCalledOnce();

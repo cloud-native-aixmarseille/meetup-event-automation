@@ -103,8 +103,10 @@ describe("Meetup login page", () => {
 			token.inputValue.mockResolvedValue("synthetic-token");
 			return true;
 		});
+
 		// Act
 		const result = await login.login("organizer@example.test", "secret");
+
 		// Assert
 		expect(result).toBe("verified");
 		expect(solver.solve).toHaveBeenCalledOnce();
@@ -120,8 +122,10 @@ describe("Meetup login page", () => {
 		const { login, challenge, solver, email, submit } = fixture();
 		challenge.isVisible.mockResolvedValue(true);
 		solver.solve.mockResolvedValue(true);
+
 		// Act
 		const result = await login.login("organizer@example.test", "secret");
+
 		// Assert
 		expect(result).toBe("challenge-required");
 		expect(email.fill).not.toHaveBeenCalled();
@@ -133,8 +137,10 @@ describe("Meetup login page", () => {
 		const { login, challenge, otherChallenge, solver, email } = fixture();
 		challenge.isVisible.mockResolvedValue(true);
 		otherChallenge.isVisible.mockResolvedValue(true);
+
 		// Act
 		const result = await login.login("organizer@example.test", "secret");
+
 		// Assert
 		expect(result).toBe("challenge-required");
 		expect(solver.solve).not.toHaveBeenCalled();
@@ -145,8 +151,10 @@ describe("Meetup login page", () => {
 		// Arrange
 		const { login, challenge, email, password, submit } = fixture();
 		challenge.isVisible.mockResolvedValue(true);
+
 		// Act
 		const result = await login.login("organizer@example.test", "secret");
+
 		// Assert
 		expect(result).toBe("challenge-required");
 		expect(email.fill).not.toHaveBeenCalled();
@@ -161,8 +169,10 @@ describe("Meetup login page", () => {
 			redirect("https://unexpected.example.test/login/");
 			return null;
 		});
+
 		// Act
 		const result = await login.login("organizer@example.test", "secret");
+
 		// Assert
 		expect(result).toBe("unexpected-page");
 		expect(email.fill).not.toHaveBeenCalled();
@@ -172,8 +182,10 @@ describe("Meetup login page", () => {
 	it("verifies the account email after one login submission", async () => {
 		// Arrange
 		const { login, email, password, submit, page } = fixture();
+
 		// Act
 		const result = await login.login("organizer@example.test", " secret ");
+
 		// Assert
 		expect(result).toBe("verified");
 		expect(email.fill).toHaveBeenCalledWith("organizer@example.test");
@@ -192,8 +204,10 @@ describe("Meetup login page", () => {
 		// Arrange
 		const { login, email } = fixture();
 		email.inputValue.mockResolvedValue("someone-else@example.test");
+
 		// Act
 		const result = await login.verifyAccount("organizer@example.test");
+
 		// Assert
 		expect(result).toBe("unexpected-page");
 	});
@@ -205,8 +219,10 @@ describe("Meetup login page", () => {
 			redirect("https://www.meetup.com/login/?returnUri=%2Faccount%2F");
 			return null;
 		});
+
 		// Act
 		const result = await login.verifyAccount("organizer@example.test");
+
 		// Assert
 		expect(result).toBe("session-not-reusable");
 		expect(email.inputValue).not.toHaveBeenCalled();
@@ -217,8 +233,10 @@ describe("Meetup login page", () => {
 		const { login, page, challenge, submit, solver } = fixture();
 		challenge.isVisible.mockResolvedValueOnce(false).mockResolvedValue(true);
 		vi.mocked(page.waitForURL).mockRejectedValue(new Error("Timed out"));
+
 		// Act
 		const result = await login.login("organizer@example.test", "secret");
+
 		// Assert
 		expect(result).toBe("challenge-required");
 		expect(submit.click).toHaveBeenCalledOnce();
@@ -230,8 +248,10 @@ describe("Meetup login page", () => {
 		const { login, page, rejected, submit } = fixture();
 		rejected.isVisible.mockResolvedValue(true);
 		vi.mocked(page.waitForURL).mockRejectedValue(new Error("Timed out"));
+
 		// Act
 		const result = await login.login("organizer@example.test", "secret");
+
 		// Assert
 		expect(result).toBe("credentials-rejected");
 		expect(submit.click).toHaveBeenCalledOnce();
@@ -241,8 +261,10 @@ describe("Meetup login page", () => {
 		// Arrange
 		const { login, submit } = fixture();
 		submit.isEnabled.mockResolvedValue(false);
+
 		// Act
 		const result = await login.login("organizer@example.test", "secret");
+
 		// Assert
 		expect(result).toBe("unexpected-page");
 		expect(submit.click).not.toHaveBeenCalled();
@@ -252,8 +274,10 @@ describe("Meetup login page", () => {
 		// Arrange
 		const { login, cookieNotice } = fixture();
 		cookieNotice.waitFor.mockResolvedValue(undefined);
+
 		// Act
 		await login.login("organizer@example.test", "secret");
+
 		// Assert
 		expect(cookieNotice.click).toHaveBeenCalledOnce();
 	});

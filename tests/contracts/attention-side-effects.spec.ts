@@ -16,6 +16,7 @@ describe("organizer attention workflow safeguards", () => {
 			// Arrange
 			const workflow = await readWorkflow(workflowName);
 			const job = workflow.jobs?.[jobName] ?? {};
+
 			// Act
 			const steps = job.steps ?? [];
 			const attention = steps.find((step: Step) => step.id === "attention");
@@ -25,6 +26,7 @@ describe("organizer attention workflow safeguards", () => {
 			const independent = steps.filter((step: Step) =>
 				["assets", "event", "reconcile"].includes(step.id ?? ""),
 			);
+
 			// Assert
 			expect(steps.at(-1)).toBe(attention);
 			expect(attention?.uses).toBe(

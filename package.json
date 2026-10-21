@@ -28,7 +28,7 @@
 		"lint:biome": "biome lint --error-on-warnings .",
 		"lint": "pnpm format:check && pnpm lint:biome && pnpm check:structure && pnpm check:knip && pnpm check:interfaces",
 		"lint:fix": "pnpm lint:biome --fix",
-		"lint:ci": "biome lint --error-on-warnings . --reporter=sarif > biome-report.sarif && pnpm format:check && pnpm check:structure && pnpm check:interfaces",
+		"lint:ci": "biome lint --error-on-warnings . --reporter=sarif > biome-report.sarif && pnpm format:check && pnpm check:structure && pnpm check:knip && pnpm check:interfaces",
 		"check:architecture": "vitest run tests/architecture.spec.ts",
 		"check:interfaces": "vitest run scripts/action-interface-usage.test.ts tests/contracts/action-interfaces.spec.ts",
 		"check:contracts": "vitest run tests/contracts",

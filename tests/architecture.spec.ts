@@ -121,6 +121,7 @@ describe("clean architecture boundaries", () => {
 			...(await filesBelow(join(repositoryRoot, "packages/application"))),
 		];
 		const violations: string[] = [];
+
 		// Act
 		for (const path of paths) {
 			if (
@@ -137,6 +138,7 @@ describe("clean architecture boundaries", () => {
 			)
 				violations.push(relative(repositoryRoot, path));
 		}
+
 		// Assert
 		expect(violations).toEqual([]);
 	});

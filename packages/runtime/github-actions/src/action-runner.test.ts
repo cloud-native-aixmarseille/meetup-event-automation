@@ -313,8 +313,10 @@ describe("action runner reporting contract", () => {
 				diagnostics,
 			}),
 		);
+
 		// Act
 		await ActionRunner.run("action.referential.validate", operation, false);
+
 		// Assert
 		expect(core.getInput).toHaveBeenCalledWith("locale", { required: true });
 		expect(core.info).toHaveBeenCalledWith("referentials=invalid");
@@ -335,8 +337,10 @@ describe("action runner reporting contract", () => {
 		const operation = vi
 			.fn()
 			.mockRejectedValue(new Error("private@example.test"));
+
 		// Act
 		await ActionRunner.run("action.event.reconcile", operation, true);
+
 		// Assert
 		expect(core.setFailed).toHaveBeenCalledWith("Erreur technique inattendue.");
 		expect(core.error).not.toHaveBeenCalled();

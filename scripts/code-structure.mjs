@@ -1,4 +1,5 @@
 import { parse } from "@babel/parser";
+import { SerializationBoundaries } from "./serialization-boundaries.mjs";
 
 const behaviors = new Set([
 	"FunctionDeclaration",
@@ -38,8 +39,10 @@ export class CodeStructure {
 				});
 			}
 		}
+		const serialization = new SerializationBoundaries();
 		const visit = (node, inClass = false) => {
 			if (!node || typeof node !== "object") return;
+			violations.push(...serialization.inspect(node));
 			const owned = inClass || node.type === "ClassBody";
 			if (!owned && behaviors.has(node.type)) {
 				violations.push({

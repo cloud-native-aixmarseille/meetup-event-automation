@@ -76,28 +76,29 @@ Reject flags with one operational value and inputs that are always null, false,
 or empty. Logging and optional verbose reads cannot establish output use.
 The focused `pnpm check:interfaces` command also runs in local and CI lint.
 
-| Check                                                                        | What it verifies                                                             |
-| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| [Architecture](../../tests/architecture.spec.ts)                             | Dependency layers, package entrypoints, cycles, adapter names, DI boundaries |
-| [Code structure](../../tests/contracts/code-structure.spec.ts)               | Actual Biome limits, class ownership, unit-test layout                       |
-| [Public actions](../../tests/contracts/public-actions.spec.ts)               | Action inputs, outputs, runtime, dispatch authorization                      |
-| [Action interfaces](../../tests/contracts/action-interfaces.spec.ts)         | Required inputs without defaults, explicit caller wiring, consumed outputs   |
-| [Action reporting](../../tests/contracts/action-reporting.spec.ts)           | Shared runner, public reports, failure policy, and safe rendering            |
-| [Localization](../../tests/contracts/localization.spec.ts)                   | Catalog ownership, locale wiring, and diagnostic coverage                    |
-| [Public workflows](../../tests/contracts/public-workflows.spec.ts)           | Reusable workflow interfaces, permissions, secrets, pinned dependencies      |
-| [Event safeguards](../../tests/contracts/event-side-effects.spec.ts)         | Shared concurrency lock, audit gating, issue-form validation                 |
-| [Attention safeguards](../../tests/contracts/attention-side-effects.spec.ts) | Final execution after failure, typed outcomes, and shared concurrency        |
-| [Feedback safeguards](../../tests/contracts/feedback-side-effects.spec.ts)   | Feedback action credentials and workflow gating                              |
-| [Internal CI](../../tests/contracts/internal-ci.spec.ts)                     | Shared CI, action checks, release documentation wiring                       |
-| [Journey integration](../../tests/journey-referential-integration.spec.ts)   | Event, catalog, codec, and issue-form behavior together                      |
+| Check                                                                        | What it verifies                                                                   |
+| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| [Architecture](../../tests/architecture.spec.ts)                             | Dependency layers, package entrypoints, cycles, adapter names, DI boundaries       |
+| [Code structure](../../tests/contracts/code-structure.spec.ts)               | Biome limits, class ownership, unit-test layout, unsafe JSON casts and comparisons |
+| [Public actions](../../tests/contracts/public-actions.spec.ts)               | Action inputs, outputs, runtime, dispatch authorization                            |
+| [Action interfaces](../../tests/contracts/action-interfaces.spec.ts)         | Required inputs without defaults, explicit caller wiring, consumed outputs         |
+| [Action reporting](../../tests/contracts/action-reporting.spec.ts)           | Shared runner, public reports, failure policy, and safe rendering                  |
+| [Localization](../../tests/contracts/localization.spec.ts)                   | Catalog ownership, locale wiring, and diagnostic coverage                          |
+| [Public workflows](../../tests/contracts/public-workflows.spec.ts)           | Reusable workflow interfaces, permissions, secrets, pinned dependencies            |
+| [Event safeguards](../../tests/contracts/event-side-effects.spec.ts)         | Shared concurrency lock, audit gating, issue-form validation                       |
+| [Attention safeguards](../../tests/contracts/attention-side-effects.spec.ts) | Final execution after failure, typed outcomes, and shared concurrency              |
+| [Feedback safeguards](../../tests/contracts/feedback-side-effects.spec.ts)   | Feedback action credentials and workflow gating                                    |
+| [Internal CI](../../tests/contracts/internal-ci.spec.ts)                     | Shared CI, action checks, release documentation wiring                             |
+| [Journey integration](../../tests/journey-referential-integration.spec.ts)   | Event, catalog, codec, and issue-form behavior together                            |
 
 [`__check-actions.yml`](../../.github/workflows/__check-actions.yml) exercises
-bundled actions in CI using a synthetic issue and catalog fixtures. After
-creation, preparation waits until the same active-issue listing used by the action
-can see the fixture. The bounded wait fails setup if visibility does not converge,
-while preserving the issue number for cleanup even when preparation fails. Its
-cleanup job closes the test issue. Do not replace these fixtures with live meetup
-issues. Communication integration checks use a synthetic issue with its introduction
+bundled actions in CI using a synthetic issue and catalog fixtures. Its cleanup
+job closes the test issue, including when fixture preparation fails after creation.
+Preparation waits for the created issue to appear in the same open, labeled
+issue listing used by the action. This bounded check allows GitHub's listing to
+reflect the new fixture before action checks start; API failures remain failures.
+Do not replace these fixtures with live meetup issues.
+Communication integration checks use a synthetic issue with its introduction
 task already completed and assert that diagnostics contain no errors. Runtime and
 journey tests verify planning and dispatch counts with controlled collaborators.
 

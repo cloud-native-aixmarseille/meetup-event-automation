@@ -16,8 +16,10 @@ describe("post-event eligibility", () => {
 			now: new Date("2099-06-09T10:00:00Z"),
 			...override,
 		};
+
 		// Act
 		const due = PostEventPolicy.isDue(input);
+
 		// Assert
 		expect(due).toBe(false);
 	});
@@ -29,8 +31,10 @@ describe("post-event eligibility", () => {
 			occurrenceStatus: "held" as const,
 			now: new Date("2099-06-01T10:00:00Z"),
 		};
+
 		// Act
 		const due = PostEventPolicy.isDue(input);
+
 		// Assert
 		expect(due).toBe(true);
 	});

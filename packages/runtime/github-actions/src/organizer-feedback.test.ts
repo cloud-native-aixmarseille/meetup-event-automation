@@ -45,8 +45,10 @@ describe("OrganizerFeedback", () => {
 			assets: stage("publication.assets.file.drift", "warning", true),
 			feedback: stage("publication.feedback.ambiguous-date", "warning"),
 		});
+
 		// Act
 		await feedback.execute(identity, reports);
+
 		// Assert
 		expect(comments.reconcileDiagnostics).toHaveBeenCalledOnce();
 		const [target, diagnostics] = comments.reconcileDiagnostics.mock.calls[0];
@@ -71,8 +73,10 @@ describe("OrganizerFeedback", () => {
 		async (reports) => {
 			// Arrange
 			const { feedback, comments } = fixture();
+
 			// Act
 			await feedback.execute(identity, JSON.stringify(reports));
+
 			// Assert
 			expect(comments.reconcileDiagnostics).not.toHaveBeenCalled();
 		},
@@ -88,8 +92,10 @@ describe("OrganizerFeedback", () => {
 					diagnostics: [{ code: "action.execution.failed", severity: "error" }],
 				},
 			});
+
 			// Act
 			await feedback.execute(identity, incomplete);
+
 			// Assert
 			expect(comments.reconcileDiagnostics).not.toHaveBeenCalled();
 		},
@@ -107,8 +113,10 @@ describe("OrganizerFeedback", () => {
 		async (assets) => {
 			// Arrange
 			const { feedback, comments } = fixture();
+
 			// Act
 			await feedback.execute(identity, reports({ assets }));
+
 			// Assert
 			expect(comments.reconcileDiagnostics).not.toHaveBeenCalled();
 		},
@@ -116,19 +124,23 @@ describe("OrganizerFeedback", () => {
 	it("clears resolved tasks only after all stages complete evaluation", async () => {
 		// Arrange
 		const { feedback, comments } = fixture();
+
 		// Act
 		await feedback.execute(identity, reports());
+
 		// Assert
 		expect(comments.reconcileDiagnostics).toHaveBeenCalledWith(identity, []);
 	});
 	it("does not write a checklist on an unrelated issue", async () => {
 		// Arrange
 		const { feedback, comments } = fixture(["question"]);
+
 		// Act
 		await feedback.execute(
 			identity,
 			reports({ event: stage("event.title.missing") }),
 		);
+
 		// Assert
 		expect(comments.reconcileDiagnostics).not.toHaveBeenCalled();
 	});
@@ -136,11 +148,13 @@ describe("OrganizerFeedback", () => {
 		// Arrange
 		const { feedback, comments } = fixture();
 		comments.reconcileDiagnostics.mockRejectedValue(new Error("Write failed"));
+
 		// Act
 		const operation = feedback.execute(
 			identity,
 			reports({ event: stage("event.title.missing") }),
 		);
+
 		// Assert
 		await expect(operation).rejects.toThrow("Write failed");
 	});

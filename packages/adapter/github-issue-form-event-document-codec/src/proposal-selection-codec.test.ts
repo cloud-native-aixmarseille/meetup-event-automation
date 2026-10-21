@@ -31,8 +31,10 @@ describe("ProposalSelectionCodec", () => {
 		const body =
 			"<!-- meetup-proposals:1:current -->\n### Conference Hall proposals\n\n38\n17\n";
 		const diagnostics: EventDiagnostic[] = [];
+
 		// Act
 		const result = ProposalSelectionCodec.read(body, diagnostics);
+
 		// Assert
 		expect(result).toEqual({
 			proposalReferences: ["38", "17"],
@@ -43,11 +45,13 @@ describe("ProposalSelectionCodec", () => {
 	it("does not opt legacy issues into management", () => {
 		// Arrange
 		const diagnostics: EventDiagnostic[] = [];
+
 		// Act
 		const result = ProposalSelectionCodec.read(
 			"### Agenda\n\n- Alex: Talk",
 			diagnostics,
 		);
+
 		// Assert
 		expect(result).toEqual({});
 	});
@@ -59,8 +63,10 @@ describe("ProposalSelectionCodec", () => {
 			proposalReferences: ["17"],
 			proposalStatus: "stale" as const,
 		};
+
 		// Act
 		const result = ProposalSelectionCodec.write(body, event);
+
 		// Assert
 		expect(result).toBe(body.replace("1:current", "1:stale"));
 	});
@@ -68,8 +74,10 @@ describe("ProposalSelectionCodec", () => {
 		// Arrange
 		const text =
 			"<script>\n### Agenda\n[link](javascript:alert(1)) <!-- injected -->";
+
 		// Act
 		const result = ProposalSelectionCodec.escape(text);
+
 		// Assert
 		expect(result).not.toMatch(/<|\n|\[|###/g);
 		expect(result).toContain("&lt;script&gt;");

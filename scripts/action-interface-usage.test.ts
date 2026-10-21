@@ -14,8 +14,10 @@ describe("operational interface evidence", () => {
 	] as const)("rejects unused inputs or constant flags: %j", (values, flag) => {
 		// Arrange
 		const supplied = [...values];
+
 		// Act
 		const problem = ActionInterfaceUsage.inputProblem(supplied, flag);
+
 		// Assert
 		expect(problem).toBeDefined();
 	});
@@ -27,8 +29,10 @@ describe("operational interface evidence", () => {
 	] as const)("allows variable flags and required data: %j", (values, flag) => {
 		// Arrange
 		const supplied = [...values];
+
 		// Act
 		const problem = ActionInterfaceUsage.inputProblem(supplied, flag);
+
 		// Assert
 		expect(problem).toBeUndefined();
 	});
@@ -44,8 +48,10 @@ describe("operational interface evidence", () => {
 	])("rejects logging-only shell reads: %s", (script) => {
 		// Arrange
 		const variable = "VALUE";
+
 		// Act
 		const consumed = ActionInterfaceUsage.shellConsumes(script, variable);
+
 		// Assert
 		expect(consumed).toBe(false);
 	});
@@ -55,8 +61,10 @@ describe("operational interface evidence", () => {
 	])("recognizes published PR content: %s", (script) => {
 		// Arrange
 		const variable = "VALUE";
+
 		// Act
 		const consumed = ActionInterfaceUsage.shellConsumes(script, variable);
+
 		// Assert
 		expect(consumed).toBe(true);
 	});
@@ -78,8 +86,10 @@ describe("operational interface evidence", () => {
 				},
 			],
 		};
+
 		// Act
 		const consumers = ActionInterfaceUsage.operationalValues(job);
+
 		// Assert
 		expect(consumers).toEqual([]);
 	});

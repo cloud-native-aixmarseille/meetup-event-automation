@@ -71,10 +71,12 @@ describe("Conference Hall contracts", () => {
 	it("guards contact persistence with private scope, a repository lock and a branch-head lease", async () => {
 		// Arrange
 		const workflow = await readWorkflow("synchronize-conference-hall-speakers");
+
 		// Act
 		const job = workflow.jobs?.synchronize;
 		const scripts = job?.steps?.map((step) => step.run ?? "").join("\n");
 		const publish = job?.steps?.find((step) => step.run?.includes("git push"));
+
 		// Assert
 		expect(job?.if).toBe("github.event.repository.private == true");
 		expect(job?.concurrency).toEqual({
@@ -94,8 +96,10 @@ describe("Conference Hall contracts", () => {
 	it("exposes only the review text consumed by the synchronization workflow", async () => {
 		// Arrange
 		const path = "actions/referential/sync-speakers/action.yml";
+
 		// Act
 		const manifest = await readYaml<ActionManifest>(path);
+
 		// Assert
 		expect(Object.keys(manifest.outputs ?? {}).sort()).toEqual([
 			"pr-body",
@@ -109,6 +113,7 @@ describe("Conference Hall contracts", () => {
 		async (name) => {
 			// Arrange
 			const workflow = await readWorkflow(name);
+
 			// Act
 			const steps = Object.values(workflow.jobs ?? {})
 				.flatMap((job) => job.steps ?? [])
@@ -117,6 +122,7 @@ describe("Conference Hall contracts", () => {
 						step.uses ?? "",
 					),
 				);
+
 			// Assert
 			expect(
 				workflow.on?.workflow_call?.inputs?.["conference-hall-event"]?.required,

@@ -7,8 +7,10 @@ describe("typed attention stage boundary", () => {
 		(outcome) => {
 			// Arrange
 			const input = JSON.stringify({ assets: { outcome } });
+
 			// Act
 			const result = AttentionStages.parse(input);
+
 			// Assert
 			expect(result.find((stage) => stage.owner === "assets")?.outcome).toBe(
 				"unknown",
@@ -29,8 +31,10 @@ describe("typed attention stage boundary", () => {
 				]),
 			},
 		});
+
 		// Act
 		const result = AttentionStages.parse(input);
+
 		// Assert
 		expect(
 			result.find((stage) => stage.owner === "communications"),
@@ -49,8 +53,10 @@ describe("typed attention stage boundary", () => {
 				diagnostics: [{ code, severity: "warning" }],
 			},
 		});
+
 		// Act
 		const result = AttentionStages.parse(input);
+
 		// Assert
 		expect(
 			result.find((stage) => stage.owner === "communications")?.blocked,
@@ -72,8 +78,10 @@ describe("typed attention stage boundary", () => {
 				],
 			},
 		});
+
 		// Act
 		const result = AttentionStages.parse(input);
+
 		// Assert
 		expect(result.find((stage) => stage.owner === "event")).toMatchObject({
 			outcome: "success",
@@ -110,8 +118,10 @@ describe("typed attention stage boundary", () => {
 				],
 			},
 		});
+
 		// Act
 		const result = AttentionStages.parse(input);
+
 		// Assert
 		expect(
 			result.find((stage) => stage.owner === "communications"),
@@ -133,8 +143,10 @@ describe("typed attention stage boundary", () => {
 				],
 			},
 		});
+
 		// Act
 		const result = AttentionStages.parse(input);
+
 		// Assert
 		expect(result.find((stage) => stage.owner === "feedback")).toMatchObject({
 			blocked: true,

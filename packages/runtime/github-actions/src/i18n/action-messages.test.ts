@@ -13,8 +13,10 @@ describe("ActionMessages", () => {
 	])("resolves %s to %s", (requested, expected) => {
 		// Arrange
 		const messages = new ActionMessages(requested);
+
 		// Act
 		const locale = messages.locale;
+
 		// Assert
 		expect(locale).toBe(expected);
 	});
@@ -25,8 +27,10 @@ describe("ActionMessages", () => {
 	])("formats the technical event count %i", (count, expected) => {
 		// Arrange
 		const messages = new ActionMessages("fr");
+
 		// Act
 		const text = messages.t("report.events.count", { count: Number(count) });
+
 		// Assert
 		expect(text).toBe(expected);
 	});
@@ -34,6 +38,7 @@ describe("ActionMessages", () => {
 		// Arrange
 		const french = new ActionMessages("fr");
 		const english = new ActionMessages();
+
 		// Act
 		const before = french.t("report.referential.counts", {
 			hosts: 1234,
@@ -44,6 +49,7 @@ describe("ActionMessages", () => {
 			hosts: 1234,
 			speakers: 2,
 		});
+
 		// Assert
 		expect(before).toContain("1\u202f234");
 		expect(other).toBe("active_events=1,234");
@@ -53,8 +59,10 @@ describe("ActionMessages", () => {
 		// Arrange
 		const messages = new ActionMessages("fr");
 		const reason = "<script>{other, plural, one {x}}</script>";
+
 		// Act
 		const text = messages.t("report.failed", { reason });
+
 		// Assert
 		expect(text).toBe(`failure=${reason}`);
 	});
@@ -62,6 +70,7 @@ describe("ActionMessages", () => {
 		// Arrange
 		const french = new ActionMessages("fr");
 		const english = new ActionMessages();
+
 		// Act
 		const translated = french.diagnostic(
 			"referential.speaker.id.duplicate",
@@ -72,6 +81,7 @@ describe("ActionMessages", () => {
 			"referential.speaker.email.invalid",
 			"Specific safe detail.",
 		);
+
 		// Assert
 		expect(translated).toBe(
 			"Les identifiants stables des intervenants doivent être uniques.",
@@ -82,9 +92,11 @@ describe("ActionMessages", () => {
 	it("requires the correct interpolation parameters at compile time", () => {
 		// Arrange
 		const messages = new ActionMessages();
+
 		// Act
 		const count = messages.t<"report.events.count">;
 		const plain = messages.t<"report.referential.valid">;
+
 		// Assert
 		expectTypeOf(count).parameters.toEqualTypeOf<
 			[key: "report.events.count", parameters: { count: number }]
@@ -97,6 +109,7 @@ describe("ActionMessages", () => {
 		// Arrange
 		const french = new ActionMessages("fr");
 		const english = new ActionMessages();
+
 		// Act
 		const known = french.error("EventNotFoundError", "Safe English detail.");
 		const unknown = french.error("UnknownError", "Safe English fallback.");
@@ -104,6 +117,7 @@ describe("ActionMessages", () => {
 			"EventNotFoundError",
 			"Safe English detail.",
 		);
+
 		// Assert
 		expect(known).toContain("L'événement est introuvable.");
 		expect(unknown).toBe("Erreur technique inattendue.");

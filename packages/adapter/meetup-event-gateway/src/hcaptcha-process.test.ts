@@ -65,6 +65,7 @@ describe("hCaptcha process isolation", () => {
 		stdin.on("data", (chunk) => {
 			request += chunk.toString();
 		});
+
 		// Act
 		const result = await solver.run(
 			"ws://127.0.0.1:1234",
@@ -76,6 +77,7 @@ describe("hCaptcha process isolation", () => {
 			() => true,
 			() => false,
 		);
+
 		// Assert
 		expect(result).toBe("solved");
 		expect(JSON.parse(request)).toEqual({
@@ -107,8 +109,10 @@ describe("hCaptcha process isolation", () => {
 		async (output, code, expected) => {
 			// Arrange
 			const { solver } = fixture(output, code);
+
 			// Act
 			const result = await solver.run("ws://127.0.0.1:1234", "key", "model");
+
 			// Assert
 			expect(result).toBe(expected);
 		},
@@ -130,11 +134,13 @@ describe("hCaptcha process isolation", () => {
 			queueMicrotask(() => child.emit("close", null));
 			return true;
 		});
+
 		// Act
 		const pending = solver.run("ws://127.0.0.1:1234", "key", "model");
 		await ready;
 		await vi.advanceTimersByTimeAsync(120_000);
 		const result = await pending;
+
 		// Assert
 		expect(result).toBe("blocked");
 		expect(kill).toHaveBeenCalledWith(-987654, "SIGKILL");
@@ -146,12 +152,14 @@ describe("hCaptcha process isolation", () => {
 		launch.mockImplementation(() => {
 			throw new Error("private provider details");
 		});
+
 		// Act
 		const result = await solver.run("ws://127.0.0.1:1234", "key", "model");
 		const exists = await access(String(launch.mock.calls[0][2]?.cwd)).then(
 			() => true,
 			() => false,
 		);
+
 		// Assert
 		expect(result).toBe("unavailable");
 		expect(exists).toBe(false);

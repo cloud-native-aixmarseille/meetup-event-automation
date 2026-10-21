@@ -26,9 +26,11 @@ describe("hCaptcha challenge", () => {
 	it("makes a single configured solver attempt per authentication check", async () => {
 		// Arrange
 		const { challenge, page, run } = fixture();
+
 		// Act
 		const first = await challenge.solve(page);
 		const second = await challenge.solve(page);
+
 		// Assert
 		expect(first).toBe(true);
 		expect(second).toBe(false);
@@ -43,8 +45,10 @@ describe("hCaptcha challenge", () => {
 		// Arrange
 		const { challenge, page, run } = fixture();
 		run.mockResolvedValue("blocked");
+
 		// Act
 		const result = await challenge.solve(page);
+
 		// Assert
 		expect(result).toBe(false);
 	});
@@ -53,8 +57,10 @@ describe("hCaptcha challenge", () => {
 		// Arrange
 		const { challenge, page, run } = fixture();
 		run.mockResolvedValue("unavailable");
+
 		// Act
 		const result = challenge.solve(page);
+
 		// Assert
 		await expect(result).rejects.toThrow("Challenge solver unavailable.");
 	});
@@ -65,8 +71,10 @@ describe("hCaptcha challenge", () => {
 	])("requires a key and model", (key, model) => {
 		// Arrange
 		const run = vi.fn();
+
 		// Act
 		const construct = () => new HcaptchaChallenge({ run }, key, model);
+
 		// Assert
 		expect(construct).toThrow("Gemini credentials and model are required.");
 		expect(run).not.toHaveBeenCalled();

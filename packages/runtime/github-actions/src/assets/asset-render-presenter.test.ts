@@ -61,6 +61,7 @@ describe("asset public presentation", () => {
 	])("formats dates and co-speakers for %s", (locale, date, speakers) => {
 		// Arrange
 		const presenter = new AssetRenderPresenterImpl(new AssetMessages(locale));
+
 		// Act
 		const result = presenter.format({
 			title: "Public title",
@@ -70,6 +71,7 @@ describe("asset public presentation", () => {
 			agenda: [{ title: "Talk", speakers: ["Example", "Other"] }],
 			pictures: {},
 		});
+
 		// Assert
 		expect(result.text["event.date"]).toBe(date);
 		expect(result.text.agenda).toBe(`Talk - ${speakers}`);

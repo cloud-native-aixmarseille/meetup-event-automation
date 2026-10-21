@@ -81,8 +81,10 @@ describe("source-first speaker referentials", () => {
 				source,
 				scope,
 			);
+
 			// Act
 			const current = await repository.load();
+
 			// Assert
 			expect(current.speakers[0]).toMatchObject({
 				company: "",
@@ -104,9 +106,11 @@ describe("source-first speaker referentials", () => {
 				scope,
 			);
 			const validate = new ValidateReferentialCatalog(repository);
+
 			// Act
 			const result = await validate.execute();
 			await validate.execute();
+
 			// Assert
 			expect(result).toMatchObject({
 				isValid: false,
@@ -198,8 +202,10 @@ describe("source-first speaker referentials", () => {
 				{ load: async () => response },
 				scope,
 			);
+
 			// Act
 			const result = await new ValidateReferentialCatalog(repository).execute();
+
 			// Assert
 			expect(result.isValid).toBe(false);
 		},

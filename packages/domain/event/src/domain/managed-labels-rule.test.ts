@@ -16,11 +16,13 @@ describe("managed host labels", () => {
 			confirmations: { host: false, speakers: false },
 		});
 		const rule = new ManagedLabelsRule(DEFAULT_MANAGED_LABEL_CONFIGURATION);
+
 		// Act
 		const result = EventPatches.applyEventPatch(
 			event,
 			rule.evaluate(event).patch,
 		);
+
 		// Assert
 		expect(result.labels).toEqual(["custom", "meetup", "speakers:needed"]);
 		expect(result.confirmations.host).toBe(false);
@@ -34,11 +36,13 @@ describe("managed host labels", () => {
 				confirmations: { host: false, speakers: true },
 			});
 			const rule = new ManagedLabelsRule(DEFAULT_MANAGED_LABEL_CONFIGURATION);
+
 			// Act
 			const result = EventPatches.applyEventPatch(
 				event,
 				rule.evaluate(event).patch,
 			);
+
 			// Assert
 			expect(result.labels).toContain("hoster:needed");
 			expect(result.labels).not.toContain("hoster:confirmed");

@@ -37,8 +37,10 @@ describe("MessageLocalizer", () => {
 	])("resolves %s to %s", (requested, expected) => {
 		// Arrange
 		const messages = new MessageLocalizer(catalogs, requested);
+
 		// Act
 		const locale = messages.locale;
+
 		// Assert
 		expect(locale).toBe(expected);
 	});
@@ -52,8 +54,10 @@ describe("MessageLocalizer", () => {
 			catalogs,
 			"fr",
 		);
+
 		// Act
 		const text = messages.t("example.plural", { count: Number(count) });
+
 		// Assert
 		expect(text).toBe(expected);
 	});
@@ -68,11 +72,13 @@ describe("MessageLocalizer", () => {
 			},
 			"fr",
 		);
+
 		// Act
 		const before = french.t("example.count", { count: 1234 });
 		const otherText = other.t("example.count", { count: 1234 });
 		const englishText = english.t("example.count", { count: 1234 });
 		const after = french.t("example.count", { count: 1234 });
+
 		// Assert
 		expect(before).toBe("1\u202f234 éléments.");
 		expect(otherText).toBe("Autre : 1\u202f234");
@@ -91,8 +97,10 @@ describe("MessageLocalizer", () => {
 			);
 			const errors = vi.spyOn(console, "error").mockImplementation(() => {});
 			const warnings = vi.spyOn(console, "warn").mockImplementation(() => {});
+
 			// Act
 			const text = messages.t("example.count", { count: 1234 });
+
 			// Assert
 			expect(text).toBe("1,234 items.");
 			expect(errors).not.toHaveBeenCalled();
@@ -111,10 +119,12 @@ describe("MessageLocalizer", () => {
 		);
 		const errors = vi.spyOn(console, "error").mockImplementation(() => {});
 		const warnings = vi.spyOn(console, "warn").mockImplementation(() => {});
+
 		// Act
 		const text = messages.t("example.literal", {
 			value: "private@example.invalid",
 		});
+
 		// Assert
 		expect(text).not.toContain("private@example.invalid");
 		expect(errors).not.toHaveBeenCalled();
@@ -130,17 +140,21 @@ describe("MessageLocalizer", () => {
 			"fr",
 		);
 		const value = "<script>{count, plural, one {x}}</script>";
+
 		// Act
 		const text = messages.t("example.literal", { value });
+
 		// Assert
 		expect(text).toBe(`<b>${value}</b>`);
 	});
 	it("exposes only the owner's keys and requires their declared parameters", () => {
 		// Arrange
 		const messages = new MessageLocalizer<Id, ExampleParameters>(catalogs);
+
 		// Act
 		const count = messages.t<"example.count">;
 		const plain = messages.t<"example.plain">;
+
 		// Assert
 		expectTypeOf(count).parameters.toEqualTypeOf<
 			[key: "example.count", parameters: { count: number }]

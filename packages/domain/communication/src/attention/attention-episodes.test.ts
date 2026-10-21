@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { condition, observation } from "../../testing/attention.fixtures.js";
 import { AttentionEpisodes } from "./attention-episodes.js";
+
 describe("attention episodes", () => {
 	it("retains unknown conditions and resolves only successfully evaluated owners", () => {
 		// Arrange
 		const now = new Date("2099-06-01T10:00:00Z");
 		const first = AttentionEpisodes.reconcile(undefined, observation(), now);
+
 		// Act
 		const unknown = AttentionEpisodes.reconcile(
 			first,
@@ -18,6 +20,7 @@ describe("attention episodes", () => {
 			now,
 		);
 		const reopened = AttentionEpisodes.reconcile(resolved, observation(), now);
+
 		// Assert
 		expect(unknown.episodes[0]?.status).toBe("unknown");
 		expect(resolved.episodes[0]?.status).toBe("resolved");
@@ -28,6 +31,7 @@ describe("attention episodes", () => {
 		const now = new Date("2099-06-01T10:00:00Z");
 		const first = AttentionEpisodes.reconcile(undefined, observation(), now);
 		AttentionEpisodes.acknowledge(first, now);
+
 		// Act
 		const moved = AttentionEpisodes.reconcile(
 			first,
@@ -39,6 +43,7 @@ describe("attention episodes", () => {
 			moved,
 			new Date("2099-06-02T10:00:00Z"),
 		);
+
 		// Assert
 		expect(dueNow).toEqual([]);
 		expect(dueTomorrow).toHaveLength(1);
@@ -60,12 +65,14 @@ describe("attention episodes", () => {
 			observation({ conditions: [condition(), recovery] }),
 			now,
 		);
+
 		// Act
 		const stopped = AttentionEpisodes.reconcile(
 			initial,
 			observation({ stopped: true, conditions: [], evaluated: [] }),
 			now,
 		);
+
 		// Assert
 		expect(stopped.episodes.map((item) => item.status)).toEqual([
 			"stopped",
@@ -88,6 +95,7 @@ describe("attention episodes", () => {
 			observation({ conditions: [recovery] }),
 			now,
 		);
+
 		// Act
 		const missing = AttentionEpisodes.reconcile(
 			initial,

@@ -14,11 +14,16 @@ describe("minimal explicit action interfaces", () => {
 	it("enforces interface checks in local and CI lint", async () => {
 		// Arrange
 		const path = join(root, "package.json");
+
 		// Act
 		const { scripts } = JSON.parse(await readFile(path, "utf8"));
+
 		// Assert
-		for (const name of ["lint", "lint:ci"])
-			expect(scripts[name].split(" && ")).toContain("pnpm check:interfaces");
+		for (const name of ["lint", "lint:ci"]) {
+			expect(scripts[name].split(" && ")).toEqual(
+				expect.arrayContaining(["pnpm check:interfaces", "pnpm check:knip"]),
+			);
+		}
 		expect(scripts["check:interfaces"]).toContain(
 			"tests/contracts/action-interfaces.spec.ts",
 		);
@@ -56,10 +61,12 @@ describe("minimal explicit action interfaces", () => {
 		const paths = (await readdir(join(root, ".github/workflows"))).filter(
 			(path) => path.endsWith(".yml"),
 		);
+
 		// Act
 		const workflows = await Promise.all(
 			paths.map((path) => readYaml<Workflow>(`.github/workflows/${path}`)),
 		);
+
 		// Assert
 		for (const workflow of workflows)
 			for (const trigger of ["workflow_call", "workflow_dispatch"] as const)
@@ -85,6 +92,7 @@ describe("minimal explicit action interfaces", () => {
 			})),
 		);
 		const violations: string[] = [];
+
 		// Act
 		for (const { path, workflow } of workflows)
 			for (const output of Object.keys(
@@ -109,6 +117,7 @@ describe("minimal explicit action interfaces", () => {
 				if (!consumed)
 					violations.push(`${path}: unused workflow output ${output}`);
 			}
+
 		// Assert
 		expect(violations).toEqual([]);
 	});

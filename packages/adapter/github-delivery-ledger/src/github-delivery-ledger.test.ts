@@ -41,6 +41,7 @@ describe("GithubDeliveryLedger", () => {
 			dispatchAuthorized: true,
 			authorLogin: "automation[bot]",
 		});
+
 		// Act
 		await ledger.reservePending(reservation);
 		const pending = await ledger.readAttention();
@@ -55,6 +56,7 @@ describe("GithubDeliveryLedger", () => {
 			"2099-06-01T11:00:00Z",
 		);
 		const accepted = await ledger.readAttention();
+
 		// Assert
 		expect(pending).toMatchObject([{ uncertain: true, commentId: 1 }]);
 		expect(rejected).toMatchObject([{ uncertain: false, commentId: 1 }]);
