@@ -12,7 +12,8 @@ import type {
 } from "@meetup-automation/journey";
 import { FOLLOW_UP_TASKS } from "@meetup-automation/journey";
 import { ApprovalNotifications } from "./approval-notifications.js";
-import type { ApprovalPresenter } from "./approval-presenter.js";
+import { ApprovalPresenter } from "./approval-presenter.js";
+import { ApprovalDecisionParser } from "./approval-decision-parser.js";
 import { ApprovalRecord, type StoredApproval } from "./approval-record.js";
 import type {
 	ApprovalComment,
@@ -31,6 +32,9 @@ export class GithubOrganizerApproval
 	implements OrganizerApproval, AttentionApprovalSource, OrganizerFollowUp
 {
 	private readonly notifications: ApprovalNotifications;
+	private readonly decisions = new ApprovalDecisionParser(
+		ApprovalPresenter.supportedLocales(),
+	);
 	constructor(
 		private readonly client: GithubApprovalClient,
 		private readonly authorLogin: string,
@@ -204,7 +208,7 @@ export class GithubOrganizerApproval
 		const { record, comment } = state;
 		const decision = await new ResolveApprovalDecision(
 			this.client,
-			this.presenter,
+			this.decisions,
 		).execute(record, comment);
 		if (decision.status !== "pending" && !record.decision) {
 			if (!decision.actor || !decision.decidedAt)

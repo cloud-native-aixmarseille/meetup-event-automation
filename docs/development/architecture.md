@@ -171,22 +171,26 @@ the API; it is not a second meetup role. Organizer notifications receive their
 explicit destination through `slack-organizer-channel-id`. Public Slack
 announcement tasks are manual and do not share this routing.
 
-The journey's `OrganizerApproval` port gates each due email batch. The GitHub
-adapter owns trusted email and Meetup publication request comments, localized approval choices and final
-results, GitHub GraphQL editor/history verification, current write-permission
-checks, and issue/Slack presentation. It durably records the verified human
-identity and final decision in the original bot comment before authorizing mail.
+The journey's `OrganizerApproval` port gates email batches and Meetup publication.
+The GitHub adapter owns trusted request comments, GitHub GraphQL editor/history
+verification, and current write-permission checks. Its comment presenter delegates
+to separate email and Meetup presenters. A decision parser compares checkbox edits
+against exact localized requests rendered from trusted metadata; decision resolution
+verifies the editor's identity and permission separately. It durably records the
+verified human identity and final decision in the original bot comment before
+authorizing the action.
 Later human edits recover state from the most recent bot-authored revision;
 missing or deleted history fails closed. Both supported catalogs are recognized
 when checking pending request integrity, so locale changes preserve approval.
-Only the communication domain's batch fingerprint and public facts cross this
-boundary. Requests are independent
+Only a content fingerprint and public facts cross this boundary. Requests are independent
 of delivery records: approval never clears a delivery reservation. Partial
 completion does not invalidate the full batch fingerprint. Slack notification
 reservations prevent automatic retries after ambiguous acknowledgements. The
-journey's `OrganizerApprovalNotification` port returns an opaque message
-reference for accepted requests. The Slack adapter uses it for idempotent
-introduction decision reactions on the original message. Synchronization finalizes choices
+journey's `OrganizerApprovalNotification` port accepts public approval facts and
+the approval comment URL, and returns an opaque message reference for accepted
+requests. The Slack adapter owns notification formatting and its English/French
+catalogs. It uses the message reference for idempotent decision reactions on the
+original message. Synchronization finalizes choices
 and retries reactions even when no email task remains. Slack failures do not
 undo durable decisions. See the
 [communication integration guide](../integrations/communications.md#confirm-an-email-batch).

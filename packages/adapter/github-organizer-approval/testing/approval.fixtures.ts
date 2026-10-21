@@ -164,3 +164,25 @@ export const publicationRequest = {
 		venue: { name: "Public Venue", city: "Marseille" },
 	},
 } satisfies OrganizerApprovalRequest;
+
+export const detailedRequest = {
+	...request,
+	recipientCount: 1,
+	details: {
+		emails: [
+			{
+				kind: "speaker-thanks" as const,
+				recipientName: "Alex Example",
+				links: [
+					{
+						kind: "feedback" as const,
+						title: "Reliable platforms",
+						url: "https://openfeedback.io/example/0/talk?displayVotes=true",
+					},
+				],
+				omittedLinks: 0,
+			},
+		],
+		omittedEmails: 0,
+	},
+};

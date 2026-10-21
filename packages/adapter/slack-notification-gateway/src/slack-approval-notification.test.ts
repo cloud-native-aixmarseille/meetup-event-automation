@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { SlackApprovalPresenter } from "./slack-approval-presenter.js";
 import { SlackApprovalNotification } from "./slack-approval-notification.js";
 
 describe("Slack approval notification", () => {
@@ -13,11 +14,18 @@ describe("Slack approval notification", () => {
 				private: "provider-data",
 			}),
 		});
-		const gateway = new SlackApprovalNotification("private-token", fetcher);
+		const gateway = new SlackApprovalNotification(
+			"private-token",
+			new SlackApprovalPresenter("en"),
+			fetcher,
+		);
 		// Act
 		const result = await gateway.send({
 			destination: "C12345",
-			content: "Public request",
+			kind: "meetup-publication",
+			eventDate: "2099-06-08",
+			approvalUrl:
+				"https://github.com/example/meetups/issues/42#issuecomment-100",
 		});
 		// Assert
 		expect(result).toEqual({
@@ -25,6 +33,15 @@ describe("Slack approval notification", () => {
 			message: { destination: "C12345", messageId: "100.001" },
 		});
 		expect(JSON.stringify(result)).not.toContain("private");
+		expect(fetcher).toHaveBeenCalledWith(
+			"https://slack.com/api/chat.postMessage",
+			expect.objectContaining({
+				body: JSON.stringify({
+					channel: "C12345",
+					text: "Meetup publication · 2099-06-08\nReview the draft and approve or reject publication: https://github.com/example/meetups/issues/42#issuecomment-100",
+				}),
+			}),
+		);
 	});
 	it.each([
 		{ ok: true },
@@ -36,12 +53,16 @@ describe("Slack approval notification", () => {
 			// Arrange
 			const gateway = new SlackApprovalNotification(
 				"token",
+				new SlackApprovalPresenter("en"),
 				vi.fn().mockResolvedValue({ ok: true, json: async () => payload }),
 			);
 			// Act
 			const result = await gateway.send({
 				destination: "C12345",
-				content: "Public request",
+				kind: "meetup-publication",
+				eventDate: "2099-06-08",
+				approvalUrl:
+					"https://github.com/example/meetups/issues/42#issuecomment-100",
 			});
 			// Assert
 			expect(result).toEqual({
@@ -60,7 +81,11 @@ describe("Slack approval notification", () => {
 			const fetcher = vi
 				.fn()
 				.mockResolvedValue({ ok: true, json: async () => ({ ok: true }) });
-			const gateway = new SlackApprovalNotification("token", fetcher);
+			const gateway = new SlackApprovalNotification(
+				"token",
+				new SlackApprovalPresenter("en"),
+				fetcher,
+			);
 			// Act
 			const accepted = await gateway.react(
 				{ destination: "G12345", messageId: "100.001" },
@@ -89,6 +114,7 @@ describe("Slack approval notification", () => {
 		// Arrange
 		const gateway = new SlackApprovalNotification(
 			"token",
+			new SlackApprovalPresenter("en"),
 			vi.fn().mockResolvedValue({
 				ok: true,
 				json: async () => ({ ok: false, error }),
@@ -106,6 +132,7 @@ describe("Slack approval notification", () => {
 		// Arrange
 		const gateway = new SlackApprovalNotification(
 			"token",
+			new SlackApprovalPresenter("en"),
 			vi.fn().mockRejectedValue(new Error("private provider failure")),
 		);
 		// Act

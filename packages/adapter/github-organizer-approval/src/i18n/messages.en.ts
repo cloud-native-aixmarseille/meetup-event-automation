@@ -5,8 +5,6 @@ export const EN_MESSAGES = {
 		"Repository writers: select one choice. After approval, automation publishes the reviewed draft. Event changes require a new approval.\n\n- [{approveMark}] Approve publishing this Meetup event\n- [{rejectMark}] Reject publishing this Meetup event",
 	"approval.meetup.final":
 		"{status, select, approved {✅ **Publication approved**} rejected {❌ **Publication rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Automation may publish this draft after rechecking its content. The issue checkbox records verified publication.} rejected {Automation will keep this event in draft.} other {}} Event changes require a new approval.",
-	"approval.meetup.slack":
-		"Meetup publication · {date}\nReview the draft and approve or reject publication: {url}",
 
 	"follow-up.title": "## Post-event follow-up · {date}",
 	"follow-up.instructions":
@@ -32,6 +30,4 @@ export const EN_MESSAGES = {
 		"### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\n{date} · Up to {count, number} recipients.\n\n{status, select, approved {✅ **Approved**} rejected {❌ **Rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Approved for dispatch; completed deliveries are skipped.} rejected {This batch will not be sent.} other {}} Batch changes require a new approval.",
 	"approval.request":
 		"### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\n{date} · Up to {count, number} recipients. Completed deliveries are skipped.\n\nRepository writers: select one choice.\n\n- [{approveMark}] Approve sending this batch\n- [{rejectMark}] Reject sending this batch\n\nBatch changes require a new approval.",
-	"approval.slack":
-		"{kind, select, introduction {Introduction emails} thanks {Thank-you emails} other {Action}} · {date} · Up to {count, number} recipients\nApprove or reject: {url}",
 } as const;

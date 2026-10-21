@@ -26,6 +26,7 @@ export type {
 	ApprovalNotificationMessage,
 	ApprovalNotificationResult,
 	OrganizerApprovalNotification,
+	ApprovalNotificationRequest,
 } from "./ports/organizer-approval-notification.js";
 export type {
 	FollowUpAttentionCodec,

@@ -9,11 +9,18 @@ export type ApprovalNotificationResult = GatewayDispatchResult & {
 	readonly message?: ApprovalNotificationMessage;
 };
 
+/** Public approval facts; the notification adapter owns channel-specific wording. */
+export type ApprovalNotificationRequest = {
+	readonly destination: string;
+	readonly eventDate: string;
+	readonly approvalUrl: string;
+} & (
+	| { readonly kind: "email-introduction"; readonly recipientCount: number }
+	| { readonly kind: "meetup-publication" }
+);
+
 export interface OrganizerApprovalNotification {
-	send(input: {
-		readonly destination: string;
-		readonly content: string;
-	}): Promise<ApprovalNotificationResult>;
+	send(input: ApprovalNotificationRequest): Promise<ApprovalNotificationResult>;
 	/** Repeating the same decision reaction must be safe after ambiguous responses. */
 	react(
 		message: ApprovalNotificationMessage,

@@ -1,38 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { request } from "../testing/approval.fixtures.js";
-import { ApprovalPresenter } from "./approval-presenter.js";
+import { request, detailedRequest } from "../testing/approval.fixtures.js";
+import { EmailApprovalPresenter } from "./email-approval-presenter.js";
 import { ApprovalRecord } from "./approval-record.js";
 import { ApprovalMessages } from "./i18n/approval-messages.js";
-
-const detailed = {
-	...request,
-	recipientCount: 1,
-	details: {
-		emails: [
-			{
-				kind: "speaker-thanks" as const,
-				recipientName: "Alex Example",
-				links: [
-					{
-						kind: "feedback" as const,
-						title: "Reliable platforms",
-						url: "https://openfeedback.io/example/0/talk?displayVotes=true",
-					},
-				],
-				omittedLinks: 0,
-			},
-		],
-		omittedEmails: 0,
-	},
-};
 
 describe("approval request details", () => {
 	it.each(["en", "fr"])(
 		"renders collapsed readable email details in %s",
 		(locale) => {
 			// Arrange
-			const presenter = new ApprovalPresenter(new ApprovalMessages(locale));
-			const record = ApprovalRecord.create(detailed);
+			const presenter = new EmailApprovalPresenter(
+				new ApprovalMessages(locale),
+			);
+			const record = ApprovalRecord.create(detailedRequest);
+			if (record.kind === "meetup-publication")
+				throw new Error("Expected email request");
 
 			// Act
 			const body = presenter.issue(record, { status: "pending" });
@@ -56,42 +38,25 @@ describe("approval request details", () => {
 		},
 	);
 
-	it("rejects approval when a person edits the displayed feedback destination", () => {
-		// Arrange
-		const presenter = new ApprovalPresenter(new ApprovalMessages());
-		const record = ApprovalRecord.create(detailed);
-		const original = presenter.issue(record, { status: "approved" });
-		const changed = original.replace(
-			'href="https://openfeedback.io/example/0/talk?displayVotes=true"',
-			'href="https://example.invalid/different"',
-		);
-
-		// Act
-		const accepted = presenter.decision(record, original);
-		const rejected = presenter.decision(record, changed);
-
-		// Assert
-		expect(accepted.status).toBe("approved");
-		expect(rejected.status).toBe("pending");
-	});
-
 	it.each(["-->", "--!>"])(
 		"escapes the %s comment terminator in public text",
 		(terminator) => {
 			// Arrange
 			const record = ApprovalRecord.create({
-				...detailed,
+				...detailedRequest,
 				details: {
-					...detailed.details,
+					...detailedRequest.details,
 					emails: [
 						{
-							...detailed.details.emails[0],
+							...detailedRequest.details.emails[0],
 							recipientName: `${terminator}<img src=x> @person **name**`,
 						},
 					],
 				},
 			});
-			const presenter = new ApprovalPresenter(new ApprovalMessages());
+			if (record.kind === "meetup-publication")
+				throw new Error("Expected email request");
+			const presenter = new EmailApprovalPresenter(new ApprovalMessages());
 
 			// Act
 			const body = presenter.issue(record, { status: "pending" });
@@ -108,14 +73,16 @@ describe("approval request details", () => {
 	it("retains the reviewed details after the decision is recorded", () => {
 		// Arrange
 		const record = {
-			...ApprovalRecord.create(detailed),
+			...ApprovalRecord.create(detailedRequest),
 			decision: {
 				status: "approved" as const,
 				actor: "organizer",
 				decidedAt: request.requestedAt,
 			},
 		};
-		const presenter = new ApprovalPresenter(new ApprovalMessages());
+		if (record.kind === "meetup-publication")
+			throw new Error("Expected email request");
+		const presenter = new EmailApprovalPresenter(new ApprovalMessages());
 
 		// Act
 		const body = presenter.issue(record, record.decision);

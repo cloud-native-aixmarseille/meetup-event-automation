@@ -11,7 +11,6 @@ export interface MessageParameters {
 	};
 	"approval.meetup.request": { approveMark: string; rejectMark: string };
 	"approval.meetup.final": { status: string; actor: string; decidedAt: string };
-	"approval.meetup.slack": { date: string; url: string };
 	"follow-up.title": { date: string };
 	"follow-up.instructions": Record<string, never>;
 	"follow-up.task": { task: string };
@@ -40,5 +39,4 @@ export interface MessageParameters {
 		approveMark: string;
 		rejectMark: string;
 	};
-	"approval.slack": { kind: string; date: string; count: number; url: string };
 }

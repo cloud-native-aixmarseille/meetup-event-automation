@@ -1,4 +1,4 @@
-import type { ApprovalPresenter } from "./approval-presenter.js";
+import type { ApprovalDecisionParser } from "./approval-decision-parser.js";
 import type { ApprovalDecision, StoredApproval } from "./approval-record.js";
 import type {
 	ApprovalComment,
@@ -9,14 +9,14 @@ import type {
 export class ResolveApprovalDecision {
 	constructor(
 		private readonly client: GithubApprovalClient,
-		private readonly presenter: ApprovalPresenter,
+		private readonly parser: ApprovalDecisionParser,
 	) {}
 	async execute(
 		record: StoredApproval,
 		comment: ApprovalComment,
 	): Promise<ApprovalDecision> {
 		if (record.decision) return record.decision;
-		const decision = this.presenter.decision(record, comment.body ?? "");
+		const decision = this.parser.parse(record, comment.body ?? "");
 		if (decision.status === "pending") return decision;
 		const edit = await this.client.edit(comment);
 		const editedAt = Date.parse(edit.lastEditedAt ?? "");

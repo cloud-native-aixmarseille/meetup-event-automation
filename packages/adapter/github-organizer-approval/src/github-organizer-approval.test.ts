@@ -354,7 +354,7 @@ describe("organizer approval requests", () => {
 			expect(second.status).toBe("pending");
 			expect(f.create).toHaveBeenCalledTimes(1);
 			expect(f.dispatch).toHaveBeenCalledTimes(1);
-			expect(f.dispatch.mock.calls[0]?.[0].content).toContain(
+			expect(f.dispatch.mock.calls[0]?.[0].approvalUrl).toBe(
 				"https://github.com/example/meetups/issues/42#issuecomment-100",
 			);
 			expect(f.comments[0]?.body).toContain(
@@ -647,9 +647,13 @@ describe("shared post-event follow-up", () => {
 				status,
 			});
 			expect(f.comments[0]?.body).not.toContain("- [");
-			expect(f.dispatch.mock.calls[0]?.[0].content).toContain(
-				"Meetup publication",
-			);
+			expect(f.dispatch).toHaveBeenCalledWith({
+				destination: "organizer-channel",
+				kind: "meetup-publication",
+				eventDate: publicationRequest.eventDate,
+				approvalUrl:
+					"https://github.com/example/meetups/issues/42#issuecomment-100",
+			});
 			expect(f.react).toHaveBeenCalledWith(expect.anything(), status);
 		},
 	);

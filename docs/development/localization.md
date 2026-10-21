@@ -44,7 +44,8 @@ feature wording.
 | ------------------------------------------------------ | ------------------------------------------------------------------------------------ |
 | Asset dates and agenda text                            | `packages/runtime/github-actions/src/assets` - `AssetMessages`                       |
 | Technical reports, safe errors, and speaker review PRs | `packages/runtime/github-actions/src/i18n` — `ActionMessages`                        |
-| Organizer approval requests and Slack alerts           | `packages/adapter/github-organizer-approval/src/i18n` - `ApprovalMessages`           |
+| Organizer approval issue comments                      | `packages/adapter/github-organizer-approval/src/i18n` - `ApprovalMessages`           |
+| Slack approval notifications                           | `packages/adapter/slack-notification-gateway/src/i18n` - `SlackApprovalMessages`     |
 | Managed issue comments                                 | `packages/adapter/github-event-comment-repository/src/i18n` — `EventCommentMessages` |
 | Issue-form speaker guidance                            | `packages/adapter/yaml-issue-form-projection/src/i18n` — `IssueFormMessages`         |
 | Organizer attention status and Slack content           | `packages/adapter/github-organizer-attention/src/i18n` - `AttentionMessages`         |

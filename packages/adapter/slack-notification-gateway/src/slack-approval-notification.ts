@@ -1,25 +1,30 @@
 import type {
 	ApprovalNotificationMessage,
+	ApprovalNotificationRequest,
 	ApprovalNotificationResult,
 	OrganizerApprovalNotification,
 } from "@meetup-automation/journey";
 import { SlackApiClient } from "./slack-api-client.js";
+import type { SlackApprovalPresenter } from "./slack-approval-presenter.js";
 import type { SlackFetch } from "./slack-notification-gateway-contracts.js";
 
 export class SlackApprovalNotification
 	implements OrganizerApprovalNotification
 {
 	private readonly client: SlackApiClient;
-	constructor(token: string, fetcher: SlackFetch = fetch) {
+	constructor(
+		token: string,
+		private readonly presenter: SlackApprovalPresenter,
+		fetcher: SlackFetch = fetch,
+	) {
 		this.client = new SlackApiClient(token, fetcher);
 	}
-	async send(input: {
-		destination: string;
-		content: string;
-	}): Promise<ApprovalNotificationResult> {
+	async send(
+		input: ApprovalNotificationRequest,
+	): Promise<ApprovalNotificationResult> {
 		const { result, payload } = await this.client.post("chat.postMessage", {
 			channel: input.destination,
-			text: input.content,
+			text: this.presenter.render(input),
 		});
 		if (result.outcome !== "accepted") return result;
 		if (

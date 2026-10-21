@@ -5,8 +5,6 @@ export const FR_MESSAGES = {
 		"Organisateurs avec accès en écriture : cochez un seul choix. Après approbation, l'automatisation publie le brouillon vérifié. Toute modification de l'événement nécessite une nouvelle approbation.\n\n- [{approveMark}] Approuver la publication de ce meetup\n- [{rejectMark}] Refuser la publication de ce meetup",
 	"approval.meetup.final":
 		"{status, select, approved {✅ **Publication approuvée**} rejected {❌ **Publication refusée**} other {Décision enregistrée}} par @{actor} le {decidedAt}.\n\n{status, select, approved {L'automatisation peut publier ce brouillon après avoir vérifié son contenu. La case de l'issue indique la publication vérifiée.} rejected {L'automatisation conserve cet événement en brouillon.} other {}} Toute modification de l'événement nécessite une nouvelle approbation.",
-	"approval.meetup.slack":
-		"Publication Meetup · {date}\nVérifiez le brouillon et approuvez ou refusez sa publication : {url}",
 
 	"follow-up.title": "## Suivi après le meetup · {date}",
 	"follow-up.instructions":
@@ -32,6 +30,4 @@ export const FR_MESSAGES = {
 		"### Confirmation des organisateurs : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}}\n\n{date} · Au maximum {count, number} destinataires.\n\n{status, select, approved {✅ **Approuvé**} rejected {❌ **Refusé**} other {Décision enregistrée}} par @{actor} le {decidedAt}.\n\n{status, select, approved {Envoi autorisé ; les envois déjà terminés sont ignorés.} rejected {Ce lot ne sera pas envoyé.} other {}} Toute modification du lot nécessite une nouvelle approbation.",
 	"approval.request":
 		"### Confirmation des organisateurs : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}}\n\n{date} · Au maximum {count, number} destinataires. Les envois déjà terminés sont ignorés.\n\nOrganisateurs avec accès en écriture : cochez un seul choix.\n\n- [{approveMark}] Approuver l'envoi de ce lot\n- [{rejectMark}] Refuser l'envoi de ce lot\n\nToute modification du lot nécessite une nouvelle approbation.",
-	"approval.slack":
-		"{kind, select, introduction {E-mails d'introduction} thanks {E-mails de remerciement} other {Action}} · {date} · Au maximum {count, number} destinataires\nApprouver ou refuser : {url}",
 } as const;

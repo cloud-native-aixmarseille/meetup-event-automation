@@ -32,6 +32,7 @@ import { OpenFeedbackTalkResultsGateway } from "@meetup-automation/openfeedback-
 import type { ReferentialRepository } from "@meetup-automation/referential";
 import {
 	SlackApprovalNotification,
+	SlackApprovalPresenter,
 	SlackNotificationGateway,
 } from "@meetup-automation/slack-notification-gateway";
 import { SystemCommunicationClock } from "@meetup-automation/system-clock";
@@ -158,7 +159,10 @@ export class CommunicationComposition {
 					),
 					input.commentAuthorLogin,
 					new ApprovalPresenter(new ApprovalMessages(input.locale)),
-					new SlackApprovalNotification(input.slackToken),
+					new SlackApprovalNotification(
+						input.slackToken,
+						new SlackApprovalPresenter(input.locale),
+					),
 					input.slackOrganizerChannelId,
 				),
 				config: context.get<AutomationConfig>(SERVICES.config),

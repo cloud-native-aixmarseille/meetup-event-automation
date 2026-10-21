@@ -10,7 +10,10 @@ import {
 	GithubApprovalClient,
 	GithubOrganizerApproval,
 } from "@meetup-automation/github-organizer-approval";
-import { SlackApprovalNotification } from "@meetup-automation/slack-notification-gateway";
+import {
+	SlackApprovalNotification,
+	SlackApprovalPresenter,
+} from "@meetup-automation/slack-notification-gateway";
 import { GithubPublicationJournal } from "@meetup-automation/github-publication-journal";
 import {
 	type AutomationConfig,
@@ -94,7 +97,10 @@ export class MeetupPublicationComposition {
 			),
 			input.commentAuthorLogin,
 			new ApprovalPresenter(new ApprovalMessages(input.locale)),
-			new SlackApprovalNotification(input.slackToken),
+			new SlackApprovalNotification(
+				input.slackToken,
+				new SlackApprovalPresenter(input.locale),
+			),
 			input.slackOrganizerChannelId,
 		);
 	}

@@ -39879,6 +39879,60 @@ var ConferenceHallInput = class _ConferenceHallInput {
 // packages/runtime/github-actions/src/meetup-publication-composition.ts
 import { fileURLToPath } from "node:url";
 
+// packages/adapter/github-organizer-approval/src/i18n/messages.en.ts
+var EN_MESSAGES2 = {
+  "approval.meetup.details": "### Organizer confirmation: publish Meetup event\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the Meetup draft]({url}) before approving publication.",
+  "approval.meetup.request": "Repository writers: select one choice. After approval, automation publishes the reviewed draft. Event changes require a new approval.\n\n- [{approveMark}] Approve publishing this Meetup event\n- [{rejectMark}] Reject publishing this Meetup event",
+  "approval.meetup.final": "{status, select, approved {\u2705 **Publication approved**} rejected {\u274C **Publication rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Automation may publish this draft after rechecking its content. The issue checkbox records verified publication.} rejected {Automation will keep this event in draft.} other {}} Event changes require a new approval.",
+  "follow-up.title": "## Post-event follow-up \xB7 {date}",
+  "follow-up.instructions": "Update manual tasks in the issue's Post event checklist.",
+  "follow-up.task": "{task, select, thank_host {Thank the host} thank_speakers {Thank the speakers} share_slides {Share slides on Meetup} import_attendance {Import attendance into CNCF} share_social {Share on social networks} other {Post-event task}}",
+  "follow-up.stopped": "Follow-up paused.",
+  "follow-up.waiting": "Thank-you emails are not ready for approval.",
+  "follow-up.emails-complete": "No thank-you emails pending.",
+  "approval.details.summary": "Review email details",
+  "approval.details.email": "{kind, select, host_introduction {Introduction for the host contact} speaker_introduction {Introduction for the speaker} host_thanks {Thank-you email for the host contact} speaker_thanks {Thank-you email for the speaker} other {Email}}",
+  "approval.details.purpose": "{kind, select, host_introduction {Thanks the host for welcoming the meetup and shares event links, slides and logistical requirements.} speaker_introduction {Shares event links, arrival and venue information, and presentation guidance.} host_thanks {Thanks the host for organizing the meetup and invites future collaboration.} speaker_thanks {Thanks the speaker, shares feedback results for their talks and invites suggestions about the meetup.} other {Sends the planned email.}}",
+  "approval.details.link": "{kind, select, meetup {Meetup event} community {CNCF community event} slides {Meetup presentation} other {Event link}}",
+  "approval.details.feedback": "Feedback results: {title}",
+  "approval.details.omitted-emails": "{count, plural, one {# more email in this batch.} other {# more emails in this batch.}}",
+  "approval.details.omitted-links": "{count, plural, one {# more link.} other {# more links.}}",
+  "approval.final": "### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\n{date} \xB7 Up to {count, number} recipients.\n\n{status, select, approved {\u2705 **Approved**} rejected {\u274C **Rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Approved for dispatch; completed deliveries are skipped.} rejected {This batch will not be sent.} other {}} Batch changes require a new approval.",
+  "approval.request": "### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\n{date} \xB7 Up to {count, number} recipients. Completed deliveries are skipped.\n\nRepository writers: select one choice.\n\n- [{approveMark}] Approve sending this batch\n- [{rejectMark}] Reject sending this batch\n\nBatch changes require a new approval."
+};
+
+// packages/adapter/github-organizer-approval/src/i18n/messages.fr.ts
+var FR_MESSAGES2 = {
+  "approval.meetup.details": "### Confirmation des organisateurs : publier le meetup\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[V\xE9rifiez le brouillon Meetup]({url}) avant d'approuver sa publication.",
+  "approval.meetup.request": "Organisateurs avec acc\xE8s en \xE9criture : cochez un seul choix. Apr\xE8s approbation, l'automatisation publie le brouillon v\xE9rifi\xE9. Toute modification de l'\xE9v\xE9nement n\xE9cessite une nouvelle approbation.\n\n- [{approveMark}] Approuver la publication de ce meetup\n- [{rejectMark}] Refuser la publication de ce meetup",
+  "approval.meetup.final": "{status, select, approved {\u2705 **Publication approuv\xE9e**} rejected {\u274C **Publication refus\xE9e**} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\n{status, select, approved {L'automatisation peut publier ce brouillon apr\xE8s avoir v\xE9rifi\xE9 son contenu. La case de l'issue indique la publication v\xE9rifi\xE9e.} rejected {L'automatisation conserve cet \xE9v\xE9nement en brouillon.} other {}} Toute modification de l'\xE9v\xE9nement n\xE9cessite une nouvelle approbation.",
+  "follow-up.title": "## Suivi apr\xE8s le meetup \xB7 {date}",
+  "follow-up.instructions": "Cochez les t\xE2ches manuelles dans la liste Post event du ticket.",
+  "follow-up.task": "{task, select, thank_host {Remercier l'h\xF4te} thank_speakers {Remercier les intervenants} share_slides {Partager la pr\xE9sentation sur Meetup} import_attendance {Importer la participation dans CNCF} share_social {Partager sur les r\xE9seaux sociaux} other {T\xE2che apr\xE8s le meetup}}",
+  "follow-up.stopped": "Suivi suspendu.",
+  "follow-up.waiting": "Les remerciements ne sont pas pr\xEAts pour approbation.",
+  "follow-up.emails-complete": "Aucun courriel de remerciement en attente.",
+  "approval.details.summary": "Voir le d\xE9tail des e-mails",
+  "approval.details.email": "{kind, select, host_introduction {Introduction pour le contact de l'h\xF4te} speaker_introduction {Introduction pour l'intervenant} host_thanks {Remerciement pour le contact de l'h\xF4te} speaker_thanks {Remerciement pour l'intervenant} other {E-mail}}",
+  "approval.details.purpose": "{kind, select, host_introduction {Remercie l'h\xF4te pour son accueil et partage les liens du meetup, la pr\xE9sentation et les besoins logistiques.} speaker_introduction {Partage les liens du meetup, les informations d'arriv\xE9e et de lieu, ainsi que les consignes de pr\xE9sentation.} host_thanks {Remercie l'h\xF4te pour l'organisation du meetup et propose de renouveler la collaboration.} speaker_thanks {Remercie l'intervenant, partage les r\xE9sultats des retours sur ses pr\xE9sentations et sollicite ses suggestions pour le meetup.} other {Envoie l'e-mail pr\xE9vu.}}",
+  "approval.details.link": "{kind, select, meetup {\xC9v\xE9nement Meetup} community {\xC9v\xE9nement de la communaut\xE9 CNCF} slides {Pr\xE9sentation du meetup} other {Lien du meetup}}",
+  "approval.details.feedback": "R\xE9sultats des retours : {title}",
+  "approval.details.omitted-emails": "{count, plural, one {# autre courriel dans ce lot.} other {# autres courriels dans ce lot.}}",
+  "approval.details.omitted-links": "{count, plural, one {# autre lien.} other {# autres liens.}}",
+  "approval.final": "### Confirmation des organisateurs : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}}\n\n{date} \xB7 Au maximum {count, number} destinataires.\n\n{status, select, approved {\u2705 **Approuv\xE9**} rejected {\u274C **Refus\xE9**} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\n{status, select, approved {Envoi autoris\xE9 ; les envois d\xE9j\xE0 termin\xE9s sont ignor\xE9s.} rejected {Ce lot ne sera pas envoy\xE9.} other {}} Toute modification du lot n\xE9cessite une nouvelle approbation.",
+  "approval.request": "### Confirmation des organisateurs : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}}\n\n{date} \xB7 Au maximum {count, number} destinataires. Les envois d\xE9j\xE0 termin\xE9s sont ignor\xE9s.\n\nOrganisateurs avec acc\xE8s en \xE9criture : cochez un seul choix.\n\n- [{approveMark}] Approuver l'envoi de ce lot\n- [{rejectMark}] Refuser l'envoi de ce lot\n\nToute modification du lot n\xE9cessite une nouvelle approbation."
+};
+
+// packages/adapter/github-organizer-approval/src/i18n/catalog.ts
+var CATALOGS2 = { en: EN_MESSAGES2, fr: FR_MESSAGES2 };
+
+// packages/adapter/github-organizer-approval/src/i18n/approval-messages.ts
+var ApprovalMessages = class extends MessageLocalizer {
+  constructor(locale = "en") {
+    super(CATALOGS2, locale);
+  }
+};
+
 // packages/adapter/github-organizer-approval/src/approval-record.ts
 import { randomUUID as randomUUID2 } from "node:crypto";
 
@@ -39997,64 +40051,6 @@ var ApprovalRecord = class _ApprovalRecord {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/i18n/messages.en.ts
-var EN_MESSAGES2 = {
-  "approval.meetup.details": "### Organizer confirmation: publish Meetup event\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the Meetup draft]({url}) before approving publication.",
-  "approval.meetup.request": "Repository writers: select one choice. After approval, automation publishes the reviewed draft. Event changes require a new approval.\n\n- [{approveMark}] Approve publishing this Meetup event\n- [{rejectMark}] Reject publishing this Meetup event",
-  "approval.meetup.final": "{status, select, approved {\u2705 **Publication approved**} rejected {\u274C **Publication rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Automation may publish this draft after rechecking its content. The issue checkbox records verified publication.} rejected {Automation will keep this event in draft.} other {}} Event changes require a new approval.",
-  "approval.meetup.slack": "Meetup publication \xB7 {date}\nReview the draft and approve or reject publication: {url}",
-  "follow-up.title": "## Post-event follow-up \xB7 {date}",
-  "follow-up.instructions": "Update manual tasks in the issue's Post event checklist.",
-  "follow-up.task": "{task, select, thank_host {Thank the host} thank_speakers {Thank the speakers} share_slides {Share slides on Meetup} import_attendance {Import attendance into CNCF} share_social {Share on social networks} other {Post-event task}}",
-  "follow-up.stopped": "Follow-up paused.",
-  "follow-up.waiting": "Thank-you emails are not ready for approval.",
-  "follow-up.emails-complete": "No thank-you emails pending.",
-  "approval.details.summary": "Review email details",
-  "approval.details.email": "{kind, select, host_introduction {Introduction for the host contact} speaker_introduction {Introduction for the speaker} host_thanks {Thank-you email for the host contact} speaker_thanks {Thank-you email for the speaker} other {Email}}",
-  "approval.details.purpose": "{kind, select, host_introduction {Thanks the host for welcoming the meetup and shares event links, slides and logistical requirements.} speaker_introduction {Shares event links, arrival and venue information, and presentation guidance.} host_thanks {Thanks the host for organizing the meetup and invites future collaboration.} speaker_thanks {Thanks the speaker, shares feedback results for their talks and invites suggestions about the meetup.} other {Sends the planned email.}}",
-  "approval.details.link": "{kind, select, meetup {Meetup event} community {CNCF community event} slides {Meetup presentation} other {Event link}}",
-  "approval.details.feedback": "Feedback results: {title}",
-  "approval.details.omitted-emails": "{count, plural, one {# more email in this batch.} other {# more emails in this batch.}}",
-  "approval.details.omitted-links": "{count, plural, one {# more link.} other {# more links.}}",
-  "approval.final": "### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\n{date} \xB7 Up to {count, number} recipients.\n\n{status, select, approved {\u2705 **Approved**} rejected {\u274C **Rejected**} other {Decision recorded}} by @{actor} on {decidedAt}.\n\n{status, select, approved {Approved for dispatch; completed deliveries are skipped.} rejected {This batch will not be sent.} other {}} Batch changes require a new approval.",
-  "approval.request": "### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\n{date} \xB7 Up to {count, number} recipients. Completed deliveries are skipped.\n\nRepository writers: select one choice.\n\n- [{approveMark}] Approve sending this batch\n- [{rejectMark}] Reject sending this batch\n\nBatch changes require a new approval.",
-  "approval.slack": "{kind, select, introduction {Introduction emails} thanks {Thank-you emails} other {Action}} \xB7 {date} \xB7 Up to {count, number} recipients\nApprove or reject: {url}"
-};
-
-// packages/adapter/github-organizer-approval/src/i18n/messages.fr.ts
-var FR_MESSAGES2 = {
-  "approval.meetup.details": "### Confirmation des organisateurs : publier le meetup\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[V\xE9rifiez le brouillon Meetup]({url}) avant d'approuver sa publication.",
-  "approval.meetup.request": "Organisateurs avec acc\xE8s en \xE9criture : cochez un seul choix. Apr\xE8s approbation, l'automatisation publie le brouillon v\xE9rifi\xE9. Toute modification de l'\xE9v\xE9nement n\xE9cessite une nouvelle approbation.\n\n- [{approveMark}] Approuver la publication de ce meetup\n- [{rejectMark}] Refuser la publication de ce meetup",
-  "approval.meetup.final": "{status, select, approved {\u2705 **Publication approuv\xE9e**} rejected {\u274C **Publication refus\xE9e**} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\n{status, select, approved {L'automatisation peut publier ce brouillon apr\xE8s avoir v\xE9rifi\xE9 son contenu. La case de l'issue indique la publication v\xE9rifi\xE9e.} rejected {L'automatisation conserve cet \xE9v\xE9nement en brouillon.} other {}} Toute modification de l'\xE9v\xE9nement n\xE9cessite une nouvelle approbation.",
-  "approval.meetup.slack": "Publication Meetup \xB7 {date}\nV\xE9rifiez le brouillon et approuvez ou refusez sa publication : {url}",
-  "follow-up.title": "## Suivi apr\xE8s le meetup \xB7 {date}",
-  "follow-up.instructions": "Cochez les t\xE2ches manuelles dans la liste Post event du ticket.",
-  "follow-up.task": "{task, select, thank_host {Remercier l'h\xF4te} thank_speakers {Remercier les intervenants} share_slides {Partager la pr\xE9sentation sur Meetup} import_attendance {Importer la participation dans CNCF} share_social {Partager sur les r\xE9seaux sociaux} other {T\xE2che apr\xE8s le meetup}}",
-  "follow-up.stopped": "Suivi suspendu.",
-  "follow-up.waiting": "Les remerciements ne sont pas pr\xEAts pour approbation.",
-  "follow-up.emails-complete": "Aucun courriel de remerciement en attente.",
-  "approval.details.summary": "Voir le d\xE9tail des e-mails",
-  "approval.details.email": "{kind, select, host_introduction {Introduction pour le contact de l'h\xF4te} speaker_introduction {Introduction pour l'intervenant} host_thanks {Remerciement pour le contact de l'h\xF4te} speaker_thanks {Remerciement pour l'intervenant} other {E-mail}}",
-  "approval.details.purpose": "{kind, select, host_introduction {Remercie l'h\xF4te pour son accueil et partage les liens du meetup, la pr\xE9sentation et les besoins logistiques.} speaker_introduction {Partage les liens du meetup, les informations d'arriv\xE9e et de lieu, ainsi que les consignes de pr\xE9sentation.} host_thanks {Remercie l'h\xF4te pour l'organisation du meetup et propose de renouveler la collaboration.} speaker_thanks {Remercie l'intervenant, partage les r\xE9sultats des retours sur ses pr\xE9sentations et sollicite ses suggestions pour le meetup.} other {Envoie l'e-mail pr\xE9vu.}}",
-  "approval.details.link": "{kind, select, meetup {\xC9v\xE9nement Meetup} community {\xC9v\xE9nement de la communaut\xE9 CNCF} slides {Pr\xE9sentation du meetup} other {Lien du meetup}}",
-  "approval.details.feedback": "R\xE9sultats des retours : {title}",
-  "approval.details.omitted-emails": "{count, plural, one {# autre courriel dans ce lot.} other {# autres courriels dans ce lot.}}",
-  "approval.details.omitted-links": "{count, plural, one {# autre lien.} other {# autres liens.}}",
-  "approval.final": "### Confirmation des organisateurs : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}}\n\n{date} \xB7 Au maximum {count, number} destinataires.\n\n{status, select, approved {\u2705 **Approuv\xE9**} rejected {\u274C **Refus\xE9**} other {D\xE9cision enregistr\xE9e}} par @{actor} le {decidedAt}.\n\n{status, select, approved {Envoi autoris\xE9 ; les envois d\xE9j\xE0 termin\xE9s sont ignor\xE9s.} rejected {Ce lot ne sera pas envoy\xE9.} other {}} Toute modification du lot n\xE9cessite une nouvelle approbation.",
-  "approval.request": "### Confirmation des organisateurs : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}}\n\n{date} \xB7 Au maximum {count, number} destinataires. Les envois d\xE9j\xE0 termin\xE9s sont ignor\xE9s.\n\nOrganisateurs avec acc\xE8s en \xE9criture : cochez un seul choix.\n\n- [{approveMark}] Approuver l'envoi de ce lot\n- [{rejectMark}] Refuser l'envoi de ce lot\n\nToute modification du lot n\xE9cessite une nouvelle approbation.",
-  "approval.slack": "{kind, select, introduction {E-mails d'introduction} thanks {E-mails de remerciement} other {Action}} \xB7 {date} \xB7 Au maximum {count, number} destinataires\nApprouver ou refuser : {url}"
-};
-
-// packages/adapter/github-organizer-approval/src/i18n/catalog.ts
-var CATALOGS2 = { en: EN_MESSAGES2, fr: FR_MESSAGES2 };
-
-// packages/adapter/github-organizer-approval/src/i18n/approval-messages.ts
-var ApprovalMessages = class extends MessageLocalizer {
-  constructor(locale = "en") {
-    super(CATALOGS2, locale);
-  }
-};
-
 // packages/adapter/github-organizer-approval/src/approval-details-presenter.ts
 var ApprovalDetailsPresenter = class _ApprovalDetailsPresenter {
   constructor(messages3) {
@@ -40137,6 +40133,49 @@ var FollowUpPresenter = class {
   }
 };
 
+// packages/adapter/github-organizer-approval/src/email-approval-presenter.ts
+var EmailApprovalPresenter = class {
+  constructor(messages3) {
+    this.messages = messages3;
+  }
+  messages;
+  issue(record, decision) {
+    const heading = [
+      ApprovalRecord.marker(record),
+      ...new FollowUpPresenter(this.messages).render(record)
+    ];
+    if (record.recipientCount === 0 || record.followUp?.active === false)
+      return [...heading, record.followUp?.attentionDetails ?? ""].join("\n\n").trimEnd();
+    const details = record.details ? [new ApprovalDetailsPresenter(this.messages).render(record.details)] : [];
+    if (record.followUp?.attentionDetails)
+      details.push(record.followUp.attentionDetails);
+    if (record.decision)
+      return [
+        ...heading,
+        this.messages.t("approval.final", {
+          kind: record.kind.replace("email-", ""),
+          date: record.eventDate,
+          count: record.recipientCount,
+          status: record.decision.status,
+          actor: record.decision.actor,
+          decidedAt: record.decision.decidedAt
+        }),
+        ...details
+      ].join("\n\n");
+    return [
+      ...heading,
+      this.messages.t("approval.request", {
+        kind: record.kind.replace("email-", ""),
+        date: record.eventDate,
+        count: record.recipientCount,
+        approveMark: decision.status === "approved" ? "x" : " ",
+        rejectMark: decision.status === "rejected" ? "x" : " "
+      }),
+      ...details
+    ].join("\n\n");
+  }
+};
+
 // packages/adapter/github-organizer-approval/src/meetup-approval-presenter.ts
 var MeetupApprovalPresenter = class _MeetupApprovalPresenter {
   constructor(messages3) {
@@ -40172,72 +40211,19 @@ var MeetupApprovalPresenter = class _MeetupApprovalPresenter {
 
 // packages/adapter/github-organizer-approval/src/approval-presenter.ts
 var ApprovalPresenter = class _ApprovalPresenter {
+  email;
+  meetup;
   constructor(messages3) {
-    this.messages = messages3;
+    this.email = new EmailApprovalPresenter(messages3);
+    this.meetup = new MeetupApprovalPresenter(messages3);
   }
-  messages;
   issue(record, decision) {
-    if (record.kind === "meetup-publication")
-      return new MeetupApprovalPresenter(this.messages).issue(record, decision);
-    const heading = [
-      ApprovalRecord.marker(record),
-      ...new FollowUpPresenter(this.messages).render(record)
-    ];
-    if (record.recipientCount === 0 || record.followUp?.active === false)
-      return [...heading, record.followUp?.attentionDetails ?? ""].join("\n\n").trimEnd();
-    const details = record.details ? [new ApprovalDetailsPresenter(this.messages).render(record.details)] : [];
-    if (record.followUp?.attentionDetails)
-      details.push(record.followUp.attentionDetails);
-    if (record.decision)
-      return [
-        ...heading,
-        this.messages.t("approval.final", {
-          kind: record.kind.replace("email-", ""),
-          date: record.eventDate,
-          count: record.recipientCount,
-          status: record.decision.status,
-          actor: record.decision.actor,
-          decidedAt: record.decision.decidedAt
-        }),
-        ...details
-      ].join("\n\n");
-    return [
-      ...heading,
-      this.messages.t("approval.request", {
-        kind: record.kind.replace("email-", ""),
-        date: record.eventDate,
-        count: record.recipientCount,
-        approveMark: decision.status === "approved" ? "x" : " ",
-        rejectMark: decision.status === "rejected" ? "x" : " "
-      }),
-      ...details
-    ].join("\n\n");
+    return record.kind === "meetup-publication" ? this.meetup.issue(record, decision) : this.email.issue(record, decision);
   }
-  decision(record, body) {
-    if (record.decision || record.recipientCount === 0 || record.followUp?.active === false)
-      return { status: "pending" };
-    const normalized = body.replace(/\r\n/g, "\n").replace(/- \[X\]/g, "- [x]");
-    for (const locale of ["en", "fr"]) {
-      const presenter = new _ApprovalPresenter(new ApprovalMessages(locale));
-      for (const status of ["approved", "rejected"]) {
-        if (normalized === presenter.issue(record, { status }))
-          return { status };
-      }
-    }
-    return { status: "pending" };
-  }
-  slack(record, url) {
-    if (record.kind === "meetup-publication")
-      return this.messages.t("approval.meetup.slack", {
-        date: record.eventDate,
-        url
-      });
-    return this.messages.t("approval.slack", {
-      kind: record.kind.replace("email-", ""),
-      date: record.eventDate,
-      count: record.recipientCount,
-      url
-    });
+  static supportedLocales() {
+    return Object.keys(CATALOGS2).map(
+      (locale) => new _ApprovalPresenter(new ApprovalMessages(locale))
+    );
   }
 };
 
@@ -40386,7 +40372,9 @@ var ApprovalNotifications = class {
     try {
       const result = await this.notifications.send({
         destination: this.channelId,
-        content: this.presenter.slack(record, this.client.url(commentId))
+        eventDate: record.eventDate,
+        approvalUrl: this.client.url(commentId),
+        ...record.kind === "meetup-publication" ? { kind: record.kind } : { kind: record.kind, recipientCount: record.recipientCount }
       });
       record.notification = result.outcome === "accepted" ? "sent" : result.outcome === "uncertain" ? "reserved" : "retry";
       if (result.outcome === "accepted" && result.message)
@@ -40424,17 +40412,36 @@ var ApprovalNotifications = class {
   }
 };
 
+// packages/adapter/github-organizer-approval/src/approval-decision-parser.ts
+var ApprovalDecisionParser = class {
+  constructor(comments) {
+    this.comments = comments;
+  }
+  comments;
+  parse(record, body) {
+    if (record.decision || record.recipientCount === 0 || record.followUp?.active === false)
+      return { status: "pending" };
+    const normalized = body.replace(/\r\n/g, "\n").replace(/- \[X\]/g, "- [x]");
+    for (const comment of this.comments) {
+      for (const status of ["approved", "rejected"]) {
+        if (normalized === comment.issue(record, { status })) return { status };
+      }
+    }
+    return { status: "pending" };
+  }
+};
+
 // packages/adapter/github-organizer-approval/src/resolve-approval-decision.ts
 var ResolveApprovalDecision = class {
-  constructor(client, presenter) {
+  constructor(client, parser) {
     this.client = client;
-    this.presenter = presenter;
+    this.parser = parser;
   }
   client;
-  presenter;
+  parser;
   async execute(record, comment) {
     if (record.decision) return record.decision;
-    const decision = this.presenter.decision(record, comment.body ?? "");
+    const decision = this.parser.parse(record, comment.body ?? "");
     if (decision.status === "pending") return decision;
     const edit = await this.client.edit(comment);
     const editedAt = Date.parse(edit.lastEditedAt ?? "");
@@ -40496,6 +40503,9 @@ var GithubOrganizerApproval = class {
   authorLogin;
   presenter;
   notifications;
+  decisions = new ApprovalDecisionParser(
+    ApprovalPresenter.supportedLocales()
+  );
   async request(input) {
     ApprovalRecord.validate(input);
     const existing = (await this.states()).find(
@@ -40636,7 +40646,7 @@ var GithubOrganizerApproval = class {
     const { record, comment } = state;
     const decision = await new ResolveApprovalDecision(
       this.client,
-      this.presenter
+      this.decisions
     ).execute(record, comment);
     if (decision.status !== "pending" && !record.decision) {
       if (!decision.actor || !decision.decidedAt)
@@ -40770,14 +40780,16 @@ var SlackApiClient = class _SlackApiClient {
 
 // packages/adapter/slack-notification-gateway/src/slack-approval-notification.ts
 var SlackApprovalNotification = class {
-  client;
-  constructor(token, fetcher = fetch) {
+  constructor(token, presenter, fetcher = fetch) {
+    this.presenter = presenter;
     this.client = new SlackApiClient(token, fetcher);
   }
+  presenter;
+  client;
   async send(input) {
     const { result, payload } = await this.client.post("chat.postMessage", {
       channel: input.destination,
-      text: input.content
+      text: this.presenter.render(input)
     });
     if (result.outcome !== "accepted") return result;
     if (typeof payload?.channel !== "string" || !/^[CGD][A-Z0-9]+$/.test(payload.channel) || typeof payload.ts !== "string" || !/^\d+\.\d+$/.test(payload.ts))
@@ -40794,6 +40806,46 @@ var SlackApprovalNotification = class {
       name: decision === "approved" ? "white_check_mark" : "x"
     });
     return result.outcome === "accepted" || payload?.error === "already_reacted";
+  }
+};
+
+// packages/adapter/slack-notification-gateway/src/i18n/messages.en.ts
+var EN_MESSAGES3 = {
+  "request.introduction": "Introduction emails \xB7 {date} \xB7 Up to {count, number} recipients\nApprove or reject: {url}",
+  "request.publication": "Meetup publication \xB7 {date}\nReview the draft and approve or reject publication: {url}"
+};
+
+// packages/adapter/slack-notification-gateway/src/i18n/messages.fr.ts
+var FR_MESSAGES3 = {
+  "request.introduction": "E-mails d'introduction \xB7 {date} \xB7 Au maximum {count, number} destinataires\nApprouver ou refuser : {url}",
+  "request.publication": "Publication Meetup \xB7 {date}\nV\xE9rifiez le brouillon et approuvez ou refusez sa publication : {url}"
+};
+
+// packages/adapter/slack-notification-gateway/src/i18n/catalog.ts
+var CATALOGS3 = { en: EN_MESSAGES3, fr: FR_MESSAGES3 };
+
+// packages/adapter/slack-notification-gateway/src/i18n/slack-approval-messages.ts
+var SlackApprovalMessages = class extends MessageLocalizer {
+  constructor(locale) {
+    super(CATALOGS3, locale);
+  }
+};
+
+// packages/adapter/slack-notification-gateway/src/slack-approval-presenter.ts
+var SlackApprovalPresenter = class {
+  messages;
+  constructor(locale) {
+    this.messages = new SlackApprovalMessages(locale);
+  }
+  render(request2) {
+    const details = {
+      date: request2.eventDate,
+      url: request2.approvalUrl
+    };
+    return request2.kind === "meetup-publication" ? this.messages.t("request.publication", details) : this.messages.t("request.introduction", {
+      ...details,
+      count: request2.recipientCount
+    });
   }
 };
 
@@ -43940,7 +43992,7 @@ var GUIDANCE = new Map([
 ]);
 
 // packages/adapter/github-event-comment-repository/src/i18n/messages.en.ts
-var EN_MESSAGES3 = {
+var EN_MESSAGES4 = {
   "comment.guidance.proposals.invalid-selection": "Enter distinct proposal numbers, one per line, from their Conference Hall URLs.",
   "comment.guidance.proposals.invalid": "Check the Conference Hall proposal selection and export format.",
   "comment.guidance.proposals.unavailable": "Conference Hall is unavailable. Check the CFP slug and API key, then retry.",
@@ -44009,7 +44061,7 @@ var EN_MESSAGES3 = {
 };
 
 // packages/adapter/github-event-comment-repository/src/i18n/messages.fr.ts
-var FR_MESSAGES3 = {
+var FR_MESSAGES4 = {
   "comment.guidance.proposals.invalid-selection": "Saisissez les num\xE9ros des URL Conference Hall, un par ligne, sans doublons.",
   "comment.guidance.proposals.invalid": "V\xE9rifiez la s\xE9lection des propositions et le format de l'export Conference Hall.",
   "comment.guidance.proposals.unavailable": "Conference Hall est indisponible. V\xE9rifiez le slug du CFP et la cl\xE9 API, puis r\xE9essayez.",
@@ -44150,15 +44202,15 @@ var STAGE_MESSAGES_FR = {
 };
 
 // packages/adapter/github-event-comment-repository/src/i18n/catalog.ts
-var CATALOGS3 = {
-  en: { ...EN_MESSAGES3, ...STAGE_MESSAGES_EN },
-  fr: { ...FR_MESSAGES3, ...STAGE_MESSAGES_FR }
+var CATALOGS4 = {
+  en: { ...EN_MESSAGES4, ...STAGE_MESSAGES_EN },
+  fr: { ...FR_MESSAGES4, ...STAGE_MESSAGES_FR }
 };
 
 // packages/adapter/github-event-comment-repository/src/i18n/event-comment-messages.ts
 var EventCommentMessages = class extends MessageLocalizer {
   constructor(locale = "en") {
-    super(CATALOGS3, locale);
+    super(CATALOGS4, locale);
   }
 };
 
@@ -53381,27 +53433,27 @@ var $i2 = { parse: de2(du), formatAST: de2(Fu), formatDoc: de2(Eu), printToDoc: 
 var import_yaml = __toESM(require_dist(), 1);
 
 // packages/adapter/yaml-issue-form-projection/src/i18n/messages.en.ts
-var EN_MESSAGES4 = {
+var EN_MESSAGES5 = {
   "form.speakers.guidance": "Select speakers by copying one or more references into the agenda.",
   "form.speakers.show": "Show available speaker references"
 };
 
 // packages/adapter/yaml-issue-form-projection/src/i18n/messages.fr.ts
-var FR_MESSAGES4 = {
+var FR_MESSAGES5 = {
   "form.speakers.guidance": "S\xE9lectionnez les intervenants en copiant une ou plusieurs r\xE9f\xE9rences dans le programme.",
   "form.speakers.show": "Afficher les r\xE9f\xE9rences des intervenants disponibles"
 };
 
 // packages/adapter/yaml-issue-form-projection/src/i18n/catalog.ts
-var CATALOGS5 = {
-  en: { ...EN_MESSAGES4 },
-  fr: { ...FR_MESSAGES4 }
+var CATALOGS6 = {
+  en: { ...EN_MESSAGES5 },
+  fr: { ...FR_MESSAGES5 }
 };
 
 // packages/adapter/yaml-issue-form-projection/src/i18n/issue-form-messages.ts
 var IssueFormMessages = class extends MessageLocalizer {
   constructor(locale = "en") {
-    super(CATALOGS5, locale);
+    super(CATALOGS6, locale);
   }
 };
 
@@ -59307,7 +59359,10 @@ var MeetupPublicationComposition = class _MeetupPublicationComposition {
       ),
       input.commentAuthorLogin,
       new ApprovalPresenter(new ApprovalMessages(input.locale)),
-      new SlackApprovalNotification(input.slackToken),
+      new SlackApprovalNotification(
+        input.slackToken,
+        new SlackApprovalPresenter(input.locale)
+      ),
       input.slackOrganizerChannelId
     );
   }
