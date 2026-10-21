@@ -34,15 +34,15 @@ Reconcile the event Drive folder, template copies, and issue asset link. Report 
   with:
     # HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
     # This input is required.
-    meetup-event-url-prefix: ${{ vars.MEETUP_EVENT_URL_PREFIX }}
+    meetup-event-url-prefix: ""
 
     # JSON array of nonempty HTTPS prefixes accepted for community event URLs.
     # This input is required.
-    community-event-url-prefixes: ${{ vars.COMMUNITY_EVENT_URL_PREFIXES }}
+    community-event-url-prefixes: ""
 
     # HTTPS prefix accepted for event asset folder URLs.
     # This input is required.
-    asset-folder-url-prefix: ${{ vars.ASSET_FOLDER_URL_PREFIX }}
+    asset-folder-url-prefix: ""
 
     # Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English.
     # This input is required.
@@ -84,6 +84,9 @@ Reconcile the event Drive folder, template copies, and issue asset link. Report 
 
 | **Input**                                    | **Description**                                                                                                                    | **Required** | **Default** |
 | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------- |
+| **`meetup-event-url-prefix`**                | HTTPS event URL prefix for the authorized Meetup group, ending in /events/.                                                        | **true**     | -           |
+| **`community-event-url-prefixes`**           | JSON array of nonempty HTTPS prefixes accepted for community event URLs.                                                           | **true**     | -           |
+| **`asset-folder-url-prefix`**                | HTTPS prefix accepted for event asset folder URLs.                                                                                 | **true**     | -           |
 | **`locale`**                                 | Language for generated reports and guidance (en or fr). Regional variants are supported; unsupported locales fall back to English. | **true**     | -           |
 | **`issue-number`**                           | GitHub issue number containing the meetup event document.                                                                          | **true**     | -           |
 | **`github-token`**                           | Token for the caller repository. Requires issues:read and issues:write.                                                            | **true**     | -           |
@@ -92,9 +95,6 @@ Reconcile the event Drive folder, template copies, and issue asset link. Report 
 | **`google-drive-meetup-template-folder-id`** | Google Drive folder ID of the template folder.                                                                                     | **true**     | -           |
 | **`conference-hall-event`**                  | Conference Hall CFP slug for live linked profiles and selected proposals.                                                          | **true**     | -           |
 | **`conference-hall-api-key`**                | Read-only Conference Hall event API key.                                                                                           | **true**     | -           |
-| **`meetup-event-url-prefix`**                | HTTPS event URL prefix for the authorized Meetup group, ending in /events/.                                                        | **true**     | -           |
-| **`community-event-url-prefixes`**           | JSON array of nonempty HTTPS prefixes accepted for community event URLs.                                                           | **true**     | -           |
-| **`asset-folder-url-prefix`**                | HTTPS prefix accepted for event asset folder URLs.                                                                                 | **true**     | -           |
 
 <!-- inputs:end -->
 <!-- secrets:start -->
