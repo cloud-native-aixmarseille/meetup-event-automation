@@ -8,8 +8,8 @@ describe("UnitTestLayout", () => {
 			"packages/domain/example/src/policy.test.ts",
 		],
 		[
-			"packages/adapter/example/src/client.ts",
-			"packages/adapter/example/src/client.test.ts",
+			"packages/adapter/example-scope/example/src/client.ts",
+			"packages/adapter/example-scope/example/src/client.test.ts",
 		],
 		[
 			"tests/architecture/rules/check.ts",

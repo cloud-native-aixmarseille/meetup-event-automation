@@ -38,7 +38,7 @@ none. Domain policies contain no community-specific URL defaults.
 | `packages/domain/publication`                 | Publication URL rules, manual checklist evaluation, asset reconciliation, text/image contracts and ownership, content/asset/feedback ports |
 | `packages/application/journey`                | Cross-domain orchestration, configuration defaults, public diagnostics, issue-form projection port                                         |
 | `packages/application/browser-authentication` | Provider-neutral CAPTCHA inspection and resolution port                                                                                    |
-| `packages/adapter/*`                          | Concrete implementations of owned ports: GitHub, CSV, YAML, Drive, OpenFeedback, Kutt, Slack, system time                                  |
+| `packages/adapter/*/*`                        | Concrete implementations of owned ports: GitHub, CSV, YAML, Drive, OpenFeedback, Kutt, Slack, system time                                  |
 | `packages/presentation/localization`          | Generic locale normalization, ICU formatting, and catalog contracts                                                                        |
 | `packages/runtime/github-actions`             | Input parsing, credentials, dependency composition, action execution, output serialization                                                 |
 
@@ -47,8 +47,24 @@ those APIs without redefining their rules. Each port has one owner. Adapters
 explicitly implement the owned interface and translate vendor payloads into
 application/domain values.
 
-Adapter names use `<technology>-<responsibility>`, with matching `technology:`
-and `responsibility:` tags in `project.json`. Keep unrelated responsibilities in
+Adapters live under `packages/adapter/<scope>/<technology>-<responsibility>`.
+Group packages by the business or capability scope they serve, independently of
+the provider. Package names use `<technology>-<responsibility>`, with matching
+`scope:`, `technology:`, and `responsibility:` tags in `project.json`.
+
+| Scope                    | Responsibility                                                         |
+| ------------------------ | ---------------------------------------------------------------------- |
+| `browser-authentication` | Browser CAPTCHA resolution                                             |
+| `communication`          | Delivery records, mail dispatch, organizer attention and notifications |
+| `event`                  | Event persistence, issue-document codecs and diagnostic comments       |
+| `journey`                | Organizer approvals and issue-form projection                          |
+| `publication`            | Event publication, assets, content, feedback and publication state     |
+| `referential`            | Speaker and proposal sources, catalog persistence                      |
+| `time`                   | System clocks for event and communication ports                        |
+
+The scope folder groups packages; it does not define a new dependency layer or
+permit adapter-to-adapter imports. Adapters serving several ports keep their
+cohesive responsibility in one package. Keep unrelated responsibilities in
 separate adapters. Do not introduce generic `utils`, `helpers`, or `shared`
 packages; keep behavior in the context that owns it.
 

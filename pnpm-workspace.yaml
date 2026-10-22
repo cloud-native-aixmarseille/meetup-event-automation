@@ -1,7 +1,7 @@
 packages:
   - packages/domain/*
   - packages/application/*
-  - packages/adapter/*
+  - packages/adapter/*/*
   - packages/runtime/*
   - packages/presentation/*
 

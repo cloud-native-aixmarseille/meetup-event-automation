@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
 	GitHubIssueFormEventDocumentCodec,
 	GithubIssueFormEventDocumentCodecComposition,
-} from "../packages/adapter/github-issue-form-event-document-codec/src/index.js";
+} from "../packages/adapter/event/github-issue-form-event-document-codec/src/index.js";
 import {
 	JourneyComposition,
 	JourneyPolicyComposition,

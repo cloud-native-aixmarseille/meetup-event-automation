@@ -17,7 +17,7 @@
 		"types": ["node", "vitest/globals"],
 		"paths": {
 			"@meetup-automation/meetup-event-gateway": [
-				"./packages/adapter/meetup-event-gateway/src/index.ts"
+				"./packages/adapter/publication/meetup-event-gateway/src/index.ts"
 			],
 			"@meetup-automation/event": ["./packages/domain/event/src/index.ts"],
 			"@meetup-automation/referential": [
@@ -33,73 +33,73 @@
 				"./packages/application/journey/src/index.ts"
 			],
 			"@meetup-automation/github-event-repository": [
-				"./packages/adapter/github-event-repository/src/index.ts"
+				"./packages/adapter/event/github-event-repository/src/index.ts"
 			],
 			"@meetup-automation/github-event-comment-repository": [
-				"./packages/adapter/github-event-comment-repository/src/index.ts"
+				"./packages/adapter/event/github-event-comment-repository/src/index.ts"
 			],
 			"@meetup-automation/github-issue-form-event-document-codec": [
-				"./packages/adapter/github-issue-form-event-document-codec/src/index.ts"
+				"./packages/adapter/event/github-issue-form-event-document-codec/src/index.ts"
 			],
 			"@meetup-automation/github-delivery-ledger": [
-				"./packages/adapter/github-delivery-ledger/src/index.ts"
+				"./packages/adapter/communication/github-delivery-ledger/src/index.ts"
 			],
 			"@meetup-automation/csv-referential-repository": [
-				"./packages/adapter/csv-referential-repository/src/index.ts"
+				"./packages/adapter/referential/csv-referential-repository/src/index.ts"
 			],
 			"@meetup-automation/yaml-issue-form-projection": [
-				"./packages/adapter/yaml-issue-form-projection/src/index.ts"
+				"./packages/adapter/journey/yaml-issue-form-projection/src/index.ts"
 			],
 			"@meetup-automation/github-repository-dispatch-mail-gateway": [
-				"./packages/adapter/github-repository-dispatch-mail-gateway/src/index.ts"
+				"./packages/adapter/communication/github-repository-dispatch-mail-gateway/src/index.ts"
 			],
 			"@meetup-automation/slack-notification-gateway": [
-				"./packages/adapter/slack-notification-gateway/src/index.ts"
+				"./packages/adapter/communication/slack-notification-gateway/src/index.ts"
 			],
 			"@meetup-automation/system-clock": [
-				"./packages/adapter/system-clock/src/index.ts"
+				"./packages/adapter/time/system-clock/src/index.ts"
 			],
 			"@meetup-automation/github-actions-runtime": [
 				"./packages/runtime/github-actions/src/index.ts"
 			],
 			"@meetup-automation/google-drive-asset-repository": [
-				"./packages/adapter/google-drive-asset-repository/src/index.ts"
+				"./packages/adapter/publication/google-drive-asset-repository/src/index.ts"
 			],
 			"@meetup-automation/localization": [
 				"./packages/presentation/localization/src/index.ts"
 			],
 			"@meetup-automation/kutt-feedback-link-gateway": [
-				"./packages/adapter/kutt-feedback-link-gateway/src/index.ts"
+				"./packages/adapter/publication/kutt-feedback-link-gateway/src/index.ts"
 			],
 			"@meetup-automation/openfeedback-event-gateway": [
-				"./packages/adapter/openfeedback-event-gateway/src/index.ts"
+				"./packages/adapter/publication/openfeedback-event-gateway/src/index.ts"
 			],
 			"@meetup-automation/github-organizer-approval": [
-				"./packages/adapter/github-organizer-approval/src/index.ts"
+				"./packages/adapter/journey/github-organizer-approval/src/index.ts"
 			],
 			"@meetup-automation/github-organizer-attention": [
-				"./packages/adapter/github-organizer-attention/src/index.ts"
+				"./packages/adapter/communication/github-organizer-attention/src/index.ts"
 			],
 			"@meetup-automation/conference-hall-proposal-source": [
-				"./packages/adapter/conference-hall-proposal-source/src/index.ts"
+				"./packages/adapter/referential/conference-hall-proposal-source/src/index.ts"
 			],
 			"@meetup-automation/google-slides-content-repository": [
-				"./packages/adapter/google-slides-content-repository/src/index.ts"
+				"./packages/adapter/publication/google-slides-content-repository/src/index.ts"
 			],
 			"@meetup-automation/google-docs-content-repository": [
-				"./packages/adapter/google-docs-content-repository/src/index.ts"
+				"./packages/adapter/publication/google-docs-content-repository/src/index.ts"
 			],
 			"@meetup-automation/https-asset-image-repository": [
-				"./packages/adapter/https-asset-image-repository/src/index.ts"
+				"./packages/adapter/publication/https-asset-image-repository/src/index.ts"
 			],
 			"@meetup-automation/github-publication-journal": [
-				"./packages/adapter/github-publication-journal/src/index.ts"
+				"./packages/adapter/publication/github-publication-journal/src/index.ts"
 			],
 			"@meetup-automation/browser-authentication": [
 				"./packages/application/browser-authentication/src/index.ts"
 			],
 			"@meetup-automation/hcaptcha-captcha-resolver": [
-				"./packages/adapter/hcaptcha-captcha-resolver/src/index.ts"
+				"./packages/adapter/browser-authentication/hcaptcha-captcha-resolver/src/index.ts"
 			]
 		}
 	}

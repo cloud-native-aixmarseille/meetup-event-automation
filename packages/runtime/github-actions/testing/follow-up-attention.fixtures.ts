@@ -7,7 +7,7 @@ import type {
 import { ManageMeetupAttention } from "@meetup-automation/journey";
 import { SystemCommunicationClock } from "@meetup-automation/system-clock";
 import { vi } from "vitest";
-import { fixture } from "../../../adapter/github-organizer-approval/testing/approval.fixtures.js";
+import { fixture } from "../../../adapter/journey/github-organizer-approval/testing/approval.fixtures.js";
 import { createTestEvent } from "../../../domain/event/testing/event.fixtures.js";
 import { AttentionComposition } from "../src/attention-composition.js";
 import { SERVICES } from "../src/composition.js";

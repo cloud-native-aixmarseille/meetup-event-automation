@@ -20,8 +20,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	decision,
 	request,
-} from "../../../adapter/github-organizer-approval/testing/approval.fixtures.js";
-import { fixture } from "../../../adapter/github-organizer-attention/testing/attention.fixtures.js";
+} from "../../../adapter/journey/github-organizer-approval/testing/approval.fixtures.js";
+import { fixture } from "../../../adapter/communication/github-organizer-attention/testing/attention.fixtures.js";
 import { createTestEvent } from "../../../domain/event/testing/event.fixtures.js";
 import { followUpFixture } from "../testing/follow-up-attention.fixtures.js";
 import {

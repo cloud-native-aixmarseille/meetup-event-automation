@@ -2,16 +2,16 @@ import { describe, expect, it, vi } from "vitest";
 import {
 	GitHubEventCommentRepository,
 	GithubEventCommentRepositoryComposition,
-} from "../packages/adapter/github-event-comment-repository/src/index.js";
+} from "../packages/adapter/event/github-event-comment-repository/src/index.js";
 import {
 	AttentionCommentRetention,
 	GithubAttentionRepository,
 	GithubOrganizerAttentionComposition,
-} from "../packages/adapter/github-organizer-attention/src/index.js";
+} from "../packages/adapter/communication/github-organizer-attention/src/index.js";
 import {
 	fixture,
 	state,
-} from "../packages/adapter/github-organizer-attention/testing/attention.fixtures.js";
+} from "../packages/adapter/communication/github-organizer-attention/testing/attention.fixtures.js";
 import { JourneyComposition } from "../packages/application/journey/src/index.js";
 import { CommunicationDomainComposition } from "../packages/domain/communication/src/index.js";
 import type { EventDiagnostic } from "../packages/domain/event/src/index.js";

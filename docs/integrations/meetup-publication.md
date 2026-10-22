@@ -224,7 +224,7 @@ to artifacts or persistent caches. Credentials are masked before use.
 Before entering credentials, the browser can attempt one hCaptcha challenge with
 [the open-source hcaptcha-challenger](https://github.com/QIN2DIM/hcaptcha-challenger)
 and Gemini. The solver is installed separately under its GPL-3.0-or-later license
-using [locked Python dependencies](../../packages/adapter/hcaptcha-captcha-resolver/python/requirements.txt).
+using [locked Python dependencies](../../packages/adapter/browser-authentication/hcaptcha-captcha-resolver/python/requirements.txt).
 The adapter checks the caller-selected HTTPS page and refuses pages containing
 credentials before starting the solver. A successful solver result must be
 confirmed by the page's CAPTCHA response.

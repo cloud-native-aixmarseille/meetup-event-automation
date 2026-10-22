@@ -1,0 +1,25 @@
+{
+	"name": "github-issue-form-event-document-codec",
+	"projectType": "library",
+	"sourceRoot": "packages/adapter/event/github-issue-form-event-document-codec/src",
+	"targets": {
+		"typecheck": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "tsc --noEmit -p packages/adapter/event/github-issue-form-event-document-codec/tsconfig.lib.json"
+			}
+		},
+		"test": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "vitest run --config packages/adapter/event/github-issue-form-event-document-codec/vitest.config.ts"
+			}
+		}
+	},
+	"tags": [
+		"type:adapter",
+		"scope:event",
+		"technology:github-issue-form",
+		"responsibility:event-document-codec"
+	]
+}

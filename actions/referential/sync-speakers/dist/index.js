@@ -46453,7 +46453,7 @@ var GithubActionsComposition = class _GithubActionsComposition {
   }
 };
 
-// packages/adapter/conference-hall-proposal-source/src/conference-hall-proposal-source.ts
+// packages/adapter/referential/conference-hall-proposal-source/src/conference-hall-proposal-source.ts
 var ConferenceHallProposalSource = class {
   constructor(collaborators, event, apiKey, request2, now2) {
     this.collaborators = collaborators;
@@ -46567,7 +46567,7 @@ var ConferenceHallProposalSource = class {
   }
 };
 
-// packages/adapter/conference-hall-proposal-source/src/proposal-export-parser.ts
+// packages/adapter/referential/conference-hall-proposal-source/src/proposal-export-parser.ts
 var ProposalExportParser = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -46679,7 +46679,7 @@ var ProposalExportParser = class {
   }
 };
 
-// packages/adapter/conference-hall-proposal-source/src/dependency-composition.ts
+// packages/adapter/referential/conference-hall-proposal-source/src/dependency-composition.ts
 var ConferenceHallProposalSourceComposition = class {
   conferenceHallProposalSource(event, apiKey, request2 = fetch, now2 = Date.now) {
     return new ConferenceHallProposalSource(
@@ -46700,7 +46700,7 @@ var ConferenceHallProposalSourceComposition = class {
   }
 };
 
-// packages/adapter/csv-referential-repository/src/csv-referential-repository.ts
+// packages/adapter/referential/csv-referential-repository/src/csv-referential-repository.ts
 import { readFile as readFile3, realpath } from "node:fs/promises";
 import { isAbsolute, relative, resolve as resolve2, sep } from "node:path";
 var CsvReferentialRepository = class {
@@ -46750,7 +46750,7 @@ var CsvReferentialRepository = class {
   }
 };
 
-// packages/adapter/csv-referential-repository/src/csv-speaker-catalog-store.ts
+// packages/adapter/referential/csv-referential-repository/src/csv-speaker-catalog-store.ts
 import { createHash as createHash3 } from "node:crypto";
 import { readFile as readFile4, writeFile as writeFile2 } from "node:fs/promises";
 import { join as join3 } from "node:path";
@@ -46839,7 +46839,7 @@ var CsvSpeakerCatalogStore = class {
   }
 };
 
-// packages/adapter/csv-referential-repository/src/dependency-composition.ts
+// packages/adapter/referential/csv-referential-repository/src/dependency-composition.ts
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
@@ -48547,7 +48547,7 @@ var parse2 = function(data, opts = {}) {
   return records;
 };
 
-// packages/adapter/csv-referential-repository/src/csv-referential-codec.ts
+// packages/adapter/referential/csv-referential-repository/src/csv-referential-codec.ts
 var CsvReferentialCodec = class {
   decode(hostsSource, speakersSource, hostsPath, speakersPath) {
     const hosts = this.parseRows(hostsSource).map(
@@ -48607,7 +48607,7 @@ var CsvReferentialCodec = class {
   }
 };
 
-// packages/adapter/csv-referential-repository/src/speaker-allocation-history.ts
+// packages/adapter/referential/csv-referential-repository/src/speaker-allocation-history.ts
 var SpeakerAllocationHistory = class {
   constructor(collaborators, root, command) {
     this.collaborators = collaborators;
@@ -48653,7 +48653,7 @@ var SpeakerAllocationHistory = class {
   }
 };
 
-// packages/adapter/csv-referential-repository/src/speaker-allocation-state-codec.ts
+// packages/adapter/referential/csv-referential-repository/src/speaker-allocation-state-codec.ts
 var STATE_LINE_WIDTH = 80;
 var STATE_INDENT_WIDTH = 2;
 var SpeakerAllocationStateCodec = class {
@@ -48695,7 +48695,7 @@ var SpeakerAllocationStateCodec = class {
   }
 };
 
-// packages/adapter/csv-referential-repository/src/speaker-catalog-csv.ts
+// packages/adapter/referential/csv-referential-repository/src/speaker-catalog-csv.ts
 var IMPORT_COLUMNS = [
   "speaker_id",
   "firstname",
@@ -48788,7 +48788,7 @@ var SpeakerCatalogCsv = class {
   }
 };
 
-// packages/adapter/csv-referential-repository/src/dependency-composition.ts
+// packages/adapter/referential/csv-referential-repository/src/dependency-composition.ts
 var CsvReferentialRepositoryComposition = class {
   csvReferentialCodec() {
     return new CsvReferentialCodec();
@@ -48829,36 +48829,36 @@ var CsvReferentialRepositoryComposition = class {
   }
 };
 
-// packages/adapter/yaml-issue-form-projection/src/i18n/messages.en.ts
+// packages/adapter/journey/yaml-issue-form-projection/src/i18n/messages.en.ts
 var EN_MESSAGES3 = {
   "form.speakers.guidance": "Select speakers by copying one or more references into the agenda.",
   "form.speakers.show": "Show available speaker references"
 };
 
-// packages/adapter/yaml-issue-form-projection/src/i18n/messages.fr.ts
+// packages/adapter/journey/yaml-issue-form-projection/src/i18n/messages.fr.ts
 var FR_MESSAGES3 = {
   "form.speakers.guidance": "S\xE9lectionnez les intervenants en copiant une ou plusieurs r\xE9f\xE9rences dans le programme.",
   "form.speakers.show": "Afficher les r\xE9f\xE9rences des intervenants disponibles"
 };
 
-// packages/adapter/yaml-issue-form-projection/src/i18n/catalog.ts
+// packages/adapter/journey/yaml-issue-form-projection/src/i18n/catalog.ts
 var CATALOGS3 = {
   en: { ...EN_MESSAGES3 },
   fr: { ...FR_MESSAGES3 }
 };
 
-// packages/adapter/yaml-issue-form-projection/src/i18n/issue-form-messages.ts
+// packages/adapter/journey/yaml-issue-form-projection/src/i18n/issue-form-messages.ts
 var IssueFormMessages = class extends MessageLocalizer {
   constructor(collaborators, locale = "en") {
     super(collaborators, CATALOGS3, locale);
   }
 };
 
-// packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-projection-contracts.ts
+// packages/adapter/journey/yaml-issue-form-projection/src/yaml-issue-form-projection-contracts.ts
 var HOST_FIELD_ID = "hoster";
 var AVAILABLE_SPEAKERS_MARKER = "<!-- Available speakers -->";
 
-// packages/adapter/yaml-issue-form-projection/src/speaker-references-presenter.ts
+// packages/adapter/journey/yaml-issue-form-projection/src/speaker-references-presenter.ts
 var SpeakerReferencesPresenter = class {
   constructor(messages) {
     this.messages = messages;
@@ -48884,7 +48884,7 @@ var SpeakerReferencesPresenter = class {
   }
 };
 
-// packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-document.ts
+// packages/adapter/journey/yaml-issue-form-projection/src/yaml-issue-form-document.ts
 var import_yaml = __toESM(require_dist(), 1);
 var YamlIssueFormDocument = class {
   project(source, hostOptions, speakersMarkdown, occurrenceStatusFieldId) {
@@ -48993,7 +48993,7 @@ var YamlIssueFormDocument = class {
   }
 };
 
-// packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-projection.ts
+// packages/adapter/journey/yaml-issue-form-projection/src/yaml-issue-form-projection.ts
 import { readFile as readFile5, realpath as realpath2, stat as stat2, writeFile as writeFile3 } from "node:fs/promises";
 import { isAbsolute as isAbsolute2, relative as relative2, resolve as resolve3, sep as sep2 } from "node:path";
 
@@ -56251,7 +56251,7 @@ async function Vi2(t7, e) {
 var Wi2 = de2(it2, 0);
 var $i2 = { parse: de2(du), formatAST: de2(Fu), formatDoc: de2(Eu), printToDoc: de2(Cu), printDocToString: de2(hu) };
 
-// packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-projection.ts
+// packages/adapter/journey/yaml-issue-form-projection/src/yaml-issue-form-projection.ts
 var YamlIssueFormProjection = class {
   constructor(collaborators, options) {
     this.collaborators = collaborators;
@@ -56333,7 +56333,7 @@ var YamlIssueFormProjection = class {
   }
 };
 
-// packages/adapter/yaml-issue-form-projection/src/dependency-composition.ts
+// packages/adapter/journey/yaml-issue-form-projection/src/dependency-composition.ts
 var YamlIssueFormProjectionComposition = class {
   issueFormMessages(...args) {
     return new IssueFormMessages(

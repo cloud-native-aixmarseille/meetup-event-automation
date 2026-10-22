@@ -44371,10 +44371,10 @@ var CommunicationAction = class {
   }
 };
 
-// packages/adapter/github-delivery-ledger/src/github-delivery-ledger-contracts.ts
+// packages/adapter/communication/github-delivery-ledger/src/github-delivery-ledger-contracts.ts
 var DELIVERY_LEDGER_MARKER = "<!-- meetup-automation-delivery-ledger:v1 -->";
 
-// packages/adapter/github-delivery-ledger/src/github-delivery-ledger.ts
+// packages/adapter/communication/github-delivery-ledger/src/github-delivery-ledger.ts
 var GithubDeliveryLedger = class {
   constructor(collaborators, comments, options, presenter) {
     this.collaborators = collaborators;
@@ -44544,7 +44544,7 @@ var GithubDeliveryLedger = class {
   }
 };
 
-// packages/adapter/github-delivery-ledger/src/i18n/messages.en.ts
+// packages/adapter/communication/github-delivery-ledger/src/i18n/messages.en.ts
 var EN_MESSAGES = {
   "ledger.title": "### Communication status",
   "ledger.empty": "No deliveries recorded.",
@@ -44555,7 +44555,7 @@ var EN_MESSAGES = {
   "ledger.attention": "Check the provider before retrying unverified or rejected deliveries."
 };
 
-// packages/adapter/github-delivery-ledger/src/i18n/messages.fr.ts
+// packages/adapter/communication/github-delivery-ledger/src/i18n/messages.fr.ts
 var FR_MESSAGES = {
   "ledger.title": "### \xC9tat des communications",
   "ledger.empty": "Aucun envoi enregistr\xE9.",
@@ -44566,17 +44566,17 @@ var FR_MESSAGES = {
   "ledger.attention": "V\xE9rifiez les envois refus\xE9s ou incertains aupr\xE8s du fournisseur avant de r\xE9essayer."
 };
 
-// packages/adapter/github-delivery-ledger/src/i18n/catalog.ts
+// packages/adapter/communication/github-delivery-ledger/src/i18n/catalog.ts
 var CATALOGS = { en: EN_MESSAGES, fr: FR_MESSAGES };
 
-// packages/adapter/github-delivery-ledger/src/i18n/ledger-messages.ts
+// packages/adapter/communication/github-delivery-ledger/src/i18n/ledger-messages.ts
 var LedgerMessages = class extends MessageLocalizer {
   constructor(collaborators, locale = "en") {
     super(collaborators, CATALOGS, locale);
   }
 };
 
-// packages/adapter/github-delivery-ledger/src/ledger-comment-codec.ts
+// packages/adapter/communication/github-delivery-ledger/src/ledger-comment-codec.ts
 var LedgerCommentCodec = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -44628,7 +44628,7 @@ ${json}
   }
 };
 
-// packages/adapter/github-delivery-ledger/src/ledger-comment-presenter.ts
+// packages/adapter/communication/github-delivery-ledger/src/ledger-comment-presenter.ts
 var LedgerCommentPresenter = class {
   constructor(collaborators, messages5) {
     this.collaborators = collaborators;
@@ -44665,7 +44665,7 @@ var LedgerCommentPresenter = class {
   }
 };
 
-// packages/adapter/github-delivery-ledger/src/ledger-entry-mapping.ts
+// packages/adapter/communication/github-delivery-ledger/src/ledger-entry-mapping.ts
 import { createHash as createHash3 } from "node:crypto";
 var LedgerEntryMapping = class {
   publicEntry(entry) {
@@ -44699,7 +44699,7 @@ var LedgerEntryMapping = class {
   }
 };
 
-// packages/adapter/github-delivery-ledger/src/scoped-github-ledger-comment-client.ts
+// packages/adapter/communication/github-delivery-ledger/src/scoped-github-ledger-comment-client.ts
 var ScopedGithubLedgerCommentClient = class {
   constructor(client, owner, repo, issueNumber) {
     this.client = client;
@@ -44770,7 +44770,7 @@ var ScopedGithubLedgerCommentClient = class {
   }
 };
 
-// packages/adapter/github-delivery-ledger/src/dependency-composition.ts
+// packages/adapter/communication/github-delivery-ledger/src/dependency-composition.ts
 var GithubDeliveryLedgerComposition = class {
   githubDeliveryLedger(...args) {
     return new GithubDeliveryLedger(
@@ -44808,7 +44808,7 @@ var GithubDeliveryLedgerComposition = class {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/approval-decision-parser.ts
+// packages/adapter/journey/github-organizer-approval/src/approval-decision-parser.ts
 var ApprovalDecisionParser = class {
   constructor(policy, comments) {
     this.policy = policy;
@@ -44833,7 +44833,7 @@ var ApprovalDecisionParser = class {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/approval-notifications.ts
+// packages/adapter/journey/github-organizer-approval/src/approval-notifications.ts
 var ApprovalNotifications = class {
   constructor(policy, client, presenter, notifications, channelId) {
     this.policy = policy;
@@ -44898,7 +44898,7 @@ var ApprovalNotifications = class {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/approval-presenter.ts
+// packages/adapter/journey/github-organizer-approval/src/approval-presenter.ts
 var ApprovalPresenter = class {
   constructor(codec, renderers) {
     this.codec = codec;
@@ -44914,7 +44914,7 @@ var ApprovalPresenter = class {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/i18n/messages.en.ts
+// packages/adapter/journey/github-organizer-approval/src/i18n/messages.en.ts
 var EN_MESSAGES2 = {
   "approval.meetup.details": "### Organizer confirmation: publish Meetup event\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[Review the Meetup draft]({url}) before approving publication.",
   "approval.meetup.request": "Repository writers: select one choice. After approval, automation publishes the reviewed draft. Event changes require a new approval.\n\n- [{approveMark}] Approve publishing this Meetup event\n- [{rejectMark}] Reject publishing this Meetup event",
@@ -44936,7 +44936,7 @@ var EN_MESSAGES2 = {
   "approval.request": "### Organizer confirmation: {kind, select, introduction {introduction emails} thanks {thank-you emails} other {action}}\n\n{date} \xB7 Up to {count, number} recipients. Completed deliveries are skipped.\n\nRepository writers: select one choice.\n\n- [{approveMark}] Approve sending this batch\n- [{rejectMark}] Reject sending this batch\n\nBatch changes require a new approval."
 };
 
-// packages/adapter/github-organizer-approval/src/i18n/messages.fr.ts
+// packages/adapter/journey/github-organizer-approval/src/i18n/messages.fr.ts
 var FR_MESSAGES2 = {
   "approval.meetup.details": "### Confirmation des organisateurs : publier le meetup\n\n**{title}**\n\n{date} \xB7 {startTime}\u2013{endTime} ({timeZone})\n\n{venue}, {city}\n\n[V\xE9rifiez le brouillon Meetup]({url}) avant d'approuver sa publication.",
   "approval.meetup.request": "Organisateurs avec acc\xE8s en \xE9criture : cochez un seul choix. Apr\xE8s approbation, l'automatisation publie le brouillon v\xE9rifi\xE9. Toute modification de l'\xE9v\xE9nement n\xE9cessite une nouvelle approbation.\n\n- [{approveMark}] Approuver la publication de ce meetup\n- [{rejectMark}] Refuser la publication de ce meetup",
@@ -44958,10 +44958,10 @@ var FR_MESSAGES2 = {
   "approval.request": "### Confirmation des organisateurs : {kind, select, introduction {e-mails d'introduction} thanks {e-mails de remerciement} other {action}}\n\n{date} \xB7 Au maximum {count, number} destinataires. Les envois d\xE9j\xE0 termin\xE9s sont ignor\xE9s.\n\nOrganisateurs avec acc\xE8s en \xE9criture : cochez un seul choix.\n\n- [{approveMark}] Approuver l'envoi de ce lot\n- [{rejectMark}] Refuser l'envoi de ce lot\n\nToute modification du lot n\xE9cessite une nouvelle approbation."
 };
 
-// packages/adapter/github-organizer-approval/src/i18n/catalog.ts
+// packages/adapter/journey/github-organizer-approval/src/i18n/catalog.ts
 var CATALOGS2 = { en: EN_MESSAGES2, fr: FR_MESSAGES2 };
 
-// packages/adapter/github-organizer-approval/src/approval-presenter-factory.ts
+// packages/adapter/journey/github-organizer-approval/src/approval-presenter-factory.ts
 var ApprovalPresenterFactory = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -44976,7 +44976,7 @@ var ApprovalPresenterFactory = class {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/approval-record-factory.ts
+// packages/adapter/journey/github-organizer-approval/src/approval-record-factory.ts
 var ApprovalRecordFactory = class {
   constructor(collaborators, nextIdentity) {
     this.collaborators = collaborators;
@@ -45009,7 +45009,7 @@ var ApprovalRecordFactory = class {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/approval-comment-codec.ts
+// packages/adapter/journey/github-organizer-approval/src/approval-comment-codec.ts
 var APPROVAL_MARKER = "<!-- meetup-organizer-approval:v1 ";
 var ApprovalCommentCodec = class {
   constructor(collaborators) {
@@ -45030,7 +45030,7 @@ var ApprovalCommentCodec = class {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/approval-details-presenter.ts
+// packages/adapter/journey/github-organizer-approval/src/approval-details-presenter.ts
 var ApprovalDetailsPresenter = class {
   constructor(messages5) {
     this.messages = messages5;
@@ -45081,7 +45081,7 @@ var ApprovalDetailsPresenter = class {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/approval-details-preview.ts
+// packages/adapter/journey/github-organizer-approval/src/approval-details-preview.ts
 var ApprovalDetailsPreview = class {
   create(details) {
     const emails = details.emails.slice(0, 20).map((email) => ({
@@ -45115,7 +45115,7 @@ var ApprovalDetailsPreview = class {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/approval-request-schema.ts
+// packages/adapter/journey/github-organizer-approval/src/approval-request-schema.ts
 var ApprovalRequestSchema = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -45138,7 +45138,7 @@ var ApprovalRequestSchema = class {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/approval-schema.ts
+// packages/adapter/journey/github-organizer-approval/src/approval-schema.ts
 var ApprovalSchema = class {
   object(value) {
     return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -45151,7 +45151,7 @@ var ApprovalSchema = class {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/email-approval-details-schema.ts
+// packages/adapter/journey/github-organizer-approval/src/email-approval-details-schema.ts
 var EmailApprovalDetailsSchema = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -45185,7 +45185,7 @@ var EmailApprovalDetailsSchema = class {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/email-approval-presenter.ts
+// packages/adapter/journey/github-organizer-approval/src/email-approval-presenter.ts
 var EmailApprovalPresenter = class {
   constructor(collaborators, messages5) {
     this.collaborators = collaborators;
@@ -45232,7 +45232,7 @@ var EmailApprovalPresenter = class {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/finalize-approval-decision.ts
+// packages/adapter/journey/github-organizer-approval/src/finalize-approval-decision.ts
 var FinalizeApprovalDecision = class {
   constructor(decisions, repository, notifications) {
     this.decisions = decisions;
@@ -45262,7 +45262,7 @@ var FinalizeApprovalDecision = class {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/follow-up-presenter.ts
+// packages/adapter/journey/github-organizer-approval/src/follow-up-presenter.ts
 var FollowUpPresenter = class {
   constructor(policy, messages5) {
     this.policy = policy;
@@ -45292,7 +45292,7 @@ var FollowUpPresenter = class {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/follow-up-schema.ts
+// packages/adapter/journey/github-organizer-approval/src/follow-up-schema.ts
 var FollowUpSchema = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -45305,7 +45305,7 @@ var FollowUpSchema = class {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/github-approval-attention-source.ts
+// packages/adapter/journey/github-organizer-approval/src/github-approval-attention-source.ts
 var GithubApprovalAttentionSource = class {
   constructor(repository, finalizer) {
     this.repository = repository;
@@ -45331,7 +45331,7 @@ var GithubApprovalAttentionSource = class {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/github-approval-client.ts
+// packages/adapter/journey/github-organizer-approval/src/github-approval-client.ts
 var GithubApprovalClient = class {
   constructor(collaborators, api, owner, repo, issue2) {
     this.collaborators = collaborators;
@@ -45450,7 +45450,7 @@ var GithubApprovalClient = class {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/github-approval-repository.ts
+// packages/adapter/journey/github-organizer-approval/src/github-approval-repository.ts
 var GithubApprovalRepository = class {
   constructor(collaborators, client, trusted, authorLogin, presenter) {
     this.collaborators = collaborators;
@@ -45497,7 +45497,7 @@ var GithubApprovalRepository = class {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/github-approval-response.ts
+// packages/adapter/journey/github-organizer-approval/src/github-approval-response.ts
 var GithubApprovalResponse = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -45561,7 +45561,7 @@ var GithubApprovalResponse = class {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/github-follow-up-attention-repository.ts
+// packages/adapter/journey/github-organizer-approval/src/github-follow-up-attention-repository.ts
 var GithubFollowUpAttentionRepository = class {
   constructor(approvals, previous, codec, presentation) {
     this.approvals = approvals;
@@ -45590,7 +45590,7 @@ var GithubFollowUpAttentionRepository = class {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/github-organizer-approval.ts
+// packages/adapter/journey/github-organizer-approval/src/github-organizer-approval.ts
 var GithubOrganizerApproval = class {
   constructor(collaborators, repository, records, finalizer, notifications, permissions) {
     this.collaborators = collaborators;
@@ -45667,7 +45667,7 @@ var GithubOrganizerApproval = class {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/github-organizer-follow-up.ts
+// packages/adapter/journey/github-organizer-approval/src/github-organizer-follow-up.ts
 var GithubOrganizerFollowUp = class {
   constructor(policy, repository, records, finalizer) {
     this.policy = policy;
@@ -45719,14 +45719,14 @@ var GithubOrganizerFollowUp = class {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/i18n/approval-messages.ts
+// packages/adapter/journey/github-organizer-approval/src/i18n/approval-messages.ts
 var ApprovalMessages = class extends MessageLocalizer {
   constructor(collaborators, locale = "en") {
     super(collaborators, CATALOGS2, locale);
   }
 };
 
-// packages/adapter/github-organizer-approval/src/meetup-approval-details-schema.ts
+// packages/adapter/journey/github-organizer-approval/src/meetup-approval-details-schema.ts
 var MeetupApprovalDetailsSchema = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -45741,7 +45741,7 @@ var MeetupApprovalDetailsSchema = class {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/meetup-approval-presenter.ts
+// packages/adapter/journey/github-organizer-approval/src/meetup-approval-presenter.ts
 var MeetupApprovalPresenter = class {
   constructor(messages5) {
     this.messages = messages5;
@@ -45774,7 +45774,7 @@ var MeetupApprovalPresenter = class {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/resolve-approval-decision.ts
+// packages/adapter/journey/github-organizer-approval/src/resolve-approval-decision.ts
 var ResolveApprovalDecision = class {
   constructor(client, parser) {
     this.client = client;
@@ -45798,7 +45798,7 @@ var ResolveApprovalDecision = class {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/stored-approval-schema.ts
+// packages/adapter/journey/github-organizer-approval/src/stored-approval-schema.ts
 var StoredApprovalSchema = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -45836,7 +45836,7 @@ var StoredApprovalSchema = class {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/trusted-approval-state.ts
+// packages/adapter/journey/github-organizer-approval/src/trusted-approval-state.ts
 var TrustedApprovalState = class {
   constructor(collaborators, client, authorLogin) {
     this.collaborators = collaborators;
@@ -45869,7 +45869,7 @@ var TrustedApprovalState = class {
   }
 };
 
-// packages/adapter/github-organizer-approval/src/dependency-composition.ts
+// packages/adapter/journey/github-organizer-approval/src/dependency-composition.ts
 var GithubOrganizerApprovalComposition = class {
   approvalCommentCodec() {
     return new ApprovalCommentCodec({
@@ -46021,7 +46021,7 @@ var GithubOrganizerApprovalComposition = class {
   }
 };
 
-// packages/adapter/github-repository-dispatch-mail-gateway/src/github-repository-dispatch-mail-gateway.ts
+// packages/adapter/communication/github-repository-dispatch-mail-gateway/src/github-repository-dispatch-mail-gateway.ts
 var GithubRepositoryDispatchMailGateway = class {
   constructor(client, repository) {
     this.client = client;
@@ -46116,14 +46116,14 @@ var GithubRepositoryDispatchMailGateway = class {
   }
 };
 
-// packages/adapter/github-repository-dispatch-mail-gateway/src/dependency-composition.ts
+// packages/adapter/communication/github-repository-dispatch-mail-gateway/src/dependency-composition.ts
 var GithubRepositoryDispatchMailGatewayComposition = class {
   githubRepositoryDispatchMailGateway(...args) {
     return new GithubRepositoryDispatchMailGateway(...args);
   }
 };
 
-// packages/adapter/openfeedback-event-gateway/src/openfeedback-agenda-gateway.ts
+// packages/adapter/publication/openfeedback-event-gateway/src/openfeedback-agenda-gateway.ts
 var OpenFeedbackAgendaGateway = class {
   constructor(collaborators, records) {
     this.collaborators = collaborators;
@@ -46160,7 +46160,7 @@ var OpenFeedbackAgendaGateway = class {
   }
 };
 
-// packages/adapter/openfeedback-event-gateway/src/openfeedback-agenda-plan.ts
+// packages/adapter/publication/openfeedback-event-gateway/src/openfeedback-agenda-plan.ts
 import { createHash as createHash4 } from "node:crypto";
 var OpenFeedbackAgendaPlan = class {
   constructor(collaborators) {
@@ -46295,7 +46295,7 @@ var OpenFeedbackAgendaPlan = class {
   }
 };
 
-// packages/adapter/openfeedback-event-gateway/src/openfeedback-agenda-snapshot.ts
+// packages/adapter/publication/openfeedback-event-gateway/src/openfeedback-agenda-snapshot.ts
 var OpenFeedbackAgendaSnapshot = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -46344,7 +46344,7 @@ var OpenFeedbackAgendaSnapshot = class {
   }
 };
 
-// packages/adapter/openfeedback-event-gateway/src/openfeedback-client.ts
+// packages/adapter/publication/openfeedback-event-gateway/src/openfeedback-client.ts
 var OpenFeedbackClient = class {
   constructor(apiKey, fetcher) {
     this.apiKey = apiKey;
@@ -46372,7 +46372,7 @@ var OpenFeedbackClient = class {
   }
 };
 
-// packages/adapter/openfeedback-event-gateway/src/openfeedback-event-gateway.ts
+// packages/adapter/publication/openfeedback-event-gateway/src/openfeedback-event-gateway.ts
 import { createHash as createHash5 } from "node:crypto";
 var OpenFeedbackEventGateway = class {
   constructor(collaborators, client, agendas) {
@@ -46416,7 +46416,7 @@ var OpenFeedbackEventGateway = class {
   }
 };
 
-// packages/adapter/openfeedback-event-gateway/src/openfeedback-event-gateway-factory.ts
+// packages/adapter/publication/openfeedback-event-gateway/src/openfeedback-event-gateway-factory.ts
 var OpenFeedbackEventGatewayFactory = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -46433,7 +46433,7 @@ var OpenFeedbackEventGatewayFactory = class {
   }
 };
 
-// packages/adapter/openfeedback-event-gateway/src/openfeedback-record-equality.ts
+// packages/adapter/publication/openfeedback-event-gateway/src/openfeedback-record-equality.ts
 var OpenFeedbackRecordEquality = class {
   equal(left, right) {
     if (left.id !== right.id) return false;
@@ -46447,7 +46447,7 @@ var OpenFeedbackRecordEquality = class {
   }
 };
 
-// packages/adapter/openfeedback-event-gateway/src/openfeedback-records-gateway.ts
+// packages/adapter/publication/openfeedback-event-gateway/src/openfeedback-records-gateway.ts
 var OpenFeedbackRecordsGateway = class {
   constructor(collaborators, client) {
     this.collaborators = collaborators;
@@ -46500,14 +46500,14 @@ var OpenFeedbackRecordsGateway = class {
   }
 };
 
-// packages/adapter/openfeedback-event-gateway/src/openfeedback-resource-id.ts
+// packages/adapter/publication/openfeedback-event-gateway/src/openfeedback-resource-id.ts
 var OpenFeedbackResourceId = class {
   isValid(value) {
     return typeof value === "string" && Array.from(value).length <= 1500 && /^(?!\.\.?$)(?!__.*__$)[^/]+$/u.test(value);
   }
 };
 
-// packages/adapter/openfeedback-event-gateway/src/openfeedback-response.ts
+// packages/adapter/publication/openfeedback-event-gateway/src/openfeedback-response.ts
 var OpenFeedbackResponse = class {
   async read(response, id) {
     if (!response.ok)
@@ -46524,7 +46524,7 @@ var OpenFeedbackResponse = class {
   }
 };
 
-// packages/adapter/openfeedback-event-gateway/src/openfeedback-talk-results-gateway.ts
+// packages/adapter/publication/openfeedback-event-gateway/src/openfeedback-talk-results-gateway.ts
 var OpenFeedbackTalkResultsGateway = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -46571,7 +46571,7 @@ var OpenFeedbackTalkResultsGateway = class {
   }
 };
 
-// packages/adapter/openfeedback-event-gateway/src/dependency-composition.ts
+// packages/adapter/publication/openfeedback-event-gateway/src/dependency-composition.ts
 var OpenfeedbackEventGatewayComposition = class {
   openFeedbackAgendaGateway(...args) {
     return new OpenFeedbackAgendaGateway(
@@ -46644,7 +46644,7 @@ var OpenfeedbackEventGatewayComposition = class {
   }
 };
 
-// packages/adapter/slack-notification-gateway/src/attention-i18n/messages.en.ts
+// packages/adapter/communication/slack-notification-gateway/src/attention-i18n/messages.en.ts
 var messages = {
   "failure.communications": "Email preparation or delivery failed.",
   "failure.feedback": "OpenFeedback synchronization failed.",
@@ -46689,7 +46689,7 @@ var messages = {
   "task.unknown": "review the issue"
 };
 
-// packages/adapter/slack-notification-gateway/src/attention-i18n/messages.fr.ts
+// packages/adapter/communication/slack-notification-gateway/src/attention-i18n/messages.fr.ts
 var messages2 = {
   "failure.communications": "La pr\xE9paration ou l'envoi des courriels a \xE9chou\xE9.",
   "failure.feedback": "La synchronisation OpenFeedback a \xE9chou\xE9.",
@@ -46734,10 +46734,10 @@ var messages2 = {
   "task.unknown": "consulter le ticket"
 };
 
-// packages/adapter/slack-notification-gateway/src/attention-i18n/catalog.ts
+// packages/adapter/communication/slack-notification-gateway/src/attention-i18n/catalog.ts
 var CATALOGS3 = { en: messages, fr: messages2 };
 
-// packages/adapter/slack-notification-gateway/src/attention-i18n/slack-attention-messages.ts
+// packages/adapter/communication/slack-notification-gateway/src/attention-i18n/slack-attention-messages.ts
 var SlackAttentionMessages = class extends MessageLocalizer {
   constructor(collaborators, locale = "en") {
     super(collaborators, CATALOGS3, locale);
@@ -46752,29 +46752,29 @@ var SlackAttentionMessages = class extends MessageLocalizer {
   }
 };
 
-// packages/adapter/slack-notification-gateway/src/i18n/messages.en.ts
+// packages/adapter/communication/slack-notification-gateway/src/i18n/messages.en.ts
 var EN_MESSAGES3 = {
   "request.introduction": "Introduction emails \xB7 {date} \xB7 Up to {count, number} recipients\nApprove or reject: {url}",
   "request.publication": "Meetup publication \xB7 {date}\nReview the draft and approve or reject publication: {url}"
 };
 
-// packages/adapter/slack-notification-gateway/src/i18n/messages.fr.ts
+// packages/adapter/communication/slack-notification-gateway/src/i18n/messages.fr.ts
 var FR_MESSAGES3 = {
   "request.introduction": "E-mails d'introduction \xB7 {date} \xB7 Au maximum {count, number} destinataires\nApprouver ou refuser : {url}",
   "request.publication": "Publication Meetup \xB7 {date}\nV\xE9rifiez le brouillon et approuvez ou refusez sa publication : {url}"
 };
 
-// packages/adapter/slack-notification-gateway/src/i18n/catalog.ts
+// packages/adapter/communication/slack-notification-gateway/src/i18n/catalog.ts
 var CATALOGS4 = { en: EN_MESSAGES3, fr: FR_MESSAGES3 };
 
-// packages/adapter/slack-notification-gateway/src/i18n/slack-approval-messages.ts
+// packages/adapter/communication/slack-notification-gateway/src/i18n/slack-approval-messages.ts
 var SlackApprovalMessages = class extends MessageLocalizer {
   constructor(collaborators, locale) {
     super(collaborators, CATALOGS4, locale);
   }
 };
 
-// packages/adapter/slack-notification-gateway/src/slack-api-client.ts
+// packages/adapter/communication/slack-notification-gateway/src/slack-api-client.ts
 var SlackApiClient = class {
   constructor(token, fetcher) {
     this.token = token;
@@ -46884,7 +46884,7 @@ var SlackApiClient = class {
   }
 };
 
-// packages/adapter/slack-notification-gateway/src/slack-approval-notification.ts
+// packages/adapter/communication/slack-notification-gateway/src/slack-approval-notification.ts
 var SlackApprovalNotification = class {
   constructor(collaborators, client, presenter) {
     this.collaborators = collaborators;
@@ -46917,7 +46917,7 @@ var SlackApprovalNotification = class {
   }
 };
 
-// packages/adapter/slack-notification-gateway/src/slack-approval-presenter.ts
+// packages/adapter/communication/slack-notification-gateway/src/slack-approval-presenter.ts
 var SlackApprovalPresenter = class {
   constructor(renderers) {
     this.renderers = renderers;
@@ -46928,7 +46928,7 @@ var SlackApprovalPresenter = class {
   }
 };
 
-// packages/adapter/slack-notification-gateway/src/slack-attention-notification.ts
+// packages/adapter/communication/slack-notification-gateway/src/slack-attention-notification.ts
 import { createHash as createHash6 } from "node:crypto";
 var SlackAttentionNotification = class {
   constructor(collaborators, client, channel, presenter) {
@@ -46985,7 +46985,7 @@ var SlackAttentionNotification = class {
   }
 };
 
-// packages/adapter/slack-notification-gateway/src/slack-attention-presenter.ts
+// packages/adapter/communication/slack-notification-gateway/src/slack-attention-presenter.ts
 var SlackAttentionPresenter = class {
   constructor(collaborators, repository, issueNumber, messages5, checklist) {
     this.collaborators = collaborators;
@@ -47093,7 +47093,7 @@ var SlackAttentionPresenter = class {
   }
 };
 
-// packages/adapter/slack-notification-gateway/src/slack-email-approval-presenter.ts
+// packages/adapter/communication/slack-notification-gateway/src/slack-email-approval-presenter.ts
 var SlackEmailApprovalPresenter = class {
   constructor(messages5) {
     this.messages = messages5;
@@ -47108,7 +47108,7 @@ var SlackEmailApprovalPresenter = class {
   }
 };
 
-// packages/adapter/slack-notification-gateway/src/slack-meetup-approval-presenter.ts
+// packages/adapter/communication/slack-notification-gateway/src/slack-meetup-approval-presenter.ts
 var SlackMeetupApprovalPresenter = class {
   constructor(messages5) {
     this.messages = messages5;
@@ -47122,7 +47122,7 @@ var SlackMeetupApprovalPresenter = class {
   }
 };
 
-// packages/adapter/slack-notification-gateway/src/slack-message-reference.ts
+// packages/adapter/communication/slack-notification-gateway/src/slack-message-reference.ts
 var SlackMessageReference = class {
   valid(message) {
     return /^[CGD][A-Z0-9]+$/.test(message.destination) && /^\d+\.\d+$/.test(message.messageId);
@@ -47135,7 +47135,7 @@ var SlackMessageReference = class {
   }
 };
 
-// packages/adapter/slack-notification-gateway/src/dependency-composition.ts
+// packages/adapter/communication/slack-notification-gateway/src/dependency-composition.ts
 var SlackNotificationGatewayComposition = class {
   slackApiClient(token, fetcher = fetch) {
     return new SlackApiClient(token, fetcher);
@@ -47195,7 +47195,7 @@ var SlackNotificationGatewayComposition = class {
   }
 };
 
-// packages/adapter/system-clock/src/system-communication-clock.ts
+// packages/adapter/time/system-clock/src/system-communication-clock.ts
 var SystemCommunicationClock = class {
   constructor(dateFactory) {
     this.dateFactory = dateFactory;
@@ -47206,7 +47206,7 @@ var SystemCommunicationClock = class {
   }
 };
 
-// packages/adapter/system-clock/src/system-event-clock.ts
+// packages/adapter/time/system-clock/src/system-event-clock.ts
 var SystemEventClock = class {
   constructor(dateFactory) {
     this.dateFactory = dateFactory;
@@ -47217,7 +47217,7 @@ var SystemEventClock = class {
   }
 };
 
-// packages/adapter/system-clock/src/dependency-composition.ts
+// packages/adapter/time/system-clock/src/dependency-composition.ts
 var SystemClockComposition = class {
   systemCommunicationClock() {
     return new SystemCommunicationClock(() => /* @__PURE__ */ new Date());
@@ -47227,7 +47227,7 @@ var SystemClockComposition = class {
   }
 };
 
-// packages/adapter/conference-hall-proposal-source/src/conference-hall-proposal-source.ts
+// packages/adapter/referential/conference-hall-proposal-source/src/conference-hall-proposal-source.ts
 var ConferenceHallProposalSource = class {
   constructor(collaborators, event, apiKey, request2, now2) {
     this.collaborators = collaborators;
@@ -47341,7 +47341,7 @@ var ConferenceHallProposalSource = class {
   }
 };
 
-// packages/adapter/conference-hall-proposal-source/src/proposal-export-parser.ts
+// packages/adapter/referential/conference-hall-proposal-source/src/proposal-export-parser.ts
 var ProposalExportParser = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -47453,7 +47453,7 @@ var ProposalExportParser = class {
   }
 };
 
-// packages/adapter/conference-hall-proposal-source/src/dependency-composition.ts
+// packages/adapter/referential/conference-hall-proposal-source/src/dependency-composition.ts
 var ConferenceHallProposalSourceComposition = class {
   conferenceHallProposalSource(event, apiKey, request2 = fetch, now2 = Date.now) {
     return new ConferenceHallProposalSource(
@@ -47474,7 +47474,7 @@ var ConferenceHallProposalSourceComposition = class {
   }
 };
 
-// packages/adapter/csv-referential-repository/src/csv-referential-repository.ts
+// packages/adapter/referential/csv-referential-repository/src/csv-referential-repository.ts
 import { readFile, realpath } from "node:fs/promises";
 import { isAbsolute, relative, resolve, sep as sep2 } from "node:path";
 var CsvReferentialRepository = class {
@@ -47524,7 +47524,7 @@ var CsvReferentialRepository = class {
   }
 };
 
-// packages/adapter/csv-referential-repository/src/csv-speaker-catalog-store.ts
+// packages/adapter/referential/csv-referential-repository/src/csv-speaker-catalog-store.ts
 import { createHash as createHash7 } from "node:crypto";
 import { readFile as readFile2, writeFile as writeFile2 } from "node:fs/promises";
 import { join } from "node:path";
@@ -47613,7 +47613,7 @@ var CsvSpeakerCatalogStore = class {
   }
 };
 
-// packages/adapter/csv-referential-repository/src/dependency-composition.ts
+// packages/adapter/referential/csv-referential-repository/src/dependency-composition.ts
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
@@ -49321,7 +49321,7 @@ var parse4 = function(data, opts = {}) {
   return records;
 };
 
-// packages/adapter/csv-referential-repository/src/csv-referential-codec.ts
+// packages/adapter/referential/csv-referential-repository/src/csv-referential-codec.ts
 var CsvReferentialCodec = class {
   decode(hostsSource, speakersSource, hostsPath, speakersPath) {
     const hosts = this.parseRows(hostsSource).map(
@@ -49381,7 +49381,7 @@ var CsvReferentialCodec = class {
   }
 };
 
-// packages/adapter/csv-referential-repository/src/speaker-allocation-history.ts
+// packages/adapter/referential/csv-referential-repository/src/speaker-allocation-history.ts
 var SpeakerAllocationHistory = class {
   constructor(collaborators, root, command) {
     this.collaborators = collaborators;
@@ -49427,7 +49427,7 @@ var SpeakerAllocationHistory = class {
   }
 };
 
-// packages/adapter/csv-referential-repository/src/speaker-allocation-state-codec.ts
+// packages/adapter/referential/csv-referential-repository/src/speaker-allocation-state-codec.ts
 var STATE_LINE_WIDTH = 80;
 var STATE_INDENT_WIDTH = 2;
 var SpeakerAllocationStateCodec = class {
@@ -49469,7 +49469,7 @@ var SpeakerAllocationStateCodec = class {
   }
 };
 
-// packages/adapter/csv-referential-repository/src/speaker-catalog-csv.ts
+// packages/adapter/referential/csv-referential-repository/src/speaker-catalog-csv.ts
 var IMPORT_COLUMNS = [
   "speaker_id",
   "firstname",
@@ -49562,7 +49562,7 @@ var SpeakerCatalogCsv = class {
   }
 };
 
-// packages/adapter/csv-referential-repository/src/dependency-composition.ts
+// packages/adapter/referential/csv-referential-repository/src/dependency-composition.ts
 var CsvReferentialRepositoryComposition = class {
   csvReferentialCodec() {
     return new CsvReferentialCodec();
@@ -49603,12 +49603,12 @@ var CsvReferentialRepositoryComposition = class {
   }
 };
 
-// packages/adapter/github-event-comment-repository/src/github-event-comment-repository-contracts.ts
+// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository-contracts.ts
 var EVENT_DIAGNOSTIC_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics:v1 -->";
 var DUPLICATE_COMMENT_MARKER = "<!-- meetup-automation:event-diagnostics-duplicate:v1 -->";
 var COMMUNICATION_DIAGNOSTIC_COMMENT_MARKER = "<!-- meetup-automation:communication-diagnostics:v1 -->";
 
-// packages/adapter/github-event-comment-repository/src/diagnostic-comment-presenter.ts
+// packages/adapter/event/github-event-comment-repository/src/diagnostic-comment-presenter.ts
 var DiagnosticCommentPresenter = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -49646,7 +49646,7 @@ ${messages5.t("comment.resolved")}`;
   }
 };
 
-// packages/adapter/github-event-comment-repository/src/stage-diagnostic-guidance.ts
+// packages/adapter/event/github-event-comment-repository/src/stage-diagnostic-guidance.ts
 var STAGE_GUIDANCE = [
   [
     "publication.assets.pdf.source",
@@ -49838,7 +49838,7 @@ var STAGE_GUIDANCE = [
   ]
 ];
 
-// packages/adapter/github-event-comment-repository/src/diagnostic-guidance.ts
+// packages/adapter/event/github-event-comment-repository/src/diagnostic-guidance.ts
 var FIELD_ORDER = [
   "Event Title",
   "Event Date",
@@ -50126,7 +50126,7 @@ var GUIDANCE = new Map([
   ]
 ]);
 
-// packages/adapter/github-event-comment-repository/src/diagnostic-presentation.ts
+// packages/adapter/event/github-event-comment-repository/src/diagnostic-presentation.ts
 var DiagnosticPresenter = class {
   FIELD_ALIASES = new Map([
     ...FIELD_ORDER.map((field) => [field, field]),
@@ -50193,7 +50193,7 @@ var DiagnosticPresenter = class {
   }
 };
 
-// packages/adapter/github-event-comment-repository/src/github-event-comment-repository-configuration-error.ts
+// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository-configuration-error.ts
 var GitHubEventCommentRepositoryConfigurationError = class extends Error {
   constructor(message) {
     super(message);
@@ -50201,7 +50201,7 @@ var GitHubEventCommentRepositoryConfigurationError = class extends Error {
   }
 };
 
-// packages/adapter/github-event-comment-repository/src/github-event-comment-repository-response-error.ts
+// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository-response-error.ts
 var GitHubEventCommentRepositoryResponseError = class extends Error {
   constructor(message) {
     super(message);
@@ -50209,7 +50209,7 @@ var GitHubEventCommentRepositoryResponseError = class extends Error {
   }
 };
 
-// packages/adapter/github-event-comment-repository/src/github-event-comment-repository-scope-error.ts
+// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository-scope-error.ts
 var GitHubEventCommentRepositoryScopeError = class extends Error {
   constructor(expected, received) {
     super(
@@ -50219,7 +50219,7 @@ var GitHubEventCommentRepositoryScopeError = class extends Error {
   }
 };
 
-// packages/adapter/github-event-comment-repository/src/github-event-comment-repository.ts
+// packages/adapter/event/github-event-comment-repository/src/github-event-comment-repository.ts
 var GitHubEventCommentRepository = class {
   constructor(collaborators, client, options) {
     this.collaborators = collaborators;
@@ -50422,7 +50422,7 @@ ${this.messages.t("comment.duplicate")}`
   }
 };
 
-// packages/adapter/github-event-comment-repository/src/i18n/messages.en.ts
+// packages/adapter/event/github-event-comment-repository/src/i18n/messages.en.ts
 var EN_MESSAGES4 = {
   "comment.guidance.proposals.invalid-selection": "Enter distinct proposal numbers, one per line, from their Conference Hall URLs.",
   "comment.guidance.proposals.invalid": "Check the Conference Hall proposal selection and export format.",
@@ -50491,7 +50491,7 @@ var EN_MESSAGES4 = {
   "comment.guidance.referential.reference.speaker.invalid": "Choose a speaker from the speaker list using its name or `Speaker name [speaker-0001]`."
 };
 
-// packages/adapter/github-event-comment-repository/src/i18n/messages.fr.ts
+// packages/adapter/event/github-event-comment-repository/src/i18n/messages.fr.ts
 var FR_MESSAGES4 = {
   "comment.guidance.proposals.invalid-selection": "Saisissez les num\xE9ros des URL Conference Hall, un par ligne, sans doublons.",
   "comment.guidance.proposals.invalid": "V\xE9rifiez la s\xE9lection des propositions et le format de l'export Conference Hall.",
@@ -50560,7 +50560,7 @@ var FR_MESSAGES4 = {
   "comment.guidance.referential.reference.speaker.invalid": "Choisissez un intervenant de la liste des intervenants par son nom ou `Nom de l'intervenant [speaker-0001]`."
 };
 
-// packages/adapter/github-event-comment-repository/src/i18n/stage-messages.en.ts
+// packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.en.ts
 var STAGE_MESSAGES_EN = {
   "comment.guidance.communication.concurrent-checklist": "The issue changed after dispatch. Rerun to update completed email tasks.",
   "comment.guidance.feedback.conflict": "Resolve duplicate or ambiguous talks and speakers in OpenFeedback.",
@@ -50602,7 +50602,7 @@ var STAGE_MESSAGES_EN = {
   "comment.guidance.pdf.invalid": "PDF verification failed. Ask a maintainer to inspect the export before retrying."
 };
 
-// packages/adapter/github-event-comment-repository/src/i18n/stage-messages.fr.ts
+// packages/adapter/event/github-event-comment-repository/src/i18n/stage-messages.fr.ts
 var STAGE_MESSAGES_FR = {
   "comment.guidance.communication.concurrent-checklist": "Le ticket a chang\xE9 apr\xE8s les envois. Relancez pour actualiser les t\xE2ches termin\xE9es.",
   "comment.guidance.feedback.conflict": "Corrigez les conf\xE9rences ou intervenants en double ou ambigus dans OpenFeedback.",
@@ -50644,20 +50644,20 @@ var STAGE_MESSAGES_FR = {
   "comment.guidance.pdf.invalid": "La v\xE9rification du PDF a \xE9chou\xE9. Demandez \xE0 un responsable de v\xE9rifier l'export avant de r\xE9essayer."
 };
 
-// packages/adapter/github-event-comment-repository/src/i18n/catalog.ts
+// packages/adapter/event/github-event-comment-repository/src/i18n/catalog.ts
 var CATALOGS5 = {
   en: { ...EN_MESSAGES4, ...STAGE_MESSAGES_EN },
   fr: { ...FR_MESSAGES4, ...STAGE_MESSAGES_FR }
 };
 
-// packages/adapter/github-event-comment-repository/src/i18n/event-comment-messages.ts
+// packages/adapter/event/github-event-comment-repository/src/i18n/event-comment-messages.ts
 var EventCommentMessages = class extends MessageLocalizer {
   constructor(collaborators, locale = "en") {
     super(collaborators, CATALOGS5, locale);
   }
 };
 
-// packages/adapter/github-event-comment-repository/src/dependency-composition.ts
+// packages/adapter/event/github-event-comment-repository/src/dependency-composition.ts
 var GithubEventCommentRepositoryComposition = class {
   diagnosticCommentPresenter() {
     return new DiagnosticCommentPresenter({
@@ -50685,7 +50685,7 @@ var GithubEventCommentRepositoryComposition = class {
   }
 };
 
-// packages/adapter/github-event-repository/src/github-event-repository-configuration-error.ts
+// packages/adapter/event/github-event-repository/src/github-event-repository-configuration-error.ts
 var GitHubEventRepositoryConfigurationError = class extends Error {
   constructor(message) {
     super(message);
@@ -50693,7 +50693,7 @@ var GitHubEventRepositoryConfigurationError = class extends Error {
   }
 };
 
-// packages/adapter/github-event-repository/src/github-event-repository-response-error.ts
+// packages/adapter/event/github-event-repository/src/github-event-repository-response-error.ts
 var GitHubEventRepositoryResponseError = class extends Error {
   constructor(message) {
     super(message);
@@ -50701,7 +50701,7 @@ var GitHubEventRepositoryResponseError = class extends Error {
   }
 };
 
-// packages/adapter/github-event-repository/src/github-event-repository-scope-error.ts
+// packages/adapter/event/github-event-repository/src/github-event-repository-scope-error.ts
 var GitHubEventRepositoryScopeError = class extends Error {
   constructor(expected, received) {
     super(`GitHub event repository is scoped to ${expected}, not ${received}`);
@@ -50709,7 +50709,7 @@ var GitHubEventRepositoryScopeError = class extends Error {
   }
 };
 
-// packages/adapter/github-event-repository/src/github-event-repository.ts
+// packages/adapter/event/github-event-repository/src/github-event-repository.ts
 var GitHubEventRepository = class {
   constructor(collaborators, client, options) {
     this.collaborators = collaborators;
@@ -50860,7 +50860,7 @@ var GitHubEventRepository = class {
   }
 };
 
-// packages/adapter/github-event-repository/src/github-issue-document-codec.ts
+// packages/adapter/event/github-event-repository/src/github-issue-document-codec.ts
 var GitHubIssueDocumentCodec = class {
   /** Map one GitHub issue response or webhook snapshot into the domain document. */
   decode(data, repository) {
@@ -50929,7 +50929,7 @@ var GitHubIssueDocumentCodec = class {
   }
 };
 
-// packages/adapter/github-event-repository/src/dependency-composition.ts
+// packages/adapter/event/github-event-repository/src/dependency-composition.ts
 var GithubEventRepositoryComposition = class {
   gitHubEventRepository(...args) {
     return new GitHubEventRepository(
@@ -50942,7 +50942,7 @@ var GithubEventRepositoryComposition = class {
   }
 };
 
-// packages/adapter/github-issue-form-event-document-codec/src/github-issue-form-event-document-codec-contracts.ts
+// packages/adapter/event/github-issue-form-event-document-codec/src/github-issue-form-event-document-codec-contracts.ts
 var CURRENT_SCHEMA_MARKER = "<!-- meetup-event-schema:1 -->";
 var SCHEMA_MARKER_NAME = "meetup-event-schema";
 var REFERENCE_MARKER_NAME = "meetup-event-references";
@@ -50966,7 +50966,7 @@ var HEADINGS = Object.freeze({
   occurrenceStatus: "Event Status"
 });
 
-// packages/adapter/github-issue-form-event-document-codec/src/event-reference-metadata.ts
+// packages/adapter/event/github-issue-form-event-document-codec/src/event-reference-metadata.ts
 var EventReferenceMetadata = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -51092,7 +51092,7 @@ var EventReferenceMetadata = class {
   }
 };
 
-// packages/adapter/github-issue-form-event-document-codec/src/github-issue-form-event-document-codec.ts
+// packages/adapter/event/github-issue-form-event-document-codec/src/github-issue-form-event-document-codec.ts
 var GitHubIssueFormEventDocumentCodec = class {
   constructor(collaborators, options = {}) {
     this.collaborators = collaborators;
@@ -51110,7 +51110,7 @@ var GitHubIssueFormEventDocumentCodec = class {
   }
 };
 
-// packages/adapter/github-issue-form-event-document-codec/src/issue-form-checklists.ts
+// packages/adapter/event/github-issue-form-event-document-codec/src/issue-form-checklists.ts
 var IssueFormChecklists = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -51229,7 +51229,7 @@ var IssueFormChecklists = class {
   }
 };
 
-// packages/adapter/github-issue-form-event-document-codec/src/issue-form-event-mapper.ts
+// packages/adapter/event/github-issue-form-event-document-codec/src/issue-form-event-mapper.ts
 var IssueFormEventMapper = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -51363,7 +51363,7 @@ var IssueFormEventMapper = class {
   }
 };
 
-// packages/adapter/github-issue-form-event-document-codec/src/issue-form-fields.ts
+// packages/adapter/event/github-issue-form-event-document-codec/src/issue-form-fields.ts
 var IssueFormFields = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -51487,7 +51487,7 @@ var IssueFormFields = class {
   }
 };
 
-// packages/adapter/github-issue-form-event-document-codec/src/issue-form-reader.ts
+// packages/adapter/event/github-issue-form-event-document-codec/src/issue-form-reader.ts
 var IssueFormReader = class {
   constructor(collaborators, options = {}) {
     this.collaborators = collaborators;
@@ -51654,7 +51654,7 @@ var IssueFormReader = class {
   }
 };
 
-// packages/adapter/github-issue-form-event-document-codec/src/issue-form-sections.ts
+// packages/adapter/event/github-issue-form-event-document-codec/src/issue-form-sections.ts
 var IssueFormSections = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -51787,7 +51787,7 @@ ${after}`;
   }
 };
 
-// packages/adapter/github-issue-form-event-document-codec/src/issue-form-writer.ts
+// packages/adapter/event/github-issue-form-event-document-codec/src/issue-form-writer.ts
 var IssueFormWriter = class {
   constructor(collaborators, options = {}) {
     this.collaborators = collaborators;
@@ -51904,7 +51904,7 @@ var IssueFormWriter = class {
   }
 };
 
-// packages/adapter/github-issue-form-event-document-codec/src/managed-issue-markers.ts
+// packages/adapter/event/github-issue-form-event-document-codec/src/managed-issue-markers.ts
 var ManagedIssueMarkers = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -52029,7 +52029,7 @@ ${referenceMarker}`
   }
 };
 
-// packages/adapter/github-issue-form-event-document-codec/src/markdown-lines.ts
+// packages/adapter/event/github-issue-form-event-document-codec/src/markdown-lines.ts
 var MarkdownLines = class {
   findLineEnd(value, start) {
     let cursor = start;
@@ -52121,7 +52121,7 @@ var MarkdownLines = class {
   }
 };
 
-// packages/adapter/github-issue-form-event-document-codec/src/participant-links.ts
+// packages/adapter/event/github-issue-form-event-document-codec/src/participant-links.ts
 var ParticipantLinks = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -52176,7 +52176,7 @@ var ParticipantLinks = class {
   }
 };
 
-// packages/adapter/github-issue-form-event-document-codec/src/participant-reference-parser.ts
+// packages/adapter/event/github-issue-form-event-document-codec/src/participant-reference-parser.ts
 var ParticipantReferenceParser = class {
   parseParticipantReference(value) {
     const trimmed = value.trim();
@@ -52273,7 +52273,7 @@ var ParticipantReferenceParser = class {
   }
 };
 
-// packages/adapter/github-issue-form-event-document-codec/src/proposal-selection-codec.ts
+// packages/adapter/event/github-issue-form-event-document-codec/src/proposal-selection-codec.ts
 var ProposalSelectionCodec = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -52345,7 +52345,7 @@ ${body}`;
   }
 };
 
-// packages/adapter/github-issue-form-event-document-codec/src/reference-bindings.ts
+// packages/adapter/event/github-issue-form-event-document-codec/src/reference-bindings.ts
 var ReferenceBindings = class {
   referenceBinding(participant, id) {
     return {
@@ -52380,7 +52380,7 @@ var ReferenceBindings = class {
   }
 };
 
-// packages/adapter/github-issue-form-event-document-codec/src/reference-metadata-shape.ts
+// packages/adapter/event/github-issue-form-event-document-codec/src/reference-metadata-shape.ts
 var ReferenceMetadataShape = class {
   constructor(collaborators) {
     this.collaborators = collaborators;
@@ -52427,7 +52427,7 @@ var ReferenceMetadataShape = class {
   }
 };
 
-// packages/adapter/github-issue-form-event-document-codec/src/dependency-composition.ts
+// packages/adapter/event/github-issue-form-event-document-codec/src/dependency-composition.ts
 var GithubIssueFormEventDocumentCodecComposition = class {
   eventReferenceMetadata() {
     return new EventReferenceMetadata({
@@ -52535,7 +52535,7 @@ var GithubIssueFormEventDocumentCodecComposition = class {
   }
 };
 
-// packages/adapter/github-organizer-attention/src/attention-record.ts
+// packages/adapter/communication/github-organizer-attention/src/attention-record.ts
 var ATTENTION_MARKER = "<!-- meetup-organizer-attention:v1 ";
 var AttentionRecord = class {
   constructor(collaborators) {
@@ -52685,7 +52685,7 @@ var AttentionRecord = class {
   }
 };
 
-// packages/adapter/github-organizer-attention/src/attention-comment-retention.ts
+// packages/adapter/communication/github-organizer-attention/src/attention-comment-retention.ts
 var AttentionCommentRetention = class {
   constructor(collaborators, api, owner, repo, author) {
     this.collaborators = collaborators;
@@ -52717,7 +52717,7 @@ var AttentionCommentRetention = class {
   }
 };
 
-// packages/adapter/github-organizer-attention/src/attention-diagnostic-checklist.ts
+// packages/adapter/communication/github-organizer-attention/src/attention-diagnostic-checklist.ts
 var DIAGNOSTIC_MARKER = "<!-- meetup-automation:event-diagnostics:v1 -->";
 var AttentionDiagnosticChecklist = class _AttentionDiagnosticChecklist {
   constructor(collaborators) {
@@ -52774,7 +52774,7 @@ var AttentionDiagnosticChecklist = class _AttentionDiagnosticChecklist {
   ]);
 };
 
-// packages/adapter/github-organizer-attention/src/attention-presenter.ts
+// packages/adapter/communication/github-organizer-attention/src/attention-presenter.ts
 var AttentionPresenter = class {
   constructor(collaborators, repository, issueNumber, diagnostics, messages5) {
     this.collaborators = collaborators;
@@ -52845,7 +52845,7 @@ var AttentionPresenter = class {
   }
 };
 
-// packages/adapter/github-organizer-attention/src/attention-record-fields.ts
+// packages/adapter/communication/github-organizer-attention/src/attention-record-fields.ts
 var AttentionRecordFields = class {
   record(value) {
     if (typeof value !== "object" || value === null || Array.isArray(value))
@@ -52876,7 +52876,7 @@ var AttentionRecordFields = class {
   }
 };
 
-// packages/adapter/github-organizer-attention/src/github-attention-client.ts
+// packages/adapter/communication/github-organizer-attention/src/github-attention-client.ts
 var GithubAttentionClient = class {
   constructor(collaborators, api, owner, repo, issue2) {
     this.collaborators = collaborators;
@@ -53006,7 +53006,7 @@ var GithubAttentionClient = class {
   }
 };
 
-// packages/adapter/github-organizer-attention/src/github-attention-repository.ts
+// packages/adapter/communication/github-organizer-attention/src/github-attention-repository.ts
 var GithubAttentionRepository = class {
   constructor(collaborators, client, author, presenter, checklist) {
     this.collaborators = collaborators;
@@ -53114,7 +53114,7 @@ var GithubAttentionRepository = class {
   }
 };
 
-// packages/adapter/github-organizer-attention/src/github-attention-response.ts
+// packages/adapter/communication/github-organizer-attention/src/github-attention-response.ts
 var GithubAttentionResponse = class {
   record(value) {
     if (!value || typeof value !== "object" || Array.isArray(value))
@@ -53188,7 +53188,7 @@ var GithubAttentionResponse = class {
   }
 };
 
-// packages/adapter/github-organizer-attention/src/i18n/messages.en.ts
+// packages/adapter/communication/github-organizer-attention/src/i18n/messages.en.ts
 var messages3 = {
   "failure.communications": "Email preparation or delivery failed.",
   "failure.feedback": "OpenFeedback synchronization failed.",
@@ -53232,7 +53232,7 @@ var messages3 = {
   "task.unknown": "review the issue"
 };
 
-// packages/adapter/github-organizer-attention/src/i18n/messages.fr.ts
+// packages/adapter/communication/github-organizer-attention/src/i18n/messages.fr.ts
 var messages4 = {
   "failure.communications": "La pr\xE9paration ou l'envoi des courriels a \xE9chou\xE9.",
   "failure.feedback": "La synchronisation OpenFeedback a \xE9chou\xE9.",
@@ -53276,10 +53276,10 @@ var messages4 = {
   "task.unknown": "consulter le ticket"
 };
 
-// packages/adapter/github-organizer-attention/src/i18n/catalog.ts
+// packages/adapter/communication/github-organizer-attention/src/i18n/catalog.ts
 var CATALOGS6 = { en: messages3, fr: messages4 };
 
-// packages/adapter/github-organizer-attention/src/i18n/attention-messages.ts
+// packages/adapter/communication/github-organizer-attention/src/i18n/attention-messages.ts
 var AttentionMessages = class extends MessageLocalizer {
   constructor(collaborators, locale = "en") {
     super(collaborators, CATALOGS6, locale);
@@ -53294,7 +53294,7 @@ var AttentionMessages = class extends MessageLocalizer {
   }
 };
 
-// packages/adapter/github-organizer-attention/src/trusted-attention-state.ts
+// packages/adapter/communication/github-organizer-attention/src/trusted-attention-state.ts
 var TrustedAttentionState = class {
   constructor(client, author) {
     this.client = client;
@@ -53323,7 +53323,7 @@ var TrustedAttentionState = class {
   }
 };
 
-// packages/adapter/github-organizer-attention/src/dependency-composition.ts
+// packages/adapter/communication/github-organizer-attention/src/dependency-composition.ts
 var GithubOrganizerAttentionComposition = class {
   attentionRecordFields() {
     return new AttentionRecordFields();
@@ -53388,36 +53388,36 @@ var GithubOrganizerAttentionComposition = class {
   }
 };
 
-// packages/adapter/yaml-issue-form-projection/src/i18n/messages.en.ts
+// packages/adapter/journey/yaml-issue-form-projection/src/i18n/messages.en.ts
 var EN_MESSAGES5 = {
   "form.speakers.guidance": "Select speakers by copying one or more references into the agenda.",
   "form.speakers.show": "Show available speaker references"
 };
 
-// packages/adapter/yaml-issue-form-projection/src/i18n/messages.fr.ts
+// packages/adapter/journey/yaml-issue-form-projection/src/i18n/messages.fr.ts
 var FR_MESSAGES5 = {
   "form.speakers.guidance": "S\xE9lectionnez les intervenants en copiant une ou plusieurs r\xE9f\xE9rences dans le programme.",
   "form.speakers.show": "Afficher les r\xE9f\xE9rences des intervenants disponibles"
 };
 
-// packages/adapter/yaml-issue-form-projection/src/i18n/catalog.ts
+// packages/adapter/journey/yaml-issue-form-projection/src/i18n/catalog.ts
 var CATALOGS7 = {
   en: { ...EN_MESSAGES5 },
   fr: { ...FR_MESSAGES5 }
 };
 
-// packages/adapter/yaml-issue-form-projection/src/i18n/issue-form-messages.ts
+// packages/adapter/journey/yaml-issue-form-projection/src/i18n/issue-form-messages.ts
 var IssueFormMessages = class extends MessageLocalizer {
   constructor(collaborators, locale = "en") {
     super(collaborators, CATALOGS7, locale);
   }
 };
 
-// packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-projection-contracts.ts
+// packages/adapter/journey/yaml-issue-form-projection/src/yaml-issue-form-projection-contracts.ts
 var HOST_FIELD_ID = "hoster";
 var AVAILABLE_SPEAKERS_MARKER = "<!-- Available speakers -->";
 
-// packages/adapter/yaml-issue-form-projection/src/speaker-references-presenter.ts
+// packages/adapter/journey/yaml-issue-form-projection/src/speaker-references-presenter.ts
 var SpeakerReferencesPresenter = class {
   constructor(messages5) {
     this.messages = messages5;
@@ -53443,7 +53443,7 @@ var SpeakerReferencesPresenter = class {
   }
 };
 
-// packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-document.ts
+// packages/adapter/journey/yaml-issue-form-projection/src/yaml-issue-form-document.ts
 var import_yaml = __toESM(require_dist(), 1);
 var YamlIssueFormDocument = class {
   project(source, hostOptions, speakersMarkdown, occurrenceStatusFieldId) {
@@ -53552,7 +53552,7 @@ var YamlIssueFormDocument = class {
   }
 };
 
-// packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-projection.ts
+// packages/adapter/journey/yaml-issue-form-projection/src/yaml-issue-form-projection.ts
 import { readFile as readFile3, realpath as realpath2, stat as stat2, writeFile as writeFile3 } from "node:fs/promises";
 import { isAbsolute as isAbsolute2, relative as relative2, resolve as resolve2, sep as sep3 } from "node:path";
 
@@ -60810,7 +60810,7 @@ async function Vi2(t7, e) {
 var Wi2 = de2(it2, 0);
 var $i2 = { parse: de2(du), formatAST: de2(Fu), formatDoc: de2(Eu), printToDoc: de2(Cu), printDocToString: de2(hu) };
 
-// packages/adapter/yaml-issue-form-projection/src/yaml-issue-form-projection.ts
+// packages/adapter/journey/yaml-issue-form-projection/src/yaml-issue-form-projection.ts
 var YamlIssueFormProjection = class {
   constructor(collaborators, options) {
     this.collaborators = collaborators;
@@ -60892,7 +60892,7 @@ var YamlIssueFormProjection = class {
   }
 };
 
-// packages/adapter/yaml-issue-form-projection/src/dependency-composition.ts
+// packages/adapter/journey/yaml-issue-form-projection/src/dependency-composition.ts
 var YamlIssueFormProjectionComposition = class {
   issueFormMessages(...args) {
     return new IssueFormMessages(

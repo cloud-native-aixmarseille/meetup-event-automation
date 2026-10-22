@@ -1,0 +1,25 @@
+{
+	"name": "google-docs-content-repository",
+	"projectType": "library",
+	"sourceRoot": "packages/adapter/publication/google-docs-content-repository/src",
+	"targets": {
+		"typecheck": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "tsc --noEmit -p packages/adapter/publication/google-docs-content-repository/tsconfig.lib.json"
+			}
+		},
+		"test": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "vitest run packages/adapter/publication/google-docs-content-repository"
+			}
+		}
+	},
+	"tags": [
+		"type:adapter",
+		"scope:publication",
+		"technology:google-docs",
+		"responsibility:content-repository"
+	]
+}

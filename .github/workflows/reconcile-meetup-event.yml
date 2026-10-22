@@ -122,7 +122,7 @@ jobs:
           python-version: "3.14"
 
       - name: Install locked challenge solver dependencies
-        working-directory: ../self-workflow/packages/adapter/hcaptcha-captcha-resolver/python
+        working-directory: ../self-workflow/packages/adapter/browser-authentication/hcaptcha-captcha-resolver/python
         run: |
           python -m venv .venv
           .venv/bin/python -m pip install --disable-pip-version-check -r requirements.txt

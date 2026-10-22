@@ -1,0 +1,25 @@
+{
+	"name": "yaml-issue-form-projection",
+	"projectType": "library",
+	"sourceRoot": "packages/adapter/journey/yaml-issue-form-projection/src",
+	"targets": {
+		"typecheck": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "tsc --noEmit -p packages/adapter/journey/yaml-issue-form-projection/tsconfig.lib.json"
+			}
+		},
+		"test": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "vitest run packages/adapter/journey/yaml-issue-form-projection"
+			}
+		}
+	},
+	"tags": [
+		"type:adapter",
+		"scope:journey",
+		"technology:yaml",
+		"responsibility:issue-form-projection"
+	]
+}

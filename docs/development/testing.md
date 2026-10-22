@@ -125,7 +125,7 @@ select checks and rebuild bundles after production changes.
 The hCaptcha adapter's Python boundary has adjacent `solve_test.py` tests using
 synthetic pages and agents. No Gemini key or live Meetup account is needed.
 With Python 3.14, run from
-`packages/adapter/hcaptcha-captcha-resolver/python`:
+`packages/adapter/browser-authentication/hcaptcha-captcha-resolver/python`:
 
 ```sh
 python -m venv .venv

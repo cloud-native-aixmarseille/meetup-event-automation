@@ -24,7 +24,7 @@
 			"entry": ["src/**/*.test.ts"],
 			"project": ["src/**/*.ts", "testing/**/*.ts"]
 		},
-		"packages/adapter/*": {
+		"packages/adapter/*/*": {
 			"entry": ["src/**/*.test.ts"],
 			"project": ["src/**/*.ts"]
 		},
