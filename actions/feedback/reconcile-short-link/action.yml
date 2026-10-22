@@ -1,0 +1,24 @@
+name: Reconcile shared feedback link
+description: Select the active feedback event across the repository and reconcile the existing shared Kutt link.
+inputs:
+  locale:
+    description: Language for generated reports (en or fr).
+    required: true
+  github-token:
+    description: GitHub token for reading the consumer repository and event issues.
+    required: true
+  kutt-base-url:
+    description: HTTPS base URL of the Kutt instance.
+    required: true
+  kutt-link-id:
+    description: Existing Kutt link API ID.
+    required: true
+  kutt-api-key:
+    description: API key for the owner of the existing link.
+    required: true
+outputs:
+  diagnostics:
+    description: Redacted shared-link diagnostics consumed by organizer reporting.
+runs:
+  using: node24
+  main: dist/index.js

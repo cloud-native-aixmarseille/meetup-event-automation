@@ -339,13 +339,15 @@ errors, check service-account permissions and quota; for rate limits, retry
 later.
 
 The direct
-[assets action](../../actions/publication/reconcile-assets/README.md) reconciles
-assets on every invocation. Call it under the shared event workflow lock. Its
+[document action](../../actions/assets/reconcile-documents/README.md) reconciles
+folders, template copies and document content on every invocation. Call it under the shared event workflow lock. Its
 `drive-files` output maps each `<template_kind>-link` to a copied file URL.
 `slides-ready` is true only when a slides URL exists and its content is copy-only
 or ready. Rendering codes appear in the technical report and `diagnostics`
 output; organizer corrections and recovery guidance appear in the merged
-checklist. The managed folder URL is saved on the issue.
+checklist. The `pdf-source` output contains public file identities and an opaque
+issue revision. `assets/reconcile-slides-pdf` checks this revision against a fresh
+issue read before exporting; an intervening edit requires a rerun. The managed folder URL is saved on the issue.
 Both event workflows produce feedback before rendering and pass the
 `slides-link` entry and `slides-ready` to communications. An existing URL alone
 does not make opted-in content ready. Pending or conflicted slides hold due
@@ -357,6 +359,11 @@ folder; email slides links identify the presentation file. See
 [email link requirements](communications.md#presentation-link).
 
 ## Export the presentation PDF
+
+The workflow runs `assets/reconcile-slides-pdf` after document reconciliation.
+Only this action receives the public destination folder ID. A PDF failure does
+not block independent event or email work with successfully prepared documents;
+it keeps the assets stage incomplete for organizer reporting.
 
 Asset reconciliation exports the managed Google Slides presentation as a separate
 PDF when post-event follow-up is due. With a valid event date and timezone, that

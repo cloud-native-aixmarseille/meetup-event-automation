@@ -5,7 +5,6 @@ import type { ActionReportData } from "./action-report.js";
 import type { AttentionComposition } from "./attention-composition.js";
 import type { AttentionStages } from "./attention-stages.js";
 import type { ActionMessages } from "./i18n/action-messages.js";
-import type { OrganizerFeedback } from "./organizer-feedback.js";
 import type { PublicationUrlInput } from "./publication-url-input.js";
 import type { RuntimeInput } from "./runtime-input.js";
 export interface AttentionActionCollaborators {
@@ -17,10 +16,7 @@ export interface AttentionActionCollaborators {
 	>;
 	readonly createAttention: (
 		input: Parameters<typeof AttentionComposition.create>[0],
-	) => {
-		feedback: Pick<OrganizerFeedback, "execute">;
-		attention: Pick<ManageMeetupAttention, "execute">;
-	};
+	) => Pick<ManageMeetupAttention, "execute">;
 	readonly runtimeInput: Pick<RuntimeInput, "positiveIntegerInput">;
 	readonly attentionStages: Pick<AttentionStages, "parse">;
 }
@@ -57,8 +53,7 @@ export class AttentionAction {
 			issueNumber,
 		};
 		const stageResults = core.getInput("stage-results", { required: true });
-		await journey.feedback.execute(identity, stageResults);
-		const result = await journey.attention.execute(
+		const result = await journey.execute(
 			identity,
 			this.collaborators.attentionStages.parse(stageResults),
 			String(context.runId),

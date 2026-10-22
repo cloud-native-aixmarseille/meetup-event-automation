@@ -1,0 +1,7 @@
+# GitHub supports concurrency.queue; actionlint 1.7.12 does not parse it.
+# https://github.com/rhysd/actionlint/issues/657
+# feedback-side-effects.spec.ts checks queue: max with cancel-in-progress: false.
+paths:
+  .github/workflows/reconcile-feedback-link.yml:
+    ignore:
+      - '^unexpected key "queue" for "concurrency" section\. expected one of "cancel-in-progress", "group"$'

@@ -1,4 +1,4 @@
-import { ManageMeetupFeedback } from "@meetup-automation/journey";
+import { ReconcileMeetupFeedback } from "@meetup-automation/journey";
 import { LocalizationComposition } from "@meetup-automation/localization";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -46,9 +46,6 @@ beforeEach(() => {
 		"conference-hall-api-key": "synthetic-source-key",
 		"issue-number": "12",
 		"github-token": "synthetic-token",
-		"kutt-api-key": "synthetic-key",
-		"kutt-base-url": "https://short.example.test",
-		"kutt-link-id": "link-1",
 		"openfeedback-api-key": "oforg_synthetic-secret",
 	};
 	mocks.outputs = {};
@@ -57,7 +54,6 @@ beforeEach(() => {
 		skipped: false,
 		persisted: true,
 		feedbackUrl: "https://openfeedback.io/poll",
-		linkUpdated: true,
 		diagnostics: [],
 	});
 });
@@ -71,12 +67,6 @@ describe("feedback action boundary", () => {
 		["conference-hall-event", "   "],
 		["conference-hall-api-key", ""],
 		["conference-hall-api-key", "   "],
-		["kutt-base-url", ""],
-		["kutt-base-url", "   "],
-		["kutt-api-key", ""],
-		["kutt-api-key", "   "],
-		["kutt-link-id", ""],
-		["kutt-link-id", "   "],
 	])(
 		"rejects missing or blank %s (%j) before requests",
 		async (name, value) => {
@@ -89,7 +79,7 @@ describe("feedback action boundary", () => {
 					new GithubActionsComposition().publicationUrlInput(),
 				createJourney: (input) =>
 					FeedbackComposition.createFeedbackContainer(input).get(
-						ManageMeetupFeedback,
+						ReconcileMeetupFeedback,
 					),
 				runtimeInput: new GithubActionsComposition().runtimeInput(),
 				conferenceHallInput:
@@ -108,17 +98,14 @@ describe("feedback action boundary", () => {
 
 	it("masks credentials and reconciles feedback without a mode input", async () => {
 		// Arrange
-		Object.assign(mocks.inputs, {
-			"kutt-api-key": "synthetic-key",
-			"kutt-link-id": "link-1",
-		});
+		// Required credentials are supplied at the boundary.
 
 		// Act
 		const report = await new FeedbackAction({
 			publicationUrlInput: new GithubActionsComposition().publicationUrlInput(),
 			createJourney: (input) =>
 				FeedbackComposition.createFeedbackContainer(input).get(
-					ManageMeetupFeedback,
+					ReconcileMeetupFeedback,
 				),
 			runtimeInput: new GithubActionsComposition().runtimeInput(),
 			conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),
@@ -126,12 +113,10 @@ describe("feedback action boundary", () => {
 
 		// Assert
 		expect(report.details).toContain("feedback=completed");
-		expect(report.details).toContain(
-			"issue_persisted=true feedback_link_updated=true",
-		);
+		expect(report.details).toContain("issue_persisted=true");
 		expect(report.diagnostics).toEqual([]);
 		expect(mocks.outputs.diagnostics).toBeUndefined();
-		expect(mocks.setSecret).toHaveBeenCalledWith("synthetic-key");
+		expect(mocks.setSecret).toHaveBeenCalledWith("oforg_synthetic-secret");
 		expect(mocks.execute).toHaveBeenCalledWith({
 			identity: { repository: "example/meetups", issueNumber: 12 },
 		});
@@ -139,16 +124,16 @@ describe("feedback action boundary", () => {
 		expect(JSON.stringify(mocks.outputs)).not.toContain("synthetic-");
 	});
 
-	it("forwards all required Kutt settings", async () => {
+	it("forwards event publication settings", async () => {
 		// Arrange
-		// Default inputs provide all required Kutt settings.
+		// Default inputs provide all required publication URL policies.
 
 		// Act
 		await new FeedbackAction({
 			publicationUrlInput: new GithubActionsComposition().publicationUrlInput(),
 			createJourney: (input) =>
 				FeedbackComposition.createFeedbackContainer(input).get(
-					ManageMeetupFeedback,
+					ReconcileMeetupFeedback,
 				),
 			runtimeInput: new GithubActionsComposition().runtimeInput(),
 			conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),
@@ -158,9 +143,6 @@ describe("feedback action boundary", () => {
 		expect(mocks.compose).toHaveBeenCalledWith(
 			expect.objectContaining({
 				...eventPublicationSettings,
-				kuttApiKey: "synthetic-key",
-				kuttBaseUrl: "https://short.example.test",
-				kuttLinkId: "link-1",
 			}),
 		);
 	});
@@ -176,7 +158,6 @@ describe("feedback action boundary", () => {
 		mocks.execute.mockResolvedValue({
 			skipped: true,
 			persisted: false,
-			linkUpdated: false,
 			diagnostics,
 		});
 
@@ -185,7 +166,7 @@ describe("feedback action boundary", () => {
 			publicationUrlInput: new GithubActionsComposition().publicationUrlInput(),
 			createJourney: (input) =>
 				FeedbackComposition.createFeedbackContainer(input).get(
-					ManageMeetupFeedback,
+					ReconcileMeetupFeedback,
 				),
 			runtimeInput: new GithubActionsComposition().runtimeInput(),
 			conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),
@@ -211,7 +192,7 @@ describe("feedback action boundary", () => {
 			publicationUrlInput: new GithubActionsComposition().publicationUrlInput(),
 			createJourney: (input) =>
 				FeedbackComposition.createFeedbackContainer(input).get(
-					ManageMeetupFeedback,
+					ReconcileMeetupFeedback,
 				),
 			runtimeInput: new GithubActionsComposition().runtimeInput(),
 			conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),
@@ -222,9 +203,7 @@ describe("feedback action boundary", () => {
 			expect.objectContaining({ locale: "fr" }),
 		);
 		expect(report.details).toContain("issue=12 mode=fix");
-		expect(report.details).toContain(
-			"issue_persisted=true feedback_link_updated=true",
-		);
+		expect(report.details).toContain("issue_persisted=true");
 		expect(report.details).toHaveLength(3);
 		expect(report.diagnostics).toEqual([]);
 	});
@@ -238,7 +217,7 @@ describe("feedback action boundary", () => {
 			publicationUrlInput: new GithubActionsComposition().publicationUrlInput(),
 			createJourney: (input) =>
 				FeedbackComposition.createFeedbackContainer(input).get(
-					ManageMeetupFeedback,
+					ReconcileMeetupFeedback,
 				),
 			runtimeInput: new GithubActionsComposition().runtimeInput(),
 			conferenceHallInput: new GithubActionsComposition().conferenceHallInput(),
@@ -267,7 +246,7 @@ describe("feedback action boundary", () => {
 					new GithubActionsComposition().publicationUrlInput(),
 				createJourney: (input) =>
 					FeedbackComposition.createFeedbackContainer(input).get(
-						ManageMeetupFeedback,
+						ReconcileMeetupFeedback,
 					),
 				runtimeInput: new GithubActionsComposition().runtimeInput(),
 				conferenceHallInput:

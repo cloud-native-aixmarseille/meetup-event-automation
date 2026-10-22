@@ -17,11 +17,11 @@ import {
 } from "@meetup-automation/journey";
 import { SystemCommunicationClock } from "@meetup-automation/system-clock";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { fixture } from "../../../adapter/communication/github-organizer-attention/testing/attention.fixtures.js";
 import {
 	decision,
 	request,
 } from "../../../adapter/journey/github-organizer-approval/testing/approval.fixtures.js";
-import { fixture } from "../../../adapter/communication/github-organizer-attention/testing/attention.fixtures.js";
 import { createTestEvent } from "../../../domain/event/testing/event.fixtures.js";
 import { followUpFixture } from "../testing/follow-up-attention.fixtures.js";
 import {

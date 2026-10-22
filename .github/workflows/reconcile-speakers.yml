@@ -1,0 +1,140 @@
+name: Reconcile speakers
+on:
+  workflow_call:
+    inputs:
+      locale:
+        description: Language for generated reports (en or fr).
+        type: string
+        required: true
+      github-app-client-id:
+        description: GitHub App client ID for the private consumer repository.
+        type: string
+        required: true
+      conference-hall-event:
+        description: Conference Hall CFP slug.
+        type: string
+        required: true
+    secrets:
+      github-app-private-key:
+        description: GitHub App private key.
+        required: true
+      conference-hall-api-key:
+        description: Read-only Conference Hall event API key.
+        required: true
+permissions: {}
+jobs:
+  synchronize:
+    if: github.event.repository.private == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    concurrency:
+      group: meetup-speaker-sync-${{ github.repository_id }}
+      cancel-in-progress: false
+    steps:
+      - id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1
+        with:
+          client-id: ${{ inputs.github-app-client-id }}
+          private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] reusable workflow forwards explicitly scoped credentials
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-pull-requests: write
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+          persist-credentials: false
+      - id: local-workflow-actions
+        uses: hoverkraft-tech/ci-github-common/actions/local-workflow-actions@3a27d31e9ccefbe9609cc9165017ed100ff34a22
+        with:
+          actions-path: actions
+      - name: Prepare synchronization branch
+        id: branch
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          BOT_LOGIN: ${{ steps.app-token.outputs.app-slug }}[bot]
+        run: |
+          gh auth setup-git
+          git config user.name "$BOT_LOGIN"
+          git config user.email "$BOT_LOGIN@users.noreply.github.com"
+          git fetch --quiet origin "$DEFAULT_BRANCH"
+          base=$(git rev-parse FETCH_HEAD)
+          branch=chore/synchronize-conference-hall-speakers
+          head=$(git ls-remote origin "refs/heads/$branch" | cut -f1)
+          echo "base=$base" >> "$GITHUB_OUTPUT"
+          echo "head=$head" >> "$GITHUB_OUTPUT"
+          if [ -n "$head" ]; then
+            git fetch --quiet origin "$branch"
+            git checkout --quiet -B "$branch" "$head"
+            # Human changes remain on the branch and require explicit reconciliation.
+            test "$(git log -1 --format=%an)" = "$BOT_LOGIN"
+            git merge --quiet --no-edit "$base" > /dev/null 2>&1
+          else
+            git checkout --quiet -B "$branch" "$base"
+          fi
+      - name: Reconcile validated speaker catalog
+        id: synchronize
+        uses: ./../self-workflow/actions/referential/reconcile-speakers
+        with:
+          locale: ${{ inputs.locale }}
+          github-token: ${{ steps.app-token.outputs.token }}
+          conference-hall-event: ${{ inputs.conference-hall-event }}
+          conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] reusable workflow forwards explicitly scoped credentials
+      - name: Reconcile public issue form
+        id: form
+        if: ${{ steps.synchronize.outputs.pr-title != '' }}
+        uses: ./../self-workflow/actions/issue-form/reconcile
+        with:
+          locale: ${{ inputs.locale }}
+          mode: fix
+      - name: Publish private review branch
+        if: ${{ steps.synchronize.outputs.pr-title != '' && steps.form.outputs.completed == 'true' }}
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          EXPECTED_BASE: ${{ steps.branch.outputs.base }}
+          EXPECTED_HEAD: ${{ steps.branch.outputs.head }}
+          PR_TITLE: ${{ steps.synchronize.outputs.pr-title }}
+          PR_BODY: ${{ steps.synchronize.outputs.pr-body }}
+        run: |
+          branch=chore/synchronize-conference-hall-speakers
+          test "$(git ls-remote origin "refs/heads/$DEFAULT_BRANCH" | cut -f1)" = "$EXPECTED_BASE"
+          git add referentials/speakers.csv referentials/speaker-sync-state.json .github/ISSUE_TEMPLATE/meetup.yml
+          if ! git diff --cached --quiet; then
+            git commit --quiet -m "feat(referential): synchronize Conference Hall speakers" > /dev/null 2>&1
+          fi
+          if git diff --quiet "$EXPECTED_BASE" HEAD; then exit 0; fi
+          git push --quiet "--force-with-lease=refs/heads/$branch:$EXPECTED_HEAD" origin "HEAD:refs/heads/$branch" > /dev/null 2>&1
+          body_file=$(mktemp)
+          printf '%s\n\n%s\n' "$PR_BODY" "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" > "$body_file"
+          number=$(gh pr list --head "$branch" --base "$DEFAULT_BRANCH" --state open --json number --jq '.[0].number // empty')
+          if [ -n "$number" ]; then
+            gh pr edit "$number" --body-file "$body_file" > /dev/null
+          else
+            gh pr create --head "$branch" --base "$DEFAULT_BRANCH" --title "$PR_TITLE" --body-file "$body_file" > /dev/null
+          fi
+          rm "$body_file"
+      - name: Report blocked synchronization on the existing private PR
+        if: ${{ always() && steps.synchronize.outputs.pr-title == '' && steps.synchronize.outputs.pr-body != '' }}
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          PR_BODY: ${{ steps.synchronize.outputs.pr-body }}
+        run: >
+          test -n "$PR_BODY" || exit 0
+
+          number=$(gh pr list --head chore/synchronize-conference-hall-speakers --base "$DEFAULT_BRANCH" --state open --json number --jq
+          '.[0].number // empty')
+
+          test -n "$number" || exit 0
+
+          body_file=$(mktemp)
+
+          printf '%s\n\n%s\n' "$PR_BODY" "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" > "$body_file"
+
+          gh pr edit "$number" --body-file "$body_file" > /dev/null
+
+          rm "$body_file"

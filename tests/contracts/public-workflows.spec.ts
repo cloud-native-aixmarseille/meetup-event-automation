@@ -1,467 +1,229 @@
-import { readdir, readFile } from "node:fs/promises";
+import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { JourneyPolicyComposition } from "../../packages/application/journey/src/index.js";
 import {
-	type ActionManifest,
 	automationActionPrefix,
-	type Job,
 	localWorkflowActionsRef,
 	readWorkflow,
 	readYaml,
 	root,
-	type Step,
-	sortedKeys,
 	type Workflow,
 	workflowExpression,
 } from "./support.js";
 
-const publicWorkflowContracts = {
-	"check-active-meetup-issues": {
-		inputs: [
-			"asset-folder-url-prefix",
-			"community-event-url-prefixes",
-			"meetup-event-url-prefix",
-			"conference-hall-event",
-			"github-app-client-id",
-			"google-drive-folder-id",
-			"google-drive-public-folder-id",
-			"google-drive-template-folder-id",
-			"kutt-base-url",
-			"kutt-link-id",
-			"slack-organizer-channel-id",
-		],
-		outputs: [],
-		secrets: [
-			"conference-hall-api-key",
-			"github-app-private-key",
-			"google-credentials",
-			"kutt-api-key",
-			"openfeedback-api-key",
-			"slack-token",
-		],
-	},
-	"update-meetup-issue": {
-		inputs: [
-			"asset-folder-url-prefix",
-			"community-event-url-prefixes",
-			"meetup-event-url-prefix",
-			"conference-hall-event",
-			"github-app-client-id",
-			"google-drive-folder-id",
-			"google-drive-public-folder-id",
-			"google-drive-template-folder-id",
-			"kutt-base-url",
-			"kutt-link-id",
-			"slack-organizer-channel-id",
-		],
-		outputs: [],
-		secrets: [
-			"conference-hall-api-key",
-			"github-app-private-key",
-			"google-credentials",
-			"kutt-api-key",
-			"openfeedback-api-key",
-			"slack-token",
-		],
-	},
-	"update-meetup-issue-form": {
-		inputs: ["github-app-client-id"],
-		outputs: [],
-		secrets: ["github-app-private-key"],
-	},
-	"check-meetup-referentials-and-issue-form": {
-		inputs: [],
-		outputs: [],
-		secrets: [],
-	},
-} as const;
-
-const expectedActionWiring = {
-	"check-active-meetup-issues": {
-		audit: [
-			"publication/reconcile-feedback",
-			"publication/reconcile-assets",
-			"event/reconcile",
-			"communication/reconcile",
-			"communication/reconcile-attention",
-		],
-		list: ["event/list-active"],
-	},
-	"update-meetup-issue": {
+const actionWiring = {
+	"reconcile-meetup": {
 		manage: [
-			"publication/reconcile-feedback",
-			"publication/reconcile-assets",
-			"communication/reconcile",
+			"feedback/reconcile-event",
+			"assets/reconcile-documents",
+			"assets/reconcile-slides-pdf",
 			"event/reconcile",
-			"communication/reconcile-attention",
+			"communication/reconcile-email",
 		],
+		report: ["organizer/reconcile-checklist", "organizer/reconcile-attention"],
 	},
+	"reconcile-feedback-link": { reconcile: ["feedback/reconcile-short-link"] },
+	"check-active-meetup-issues": { list: ["event/list-active"] },
 	"update-meetup-issue-form": {
-		synchronize: ["referential/validate", "referential/sync-issue-form"],
+		synchronize: ["referential/validate", "issue-form/reconcile"],
 	},
 	"check-meetup-referentials-and-issue-form": {
-		validate: ["referential/validate", "referential/sync-issue-form"],
+		validate: ["referential/validate", "issue-form/reconcile"],
 	},
-} as const;
+	"reconcile-speakers": {
+		synchronize: ["referential/reconcile-speakers", "issue-form/reconcile"],
+	},
+	"reconcile-event-publication": { publish: ["publication/reconcile-event"] },
+};
 
 describe("public reusable workflow contracts", () => {
-	it.each([
-		["update-meetup-issue", "manage"],
-		["check-active-meetup-issues", "audit"],
-	] as const)(
-		"provides the reconciled presentation before email approval in %s",
-		async (name, job) => {
-			// Arrange
-			const assetsAction = `${automationActionPrefix}publication/reconcile-assets`;
-			const communicationAction = `${automationActionPrefix}communication/reconcile`;
-
-			// Act
-			const workflow = await readWorkflow(name);
-			const steps = workflow.jobs?.[job]?.steps ?? [];
-			const assetsIndex = steps.findIndex((step) => step.uses === assetsAction);
-			const communicationIndex = steps.findIndex(
-				(step) => step.uses === communicationAction,
-			);
-
-			// Assert
-			expect(assetsIndex).toBeGreaterThanOrEqual(0);
-			expect(steps[assetsIndex]?.id).toBe("assets");
-			expect(communicationIndex).toBeGreaterThan(assetsIndex);
-			expect(steps.findIndex((step) => step.id === "feedback")).toBeLessThan(
-				communicationIndex,
-			);
-			expect(steps[communicationIndex]?.with?.["openfeedback-api-key"]).toBe(
-				workflowExpression("secrets.openfeedback-api-key"),
-			);
-			expect(steps[communicationIndex]?.with?.["slides-ready"]).toBe(
-				workflowExpression("steps.assets.outputs.slides-ready"),
-			);
-			expect(steps[communicationIndex]?.with?.["slides-url"]).toBe(
-				workflowExpression(
-					"fromJSON(steps.assets.outputs.drive-files)['slides-link']",
-				),
-			);
-		},
-	);
-
-	it.each(Object.entries(publicWorkflowContracts))(
-		"publishes the exact caller contract and generated documentation for %s",
-		async (name, expected) => {
+	it.each(Object.entries(actionWiring))(
+		"loads scoped actions from the workflow revision in %s",
+		async (name, jobs) => {
 			// Arrange
 			const workflow = await readWorkflow(name);
-			const contract = workflow.on?.workflow_call;
-			const documentation = await readFile(
-				join(root, `.github/workflows/${name}.md`),
-				"utf8",
-			);
-
 			// Act
-			const actual = sortedKeys(contract?.inputs);
-			const actual1 = sortedKeys(contract?.secrets);
-			const actual2 = sortedKeys(contract?.outputs);
-
+			const configured = Object.entries(jobs).map(([id, expected]) => ({
+				expected,
+				steps: workflow.jobs?.[id]?.steps ?? [],
+			}));
 			// Assert
-			expect(workflow.permissions).toEqual({});
-			expect(actual).toEqual([...expected.inputs, "locale"].sort());
-			expect(actual1).toEqual([...expected.secrets].sort());
-			for (const secretName of expected.secrets) {
-				expect(contract?.secrets?.[secretName]?.required).toBe(true);
-			}
-			expect(actual2).toEqual([...expected.outputs].sort());
-			expect(documentation).toContain(
-				`GitHub Reusable Workflow: ${workflow.name}`,
-			);
-			expect(documentation).toContain(
-				"This documentation was automatically generated by [CI Dokumentor]",
-			);
-		},
-	);
-
-	it("creates every public workflow installation token from a required client ID", async () => {
-		// Arrange
-		const workflowFiles = (
-			await readdir(join(root, ".github/workflows"))
-		).filter((name) => name.endsWith(".yml") && !name.startsWith("__"));
-
-		// Act
-		const workflows = await Promise.all(
-			workflowFiles.map(async (file) => {
-				const workflow = await readYaml<Workflow>(`.github/workflows/${file}`);
-				const tokens = Object.values(workflow.jobs ?? {})
-					.flatMap((job) => job.steps ?? [])
-					.filter((step) =>
-						step.uses?.startsWith("actions/create-github-app-token@"),
-					);
-				return { file, contract: workflow.on?.workflow_call, tokens };
-			}),
-		);
-		const tokenWorkflows = workflows.filter(({ tokens }) => tokens.length > 0);
-
-		// Assert
-		expect(tokenWorkflows.map(({ file }) => file).sort()).toEqual([
-			"check-active-meetup-issues.yml",
-			"reconcile-meetup-event.yml",
-			"synchronize-conference-hall-speakers.yml",
-			"update-meetup-issue-form.yml",
-			"update-meetup-issue.yml",
-		]);
-		for (const { file, contract, tokens } of tokenWorkflows) {
-			expect(contract?.inputs?.["github-app-client-id"], file).toMatchObject({
-				required: true,
-				type: "string",
-			});
-			expect(contract?.inputs, file).not.toHaveProperty("github-app-id");
-			for (const token of tokens) {
-				expect(token.with?.["client-id"], `${file}/${token.id}`).toBe(
-					workflowExpression("inputs.github-app-client-id"),
+			for (const { expected, steps } of configured) {
+				const loader = steps.findIndex(
+					(step) =>
+						step.uses === localWorkflowActionsRef &&
+						step.with?.["actions-path"] ===
+							(name === "reconcile-event-publication" ? "." : "actions"),
 				);
-				expect(token.with, `${file}/${token.id}`).not.toHaveProperty("app-id");
-			}
-		}
-	});
-
-	it.each(["check-active-meetup-issues", "update-meetup-issue"])(
-		"requires Slack credentials and forwards communication tokens and routing in %s",
-		async (workflowName) => {
-			// Arrange
-			const communicationAction = `${automationActionPrefix}communication/reconcile`;
-
-			// Act
-			const workflow = await readWorkflow(workflowName);
-			const secrets = workflow.on?.workflow_call?.secrets;
-			const slackChannel =
-				workflow.on?.workflow_call?.inputs?.["slack-organizer-channel-id"];
-			const communicationSteps = Object.values(workflow.jobs ?? {})
-				.flatMap((job) => job.steps ?? [])
-				.filter((step) => step.uses === communicationAction);
-
-			// Assert
-			expect(secrets).not.toHaveProperty("mailings-token");
-			expect(secrets?.["slack-token"]?.required).toBe(true);
-			expect(slackChannel?.required).toBe(true);
-			expect(workflow.on?.workflow_call?.inputs).not.toHaveProperty(
-				"slack-channel-id",
-			);
-			expect(slackChannel?.default).toBeUndefined();
-			expect(communicationSteps).toHaveLength(1);
-			expect(communicationSteps[0].with).toMatchObject({
-				"mailings-token": workflowExpression(
-					"steps.mailings-token.outputs.token",
-				),
-				"slack-token": workflowExpression("secrets.slack-token"),
-				"slack-organizer-channel-id": workflowExpression(
-					"inputs.slack-organizer-channel-id",
-				),
-			});
-			expect(communicationSteps[0].env).toBeUndefined();
-		},
-	);
-
-	it.each([
-		["check-active-meetup-issues", "audit"],
-		["update-meetup-issue", "manage"],
-	] as const)(
-		"creates a revocable mailings-only token in the dispatch job in %s",
-		async (workflowName, jobName) => {
-			// Arrange
-			const repositoryOwner = "example-community";
-			const config = new JourneyPolicyComposition()
-				.automationConfigFactory()
-				.createAutomationConfig(repositoryOwner);
-			const communicationAction = `${automationActionPrefix}communication/reconcile`;
-
-			// Act
-			const workflow = await readWorkflow(workflowName);
-			const jobs = Object.values(workflow.jobs ?? {});
-			const steps = workflow.jobs?.[jobName]?.steps ?? [];
-			const tokens = jobs
-				.flatMap((job) => job.steps ?? [])
-				.filter((step) => step.id === "mailings-token");
-			const token = tokens[0];
-			const tokenIndex = steps.indexOf(token);
-			const communicationIndex = steps.findIndex(
-				(step) => step.uses === communicationAction,
-			);
-			const jobOutputs = jobs.map((job) =>
-				"outputs" in job ? job.outputs : {},
-			);
-			const publicOutputs = JSON.stringify([
-				workflow.on?.workflow_call?.outputs,
-				...jobOutputs,
-			]);
-
-			// Assert
-			expect(tokens).toHaveLength(1);
-			expect(token.uses).toMatch(
-				/^actions\/create-github-app-token@[0-9a-f]{40}$/,
-			);
-			expect(token.if).toBe(
-				workflowExpression(
-					"steps.assets.outputs.drive-files != '' && steps.assets.outputs.slides-ready != ''",
-				),
-			);
-			expect(token.with).toEqual({
-				"client-id": workflowExpression("inputs.github-app-client-id"),
-				"private-key": workflowExpression("secrets.github-app-private-key"),
-				owner: workflowExpression("github.repository_owner"),
-				repositories: "mailings",
-				"permission-contents": "write",
-			});
-			expect(`${repositoryOwner}/${token.with?.repositories}`).toBe(
-				config.communication["mailings-repository"],
-			);
-			expect(tokenIndex).toBeGreaterThanOrEqual(0);
-			expect(communicationIndex).toBeGreaterThan(tokenIndex);
-			expect(steps[communicationIndex].with?.["mailings-token"]).toBe(
-				workflowExpression("steps.mailings-token.outputs.token"),
-			);
-			expect(publicOutputs).not.toContain("steps.mailings-token.outputs.token");
-		},
-	);
-
-	it.each(Object.entries(expectedActionWiring))(
-		"loads actions from the reusable workflow revision in %s",
-		async (workflowName, jobs) => {
-			// Arrange
-			const expectedJobs = Object.entries(jobs);
-
-			// Act
-			const workflow = await readWorkflow(workflowName);
-			const wiring = expectedJobs.map(([jobName, expectedActions]) => {
-				const actionNames = expectedActions as readonly string[];
-				const job = workflow.jobs?.[jobName];
-				const actionSteps = (job?.steps ?? []).filter((step: Step) =>
+				const actions = steps.filter((step) =>
 					step.uses?.startsWith(automationActionPrefix),
 				);
-				const workflowSourceIndex = (job?.steps ?? []).findIndex(
-					(step: Step) =>
-						step.id === "local-workflow-actions" &&
-						step.uses === localWorkflowActionsRef &&
-						step.with?.["actions-path"] === "actions",
+				expect(actions.map((step) => step.uses)).toEqual(
+					expected.map((path) => automationActionPrefix + path),
 				);
-				const firstActionIndex = (job?.steps ?? []).indexOf(actionSteps[0]);
-				return {
-					jobName,
-					actionNames,
-					job,
-					actionSteps,
-					workflowSourceIndex,
-					firstActionIndex,
-				};
-			});
-
-			// Assert
-			for (const {
-				jobName,
-				actionNames,
-				job,
-				actionSteps,
-				workflowSourceIndex,
-				firstActionIndex,
-			} of wiring) {
-				expect(job, `${workflowName}/${jobName}`).toBeDefined();
-				expect(actionSteps.map((step: Step) => step.uses)).toEqual(
-					actionNames.map((action) => `${automationActionPrefix}${action}`),
-				);
-				expect(
-					workflowSourceIndex,
-					`${workflowName}/${jobName} local workflow actions loader`,
-				).toBeGreaterThanOrEqual(0);
-				expect(workflowSourceIndex).toBeLessThan(firstActionIndex);
+				expect(loader).toBeGreaterThanOrEqual(0);
+				expect(loader).toBeLessThan(steps.indexOf(actions[0]));
 			}
 		},
 	);
-
-	it.each([
-		["check-meetup-referentials-and-issue-form", "validate", "check"],
-		["update-meetup-issue-form", "synchronize", "fix"],
-	] as const)(
-		"lets referential actions enforce their failure policy in %s",
-		async (workflowName, jobName, mode) => {
-			// Arrange
-			const workflow = await readWorkflow(workflowName);
-
-			// Act
-			const job = workflow.jobs?.[jobName];
-			const actions = (job?.steps ?? []).filter((step) =>
-				step.uses?.startsWith(`${automationActionPrefix}referential/`),
-			);
-
-			// Assert
-			expect(job).not.toHaveProperty("continue-on-error");
-			expect(actions).toHaveLength(2);
-			for (const action of actions) {
-				expect(action).not.toHaveProperty("continue-on-error");
-				expect(action.if).toBeUndefined();
-			}
-			expect(actions[1].with?.mode).toBe(mode);
-			expect(actions[1].with).not.toHaveProperty("fail-on-drift");
-		},
-	);
-
-	it("pins every external workflow dependency to a full commit SHA", async () => {
+	it("passes every nested workflow input and secret explicitly", async () => {
 		// Arrange
-		const workflowFiles = (
-			await readdir(join(root, ".github/workflows"))
-		).filter((name) => name.endsWith(".yml"));
-		const externalUses: string[] = [];
-
+		const files = (await readdir(join(root, ".github/workflows"))).filter(
+			(file) => file.endsWith(".yml") && !file.startsWith("__"),
+		);
+		const workflows = new Map(
+			await Promise.all(
+				files.map(
+					async (file) =>
+						[
+							file,
+							await readYaml<Workflow>(`.github/workflows/${file}`),
+						] as const,
+				),
+			),
+		);
 		// Act
-		for (const file of workflowFiles) {
-			const workflow = await readYaml<Workflow>(`.github/workflows/${file}`);
-			for (const job of Object.values(workflow.jobs ?? {}) as Job[]) {
-				if (job.uses && !job.uses.startsWith("./")) externalUses.push(job.uses);
-				for (const step of job.steps ?? []) {
-					if (step.uses && !step.uses.startsWith("./")) {
-						externalUses.push(step.uses);
-					}
-				}
-			}
-		}
-		for (const action of [
-			"actions/publication/reconcile-assets",
-			"actions/publication/reconcile-feedback",
-			"actions/event/reconcile",
-			"actions/event/list-active",
-			"actions/referential/validate",
-			"actions/referential/sync-issue-form",
-			"actions/communication/reconcile",
-		]) {
-			const manifest = await readYaml<ActionManifest>(
-				join(action, "action.yml"),
-			);
-			for (const step of manifest.runs?.steps ?? []) {
-				if (step.uses && !step.uses.startsWith("./"))
-					externalUses.push(step.uses);
-			}
-		}
-
+		const calls = [...workflows.values()]
+			.flatMap((workflow) => Object.values(workflow.jobs ?? {}))
+			.filter((job) => job.uses?.startsWith("./.github/workflows/"));
 		// Assert
-		expect(externalUses.length).toBeGreaterThan(0);
-		for (const uses of externalUses) {
-			expect(uses).toMatch(/^[^@\s]+@[0-9a-f]{40}$/);
+		expect(calls.length).toBeGreaterThan(0);
+		for (const call of calls) {
+			const target = workflows.get(call.uses?.split("/").at(-1) ?? "");
+			expect(target).toBeDefined();
+			expect(Object.keys(call.with ?? {}).sort()).toEqual(
+				Object.keys(target?.on?.workflow_call?.inputs ?? {}).sort(),
+			);
+			expect(Object.keys(call.secrets ?? {}).sort()).toEqual(
+				Object.keys(target?.on?.workflow_call?.secrets ?? {}).sort(),
+			);
+			expect(call.permissions).toEqual({ contents: "read" });
 		}
 	});
-});
-
-describe("organizer decision workflow triggers", () => {
-	it("accepts human edits to bot requests only on open issues", async () => {
+	it("provides prepared slides to email while keeping PDF reconciliation independent", async () => {
+		// Arrange
+		const workflow = await readWorkflow("reconcile-meetup");
+		// Act
+		const steps = workflow.jobs?.manage?.steps ?? [];
+		const documents = steps.findIndex((step) => step.id === "assets");
+		const pdf = steps.find((step) => step.id === "pdf");
+		const email = steps.find((step) => step.id === "communications");
+		// Assert
+		expect(documents).toBeGreaterThanOrEqual(0);
+		expect(
+			steps.findIndex((step) => step.id === "communications"),
+		).toBeGreaterThan(documents);
+		expect(pdf?.with?.["pdf-source"]).toBe(
+			workflowExpression("steps.assets.outputs.pdf-source"),
+		);
+		expect(email?.with?.["slides-ready"]).toBe(
+			workflowExpression("steps.assets.outputs.slides-ready"),
+		);
+		expect(email?.with?.["slides-url"]).toBe(
+			workflowExpression(
+				"fromJSON(steps.assets.outputs.drive-files)['slides-link']",
+			),
+		);
+		expect(email?.if).not.toContain("steps.pdf");
+	});
+	it("mints a revocable mailings-only token immediately before email reconciliation", async () => {
+		// Arrange
+		const workflow = await readWorkflow("reconcile-meetup");
+		// Act
+		const steps = workflow.jobs?.manage?.steps ?? [];
+		const token = steps.find((step) => step.id === "mailings-token");
+		const email = steps.find((step) => step.id === "communications");
+		// Assert
+		expect(token?.with).toEqual({
+			"client-id": workflowExpression("inputs.github-app-client-id"),
+			"private-key": workflowExpression("secrets.github-app-private-key"),
+			owner: workflowExpression("github.repository_owner"),
+			repositories: "mailings",
+			"permission-contents": "write",
+		});
+		expect(email?.with?.["mailings-token"]).toBe(
+			workflowExpression("steps.mailings-token.outputs.token"),
+		);
+		expect(email?.with?.["slack-token"]).toBe(
+			workflowExpression("secrets.slack-token"),
+		);
+		expect(email?.with?.["slack-organizer-channel-id"]).toBe(
+			workflowExpression("inputs.slack-organizer-channel-id"),
+		);
+		expect(steps.findIndex((step) => step.id === "communications")).toBe(
+			steps.findIndex((step) => step.id === "mailings-token") + 1,
+		);
+		expect(JSON.stringify(workflow.jobs?.manage?.outputs)).not.toContain(
+			"mailings-token",
+		);
+	});
+	it("pins external dependencies and prevents persisted checkout credentials", async () => {
+		// Arrange
+		const files = (await readdir(join(root, ".github/workflows"))).filter(
+			(file) => file.endsWith(".yml"),
+		);
+		// Act
+		const workflows = await Promise.all(
+			files.map((file) => readYaml<Workflow>(`.github/workflows/${file}`)),
+		);
+		const jobs = workflows.flatMap((workflow) =>
+			Object.values(workflow.jobs ?? {}),
+		);
+		const uses = jobs
+			.flatMap((job) => [
+				job.uses,
+				...(job.steps ?? []).map((step) => step.uses),
+			])
+			.filter(
+				(value): value is string => Boolean(value) && !value?.startsWith("./"),
+			);
+		// Assert
+		expect(uses.length).toBeGreaterThan(0);
+		for (const value of uses) expect(value).toMatch(/^[^@\s]+@[0-9a-f]{40}$/);
+		for (const step of jobs.flatMap((job) => job.steps ?? []))
+			if (step.uses?.startsWith("actions/checkout@"))
+				expect(step.with?.["persist-credentials"]).toBe(false);
+	});
+	it("uses required client IDs for every installation token", async () => {
+		// Arrange
+		const files = (await readdir(join(root, ".github/workflows"))).filter(
+			(file) => file.endsWith(".yml") && !file.startsWith("__"),
+		);
+		// Act
+		const workflows = await Promise.all(
+			files.map((file) => readYaml<Workflow>(`.github/workflows/${file}`)),
+		);
+		// Assert
+		for (const workflow of workflows)
+			for (const token of Object.values(workflow.jobs ?? {})
+				.flatMap((job) => job.steps ?? [])
+				.filter((step) =>
+					step.uses?.startsWith("actions/create-github-app-token@"),
+				)) {
+				expect(
+					workflow.on?.workflow_call?.inputs?.["github-app-client-id"],
+				).toMatchObject({ required: true, type: "string" });
+				expect(token.with?.["client-id"]).toBe(
+					workflowExpression("inputs.github-app-client-id"),
+				);
+				expect(token.with).not.toHaveProperty("app-id");
+			}
+	});
+	it("accepts human edits to trusted bot requests only on open issues", async () => {
 		// Arrange
 		const workflow = await readWorkflow("update-meetup-issue");
-
 		// Act
 		const guard = workflow.jobs?.manage?.if ?? "";
-
 		// Assert
-		expect(guard).toContain("!github.event.issue.pull_request");
-		expect(guard).toContain("github.event.issue.state == 'open'");
-		expect(guard).toContain("github.event_name != 'issue_comment'");
-		expect(guard).toContain("github.event.action == 'edited'");
-		expect(guard).toContain("github.event.sender.type == 'User'");
-		expect(guard).toContain("github.event.comment.user.type == 'Bot'");
-		expect(guard).toContain(
+		for (const condition of [
+			"!github.event.issue.pull_request",
+			"github.event.issue.state == 'open'",
+			"github.event_name != 'issue_comment'",
+			"github.event.action == 'edited'",
+			"github.event.sender.type == 'User'",
+			"github.event.comment.user.type == 'Bot'",
 			"startsWith(github.event.comment.body, '<!-- meetup-organizer-approval:v1 ')",
-		);
+		])
+			expect(guard).toContain(condition);
 	});
 });

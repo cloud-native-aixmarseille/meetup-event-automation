@@ -170,8 +170,8 @@ jobs:
           OUTCOME: ${{ steps.validate-referentials.outcome }}
         run: test "$OUTCOME" = success
 
-  test-referential-sync-issue-form:
-    name: Test referential sync issue form action
+  test-issue-form-reconcile:
+    name: Test issue form reconciliation
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -230,7 +230,7 @@ jobs:
 
       - name: Synchronize issue form
         id: sync-issue-form
-        uses: ./actions/referential/sync-issue-form
+        uses: ./actions/issue-form/reconcile
         with:
           locale: en
           mode: fix
@@ -370,7 +370,7 @@ jobs:
       # The synthetic issue has completed email tasks, so no delivery is due.
       - name: Reconcile synthetic meetup communications
         id: reconcile-communications
-        uses: ./actions/communication/reconcile
+        uses: ./actions/communication/reconcile-email
         with:
           meetup-event-url-prefix: https://www.meetup.com/example-group/events/
           community-event-url-prefixes: '["https://community.example.test/events/"]'
@@ -395,8 +395,8 @@ jobs:
         run: |
           jq -e 'type == "array" and all(.[]; .severity != "error")' <<< "$DIAGNOSTICS" >/dev/null
 
-  test-publication-reconcile-assets:
-    name: Test publication asset action requires credentials
+  test-assets-reconcile-documents:
+    name: Test required document and PDF configuration
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -409,7 +409,7 @@ jobs:
       - name: Check required asset credentials
         id: assets
         continue-on-error: true
-        uses: ./actions/publication/reconcile-assets
+        uses: ./actions/assets/reconcile-documents
         with:
           meetup-event-url-prefix: https://www.meetup.com/example-group/events/
           community-event-url-prefixes: '["https://community.example.test/events/"]'
@@ -421,7 +421,6 @@ jobs:
           github-token: ${{ github.token }}
           google-credentials: ""
           google-drive-folder-id: synthetic-parent-folder
-          google-drive-public-folder-id: synthetic-public-folder
           google-drive-template-folder-id: synthetic-template-folder
 
       - name: Assert asset action rejects missing credentials
@@ -432,8 +431,28 @@ jobs:
         run: |
           [[ "$OUTCOME" == "failure" ]]
           jq -e 'map(.code) | index("action.execution.failed") != null' <<< "$DIAGNOSTICS" >/dev/null
+      - name: Reject missing PDF credentials
+        id: pdf
+        continue-on-error: true
+        uses: ./actions/assets/reconcile-slides-pdf
+        with:
+          locale: en
+          issue-number: "1"
+          github-token: ${{ github.token }}
+          google-credentials: ""
+          google-drive-public-folder-id: synthetic-public-folder
+          pdf-source: "{}"
+          slides-ready: "false"
+      - name: Assert PDF configuration failure
+        shell: bash
+        env:
+          OUTCOME: ${{ steps.pdf.outcome }}
+          DIAGNOSTICS: ${{ steps.pdf.outputs.diagnostics }}
+        run: |
+          [[ "$OUTCOME" == "failure" ]]
+          jq -e 'map(.code) | index("action.execution.failed") != null' <<< "$DIAGNOSTICS" >/dev/null
 
-  test-publication-reconcile-feedback:
+  test-feedback-reconcile-event:
     name: Test required feedback configuration
     runs-on: ubuntu-latest
     permissions:
@@ -447,7 +466,7 @@ jobs:
       - name: Reject a missing OpenFeedback API key
         id: missing-openfeedback-key
         continue-on-error: true
-        uses: ./actions/publication/reconcile-feedback
+        uses: ./actions/feedback/reconcile-event
         with:
           meetup-event-url-prefix: https://www.meetup.com/example-group/events/
           community-event-url-prefixes: '["https://community.example.test/events/"]'
@@ -458,24 +477,14 @@ jobs:
           issue-number: "1"
           github-token: ${{ github.token }}
           openfeedback-api-key: ""
-          kutt-api-key: synthetic-key
-          kutt-base-url: https://short.example.test
-          kutt-link-id: synthetic-link
 
       - name: Reject a missing Kutt API key
         id: missing-key
         continue-on-error: true
-        uses: ./actions/publication/reconcile-feedback
+        uses: ./actions/feedback/reconcile-short-link
         with:
-          meetup-event-url-prefix: https://www.meetup.com/example-group/events/
-          community-event-url-prefixes: '["https://community.example.test/events/"]'
-          asset-folder-url-prefix: https://drive.google.com/drive/folders/
           locale: en
-          conference-hall-event: synthetic-cfp
-          conference-hall-api-key: synthetic-key
-          issue-number: "1"
           github-token: ${{ github.token }}
-          openfeedback-api-key: oforg_synthetic-key
           kutt-api-key: ""
           kutt-base-url: https://short.example.test
           kutt-link-id: synthetic-link
@@ -483,17 +492,10 @@ jobs:
       - name: Reject a missing Kutt link ID
         id: missing-id
         continue-on-error: true
-        uses: ./actions/publication/reconcile-feedback
+        uses: ./actions/feedback/reconcile-short-link
         with:
-          meetup-event-url-prefix: https://www.meetup.com/example-group/events/
-          community-event-url-prefixes: '["https://community.example.test/events/"]'
-          asset-folder-url-prefix: https://drive.google.com/drive/folders/
           locale: en
-          conference-hall-event: synthetic-cfp
-          conference-hall-api-key: synthetic-key
-          issue-number: "1"
           github-token: ${{ github.token }}
-          openfeedback-api-key: oforg_synthetic-key
           kutt-api-key: synthetic-key
           kutt-base-url: https://short.example.test
           kutt-link-id: ""
@@ -501,20 +503,13 @@ jobs:
       - name: Reject a missing Kutt base URL
         id: missing-base-url
         continue-on-error: true
-        uses: ./actions/publication/reconcile-feedback
+        uses: ./actions/feedback/reconcile-short-link
         with:
-          meetup-event-url-prefix: https://www.meetup.com/example-group/events/
-          community-event-url-prefixes: '["https://community.example.test/events/"]'
-          asset-folder-url-prefix: https://drive.google.com/drive/folders/
           locale: en
-          conference-hall-event: synthetic-cfp
-          conference-hall-api-key: synthetic-key
-          issue-number: "1"
           github-token: ${{ github.token }}
-          openfeedback-api-key: oforg_synthetic-key
           kutt-api-key: synthetic-key
-          kutt-link-id: synthetic-link
           kutt-base-url: ""
+          kutt-link-id: synthetic-link
 
       - name: Assert missing settings fail
         shell: bash
@@ -557,3 +552,27 @@ jobs:
               issue_number: Number(process.env.ISSUE_NUMBER),
               state: 'closed',
             });
+  test-organizer-reconcile-checklist:
+    name: Test organizer checklist requires a trusted author
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Reject a missing trusted author
+        id: checklist
+        continue-on-error: true
+        uses: ./actions/organizer/reconcile-checklist
+        with:
+          locale: en
+          github-token: ${{ github.token }}
+          issue-number: "1"
+          managed-comment-author: ""
+          stage-results: "{}"
+      - name: Assert checklist configuration failure
+        env:
+          OUTCOME: ${{ steps.checklist.outcome }}
+        run: test "$OUTCOME" = failure

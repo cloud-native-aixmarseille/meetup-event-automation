@@ -7,7 +7,6 @@ import { AttentionAction } from "./attention-action.js";
 import { AttentionComposition } from "./attention-composition.js";
 import { GithubActionsComposition } from "./dependency-composition.js";
 import { ActionMessages } from "./i18n/action-messages.js";
-import { OrganizerFeedback } from "./organizer-feedback.js";
 
 const boundary = vi.hoisted(() => ({ execute: vi.fn(), feedback: vi.fn() }));
 vi.mock("@actions/core", () => ({
@@ -58,10 +57,7 @@ describe("attention action reporting", () => {
 					new GithubActionsComposition().publicationUrlInput(),
 				createAttention: (input) => {
 					const container = AttentionComposition.create(input);
-					return {
-						feedback: container.get(OrganizerFeedback),
-						attention: container.get(ManageMeetupAttention),
-					};
+					return container.get(ManageMeetupAttention);
 				},
 				runtimeInput: new GithubActionsComposition().runtimeInput(),
 				attentionStages: new GithubActionsComposition().attentionStages(),
@@ -76,9 +72,6 @@ describe("attention action reporting", () => {
 			expect(Boolean(report.failure)).toBe(notificationFailed);
 			expect(report.details.join(" ")).toContain("attention=persisted");
 			expect(core.setOutput).not.toHaveBeenCalled();
-			expect(boundary.feedback.mock.invocationCallOrder[0]).toBeLessThan(
-				boundary.execute.mock.invocationCallOrder[0],
-			);
 
 			expect(JSON.stringify(report)).not.toContain("private");
 		},
@@ -97,10 +90,7 @@ describe("attention action reporting", () => {
 			publicationUrlInput: new GithubActionsComposition().publicationUrlInput(),
 			createAttention: (input) => {
 				const container = AttentionComposition.create(input);
-				return {
-					feedback: container.get(OrganizerFeedback),
-					attention: container.get(ManageMeetupAttention),
-				};
+				return container.get(ManageMeetupAttention);
 			},
 			runtimeInput: new GithubActionsComposition().runtimeInput(),
 			attentionStages: new GithubActionsComposition().attentionStages(),

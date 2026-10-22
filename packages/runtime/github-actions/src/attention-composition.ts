@@ -4,7 +4,6 @@ import {
 	CommunicationDomainComposition,
 } from "@meetup-automation/communication";
 import type {
-	EventCommentRepository,
 	EventDocumentCodec,
 	EventRepository,
 } from "@meetup-automation/event";
@@ -28,9 +27,7 @@ import {
 	type EventDocumentCompositionInput,
 	SERVICES,
 } from "./composition.js";
-import { GithubActionsComposition } from "./dependency-composition.js";
 import { OrganizerApprovalComposition } from "./organizer-approval-composition.js";
-import { OrganizerFeedback } from "./organizer-feedback.js";
 import { PublicationPolicyComposition } from "./publication-policy-composition.js";
 
 type ApprovalCapabilities = ReturnType<
@@ -58,11 +55,7 @@ export class AttentionComposition {
 				input.communityEventUrlPrefixes,
 				input.assetFolderUrlPrefix,
 			);
-		const container = EventComposition.createDocumentContainer({
-			...input,
-			retireCommunicationReports: true,
-		});
-		AttentionComposition.bindFeedback(container);
+		const container = EventComposition.createDocumentContainer(input);
 		container
 			.bind(SystemCommunicationClock)
 			.toDynamicValue(() =>
@@ -133,17 +126,6 @@ export class AttentionComposition {
 			);
 	}
 
-	private static bindFeedback(container: Container): void {
-		container
-			.bind(OrganizerFeedback)
-			.toDynamicValue((context) =>
-				new GithubActionsComposition().organizerFeedback(
-					context.get<EventRepository>(SERVICES.eventRepository),
-					context.get<EventCommentRepository>(SERVICES.eventCommentRepository),
-					context.get<AutomationConfig>(SERVICES.config).event["issue-label"],
-				),
-			);
-	}
 	private static approvals(
 		input: AttentionCompositionInput,
 	): ApprovalCapabilities {

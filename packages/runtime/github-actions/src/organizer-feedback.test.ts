@@ -55,7 +55,7 @@ describe("OrganizerFeedback", () => {
 			event: stage("event.proposals.not-found"),
 			communications: stage("communication.event-references-unresolved"),
 			assets: stage("publication.assets.file.drift", "warning", true),
-			feedback: stage("publication.feedback.ambiguous-date", "warning"),
+			feedback: stage("publication.feedback-link.ambiguous-date", "warning"),
 		});
 
 		// Act
@@ -67,7 +67,7 @@ describe("OrganizerFeedback", () => {
 		expect(target).toEqual(identity);
 		expect(diagnostics.map((item: { code: string }) => item.code)).toEqual([
 			"event.proposals.not-found",
-			"publication.feedback.ambiguous-date",
+			"publication.feedback-link.ambiguous-date",
 		]);
 		expect(JSON.stringify(diagnostics)).not.toContain("private");
 	});

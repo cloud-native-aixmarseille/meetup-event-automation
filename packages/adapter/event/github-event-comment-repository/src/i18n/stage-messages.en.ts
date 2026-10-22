@@ -42,10 +42,10 @@ export const STAGE_MESSAGES_EN = {
 		"Complete talk subjects and speakers before synchronizing OpenFeedback.",
 	"comment.guidance.feedback.prerequisites":
 		"Complete the title, date and OpenFeedback link.",
-	"comment.guidance.feedback.current-event":
-		"Keep today's shared feedback link until the event day ends.",
-	"comment.guidance.feedback.ambiguous-date":
-		"Several meetups share this date. Select the shared feedback link manually.",
+	"comment.guidance.feedback-link.prerequisites":
+		"Check the active meetup selected for the shared link and complete its OpenFeedback URL.",
+	"comment.guidance.feedback-link.ambiguous-date":
+		"Several active meetups share the selected date. Select the shared feedback target manually.",
 	"comment.guidance.assets.prerequisites":
 		"Select the host and date before preparing Drive files.",
 	"comment.guidance.assets.drift":

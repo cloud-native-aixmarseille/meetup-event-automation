@@ -1,7 +1,7 @@
 import type {
 	IssueFormProjectionMode,
 	PublicDiagnostic,
-	SynchronizeMeetupIssueFormResult,
+	ReconcileMeetupIssueFormResult,
 } from "@meetup-automation/journey";
 import type { ActionReportData } from "./action-report.js";
 import type { ActionMessages } from "./i18n/action-messages.js";
@@ -31,7 +31,7 @@ export class ReferentialActionReport {
 
 	issueForm(
 		mode: IssueFormProjectionMode,
-		result: SynchronizeMeetupIssueFormResult,
+		result: ReconcileMeetupIssueFormResult,
 		messages: ActionMessages,
 	): ActionReportData {
 		const details: string[] = [];

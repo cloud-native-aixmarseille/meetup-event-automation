@@ -94,3 +94,68 @@ describe("operational interface evidence", () => {
 		expect(consumers).toEqual([]);
 	});
 });
+
+describe("reusable workflow data flow", () => {
+	it("traces only inputs consumed by a called workflow into a real action", () => {
+		// Arrange
+		const workflows = new Map([
+			[
+				"child.yml",
+				{
+					jobs: {
+						run: {
+							steps: [
+								{
+									uses: "./actions/event/reconcile",
+									with: { "issue-number": `\${{ inputs.issue-number }}` },
+								},
+							],
+						},
+					},
+				},
+			],
+		]);
+		const job = {
+			uses: "./.github/workflows/child.yml",
+			strategy: { matrix: `\${{ needs.list.outputs.issues }}` },
+			with: {
+				"issue-number": `\${{ matrix.issue }}`,
+				unused: `\${{ needs.source.outputs.unused }}`,
+			},
+		};
+		// Act
+		const values = ActionInterfaceUsage.operationalValues(job, workflows);
+		// Assert
+		expect(values).toContain(`\${{ needs.list.outputs.issues }}`);
+		expect(values).toContain(`\${{ matrix.issue }}`);
+		expect(values).not.toContain(`\${{ needs.source.outputs.unused }}`);
+	});
+	it("does not treat a called logging-only workflow as an operational consumer", () => {
+		// Arrange
+		const workflows = new Map([
+			[
+				"log.yml",
+				{
+					jobs: {
+						log: {
+							steps: [
+								{
+									run: 'echo "$VALUE"',
+									env: { VALUE: `\${{ inputs.value }}` },
+								},
+							],
+						},
+					},
+				},
+			],
+		]);
+		const job = {
+			uses: "./.github/workflows/log.yml",
+			with: { value: `\${{ needs.source.outputs.value }}` },
+		};
+		// Act
+		const values = ActionInterfaceUsage.operationalValues(job, workflows);
+		// Assert
+		expect(values).toEqual([]);
+	});
+});

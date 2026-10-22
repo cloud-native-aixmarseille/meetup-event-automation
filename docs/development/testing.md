@@ -117,6 +117,13 @@ branches/functions. Tests, shared fixtures, and runtime bootstrap entrypoints
 are excluded from coverage. Coverage percentages do not replace assertions about
 failure paths or data privacy.
 
+The pinned `actionlint` parser does not recognize GitHub's `concurrency.queue`
+setting ([upstream issue](https://github.com/rhysd/actionlint/issues/657)).
+The [linter configuration](../../.github/linters/actionlint.yml) excludes only that
+exact parser message in the shared-link workflow. The feedback workflow contract
+checks `queue: max` and `cancel-in-progress: false`; other syntax errors remain
+subject to normal linting.
+
 Use [the development checklist](README.md#choose-checks-for-the-change) to
 select checks and rebuild bundles after production changes.
 

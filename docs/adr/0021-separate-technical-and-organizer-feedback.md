@@ -4,6 +4,9 @@ Status: Accepted
 
 Date: 2026-10-20
 
+The combined checklist/attention action boundary is superseded by
+[ADR 0024](0024-scoped-actions-and-workflow-composition.md).
+
 ## Context
 
 Meetup input can be incomplete or invalid during normal preparation. Treating

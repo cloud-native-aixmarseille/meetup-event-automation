@@ -12,6 +12,7 @@ export type { AutomationConfig } from "./config/automation-config.js";
 export { AutomationConfigFactory } from "./config/automation-config.js";
 export { JourneyComposition } from "./dependency-composition.js";
 export { JourneyPolicyComposition } from "./policy-composition.js";
+export type { EventDocumentRevision } from "./ports/event-document-revision.js";
 export type {
 	IssueFormProjection,
 	IssueFormProjectionMode,
@@ -56,7 +57,6 @@ export type { PublicDiagnostic } from "./result/result-envelope.js";
 export { AssetRenderProjection } from "./use-cases/asset-render-projection.js";
 export { CommunicationJourneyResults } from "./use-cases/communication-journey-results.js";
 export { FindNextAssetEvent } from "./use-cases/find-next-asset-event.js";
-export { ManageMeetupAssets } from "./use-cases/manage-meetup-assets.js";
 export { ManageMeetupAttention } from "./use-cases/manage-meetup-attention.js";
 export { ManageMeetupCommunications } from "./use-cases/manage-meetup-communications.js";
 export { ManageMeetupEvent } from "./use-cases/manage-meetup-event.js";
@@ -64,26 +64,32 @@ export type {
 	ManageMeetupEventDependencies,
 	ManageMeetupEventResult,
 } from "./use-cases/manage-meetup-event-contracts.js";
-export { ManageMeetupFeedback } from "./use-cases/manage-meetup-feedback.js";
 export {
 	ManageMeetupPublication,
 	type MeetupPublicationResult,
 } from "./use-cases/manage-meetup-publication.js";
 export type { MeetupPublicationSettings } from "./use-cases/meetup-publication-projection.js";
+export { ReconcileFeedbackLink } from "./use-cases/reconcile-feedback-link.js";
+export { ReconcileMeetupDocuments } from "./use-cases/reconcile-meetup-documents.js";
+export { ReconcileMeetupFeedback } from "./use-cases/reconcile-meetup-feedback.js";
+export type {
+	ReconcileMeetupIssueFormDependencies,
+	ReconcileMeetupIssueFormResult,
+} from "./use-cases/reconcile-meetup-issue-form.js";
+export { ReconcileMeetupIssueForm } from "./use-cases/reconcile-meetup-issue-form.js";
+export {
+	ReconcileMeetupSlidesPdf,
+	type SlidesPdfSource,
+} from "./use-cases/reconcile-meetup-slides-pdf.js";
 export {
 	ReconcileOrganizerFeedback,
 	type ReconcileOrganizerFeedbackArguments,
 } from "./use-cases/reconcile-organizer-feedback.js";
-export { SpeakerSynchronizationError } from "./use-cases/speaker-synchronization-error.js";
-export type {
-	SynchronizeMeetupIssueFormDependencies,
-	SynchronizeMeetupIssueFormResult,
-} from "./use-cases/synchronize-meetup-issue-form.js";
-export { SynchronizeMeetupIssueForm } from "./use-cases/synchronize-meetup-issue-form.js";
 export {
-	SynchronizeSourceSpeakers,
-	type SynchronizeSourceSpeakersArguments,
-} from "./use-cases/synchronize-source-speakers.js";
+	ReconcileSourceSpeakers,
+	type ReconcileSourceSpeakersArguments,
+} from "./use-cases/reconcile-source-speakers.js";
+export { SpeakerSynchronizationError } from "./use-cases/speaker-synchronization-error.js";
 export type {
 	ValidateMeetupReferentialsDependencies,
 	ValidateMeetupReferentialsResult,

@@ -5,7 +5,18 @@ type Step = {
 	with?: Record<string, unknown>;
 	env?: Record<string, unknown>;
 };
-type Job = { if?: string; strategy?: unknown; steps?: Step[] };
+type Job = {
+	if?: string;
+	strategy?: unknown;
+	steps?: Step[];
+	uses?: string;
+	with?: Record<string, unknown>;
+	outputs?: Record<string, unknown>;
+};
+type Workflow = {
+	jobs?: Record<string, Job>;
+	on?: { workflow_call?: { outputs?: Record<string, unknown> } };
+};
 
 /** Conservative evidence for public interfaces; logging and test reads are not consumers. */
 export function inputProblem(
@@ -47,9 +58,28 @@ export function strings(value: unknown): string[] {
 	return Object.values(value).flatMap(strings);
 }
 
-export function operationalValues(job: Job): string[] {
-	const hasWork = job.steps?.some(operationalStep);
+export function operationalValues(
+	job: Job,
+	workflows: ReadonlyMap<string, Workflow> = new Map(),
+	visiting: ReadonlySet<string> = new Set(),
+): string[] {
+	const called = job.uses?.replace(/^\.\/\.github\/workflows\//, "");
+	const nested =
+		called && !visiting.has(called) ? workflows.get(called) : undefined;
+	const nestedValues = nested
+		? Object.values(nested.jobs ?? {}).flatMap((child) =>
+				operationalValues(
+					child,
+					workflows,
+					new Set([...visiting, called as string]),
+				),
+			)
+		: [];
+	const hasWork = job.steps?.some(operationalStep) || nestedValues.length > 0;
 	const values = hasWork ? strings([job.if, job.strategy]) : [];
+	for (const [name, value] of Object.entries(job.with ?? {}))
+		if (nestedValues.some((item) => item.includes(`inputs.${name}`)))
+			values.push(...strings(value));
 	for (const step of job.steps ?? []) {
 		const ownedAction = /^\.\/(?:\.\.\/self-workflow\/)?actions\//.test(
 			step.uses ?? "",
@@ -62,6 +92,28 @@ export function operationalValues(job: Job): string[] {
 			if (shellConsumes(step.run ?? "", name)) values.push(...strings(value));
 	}
 	return values;
+}
+
+export function workflowOutputConsumed(
+	workflows: ReadonlyMap<string, Workflow>,
+	path: string,
+	output: string,
+): boolean {
+	return [...workflows].some(
+		([name, workflow]) =>
+			!name.startsWith("__") &&
+			Object.entries(workflow.jobs ?? {}).some(
+				([id, job]) =>
+					job.uses === `./.github/workflows/${path}` &&
+					Object.entries(workflow.jobs ?? {}).some(
+						([otherId, other]) =>
+							otherId !== id &&
+							operationalValues(other, workflows).some((value) =>
+								value.includes(`needs.${id}.outputs.${output}`),
+							),
+					),
+			),
+	);
 }
 
 function operationalStep(step: Step): boolean {

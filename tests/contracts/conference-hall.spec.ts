@@ -37,7 +37,7 @@ describe("Conference Hall contracts", () => {
 		const steps = Object.values(workflow.jobs ?? {})
 			.flatMap((job) => job.steps ?? [])
 			.filter((step) =>
-				/^\.\/actions\/(event\/reconcile|publication\/reconcile-feedback|publication\/reconcile-assets|communication\/reconcile)$/.test(
+				/^\.\/actions\/(event\/reconcile|feedback\/reconcile-event|assets\/reconcile-documents|communication\/reconcile-email)$/.test(
 					step.uses ?? "",
 				),
 			);
@@ -51,10 +51,10 @@ describe("Conference Hall contracts", () => {
 	});
 	it.each([
 		"event/reconcile",
-		"publication/reconcile-assets",
-		"publication/reconcile-feedback",
-		"communication/reconcile",
-		"referential/sync-speakers",
+		"assets/reconcile-documents",
+		"feedback/reconcile-event",
+		"communication/reconcile-email",
+		"referential/reconcile-speakers",
 	])("requires explicit Conference Hall settings in %s", async (action) => {
 		// Arrange
 		const path = `actions/${action}/action.yml`;
@@ -70,7 +70,7 @@ describe("Conference Hall contracts", () => {
 	});
 	it("guards contact persistence with private scope, a repository lock and a branch-head lease", async () => {
 		// Arrange
-		const workflow = await readWorkflow("synchronize-conference-hall-speakers");
+		const workflow = await readWorkflow("reconcile-speakers");
 
 		// Act
 		const job = workflow.jobs?.synchronize;
@@ -90,12 +90,14 @@ describe("Conference Hall contracts", () => {
 		expect(scripts).not.toContain("--auto");
 		expect(scripts).not.toContain("git diff --cached\n");
 		expect(publish?.if).toBe(
-			workflowExpression("steps.synchronize.outputs.pr-title != ''"),
+			workflowExpression(
+				"steps.synchronize.outputs.pr-title != '' && steps.form.outputs.completed == 'true'",
+			),
 		);
 	});
 	it("exposes only the review text consumed by the synchronization workflow", async () => {
 		// Arrange
-		const path = "actions/referential/sync-speakers/action.yml";
+		const path = "actions/referential/reconcile-speakers/action.yml";
 
 		// Act
 		const manifest = await readYaml<ActionManifest>(path);
@@ -108,7 +110,7 @@ describe("Conference Hall contracts", () => {
 		expect(manifest.inputs?.["conference-hall-api-key"].required).toBe(true);
 		expect(manifest.runs?.using).toBe("node24");
 	});
-	it.each(["update-meetup-issue", "check-active-meetup-issues"])(
+	it.each(["reconcile-meetup"])(
 		"forwards required source credentials to each refreshing action in %s",
 		async (name) => {
 			// Arrange
@@ -118,7 +120,7 @@ describe("Conference Hall contracts", () => {
 			const steps = Object.values(workflow.jobs ?? {})
 				.flatMap((job) => job.steps ?? [])
 				.filter((step) =>
-					/\/actions\/(event\/reconcile|publication\/reconcile-feedback|publication\/reconcile-assets|communication\/reconcile)$/.test(
+					/\/actions\/(event\/reconcile|feedback\/reconcile-event|assets\/reconcile-documents|communication\/reconcile-email)$/.test(
 						step.uses ?? "",
 					),
 				);

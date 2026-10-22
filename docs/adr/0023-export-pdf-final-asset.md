@@ -4,6 +4,9 @@ Status: Accepted; implemented.
 
 Date: 2026-10-20
 
+The combined document/PDF action boundary and PDF failure gating is superseded by
+[ADR 0024](0024-scoped-actions-and-workflow-composition.md).
+
 ## Context
 
 [Asset reconciliation](../integrations/assets.md) maintains an event folder and

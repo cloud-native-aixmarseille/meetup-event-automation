@@ -191,7 +191,7 @@ before the event, even when nobody edits an issue.
 
 ### Synchronize the issue form
 
-`.github/workflows/synchronize-meetup-issue-form.yml`:
+`.github/workflows/reconcile-meetup-issue-form.yml`:
 
 ```yaml
 name: Update meetup issue form

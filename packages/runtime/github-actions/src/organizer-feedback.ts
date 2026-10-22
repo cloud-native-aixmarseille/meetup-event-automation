@@ -30,8 +30,8 @@ export class OrganizerFeedback {
 			meetupLabel,
 		);
 	}
-	async execute(identity: EventIdentity, stageResults: string): Promise<void> {
-		await this.reconciliation.execute(
+	async execute(identity: EventIdentity, stageResults: string) {
+		return this.reconciliation.execute(
 			identity,
 			this.collaborators.attentionStageInput.parse(stageResults),
 		);

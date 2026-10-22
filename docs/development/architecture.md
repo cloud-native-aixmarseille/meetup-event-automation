@@ -28,6 +28,45 @@ Full event readiness evaluation uses all three policies; next-event selection
 uses only Meetup and community policies. Listing and referential operations need
 none. Domain policies contain no community-specific URL defaults.
 
+## Action and workflow ownership
+
+Public actions use `actions/<scope>/<operation>`. Repeated desired-state
+operations use `reconcile`; queries and validation use `list-active` and
+`validate`. Action paths, workflow filenames and public display names describe
+business responsibilities, independently of adapter implementations. Use
+`reconcile-speakers.yml` for the speaker referential and
+`publication/reconcile-event` with `reconcile-event-publication.yml` for event
+publication. Provider identities belong in adapter wiring, integration guides
+and provider-specific settings. An action accepts only credentials and inputs
+needed by its own operation. See the [action inventory](../README.md#action-contracts).
+
+Workflows compose the operations. Issue updates and audits call
+`reconcile-meetup.yml`, which holds the repository/issue lock across event
+mutations, shared-link reconciliation and organizer reporting. Meetup publication
+uses the same lock. Shared-link writes have an additional repository/link lock
+in `reconcile-feedback-link.yml`; every invocation rereads all active candidates.
+The audit runs at most four issue pipelines concurrently. The shared-link lock
+uses [GitHub's bounded queue](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#concurrency)
+to retain pending calls. Each issue pipeline invokes this idempotent operation, so each
+pipeline can include its outcome without sharing private artifacts.
+
+Document reconciliation passes public asset identities, protected folder IDs and
+an opaque canonical issue revision to PDF export. The revision covers repository,
+issue number, state, title, sorted labels and body; the PDF operation rereads and
+checks it before effects. Private profiles and credentials stay inside the action
+that reads them. PDF failure leaves prepared slides available to email processing.
+
+Checklist reconciliation precedes attention. Document and PDF evidence form the
+assets stage; event-feedback and shared-link evidence form the feedback stage.
+Every member must succeed and report diagnostics before the combined stage can
+clear previous tasks. Attention runs only after checklist persistence succeeds.
+Its durable state and notifications remain independent of email delivery records.
+
+Speaker reconciliation writes only catalog and ID-allocation files. The workflow
+then reconciles the issue form and publishes a review branch only after both
+operations complete. It preserves the branch identity and allocated IDs across
+retries.
+
 ## Package ownership
 
 | Package area                                  | Responsibility                                                                                                                             |

@@ -111,7 +111,7 @@ commit used by your workflows, alongside the consumer checkout. With Node.js 24,
 run from the **consumer repository root**:
 
 ```sh
-INPUT_LOCALE=en INPUT_MODE=fix node ../meetup-event-automation/actions/referential/sync-issue-form/dist/index.js
+INPUT_LOCALE=en INPUT_MODE=fix node ../meetup-event-automation/actions/issue-form/reconcile/dist/index.js
 git diff -- .github/ISSUE_TEMPLATE/meetup.yml
 ```
 

@@ -12,7 +12,7 @@ type Inputs = Record<
 	}
 >;
 
-export interface Step {
+interface Step {
 	"continue-on-error"?: boolean;
 	env?: Record<string, unknown>;
 	id?: string;
@@ -24,8 +24,14 @@ export interface Step {
 }
 
 export interface Job {
+	strategy?: {
+		"max-parallel"?: number;
+		"fail-fast"?: boolean;
+		matrix?: unknown;
+	};
 	outputs?: Record<string, unknown>;
 	concurrency?: {
+		queue?: "single" | "max";
 		"cancel-in-progress"?: boolean;
 		group?: string;
 	};
@@ -39,6 +45,7 @@ export interface Job {
 }
 
 export interface Workflow {
+	concurrency?: Job["concurrency"];
 	jobs?: Record<string, Job>;
 	name?: string;
 	on?: {

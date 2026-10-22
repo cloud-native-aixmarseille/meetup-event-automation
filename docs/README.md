@@ -30,31 +30,37 @@ page for each topic below.
 These references are generated from the workflow manifests. Use the integration
 guides above for setup, behavior, and recovery.
 
-| Workflow                                                                                              | Purpose                                                    |
-| ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| [Create or update Meetup event](../.github/workflows/reconcile-meetup-event.md)                       | Create/update drafts and publish after organizer approval. |
-| [Synchronize Conference Hall speakers](../.github/workflows/synchronize-conference-hall-speakers.md)  | Prepare a private catalog and form review PR.              |
-| [Update meetup issue](../.github/workflows/update-meetup-issue.md)                                    | Process issue changes.                                     |
-| [Check active meetup issues](../.github/workflows/check-active-meetup-issues.md)                      | Run the scheduled or manual audit.                         |
-| [Update meetup issue form](../.github/workflows/update-meetup-issue-form.md)                          | Open a pull request with updated host and speaker choices. |
-| [Check referentials and issue form](../.github/workflows/check-meetup-referentials-and-issue-form.md) | Validate consumer pull requests.                           |
+| Workflow                                                                                              | Purpose                                                                        |
+| ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| [Reconcile meetup](../.github/workflows/reconcile-meetup.yml)                                         | Compose event, feedback, assets, email and organizer operations for one issue. |
+| [Reconcile shared feedback link](../.github/workflows/reconcile-feedback-link.yml)                    | Select the active event and serialize shared-link updates.                     |
+| [Reconcile event publication](../.github/workflows/reconcile-event-publication.md)                    | Create/update drafts and publish after organizer approval.                     |
+| [Reconcile speakers](../.github/workflows/reconcile-speakers.md)                                      | Prepare a private catalog and form review PR.                                  |
+| [Update meetup issue](../.github/workflows/update-meetup-issue.md)                                    | Process issue changes through the common pipeline.                             |
+| [Check active meetup issues](../.github/workflows/check-active-meetup-issues.md)                      | List active issues and run the common pipeline for each.                       |
+| [Update meetup issue form](../.github/workflows/update-meetup-issue-form.md)                          | Open a pull request with updated host and speaker choices.                     |
+| [Check referentials and issue form](../.github/workflows/check-meetup-referentials-and-issue-form.md) | Validate consumer pull requests.                                               |
 
 ## Action contracts
 
-These references are generated from the action manifests.
+Each action owns one scope. YAML manifests define their interfaces; the release
+workflow generates adjacent readme references.
 
-| Action                                                                                  | Purpose                                                                                |
-| --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| [Create or update Meetup event](../actions/publication/reconcile-meetup/README.md)      | Create a draft or update the event described by a meetup issue.                        |
-| [Reconcile event](../actions/event/reconcile/README.md)                                 | Validate and normalize one meetup issue.                                               |
-| [List active events](../actions/event/list-active/README.md)                            | Select issues for an audit.                                                            |
-| [Synchronize speakers](../actions/referential/sync-speakers/README.md)                  | Prepare a validated private speaker catalog from Conference Hall.                      |
-| [Validate referentials](../actions/referential/validate/README.md)                      | Check host and speaker catalogs.                                                       |
-| [Synchronize issue form](../actions/referential/sync-issue-form/README.md)              | Update the checked-out form choices.                                                   |
-| [Reconcile assets](../actions/publication/reconcile-assets/README.md)                   | Prepare Drive folders, template copies and post-event PDFs.                            |
-| [Reconcile feedback](../actions/publication/reconcile-feedback/README.md)               | Synchronize OpenFeedback events, talks and speakers, and update the shared short link. |
-| [Reconcile organizer attention](../actions/communication/reconcile-attention/README.md) | Update durable status and bounded organizer reminders.                                 |
-| [Reconcile communications](../actions/communication/reconcile/README.md)                | Plan or dispatch due email and Slack messages.                                         |
+| Action                                                                                 | Purpose                                                        |
+| -------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| [event/list-active](../actions/event/list-active/action.yml)                           | Select open meetup issues for an audit.                        |
+| [event/reconcile](../actions/event/reconcile/action.yml)                               | Validate and normalize one meetup issue.                       |
+| [referential/validate](../actions/referential/validate/action.yml)                     | Validate host and speaker catalogs.                            |
+| [referential/reconcile-speakers](../actions/referential/reconcile-speakers/action.yml) | Reconcile the private speaker catalog and allocation state.    |
+| [issue-form/reconcile](../actions/issue-form/reconcile/action.yml)                     | Check or update form choices from the local catalog.           |
+| [assets/reconcile-documents](../actions/assets/reconcile-documents/action.yml)         | Reconcile Drive folders, template copies and document content. |
+| [assets/reconcile-slides-pdf](../actions/assets/reconcile-slides-pdf/action.yml)       | Export and place the post-event presentation PDF.              |
+| [feedback/reconcile-event](../actions/feedback/reconcile-event/action.yml)             | Reconcile one OpenFeedback event, its agenda and issue URL.    |
+| [feedback/reconcile-short-link](../actions/feedback/reconcile-short-link/action.yml)   | Select the current meetup and update the shared Kutt target.   |
+| [publication/reconcile-event](../actions/publication/reconcile-event/action.yml)       | Reconcile a Meetup draft or approved publication.              |
+| [communication/reconcile-email](../actions/communication/reconcile-email/action.yml)   | Plan and dispatch approved email batches.                      |
+| [organizer/reconcile-checklist](../actions/organizer/reconcile-checklist/action.yml)   | Merge complete stage evidence into the organizer checklist.    |
+| [organizer/reconcile-attention](../actions/organizer/reconcile-attention/action.yml)   | Reconcile durable attention state and bounded Slack reminders. |
 
 ## Development
 
@@ -98,6 +104,7 @@ for implemented behavior and contributor conventions.
 - [ADR-0021: Separate technical failures from organizer feedback](adr/0021-separate-technical-and-organizer-feedback.md)
 - [ADR-0022: Inject stateless collaborators](adr/0022-inject-stateless-collaborators.md)
 - [ADR-0023: Export a static PDF final asset from the slides](adr/0023-export-pdf-final-asset.md)
+- [ADR-0024: Scope actions and compose workflows](adr/0024-scoped-actions-and-workflow-composition.md)
 
 ## Directory layout
 
@@ -148,7 +155,8 @@ docs/
     ├── 0020-unified-organizer-checklist.md
     ├── 0021-separate-technical-and-organizer-feedback.md
     ├── 0022-inject-stateless-collaborators.md
-    └── 0023-export-pdf-final-asset.md
+    ├── 0023-export-pdf-final-asset.md
+    └── 0024-scoped-actions-and-workflow-composition.md
 ```
 
 Action references stay beside `action.yml`; workflow references stay beside

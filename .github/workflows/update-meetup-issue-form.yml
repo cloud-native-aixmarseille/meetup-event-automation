@@ -1,7 +1,4 @@
-# Reusable workflow that validates private referentials and updates the public
-# meetup issue form when the checked-out projection is stale.
 name: Update meetup issue form
-
 on:
   workflow_call:
     inputs:
@@ -15,11 +12,11 @@ on:
         type: string
     secrets:
       github-app-private-key:
-        description: PEM-encoded private key for the GitHub App identified by the github-app-client-id input. Used to mint a narrowly scoped installation token.
+        description:
+          PEM-encoded private key for the GitHub App identified by the github-app-client-id input. Used to mint a narrowly scoped
+          installation token.
         required: true
-
 permissions: {}
-
 jobs:
   synchronize:
     runs-on: ubuntu-latest
@@ -28,41 +25,36 @@ jobs:
     steps:
       - name: Create narrowly scoped GitHub App token
         id: app-token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1
         with:
           client-id: ${{ inputs.github-app-client-id }}
-          private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] reusable workflows cannot safely consume environment secrets without broad inherit; this workflow forwards only the required secret
+          private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] reusable workflow forwards explicitly scoped credentials
           owner: ${{ github.repository_owner }}
           repositories: ${{ github.event.repository.name }}
           permission-contents: write
           permission-pull-requests: write
-
       - name: Checkout consumer repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-
       - id: local-workflow-actions
-        uses: hoverkraft-tech/ci-github-common/actions/local-workflow-actions@3a27d31e9ccefbe9609cc9165017ed100ff34a22 # 0.38.0
+        uses: hoverkraft-tech/ci-github-common/actions/local-workflow-actions@3a27d31e9ccefbe9609cc9165017ed100ff34a22
         with:
           actions-path: actions
-
       - name: Validate referentials
         id: referentials
         uses: ./../self-workflow/actions/referential/validate
         with:
           locale: ${{ inputs.locale }}
-
       - name: Render issue form
         id: synchronize
-        uses: ./../self-workflow/actions/referential/sync-issue-form
+        uses: ./../self-workflow/actions/issue-form/reconcile
         with:
           locale: ${{ inputs.locale }}
           mode: fix
-
       - name: Open or update synchronization pull request
-        if: steps.synchronize.outputs.changed == 'true'
-        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        if: ${{ steps.synchronize.outputs.completed == 'true' && steps.synchronize.outputs.changed == 'true' }}
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1
         with:
           token: ${{ steps.app-token.outputs.token }}
           branch: chore/update-meetup-issue-form

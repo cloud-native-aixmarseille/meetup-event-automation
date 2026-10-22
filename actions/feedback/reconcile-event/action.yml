@@ -1,0 +1,38 @@
+name: Reconcile feedback event
+description: Reconcile one OpenFeedback event, its talks and speakers, and the issue feedback link.
+inputs:
+  meetup-event-url-prefix:
+    description: HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
+    required: true
+  community-event-url-prefixes:
+    description: JSON array of nonempty HTTPS prefixes accepted for community event URLs.
+    required: true
+  asset-folder-url-prefix:
+    description: HTTPS prefix accepted for event asset folder URLs.
+    required: true
+  locale:
+    description:
+      Language for generated reports and guidance (en or fr). Regional variants are
+      supported; unsupported locales fall back to English.
+    required: true
+  github-token:
+    description: GitHub token with issue read and write permissions.
+    required: true
+  issue-number:
+    description: Meetup issue number.
+    required: true
+  openfeedback-api-key:
+    description: OpenFeedback organization API key (`oforg_`) used to create and update events.
+    required: true
+  conference-hall-event:
+    description: Conference Hall CFP slug for live linked profiles and selected proposals.
+    required: true
+  conference-hall-api-key:
+    description: Read-only Conference Hall event API key.
+    required: true
+outputs:
+  diagnostics:
+    description: Redacted JSON diagnostics.
+runs:
+  using: node24
+  main: dist/index.js

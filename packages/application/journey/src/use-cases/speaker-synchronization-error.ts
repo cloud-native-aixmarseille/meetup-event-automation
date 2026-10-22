@@ -5,9 +5,7 @@ export type SpeakerSynchronizationStage =
 	| "load-source"
 	| "merge-speakers"
 	| "validate-catalog"
-	| "check-form"
-	| "save-catalog"
-	| "update-form";
+	| "save-catalog";
 
 export class SpeakerSynchronizationError extends Error {
 	constructor(

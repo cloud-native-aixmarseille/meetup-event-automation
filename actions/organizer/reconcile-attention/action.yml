@@ -1,0 +1,42 @@
+name: Reconcile organizer attention
+description:
+  Reconcile organizer attention and bounded Slack reminders from the persisted checklist
+  and stage evidence.
+inputs:
+  meetup-event-url-prefix:
+    description: HTTPS event URL prefix for the authorized Meetup group, ending in /events/.
+    required: true
+  community-event-url-prefixes:
+    description: JSON array of nonempty HTTPS prefixes accepted for community event URLs.
+    required: true
+  asset-folder-url-prefix:
+    description: HTTPS prefix accepted for event asset folder URLs.
+    required: true
+  locale:
+    description:
+      Language for generated reports and guidance (en or fr). Regional variants are
+      supported; unsupported locales fall back to English.
+    required: true
+  issue-number:
+    description: Meetup issue number.
+    required: true
+  github-token:
+    description: GitHub App token with issue write access.
+    required: true
+  managed-comment-author:
+    description: Trusted GitHub App bot login.
+    required: true
+  slack-token:
+    description: Slack bot token for organizer attention.
+    required: true
+  slack-organizer-channel-id:
+    description: Explicit internal organizer channel ID.
+    required: true
+  stage-results:
+    description:
+      JSON object of event, assets, feedback and communications outcomes and diagnostic
+      outputs. Unexecuted stages remain unknown.
+    required: true
+runs:
+  using: node24
+  main: dist/index.js

@@ -39,7 +39,7 @@ jobs:
 
       - name: Check issue form projection
         id: issue-form
-        uses: ./../self-workflow/actions/referential/sync-issue-form
+        uses: ./../self-workflow/actions/issue-form/reconcile
         with:
           locale: ${{ inputs.locale }}
           mode: check

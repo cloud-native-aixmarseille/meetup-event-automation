@@ -1,13 +1,4 @@
-# Reusable workflow that checks one open meetup issue and applies the due
-# communication and issue updates needed to keep it current.
-#
-# The workflow creates a separate GitHub App installation token for
-# `<repository-owner>/mailings` using the supplied App client ID and private key.
-# The App must be installed there with Contents: write permission. The token is
-# used in the dispatch job and revoked when the job finishes; callers do not
-# provide a mailing token secret.
 name: Update meetup issue
-
 on:
   workflow_call:
     inputs:
@@ -32,7 +23,9 @@ on:
         required: true
         type: string
       slack-organizer-channel-id:
-        description: Internal meetup organizer Slack channel for approval requests and actionable organizer reminders. Public announcement channels are separate.
+        description:
+          Internal meetup organizer Slack channel for approval requests and actionable organizer reminders. Public announcement channels
+          are separate.
         required: true
         type: string
       google-drive-folder-id:
@@ -70,7 +63,9 @@ on:
         description: Google service-account JSON for Drive asset reconciliation.
         required: true
       github-app-private-key:
-        description: PEM-encoded private key for the GitHub App identified by the github-app-client-id input. Used to mint a narrowly scoped installation token.
+        description:
+          PEM-encoded private key for the GitHub App identified by the github-app-client-id input. Used to mint a narrowly scoped
+          installation token.
         required: true
       slack-token:
         description: Slack bot token with chat:write and reactions:write for organizer notifications and decision reactions.
@@ -78,12 +73,10 @@ on:
       conference-hall-api-key:
         description: Read-only Conference Hall event API key.
         required: true
-
 permissions: {}
-
 jobs:
   manage:
-    if: >-
+    if: |-
       ${{ !github.event.issue.pull_request &&
           github.event.issue.state == 'open' &&
           (github.event_name != 'issue_comment' ||
@@ -91,131 +84,27 @@ jobs:
             github.event.sender.type == 'User' &&
             github.event.comment.user.type == 'Bot' &&
             startsWith(github.event.comment.body, '<!-- meetup-organizer-approval:v1 '))) }}
-    runs-on: ubuntu-latest
+    uses: ./.github/workflows/reconcile-meetup.yml
     permissions:
       contents: read
-    concurrency:
-      group: meetup-event-${{ github.repository_id }}-${{ github.event.issue.number }}
-      cancel-in-progress: false
-    steps:
-      - name: Create narrowly scoped GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          client-id: ${{ inputs.github-app-client-id }}
-          private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] reusable workflows cannot safely consume environment secrets without broad inherit; this workflow forwards only the required secret
-          owner: ${{ github.repository_owner }}
-          repositories: ${{ github.event.repository.name }}
-          permission-contents: read
-          permission-issues: write
-
-      - name: Checkout consumer repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - id: local-workflow-actions
-        uses: hoverkraft-tech/ci-github-common/actions/local-workflow-actions@3a27d31e9ccefbe9609cc9165017ed100ff34a22 # 0.38.0
-        with:
-          actions-path: actions
-
-      - name: Reconcile event feedback
-        id: feedback
-        uses: ./../self-workflow/actions/publication/reconcile-feedback
-        with:
-          meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
-          community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
-          asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}
-          conference-hall-event: ${{ inputs.conference-hall-event }}
-          conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicit reusable workflow secret
-          locale: ${{ inputs.locale }}
-          issue-number: ${{ github.event.issue.number }}
-          github-token: ${{ steps.app-token.outputs.token }}
-          kutt-base-url: ${{ inputs.kutt-base-url }}
-          kutt-link-id: ${{ inputs.kutt-link-id }}
-          openfeedback-api-key: ${{ secrets.openfeedback-api-key }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly
-          kutt-api-key: ${{ secrets.kutt-api-key }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly
-
-      - name: Reconcile event assets
-        id: assets
-        if: ${{ !cancelled() && steps.app-token.outcome == 'success' && steps.local-workflow-actions.outcome == 'success' }}
-        uses: ./../self-workflow/actions/publication/reconcile-assets
-        with:
-          meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
-          community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
-          asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}
-          conference-hall-event: ${{ inputs.conference-hall-event }}
-          conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicit reusable workflow secret
-          locale: ${{ inputs.locale }}
-          issue-number: ${{ github.event.issue.number }}
-          github-token: ${{ steps.app-token.outputs.token }}
-          google-credentials: ${{ secrets.google-credentials }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly
-          google-drive-folder-id: ${{ inputs.google-drive-folder-id }}
-          google-drive-public-folder-id: ${{ inputs.google-drive-public-folder-id }}
-          google-drive-template-folder-id: ${{ inputs.google-drive-template-folder-id }}
-
-      - name: Create mailings GitHub App token
-        id: mailings-token
-        if: ${{ steps.assets.outputs.drive-files != '' && steps.assets.outputs.slides-ready != '' }}
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          client-id: ${{ inputs.github-app-client-id }}
-          private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] reusable workflow receives the App key explicitly to mint a repository-scoped token
-          owner: ${{ github.repository_owner }}
-          repositories: mailings
-          permission-contents: write
-
-      - name: Reconcile communications
-        id: communications
-        if: ${{ steps.assets.outputs.drive-files != '' && steps.assets.outputs.slides-ready != '' }}
-        uses: ./../self-workflow/actions/communication/reconcile
-        with:
-          meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
-          community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
-          asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}
-          conference-hall-event: ${{ inputs.conference-hall-event }}
-          conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicit reusable workflow secret
-          slides-ready: ${{ steps.assets.outputs.slides-ready }}
-          slides-url: ${{ fromJSON(steps.assets.outputs.drive-files)['slides-link'] }}
-          openfeedback-api-key: ${{ secrets.openfeedback-api-key }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly
-          locale: ${{ inputs.locale }}
-          issue-number: ${{ github.event.issue.number }}
-          github-token: ${{ steps.app-token.outputs.token }}
-          managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
-          mailings-token: ${{ steps.mailings-token.outputs.token }}
-          slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
-          slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly to avoid secrets: inherit
-
-      - name: Reconcile event
-        id: reconcile
-        if: ${{ !cancelled() && steps.app-token.outcome == 'success' && steps.local-workflow-actions.outcome == 'success' }}
-        uses: ./../self-workflow/actions/event/reconcile
-        with:
-          meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
-          community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
-          asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}
-          conference-hall-event: ${{ inputs.conference-hall-event }}
-          conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] explicit reusable workflow secret
-          locale: ${{ inputs.locale }}
-          issue-number: ${{ github.event.issue.number }}
-          github-token: ${{ steps.app-token.outputs.token }}
-
-      - name: Reconcile organizer attention
-        id: attention
-        if: ${{ always() && steps.app-token.outcome == 'success' && steps.local-workflow-actions.outcome == 'success' }}
-        uses: ./../self-workflow/actions/communication/reconcile-attention
-        with:
-          meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
-          community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
-          asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}
-          locale: ${{ inputs.locale }}
-          issue-number: ${{ github.event.issue.number }}
-          github-token: ${{ steps.app-token.outputs.token }}
-          managed-comment-author: ${{ format('{0}[bot]', steps.app-token.outputs.app-slug) }}
-          slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
-          slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] required reusable-workflow secret is forwarded explicitly
-          stage-results: >-
-            {"event":{"outcome":${{ toJSON(steps.reconcile.outcome) }},"diagnostics":${{ toJSON(steps.reconcile.outputs.diagnostics) }}},
-            "assets":{"outcome":${{ toJSON(steps.assets.outcome) }},"diagnostics":${{ toJSON(steps.assets.outputs.diagnostics) }}},
-            "feedback":{"outcome":${{ toJSON(steps.feedback.outcome) }},"diagnostics":${{ toJSON(steps.feedback.outputs.diagnostics) }}},
-            "communications":{"outcome":${{ toJSON(steps.communications.outcome) }},"diagnostics":${{ toJSON(steps.communications.outputs.diagnostics) }}}}
+    with:
+      meetup-event-url-prefix: ${{ inputs.meetup-event-url-prefix }}
+      community-event-url-prefixes: ${{ inputs.community-event-url-prefixes }}
+      asset-folder-url-prefix: ${{ inputs.asset-folder-url-prefix }}
+      locale: ${{ inputs.locale }}
+      github-app-client-id: ${{ inputs.github-app-client-id }}
+      slack-organizer-channel-id: ${{ inputs.slack-organizer-channel-id }}
+      google-drive-folder-id: ${{ inputs.google-drive-folder-id }}
+      google-drive-public-folder-id: ${{ inputs.google-drive-public-folder-id }}
+      google-drive-template-folder-id: ${{ inputs.google-drive-template-folder-id }}
+      kutt-base-url: ${{ inputs.kutt-base-url }}
+      kutt-link-id: ${{ inputs.kutt-link-id }}
+      conference-hall-event: ${{ inputs.conference-hall-event }}
+      issue-number: ${{ github.event.issue.number }}
+    secrets:
+      openfeedback-api-key: ${{ secrets.openfeedback-api-key }} # zizmor: ignore[secrets-outside-env] reusable workflow forwards explicitly scoped credentials
+      kutt-api-key: ${{ secrets.kutt-api-key }} # zizmor: ignore[secrets-outside-env] reusable workflow forwards explicitly scoped credentials
+      google-credentials: ${{ secrets.google-credentials }} # zizmor: ignore[secrets-outside-env] reusable workflow forwards explicitly scoped credentials
+      github-app-private-key: ${{ secrets.github-app-private-key }} # zizmor: ignore[secrets-outside-env] reusable workflow forwards explicitly scoped credentials
+      slack-token: ${{ secrets.slack-token }} # zizmor: ignore[secrets-outside-env] reusable workflow forwards explicitly scoped credentials
+      conference-hall-api-key: ${{ secrets.conference-hall-api-key }} # zizmor: ignore[secrets-outside-env] reusable workflow forwards explicitly scoped credentials

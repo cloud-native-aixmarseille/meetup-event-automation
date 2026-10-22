@@ -52,12 +52,12 @@ The same policy applies to issue updates and scheduled audits. Never use
 `continue-on-error` to hide a technical failure or make failure depend on where a
 report was posted. A successful step can represent a safely blocked operation;
 publish changes only when its completion evidence is present. Speaker catalog
-publication requires the completed synchronization's `pr-title` output.
+publication requires the speaker action's `pr-title` and the form action's `completed` output.
 Mailing token creation and communications skip when completed asset outputs are absent.
 
 ## Organizer feedback
 
-The final attention action is the sole diagnostic checklist writer. It merges
+The `organizer/reconcile-checklist` action is the sole diagnostic checklist writer. It merges
 event, asset, feedback and communication reports through the journey's
 `ReconcileOrganizerFeedback`. `OrganizerFeedback` decodes runtime inputs and
 invokes that use case.
@@ -67,7 +67,9 @@ concise localized guidance; raw diagnostic messages never become organizer text.
 Slack reuses this checklist alongside verified approvals and recovery tasks.
 
 The checklist is replaced only after all four stages report completed evaluation.
-A missing, failed or concurrently invalidated stage preserves previous tasks;
+Document/PDF operations form the assets stage, and event-feedback/shared-link
+operations form the feedback stage. Every member must report success before its
+group is complete. A missing, failed or concurrently invalidated stage preserves previous tasks;
 new diagnostic tasks wait for a complete run. Technical attention still reports
 the failed stage. This avoids treating an unevaluated task as resolved.
 Successful consolidated persistence precedes retirement of an obsolete separate
@@ -77,8 +79,9 @@ comment persistence prevents a new Slack notification and fails the action.
 
 Workflow stage results carry the consumed diagnostic outputs. Stages that did
 not execute remain unknown, and dependent blockage cannot resolve an earlier
-unverified technical failure. The final attention step runs after earlier
-failures when its GitHub setup is available.
+unverified technical failure. The reporting job runs after earlier failures when
+its GitHub setup is available. Attention requires a successful checklist step;
+a checklist write failure cannot be followed by a Slack notification.
 
 ## Validation
 
